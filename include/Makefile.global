@@ -37,15 +37,9 @@
 #	by other makefiles.
 #
 
-ifndef AOLSERVER
-    AOLSERVER=/usr/local/aolserver
-endif
-ifndef NSDEBUG
-    NSDEBUG=1
-endif
-ifndef NSGCC
-    NSGCC=1
-endif
+AOLSERVER ?= /usr/local/aolserver
+NSDEBUG	  ?= 1
+NSGCC	  ?= 1
 
 #
 # Current Tcl version.
