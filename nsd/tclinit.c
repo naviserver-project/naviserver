@@ -606,7 +606,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
     NsInterp *itPtr;
 
     if (connPtr->interp == NULL) {
-	connPtr->interp = Ns_TclAllocateInterp(connPtr->servPtr->server);
+	connPtr->interp = Ns_TclAllocateInterp(connPtr->server);
 	itPtr = NsGetInterp(connPtr->interp);
 	itPtr->conn = conn;
 	itPtr->nsconn.flags = 0;

@@ -204,7 +204,7 @@ Ns_ConnServer(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
 
-    return connPtr->servPtr->server;
+    return connPtr->server;
 }
 
 
@@ -407,12 +407,13 @@ char *
 Ns_ConnLocation(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
+    NsServer *servPtr = connPtr->servPtr;
     char *location;
 
-    if (connPtr->servPtr->locationProc != NULL) {
-        location = (*connPtr->servPtr->locationProc)(conn);
+    if (servPtr->locationProc != NULL) {
+        location = (*servPtr->locationProc)(conn);
     } else {
-	location = connPtr->drvPtr->location;
+	location = connPtr->location;
     }
     return location;
 }

@@ -71,6 +71,7 @@ NsdInit(void)
     	NsInitMimeTypes();
     	NsInitModLoad();
     	NsInitProcInfo();
+    	NsInitDrivers();
     	NsInitQueue();
     	NsInitSched();
     	NsInitTcl();

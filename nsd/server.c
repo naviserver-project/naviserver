@@ -528,7 +528,6 @@ CreatePool(NsServer *servPtr, char *pool)
     for (n = 0; n < maxconns - 1; ++n) {
 	connPtr = &connBufPtr[n];
 	connPtr->nextPtr = &connBufPtr[n+1];
-	connPtr->servPtr = servPtr;
     }
     connBufPtr[n].nextPtr = NULL;
     poolPtr->queue.freePtr = &connBufPtr[0];

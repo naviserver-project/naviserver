@@ -631,6 +631,7 @@ int
 Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
 {
     Conn *connPtr = (Conn *) conn;
+    NsServer *servPtr = connPtr->servPtr;
     Ns_DString ds;
     int        result;
 
@@ -651,7 +652,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
     /*
      * Detailed server information at the bottom of the page.
      */
-    if (connPtr->servPtr->opts.noticedetail) {
+    if (servPtr->opts.noticedetail) {
 	Ns_DStringVarAppend(&ds, "<P ALIGN=RIGHT><SMALL><I>",
 			    Ns_InfoServerName(), "/",
 			    Ns_InfoServerVersion(), " on ",
@@ -664,7 +665,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
      * NB: Because we pad inside the body we may pad more than needed.
      */
     if (status >= 400) {
-	while (ds.length < connPtr->servPtr->limits.errorminsize) {
+	while (ds.length < servPtr->limits.errorminsize) {
 	    Ns_DStringAppend(&ds, "                    ");
 	}
     }
