@@ -70,10 +70,23 @@ static Callback *firstSignal;
 static Callback *firstServerShutdown;
 static Callback *firstShutdown;
 static Callback *firstExit;
+static Callback *firstReady;
 static Ns_Mutex  lock;
 static Ns_Cond   cond;
 static int shutdownPending;
 static Ns_Thread serverShutdownThread;
+
+void *
+Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
+{
+    return RegisterAt(&firstReady, proc, arg);
+}
+
+void
+NsRunAtReadyProcs(void)
+{
+    RunCallbacks(firstReady);
+}
 
 
 /*

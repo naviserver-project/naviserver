@@ -679,9 +679,19 @@ NsConnThread(void *arg)
 	} else {
 	    lastActiveConnPtr = connPtr->prevPtr;
 	}
+	idleThreads++;
 	connPtr->nextPtr = firstFreeConnPtr;
 	firstFreeConnPtr = connPtr;
-	idleThreads++;
+	if (connPtr->nextPtr == NULL) {
+	    /*
+	     * If this thread just free'd up the busy server,
+	     * run the ready procs to signal other subsystems.
+	     */
+
+	    Ns_MutexUnlock(&lock);
+	    NsRunAtReadyProcs();
+	    Ns_MutexLock(&lock);
+	}
     }
 
     idleThreads--;

@@ -539,6 +539,7 @@ NS_EXTERN void *Ns_RegisterServerShutdown(char *ignored, Ns_Callback *proc,
 NS_EXTERN void *Ns_RegisterShutdown(Ns_Callback *proc, void *arg);
 NS_EXTERN void *Ns_RegisterAtServerShutdown(Ns_Callback *proc, void *arg);
 NS_EXTERN void *Ns_RegisterAtShutdown(Ns_Callback *proc, void *arg);
+NS_EXTERN void *Ns_RegisterAtReady(Ns_Callback *proc, void *arg);
 NS_EXTERN void *Ns_RegisterAtExit(Ns_Callback *proc, void *arg);
 NS_EXTERN void Ns_RegisterProcDesc(void *procAddr, char *desc);
 NS_EXTERN void Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc);
