@@ -40,12 +40,13 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #include "nsconf.h"
 
 struct _nsconf nsconf;
-int nsConfQuiet;
 
 static void
 Log(char *path, char *key, char *value)
 {
-    if (!nsConfQuiet) Ns_Log(Notice, "conf: [%s]%s = %s", path, key, value);
+    if (!nsconf.quiet) {
+	Ns_Log(Notice, "conf: [%s]%s = %s", path, key, value);
+    }
 }
 
 
@@ -57,7 +58,9 @@ GetInt(char *path, char *key, int def)
     if (!Ns_ConfigGetInt(path, key, &i) || i < 0) {
 	i = def;
     }
-    if (!nsConfQuiet) Ns_Log(Notice, "conf: [%s]%s = %d", path, key, i);
+    if (!nsconf.quiet) {
+	Ns_Log(Notice, "conf: [%s]%s = %d", path, key, i);
+    }
     return i;
 }
 
@@ -158,6 +161,7 @@ NsConfInit(void)
      */
          
     nsconf.shutdowntimeout = GetInt(PARAMS, "shutdowntimeout", SHUTDOWNTIMEOUT);
+    nsconf.startuptimeout  = GetInt(PARAMS, "startuptimeout", STARTUPTIMEOUT);
     nsconf.bufsize         = GetInt(PARAMS, "iobufsize", IOBUFSIZE);
 
     /*
