@@ -271,4 +271,5 @@ SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
     objPtr->typePtr = &timeType;
     *((Ns_Time *) &objPtr->internalRep) = *timePtr;
     Tcl_InvalidateStringRep(objPtr);
+    objPtr->length = 0;  /* ensure there's no stumbling */
 }
