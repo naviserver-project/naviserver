@@ -97,6 +97,7 @@ typedef struct Mutex {
 
 extern Thread  *NsGetThread(void);
 extern void     NsSetThread(Thread *thrPtr);
+extern void     NsInitThread(Thread *thrPtr, int tid);
 extern Thread  *NsNewThread(void);
 extern Thread  *NsNewThread2(Ns_ThreadProc *proc, void *arg, long stack, int flags);
 extern void     NsCleanupThread(Thread *thrPtr);
