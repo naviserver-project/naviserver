@@ -74,6 +74,7 @@ FatalSignalHandler(int signal)
     pthread_kill_other_threads_np();
 #endif
 
+    Ns_Log(Fatal, "received fatal signal %d", signal);
     abort();
 }
 

@@ -388,6 +388,20 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 	}
     }
 
+#ifdef __linux
+    /*
+     * On Linux, once a process changes uid/gid, the dumpable flag
+     * is cleared, preventing a core file from being written.  On
+     * Linux 2.4+, it can be set again using prctl() so that we can
+     * get core files.
+     */
+     
+    if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) < 0) {
+        Ns_Fatal("nsmain: prctl(PR_SET_DUMPABLE) failed: '%s'",
+                strerror(errno));
+    }
+#endif
+
     /*
      * Fork into the background and create a new session if running 
      * in daemon mode.
