@@ -409,10 +409,15 @@ typedef struct {
  * scatter/gather buffer.
  */
 
-typedef struct Ns_Buf {
-    char  *buf;
-    size_t len;
-} Ns_Buf;
+#ifdef WIN32
+typedef WSABUF Ns_Buf;
+#define ns_buf buf
+#define ns_len len
+#else
+typedef struct iovec Ns_Buf;
+#define ns_buf iov_base
+#define ns_len iov_len
+#endif
 
 /*
  * The following structure defines a driver.
@@ -961,6 +966,7 @@ NS_EXTERN void Ns_SetRequestUrl(Ns_Request *request, char *url);
 
 NS_EXTERN void Ns_RegisterReturn(int status, char *url);
 NS_EXTERN void Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr);
+NS_EXTERN void Ns_ConnQueueHeaders(Ns_Conn *conn, int status);
 NS_EXTERN int Ns_ConnFlushHeaders(Ns_Conn *conn, int status);
 NS_EXTERN void Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value);
 NS_EXTERN void Ns_ConnCondSetHeaders(Ns_Conn *conn, char *field, char *value);

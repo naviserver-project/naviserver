@@ -111,6 +111,7 @@ NS_EXTERN int closedir(DIR *dp);
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <sys/uio.h>
 
 #ifndef O_TEXT
 #define O_TEXT 0
