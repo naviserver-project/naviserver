@@ -1,3 +1,9 @@
+2005-02-27  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/mimetypes.c: XML mime types changed to application/xml from
+	text/xml, fixes bug #1145927.  Added a handful of new mime
+	mappings.
+
 2005-02-26  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/tclobjv.c: New file with objv argument parsing code
