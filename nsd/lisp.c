@@ -261,8 +261,6 @@ Ns_StringPrint(char *s)
 void
 Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc)
 {
-    assert(printProc != NULL);
-    
     Ns_StringPrint("(");
     for (; lPtr != NULL; lPtr = lPtr->rest) {
         (*printProc) (lPtr->first);

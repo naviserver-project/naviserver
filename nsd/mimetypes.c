@@ -323,8 +323,6 @@ AddType(char *ext, char *type)
 static char *
 LowerDString(Ns_DString *dsPtr, char *ext)
 {
-    assert(ext != NULL);
-
     Ns_DStringAppend(dsPtr, ext);
     ext = dsPtr->string;
     while (*ext != '\0') {

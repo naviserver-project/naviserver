@@ -299,10 +299,6 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
 void
 Ns_DbSetException(Ns_DbHandle *handle, char *code, char *msg)
 {
-    assert(handle != NULL);
-    assert(code != NULL);
-    assert(strlen(code) <= 5);
-
     strcpy(handle->cExceptionCode, code);
     Ns_DStringFree(&(handle->dsExceptionMsg));
     Ns_DStringAppend(&(handle->dsExceptionMsg), msg);

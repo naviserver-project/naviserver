@@ -1909,8 +1909,6 @@ MkSeq(Ns_DString *dsPtr, char *server, char *method, char *url)
 	
         Ns_DStringNAppend(dsPtr, "\0", 1);
     } else {
-        assert((method == NULL) && (url == NULL));
-
 	/*
 	 * This is Server-specific data, so there's only going to
 	 * be one element.
