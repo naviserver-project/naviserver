@@ -76,7 +76,7 @@
 #endif
 
 #include <windows.h>
-#include <winsock.h>
+#include <winsock2.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <io.h>
