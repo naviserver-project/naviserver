@@ -131,12 +131,6 @@ NsConfInit(void)
     }
 
     /*
-     * dstring.c
-     */
-    nsconf.dstring.maxentries = GetInt("dstringcachemaxentries", DSTRING_MAXENTRIES_INT);
-    nsconf.dstring.maxsize    = GetInt("dstringcachemaxsize", DSTRING_MAXSIZE_INT);
-
-    /*
      * exec.c
      */
      
