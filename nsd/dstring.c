@@ -107,7 +107,6 @@ Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
 	Ns_DStringAppend(dsPtr, s);
     }
     va_end(ap);
-
     return dsPtr->string;
 }
 
@@ -194,7 +193,6 @@ Ns_DStringExport(Ns_DString *dsPtr)
 	memcpy(s, dsPtr->string, dsPtr->length+1);  
     }
     Ns_DStringFree(dsPtr);
-
     return s;
 }
 
@@ -217,13 +215,12 @@ Ns_DStringExport(Ns_DString *dsPtr)
 char *
 Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
 {
-    char            buf[DSTRINGPRINTF_LIMIT];
+    char            buf[NS_DSTRING_PRINTF_MAX+1];
     va_list         ap;
 
     va_start(ap, fmt);
-    vsnprintf(buf, DSTRINGPRINTF_LIMIT, fmt, ap);
+    vsnprintf(buf, sizeof(buf)-1, fmt, ap);
     va_end(ap);
-
     return Ns_DStringAppend(dsPtr, buf);
 }
 
@@ -353,7 +350,6 @@ Ns_DStringNAppend(Ns_DString *dsPtr, char *string, int length)
     memcpy(dsPtr->string + dsPtr->length, string, length);
     dsPtr->length += length;
     dsPtr->string[dsPtr->length] = '\0';
-
     return dsPtr->string;
 }
 
