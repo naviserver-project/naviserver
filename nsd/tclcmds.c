@@ -173,9 +173,17 @@ static struct {
     {"ns_returnnotfound", NsTclReturnNotFoundCmd},
 
     /*
+     * tcljob.c
+     */
+
+    {"ns_job", NsTclJobCmd},
+
+    /*
      * tclfile.c
      */
 
+    {"ns_detach", NsTclDetachCmd},
+    {"ns_attach", NsTclAttachCmd},
     {"ns_url2file", NsTclUrl2FileCmd},
 
     /*
