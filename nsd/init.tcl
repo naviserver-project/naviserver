@@ -436,7 +436,7 @@ proc _ns_getscript n {
                     [::list proc $_proc $_args [::info body $_proc]] \n
             } else {
                 # procedure imported from other namespace
-                ::append _import [::list namespace import $_orig] \n
+                ::append _import [::list namespace import -force $_orig] \n
             }
         }
 
@@ -448,7 +448,7 @@ proc _ns_getscript n {
             ::set _orig [::namespace origin $_cmnd]
             ::if {[::info exists _prcs($_cmnd)] == 0 
                     && $_orig != [::namespace which -command $_cmnd]} {
-                ::append _import [::list namespace import $_orig] \n
+                ::append _import [::list namespace import -force $_orig] \n
             }
         }
 

@@ -683,8 +683,8 @@ NsDbInitServer(char *server)
 		pool = p;
 	    }
 	}
-    	sdataPtr->allowed = ns_malloc(ds.length + 1);
-    	memcpy(sdataPtr->allowed, ds.string, ds.length + 1);
+    	sdataPtr->allowed = ns_malloc((size_t)(ds.length + 1));
+    	memcpy(sdataPtr->allowed, ds.string, (size_t)(ds.length + 1));
     	Ns_DStringFree(&ds);
     }
 }

@@ -224,9 +224,9 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     NsInterp *itPtr = arg;
     Queue *queuePtr;
-    Job *jobPtr, **nextPtrPtr;
-    int code, new, create, running, max;
-    char *id, buf[20], *queue;
+    Job *jobPtr = NULL, **nextPtrPtr;
+    int code, new, create = 0, running = 0, max;
+    char *id = NULL, buf[20], *queue;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     static CONST char *opts[] = {

@@ -760,6 +760,9 @@ StatusMsg(int state)
     case 3:
 	what = "exiting";
 	break;
+    default:
+	what = "unknown";
+	break;
     }
     Ns_Log(Notice, "nsmain: %s/%s %s",
 	   Ns_InfoServerName(), Ns_InfoServerVersion(), what);

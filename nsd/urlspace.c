@@ -1892,8 +1892,8 @@ MkSeq(Ns_DString *dsPtr, char *server, char *method, char *url)
 	 * if we get here.
 	 */
 	
-        Ns_DStringNAppend(dsPtr, server, strlen(server) + 1);
-        Ns_DStringNAppend(dsPtr, method, strlen(method) + 1);
+        Ns_DStringNAppend(dsPtr, server, (int)(strlen(server) + 1));
+        Ns_DStringNAppend(dsPtr, method, (int)(strlen(method) + 1));
 
 	/*
 	 * Loop over each directory in the URL and turn the slashes
@@ -1933,7 +1933,7 @@ MkSeq(Ns_DString *dsPtr, char *server, char *method, char *url)
 	 * be one element.
 	 */
 	
-        Ns_DStringNAppend(dsPtr, server, strlen(server) + 1);
+        Ns_DStringNAppend(dsPtr, server, (int)(strlen(server) + 1));
         Ns_DStringNAppend(dsPtr, "\0", 1);
     }
 }

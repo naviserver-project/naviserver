@@ -79,9 +79,9 @@ NsTclAtCloseCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
 	return TCL_ERROR;
     }
     if (argc == 2) {
-	script = argv[1];
+	script = (char*)argv[1];
     } else {
-	script = Tcl_Concat(2, argv+1);
+	script = (char*)Tcl_Concat(2, (CONST char**)(argv+1));
     }
 
     /*

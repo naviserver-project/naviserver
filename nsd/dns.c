@@ -109,10 +109,10 @@ Ns_GetAddrByHost(Ns_DString *dsPtr, char *host)
 static int
 DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache **cachePtr, char *key)
 {
-    int             status, new, timeout;
-    Value   	   *vPtr;
-    Ns_Entry       *ePtr;
-    Ns_Cache	   *cache;
+    int             status = NS_FALSE, new, timeout;
+    Value   	   *vPtr  = NULL;
+    Ns_Entry       *ePtr  = NULL;
+    Ns_Cache	   *cache = NULL;
     time_t	    now;
 
     /*

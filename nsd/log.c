@@ -622,7 +622,7 @@ LogFlush(Cache *cachePtr)
     Ns_DString *dsPtr = &cachePtr->buffer;
 
     Ns_MutexLock(&lock);
-    (void) write(2, dsPtr->string, dsPtr->length);
+    (void) write(2, dsPtr->string, (size_t)dsPtr->length);
     Ns_MutexUnlock(&lock);
     Ns_DStringFree(dsPtr);
     cachePtr->count = 0;

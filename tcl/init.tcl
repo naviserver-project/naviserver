@@ -41,8 +41,22 @@
 #
 # Initialize errorCode and errorInfo like tclsh does.
 #
-global errorCode errorInfo 
-set errorCode "" 
-set errorInfo "" 
- 
- 
+
+set ::errorCode ""
+set ::errorInfo ""
+
+#
+# Make sure Tcl package loader starts looking for
+# packages with our private library directory and not
+# in some public, like /usr/local/lib or such. This
+# way we avoid clashes with modules having multiple
+# versions, one for general use and one for AOLserver.
+#
+
+if {[info exists ::auto_path] == 0} {
+    set ::auto_path [file join [ns_info home] lib]
+} else {
+    set ::auto_path [concat [file join [ns_info home] lib] $::auto_path]
+}
+
+# EOF $RCSfile$

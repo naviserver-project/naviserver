@@ -1148,7 +1148,8 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **
 	return TCL_ERROR;
     }
     Tcl_Flush(chan);
-    if (Ns_ConnCopyToChannel(itPtr->conn, itPtr->conn->contentLength, chan) != NS_OK) {
+    if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)itPtr->conn->contentLength, 
+                             chan) != NS_OK) {
         Tcl_SetResult(interp, "could not copy content (likely client disconnect)",
 		TCL_STATIC);
         return TCL_ERROR;

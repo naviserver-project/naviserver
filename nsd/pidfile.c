@@ -71,7 +71,7 @@ NsCreatePidFile(char *procname)
     } else {
 	sprintf(buf, "%d\n", nsconf.pid);
 	n = strlen(buf);
-	if (write(fd, buf, n) != n) {
+	if (write(fd, buf, (size_t)n) != n) {
 	    Ns_Log(Error, "pidfile: write() failed: '%s'", strerror(errno));
 	}
         close(fd);

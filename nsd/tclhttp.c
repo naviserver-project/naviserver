@@ -202,7 +202,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
 		result = "error";
 	    }
 	}
-	result = Tcl_SetVar(interp, Tcl_GetString(objv[3]), result, TCL_LEAVE_ERR_MSG);
+	result = (char*)Tcl_SetVar(interp, Tcl_GetString(objv[3]), result, TCL_LEAVE_ERR_MSG);
 	if (httpPtr != NULL) {
 	    Tcl_DeleteHashEntry(hPtr);
 	    HttpClose(httpPtr, 0);

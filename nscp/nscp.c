@@ -545,7 +545,7 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 	Ns_Log(Warning, "nscp: login failed: '%s'", user ? user : "?");
 	sprintf(msg, "Access denied!\n");
     }
-    (void) send(sessPtr->sock, msg, strlen(msg), 0);
+    (void) send(sessPtr->sock, msg, (int)strlen(msg), 0);
     Tcl_DStringFree(&uds);
     Tcl_DStringFree(&pds);
     return ok;
@@ -569,13 +569,13 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
  */
 
 static int
-ExitCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+ExitCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
 {
     int *stopPtr;
 
     if (argc != 1) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
-	    argv[0], "\"", NULL);
+	    (char*)argv[0], "\"", NULL);
 	return TCL_ERROR;
     }
 

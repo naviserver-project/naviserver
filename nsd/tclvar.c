@@ -494,8 +494,8 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
 int
 NsTclNsvUnsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Tcl_HashEntry *hPtr;
-    Array *arrayPtr;
+    Tcl_HashEntry *hPtr = NULL;
+    Array *arrayPtr = NULL;
 
     if (objc != 2 && objc != 3) {
     	Tcl_WrongNumArgs(interp, 1, objv, "array ?key?");
@@ -681,8 +681,8 @@ UpdateVar(Tcl_HashEntry *hPtr, Tcl_Obj *obj)
 
     str = Tcl_GetStringFromObj(obj, &len);
     old = Tcl_GetHashValue(hPtr);
-    new = ns_realloc(old, len+1);
-    memcpy(new, str, len+1);
+    new = ns_realloc(old, (size_t)(len+1));
+    memcpy(new, str, (size_t)(len+1));
     Tcl_SetHashValue(hPtr, new);
 }
 
@@ -771,7 +771,7 @@ NsTclVarObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_HashEntry        *hPtr;
     Tcl_HashSearch        search;
     int                   new, code;
-    char		 *var, *val;
+    char *var = NULL, *val = NULL;
     static CONST char *opts[] = {
 	"exists", "get", "list", "set", "unset", NULL
     };

@@ -298,7 +298,7 @@ NsLoadModules(char *server)
 {
     Ns_Set *modules;
     int     i;
-    char   *file, *module, *init, *s, *e;
+    char   *file, *module, *init = NULL, *s, *e = NULL;
     Module *modPtr, *nextPtr;
 
     modules = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL, "modules", NULL));

@@ -99,9 +99,13 @@ INSTSRVPAG	= $(INSTSRV)/pages
 # Platform-specific options.
 uname = $(shell uname -a)
 
-# Solaris 2.7+
+# Solaris 2.6+
 ifneq (,$(findstring SunOS,$(uname)))
-    LIBS+=-lrt
+    ifneq (,$(findstring 5.6,$(uname)))
+        LIBS+=-lthread -lposix4
+    else
+        LIBS+=-lrt
+    endif
 endif
 
 # Add dynamic library entry point flags.

@@ -184,7 +184,7 @@ Ns_PurgeFiles(char *file, int max)
 	goto err;
     }
     while ((ent = ns_readdir(dp)) != NULL) {
-	if (strncmp(tail, ent->d_name, tlen) != 0) {
+	if (strncmp(tail, ent->d_name, (size_t)tlen) != 0) {
 	    continue;
 	}
     	if (!AppendFile(&list, dir.string, ent->d_name)) {
@@ -197,7 +197,7 @@ Ns_PurgeFiles(char *file, int max)
     nfiles = list.length / sizeof(File *);
     if (nfiles >= max) {
 	files = (File **) list.string;
-	qsort(files, nfiles, sizeof(File *), CmpFile);
+	qsort(files, (size_t)nfiles, sizeof(File *), CmpFile);
 	for (i = max; i < nfiles; ++i) {
 	    if (Unlink(files[i]->name) != 0) {
 	    	goto err;

@@ -165,11 +165,11 @@ NsMapPool(ConnPool *poolPtr, char *map)
     char **mv;
     int mc;
 
-    if (Tcl_SplitList(NULL, map, &mc, &mv) == TCL_OK) {
+    if (Tcl_SplitList(NULL, map, &mc, (CONST char***)&mv) == TCL_OK) {
 	if (mc == 2) {
-    	    Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0, NULL);
-	    Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", server, mv[0], mv[1],
-		   poolPtr->pool);
+	    Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0, NULL);
+	    Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", server, mv[0], mv[1], 
+               poolPtr->pool);
 	}
 	ckfree((char *) mv);
     }
@@ -286,7 +286,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_DString ds;
     static CONST char *opts[] = {
 	 "active", "all", "connections", "keepalive", "pools", "queued",
-	 "threads", "waiting", NULL,
+	 "threads", "waiting", NULL, 
     };
     enum {
 	 SActiveIdx, SAllIdx, SConnectionsIdx, SKeepaliveIdx, SPoolsIdx,

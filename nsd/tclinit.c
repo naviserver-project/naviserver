@@ -773,7 +773,7 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
            "User-Agent: %s, PeerAddress: %s\n%s", 
            conn->request->method, conn->request->url,
 	   agent, Ns_ConnPeer(conn), errorInfo);
-    return errorInfo;
+    return (char*)errorInfo;
 }
 
 

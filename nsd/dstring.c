@@ -98,8 +98,8 @@ Ns_DStringExport(Ns_DString *dsPtr)
 	s = dsPtr->string;
 	dsPtr->string = dsPtr->staticSpace;
     } else {
-	s = ns_malloc(dsPtr->length+1);
-	memcpy(s, dsPtr->string, dsPtr->length+1);  
+	s = ns_malloc((size_t)dsPtr->length+1);
+	memcpy(s, dsPtr->string, (size_t)(dsPtr->length+1));  
     }
     Ns_DStringFree(dsPtr);
     return s;
@@ -124,7 +124,7 @@ Ns_DStringExport(Ns_DString *dsPtr)
 char *
 Ns_DStringAppendArg(Ns_DString *dsPtr, char *string)
 {
-    return Ns_DStringNAppend(dsPtr, string, strlen(string) + 1);
+    return Ns_DStringNAppend(dsPtr, string, (int)strlen(string) + 1);
 }
 
 

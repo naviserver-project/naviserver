@@ -334,7 +334,7 @@ SockCallbackThread(void *ignored)
 
 	if (max <= table.numEntries) {
 	    max  = table.numEntries + 100;
-	    pfds = ns_realloc(pfds, max);
+	    pfds = ns_realloc(pfds, (size_t)max);
 	}
 	nfds = 1;
 	hPtr = Tcl_FirstHashEntry(&table, &search);
@@ -367,7 +367,7 @@ SockCallbackThread(void *ignored)
 	}
 	pfds[0].revents = 0;
 	do {
-	    n = poll(pfds, nfds, -1);
+	    n = poll(pfds, (size_t)nfds, -1);
 	} while (n < 0 && errno == EINTR);
 	if (n < 0) {
 	    Ns_Fatal("poll() failed: %s", strerror(errno));

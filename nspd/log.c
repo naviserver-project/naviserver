@@ -198,6 +198,7 @@ Ns_PdLog(Ns_PdLogMsgType errtype, char *format,...)
             priority = LOG_NOTICE;
             break;
         default:
+            priority = LOG_ERR;
             typeok = 0;
             syslog(LOG_ERR, "nspd: unknown error type: %d", errtype);
             break;

@@ -67,7 +67,7 @@ static Ns_Mutex lock;
 int
 Ns_SockListenEx(char *address, int port, int backlog)
 {
-    int          err, sock;
+    int err, sock = -1;
     struct sockaddr_in sa;
     Tcl_HashEntry *hPtr;
 

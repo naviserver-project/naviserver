@@ -408,8 +408,8 @@ SetUrl(Ns_Request * request, char *url)
     request->urlc = ds1.length / (sizeof(char *));
     p = NULL;
     Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
-    request->urlv = (char **) ns_malloc(ds1.length);
-    memcpy(request->urlv, ds1.string, ds1.length);
+    request->urlv = (char **) ns_malloc((size_t)ds1.length);
+    memcpy(request->urlv, ds1.string, (size_t)ds1.length);
     Ns_DStringFree(&ds1);
 }
 

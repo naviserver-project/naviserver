@@ -290,10 +290,10 @@ Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc)
 Ns_List *
 Ns_ListCopy(Ns_List *lPtr)
 {
-    Ns_List *curPtr, *newPtr, *headPtr;
+    Ns_List *curPtr = NULL, *newPtr = NULL, *headPtr = NULL;
 
     if (lPtr == NULL) {
-        return lPtr;
+        return NULL;
     }
     headPtr = curPtr = Ns_ListCons(lPtr->first, NULL);
     for (lPtr = lPtr->rest; lPtr != NULL; lPtr = lPtr->rest) {
