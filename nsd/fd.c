@@ -248,6 +248,7 @@ Ns_GetTemp(void)
 	Ns_CloseOnExec(fd);
 	if (unlink(path) != 0) {
 	    Ns_Log(Warning, "tmp: unlink(%s) failed: %s", path, strerror(errno));
+	}
 #endif
     }
     Ns_DStringFree(&ds);
