@@ -177,7 +177,8 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 	 * startup.
 	 */
 
-	Tcl_WaitPid(pid, &status, WNOHANG);
+	/* NB: Must be a blocking wait to avoid zombies. */
+	Tcl_WaitPid(pid, &status, 0);
     }
     
     if (errPipeIn) {
