@@ -42,6 +42,21 @@
 #include "nsthread.h"
 
 /*
+ * The following constants define the default and minimum stack
+ * sizes for new threads.
+ */
+
+#define STACK_DEFAULT	65536	/* 64k */
+#define STACK_MIN	16384	/* 16k */
+
+/*
+ * The following defines the estimated stack space required to
+ * return an NS_OK in Ns_CheckStack().
+ */
+
+#define STACK_CHECK	2048	/* 2k */
+
+/*
  * The following structure maintains all state for a thread
  * including thread local storage slots.
  */
