@@ -35,7 +35,7 @@
 
 #include "nsd.h"
 
-static char rcsid[] = "$Id$";
+static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 /*
  * The following structure maintains the context for each variable

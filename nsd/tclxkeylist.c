@@ -8,7 +8,7 @@
  *
  */
 
-static char rcsid[] = "$Id$";
+static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 
