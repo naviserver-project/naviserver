@@ -1,7 +1,19 @@
+2005-02-26  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* generic/unix.c:
+	* include/ns.h: added Ns_GetNameForUid(), Ns_GetNameForGid()
+	
+	* generic/nsmain.c: allows server to be started as uid == 0
+	  if both of the following are true:
+	     o. the caller process is running as root (getuid() == 0)
+	     o "-u root" or "-u 0" was given on the command line
+	  Also, improved and tightented verification of passed user
+	  and/or group information.
+
 2005-02-24  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* include/ns.h nsd/nsd.h nsd/binder.c: changed server name 
-          from AOLserver to NaviServer in ns_info command.
+	  from AOLserver to NaviServer in ns_info command.
 	  New ListenXXX family functions declared in the ns.h file. 
 
 2005-02-22  Vlad Seryakov <vlad@crystalballinc.com>
@@ -14,31 +26,32 @@
 
 	* nsd/tclfile.c: fixed broken NsTclChanObjCmd command which
 	  caused server crashes when trasporting channels between 
-	  threads when linked against Tcl 8.4+ library.
+	  threads when linked against Tcl 8.4+ library (Bug #1143586)
 
 2005-02-16 Vlad Seryakov <vlad@crystalballinc.com>
 
-	* Makefile configure configure.in sample-config.tcl include/Makefile.build
-	  include/Makefile.global.in include/Makefile.module.in include/ns.h
-	  include/nsdb.h include/nsextmsg.h include/nspd.h include/nsthread.h
+	* Makefile configure configure.in sample-config.tcl 
+	  include/Makefile.build include/Makefile.global.in 
+	  include/Makefile.module.in include/ns.h include/nsdb.h 
+	  include/nsextmsg.h include/nspd.h include/nsthread.h
 	  tcl/charsets.tcl tcl/compat.tcl tcl/debug.tcl tcl/fastpath.tcl
 	  tcl/file.tcl tcl/form.tcl tcl/http.tcl tcl/init.tcl
 	  tcl/nsdb.tcl tcl/util.tcl: modified license in the header
 
 	* tcl/sendmail.tcl: added erro notification flag to smtp_recv proc,
-          when receiving last QUIT response, do not fire exception if
-          remote server just drops the connection on QUIT
+	  when receiving last QUIT response, do not fire exception if
+	  remote server just drops the connection on QUIT
 
 	* nsd/binder.c: added UDP/UNIX/RAW protocols to the sockets,
 
-	* nsd/init.c: call InitLog before dns resolver will try to resolve local 
-          host, this prevents server crash
+	* nsd/init.c: call InitLog before dns resolver will try to resolve 
+	  local host, this prevents server crash
 
-	* nsd/tclsock.c: back ported from CVS 4.1, added -localhost/-localport to 
-          ns_scokopen
+	* nsd/tclsock.c: back ported from CVS 4.1, added -localhost/-localport
+	  to ns_scokopen
 
-	* nsdb/dbdrv.c: if driver set exception in select, do to rewrite it in the 
-          server
+	* nsdb/dbdrv.c: if driver set exception in select, do to rewrite it 
+	  in the server
 
 2005-02-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
