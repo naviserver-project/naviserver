@@ -30,6 +30,23 @@
 # $Header$
 #
 
-LIB      =  libnspd.so
-OBJS     =  listen.o log.o main.o ../nsext/nsextmsg.o
-include  ../include/Makefile.library
+NSHOME ?= ..
+include  $(NSHOME)/include/Makefile.global
+
+LIB	 =  libnspd.a
+OBJS     =  listen.o log.o main.o msg.o
+
+all: $(LIB)
+
+$(LIB): $(OBJS)
+	$(AR) rv $(LIB) $(OBJS)
+	$(RANLIB) $(LIB)
+
+msg.o: ../include/nsextmsg.h
+
+install: $(LIB)
+	$(RM) $(INSTLIB)/$(LIB)
+	$(CP) $(LIB) $(INSTLIB)/
+
+clean:
+	$(RM) $(LIB) $(OBJS)
