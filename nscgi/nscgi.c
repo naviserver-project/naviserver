@@ -765,7 +765,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
     	Ns_DString tmp;
 	
-        if (Ns_UrlDecode(dsPtr, cgiPtr->pathinfo) != NULL) {
+        if (Ns_DecodeUrl(dsPtr, cgiPtr->pathinfo) != NULL) {
             SetUpdate(cgiPtr->env, "PATH_INFO", dsPtr->string);
         } else {
             SetUpdate(cgiPtr->env, "PATH_INFO", cgiPtr->pathinfo);
@@ -773,7 +773,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 	Ns_DStringTrunc(dsPtr, 0);
 	Ns_DStringInit(&tmp);
         Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
-        if (Ns_UrlDecode(&tmp, dsPtr->string) != NULL) {
+        if (Ns_DecodeUrl(&tmp, dsPtr->string) != NULL) {
             SetUpdate(cgiPtr->env, "PATH_TRANSLATED", tmp.string);
         } else {
             SetUpdate(cgiPtr->env, "PATH_TRANSLATED", dsPtr->string);
