@@ -447,6 +447,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
     struct stat     st;
     char           *s, *e;
     char    	   *url = conn->request->url;
+    char	   *server = Ns_ConnServer(conn);
     
     modPtr = mapPtr->modPtr;
     memset(cgiPtr, 0, sizeof(Cgi));
@@ -476,7 +477,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
 	     
             cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, plen);
 	    dsPtr = CgiDs(cgiPtr);
-            Ns_UrlToFile(dsPtr, nsServer, cgiPtr->name);
+            Ns_UrlToFile(dsPtr, server, cgiPtr->name);
 	    cgiPtr->path = dsPtr->string;
             cgiPtr->pathinfo = url + plen;
 	    
@@ -547,7 +548,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
          */
 	 
 	dsPtr = CgiDs(cgiPtr);   
-	Ns_UrlToFile(dsPtr, nsServer, url);
+	Ns_UrlToFile(dsPtr, server, url);
 	cgiPtr->path = dsPtr->string;
 	cgiPtr->name = url;
         cgiPtr->pathinfo = url + ulen;
