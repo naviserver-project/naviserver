@@ -416,6 +416,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     }
     if (env == NULL) {
 	/* NB: Not strictly thread safe. */
+	extern char **environ;
 	envp = environ;
     } else {
         envBlock = GetEnvBlock(env);
