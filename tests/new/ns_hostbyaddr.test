@@ -1,7 +1,3 @@
-#!/bin/sh
-# the next line restarts using tclsh \
-exec tclsh "$0" "$@"
-
 #
 # The contents of this file are subject to the AOLserver Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -34,22 +30,20 @@ exec tclsh "$0" "$@"
 # $Header$
 #
 
-package require Tcl 8.4
-
-if {![info exists ::tcl_platform(threaded)] || !$::tcl_platform(threaded)} {
-    error "tests must run from a threaded tclsh"
-}
+source harness.tcl
+load libnsd.so
 
 package require tcltest 2.2
+namespace import -force ::tcltest::*
 
-set LD_LIBRARY_PATH [list]
-if {[info exists env(LD_LIBRARY_PATH)]} {
-    lappend LD_LIBRARY_PATH $env(LD_LIBRARY_PATH)
-}
-lappend LD_LIBRARY_PATH ../../nsd ../../nsthread
-set env(LD_LIBRARY_PATH) [join $LD_LIBRARY_PATH :]
+test ns_hostbyaddr {ns_hostbyaddr} {
+    assertEquals "localhost" [ns_hostbyaddr "127.0.0.1"]
 
-tcltest::configure -testdir [file dirname [info script]]
-eval tcltest::configure $argv
+    # ns_log messages confuse tcltest into thinking the test had a failure
+    ns_logctl hold
+    assertEquals 1 [catch {ns_hostbyaddr "0.0.0.0"} msg]
+    assertEquals "could not lookup 0.0.0.0" $msg
+    ns_logctl truncate
+} {}
 
-tcltest::runAllTests
+cleanupTests
