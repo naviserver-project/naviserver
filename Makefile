@@ -81,7 +81,7 @@ endif
 include include/Makefile.global
 
 MAKEFLAGS 	+= NSHOME=$(NSHOME) NSDEBUG=$(NSDEBUG) NSGCC=$(NSGCC)
-DIRS		=  thread $(NSTCL_ROOT) nsd nsmain $(NSMODS)
+DIRS		=  $(NSTCL_ROOT) nsd $(NSMODS)
 
 all:
 	@for i in $(DIRS); do \
