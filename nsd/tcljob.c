@@ -43,6 +43,20 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #define JOB_ERRCODE 8
 #define JOB_ERRINFO 16
 
+/*
+ * The following structure defines a job queued in a
+ * server Tcl job pool.
+ */
+
+typedef struct Job {
+    struct Job      *nextPtr;
+    int              flags;
+    int              code;
+    char            *errorCode;
+    char            *errorInfo;
+    Tcl_DString      ds;
+} Job;
+
 static void FreeJob(Job *jobPtr);
 static Ns_ThreadProc JobThread;
 

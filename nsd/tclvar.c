@@ -38,6 +38,17 @@
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 /*
+ * The following structure defines a collection of arrays.
+ * Only the arrays within a given bucket share a lock,
+ * allowing for more concurency in nsv.
+ */
+
+typedef struct Bucket {
+    Ns_Mutex lock;
+    Tcl_HashTable arrays;   
+} Bucket;
+
+/*
  * The following structure maintains the context for each variable
  * array.
  */
@@ -59,6 +70,39 @@ static Array *LockArray(void *arg, Tcl_Interp *interp, Tcl_Obj *array,
 			int create);
 #define UnlockArray(arrayPtr) \
 	Ns_MutexUnlock(&((arrayPtr)->bucketPtr->lock));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclNsvCreateBuckets --
+ *
+ *	Create a new array of buckets for a server.
+ *
+ * Results:
+ *	Pointer to bucket array.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+struct Bucket *
+NsTclCreateBuckets(char *server, int n)
+{
+    char buf[NS_THREAD_NAMESIZE];
+    Bucket *buckets;
+
+    buckets = ns_malloc(sizeof(Bucket) * n);
+    while (--n >= 0) {
+        sprintf(buf, "nsv:%d", n);
+        Tcl_InitHashTable(&buckets[n].arrays, TCL_STRING_KEYS);
+        Ns_MutexInit(&buckets[n].lock);
+        Ns_MutexSetName2(&buckets[n].lock, buf, server);
+    } 
+    return buckets;
+}
 
 
 /*
