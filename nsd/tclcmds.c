@@ -182,8 +182,7 @@ static struct {
      * tclfile.c
      */
 
-    {"ns_detach", NsTclDetachCmd},
-    {"ns_attach", NsTclAttachCmd},
+    {"ns_chan", NsTclChanCmd},
     {"ns_url2file", NsTclUrl2FileCmd},
 
     /*
