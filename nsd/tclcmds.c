@@ -90,6 +90,7 @@ extern Tcl_ObjCmdProc
     NsTclLinkObjCmd,
     NsTclLocalTimeObjCmd,
     NsTclLogObjCmd,
+    NsTclLogCtlObjCmd,
     NsTclLogRollObjCmd,
     NsTclMarkForDeleteObjCmd,
     NsTclMkdirObjCmd,
@@ -188,7 +189,6 @@ extern Tcl_CmdProc
     NsTclHeadersCmd,
     NsTclKillCmd,
     NsTclLinkCmd,
-    NsTclLogCmd,
     NsTclLogRollCmd,
     NsTclMkTempCmd,
     NsTclMkdirCmd,
@@ -332,7 +332,8 @@ static Cmd cmds[] = {
     {"ns_info", NsTclInfoCmd, NsTclInfoObjCmd},
     {"ns_modulepath", NsTclModulePathCmd, NsTclModulePathObjCmd},
 
-    {"ns_log", NsTclLogCmd, NsTclLogObjCmd},
+    {"ns_log", NULL, NsTclLogObjCmd},
+    {"ns_logctl", NULL, NsTclLogCtlObjCmd},
 
     {"ns_urlencode", NsTclUrlEncodeCmd, NsTclUrlEncodeObjCmd},
     {"ns_urldecode", NsTclUrlDecodeCmd, NsTclUrlDecodeObjCmd},
