@@ -35,7 +35,7 @@
 #	Makefile include for AOLserver modules, libraries, and programs.  Variables to set
 #	before including this file include:
 #
-#	AOLSERVER	AOLserver install directory.
+#	NAVISERVER	naviserver install directory.
 #	MOD		Name of module
 #	MODOBJS		List of module object files (required with MOD)
 #	LIB		Root name of dynamic library (without lib prefix or extension)
@@ -104,7 +104,7 @@ endif
 ifdef NSBUILD
     include ../include/Makefile.global
 else
-    include $(AOLSERVER)/include/Makefile.global
+    include $(NAVISERVER)/include/Makefile.global
 endif
 
 all build: $(BUILD)

@@ -372,7 +372,8 @@ Ns_DbSelect(Ns_DbHandle *handle, char *sql)
     	    if (Ns_DbExec(handle, sql) == NS_ROWS) {
     		setPtr = Ns_DbBindRow(handle);
 	    } else {
-        	Ns_DbSetException(handle, "NSDB",
+		if(!handle->dsExceptionMsg.length)
+        	   Ns_DbSetException(handle, "NSDB",
 		    	"Query was not a statement returning rows.");
 	    }
 	} else if (driverPtr->selectProc != NULL) {

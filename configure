@@ -11,7 +11,7 @@
 ac_help=
 ac_default_prefix=/usr/local
 # Any additions from configure.in:
-ac_default_prefix=/usr/local/aolserver
+ac_default_prefix=/usr/local/ns
 ac_help="$ac_help
   --with-tcl              directory containing tcl configuration (tclConfig.sh)"
 ac_help="$ac_help
@@ -995,10 +995,10 @@ fi
 
 
 #
-# TCL_SHLIB_LD from tclConfig.sh is not quite right for aolserver.
+# TCL_SHLIB_LD from tclConfig.sh is not quite right for naviserver.
 #
 
-test "x$prefix" = "xNONE" && prefix="/usr/local/aolserver"
+test "x$prefix" = "xNONE" && prefix="/usr/local/ns"
 system=`uname`
 case "$system" in
     Darwin)
@@ -1042,7 +1042,7 @@ case "$system" in
 	;;
 esac
 SRCDIR=`cd $srcdir; pwd`
-AOLSERVER=$prefix
+NAVISERVER=$prefix
 
 
 
@@ -1055,7 +1055,7 @@ AOLSERVER=$prefix
 
 
 #
-# Additional AOLserver checks.
+# Additional naviserver checks.
 #
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
@@ -2164,7 +2164,7 @@ s%@CCRPATH@%$CCRPATH%g
 s%@LDRPATH@%$LDRPATH%g
 s%@CCRPATHS@%$CCRPATHS%g
 s%@LDRPATHS@%$LDRPATHS%g
-s%@AOLSERVER@%$AOLSERVER%g
+s%@NAVISERVER@%$NAVISERVER%g
 s%@CPP@%$CPP%g
 s%@STATIC_BUILD@%$STATIC_BUILD%g
 

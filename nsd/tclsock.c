@@ -104,45 +104,26 @@ static int
 GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int byaddr)
 {
     Ns_DString  ds;
-    char       *opt, *addr;
-    int         all = 0;
     int         status;
 
-    if (byaddr) {
-        if (objc < 2 || objc > 3) {
-            Tcl_WrongNumArgs(interp, 1, objv, "?-all? address");
-            return TCL_ERROR;
-        }
-    } else {
-        if (objc != 2) {
-            Tcl_WrongNumArgs(interp, 1, objv, "address");
-            return TCL_ERROR;
-        }
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "address");
+        return TCL_ERROR;
     }
-    opt = Tcl_GetString(objv[1]);
-    if (objc >= 3 && STREQ(opt, "-all")) {
-        all = 1;
-        addr = Tcl_GetString(objv[2]);
-    } else {
-        addr = opt;
-    }
-
     Ns_DStringInit(&ds);
     if (byaddr) {
-        if (all) {
-            status = Ns_GetAllAddrByHost(&ds, addr);
-        } else {
-            status = Ns_GetAddrByHost(&ds, addr);
-        }
+	status = Ns_GetAddrByHost(&ds, Tcl_GetString(objv[1]));
     } else {
-        status = Ns_GetHostByAddr(&ds, addr);
+	status = Ns_GetHostByAddr(&ds, Tcl_GetString(objv[1]));
     }
     if (status == NS_TRUE) {
     	Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
     }
     Ns_DStringFree(&ds);
     if (status != NS_TRUE) {
-        Tcl_AppendResult(interp, "could not lookup ", addr, NULL);
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not lookup ", 
+		Tcl_GetString(objv[1]), 
+		NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -392,71 +373,125 @@ NsTclSockCheckObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  */
 
 int
-NsTclSockOpenObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSockOpenObjCmd(
+    ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]
+)
 {
     SOCKET sock;
-    int port;
-    int timeout;
-    int first;
-    int async;
+    char *host, *lhost = NULL, *opt, *val;
+    int lport = 0, port, first, async = 0, timeout = -1;
 
-    if (objc < 3 || objc > 5) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nonblock|-timeout seconds? host port");
+    if (objc < 3 || objc > 9) {
+      syntax:
+        Tcl_WrongNumArgs(interp, 1, objv,
+                "?(-nonblock | -async) | -timeout seconds? "
+                "?-localhost host? ?-localport port? host port");
         return TCL_ERROR;
     }
-    first = 1;
-    async = 0;
-    timeout = -1;
-    if (objc == 4) {
+    
+    /*
+     * Parse optional arguments.  Note that either the:
+     *     -nonblock | -async
+     * or
+     *     -timeout seconds
+     * combinations are accepted.
+     */
 
-	/*
-	 * open -nonblock host port
-	 */
-	
-        if (!STREQ(Tcl_GetString(objv[1]), "-nonblock") && 
-	    !STREQ(Tcl_GetString(objv[1]), "-async")) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-nonblock|-timeout seconds? host port");
-	   return TCL_ERROR;
+    for (first = 1; first < objc; first++) {
+        opt= Tcl_GetString(objv[first]);
+        if (*opt != '-') {
+            break; /* End of options */
         }
-
-        first = 2;
-        async = 1;
-    } else if (objc == 5) {
-
-	/*
-	 * open -timeout seconds host port
-	 */
-
-        if (!STREQ(Tcl_GetString(objv[1]), "-timeout")) {
-        	Tcl_WrongNumArgs(interp, 1, objv, "?-nonblock|-timeout seconds? host port");
-	    	return TCL_ERROR;
+        if (STREQ(opt, "-nonblock") || STREQ(opt, "-async")) {
+            if (timeout >= 0) {
+                goto syntax;
+            }
+            async = 1;
+        } else if (STREQ(opt, "-localhost")) {
+            if (++first >= objc) {
+                goto syntax;
+            }
+            lhost = Tcl_GetString(objv[first]);
+            if (*lhost == 0) {
+                Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                        "invalid hostname: must not be empty", NULL);
+                return TCL_ERROR;
+            }
+        } else if (STREQ(opt, "-timeout")) {
+            if (++first >= objc || async) {
+                goto syntax;
+            }
+            if (Tcl_GetIntFromObj(interp, objv[first], &timeout) != TCL_OK) {
+                return TCL_ERROR;
+            }
+        } else if (STREQ(opt, "-localport")) {
+            if (++first >= objc) {
+                goto syntax;
+            }
+            if (Tcl_GetIntFromObj(interp, objv[first], &lport) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            if (lport < 0) {
+                val = Tcl_GetString(objv[first]);
+                Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                        "invalid port: ", val, "; must be > 0", NULL);
+                return TCL_ERROR;
+            }
+        } else {
+            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                    "invalid option: \"", opt, "\"", NULL);
+            return TCL_ERROR;   
         }
-        if (Tcl_GetIntFromObj(interp, objv[2], &timeout) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        first = 3;
     }
-    if (Tcl_GetIntFromObj(interp, objv[first + 1], &port) != TCL_OK) {
+
+    if ((objc - first) != 2) {
+        goto syntax;
+    }
+
+    /*
+     * Get the host to connect to. Bark on invalid entry.
+     */
+
+    host = Tcl_GetString(objv[first]);
+    if (*host == 0) {
+        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                "invalid hostname: must not be empty", NULL);
+        return TCL_ERROR;
+    }
+
+    /*
+     * Get the port to connect to. Bark on invalid entry.
+     */
+
+    if (Tcl_GetIntFromObj(interp, objv[first+1], &port) != TCL_OK) {
+        return TCL_ERROR;
+    } else if (port < 0) {
+        val = Tcl_GetString(objv[first+1]);
+        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                "invalid port: ", val, "; must be > 0", NULL);
         return TCL_ERROR;
     }
 
     /*
      * Perform the connection.
      */
-    
+
     if (async) {
-        sock = Ns_SockAsyncConnect(Tcl_GetString(objv[first]), port);
+        sock = Ns_SockAsyncConnect2(host, port, lhost, lport);
     } else if (timeout < 0) {
-        sock = Ns_SockConnect(Tcl_GetString(objv[first]), port);
+        sock = Ns_SockConnect2(host, port, lhost, lport);
     } else {
-        sock = Ns_SockTimedConnect(Tcl_GetString(objv[first]), port, timeout);
+        sock = Ns_SockTimedConnect2(host, port, lhost, lport, timeout);
     }
+
     if (sock == INVALID_SOCKET) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not connect to \"",
-		Tcl_GetString(objv[first]), ":", 
-		Tcl_GetString(objv[first + 1]), "\"", NULL);
+        char *why = Tcl_GetErrno() ? Tcl_PosixError(interp) : "reason unknown";
+        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                "can't connect to \"", host, ":",
+                Tcl_GetString(objv[first+1]), "\"; ", why, NULL);
         return TCL_ERROR;
     }
+
     return EnterDupedSocks(interp, sock);
 }
 

@@ -37,16 +37,20 @@
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
-
+#include <sys/un.h>
 /*
  * Locals defined in this file
  */
 
 static void PreBind(char *line);
-static Tcl_HashTable prebound;
+static Tcl_HashTable preboundTcp;
+static Tcl_HashTable preboundUdp;
+static Tcl_HashTable preboundRaw;
+static Tcl_HashTable preboundUnix;
 static Ns_Mutex lock;
 
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -75,7 +79,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
 	return -1;
     }
     Ns_MutexLock(&lock);
-    hPtr = Tcl_FindHashEntry(&prebound, (char *) &sa);
+    hPtr = Tcl_FindHashEntry(&preboundTcp, (char *) &sa);
     if (hPtr != NULL) {
 	sock = (int) Tcl_GetHashValue(hPtr);
 	Tcl_DeleteHashEntry(hPtr);
@@ -91,6 +95,184 @@ Ns_SockListenEx(char *address, int port, int backlog)
 	sock = -1;
     }
     return sock;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockBindUdp --
+ *
+ *	Create a UDP socket and bind it to the passed-in address.
+ *
+ * Results:
+ *	Socket descriptor or -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_SockBindUdp(struct sockaddr_in *saPtr)
+{
+   int sock, err, n = 1;
+   
+   if((sock = socket(AF_INET,SOCK_DGRAM,0)) < 0 ||
+      setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n)) < 0 ||
+      bind(sock,(struct sockaddr *)saPtr,sizeof(struct sockaddr_in)) < 0) {
+	err = errno;
+	close(sock);
+	Ns_SetSockErrno(err);
+        sock = -1;
+   }
+   return sock;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockRaw --
+ *
+ *	Helper routine for creating a raw socket
+ *
+ * Results:
+ *	Socket descriptor or -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_SockRaw(int proto)
+{
+   int sock, err;
+   
+   if((sock = socket(AF_INET,SOCK_RAW,proto)) < 0) {
+        err = errno;
+	close(sock);
+	Ns_SetSockErrno(err);
+        sock = -1;
+   }
+   return sock;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockListenUdp --
+ *
+ *	Create a new UDP socket bound to the specified port and listening
+ *	for new connections.
+ *
+ * Results:
+ *	Socket descriptor or -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_SockListenUdp(char *address, int port)
+{
+    int sock = -1;
+    struct sockaddr_in sa;
+    Tcl_HashEntry *hPtr;
+
+    if (Ns_GetSockAddr(&sa, address, port) != NS_OK) {
+	return -1;
+    }
+    Ns_MutexLock(&lock);
+    hPtr = Tcl_FindHashEntry(&preboundUdp, (char *) &sa);
+    if (hPtr != NULL) {
+	sock = (int) Tcl_GetHashValue(hPtr);
+	Tcl_DeleteHashEntry(hPtr);
+    }
+    Ns_MutexUnlock(&lock);
+    if (hPtr == NULL) {
+    	sock = Ns_SockBindUdp(&sa);
+    }
+    return sock;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockListenRaw --
+ *
+ *	Create a new RAW socket 
+ *
+ * Results:
+ *	Socket descriptor or -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_SockListenRaw(int proto)
+{
+    int sock = -1;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+
+    Ns_MutexLock(&lock);
+    hPtr = Tcl_FirstHashEntry(&preboundRaw, &search);
+    while (hPtr != NULL) {
+        if(proto == (int)Tcl_GetHashValue(hPtr)) {
+          sock = (int)Tcl_GetHashKey(&preboundRaw, hPtr);
+          Tcl_DeleteHashEntry(hPtr);
+          break;
+        }
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+    Ns_MutexUnlock(&lock);
+    if (hPtr == NULL) {
+    	sock = Ns_SockRaw(proto);
+    }
+    return sock;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ListenUnix --
+ *
+ *	Helper routine for creating a listening UNIX domain socket.
+ *
+ * Results:
+ *	Socket descriptor or -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Ns_SockListenUnix(char *path)
+{
+   int sock, err;
+   struct sockaddr_un addr;
+
+   memset(&addr,0,sizeof(addr));
+   addr.sun_family = AF_UNIX;
+   strncpy(addr.sun_path,path,sizeof(addr.sun_path)-1);
+   unlink(path);
+   if((sock = socket(AF_UNIX,SOCK_STREAM,0)) < 0 ||
+      bind(sock,(struct sockaddr*)&addr,sizeof(addr)) < 0) {
+	err = errno;
+	close(sock);
+	Ns_SetSockErrno(err);
+        sock = -1;
+   }
+   return sock;
 }
 
 
@@ -113,7 +295,10 @@ Ns_SockListenEx(char *address, int port, int backlog)
 void
 NsInitBinder(void)
 {
-    Tcl_InitHashTable(&prebound, sizeof(struct sockaddr_in)/sizeof(int));
+    Tcl_InitHashTable(&preboundTcp, sizeof(struct sockaddr_in)/sizeof(int));
+    Tcl_InitHashTable(&preboundUdp, sizeof(struct sockaddr_in)/sizeof(int));
+    Tcl_InitHashTable(&preboundRaw, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&preboundUnix, TCL_STRING_KEYS);
 }
 
 
@@ -177,18 +362,50 @@ NsClosePreBound(void)
     struct sockaddr_in *saPtr;
 
     Ns_MutexLock(&lock);
-    hPtr = Tcl_FirstHashEntry(&prebound, &search);
+    hPtr = Tcl_FirstHashEntry(&preboundTcp, &search);
     while (hPtr != NULL) {
-	saPtr = (struct sockaddr_in *) Tcl_GetHashKey(&prebound, hPtr);
+	saPtr = (struct sockaddr_in *) Tcl_GetHashKey(&preboundTcp, hPtr);
 	addr = ns_inet_ntoa(saPtr->sin_addr);
 	port = htons(saPtr->sin_port);
-	sock = (int) Tcl_GetHashValue(hPtr);
-	Ns_Log(Warning, "prebind: closed unused: %s:%d = %d", addr, port, sock);
+	sock = (int)Tcl_GetHashValue(hPtr);
+	Ns_Log(Warning, "prebind: closed unused TCP: %s:%d = %d", addr, port, sock);
 	close(sock);
 	hPtr = Tcl_NextHashEntry(&search);
     }
-    Tcl_DeleteHashTable(&prebound);
-    Tcl_InitHashTable(&prebound, sizeof(struct sockaddr_in)/sizeof(int));
+    Tcl_DeleteHashTable(&preboundTcp);
+    Tcl_InitHashTable(&preboundTcp, sizeof(struct sockaddr_in)/sizeof(int));
+    hPtr = Tcl_FirstHashEntry(&preboundUdp, &search);
+    while (hPtr != NULL) {
+	saPtr = (struct sockaddr_in *) Tcl_GetHashKey(&preboundUdp, hPtr);
+	addr = ns_inet_ntoa(saPtr->sin_addr);
+	port = htons(saPtr->sin_port);
+	sock = (int)Tcl_GetHashValue(hPtr);
+	Ns_Log(Warning, "prebind: closed unused UDP: %s:%d = %d", addr, port, sock);
+	close(sock);
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+    Tcl_DeleteHashTable(&preboundUdp);
+    Tcl_InitHashTable(&preboundUdp, sizeof(struct sockaddr_in)/sizeof(int));
+    hPtr = Tcl_FirstHashEntry(&preboundRaw, &search);
+    while (hPtr != NULL) {
+	sock = (int)Tcl_GetHashKey(&preboundRaw, hPtr);
+	port = (int)Tcl_GetHashValue(hPtr);
+	Ns_Log(Warning, "prebind: closed unused RAW: %d = %d", port, sock);
+	close(sock);
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+    Tcl_DeleteHashTable(&preboundRaw);
+    Tcl_InitHashTable(&preboundRaw, TCL_ONE_WORD_KEYS);
+    hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
+    while (hPtr != NULL) {
+	addr = (char *) Tcl_GetHashKey(&preboundUnix, hPtr);
+	sock = (int)Tcl_GetHashValue(hPtr);
+	Ns_Log(Warning, "prebind: closed unused Unix: %s = %d", addr, sock);
+	close(sock);
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+    Tcl_DeleteHashTable(&preboundUnix);
+    Tcl_InitHashTable(&preboundUnix, TCL_STRING_KEYS);
     Ns_MutexUnlock(&lock);
 }
 
@@ -199,7 +416,10 @@ NsClosePreBound(void)
  * PreBind --
  *
  *	Pre-bind to one or more ports in a comma-separated list.
- *
+ *      addr:port[/protocol]
+ *      port[/protocol]
+ *      0/icmp[/count]
+ *      /path
  * Results:
  *	None.
  *
@@ -216,51 +436,104 @@ PreBind(char *line)
     Tcl_HashEntry *hPtr;
     int new, sock, port;
     struct sockaddr_in sa;
-    char *err, *ent, *p, *q, *addr, *baddr;
+    char *next, *str, *addr, *proto;
 
-    ent = line;
-    do {
-	p = strchr(ent, ',');
-	if (p != NULL) {
-	    *p = '\0';
-	}
-	baddr = NULL;
-    	addr = "0.0.0.0";
-    	q = strchr(ent, ':');
-	if (q == NULL) {
-	    port = atoi(ent);
-	} else {
-	    *q = '\0';
-	    port = atoi(q+1);
-	    baddr = addr = ent;
-	}
-	if (port == 0) {
-	    err = "invalid port";
-	} else if (Ns_GetSockAddr(&sa, baddr, port) != NS_OK) {
-	    err = "invalid address";
-	} else {
-	    hPtr = Tcl_CreateHashEntry(&prebound, (char *) &sa, &new);
-	    if (!new) {
-		err = "duplicate entry";
-	    } else if ((sock = Ns_SockBind(&sa)) == -1) {
-		Tcl_DeleteHashEntry(hPtr);
-	    	err = strerror(errno);
-	    } else {
-	    	Tcl_SetHashValue(hPtr, sock);
-		err = NULL;
-	    }
-	}
-	if (q != NULL) {
-	    *q = ':';
-	}
-	if (p != NULL) {
-	    *p++ = ',';
-	}
-	if (err != NULL) {
-	    Ns_Log(Error, "prebind: invalid entry: %s: %s", ent, err);
-	} else {
-	    Ns_Log(Notice, "prebind: bound: %s", ent);
-	}
-	ent = p;
-    } while (ent != NULL);
+     for(;line != NULL;line = next) {
+       if((next = strchr(line, ','))) {
+         *next++ = '\0';
+       }
+       proto = "tcp";
+       addr = "0.0.0.0";
+       /* Parse port */
+       if((str = strchr(line, ':'))) {
+         *str++ = '\0';
+         port = atoi(str);
+         addr = line;
+         line = str;
+       } else {
+         port = atoi(line);
+       }
+       /* Parse protocol */
+       if(*line != '/' && (str = strchr(line,'/'))) {
+         *str++ = '\0';
+         proto = str;
+       }
+
+       if(!strcmp(proto,"tcp") && port > 0) {
+         if(Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
+           Ns_Log(Error, "prebind: tcp: invalid address: %s:%d",addr,port);
+           continue;
+         }
+         hPtr = Tcl_CreateHashEntry(&preboundTcp, (char *) &sa, &new);
+         if(!new) {
+           Ns_Log(Error, "prebind: tcp: duplicate entry: %s:%d",addr,port);
+           continue;
+         }
+         if((sock = Ns_SockBind(&sa)) == -1) {
+           Ns_Log(Error, "prebind: tcp: %s:%d: %s",addr,port,strerror(errno));
+           Tcl_DeleteHashEntry(hPtr);
+           continue;
+         }
+         Tcl_SetHashValue(hPtr, sock);
+         Ns_Log(Notice, "prebind: tcp: %s:%d = %d", addr, port, sock);
+       }
+
+       if(!strcmp(proto,"udp") && port > 0) {
+         if(Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
+           Ns_Log(Error, "prebind: udp: invalid address: %s:%d",addr,port);
+           continue;
+         }
+         hPtr = Tcl_CreateHashEntry(&preboundUdp, (char *) &sa, &new);
+         if(!new) {
+           Ns_Log(Error, "prebind: udp: duplicate entry: %s:%d",addr,port);
+           continue;
+         }
+         if((sock = Ns_SockBindUdp(&sa)) == -1) {
+           Ns_Log(Error, "prebind: udp: %s:%d: %s",addr,port,strerror(errno));
+           Tcl_DeleteHashEntry(hPtr);
+           continue;
+         }
+         Tcl_SetHashValue(hPtr, sock);
+         Ns_Log(Notice, "prebind: udp: %s:%d = %d", addr, port, sock);
+       }
+
+       if(!strncmp(proto,"icmp",4)) {
+         int count = 1;
+         /* Parse count */
+         if((str = strchr(str,'/'))) {
+           *(str++) = '\0';
+           count = atoi(str);
+         }
+         while(count--) {
+           if((sock = Ns_SockRaw(IPPROTO_ICMP)) == -1) {
+             Ns_Log(Error, "prebind: icmp: %s",strerror(errno));
+             continue;
+           }
+           hPtr = Tcl_CreateHashEntry(&preboundRaw, (char *) sock, &new);
+           if(!new) {
+             Ns_Log(Error, "prebind: icmp: duplicate entry");
+             close(sock);
+             continue;
+           }
+           Tcl_SetHashValue(hPtr, IPPROTO_ICMP);
+           Ns_Log(Notice, "prebind: icmp: %d", sock);
+         }
+       }
+
+       if(*line == '/') {
+         hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &new);
+         if(!new) {
+           Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
+           continue;
+         }
+         if((sock = Ns_SockListenUnix(line)) == -1) {
+           Ns_Log(Error, "prebind: unix: %s: %s",proto,strerror(errno));
+           Tcl_DeleteHashEntry(hPtr);
+           continue;
+         }
+         Tcl_SetHashValue(hPtr, sock);
+         Ns_Log(Notice, "prebind: unix: %s = %d", line, sock);
+       }
+    }
 }
+
