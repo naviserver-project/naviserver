@@ -567,7 +567,7 @@ NsTclInfoCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     } else if (STREQ(cmd, "tcllib")
 	|| STREQ(cmd, "pageroot")
 	|| STREQ(cmd, "server")) {
-	if (itPtr == NULL) {
+	if (itPtr->servPtr == NULL) {
 	    Tcl_SetResult(interp, "no server", TCL_STATIC);
 	    return TCL_ERROR;
 	}
@@ -781,7 +781,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case ITclLibIdx:
     case IPageRootIdx:
     case IServerIdx:
-	if (itPtr == NULL) {
+	if (itPtr->servPtr == NULL) {
 	    Tcl_SetResult(interp, "no server", TCL_STATIC);
 	    return TCL_ERROR;
 	}
