@@ -41,7 +41,7 @@
  * Special direct include of pthread.h for compatibility tests.
  */
 
-#if !defined(USE_SPROC) && !defined(WIN32)
+#if !defined(USE_SPROC) && !defined(WIN32) && !defined(__hpux)
 #include <pthread.h>
 #define PTHREAD_TEST 1
 #endif
