@@ -107,12 +107,10 @@ proc ns_eval {args} {
 	set res [list]
 	foreach job $jlist {
 	    array set jstate $job
-	    set scr $jstate(SCRIPT)
+	    set scr $jstate(script)
 	    # Strip off the constant, non-user supplied cruft
 	    set scr [lindex $scr 1]
-	    set stime $jstate(START_TIME)
-	    # Strip off any trailing newlines
-	    regsub {\n+$} $stime { } stime
+	    set stime $jstate(starttime)
 	    lappend res [list $stime $scr]
 	}
 	return $res
