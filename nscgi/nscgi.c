@@ -1092,19 +1092,11 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     }
     
     /*
-     * Output the parsed and copied headers.
+     * Queue the headers and copy remaining content up to end of file.
      */
      
     Ns_ConnSetRequiredHeaders(conn, NULL, 0);
-    status = Ns_ConnFlushHeaders(conn, httpstatus);
-    if (status != NS_OK) {
-    	return status;
-    }
-
-    /*
-     * Copy remaining content up to end of file.
-     */
-
+    Ns_ConnQueueHeaders(conn, httpstatus);
 copy:
     do {
     	status = Ns_WriteConn(conn, cgiPtr->ptr, cgiPtr->cnt);
