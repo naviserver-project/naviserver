@@ -592,7 +592,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         case JJobsListIdx:
         {
             /*
-             * Return a list of all the jobs in the queue. The "job" consists of:
+             * Returns a list of all the jobs in the queue. The "job" consists of:
              *
              * Job ID
              * Job State (Scheduled, Running, or Done)
