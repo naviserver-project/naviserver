@@ -129,10 +129,10 @@ Ns_ParseHttpTime(char *str)
     time_t     t;
 #ifndef HAVE_TIMEGM
     time_t     toff;
-#endif
 #ifdef NO_TIMEZONE
     struct timeval tv;
     struct timezone tz;
+#endif
 #endif
 
     if (str == NULL) {
