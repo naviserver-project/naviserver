@@ -46,4 +46,4 @@ include ../include/Makefile.library
 $(OBJS):	thread.h
 osthread.o:	pthread.cpp sproc.cpp win32.cpp
 test: $(LIB) test.o
-	$(CC) -o test test.o $(RFLAG) . -L. -l$(NSTHREAD) $(LIBS)
+	$(CC) -o test test.o -L. -l$(NSTHREAD) $(LIBS) -Wl,$(RFLAG),. $(RPATH)
