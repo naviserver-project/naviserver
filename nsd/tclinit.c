@@ -238,10 +238,12 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
      * Invoke the cleanup callbacks if any.
      */
 
-    while ((cleanupPtr = itPtr->firstAtCleanupPtr) != NULL) {
-	itPtr->firstAtCleanupPtr = cleanupPtr->nextPtr;
-	(*cleanupPtr->procPtr)(interp, cleanupPtr->arg);
-	ns_free(cleanupPtr);
+    if (itPtr != NULL) {
+    	while ((cleanupPtr = itPtr->firstAtCleanupPtr) != NULL) {
+	    itPtr->firstAtCleanupPtr = cleanupPtr->nextPtr;
+	    (*cleanupPtr->procPtr)(interp, cleanupPtr->arg);
+	    ns_free(cleanupPtr);
+	}
     }
 
     /*
@@ -251,6 +253,7 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
     if (Tcl_Eval(interp, cleanupInterp) != TCL_OK) {
 	Ns_TclLogError(interp);
     }
+    Tcl_ResetResult(interp);    
 
     /*
      * Free up any remaining resources and put
@@ -261,7 +264,6 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
     if (itPtr != NULL) {
     	NsFreeAtClose(itPtr);
         itPtr->conn = NULL;
-    	Tcl_ResetResult(interp);    
 	if (Tcl_GetHashValue(itPtr->hPtr) != NULL) {
 	    itPtr->delete = 1;
 	}
