@@ -363,7 +363,7 @@ KeepThread(void *ignored)
 
 		if (ns_sockioctl(keepPtr->sock, FIONREAD, &n) != 0
 		    || n == 0
-		    || Ns_QueueConn(keepPtr->drvPtr,
+		    || Ns_QueueConn((Ns_Driver) keepPtr->drvPtr,
 				    keepPtr->drvData) != NS_OK) {
 		    KeepClose(keepPtr);
 		}

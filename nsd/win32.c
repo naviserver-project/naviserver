@@ -52,7 +52,6 @@ static void ExitService(void);
 static char *GetServiceName(Ns_DString *dsPtr, char *server);
 static SERVICE_STATUS_HANDLE hStatus = 0;
 static SERVICE_STATUS curStatus;
-static Ns_Tls   tls;
 static int service;
 static int tick;
 static int sigpending;
@@ -84,7 +83,6 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
     WSADATA         wsd;
 
     if (why == DLL_PROCESS_ATTACH) {
-	Ns_TlsAlloc(&tls, ns_free);
 	if (WSAStartup(MAKEWORD(1, 1), &wsd) != 0) {
             return FALSE;
         }
@@ -116,15 +114,10 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
 char *
 NsWin32ErrMsg(int err)
 {
-    char           *msg;
+    NsTls *tlsPtr = NsGetTls();
 
-    msg = Ns_TlsGet(&tls);
-    if (msg == NULL) {
-	msg = ns_malloc(100);
-	Ns_TlsSet(&tls, msg);
-    }
-    sprintf(msg, "win32 error code: %d", err);
-    return msg;
+    sprintf(tlsPtr->win.errmsg, "win32 error code: %d", err);
+    return tlsPtr->win.errmsg;
 }
 
 
@@ -310,7 +303,7 @@ NsInstallService(char *server)
  *
  * NsHandleSignals --
  *
- *	Loop endlessly, processing HUP and TCL signals until a TERM
+ *	Loop endlessly, processing HUP signals until a TERM
  *  	signal arrives.
  *
  * Results:
@@ -352,9 +345,6 @@ NsHandleSignals(void)
 	if (pending & NS_SIGHUP) {
 	    NsRunSignalProcs();
 	}
-	if (pending & NS_SIGTCL) {
-	    NsTclRunInits();
-	}
     } while (!(pending & NS_SIGTERM));
 
     /*
@@ -391,7 +381,6 @@ NsSendSignal(int sig)
     switch (sig) {
 	case NS_SIGTERM:
 	case NS_SIGHUP:
-	case NS_SIGTCL:
 	    Ns_MutexLock(&lock);
 	    sigpending |= sig;
 	    Ns_CondSignal(&cond);

@@ -1864,9 +1864,6 @@ JunctionDelete(Junction *juncPtr, char *seq, int id, int flags)
 static void
 MkSeq(Ns_DString *dsPtr, char *server, char *method, char *url)
 {
-    if (server == NULL) {
-	server = nsServer;
-    }
     if ((method != NULL) && (url != NULL)) {
         char *p;
         int   done;

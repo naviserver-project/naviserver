@@ -425,8 +425,7 @@ NsConfigEval(char *config)
     interp = Tcl_CreateInterp();
     Tcl_CreateCommand(interp, "ns_section", SectionCmd, &setPtr, NULL);
     Tcl_CreateCommand(interp, "ns_param", ParamCmd, &setPtr, NULL);
-    NsTclCreateGenericCmds(interp);
-
+    NsTclAddCmds(NULL, interp);
     if (Tcl_Eval(interp, config) != TCL_OK) {
 	err = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
 	if (err == NULL) {

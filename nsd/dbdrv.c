@@ -669,7 +669,7 @@ NsDbLoadDriver(char *driver)
  */
 
 void
-NsDbServerInit(char *server, DbDriver *driverPtr)
+NsDbDriverInit(char *server, DbDriver *driverPtr)
 {
     if (driverPtr->initProc != NULL &&
 	((*driverPtr->initProc) (server, "db", driverPtr->name)) != NS_OK) {
