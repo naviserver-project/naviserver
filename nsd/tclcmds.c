@@ -182,6 +182,7 @@ extern Tcl_CmdProc
     NsTclQuoteListToListCmd,
     NsTclGetCsvCmd,
     NsTclEnvCmd,
+    NsTclAdpStatsCmd,
     NsTclAdpEvalCmd,
     NsTclAdpIncludeCmd,
     NsTclAdpDirCmd,
@@ -493,6 +494,7 @@ static Cmd servCmds[] = {
 
     {"_ns_adp_include", NsTclAdpIncludeCmd, NULL},
     {"ns_adp_eval", NsTclAdpEvalCmd, NULL},
+    {"ns_adp_stats", NsTclAdpStatsCmd, NULL},
     {"ns_adp_parse", NsTclAdpParseCmd, NULL},
     {"ns_puts", NULL, NsTclAdpPutsObjCmd},
     {"ns_adp_puts", NULL, NsTclAdpPutsObjCmd},
