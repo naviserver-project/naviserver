@@ -655,10 +655,10 @@ AddCmds(Cmd *cmdPtr, ClientData arg, Tcl_Interp *interp)
 }
 
 void
-NsTclAddCmds(NsInterp *itPtr, Tcl_Interp *interp)
+NsTclAddCmds(Tcl_Interp *interp, NsInterp *itPtr)
 {
     AddCmds(cmds, itPtr, interp);
     if (itPtr != NULL) {
-	AddCmds(servCmds, itPtr, interp);
+        AddCmds(servCmds, itPtr, interp);
     }
 }

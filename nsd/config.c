@@ -403,7 +403,6 @@ NsConfigEval(char *config, int argc, char **argv, int optind)
     Tcl_SetVar(interp, "argc", buf, TCL_GLOBAL_ONLY);
     sprintf(buf, "%d", optind);
     Tcl_SetVar(interp, "optind", buf, TCL_GLOBAL_ONLY);
-    NsTclAddCmds(NULL, interp);
     if (Tcl_Eval(interp, config) != TCL_OK) {
 	Ns_TclLogError(interp);
 	Ns_Fatal("config error");
