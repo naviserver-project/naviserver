@@ -1118,8 +1118,8 @@ JobThread(void *arg)
             FreeJob(jobPtr);
         }
 
-        ReleaseQueue(queuePtr, 1);
         Ns_CondBroadcast(&queuePtr->cond);
+        ReleaseQueue(queuePtr, 1);
     }
 
     --tp.nthreads;
