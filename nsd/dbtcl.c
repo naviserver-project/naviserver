@@ -834,8 +834,8 @@ NsTclQuoteListToListCmd(ClientData cd, Tcl_Interp *interp, int argc,
 int
 NsTclGetCsvCmd(ClientData cd, Tcl_Interp *interp, int argc, char **argv)
 {
-    int             ncols, inquote, quoted, blank, n;
-    char            c, *p, *s, buf[20];
+    int             ncols, inquote, quoted, blank;
+    char            c, *p, buf[20];
     Tcl_DString     line, cols, elem;
     Tcl_Channel	    chan;
 
