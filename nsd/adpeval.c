@@ -242,14 +242,14 @@ int
 NsAdpInclude(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[])
 {
     /*
-     * Direct output to the ADP response buffer.
+     * Direct output to the current ADP output buffer.
      */
 
-    if (itPtr->adp.responsePtr == NULL) {
+    if (itPtr->adp.outputPtr == NULL) {
 	Tcl_SetResult(itPtr->interp, "no connection", TCL_STATIC);
 	return TCL_ERROR;
     }
-    return AdpRun(itPtr, file, objc, objv, itPtr->adp.responsePtr);
+    return AdpRun(itPtr, file, objc, objv, itPtr->adp.outputPtr);
 }
 
 static int

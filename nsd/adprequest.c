@@ -122,6 +122,7 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
     Tcl_DStringInit(&rds);
     Tcl_DStringInit(&tds);
     itPtr->adp.responsePtr = &rds;
+    itPtr->adp.outputPtr = itPtr->adp.responsePtr;
     itPtr->adp.typePtr = &tds;
 
     /*
