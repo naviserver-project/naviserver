@@ -37,6 +37,10 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 
+/*
+ * Tcl object and string commands.
+ */
+
 extern Tcl_ObjCmdProc
     NsTclAdpAppendObjCmd,
     NsTclAdpPutsObjCmd;
@@ -195,7 +199,6 @@ extern Tcl_CmdProc
     NsTclAdpDebugCmd,
     NsTclAdpParseCmd,
     NsTclAdpMimeTypeCmd,
-    NsTclAdpCharSetCmd,
     NsTclNsvGetCmd,
     NsTclNsvExistsCmd,
     NsTclNsvSetCmd,
@@ -501,7 +504,6 @@ static Cmd servCmds[] = {
     {"ns_adp_debug", NsTclAdpDebugCmd, NULL},
     {"ns_adp_mime", NsTclAdpMimeTypeCmd, NULL},
     {"ns_adp_mimetype", NsTclAdpMimeTypeCmd, NULL},
-    {"ns_adp_charset", NsTclAdpCharSetCmd, NULL},
 
     /*
      * tclvar.c
