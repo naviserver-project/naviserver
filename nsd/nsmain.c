@@ -324,11 +324,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     }
     if (mode == 'V') {
-        printf("AOLserver version %s\n", NSD_VERSION); 
-	printf("   Platform:        %s\n", Ns_InfoPlatform());
+        printf("AOLserver/%s (%s)\n", NSD_VERSION, Ns_InfoLabel()); 
+	printf("   CVS Tag:         %s\n", Ns_InfoTag());
 	printf("   Built:           %s\n", Ns_InfoBuildDate());
 	printf("   Tcl version:     %s\n", nsTclVersion);
 	printf("   Thread library:  %s\n", NsThreadLibName());
+	printf("   Platform:        %s\n", Ns_InfoPlatform());
         return 0;
     } else if (nsconf.config == NULL) {
         UsageError("required -c/-t <config> option not specified");
@@ -1178,6 +1179,29 @@ char *
 Ns_InfoLabel(void)
 {
     return NSD_LABEL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_InfoTag --
+ *
+ *	Returns CVS tag of this build (can be meaningless).
+ *
+ * Results:
+ *	A string version name. 
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_InfoTag(void)
+{
+    return NSD_TAG;
 }
 
 

@@ -494,10 +494,10 @@ Login(SOCKET sock)
     if (ok) {
 	Ns_Log(Notice, "nscp: logged in: '%s'", user);
 	sprintf(msg, "\nWelcome to %s running at %s (pid %d)\n"
-		"%s/%s (%s) for %s built on %s\n\n",
+		"%s/%s (%s) for %s built on %s\nCVS Tag: %s\n",
 		server, Ns_InfoNameOfExecutable(), Ns_InfoPid(),
 		Ns_InfoServerName(), Ns_InfoServerVersion(), Ns_InfoLabel(),
-		Ns_InfoPlatform(), Ns_InfoBuildDate());
+		Ns_InfoPlatform(), Ns_InfoBuildDate(), Ns_InfoTag());
     } else {
 	Ns_Log(Warning, "nscp: login failed: '%s'", user ? user : "?");
 	sprintf(msg, "Access denied!\n");

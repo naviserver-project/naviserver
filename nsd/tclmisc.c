@@ -961,6 +961,8 @@ NsTclInfoCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	Tcl_SetResult(interp, Ns_InfoLabel(), TCL_STATIC);
     } else if (STREQ(argv[1], "builddate")) {
 	Tcl_SetResult(interp, Ns_InfoBuildDate(), TCL_STATIC);
+    } else if (STREQ(argv[1], "tag")) {
+	Tcl_SetResult(interp, Ns_InfoTag(), TCL_STATIC);
     } else {
         Tcl_AppendResult(interp, "unknown command \"", argv[1],
                          "\":  should be "
@@ -980,6 +982,7 @@ NsTclInfoCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          "scheduled, "
                          "server, "
                          "sockcallbacks, "
+                         "tag, "
                          "tcllib, "
                          "threads, "
                          "version, "
