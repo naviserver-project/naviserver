@@ -1,47 +1,35 @@
-
-NSHOME     =  ..
-
-include $(NSHOME)/include/Makefile.global
-
 #
-# Specify the name of the library.
+# The contents of this file are subject to the AOLserver Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://aolserver.com/.
 #
-TARGET	   =  libnspd.a
-
-
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
 #
-# Objects to build
+# The Original Code is AOLserver Code and related documentation
+# distributed by AOL.
+# 
+# The Initial Developer of the Original Code is America Online,
+# Inc. Portions created by AOL are Copyright (C) 1999 America Online,
+# Inc. All Rights Reserved.
+#
+# Alternatively, the contents of this file may be used under the terms
+# of the GNU General Public License (the "GPL"), in which case the
+# provisions of GPL are applicable instead of those above.  If you wish
+# to allow use of your version of this file only under the terms of the
+# GPL and not to allow others to use your version of this file under the
+# License, indicate your decision by deleting the provisions above and
+# replace them with the notice and other provisions required by the GPL.
+# If you do not delete the provisions above, a recipient may use your
+# version of this file under either the License or the GPL.
+# 
+#
+# $Header$
 #
 
-OBJS       =  listen.o log.o main.o
-NSEXTMSG   =  $(NSHOME)/nsext/nsextmsg.o
-
-#
-# Link the objects into a library.
-#
-
-all: $(TARGET)
-
-$(TARGET): $(OBJS) $(NSEXTMSG)
-	$(AR) $(ARFLAGS) $(TARGET) $(OBJS) $(NSEXTMSG)
-
-
-#
-# Installs to the lib/ directory of the binary distribution.
-#
-install: all
-	$(RM) $(INSTLIB)/libnspd.a
-	$(CP) libnspd.a $(INSTLIB)
-
-
-#
-# Clean the directory to pre-built state.
-#
-clean:
-	$(RM) $(OBJS) $(TARGET) so_locations
-
-clobber: clean
-	$(RM) *.so *.o *.a *~
-
-distclean: clobber
-	$(RM) TAGS core
+LIB      =  libnspd.so
+OBJS     =  listen.o log.o main.o ../nsext/nsextmsg.o
+include  ../include/Makefile.library

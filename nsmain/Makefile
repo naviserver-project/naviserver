@@ -30,6 +30,21 @@
 # $Header$
 #
 
-MOD      =  nscp.so
-OBJS     =  nscp.o
-include  ../include/Makefile.module
+
+include ../include/Makefile.global
+
+MAIN	= nsd
+OBJS	= main.o
+
+all: $(MAIN)
+
+$(MAIN): $(OBJS)
+	$(CC) -o $(MAIN) $(OBJS) $(MAINLIBS)
+
+install: all
+	$(MKDIR) $(INSTBIN)
+	$(RM) $(INSTBIN)/$(MAIN)
+	$(CP) $(MAIN) $(INSTBIN)/
+
+clean:
+	$(RM) $(MAIN) $(OBJS)
