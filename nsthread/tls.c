@@ -109,7 +109,7 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
     int key = (int) (*keyPtr);
 
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
-	Tcl_Panic("Ns_Tls: invalid key: %d: should be between 1 and %d",
+	Tcl_Panic("Ns_TlsSet: invalid key: %d: should be between 1 and %d",
 		    key, NS_THREAD_MAXTLS);
     }
     slots[key] = value;
@@ -139,7 +139,7 @@ Ns_TlsGet(Ns_Tls *keyPtr)
     int key = (int) (*keyPtr);
 
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
-	Tcl_Panic("Ns_Tls: invalid key: %d: should be between 1 and %d",
+	Tcl_Panic("Ns_TlsGet: invalid key: %d: should be between 1 and %d",
 		    key, NS_THREAD_MAXTLS);
     }
     return slots[key];
