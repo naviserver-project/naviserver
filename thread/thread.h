@@ -27,7 +27,6 @@
  * version of this file under either the License or the GPL.
  */
 
-
 /* 
  * thread.h --
  *
@@ -50,7 +49,6 @@
 typedef struct Thread {
     struct Thread  *nextPtr;	/* Next in list of all threads. */
     time_t	    ctime;	/* Thread structure create time. */
-    time_t	    etime;	/* Thread structure exit time. */
     int		    flags;	/* Detached, joined, etc. */
     Ns_ThreadProc  *proc;	/* Thread startup routine. */ 
     void           *arg;	/* Argument to startup proc. */
@@ -123,15 +121,5 @@ extern void    *NsGetCond(Ns_Cond *condPtr);
 
 extern void    *NsAlloc(size_t size);
 extern void     NsFree(void *);
-
-/*
- * Fast Pool memory allocator API's.
- */
-
-extern void    *NsPoolRealloc(void *ptr, size_t size);
-extern void    *NsPoolMalloc(size_t size);
-extern void     NsPoolFree(void *ptr);
-extern void	NsPoolFlush(void *poolPtr);
-extern void	NsPoolDump(void *poolPtr, FILE *fp);
 
 #endif /* THREAD_H */

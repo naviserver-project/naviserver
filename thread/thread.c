@@ -584,7 +584,6 @@ NsCleanupThread(Thread *thrPtr)
 
     Ns_MutexLock(&lock);
     if (!(thrPtr->flags & NS_THREAD_DETACHED)) {
-    	thrPtr->etime = time(NULL);
 	thrPtr->arg = NULL;
 	thrPtr->flags |= NS_THREAD_EXITED;
 	thrPtr = NULL;
