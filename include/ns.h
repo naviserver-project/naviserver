@@ -104,6 +104,9 @@ typedef long INT64;
 typedef long long INT64;
 #define NS_INT_64_FORMAT_STRING "%lld"
 #endif
+#else
+typedef __int64 INT64;
+#define NS_INT_64_FORMAT_STRING "%lld"
 #endif
 
 /*
