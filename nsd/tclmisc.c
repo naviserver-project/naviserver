@@ -255,12 +255,50 @@ TmCmd(ClientData isgmt, Tcl_Interp *interp, int argc, char **argv)
     char       buf[10];
     struct tm *ptm;
 
-    if (argc != 1) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         argv[0], "\"", NULL);
-        return TCL_ERROR;
+    if (isgmt) {
+        if (argc != 1) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"",
+                 argv[0], "\"", NULL);
+            return TCL_ERROR;
+        }
+        ptm = ns_gmtime(&tt_now);
+    } else {
+        char *oldTimezone = NULL;
+
+        if (argc > 2) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"",
+                 argv[0], " ?tz?\"", NULL);
+            return TCL_ERROR;
+        }
+
+        if (argc == 2) {
+            Ns_DString dsNewTimezone;
+            Ns_DStringInit(&dsNewTimezone);
+
+            oldTimezone = getenv("TZ");
+            Ns_DStringAppend(&dsNewTimezone, "TZ=");
+            Ns_DStringAppend(&dsNewTimezone, argv[1]);
+
+            putenv(dsNewTimezone.string);
+            tzset();
+
+            Ns_DStringFree(&dsNewTimezone);
+        }
+
+        ptm = ns_localtime(&tt_now);
+
+        if (oldTimezone != NULL) {
+            Ns_DString dsNewTimezone;
+            Ns_DStringInit(&dsNewTimezone);
+
+            Ns_DStringAppend(&dsNewTimezone, "TZ=");
+            Ns_DStringAppend(&dsNewTimezone, oldTimezone);
+
+            putenv(dsNewTimezone.string);
+
+            Ns_DStringFree(&dsNewTimezone);
+        }
     }
-    ptm = isgmt ? ns_gmtime(&tt_now) : ns_localtime(&tt_now);
 
     sprintf(buf, "%d", ptm->tm_sec);
     Tcl_AppendElement(interp, buf);
