@@ -227,6 +227,7 @@ NsTclJobCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	Tcl_AppendResult(interp, "unknown command \"",
 	    cmd, "\": should be queue, wait, or cancel", NULL);
 	Tcl_SetErrorCode(interp, "ns:job", "usage", interp->result, NULL);
+	return TCL_ERROR;
     }
 
     if (stop) {
