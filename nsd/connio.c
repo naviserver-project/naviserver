@@ -52,6 +52,29 @@ static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
 /*
  *-----------------------------------------------------------------
  *
+ * Ns_ConnInit --
+ *
+ *	Initialize a connection (no longer used).
+ *
+ * Results:
+ *	Always NS_OK.
+ * 
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------
+ */
+
+int
+Ns_ConnInit(Ns_Conn *conn)
+{
+    return NS_OK;
+}
+
+
+/*
+ *-----------------------------------------------------------------
+ *
  * Ns_ConnClose - Close a connection.
  *
  * Results:
@@ -310,6 +333,74 @@ int
 Ns_ConnSendFd(Ns_Conn *conn, int fd, int nsend)
 {
     return ConnSend(conn, nsend, NULL, NULL, fd);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnFlushContent --
+ *
+ *	Finish reading waiting content.
+ *
+ * Results:
+ *	NS_OK.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnFlushContent(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+    Request *reqPtr = connPtr->reqPtr;
+
+    if (connPtr->sockPtr == NULL) {
+	return -1;
+    }
+    reqPtr->next  += reqPtr->avail;
+    reqPtr->avail  = 0;
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnGets --
+ *
+ *	Read in a string from a connection, stopping when either 
+ *	we've run out of data, hit a newline, or had an error 
+ *
+ * Results:
+ *	Pointer to given buffer or NULL on error.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
+{
+    char *p;
+
+    p = buf;
+    while (bufsize > 1) {
+	if (Ns_ConnRead(conn, p, 1) != 1) {
+	    return NULL;
+	}
+        if (*p++ == '\n') {
+            break;
+	}
+        --bufsize;
+    }
+    *p = '\0';
+    return buf;
 }
 
 
