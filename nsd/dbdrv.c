@@ -669,10 +669,10 @@ NsDbLoadDriver(char *driver)
  */
 
 void
-NsDbServerInit(DbDriver *driverPtr)
+NsDbServerInit(char *server, DbDriver *driverPtr)
 {
     if (driverPtr->initProc != NULL &&
-	((*driverPtr->initProc) (nsServer, "db", driverPtr->name)) != NS_OK) {
+	((*driverPtr->initProc) (server, "db", driverPtr->name)) != NS_OK) {
 
 	Ns_Log(Warning, "dbdrv: init proc failed for driver '%s'",
 	       driverPtr->name);

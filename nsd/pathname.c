@@ -280,7 +280,7 @@ Ns_HomePath(Ns_DString *dest, ...)
  *
  *	Append a path to dest:
  *	server-home/?servers/hserver?/?modules/hmodule?/...
- *	hServer and hModule may both be null.
+ *	server and module may both be null.
  *
  * Results:
  *	dest->string 
@@ -292,7 +292,7 @@ Ns_HomePath(Ns_DString *dest, ...)
  */
 
 char *
-Ns_ModulePath(Ns_DString *dest, char *hServer, char *hModule, ...)
+Ns_ModulePath(Ns_DString *dest, char *server, char *module, ...)
 {
     va_list         ap;
     char           *path;
@@ -301,13 +301,13 @@ Ns_ModulePath(Ns_DString *dest, char *hServer, char *hModule, ...)
     if (dest->string[dest->length - 1] != '/') {
         Ns_DStringAppend(dest, "/");
     }
-    if (hServer != NULL) {
-        Ns_DStringVarAppend(dest, "servers/", hServer, "/", NULL);
+    if (server != NULL) {
+        Ns_DStringVarAppend(dest, "servers/", server, "/", NULL);
     }
-    if (hModule != NULL) {
-        Ns_DStringVarAppend(dest, "modules/", hModule, "/", NULL);
+    if (module != NULL) {
+        Ns_DStringVarAppend(dest, "modules/", module, "/", NULL);
     }
-    va_start(ap, hModule);
+    va_start(ap, module);
     path = MakePath(dest, &ap);
     va_end(ap);
 

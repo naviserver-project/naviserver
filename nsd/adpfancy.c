@@ -113,7 +113,7 @@ static Ns_RWLock     tlock;
  */
 
 void
-NsAdpFancyInit(char *hServer, char *path)
+NsAdpFancyInit(char *server, char *path)
 {
     Tcl_InitHashTable(&htTags, TCL_STRING_KEYS);
 

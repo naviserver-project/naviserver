@@ -332,9 +332,11 @@ Ns_ConnContentLength(Ns_Conn *conn)
  */
 
 char *
-Ns_ConnServer(Ns_Conn *ignored)
+Ns_ConnServer(Ns_Conn *conn)
 {
-    return nsServer;
+    Conn           *connPtr = (Conn *) conn;
+
+    return connPtr->server;
 }
 
 
@@ -1344,7 +1346,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
     Conn *connPtr = (Conn *) conn;
 
     if (connPtr->interp == NULL) {
-	connPtr->interp = Ns_TclAllocateInterp(NULL);
+	connPtr->interp = Ns_TclAllocateInterp(connPtr->server);
     }
     return connPtr->interp;
 }

@@ -1145,7 +1145,7 @@ Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, char *type, int fd, int len)
  */
 
 void
-NsInitReturn(void)
+NsInitReturn(char *server)
 {
     Ns_Set *set;
     int     status, i;
@@ -1157,7 +1157,7 @@ NsInitReturn(void)
      * Process return redirects, e.g., not found 404.
      */
 
-    path = Ns_ConfigGetPath(nsServer, NULL, "redirects", NULL);
+    path = Ns_ConfigGetPath(server, NULL, "redirects", NULL);
     set = Ns_ConfigGetSection(path);
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
 	key = Ns_SetKey(set, i);

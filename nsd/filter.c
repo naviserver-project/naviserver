@@ -157,7 +157,7 @@ NsRunFilters(Ns_Conn *conn, int why)
  */
 
 void *
-Ns_RegisterServerTrace(char *hServer, Ns_TraceProc * proc, void *arg)
+Ns_RegisterServerTrace(char *server, Ns_TraceProc * proc, void *arg)
 {
     Trace *tPtr, **tPtrPtr;
 

@@ -216,14 +216,14 @@ Ns_GetDriverContext(Ns_Driver drv)
  */
 
 void
-NsStartDrivers(void)
+NsStartDrivers(char *server)
 {
     Driver  *drvPtr;
 
     drvPtr = firstDrvPtr;
     while (drvPtr != NULL) {
 	if (drvPtr->startProc == NULL ||
-	    (*drvPtr->startProc)(nsServer, drvPtr->label,
+	    (*drvPtr->startProc)(server, drvPtr->label,
 			         &drvPtr->drvData) == NS_OK) {
 	    drvPtr->running = 1;
             if (drvPtr->acceptProc != NULL) {
