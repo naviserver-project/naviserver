@@ -121,9 +121,13 @@ NsConfInit(void)
      * dns.c
      */
      
-    if (GetBool("dnscache", DNS_CACHE_BOOL)
-	&& (i = GetInt("dnscachetimeout", DNS_TIMEOUT_INT)) > 0) {
-	NsEnableDNSCache(i * 60);	/* NB: Config minutes, seconds internally. */
+    if (GetBool("dnscache", DNS_CACHE_BOOL)) {
+	int max = GetInt("dnscachemaxentries", 100);
+	i = GetInt("dnscachetimeout", DNS_TIMEOUT_INT);
+	if (max > 0 && i > 0) {
+	    i *= 60; /* NB: Config minutes, seconds internally. */
+	    NsEnableDNSCache(i * 60, max);
+	}
     }
 
     /*
