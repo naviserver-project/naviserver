@@ -25,64 +25,29 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
-#
-# $Header$
 #
 
 #
-# You may set the following variables here, on the make command line,
-# or via shell environment variables.
+# ini2tcl.tcl --
 #
-# AOLSERVER:	AOLserver install directory (/usr/local/aolserver)
-# DEBUG		Build with debug symbols (default: 0, no symbols)
-# GCC		Build with gcc compiler (default: 1, use gcc)
+#	Translate an old-style .ini file into simple .tcl format.
+#  Usage:
+#	nsd -ft ini2tcl.tcl nsd.ini
 #
 
+set fp [open [lindex $argv 3]]
+while {[gets $fp line] >= 0} {
+    set line [string trim $line]
+    if {[regsub {^;} $line {#} line]} {
+	puts $line
+    } elseif {[regsub {^\[(.*)\]} $line {\1} line]} {
+	puts "\n[list ns_section $line]"
+    } elseif {[string match *=* $line]} {
+	set line [split $line =]
+	set key [string trim [lindex $line 0]]
+	set val [string trim [lindex $line 1]]
+	puts [list ns_param $key $val]
+    }
+}
 
-##################################################################
-#
-# You should not need to edit anything below.
-#
-##################################################################
-
-include include/Makefile.global
-
-MAKEFLAGS 	+= nsbuild=1
-ifdef AOLSERVER
-    MAKEFLAGS	+= AOLSERVER=$(AOLSERVER)
-endif
-ifdef NSDEBUG
-    MAKEFLAGS	+= NSDEBUG=$(NSDEBUG)
-endif
-ifdef NSGCC
-    MAKEFLAGS	+= NSGCC=$(NSGCC)
-endif
-
-dirs = $(tcldir) nsd nssock nsssl nscgi nscp nslog nsperm nspd nsext
-
-all:
-	@for i in $(dirs); do \
-		( cd $$i && $(MAKE) all ) || exit 1; \
-	done
-
-install: all
-	@for i in $(dirs); do \
-		(cd $$i && $(MAKE) $@) || exit 1; \
-	done
-	$(MKDIR)		$(AOLSERVER)/log
-	$(MKDIR)		$(AOLSERVER)/modules
-	$(CP) -r tcl    	$(AOLSERVER)/modules/
-	$(CP) -r include	$(AOLSERVER)/
-	$(CP) sample-config.tcl $(AOLSERVER)/
-
-install-tests:
-	$(CP) -r tests $(INSTSRVPAG)
-
-clean:
-	@for i in $(dirs); do \
-		(cd $$i && $(MAKE) $@) || exit 1; \
-	done
-
-distclean: clean
-	(cd $(tcldir); $(MAKE) distclean)
+exit
