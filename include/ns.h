@@ -99,7 +99,11 @@ typedef void *ClientData;
 #define NS_ROWS 		  2
 #define NS_DML  		  1
 #define NS_ENCRYPT_BUFSIZE 	 16
-#ifndef WIN32
+
+#ifdef WIN32
+typedef __int64 INT64;
+#define NS_INT_64_FORMAT_STRING "%I64d"
+#else
 #ifdef __alpha
 typedef long INT64;
 #define NS_INT_64_FORMAT_STRING "%ld"
@@ -107,9 +111,6 @@ typedef long INT64;
 typedef long long INT64;
 #define NS_INT_64_FORMAT_STRING "%lld"
 #endif
-#else
-typedef __int64 INT64;
-#define NS_INT_64_FORMAT_STRING "%lld"
 #endif
 
 /*
