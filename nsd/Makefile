@@ -55,8 +55,6 @@ LIBOBJS	= $(LOBJS) stamp.o
 
 include ../include/Makefile.build
 
-LIBS	+= -lz
-
 stamp.o: $(LOBJS)
 	$(CC) -c -o stamp.o stamp.c
 
