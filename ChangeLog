@@ -1,3 +1,9 @@
+2005-03-07  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nslog/nslog.c: fixed bad handling of rollfmt arg which
+	caused segmetantion if the alternative rollfmt was not
+	defined.
+
 2005-03-06  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* nsd/tclmisc.c:

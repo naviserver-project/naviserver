@@ -215,7 +215,7 @@ Ns_ModuleInit(char *server,char *module)
 
     /* Get parameters from configuration file */
     logPtr->rollfmt = Ns_ConfigGetValue(path,"rollfmt");
-    if (logPtr->rollfmt == NULL) {
+    if (logPtr->rollfmt != NULL) {
         logPtr->rollfmt = ns_strdup(logPtr->rollfmt);
     }
     if (!Ns_ConfigGetInt(path,"maxbackup",&logPtr->maxbackup) || 
