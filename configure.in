@@ -101,6 +101,11 @@ case "$system" in
 		CCRPATH="$CCRPATH \$(TCL_CC_SEARCH_FLAGS)\$(TCL_EXEC_PREFIX)/lib"
 		LDRPATH="$LDRPATH \$(TCL_LD_SEARCH_FLAGS)\$(TCL_EXEC_PREFIX)/lib"
 	fi
+	if test -d /usr/lib/lwp
+	then
+		CCRPATH="$CCRPATH \$(TCL_CC_SEARCH_FLAGS)/usr/lib/lwp"
+		LDRPATH="$LDRPATH \$(TCL_LD_SEARCH_FLAGS)/usr/lib/lwp"
+	fi
 	LDSO="\$(LDLIB)"
 	;;
 esac

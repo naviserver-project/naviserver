@@ -81,8 +81,6 @@ uname = $(shell uname -a)
 # Solaris 2.7+
 ifneq (,$(findstring SunOS,$(uname)))
     AR=/usr/ccs/bin/ar
-    CCRPATH += $(CCRFLAG)/usr/lib/lwp
-    LDRPATH += $(LDRFLAG)/usr/lib/lwp
     LIBS+=-lrt
 endif
 
