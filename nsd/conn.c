@@ -509,7 +509,9 @@ Ns_ConnDriverName(Ns_Conn *conn)
 void *
 Ns_ConnDriverContext(Ns_Conn *conn)
 {
-    return NULL;
+    Conn *connPtr = (Conn *) conn;
+
+    return (void *)(connPtr->sockPtr ? connPtr->sockPtr->arg : NULL);
 }
 
 
