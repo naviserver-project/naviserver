@@ -167,12 +167,10 @@ NsAdpEval(NsInterp *itPtr, char *string, int argc, char **argv)
      
     Ns_DStringInit(&adp);
     Ns_DStringInit(&output);
-    ++itPtr->adp.evalLevel;
     PushFrame(itPtr, &frame, NULL, argc, argv, &output);
     NsAdpParse(itPtr->servPtr, &adp, string);
     code = EvalChunks(itPtr, adp.string);
     PopFrame(itPtr, &frame);
-    --itPtr->adp.evalLevel;
     Tcl_SetResult(itPtr->interp, output.string, TCL_VOLATILE);
     Ns_DStringFree(&output);
     Ns_DStringFree(&adp);
@@ -403,7 +401,6 @@ AdpRun(NsInterp *itPtr, char *file, int argc, char **argv, Ns_DString *outputPtr
             status = EvalBlocks(itPtr, pagePtr->firstPtr);
         }
     	PopFrame(itPtr, &frame);
-	NsAdpFlush(itPtr);
     }
     if (itPtr->adp.debugLevel > 0) {
 	--itPtr->adp.debugLevel;
