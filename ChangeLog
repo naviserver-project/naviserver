@@ -1,3 +1,9 @@
+2005-03-01  Vlad Seryakov <vlad@crystalballinc.com>
+
+	* nslog/nslog.c: redone options support for the module
+        using flags, added commands to ns_accesslog to change flags and/or
+        extended headers on the fly 
+
 2005-02-27  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclobjv.c: Short circuit option processing when "--" is found.
