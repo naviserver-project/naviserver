@@ -4,6 +4,30 @@
 	  caused server crashes when trasporting channels between 
 	  threads when linked against Tcl 8.4+ library.
 
+2005-02-16 Vlad Seryakov <vlad@crystalballinc.com>
+
+	* Makefile configure configure.in sample-config.tcl include/Makefile.build
+	  include/Makefile.global.in include/Makefile.module.in include/ns.h
+	  include/nsdb.h include/nsextmsg.h include/nspd.h include/nsthread.h
+	  tcl/charsets.tcl tcl/compat.tcl tcl/debug.tcl tcl/fastpath.tcl
+	  tcl/file.tcl tcl/form.tcl tcl/http.tcl tcl/init.tcl
+	  tcl/nsdb.tcl tcl/util.tcl: modified license in the header
+
+	* tcl/sendmail.tcl: added erro notification flag to smtp_recv proc,
+          when receiving last QUIT response, do not fire exception if
+          remote server just drops the connection on QUIT
+
+	* nsd/binder.c: added UDP/UNIX/RAW protocols to the sockets,
+
+	* nsd/init.c: call InitLog before dns resolver will try to resolve local 
+          host, this prevents server crash
+
+	* nsd/tclsock.c: back ported from CVS 4.1, added -localhost/-localport to 
+          ns_scokopen
+
+	* nsdb/dbdrv.c: if driver set exception in select, do to rewrite it in the 
+          server
+
 2005-02-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	--- INITIAL IMPORT OF 4.0.10 AOLSERVER CODE ---
