@@ -488,8 +488,8 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
     }
     
     /*
-     * Set the last modified header and, if not modified since
-     * last request, return now.
+     * Set the last modified header if not set yet and, if not
+     * modified since last request, return now.
      */
      
     Ns_ConnSetLastModifiedHeader(conn, &stPtr->st_mtime);
