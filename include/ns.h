@@ -644,6 +644,18 @@ NS_EXTERN void Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 
 /*
+ * cookies.c:
+ */
+
+NS_EXTERN void Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
+NS_EXTERN void Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
+NS_EXTERN void Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
+                                  char *domain, char *path, int secure);
+NS_EXTERN void Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path);
+NS_EXTERN void Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path);
+NS_EXTERN char *Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name);
+
+/*
  * crypt.c:
  */
 

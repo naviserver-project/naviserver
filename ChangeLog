@@ -1,6 +1,11 @@
 2005-03-26  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
+	* nsd/Makefile:
+	* nsd/tclcmds.c:
+	* nsd/cookies.c: Add cookie API for C and Tcl.  (RFE #1145957)
+
+	* include/ns.h:
 	* nsd/nsd.h:
 	* nsd/tclobjv.c:
 	* nsd/tclcmds.c:

@@ -39,7 +39,7 @@ HDRS	= nsd.h
 
 LOBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  cache.o callbacks.o cls.o compress.o config.o conn.o connio.o \
-	  crypt.o dns.o driver.o dsprintf.o dstring.o encoding.o exec.o \
+	  cookies.o crypt.o dns.o driver.o dsprintf.o dstring.o encoding.o exec.o \
 	  fastpath.o fd.o filter.o form.o httptime.o index.o info.o \
 	  init.o lisp.o listen.o log.o mimetypes.o modload.o nsconf.o \
 	  nsmain.o nsthread.o op.o pathname.o pidfile.o proc.o queue.o \

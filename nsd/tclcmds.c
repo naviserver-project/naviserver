@@ -71,10 +71,12 @@ extern Tcl_ObjCmdProc
     NsTclCpObjCmd,
     NsTclCryptObjCmd,
     NsTclCritSecObjCmd,
+    NsTclDeleteCookieObjCmd,
     NsTclDummyObjCmd,
     NsTclICtlObjCmd,
     NsTclFTruncateObjCmd,
     NsTclGetAddrObjCmd,
+    NsTclGetCookieObjCmd,
     NsTclGetHostObjCmd,
     NsTclGetUrlObjCmd,
     NsTclGifSizeObjCmd,
@@ -135,6 +137,7 @@ extern Tcl_ObjCmdProc
     NsTclSelectObjCmd,
     NsTclSemaObjCmd,
     NsTclServerObjCmd,
+    NsTclSetCookieObjCmd,
     NsTclSetObjCmd,
     NsTclShutdownObjCmd,
     NsTclSleepObjCmd,
@@ -487,6 +490,14 @@ static Cmd servCmds[] = {
     {"ns_writecontent", NULL, NsTclWriteContentObjCmd},
     {"ns_conn", NULL, NsTclConnObjCmd},
     {"ns_startcontent", NULL, NsTclStartContentObjCmd},
+
+    /*
+     * cookies.c
+     */
+
+    {"ns_deletecookie", NULL, NsTclDeleteCookieObjCmd},
+    {"ns_getcookie", NULL, NsTclGetCookieObjCmd},
+    {"ns_setcookie", NULL, NsTclSetCookieObjCmd},
 
     /*
      * adpparse.c
