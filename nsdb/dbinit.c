@@ -438,7 +438,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, char *pool,
      * watching for timeout in either of these waits.
      */
      
-    if (wait <= 0) {
+    if (wait < 0) {
 	timePtr = NULL;
     } else {
     	Ns_GetTime(&timeout);

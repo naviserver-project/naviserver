@@ -195,7 +195,7 @@ DbCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
 	int timeout, nhandles, result;
 	Ns_DbHandle **handlesPtrPtr;
 
-	timeout = 0;
+	timeout = -1;
 	if (argc >= 4) {
 	    if (STREQ(argv[2], "-timeout")) {
 		if (Tcl_GetInt(interp, argv[3], &timeout) != TCL_OK) {
