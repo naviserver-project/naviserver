@@ -741,8 +741,8 @@ SockRead(void *arg, void *vbuf, int toread)
         }
         if (toread > 0) {
             cdPtr->base = cdPtr->buf;
-	    cdPtr->cnt = Ns_SockRecv(cdPtr->sock, cdPtr->buf, toread,
-				     cdPtr->sdPtr->timeout);
+	    cdPtr->cnt = Ns_SockRecv(cdPtr->sock, cdPtr->buf,
+		cdPtr->sdPtr->bufsize, cdPtr->sdPtr->timeout);
 	    if (cdPtr->cnt <= 0) {
 		return -1;
 	    }
