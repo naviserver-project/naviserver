@@ -29,7 +29,7 @@
 # Set this to the appropriate value of /MACHINE: for your platform
 MACHINE		= IX86
 
-ROOT            = ..\..\tcl8.3.2
+ROOT            = ..\..\tcl8.3.3
 INSTALLDIR	= c:\Progra~1\Tcl
 
 !IF "$(MACHINE)" == "IA64"
@@ -121,6 +121,7 @@ TCLTESTOBJS = \
 	$(TMPDIR)\testMain.obj
 
 TCLOBJS = \
+	$(TMPDIR)\nsthreads.obj \
 	$(TMPDIR)\regcomp.obj \
 	$(TMPDIR)\regexec.obj \
 	$(TMPDIR)\regfree.obj \
