@@ -694,22 +694,27 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	return TCL_ERROR;
     }
 
+    result  = Tcl_GetObjResult(interp);
+    connPtr = (Conn *) conn = itPtr->conn;
+
     /*
      * Only the "isconnected" option operates without a conn.
      */
 
-    if (itPtr->conn == NULL && opt != CIsConnectedIdx) {
+    if (opt == CIsConnectedIdx) {
+	Tcl_SetBooleanObj(result, connPtr ? 0 : 1);
+	return TCL_OK;
+    }
+    if (connPtr == NULL) {
 	Tcl_SetResult(interp, "no current connection", TCL_STATIC);
         return TCL_ERROR;
     }
 
-    connPtr = (Conn *) conn = itPtr->conn;
     request = connPtr->request;
-    result  = Tcl_GetObjResult(interp);
     switch (opt) {
 
 	case CIsConnectedIdx:
-	    Tcl_SetBooleanObj(result, connPtr ? 0 : 1);
+	    /* NB: Not reached - silence compiler warning. */
 	    break;
 		
 	case CUrlvIdx:
