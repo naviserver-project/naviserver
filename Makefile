@@ -61,7 +61,9 @@ endif
 
 dirs   = nsthread nsd nssock nsssl nscgi nscp nslog nsperm nsdb nsext nspd
 
-all: tcl
+all: tcl aolserver
+
+aolserver:
 	@for i in $(dirs); do \
 		( cd $$i && $(MAKE) all ) || exit 1; \
 	done
