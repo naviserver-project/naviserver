@@ -33,6 +33,8 @@
 LIB     = nsthread
 HDRS	= thread.h
 LIBINIT	= NsthreadsInit
+PGM	= nsthreadtest
+PGMOBJS	= nsthreadtest.o
 LIBOBJS = \
 	cond.o error.o master.o memory.o mutex.o cslock.o	\
 	rwlock.o reentrant.o sema.o thread.o tls.o signal.o	\
