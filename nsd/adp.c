@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -1506,7 +1506,7 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
 
 	default:
 	    if (nsconf.adp.enableexpire) {
-		Ns_ConnSetHeaders(conn, "Expires", "now");
+		Ns_ConnCondSetHeaders(conn, "Expires", "now");
 	    }
 	    if (Ns_ConnResponseStatus(conn) == 0) {
                 status = Ns_ConnReturnData(conn, 200,
