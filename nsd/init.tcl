@@ -371,12 +371,8 @@ _ns_sourcefiles $shared $private
 # Source the module-specific Tcl libraries.
 #
 
-set server [ns_info server]
-set mods [ns_configsection ns/server/$server/modules]
-if {$mods != ""} {
-    for {set i 0} {$i < [ns_set size $mods]} {incr i} {
-	_ns_sourcemodule [ns_set key $mods $i]
-    }
+foreach mod {[ns_ictl getmodules]} {
+    _ns_sourcemodule $mod
 }
 
 #
