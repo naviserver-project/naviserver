@@ -40,7 +40,7 @@ all:
 		( cd $$i && $(MAKE) all ) || exit 1; \
 	done
 
-install: 
+install: all
 	for i in bin lib log include modules/tcl servers/server1/pages; do \
 		$(MKDIR) $(prefix)/$$i; \
 	done
