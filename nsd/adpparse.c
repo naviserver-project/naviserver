@@ -74,6 +74,29 @@ static int RegisterCmd(ClientData arg, Tcl_Interp *interp, int argc,
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_AdpRegisterParser --
+ *
+ *	Register an ADP parser (no longer supported).
+ *
+ * Results:
+ *	NS_ERROR.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_AdpRegisterParser(char *extension, Ns_AdpParserProc *proc)
+{
+    return NS_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclRegisterTagCmd, NsTclRegisterAdpCmd --
  *
  *	Register an ADP proc or string tag.
