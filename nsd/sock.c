@@ -153,6 +153,7 @@ Ns_SockWait(int sock, int what, int timeout)
 	return NS_ERROR;
 	break;
     }
+    pfd.revents = 0;
     do {
 	n = poll(&pfd, 1, timeout);
     } while (n < 0 && errno == EINTR);

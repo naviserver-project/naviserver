@@ -346,7 +346,7 @@ SockCallbackThread(void *ignored)
 	    } else {
 		cbPtr->idx = nfds;
 		pfds[nfds].fd = cbPtr->sock;
-		pfds[nfds].events = 0;
+		pfds[nfds].events = pfds[nfds].revents = 0;
         	for (i = 0; i < 3; ++i) {
                     if (cbPtr->when & when[i]) {
 			pfds[nfds].events |= events[i];
@@ -365,6 +365,7 @@ SockCallbackThread(void *ignored)
 	if (stop) {
 	    break;
 	}
+	pfds[0].revents = 0;
 	do {
 	    n = poll(pfds, nfds, -1);
 	} while (n < 0 && errno == EINTR);

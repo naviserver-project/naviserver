@@ -660,6 +660,7 @@ DriversThread(void *ignored)
 	 * Select and drain the trigger pipe if necessary.
 	 */
 
+    	pfds[0].revents = 0;
 	do {
 	    n = poll(pfds, nfds, pollto);
 	} while (n < 0  && errno == EINTR);
