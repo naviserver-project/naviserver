@@ -523,7 +523,6 @@ typedef struct NsServer {
      */
 
     struct {
-	bool	    	    aolpress;
 	bool	    	    flushcontent;
 	bool	    	    modsince;
 	bool 	    	    noticedetail;

@@ -221,9 +221,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     if (servPtr->opts.realm == NULL) {
     	servPtr->opts.realm = server;
     }
-    if (!Ns_ConfigGetBool(path, "enableaolpress", &servPtr->opts.aolpress)) {
-    	servPtr->opts.aolpress = 0;
-    }
     if (!Ns_ConfigGetBool(path, "checkmodifiedsince", &servPtr->opts.modsince)) {
     	servPtr->opts.modsince = 1;
     }

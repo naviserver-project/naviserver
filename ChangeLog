@@ -1,3 +1,16 @@
+2005-03-18  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/conn.c: Modified NsTclWriteContentObjCmd() to
+	  consult reqPtr->avail instead of conn->contentLength
+	  when examining how much bytes from the content is
+	  still left to copy. The conn->contentLength is not
+	  touched any more.
+
+	* tcl/fastpath.tcl:
+	* nsd/nsd.h:
+	* nsd/return.c:
+	* nsd/server.c: Removed handling of aolpress (RFE #1165562)
+
 2005-03-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/conn.c: Added [ns_conn channel] (RFE #1156141)

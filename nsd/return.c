@@ -438,7 +438,6 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
 void
 Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length)
 {
-    Conn *connPtr = (Conn *) conn;
     Ns_DString ds;
 
     /*
@@ -450,14 +449,6 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length)
     Ns_ConnCondSetHeaders(conn, "Date", Ns_HttpTime(&ds, NULL));
     Ns_DStringTrunc(&ds, 0);
 
-    /*
-     * Set the standard server header, prepending "NaviServer/2.0"
-     * if AOLpress support is enabled.
-     */
-
-    if (connPtr->servPtr->opts.aolpress) {
-    	Ns_DStringAppend(&ds, "NaviServer/2.0 ");
-    }
     Ns_DStringVarAppend(&ds, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NULL);
     Ns_ConnCondSetHeaders(conn, "Server", ds.string);
 
