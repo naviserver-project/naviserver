@@ -36,7 +36,6 @@
 #    AOLserver configure script.
 #
 
-
 AC_INIT(include/ns.h)
 AC_PREREQ(2.13)
 AC_PREFIX_DEFAULT(/usr/local/aolserver)
@@ -181,6 +180,18 @@ else
     AC_MSG_RESULT([static])
 fi
 AC_SUBST(STATIC_BUILD)
+
+has_threadsafe_dns=no
+AC_CHECK_FUNCS(getaddrinfo getnameinfo, has_threadsafe_dns=yes)
+AC_HAVE_GETHOSTBYNAME_R
+AC_HAVE_GETHOSTBYADDR_R
+if test "${ac_cv_func_gethostbyname_r}" = "yes" \
+  -a "${ac_cv_func_gethostbyaddr_r}" = "yes" ; then
+  has_threadsafe_dns=yes
+fi
+if test "${has_threadsafe_dns}" != "yes" ; then
+  AC_MSG_WARN([dns queries will use non-threadsafe calls which could result in server instability])
+fi
 
 #
 # Create Makefile.global.
