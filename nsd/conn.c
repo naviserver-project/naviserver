@@ -898,7 +898,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    break;
 
 	case CStartIdx:
-	    Tcl_SetLongObj(result, connPtr->startTime);
+	    Ns_TclSetTimeObj(result, &connPtr->startTime);
 	    break;
 
 	case CCloseIdx:
@@ -1125,7 +1125,7 @@ NsTclConnCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
 
     } else if (STREQ(argv[1], "start")) {
-	sprintf(buf, "%d", (int) connPtr->startTime);
+	sprintf(buf, "%d", connPtr->startTime.sec);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
 
     } else if (STREQ(argv[1], "close")) {
