@@ -427,7 +427,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     if (fdout < 0) {
 	fdout = 1;
     }
-    pid = Ns_Fork();
+    pid = ns_fork();
     if (pid < 0) {
         Ns_Log(Error, "exec: failed to fork '%s': '%s'", exec, strerror(errno));
         close(pipeError[0]);

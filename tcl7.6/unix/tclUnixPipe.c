@@ -109,7 +109,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 
     joinThisError = (errorFile == outputFile);
     /* pid = vfork();	NB: Never use vfork(). */
-    pid = fork();
+    pid = ns_fork();
     if (pid == 0) {
 
 	/*
