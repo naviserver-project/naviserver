@@ -1597,8 +1597,8 @@ DbProxyTimedIO(int sock, char *buf, int nbytes, int flags,
 #endif
 	    
             while (bytesRead < nbytes) {
-                ioreturn = recv(sock, buf + bytesRead, nbytes - bytesRead,
-                                flags);
+                ioreturn = recv(sock, buf + bytesRead, (size_t)(nbytes - bytesRead),
+                   flags);
                 if (ioreturn < 0) {
                     break;
 		}
@@ -1610,7 +1610,7 @@ DbProxyTimedIO(int sock, char *buf, int nbytes, int flags,
             ioreturn = bytesRead;
 
         } else {
-            ioreturn = send(sock, buf, nbytes, flags);
+            ioreturn = send(sock, buf, (size_t)nbytes, flags);
         }
 
         if (ioreturn != nbytes) {
@@ -2447,12 +2447,12 @@ LocalProxy(NsExtConn * nsConn)
     status = NS_ERROR;
 
 
-    if (ns_pipe(in) < 0) {
+    if (ns_sockpair(in) < 0) {
         Ns_Log(Error, "nsext: failed to create input socket pipes");
     } else {
-        if (ns_pipe(out) < 0) {
-	    close(in[0]);
-	    close(in[1]);
+        if (ns_sockpair(out) < 0) {
+	    ns_sockclose(in[0]);
+	    ns_sockclose(in[1]);
             Ns_Log(Error, "nsext: failed to create output socket pipes");
         } else {
             /*
@@ -2466,8 +2466,8 @@ LocalProxy(NsExtConn * nsConn)
             argv[1] = NULL;
             pid = Ns_ExecArgv(nsConn->ctx->path, NULL, out[0], in[1], argv,
 			      NULL);
-            close(out[0]);
-            close(in[1]);
+            ns_sockclose(out[0]);
+            ns_sockclose(in[1]);
             if (pid == -1) {
                 Ns_Log(Error, "nsext: spawn failed for '%s'",
 		       nsConn->ctx->path);
@@ -2484,8 +2484,8 @@ LocalProxy(NsExtConn * nsConn)
                 }
             }
             if (status != NS_OK) {
-            	close(in[0]);
-            	close(out[1]);
+            	ns_sockclose(in[0]);
+            	ns_sockclose(out[1]);
             }
         }
     }
