@@ -108,6 +108,12 @@ proc _ns_ismw dir {
 proc _ns_dirlist {} {
     set url [ns_conn url]
     set dir [ns_url2file $url]
+    set location [ns_conn location]
+
+    if {[string index $url end] ne "/"} {
+        ns_returnredirect "$location$url/"
+        return
+    }
 
     #
     # Handle special case of AOLpress MiniWebs.
@@ -152,7 +158,6 @@ proc _ns_dirlist {} {
     }
 
     set hidedot [nsv_get _ns_fastpath hidedot]
-    set location [ns_conn location]
     
     set prefix "${location}${url}"
     set up "<a href=..>..</a>"
