@@ -42,6 +42,9 @@
 #define NS_MAJOR_VERSION	4
 #define NS_MINOR_VERSION	0
 #define NS_RELEASE_SERIAL	10
+#define NS_VERSION_NUM          (NS_MAJOR_VERSION * 10000 \
+                                + NS_MINOR_VERSION * 100 \
+                                + NS_RELEASE_SERIAL)
 #define NS_VERSION		"4.0"
 #define NS_PATCH_LEVEL		"4.0.10a"
 
