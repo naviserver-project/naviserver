@@ -141,8 +141,6 @@ NS_EXTERN int			kill(int pid, int sig);
 #define closesocket		close
 #endif
 
-NS_EXTERN int			ns_sockpair(SOCKET *socks);
-
 
 /*
  * C API macros.
@@ -1220,6 +1218,13 @@ NS_EXTERN void *Ns_ServerSpecificDestroy(char *handle, int id, int flags);
 NS_EXTERN int Ns_CloseOnExec(int fd);
 NS_EXTERN int Ns_NoCloseOnExec(int fd);
 NS_EXTERN int Ns_DupHigh(int *fdPtr);
+
+/*
+ * unix.c, win32.c:
+ */
+
+NS_EXTERN int			ns_sockpair(SOCKET *socks);
+NS_EXTERN int			ns_pipe(int *fds);
 
 /*
  * Exported variables.

@@ -461,6 +461,29 @@ ns_sockdup(SOCKET sock)
 /*
  *----------------------------------------------------------------------
  *
+ * ns_pipe --
+ *
+ *	Create a pipe marked close-on-exec.
+ *
+ * Results:
+ *  	0 if ok, -1 on error.
+ *
+ * Side effects:
+ *  	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ns_pipe(int *fds)
+{
+    return _pipe(fds, 4096, _O_NOINHERIT|_O_BINARY);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ns_sockpair --
  *
  *	Create a pair of connected sockets via brute force.  Sock pairs
