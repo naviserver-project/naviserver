@@ -181,7 +181,11 @@ NsConfInit(void)
      */
      
     nsconf.dns.cache   = GetBool(PARAMS, "dnscache", DNS_CACHE_BOOL);
-    nsconf.dns.timeout = GetInt(PARAMS, "dnscachetimeout", DNS_TIMEOUT_INT) * 60;
+    nsconf.dns.timeout = GetInt(PARAMS, "dnscachetimeout", DNS_TIMEOUT_INT);
+    if (nsconf.dns.cache && nsconf.dns.timeout > 0) {
+	/* NB: Config in minutes, internally in seconds. */
+	NsEnableDNSCache(nsconf.dns.timeout * 60);
+    }
 
     /*
      * dstring.c
