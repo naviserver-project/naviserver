@@ -345,4 +345,27 @@ if { [file exists $sslcertfile] && [file exists $sslkeyfile] } {
 #ns_section ns/server/server1/pool/fast
 #ns_param map {GET /faststuff.adp}
 #ns_param maxthreads 10
+#
+
+#
+# Example:  Web based stats interface.
+#
+# To enable:
+#
+# 1. Configure whether or not stats are enabled. (Optional: default = false)
+# 2. Configure URL for statistics. (Optional: default = /_stats)
+#
+#    http://<host>:<port>/_stats
+# 
+# 3. Configure user. (Optional: default = aolserver)
+# 4. Configure password. (Optional: default = stats)
+#
+# For added security it is recommended that configure your own
+# URL, user, and password instead of using the default values.
+#
+#ns_section ns/server/stats
+#    ns_param enabled 1
+#    ns_param url /aolserver/stats
+#    ns_param user nsadmin
+#    ns_param password 23dfs!d
 # 
