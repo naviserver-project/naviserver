@@ -84,6 +84,8 @@ Ns_StrTrim(char *string)
 char *
 Ns_StrTrimLeft(char *string)
 {
+    if (string == NULL)
+        return NULL;
     while (isspace(UCHAR(*string))) {
         ++string;
     }
@@ -114,8 +116,10 @@ Ns_StrTrimRight(char *string)
 {
     int len;
 
+    if (string == NULL)
+        return NULL;
     len = strlen(string);
-    while ((len-- >= 0) &&
+    while ((--len >= 0) &&
 	   (isspace(UCHAR(string[len])) ||
 	    string[len] == '\n')) {
 	
