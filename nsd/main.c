@@ -31,12 +31,14 @@
 /* 
  * main.c --
  *
- *	AOLserver main() startup routine.
+ *	Example AOLserver main() startup routine.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "ns.h"
+
+static Ns_ServerInitProc ServerInit;
 
 
 /*
@@ -44,7 +46,8 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  *
  * main --
  *
- *	AOLserver startup routine which simply calls Ns_Main(). 
+ *	AOLserver startup routine which simply calls Ns_Main().  
+ *	Ns_Main() will later call ServerInit() if not NULL.
  *
  * Results:
  *	Result of Ns_Main.
@@ -58,5 +61,35 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 int
 main(int argc, char **argv)
 {
-    return Ns_Main(argc, argv);
+    return Ns_Main(argc, argv, ServerInit);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServerInit --
+ *
+ *	Example ServerInit() which does nothing by default.  This
+ *	routine is called by Ns_Main() just before loading dynamic
+ *	modules.
+ *
+ * Results:
+ *	NS_OK.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ServerInit(char *server)
+{
+    /*
+     * Add code here to initialize your server much like an ordinary
+     * dynamic module.
+     */
+
+    return NS_OK;
 }
