@@ -416,7 +416,7 @@ Ns_ThreadEnum(Ns_ThreadInfoProc *proc, void *arg)
     Ns_MasterLock();
     thrPtr = firstThreadPtr;
     while (thrPtr != NULL) {
-	info.thread = (Ns_Thread *) thrPtr;
+	info.thread = (Ns_Thread *) &thrPtr;
 	info.tid = thrPtr->tid;
 	info.ctime = thrPtr->ctime;
 	info.name = thrPtr->name;
