@@ -500,6 +500,7 @@ Ns_ConnPrintfHeader(Ns_Conn *conn, char *fmt,...)
         vsnprintf(buf, sizeof(buf)-1, fmt, ap);
 #endif
         va_end(ap);
+	buf[sizeof(buf)-1] = '\0';
         result = Ns_ConnPuts(conn, buf);
     } else {
         result = NS_OK;

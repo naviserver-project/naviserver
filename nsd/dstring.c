@@ -157,6 +157,7 @@ Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
     vsnprintf(buf, sizeof(buf)-1, fmt, ap);
 #endif
     va_end(ap);
+    buf[sizeof(buf)-1] = '\0';
     return Ns_DStringAppend(dsPtr, buf);
 }
 
