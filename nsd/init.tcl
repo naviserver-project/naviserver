@@ -206,7 +206,7 @@ proc _ns_helper_eval {args} {
 	set didsaveproc 1
     }
 
-    set code [catch {uplevel 1 $args} result]
+    set code [catch {uplevel 1 [eval concat $args]} result]
 
     if $didsaveproc {
 	rename ns_eval ""
