@@ -163,7 +163,7 @@ proc _ns_sendmail {smtp smtpport timeout tolist bcclist \
     ## Perform the SMTP conversation
     if { [catch {
 	_ns_smtp_recv $rfp 220 $timeout
-	_ns_smtp_send $wfp "HELO AOLserver [ns_info hostname]" $timeout
+	_ns_smtp_send $wfp "HELO [ns_info hostname]" $timeout
 	_ns_smtp_recv $rfp 250 $timeout
 	_ns_smtp_send $wfp "MAIL FROM:<$from>" $timeout
 	_ns_smtp_recv $rfp 250 $timeout
