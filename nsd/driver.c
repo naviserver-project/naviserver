@@ -146,11 +146,6 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 	return NS_ERROR;
     }
 
-    if (init == NULL) {
-        Ns_Log(Error, "%s: init argument is NULL", module);
-        return NS_ERROR;
-    }
-
     if (init->version != NS_DRIVER_VERSION_1) {
         Ns_Log(Error, "%s: version field of init argument is invalid: %d", 
                 module, init->version);
