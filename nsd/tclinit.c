@@ -1245,6 +1245,7 @@ FreeData(void *arg)
     	DeleteInterp(tdPtr);
     }
     ns_free(tdPtr);
+    NsTclFinalizeThread();
 }
 
 
