@@ -177,6 +177,7 @@ NS_EXTERN int			kill(int pid, int sig);
 #define strcasecmp		_stricmp
 #define strncasecmp		_strnicmp
 #define vsnprintf		_vsnprintf
+#define snprintf		_snprintf
 #define mkdir(d,m)		_mkdir((d))
 #define ftruncate(f,s)		chsize((f),(s))
 #define EINPROGRESS		WSAEINPROGRESS
