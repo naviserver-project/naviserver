@@ -1,3 +1,8 @@
+2005-03-06  Vlad Seryakov <vlad@crystalballinc.com>
+
+	* nsd/tclmisc.c:
+	* nsd/tclcmds.c: added ns_sha1 command.
+
 2005-03-06  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/tclxkeylist.c:

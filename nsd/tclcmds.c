@@ -161,7 +161,8 @@ extern Tcl_ObjCmdProc
     NsTclVarObjCmd,
     NsTclWriteContentObjCmd,
     NsTclWriteFpObjCmd,
-    NsTclWriteObjCmd;
+    NsTclWriteObjCmd,
+    NsTclSHA1ObjCmd;
 
 extern Tcl_CmdProc
     NsTclAdpDebugCmd,
@@ -258,6 +259,11 @@ static Cmd cmds[] = {
     {"ns_jpegsize", NULL, NsTclJpegSizeObjCmd},
     {"ns_guesstype", NULL, NsTclGuessTypeObjCmd},
 
+    /*
+     * tclmisc.c
+     */
+
+    {"ns_sha1", NULL, NsTclSHA1ObjCmd},
     {"ns_striphtml", NsTclStripHtmlCmd, NULL},
     {"ns_quotehtml", NsTclQuoteHtmlCmd, NULL},
     {"ns_hrefs", NsTclHrefsCmd, NULL},
