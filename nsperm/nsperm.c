@@ -37,6 +37,10 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "ns.h"
 
+#ifndef INADDR_NONE
+#define INADDR_NONE (-1)
+#endif
+
 /*
  * For AOLserver
  */
