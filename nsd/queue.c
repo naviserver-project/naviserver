@@ -660,6 +660,7 @@ ConnRun(Conn *connPtr)
 	}
     }
     NsRunCleanups(conn);
+    NsClsCleanup(connPtr);
     Ns_DStringFree(&ds);
 }
 
