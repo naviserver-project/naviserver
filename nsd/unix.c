@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,7 +31,7 @@
 /* 
  * unix.c --
  *
- *	Unix specific routines.
+ *  Unix specific routines.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
@@ -49,14 +49,14 @@ static int debugMode;
  *
  * FatalSignalHandler --
  *
- * 	Ensure that we drop core on fatal signals like SIGBUS and
- * 	SIGSEGV.
+ *  Ensure that we drop core on fatal signals like SIGBUS and
+ *  SIGSEGV.
  *
  * Results:
- * 	None.
+ *  None.
  *
  * Side effects:
- * 	A core file will be left wherever the server was running.
+ *  A core file will be left wherever the server was running.
  *
  *----------------------------------------------------------------------
  */
@@ -84,13 +84,13 @@ FatalSignalHandler(int signal)
  *
  * NsBlockSignals --
  *
- *	Block signals at startup.
+ *  Block signals at startup.
  *
  * Results:
- *	None.
+ *  None.
  *
  * Side effects:
- *	Signals will be pending until NsHandleSignals.
+ *  Signals will be pending until NsHandleSignals.
  *
  *----------------------------------------------------------------------
  */
@@ -138,7 +138,7 @@ NsBlockSignals(int debug)
  *----------------------------------------------------------------------
  * NsRestoreSignals --
  *
- *	Restore all signals to their default value.
+ *  Restore all signals to their default value.
  *
  * Results:
  *      None.
@@ -152,8 +152,8 @@ NsBlockSignals(int debug)
 void
 NsRestoreSignals(void)
 {
-    sigset_t        set;
-    int             sig;
+    sigset_t set;
+    int sig;
 
     for (sig = 1; sig < NSIG; ++sig) {
         ns_signal(sig, (void (*)(int)) SIG_DFL);
@@ -168,14 +168,14 @@ NsRestoreSignals(void)
  *
  * NsHandleSignals --
  *
- *	Loop forever processing signals until a term signal
- *  	is received.
+ *  Loop forever processing signals until a term signal
+ *      is received.
  *
  * Results:
- *	None.
+ *  None.
  *
  * Side effects:
- *	HUP callbacks may be called.
+ *  HUP callbacks may be called.
  *
  *----------------------------------------------------------------------
  */
@@ -197,15 +197,15 @@ NsHandleSignals(void)
         sigaddset(&set, SIGINT);
     }
     do {
-	do {
-	    err = ns_sigwait(&set, &sig);
-	} while (err == EINTR);
-	if (err != 0) {
-	    Ns_Fatal("signal: ns_sigwait failed: %s", strerror(errno));
-	}
-	if (sig == SIGHUP) {
-	    NsRunSignalProcs();
-	}
+    do {
+        err = ns_sigwait(&set, &sig);
+    } while (err == EINTR);
+    if (err != 0) {
+        Ns_Fatal("signal: ns_sigwait failed: %s", strerror(errno));
+    }
+    if (sig == SIGHUP) {
+        NsRunSignalProcs();
+    }
     } while (sig == SIGHUP);
 
     /*
@@ -221,13 +221,13 @@ NsHandleSignals(void)
  *
  * NsSendSignal --
  *
- *	Send a signal to the main thread.
+ *  Send a signal to the main thread.
  *
  * Results:
- *	None.
+ *  None.
  *
  * Side effects:
- *	Main thread in NsHandleSignals will wakeup.
+ *  Main thread in NsHandleSignals will wakeup.
  *
  *----------------------------------------------------------------------
  */
@@ -235,8 +235,8 @@ NsHandleSignals(void)
 void
 NsSendSignal(int sig)
 {
-    if (kill(Ns_InfoPid(),  sig) != 0) {
-    	Ns_Fatal("unix: kill() failed: '%s'", strerror(errno));
+    if (kill(Ns_InfoPid(), sig) != 0) {
+        Ns_Fatal("unix: kill() failed: '%s'", strerror(errno));
     }
 }
 
@@ -262,13 +262,13 @@ Pipe(int *fds, int sockpair)
     int err;
 
     if (sockpair) {
-    	err = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
+        err = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
     } else {
-    	err = pipe(fds);
+        err = pipe(fds);
     }
     if (!err) {
-	fcntl(fds[0], F_SETFD, 1);
-	fcntl(fds[1], F_SETFD, 1);
+    fcntl(fds[0], F_SETFD, 1);
+    fcntl(fds[1], F_SETFD, 1);
     }
     return err;
 }
@@ -288,47 +288,12 @@ ns_pipe(int *fds)
 
 /*
  *----------------------------------------------------------------------
- * Ns_GetUserHome --
+ * Ns_GetNameForUid --
  *
- *      Get the home directory name for a user name
- *
- * Results:
- *      Return NS_TRUE if user name is found in /etc/passwd file and 
- * 	NS_FALSE otherwise.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_GetUserHome(Ns_DString *pds, char *user)
-{
-    struct passwd  *pw;
-    int             retcode;
-
-    Ns_MutexLock(&lock);
-    pw = getpwnam(user);
-    if (pw == NULL) {
-        retcode = NS_FALSE;
-    } else {
-        Ns_DStringAppend(pds, pw->pw_dir);
-        retcode = NS_TRUE;
-    }
-    Ns_MutexUnlock(&lock);
-    return retcode;
-}
-
-
-/*
- *----------------------------------------------------------------------
- * Ns_GetGid --
- *
- *      Get the group id from a group name.
+ *      Get the user name given the id
  *
  * Results:
- * 	Group id or -1 if not found.
+ *      NS_TRUE if id is found; NS_FALSE otherwise.
  *
  * Side effects:
  *      None.
@@ -337,20 +302,80 @@ Ns_GetUserHome(Ns_DString *pds, char *user)
  */
 
 int
-Ns_GetGid(char *group)
+Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
 {
-    int             retcode;
-    struct group   *grent;
+    struct passwd *pw = NULL;
 
     Ns_MutexLock(&lock);
-    grent = getgrnam(group);
-    if (grent == NULL) {
-        retcode = -1;
-    } else {
-        retcode = grent->gr_gid;
+    pw = getpwuid((uid_t)uid);
+    if (pw != NULL && dsPtr) {
+        Ns_DStringAppend(dsPtr, pw->pw_name);
     }
     Ns_MutexUnlock(&lock);
-    return retcode;
+    return (pw != NULL) ? NS_TRUE : NS_FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * Ns_GetNameForGid --
+ *
+ *      Get the group name given the id
+ *
+ * Results:
+ *      NS_TRUE if id is found; NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_GetNameForGid(Ns_DString *dsPtr, int gid)
+{
+    struct group *gr = NULL;
+
+    Ns_MutexLock(&lock);
+    gr = getgrgid((gid_t)gid);
+    if (gr != NULL && dsPtr) {
+        Ns_DStringAppend(dsPtr, gr->gr_name);
+    }
+    Ns_MutexUnlock(&lock);
+
+    return (gr != NULL) ? NS_TRUE : NS_FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * Ns_GetUserHome --
+ *
+ *      Get the home directory name for a user name
+ *
+ * Results:
+ *      Return NS_TRUE if user name is found in /etc/passwd file and 
+ *  NS_FALSE otherwise.
+ *
+ * Side effects:
+ *  None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_GetUserHome(Ns_DString *ds, char *user)
+{
+    struct passwd *pw = NULL;
+
+    Ns_MutexLock(&lock);
+    pw = getpwnam(user);
+    if (pw != NULL) {
+        Ns_DStringAppend(ds, pw->pw_dir);
+    }
+    Ns_MutexUnlock(&lock);
+
+    return (pw != NULL) ? NS_TRUE : NS_FALSE;
 }
 
 
@@ -361,8 +386,7 @@ Ns_GetGid(char *group)
  *      Get the group id for a user name
  *
  * Results:
- *      Returns group id of the user name found in /etc/passwd or -1
- *	otherwise.
+ *  Group id or -1 if not found.
  *
  * Side effects:
  *      None.
@@ -373,15 +397,15 @@ Ns_GetGid(char *group)
 int
 Ns_GetUserGid(char *user)
 {
-    struct passwd  *pw;
-    int             retcode;
+    struct passwd *pw;
+    int retcode;
 
     Ns_MutexLock(&lock);
     pw = getpwnam(user);
     if (pw == NULL) {
         retcode = -1;
     } else {
-        retcode = pw->pw_gid;
+        retcode = (int) pw->pw_gid;
     }
     Ns_MutexUnlock(&lock);
     return retcode;
@@ -395,8 +419,7 @@ Ns_GetUserGid(char *user)
  *      Get user id for a user name.
  *
  * Results:
- *      Return NS_TRUE if user name is found in /etc/passwd file and 
- * 	NS_FALSE otherwise.
+ *      User id or -1 if not found.
  *
  * Side effects:
  *      None.
@@ -407,7 +430,7 @@ Ns_GetUserGid(char *user)
 int
 Ns_GetUid(char *user)
 {
-    struct passwd  *pw;
+    struct passwd *pw;
     int retcode;
 
     Ns_MutexLock(&lock);
@@ -415,9 +438,43 @@ Ns_GetUid(char *user)
     if (pw == NULL) {
         retcode = -1;
     } else {
-        retcode = (unsigned) pw->pw_uid;
+        retcode = (int) pw->pw_uid;
     }
     Ns_MutexUnlock(&lock);
+
+    return retcode;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * Ns_GetGid --
+ *
+ *      Get the group id from a group name.
+ *
+ * Results:
+ *  Group id or -1 if not found.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_GetGid(char *group)
+{
+    struct group *gr;
+    int retcode;
+
+    Ns_MutexLock(&lock);
+    gr = getgrnam(group);
+    if (gr == NULL) {
+        retcode = -1;
+    } else {
+        retcode = (int) gr->gr_gid;
+    }
+    Ns_MutexUnlock(&lock);
+
     return retcode;
 }
 
