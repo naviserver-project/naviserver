@@ -133,6 +133,9 @@ NsConfUpdate(void)
      * log.c
      */
     
+    if (GetBool("logusec", LOG_USEC_BOOL)) {
+	nsconf.log.flags |= LOG_USEC;
+    }
     if (GetBool("logroll", LOG_ROLL_BOOL)) {
 	nsconf.log.flags |= LOG_ROLL;
     }
