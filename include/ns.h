@@ -285,6 +285,8 @@ typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
 typedef int   (Ns_UserAuthorizeProc) (char *user, char *passwd);
 typedef int   (Ns_LogFlushProc) (char *msg, size_t len);
 typedef int   (Ns_LogProc) (Ns_DString *dsPtr, Ns_LogSeverity severity, char *fmt, va_list ap);
+typedef int   (Ns_ObjvProc) (void *dest, Tcl_Interp *interp,
+                             int objc, Tcl_Obj *CONST objv[], void *arg);
 
 /*
  * The field of a key-value data structure.
@@ -359,6 +361,28 @@ typedef struct Ns_List {
     float           weight;   /* Between 0 and 1 */
     struct Ns_List *rest;
 } Ns_List;
+
+/*
+ * The following struct describes how to process an option
+ * or argument passed to a Tcl command.
+ */
+
+typedef struct Ns_ObjvSpec {
+    char            *key;
+    Ns_ObjvProc     *proc;
+    void            *dest;
+    void            *arg;
+} Ns_ObjvSpec;
+
+/*
+ * The following struct is used to validate options from
+ * a choice of values.
+ */
+
+typedef struct Ns_ObjvTable {
+    char            *key;
+    int              value;
+} Ns_ObjvTable;
 
 /*
  * The following structure defines an I/O
@@ -763,6 +787,24 @@ NS_EXTERN double Ns_DRand(void);
 
 NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
 NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
+
+/*
+ * tclobjv.c
+ */
+
+NS_EXTERN int Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+                           Tcl_Interp *interp, int offset, int objc, Tcl_Obj *CONST objv[]);
+NS_EXTERN Ns_ObjvProc Ns_ObjvBool;
+NS_EXTERN Ns_ObjvProc Ns_ObjvInt;
+NS_EXTERN Ns_ObjvProc Ns_ObjvLong;
+NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
+NS_EXTERN Ns_ObjvProc Ns_ObjvDouble;
+NS_EXTERN Ns_ObjvProc Ns_ObjvString;
+NS_EXTERN Ns_ObjvProc Ns_ObjvObj;
+NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
+NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
+NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
+NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 
 /*
  * tclthread.c:

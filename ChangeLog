@@ -1,12 +1,37 @@
 2005-02-26  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
-	* generic/unix.c:
+	* nsd/tclobjv.c: New file with objv argument parsing code
+
+	* nsd/Makefile: Added compliation directive for nsd/tclobjv.c
+
+	* include/ns.h: Added declarations... 
+ 	 for following structs:
+	    o. Ns_ObjvSpec
+	    o. Ns_ObjvTable
+	  and following calls:
+	    o. Ns_ParseObjv
+	    o. Ns_ObjvBool
+	    o. Ns_ObjvInt
+	    o. Ns_ObjvLong
+	    o. Ns_ObjvWideInt
+	    o. Ns_ObjvDouble
+	    o. Ns_ObjvString
+	    o. Ns_ObjvObj
+	    o. Ns_ObjvIndex
+	    o. Ns_ObjvFlags
+	    o. Ns_ObjvBreak
+	    o. Ns_ObjvArgs
+	  This all implements new argument parsing code from Stephen.
+ 
+2005-02-26  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/unix.c:
 	* include/ns.h: added Ns_GetNameForUid(), Ns_GetNameForGid()
 	
-	* generic/nsmain.c: allows server to be started as uid == 0
+	* nsd/nsmain.c: allows server to be started as uid == 0
 	  if both of the following are true:
 	     o. the caller process is running as root (getuid() == 0)
-	     o "-u root" or "-u 0" was given on the command line
+	     o. "-u root" or "-u 0" was given on the command line
 	  Also, improved and tightented verification of passed user
 	  and/or group information.
 
