@@ -214,22 +214,17 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 int
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
-    int   result;
-    Conn *connPtr;
+    Conn *connPtr = (Conn *) conn;
+    Ns_DString *dsPtr = &connPtr->response;
+    status = NS_OK;
 
-    connPtr = (Conn *) conn;
     connPtr->responseStatus = status;
     if (!(conn->flags & NS_CONN_SKIPHDRS)) {
-	Ns_DString ds;
-	Ns_DStringInit(&ds);
-	Ns_ConnConstructHeaders(conn, &ds);
-        result = Ns_WriteConn(conn, ds.string, ds.length);
-        Ns_DStringFree(&ds);
-    } else {
-        result = NS_OK;
+	Ns_ConnConstructHeaders(conn, dsPtr);
+	status = Ns_WriteConn(conn, dsPtr->string, dsPtr->length);
     }
-    connPtr->sendState = Content;
-    return result;
+    conn->flags |= NS_CONN_SENTHDRS;
+    return status;
 }
 
 
@@ -642,6 +637,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
 int
 Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
 {
+    Conn *connPtr = (Conn *) conn;
     int result;
 
     if (len == -1) {
@@ -651,7 +647,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
     result = Ns_ConnFlushHeaders(conn, status);
     if (result == NS_OK) {
 	if (!(conn->flags & NS_CONN_SKIPBODY)) {
-    	    result = Ns_WriteConn(conn, data, len);
+	    result = Ns_WriteConn(conn, data, len);
 	}
 	if (result == NS_OK) {
 	    result = Ns_ConnClose(conn);

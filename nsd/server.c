@@ -161,7 +161,7 @@ NsInitServer(Ns_ServerInitProc *initProc, char *server)
     Ns_DString ds;
     static int initialized = 0;
     NsServer *servPtr;
-    Conn *connBufPtr;
+    Conn *connBufPtr, *connPtr;
     Bucket *buckPtr;
     char *path, *spath, *map, *key, *dirf, *p;
     char buf[200];
@@ -213,9 +213,12 @@ NsInitServer(Ns_ServerInitProc *initProc, char *server)
      * before Ns_QueueConn begins to return NS_ERROR.
      */
 
-    connBufPtr = ns_malloc(sizeof(Conn) * maxconns);
+    connBufPtr = ns_calloc(maxconns, sizeof(Conn));
     for (n = 0; n < maxconns - 1; ++n) {
-	connBufPtr[n].nextPtr = &connBufPtr[n+1];
+	connPtr = &connBufPtr[n];
+	Ns_DStringInit(&connPtr->response);
+	Ns_DStringInit(&connPtr->content);
+	connPtr->nextPtr = &connBufPtr[n+1];
     }
     connBufPtr[n].nextPtr = NULL;
     servPtr->queue.freePtr = &connBufPtr[0];

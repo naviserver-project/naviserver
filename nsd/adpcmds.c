@@ -184,7 +184,7 @@ NsTclAdpAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
     }
     for (i = 1; i < objc; ++i) {
 	s = Tcl_GetStringFromObj(objv[i], &len);
-	Ns_DStringNAppend(&itPtr->adp.output, s, len);
+	Ns_DStringNAppend(itPtr->adp.outputPtr, s, len);
     }
     NsAdpFlush(itPtr);
     return TCL_OK;
@@ -210,9 +210,9 @@ NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	}
     }
     s = Tcl_GetStringFromObj(objv[objc-1], &len);
-    Ns_DStringNAppend(&itPtr->adp.output, s, len);
+    Ns_DStringNAppend(itPtr->adp.outputPtr, s, len);
     if (objc == 2) {
-	Ns_DStringNAppend(&itPtr->adp.output, "\n", 1);
+	Ns_DStringNAppend(itPtr->adp.outputPtr, "\n", 1);
     }
     NsAdpFlush(itPtr);
     return TCL_OK;
@@ -233,9 +233,9 @@ NsTclAdpPutsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	    argv[1], "\": expected -nonewline", NULL);
 	return TCL_ERROR;
     }
-    Ns_DStringAppend(&itPtr->adp.output, argv[argc-1]);
+    Ns_DStringAppend(itPtr->adp.outputPtr, argv[argc-1]);
     if (argc != 3) {
-    	Ns_DStringNAppend(&itPtr->adp.output, "\n", 1);
+    	Ns_DStringNAppend(itPtr->adp.outputPtr, "\n", 1);
     }
     NsAdpFlush(itPtr);
     return TCL_OK;
@@ -357,7 +357,7 @@ NsTclAdpTellCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	    argv[0], "\"", NULL);
 	return TCL_ERROR;
     }
-    sprintf(buf, "%d", itPtr->adp.output.length);
+    sprintf(buf, "%d", itPtr->adp.outputPtr->length);
     Tcl_SetResult(interp, buf, TCL_VOLATILE);
     return TCL_OK;
 }
@@ -403,7 +403,7 @@ NsTclAdpTruncCmd(ClientData arg, Tcl_Interp *interp, int argc,
 	    return TCL_ERROR;
 	}
     }
-    Ns_DStringTrunc(&itPtr->adp.output, length);
+    Ns_DStringTrunc(itPtr->adp.outputPtr, length);
     return TCL_OK;
 }
 
@@ -435,7 +435,7 @@ NsTclAdpDumpCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	    argv[0], "\"", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, itPtr->adp.output.string, TCL_VOLATILE);
+    Tcl_SetResult(interp, itPtr->adp.outputPtr->string, TCL_VOLATILE);
     return TCL_OK;
 }
 
