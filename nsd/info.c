@@ -538,11 +538,11 @@ NsTclInfoCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     } else if (STREQ(cmd, "address")) {
 	Tcl_SetResult(interp, Ns_InfoAddress(), TCL_STATIC);
     } else if (STREQ(cmd, "uptime")) {
-        sprintf(interp->result, "%d", Ns_InfoUptime());
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoUptime()));
     } else if (STREQ(cmd, "boottime")) {
-        sprintf(interp->result, "%d", Ns_InfoBootTime());
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoBootTime()));
     } else if (STREQ(cmd, "pid")) {
-        sprintf(interp->result, "%d", Ns_InfoPid());
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoPid()));
     } else if (STREQ(cmd, "version")) {
 	Tcl_SetResult(interp, Ns_InfoServerVersion(), TCL_STATIC);
     } else if (STREQ(cmd, "home")) {

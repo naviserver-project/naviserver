@@ -275,7 +275,8 @@ NsTclGetUrlCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     }
     if (argc == 3) {
         Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC);
-        if (Tcl_SetVar(interp, argv[2], interp->result, TCL_LEAVE_ERR_MSG) == NULL) {
+        if (Tcl_SetVar(interp, argv[2], Tcl_GetStringResult(interp),
+		TCL_LEAVE_ERR_MSG) == NULL) {
 	    goto done;
 	}
     }

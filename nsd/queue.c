@@ -161,11 +161,11 @@ NsTclServerCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     status = TCL_OK;
     Ns_MutexLock(&servPtr->queue.lock);
     if (STREQ(argv[1], "waiting")) {
-        sprintf(interp->result, "%d", servPtr->queue.wait.num);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(servPtr->queue.wait.num));
     } else if (STREQ(argv[1], "keepalive")) {
-        sprintf(interp->result, "%d", nsconf.keepalive.npending);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(nsconf.keepalive.npending));
     } else if (STREQ(argv[1], "connections")) {
-        sprintf(interp->result, "%d", servPtr->queue.nextid);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(servPtr->queue.nextid));
     } else if (STREQ(argv[1], "threads")) {
         sprintf(buf, "min %d", servPtr->threads.min);
         Tcl_AppendElement(interp, buf);

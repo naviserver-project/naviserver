@@ -115,9 +115,9 @@ NsTclRandCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     }
     d = Ns_DRand();
     if (argc == 1) {
-    	Tcl_PrintDouble(interp, d, interp->result);
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(d));
     } else {
-    	sprintf(interp->result, "%d", (int) (d * max));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) (d * max)));
     }
     return TCL_OK;
 }

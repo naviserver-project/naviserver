@@ -281,13 +281,15 @@ int
 NsTclParseHttpTimeCmd(ClientData dummy, Tcl_Interp *interp, int argc,
 		      char **argv)
 {
+    time_t t;
+
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # of args: should be \"",
                          argv[0], " httptime\"", NULL);
         return TCL_ERROR;
     }
-    sprintf(interp->result, "%d", (int) Ns_ParseHttpTime(argv[1]));
-
+    t = Ns_ParseHttpTime(argv[1]);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((int) t));
     return TCL_OK;
 }
 

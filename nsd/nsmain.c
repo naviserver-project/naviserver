@@ -618,7 +618,7 @@ NsTclShutdownCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     } else  if (Tcl_GetInt(interp, argv[1], &timeout) != TCL_OK) {
 	return TCL_ERROR;
     }
-    sprintf(interp->result, "%d", timeout);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(timeout));
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.shutdowntimeout = timeout;
     Ns_MutexUnlock(&nsconf.state.lock);

@@ -263,7 +263,7 @@ Append2Cmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv, int lappen
     	    Tcl_AppendResult(interp, argv[i], NULL);
 	}
     }
-    UpdateVar(hPtr, interp->result);
+    UpdateVar(hPtr, Tcl_GetStringResult(interp));
     UnlockArray(arrayPtr);
     return TCL_OK;
 }
@@ -364,7 +364,7 @@ NsTclNsvArrayCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	Tcl_SetResult(interp, "1", TCL_STATIC);
 	break;
     case 'z':
-	sprintf(interp->result, "%d", arrayPtr->vars.numEntries);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(arrayPtr->vars.numEntries));
 	break;
     case 'r':
 	FlushArray(arrayPtr);

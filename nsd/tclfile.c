@@ -192,8 +192,7 @@ NsTclCpFpCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	    p += nwrote;
 	}
     }
-
-    sprintf(interp->result, "%d", ntotal);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(ntotal));
     return TCL_OK;
 }
 
@@ -545,11 +544,10 @@ NsTclTmpNamCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     char buf[L_tmpnam];
 
     if (tmpnam(buf) == NULL) {
-        interp->result = "could not generate temporary filename.";
+	Tcl_SetResult(interp, "could not generate temporary filename.", TCL_STATIC);
         return TCL_ERROR;
     }
     Tcl_SetResult(interp, buf, TCL_VOLATILE);
-    
     return TCL_OK;
 }
 

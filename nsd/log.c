@@ -292,8 +292,7 @@ int
 NsTclLogRollCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
     if (Ns_LogRoll() != NS_OK) {
-	interp->result = "could not roll server log";
-	return TCL_ERROR;
+	Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
     }
     return TCL_OK;
 }
