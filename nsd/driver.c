@@ -273,6 +273,54 @@ Ns_DriverInit(char *server, char *module, char *name,
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_RegisterDriver --
+ *
+ *	Register a set of communications driver procs (no longer
+ *	supported).
+ *
+ * Results:
+ *	NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Ns_RegisterDriver(char *server, char *label, void *procs, void *drvData)
+{
+    Ns_Log(Error, "driver: loadable drivers no longer supported");
+    return NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_GetDriverContext --
+ *
+ *	Return the driver's context (no longer supported)
+ *
+ * Results:
+ *	NULL. 
+ *
+ * Side effects:
+ *	None 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Ns_GetDriverContext(Ns_Driver drv)
+{
+    return NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsStartDrivers --
  *
  *	Listen on all driver address/ports and start the DriverThread.
