@@ -75,7 +75,7 @@ GetTls(void)
 	Ns_MasterLock();
 	if (!initialized) {
 	    Ns_TlsAlloc(&tls, ns_free);
-	    initialized = 0;
+	    initialized = 1;
 	}
 	Ns_MasterUnlock();
     }
