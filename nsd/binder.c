@@ -154,7 +154,7 @@ NsPreBind(char *args, char *file)
 /*
  *----------------------------------------------------------------------
  *
- * NsStopBinder --
+ * NsClosePreBound --
  *
  *	Close any remaining pre-bound sockets.
  *
@@ -168,7 +168,7 @@ NsPreBind(char *args, char *file)
  */
 
 void
-NsStopBinder(void)
+NsClosePreBound(void)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
