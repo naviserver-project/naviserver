@@ -29,7 +29,7 @@
 
 
 /*
- * tclcmds.c --
+ * tclmisc.c --
  *
  *	Implements a lot of Tcl API commands. 
  */
@@ -161,7 +161,7 @@ NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
  *
  * NsTclHrefsCmd --
  *
- *	Implments ns_hrefs. 
+ *	Implements ns_hrefs. 
  *
  * Results:
  *	Tcl result. 

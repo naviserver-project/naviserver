@@ -104,7 +104,7 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
 	
 	if {$rqset != ""} {
 	    #
-	    # There are rqeuest headers
+	    # There are request headers
 	    #
 	    
 	    for {set i 0} {$i < [ns_set size $rqset]} {incr i} {

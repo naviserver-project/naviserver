@@ -109,7 +109,7 @@ Ns_SetRequestAuthorizeProc(char *server, Ns_RequestAuthorizeProc *proc)
  *
  * NsTclRequestAuthorizeObjCmd --
  *
- *	Implments ns_requestauthorize as obj command. 
+ *	Implements ns_requestauthorize as obj command. 
  *
  * Results:
  *	Tcl result. 

@@ -1069,7 +1069,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
  *
  * NsTclWriteContentObjCmd --
  *
- *	Implments ns_writecontent as obj command. 
+ *	Implements ns_writecontent as obj command. 
  *
  * Results:
  *	Tcl result. 

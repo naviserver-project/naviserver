@@ -174,7 +174,7 @@ NsStopServers(Ns_Time *toPtr)
  *
  * NsInitServer --
  *
- *	Initialize a virtual server and all it's crazy state.
+ *	Initialize a virtual server and all its crazy state.
  *
  * Results:
  *	None.

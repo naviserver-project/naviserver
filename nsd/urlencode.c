@@ -376,7 +376,7 @@ NsUpdateUrlEncode(void)
  *
  * NsTclUrlEncodeObjCmd, NsTclUrlDecodeObjCmd --
  *
- *	Implments ns_urlencode and ns_urldecode.
+ *	Implements ns_urlencode and ns_urldecode.
  *
  * Results:
  *	Tcl result. 
