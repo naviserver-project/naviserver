@@ -194,6 +194,7 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
 {
     Ns_Thread thr;
     
+    Ns_Log(Notice, "random: generating %d seeds", nseeds);
     Ns_CsEnter(&lock);
     Ns_SemaInit(&sema, 0);
     fRun = 1;
