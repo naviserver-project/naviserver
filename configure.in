@@ -70,6 +70,11 @@ AC_SUBST(TCL_EXTRA_CFLAGS)
 AC_SUBST(TCL_SHLIB_CFLAGS)
 AC_SUBST(TCL_DEFS)
 
+if test "${CC+set}" != "set"; then
+    CC=$TCL_CC
+fi
+AC_PROG_CC
+
 #
 # TCL_SHLIB_LD from tclConfig.sh is not quite right for aolserver.
 #
