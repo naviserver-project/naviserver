@@ -212,7 +212,7 @@ Ns_ModuleInit(char *server, char *module)
 	}
 	Ns_DupHigh(&devNull);
 	Ns_CloseOnExec(devNull);
-	Ns_MutexInit2(&tmpLock, "cgitmp");
+	Ns_MutexSetName2(&tmpLock, "nscgi", "tmpfd");
 	initialized = 1;
     }
 
