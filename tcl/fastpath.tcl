@@ -42,7 +42,7 @@
 #   handle directory listings and AOLpress MiniWeb top pages.
 #
 
-set path "ns/server/[ns_info server]"
+set path "ns/server/[ns_info server]/fastpath"
 nsv_set _ns_fastpath type [ns_config $path directorylisting none]
 nsv_set _ns_fastpath hidedot [ns_config -bool $path hidedotfiles 1]
 nsv_set _ns_fastpath toppage [ns_config -bool $path returnmwtoppage 0]
