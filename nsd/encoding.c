@@ -194,9 +194,14 @@ static struct {
 Tcl_Encoding
 Ns_GetEncoding(char *charset)
 {
+    Ns_DString ds;
     Tcl_HashEntry *hPtr;
     Enc *encPtr;
 
+    Ns_DStringInit(&ds);
+    Ns_DStringAppend(&ds, charset);
+    charset = Ns_StrToLower(ds.string);
+    
     Ns_MutexLock(&lock);
     hPtr = Tcl_FindHashEntry(&encodingTable, charset);
     if (hPtr != NULL) {
@@ -219,6 +224,7 @@ Ns_GetEncoding(char *charset)
 	}
     }
     Ns_MutexUnlock(&lock);
+    Ns_DStringFree(&ds);
     return (hPtr ? encPtr->encoding : NULL);
 }
 
@@ -293,7 +299,11 @@ AddEncoding(char *charset, char *name)
     Enc		   *encPtr;
     Tcl_HashEntry  *hPtr;
     int             new;
+    Ns_DString      ds;
 
+    Ns_DStringInit(&ds);
+    Ns_DStringAppend(&ds, charset);
+    charset = Ns_StrToLower(ds.string);
     hPtr = Tcl_CreateHashEntry(&encodingTable, charset, &new);
     if (!new) {
 	Ns_Log(Warning, "duplicate charset: %s", charset);
@@ -304,4 +314,5 @@ AddEncoding(char *charset, char *name)
     strcpy(encPtr->name, name);
     encPtr->encoding = NULL;
     Tcl_SetHashValue(hPtr, encPtr);
+    Ns_DStringFree(&ds);
 }
