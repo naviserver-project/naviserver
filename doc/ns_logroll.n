@@ -39,15 +39,15 @@
 .SH NAME
 ns_logroll \- commands
 .SH SYNOPSIS
-\fBns_logroll \fIoption \fR?\fIarg arg ...\fR?
+\fBns_logroll\fR
 .BE
 
 .SH DESCRIPTION
 .PP
-These commands...
-
+This function forces a roll of the server log
+.PP
 .SH "SEE ALSO"
-nsd(1), info(n)
-
+ns_log(n)
+.PP
 .SH KEYWORDS
 

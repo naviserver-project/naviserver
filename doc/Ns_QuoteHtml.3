@@ -33,22 +33,34 @@
 '\" 
 .so man.macros
 
-.TH Ns_QuoteHtml 3 4.0 AOLserver "AOLserver Library Procedures"
+.TH Ns_QuoteHtml 3 3.5 AOLserver "AOLserver Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Ns_QuoteHtml \- library procedures
+Ns_QuoteHtml \- Quote an HTML string
 .SH SYNOPSIS
 .nf
 \fB#include "ns.h"\fR
 .sp
-\fBNs_QuoteHtml\fR(\fIarg, arg\fR)
+void
+\fBNs_QuoteHtml\fR(\fINs_Dstring *pds, char *string\fR)
 .BE
 
 .SH DESCRIPTION
-.PP
-These functions ...
+.TP
+\fBNs_QuoteHtml\fR(\fIpds, string\fR)
 
+The Ns_QuoteHtml function appends the given string to the Ns_DString, making the
+following substitutions that allow HTML to be included in another HTML page as
+plain text:
+
+.CS
+<   &lt;
+
+>   &gt;
+
+&   &amp;
+.CE
 .SH "SEE ALSO"
 nsd(1), info(n)
 

@@ -39,15 +39,25 @@
 .SH NAME
 ns_normalizepath \- commands
 .SH SYNOPSIS
-\fBns_normalizepath \fIoption \fR?\fIarg arg ...\fR?
+\fBns_normalizepath\fR \fIpath\fR
 .BE
 
 .SH DESCRIPTION
 .PP
-These commands...
-
+\fBns_normalizepath\fR
+.RS
+Removes extraneous slashes ("/") from the given path
+.RE
+.PP
+.SH EXAMPLES
+\fBns_normalizepath\fR
+.RS
+ns_normalizepath a/b///c/d
+Returns: /a/b/c/d
+.RE
+.PP
 .SH "SEE ALSO"
-nsd(1), info(n)
+.PP
 
 .SH KEYWORDS
 
