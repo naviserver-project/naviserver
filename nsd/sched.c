@@ -848,7 +848,7 @@ SchedThread(void *ignored)
     if (nThreads > 0) {
     	Ns_Log(Notice, "sched: waiting for event threads...");
 	Ns_CondBroadcast(&eventcond);
-	while (--nThreads >= 0) {
+	while (nThreads > 0) {
             joinThreads = eventThreads;
             nJoinThreads = nThreads;
             eventThreads = NULL;
