@@ -107,6 +107,8 @@
 #define NS_SOCK_WRITE		  2
 #define NS_SOCK_EXCEPTION	  4
 #define NS_SOCK_EXIT		  8
+#define NS_SOCK_DROP             16
+#define NS_SOCK_CANCEL           32
 #define NS_SOCK_ANY		255
 #define NS_ENCRYPT_BUFSIZE 	 16
 #define NS_DRIVER_ASYNC		  1	/* Use async read-ahead. */
@@ -1059,6 +1061,7 @@ NS_EXTERN char *Ns_SockStrError(int err);
 
 NS_EXTERN int Ns_SockCallback(SOCKET sock, Ns_SockProc *proc, void *arg, int when);
 NS_EXTERN void Ns_SockCancelCallback(SOCKET sock);
+NS_EXTERN int Ns_SockCancelCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg);
 
 /*
  * str.c:

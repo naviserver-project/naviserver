@@ -529,7 +529,7 @@ HttpAbort(Http *httpPtr)
     Ns_MutexLock(&lock);
     state = httpPtr->state;
     if (!(state & REQ_DONE)) {
-        Ns_SockCallback(httpPtr->sock, HttpCancel, httpPtr, NS_SOCK_ANY);
+        Ns_SockCancelCallbackEx(httpPtr->sock, HttpCancel, httpPtr);
         while (!(httpPtr->state & REQ_DONE)) {
             Ns_CondWait(&cond, &lock);
         }
