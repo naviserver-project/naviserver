@@ -30,6 +30,6 @@
 # $Header$
 #
 
-ALIB	 =  nspd
-ALIBOBJS =  listen.o log.o main.o 
+ALIB	=  nspd
+LIBOBJS	=  listen.o log.o main.o 
 include  ../include/Makefile.build
