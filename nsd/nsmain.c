@@ -284,7 +284,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 	    break;
 	case 'K':
 	case 'k':
-	    fprintf(stderr, "\nWARNING: -k and -K are deprecated.\n\n");
 	    if (kill != 0) {
 		UsageError("only one of -k or -K may be specified");
 	    }
@@ -1289,7 +1288,7 @@ StatusMsg(int state)
 #define UOPTS   ""
 #else
 #define SOPTS	""
-#define UOPTS	"[-d] [-k|-K] [-r root] [-u user] [-g group] "
+#define UOPTS	"[-d] [-r root] [-u user] [-g group] "
 #endif
 
 static void
