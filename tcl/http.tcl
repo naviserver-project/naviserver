@@ -115,7 +115,12 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
 	# even with HTTP/1.0.
 	#
 	
-	_ns_http_puts $timeout $wfd "Host: $host\r"
+	if { $port == 80 } {
+	    set hostheader "Host: ${host}\r"
+	} else {
+	    set hostheader "Host: ${host}:${port}\r"
+	}
+	_ns_http_puts $timeout $wfd $hostheader
 
 	#
 	# If optional content exists, then output that. Otherwise spit
