@@ -1,8 +1,8 @@
 #
-# The contents of this file are subject to the AOLserver Public License
+# The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://aolserver.com/.
+# http://www.mozilla.org/.
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -33,7 +33,7 @@
 #
 # sample-config.tcl --  Example config script.
 #
-#       This script is an AOLserver configuration script with
+#       This script is an naviserver configuration script with
 #	several example sections.  To use:
 #
 #	% cp sample-config.tcl myconfig.tcl
@@ -87,7 +87,7 @@ ns_param  URLCharset     iso8859-1   ;# Default Charset for Url Encode/Decode.
 #
 # MIME types.
 #
-#  Note: AOLserver already has an exhaustive list of MIME types, but in
+#  Note: naviserver already has an exhaustive list of MIME types, but in
 #  case something is missing you can add it here.
 #
 ns_section "ns/mimetypes"
@@ -142,7 +142,7 @@ ns_section "ns/threads"
 #
 # Server-level configuration
 #
-#  There is only one server in AOLserver, but this is helpful when multiple
+#  There is only one server in naviserver, but this is helpful when multiple
 #  servers share the same configuration file.  This file assumes that only
 #  one server is in use so it is set at the top in the "server" Tcl variable.
 #  Other host-specific values are set up above as Tcl variables, too.
@@ -255,8 +255,8 @@ ns_param   address         $address
 #
 # See also:
 #
-#     /aolserver/nsd/fastpath.c
-#     /aolserver/tcl/fastpath.tcl         
+#     /naviserver/nsd/fastpath.c
+#     /naviserver/tcl/fastpath.tcl         
 
 
 #
@@ -403,7 +403,7 @@ ns_section "ns/server/${servername}/modules"
 #
 #    http://<host>:<port>/_stats
 # 
-# 3. Configure user. (Optional: default = aolserver)
+# 3. Configure user. (Optional: default = naviserver)
 # 4. Configure password. (Optional: default = stats)
 #
 # For added security it is recommended that configure your own
@@ -411,7 +411,7 @@ ns_section "ns/server/${servername}/modules"
 #
 #ns_section ns/server/stats
 #    ns_param enabled 1
-#    ns_param url /aolserver/stats
+#    ns_param url /naviserver/stats
 #    ns_param user nsadmin
 #    ns_param password 23dfs!d
 # 

@@ -1,8 +1,8 @@
 #
-# The contents of this file are subject to the AOLserver Public License
+# The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://aolserver.com/.
+# http://www.mozilla.org/.
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -47,7 +47,7 @@ set on [ns_config -bool $path enabletclpages off]
 ns_log notice "conf: \[$path\]enabletclpages = $on"
 
 
-if {$on} {
+if $on {
     ns_share errorPage
     ns_log notice "tcl: enabling .tcl pages"
     ns_register_proc GET /*.tcl ns_sourceproc 
@@ -64,40 +64,79 @@ proc ns_tcl_abort {} {
     error ns_tcl_abort "" NS_TCL_ABORT
 }
 
+if { ![string equal [info commands "ns_cache"] ""] } {
+    proc ns_sourceproc {conn ignored} {
 
-proc ns_sourceproc {conn args} {
+        ns_share errorPage
 
-    ns_share errorPage
+        set file [ns_url2file [ns_conn url $conn]]
+        if ![file exists $file] {
+            ns_returnnotfound $conn
+        } else {
+	    set code [catch {
+	        source_cached $file
+	    } result ]
 
-    set file [ns_url2file [ns_conn url $conn]]
-    if {![file exists $file]} {
-	ns_returnnotfound $conn
-    } else {
-	set code [catch {
-	    source $file
-	} result ]
-
-	global errorCode errorInfo
+	    global errorCode errorInfo
 	
-	if { ![info exists errorCode] } {
-	    # Tcl bug workaround.
-	    set errorCode NONE
-	}
-	if { ![info exists errorInfo] } {
-	    # Another Tcl bug workaround.
-	    set errorInfo ""
-	}
+	    if { ![info exists errorCode] } {
+	        # Tcl bug workaround.
+	        set errorCode NONE
+	    }
+	    if { ![info exists errorInfo] } {
+	        # Another Tcl bug workaround.
+	        set errorInfo ""
+	    }
 	
-	if {$code == 1 && $errorCode == "NS_TCL_ABORT"} {
-	    return
-	}
+	    if {$code == 1 && $errorCode == "NS_TCL_ABORT"} {
+	        return
+	    }
 
-	if { $errorPage == "" } {
-	    return -code $code \
-		-errorcode $errorCode -errorinfo $errorInfo $result
-	} else {
-	    ## Custom error page -- unfortunately we can't pass parameters.
-	    source $errorPage
-	}
+	    if { $errorPage == "" } {
+	        return -code $code \
+		    -errorcode $errorCode -errorinfo $errorInfo $result
+	    } else {
+	        ## Custom error page -- unfortunately we can't pass parameters.
+	        source $errorPage
+	    }
+        }
+    }
+} else {
+    proc ns_sourceproc {conn ignored} {
+
+        ns_share errorPage
+
+        set file [ns_url2file [ns_conn url $conn]]
+        if ![file exists $file] {
+            ns_returnnotfound $conn
+        } else {
+	    set code [catch {
+	        source $file
+	    } result ]
+
+	    global errorCode errorInfo
+	
+	    if { ![info exists errorCode] } {
+	        # Tcl bug workaround.
+	        set errorCode NONE
+	    }
+	    if { ![info exists errorInfo] } {
+	        # Another Tcl bug workaround.
+	        set errorInfo ""
+	    }
+	
+	    if {$code == 1 && $errorCode == "NS_TCL_ABORT"} {
+	        return
+	    }
+
+	    if { $errorPage == "" } {
+	        return -code $code \
+		    -errorcode $errorCode -errorinfo $errorInfo $result
+	    } else {
+	        ## Custom error page -- unfortunately we can't pass parameters.
+	        source $errorPage
+	    }
+        }
     }
 }
+

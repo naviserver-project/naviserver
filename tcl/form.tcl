@@ -1,8 +1,8 @@
 #
-# The contents of this file are subject to the AOLserver Public License
+# The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://aolserver.com/.
+# http://www.mozilla.org/.
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -133,6 +133,8 @@ proc ns_queryexists { key } {
 
 proc ns_getform {{charset ""}}  {
     global _ns_form _ns_formfiles
+
+    if { ![ns_conn isconnected] } { return }
 
     #
     # If a charset has been specified, use ns_urlcharset to

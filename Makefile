@@ -1,8 +1,8 @@
 #
-# The contents of this file are subject to the AOLserver Public License
+# The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://aolserver.com/.
+# http://www.mozilla.org/.
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -44,15 +44,15 @@ install: install-binaries install-doc
 
 install-binaries: all
 	for i in bin lib log include modules/tcl servers/server1/pages; do \
-		$(MKDIR) $(AOLSERVER)/$$i; \
+		$(MKDIR) $(NAVISERVER)/$$i; \
 	done
 	for i in include/*.h include/Makefile.global include/Makefile.module; do \
-		$(INSTALL_DATA) $$i $(AOLSERVER)/include/; \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/include/; \
 	done
 	for i in tcl/*.tcl; do \
-		$(INSTALL_DATA) $$i $(AOLSERVER)/modules/tcl/; \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/modules/tcl/; \
 	done
-	$(INSTALL_DATA) sample-config.tcl $(AOLSERVER)/
+	$(INSTALL_DATA) sample-config.tcl $(NAVISERVER)/
 	$(INSTALL_SH) install-sh $(INSTBIN)/
 	for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \
@@ -62,7 +62,7 @@ install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
-	cd doc && /bin/sh ./install-doc $(AOLSERVER)
+	cd doc && /bin/sh ./install-doc $(NAVISERVER)
 
 test: all
 	cd tests/new && ./all.tcl
