@@ -107,7 +107,7 @@ tcl: $(tclsrc)/Makefile
 tcl-checkout:
 	(cd `dirname $(tcldir)` && \
 		cvs -d :pserver:anonymous@cvs.tcl.sourceforge.net:/cvsroot/tcl \
-			co -d `basename $(tcldir)` tcl)
+			co -r$(tcltag) -d `basename $(tcldir)` tcl)
 
 tcl-update:
 	(cd $(tcldir) && cvs update)

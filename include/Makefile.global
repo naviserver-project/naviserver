@@ -47,8 +47,9 @@ NSGCC	  ?= 1
 
 tclmajor  	= 8
 tclminor  	= 4
-tclpatch  	= 
+tclpatch  	= b1
 tcldir		= ../tcl$(tclmajor).$(tclminor)$(tclpatch)
+tcltag		= core-8-4-b1
 
 #
 # Set common options.
