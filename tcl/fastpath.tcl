@@ -173,7 +173,7 @@ $up
 	    continue
 	}
 	
-	set link "<a href=${prefix}${tail}>${tail}</a>"
+	set link "<a href=\"${prefix}${tail}\">${tail}</a>"
 
 	if $simple {
 	    append list $link\n
