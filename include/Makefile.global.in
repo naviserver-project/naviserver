@@ -56,20 +56,10 @@ TCL_EXEC_PREFIX	= @TCL_EXEC_PREFIX@
 LIB_RUNTIME_DIR =
 LDLIB		= @LDLIB@
 LDSO		= @LDSO@
-
-ifdef NSBUILD
-    ifeq ($(STATIC_BUILD), 1)
-        CCRFLAG	=
-        LDRFLAG	=
-    else
-        CCRFLAG	= @CCRFLAG@
-        LDRFLAG	= @LDRFLAG@
-    endif
-else
-    CCRFLAG	= @CCRFLAG@
-    LDRFLAG	= @LDRFLAG@
-endif
-
+CCRFLAG         = @CCRFLAG@
+LDRFLAG         = @LDRFLAG@
+CCRPATH         += @CCRPATH@
+LDRPATH         += @LDRPATH@
 CC		= $(PURIFY) @TCL_CC@
 CFLAGS_DEBUG	= @TCL_CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE = @TCL_CFLAGS_OPTIMIZE@
