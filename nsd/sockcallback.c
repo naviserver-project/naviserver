@@ -352,7 +352,7 @@ SockCallbackThread(void *ignored)
 			pfds[nfds].events |= events[i];
                     }
         	}
-		++n;
+		++nfds;
 	    }
 	    hPtr = Tcl_NextHashEntry(&search);
         }
