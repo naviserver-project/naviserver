@@ -105,6 +105,7 @@ typedef unsigned long           ns_uint64;
 typedef long INT64;
 #define NS_INT_64_FORMAT_STRING "%ld"
 #elif defined(_WIN32)
+typedef int                     mode_t;  /* Bug: #703061 */ 
 typedef __int64                 ns_int64;
 typedef unsigned __int64        ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%I64d"
