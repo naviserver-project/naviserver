@@ -883,6 +883,12 @@ NS_EXTERN char *Ns_InfoTag(void);
 NS_EXTERN char *Ns_GetMimeType(char *file);
 
 /*
+ * encoding.c:
+ */
+
+NS_EXTERN Tcl_Encoding Ns_GetEncoding(char *charset);
+
+/*
  * modload.c:
  */
 
