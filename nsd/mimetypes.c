@@ -62,7 +62,21 @@ static struct exttype {
     char           *ext;
     char           *type;
 } typetab[] = {
-    { ".adp",   "text/html" },
+    /*
+     * Basic text/html types.
+     */
+
+    { ".adp",   NSD_TEXTHTML},
+    { ".dci",   NSD_TEXTHTML},
+    { ".htm",   NSD_TEXTHTML},
+    { ".html",  NSD_TEXTHTML},
+    { ".sht",   NSD_TEXTHTML},
+    { ".shtml", NSD_TEXTHTML},
+
+    /*
+     * All other types.
+     */
+
     { ".ai",    "application/postscript" },
     { ".aif",   "audio/aiff" },
     { ".aifc",  "audio/aiff" },
@@ -75,7 +89,6 @@ static struct exttype {
     { ".bmp",   "image/bmp" },
     { ".css",   "text/css" },
     { ".csv",   "application/csv" },
-    { ".dci",   "text/html" },
     { ".dcr",   "application/x-director" },
     { ".dir",   "application/x-director" },
     { ".dp",    "application/commonground" },
@@ -87,8 +100,6 @@ static struct exttype {
     { ".gif",   "image/gif" },
     { ".gz",    "application/x-compressed" },
     { ".hqx",   "application/mac-binhex40" },
-    { ".htm",   "text/html" },
-    { ".html",  "text/html" },
     { ".jfif",  "image/jpeg" },
     { ".jpe",   "image/jpeg" },
     { ".jpg",   "image/jpeg" },
@@ -119,8 +130,6 @@ static struct exttype {
     { ".ras",   "image/x-cmu-raster" },
     { ".rgb",   "image/x-rgb" },
     { ".rtf",   "application/rtf" },
-    { ".sht",   "text/html" },
-    { ".shtml", "text/html" },
     { ".sit",   "application/x-stuffit" },
     { ".snd",   "audio/basic" },
     { ".sql",   "application/x-sql" },
