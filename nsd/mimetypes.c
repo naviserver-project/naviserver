@@ -111,6 +111,7 @@ static struct exttype {
     { ".pic",   "image/pict" },
     { ".pict",  "image/pict" },
     { ".pnm",   "image/x-portable-anymap" },
+    { ".png",   "image/png" },
     { ".ps",    "application/postscript" },
     { ".qt",    "video/quicktime" },
     { ".ra",    "audio/x-pn-realaudio" },
