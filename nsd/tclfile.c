@@ -981,3 +981,100 @@ NsTclChmodCmd(ClientData dummy,Tcl_Interp *interp, int argc, char **argv)
 
     return TCL_OK;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclDetachCmd --
+ *
+ *	Implement the ns_detach command.
+ *
+ * Results:
+ *	Tcl result. 
+ *
+ * Side effects:
+ *	See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclDetachCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+{
+    NsInterp *itPtr = arg;
+    NsServer *servPtr = itPtr->servPtr;
+    Tcl_Channel channel;
+    int new;
+    Tcl_HashEntry *hPtr;
+
+    if (argc != 3) {
+	Tcl_AppendResult(interp, "wrong # of args: should be \"",
+	    argv[0], " channelId detachedName\"", NULL);
+	return TCL_ERROR;
+    }
+    channel = Tcl_GetChannel(interp, argv[1], NULL);
+    if (channel == NULL) {
+	Tcl_AppendResult(interp, "no such channel: ", argv[1], NULL);
+	return TCL_ERROR;
+    }
+    Ns_MutexLock(&servPtr->detach.lock);
+    hPtr = Tcl_CreateHashEntry(&servPtr->detach.channels, argv[2], &new);
+    if (new) {
+	Tcl_RegisterChannel(NULL, channel);
+        Tcl_SetHashValue(hPtr, channel);
+    }
+    Ns_MutexUnlock(&servPtr->detach.lock);
+    if (!new) {
+	Tcl_AppendResult(interp, "channel \"", argv[2],
+		"\" already detached", NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAttachCmd --
+ *
+ *	Implement the ns_attach command.
+ *
+ * Results:
+ *	Tcl result. 
+ *
+ * Side effects:
+ *	See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclAttachCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+{
+    NsInterp *itPtr = arg;
+    NsServer *servPtr = itPtr->servPtr;
+    Tcl_Channel channel;
+    Tcl_HashEntry *hPtr;
+
+    if (argc != 2) {
+	Tcl_AppendResult(interp, "wrong # of args: should be \"",
+	    argv[0], " detachedName\"", NULL);
+	return TCL_ERROR;
+    }
+
+    Ns_MutexLock(&servPtr->detach.lock);
+    hPtr = Tcl_FindHashEntry(&servPtr->detach.channels, argv[1]);
+    if (hPtr != NULL) {
+	channel = Tcl_GetHashValue(hPtr);
+	Tcl_RegisterChannel(interp, channel);
+	Tcl_SetResult(interp, Tcl_GetChannelName(channel), TCL_VOLATILE);
+    }
+    Ns_MutexUnlock(&servPtr->detach.lock);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "no such detached channel: ", argv[1], NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
