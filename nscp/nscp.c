@@ -125,12 +125,7 @@ Ns_ModuleInit(char *s, char *module)
 	port = 9999;
     }
     if (!Ns_ConfigGetBool(path, "echopassword", &fEchoPw)) {
-#if defined(WIN32) || defined(__linux)
-    	/* NB: Doesn't appear to work on WIN32 and Linux yet. */
     	fEchoPw = 1;
-#else
-	fEchoPw = 0;
-#endif
     }
     lsock = Ns_SockListen(addr, port);
     if (lsock == INVALID_SOCKET) {
