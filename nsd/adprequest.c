@@ -279,6 +279,7 @@ NsAdpSetMimeType(NsInterp *itPtr, char *type)
 	encoding = Ns_GetTypeEncoding(type);
 	if (encoding != NULL) {
 	    Ns_ConnSetEncoding(itPtr->conn, encoding);
+            Ns_ConnSetUrlEncoding(itPtr->conn, encoding);
 	}
     }
 }

@@ -611,7 +611,7 @@ Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
  * Ns_ConnGetEncoding, Ns_ConnSetEncoding --
  *
  *	Get (set) the Tcl_Encoding for the connection which is used
- *	to convert input forms to proper UTF.
+ *	to convert from UTF to specified output character set.
  *
  * Results:
  *	Pointer to Tcl_Encoding (get) or NULL (set).
@@ -636,6 +636,41 @@ Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
     Conn *connPtr = (Conn *) conn;
 
     connPtr->encoding = encoding;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnGetUrlEncoding, Ns_ConnSetUrlEncoding --
+ *
+ *	Get (set) the Tcl_Encoding for the connection which is used
+ *	to convert input forms to proper UTF.
+ *
+ * Results:
+ *	Pointer to Tcl_Encoding (get) or NULL (set).
+ *
+ * Side effects:
+ *	See Ns_ConnGetQuery().
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Encoding
+Ns_ConnGetUrlEncoding(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return connPtr->urlEncoding;
+}
+
+void
+Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    connPtr->urlEncoding = encoding;
 }
 
 
@@ -866,6 +901,16 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 			Tcl_GetString(objv[2]), NULL);
 		    return TCL_ERROR;
 		}
+                /*
+                 * Check to see if form data has already been parsed.
+                 * If so, and the urlEncoding is changing, then clear
+                 * the previous form data.
+                 */
+                if ((connPtr->urlEncoding != encoding) &&
+                    (itPtr->nsconn.flags & CONN_TCLFORM)) {
+                    Ns_ConnClearQuery(conn);
+                    itPtr->nsconn.flags ^= CONN_TCLFORM;
+                }
 		connPtr->urlEncoding = encoding;
 	    }
 	    if (connPtr->urlEncoding != NULL) {
