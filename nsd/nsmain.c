@@ -121,7 +121,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Set up logging defaults (for Ns_Log at startup time).
      */
 
-    Ns_ThreadSetName("-main-");
     nsconf.log.dev       = NS_FALSE;
     nsconf.log.debug     = NS_FALSE;
     nsconf.log.expanded  = NS_FALSE;
@@ -169,6 +168,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     if (fd > 0 && fd != 2) {
 	close(fd);
     }
+
+    Ns_ThreadSetName("-main-");
 
 #ifndef WIN32
 
