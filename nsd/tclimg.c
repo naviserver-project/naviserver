@@ -46,7 +46,6 @@ static unsigned int JpegRead2Bytes(Tcl_Channel chan);
 static int JpegNextMarker(Tcl_Channel chan);
 static int JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr);
 static unsigned int JpegRead2Bytes(Tcl_Channel chan);
-static void AppendDims(Tcl_Interp *interp, int w, int h);
 static int AppendObjDims(Tcl_Interp *interp, int w, int h);
 
 
@@ -224,7 +223,7 @@ JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr)
 	    if (i == EOF || i == M_SOS || i == M_EOI) {
 	    	break;
 	    }
-	    if ((i >> 4) == 0xC) {
+            if (0xC0 <= i && i <= 0xC3) {
 		if (JpegRead2Bytes(chan) != EOF && ChanGetc(chan) != EOF
 		    && (h = JpegRead2Bytes(chan)) != EOF
 		    && (w = JpegRead2Bytes(chan)) != EOF) {
@@ -350,34 +349,6 @@ ChanGetc(Tcl_Channel chan)
 	return EOF;
     }
     return (int) buf[0];
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * AppendDims --
- *
- *	Format and append width and height dimensions.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	List elements appended to interp result.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-AppendDims(Tcl_Interp *interp, int w, int h)
-{
-    char buf[20];
-
-    sprintf(buf, "%d", w);
-    Tcl_AppendElement(interp, buf);
-    sprintf(buf, "%d", h);
-    Tcl_AppendElement(interp, buf);
 }
 
 
