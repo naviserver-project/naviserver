@@ -306,7 +306,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 	    Ns_DStringVarAppend(&ds, " \"", conn->request->line, "\" ", NULL);
 	}
     } else {
-	Ns_DStringAppend(&ds, " \"\"");
+	Ns_DStringAppend(&ds, " \"\" ");
     }
 
     /*
