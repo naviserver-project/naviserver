@@ -59,8 +59,13 @@ NsGetServer(char *server)
 {
     Tcl_HashEntry *hPtr;
 
-    hPtr = Tcl_FindHashEntry(&nsconf.servertable, server);
-    return (hPtr ? Tcl_GetHashValue(hPtr) : NULL);
+    if (server != NULL) {
+    	hPtr = Tcl_FindHashEntry(&nsconf.servertable, server);
+	if (hPtr != NULL) {
+	    return Tcl_GetHashValue(hPtr);
+	}
+    }
+    return NULL;
 }
 
 
