@@ -1,6 +1,9 @@
 2005-03-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/conn.c: Added [ns_conn channel] (RFE #1156141)
+	  Also, added [ns_conncptofp ?-bytes toCopy? channel]
+	  (RFE #1156899). This change scraps parsing of the 
+	  dummy connId argument left for 2.x server compat.
 
 	* nsd/nsd.h
 	* nsd/unix.h

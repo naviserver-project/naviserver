@@ -1179,7 +1179,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
  *
  * NsTclWriteContentObjCmd --
  *
- *	Implements ns_writecontent as obj command. 
+ *	Implements ns_conncptofp as obj command. 
  *
  * Results:
  *	Tcl result. 
@@ -1193,33 +1193,46 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 int
 NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    NsInterp	*itPtr = arg;
-    Tcl_Channel  chan;
+    NsInterp *itPtr = arg;
+    int toCopy = 0;
+    char *chanName;
+    Tcl_Channel chan;
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?connid? channel");
+    /*
+     * Syntax: ns_conncptofp ?-bytes tocopy? channel
+     */
+
+    Ns_ObjvSpec opts[] = {
+        {"-bytes",   Ns_ObjvInt,   &toCopy, NULL},
+        {"--",       Ns_ObjvBreak, NULL,    NULL},
+        {NULL,       NULL,         NULL,    NULL}
+    };
+    Ns_ObjvSpec args[] = { 
+        {"channel",  Ns_ObjvString, &chanName, NULL},
+        {NULL,       NULL,          NULL,      NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
-    }
-    if (objc == 3 && !NsIsIdConn(Tcl_GetString(objv[1]))) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad connid: \"", 
-		Tcl_GetString(objv[1]), "\"", NULL);
-	return TCL_ERROR;
     }
     if (itPtr->conn == NULL) {
-	Tcl_SetResult(interp, "no connection", TCL_STATIC);
+        Tcl_SetResult(interp, "no connection", TCL_STATIC);
         return TCL_ERROR;
     }
-    if (GetChan(interp, Tcl_GetString(objv[objc-1]), &chan) != TCL_OK) {
-	return TCL_ERROR;
+    if (GetChan(interp, chanName, &chan) != TCL_OK) {
+        return TCL_ERROR;
     }
     Tcl_Flush(chan);
-    if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)itPtr->conn->contentLength, 
-                             chan) != NS_OK) {
-        Tcl_SetResult(interp, "could not copy content (likely client disconnect)",
-		TCL_STATIC);
+    if (toCopy > itPtr->conn->contentLength || toCopy <= 0) {
+        toCopy = itPtr->conn->contentLength;
+    }
+    if (Ns_ConnCopyToChannel(itPtr->conn, (unsigned)toCopy, chan) != NS_OK) {
+        Tcl_SetResult(interp, "could not copy content", TCL_STATIC);
         return TCL_ERROR;
     }
     
+    itPtr->conn->contentLength -= toCopy;
+
     return TCL_OK;
 }
 
