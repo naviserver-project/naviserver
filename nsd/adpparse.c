@@ -362,9 +362,19 @@ ParseAtts(char *s, char *e, int *servPtr, Tcl_DString *attsPtr, int atts)
 	    break;
 	}
 	as = s;
-	while (s < e && !isspace(UCHAR(*s)) && *s != '=') {
-	    ++s;
-	}
+
+        if (*s != '\'' && *s != '"') {
+            while (s < e && !isspace(UCHAR(*s)) && *s != '=') {
+                ++s;
+            }
+        } else {
+            ++s;
+            while (s < e && *s != *as) {
+                ++s;
+            }
+            ++s;
+        }
+
 	ae = s;
 	while (s < e && isspace(UCHAR(*s))) {
 	    ++s;
@@ -384,9 +394,19 @@ ParseAtts(char *s, char *e, int *servPtr, Tcl_DString *attsPtr, int atts)
 		++s;
 	    } while (s < e && isspace(UCHAR(*s)));
 	    vs = s;
-	    while (s < e && !isspace(UCHAR(*s))) {
-		++s;
-	    }
+
+            if (*s != '\'' && *s != '"') {
+                while (s < e && !isspace(UCHAR(*s))) {
+                    ++s;
+                }
+            } else {
+                ++s;
+                while (s < e && *s != *vs) {
+                    ++s;
+                }
+                ++s;
+            }
+            
 	    ve = s;
 	    end = *vs;
 	    if (end != '=' && end != '\'' && end != '"') {
