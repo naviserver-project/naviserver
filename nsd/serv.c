@@ -810,6 +810,7 @@ ConnRun(Conn *connPtr)
 	if (Ns_ConnFlushContent(conn) == NS_OK) {
 	    Ns_ReturnUnauthorized(conn);
 	}
+	break;
 
     case NS_ERROR:
     default:
