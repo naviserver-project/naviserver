@@ -487,6 +487,23 @@ NsInitServer(Ns_ServerInitProc *initProc, char *server)
 	}
     }
 
+    /*
+     * Initialize the encodings table.
+     */
+
+    Tcl_InitHashTable(&servPtr->adp.encodings, TCL_STRING_KEYS);
+    path = Ns_ConfigPath(server, NULL, "adp", "encodings", NULL);
+    set = Ns_ConfigGetSection(path);
+    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+	key = Ns_SetKey(set, i);
+	hPtr = Tcl_CreateHashEntry(&servPtr->adp.encodings, key, &n);
+	if (!n) {
+	    Ns_Log(Warning, "adp: duplicate extension: %s", key);
+	}
+	Tcl_SetHashValue(hPtr, Ns_SetValue(set, i));
+    }
+
+
     NsDbInitServer(server);
 
     /*
