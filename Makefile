@@ -30,22 +30,6 @@
 # $Header$
 #
 
-#
-# You may set the following variables here, on the make command line,
-# or via shell environment variables.
-#
-# AOLSERVER:	AOLserver install directory (/usr/local/aolserver)
-# DEBUG		Build with debug symbols (default: 0, no symbols)
-# GCC		Build with gcc compiler (default: 1, use gcc)
-#
-
-
-##################################################################
-#
-# You should not need to edit anything below.
-#
-##################################################################
-
 include include/Makefile.global
 
 dirs   = nsthread nsd nssock nsssl nscgi nscp nslog nsperm nsdb nsext nspd
