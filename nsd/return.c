@@ -312,8 +312,8 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
     	connPtr->responseStatus = status;
     	if (!(conn->flags & NS_CONN_SKIPHDRS)) {
-	    Ns_ConnConstructHeaders(conn, &connPtr->queued);
-	    connPtr->nContentSent -= connPtr->queued.length;
+	    Ns_ConnConstructHeaders(conn, &connPtr->obuf);
+	    connPtr->nContentSent -= connPtr->obuf.length;
     	}
     	conn->flags |= NS_CONN_SENTHDRS;
     }

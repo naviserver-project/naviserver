@@ -76,12 +76,12 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 	    if (form != NULL) {
 		ParseQuery(form, connPtr->query, connPtr->urlEncoding);
 	    }
-	} else if ((form = connPtr->reqPtr->content) != NULL) {
+	} else if ((form = connPtr->content) != NULL) {
 	    Tcl_DStringInit(&bound);
 	    if (!GetBoundary(&bound, conn)) {
 		ParseQuery(form, connPtr->query, connPtr->urlEncoding);
 	    } else {
-	    	formend = form + connPtr->reqPtr->length;
+	    	formend = form + connPtr->contentLength;
 		s = NextBoundry(&bound, form, formend);
 		while (s != NULL) {
 		    s += bound.length;
@@ -343,7 +343,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 	    if (new) {
 		filePtr = ns_malloc(sizeof(FormFile));
 		filePtr->hdrs = set;
-	    	filePtr->off = start - connPtr->reqPtr->content;
+	    	filePtr->off = start - connPtr->content;
 		filePtr->len = end - start;
 		Tcl_SetHashValue(hPtr, filePtr);
 	    	set = NULL;
