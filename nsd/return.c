@@ -172,7 +172,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	    STREQ(connPtr->request->method, "GET") &&
 	    (key = Ns_SetIGet(conn->headers, "connection")) != NULL &&
 	    STRIEQ(key, "keep-alive")) {
-	    connPtr->keepAlive = 1;
+	    conn->flags |= NS_CONN_KEEPALIVE;
 	    keep = "keep-alive";
 	} else {
 	    keep = "close";
