@@ -57,7 +57,7 @@ MKDIR        =   /bin/mkdir -p
 RM           =   /bin/rm -f
 CP           =   /bin/cp -fp
 AR	     =   /usr/bin/ar
-RANLIB	     =   /usr/bin/true
+RANLIB	     =   /bin/true
 
 ifeq (1,$(NSDEBUG))
     CCOPT     	= -g
