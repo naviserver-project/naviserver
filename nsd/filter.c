@@ -58,12 +58,6 @@ static Trace *firstCleanupPtr;
 static Trace *NewTrace(Ns_TraceProc *proc, void *arg);
 static void RunTraces(Trace *firstPtr, Ns_Conn *conn);
 
-/*
- *==========================================================================
- * Exported functions
- *==========================================================================
- */
-
 
 /*
  *----------------------------------------------------------------------

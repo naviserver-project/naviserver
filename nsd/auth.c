@@ -46,12 +46,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 static Ns_RequestAuthorizeProc *authProcPtr;
 static Ns_UserAuthorizeProc    *userProcPtr; 
 
-/*
- *==========================================================================
- * API functions
- *==========================================================================
- */
-
 
 /*
  *----------------------------------------------------------------------
@@ -154,12 +148,6 @@ Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
 {
     userProcPtr = procPtr;
 }
-
-/* 
- *==========================================================================
- * Exported functions
- *==========================================================================
- */
 
 
 /*

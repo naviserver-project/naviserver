@@ -184,12 +184,6 @@ Ns_ThreadPool(void)
     return thisPtr->pool;
 }
 
-/*
- *==========================================================================
- * Thread allocation routines
- *==========================================================================
- */
-
 void *
 Ns_ThreadMalloc(size_t size)
 {

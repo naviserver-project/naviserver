@@ -45,12 +45,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 static int BinSearch(void **elp, void **list, int n, Ns_IndexCmpProc *cmp);
 static int BinSearchKey(void *key, void **list, int n, Ns_IndexCmpProc *cmp);
 
-/*
- *==========================================================================
- * API functions
- *==========================================================================
- */
-
 
 /*
  *----------------------------------------------------------------------
