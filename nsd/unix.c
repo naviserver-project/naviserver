@@ -180,7 +180,7 @@ NsRestoreSignals(void)
  *----------------------------------------------------------------------
  */
 
-void
+int
 NsHandleSignals(void)
 {
     sigset_t set;
@@ -213,6 +213,8 @@ NsHandleSignals(void)
      */
 
     ns_sigmask(SIG_UNBLOCK, &set, NULL);
+
+    return sig;
 }
 
 

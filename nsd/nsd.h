@@ -2,7 +2,7 @@
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -96,11 +96,13 @@
 #endif
 
 #ifdef _WIN32
-#define NS_SIGTERM  1
-#define NS_SIGHUP   2
+#define NS_SIGHUP   1
+#define NS_SIGINT   2
+#define NS_SIGTERM  15
 #else
-#define NS_SIGTERM  SIGTERM
 #define NS_SIGHUP   SIGHUP
+#define NS_SIGINT   SIGINT
+#define NS_SIGTERM  SIGTERM
 #endif
 
 /*
@@ -857,7 +859,7 @@ extern void NsUpdateUrlEncode(void);
 extern void NsRunPreStartupProcs(void);
 extern void NsStartServers(void);
 extern void NsBlockSignals(int debug);
-extern void NsHandleSignals(void);
+extern int  NsHandleSignals(void);
 extern void NsStopDrivers(void);
 extern void NsPreBind(char *bindargs, char *bindfile);
 extern void NsClosePreBound(void);

@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -30,7 +30,7 @@
 /* 
  * nsmain.c --
  *
- *  AOLserver Ns_Main() startup routine.
+ *  NaviServer Ns_Main() startup routine.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
@@ -46,6 +46,11 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  * Local functions defined in this file.
  */
 
+static int  StartWatchedServer(void);
+static void SysLog(int priority, char *fmt, ...);
+static void WatchdogSigtermHandler(int sig);
+static int  WaitForServer();
+
 static void UsageError(char *msg);
 static void StatusMsg(int state);
 static char *FindConfig(char *config);
@@ -55,13 +60,34 @@ extern void NsthreadsInit();
 extern void NsdInit();
 #endif
 
+/*
+ * Setup timer/counter values for graceously waiting before trying 
+ * to restart crippled server. This should be configurable from the
+ * server config file (ns/watchdog section or alike).
+ */
+
+#define MAX_RESTART_SECONDS 64 /* Max time in sec to wait between restarts */
+#define MIN_WORK_SECONDS   128 /* After being up for # secs, reset timers */
+#define MAX_NUM_RESTARTS   256 /* Quit after somany unsuccessful restarts */
+
+#ifndef _WIN32
+# ifdef LOG_DEBUG
+#  undef LOG_DEBUG /* Because this is used by the syslog facility as well */
+# endif
+# include <syslog.h>
+# include <signal.h>
+# include <stdarg.h>
+# include <unistd.h>
+static int watchdogExit = 0; /* Watchdog loop toggle */
+#endif /* _WIN32 */
+
 
 /*
  *----------------------------------------------------------------------
  *
  * Ns_Main --
  *
- *  The AOLserver startup routine called from main().  Startup is
+ *  The NaviServer startup routine called from main().  Startup is
  *  somewhat complicated to ensure certain things happen in the
  *  correct order.
  *
@@ -77,7 +103,7 @@ extern void NsdInit();
 int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
-    int  i, fd;
+    int  i, fd, sig;
     char *config;
     Ns_Time timeout;
     char buf[PATH_MAX];
@@ -145,7 +171,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     nsconf.argv0 = argv[0];
 
     /*
-     * AOLserver requires file descriptor 0 be open on /dev/null to
+     * NaviServer requires file descriptor 0 be open on /dev/null to
      * ensure the server never blocks reading stdin.
      */
      
@@ -177,13 +203,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     opterr = 0;
-    while ((i = getopt(argc, argv, "hpzifVs:t:IRSkKdr:u:g:b:B:")) != -1) {
+    while ((i = getopt(argc, argv, "hpzifwVs:t:IRSkKdr:u:g:b:B:")) != -1) {
         switch (i) {
         case 'h':
             UsageError(NULL);
             break;
         case 'f':
         case 'i':
+        case 'w':
         case 'V':
 #ifdef _WIN32
         case 'I':
@@ -194,7 +221,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #ifdef _WIN32
                 UsageError("only one of -i, -f, -V, -I, -R, or -S may be specified");
 #else
-                UsageError("only one of -i, -f, or -V may be specified");
+                UsageError("only one of -i, -f, -w, or -V may be specified");
 #endif
             }
             mode = i;
@@ -247,7 +274,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
     }
     if (mode == 'V') {
-        printf("AOLserver/%s (%s)\n", NSD_VERSION, Ns_InfoLabel()); 
+        printf("NaviServer/%s (%s)\n", NSD_VERSION, Ns_InfoLabel()); 
         printf("   CVS Tag:         %s\n", Ns_InfoTag());
         printf("   Built:           %s\n", Ns_InfoBuildDate());
         printf("   Tcl version:     %s\n", nsconf.tcl.version);
@@ -311,6 +338,32 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             }
         }
     }
+
+    /*
+     * If running as privileged user (root) check given user/group 
+     * information and bail-out if any of them not really known.
+     */
+
+    if (getuid() == 0) {
+
+        /*
+         * OK, so the caller is running as root. In such cases
+         * he/she should have used "-u" to give the actual user
+         * to run as (may be root as well) and optionally "-g"
+         * to set the process group. We're picky about the group
+         * though. If we were not able to figure out to which
+         * group the user belongs to, we will abort, no mercy.
+         */
+
+        if (uid == -1) {
+            Ns_Fatal("nsmain: will not run without valid user; "
+                     "must specify '-u username' parameter");
+        }
+        if (gid == -1) {
+            Ns_Fatal("nsmain: will not run for unknown group; "
+                     "must specify '-g group' parameter");
+        }
+    }
     
     /*
      * The server now uses poll() but Tcl and other components may
@@ -337,6 +390,40 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
     
     /*
+     * Fork into the background and create a new session.
+     */
+
+    if (mode == 0 || mode == 'w') {
+        i = ns_fork();
+        if (i == -1) {
+            Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
+        }
+        if (i > 0) {
+            return 0;
+        }
+        setsid(); /* Detaches from the controlling terminal device */
+    }
+
+    /*
+     * Optionally, start the watchdog/server process pair.
+     * The watchdog process will monitor and restart the server unless 
+     * the server exits gracefully, either by calling exit(0) or get 
+     * signalled by the SIGTERM signal.
+     * The watchdog process itself will exit when the server process 
+     * exits gracefully, or, when get signalled by the SIGTERM signal. 
+     * In the latter case, watchdog will pass the SIGTERM to the server 
+     * process, so both of them will gracefully terminate.
+     */
+
+    if (mode == 'w') {
+        if (StartWatchedServer() == 0) {
+            return 0;
+        }
+    } else {
+        nsconf.pid = getpid();
+    }
+    
+    /*
      * Pre-bind any sockets now, before a possible setuid from root
      * or chroot which may hide /etc/resolv.conf required to
      * resolve name-based addresses.
@@ -357,31 +444,13 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
         nsconf.home = "/";
     }
-    
+
     /*
-     * If caller is running as the privileged user, determine and change 
-     * to the run time (given) user and/or group.
+     * If caller is running as the privileged user, change 
+     * to the run time (given) user and/or group now.
      */
 
     if (getuid() == 0) {
-
-        /*
-         * OK, so the caller is running as root. In such cases
-         * he/she should have used "-u" to give the actual user
-         * to run as (may be root as well) and optionally "-g"
-         * to set the process group. We're picky about the group
-         * though. If we were not able to figure out to which
-         * group the user belongs to, we will abort, no mercy.
-         */
-
-        if (uid == -1) {
-            Ns_Fatal("nsmain: will not run without valid user; "
-                     "must specify '-u username' parameter");
-        }
-        if (gid == -1) {
-            Ns_Fatal("nsmain: will not run for unknown group; "
-                     "must specify '-g group' parameter");
-        }
         
         /*
          * Set or clear supplementary groups.
@@ -420,24 +489,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                  strerror(errno));
     }
 #endif
-    
-    /*
-     * Fork into the background and create a new session if running 
-     * in daemon mode.
-     */
-
-    if (mode == 0) {
-        i = ns_fork();
-        if (i < 0) {
-            Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
-        }
-        if (i > 0) {
-            return 0;
-        }
-        nsconf.pid = getpid();
-        setsid();
-    }
-    
+        
     /*
      * Finally, block all signals for the duration of startup to ensure any
      * new threads inherit the blocked state.
@@ -653,7 +705,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * whenever SIGHUP arrives.
      */
 
-    NsHandleSignals();
+    sig = NsHandleSignals();
 
     /*
      * Print a "server shutting down" status message, set
@@ -709,7 +761,13 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsRemovePidFile(procname);
     StatusMsg(3);
-    return 0;
+
+    /*
+     * The server exits gracefully on NS_SIGTERM.
+     * All other signals are propagated to the caller.
+     */
+
+    return (sig == NS_SIGTERM) ? 0 : sig;
 }
 
 
@@ -779,13 +837,15 @@ Ns_StopServer(char *server)
  *
  * NsTclShutdownObjCmd --
  *
- *  Implements ns_shutdown as obj command. 
+ *      Shutdown the server, waiting at most timeout seconds for threads
+ *      to exit cleanly before giving up.
  *
  * Results:
- *  Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *  See docs. 
+ *      If -restart was specified and watchdog is active, server
+ *      will be restarted.
  *
  *----------------------------------------------------------------------
  */
@@ -793,22 +853,33 @@ Ns_StopServer(char *server)
 int
 NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    int timeout;
+    int timeout = 0, signal = NS_SIGTERM;
 
-    if (objc != 1 && objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?timeout?");
+    Ns_ObjvSpec opts[] = {
+        {"-restart", Ns_ObjvBool,  &signal, (void *) NS_SIGINT},
+        {"--",       Ns_ObjvBreak, NULL,    NULL},
+        {NULL,       NULL,         NULL,    NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"?timeout", Ns_ObjvInt, &timeout, NULL},
+        {NULL,       NULL,       NULL,     NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (objc == 1) {
-        timeout = nsconf.shutdowntimeout;
-    } else  if (Tcl_GetIntFromObj(interp, objv[1], &timeout) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), timeout);
+
     Ns_MutexLock(&nsconf.state.lock);
-    nsconf.shutdowntimeout = timeout;
+    if (timeout > 0) {
+        nsconf.shutdowntimeout = timeout;
+    } else {
+        timeout = nsconf.shutdowntimeout;
+    }
     Ns_MutexUnlock(&nsconf.state.lock);
-    NsSendSignal(NS_SIGTERM);
+
+    NsSendSignal(signal);
+    Tcl_SetIntObj(Tcl_GetObjResult(interp), timeout);
+
     return TCL_OK;
 }
 
@@ -898,6 +969,7 @@ UsageError(char *msg)
         "  -V  version and release information\n"
         "  -i  inittab mode\n"
         "  -f  foreground mode\n"
+        "  -w  watchdog mode: restart a failed server\n"
 #ifdef _WIN32
         "  -I  Install win32 service\n"
         "  -R  Remove win32 service\n"
@@ -948,4 +1020,186 @@ FindConfig(char *config)
     config = Ns_DStringExport(&ds1);
     Ns_DStringFree(&ds2);
     return config;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SysLog --
+ *
+ *      Logs a message to the system log facility
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void 
+SysLog(int priority, char *fmt, ...)
+{
+    va_list ap;
+
+    openlog("nsd", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_DAEMON);
+    va_start(ap, fmt);
+    vsyslog(priority, fmt, ap);
+    va_end(ap);
+    closelog();    
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WatchdogSigtermHandler --
+ *
+ *      Handle SIGTERM and pass to server process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Watchdog will not restart the server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void 
+WatchdogSigtermHandler(int sig)
+{
+    kill((pid_t) nsconf.pid, sig);
+    watchdogExit = 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitForServer --
+ *
+ *      Waits for the server process to exit or die due to an uncaught
+ *      signal.
+ *
+ * Results:
+ *      NS_OK if the server exited cleanly, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      May wait forever...
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int 
+WaitForServer()
+{
+    int ret, status;
+    pid_t pid;
+    char *msg;
+
+    do {
+        pid = waitpid(nsconf.pid, &status, 0);
+    } while (pid == -1 && errno == EINTR);
+
+    if (WIFEXITED(status)) {
+        ret = WEXITSTATUS(status);
+        msg = "exited";
+    } else if (WIFSIGNALED(status)) {
+        ret = WTERMSIG(status);
+        msg = "terminated";
+    } else {
+        msg = "killed";
+        ret = -1; /* Some waitpid (or other unknown) failure? */
+    }
+
+    SysLog(LOG_NOTICE, "watchdog: server %d %s (%d).", nsconf.pid, msg, ret);
+
+    return ret ? NS_ERROR : NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartWatchedServer --
+ *
+ *      Restart the server process until it exits 0 or we exceed the
+ *      maximum number of restart attempts.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Install SIGTERM handler for watchdog process.
+ *      Sets the global nsconf.pid with the process ID of the server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StartWatchedServer(void)
+{
+    unsigned int setSigterm = 0, startTime, numRestarts = 0, restartWait = 0;
+
+    SysLog(LOG_NOTICE, "watchdog: started.");
+
+    do {
+        if (restartWait) {
+            SysLog(LOG_WARNING, 
+                   "watchdog: waiting %d seconds before restart %d.",
+                   restartWait, numRestarts);
+            sleep(restartWait);
+        }
+        nsconf.pid = ns_fork();
+        if (nsconf.pid == -1) {
+            SysLog(LOG_ERR, "watchdog: fork() failed: '%s'.", strerror(errno));
+            Ns_Fatal("watchdog: fork() failed: '%s'.", strerror(errno));
+        }
+        if (nsconf.pid == 0) {
+            /* Server process. */
+            nsconf.pid = getpid();
+            SysLog(LOG_NOTICE, "server: started.");
+            return nsconf.pid;
+        }
+
+        /* Watchdog process */
+
+        /*
+         * Register SIGTERM handler so we can gracefully stop the server. 
+         * The watchdog will exit w/o stopping the server if got signalled 
+         * with any other signal, though.
+         */
+
+        if (setSigterm == 0) {
+            setSigterm = 1;
+            ns_signal(SIGTERM, WatchdogSigtermHandler);
+        }
+
+        startTime = time(NULL);
+
+        if (WaitForServer() == NS_OK) {
+            break;
+        }
+
+        if ((time(NULL) - startTime) > MIN_WORK_SECONDS) {
+            restartWait = numRestarts = 0;
+        }
+
+        if (++numRestarts > MAX_NUM_RESTARTS) {
+            SysLog(LOG_WARNING, "watchdog: exceeded restart limit of %d",
+                   MAX_NUM_RESTARTS);
+            break;
+        }
+
+        restartWait *= 2;
+        if (restartWait > MAX_RESTART_SECONDS) {
+            restartWait = MAX_RESTART_SECONDS;
+        } else if (restartWait == 0) {
+            restartWait = 1;
+        }
+
+    } while (!watchdogExit);
+
+    SysLog(LOG_NOTICE, "watchdog: exited.");
+
+    return 0;
 }
