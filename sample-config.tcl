@@ -62,7 +62,7 @@ set homedir                [file dirname [ns_info config]]
 set bindir                 [file dirname [ns_info nsd]]
 
 set pageroot               ${homedir}/servers/${servername}/pages
-set directoryfile          index.adp,index.html,index.htm
+set directoryfile          index.adp,index.html,index.htm,index.xhtml,index.xht
 
 # nsssl: Only loads if keyfile.pem and certfile.pem exist.
 #set sslmodule              nsssl.so  ;# Domestic 128-bit/1024-bit SSL.
