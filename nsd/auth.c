@@ -185,11 +185,11 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     }
 
     status = Ns_AuthorizeRequest(itPtr->servPtr->server, 
-			Tcl_GetString(objv[1]), 
-			Tcl_GetString(objv[2]),
-			Tcl_GetString(objv[3]), 
-			Tcl_GetString(objv[4]), 
-			Tcl_GetString(objv[5]));
+	    Tcl_GetString(objv[1]), 
+	    Tcl_GetString(objv[2]),
+	    Tcl_GetString(objv[3]), 
+	    Tcl_GetString(objv[4]), 
+	    objc < 6 ? NULL : Tcl_GetString(objv[5]));
 
     switch (status) {
 	case NS_OK:

@@ -161,10 +161,8 @@ NsTclRandObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     	if (Tcl_GetIntFromObj(interp, objv[1], &max) != TCL_OK) {
 	    return TCL_ERROR;
 	} else if (max <= 0) {
-	    Tcl_Obj *result = Tcl_NewObj();
-	    Tcl_AppendStringsToObj(result, "invalid max \"", 
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid max \"", 
 		    Tcl_GetString(objv[1]), "\": must be > 0", NULL);
-	    Tcl_SetObjResult(interp, result);
 	    return TCL_ERROR;
 	}
     }

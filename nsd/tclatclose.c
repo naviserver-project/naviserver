@@ -151,13 +151,13 @@ NsTclAtCloseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
 
     if (objc < 2 || objc > 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "{ script | procname ?arg? }");
-		return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     if (objc == 2) {
-		script = Tcl_GetString(objv[1]);
+	script = Tcl_GetString(objv[1]);
     } else {
-		script = Tcl_GetString(Tcl_ConcatObj(2, objv+1));
+	script = Tcl_GetString(Tcl_ConcatObj(2, objv+1));
     }
 
     /*

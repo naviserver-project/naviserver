@@ -178,27 +178,27 @@ badargs:
         return TCL_ERROR;
     }
     if (STREQ(Tcl_GetString(objv[1]), "-noinherit")) {
-		if (objc < 5) {
-			goto badargs;
-		}
-		flags = NS_OP_NOINHERIT;
-		idx = 2;
+	if (objc < 5) {
+	    goto badargs;
+	}
+	flags = NS_OP_NOINHERIT;
+	idx = 2;
     } else {
-		if (objc == 7) {
-			goto badargs;
-		}
-		flags = 0;
-		idx = 1;
+	if (objc == 7) {
+	    goto badargs;
+	}
+	flags = 0;
+	idx = 1;
     }
     server = itPtr->servPtr->server;
     method = Tcl_GetString(objv[idx++]);
     url = Tcl_GetString(objv[idx++]);
-	Ns_Log(Notice, "%d %d", idx, objc);
-	if (idx+1 > objc-1) {
-    	procPtr = NewProc(Tcl_GetString(objv[idx]), "");
-	} else {
-    	procPtr = NewProc(Tcl_GetString(objv[idx]), Tcl_GetString(objv[idx+1]));
-	}
+    Ns_Log(Notice, "%d %d", idx, objc);
+    if (idx+1 > objc-1) {
+       procPtr = NewProc(Tcl_GetString(objv[idx]), "");
+    } else {
+       procPtr = NewProc(Tcl_GetString(objv[idx]), Tcl_GetString(objv[idx+1]));
+    }
     Ns_RegisterRequest(server, method, url, ProcRequest, FreeProc,
 			procPtr, flags);
 
@@ -276,7 +276,7 @@ badargs:
         return TCL_ERROR;
     }
     if (objc == 5 && !STREQ(Tcl_GetString(objv[1]), "-noinherit")) {
-		goto badargs;
+	goto badargs;
     }
     server = itPtr->servPtr->server;
     method = Tcl_GetString(objv[objc-3]);
@@ -353,8 +353,7 @@ NsTclUnRegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         return TCL_ERROR;
     }
     if (objc == 4 && !STREQ(Tcl_GetString(objv[1]), "-noinherit")) {
-	Tcl_Obj *result = Tcl_NewObj();
-	Tcl_AppendStringsToObj(result, "unknown flag \"", 
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "unknown flag \"", 
 		Tcl_GetString(objv[1]),
 		"\": should be -noinherit", NULL);
 	return TCL_ERROR;
@@ -473,11 +472,9 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
             } else if (STREQ(Tcl_GetString(lobjv[i]), "trace")) {
                 when |= NS_FILTER_TRACE;
             } else {
-		Tcl_Obj *result = Tcl_NewObj();
-		Tcl_AppendStringsToObj(result, "unknown when \"", 
+		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "unknown when \"", 
 			Tcl_GetString(lobjv[i]),
 			"\": should be preauth, postauth, or trace", NULL);
-		Tcl_SetObjResult(interp, result);
                 when = 0;
                 break;
             }

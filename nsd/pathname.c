@@ -312,15 +312,15 @@ NsTclModulePathCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          argv[0], " server ?module?\"", NULL);
         return TCL_ERROR;
     }
-if (1) {
-Ns_MakePath(&ds, argv[1], argv[2], argv[3], argv[4], argv[5], NULL);
-} else {
-    if (argc == 3) {
-        Ns_ModulePath(&ds, argv[1], argv[2], NULL);
+    if (1) {
+	Ns_MakePath(&ds, argv[1], argv[2], argv[3], argv[4], argv[5], NULL);
     } else {
-        Ns_ModulePath(&ds, argv[1], NULL, NULL);
+	if (argc == 3) {
+	    Ns_ModulePath(&ds, argv[1], argv[2], NULL);
+	} else {
+	    Ns_ModulePath(&ds, argv[1], NULL, NULL);
+	}
     }
-}
     Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
     Ns_DStringFree(&ds);
     return TCL_OK;
