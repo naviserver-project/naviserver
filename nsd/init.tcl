@@ -881,7 +881,7 @@ if { $_ns_lazyprocdef == 1 } {
     #
     proc unknown { args } {
         set _proc [ lindex $args 0  ]
-        if { [ _ns_lzproc_load $_proc ] } {
+        if { [ $_proc != "" && _ns_lzproc_load $_proc ] } {
             set arglist [lrange $args 1 end]
             return [ uplevel 1 $args ]
         } else {
