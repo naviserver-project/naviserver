@@ -92,7 +92,7 @@ static int pr2six[256] = {
  *
  * Side effects:
  *      Encoded characters are placed in output which must be
- *	large enough for the result, i.e., (1 + (len * 4) / 3)
+ *	large enough for the result, i.e., (1 + (len * 4) / 2)
  *	bytes.
  *
  *----------------------------------------------------------------------
@@ -102,7 +102,7 @@ int
 Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
 {
     register unsigned char  *p, *q;
-    register int n;
+    register int n, line = 0;
 
     /*
      * Convert every three input bytes into four output
@@ -117,6 +117,15 @@ Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
 	*q++ = ENC(((p[1] << 2) & 074) | ((p[2] >> 6) & 03));
 	*q++ = ENC(p[2] & 077);
 	p += 3;
+        line += 4;
+        /*
+         * Add wrapping newline to be compatible with GNU uuencode
+         */
+    
+        if (line == 60) {
+            *q++ = '\n'; 
+	    line = 0;
+        }       
     }
 
     /*
@@ -161,8 +170,9 @@ Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
 int
 Ns_HtuuDecode(char *input, unsigned char *output, int outputlen)
 {
+    register int n;
+    unsigned char buf[4];
     register unsigned char *p, *q;
-    register int    len, n;
 
 
     /*
@@ -174,38 +184,34 @@ Ns_HtuuDecode(char *input, unsigned char *output, int outputlen)
     }
 
     /*
-     * Determine the maximum length of output bytes.
-     */
-
-    p = input;
-    while (pr2six[(int)(*p)] >= 0) {
-	++p;
-    }
-    len = p - (unsigned char *) input;
-
-    /*
      * Decode every four input bytes.
      */
 
+    n = 0;
     p = input;
     q = output;
-    for (n = len / 4; n > 0; --n) {
-	*q++ = DEC(p[0]) << 2 | DEC(p[1]) >> 4;
-	*q++ = DEC(p[1]) << 4 | DEC(p[2]) >> 2;
-	*q++ = DEC(p[2]) << 6 | DEC(p[3]);
-	p += 4;
+    while (*p) {
+        if (pr2six[(int)(*p)] >= 0) {
+            buf[n++] = *p;
+	    if (n == 4) {
+		*q++ = DEC(buf[0]) << 2 | DEC(buf[1]) >> 4;
+		*q++ = DEC(buf[1]) << 4 | DEC(buf[2]) >> 2;
+		*q++ = DEC(buf[2]) << 6 | DEC(buf[3]);
+		n = 0;
+	    }
+        }
+	p++;
     }
 
     /*
      * Decode remaining 2 or 3 bytes.
      */
 
-    n = len % 4;
     if (n > 1) {
-	*q++ = DEC(p[0]) << 2 | DEC(p[1]) >> 4;
+	*q++ = DEC(buf[0]) << 2 | DEC(buf[1]) >> 4;
     }
     if (n > 2) {
-	*q++ = DEC(p[1]) << 4 | DEC(p[2]) >> 2;
+	*q++ = DEC(buf[1]) << 4 | DEC(buf[2]) >> 2;
     }
     if ((q - output) < outputlen) {
 	*q = '\0';

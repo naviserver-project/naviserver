@@ -1,3 +1,10 @@
+2005-04-02  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclmisc.c:
+	* nsd/uuencode.c: modified uuencode/decode to support
+	  string buffers any size and be compatible with GNU uuencode,
+	  i.e. wrapping lines to be 60 chars.
+
 2005-03-28  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/nsd.h:

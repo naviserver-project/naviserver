@@ -357,8 +357,8 @@ NsTclSleepObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 int
 NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    char bufcoded[1 + (4 * 48) / 2];
     char *string;
+    char *result;
     int   nbytes;
 
     if (objc != 2) {
@@ -366,13 +366,9 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
         return TCL_ERROR;
     }
     string = Tcl_GetStringFromObj(objv[1], &nbytes);
-    if (nbytes > 48) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid string \"",
-                         string, "\": must be less than 48 characters", NULL);
-        return TCL_ERROR;
-    }
-    Ns_HtuuEncode((unsigned char *) string, (size_t)nbytes, bufcoded);
-    Tcl_SetResult(interp, bufcoded, TCL_VOLATILE);
+    result = ns_malloc(1 + (4 * nbytes) / 2);
+    Ns_HtuuEncode((unsigned char *) string, (size_t)nbytes, result);
+    Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
     return TCL_OK;
 }
 
