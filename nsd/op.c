@@ -222,7 +222,11 @@ Ns_ConnRunRequest(Ns_Conn *conn)
     	    	    	       conn->request->url, uid);
     if (reqPtr == NULL) {
     	Ns_MutexUnlock(&ulock);
-	return Ns_ConnReturnNotFound(conn);
+	if (STREQ(conn->request->method, "BAD")) {
+	    return Ns_ConnReturnBadRequest(conn, NULL);
+	} else {
+	   return Ns_ConnReturnNotFound(conn);
+	}
     }
     ++reqPtr->refcnt;
     Ns_MutexUnlock(&ulock);
