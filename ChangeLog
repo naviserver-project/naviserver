@@ -1,3 +1,10 @@
+2004-11-19  Dossy Shiobara <dossy@panoptic.com>
+
+	* configure (1.15.2.7), configure.in (1.13.2.5),
+	  include/Makefile.global.in (1.16.2.1), nsd/compress.c (1.1.2.2):
+	  Add --with-zlib configure option (on by default) and add ifdef's
+	  to nsd/compress.c.  Backport from HEAD.
+
 2004-11-17  Dossy Shiobara <dossy@panoptic.com>
 
 	* nsd/adprequest.c (1.16.2.1): Don't send Content-Length if
