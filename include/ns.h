@@ -1034,6 +1034,15 @@ NS_EXTERN void Ns_SetPrint(Ns_Set *set);
  */
 
 /*
+ * binder.c:
+ */
+
+NS_EXTERN SOCKET Ns_SockListenEx(char *address, int port, int backlog);
+NS_EXTERN SOCKET Ns_SockListenUdp(char *address, int port);
+NS_EXTERN SOCKET Ns_SockListenRaw(int proto);
+NS_EXTERN SOCKET Ns_SockListenUnix(char *path);
+
+/*
  * sock.c:
  */
 
@@ -1044,7 +1053,6 @@ NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa);
 NS_EXTERN SOCKET Ns_SockBind(struct sockaddr_in *psa);
 NS_EXTERN SOCKET Ns_SockListen(char *address, int port);
-NS_EXTERN SOCKET Ns_SockListenEx(char *address, int port, int backlog);
 NS_EXTERN SOCKET Ns_SockAccept(SOCKET sock, struct sockaddr *psa, int *lenPtr);
 
 NS_EXTERN SOCKET Ns_SockConnect(char *host, int port);

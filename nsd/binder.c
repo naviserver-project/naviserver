@@ -68,7 +68,7 @@ static Ns_Mutex lock;
  *----------------------------------------------------------------------
  */
 
-int
+SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
     int err, sock = -1;
@@ -113,7 +113,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
  *----------------------------------------------------------------------
  */
 
-int
+SOCKET
 Ns_SockBindUdp(struct sockaddr_in *saPtr)
 {
    int sock, err, n = 1;
@@ -145,7 +145,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
  *----------------------------------------------------------------------
  */
 
-int
+SOCKET
 Ns_SockRaw(int proto)
 {
    int sock, err;
@@ -176,7 +176,7 @@ Ns_SockRaw(int proto)
  *----------------------------------------------------------------------
  */
 
-int
+SOCKET
 Ns_SockListenUdp(char *address, int port)
 {
     int sock = -1;
@@ -215,7 +215,7 @@ Ns_SockListenUdp(char *address, int port)
  *----------------------------------------------------------------------
  */
 
-int
+SOCKET
 Ns_SockListenRaw(int proto)
 {
     int sock = -1;
@@ -255,7 +255,7 @@ Ns_SockListenRaw(int proto)
  *----------------------------------------------------------------------
  */
 
-static int
+SOCKET
 Ns_SockListenUnix(char *path)
 {
    int sock, err;

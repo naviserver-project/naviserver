@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://www.mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -107,9 +107,9 @@
  * constants
  */
 
-#define NSD_NAME             "AOLserver"
+#define NSD_NAME             "NaviServer"
 #define NSD_VERSION	     NS_PATCH_LEVEL
-#define NSD_LABEL            "aolserver4_0"
+#define NSD_LABEL            "naviserver4_0"
 #define NSD_TAG              "$Name$"
 #define NS_CONFIG_PARAMETERS "ns/parameters"
 #define NS_CONFIG_THREADS    "ns/threads"

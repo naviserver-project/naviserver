@@ -1,3 +1,9 @@
+2005-02-24  Vlad Seryakov <vlad@crystalballinc.com>
+
+	* include/ns.h nsd/nsd.h nsd/binder.c: changed server name 
+          from AOLserver to NaviServer in ns_info command.
+	  New ListenXXX family functions declared in the ns.h file. 
+
 2005-02-22  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* nsd/tclsched.c nsd/tclcmds.c doc/at.n: added ns_atstartup
