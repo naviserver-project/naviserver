@@ -69,11 +69,6 @@
  * Required constants and system headers.
  */
 
-#if defined(__APPLE__)
-#include <mach/cthreads.h>
-#define errno (cthread_errno())
-#endif 
-
 #ifdef WIN32
 
 #ifndef WIN32_LEAN_AND_MEAN
