@@ -751,7 +751,7 @@ LogTime(Cache *cachePtr, int gmtoff, long *usecPtr)
 	    bp[n++] = ']';
 	    bp[n] = '\0';
 	} else {
-#ifdef NO_TIMEZONE
+#ifdef HAVE_TM_GMTOFF
 	    gmtoffset = ptm->tm_gmtoff / 60;
 #else
 	    gmtoffset = -timezone / 60;
