@@ -216,8 +216,6 @@ NsInitServer(Ns_ServerInitProc *initProc, char *server)
     connBufPtr = ns_calloc(maxconns, sizeof(Conn));
     for (n = 0; n < maxconns - 1; ++n) {
 	connPtr = &connBufPtr[n];
-	Ns_DStringInit(&connPtr->response);
-	Ns_DStringInit(&connPtr->content);
 	connPtr->nextPtr = &connBufPtr[n+1];
     }
     connBufPtr[n].nextPtr = NULL;

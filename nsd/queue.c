@@ -443,8 +443,6 @@ NsConnThread(void *arg)
 	sprintf(connPtr->idstr, "cns%d", connPtr->id);
 	connPtr->headers = Ns_SetCreate(NULL);
 	connPtr->outputheaders = Ns_SetCreate(NULL);
-	Ns_DStringTrunc(&connPtr->response, 0);
-	Ns_DStringTrunc(&connPtr->content, 0);
 
 	ConnRun(connPtr);
 
