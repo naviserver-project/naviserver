@@ -90,10 +90,12 @@ static int FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 Ns_Cache *
 NsFastpathCache(char *server, int size)
 {
-    char buf[100];
+    Ns_DString ds;
 
-    sprintf(buf, "nsfp:%s", server);
-    return Ns_CacheCreateSz("ns:fastpath", FILE_KEYS, (size_t) size, FreeEntry);
+    Ns_DStringInit(&ds);
+    Ns_DStringVarAppend(&ds, "nsfp:", server, NULL);
+    return Ns_CacheCreateSz(ds.string, FILE_KEYS, (size_t) size, FreeEntry);
+    Ns_DStringFree(&ds);
 }
 
 
