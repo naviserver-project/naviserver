@@ -79,7 +79,9 @@ NsBlockSignals(int debug)
     sigaddset(&set, SIGPIPE);
     sigaddset(&set, SIGTERM);
     sigaddset(&set, NS_SIGHUP);
-    sigaddset(&set, NS_SIGTCL);
+    if (nsconf.tcl.nseval) {
+    	sigaddset(&set, NS_SIGTCL);
+    }
     if (!debugMode) {
         /* NB: Don't block SIGINT in debug mode for Solaris dbx. */
         sigaddset(&set, SIGINT);
@@ -149,7 +151,9 @@ NsHandleSignals(void)
     sigemptyset(&set);
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGHUP);
-    sigaddset(&set, NS_SIGTCL);
+    if (nsconf.tcl.nseval) {
+    	sigaddset(&set, NS_SIGTCL);
+    }
     if (!debugMode) {
         sigaddset(&set, SIGINT);
     }
@@ -173,7 +177,9 @@ NsHandleSignals(void)
 
     sigemptyset(&set);
     sigaddset(&set, SIGHUP);
-    sigaddset(&set, SIGTERM);
+    if (nsconf.tcl.nseval) {
+    	sigaddset(&set, NS_SIGTCL);
+    }
     if (!debugMode) {
         sigaddset(&set, SIGINT);
     }
