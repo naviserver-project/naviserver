@@ -756,7 +756,7 @@ NsTclConnSendFpCmd(ClientData arg, Tcl_Interp *interp, int argc,
 static int
 CheckId(Tcl_Interp *interp, char *id)
 {
-    if (*id != 'c') {
+    if (!NsIsIdConn(id)) {
 	Tcl_AppendResult(interp, "invalid connid: ", id, NULL);
 	return TCL_ERROR;
     }
