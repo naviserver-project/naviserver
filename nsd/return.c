@@ -946,7 +946,7 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, char *reason)
     Ns_DString ds;
     int        result;
 
-    if (ReturnRedirect(conn, 401, &result)) {
+    if (ReturnRedirect(conn, 400, &result)) {
 	return result;
     }
     Ns_DStringInit(&ds);
