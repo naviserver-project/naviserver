@@ -468,8 +468,7 @@ NsInitServer(char *server)
     Ns_CondInit(&servPtr->adp.pagecond);
     Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
     Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
-    Ns_MutexInit(&servPtr->adp.taglock);
-    Ns_MutexSetName2(&servPtr->adp.taglock, "nsadp:tags", server);
+    Ns_RWLockInit(&servPtr->adp.taglock);
 
     /*
      * Register ADP for any requested URLs.
