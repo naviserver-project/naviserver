@@ -437,7 +437,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
 	if (arrayPtr == NULL) {
 	    size = 0;
 	} else {
-	    size = arrayPtr->vars.numEntries;
+	    size = (opt == CSizeIdx) ? arrayPtr->vars.numEntries : 1;
 	    UnlockArray(arrayPtr);
 	}
 	if (opt == CExistsIdx) {
