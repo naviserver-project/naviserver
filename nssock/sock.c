@@ -307,15 +307,12 @@ Ns_ModuleInit(char *server, char *name)
     } 
     sdPtr->bufsize = 0; 
 #else 
- 
     if (!Ns_ConfigGetInt(path, "bufsize", &n) || n < 1) { 
         n = 16000; 
     } 
     sdPtr->bufsize = n; 
 #endif 
-
     Ns_MutexSetName2(&sdPtr->lock, DRIVER_NAME, name);
-    sdPtr->bufsize = n;
     sdPtr->refcnt = 1;
     sdPtr->lsock = INVALID_SOCKET;
     sdPtr->name = name;
