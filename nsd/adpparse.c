@@ -88,7 +88,7 @@ NsTclRegisterTagCmd(ClientData arg, Tcl_Interp *interp, int argc,
 }
 
 int
-NsTclRegisterAdpCmd(ClientData arg, Tcl_Interp *interp, int argc,
+NsTclRegisterAdpTagCmd(ClientData arg, Tcl_Interp *interp, int argc,
 		    char **argv)
 {
     return RegisterCmd(arg, interp, argc, argv, 0);

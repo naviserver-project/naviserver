@@ -64,11 +64,7 @@ NsAdpProc(void *arg, Ns_Conn *conn)
 
     Ns_DStringInit(&file);
     Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
-    if (access(file.string, R_OK) != 0) {
-	status = Ns_ConnReturnNotFound(conn);
-    } else {
-	status = Ns_AdpRequest(conn, file.string);
-    }
+    status = Ns_AdpRequest(conn, file.string);
     Ns_DStringFree(&file);
     return status;
 }
@@ -98,10 +94,18 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
     Tcl_DString	      rds, tds;
     NsInterp          *itPtr;
     int               status;
-    char             *type, *start, *argv[1];
+    char             *type, *start, *argv[2];
     Ns_Set           *setPtr;
     NsServer	     *servPtr;
     
+    /*
+     * Verify the file exists.
+     */
+
+    if (access(file, R_OK) != 0) {
+	return Ns_ConnReturnNotFound(conn);
+    }
+
     /*
      * Get the current connection's interp.
      */
@@ -152,8 +156,9 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
      */
 
     start = servPtr->adp.startpage ? servPtr->adp.startpage : file;
-    argv[0] = NULL;
-    if (NsAdpInclude(itPtr, start, 0, argv) != TCL_OK) {
+    argv[0] = file;
+    argv[1] = NULL;
+    if (NsAdpInclude(itPtr, start, 1, argv) != TCL_OK) {
 	Ns_TclLogError(interp);
     }
 
@@ -171,12 +176,6 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
     /*
      * Cleanup the per-thead ADP context.
      */
-
-    itPtr->adp.depth = 0;
-    itPtr->adp.argc = 0;
-    itPtr->adp.argv = NULL;
-    itPtr->adp.cwd = NULL;
-    itPtr->adp.file = NULL;
 
     itPtr->adp.outputPtr = NULL;
     itPtr->adp.responsePtr = NULL;
