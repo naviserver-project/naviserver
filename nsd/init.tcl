@@ -383,7 +383,7 @@ _ns_sourcefiles $shared $private
 # Source the module-specific Tcl libraries.
 #
 
-foreach mod {[ns_ictl getmodules]} {
+foreach mod [ns_ictl getmodules] {
     _ns_sourcemodule $mod
 }
 
