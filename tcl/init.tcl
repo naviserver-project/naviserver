@@ -34,8 +34,15 @@
 #
 # init.tcl --
 #
-#	The AOLserver looks for init.tcl before sourcing
-#	all other files in order.  This script does nothing
-#	at the moment.
+#	AOLserver looks for init.tcl before sourcing all other files
+#	in directory order.
 #
 
+#
+# Initialize errorCode and errorInfo like tclsh does.
+#
+global errorCode errorInfo 
+set errorCode "" 
+set errorInfo "" 
+ 
+ 
