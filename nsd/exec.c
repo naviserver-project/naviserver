@@ -371,26 +371,25 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
      */
      
     if (ns_pipe(errpipe) < 0) {
-	errnum = errno;
-	result = ERR_PIPE;
-    } else {
+	return ERR_PIPE;
+    }
+    pid = ns_fork();
+    if (pid < 0) {
+        close(errpipe[0]);
+        close(errpipe[1]);
+	return ERR_FORK;
+    }
   
     iov[0].iov_base = (caddr_t) &result;
     iov[1].iov_base = (caddr_t) &errnum;
     iov[0].iov_len = iov[1].iov_len = sizeof(int);
+    if (pid == 0) {
 
-    /*
-     * Fork the child and exec new program.  The child will write
-     * the result and errno to the pipe on error.
-     */
+	/*
+	 * Setup and exec the new process in the child, writing
+	 * error status to the pipe on any failure.
+	 */
 
-    pid = ns_fork();
-    if (pid < 0) {
-	errnum = errno;
-	result = ERR_FORK;
-        close(errpipe[0]);
-        close(errpipe[1]);
-    } else if (pid == 0) {
         close(errpipe[0]);
         if (dir != NULL && chdir(dir) != 0) {
 	    result = ERR_CHDIR;
@@ -439,7 +438,6 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
             }
             waitpid(pid, NULL, 0);
         }
-    }
     }
     return result;
 }
