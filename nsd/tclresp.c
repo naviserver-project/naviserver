@@ -744,9 +744,9 @@ CheckId(Tcl_Interp *interp, char *id)
 {
     if (!NsIsIdConn(id)) {
 	Tcl_AppendResult(interp, "invalid connid: ", id, NULL);
-	return TCL_ERROR;
+	return 0;
     }
-    return TCL_OK;
+    return 1;
 }
 
 
