@@ -403,6 +403,7 @@ NS_EXTERN void Ns_ThreadSelf(Ns_Thread *thrPtr);
 NS_EXTERN int Ns_CheckStack(void);
 NS_EXTERN char *Ns_ThreadGetName(void);
 NS_EXTERN char *Ns_ThreadGetParent(void);
+NS_EXTERN void  Ns_ThreadMemStats(FILE *fp);
 
 /*
  * time.c:
