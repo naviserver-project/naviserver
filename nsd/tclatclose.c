@@ -37,43 +37,17 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 
-static void RunAtClose(NsInterp *itPtr, int run);
-
-
-
 /*
- *----------------------------------------------------------------------
- *
- * Ns_TclRegisterDeferred --
- *
- *	Register a procedure to be called when the interp is cleaned up.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Procedure will be called later.
- *
- *----------------------------------------------------------------------
+ * The following structure maintains script to execute when the
+ * connection is closed.
  */
 
-void
-Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *procPtr,
-	void *arg)
-{
-    NsInterp   *itPtr = NsGetInterp(interp);
-    AtCleanup  *cleanupPtr, **nextPtrPtr;
+typedef struct AtClose {
+    struct AtClose *nextPtr;
+    char script[1];
+} AtClose;
 
-    cleanupPtr = ns_malloc(sizeof(AtCleanup));
-    cleanupPtr->procPtr = procPtr;
-    cleanupPtr->arg = arg;
-    cleanupPtr->nextPtr = NULL;
-    nextPtrPtr = &itPtr->firstAtCleanupPtr;
-    while (*nextPtrPtr != NULL) {
-	nextPtrPtr = &((*nextPtrPtr)->nextPtr);
-    }
-    *nextPtrPtr = cleanupPtr;
-}
+static void RunAtClose(NsInterp *itPtr, int run);
 
 
 /*
