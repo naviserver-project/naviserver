@@ -696,6 +696,8 @@ ConnRun(Conn *connPtr)
     connPtr->responseStatus = 0;
     connPtr->responseLength = 0;
     connPtr->recursionCount = 0;
+    connPtr->encoding = NULL;
+    connPtr->urlEncoding = NULL;
     Tcl_DStringInit(&connPtr->queued);
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
     sprintf(connPtr->idstr, "cns%d", connPtr->id);

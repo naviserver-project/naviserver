@@ -146,6 +146,7 @@ extern Tcl_ObjCmdProc
     NsTclSockSetBlockingObjCmd,
     NsTclSockSetNonBlockingObjCmd,
     NsTclSocketPairObjCmd,
+    NsTclStartContentObjCmd,
     NsTclStrftimeObjCmd,
     NsTclSymlinkObjCmd,
     NsTclTimeObjCmd,
@@ -178,9 +179,11 @@ extern Tcl_CmdProc
     NsTclCacheSizeCmd,
     NsTclCacheStatsCmd,
     NsTclCancelCmd,
+    NsTclCharsetsCmd,
     NsTclConfigCmd,
     NsTclConfigSectionCmd,
     NsTclConfigSectionsCmd,
+    NsTclEncodingForCharsetCmd,
     NsTclEnvCmd,
     NsTclEnvCmd,
     NsTclHrefsCmd,
@@ -388,6 +391,13 @@ static Cmd cmds[] = {
     {"ns_markfordelete", NULL, NsTclMarkForDeleteObjCmd},
 
     /*
+     * encoding.c
+     */
+
+    {"ns_charsets", NsTclCharsetsCmd, NULL},
+    {"ns_encodingforcharset", NsTclEncodingForCharsetCmd, NULL},
+
+    /*
      * Add more basic Tcl commands here.
      */
 
@@ -460,6 +470,7 @@ static Cmd servCmds[] = {
     {"ns_conncptofp", NULL, NsTclWriteContentObjCmd},
     {"ns_writecontent", NULL, NsTclWriteContentObjCmd},
     {"ns_conn", NULL, NsTclConnObjCmd},
+    {"ns_startcontent", NULL, NsTclStartContentObjCmd},
 
     /*
      * adpparse.c
