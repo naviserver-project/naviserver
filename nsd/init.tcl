@@ -724,7 +724,7 @@ if { $_ns_lazyprocdef == 1 } {
             }
         }
         # did we end up with a valid one for the current context?
-        if { [ uplevel 2 _ns_tclinfo proc $procName ] == "" } {
+        if { [ uplevel 2 _ns_tclinfo command $procName ] == "" } {
             set loaded 0
         } else {
             set loaded 1
