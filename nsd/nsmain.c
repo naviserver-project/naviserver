@@ -87,12 +87,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
     int            i, fd;
     char          *config;
-    char	  *procname;
-    char	  *server = NULL;
     Ns_Time 	   timeout;
     char	   cwd[PATH_MAX];
     Ns_DString	   addr;
-    Ns_Set	  *servers = NULL;
 #ifndef WIN32
     int		   uid = 0;
     int		   gid = 0;
@@ -105,7 +102,16 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     char	  *bindfile = NULL;
     struct rlimit  rl;
 #endif
+    /*
+     * The following variables are declared static so they
+     * preserve their values when Ns_Main is re-entered by
+     * the Win32 service control manager.
+     */
+
     static int	   mode = 0;
+    static Ns_Set *servers;
+    static char	  *procname;
+    static char	  *server;
 
     /*
      * When run as a Win32 service, Ns_Main will be re-entered

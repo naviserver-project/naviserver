@@ -267,7 +267,7 @@ NsInstallService(char *server)
 	Ns_DStringInit(&name);
 	Ns_DStringInit(&cmd);
 	Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
-	    " -S -s ", server, "-t \"", config, "\"", NULL);
+	    " -S -s ", server, " -t \"", config, "\"", NULL);
     	if (nsMemPools) {
 	    Ns_DStringAppend(&cmd, " -z");
 	}
