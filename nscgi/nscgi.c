@@ -1128,7 +1128,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
      * Queue the headers and copy remaining content up to end of file.
      */
      
-    Ns_ConnSetRequiredHeaders(conn, NULL, 0);
+    Ns_ConnSetRequiredHeaders(conn, NULL, -1);
     Ns_ConnQueueHeaders(conn, httpstatus);
 copy:
     do {
