@@ -129,7 +129,7 @@ Ns_ModuleInit(char *server, char *module)
     logPtr->fd = -1;
     logPtr->module = module;
     Ns_MutexInit(&logPtr->lock);
-    Ns_MutexSetName(&logPtr->lock, "nslog");
+    Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Ns_DStringInit(&logPtr->buffer);
 
     /*
