@@ -33,13 +33,17 @@
 MOD      =  nsperm.so
 OBJS     =  nsperm.o
 MODINST	 =  cpfiles
-MODDIR   =  nsperm
 
 include ../include/Makefile.module
 
+moddir	 = nsperm
+datdir	 = $(INSTSRVMOD)/$(moddir)
+tcldir	 = $(INSTTCL)/$(moddir)
+
 cpfiles:
-	$(MKDIR) $(INSTTCL)/$(MODDIR)
-	$(MKDIR) $(INSTSRVMOD)/$(MODDIR)
-	test -d $(INSTSRVMOD)/$(MODDIR)/passwd \
-		|| $(CP) passwd group hosts.allow hosts.deny perms $(INSTSRVMOD)/$(MODDIR)
-	$(CP) init.tcl compat.tcl $(INSTTCL)/$(MODDIR)
+	$(MKDIR) $(tcldir)
+	$(CP) init.tcl compat.tcl $(tcldir)/
+	$(MKDIR) $(datdir)
+	for f in passwd group hosts.allow hosts.deny perms; do \
+		test -f $(datdir)/$$f || $(CP) $$f $(datdir)/; \
+	done

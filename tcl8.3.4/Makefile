@@ -32,19 +32,25 @@
 
 include ../include/Makefile.global
 
-MAKEFILE	=  $(NSTCL_DIR)/Makefile
+CONFIG		=  --enable-threads --prefix=$(AOLSERVER)
+ifeq ($(NSGCC),1)
+    CONFIG	+= --enable-gcc
+endif
+ifeq (1,$(NSDEBUG))
+    CONFIG	+= --enable-symbols
+endif
 
-all: $(MAKEFILE)
-	(cd $(NSTCL_DIR); $(MAKE))
+all: unix/Makefile
+	(cd unix; $(MAKE))
 
-$(MAKEFILE): $(NSTCL_DIR)/Makefile.in $(NSTCL_DIR)/configure
-	(cd $(NSTCL_DIR); ./configure $(NSTCL_CFG))
+unix/Makefile: unix/Makefile.in unix/configure
+	(cd unix; ./configure $(CONFIG))
 
 clean:
-	(cd $(NSTCL_DIR); $(MAKE) -f Makefile.in clean)
+	(cd unix; $(MAKE) -f Makefile.in clean)
 
 distclean:
-	(cd $(NSTCL_DIR); $(MAKE) -f Makefile.in distclean)
+	(cd unix; $(MAKE) -f Makefile.in distclean)
 
 install: all
-	(cd $(NSTCL_DIR); $(MAKE) install)
+	(cd unix; $(MAKE) install)
