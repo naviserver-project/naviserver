@@ -112,6 +112,13 @@ be easy.  To compile and install AOLserver:
 		files) will be install or updated within this
 		directory.
 
+
+        To make AOLserver with purify, set the variable $PURIFY to 
+        your purify executable along with any options you desire, e.g.,
+
+        make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
+ 
+
 3d.     Create and edit a config file, nsd.tcl by convention.  A
 	sample is provided to get started:
 
