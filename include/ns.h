@@ -278,6 +278,8 @@ typedef int   (Ns_RequestAuthorizeProc) (char *server, char *method,
 			char *url, char *user, char *pass, char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
 typedef int   (Ns_UserAuthorizeProc) (char *user, char *passwd);
+typedef int   (Ns_LogFlushProc) (char *msg, size_t len);
+typedef int   (Ns_LogProc) (Ns_DString *dsPtr, Ns_LogSeverity severity, char *fmt, va_list ap);
 
 /*
  * The field of a key-value data structure.
@@ -790,6 +792,8 @@ NS_EXTERN char *Ns_LogTime2(char *timeBuf, int gmt);
 NS_EXTERN int   Ns_RollFile(char *file, int max);
 NS_EXTERN int   Ns_PurgeFiles(char *file, int max);
 NS_EXTERN int   Ns_RollFileByDate(char *file, int max);
+NS_EXTERN void  Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr);
+NS_EXTERN void  Ns_SetNsLogProc(Ns_LogProc *procPtr);
 
 /*
  * nsmain.c:
