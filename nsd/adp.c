@@ -112,7 +112,6 @@ static void SetMimeType(AdpData *adPtr, char *mimeType);
  * Static global variables
  */
 
-static Ns_Tls            adKey;
 static Ns_AdpParserProc *defParserProc = NULL;
 static Tcl_HashTable     extensionsTable;
 static Tcl_HashTable     parsersTable;
@@ -182,7 +181,6 @@ NsAdpInit(void)
      * Initialize the ADP core.
      */
 
-    Ns_TlsAlloc(&adKey, DelAdpData);
     if (nsconf.adp.cache && !nsconf.adp.threadcache) {
         sharedCachePtr = Ns_CacheCreateSz("adp", CACHE_KEYS,
 	    	    	    	    	  nsconf.adp.cachesize, ns_free);
@@ -312,15 +310,22 @@ AdpData *
 NsAdpGetData(void)
 {
     AdpData *adPtr;
+    static Ns_Tls tls;
 
-    adPtr = (AdpData *) Ns_TlsGet(&adKey);
+    if (tls == NULL) {
+	Ns_MasterLock();
+	if (tls == NULL) {
+	    Ns_TlsAlloc(&tls, DelAdpData);
+	}
+	Ns_MasterUnlock();
+    }
+    adPtr = (AdpData *) Ns_TlsGet(&tls);
     if (adPtr == NULL) {
 	adPtr = ns_calloc(1, sizeof(AdpData));
         adPtr->mimeType = NULL;
 	Ns_DStringInit(&adPtr->output);
-	Ns_TlsSet(&adKey, adPtr);
+	Ns_TlsSet(&tls, adPtr);
     }
-
     return adPtr;
 }
 
