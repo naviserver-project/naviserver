@@ -260,7 +260,7 @@ NsTclGetUrlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     }
     Ns_DStringInit(&ds);
     if (*argv[1] == '/') {
-        if (Ns_FetchPage(&ds, argv[1], nsServer) != NS_OK) {
+        if (Ns_FetchPage(&ds, argv[1], Ns_TclInterpServer(interp)) != NS_OK) {
             Tcl_AppendResult(interp, "Could not get contents of URL \"",
                              argv[1], "\"", NULL);
             status = TCL_ERROR;
