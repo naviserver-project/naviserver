@@ -277,7 +277,7 @@ GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
 	&& (bs = Ns_StrCaseFind(type, "boundary=")) != NULL) {
 	bs += 9;
 	be = bs;
-	while (*be && !isspace(*be)) {
+	while (*be && !isspace(UCHAR(*be))) {
 	    ++be;
 	}
 	Tcl_DStringAppend(dsPtr, "--", 2);
@@ -294,7 +294,7 @@ AttEnd(char **sPtr, char **ePtr)
 
     s = *sPtr;
     e = s;
-    while (*e && !isspace(*e)) {
+    while (*e && !isspace(UCHAR(*e))) {
 	++e;
     }
     if (e > s && e[-1] == ';') {
