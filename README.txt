@@ -28,15 +28,10 @@ AOLserver Documentation
 -----------------------
 
   README.txt          -- this file
-
   doc/install.txt     -- build and installation instructions
-
   ChangeLog           -- Change log
-
   doc/config.txt      -- nsd.tcl reference
-
   doc/nsssl2.txt      -- nsssl2 module documentation
-
   doc/admin/          -- AOLserver online guidebooks
   doc/cdev/
   doc/driver/
