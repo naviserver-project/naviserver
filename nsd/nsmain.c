@@ -1316,7 +1316,7 @@ UsageError(char *msg)
 #else
 	"  -d           Ignore SIGINT for debugging on some platforms.\n"
 	""
-	"  -r  <path>   chroot(path) after reading config file.\n"
+	"  -r <path>    chroot(path) after reading config file.\n"
 	"  -u <user>    run as user/uid (required).\n"
 	"  -g <group>   run as group/gid (optional).\n"
 #endif
