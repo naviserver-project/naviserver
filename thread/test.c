@@ -399,9 +399,9 @@ int main(int argc, char *argv[])
     Ns_Thread       threads[10];
     Ns_Thread       self, dumper;
     extern int      nsMemPools;
+    void *arg;
 #ifndef USE_SPROC
     pthread_t tids[10];
-    void *arg;
 #endif
 
     nsThreadMutexMeter = 1;
