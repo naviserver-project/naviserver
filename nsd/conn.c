@@ -41,6 +41,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
 static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv,
 		      int *offPtr, int *lenPtr);
+static int MakeConnChan(Tcl_Interp *interp, Ns_Conn *conn);
 
 
 /*
@@ -840,7 +841,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	 "host", "id", "isconnected", "location", "method",
 	 "outputheaders", "peeraddr", "peerport", "port", "protocol",
 	 "query", "request", "server", "sock", "start", "status",
-	 "url", "urlc", "urlencoding", "urlv", "version", "write_encoded", NULL
+	 "url", "urlc", "urlencoding", "urlv", "version", "write_encoded", 
+	 "channel", NULL
     };
     enum ISubCmdIdx {
 	 CAuthPasswordIdx, CAuthUserIdx, CCloseIdx, CContentIdx,
@@ -850,7 +852,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	 CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
 	 CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
 	 CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
-	 CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx
+	 CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
+	 CChannelIdx
     } opt;
 
     if (objc < 2) {
@@ -1159,7 +1162,12 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 		return TCL_ERROR;
 	    }
 	    break;
-	    
+
+	case CChannelIdx:
+	    if (MakeConnChan(interp, conn) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
     }
 
     return TCL_OK;
@@ -1380,5 +1388,61 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr, int *
     }
     *offPtr = off;
     *lenPtr = len;
+    return TCL_OK;
+}
+
+/*----------------------------------------------------------------------------
+ * MakeConnChan --
+ *
+ *      Wraps a Tcl channel arround the current connection socket
+ *      and returns the channel handle to the caller.
+ *  
+ * Result:
+ *      A standard Tcl result.
+ *
+ * Side Effects:
+ *      New channel registered in the current interpreter. The channel
+ *      is set to blocking mode.
+ *
+ *----------------------------------------------------------------------------
+ */
+static int
+MakeConnChan(Tcl_Interp *interp, Ns_Conn *conn)
+{
+    int sock;
+    Tcl_Channel chan;
+    
+    /*
+     * Flush the connection, so we can safely make a dup
+     * of the connection socket. Without this, we may 
+     * dup some unwanted data in socket buffers which may
+     * confuse the receiving side.
+     */
+
+    Ns_WriteConn(conn, NULL, 0);
+
+    /*
+     * Wrap the connection in channel and register it.
+     * Note we must duplicate the connection socket 
+     * since the Tcl channel driver will try to close
+     * it when we tear down the channel.
+     */
+
+    sock = ns_sockdup(Ns_ConnSock(conn));
+    if (sock == INVALID_SOCKET) {
+        Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
+        return TCL_ERROR;
+    }
+
+    chan = Tcl_MakeTcpClientChannel((ClientData)sock);
+    if (chan == NULL) {
+        Tcl_SetResult(interp, "can't wrap connection socket", TCL_STATIC);
+        return TCL_ERROR;
+    }
+
+    Ns_SockSetBlocking(sock);
+    Tcl_RegisterChannel(interp, chan);
+    Tcl_SetResult(interp, Tcl_GetChannelName(chan), TCL_STATIC);
+
     return TCL_OK;
 }

@@ -1,5 +1,7 @@
 2005-03-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
+	* nsd/conn.c: Added [ns_conn channel] (RFE #1156141)
+
 	* nsd/nsd.h
 	* nsd/unix.h
 	* nsd/nsmain.h: Added watchdog implementation (RFE #1156875)
