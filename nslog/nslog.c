@@ -366,7 +366,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if (logPtr->flags & LOG_REQTIME) {
 
-        sprintf(buf, " %d.%ld", (int)diff.sec, diff.usec);
+        sprintf(buf, " %d.%06ld", (int)diff.sec, diff.usec);
         Ns_DStringAppend(&ds, buf);
     }
 
