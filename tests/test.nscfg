@@ -1,0 +1,19 @@
+#
+# ...
+#
+
+set servername test
+
+ns_section "ns/parameters"
+ns_param   home            ./tests
+
+ns_section "ns/servers"
+ns_param   $servername     "Test Server"
+
+ns_section "ns/server/${servername}"
+ns_param   pageroot        servers/server1/pages
+ns_param   enabletclpages  true
+
+ns_section "ns/server/${servername}/tcl"
+ns_param   initfile        ../nsd/init.tcl
+ns_param   library         ../tcl

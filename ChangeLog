@@ -1,3 +1,26 @@
+2005-04-02  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/driver.c:
+	* nsd/tclinit.c:
+	* nsd/nsmain.c: Add -c command line option which causes the server
+	to start in command mode, reading commands from stdin and
+	executing them like a tclsh.
+
+	* Makefile:
+	* tests/test.nscfg:
+	* tests/all.tcl: Add new Makefile targets test, runtest and gdb
+	which start the server in command mode.  Modify the test runner
+	and add a test server config file.
+
+	* tests/http.test:
+	* tests/ns_addrbyhost.test:
+	* tests/ns_adp_compress.test:
+	* tests/ns_hostbyaddr.test:
+	* tests/ns_hrefs.test:
+	* tests/ns_parseargs.test: Update tests to use tlctest syntax and
+	features.
+
 2005-04-02  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclcmds.c: added synonyms for ns_uuencode/ns_uudecode procs

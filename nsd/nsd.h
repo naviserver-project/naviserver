@@ -807,6 +807,8 @@ extern void NsFreeRequest(Request *reqPtr);
 extern NsServer *NsGetServer(char *server);
 extern NsServer *NsGetInitServer(void);
 extern NsInterp *NsGetInterp(Tcl_Interp *interp);
+extern int NsInitInterp(Tcl_Interp *interp, NsServer *servPtr,
+                        NsInterp **itPtrPtr);
 
 extern Ns_OpProc NsFastGet;
 extern Ns_OpProc NsAdpProc;

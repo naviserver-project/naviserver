@@ -30,30 +30,72 @@
 # $Header$
 #
 
-source harness.tcl
-load libnsd.so
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-test ns_hrefs-1.1 {ns_hrefs} {
-    assertEquals "" [ns_hrefs {}]
-    assertEquals "" [ns_hrefs {<a>}]
-    assertEquals "{}" [ns_hrefs {<a href="">}]
-    assertEquals "{}" [ns_hrefs {<a href=''>}]
 
-    assertEquals "simple" [ns_hrefs {<a href="simple">}]
-    assertEquals "href=tricky" [ns_hrefs {<a href="href=tricky">}]
-    assertEquals "first" [ns_hrefs {<a href="first" href="second">}]
-    assertEquals "naked" [ns_hrefs {<a href=naked dummy>}]
 
-    assertEquals "" [ns_hrefs {a href="bogus">}]
-    assertEquals "" [ns_hrefs {<a href="bogus"}]
-    assertEquals "" [ns_hrefs {<a href "bogus">}]
-    assertEquals "" [ns_hrefs {<a "href="bogus"">}]
+test ns_hrefs-1.1 {syntax} -body {
+    ns_hrefs
+} -returnCodes error -result {wrong # args: should be "ns_hrefs html"}
 
-    # [ 995078 ] ns_hrefs only checks first attribute in <a>
-    assertEquals "hard" [ns_hrefs {<a dummy href="hard">}]
-} {}
+test ns_hrefs-1.2 {syntax} -body {
+    ns_hrefs {}
+} -result {}
+
+
+
+test ns_hrefs-2.1 {parse with result} -body {
+    ns_hrefs {<a>}
+} -result {}
+
+test ns_hrefs-2.2 {parse with result} -body {
+    ns_hrefs {<a href="">}
+} -result {{}}
+
+test ns_hrefs-2.3 {parse with result} -body {
+    ns_hrefs {<a href=''>}
+} -result {{}}
+
+test ns_hrefs-2.4 {parse with result} -body {
+    ns_hrefs {<a href="simple">}
+} -result {simple}
+
+test ns_hrefs-2.5 {parse with result} -body {
+    ns_hrefs {<a href="href=tricky">}
+} -result {href=tricky}
+
+test ns_hrefs-2.6 {parse with result} -body {
+    ns_hrefs {<a href="first" href="second">}
+} -result {first}
+
+test ns_hrefs-2.7 {parse with result} -body {
+    ns_hrefs {<a href=naked dummy>}
+} -result {naked}
+
+test ns_hrefs-2.8 {parse with result} -body {
+    ns_hrefs {<a first href="second">}
+} -result {second}
+
+
+
+test ns_hrefs-3.1 {parse without result} -body {
+    ns_hrefs {a href="bogus">}
+} -result {}
+
+test ns_hrefs-3.2 {parse without result} -body {
+    ns_hrefs {<a href="bogus"}
+} -result {}
+
+test ns_hrefs-3.3 {parse without result} -body {
+    ns_hrefs {<a href "bogus">}
+} -result {}
+
+test ns_hrefs-3.4 {parse without result} -body {
+    ns_hrefs {a "href="bogus"">}
+} -result {}
+
+
 
 cleanupTests

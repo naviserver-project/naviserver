@@ -69,7 +69,6 @@ typedef struct Defer {
 
 static Tcl_InterpDeleteProc FreeData;
 static Ns_TlsCleanup DeleteInterps;
-static int InitInterp(Tcl_Interp *interp, NsServer *servPtr, NsInterp **itPtrPtr);
 static int UpdateInterp(NsInterp *itPtr);
 static Tcl_HashEntry *GetHashEntry(NsServer *servPtr);
 static int RegisterTrace(NsServer *servPtr, int idx,
@@ -291,7 +290,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
 int
 Ns_TclInit(Tcl_Interp *interp)
 {
-    return InitInterp(interp, NULL, NULL);
+    return NsInitInterp(interp, NULL, NULL);
 }
 
 
@@ -417,7 +416,7 @@ Ns_TclAllocateInterp(char *server)
     if (itPtr != NULL) {
 	Tcl_SetHashValue(hPtr, itPtr->nextPtr);
     } else {
-	(void) InitInterp(Tcl_CreateInterp(), servPtr, &itPtr);
+	(void) NsInitInterp(Tcl_CreateInterp(), servPtr, &itPtr);
     }
     interp = itPtr->interp;
     itPtr->nextPtr = NULL;
@@ -1134,9 +1133,9 @@ TclInitScriptCB(Tcl_Interp *interp, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * InitInterp --
+ * NsInitInterp --
  *
- *      Initialize an interp with standard Tcl and AOLserver commands.
+ *      Initialize an interp with standard Tcl and server commands.
  *	If servPtr is not NULL, virtual server commands will be added
  *	as well.
  *
@@ -1149,8 +1148,8 @@ TclInitScriptCB(Tcl_Interp *interp, void *arg)
  *----------------------------------------------------------------------
  */
 
-static int
-InitInterp(Tcl_Interp *interp, NsServer *servPtr, NsInterp **itPtrPtr)
+int
+NsInitInterp(Tcl_Interp *interp, NsServer *servPtr, NsInterp **itPtrPtr)
 {
     static volatile int initialized = 0;
     NsInterp *itPtr;

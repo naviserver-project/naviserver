@@ -65,7 +65,15 @@ install-doc:
 	cd doc && /bin/sh ./install-doc $(NAVISERVER)
 
 test: all
-	cd tests/new && ./all.tcl
+	LD_LIBRARY_PATH="./nsd:./nsthread" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)
+
+runtest: all
+	LD_LIBRARY_PATH="./nsd:./nsthread" ./nsd/nsd -c -t tests/test.nscfg
+
+gdb: all
+	@echo "set args -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)" > gdb.run
+	LD_LIBRARY_PATH="./nsd:./nsthread" gdb -x gdb.run ./nsd/nsd
+	rm gdb.run
 
 clean:
 	@for i in $(dirs); do \

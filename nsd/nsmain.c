@@ -36,15 +36,33 @@
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
-#ifdef _WIN32
-#define DEVNULL "nul:"
+
+#ifndef _WIN32
+# ifdef LOG_DEBUG
+#  undef LOG_DEBUG /* Because this is used by the syslog facility as well */
+# endif
+# include <syslog.h>
+# include <signal.h>
+# include <stdarg.h>
+# include <unistd.h>
+# define DEVNULL "/dev/null"
 #else
-#define DEVNULL "/dev/null"
+# define DEVNULL "nul:"
 #endif
+
+/*
+ * The following values define the restart behaviour for watchdog mode.
+ */
+
+#define MAX_RESTART_SECONDS 64 /* Max time in sec to wait between restarts */
+#define MIN_WORK_SECONDS   128 /* After being up for # secs, reset timers */
+#define MAX_NUM_RESTARTS   256 /* Quit after somany unsuccessful restarts */
 
 /*
  * Local functions defined in this file.
  */
+
+static Tcl_AppInitProc CommandInit;
 
 static int  StartWatchedServer(void);
 static void SysLog(int priority, char *fmt, ...);
@@ -61,25 +79,12 @@ extern void NsdInit();
 #endif
 
 /*
- * Setup timer/counter values for graceously waiting before trying 
- * to restart crippled server. This should be configurable from the
- * server config file (ns/watchdog section or alike).
+ * Local variables defined in this file.
  */
 
-#define MAX_RESTART_SECONDS 64 /* Max time in sec to wait between restarts */
-#define MIN_WORK_SECONDS   128 /* After being up for # secs, reset timers */
-#define MAX_NUM_RESTARTS   256 /* Quit after somany unsuccessful restarts */
-
-#ifndef _WIN32
-# ifdef LOG_DEBUG
-#  undef LOG_DEBUG /* Because this is used by the syslog facility as well */
-# endif
-# include <syslog.h>
-# include <signal.h>
-# include <stdarg.h>
-# include <unistd.h>
+static char *cmdServer;      /* Command mode interp server */
 static int watchdogExit = 0; /* Watchdog loop toggle */
-#endif /* _WIN32 */
+
 
 
 /*
@@ -103,7 +108,8 @@ static int watchdogExit = 0; /* Watchdog loop toggle */
 int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
-    int  i, fd, sig;
+    int  i, fd, sig, cmdargc;
+    char **cmdargv;
     char *config;
     Ns_Time timeout;
     char buf[PATH_MAX];
@@ -170,19 +176,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     nsconf.argv0 = argv[0];
 
-    /*
-     * NaviServer requires file descriptor 0 be open on /dev/null to
-     * ensure the server never blocks reading stdin.
-     */
-     
-    fd = open(DEVNULL, O_RDONLY);
-    if (fd > 0) {
-        dup2(fd, 0);
-        close(fd);
-    }
-
     /*     
-     * Also, file descriptors 1 and 2 may not be open if the server
+     * File descriptors 1 and 2 may not be open if the server
      * is starting from /etc/init.  If so, open them on /dev/null
      * as well because the server will assume they're open during
      * initialization.  In particular, the log file will be duped
@@ -203,11 +198,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     opterr = 0;
-    while ((i = getopt(argc, argv, "hpzifwVs:t:IRSkKdr:u:g:b:B:")) != -1) {
+    while ((i = getopt(argc, argv, "+chpzifwVs:t:IRSkKdr:u:g:b:B:")) != -1) {
         switch (i) {
         case 'h':
             UsageError(NULL);
             break;
+        case 'c':
         case 'f':
         case 'i':
         case 'w':
@@ -219,9 +215,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #endif
             if (mode != 0) {
 #ifdef _WIN32
-                UsageError("only one of -i, -f, -V, -I, -R, or -S may be specified");
+                UsageError("only one of -c, -i, -f, -V, -I, -R, or -S may be specified");
 #else
-                UsageError("only one of -i, -f, -w, or -V may be specified");
+                UsageError("only one of -c, -i, -f, -w, or -V may be specified");
 #endif
             }
             mode = i;
@@ -283,7 +279,19 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     } else if (nsconf.config == NULL) {
         UsageError("required -t <config> option not specified");
     }
-    
+    if (mode != 'c') {
+        /*
+         * The server requires file descriptor 0 be open on /dev/null to
+         * ensure the server never blocks reading stdin.
+         */
+
+        fd = open(DEVNULL, O_RDONLY);
+        if (fd > 0) {
+            dup2(fd, 0);
+            close(fd);
+        }
+    }
+
     /*
      * Find the absolute config pathname and read the config data
      * before a possible chroot().
@@ -531,7 +539,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
         server = Ns_SetKey(servers, i);
     }
-    
+
     /*
      * Set the procname used for the pid file.
      */
@@ -543,10 +551,10 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
     
     nsconf.home = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "home");
-    if (nsconf.home == NULL) {
+    if (mode != 'c' && nsconf.home == NULL) {
         Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
     }
-    if (chdir(nsconf.home) != 0) {
+    if (nsconf.home != NULL && chdir(nsconf.home) != 0) {
         Ns_Fatal("nsmain: chdir(%s) failed: '%s'", nsconf.home, strerror(errno));
     }
     
@@ -609,7 +617,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * user id have been set.
      */
      
-    if (mode != 'f') {
+    if (mode != 'c' && mode != 'f') {
         NsLogOpen();
     }
 
@@ -645,7 +653,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Create the pid file used.
      */
 
-    NsCreatePidFile(procname);
+    if (mode != 'c') {
+        NsCreatePidFile(procname);
+    }
 
     /*
      * Initialize the virtual servers.
@@ -659,6 +669,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             NsInitServer(server, initProc);
         }
     }
+    cmdServer = server;
     
     /*
      * Load non-server modules.
@@ -698,6 +709,22 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #ifndef _WIN32
     NsClosePreBound();
 #endif
+
+    if (mode == 'c') {
+        /*
+         * Initialize Tcl and start interpreting commands.
+         * This function never returns, so no clean shutdown.
+         */
+
+        NsRestoreSignals();
+        cmdargv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
+        cmdargc = 0;
+        cmdargv[cmdargc++] = argv[0];
+        for (i = optind; i < argc; i++) {
+            cmdargv[cmdargc++] = argv[i];
+        }
+        Tcl_Main(cmdargc, cmdargv, CommandInit);
+    }
 
     /*
      * Once the drivers listen thread is started, this thread will just
@@ -887,6 +914,31 @@ NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
 /*
  *----------------------------------------------------------------------
  *
+ * CommandInit --
+ *
+ *      Initialize the interp with server commands.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CommandInit(Tcl_Interp *interp)
+{
+    NsServer *servPtr = NsGetServer(cmdServer);
+
+    return NsInitInterp(interp, servPtr, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * StatusMsg --
  *
  *  Print a status message to the log file.  Initial messages log
@@ -957,7 +1009,7 @@ UsageError(char *msg)
     fprintf(stderr, "\nError: %s\n", msg);
     }
     fprintf(stderr, "\n"
-        "Usage: %s [-h|V] [-i|f] "
+        "Usage: %s [-h|V] [-c|-i|f] "
 #ifdef _WIN32
         "[-I|R] "
 #else
@@ -967,6 +1019,7 @@ UsageError(char *msg)
         "\n"
         "  -h  help (this message)\n"
         "  -V  version and release information\n"
+        "  -c  command mode\n"
         "  -i  inittab mode\n"
         "  -f  foreground mode\n"
         "  -w  watchdog mode: restart a failed server\n"

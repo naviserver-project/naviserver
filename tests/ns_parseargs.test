@@ -3,8 +3,6 @@
 #
 
 
-load ../nsd/libnsd.so
-
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
@@ -45,6 +43,20 @@ test ns_parseargs-2.2 {object type conversion / display} -body {
     ns_parseargs a a
 } -cleanup {
     unset -nocomplain a
+} -result {}
+
+test ns_parseargs-2.3 {object type conversion / display} -constraints {
+    knownBug
+} -body {
+    set tid [ns_thread begin {
+        proc x {} {
+            ns_parseargs {-a} {-a A}
+        }
+        x
+    }]
+    ns_thread wait $tid
+} -cleanup {
+    unset -nocomplain -- tid
 } -result {}
 
 

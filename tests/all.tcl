@@ -1,7 +1,3 @@
-#!/bin/sh
-# the next line restarts using tclsh \
-exec tclsh "$0" "$@"
-
 #
 # The contents of this file are subject to the AOLserver Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -34,22 +30,20 @@ exec tclsh "$0" "$@"
 # $Header$
 #
 
+#
+# all.tcl --
+#
+#       This file contains a top-level script to run all of the tests.
+#       Execute it by invoking "source all.tcl" when running nsd in
+#       command mode in this directory.
+#
+
 package require Tcl 8.4
-
-if {![info exists ::tcl_platform(threaded)] || !$::tcl_platform(threaded)} {
-    error "tests must run from a threaded tclsh"
-}
-
 package require tcltest 2.2
+namespace import tcltest::*
+eval configure $argv -singleproc true -testdir [file dirname [info script]]
 
-set LD_LIBRARY_PATH [list]
-if {[info exists env(LD_LIBRARY_PATH)]} {
-    lappend LD_LIBRARY_PATH $env(LD_LIBRARY_PATH)
-}
-lappend LD_LIBRARY_PATH ../../nsd ../../nsthread
-set env(LD_LIBRARY_PATH) [join $LD_LIBRARY_PATH :]
+# Output on stderr confuses tcltest
+ns_logctl hold
 
-tcltest::configure -testdir [file dirname [info script]]
-eval tcltest::configure $argv
-
-tcltest::runAllTests
+runAllTests

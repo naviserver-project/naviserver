@@ -499,11 +499,13 @@ NsStartDrivers(void)
      * Create the socket thread.
      */
 
-    if (ns_sockpair(trigPipe) != 0) {
-	Ns_Fatal("driver: ns_sockpair() failed: %s",
-	    ns_sockstrerror(ns_sockerrno));
+    if (firstDrvPtr != NULL) {
+        if (ns_sockpair(trigPipe) != 0) {
+            Ns_Fatal("driver: ns_sockpair() failed: %s",
+                     ns_sockstrerror(ns_sockerrno));
+        }
+        Ns_ThreadCreate(DriverThread, NULL, 0, &driverThread);
     }
-    Ns_ThreadCreate(DriverThread, NULL, 0, &driverThread);
 }
 
 

@@ -31,20 +31,14 @@
 #
 
 source harness.tcl
-load libnsd.so
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 if {[info exists ::env(AOLSERVER_HTTP_TEST)]} {
     testConstraint serverTests true
-} else {
-    puts "
-    To enable HTTP compliance tests, set environment variable
-    AOLSERVER_HTTP_TEST=hostname:port of the server running
-    http-test-config.tcl.
-"
 }
+
 
 if {[testConstraint serverTests]} {
     foreach {host port} [split $::env(AOLSERVER_HTTP_TEST) :] break
