@@ -2490,10 +2490,10 @@ LocalProxy(NsExtConn * nsConn)
     Ns_CloseOnExec(out[0]);
     Ns_CloseOnExec(out[1]);
 
-    if (ns_sockpipe(in) < 0) {
+    if (ns_pipe(in) < 0) {
         Ns_Log(Error, "nsext: failed to create input socket pipes");
     } else {
-        if (ns_sockpipe(out) < 0) {
+        if (ns_pipe(out) < 0) {
 	    close(in[0]);
 	    close(in[1]);
             Ns_Log(Error, "nsext: failed to create output socket pipes");
