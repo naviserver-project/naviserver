@@ -37,6 +37,26 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 
+/*
+ * The following stuctures maintain connection filters
+ * and traces.       
+ */
+
+typedef struct Filter {
+    struct Filter *nextPtr;
+    Ns_FilterProc *proc;
+    char          *method;
+    char          *url;
+    int            when;
+    void          *arg;
+} Filter;
+
+typedef struct Trace {
+    struct Trace    *nextPtr;
+    Ns_TraceProc    *proc;
+    void            *arg;
+} Trace;
+
 static Trace *NewTrace(Ns_TraceProc *proc, void *arg);
 static void RunTraces(Ns_Conn *conn, Trace *firstPtr);
 
