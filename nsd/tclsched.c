@@ -60,56 +60,6 @@ static int AtCmd(AtProc *procPtr, Tcl_Interp *interp, int argc, char **argv);
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TclThread --
- *
- *	Run a Tcl script in a new thread. 
- *
- * Results:
- *	NS_OK. 
- *
- * Side effects:
- *	None. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
-{
-    Callback *cbPtr;
-
-    cbPtr = NewCallback(interp, script, NULL);
-    Ns_ThreadCreate(NsTclThread, cbPtr, 0, thrPtr);
-    return NS_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_TclDetachedThread --
- *
- *	Run a Tcl script in a detached thread. 
- *
- * Results:
- *	NS_OK. 
- *
- * Side effects:
- *	None. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_TclDetachedThread(Tcl_Interp *interp, char *script)
-{
-    return Ns_TclThread(interp, script, NULL);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclAt --
  *
  *	Implements ns_atsignal, ns_atshutdown, and ns_atexit commands.
@@ -671,7 +621,7 @@ FreeSched(void *arg, int id)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclSchedProc, NsTclSignalProc, NsTclCallback, NsTclThread --
+ * NsTclSchedProc, NsTclSignalProc, NsTclCallback --
  *
  *	External wrapper for various Tcl callbacks.
  *
@@ -703,11 +653,22 @@ NsTclCallback(void *arg)
     FreeCallback(arg);
 }
 
-void
-NsTclThread(void *arg)
-{
-    NsTclCallback(arg);
-}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclArgProc --
+ *
+ *	Proc info routine to copy Tcl callback script.
+ *
+ * Results:
+ *	None. 
+ *
+ * Side effects:
+ *	Will copy script to given dstring.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 NsTclArgProc(Tcl_DString *dsPtr, void *arg)
