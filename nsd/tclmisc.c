@@ -1743,26 +1743,26 @@ AppendThread(Ns_ThreadInfo *iPtr, void *arg)
 
 
 static void
-AppendPool(Ns_ThreadInfo *iPtr, void *arg)
+AppendPool(Ns_ThreadInfo *tiPtr, void *arg)
 {
-    Ns_PoolInfo *infoPtr;
+    Ns_PoolInfo *piPtr;
     Tcl_DString *dsPtr = arg;
     char buf[200];
     int n;
 
-    infoPtr = Ns_ThreadPoolStats(iPtr->thread);
-    if (infoPtr != NULL) {
+    piPtr = Ns_ThreadPoolStats(&tiPtr->thread);
+    if (piPtr != NULL) {
     	Tcl_DStringStartSublist(dsPtr);
-    	Tcl_DStringAppendElement(dsPtr, iPtr->name);
-	for (n = 0; n < infoPtr->nbuckets; ++n) {
+    	Tcl_DStringAppendElement(dsPtr, tiPtr->name);
+	for (n = 0; n < piPtr->nbuckets; ++n) {
     	    sprintf(buf, "%d %d %d %d %d %d %d",
-		infoPtr->buckets[n].blocksize,
-		infoPtr->buckets[n].nfree,
-		infoPtr->buckets[n].nget,
-		infoPtr->buckets[n].nput,
-		infoPtr->buckets[n].nrequest,
-		infoPtr->buckets[n].nlock,
-		infoPtr->buckets[n].nwait);
+		piPtr->buckets[n].blocksize,
+		piPtr->buckets[n].nfree,
+		piPtr->buckets[n].nget,
+		piPtr->buckets[n].nput,
+		piPtr->buckets[n].nrequest,
+		piPtr->buckets[n].nlock,
+		piPtr->buckets[n].nwait);
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
     	Tcl_DStringEndSublist(dsPtr);

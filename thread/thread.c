@@ -219,8 +219,11 @@ void
 NsThreadMain(void *arg)
 {
     Thread      *thrPtr = (Thread *) arg;
+    char	 name[NS_THREAD_NAMESIZE];
 
     NsSetThread(thrPtr);
+    sprintf(name, "-thread%d-", thrPtr->tid);
+    Ns_ThreadSetName(name);
     thrPtr->stackBase = &arg;
     (*thrPtr->proc) (thrPtr->arg);
     Ns_ThreadExit(0);
@@ -269,9 +272,9 @@ Ns_ThreadId(void)
  */
 
 void
-Ns_ThreadSelf(Ns_Thread *thrPtr)
+Ns_ThreadSelf(Ns_Thread *threadPtr)
 {
-    *thrPtr = (Ns_Thread) NsGetThread();
+    *threadPtr = (Ns_Thread) NsGetThread();
 }
 
 
@@ -416,7 +419,7 @@ Ns_ThreadEnum(Ns_ThreadInfoProc *proc, void *arg)
     Ns_MasterLock();
     thrPtr = firstThreadPtr;
     while (thrPtr != NULL) {
-	info.thread = (Ns_Thread *) &thrPtr;
+	info.thread = (Ns_Thread) thrPtr;
 	info.tid = thrPtr->tid;
 	info.ctime = thrPtr->ctime;
 	info.name = thrPtr->name;

@@ -233,7 +233,6 @@ int             nrunning;
 void
 MemThread(void *arg)
 {
-    Ns_Thread thread;
     int             i;
     void           *ptr;
 
@@ -347,7 +346,7 @@ DumpThreads(Ns_ThreadInfo * iPtr, void *ignored)
 
     printf("\t%d(%d): %s %s %p %p %s", iPtr->tid, iPtr->flags, iPtr->name, iPtr->parent,
 	   iPtr->proc, iPtr->arg, ns_ctime(&iPtr->ctime));
-    DumpMem(iPtr->thread);
+    DumpMem(&iPtr->thread);
 }
      
 
