@@ -43,6 +43,14 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #define CGI_ECONTENT	4
 #define CGI_SYSENV	8
 
+#ifdef _WIN32
+#define S_ISREG(m)	((m)&_S_IFREG)
+#define S_ISDIR(m)	((m)&_S_IFDIR)
+#define DEVNULL	    "nul:"
+#else
+#define DEVNULL	    "/dev/null"
+#endif
+
 /*
  * The following structure is allocated for each instance the module is
  * loaded (normally just once).
@@ -160,14 +168,15 @@ Ns_ModuleInit(char *server, char *module)
 
     /*
      * On the first (and likely only) load, register
-     * the temp file cleanup routine and open /dev/null
+     * the temp file cleanup routine and open devNull
      * for requests without content data.
      */
 
     if (!initialized) {
-	devNull = open("/dev/null", O_RDONLY);
+	devNull = open(DEVNULL, O_RDONLY);
 	if (devNull < 0) {
-	    Ns_Log(Error, "nscgi: open(/dev/null) failed: %s", strerror(errno));
+	    Ns_Log(Error, "nscgi: open(%s) failed: %s",
+		   DEVNULL, strerror(errno));
 	    return NS_ERROR;
 	}
 	Ns_DupHigh(&devNull);
