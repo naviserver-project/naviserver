@@ -209,6 +209,7 @@ extern Tcl_CmdProc
     NsTclNsvUnsetCmd,
     NsTclNsvNamesCmd,
     NsTclVarCmd,
+    NsTclHttpCmd,
     NsTclShareCmd;
 
 /*
@@ -365,6 +366,12 @@ static Cmd servCmds[] = {
      */
 
     {"ns_job", NsTclJobCmd, NULL},
+
+    /*
+     * tclhttp.c
+     */
+
+    {"ns_http", NsTclHttpCmd, NULL},
 
     /*
      * tclfile.c
