@@ -213,6 +213,7 @@ NsConfUpdate(void)
 	nsconf.keepalive.enabled = 1;
     }
     nsconf.keepalive.maxkeep = GetInt("maxkeepalive", KEEPALIVE_MAXKEEP_INT);
+    nsconf.keepalive.allmethods = GetBool("keepaliveallmethods", NS_FALSE);
 
     /*
      * tclinit.c

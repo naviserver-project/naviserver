@@ -250,7 +250,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	
 	/*
 	 * Output a connection keep-alive header only on
-	 * basic HTTP status 200 GET responses which included
+	 * any HTTP status 200 response which included
 	 * a valid and correctly set content-length header.
 	 */
 
@@ -261,7 +261,8 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	    (lengthHdr != NULL &&
 	    connPtr->responseLength == length) || doChunkEncoding) ||
 	    connPtr->responseStatus == 304) &&
-	    STREQ(connPtr->request->method, "GET") &&
+	    (nsconf.keepalive.allmethods == NS_TRUE ||
+	    STREQ(connPtr->request->method, "GET")) &&
 	    (key = Ns_SetIGet(conn->headers, "connection")) != NULL &&
 	    STRIEQ(key, "keep-alive")) {
 	    conn->flags |= NS_CONN_KEEPALIVE;
@@ -271,7 +272,6 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	}
 
 	Ns_ConnCondSetHeaders(conn, "Connection", keep);
-	
 
 	for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
 	    key = Ns_SetKey(conn->outputheaders, i);
@@ -312,8 +312,8 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
     	connPtr->responseStatus = status;
     	if (!(conn->flags & NS_CONN_SKIPHDRS)) {
-	    Ns_ConnConstructHeaders(conn, &connPtr->obuf);
-	    connPtr->nContentSent -= connPtr->obuf.length;
+	    Ns_ConnConstructHeaders(conn, &connPtr->queued);
+	    connPtr->nContentSent -= connPtr->queued.length;
     	}
     	conn->flags |= NS_CONN_SENTHDRS;
     }
