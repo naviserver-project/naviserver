@@ -25,6 +25,7 @@ ns_param   iobufsize       16000     ;# Buffer size suitable for I/O
 
 # Limits
 ns_param   keepalivetimeout 30       ;# Max time conn is kept alive (keepalive)
+                                     ;#   (set to 0 to disable keepalive)
 ns_param   listenbacklog   32        ;# Max length of pending conn queue
 ns_param   maxkeepalive    100       ;# Max no. of conns in keepalive state
 ns_param   schedmaxelapsed 2         ;# Warn when waiting on really long procs
