@@ -318,7 +318,7 @@ NsConfInit(void)
     Ns_HomePath(&ds, "modules", "tcl", NULL);
     nsconf.tcl.sharedlibrary = GetString2(path, "sharedlibrary", &ds);
     nsconf.tcl.statlevel = GetInt(path, "statlevel", 0);
-    nsconf.tcl.statmaxbuf = GetInt(path, "statmaxbuf", 100);
+    nsconf.tcl.statmaxbuf = GetInt(path, "statmaxbuf", 1000);
     nsconf.tcl.nsvbuckets = GetInt(path, "nsvbuckets", 8);
 
     /*

@@ -245,7 +245,7 @@ StatsTrace(ClientData clientData, Tcl_Interp *interp, int level,
     } else {
     	bufPtr = Ns_TlsGet(&tls);
     	if (bufPtr == NULL) {
-	    bufPtr = ns_malloc(sizeof(Tcl_HashTable));
+	    bufPtr = ns_malloc(sizeof(Buf));
 	    bufPtr->nbuf = 0;
 	    Tcl_InitHashTable(&bufPtr->table, TCL_STRING_KEYS);
 	    Ns_TlsSet(&tls, bufPtr);
