@@ -736,7 +736,7 @@ NS_EXTERN int Ns_UrlIsDir(char *server, char *url);
 NS_EXTERN void *Ns_RegisterFilter(char *server, char *method, char *URL,
 			       Ns_FilterProc *proc, int when, void *args);
 NS_EXTERN void *Ns_RegisterServerTrace(char *server, Ns_TraceProc *proc, void *arg);
-NS_EXTERN void *Ns_RegisterCleanup(char *server, Ns_TraceProc *proc, void *arg);
+NS_EXTERN void *Ns_RegisterConnCleanup(char *server, Ns_TraceProc *proc, void *arg);
 
 /*
  * htuu.c
