@@ -62,7 +62,7 @@ typedef struct Page {
 
 typedef struct InterpPage {
     Page     *pagePtr;
-    Tcl_Obj  *objs[0];
+    Tcl_Obj  *objs[1];
 } InterpPage;
 
 /*
