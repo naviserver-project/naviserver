@@ -171,6 +171,7 @@ NsStopBinder(void)
 	hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&prebound);
+    Tcl_InitHashTable(&prebound, sizeof(struct sockaddr_in)/sizeof(int));
     Ns_MutexUnlock(&lock);
 }
 
