@@ -69,7 +69,7 @@ static void SysLog(int priority, char *fmt, ...);
 static void WatchdogSigtermHandler(int sig);
 static int  WaitForServer();
 
-static void UsageError(char *msg);
+static void UsageError(char *msg, ...);
 static void StatusMsg(int state);
 static char *FindConfig(char *config);
 
@@ -108,11 +108,9 @@ static int watchdogExit = 0; /* Watchdog loop toggle */
 int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
-    int  i, fd, sig, cmdargc;
-    char **cmdargv;
+    int  i, fd, sig;
     char *config;
     Ns_Time timeout;
-    char buf[PATH_MAX];
 
 #ifndef _WIN32
     int  uid = -1;
@@ -197,9 +195,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Parse the command line arguments.
      */
 
-    opterr = 0;
-    while ((i = getopt(argc, argv, "+chpzifwVs:t:IRSkKdr:u:g:b:B:")) != -1) {
-        switch (i) {
+    for (i = 1; i < argc; i++) {
+        if (argv[i][0] != '-') {
+            UsageError("invalid option: %s", argv[i]);
+	    exit(1);
+        }
+        switch (argv[i][1]) {
         case 'h':
             UsageError(NULL);
             break;
@@ -220,19 +221,27 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                 UsageError("only one of -c, -i, -f, -w, or -V may be specified");
 #endif
             }
-            mode = i;
+            mode = argv[i][1];
             break;
         case 's':
             if (server != NULL) {
                 UsageError("multiple -s <server> options");
             }
-            server = optarg;
+            if (i + 1 < argc) {
+                server = argv[++i];
+            } else {
+                UsageError("no parameter for -%c option", argv[i][1]);
+            }
             break;
         case 't':
             if (nsconf.config != NULL) {
                 UsageError("multiple -t <file> options");
             }
-            nsconf.config = optarg;
+            if (i + 1 < argc) {
+           	nsconf.config = argv[++i];
+            } else {
+                UsageError("no parameter for -%c option", argv[i][1]);
+            }
             break;
         case 'p':
         case 'z':
@@ -240,32 +249,46 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             break;
 #ifndef _WIN32
         case 'b':
-            bindargs = optarg;
+            if (i + 1 < argc) {
+            	bindargs = argv[++i];
+            } else {
+                UsageError("no parameter for -%c option", argv[i][1]);
+            }
             break;
         case 'B':
-            bindfile = optarg;
+            if (i + 1 < argc) {
+            	bindfile = argv[++i];
+            } else {
+                UsageError("no parameter for -%c option", argv[i][1]);
+            }
             break;
         case 'r':
-            root = optarg;
-            break;
+            if (i + 1 < argc) {
+            	root = server = argv[++i];
+            } else {
+                UsageError("no parameter for -%c option", argv[i][1]);
+            }
             break;
         case 'd':
             debug = 1;
             break;
         case 'g':
-            garg = optarg;
+            if (i + 1 < argc) {
+                garg = argv[++i];
+            } else {
+                UsageError("no parameter for -%c option", argv[i][1]);
+            }
             break;
         case 'u':
-            uarg = optarg;
+            if (i + 1 < argc) {
+                uarg = argv[++i];
+            } else {
+                UsageError("no parameter for -%c option", argv[i][1]);
+            }
             break;
 #endif
-        case ':':
-            sprintf(buf, "option -%c requires a parameter", optopt);
-            UsageError(buf);
-            break;
         default:
-            sprintf(buf, "invalid option: -%c", optopt);
-            UsageError(buf);
+            UsageError("invalid option: -%c", argv[i][1]);
             break;
         }
     }
@@ -513,7 +536,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     Tcl_FindExecutable(argv[0]);
     nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
-    NsConfigEval(config, argc, argv, optind);
+    NsConfigEval(config, argc, argv, argc);
     ns_free(config);
     
     /*
@@ -717,13 +740,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          */
 
         NsRestoreSignals();
-        cmdargv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
-        cmdargc = 0;
-        cmdargv[cmdargc++] = argv[0];
-        for (i = optind; i < argc; i++) {
-            cmdargv[cmdargc++] = argv[i];
-        }
-        Tcl_Main(cmdargc, cmdargv, CommandInit);
+        Tcl_Main(argc, argv, CommandInit);
     }
 
     /*
@@ -1003,10 +1020,15 @@ StatusMsg(int state)
  */
 
 static void
-UsageError(char *msg)
+UsageError(char *msg, ...)
 {
     if (msg != NULL) {
-    fprintf(stderr, "\nError: %s\n", msg);
+    	va_list ap;
+    	va_start(ap, msg);
+    	fprintf(stderr, "\nError: ");
+	vfprintf(stderr, msg, ap);
+	fprintf(stderr, "\n");
+	va_end(ap);
     }
     fprintf(stderr, "\n"
         "Usage: %s [-h|V] [-c|-i|f] "

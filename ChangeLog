@@ -1,3 +1,9 @@
+2005-04-03  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/nsmain.c: changed command line parsing from getopt to
+	  simple manual processing thus getopt is not needed anymore.
+	* nsd/getopt.c: removed because no needed anymore
+
 2005-04-02  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
