@@ -116,6 +116,10 @@ NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
 #define sleep(n)	(Sleep((n)*1000))
 
+#define HAVE_GETADDRINFO
+#define HAVE_GETNAMEINFO
+#include <ws2tcpip.h>
+
 #endif
 
 #include "tcl.h"
