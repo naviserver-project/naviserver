@@ -728,7 +728,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
      */
 
     if (opt == CIsConnectedIdx) {
-	Tcl_SetBooleanObj(result, connPtr ? 0 : 1);
+	Tcl_SetBooleanObj(result, connPtr ? 1 : 0);
 	return TCL_OK;
     }
     if (connPtr == NULL) {
