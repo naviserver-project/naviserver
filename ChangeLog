@@ -1,3 +1,8 @@
+2005-03-12  Vlad Seryakov <vlad@crystalballinc.com>
+
+        * nspd/
+        * nsext/: moved modules out of the core into modules /section
+
 2005-03-08  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* nslog/nslog.c: as Stephan pointed there is possibility for 
