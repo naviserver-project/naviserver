@@ -47,9 +47,9 @@ NSGCC	  ?= 1
 
 tclmajor  	= 8
 tclminor  	= 4
-tclpatch  	= b1
+tclpatch  	= b2
 tcldir		= ../tcl$(tclmajor).$(tclminor)$(tclpatch)
-tcltag		= core-8-4-b1
+tcltag		= core-$(tclmajor)-$(tclminor)-$(tclpatch)
 
 #
 # Set common options.
@@ -82,7 +82,7 @@ ifeq (1,$(NSDEBUG))
     tclcfg      += --enable-symbols
 endif
 
-CFLAGS          += -D_REENTRANT=1 -DTCL_THREADS=1 $(tclmemdbg) 
+CFLAGS          += -D_REENTRANT=1 -DTCL_THREADS=1 $(tclmemdbg)  -DNO_CONST
 ifdef NSHOME
     INCDIR	=  $(NSHOME)/include
     CFLAGS      += -I$(NSHOME)/$(tcldir)/generic
