@@ -104,7 +104,7 @@ endif
 ifdef NSBUILD
     include ../include/Makefile.global
 else
-    include @prefix@/include/Makefile.global
+    include $(AOLSERVER)/include/Makefile.global
 endif
 
 all build: $(BUILD)
