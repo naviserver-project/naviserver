@@ -315,11 +315,11 @@ NsLoadModules(char *server)
 	    init = "Ns_ModuleInit";
 	} else {
             *s = '\0';
+            init = s + 1;
             e = strchr(init, ')');
             if (e != NULL) {
                 *e = '\0';
             }
-            init = s + 1;
 	}
 
 	/*
