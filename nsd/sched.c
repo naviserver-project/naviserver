@@ -748,6 +748,8 @@ SchedThread(void *ignored)
     time_t          now;
     Ns_Time         timeout;
     int		    elapsed;
+    Ns_Thread      *joinThreads;
+    int             nJoinThreads;
 
     Ns_WaitForStartup();
     Ns_ThreadSetName("-sched-");
@@ -847,7 +849,16 @@ SchedThread(void *ignored)
     	Ns_Log(Notice, "sched: waiting for event threads...");
 	Ns_CondBroadcast(&eventcond);
 	while (--nThreads >= 0) {
-	    Ns_ThreadJoin(&eventThreads[nThreads], NULL);
+            joinThreads = eventThreads;
+            nJoinThreads = nThreads;
+            eventThreads = NULL;
+            nThreads = 0;
+            Ns_MutexUnlock(&lock);
+            while (--nJoinThreads >= 0 ) {
+                Ns_ThreadJoin(&joinThreads[nJoinThreads], NULL);
+            }
+            ns_free(joinThreads);
+            Ns_MutexLock(&lock);
 	}
     }
     Ns_MutexUnlock(&lock);
