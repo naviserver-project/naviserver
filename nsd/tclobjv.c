@@ -82,6 +82,9 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             
             remain = specPtr->proc(specPtr->dest, interp, objc, objv + objvIndex,
                                    specPtr->arg);
+            if (remain == objc) {
+                break;
+            }
             if (remain < 0 || remain > objc) {
                 return NS_ERROR;
             }
@@ -454,7 +457,8 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
         }
     }
     for (specPtr = argSpec; specPtr->key != NULL; ++specPtr) {
-        Ns_DStringVarAppend(&ds, specPtr->key, " ", NULL);
+        Ns_DStringPrintf(&ds, "%s%s ", specPtr->key,
+                         (*specPtr->key == '?') ? "?" : "");
     }
     Tcl_WrongNumArgs(interp, objc, objv, ds.string);
     Ns_DStringFree(&ds);

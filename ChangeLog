@@ -1,5 +1,8 @@
 2005-02-27  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/tclobjv.c: Short circuit option processing when "--" is found.
+	Accurately describe optional arguments as optional in error messages.
+
 	* include/ns.h:
 	* nsd/form.c:
 	* nsd/request.c:
