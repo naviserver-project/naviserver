@@ -491,8 +491,8 @@ NsConnArgProc(Tcl_DString *dsPtr, void *arg)
 {
     Conn *connPtr;
     
-    connPtr = *((Conn **) arg);
-    if (connPtr != NULL) {
+    if (arg != NULL) {
+	connPtr = *((Conn **) arg);
     	AppendConn(dsPtr, connPtr, "running", time(NULL));
     } else {
     	Tcl_DStringAppendElement(dsPtr, "");
