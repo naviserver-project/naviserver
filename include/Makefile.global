@@ -76,9 +76,9 @@ else
 endif
 tcllib		= tcl$(tclmajor).$(tclminor)$(tcldbg)
 tcldir		= tcl$(tclmajor).$(tclminor)$(tclpatch)
-ifdef nsbuild
-    CFLAGS      += -I../include -I../$(tcldir)/generic
-    LIBS	=  -L../$(tcldir)/unix 
+ifdef NSHOME
+    CFLAGS      += -I$(NSHOME)/include -I$(NSHOME)/$(tcldir)/generic
+    LIBS	=  -L$(NSHOME)/$(tcldir)/unix 
 else
     CFLAGS      += -I$(AOLSERVER)/include
     LIBS	=  -L$(AOLSERVER)/lib

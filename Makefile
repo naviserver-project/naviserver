@@ -59,7 +59,7 @@ ifdef NSGCC
     MAKEFLAGS	+= NSGCC=$(NSGCC)
 endif
 
-dirs = $(tcldir) nsd nssock nsssl nscgi nscp nslog nsperm nsext nspd 
+dirs = $(tcldir) nsd nsmain nssock nsssl nscgi nscp nslog nsperm nsext nspd 
 
 all:
 	@for i in $(dirs); do \

@@ -30,9 +30,7 @@
 # $Header$
 #
 
-include ../include/Makefile.global
-LIB	= libnsd.so
-MAIN	= nsd
+LIB      =  libnsd.so
 
 OBJS = \
 	adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o	\
@@ -51,23 +49,4 @@ OBJS = \
 	tclvar.o tclxkeylist.o thread.o time.o tls.o unix.o url.o	\
 	urlencode.o urlopen.o urlspace.o uuencode.o
 
-all: $(MAIN)
-
-$(OBJS): nsd.h
-
-$(LIB): $(OBJS)
-	$(RM) $(LIB)
-	$(LDSO) -o $(LIB) $(OBJS) $(LIBS)
-
-$(MAIN): $(LIB) main.o
-	$(CC) -o $(MAIN) main.o $(LIB) $(LIBS) $(RPATH)
-
-install: all
-	$(RM) $(AOLSERVER)/bin/$(MAIN)
-	$(CP) $(MAIN) translate-ini init.tcl $(AOLSERVER)/bin/
-	$(RM) $(AOLSERVER)/lib/$(LIB)
-	$(CP) $(LIB) $(AOLSERVER)/lib/
-	$(CP) sample-config.tcl $(AOLSERVER)/
-
-clean:
-	$(RM) $(MAIN) $(OBJS) $(LIB)
+include  ../include/Makefile.library
