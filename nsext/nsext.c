@@ -111,7 +111,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "ns.h"
+#include "nsdb.h"
 #include "nsextmsg.h"
 #include <ctype.h>
 
@@ -322,6 +322,7 @@ Ns_DbDriverInit(char *hDriver, char *configPath)
 
     if (initialized == NS_FALSE) {
         Ns_MutexInit(&muCtx);
+        Ns_MutexSetName(&muCtx, "nsext");
         Tcl_InitHashTable(&htCtx, TCL_STRING_KEYS);
         Ns_RegisterShutdown(ExtCleanup, NULL);
         initialized = NS_TRUE;
