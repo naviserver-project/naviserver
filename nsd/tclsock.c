@@ -1745,7 +1745,7 @@ NsTclSockProc(int sock, void *arg, int why)
             w = "x";
         }
         Tcl_DStringAppendElement(&script, w);
-        result = NsTclEval(interp, script.string);
+        result = Tcl_EvalEx(interp, script.string, script.length, 0);
 	if (result != TCL_OK) {
             Ns_TclLogError(interp);
 	} else {
@@ -1807,7 +1807,7 @@ SockListenCallback(int sock, void *arg, int why)
             Tcl_DStringAppend(&script, lcbPtr->script, -1);
 	    Tcl_DStringAppendElement(&script, Tcl_GetString(objv[0]));
 	    Tcl_DStringAppendElement(&script, Tcl_GetString(objv[1]));
-            result = NsTclEval(interp, script.string);
+            result = Tcl_EvalEx(interp, script.string, script.length, 0);
 	    Tcl_DStringFree(&script);
 	}
     }
