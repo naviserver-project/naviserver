@@ -47,7 +47,7 @@ set on [ns_config -bool $path enabletclpages off]
 ns_log notice "conf: \[$path\]enabletclpages = $on"
 
 
-if $on {
+if {$on} {
     ns_share errorPage
     ns_log notice "tcl: enabling .tcl pages"
     ns_register_proc GET /*.tcl ns_sourceproc 
@@ -70,7 +70,7 @@ proc ns_sourceproc {conn ignored} {
     ns_share errorPage
 
     set file [ns_url2file [ns_conn url $conn]]
-    if ![file exists $file] {
+    if {![file exists $file]} {
 	ns_returnnotfound $conn
     } else {
 	set code [catch {

@@ -218,7 +218,7 @@ if { [file exists $sslcertfile] && [file exists $sslkeyfile] } {
 #
 if { $nscp_user != "" } {
 
-    if ![string match "127.0.0.1" $nscp_addr] {
+    if {![string match "127.0.0.1" $nscp_addr]} {
 	# Anything but 127.0.0.1 is not recommended.
 	ns_log warning "config.tcl: nscp listening on ${nscp_addr}:${nscp_port}"
     }

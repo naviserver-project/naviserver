@@ -40,7 +40,7 @@ proc ns_queryget {key {value ""}}  {
     set form [ns_getform]
     if { $form != "" } {
 	set tmp [ns_set iget $form $key]
-	if [string length $tmp] {
+	if {[string length $tmp]} {
 	    set value $tmp
 	}
     }
@@ -80,7 +80,7 @@ proc ns_queryexists { key } {
     if { $form != "" } {
 	set i [ns_set ifind $form $key]
     }
-    return [expr $i >= 0]
+    return [expr {$i >= 0}]
 }
 
 
@@ -122,7 +122,7 @@ proc ns_getform { }  {
 #	the file already exists in which case "" is returned.
 
 proc ns_openexcl file {
-    if [catch { set fp [open $file {RDWR CREAT EXCL} ] } err] {
+    if {[catch { set fp [open $file {RDWR CREAT EXCL} ] } err]} {
 	global errorCode
 	if { [lindex $errorCode 1] != "EEXIST"} {
 	    return -code error $err
