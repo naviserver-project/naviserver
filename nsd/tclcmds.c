@@ -72,6 +72,7 @@ extern Tcl_ObjCmdProc
     NsTclCritSecObjCmd,
     NsTclDummyObjCmd,
     NsTclICtlObjCmd,
+    NsTclRegisterInterpTraceObjCmd,
     NsTclFTruncateObjCmd,
     NsTclGetAddrObjCmd,
     NsTclGetHostObjCmd,
@@ -389,6 +390,7 @@ static Cmd cmds[] = {
     {"ns_init", NULL, NsTclDummyObjCmd},
     {"ns_cleanup", NULL, NsTclDummyObjCmd},
     {"ns_markfordelete", NULL, NsTclMarkForDeleteObjCmd},
+    {"ns_register_interptrace", NULL, NsTclRegisterInterpTraceObjCmd},
 
     /*
      * encoding.c
