@@ -329,6 +329,7 @@ NsTclSetCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 		    Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
 		}
 		Tcl_DStringResult(interp, &ds);
+		break;
 
             case 's':
 		/*
