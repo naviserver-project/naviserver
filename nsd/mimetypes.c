@@ -274,39 +274,6 @@ NsUpdateMimeTypes(void)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclGuessTypeCmd --
- *
- *	Implements ns_guesstype. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclGuessTypeCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
-{
-    char *type;
-
-    if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # of args:  should be \"",
-                         argv[0], " filename\"", NULL);
-        return TCL_ERROR;
-    }
-    type = Ns_GetMimeType(argv[1]);
-    Tcl_SetResult(interp, type, TCL_VOLATILE);
-    
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclGuessTypeObjCmd --
  *
  *	Implements ns_guesstype. 

@@ -589,46 +589,6 @@ Ns_StopServer(char *server)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclShutdownCmd --
- *
- *	Implements ns_shutdown. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclShutdownCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
-{
-    int timeout;
-
-    if (argc != 1 && argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-	    argv[0], " ?timeout?\"", NULL);
-	return TCL_ERROR;
-    }
-    if (argc == 1) {
-	timeout = nsconf.shutdowntimeout;
-    } else  if (Tcl_GetInt(interp, argv[1], &timeout) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(timeout));
-    Ns_MutexLock(&nsconf.state.lock);
-    nsconf.shutdowntimeout = timeout;
-    Ns_MutexUnlock(&nsconf.state.lock);
-    NsSendSignal(SIGTERM);
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclShutdownObjCmd --
  *
  *	Implements ns_shutdown as obj command. 

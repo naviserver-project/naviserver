@@ -286,51 +286,6 @@ Ns_ModulePath(Ns_DString *dest, char *server, char *module, ...)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclModulePathCmd --
- *
- *	Implements ns_modulepath; basically a wrapper around 
- *	Ns_ModulePath. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	None (deprecated) 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclModulePathCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
-{
-    Ns_DString      ds;
-
-    Ns_DStringInit(&ds);
-
-    if (0/*(argc < 2) || (argc > 3)*/) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         argv[0], " server ?module?\"", NULL);
-        return TCL_ERROR;
-    }
-    if (1) {
-	/* NB: Seems broken - assume goes away with string commands. */
-	Ns_MakePath(&ds, argv[1], argv[2], argv[3], argv[4], argv[5], NULL);
-    } else {
-	if (argc == 3) {
-	    Ns_ModulePath(&ds, argv[1], argv[2], NULL);
-	} else {
-	    Ns_ModulePath(&ds, argv[1], NULL, NULL);
-	}
-    }
-    Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
-    Ns_DStringFree(&ds);
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclModulePathObjCmd --
  *
  *	Implements ns_modulepath command; basically a wrapper around 

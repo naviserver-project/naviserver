@@ -288,32 +288,6 @@ NsLogOpen(void)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclLogRollCmd --
- *
- *	Implements ns_logroll. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclLogRollCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
-{
-    if (Ns_LogRoll() != NS_OK) {
-	Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
-    }
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclLogRollObjCmd --
  *
  *	Implements ns_logroll as obj command. 

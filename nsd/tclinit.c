@@ -522,38 +522,6 @@ NsGetInterp(Tcl_Interp *interp)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclMarkForDeleteCmd --
- *
- *	Implements ns_markfordelete. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclMarkForDeleteCmd(ClientData arg, Tcl_Interp *interp, int argc,
-		      char **argv)
-{
-    NsInterp *itPtr = arg;
-
-    if (argc != 1) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-	    argv[0], "\"", NULL);
-	return TCL_ERROR;
-    }
-    itPtr->delete = 1;
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclMarkForDeleteObjCmd --
  *
  *	Implements ns_markfordelete as obj command. 

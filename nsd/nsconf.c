@@ -85,7 +85,6 @@ NsInitConf(void)
     time(&nsconf.boot_t);
     nsconf.pid = getpid();
     nsconf.home = getcwd(cwd, sizeof(cwd));
-    nsconf.tcl.objcmds = 1;
     if (gethostname(nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
         strcpy(nsconf.hostname, "localhost");
     }
@@ -221,14 +220,6 @@ NsConfUpdate(void)
     Ns_HomePath(&ds, "modules", "tcl", NULL);
     nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
 
-    /*
-     * tclcmds.c
-     */
-
-    if (GetBool("objcmds", 1)) {
-	nsconf.tcl.objcmds = 1;
-    }
-    
     Ns_DStringFree(&ds);
 }
 

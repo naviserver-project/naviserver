@@ -129,48 +129,6 @@ Ns_QueryToSet(char *query, Ns_Set *set)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclParseQueryCmd --
- *
- *	This procedure implements the AOLserver Tcl
- *
- *	    ns_parsequery querystring
- *
- *	command.
- *
- * Results:
- *	The Tcl result is a Tcl set with the parsed name-value pairs from
- *	the querystring argument
- *
- * Side effects:
- *	None external.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclParseQueryCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) 
-{
-    Ns_Set *set;
-
-    if (argc != 2) {
-	Tcl_AppendResult(interp, argv[0], ": wrong number args: should be \"",
-	    argv[0], " querystring\"", (char *) NULL);
-	return TCL_ERROR;
-    }
-    set = Ns_SetCreate(NULL);
-    if (Ns_QueryToSet(argv[1], set) != NS_OK) {
-	Tcl_AppendResult(interp, argv[0], ": could not parse: \"",
-	    argv[1], "\"", (char *) NULL);
-	Ns_SetFree(set);
-	return TCL_ERROR;
-    }
-    return Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclParseQueryObjCmd --
  *
  *	This procedure implements the AOLserver Tcl

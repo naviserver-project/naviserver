@@ -982,56 +982,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclWriteContentCmd --
- *
- *	Implments ns_writecontent. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclWriteContentCmd(ClientData arg, Tcl_Interp *interp, int argc,
-		     char **argv)
-{
-    NsInterp	*itPtr = arg;
-    Tcl_Channel  chan;
-
-    if (argc != 2 && argc != 3) {
-        Tcl_AppendResult(interp, "wrong # of args: should be \"",
-                         argv[0], " ?connid? channel", NULL);
-        return TCL_ERROR;
-    }
-    if (argc == 3 && !NsIsIdConn(argv[1])) {
-	Tcl_AppendResult(interp, "bad connid: \"", argv[1], "\"", NULL);
-	return TCL_ERROR;
-    }
-    if (itPtr->conn == NULL) {
-        Tcl_AppendResult(interp, "no connection", NULL);
-        return TCL_ERROR;
-    }
-    if (GetChan(interp, argv[argc-1], &chan) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    Tcl_Flush(chan);
-    if (Ns_ConnCopyToChannel(itPtr->conn, itPtr->conn->contentLength, chan) != NS_OK) {
-        Tcl_SetResult(interp, "could not copy content (likely client disconnect)",
-	    TCL_STATIC);
-        return TCL_ERROR;
-    }
-    
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclWriteContentObjCmd --
  *
  *	Implments ns_writecontent as obj command. 
