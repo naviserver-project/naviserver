@@ -234,34 +234,34 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	 "threads", "waiting", NULL,
     };
     enum {
-	 activeidx, allidx, connectionsidx, keepaliveidx, queuedidx,
-	 threadsidx, waitingidx,
-    };
-    int  idx;
+	 SActiveIdx, SAllIdx, SConnectionsIdx, SKeepaliveIdx, SQueuedIdx,
+	 SThreadsIdx, SWaitingIdx,
+    } opt;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &idx) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+			    (int *) &opt) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     Ns_MutexLock(&servPtr->queue.lock);
-    switch (idx) {
-    case waitingidx:
+    switch (opt) {
+    case SWaitingIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(servPtr->queue.wait.num));
 	break;
 
-    case keepaliveidx:
+    case SKeepaliveIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(nsconf.keepalive.npending));
 	break;
 
-    case connectionsidx:
+    case SConnectionsIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(servPtr->queue.nextid));
 	break;
 
-    case threadsidx:
+    case SThreadsIdx:
         sprintf(buf, "min %d", servPtr->threads.min);
         Tcl_AppendElement(interp, buf);
         sprintf(buf, "max %d", servPtr->threads.max);
@@ -274,14 +274,14 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_AppendElement(interp, buf);
 	break;
 
-    case activeidx:
-    case queuedidx:
-    case allidx:
+    case SActiveIdx:
+    case SQueuedIdx:
+    case SAllIdx:
     	Tcl_DStringInit(&ds);
-	if (idx != queuedidx) {
+	if (opt != SQueuedIdx) {
 	    AppendConnList(&ds, servPtr->queue.active.firstPtr, "running");
 	}
-	if (idx != activeidx) {
+	if (opt != SActiveIdx) {
 	    AppendConnList(&ds, servPtr->queue.wait.firstPtr, "queued");
 	}
         Tcl_DStringResult(interp, &ds);
