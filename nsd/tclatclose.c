@@ -75,7 +75,7 @@ NsTclAtCloseCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
 
     if (argc < 2 || argc > 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
-			 argv[0], "script ?arg?\"", NULL);
+			 argv[0], " script ?arg?\"", NULL);
 	return TCL_ERROR;
     }
     if (argc == 2) {
