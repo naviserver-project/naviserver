@@ -291,7 +291,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     if (garg != NULL) {
-	gid = Ns_GetGid(optarg);
+	gid = Ns_GetGid(garg);
 	if (gid < 0) {
 	    gid = atoi(garg);
 	    if (gid == 0) {
