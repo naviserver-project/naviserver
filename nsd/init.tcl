@@ -164,8 +164,8 @@ proc ns_cleanupchans {} {
 proc ns_cleanupvars {} {
     foreach g [info globals] {
         switch -glob -- $g {
-            tcl*  - 
-            error - 
+            auto_* -
+            tcl_*  - 
             env {
                 # NB: Save these core Tcl vars.
             }
@@ -177,6 +177,10 @@ proc ns_cleanupvars {} {
             }
         }
     }
+
+    global errorInfo errorCode
+    set errorInfo ""
+    set errorCode ""
 }
 
 
