@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -198,8 +198,7 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
 {
     Ns_Thread thr;
     
-    Ns_Log(Notice, "generating %d random seed%s...", nseeds,
-	nseeds > 1 ? "s" : "");
+    Ns_Log(Notice, "Ns_GenSeeds: generating %d random seed(s)...", nseeds);
     Ns_MasterLock();
     Ns_SemaInit(&counterSema, 0);
     counterRun = 1;
@@ -212,7 +211,7 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
     Ns_MasterUnlock();
     Ns_ThreadJoin(&thr, NULL);
     Ns_SemaDestroy(&counterSema);
-    Ns_Log(Notice, "seed generation complete.");
+    Ns_Log(Notice, "Ns_GenSeeds: seed generation complete.");
 }
 
 /*

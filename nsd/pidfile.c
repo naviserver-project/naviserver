@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -70,18 +70,19 @@ NsGetLastPid(void)
     if (fd >= 0) {
 	n = read(fd, buf, sizeof(buf)-1);
 	if (n < 0) {
-	    Ns_Log(Warning, "pid file read() failed: %s", strerror(errno));
+	    Ns_Log(Warning, "NsGetLastPid: pid file read() failed: %s",
+		   strerror(errno));
 	} else {
 	    buf[n] = '\0';
 	    if (sscanf(buf, "%d", &pid) != 1) {
-		Ns_Log(Warning, "invalid pid file: %s", file);
+		Ns_Log(Warning, "NsGetLastPid: invalid pid file: %s", file);
 	    	pid = -1;
 	    }
 	}
 	close(fd);
     } else if (errno != ENOENT) {
-	Ns_Log(Error, "could not open pid file %s: %s",
-		       file, strerror(errno));
+	Ns_Log(Error, "NsGetLastPid: could not open pid file %s: %s",
+	       file, strerror(errno));
     }
     return pid;
 }
@@ -96,13 +97,14 @@ NsCreatePidFile(void)
 
     fd = open(file, O_WRONLY|O_TRUNC|O_CREAT|O_TEXT, 0644);
     if (fd < 0) {
-    	Ns_Log(Error, "could not open pid file \"%s\":  %s",
-               file, strerror(errno));
+    	Ns_Log(Error, "Ns_CreatePidFile: "
+	       "could not open pid file \"%s\":  %s", file, strerror(errno));
     } else {
 	sprintf(buf, "%d\n", nsconf.pid);
 	n = strlen(buf);
 	if (write(fd, buf, n) != n) {
-	    Ns_Log(Error, "write() failed: %s", strerror(errno));
+	    Ns_Log(Error, "Ns_CreatePidFile: "
+		   "write() failed: %s", strerror(errno));
 	}
         close(fd);
     }
@@ -115,7 +117,8 @@ NsRemovePidFile(void)
     char *file = GetFile();
     
     if (unlink(file) != 0) {
-    	Ns_Log(Error, "could not remove \"%s\": %s", file, strerror(errno));
+    	Ns_Log(Error, "NsRemovePidFile: "
+	       "could not remove \"%s\": %s", file, strerror(errno));
     }
 }
 

@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -292,9 +292,9 @@ NsKillPid(int pid)
     int timeout, err;
     
     if (!Kill(pid, SIGTERM)) {
-	Ns_Log(Warning, "pid %d does not exist", pid);
+	Ns_Log(Warning, "NsKillPid: pid %d does not exist", pid);
     } else if (!Wait(pid, 10)) {
-    	Ns_Log(Warning, "pid %d still alive - killing", pid);
+    	Ns_Log(Warning, "NsKillPid: pid %d still alive - killing", pid);
 	if (Kill(pid, SIGKILL) && !Wait(pid, 5)) {
 	    Ns_Fatal("could not kill %d: %s", pid, strerror(errno));
 	}
@@ -353,7 +353,7 @@ Wait(int pid, int seconds)
     int alive;
     
     while ((alive = Kill(pid, 0)) && seconds-- >= 0) {
-	Ns_Log(Notice, "waiting for %d to die...", pid);
+	Ns_Log(Notice, "Wait: waiting for %d to die...", pid);
     	sleep(1);
     }
     return (alive ? 0 : 1);

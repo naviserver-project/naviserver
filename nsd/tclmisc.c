@@ -959,28 +959,31 @@ NsTclInfoCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	Tcl_SetResult(interp, Ns_InfoLabel(), TCL_STATIC);
     } else if (STREQ(argv[1], "builddate")) {
 	Tcl_SetResult(interp, Ns_InfoBuildDate(), TCL_STATIC);
+    } else if (STREQ(argv[1], "pid")) {
+	Tcl_SetResult(interp, Ns_InfoPid(), TCL_STATIC);
     } else {
         Tcl_AppendResult(interp, "unknown command \"", argv[1],
                          "\":  should be "
                          "address, "
                          "argv0, "
+                         "builddate, "
                          "callbacks, "
                          "config, "
                          "hostname, "
+                         "label, "
                          "locks, "
                          "log, "
                          "name, "
                          "pageroot, "
+			 "pid, "
                          "platform, "
+                         "scheduled, "
                          "server, "
                          "sockcallbacks, "
-                         "scheduled, "
                          "tcllib, "
                          "threads, "
                          "version, "
-                         "winnt, "
-                         "builddate, "
-                         "or label", NULL);
+                         "or winnt", NULL);
         return TCL_ERROR;
     }
 

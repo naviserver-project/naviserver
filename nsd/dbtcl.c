@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -111,7 +111,7 @@ NsDbTclInit(void)
     Ns_TclInitInterps(nsServer, EnableCmds, NULL);
 
     if (Ns_TclInitModule(nsServer, "nsdb") != NS_OK) {
-	Ns_ModLog(Warning, nsDBModLogHandle, "could not initialize nsdb Tcl");
+	Ns_Log(Warning, "NsDbTclInit: could not initialize nsdb Tcl");
     }
 }
 

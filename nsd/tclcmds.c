@@ -287,12 +287,6 @@ static TclCmd tclCmds[ ] = {
     {
         "ns_logroll", NsTclLogRollCmd, NULL
     },
-    {
-	"ns_modlogcontrol", NsTclModLogControlCmd, NULL
-    },
-    {
-	"ns_modlog", NsTclModLogCmd, NULL
-    },
 
     /*
      * tclcmds.c (this file)

@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -186,11 +186,13 @@ PdNewConn(int sock, int new)
         if (waitpid(pid, &status, 0) != pid) {
             Ns_FatalErrno("waitpid");
         } else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-            Ns_PdLog(Error, "child pid %d returned non-zero status:  %d", pid, WEXITSTATUS(status));
+            Ns_PdLog(Error, "PdNewConn: "
+		     "child pid %d returned non-zero status: %d",
+		     pid, WEXITSTATUS(status));
         } else if (WIFSIGNALED(status)) {
-            Ns_PdLog(Error, "child pid %d exited from signal %d%s",
-                pid, WTERMSIG(status), WCOREDUMP(status) ? " - core dumped" : "");
+            Ns_PdLog(Error, "PdNewConn: child pid %d exited from signal %d%s",
+		     pid, WTERMSIG(status),
+		     WCOREDUMP(status) ? " - core dumped" : "");
         }
     }
 }
-

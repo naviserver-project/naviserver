@@ -436,7 +436,7 @@ RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPtr)
     }
     Ns_MutexUnlock(&lock);
     if (status != NS_OK) {
-	Ns_Log(Warning, "timeout waiting for shutdown procs!");
+	Ns_Log(Warning, "RunWait: timeout waiting for shutdown procs");
     } else if (*threadPtr != NULL) {
 	Ns_ThreadJoin(threadPtr, NULL);
     }

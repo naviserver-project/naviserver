@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -562,7 +562,7 @@ FancyParsePage(Ns_DString *outPtr, char *in)
 	     */
 	    end = strstr(top, "%>");
 	    if (end == NULL) {
-		Ns_ModLog(Warning, nsAdpModLogHandle, "unterminated script");
+		Ns_Log(Warning, "FancyParsePage: unterminated script");
 		AddTextChunk(outPtr, oldtop, strlen(oldtop));
 		break;
 	    } else {
@@ -599,8 +599,7 @@ FancyParsePage(Ns_DString *outPtr, char *in)
 		
 		end = Ns_StrNStr(top, "</script>");
 		if (end == NULL) {
-		    Ns_ModLog(Warning, nsAdpModLogHandle,
-			      "unterminated script");
+		    Ns_Log(Warning, "FancyParsePage: unterminated script");
 		    AddTextChunk(outPtr, oldtop, strlen(oldtop));
                     Ns_SetFree(params);
 		    break;
@@ -641,8 +640,8 @@ FancyParsePage(Ns_DString *outPtr, char *in)
 	    if (rtPtr->endtag &&
 		((end = Ns_StrNStr(top, rtPtr->endtag)) == NULL)) {
 
-		Ns_ModLog(Warning, nsAdpModLogHandle,
-			  "unterminated registered tag %s", rtPtr->tag);
+		Ns_Log(Warning, "FancyParsePage: "
+		       "unterminated registered tag %s", rtPtr->tag);
 		AddTextChunk(outPtr, oldtop, strlen(oldtop));
                 Ns_SetFree(params);
 		break;
