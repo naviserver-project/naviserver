@@ -297,6 +297,7 @@ main(int argc, char *argv[])
     nsThreadMutexMeter = 1;
     Ns_ThreadSetName("-main-");
     nsMemPools = 1;
+
     if (argv[1] != NULL && argv[1][0] == 'm') {
 	i = atoi(argv[1] + 1);
 	if (i > 0) {

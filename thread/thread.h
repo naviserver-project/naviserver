@@ -33,12 +33,12 @@
  *
  *	Internal nsthread definitions.
  *
+ * RCS: $Id$
+ *
  */
 
 #ifndef THREAD_H
 #define THREAD_H
-
-static const char *RCSID_THREAD_H = "@(#) $Header$, compiled: " __DATE__;
 
 #include "nsthread.h"
 
