@@ -159,6 +159,7 @@ Ns_ThreadExit(void *arg)
     if (thisPtr->flags & NS_THREAD_DETACHED) {
 	FreeThread(thisPtr);
     } else {
+	thisPtr->arg = NULL;
     	thisPtr->exitarg = arg;
 	thisPtr->flags |= NS_THREAD_EXITED;
 	Ns_CondBroadcast(&cond);
@@ -353,8 +354,8 @@ Ns_ThreadEnum(Ns_ThreadInfoProc *proc, void *arg)
     Thread *thrPtr;
     Ns_ThreadInfo info;
 
-    thrPtr = firstPtr;
     Ns_MutexLock(&lock);
+    thrPtr = firstPtr;
     while (thrPtr != NULL) {
 	info.thread = (Ns_Thread *) thrPtr;
 	info.tid = thrPtr->tid;
