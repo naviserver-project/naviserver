@@ -585,8 +585,8 @@ LogStart(Cache *cachePtr, Ns_LogSeverity severity)
     	Ns_DStringTrunc(&cachePtr->buffer, cachePtr->buffer.length-1);
 	Ns_DStringPrintf(&cachePtr->buffer, ".%ld]", usec);
     }
-    Ns_DStringPrintf(&cachePtr->buffer, "[%d.%d][%s] %s: ",
-	Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(), severityStr);
+    Ns_DStringPrintf(&cachePtr->buffer, "[%d.%lu][%s] %s: ",
+	Ns_InfoPid(), (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(), severityStr);
     if (nsconf.log.flags & LOG_EXPAND) {
 	Ns_DStringAppend(&cachePtr->buffer, "\n    ");
     }
