@@ -165,7 +165,6 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
         if (n == -1) {
             Ns_Log(Error, "urlopen: failed to send data to '%s': '%s'",
 		   url, strerror(errno));
-	    close(sock);
             goto done;
         }
         tosend -= n;
