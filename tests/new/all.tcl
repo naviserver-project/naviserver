@@ -1,3 +1,7 @@
+#!/bin/sh
+# the next line restarts using tclsh \
+exec tclsh "$0" "$@"
+
 #
 # The contents of this file are subject to the AOLserver Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -30,49 +34,19 @@
 # $Header$
 #
 
-NSBUILD=1
-include include/Makefile.global
+package require Tcl 8.4
 
-dirs   = nsthread nsd nssock nsssl nscgi nscp nslog nsperm nsdb nsext nspd
+if {!$tcl_platform(threaded)} {
+    error "tests must run from a threaded tclsh"
+}
 
-all: 
-	@for i in $(dirs); do \
-		( cd $$i && $(MAKE) all ) || exit 1; \
-	done
+package require tcltest 2.2
 
-install: install-binaries install-doc
 
-install-binaries: all
-	for i in bin lib log include modules/tcl servers/server1/pages; do \
-		$(MKDIR) $(AOLSERVER)/$$i; \
-	done
-	for i in include/*.h include/Makefile.global include/Makefile.module; do \
-		$(INSTALL_DATA) $$i $(AOLSERVER)/include/; \
-	done
-	for i in tcl/*.tcl; do \
-		$(INSTALL_DATA) $$i $(AOLSERVER)/modules/tcl/; \
-	done
-	$(INSTALL_DATA) sample-config.tcl $(AOLSERVER)/
-	$(INSTALL_SH) install-sh $(INSTBIN)/
-	for i in $(dirs); do \
-		(cd $$i && $(MAKE) install) || exit 1; \
-	done
+set env(LD_LIBRARY_PATH) [join [list \
+        $env(LD_LIBRARY_PATH) ../../nsd ../../nsthread] :]
 
-install-tests:
-	$(CP) -r tests $(INSTSRVPAG)
+tcltest::configure -testdir [file dirname [info script]]
+eval tcltest::configure $argv
 
-install-doc:
-	cd doc && /bin/sh ./install-doc $(AOLSERVER)
-
-test: all
-	cd tests/new && ./all.tcl
-
-clean:
-	@for i in $(dirs); do \
-		(cd $$i && $(MAKE) clean) || exit 1; \
-	done
-
-distclean: clean
-	$(RM) config.status config.log config.cache include/Makefile.global include/Makefile.module
-
-.PHONY: all install install-binaries install-doc install-tests clean distclean
+tcltest::runAllTests
