@@ -267,6 +267,12 @@ Ns_ModuleInit(char *server, char *name)
     n = 128;
 #endif
     Ns_Log(Notice, "%s: initialized with %d-bit encryption", name, n);
+
+#ifdef HAVE_SWIFT
+    Ns_Log(Notice, "%s: SUPPORTS RAINBOW CRYPTOSWIFT HARDWARE SSL ACCELERATOR",
+	   DRIVER_NAME);
+#endif
+
 #endif 
     
     /*
