@@ -39,7 +39,7 @@ OBJS	= main.o
 all: $(MAIN)
 
 $(MAIN): $(OBJS)
-	$(CC) -o $(MAIN) $(OBJS) $(MAINLIBS)
+	$(CC) -o $(MAIN) $(OBJS) $(NSD_LIB) $(NSTCL_LIB) $(NSTHREAD_LIB) $(LIBS) $(RPATH)
 
 install: all
 	$(MKDIR) $(INSTBIN)

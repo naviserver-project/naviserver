@@ -144,8 +144,7 @@ NSD_LIB		= -L$(NSD_DIR) -l$(NSD)
 
 RFLAG		= -rpath
 RPATH		= $(RFLAG) $(INSTLIB) 
-LIBS	     	= $(RPATH) -lm
-MAINLIBS	= $(NSTCL_LIB) $(NSTHREAD_LIB) $(NSD_LIB) $(LIBS)
+LIBS	     	= -lm
 
 #
 # Figure the OS and architecture.
