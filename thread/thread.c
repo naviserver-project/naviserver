@@ -434,47 +434,6 @@ Ns_ThreadEnum(Ns_ThreadInfoProc *proc, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ThreadMemStats --
- *
- *	Write pool stats for all threads and the shared pool to open
- *	file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Output to open file or stderr.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_ThreadMemStats(FILE *fp)
-{
-    Thread *thrPtr;
-
-    if (fp == NULL) {
-	fp = stderr;
-    }
-    Ns_MasterLock();
-    thrPtr = firstThreadPtr;
-    while (thrPtr != NULL) {
-	if (thrPtr->pool != NULL) {
-    	    fprintf(fp, "[%d:%s]:", thrPtr->tid, thrPtr->name);
-	    Ns_PoolStats(thrPtr->pool, fp);
-	}
-	thrPtr = thrPtr->nextPtr;
-    }
-    Ns_MasterUnlock();
-    fprintf(fp, "[shared]:");
-    Ns_PoolStats(NULL, fp);
-    fflush(fp);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsNewThread --
  *
  *	Allocate a new thread data structure and add it to the list
