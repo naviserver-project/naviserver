@@ -56,6 +56,8 @@ all:
 	done
 
 install: all 
+	$(MKDIR)		$(AOLSERVER)/bin
+	$(MKDIR)		$(AOLSERVER)/lib
 	$(MKDIR)		$(AOLSERVER)/log
 	$(MKDIR)		$(AOLSERVER)/modules
 	$(MKDIR)		$(INSTSRVPAG)
