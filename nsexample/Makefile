@@ -7,6 +7,15 @@
 #
 
 #
+# AOLserver's location
+#
+#  Since your module probably doesn't live inside the "aolserver"
+#  directory, you can tell make where to find aolserver.
+#
+#NSHOME   =  /home/user/cvs/aolserver
+NSHOME   =  ..
+
+#
 # Module name
 #
 MOD      =  nsexample.so
