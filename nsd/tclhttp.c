@@ -146,6 +146,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         }
         else {
             body = NULL;
+            hdrs = NULL;
         }
 
         if (strcasecmp(method, METHOD_GET) == 0) {
