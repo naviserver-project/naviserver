@@ -614,6 +614,9 @@ static TclCmd tclCmds[ ] = {
     {
     	"nsv_incr", NsTclVIncrCmd, NULL
     },
+    {
+    	"nsv_names", NsTclVNamesCmd, NULL
+    },
 
     /*
      * tclxkeylist.c
