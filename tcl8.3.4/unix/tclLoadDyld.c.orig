@@ -14,9 +14,6 @@
  * RCS: @(#) $Id$
  */
 
-#include "../../compat/poll.h"
-#include "../../compat/osx.c"
-
 #include "tclInt.h"
 #include <mach-o/dyld.h>
 
