@@ -1,7 +1,7 @@
 
 README:  AOLserver
 
-    This is the AOLserver 4.0.0 source distribution.  AOLserver is
+    This is the AOLserver 4.0.8 source distribution.  AOLserver is
     available at http://aolserver.com, a SourceForge hosted site.
 
 RCS: @(#) $Id$
@@ -86,8 +86,8 @@ be easy.  To compile and install AOLserver:
 3c.     Download, configure, build, and install AOLserver.  The
 	following should work:
 
-	% gunzip < aolserver-4.0.0.src.tar.gz | tar xvf -
-	% cd aolserver-4.0.0
+	% gunzip < aolserver-4.0.8.src.tar.gz | tar xvf -
+	% cd aolserver-4.0.8
 	% ./configure 
 	% make install
 
@@ -144,7 +144,7 @@ page.
 There is a mailing list for AOLserver to discuss anything from
 configuration, development, and future direction.  To join visit:
 
-	http://aolserver.com/
+	http://aolserver.com/lists.php
 
 
 5. Thank You
