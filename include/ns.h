@@ -63,6 +63,9 @@ typedef void *ClientData;
 #define NS_CONN_CLOSED		  1
 #define NS_CONN_SKIPHDRS	  2
 #define NS_CONN_SKIPBODY	  4
+#define NS_CONN_READHDRS	  8
+#define NS_CONN_SENTHDRS	 16
+
 #define NS_CONN_MAXCLS		  16
 
 #define NS_AOLSERVER_3_PLUS
