@@ -394,7 +394,8 @@ NsConfigRead(char *file)
 void
 NsConfigEval(char *config, int argc, char **argv, int optind)
 {
-    char *err, buf[20];
+    const char *err;
+    char buf[20];
     Tcl_Interp *interp;
     Ns_Set     *set;
     int i;

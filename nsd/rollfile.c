@@ -44,7 +44,6 @@ typedef struct File {
 
 static int AppendFile(Ns_DString *dsPtr, char *dir, char *tail);
 static int CmpFile(const void *p1, const void *p2);
-static int RollFiles(char *prev, char *next, int max);
 static int Rename(char *from, char *to);
 static int Exists(char *file);
 static int Unlink(char *file);

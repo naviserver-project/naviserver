@@ -93,8 +93,6 @@ static int      running;
 static int  	shutdownPending;
 static Ns_Thread schedThread;
 static Ns_Thread lastEventThread;
-static Event   *firstFreeEventPtr;
-static int      nfreeEvents;
 static int	neventThreads;
 
 /*

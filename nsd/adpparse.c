@@ -67,9 +67,8 @@ typedef struct {
 
 static void AppendBlock(AdpParse *parsePtr, char *s, char *e, int type);
 static void Parse(AdpParse *parsePtr, NsServer *servPtr, char *utf);
-static Tag   *GetRegTag(NsServer *servPtr, char *tag);
-static int	 RegisterCmd(ClientData arg, Tcl_Interp *interp,
-		    int argc, char **argv, int type);
+static int RegisterCmd(ClientData arg, Tcl_Interp *interp, int argc,
+		char **argv, int type);
 
 
 /*
