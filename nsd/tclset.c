@@ -896,6 +896,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 break;
 		
             case SDeleteIdx:
+            case SDelkeyIdx:
                 Ns_SetDeleteKey(set, key);
                 break;
 		
@@ -914,6 +915,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 break;
 		    
 	    case SIDeleteIdx:
+            case SIDelkeyIdx:
                 Ns_SetIDeleteKey(set, key);
                 break;
 		    
