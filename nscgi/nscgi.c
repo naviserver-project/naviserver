@@ -184,6 +184,8 @@ Ns_ModuleInit(char *server, char *module)
     modPtr = ns_calloc(1, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;
+    Ns_MutexInit(&modPtr->lock);
+    Ns_MutexSetName2(&modPtr->lock, "nscgi", server);
     if (!Ns_ConfigGetInt(path, "maxinput", &modPtr->maxInput)) {
         modPtr->maxInput = DEFAULT_MAXINPUT;
     }
@@ -664,20 +666,20 @@ CgiFree(Cgi *cgiPtr)
     }
 
     /*
-     * Free all dstrings.
-     */
-
-    while (cgiPtr->nextds-- > 0) {
-	Ns_DStringFree(&cgiPtr->ds[cgiPtr->nextds]);
-    }
-    
-    /*
      * Reap the process.
      */
      
     if (cgiPtr->pid != -1 && Ns_WaitProcess(cgiPtr->pid) != NS_OK) {
 	Ns_Log(Error, "nscgi: wait for %s failed: %s",
 	       cgiPtr->exec, strerror(errno));
+    }
+
+    /*
+     * Free all dstrings.
+     */
+
+    while (cgiPtr->nextds-- > 0) {
+	Ns_DStringFree(&cgiPtr->ds[cgiPtr->nextds]);
     }
 }
 
@@ -952,7 +954,9 @@ CgiRead(Cgi *cgiPtr)
     int n;
     
     cgiPtr->ptr = cgiPtr->buf;
-    n = read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
+    do {
+    	n = read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
+    } while (n < 0 && errno == EINTR);
     if (n > 0) {
 	cgiPtr->cnt = n;
     } else if (n < 0) {
