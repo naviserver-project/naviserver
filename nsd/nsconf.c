@@ -211,6 +211,14 @@ NsConfUpdate(void)
      
     Ns_HomePath(&ds, "modules", "tcl", NULL);
     nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
+
+    /*
+     * tclcmds.c
+     */
+
+    if (GetBool("objcmds", 1)) {
+	nsconf.tcl.objcmds = 1;
+    }
     
     Ns_DStringFree(&ds);
 }
