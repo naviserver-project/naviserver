@@ -351,13 +351,12 @@ AdpFlush(NsInterp *itPtr, int stream)
      * is known for non-streaming output.
      */
 
-    result = NS_OK;
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
 	if (itPtr->servPtr->adp.enableexpire) {
 	    Ns_ConnCondSetHeaders(conn, "Expires", "now");
 	}
 	Ns_ConnSetRequiredHeaders(conn, type, stream ? 0 : len);
-	result = Ns_ConnFlushHeaders(conn, 200);
+	Ns_ConnQueueHeaders(conn, 200);
     }
 
     /*
@@ -365,11 +364,9 @@ AdpFlush(NsInterp *itPtr, int stream)
      * connection.
      */
 
-    if (result == NS_OK) {
-	result = Ns_WriteConn(conn, buf, len);
-	if (result == NS_OK && !stream) {
-	    result = Ns_ConnClose(conn);
-	}
+    result = Ns_WriteConn(conn, buf, len);
+    if (result == NS_OK && !stream) {
+	result = Ns_ConnClose(conn);
     }
 
     Tcl_DStringFree(&ds);
