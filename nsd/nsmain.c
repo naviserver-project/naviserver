@@ -53,6 +53,9 @@ static void UsageError(char *msg);
 static void StatusMsg(int state);
 static char *FindConfig(char *config);
 
+typedef void (CoreInit)(void);
+extern CoreInit NsInitEncodings;
+
 
 /*
  *----------------------------------------------------------------------
@@ -169,8 +172,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #endif
 
     opterr = 0;
-    while ((i = getopt(argc, argv, "qhpzifVs:t:c:" POPTS)) != -1) {
+    while ((i = getopt(argc, argv, "qhpzifVl:s:t:c:" POPTS)) != -1) {
         switch (i) {
+	case 'l':
+	    sprintf(cwd, "TCL_LIBRARY=%s", optarg);
+	    putenv(cwd);
+	    break;
 	case 'h':
 	    UsageError(NULL);
 	    break;
@@ -598,6 +605,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsConfInit();
     NsInitMimeTypes();
+    NsInitEncodings();
     NsCreatePidFile(procname);
     NsDbInitPools();
 
