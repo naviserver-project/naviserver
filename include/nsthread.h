@@ -90,7 +90,7 @@ struct dirent {
 NS_EXTERN DIR *opendir(char *pathname);
 NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
-#define sleep(n)	(Sleep((n)*100))
+#define sleep(n)	(Sleep((n)*1000))
 
 #else
 
