@@ -109,11 +109,6 @@ Ns_PdMain(int argc, char **argv)
         if (fork() > 0) {
             exit(0);
         }
-#if HAVE_BSDSETPGRP
-	setpgrp(0, getpid());
-#else
-	setpgrp();
-#endif
         setsid();
     }
 
