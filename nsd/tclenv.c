@@ -38,7 +38,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include	"nsd.h"
 
-static char **GetEnviron(void);
 static int PutEnv(Tcl_Interp *interp, char *name, char *value);
 static Ns_Mutex lock;
 
@@ -46,7 +45,7 @@ static Ns_Mutex lock;
 /*
  *----------------------------------------------------------------------
  *
- * Ns_GetEnvironment --
+ * Ns_CopyEnviron --
  *
  *	Copy the environment to the given dstring along with
  *	an argv vector.
@@ -61,13 +60,13 @@ static Ns_Mutex lock;
  */
 
 char **
-Ns_GetEnvironment(Ns_DString *dsPtr)
+Ns_CopyEnviron(Ns_DString *dsPtr)
 {
     char *s, **envp;
     int i;
 
     Ns_MutexLock(&lock);
-    envp = GetEnviron();
+    envp = Ns_GetEnviron();
     for (i = 0; (s = envp[i]) != NULL; ++i) {
 	Ns_DStringAppendArg(dsPtr, s);
     }
@@ -118,7 +117,7 @@ NsTclEnvCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	    status = TCL_ERROR;
 	} else {
 	    Tcl_DStringInit(&ds);
-    	    envp = GetEnviron();
+    	    envp = Ns_GetEnviron();
 	    for (i = 0; envp[i] != NULL; ++i) {
 		name = envp[i];
 		value = strchr(name, '=');
@@ -241,7 +240,7 @@ PutEnv(Tcl_Interp *interp, char *name, char *value)
 /*
  *----------------------------------------------------------------------
  *
- * GetEnviron --
+ * Ns_GetEnviron --
  *
  *	Return the environment vector.
  *
@@ -254,8 +253,8 @@ PutEnv(Tcl_Interp *interp, char *name, char *value)
  *----------------------------------------------------------------------
  */
 
-static char **
-GetEnviron(void)
+char **
+Ns_GetEnviron(void)
 {
    char **envp;
 
