@@ -40,7 +40,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "thread.h"
 #include <assert.h>
-#include <mutex.h>
 
 /*
  * The following structure specifies various per-bucket runtime
