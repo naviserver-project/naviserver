@@ -473,9 +473,10 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 {
     int         result = NS_ERROR, fd, new, nread;
     File	   *filePtr;
-    char	   *key, *map;
+    char	   *key;
     Ns_Entry	   *entPtr;
 #ifndef _WIN32
+    char           *map;
     FileKey	    ukey;
 #endif
 
