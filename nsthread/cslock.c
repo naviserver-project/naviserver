@@ -56,7 +56,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 typedef struct CsLock {
     Ns_Mutex        mutex;
     Ns_Cond         cond;
-    unsigned int    id;
     int		    tid;
     int             count;
 } CsLock;
@@ -82,16 +81,10 @@ void
 Ns_CsInit(Ns_Cs *csPtr)
 {
     CsLock     *lockPtr;
-    static unsigned int next = 0;
-    char name[NS_THREAD_NAMESIZE];
+    static unsigned int nextid = 0;
 
     lockPtr = ns_malloc(sizeof(CsLock));
-    Ns_MasterLock();
-    lockPtr->id = next++;
-    Ns_MasterUnlock();
-    sprintf(name, "ns:cs%d", lockPtr->id);
-    Ns_MutexInit(&lockPtr->mutex);
-    Ns_MutexSetName(&lockPtr->mutex, name);
+    NsMutexInitNext(&lockPtr->mutex, "cs", &nextid);
     Ns_CondInit(&lockPtr->cond);
     lockPtr->count = 0;
     *csPtr = (Ns_Cs) lockPtr;

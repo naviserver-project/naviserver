@@ -47,5 +47,6 @@
 extern void NsThreadFatal(char *func, char *osfunc, int err);
 extern void NsInitMaster(void);
 extern void NsInitReentrant(void);
+extern void NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr);
 
 #endif /* THREAD_H */

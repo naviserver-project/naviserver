@@ -290,7 +290,7 @@ Ns_MutexUnlock(Ns_Mutex *mutexPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_MutexEnum --
+ * Ns_MutexList --
  *
  *	Append info on each lock.
  *
@@ -304,7 +304,7 @@ Ns_MutexUnlock(Ns_Mutex *mutexPtr)
  */
 
 void
-Ns_MutexEnum(Tcl_DString *dsPtr)
+Ns_MutexList(Tcl_DString *dsPtr)
 {
     Lock *lockPtr;
     char buf[100];
@@ -321,6 +321,38 @@ Ns_MutexEnum(Tcl_DString *dsPtr)
 	lockPtr = lockPtr->nextPtr;
     }
     Ns_MasterUnlock();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsMutexInitNext --
+ *
+ *	Initialize and name the next internal mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Given counter is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr)
+{
+    unsigned int id;
+    char buf[20];
+
+    Ns_MasterLock();
+    id = *nextPtr;
+    *nextPtr = id + 1;
+    Ns_MasterUnlock();
+    sprintf(buf, "ns:%s:%u", prefix, id);
+    Ns_MutexInit(mutex);
+    Ns_MutexSetName(mutex, buf);
 }
 
 
