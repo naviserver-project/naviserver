@@ -39,6 +39,14 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 static Tcl_HashTable table;
 
+/*
+ * Various external init routines.
+ */
+
+extern void NsTclInitServer(char *server);
+extern void NsDbInitServer(char *server);
+extern void NsLoadModules(char *server);
+
 
 /*
  *----------------------------------------------------------------------
