@@ -245,14 +245,12 @@ extern Tcl_CmdProc
     NsTclClientDebugCmd,
     NsTclParseQueryCmd,
     NsTclQueryResolveCmd,
-    NsTclServerCmd,
     NsTclSetExpiresCmd,
     NsTclShutdownCmd,
     Tcl_KeyldelCmd,
     Tcl_KeylgetCmd,
     Tcl_KeylkeysCmd,
     Tcl_KeylsetCmd,
-    NsTclConnCmd,
     NsTclCrashCmd,
     NsTclCryptCmd,
     NsTclGetUrlCmd,
@@ -555,7 +553,7 @@ static Cmd servCmds[] = {
 
     {"ns_conncptofp", NsTclWriteContentCmd, NsTclWriteContentObjCmd},
     {"ns_writecontent", NsTclWriteContentCmd, NsTclWriteContentObjCmd},
-    {"ns_conn", NsTclConnCmd, NsTclConnObjCmd},
+    {"ns_conn", NULL, NsTclConnObjCmd},
 
     /*
      * adpparse.c
@@ -615,7 +613,7 @@ static Cmd servCmds[] = {
      * serv.c
      */
 
-    {"ns_server", NsTclServerCmd, NsTclServerObjCmd},
+    {"ns_server", NULL, NsTclServerObjCmd},
 
     /*
      * tclinit.c
