@@ -39,6 +39,9 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #include	"nsd.h"
 
 #ifndef WIN32
+#ifdef __alpha
+#define _environ environ
+#endif
 extern char **_environ;
 #endif
 
