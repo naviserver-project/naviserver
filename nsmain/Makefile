@@ -38,8 +38,8 @@ OBJS = main.o
 
 all: $(MAIN)
 
-$(MAIN): ../nsd/libnsd.so $(OBJS)
-	$(CC) -o $(MAIN) main.o -L../nsd -lnsd $(LIBS) $(RPATH)
+$(MAIN): $(OBJS)
+	$(CC) -o $(MAIN) main.o $(LIBS) $(RPATH)
 
 install: all
 	$(RM) $(AOLSERVER)/bin/$(MAIN)
