@@ -456,7 +456,7 @@ NsTclUnlinkCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
  *	Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *	Allocates memory for the filename as a TCL_VOLATILE object.
  *
  *----------------------------------------------------------------------
  */
@@ -464,12 +464,16 @@ NsTclUnlinkCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 int
 NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
+    char *buffer;
+
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # of args: should be \"",
-            argv[0], " template\"", NULL);
+			 argv[0], " template\"", NULL);
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, mktemp(argv[1]), TCL_VOLATILE);
+
+    buffer = Ns_StrDup(argv[1]);
+    Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
     return TCL_OK;
 }
 
