@@ -214,7 +214,6 @@ static int      ExtSpReturnCode(Ns_DbHandle *handle, char *returnCode,
 				   int bufsize);
 static Ns_Set  *ExtSpGetParams(Ns_DbHandle *handle);
 static void     ExtFree(void *ptr);
-static void     ExtFreeElement(void *ptr);
 
 static int      DbProxyCheckStatus(NsExtConn * nsConn, Ns_DbHandle *handle);
 static int      DbProxyStart(NsExtConn * nsConn);
@@ -1277,34 +1276,6 @@ ExtFree(void *ptr)
         element = (DbProxyInputElement *) ptr;
         data    = element->data;
         ns_free(data);
-        ns_free(element);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ExtFreeElement --
- *
- *	Free a dbproxyinputelement. 
- *
- * Results:
- *	None. 
- *
- * Side effects:
- *	Frees only the structure. 
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ExtFreeElement(void *ptr)
-{
-    DbProxyInputElement *element;
-
-    if (ptr != NULL) {
-        element = (DbProxyInputElement *) ptr;
         ns_free(element);
     }
 }
