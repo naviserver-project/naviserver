@@ -63,7 +63,7 @@ void
 NsInitConf(void)
 {
     Ns_DString addr;
-    char cwd[PATH_MAX];
+    static char cwd[PATH_MAX];
     extern char *nsBuildDate; /* NB: Declared in stamp.c */
 
     Ns_MutexInit(&nsconf.state.lock);
