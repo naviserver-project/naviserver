@@ -506,7 +506,9 @@ NsTclAdpArgvObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     	if (Tcl_GetIntFromObj(interp, objv[1], &i) != TCL_OK) {
     	    return TCL_ERROR;
     	}
-    	Tcl_SetObjResult(interp, itPtr->adp.objv[i]);
+        if ((i + 1) <= itPtr->adp.objc) {
+    	    Tcl_SetObjResult(interp, itPtr->adp.objv[i]);
+        }
     }
     return TCL_OK;
 }
