@@ -653,6 +653,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 int
 Ns_WaitForStartup(void)
 {
+
+    /*
+     * This dirty-read is worth the effort. 
+     */
+    if (nsconf.state.started) {
+        return NS_OK;
+    }
+
     Ns_MutexLock(&nsconf.state.lock);
     while (!nsconf.state.started) {
         Ns_CondWait(&nsconf.state.cond, &nsconf.state.lock);

@@ -673,11 +673,8 @@ NsTclThread(void *arg)
     /*
      * Need to ensure that the server has completed it's initializtion
      * prior to initiating TclEval.
-     * Note that we do a quick-and-dirty test first.
      */
-    if( !nsconf.state.started ) {
-        Ns_WaitForStartup();
-    }
+    Ns_WaitForStartup();
 
     (void) Ns_TclEval(dsPtr, argPtr->server, argPtr->script);
     ns_free(argPtr);
