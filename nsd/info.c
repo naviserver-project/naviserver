@@ -543,8 +543,14 @@ NsTclInfoCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoBootTime()));
     } else if (STREQ(cmd, "pid")) {
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoPid()));
+    } else if (STREQ(cmd, "major")) {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MAJOR_VERSION));
+    } else if (STREQ(cmd, "minor")) {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MINOR_VERSION));
     } else if (STREQ(cmd, "version")) {
-	Tcl_SetResult(interp, Ns_InfoServerVersion(), TCL_STATIC);
+	Tcl_SetResult(interp, NS_VERSION, TCL_STATIC);
+    } else if (STREQ(cmd, "patchlevel")) {
+	Tcl_SetResult(interp, NS_PATCH_LEVEL, TCL_STATIC);
     } else if (STREQ(cmd, "home")) {
 	Tcl_SetResult(interp, Ns_InfoHomePath(), TCL_STATIC);
     } else if (STREQ(cmd, "winnt")) {

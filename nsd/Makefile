@@ -50,3 +50,5 @@ OBJS = \
 	urlencode.o urlopen.o urlspace.o uuencode.o
 
 include  ../include/Makefile.library
+
+$(OBJS): nsd.h
