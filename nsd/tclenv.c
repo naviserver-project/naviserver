@@ -38,16 +38,41 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include	"nsd.h"
 
+extern char **_environ;
 
 static int PutEnv(Tcl_Interp *interp, char *name, char *value);
+static Ns_Mutex lock;
 
-#ifndef WIN32
-#ifndef __irix
-extern char **environ;
-#else
-extern char *environ[];
-#endif
-#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_GetEnvironment --
+ *
+ *	Copy the environment to the given dstring.
+ *
+ * Results:
+ *	Pointer to dsPtr->string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_GetEnvironment(Ns_DString *dsPtr)
+{
+    char *s;
+    int i;
+
+    Ns_MutexLock(&lock);
+    for (i = 0; (s = _environ[i]) != NULL; ++i) {
+	Ns_DStringNAppend(dsPtr, s, strlen(s)+1);
+    }
+    Ns_MutexUnlock(&lock);
+    return dsPtr->string;
+}
 
 
 /*
@@ -76,7 +101,6 @@ NsTclEnvCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     char	*name, *value;
     int		status, i;
     Tcl_DString	ds;
-    static Ns_Mutex lock;
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args:  should be \"",
@@ -93,8 +117,8 @@ NsTclEnvCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	    status = TCL_ERROR;
 	} else {
 	    Tcl_DStringInit(&ds);
-	    for (i = 0; environ[i] != NULL; ++i) {
-		name = environ[i];
+	    for (i = 0; _environ[i] != NULL; ++i) {
+		name = _environ[i];
 		value = strchr(name, '=');
 		Tcl_DStringAppend(&ds, name, value ? value - name : -1);
 	    	Tcl_AppendElement(interp, ds.string);

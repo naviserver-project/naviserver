@@ -1096,6 +1096,12 @@ NS_EXTERN char *Ns_NextWord(char *line);
 NS_EXTERN char *Ns_StrNStr(char *pattern, char *expression);
 
 /*
+ * tclenv.c:
+ */
+
+NS_EXTERN char *Ns_GetEnvironment(Ns_DString *dsPtr);
+
+/*
  * tclfile.c:
  */
 
