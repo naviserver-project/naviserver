@@ -141,3 +141,5 @@ clean-alib:
 
 clean-pgm:
 	$(RM) $(PGM) $(PGMOBJS)
+
+.PHONY: clean-mod clean-lib clean-alib clean-pgm
