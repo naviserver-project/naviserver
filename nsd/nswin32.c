@@ -219,7 +219,6 @@ NsRemoveService(void)
 
     Ns_DStringInit(&name);
     GetServiceName(&name);
-    Ns_Log(Notice, "nswin32: removing service '%s'", name.string);
     ok = FALSE;
     hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (hmgr != NULL) {
@@ -231,8 +230,10 @@ NsRemoveService(void)
         }
         CloseServiceHandle(hmgr);
     }
-    if (!ok) {
-	Ns_Log(Error, "nswin32: failed to remove service '%s': '%s'",
+    if (ok) {
+	Ns_Log(Notice, "nswin32: removed service: %s", name.string);
+    } else {
+	Ns_Log(Error, "nswin32: failed to remove %s service: %s",
 	       name.string, SysErrMsg());
     }
     Ns_DStringFree(&name);
@@ -273,13 +274,14 @@ NsInstallService(void)
 	sprintf(carg, " -%c ", nsconf.configfmt);
 	Ns_DStringInit(&name);
 	Ns_DStringInit(&cmd);
-	Ns_DStringVarAppend(&cmd, nsd,
-	    " -S -s ", nsServer, carg, config, NULL);
+	Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
+	    " -S -s ", nsServer, carg, "\"", config, "\"", NULL);
     	if (nsMemPools) {
 	    Ns_DStringAppend(&cmd, " -z");
 	}
 	GetServiceName(&name);
-	Ns_Log(Notice, "nswin32: installing service '%s'", name.string);
+	Ns_Log(Notice, "nswin32: installing %s service: %s",
+	    name.string, cmd.string);
 	hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	if (hmgr != NULL) {
 	    hsrv = CreateService(hmgr, name.string, name.string,
