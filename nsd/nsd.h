@@ -618,6 +618,12 @@ typedef struct NsServer {
 	Tcl_HashTable	    pages;
 	Ns_RWLock	    taglock;
 	Tcl_HashTable	    tags;
+
+        struct {
+            bool            enable;
+            int             level;
+            int             minsize;
+        } compress;
     } adp;
     
     /*
@@ -730,6 +736,7 @@ typedef struct NsInterp {
 
     struct {
 	bool               stream;
+        bool               compress;
 	int	           exception;
 	int                depth;
 	int                objc;
@@ -895,6 +902,7 @@ extern void NsAdpSetMimeType(NsInterp *itPtr, char *type);
 extern void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
 extern void NsAdpFlush(NsInterp *itPtr);
 extern void NsAdpStream(NsInterp *itPtr);
+extern void NsAdpCompress(NsInterp *itPtr, int compress);
 extern int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
 extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int safe,
                      char *resvar);

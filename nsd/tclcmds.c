@@ -61,6 +61,7 @@ extern Tcl_ObjCmdProc
     NsTclAdpExceptionObjCmd,
     NsTclAdpStreamObjCmd,
     NsTclAdpMimeTypeObjCmd,
+    NsTclAdpCompressObjCmd,
     NsTclChanObjCmd,
     NsTclChmodObjCmd,
     NsTclCondObjCmd,
@@ -509,6 +510,7 @@ static Cmd servCmds[] = {
     {"ns_adp_stream", NULL, NsTclAdpStreamObjCmd},
     {"ns_adp_mime", NULL, NsTclAdpMimeTypeObjCmd},
     {"ns_adp_mimetype", NULL, NsTclAdpMimeTypeObjCmd},
+    {"ns_adp_compress", NULL, NsTclAdpCompressObjCmd},
 
     /*
      * tclvar.c

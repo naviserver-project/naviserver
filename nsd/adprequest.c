@@ -191,6 +191,7 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
     itPtr->adp.typePtr = NULL;
     itPtr->adp.exception = ADP_OK;
     itPtr->adp.stream = 0;
+    itPtr->adp.compress = 0;
     itPtr->adp.debugLevel = 0;
     itPtr->adp.debugInit = 0;
     itPtr->adp.debugFile = NULL;
@@ -253,6 +254,29 @@ NsAdpStream(NsInterp *itPtr)
     	itPtr->adp.stream = 1;
 	NsAdpFlush(itPtr);
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsAdpCompress --
+ *
+ *	Turn on-the-fly compression on or off.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsAdpCompress(NsInterp *itPtr, int compress)
+{
+    itPtr->adp.compress = compress;
 }
 
 
@@ -335,11 +359,12 @@ AdpFlush(NsInterp *itPtr, int stream)
 {
     Tcl_Encoding encoding;
     Ns_Conn *conn;
-    Tcl_DString  ds;
+    Tcl_DString  ds, cds;
     int result, len;
-    char *buf, *type;
+    char *buf, *type, *ahdr;
 
     Tcl_DStringInit(&ds);
+    Tcl_DStringInit(&cds);
     conn = itPtr->conn;
     buf = itPtr->adp.responsePtr->string;
     len = itPtr->adp.responsePtr->length;
@@ -354,6 +379,37 @@ AdpFlush(NsInterp *itPtr, int stream)
 	Tcl_UtfToExternalDString(encoding, buf, len, &ds);
 	buf = ds.string;
 	len = ds.length;
+    }
+
+    /*
+     * Should we compress the response?  If the ADP requested it with
+     * ns_adp_compress, it's enabled in the server config, if headers
+     * haven't been sent yet, if this isn't a HEAD request, if streaming
+     * isn't turned on, if the response meets the minimum size per the
+     * config, if the browser indicates it can accept it, only THEN do
+     * we compress the response.
+     */
+
+    if (itPtr->adp.compress
+            && itPtr->servPtr->adp.compress.enable
+            && !(conn->flags & NS_CONN_SENTHDRS)
+            && !(conn->flags & NS_CONN_SKIPBODY)
+            && !stream
+            && len >= itPtr->servPtr->adp.compress.minsize
+            && (ahdr = Ns_SetIGet(Ns_ConnHeaders(conn),
+                    "Accept-Encoding")) != NULL
+            && strstr(ahdr, "gzip") != NULL
+            && Ns_CompressGzip(buf, len, &cds,
+                itPtr->servPtr->adp.compress.level) == NS_OK) {
+
+        /*
+         * We may want to check if Content-Encoding was already
+         * set, and if so, don't gzip.
+         */
+
+        Ns_ConnCondSetHeaders(conn, "Content-Encoding", "gzip");
+        buf = cds.string;
+        len = cds.length;
     }
 
     /*
@@ -385,6 +441,7 @@ AdpFlush(NsInterp *itPtr, int stream)
     }
 
     Tcl_DStringFree(&ds);
+    Tcl_DStringFree(&cds);
     Tcl_DStringTrunc(itPtr->adp.responsePtr, 0);
     return result;
 }

@@ -751,6 +751,44 @@ NsTclAdpStreamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclAdpCompressObjCmd --
+ *
+ *	Process the Tcl ns_adp_compress command to enable on-the-fly
+ *	gzip compression of ADP response.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ 
+int
+NsTclAdpCompressObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+		     Tcl_Obj **objv)
+{
+    NsInterp *itPtr = arg;
+    int compress = 1;
+
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?boolean?");
+        return TCL_ERROR;
+    }
+    if (objc >= 2) {
+        if (Tcl_GetBooleanFromObj(interp, objv[1], &compress) != TCL_OK) {
+            return TCL_ERROR;
+        }
+    }
+    NsAdpCompress(itPtr, compress);
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclAdpDebugCmd --
  *
  *	Process the Tcl ns_adp_debug command to connect to the TclPro

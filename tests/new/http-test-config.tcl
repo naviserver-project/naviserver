@@ -204,6 +204,10 @@ ns_param   enabledebug     false     ;# Allow Tclpro debugging with "?debug".
 # ADP special pages
 #ns_param   errorpage      ${pageroot}/errorpage.adp ;# ADP error page.
 
+ns_section "ns/server/${servername}/adp/compress"
+ns_param   enable          yes
+ns_param   level           4
+ns_param   minsize         0
 
 #
 # Socket driver module (HTTP)  -- nssock

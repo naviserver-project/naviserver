@@ -36,9 +36,9 @@
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "ns.h"
+
 #ifdef HAVE_ZLIB_H
 #include <zlib.h>
-#endif
 
 static char header[] = {
     037, 0213,  /* GZIP magic number. */
@@ -52,9 +52,9 @@ static char header[] = {
 /*
  *----------------------------------------------------------------------
  *
- * Ns_Compress --
+ * Ns_CompressGzip --
  *
- *      Compress a string.
+ *      Compress a string using gzip with RFC 1952 header/footer.
  *
  * Results:
  *      NS_OK if compression worked, NS_ERROR otherwise.
@@ -65,10 +65,8 @@ static char header[] = {
  *----------------------------------------------------------------------
  */
 
-#ifdef HAVE_LIBZ
-
 int
-Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level)
 {
     uLongf glen;
     char *gbuf;
@@ -112,10 +110,33 @@ Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level)
 #else
 
 int
-Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level)
 {
     return NS_ERROR;
 }
 
 #endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_Compress --
+ *
+ *      Deprecated:  Used by nsjk2 module.  Remove this once nsjk2 has
+ *      been updated to use Ns_CompressGzip directly.
+ *
+ * Results:
+ *      NS_OK if compression worked, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      Will write compressed content to given Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level)
+{
+    return Ns_CompressGzip(buf, len, outPtr, level);
+}
 
