@@ -511,6 +511,9 @@ static TclCmd tclCmds[ ] = {
     {
 	"ns_adp_registeradp", NsTclRegisterAdpCmd, NULL
     },
+    {
+	"ns_adp_registertag", NsTclRegisterAdpCmd, NULL
+    },
 
     /*
      * cache.c
