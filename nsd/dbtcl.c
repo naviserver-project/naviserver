@@ -350,7 +350,7 @@ NsTclDbCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 		if (rowPtr == NULL) {
 		    return DbFail(interp, handlePtr, cmd);
 		}
-		Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC);
+		Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC);
 	    }
 		
 
