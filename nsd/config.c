@@ -320,6 +320,46 @@ Ns_ConfigGetSection(char *section)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_GetVersion
+ *
+ *	Get the major, minor, and patchlevel version numbers and
+ *      the release type. A patch is a release type NS_FINAL_RELEASE
+ *      with a patchLevel > 0.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_GetVersion(majorV, minorV, patchLevelV, type)
+    int *majorV;
+    int *minorV;
+    int *patchLevelV;
+    int *type;
+{
+    if (majorV != NULL) {
+        *majorV = NS_MAJOR_VERSION;
+    }
+    if (minorV != NULL) {
+        *minorV = NS_MINOR_VERSION;
+    }
+    if (patchLevelV != NULL) {
+        *patchLevelV = NS_RELEASE_SERIAL;
+    }
+    if (type != NULL) {
+        *type = NS_RELEASE_LEVEL;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsConfigRead --
  *
  *	Read a config file at startup.
