@@ -1,0 +1,9 @@
+2005-02-17  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/tclfile.c: fixed broken NsTclChanObjCmd command which
+	  caused server crashes when trasporting channels between 
+	  threads when linked against Tcl 8.4+ library.
+
+2005-02-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	--- INITIAL IMPORT OF 4.0.10 AOLSERVER CODE ---
