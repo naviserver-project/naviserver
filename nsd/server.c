@@ -456,7 +456,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Ns_MutexSetName2(&servPtr->pools.lock, "nsd:queue:", server);
     CreatePool(servPtr, "");
     path = Ns_ConfigGetPath(server, NULL, "pools", NULL);
-    set = Ns_ConfigSection(path);
+    set = Ns_ConfigGetSection(path);
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
 	CreatePool(servPtr, Ns_SetKey(set, i));
     }

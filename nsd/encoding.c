@@ -689,10 +689,10 @@ RebuildCharsetList(void)
     Ns_MutexUnlock(&lock);
 
     if (charsetList != NULL ) {
-        Ns_Free( charsetList );
+        ns_free( charsetList );
     }
 
-    charsetList = Ns_StrDup( Tcl_DStringValue(&ds) );
+    charsetList = ns_strdup( Tcl_DStringValue(&ds) );
     Tcl_DStringFree(&ds);
     return charsetList;
 }

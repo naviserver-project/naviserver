@@ -41,7 +41,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #define CONST
 #endif
 #define ISSPACE(c) (isspace ((unsigned char) c))
-#define UCHAR(c) ((unsigned char) (c))
+#define UCHAR(c) ((unsigned char)(c))
 #define STRNEQU(str1, str2, cnt) \
         (((str1) [0] == (str2) [0]) && (strncmp (str1, str2, cnt) == 0))
 static char    *tclXWrongArgs = "wrong # args: ";

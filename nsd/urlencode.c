@@ -282,7 +282,7 @@ Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
     length = strlen(string);
     if (encoding != NULL) {
 
-        copy = Ns_Malloc((size_t)(length+1));
+        copy = ns_malloc((size_t)(length+1));
         q = copy;
 
     } else {
@@ -322,7 +322,7 @@ Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
         Tcl_ExternalToUtfDString(encoding, copy, n, &ds);
         Ns_DStringAppend(dsPtr, Tcl_DStringValue(&ds));
         Tcl_DStringFree(&ds);
-        Ns_Free(copy);
+        ns_free(copy);
 
     } else {
 

@@ -37,7 +37,11 @@
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
+#ifdef _WIN32
+#include <sys/utime.h>
+#else
 #include <utime.h>
+#endif
 
 
 /*
@@ -257,12 +261,12 @@ badargs:
     }
 
     emsg = "open";
-    rfd = open(src, O_RDONLY);
+    rfd = open(src, O_RDONLY|O_BINARY);
     if (rfd < 0) {
 	efile = src;
 	goto done;
     }
-    wfd = open(dst, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+    wfd = open(dst, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644);
     if (wfd < 0) {
 	efile = dst;
 	goto done;

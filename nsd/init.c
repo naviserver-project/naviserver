@@ -62,7 +62,9 @@ NsdInit(void)
 
     if (!once) {
 	once = 1;
+#ifndef _WIN32
     	NsInitBinder();
+#endif
     	NsInitCache();
     	NsInitConf();
     	NsInitEncodings();

@@ -42,7 +42,7 @@ static int PutEnv(Tcl_Interp *interp, char *name, char *value);
 static Ns_Mutex lock;
 #ifdef HAVE__NSGETENVIRON
 #include <crt_externs.h>
-#else
+#elif !defined(_WIN32)
 extern char **environ;
 #endif
 

@@ -225,6 +225,8 @@ Ns_InfoPlatform(void)
     return "UnixWare";
 #elif defined(__APPLE__)
     return "osx";
+#elif defined(_WIN32)
+    return "win32";
 #else
     return "?";
 #endif
@@ -564,8 +566,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	break;
 
     case IPoolsIdx:
+#ifndef _WIN32
 	Tcl_GetMemoryInfo(&ds);
 	Tcl_DStringResult(interp, &ds);
+#endif
 	break;
 
     case ILogIdx:
@@ -618,7 +622,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	break;
 
     case IWinntIdx:
+#ifdef _WIN32
+    Tcl_SetResult(interp, "1", TCL_STATIC);
+#else
 	Tcl_SetResult(interp, "0", TCL_STATIC);
+#endif
 	break;
 
     case ILabelIdx:

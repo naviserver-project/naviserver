@@ -77,7 +77,7 @@ NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         Tcl_WrongNumArgs(interp, 1, objv, "gif");
         return TCL_ERROR;
     }
-    fd = open(Tcl_GetString(objv[1]), O_RDONLY);
+    fd = open(Tcl_GetString(objv[1]), O_RDONLY|O_BINARY);
     if (fd == -1) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not open \"", 
             Tcl_GetString(objv[1]),
