@@ -372,6 +372,11 @@ AdpFlush(NsInterp *itPtr, int stream)
      * connection.
      */
 
+    if (conn->flags & NS_CONN_SKIPBODY) {
+        buf = NULL;
+        len = 0;
+    }
+
     result = Ns_WriteConn(conn, buf, len);
     if (result == NS_OK && !stream) {
 	result = Ns_ConnClose(conn);
