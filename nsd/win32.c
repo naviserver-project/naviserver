@@ -255,7 +255,7 @@ NsInstallService(char *server)
 {
     SC_HANDLE       hmgr, hsrv;
     BOOL	    ok;
-    char	    nsd[PATH_MAX], carg[10], config[PATH_MAX];
+    char	    nsd[PATH_MAX], config[PATH_MAX];
     Ns_DString	    name, cmd;
 
     ok = FALSE;
@@ -264,11 +264,10 @@ NsInstallService(char *server)
     } else if (!GetModuleFileName(NULL, nsd, sizeof(nsd))) {
 	Ns_Log(Error, "nswin32: failed to find nsd.exe: '%s'", SysErrMsg());
     } else {
-	sprintf(carg, " -%c ", nsconf.configfmt);
 	Ns_DStringInit(&name);
 	Ns_DStringInit(&cmd);
 	Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
-	    " -S -s ", server, carg, "\"", config, "\"", NULL);
+	    " -S -s ", server, "-t \"", config, "\"", NULL);
     	if (nsMemPools) {
 	    Ns_DStringAppend(&cmd, " -z");
 	}
