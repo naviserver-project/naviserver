@@ -616,6 +616,23 @@ static TclCmd tclCmds[ ] = {
     },
 
     /*
+     * tclxkeylist.c
+     */
+
+    {
+        "keyldel", Tcl_KeyldelCmd, NULL
+    },
+    {
+        "keylget", Tcl_KeylgetCmd, NULL
+    },
+    {
+        "keylkeys", Tcl_KeylkeysCmd, NULL
+    },
+    {
+        "keylset", Tcl_KeylsetCmd, NULL
+    },
+
+    /*
      * add more Tcl commands here 
      */
 
