@@ -101,7 +101,7 @@ Ns_SockListen(char *address, int port)
 {
     SOCKET          sock;
     struct sockaddr_in sa;
-    int backlog;
+    int backlog = nsconf.backlog;
     static int first = 1;
     Tcl_HashEntry *hPtr;
     char *addrstr;
@@ -446,7 +446,8 @@ Binder(void)
 {
     struct sockaddr_in sa;
     struct iovec    iov[3];
-    int             backlog, n, err, fd;
+    int             backlog = nsconf.backlog;
+    int             n, err, fd;
     struct msghdr   msg;
 #ifdef HAVE_CMMSG
     CMsg	    cm;
@@ -530,7 +531,7 @@ Binder(void)
  *
  * PreBind --
  *
- *	Pre-bind to one or more ports in a comma-separted list.
+ *	Pre-bind to one or more ports in a comma-separated list.
  *
  * Results:
  *	None.
@@ -589,7 +590,9 @@ PreBind(char *line)
 	    *p++ = ',';
 	}
 	if (err != NULL) {
-	    Ns_Log(Error, "prebind: invalid entry \"%s\": %s\n", ent, err);
+	    Ns_Log(Error, "prebind: invalid entry '%s': %s", ent, err);
+	} else {
+	    Ns_Log(Notice, "prebind: successful pre-bind to '%s'", ent);
 	}
 	ent = p;
     } while (ent != NULL);
