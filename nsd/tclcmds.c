@@ -77,13 +77,13 @@ extern Tcl_ObjCmdProc
     NsTclGifSizeObjCmd,
     NsTclGmTimeObjCmd,
     NsTclGuessTypeObjCmd,
-    NsTclInfoObjCmd,
     NsTclHTUUDecodeObjCmd,
     NsTclHTUUEncodeObjCmd,
     NsTclHeadersObjCmd,
     NsTclHttpObjCmd,
     NsTclHttpTimeObjCmd,
-    //NsTclInfoObjCmd,
+    NsTclInfoObjCmd,
+    NsTclInitObjCmd,
     NsTclJpegSizeObjCmd,
     NsTclKillObjCmd,
     //NsTclLibraryObjCmd,
@@ -615,6 +615,7 @@ static Cmd servCmds[] = {
      */
 
     {"ns_server", NsTclServerCmd, NsTclServerObjCmd},
+    {"ns_init", NULL, NsTclInitObjCmd},
 
     /*
      * Add more server Tcl commands here.
