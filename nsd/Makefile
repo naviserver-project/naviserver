@@ -30,7 +30,11 @@
 # $Header$
 #
 
-LIB      =  libnsd.so
+NSHOME ?= ..
+buildnsd = 1
+include $(NSHOME)/include/Makefile.global
+
+LIB      =  libnsd.$(LIBEXT)
 
 OBJS = \
 	adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o	\
@@ -50,6 +54,17 @@ OBJS = \
 	urlencode.o urlopen.o urlspace.o uuencode.o			\
 	mutex.o cslock.o rwlock.o
 
-include  ../include/Makefile.library
+all: $(LIB)
 
 $(OBJS): nsd.h
+
+$(LIB): $(OBJS)
+	$(RM) $(LIB)
+	$(LDLIB) -o $(LIB) $(OBJS) $(LIBS) $(RPATH)
+
+install: all
+	$(RM) $(INSTLIB)/$(LIB)
+	$(CP) $(LIB) $(INSTLIB)
+
+clean:
+	$(RM) $(OBJS) $(LIB) 
