@@ -139,9 +139,6 @@ NsConfUpdate(void)
     if (GetBool("logroll", LOG_ROLL_BOOL)) {
 	nsconf.log.flags |= LOG_ROLL;
     }
-    if (GetBool("logbuffered", LOG_BUFFER_BOOL)) {
-	nsconf.log.flags |= LOG_BUFFER;
-    }
     if (GetBool("logexpanded", LOG_EXPANDED_BOOL)) {
 	nsconf.log.flags |= LOG_EXPAND;
     }
