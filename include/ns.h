@@ -43,7 +43,7 @@
 #define NS_MINOR_VERSION	0
 #define NS_RELEASE_SERIAL	9
 #define NS_VERSION		"4.0"
-#define NS_PATCH_LEVEL		"4.0.9b"
+#define NS_PATCH_LEVEL		"4.0.9"
 
 #define NS_ALPHA_RELEASE	0
 #define NS_BETA_RELEASE		1
@@ -54,7 +54,7 @@
  * finished with non-production stages.
  */
 
-#define NS_RELEASE_LEVEL	NS_BETA_RELEASE
+#define NS_RELEASE_LEVEL	NS_FINAL_RELEASE
 
 #include "nsthread.h"
 
