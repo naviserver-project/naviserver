@@ -221,9 +221,9 @@ Ns_Fatal(char *fmt, ...)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_LogTime --
+ * Ns_LogTime2, Ns_LogTime --
  *
- *	Copy a GMT date and time string useful for common log
+ *	Copy a local or GMT date and time string useful for common log
  *	format enties (e.g., nslog).
  *
  * Results:
@@ -237,10 +237,16 @@ Ns_Fatal(char *fmt, ...)
  */
 
 char *
+Ns_LogTime2(char *timeBuf, int gmt)
+{
+    strcpy(timeBuf, LogTime(LogGetCache(), gmt, NULL));
+    return timeBuf;
+}
+
+char *
 Ns_LogTime(char *timeBuf)
 {
-    strcpy(timeBuf, LogTime(LogGetCache(), 1, NULL));
-    return timeBuf;
+    return Ns_LogTime2(timeBuf, 1);
 }
 
 
