@@ -85,8 +85,9 @@ include  ../include/Makefile.build
 
 cppem:
 	$(MKDIR) $(INSTMOD)/nsssl
-	$(CP) *.tcl $(INSTMOD)/nsssl
+	$(INSTALL_DATA) keygen.tcl $(INSTMOD)/nsssl
 	$(MKDIR) $(INSTSRVMOD)/nsssl
-	$(CP) *.pem $(INSTSRVMOD)/nsssl
+	$(INSTALL_DATA) certfile-sample.pem $(INSTSRVMOD)/nsssl
+	$(INSTALL_DATA) keyfile-sample.pem $(INSTSRVMOD)/nsssl
 
 endif
