@@ -51,7 +51,7 @@ install: all
 		$(INSTALL_DATA) $$i $(prefix)/modules/tcl/; \
 	done
 	$(INSTALL_DATA) sample-config.tcl $(prefix)/
-	$(INSTALL_DATA) install-sh $(INSTBIN)/
+	$(INSTALL_SH) install-sh $(INSTBIN)/
 	for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \
 	done
