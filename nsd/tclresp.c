@@ -512,8 +512,8 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
 	(filename != NULL ? 1 : 0) +
 	(string != NULL ? 1 : 0);
     if (i != 1) {
-		Tcl_SetResult(interp, "Need to specify at least one of -string, -file, 
-				or -type \n", TCL_STATIC);
+	Tcl_SetResult(interp, "must specify at least one of -string, -file, "
+			      "or -type \n", TCL_STATIC);
         retval = TCL_ERROR;
     }
 
