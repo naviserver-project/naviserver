@@ -161,7 +161,9 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
     objv[1] = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(objv[0]);
     Tcl_IncrRefCount(objv[1]);
-    if (NsAdpInclude(itPtr, start, 2, objv) != TCL_OK) {
+    if (NsAdpInclude(itPtr, start, 2, objv) != TCL_OK &&
+        itPtr->adp.exception != ADP_RETURN &&
+        itPtr->adp.exception != ADP_ABORT) {
 	Ns_TclLogError(interp);
     }
     Tcl_DecrRefCount(objv[0]);
