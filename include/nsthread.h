@@ -74,6 +74,15 @@
 #define FD_SETSIZE 1024
 #endif
 
+#ifdef __OpenBSD__
+#ifndef ENOTSUP
+/*
+ * Workaround until we have ENOTSUP in errno.h
+ */
+#define ENOTSUP         EOPNOTSUPP    
+#endif
+#endif
+
 #ifndef _WIN32
 #include <sys/types.h>
 #include <dirent.h>
