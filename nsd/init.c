@@ -65,11 +65,11 @@ NsdInit(void)
 #ifndef _WIN32
     	NsInitBinder();
 #endif
+    	NsInitLog();
     	NsInitCache();
     	NsInitConf();
     	NsInitEncodings();
     	NsInitListen();
-    	NsInitLog();
     	NsInitInfo();
     	NsInitMimeTypes();
     	NsInitModLoad();
