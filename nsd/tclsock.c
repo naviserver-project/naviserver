@@ -764,7 +764,7 @@ NsTclSockListenCallbackCmd(ClientData arg, Tcl_Interp *interp, int argc,
     NsInterp *itPtr = arg;
     ListenCallback *lcbPtr;
     int       port;
-    char     *addr, *script;
+    char     *addr;
 
     if (argc != 4) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
