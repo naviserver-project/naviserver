@@ -70,6 +70,6 @@ clean:
 	done
 
 distclean: clean
-	$(RM) config.status config.log config.cache include/Makefile.global
+	$(RM) config.status config.log config.cache include/Makefile.global include/Makefile.module
 
 .PHONY: all install install-binaries install-doc install-tests clean distclean
