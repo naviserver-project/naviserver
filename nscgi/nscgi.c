@@ -467,7 +467,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
 	    if (e != NULL) {
 		*e = '\0';
 	    }
-	    cgiPtr->name = url;
+	    cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), url);
             cgiPtr->path = Ns_DStringVarAppend(CgiDs(cgiPtr),
 	    	    	    	    	      mapPtr->path, "/", s, NULL);
     	    if (e == NULL) {
