@@ -424,6 +424,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     Tcl_FindExecutable(argv[0]);
+    NsTclInitObjs();
     nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
     NsConfigEval(config, argc, argv, optind);
     ns_free(config);
