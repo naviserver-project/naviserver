@@ -242,16 +242,10 @@ Ns_ConnRedirect(Ns_Conn *conn, char *url)
         status = Ns_ConnRunRequest(conn);
         break;
     case NS_FORBIDDEN:
-        status = Ns_ConnFlushContent(conn);
-        if (status == NS_OK) {
-            status = Ns_ConnReturnForbidden(conn);
-        }
+        status = Ns_ConnReturnForbidden(conn);
         break;
     case NS_UNAUTHORIZED:
-        status = Ns_ConnFlushContent(conn);
-        if (status == NS_OK) {
-            status = Ns_ConnReturnUnauthorized(conn);
-        }
+        status = Ns_ConnReturnUnauthorized(conn);
         break;
     case NS_ERROR:
     default:
