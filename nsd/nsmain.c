@@ -432,6 +432,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
 
     /*
+     * Load non-server modules.
+     */
+
+    NsLoadModules(NULL);
+
+    /*
      * Run pre-startups and start the servers.
      */
 
