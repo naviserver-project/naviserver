@@ -1,3 +1,10 @@
+2005-03-22  Vlad Seryakov <vlad@crystalballinc.com>
+
+         nsd/driver.c:  Ensure that socket driver's DriverClose callback 
+         gets executed when the socket is released.  This was causing a 
+         memory leak for HTTPS connections with nsopenssl when a Keep-Alive 
+         HTTP request timed out. Closes SF Bug #1160850 from AOLServer.
+
 2005-03-18  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/conn.c: Modified NsTclWriteContentObjCmd() to

@@ -1318,6 +1318,8 @@ SockRelease(Sock *sockPtr, ReleaseReasons reason)
                 ntohs(sockPtr->sa.sin_port) );
     }
 
+    (*sockPtr->drvPtr->proc)(DriverClose, sockPtr, NULL, 0);
+
     --nactive;
     ns_sockclose(sockPtr->sock);
     sockPtr->sock = INVALID_SOCKET;
