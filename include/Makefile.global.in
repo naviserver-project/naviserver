@@ -109,7 +109,6 @@ ifneq (,$(findstring SunOS,$(uname)))
     AR=/usr/ccs/bin/ar
     CCRPATH += $(CCRFLAG)/usr/lib/lwp
     LDRPATH += $(LDRFLAG)/usr/lib/lwp
-    LDLIB+=-nostartfiles
     LIBS+=-lrt
 endif
 
