@@ -57,7 +57,7 @@ struct proc {
 	char *desc;
 	Ns_ArgProc *argProc;
 } procs[] = {
-	{(void *) NsTclThread, "ns:tclthread", NsTclArgProc},
+	{(void *) NsTclThread, "ns:tclthread", NsTclThreadArgProc},
 	{(void *) NsTclCallback, "ns:tclcallback", NsTclArgProc},
 	{(void *) NsTclSchedProc, "ns:tclschedproc", NsTclArgProc},
 	{(void *) NsTclSignalProc, "ns:tclsigproc", NsTclArgProc},
