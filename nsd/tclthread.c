@@ -36,6 +36,9 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
+#ifdef NS_NOCOMPAT
+#undef NS_NOCOMPAT
+#endif
 #include "nsd.h"
 
 /*
