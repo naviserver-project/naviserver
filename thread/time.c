@@ -64,7 +64,7 @@ Ns_GetTime(Ns_Time *timePtr)
 
     _ftime(&tb);
     timePtr->sec = tb.time;
-    timePtr->usec = tb.millitm;
+    timePtr->usec = tb.millitm * 1000;
 #else
     struct timezone tz;
     struct timeval tv;
