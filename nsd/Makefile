@@ -35,6 +35,8 @@ buildnsd = 1
 include $(NSHOME)/include/Makefile.global
 
 LIB      =  libnsd.$(LIBEXT)
+NSD	 =  nsd
+INIT	 =  init.tcl
 
 OBJS = \
 	adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o	\
@@ -54,7 +56,7 @@ OBJS = \
 	urlencode.o urlopen.o urlspace.o uuencode.o			\
 	mutex.o cslock.o rwlock.o
 
-all: $(LIB)
+all: $(LIB) $(NSD)
 
 $(OBJS): nsd.h
 
@@ -62,9 +64,14 @@ $(LIB): $(OBJS)
 	$(RM) $(LIB)
 	$(LDLIB) -o $(LIB) $(OBJS) $(LIBS) $(RPATH)
 
+$(NSD): $(LIB) main.o
+	$(RM) $(NSD)
+	$(CC) -o $(NSD) main.o $(LIB) $(LIBS) $(RPATH)
+
 install: all
-	$(RM) $(INSTLIB)/$(LIB)
-	$(CP) $(LIB) $(INSTLIB)
+	$(RM) $(INSTLIB)/$(LIB) $(INSTBIN)/$(NSD) $(INSTBIN)/$(INIT)
+	$(CP) $(LIB) $(INSTLIB)/
+	$(CP) $(NSD) $(INIT) $(INSTBIN)/
 
 clean:
-	$(RM) $(OBJS) $(LIB) 
+	$(RM) $(OBJS) $(LIB) $(NSD) main.o
