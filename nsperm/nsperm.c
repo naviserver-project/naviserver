@@ -751,8 +751,7 @@ ValidateUserAddr(User *userPtr, char *peer)
 	return NS_TRUE;
     }
     if (inet_aton(peer, &peerip) == 0) {
-	Ns_Log(Bug, "ValidateUserAddr: "
-	       "bogus peer address of '%s'", peer);
+	Ns_Log(Bug, "nsperm: bogus peer address '%s'", peer);
 	return NS_FALSE;
     }
     if (!skiplocks) {
@@ -854,8 +853,8 @@ ValidateUserAddr(User *userPtr, char *peer)
 		}
 
 		if (last == start) {
-		    Ns_Log(Warning, "ValidateUserAddr: "
-			   "invalid hostname: %s", addr.string);
+		    Ns_Log(Warning, "nsperm: "
+			   "invalid hostname '%s'", addr.string);
 		    break;
 		}
 	    }
