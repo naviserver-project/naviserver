@@ -83,6 +83,7 @@ static int TclInitScriptCB(Tcl_Interp *interp, void *arg);
  */
 
 static Ns_Tls tls;
+static Ns_Mutex initLock;
 
 
 /*
@@ -105,6 +106,9 @@ void
 NsInitTcl(void)
 {
     Ns_TlsAlloc(&tls, DeleteInterps);
+    Ns_MutexInit(&initLock);
+    Ns_MutexSetName(&initLock, "ns:interp");
+
 }
 
 
@@ -1117,6 +1121,7 @@ InitInterp(Tcl_Interp *interp, NsServer *servPtr, NsInterp **itPtrPtr)
     static volatile int initialized = 0;
     NsInterp *itPtr;
     int result = TCL_OK;
+    int updateResult = TCL_OK;
 
     /*
      * Basic Tcl initialization.
@@ -1179,7 +1184,16 @@ InitInterp(Tcl_Interp *interp, NsServer *servPtr, NsInterp **itPtrPtr)
 	 * Update the interp state which should define ns_init.
 	 */
 
-	if (UpdateInterp(itPtr) != TCL_OK) {
+	if (nsconf.tcl.lockoninit) {
+            /* optionally serialize interp initialization as 
+               the resulting malloc lock contention can be far worse */
+       	    Ns_MutexLock(&initLock);
+        }
+        updateResult = UpdateInterp(itPtr);
+	if (nsconf.tcl.lockoninit) {
+            Ns_MutexUnlock(&initLock); 
+	}
+	if (updateResult != TCL_OK) {
 	    Ns_TclLogError(interp);
 	    result = TCL_ERROR;
     	}

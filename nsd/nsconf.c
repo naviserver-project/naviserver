@@ -220,6 +220,7 @@ NsConfUpdate(void)
      
     Ns_HomePath(&ds, "modules", "tcl", NULL);
     nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
+    nsconf.tcl.lockoninit = GetBool("tclinitlock", TCL_INITLCK_BOOL);
 
     Ns_DStringFree(&ds);
 }
