@@ -828,7 +828,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             char        *jobId, *jobState, *jobCode, *jobType;
             char        *jobResults, *jobScript, *jobReq;
             double      delta;
-
+            char        *timeTmp;
 
             if (objc != 3) {
                 Tcl_WrongNumArgs(interp, 2, objv, "queueId");
@@ -862,7 +862,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 } else if(jobPtr->state == JOB_DONE) {
                     delta = computeDelta(&jobPtr->startTime, &jobPtr->endTime);
                 }
-                ctime_r(&jobPtr->startTime.sec, buf);
+                timeTmp = ns_ctime((time_t*)&jobPtr->startTime.sec);
 
                 /* Create a Tcl List to hold the list of job fields. */
                 jobFieldList = Tcl_NewListObj(0, NULL);
@@ -885,7 +885,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                     (AppendFieldEntryDouble(interp, jobFieldList,
                                             "TIME", delta) != TCL_OK) ||
                     (AppendFieldEntry(interp, jobFieldList,
-                                      "START_TIME", buf) != TCL_OK)) {
+                                      "START_TIME", timeTmp) != TCL_OK)) {
 
                     /* AppendFieldEntry sets results if an error occurs. */
                     Tcl_DecrRefCount(jobList);
