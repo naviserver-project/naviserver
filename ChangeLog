@@ -1,3 +1,8 @@
+2005-03-23  Vlad Seryakov <vlad@crystalballinc.com>
+
+         include/ns.h:  Make Ns_SockBindUdp public function, it is public in
+         nsd/binder.c already.
+
 2005-03-22  Vlad Seryakov <vlad@crystalballinc.com>
 
          nsd/driver.c:  Ensure that socket driver's DriverClose callback 
