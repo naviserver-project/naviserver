@@ -141,13 +141,13 @@ Ns_SockWait(int sock, int what, int timeout)
     pfd.fd = sock;
     switch (what) {
     case NS_SOCK_READ:
-	pfd.events = POLLRDNORM;
+	pfd.events = POLLIN;
 	break;
     case NS_SOCK_WRITE:
-	pfd.events = POLLWRNORM;
+	pfd.events = POLLOUT;
 	break;
     case NS_SOCK_EXCEPTION:
-	pfd.events = POLLRDBAND;
+	pfd.events = POLLPRI;
 	break;
     default:
 	return NS_ERROR;
