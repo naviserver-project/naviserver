@@ -2000,7 +2000,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
 	if (hPtr != NULL) {
 	    chan = Tcl_GetHashValue(hPtr);
 	    Tcl_RegisterChannel(interp, chan);
-	    Tcl_SetResult(interp, Tcl_GetChannelName(chan), TCL_VOLATILE);
+	    Tcl_SetResult(interp, (char *) Tcl_GetChannelName(chan), TCL_VOLATILE);
 	}
     	Ns_MutexUnlock(&servPtr->chans.lock);
 	if (hPtr == NULL) {

@@ -1309,7 +1309,6 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_Conn     *conn;
     Tcl_Channel	 chan;
     int          len;
-    int		 fpArg = 1, lengthArg = 2;
 
     if (objc != 3 && objc != 4) {
         Tcl_WrongNumArgs(interp, 1, objv, "?connid? fp len");
