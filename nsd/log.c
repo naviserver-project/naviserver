@@ -457,7 +457,7 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (LogStart(cachePtr, severity)) {
 	for (i = 2; i < objc; ++i) {
 	    Ns_DStringVarAppend(&cachePtr->buffer,
-		Tcl_GetString(objv[i]), i > 1 ? " " : NULL, NULL);
+		Tcl_GetString(objv[i]), i < (objc-1) ? " " : NULL, NULL);
 	}
 	LogEnd(cachePtr);
     }
