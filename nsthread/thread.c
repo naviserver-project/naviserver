@@ -109,7 +109,6 @@ NsthreadsInit(void)
     	NsInitMaster();
     	NsInitReentrant();
     	Ns_TlsAlloc(&key, CleanupThread);
-	printf("nsthread load\n");
     }
 }
 
