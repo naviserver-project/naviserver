@@ -174,7 +174,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #endif
 
     opterr = 0;
-    while ((i = getopt(argc, argv, "qhpzifVl:s:t:" POPTS)) != -1) {
+    while ((i = getopt(argc, argv, "hpzifVl:s:t:" POPTS)) != -1) {
         switch (i) {
 	case 'l':
 	    sprintf(cwd, "TCL_LIBRARY=%s", optarg);
@@ -844,14 +844,13 @@ UsageError(char *msg)
 	fprintf(stderr, "\nError: %s\n", msg);
     }
     fprintf(stderr, "\n"
-	    "Usage: %s [-h|V] [-i|f] [-z] [-q] " OPTS " " OPTS_ARGS " [-b <address:port>|-B <file>] [-s <server>] -t <file>\n"
+	    "Usage: %s [-h|V] [-i|f] [-z] " OPTS " " OPTS_ARGS " [-b <address:port>|-B <file>] [-s <server>] -t <file>\n"
 	    "\n"
 	    "  -h  help (this message)\n"
 	    "  -V  version and release information\n"
 	    "  -i  inittab mode\n"
 	    "  -f  foreground mode\n"
 	    "  -z  zippy memory allocator\n"
-	    "  -q  quieter startup\n"
 #ifdef WIN32
 	    "  -I  Install win32 service\n"
 	    "  -R  Remove win32 service\n"
