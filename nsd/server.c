@@ -327,8 +327,8 @@ NsInitServer(Ns_ServerInitProc *initProc, char *server)
      * Initialize the Tcl detached channel support.
      */
 
-    Tcl_InitHashTable(&servPtr->detach.channels, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->detach.lock, "ns:detach", server);
+    Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
+    Ns_MutexSetName2(&servPtr->chans.lock, "ns:chans", server);
 
 
     /*

@@ -192,8 +192,9 @@ Ns_TclAllocateInterp(char *server)
 	itPtr->interp = interp;
 	itPtr->servPtr = NsGetServer(server);
 	itPtr->hPtr = hPtr;
-	Tcl_InitHashTable(&itPtr->sets.table, TCL_STRING_KEYS);
-	Tcl_InitHashTable(&itPtr->dbs.table, TCL_STRING_KEYS);	
+	Tcl_InitHashTable(&itPtr->sets, TCL_STRING_KEYS);
+	Tcl_InitHashTable(&itPtr->dbs, TCL_STRING_KEYS);	
+	Tcl_InitHashTable(&itPtr->chans, TCL_STRING_KEYS);	
 	Tcl_SetAssocData(interp, "ns:data", FreeData, itPtr);
 	NsTclAddCmds(itPtr, interp);
 	initPtr = itPtr->servPtr->tcl.firstInitPtr;
@@ -572,5 +573,6 @@ FreeData(ClientData arg, Tcl_Interp *interp)
     NsFreeSets(itPtr);
     NsFreeDbs(itPtr);
     NsFreeAdp(itPtr);
+    Tcl_DeleteHashTable(&itPtr->chans);
     ns_free(itPtr);
 }
