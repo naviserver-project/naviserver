@@ -280,6 +280,7 @@ NS_EXTERN void Ns_CsLeave(Ns_Cs *csPtr);
  */
 
 NS_EXTERN int ns_fork(void);
+NS_EXTERN int ns_vfork(void);
 NS_EXTERN int Ns_Fork(void);
 
 /*

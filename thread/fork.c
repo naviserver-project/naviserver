@@ -42,7 +42,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 /*
  *----------------------------------------------------------------------
  *
- * ns_fork --
+ * ns_fork, nv_vfork --
  *
  *	Posix style fork(), using fork1() on Solaris if needed.
  *
@@ -73,4 +73,14 @@ int
 Ns_Fork(void)
 {
     return ns_fork();
+}
+
+int
+ns_vfork(void)
+{
+#ifdef HAVE_VFORK
+    return vfork();
+#else
+    return ns_fork();
+#endif
 }

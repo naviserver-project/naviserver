@@ -156,6 +156,7 @@ NsConfInit(void)
      */
      
     nsconf.exec.checkexit = GetBool("checkexitcode", EXEC_CHECKEXIT_BOOL);
+    nsconf.exec.vfork = GetBool("enablevfork", EXEC_VFORK_BOOL);
 
     /*
      * keepalive.c
