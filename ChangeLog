@@ -1,5 +1,8 @@
 2005-04-02  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/tclcmds.c: added synonyms for ns_uuencode/ns_uudecode procs
+	  as ns_base64encode/ns_base64decode, because those functions actually
+	  do base64 encoding
 	* nsd/tclmisc.c:
 	* nsd/uuencode.c: modified uuencode/decode to support
 	  string buffers any size and be compatible with GNU uuencode,

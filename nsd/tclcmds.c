@@ -259,6 +259,8 @@ static Cmd cmds[] = {
     {"ns_urldecode", NULL, NsTclUrlDecodeObjCmd},
     {"ns_uuencode", NULL, NsTclHTUUEncodeObjCmd},
     {"ns_uudecode", NULL, NsTclHTUUDecodeObjCmd},
+    {"ns_base64encode", NULL, NsTclHTUUEncodeObjCmd},
+    {"ns_base64decode", NULL, NsTclHTUUDecodeObjCmd},
     {"ns_gifsize", NULL, NsTclGifSizeObjCmd},
     {"ns_jpegsize", NULL, NsTclJpegSizeObjCmd},
     {"ns_guesstype", NULL, NsTclGuessTypeObjCmd},
