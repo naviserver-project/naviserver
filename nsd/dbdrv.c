@@ -631,7 +631,7 @@ NsDbLoadDriver(char *driver)
 	memset(driverPtr, 0, sizeof(DbDriver));
 	driverPtr->name = Tcl_GetHashKey(&driversTable, hPtr);
         Tcl_SetHashValue(hPtr, driverPtr);
-        module = Ns_ConfigGet("ns/db/drivers", driver);
+        module = Ns_ConfigGetValue("ns/db/drivers", driver);
         if (module == NULL) {
 	    Ns_Log(Error, "dbdrv: no such driver '%s'", driver);
 	} else {

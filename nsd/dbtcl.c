@@ -623,7 +623,7 @@ NsTclDbConfigPathCmd(ClientData arg, Tcl_Interp *interp, int argc,
 			 "\"", NULL);
         return TCL_ERROR;
     }
-    section = Ns_ConfigPath(itPtr->servPtr->server, NULL, "db", NULL);
+    section = Ns_ConfigGetPath(itPtr->servPtr->server, NULL, "db", NULL);
     Tcl_SetResult(interp, section, TCL_STATIC);
     return TCL_OK;
 }
