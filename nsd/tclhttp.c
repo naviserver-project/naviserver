@@ -149,20 +149,6 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
             hdrs = NULL;
         }
 
-        if (strcasecmp(method, METHOD_GET) == 0) {
-            method = METHOD_GET;
-        }
-        else if (strcasecmp(method, METHOD_POST) == 0) {
-            method = METHOD_POST;
-        }
-        else {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                                   "method must be one of ",
-                                   METHOD_GET ", " METHOD_POST,
-                                   NULL);
-            return TCL_ERROR;
-        }
-
         httpPtr = HttpOpen(method, url, hdrs, body);
         if (httpPtr == NULL) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
@@ -318,7 +304,9 @@ HttpOpen(char *method, char *url, Ns_Set *hdrs, char *body)
         if (file != NULL) {
             *file = '/';
         }
-        Ns_DStringVarAppend(&httpPtr->ds, method, " ", file ? file : "/", " HTTP/1.0\r\n", NULL);
+        Ns_DStringAppend(&httpPtr->ds, method);
+        Ns_StrToUpper(Ns_DStringValue(&httpPtr->ds));
+        Ns_DStringVarAppend(&httpPtr->ds, " ", file ? file : "/", " HTTP/1.0\r\n", NULL);
         if (file != NULL) {
             *file = '\0';
         }
