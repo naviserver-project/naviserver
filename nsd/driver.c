@@ -1486,18 +1486,18 @@ SockRead(Sock *sockPtr)
 	 */
 
 	if (e == s) {
-            /* Look for a blank line on its own prior to any "real" 
+            /*
+             * Look for a blank line on its own prior to any "real" 
              * data. We eat up to 2 of these before closing the
              * connection.
              */
-            if (bufPtr->length == 2 && e[0] == '\r' && e[1] == '\n') {
-		if (reqPtr->leadblanks++ >= 2) {
-		    reqPtr->leadblanks = 0;
+
+            if (bufPtr->length == 0) {
+		if (++reqPtr->leadblanks > 2) {
 		    return SOCK_ERROR;
 		}
 		reqPtr->woff = reqPtr->roff = 0;
-		reqPtr->leadblanks++;
-		Tcl_DStringSetLength(bufPtr, len - n);
+		Tcl_DStringSetLength(bufPtr, 0);
 		return SOCK_MORE;
             }
 	    reqPtr->coff = reqPtr->roff;
