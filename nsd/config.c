@@ -447,7 +447,7 @@ NsConfigEval(char *config, int argc, char **argv, int optind)
 	Ns_TclLogError(interp);
 	Ns_Fatal("config error");
     }
-    Tcl_DeleteInterp(interp);
+    Ns_TclDestroyInterp(interp);
 }
 
 
