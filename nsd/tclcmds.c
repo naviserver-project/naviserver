@@ -47,7 +47,7 @@ extern Tcl_ObjCmdProc
     NsTclAtCloseObjCmd,
     NsTclChanObjCmd,
     NsTclChmodObjCmd,
-    //NsTclConnObjCmd,
+    NsTclConnObjCmd,
     NsTclConnSendFpObjCmd,
     NsTclCpFpObjCmd,
     NsTclCpObjCmd,
@@ -490,7 +490,7 @@ static Cmd servCmds[] = {
     {"ns_parsequery", NsTclParseQueryCmd, NsTclParseQueryObjCmd},
     {"ns_conncptofp", NsTclWriteContentCmd, NsTclWriteContentObjCmd},
     {"ns_writecontent", NsTclWriteContentCmd, NsTclWriteContentObjCmd},
-    {"ns_conn", NsTclConnCmd, NULL},
+    {"ns_conn", NsTclConnCmd, NsTclConnObjCmd},
 
     /*
      * adpparse.c
