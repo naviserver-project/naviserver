@@ -728,7 +728,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_SetMerge(cgiPtr->env, modPtr->mergeEnv);
     }
     if (modPtr->flags & CGI_SYSENV) {
-	envp = Ns_GetEnvironment(dsPtr);
+	envp = Ns_CopyEnviron(dsPtr);
 	while (*envp != NULL) {
 	    s = *envp;
 	    e = strchr(s, '=');
