@@ -66,9 +66,17 @@ NsInitConf(void)
     static char cwd[PATH_MAX];
     extern char *nsBuildDate; /* NB: Declared in stamp.c */
 
+    Ns_ThreadSetName("-main-");
+
+    /*
+     * At library load time the server is considered started. 
+     * Normally it's marked stopped immediately by Ns_Main unless
+     * libnsd is being used for some other, non-server program.
+     */
+     
+    nsconf.state.started = 1;
     Ns_MutexInit(&nsconf.state.lock);
     Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
-    Ns_ThreadSetName("-main-");
 
     nsconf.build	 = nsBuildDate;
     nsconf.name          = NSD_NAME;
@@ -77,6 +85,7 @@ NsInitConf(void)
     time(&nsconf.boot_t);
     nsconf.pid = getpid();
     nsconf.home = getcwd(cwd, sizeof(cwd));
+    nsconf.tcl.objcmds = 1;
     if (gethostname(nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
         strcpy(nsconf.hostname, "localhost");
     }
