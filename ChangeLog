@@ -1,3 +1,13 @@
+2005-03-05  Vlad Seryakov <vlad@crystalballinc.com>
+
+	* nsd/conn.c include/ns.h Add Ns_ConnSetResponseStatus command to
+        be able to se response status without touching headers. Also
+        ns_conn status has been extended with ability to set response 
+        status if third argument is provided. ns_conn status ?newStatus?
+
+        * nslog/nslog.c: changed syntax to conform naviserver style,
+        no functional modifications
+
 2005-03-04  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclobjv.c: Add support for boolean options which take no

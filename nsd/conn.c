@@ -233,6 +233,31 @@ Ns_ConnResponseStatus(Ns_Conn *conn)
 
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSetResponseStatus --
+ *
+ *	Set the HTTP reponse code that will be sent
+ *
+ * Results:
+ *	Previous response status as an integer response code (e.g., 200 for OK)
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
+{
+    Conn           *connPtr = (Conn *) conn;
+
+    connPtr->responseStatus = new_status;
+    return new_status;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -808,7 +833,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Tcl_HashSearch search;
     FormFile	 *filePtr;
     int		  idx, off, len;
-    int           write_encoded_flag;
 
     static CONST char *opts[] = {
 	 "authpassword", "authuser", "close", "content", "contentlength",
@@ -1039,7 +1063,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
         case CWriteEncodedIdx:
 	    if (objc > 2) {
-		if (Tcl_GetIntFromObj(interp, objv[2], &write_encoded_flag) 
+                int write_encoded_flag;
+                if (Tcl_GetIntFromObj(interp, objv[2], &write_encoded_flag)
                     != TCL_OK) {
                     Tcl_AppendResult(interp, "Invalid write-encoded flag", NULL );
                     return TCL_ERROR;
@@ -1102,6 +1127,14 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    break;
 
 	case CStatusIdx:
+            if (objc > 2) {
+                int new_status;
+                if (Tcl_GetIntFromObj(interp, objv[2], &new_status) != TCL_OK) {
+                    Tcl_AppendResult(interp, "Invalid response status code", NULL );
+                    return TCL_ERROR;
+                }
+                Ns_ConnSetResponseStatus(conn, new_status);
+            }
 	    Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
 	    break;
 

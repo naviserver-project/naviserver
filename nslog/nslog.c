@@ -28,6 +28,7 @@
  *
  */
 
+static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 /* 
  * nslog.c --
@@ -169,10 +170,10 @@ Ns_ModuleInit(char *server,char *module)
     static int first = 1;
 
     /* Register the info callbacks just once. */
-    if(first) {
-      Ns_RegisterProcInfo((void *)LogRollCallback,"logroll",LogArg);
-      Ns_RegisterProcInfo((void *)LogCloseCallback,"logclose",LogArg);
-      first = 0;
+    if (first) {
+        Ns_RegisterProcInfo((void *)LogRollCallback,"logroll",LogArg);
+        Ns_RegisterProcInfo((void *)LogCloseCallback,"logclose",LogArg);
+        first = 0;
     }
 
     Ns_DStringInit(&ds);
@@ -192,57 +193,75 @@ Ns_ModuleInit(char *server,char *module)
      */
 
     path = Ns_ConfigGetPath(server,module,NULL);
-    if(!(logPtr->file = Ns_ConfigGetValue(path,"file"))) logPtr->file = "access.log";
+    logPtr->file = Ns_ConfigGetValue(path,"file");
+    if (logPtr->file == NULL) {
+        logPtr->file = "access.log";
+    }
     logPtr->file = ns_strdup(logPtr->file);
-    if(Ns_PathIsAbsolute(logPtr->file) == NS_FALSE) {
-      Ns_ModulePath(&ds,server,module,NULL,NULL);
-      if(mkdir(ds.string,0755) != 0 && errno != EEXIST && errno != EISDIR) {
-        Ns_Log(Error,"nslog: mkdir(%s) failed: %s",ds.string,strerror(errno));
-        Ns_DStringFree(&ds);
-        return NS_ERROR;
-      }
-      Ns_DStringTrunc(&ds,0);
-      Ns_ModulePath(&ds,server,module,logPtr->file,NULL);
-      logPtr->file = Ns_DStringExport(&ds);
+
+    if (Ns_PathIsAbsolute(logPtr->file) == NS_FALSE) {
+        Ns_ModulePath(&ds,server,module,NULL,NULL);
+        if (mkdir(ds.string,0755) != 0 && 
+            errno != EEXIST && 
+            errno != EISDIR) {
+            Ns_Log(Error,"nslog: mkdir(%s) failed: %s",ds.string,strerror(errno));
+            Ns_DStringFree(&ds);
+            return NS_ERROR;
+       }
+       Ns_DStringTrunc(&ds,0);
+       Ns_ModulePath(&ds,server,module,logPtr->file,NULL);
+       logPtr->file = Ns_DStringExport(&ds);
     }
 
     /* Get parameters from configuration file */
-    if((logPtr->rollfmt = Ns_ConfigGetValue(path,"rollfmt")))
-       logPtr->rollfmt = ns_strdup(logPtr->rollfmt);
-    if(!Ns_ConfigGetInt(path,"maxbackup",&logPtr->maxbackup) || logPtr->maxbackup < 1)
-       logPtr->maxbackup = 100;
-    if(!Ns_ConfigGetInt(path,"maxbuffer",&logPtr->maxlines)) 
-       logPtr->maxlines = 0;
-    if(!Ns_ConfigGetBool(path,"formattedTime",&opt) || opt) 
-       logPtr->flags |= LOG_FMTTIME;
-    if(!Ns_ConfigGetBool(path,"logcombined",&opt) || opt) 
-       logPtr->flags |= LOG_COMBINED;
-    if(Ns_ConfigGetBool(path,"logreqtime",&opt) && opt) 
-       logPtr->flags |= LOG_REQTIME;
-    if(Ns_ConfigGetBool(path,"suppressquery",&opt) && opt) 
-       logPtr->flags |= LOG_SUPPRESSQUERY;
-    if(Ns_ConfigGetBool(path,"checkforproxy",&opt) && opt) 
-       logPtr->flags |= LOG_CHECKFORPROXY;
-
+    logPtr->rollfmt = Ns_ConfigGetValue(path,"rollfmt");
+    if (logPtr->rollfmt == NULL) {
+        logPtr->rollfmt = ns_strdup(logPtr->rollfmt);
+    }
+    if (!Ns_ConfigGetInt(path,"maxbackup",&logPtr->maxbackup) || 
+        logPtr->maxbackup < 1) {
+        logPtr->maxbackup = 100;
+    }
+    if (!Ns_ConfigGetInt(path,"maxbuffer",&logPtr->maxlines))  {
+        logPtr->maxlines = 0;
+    }
+    if (!Ns_ConfigGetBool(path,"formattedTime",&opt) || opt)  {
+        logPtr->flags |= LOG_FMTTIME;
+    }
+    if (!Ns_ConfigGetBool(path,"logcombined",&opt) || opt) {
+        logPtr->flags |= LOG_COMBINED;
+    }
+    if (Ns_ConfigGetBool(path,"logreqtime",&opt) && opt) {
+        logPtr->flags |= LOG_REQTIME;
+    }
+    if (Ns_ConfigGetBool(path,"suppressquery",&opt) && opt) {
+        logPtr->flags |= LOG_SUPPRESSQUERY;
+    }
+    if (Ns_ConfigGetBool(path,"checkforproxy",&opt) && opt) {
+        logPtr->flags |= LOG_CHECKFORPROXY;
+    }
     /* Schedule various log roll and shutdown options. */
-    if(!Ns_ConfigGetInt(path,"rollhour",&hour) || hour < 0 || hour > 23) 
-       hour = 0;
-    if(!Ns_ConfigGetBool(path,"rolllog",&opt) || opt)
-       Ns_ScheduleDaily((Ns_SchedProc *) LogRollCallback,logPtr,0,hour,0,NULL);
-
-    if(Ns_ConfigGetBool(path,"rollonsignal",&opt) && opt)
-       Ns_RegisterAtSignal(LogRollCallback,logPtr);
-
+    if (!Ns_ConfigGetInt(path,"rollhour",&hour) || hour < 0 || hour > 23) {
+        hour = 0;
+    }
+    if (!Ns_ConfigGetBool(path,"rolllog",&opt) || opt) {
+        Ns_ScheduleDaily((Ns_SchedProc *) LogRollCallback,logPtr,0,hour,0,NULL);
+    }
+    if (Ns_ConfigGetBool(path,"rollonsignal",&opt) && opt) {
+        Ns_RegisterAtSignal(LogRollCallback,logPtr);
+    }
     /* Parse extended headers, it is just Tcl list of names */
     Ns_DStringTrunc(&ds,0);
     Ns_DStringVarAppend(&ds,Ns_ConfigGet(path,"extendedheaders"),0);
-    if(Tcl_SplitList(NULL,ds.string,&opt,&logPtr->extheaders) != TCL_OK)
-       Ns_Log(Error,"nslog: invalid %s/extendedHeaders parameter: %s",path,ds.string);
-
+    if (Tcl_SplitList(NULL,ds.string,&opt,&logPtr->extheaders) != TCL_OK) {
+        Ns_Log(Error,"nslog: invalid %s/extendedHeaders parameter: %s",path,ds.string);
+    }
     Ns_DStringFree(&ds);
 
     /* Open the log and register the trace. */
-    if(LogOpen(logPtr) != NS_OK) return NS_ERROR;
+    if (LogOpen(logPtr) != NS_OK) {
+        return NS_ERROR;
+    }
     Ns_RegisterServerTrace(server,LogTrace,logPtr);
     Ns_RegisterAtShutdown(LogCloseCallback,logPtr);
     Ns_TclInitInterps(server,AddCmds,logPtr);
@@ -278,9 +297,9 @@ LogTrace(void *arg,Ns_Conn *conn)
     register char **h,*p = 0;
 
     /* Compute the request's elapsed time. */
-    if(logPtr->flags & LOG_REQTIME) {
-      Ns_GetTime(&now);
-      Ns_DiffTime(&now,Ns_ConnStartTime(conn),&diff);
+    if (logPtr->flags & LOG_REQTIME) {
+        Ns_GetTime(&now);
+        Ns_DiffTime(&now,Ns_ConnStartTime(conn),&diff);
     }
 
     Ns_DStringInit(&ds);
@@ -290,89 +309,102 @@ LogTrace(void *arg,Ns_Conn *conn)
      * Watch for users comming from proxy servers if configured.
      */
 
-    if(logPtr->flags & LOG_CHECKFORPROXY) {
-      if((p = Ns_SetIGet(conn->headers,"X-Forwarded-For")) && !strcmp(p,"unknown")) p = 0;
+    if (logPtr->flags & LOG_CHECKFORPROXY) {
+        p = Ns_SetIGet(conn->headers,"X-Forwarded-For");
+        if (p != NULL && !strcasecmp(p,"unknown")) {
+            p = 0;
+        }
     }
-    Ns_DStringAppend(&ds,p ? p : Ns_ConnPeer(conn));
+    Ns_DStringAppend(&ds,p && *p ? p : Ns_ConnPeer(conn));
 
-    if(conn->authUser == NULL) {
-      Ns_DStringAppend(&ds," - - ");
+    if (conn->authUser == NULL) {
+        Ns_DStringAppend(&ds," - - ");
     } else {
-      p = conn->authUser;
-      quote = 0;
-      while(*p != '\0') {
-	if(isspace((unsigned char) *p)) {
-	  quote = 1;
-	  break;
-	}
-	++p;
-      }
-      if(quote)
-        Ns_DStringVarAppend(&ds," - \"",conn->authUser,"\" ",NULL);
-      else
-        Ns_DStringVarAppend(&ds," - ",conn->authUser," ",NULL);
+        p = conn->authUser;
+        quote = 0;
+        while (*p != '\0') {
+	  if (isspace((unsigned char) *p)) {
+	      quote = 1;
+	      break;
+	   }
+	 ++p;
+       }
+       if (quote) {
+           Ns_DStringVarAppend(&ds," - \"",conn->authUser,"\" ",NULL);
+       } else {
+           Ns_DStringVarAppend(&ds," - ",conn->authUser," ",NULL);
+       }
     }
 
     /* Append a common log format time stamp including GMT offset. */
-    if(!(logPtr->flags & LOG_FMTTIME))
-      sprintf(buf,"[%ld]",(long)time(NULL));
-    else
-      Ns_LogTime(buf);
-
+    if (!(logPtr->flags & LOG_FMTTIME)) {
+        sprintf(buf,"[%ld]",(long)time(NULL));
+    } else {
+       Ns_LogTime(buf);
+    }
     Ns_DStringAppend(&ds,buf);
 
     /* Append the request line. */
-    if(conn->request && conn->request->line) {
-      if(logPtr->flags & LOG_SUPPRESSQUERY) {
-	/* Don't display query data. */
-	Ns_DStringVarAppend(&ds," \"",conn->request->url,"\" ",NULL);
-      } else
-        Ns_DStringVarAppend(&ds," \"",conn->request->line,"\" ",NULL);
-    } else
-      Ns_DStringAppend(&ds," \"\" ");
-
+    if (conn->request && conn->request->line) {
+        if (logPtr->flags & LOG_SUPPRESSQUERY) {
+	    /* Don't display query data. */
+	    Ns_DStringVarAppend(&ds," \"",conn->request->url,"\" ",NULL);
+        } else {
+            Ns_DStringVarAppend(&ds," \"",conn->request->line,"\" ",NULL);
+        }
+    } else {
+        Ns_DStringAppend(&ds," \"\" ");
+    }
     /* Construct and append the HTTP status code and bytes sent. */
     n = Ns_ConnResponseStatus(conn);
     sprintf(buf,"%d %u ",n ? n : 200,Ns_ConnContentSent(conn));
     Ns_DStringAppend(&ds,buf);
 
-    if((logPtr->flags & LOG_COMBINED)) {
-      /* Append the referer and user-agent headers(if any). */
-      Ns_DStringAppend(&ds,"\"");
-      if((p = Ns_SetIGet(conn->headers,"referer"))) Ns_DStringAppend(&ds,p);
-      Ns_DStringAppend(&ds,"\" \"");
-      if((p = Ns_SetIGet(conn->headers,"user-agent"))) Ns_DStringAppend(&ds,p);
-      Ns_DStringAppend(&ds,"\"");
+    if ((logPtr->flags & LOG_COMBINED)) {
+        /* Append the referer and user-agent headers(if any). */
+        Ns_DStringAppend(&ds,"\"");
+        if ((p = Ns_SetIGet(conn->headers,"referer"))) {
+            Ns_DStringAppend(&ds,p);
+        }
+        Ns_DStringAppend(&ds,"\" \"");
+        if ((p = Ns_SetIGet(conn->headers,"user-agent"))) {
+            Ns_DStringAppend(&ds,p);
+        }
+        Ns_DStringAppend(&ds,"\"");
     }
 
     /* Append the request's elapsed time(if enabled). */
-    if(logPtr->flags & LOG_REQTIME) {
-      sprintf(buf," %d.%06ld",(int)diff.sec,diff.usec);
-      Ns_DStringAppend(&ds,buf);
+    if (logPtr->flags & LOG_REQTIME) {
+        sprintf(buf," %d.%06ld",(int)diff.sec,diff.usec);
+        Ns_DStringAppend(&ds,buf);
     }
 
     /* Append the extended headers(if any). */
-    for(h = logPtr->extheaders; *h; h++) {
-      if(!(p = Ns_SetIGet(conn->headers,*h))) p = "";
-      Ns_DStringVarAppend(&ds," \"",p,"\"",NULL);
+    for (h = logPtr->extheaders; *h; h++) {
+        if (!(p = Ns_SetIGet(conn->headers,*h))) {
+            p = "";
+        }
+        Ns_DStringVarAppend(&ds," \"",p,"\"",NULL);
     }
 
     /* Append the trailing newline and buffer and/or flush the line. */
     status = NS_OK;
     Ns_DStringAppend(&ds,"\n");
     Ns_MutexLock(&logPtr->lock);
-    if(logPtr->maxlines <= 0) {
-      status = LogFlush(logPtr,&ds);
+    if (logPtr->maxlines <= 0) {
+        status = LogFlush(logPtr,&ds);
     } else {
-      Ns_DStringNAppend(&logPtr->buffer,ds.string,ds.length);
-      if(++logPtr->curlines > logPtr->maxlines) {
-	status = LogFlush(logPtr,&logPtr->buffer);
-	logPtr->curlines = 0;
-      }
+        Ns_DStringNAppend(&logPtr->buffer,ds.string,ds.length);
+        if (++logPtr->curlines > logPtr->maxlines) {
+	    status = LogFlush(logPtr,&logPtr->buffer);
+	    logPtr->curlines = 0;
+        }
     }
     Ns_MutexUnlock(&logPtr->lock);
     Ns_DStringFree(&ds);
-    if(status != NS_OK) Ns_Log(Error,"nslog: failed to flush log: %s",strerror(errno));
+    if (status != NS_OK) {
+        Ns_Log(Error,"nslog: failed to flush log: %s",strerror(errno));
+    }
 }
 
 
@@ -406,114 +438,146 @@ LogCmd(ClientData arg,Tcl_Interp *interp,int argc,CONST char **argv)
     Ns_DString ds;
     Log *logPtr = arg;
 
-    if(argc < 2) {
-      Tcl_AppendResult(interp,"wrong # args: should be: \"",argv[0]," command ?arg?\"",NULL);
-      return TCL_ERROR;
+    if (argc < 2) {
+        Tcl_AppendResult(interp,"wrong # args: should be: \"",argv[0]," command ?arg?\"",NULL);
+        return TCL_ERROR;
     }
 
-    if(STREQ(argv[1],"rollfmt")) {
-      Ns_MutexLock(&logPtr->lock);
-      if(argc > 2) {
-        ns_free(logPtr->rollfmt);
-        logPtr->rollfmt = ns_strdup(argv[2]);
-      }
-      Ns_MutexUnlock(&logPtr->lock);
-      Tcl_SetResult(interp,logPtr->rollfmt,TCL_STATIC);
-    } else
-
-    if(STREQ(argv[1],"maxbackup")) {
-      Ns_MutexLock(&logPtr->lock);
-      if(argc > 2 && (logPtr->maxbackup = atoi(argv[2])) < 1) logPtr->maxbackup = 100;
-      Tcl_SetObjResult(interp,Tcl_NewIntObj(logPtr->maxbackup));
-      Ns_MutexUnlock(&logPtr->lock);
-    } else
-
-    if(STREQ(argv[1],"maxbuffer")) {
-      Ns_MutexLock(&logPtr->lock);
-      if(argc > 2) logPtr->maxlines = atoi(argv[2]);
-      Tcl_SetObjResult(interp,Tcl_NewIntObj(logPtr->maxlines));
-      Ns_MutexUnlock(&logPtr->lock);
-    } else
-
-    if(STREQ(argv[1],"extendedheaders")) {
-      char **h,**h1,**h2 = logPtr->extheaders;
-      Ns_DStringInit(&ds);
-      if(argc > 2) {
-        if(Tcl_SplitList(interp,argv[2],&status,&h1) != TCL_OK) return TCL_ERROR;
+    if (STREQ(argv[1],"rollfmt")) {
         Ns_MutexLock(&logPtr->lock);
-        /* Wait for others to finish logging extheaders */
-        sleep(1);
-        logPtr->extheaders = h1;
+        if(argc > 2) {
+           ns_free(logPtr->rollfmt);
+           logPtr->rollfmt = ns_strdup(argv[2]);
+        }
         Ns_MutexUnlock(&logPtr->lock);
-        if(h2) Tcl_Free((char*)h2);
-      }
-      for(h = logPtr->extheaders; *h; h++) Ns_DStringVarAppend(&ds,*h," ",NULL);
-      Tcl_AppendResult(interp,ds.string,0);
-      Ns_DStringFree(&ds);
+        Tcl_SetResult(interp,logPtr->rollfmt,TCL_STATIC);
     } else
 
-    if(STREQ(argv[1],"flags")) {
-      Ns_DStringInit(&ds);
-      if(argc > 2) {
-        status = 0;
-        Ns_DStringAppend(&ds,argv[2]);
-        Ns_StrToLower(ds.string);
-        if(strstr(ds.string,"logcombined")) status |= LOG_COMBINED;
-        if(strstr(ds.string,"formattedtime")) status |= LOG_FMTTIME;
-        if(strstr(ds.string,"logreqtime")) status |= LOG_REQTIME;
-        if(strstr(ds.string,"checkforproxy")) status |= LOG_CHECKFORPROXY;
-        if(strstr(ds.string,"suppressquery")) status |= LOG_SUPPRESSQUERY;
-        logPtr->flags = status;
-        Ns_DStringTrunc(&ds,0);
-      }
-      if(logPtr->flags & LOG_COMBINED) Ns_DStringAppend(&ds,"logCombined ");
-      if(logPtr->flags & LOG_FMTTIME) Ns_DStringAppend(&ds,"formattedTime ");
-      if(logPtr->flags & LOG_REQTIME) Ns_DStringAppend(&ds,"logReqTime ");
-      if(logPtr->flags & LOG_CHECKFORPROXY) Ns_DStringAppend(&ds,"checkForProxy ");
-      if(logPtr->flags & LOG_SUPPRESSQUERY) Ns_DStringAppend(&ds,"suppressQuery ");
-      Tcl_AppendResult(interp,ds.string,0);
-      Ns_DStringFree(&ds);
-    } else
-
-    if(STREQ(argv[1],"file")) {
-      if(argc > 2 && Ns_PathIsAbsolute(argv[2])) {
+    if (STREQ(argv[1],"maxbackup")) {
         Ns_MutexLock(&logPtr->lock);
-        LogClose(logPtr);
-        logPtr->file = ns_strdup(argv[2]);
-        LogOpen(logPtr);
+        if(argc > 2 && (logPtr->maxbackup = atoi(argv[2])) < 1) {
+           logPtr->maxbackup = 100;
+        }
+        Tcl_SetObjResult(interp,Tcl_NewIntObj(logPtr->maxbackup));
         Ns_MutexUnlock(&logPtr->lock);
-      }
-      Tcl_SetResult(interp,logPtr->file,TCL_STATIC);
     } else
 
-    if(STREQ(argv[1],"roll")) {
-      if(argc != 2 && argc != 3) {
-        Tcl_AppendResult(interp,"wrong # args: should be: \"",argv[0]," ",argv[1]," ?file?\"",NULL);
-        return TCL_ERROR;
-      }
-      Ns_MutexLock(&logPtr->lock);
-      if(argc == 2) {
-	status = LogRoll(logPtr);
+    if (STREQ(argv[1],"maxbuffer")) {
+        Ns_MutexLock(&logPtr->lock);
+        if (argc > 2) {
+            logPtr->maxlines = atoi(argv[2]);
+        }
+        Tcl_SetObjResult(interp,Tcl_NewIntObj(logPtr->maxlines));
+        Ns_MutexUnlock(&logPtr->lock);
+    } else
+
+    if (STREQ(argv[1],"extendedheaders")) {
+        char **h,**h1,**h2 = logPtr->extheaders;
+        Ns_DStringInit(&ds);
+        if (argc > 2) {
+            if(Tcl_SplitList(interp,argv[2],&status,&h1) != TCL_OK) {
+               return TCL_ERROR;
+            }
+            Ns_MutexLock(&logPtr->lock);
+            /* Wait for others to finish logging extheaders */
+            sleep(1);
+            logPtr->extheaders = h1;
+            Ns_MutexUnlock(&logPtr->lock);
+            if (h2) {
+                Tcl_Free((char*)h2);
+            }
+       }
+       for (h = logPtr->extheaders; *h; h++) {
+           Ns_DStringVarAppend(&ds,*h," ",NULL);
+       }
+       Tcl_AppendResult(interp,ds.string,0);
+       Ns_DStringFree(&ds);
+    } else
+
+    if (STREQ(argv[1],"flags")) {
+        Ns_DStringInit(&ds);
+        if (argc > 2) {
+            status = 0;
+            Ns_DStringAppend(&ds,argv[2]);
+            Ns_StrToLower(ds.string);
+            if (strstr(ds.string,"logcombined")) {
+                status |= LOG_COMBINED;
+            }
+            if (strstr(ds.string,"formattedtime")) {
+                status |= LOG_FMTTIME;
+            }
+            if (strstr(ds.string,"logreqtime")) {
+                status |= LOG_REQTIME;
+            }
+            if (strstr(ds.string,"checkforproxy")) {
+                status |= LOG_CHECKFORPROXY;
+            }
+            if (strstr(ds.string,"suppressquery")) {
+                status |= LOG_SUPPRESSQUERY;
+            } 
+            logPtr->flags = status;
+            Ns_DStringTrunc(&ds,0);
+       }
+       if (logPtr->flags & LOG_COMBINED) {
+           Ns_DStringAppend(&ds,"logCombined ");
+       }
+       if (logPtr->flags & LOG_FMTTIME) {
+           Ns_DStringAppend(&ds,"formattedTime ");
+       }
+       if (logPtr->flags & LOG_REQTIME) {
+           Ns_DStringAppend(&ds,"logReqTime ");
+       }
+       if (logPtr->flags & LOG_CHECKFORPROXY) {
+           Ns_DStringAppend(&ds,"checkForProxy ");
+       }
+       if (logPtr->flags & LOG_SUPPRESSQUERY) {
+           Ns_DStringAppend(&ds,"suppressQuery ");
+       }
+       Tcl_AppendResult(interp,ds.string,0);
+       Ns_DStringFree(&ds);
+    } else
+
+    if (STREQ(argv[1],"file")) {
+        if (argc > 2 && Ns_PathIsAbsolute(argv[2])) {
+            Ns_MutexLock(&logPtr->lock);
+            LogClose(logPtr);
+            logPtr->file = ns_strdup(argv[2]);
+            LogOpen(logPtr);
+            Ns_MutexUnlock(&logPtr->lock);
+       }
+       Tcl_SetResult(interp,logPtr->file,TCL_STATIC);
+    } else
+
+    if (STREQ(argv[1],"roll")) {
+        if (argc != 2 && argc != 3) {
+            Tcl_AppendResult(interp,"wrong # args: should be: \"",argv[0]," ",argv[1]," ?file?\"",NULL);
+            return TCL_ERROR;
+        }
+        Ns_MutexLock(&logPtr->lock);
+        if (argc == 2) {
+	    status = LogRoll(logPtr);
       } else {
-	status = NS_OK;
-    	if(access(argv[2],F_OK) == 0) status = Ns_RollFile(argv[2],logPtr->maxbackup);
-	if(status == NS_OK) {
-	  if(rename(logPtr->file,argv[2]) != 0) {
-	    status = NS_ERROR;
-	  } else {
-	    LogFlush(logPtr,&logPtr->buffer);
-	    status = LogOpen(logPtr);
-	  }
-	}
+	    status = NS_OK;
+    	    if (access(argv[2],F_OK) == 0) {
+                status = Ns_RollFile(argv[2],logPtr->maxbackup);
+            }
+	    if (status == NS_OK) {
+	        if (rename(logPtr->file,argv[2]) != 0) {
+	            status = NS_ERROR;
+	        } else {
+	            LogFlush(logPtr,&logPtr->buffer);
+	            status = LogOpen(logPtr);
+	        }
+	    }
       }
       Ns_MutexUnlock(&logPtr->lock);
-      if(status != NS_OK) {
-	Tcl_AppendResult(interp,"could not roll \"",logPtr->file,"\": ",Tcl_PosixError(interp),NULL);
-        return TCL_ERROR;
+      if (status != NS_OK) {
+	  Tcl_AppendResult(interp,"could not roll \"",logPtr->file,"\": ",Tcl_PosixError(interp),NULL);
+          return TCL_ERROR;
       }
     } else {
-      Tcl_AppendResult(interp,"unknown command \"",argv[1],"\": should be file or roll",NULL);
-      return TCL_ERROR;
+        Tcl_AppendResult(interp,"unknown command \"",argv[1],"\": should be file or roll",NULL);
+        return TCL_ERROR;
     }
     return TCL_OK;
 }
@@ -566,11 +630,13 @@ LogOpen(Log *logPtr)
     int fd;
 
     fd = open(logPtr->file,O_APPEND|O_WRONLY|O_CREAT,0644);
-    if(fd < 0) {
-      Ns_Log(Error,"nslog: error '%s' opening '%s'",strerror(errno),logPtr->file);
-      return NS_ERROR;
+    if (fd < 0) {
+        Ns_Log(Error,"nslog: error '%s' opening '%s'",strerror(errno),logPtr->file);
+        return NS_ERROR;
     }
-    if(logPtr->fd >= 0) close(logPtr->fd);
+    if (logPtr->fd >= 0) {
+        close(logPtr->fd);
+    }
     logPtr->fd = fd;
     Ns_Log(Notice,"nslog: opened '%s'",logPtr->file);
     return NS_OK;
@@ -599,12 +665,12 @@ LogClose(Log *logPtr)
     int status;
 
     status = NS_OK;
-    if(logPtr->fd >= 0) {
-      Ns_Log(Notice,"nslog: closing '%s'",logPtr->file);
-      status = LogFlush(logPtr,&logPtr->buffer);
-      close(logPtr->fd);
-      logPtr->fd = -1;
-      Ns_DStringFree(&logPtr->buffer);
+    if (logPtr->fd >= 0) {
+        Ns_Log(Notice,"nslog: closing '%s'",logPtr->file);
+        status = LogFlush(logPtr,&logPtr->buffer);
+        close(logPtr->fd);
+        logPtr->fd = -1;
+        Ns_DStringFree(&logPtr->buffer);
     }
     return status;
 }
@@ -630,15 +696,18 @@ LogClose(Log *logPtr)
 static int
 LogFlush(Log *logPtr,Ns_DString *dsPtr)
 {
-    if(dsPtr->length > 0) {
-      if(logPtr->fd >= 0 && write(logPtr->fd,dsPtr->string,(size_t)dsPtr->length) != dsPtr->length) {
-	Ns_Log(Error,"nslog: logging disabled: write() failed: '%s'",strerror(errno));
-        close(logPtr->fd);
-        logPtr->fd = -1;
-      }
-      Ns_DStringTrunc(dsPtr,0);
+    if (dsPtr->length > 0) {
+        if (logPtr->fd >= 0 && 
+            write(logPtr->fd,dsPtr->string,(size_t)dsPtr->length) != dsPtr->length) {
+	    Ns_Log(Error,"nslog: logging disabled: write() failed: '%s'",strerror(errno));
+            close(logPtr->fd);
+            logPtr->fd = -1;
+          }
+          Ns_DStringTrunc(dsPtr,0);
     }
-    if(logPtr->fd < 0) return NS_ERROR;
+    if (logPtr->fd < 0) {
+        return NS_ERROR;
+    }
     return NS_OK;
 }
 
@@ -670,27 +739,29 @@ LogRoll(Log *logPtr)
     time_t now = time(0);
 
     LogClose(logPtr);
-    if(access(logPtr->file,F_OK) == 0) {
-      if(logPtr->rollfmt == NULL) {
-	status = Ns_RollFile(logPtr->file,logPtr->maxbackup);
+    if (access(logPtr->file,F_OK) == 0) {
+        if (logPtr->rollfmt == NULL) {
+	    status = Ns_RollFile(logPtr->file,logPtr->maxbackup);
       } else {
-	ptm = ns_localtime(&now);
-	strftime(timeBuf,512,logPtr->rollfmt,ptm);
-	Ns_DStringInit(&ds);
-	Ns_DStringVarAppend(&ds,logPtr->file,".",timeBuf,NULL);
-	if(access(ds.string,F_OK) == 0) {
-	  status = Ns_RollFile(ds.string,logPtr->maxbackup);
-	} else
-        if(errno != ENOENT) {
-	  Ns_Log(Error,"nslog: access(%s,F_OK) failed: '%s'",ds.string,strerror(errno));
-	  status = NS_ERROR;
-	}
-	if(status == NS_OK && rename(logPtr->file,ds.string) != 0) {
-	  Ns_Log(Error,"nslog: rename(%s,%s) failed: '%s'",logPtr->file,ds.string,strerror(errno));
-       	  status = NS_ERROR;
-	}
-	Ns_DStringFree(&ds);
-	if(status == NS_OK) status = Ns_PurgeFiles(logPtr->file,logPtr->maxbackup);
+	    ptm = ns_localtime(&now);
+	    strftime(timeBuf,512,logPtr->rollfmt,ptm);
+	    Ns_DStringInit(&ds);
+	    Ns_DStringVarAppend(&ds,logPtr->file,".",timeBuf,NULL);
+	    if (access(ds.string,F_OK) == 0) {
+	        status = Ns_RollFile(ds.string,logPtr->maxbackup);
+	    } else
+               if (errno != ENOENT) {
+	           Ns_Log(Error,"nslog: access(%s,F_OK) failed: '%s'",ds.string,strerror(errno));
+	           status = NS_ERROR;
+	       }
+	       if (status == NS_OK && rename(logPtr->file,ds.string) != 0) {
+	           Ns_Log(Error,"nslog: rename(%s,%s) failed: '%s'",logPtr->file,ds.string,strerror(errno));
+                   status = NS_ERROR;
+	       }
+	       Ns_DStringFree(&ds);
+	       if (status == NS_OK) {
+                   status = Ns_PurgeFiles(logPtr->file,logPtr->maxbackup);
+               }
       }
     }
     status = LogOpen(logPtr);
@@ -723,7 +794,9 @@ LogCallback(int(proc)(Log *),void *arg,char *desc)
     Ns_MutexLock(&logPtr->lock);
     status =(*proc)(logPtr);
     Ns_MutexUnlock(&logPtr->lock);
-    if(status != NS_OK) Ns_Log(Error,"nslog: failed: %s '%s': '%s'",desc,logPtr->file,strerror(errno));
+    if (status != NS_OK) {
+        Ns_Log(Error,"nslog: failed: %s '%s': '%s'",desc,logPtr->file,strerror(errno));
+    }
 }
 
 static void
