@@ -77,7 +77,7 @@ NsTclGifSizeCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          argv[0], " gif\"", NULL);
         return TCL_ERROR;
     }
-    fd = open(argv[1], O_RDONLY|O_BINARY);
+    fd = open(argv[1], O_RDONLY);
     if (fd == -1) {
         Tcl_AppendResult(interp, "could not open \"", argv[1],
 	    "\": ", Tcl_PosixError(interp), NULL);

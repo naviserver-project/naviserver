@@ -38,12 +38,10 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 
-#ifndef WIN32
 #ifdef NO_RAND48
 #define HAVE_RANDOM 1
 #else
 #define HAVE_RAND48 1
-#endif
 #endif
 
 /*
