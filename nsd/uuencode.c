@@ -136,7 +136,7 @@ Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
 	*q++ = '=';
     }
     *q = '\0';
-    return (q - output);
+    return (q - (unsigned char *) output);
 }
 
 
@@ -181,7 +181,7 @@ Ns_HtuuDecode(char *input, unsigned char *output, int outputlen)
     while (pr2six[(int)(*p)] >= 0) {
 	++p;
     }
-    len = p - input;
+    len = p - (unsigned char *) input;
 
     /*
      * Decode every four input bytes.
