@@ -118,3 +118,18 @@ ifdef LIBINIT
 	CFLAGS	+= -D$(LIBINIT)=_init
     endif
 endif
+ 
+#
+# For static linking on Darwin, link modules 
+# against server image.
+#
+
+ifneq (,$(findstring Darwin,$(uname)))
+    ifeq ($(STATIC_BUILD), 1)
+        ifdef NSBUILD
+            LDSO += -bundle_loader $(srcdir)/nsd/nsd
+        else
+            LDSO += -bundle_loader $(AOLSERVER)/bin/nsd
+        endif
+    endif
+endif
