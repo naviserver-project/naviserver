@@ -423,11 +423,9 @@ NsConfigEval(char *config)
 
     setPtr = NULL;
     interp = Tcl_CreateInterp();
-    Tcl_CreateCommand(interp, "ns_log", NsTclLogCmd, NULL, NULL);
-    Tcl_CreateCommand(interp, "ns_info", NsTclInfoCmd, NULL, NULL);
-    Tcl_CreateCommand(interp, "ns_config", NsTclConfigCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "ns_section", SectionCmd, &setPtr, NULL);
     Tcl_CreateCommand(interp, "ns_param", ParamCmd, &setPtr, NULL);
+    NsTclCreateGenericCmds(interp);
 
     if (Tcl_Eval(interp, config) != TCL_OK) {
 	err = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
