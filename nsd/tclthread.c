@@ -328,7 +328,7 @@ NsTclCondObjCmd(ClientData data, Tcl_Interp *interp, int objc,
 	    Ns_Event *eventPtr = (Ns_Event *) condPtr;
             result = Ns_TimedWaitForEvent(eventPtr, lock, timeout.sec);
 	} else {
-	    if (objc < 5) {
+	    if (objc < 5 || (timeout.sec == 0 && timeout.usec == 0)) {
 		Ns_CondWait(condPtr, lock);
 		result = NS_OK;
 	    } else {
