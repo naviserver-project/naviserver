@@ -118,6 +118,67 @@ NsTclMutexCmd(ClientData data, Tcl_Interp *interp, int argc, char **argv)
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclMutexObjCmd --
+ *
+ *	Implements ns_mutex as obj command. 
+ *
+ * Results:
+ *	Tcl result. 
+ *
+ * Side effects:
+ *	See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclMutexObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+{
+    Ns_Mutex *lockPtr;
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "command ...");
+        return TCL_ERROR;
+    }
+    if (STREQ(Tcl_GetString(objv[1]), "create")) {
+        lockPtr = ns_malloc(sizeof(Ns_Mutex));
+		Ns_MutexInit(lockPtr);
+		if (objc > 2) {
+			Ns_MutexSetName(lockPtr, Tcl_GetString(objv[2]));
+		}
+        SetObj(interp, 'm', lockPtr);
+    } else {
+        if (objc != 3) {
+        	Tcl_WrongNumArgs(interp, 2, objv, "lock ...");
+            return TCL_ERROR;
+        } else if (GetObj(interp, 'm', Tcl_GetString(objv[2]),
+			  (void **) &lockPtr) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        if (STREQ(Tcl_GetString(objv[1]), "lock")) {
+	    	Ns_MutexLock(lockPtr);
+        } else if (STREQ(Tcl_GetString(objv[1]), "unlock")) {
+	    	Ns_MutexUnlock(lockPtr);
+        } else if (STREQ(Tcl_GetString(objv[1]), "destroy")) {
+	    	Ns_MutexDestroy(lockPtr);
+            ns_free(lockPtr);
+        } else {
+	    Tcl_Obj *result = Tcl_NewObj();
+	    Tcl_AppendStringsToObj(result, "unknown command \"",
+		    Tcl_GetString(objv[1]), 
+		    "\": should be create, destroy, lock or unlock",
+		    NULL);
+	    Tcl_SetObjResult(interp, result);
+	    return TCL_ERROR;
+        }
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclCritSecCmd --
  *
  *	Implements ns_critsec. 

@@ -129,6 +129,56 @@ NsTclAtCloseCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclAtCloseObjCmd --
+ *
+ *	Implements ns_atclose as obj command. 
+ *
+ * Results:
+ *	Tcl result. 
+ *
+ * Side effects:
+ *	See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclAtCloseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    NsInterp *itPtr = arg;
+    char    *script;
+    AtClose *atPtr;
+
+    if (objc < 2 || objc > 3) {
+        Tcl_WrongNumArgs(interp, 1, objv, "{ script | procname ?arg? }");
+		return TCL_ERROR;
+    }
+
+    if (objc == 2) {
+		script = Tcl_GetString(objv[1]);
+    } else {
+		script = Tcl_GetString(Tcl_ConcatObj(2, objv+1));
+    }
+
+    /*
+     * Push the script onto the head of the atclose list so scripts
+     * will be called in reversed order when invoked.
+     */
+
+    atPtr = ns_malloc(sizeof(AtClose) + strlen(script));
+    strcpy(atPtr->script, script);
+    atPtr->nextPtr = itPtr->firstAtClosePtr;
+    itPtr->firstAtClosePtr = atPtr;
+    if (script != Tcl_GetString(objv[1])) {
+		ckfree(script);
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsRunAtClose, NsFreeAtClose --
  *
  *	Run and/or free the registered at-close scripts. 

@@ -368,6 +368,36 @@ NsTclMarkForDeleteCmd(ClientData arg, Tcl_Interp *interp, int argc,
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclMarkForDeleteObjCmd --
+ *
+ *	Implements ns_markfordelete as obj command. 
+ *
+ * Results:
+ *	Tcl result. 
+ *
+ * Side effects:
+ *	See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclMarkForDeleteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+{
+    NsInterp *itPtr = arg;
+
+    if (objc != 1) {
+        Tcl_WrongNumArgs(interp, 1, objv, "");
+		return TCL_ERROR;
+    }
+    itPtr->delete = 1;
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_GetConnInterp --
  *
  *	Get an interp for use in a connection thread.  Using this
