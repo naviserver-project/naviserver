@@ -263,6 +263,41 @@ typedef struct AdpParse {
 } AdpParse;
 
 /*
+ * The following structure defines the entire request
+ * including HTTP request line, headers, and content.
+ */
+
+typedef struct Request {
+    struct Request *nextPtr;	/* Next on free list. */
+    Ns_Request	   *request;	/* Parsed request line. */
+    Ns_Set	   *headers;	/* Input headers. */
+    char	    peer[16];	/* Client peer address. */
+    int		    port;	/* Client peer port. */
+
+    /*
+     * The following pointers are used to access the
+     * buffer contents after the read-ahead is complete.
+     */
+
+    char	   *next;	/* Next read offset. */
+    char	   *content;	/* Start of content. */
+    int		    length;	/* Length of content. */
+    int		    avail;	/* Bytes avail in buffer. */
+
+    /*
+     * The following offsets are used to manage the 
+     * buffer read-ahead process.
+     */
+
+    int		    woff;	/* Next write buffer offset. */
+    int		    roff;	/* Next read buffer offset. */
+    int		    coff;	/* Content buffer offset. */
+
+    Tcl_DString	    buffer;	/* Request and content buffer. */
+
+} Request;
+
+/*
  * The following structure maitains data for each instance of
  * a driver initialized with Ns_DriverInit.
  */
@@ -297,40 +332,14 @@ typedef struct Driver {
     int		 opts;		    /* Driver options. */
     int     	 closewait;	    /* Graceful close timeout. */
     int     	 keepwait;	    /* Keepalive timeout. */
-    SOCKET  	 sock;		    /* Listening socket. */
+    SOCKET		 sock;		    /* Listening socket. */
     int		 pidx;		    /* poll() index. */
     char        *bindaddr;	    /* Numerical listen address. */
     int          port;		    /* Port in location. */
     int		 backlog;	    /* listen() backlog. */
-    
-    int		 maxinput;	    /* Maximum request bytes to read. */
-    int     	 maxsock;	    /* Maximum open Sock's. */
-    int     	 nactive;	    /* Number of active Sock's. */
-    struct Sock *firstFreePtr;	    /* Sock free list. */
-    struct Sock *firstClosePtr;     /* Sock's returning to driver thread. */
 
-    int		 maxreaders;	    /* Max reader threads. */
-    Ns_Thread   *readers;	    /* Array of reader Ns_Thread's. */
-    int		 nreaders;	    /* Current num reader threads. */
-    int		 idlereaders;	    /* Idle reader threads. */
-    struct Sock *firstReadPtr;	    /* Sock's waiting for reader threads. */
-    struct Sock *firstReadyPtr;	    /* Sock's returning from reader threads. */
+    int          maxinput;          /* Maximum request bytes to read. */
 
-    int     	 trigger[2];	    /* Wakeup trigger pipe. */
-    int     	 shutdown;  	    /* Shutdown pending. */
-    int     	 stopped;	    /* Shutdown complete. */
-
-    Ns_Mutex	 lock;
-    Ns_Cond 	 cond;
-    Ns_Time 	 now;		    /* Current time updated each spin. */
-    Ns_Thread	 thread;
-
-    unsigned  	 nfds;
-    unsigned 	 maxfds;
-    struct pollfd *pfds;
-
-    struct QueWait *freeQueWaitPtr;
-    
 } Driver;
 
 /*
@@ -355,12 +364,13 @@ typedef struct Sock {
      */
 
     struct Sock *nextPtr;
-    struct Conn *connPtr;
+    struct NsServer *servPtr;
+    char *location;
     struct sockaddr_in sa;
-    int		 state;
+    int		 keep;
     int		 pidx;		    /* poll() index. */
-    Ns_Time      acceptTime;
     Ns_Time	 timeout;
+    Request	*reqPtr;
 
 } Sock;
 
@@ -409,20 +419,13 @@ typedef struct Conn {
 
     char *server;
     char *location;
+    struct Request *reqPtr;
     struct NsServer *servPtr;
     struct Driver *drvPtr;
 
     int          id;
     char	 idstr[16];
-    struct {
-        Ns_Time  accept;
-        Ns_Time  ready;
-        Ns_Time  read;
-        Ns_Time  queue;
-        Ns_Time  run;
-        Ns_Time  close;
-        Ns_Time  done;
-    } times;
+    Ns_Time	 startTime;
     Tcl_Interp  *interp;
     Tcl_Encoding encoding;
     Tcl_Encoding urlEncoding;
@@ -432,42 +435,8 @@ typedef struct Conn {
     int          recursionCount;
     Ns_Set      *query;
     Tcl_HashTable files;
-
-    /*
-     * The following are copied from Sock.
-     */
-     
-    char	    peer[16];	/* Client peer address. */
-    int		    port;	/* Client peer port. */
-
-    /*
-     * The following array maintains conn local storage.
-     */
-     
-    void	   *cls[NS_CONN_MAXCLS];
-    struct QueWait *queWaitPtr;
-
-    /*
-     * The following pointers are used to access the
-     * buffer contents after the read-ahead is complete.
-     */
-
-    char	   *next;	/* Next read offset. */
-    int		    avail;	/* Bytes avail in buffer. */
-    char	   *content;	/* Start of content. */
-
-    /*
-     * The following offsets are used to manage the 
-     * buffer read-ahead process.
-     */
-
-    int		    woff;	/* Next write buffer offset. */
-    int		    roff;	/* Next read buffer offset. */
-    int		    coff;	/* Content buffer offset. */
-
-    Tcl_DString	    ibuf;	/* Request and content input buffer. */
-    Tcl_DString	    obuf;	/* Output buffer for queued headers. */
-
+    Tcl_DString	 queued;
+    void	*cls[NS_CONN_MAXCLS];
 } Conn;
 
 /*
@@ -481,10 +450,12 @@ typedef struct ConnPool {
 
     /*
      * The following struct maintains the active and waiting connection
-     * queues, the next conn id, and the number of waiting connects.
+     * queues, the free conn list, the next conn id, and the number
+     * of waiting connects.
      */
 
     struct {
+    	Conn	    	   *freePtr;
 	struct {
 	    int     	    num;
     	    Conn    	   *firstPtr;
@@ -503,8 +474,7 @@ typedef struct ConnPool {
      * current number of threads remains within that range with individual
      * threads waiting no more than the timeout for a connection to
      * arrive.  The number of idle threads is maintained for the benefit of
-     * the ns_server command.  Threads will handle up to maxconns before
-     * exit (default is the "connsperthread" virtual server config).
+     * the ns_server command. 
      */
 
     struct {
@@ -514,7 +484,6 @@ typedef struct ConnPool {
     	int 	    	    current;
 	int 	    	    idle;
 	int 	    	    timeout;
-	int		    maxconns;
     } threads;
 
 } ConnPool;
@@ -526,7 +495,6 @@ typedef struct ConnPool {
 typedef struct NsServer {
     char    	    	   *server;
     Ns_LocationProc 	   *locationProc;
-    struct PreQueue 	   *firstPreQuePtr;
 
     /*
      * The following struct maintains the connection pool(s).
@@ -575,7 +543,6 @@ typedef struct NsServer {
 	int 	    	    maxpost;
 	int	    	    sendfdmin;
     	int 	    	    errorminsize;
-	int		    connsperthread;
     } limits;
 
     struct {
@@ -617,7 +584,7 @@ typedef struct NsServer {
 
     struct {         
 	char	           *library;
-	struct Trace       *firstTracePtr;
+	struct Trace       *traces[4];
 	char	    	   *initfile;
 	Ns_RWLock	    lock;
 	char		   *script;
@@ -813,11 +780,13 @@ extern void NsInitTcl(void);
 extern void NsInitUrlSpace(void);
 extern void NsInitRequests(void);
 
-extern void NsQueueConn(Conn *connPtr);
+extern int NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);
 extern int NsSockSend(Sock *sockPtr, struct iovec *bufs, int nbufs);
 extern void NsSockClose(Sock *sockPtr, int keep);
-extern void NsFreeConn(Conn *connPtr);
+
+extern Request *NsGetRequest(Sock *sockPtr);
+extern void NsFreeRequest(Request *reqPtr);
 
 extern NsServer *NsGetServer(char *server);
 extern NsServer *NsGetInitServer(void);
@@ -893,7 +862,6 @@ extern void NsStartSockShutdown(void);
 extern void NsWaitSockShutdown(Ns_Time *toPtr);
 extern void NsStartShutdownProcs(void);
 extern void NsWaitShutdownProcs(Ns_Time *toPtr);
-extern void NsWaitDriversShutdown(Ns_Time *toPtr);
 
 extern void NsStartJobsShutdown(void);
 extern void NsWaitJobsShutdown(Ns_Time *toPtr);
