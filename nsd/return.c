@@ -840,14 +840,11 @@ ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
 
     Ns_ConnSetRequiredHeaders(conn, type, len);
     Ns_ConnQueueHeaders(conn, status);
-    result = NS_OK;
-    if (data != NULL) {
-        if (conn->flags & NS_CONN_SKIPBODY) {
-            data = NULL;
-            len = 0;
-        }
-        result = Ns_WriteConn(conn, data, len);
+    if (conn->flags & NS_CONN_SKIPBODY) {
+        data = NULL;
+        len = 0;
     }
+    result = Ns_WriteConn(conn, data, len);
     if (result == NS_OK) {
         result = Ns_ConnClose(conn);
     }
