@@ -852,7 +852,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 		Tcl_AppendResult(interp, "invalid length: ", Tcl_GetString(objv[3]), NULL);
 		return TCL_ERROR;
 	    }
-	    if (Tcl_WriteChars(chan, connPtr->reqPtr->content + off, len) != len) {
+	    if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
 		Tcl_AppendResult(interp, "could not write ", Tcl_GetString(objv[3]), " bytes to ",
 		    Tcl_GetString(objv[4]), ": ", Tcl_PosixError(interp), NULL);
 		return TCL_ERROR;
@@ -1089,7 +1089,7 @@ NsTclConnCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	    Tcl_AppendResult(interp, "invalid length: ", argv[3], NULL);
 	    return TCL_ERROR;
 	}
-	if (Tcl_WriteChars(chan, connPtr->reqPtr->content + off, len) != len) {
+	if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
 	    Tcl_AppendResult(interp, "could not write ", argv[3], " bytes to ",
 		argv[4], ": ", Tcl_PosixError(interp), NULL);
 	    return TCL_ERROR;
