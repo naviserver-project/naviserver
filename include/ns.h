@@ -634,14 +634,14 @@ NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time 
  * tclxkeylist.c:
  */
 
-NS_EXTERN char *Tcl_DeleteKeyedListField (Tcl_Interp  *interp, const char *fieldName,
-        const char *keyedList);
-NS_EXTERN int Tcl_GetKeyedListField (Tcl_Interp  *interp, const char *fieldName,
-        const char *keyedList, char **fieldValuePtr);
-NS_EXTERN int Tcl_GetKeyedListKeys (Tcl_Interp  *interp, char const *subFieldName,
-        const char *keyedList, int *keysArgcPtr, char ***keysArgvPtr);
-NS_EXTERN char *Tcl_SetKeyedListField (Tcl_Interp  *interp, const char *fieldName,
-        const char *fieldvalue, const char *keyedList);
+NS_EXTERN char *Tcl_DeleteKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
+        CONST char *keyedList);
+NS_EXTERN int Tcl_GetKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
+        CONST char *keyedList, char **fieldValuePtr);
+NS_EXTERN int Tcl_GetKeyedListKeys (Tcl_Interp  *interp, char CONST *subFieldName,
+        CONST char *keyedList, int *keysArgcPtr, char ***keysArgvPtr);
+NS_EXTERN char *Tcl_SetKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
+        CONST char *fieldvalue, CONST char *keyedList);
 
 /*
  * listen.c:
