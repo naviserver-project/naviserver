@@ -524,8 +524,6 @@ NS_EXTERN Ns_Entry *Ns_CacheNextEntry(Ns_CacheSearch *search);
 NS_EXTERN void Ns_CacheFlush(Ns_Cache *cache);
 NS_EXTERN void Ns_CacheLock(Ns_Cache *cache);
 NS_EXTERN void Ns_CacheUnlock(Ns_Cache *cache);
-NS_EXTERN void *Ns_CacheTimedGetValue(Ns_Cache *cache, char *key,
-				   Ns_Time *timePtr, int *okPtr);
 NS_EXTERN int Ns_CacheTimedWait(Ns_Cache *cache, Ns_Time *timePtr);
 NS_EXTERN void Ns_CacheWait(Ns_Cache *cache);
 NS_EXTERN void Ns_CacheSignal(Ns_Cache *cache);

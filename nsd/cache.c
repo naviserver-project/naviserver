@@ -684,60 +684,6 @@ Ns_CacheUnlock(Ns_Cache *cache)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheTimedGetValue --
- *
- *	Wait for an entry's value to be set to non-null by some other
- *  	thread up to the given timeout or until an optional condition
- *  	integer becomes zero.  Note that the cache and key are given
- *  	instead of the entry because you cannot rely on an entry to
- *  	remain valid during the Ns_CondTimedWait.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Thread is suspended until entry is available or timeout.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Ns_CacheTimedGetValue(Ns_Cache *cache, char *key, Ns_Time *timePtr, int *okPtr)
-{
-    Cache *cachePtr = (Cache *) cache;
-    Entry *ePtr;
-    int ok;
-
-    /*
-    * If okPtr is NULL, set it to a local variable which is
-    * always 1.
-    */
-    
-    if (okPtr == NULL) {
-	ok = 1;
-	okPtr = &ok;
-    }
-    
-    /*
-    * Wait for the entries value to become non-NULL up to the given
-    * timeout as long as the value at *okPtr is still non-zero.
-    */
-    
-    while (*okPtr &&
-	(ePtr = (Entry *) Ns_CacheFindEntry(cache, key)) != NULL &&
-	ePtr->value == NULL &&
-	Ns_CondTimedWait(&cachePtr->cond, &cachePtr->lock, timePtr) == NS_OK) {
-
-	    /* NULL STATEMENT */ ;
-	}
-  
-    return (ePtr ? ePtr->value : NULL);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_CacheTimedWait --
  *
  *	Wait for the cache's condition variable to be
