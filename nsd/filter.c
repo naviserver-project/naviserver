@@ -306,3 +306,82 @@ NewTrace(Ns_TraceProc *proc, void *arg)
     tracePtr->arg = arg;
     return tracePtr;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ * NsGetTraces, NsGetFilters --
+ *
+ *      Returns information about registered filters/traces
+ *
+ * Results:
+ *      DString with info as Tcl list
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsGetFilters(Tcl_DString *dsPtr, char *server)
+{
+    Filter *fPtr;
+    NsServer *servPtr;
+
+    servPtr = NsGetServer(server);
+    if (servPtr == NULL) {
+        return;
+    }
+    fPtr = servPtr->filter.firstFilterPtr;
+    while (fPtr != NULL) {
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, fPtr->method);
+        Tcl_DStringAppendElement(dsPtr, fPtr->url);
+        switch (fPtr->when) {
+        case NS_FILTER_PRE_AUTH:
+            Tcl_DStringAppendElement(dsPtr, "preauth");
+            break;
+        case NS_FILTER_POST_AUTH:
+            Tcl_DStringAppendElement(dsPtr, "postauth");
+            break;
+        case NS_FILTER_VOID_TRACE: 
+        case NS_FILTER_TRACE:
+            Tcl_DStringAppendElement(dsPtr, "trace");
+            break;
+        }
+        Ns_GetProcInfo(dsPtr, (void *) fPtr->proc, fPtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+        fPtr = fPtr->nextPtr;
+    }
+}   
+
+void
+NsGetTraces(Tcl_DString *dsPtr, char *server)
+{
+    Trace  *tracePtr;
+    NsServer *servPtr;
+
+    servPtr = NsGetServer(server);
+    if (servPtr == NULL) {
+        return;
+    }
+    tracePtr = servPtr->filter.firstTracePtr;
+    while (tracePtr != NULL) {
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, "trace");
+        Ns_GetProcInfo(dsPtr, (void *) tracePtr->proc, tracePtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+	tracePtr = tracePtr->nextPtr;
+    }
+
+    tracePtr = servPtr->filter.firstCleanupPtr;
+    while (tracePtr != NULL) {
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, "cleanup");
+        Ns_GetProcInfo(dsPtr, (void *) tracePtr->proc, tracePtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+	tracePtr = tracePtr->nextPtr;
+    }
+}   
+

@@ -43,6 +43,12 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #include "nsd.h"
 
 /*
+ * Size of stack to keep track of server/method/url/... node path
+ */
+
+#define STACK_SIZE	512
+
+/*
  * This optimization, when turned on, prevents the server from doing a
  * whole lot of calls to Tcl_StringMatch on every lookup in urlspace.
  * Instead, a strcmp is done. This hasn't been thoroughly tested, so
@@ -2089,3 +2095,106 @@ PrintSeq(char *seq)
 }
 
 #endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsUrlSpecificWalk --
+ *
+ *	Walk url tree, call ArgProc function for each node 
+ *
+ * Results:
+ *	None. 
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+WalkTrie(Trie *triePtr, int id, char *server, Ns_ArgProc func, Tcl_DString *dsPtr, char **stack, char *filter)
+{
+    int i, depth;
+
+    for (i = 0; i < (&triePtr->branches)->n; i++) {
+        Branch *branch;
+        branch = (Branch *) Ns_IndexEl(&triePtr->branches, i);
+
+        /*
+         * Remember current stack depth
+         */
+
+        for(depth = 0; stack[depth] != NULL && depth < STACK_SIZE-1; depth++) ;
+
+        stack[depth] = branch->word;
+        WalkTrie(&(branch->node), id, server, func, dsPtr, stack, filter);
+
+        /*
+         * Restore stack position
+         */
+
+        stack[depth] = 0;
+    }
+    if (triePtr->indexnode != NULL) {
+        for (i = 0; i < triePtr->indexnode->n; i++) {
+            Node *nodePtr;
+            nodePtr = (Node *) Ns_IndexEl(triePtr->indexnode, i);
+	    if (nodePtr->id == id && !strcmp(server, stack[0])) {
+                Tcl_DStringStartSublist(dsPtr);
+
+                /*
+                 * Put stack contents into the sublist,
+                 * 1st element is server, 2nd is method, the rest is url
+                 */
+              
+                for (depth = 0; stack[depth] != NULL; depth++) {
+                    switch (depth) {
+                     case 0:
+                         Tcl_DStringAppendElement(dsPtr, stack[depth]);
+                         break;
+                     case 1:
+                         Tcl_DStringAppendElement(dsPtr, stack[depth]);
+                         Tcl_DStringAppend(dsPtr, " ", 1);
+                         break;
+                     default:
+                         Ns_DStringVarAppend(dsPtr, "/", stack[depth], 0);
+                         break;
+                    }
+                }
+                Ns_DStringVarAppend(dsPtr, filter, " ", 0);
+                if (nodePtr->dataInherit != NULL) {
+                    func(dsPtr, nodePtr->dataInherit);
+                }
+                if (nodePtr->dataNoInherit != NULL) {
+                    func(dsPtr, nodePtr->dataNoInherit);
+                }
+                Tcl_DStringEndSublist(dsPtr);
+            }
+        }
+    }
+}
+
+void
+NsUrlSpecificWalk(int id, char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+{
+    int i;
+    char *stack[STACK_SIZE];
+
+    memset(stack, 0, sizeof(stack));
+    Ns_MutexLock(&lock);
+#ifndef __URLSPACE_OPTIMIZE__
+    for (i = 0; i < (&urlspace.byuse)->n; i++) {
+        Channel *channelPtr;
+        channelPtr = (Channel *) Ns_IndexEl(&urlspace.byuse, i);
+#else
+    for (i = ((&urlspace.byname)->n - 1); i >= 0; i--) {
+        Channel *channelPtr;
+        channelPtr = (Channel *) Ns_IndexEl(&urlspace.byname, i);
+#endif
+        WalkTrie(&channelPtr->trie, id, server, func, dsPtr, stack, channelPtr->filter);
+    }
+    Ns_MutexUnlock(&lock);
+}
+

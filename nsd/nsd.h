@@ -836,10 +836,14 @@ extern Ns_ArgProc NsConnArgProc;
 extern Ns_FilterProc NsTclFilter;
 extern Ns_OpProc NsTclRequest;
 extern Ns_OpProc NsAdpRequest;
+extern Ns_ArgProc NsTclRequestArgProc;
 
 extern void NsGetCallbacks(Tcl_DString *dsPtr);
 extern void NsGetSockCallbacks(Tcl_DString *dsPtr);
 extern void NsGetScheduled(Tcl_DString *dsPtr);
+extern void NsGetTraces(Tcl_DString *dsPtr, char *server);
+extern void NsGetFilters(Tcl_DString *dsPtr, char *server);
+extern void NsGetRequestProcs(Tcl_DString *dsPtr, char *server);
 
 #ifdef _WIN32
 extern int NsConnectService(void);
@@ -955,6 +959,8 @@ extern void NsGetBuf(char **bufPtr, int *sizePtr);
 extern Tcl_Encoding NsGetTypeEncodingWithDef(char *type, int *used_default);
 extern void NsComputeEncodingFromType(char *type, Tcl_Encoding *enc,
                                       int *new_type, Tcl_DString *type_ds);
+
+extern void NsUrlSpecificWalk(int id, char *server, Ns_ArgProc func, Tcl_DString *dsPtr);
 
 /*
  * Proxy support

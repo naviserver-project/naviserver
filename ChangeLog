@@ -1,3 +1,13 @@
+2005-03-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/info.c:
+	* nsd/op.c:
+	* nsd/urlspace.c: Added support for ns_info filters, 
+	  ns_info traces, ns_info requestprocs commands using new 
+ 	  Tcl callback interface. New commands show information about
+	  registered filters/procs same way as ns_info scheduled does.
+
 2005-03-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tlrequest.c: In Ns_RegisterFilterObj command 'when'

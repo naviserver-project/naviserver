@@ -502,7 +502,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	"major", "minor", "name", "nsd", "pageroot", "patchlevel",
 	"pid", "platform", "pools", "scheduled", "server", "servers",
 	"sockcallbacks", "tag", "tcllib", "threads", "uptime",
-	"version", "winnt", NULL
+	"version", "winnt", "filters", "traces", "requestprocs", NULL
     };
     enum {
 	IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
@@ -510,7 +510,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	IMajorIdx, IMinorIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
 	IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
 	sockICallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
-	IVersionIdx, IWinntIdx,
+	IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
     } opt;
 
     if (objc != 2) {
@@ -554,6 +554,21 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     	NsGetScheduled(&ds);
 	Tcl_DStringResult(interp, &ds);
 	break;
+
+    case IFiltersIdx:
+        NsGetFilters(&ds, itPtr->servPtr ? itPtr->servPtr->server : 0);
+        Tcl_DStringResult(interp, &ds);
+        break;
+
+    case ITracesIdx:
+        NsGetTraces(&ds, itPtr->servPtr ? itPtr->servPtr->server : 0);
+        Tcl_DStringResult(interp, &ds);
+        break;
+
+    case IRequestProcsIdx:
+        NsGetRequestProcs(&ds, itPtr->servPtr ? itPtr->servPtr->server : 0);
+        Tcl_DStringResult(interp, &ds);
+        break;
 
     case ILocksIdx:
 	Ns_MutexList(&ds);
