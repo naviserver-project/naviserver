@@ -38,13 +38,12 @@ OBJS	=   compat.o cs.o rwlock.o reentrant.o \
             sema.o thread.o tls.o time.o memory.o debug.o \
             pool.o error.o signal.o \
             mutex.o cond.o osthread.o fork.o
+CLEAN	+= test test.o
+ALL	= test
+
 include ../include/Makefile.library
 
 $(OBJS):	thread.h
 osthread.o:	pthread.cpp sproc.cpp win32.cpp
-
-TEST      = test
-TEST_OBJS = test.o
-
-test: all $(TEST_OBJS)
-	$(CC) -o $(TEST) $(TEST_OBJS) $(RFLAG) . -L. -l$(NSTHREAD) $(LIBS)
+test: $(LIB) test.o
+	$(CC) -o test test.o $(RFLAG) . -L. -l$(NSTHREAD) $(LIBS)
