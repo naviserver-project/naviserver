@@ -454,7 +454,7 @@ Ns_ThreadGetParent(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ThreadEnum --
+ * Ns_ThreadList --
  *
  *	Append info for each thread.
  *
@@ -468,7 +468,7 @@ Ns_ThreadGetParent(void)
  */
 
 void
-Ns_ThreadEnum(Tcl_DString *dsPtr, Ns_ThreadEnumProc *proc)
+Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
 {
     Thread *thrPtr;
     char buf[100];
@@ -481,7 +481,12 @@ Ns_ThreadEnum(Tcl_DString *dsPtr, Ns_ThreadEnumProc *proc)
 	Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
 	sprintf(buf, " %d %d %ld", thrPtr->tid, thrPtr->flags, thrPtr->ctime);
 	Tcl_DStringAppend(dsPtr, buf, -1);
-	(*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
+	if (proc != NULL) {
+	    (*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
+	} else {
+	    sprintf(buf, " %p %p", thrPtr->proc, thrPtr->arg);
+	    Tcl_DStringAppend(dsPtr, buf, -1);
+	}
 	Tcl_DStringEndSublist(dsPtr);
 	thrPtr = thrPtr->nextPtr;
     }
