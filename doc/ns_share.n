@@ -33,7 +33,7 @@
 '\" 
 .so man.macros
 
-.TH ns_share n 3.5 AOLserver "AOLserver Built-In Commands"
+.TH ns_share n 4.0 AOLserver "AOLserver Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
