@@ -102,6 +102,14 @@ clean-tcl:
 tcl: $(tclsrc)/Makefile
 	(cd $(tclsrc); $(MAKE))
 
+tcl-checkout:
+	(cd `dirname $(tcldir)` && \
+		cvs -d :pserver:anonymous@cvs.tcl.sourceforge.net:/cvsroot/tcl \
+			co -d `basename $(tcldir)` tcl)
+
+tcl-update:
+	(cd $(tcldir) && cvs update)
+
 $(tclsrc)/Makefile: $(tclsrc)/Makefile.in $(tclsrc)/configure
 	(cd $(tclsrc); ./configure $(tclcfg))
 
