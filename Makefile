@@ -74,9 +74,7 @@ install: all
 	$(MKDIR)                    $(INSTSRVMOD)
 	$(MKDIR)                    $(INSTSRVPAG)
 	$(CP) -r tcl                $(INSTMOD)
-	$(CP) nsd/translate-ini     $(INSTBIN)
 	$(CP) -r include            $(INSTINC)
-	$(CP) nsd/sample-config.tcl $(INST)
 	test -f $(INSTSRVPAG)/index.html \
 		|| $(CP) doc/default-home.html $(INSTSRVPAG)/index.html
 	@for i in $(DIRS); do \

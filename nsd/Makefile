@@ -47,4 +47,11 @@ OBJS = \
 	tclobj.o tclthread.o tclvar.o tclxkeylist.o tls.o unix.o url.o \
 	urlencode.o urlopen.o urlspace.o uuencode.o stamp.o
 
+LIBINST=cpinit
+
 include ../include/Makefile.library
+
+cpinit:
+	$(CP) init.tcl $(INSTBIN)/
+	$(CP) translate-ini $(INSTBIN)/
+	$(CP) sample-config.tcl $(INST)/
