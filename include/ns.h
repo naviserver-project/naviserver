@@ -113,12 +113,12 @@ typedef unsigned long           ns_uint64;
 typedef long INT64;
 #define NS_INT_64_FORMAT_STRING "%ld"
 #else
-typedef long long               ns_int64
-typedef unsigned long long      ns_uint64
+typedef long long 		ns_int64;
+typedef unsigned long long      ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%lld"
 #endif
 
-typedef INT64 ns_int64;
+typedef ns_int64 INT64;
 
 /*
  * The following flags define how Ns_Set's
