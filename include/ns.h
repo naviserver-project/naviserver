@@ -821,6 +821,19 @@ NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
  */
 
 /*
+ * tclxkeylist.c:
+ */
+
+NS_EXTERN char *Tcl_DeleteKeyedListField (Tcl_Interp  *interp, const char *fieldName,
+        const char *keyedList);
+NS_EXTERN int Tcl_GetKeyedListField (Tcl_Interp  *interp, const char *fieldName,
+        const char *keyedList, char **fieldValuePtr);
+NS_EXTERN int Tcl_GetKeyedListKeys (Tcl_Interp  *interp, char const *subFieldName,
+        const char *keyedList, int *keysArgcPtr, char ***keysArgvPtr);
+NS_EXTERN char *Tcl_SetKeyedListField (Tcl_Interp  *interp, const char *fieldName,
+        const char *fieldvalue, const char *keyedList);
+
+/*
  * listen.c:
  */
 
