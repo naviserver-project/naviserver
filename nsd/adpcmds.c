@@ -158,15 +158,17 @@ NsTclAdpParseCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAdpPutsCmd --
+ * NsTclAdpAppendObjCmd, NsTclAdpPutsObjCmd --
  *
- *	Process the Tcl ns_adp_puts command to append output.
+ *	Process the ns_adp_append and ns_adp_puts commands to append
+ *	output.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Output buffer is extended with given text.
+ *	Output buffer is extended with given text, including a newline
+ *	with ns_adp_puts.
  *
  *----------------------------------------------------------------------
  */
@@ -213,29 +215,6 @@ NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Ns_DStringNAppend(itPtr->adp.outputPtr, s, len);
     if (objc == 2) {
 	Ns_DStringNAppend(itPtr->adp.outputPtr, "\n", 1);
-    }
-    NsAdpFlush(itPtr);
-    return TCL_OK;
-}
-
-int
-NsTclAdpPutsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
-{
-    NsInterp *itPtr = arg;
-
-    if (argc != 2 && argc != 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-	    argv[0], " ?-nonewline? string\"", NULL);
-	return TCL_ERROR;
-    }
-    if (argc == 3 && !STREQ(argv[1], "-nonewline")) {
-	Tcl_AppendResult(interp, "invalid flag \"",
-	    argv[1], "\": expected -nonewline", NULL);
-	return TCL_ERROR;
-    }
-    Ns_DStringAppend(itPtr->adp.outputPtr, argv[argc-1]);
-    if (argc != 3) {
-    	Ns_DStringNAppend(itPtr->adp.outputPtr, "\n", 1);
     }
     NsAdpFlush(itPtr);
     return TCL_OK;

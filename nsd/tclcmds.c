@@ -180,7 +180,6 @@ extern Tcl_CmdProc
     NsTclEnvCmd,
     NsTclAdpEvalCmd,
     NsTclAdpIncludeCmd,
-    NsTclAdpPutsCmd,
     NsTclAdpDirCmd,
     NsTclAdpReturnCmd,
     NsTclAdpBreakCmd,
