@@ -419,19 +419,6 @@ static Cmd servCmds[] = {
     {"ns_adp_registertag", NsTclRegisterAdpTagCmd, NULL},
 
     /*
-     * dbtcl.c
-     */
-
-    {"ns_db", NsTclDbCmd, NULL},
-    {"ns_quotelisttolist", NsTclQuoteListToListCmd, NULL},
-    {"ns_getcsv", NsTclGetCsvCmd, NULL},
-    {"ns_dberrorcode", NsTclDbErrorCodeCmd, NULL},
-    {"ns_dberrormsg", NsTclDbErrorMsgCmd, NULL},
-    {"ns_getcsv", NsTclGetCsvCmd, NULL},
-    {"ns_dbconfigpath", NsTclDbConfigPathCmd, NULL},
-    {"ns_pooldescription", NsTclPoolDescriptionCmd, NULL},
-
-    /*
      * tclthread.c
      */
 

@@ -452,7 +452,7 @@ Ns_Main(int argc, char **argv)
     NsInitMimeTypes();
     NsInitEncodings();
     NsCreatePidFile(procname);
-    NsDbInitPools();
+    /*NsDbInitPools();*/
 
     /*
      * Initialize the virtual servers.

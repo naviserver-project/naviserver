@@ -36,7 +36,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "db.h"
 
 /*
  * The following constants are defined for this file.

@@ -37,7 +37,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "db.h"
 
 /*
  * The following structure defines a database pool.
@@ -98,6 +98,15 @@ typedef struct Handle {
 }               Handle;
 
 /*
+ * The following structure maintains per-server data.
+ */
+
+typedef struct ServData {
+    char *defpool;
+    char *allowed;
+} ServData;
+
+/*
  * Local functions defined in this file
  */
 
@@ -107,15 +116,50 @@ static int      IsStale(Handle *, time_t now);
 static int	Connect(Handle *);
 static Pool    *CreatePool(char *pool, char *path, char *driver);
 static int	IncrCount(Pool *poolPtr, int incr);
+static ServData *GetServer(char *server);
 static Ns_TlsCleanup FreeTable;
+static Ns_Callback CheckPool;
+static Ns_ArgProc CheckArgProc;
 
 /*
  * Static variables defined in this file
  */
 
 static Tcl_HashTable poolsTable;
+static Tcl_HashTable serversTable;
 static Ns_Tls tls;
-static int initialized = 0;
+
+int Ns_ModuleVersion = 1;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ModuleInit --
+ *
+ *	Module initialization point.
+ *
+ * Results:
+ *	NS_OK.
+ *
+ * Side effects:
+ *	May load database drivers and configure pools.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ModuleInit(char *server, char *module)
+{
+    static int once;
+
+    if (!once) {
+	NsDbInitPools();
+	once = 1;
+    }
+    NsDbInitServer(server);
+    return Ns_TclInitInterps(server, NsDbAddCmds, server);
+}
 
 
 /*
@@ -166,9 +210,9 @@ Ns_DbPoolDescription(char *pool)
 char *
 Ns_DbPoolDefault(char *server)
 {
-    NsServer *servPtr = NsGetServer(server);
+    ServData *sdataPtr = GetServer(server);
 
-    return servPtr->db.defpool;
+    return (sdataPtr ? sdataPtr->defpool : NULL);
 }
 
 
@@ -191,9 +235,9 @@ Ns_DbPoolDefault(char *server)
 char *
 Ns_DbPoolList(char *server)
 {
-    NsServer *servPtr = NsGetServer(server);
+    ServData *sdataPtr = GetServer(server);
 
-    return servPtr->db.allowed;
+    return (sdataPtr ? sdataPtr->allowed : NULL);
 }
 
 
@@ -507,7 +551,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, char *pool,
  *	NS_OK if pool was bounce, NS_ERROR otherwise.
  *
  * Side effects:
- *	Handles are all marked stale and then closed by NsDbCheckPool.
+ *	Handles are all marked stale and then closed by CheckPool.
  *
  *----------------------------------------------------------------------
  */
@@ -533,7 +577,7 @@ Ns_DbBouncePool(char *pool)
 	handlePtr = handlePtr->nextPtr;
     }
     Ns_MutexUnlock(&poolPtr->lock);
-    NsDbCheckPool(poolPtr);
+    CheckPool(poolPtr);
 
     return NS_OK;
 }
@@ -564,10 +608,13 @@ NsDbInitPools(void)
     char           *path, *pool, *driver;
     int		    new, i;
 
+    Ns_TlsAlloc(&tls, FreeTable);
+
     /*
      * Attempt to create each database pool.
      */
 
+    Tcl_InitHashTable(&serversTable, TCL_STRING_KEYS);
     Tcl_InitHashTable(&poolsTable, TCL_STRING_KEYS);
     pools = Ns_ConfigGetSection("ns/db/pools");
     for (i = 0; pools != NULL && i < Ns_SetSize(pools); ++i) {
@@ -586,6 +633,7 @@ NsDbInitPools(void)
 	    Tcl_SetHashValue(hPtr, poolPtr);
 	}
     }
+    Ns_RegisterProcInfo(CheckPool, "nsdb:check", CheckArgProc);
 }
 
 
@@ -609,11 +657,12 @@ void
 NsDbInitServer(char *server)
 {
     Pool	   *poolPtr;
-    NsServer       *servPtr = NsGetServer(server);
+    ServData	   *sdataPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     char           *path, *pool, *p;
     Ns_DString	    ds;
+    int		    new;
 
     path = Ns_ConfigGetPath(server, NULL, "db", NULL);
 
@@ -621,18 +670,21 @@ NsDbInitServer(char *server)
      * Verify the default pool exists, if any.
      */
 
-    servPtr->db.defpool = Ns_ConfigGetValue(path, "defaultpool");
-    if (servPtr->db.defpool != NULL &&
-	(Tcl_FindHashEntry(&poolsTable, servPtr->db.defpool) == NULL)) {
-	Ns_Log(Error, "dbinit: no such default pool '%s'", servPtr->db.defpool);
-	servPtr->db.defpool = NULL;
+    sdataPtr = ns_malloc(sizeof(ServData));
+    hPtr = Tcl_CreateHashEntry(&serversTable, server, &new);
+    Tcl_SetHashValue(hPtr, sdataPtr);
+    sdataPtr->defpool = Ns_ConfigGetValue(path, "defaultpool");
+    if (sdataPtr->defpool != NULL &&
+	(Tcl_FindHashEntry(&poolsTable, sdataPtr->defpool) == NULL)) {
+	Ns_Log(Error, "dbinit: no such default pool '%s'", sdataPtr->defpool);
+	sdataPtr->defpool = NULL;
     }
 
     /*
      * Construct the allowed list and call the server-specific init.
      */
 
-    servPtr->db.allowed = "";
+    sdataPtr->allowed = "";
     pool = Ns_ConfigGetValue(path, "pools");
     if (pool != NULL && poolsTable.numEntries > 0) {
 	Ns_DStringInit(&ds);
@@ -663,8 +715,8 @@ NsDbInitServer(char *server)
 		pool = p;
 	    }
 	}
-    	servPtr->db.allowed = ns_malloc(ds.length + 1);
-    	memcpy(servPtr->db.allowed, ds.string, ds.length + 1);
+    	sdataPtr->allowed = ns_malloc(ds.length + 1);
+    	memcpy(sdataPtr->allowed, ds.string, ds.length + 1);
     	Ns_DStringFree(&ds);
     }
 }
@@ -876,7 +928,7 @@ IsStale(Handle *handlePtr, time_t now)
 /*
  *----------------------------------------------------------------------
  *
- * NsDbCheckArgProc --
+ * CheckArgProc --
  *
  *	Ns_ArgProc callback for the pool checker.
  *
@@ -889,8 +941,8 @@ IsStale(Handle *handlePtr, time_t now)
  *----------------------------------------------------------------------
  */
 
-void
-NsDbCheckArgProc(Tcl_DString *dsPtr, void *arg)
+static void
+CheckArgProc(Tcl_DString *dsPtr, void *arg)
 {
     Pool *poolPtr = arg;
 
@@ -901,7 +953,7 @@ NsDbCheckArgProc(Tcl_DString *dsPtr, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * NsDbCheckPool --
+ * CheckPool --
  *
  *	Verify all handles in a pool are not stale.
  *
@@ -914,8 +966,8 @@ NsDbCheckArgProc(Tcl_DString *dsPtr, void *arg)
  *----------------------------------------------------------------------
  */
 
-void
-NsDbCheckPool(void *arg)
+static void
+CheckPool(void *arg)
 {
     Pool 	 *poolPtr = arg;
     Handle       *handlePtr, *nextPtr;
@@ -1069,7 +1121,7 @@ CreatePool(char *pool, char *path, char *driver)
     if (!Ns_ConfigGetInt(path, "checkinterval", &i) || i < 0) {
 	i = 600;	/* 10 minutes. */
     }
-    Ns_ScheduleProc(NsDbCheckPool, poolPtr, 0, i);
+    Ns_ScheduleProc(CheckPool, poolPtr, 0, i);
     return poolPtr;
 }
 
@@ -1132,14 +1184,6 @@ IncrCount(Pool *poolPtr, int incr)
     Tcl_HashEntry *hPtr;
     int prev, count, new;
 
-    if (!initialized) {
-	Ns_MasterLock();
-	if (!initialized) {
-	    Ns_TlsAlloc(&tls, FreeTable);
-	    initialized = 1;
-	}
-	Ns_MasterUnlock();
-    }
     tablePtr = Ns_TlsGet(&tls);
     if (tablePtr == NULL) {
 	tablePtr = ns_malloc(sizeof(Tcl_HashTable));
@@ -1159,6 +1203,35 @@ IncrCount(Pool *poolPtr, int incr)
 	Tcl_SetHashValue(hPtr, (ClientData) count);
     }
     return prev;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetServer --
+ *
+ *	Get per-server data.
+ *
+ * Results:
+ *	Pointer to per-server data.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ServData *
+GetServer(char *server)
+{
+    Tcl_HashEntry *hPtr;
+
+    hPtr = Tcl_FindHashEntry(&serversTable, server);
+    if (hPtr != NULL) {
+	return Tcl_GetHashValue(hPtr);
+    }
+    return NULL;
 }
 
 

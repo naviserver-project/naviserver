@@ -59,7 +59,7 @@ ifdef NSGCC
     MAKEFLAGS	+= NSGCC=$(NSGCC)
 endif
 
-dirs   = nsd nssock nsssl nscgi nscp nslog nsperm nspd nsext
+dirs   = nsd nssock nsssl nscgi nscp nslog nsperm nsdb nspd nsext 
 
 all: tcl 
 	@for i in $(dirs); do \
@@ -68,16 +68,20 @@ all: tcl
 
 install: all install-tcl install-aolserver
 
-install-aolserver:
-	@for i in $(dirs); do \
-		(cd $$i && $(MAKE) install) || exit 1; \
-	done
+install-binaries: all install-tclbinaries install-asbinaries
+
+install-aolserver: install-asbinaries
 	$(MKDIR)		$(AOLSERVER)/log
 	$(MKDIR)		$(AOLSERVER)/modules
 	$(MKDIR)		$(INSTSRVPAG)
 	$(CP) -r tcl    	$(AOLSERVER)/modules/
 	$(CP) -r include	$(AOLSERVER)/
 	$(CP) sample-config.tcl $(AOLSERVER)/
+
+install-asbinaries: 
+	@for i in $(dirs); do \
+		(cd $$i && $(MAKE) install) || exit 1; \
+	done
 
 install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
@@ -101,5 +105,8 @@ tcl: $(tclsrc)/Makefile
 $(tclsrc)/Makefile: $(tclsrc)/Makefile.in $(tclsrc)/configure
 	(cd $(tclsrc); ./configure $(tclcfg))
 
-install-tcl: tcl
-	(cd $(tclsrc); $(MAKE) install-binaries install-libraries)
+install-tcl: install-tclbinaries
+	(cd $(tclsrc); $(MAKE) install-libraries)
+
+install-tclbinaries: tcl
+	(cd $(tclsrc); $(MAKE) install-binaries)

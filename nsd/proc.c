@@ -64,7 +64,6 @@ struct proc {
 	{(void *) NsTclSockProc, "ns:tclsockcallback", NsTclSockArgProc},
 	{(void *) NsCachePurge, "ns:cachepurge", NsCacheArgProc},
 	{(void *) NsConnThread, "ns:connthread", NsConnArgProc},
-	{(void *) NsDbCheckPool, "ns:dbcheck", NsDbCheckArgProc},
 	{NULL, NULL, NULL}
 };
 

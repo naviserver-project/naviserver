@@ -123,7 +123,6 @@ proc ns_cleanup {} {
 	ns_chan cleanup
 	_ns_closechannels
 	ns_set cleanup
-	ns_db cleanup
 	ns_http cleanup
 	_ns_updatenamespaces
     }]} {
