@@ -49,10 +49,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 NS_EXPORT int Ns_ModuleVersion = 1; 		/* Needed for AOLserver */
 
-/*
- * Local functions defined in this file
- */
-
 typedef struct {
     char	   *module;
     Ns_Mutex	    lock;
@@ -63,9 +59,15 @@ typedef struct {
     int             maxbackup;
     int             maxlines;
     int             curlines;
+    int             suppressquery;
     Ns_DString      buffer;
+    char          **extheaders;
 } Log;
 
+
+/*
+ * Local functions defined in this file
+ */
 static Ns_Callback LogRollCallback;
 static Ns_Callback LogCloseCallback;
 static Ns_TraceProc LogTrace;
@@ -73,6 +75,7 @@ static int LogFlush(Log *logPtr, Ns_DString *dsPtr);
 static int LogOpen(Log *logPtr);
 static int LogRoll(Log *logPtr);
 static int LogClose(Log *logPtr);
+static void LogConfigExtHeaders(Log *logPtr, char *path);
 static Ns_ArgProc LogArg;
 static Tcl_CmdProc LogCmd;
 static Ns_TclInterpInitProc AddCmds;
@@ -181,6 +184,10 @@ Ns_ModuleInit(char *server, char *module)
 	logPtr->flags |= LOG_COMBINED;
     }
 
+    if (!Ns_ConfigGetBool(path, "suppressquery", &logPtr->suppressquery)) {
+	logPtr->suppressquery = 0;
+    }
+
     /*
      * Schedule various log roll and shutdown options.
      */
@@ -201,6 +208,8 @@ Ns_ModuleInit(char *server, char *module)
     if (opt) {
         Ns_RegisterAtSignal(LogRollCallback, logPtr);
     }
+
+    LogConfigExtHeaders(logPtr, path);
 
     /*
      * Open the log and register the trace.
@@ -238,7 +247,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 {
     Ns_DString     ds;
     register char *p;
-    int            quote, n, status;
+    int            quote, n, status, i;
     char           buf[100];
     Log		  *logPtr = arg;
     
@@ -284,9 +293,19 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (conn->request && conn->request->line) {
-    	Ns_DStringVarAppend(&ds, " \"", conn->request->line, "\" ", NULL);
+	
+	if (logPtr->suppressquery) {
+	    /*
+	     * Don't display query data.
+	     * NB: Side-effect is that the real URI is returned, so places
+	     * where trailing slash returns "index.html" logs as "index.html".
+	     */
+	    Ns_DStringVarAppend(&ds, " \"", conn->request->url, "\" ", NULL);
+	} else {
+	    Ns_DStringVarAppend(&ds, " \"", conn->request->line, "\" ", NULL);
+	}
     } else {
-    	Ns_DStringAppend(&ds, " \"\"");
+	Ns_DStringAppend(&ds, " \"\"");
     }
 
     /*
@@ -312,6 +331,20 @@ LogTrace(void *arg, Ns_Conn *conn)
 	    Ns_DStringAppend(&ds, p);
 	}
 	Ns_DStringAppend(&ds, "\"");
+
+    }
+
+    /*
+     * Append the extended headers (if any).
+     */
+    for (i=0; logPtr->extheaders[i] != NULL; i++) {
+	if ((p = Ns_SetIGet(conn->headers, logPtr->extheaders[i]))) {
+	    Ns_DStringAppend(&ds, " \"");
+	    Ns_DStringAppend(&ds, p);
+	    Ns_DStringAppend(&ds, "\"");
+	} else {
+	    Ns_DStringAppend(&ds, " -");
+	}
     }
 
     /*
@@ -648,3 +681,61 @@ LogRollCallback(void *arg)
 {
     LogCallback(LogRoll, arg, "roll");
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogConfigExtHeaders
+ *
+ *      Parse the ExtendedHeaders configuration.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	Sets logPtr->extheaders.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+LogConfigExtHeaders(Log *logPtr, char *path)
+{
+    char *config = Ns_ConfigGet(path, "extendedheaders");
+    char *p;
+    int   i;
+
+    if (config == NULL) {
+        logPtr->extheaders = ns_calloc(1, sizeof *logPtr->extheaders);
+        logPtr->extheaders[0] = NULL;
+	return;
+    }
+
+    config = Ns_StrDup(config);
+
+    /* Figure out how many extended headers there are. */
+
+    for (i = 1, p = config; *p; p++) {
+	if (*p == ',') {
+	    i++;
+	}
+    }
+
+    /* Initialize the extended header pointers. */
+
+    logPtr->extheaders = ns_calloc(i + 1, sizeof *logPtr->extheaders);
+
+    logPtr->extheaders[0] = config;
+
+    for (i = 1, p = config; *p; p++) {
+	if (*p == ',') {
+	    *p = '\000';
+	    logPtr->extheaders[i++] = p + 1;
+	}
+    }
+
+    logPtr->extheaders[i] = NULL;
+
+}
+
