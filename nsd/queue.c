@@ -443,6 +443,7 @@ NsConnThread(void *arg)
 	sprintf(connPtr->idstr, "cns%d", connPtr->id);
 	connPtr->headers = Ns_SetCreate(NULL);
 	connPtr->outputheaders = Ns_SetCreate(NULL);
+	Ns_DStringInit(&connPtr->content);
 
 	ConnRun(connPtr);
 
@@ -469,8 +470,10 @@ NsConnThread(void *arg)
 	    Ns_SetFree(connPtr->query);
 	    connPtr->query = NULL;
 	}
+	connPtr->form = NULL;
 	Ns_SetFree(connPtr->headers);
 	Ns_SetFree(connPtr->outputheaders);
+	Ns_DStringFree(&connPtr->content);
 	connPtr->headers = connPtr->outputheaders = NULL;
 
 	/*
