@@ -111,7 +111,7 @@ NsDbTclInit(void)
     Ns_TclInitInterps(nsServer, EnableCmds, NULL);
 
     if (Ns_TclInitModule(nsServer, "nsdb") != NS_OK) {
-	Ns_Log(Warning, "NsDbTclInit: could not initialize nsdb Tcl");
+	Ns_Log(Warning, "dbtcl: failed to initialize nsdb tcl commands");
     }
 }
 

@@ -714,8 +714,8 @@ TclFilterProc(void *arg, Ns_Conn *conn, int why)
 	    }
 	}
 	if (status == NS_ERROR) {
-	    Ns_Log(Error, "Invalid return code from filter proc: %s "
-		   "(must be filter_ok, filter_return, or filter_break)",
+	    Ns_Log(Error, "tclop: invalid return code from filter proc '%s': "
+		   "must be filter_ok, filter_return, or filter_break",
 		   interp->result);
 	}
     }

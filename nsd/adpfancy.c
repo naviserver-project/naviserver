@@ -562,7 +562,7 @@ FancyParsePage(Ns_DString *outPtr, char *in)
 	     */
 	    end = strstr(top, "%>");
 	    if (end == NULL) {
-		Ns_Log(Warning, "FancyParsePage: unterminated script");
+		Ns_Log(Warning, "adpfancy: unterminated script");
 		AddTextChunk(outPtr, oldtop, strlen(oldtop));
 		break;
 	    } else {
@@ -599,7 +599,7 @@ FancyParsePage(Ns_DString *outPtr, char *in)
 		
 		end = Ns_StrNStr(top, "</script>");
 		if (end == NULL) {
-		    Ns_Log(Warning, "FancyParsePage: unterminated script");
+		    Ns_Log(Warning, "adpfancy: unterminated script");
 		    AddTextChunk(outPtr, oldtop, strlen(oldtop));
                     Ns_SetFree(params);
 		    break;
@@ -640,8 +640,8 @@ FancyParsePage(Ns_DString *outPtr, char *in)
 	    if (rtPtr->endtag &&
 		((end = Ns_StrNStr(top, rtPtr->endtag)) == NULL)) {
 
-		Ns_Log(Warning, "FancyParsePage: "
-		       "unterminated registered tag %s", rtPtr->tag);
+		Ns_Log(Warning, "adpfancy: unterminated registered tag '%s'",
+		       rtPtr->tag);
 		AddTextChunk(outPtr, oldtop, strlen(oldtop));
                 Ns_SetFree(params);
 		break;

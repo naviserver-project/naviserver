@@ -1164,8 +1164,8 @@ Ns_ConnGetQuery(Ns_Conn *conn)
         if (STREQ(conn->request->method, "POST") && conn->contentLength > 0) {
             if (connPtr->nContent == 0 
 		&& conn->contentLength > nsconf.conn.maxpost) {
-		Ns_Log(Warning, "Ns_ConnGetQuery: "
-		       "POST contentlength %d exceeds maxpost limit %d",
+		Ns_Log(Warning, "conn: "
+		       "post size %d exceeds maxpost limit of %d",
 		       conn->contentLength, nsconf.conn.maxpost);
 	    } else if (Ns_ConnCopyToDString(conn, conn->contentLength,
 					 dsPtr) != NS_OK) {

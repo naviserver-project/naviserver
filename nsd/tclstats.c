@@ -87,8 +87,7 @@ NsTclStatsInit(void)
     Tcl_InitHashTable(&statsTable, TCL_STRING_KEYS);
     Ns_MutexSetName2(&lock, "ns", "tclstats");
     if (nsconf.tcl.statlevel > 0) {
-	Ns_Log(Warning, "NsTclStatsInit: tracing to level: %d",
-	       nsconf.tcl.statlevel);
+	Ns_Log(Warning, "tclstats: tracing to level %d", nsconf.tcl.statlevel);
 	Ns_TclRegisterAtCreate(CreateTrace, NULL);
 	if (nsconf.tcl.statmaxbuf > 0) {
 	    Ns_TlsAlloc(&tls, FreeBuf);

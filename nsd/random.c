@@ -198,7 +198,7 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
 {
     Ns_Thread thr;
     
-    Ns_Log(Notice, "Ns_GenSeeds: generating %d random seed(s)...", nseeds);
+    Ns_Log(Notice, "random: generating %d random seeds...", nseeds);
     Ns_MasterLock();
     Ns_SemaInit(&counterSema, 0);
     counterRun = 1;
@@ -211,7 +211,7 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
     Ns_MasterUnlock();
     Ns_ThreadJoin(&thr, NULL);
     Ns_SemaDestroy(&counterSema);
-    Ns_Log(Notice, "Ns_GenSeeds: seed generation complete.");
+    Ns_Log(Notice, "random: seed generation complete");
 }
 
 /*

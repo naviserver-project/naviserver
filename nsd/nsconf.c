@@ -108,9 +108,9 @@ GetFile(char *path, char *key)
     
     file = GetString(path, key, NULL);
     if (file != NULL && access(file, R_OK) != 0) {
-    	Ns_Log(Error, "conf: GetFile: access(%s, R_OK) failed: %s",
+    	Ns_Log(Error, "conf: access(%s, R_OK) failed: %s",
 	       file, strerror(errno));
-	Ns_Log(Error, "conf: GetFile: [%s]%s reset to NULL",
+	Ns_Log(Error, "conf: [%s]%s reset to NULL",
 	       path, key);
 	file = NULL;
     }
@@ -258,7 +258,7 @@ NsConfInit(void)
 	nsconf.conn.hdrcase = ToUpper;
     } else {
     	if (!STRIEQ(s, "preserve")) {
-	    Ns_Log(Error, "conf: NsConfInit: "
+	    Ns_Log(Error, "conf: "
 		   "[%s]headercase = %s invalid - set to preserve", path, s);
     	}
     	nsconf.conn.hdrcase = Preserve;
@@ -361,8 +361,7 @@ NsConfInit(void)
     
     for (i = 0; ignored[i] != NULL; ++i) {
 	if (Ns_ConfigGet(PARAMS, ignored[i]) != NULL) {
-	    Ns_Log(Warning, "conf: Ns_ConfInit: ignored 2.x option: %s",
-		   ignored[i]);
+	    Ns_Log(Warning, "conf: ignored 2.x option: %s", ignored[i]);
 	}
     }
 
