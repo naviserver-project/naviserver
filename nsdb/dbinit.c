@@ -1155,7 +1155,7 @@ IncrCount(Pool *poolPtr, int incr)
     tablePtr = Ns_TlsGet(&tls);
     if (tablePtr == NULL) {
 	tablePtr = ns_malloc(sizeof(Tcl_HashTable));
-	Tcl_InitHashTable(tablePtr, TCL_STRING_KEYS);
+	Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
 	Ns_TlsSet(&tls, tablePtr);
     }
     hPtr = Tcl_CreateHashEntry(tablePtr, (char *) poolPtr, &new);
