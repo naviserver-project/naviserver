@@ -76,7 +76,7 @@
  *   add an "-autoclean" option to queue create function. However,
  *   AOLServer does not currently supply a "good" connection cleanup
  *   callback. We tryed to use "Ns_RegisterConnCleanup" however it does
- *   not have a facility to remove registered functions.
+ *   not have a facility to remove registered callbacks.
  *
  */
 
@@ -561,8 +561,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             int         timedOut = 0;
 
             argIndex = 2;
-            if ((objc < 4) ||
-                ((objc > 4) && (objc != 7))) {
+            if ((objc != 4) && (objc != 7)) {
                 Tcl_WrongNumArgs(interp, 2, objv,
                                  "?-timeout seconds milliseconds? queueId jobId");
                 return TCL_ERROR;
@@ -725,8 +724,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             int         timedOut = 0;
 
             argIndex = 2;
-            if ((objc != 3) ||
-                ((objc > 3) && (objc != 6))) {
+            if ((objc != 3) && (objc != 6)) {
                 Tcl_WrongNumArgs(interp, 2, objv,
                                  "?-timeout seconds milliseconds? queueId");
                 return TCL_ERROR;
