@@ -34,7 +34,7 @@
  */
 
 /* 
- * nssock.c --
+ * sock.cpp --
  *
  *	Routines for the nssock and nsssl socket drivers.
  *
