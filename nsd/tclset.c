@@ -194,7 +194,7 @@ NsTclSetCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 {
     Ns_Set       *set, *set2Ptr;
     int           locked, i;
-    char         *cmd;
+    char         *cmd, *key, *val;
     int           flags;
     Ns_Set      **setvectorPtrPtr;
     char         *split;
@@ -245,7 +245,7 @@ NsTclSetCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	
         flags = NS_TCL_SET_DYNAMIC;
         i = 2;
-        if (argv[2] != NULL &&
+        if (argc > 2 &&
 	    (STREQ(argv[2], "-shared") || STREQ(argv[2], "-persist"))) {
             flags |= NS_TCL_SET_SHARED;
             ++i;
@@ -257,10 +257,13 @@ NsTclSetCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	     * ns_set new
 	     */
 	    
-            if (argv[i] != NULL && argv[i + 1] != NULL) {
-                return BadArgs(interp, argv, "?-shared? ?name?");
-            }
-            EnterSet(itPtr, interp, Ns_SetCreate(argv[i]), flags);
+	    set = Ns_SetCreate(argv[i++]);
+	    while (i < argc) {
+		key = argv[i++];
+		val = argv[i++];
+		Ns_SetPut(set, key, val);
+	    }
+            EnterSet(itPtr, interp, set, flags);
             break;
         case 'c':
 	    /*
