@@ -653,7 +653,7 @@ Parse(AdpParse *parsePtr, NsServer *servPtr, char *utf)
 	    }
 	    break;
 	}
-	utf = e + 1;
+	utf = s + 1;
     }
     Ns_RWLockUnlock(&servPtr->adp.taglock);
 
