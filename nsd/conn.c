@@ -1400,8 +1400,11 @@ NsTclConnCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          argv[0], " cmd ", NULL);
         return TCL_ERROR;
     }
-
     connPtr = (Conn *) Ns_GetConn();
+    if (STREQ(argv[1], "isconnected")) {
+	Tcl_SetResult(interp, (connPtr == NULL) ? "0" : "1", TCL_STATIC);
+	return TCL_OK;
+    }
     if (connPtr == NULL) {
         Tcl_AppendResult(interp, "no current connection", NULL);
         return TCL_ERROR;
@@ -1482,14 +1485,12 @@ NsTclConnCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
             Tcl_SetResult(interp, "could not close connection", TCL_STATIC);
             return TCL_ERROR;
         }
-    } else if (STREQ(argv[1], "isconnected")) {
-	Tcl_SetResult(interp, (connPtr == NULL) ? "0" : "1", TCL_STATIC);
-	return TCL_OK;
     } else {
         Tcl_AppendResult(interp, "unknown command \"", argv[1],
 			 "\":  should be "
                          "authpassword, "
                          "authuser, "
+                         "close, "
                          "content, "
                          "contentlength, "
                          "driver, "
@@ -1497,6 +1498,7 @@ NsTclConnCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          "form, "
                          "headers, "
                          "host, "
+                         "isconnected, "
                          "location, "
                          "method, "
                          "outputheaders, "
@@ -1512,8 +1514,6 @@ NsTclConnCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          "status, "
                          "urlc, "
                          "urlv, "
-                         "close, "
-                         "isconnected, "
                          "or version", NULL);
         return TCL_ERROR;
     }
