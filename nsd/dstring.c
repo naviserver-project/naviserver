@@ -219,7 +219,12 @@ Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
     va_list         ap;
 
     va_start(ap, fmt);
+#if NO_VSNPRINTF
+    /* NB: Technically unsafe. */
+    vsprintf(buf, fmt, ap);
+#else
     vsnprintf(buf, sizeof(buf)-1, fmt, ap);
+#endif
     va_end(ap);
     return Ns_DStringAppend(dsPtr, buf);
 }
