@@ -497,6 +497,7 @@ NS_EXTERN int Ns_AuthorizeRequest(char *server, char *method, char *url,
 			       char *user, char *passwd, char *peer);
 NS_EXTERN void Ns_SetRequestAuthorizeProc(char *server,
     				       Ns_RequestAuthorizeProc *procPtr);
+NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *procPtr);
 
 /*
  * cache.c:
@@ -604,7 +605,6 @@ NS_EXTERN int Ns_ConnContentSent(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPeerPort(Ns_Conn *conn);
-NS_EXTERN void Ns_SetConnLocationProc(Ns_LocationProc *procPtr);
 NS_EXTERN char *Ns_ConnLocation(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnHost(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPort(Ns_Conn *conn);
