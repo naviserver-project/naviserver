@@ -555,7 +555,7 @@ ns_sockpair(SOCKET socks[2])
  */
 
 SOCKET
-Ns_SockListen(char *address, int port)
+Ns_SockListenEx(char *address, int port, int backlog)
 {
     SOCKET          sock;
     struct sockaddr_in sa;
@@ -564,7 +564,7 @@ Ns_SockListen(char *address, int port)
 	return -1;
     }
     sock = Ns_SockBind(&sa);
-    if (sock != INVALID_SOCKET && listen(sock, nsconf.backlog) != 0) {
+    if (sock != INVALID_SOCKET && listen(sock, backlog) != 0) {
 	ns_sockclose(sock);
 	sock = INVALID_SOCKET;
     }

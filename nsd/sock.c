@@ -168,7 +168,30 @@ Ns_SockWait(SOCKET sock, int what, int timeout)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_AccpetSock --
+ * Ns_SockListen --
+ *
+ *	Listen for connections with default backlog.
+ *
+ * Results:
+ *	A socket or INVALID_SOCKET on error. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+SOCKET
+Ns_SockListen(char *address, int port)
+{
+    return Ns_SockListenEx(address, port, nsconf.backlog);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockAccept --
  *
  *	Accept a TCP socket, setting close on exec.
  *
