@@ -157,14 +157,12 @@ NsStopServers(Ns_Time *toPtr)
     while (hPtr != NULL) {
 	servPtr = Tcl_GetHashValue(hPtr);
 	NsStopServer(servPtr);
-	NsTclStopJobs(servPtr);
 	hPtr = Tcl_NextHashEntry(&search);
     }
     hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
     while (hPtr != NULL) {
 	servPtr = Tcl_GetHashValue(hPtr);
 	NsWaitServer(servPtr, toPtr);
-	NsTclWaitJobs(servPtr, toPtr);
 	hPtr = Tcl_NextHashEntry(&search);
     }
 }
@@ -352,17 +350,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
 
     Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
     Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
-
-
-    /*
-     * Initialize Tcl job queue.
-     */
-
-    Tcl_InitHashTable(&servPtr->job.table, TCL_STRING_KEYS);
-    if (!Ns_ConfigGetInt(path, "maxjobs", &i) || i < 0) {
-	i = 4;
-    }
-    servPtr->job.threads.max = i;
 
     /*
      * Initialize the fastpath.
