@@ -46,15 +46,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 int nsThreadMaxTls = NS_THREAD_MAXTLS;
 
-/*
- * The following static variable and lock is used when allocating
- * tls ids.  The first valid id starts at 1 to detect use of an
- * unallocated id initialized to zero as a static variable.
- */
-
-static int      nextId = 1;
-static Ns_Mutex idLock;
-
 /* 
  * Static functions defined in this file.
  */
@@ -88,18 +79,16 @@ static Ns_TlsCleanup *cleanupProcs[NS_THREAD_MAXTLS];
 void
 Ns_TlsAlloc(Ns_Tls *tlsPtr, Ns_TlsCleanup *cleanup)
 {
+    static int      nextId = 1;
     int id;
 
-    Ns_MutexLock(&idLock);
+    Ns_MasterLock();
     if (nextId == NS_THREAD_MAXTLS) {
 	NsThreadAbort("Ns_TlsAlloc: exceded max tls: %d", NS_THREAD_MAXTLS);
     }
     id = nextId++;
     cleanupProcs[id] = cleanup;
-    Ns_MutexUnlock(&idLock);
-    if (id == 1) {
-	Ns_MutexSetName(&idLock, "nsthread:tls");
-    }
+    Ns_MasterUnlock();
     *tlsPtr = (void *) id;
 }
 
