@@ -53,6 +53,10 @@ LOBJS = \
 	tclvar.o tclxkeylist.o thread.o time.o tls.o unix.o url.o	\
 	urlencode.o urlopen.o urlspace.o uuencode.o
 
+ifeq (Darwin,$(shell uname))
+  LOBJS += osxcompat.o
+endif
+
 LIBOBJS=$(LOBJS) stamp.o
 
 include ../include/Makefile.module
