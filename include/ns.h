@@ -719,7 +719,6 @@ NS_EXTERN int Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
 			 char *args, Ns_Set *env);
 NS_EXTERN int Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout, char **argv,
 		       Ns_Set *env);
-NS_EXTERN int Ns_Fork(void);
 NS_EXTERN int Ns_WaitProcess(int pid);
 NS_EXTERN int Ns_WaitForProcess(int pid, int *statusPtr);
 

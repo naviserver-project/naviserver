@@ -271,6 +271,13 @@ NS_EXTERN void Ns_CsEnter(Ns_Cs *csPtr);
 NS_EXTERN void Ns_CsLeave(Ns_Cs *csPtr);
 
 /*
+ * fork.c:
+ */
+
+NS_EXTERN int ns_fork(void);
+NS_EXTERN int Ns_Fork(void);
+
+/*
  * master.c:
  */
 
@@ -443,5 +450,6 @@ NS_EXTERN int nsThreadMutexMeter;	/* Meter mutex trylock fails. */
 #define Ns_Calloc ns_calloc
 #define Ns_StrDup ns_strdup
 #define Ns_StrCopy ns_strcopy
+#define Ns_Fork ns_fork
 
 #endif /* NSTHREAD_H */

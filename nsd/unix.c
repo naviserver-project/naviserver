@@ -208,39 +208,6 @@ NsSendSignal(int sig)
 
 /*
  *----------------------------------------------------------------------
- * Ns_Fork --
- *
- *      Fork a child process.
- *
- * Results:
- *      Returns ther process id of the child if parent, 0 if child, or
- *	-1 if error.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-ns_fork(void)
-{
-    return Ns_Fork();
-}
-
-int
-Ns_Fork(void)
-{
-#ifdef HAVE_FORK1
-    return fork1();
-#else
-    return fork();
-#endif
-}
-
-
-/*
- *----------------------------------------------------------------------
  * ns_sockpair --
  *
  *      Create a socketpair with fd's set close on exec.
