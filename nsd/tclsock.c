@@ -987,8 +987,9 @@ NsTclSelectObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     Tcl_Channel	    chan;
     struct timeval  tv, *tvPtr;
     Tcl_DString     dsRfd, dsNbuf;
-	Tcl_Obj   **fobjv;
-	int         fobjc;
+    Tcl_Obj   **fobjv;
+    int         fobjc;
+    Ns_Time     timeout;
 
     status = TCL_ERROR;
     if (objc != 6 && objc != 4) {
@@ -1004,11 +1005,11 @@ NsTclSelectObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         	Tcl_WrongNumArgs(interp, 1, objv, "?-timeout sec? rfds wfds efds");
 	    	return TCL_ERROR;
         }
-        tv.tv_usec = 0;
-        if (Tcl_GetIntFromObj(interp, objv[2], &i) != TCL_OK) {
+        if (Ns_TclGetTimeFromObj(interp, objv[2], &timeout) != TCL_OK) {
             return TCL_ERROR;
         }
-        tv.tv_sec = i;
+        tv.tv_sec = timeout.sec;
+        tv.tv_usec = timeout.usec;
         arg = 3;
     }
 
