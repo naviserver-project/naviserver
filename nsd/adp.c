@@ -1494,9 +1494,9 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
 	    }
 	    if (Ns_ConnResponseStatus(conn) == 0) {
                 status = Ns_ConnReturnData(conn, 200,
-                                            adPtr->output.string,
-                                            adPtr->output.length,
-                                            adPtr->mimeType);
+					   adPtr->output.string,
+					   adPtr->output.length,
+					   adPtr->mimeType);
 	    } else {
                 status = NS_OK;
             }
