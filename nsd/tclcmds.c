@@ -140,7 +140,6 @@ extern Tcl_CmdProc
     NsTclConnCmd,
     NsTclCrashCmd,
     NsTclCryptCmd,
-    NsTclGetMultipartFormdataCmd,
     NsTclGetUrlCmd,
     NsTclGifSizeCmd,
     NsTclGuessTypeCmd,
@@ -386,7 +385,6 @@ static Cmd servCmds[] = {
 
     {"ns_checkurl", NsTclRequestAuthorizeCmd, NULL},
     {"ns_requestauthorize", NsTclRequestAuthorizeCmd, NULL},
-    {"ns_get_multipart_formdata", NsTclGetMultipartFormdataCmd, NULL},
     {"ns_markfordelete", NsTclMarkForDeleteCmd, NULL},
 
     /*
