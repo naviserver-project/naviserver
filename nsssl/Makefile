@@ -59,6 +59,7 @@ endif
 MODLIBS  =  -L$(BSAFE)/lib -lbsafe
 MODDIR   =  nsssl
 HDRS     =  ssl.h ssltcl.h x509.h
+LDRPATH  += $(LDRFLAG)$(BSAFE)/lib
 
 
 #
