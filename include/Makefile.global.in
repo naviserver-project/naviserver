@@ -109,7 +109,6 @@ ifneq (,$(findstring SunOS,$(uname)))
     AR=/usr/ccs/bin/ar
     CCRPATH += $(CCRFLAG)/usr/lib/lwp
     LDRPATH += $(LDRFLAG)/usr/lib/lwp
-    CFLAGS+=-DUSE_DUPHIGH=1 
     LDLIB+=-nostartfiles
     LIBS+=-lrt
 endif
@@ -120,7 +119,6 @@ ifneq (,$(findstring Darwin,$(uname)))
     LDLIB=cc -dynamiclib -install_name $(ASLIBDIR)/$(LIBFILE)
     CCRPATH=
     LDRPATH=
-    CFLAGS+=-DUSE_DLSYMPREFIX=1
 endif
 
 # Add dynamic library entry point flags.
