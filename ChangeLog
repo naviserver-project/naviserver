@@ -1,3 +1,8 @@
+2005-03-06  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/tclxkeylist.c:
+	* nsd/tclcmds.c: added objectified version of TclX keyed lists.
+
 2005-03-05  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* nsd/conn.c include/ns.h Add Ns_ConnSetResponseStatus command to

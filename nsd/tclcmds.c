@@ -205,10 +205,10 @@ extern Tcl_CmdProc
     NsTclStripHtmlCmd,
     NsTclThreadCmd,
     NsTclUnscheduleCmd,
-    Tcl_KeyldelCmd,
-    Tcl_KeylgetCmd,
-    Tcl_KeylkeysCmd,
-    Tcl_KeylsetCmd;
+    TclX_KeyldelObjCmd,
+    TclX_KeylgetObjCmd,
+    TclX_KeylkeysObjCmd,
+    TclX_KeylsetObjCmd;
 
 /*
  * The following structure defines a command to be created
@@ -358,10 +358,10 @@ static Cmd cmds[] = {
      * tclxkeylist.c
      */
 
-    {"keyldel", Tcl_KeyldelCmd, NULL},
-    {"keylget", Tcl_KeylgetCmd, NULL},
-    {"keylkeys", Tcl_KeylkeysCmd, NULL},
-    {"keylset", Tcl_KeylsetCmd, NULL},
+    {"keyldel", TclX_KeyldelObjCmd, NULL},
+    {"keylget", TclX_KeylgetObjCmd, NULL},
+    {"keylkeys", TclX_KeylkeysObjCmd, NULL},
+    {"keylset", TclX_KeylsetObjCmd, NULL},
 
     /*
      * cache.c
