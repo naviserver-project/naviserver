@@ -164,6 +164,16 @@ Ns_SockListen(char *address, int port)
 #ifdef HAVE_CMMSG
 	sock = cm.fds[0];
 #endif
+	/*
+	 * Close-on-exec, while set in the binder process by default
+	 * with Ns_SockBind, is not transmitted in the sendmsg and
+	 * must be set again.
+	 */
+
+	if (sock != INVALID_SOCKET && Ns_CloseOnExec(sock) != NS_OK) {
+	    close(sock);
+	    sock = -1;
+	}
 	if (address == NULL) {
 	    address = "0.0.0.0";
 	}
@@ -180,7 +190,6 @@ Ns_SockListen(char *address, int port)
     Ns_MutexUnlock(&lock);
     return sock;
 }
-
 
 
 /*
