@@ -277,7 +277,7 @@ SockCallbackThread(void *ignored)
 {
     char          c;
     int           when[3], events[3];
-    int           n, i, whenany, new, stop;
+    int           n, i, new, stop;
     int		  max, nfds;
     Callback     *cbPtr;
     Tcl_HashEntry *hPtr;
@@ -294,7 +294,6 @@ SockCallbackThread(void *ignored)
     when[0] = NS_SOCK_READ;
     when[1] = NS_SOCK_WRITE;
     when[2] = NS_SOCK_EXCEPTION;
-    whenany = (when[0] | when[1] | when[2] | NS_SOCK_EXIT);
     max = 100;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     pfds[0].fd = trigPipe[0];
@@ -340,7 +339,7 @@ SockCallbackThread(void *ignored)
 	hPtr = Tcl_FirstHashEntry(&table, &search);
 	while (hPtr != NULL) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
-	    if (!(cbPtr->when & whenany)) {
+	    if (!(cbPtr->when & NS_SOCK_ANY)) {
 	    	Tcl_DeleteHashEntry(hPtr);
 		ns_free(cbPtr);
 	    } else {
