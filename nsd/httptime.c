@@ -313,14 +313,19 @@ NsTclParseHttpTimeCmd(ClientData dummy, Tcl_Interp *interp, int argc,
 int
 NsTclParseHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    time_t t;
+    time_t time;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "httptime");
         return TCL_ERROR;
     }
-    t = Ns_ParseHttpTime(Tcl_GetString(objv[1]));
-    Tcl_SetObjResult(interp, Tcl_NewIntObj((int) t));
+    time = Ns_ParseHttpTime(Tcl_GetString(objv[1]));
+    if (time == 0) {
+	Tcl_AppendResult(interp, "invalid time: ",
+		Tcl_GetString(objv[1]), NULL);
+	return TCL_ERROR;
+    }
+    Tcl_SetLongObj(Tcl_GetObjResult(interp), time);
     return TCL_OK;
 }
 

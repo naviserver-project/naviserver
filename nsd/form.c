@@ -197,9 +197,8 @@ NsTclParseQueryObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
     }
     set = Ns_SetCreate(NULL);
     if (Ns_QueryToSet(Tcl_GetString(objv[1]), set) != NS_OK) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), Tcl_GetString(objv[0]), 
-			": could not parse: \"",
-	    	Tcl_GetString(objv[1]), "\"", (char *) NULL);
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		"could not parse: \"", Tcl_GetString(objv[1]), "\"", NULL);
 	Ns_SetFree(set);
 	return TCL_ERROR;
     }
