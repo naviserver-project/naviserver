@@ -42,7 +42,7 @@
 #define NS_MAJOR_VERSION   4
 #define NS_MINOR_VERSION   0
 #define NS_VERSION         "4.0"
-#define NS_PATCH_LEVEL     "4.0b2"
+#define NS_PATCH_LEVEL     "4.0b3"
 
 #include "nsthread.h"
 #include "tcl.h"
