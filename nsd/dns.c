@@ -190,6 +190,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache **cachePtr, char *key)
 void
 NsEnableDNSCache(int timeout, int maxentries)
 {
+    Ns_MutexSetName(&lock, "ns:dns");
     Ns_MutexLock(&lock);
     cachetimeout = timeout;
     hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
