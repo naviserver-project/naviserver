@@ -583,9 +583,6 @@ NsTclAdpExceptionCmd(ClientData arg, Tcl_Interp *interp, int argc,
 	case ADP_ABORT:
 	    exception = "abort";
 	    break;
-	case ADP_OVERFLOW:
-	    exception = "overflow";
-	    break;
 	case ADP_RETURN:
 	    exception = "return";
             break;
