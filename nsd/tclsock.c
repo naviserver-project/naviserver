@@ -69,6 +69,8 @@ static void AppendReadyFiles(Tcl_Interp *interp, fd_set * pset, int write,
 static int EnterSock(Tcl_Interp *interp, SOCKET sock);
 static int EnterDup(Tcl_Interp *interp, SOCKET sock);
 static int EnterDupedSocks(Tcl_Interp *interp, SOCKET sock);
+static int SockSetBlocking(char *value, Tcl_Interp *interp, int argc,
+			   	char **argv);
 static int SockSetBlockingObj(char *value, Tcl_Interp *interp, int objc, 
 				Tcl_Obj *CONST objv[]);
 static Ns_SockProc SockListenCallback;
@@ -102,26 +104,45 @@ static int
 GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int byaddr)
 {
     Ns_DString  ds;
+    char       *opt, *addr;
+    int         all = 0;
     int         status;
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "address");
-        return TCL_ERROR;
+    if (byaddr) {
+        if (objc < 2 || objc > 3) {
+            Tcl_WrongNumArgs(interp, 1, objv, "?-all? address");
+            return TCL_ERROR;
+        }
+    } else {
+        if (objc != 2) {
+            Tcl_WrongNumArgs(interp, 1, objv, "address");
+            return TCL_ERROR;
+        }
     }
+    opt = Tcl_GetString(objv[1]);
+    if (objc >= 3 && STREQ(opt, "-all")) {
+        all = 1;
+        addr = Tcl_GetString(objv[2]);
+    } else {
+        addr = opt;
+    }
+
     Ns_DStringInit(&ds);
     if (byaddr) {
-	status = Ns_GetAddrByHost(&ds, Tcl_GetString(objv[1]));
+        if (all) {
+            status = Ns_GetAllAddrByHost(&ds, addr);
+        } else {
+            status = Ns_GetAddrByHost(&ds, addr);
+        }
     } else {
-	status = Ns_GetHostByAddr(&ds, Tcl_GetString(objv[1]));
+        status = Ns_GetHostByAddr(&ds, addr);
     }
     if (status == NS_TRUE) {
     	Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
     }
     Ns_DStringFree(&ds);
     if (status != NS_TRUE) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not lookup ", 
-		Tcl_GetString(objv[1]), 
-		NULL);
+        Tcl_AppendResult(interp, "could not lookup ", addr, NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -761,6 +782,40 @@ NsTclSockListenCallbackObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
     return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockSetBlocking --
+ *
+ *	Set a socket blocking. 
+ *
+ * Results:
+ *	Tcl result. 
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SockSetBlocking(char *value, Tcl_Interp *interp, int argc, char **argv)
+{
+    Tcl_Channel chan;
+
+    if (argc != 2) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"",
+            argv[0], " sockId\"", NULL);
+        return TCL_ERROR;
+    }
+    chan = Tcl_GetChannel(interp, argv[1], NULL);
+    if (chan == NULL) {
+	return TCL_ERROR;
+    }
+    return Tcl_SetChannelOption(interp, chan, "-blocking", value);
 }
 
 

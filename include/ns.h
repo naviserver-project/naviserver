@@ -627,6 +627,7 @@ NS_EXTERN char *Ns_Encrypt(char *pw, char *salt, char iobuf[ ]);
 
 NS_EXTERN int Ns_GetHostByAddr(Ns_DString *dsPtr, char *addr);
 NS_EXTERN int Ns_GetAddrByHost(Ns_DString *dsPtr, char *host);
+NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
 
 /*
  * driver.c:
