@@ -46,7 +46,7 @@
 #
 
 if {[info command namespace] == ""} {
-	return
+    return
 }
 
 
@@ -124,6 +124,7 @@ proc _ns_getnamespace n {
 	    }
 	    append script [list proc $p $args [info body $p]]\n
 	}
+	append script [concat namespace export [namespace export]]\n
 	return $script
     }
 }
