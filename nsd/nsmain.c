@@ -50,6 +50,11 @@ static void UsageError(char *msg);
 static void StatusMsg(int state);
 static char *FindConfig(char *config);
 
+#if (STATIC_BUILD == 1)
+extern void NsthreadsInit();
+extern void NsdInit();
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -102,6 +107,16 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     static char	  *procname;
     static char	  *server;
 
+#endif
+
+    /*
+     * For static builds only, we have to initialize
+     * otherwise dynamically loaded shared libraries.
+     */
+
+#if (STATIC_BUILD == 1)
+    NsthreadsInit();
+    NsdInit();
 #endif
 
     /*
