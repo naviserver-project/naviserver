@@ -31,6 +31,7 @@
 #
 
 MOD       =  nsext.so
-OBJS      =  nsext.o nsextmsg.o
+OBJS      =  nsext.o 
 HDRS      =  ../include/nsextmsg.h
+MODLIBS	  =  ../nspd/libnspd.a
 include  ../include/Makefile.module
