@@ -217,11 +217,11 @@ Ns_DStringExport(Ns_DString *dsPtr)
 char *
 Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
 {
-    char            buf[4096];
+    char            buf[DSTRINGPRINTF_LIMIT];
     va_list         ap;
 
     va_start(ap, fmt);
-    vsprintf(buf, fmt, ap);
+    vsnprintf(buf, DSTRINGPRINTF_LIMIT, fmt, ap);
     va_end(ap);
 
     return Ns_DStringAppend(dsPtr, buf);

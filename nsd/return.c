@@ -202,9 +202,10 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	if (nsconf.keepalive.enabled &&
 	    connPtr->headers != NULL &&
 	    connPtr->request != NULL &&
-	    connPtr->responseStatus == 200 &&
+	    ((connPtr->responseStatus == 200 &&
 	    lengthHdr != NULL &&
-	    connPtr->responseLength == length &&
+	    connPtr->responseLength == length) ||
+            connPtr->responseStatus == 304) &&
 	    STREQ(connPtr->request->method, "GET") &&
 	    (key = Ns_SetIGet(conn->headers, "connection")) != NULL &&
 	    STRIEQ(key, "keep-alive")) {
