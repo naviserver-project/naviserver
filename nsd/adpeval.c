@@ -591,6 +591,7 @@ ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr)
 
     pagePtr = NULL;
     buf = NULL;
+    trys = 0;
     do {
 	/*
 	 * fstat the open file to ensure it has not changed or been
