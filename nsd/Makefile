@@ -51,7 +51,7 @@ OBJS = \
 	tclobj.o tclthread.o tclvar.o tclxkeylist.o unix.o url.o \
 	urlencode.o urlopen.o urlspace.o uuencode.o stamp.o \
 	compat.o cond.o error.o fork.o locks.o master.o \
-	memory.o reentrant.o sema.o  signal.o thread.o time.o specific.o
+	memory.o reentrant.o sema.o  signal.o thread.o time.o tls.o
 
 all: $(MAIN)
 
