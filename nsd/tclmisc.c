@@ -489,7 +489,7 @@ int
 NsTclSleepObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     Ns_Time time;
-    struct timeval tv;
+    int ms;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "timespec");
@@ -504,9 +504,8 @@ NsTclSleepObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    tv.tv_sec = time.sec;
-    tv.tv_usec = time.usec;
-    (void) select(0, NULL, NULL, NULL, &tv);
+    ms = time.sec * 1000 + time.usec / 1000;
+    Tcl_Sleep(ms);
     return TCL_OK;
 }
 
