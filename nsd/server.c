@@ -400,11 +400,12 @@ NsInitServer(char *server)
     servPtr->fastpath.diradp = Ns_ConfigGetValue(path, "directoryadp");
 
     /*
-     * Configure the proxy and redirects requests , e.g., not found 404.
+     * Configure the url, proxy and redirect requests.
      */
 
     Tcl_InitHashTable(&servPtr->request.proxy, TCL_STRING_KEYS);
-
+    Ns_MutexInit(&servPtr->request.plock);
+    Ns_MutexSetName2(&servPtr->request.plock, "nsd:proxy", server);
     path = Ns_ConfigGetPath(server, NULL, "redirects", NULL);
     set = Ns_ConfigGetSection(path);
     Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
