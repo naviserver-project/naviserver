@@ -118,9 +118,9 @@ NsInitInfo(void)
     }
     Ns_DStringInit(&addr);
     if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
-    	strcpy(nsconf.address, addr.string);
+        strcpy(nsconf.address, addr.string);
     } else {
-        Ns_Fatal("could not resolve %s via dns", nsconf.hostname);
+        strcpy(nsconf.address, "0.0.0.0");
     }
     Ns_DStringFree(&addr);
 }
