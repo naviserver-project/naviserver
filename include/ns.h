@@ -987,6 +987,7 @@ NS_EXTERN int Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write,
  */
 
 NS_EXTERN int Ns_TclInitInterps(char *server, Ns_TclInterpInitProc *proc, void *arg);
+NS_EXTERN int Ns_TclInitModule(char *server, char *module);
 NS_EXTERN void Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg);
 NS_EXTERN void Ns_TclMarkForDelete(Tcl_Interp *interp);
 NS_EXTERN Tcl_Interp *Ns_TclCreateInterp(void);
