@@ -26,7 +26,7 @@ MOD      =  nsexample.so
 OBJS     =  nsexample.o
 
 #
-# Header files
+# Header files in THIS directory
 #
 HDRS     =  
 
