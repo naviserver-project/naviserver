@@ -122,7 +122,7 @@ Ns_RWLockInit(Ns_RWLock *lockPtr)
 {
     Lock *lPtr;
     
-    lPtr = ns_malloc(sizeof(Lock));
+    lPtr = NsAlloc(sizeof(Lock));
     Ns_MutexInit2(&lPtr->mutex, "nsthread:rwlock");
     Ns_CondInit(&lPtr->rdCond);
     Ns_CondInit(&lPtr->wrCond);
@@ -159,7 +159,7 @@ Ns_RWLockDestroy(Ns_RWLock *lockPtr)
     	Ns_MutexDestroy(&lPtr->mutex);
     	Ns_CondDestroy(&lPtr->rdCond);
     	Ns_CondDestroy(&lPtr->wrCond);
-    	ns_free(lPtr);
+    	NsFree(lPtr);
     	*lockPtr = NULL;
     }
 }

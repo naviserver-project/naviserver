@@ -83,7 +83,7 @@ Ns_CsInit(Ns_Cs *csPtr)
 {
     Cs       *cPtr;
 
-    cPtr = ns_malloc(sizeof(Cs));
+    cPtr = NsAlloc(sizeof(Cs));
     Ns_MutexInit2(&cPtr->lock, "nsthread:cs");
     Ns_CondInit(&cPtr->cond);
     cPtr->count = 0;
@@ -127,7 +127,7 @@ Ns_CsDestroy(Ns_Cs *csPtr)
     	Ns_CondDestroy(&cPtr->cond);
     	cPtr->ownerPtr = NULL;
     	cPtr->count = 0;
-    	ns_free(cPtr);
+    	NsFree(cPtr);
     	*csPtr = NULL;
     }
 }

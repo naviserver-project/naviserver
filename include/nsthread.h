@@ -326,6 +326,7 @@ NS_EXTERN char *Ns_PoolStrCopy(Ns_Pool *pool, char *old);
 NS_EXTERN Ns_Pool *Ns_ThreadPool(void);
 NS_EXTERN void *Ns_ThreadMalloc(size_t size);
 NS_EXTERN void *Ns_ThreadAlloc(size_t size);
+NS_EXTERN void *Ns_ThreadRealloc(void *ptr, size_t size);
 NS_EXTERN void Ns_ThreadFree(void *ptr);
 #define Ns_ThreadAlloc	Ns_ThreadMalloc
 NS_EXTERN void *Ns_ThreadCalloc(size_t nelem, size_t elsize);

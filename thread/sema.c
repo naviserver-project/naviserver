@@ -81,7 +81,7 @@ Ns_SemaInit(Ns_Sema *semaPtr, int initCount)
 {
     Sema *sPtr;
 
-    sPtr = ns_malloc(sizeof(Sema));
+    sPtr = NsAlloc(sizeof(Sema));
     sPtr->count = initCount;
     Ns_MutexInit2(&sPtr->lock, "nsthread:sema");
     Ns_CondInit(&sPtr->cond);
@@ -114,7 +114,7 @@ Ns_SemaDestroy(Ns_Sema *semaPtr)
 
     	Ns_MutexDestroy(&sPtr->lock);
     	Ns_CondDestroy(&sPtr->cond);
-    	ns_free(sPtr);
+    	NsFree(sPtr);
     	*semaPtr = NULL;
     }
 }

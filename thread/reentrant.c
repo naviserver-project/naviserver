@@ -296,13 +296,13 @@ GetTls(void)
     if (tls == NULL) {
 	Ns_MasterLock();
 	if (tls == NULL) {
-	    Ns_TlsAlloc(&tls, ns_free);
+	    Ns_TlsAlloc(&tls, NsFree);
 	}
 	Ns_MasterUnlock();
     }
     tlsPtr = Ns_TlsGet(&tls);
     if (tlsPtr == NULL) {
-	tlsPtr = ns_malloc(sizeof(Tls));
+	tlsPtr = NsAlloc(sizeof(Tls));
 	Ns_TlsSet(&tls, tlsPtr);
     }
     return tlsPtr;
