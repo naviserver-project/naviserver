@@ -331,7 +331,7 @@ DumperThread(void *arg)
 	DumpString(&ds);
 	Ns_MutexList(&ds);
 	DumpString(&ds);
-#ifndef _WIN32
+#if !defined(_WIN32) && defined(USE_THREAD_ALLOC) && (STATIC_BUILD == 0)
 	/* NB: Not yet exported in WIN32 Tcl. */
 	Tcl_GetMemoryInfo(&ds);
 #endif
@@ -411,6 +411,11 @@ int main(int argc, char *argv[])
     char *p;
 #if PTHREAD_TEST
     pthread_t tids[10];
+#endif
+
+#if (STATIC_BUILD == 1)
+    extern void NsthreadsInit();
+    NsthreadsInit();
 #endif
 
     Ns_ThreadSetName("-main-");
