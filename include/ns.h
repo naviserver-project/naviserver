@@ -536,6 +536,12 @@ NS_EXTERN void *Ns_ClsGet(Ns_Cls *clsPtr, Ns_Conn *conn);
 NS_EXTERN void Ns_ClsSet(Ns_Cls *clsPtr, Ns_Conn *conn, void *data);
 
 /*
+ * compress.c:
+ */
+
+NS_EXTERN int Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level);
+
+/*
  * config.c:
  */
 
