@@ -42,6 +42,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  */
 
 extern Tcl_ObjCmdProc
+    NsTclTimeObjCmd,
     NsTclAdpAppendObjCmd,
     NsTclAdpPutsObjCmd;
 
@@ -162,7 +163,6 @@ extern Tcl_CmdProc
     NsTclSleepCmd,
     NsTclStrftimeCmd,
     NsTclStripHtmlCmd,
-    NsTclTimeCmd,
     NsTclUrlDecodeCmd,
     NsTclUrlEncodeCmd,
     NsTclVarCmd,
@@ -233,7 +233,7 @@ static Cmd cmds[] = {
     {"ns_sleep", NsTclSleepCmd, NULL},
     {"ns_localtime", NsTclLocalTimeCmd, NULL},
     {"ns_gmtime", NsTclGmTimeCmd, NULL},
-    {"ns_time", NsTclTimeCmd, NULL},
+    {"ns_time", NULL, NsTclTimeObjCmd},
     {"ns_fmttime", NsTclStrftimeCmd, NULL},
     {"ns_httptime", NsTclHttpTimeCmd, NULL},
     {"ns_parsehttptime", NsTclParseHttpTimeCmd, NULL},
