@@ -850,7 +850,7 @@ Ns_InfoPlatform(void)
     return "hp11";
 #elif defined(__unixware)
     return "UnixWare";
-#elif defined(__APPLE__)
+#elif defined(MACOSX)
     return "osx";
 #elif defined(WIN32)
     return "win32";
