@@ -405,6 +405,7 @@ GetCharsetEncoding(char *charset, int len)
     charset = Ns_StrTrim(Ns_StrToLower(ds.string));
     hPtr = Tcl_FindHashEntry(&charsets, charset);
     if (hPtr != NULL) {
+	hPtr = Tcl_GetHashValue(hPtr);
 	encoding = LoadEncoding(hPtr);
     }
     Ns_DStringFree(&ds);
