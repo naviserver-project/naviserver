@@ -235,7 +235,7 @@ NS_EXPORT int
 Ns_ModuleInit(char *server, char *name)
 {
     char *path,*address, *host, *bindaddr;
-    int n, def;
+    int n;
     Ns_DString ds;
     struct in_addr  ia;
     struct hostent *he;
@@ -846,11 +846,11 @@ SockThread(void *ignored)
 
 		    if (drvPtr->sndbuf > 0) {
 			setsockopt(connPtr->sock, SOL_SOCKET, SO_SNDBUF,
-			    &drvPtr->sndbuf, sizeof(drvPtr->sndbuf));
+			    (char *) &drvPtr->sndbuf, sizeof(drvPtr->sndbuf));
 		    }
 		    if (drvPtr->rcvbuf > 0) {
 			setsockopt(connPtr->sock, SOL_SOCKET, SO_RCVBUF,
-			    &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
+			    (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
 		    }
 
 		    /*
