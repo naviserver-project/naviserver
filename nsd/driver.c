@@ -1107,7 +1107,8 @@ SetServer(Sock *sockPtr)
     }
 
     if (!status && sockPtr->reqPtr) {
-	sockPtr->reqPtr->request->method = "BAD";
+	ns_free(sockPtr->reqPtr->request->method);
+	sockPtr->reqPtr->request->method = ns_strdup("BAD");
     }
     return 1;
     // return status;
