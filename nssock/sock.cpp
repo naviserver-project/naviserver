@@ -68,21 +68,30 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #endif
 
+/*
+ * The Server Busy msg is hard-coded and directly copied out to the socket.
+ * NB: the padding at the end defeats MSIE "friendly" error messages.
+ */
 #define BUSY \
-	"HTTP/1.0 503 Service Unavailable\r\n"\
-        "MIME-Version: 1.0\r\n"\
-        "Server: AOLserver\r\n"\
-        "Content-Type: text/html\r\n"\
-        "Connection: close\r\n"\
-	"Expires: now\r\n"\
-        "\r\n"\
-	"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"\
-	"<HTML>\n"\
-	"<HEAD><TITLE>Server Busy</TITLE></HEAD>\n"\
-	"<BODY>\n"\
-	"<H2>Server Busy</H2>\n"\
-	"This server is too busy to process the request.\n"\
-	"</BODY></HTML>\n"
+    "HTTP/1.0 503 Service Unavailable\r\n"\
+    "MIME-Version: 1.0\r\n"\
+    "Server: AOLserver/3.x\r\n"\
+    "Content-Type: text/html\r\n"\
+    "Connection: close\r\n"\
+    "Expires: now\r\n"\
+    "\r\n"\
+    "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"\
+    "<HTML>\n"\
+    "<HEAD>\n<TITLE>Server Busy</TITLE>\n</HEAD>\n"\
+    "<BODY>\n"\
+    "<H2>Server Busy</H2>\n"\
+    "The server is temporarily too busy to process your request.\n"\
+    "Please try again in a few minutes.\n"\
+    "                                                  "\
+    "                                                  "\
+    "                                                  "\
+    "                                                  "\
+    "\n</BODY>\n</HTML>\n"
 
 struct ConnData;
 
