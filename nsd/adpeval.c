@@ -80,6 +80,14 @@ typedef struct Frame {
     Tcl_DString	      *outputPtr;
 } Frame;
 
+
+/*
+ * Constants to support construction of evaluation error messages
+ */
+#define ADPEVAL_MAX_SCRIPT_TEXT 150
+#define ADPEVAL_ELIPSIS_LEN     3
+
+
 /*
  * Local functions defined in this file.
  */
@@ -767,6 +775,7 @@ done:
  *----------------------------------------------------------------------
  */
 
+
 static void
 LogError(NsInterp *itPtr, int nscript)
 {
@@ -774,12 +783,22 @@ LogError(NsInterp *itPtr, int nscript)
     Ns_DString ds;
     Tcl_Obj *objv[2];
     char *file;
+    char *script;
+    char buffer[ADPEVAL_MAX_SCRIPT_TEXT+ADPEVAL_ELIPSIS_LEN+1];
     
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds, "\n    invoked from within chunk: ");
     Ns_DStringPrintf(&ds, "%d", nscript);
     Ns_DStringAppend(&ds, " of adp: ");
-    Ns_DStringAppend(&ds, Tcl_GetString(itPtr->adp.objv[0]));
+    /*
+     * Need to limit the amount of text put into the error.
+     */
+    script = Tcl_GetString(itPtr->adp.objv[0]);
+    if (strlen(script) > 150) {
+        sprintf(buffer, "%.*s...", ADPEVAL_MAX_SCRIPT_TEXT, script);
+        script = buffer;
+    }
+    Ns_DStringAppend(&ds, script);
     Tcl_AddErrorInfo(interp, ds.string);
     Ns_TclLogError(interp);
     Ns_DStringFree(&ds);
