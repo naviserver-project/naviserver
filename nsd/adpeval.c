@@ -251,7 +251,7 @@ AdpRun(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[],
     }
 
     if (itPtr->adp.cache == NULL) {
-	Ns_DStringPrintf(&tmp, "nsadp:%s:%d", itPtr->servPtr->server, Ns_ThreadId());
+	Ns_DStringPrintf(&tmp, "nsadp:%s:%p", itPtr->servPtr->server, itPtr);
 	itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, FILE_KEYS,
 				itPtr->servPtr->adp.cachesize, FreeInterpPage);
 	Ns_DStringTrunc(&tmp, 0);
