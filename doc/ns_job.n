@@ -55,8 +55,6 @@ ns_job \- commands
 
 \fBns_job\fR jobs \fIqueueId \fR
 
-\fBns_job\fR job \fIqueueId \fR
-
 \fBns_job\fR queues
 
 \fBns_job\fR threadlist 
