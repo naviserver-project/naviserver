@@ -54,6 +54,19 @@
 
 proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
     #
+    # Determine if url is local; prepend site address if so
+    #
+
+    if [string match /* $url] {
+        set host "http://[ns_config ns/server/[ns_info server]/module/nssock hostname]"
+        set port [ns_config ns/server/[ns_info server]/module/nssock port]             
+        if { $port != 80 } {
+            append host ":$port"
+        }
+        set url "$host$url"
+    }
+
+    #
     # Verify that the URL is an HTTP url.
     #
     
