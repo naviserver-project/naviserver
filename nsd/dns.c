@@ -327,6 +327,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
     } else {
         Ns_DStringAppend(dsPtr, ns_inet_ntoa(
                     ((struct sockaddr_in *) res->ai_addr)->sin_addr));
+        freeaddrinfo(res);
         status = NS_TRUE;
     }
     return status;
