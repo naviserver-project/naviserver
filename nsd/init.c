@@ -45,6 +45,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  *
  *	Library entry point for libnsd.  This routine calls various
  *	data structure initialization functions throughout the core.
+ *	Order of the initialization calls is significant.
  *
  * Results:
  	None.
@@ -74,10 +75,10 @@ NsdInit(void)
     	NsInitModLoad();
     	NsInitProcInfo();
     	NsInitDrivers();
+    	NsInitUrlSpace();
     	NsInitQueue();
     	NsInitSched();
     	NsInitTcl();
-    	NsInitUrlSpace();
     	NsInitRequests();
     }
 }
