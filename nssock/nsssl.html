@@ -1,7 +1,20 @@
-
-$Header$
-
-
+<html>
+<head>
+  <title>nsssl</title>
+</head>
+<body bgcolor="#ffffff">
+<h2>nsssl -- Socket (HTTPS) Driver Module</h2>
+<pre>$Header$
+</pre>
+<br>
+<a href="#Theory_of_Operation">Theory of Operation</a><br>
+<a href="#Known_Issues">Known Issues</a><br>
+<a href="#Sample_Configuration">Sample Configuration</a><br>
+<br>
+<br>
+<h3><a name="Theory_of_Operation"></a>Theory of Operation</h3>
+<br>
+<pre>
 The nsssl Socket Driver
 -----------------------
 
@@ -181,3 +194,46 @@ Implementation Notes
  nsssl and nssock are one, maintenance of this code can now be done in
  one place.
 
+
+</pre>
+<br>
+<h3><a name="Known_Issues"></a>Known Issues</h3>
+Only SSL v2 is supported.<br>
+<br>
+Client-side certificates are not supported.<br>
+<br>
+SHA-1 message digests are not support (only MD5).<br>
+<br>
+The key- and certificate-handling code in x509.c and keygen.tcl needs to&nbsp;
+ go away.&nbsp; It is implemented better in BSAFE and OpenSSL.<br>
+<br>
+Requires the proprietary RSA BSAFE encryption library from <a href="http://www.rsasecurity.com/">http://www.rsasecurity.com/</a>.&nbsp;
+ We should provide the option of using other libraries like <a href="http://www.openssl.org/">OpenSSL</a>.<br>
+<br>
+There are reports that the keygen.tcl file does not work correctly on Win32.<br>
+<br>
+<h3><a name="Sample_Configuration"></a>Sample Configuration</h3>
+Please see the <a href="../doc/config.txt">Configuration File Reference</a>.<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+</body>
+</html>
