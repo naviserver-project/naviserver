@@ -492,7 +492,6 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
 	Ns_Log(Warning, "driver: timeout waiting for shutdown");
     } else {
 	Ns_Log(Notice, "driver: shutdown complete");
-	Ns_ThreadJoin(&driverThread, NULL);
 	driverThread = NULL;
 	ns_sockclose(trigPipe[0]);
 	ns_sockclose(trigPipe[1]);
