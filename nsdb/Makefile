@@ -34,4 +34,4 @@ LIBOBJS	= dbinit.o dbdrv.o dbtcl.o dbutil.o
 MOD	= nsdb.so
 OBJS	= nsdb.o
 HDRS	= db.h
-include ../include/Makefile.module
+include ../include/Makefile.build

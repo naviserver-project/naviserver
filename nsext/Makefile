@@ -35,4 +35,4 @@ MOD	= nsext.so
 OBJS	= nsext.o
 MODLIBS	= -L../nsdb -lnsdb
 HDRS	= ../include/nsextmsg.h
-include ../include/Makefile.module
+include ../include/Makefile.build

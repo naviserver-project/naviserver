@@ -32,4 +32,4 @@
 
 MOD      =  nssock.so
 OBJS     =  nssock.o
-include  ../include/Makefile.module
+include  ../include/Makefile.build

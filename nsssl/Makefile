@@ -80,7 +80,7 @@ endif
 OBJS      =  nsssl.o ssl.o ssltcl.o t_stdlib.o x509.o
 MODINST	  =  cppem
 
-include  ../include/Makefile.module
+include  ../include/Makefile.build
 
 cppem:
 	$(MKDIR) $(INSTMOD)/nsssl

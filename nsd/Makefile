@@ -30,7 +30,6 @@
 # $Header$
 #
 
-INIT	= init.tcl
 INSTALL = install-init
 LIB     = nsd
 PGM	= nsd
@@ -54,11 +53,10 @@ LOBJS = adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 
 LIBOBJS=$(LOBJS) stamp.o
 
-include ../include/Makefile.module
+include ../include/Makefile.build
 
 stamp.o: $(LOBJS)
 	$(CC) -c -o stamp.o stamp.c
 
 install-init:
-	$(RM) $(INSTBIN)/$(INIT)
-	$(CP) $(INIT) $(INSTBIN)/
+	$(INSTALL_DATA) init.tcl $(INSTBIN)/

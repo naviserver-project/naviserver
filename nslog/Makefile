@@ -32,4 +32,4 @@
 
 MOD      =  nslog.so
 OBJS     =  nslog.o
-include  ../include/Makefile.module
+include  ../include/Makefile.build

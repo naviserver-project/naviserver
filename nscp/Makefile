@@ -32,4 +32,4 @@
 
 MOD      =  nscp.so
 OBJS     =  nscp.o
-include  ../include/Makefile.module
+include  ../include/Makefile.build

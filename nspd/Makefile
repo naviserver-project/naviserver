@@ -30,21 +30,6 @@
 # $Header$
 #
 
-NSHOME ?= ..
-include  $(NSHOME)/include/Makefile.global
-
-LIB	 =  libnspd.a
-OBJS     =  listen.o log.o main.o 
-
-all: $(LIB)
-
-$(LIB): $(OBJS)
-	$(AR) rv $(LIB) $(OBJS)
-	$(RANLIB) $(LIB)
-
-install: $(LIB)
-	$(RM) $(INSTLIB)/$(LIB)
-	$(CP) $(LIB) $(INSTLIB)/
-
-clean:
-	$(RM) $(LIB) $(OBJS)
+ALIB	 =  nspd
+ALIBOBJS =  listen.o log.o main.o 
+include  ../include/Makefile.build

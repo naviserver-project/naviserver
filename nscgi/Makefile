@@ -32,4 +32,4 @@
 
 MOD      =  nscgi.so
 OBJS     =  nscgi.o
-include  ../include/Makefile.module
+include  ../include/Makefile.build
