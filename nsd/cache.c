@@ -742,6 +742,31 @@ Ns_CacheLock(Ns_Cache *cache)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_CacheTryLock --
+ *
+ *	Try to lock the cache.
+ *
+ * Results:
+ *      NS_OK if cache is locked, NS_TIMEOUT if not.
+ *
+ * Side effects:
+ *	Mutex may eventually be locked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_CacheTryLock(Ns_Cache *cache)
+{
+    Cache *cachePtr = (Cache *) cache;
+
+    return Ns_MutexTryLock(&cachePtr->lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_CacheUnlock --
  *
  *	Unlock the cache entry
