@@ -63,7 +63,7 @@ static void AddEncoding(char *charset, char *enc);
  * Static variables defined in this file.
  */
 
-static Tcl_HashTable    encodingTable;;
+static Tcl_HashTable    encodingTable;
 static Ns_Mutex lock;
 static Ns_Cond cond;
 
