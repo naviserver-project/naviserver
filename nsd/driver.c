@@ -1189,7 +1189,7 @@ SockRead(Sock *sockPtr)
 	reqPtr->content = bufPtr->string + reqPtr->coff;
 	reqPtr->next = reqPtr->content;
 	reqPtr->avail = reqPtr->length;
-	return SOCK_READY;
+	return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
     }
 
     /*
