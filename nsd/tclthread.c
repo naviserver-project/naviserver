@@ -505,7 +505,7 @@ NsTclThreadCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
             return TCL_ERROR;
         }
 	argPtr = ns_malloc(sizeof(ThreadArg) + strlen(argv[2]));
-	argPtr->server = itPtr->servPtr->server;
+	argPtr->server = (itPtr ? itPtr->servPtr->server : NULL);
 	argPtr->detached = STREQ(argv[1], "begindetached");
 	strcpy(argPtr->script, argv[2]);
 	Ns_ThreadCreate(NsTclThread, argPtr, 0, &tid);
