@@ -279,7 +279,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Watch for users comming from proxy servers. 
      */
 
-    if ((p = Ns_SetIGet(conn->headers, "X-Forwarded-For"))) {
+    if (conn->headers && (p = Ns_SetIGet(conn->headers, "X-Forwarded-For"))) {
 	Ns_DStringAppend(&ds, p);
     } else {
  	Ns_DStringAppend(&ds, Ns_ConnPeer(conn));
