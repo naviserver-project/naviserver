@@ -176,11 +176,16 @@ static struct exttype {
 char *
 Ns_GetMimeType(char *file)
 {
-    char          *ext;
+    char          *start, *ext;
     Ns_DString     ds;
     Tcl_HashEntry *hePtr;
 
-    ext = strrchr(file, '.');
+    start = strrchr(file, '/');
+    if (start == NULL) {
+	start = file;
+    }
+
+    ext = strrchr(start, '.');
     if (ext == NULL) {
 	return noextType;
     }
