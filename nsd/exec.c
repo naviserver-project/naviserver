@@ -551,7 +551,6 @@ static void
 ProcThread(void *ignored)
 {
     Args *argsPtr;
-    int result, status, err;
     
     Ns_ThreadSetName("-exec-");
     Ns_Log(Notice, "exec: starting");
