@@ -146,19 +146,13 @@ Ns_DStringAppendArg(Ns_DString *dsPtr, char *string)
 char *
 Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
 {
-    char            buf[NS_DSTRING_PRINTF_MAX+1];
+    char           *str;
     va_list         ap;
 
     va_start(ap, fmt);
-#if NO_VSNPRINTF
-    /* NB: Technically unsafe. */
-    vsprintf(buf, fmt, ap);
-#else
-    vsnprintf(buf, sizeof(buf)-1, fmt, ap);
-#endif
+    str = Ns_DStringVPrintf(dsPtr, fmt, ap);
     va_end(ap);
-    buf[sizeof(buf)-1] = '\0';
-    return Ns_DStringAppend(dsPtr, buf);
+    return str;
 }
 
 
