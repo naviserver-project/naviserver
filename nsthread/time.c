@@ -29,134 +29,125 @@
 
 
 /* 
- * sema.c --
+ * time.c --
  *
- *	Couting semaphore routines.  Semaphores differ from ordinary mutex 
- *	locks in that they maintain a count instead of a simple locked/unlocked
- *	state.  Threads block if the semaphore count is less than one.
- *
- *	Note:  In general, cleaner and more flexible code can be implemented
- *	with condition variables.
+ *	Ns_Time support routines.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
-#include <semaphore.h>
+#include "thread.h"
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SemaInit --
+ * Ns_GetTime --
  *
- *	Initialize a semaphore.   Note that because semaphores are
- *	initialized with a starting count they cannot be automatically
- *	created on first use as with other synchronization objects.
+ *	Get the current time value.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Memory is allocated and initialized from the heap.
+ *	Ns_Time structure pointed to by timePtr is updated with currnet
+ *	time.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_SemaInit(Ns_Sema *semaPtr, int initCount)
+Ns_GetTime(Ns_Time *timePtr)
 {
-    sem_t *sPtr;
+    struct timeval tv;
 
-    sPtr = ns_malloc(sizeof(sem_t));
-    if (sem_init(sPtr, 0, 0) != 0) {
-	NsThreadFatal("Ns_SemaInit", "sem_init", errno);
-    }
-    *semaPtr = (Ns_Sema) sPtr;
+    gettimeofday(&tv, NULL);
+    timePtr->sec = tv.tv_sec;
+    timePtr->usec = tv.tv_usec;
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SemaDestroy --
+ * Ns_AdjTime --
  *
- *	Destroy a semaphore.  This routine should almost never be used
- *	as synchronization objects are normally created at process startup
- *	and exist entirely in process memory until the process exits.
+ *	Adjust an Ns_Time so the values are in range.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Memory is returned to the heap.
+ *	Ns_Time structure pointed to by timePtr is adjusted as needed.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_SemaDestroy(Ns_Sema *semaPtr)
+Ns_AdjTime(Ns_Time *timePtr)
 {
-    if (*semaPtr != NULL) {
-    	sem_t *sPtr = (sem_t *) *semaPtr;
-
-	if (sem_destroy(sPtr) != 0) {
-	    NsThreadFatal("Ns_SemaDestroy", "sem_destroy", errno);
-	}
-	ns_free(sPtr);
-    	*semaPtr = NULL;
+    if (timePtr->usec < 0) {
+	timePtr->sec += (timePtr->usec / 1000000L) - 1;
+	timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
+    } else if (timePtr->usec > 1000000L) {
+	timePtr->sec += timePtr->usec / 1000000L;
+	timePtr->usec = timePtr->usec % 1000000L;
     }
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SemaWait --
+ * Ns_DiffTime --
  *
- *	Wait for a semaphore count to be greater than zero.
+ *	Determine the difference between two Ns_Time structures.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Calling thread may wait on the condition.
+ *	Ns_Time structure pointed to by timePtr is set with difference
+ *	between the two given times.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_SemaWait(Ns_Sema *semaPtr)
+Ns_DiffTime(Ns_Time *t1, Ns_Time *t0, Ns_Time *resultPtr)
 {
-    sem_t *sPtr = (sem_t *) *semaPtr;
-
-    if (sem_wait(sPtr) != 0) {
-	NsThreadFatal("Ns_SemaWait", "sem_wait", errno);
+    if (t1->usec >= t0->usec) {
+	resultPtr->sec = t1->sec - t0->sec;
+	resultPtr->usec = t1->usec - t0->usec;
+    } else {
+	resultPtr->sec = t1->sec - t0->sec - 1;
+	resultPtr->usec = 1000000L + t1->usec - t0->usec;
     }
+    Ns_AdjTime(resultPtr);
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SemaPost --
+ * Ns_IncrTime --
  *
- *	Increment a semaphore count, releasing waiting threads if needed.
+ *	Increment the given Ns_Time structure with the given number of
+ *	seconds and microseconds.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Threads waiting on the condition, if any, may be resumed.
+ *	Ns_Time structure pointed to by timePtr is incremented as needed.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_SemaPost(Ns_Sema *semaPtr, int count)
+Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec)
 {
-    sem_t *sPtr = (sem_t *) *semaPtr;
-
-    while (--count >= 0) {
-        if (sem_post(sPtr) != 0) {
-	    NsThreadFatal("Ns_SemaPost", "sem_post", errno);
-        }
-   }
+    timePtr->usec += usec;
+    timePtr->sec += sec;
+    Ns_AdjTime(timePtr);
 }

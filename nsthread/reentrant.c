@@ -37,7 +37,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "thread.h"
 
 /*
  * The following structure maintains state for the

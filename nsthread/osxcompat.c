@@ -35,13 +35,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "osxcompat.h"
-
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <string.h>
+#include "thread.h"
 
 /* Copyright (C) 1994, 1996, 1997 Free Software Foundation, Inc.
    This file is part of the GNU C Library.

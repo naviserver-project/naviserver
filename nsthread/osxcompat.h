@@ -1,7 +1,6 @@
 #ifndef OSX_H
 #define OSX_H
 
-#include <pthread.h>
 #include <dirent.h>
 #include <sys/types.h>
 #include <time.h>

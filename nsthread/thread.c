@@ -36,7 +36,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "thread.h"
 #include <sched.h>		/* sched_yield() */
 
 /*
@@ -46,13 +46,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #define STACK_DEFAULT	65536	/* 64k */
 #define STACK_MIN	16384	/* 16k */
-
-/*
- * The following defines the estimated stack space required to
- * return an NS_OK in Ns_CheckStack().
- */
-
-#define STACK_CHECK	2048	/* 2k */
 
 /*
  * The following structure maintains all state for a thread
@@ -66,8 +59,6 @@ typedef struct Thread {
     Ns_ThreadProc  *proc;	/* Thread startup routine. */ 
     void           *arg;	/* Argument to startup proc. */
     int		    tid;        /* Id set by thread for logging. */
-    long	    stackSize;	/* Stack size in bytes for this thread. */
-    void	   *stackBase;	/* Approximate stack base for Ns_CheckStack. */
     char	    name[NS_THREAD_NAMESIZE+1]; /* Thread name. */
     char	    parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
 }               Thread;
@@ -89,12 +80,13 @@ static Thread *firstThreadPtr;
  */
 
 static Ns_Tls key;
+static long stacksize = STACK_DEFAULT;
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsInitThreads --
+ * NsthreadsInit --
  *
  *	Initialize threads interface.
  *
@@ -108,11 +100,17 @@ static Ns_Tls key;
  */
 
 void
-NsInitThreads(void)
+NsthreadsInit(void)
 {
-    Ns_TlsAlloc(&key, CleanupThread);
-    NsInitMaster();
-    NsInitReentrant();
+    static int once = 0;
+
+    if (!once) {
+	once = 1;
+    	NsInitMaster();
+    	NsInitReentrant();
+    	Ns_TlsAlloc(&key, CleanupThread);
+	printf("nsthread load\n");
+    }
 }
 
 
@@ -142,12 +140,14 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     Thread *thrPtr;
     int err;
 
+    Ns_MasterLock();
+
     /*
      * Determine the stack size and impose a 16k minimum.
      */
 
-    if (stack == 0) {
-	stack = nsconf.stacksize;
+    if (stack <= 0) {
+	stack = stacksize;
     }
     if (stack < STACK_MIN) {
 	stack = STACK_MIN;
@@ -158,11 +158,9 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
      * which are known for threads created here.
      */
 
-    Ns_MasterLock();
     thrPtr = NewThread();
     thrPtr->proc = proc;
     thrPtr->arg = arg;
-    thrPtr->stackSize = stack;
     if (resultPtr == NULL) {
     	thrPtr->flags = NS_THREAD_DETACHED;
     }
@@ -179,7 +177,7 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     if (err != 0) {
         NsThreadFatal(func, "pthread_attr_init", err);
     }
-    err = pthread_attr_setstacksize(&attr, thrPtr->stackSize); 
+    err = pthread_attr_setstacksize(&attr, stack); 
     if (err != 0) {
         NsThreadFatal(func, "pthread_attr_setstacksize", err);
     }
@@ -271,6 +269,37 @@ Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ThreadStackSize --
+ *
+ *	Set default stack size.
+ *
+ * Results:
+ *	Previous stack size.
+ *
+ * Side effects:
+ *	New threads will use default size.
+ *
+ *----------------------------------------------------------------------
+ */
+
+long
+Ns_ThreadStackSize(long size)
+{
+    long prev;
+
+    Ns_MasterLock();
+    prev = stacksize;
+    if (size > 0) {
+	stacksize = size;
+    }
+    Ns_MasterUnlock();
+    return prev;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ThreadMain --
  *
  *	Thread startup routine.  Sets the given pre-allocated thread
@@ -295,7 +324,6 @@ ThreadMain(void *arg)
     SetThread(thrPtr);
     sprintf(name, "-thread%d-", thrPtr->tid);
     Ns_ThreadSetName(name);
-    thrPtr->stackBase = &arg;
     (*thrPtr->proc) (thrPtr->arg);
     return NULL;
 }
@@ -344,45 +372,6 @@ void
 Ns_ThreadSelf(Ns_Thread *threadPtr)
 {
     *threadPtr = (Ns_Thread) pthread_self();
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_CheckStack --
- *
- *	Check for possible thread stack overflow.
- *
- * Results:
- *	NS_OK if stack appears ok, otherwise NS_ERROR.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_CheckStack(void)
-{
-    Thread *thisPtr = GetThread();
-    long size, base, here;
-    
-    /* 
-     * Check to see if the thread may be about to grow beyond it's allocated
-     * stack.  Currently, this function is only called in Tcl_Eval where
-     * it traps the common case of infinite Tcl recursion.  The STACK_CHECK
-     * slop is just a conservative guess.
-     */
-
-    size = thisPtr->stackSize - STACK_CHECK;
-    base = (long) thisPtr->stackBase;
-    here = (long) &thisPtr;
-    if (size > 0 && abs(base - here) > size) {
-	return NS_ERROR;
-    }
-    return NS_OK;
 }
 
 
@@ -466,7 +455,7 @@ Ns_ThreadGetParent(void)
 /*
  *----------------------------------------------------------------------
  *
- * NsThreadInfo --
+ * Ns_ThreadEnum --
  *
  *	Append info for each thread.
  *
@@ -480,7 +469,7 @@ Ns_ThreadGetParent(void)
  */
 
 void
-NsThreadInfo(Tcl_DString *dsPtr)
+Ns_ThreadEnum(Tcl_DString *dsPtr, Ns_ThreadEnumProc *proc)
 {
     Thread *thrPtr;
     char buf[100];
@@ -493,7 +482,7 @@ NsThreadInfo(Tcl_DString *dsPtr)
 	Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
 	sprintf(buf, " %d %d %ld", thrPtr->tid, thrPtr->flags, thrPtr->ctime);
 	Tcl_DStringAppend(dsPtr, buf, -1);
-	Ns_GetProcInfo(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
+	(*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
 	Tcl_DStringEndSublist(dsPtr);
 	thrPtr = thrPtr->nextPtr;
     }

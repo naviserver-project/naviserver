@@ -35,7 +35,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "thread.h"
 
 /*
  * The following structure defines a mutex with
@@ -290,7 +290,7 @@ Ns_MutexUnlock(Ns_Mutex *mutexPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsLockInfo --
+ * Ns_MutexEnum --
  *
  *	Append info on each lock.
  *
@@ -304,7 +304,7 @@ Ns_MutexUnlock(Ns_Mutex *mutexPtr)
  */
 
 void
-NsLockInfo(Tcl_DString *dsPtr)
+Ns_MutexEnum(Tcl_DString *dsPtr)
 {
     Lock *lockPtr;
     char buf[100];

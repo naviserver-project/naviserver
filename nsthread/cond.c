@@ -35,7 +35,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "thread.h"
 
 #define GETCOND(c)	(*(c)?((pthread_cond_t *)*(c)):GetCond((c)))
 static pthread_cond_t *GetCond(Ns_Cond *condPtr);

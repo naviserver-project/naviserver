@@ -27,36 +27,96 @@
  * version of this file under either the License or the GPL.
  */
 
-
 /* 
- * error.c --
+ * tls.c --
  *
- *	Routines for dealing with fatal errors.
+ *	Thread local storage.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "thread.h"
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsThreadFatal --
+ * Ns_TlsAlloc --
  *
- *	Call NsThreadAbort when an operating system function fails.
+ *	Allocate the next tls id.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Process is aborted through NsThreadAbort.
+ *	Id is set in given tlsPtr.
  *
  *----------------------------------------------------------------------
  */
 
 void
-NsThreadFatal(char *func, char *osfunc, int err)
+Ns_TlsAlloc(Ns_Tls *tlsPtr, Ns_TlsCleanup *cleanup)
 {
-    Ns_Fatal("threads: %s failed in %s: %s", osfunc, func, strerror(err));
+    pthread_key_t key;
+    int err;
+
+    err = pthread_key_create(&key, cleanup);
+    if (err != 0) {
+	NsThreadFatal("Ns_TlsAlloc", "pthread_key_create", err);
+    }
+    *tlsPtr = (Ns_Tls) key;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TlsSet --
+ *
+ *	Set the value for a threads tls slot.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TlsSet(Ns_Tls *tlsPtr, void *value)
+{
+    pthread_key_t key = (pthread_key_t) *tlsPtr;
+    int err;
+
+    err = pthread_setspecific(key, value);
+    if (err != 0) {
+	NsThreadFatal("Ns_TlsSet", "pthread_setspecific", err);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TlsGet --
+ *
+ *	Get this thread's value in a tls slot.
+ *
+ * Results:
+ *	Pointer in slot.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Ns_TlsGet(Ns_Tls *tlsPtr)
+{
+    pthread_key_t key = (pthread_key_t) *tlsPtr;
+
+    return pthread_getspecific(key);
 }

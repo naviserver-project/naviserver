@@ -27,80 +27,25 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
- * memory.c --
- *
- *	Memory allocation routines.
- */
-
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
-#include "nsd.h"
-
-
 /*
- *----------------------------------------------------------------------
+ * thread.h --
  *
- * ns_realloc, ns_malloc, ns_calloc, ns_free, ns_strdup, ns_strcopy --
+ *	Private nsthread library include.
  *
- *	Memory allocation wrappers which either call the platform
- *	versions or the fast pool allocator for a per-thread pool.
- *
- * Results:
- *	As with system functions.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
+ *	$Header$
  */
 
-void *
-ns_realloc(void *ptr, size_t size)
-{
-    return (ptr ? Tcl_Realloc(ptr, size) : Tcl_Alloc(size));
-}
+#ifndef THREAD_H
+#define THREAD_H
 
-void *
-ns_malloc(size_t size)
-{
-    return Tcl_Alloc(size);
-}
+#include "nsthread.h"
+#include <pthread.h>
+#ifdef __APPLE__
+  #include "osxcompat.h"
+#endif
 
-void
-ns_free(void *ptr)
-{
-    if (ptr != NULL) {
-	Tcl_Free(ptr);
-    }
-}
+extern void NsThreadFatal(char *func, char *osfunc, int err);
+extern void NsInitMaster(void);
+extern void NsInitReentrant(void);
 
-void *
-ns_calloc(size_t num, size_t esize)
-{
-    void *new;
-    size_t size;
-
-    size = num * esize;
-    new = ns_malloc(size);
-    memset(new, 0, size);
-
-    return new;
-}
-
-char *
-ns_strcopy(const char *old)
-{
-    return (old == NULL ? NULL : ns_strdup(old));
-}
-
-char *
-ns_strdup(const char *old)
-{
-    char *new;
-
-    new = ns_malloc(strlen(old) + 1);
-    strcpy(new, old);
-
-    return new;
-}
+#endif /* THREAD_H */

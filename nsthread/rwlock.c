@@ -27,7 +27,6 @@
  * version of this file under either the License or the GPL.
  */
 
-
 /* 
  * rwlock.c --
  *
@@ -48,7 +47,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "thread.h"
 
 /*
  * The following structure defines a read/write lock including a mutex

@@ -29,88 +29,48 @@
 
 
 /* 
- * signal.c --
+ * fork.c --
  *
- *	Routines for signal handling.
+ *	Implement ns_fork.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#include "nsd.h"
+#include "thread.h"
 
 
 /*
  *----------------------------------------------------------------------
  *
- * ns_sigmask --
+ * ns_fork --
  *
- *	Set the thread's signal mask.
+ *	Posix style fork(), using fork1() on Solaris if needed.
  *
  * Results:
- *	0 on success, otherwise an error code.
+ *	See fork(2) man page.
  *
  * Side effects:
- *	See pthread_sigmask.
+ *	See fork(2) man page.
  *
  *----------------------------------------------------------------------
  */
 
 int
-ns_sigmask(int how, sigset_t *set, sigset_t *oset)
+ns_fork(void)
 {
-    return pthread_sigmask(how, set, oset);
+#ifdef HAVE_FORK1
+    return fork1();
+#else
+    return fork();
+#endif
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ns_signal --
- *
- *	Install a process-wide signal handler.  Note that the handler
- *	is shared among all threads (although the signal mask is
- *	per-thread).
- *
- * Results:
- *	0 on success, -1 on error with specific error code set in errno.
- *
- * Side effects:
- *	Handler will be called when signal is received in this thread.
- *
- *----------------------------------------------------------------------
- */
+#ifdef Ns_Fork
+#undef Ns_Fork
+#endif
 
 int
-ns_signal(int sig, void (*proc) (int))
+Ns_Fork(void)
 {
-    struct sigaction sa;
-
-    sa.sa_flags = 0;
-    sa.sa_handler = (void (*)(int)) proc;
-    sigemptyset(&sa.sa_mask);
-
-    return sigaction(sig, &sa, NULL);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ns_sigwait --
- *
- *	Posix style sigwait().
- *
- * Results:
- *	0 on success, otherwise an error code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-ns_sigwait(sigset_t * set, int *sig)
-{
-    return sigwait(set, sig);
+    return ns_fork();
 }
