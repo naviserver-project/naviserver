@@ -137,6 +137,7 @@ ifneq (,$(findstring SunOS,$(uname)))
         endif
     endif
     LDSO=/usr/ccs/bin/ld -G
+    AR=/usr/ccs/bin/ar
     RFLAG = -R
     RPATH = $(RFLAG) $(AOLSERVER)/lib $(RFLAG) /usr/lwp
     LIBS+=-lsocket -lnsl -ldl -lposix4 -lthread -lresolv
