@@ -41,5 +41,4 @@ MODLIBS  =
 CFLAGS   =  
 
 
-include  ../include/Makefile.module
-
+include  $(NSHOME)/include/Makefile.module
