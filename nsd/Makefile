@@ -38,7 +38,7 @@ OBJS = \
 	connio.o crypt.o dbdrv.o dbinit.o dbtcl.o dbutil.o dns.o	\
 	driver.o dsprintf.o dstring.o encoding.o error.o exec.o		\
 	fastpath.o fd.o filter.o fork.o form.o httptime.o index.o	\
-	info.o lisp.o listen.o locks.o log.o master.o memory.o		\
+	info.o lisp.o listen.o log.o master.o memory.o			\
 	mimetypes.o modload.o nsconf.o nsmain.o nsthread.o op.o		\
 	pathname.o pidfile.o proc.o queue.o quotehtml.o random.o	\
 	reentrant.o request.o return.o rollfile.o sched.o sema.o	\
@@ -47,7 +47,8 @@ OBJS = \
 	tclimg.o tclinit.o tcljob.o tclmisc.o tclobj.o tclrequest.o	\
 	tclresp.o tclsched.o tclset.o tclshare.o tclsock.o tclthread.o	\
 	tclvar.o tclxkeylist.o thread.o time.o tls.o unix.o url.o	\
-	urlencode.o urlopen.o urlspace.o uuencode.o
+	urlencode.o urlopen.o urlspace.o uuencode.o			\
+	mutex.o cslock.o rwlock.o
 
 include  ../include/Makefile.library
 

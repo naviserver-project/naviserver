@@ -61,7 +61,6 @@ void
 NsInitMaster(void)
 {
     Ns_CsInit(&master);
-    Ns_MutexSetName((Ns_Mutex *) &master, "ns:master");
     initialized = 1;
 }
 
