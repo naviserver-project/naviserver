@@ -447,7 +447,6 @@ NsTclThreadCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     NsInterp *itPtr = arg;
     void *status;
     Ns_Thread tid;
-    int detached;
 
     if (argc < 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -461,9 +460,12 @@ NsTclThreadCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
                 argv[0], " ", argv[1], " script\"", NULL);
             return TCL_ERROR;
         }
-	detached = STREQ(argv[1], "begindetached");
-	CreateTclThread(itPtr, argv[2], detached, &tid);
-        SetAddr(interp, 't', tid);
+	if (STREQ(argv[1], "begindetached")) {
+	    CreateTclThread(itPtr, argv[2], 1, NULL);
+        } else {
+	    CreateTclThread(itPtr, argv[2], 0, &tid);
+            SetAddr(interp, 't', tid);
+        }
     } else if (STREQ(argv[1], "wait") || STREQ(argv[1], "join")) {
         if (argc < 3) {
             Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -579,7 +581,7 @@ Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
 {
     NsInterp *itPtr = NsGetInterp(interp);
 
-    CreateTclThread(itPtr, script, 1, thrPtr);
+    CreateTclThread(itPtr, script, (thrPtr == NULL), thrPtr);
     return NS_OK;
 }
 
