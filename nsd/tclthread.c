@@ -399,7 +399,8 @@ NsTclRWLockCmd(ClientData data, Tcl_Interp *interp, int argc, char **argv)
 	} else {
 	    Tcl_AppendResult(interp, "unknown command \"",
 			     argv[1], "\":should be create, destroy, "
-			     "readlock, readunlock, writelock, writeunlock");
+			     "readlock, readunlock, writelock, "
+			     "writeunlock", NULL);
 	    return TCL_ERROR;
 	}
     }
