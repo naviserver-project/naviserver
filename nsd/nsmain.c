@@ -620,7 +620,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * for them to complete.
      */
 
-    NsWaitDriversShutdown(&timeout);
     NsStartSchedShutdown(); 
     NsStartSockShutdown();
     NsStartJobsShutdown();
@@ -628,6 +627,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     NsWaitSchedShutdown(&timeout);
     NsWaitSockShutdown(&timeout);
     NsWaitJobsShutdown(&timeout);
+    NsWaitDriversShutdown(&timeout);
     NsWaitShutdownProcs(&timeout);
 
     /*
