@@ -134,7 +134,7 @@ char *
 Ns_DStringAppendElement(Ns_DString *dsPtr, char *string)
 {
     int newSize, flags;
-    char *dst, *newString;
+    char *dst;
     extern int TclNeedSpace(char *, char *);
 
     newSize = Tcl_ScanElement(string, &flags) + dsPtr->length + 1;
@@ -332,7 +332,6 @@ char *
 Ns_DStringNAppend(Ns_DString *dsPtr, char *string, int length)
 {
     int newSize;
-    char *newString;
 
     if (length < 0) {
 	length = strlen(string);
