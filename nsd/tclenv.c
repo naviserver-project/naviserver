@@ -38,7 +38,9 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include	"nsd.h"
 
+#ifndef WIN32
 extern char **_environ;
+#endif
 
 static int PutEnv(Tcl_Interp *interp, char *name, char *value);
 static Ns_Mutex lock;
