@@ -1105,7 +1105,7 @@ SourceDirFile(Ns_DString *dsPtr, char *file)
 	       file, strerror(errno));
     } else {
     	interp = Ns_TclAllocateInterp(NULL);
-	Ns_Log(Notice, "tclinit: sourcing '%s'", file);
+	if (!nsConfQuiet) Ns_Log(Notice, "tclinit: sourcing '%s'", file);
 	if (Tcl_EvalFile(interp, file) != TCL_OK) {
 	    Ns_TclLogError(interp);
 	}
