@@ -371,7 +371,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     case JJobsIdx:
 	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "queue id");
+	    Tcl_WrongNumArgs(interp, 2, objv, "queue");
 	    return TCL_ERROR;
 	}
 	if (GetQueueFromObj(interp, objv[2], &queuePtr) != TCL_OK) {
