@@ -5,24 +5,16 @@ $Header$
 The nsssl Socket Driver
 -----------------------
 
-This document is not intended to be interpreted as an endorsement of
-any product or service.
+EXPORT NOTICE
+This source code is subject to the U.S. Export Administration
+Regulations and other U.S. law, and may not be exported or re-exported
+to certain countries (currently Afghanistan (Taliban-controlled
+areas), Cuba, Iran, Iraq, Libya, North Korea, Serbia (except Kosovo),
+Sudan and Syria) or to persons or entities prohibited from receiving
+U.S. exports (including Denied Parties, Specially Designated
+Nationals, and entities on the Bureau of Export Administration Entity
+List).
 
-
-***********************************************************************
-*
-* EXPORT NOTICE
-*
-* This source code is subject to the U.S. Export Administration
-* Regulations and other U.S. law, and may not be exported or
-* re-exported to certain countries (currently Afghanistan
-* (Taliban-controlled areas), Cuba, Iran, Iraq, Libya, North Korea,
-* Serbia (except Kosovo), Sudan and Syria) or to persons or entities
-* prohibited from receiving U.S. exports (including Denied Parties,
-* Specially Designated Nationals, and entities on the Bureau of Export
-* Administration Entity List).
-*
-***********************************************************************
 
 The nsssl driver supports SSL v2 according to the Netscape SSL
 documentation, which you can find at http://developer.netscape.com/.
@@ -38,7 +30,9 @@ browsers and is fully supported.  In any event, we always welcome
 contributions to add these features to nsssl.
 
 We are interested in supporting SSL v3 and welcome your contributions
-to help us get there.
+to help us get there.  An alternative to nsssl is nsopenssl at
+http://aolserver.com/modules/.  The nsopenssl module supports SSL v3
+using the OpenSSL library and the AOLserver communications driver API.
 
 
 Compiling and Installing
@@ -48,30 +42,34 @@ If you have BSAFE, simply type "gmake" in the root directory of the
 AOLserver source distribution.  If you want 128-bit/1024-bit
 (domestic) security, type "gmake DOMESTIC=1".  If you have a BSAFE
 version newer than BSAFE 3, add "BSAFE_VERSION=BSAFEx" where "x" is
-"4" or "5".
+"4" or "5".  You may also type "gmake SSL=1" in the nssock directory
+if you only want to build nsssl.
 
 The BSAFE encryption toolkit is available from RSA Data Security at
 http://www.rsasecurity.com/.
 
 
-RSA Alternatives (or "Why We Don't Use OpenSSL")
-------------------------------------------------
+RSA Alternatives
+----------------
 
 RSA Data Security, at http://www.rsasecurity.com/, holds the patents
 and intellectual rights to the most important algorithms used by SSL:
-RSA, RC5, RC4, RC2, and MD5.  As a direct result of this the use of
-anything but RSA products to implement these algorithms is illegal in
-the United States of America and other countries with which the USA
-has intellectual property treaties.  The patent on the RSA public-key
-algorithm expires in the Fall of 2000, but RSA's rights and/or patents
-on RC4, RC5, and MD5 still remain.  In particular, the source code
-implementation of the RC4 cipher used by OpenSSL/SSLeay is contraband.
+RSA and RC4.  As a direct result of this the use of anything but RSA
+products to implement these algorithms is illegal in the United States
+of America and other countries with which the USA has intellectual
+property treaties.  The patent on the RSA public-key algorithm expires
+in the Fall of 2000, but RSA still retains rights to RC4 and possibly
+RC5, RC2, and MD5.  In particular, the source code implementation of
+the RC4 cipher used by OpenSSL/SSLeay is, unfortunately, contraband.
 
 While it is theoretically possible to implement SSL v2 using
 unencumbered algorithms the performance and security are both too low.
 Therefore, we use RSA BSAFE libraries to implement SSL v2.  This is
 not intended to be interpreted as an endorsement of any product or
-service.
+service.  There is an alternative module, nsopenssl, that uses the
+OpenSSL library to implement SSL.  This module is available at
+http://aolserver.com/modules/ but is not supported in any way by the
+AOLserver Team at AOL.
 
 
 Key Pair and Certificate Request Generation
@@ -115,18 +113,6 @@ provide secure access to your web site!
 Security Notes
 --------------
 
-Due to export, patent, and intellectual property issues with RSA, RC4,
-MD5, and RC2, the 40-bit/512-bit export version is the only binary of
-nsssl that America Online is permitted to distribute from
-http://aolserver.com/.  If you wish to use the 128-bit/1024-bit
-domestic version of nsssl, you will have to obtain RSA BSAFE 3, 4 or 5
-libraries from http://www.rsa.com/ and build nsssl on your own.
-Unfortunately, we are forbidden to distribute a binary build of nsssl
-with 128-bit/1024-bit domestic encryption for the reasons stated
-above.  We are permitted to distribute a binary build with
-40-bit/512-bit encryption, and we are also allowed to distribute the
-nsssl source code itself.
-
 The "keyfile.pem" is a very sensitive document!  Do not let it out of
 your hands, do not send it out over the network, and don't delete it.
 It contains your server's private key and if it's lost then you must
@@ -152,7 +138,7 @@ Implementation Notes
 
  The nsssl and nssock modules are nearly identical, save for the extra
  encryption steps used in SSL.  This release of AOLserver has merged
- nsssl and nssock together.  The SSL=1 variable determins whether
+ nsssl and nssock together.  The SSL=1 variable determines whether
  nssock or nsssl is built.  The advantage is that both nssock and
  nsssl function identically as far as the network is concerned.  This
  also means that nssock and nsssl will continue to share important new
