@@ -257,7 +257,7 @@ JobThread(void *arg)
     Tcl_Interp *interp;
     Job *jobPtr;
     char buf[100];
-    const char *err;
+    CONST char *err;
 
     Ns_MutexLock(&servPtr->job.lock);
     sprintf(buf, "-job%d:%s-", servPtr->job.threads.next++, server);

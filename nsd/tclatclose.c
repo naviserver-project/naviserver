@@ -93,7 +93,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *procPtr,
  */
 
 int
-NsTclAtCloseCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+NsTclAtCloseCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
 {
     NsInterp *itPtr = arg;
     char    *script;
@@ -107,7 +107,7 @@ NsTclAtCloseCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     if (argc == 2) {
 	script = argv[1];
     } else {
-	script = Tcl_Concat(2, (const char **) argv+1);
+	script = Tcl_Concat(2, argv+1);
     }
 
     /*
