@@ -35,7 +35,7 @@ include ../include/Makefile.global
 MAKEFILE	=  $(NSTCL_DIR)/Makefile
 
 all: $(MAKEFILE)
-	(cd $(NSTCL_DIR); $(MAKE) CC='gcc -D_POSIX_PTHREAD_SEMANTICS=1')
+	(cd $(NSTCL_DIR); $(MAKE))
 
 $(MAKEFILE): $(NSTCL_DIR)/Makefile.in $(NSTCL_DIR)/configure
 	(cd $(NSTCL_DIR); ./configure $(NSTCL_CFG))
