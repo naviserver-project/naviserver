@@ -622,13 +622,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      *    eval shared module files where not in private
      */
 
-    NsProcInit();
     NsConfInit();
     NsCreatePidFile();
-    NsGetURLInit();
     NsTclInit();
-    NsCacheInit();
-    NsDNSInit();
     NsInitMimeTypes();
     NsInitReturn();
     NsInitProxyRequests();

@@ -228,29 +228,6 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
 /*
  *----------------------------------------------------------------------
  *
- * NsGetURLInit --
- *
- *	Initialize this module.
- *
- * Results:
- *	None. 
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsGetURLInit(void)
-{
-    Ns_Log(Debug, "urlopen: initialized.");
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclGetUrlCmd --
  *
  *	Implements ns_geturl. 
