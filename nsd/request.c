@@ -412,3 +412,82 @@ SetUrl(Ns_Request * request, char *url)
     memcpy(request->urlv, ds1.string, ds1.length);
     Ns_DStringFree(&ds1);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ParseHeader --
+ *
+ *	Consume a header line, handling header continuation, placing
+ *	results in given set.
+ *
+ * Results:
+ *	NS_OK/NS_ERROR 
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ParseHeader(Ns_Set *set, char *line, Ns_HeaderCaseDisposition disp)
+{
+    char           *key, *sep;
+    char           *value;
+    int             index;
+    Ns_DString	    ds;
+
+    /* 
+     * Header lines are first checked if they continue a previous
+     * header indicated by any preceeding white space.  Otherwise,
+     * they must be in well form key: value form.
+     */
+
+    if (isspace(UCHAR(*line))) {
+        index = Ns_SetLast(set);
+        if (index < 0) {
+	    return NS_ERROR;	/* Continue before first header. */
+        }
+        while (isspace(UCHAR(*line))) {
+            ++line;
+        }
+        if (*line != '\0') {
+	    value = Ns_SetValue(set, index);
+	    Ns_DStringInit(&ds);
+	    Ns_DStringVarAppend(&ds, value, " ", line, NULL);
+	    Ns_SetPutValue(set, index, ds.string);
+	    Ns_DStringFree(&ds);
+	}
+    } else {
+        sep = strchr(line, ':');
+        if (sep == NULL) {
+	    return NS_ERROR;	/* Malformed header. */
+	}
+        *sep = '\0';
+        value = sep + 1;
+        while (*value != '\0' && isspace(UCHAR(*value))) {
+            ++value;
+        }
+        index = Ns_SetPut(set, line, value);
+        key = Ns_SetKey(set, index);
+	if (disp == ToLower) {
+            while (*key != '\0') {
+	        if (isupper(UCHAR(*key))) {
+            	    *key = tolower(UCHAR(*key));
+		}
+            	++key;
+	    }
+	} else if (disp == ToUpper) {
+            while (*key != '\0') {
+	        if (islower(UCHAR(*key))) {
+		    *key = toupper(UCHAR(*key));
+		}
+		++key;
+	    }
+        }
+        *sep = ':';
+    }
+    return NS_OK;
+}
