@@ -379,6 +379,8 @@ LogTrace(void *arg,Ns_Conn *conn)
         Ns_DStringAppend(&ds,buf);
     }
 
+    status = NS_OK;
+    Ns_MutexLock(&logPtr->lock);
     /* Append the extended headers(if any). */
     for (h = logPtr->extheaders; *h; h++) {
         if (!(p = Ns_SetIGet(conn->headers,*h))) {
@@ -388,9 +390,7 @@ LogTrace(void *arg,Ns_Conn *conn)
     }
 
     /* Append the trailing newline and buffer and/or flush the line. */
-    status = NS_OK;
     Ns_DStringAppend(&ds,"\n");
-    Ns_MutexLock(&logPtr->lock);
     if (logPtr->maxlines <= 0) {
         status = LogFlush(logPtr,&ds);
     } else {
@@ -479,8 +479,6 @@ LogCmd(ClientData arg,Tcl_Interp *interp,int argc,CONST char **argv)
                return TCL_ERROR;
             }
             Ns_MutexLock(&logPtr->lock);
-            /* Wait for others to finish logging extheaders */
-            sleep(1);
             logPtr->extheaders = h1;
             Ns_MutexUnlock(&logPtr->lock);
             if (h2) {

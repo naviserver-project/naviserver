@@ -1,3 +1,10 @@
+2005-03-08  Vlad Seryakov <vlad@crystalballinc.com>
+
+	* nslog/nslog.c: as Stephan pointed there is possibility for 
+	server to crash under some conditions accessing already freed 
+	extheaders pointer. So i put lock before putting extheaders values 
+        in the log, in most cases extheaders are empty so there is no overhead.
+
 2005-03-07  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nslog/nslog.c: fixed bad handling of rollfmt arg which
