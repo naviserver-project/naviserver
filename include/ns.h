@@ -695,6 +695,7 @@ NS_EXTERN char *Ns_GetDriverServer(Ns_Driver driver);
  * dstring.c:
  */
 
+NS_EXTERN char **Ns_DStringAppendArgv(Ns_DString *dsPtr);
 NS_EXTERN char *Ns_DStringVarAppend(Ns_DString *dsPtr, ...);
 NS_EXTERN char *Ns_DStringExport(Ns_DString *dsPtr);
 NS_EXTERN char *Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...);
@@ -1099,7 +1100,7 @@ NS_EXTERN char *Ns_StrNStr(char *pattern, char *expression);
  * tclenv.c:
  */
 
-NS_EXTERN char *Ns_GetEnvironment(Ns_DString *dsPtr);
+NS_EXTERN char **Ns_GetEnvironment(Ns_DString *dsPtr);
 
 /*
  * tclfile.c:

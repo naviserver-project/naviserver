@@ -163,6 +163,63 @@ Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
 
 /*
  *----------------------------------------------------------------------
+ * Ns_DStringAppendArgv --
+ *
+ *      Append an argv vector pointing to the null terminated
+ *	strings in the given dstring.
+ *
+ * Results:
+ *	Pointer char ** vector appended to end of dstring.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char **
+Ns_DStringAppendArgv(Ns_DString *dsPtr)
+{
+    char *s, **argv;
+    int i, argc, len, size;
+
+    /* 
+     * Determine the number of strings.
+     */
+
+    argc = 0;
+    s = dsPtr->string;
+    while (*s != '\0') {
+	++argc;
+	s += strlen(s) + 1;
+    }
+
+    /*
+     * Resize the dstring with space for the argv aligned
+     * on an 8 byte boundry.
+     */
+
+    len = ((dsPtr->length / 8) + 1) * 8;
+    size = len + (sizeof(char *) * (argc + 1));
+    Ns_DStringSetLength(dsPtr, size);
+
+    /*
+     * Set the argv elements to the strings.
+     */
+
+    s = dsPtr->string;
+    argv = (char **) (s + len);
+    for (i = 0; i < argc; ++i) {
+	argv[i] = s;
+	s += strlen(s) + 1;
+    }
+    argv[i] = NULL;
+    return argv;
+}
+
+
+/*
+ *----------------------------------------------------------------------
  * Compatibility routines --
  *
  *	Wrappers for old Ns_DString functions.
