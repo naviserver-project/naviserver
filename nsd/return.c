@@ -257,10 +257,10 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	if (nsconf.keepalive.enabled &&
 	    connPtr->headers != NULL &&
 	    connPtr->request != NULL &&
-	    ((connPtr->responseStatus == 200 &&
+	    (( (connPtr->responseStatus >= 200 && connPtr->responseStatus < 300) &&
 	    (lengthHdr != NULL &&
 	    connPtr->responseLength == length) || doChunkEncoding) ||
-	    connPtr->responseStatus == 304) &&
+	    (connPtr->responseStatus == 304 || connPtr->responseStatus == 201 || connPtr->responseStatus == 207) ) &&
 	    (nsconf.keepalive.allmethods == NS_TRUE ||
 	    STREQ(connPtr->request->method, "GET")) &&
 	    (key = Ns_SetIGet(conn->headers, "connection")) != NULL &&
