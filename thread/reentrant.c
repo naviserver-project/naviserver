@@ -39,7 +39,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "thread.h"
 
-#if defined(__APPLE__)
+#ifdef MACOSX
 #define NO_REENTRANT	1
 char *strtok_r(char *s, const char *delim, char **last);
 #endif
@@ -266,7 +266,7 @@ ns_inet_ntoa(struct in_addr addr)
 }
 
 
-#ifdef __APPLE__
+#ifdef MACOSX
 
 /*
  * Copyright (c) 1998 Softweyr LLC.  All rights reserved.

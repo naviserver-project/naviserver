@@ -36,10 +36,7 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
-#if defined(USE_CTHREADS)
-#include "cthread.cpp"
-
-#elif defined(USE_SPROC)
+#if defined(USE_SPROC)
 #include "sproc.cpp"
 
 #elif defined(WIN32)

@@ -41,7 +41,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #endif
 #include "thread.h"
 
-#ifdef __APPLE__
+#ifdef MACOSX
 int sigwait(const sigset_t *set, int *sig);
 #endif
 
@@ -139,7 +139,7 @@ ns_signal(int sig, void (*proc) (int))
  *----------------------------------------------------------------------
  */
  
-#ifdef __APPLE__
+#ifdef MACOSX
 
 static void
 sigwaithandler(int sig)
