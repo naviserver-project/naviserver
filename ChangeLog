@@ -1,3 +1,23 @@
+2005-03-26  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/tclobjv.c:
+	* nsd/tclcmds.c:
+	* tests/ns_parseargs.test: Change the signature of Ns_ObjvProc()s
+	to return either TCL_OK, TCL_ERROR or TCL_BREAK.  Fixes a bug
+	where options were being double-counted as args.  Also simplified
+	the Ns_ObjvProc interface by passing the Ns_ObjvSpec directly.
+
+	Added a new Tcl command: ns_parseargs specification args.  It
+	parses options, args and handles defaults.
+
+	* nsd/tclobj.c: Added some wrapper procs for handling Tcl obj
+	types.
+
+	* nsd/tclinit.c: Added Ns_TclPrintfResult() as a convenience for
+	writing ints into a formatted string result.
+
 2005-03-23  Vlad Seryakov <vlad@crystalballinc.com>
 
          include/ns.h:  Make Ns_SockBindUdp public function, it is public in

@@ -108,6 +108,7 @@ extern Tcl_ObjCmdProc
     NsTclNsvNamesObjCmd,
     NsTclNsvSetObjCmd,
     NsTclNsvUnsetObjCmd,
+    NsTclParseArgsObjCmd,
     NsTclParseHttpTimeObjCmd,
     NsTclParseQueryObjCmd,
     NsTclPurgeFilesObjCmd,
@@ -405,6 +406,12 @@ static Cmd cmds[] = {
 
     {"ns_charsets", NsTclCharsetsCmd, NULL},
     {"ns_encodingforcharset", NsTclEncodingForCharsetCmd, NULL},
+
+    /*
+     * tclobjv.c
+     */
+
+    {"ns_parseargs", NULL, NsTclParseArgsObjCmd},
 
     /*
      * Add more basic Tcl commands here.

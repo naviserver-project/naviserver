@@ -922,6 +922,7 @@ extern int 	   NsIsIdConn(char *inID);
 extern void	   NsTclInitQueueType(void);
 extern void	   NsTclInitAddrType(void);
 extern void	   NsTclInitTimeType(void);
+extern void	   NsTclInitSpecType(void);
 
 /*
  * Callback routines.

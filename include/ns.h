@@ -285,8 +285,10 @@ typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
 typedef int   (Ns_UserAuthorizeProc) (char *user, char *passwd);
 typedef int   (Ns_LogFlushProc) (char *msg, size_t len);
 typedef int   (Ns_LogProc) (Ns_DString *dsPtr, Ns_LogSeverity severity, char *fmt, va_list ap);
-typedef int   (Ns_ObjvProc) (void *dest, Tcl_Interp *interp,
-                             int objc, Tcl_Obj *CONST objv[], void *arg);
+struct Ns_ObjvSpec;
+typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
+                             int *objcPtr, Tcl_Obj *CONST objv[]);
+
 
 /*
  * The field of a key-value data structure.
@@ -782,10 +784,17 @@ NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
 
 NS_EXTERN void Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
 NS_EXTERN double Ns_DRand(void);
+
 /*
  * tclobj.c:
  */
 
+NS_EXTERN void Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr);
+NS_EXTERN void Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
+                                    void *ptr1, void *ptr2);
+NS_EXTERN void Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
+                                      void *value);
+NS_EXTERN void Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length);
 NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
 NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
 
@@ -1161,6 +1170,7 @@ NS_EXTERN int Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write,
  */
 
 NS_EXTERN int Ns_TclInit(Tcl_Interp *interp);
+NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...);
 NS_EXTERN int Nsd_Init(Tcl_Interp *interp);
 NS_EXTERN int Ns_TclInitInterps(char *server, Ns_TclInterpInitProc *proc, void *arg);
 NS_EXTERN int Ns_TclInitModule(char *server, char *module);

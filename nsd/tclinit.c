@@ -156,6 +156,36 @@ Ns_TclEval(Ns_DString *dsPtr, char *server, char *script)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_TclPrintfResult --
+ *
+ *      Leave a formatted message in the given Tcl interps result.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
+{
+    va_list         ap;
+    Tcl_DString     ds;
+
+    Tcl_DStringInit(&ds);
+    va_start(ap, fmt);
+    Ns_DStringVPrintf(&ds, fmt, ap);
+    va_end(ap);
+    Tcl_DStringResult(interp, &ds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_TclInitInterps --
  *
  *	Register a user-supplied Tcl initialization procedure to be
@@ -1147,6 +1177,7 @@ InitInterp(Tcl_Interp *interp, NsServer *servPtr, NsInterp **itPtrPtr)
 	    NsTclInitQueueType();
 	    NsTclInitAddrType();
 	    NsTclInitTimeType();
+        NsTclInitSpecType();
 	    initialized = 1;
 	}
 	Ns_MasterUnlock();

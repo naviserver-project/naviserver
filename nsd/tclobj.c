@@ -60,6 +60,7 @@ static Tcl_ObjType timeType = {
 
 static Tcl_ObjType *intTypePtr;
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -93,6 +94,116 @@ NsTclInitTimeType()
     	Tcl_Panic("NsTclInitObjs: no int type");
     }
     Tcl_RegisterObjType(&timeType);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclResetObjType --
+ *
+ *      Reset the given Tcl_Obj type, freeing any type specific
+ *      internal representation.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on object type.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
+{
+    Tcl_ObjType *typePtr = objPtr->typePtr;
+
+    if (typePtr != NULL && typePtr->freeIntRepProc != NULL) {
+        (typePtr->freeIntRepProc)(objPtr);
+    }
+    objPtr->typePtr = newTypePtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclSetTwoPtrValue --
+ *
+ *      Reset the given objects type and values, freeing any existing
+ *      internal rep.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on object type.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
+                     void *ptr1, void *ptr2)
+{
+    Ns_TclResetObjType(objPtr, newTypePtr);
+    objPtr->internalRep.twoPtrValue.ptr1 = ptr1;
+    objPtr->internalRep.twoPtrValue.ptr2 = ptr2;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclSetOtherValuePtr --
+ *
+ *      Reset the given objects type and value, freeing any existing
+ *      internal rep.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on object type.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
+{
+    Ns_TclResetObjType(objPtr, newTypePtr);
+    objPtr->internalRep.otherValuePtr = value;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclSetStringRep --
+ *
+ *      Copy length bytes and set objects string rep.  The objects
+ *      existing string rep *must* have already been freed.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length)
+{
+    if (length < 1) {
+        length = strlen(bytes);
+    }
+    objPtr->length = length;
+    objPtr->bytes = ckalloc((size_t) length + 1);
+    memcpy(objPtr->bytes, bytes, (size_t) length + 1);
 }
 
 
@@ -178,7 +289,7 @@ UpdateStringOfTime(objPtr)
     register Tcl_Obj *objPtr;	/* Int object whose string rep to update. */
 {
     Ns_Time *timePtr = (Ns_Time *) &objPtr->internalRep;
-    size_t len;
+    int len;
     char buf[100];
 
     Ns_AdjTime(timePtr);
@@ -187,9 +298,7 @@ UpdateStringOfTime(objPtr)
     } else {
     	len = sprintf(buf, "%ld:%ld", timePtr->sec, timePtr->usec);
     }
-    objPtr->length = len;
-    objPtr->bytes = ckalloc(len + 1);
-    memcpy(objPtr->bytes, buf, len + 1);
+    Ns_TclSetStringRep(objPtr, buf, len);
 }
 
 
@@ -263,12 +372,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 static void
 SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
-    Tcl_ObjType *typePtr = objPtr->typePtr;
-
-    if (typePtr != NULL && typePtr->freeIntRepProc != NULL) {
-	(*typePtr->freeIntRepProc)(objPtr);
-    }
-    objPtr->typePtr = &timeType;
+    Ns_TclResetObjType(objPtr, &timeType);
     *((Ns_Time *) &objPtr->internalRep) = *timePtr;
     Tcl_InvalidateStringRep(objPtr);
     objPtr->length = 0;  /* ensure there's no stumbling */
