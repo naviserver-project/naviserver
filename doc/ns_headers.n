@@ -39,12 +39,12 @@
 .SH NAME
 ns_headers \- commands
 .SH SYNOPSIS
-\fBns_headers \fIoption \fR?\fIarg arg ...\fR?
+\fBns_headers \fIconnId status \fR?\fItype length\fR?
 .BE
 
 .SH DESCRIPTION
 .PP
-These commands...
+This command immediately pushes the required HTTP headers back to the client.  It is for backwords compatability only.  The connId argument is made available through the ns_register_proc function.  The status is the HTTP response code to return to the client.  The type refers to the Content-Type header, and defaults to 'text/html'.  The length argument refers to the Content-Length header.
 
 .SH "SEE ALSO"
 nsd(1), info(n)
