@@ -86,6 +86,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     struct rlimit  rl;
 
     /*
+     * Mark the server stopped until initialization is complete.
+     */
+
+    Ns_MutexLock(&nsconf.state.lock);
+    nsconf.state.started = 0;
+    Ns_MutexUnlock(&nsconf.state.lock);
+
+    /*
      * Set up configuration defaults and initial values.
      */
 
@@ -322,7 +330,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     Tcl_FindExecutable(argv[0]);
-    NsTclInitObjs();
     nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
     NsConfigEval(config, argc, argv, optind);
     ns_free(config);
@@ -494,9 +501,11 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsStartSchedShutdown(); 
     NsStartSockShutdown();
+    NsStartJobsShutdown();
     NsStartShutdownProcs();
     NsWaitSchedShutdown(&timeout);
     NsWaitSockShutdown(&timeout);
+    NsWaitJobsShutdown(&timeout);
     NsWaitShutdownProcs(&timeout);
 
     /*
