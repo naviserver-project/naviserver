@@ -52,16 +52,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #define MAP_FAILED ((void *) (-1))
 
 /*
- * The following structure defines the key to indentify a 
- * in the file cache.
- */
-
-typedef struct {
-    dev_t dev;
-    ino_t ino;
-} Key;
-
-/*
  * The following structure defines the contents of a file
  * stored in the file cache.
  */
@@ -106,8 +96,7 @@ NsFastpathCache(char *server, int size)
     char buf[100];
 
     sprintf(buf, "nsfp:%s", server);
-    return Ns_CacheCreateSz("ns:fastpath", sizeof(Key)/sizeof(int),
-	size, FreeEntry);
+    return Ns_CacheCreateSz("ns:fastpath", FILE_KEYS, size, FreeEntry);
 }
 
 
@@ -477,7 +466,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
     File	   *filePtr;
     char	   *key, *map;
     Ns_Entry	   *entPtr;
-    Key ukey;
+    FileKey	    ukey;
 
     /*
      * Determine the mime type if not given.
