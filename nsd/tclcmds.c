@@ -70,6 +70,8 @@ extern Tcl_ObjCmdProc
     NsTclCpObjCmd,
     NsTclCryptObjCmd,
     NsTclCritSecObjCmd,
+    NsTclDummyObjCmd,
+    NsTclICtlObjCmd,
     NsTclFTruncateObjCmd,
     NsTclGetAddrObjCmd,
     NsTclGetHostObjCmd,
@@ -83,7 +85,6 @@ extern Tcl_ObjCmdProc
     NsTclHttpObjCmd,
     NsTclHttpTimeObjCmd,
     NsTclInfoObjCmd,
-    NsTclInitObjCmd,
     NsTclJpegSizeObjCmd,
     NsTclKillObjCmd,
     //NsTclLibraryObjCmd,
@@ -615,7 +616,14 @@ static Cmd servCmds[] = {
      */
 
     {"ns_server", NsTclServerCmd, NsTclServerObjCmd},
-    {"ns_init", NULL, NsTclInitObjCmd},
+
+    /*
+     * tclinit.c
+     */
+
+    {"ns_ictl", NULL, NsTclICtlObjCmd},
+    {"ns_init", NULL, NsTclDummyObjCmd},
+    {"ns_cleanup", NULL, NsTclDummyObjCmd},
 
     /*
      * Add more server Tcl commands here.
