@@ -204,6 +204,14 @@ Ns_QueueConn(void *drvPtr, void *drvData)
     if (create) {
     	CreateConnThread();
     }
+
+    /*
+     * Yield so a thread can grab the new connection, perhaps
+     * avoiding a startup storm.
+     */
+
+    Ns_ThreadYield();
+
     return status;
 }
 
