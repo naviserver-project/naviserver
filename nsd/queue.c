@@ -755,7 +755,15 @@ ConnRun(Conn *connPtr)
 		Ns_ConnReturnInternalError(conn);
 		break;
 	    }
-	}
+        } else if (status != NS_FILTER_RETURN) {
+            /* if not ok or filter_return, then the pre-auth filter coughed
+             * an error.  We are not going to proceed, but also we
+             * can't count on the filter to have sent a response
+             * back to the client.  So, send an error response.
+             */
+            Ns_ConnReturnInternalError(conn);
+            status = NS_FILTER_RETURN; /* to allow tracing to happen */
+        }
     }
     Ns_ConnClose(conn);
     if (status == NS_OK || status == NS_FILTER_RETURN) {
