@@ -94,13 +94,7 @@ case "$system" in
 	LDLIB="$TCL_SHLIB_LD"
 	case "$LDLIB" in
 	    *gcc*)
-		LDLIB="$LDLIB -nostartfiles \$(CCRFLAG)"
-		;;
-	    *cc*)
-		LDLIB="$LDLIB \$(CCRFLAG)"
-		;;
-	    *)
-		LDLIB="$LDLIB \$(LDRFLAG)"
+		LDLIB="$LDLIB -nostartfiles"
 		;;
 	esac
 	CCRPATH="\$(CCRFLAG)\$(INSTLIB)"
