@@ -4,6 +4,12 @@
 	caused segmetantion if the alternative rollfmt was not
 	defined.
 
+2005-03-07  Vlad Seryakov <vlad@crystalballinc.com>
+
+        * include/hs.h:
+        * nsd/conn.c: changed return status for Ns_ConnSetResponseStatus
+        to void, corrected comments for this function.
+
 2005-03-06  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* nsd/tclmisc.c:

@@ -241,7 +241,7 @@ Ns_ConnResponseStatus(Ns_Conn *conn)
  *	Set the HTTP reponse code that will be sent
  *
  * Results:
- *	Previous response status as an integer response code (e.g., 200 for OK)
+ *	None
  *
  * Side effects:
  *	None. 
@@ -249,13 +249,12 @@ Ns_ConnResponseStatus(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+void
 Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
 {
     Conn           *connPtr = (Conn *) conn;
 
     connPtr->responseStatus = new_status;
-    return new_status;
 }
 
 
