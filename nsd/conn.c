@@ -334,6 +334,32 @@ Ns_ConnPeerPort(Ns_Conn *conn)
 
 /*
  *----------------------------------------------------------------------
+ * Ns_SetConnLocationProc --
+ *
+ *      Set pointer to custom routine that acts like Ns_ConnLocation();
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_SetConnLocationProc(Ns_LocationProc *procPtr)
+{
+    NsServer *servPtr = NsGetInitServer();
+
+    if (servPtr != NULL) {
+	servPtr->locationProc = procPtr;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
  * Ns_SetLocationProc --
  *
  *      Set pointer to custom routine that acts like Ns_ConnLocation();
