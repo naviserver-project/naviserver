@@ -123,7 +123,7 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
 	#
 	
 	if {$pdata != ""} {
-	    _ns_http_puts $timeout $wfd "\r$pdata\r"
+	    _ns_http_puts $timeout $wfd "\r\n$pdata\r"
 	} else {
 	    _ns_http_puts $timeout $wfd "\r"
 	}
