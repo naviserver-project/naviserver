@@ -216,18 +216,18 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
     Conn *connPtr = (Conn *) conn;
     Ns_DString *dsPtr;
-    status = NS_OK;
+    int result = NS_OK;
 
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
     	dsPtr = &connPtr->response;
     	connPtr->responseStatus = status;
     	if (!(conn->flags & NS_CONN_SKIPHDRS)) {
 	    Ns_ConnConstructHeaders(conn, dsPtr);
-	    status = Ns_WriteConn(conn, dsPtr->string, dsPtr->length);
+	    result = Ns_WriteConn(conn, dsPtr->string, dsPtr->length);
     	}
     	conn->flags |= NS_CONN_SENTHDRS;
     }
-    return status;
+    return result;
 }
 
 

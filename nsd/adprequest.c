@@ -170,7 +170,7 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
 		 * command was called.
 		 */
 
-                status = NS_OK;
+                status = Ns_ConnClose(conn);
 
 	    } else {
 		/*
