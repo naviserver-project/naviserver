@@ -545,8 +545,8 @@ NsTclAdpBindArgsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	return TCL_ERROR;
     }
     for (i = 1; i < objc; ++i) {
-    	if (Tcl_SetVar2Ex(interp, Tcl_GetString(objv[i]), NULL,
-			  itPtr->adp.objv[i], TCL_LEAVE_ERR_MSG) == NULL) {
+    	if (Tcl_ObjSetVar2(interp, objv[i], NULL, itPtr->adp.objv[i],
+			   TCL_LEAVE_ERR_MSG) == NULL) {
     	    return TCL_ERROR;
     	}
     }
@@ -607,8 +607,8 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	    exception = "unknown";
 	    break;
 	}
-	if (Tcl_SetVar(interp, Tcl_GetString(objv[1]), exception, 
-		       TCL_LEAVE_ERR_MSG) == NULL) {
+	if (Tcl_ObjSetVar2(interp, objv[1], NULL, Tcl_NewStringObj(exception, -1),
+		           TCL_LEAVE_ERR_MSG) == NULL) {
 	    return TCL_ERROR;
 	}
     }
