@@ -765,7 +765,7 @@ static int
 CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
     int i, index, opipe[2];
-    char *s, *e;
+    char *s, *e, **envp;
     Ns_DString *dsPtr;
     Mod *modPtr = cgiPtr->modPtr;
 
@@ -790,8 +790,9 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_SetMerge(cgiPtr->env, modPtr->mergeEnv);
     }
     if (modPtr->flags & CGI_SYSENV) {
-	s = Ns_GetEnvironment(dsPtr);
-	while (*s != '\0') {
+	envp = Ns_GetEnvironment(dsPtr);
+	while (*envp != NULL) {
+	    s = *envp;
 	    e = strchr(s, '=');
 	    if (e != NULL) {
 		*e = '\0';
@@ -801,7 +802,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 		}
 		*e = '=';
 	    }
-	    s += strlen(s) + 1;
+	    ++envp;
 	}
 	Ns_DStringTrunc(dsPtr, 0);
     }
