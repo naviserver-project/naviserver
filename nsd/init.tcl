@@ -446,8 +446,10 @@ proc _ns_getscript n {
             ::switch -- $_var {
                 _var -
                 _import -
+                env -
                 _script {
                     continue ; # skip local help variables
+                               # env should also be skipped as redundent.
                 }
                 default {
                     ::if {[::info exists [::namespace current]::$_var]} {
