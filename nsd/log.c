@@ -401,6 +401,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     case CGetIdx:
 	Tcl_SetResult(interp, cachePtr->buffer.string, TCL_VOLATILE);
 	Ns_DStringFree(&cachePtr->buffer);
+        cachePtr->count = 0;
 	break;
 
     case CReleaseIdx:
@@ -409,6 +410,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     case CFlushIdx:
 	LogFlush(cachePtr);
+        cachePtr->count = 0;
 	break;
 
     case CCountIdx:
