@@ -28,9 +28,10 @@
  */
 
 /* 
- * serv.c --
+ * queue.c --
  *
- *	Routines for the core server connection threads.
+ *	Routines for the managing the virtual server connection queue
+ *	and service threads.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
