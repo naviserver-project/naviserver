@@ -95,7 +95,8 @@ NsTclHttpCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 {
     NsInterp *itPtr = arg;
     Http *httpPtr;
-    char *cmd, buf[20], *result;
+    char *cmd, buf[20];
+    const char *result;
     int new, status, n;
     Ns_Time timeout;
     Ns_Set *hdrs;

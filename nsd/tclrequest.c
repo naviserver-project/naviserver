@@ -424,7 +424,7 @@ ProcFilter(void *arg, Ns_Conn *conn, int why)
     Tcl_Interp          *interp;
     int                  status;
     int                  cnt;
-    char		*result;
+    const char		*result;
 
     Tcl_DStringInit(&cmd);
 

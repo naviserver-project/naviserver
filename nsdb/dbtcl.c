@@ -792,6 +792,7 @@ GetCsvCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 {
     int             ncols, inquote, quoted, blank;
     char            c, *p, buf[20];
+    const char	   *result;
     Tcl_DString     line, cols, elem;
     Tcl_Channel	    chan;
 
@@ -878,11 +879,11 @@ loopstart:
 	Tcl_DStringAppendElement(&cols, elem.string);
         ncols++;
     }
-    p = Tcl_SetVar(interp, argv[2], cols.string, TCL_LEAVE_ERR_MSG);
+    result = Tcl_SetVar(interp, argv[2], cols.string, TCL_LEAVE_ERR_MSG);
     Tcl_DStringFree(&line);
     Tcl_DStringFree(&cols);
     Tcl_DStringFree(&elem);
-    if (p == NULL) {
+    if (result == NULL) {
 	return TCL_ERROR;
     }
     sprintf(buf, "%d", ncols);

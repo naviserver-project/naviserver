@@ -164,7 +164,7 @@ UpdateStringOfTime(objPtr)
     char buf[100];
 
     Ns_AdjTime(timePtr);
-    objPtr->length = sprintf(buf, "%d:%d", (int) timePtr->sec, timePtr->usec);
+    objPtr->length = sprintf(buf, "%ld:%ld", timePtr->sec, timePtr->usec);
     objPtr->bytes = Tcl_Alloc(objPtr->length + 1);
     memcpy(objPtr->bytes, buf, objPtr->length+1);
 }

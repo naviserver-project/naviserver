@@ -89,13 +89,13 @@ ns_calloc(size_t num, size_t esize)
 }
 
 char *
-ns_strcopy(char *old)
+ns_strcopy(const char *old)
 {
     return (old == NULL ? NULL : ns_strdup(old));
 }
 
 char *
-ns_strdup(char *old)
+ns_strdup(const char *old)
 {
     char *new;
 

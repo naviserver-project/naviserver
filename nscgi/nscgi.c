@@ -37,7 +37,6 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #define BUFSIZE	    4096
 #define NDSTRINGS   5
-#define UCHAR(c)	((unsigned char) (c))
 #define DEFAULT_MAXINPUT    1024000
 #define CGI_NPH	    	1
 #define CGI_GETHOST	2

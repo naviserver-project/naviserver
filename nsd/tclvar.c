@@ -55,8 +55,8 @@ typedef struct Array {
 #define FLAGS_CREATE 1
 #define FLAGS_NOERRMSG 2
 
-static void SetVar(Array *, char *key, char *value);
-static void UpdateVar(Tcl_HashEntry *hPtr, char *value);
+static void SetVar(Array *, const char *key, const char *value);
+static void UpdateVar(Tcl_HashEntry *hPtr, const char *value);
 static void FlushArray(Array *arrayPtr);
 static Array *LockArray(void *arg, Tcl_Interp *, char *array, int flags);
 #define UnlockArray(arrayPtr) \
@@ -589,7 +589,7 @@ LockArray(void *arg, Tcl_Interp *interp, char *array, int flags)
  */
 
 static void
-UpdateVar(Tcl_HashEntry *hPtr, char *value)
+UpdateVar(Tcl_HashEntry *hPtr, const char *value)
 {
     char *old, *new;
     size_t size;
@@ -623,7 +623,7 @@ UpdateVar(Tcl_HashEntry *hPtr, char *value)
  */
 
 static void
-SetVar(Array *arrayPtr, char *key, char *value)
+SetVar(Array *arrayPtr, const char *key, const char *value)
 {
     Tcl_HashEntry *hPtr;
     int new;

@@ -718,7 +718,7 @@ NsTclConnCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	    connPtr->encoding = encoding;
 	}
 	if (connPtr->encoding != NULL) {
-	    Tcl_SetResult(interp, Tcl_GetEncodingName(connPtr->encoding), TCL_VOLATILE);
+	    Tcl_SetResult(interp, (char *) Tcl_GetEncodingName(connPtr->encoding), TCL_VOLATILE);
 	}
 
     } else if (STREQ(argv[1], "peeraddr")) {

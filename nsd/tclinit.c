@@ -75,7 +75,7 @@ Ns_TclEval(Ns_DString *dsPtr, char *server, char *script)
 {
     int         retcode;
     Tcl_Interp *interp;
-    char       *result;
+    const char *result;
 
     retcode = NS_ERROR;
     interp = Ns_TclAllocateInterp(server);
@@ -539,14 +539,14 @@ NsTclEval(Tcl_Interp *interp, char *script)
 char *
 Ns_TclLogError(Tcl_Interp *interp)
 {
-    char *errorInfo;
+    const char *errorInfo;
 
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorInfo == NULL) {
         errorInfo = "";
     }
     Ns_Log(Error, "%s\n%s", Tcl_GetStringResult(interp), errorInfo);
-    return errorInfo;
+    return (char *) errorInfo;
 }
 
 
