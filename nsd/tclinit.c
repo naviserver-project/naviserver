@@ -1291,6 +1291,8 @@ DeleteInterps(void *arg)
     }
     Tcl_DeleteHashTable(tablePtr);
     ns_free(tablePtr);
+
+    Tcl_FinalizeThread(); /* To call registered thread-exit handlers */
 }
 
 

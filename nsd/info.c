@@ -566,8 +566,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	break;
 
     case IPoolsIdx:
-#ifndef _WIN32
-    Tcl_GetMemoryInfo(&ds); /* As of Tcl8.4.1 this is not exported. */
+#if !defined(_WIN32) && defined(USE_THREAD_ALLOC)
+	Tcl_GetMemoryInfo(&ds); /* As of Tcl8.4.1 this is not exported. */
 	Tcl_DStringResult(interp, &ds);
 #endif
 	break;
