@@ -529,7 +529,7 @@ NsTclAdpEvalCmd(ClientData dummy, Tcl_Interp *interp, int argc,
     int               code;
     Tcl_HashEntry    *hPtr;
     Ns_AdpParserProc *parserProc;
-    char	     *page, *cmd;
+    char	     *cmd;
     
     if (argc < 2) {
 badargs:
