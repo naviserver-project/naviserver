@@ -1294,6 +1294,16 @@ SockRead(Sock *sockPtr)
 	reqPtr->content = bufPtr->string + reqPtr->coff;
 	reqPtr->next = reqPtr->content;
 	reqPtr->avail = reqPtr->length;
+
+        /*
+         * Ensure that there are no 'bonus' crlf chars left visible
+         * in the buffer beyond the specified content-length.
+         * This happens from some browsers on POST requests.
+         */
+        if (reqPtr->length > 0) {
+            reqPtr->content[reqPtr->length] = '\0';
+        }
+
 	return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
     }
 
