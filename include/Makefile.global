@@ -70,7 +70,7 @@ endif
 ifeq (1,$(NSGCC))
     CC       	=  gcc -pipe
     LDSO     	=  gcc -shared -nostartfiles
-    CFLAGS	+= -fPIC
+    CFLAGS	+= -fPIC -Wall
 else
     CC	     =   $(PURIFY) cc
 endif
