@@ -65,7 +65,7 @@ proc ns_tcl_abort {} {
 }
 
 
-proc ns_sourceproc {conn ignored} {
+proc ns_sourceproc {conn args} {
 
     ns_share errorPage
 
