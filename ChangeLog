@@ -1,3 +1,8 @@
+2005-03-04  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tclobjv.c: Add support for boolean options which take no
+	argument. Truth is determined by presence of the option alone.
+
 2005-03-01  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* nslog/nslog.c: redone options support for the module

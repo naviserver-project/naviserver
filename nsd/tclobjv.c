@@ -82,7 +82,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             
             remain = specPtr->proc(specPtr->dest, interp, objc, objv + objvIndex,
                                    specPtr->arg);
-            if (remain == objc) {
+            if (remain == 0) {
                 break;
             }
             if (remain < 0 || remain > objc) {
@@ -131,8 +131,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ObjvBool, Ns_ObjvInt, Ns_ObjvLong, Ns_ObjvWideInt, 
- * Ns_ObjvDouble --
+ * Ns_ObjvInt, Ns_ObjvLong, Ns_ObjvWideInt, Ns_ObjvDouble --
  *
  *      Consume exactly one argument, returning it's value into dest.
  *
@@ -145,18 +144,6 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
-
-int
-Ns_ObjvBool(void *dest, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
-            void *arg)
-{
-    if (objc > 0 
-        && Tcl_GetBooleanFromObj(interp, objv[0], (int *) dest) == TCL_OK) {
-        return --objc;
-    }
-
-    return -1;
-}
 
 int
 Ns_ObjvInt(void *dest, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
@@ -201,6 +188,41 @@ Ns_ObjvDouble(void *dest, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
 {
     if (objc > 0 
         && Tcl_GetDoubleFromObj(interp, objv[0], (double *) dest) == TCL_OK) {
+        return --objc;
+    }
+
+    return -1;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ObjvBool --
+ *
+ *      If no argument is given, consume the next objv object and attempt
+ *      conversion to a boolean value.  If an argument is given it is
+ *      expected to be an int and is placed into dest.
+ *
+ * Results:
+ *      -1 on error. Exactly objc if an arg was given, objc-1 otherwise.
+ *
+ * Side effects:
+ *	    Next Tcl object maybe converted to type specific internal rep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ObjvBool(void *dest, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
+            void *arg)
+{
+    if (arg) {
+        *((int *) dest) = ((int) arg);
+        return objc;
+    }
+    if (objc > 0 
+        && Tcl_GetBooleanFromObj(interp, objv[0], (int *) dest) == TCL_OK) {
         return --objc;
     }
 
@@ -378,7 +400,7 @@ Ns_ObjvFlags(void *dest, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
  *	    Handle '--' option/argument separator.
  *
  * Results:
- *      Exactly objc.
+ *      Always 0 (zero).
  *
  * Side effects:
  *      Option processing will end successfully, argument processing 
@@ -391,7 +413,7 @@ int
 Ns_ObjvBreak(void *dest, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
              void *arg)
 {
-    return objc;
+    return 0;
 }
 
 
@@ -448,6 +470,8 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     for (specPtr = optSpec; specPtr->key != NULL; ++specPtr) {
         if (STREQ(specPtr->key, "--")) {
             Ns_DStringAppend(&ds, "?--? ");
+        } else if (specPtr->proc == &Ns_ObjvBool && specPtr->arg != NULL) {
+            Ns_DStringPrintf(&ds, "?%s? ", specPtr->key);
         } else {
             p = specPtr->key;
             if (*specPtr->key == '-') {
