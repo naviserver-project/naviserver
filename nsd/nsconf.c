@@ -94,7 +94,6 @@ NsConfInit(void)
      */
      
     nsconf.log.expanded = GetBool("logexpanded", LOG_EXPANDED_BOOL);
-    nsconf.log.dev      = GetBool("dev", LOG_DEV_BOOL);
     nsconf.log.debug    = GetBool("debug", LOG_DEBUG_BOOL);
     nsconf.log.maxback  = GetInt("maxbackup", LOG_MAXBACK_INT);
 

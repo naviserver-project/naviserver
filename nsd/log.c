@@ -138,9 +138,6 @@ ns_serverLog(Ns_LogSeverity severity, char *fmt, va_list *vaPtr)
     if (severity == Debug && nsconf.log.debug == 0) {
 	return;
     }
-    if (severity == Dev && nsconf.log.dev == 0) {
-	return;
-    }
     Log(severity, fmt, vaPtr);
 }
 
@@ -422,9 +419,6 @@ Log(Ns_LogSeverity severity, char *fmt, va_list *argsPtr)
 	case Debug:
 	    severityStr = "Debug";
 	    break;
-    	case Dev: 
-	    severityStr = "Dev";
-	    break;
 	default:
 	    severityStr = "<Unknown>";
 	    break;
@@ -545,8 +539,6 @@ GetSeverity(Tcl_Interp *interp, char *severityStr,
 	*severityPtr = Notice;
     } else if (STRIEQ(severityStr, "debug")) {
 	*severityPtr = Debug;
-    } else if (STRIEQ(severityStr, "dev")) {
-	*severityPtr = Dev;
     } else {
         Tcl_AppendResult(interp, "unknown severity \"",
                          severityStr, "\":  should be one of: ",
