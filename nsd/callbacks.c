@@ -376,16 +376,14 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
     Callback       *cbPtr;
     static int first = 1;
 
-    if (first) {
-	Ns_MutexSetName2(&lock, "ns", "callbacks");
-	first = 0;
-    }
-
     cbPtr = ns_malloc(sizeof(Callback));
     cbPtr->proc = proc;
     cbPtr->arg = arg;
-
     Ns_MutexLock(&lock);
+    if (first) {
+	Ns_MutexSetName(&lock, "ns:callbacks");
+	first = 0;
+    }
     if (shutdownPending) {
     	ns_free(cbPtr);
 	cbPtr = NULL;
@@ -394,7 +392,6 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
 	*firstPtrPtr = cbPtr;
     }
     Ns_MutexUnlock(&lock);
-
     return (void *) cbPtr;
 }
 

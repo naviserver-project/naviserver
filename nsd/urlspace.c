@@ -221,7 +221,7 @@ Ns_UrlSpecificAlloc(void)
 
     Ns_MutexLock(&lock);
     if (!initialized) {
-	Ns_MutexSetName2(&lock, "ns", "urlspace");
+	Ns_MutexSetName(&lock, "ns:urlspace");
         JunctionInit(&urlspace);
 	initialized = 1;
     }

@@ -1186,7 +1186,7 @@ CacheCreate(char *name, int keys, time_t timeout, size_t maxSize,
     cachePtr->keys = keys;
     strcpy(cachePtr->name, name);
     cachePtr->nflush = cachePtr->nhit = cachePtr->nmiss = 0;
-    Ns_MutexSetName2(&cachePtr->lock, "nscache", name);
+    Ns_MutexSetName2(&cachePtr->lock, "ns:cache", name);
     Tcl_InitHashTable(&cachePtr->entriesTable, keys);
     if (timeout > 0) {
     	cachePtr->schedId = Ns_ScheduleProc(NsCachePurge, cachePtr, 0, timeout);

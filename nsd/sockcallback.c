@@ -228,7 +228,7 @@ Queue(int sock, Ns_SockProc *proc, void *arg, int when)
     } else {
 	if (!running) {
     	    Tcl_InitHashTable(&table, TCL_ONE_WORD_KEYS);
-	    Ns_MutexSetName2(&lock, "ns", "socks");
+	    Ns_MutexSetName(&lock, "ns:sockcallbacks");
 	    create = 1;
 	    running = 1;
 	} else if (firstQueuePtr == NULL) {

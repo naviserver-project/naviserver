@@ -281,7 +281,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
     	ns_free(ePtr);
     } else {
 	if (!initialized) {
-	    Ns_MutexSetName2(&lock, "ns", "sched");
+	    Ns_MutexSetName(&lock, "ns:sched");
     	    Tcl_InitHashTable(&eventsTable, TCL_ONE_WORD_KEYS);
 	    initialized = 1;
 	}

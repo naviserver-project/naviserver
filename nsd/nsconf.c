@@ -67,8 +67,7 @@ NsConfInit(void)
     Ns_DString ds;
     
     Ns_DStringInit(&ds);
-
-    Ns_MutexSetName(&nsconf.state.lock, "nsconf:state");
+    Ns_MutexSetName(&nsconf.state.lock, "nsd:config");
     Tcl_DStringInit(&nsconf.servers);
 
     /*
