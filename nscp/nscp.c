@@ -361,7 +361,7 @@ retry:
 	}
 
         if (sessPtr->modPtr->commandLogging) {
-            Ns_Log(Notice, " %d> %s", ncmd, ds.string);
+            Ns_Log(Notice, "nscp:%d %s", ncmd, ds.string);
         }
 
 	if (Tcl_RecordAndEval(interp, ds.string, 0) != TCL_OK) {
@@ -377,7 +377,7 @@ retry:
 	}
 
         if (sessPtr->modPtr->commandLogging) {
-            Ns_Log(Notice, " %d> Command Completed.", ncmd);
+            Ns_Log(Notice, "nscp:%d done", ncmd);
         }
     }
 done:
