@@ -45,7 +45,6 @@
 #define NS_PATCH_LEVEL     "4.0b3"
 
 #include "nsthread.h"
-#include "tcl.h"
 
 /*
  * Various constants.
