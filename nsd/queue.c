@@ -61,6 +61,84 @@ static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state);
 static void AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr,
     	char *state);
 
+/*
+ * Static variables defined in this file.
+ */
+
+static Ns_Tls argtls;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitQueue --
+ *
+ *	Init connection queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitQueue(void)
+{
+    Ns_TlsAlloc(&argtls, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_QueueConn --
+ *
+ *	Queue a connection from a loadable driver (no longer supported).
+ *
+ * Results:
+ *	NS_ERROR.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_QueueConn(void *drv, void *arg)
+{
+    return NS_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_GetConn --
+ *
+ *	Return the current connection in this thread.
+ *
+ * Results:
+ *	Pointer to conn or NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Conn *
+Ns_GetConn(void)
+{
+    Arg *argPtr;
+
+    argPtr = Ns_TlsGet(&argtls);
+    return (argPtr ? ((Ns_Conn *) argPtr->connPtr) : NULL);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -436,6 +514,7 @@ NsConnThread(void *arg)
      * Set the conn thread name.
      */
 
+    Ns_TlsSet(&argtls, argPtr);
     Ns_MutexLock(&servPtr->queue.lock);
     id = servPtr->threads.nextid++;
     Ns_MutexUnlock(&servPtr->queue.lock);
