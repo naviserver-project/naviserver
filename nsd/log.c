@@ -440,7 +440,7 @@ Log(Ns_LogSeverity severity, char *fmt, va_list *argsPtr)
     }
 
     Ns_MutexLock(&lock);
-    if ( (logFileFd = fp) == NULL) {
+    if ( (fp = logFileFd) == NULL) {
 	fp = stderr;
     }
 
