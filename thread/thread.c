@@ -79,7 +79,7 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stackSize, Ns_Thread *resul
     int flags;
 
     flags = resultPtr ? 0 : NS_THREAD_DETACHED;
-    return Ns_ThreadCreate2(proc, arg, stackSize, flags, resultPtr);
+    Ns_ThreadCreate2(proc, arg, stackSize, flags, resultPtr);
 }
 
 void
