@@ -334,7 +334,6 @@ NsConfInit(char *server)
     nsconf.tcl.statlevel = GetInt(path, "statlevel", TCL_STATLEVEL_INT);
     nsconf.tcl.statmaxbuf = GetInt(path, "statmaxbuf", TCL_STATMAXBUF_INT);
     nsconf.tcl.nsvbuckets = GetInt(path, "nsvbuckets", TCL_NSVBUCKETS_INT);
-    nsconf.tcl.nseval = GetBool(path, "enablenseval", 0);
 
     /*
      * adp.c, adpfancy.c

@@ -784,10 +784,6 @@ NsTclEvalCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     char *script;
     int   retcode;
 
-    if (!nsconf.tcl.nseval) {
-	Tcl_SetResult(interp, "ns_eval not enabled", TCL_STATIC);
-	return TCL_ERROR;
-    }
     if (argc < 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
             argv[0], " arg ?arg? ?arg?", NULL);
