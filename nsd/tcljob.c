@@ -311,6 +311,22 @@ JobThread(void *arg)
     Ns_Log(Notice, "exiting");
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeJob --
+ *
+ *	Destory a Job structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 FreeJob(Job *jobPtr)
