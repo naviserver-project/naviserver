@@ -41,8 +41,12 @@
  * Special direct include of pthread.h for compatibility tests.
  */
 
+#ifdef _WIN32
+#define PTHREAD_TEST 0
+#else
 #include <pthread.h>
 #define PTHREAD_TEST 1
+#endif
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
@@ -327,7 +331,10 @@ DumperThread(void *arg)
 	DumpString(&ds);
 	Ns_MutexList(&ds);
 	DumpString(&ds);
+#ifndef _WIN32
+	/* NB: Not yet exported in WIN32 Tcl. */
 	Tcl_GetMemoryInfo(&ds);
+#endif
 	DumpString(&ds);
 	Ns_MutexUnlock(&mlock);
     }

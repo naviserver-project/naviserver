@@ -58,5 +58,9 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 void
 NsThreadFatal(char *func, char *osfunc, int err)
 {
+#ifdef _WIN32
+    Tcl_Panic("nsthreads: %s failed in %s: win32 err: %d", osfunc, func, err);
+#else
     Tcl_Panic("nsthreads: %s failed in %s: %s", osfunc, func, strerror(err));
+#endif
 }

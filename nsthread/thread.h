@@ -39,11 +39,22 @@
 #define THREAD_H
 
 #include "nsthread.h"
-#include <pthread.h>
 
-extern void NsThreadFatal(char *func, char *osfunc, int err);
-extern void NsInitMaster(void);
-extern void NsInitReentrant(void);
-extern void NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr);
+extern void   NsthreadsInit(void);
+extern void   NsInitThreads(void);
+extern void   NsInitMaster(void);
+extern void   NsInitReentrant(void);
+extern void   NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr);
+extern void  *NsGetLock(Ns_Mutex *mutex);
+extern void  *NsLockAlloc(void);
+extern void   NsLockFree(void *lock);
+extern void   NsLockSet(void *lock);
+extern int    NsLockTry(void *lock);
+extern void   NsLockUnset(void *lock);
+extern void   NsCleanupTls(void **slots);
+extern void **NsGetTls(void);
+extern void   NsThreadMain(void *arg);
+extern void   NsCreateThread(void *arg, long stacksize, Ns_Thread *threadPtr);
+extern void   NsThreadFatal(char *func, char *osfunc, int err);
 
 #endif /* THREAD_H */

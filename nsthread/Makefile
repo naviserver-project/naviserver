@@ -36,8 +36,8 @@ LIBINIT	= NsthreadsInit
 PGM	= nsthreadtest
 PGMOBJS	= nsthreadtest.o
 LIBOBJS = \
-	cond.o error.o master.o memory.o mutex.o cslock.o	\
+	error.o master.o memory.o mutex.o cslock.o	\
 	rwlock.o reentrant.o sema.o thread.o tls.o signal.o	\
-	compat.o time.o fork.o
+	compat.o time.o fork.o pthread.o
 
 include ../include/Makefile.build

@@ -43,10 +43,11 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  *
  * ns_realloc, ns_malloc, ns_calloc, ns_free, ns_strdup, ns_strcopy --
  *
- *	Memory allocation wrappers which call Tcl routines.
+ *	Memory allocation wrappers which either call the platform
+ *	versions or the fast pool allocator for a per-thread pool.
  *
  * Results:
- *	See Tcl ckalloc, ckfree, and ckrealloc.
+ *	As with system functions.
  *
  * Side effects:
  *	None.
@@ -57,20 +58,20 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 void *
 ns_realloc(void *ptr, size_t size)
 {
-    return (ptr ? ckrealloc(ptr, size) : ckalloc(size));
+    return (ptr ? Tcl_Realloc(ptr, size) : Tcl_Alloc(size));
 }
 
 void *
 ns_malloc(size_t size)
 {
-    return ckalloc(size);
+    return Tcl_Alloc(size);
 }
 
 void
 ns_free(void *ptr)
 {
     if (ptr != NULL) {
-	ckfree(ptr);
+	Tcl_Free(ptr);
     }
 }
 
