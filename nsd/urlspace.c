@@ -215,7 +215,6 @@ static Ns_Mutex lock;
 void
 NsInitUrlSpace(void)
 {
-    Ns_MutexInit(&lock);
     Ns_MutexSetName(&lock, "ns:urlspace");
     JunctionInit(&urlspace);
 }
