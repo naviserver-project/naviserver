@@ -28,9 +28,10 @@
 # 
 #
 # $Header$
-#
 
-MOD      =  nsdb.so
-OBJS     =  dbtcl.o dbutil.o dbinit.o dbdrv.o 
-HDRS	 =  db.h
-include  ../include/Makefile.module
+LIB	= nsdb
+LIBOBJS	= dbinit.o dbdrv.o dbtcl.o dbutil.o
+MOD	= nsdb.so
+OBJS	= nsdb.o
+HDRS	= db.h
+include ../include/Makefile.module

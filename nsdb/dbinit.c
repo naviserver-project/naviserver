@@ -129,38 +129,6 @@ static Tcl_HashTable poolsTable;
 static Tcl_HashTable serversTable;
 static Ns_Tls tls;
 
-int Ns_ModuleVersion = 1;
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ModuleInit --
- *
- *	Module initialization point.
- *
- * Results:
- *	NS_OK.
- *
- * Side effects:
- *	May load database drivers and configure pools.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ModuleInit(char *server, char *module)
-{
-    static int once;
-
-    if (!once) {
-	NsDbInitPools();
-	once = 1;
-    }
-    NsDbInitServer(server);
-    return Ns_TclInitInterps(server, NsDbAddCmds, server);
-}
-
 
 /*
  *----------------------------------------------------------------------
