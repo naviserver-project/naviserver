@@ -78,11 +78,7 @@ NsConfInit(void)
     if (!Ns_ConfigGetInt(NS_CONFIG_THREADS, "stacksize", &i)) {
     	i = GetInt("stacksize", THREAD_STACKSIZE_INT);
     }
-    nsThreadStackSize   = i;
-    if (!Ns_ConfigGetBool(NS_CONFIG_THREADS, "mutexmeter", &i)) {
-	i = THREAD_MUTEXMETER_BOOL;
-    }
-    nsThreadMutexMeter  = i;
+    nsconf.stacksize = i;
 
     /*
      * log.c
@@ -110,7 +106,7 @@ NsConfInit(void)
     nsconf.log.maxlevel = GetInt("logmaxlevel", LOG_MAXLEVEL_INT);
     nsconf.log.maxbuffer  = GetInt("logmaxbuffer", LOG_MAXBUFFER_INT);
     nsconf.log.flushint  = GetInt("logflushinterval", LOG_FLUSHINT_INT);
-    nsconf.log.file = Ns_ConfigGet(NS_CONFIG_PARAMETERS, "serverlog");
+    nsconf.log.file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "serverlog");
     if (nsconf.log.file == NULL) {
 	nsconf.log.file = "server.log";
     }
@@ -124,7 +120,6 @@ NsConfInit(void)
      */
          
     nsconf.shutdowntimeout = GetInt("shutdowntimeout", SHUTDOWNTIMEOUT);
-    nsconf.startuptimeout  = GetInt("startuptimeout", STARTUPTIMEOUT);
 
     /*
      * sched.c
@@ -150,13 +145,6 @@ NsConfInit(void)
 	    NsEnableDNSCache(i, max);
 	}
     }
-
-    /*
-     * exec.c
-     */
-     
-    nsconf.exec.checkexit = GetBool("checkexitcode", EXEC_CHECKEXIT_BOOL);
-    nsconf.exec.vfork = GetBool("enablevfork", EXEC_VFORK_BOOL);
 
     /*
      * keepalive.c
