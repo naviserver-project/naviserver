@@ -368,7 +368,7 @@ Ns_GetUid(char *user)
     if (pw == NULL) {
         retcode = -1;
     } else {
-        retcode = pw->pw_uid;
+        retcode = (unsigned) pw->pw_uid;
     }
     Ns_MutexUnlock(&lock);
     return retcode;
