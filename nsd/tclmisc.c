@@ -263,6 +263,7 @@ TmCmd(ClientData isgmt, Tcl_Interp *interp, int argc, char **argv)
         }
         ptm = ns_gmtime(&tt_now);
     } else {
+        static Ns_Mutex lock;
         char *oldTimezone = NULL;
 
         if (argc > 2) {
@@ -270,6 +271,8 @@ TmCmd(ClientData isgmt, Tcl_Interp *interp, int argc, char **argv)
                  argv[0], " ?tz?\"", NULL);
             return TCL_ERROR;
         }
+
+        Ns_MutexLock(&lock);
 
         if (argc == 2) {
             Ns_DString dsNewTimezone;
@@ -298,6 +301,8 @@ TmCmd(ClientData isgmt, Tcl_Interp *interp, int argc, char **argv)
 
             Ns_DStringFree(&dsNewTimezone);
         }
+
+        Ns_MutexUnlock(&lock);
     }
 
     sprintf(buf, "%d", ptm->tm_sec);
