@@ -135,7 +135,7 @@ Ns_ThreadCreate2(Ns_ThreadProc *proc, void *arg, long stackSize,
  *	None.
  *
  * Side effects:
- *	See NsFreeThread.
+ *	See NsCleanupThread.
  *
  *----------------------------------------------------------------------
  */
