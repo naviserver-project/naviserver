@@ -260,7 +260,7 @@ Ns_ModuleInit(char *server, char *name)
 #else
     n = 128;
 #endif
-    Ns_Log(Notice, "%s: initialized with %d-bit encryption", module, n);
+    Ns_Log(Notice, "%s: initialized with %d-bit encryption", name, n);
 #endif 
     
     /*
@@ -1112,7 +1112,7 @@ SockWrite(void *arg, void *vbuf, int len)
     int	    nwrote;
 
 #ifdef SSL 
-    nwrote = NsSSLSend(connPtr->cssl, vbuf, towrite); 
+    nwrote = NsSSLSend(connPtr->cssl, vbuf, len); 
 #else
     int     n;
     char   *buf;
