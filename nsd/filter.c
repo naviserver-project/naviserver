@@ -59,6 +59,8 @@ typedef struct Trace {
 
 static Trace *NewTrace(Ns_TraceProc *proc, void *arg);
 static void RunTraces(Ns_Conn *conn, Trace *firstPtr);
+static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
+			     void *arg);
 
 
 /*
@@ -189,7 +191,7 @@ Ns_RegisterServerTrace(char *server, Ns_TraceProc * proc, void *arg)
 
 /*
  *----------------------------------------------------------------------
- * Ns_RegisterConnCleanup --
+ * Ns_RegisterCleanup, Ns_RegisterConnCleanup --
  *
  *      Register a connection cleanup trace procedure.  Traces
  *  	registered with this procedure are always called in LIFO
@@ -210,6 +212,21 @@ void *
 Ns_RegisterConnCleanup(char *server, Ns_TraceProc *proc, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
+
+    return RegisterCleanup(servPtr, proc, arg);
+}
+
+void *
+Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg)
+{
+    NsServer *servPtr = NsGetInitServer();
+
+    return RegisterCleanup(servPtr, proc, arg);
+}
+
+static void *
+RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
+{
     Trace *tracePtr;
 
     if (servPtr == NULL) {
