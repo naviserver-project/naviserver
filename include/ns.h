@@ -1101,13 +1101,6 @@ NS_EXTERN char *Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn);
 NS_EXTERN Tcl_Interp *Ns_GetConnInterp(Ns_Conn *conn);
 
 /*
- * tclsched.c:
- */
-
-NS_EXTERN int Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *tid);
-NS_EXTERN int Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
-
-/*
  * tclset.c:
  */
 
