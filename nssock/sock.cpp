@@ -69,17 +69,20 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #endif
 
 #define BUSY \
-	"HTTP/1.0 503 Server Busy\r\n"\
-	"Content-type: text/html\r\n"\
-	"\r\n"\
-	"<html>\n"\
-	"<head><title>Server Busy</title></head>\n"\
-	"<body>\n"\
-	"<h2>Server Busy</h2>\n"\
-	"The server is temporarily too busy to process your request. "\
-        "Please try again later.\n"\
-	"</body>\n"\
-	"</html>\n"
+	"HTTP/1.0 503 Service Unavailable\r\n"\
+        "MIME-Version: 1.0\r\n"\
+        "Server: AOLserver\r\n"\
+        "Content-Type: text/html\r\n"\
+        "Connection: close\r\n"\
+	"Expires: now\r\n"\
+        "\r\n"\
+	"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"\
+	"<HTML>\n"\
+	"<HEAD><TITLE>Server Busy</TITLE></HEAD>\n"\
+	"<BODY>\n"\
+	"<H2>Server Busy</H2>\n"\
+	"This server is too busy to process the request.\n"\
+	"</BODY></HTML>\n"
 
 struct ConnData;
 
