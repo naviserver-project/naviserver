@@ -34,15 +34,13 @@ NSHOME ?= ..
 include  $(NSHOME)/include/Makefile.global
 
 LIB	 =  libnspd.a
-OBJS     =  listen.o log.o main.o msg.o
+OBJS     =  listen.o log.o main.o 
 
 all: $(LIB)
 
 $(LIB): $(OBJS)
 	$(AR) rv $(LIB) $(OBJS)
 	$(RANLIB) $(LIB)
-
-msg.o: ../include/nsextmsg.h
 
 install: $(LIB)
 	$(RM) $(INSTLIB)/$(LIB)

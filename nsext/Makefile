@@ -28,10 +28,11 @@
 # 
 #
 # $Header$
-#
 
-MOD       =  nsext.so
-OBJS      =  nsext.o 
-HDRS      =  ../include/nsextmsg.h
-MODLIBS	  =  ../nspd/libnspd.a
-include  ../include/Makefile.module
+LIB	= nsext
+LIBOBJS	= msg.o
+MOD	= nsext.so
+OBJS	= nsext.o
+MODLIBS	= -L../nsdb -lnsdb
+HDRS	= ../include/nsextmsg.h
+include ../include/Makefile.module
