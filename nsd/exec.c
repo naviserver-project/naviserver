@@ -524,12 +524,11 @@ CallWaitPid(int pid, int *statusPtr, int *errPtr)
     return args.result;
 }
 
+static volatile int initialized = 0;
 
 static void
 CallProcThread(Args *argsPtr)
 {
-    static int initialized = 0;
-
     Ns_MutexLock(&lock);
     if (!initialized) {
     	Ns_ThreadCreate(ProcThread, NULL, 0, NULL);

@@ -72,6 +72,29 @@ static char *DlError(void);
 /*
  *----------------------------------------------------------------------
  *
+ * NsInitModLoad --
+ *
+ *	Initialize module table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitModLoad(void)
+{
+    Tcl_InitHashTable(&modulesTable, FILE_KEYS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ModuleLoad --
  *
  *	Load a module and initialize it.  The result code from modules
@@ -133,14 +156,8 @@ Ns_ModuleSymbol(char *file, char *name)
     int		   new;
     void	  *module;
     void          *symbol;
-    static int     initialized = 0;
     struct stat    st;
     FileKey	   key;
-
-    if (initialized == 0) {
-    	Tcl_InitHashTable(&modulesTable, FILE_KEYS);
-	initialized = 1;
-    }
 
     symbol = NULL;
     Ns_DStringInit(&ds);

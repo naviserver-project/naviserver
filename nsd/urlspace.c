@@ -199,6 +199,31 @@ static Ns_Mutex lock;
 /*
  *----------------------------------------------------------------------
  *
+ * NsInitUrlSpace --
+ *
+ *	Initialize the urlspace API.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitUrlSpace(void)
+{
+    Ns_MutexInit(&lock);
+    Ns_MutexSetName(&lock, "ns:urlspace");
+    JunctionInit(&urlspace);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_UrlSpecificAlloc --
  *
  *	Allocate a unique ID to create a seperate virtual URL-space. 
@@ -217,14 +242,8 @@ Ns_UrlSpecificAlloc(void)
 {
     int        id;
     static int nextid = 0;
-    static int initialized = 0;
 
     Ns_MutexLock(&lock);
-    if (!initialized) {
-	Ns_MutexSetName(&lock, "ns:urlspace");
-        JunctionInit(&urlspace);
-	initialized = 1;
-    }
     id = nextid++;
     Ns_MutexUnlock(&lock);
     return id;
