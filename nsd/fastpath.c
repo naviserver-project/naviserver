@@ -37,7 +37,7 @@
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
-#if defined(MACOSX) && defined(panic)
+#if defined(__APPLE__) && defined(panic)
 #undef panic
 #endif
 #include <sys/mman.h>
