@@ -40,6 +40,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "thread.h"
 #include <assert.h>
+#include <mutex.h>
 
 /*
  * The following structure specifies various per-bucket runtime
@@ -616,17 +617,10 @@ GetBlocks(Pool *poolPtr, int bucket)
 
 	if (blockPtr == NULL) {
 	    size = MAXALLOC;
-#ifdef WIN32
 	    blockPtr = malloc(size);
 	    if (blockPtr == NULL) {
 		return 0;
 	    }
-#else
-	    blockPtr = sbrk(size);
-	    if (blockPtr == (Block *) -1) {
-		return 0;
-	    }
-#endif
 	}
 
 	/*
