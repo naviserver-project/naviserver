@@ -279,6 +279,8 @@ Dumper(void *arg)
 	Ns_ThreadEnum(DumpThread, NULL);
 	printf("current locks:\n");
 	Ns_MutexEnum(DumpLock, NULL);
+	printf("memory stats:\n");
+	Ns_ThreadMemStats(stdout);
 	Ns_MutexUnlock(&mlock);
     }
     Ns_MutexUnlock(&dlock);
@@ -314,9 +316,9 @@ main(int argc, char *argv[])
     Ns_SemaInit(&sema, 3);
     Msg("sema initialized to 3");
     atexit(AtExit);
-    Ns_ThreadCreate(PauseThread, (void *) 30, 0, NULL);
-    Ns_ThreadCreate(PauseThread, (void *) 30, 0, NULL);
-    Ns_ThreadCreate(PauseThread, (void *) 30, 0, NULL);
+    Ns_ThreadCreate(PauseThread, (void *) 1, 0, NULL);
+    Ns_ThreadCreate(PauseThread, (void *) 50, 0, NULL);
+    Ns_ThreadCreate(PauseThread, (void *) 10, 0, NULL);
     Msg("pid = %d", getpid());
     Ns_TlsAlloc(&key, junk);
     for (i = 0; i < 10; ++i) {
@@ -349,5 +351,6 @@ mem:
     MemTime(1);
     Ns_ThreadEnum(DumpThread, NULL);
     Ns_MutexEnum(DumpLock, NULL);
+    Ns_ThreadMemStats(stdout);
     return 0;
 }

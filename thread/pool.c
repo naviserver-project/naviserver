@@ -156,12 +156,14 @@ static Ns_Mutex bucketLocks[NBUCKETS];
 #define POPBLOCK(pp,i,bp) \
     bp = pp->firstPtr[i];\
     pp->firstPtr[i] = bp->b_next;\
-    --pp->nfree[i]
+    --pp->nfree[i];\
+    ++pp->nused[i]
 
 #define PUSHBLOCK(pp,bp,i) \
     bp->b_next = pp->firstPtr[i];\
     pp->firstPtr[i] = bp;\
-    ++pp->nfree[i]
+    ++pp->nfree[i];\
+    --pp->nused[i]
 
 #define UNLOCKBUCKET(i) Ns_MutexUnlock(&bucketLocks[i])
 #define LOCKBUCKET(i)	Ns_MutexLock(&bucketLocks[i])
@@ -209,7 +211,7 @@ NsInitPools(void)
 /*
  *----------------------------------------------------------------------
  *
- *  NsFlushPool --
+ *  NsPoolFlush --
  *
  *	Return all free blocks to the shared pool at thread exit.
  *
@@ -223,7 +225,7 @@ NsInitPools(void)
  */
 
 void
-NsFlushPool(Pool *poolPtr)
+NsPoolFlush(Pool *poolPtr)
 {
     register int   bucket;
 
@@ -232,6 +234,40 @@ NsFlushPool(Pool *poolPtr)
 	    PutBlocks(poolPtr, bucket, poolPtr->nfree[bucket]);
 	}
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsPoolDump --
+ *
+ *	Dump stats about current pool to open file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsPoolDump(Pool *poolPtr, FILE *fp)
+{
+    int nfree[NBUCKETS], nused[NBUCKETS];
+    int i;
+
+    if (poolPtr == NULL) {
+	poolPtr = &sharedPool;
+    }
+    memcpy(nfree, poolPtr->nfree, sizeof(nfree));
+    memcpy(nused, poolPtr->nused, sizeof(nused));
+    for (i = 0; i < NBUCKETS; ++i) {
+	fprintf(fp, " %d:%d", nfree[i], nused[i]);
+    }
+    fprintf(fp, "\n");
 }
 
 
