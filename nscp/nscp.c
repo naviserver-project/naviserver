@@ -153,7 +153,7 @@ Ns_ModuleInit(char *server, char *module)
     }
 
     if (!Ns_ConfigGetBool(path, "cpcmdlogging", &modPtr->commandLogging)) {
-        modPtr->commandLogging = 1; /* Default to on */
+        modPtr->commandLogging = 0; /* Default to off */
     }
 
     /*
