@@ -65,7 +65,7 @@ static char *FindConfig(char *config);
  */
 
 int
-Ns_Main(int argc, char **argv)
+Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
     int            i, fd;
     char          *config;
@@ -416,11 +416,11 @@ Ns_Main(int argc, char **argv)
      */
 
     if (server != NULL) {
-    	NsInitServer(server);
+    	NsInitServer(server, initProc);
     } else {
 	for (i = 0; i < Ns_SetSize(servers); ++i) {
 	    server = Ns_SetKey(servers, i);
-    	    NsInitServer(server);
+    	    NsInitServer(server, initProc);
 	}
     }
 
@@ -544,6 +544,30 @@ Ns_WaitForStartup(void)
     }
     Ns_MutexUnlock(&nsconf.state.lock);
     return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_StopSerrver --
+ *
+ *	Shutdown a server.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Server will begin shutdown process. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_StopServer(char *server)
+{
+    Ns_Log(Warning, "nsmain: immediate server shutdown requested");
+    NsSendSignal(SIGTERM);
 }
 
 
