@@ -259,8 +259,8 @@ GetEnviron(void)
 {
    char **envp;
 
-#ifdef HAVE_NSGETENVIRON
-    envp = NsGetEnviron();
+#ifdef HAVE__NSGETENVIRON
+    envp = _NSGetEnviron();
 #else
     extern char **environ;
 

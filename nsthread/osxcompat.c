@@ -28,7 +28,7 @@
  */
 
 /* 
- * osxcompat.cpp --
+ * osxcompat.c --
  *
  *	Routines missing from OS/X required by AOLserver.
  */
@@ -117,7 +117,7 @@ poll (fds, nfds, timeout)
  return ready;
 }
 
-#ifdef NEED_OSXCOMPAT
+#ifndef HAVE_SIGWAIT
 
 static pthread_mutex_t rdlock = PTHREAD_MUTEX_INITIALIZER;
 

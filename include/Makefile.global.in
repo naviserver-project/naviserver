@@ -116,9 +116,10 @@ endif
 
 # Mac OS X
 ifneq (,$(findstring Darwin,$(uname)))
-    CFLAGS+=-DNEED_OSXCOMPAT
     LDSO=cc -bundle
-    LDLIB=cc -dynamiclib -install_name $(ASLIB)/$(LIBFILE)
+    LDLIB=cc -dynamiclib -install_name $(ASLIBDIR)/$(LIBFILE)
+    CCRPATH=
+    LDRPATH=
     CFLAGS+=-DUSE_DLSYMPREFIX=1 -DUSE_DYLD=1
 endif
 

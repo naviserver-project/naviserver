@@ -74,7 +74,7 @@ AC_SUBST(TCL_DEFS)
 # Additional AOLserver checks.
 #
 
-AC_CHECK_FUNCS(timegm)
+AC_CHECK_FUNCS(timegm sigwait _NSGetEnviron)
 
 #
 # Create Makefile.global.
