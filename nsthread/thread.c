@@ -158,7 +158,7 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
     }
     strcpy(thrPtr->parent, Ns_ThreadGetName());
     Ns_MasterUnlock();
-    NsCreateThread(thrPtr, stacksize, resultPtr);
+    NsCreateThread(thrPtr, stack, resultPtr);
 }
 
 
