@@ -738,7 +738,7 @@ NsTclConnCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	}
 
     } else if (STREQ(argv[1], "outputheaders")) {
-	if (itPtr->nsconn.flags & CONN_TCLHDRS) {
+	if (itPtr->nsconn.flags & CONN_TCLOUTHDRS) {
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
 	} else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
