@@ -40,9 +40,6 @@
 
 #include "nsthread.h"
 #include <pthread.h>
-#ifdef __APPLE__
-  #include "osxcompat.h"
-#endif
 
 extern void NsThreadFatal(char *func, char *osfunc, int err);
 extern void NsInitMaster(void);

@@ -40,9 +40,4 @@ LIBOBJS = \
 	rwlock.o reentrant.o sema.o thread.o tls.o signal.o	\
 	compat.o time.o fork.o
 
-ifeq (Darwin,$(shell uname))
-  LIBOBJS += osxcompat.o
-  HDRS	  += osxcompat.h
-endif
-
 include ../include/Makefile.module
