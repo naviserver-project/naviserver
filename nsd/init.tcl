@@ -89,18 +89,23 @@ proc ns_module {key {val ""}} {
 
 proc ns_eval {args} {
     set len [llength $args]
+
     if {$len == 0} {
         return
     } elseif {$len == 1} {
         set args [lindex $args 0]
     }
-    if {[set code [catch {uplevel 1 $args} result]]} {
-        # dump this interp to avoid proc pollution
+
+    set code [catch {uplevel 1 $args} result]
+
+    if {$code == 1} {
+        # TCL_ERROR: Dump this interp to avoid proc pollution.
         ns_markfordelete
-        return -code $code $result
+    } else {
+        # Save this interp's namespaces for others.
+        _ns_savenamespaces
     }
-    # save this interp's namespaces for others
-    _ns_savenamespaces
+
     return -code $code $result
 }
 
