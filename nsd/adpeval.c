@@ -763,8 +763,6 @@ AdpEval(NsInterp *itPtr, AdpCode *codePtr, Tcl_Obj **objs)
 		    objPtr = Tcl_NewStringObj(ptr, len);
 		    Tcl_IncrRefCount(objPtr);
     	            result = Tcl_EvalObjEx(interp, objPtr, 0);
-		    /* NB: Object now bytecodes, free unneeded string. */
-		    Tcl_InvalidateStringRep(objPtr);
 		    objs[nscript] = objPtr;
 		}
 	    }
