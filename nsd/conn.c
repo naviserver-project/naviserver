@@ -1235,7 +1235,7 @@ Ns_QueryToSet(char *query, Ns_Set *set)
                   *value = '\0';
                 }
                 Ns_DStringTrunc(&ds, 0);
-                decode = Ns_UrlDecode(&ds, name);
+                decode = Ns_DecodeUrl(&ds, name);
                 if (decode == NULL) {
                     status = NS_ERROR;
                     goto done;
@@ -1245,7 +1245,7 @@ Ns_QueryToSet(char *query, Ns_Set *set)
                     *value++ = '=';
 
 		    Ns_DStringTrunc(&ds, 0);
-		    decode = Ns_UrlDecode(&ds, value);
+		    decode = Ns_DecodeUrl(&ds, value);
 		    if (decode == NULL) {
 			status = NS_ERROR;
 			goto done;

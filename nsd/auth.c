@@ -179,10 +179,10 @@ NsTclRequestAuthorizeCmd(ClientData dummy, Tcl_Interp *interp, int argc,
         return TCL_ERROR;
     }
     if (argc == 5) {
-        status = Ns_RequestAuthorize(Ns_TclInterpServer(interp),
+        status = Ns_AuthorizeRequest(Ns_TclInterpServer(interp),
                                      argv[1], argv[2], argv[3], argv[4], NULL);
     } else {
-        status = Ns_RequestAuthorize(Ns_TclInterpServer(interp),
+        status = Ns_AuthorizeRequest(Ns_TclInterpServer(interp),
                                      argv[1], argv[2], argv[3], argv[4],
 				     argv[5]);
     }

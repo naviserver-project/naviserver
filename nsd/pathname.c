@@ -227,7 +227,7 @@ Ns_LibPath(Ns_DString *dest, ...)
     va_list  ap;
     char    *path;
 
-    Ns_MakePath(dest, Ns_InfoHome(), "/lib", NULL);
+    Ns_MakePath(dest, Ns_InfoHomePath(), "/lib", NULL);
     if (dest->string[dest->length - 1] != '/') {
         Ns_DStringAppend(dest, "/");
     }
@@ -261,7 +261,7 @@ Ns_HomePath(Ns_DString *dest, ...)
     va_list  ap;
     char    *path;
 
-    Ns_MakePath(dest, Ns_InfoHome(), NULL);
+    Ns_MakePath(dest, Ns_InfoHomePath(), NULL);
     if (dest->string[dest->length - 1] != '/') {
         Ns_DStringAppend(dest, "/");
     }
@@ -297,7 +297,7 @@ Ns_ModulePath(Ns_DString *dest, char *hServer, char *hModule, ...)
     va_list         ap;
     char           *path;
 
-    Ns_DStringAppend(dest, Ns_InfoHome());
+    Ns_DStringAppend(dest, Ns_InfoHomePath());
     if (dest->string[dest->length - 1] != '/') {
         Ns_DStringAppend(dest, "/");
     }

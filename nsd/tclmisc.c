@@ -950,9 +950,9 @@ NsTclInfoCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     } else if (STREQ(argv[1], "pid")) {
         sprintf(interp->result, "%d", Ns_InfoPid());
     } else if (STREQ(argv[1], "version")) {
-	Tcl_SetResult(interp, Ns_InfoVersion(), TCL_STATIC);
+	Tcl_SetResult(interp, Ns_InfoServerVersion(), TCL_STATIC);
     } else if (STREQ(argv[1], "home")) {
-	Tcl_SetResult(interp, Ns_InfoHome(), TCL_STATIC);
+	Tcl_SetResult(interp, Ns_InfoHomePath(), TCL_STATIC);
     } else if (STREQ(argv[1], "tcllib")) {
 	Tcl_SetResult(interp, Ns_TclLibrary(), TCL_STATIC);
     } else if (STREQ(argv[1], "winnt")) {

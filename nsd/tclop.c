@@ -589,8 +589,8 @@ TclDoOp(void *arg, Ns_Conn *conn)
     }
     if (Tcl_GlobalEval(interp, cmd.string) != TCL_OK) {
         Ns_TclLogError(interp);
-        if (Ns_ResetReturn(conn) == NS_OK) {
-            retval = Ns_ReturnInternalError(conn);
+        if (Ns_ConnResetReturn(conn) == NS_OK) {
+            retval = Ns_ConnReturnInternalError(conn);
         }
     }
     RunAtClose(interp);

@@ -160,7 +160,7 @@ NsTclUrlEncodeCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 
     Ns_DStringInit(&ds);
 
-    Ns_UrlEncode(&ds, argv[1]);
+    Ns_EncodeUrl(&ds, argv[1]);
 
     Tcl_SetResult(interp, Ns_DStringExport(&ds), (Tcl_FreeProc *) ns_free);
     
@@ -195,7 +195,7 @@ NsTclUrlDecodeCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
         return TCL_ERROR;
     }
     Ns_DStringInit(&ds);
-    if (Ns_UrlDecode(&ds, argv[1]) == NULL) {
+    if (Ns_DecodeUrl(&ds, argv[1]) == NULL) {
         Ns_DStringFree(&ds);
     }
     Tcl_SetResult(interp, Ns_DStringExport(&ds), (Tcl_FreeProc *) ns_free);

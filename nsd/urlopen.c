@@ -215,7 +215,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     
  done:
     if (request != NULL) {
-        Ns_RequestFree(request);
+        Ns_FreeRequest(request);
     }
     if (sock != INVALID_SOCKET) {
         ns_sockclose(sock);
