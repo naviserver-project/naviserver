@@ -58,24 +58,6 @@ static char     *logFile;
 static FILE     *logFileFd;
 static Ns_Mutex  lock;
 
-/*
- * Maps the Ns_LogSeverity enum to integers that relate to their relative
- * severity.  This works around the problem of not being able to re-order
- * the elements of that enum without breaking backwards compatibility.
- * Smaller values have higher severity:
- */
-
-static int severityRank[Dev + 1] = { 
-   4, /* Notice    - enum value = 0 */
-   3, /* Warning   - enum value = 1 */
-   2, /* Error     - enum value = 2 */
-   0, /* Fatal     - enum value = 3 */
-   1, /* Bug       - enum value = 4 */
-   5, /* Debug     - enum value = 5 */
-   6  /* Dev       - enum value = 6 - for developers - defined in nsd/nsd.h */
-};
-
-
 
 /*
  *----------------------------------------------------------------------
