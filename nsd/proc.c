@@ -63,6 +63,9 @@ struct proc {
 	{(void *) NsTclSockProc, "ns:tclsockcallback", NsTclSockArgProc},
 	{(void *) NsCachePurge, "ns:cachepurge", NsCacheArgProc},
 	{(void *) NsConnThread, "ns:connthread", NsConnArgProc},
+	{(void *) NsTclFilter, "ns:tclfilter", Ns_TclCallbackArgProc},
+	{(void *) NsTclRequest, "ns:tclrequest", Ns_TclCallbackArgProc},
+	{(void *) NsAdpRequest, "ns:adprequest", Ns_StringArgProc},
 	{NULL, NULL, NULL}
 };
 
@@ -182,6 +185,31 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg)
     } else {
 	AppendAddr(dsPtr, "a", arg);
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_StringArgProc --
+ *
+ *      Treat arg as cstring and copy to dstring.
+ *
+ * Results:
+ *      None. 
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
+{
+    char *str = arg;
+
+    Tcl_DStringAppendElement(dsPtr, str ? str : "");
 }
 
 

@@ -977,6 +977,7 @@ NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, char *server, char *module, ...
 
 NS_EXTERN void Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc);
 NS_EXTERN void Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg);
+NS_EXTERN void Ns_StringArgProc(Tcl_DString *dsPtr, void *arg);
 
 /*
  * queue.c:

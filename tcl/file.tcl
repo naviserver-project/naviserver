@@ -65,13 +65,13 @@ proc ns_tcl_abort {} {
 }
 
 if { ![string equal [info commands "ns_cache"] ""] } {
-    proc ns_sourceproc {conn ignored} {
+    proc ns_sourceproc {ignored} {
 
         ns_share errorPage
 
-        set file [ns_url2file [ns_conn url $conn]]
+        set file [ns_url2file [ns_conn url]]
         if ![file exists $file] {
-            ns_returnnotfound $conn
+            ns_returnnotfound
         } else {
 	    set code [catch {
 	        source_cached $file
@@ -102,13 +102,13 @@ if { ![string equal [info commands "ns_cache"] ""] } {
         }
     }
 } else {
-    proc ns_sourceproc {conn ignored} {
+    proc ns_sourceproc {ignored} {
 
         ns_share errorPage
 
-        set file [ns_url2file [ns_conn url $conn]]
+        set file [ns_url2file [ns_conn url]]
         if ![file exists $file] {
-            ns_returnnotfound $conn
+            ns_returnnotfound
         } else {
 	    set code [catch {
 	        source $file

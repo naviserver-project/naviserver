@@ -2,9 +2,18 @@
 
 	* include/ns.h:
 	* nsd/nsd.h:
+	* nsd/proc.c:
+	* nsd/tclrequest.c: Convert to new callback and parse proc APIs.
+	Remove support for old connId parameter.
+
+	* tcl/file.tcl:
+	* tcl/util.tcl: Remove support for old connId parameter.
+	
+	* include/ns.h:
+	* nsd/nsd.h:
 	* nsd/Makefile:
 	* nsd/tclcallbacks.c: Add routines to support calling Tcl code
-	from C for callback events.
+	from C for callback events. (RFE #1162223)
 
 	* nsd/proc.c:
 	* nsd/tclcmds.c:

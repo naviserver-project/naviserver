@@ -833,6 +833,9 @@ extern Ns_SockProc NsTclSockProc;
 extern Ns_ArgProc NsTclSockArgProc;
 extern Ns_ThreadProc NsConnThread;
 extern Ns_ArgProc NsConnArgProc;
+extern Ns_FilterProc NsTclFilter;
+extern Ns_OpProc NsTclRequest;
+extern Ns_OpProc NsAdpRequest;
 
 extern void NsGetCallbacks(Tcl_DString *dsPtr);
 extern void NsGetSockCallbacks(Tcl_DString *dsPtr);

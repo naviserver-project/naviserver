@@ -63,11 +63,11 @@ proc ns_findset {sets name} {
 }
 
 # getformdata - make sure an HTML FORM was sent with the request.
-proc getformdata {conn formVar} {
+proc getformdata {formVar} {
     upvar $formVar form
-    set form [ns_conn form $conn]
+    set form [ns_conn form]
     if {[string match "" $form]} {
-	ns_returnbadrequest $conn "Missing HTML FORM data"
+	ns_returnbadrequest "Missing HTML FORM data"
 	return 0
     }
     return 1
