@@ -45,7 +45,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  * For AOLserver
  */
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+int Ns_ModuleVersion = 1;
 
 /*
  * The following structure is allocated for each instance of the module.
@@ -133,7 +133,7 @@ static Tcl_HashTable   serversTable;
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+int
 Ns_ModuleInit(char *server, char *module)
 {
     Server *servPtr;
