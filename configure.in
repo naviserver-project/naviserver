@@ -157,11 +157,6 @@ then
 	AC_DEFINE(HAVE_CMMSG)
 fi
 
-if test "$system" = "Linux"
-then
-    AC_DEFINE(USE_PROCTHREAD)
-fi
-
 #
 # Create Makefile.global.
 #
