@@ -62,7 +62,6 @@ struct _nsconf nsconf;
 void
 NsInitConf(void)
 {
-    Ns_DString addr;
     static char cwd[PATH_MAX];
     extern char *nsBuildDate; /* NB: Declared in stamp.c */
 
@@ -85,18 +84,45 @@ NsInitConf(void)
     time(&nsconf.boot_t);
     nsconf.pid = getpid();
     nsconf.home = getcwd(cwd, sizeof(cwd));
+
+    Tcl_InitHashTable(&nsconf.sections, TCL_STRING_KEYS);
+    Tcl_DStringInit(&nsconf.servers);
+    Tcl_InitHashTable(&nsconf.servertable, TCL_STRING_KEYS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitInfo --
+ *
+ *	Initialize the elements of the nsconf structure which may
+ *	require Ns_Log to be initialized first.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitInfo(void)
+{
+    Ns_DString addr;
+
     if (gethostname(nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
         strcpy(nsconf.hostname, "localhost");
     }
     Ns_DStringInit(&addr);
     if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
     	strcpy(nsconf.address, addr.string);
+    } else {
+        Ns_Fatal("could not resolve %s via dns", nsconf.hostname);
     }
     Ns_DStringFree(&addr);
-
-    Tcl_InitHashTable(&nsconf.sections, TCL_STRING_KEYS);
-    Tcl_DStringInit(&nsconf.servers);
-    Tcl_InitHashTable(&nsconf.servertable, TCL_STRING_KEYS);
 }
 
 
