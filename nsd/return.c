@@ -1036,15 +1036,15 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     Ns_DString  ds;
     int	        result;
 
-    if (ReturnRedirect(conn, 401, &result)) {
-	return result;
-    }
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, "Basic realm=\"",
 	connPtr->servPtr->opts.realm, "\"", NULL);
     Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
     Ns_DStringFree(&ds);
 
+    if (ReturnRedirect(conn, 401, &result)) {
+        return result;
+    }
     return Ns_ConnReturnNotice(conn, 401, "Access Denied",
 	"The requested URL cannot be accessed because a "
 	"valid username and password are required.");
