@@ -202,7 +202,7 @@ AdpRun(NsInterp *itPtr, char *file, int argc, char **argv, Tcl_DString *outputPt
     InterpPage *ipagePtr;
     Page *pagePtr, *oldPagePtr;
     Ns_Entry *ePtr;
-    int new, i, len, n;
+    int new, n;
     char *p, *key;
     FileKey ukey;
 

@@ -197,13 +197,12 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnFlushHeaders --
+ * Ns_ConnQueueHeaders --
  *
- *	Send out a well-formed set of HTTP headers with the given 
- *	status. 
+ *	Format basic headers to be sent on the connection.
  *
  * Results:
- *	Number of bytes written. 
+ *	None.
  *
  * Side effects:
  *	See Ns_ConnConstructHeaders. 
@@ -215,7 +214,6 @@ void
 Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
 {
     Conn *connPtr = (Conn *) conn;
-    int result = NS_OK;
 
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
     	connPtr->responseStatus = status;
@@ -226,6 +224,24 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     	conn->flags |= NS_CONN_SENTHDRS;
     }
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnFlushHeaders --
+ *
+ *	Send out a well-formed set of HTTP headers with the given 
+ *	status. 
+ *
+ * Results:
+ *	Number of bytes written. 
+ *
+ * Side effects:
+ *	See Ns_ConnQueueHeaders. 
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
@@ -639,7 +655,6 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
 int
 Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
 {
-    Conn *connPtr = (Conn *) conn;
     int result;
 
     if (len == -1) {

@@ -129,7 +129,7 @@ void *
 Ns_ModuleSymbol(char *file, char *name)
 {
     Tcl_HashEntry *hPtr;
-    Ns_DString     ds, ds2;
+    Ns_DString     ds;
     int		   new;
     void	  *module;
     void          *symbol;

@@ -711,7 +711,6 @@ NsTclConnSendFpCmd(ClientData arg, Tcl_Interp *interp, int argc,
     Ns_Conn     *conn;
     Tcl_Channel	 chan;
     int          len;
-    int		 fpArg = 1, lengthArg = 2;
 
     if (argc != 3 && argc != 4) {
         Tcl_AppendResult(interp, "wrong # of args: should be \"",

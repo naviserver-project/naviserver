@@ -64,7 +64,6 @@ void
 NsBlockSignals(int debug)
 {
     sigset_t set;
-    int i;
 
     /*
      * Block SIGHUP, SIGPIPE, SIGTERM, and SIGINT. This mask is

@@ -573,7 +573,6 @@ CgiSpool(Cgi *cgiPtr, Ns_Conn *conn)
 {
     int     len, fd;
     char   *content, *err;
-    Mod    *modPtr = cgiPtr->modPtr;
 
     err = NULL;
     len = conn->contentLength;

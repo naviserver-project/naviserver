@@ -520,7 +520,6 @@ GetNumArgs(Tcl_Interp *interp, Proc *procPtr)
 {
     Tcl_Obj *objPtr;
     Tcl_DString ds;
-    char *result;
 
     if (procPtr->nargs == ARGS_UNKNOWN) {
     	Tcl_DStringInit(&ds);

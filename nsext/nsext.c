@@ -757,7 +757,6 @@ ExtGetRow(Ns_DbHandle *handle, Ns_Set *row)
     Ns_List             *rowList, *currRow;
     DbProxyInputElement *rowEl;
     int                  trimcnt;
-    int                  trimstate;
 
     assert(handle != NULL);
     nsConn = handle->connection;
@@ -1183,7 +1182,6 @@ ExtSpGetParams(Ns_DbHandle *handle)
     Ns_List             *paramList, *rowList, *currParam, *currRow;
     DbProxyInputElement *rowEl, *paramEl;
     int                  trimcnt;
-    int                  trimstate;
 
     assert(handle != NULL);
     nsConn = handle->connection;
@@ -1304,7 +1302,6 @@ static void
 ExtFreeElement(void *ptr)
 {
     DbProxyInputElement *element;
-    char                *data;
 
     if (ptr != NULL) {
         element = (DbProxyInputElement *) ptr;

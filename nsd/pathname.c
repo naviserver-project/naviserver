@@ -346,7 +346,7 @@ Ns_MakePath(&ds, argv[1], argv[2], argv[3], argv[4], argv[5], NULL);
 static char *
 MakePath(Ns_DString *dest, va_list *pap)
 {
-    char *s, *e;
+    char *s;
     int len;
 
     while ((s = va_arg(*pap, char *)) != NULL) {
