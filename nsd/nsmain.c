@@ -46,29 +46,6 @@ extern char *nsBuildDate;
 #endif
 
 /*
- * Various external init routines.
- */
-
-extern void NsLogOpen(void);
-extern void NsConfInit(void);
-extern void NsInitMimeTypes(void);
-extern void NsInitEncodings(void);
-extern void NsDbInitPools(void);
-extern void NsRunPreStartupProcs(void);
-extern void NsStartServers(void);
-extern void NsStartKeepAlive(void);
-extern void NsForkBinder(void);
-extern void NsStopBinder(void);
-extern void NsBlockSignals(int debug);
-extern void NsHandleSignals(void);
-extern void NsStopDrivers(void);
-extern void NsStopKeepAlive(void);
-extern void NsInitBinder(char *bindargs, char *bindfile);
-extern void NsInitServer(Ns_ServerInitProc *proc, char *server);
-extern char *NsConfigRead(char *file);
-extern void NsConfigEval(char *config, int argc, char **argv, int optind);
-
-/*
  * Local functions defined in this file.
  */
 
