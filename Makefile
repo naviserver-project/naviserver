@@ -62,7 +62,7 @@ install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
-	cd doc && ./install-doc $(AOLSERVER)
+	cd doc && /bin/sh ./install-doc $(AOLSERVER)
 
 clean:
 	@for i in $(dirs); do \
