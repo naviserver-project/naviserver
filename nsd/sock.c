@@ -579,8 +579,6 @@ Ns_ClearSockErrno(void)
 {
 #ifdef WIN32
     SetLastError(0);
-#elif defined(USE_CTHREADS)
-    cthread_set_errno_self(0);
 #else
     errno = 0;
 #endif
@@ -601,8 +599,6 @@ Ns_SetSockErrno(int err)
 {
 #ifdef WIN32
     SetLastError((DWORD) err);
-#elif defined(USE_CTHREADS)
-    cthread_set_errno_self(err);
 #else
     errno = err;
 #endif
