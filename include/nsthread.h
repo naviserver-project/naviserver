@@ -137,6 +137,9 @@ NS_EXTERN int closedir(DIR *dp);
 #ifndef PATH_MAX
 #define PATH_MAX 1024
 #endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
 
 /*
  * Various constants.
