@@ -207,6 +207,93 @@ NsTclServerCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclServerObjCmd --
+ *
+ *	Implement the ns_server Tcl command to return simple statistics
+ *	about the running server.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+		  Tcl_Obj **objv)
+{
+    NsInterp *itPtr = arg;
+    NsServer *servPtr = itPtr->servPtr;
+    char buf[100];
+    Tcl_DString ds;
+    static CONST char *opts[] = {
+	 "active", "all", "connections", "keepalive", "queued",
+	 "threads", "waiting", NULL,
+    };
+    enum {
+	 activeidx, allidx, connectionsidx, keepaliveidx, queuedidx,
+	 threadsidx, waitingidx,
+    };
+    int  idx;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Ns_MutexLock(&servPtr->queue.lock);
+    switch (idx) {
+    case waitingidx:
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(servPtr->queue.wait.num));
+	break;
+
+    case keepaliveidx:
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(nsconf.keepalive.npending));
+	break;
+
+    case connectionsidx:
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(servPtr->queue.nextid));
+	break;
+
+    case threadsidx:
+        sprintf(buf, "min %d", servPtr->threads.min);
+        Tcl_AppendElement(interp, buf);
+        sprintf(buf, "max %d", servPtr->threads.max);
+        Tcl_AppendElement(interp, buf);
+        sprintf(buf, "current %d", servPtr->threads.current);
+        Tcl_AppendElement(interp, buf);
+        sprintf(buf, "idle %d", servPtr->threads.idle);
+        Tcl_AppendElement(interp, buf);
+        sprintf(buf, "stopping 0");
+        Tcl_AppendElement(interp, buf);
+	break;
+
+    case activeidx:
+    case queuedidx:
+    case allidx:
+    	Tcl_DStringInit(&ds);
+	if (idx != queuedidx) {
+	    AppendConnList(&ds, servPtr->queue.active.firstPtr, "running");
+	}
+	if (idx != activeidx) {
+	    AppendConnList(&ds, servPtr->queue.wait.firstPtr, "queued");
+	}
+        Tcl_DStringResult(interp, &ds);
+    }
+    Ns_MutexUnlock(&servPtr->queue.lock);
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsStartServer --
  *
  *	Start the core connection thread interface.

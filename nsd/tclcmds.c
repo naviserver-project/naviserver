@@ -127,6 +127,7 @@ extern Tcl_ObjCmdProc
     NsTclRmdirObjCmd,
     NsTclRollFileObjCmd,
     NsTclSelectObjCmd,
+    NsTclServerObjCmd,
     NsTclShutdownObjCmd,
     NsTclSleepObjCmd,
     NsTclSockAcceptObjCmd,
@@ -618,7 +619,7 @@ static Cmd servCmds[] = {
      * serv.c
      */
 
-    {"ns_server", NsTclServerCmd, NULL},
+    {"ns_server", NsTclServerCmd, NsTclServerObjCmd},
 
     /*
      * Add more server Tcl commands here.
