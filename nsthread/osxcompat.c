@@ -117,6 +117,8 @@ poll (fds, nfds, timeout)
  return ready;
 }
 
+#ifdef NEED_OSXCOMPAT
+
 static pthread_mutex_t rdlock = PTHREAD_MUTEX_INITIALIZER;
 
 int
@@ -311,3 +313,4 @@ gmtime_r(const time_t * clock, struct tm *ptmPtr)
 {
     return tmtime_r(&gmlock, clock, ptmPtr, 1);
 }
+#endif

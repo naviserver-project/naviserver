@@ -248,6 +248,8 @@ ifneq (,$(findstring Darwin,$(uname)))
     CC=cc
     LIBEXT=dylib
     CFLAGS+=-dynamic -traditional-cpp -fno-common -Wall
+    # Comment out the following for 10.2
+    CFLAGS+=-DNEED_OSXCOMPAT
     LDSO=cc -bundle
     LDLIB=cc -dynamiclib -install_name $(AOLSERVER)/lib/$(LIBFILE)
     CFLAGS+=-DUSE_DLSYMPREFIX=1 -DUSE_DYLD=1 \
