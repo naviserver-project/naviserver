@@ -41,9 +41,9 @@
 
 #define NS_MAJOR_VERSION	4
 #define NS_MINOR_VERSION	0
-#define NS_RELEASE_SERIAL	3
+#define NS_RELEASE_SERIAL	5
 #define NS_VERSION		"4.0"
-#define NS_PATCH_LEVEL		"4.0.3"
+#define NS_PATCH_LEVEL		"4.0.5"
 
 #define NS_ALPHA_RELEASE	0
 #define NS_BETA_RELEASE		1
