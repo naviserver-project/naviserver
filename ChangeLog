@@ -1,5 +1,11 @@
 2005-02-27  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/form.c:
+	* nsd/request.c:
+	* nsd/urlencode: Decode + and other characters in URL paths
+	correctly.  Fixes bug #1145277.
+
 	* nsd/mimetypes.c: XML mime types changed to application/xml from
 	text/xml, fixes bug #1145927.  Added a handful of new mime
 	mappings.

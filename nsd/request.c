@@ -364,7 +364,7 @@ SetUrl(Ns_Request * request, char *url)
      * Decode and normalize the URL.
      */
 
-    p = Ns_DecodeUrlCharset(&ds1, url, NULL);
+    p = Ns_UrlPathDecode(&ds1, url, Ns_GetUrlEncoding(NULL));
     if (p == NULL) {
         p = url;
     }

@@ -1215,13 +1215,18 @@ NS_EXTERN int Ns_AbsoluteUrl(Ns_DString *pds, char *url, char *baseurl);
  * urlencode.c:
  */
 
-NS_EXTERN char *Ns_EncodeUrlWithEncoding(Ns_DString *pds, char *string,
+NS_EXTERN Tcl_Encoding Ns_GetUrlEncoding(char *charset);
+NS_EXTERN char *Ns_UrlPathEncode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+NS_EXTERN char *Ns_UrlPathDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+NS_EXTERN char *Ns_UrlQueryEncode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+NS_EXTERN char *Ns_UrlQueryDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+NS_EXTERN char *Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
                                          Tcl_Encoding encoding);
-NS_EXTERN char *Ns_DecodeUrlWithEncoding(Ns_DString *pds, char *string,
+NS_EXTERN char *Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
                                          Tcl_Encoding encoding);
-NS_EXTERN char *Ns_EncodeUrlCharset(Ns_DString *pds, char *string,
+NS_EXTERN char *Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string,
                                     char *charset);
-NS_EXTERN char *Ns_DecodeUrlCharset(Ns_DString *pds, char *string,
+NS_EXTERN char *Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string,
                                     char *charset);
 
 /*

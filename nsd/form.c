@@ -250,10 +250,10 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 	    *v = '\0';
 	}
         Ns_DStringTrunc(&kds, 0);
-	k = Ns_DecodeUrlWithEncoding(&kds, k, encoding);
+	k = Ns_UrlQueryDecode(&kds, k, encoding);
 	if (v != NULL) {
             Ns_DStringTrunc(&vds, 0);
-	    Ns_DecodeUrlWithEncoding(&vds, v+1, encoding);
+	    Ns_UrlQueryDecode(&vds, v+1, encoding);
 	    *v = '=';
 	    v = vds.string;
 	}
