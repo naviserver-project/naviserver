@@ -104,7 +104,7 @@ NsKeepAlive(Ns_Conn *conn)
     if (connPtr->keepAlive != NS_TRUE ||
 	connPtr->drvPtr->detachProc == NULL ||
 	connPtr->drvPtr->sockProc == NULL ||
-	(sock = ((*connPtr->drvPtr->sockProc)(connPtr->drvData))) < 0) {
+	(int) ((sock = ((*connPtr->drvPtr->sockProc)(connPtr->drvData)))) < 0) {
     	return 0;
     }
     drvData = (*connPtr->drvPtr->detachProc)(connPtr->drvData);
