@@ -660,10 +660,7 @@ ConnRun(Conn *connPtr)
 
     NsRunCleanups(conn);
     NsClsCleanup(connPtr);
-    if (connPtr->interp != NULL) {
-        Ns_TclDeAllocateInterp(connPtr->interp);
-	connPtr->interp = NULL;
-    }
+    Ns_FreeConnInterp(conn);
     if (connPtr->authUser != NULL) {
 	ns_free(connPtr->authUser);
 	connPtr->authUser = connPtr->authPasswd = NULL;

@@ -972,6 +972,7 @@ NS_EXTERN int Ns_TclEval(Ns_DString *pds, char *server, char *script);
 NS_EXTERN char *Ns_TclLogError(Tcl_Interp *interp);
 NS_EXTERN char *Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn);
 NS_EXTERN Tcl_Interp *Ns_GetConnInterp(Ns_Conn *conn);
+NS_EXTERN void Ns_FreeConnInterp(Ns_Conn *conn);
 
 /*
  * tclset.c:
