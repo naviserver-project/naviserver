@@ -563,7 +563,7 @@ badargs:
     adPtr = NsAdpGetData();
     ++adPtr->evalLevel;
     PushFrame(&frame, NULL, argc-1, argv+1);
-    Parse(NULL, &ds, argv[1]);
+    (*parserProc)(&ds, argv[1]);
     code = NsAdpEval(interp, cmd, ds.string);
     if (adPtr->output.length > frame.length) {
 	Tcl_SetResult(interp, adPtr->output.string + frame.length,
