@@ -833,7 +833,7 @@ AllowDenyCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv, int all
 	Tcl_InitHashTable(&permPtr->denygroup, TCL_STRING_KEYS);
 	Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
     }
-    permPtr->implicit_allow = allow;
+    permPtr->implicit_allow = !allow;
     if (user) {
 	if (allow) {
             (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &new);
