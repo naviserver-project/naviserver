@@ -215,6 +215,54 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
 
 /*
  *----------------------------------------------------------------------
+ * Ns_DStringPop --
+ *
+ *      Allocate a new dstring.
+ *
+ * Results:
+ *	Pointer to Ns_DString.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_DString *
+Ns_DStringPop(void)
+{
+    Ns_DString *dsPtr;
+
+    dsPtr = ns_malloc(sizeof(Ns_DString));
+    Ns_DStringInit(dsPtr);
+    return dsPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * Ns_DStringPush --
+ *
+ *      Free a dstring.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_DStringPush(Ns_DString *dsPtr)
+{
+    Ns_DStringFree(dsPtr);
+    ns_free(dsPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
  * Compatibility routines --
  *
  *	Wrappers for old Ns_DString functions.
