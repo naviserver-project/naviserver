@@ -58,6 +58,6 @@ do
 		chmod 444 $o
 	done
 	echo Cross-linking $n manpages in $d...
-	./mkLinks $d
+	/bin/sh ./mkLinks $d
 done
 exit 0
