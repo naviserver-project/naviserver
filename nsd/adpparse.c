@@ -348,14 +348,11 @@ ParseAtts(char *s, char *e, int *servPtr, Tcl_DString *attsPtr)
 		++s;
 	    }
 	    ve = s;
-	    if (*vs == '=') {
-		end = '=';
-	    } else if (*vs == '\'') {
-		end = '\'';
-	    } else {
+	    end = *vs;
+	    if (end != '=' && end != '\'' && end != '"') {
 		end = 0;
 	    }
-	    if (end != 0 && ve > vs && ve[-1] == end) {
+	    if (end && ve > vs && ve[-1] == end) {
 		++vs;
 		--ve;
 	    }
