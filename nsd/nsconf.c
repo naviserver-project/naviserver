@@ -66,6 +66,9 @@ NsConfInit(void)
     int i;
     Ns_DString ds;
     
+    Ns_DStringInit(&ds);
+
+    Ns_MutexSetName(&nsconf.state.lock, "nsconf:state");
     Tcl_DStringInit(&nsconf.servers);
 
     /*
@@ -84,10 +87,37 @@ NsConfInit(void)
     /*
      * log.c
      */
-     
-    nsconf.log.expanded = GetBool("logexpanded", LOG_EXPANDED_BOOL);
-    nsconf.log.debug    = GetBool("debug", LOG_DEBUG_BOOL);
+    
+    if (GetBool("logroll", LOG_ROLL_BOOL)) {
+	nsconf.log.flags |= LOG_ROLL;
+    }
+    if (GetBool("logbuffered", LOG_BUFFER_BOOL)) {
+	nsconf.log.flags |= LOG_BUFFER;
+    }
+    if (GetBool("logexpanded", LOG_EXPANDED_BOOL)) {
+	nsconf.log.flags |= LOG_EXPAND;
+    }
+    if (GetBool("debug", LOG_DEBUG_BOOL)) {
+	nsconf.log.flags |= LOG_DEBUG;
+    }
+    if (GetBool("logdev", LOG_DEV_BOOL)) {
+	nsconf.log.flags |= LOG_DEV;
+    }
+    if (!GetBool("lognotice", LOG_NOTICE_BOOL)) {
+	nsconf.log.flags |= LOG_NONOTICE;
+    }
+    nsconf.log.maxlevel = GetInt("maxloglevel", LOG_MAXLEVEL_INT);
     nsconf.log.maxback  = GetInt("maxbackup", LOG_MAXBACK_INT);
+    nsconf.log.maxbuffer  = GetInt("maxlogbuffer", LOG_MAXBUFFER_INT);
+    nsconf.log.flushint  = GetInt("logflushinterval", LOG_FLUSHINT_INT);
+    nsconf.log.file = Ns_ConfigGet(NS_CONFIG_PARAMETERS, "serverlog");
+    if (nsconf.log.file == NULL) {
+	nsconf.log.file = "server.log";
+    }
+    if (Ns_PathIsAbsolute(nsconf.log.file) == NS_FALSE) {
+	Ns_HomePath(&ds, "log", nsconf.log.file, NULL);
+	nsconf.log.file = Ns_DStringExport(&ds);
+    }
 
     /*
      * nsmain.c
@@ -141,7 +171,6 @@ NsConfInit(void)
      * tclinit.c
      */
      
-    Ns_DStringInit(&ds);
     Ns_HomePath(&ds, "modules", "tcl", NULL);
     nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
     

@@ -518,7 +518,11 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
 #endif
 
-    Ns_MutexSetName2(&nsconf.state.lock, "nsconf", "state");
+    /*
+     * Update core config values.
+     */
+
+    NsConfInit();
 
     /*
      * Open the log file now that the home directory and runtime
@@ -573,7 +577,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Initialize the core.
      */
 
-    NsConfInit();
     NsInitMimeTypes();
     NsInitEncodings();
     NsCreatePidFile(procname);

@@ -71,6 +71,8 @@ NsGetTls(void)
 	tlsPtr = ns_malloc(sizeof(NsTls));
 	Tcl_InitHashTable(&tlsPtr->db.owned, TCL_STRING_KEYS);
 	Tcl_InitHashTable(&tlsPtr->tcl.interps, TCL_STRING_KEYS);
+	tlsPtr->tfmt.gtime = tlsPtr->tfmt.ltime = 0;
+	tlsPtr->tfmt.gbuf[0] = tlsPtr->tfmt.lbuf[0] = '\0';
 	Ns_TlsSet(&tls, tlsPtr);
     }
     return tlsPtr;
