@@ -100,7 +100,7 @@ static Request *firstReqPtr;/* Free list of request structures. */
 static Ns_Mutex reqLock;    /* Lock around request free list. */
 static Sock *firstSockPtr;  /* Free list of Sock structures. */
 static int shutdownPending; /* Flag to indicate shutdown. */
-static int stopped = 1;	    /* Flag to indicate running. */
+static int stopped;	    /* Flag to indicate driver thread stopped. */
 static int nactive;	    /* Active sockets. */
 static Ns_Thread driverThread;/* Running DriverThread. */
 static SOCKET trigPipe[2];  /* Trigger to wakeup DriverThread. */
