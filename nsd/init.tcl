@@ -320,7 +320,8 @@ proc _ns_sourcefiles {shared private} {
 
 proc _ns_sourcefile {file} {
     if {[catch {source $file} err]} {
-        ns_log error "tcl: source $file failed: $err"
+        global errorInfo errorCode
+        ns_log error "tcl: source $file failed: $err\n$errorCode\n$errorInfo"
     }
 }
 
