@@ -1151,7 +1151,7 @@ NsTclConnCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
 
     } else if (STREQ(argv[1], "start")) {
-	sprintf(buf, "%d", connPtr->startTime.sec);
+	sprintf(buf, "%ld", connPtr->startTime.sec);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
 
     } else if (STREQ(argv[1], "close")) {

@@ -193,9 +193,9 @@ NsEnableDNSCache(int timeout, int maxentries)
     Ns_MutexLock(&lock);
     cachetimeout = timeout;
     hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
-	maxentries, ns_free);
+	(size_t) maxentries, ns_free);
     addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
-	maxentries, ns_free);
+	(size_t) maxentries, ns_free);
     Ns_MutexUnlock(&lock);
 }
 
