@@ -322,7 +322,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             break;
 	
         case SSplitIdx:
-	    if ((i - objc) < 1) {
+	    if ((objc - i) < 1) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?-shared? setId ?splitChar");
 		return TCL_ERROR;
             }
