@@ -851,6 +851,7 @@ NS_EXTERN char *Ns_InfoServerName(void);
 NS_EXTERN char *Ns_InfoServerVersion(void);
 NS_EXTERN char *Ns_InfoConfigFile(void);
 NS_EXTERN int Ns_InfoPid(void);
+NS_EXTERN char *Ns_InfoNameOfExecutable(void);
 NS_EXTERN char *Ns_InfoPlatform(void);
 NS_EXTERN int Ns_InfoUptime(void);
 NS_EXTERN int Ns_InfoBootTime(void);

@@ -52,7 +52,7 @@ static void StatusMsg(int state);
 static char *FindConfig(char *config);
 
 /*
- * The follwing global variable specifies the name
+ * The following global variable specifies the name
  * of the single running server.
  */
  
@@ -256,7 +256,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 	    break;
         case 's':
 	    if (nsServer != NULL) {
-		UsageError("multple -s <server> options");
+		UsageError("multiple -s <server> options");
 	    }
 	    nsServer = optarg;
             break;
@@ -854,6 +854,29 @@ int
 Ns_InfoPid(void)
 {
     return nsconf.pid;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_InfoNameOfExecutable --
+ *
+ *	Returns the name of the nsd executable.  Quirky name is from Tcl.
+ *
+ * Results:
+ *	Name of executable, string.
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_InfoNameOfExecutable(void)
+{
+    return nsconf.nsd;
 }
 
 
