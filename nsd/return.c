@@ -470,7 +470,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length)
     if (type != NULL) {
     	Ns_ConnSetTypeHeader(conn, type);
     }
-    if (length > 0) {
+    if (length >= 0) {
 	Ns_ConnSetLengthHeader(conn, length);
     }
 
