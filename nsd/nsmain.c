@@ -599,7 +599,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsRunPreStartupProcs();
     NsStartServers();
-    NsStartKeepAlive();
 
     /*
      * Signal startup is complete.
@@ -632,7 +631,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * ready.
      */
 
-    NsStartDrivers(server);
+    NsStartDrivers();
 #ifndef WIN32
     NsStopBinder();
 #endif
@@ -667,7 +666,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     NsStopDrivers();
-    NsStopKeepAlive();
     NsStopServers(&timeout);
 
     /*
