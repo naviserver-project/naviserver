@@ -62,7 +62,7 @@ static int AtCmd(AtProc *procPtr, Tcl_Interp *interp, int argc, char **argv);
  *
  * NsTclAt --
  *
- *	Implements ns_atsignal, ns_atshutdown, and ns_atexit commands.
+ *	Implements ns_atstartup, ns_atsignal, ns_atshutdown, and ns_atexit commands.
  *
  * Results:
  *	Tcl result. 
@@ -92,6 +92,12 @@ AtCmd(AtProc *procPtr, Tcl_Interp *interp, int argc, char **argv)
     return TCL_OK;
 }
     
+int
+NsTclAtStartupCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+{
+    return AtCmd(Ns_RegisterAtStartup, interp, argc, argv);
+}
+
 int
 NsTclAtSignalCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 {

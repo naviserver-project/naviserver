@@ -37,11 +37,13 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-ns_atclose, ns_atexit, ns_atshutdown, ns_atsignal \- commands
+ns_atclose, ns_atexit, ns_atstartup, ns_atshutdown, ns_atsignal \- commands
 .SH SYNOPSIS
 \fBns_atclose \fIoption \fR?\fIarg arg ...\fR?
 .sp
 \fBns_atexit \fIoption \fR?\fIarg arg ...\fR?
+.sp
+\fBns_atstartup \fIoption \fR?\fIarg arg ...\fR?
 .sp
 \fBns_atshutdown \fIoption \fR?\fIarg arg ...\fR?
 .sp
@@ -50,7 +52,17 @@ ns_atclose, ns_atexit, ns_atshutdown, ns_atsignal \- commands
 
 .SH DESCRIPTION
 .PP
-These commands...
+ns_atclose will run Tcl command at each connection close.
+.PP
+ns_atexit will run Tcl command at server exit
+.PP
+ns_atstartup will run Tcl command just after server started and initialized, 
+so all Tcl namespaces and proc are already available.
+.PP
+ns_atsignal will run Tcl command when a signal arrives
+.PP
+ns_atshutdown will run Tcl command just before server is about to shutdown
+.PP
 
 .SH "SEE ALSO"
 nsd(1), info(n)
