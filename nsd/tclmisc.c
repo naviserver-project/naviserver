@@ -551,7 +551,7 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
     if (Tcl_GetLongFromObj(interp, objv[1], &time) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (objv[2] != NULL) {
+    if (objc > 2) {
         fmt = Tcl_GetString(objv[2]);
     } else {
         fmt = "%c";
