@@ -116,8 +116,8 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     if (first) {
-	Ns_RegisterProcInfo(LogRollCallback, "logroll", LogArg);
-	Ns_RegisterProcInfo(LogCloseCallback, "logclose", LogArg);
+	Ns_RegisterProcInfo((void *)LogRollCallback, "logroll", LogArg);
+	Ns_RegisterProcInfo((void *)LogCloseCallback, "logclose", LogArg);
 	first = 0;
     }
 
