@@ -1,3 +1,9 @@
+2005-03-27  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tlrequest.c: In Ns_RegisterFilterObj command 'when'
+	  was not initialized with 0 and because this is Ored flags
+	  registered filters had incorrect mask.
+
 2005-03-26  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

@@ -240,7 +240,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     NsInterp        *itPtr = arg;
     Ns_TclCallback  *cbPtr;
     char            *method, *urlPattern, *script, *scriptarg = "";
-    int              when;
+    int              when = 0;
 
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},
