@@ -1730,7 +1730,7 @@ KeyMaterial(SSLConn * con, unsigned char *dest, char *num)
     }
 
     if (num != NULL &&
-	B_DigestUpdate(con->digester, num,
+	B_DigestUpdate(con->digester, (unsigned char *)num,
 		       strlen(num), NULL) != 0) {
 	return NS_ERROR;
     }

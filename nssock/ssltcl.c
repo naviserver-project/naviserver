@@ -149,13 +149,12 @@ Nsssle_Init(Tcl_Interp *interp)
     Ns_Log(Notice, "nsssl: "
 	   "40-bit export encryption version starting in stand-alone mode");
     InitCommands(interp);
+    return TCL_OK;
 #else
     Ns_Log(Fatal, "nsssl: "
 	   "128-bit domestic encryption not supported by this module");
     return TCL_ERROR;
 #endif    
-
-    return TCL_OK;
 }
 
 
@@ -186,9 +185,8 @@ Nsssl_Init(Tcl_Interp *interp)
     Ns_Log(Notice, "nsssl: "
 	   "128-bit domestic encryption version starting in stand-alone mode");
     InitCommands(interp);
-#endif
-    
     return TCL_OK;
+#endif
 }
 
 
