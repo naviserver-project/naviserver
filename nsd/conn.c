@@ -1441,7 +1441,7 @@ badconn:
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
 	} else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
-	    strcpy(interp->result, itPtr->nsconn.hdrs);
+	    strcpy(itPtr->nsconn.hdrs, interp->result);
 	    itPtr->nsconn.flags |= CONN_TCLHDRS;
 	}
 
@@ -1450,7 +1450,7 @@ badconn:
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
 	} else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
-	    strcpy(interp->result, itPtr->nsconn.outhdrs);
+	    strcpy(itPtr->nsconn.outhdrs, interp->result);
 	    itPtr->nsconn.flags |= CONN_TCLOUTHDRS;
 	}
 
