@@ -2,13 +2,13 @@
 # $Header$
 
 #
-# nsd.tcl --  The AOLserver Startup Script
+# sample-config.tcl --  The AOLserver Startup Script
 #
 #      This is a Tcl script that is sourced when AOLserver starts up.
 #      A detailed reference is in "doc/config.txt".
 #
 
-ns_log notice "nsd.tcl: starting to read config file..."
+ns_log notice "config.tcl: starting to read config file..."
 
 
 #
@@ -195,7 +195,7 @@ ns_param   nslog           ${bindir}/nslog${ext}
 if { [file exists $sslcertfile] && [file exists $sslkeyfile] } {
     ns_param nsssl ${bindir}/${sslmodule}
 } else {
-    ns_log warning "nsd.tcl: nsssl not loaded -- key/cert files do not exist."
+    ns_log warning "config.tcl: nsssl not loaded -- key/cert files do not exist."
 }
 
 #
@@ -205,12 +205,12 @@ if { $nscp_user != "" } {
 
     if ![string match "127.0.0.1" $nscp_addr] {
 	# Anything but 127.0.0.1 is not recommended.
-	ns_log warning "nsd.tcl: nscp listening on ${nscp_addr}:${nscp_port}"
+	ns_log warning "config.tcl: nscp listening on ${nscp_addr}:${nscp_port}"
     }
     ns_param nscp ${bindir}/nscp${ext}
 
 } else {
-    ns_log warning "nsd.tcl: nscp not loaded -- user/password is not set."
+    ns_log warning "config.tcl: nscp not loaded -- user/password is not set."
 }
 
-ns_log notice "nsd.tcl: finished reading config file."
+ns_log notice "config.tcl: finished reading config file."
