@@ -71,13 +71,16 @@ static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
 int
 Ns_ConnWrite(Ns_Conn *conn, void *vbuf, int towrite)
 {
+    Ns_Buf buf;
     Conn *connPtr = (Conn *) conn;
     int nwrote;
     
     if (connPtr->sockPtr == NULL) {
 	nwrote = -1;
     } else {
-	nwrote = NsSockSend(connPtr->sockPtr, vbuf, towrite);
+	buf.buf = vbuf;
+	buf.len = towrite;
+	nwrote = NsSockSend(connPtr->sockPtr, &buf, 1);
     	if (nwrote > 0 && (conn->flags & NS_CONN_SENTHDRS)) {
             connPtr->nContentSent += nwrote;
     	}

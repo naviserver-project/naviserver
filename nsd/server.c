@@ -344,6 +344,16 @@ NsInitServer(Ns_ServerInitProc *initProc, char *server)
     servPtr->job.threads.max = i;
 
     /*
+     * Initialize Tcl HTTP requests.
+     */
+
+    Tcl_InitHashTable(&servPtr->http.ids, TCL_STRING_KEYS);
+    Ns_MutexInit(&servPtr->http.lock);
+    Ns_MutexSetName2(&servPtr->http.lock, "ns:http", server);
+    Ns_CondInit(&servPtr->http.cond);
+    servPtr->http.next = 0;
+
+    /*
      * Initialize the fastpath.
      */
      
