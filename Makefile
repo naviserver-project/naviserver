@@ -33,7 +33,7 @@
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nsssl nscgi nscp nslog nsperm nsdb nsext nspd
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsext nspd
 
 all: 
 	@for i in $(dirs); do \

@@ -49,7 +49,6 @@
 #
 
 set httpport               8000
-set httpsport              8443
 
 # The hostname and address should be set to actual values.
 set hostname               [ns_info hostname]
@@ -64,12 +63,6 @@ set bindir                 [file dirname [ns_info nsd]]
 set pageroot               ${homedir}/servers/${servername}/pages
 set directoryfile          index.adp,index.html,index.htm,index.xhtml,index.xht
 
-# nsssl: Only loads if keyfile.pem and certfile.pem exist.
-#set sslmodule              nsssl.so  ;# Domestic 128-bit/1024-bit SSL.
-set sslmodule              nsssle.so ;# Exportable 40-bit/512-bit SSL.
-set sslkeyfile   ${homedir}/servers/${servername}/modules/nsssl/keyfile.pem
-set sslcertfile  ${homedir}/servers/${servername}/modules/nsssl/certfile.pem
-
 #
 # Global server parameters
 #
@@ -78,18 +71,18 @@ ns_param   home            $homedir
 ns_param   debug           false
 
 #
-#         I18N Parameters
+# I18N Parameters
 #
-#ns_param HackContentType false       ;# automatic adjustment of response
-                                       # content-type header to include charset
-                                       # This defaults to True.
-ns_param  OutputCharset  iso8859-1    ;# Default output charset.  When none specified,
-                                       # no character encoding of output is performed.
-ns_param  URLCharset     iso8859-1    ;# Default Charset for Url Encode/Decode.
-                                       # When none specified, no character set encoding
-                                       # is performed.
+#ns_param HackContentType false      ;# automatic adjustment of response
+                                      # content-type header to include charset
+                                      # This defaults to True.
+ns_param  OutputCharset  iso8859-1   ;# Default output charset.  When none specified,
+                                      # no character encoding of output is performed.
+ns_param  URLCharset     iso8859-1   ;# Default Charset for Url Encode/Decode.
+                                      # When none specified, no character set encoding
+                                      # is performed.
 #ns_param  PreferredCharsets { utf-8 iso8859-1 } ;# This parameter supports output
-                                       # encoding arbitration.
+                                      # encoding arbitration.
 
 #
 # MIME types.
@@ -103,11 +96,13 @@ ns_param   noextension     "*/*"     ;# MIME type for missing extension.
 #ns_param   ".xls"          "application/vnd.ms-excel"
 
 #
-#   I18N Mime-types; define content-type header values
-#                    to be mapped from these file-types.
-#                    Note that you can map file-types of adp files to control
-#                    the output encoding through mime-type specificaion.
-#                    Remember to add an adp mapping for that extension.
+# I18N Mime-types
+#
+# Define content-type header values to be mapped from these file-types.
+# 
+# Note that you can map file-types of adp files to control
+# the output encoding through mime-type specificaion.
+# Remember to add an adp mapping for that extension.
 #
 ns_param   .adp            "text/html; charset=iso-8859-1"
 ns_param   .u_adp          "text/html; charset=UTF-8"
@@ -156,7 +151,6 @@ ns_section "ns/threads"
 ns_section "ns/servers"
 ns_param   $servername     $serverdesc
 
-
 #
 # Server parameters
 #
@@ -186,12 +180,13 @@ ns_param   enabletclpages  false     ;# Parse *.tcl files in pageroot.
 #ns_param   minthreads      0         ;# Tune this to scale your server
 #ns_param   threadtimeout   120       ;# Idle threads die at this rate
 
+
 #
 # ADP (AOLserver Dynamic Page) configuration
 #
 ns_section "ns/server/${servername}/adp"
 ns_param   map             "/*.adp"  ;# Extensions to parse as ADP's.
-#   I18N Note: will need to define I18N specifying mappings of ADP's here as well.
+# I18N Note: will need to define I18N specifying mappings of ADP's here as well.
 ns_param   map             "/*.u_adp"
 ns_param   map             "/*.gb_adp"
 ns_param   map             "/*.sjis_adp"
@@ -211,31 +206,10 @@ ns_param   port            $httpport
 ns_param   hostname        $hostname
 ns_param   address         $address
 
-                                         # Socket driver logging controls.
-                                         # Default is no logging.
-#ns_param   readtimeoutlogging    true  ;# Timed-out waiting for complete
-                                         # request.
-#ns_param   serverrejectlogging   true  ;# Unable to match request to a virtual
-                                         # server.
-#ns_param   sockerrorlogging      true  ;# Malformed request, or would exceed
-                                         # request limits.
-#ns_param   sockshuterrorlogging  true  ;# Error while attempting to shutdown
-                                         # a socket during connection close.
 
 #
-# Socket driver module (HTTPS) -- nsssl
+# Socket driver logging controls. Default is no logging.
 #
-#  nsssl does not load unless sslkeyfile/sslcertfile exist (above).
-#
-ns_section "ns/server/${servername}/module/nsssl"
-ns_param   port            $httpsport
-ns_param   hostname        $hostname
-ns_param   address         $address
-ns_param   keyfile         $sslkeyfile
-ns_param   certfile        $sslcertfile
-
-                                         # Socket driver logging controls.
-                                         # Default is no logging.
 #ns_param   readtimeoutlogging    true  ;# Timed-out waiting for complete
                                          # request.
 #ns_param   serverrejectlogging   true  ;# Unable to match request to a virtual
@@ -276,8 +250,8 @@ ns_param   certfile        $sslcertfile
 #
 # Example:
 #
-#    ns_section "ns/server/${servername}/fastpath"
-#        ns_param directorylisting fancy
+#     ns_section "ns/server/${servername}/fastpath"
+#     ns_param directorylisting fancy
 #
 # See also:
 #
@@ -286,7 +260,39 @@ ns_param   certfile        $sslcertfile
 
 
 #
-# Example:  Control port configuration.
+# Access log -- nslog
+#
+ns_section "ns/server/${servername}/module/nslog"
+ns_param   rolllog         true      ;# Should we roll log?
+ns_param   rollonsignal    true      ;# Roll log on SIGHUP.
+ns_param   rollhour        0         ;# Time to roll log.
+ns_param   maxbackup       5         ;# Max number to keep around when rolling.
+ns_param   logreqtime      true      ;# Log the execution time of request
+
+
+#
+# CGI interface -- nscgi
+#
+#  WARNING: These directories must not live under pageroot.
+#
+ns_section "ns/server/${servername}/module/nscgi"
+#ns_param   map "GET  /cgi /usr/local/cgi"     ;# CGI script file dir (GET).
+#ns_param   map "POST /cgi /usr/local/cgi"     ;# CGI script file dir (POST).
+
+
+#
+# Modules to load
+#
+
+ns_section "ns/server/${servername}/modules"
+    ns_param nssock ${bindir}/nssock.so
+    ns_param nslog ${bindir}/nslog.so
+    #ns_param nscgi ${bindir}/nscgi.so
+    #ns_param nsperm ${bindir}/nsperm.so
+
+
+#
+# Example: Control port configuration.
 #
 # To enable:
 #  
@@ -332,45 +338,6 @@ ns_param   certfile        $sslcertfile
 #    ns_param nscp ${bindir}/nscp.so
 #
 
-#
-# Access log -- nslog
-#
-ns_section "ns/server/${servername}/module/nslog"
-ns_param   rolllog         true      ;# Should we roll log?
-ns_param   rollonsignal    true      ;# Roll log on SIGHUP.
-ns_param   rollhour        0         ;# Time to roll log.
-ns_param   maxbackup       5         ;# Max number to keep around when rolling.
-ns_param   logreqtime      true      ;# Log the execution time of request
-
-
-#
-# CGI interface -- nscgi
-#
-#  WARNING: These directories must not live under pageroot.
-#
-ns_section "ns/server/${servername}/module/nscgi"
-#ns_param   map "GET  /cgi /usr/local/cgi"     ;# CGI script file dir (GET).
-#ns_param   map "POST /cgi /usr/local/cgi"     ;# CGI script file dir (POST).
-
-
-#
-# Modules to load
-#
-
-ns_section "ns/server/${servername}/modules"
-    ns_param nssock ${bindir}/nssock.so
-    ns_param nslog ${bindir}/nslog.so
-    #ns_param nscgi ${bindir}/nscgi.so
-    #ns_param nsperm ${bindir}/nsperm.so
-
-#
-# nsssl: Only loads if sslcertfile and sslkeyfile exist (see above).
-#
-if { [file exists $sslcertfile] && [file exists $sslkeyfile] } {
-    ns_param nsssl ${bindir}/${sslmodule}
-} else {
-    ns_log warning "config.tcl: nsssl not loaded -- key/cert files do not exist."
-}
 
 #
 # Example: Host headers based virtual servers.
@@ -395,6 +362,7 @@ if { [file exists $sslcertfile] && [file exists $sslkeyfile] } {
 #ns_section "ns/module/nssock/servers"
 #    ns_param   server1         $hostname:$httpport
 #
+
 
 #
 # Example:  Multiple connection thread pools.
@@ -423,6 +391,7 @@ if { [file exists $sslcertfile] && [file exists $sslkeyfile] } {
 #ns_param map {GET /faststuff.adp}
 #ns_param maxthreads 10
 #
+
 
 #
 # Example:  Web based stats interface.

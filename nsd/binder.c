@@ -113,7 +113,6 @@ Ns_SockListenEx(char *address, int port, int backlog)
 void
 NsInitBinder(void)
 {
-    Ns_MutexSetName(&lock, "ns:binder");
     Tcl_InitHashTable(&prebound, sizeof(struct sockaddr_in)/sizeof(int));
 }
 

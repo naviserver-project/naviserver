@@ -57,6 +57,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  */
 
 static int NoServer(Tcl_Interp *interp);
+static int BadArgs(Tcl_Interp *interp, char **argv, char *args);
 static int LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr);
 static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int delete,
 			Ns_Set **setPtr);
@@ -776,6 +777,32 @@ LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr)
     }
     *setPtr = set;
     return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadArgs --
+ *
+ *	Complain that the wrong # args were recieved. 
+ *
+ * Results:
+ *	TCL result. 
+ *
+ * Side effects:
+ *	Error message appended to interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BadArgs(Tcl_Interp *interp, char **argv, char *args)
+{
+    Tcl_AppendResult(interp, "wrong # of args: should be \"",
+        argv[0], " ", argv[1], " ", args, "\"", NULL);
+
+    return TCL_ERROR;
 }
 
 static int

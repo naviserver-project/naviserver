@@ -179,7 +179,7 @@ Ns_ConnContent(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return connPtr->content;
+    return connPtr->reqPtr->content;
 }
 
 
@@ -305,7 +305,7 @@ Ns_ConnPeer(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
 
-    return connPtr->peer;
+    return connPtr->reqPtr->peer;
 }
 
 
@@ -330,7 +330,7 @@ Ns_ConnPeerPort(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
 
-    return connPtr->port;
+    return connPtr->reqPtr->port;
 }
 
 
@@ -565,7 +565,7 @@ Ns_ConnStartTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return &connPtr->times.queue;
+    return &connPtr->startTime;
 }
 
 
@@ -1030,7 +1030,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 		GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (Tcl_Write(chan, connPtr->content + off, len) != len) {
+	    if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
 		Tcl_AppendResult(interp, "could not write ", Tcl_GetString(objv[3]), " bytes to ",
 		    Tcl_GetString(objv[4]), ": ", Tcl_PosixError(interp), NULL);
 		return TCL_ERROR;
@@ -1118,7 +1118,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    break;
 
 	case CStartIdx:
-	    Ns_TclSetTimeObj(result, &connPtr->times.queue);
+	    Ns_TclSetTimeObj(result, &connPtr->startTime);
 	    break;
 
 	case CCloseIdx:
@@ -1338,11 +1338,11 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr, int *
 	Tcl_GetIntFromObj(interp, objv[1], &len) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (off < 0 || off > connPtr->contentLength) {
+    if (off < 0 || off > connPtr->reqPtr->length) {
 	Tcl_AppendResult(interp, "invalid offset: ", Tcl_GetString(objv[0]), NULL);
 	return TCL_ERROR;
     }
-    if (len < 0 || len > (connPtr->contentLength - off)) {
+    if (len < 0 || len > (connPtr->reqPtr->length - off)) {
 	Tcl_AppendResult(interp, "invalid length: ", Tcl_GetString(objv[1]), NULL);
 	return TCL_ERROR;
     }
