@@ -256,13 +256,18 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     /*
      * Append the peer address and auth user (if any).
+     * Watch for users comming from proxy servers. 
      */
 
-    Ns_DStringAppend(&ds, Ns_ConnPeer(conn));
-    if (conn->authUser == NULL) {
-    	Ns_DStringAppend(&ds, " - - ");
+    if ((p = Ns_SetIGet(conn->headers, "X-Forwarded-For"))) {
+	Ns_DStringAppend(&ds, p);
     } else {
-    	p = conn->authUser;
+ 	Ns_DStringAppend(&ds, Ns_ConnPeer(conn));
+    }
+    if (conn->authUser == NULL) {
+	Ns_DStringAppend(&ds, " - - ");
+    } else {
+	p = conn->authUser;
 	quote = 0;
 	while (*p != '\0') {
 	    if (isspace((unsigned char) *p)) {
