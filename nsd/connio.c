@@ -151,7 +151,7 @@ Ns_ConnSend(Ns_Conn *conn, Ns_Buf *bufs, int nbufs)
 		    bufs[i].ns_buf = NULL;
 		    bufs[i].ns_len = 0;
 		} else {
-		    bufs[i].ns_buf += n;
+		    bufs[i].ns_buf = (char *) bufs[i].ns_buf + n;
 		    bufs[i].ns_len -= n;
 		    n = 0;
 		}
