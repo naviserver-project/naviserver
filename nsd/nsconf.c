@@ -234,7 +234,8 @@ NsConfInit(void)
     if (nsconf.serv.maxurlstats > 0 && GetBool(path, "urlstats", 0)) {
 	nsconf.serv.stats |= STATS_PERURL;
     }
-    
+    nsconf.serv.errorminsize = GetInt(path,  "errorminsize", 514);
+    nsconf.serv.noticedetail = GetBool(path, "noticedetail", 1);
 
     /*
      * ConnsPerThread specifies the maximum number of connections for
