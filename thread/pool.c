@@ -616,10 +616,17 @@ GetBlocks(Pool *poolPtr, int bucket)
 
 	if (blockPtr == NULL) {
 	    size = MAXALLOC;
+#ifdef WIN32
 	    blockPtr = malloc(size);
 	    if (blockPtr == NULL) {
 		return 0;
 	    }
+#else
+	    blockPtr = sbrk(size);
+	    if (blockPtr == (Block *) -1) {
+		return 0;
+	    }
+#endif
 	}
 
 	/*
