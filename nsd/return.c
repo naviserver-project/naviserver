@@ -95,7 +95,7 @@ static struct {
     {413, "Request Entity Too Large"},
     {414, "Request-URI Too Long"},
     {415, "Unsupported Media Type"},
-    {416, "Requested range not satisfiable"},
+    {416, "Requested Range Not Satisfiable"},
     {417, "Expectation Failed"},
     {423, "Locked"},
     {500, "Internal Server Error"},
