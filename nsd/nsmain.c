@@ -453,7 +453,7 @@ Ns_Main(int argc, char **argv)
      */
 
     NsStartDrivers();
-    NsClosePreBindBinder();
+    NsClosePreBound();
 
     /*
      * Once the drivers listen thread is started, this thread will just
