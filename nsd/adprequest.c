@@ -365,7 +365,7 @@ AdpFlush(NsInterp *itPtr, int stream)
 	if (itPtr->servPtr->adp.enableexpire) {
 	    Ns_ConnCondSetHeaders(conn, "Expires", "now");
 	}
-	Ns_ConnSetRequiredHeaders(conn, type, stream ? 0 : len);
+	Ns_ConnSetRequiredHeaders(conn, type, stream ? -1 : len);
 	Ns_ConnQueueHeaders(conn, 200);
     }
 
