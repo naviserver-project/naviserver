@@ -268,9 +268,11 @@ AdpRun(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[],
     int new, n;
     char *p, *key;
     FileKey ukey;
+    int status;
 
     ipagePtr = NULL;
-    pagePtr = NULL;    
+    pagePtr = NULL; 
+    status = TCL_ERROR;   /* assume error until accomplished success */
     Ns_DStringInit(&tmp);
     Ns_DStringInit(&path);
     key = (char *) &ukey;
@@ -423,7 +425,7 @@ AdpRun(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[],
          
     if (ipagePtr != NULL) {
     	PushFrame(itPtr, &frame, file, objc, objv, outputPtr);
-	AdpEval(itPtr, &ipagePtr->pagePtr->code, ipagePtr->objs);
+	status = AdpEval(itPtr, &ipagePtr->pagePtr->code, ipagePtr->objs);
     	PopFrame(itPtr, &frame);
 	Ns_MutexLock(&servPtr->adp.pagelock);
 	++ipagePtr->pagePtr->evals;
@@ -436,7 +438,7 @@ AdpRun(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[],
 done:
     Ns_DStringFree(&path);
     Ns_DStringFree(&tmp);
-    return TCL_OK;
+    return status;
 }
 
 
