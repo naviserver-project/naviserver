@@ -62,6 +62,12 @@ extern Tcl_ObjCmdProc
     NsTclAdpStreamObjCmd,
     NsTclAdpMimeTypeObjCmd,
     NsTclAdpCompressObjCmd,
+    NsTclAfterObjCmd,
+    NsTclAtExitObjCmd,
+    NsTclAtStartupObjCmd,
+    NsTclAtShutdownObjCmd,
+    NsTclAtSignalObjCmd,
+    NsTclCancelObjCmd,
     NsTclChanObjCmd,
     NsTclChmodObjCmd,
     NsTclCondObjCmd,
@@ -113,6 +119,7 @@ extern Tcl_ObjCmdProc
     NsTclParseArgsObjCmd,
     NsTclParseHttpTimeObjCmd,
     NsTclParseQueryObjCmd,
+    NsTclPauseObjCmd,
     NsTclPurgeFilesObjCmd,
     NsTclRandObjCmd,
     NsTclRegisterAdpObjCmd,
@@ -122,6 +129,7 @@ extern Tcl_ObjCmdProc
     NsTclRenameObjCmd,
     NsTclRequestAuthorizeObjCmd,
     NsTclRespondObjCmd,
+    NsTclResumeObjCmd,
     NsTclReturnBadRequestObjCmd,
     NsTclReturnErrorObjCmd,
     NsTclReturnFileObjCmd,
@@ -134,6 +142,9 @@ extern Tcl_ObjCmdProc
     NsTclRmdirObjCmd,
     NsTclRollFileObjCmd,
     NsTclRWLockObjCmd,
+    NsTclSchedObjCmd,
+    NsTclSchedDailyObjCmd,
+    NsTclSchedWeeklyObjCmd,
     NsTclSelectObjCmd,
     NsTclSemaObjCmd,
     NsTclServerObjCmd,
@@ -159,6 +170,7 @@ extern Tcl_ObjCmdProc
     NsTclTruncateObjCmd,
     NsTclUnRegisterObjCmd,
     NsTclUnlinkObjCmd,
+    NsTclUnscheduleObjCmd,
     NsTclUrl2FileObjCmd,
     NsTclUrlDecodeObjCmd,
     NsTclUrlEncodeObjCmd,
@@ -174,18 +186,12 @@ extern Tcl_CmdProc
     NsTclAdpRegisterAdpCmd,
     NsTclAdpRegisterProcCmd,
     NsTclAdpStatsCmd,
-    NsTclAfterCmd,
     NsTclAtCloseCmd,
-    NsTclAtExitCmd,
-    NsTclAtStartupCmd,
-    NsTclAtShutdownCmd,
-    NsTclAtSignalCmd,
     NsTclCacheFlushCmd,
     NsTclCacheKeysCmd,
     NsTclCacheNamesCmd,
     NsTclCacheSizeCmd,
     NsTclCacheStatsCmd,
-    NsTclCancelCmd,
     NsTclCharsetsCmd,
     NsTclConfigCmd,
     NsTclConfigSectionCmd,
@@ -197,19 +203,13 @@ extern Tcl_CmdProc
     NsTclLibraryCmd,
     NsTclMkTempCmd,
     NsTclParseHeaderCmd,
-    NsTclPauseCmd,
     NsTclQuoteHtmlCmd,
     NsTclRegisterTagCmd,
-    NsTclResumeCmd,
     NsTclReturnAdminNoticeCmd,
     NsTclReturnNoticeCmd,
-    NsTclSchedCmd,
-    NsTclSchedDailyCmd,
-    NsTclSchedWeeklyCmd,
     NsTclShareCmd,
     NsTclStripHtmlCmd,
     NsTclThreadCmd,
-    NsTclUnscheduleCmd,
     TclX_KeyldelObjCmd,
     TclX_KeylgetObjCmd,
     TclX_KeylkeysObjCmd,
@@ -273,6 +273,15 @@ static Cmd cmds[] = {
     {"ns_hrefs", NsTclHrefsCmd, NULL},
 
     /*
+     * tclcallbacks.c
+     */
+
+    {"ns_atsignal", NULL, NsTclAtSignalObjCmd},
+    {"ns_atstartup", NULL, NsTclAtStartupObjCmd},
+    {"ns_atshutdown", NULL, NsTclAtShutdownObjCmd},
+    {"ns_atexit", NULL, NsTclAtExitObjCmd},
+
+    /*
      * tclconf.c
      */
 
@@ -326,18 +335,14 @@ static Cmd cmds[] = {
      * tclsched.c
      */
 
-    {"ns_schedule_proc", NsTclSchedCmd, NULL},
-    {"ns_schedule_daily", NsTclSchedDailyCmd, NULL},
-    {"ns_schedule_weekly", NsTclSchedWeeklyCmd, NULL},
-    {"ns_atsignal", NsTclAtSignalCmd, NULL},
-    {"ns_atstartup", NsTclAtStartupCmd, NULL},
-    {"ns_atshutdown", NsTclAtShutdownCmd, NULL},
-    {"ns_atexit", NsTclAtExitCmd, NULL},
-    {"ns_after", NsTclAfterCmd, NULL},
-    {"ns_cancel", NsTclCancelCmd, NULL},
-    {"ns_pause", NsTclPauseCmd, NULL},
-    {"ns_resume", NsTclResumeCmd, NULL},
-    {"ns_unschedule_proc", NsTclUnscheduleCmd, NULL},
+    {"ns_schedule_proc", NULL, NsTclSchedObjCmd},
+    {"ns_schedule_daily", NULL, NsTclSchedDailyObjCmd},
+    {"ns_schedule_weekly", NULL, NsTclSchedWeeklyObjCmd},
+    {"ns_after", NULL, NsTclAfterObjCmd},
+    {"ns_cancel", NULL, NsTclCancelObjCmd},
+    {"ns_pause", NULL, NsTclPauseObjCmd},
+    {"ns_resume", NULL, NsTclResumeObjCmd},
+    {"ns_unschedule_proc", NULL, NsTclUnscheduleObjCmd},
 
     /*
      * tclset.c

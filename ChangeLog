@@ -1,6 +1,16 @@
 2005-03-26  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/Makefile:
+	* nsd/tclcallbacks.c: Add routines to support calling Tcl code
+	from C for callback events.
+
+	* nsd/proc.c:
+	* nsd/tclcmds.c:
+	* nsd/tclsched.c: Update to use new callback and parse proc APIs.
+	
+	* include/ns.h:
 	* nsd/Makefile:
 	* nsd/tclcmds.c:
 	* nsd/cookies.c: Add cookie API for C and Tcl.  (RFE #1145957)

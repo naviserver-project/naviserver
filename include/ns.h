@@ -387,6 +387,18 @@ typedef struct Ns_ObjvTable {
 } Ns_ObjvTable;
 
 /*
+ * The following structure defines the Tcl code to run
+ * for a callback function.
+ */
+
+typedef struct Ns_TclCallback {
+    void     *cbProc;
+    char     *server;
+    char     *script;
+    char     *scriptarg;
+} Ns_TclCallback;
+
+/*
  * The following structure defines an I/O
  * scatter/gather buffer for WIN32.
  */
@@ -963,7 +975,6 @@ NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, char *server, char *module, ...
  * proc.c:
  */
 
-NS_EXTERN void Ns_RegisterProcDesc(void *procAddr, char *desc);
 NS_EXTERN void Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc);
 NS_EXTERN void Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg);
 
@@ -1160,6 +1171,22 @@ NS_EXTERN char *Ns_StrCaseFind(char *s1, char *s2);
 NS_EXTERN char *Ns_Match(char *a, char *b);
 NS_EXTERN char *Ns_NextWord(char *line);
 NS_EXTERN char *Ns_StrNStr(char *pattern, char *expression);
+
+/*
+ * tclcallbacks.c:
+ */
+
+NS_EXTERN Ns_TclCallback *Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc,
+                                            char *script, char *scriptarg);
+NS_EXTERN Ns_TclCallback *Ns_TclNewCallbackObj(Tcl_Interp *interp,
+                                               void *cbProc,
+                                               Tcl_Obj *scriptObjPtr,
+                                               Tcl_Obj *argObjPtr);
+NS_EXTERN int Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
+                                 Ns_DString *result, ...);
+NS_EXTERN Ns_Callback Ns_TclCallbackProc;
+NS_EXTERN Ns_Callback Ns_TclFreeCallback;
+NS_EXTERN Ns_ArgProc Ns_TclCallbackArgProc;
 
 /*
  * tclenv.c:

@@ -58,9 +58,8 @@ struct proc {
 	Ns_ArgProc *argProc;
 } procs[] = {
 	{(void *) NsTclThread, "ns:tclthread", NsTclThreadArgProc},
-	{(void *) NsTclCallback, "ns:tclcallback", NsTclArgProc},
-	{(void *) NsTclSchedProc, "ns:tclschedproc", NsTclArgProc},
-	{(void *) NsTclSignalProc, "ns:tclsigproc", NsTclArgProc},
+	{(void *) Ns_TclCallbackProc, "ns:tclcallback", Ns_TclCallbackArgProc},
+	{(void *) NsTclSchedProc, "ns:tclschedproc", Ns_TclCallbackArgProc},
 	{(void *) NsTclSockProc, "ns:tclsockcallback", NsTclSockArgProc},
 	{(void *) NsCachePurge, "ns:cachepurge", NsCacheArgProc},
 	{(void *) NsConnThread, "ns:connthread", NsConnArgProc},

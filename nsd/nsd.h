@@ -824,10 +824,7 @@ extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url);
  * External callback functions.
  */
 
-extern Ns_Callback NsTclCallback;
-extern Ns_Callback NsTclSignalProc;
 extern Ns_SchedProc NsTclSchedProc;
-extern Ns_ArgProc NsTclArgProc;
 extern Ns_ThreadProc NsTclThread;
 extern Ns_ArgProc NsTclThreadArgProc;
 extern Ns_Callback NsCachePurge;
