@@ -258,7 +258,7 @@ Decode(Tcl_DString *dsPtr, char *s, Tcl_Encoding encoding)
      * URL decode and then convert to UTF.
      */
 
-    Ns_UrlDecode(&eds, s);
+    Ns_DecodeUrl(&eds, s);
     Ext2Utf(dsPtr, eds.string, eds.length, encoding);
     Tcl_DStringFree(&uds);
     Tcl_DStringFree(&eds);
