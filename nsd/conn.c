@@ -1196,6 +1196,7 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **
     NsInterp *itPtr = arg;
     int toCopy = 0;
     char *chanName;
+    Request *reqPtr;
     Tcl_Channel chan;
 
     /*
@@ -1223,15 +1224,14 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **
         return TCL_ERROR;
     }
     Tcl_Flush(chan);
-    if (toCopy > itPtr->conn->contentLength || toCopy <= 0) {
-        toCopy = itPtr->conn->contentLength;
+    reqPtr = ((Conn *)itPtr->conn)->reqPtr;
+    if (toCopy > reqPtr->avail || toCopy <= 0) {
+        toCopy = reqPtr->avail;
     }
-    if (Ns_ConnCopyToChannel(itPtr->conn, (unsigned)toCopy, chan) != NS_OK) {
+    if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
         Tcl_SetResult(interp, "could not copy content", TCL_STATIC);
         return TCL_ERROR;
     }
-    
-    itPtr->conn->contentLength -= toCopy;
 
     return TCL_OK;
 }
