@@ -1,5 +1,10 @@
 2005-04-03  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd.nsmain.c: fixed make test, argumens nowe processed
+	  until first non dash parameter.
+
+2005-04-03  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* nsd/nsmain.c: changed command line parsing from getopt to
 	  simple manual processing thus getopt is not needed anymore.
 	* nsd/getopt.c: removed because no needed anymore

@@ -108,7 +108,8 @@ static int watchdogExit = 0; /* Watchdog loop toggle */
 int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
-    int  i, fd, sig;
+    int  i, fd, sig, optind, cmdargc;
+    char **cmdargv;;
     char *config;
     Ns_Time timeout;
 
@@ -195,12 +196,11 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Parse the command line arguments.
      */
 
-    for (i = 1; i < argc; i++) {
-        if (argv[i][0] != '-') {
-            UsageError("invalid option: %s", argv[i]);
-	    exit(1);
+    for (optind = 1; optind < argc; optind++) {
+        if (argv[optind][0] != '-') {
+	    break;
         }
-        switch (argv[i][1]) {
+        switch (argv[optind][1]) {
         case 'h':
             UsageError(NULL);
             break;
@@ -221,26 +221,26 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                 UsageError("only one of -c, -i, -f, -w, or -V may be specified");
 #endif
             }
-            mode = argv[i][1];
+            mode = argv[optind][1];
             break;
         case 's':
             if (server != NULL) {
                 UsageError("multiple -s <server> options");
             }
-            if (i + 1 < argc) {
-                server = argv[++i];
+            if (optind + 1 < argc) {
+                server = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[i][1]);
+                UsageError("no parameter for -%c option", argv[optind][1]);
             }
             break;
         case 't':
             if (nsconf.config != NULL) {
                 UsageError("multiple -t <file> options");
             }
-            if (i + 1 < argc) {
-           	nsconf.config = argv[++i];
+            if (optind + 1 < argc) {
+           	nsconf.config = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[i][1]);
+                UsageError("no parameter for -%c option", argv[optind][1]);
             }
             break;
         case 'p':
@@ -249,46 +249,46 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             break;
 #ifndef _WIN32
         case 'b':
-            if (i + 1 < argc) {
-            	bindargs = argv[++i];
+            if (optind + 1 < argc) {
+            	bindargs = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[i][1]);
+                UsageError("no parameter for -%c option", argv[optind][1]);
             }
             break;
         case 'B':
-            if (i + 1 < argc) {
-            	bindfile = argv[++i];
+            if (optind + 1 < argc) {
+            	bindfile = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[i][1]);
+                UsageError("no parameter for -%c option", argv[optind][1]);
             }
             break;
         case 'r':
-            if (i + 1 < argc) {
-            	root = server = argv[++i];
+            if (optind + 1 < argc) {
+            	root = server = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[i][1]);
+                UsageError("no parameter for -%c option", argv[optind][optind]);
             }
             break;
         case 'd':
             debug = 1;
             break;
         case 'g':
-            if (i + 1 < argc) {
-                garg = argv[++i];
+            if (optind + 1 < argc) {
+                garg = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[i][1]);
+                UsageError("no parameter for -%c option", argv[optind][1]);
             }
             break;
         case 'u':
-            if (i + 1 < argc) {
-                uarg = argv[++i];
+            if (optind + 1 < argc) {
+                uarg = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[i][1]);
+                UsageError("no parameter for -%c option", argv[optind][1]);
             }
             break;
 #endif
         default:
-            UsageError("invalid option: -%c", argv[i][1]);
+            UsageError("invalid option: -%c", argv[optind][1]);
             break;
         }
     }
@@ -536,7 +536,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     Tcl_FindExecutable(argv[0]);
     nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
-    NsConfigEval(config, argc, argv, argc);
+    NsConfigEval(config, argc, argv, optind);
     ns_free(config);
     
     /*
@@ -740,7 +740,13 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          */
 
         NsRestoreSignals();
-        Tcl_Main(argc, argv, CommandInit);
+        cmdargv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
+        cmdargc = 0;
+        cmdargv[cmdargc++] = argv[0];
+        for (i = optind; i < argc; i++) {
+            cmdargv[cmdargc++] = argv[i];
+        }
+        Tcl_Main(cmdargc, cmdargv, CommandInit);
     }
 
     /*
