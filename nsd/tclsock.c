@@ -2,7 +2,7 @@
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://aolserver.com/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -384,11 +384,10 @@ NsTclSockOpenCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
         async = 1;
     } else if (argc == 5) {
 
-	Ns_Log(Notice, "not nonblock");
 	/*
 	 * ns_sockopen -timeout seconds host port
 	 */
-	
+
         if (!STREQ(argv[1], "-timeout")) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
 			     argv[0],
