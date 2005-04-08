@@ -1,3 +1,8 @@
+2005-04-08  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/nsd.h: Added non-gnu implementation of poll() for
+	* nsd/unix.c: platforms not implementing it (Darwin)
+
 2005-04-03  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd.nsmain.c: fixed make test, argumens nowe processed

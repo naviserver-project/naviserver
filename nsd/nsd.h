@@ -65,9 +65,13 @@
 #ifdef HAVE_POLL
   #include <poll.h>
 #else
-  #define POLLIN 1
-  #define POLLOUT 2
-  #define POLLPRI 3
+  #define POLLIN 001
+  #define POLLPRI 002
+  #define POLLOUT 004
+  #define POLLNORM POLLIN
+  #define POLLERR 010
+  #define POLLHUP 020
+  #define POLLNVAL 040
   struct pollfd {
     int fd;
     short events;
