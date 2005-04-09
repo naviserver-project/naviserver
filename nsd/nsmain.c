@@ -198,7 +198,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     for (optind = 1; optind < argc; optind++) {
         if (argv[optind][0] != '-') {
-	    break;
+            break;
         }
         switch (argv[optind][1]) {
         case 'h':
@@ -206,19 +206,22 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             break;
         case 'c':
         case 'f':
-        case 'i':
-        case 'w':
         case 'V':
 #ifdef _WIN32
         case 'I':
         case 'R':
         case 'S':
+#else
+        case 'i':
+        case 'w':
 #endif
             if (mode != 0) {
 #ifdef _WIN32
-                UsageError("only one of -c, -i, -f, -V, -I, -R, or -S may be specified");
+                UsageError("only one of -h, -V, -c, -f, -I, -R, or -S"
+                           " may be specified");
 #else
-                UsageError("only one of -c, -i, -f, -w, or -V may be specified");
+                UsageError("only one of -h, -V, -c, -f, -i, or -w"
+                           " may be specified");
 #endif
             }
             mode = argv[optind][1];
@@ -238,7 +241,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                 UsageError("multiple -t <file> options");
             }
             if (optind + 1 < argc) {
-           	nsconf.config = argv[++optind];
+                nsconf.config = argv[++optind];
             } else {
                 UsageError("no parameter for -%c option", argv[optind][1]);
             }
@@ -1037,24 +1040,25 @@ UsageError(char *msg, ...)
 	va_end(ap);
     }
     fprintf(stderr, "\n"
-        "Usage: %s [-h|V] [-c|-i|f] "
 #ifdef _WIN32
-        "[-I|R] "
+        "Usage: %s [-h|V] [-c|f|I|R|S] "
 #else
+        "Usage: %s [-h|V] [-c|f|i|w] "
         "[-u <user>] [-g <group>] [-r <path>] [-b <address:port>|-B <file>] "
 #endif
         "[-s <server>] -t <file>\n"
         "\n"
         "  -h  help (this message)\n"
         "  -V  version and release information\n"
-        "  -c  command mode\n"
-        "  -i  inittab mode\n"
+        "  -c  command (interactive) mode\n"
         "  -f  foreground mode\n"
-        "  -w  watchdog mode: restart a failed server\n"
 #ifdef _WIN32
-        "  -I  Install win32 service\n"
-        "  -R  Remove win32 service\n"
+        "  -I  install Win32 service\n"
+        "  -R  remove Win32 service\n"
+        "  -S  start Win32 service\n"
 #else
+        "  -i  inittab mode\n"
+        "  -w  watchdog mode (restart a failed server)\n"
         "  -d  debugger-friendly mode (ignore SIGINT)\n"
         "  -u  run as <user>\n"
         "  -g  run as <group>\n"
@@ -1102,6 +1106,7 @@ FindConfig(char *config)
     Ns_DStringFree(&ds2);
     return config;
 }
+#ifndef _WIN32
 
 /*
  *----------------------------------------------------------------------
@@ -1284,3 +1289,4 @@ StartWatchedServer(void)
 
     return 0;
 }
+#endif /* _WIN32 */
