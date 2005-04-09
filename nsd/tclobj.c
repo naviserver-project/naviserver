@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,7 +31,7 @@
 /*
  * tcltime.c --
  *
- *	Implement Tcl_Obj type for AOLserver Ns_Time.
+ *	Implement Tcl_Obj type for Ns_Time.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
@@ -120,7 +120,7 @@ Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
     Tcl_ObjType *typePtr = objPtr->typePtr;
 
     if (typePtr != NULL && typePtr->freeIntRepProc != NULL) {
-        (typePtr->freeIntRepProc)(objPtr);
+        (*typePtr->freeIntRepProc)(objPtr);
     }
     objPtr->typePtr = newTypePtr;
 }
