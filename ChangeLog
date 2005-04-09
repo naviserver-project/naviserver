@@ -3,6 +3,13 @@
 	* nsd/dns.c: Fixed GetAddr() when dealing with gethostbyname_r
 	  calls. In some/many cases we ended up in an infinite loop.
 
+	* nsd/tclobjv.c: SetSpecFromAny does not invalidate string rep 
+	  of the passed object after converting it to the ns:spec
+	  object type. This will definitely corrupt the interp literal
+	  table and result in process exitus when the interp is being
+	  destroyed.
+	* nsd/tclobj.c: fixed broken ptr deref
+	  
 2005-04-08  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/nsd.h: Added non-gnu implementation of poll() for

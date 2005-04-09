@@ -655,8 +655,6 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         argSpec = specPtr;
     }
     Ns_TclSetTwoPtrValue(objPtr, &specType, optSpec, argSpec);
-    Tcl_InvalidateStringRep(objPtr);
-    objPtr->length = 0;
 
     return TCL_OK;
 }
@@ -725,6 +723,9 @@ FreeSpecObj(Tcl_Obj *objPtr)
 
     optSpec = objPtr->internalRep.twoPtrValue.ptr1;
     FreeSpecs(optSpec);
+
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 }
 
 
