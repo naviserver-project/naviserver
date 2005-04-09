@@ -45,9 +45,7 @@ test ns_parseargs-2.2 {object type conversion / display} -body {
     unset -nocomplain a
 } -result {}
 
-test ns_parseargs-2.3 {object type conversion / display} -constraints {
-    knownBug
-} -body {
+test ns_parseargs-2.3 {object type conversion / display} -body {
     set tid [ns_thread begin {
         proc x {} {
             ns_parseargs {-a} {-a A}
