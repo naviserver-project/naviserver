@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -346,10 +346,10 @@ GetAddr(Ns_DString *dsPtr, char *host)
         while (ptr != NULL) {
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(
                         ((struct sockaddr_in *) ptr->ai_addr)->sin_addr));
+            status = NS_TRUE;
             ptr = ptr->ai_next;
         }
         freeaddrinfo(res);
-        status = NS_TRUE;
     }
     return status;
 }
@@ -370,6 +370,8 @@ GetAddr(Ns_DString *dsPtr, char *host)
     int h_errnop;
     int status = NS_FALSE;
     
+    memset(buf, 0, sizeof(buf));
+
 #if defined(HAVE_GETHOSTBYNAME_R_6)
     result = gethostbyname_r(host, &he, buf, sizeof(buf), &res, &h_errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5)
@@ -384,13 +386,14 @@ GetAddr(Ns_DString *dsPtr, char *host)
 #endif
 
     if (result != 0) { 
-	LogError("gethostbyname_r", h_errnop);
+        LogError("gethostbyname_r", h_errnop);
     } else {
         ptr = (struct in_addr *) he.h_addr_list[i];
         while (ptr != NULL) {
             ia.s_addr = ptr->s_addr;
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));
             status = NS_TRUE;
+            ptr = (struct in_addr *) he.h_addr_list[++i];
         }
     }
     return status;
@@ -418,13 +421,14 @@ GetAddr(Ns_DString *dsPtr, char *host)
     Ns_CsEnter(&cs);
     he = gethostbyname(host);
     if (he == NULL) {
-	LogError("gethostbyname", h_errno);
+        LogError("gethostbyname", h_errno);
     } else {
         ptr = (struct in_addr *) he.h_addr_list[i];
         while (ptr != NULL) {
             ia.s_addr = ptr->s_addr;
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));
             status = NS_TRUE;
+            ptr = (struct in_addr *) he.h_addr_list[++i];
         }
     }
     Ns_CsLeave(&cs);

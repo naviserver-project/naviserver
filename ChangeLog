@@ -1,3 +1,8 @@
+2005-04-09  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/dns.c: Fixed GetAddr() when dealing with gethostbyname_r
+	  calls. In some/many cases we ended up in an infinite loop.
+
 2005-04-08  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/nsd.h: Added non-gnu implementation of poll() for
