@@ -9,7 +9,8 @@
 	  table and result in process exitus when the interp is being
 	  destroyed.
 	* nsd/tclobj.c: fixed broken ptr deref
-	  
+	* nsd/nsmain.c: adjusted options parsing for Windows / unix
+
 2005-04-08  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/nsd.h: Added non-gnu implementation of poll() for

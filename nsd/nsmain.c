@@ -217,11 +217,11 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #endif
             if (mode != 0) {
 #ifdef _WIN32
-                UsageError("only one of -h, -V, -c, -f, -I, -R, or -S"
-                           " may be specified");
+                UsageError("only one of -c, -f, -I, -R, or -S"
+                           " options may be specified");
 #else
-                UsageError("only one of -h, -V, -c, -f, -i, or -w"
-                           " may be specified");
+                UsageError("only one of -c, -f, -i, or -w"
+                           " options may be specified");
 #endif
             }
             mode = argv[optind][1];
