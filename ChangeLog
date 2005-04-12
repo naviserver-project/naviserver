@@ -1,5 +1,8 @@
 2005-04-11  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/proc.c: Add proc info for NsFastGet.  Cleanup source code
+	formatting.
+
 	* tests/ns_urlencode.test: Add missing tests for urlencode fix.
 
 2005-04-09  Stephen Deasey  <sdeasey@users.sf.net>

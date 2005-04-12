@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -30,13 +30,14 @@
 /* 
  * proc.c --
  *
- *	Support for getting information on procs (thread routines,
- *	callbacks, scheduled procs, etc.).
+ *      Support for describing procs and their arguments (thread routines,
+ *      callbacks, scheduled procs, etc.).
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
+
 
 /*
  * The following struct maintains callback and description for
@@ -44,37 +45,40 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  */
 
 typedef struct Info {
-    Ns_ArgProc *proc;
-    char *desc;
+    Ns_ArgProc  *proc;
+    char        *desc;
 } Info;
-
-/*
- * The following struct array defines common procs in nsd.
- */
-
-struct proc {
-	void *procAddr;
-	char *desc;
-	Ns_ArgProc *argProc;
-} procs[] = {
-	{(void *) NsTclThread, "ns:tclthread", NsTclThreadArgProc},
-	{(void *) Ns_TclCallbackProc, "ns:tclcallback", Ns_TclCallbackArgProc},
-	{(void *) NsTclSchedProc, "ns:tclschedproc", Ns_TclCallbackArgProc},
-	{(void *) NsTclSockProc, "ns:tclsockcallback", NsTclSockArgProc},
-	{(void *) NsCachePurge, "ns:cachepurge", NsCacheArgProc},
-	{(void *) NsConnThread, "ns:connthread", NsConnArgProc},
-	{(void *) NsTclFilter, "ns:tclfilter", Ns_TclCallbackArgProc},
-	{(void *) NsTclRequest, "ns:tclrequest", Ns_TclCallbackArgProc},
-	{(void *) NsAdpRequest, "ns:adprequest", Ns_StringArgProc},
-	{NULL, NULL, NULL}
-};
 
 /*
  * Static functions defined in this file.
  */
 
+static void ServerArgProc(Tcl_DString *dsPtr, void *arg);
 static void AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr);
+
+/*
+ * Static variables defined in this file.
+ */
+
 static Tcl_HashTable info;
+
+struct proc {
+    void       *procAddr;
+    char       *desc;
+    Ns_ArgProc *argProc;
+} procs[] = {
+    {(void *) NsTclThread,         "ns:tclthread",        NsTclThreadArgProc},
+    {(void *) Ns_TclCallbackProc,  "ns:tclcallback",      Ns_TclCallbackArgProc},
+    {(void *) NsTclSchedProc,      "ns:tclschedproc",     Ns_TclCallbackArgProc},
+    {(void *) NsTclSockProc,       "ns:tclsockcallback",  NsTclSockArgProc},
+    {(void *) NsCachePurge,        "ns:cachepurge",       NsCacheArgProc},
+    {(void *) NsConnThread,        "ns:connthread",       NsConnArgProc},
+    {(void *) NsTclFilter,         "ns:tclfilter",        Ns_TclCallbackArgProc},
+    {(void *) NsTclRequest,        "ns:tclrequest",       Ns_TclCallbackArgProc},
+    {(void *) NsAdpRequest,        "ns:adprequest",       Ns_StringArgProc},
+    {(void *) NsFastGet,           "ns:fastget",          ServerArgProc},
+    {NULL, NULL, NULL}
+};
 
 
 /*
@@ -82,13 +86,13 @@ static Tcl_HashTable info;
  *
  * NsInitProcInfo --
  *
- *	Initialize the proc info API and default compiled-in callbacks.
+ *      Initialize the proc info API and default compiled-in callbacks.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -101,9 +105,9 @@ NsInitProcInfo(void)
     Tcl_InitHashTable(&info, TCL_ONE_WORD_KEYS);
     procPtr = procs;
     while (procPtr->procAddr != NULL) {
-	Ns_RegisterProcInfo(procPtr->procAddr, procPtr->desc,
-			    procPtr->argProc);
-	++procPtr;
+        Ns_RegisterProcInfo(procPtr->procAddr, procPtr->desc,
+                            procPtr->argProc);
+        ++procPtr;
     }
 }
 
@@ -113,15 +117,15 @@ NsInitProcInfo(void)
  *
  * Ns_RegisterProcInfo --
  *
- *	Register a callback to describe the arguments to a proc,
- *	e.g., a thread start arg.
+ *      Register a proc description and a callback to describe the
+ *      arguments e.g., a thread start arg.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Given argProc will be invoked for given procAddr by
- *	Ns_GetProcInfo.
+ *      Given argProc will be invoked for given procAddr by
+ *      Ns_GetProcInfo.
  *
  *----------------------------------------------------------------------
  */
@@ -130,15 +134,15 @@ void
 Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc)
 {
     Tcl_HashEntry *hPtr;
-    Info *iPtr;
-    int new;
+    Info          *iPtr;
+    int            new;
 
     hPtr = Tcl_CreateHashEntry(&info, (char *) procAddr, &new);
     if (!new) {
-	iPtr = Tcl_GetHashValue(hPtr);
+        iPtr = Tcl_GetHashValue(hPtr);
     } else {
-    	iPtr = ns_malloc(sizeof(Info));
-    	Tcl_SetHashValue(hPtr, iPtr);
+        iPtr = ns_malloc(sizeof(Info));
+        Tcl_SetHashValue(hPtr, iPtr);
     }
     iPtr->desc = desc;
     iPtr->proc = argProc;
@@ -150,14 +154,14 @@ Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc)
  *
  * Ns_GetProcInfo --
  *
- *	Format a string of information for the given proc
- *	and arg, invoking the argProc callback if it exists.
+ *      Format a string of information for the given proc
+ *      and arg, invoking the argProc callback if it exists.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	String will be appended to given dsPtr.
+ *      String will be appended to given dsPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -165,25 +169,25 @@ Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc)
 void
 Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg)
 {
-    Tcl_HashEntry *hPtr;
-    Info *iPtr;
-    static Info nullInfo = {NULL, NULL};
+    Tcl_HashEntry          *hPtr;
+    Info                   *iPtr;
+    static Info nullInfo =  {NULL, NULL};
 
     hPtr = Tcl_FindHashEntry(&info, (char *) procAddr);
     if (hPtr != NULL) {
-	iPtr = Tcl_GetHashValue(hPtr);
+        iPtr = Tcl_GetHashValue(hPtr);
     } else {
-	iPtr = &nullInfo;
+        iPtr = &nullInfo;
     }
     if (iPtr->desc != NULL) {
-    	Tcl_DStringAppendElement(dsPtr, iPtr->desc);
+        Tcl_DStringAppendElement(dsPtr, iPtr->desc);
     } else {
-	AppendAddr(dsPtr, "p", procAddr);
+        AppendAddr(dsPtr, "p", procAddr);
     }
     if (iPtr->proc != NULL) {
-    	(*iPtr->proc)(dsPtr, arg);
+        (*iPtr->proc)(dsPtr, arg);
     } else {
-	AppendAddr(dsPtr, "a", arg);
+        AppendAddr(dsPtr, "a", arg);
     }
 }
 
@@ -193,7 +197,7 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg)
  *
  * Ns_StringArgProc --
  *
- *      Treat arg as cstring and copy to dstring.
+ *      Info callback for procs which take a cstring arg.
  *
  * Results:
  *      None. 
@@ -216,15 +220,40 @@ Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * AppendAddr -- 
+ * ServerArgProc --
  *
- *	Format a simple string with the given address.
+ *      Info callback for procs which take an NsServer arg.
  *
  * Results:
- *	None.
+ *      None. 
  *
  * Side effects:
- *	String will be appended to given dsPtr.
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ServerArgProc(Tcl_DString *dsPtr, void *arg)
+{
+    NsServer *servPtr = arg;
+
+    Tcl_DStringAppendElement(dsPtr, servPtr->server);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendAddr -- 
+ *
+ *      Format a simple string with the given address.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      String will be appended to given dsPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -232,12 +261,5 @@ Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
 static void
 AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr)
 {
-    char buf[30];
-
-    if (addr == NULL) {
-    	sprintf(buf, "%s:0x0", prefix);
-    } else {
-	sprintf(buf, "%s:%p", prefix, addr);
-    }
-    Tcl_DStringAppendElement(dsPtr, buf);
+    Ns_DStringPrintf(dsPtr, " %s:%p", prefix, addr);
 }
