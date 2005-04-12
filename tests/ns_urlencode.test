@@ -1,0 +1,131 @@
+#
+# $Header$
+#
+
+
+source harness.tcl
+load libnsd.so
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+
+
+test ns_urlencode-1.1 {Basic sanity checks} {
+
+    # rfc2396 unreserved URI characters, except for + which receives
+    # special treatment by the HTTP URL scheme.
+    set unreserved "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    assertEquals "" [ns_urlencode ""]
+    assertEquals "" [ns_urlencode -part path  ""]
+    assertEquals "" [ns_urlencode -part query ""]
+
+    assertEquals "" [ns_urldecode ""]
+    assertEquals "" [ns_urldecode -part path  ""]
+    assertEquals "" [ns_urldecode -part query ""]
+
+    assertEquals $unreserved [ns_urlencode $unreserved]
+    assertEquals $unreserved [ns_urldecode $unreserved]
+
+    assertEquals "1/2/3" [ns_urlencode -part path  1 2 3]
+    assertEquals "1&2&3" [ns_urlencode -part query 1 2 3]
+    assertEquals "1&2&3" [ns_urlencode 1 2 3]
+
+    assertEquals "1" [ns_urldecode "1"]
+    assertEquals "1" [ns_urldecode -part path  "1"]
+    assertEquals "1" [ns_urldecode -part query "1"]
+
+} {}
+
+
+test ns_urlencode-2.1 {Spaces and plus signs} {
+
+    assertEquals "+"   [ns_urlencode -part path +]
+    assertEquals "%2b" [string tolower [ns_urlencode -part query +]]
+    assertEquals "%2b" [string tolower [ns_urlencode +]]
+
+    assertEquals "%20" [ns_urlencode -part path " "]
+    assertEquals "+"   [ns_urlencode -part query " "]
+    assertEquals "+"   [ns_urlencode " "]
+
+
+    assertEquals "+"   [ns_urldecode -part path +]
+    assertEquals " "   [ns_urldecode -part query +]
+    assertEquals " "   [ns_urldecode +]
+
+    assertEquals " "   [ns_urldecode -part path " "]
+    assertEquals " "   [ns_urldecode -part query " "]
+    assertEquals " "   [ns_urldecode " "]
+
+    assertEquals " "   [ns_urldecode -part path "%20"]
+    assertEquals " "   [ns_urldecode -part query "%20"]
+    assertEquals " "   [ns_urldecode "%20"]
+
+    assertEquals "+"   [ns_urldecode -part path "%2b"]
+    assertEquals "+"   [ns_urldecode -part query "%2b"]
+    assertEquals "+"   [ns_urldecode "%2b"]
+    assertEquals "+"   [ns_urldecode "%2B"]
+
+} {}
+
+
+test ns_urlencode-3.1 {rfc2396 section 2.4.3 URI 'delim' characters} {
+
+    assertEquals "%3c" [string tolower [ns_urlencode -part path "<"]]
+    assertEquals "%3e" [string tolower [ns_urlencode -part path ">"]]
+    assertEquals "%23" [string tolower [ns_urlencode -part path "\#"]]
+    assertEquals "%25" [string tolower [ns_urlencode -part path "%"]]
+    assertEquals "%22" [string tolower [ns_urlencode -part path "\""]]
+
+} {}
+
+
+test ns_urlencode-4.1 {rfc2396 section 2.4.3 URI 'unwise' characters} {
+
+    assertEquals "%7b" [string tolower [ns_urlencode -part path "{"]]
+    assertEquals "%7d" [string tolower [ns_urlencode -part path "}"]]
+    assertEquals "%7c" [string tolower [ns_urlencode -part path "|"]]
+    assertEquals "%5c" [string tolower [ns_urlencode -part path "\\"]]
+    assertEquals "%5e" [string tolower [ns_urlencode -part path "^"]]
+    assertEquals "%5b" [string tolower [ns_urlencode -part path "\["]]
+    assertEquals "%5d" [string tolower [ns_urlencode -part path "\]"]]
+    assertEquals "%60" [string tolower [ns_urlencode -part path "`"]]
+
+} {}
+
+
+test ns_urlencode-5.1 {rfc2396 section 3.3 URI path component reserved characters} {
+
+    assertEquals "%2f" [string tolower [ns_urlencode -part path "/"]]
+    assertEquals "%3f" [string tolower [ns_urlencode -part path "?"]]
+    assertEquals "%3b" [string tolower [ns_urlencode -part path ";"]]
+    assertEquals "%3d" [string tolower [ns_urlencode -part path "="]]
+
+    assertEquals ":" [ns_urlencode -part path ":"]
+    assertEquals "@" [ns_urlencode -part path "@"]
+    assertEquals "&" [ns_urlencode -part path "&"]
+    assertEquals "+" [ns_urlencode -part path "+"]
+    assertEquals "$" [ns_urlencode -part path "$"]
+    assertEquals "," [ns_urlencode -part path ","]
+
+} {}
+
+
+test ns_urlencode-6.1 {rfc2396 section 3.4 URI query component reserved characters} {
+
+    assertEquals "%3b" [string tolower [ns_urlencode -part query ";"]]
+    assertEquals "%2f" [string tolower [ns_urlencode -part query "/"]]
+    assertEquals "%3f" [string tolower [ns_urlencode -part query "?"]]
+    assertEquals "%3a" [string tolower [ns_urlencode -part query ":"]]
+    assertEquals "%40" [string tolower [ns_urlencode -part query "@"]]
+    assertEquals "%26" [string tolower [ns_urlencode -part query "&"]]
+    assertEquals "%3d" [string tolower [ns_urlencode -part query "="]]
+    assertEquals "%2b" [string tolower [ns_urlencode -part query "+"]]
+    assertEquals "%2c" [string tolower [ns_urlencode -part query ","]]
+    assertEquals "%24" [string tolower [ns_urlencode -part query "$"]]
+
+} {}
+
+
+cleanupTests
