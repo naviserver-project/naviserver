@@ -482,7 +482,9 @@ typedef int   (Ns_OpProc) (void *arg, Ns_Conn *conn);
 typedef void  (Ns_TraceProc) (void *arg, Ns_Conn *conn);
 typedef int   (Ns_FilterProc) (void *arg, Ns_Conn *conn, int why);
 typedef int   (Ns_UrlToFileProc) (Ns_DString *dsPtr, char *server, char *url);
-typedef char *(Ns_LocationProc) (Ns_Conn *conn);
+typedef char *(Ns_ServerRootProc) (Ns_DString  *dest, char *host, void *arg);
+typedef char *(Ns_ConnLocationProc) (Ns_Conn *conn, Ns_DString *dest, void *arg);
+typedef char *(Ns_LocationProc) (Ns_Conn *conn); /* depreciated */
 
 /*
  * Typedefs of variables
@@ -515,8 +517,6 @@ NS_EXTERN int Ns_AuthorizeRequest(char *server, char *method, char *url,
 			       char *user, char *passwd, char *peer);
 NS_EXTERN void Ns_SetRequestAuthorizeProc(char *server,
     				       Ns_RequestAuthorizeProc *procPtr);
-NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *procPtr);
-NS_EXTERN void Ns_SetConnLocationProc(Ns_LocationProc *procPtr);
 NS_EXTERN void Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr);
 NS_EXTERN int  Ns_AuthorizeUser(char *user, char *passwd);
 
@@ -646,6 +646,7 @@ NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPeerPort(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnLocation(Ns_Conn *conn);
+NS_EXTERN char *Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);
 NS_EXTERN char *Ns_ConnHost(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPort(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnSock(Ns_Conn *conn);
@@ -654,6 +655,8 @@ NS_EXTERN void *Ns_ConnDriverContext(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnGetWriteEncodedFlag(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
+NS_EXTERN int Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
+NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc); /* depreciated */
 
 /*
  * cookies.c:
@@ -967,9 +970,13 @@ NS_EXTERN int Ns_ConnRedirect(Ns_Conn *conn, char *url);
 NS_EXTERN int Ns_PathIsAbsolute(char *path);
 NS_EXTERN char *Ns_NormalizePath(Ns_DString *dsPtr, char *path);
 NS_EXTERN char *Ns_MakePath(Ns_DString *dsPtr, ...);
+NS_EXTERN char *Ns_HashPath(Ns_DString *dsPtr, char *string, int levels);
 NS_EXTERN char *Ns_LibPath(Ns_DString *dsPtr, ...);
 NS_EXTERN char *Ns_HomePath(Ns_DString *dsPtr, ...);
 NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, char *server, char *module, ...);
+NS_EXTERN char *Ns_ServerPath(Ns_DString *dest, char *server, ...);
+NS_EXTERN char *Ns_PagePath(Ns_DString *dest, char *server, ...);
+NS_EXTERN int Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
 /*
  * proc.c:

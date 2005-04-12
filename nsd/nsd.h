@@ -132,6 +132,9 @@
 #define LOG_NONOTICE	16
 #define LOG_USEC	32
 
+#define NSD_STRIP_WWW       0x01
+#define NSD_STRIP_PORT      0x02
+
 /*
  * The following is the default text/html content type
  * sent to the browsers.  The charset is also used for
@@ -507,7 +510,6 @@ typedef struct ConnPool {
 
 typedef struct NsServer {
     char    	    	   *server;
-    Ns_LocationProc 	   *locationProc;
 
     /*
      * The following struct maintains the connection pool(s).
@@ -558,7 +560,9 @@ typedef struct NsServer {
     } limits;
 
     struct {
-	char	    	   *pageroot;
+	char               *serverdir; /* virtual server files path */
+	char               *pagedir;   /* path to public pages */
+	char	    	   *pageroot;  /* absolute path to public pages */
 	char	    	  **dirv;
 	int 	    	    dirc;
 	char	    	   *dirproc;
@@ -568,6 +572,22 @@ typedef struct NsServer {
 	Ns_UrlToFileProc   *url2file;
 	Ns_Cache    	   *cache;
     } fastpath;
+
+    /*
+     * The following struct maintains virtual host config.
+     */
+
+    struct {
+        bool                    enabled;
+        int                     opts; /* NSD_STRIP_WWW | NSD_STRIP_PORT */
+        char                   *hostprefix;
+        int                     hosthashlevel;
+        Ns_ServerRootProc      *serverRootProc;
+        void                   *serverRootArg;
+        Ns_ConnLocationProc    *connLocationProc;
+        void                   *connLocationArg;
+        Ns_LocationProc        *locationProc; /* depreciated */
+    } vhost;
 
     /*
      * The following struct maintains request tables.
@@ -826,11 +846,15 @@ extern void NsRunAtClose(Tcl_Interp *interp);
 
 extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url);
 
+extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, char *host);
+
 /*
  * External callback functions.
  */
 
+extern Ns_ConnLocationProc NsTclConnLocation;
 extern Ns_SchedProc NsTclSchedProc;
+extern Ns_ServerRootProc NsTclServerRoot;
 extern Ns_ThreadProc NsTclThread;
 extern Ns_ArgProc NsTclThreadArgProc;
 extern Ns_Callback NsCachePurge;

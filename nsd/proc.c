@@ -62,14 +62,16 @@ static void AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr);
 
 static Tcl_HashTable info;
 
-struct proc {
+static struct proc {
     void       *procAddr;
     char       *desc;
     Ns_ArgProc *argProc;
 } procs[] = {
     {(void *) NsTclThread,         "ns:tclthread",        NsTclThreadArgProc},
     {(void *) Ns_TclCallbackProc,  "ns:tclcallback",      Ns_TclCallbackArgProc},
+    {(void *) NsTclConnLocation,   "ns:tclconnlocation",  Ns_TclCallbackArgProc},
     {(void *) NsTclSchedProc,      "ns:tclschedproc",     Ns_TclCallbackArgProc},
+    {(void *) NsTclServerRoot,     "ns:tclserverroot",    Ns_TclCallbackArgProc},
     {(void *) NsTclSockProc,       "ns:tclsockcallback",  NsTclSockArgProc},
     {(void *) NsCachePurge,        "ns:cachepurge",       NsCacheArgProc},
     {(void *) NsConnThread,        "ns:connthread",       NsConnArgProc},

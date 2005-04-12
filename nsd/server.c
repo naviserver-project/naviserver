@@ -376,13 +376,24 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
 	    dirf = p;
 	}
     }
-    servPtr->fastpath.pageroot = Ns_ConfigGetValue(path, "pageroot");
-    if (servPtr->fastpath.pageroot == NULL) {
-    	servPtr->fastpath.pageroot = Ns_ConfigGetValue(spath, "pageroot");
-	if (servPtr->fastpath.pageroot == NULL) {    	
-	    Ns_ModulePath(&ds, server, NULL, "pages", NULL);
-	    servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
-	}
+    servPtr->fastpath.serverdir = Ns_ConfigGetValue(path, "serverdir");
+    if (servPtr->fastpath.serverdir == NULL) {
+        Ns_MakePath(&ds, Ns_InfoHomePath(), "servers", server, NULL);
+    	servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
+    } else if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
+        Ns_MakePath(&ds, Ns_InfoHomePath(), servPtr->fastpath.serverdir, NULL);
+    	servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
+    }
+    servPtr->fastpath.pagedir = Ns_ConfigGetValue(path, "pagedir");
+    if (servPtr->fastpath.pagedir == NULL) {
+    	servPtr->fastpath.pagedir = "pages";
+    }
+    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+        servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
+    } else {
+        Ns_MakePath(&ds, servPtr->fastpath.serverdir,
+                    servPtr->fastpath.pagedir, NULL);
+        servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
     }
     p = Ns_ConfigGetValue(path, "directorylisting");
     if (p != NULL && (STREQ(p, "simple") || STREQ(p, "fancy"))) {
@@ -393,6 +404,40 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     	servPtr->fastpath.dirproc = p;
     }
     servPtr->fastpath.diradp = Ns_ConfigGetValue(path, "directoryadp");
+
+    /*
+     * Initialize virtual hosting.
+     */
+
+    path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
+    Ns_ConfigGetBool(path, "enabled", &servPtr->vhost.enabled);
+    if (servPtr->vhost.enabled
+        && Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+
+        Ns_Log(Error, "virtual hosting disabled, pagedir not relative: %s",
+               servPtr->fastpath.pagedir);
+        servPtr->vhost.enabled = NS_FALSE;
+    }
+    if (!Ns_ConfigGetBool(path, "stripwww", &i) || i) {
+        servPtr->vhost.opts |= NSD_STRIP_WWW;
+    }
+    if (!Ns_ConfigGetBool(path, "stripport", &i) || i) {
+        servPtr->vhost.opts |= NSD_STRIP_PORT;
+    }
+    servPtr->vhost.hostprefix = Ns_ConfigGetValue(path, "hostprefix");
+    Ns_ConfigGetInt(path, "hosthashlevel", &servPtr->vhost.hosthashlevel);
+    if (servPtr->vhost.hosthashlevel < 0) {
+        servPtr->vhost.hosthashlevel = 0;
+    }
+    if (servPtr->vhost.hosthashlevel > 5) {
+        servPtr->vhost.hosthashlevel = 5;
+    }
+    if (servPtr->vhost.enabled) {
+        NsPageRoot(&ds, servPtr, ns_strdup("www.example.com:80"));
+        Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",
+               server, ds.string);
+        Ns_DStringTrunc(&ds, 0);
+    }
 
     /*
      * Configure the url, proxy and redirect requests.

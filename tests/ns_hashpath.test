@@ -1,0 +1,63 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+test ns_hashpath-1.1 {basic syntax} -body {
+    ns_hashpath
+} -returnCodes error -result {wrong # args: should be "ns_hashpath string levels"}
+
+test ns_hashpath-1.2 {basic syntax} -body {
+    ns_hashpath "" 0
+} -returnCodes error -result {levels must be an interger greater than zero}
+
+test ns_hashpath-1.3 {basic syntax} -body {
+    ns_hashpath "" -1
+} -returnCodes error -result {levels must be an interger greater than zero}
+
+test ns_hashpath-1.4 {basic syntax} -body {
+    ns_hashpath "" notanum
+} -returnCodes error -result {levels must be an interger greater than zero}
+
+
+
+test ns_hashpath-2.1 {paths} -body {
+    ns_hashpath x 1
+} -result /x
+
+test ns_hashpath-2.2 {paths} -body {
+    ns_hashpath xxx 1
+} -result /x
+
+test ns_hashpath-2.3 {paths} -body {
+    ns_hashpath xxx 2
+} -result /x/x
+
+test ns_hashpath-2.4 {paths} -body {
+    ns_hashpath xxx 3
+} -result /x/x/x
+
+
+
+test ns_hashpath-3.1 {short paths} -body {
+    ns_hashpath x 2
+} -result /x/_
+
+test ns_hashpath-3.1 {short paths} -body {
+    ns_hashpath x 3
+} -result /x/_/_
+
+test ns_hashpath-3.1 {short paths} -body {
+    ns_hashpath xx 3
+} -result /x/x/_
+
+
+
+
+cleanupTests

@@ -88,6 +88,7 @@ extern Tcl_ObjCmdProc
     NsTclGifSizeObjCmd,
     NsTclGmTimeObjCmd,
     NsTclGuessTypeObjCmd,
+    NsTclHashPathObjCmd,
     NsTclHTUUDecodeObjCmd,
     NsTclHTUUEncodeObjCmd,
     NsTclHeadersObjCmd,
@@ -99,6 +100,7 @@ extern Tcl_ObjCmdProc
     NsTclKillObjCmd,
     NsTclLinkObjCmd,
     NsTclLocalTimeObjCmd,
+    NsTclLocationProcObjCmd,
     NsTclLogObjCmd,
     NsTclLogCtlObjCmd,
     NsTclLogRollObjCmd,
@@ -116,6 +118,7 @@ extern Tcl_ObjCmdProc
     NsTclNsvNamesObjCmd,
     NsTclNsvSetObjCmd,
     NsTclNsvUnsetObjCmd,
+    NsTclPagePathObjCmd,
     NsTclParseArgsObjCmd,
     NsTclParseHttpTimeObjCmd,
     NsTclParseQueryObjCmd,
@@ -148,6 +151,8 @@ extern Tcl_ObjCmdProc
     NsTclSelectObjCmd,
     NsTclSemaObjCmd,
     NsTclServerObjCmd,
+    NsTclServerPathObjCmd,
+    NsTclServerRootProcObjCmd,
     NsTclSetCookieObjCmd,
     NsTclSetObjCmd,
     NsTclShutdownObjCmd,
@@ -245,7 +250,14 @@ static Cmd cmds[] = {
     {"ns_rand", NULL, NsTclRandObjCmd},
 
     {"ns_info", NULL, NsTclInfoObjCmd},
+
+    {"ns_hashpath", NULL, NsTclHashPathObjCmd},
     {"ns_modulepath", NULL, NsTclModulePathObjCmd},
+    {"ns_pagepath", NULL, NsTclPagePathObjCmd},
+    {"ns_serverpath", NULL, NsTclServerPathObjCmd},
+
+    {"ns_serverrootproc", NULL, NsTclServerRootProcObjCmd},
+    {"ns_locationproc", NULL, NsTclLocationProcObjCmd},
 
     /*
      * log.c

@@ -696,11 +696,12 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
      * Detailed server information at the bottom of the page.
      */
     if (servPtr->opts.noticedetail) {
-	Ns_DStringVarAppend(&ds, "<P ALIGN=RIGHT><SMALL><I>",
-			    Ns_InfoServerName(), "/",
-			    Ns_InfoServerVersion(), " on ",
-			    Ns_ConnLocation(conn), "</I></SMALL></P>\n",
-			    NULL);
+        Ns_DStringVarAppend(&ds, "<P ALIGN=RIGHT><SMALL><I>",
+                            Ns_InfoServerName(), "/",
+                            Ns_InfoServerVersion(), " on ",
+                            NULL);
+        Ns_ConnLocationAppend(conn, &ds);
+        Ns_DStringAppend(&ds, "</I></SMALL></P>\n");
     }
 
     /*
@@ -949,18 +950,19 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, char *url)
     Ns_DStringInit(&msg);
     if (url != NULL) {
         if (*url == '/') {
-            Ns_DStringAppend(&ds, Ns_ConnLocation(conn));
+            Ns_ConnLocationAppend(conn, &ds);
         }
         Ns_DStringAppend(&ds, url);
         Ns_ConnSetHeaders(conn, "Location", ds.string);
-	Ns_DStringVarAppend(&msg, "<A HREF=\"", ds.string,
-		"\">The requested URL has moved here.</A>", NULL);
-	result = Ns_ConnReturnNotice(conn, 302, "Redirection", msg.string);
+        Ns_DStringVarAppend(&msg, "<A HREF=\"", ds.string,
+                            "\">The requested URL has moved here.</A>", NULL);
+        result = Ns_ConnReturnNotice(conn, 302, "Redirection", msg.string);
     } else {
-	result = Ns_ConnReturnNotice(conn, 204, "No Content", msg.string);
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", msg.string);
     }
     Ns_DStringFree(&msg);
     Ns_DStringFree(&ds);
+
     return result;
 }
 

@@ -672,7 +672,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	} else if (opt == ITclLibIdx) {
 	    Tcl_SetResult(interp, itPtr->servPtr->tcl.library, TCL_STATIC);
 	} else {
-	    Tcl_SetResult(interp, itPtr->servPtr->fastpath.pageroot, TCL_STATIC);
+        NsPageRoot(&ds, itPtr->servPtr, NULL);
+        Tcl_DStringResult(interp, &ds);
 	}
     }
     return TCL_OK;

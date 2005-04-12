@@ -146,6 +146,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, char *type, char *file)
  * Ns_PageRoot --
  *
  *      Return path name of the server pages directory.
+ *      Depreciated: Use Ns_PagePath() which is virtual host aware.
  *
  * Results:
  *      Server pageroot or NULL on invalid server.
@@ -160,8 +161,11 @@ char *
 Ns_PageRoot(char *server)
 {
     NsServer *servPtr = NsGetServer(server);
-    
-    return servPtr->fastpath.pageroot;
+ 
+    if (servPtr != NULL) {
+        return servPtr->fastpath.pageroot;
+    }
+    return NULL;
 }
 
 
@@ -628,8 +632,9 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
     if (servPtr->fastpath.url2file != NULL) {
 	status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
     } else {
-	Ns_MakePath(dsPtr, servPtr->fastpath.pageroot, url, NULL);
-	status = NS_OK;
+        NsPageRoot(dsPtr, servPtr, NULL);
+        Ns_MakePath(dsPtr, url, NULL);
+        status = NS_OK;
     }
     if (status == NS_OK) {
 	while (dsPtr->length > 0 && dsPtr->string[dsPtr->length-1] == '/') {

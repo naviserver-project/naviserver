@@ -1,0 +1,92 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+set serverroot [file join [ns_config "test" home] \
+                    [ns_config "ns/server/test/fastpath" serverdir]]
+set vhosts  [ns_config "ns/server/test/vhost" hostprefix]
+
+
+test ns_serverpath-1.1 {basic path} -body {
+    ns_serverpath
+} -result $serverroot
+
+test ns_serverpath-1.2 {basic path} -body {
+    ns_serverpath foo bar
+} -result ${serverroot}/foo/bar
+
+test ns_serverpath-1.3 {basic path} -body {
+    ns_serverpath -- foo bar
+} -result ${serverroot}/foo/bar
+
+
+
+test ns_serverpath-2.1 {host path} -body {
+    ns_serverpath -host example.com
+} -result ${serverroot}/${vhosts}/e/x/a/example.com
+
+test ns_serverpath-2.2 {host path} -body {
+    ns_serverpath -host EXAMPLE.COM
+} -result ${serverroot}/${vhosts}/e/x/a/example.com
+
+test ns_serverpath-2.3 {host path} -body {
+    ns_serverpath -host www.example.com
+} -result ${serverroot}/${vhosts}/e/x/a/example.com
+
+test ns_serverpath-2.4 {host path} -body {
+    ns_serverpath -host www.example.com:80
+} -result ${serverroot}/${vhosts}/e/x/a/example.com
+
+test ns_serverpath-2.5 {host path} -body {
+    ns_serverpath -host 1
+} -result ${serverroot}/${vhosts}/1/_/_/1
+
+test ns_serverpath-2.6 {host path} -body {
+    ns_serverpath -host ""
+} -result ${serverroot}
+
+
+
+
+test ns_serverpath-3.1 {bad host} -body {
+    ns_serverpath -host " "
+} -result ${serverroot}
+
+test ns_serverpath-3.2 {bad host} -body {
+    ns_serverpath -host /
+} -result ${serverroot}
+
+test ns_serverpath-3.3 {bad host} -body {
+    ns_serverpath -host ../example.com
+} -result ${serverroot}
+
+test ns_serverpath-3.4 {bad host} -body {
+    ns_serverpath -host www.example.com//naughty
+} -result ${serverroot}
+
+test ns_serverpath-3.5 {bad host} -body {
+    ns_serverpath -host www.example.com/../naughty
+} -result ${serverroot}
+
+test ns_serverpath-3.6 {bad host} -body {
+    ns_serverpath -host .. 2dots
+} -result ${serverroot}/2dots
+
+test ns_serverpath-3.6 {bad host} -body {
+    ns_serverpath -host ... 3dots
+} -result ${serverroot}/3dots
+
+
+
+unset -nocomplain serverroot vhosts
+
+
+
+cleanupTests

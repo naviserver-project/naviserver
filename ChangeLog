@@ -1,5 +1,29 @@
 2005-04-11  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/info.c:
+	* nsd/proc.c:
+	* nsd/return.c:
+	* nsd/server.c:
+	* nsd/fastpath.c:
+	* nsd/pathname.c: New concept: server root. Callback can be
+	registered to create the server root, defaults to statically
+	assigned 'serverroot' from config, or host-based if enabled.
+	Many virtual hosting options added. (RFE #1159471)
+	* nsd/conn.c: Add callback to generate current location. If none
+	registered, uses host-header and falls back to driver's location.
+	Add new Ns_ConnAppendLocation() as preferred method of access,
+	depreciated Ns_ConnLocation().
+	* nsd/tclcmds.c: Add vhost related Tcl commands: ns_serverpath
+	ns_pagepath ns_hashpath ns_serverrootproc ns_locationproc.
+	* ns_pagepath.test:
+	* ns_conn_host.test:
+	* ns_serverpath.test:
+	* ns_hashpath.test:
+	* tests/test.nscfg: Add tests for vhost related commands. More
+	location tests needed...
+
 	* nsd/proc.c: Add proc info for NsFastGet.  Cleanup source code
 	formatting.
 

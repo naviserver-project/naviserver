@@ -1,0 +1,56 @@
+#
+# See: ns_serverpath.test for tests which thoroughly exercise the -host switch.
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+set serverroot [file join [ns_config "test" home] \
+                    [ns_config "ns/server/test/fastpath" serverdir] ]
+set pagedir [ns_config "ns/server/test/fastpath" pagedir]
+set vhosts  [ns_config "ns/server/test/vhost" hostprefix]
+
+
+
+test ns_pagepath-1.1 {basic path} -body {
+    ns_pagepath
+} -result ${serverroot}/${pagedir}
+
+test ns_pagepath-1.2 {basic path} -body {
+    ns_pagepath x y
+} -result ${serverroot}/${pagedir}/x/y
+
+test ns_pagepath-1.3 {basic path} -body {
+    ns_pagepath -- x y
+} -result ${serverroot}/${pagedir}/x/y
+
+
+
+test ns_pagepath-2.1 {host path} -body {
+    ns_pagepath -host www.example.com
+} -result ${serverroot}/${vhosts}/e/x/a/example.com/${pagedir}
+
+test ns_pagepath-2.2 {host path} -body {
+    ns_pagepath -host www.example.com --
+} -result ${serverroot}/${vhosts}/e/x/a/example.com/${pagedir}
+
+test ns_pagepath-2.3 {host path} -body {
+    ns_pagepath -host www.example.com -- x
+} -result ${serverroot}/${vhosts}/e/x/a/example.com/${pagedir}/x
+
+test ns_pagepath-2.4 {host path} -body {
+    ns_pagepath -host www.example.com x y
+} -result ${serverroot}/${vhosts}/e/x/a/example.com/${pagedir}/x/y
+
+
+
+unset -nocomplain serverroot pagedir vhosts
+
+
+cleanupTests

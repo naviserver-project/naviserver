@@ -1,19 +1,66 @@
 #
-# ...
+# Configuration file for server to run tests in command mode.
+#
+# $Header$
 #
 
 set servername test
 
+
+
+#
+# Parameters for test scripts.
+#
+
+ns_section "test"
+ns_param   servername      $servername
+ns_param   home            [pwd]/tests
+
+for {set port 8000} {$port < 8100} {incr port} {
+    if {![catch {
+        close [ns_socklisten 127.0.0.1 $port]
+    } msg]} {
+        break
+    }
+}
+ns_param   listenport      [expr $port < 8100 ? $port : 0]
+
+
+
+#
+# Test server configuration.
+#
+
 ns_section "ns/parameters"
-ns_param   home            ./tests
+ns_param   home            [ns_config "test" home]
 
 ns_section "ns/servers"
 ns_param   $servername     "Test Server"
 
 ns_section "ns/server/${servername}"
-ns_param   pageroot        servers/server1/pages
 ns_param   enabletclpages  true
+
+ns_section "ns/server/${servername}/fastpath"
+ns_param   serverdir       testserver
+ns_param   pagedir         pages
+
+ns_section "ns/server/${servername}/vhost"
+ns_param   enabled         true
+ns_param   hostprefix      vhosts
+ns_param   hosthashlevel   3
+ns_param   stripport       yes
+ns_param   stripwww        yes
 
 ns_section "ns/server/${servername}/tcl"
 ns_param   initfile        ../nsd/init.tcl
 ns_param   library         ../tcl
+
+ns_section "ns/server/${servername}/module/nssock"
+ns_param   port            [ns_config "test" listenport]
+ns_param   hostname        localhost
+ns_param   address         127.0.0.1
+
+ns_section "ns/server/${servername}/modules"
+if {[ns_config "test" listenport]} {
+    ns_param   nssock      [ns_config "test" home]/../nssock/nssock.so
+}

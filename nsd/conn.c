@@ -363,25 +363,31 @@ Ns_ConnPeerPort(Ns_Conn *conn)
  *----------------------------------------------------------------------
  * Ns_SetConnLocationProc --
  *
- *      Set pointer to custom routine that acts like Ns_ConnLocation();
+ *      Set pointer to custom routine that acts like
+ *      Ns_ConnLocationAppend();
  *
  * Results:
- *      None.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      None.
+ *      Overrides an old-style Ns_LocationProc.
  *
  *----------------------------------------------------------------------
  */
 
-void
-Ns_SetConnLocationProc(Ns_LocationProc *procPtr)
+int
+Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg)
 {
     NsServer *servPtr = NsGetInitServer();
 
-    if (servPtr != NULL) {
-	servPtr->locationProc = procPtr;
+    if (servPtr == NULL) {
+        Ns_Log(Error, "Ns_SetConnLocationProc: no initializing server");
+        return NS_ERROR;
     }
+    servPtr->vhost.connLocationProc = proc;
+    servPtr->vhost.connLocationArg = arg;
+
+    return NS_OK;
 }
 
 
@@ -391,6 +397,9 @@ Ns_SetConnLocationProc(Ns_LocationProc *procPtr)
  *
  *      Set pointer to custom routine that acts like Ns_ConnLocation();
  *
+ *      Depreciated: Use Ns_SetConnLocationProc() which is virtual host
+ *      aware.
+ *
  * Results:
  *      None.
  *
@@ -401,12 +410,12 @@ Ns_SetConnLocationProc(Ns_LocationProc *procPtr)
  */
 
 void
-Ns_SetLocationProc(char *server, Ns_LocationProc *procPtr)
+Ns_SetLocationProc(char *server, Ns_LocationProc *proc)
 {
     NsServer *servPtr = NsGetServer(server);
 
     if (servPtr != NULL) {
-	servPtr->locationProc = procPtr;
+        servPtr->vhost.locationProc = proc;
     }
 }
 
@@ -416,14 +425,17 @@ Ns_SetLocationProc(char *server, Ns_LocationProc *procPtr)
  *
  * Ns_ConnLocation --
  *
- *	Get the location of this connection. It is of the form 
- *	METHOD://HOSTNAME:PORT 
+ *      Get the location according to the driver for this connection.
+ *      It is of the form SCHEME://HOSTNAME:PORT
+ *
+ *      Depreciated: Use Ns_ConnLocationAppend() which is virtual host
+ *      aware.
  *
  * Results:
- *	a string URL, not including path 
+ *      a string URL, not including path 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -431,15 +443,111 @@ Ns_SetLocationProc(char *server, Ns_LocationProc *procPtr)
 char *
 Ns_ConnLocation(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn     *connPtr = (Conn *) conn;
     NsServer *servPtr = connPtr->servPtr;
-    char *location;
+    char     *location = NULL;
 
-    if (servPtr->locationProc != NULL) {
-        location = (*servPtr->locationProc)(conn);
-    } else {
-	location = connPtr->location;
+    if (servPtr->vhost.locationProc != NULL) {
+        location = (*servPtr->vhost.locationProc)(conn);
     }
+    if (location == NULL) {
+        location = connPtr->location;
+    }
+
+    return location;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnLocationAppend --
+ *
+ *      Append the location of this connection to dest. It is of the
+ *      form SCHEME://HOSTNAME:PORT
+ *
+ * Results:
+ *      dest->string.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
+{
+    Conn       *connPtr = (Conn *) conn;
+    NsServer   *servPtr = connPtr->servPtr;
+    Ns_Set     *headers;
+    char       *location, *host, *p;
+
+    if (servPtr->vhost.connLocationProc != NULL) {
+
+        /*
+         * Prefer the new style Ns_ConnLocationProc.
+         */
+
+        location = (*servPtr->vhost.connLocationProc)
+            (conn, dest, servPtr->vhost.connLocationArg);
+        if (location == NULL) {
+            goto deflocation;
+        }
+
+    } else if (servPtr->vhost.locationProc != NULL) {
+
+        /*
+         * Fall back to old style Ns_LocationProc.
+         */
+
+        location = (*servPtr->vhost.locationProc)(conn);
+        if (location == NULL) {
+            goto deflocation;
+        }
+        location = Ns_DStringAppend(dest, location);
+
+    } else if (servPtr->vhost.enabled
+               && (headers = Ns_ConnHeaders(conn))
+               && (host = Ns_SetIGet(headers, "Host"))
+               && *host != '\0') {
+
+        /*
+         * Construct a location string from the HTTP host header.
+         *
+         * We do not trust the contents of the Host header, so we scan
+         * it for new lines which may be a reponse splitting attack when
+         * used as the target of a redirect reponse, and the HTML open
+         * tag character which may be a cross-site scripting attack when
+         * embedded within HTML.
+         */
+
+        for (p = host; *p != '\0'; ++p) {
+            if (*p == '\n' || *p == '\r' || *p == '<') {
+                return NULL;
+            }
+        }
+
+        Ns_DStringAppend(dest, connPtr->location);
+        location = strstr(dest->string, "://");
+        if (location != NULL) {
+            Ns_DStringTrunc(dest, (location - dest->string) + 3);
+        } else {
+            /* server missconfiguration, should begin: SCHEME:// */
+            Ns_DStringAppend(dest, "http://");
+        }
+        location = Ns_DStringAppend(dest, host);
+
+    } else {
+
+        /*
+         * If all else fails, append the static driver location.
+         */
+
+    deflocation:
+        location = Ns_DStringAppend(dest, connPtr->location);
+    }
+
     return location;
 }
 
@@ -832,6 +940,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     FormFile	 *filePtr;
+    Ns_DString    ds;
     int		  idx, off, len;
 
     static CONST char *opts[] = {
@@ -1117,7 +1226,9 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    break;
 
 	case CLocationIdx:
-	    Tcl_SetResult(interp, Ns_ConnLocation(conn), TCL_STATIC);
+        Ns_DStringInit(&ds);
+        Ns_ConnLocationAppend(conn, &ds);
+        Tcl_DStringResult(interp, &ds);
 	    break;
 
 	case CDriverIdx:
@@ -1169,6 +1280,44 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    }
 	    break;
     }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclLocationProcObjCmd --
+ *
+ *      Implements ns_locationproc as obj command. 
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+{
+    NsServer        *servPtr = NsGetInitServer();
+    Ns_TclCallback  *cbPtr;
+
+    if (objc != 2 && objc != 3) {
+        Tcl_WrongNumArgs(interp, 1, objv, "script ?arg?");
+        return TCL_ERROR;
+    }
+    if (servPtr == NULL) {
+        Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
+        return TCL_ERROR;
+    }
+    cbPtr = Ns_TclNewCallbackObj(interp, NsTclConnLocation,
+                                 objv[1], (objc > 2) ? objv[2] : NULL);
+    Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
 
     return TCL_OK;
 }
@@ -1326,6 +1475,34 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     return status;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclConnLocation --
+ *
+ *      Tcl callback to construct location string.
+ *
+ * Results:
+ *      dest->string or NULL on error.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, void *arg)
+{
+    Ns_TclCallback  *cbPtr = arg;
+    Tcl_Interp      *interp = Ns_GetConnInterp(conn);
+
+    if (Ns_TclEvalCallback(interp, cbPtr, dest, NULL) != NS_OK) {
+        return NULL;
+    }
+    return Ns_DStringValue(dest);
+}
 
 
 /*
