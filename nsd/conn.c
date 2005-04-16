@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://www.mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -234,6 +234,7 @@ Ns_ConnResponseStatus(Ns_Conn *conn)
 
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -292,7 +293,7 @@ Ns_ConnContentSent(Ns_Conn *conn)
  *	Get the response length 
  *
  * Results:
- *	integer, number of bytes to send 
+ *	Integer, number of bytes to send 
  *
  * Side effects:
  *	None.	
@@ -945,24 +946,22 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     static CONST char *opts[] = {
 	 "authpassword", "authuser", "close", "content", "contentlength",
-	 "copy", "driver", "encoding", "files", "fileoffset",
-	 "filelength", "fileheaders", "flags", "form", "headers",
+	 "copy", "channel", "driver", "encoding", "files", "fileoffset",
+	 "filelength", "fileheaders", "flags", "form", "flush", "headers",
 	 "host", "id", "isconnected", "location", "method",
 	 "outputheaders", "peeraddr", "peerport", "port", "protocol",
 	 "query", "request", "server", "sock", "start", "status",
-	 "url", "urlc", "urlencoding", "urlv", "version", "write_encoded", 
-	 "channel", NULL
+	 "url", "urlc", "urlencoding", "urlv", "version", "write_encoded", NULL
     };
     enum ISubCmdIdx {
 	 CAuthPasswordIdx, CAuthUserIdx, CCloseIdx, CContentIdx,
-	 CContentLengthIdx, CCopyIdx, CDriverIdx, CEncodingIdx,
+	 CContentLengthIdx, CCopyIdx, CChannelIdx, CDriverIdx, CEncodingIdx,
 	 CFilesIdx, CFileOffIdx, CFileLenIdx, CFileHdrIdx, CFlagsIdx,
-	 CFormIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
+	 CFormIdx, CFlushIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
 	 CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
 	 CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
 	 CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
-	 CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
-	 CChannelIdx
+	 CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx
     } opt;
 
     if (objc < 2) {
@@ -1156,6 +1155,13 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    }
 	    break;
 
+    case CFlushIdx: {
+        Tcl_SetIntObj(result,
+                      Ns_ConnFlushHeaders(conn, 
+                                          Ns_ConnResponseStatus(conn)));
+        break;
+    }
+
 	case CCopyIdx:
 	    if (objc != 5) {
 		Tcl_WrongNumArgs(interp, 2, objv, "off len chan");
@@ -1166,9 +1172,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 		return TCL_ERROR;
 	    }
 	    if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
-		Tcl_AppendResult(interp, "could not write ", Tcl_GetString(objv[3]), " bytes to ",
-		    Tcl_GetString(objv[4]), ": ", Tcl_PosixError(interp), NULL);
-		return TCL_ERROR;
+            Tcl_AppendResult(interp, "could not write ", 
+                             Tcl_GetString(objv[3]), " bytes to ", 
+                             Tcl_GetString(objv[4]), ": ",
+                             Tcl_PosixError(interp), NULL);
+            return TCL_ERROR;
 	    }
 	    break;
 
@@ -1239,17 +1247,19 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    Tcl_SetResult(interp, Ns_ConnServer(conn), TCL_STATIC);
 	    break;
 
-	case CStatusIdx:
-            if (objc > 2) {
-                int new_status;
-                if (Tcl_GetIntFromObj(interp, objv[2], &new_status) != TCL_OK) {
-                    Tcl_AppendResult(interp, "Invalid response status code", NULL );
-                    return TCL_ERROR;
-                }
-                Ns_ConnSetResponseStatus(conn, new_status);
+    case CStatusIdx:
+        if (objc < 2 || objc > 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "?status?");
+            return TCL_ERROR;
+        } else if (objc == 3) {
+            int status;
+            if (Tcl_GetIntFromObj(interp, objv[2], &status) != TCL_OK) {
+                return TCL_ERROR;
             }
-	    Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
-	    break;
+            Ns_ConnSetResponseStatus(conn, status);
+        }
+        Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
+        break;
 
 	case CSockIdx:
 	    Tcl_SetIntObj(result, Ns_ConnSock(conn));

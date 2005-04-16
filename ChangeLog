@@ -3,6 +3,9 @@
 	* nsd/nsmain.c: removed extra colon in variable declaration
 	which caused some older gcc compilers to break.
 
+	* nsd/conn.c: added "ns_conn flush" as per RFE #1184271
+	and untabified and reidented the file (eh, old nit-picker)
+
 2005-04-11  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
