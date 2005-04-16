@@ -109,7 +109,7 @@ int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
     int  i, fd, sig, optind, cmdargc;
-    char **cmdargv;;
+    char **cmdargv;
     char *config;
     Ns_Time timeout;
 
