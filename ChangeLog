@@ -1,5 +1,10 @@
 2005-04-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
+	* tests/ns_nsv.test: added new file.
+	Credits to Bernd (b.eidenschink@kinetiqa.de).
+
+2005-04-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
 	* nsd/conn.c: ns_conn status was wrongly returning the
 	changed status code instead of the previous value.
 	This was introduced (again) by the changes below.
