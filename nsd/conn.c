@@ -1253,9 +1253,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             if (Tcl_GetIntFromObj(interp, objv[2], &status) != TCL_OK) {
                 return TCL_ERROR;
             }
+            Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
             Ns_ConnSetResponseStatus(conn, status);
+        } else {
+            Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
         }
-        Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
         break;
 
     case CSockIdx:
