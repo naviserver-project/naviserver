@@ -927,7 +927,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     static CONST char *opts[] = {
         "authpassword", "authuser", "close", "content", "contentlength",
         "copy", "channel", "driver", "encoding", "files", "fileoffset",
-        "filelength", "fileheaders", "flags", "form", "flush", "headers",
+        "filelength", "fileheaders", "flags", "form", "headers",
         "host", "id", "isconnected", "location", "method",
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status",
@@ -938,7 +938,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CAuthPasswordIdx, CAuthUserIdx, CCloseIdx, CContentIdx,
         CContentLengthIdx, CCopyIdx, CChannelIdx, CDriverIdx, CEncodingIdx,
         CFilesIdx, CFileOffIdx, CFileLenIdx, CFileHdrIdx, CFlagsIdx,
-        CFormIdx, CFlushIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
+        CFormIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
         CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
@@ -1136,13 +1136,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Ns_TclEnterSet(interp, filePtr->hdrs, NS_TCL_SET_STATIC);
         }
         break;
-
-    case CFlushIdx: {
-        Tcl_SetIntObj(result,
-                      Ns_ConnFlushHeaders(conn, 
-                                          Ns_ConnResponseStatus(conn)));
-        break;
-    }
 
     case CCopyIdx:
         if (objc != 5) {

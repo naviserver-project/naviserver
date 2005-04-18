@@ -1,3 +1,9 @@
+2005-04-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/conn.c: removed "ns_conn flush" option added 
+	recently since not needed. The trick is done with 
+	the "ns_headers" command.
+
 2005-04-18  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
