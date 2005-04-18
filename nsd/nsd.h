@@ -951,8 +951,6 @@ extern void NsAdpParse(AdpParse *parsePtr, NsServer *servPtr, char *utf, int saf
  */
 
 extern Ns_TclInterpInitProc NsTclCreateCmds;
-extern char 	  *NsTclConnId(Ns_Conn *conn);
-extern int 	   NsIsIdConn(char *inID);
 extern void	   NsTclInitQueueType(void);
 extern void	   NsTclInitAddrType(void);
 extern void	   NsTclInitTimeType(void);
