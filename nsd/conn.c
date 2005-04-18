@@ -480,10 +480,11 @@ Ns_ConnLocation(Ns_Conn *conn)
 char *
 Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 {
-    Conn *connPtr = (Conn *) conn;
-    NsServer *servPtr = connPtr->servPtr;
-    Ns_Set *headers;
-    char *location, *host, *p;
+    Conn       *connPtr = (Conn *) conn;
+    NsServer   *servPtr = connPtr->servPtr;
+    Ns_Set     *headers;
+    Ns_DString  ds;
+    char       *location, *host, *p;
 
     if (servPtr->vhost.connLocationProc != NULL) {
 
@@ -530,14 +531,21 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
             }
         }
 
-        Ns_DStringAppend(dest, connPtr->location);
-        location = strstr(dest->string, "://");
+        /*
+         * Get the scheme from the driver location, default to http://.
+         */
+
+        Ns_DStringInit(&ds);
+        Ns_DStringAppend(&ds, connPtr->location);
+        location = strstr(ds.string, "://");
         if (location != NULL) {
-            Ns_DStringTrunc(dest, (location - dest->string) + 3);
+            Ns_DStringTrunc(&ds, (location - ds.string) + 3);
+            Ns_DStringNAppend(dest, ds.string, ds.length);
         } else {
             /* server missconfiguration, should begin: SCHEME:// */
             Ns_DStringAppend(dest, "http://");
         }
+        Ns_DStringFree(&ds);
         location = Ns_DStringAppend(dest, host);
 
     } else {
@@ -836,29 +844,6 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 /*
  *----------------------------------------------------------------------
  *
- * NsIsIdConn --
- *
- *      Given an conn ID, could this be a conn ID?
- *
- * Results:
- *      Boolean 
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsIsIdConn(char *connId)
-{
-    return (connId && *connId == 'c') ? NS_TRUE : NS_FALSE;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_ConnGetWriteEncodedFlag --
  *
  *      Is the given connection set for encoded writes.
@@ -993,7 +978,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
         
     case CUrlvIdx:
-        if (objc == 2 || (objc == 3 && NsIsIdConn(Tcl_GetString(objv[2])))) {
+        if (objc == 2) {
             for (idx = 0; idx < request->urlc; idx++) {
                 Tcl_AppendElement(interp, request->urlv[idx]);
             }

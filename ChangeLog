@@ -1,5 +1,9 @@
 2005-04-18  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/conn.c:
+	* tests/ns_conn_host.test: Prevent truncation of content already in
+	dstring when location is appended.  Use nstest_http in tests.
+
 	* nsd/nsconf.c:
 	* tests/test.nscfg:
 	* tests/testserver/modules/http.tcl: Add helper command

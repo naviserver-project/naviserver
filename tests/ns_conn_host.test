@@ -21,29 +21,14 @@ set self ${driverlocation}:[ns_config "ns/server/test/module/nssock" port]
 
 
 test ns_conn_location-1.1 {http 1.1 host} -constraints serverListen -setup {
-    ns_eval {{
-        proc conn_location_request {args} {
-            ns_return 200 text/plain [ns_conn location]
-        }
-    }}
-    ns_register_proc GET /location conn_location_request
+    ns_register_proc GET /location {ns_return 200 text/plain [ns_conn location] ;#}
 } -body {
-    set id [ns_http queue GET $self/location]
-    ns_http wait $id location
-    set location
+    nstest_http -getbody 1 GET $self/location
 } -cleanup {
-    ns_eval {{
-        rename conn_location_request {}
-    }}
     ns_unregister_proc GET /location
-    ns_http cleanup
-    unset -nocomplain id location
-} -result $self
+} -result [list 200 $self]
 
 
 
-unset -nocomplain driverhost self
-
-
-
+unset -nocomplain driverlocation self
 cleanupTests
