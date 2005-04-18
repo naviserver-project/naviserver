@@ -1,3 +1,12 @@
+2005-04-18  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsconf.c:
+	* tests/test.nscfg:
+	* tests/testserver/modules/http.tcl: Add helper command
+	nstest_http for test suite and new config parameter
+	ns/parameters/tcllibrary so that the tcl shared library can be set
+	to an arbitrary path.
+
 2005-04-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* tests/ns_nsv.test: added new file.

@@ -33,6 +33,7 @@ ns_param   listenport      [expr $port < 8100 ? $port : 0]
 
 ns_section "ns/parameters"
 ns_param   home            [ns_config "test" home]
+ns_param   tcllibrary      [ns_config "test" home]/../tcl
 
 ns_section "ns/servers"
 ns_param   $servername     "Test Server"
@@ -53,7 +54,7 @@ ns_param   stripwww        yes
 
 ns_section "ns/server/${servername}/tcl"
 ns_param   initfile        ../nsd/init.tcl
-ns_param   library         ../tcl
+ns_param   library         [ns_config "test" home]/testserver/modules
 
 ns_section "ns/server/${servername}/module/nssock"
 ns_param   port            [ns_config "test" listenport]
