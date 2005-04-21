@@ -56,6 +56,10 @@ static char *month_names[12] =
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
+#ifdef HAVE_TIMEGM
+static Ns_Mutex lock;
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -240,7 +244,9 @@ Ns_ParseHttpTime(char *str)
     }
     tm.tm_isdst = 0;
 #ifdef HAVE_TIMEGM
+    Ns_MutexLock(&lock);
     t = timegm(&tm);
+    Ns_MutexUnlock(&lock);
 #else
     t = mktime(&tm) - timezone;
 #endif

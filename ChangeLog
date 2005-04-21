@@ -1,3 +1,8 @@
+2005-04-21  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/httptime.c: fixed usage of non-mt-safe timegm()
+	by adding a protective lock (Bug#  1187635).
+
 2005-04-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/conn.c: removed "ns_conn flush" option added 
