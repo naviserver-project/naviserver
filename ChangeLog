@@ -1,3 +1,9 @@
+2005-04-26  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/file.tcl: added support for caching tcl bytecode if 
+	ns_cache module is loaded, it is used to be in tclcache.tcl 
+	file which is missing in NS
+
 2005-04-21  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/httptime.c: fixed usage of non-mt-safe timegm()

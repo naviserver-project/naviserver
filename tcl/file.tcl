@@ -64,79 +64,82 @@ proc ns_tcl_abort {} {
     error ns_tcl_abort "" NS_TCL_ABORT
 }
 
+#
+#
+#      Support for caching Tcl-page bytecodes.
+#
+
 if { ![string equal [info commands "ns_cache"] ""] } {
-    proc ns_sourceproc {ignored} {
 
-        ns_share errorPage
+    ns_cache create util_file_contents_cached -thread 1 \
+        -size [ns_config "ns/server/[ns_info server]" SourceCacheSize 5000000]
 
-        set file [ns_url2file [ns_conn url]]
-        if ![file exists $file] {
-            ns_returnnotfound
-        } else {
-	    set code [catch {
-	        source_cached $file
-	    } result ]
-
-	    global errorCode errorInfo
-	
-	    if { ![info exists errorCode] } {
-	        # Tcl bug workaround.
-	        set errorCode NONE
-	    }
-	    if { ![info exists errorInfo] } {
-	        # Another Tcl bug workaround.
-	        set errorInfo ""
-	    }
-	
-	    if {$code == 1 && $errorCode == "NS_TCL_ABORT"} {
-	        return
-	    }
-
-	    if { $errorPage == "" } {
-	        return -code $code \
-		    -errorcode $errorCode -errorinfo $errorInfo $result
-	    } else {
-	        ## Custom error page -- unfortunately we can't pass parameters.
-	        source $errorPage
-	    }
+    # Get the contents of a file from the cache or disk.
+    proc ns_sourcefile {filename} {
+        file stat $filename stat
+        set current_cookie [list $stat(mtime) $stat(ctime) $stat(ino) $stat(dev)]
+        set cached_p [ns_cache get util_file_contents_cached $filename pair]
+        if {$cached_p} {
+            set cached_cookie [lindex $pair 0]
+            if {![string equal $cached_cookie $current_cookie]} {
+                ns_cache flush util_file_contents_cached $filename
+                set cached_p 0
+            }
         }
+        if {!$cached_p} {
+            # Now cache the Tcl_Obj in a thread-local cache.
+            set pair [ns_cache eval util_file_contents_cached $filename {
+                set fd [open $filename]
+                set contents [read $fd]
+                close $fd
+                list $current_cookie $contents
+            }]
+        }
+        # And here's the magic part.  We're using "for" here to translate the
+        # text source file into bytecode, which will be associated with the 
+        # Tcl_Obj we just cached (as its internal representation).  "eval"
+        # doesn't do this as the eval provided in Tcl uses the TCL_EVAL_DIRECT
+        # flag, and hence interprets the text directly.
+        uplevel [for [lindex $pair 1] {0} {} {}]
     }
+
 } else {
-    proc ns_sourceproc {ignored} {
 
-        ns_share errorPage
-
-        set file [ns_url2file [ns_conn url]]
-        if ![file exists $file] {
-            ns_returnnotfound
-        } else {
-	    set code [catch {
-	        source $file
-	    } result ]
-
-	    global errorCode errorInfo
-	
-	    if { ![info exists errorCode] } {
-	        # Tcl bug workaround.
-	        set errorCode NONE
-	    }
-	    if { ![info exists errorInfo] } {
-	        # Another Tcl bug workaround.
-	        set errorInfo ""
-	    }
-	
-	    if {$code == 1 && $errorCode == "NS_TCL_ABORT"} {
-	        return
-	    }
-
-	    if { $errorPage == "" } {
-	        return -code $code \
-		    -errorcode $errorCode -errorinfo $errorInfo $result
-	    } else {
-	        ## Custom error page -- unfortunately we can't pass parameters.
-	        source $errorPage
-	    }
-        }
+    proc ns_sourcefile {filename} {
+        uplevel source $filename
     }
 }
 
+proc ns_sourceproc { args } {
+
+    ns_share errorPage
+
+    set file [ns_url2file [ns_conn url]]
+    if { ![file exists $file] } {
+        ns_returnnotfound
+        return
+    }
+    set code [catch { ns_sourcefile $file } result ]
+
+    global errorCode errorInfo
+	
+    if { ![info exists errorCode] } {
+        # Tcl bug workaround.
+        set errorCode NONE
+    }
+    if { ![info exists errorInfo] } {
+        # Another Tcl bug workaround.
+        set errorInfo ""
+    }
+	
+    if { $code == 1 && $errorCode == "NS_TCL_ABORT" } {
+        return
+    }
+
+    if { $errorPage == "" } {
+        return -code $code -errorcode $errorCode -errorinfo $errorInfo $result
+    } else {
+        ## Custom error page -- unfortunately we can't pass parameters.
+        source $errorPage
+    }
+}
