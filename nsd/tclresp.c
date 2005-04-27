@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,15 +31,21 @@
 /*
  * tclresp.c --
  *
- *	Tcl commands for returning data to the user agent. 
+ *      Tcl commands for returning data to the user agent. 
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 
+
+/*
+ * Static functions defined in this file.
+ */
+
 static int Result(Tcl_Interp *interp, int result);
 static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
+
 
 
 /*
@@ -47,14 +53,14 @@ static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
  *
  * NsTclHeadersObjCmd --
  *
- *	Spit out initial HTTP response; this is for backwards 
- *	compatibility only. 
+ *      Implements ns_headers.  Set default response headers and flush
+ *      all headers to client.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -71,7 +77,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         return TCL_ERROR;
     }
     if (GetConn(arg, interp, &conn) != TCL_OK) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
         return TCL_ERROR;
@@ -83,7 +89,62 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         return TCL_ERROR;
     }
     Ns_ConnSetRequiredHeaders(conn, type, len);
+
     return Result(interp, Ns_ConnFlushHeaders(conn, status));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclWriteObjCmd --
+ *
+ *      Implements ns_write.  Send string directly to client.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      String may be transcoded.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_Conn *conn;
+    char    *bytes;
+    int      length;
+    int      result;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "string");
+        return TCL_ERROR;
+    }
+    if (GetConn(arg, interp, &conn) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    /*
+     * Treat string as binary unless the WriteEncodedFlag is set
+     * on the current conn.  This flag is manipulated via
+     * ns_startcontent or ns_conn write_encoded.
+     */
+
+    if (Ns_ConnGetWriteEncodedFlag(conn) &&
+        (Ns_ConnGetEncoding(conn) != NULL)) {
+
+        bytes = Tcl_GetStringFromObj(objv[1], &length);
+        result = Ns_WriteCharConn(conn, bytes, length);
+
+    } else {
+
+        bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &length);
+        result = Ns_WriteConn(conn, bytes, length);
+    }
+
+    return Result(interp, result);
 }
 
 
@@ -92,13 +153,14 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  *
  * NsTclReturnObjCmd --
  *
- *	Implements ns_return as obj command. 
+ *      Implements ns_return.  Send complete response to client with
+ *      given string as body.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      String may be transcoded. Connection will be closed.
  *
  *----------------------------------------------------------------------
  */
@@ -114,13 +176,14 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         return TCL_ERROR;
     }
     if (GetConn(arg, interp, &conn) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[objc-3], &status) != TCL_OK) {
         return TCL_ERROR;
     }
-    result = Ns_ConnReturnCharData(conn, status, Tcl_GetString(objv[objc-1]), -1, 
-	    Tcl_GetString(objv[objc-2]));
+    if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    result = Ns_ConnReturnCharData(conn, status, Tcl_GetString(objv[3]), -1, 
+        Tcl_GetString(objv[2]));
+
     return Result(interp, result);
 }
 
@@ -130,13 +193,14 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  *
  * NsTclRespondObjCmd --
  *
- *	Implements ns_respond as obj command. 
+ *      Implements ns_respond.  Send complete response to client using
+ *      a variety of options.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See ns_respond. 
+ *      String data may be transcoded. Connection will be closed.
  *
  *----------------------------------------------------------------------
  */
@@ -149,7 +213,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
     char        *type = "*/*", *setid = NULL;
     char        *string = NULL, *filename = NULL, *chanid = NULL;
     Ns_Set      *set = NULL;
-    Tcl_Channel	 chan;
+    Tcl_Channel  chan;
     int          retval;
 
     Ns_ObjvSpec opts[] = {
@@ -178,16 +242,16 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
     }
     if (setid != NULL) {
         set = Ns_TclGetSet(interp, setid);
-	    if (set == NULL) {
+        if (set == NULL) {
             Ns_TclPrintfResult(interp, "illegal ns_set id: \"%s\"", setid);
             return TCL_ERROR;
-	    }
+        }
     }
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
     if (set != NULL) {
-	    Ns_ConnReplaceHeaders(conn, set);
+        Ns_ConnReplaceHeaders(conn, set);
     }
 
     if (chanid != NULL) {
@@ -195,7 +259,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
          * We'll be returning an open channel
          */
 
-	    if (Ns_TclGetOpenChannel(interp, chanid, 0, 1, &chan) != TCL_OK) {
+        if (Ns_TclGetOpenChannel(interp, chanid, 0, 1, &chan) != TCL_OK) {
             return TCL_ERROR;
         }
         retval = Ns_ConnReturnOpenChannel(conn, status, type, chan, length);
@@ -224,13 +288,15 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  *
  * NsTclReturnFileObjCmd --
  *
- *	Return an open file. (ns_returnfile) 
+ *      Implements ns_returnfile.  Send complete response to client
+ *      using contents of filename if exists and is readable, otherwise
+ *      send error response.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      Fastpath cache may be used. Connection will be closed.
  *
  *----------------------------------------------------------------------
  */
@@ -252,7 +318,7 @@ NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         return TCL_ERROR;
     }
     return Result(interp, Ns_ConnReturnFile(conn, status, Tcl_GetString(objv[2]), 
-				Tcl_GetString(objv[3])));
+                                            Tcl_GetString(objv[3])));
 }
 
 
@@ -261,13 +327,14 @@ NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *
  * NsTclReturnFpObjCmd --
  *
- *	Implements ns_returnfp. (actually accepts any open channel)
+ *      Implements ns_returnfp.  Send complete response to client using
+ *      len bytes from given channel.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      Will close connection.
  *
  *----------------------------------------------------------------------
  */
@@ -276,7 +343,7 @@ int
 NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     int          len, status;
-    Tcl_Channel	 chan;
+    Tcl_Channel  chan;
     Ns_Conn     *conn;
 
     if (objc != 5) {
@@ -292,10 +359,61 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     if (Tcl_GetIntFromObj(interp, objv[4], &len) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[3]), 0, 1, &chan) != TCL_OK) {
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[3]), 0, 1, &chan)
+        != TCL_OK) {
         return TCL_ERROR;
     }
-    return Result(interp, Ns_ConnReturnOpenChannel(conn, status, Tcl_GetString(objv[2]), chan, len));
+
+    return Result(interp,
+        Ns_ConnReturnOpenChannel(conn, status, Tcl_GetString(objv[2]), chan, len));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclConnSendFpObjCmd --
+ *
+ *      Implements ns_connsendfp.  Send len bytes from given channel
+ *      directly to client without sending headers.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Will close connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_Conn     *conn;
+    Tcl_Channel  chan;
+    int          len;
+
+    if (objc != 3) {
+        Tcl_WrongNumArgs(interp, 1, objv, "channel len");
+        return TCL_ERROR;
+    }
+    if (GetConn(arg, interp, &conn) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) 
+        != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (Ns_ConnSendChannel(conn, chan, len) != NS_OK) {
+        Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
+                           len, Tcl_GetString(objv[1]));
+        return TCL_ERROR;
+    }
+
+    return TCL_OK;
 }
 
 
@@ -304,13 +422,14 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *
  * NsTclReturnBadRequestObjCmd --
  *
- *	Implements ns_returnbadrequest as obj command. 
+ *      Implements ns_returnbadrequest.  Send an error response to
+ *      client with HTTP status code 400.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      Will close connection.
  *
  *----------------------------------------------------------------------
  */
@@ -327,6 +446,7 @@ NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
+
     return Result(interp, Ns_ConnReturnBadRequest(conn, Tcl_GetString(objv[1])));
 }
 
@@ -334,29 +454,28 @@ NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 /*
  *----------------------------------------------------------------------
  *
- * NsTclSimpleReturnObjCmd --
+ * ReturnObjCmd --
  *
- *	A generic way of returning from tcl; this implements 
- *	ns_returnnotfound and ns_returnforbidden. It uses the 
- *	clientdata to know what to do. 
+ *      Implements ns_returnnotfound, ns_returnunauthorized and
+ *      ns_returnforbidden.  Send an error response to client.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	Will call proc that is clientdata. 
+ *      Will close connection.
  *
  *----------------------------------------------------------------------
  */
 
 static int
 ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
-		Tcl_Obj *CONST objv[], int (*proc) (Ns_Conn *))
+        Tcl_Obj *CONST objv[], int (*proc) (Ns_Conn *))
 {
     Ns_Conn *conn;
 
     if (GetConn(arg, interp, &conn) != TCL_OK) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     return Result(interp, (*proc)(conn));
 }
@@ -385,13 +504,14 @@ NsTclReturnForbiddenObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclReturnErrorObjCmd --
  *
- *	Implements ns_returnerror as obj command.
+ *      Implements ns_returnerror.  Send an error response to client
+ *      with given status code and message.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      Will close connection.
  *
  *----------------------------------------------------------------------
  */
@@ -399,8 +519,8 @@ NsTclReturnForbiddenObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj
 int
 NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    int      status;
     Ns_Conn *conn;
+    int      status;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "status message");
@@ -412,9 +532,10 @@ NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
         return TCL_ERROR;
     }
+
     return Result(interp,
-        Ns_ConnReturnAdminNotice(conn, status, "Request Error", 
-                                 Tcl_GetString(objv[2])));
+        Ns_ConnReturnNotice(conn, status, "Request Error",
+                            Tcl_GetString(objv[2])));
 }
 
 
@@ -423,13 +544,14 @@ NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *
  * NsTclReturnNoticeObjCmd --
  *
- *      Implements ns_returnnotice command.
+ *      Implements ns_returnnotice command.  Send a response to client
+ *      with given status code, title and message.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      Will close connection.
  *
  *----------------------------------------------------------------------
  */
@@ -461,13 +583,13 @@ NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
  *
  * NsTclReturnRedirectObjCmd --
  *
- *	Implements ns_returnredirect as obj command. 
+ *      Implements ns_returnredirect.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      See Ns_ConnReturnRedirect().
  *
  *----------------------------------------------------------------------
  */
@@ -484,108 +606,8 @@ NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
+
     return Result(interp, Ns_ConnReturnRedirect(conn, Tcl_GetString(objv[1])));
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclWriteObjCmd --
- *
- *	Implements ns_write as obj command.
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Ns_Conn *conn;
-    char    *bytes;
-    int      length;
-    int      result;
-
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string");
-        return TCL_ERROR;
-    }
-    if (GetConn(arg, interp, &conn) != TCL_OK) {
-        return TCL_ERROR;
-    }
-
-    /*
-     * ns_write will treat data it is given as binary, until
-     * it is specifically given permission to do otherwise through
-     * the WriteEncodedFlag on the current conn.  This flag is
-     * manipulated via ns_startcontent or ns_conn write_encoded
-     */
-    if (Ns_ConnGetWriteEncodedFlag(conn) &&
-        (Ns_ConnGetEncoding(conn) != NULL)) {
-
-        bytes = Tcl_GetStringFromObj(objv[1], &length);
-        result = Ns_WriteCharConn(conn, bytes, length);
-
-    } else {
-
-        bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &length);
-        result = Ns_WriteConn(conn, bytes, length);
-
-    }
-
-    return Result(interp, result);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclConnSendFpObjCmd --
- *
- *	Implements ns_connsendfp as obj command.
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Ns_Conn     *conn;
-    Tcl_Channel	 chan;
-    int          len;
-
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "channel len");
-        return TCL_ERROR;
-    }
-    if (GetConn(arg, interp, &conn) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) 
-			!= TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (Ns_ConnSendChannel(conn, chan, len) != NS_OK) {
-        Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
-                           len, Tcl_GetString(objv[1]));
-        return TCL_ERROR;
-    }
-    return TCL_OK;
 }
 
 static int
@@ -602,9 +624,10 @@ GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
     NsInterp *itPtr = arg;
 
     if (itPtr->conn == NULL) {
-	Tcl_SetResult(interp, "no connection", TCL_STATIC);
-	return TCL_ERROR;
+        Tcl_SetResult(interp, "no connection", TCL_STATIC);
+        return TCL_ERROR;
     }
     *connPtr = itPtr->conn;
+
     return TCL_OK;
 }

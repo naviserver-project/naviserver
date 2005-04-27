@@ -1,3 +1,31 @@
+2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tclresp.c: Cleanup and reformat code.  Clarify comments.
+
+	* tests/ns_conn_host.test:
+	* tests/ns_pagepath.test:
+	* ns_serverpath.test: Convert to new nstest_http command and the
+	use seperate virtual hosts for tests.
+
+	* tests/http.test:
+	* ns_adp_compress.test:
+	* tclresp.test: Convert	to new nstest_http command for testing
+	http responses.
+
+	* tests/test.nscfg: Create seperate virtual servers for virtual
+	host tests and custom serverroot and conn host tests.
+
+	* tests/testserver/pages/10bytes: Add missing 10bytes file for
+	tclresp.test.
+
+	* tests/testserver/modules/http.tcl:
+	* tests/testserver/modules/testhttp.tcl: Rename http.tcl
+	testhttp.tcl so that it doesn't overide the standard tcl/http.tcl
+	file.  Command now correctly only sets default headers once so
+	that e.g. the Host header can be overridden. Retrieve host and
+	port to connect to from config file.
+
+
 2005-04-26  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/file.tcl: added support for caching tcl bytecode if 
