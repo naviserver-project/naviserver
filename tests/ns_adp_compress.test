@@ -30,59 +30,29 @@
 # $Header$
 #
 
-source harness.tcl
-
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-if {[info exists ::env(AOLSERVER_HTTP_TEST)]} {
-    testConstraint serverTests true
+eval ::tcltest::configure $argv
+
+
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
 }
 
-if {[testConstraint serverTests]} {
-    foreach {host port} [split $::env(AOLSERVER_HTTP_TEST) :] break
-}
 
-set setup {
-    set sock [socket $host $port]
-    fconfigure $sock -translation binary -encoding binary -buffering none
-}
-set cleanup {
-    close $sock
-}
 
-set test 0
-test ns_adp_compress-1.[incr test] {fetch compressed page w/o Accept-Encoding} \
-    -constraints serverTests -setup $setup -body {
-    puts $sock "GET /ns_adp_compress.adp HTTP/1.0\n"
-    set response [read $sock]
-    set lines [split $response "\n"]
-    assertEquals "HTTP/1.0 200 OK\r" [lindex $lines 0]
-    assertEquals 0 [string match "Content-Encoding: gzip" $response]
-} -cleanup $cleanup -result {}
+test ns_adp_conpress-1.1 {no Accept-Encoding} -constraints serverListen -body {
+    nstest_http -getbody 1 GET /ns_adp_compress.adp
+} -result {200 {this is a test}}
 
-test ns_adp_compress-1.[incr test] {fetch compressed page w/ Accept-Encoding} \
-    -constraints serverTests -setup $setup -body {
-    puts $sock "GET /ns_adp_compress.adp HTTP/1.0"
-    puts $sock "Accept-Encoding: gzip\n"
-    set response [read $sock]
-    set lines [split $response "\n"]
-    assertEquals "HTTP/1.0 200 OK\r" [lindex $lines 0]
-    assertEquals 1 [string match "*\r\nContent-Encoding: gzip\r\n*" $response]
+test ns_adp_conpress-1.2 {Accept-Encoding gzip} -constraints serverListen -body {
+    set response [nstest_http -setheaders {accept-encoding gzip} \
+                      -getheaders {content-encoding} -getbody 1 GET /ns_adp_compress.adp]
+    binary scan [lindex $response 2] "H*" values
+    list [lindex $response 0] [lindex $response 1] [regexp -all -inline {..} $values]
+} -result "200 gzip \{1f 8b 08 00 00 00 00 00 00 03 2b c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 00 26 33 05 16 0d 1e e7 ea 00 00 00 0e\}"
 
-    set gzipBytes [list 1f 8b 08 00 00 00 00 00 00 03 2b c9 c8 2c 56 00 \
-    a2 44 85 92 d4 e2 12 2e 2e 00 30 7d 05 2a c1 1c 72 c8 00 00 00 10]
-    set responseBytes [list]
-    foreach {start end} \
-        [lindex [regexp -inline -indices "\r\n\r\n" $response] 0] break
-    if {$end ne ""} {
-        incr end
-        binary scan [string range $response $end end] "H*" values
-        set responseBytes [regexp -all -inline {..} $values]
-    } else {
-        set responseBytes $response
-    }
-    assertEquals $gzipBytes $responseBytes
-} -cleanup $cleanup -result {}
+
 
 cleanupTests

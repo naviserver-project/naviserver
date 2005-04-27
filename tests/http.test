@@ -30,58 +30,36 @@
 # $Header$
 #
 
-source harness.tcl
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-if {[info exists ::env(AOLSERVER_HTTP_TEST)]} {
-    testConstraint serverTests true
+eval ::tcltest::configure $argv
+
+
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
 }
 
 
-if {[testConstraint serverTests]} {
-    foreach {host port} [split $::env(AOLSERVER_HTTP_TEST) :] break
-}
 
-set setup {
-    set sock [socket $host $port]
-    fconfigure $sock -translation binary -encoding binary -buffering none
-}
-set cleanup {
-    close $sock
-}
+test http-1.1 {bad request} -constraints serverListen -body {
+    nstest_http -getbody 1 bogus
+} -result {{}}
 
-set test 0
-test http-1.[incr test] {bad method} \
-    -constraints serverTests -setup $setup -body {
-    puts $sock "."
-    set response [read $sock]
-    assertEquals {} $response
-} -cleanup $cleanup -result {}
+test http-1.2 {HTTP/0.9 GET} -constraints serverListen -body {
+    nstest_http -http "" -getbody 1 GET /noexist
+} -match glob -result {*Not Found*}
 
-test http-1.[incr test] {HTTP/0.9 GET} \
-    -constraints serverTests -setup $setup -body {
-    puts $sock "GET /asdfasdfasdf\n"
-    set response [read $sock]
-    assertEquals 0 [regexp {^HTTP/\S+ \d+ .*} $response]
-    assertEquals 1 [regexp {<TITLE>Not Found</TITLE>} $response]
-} -cleanup $cleanup -result {}
+test http-1.3 {HTTP/1.0 GET} -constraints serverListen -body {
+    nstest_http -getbody 1 GET /noexist
+} -match glob -result {404 *Not Found*}
 
-test http-1.[incr test] {HTTP/1.0 GET} \
-    -constraints serverTests -setup $setup -body {
-    puts $sock "GET /asdfasdfasdf HTTP/1.0\n"
-    set response [read $sock]
-    assertEquals 1 [regexp {^HTTP/\S+ \d+ .*} $response]
-    assertEquals 1 [regexp {<TITLE>Not Found</TITLE>} $response]
-} -cleanup $cleanup -result {}
+test http-1.4 {HTTP/1.1 GET} -constraints serverListen -body {
+    nstest_http -http 1.1 -getbody 1 GET /noexist
+} -match glob -result {404 *Not Found*}
 
-test http-1.[incr test] {HTTP/1.1 GET} \
-    -constraints serverTests -setup $setup -body {
-    puts $sock "GET /asdfasdfasdf HTTP/1.0\nHost: $host:$port\n"
-    set response [read $sock]
-    assertEquals 1 [regexp {^HTTP/\S+ \d+ .*} $response]
-    assertEquals 1 [regexp {<TITLE>Not Found</TITLE>} $response]
-} -cleanup $cleanup -result {}
+
+
 
 cleanupTests
