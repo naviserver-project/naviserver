@@ -15,20 +15,28 @@ if {[ns_config test listenport]} {
 
 
 
-set driverlocation http://[ns_config "ns/server/test/module/nssock" hostname]
-set self ${driverlocation}:[ns_config "ns/server/test/module/nssock" port]
-
-
-
-test ns_conn_location-1.1 {http 1.1 host} -constraints serverListen -setup {
+test ns_conn_location-1.1 {default location} -constraints serverListen -setup {
     ns_register_proc GET /location {ns_return 200 text/plain [ns_conn location] ;#}
 } -body {
-    nstest_http -getbody 1 GET $self/location
+    nstest_http -getbody 1 -- GET /location
 } -cleanup {
     ns_unregister_proc GET /location
-} -result [list 200 $self]
+} -result {200 http://test}
 
 
 
-unset -nocomplain driverlocation self
+test ns_conn_location-2.1 {virtual host location} -constraints serverListen -body {
+    nstest_http -getbody 1 -setheaders {Host testvhost} -- GET /location
+} -result {200 http://testvhost}
+
+# 2.2: Test bad host headers..?
+
+
+
+test ns_conn_location-3.1 {custom location} -constraints serverListen -body {
+    nstest_http -getbody 1 -setheaders {Host testvhost2} -- GET /location
+} -result {200 testlocation.arg}
+
+
+
 cleanupTests
