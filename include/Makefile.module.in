@@ -32,73 +32,73 @@
 #
 # Makefile.module --
 #
-#	Makefile include for AOLserver modules, libraries, and programs.  Variables to set
-#	before including this file include:
+#     Makefile include for NaviServer modules, libraries, and programs.  Variables to set
+#     before including this file include:
 #
-#	NAVISERVER	naviserver install directory.
-#	MOD		Name of module
-#	MODOBJS		List of module object files (required with MOD)
-#	LIB		Root name of dynamic library (without lib prefix or extension)
-#	LIBOBJS		List of library object files (required with LIB)
-#	PGM		Name of executable program
-#	PGMOBJS		List of program object files (required with PGM)
-#	HDRS		Header files which objects depend on
-#	MODLIBS		Extra module link libraries
-#	LIBLIBS		Extra dynamic library link libraries
-#	PGMLIBS		Extra program link libraries
-#	INSTALL		Extra install directive(s)
-#	CLEAN		Extra clean directive(s)
+#     NAVISERVER  naviserver install directory.
+#     MOD         Name of module
+#     MODOBJS     List of module object files (required with MOD)
+#     LIB         Root name of dynamic library (without lib prefix or extension)
+#     LIBOBJS     List of library object files (required with LIB)
+#     PGM         Name of executable program
+#     PGMOBJS     List of program object files (required with PGM)
+#     HDRS        Header files which objects depend on
+#     MODLIBS     Extra module link libraries
+#     LIBLIBS     Extra dynamic library link libraries
+#     PGMLIBS     Extra program link libraries
+#     INSTALL     Extra install directive(s)
+#     CLEAN       Extra clean directive(s)
 #
-#	At least one of PGM, MOD, or LIB must be defined.  For backwards compatibility,
-#	MODOBJS will default to OBJS and MODINST can be used for module install.
+#     At least one of PGM, MOD, or LIB must be defined.  For backwards compatibility,
+#     MODOBJS will default to OBJS and MODINST can be used for module install.
 #
-#       For static builds (use configure --disable-shared) the LIB variable is
-#       replaced with ALIB which triggers the linking of the static library.
+#     For static builds (use configure --disable-shared) the LIB variable is
+#     replaced with ALIB which triggers the linking of the static library.
 #
-#	See ../nsd/Makefile and ../nsdb/Makefile for examples.
-#	
+#     See nsd/Makefile and nsdb/Makefile for examples.
+#   
 
 STATIC_BUILD = @STATIC_BUILD@
 
 ifdef NSBUILD
     ifeq ($(STATIC_BUILD), 1)
-        ALIB 	:= $(LIB)
-        LIB	:=
-        LIBINIT	:= 
+        ALIB    := $(LIB)
+        LIB     :=
+        LIBINIT := 
     endif
 endif
 
 ifdef MOD
-    BUILD	+= $(MOD)
-    INSTALL 	+= install-mod
-    CLEAN	+= clean-mod
+    BUILD     += $(MOD)
+    INSTALL   += install-mod
+    CLEAN     += clean-mod
     ifeq ($(origin MODOBJS), undefined)
         MODOBJS	= $(OBJS)
     endif
 endif
 
 ifdef LIB
-    LIBFILE	=  lib$(LIB)$(LIBEXT)
-    BUILD	+= $(LIBFILE)
-    INSTALL 	+= install-lib
-    CLEAN   	+= clean-lib
-    MODLIBS	+= $(LIBFILE)
-    PGMLIBS	+= $(LIBFILE)
+    LIBFILE	 = lib$(LIB)$(LIBEXT)
+    BUILD   += $(LIBFILE)
+    INSTALL += install-lib
+    CLEAN   += clean-lib
+    MODLIBS += $(LIBFILE)
+    PGMLIBS += $(LIBFILE)
 endif
 
 ifdef ALIB
-    ALIBFILE 	= lib$(ALIB).a
-    BUILD	+= $(ALIBFILE)
-    INSTALL	+= install-alib
-    CLEAN	+= clean-alib
-    MODLIBS	+= $(ALIBFILE)
-    PGMLIBS	+= $(ALIBFILE)
+    ALIBFILE  = lib$(ALIB).a
+    BUILD    += $(ALIBFILE)
+    INSTALL  += install-alib
+    CLEAN    += clean-alib
+    MODLIBS  += $(ALIBFILE)
+    PGMLIBS  += $(ALIBFILE)
 endif
 
 ifdef PGM
-    BUILD	+= $(PGM)
-    INSTALL	+= install-pgm
-    CLEAN	+= clean-pgm
+    BUILD   += $(PGM)
+    INSTALL += install-pgm
+    CLEAN   += clean-pgm
 endif
 
 ifdef NSBUILD

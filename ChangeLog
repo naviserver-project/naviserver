@@ -1,5 +1,9 @@
 2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/Makefile.module.in:
+	* include/Makefile.global.in: Reindent code for consistency prior
+	to making changes.
+
 	* tests/testserver/pages/ns_adp_compress.adp: Add missing file for
 	gzip compression tests.
 
