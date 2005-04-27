@@ -4,16 +4,12 @@
 # $Header$
 #
 
-set servername test
-
-
 
 #
 # Parameters for test scripts.
 #
 
 ns_section "test"
-ns_param   servername      $servername
 ns_param   home            [pwd]/tests
 
 for {set port 8000} {$port < 8100} {incr port} {
@@ -28,40 +24,100 @@ ns_param   listenport      [expr $port < 8100 ? $port : 0]
 
 
 #
-# Test server configuration.
+# Global config.
 #
+
+ns_section "ns/modules"
+if {[ns_config "test" listenport]} {
+    ns_param   nssock      [ns_config "test" home]/../nssock/nssock.so
+}
+
+ns_section "ns/module/nssock"
+ns_param   port            [ns_config "test" listenport]
+ns_param   hostname        localhost
+ns_param   address         127.0.0.1
+ns_param   defaultserver   test
+
+ns_section "ns/module/nssock/servers"
+ns_param   test            test
+ns_param   test            test:[ns_config "test" listenport]
+ns_param   testvhost       testvhost
+ns_param   testvhost       testvhost:[ns_config "test" listenport]
+ns_param   testvhost2      testvhost2
+ns_param   testvhost2      testvhost2:[ns_config "test" listenport]
 
 ns_section "ns/parameters"
 ns_param   home            [ns_config "test" home]
 ns_param   tcllibrary      [ns_config "test" home]/../tcl
 
 ns_section "ns/servers"
-ns_param   $servername     "Test Server"
+ns_param   testvhost       "Virtual Host Test Server"
+ns_param   testvhost2      "Virtual Host Test Server with custom procs"
+ns_param   test            "Main Test Server"
 
-ns_section "ns/server/${servername}"
+
+
+
+#
+# Main test server config.
+#
+
+ns_section "ns/server/test"
 ns_param   enabletclpages  true
 
-ns_section "ns/server/${servername}/fastpath"
+ns_section "ns/server/test/fastpath"
 ns_param   serverdir       testserver
 ns_param   pagedir         pages
 
-ns_section "ns/server/${servername}/vhost"
+ns_section "ns/server/test/tcl"
+ns_param   initfile        ../nsd/init.tcl
+ns_param   library         [ns_config "test" home]/testserver/modules
+
+ns_section "ns/server/test/adp"
+ns_param   map             *.adp
+
+ns_section "ns/server/test/adp/compress"
+ns_param   enable          yes
+ns_param   level           4
+ns_param   minsize         0
+
+
+
+#
+# Virtual host test server config.
+#
+
+ns_section "ns/server/testvhost"
+ns_param   enabletclpages  true
+
+ns_section "ns/server/testvhost/fastpath"
+ns_param   serverdir       testserver
+ns_param   pagedir         pages
+
+ns_section "ns/server/testvhost/vhost"
 ns_param   enabled         true
 ns_param   hostprefix      vhosts
 ns_param   hosthashlevel   3
 ns_param   stripport       yes
 ns_param   stripwww        yes
 
-ns_section "ns/server/${servername}/tcl"
+ns_section "ns/server/testvhost/tcl"
 ns_param   initfile        ../nsd/init.tcl
 ns_param   library         [ns_config "test" home]/testserver/modules
 
-ns_section "ns/server/${servername}/module/nssock"
-ns_param   port            [ns_config "test" listenport]
-ns_param   hostname        localhost
-ns_param   address         127.0.0.1
 
-ns_section "ns/server/${servername}/modules"
-if {[ns_config "test" listenport]} {
-    ns_param   nssock      [ns_config "test" home]/../nssock/nssock.so
-}
+
+#
+# Custom location/serverroot proc test server config.
+#
+
+ns_section "ns/server/testvhost2"
+ns_param   enabletclpages  true
+
+ns_section "ns/server/testvhost2/fastpath"
+ns_param   serverdir       testserver
+ns_param   pagedir         pages
+
+ns_section "ns/server/testvhost2/tcl"
+ns_param   initfile        ../nsd/init.tcl
+ns_param   library         [ns_config "test" home]/testserver/modules
