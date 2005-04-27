@@ -1,3 +1,8 @@
+2005-04-27  Vlad Seryakov  <seryakov@users.sf.net>
+
+	nsd/tclmisc.c: updated ns_uudecode to return possibly binary decoded data
+	in the Tcl_Obj result instead of string result
+
 2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/nsextmsg.h:

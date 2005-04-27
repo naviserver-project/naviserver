@@ -392,19 +392,20 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
 int
 NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    int   n;
+    int   size;
     char *string, *decoded;
-
+ 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
-    string = Tcl_GetStringFromObj(objv[1], &n);
-    n += 3;
-    decoded = ns_malloc((size_t)n);
-    n = Ns_HtuuDecode(string, (unsigned char *) decoded, n);
-    decoded[n] = '\0';
-    Tcl_SetResult(interp, decoded, (Tcl_FreeProc *) ns_free);
+    string = Tcl_GetStringFromObj(objv[1], &size);
+    size += 3;
+    decoded = ns_malloc((size_t)size);
+    size = Ns_HtuuDecode(string, (unsigned char *) decoded, size);
+    decoded[size] = '\0';
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded,size));
+    ns_free(decoded);
     return TCL_OK;
 }
 
