@@ -1,5 +1,8 @@
 2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* tests/testserver/modules/vhost.tcl: Add supporting procs for
+	virtual hosting tests.
+
 	* nsd/tclresp.c: Cleanup and reformat code.  Clarify comments.
 
 	* tests/ns_conn_host.test:
