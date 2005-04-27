@@ -1,5 +1,8 @@
 2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* tests/testserver/pages/ns_adp_compress.adp: Add missing file for
+	gzip compression tests.
+
 	* tests/testserver/modules/vhost.tcl: Add supporting procs for
 	virtual hosting tests.
 

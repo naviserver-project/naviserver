@@ -1,0 +1,1 @@
+<% ns_adp_compress %>this is a test
