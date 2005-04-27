@@ -1,5 +1,8 @@
 2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/nsextmsg.h:
+	* include/nspd.h: Move stray headers into external modules.
+
 	* include/Makefile.module.in:
 	* include/Makefile.global.in:
 	* Makefile: Add new module variable LIBHDRS which is the list of
