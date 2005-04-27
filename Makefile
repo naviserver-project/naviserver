@@ -47,7 +47,7 @@ install-binaries: all
 		$(MKDIR) $(NAVISERVER)/$$i; \
 	done
 	for i in include/*.h include/Makefile.global include/Makefile.module; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/include/; \
+		$(INSTALL_DATA) $$i $(INSTHDR)/; \
 	done
 	for i in tcl/*.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/modules/tcl/; \

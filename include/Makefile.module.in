@@ -40,6 +40,7 @@
 #     MODOBJS     List of module object files (required with MOD)
 #     LIB         Root name of dynamic library (without lib prefix or extension)
 #     LIBOBJS     List of library object files (required with LIB)
+#     LIBHDRS     List of public header files to install (required with module LIB)
 #     PGM         Name of executable program
 #     PGMOBJS     List of program object files (required with PGM)
 #     HDRS        Header files which objects depend on
@@ -101,6 +102,10 @@ ifdef PGM
     CLEAN   += clean-pgm
 endif
 
+ifdef LIBHDRS
+    INSTALL += install-hdrs
+endif
+
 ifdef NSBUILD
     include ../include/Makefile.global
 else
@@ -143,6 +148,9 @@ install-alib: $(ALIBFILE)
 
 install-pgm: $(PGM)
 	$(INSTALL_SH) $(PGM) $(INSTBIN)/
+
+install-hdrs: $(LIBHDRS)
+	$(INSTALL_DATA) $(LIBHDRS) $(INSTHDR)/
 
 clean-mod:
 	$(RM) $(MOD) $(MODOBJS)

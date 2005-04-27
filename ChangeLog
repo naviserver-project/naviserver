@@ -1,6 +1,12 @@
 2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/Makefile.module.in:
+	* include/Makefile.global.in:
+	* Makefile: Add new module variable LIBHDRS which is the list of
+	headers which should be installed for other modules to link
+	against (e.g. nsdb.h).
+
+	* include/Makefile.module.in:
 	* include/Makefile.global.in: Reindent code for consistency prior
 	to making changes.
 

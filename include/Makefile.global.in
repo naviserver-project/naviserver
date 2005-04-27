@@ -92,6 +92,7 @@ CCLIBS       = $(LIBS) @TCL_LD_FLAGS@
 # Install directories
 INSTBIN      = $(NAVISERVER)/bin
 INSTLIB      = $(NAVISERVER)/lib
+INSTHDR      = $(NAVISERVER)/include
 INSTMOD      = $(NAVISERVER)/modules
 INSTTCL      = $(NAVISERVER)/modules/tcl
 INSTSRV      = $(NAVISERVER)/servers/server1
