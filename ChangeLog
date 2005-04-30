@@ -5,6 +5,10 @@
 
 2005-04-26  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/nsdb.h:
+	* nsdb/nsdb.h:
+	* nsdb/Makefile: Move nsdb public header file into module directory.
+
 	* include/nsextmsg.h:
 	* include/nspd.h: Move stray headers into external modules.
 
