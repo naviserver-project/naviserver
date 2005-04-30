@@ -1,3 +1,8 @@
+2005-04-30  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsmain.c: Don't assign chroot directory as default server
+	name.  Simplify option parsing error messages.
+
 2005-04-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/tclmisc.c: updated ns_uudecode to return possibly binary decoded data

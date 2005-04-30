@@ -233,7 +233,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             if (optind + 1 < argc) {
                 server = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[optind][1]);
+                UsageError("no parameter for -s option");
             }
             break;
         case 't':
@@ -243,7 +243,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             if (optind + 1 < argc) {
                 nsconf.config = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[optind][1]);
+                UsageError("no parameter for -t option");
             }
             break;
         case 'p':
@@ -255,21 +255,21 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             if (optind + 1 < argc) {
             	bindargs = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[optind][1]);
+                UsageError("no parameter for -b option");
             }
             break;
         case 'B':
             if (optind + 1 < argc) {
             	bindfile = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[optind][1]);
+                UsageError("no parameter for -B option");
             }
             break;
         case 'r':
             if (optind + 1 < argc) {
-            	root = server = argv[++optind];
+            	root = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[optind][optind]);
+                UsageError("no parameter for -r option");
             }
             break;
         case 'd':
@@ -279,14 +279,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             if (optind + 1 < argc) {
                 garg = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[optind][1]);
+                UsageError("no parameter for -g option");
             }
             break;
         case 'u':
             if (optind + 1 < argc) {
                 uarg = argv[++optind];
             } else {
-                UsageError("no parameter for -%c option", argv[optind][1]);
+                UsageError("no parameter for -u option");
             }
             break;
 #endif
