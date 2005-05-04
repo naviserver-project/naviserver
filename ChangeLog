@@ -4,6 +4,9 @@
 	in addition to 7.x and 8.x versions. Also, heavily reformatted
 	poll() wrapper to be easily readable.
 
+	* nsd/tclmisc.c: conditionally define u_int32_t and u_int8_t
+	on Darwin since it has the definition already. 
+
 2005-04-30  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsmain.c: Don't assign chroot directory as default server
