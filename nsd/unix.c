@@ -481,8 +481,8 @@ Ns_GetGid(char *group)
 }
 
 #ifndef HAVE_POLL
-
 /*
+ * -----------------------------------------------------------------
  *  Copyright 1994 University of Washington
  *
  *  Permission is hereby granted to copy this software, and to
@@ -490,58 +490,65 @@ Ns_GetGid(char *group)
  *  removed.  The University of Washington does not guarantee
  *  that this software is suitable for any purpose and will not
  *  be held liable for any damage it may cause.
+ * -----------------------------------------------------------------
+ * 
+ *  Modified to work properly on Darwin 10.2 or less.
+ *  Also, heavily reformatted to be more readable.
  */
 
 int
-poll(fds, nfds, timo)
-	struct pollfd *fds;
-	unsigned long nfds;
-	int timo;
+poll(struct pollfd *fds, unsigned long int nfds, int timo)
 {
     struct timeval timeout, *toptr;
-    fd_set ifds, ofds, efds, *ip, *op, *ep;
-    int i, rc, n;
+    fd_set ifds, ofds, efds;
+    int i, rc, n = -1;
     FD_ZERO(&ifds);
     FD_ZERO(&ofds);
     FD_ZERO(&efds);
-    for (i = 0, n = -1, op = ip = 0; i < nfds; ++i) {
-        fds[i].revents = 0;
-        if (fds[i].fd < 0)
+    for (i = 0; i < nfds; ++i) {
+        if (fds[i].fd == -1) {
             continue;
-        if (fds[i].fd > n)
+        }
+        if (fds[i].fd > n) {
             n = fds[i].fd;
-        if (fds[i].events & (POLLIN|POLLPRI)) {
-            ip = &ifds;
-            FD_SET(fds[i].fd, ip);
         }
-        if (fds[i].events & POLLOUT) {
-            op = &ofds;
-            FD_SET(fds[i].fd, op);
+        if ((fds[i].events & POLLIN)) {
+            FD_SET(fds[i].fd, &ifds);
         }
-        FD_SET(fds[i].fd, &efds);
+        if ((fds[i].events & POLLOUT)) {
+            FD_SET(fds[i].fd, &ofds);
+        }
+        if ((fds[i].events & POLLPRI)) {
+            FD_SET(fds[i].fd, &efds);
+        }
     }
-    if (timo < 0)
-        toptr = 0;
-    else {
+    if (timo < 0) {
+        toptr = NULL;
+    } else {
         toptr = &timeout;
         timeout.tv_sec = timo / 1000;
         timeout.tv_usec = (timo - timeout.tv_sec * 1000) * 1000;
     }
-    
-    rc = select(++n, ip, op, &efds, toptr);
-    if (rc <= 0)
+    rc = select(++n, &ifds, &ofds, &efds, toptr);
+    if (rc <= 0) {
         return rc;
-    
-    for (i = 0, n = 0; i < nfds; ++i) {
-        if (fds[i].fd < 0) continue;
-        if (fds[i].events & (POLLIN|POLLPRI) && FD_ISSET(i, &ifds))
-            fds[i].revents |= POLLIN;
-        if (fds[i].events & POLLOUT && FD_ISSET(i, &ofds))
-            fds[i].revents |= POLLOUT;
-        if (FD_ISSET(i, &efds))
-            /* Some error was detected ... should be some way to know. */
-            fds[i].revents |= POLLHUP;
     }
+    for (i = 0; i < nfds; ++i) {
+        fds[i].revents = 0;
+        if (fds[i].fd == -1) {
+            continue;
+        }
+        if (FD_ISSET(fds[i].fd, &ifds)) {
+            fds[i].revents |= POLLIN;
+        }
+        if (FD_ISSET(fds[i].fd, &ofds)) {
+            fds[i].revents |= POLLOUT;
+        }
+        if (FD_ISSET(fds[i].fd, &efds)) {
+            fds[i].revents |= POLLPRI;
+        }
+    }
+
     return rc;
 }
 

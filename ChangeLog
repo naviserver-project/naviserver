@@ -1,3 +1,9 @@
+2005-05-04  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/unix.c: modified poll() wrapper to work on Darwin 6.x 
+	in addition to 7.x and 8.x versions. Also, heavily reformatted
+	poll() wrapper to be easily readable.
+
 2005-04-30  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsmain.c: Don't assign chroot directory as default server
