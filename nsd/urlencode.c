@@ -655,7 +655,11 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
             (j = enc[UCHAR(p[2])].hex) >= 0) {
             *q++ = (unsigned char) ((i << 4) + j);
             p += 3;
+#ifndef URLDECODE_RELAXED 
         } else if (UCHAR(p[0]) == '+' && part == 'q') {
+#else
+        } else if (UCHAR(p[0]) == '+') {
+#endif
             *q++ = ' ';
             ++p;
         } else {

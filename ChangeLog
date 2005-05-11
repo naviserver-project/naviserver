@@ -1,3 +1,9 @@
+2005-05-11  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/urlencode.c: added URLDECODE_RELAXED (undefined per default)
+	to be able to adjust url decoding to replace '+' to ' ', thus being
+	more forgiving to urls encoded with (broken) AOLserver urlencoder.
+
 2005-05-04  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/unix.c: modified poll() wrapper to work on Darwin 6.x 
