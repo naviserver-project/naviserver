@@ -1,5 +1,8 @@
 2005-05-14  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsperm/Makefile: Use new TCL variable to install shared Tcl
+	files.
+	
 	* include/Makefile.module.in: Add new MODNAME and TCL Makefile
 	variables which modules can use to specify a list of shared tcl
 	files to install.

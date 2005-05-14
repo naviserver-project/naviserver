@@ -30,20 +30,17 @@
 # $Header$
 #
 
+MODNAME  =  nsperm
 MOD      =  nsperm.so
 OBJS     =  nsperm.o
+TCL      =  init.tcl compat.tcl
 MODINST	 =  cpfiles
 
 include ../include/Makefile.build
 
-moddir	 = nsperm
-moddat	 = $(INSTSRVMOD)/$(moddir)
-modtcl	 = $(INSTTCL)/$(moddir)
+moddat	 = $(INSTSRVMOD)/$(MODNAME)
 
 cpfiles:
-	$(MKDIR) $(modtcl)
-	$(INSTALL_DATA) init.tcl $(modtcl)/
-	$(INSTALL_DATA) compat.tcl $(modtcl)/
 	$(MKDIR) $(moddat)
 	for f in passwd group hosts.allow hosts.deny perms; do \
 		test -f $(moddat)/$$f || $(INSTALL_DATA) $$f $(moddat)/; \
