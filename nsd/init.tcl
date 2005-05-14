@@ -359,7 +359,7 @@ proc _ns_sourcemodule module {
     set private [ns_library private $module]
     ns_module name    $module
     ns_module private $private
-    ns_module shared  $private
+    ns_module shared  $shared
     _ns_sourcefiles $shared $private
     ns_module clear
 }

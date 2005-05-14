@@ -1,3 +1,8 @@
+2005-05-13  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/init.tcl (_ns_sourcemodule): Module's shared tcl directory
+	was incorrectly set to private directory.
+
 2005-05-11  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/urlencode.c: added URLDECODE_RELAXED (undefined per default)
