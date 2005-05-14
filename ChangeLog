@@ -1,8 +1,13 @@
 2005-05-14  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* tcl/nsdb.tcl:
+	* nsdb/util.tcl:
+	* nsdb/Makefile: Move nsdb module's Tcl file into module directory
+	and add to module shared Tcl install target.
+
 	* nsperm/Makefile: Use new TCL variable to install shared Tcl
 	files.
-	
+
 	* include/Makefile.module.in: Add new MODNAME and TCL Makefile
 	variables which modules can use to specify a list of shared tcl
 	files to install.

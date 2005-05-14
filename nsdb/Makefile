@@ -29,10 +29,13 @@
 #
 # $Header$
 
-LIB	= nsdb
-LIBOBJS	= dbinit.o dbdrv.o dbtcl.o dbutil.o
+MODNAME = nsdb
+LIB     = nsdb
+LIBOBJS = dbinit.o dbdrv.o dbtcl.o dbutil.o
 LIBHDRS = nsdb.h
-MOD	= nsdb.so
-OBJS	= nsdb.o
-HDRS	= db.h
+MOD     = nsdb.so
+OBJS    = nsdb.o
+HDRS    = db.h
+TCL     = util.tcl
+
 include ../include/Makefile.build
