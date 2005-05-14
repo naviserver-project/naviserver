@@ -36,8 +36,10 @@
 #     before including this file include:
 #
 #     NAVISERVER  naviserver install directory.
-#     MOD         Name of module
+#     MODNAME     Unique name of module
+#     MOD         File name of binary loadable module
 #     MODOBJS     List of module object files (required with MOD)
+#     TCL         List of module shared Tcl files
 #     LIB         Root name of dynamic library (without lib prefix or extension)
 #     LIBOBJS     List of library object files (required with LIB)
 #     LIBHDRS     List of public header files to install (required with module LIB)
@@ -76,6 +78,13 @@ ifdef MOD
     ifeq ($(origin MODOBJS), undefined)
         MODOBJS	= $(OBJS)
     endif
+endif
+
+ifdef TCL
+    ifndef MODNAME
+        $(error MODNAME not specified)
+    endif
+    INSTALL += install-tcl
 endif
 
 ifdef LIB
@@ -138,6 +147,12 @@ $(MODOBJS) $(LIBOBJS) $(PGMOBJS): $(HDRS) $(INCDIR)/ns.h $(INCDIR)/nsthread.h
 
 install-mod: $(MOD) $(MODINST)
 	$(INSTALL_SH) $(MOD) $(INSTBIN)/
+
+install-tcl: $(TCL)
+	$(MKDIR) $(INSTTCL)/$(MODNAME)
+	for t in $(TCL); do \
+		$(INSTALL_DATA) $$t $(INSTTCL)/$(MODNAME)/; \
+	done
 
 install-lib: $(LIBFILE)
 	$(INSTALL_SH) $(LIBFILE) $(INSTLIB)/
