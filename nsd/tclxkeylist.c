@@ -66,7 +66,7 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 /*
  * Used to return argument messages by most commands.
  */
-char *tclXWrongArgs = "wrong # args: ";
+static char *tclXWrongArgs = "wrong # args: ";
 
 /*
  * Those are used in TclX_IsNullObj() in read-only mode

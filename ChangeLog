@@ -1,5 +1,10 @@
 2005-05-15  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/tcljob.c:
+	* nsd/tclobjv.c:
+	* nsd/tclxkeylist.c:
+	* nsd/unix.c: Hide global symbols which shouldn't be exported.
+
 	* Makefile: Add new "checkexports" target which prints out a list
 	of global symbols which shouldn't be.
 

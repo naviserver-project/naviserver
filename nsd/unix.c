@@ -40,43 +40,21 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #include <pwd.h>
 #include <grp.h>
 
+
+/*
+ * Static functions defined in this file.
+ */
+
+static int Pipe(int *fds, int sockpair);
+static void FatalSignalHandler(int signal);
+
+/*
+ * Static variables defined in this file.
+ */
+
 static Ns_Mutex lock;
 static int debugMode;
 
-
-/*
- *----------------------------------------------------------------------
- *
- * FatalSignalHandler --
- *
- *  Ensure that we drop core on fatal signals like SIGBUS and
- *  SIGSEGV.
- *
- * Results:
- *  None.
- *
- * Side effects:
- *  A core file will be left wherever the server was running.
- *
- *----------------------------------------------------------------------
- */
-
-void
-FatalSignalHandler(int signal)
-{
-#ifdef __linux
-    /*
-     * LinuxThreads thread manager needs to kill all child threads
-     * on fatal signals, else they get left behind as dead threads.
-     * As of glibc 2.3 with NPTL, this should be a no-op.
-     */
-
-    pthread_kill_other_threads_np();
-#endif
-
-    Ns_Log(Fatal, "received fatal signal %d", signal);
-    abort();
-}
 
 
 /*
@@ -258,6 +236,18 @@ NsSendSignal(int sig)
  *----------------------------------------------------------------------
  */
 
+int
+ns_sockpair(int *socks)
+{
+    return Pipe(socks, 1);
+}
+
+int
+ns_pipe(int *fds)
+{
+    return Pipe(fds, 0);
+}
+
 static int
 Pipe(int *fds, int sockpair)
 {
@@ -269,22 +259,10 @@ Pipe(int *fds, int sockpair)
         err = pipe(fds);
     }
     if (!err) {
-    fcntl(fds[0], F_SETFD, 1);
-    fcntl(fds[1], F_SETFD, 1);
+        fcntl(fds[0], F_SETFD, 1);
+        fcntl(fds[1], F_SETFD, 1);
     }
     return err;
-}
-
-int
-ns_sockpair(int *socks)
-{
-    return Pipe(socks, 1);
-}
-
-int
-ns_pipe(int *fds)
-{
-    return Pipe(fds, 0);
 }
 
 
@@ -551,5 +529,39 @@ poll(struct pollfd *fds, unsigned long int nfds, int timo)
 
     return rc;
 }
-
 #endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FatalSignalHandler --
+ *
+ *      Ensure that we drop core on fatal signals like SIGBUS and
+ *      SIGSEGV.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      A core file will be left wherever the server was running.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FatalSignalHandler(int signal)
+{
+#ifdef __linux
+    /*
+     * LinuxThreads thread manager needs to kill all child threads
+     * on fatal signals, else they get left behind as dead threads.
+     * As of glibc 2.3 with NPTL, this should be a no-op.
+     */
+
+    pthread_kill_other_threads_np();
+#endif
+
+    Ns_Log(Fatal, "received fatal signal %d", signal);
+    abort();
+}

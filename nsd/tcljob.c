@@ -182,11 +182,11 @@ typedef struct ThreadPool {
 static void JobThread(void *arg);
 static Job* getNextJob(void);
 
-Queue* NewQueue(CONST char* queueName, CONST char* queueDesc, int maxThreads);
-void FreeQueue(Queue *queuePtr);
+static Queue* NewQueue(CONST char* queueName, CONST char* queueDesc, int maxThreads);
+static void FreeQueue(Queue *queuePtr);
 
-Job* NewJob(CONST char* server, CONST char* queueName, int type, Tcl_Obj *script);
-void FreeJob(Job *jobPtr);
+static Job* NewJob(CONST char* server, CONST char* queueName, int type, Tcl_Obj *script);
+static void FreeJob(Job *jobPtr);
 
 static int LookupQueue(Tcl_Interp       *interp,
                        CONST char       *queue_name,
@@ -1232,7 +1232,7 @@ getNextJob(void)
  *----------------------------------------------------------------------
  */
 
-Queue*
+static Queue*
 NewQueue(CONST char* queueName, CONST char* queueDesc, int maxThreads)
 {
     Queue *queuePtr = NULL;
@@ -1274,7 +1274,7 @@ NewQueue(CONST char* queueName, CONST char* queueDesc, int maxThreads)
  *----------------------------------------------------------------------
  */
 
-void
+static void
 FreeQueue(Queue *queuePtr)
 {
     Ns_MutexDestroy(&queuePtr->lock);
@@ -1301,7 +1301,7 @@ FreeQueue(Queue *queuePtr)
  *----------------------------------------------------------------------
  */
 
-Job*
+static Job*
 NewJob(CONST char* server, CONST char* queueId, int type, Tcl_Obj *script)
 {
     Job *jobPtr = NULL;
@@ -1343,7 +1343,7 @@ NewJob(CONST char* server, CONST char* queueId, int type, Tcl_Obj *script)
  *----------------------------------------------------------------------
  */
 
-void
+static void
 FreeJob(Job *jobPtr)
 {
     Tcl_DStringFree(&jobPtr->results);

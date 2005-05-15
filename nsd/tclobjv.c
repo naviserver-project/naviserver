@@ -46,8 +46,8 @@ static Tcl_DupInternalRepProc  DupSpec;
 static Tcl_UpdateStringProc    UpdateStringOfSpec;
 static Tcl_SetFromAnyProc      SetSpecFromAny;
 
-Ns_ObjvProc ObjvTcl;
-Ns_ObjvProc ObjvTclArgs;
+static Ns_ObjvProc ObjvTcl;
+static Ns_ObjvProc ObjvTclArgs;
 
 static void FreeSpecs(Ns_ObjvSpec *optSpec);
 static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valObjPtr);
@@ -854,7 +854,7 @@ DupSpec(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ObjvTcl(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST objv[])
 {
     if (*objcPtr > 0) {
@@ -887,7 +887,7 @@ ObjvTcl(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST objv
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST objv[])
 {
     Tcl_Obj  *listObj;
