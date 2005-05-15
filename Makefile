@@ -75,6 +75,11 @@ gdb: all
 	LD_LIBRARY_PATH="./nsd:./nsthread" gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
+checkexports: all
+	@for i in $(dirs); do \
+		nm -p $$i/*.so | awk '$$2 ~ /[TDB]/ { print $$3 }' | sort -n | uniq | grep -v '^[Nn]s\|^TclX\|^_'; \
+	done
+
 clean:
 	@for i in $(dirs); do \
 		(cd $$i && $(MAKE) clean) || exit 1; \

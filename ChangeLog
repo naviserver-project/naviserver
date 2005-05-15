@@ -1,3 +1,8 @@
+2005-05-15  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* Makefile: Add new "checkexports" target which prints out a list
+	of global symbols which shouldn't be.
+
 2005-05-14  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tcl/nsdb.tcl:
