@@ -1,5 +1,11 @@
 2005-05-15  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/info.c:
+	* nsd/nsmain.c:
+	* nscp/nscp.c: Remove redundant Ns_InfoLabel(). Use Ns_InfoTag() instead.
+
 	* include/ns.h: Bump version to 4.99.0 alpha.
 
 	* include/ns.h:

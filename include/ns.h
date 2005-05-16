@@ -912,7 +912,6 @@ NS_EXTERN char *Ns_InfoBuildDate(void);
 NS_EXTERN int Ns_InfoShutdownPending(void);
 NS_EXTERN int Ns_InfoStarted(void);
 NS_EXTERN int Ns_InfoServersStarted(void);
-NS_EXTERN char *Ns_InfoLabel(void);
 NS_EXTERN char *Ns_InfoTag(void);
 
 /*

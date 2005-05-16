@@ -537,10 +537,10 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 	Ns_Log(Notice, "nscp: %s logged in", user);
         Tcl_DStringAppend(unameDSPtr, user, -1);
 	sprintf(msg, "\nWelcome to %s running at %s (pid %d)\n"
-		"%s/%s (%s) for %s built on %s\nCVS Tag: %s\n",
+		"%s/%s for %s built on %s\nCVS Tag: %s\n",
 		sessPtr->modPtr->server,
 		Ns_InfoNameOfExecutable(), Ns_InfoPid(),
-		Ns_InfoServerName(), Ns_InfoServerVersion(), Ns_InfoLabel(),
+		Ns_InfoServerName(), Ns_InfoServerVersion(),
 		Ns_InfoPlatform(), Ns_InfoBuildDate(), Ns_InfoTag());
     } else {
 	Ns_Log(Warning, "nscp: login failed: '%s'", user ? user : "?");

@@ -114,9 +114,9 @@
  */
 
 #define NSD_NAME             "NaviServer"
-#define NSD_VERSION	     NS_PATCH_LEVEL
-#define NSD_LABEL            "naviserver4_0"
+#define NSD_VERSION	         NS_PATCH_LEVEL
 #define NSD_TAG              "$Name$"
+
 #define NS_CONFIG_PARAMETERS "ns/parameters"
 #define NS_CONFIG_THREADS    "ns/threads"
 

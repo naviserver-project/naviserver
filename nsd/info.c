@@ -438,32 +438,9 @@ Ns_InfoServersStarted(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_InfoLabel --
- *
- *	Returns version information about this build. 
- *
- * Results:
- *	A string version name. 
- *
- * Side effects:
- *	None. 
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Ns_InfoLabel(void)
-{
-    return NSD_LABEL;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_InfoTag --
  *
- *	Returns CVS tag of this build (can be meaningless).
+ *	Returns CVS tag of this build (meaningless without "cvs export").
  *
  * Results:
  *	A string version name. 
@@ -505,7 +482,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Tcl_DString ds;
     static CONST char *opts[] = {
 	"address", "argv0", "boottime", "builddate", "callbacks",
-	"config", "home", "hostname", "label", "locks", "log",
+	"config", "home", "hostname", "locks", "log",
 	"major", "minor", "name", "nsd", "pageroot", "patchlevel",
 	"pid", "platform", "pools", "scheduled", "server", "servers",
 	"sockcallbacks", "tag", "tcllib", "threads", "uptime",
@@ -513,7 +490,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
     enum {
 	IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
-	IConfigIdx, IHomeIdx, hostINameIdx, ILabelIdx, ILocksIdx, ILogIdx,
+	IConfigIdx, IHomeIdx, hostINameIdx, ILocksIdx, ILogIdx,
 	IMajorIdx, IMinorIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
 	IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
 	sockICallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
@@ -649,10 +626,6 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 #else
 	Tcl_SetResult(interp, "0", TCL_STATIC);
 #endif
-	break;
-
-    case ILabelIdx:
-	Tcl_SetResult(interp, Ns_InfoLabel(), TCL_STATIC);
 	break;
 
     case IBuilddateIdx:
