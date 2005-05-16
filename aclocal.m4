@@ -31,12 +31,12 @@
 #
 
 #
-# configure.in --
+# aclocal.m4 --
 #
-#	AOLserver autoconf include which simply includes Tcl's tcl.m4.
+#	Autoconf include which includes the bundled TEA tcl.m4.
 #
 
-builtin(include,../tcl8.4/unix/tcl.m4)
+builtin(include,tcl.m4)
 
 
 dnl
@@ -63,8 +63,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
 
     (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
   ], [
-    AC_DEFINE(HAVE_GETHOSTBYNAME_R)
-    AC_DEFINE(HAVE_GETHOSTBYNAME_R_6)
+    AC_DEFINE(HAVE_GETHOSTBYNAME_R,1,[Define to 1 if gethostbyname_r is available.])
+    AC_DEFINE(HAVE_GETHOSTBYNAME_R_6,1,[Define to 1 if gethostbyname_r takes 6 args.])
     AC_MSG_RESULT(yes)
   ], [
     AC_MSG_RESULT(no)
@@ -80,8 +80,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
 
       (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
     ], [
-      AC_DEFINE(HAVE_GETHOSTBYNAME_R)
-      AC_DEFINE(HAVE_GETHOSTBYNAME_R_5)
+      AC_DEFINE(HAVE_GETHOSTBYNAME_R,1,[Define to 1 if gethostbyname_r is available.])
+      AC_DEFINE(HAVE_GETHOSTBYNAME_R_5,1,[Define to 1 if gethostbyname_r takes 5 args.])
       AC_MSG_RESULT(yes)
     ], [
       AC_MSG_RESULT(no)
@@ -95,8 +95,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
 
         (void) gethostbyname_r(name, he, &data);
       ], [
-        AC_DEFINE(HAVE_GETHOSTBYNAME_R)
-        AC_DEFINE(HAVE_GETHOSTBYNAME_R_3)
+        AC_DEFINE(HAVE_GETHOSTBYNAME_R,1,[Define to 1 if gethostbyname_r is available.])
+        AC_DEFINE(HAVE_GETHOSTBYNAME_R_3,1,[Define to 1 if gethostbyname_r takes 3 args.])
         AC_MSG_RESULT(yes)
       ], [
         AC_MSG_RESULT(no)
@@ -124,8 +124,8 @@ AC_CHECK_FUNC(gethostbyaddr_r, [
 
     (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen, &h_errnop);
   ], [
-    AC_DEFINE(HAVE_GETHOSTBYADDR_R)
-    AC_DEFINE(HAVE_GETHOSTBYADDR_R_7)
+    AC_DEFINE(HAVE_GETHOSTBYADDR_R,1,[Define to 1 if gethostbyaddr_r is available.])
+    AC_DEFINE(HAVE_GETHOSTBYADDR_R_7,1,[Define to 1 if gethostbyaddr_r takes 7 args.])
     AC_MSG_RESULT(yes)
   ], [
     AC_MSG_RESULT(no)

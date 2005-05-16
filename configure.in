@@ -33,53 +33,37 @@
 #
 # configure.in --
 #
-#    AOLserver configure script.
+#    NaviServer configure script.
 #
 
-AC_INIT(include/ns.h)
-AC_PREREQ(2.13)
-AC_PREFIX_DEFAULT(/usr/local/aolserver)
+AC_INIT(NaviServer, 4.99.0, naviserver-devel@lists.sourceforge.net)
+AC_CONFIG_SRCDIR(include/ns.h)
+AC_PREREQ(2.50)
+AC_REVISION($Revision$)
 
 #
 # Include and verify Tcl config located by --with-tcl=
 #
 
-SC_PATH_TCLCONFIG
-SC_LOAD_TCLCONFIG
+TEA_INIT([3.2])
+TEA_PATH_TCLCONFIG
+TEA_LOAD_TCLCONFIG
+TEA_ENABLE_THREADS
 if test "${TCL_THREADS}" != "1"; then
     AC_MSG_ERROR([must build tcl with --enable-threads])
 fi
-SC_ENABLE_SYMBOLS
-
-AC_SUBST(TCL_LIB_SPEC)
-AC_SUBST(TCL_LIBS)
-AC_SUBST(TCL_INCLUDE_SPEC)
-AC_SUBST(TCL_RANLIB)
-AC_SUBST(TCL_EXEC_PREFIX)
-
-AC_SUBST(TCL_SHLIB_SUFFIX)
-AC_SUBST(TCL_CC_SEARCH_FLAGS)
-AC_SUBST(TCL_LD_SEARCH_FLAGS)
-AC_SUBST(TCL_LD_FLAGS)
-
-AC_SUBST(TCL_CC)
-AC_SUBST(TCL_CFLAGS_DEBUG)
-AC_SUBST(TCL_CFLAGS_OPTIMIZE)
-AC_SUBST(TCL_CFLAGS_WARNING)
-AC_SUBST(TCL_EXTRA_CFLAGS)
-AC_SUBST(TCL_SHLIB_CFLAGS)
-AC_SUBST(TCL_DEFS)
-
-if test "${CC+set}" != "set"; then
-    CC=$TCL_CC
-fi
-AC_PROG_CC
+TEA_SETUP_COMPILER
+TEA_PUBLIC_TCL_HEADERS
+TEA_ENABLE_SHARED
+TEA_CONFIG_CFLAGS
+TEA_ENABLE_SYMBOLS
 
 #
-# TCL_SHLIB_LD from tclConfig.sh is not quite right for aolserver.
+# Modify SHLIB_LD from tclConfig.sh as we specifically name
+# shared library _init functions.
 #
 
-test "x$prefix" = "xNONE" && prefix="/usr/local/aolserver"
+test "x$prefix" = "xNONE" && prefix="/usr/local/ns"
 system=`uname`
 case "$system" in
     Darwin)
@@ -91,7 +75,7 @@ case "$system" in
 	LDRPATHS=
 	;;
     *)
-	LDLIB="$TCL_SHLIB_LD"
+	LDLIB="$SHLIB_LD"
 	case "$LDLIB" in
 	    *gcc*)
 		LDLIB="$LDLIB -nostartfiles"
@@ -123,7 +107,7 @@ case "$system" in
 	;;
 esac
 SRCDIR=`cd $srcdir; pwd`
-AOLSERVER=$prefix
+NAVISERVER=$prefix
 AC_SUBST(SRCDIR)
 AC_SUBST(LDLIB)
 AC_SUBST(LDSO)
@@ -131,18 +115,18 @@ AC_SUBST(CCRFLAG)
 AC_SUBST(LDRFLAG)
 AC_SUBST(CCRPATH)
 AC_SUBST(LDRPATH)
-AC_SUBST(CCRPATHS)
-AC_SUBST(LDRPATHS)
-AC_SUBST(AOLSERVER)
+AC_SUBST(SHLIB_SUFFIX)
+AC_SUBST(TCL_EXEC_PREFIX)
+AC_SUBST(NAVISERVER)
 
 #
-# Additional AOLserver checks.
+# Additional checks.
 #
 
 AC_CHECK_HEADERS(inttypes.h)
 AC_CHECK_FUNCS(timegm fork1 poll drand48 random _NSGetEnviron)
-AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD),)
-AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL),)
+AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD,1,[Define to 1 if the <mach-o/dyld.h> header should be used.]),)
+AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL,1,[Define to 1 if the <dl.h> header should be used.]),)
 AC_MSG_CHECKING([need for dup high])
 AC_TRY_RUN([
 #include <stdio.h>
@@ -150,16 +134,7 @@ int
 main(int argc, char **argv)
 {
     return (sizeof(stdout->_file) == 1) ? 0 : 1;
-}], AC_DEFINE(USE_DUPHIGH) as_ok=yes, as_ok=no, as_ok=no)
-AC_MSG_RESULT($as_ok)
-
-AC_MSG_CHECKING([msg_controllen in struct msghdr])
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>], [
-struct msghdr msg;
-int *i = msg.msg_controllen;
-], AC_DEFINE(HAVE_CMMSG) as_ok=yes, as_ok=no)
+}], AC_DEFINE(USE_DUPHIGH,1,[need for dup high]) as_ok=yes, as_ok=no, as_ok=no)
 AC_MSG_RESULT($as_ok)
 
 #
@@ -237,7 +212,7 @@ if test "${ac_zlib}" = "yes" ; then
 fi
 
 #
-# Create Makefile.global.
+# Create Makefiles.
 #
 
 AC_OUTPUT(include/Makefile.global include/Makefile.module)

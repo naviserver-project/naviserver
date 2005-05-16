@@ -1,3 +1,15 @@
+2005-05-16  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* aclocal.m4:
+	* tcl.m4
+	* configure.in:
+	* configure:
+	* include/Makefile.global.in:
+	* include/Makefile.module.in: Include tc.m4 macros and convert to
+	Tcl TEA build system.  Add messages to all autoconf feature
+	tests.  Remove unneeded feature tests.  Rebuild configure script using
+	autoconf 2.59.
+
 2005-05-15  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
