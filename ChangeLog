@@ -1,5 +1,7 @@
 2005-05-15  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h: Bump version to 4.99.0 alpha.
+
 	* include/ns.h:
 	* nscp/nscp.c:
 	* nsd/adpeval.c:
