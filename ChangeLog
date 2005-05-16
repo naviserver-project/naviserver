@@ -1,5 +1,20 @@
 2005-05-15  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nscp/nscp.c:
+	* nsd/adpeval.c:
+	* nsd/conn.c:
+	* nsd/driver.c:
+	* nsd/info.c:
+	* nsd/init.tcl:
+	* nsd/sock.c:
+	* nsd/tclinit.c:
+	* nsd/tcljob.c:
+	* nsd/tclmisc.c:
+	* nsd/tclset.c:
+	* nsd/urlopen.c:
+	* nsthread/nsthreadtest.c: Silence some compiler warnings.
+
 	* nsd/tcljob.c:
 	* nsd/tclobjv.c:
 	* nsd/tclxkeylist.c:

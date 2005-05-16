@@ -121,7 +121,8 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     Ns_DString      ds;
     Stream  	    stream;
     Ns_Request     *request;
-    int     	    status, tosend, n;
+    int     	    status, n;
+    unsigned int    tosend;
 
     status = NS_ERROR;    
     sock = INVALID_SOCKET;

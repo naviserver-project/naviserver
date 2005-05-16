@@ -1130,8 +1130,8 @@ NS_EXTERN SOCKET Ns_SockBindUdp(struct sockaddr_in *saPtr);
  * sock.c:
  */
 
-NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, int nrecv, int timeout);
-NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, int nsend, int timeout);
+NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, int timeout);
+NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, int timeout);
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa);

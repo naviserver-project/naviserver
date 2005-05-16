@@ -67,7 +67,7 @@ static SOCKET SockSetup(SOCKET sock);
  */
 
 int
-Ns_SockRecv(SOCKET sock, void *buf, int toread, int timeout)
+Ns_SockRecv(SOCKET sock, void *buf, size_t toread, int timeout)
 {
     int		nread;
 
@@ -99,7 +99,7 @@ Ns_SockRecv(SOCKET sock, void *buf, int toread, int timeout)
  */
 
 int
-Ns_SockSend(SOCKET sock, void *buf, int towrite, int timeout)
+Ns_SockSend(SOCKET sock, void *buf, size_t towrite, int timeout)
 {
     int nwrote;
 

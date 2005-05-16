@@ -301,7 +301,8 @@ EvalThread(void *arg)
     Tcl_DString ds;
     Tcl_DString unameDS;
     char buf[64], *res;
-    int n, len, ncmd, stop;
+    int n, ncmd, stop;
+    unsigned int len;
     Sess *sessPtr = arg;
     char *server = sessPtr->modPtr->server;
 
@@ -424,7 +425,7 @@ GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);
-    if (send(sock, prompt, n, 0) != n) {
+    if (send(sock, prompt, (unsigned int) n, 0) != n) {
 	result = 0;
 	goto bail;
     }
@@ -545,7 +546,7 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 	Ns_Log(Warning, "nscp: login failed: '%s'", user ? user : "?");
 	sprintf(msg, "Access denied!\n");
     }
-    (void) send(sessPtr->sock, msg, (int)strlen(msg), 0);
+    (void) send(sessPtr->sock, msg, strlen(msg), 0);
     Tcl_DStringFree(&uds);
     Tcl_DStringFree(&pds);
     return ok;

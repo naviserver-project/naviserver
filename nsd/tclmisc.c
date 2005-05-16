@@ -366,7 +366,7 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
         return TCL_ERROR;
     }
     string = Tcl_GetStringFromObj(objv[1], &nbytes);
-    result = ns_malloc(1 + (4 * nbytes) / 2);
+    result = ns_malloc((size_t) 1 + (4 * nbytes) / 2);
     Ns_HtuuEncode((unsigned char *) string, (size_t)nbytes, result);
     Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
     return TCL_OK;
@@ -1064,7 +1064,7 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
 
     str = Tcl_GetStringFromObj(objv[1],&strLen);
     SHAInit(&ctx);
-    SHAUpdate(&ctx, str, strLen);
+    SHAUpdate(&ctx, str, (unsigned int) strLen);
     SHAFinal(digest, &ctx);
 
     for (i = 0; i < 20; ++i) {

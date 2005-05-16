@@ -986,7 +986,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              */
             Ns_Time currentTime;
             Ns_GetTime(&currentTime);
-            snprintf(buf, 100, "queue_id_%x_%x", tp.nextQueueId++, currentTime.sec);
+            snprintf(buf, 100, "queue_id_%lx_%lx",
+                     tp.nextQueueId++, (unsigned long) currentTime.sec);
             Tcl_SetResult(interp, buf, TCL_VOLATILE);
         }
         break;

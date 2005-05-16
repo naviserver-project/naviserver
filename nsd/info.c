@@ -37,7 +37,14 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 
+
+extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 extern char *nsBuildDate;
+
+/*
+ * Static variables defined in this file.
+ */
+
 static Ns_ThreadArgProc ThreadArgProc;
 
 

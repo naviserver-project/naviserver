@@ -911,8 +911,8 @@ int
 NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     NsInterp *itPtr = arg;
-    Ns_Conn *conn;
-    Conn *connPtr;
+    Ns_Conn *conn = itPtr->conn;
+    Conn *connPtr = (Conn *) conn;
     Ns_Set *form;
     Ns_Request *request;
     Tcl_Encoding encoding;
@@ -955,7 +955,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     }
     
     result  = Tcl_GetObjResult(interp);
-    connPtr = (Conn *) conn = itPtr->conn;
     
     /*
      * Only the "isconnected" option operates without a conn.

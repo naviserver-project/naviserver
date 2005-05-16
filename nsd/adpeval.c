@@ -543,9 +543,9 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 	pagePtr = Tcl_GetHashValue(hPtr);
 	keyPtr = (FileKey *) Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
 	Tcl_AppendElement(interp, pagePtr->file);
-	sprintf(buf, "dev %ld ino %ld mtime %ld refcnt %d evals %d size %ld blocks %d scripts %d",
-		keyPtr->dev, keyPtr->ino, pagePtr->mtime, pagePtr->refcnt,
-		pagePtr->evals, pagePtr->size, pagePtr->code.nblocks,
+	sprintf(buf, "dev %ld ino %ld mtime %lu refcnt %d evals %d size %ld blocks %d scripts %d",
+		(long) keyPtr->dev, (long) keyPtr->ino, (unsigned long) pagePtr->mtime, pagePtr->refcnt,
+		pagePtr->evals, (long) pagePtr->size, pagePtr->code.nblocks,
 		pagePtr->code.nscripts);
 	Tcl_AppendElement(interp, buf);
 	hPtr = Tcl_NextHashEntry(&search);

@@ -921,7 +921,6 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     char *script;
     int length, result;
     int status;
-    Tcl_Obj   *objPtr;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
@@ -1053,7 +1052,6 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                                  ", this can only be used during server init.",
                                  NULL );
             }
-            Tcl_DecrRefCount(objPtr);
             result = TCL_ERROR;
         } else {
             result = TCL_OK;

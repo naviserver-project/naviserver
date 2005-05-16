@@ -50,6 +50,9 @@
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
+
+extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+
 /*
  * Collection of synchronization objects for tests.
  */

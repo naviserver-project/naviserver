@@ -1088,7 +1088,7 @@ SetServer(Sock *sockPtr)
 {
     ServerMap *mapPtr = NULL;
     Tcl_HashEntry *hPtr;
-    char *host;
+    char *host = NULL;
     int status = 1;
 
     sockPtr->servPtr = sockPtr->drvPtr->servPtr;
@@ -1320,7 +1320,7 @@ SockRelease(Sock *sockPtr, ReleaseReasons reason)
                 ntohs(sockPtr->sa.sin_port) );
     }
 
-    (*sockPtr->drvPtr->proc)(DriverClose, sockPtr, NULL, 0);
+    (*sockPtr->drvPtr->proc)(DriverClose, (Ns_Sock *) sockPtr, NULL, 0);
 
     --nactive;
     ns_sockclose(sockPtr->sock);
