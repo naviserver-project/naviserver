@@ -1,3 +1,9 @@
+2005-05-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* ns/include.h:
+	* nsd/driver.c: added support for UDP and Unix domain sockets
+	for HTTP over udp/unix sockets. Removed obsolete driver functions.
+
 2005-05-16  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* aclocal.m4:

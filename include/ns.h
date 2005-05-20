@@ -115,6 +115,8 @@
 #define NS_ENCRYPT_BUFSIZE 	 16
 #define NS_DRIVER_ASYNC		  1	/* Use async read-ahead. */
 #define NS_DRIVER_SSL		  2	/* Use SSL port, protocol defaults. */
+#define NS_DRIVER_UDP             4     /* UDP socket */
+#define NS_DRIVER_UNIX            8     /* Unix domain socket */
 #define NS_DRIVER_VERSION_1       1
 
 #if defined(__alpha)

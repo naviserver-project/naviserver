@@ -409,54 +409,6 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_RegisterDriver --
- *
- *	Register a set of communications driver procs (no longer
- *	supported).
- *
- * Results:
- *	NULL.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Ns_RegisterDriver(char *server, char *label, void *procs, void *drvData)
-{
-    Ns_Log(Error, "driver: loadable drivers no longer supported");
-    return NULL;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_GetDriverContext --
- *
- *	Return the driver's context (no longer supported)
- *
- * Results:
- *	NULL. 
- *
- * Side effects:
- *	None 
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Ns_GetDriverContext(Ns_Driver drv)
-{
-    return NULL;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsStartDrivers --
  *
  *	Listen on all driver address/ports and start the DriverThread.
@@ -481,8 +433,17 @@ NsStartDrivers(void)
 
     drvPtr = firstDrvPtr;
     while (drvPtr != NULL) {
-	drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port,
-	    drvPtr->backlog);
+        if (drvPtr->bindaddr[0] == '/') {
+            drvPtr->opts |= NS_DRIVER_UNIX;
+        }
+        if (drvPtr->opts & NS_DRIVER_UDP) {
+            drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr, drvPtr->port);
+        } else
+        if (drvPtr->opts & NS_DRIVER_UNIX) {
+            drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr);
+        } else {
+            drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port, drvPtr->backlog);
+        }
 	if (drvPtr->sock == INVALID_SOCKET) {
 	    Ns_Log(Error, "%s: failed to listen on %s:%d: %s",
 		drvPtr->name, drvPtr->address, drvPtr->port,
@@ -1224,8 +1185,11 @@ SockAccept(Driver *drvPtr)
     sockPtr->drvPtr = drvPtr;
     sockPtr->keep = 0;
     sockPtr->arg = NULL;
-    sockPtr->sock = Ns_SockAccept(drvPtr->sock,
-				  (struct sockaddr *) &sockPtr->sa, &slen);
+    if (drvPtr->opts & NS_DRIVER_UDP) {
+        sockPtr->sock = drvPtr->sock;
+    } else {
+        sockPtr->sock = Ns_SockAccept(drvPtr->sock, (struct sockaddr *) &sockPtr->sa, &slen);
+    }
     if (sockPtr->sock == INVALID_SOCKET) {
 	/* 
 	 * Accept failed - return the Sock to the free list.
