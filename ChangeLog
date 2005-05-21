@@ -1,3 +1,8 @@
+2005-05-21  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/driver.c: fixed coredump in NsStartDrivers() if the driver
+	does not have the bindaddr defined (i.e. it is NULL).
+
 2005-05-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* ns/include.h:

@@ -433,27 +433,27 @@ NsStartDrivers(void)
 
     drvPtr = firstDrvPtr;
     while (drvPtr != NULL) {
-        if (drvPtr->bindaddr[0] == '/') {
+        if (drvPtr->bindaddr && drvPtr->bindaddr[0] == '/') {
             drvPtr->opts |= NS_DRIVER_UNIX;
         }
         if (drvPtr->opts & NS_DRIVER_UDP) {
             drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr, drvPtr->port);
-        } else
-        if (drvPtr->opts & NS_DRIVER_UNIX) {
+        } else if (drvPtr->opts & NS_DRIVER_UNIX) {
             drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr);
         } else {
-            drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port, drvPtr->backlog);
+            drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port,
+                                           drvPtr->backlog);
         }
-	if (drvPtr->sock == INVALID_SOCKET) {
-	    Ns_Log(Error, "%s: failed to listen on %s:%d: %s",
-		drvPtr->name, drvPtr->address, drvPtr->port,
-		ns_sockstrerror(ns_sockerrno));
-	} else {
+        if (drvPtr->sock == INVALID_SOCKET) {
+            Ns_Log(Error, "%s: failed to listen on %s:%d: %s",
+                   drvPtr->name, drvPtr->address, drvPtr->port,
+                   ns_sockstrerror(ns_sockerrno));
+        } else {
     	    Ns_SockSetNonBlocking(drvPtr->sock);
     	    Ns_Log(Notice, "%s: listening on %s:%d",
-		drvPtr->name, drvPtr->address, drvPtr->port);
-	}
-	drvPtr = drvPtr->nextPtr;
+                   drvPtr->name, drvPtr->address, drvPtr->port);
+        }
+        drvPtr = drvPtr->nextPtr;
     }
 
     /*
