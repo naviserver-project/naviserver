@@ -35,6 +35,9 @@ include include/Makefile.global
 
 dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb
 
+distfiles = $(dirs) doc tcl include tests win32 *.tcl *.m4 \
+	configure Makefile install-sh README ChangeLog license.terms
+
 all: 
 	@for i in $(dirs); do \
 		( cd $$i && $(MAKE) all ) || exit 1; \
@@ -86,6 +89,16 @@ clean:
 	done
 
 distclean: clean
-	$(RM) config.status config.log config.cache include/Makefile.global include/Makefile.module include/config.h
+	$(RM) config.status config.log config.cache \
+	include/Makefile.global include/Makefile.module include/config.h \
+	naviserver-$(NS_PATCH_LEVEL).tar.gz
+
+dist:
+	$(RM) naviserver-$(NS_PATCH_LEVEL)
+	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
+	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
+	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz naviserver-$(NS_PATCH_LEVEL)
+	$(RM) naviserver-$(NS_PATCH_LEVEL)
+
 
 .PHONY: all install install-binaries install-doc install-tests clean distclean

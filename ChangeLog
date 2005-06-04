@@ -2,6 +2,11 @@
 
 	* configure:
 	* configure.in:
+	* include/Makefile.global.in:
+	* Makefile: Add 'dist' Makefile target.  Rebuild configure.
+
+	* configure:
+	* configure.in:
 	* include/config.h.in:
 	* include/ns.h: Move definition of version information from main
 	header into configure script.  Rebuild configure.

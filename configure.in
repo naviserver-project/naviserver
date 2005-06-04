@@ -50,6 +50,9 @@ AC_DEFINE(NS_PATCH_LEVEL,    "4.99.0",         [Patch Level])
 AC_DEFINE(NS_RELEASE_LEVEL,  NS_ALPHA_RELEASE,
     [NS_ALPHA_RELASE, NS_BETA_RELEASE or NS_FINAL_RELEASE])
 
+NS_PATCH_LEVEL="4.99.0"
+AC_SUBST(NS_PATCH_LEVEL)
+
 
 #
 # Include and verify Tcl config located by --with-tcl=
