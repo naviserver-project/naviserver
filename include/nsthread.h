@@ -38,6 +38,8 @@
 #ifndef NSTHREAD_H
 #define NSTHREAD_H
 
+#include <config.h>
+
 #ifdef _WIN32
 #define NS_EXPORT		__declspec(dllexport)
 #define NS_IMPORT		__declspec(dllimport)

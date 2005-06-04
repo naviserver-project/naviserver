@@ -1,6 +1,13 @@
 2005-06-04  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* configure:
+	* configure.in:
+	* include/nsthread.h:
+	* include/Makefile.global.in:
+	* include/config.h.in: Update configure.in to use an autoheader
+	generated config.h.in.  Rebuild configure.
+
+	* configure:
 	* tcl.m4: Update to revision 1.64 of tcl.m4 from Tcl cvs which
 	adds AC_DEFINE descriptions for use with autoheader.  Rebuild
 	configure.
