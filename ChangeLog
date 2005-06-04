@@ -1,3 +1,10 @@
+2005-06-04  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* configure:
+	* tcl.m4: Update to revision 1.64 of tcl.m4 from Tcl cvs which
+	adds AC_DEFINE descriptions for use with autoheader.  Rebuild
+	configure.
+
 2005-05-21  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/driver.c: fixed coredump in NsStartDrivers() if the driver
