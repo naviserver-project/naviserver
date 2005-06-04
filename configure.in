@@ -42,6 +42,15 @@ AC_CONFIG_HEADER(include/config.h)
 AC_PREREQ(2.50)
 AC_REVISION($Revision$)
 
+AC_DEFINE(NS_MAJOR_VERSION,  4,                [Major Version])
+AC_DEFINE(NS_MINOR_VERSION,  99,               [Minor Version])
+AC_DEFINE(NS_RELEASE_SERIAL, 0,                [Release Serial])
+AC_DEFINE(NS_VERSION,        "4.99",           [Version])
+AC_DEFINE(NS_PATCH_LEVEL,    "4.99.0",         [Patch Level])
+AC_DEFINE(NS_RELEASE_LEVEL,  NS_ALPHA_RELEASE,
+    [NS_ALPHA_RELASE, NS_BETA_RELEASE or NS_FINAL_RELEASE])
+
+
 #
 # Include and verify Tcl config located by --with-tcl=
 #

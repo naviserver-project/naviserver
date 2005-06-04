@@ -129,6 +129,24 @@
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
 
+/* Major Version */
+#undef NS_MAJOR_VERSION
+
+/* Minor Version */
+#undef NS_MINOR_VERSION
+
+/* Patch Level */
+#undef NS_PATCH_LEVEL
+
+/* NS_ALPHA_RELASE, NS_BETA_RELEASE or NS_FINAL_RELEASE */
+#undef NS_RELEASE_LEVEL
+
+/* Release Serial */
+#undef NS_RELEASE_SERIAL
+
+/* Version */
+#undef NS_VERSION
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 

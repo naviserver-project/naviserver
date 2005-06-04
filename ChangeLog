@@ -1,5 +1,11 @@
 2005-06-04  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* configure:
+	* configure.in:
+	* include/config.h.in:
+	* include/ns.h: Move definition of version information from main
+	header into configure script.  Rebuild configure.
+
 	* Makefile: Also remove include/config.h on distclean.
 
 	* configure:
