@@ -191,6 +191,47 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclReturnBinaryObjCmd --
+ *
+ *      Implements ns_returnbinary.  Send complete response to client with
+ *      given string as body.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Connection will be closed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclReturnBinaryObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_Conn *conn;
+    unsigned char *data;
+    int len, status, result;
+
+    if (objc != 4) {
+        Tcl_WrongNumArgs(interp, 1, objv, "status type data");
+        return TCL_ERROR;
+    }
+    if (GetConn(arg, interp, &conn) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    data = Tcl_GetByteArrayFromObj(objv[3], &len);
+    result = Ns_ConnReturnData(conn, status, data, len, Tcl_GetString(objv[2]));
+
+    return Result(interp, result);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclRespondObjCmd --
  *
  *      Implements ns_respond.  Send complete response to client using

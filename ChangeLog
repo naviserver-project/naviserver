@@ -1,3 +1,10 @@
+2005-06-08  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclcmds.c:
+	* nsd/tclresp.c: added ns_returnbinary command to be able
+	to return possibly binary data to the connection. Currently 
+	ns_return family support this from files or open fds only.
+
 2005-06-08  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* Makefile: Make sure derived files don't end up in the tarball.
