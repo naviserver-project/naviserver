@@ -46,3 +46,22 @@ Code Changes:
      * Remove support for old connid argument in much code #1156107
      * Modules nspd and nsext moved from core to external modules
      * Objectified TclX keyed lists
+
+New Modules:
+
+    * New nsudp module to support HTTP over UDP
+    * New nstk module that implements templating and Tcl utilities
+    * New nsaspell module implements interface to GNU Aspell
+    * New nsberkeleydb module implements interface to BerkelyDB
+    * New nschartdir module implements charting interface to ChartDirector
+    * New nsclamav module implements interface to ClamAV anti-virus
+    * New nsdns module implements DNS client and server
+    * New nsfortune module implements interface to Unix fortune game
+    * New nsfreetds module implements database driver to FreeTDS
+    * New nsgdchart module implements charting using GD library
+    * New nsimap module implements IMAP client using UW imap client
+    * New nsocaml module implements interface to OCaml langage
+    * New nssavi module implements interface to Sophos anti-virus
+    * New nssnmp module implements SNMP client and SNMP trap server
+    * New nszlib module implements interface to zlib library
+
