@@ -1,5 +1,7 @@
 2005-06-08  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* Makefile: Make sure derived files don't end up in the tarball.
+
 	* Makefile:
 	* NEWS: Add latest news.
 
