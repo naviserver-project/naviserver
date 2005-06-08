@@ -1,9 +1,15 @@
 2005-06-08  Vlad Seryakov  <seryakov@users.sf.net>
 
+        * include/ns.h:
+	* nsd/tclobjv.c: added Ns_ObjvByteArray function to
+        accept binary arrays as input parameters.
+
 	* nsd/tclcmds.c:
 	* nsd/tclresp.c: added ns_returnbinary command to be able
 	to return possibly binary data to the connection. Currently 
 	ns_return family support this from files or open fds only.
+        Added -binary flag to ns_respond to return binary data without
+        encoding conversion.
 
 2005-06-08  Stephen Deasey  <sdeasey@users.sf.net>
 

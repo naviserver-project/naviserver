@@ -251,20 +251,21 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
 {
     Ns_Conn     *conn;
     int          status = 200, length = -1;
-    char        *type = "*/*", *setid = NULL;
+    char        *type = "*/*", *setid = NULL, *binary = NULL;
     char        *string = NULL, *filename = NULL, *chanid = NULL;
     Ns_Set      *set = NULL;
     Tcl_Channel  chan;
     int          retval;
 
     Ns_ObjvSpec opts[] = {
-        {"-status",   Ns_ObjvInt,    &status,   NULL},
-        {"-type",     Ns_ObjvString, &type,     NULL},
-        {"-length",   Ns_ObjvInt,    &length,   NULL},
-        {"-headers",  Ns_ObjvString, &setid,    NULL},
-        {"-string",   Ns_ObjvString, &string,   NULL},
-        {"-file",     Ns_ObjvString, &filename, NULL},
-        {"-fileid",   Ns_ObjvString, &chanid,   NULL},
+        {"-status",   Ns_ObjvInt,       &status,   NULL},
+        {"-type",     Ns_ObjvString,    &type,     NULL},
+        {"-length",   Ns_ObjvInt,       &length,   NULL},
+        {"-headers",  Ns_ObjvString,    &setid,    NULL},
+        {"-string",   Ns_ObjvString,    &string,   NULL},
+        {"-file",     Ns_ObjvString,    &filename, NULL},
+        {"-fileid",   Ns_ObjvString,    &chanid,   NULL},
+        {"-binary",   Ns_ObjvByteArray, &binary,   &length},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
@@ -276,8 +277,8 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
                       TCL_STATIC);
         return TCL_ERROR;
     }
-    if ((string != NULL) + (filename != NULL) + (chanid != NULL) != 1) {
-        Tcl_SetResult(interp, "must specify only one of -string, -file "
+    if ((binary != NULL) + (string != NULL) + (filename != NULL) + (chanid != NULL) != 1) {
+        Tcl_SetResult(interp, "must specify only one of -string, -file, -binary "
                       "or -fileid", TCL_STATIC);
         return TCL_ERROR;
     }
@@ -311,6 +312,13 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
          */
 
         retval = Ns_ConnReturnFile(conn, status, type, filename);
+
+    } else if (binary != NULL) {
+        /*
+         * We'll be returning a binary data
+         */
+
+        retval = Ns_ConnReturnData(conn, status, binary, length, type);
 
     } else {
         /*

@@ -309,6 +309,45 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ObjvByteArray --
+ *
+ *      Consume exactly one argument, returning a pointer to it's
+ *      cstring into *spec->dest.
+ *
+ *      If spec->arg is != NULL it is assumed to be a pointer to an
+ *      int and the returned string length will be left in it.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+              Tcl_Obj *CONST objv[])
+{
+    unsigned char **dest = spec->dest;
+
+    if (*objcPtr > 0) {
+        if (spec->arg == NULL) {
+            *dest = Tcl_GetByteArrayFromObj(objv[0],0);
+        } else {
+            *dest = Tcl_GetByteArrayFromObj(objv[0], (int *) spec->arg);
+        }
+        *objcPtr -= 1;
+        return TCL_OK;
+    }
+    return TCL_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ObjvObj --
  *
  *      Consume exactly one argument, returning it's pointer into dest

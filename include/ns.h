@@ -826,6 +826,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvLong;
 NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
 NS_EXTERN Ns_ObjvProc Ns_ObjvDouble;
 NS_EXTERN Ns_ObjvProc Ns_ObjvString;
+NS_EXTERN Ns_ObjvProc Ns_ObjvByteArray;
 NS_EXTERN Ns_ObjvProc Ns_ObjvObj;
 NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
