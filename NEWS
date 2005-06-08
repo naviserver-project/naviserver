@@ -7,7 +7,7 @@ New Features:
     * Byte code for Tcl pages are cached if nscache module present
     * Add support for mass virtual hosting #1159471
     * ns_uuencode et all now do full base64 encoding
-    * New introspection commands for procs, filters and traces
+    * New introspection commands for procs, filters and traces #1161597
     * C and Tcl API for HTTP cookies #1145957
     * Add -bytes option to ns_conncptofp command
     * New command ns_conn channel #1156141

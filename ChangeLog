@@ -332,7 +332,7 @@
 	* nsd/tclmisc.c:
 	* nsd/uuencode.c: modified uuencode/decode to support
 	  string buffers any size and be compatible with GNU uuencode,
-	  i.e. wrapping lines to be 60 chars.
+	  i.e. wrapping lines to be 60 chars. (RFE #1175025)
 
 2005-03-28  Vlad Seryakov  <seryakov@users.sf.net>
 
@@ -343,6 +343,7 @@
 	  ns_info traces, ns_info requestprocs commands using new 
  	  Tcl callback interface. New commands show information about
 	  registered filters/procs same way as ns_info scheduled does.
+	  (RFE #1161597)
 
 2005-03-27  Vlad Seryakov  <seryakov@users.sf.net>
 
