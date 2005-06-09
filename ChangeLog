@@ -1,5 +1,7 @@
 2005-06-08  Vlad Seryakov  <seryakov@users.sf.net>
 
+        * sample-config.tcl: added example of dynamic virtual hosting
+       
         * include/ns.h:
 	* nsd/tclobjv.c: added Ns_ObjvByteArray function to
         accept binary arrays as input parameters.

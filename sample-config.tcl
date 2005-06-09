@@ -60,7 +60,8 @@ set serverdesc             "Server Name"
 set homedir                [file dirname [ns_info config]]
 set bindir                 [file dirname [ns_info nsd]]
 
-set pageroot               ${homedir}/servers/${servername}/pages
+set serverdir              ${homedir}/servers/${servername}
+set pageroot               pages
 set directoryfile          index.adp,index.html,index.htm,index.xhtml,index.xht
 
 #
@@ -156,7 +157,7 @@ ns_param   $servername     $serverdesc
 #
 ns_section "ns/server/${servername}"
 ns_param   directoryfile   $directoryfile
-ns_param   pageroot        $pageroot
+ns_param   pageroot        $serverdir/$pageroot
 ns_param   enabletclpages  false     ;# Parse *.tcl files in pageroot.
 #
 #         Server-level I18N Parameters can be specified here, to override
@@ -195,7 +196,7 @@ ns_param   enableexpire    false     ;# Set "Expires: now" on all ADP's.
 ns_param   enabledebug     false     ;# Allow Tclpro debugging with "?debug".
 
 # ADP special pages
-#ns_param   errorpage      ${pageroot}/errorpage.adp ;# ADP error page.
+#ns_param   errorpage      ${serverdir}/${pageroot}/errorpage.adp ;# ADP error page.
 
 
 #
@@ -226,6 +227,11 @@ ns_param   address         $address
 #     directory listings.
 #
 # Parameters:
+#
+#     serverdir           Defines absolute path to server's home directory
+#
+#     pageroot            Defines absolute or relative to serverdir directory
+#                         where all html/adp pages are located
 #                     
 #     cache               Boolean. Enable cache for normal URLs.
 #                         Optional, default is false.
@@ -251,7 +257,9 @@ ns_param   address         $address
 # Example:
 #
 #     ns_section "ns/server/${servername}/fastpath"
-#     ns_param directorylisting fancy
+#     ns_param    directorylisting      fancy
+#     ns_param    serverdir             ${serverdir}
+#     ns_param    pagedir               ${pageroot}
 #
 # See also:
 #
@@ -285,10 +293,10 @@ ns_section "ns/server/${servername}/module/nscgi"
 #
 
 ns_section "ns/server/${servername}/modules"
-    ns_param nssock ${bindir}/nssock.so
-    ns_param nslog ${bindir}/nslog.so
-    #ns_param nscgi ${bindir}/nscgi.so
-    #ns_param nsperm ${bindir}/nsperm.so
+ns_param nssock ${bindir}/nssock.so
+ns_param nslog ${bindir}/nslog.so
+#ns_param nscgi ${bindir}/nscgi.so
+#ns_param nsperm ${bindir}/nsperm.so
 
 
 #
@@ -326,16 +334,16 @@ ns_section "ns/server/${servername}/modules"
 # 4. Make sure the nscp.so module is loaded in the modules section.
 #
 #ns_section "ns/server/${servername}/module/nscp"
-#    ns_param address 127.0.0.1        
-#    ns_param port 9999
-#    ns_param echopassword 1
-#    ns_param cpcmdlogging 1
+#ns_param address 127.0.0.1        
+#ns_param port 9999
+#ns_param echopassword 1
+#ns_param cpcmdlogging 1
 #
 #ns_section "ns/server/${servername}/module/nscp/users"
-#    ns_param user "nsadmin:t2GqvvaiIUbF2:"
+#ns_param user "nsadmin:t2GqvvaiIUbF2:"
 #
 #ns_section "ns/server/${servername}/modules"
-#    ns_param nscp ${bindir}/nscp.so
+#ns_param nscp ${bindir}/nscp.so
 #
 
 
@@ -351,18 +359,59 @@ ns_section "ns/server/${servername}/modules"
 #    virtual server.
 #
 #ns_section "ns/modules"
-#    ns_param   nssock          ${bindir}/nssock.so
+#ns_param   nssock          ${bindir}/nssock.so
 #
 #ns_section "ns/module/nssock"
-#    ns_param   port            $httpport
-#    ns_param   hostname        $hostname
-#    ns_param   address         $address
-#    ns_param   defaultserver   server1
+#ns_param   port            $httpport
+#ns_param   hostname        $hostname
+#ns_param   address         $address
+#ns_param   defaultserver   server1
 #
 #ns_section "ns/module/nssock/servers"
-#    ns_param   server1         $hostname:$httpport
+#ns_param   server1         $hostname:$httpport
 #
 
+#
+# Example: Dynamic Host headers based virtual servers.
+#
+# To enable:
+#
+# 1. Enable by setting enabled to true.
+# 2. For each hosted name create directory under ${serverdir}
+# 3. Each virtual host directory should have ${pageroot} subdirectory
+#  
+#  /usr/local/ns/
+#        servers/${servername}
+#                        host.com/
+#                               pages
+#                        domain.net/
+#                               pages
+#
+#
+# Parameters:
+# 
+#  enabled            Enable or disable virtual hosting
+#  hostprefix         Prefix between serverdir and host name
+#  stripport          Remove :port in the Host: header when 
+#                     building pageroot path so Host: www.host.com:80
+#                     will result in pageroot ${serverdir}/www.host.com
+#  stripwww           Remove www. prefix from Host: header
+#                     when building pageroot path so Host: www.host.com
+#                     will result in pageroot ${serverdir}/host.com
+#  hosthashlevel      Hash the leading characters of string into a path, skipping
+#                     periods and slashes. If string contains less characters than
+#                     levels requested, '_' characters are used as padding.
+#                     For example, given the string 'foo' and the levels 2, 3:
+#                     foo, 2 -> /f/o
+#                     foo, 3 -> /f/o/o
+#
+
+#ns_section      "ns/server/${servername}/vhost"
+#ns_param        enabled                 true
+#ns_param        hostprefix              ""
+#ns_param        hosthashlevel           0
+#ns_param        stripport               true
+#ns_param        stripwww                true
 
 #
 # Example:  Multiple connection thread pools.
@@ -410,8 +459,8 @@ ns_section "ns/server/${servername}/modules"
 # URL, user, and password instead of using the default values.
 #
 #ns_section ns/server/stats
-#    ns_param enabled 1
-#    ns_param url /naviserver/stats
-#    ns_param user nsadmin
-#    ns_param password 23dfs!d
+#ns_param enabled 1
+#ns_param url /naviserver/stats
+#ns_param user nsadmin
+#ns_param password 23dfs!d
 # 
