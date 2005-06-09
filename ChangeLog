@@ -1,3 +1,8 @@
+2005-06-09  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/Makefile.global.in: added missing TCL_DEFS
+	in CFLAGS
+
 2005-06-08  Vlad Seryakov  <seryakov@users.sf.net>
 
         * sample-config.tcl: added example of dynamic virtual hosting
