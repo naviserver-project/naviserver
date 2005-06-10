@@ -33,7 +33,7 @@ test tclresp-1.2.2 {basic syntax} -body {
 
 test tclresp-1.3.1 {basic syntax} -body {
     ns_respond -x
-} -returnCodes error -result {wrong # args: should be "ns_respond ?-status status? ?-type type? ?-length length? ?-headers headers? ?-string string? ?-file file? ?-fileid fileid?"}
+} -returnCodes error -result {wrong # args: should be "ns_respond ?-status status? ?-type type? ?-length length? ?-headers headers? ?-string string? ?-file file? ?-fileid fileid? ?-binary binary?"}
 
 test tclresp-1.3.2 {basic syntax} -body {
     ns_respond -string x
@@ -41,7 +41,7 @@ test tclresp-1.3.2 {basic syntax} -body {
 
 test tclresp-1.3.3 {basic syntax} -body {
     ns_respond -string x -file y
-} -returnCodes error -result {must specify only one of -string, -file or -fileid}
+} -returnCodes error -result {must specify only one of -string, -file, -binary or -fileid}
 
 test tclresp-1.3.4 {basic syntax} -body {
     ns_respond -fileid x
