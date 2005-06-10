@@ -1,5 +1,7 @@
 2005-06-10  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* NEWS: Add latest news and remove news which belongs to other modules.
+
 	* include/Makefile.global.in: Enable Tcl CONST checking.
 	* include/nsthread.h:
 	* include/nscheck.h: Add support for extra GCC checks. (RFE #1215725)
