@@ -1,3 +1,9 @@
+2005-06-10  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/Makefile.global.in: Enable Tcl CONST checking.
+	* include/nsthread.h:
+	* include/nscheck.h: Add support for extra GCC checks. (RFE #1215725)
+
 2005-06-09  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/Makefile.global.in: Remove TCL_DEFS which isn't needed

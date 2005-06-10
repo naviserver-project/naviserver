@@ -39,6 +39,7 @@
 #define NSTHREAD_H
 
 #include <config.h>
+#include <nscheck.h>
 
 #ifdef _WIN32
 #define NS_EXPORT		__declspec(dllexport)
