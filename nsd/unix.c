@@ -62,13 +62,13 @@ static int debugMode;
  *
  * NsBlockSignals --
  *
- *  Block signals at startup.
+ *      Block signals at startup.
  *
  * Results:
- *  None.
+ *      None.
  *
  * Side effects:
- *  Signals will be pending until NsHandleSignals.
+ *      Signals will be pending until NsHandleSignals.
  *
  *----------------------------------------------------------------------
  */
@@ -116,13 +116,13 @@ NsBlockSignals(int debug)
  *----------------------------------------------------------------------
  * NsRestoreSignals --
  *
- *  Restore all signals to their default value.
+ *      Restore all signals to their default value.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      A new thread will be created.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -146,14 +146,14 @@ NsRestoreSignals(void)
  *
  * NsHandleSignals --
  *
- *  Loop forever processing signals until a term signal
+ *      Loop forever processing signals until a term signal 
  *      is received.
  *
  * Results:
- *  None.
+ *      None.
  *
  * Side effects:
- *  HUP callbacks may be called.
+ *      HUP callbacks may be called.
  *
  *----------------------------------------------------------------------
  */
@@ -175,15 +175,15 @@ NsHandleSignals(void)
         sigaddset(&set, SIGINT);
     }
     do {
-    do {
-        err = ns_sigwait(&set, &sig);
-    } while (err == EINTR);
-    if (err != 0) {
-        Ns_Fatal("signal: ns_sigwait failed: %s", strerror(errno));
-    }
-    if (sig == SIGHUP) {
-        NsRunSignalProcs();
-    }
+        do {
+            err = ns_sigwait(&set, &sig);
+        } while (err == EINTR);
+        if (err != 0) {
+            Ns_Fatal("signal: ns_sigwait failed: %s", strerror(errno));
+        }
+        if (sig == SIGHUP) {
+            NsRunSignalProcs();
+        }
     } while (sig == SIGHUP);
 
     /*
@@ -201,13 +201,13 @@ NsHandleSignals(void)
  *
  * NsSendSignal --
  *
- *  Send a signal to the main thread.
+ *      Send a signal to the main thread.
  *
  * Results:
- *  None.
+ *      None.
  *
  * Side effects:
- *  Main thread in NsHandleSignals will wakeup.
+ *      Main thread in NsHandleSignals will wakeup.
  *
  *----------------------------------------------------------------------
  */
@@ -292,6 +292,7 @@ Ns_GetNameForUid(Ns_DString *dsPtr, int uid)
         Ns_DStringAppend(dsPtr, pw->pw_name);
     }
     Ns_MutexUnlock(&lock);
+
     return (pw != NULL) ? NS_TRUE : NS_FALSE;
 }
 
@@ -335,10 +336,10 @@ Ns_GetNameForGid(Ns_DString *dsPtr, int gid)
  *
  * Results:
  *      Return NS_TRUE if user name is found in /etc/passwd file and 
- *  NS_FALSE otherwise.
+ *      NS_FALSE otherwise.
  *
  * Side effects:
- *  None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -366,7 +367,7 @@ Ns_GetUserHome(Ns_DString *ds, char *user)
  *      Get the group id for a user name
  *
  * Results:
- *  Group id or -1 if not found.
+ *      Group id or -1 if not found.
  *
  * Side effects:
  *      None.
@@ -388,6 +389,7 @@ Ns_GetUserGid(char *user)
         retcode = (int) pw->pw_gid;
     }
     Ns_MutexUnlock(&lock);
+
     return retcode;
 }
 
@@ -425,6 +427,7 @@ Ns_GetUid(char *user)
     return retcode;
 }
 
+
 /*
  *----------------------------------------------------------------------
  * Ns_GetGid --
@@ -432,7 +435,7 @@ Ns_GetUid(char *user)
  *      Get the group id from a group name.
  *
  * Results:
- *  Group id or -1 if not found.
+ *      Group id or -1 if not found.
  *
  * Side effects:
  *      None.
@@ -480,9 +483,11 @@ poll(struct pollfd *fds, unsigned long int nfds, int timo)
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;
     int i, rc, n = -1;
+
     FD_ZERO(&ifds);
     FD_ZERO(&ofds);
     FD_ZERO(&efds);
+
     for (i = 0; i < nfds; ++i) {
         if (fds[i].fd == -1) {
             continue;
@@ -558,7 +563,6 @@ FatalSignalHandler(int signal)
      * on fatal signals, else they get left behind as dead threads.
      * As of glibc 2.3 with NPTL, this should be a no-op.
      */
-
     pthread_kill_other_threads_np();
 #endif
 
