@@ -25,7 +25,7 @@ test tclresp-1.1.2 {basic syntax} -body {
 
 test tclresp-1.2.1 {basic syntax} -body {
     ns_return
-} -returnCodes error -result {wrong # args: should be "ns_return status type string"}
+} -returnCodes error -result {wrong # args: should be "ns_return ?-binary? status type string"}
 
 test tclresp-1.2.2 {basic syntax} -body {
     ns_return 200 text/plain x

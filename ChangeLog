@@ -1,3 +1,8 @@
+2005-06-10  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclresp.c: removed ns_returnbinary command. Added -binary
+	flag to ns_return.
+
 2005-06-10  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* include/ns.h Ns_SockBindUdp(), Ns_SockBindRaw() and Ns_SockBindUnix()

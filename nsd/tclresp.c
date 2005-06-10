@@ -169,62 +169,38 @@ int
 NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
-    int      status, result;
+    unsigned char *data = 0, *type = 0;
+    int result, param = 1, status = 0, len = 0, binary = 0;
 
-    if (objc != 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "status type string");
+    if (objc != 4 && objc != 5) {
+        Tcl_WrongNumArgs(interp, 1, objv, "?-binary? status type string");
         return TCL_ERROR;
+    }
+    if (objc == 5) {
+        if(strcmp(Tcl_GetString(objv[param]),"-binary")) {
+           Tcl_WrongNumArgs(interp, 1, objv, "?-binary? status type string");
+           return TCL_ERROR;
+        }
+        binary = 1;
+        param++;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[param], &status) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    type = Tcl_GetString(objv[param+1]);
+    if (binary != 0) { 
+        data = Tcl_GetByteArrayFromObj(objv[param+2], &len);
+    } else {
+        data = Tcl_GetStringFromObj(objv[param+2], &len);
     }
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
-        return TCL_ERROR;
+    if(binary != 0) {
+       result = Ns_ConnReturnData(conn, status, data, len, type);
+    } else {
+       result = Ns_ConnReturnCharData(conn, status, data, len, type);
     }
-    result = Ns_ConnReturnCharData(conn, status, Tcl_GetString(objv[3]), -1, 
-        Tcl_GetString(objv[2]));
-
-    return Result(interp, result);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclReturnBinaryObjCmd --
- *
- *      Implements ns_returnbinary.  Send complete response to client with
- *      given string as body.
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      Connection will be closed.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclReturnBinaryObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Ns_Conn *conn;
-    unsigned char *data;
-    int len, status, result;
-
-    if (objc != 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "status type data");
-        return TCL_ERROR;
-    }
-    if (GetConn(arg, interp, &conn) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    data = Tcl_GetByteArrayFromObj(objv[3], &len);
-    result = Ns_ConnReturnData(conn, status, data, len, Tcl_GetString(objv[2]));
-
     return Result(interp, result);
 }
 

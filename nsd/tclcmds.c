@@ -141,7 +141,6 @@ extern Tcl_ObjCmdProc
     NsTclReturnNotFoundObjCmd,
     NsTclReturnNoticeObjCmd,
     NsTclReturnObjCmd,
-    NsTclReturnBinaryObjCmd,
     NsTclReturnRedirectObjCmd,
     NsTclReturnUnauthorizedObjCmd,
     NsTclRmdirObjCmd,
@@ -480,7 +479,6 @@ static Cmd servCmds[] = {
     {"ns_returnforbidden", NULL, NsTclReturnForbiddenObjCmd},
     {"ns_returnunauthorized", NULL, NsTclReturnUnauthorizedObjCmd},
     {"ns_returnnotfound", NULL, NsTclReturnNotFoundObjCmd},
-    {"ns_returnbinary", NULL, NsTclReturnBinaryObjCmd},
 
     /*
      * tclfile.c
