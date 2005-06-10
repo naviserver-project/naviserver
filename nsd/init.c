@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -43,14 +43,14 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  *
  * NsdInit --
  *
- *	Library entry point for libnsd.  This routine calls various
- *	data structure initialization functions throughout the core.
+ *	    Library entry point for libnsd. This routine calls various
+ *	    data structure initialization functions throughout the core.
  *
  * Results:
- 	None.
+ *	    None.
  *
  * Side effects:
- *	None.
+ *	    Numerous.
  *
  *----------------------------------------------------------------------
  */
@@ -61,10 +61,8 @@ NsdInit(void)
     static int once = 0;
 
     if (!once) {
-	once = 1;
-#ifndef _WIN32
+        once = 1;
     	NsInitBinder();
-#endif
     	NsInitLog();
     	NsInitCache();
     	NsInitConf();
