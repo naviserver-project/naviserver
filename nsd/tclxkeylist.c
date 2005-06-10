@@ -282,7 +282,7 @@ Tcl_GetKeyedListKeys(interp, subFieldName, keyedList, keyesArgcPtr,keyesArgvPtr)
                 return TCL_ERROR;
             }
             for (ii = 0; ii < keyCount; ii++) {
-                keyPtr = Tcl_GetStringFromObj(objValues[ii], &keySize);
+                keyPtr = Tcl_GetStringFromObj(objValues[ii], (int*)&keySize);
                 totalKeySize += keySize + 1;
             }
             keyArgv = (char**)ckalloc(((keyCount+1)*sizeof(char*))+totalKeySize);
@@ -290,7 +290,7 @@ Tcl_GetKeyedListKeys(interp, subFieldName, keyedList, keyesArgcPtr,keyesArgvPtr)
             nextByte = ((char*)keyArgv) + ((keyCount+1) * sizeof(char*));
             for (ii = 0; ii < keyCount; ii++) {
                 keyArgv[ii] = nextByte;
-                keyPtr = Tcl_GetStringFromObj(objValues[ii], &keySize);
+                keyPtr = Tcl_GetStringFromObj(objValues[ii], (int*)&keySize);
                 strncpy(nextByte, keyPtr, keySize);
                 nextByte[keySize] = 0;
                 nextByte += keySize + 1;
@@ -350,7 +350,7 @@ Tcl_GetKeyedListField(interp, fieldName, keyedList, fieldValuePtr)
     } else if (status == TCL_OK) {
         if (fieldValuePtr) {
             size_t valueLen;
-            char *keyValue = Tcl_GetStringFromObj(objValPtr, &valueLen);
+            char *keyValue = Tcl_GetStringFromObj(objValPtr, (int*)&valueLen);
             char *newValue = strncpy(ckalloc(valueLen + 1), keyValue, valueLen);
             newValue[valueLen] = 0;
             *fieldValuePtr = newValue;
@@ -404,7 +404,7 @@ Tcl_SetKeyedListField(interp, fieldName, fieldValue, keyedList)
         return NULL;
     }
 
-    listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &listLen);
+    listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), (int*)&listLen);
     newList = strncpy(ckalloc(listLen + 1), listStr, listLen);
     listStr[listLen] = 0;
 
@@ -450,7 +450,7 @@ Tcl_DeleteKeyedListField(interp, fieldName, keyedList)
         return NULL;
     }
 
-    listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &listLen);
+    listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), (int*)&listLen);
     newList = strncpy(ckalloc(listLen + 1), listStr, listLen);
     listStr[listLen] = 0;
 
