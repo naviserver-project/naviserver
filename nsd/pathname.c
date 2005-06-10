@@ -34,9 +34,9 @@
  *	Functions that manipulate or return paths. 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #define isslash(c)	((c) == '/' || (c) == '\\')
 

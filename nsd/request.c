@@ -35,9 +35,9 @@
  *	Pool memory is used as an optimization.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #define HTTP "HTTP/"
 

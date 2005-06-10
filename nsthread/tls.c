@@ -35,9 +35,9 @@
  *	library handles thread local storage directly.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "thread.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following global variable specifies the maximum TLS id.  Modifying

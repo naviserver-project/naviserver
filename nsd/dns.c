@@ -34,9 +34,9 @@
  *      DNS lookup routines.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #ifndef INADDR_NONE
 #define INADDR_NONE (-1)

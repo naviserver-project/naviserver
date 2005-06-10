@@ -33,15 +33,20 @@
  *	Routines for managing NsServer structures.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
+
+/*
+ * Local functions defined in this file.
+ */
+
+static void CreatePool(NsServer *servPtr, char *pool);
 
 /*
  * Static variables defined in this file. 
  */
 
-static void CreatePool(NsServer *servPtr, char *pool);
 static NsServer *initServPtr; /* Holds currently initializing server. */
 
 

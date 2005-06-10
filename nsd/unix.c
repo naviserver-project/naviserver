@@ -34,11 +34,11 @@
  *  Unix specific routines.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
 #include <pwd.h>
 #include <grp.h>
+
+NS_RCSID("@(#) $Header$");
 
 
 /*

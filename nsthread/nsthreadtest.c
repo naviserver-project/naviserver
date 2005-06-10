@@ -37,6 +37,8 @@
 
 #include "nsthread.h"
 
+NS_RCSID("@(#) $Header$");
+
 /*
  * Special direct include of pthread.h for compatibility tests.
  */
@@ -47,9 +49,6 @@
 #include <pthread.h>
 #define PTHREAD_TEST 1
 #endif
-
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 
 extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 

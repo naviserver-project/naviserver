@@ -41,6 +41,8 @@
 	
 2005-06-10  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* *.c: Use NS_RCSD() macro to quieten compiler.
+
 	* NEWS: Add latest news and remove news which belongs to other modules.
 
 	* include/Makefile.global.in: Enable Tcl CONST checking.

@@ -33,9 +33,9 @@
  *	ADP parser.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #define SERV_STREAM	1
 #define SERV_RUNAT	2

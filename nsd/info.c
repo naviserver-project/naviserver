@@ -33,9 +33,9 @@
  *	Ns_Info* API and ns_info command support.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 
 extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);

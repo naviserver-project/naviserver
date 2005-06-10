@@ -34,14 +34,15 @@
  *	Tcl commands that do stuff to the filesystem. 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
 #ifdef _WIN32
 #include <sys/utime.h>
 #else
 #include <utime.h>
 #endif
+
+NS_RCSID("@(#) $Header$");
+
 
 /*
  * Structure handling one registered channel for the [ns_chan] command

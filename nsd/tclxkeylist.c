@@ -1,16 +1,4 @@
 /* 
- * tclxkeylist.c --
- *
- *  Keyed list support, modified from the original
- *  Tcl8.x based TclX and Tcl source.
- *
- */
-
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
-#include "nsd.h"
-
-/* 
  * tclXkeylist.c --
  *
  *  Extended Tcl keyed list commands and interfaces.
@@ -27,6 +15,18 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  * $Id$
  *-----------------------------------------------------------------------------
  */
+
+/* 
+ * tclxkeylist.c --
+ *
+ *  Keyed list support, modified from the original
+ *  Tcl8.x based TclX and Tcl source.
+ *
+ */
+
+#include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 
 /*---------------------------------------------------------------------------*/

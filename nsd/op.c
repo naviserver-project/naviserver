@@ -34,9 +34,9 @@
  *  	routines (previously known as "op procs").
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure defines a request procedure including user

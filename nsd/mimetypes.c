@@ -34,9 +34,10 @@
  *	Defines standard default mime types. 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
+
 #define TYPE_DEFAULT "*/*"
 
 /*

@@ -34,9 +34,9 @@
  *	Routines for creating, exiting, and joining threads.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "thread.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following constants define the default and minimum stack

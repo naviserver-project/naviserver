@@ -33,9 +33,9 @@
  *	Master lock critical section.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "thread.h"
+
+NS_RCSID("@(#) $Header$");
 
 static Ns_Cs master;
 static int initialized;

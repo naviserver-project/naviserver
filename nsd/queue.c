@@ -34,9 +34,9 @@
  *	and service threads.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure is allocated for each new thread.  The

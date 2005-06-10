@@ -36,9 +36,9 @@
  *	that are run at various points during the server's execution.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * This structure is used as nodes in a linked list of callbacks.

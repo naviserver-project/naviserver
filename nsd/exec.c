@@ -33,9 +33,9 @@
  *	Routines for creating and waiting for child processes.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #ifdef _WIN32
 #include <process.h>

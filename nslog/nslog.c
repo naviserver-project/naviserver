@@ -28,8 +28,6 @@
  *
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 /* 
  * nslog.c --
  *
@@ -99,6 +97,8 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #include "ns.h"
 #include <sys/stat.h>	/* mkdir */
 #include <ctype.h>	/* isspace */
+
+NS_RCSID("@(#) $Header$");
 
 #define LOG_COMBINED	        1
 #define LOG_FMTTIME	        2

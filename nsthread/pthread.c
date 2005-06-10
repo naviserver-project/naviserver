@@ -37,7 +37,15 @@
 #include "thread.h"
 #include <pthread.h>
 
+NS_RCSID("@(#) $Header$");
+
+/*
+ * Local functions defined in this file.
+ */
+
 static pthread_cond_t  *GetCond(Ns_Cond *cond);
+static void CleanupTls(void *arg);
+static void *ThreadMain(void *arg);
 
 /*
  * The following single Tls key is used to store the nsthread
@@ -45,8 +53,6 @@ static pthread_cond_t  *GetCond(Ns_Cond *cond);
  */
 
 static pthread_key_t	key;
-static void CleanupTls(void *arg);
-static void *ThreadMain(void *arg);
 
 
 /*

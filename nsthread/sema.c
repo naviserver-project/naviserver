@@ -37,9 +37,9 @@
  *	Note:  In general, cleaner code can be implemented with condition variables.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "thread.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure defines a counting semaphore using a lock

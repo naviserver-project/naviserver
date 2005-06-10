@@ -45,9 +45,9 @@
  *	the Req structures in op.c) normally work better.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "thread.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure defines a read/write lock including a mutex

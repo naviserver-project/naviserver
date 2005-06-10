@@ -34,9 +34,9 @@
  *	Functions that return data to a browser. 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #define MAX_RECURSION 3       /* Max return direct recursion limit. */
 

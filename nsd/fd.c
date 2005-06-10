@@ -33,13 +33,13 @@
  *
  *      Manipulate file descriptors of open files.
  */
- 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
 #ifdef _WIN32
 #include <share.h>
 #endif
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure maitains and open temp fd.

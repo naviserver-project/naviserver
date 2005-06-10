@@ -35,9 +35,9 @@
  *	connections. 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * This the context used by the socket callback.

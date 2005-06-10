@@ -35,9 +35,9 @@
  *	data buffers.  See the corresponding manual page for details.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "thread.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure maintains state for the

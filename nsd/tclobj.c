@@ -34,9 +34,9 @@
  *	Implement Tcl_Obj type for Ns_Time.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * Prototypes for procedures defined later in this file:

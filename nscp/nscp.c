@@ -30,14 +30,14 @@
 /*
  * nscp.c --
  *
- *	Simple control port module for AOLserver which allows
- *  	one to telnet to a specified port, login, and issue
- *  	Tcl commands.
+ *      Simple control port module for AOLserver which allows
+ *      one to telnet to a specified port, login, and issue
+ *      Tcl commands.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "ns.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure is allocated each instance of

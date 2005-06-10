@@ -34,12 +34,13 @@
  *	Tcl wrappers around all thread objects 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #ifdef NS_NOCOMPAT
 #undef NS_NOCOMPAT
 #endif
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
+
 
 typedef struct ThreadArg {
     int detached;

@@ -27,13 +27,12 @@
  * version of this file under either the License or the GPL.
  */
 
-
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "ns.h"
 #include <sys/stat.h>
 #include <ctype.h>
 #include <stdlib.h>	/* environ */
+
+NS_RCSID("@(#) $Header$");
 
 #define BUFSIZE	    4096
 #define NDSTRINGS   5

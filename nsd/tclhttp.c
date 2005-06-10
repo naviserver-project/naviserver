@@ -33,9 +33,9 @@
  *	Support for the ns_http command.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure and flags maintains the state of a

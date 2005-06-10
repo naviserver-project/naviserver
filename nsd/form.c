@@ -33,9 +33,14 @@
  *      Routines for dealing with HTML FORM's.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
+
+
+/*
+ * Local functions defined in this file.
+ */
 
 static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding);
 static void ParseMultiInput(Conn *connPtr, char *start, char *end);

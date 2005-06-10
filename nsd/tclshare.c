@@ -33,7 +33,9 @@
  *	This file implements shared Tcl variables between interpreters.
  */
 
-#include	"nsd.h"
+#include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * Shared variables are implemented with a per-server hash table

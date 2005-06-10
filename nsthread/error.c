@@ -34,9 +34,9 @@
  *	Routines for dealing with fatal errors.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "thread.h"
+
+NS_RCSID("@(#) $Header$");
 
 
 /*

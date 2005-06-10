@@ -34,11 +34,10 @@
  * Support for pre-bound privileged ports.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
 #include <sys/un.h>
 
+NS_RCSID("@(#) $Header$");
 
 /*
  * Local variables defined in this file

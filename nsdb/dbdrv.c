@@ -34,9 +34,9 @@
  *	Routines for handling the loadable db driver interface.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "db.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following typedefs define the functions provided by

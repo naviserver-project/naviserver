@@ -34,9 +34,9 @@
  *	Tcl database access routines.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "db.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure maintains per-interp data.

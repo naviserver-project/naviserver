@@ -33,9 +33,9 @@
  *	Routines for the ns_atclose command.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure maintains script to execute when the

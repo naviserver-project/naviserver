@@ -38,9 +38,9 @@
  *	For full details see the file doc/urlspace.txt.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * Size of stack to keep track of server/method/url/... node path

@@ -27,10 +27,9 @@
  * version of this file under either the License or the GPL.
  */
 
-
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * This program implements the Proposed Federal Information Processing Data

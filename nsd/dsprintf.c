@@ -37,8 +37,6 @@
  *	(see copyright below).
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 /*	$NetBSD: vfprintf.c,v 1.35 2000/12/30 04:13:25 itojun Exp $	*/
 
 /*-
@@ -81,6 +79,8 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 #include <float.h>
 #define quad_t	  ns_int64
 #define u_quad_t  ns_uint64
+
+NS_RCSID("@(#) $Header$");
 
 /* 11-bit exponent (VAX G floating point) is 308 decimal digits */
 #define	MAXEXP		308

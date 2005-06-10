@@ -33,9 +33,9 @@
  *	ADP string and file eval.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure defines a shared page in the ADP cache.  The

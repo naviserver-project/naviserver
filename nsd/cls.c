@@ -34,9 +34,9 @@
  *	Connection local storage.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /* 
  * Static functions defined in this file.

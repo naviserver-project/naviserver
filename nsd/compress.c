@@ -33,9 +33,9 @@
  * Support for simple gzip compression using Zlib.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "ns.h"
+
+NS_RCSID("@(#) $Header$");
 
 #ifdef HAVE_ZLIB_H
 #include <zlib.h>

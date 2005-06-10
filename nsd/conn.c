@@ -34,9 +34,9 @@
  *      Manage the Ns_Conn structure
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
 static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv,

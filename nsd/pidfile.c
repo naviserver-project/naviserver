@@ -34,9 +34,13 @@
  *	Implement the PID file routines.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
+
+/*
+ * Local functions defined in this file.
+ */
 
 static char *GetFile(char *procname);
 

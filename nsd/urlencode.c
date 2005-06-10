@@ -27,23 +27,16 @@
  * version of this file under either the License or the GPL.
  */
 
-
 /* 
  * urlencode.c --
  *
  *      Encode and decode URLs, as described in RFC 1738.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
 
+NS_RCSID("@(#) $Header$");
 
-
-static char *UrlEncode(Ns_DString *dsPtr, char *string,
-                       Tcl_Encoding encoding, int part);
-static char *UrlDecode(Ns_DString *dsPtr, char *string,
-                       Tcl_Encoding encoding, int part);
 
 /*
  * The following structure defines the encoding attributes
@@ -55,6 +48,19 @@ typedef struct ByteKey {
     int   len;	    /* Length required to encode string. */
     char *str;	    /* String for multibyte encoded character. */
 } ByteKey;
+
+/*
+ * Local functions defined in this file.
+ */
+
+static char *UrlEncode(Ns_DString *dsPtr, char *string,
+                       Tcl_Encoding encoding, int part);
+static char *UrlDecode(Ns_DString *dsPtr, char *string,
+                       Tcl_Encoding encoding, int part);
+
+/*
+ * Local variables defined in this file.
+ */
 
 /*
  * The following table is used for encoding and decoding the

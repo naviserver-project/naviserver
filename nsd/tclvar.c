@@ -35,7 +35,7 @@
 
 #include "nsd.h"
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure defines a collection of arrays.

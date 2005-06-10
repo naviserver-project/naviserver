@@ -31,13 +31,13 @@
  * uuencode.c --
  *
  *      Uuencoding and decoding routines which map 8-bit binary bytes
- *	into 6-bit ascii characters.
+ *      into 6-bit ascii characters.
  *
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following array specify the output ascii character for each

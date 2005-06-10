@@ -34,9 +34,9 @@
  *	Routines for a simple cache used by fastpath and Adp.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 struct Cache;
 

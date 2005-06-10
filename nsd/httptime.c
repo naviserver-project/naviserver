@@ -29,15 +29,15 @@
 
 
 /* 
- * time.c --
+ * httptime.c --
  *
  *	Manipulate times and dates; this is strongly influenced
  *	by HTSUtils.c from CERN. See also RFC 1123.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * Local functions defined in this file

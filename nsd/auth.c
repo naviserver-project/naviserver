@@ -33,9 +33,9 @@
  *	URL level HTTP authorization support.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following proc is used for simple user authorization.  It

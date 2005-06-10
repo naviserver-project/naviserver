@@ -34,9 +34,9 @@
  *	Load .so files into the server and initialize them. 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #if defined(USE_DLSHL)
 #include <dl.h>

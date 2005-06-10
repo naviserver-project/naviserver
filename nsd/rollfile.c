@@ -32,15 +32,19 @@
  *
  *	Routines to roll files.
  */
- 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
 
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 typedef struct File {
     time_t  	mtime;
     char        name[4];
 } File;
+
+/*
+ * Local functions defined in this file.
+ */
 
 static int AppendFile(Ns_DString *dsPtr, char *dir, char *tail);
 static int CmpFile(const void *p1, const void *p2);

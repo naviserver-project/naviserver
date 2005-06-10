@@ -33,10 +33,14 @@
  *	Various core configuration.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
 #include "nsconf.h"
+
+NS_RCSID("@(#) $Header$");
+
+/*
+ * Local functions defined in this file.
+ */
 
 static int GetInt(char *key, int def);
 static int GetBool(char *key, int def);

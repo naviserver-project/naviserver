@@ -34,9 +34,10 @@
  *	Implement the "ns_env" command.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
+#include "nsd.h"
 
-#include	"nsd.h"
+NS_RCSID("@(#) $Header$");
+
 
 static int PutEnv(Tcl_Interp *interp, char *name, char *value);
 static Ns_Mutex lock;

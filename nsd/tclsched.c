@@ -34,9 +34,9 @@
  *      Implement scheduled procs in Tcl.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 
 /*

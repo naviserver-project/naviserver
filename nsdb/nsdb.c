@@ -33,9 +33,9 @@
  *	Database module entry point.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "db.h"
+
+NS_RCSID("@(#) $Header$");
 
 int Ns_ModuleVersion = 1;
 

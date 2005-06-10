@@ -33,9 +33,9 @@
  *	ADP connection request support.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 static int AdpFlush(NsInterp *itPtr, int stream);
 

@@ -28,10 +28,9 @@
  *
  */
 
-static const char *RCSID =
-    "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "ns.h"
+
+NS_RCSID("@(#) $Header$");
 
 
 #define VALUE_SUPPLIED ((void *) NS_TRUE)

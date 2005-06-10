@@ -34,9 +34,9 @@
  *	Support for the socket callback thread.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following defines a socket being monitored.

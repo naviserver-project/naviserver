@@ -27,8 +27,6 @@
  * version of this file under either the License or the GPL.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 /*
  * sched.c --
  *
@@ -46,6 +44,8 @@ static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
  */
 
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure defines a scheduled event.

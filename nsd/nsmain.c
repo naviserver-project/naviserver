@@ -33,9 +33,9 @@
  *  NaviServer Ns_Main() startup routine.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 #ifndef _WIN32
 # ifdef LOG_DEBUG

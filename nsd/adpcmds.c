@@ -33,9 +33,9 @@
  *	ADP commands.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 static int ReturnObjCmd(NsInterp *itPtr, int objc, Tcl_Obj **objv,
 			int exception);

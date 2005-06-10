@@ -34,9 +34,9 @@
  *	Tcl commands that let you do TCP sockets. 
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure is used for a socket callback.

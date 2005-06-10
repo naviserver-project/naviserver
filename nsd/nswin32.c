@@ -34,9 +34,9 @@
  *  Win32 specific routines.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 static Ns_Mutex lock;
 static Ns_Cond cond;

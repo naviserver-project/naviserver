@@ -33,9 +33,9 @@
  *	Defines standard default charset to encoding mappings.
  */
 
-static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
-
 #include "nsd.h"
+
+NS_RCSID("@(#) $Header$");
 
 
 #define DEFAULT_CHARSET_CONFIG    "OutputCharset"

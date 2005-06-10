@@ -36,11 +36,17 @@
 
 #include "ns.h"
 
+NS_RCSID("@(#) $Header$");
+
+int Ns_ModuleVersion = 1;
+
+/*
+ * Local functions defined in this file.
+ */
+
 static Ns_DriverProc SockProc;
 static int SockRecv(SOCKET sock, struct iovec *bufs, int nbufs);
 static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs);
-
-int Ns_ModuleVersion = 1;
 
 
 /*
