@@ -636,7 +636,7 @@ PreBind(char *line)
             }
         }
 
-        if (*line == '/') {
+        if (Ns_PathIsAbsolute(line)) {
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &new);
             if (!new) {
                 Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);

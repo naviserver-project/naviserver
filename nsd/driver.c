@@ -335,12 +335,19 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
 
     /*
+     * Check if bind address represent valid pathname and if so
+     * switch driver to Unix domain sockets mode
+     */
+    drvPtr->bindaddr = bindaddr;
+    if (drvPtr->bindaddr && Ns_PathIsAbsolute(drvPtr->bindaddr)) {
+        drvPtr->opts |= NS_DRIVER_UNIX;
+    }
+
+    /*
      * Determine the port and then set the HTTP location string either
      * as specified in the config file or constructed from the
      * hostname and port.
      */
-
-    drvPtr->bindaddr = bindaddr;
     drvPtr->address = ns_strdup(address);
     if (!Ns_ConfigGetInt(path, "port", &drvPtr->port)) {
 	drvPtr->port = defport;
@@ -433,9 +440,6 @@ NsStartDrivers(void)
 
     drvPtr = firstDrvPtr;
     while (drvPtr != NULL) {
-        if (drvPtr->bindaddr && drvPtr->bindaddr[0] == '/') {
-            drvPtr->opts |= NS_DRIVER_UNIX;
-        }
         if (drvPtr->opts & NS_DRIVER_UDP) {
             drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr, drvPtr->port);
         } else if (drvPtr->opts & NS_DRIVER_UNIX) {

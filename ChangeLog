@@ -1,5 +1,9 @@
 2005-06-10  Vlad Seryakov  <seryakov@users.sf.net>
 
+        * nsd/driver.c:
+        * nsd/binder.c: Determine path using Ns_PathIsAbsolute for Unix 
+	domain sockets
+
 	* nsd/tclresp.c: removed ns_returnbinary command. Added -binary
 	flag to ns_return.
 
