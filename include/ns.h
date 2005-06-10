@@ -569,7 +569,8 @@ NS_EXTERN void Ns_ClsSet(Ns_Cls *clsPtr, Ns_Conn *conn, void *data);
  * compress.c:
  */
 
-NS_EXTERN int Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level);
+NS_EXTERN int Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level)
+     NS_GNUC_DEPRECATED;
 NS_EXTERN int Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level);
 
 /*
@@ -634,7 +635,7 @@ NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
 NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPeerPort(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnLocation(Ns_Conn *conn);
+NS_EXTERN char *Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED;
 NS_EXTERN char *Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);
 NS_EXTERN char *Ns_ConnHost(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPort(Ns_Conn *conn);
@@ -645,7 +646,7 @@ NS_EXTERN int Ns_ConnGetWriteEncodedFlag(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN int Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
-NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc); /* depreciated */
+NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
 
 /*
  * cookies.c:
@@ -686,7 +687,8 @@ NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 NS_EXTERN char **Ns_DStringAppendArgv(Ns_DString *dsPtr);
 NS_EXTERN char *Ns_DStringVarAppend(Ns_DString *dsPtr, ...);
 NS_EXTERN char *Ns_DStringExport(Ns_DString *dsPtr);
-NS_EXTERN char *Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...);
+NS_EXTERN char *Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt, ...)
+     NS_GNUC_PRINTF(2, 3);
 NS_EXTERN char *Ns_DStringVPrintf(Ns_DString *dsPtr, char *fmt, va_list ap);
 NS_EXTERN char *Ns_DStringAppendArg(Ns_DString *dsPtr, char *string);
 NS_EXTERN Ns_DString *Ns_DStringPop(void);
@@ -710,7 +712,7 @@ NS_EXTERN int Ns_WaitForProcess(int pid, int *statusPtr);
  * fastpath.c:
  */
 
-NS_EXTERN char *Ns_PageRoot(char *server);
+NS_EXTERN char *Ns_PageRoot(char *server) NS_GNUC_DEPRECATED;
 NS_EXTERN void Ns_SetUrlToFileProc(char *server, Ns_UrlToFileProc *procPtr);
 NS_EXTERN int Ns_UrlToFile(Ns_DString *dsPtr, char *server, char *url);
 NS_EXTERN int Ns_UrlIsFile(char *server, char *url);
@@ -867,8 +869,8 @@ NS_EXTERN int Ns_SockPortBound(int port);
 
 NS_EXTERN char *Ns_InfoErrorLog(void);
 NS_EXTERN int   Ns_LogRoll(void);
-NS_EXTERN void  Ns_Log(Ns_LogSeverity severity, char *fmt, ...);
-NS_EXTERN void  Ns_Fatal(char *fmt, ...);
+NS_EXTERN void  Ns_Log(Ns_LogSeverity severity, char *fmt, ...) NS_GNUC_PRINTF(2, 3);
+NS_EXTERN void  Ns_Fatal(char *fmt, ...) NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
 NS_EXTERN char *Ns_LogTime(char *timeBuf);
 NS_EXTERN char *Ns_LogTime2(char *timeBuf, int gmt);
 NS_EXTERN int   Ns_RollFile(char *file, int max);
@@ -1012,8 +1014,8 @@ NS_EXTERN void Ns_ConnSetTypeHeader(Ns_Conn *conn, char *type);
 NS_EXTERN void Ns_ConnSetLengthHeader(Ns_Conn *conn, int length);
 NS_EXTERN void Ns_ConnSetLastModifiedHeader(Ns_Conn *conn, time_t *mtime);
 NS_EXTERN void Ns_ConnSetExpiresHeader(Ns_Conn *conn, char *expires);
-NS_EXTERN int Ns_ConnPrintfHeader(Ns_Conn *conn, char *fmt,...);
-NS_EXTERN int Ns_ConnResetReturn(Ns_Conn *conn);
+NS_EXTERN int Ns_ConnPrintfHeader(Ns_Conn *conn, char *fmt, ...) NS_GNUC_PRINTF(2, 3);
+NS_EXTERN int Ns_ConnResetReturn(Ns_Conn *conn) NS_GNUC_DEPRECATED;
 NS_EXTERN int Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, char *title,
 				    char *notice);
 NS_EXTERN int Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title,
@@ -1126,7 +1128,7 @@ NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, int timeout);
 NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, int timeout);
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 
-NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa);
+NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
 NS_EXTERN SOCKET Ns_SockBind(struct sockaddr_in *psa);
 NS_EXTERN SOCKET Ns_SockListen(char *address, int port);
 NS_EXTERN SOCKET Ns_SockAccept(SOCKET sock, struct sockaddr *psa, int *lenPtr);
@@ -1209,7 +1211,7 @@ NS_EXTERN int Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write,
  */
 
 NS_EXTERN int Ns_TclInit(Tcl_Interp *interp);
-NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...);
+NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...) NS_GNUC_PRINTF(2, 3);
 NS_EXTERN int Nsd_Init(Tcl_Interp *interp);
 NS_EXTERN int Ns_TclInitInterps(char *server, Ns_TclInterpInitProc *proc, void *arg);
 NS_EXTERN int Ns_TclInitModule(char *server, char *module);
@@ -1272,13 +1274,13 @@ NS_EXTERN char *Ns_UrlPathDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc)
 NS_EXTERN char *Ns_UrlQueryEncode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
 NS_EXTERN char *Ns_UrlQueryDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
 NS_EXTERN char *Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
-                                         Tcl_Encoding encoding);
+                                         Tcl_Encoding encoding) NS_GNUC_DEPRECATED;
 NS_EXTERN char *Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
-                                         Tcl_Encoding encoding);
+                                         Tcl_Encoding encoding) NS_GNUC_DEPRECATED;
 NS_EXTERN char *Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string,
-                                    char *charset);
+                                    char *charset) NS_GNUC_DEPRECATED;
 NS_EXTERN char *Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string,
-                                    char *charset);
+                                    char *charset) NS_GNUC_DEPRECATED;
 
 /*
  * urlopen.c:

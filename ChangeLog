@@ -41,6 +41,9 @@
 	
 2005-06-10  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* include/nsthread.h: Add a variety of NS_GNUC_* annotations.
+
 	* *.c: Use NS_RCSD() macro to quieten compiler.
 
 	* NEWS: Add latest news and remove news which belongs to other modules.
