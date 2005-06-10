@@ -1,3 +1,18 @@
+2005-06-10  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* include/ns.h Ns_SockBindUdp(), Ns_SockBindRaw() and Ns_SockBindUnix()
+	are now exported.
+
+	* nsd/init.c: NsInitBinder is also done for Windows as for Unix.
+
+	* nsd/binder.c: Attempt to unify usage and call-conventions on various 
+	Ns_SockListenXXX and Ns_SockBindXXX calls for various protocols 
+	(tcp, udp, raw, unix).
+	Also, parts not needed for windows build (pre-binding) are ifdef'ed out.
+	Still open: handling of Unix-domain sockets on Windows. It might compile
+	but will definitely not work because of the address parsing issues 
+	(windows files do not begin with slash). This has to be sorted out.
+
 2005-06-10  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/tclresp.test: updated to reflect parameters change 
