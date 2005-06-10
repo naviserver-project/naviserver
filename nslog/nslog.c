@@ -113,7 +113,7 @@ typedef struct {
     char	   *module;
     char           *file;
     char           *rollfmt;
-    char           **extheaders;
+    CONST char    **extheaders;
     int            fd;
     int		   flags;
     int            maxbackup;
@@ -294,7 +294,8 @@ LogTrace(void *arg,Ns_Conn *conn)
     Ns_DString ds;
     Ns_Time now,diff;
     int quote,n,status;
-    register char **h,*p = 0;
+    CONST char **h;
+    register char *p = 0;
 
     /* Compute the request's elapsed time. */
     if (logPtr->flags & LOG_REQTIME) {
@@ -472,7 +473,7 @@ LogCmd(ClientData arg,Tcl_Interp *interp,int argc,CONST char **argv)
     } else
 
     if (STREQ(argv[1],"extendedheaders")) {
-        char **h,**h1,**h2 = logPtr->extheaders;
+        CONST char **h,**h1,**h2 = logPtr->extheaders;
         Ns_DStringInit(&ds);
         if (argc > 2) {
             if(Tcl_SplitList(interp,argv[2],&status,&h1) != TCL_OK) {

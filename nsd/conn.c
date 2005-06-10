@@ -1027,8 +1027,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             connPtr->encoding = encoding;
         }
         if (connPtr->encoding != NULL) {
-            Tcl_SetResult(interp, Tcl_GetEncodingName(connPtr->encoding),
-                          TCL_STATIC);
+            Tcl_SetStringObj(result, Tcl_GetEncodingName(connPtr->encoding), -1);
         }
         break;
     
@@ -1053,8 +1052,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             connPtr->urlEncoding = encoding;
         }
         if (connPtr->urlEncoding != NULL) {
-            Tcl_SetResult(interp, Tcl_GetEncodingName(connPtr->urlEncoding),
-                          TCL_STATIC);
+            Tcl_SetStringObj(result, Tcl_GetEncodingName(connPtr->urlEncoding), -1);
         }
         break;
     
@@ -1267,7 +1265,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return TCL_ERROR;
         }
         Tcl_RegisterChannel(interp, chan);
-        Tcl_SetResult(interp, Tcl_GetChannelName(chan), TCL_STATIC);
+        Tcl_SetStringObj(result, Tcl_GetChannelName(chan), -1);
     }
 
     return TCL_OK;

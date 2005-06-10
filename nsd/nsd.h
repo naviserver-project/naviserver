@@ -828,7 +828,7 @@ extern void NsSockClose(Sock *sockPtr, int keep);
 extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
-extern NsServer *NsGetServer(char *server);
+extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);
 extern NsInterp *NsGetInterp(Tcl_Interp *interp);
 extern int NsInitInterp(Tcl_Interp *interp, NsServer *servPtr,

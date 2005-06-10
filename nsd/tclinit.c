@@ -386,7 +386,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
  */
 
 Tcl_Interp *
-Ns_TclAllocateInterp(char *server)
+Ns_TclAllocateInterp(CONST char *server)
 {
     Tcl_HashEntry *hPtr;
     Tcl_Interp *interp;

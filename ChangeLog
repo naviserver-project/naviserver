@@ -42,6 +42,20 @@
 2005-06-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
+	* include/nsthread.h:
+	* nsd/conn.c:
+	* nsd/nsd.h:
+	* nsd/pathname.c:
+	* nsd/rollfile.c:
+	* nsd/server.c:
+	* nsd/set.c:
+	* nsd/tclinit.c:
+	* nsd/tcljob.c:
+	* nsd/tclsock.c:
+	* nslog/nslog.c:
+	* nsthread/mutex.c: Use CONST declarations to silence compiler.
+
+	* include/ns.h:
 	* include/nsthread.h: Add a variety of NS_GNUC_* annotations.
 
 	* *.c: Use NS_RCSD() macro to quieten compiler.

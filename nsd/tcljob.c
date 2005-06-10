@@ -125,7 +125,7 @@ typedef enum ThreadPoolRequests {
 
 typedef struct Job {
     struct Job      *nextPtr;
-    char	    *server;
+    CONST char      *server;
     JobStates        state;
     int              code;
     JobTypes         type;
@@ -833,8 +833,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              */
 
             Tcl_Obj     *jobList, *jobFieldList;
-            char        *jobId, *jobState, *jobCode, *jobType;
-            char        *jobResults, *jobScript, *jobReq;
+            CONST char  *jobId, *jobState, *jobCode, *jobType, *jobReq;
+            char        *jobResults, *jobScript;
             double      delta;
 
             if (objc != 3) {
@@ -927,7 +927,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * Returns a list of all the queues and the queue information.
              */
             Tcl_Obj     *queueList, *queueFieldList;
-            char        *queueReq;
+            CONST char  *queueReq;
 
             /* Create a Tcl List to hold the list of jobs. */
             queueList = Tcl_NewListObj(0, NULL);
@@ -1001,7 +1001,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              */ 
 
             Tcl_Obj     *tpFieldList;
-            char        *tpReq;
+            CONST char  *tpReq;
 
             /* Create a Tcl List to hold the list of thread fields. */
             tpFieldList = Tcl_NewListObj(0, NULL);

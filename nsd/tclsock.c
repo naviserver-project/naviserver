@@ -485,7 +485,7 @@ NsTclSockOpenObjCmd(
     }
 
     if (sock == INVALID_SOCKET) {
-        char *why = Tcl_GetErrno() ? Tcl_PosixError(interp) : "reason unknown";
+        CONST char *why = Tcl_GetErrno() ? Tcl_PosixError(interp) : "reason unknown";
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                 "can't connect to \"", host, ":",
                 Tcl_GetString(objv[first+1]), "\"; ", why, NULL);

@@ -873,11 +873,16 @@ NS_EXTERN void  Ns_Log(Ns_LogSeverity severity, char *fmt, ...) NS_GNUC_PRINTF(2
 NS_EXTERN void  Ns_Fatal(char *fmt, ...) NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
 NS_EXTERN char *Ns_LogTime(char *timeBuf);
 NS_EXTERN char *Ns_LogTime2(char *timeBuf, int gmt);
-NS_EXTERN int   Ns_RollFile(char *file, int max);
-NS_EXTERN int   Ns_PurgeFiles(char *file, int max);
-NS_EXTERN int   Ns_RollFileByDate(char *file, int max);
 NS_EXTERN void  Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr);
 NS_EXTERN void  Ns_SetNsLogProc(Ns_LogProc *procPtr);
+
+/*
+ * rollfile.c
+ */
+
+NS_EXTERN int Ns_RollFile(CONST char *file, int max);
+NS_EXTERN int Ns_PurgeFiles(CONST char *file, int max);
+NS_EXTERN int Ns_RollFileByDate(CONST char *file, int max);
 
 /*
  * nsmain.c:
@@ -958,15 +963,16 @@ NS_EXTERN int Ns_ConnRedirect(Ns_Conn *conn, char *url);
  * pathname.c:
  */
 
-NS_EXTERN int Ns_PathIsAbsolute(char *path);
-NS_EXTERN char *Ns_NormalizePath(Ns_DString *dsPtr, char *path);
+NS_EXTERN int Ns_PathIsAbsolute(CONST char *path);
+NS_EXTERN char *Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path);
 NS_EXTERN char *Ns_MakePath(Ns_DString *dsPtr, ...);
-NS_EXTERN char *Ns_HashPath(Ns_DString *dsPtr, char *string, int levels);
+NS_EXTERN char *Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels);
 NS_EXTERN char *Ns_LibPath(Ns_DString *dsPtr, ...);
 NS_EXTERN char *Ns_HomePath(Ns_DString *dsPtr, ...);
-NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, char *server, char *module, ...);
-NS_EXTERN char *Ns_ServerPath(Ns_DString *dest, char *server, ...);
-NS_EXTERN char *Ns_PagePath(Ns_DString *dest, char *server, ...);
+NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, CONST char *server,
+                              CONST char *module, ...);
+NS_EXTERN char *Ns_ServerPath(Ns_DString *dest, CONST char *server, ...);
+NS_EXTERN char *Ns_PagePath(Ns_DString *dest, CONST char *server, ...);
 NS_EXTERN int Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
 /*
@@ -1069,28 +1075,28 @@ NS_EXTERN void Ns_UnscheduleProc(int id);
  * set.c:
  */
 
-NS_EXTERN void Ns_SetUpdate(Ns_Set *set, char *key, char *value);
-NS_EXTERN Ns_Set *Ns_SetCreate(char *name);
+NS_EXTERN void Ns_SetUpdate(Ns_Set *set, CONST char *key, CONST char *value);
+NS_EXTERN Ns_Set *Ns_SetCreate(CONST char *name);
 NS_EXTERN void Ns_SetFree(Ns_Set *set);
-NS_EXTERN int Ns_SetPut(Ns_Set *set, char *key, char *value);
-NS_EXTERN int Ns_SetUniqueCmp(Ns_Set *set, char *key, int (*cmp) (char *s1,
-			   char *s2));
-NS_EXTERN int Ns_SetFindCmp(Ns_Set *set, char *key, int (*cmp) (char *s1,
-			 char *s2));
-NS_EXTERN char *Ns_SetGetCmp(Ns_Set *set, char *key, int (*cmp) (char *s1,
-			  char *s2));
-NS_EXTERN int Ns_SetUnique(Ns_Set *set, char *key);
-NS_EXTERN int Ns_SetIUnique(Ns_Set *set, char *key);
-NS_EXTERN int Ns_SetFind(Ns_Set *set, char *key);
-NS_EXTERN int Ns_SetIFind(Ns_Set *set, char *key);
-NS_EXTERN char *Ns_SetGet(Ns_Set *set, char *key);
-NS_EXTERN char *Ns_SetIGet(Ns_Set *set, char *key);
+NS_EXTERN int Ns_SetPut(Ns_Set *set, CONST char *key, CONST char *value);
+NS_EXTERN int Ns_SetUniqueCmp(Ns_Set *set, CONST char *key,
+                              int (*cmp) (CONST char *s1, CONST char *s2));
+NS_EXTERN int Ns_SetFindCmp(Ns_Set *set, CONST char *key,
+                            int (*cmp) (CONST char *s1, CONST char *s2));
+NS_EXTERN char *Ns_SetGetCmp(Ns_Set *set, CONST char *key,
+                             int (*cmp) (CONST char *s1, CONST char *s2));
+NS_EXTERN int Ns_SetUnique(Ns_Set *set, CONST char *key);
+NS_EXTERN int Ns_SetIUnique(Ns_Set *set, CONST char *key);
+NS_EXTERN int Ns_SetFind(Ns_Set *set, CONST char *key);
+NS_EXTERN int Ns_SetIFind(Ns_Set *set, CONST char *key);
+NS_EXTERN char *Ns_SetGet(Ns_Set *set, CONST char *key);
+NS_EXTERN char *Ns_SetIGet(Ns_Set *set, CONST char *key);
 NS_EXTERN void Ns_SetTrunc(Ns_Set *set, int size);
 NS_EXTERN void Ns_SetDelete(Ns_Set *set, int index);
-NS_EXTERN void Ns_SetPutValue(Ns_Set *set, int index, char *value);
-NS_EXTERN void Ns_SetDeleteKey(Ns_Set *set, char *key);
-NS_EXTERN void Ns_SetIDeleteKey(Ns_Set *set, char *key);
-NS_EXTERN Ns_Set *Ns_SetListFind(Ns_Set **sets, char *name);
+NS_EXTERN void Ns_SetPutValue(Ns_Set *set, int index, CONST char *value);
+NS_EXTERN void Ns_SetDeleteKey(Ns_Set *set, CONST char *key);
+NS_EXTERN void Ns_SetIDeleteKey(Ns_Set *set, CONST char *key);
+NS_EXTERN Ns_Set *Ns_SetListFind(Ns_Set **sets, CONST char *name);
 NS_EXTERN Ns_Set **Ns_SetSplit(Ns_Set *set, char sep);
 NS_EXTERN void Ns_SetListFree(Ns_Set **sets);
 NS_EXTERN void Ns_SetMerge(Ns_Set *high, Ns_Set *low);
@@ -1219,7 +1225,7 @@ NS_EXTERN void Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc,
 NS_EXTERN void Ns_TclMarkForDelete(Tcl_Interp *interp);
 NS_EXTERN Tcl_Interp *Ns_TclCreateInterp(void);
 NS_EXTERN void Ns_TclDestroyInterp(Tcl_Interp *interp);
-NS_EXTERN Tcl_Interp *Ns_TclAllocateInterp(char *server);
+NS_EXTERN Tcl_Interp *Ns_TclAllocateInterp(CONST char *server);
 NS_EXTERN void Ns_TclDeAllocateInterp(Tcl_Interp *interp);
 NS_EXTERN char *Ns_TclLibrary(char *server);
 NS_EXTERN char *Ns_TclInterpServer(Tcl_Interp *interp);

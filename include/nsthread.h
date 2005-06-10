@@ -213,8 +213,9 @@ NS_EXTERN void Ns_MutexDestroy(Ns_Mutex *mutexPtr);
 NS_EXTERN void Ns_MutexLock(Ns_Mutex *mutexPtr);
 NS_EXTERN int  Ns_MutexTryLock(Ns_Mutex *mutexPtr);
 NS_EXTERN void Ns_MutexUnlock(Ns_Mutex *mutexPtr);
-NS_EXTERN void Ns_MutexSetName(Ns_Mutex *mutexPtr, char *name);
-NS_EXTERN void Ns_MutexSetName2(Ns_Mutex *mutexPtr, char *prefix, char *name);
+NS_EXTERN void Ns_MutexSetName(Ns_Mutex *mutexPtr, CONST char *name);
+NS_EXTERN void Ns_MutexSetName2(Ns_Mutex *mutexPtr, CONST char *prefix,
+                                CONST char *name);
 NS_EXTERN void Ns_MutexList(Tcl_DString *dsPtr);
 
 /*

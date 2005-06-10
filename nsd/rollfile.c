@@ -46,11 +46,11 @@ typedef struct File {
  * Local functions defined in this file.
  */
 
-static int AppendFile(Ns_DString *dsPtr, char *dir, char *tail);
+static int AppendFile(Ns_DString *dsPtr, CONST char *dir, CONST char *tail);
 static int CmpFile(const void *p1, const void *p2);
-static int Rename(char *from, char *to);
-static int Exists(char *file);
-static int Unlink(char *file);
+static int Rename(CONST char *from, CONST char *to);
+static int Exists(CONST char *file);
+static int Unlink(CONST char *file);
  
 
 /*
@@ -77,7 +77,7 @@ static int Unlink(char *file);
  */
 
 int
-Ns_RollFile(char *file, int max)
+Ns_RollFile(CONST char *file, int max)
 {
     char *first, *next, *dot;
     int   num;
@@ -147,13 +147,13 @@ Ns_RollFile(char *file, int max)
  */
 
 int
-Ns_RollFileByDate(char *file, int max)
+Ns_RollFileByDate(CONST char *file, int max)
 {
     return Ns_PurgeFiles(file, max);
 }
 
 int
-Ns_PurgeFiles(char *file, int max)
+Ns_PurgeFiles(CONST char *file, int max)
 {
     char *slash, *tail;
     DIR *dp;
@@ -241,7 +241,7 @@ err:
  */
 
 static int
-AppendFile(Ns_DString *dsPtr, char *dir, char *tail)
+AppendFile(Ns_DString *dsPtr, CONST char *dir, CONST char *tail)
 {
     File *fPtr;
     struct stat st;
@@ -308,7 +308,7 @@ CmpFile(const void *arg1, const void *arg2)
  */
  
 static int
-Unlink(char *file)
+Unlink(CONST char *file)
 {
     int err;
     
@@ -321,7 +321,7 @@ Unlink(char *file)
 }
 
 static int
-Rename(char *from, char *to)
+Rename(CONST char *from, CONST char *to)
 {
     int err;
     
@@ -334,7 +334,7 @@ Rename(char *from, char *to)
 }
 
 static int
-Exists(char *file)
+Exists(CONST char *file)
 {
     int exists;
     

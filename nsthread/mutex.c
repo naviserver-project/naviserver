@@ -108,13 +108,13 @@ Ns_MutexInit(Ns_Mutex *mutex)
  */
 
 void
-Ns_MutexSetName(Ns_Mutex *mutex, char *name)
+Ns_MutexSetName(Ns_Mutex *mutex, CONST char *name)
 {
     Ns_MutexSetName2(mutex, name, NULL);
 }
 
 void
-Ns_MutexSetName2(Ns_Mutex *mutex, char *prefix, char *name)
+Ns_MutexSetName2(Ns_Mutex *mutex, CONST char *prefix, CONST char *name)
 {
     Mutex *mutexPtr = GETMUTEX(mutex);
     int plen, nlen;

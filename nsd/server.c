@@ -67,7 +67,7 @@ static NsServer *initServPtr; /* Holds currently initializing server. */
  */
 
 NsServer *
-NsGetServer(char *server)
+NsGetServer(CONST char *server)
 {
     Tcl_HashEntry *hPtr;
 

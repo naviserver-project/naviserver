@@ -68,7 +68,7 @@ static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, char *host);
  */
 
 int
-Ns_PathIsAbsolute(char *path)
+Ns_PathIsAbsolute(CONST char *path)
 {
 #ifdef _WIN32
     if (isalpha(*path) && path[1] == ':') {
@@ -99,7 +99,7 @@ Ns_PathIsAbsolute(char *path)
  */
 
 char *
-Ns_NormalizePath(Ns_DString *dsPtr, char *path)
+Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
 {
     char end;
     register char *src, *part, *slash;
@@ -227,9 +227,9 @@ Ns_MakePath(Ns_DString *dest, ...)
  */
 
 char *
-Ns_HashPath(Ns_DString *dest, char *string, int levels)
+Ns_HashPath(Ns_DString *dest, CONST char *string, int levels)
 {
-    char *p = string;
+    CONST char *p = string;
     int   i;
 
     for (i = 0; i < levels; ++i) {
@@ -332,7 +332,7 @@ Ns_HomePath(Ns_DString *dest, ...)
  */
 
 char *
-Ns_ServerPath(Ns_DString *dest, char *server, ...)
+Ns_ServerPath(Ns_DString *dest, CONST char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
@@ -368,7 +368,7 @@ Ns_ServerPath(Ns_DString *dest, char *server, ...)
  */
 
 char *
-Ns_PagePath(Ns_DString *dest, char *server, ...)
+Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
 {
     NsServer *servPtr;
     va_list   ap;
@@ -406,7 +406,7 @@ Ns_PagePath(Ns_DString *dest, char *server, ...)
  */
 
 char *
-Ns_ModulePath(Ns_DString *dest, char *server, char *module, ...)
+Ns_ModulePath(Ns_DString *dest, CONST char *server, CONST char *module, ...)
 {
     va_list         ap;
     char           *path;
