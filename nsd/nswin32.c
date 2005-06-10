@@ -31,7 +31,7 @@
 /* 
  * win32.c --
  *
- *	Win32 specific routines.
+ *  Win32 specific routines.
  */
 
 static const char *RCSID = "@(#) $Header$, compiled: " __DATE__ " " __TIME__;
@@ -57,7 +57,7 @@ static int service;
 static int tick;
 static int sigpending;
 
-#define SysErrMsg()    (NsWin32ErrMsg(GetLastError()))
+#define SysErrMsg() (NsWin32ErrMsg(GetLastError()))
 
 void NsdInit(void);
 
@@ -67,14 +67,14 @@ void NsdInit(void);
  *
  * DllMain --
  *
- *	Init routine for the nsd.dll which setups TLS for Win32 errors
- *  	disables thread attach/detach calls.
+ *      Init routine for the nsd.dll which setups TLS for Win32 errors
+ *      disables thread attach/detach calls.
  *
  * Results:
- *  	TRUE or FALSE.
+ *      TRUE or FALSE.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -82,11 +82,11 @@ void NsdInit(void);
 BOOL APIENTRY
 DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
 {
-    WSADATA         wsd;
+    WSADATA wsd;
 
     if (why == DLL_PROCESS_ATTACH) {
-	Ns_TlsAlloc(&tls, ns_free);
-	if (WSAStartup(MAKEWORD(1, 1), &wsd) != 0) {
+        Ns_TlsAlloc(&tls, ns_free);
+        if (WSAStartup(MAKEWORD(1, 1), &wsd) != 0) {
             return FALSE;
         }
         DisableThreadLibraryCalls(hModule);
@@ -94,6 +94,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
     } else if (why == DLL_PROCESS_DETACH) {
         WSACleanup();
     }
+
     return TRUE;
 }
 
@@ -103,14 +104,14 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
  *
  * NsWin32ErrMsg --
  *
- *	Get a string message for an error code in either the kernel or
- *  	wsock dll's.
+ *      Get a string message for an error code in either the kernel or
+ *      wsock dll's.
  *
  * Results:
- *  	Pointer to per-thread LocalAlloc'ed memory.
+ *      Pointer to per-thread LocalAlloc'ed memory.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -118,14 +119,15 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
 char *
 NsWin32ErrMsg(int err)
 {
-    char           *msg;
+    char *msg;
 
     msg = Ns_TlsGet(&tls);
     if (msg == NULL) {
-	msg = ns_malloc(100);
-	Ns_TlsSet(&tls, msg);
+        msg = ns_malloc(100);
+        Ns_TlsSet(&tls, msg);
     }
     sprintf(msg, "win32 error code: %d", err);
+
     return msg;
 }
 
@@ -135,14 +137,14 @@ NsWin32ErrMsg(int err)
  *
  * NsConnectService --
  *
- *	Attach to the service control manager at startup.
+ *  Attach to the service control manager at startup.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Service control manager will create a new thread running
- *  	ServiceMain().
+ *      Service control manager will create a new thread running
+ *      ServiceMain().
  *
  *----------------------------------------------------------------------
  */
@@ -163,15 +165,15 @@ NsConnectService(void)
 
     log = null = "nul:";
     if (GetTempPath(sizeof(buf) - sizeof(NSD_NAME) - 7, buf) > 0) {
-	strcat(buf, NSD_NAME ".XXXXXX");
-	log = _mktemp(buf);
+        strcat(buf, NSD_NAME ".XXXXXX");
+        log = _mktemp(buf);
     }
     if (log == NULL) {
-	log = null;
+        log = null;
     }
     _fcloseall();
     for (fd = 0; fd < 3; ++fd) {
-	close(fd);
+        close(fd);
     }
     freopen(null, "rt", stdin);
     freopen(log, "wt", stdout);
@@ -185,10 +187,12 @@ NsConnectService(void)
     ok = StartServiceCtrlDispatcher(table);
     if (!ok) {
         Ns_Log(Error, "nswin32: "
-	       "failed to contact service control dispatcher: '%s'", SysErrMsg());
+               "failed to contact service control dispatcher: '%s'",
+               SysErrMsg());
     } else if (log != null) {
-	unlink(log);
+        unlink(log);
     }
+
     return (ok ? NS_OK : NS_ERROR);
 }
 
@@ -198,14 +202,14 @@ NsConnectService(void)
  *
  * NsRemoveService --
  *
- *	Remove a previously installed service.
+ *      Remove a previously installed service.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Service should stop and then disappear from the list in the
- *  	services control panel.
+ *      Service should stop and then disappear from the list in the
+ *      services control panel.
  *
  *----------------------------------------------------------------------
  */
@@ -213,10 +217,10 @@ NsConnectService(void)
 int
 NsRemoveService(char *server)
 {
-    SC_HANDLE       hmgr, hsrv;
-    SERVICE_STATUS  status;
-    Ns_DString	    name;
-    BOOL            ok;
+    SC_HANDLE hmgr, hsrv;
+    SERVICE_STATUS status;
+    Ns_DString name;
+    BOOL ok;
 
     Ns_DStringInit(&name);
     GetServiceName(&name, server);
@@ -232,12 +236,13 @@ NsRemoveService(char *server)
         CloseServiceHandle(hmgr);
     }
     if (ok) {
-	Ns_Log(Notice, "nswin32: removed service: %s", name.string);
+        Ns_Log(Notice, "nswin32: removed service: %s", name.string);
     } else {
-	Ns_Log(Error, "nswin32: failed to remove %s service: %s",
-	       name.string, SysErrMsg());
+        Ns_Log(Error, "nswin32: failed to remove %s service: %s",
+               name.string, SysErrMsg());
     }
     Ns_DStringFree(&name);
+
     return (ok ? NS_OK : NS_ERROR);
 }
 
@@ -247,13 +252,14 @@ NsRemoveService(char *server)
  *
  * NsInstallService --
  *
- *	Install as an NT service.
+ *      Install as an NT service.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Service should appear in the list in the services control panel.
+ *      Service should appear in the list in the services 
+ *      control panel.
  *
  *----------------------------------------------------------------------
  */
@@ -261,43 +267,44 @@ NsRemoveService(char *server)
 int
 NsInstallService(char *server)
 {
-    SC_HANDLE       hmgr, hsrv;
-    BOOL	    ok;
-    char	    nsd[PATH_MAX], config[PATH_MAX];
-    Ns_DString	    name, cmd;
+    SC_HANDLE hmgr, hsrv;
+    BOOL ok;
+    char nsd[PATH_MAX], config[PATH_MAX];
+    Ns_DString name, cmd;
 
     ok = FALSE;
     if (_fullpath(config, nsconf.config, sizeof(config)) == NULL) {
-	Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.config);
+        Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.config);
     } else if (!GetModuleFileName(NULL, nsd, sizeof(nsd))) {
-	Ns_Log(Error, "nswin32: failed to find nsd.exe: '%s'", SysErrMsg());
+        Ns_Log(Error, "nswin32: failed to find nsd.exe: '%s'", SysErrMsg());
     } else {
-	Ns_DStringInit(&name);
-	Ns_DStringInit(&cmd);
-	Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
-	    " -S -s ", server, " -t \"", config, "\"", NULL);
-	GetServiceName(&name, server);
-	Ns_Log(Notice, "nswin32: installing %s service: %s",
-	    name.string, cmd.string);
-	hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-	if (hmgr != NULL) {
-	    hsrv = CreateService(hmgr, name.string, name.string,
-		SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
-		SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
-		cmd.string, NULL, NULL, "TcpIp\0", NULL, NULL);
-	    if (hsrv != NULL) {
-		CloseServiceHandle(hsrv);
-		ok = TRUE;
-	    }
-	    CloseServiceHandle(hmgr);
-	}
-	if (!ok) {
-	    Ns_Log(Error, "nswin32: failed to install service '%s': '%s'",
-		   name.string, SysErrMsg());
-	}
-	Ns_DStringFree(&name);
-	Ns_DStringFree(&cmd);
+        Ns_DStringInit(&name);
+        Ns_DStringInit(&cmd);
+        Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
+                            " -S -s ", server, " -t \"", config, "\"", NULL);
+        GetServiceName(&name, server);
+        Ns_Log(Notice, "nswin32: installing %s service: %s",
+               name.string, cmd.string);
+        hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+        if (hmgr != NULL) {
+            hsrv = CreateService(hmgr, name.string, name.string,
+                                 SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
+                                 SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
+                                 cmd.string, NULL, NULL, "TcpIp\0", NULL, NULL);
+            if (hsrv != NULL) {
+                CloseServiceHandle(hsrv);
+                ok = TRUE;
+            }
+            CloseServiceHandle(hmgr);
+        }
+        if (!ok) {
+            Ns_Log(Error, "nswin32: failed to install service '%s': '%s'",
+                   name.string, SysErrMsg());
+        }
+        Ns_DStringFree(&name);
+        Ns_DStringFree(&cmd);
     }
+
     return (ok ? NS_OK : NS_ERROR);
 }
 
@@ -307,14 +314,14 @@ NsInstallService(char *server)
  *
  * NsHandleSignals --
  *
- *	Loop endlessly, processing HUP signals until a TERM
- *  	signal arrives.
+ *      Loop endlessly, processing HUP signals until a TERM
+ *      signal arrives.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -331,24 +338,23 @@ NsHandleSignals(void)
      */
      
     if (!service) {
-    	SetConsoleCtrlHandler(ConsoleHandler, TRUE);
+        SetConsoleCtrlHandler(ConsoleHandler, TRUE);
     } else {
-	StopTicker();
-	ReportStatus(SERVICE_RUNNING, NO_ERROR, 0);
+        StopTicker();
+        ReportStatus(SERVICE_RUNNING, NO_ERROR, 0);
     }
-
     Ns_MutexSetName2(&lock, "ns", "signal");
     do {
-    	Ns_MutexLock(&lock);
-	while (sigpending == 0) {
-    	    Ns_CondWait(&cond, &lock);
-	}
-	pending = sigpending;
-	sigpending = 0;
-	Ns_MutexUnlock(&lock);
-	if (pending & NS_SIGHUP) {
-	    NsRunSignalProcs();
-	}
+        Ns_MutexLock(&lock);
+        while (sigpending == 0) {
+            Ns_CondWait(&cond, &lock);
+        }
+        pending = sigpending;
+        sigpending = 0;
+        Ns_MutexUnlock(&lock);
+        if (pending & NS_SIGHUP) {
+            NsRunSignalProcs();
+        }
     } while (!(pending & NS_SIGTERM));
 
     /*
@@ -357,7 +363,7 @@ NsHandleSignals(void)
      */
      
     if (service) {
-	StartTicker(SERVICE_STOP_PENDING);
+        StartTicker(SERVICE_STOP_PENDING);
     }
 }
 
@@ -367,14 +373,14 @@ NsHandleSignals(void)
  *
  * NsSendSignal --
  *
- *	Send a signal to wakeup NsHandleSignals. As on Unix, a signal
- *  	sent multiple times is only received once.
+ *      Send a signal to wakeup NsHandleSignals. As on Unix, a signal
+ *      sent multiple times is only received once.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Main thread will wakeup.
+ *      Main thread will wakeup.
  *
  *----------------------------------------------------------------------
  */
@@ -402,14 +408,15 @@ NsSendSignal(int sig)
  *
  * ns_socknbclose --
  *
- *	Perform a non-blocking socket close via the socket callback
- *  	thread.  This is only called by a timeout in Ns_SockTimedConnect.
+ *      Perform a non-blocking socket close via the socket callback
+ *      thread.
+ *      This is only called by a timeout in Ns_SockTimedConnect.
  *
  * Results:
- *  	0 or SOCKET_ERROR.
+ *      0 or SOCKET_ERROR.
  *
  * Side effects:
- *  	Socket will be closed when writable.
+ *      Socket will be closed when writable.
  *
  *----------------------------------------------------------------------
  */
@@ -418,8 +425,9 @@ int
 ns_socknbclose(SOCKET sock)
 {
     if (Ns_SockCloseLater(sock) != NS_OK) {
-	return SOCKET_ERROR;
+        return SOCKET_ERROR;
     }
+
     return 0;
 }
 
@@ -429,13 +437,13 @@ ns_socknbclose(SOCKET sock)
  *
  * ns_sockdup --
  *
- *	Duplicate a socket.  This is used in the old ns_sock Tcl cmds.
+ *      Duplicate a socket. This is used in the old ns_sock Tcl cmds.
  *
  * Results:
- *  	New handle to underlying socket.
+ *      New handle to underlying socket.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -448,8 +456,9 @@ ns_sockdup(SOCKET sock)
     src = (HANDLE) sock;
     hp = GetCurrentProcess();    
     if (!DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
-	return INVALID_SOCKET;
+        return INVALID_SOCKET;
     }
+
     return (SOCKET) dup;
 }   
 
@@ -459,13 +468,13 @@ ns_sockdup(SOCKET sock)
  *
  * ns_pipe --
  *
- *	Create a pipe marked close-on-exec.
+ *      Create a pipe marked close-on-exec.
  *
  * Results:
- *  	0 if ok, -1 on error.
+ *      0 if ok, -1 on error.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -482,14 +491,14 @@ ns_pipe(int *fds)
  *
  * ns_sockpair --
  *
- *	Create a pair of connected sockets via brute force.  Sock pairs
- *  	are used as trigger pipes in various subsystems.
+ *      Create a pair of connected sockets via brute force.
+ *      Sock pairs are used as trigger pipes in various subsystems.
  *
  * Results:
- *  	0 if ok, -1 on error.
+ *      0 if ok, -1 on error.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -497,36 +506,37 @@ ns_pipe(int *fds)
 int
 ns_sockpair(SOCKET socks[2])
 {
-    SOCKET          sock;
+    SOCKET sock;
     struct sockaddr_in ia[2];
-    int             size;
+    int size;
 
     size = sizeof(struct sockaddr_in);
     sock = Ns_SockListen("127.0.0.1", 0);
     if (sock == INVALID_SOCKET ||
-    	getsockname(sock, (struct sockaddr *) &ia[0], &size) != 0) {
-	return -1;
+        getsockname(sock, (struct sockaddr *) &ia[0], &size) != 0) {
+        return -1;
     }
     size = sizeof(struct sockaddr_in);
     socks[1] = Ns_SockConnect("127.0.0.1", (int) ntohs(ia[0].sin_port));
     if (socks[1] == INVALID_SOCKET ||
-    	getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
-	ns_sockclose(sock);
-	return -1;
+        getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
+        ns_sockclose(sock);
+        return -1;
     }
     size = sizeof(struct sockaddr_in);
     socks[0] = accept(sock, (struct sockaddr *) &ia[0], &size);
     ns_sockclose(sock);
     if (socks[0] == INVALID_SOCKET) {
-	ns_sockclose(socks[1]);
-	return -1;
+        ns_sockclose(socks[1]);
+        return -1;
     }
     if (ia[0].sin_addr.s_addr != ia[1].sin_addr.s_addr ||
-	ia[0].sin_port != ia[1].sin_port) {
-	ns_sockclose(socks[0]);
-	ns_sockclose(socks[1]);
-	return -1;
+        ia[0].sin_port != ia[1].sin_port) {
+        ns_sockclose(socks[0]);
+        ns_sockclose(socks[1]);
+        return -1;
     }
+
     return 0;
 }
 
@@ -536,14 +546,14 @@ ns_sockpair(SOCKET socks[2])
  *
  * Ns_SockListen --
  *
- *	Simple socket listen implementation for Win32 without privileged
- *  	port issues.
+ *      Simple socket listen implementation for Win32 without 
+ *      privileged port issues.
  *
  * Results:
- *	Socket descriptor or INVALID_SOCKET on error.
+ *      Socket descriptor or INVALID_SOCKET on error.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -551,17 +561,18 @@ ns_sockpair(SOCKET socks[2])
 SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
-    SOCKET          sock;
+    SOCKET sock;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) != NS_OK) {
-	return -1;
+        return -1;
     }
     sock = Ns_SockBind(&sa);
     if (sock != INVALID_SOCKET && listen(sock, backlog) != 0) {
-	ns_sockclose(sock);
-	sock = INVALID_SOCKET;
+        ns_sockclose(sock);
+        sock = INVALID_SOCKET;
     }
+
     return sock;
 }
 
@@ -571,14 +582,14 @@ Ns_SockListenEx(char *address, int port, int backlog)
  *
  * link, symlink, kill --
  *
- *  	Stubs for missing Unix routines.  This is done simply to avoid
- *  	more ifdef's in the code.
+ *      Stubs for missing Unix routines. This is done simply to avoid
+ *      more ifdef's in the code.
  *
  * Results:
- *  	-1.
+ *      -1.
  *
  * Side effects:
- *  	Sets errno to EINVAL.
+ *      Sets errno to EINVAL.
  *
  *----------------------------------------------------------------------
  */
@@ -610,13 +621,13 @@ kill(int pid, int sig)
  *
  * truncate --
  *
- *	Implement Unix truncate.
+ *      Implement Unix truncate.
  *
  * Results:
- *  	0 if ok or -1 on error.
+ *      0 if ok or -1 on error.
  *
  * Side effects:
- *  	File is opened, truncated, and closed.
+ *      File is opened, truncated, and closed.
  *
  *----------------------------------------------------------------------
  */
@@ -628,13 +639,14 @@ truncate(char *file, off_t size)
 
     fd = open(file, O_WRONLY|O_BINARY);
     if (fd < 0) {
-	return -1;
+        return -1;
     }
     size = _chsize(fd, size);
     close(fd);
     if (size != 0) {
-	return -1;
+        return -1;
     }
+
     return 0;
 }
 
@@ -644,13 +656,13 @@ truncate(char *file, off_t size)
  *
  * ConsoleHandler --
  *
- *	Callback when the Ctrl-C is pressed.
+ *      Callback when the Ctrl-C is pressed.
  *
  * Results:
- *  	TRUE.
+ *      TRUE.
  *
  * Side effects:
- *  	Shutdown is initiated.
+ *      Shutdown is initiated.
  *
  *----------------------------------------------------------------------
  */
@@ -660,6 +672,7 @@ ConsoleHandler(DWORD ignored)
 {
     SetConsoleCtrlHandler(ConsoleHandler, FALSE);
     NsSendSignal(NS_SIGTERM);
+
     return TRUE;
 }
 
@@ -669,13 +682,13 @@ ConsoleHandler(DWORD ignored)
  *
  * GetServiceName --
  *
- *	Construct the service name for the corresponding server.
+ *      Construct the service name for the corresponding server.
  *
  * Results:
- *  	Pointer to given dstring string.
+ *      Pointer to given dstring string.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -693,15 +706,15 @@ GetServiceName(Ns_DString *dsPtr, char *server)
  *
  * StartTicker, StopTicker --
  *
- *	Start and stop the background ticker thread which keeps the
- *  	service control manager informed of during startup and
- *  	shutdown.
+ *      Start and stop the background ticker thread which keeps the
+ *      service control manager informed of during startup and
+ *      shutdown.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Thread is created or signalled to stop and joined.
+ *      Thread is created or signalled to stop and joined.
  *
  *----------------------------------------------------------------------
  */
@@ -731,14 +744,14 @@ StopTicker(void)
  *
  * ServiceTicker --
  *
- *	Background ticker created by StartTicker which does nothing
- *  	but send the message repeatedly until signaled to stop.
+ *      Background ticker created by StartTicker which does nothing
+ *      but send the message repeatedly until signaled to stop.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Service control manager is kept informed of progress.
+ *      Service control manager is kept informed of progress.
  *
  *----------------------------------------------------------------------
  */
@@ -754,9 +767,9 @@ ServiceTicker(void *arg)
     Ns_MutexLock(&lock);
     do {
         ReportStatus(pending, NO_ERROR, 2000);
-	Ns_GetTime(&timeout);
-	Ns_IncrTime(&timeout, 1, 0);
-	Ns_CondTimedWait(&cond, &lock, &timeout);
+        Ns_GetTime(&timeout);
+        Ns_IncrTime(&timeout, 1, 0);
+        Ns_CondTimedWait(&cond, &lock, &timeout);
     } while (tick);
     Ns_MutexUnlock(&lock);
 }
@@ -767,16 +780,16 @@ ServiceTicker(void *arg)
  *
  * ServiceMain --
  *
- *	Startup routine created by the service control manager.  This
- *  	routine initializes the structure for reporting status,
- *  	starts the ticker, and then re-enters Ns_Main() where it
- *  	was left off when NsServiceConnect() was called.
+ *      Startup routine created by the service control manager.
+ *      This routine initializes the structure for reporting status,
+ *      starts the ticker, and then re-enters Ns_Main() where it
+ *      was left off when NsServiceConnect() was called.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Server startup continues.
+ *      Server startup continues.
  *
  *----------------------------------------------------------------------
  */
@@ -786,7 +799,8 @@ ServiceMain(DWORD argc, LPTSTR *argv)
 {
     hStatus = RegisterServiceCtrlHandler(argv[0], ServiceHandler);
     if (hStatus == 0) {
-        Ns_Fatal("nswin32: RegisterServiceCtrlHandler() failed: '%s'",SysErrMsg());
+        Ns_Fatal("nswin32: RegisterServiceCtrlHandler() failed: '%s'",
+                 SysErrMsg());
     }
     curStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
     curStatus.dwServiceSpecificExitCode = 0;
@@ -804,15 +818,15 @@ ServiceMain(DWORD argc, LPTSTR *argv)
  *
  * ServiceHandler --
  *
- *	Callback when the service control manager wants to signal the
- *  	server (i.e., when service is stopped via services control
- *  	panel).
+ *      Callback when the service control manager wants to signal the
+ *      server (i.e., when service is stopped via services control
+ *      panel).
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	Signal may be sent.
+ *      Signal may be sent.
  *
  *----------------------------------------------------------------------
  */
@@ -821,7 +835,7 @@ static VOID WINAPI
 ServiceHandler(DWORD code)
 {
     if (code == SERVICE_CONTROL_STOP || code == SERVICE_CONTROL_SHUTDOWN) {
-    	NsSendSignal(NS_SIGTERM);
+        NsSendSignal(NS_SIGTERM);
     } else {
         ReportStatus(code, NO_ERROR, 0);
     }
@@ -833,13 +847,13 @@ ServiceHandler(DWORD code)
  *
  * ReportStatus --
  *
- *	Update the service control manager with the current state.
+ *      Update the service control manager with the current state.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -847,12 +861,13 @@ ServiceHandler(DWORD code)
 static void
 ReportStatus(DWORD state, DWORD code, DWORD hint)
 {
-    static DWORD    check = 1;
+    static DWORD check = 1;
 
     if (state == SERVICE_START_PENDING) {
         curStatus.dwControlsAccepted = 0;
     } else {
-        curStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+        curStatus.dwControlsAccepted = 
+            SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
     }
     curStatus.dwCurrentState = state;
     curStatus.dwWin32ExitCode = code;
@@ -863,7 +878,8 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
         curStatus.dwCheckPoint = check++;
     }
     if (hStatus != 0 && SetServiceStatus(hStatus, &curStatus) != TRUE) {
-        Ns_Fatal("nswin32: SetServiceStatus(%d) failed: '%s'", state, SysErrMsg());
+        Ns_Fatal("nswin32: SetServiceStatus(%d) failed: '%s'", state, 
+                 SysErrMsg());
     }
 }
 
