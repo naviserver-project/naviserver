@@ -38,7 +38,7 @@
 #ifndef NSTHREAD_H
 #define NSTHREAD_H
 
-#include <config.h>
+#include <nsconfig.h>
 #include <nscheck.h>
 
 #ifdef _WIN32

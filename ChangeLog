@@ -41,6 +41,13 @@
 	
 2005-06-10  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* configure.in:
+	* include/config.h.in:
+	* include/nsthread.h:
+	* include/nsconfig.h.in: Rename config.h nsconfig.h to prevent
+	clashes wth module/library config.h files.
+	* configure: Rebuild configure.
+
 	* include/ns.h:
 	* include/nsthread.h:
 	* nsd/conn.c:
