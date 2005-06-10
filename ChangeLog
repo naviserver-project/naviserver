@@ -1,3 +1,11 @@
+2005-06-09  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/Makefile.global.in: Remove TCL_DEFS which isn't needed
+	now that autoheader is used.
+	* configure.in: Add call to TEA_TIME_HANDLER for time defs.
+	* configure:
+	* include/config.h.in: Rebuild configure and config.h.
+
 2005-06-09  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/Makefile.global.in: added missing TCL_DEFS
