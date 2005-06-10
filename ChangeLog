@@ -1,7 +1,10 @@
 2005-06-10  Vlad Seryakov  <seryakov@users.sf.net>
 
-	tests/tclresp.test: updated to reflect parameters change 
+	* tests/tclresp.test: updated to reflect parameters change 
 	for ns_respond, new -binary flag
+
+	* nsd/binder.c: make Ns_SockListenUnix to use prebound
+	sockets if available.
 
 2005-06-10  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 

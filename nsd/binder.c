@@ -259,7 +259,7 @@ Ns_SockListenRaw(int proto)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockListenUnix --
+ * Ns_SockBindUnix --
  *
  *      Helper routine for creating a listening UNIX domain socket.
  *
@@ -273,7 +273,7 @@ Ns_SockListenRaw(int proto)
  */
 
 SOCKET
-Ns_SockListenUnix(char *path)
+Ns_SockBindUnix(char *path)
 {
    int sock, err;
    struct sockaddr_un addr;
@@ -293,6 +293,44 @@ Ns_SockListenUnix(char *path)
    }
 
    return sock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockListenUnix --
+ *
+ *      Create a new Unix domain socket bound to the specified path and
+ *      listening for new connections.
+ *
+ * Results:
+ *      Socket descriptor or -1 on error.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+SOCKET
+Ns_SockListenUnix(char *path)
+{
+    int sock = -1;
+    Tcl_HashEntry *hPtr;
+
+    Ns_MutexLock(&lock);
+    hPtr = Tcl_FindHashEntry(&preboundUnix, path);
+    if (hPtr != NULL) {
+        sock = (int)Tcl_GetHashKey(&preboundUnix, hPtr);
+        Tcl_DeleteHashEntry(hPtr);
+    }
+    Ns_MutexUnlock(&lock);
+    if (hPtr == NULL) {
+        sock = Ns_SockBindUnix(path);
+    }
+
+    return sock;
 }
 
 
