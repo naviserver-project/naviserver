@@ -405,7 +405,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 	}
         if (defMapPtr == NULL) {
             Ns_Fatal("%s: default server %s not defined in %s",
-                    module, path);
+                    module, server, path);
         }
     }
 

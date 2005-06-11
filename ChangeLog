@@ -1,3 +1,9 @@
+2005-06-11  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/exec.c:    Fixed various places where log calls
+	* nsd/nsmain.ci: were fed with wrong number or wrong 
+	* nsd/driver.c:  types of arguments.
+
 2005-06-10  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/driver.c:

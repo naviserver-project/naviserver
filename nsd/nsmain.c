@@ -417,8 +417,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             rl.rlim_cur = rl.rlim_max;
             if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
                 Ns_Log(Warning, "nsmain: "
-                       "setrlimit(RLIMIT_NOFILE, %d) failed: '%s'",
-                       rl.rlim_max, strerror(errno));
+                       "setrlimit(RLIMIT_NOFILE, %u) failed: '%s'",
+                       (unsigned int)rl.rlim_max, strerror(errno));
             } 
         }
     }
@@ -666,8 +666,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                "getrlimit(RLIMIT_NOFILE) failed: '%s'", strerror(errno));
     } else {
         Ns_Log(Notice, "nsmain: "
-               "max files: FD_SETSIZE = %d, rl_cur = %d, rl_max = %d",
-               FD_SETSIZE, rl.rlim_cur, rl.rlim_max);
+               "max files: FD_SETSIZE = %u, rl_cur = %u, rl_max = %u",
+               FD_SETSIZE, (unsigned int)rl.rlim_cur, (unsigned int)rl.rlim_max);
         if (rl.rlim_max > FD_SETSIZE) {
             Ns_Log(Warning, "nsmain: rl_max > FD_SETSIZE");
         }
@@ -1006,7 +1006,7 @@ StatusMsg(int state)
 #ifndef _WIN32
     if (state < 2) {
         Ns_Log(Notice, "nsmain: security info: uid=%d, euid=%d, gid=%d, egid=%d",
-               getuid(), geteuid(), getgid(), getegid());
+               (int)getuid(), (int)geteuid(), (int)getgid(), (int)getegid());
     }
 #endif
 }
