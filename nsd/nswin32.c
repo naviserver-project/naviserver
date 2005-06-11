@@ -423,6 +423,51 @@ NsSendSignal(int sig)
         break;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsMemMap --
+ *
+ *      Maps a file to memory.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsMemMap(char *path, int size, int mode, FileMap *mapPtr)
+{
+    return NS_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsMemUmap --
+ *
+ *      Unmaps a file.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsMemUmap(FileMap *mapPtr)
+{
+    return;
+}
 
 
 /*

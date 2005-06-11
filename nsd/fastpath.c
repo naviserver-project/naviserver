@@ -35,20 +35,8 @@
  */
 
 #include "nsd.h"
-#ifndef _WIN32
-#include <sys/mman.h>
-#endif
 
 NS_RCSID("@(#) $Header$");
-
-/*
- * The following constants are defined for this file
- */
-
-#ifdef MAP_FAILED
-#undef MAP_FAILED 
-#endif
-#define MAP_FAILED ((void *) (-1))
 
 /*
  * The following structure defines the contents of a file
@@ -487,9 +475,9 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
     File *filePtr;
     char *key;
     Ns_Entry *entPtr;
+    FileMap fmap;
 
 #ifndef _WIN32
-    char *map;
     FileKey ukey;
 #endif
 
@@ -526,28 +514,22 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 
         /*
          * Caching is disabled or the entry is too large for the cache
-         * so just open, mmap, and send the content directly.
+         * so just send the content directly.
+         * First, attempt to map the file, and if not configured or
+         * not successful, revert to open/read/close.
          */
-        
-        fd = open(file, O_RDONLY|O_BINARY);
-        if (fd < 0) {
-            Ns_Log(Warning, "fastpath: open(%s) failed: %s", file,
-                   strerror(errno));
-            goto notfound;
-        }
-#ifndef _WIN32
-        if (servPtr->fastpath.mmap) {
-            map = mmap(0, (size_t) stPtr->st_size, PROT_READ,MAP_SHARED,fd, 0);
-            if (map != MAP_FAILED) {
-                close(fd);
-                fd = -1;
-                result = Ns_ConnReturnData(conn, status, map, 
-                                           (int) stPtr->st_size, type);
-                munmap(map, (size_t) stPtr->st_size);
+
+        if (servPtr->fastpath.mmap
+            && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
+            result = Ns_ConnReturnData(conn,status, fmap.addr,fmap.size, type);
+            NsMemUmap(&fmap);
+        } else {
+            fd = open(file, O_RDONLY | O_BINARY);
+            if (fd == -1) {
+                Ns_Log(Warning, "fastpath: open(%s) failed: %s", file,
+                       strerror(errno));
+                goto notfound;
             }
-        }
-#endif
-        if (fd != -1) {
             result = Ns_ConnReturnOpenFd(conn, status,type, fd,stPtr->st_size);
             close(fd);
         }

@@ -36,7 +36,6 @@
 
 #include "nsd.h"
 #include <pwd.h>
-#include <grp.h>
 
 NS_RCSID("@(#) $Header$");
 
@@ -218,6 +217,91 @@ NsSendSignal(int sig)
     if (kill(Ns_InfoPid(), sig) != 0) {
         Ns_Fatal("unix: kill() failed: '%s'", strerror(errno));
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsMemMap --
+ *
+ *      Maps a file to memory. The file will be mapped as shared
+ *      and read or write, depeding on the passed mode.
+ *
+ * Results:
+ *      NS_OK - file was mapped OK; details of the mapped address
+ *              and the mapped size are left in the FileMap struct ptr.
+ *
+ *      NS_ERROR - operation failed.
+ *
+ * Side effects:
+ *      If the operation failed, server log event will be sent.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsMemMap(char *path, int size, int mode, FileMap *mapPtr)
+{
+    /*
+     * Open the file according to map mode
+     */
+    
+    switch (mode) {
+    case NS_MMAP_WRITE:
+        mapPtr->handle = open(path, O_BINARY | O_RDWR);
+        break;
+    case NS_MMAP_READ:
+        mapPtr->handle = open(path, O_BINARY | O_RDONLY);
+        break;
+    default:
+        return NS_ERROR;
+    }
+    
+    if (mapPtr->handle == -1) {
+        Ns_Log(Warning, "mmap: open(%s) failed: %s", path, strerror(errno));
+        return NS_ERROR;
+    }
+
+    /*
+     * Map the file as shared and to a system-assigned address
+     * per default.
+     */
+
+    mapPtr->addr = mmap(0, (size_t)size, mode, MAP_SHARED, mapPtr->handle, 0);
+    if (mapPtr->addr == MAP_FAILED) {
+        Ns_Log(Warning, "mmap: mmap(%s) failed: %s", path, strerror(errno));
+        close(mapPtr->handle);
+        return NS_ERROR;
+    }
+
+    close(mapPtr->handle);
+    mapPtr->size = size;
+
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsMemUmap --
+ *
+ *      Unmaps a file.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsMemUmap(FileMap *mapPtr)
+{
+    munmap(mapPtr->addr, (size_t)mapPtr->size);
 }
 
 

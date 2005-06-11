@@ -35,12 +35,8 @@
 #endif
 
 #include "ns.h"
-
-#ifndef _WIN32
-  #include <pthread.h>
-#endif
-
 #include <assert.h>
+#include <sys/stat.h>
 
 #ifdef _WIN32
   #include <fcntl.h>
@@ -49,15 +45,15 @@
   #define STDERR_FILENO 2
   #define S_ISREG(m) ((m)&_S_IFREG)
   #define S_ISDIR(m) ((m)&_S_IFDIR)
-  #include "getopt.h"
   #include <sys/stat.h>
 #else
   #include <sys/resource.h>
   #include <sys/wait.h>
   #include <sys/ioctl.h>
-  #include <sys/stat.h>
   #include <ctype.h>
   #include <grp.h>
+  #include <pthread.h>
+  #include <sys/mman.h>
 #endif  /* WIN32 */
 
 #ifdef HAVE_POLL
@@ -247,6 +243,35 @@ typedef struct FileKey {
 } FileKey;
 
 #define FILE_KEYS (sizeof(FileKey)/sizeof(int))
+
+/*
+ * The following structure tracks a memory-mapped file
+ * in a platform-neutral way.
+ */
+
+typedef struct FileMap {
+    char *addr;                 /* Mapped to this virtual address */
+    int size;                   /* Size of the mapped region */
+    int handle;                 /* OS handle of the opened/mapped file */
+    void *mapobj;               /* Mapping object (Win32 only) */
+} FileMap;
+
+/*
+ * For the time being, don't try to be very clever
+ * and define (platform-neutral) just those two modes
+ * for mapping the files.
+ * Although the underlying implementation(s) can do 
+ * much more, we really need only one (read-maps) now. 
+ */
+
+#ifdef _WIN32
+  #define NS_MMAP_READ   FILE_MAP_READ
+  #define NS_MMAP_WRITE  FILE_MAP_WRITE
+#else
+  #define NS_MMAP_READ   PROT_READ
+  #define NS_MMAP_WRITE  PROT_WRITE
+#endif
+
 
 /*
  * The following structure defines blocks of ADP.  The
@@ -993,12 +1018,16 @@ extern void NsRunAtExitProcs(void);
  */
 
 extern int NsCloseAllFiles(int errFd);
+extern int NsMemMap(char *path, int size, int mode, FileMap *mapPtr);
+extern void NsMemUmap(FileMap *mapPtr);
+
 #ifndef _WIN32
 extern int Ns_ConnRunRequest(Ns_Conn *conn);
 extern int Ns_GetGid(char *group);
 extern int Ns_GetUserGid(char *user);
 extern int Ns_TclGetOpenFd(Tcl_Interp *, char *, int write, int *fp);
 #endif
+
 extern void NsStopSockCallbacks(void);
 extern void NsStopScheduledProcs(void);
 extern void NsGetBuf(char **bufPtr, int *sizePtr);
