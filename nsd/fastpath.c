@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,7 +31,7 @@
 /*
  * fastpath.c --
  *
- *      Get page possibly from a file cache.
+ * Get page possibly from a file cache.
  */
 
 #include "nsd.h"
@@ -59,7 +59,7 @@ typedef struct {
     time_t mtime;
     int size;
     int refcnt;
-    char bytes[1];	/* Grown to actual file size. */
+    char bytes[1];  /* Grown to actual file size. */
 } File;
 
 /*
@@ -71,20 +71,20 @@ static void DecrEntry(File *);
 static int UrlIs(char *server, char *url, int dir);
 static int FastStat(char *file, struct stat *stPtr);
 static int FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
-    char *type, char *file, struct stat *stPtr);
+                      char *type, char *file, struct stat *stPtr);
 
 
 /*
  *----------------------------------------------------------------------
  * NsFastpathCache --
  *
- *	Initialize the fastpath cache.
+ *      Initialize the fastpath cache.
  *
  * Results:
- *	Pointer to Ns_Cache.
+ *      Pointer to Ns_Cache.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -105,6 +105,7 @@ NsFastpathCache(char *server, int size)
     Ns_DStringVarAppend(&ds, "nsfp:", server, NULL);
     fpCache = Ns_CacheCreateSz(ds.string, keys, (size_t) size, FreeEntry);
     Ns_DStringFree(&ds);
+
     return fpCache;
 }
 
@@ -114,13 +115,13 @@ NsFastpathCache(char *server, int size)
  *
  * Ns_ConnReturnFile --
  *
- *	Send the contents of a file out the conn. 
+ *      Send the contents of a file out the conn. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	See FastReturn.
+ *      See FastReturn.
  *
  *----------------------------------------------------------------------
  */
@@ -133,10 +134,12 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, char *type, char *file)
     NsServer *servPtr;
     
     if (!FastStat(file, &st)) {
-    	return Ns_ConnReturnNotFound(conn);
+        return Ns_ConnReturnNotFound(conn);
     }
+
     server = Ns_ConnServer(conn);
     servPtr = NsGetServer(server);
+
     return FastReturn(servPtr, conn, status, type, file, &st);
 }
 
@@ -165,6 +168,7 @@ Ns_PageRoot(char *server)
     if (servPtr != NULL) {
         return servPtr->fastpath.pageroot;
     }
+
     return NULL;
 }
 
@@ -253,13 +257,14 @@ UrlIs(char *server, char *url, int dir)
     struct stat st;
 
     Ns_DStringInit(&ds);
-    if (Ns_UrlToFile(&ds, server, url) == NS_OK &&
-	(stat(ds.string, &st) == 0) &&
-	((dir && S_ISDIR(st.st_mode)) ||
-	    (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
-	is = NS_TRUE;
+    if (Ns_UrlToFile(&ds, server, url) == NS_OK 
+        && (stat(ds.string, &st) == 0)
+        && ((dir && S_ISDIR(st.st_mode))
+            || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
+        is = NS_TRUE;
     }
     Ns_DStringFree(&ds);
+
     return is;
 }
 
@@ -268,7 +273,7 @@ UrlIs(char *server, char *url, int dir)
  *----------------------------------------------------------------------
  * FastGetRestart --
  *
- *	Construct the full URL and redirect internally.
+ *      Construct the full URL and redirect internally.
  *
  * Results:
  *      See Ns_ConnRedirect().
@@ -282,8 +287,8 @@ UrlIs(char *server, char *url, int dir)
 static int
 FastGetRestart(Ns_Conn *conn, char *page)
 {
-    int		    status;
-    Ns_DString      ds;
+    int status;
+    Ns_DString ds;
 
     Ns_DStringInit(&ds);
     Ns_MakePath(&ds, conn->request->url, page, NULL);
@@ -312,36 +317,37 @@ FastGetRestart(Ns_Conn *conn, char *page)
 int
 NsFastGet(void *arg, Ns_Conn *conn)
 {
-    Ns_DString      ds;
-    NsServer  	   *servPtr = arg;
-    char	   *url = conn->request->url;
-    int             result, i;
-    struct stat	    st;
+    Ns_DString ds;
+    NsServer *servPtr = arg;
+    char *url = conn->request->url;
+    int result, i;
+    struct stat st;
 
     Ns_DStringInit(&ds);
-    if (NsUrlToFile(&ds, servPtr, url) != NS_OK
-    	    || !FastStat(ds.string, &st)) {
-	goto notfound;
+    if (NsUrlToFile(&ds, servPtr, url) != NS_OK || !FastStat(ds.string, &st)) {
+        goto notfound;
     }
     if (S_ISREG(st.st_mode)) {
-	/*
-	 * Return ordinary files as with Ns_ConnReturnFile.
-	 */
 
-	result = FastReturn(servPtr, conn, 200, NULL, ds.string, &st);
+        /*
+         * Return ordinary files as with Ns_ConnReturnFile.
+         */
+
+        result = FastReturn(servPtr, conn, 200, NULL, ds.string, &st);
 
     } else if (S_ISDIR(st.st_mode)) {
-	/*
-	 * For directories, search for a matching directory file and 
-	 * restart the connection if found.
-	 */
 
-    	for (i = 0; i < servPtr->fastpath.dirc; ++i) {
-	    Ns_DStringTrunc(&ds, 0);
-	    if (NsUrlToFile(&ds, servPtr, url) != NS_OK) {
-		goto notfound;
-	    }
-	    Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
+        /*
+         * For directories, search for a matching directory file and 
+         * restart the connection if found.
+         */
+
+        for (i = 0; i < servPtr->fastpath.dirc; ++i) {
+            Ns_DStringTrunc(&ds, 0);
+            if (NsUrlToFile(&ds, servPtr, url) != NS_OK) {
+                goto notfound;
+            }
+            Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
             if ((stat(ds.string, &st) == 0) && S_ISREG(st.st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
                     Ns_DStringTrunc(&ds, 0);
@@ -354,25 +360,26 @@ NsFastGet(void *arg, Ns_Conn *conn)
             }
         }
 
-    	/*
-	 * If no index file was found, invoke a directory listing
-	 * ADP or Tcl proc if configured.
-	 */
-	 
-	if (servPtr->fastpath.diradp != NULL) {
-	    result = Ns_AdpRequest(conn, servPtr->fastpath.diradp);
-	} else if (servPtr->fastpath.dirproc != NULL) {
-	    result = Ns_TclRequest(conn, servPtr->fastpath.dirproc);
-	} else {
-	    goto notfound;
-	}
+        /*
+         * If no index file was found, invoke a directory listing
+         * ADP or Tcl proc if configured.
+         */
+        
+        if (servPtr->fastpath.diradp != NULL) {
+            result = Ns_AdpRequest(conn, servPtr->fastpath.diradp);
+        } else if (servPtr->fastpath.dirproc != NULL) {
+            result = Ns_TclRequest(conn, servPtr->fastpath.dirproc);
+        } else {
+            goto notfound;
+        }
     } else {
- notfound:
-	result = Ns_ConnReturnNotFound(conn);
+    notfound:
+        result = Ns_ConnReturnNotFound(conn);
     }
 
  done:
     Ns_DStringFree(&ds);
+
     return result;
 }
 
@@ -420,7 +427,7 @@ static void
 DecrEntry(File *filePtr)
 {
     if (--filePtr->refcnt == 0) {
-	ns_free(filePtr);
+        ns_free(filePtr);
     }
 }
 
@@ -445,12 +452,13 @@ static int
 FastStat(char *file, struct stat *stPtr)
 {
     if (stat(file, stPtr) != 0) {
-	if (errno != ENOENT && errno != EACCES) {
-	    Ns_Log(Error, "fastpath: stat(%s) failed: %s",
-		   file, strerror(errno));
-	}
-	return 0;
+        if (errno != ENOENT && errno != EACCES) {
+            Ns_Log(Error, "fastpath: stat(%s) failed: %s",
+                   file, strerror(errno));
+        }
+        return 0;
     }
+
     return 1;
 }
 
@@ -473,23 +481,24 @@ FastStat(char *file, struct stat *stPtr)
 
 static int
 FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
-    char *type, char *file, struct stat *stPtr)
+           char *type, char *file, struct stat *stPtr)
 {
-    int         result = NS_ERROR, fd, new, nread;
-    File	   *filePtr;
-    char	   *key;
-    Ns_Entry	   *entPtr;
+    int result = NS_ERROR, fd, new, nread;
+    File *filePtr;
+    char *key;
+    Ns_Entry *entPtr;
+
 #ifndef _WIN32
-    char           *map;
-    FileKey	    ukey;
+    char *map;
+    FileKey ukey;
 #endif
 
     /*
      * Determine the mime type if not given.
      */
-     
+    
     if (type == NULL) {
-    	type = Ns_GetMimeType(file);
+        type = Ns_GetMimeType(file);
     }
     
     /*
@@ -499,127 +508,134 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
      
     Ns_ConnSetLastModifiedHeader(conn, &stPtr->st_mtime);
     if (Ns_ConnModifiedSince(conn, stPtr->st_mtime) == NS_FALSE) {
-	return Ns_ConnReturnNotModified(conn);
+        return Ns_ConnReturnNotModified(conn);
     }
-    
+
     /*
      * For no output (i.e., HEAD request), just send required
      * headers.
      */
      
     if (conn->flags & NS_CONN_SKIPBODY) {
-	Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
-	return Ns_ConnFlushHeaders(conn, status);
+        Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
+        return Ns_ConnFlushHeaders(conn, status);
     }
 
     if (servPtr->fastpath.cache == NULL
-    	    || stPtr->st_size > servPtr->fastpath.cachemaxentry) {
-	/*
-	 * Caching is disabled or the entry is too large for the cache
-	 * so just open, mmap, and send the content directly.
-	 */
+        || stPtr->st_size > servPtr->fastpath.cachemaxentry) {
 
-    	fd = open(file, O_RDONLY|O_BINARY);
-    	if (fd < 0) {
-	    Ns_Log(Warning, "fastpath: open(%s) failed: %s",
-		   file, strerror(errno));
-	    goto notfound;
-	}
+        /*
+         * Caching is disabled or the entry is too large for the cache
+         * so just open, mmap, and send the content directly.
+         */
+        
+        fd = open(file, O_RDONLY|O_BINARY);
+        if (fd < 0) {
+            Ns_Log(Warning, "fastpath: open(%s) failed: %s", file,
+                   strerror(errno));
+            goto notfound;
+        }
 #ifndef _WIN32
-	if (servPtr->fastpath.mmap) {
-	    map = mmap(0, (size_t) stPtr->st_size, PROT_READ, MAP_SHARED, fd, 0);
-	    if (map != MAP_FAILED) {
-	    	close(fd);
-	    	fd = -1;
-            	result = Ns_ConnReturnData(conn, status, map, (int) stPtr->st_size, type);
-	    	munmap(map, (size_t) stPtr->st_size);
-	    }
-	}
+        if (servPtr->fastpath.mmap) {
+            map = mmap(0, (size_t) stPtr->st_size, PROT_READ,MAP_SHARED,fd, 0);
+            if (map != MAP_FAILED) {
+                close(fd);
+                fd = -1;
+                result = Ns_ConnReturnData(conn, status, map, 
+                                           (int) stPtr->st_size, type);
+                munmap(map, (size_t) stPtr->st_size);
+            }
+        }
 #endif
-	if (fd != -1) {
-            result = Ns_ConnReturnOpenFd(conn, status, type, fd, stPtr->st_size);
-	    close(fd);
-	}
-
+        if (fd != -1) {
+            result = Ns_ConnReturnOpenFd(conn, status,type, fd,stPtr->st_size);
+            close(fd);
+        }
+        
     } else {
-	/*
-	 * Search for an existing cache entry for this file, validating 
-	 * the contents against the current file mtime and size.
-	 */
 
+        /*
+         * Search for an existing cache entry for this file, validating 
+         * the contents against the current file mtime and size.
+         */
+        
 #ifdef _WIN32
-	key = file;
+        key = file;
 #else
-	ukey.dev = stPtr->st_dev;
-	ukey.ino = stPtr->st_ino;
-	key = (char *) &ukey;
+        ukey.dev = stPtr->st_dev;
+        ukey.ino = stPtr->st_ino;
+        key = (char *) &ukey;
 #endif
-	filePtr = NULL;
-	Ns_CacheLock(servPtr->fastpath.cache);
-	entPtr = Ns_CacheCreateEntry(servPtr->fastpath.cache, key, &new);
-	if (!new) {
-	    while (entPtr != NULL &&
-		   (filePtr = Ns_CacheGetValue(entPtr)) == NULL) {
-		Ns_CacheWait(servPtr->fastpath.cache);
-		entPtr = Ns_CacheFindEntry(servPtr->fastpath.cache, key);
-	    }
-	    if (filePtr != NULL &&
-		    (filePtr->mtime != stPtr->st_mtime ||
-		     filePtr->size != stPtr->st_size)) {
-		Ns_CacheUnsetValue(entPtr);
-		new = 1;
-	    }
-	}
-	if (new) {
-	    /*
-	     * Read and cache new or invalidated entries in one big chunk.
-	     */
+        filePtr = NULL;
+        Ns_CacheLock(servPtr->fastpath.cache);
+        entPtr = Ns_CacheCreateEntry(servPtr->fastpath.cache, key, &new);
 
-	    Ns_CacheUnlock(servPtr->fastpath.cache);
-	    fd = open(file, O_RDONLY|O_BINARY);
-	    if (fd < 0) {
-	    	filePtr = NULL;
-	        Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
-		       file, strerror(errno));
-	    } else {
-		filePtr = ns_malloc(sizeof(File) + stPtr->st_size);
-		filePtr->refcnt = 1;
-		filePtr->size = stPtr->st_size;
-		filePtr->mtime = stPtr->st_mtime;
-		nread = read(fd, filePtr->bytes, (size_t)filePtr->size);
-		close(fd);
-		if (nread != filePtr->size) {
-	    	    Ns_Log(Warning, "fastpath: failed to read '%s': '%s'",
-			   file, strerror(errno));
-		    ns_free(filePtr);
-		    filePtr = NULL;
-		}
-	    }
-	    Ns_CacheLock(servPtr->fastpath.cache);
-	    entPtr = Ns_CacheCreateEntry(servPtr->fastpath.cache, key, &new);
-	    if (filePtr != NULL) {
-		Ns_CacheSetValueSz(entPtr, filePtr, (size_t)filePtr->size);
-	    } else {
-		Ns_CacheFlushEntry(entPtr);
-	    }
-	    Ns_CacheBroadcast(servPtr->fastpath.cache);
-	}
-	if (filePtr != NULL) {
-	    ++filePtr->refcnt;
-	    Ns_CacheUnlock(servPtr->fastpath.cache);
+        if (!new) {
+            while (entPtr && (filePtr = Ns_CacheGetValue(entPtr)) == NULL) {
+                Ns_CacheWait(servPtr->fastpath.cache);
+                entPtr = Ns_CacheFindEntry(servPtr->fastpath.cache, key);
+            }
+            if (filePtr 
+                && (filePtr->mtime != stPtr->st_mtime 
+                    || filePtr->size != stPtr->st_size)) {
+                Ns_CacheUnsetValue(entPtr);
+                new = 1;
+            }
+        }
+
+        if (new) {
+            
+            /*
+             * Read and cache new or invalidated entries in one big chunk.
+             */
+
+            Ns_CacheUnlock(servPtr->fastpath.cache);
+            fd = open(file, O_RDONLY|O_BINARY);
+            if (fd < 0) {
+                filePtr = NULL;
+                Ns_Log(Warning, "fastpath: failed to open '%s': '%s'", file,
+                       strerror(errno));
+            } else {
+                filePtr = ns_malloc(sizeof(File) + stPtr->st_size);
+                filePtr->refcnt = 1;
+                filePtr->size = stPtr->st_size;
+                filePtr->mtime = stPtr->st_mtime;
+                nread = read(fd, filePtr->bytes, (size_t)filePtr->size);
+                close(fd);
+                if (nread != filePtr->size) {
+                    Ns_Log(Warning, "fastpath: failed to read '%s': '%s'",
+                           file, strerror(errno));
+                    ns_free(filePtr);
+                    filePtr = NULL;
+                }
+            }
+            Ns_CacheLock(servPtr->fastpath.cache);
+            entPtr = Ns_CacheCreateEntry(servPtr->fastpath.cache, key, &new);
+            if (filePtr != NULL) {
+                Ns_CacheSetValueSz(entPtr, filePtr, (size_t)filePtr->size);
+            } else {
+                Ns_CacheFlushEntry(entPtr);
+            }
+            Ns_CacheBroadcast(servPtr->fastpath.cache);
+        }
+        if (filePtr != NULL) {
+            ++filePtr->refcnt;
+            Ns_CacheUnlock(servPtr->fastpath.cache);
             result = Ns_ConnReturnData(conn, status, filePtr->bytes,
-			    filePtr->size, type);
-	    Ns_CacheLock(servPtr->fastpath.cache);
-	    DecrEntry(filePtr);
-	}
-	Ns_CacheUnlock(servPtr->fastpath.cache);
-	if (filePtr == NULL) {
-	    goto notfound;
-	}
+                                       filePtr->size, type);
+            Ns_CacheLock(servPtr->fastpath.cache);
+            DecrEntry(filePtr);
+        }
+        Ns_CacheUnlock(servPtr->fastpath.cache);
+        if (filePtr == NULL) {
+            goto notfound;
+        }
     }
+
     return result;
 
-notfound:
+ notfound:
+
     return Ns_ConnReturnNotFound(conn);
 }
 
@@ -628,18 +644,19 @@ int
 NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
 {
     int status;
-
+    
     if (servPtr->fastpath.url2file != NULL) {
-	status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
+        status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
     } else {
         NsPageRoot(dsPtr, servPtr, NULL);
         Ns_MakePath(dsPtr, url, NULL);
         status = NS_OK;
     }
     if (status == NS_OK) {
-	while (dsPtr->length > 0 && dsPtr->string[dsPtr->length-1] == '/') {
-	    Ns_DStringTrunc(dsPtr, dsPtr->length-1);
-	}
+        while (dsPtr->length > 0 && dsPtr->string[dsPtr->length-1] == '/') {
+            Ns_DStringTrunc(dsPtr, dsPtr->length-1);
+        }
     }
+
     return status;
 }
