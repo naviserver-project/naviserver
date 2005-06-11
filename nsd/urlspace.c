@@ -2159,11 +2159,11 @@ WalkTrie(Trie *triePtr, int id, char *server, Ns_ArgProc func, Tcl_DString *dsPt
                          Tcl_DStringAppend(dsPtr, " ", 1);
                          break;
                      default:
-                         Ns_DStringVarAppend(dsPtr, "/", stack[depth], 0);
+                         Ns_DStringVarAppend(dsPtr, "/", stack[depth], NULL);
                          break;
                     }
                 }
-                Ns_DStringVarAppend(dsPtr, filter, " ", 0);
+                Ns_DStringVarAppend(dsPtr, filter, " ", NULL);
                 if (nodePtr->dataInherit != NULL) {
                     func(dsPtr, nodePtr->dataInherit);
                 }

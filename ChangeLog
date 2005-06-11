@@ -1,3 +1,13 @@
+2005-06-11  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/nscheck: Add new attribute NS_GNUC_SENTINEL which
+	ensures that a NULL is passed as the last arg to a varargs
+	function.  Also, make sure that the format arg in a printf-like
+	function is non-NULL.
+	* include/ns.h: Markup up with NS_GNUC_SENTINEL.
+	* nsd/urlspace.c:
+	* nsd/nslog.c: Say NULL rather than 0 when talking about null pointers.
+
 2005-06-11  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/exec.c:     Fixed various places where log calls

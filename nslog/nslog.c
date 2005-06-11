@@ -252,7 +252,7 @@ Ns_ModuleInit(char *server,char *module)
     }
     /* Parse extended headers, it is just Tcl list of names */
     Ns_DStringTrunc(&ds,0);
-    Ns_DStringVarAppend(&ds,Ns_ConfigGet(path,"extendedheaders"),0);
+    Ns_DStringVarAppend(&ds, Ns_ConfigGet(path, "extendedheaders"), NULL);
     if (Tcl_SplitList(NULL,ds.string,&opt,&logPtr->extheaders) != TCL_OK) {
         Ns_Log(Error,"nslog: invalid %s/extendedHeaders parameter: %s",path,ds.string);
     }

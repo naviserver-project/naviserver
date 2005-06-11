@@ -582,7 +582,7 @@ NS_EXTERN char *Ns_ConfigGetValueExact(char *section, char *key);
 NS_EXTERN int Ns_ConfigGetInt(char *section, char *key, int *valuePtr);
 NS_EXTERN int Ns_ConfigGetInt64(char *section, char *key, ns_int64 *valuePtr);
 NS_EXTERN int Ns_ConfigGetBool(char *section, char *key, int *valuePtr);
-NS_EXTERN char *Ns_ConfigGetPath(char *server, char *module, ...);
+NS_EXTERN char *Ns_ConfigGetPath(char *server, char *module, ...) NS_GNUC_SENTINEL;
 NS_EXTERN Ns_Set **Ns_ConfigGetSections(void);
 NS_EXTERN Ns_Set *Ns_ConfigGetSection(char *section);
 NS_EXTERN void Ns_GetVersion(int *major, int *minor, int *patch, int *type);
@@ -685,10 +685,9 @@ NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
  */
 
 NS_EXTERN char **Ns_DStringAppendArgv(Ns_DString *dsPtr);
-NS_EXTERN char *Ns_DStringVarAppend(Ns_DString *dsPtr, ...);
+NS_EXTERN char *Ns_DStringVarAppend(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
 NS_EXTERN char *Ns_DStringExport(Ns_DString *dsPtr);
-NS_EXTERN char *Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt, ...)
-     NS_GNUC_PRINTF(2, 3);
+NS_EXTERN char *Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt, ...) NS_GNUC_PRINTF(2,3);
 NS_EXTERN char *Ns_DStringVPrintf(Ns_DString *dsPtr, char *fmt, va_list ap);
 NS_EXTERN char *Ns_DStringAppendArg(Ns_DString *dsPtr, char *string);
 NS_EXTERN Ns_DString *Ns_DStringPop(void);
@@ -965,14 +964,14 @@ NS_EXTERN int Ns_ConnRedirect(Ns_Conn *conn, char *url);
 
 NS_EXTERN int Ns_PathIsAbsolute(CONST char *path);
 NS_EXTERN char *Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path);
-NS_EXTERN char *Ns_MakePath(Ns_DString *dsPtr, ...);
+NS_EXTERN char *Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
 NS_EXTERN char *Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels);
-NS_EXTERN char *Ns_LibPath(Ns_DString *dsPtr, ...);
-NS_EXTERN char *Ns_HomePath(Ns_DString *dsPtr, ...);
+NS_EXTERN char *Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+NS_EXTERN char *Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
 NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, CONST char *server,
-                              CONST char *module, ...);
-NS_EXTERN char *Ns_ServerPath(Ns_DString *dest, CONST char *server, ...);
-NS_EXTERN char *Ns_PagePath(Ns_DString *dest, CONST char *server, ...);
+                              CONST char *module, ...) NS_GNUC_SENTINEL;
+NS_EXTERN char *Ns_ServerPath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
+NS_EXTERN char *Ns_PagePath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
 NS_EXTERN int Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
 /*
@@ -1191,7 +1190,7 @@ NS_EXTERN Ns_TclCallback *Ns_TclNewCallbackObj(Tcl_Interp *interp,
                                                Tcl_Obj *scriptObjPtr,
                                                Tcl_Obj *argObjPtr);
 NS_EXTERN int Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
-                                 Ns_DString *result, ...);
+                                 Ns_DString *result, ...) NS_GNUC_SENTINEL;
 NS_EXTERN Ns_Callback Ns_TclCallbackProc;
 NS_EXTERN Ns_Callback Ns_TclFreeCallback;
 NS_EXTERN Ns_ArgProc Ns_TclCallbackArgProc;

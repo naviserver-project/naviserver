@@ -46,50 +46,10 @@
 #endif
 
 
-#if __GNUC_PREREQ(2,96)
-# define NS_GNUC_MALLOC __attribute__((__malloc__))
-# define NS_GNUC_PURE __attribute__((__pure__))
-# define NS_GNUC_CONST __attribute__((__const__))
+#if __GNUC_PREREQ(3,5)
+# define NS_GNUC_SENTINEL __attribute__((__sentinel__))
 #else
-# define NS_GNUC_MALLOC
-# define NS_GNUC_PURE
-# define NS_GNUC_CONST
-#endif
-
-
-#if __GNUC_PREREQ(2,7)
-# define NS_GNUC_UNUSED __attribute__((__unused__))
-# define NS_GNUC_NORETURN __attribute__((__noreturn__))
-# define NS_GNUC_PRINTF(fmtarg, firstvararg) \
-             __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
-# define NS_GNUC_SCANF(fmtarg, firstvararg) \
-             __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
-#else
-# define NS_GNUC_UNUSED
-# define NS_GNUC_NORETURN
-# define NS_GNUC_PRINTF(fmtarg, firstvararg)
-# define NS_GNUC_SCANF(fmtarg, firstvararg)
-#endif
-
-
-#if __GNUC_PREREQ(2,8)
-# define NS_GNUC_FORMAT(fmtarg) __attribute__((__format_arg__ (fmtarg)))
-#else
-# define NS_GNUC_FORMAT(fmtarg)
-#endif
-
-
-#if __GNUC_PREREQ(3,1)
-# define NS_GNUC_USED __attribute__((__used__))
-#else
-# define NS_GNUC_USED
-#endif
-
-
-#if __GNUC_PREREQ(3,2)
-# define NS_GNUC_DEPRECATED __attribute__((__deprecated__))
-#else
-# define NS_GNUC_DEPRECATED
+# define NS_GNUC_SENTINEL
 #endif
 
 
@@ -101,6 +61,51 @@
 # define NS_GNUC_NONNULL(...)
 # define NS_GNUC_WARN_UNUSED_RESULT
 # define NS_GNUC_MAYALIAS
+#endif
+
+
+#if __GNUC_PREREQ(3,2)
+# define NS_GNUC_DEPRECATED __attribute__((__deprecated__))
+#else
+# define NS_GNUC_DEPRECATED
+#endif
+
+
+#if __GNUC_PREREQ(3,1)
+# define NS_GNUC_USED __attribute__((__used__))
+#else
+# define NS_GNUC_USED
+#endif
+
+
+#if __GNUC_PREREQ(2,8)
+# define NS_GNUC_FORMAT(m) __attribute__((__format_arg__ (m)))
+#else
+# define NS_GNUC_FORMAT(m)
+#endif
+
+
+#if __GNUC_PREREQ(2,7)
+# define NS_GNUC_UNUSED __attribute__((__unused__))
+# define NS_GNUC_NORETURN __attribute__((__noreturn__))
+# define NS_GNUC_PRINTF(m, n) __attribute__((__format__ (__printf__, m, n))) NS_GNUC_NONNULL(m)
+# define NS_GNUC_SCANF(m, n) __attribute__((__format__ (__scanf__, m, n))) NS_GNUC_NONNULL(m)
+#else
+# define NS_GNUC_UNUSED
+# define NS_GNUC_NORETURN
+# define NS_GNUC_PRINTF(fmtarg, firstvararg)
+# define NS_GNUC_SCANF(fmtarg, firstvararg)
+#endif
+
+
+#if __GNUC_PREREQ(2,96)
+# define NS_GNUC_MALLOC __attribute__((__malloc__))
+# define NS_GNUC_PURE __attribute__((__pure__))
+# define NS_GNUC_CONST __attribute__((__const__))
+#else
+# define NS_GNUC_MALLOC
+# define NS_GNUC_PURE
+# define NS_GNUC_CONST
 #endif
 
 
