@@ -1,3 +1,7 @@
+2005-06-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	nsd/return.c: made warning go away about parentheses around && and ||
+
 2005-06-11  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/nscheck: Add new attribute NS_GNUC_SENTINEL which
