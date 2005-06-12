@@ -357,7 +357,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     NsInterp            *itPtr = arg;
     Queue               *queuePtr = NULL;
     Job                 *jobPtr = NULL, **nextPtrPtr;
-    int                 code, new, create = 0, max;
+    int                 code, new, create = 0, max, opt;
     char                *jobId = NULL, buf[100], *queueId;
     Tcl_HashEntry       *hPtr, *jPtr;
     Tcl_HashSearch      search;
@@ -372,14 +372,14 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     enum {
         JCancelIdx, JCreateIdx, JDeleteIdx, JGenIDIdx, JJobsIdx, JJobsListIdx,
         JThreadListIdx, JQueueIdx, JQueuesIdx, JQueueListIdx, JWaitIdx, JWaitAnyIdx
-    } opt;
+    };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", TCL_EXACT,
-                            (int *) &opt) != TCL_OK) {
+                            &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 

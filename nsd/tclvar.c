@@ -382,7 +382,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     char *pattern, *key;
-    int i, lobjc, size;
+    int i, opt, lobjc, size;
     Tcl_Obj *result, **lobjv;
 
     static CONST char *opts[] = {
@@ -390,14 +390,14 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
     };
     enum ISubCmdIdx {
 	CSetIdx, CResetIdx, CGetIdx, CNamesIdx, CSizeIdx, CExistsIdx
-    } opt;
+    };
 
     if (objc < 2) {
     	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-			    (int *) &opt) != TCL_OK) {
+			    &opt) != TCL_OK) {
 	return TCL_ERROR;
     }
     result = Tcl_GetObjResult(interp);
@@ -770,21 +770,21 @@ NsTclVarObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_HashTable	 *tablePtr;
     Tcl_HashEntry        *hPtr;
     Tcl_HashSearch        search;
-    int                   new, code;
+    int                   new, code, opt;
     char *var = NULL, *val = NULL;
     static CONST char *opts[] = {
 	"exists", "get", "list", "set", "unset", NULL
     };
     enum {
 	VExistsIdx, VGetIdx, VListIdx, VSetIdx, VUnsetIdx
-    } opt; 
+    }; 
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?args?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-			    (int *) &opt) != TCL_OK) {
+			    &opt) != TCL_OK) {
 	return TCL_ERROR;
     }
     servPtr = itPtr->servPtr;

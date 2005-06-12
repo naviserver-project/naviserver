@@ -1,3 +1,19 @@
+2005-06-12  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/conn.c:
+	* nsd/info.c:
+	* nsd/log.c:
+	* nsd/queue.c:
+	* nsd/tclfile.c:
+	* nsd/tclhttp.c:
+	* nsd/tclinit.c:
+	* nsd/tcljob.c:
+	* nsd/tclmisc.c:
+	* nsd/tclthread.c
+	* nsd/tclvar.c:
+	* nsthread/nsthreadtest.c: silencecompiler warnings like
+	"dereferencing type-punned pointer will break strict-aliasing rules"
+
 2005-06-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/return.c: made warning go away about parentheses around && and ||

@@ -101,7 +101,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     NsInterp *itPtr = arg;
     Http *httpPtr;
     char buf[50], *result, *carg;
-    int new, status, n, timeidx;
+    int new, status, n, timeidx, opt;
     Ns_Time timeout, incr;
     Ns_Set *hdrs;
     Tcl_HashEntry *hPtr;
@@ -111,7 +111,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     };
     enum {
         HCancelIdx, HCleanupIdx, HQueueIdx, HWaitIdx
-    } opt;
+    };
 
     char *method, *url, *body;
 
@@ -120,7 +120,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            (int *) &opt) != TCL_OK) {
+                            &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 

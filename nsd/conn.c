@@ -922,7 +922,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Tcl_HashSearch search;
     FormFile *filePtr;
     Ns_DString ds;
-    int idx, off, len;
+    int idx, off, len, opt;
 
     static CONST char *opts[] = {
         "authpassword", "authuser", "close", "content", "contentlength",
@@ -943,14 +943,14 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx
-    } opt;
+    };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            (int *) &opt) != TCL_OK) {
+                            &opt) != TCL_OK) {
         return TCL_ERROR;
     }
     

@@ -1028,7 +1028,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     Tcl_Channel chan = NULL;
     char *name, *chanName;
     NsRegChan *regChan = NULL;
-    int new, shared;
+    int new, shared, opt;
     Tcl_HashTable *tabPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -1037,14 +1037,14 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     };
     enum {
 	CCleanupIdx, CListIdx, CCreateIdx, CPutIdx, CGetIdx
-    } opt;
+    };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-		(int *) &opt) != TCL_OK) {
+		            &opt) != TCL_OK) {
 	return TCL_ERROR;
     }
 

@@ -429,6 +429,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
 int
 NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
+    int opt;
     Ns_Time result, t1, t2;
     static CONST char *opts[] = {
 	"adjust", "diff", "get", "incr", "make", "seconds",
@@ -437,13 +438,13 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     enum {
 	TAdjustIdx, TDiffIdx, TGetIdx, TIncrIdx, TMakeIdx,
 	TSecondsIdx, TMicroSecondsIdx
-    } opt;
+    };
 
     if (objc < 2) {
     	Tcl_SetLongObj(Tcl_GetObjResult(interp), time(NULL));
     } else {
 	if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-				(int *) &opt) != TCL_OK) {
+				&opt) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (opt) {

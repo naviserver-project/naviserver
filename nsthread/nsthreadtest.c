@@ -463,8 +463,10 @@ int main(int argc, char *argv[])
     Ns_RWLockUnlock(&rwlock);
     Msg("rwlock write unlocked (main thread)");
     for (i = 0; i < 10; ++i) {
+        void *codeArg;
 	Msg("waiting for thread %d to exit", i);
-	Ns_ThreadJoin(&threads[i], (void **) &code);
+	Ns_ThreadJoin(&threads[i], &codeArg);
+        code = (int)codeArg;
 	Msg("thread %d exited - code: %d", i, code);
     }
 #if PTHREAD_TEST

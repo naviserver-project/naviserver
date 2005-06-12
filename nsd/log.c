@@ -336,7 +336,7 @@ int
 NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	       Tcl_Obj *CONST objv[])
 {
-    int len;
+    int len, opt;
     Cache *cachePtr;
     static CONST char *opts[] = {
 	"hold",
@@ -356,14 +356,14 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	CFlushIdx,
 	CReleaseIdx,
 	CTruncIdx
-    } opt;
+    };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
     	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-			    (int *) &opt) != TCL_OK) {
+			    &opt) != TCL_OK) {
 	return TCL_ERROR;
     }
     cachePtr = LogGetCache();

@@ -279,6 +279,7 @@ int
 NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 		  Tcl_Obj **objv)
 {
+    int opt;
     NsInterp *itPtr = arg;
     NsServer *servPtr = itPtr->servPtr;
     ConnPool *poolPtr = servPtr->pools.defaultPtr;
@@ -291,14 +292,14 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     enum {
 	 SActiveIdx, SAllIdx, SConnectionsIdx, SKeepaliveIdx, SPoolsIdx,
 	 SQueuedIdx, SThreadsIdx, SWaitingIdx,
-    } opt;
+    };
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?pool?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-			    (int *) &opt) != TCL_OK) {
+			    &opt) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (objc == 2) {
@@ -924,9 +925,11 @@ CreateConnThread(ConnPool *poolPtr)
 static void
 JoinConnThread(Ns_Thread *threadPtr)
 {
+    void *argArg;
     Arg *argPtr;
 
-    Ns_ThreadJoin(threadPtr, (void **) &argPtr);
+    Ns_ThreadJoin(threadPtr, &argArg);
+    argPtr = (Arg*)argArg;
     ns_free(argPtr);
 }
 
