@@ -1,5 +1,7 @@
 2005-06-12  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nscgi/nscgi.c: Use non-depreciated functions.
+
 	* nsd/str.c: Add new function Ns_StrIsHost.
 	* include/ns.h:
 	* nsd/nsd.h:

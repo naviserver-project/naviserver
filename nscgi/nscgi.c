@@ -773,7 +773,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
     	Ns_DString tmp;
 	
-        if (Ns_DecodeUrl(dsPtr, cgiPtr->pathinfo) != NULL) {
+        if (Ns_UrlPathDecode(dsPtr, cgiPtr->pathinfo, NULL) != NULL) {
             SetUpdate(cgiPtr->env, "PATH_INFO", dsPtr->string);
         } else {
             SetUpdate(cgiPtr->env, "PATH_INFO", cgiPtr->pathinfo);
@@ -781,7 +781,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 	Ns_DStringTrunc(dsPtr, 0);
 	Ns_DStringInit(&tmp);
         Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
-        if (Ns_DecodeUrl(&tmp, dsPtr->string) != NULL) {
+        if (Ns_UrlPathDecode(&tmp, dsPtr->string, NULL) != NULL) {
             SetUpdate(cgiPtr->env, "PATH_TRANSLATED", tmp.string);
         } else {
             SetUpdate(cgiPtr->env, "PATH_TRANSLATED", dsPtr->string);
@@ -800,56 +800,28 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_DStringTrunc(dsPtr, 0);
 
     /*
-     * Determine SERVER_NAME from the conn location.
+     * Determine SERVER_NAME and SERVER_PORT from the conn location.
      */
 
-    s = Ns_ConnLocation(conn);
-    p = NULL;
-    if (s != NULL) {
-        if (strstr(s, "://") == NULL) {
-            Ns_Log(Warning, "nscgi: location does not contain '://'");
-            s = NULL;
-        } else {
-            s = strchr(s, ':');         /* Get past the http */
-            if (s != NULL) {
-                s += 3;                 /* Get past the // */
-                p = strchr(s, ':');     /* Get to the port number */ 
-            }
+    s = Ns_ConnLocationAppend(conn, dsPtr);
+    s = strchr(s, ':');
+    s += 3;               /* Get past the protocol://  */
+    p = strchr(s, ':');   /* Get to the port number    */ 
+    if (p != NULL) {
+        SetUpdate(cgiPtr->env, "SERVER_PORT", p);
+        for (i = 0; p != '\0'; ++p) {
+            ++i;
         }
+        Ns_DStringTrunc(dsPtr, i);
     }
-    if (s == NULL) {
-        s = Ns_ConnHost(conn);
-        SetUpdate(cgiPtr->env, "SERVER_NAME", s);
-    } else {
-        if (p == NULL) {
-            Ns_DStringAppend(dsPtr, s);           /* No port number */
-        } else {
-            Ns_DStringNAppend(dsPtr, s, (p - s)); /* Port number exists */
-        }
-        s = Ns_DStringExport(dsPtr);
-        SetUpdate(cgiPtr->env, "SERVER_NAME", s);
-        ns_free(s);
+    SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
+    Ns_DStringTrunc(dsPtr, 0);
+    if (p == NULL) {
+        Ns_DStringPrintf(dsPtr, "%d", Ns_ConnPort(conn));
+        SetUpdate(cgiPtr->env, "SERVER_PORT", dsPtr->string);
+        Ns_DStringTrunc(dsPtr, 0);
     }
 
-    /*
-     * Determine SERVER_PORT from the conn location.
-     */
-
-    s = Ns_ConnLocation(conn);
-    if (s != NULL) {
-        s = strchr(s, ':');             /* Skip past http. */
-        if (s != NULL) {
-            ++s;
-            s = strchr(s, ':');         /* Skip past hostname. */
-            if (s != NULL) {
-                ++s;
-            }
-        }
-    }
-    if (s == NULL) {
-        s = "80";
-    }
-    SetUpdate(cgiPtr->env, "SERVER_PORT", s);
     SetUpdate(cgiPtr->env, "AUTH_TYPE", "Basic");
     SetUpdate(cgiPtr->env, "REMOTE_USER", conn->authUser);
     s = Ns_ConnPeer(conn);
@@ -931,7 +903,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 		if (e != NULL) {
 		    *e = '\0';
 		}
-		Ns_UrlDecode(dsPtr, s);
+		Ns_UrlQueryDecode(dsPtr, s, NULL);
 		Ns_DStringNAppend(dsPtr, "", 1);
 		if (e != NULL) {
 		    *e++ = '+';
@@ -1106,7 +1078,8 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                 httpstatus = 302;
                 if (*value == '/') {
                     Ns_DStringInit(&redir);
-                    Ns_DStringVarAppend(&redir, Ns_ConnLocation(conn), value, NULL);
+                    Ns_ConnLocationAppend(conn, &redir);
+                    Ns_DStringAppend(&redir, value);
                     last = Ns_SetPut(hdrs, ds.string, redir.string);
                     Ns_DStringFree(&redir);
                 } else {
