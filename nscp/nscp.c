@@ -411,7 +411,7 @@ static int
 GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 {
     unsigned char buf[2048];
-    int n;
+    size_t n;
     int result = 0;
     int retry = 0;
 
@@ -425,7 +425,7 @@ GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);
-    if (send(sock, prompt, (unsigned int) n, 0) != n) {
+    if (send(sock, prompt, n, 0) != n) {
 	result = 0;
 	goto bail;
     }
@@ -477,7 +477,7 @@ GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 	    }
 	}
 
-	Tcl_DStringAppend(dsPtr, buf, n);
+	Tcl_DStringAppend(dsPtr, (char *) buf, n);
 	result = 1;
 
     } while (buf[n-1] != '\n');

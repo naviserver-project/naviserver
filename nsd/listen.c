@@ -221,7 +221,7 @@ static int
 ListenCallback(SOCKET sock, void *arg, int why)
 {
     struct sockaddr_in  sa;
-    int                 len;
+    socklen_t           len;
     Tcl_HashTable      *tablePtr;
     Tcl_HashEntry      *hPtr;
     SOCKET              new;

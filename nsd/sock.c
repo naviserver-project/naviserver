@@ -209,7 +209,7 @@ Ns_SockAccept(SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
 {
     SOCKET sock;
 
-    sock = accept(lsock, saPtr, lenPtr);
+    sock = accept(lsock, saPtr, (socklen_t *) lenPtr);
     if (sock != INVALID_SOCKET) {
 	sock = SockSetup(sock);
     }
@@ -349,7 +349,8 @@ SOCKET
 Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, int timeout)
 {
     SOCKET         sock;
-    int		   len, err;
+    int            err;
+    socklen_t      len;
 
     /*
      * Connect to the host asynchronously and wait for
@@ -358,14 +359,14 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, int timeout)
     
     sock = SockConnect(host, port, lhost, lport, 1);
     if (sock != INVALID_SOCKET) {
-	len = sizeof(err);
-    	if (Ns_SockWait(sock, NS_SOCK_WRITE, timeout) == NS_OK
-		&& getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *) &err, &len) == 0
-		&& err == 0) {
-	    return sock;
-	}
-	ns_sockclose(sock);
-	sock = INVALID_SOCKET;
+        len = sizeof(err);
+        if (Ns_SockWait(sock, NS_SOCK_WRITE, timeout) == NS_OK
+            && getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *) &err, &len) == 0
+            && err == 0) {
+            return sock;
+        }
+        ns_sockclose(sock);
+        sock = INVALID_SOCKET;
     }
     return sock;
 }

@@ -110,7 +110,7 @@ Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
      */
 
     p = input;
-    q = output;
+    q = (unsigned char *) output;
     for (n = len / 3; n > 0; --n) {
 	*q++ = ENC(p[0] >> 2);
 	*q++ = ENC(((p[0] << 4) & 060) | ((p[1] >> 4) & 017));
@@ -188,7 +188,7 @@ Ns_HtuuDecode(char *input, unsigned char *output, int outputlen)
      */
 
     n = 0;
-    p = input;
+    p = (unsigned char *) input;
     q = output;
     while (*p) {
         if (pr2six[(int)(*p)] >= 0) {

@@ -179,7 +179,7 @@ done:
 int
 NsTclJpegSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    int   code, w, h;
+    int   code, w = 0, h = 0;
     Tcl_Channel chan;
 
     if (objc != 2) {

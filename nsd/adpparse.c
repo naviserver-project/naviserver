@@ -557,16 +557,14 @@ Parse(AdpParse *parsePtr, NsServer *servPtr, char *utf)
 {
     Tag            *tagPtr = NULL;
     char           *ss = NULL, *se = NULL, *s = NULL, *e = NULL;
-    char           *a = NULL, *as = NULL, *ae = NULL , *t = NULL;
-    int             level = 0, state, stream, streamdone;
+    char           *a = NULL, *as = NULL, *ae = NULL , *t = utf;
+    int             level = 0, state = 0, stream = 0, streamdone = 0;
     Tcl_DString     tag;
     Tcl_HashEntry  *hPtr = NULL;
 
     Tcl_DStringInit(&tag);
-    t = utf;
-    streamdone = 0;
-    state = 0;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
+
     while ((s = strchr(utf, '<')) && (e = strchr(s, '>'))) {
 	/*
 	 * Process the tag depending on the current state.

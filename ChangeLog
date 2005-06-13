@@ -1,5 +1,19 @@
 2005-06-12  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/adpparse.c:
+	* nsd/compress.c:
+	* nsd/listen.c:
+	* nsd/sock.c:
+	* nsd/tclimg.c:
+	* nsd/tclmisc.c:
+	* nsd/tclresp.c:
+	* nsd/uuencode.c:
+	* nscp/nscp.c:
+	* tests/tclresp.test: Fix some issues with mixing signed/unsigned
+	data that gcc4 was complaining about and a couple of instances of
+	uninitialised variables.
+
 	* nsd/tclobjv.c: Simplify code and clarify comment.
 
 	* nscgi/nscgi.c: Use non-depreciated functions.

@@ -392,8 +392,9 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
 int
 NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    int   size;
-    char *string, *decoded;
+    int            size;
+    char          *string;
+    unsigned char *decoded;
  
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -401,10 +402,10 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
     }
     string = Tcl_GetStringFromObj(objv[1], &size);
     size += 3;
-    decoded = ns_malloc((size_t)size);
-    size = Ns_HtuuDecode(string, (unsigned char *) decoded, size);
+    decoded = ns_malloc(size);
+    size = Ns_HtuuDecode(string, decoded, size);
     decoded[size] = '\0';
-    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded,size));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, size));
     ns_free(decoded);
     return TCL_OK;
 }
@@ -1051,12 +1052,12 @@ SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
 int
 NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    SHA_CTX ctx;
-    char    digest[20];
-    char    digestChars[41];
-    int     i;
-    char    *str;
-    int     strLen;
+    SHA_CTX        ctx;
+    unsigned char  digest[20];
+    char           digestChars[41];
+    int            i;
+    char          *str;
+    int            strLen;
     
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
@@ -1065,12 +1066,12 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
 
     str = Tcl_GetStringFromObj(objv[1],&strLen);
     SHAInit(&ctx);
-    SHAUpdate(&ctx, str, (unsigned int) strLen);
+    SHAUpdate(&ctx, (unsigned char *) str, (unsigned int) strLen);
     SHAFinal(digest, &ctx);
 
     for (i = 0; i < 20; ++i) {
-	digestChars[i * 2] = hexChars[(unsigned char)(digest[i]) >> 4];
-	digestChars[i * 2 + 1] = hexChars[(unsigned char)(digest[i]) & 0xF];
+	digestChars[i * 2] = hexChars[digest[i] >> 4];
+	digestChars[i * 2 + 1] = hexChars[digest[i] & 0xF];
     }
     digestChars[40] = '\0';
 

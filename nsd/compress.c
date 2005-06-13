@@ -66,7 +66,7 @@ static char header[] = {
  */
 
 int
-Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
 {
     uLongf glen;
     char *gbuf;
@@ -88,7 +88,7 @@ Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level)
     gbuf = outPtr->string;
     skip = sizeof(header) - 2;
     glen -= skip;
-    if (compress2(gbuf + skip, &glen, buf, (uLong) len, level) != Z_OK) {
+    if (compress2((Bytef *) gbuf + skip, &glen, (Bytef *) buf, (uLong) len, level) != Z_OK) {
         return NS_ERROR;
     }
     memcpy(gbuf, header, sizeof(header));
@@ -99,7 +99,7 @@ Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level)
      */
 
     crc = crc32(0, Z_NULL, 0);
-    crc = crc32(crc, buf, len);
+    crc = crc32(crc, (Bytef *) buf, len);
     footer[0] = htonl(crc);
     footer[1] = htonl(len);
     Tcl_DStringAppend(outPtr, (char *) footer, sizeof(footer));
@@ -135,7 +135,7 @@ Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level)
  *----------------------------------------------------------------------
  */
 int
-Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_Compress(const char *buf, int len, Tcl_DString *outPtr, int level)
 {
     return Ns_CompressGzip(buf, len, outPtr, level);
 }

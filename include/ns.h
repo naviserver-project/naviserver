@@ -570,9 +570,9 @@ NS_EXTERN void Ns_ClsSet(Ns_Cls *clsPtr, Ns_Conn *conn, void *data);
  * compress.c:
  */
 
-NS_EXTERN int Ns_Compress(char *buf, int len, Tcl_DString *outPtr, int level)
+NS_EXTERN int Ns_Compress(const char *buf, int len, Tcl_DString *outPtr, int level)
      NS_GNUC_DEPRECATED;
-NS_EXTERN int Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level);
+NS_EXTERN int Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level);
 
 /*
  * config.c:

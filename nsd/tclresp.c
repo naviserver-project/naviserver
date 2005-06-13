@@ -160,7 +160,8 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
  *      Tcl result.
  *
  * Side effects:
- *      String may be transcoded. Connection will be closed.
+ *      String may be transcoded if binary switch not given. Connection
+ *      will be closed.
  *
  *----------------------------------------------------------------------
  */
@@ -169,38 +170,34 @@ int
 NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
-    unsigned char *data = 0, *type = 0;
-    int result, param = 1, status = 0, len = 0, binary = 0;
+    Tcl_Obj *dataObj;
+    char    *type, *data;
+    int      status, len, result, binary = NS_FALSE;
 
-    if (objc != 4 && objc != 5) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?-binary? status type string");
+    Ns_ObjvSpec opts[] = {
+        {"-binary",  Ns_ObjvBool, &binary, (void *) NS_TRUE},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"status",   Ns_ObjvInt,    &status,  NULL},
+        {"type",     Ns_ObjvString, &type,    NULL},
+        {"data",     Ns_ObjvObj,    &dataObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
-    }
-    if (objc == 5) {
-        if(strcmp(Tcl_GetString(objv[param]),"-binary")) {
-           Tcl_WrongNumArgs(interp, 1, objv, "?-binary? status type string");
-           return TCL_ERROR;
-        }
-        binary = 1;
-        param++;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[param], &status) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    type = Tcl_GetString(objv[param+1]);
-    if (binary != 0) { 
-        data = Tcl_GetByteArrayFromObj(objv[param+2], &len);
-    } else {
-        data = Tcl_GetStringFromObj(objv[param+2], &len);
     }
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if(binary != 0) {
-       result = Ns_ConnReturnData(conn, status, data, len, type);
+    if (binary) {
+        data = (char *) Tcl_GetByteArrayFromObj(dataObj, &len);
+        result = Ns_ConnReturnData(conn, status, data, len, type);
     } else {
-       result = Ns_ConnReturnCharData(conn, status, data, len, type);
+        data = Tcl_GetStringFromObj(dataObj, &len);
+        result = Ns_ConnReturnCharData(conn, status, data, len, type);
     }
+
     return Result(interp, result);
 }
 
