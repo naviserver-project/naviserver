@@ -1,3 +1,4 @@
+
 /*
  * The contents of this file are subject to the AOLserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
@@ -251,11 +252,11 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     if (init->opts & NS_DRIVER_SSL) {
-	defproto = "https";
-	defport = 443;
+        defproto = "https";
+        defport = 443;
     } else {
-	defproto = "http";
-	defport = 80;
+        defproto = "http";
+        defport = 80;
     }
 
     /*
@@ -346,23 +347,26 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     /*
      * Determine the port and then set the HTTP location string either
      * as specified in the config file or constructed from the
-     * hostname and port.
+     * protocol, hostname and port.
      */
+
+    drvPtr->protocol = ns_strdup(defproto);
     drvPtr->address = ns_strdup(address);
     if (!Ns_ConfigGetInt(path, "port", &drvPtr->port)) {
-	drvPtr->port = defport;
+        drvPtr->port = defport;
     }
     drvPtr->location = Ns_ConfigGetValue(path, "location");
-    if (drvPtr->location != NULL) {
-	drvPtr->location = ns_strdup(drvPtr->location);
+    if (drvPtr->location != NULL && strstr(drvPtr->location, "://")) {
+        drvPtr->location = ns_strdup(drvPtr->location);
     } else {
-    	Ns_DStringInit(&ds);
-	Ns_DStringVarAppend(&ds, defproto, "://", host, NULL);
-	if (drvPtr->port != defport) {
-	    Ns_DStringPrintf(&ds, ":%d", drvPtr->port);
-	}
-	drvPtr->location = Ns_DStringExport(&ds);
+        Ns_DStringInit(&ds);
+        Ns_DStringVarAppend(&ds, drvPtr->protocol, "://", host, NULL);
+        if (drvPtr->port != defport) {
+            Ns_DStringPrintf(&ds, ":%d", drvPtr->port);
+        }
+        drvPtr->location = Ns_DStringExport(&ds);
     }
+
     drvPtr->nextPtr = firstDrvPtr;
     firstDrvPtr = drvPtr;
     ++maxfds;
@@ -391,7 +395,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                 if (!n) {
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
-                    Ns_DStringVarAppend(&ds, defproto, "://", host, NULL);
+                    Ns_DStringVarAppend(&ds, drvPtr->protocol, "://", host, NULL);
                     mapPtr = ns_malloc(sizeof(ServerMap) + ds.length);
                     mapPtr->servPtr  = servPtr;
                     strcpy(mapPtr->location, ds.string);

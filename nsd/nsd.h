@@ -355,7 +355,8 @@ typedef struct Driver {
     char *module;               /* Driver module. */
     char *name;                 /* Driver name. */
     char *location;             /* Location, e.g, "http://foo:9090" */
-    char *address;              /* Address in location. */
+    char *address;              /* Address in location, e.g. "foo" */
+    char *protocol;             /* Protocol in location, e.g, "http" */
     int sendwait;               /* send() I/O timeout. */
     int recvwait;               /* recv() I/O timeout. */
     int bufsize;                /* Conn bufsize (0 for SSL) */
@@ -887,7 +888,7 @@ extern void NsFreeAtClose(NsInterp *itPtr);
 extern void NsRunAtClose(Tcl_Interp *interp);
 
 extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url);
-extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, char *host);
+extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
 /*
  * External callback functions.

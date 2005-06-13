@@ -1,5 +1,16 @@
 2005-06-12  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/str.c: Add new function Ns_StrIsHost.
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/driver.c: Save the protocol seperate from the location in
+	the driver structure and ensure the location always begins with a
+	"protocol://" string.
+	* nsd/server.c:
+	* nsd/conn.c:
+	* nsd/pathname.c: Simplify code by using protocol direct from
+	driver structure and checking Host header with Ns_StrIsHost.
+
 	* nsd/tclsock.c: Removed unused static function.
 
 2005-06-12  Zoran Vasiljevic  <vasiljevic@users.sf.net>

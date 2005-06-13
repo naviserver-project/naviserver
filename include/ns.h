@@ -404,17 +404,18 @@ struct iovec {
  */
 
 typedef struct Ns_Driver {
-    void	*arg;		    /* Driver callback data. */
-    char	*server;	    /* Virtual server name. */
-    char	*module;	    /* Driver module. */
-    char        *name;		    /* Driver name. */
-    char        *location;	    /* Location, e.g, "http://foo:9090" */
-    char        *address;	    /* Address in location. */
-    int     	 sendwait;	    /* send() I/O timeout. */
-    int     	 recvwait;	    /* recv() I/O timeout. */
-    int		 bufsize;	    /* Conn bufsize (0 for SSL) */
-    int		 sndbuf;	    /* setsockopt() SNDBUF option. */
-    int		 rcvbuf;	    /* setsockopt() RCVBUF option. */
+    void    *arg;           /* Driver callback data. */
+    char    *server;        /* Virtual server name. */
+    char    *module;        /* Driver module. */
+    char    *name;          /* Driver name. */
+    char    *location;      /* Location, e.g, "http://foo:9090" */
+    char    *address;       /* Address in location, e.g. "foo" */
+    char    *protocol;      /* Protocol in location, e.g, "http" */
+    int      sendwait;      /* send() I/O timeout. */
+    int      recvwait;      /* recv() I/O timeout. */
+    int      bufsize;       /* Conn bufsize (0 for SSL) */
+    int      sndbuf;        /* setsockopt() SNDBUF option. */
+    int      rcvbuf;        /* setsockopt() RCVBUF option. */
 } Ns_Driver;
 
 /*
@@ -471,7 +472,7 @@ typedef int   (Ns_OpProc) (void *arg, Ns_Conn *conn);
 typedef void  (Ns_TraceProc) (void *arg, Ns_Conn *conn);
 typedef int   (Ns_FilterProc) (void *arg, Ns_Conn *conn, int why);
 typedef int   (Ns_UrlToFileProc) (Ns_DString *dsPtr, char *server, char *url);
-typedef char *(Ns_ServerRootProc) (Ns_DString  *dest, char *host, void *arg);
+typedef char *(Ns_ServerRootProc) (Ns_DString  *dest, CONST char *host, void *arg);
 typedef char *(Ns_ConnLocationProc) (Ns_Conn *conn, Ns_DString *dest, void *arg);
 typedef char *(Ns_LocationProc) (Ns_Conn *conn); /* depreciated */
 
@@ -1178,6 +1179,7 @@ NS_EXTERN char *Ns_StrCaseFind(char *s1, char *s2);
 NS_EXTERN char *Ns_Match(char *a, char *b);
 NS_EXTERN char *Ns_NextWord(char *line);
 NS_EXTERN char *Ns_StrNStr(char *pattern, char *expression);
+NS_EXTERN int Ns_StrIsHost(CONST char *string);
 
 /*
  * tclcallbacks.c:

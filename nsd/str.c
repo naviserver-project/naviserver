@@ -296,3 +296,38 @@ Ns_StrCaseFind(char *string, char *substring)
     }
     return NULL;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_StrIsHost --
+ *
+ *      Does the given string contain only characters permitted in a
+ *      Host header? Letters, digits, single periods and the colon port
+ *      seperator are valid.
+ *
+ * Results:
+ *      NS_TRUE or NS_FALSE.
+ *
+ * Side effects:
+ *      None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_StrIsHost(CONST char *string)
+{
+    register CONST char *p;
+
+    for (p = string; *p != '\0'; p++) {
+        if (!isalnum(*p) && *p != ':'
+            && (*p != '.' || (p[0] == '.' && p[1] == '.'))) {
+
+            return NS_FALSE;
+        }
+    }
+
+    return NS_TRUE;
+}

@@ -483,8 +483,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     Conn       *connPtr = (Conn *) conn;
     NsServer   *servPtr = connPtr->servPtr;
     Ns_Set     *headers;
-    Ns_DString  ds;
-    char       *location, *host, *p;
+    char       *location, *host;
 
     if (servPtr->vhost.connLocationProc != NULL) {
 
@@ -517,36 +516,14 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 
         /*
          * Construct a location string from the HTTP host header.
-         *
-         * We do not trust the contents of the Host header, so we scan
-         * it for new lines which may be a reponse splitting attack when
-         * used as the target of a redirect reponse, and the HTML open
-         * tag character which may be a cross-site scripting attack when
-         * embedded within HTML.
          */
 
-        for (p = host; *p != '\0'; ++p) {
-            if (*p == '\n' || *p == '\r' || *p == '<') {
-                return NULL;
-            }
+        if (!Ns_StrIsHost(host)) {
+            goto deflocation;
         }
 
-        /*
-         * Get the scheme from the driver location, default to http://.
-         */
-
-        Ns_DStringInit(&ds);
-        Ns_DStringAppend(&ds, connPtr->location);
-        location = strstr(ds.string, "://");
-        if (location != NULL) {
-            Ns_DStringTrunc(&ds, (location - ds.string) + 3);
-            Ns_DStringNAppend(dest, ds.string, ds.length);
-        } else {
-            /* server missconfiguration, should begin: SCHEME:// */
-            Ns_DStringAppend(dest, "http://");
-        }
-        Ns_DStringFree(&ds);
-        location = Ns_DStringAppend(dest, host);
+        location = Ns_DStringVarAppend(dest,
+            connPtr->drvPtr->protocol, "://", host, NULL);
 
     } else {
 

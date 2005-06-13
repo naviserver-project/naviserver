@@ -438,7 +438,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         servPtr->vhost.hosthashlevel = 5;
     }
     if (servPtr->vhost.enabled) {
-        NsPageRoot(&ds, servPtr, ns_strdup("www.example.com:80"));
+        NsPageRoot(&ds, servPtr, "www.example.com:80");
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",
                server, ds.string);
         Ns_DStringTrunc(&ds, 0);

@@ -47,7 +47,7 @@ NS_RCSID("@(#) $Header$");
 static int PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[], int cmd);
 static char *MakePath(Ns_DString *dest, va_list *pap);
-static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, char *host);
+static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
 
 
@@ -230,7 +230,7 @@ char *
 Ns_HashPath(Ns_DString *dest, CONST char *string, int levels)
 {
     CONST char *p = string;
-    int   i;
+    int         i;
 
     for (i = 0; i < levels; ++i) {
         if (dest->string[dest->length] != '/') {
@@ -475,7 +475,7 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg)
  */
 
 char *
-NsPageRoot(Ns_DString *dest, NsServer *servPtr, char *host)
+NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
 {
     char *path;
 
@@ -701,7 +701,7 @@ NsTclServerRootProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
  */
 
 char *
-NsTclServerRoot(Ns_DString *dest, char *host, void *arg)
+NsTclServerRoot(Ns_DString *dest, CONST char *host, void *arg)
 {
     Ns_TclCallback *cbPtr = arg;
 
@@ -781,11 +781,12 @@ MakePath(Ns_DString *dest, va_list *pap)
  */
 
 static char *
-ServerRoot(Ns_DString *dest, NsServer *servPtr, char *host)
+ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
 {
-    char     *p, *path, *port = NULL;
-    Ns_Conn  *conn;
-    Ns_Set   *headers;
+    char       *safehost, *path, *p;
+    Ns_Conn    *conn;
+    Ns_Set     *headers;
+    Ns_DString  ds;
 
     if (servPtr->vhost.serverRootProc != NULL) {
 
@@ -793,51 +794,54 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, char *host)
          * Prefer to run a user-registered Ns_ServerRootProc.
          */
 
-        path = (servPtr->vhost.serverRootProc)(dest, host, servPtr->vhost.serverRootArg);
+        path = (servPtr->vhost.serverRootProc)(dest, rawhost, servPtr->vhost.serverRootArg);
         if (path == NULL) {
             goto defpath;
         }
 
     } else if (servPtr->vhost.enabled
-               && (host != NULL
+               && (rawhost != NULL
                    || ((conn = Ns_GetConn()) != NULL
                        && (headers = Ns_ConnHeaders(conn)) != NULL
-                       && (host = Ns_SetIGet(headers, "Host")) != NULL))
-               && *host != '\0') {
+                       && (rawhost = Ns_SetIGet(headers, "Host")) != NULL))
+               && *rawhost != '\0') {
 
         /*
-         * Bail out if there are suspicious characters.
+         * Bail out if there are suspicious characters in the unprocessed Host.
          */
 
-        for (p = host; *p != '\0'; p++) {
-            if (isslash(*p) || isspace(*p) || (p[0] == '.' && p[1] == '.')) {
-                goto defpath;
-            }
+        if (!Ns_StrIsHost(rawhost)) {
+            goto defpath;
         }
-        host = Ns_StrToLower(host);
+
+        /*
+         * Normalize the Host string.
+         */
+
+        Ns_DStringInit(&ds);
+        safehost = Ns_DStringAppend(&ds, rawhost);
+
+        Ns_StrToLower(safehost);
+        if (servPtr->vhost.opts & NSD_STRIP_WWW
+            && strncmp(safehost, "www.", 4) == 0) {
+            safehost = &safehost[4];
+        }
+        if (servPtr->vhost.opts & NSD_STRIP_PORT
+            && (p = strrchr(safehost, ':')) != NULL) {
+            *p = '\0';
+        }
+
+        /*
+         * Build the final path.
+         */
 
         path = Ns_MakePath(dest, servPtr->fastpath.serverdir,
                            servPtr->vhost.hostprefix, NULL);
-
-        if (servPtr->vhost.opts & NSD_STRIP_WWW) {
-            if (strncmp(host, "www.", 4) == 0) {
-                host = &host[4];
-            }
-        }
-        if (servPtr->vhost.opts & NSD_STRIP_PORT) {
-            if ((port = strrchr(host, ':')) != NULL) {
-                *port = '\0';
-            }
-        }
-
         if (servPtr->vhost.hosthashlevel > 0) {
-            Ns_HashPath(dest, host, servPtr->vhost.hosthashlevel);
+            Ns_HashPath(dest, safehost, servPtr->vhost.hosthashlevel);
         }
-        Ns_NormalizePath(dest, host);
-
-        if (port != NULL) {
-            *port = ':';
-        }
+        Ns_NormalizePath(dest, safehost);
+        Ns_DStringFree(&ds);
 
     } else {
 
