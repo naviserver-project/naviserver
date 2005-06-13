@@ -293,11 +293,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     char **dest = spec->dest;
 
     if (*objcPtr > 0) {
-        if (spec->arg == NULL) {
-            *dest = Tcl_GetString(objv[0]);
-        } else {
-            *dest = Tcl_GetStringFromObj(objv[0], (int *) spec->arg);
-        }
+        *dest = Tcl_GetStringFromObj(objv[0], (int *) spec->arg);
         *objcPtr -= 1;
         return TCL_OK;
     }
@@ -310,11 +306,11 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *
  * Ns_ObjvByteArray --
  *
- *      Consume exactly one argument, returning a pointer to it's
- *      cstring into *spec->dest.
+ *      Consume exactly one argument, returning a pointer to the
+ *      raw bytes into *spec->dest.
  *
  *      If spec->arg is != NULL it is assumed to be a pointer to an
- *      int and the returned string length will be left in it.
+ *      int and the number of bytes will be left in it.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -332,11 +328,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     unsigned char **dest = spec->dest;
 
     if (*objcPtr > 0) {
-        if (spec->arg == NULL) {
-            *dest = Tcl_GetByteArrayFromObj(objv[0],0);
-        } else {
-            *dest = Tcl_GetByteArrayFromObj(objv[0], (int *) spec->arg);
-        }
+        *dest = Tcl_GetByteArrayFromObj(objv[0], (int *) spec->arg);
         *objcPtr -= 1;
         return TCL_OK;
     }
