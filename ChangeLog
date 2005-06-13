@@ -1,3 +1,7 @@
+2005-06-12  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tclsock.c: Removed unused static function.
+
 2005-06-12  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/conn.c:
