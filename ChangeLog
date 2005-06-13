@@ -1,3 +1,9 @@
+2005-06-13  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/compress.c: Fixed Ns_CompressGzip() declaration 
+	when --without-zlib is used during compilation
+	(first arg was lacking the "const" qualifier).
+
 2005-06-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

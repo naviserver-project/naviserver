@@ -110,7 +110,7 @@ Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
 #else
 
 int
-Ns_CompressGzip(char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
 {
     return NS_ERROR;
 }
