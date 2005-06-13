@@ -4,6 +4,9 @@
 	when --without-zlib is used during compilation
 	(first arg was lacking the "const" qualifier).
 
+	* nsd/nswin32: Added (untested) implementatio of
+	NsMemMap() and NsMemUmap() calls.
+
 2005-06-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

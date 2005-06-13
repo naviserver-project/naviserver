@@ -443,7 +443,72 @@ NsSendSignal(int sig)
 int
 NsMemMap(char *path, int size, int mode, FileMap *mapPtr)
 {
-    return NS_ERROR;
+    HANDLE hndl, mobj;
+    LPCVOID addr;
+    char name[256];
+
+    switch (mode) {
+    case NS_MMAP_WRITE:
+        hndl = CreateFile(path, 
+                          GENERIC_READ|GENERIC_WRITE,
+                          FILE_SHARE_READ|FILE_SHARE_WRITE,
+                          NULL,
+                          OPEN_EXISTING,
+                          FILE_FLAG_WRITE_THROUGH,
+                          NULL);
+        break;
+    case NS_MMAP_READ:
+        hndl = CreateFile(path, 
+                          GENERIC_READ,
+                          FILE_SHARE_READ,
+                          NULL,
+                          OPEN_EXISTING,
+                          0,
+                          NULL);
+        break;
+    default:
+        return NS_ERROR;
+    }
+
+    if (hndl == NULL || hndl == INVALID_HANDLE_VALUE) {
+        Ns_Log(Error, "CreateFile(%s): %s", path, GetLastError());
+        return NS_ERROR;
+    }
+
+    sprintf(name, "MapObj-%s", Ns_ThreadGetName());
+
+    mobj = CreateFileMapping(hndl,
+                             NULL,
+                             PAGE_READWRITE|SEC_NOCACHE,
+                             0,
+                             0,
+                             name);
+
+    if (mobj == NULL || mobj == INVALID_HANDLE_VALUE) {
+        Ns_Log(Error, "CreateFileMapping(%s): %s", path, GetLastError());
+        CloseHandle(hndl);
+        return NS_ERROR;
+    }
+
+    addr = MapViewOfFile(mobj, 
+                         FILE_MAP_ALL_ACCESS,
+                         0, 
+                         0, 
+                         size);
+
+    if (addr == NULL) {
+        Ns_Log(Warning, "MapViewOfFile(%s): %s", path, GetLastError());
+        CloseHandle(mobj);
+        CloseHandle(hndl);
+        return NS_ERROR;
+    }
+
+    mapPtr->mapobj = (void *) mobj;
+    mapPtr->handle = (int) hndl;
+    mapPtr->addr   = (void *) addr;
+    mapPtr->size   = size;
+
+    return NS_OK;
 }
 
 
@@ -466,7 +531,9 @@ NsMemMap(char *path, int size, int mode, FileMap *mapPtr)
 void
 NsMemUmap(FileMap *mapPtr)
 {
-    return;
+    UnmapViewOfFile((LPCVOID)mapPtr->addr);
+    CloseHandle((HANDLE)mapPtr->mapobj);
+    CloseHandle((HANDLE)mapPtr->handle);
 }
 
 
