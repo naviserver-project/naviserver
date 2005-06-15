@@ -226,7 +226,14 @@ Ns_SockListenUnix(char *path)
         /* Not prebound, bind now */
         sock = Ns_SockBindUnix(path);
     }
-
+    if (sock >= 0 && listen(sock, nsconf.backlog) == -1) {
+        /* Can't listen; close the opened socket */
+        int err = errno;
+        close(sock);
+        errno = err;
+        sock = -1;
+        Ns_SetSockErrno(err);
+    }
     return (SOCKET)sock;
 }
 
