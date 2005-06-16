@@ -593,7 +593,6 @@ typedef struct NsServer {
     struct {
         int maxheaders;
         int maxline;
-        int maxpost;
         int sendfdmin;
         int errorminsize;
     } limits;

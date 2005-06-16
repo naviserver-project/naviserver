@@ -1,9 +1,8 @@
-
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -1366,47 +1365,47 @@ SockRead(Sock *sockPtr)
     Tcl_DString *bufPtr;
     char *s, *e, save;
     int   cnt, len, nread, n;
-
+    
     reqPtr = sockPtr->reqPtr;
     if (reqPtr == NULL) {
-	Ns_MutexLock(&reqLock);
-	reqPtr = firstReqPtr;
-	if (reqPtr != NULL) {
-	    firstReqPtr = reqPtr->nextPtr;
-	}
-	Ns_MutexUnlock(&reqLock);
-	if (reqPtr == NULL) {
-	    reqPtr = ns_malloc(sizeof(Request));
-	    Tcl_DStringInit(&reqPtr->buffer);
-	    reqPtr->headers = Ns_SetCreate(NULL);
-	    reqPtr->request = NULL;
-	    reqPtr->next = reqPtr->content = NULL;
-	    reqPtr->length = reqPtr->avail = 0;
-	    reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
-	    reqPtr->leadblanks = 0;
-	}
-	sockPtr->reqPtr = reqPtr;
+        Ns_MutexLock(&reqLock);
+        reqPtr = firstReqPtr;
+        if (reqPtr != NULL) {
+            firstReqPtr = reqPtr->nextPtr;
+        }
+        Ns_MutexUnlock(&reqLock);
+        if (reqPtr == NULL) {
+            reqPtr = ns_malloc(sizeof(Request));
+            Tcl_DStringInit(&reqPtr->buffer);
+            reqPtr->headers = Ns_SetCreate(NULL);
+            reqPtr->request = NULL;
+            reqPtr->next = reqPtr->content = NULL;
+            reqPtr->length = reqPtr->avail = 0;
+            reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
+            reqPtr->leadblanks = 0;
+        }
+        sockPtr->reqPtr = reqPtr;
     	reqPtr->port = ntohs(sockPtr->sa.sin_port);
-	strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+        strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
     }
-
+    
     /*
      * On the first read, attempt to read-ahead bufsize bytes.
      * Otherwise, read only the number of bytes left in the
      * content.
      */
-
+    
     bufPtr = &reqPtr->buffer;
     if (reqPtr->length == 0) {
-	nread = sockPtr->drvPtr->bufsize;
+        nread = sockPtr->drvPtr->bufsize;
     } else {
-	nread = reqPtr->length - reqPtr->avail;
+        nread = reqPtr->length - reqPtr->avail;
     }
 
     /*
      * Grow the buffer to include space for the next bytes.
      */
-
+    
     len = bufPtr->length;
     n = len + nread;
     if (n > sockPtr->drvPtr->maxinput) {
@@ -1421,109 +1420,115 @@ SockRead(Sock *sockPtr)
     buf.iov_len = nread;
     n = (*sockPtr->drvPtr->proc)(DriverRecv, sock, &buf, 1);
     if (n <= 0) {
-	return SOCK_ERROR;
+        return SOCK_ERROR;
     }
     Tcl_DStringSetLength(bufPtr, len + n);
     reqPtr->woff  += n;
     reqPtr->avail += n;
-
+    
     /*
      * Scan lines until start of content.
      */
-
+    
     while (reqPtr->coff == 0) {
-	/*
-	 * Find the next line.
-	 */
-
-	s = bufPtr->string + reqPtr->roff;
-	e = strchr(s, '\n');
-	if (e == NULL) {
-	    /*
-	     * Input not yet null terminated - request more.
-	     */
-
-	    return SOCK_MORE;
-	}
-
-	/*
-	 * Update next read pointer to end of this line.
-	 */
-
-	cnt = e - s + 1;
-	reqPtr->roff  += cnt;
-	reqPtr->avail -= cnt;
-	if (e > s && e[-1] == '\r') {
-	    --e;
-	}
-
-	/*
-	 * Check for end of headers.
-	 */
-
-	if (e == s) {
+        /*
+         * Find the next line.
+         */
+        
+        s = bufPtr->string + reqPtr->roff;
+        e = strchr(s, '\n');
+        if (e == NULL) {
+            /*
+             * Input not yet null terminated - request more.
+             */
+            
+            return SOCK_MORE;
+        }
+        
+        /*
+         * Update next read pointer to end of this line.
+         */
+        
+        cnt = e - s + 1;
+        reqPtr->roff  += cnt;
+        reqPtr->avail -= cnt;
+        if (e > s && e[-1] == '\r') {
+            --e;
+        }
+        
+        /*
+         * Check for end of headers.
+         */
+        
+        if (e == s) {
             /*
              * Look for a blank line on its own prior to any "real" 
              * data. We eat up to 2 of these before closing the
              * connection.
              */
-
+            
             if (bufPtr->length == 0) {
-		if (++reqPtr->leadblanks > 2) {
-		    return SOCK_ERROR;
-		}
-		reqPtr->woff = reqPtr->roff = 0;
-		Tcl_DStringSetLength(bufPtr, 0);
-		return SOCK_MORE;
-            }
-	    reqPtr->coff = reqPtr->roff;
-	    s = Ns_SetIGet(reqPtr->headers, "content-length");
-	    if (s != NULL) {
-		reqPtr->length = atoi(s);
-                if (reqPtr->length < 0 
-                    && reqPtr->length > sockPtr->drvPtr->servPtr->limits.maxpost) {
+                if (++reqPtr->leadblanks > 2) {
                     return SOCK_ERROR;
                 }
-	    }
-	} else {
-	    save = *e;
-	    *e = '\0';
-	    if (reqPtr->request == NULL) {
-		reqPtr->request = Ns_ParseRequest(s);
-		if (reqPtr->request == NULL) {
-		    /*
-		     * Invalid request.
-		     */
+                reqPtr->woff = reqPtr->roff = 0;
+                Tcl_DStringSetLength(bufPtr, 0);
+                return SOCK_MORE;
+            }
+            reqPtr->coff = reqPtr->roff;
+            s = Ns_SetIGet(reqPtr->headers, "content-length");
+            if (s != NULL) {
+                int length;
 
-		    return SOCK_ERROR;
-		}
-	    } else if (Ns_ParseHeader(reqPtr->headers, s, Preserve) != NS_OK) {
-		/*
-		 * Invalid header.
-		 */
+                /*
+                 * Honour meaningfull remote 
+                 * content-length hints only.
+                 */
 
-		return SOCK_ERROR;
-	    }
-	    *e = save;
-	    if (reqPtr->request->version <= 0.0) {
-		/*
-		 * Pre-HTTP/1.0 request.
-		 */
-
-		reqPtr->coff = reqPtr->roff;
-	    }
-	}
+                length = atoi(s);
+                if (length >= 0) {
+                    reqPtr->length = length;
+                }
+            }
+        } else {
+            save = *e;
+            *e = '\0';
+            if (reqPtr->request == NULL) {
+                reqPtr->request = Ns_ParseRequest(s);
+                if (reqPtr->request == NULL) {
+                    /*
+                     * Invalid request.
+                     */
+                    
+                    return SOCK_ERROR;
+                }
+            } else if (Ns_ParseHeader(reqPtr->headers, s, Preserve) != NS_OK) {
+                /*
+                 * Invalid header.
+                 */
+                
+                return SOCK_ERROR;
+            }
+            *e = save;
+            if (reqPtr->request->version <= 0.0) {
+                /*
+                 * Pre-HTTP/1.0 request.
+                 */
+                
+                reqPtr->coff = reqPtr->roff;
+            }
+        }
     }
 
     /*
      * Check if all content has arrived.
      */
-
+    
     if (reqPtr->coff > 0 && reqPtr->length <= reqPtr->avail) {
-	reqPtr->content = bufPtr->string + reqPtr->coff;
-	reqPtr->next = reqPtr->content;
-	reqPtr->avail = reqPtr->length;
-
+        reqPtr->content = bufPtr->string + reqPtr->coff;
+        reqPtr->next = reqPtr->content;
+        reqPtr->avail = reqPtr->length;
+        
         /*
          * Ensure that there are no 'bonus' crlf chars left visible
          * in the buffer beyond the specified content-length.
@@ -1532,13 +1537,13 @@ SockRead(Sock *sockPtr)
         if (reqPtr->length > 0) {
             reqPtr->content[reqPtr->length] = '\0';
         }
-
-	return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
+        
+        return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
     }
-
+    
     /*
      * Wait for more input.
      */
-
+    
     return SOCK_MORE;
 }

@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -299,9 +299,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     if (!Ns_ConfigGetInt(path, "maxheaders", &servPtr->limits.maxheaders)) {
     	servPtr->limits.maxheaders = 64 * 1024;	/* 64k */
     }
-    if (!Ns_ConfigGetInt(path, "maxpost", &servPtr->limits.maxpost)) {
-    	servPtr->limits.maxpost = 256 * 1024;	/* 256k */
-    }
     
     /*
      * Initialize Tcl.
@@ -347,12 +344,12 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
     if (!Ns_ConfigGetBool(path, "cache", &i) || i) {
     	if (!Ns_ConfigGetInt(path, "cachemaxsize", &n)) {
-	    n = 5 * 1024 * 1000;
-	}
-	if (!Ns_ConfigGetInt(path, "cachemaxentry", &i) || i < 0) {
-	    i = n / 10;
-	}
-	servPtr->fastpath.cachemaxentry = i;
+            n = 5 * 1024 * 1000;
+        }
+        if (!Ns_ConfigGetInt(path, "cachemaxentry", &i) || i < 0) {
+            i = n / 10;
+        }
+        servPtr->fastpath.cachemaxentry = i;
     	servPtr->fastpath.cache =  NsFastpathCache(server, n);
     }
     if (!Ns_ConfigGetBool(path, "mmap", &servPtr->fastpath.mmap)) {
@@ -364,22 +361,22 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     }
     if (dirf != NULL) {
     	dirf = ns_strdup(dirf);
-	p = dirf;
-	n = 1;
+        p = dirf;
+        n = 1;
     	while ((p = (strchr(p, ','))) != NULL) {
-	    ++n;
-	    ++p;
-	}
-	servPtr->fastpath.dirc = n;
-	servPtr->fastpath.dirv = ns_malloc(sizeof(char *) * n);
-	for (i = 0; i < n; ++i) {
+            ++n;
+            ++p;
+        }
+        servPtr->fastpath.dirc = n;
+        servPtr->fastpath.dirv = ns_malloc(sizeof(char *) * n);
+        for (i = 0; i < n; ++i) {
     	    p = strchr(dirf, ',');
-	    if (p != NULL) {
-	    	*p++ = '\0';
-	    }
-	    servPtr->fastpath.dirv[i] = dirf;
-	    dirf = p;
-	}
+            if (p != NULL) {
+                *p++ = '\0';
+            }
+            servPtr->fastpath.dirv[i] = dirf;
+            dirf = p;
+        }
     }
     servPtr->fastpath.serverdir = Ns_ConfigGetValue(path, "serverdir");
     if (servPtr->fastpath.serverdir == NULL) {
@@ -402,7 +399,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     }
     p = Ns_ConfigGetValue(path, "directorylisting");
     if (p != NULL && (STREQ(p, "simple") || STREQ(p, "fancy"))) {
-	p = "_ns_dirlist";
+        p = "_ns_dirlist";
     }
     servPtr->fastpath.dirproc = Ns_ConfigGetValue(path, "directoryproc");
     if (servPtr->fastpath.dirproc == NULL) {

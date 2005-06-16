@@ -1,3 +1,9 @@
+2005-06-16  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/driver.c
+	* nsd/server.c
+	* nsd/nsd.h: Removed maxpost config option (RFE #1222107)
+
 2005-06-14  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/binder.c: added missing listen call to Ns_SockListenUnix
