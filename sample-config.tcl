@@ -206,7 +206,8 @@ ns_section "ns/server/${servername}/module/nssock"
 ns_param   port            $httpport
 ns_param   hostname        $hostname
 ns_param   address         $address
-
+#ns_param   maxinput	   1024000  ;# Max upload size
+#ns_param   bufsize        16000    ;# Read-ahead buffer size
 
 #
 # Socket driver logging controls. Default is no logging.

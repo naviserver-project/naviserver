@@ -1,3 +1,8 @@
+2005-06-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* sample-config.tcl: added maxinput and bufsize parameters
+	for nssock section
+
 2005-06-16  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/driver.c
