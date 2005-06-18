@@ -1,3 +1,8 @@
+2005-06-17  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/harness.tcl:
+	* tests/ns_urlencode.test: Use Tcl style tests and remove old harness.
+
 2005-06-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* sample-config.tcl: added maxinput and bufsize parameters
