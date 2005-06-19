@@ -1,3 +1,11 @@
+2005-06-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* sample-config.tcl: added maxline parameter for nssock section
+
+	* nsd/driver.c:
+	* nsd.nsd.h: added maxline parameter to driver section, checks 
+	for line size limit in the request, defaults to 4k. 
+
 2005-06-17  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/harness.tcl:

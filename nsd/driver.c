@@ -309,6 +309,10 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         n = 1000 * 1024;        /* 1m. */
     }
     drvPtr->maxinput = _MAX(n, 1024);
+    if (!Ns_ConfigGetInt(path, "maxline", &n) || n < 1) {
+        n = 4 * 1024;        /* 4k. */
+    }
+    drvPtr->maxline = _MAX(n, 256);
 
     /*
      * Allow specification of logging or not of various deep
@@ -1452,7 +1456,15 @@ SockRead(Sock *sockPtr)
             
             return SOCK_MORE;
         }
-        
+
+        /*
+         * Check for max single line overflow.
+         */
+
+        if ((e - s) > sockPtr->drvPtr->maxline) {
+            return SOCK_ERROR;
+        }
+
         /*
          * Update next read pointer to end of this line.
          */

@@ -207,6 +207,7 @@ ns_param   port            $httpport
 ns_param   hostname        $hostname
 ns_param   address         $address
 #ns_param   maxinput	   1024000  ;# Max upload size
+#ns_param   maxline	   4096     ;# Max line size
 #ns_param   bufsize        16000    ;# Read-ahead buffer size
 
 #
