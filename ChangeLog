@@ -1,5 +1,8 @@
 2005-06-18  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/connio.c: Fixed bad return code for Ns_ConnReadLine as per 
+        AOLServer bug report from the mailing list
+
 	* sample-config.tcl: added maxline parameter for nssock section
 
 	* nsd/driver.c:
