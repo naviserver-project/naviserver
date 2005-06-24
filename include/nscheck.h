@@ -38,6 +38,7 @@
 #ifndef NSCHECK_H
 #define NSCHECK_H
 
+#ifndef _WIN32
 
 #undef  __GNUC_PREREQ
 #if defined __GNUC__ && defined __GNUC_MINOR__
@@ -108,6 +109,24 @@
 # define NS_GNUC_CONST
 #endif
 
+#else /* _WIN32 */
+
+# define NS_GNUC_SENTINEL
+# define NS_GNUC_NONNULL
+# define NS_GNUC_WARN_UNUSED_RESULT
+# define NS_GNUC_MAYALIAS
+# define NS_GNUC_DEPRECATED
+# define NS_GNUC_USED
+# define NS_GNUC_FORMAT(m)
+# define NS_GNUC_UNUSED
+# define NS_GNUC_NORETURN
+# define NS_GNUC_PRINTF(fmtarg, firstvararg)
+# define NS_GNUC_SCANF(fmtarg, firstvararg)
+# define NS_GNUC_MALLOC
+# define NS_GNUC_PURE
+# define NS_GNUC_CONST
+
+#endif /* _WIN32 */
 
 /*
  * Ensure static RCSID strings aren't optimised away.
