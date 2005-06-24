@@ -38,6 +38,10 @@
 
 NS_RCSID("@(#) $Header$");
 
+#ifdef _WIN32
+# include <Ws2tcpip.h>
+#endif
+
 #ifndef INADDR_NONE
 #define INADDR_NONE (-1)
 #endif
