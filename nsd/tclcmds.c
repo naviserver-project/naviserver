@@ -80,6 +80,7 @@ extern Tcl_ObjCmdProc
     NsTclDeleteCookieObjCmd,
     NsTclDummyObjCmd,
     NsTclICtlObjCmd,
+    NsTclFailServiceObjCmd,
     NsTclFTruncateObjCmd,
     NsTclGetAddrObjCmd,
     NsTclGetCookieObjCmd,
@@ -583,6 +584,12 @@ static Cmd servCmds[] = {
      */
 
     {"ns_ictl", NULL, NsTclICtlObjCmd},
+
+    /*
+     * nswin32.c
+     */
+
+    {"ns_failservice", NULL, NsTclFailServiceObjCmd},
 
     /*
      * Add more server Tcl commands here.
