@@ -110,7 +110,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
     int  i, fd, sig, optind, cmdargc;
     char **cmdargv;
-    char *config;
+    char *config, *tcp;
     Ns_Time timeout;
 
 #ifndef _WIN32
@@ -591,7 +591,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * home, ensuring forward slashes and lowercase.
      */
     
-    nsconf.home = getcwd(buf, sizeof(buf));
+    tcp =
+    nsconf.home = getcwd(NULL, _MAX_PATH);
     if (nsconf.home == NULL) {
         Ns_Fatal("nsmain: getcwd failed: '%s'", strerror(errno));
     }
@@ -603,7 +604,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
         ++nsconf.home;
     }
-    nsconf.home = buf;
+    nsconf.home = tcp;
     
     /*
      * Then, connect to the service control manager if running
