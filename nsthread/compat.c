@@ -495,7 +495,7 @@ Ns_PoolBlockSize(void *ptr, int *reqPtr, int *usePtr)
 #undef Ns_Malloc
 #endif
 
-void *
+NS_EXPORT void *
 Ns_Malloc(size_t size)
 {
     return ns_malloc(size);
@@ -525,7 +525,7 @@ Ns_Calloc(size_t nelem, size_t elsize)
 #undef Ns_Free
 #endif
 
-void 
+NS_EXPORT void 
 Ns_Free(void *ptr)
 {
     ns_free(ptr);
