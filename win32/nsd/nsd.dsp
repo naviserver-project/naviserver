@@ -74,7 +74,7 @@ PostBuild_Cmds=for %%m in (dll) do copy release\nsd.%%m ..\release\nsd.%%m	copy 
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "NSD_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\..\tcl8.4\generic" /I "..\..\include" /D "_DEBUG" /D "NS_NOCOMPAT" /D "_WINDOWS" /D "_USRDLL" /D "NSD_EXPORTS" /D "WIN32" /D "_MBCS" /D FD_SETSIZE=128 /D TCL_THREADS=1 /D NO_CONST=1 /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\tcl8.4\generic" /I "..\..\include" /D "_DEBUG" /D "NS_NOCOMPAT" /D "_WINDOWS" /D "_USRDLL" /D "NSD_EXPORTS" /D "WIN32" /D "_MBCS" /D FD_SETSIZE=128 /D TCL_THREADS=1 /D NO_CONST=1 /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -121,6 +121,10 @@ SOURCE=..\..\nsd\auth.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\nsd\binder.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\nsd\cache.c
 # End Source File
 # Begin Source File
@@ -133,6 +137,10 @@ SOURCE=..\..\nsd\cls.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\nsd\compress.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\nsd\config.c
 # End Source File
 # Begin Source File
@@ -142,6 +150,10 @@ SOURCE=..\..\nsd\conn.c
 # Begin Source File
 
 SOURCE=..\..\nsd\connio.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\nsd\cookies.c
 # End Source File
 # Begin Source File
 
@@ -317,6 +329,10 @@ SOURCE=..\..\nsd\tclatclose.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\nsd\tclcallbacks.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\nsd\tclcmds.c
 # End Source File
 # Begin Source File
@@ -354,6 +370,10 @@ SOURCE=..\..\nsd\tclmisc.c
 # Begin Source File
 
 SOURCE=..\..\nsd\tclobj.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\nsd\tclobjv.c
 # End Source File
 # Begin Source File
 
