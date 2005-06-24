@@ -1,3 +1,48 @@
+2005-06-24  Ibrahim Tannir  <itannir@users.sf.net>
+
+	* include/nscheck.h: VC for Windows cannot handle GNU preprocessor
+	directives and macros (fixed).
+
+	* nsd/driver.c: 
+	* nsd/binder.c: Excluded Unix calls from Windows code since some
+	of the structs needed to compile them are missing in Windows.
+
+	* nsd/dns.c: Added missing header for Windows.
+	* nsd/nsmain.c: Corrected normalizing the home path on Windows.
+	* nsd/nswin32.c: Added provisions to fake that nsd as a service
+	failed on Windows in order for the Service Control Manager to
+	restart it automatically.
+	* nsd/return.c: Added Ns_ConnReturnPath to open a file and send
+	its contents via the connection.
+	* nsd/tclcmds.c: Added the ns_failservice command which affects
+	Windows only (see also changes in nswin32.c).
+
+	* nsthread/compat.c:  Added NS_EXPORTS so that the Windows DLL
+	can get loaded.
+
+	* win32/cgitest/main.c: Removed superflous CRs at end of lines.
+
+	* main.dsp:
+	* nscgi.dsp:
+	* nscp.dsp:
+	* nsd.dsp:
+	* nsdb.dsp:
+	* nslog.dsp:
+	* nsperm.dsp:
+	* nssock.dsp:
+	* nsthread.dsp: Changed projects to compile for and link with
+	mutithreading & debug enabled libs (MTd instead of MDd).
+	
+	* main.vcproj:
+	* nscgi.vcproj:
+	* nscp.vcproj:
+	* nsd.vcproj:
+	* nsdb.vcproj:
+	* nslog.vcproj:
+	* nsperm.vcproj:
+	* nssock.vcproj:
+	* nsthread.vcproj: New files, VS7 projects for Windows.
+
 2005-06-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/connio.c: Fixed bad return code for Ns_ConnReadLine as per 
