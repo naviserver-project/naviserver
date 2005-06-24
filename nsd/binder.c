@@ -35,7 +35,10 @@
  */
 
 #include "nsd.h"
-#include <sys/un.h>
+
+#ifndef _WIN32
+# include <sys/un.h>
+#endif
 
 NS_RCSID("@(#) $Header$");
 
@@ -51,7 +54,6 @@ static Ns_Mutex lock;
 
 #ifndef _WIN32
 static void PreBind(char *line);
-#endif
 
 
 /*
@@ -102,7 +104,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
 
     return (SOCKET)sock;
 }
-
+#endif /* _WIN32 */
 
 /*
  *----------------------------------------------------------------------
@@ -188,6 +190,7 @@ Ns_SockListenRaw(int proto)
 }
 
 
+#ifndef _WIN32
 /*
  *----------------------------------------------------------------------
  *
@@ -236,7 +239,7 @@ Ns_SockListenUnix(char *path)
     }
     return (SOCKET)sock;
 }
-
+#endif /* _WIN32 */
 
 /*
  *----------------------------------------------------------------------
@@ -274,6 +277,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
 }
 
 
+#ifndef _WIN32
 /*
  *----------------------------------------------------------------------
  *
@@ -314,7 +318,7 @@ Ns_SockBindUnix(char *path)
     
     return (SOCKET)sock;
 }
-
+#endif /* _WIN32 */
 
 /*
  *----------------------------------------------------------------------
