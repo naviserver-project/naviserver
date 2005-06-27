@@ -1,3 +1,8 @@
+2005-06-27  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclcmds.c: #ifdef-ed NsTclFailServiceObjCmd with WIN32 to 
+	allow nsd to be compiled on Unix again.
+
 2005-06-24  Ibrahim Tannir  <itannir@users.sf.net>
 
 	* include/nscheck.h: VC for Windows cannot handle GNU preprocessor

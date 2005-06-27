@@ -588,9 +588,9 @@ static Cmd servCmds[] = {
     /*
      * nswin32.c
      */
-
+#ifdef WIN32
     {"ns_failservice", NULL, NsTclFailServiceObjCmd},
-
+#endif
     /*
      * Add more server Tcl commands here.
      */
