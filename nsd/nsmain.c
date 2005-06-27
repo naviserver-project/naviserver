@@ -110,7 +110,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
     int  i, fd, sig, optind, cmdargc;
     char **cmdargv;
-    char *config, *tcp;
+    char *config;
     Ns_Time timeout;
 
 #ifndef _WIN32
@@ -128,6 +128,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     Ns_Set *servers;
     struct rlimit  rl;
 #else
+   char *cwd;
     /*
      * The following variables are declared static so they
      * preserve their values when Ns_Main is re-entered by
@@ -590,22 +591,19 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * On Win32, first perform some additional cleanup of
      * home, ensuring forward slashes and lowercase.
      */
-    
-    tcp =
+
     nsconf.home = getcwd(NULL, _MAX_PATH);
     if (nsconf.home == NULL) {
         Ns_Fatal("nsmain: getcwd failed: '%s'", strerror(errno));
     }
-    while (*nsconf.home != '\0') {
-        if (*nsconf.home == '\\') {
-            *nsconf.home = '/';
-        } else if (isupper(*nsconf.home)) {
-            *nsconf.home = tolower(*nsconf.home);
+    for (cwd = nsconf.home; *cwd != '\0'; cwd++) {
+        if (*cwd == '\\') {
+            *cwd = '/';
+        } else if (isupper(*cwd)) {
+            *cwd = tolower(*cwd);
         }
-        ++nsconf.home;
     }
-    nsconf.home = tcp;
-    
+
     /*
      * Then, connect to the service control manager if running
      * as a service (see service comment above).
