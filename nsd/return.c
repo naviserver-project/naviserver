@@ -1361,37 +1361,3 @@ ReturnOpen(Ns_Conn *conn, int status, char *type, Tcl_Channel chan,
     }
     return result;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnReturnPath --
- *
- *  Open a path and send contents out the conn.
- *
- * Results:
- *  See ReturnOpen.
- *
- * Side effects:
- *  See ReturnOpen.
- *
- * Note:
- *  Added by Archiware
- *
- *----------------------------------------------------------------------
- */
-
-NS_EXPORT int
-Ns_ConnReturnPath(Ns_Conn *conn, int status, char *type, char *path, int len);
-
-int
-Ns_ConnReturnPath(Ns_Conn *conn, int status, char *type, char *path, int len)
-{
-    int fd = open(path, O_RDONLY|O_BINARY);
-    int rv;
-
-    if (fd < 0) return -1;
-    rv = ReturnOpen(conn, status, type, NULL, NULL, fd, len);
-    close(fd);
-    return rv;
-}
