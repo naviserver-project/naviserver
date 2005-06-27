@@ -50,7 +50,6 @@ static BOOL WINAPI ConsoleHandler(DWORD code);
 static void ReportStatus(DWORD state, DWORD code, DWORD hint);
 static void ExitService(void);
 static char *GetServiceName(Ns_DString *dsPtr, char *server);
-static int ReportException(int ec, char *msg);
 static SERVICE_STATUS_HANDLE hStatus = 0;
 static SERVICE_STATUS curStatus;
 static Ns_Tls   tls;
@@ -339,7 +338,7 @@ NsRestoreSignals(void)
  * NsHandleSignals --
  *
  *      Loop endlessly, processing HUP signals until a TERM
- *      signal arrives.
+ *      signal arrives
  *
  * Results:
  *      None.
@@ -353,7 +352,7 @@ NsRestoreSignals(void)
 int
 NsHandleSignals(void)
 {
-    int pending;
+    int sig;
 
     /*
      * If running as a service, stop the ticker thread and report
@@ -373,13 +372,22 @@ NsHandleSignals(void)
         while (sigpending == 0) {
             Ns_CondWait(&cond, &lock);
         }
-        pending = sigpending;
+        sig = sigpending;
         sigpending = 0;
+        if ((sig & NS_SIGINT)) {
+
+           /*
+            * Signalize the Service Control Manager
+            * to restart the service.
+            */
+
+            servicefailed = 1; 
+        }
         Ns_MutexUnlock(&lock);
-        if (pending & NS_SIGHUP) {
+        if ((sig & NS_SIGHUP)) {
             NsRunSignalProcs();
         }
-    } while (!(pending & NS_SIGTERM));
+    } while (sig == NS_SIGHUP);
 
     /*
      * If running as a service, startup the ticker thread again
@@ -390,7 +398,7 @@ NsHandleSignals(void)
         StartTicker(SERVICE_STOP_PENDING);
     }
    
-    return pending; 
+    return sig;
 }
 
 
@@ -936,29 +944,23 @@ ServiceTicker(void *arg)
 static VOID WINAPI
 ServiceMain(DWORD argc, LPTSTR *argv)
 {
-    __try {
-        hStatus = RegisterServiceCtrlHandler(argv[0], ServiceHandler);
-        if (hStatus == 0) {
-            Ns_Fatal("nswin32: RegisterServiceCtrlHandler() failed: '%s'",
-                     SysErrMsg());
-        }
-        curStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
-        curStatus.dwServiceSpecificExitCode = 0;
-        StartTicker(SERVICE_START_PENDING);
-        Ns_Main(argc, argv, NULL);
-        StopTicker();
-        ReportStatus(SERVICE_STOP_PENDING, NO_ERROR, 100);
-        if (!servicefailed) {
-            ReportStatus(SERVICE_STOPPED, 0, 0);
-        }
-        Ns_Log(Notice, "nswin32: service exiting");
-        
-        if(servicefailed) {
-            exit(-1);
-        }
+    hStatus = RegisterServiceCtrlHandler(argv[0], ServiceHandler);
+    if (hStatus == 0) {
+        Ns_Fatal("nswin32: RegisterServiceCtrlHandler() failed: '%s'",
+                 SysErrMsg());
     }
-    __except (ReportException(GetExceptionCode(), "ServiceMain")) {
-        // No code; this block is never executed.
+    curStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+    curStatus.dwServiceSpecificExitCode = 0;
+    StartTicker(SERVICE_START_PENDING);
+    Ns_Main(argc, argv, NULL);
+    StopTicker();
+    ReportStatus(SERVICE_STOP_PENDING, NO_ERROR, 100);
+    if (!servicefailed) {
+        ReportStatus(SERVICE_STOPPED, 0, 0);
+    }
+    Ns_Log(Notice, "nswin32: service exiting");
+    if(servicefailed) {
+        exit(-1);
     }
 }
 
@@ -1106,58 +1108,4 @@ poll(struct pollfd *fds, unsigned long int nfds, int timo)
     }
 
     return rc;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclFailServiceObjCmd --
- *
- *	Tell the server not to unregister from the Service Control Manager
- *  (SCM) when exiting, effectively leaving SCM wondering about the
- *  service, thinking it failed and restarting it
- *  (provided restarting the serice is configured in SCM).
- *
- * Results:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclFailServiceObjCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
-{
-    servicefailed = 1;
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * reportException --
- *
- *	Handle expecptions - cause the server to terminate abruptly
- *    and leave a log trace. It is intended to prevents the default
- *    handling in Windows where a Window pops up and the user has to
- *    confirm - which then prevents the service control manager to
- *    restart the service. (The idea, however, does not seem to work
- *    as intended - Windows still brings up the popup for reporting
- *    the "bug" to Microsoft).
- *
- * Results:
- *  	None.
- *
- * Side effects:
- *  	Exits the server
- *
- *----------------------------------------------------------------------
- */
-
-static int ReportException(int ec, char *msg)
-{
-    fprintf(stderr, "EXCEPTION %x in %s\n", ec, msg); fflush(stderr);
-    exit(-1);
-    return EXCEPTION_EXECUTE_HANDLER;
 }
