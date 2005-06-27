@@ -1,3 +1,25 @@
+2005-06-27  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/nsmain.c: improved clarity of code handling nsconf.home
+	path rewriting for Windows platform.
+
+	* nsd/tclcmds.c:
+	* nsd/nswin32.c: removed NsTclFailServiceObjCmd() and tied the
+	processing to the NS_SIGINT signal as sent by the -restart
+	option of the "ns_shutdown" command, hence avoiding different
+	ways to force server restarts on different platforms.
+	Removed experimental ReportException() call since it does
+	not really seem to prevent the default handling in Windows where 
+	a Window pops up and the user has to confirm. Such behaviour 
+	prevents the service control manager to restart the service.
+
+	* nsd/return.c: removed unneeded Ns_ConnReturnPath() added by
+	latest Win changes. The Ns_ConnReturnFile() should be used instead.
+
+	* include/nscheck.h: define __GNUC_PREREQ to false if
+	not using GCC compiler. This will automatically disable
+	all GCC-related optimizations.
+
 2005-06-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclcmds.c: #ifdef-ed NsTclFailServiceObjCmd with WIN32 to 
