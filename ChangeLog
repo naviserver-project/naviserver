@@ -1,3 +1,12 @@
+2005-06-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/return.c: Added Ns_ConnVSetHeaders function to add
+        headers to the output in printf-style way.
+
+	* nsd/fastpath.c: Added support for Range: headers in the 
+	requests to return partial content
+
 2005-06-27  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/nsmain.c: improved clarity of code handling nsconf.home

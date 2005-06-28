@@ -60,7 +60,8 @@ static int UrlIs(char *server, char *url, int dir);
 static int FastStat(char *file, struct stat *stPtr);
 static int FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                       char *type, char *file, struct stat *stPtr);
-
+static int ParseRange(Ns_Conn *conn, unsigned long size,
+                      unsigned long *offset1, unsigned long *offset2);
 
 /*
  *----------------------------------------------------------------------
@@ -471,10 +472,12 @@ static int
 FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
            char *type, char *file, struct stat *stPtr)
 {
-    int result = NS_ERROR, fd, new, nread;
-    File *filePtr;
+    int fd, new, nread;
+    unsigned long size, offset1, offset2;
+    int result = NS_ERROR, range = NS_ERROR;
     char *key;
     Ns_Entry *entPtr;
+    File *filePtr;
     FileMap fmap;
 
 #ifndef _WIN32
@@ -509,8 +512,34 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
         return Ns_ConnFlushHeaders(conn, status);
     }
 
+    /*
+     * Check if this is a Range: request, if so return requested
+     * portion of the file. Range requests are not cached.
+     */
+
+    size = stPtr->st_size;
+    if (status == 200) {
+        range = ParseRange(conn, stPtr->st_size, &offset1, &offset2);
+    }
+    if (range != NS_ERROR) {
+        if (offset1 > offset2) {
+            /* 416 Requested Range Not Satisfiable */
+            Ns_ConnVSetHeaders(conn, "Content-Range", "bytes */%lu",
+                               stPtr->st_size);
+            Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
+            return Ns_ConnFlushHeaders(conn, 416);
+        }
+        /* Continue with returning a portion of the file */
+        Ns_ConnVSetHeaders(conn, "Content-Range", "bytes %lu-%lu/%lu",
+                              offset1, offset2, stPtr->st_size);
+        size = (offset2 - offset1) + 1;
+        /* 206 Partial Content */
+        status = 206;
+    }
+
     if (servPtr->fastpath.cache == NULL
-        || stPtr->st_size > servPtr->fastpath.cachemaxentry) {
+        || stPtr->st_size > servPtr->fastpath.cachemaxentry
+        || range == NS_OK) {
 
         /*
          * Caching is disabled or the entry is too large for the cache
@@ -521,7 +550,11 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 
         if (servPtr->fastpath.mmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            result = Ns_ConnReturnData(conn,status, fmap.addr,fmap.size, type);
+            char *maddr = fmap.addr;
+            if (range == NS_OK) {
+                maddr += offset1;
+            }
+            result = Ns_ConnReturnData(conn,status, maddr, size, type);
             NsMemUmap(&fmap);
         } else {
             fd = open(file, O_RDONLY | O_BINARY);
@@ -530,7 +563,10 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                        strerror(errno));
                 goto notfound;
             }
-            result = Ns_ConnReturnOpenFd(conn, status,type, fd,stPtr->st_size);
+            if (range == NS_OK) {
+                lseek(fd, offset1, SEEK_SET);
+            }
+            result = Ns_ConnReturnOpenFd(conn, status, type, fd, size);
             close(fd);
         }
         
@@ -642,3 +678,60 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
 
     return status;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseRange --
+ *
+ *      Checks for presence of Range: header, parses it and returns 
+ *      the requested offsets
+ *
+ * Results:
+ *      NS_OK or NS_ERROR
+ *
+ * Side effects:
+ *      First range specification is honored only
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseRange(Ns_Conn *conn, unsigned long size, 
+               unsigned long *offset1, unsigned long *offset2)
+{
+    char *range;
+
+    *offset1 = *offset2 = 0;
+
+    if ((range = Ns_SetIGet(conn->headers, "Range")) != NULL
+        && (range = strchr(range,'=')) != NULL) {
+        range++;
+        if (isdigit(*range)) {
+            *offset1 = atol(range);
+            while (isdigit(*range)) range++;
+            if (*range == '-') {
+                range++;
+                *offset2 = atol(range);
+                if (*offset2 == 0 || *offset2 >= size) {
+                    *offset2 = size - 1;
+                }
+            }
+        } else if (*range == '-') {
+            range++;
+            *offset2 = atol(range);
+            if (*offset2 > size) {
+                *offset2 = size;
+            }
+            /* Size from the end requested, convert into offset */
+            *offset1 = size - *offset2;
+            *offset2 = *offset1 + *offset2 - 1;
+        }
+    }
+    if (*offset2 == 0) {
+        return NS_ERROR;
+    }
+    return NS_OK;
+}
+

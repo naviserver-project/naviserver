@@ -367,6 +367,36 @@ Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value)
     Ns_SetPut(conn->outputheaders, field, value);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnVSetHeaders --
+ *
+ *      Add a printf-style string as an output header.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnVSetHeaders(Ns_Conn *conn, char *field, char *fmt,...)
+{
+    Ns_DString ds;
+    va_list ap;
+ 
+    Ns_DStringInit(&ds);
+    va_start(ap, fmt);
+    Ns_DStringVPrintf(&ds, fmt, ap);
+    va_end(ap);
+    Ns_SetPut(conn->outputheaders, field, ds.string);
+    Ns_DStringFree(&ds);
+}
+
 
 /*
  *----------------------------------------------------------------------

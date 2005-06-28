@@ -1013,6 +1013,7 @@ NS_EXTERN void Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr);
 NS_EXTERN void Ns_ConnQueueHeaders(Ns_Conn *conn, int status);
 NS_EXTERN int Ns_ConnFlushHeaders(Ns_Conn *conn, int status);
 NS_EXTERN void Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value);
+NS_EXTERN void Ns_ConnVSetHeaders(Ns_Conn *conn, char *field, char *fmt,...);
 NS_EXTERN void Ns_ConnCondSetHeaders(Ns_Conn *conn, char *field, char *value);
 NS_EXTERN void Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders);
 NS_EXTERN void Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length);
