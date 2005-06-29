@@ -156,17 +156,17 @@ Content-range: bytes 0-2/10\r
 
 
 
-test http-3.1 {syntactically invalid} -constraints serverListen -body {
+test http-3.1 {invalid offsets} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=3-2} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
-} -result {200 10 {} 0123456789}
+} -result {416 10 {bytes */10} {}}
 
-test http-3.2 {syntactically invalid} -constraints serverListen -body {
+test http-3.2 {invalid offsets} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=11-10} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
-} -result {200 10 {} 0123456789}
+} -result {416 10 {bytes */10} {}}
 
 test http-3.3 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=} \

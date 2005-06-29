@@ -1013,7 +1013,6 @@ NS_EXTERN void Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr);
 NS_EXTERN void Ns_ConnQueueHeaders(Ns_Conn *conn, int status);
 NS_EXTERN int Ns_ConnFlushHeaders(Ns_Conn *conn, int status);
 NS_EXTERN void Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value);
-NS_EXTERN void Ns_ConnVSetHeaders(Ns_Conn *conn, char *field, char *fmt,...);
 NS_EXTERN void Ns_ConnCondSetHeaders(Ns_Conn *conn, char *field, char *value);
 NS_EXTERN void Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders);
 NS_EXTERN void Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length);
@@ -1021,7 +1020,7 @@ NS_EXTERN void Ns_ConnSetTypeHeader(Ns_Conn *conn, char *type);
 NS_EXTERN void Ns_ConnSetLengthHeader(Ns_Conn *conn, int length);
 NS_EXTERN void Ns_ConnSetLastModifiedHeader(Ns_Conn *conn, time_t *mtime);
 NS_EXTERN void Ns_ConnSetExpiresHeader(Ns_Conn *conn, char *expires);
-NS_EXTERN int Ns_ConnPrintfHeader(Ns_Conn *conn, char *fmt, ...) NS_GNUC_PRINTF(2, 3);
+NS_EXTERN void Ns_ConnPrintfHeaders(Ns_Conn *conn, char *field, char *fmt, ...) NS_GNUC_PRINTF(3, 4);
 NS_EXTERN int Ns_ConnResetReturn(Ns_Conn *conn) NS_GNUC_DEPRECATED;
 NS_EXTERN int Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, char *title,
 				    char *notice);
@@ -1361,7 +1360,6 @@ NS_EXTERN void Ns_ConnClearQuery(Ns_Conn *conn);
 #define Ns_RequestFree(r)	Ns_FreeRequest(r)
 #define Ns_ResetReturn(c)	Ns_ConnResetReturn(c)
 #define Ns_PutsConn(c,s)	Ns_ConnPuts(c,s)
-#define Ns_PrintfHeader		Ns_ConnPrintfHeader
 #define Ns_ExpiresHeader(c,h)	Ns_ConnSetExpiresHeader(c,h)
 #define Ns_ReturnHtml(c,s,h,l)	Ns_ConnReturnHtml(c,s,h,l)
 #define Ns_ReturnOk(c)		Ns_ConnReturnOk(c)

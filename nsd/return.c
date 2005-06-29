@@ -370,7 +370,7 @@ Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnVSetHeaders --
+ * Ns_ConnPrintfHeaders --
  *
  *      Add a printf-style string as an output header.
  *
@@ -384,7 +384,7 @@ Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value)
  */
 
 void
-Ns_ConnVSetHeaders(Ns_Conn *conn, char *field, char *fmt,...)
+Ns_ConnPrintfHeaders(Ns_Conn *conn, char *field, char *fmt,...)
 {
     Ns_DString ds;
     va_list ap;
@@ -597,43 +597,6 @@ void
 Ns_ConnSetExpiresHeader(Ns_Conn *conn, char *expires)
 {
     Ns_ConnSetHeaders(conn, "Expires", expires);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnPrintfHeader --
- *
- *	Write a printf-style string right to the conn. 
- *
- * Results:
- *	NS_OK/NS_ERROR 
- *
- * Side effects:
- *	Will write to the conn; you're expected to format this like a 
- *	header (like "foo: bar\n"). 
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnPrintfHeader(Ns_Conn *conn, char *fmt,...)
-{
-    int result;
-    Ns_DString ds;
-    va_list ap;
-
-    if (conn->request == NULL || conn->request->version < 1.0) {
-	return NS_OK;
-    }
-    Ns_DStringInit(&ds);
-    va_start(ap, fmt);
-    Ns_DStringVPrintf(&ds, fmt, ap);
-    va_end(ap);
-    result = Ns_ConnSendDString(conn, &ds);
-    Ns_DStringFree(&ds);
-    return result;
 }
 
 

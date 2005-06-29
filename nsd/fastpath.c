@@ -520,17 +520,18 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
     size = stPtr->st_size;
     if (status == 200) {
         range = ParseRange(conn, stPtr->st_size, &offset1, &offset2);
+        Ns_Log(Debug,"bytes %lu-%lu/%lu",offset1,offset2,stPtr->st_size);
     }
     if (range != NS_ERROR) {
         if (offset1 > offset2) {
             /* 416 Requested Range Not Satisfiable */
-            Ns_ConnVSetHeaders(conn, "Content-Range", "bytes */%lu",
+            Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%lu",
                                stPtr->st_size);
             Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
             return Ns_ConnFlushHeaders(conn, 416);
         }
         /* Continue with returning a portion of the file */
-        Ns_ConnVSetHeaders(conn, "Content-Range", "bytes %lu-%lu/%lu",
+        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes %lu-%lu/%lu",
                               offset1, offset2, stPtr->st_size);
         size = (offset2 - offset1) + 1;
         /* 206 Partial Content */
@@ -706,20 +707,33 @@ ParseRange(Ns_Conn *conn, unsigned long size,
     *offset1 = *offset2 = 0;
 
     if ((range = Ns_SetIGet(conn->headers, "Range")) != NULL
-        && (range = strchr(range,'=')) != NULL) {
-        range++;
+        && (range = strstr(range,"bytes=")) != NULL) {
+        range += 6;
         if (isdigit(*range)) {
             *offset1 = atol(range);
             while (isdigit(*range)) range++;
             if (*range == '-') {
                 range++;
-                *offset2 = atol(range);
-                if (*offset2 == 0 || *offset2 >= size) {
+                if (!isdigit(*range)) {
+                    if (*range != '\0') {
+                        return NS_ERROR;
+                    }
+                    *offset2 = size - 1;
+                } else {
+                    *offset2 = atol(range);
+                }
+                if (*offset2 >= size) {
                     *offset2 = size - 1;
                 }
+                return NS_OK;
+            } else {
+                return NS_ERROR;
             }
         } else if (*range == '-') {
             range++;
+            if (!isdigit(*range)) {
+                return NS_ERROR;
+            }
             *offset2 = atol(range);
             if (*offset2 > size) {
                 *offset2 = size;
@@ -727,11 +741,9 @@ ParseRange(Ns_Conn *conn, unsigned long size,
             /* Size from the end requested, convert into offset */
             *offset1 = size - *offset2;
             *offset2 = *offset1 + *offset2 - 1;
+            return NS_OK;
         }
     }
-    if (*offset2 == 0) {
-        return NS_ERROR;
-    }
-    return NS_OK;
+    return NS_ERROR;
 }
 

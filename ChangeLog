@@ -1,3 +1,15 @@
+2005-06-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tests/http_byteranges.test: Updated to reflect
+	actual range support. Multiple ranges are not supported.
+
+	* nsd/fastpath.c: improved detection of invalid syntax
+
+	* ns/include:
+	 nsd/return.c: removed unsed NsConnPrintfHeader. Renamed
+	 Ns_ConnVSetHeaders into Ns_ConnPrintfHeaders.
+	
+
 2005-06-28  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/http_byteranges.test: Test HTTP byte ranges.
