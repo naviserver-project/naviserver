@@ -1,3 +1,7 @@
+2005-06-28  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/http_byteranges.test: Test HTTP byte ranges.
+
 2005-06-28  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:
