@@ -708,6 +708,10 @@ ParseRange(Ns_Conn *conn, unsigned long size,
     if ((range = Ns_SetIGet(conn->headers, "Range")) != NULL
         && (range = strstr(range,"bytes=")) != NULL) {
         range += 6;
+        /* Multiple ranges are not supported yet */
+        if (strchr(range,',') != NULL) {
+            return NS_ERROR;
+        }
         if (isdigit(*range)) {
             *offset1 = atol(range);
             while (isdigit(*range)) range++;
@@ -720,9 +724,12 @@ ParseRange(Ns_Conn *conn, unsigned long size,
                     *offset2 = size - 1;
                 } else {
                     *offset2 = atol(range);
-                }
-                if (*offset2 >= size) {
-                    *offset2 = size - 1;
+                    if (*offset1 > *offset2) {
+                        return NS_ERROR;
+                    }
+                    if (*offset2 >= size) {
+                        *offset2 = size - 1;
+                    }
                 }
                 return NS_OK;
             } else {

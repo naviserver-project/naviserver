@@ -1,3 +1,7 @@
+2005-06-29  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/fastpath.c: Made all tests pass successfully
+
 2005-06-29  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/http_byteranges.test: Use the 'knownBug' test contraint to
