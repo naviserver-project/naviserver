@@ -1,3 +1,17 @@
+2005-06-29  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/http_byteranges.test: Use the 'knownBug' test contraint to
+	dissable multiple-range tests so that they are counted in the 'Skipped'
+	column of the test results and are not forgottena about. Added a new,
+	temporary test for multiple ranges to ensure that multiple-range
+	requests are ignored, not half fulfilled.  Re-added test 2.3 which
+	tests multiple, overlapping ranges (non canonical in RFC speak);
+	dissabled as a 'knownBug'.  Reverted tests 3.1 and 3.2 which check
+	syntactically invalid requests are ignored by the server.  An end
+	byte before the start byte is never going to work and so is a
+	syntactic error, not an unsatisfiable request.  Renamed tests
+	byteranges- from http-.
+
 2005-06-29  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/http_byteranges.test: Disabled mutiple ranges
