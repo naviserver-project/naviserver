@@ -1,3 +1,8 @@
+2005-06-29  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tests/http_byteranges.test: Disabled mutiple ranges
+	test. This can be supported in the future.
+
 2005-06-28  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/http_byteranges.test: Updated to reflect

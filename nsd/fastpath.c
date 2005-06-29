@@ -520,7 +520,6 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
     size = stPtr->st_size;
     if (status == 200) {
         range = ParseRange(conn, stPtr->st_size, &offset1, &offset2);
-        Ns_Log(Debug,"bytes %lu-%lu/%lu",offset1,offset2,stPtr->st_size);
     }
     if (range != NS_ERROR) {
         if (offset1 > offset2) {

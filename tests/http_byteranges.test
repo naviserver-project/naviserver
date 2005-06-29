@@ -103,6 +103,7 @@ test http-1.8 {Request more than exists} -constraints serverListen -body {
 } -result {206 10 {bytes 0-9/10} 0123456789}
 
 
+if { "MultipleSupported" == "NotYet" } {
 
 test http-2.1 {Multiple contiguous ranges} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-6} \
@@ -115,12 +116,6 @@ test http-2.2 {Multiple contiguous ranges} -constraints serverListen -body {
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 9 {bytes 0-8/10} 012345678}
-
-test http-2.3 {Multiple non-canonical contiguous ranges} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-6} \
-        -getheaders {Content-length Content-range} \
-        GET /10bytes
-} -result {206 6 {bytes 0-6/10} 012345}
 
 test http-2.4 {Multiple non-contiguous ranges} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
@@ -154,7 +149,7 @@ Content-range: bytes 0-2/10\r
 --[^ ]+--
 }]
 
-
+}
 
 test http-3.1 {invalid offsets} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=3-2} \
