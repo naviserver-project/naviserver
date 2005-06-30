@@ -38,6 +38,8 @@
 
 NS_RCSID("@(#) $Header$");
 
+#define MAX_RANGES      10
+
 /*
  * The following structure defines the contents of a file
  * stored in the file cache.
@@ -60,8 +62,8 @@ static int UrlIs(char *server, char *url, int dir);
 static int FastStat(char *file, struct stat *stPtr);
 static int FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                       char *type, char *file, struct stat *stPtr);
-static int ParseRange(Ns_Conn *conn, unsigned long size,
-                      unsigned long *offset1, unsigned long *offset2);
+static int ParseRange(Ns_Conn *conn, unsigned long size, unsigned long *offsets,
+                      int offsets_size);
 
 /*
  *----------------------------------------------------------------------
@@ -473,8 +475,8 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
            char *type, char *file, struct stat *stPtr)
 {
     int fd, new, nread;
-    unsigned long size, offset1, offset2;
-    int result = NS_ERROR, range = NS_ERROR;
+    unsigned long size, offsets[MAX_RANGES*2];
+    int result = NS_ERROR, ranges = 0;
     char *key;
     Ns_Entry *entPtr;
     File *filePtr;
@@ -519,27 +521,27 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 
     size = stPtr->st_size;
     if (status == 200) {
-        range = ParseRange(conn, stPtr->st_size, &offset1, &offset2);
+        ranges = ParseRange(conn, stPtr->st_size, offsets, MAX_RANGES*2);
     }
-    if (range != NS_ERROR) {
-        if (offset1 > offset2) {
-            /* 416 Requested Range Not Satisfiable */
-            Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%lu",
-                               stPtr->st_size);
-            Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
-            return Ns_ConnFlushHeaders(conn, 416);
-        }
+    if (ranges == -1) {
+        /* 416 Requested Range Not Satisfiable */
+        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%lu",
+                             stPtr->st_size);
+        Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
+        return Ns_ConnFlushHeaders(conn, 416);
+    }
+    if (ranges == 1) {
         /* Continue with returning a portion of the file */
         Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes %lu-%lu/%lu",
-                              offset1, offset2, stPtr->st_size);
-        size = (offset2 - offset1) + 1;
+                             offsets[0], offsets[1], stPtr->st_size);
+        size = (offsets[1] - offsets[0]) + 1;
         /* 206 Partial Content */
         status = 206;
     }
 
     if (servPtr->fastpath.cache == NULL
         || stPtr->st_size > servPtr->fastpath.cachemaxentry
-        || range == NS_OK) {
+        || ranges == 1) {
 
         /*
          * Caching is disabled or the entry is too large for the cache
@@ -551,8 +553,8 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
         if (servPtr->fastpath.mmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
             char *maddr = fmap.addr;
-            if (range == NS_OK) {
-                maddr += offset1;
+            if (ranges > 0) {
+                maddr += offsets[0];
             }
             result = Ns_ConnReturnData(conn,status, maddr, size, type);
             NsMemUmap(&fmap);
@@ -563,8 +565,8 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                        strerror(errno));
                 goto notfound;
             }
-            if (range == NS_OK) {
-                lseek(fd, offset1, SEEK_SET);
+            if (ranges > 0) {
+                lseek(fd, offsets[0], SEEK_SET);
             }
             result = Ns_ConnReturnOpenFd(conn, status, type, fd, size);
             close(fd);
@@ -689,7 +691,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
  *      the requested offsets
  *
  * Results:
- *      NS_OK or NS_ERROR
+ *      -1 on error, number of byte ranges parsed
  *
  * Side effects:
  *      First range specification is honored only
@@ -698,58 +700,81 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
  */
 
 static int
-ParseRange(Ns_Conn *conn, unsigned long size, 
-               unsigned long *offset1, unsigned long *offset2)
+ParseRange(Ns_Conn *conn, unsigned long size, unsigned long *offsets,
+           int offsets_size)
 {
+    int count = 0;
     char *range;
 
-    *offset1 = *offset2 = 0;
+    if ((range = Ns_SetIGet(conn->headers, "Range")) == NULL
+        || (range = strstr(range,"bytes=")) == NULL) {
+        return 0;
+    }
+    range += 6;
+    memset(offsets,0,sizeof(unsigned long)*offsets_size);
 
-    if ((range = Ns_SetIGet(conn->headers, "Range")) != NULL
-        && (range = strstr(range,"bytes=")) != NULL) {
-        range += 6;
-        /* Multiple ranges are not supported yet */
-        if (strchr(range,',') != NULL) {
-            return NS_ERROR;
-        }
+    while(*range && count < offsets_size-1) {
         if (isdigit(*range)) {
-            *offset1 = atol(range);
+            offsets[count] = atol(range);
             while (isdigit(*range)) range++;
             if (*range == '-') {
                 range++;
                 if (!isdigit(*range)) {
-                    if (*range != '\0') {
-                        return NS_ERROR;
-                    }
-                    *offset2 = size - 1;
+                    offsets[count+1] = size - 1;
                 } else {
-                    *offset2 = atol(range);
-                    if (*offset1 > *offset2) {
-                        return NS_ERROR;
+                    offsets[count+1] = atol(range);
+                    if (offsets[count] > offsets[count+1]) {
+                        return 0;
                     }
-                    if (*offset2 >= size) {
-                        *offset2 = size - 1;
+                    if (offsets[count+1] >= size) {
+                        offsets[count+1] = size - 1;
                     }
+                    while (isdigit(*range)) range++;
                 }
-                return NS_OK;
-            } else {
-                return NS_ERROR;
+                switch (*range) {
+                 case ',':
+                     range++;
+                 case '\0':
+                     break;
+                 default:
+                     return 0;
+                }
+                if (offsets[count] > offsets[count+1]) {
+                    return -1;
+                }
+                count += 2;
+                continue;
             }
         } else if (*range == '-') {
             range++;
             if (!isdigit(*range)) {
-                return NS_ERROR;
+                return 0;
             }
-            *offset2 = atol(range);
-            if (*offset2 > size) {
-                *offset2 = size;
+            offsets[count+1] = atol(range);
+            if (offsets[count+1] > size) {
+                offsets[count+1] = size;
             }
             /* Size from the end requested, convert into offset */
-            *offset1 = size - *offset2;
-            *offset2 = *offset1 + *offset2 - 1;
-            return NS_OK;
+            offsets[count] = size - offsets[count+1];
+            offsets[count+1] = offsets[count] + offsets[count+1] - 1;
+            while (isdigit(*range)) range++;
+            switch (*range) {
+             case ',':
+                 range++;
+             case '\0':
+                 break;
+             default:
+                 return 0;
+            }
+            if (offsets[count] > offsets[count+1]) {
+                return -1;
+            }
+            count += 2;
+            continue;
         }
+        /* Invalid syntax */
+        return 0;
     }
-    return NS_ERROR;
+    return count/2;
 }
 

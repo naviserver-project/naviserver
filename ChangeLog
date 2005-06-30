@@ -1,6 +1,9 @@
 2005-06-29  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/fastpath.c: Made all tests pass successfully
+	* nsd/fastpath.c: Made all tests pass successfully. Changed parser
+	to support multiple ranges. ParseRange returns list of all parsed ranges
+	but FastReturn uses only the first one. to return mutiple chunks
+	FastReturn should be changed.
 
 2005-06-29  Stephen Deasey  <sdeasey@users.sf.net>
 
