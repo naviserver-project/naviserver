@@ -334,11 +334,11 @@ NsTclDeleteCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
  *
  * GetConn --
  *
- *      Get the conn and make sure the headers have not already
- *      been sent.
+ *      Return the conn for the given interp, logging an error if
+ *      not available.
  *
  * Results:
- *      Ns_Conn pointer or NULL on error.
+ *      Ns_Conn pointer or NULL.
  *
  * Side effects:
  *      None.
@@ -349,13 +349,11 @@ NsTclDeleteCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 static Ns_Conn *
 GetConn(Tcl_Interp *interp)
 {
-    Ns_Conn *conn = Ns_TclGetConn(interp);
+    Ns_Conn *conn;
 
+    conn = Ns_TclGetConn(interp);
     if (conn == NULL) {
         Tcl_SetResult(interp, "No connection available.", TCL_STATIC);
-    } else if (conn->flags & NS_CONN_SENTHDRS) {
-        Tcl_SetResult(interp, "Cannot set cookie, "
-                      "reponse headers already sent to user-agent.", TCL_STATIC);
     }
 
     return conn;
