@@ -1,3 +1,8 @@
+2005-06-30  Zoran Vasiljevic  <vasiljevic@users.sf.net>
+
+	* nsd/conn.c: fixed Bug #1230179 which caused the server crash
+	when calling ns_startcontent outside of the connection scope.
+
 2005-06-29  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/fastpath.c: Made all tests pass successfully. Changed parser

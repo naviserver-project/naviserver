@@ -1378,6 +1378,11 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     char *opt;
     int i, status = TCL_OK;
 
+    if (itPtr->conn == NULL) {
+        Tcl_SetResult(interp, "no current connection", TCL_STATIC);
+        return TCL_ERROR;
+    }
+
     for (i = 1; i < objc && status == TCL_OK; i++) {
         opt = Tcl_GetString(objv[i]);
         if (STREQ(opt, "-charset")) {
@@ -1423,7 +1428,7 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
     
     if (status == TCL_OK) {    
-        Ns_ConnSetWriteEncodedFlag( itPtr->conn, NS_TRUE);
+        Ns_ConnSetWriteEncodedFlag(itPtr->conn, NS_TRUE);
         Ns_ConnSetEncoding(itPtr->conn, encoding);
     }
 
