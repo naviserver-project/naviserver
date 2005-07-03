@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rdf:RDF xmlns:doap="http://usefulinc.com/ns/doap#"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+<!-- DOAP is a project to create an XML/RDF vocabulary to describe open source projects. -->
+<!-- $Id$ -->
+<Project>	
+
+        <name>NaviServer</name>
+	<shortname>ns</shortname>
+	<homepage rdf:resource="http://sourceforge.net/projects/naviserver/" />
+	<wiki rdf:resource="http://naviserver.sourceforge.net" />
+	<created>2005-02-05</created>
+
+	<shortdesc xml:lang="en">
+	    NaviServer is a high performance web server written in C and Tcl.
+	</shortdesc>
+	<shortdesc xml:lang="de">
+	    NaviServer ist ein in C und TCL entwickelter hoch performanter Webserver.
+	</shortdesc>
+
+	<description xml:lang="en">Project description: NaviServer is a high
+	performance web server written in C and Tcl.  
+	It can be easily extended in either language to create interesting 
+	web sites and services.</description>
+	<description xml:lang="de">Projektbeschreibung: NaviServer ist ein
+	in C und TCL entwickelter hoch performanter Webserver.
+	Er kann mit jeder der beiden Sprachen leicht erweitert werden
+	um interessante Websites und -services zu entwickeln.</description>
+
+	<download-page rdf:resource="http://sourceforge.net/project/showfiles.php?group_id=130646" />
+	<mailing-list rdf:resource="http://sourceforge.net/mail/?group_id=130646" />
+	<bug-database rdf:resource="http://sourceforge.net/tracker/?group_id=130646&amp;atid=719006" />
+
+	<version>
+	    <branch>development</branch>
+	    <revision>4.99.0</revision>
+	    <created>2005-07-02</created>
+	</version>
+
+	<Repository>
+		<CVSRepository>
+			<browse rdf:resource="http://cvs.sourceforge.net/viewcvs.py/naviserver" />
+			<anon-root rdf:resource="cvs.sourceforge.net:/cvsroot/naviserver" />
+		</CVSRepository>
+	</Repository>
+
+</Project>
+</rdf:RDF>
