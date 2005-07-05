@@ -36,6 +36,7 @@ Bug Fixes:
 
 Code Changes:
 
+    * New function Ns_ConnPrintfHeaders()
     * Use GCC compiler code checks #1215725
     * Remove GNU implementations of getopt and poll
     * Cleanup up autoconf and use autoheader
