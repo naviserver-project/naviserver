@@ -1,3 +1,8 @@
+2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* naviserver.rdf: Add license and category information to DOAP
+	file and fix default namespace so it validates.
+
 2005-06-30  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/cookies.c (GetConn): No longer check whether the response
