@@ -1,5 +1,8 @@
 2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* Makefile: Add DOAP file to list of files to be included in
+	release tarball.
+
 	* nsd/fastpath.c:
 	* tests/http_byteranges.test: Temporarily remove in-progress
 	support for HTTP Range requests.
