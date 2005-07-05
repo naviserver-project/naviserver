@@ -55,11 +55,11 @@
 
 
 #if __GNUC_PREREQ(3,3)
-# define NS_GNUC_NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
+# define NS_GNUC_NONNULL(ARGS) __attribute__((__nonnull__(ARGS)))
 # define NS_GNUC_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
 # define NS_GNUC_MAYALIAS __attribute__((__may_alias__))
 #else
-# define NS_GNUC_NONNULL(...)
+# define NS_GNUC_NONNULL(ARGS)
 # define NS_GNUC_WARN_UNUSED_RESULT
 # define NS_GNUC_MAYALIAS
 #endif

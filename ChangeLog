@@ -1,5 +1,8 @@
 2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/nscheck.h: Microsoft's feeble compiler can't handle
+	macro varargs.  New usage is: NS_GNUC_NONNULL((x, y, z)).
+
 	* naviserver.rdf: Add license and category information to DOAP
 	file and fix default namespace so it validates.
 
