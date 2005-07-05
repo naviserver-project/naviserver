@@ -1,6 +1,6 @@
-=================
-NaviServer 4.99.0
-=================
+======================================
+NaviServer 4.99.0, released 2005-07-05
+======================================
 
 New Features:
 
@@ -20,7 +20,6 @@ New Features:
     * Add new command ns_atstartup
     * New routines for listening on UDP and UNIX domain sockets
     * Add -localhost -localport options to ns_sockopen
-    * Add support for Range: header to return partial content
 
 Bug Fixes:
 
@@ -37,14 +36,14 @@ Bug Fixes:
 
 Code Changes:
 
-     * Use GCC compiler code checks #1215725
-     * Remove GNU implementations of getopt and poll
-     * Cleanup up autoconf and use autoheader
-     * Clean up test harness and add lots of tests
-     * New Tcl callback infrastructure #1162223
-     * New convenience functions for handling Tcl object types
-     * New function Ns_TclPrintfResult() for formatting Tcl results
-     * No more support for defunct AOLpress
-     * Remove support for old connid argument in much code #1156107
-     * Modules nspd and nsext moved from core to external modules
-     * Objectified TclX keyed lists
+    * Use GCC compiler code checks #1215725
+    * Remove GNU implementations of getopt and poll
+    * Cleanup up autoconf and use autoheader
+    * Clean up test harness and add lots of tests
+    * New Tcl callback infrastructure #1162223
+    * New convenience functions for handling Tcl object types
+    * New function Ns_TclPrintfResult() for formatting Tcl results
+    * No more support for defunct AOLpress
+    * Remove support for old connid argument in much code #1156107
+    * Modules nspd and nsext moved from core to external modules
+    * Objectified TclX keyed lists

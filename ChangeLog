@@ -1,5 +1,7 @@
 2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* NEWS: Add release date and remove reference to byte ranges.
+
 	* include/nscheck.h: Microsoft's feeble compiler can't handle
 	macro varargs.  New usage is: NS_GNUC_NONNULL((x, y, z)).
 
