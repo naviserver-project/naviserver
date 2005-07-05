@@ -1,5 +1,9 @@
 2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/fastpath.c:
+	* tests/http_byteranges.test: Temporarily remove in-progress
+	support for HTTP Range requests.
+
 	* NEWS: Add release date and remove reference to byte ranges.
 	Mention new Ns_ConnPrintfHeaders() function.
 

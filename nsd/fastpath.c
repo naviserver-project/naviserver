@@ -38,8 +38,6 @@
 
 NS_RCSID("@(#) $Header$");
 
-#define MAX_RANGES      10
-
 /*
  * The following structure defines the contents of a file
  * stored in the file cache.
@@ -62,8 +60,7 @@ static int UrlIs(char *server, char *url, int dir);
 static int FastStat(char *file, struct stat *stPtr);
 static int FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                       char *type, char *file, struct stat *stPtr);
-static int ParseRange(Ns_Conn *conn, unsigned long size, unsigned long *offsets,
-                      int offsets_size);
+
 
 /*
  *----------------------------------------------------------------------
@@ -474,12 +471,10 @@ static int
 FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
            char *type, char *file, struct stat *stPtr)
 {
-    int fd, new, nread;
-    unsigned long size, offsets[MAX_RANGES*2];
-    int result = NS_ERROR, ranges = 0;
+    int result = NS_ERROR, fd, new, nread;
+    File *filePtr;
     char *key;
     Ns_Entry *entPtr;
-    File *filePtr;
     FileMap fmap;
 
 #ifndef _WIN32
@@ -514,34 +509,8 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
         return Ns_ConnFlushHeaders(conn, status);
     }
 
-    /*
-     * Check if this is a Range: request, if so return requested
-     * portion of the file. Range requests are not cached.
-     */
-
-    size = stPtr->st_size;
-    if (status == 200) {
-        ranges = ParseRange(conn, stPtr->st_size, offsets, MAX_RANGES*2);
-    }
-    if (ranges == -1) {
-        /* 416 Requested Range Not Satisfiable */
-        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%lu",
-                             stPtr->st_size);
-        Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
-        return Ns_ConnFlushHeaders(conn, 416);
-    }
-    if (ranges == 1) {
-        /* Continue with returning a portion of the file */
-        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes %lu-%lu/%lu",
-                             offsets[0], offsets[1], stPtr->st_size);
-        size = (offsets[1] - offsets[0]) + 1;
-        /* 206 Partial Content */
-        status = 206;
-    }
-
     if (servPtr->fastpath.cache == NULL
-        || stPtr->st_size > servPtr->fastpath.cachemaxentry
-        || ranges == 1) {
+        || stPtr->st_size > servPtr->fastpath.cachemaxentry) {
 
         /*
          * Caching is disabled or the entry is too large for the cache
@@ -552,11 +521,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 
         if (servPtr->fastpath.mmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            char *maddr = fmap.addr;
-            if (ranges > 0) {
-                maddr += offsets[0];
-            }
-            result = Ns_ConnReturnData(conn,status, maddr, size, type);
+            result = Ns_ConnReturnData(conn,status, fmap.addr,fmap.size, type);
             NsMemUmap(&fmap);
         } else {
             fd = open(file, O_RDONLY | O_BINARY);
@@ -565,10 +530,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                        strerror(errno));
                 goto notfound;
             }
-            if (ranges > 0) {
-                lseek(fd, offsets[0], SEEK_SET);
-            }
-            result = Ns_ConnReturnOpenFd(conn, status, type, fd, size);
+            result = Ns_ConnReturnOpenFd(conn, status,type, fd,stPtr->st_size);
             close(fd);
         }
         
@@ -680,101 +642,3 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
 
     return status;
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ParseRange --
- *
- *      Checks for presence of Range: header, parses it and returns 
- *      the requested offsets
- *
- * Results:
- *      -1 on error, number of byte ranges parsed
- *
- * Side effects:
- *      First range specification is honored only
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ParseRange(Ns_Conn *conn, unsigned long size, unsigned long *offsets,
-           int offsets_size)
-{
-    int count = 0;
-    char *range;
-
-    if ((range = Ns_SetIGet(conn->headers, "Range")) == NULL
-        || (range = strstr(range,"bytes=")) == NULL) {
-        return 0;
-    }
-    range += 6;
-    memset(offsets,0,sizeof(unsigned long)*offsets_size);
-
-    while(*range && count < offsets_size-1) {
-        if (isdigit(*range)) {
-            offsets[count] = atol(range);
-            while (isdigit(*range)) range++;
-            if (*range == '-') {
-                range++;
-                if (!isdigit(*range)) {
-                    offsets[count+1] = size - 1;
-                } else {
-                    offsets[count+1] = atol(range);
-                    if (offsets[count] > offsets[count+1]) {
-                        return 0;
-                    }
-                    if (offsets[count+1] >= size) {
-                        offsets[count+1] = size - 1;
-                    }
-                    while (isdigit(*range)) range++;
-                }
-                switch (*range) {
-                 case ',':
-                     range++;
-                 case '\0':
-                     break;
-                 default:
-                     return 0;
-                }
-                if (offsets[count] > offsets[count+1]) {
-                    return -1;
-                }
-                count += 2;
-                continue;
-            }
-        } else if (*range == '-') {
-            range++;
-            if (!isdigit(*range)) {
-                return 0;
-            }
-            offsets[count+1] = atol(range);
-            if (offsets[count+1] > size) {
-                offsets[count+1] = size;
-            }
-            /* Size from the end requested, convert into offset */
-            offsets[count] = size - offsets[count+1];
-            offsets[count+1] = offsets[count] + offsets[count+1] - 1;
-            while (isdigit(*range)) range++;
-            switch (*range) {
-             case ',':
-                 range++;
-             case '\0':
-                 break;
-             default:
-                 return 0;
-            }
-            if (offsets[count] > offsets[count+1]) {
-                return -1;
-            }
-            count += 2;
-            continue;
-        }
-        /* Invalid syntax */
-        return 0;
-    }
-    return count/2;
-}
-
