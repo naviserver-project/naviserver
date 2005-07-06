@@ -202,36 +202,31 @@ IsSetupForChunkedEncoding(Ns_Conn *conn)
 void
 Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 {
+    Conn *connPtr = (Conn *) conn;
+    Driver *drvPtr  = (Driver *) connPtr->drvPtr;
     int   i, length;
     char *reason;
-    char  buf[100];
     char *value, *keep;
     char *key, *lengthHdr;
-    Conn *connPtr;
-    Driver *drvPtr;
     int  doChunkEncoding = 0;
 
     /*
      * Construct the HTTP response status line.
      */
 
-    connPtr = (Conn *) conn;
-    drvPtr = connPtr->drvPtr;
-    sprintf(buf, "%d", connPtr->responseStatus);
     reason = "Unknown Reason";
     for (i = 0; i < nreasons; i++) {
-	if (reasons[i].status == connPtr->responseStatus) {
-	    reason = reasons[i].reason;
-	    break;
-	}
+        if (reasons[i].status == connPtr->responseStatus) {
+            reason = reasons[i].reason;
+            break;
+        }
     }
-
     doChunkEncoding = IsSetupForChunkedEncoding(conn);
 
-    if (!doChunkEncoding)
-        Ns_DStringVarAppend(dsPtr, "HTTP/1.0 ", buf, " ", reason, "\r\n", NULL);
-    else
-        Ns_DStringVarAppend(dsPtr, "HTTP/1.1 ", buf, " ", reason, "\r\n", NULL);
+    Ns_DStringPrintf(dsPtr, "HTTP/%s %d %s\r\n",
+                     doChunkEncoding ? "1.1" : "1.0",
+                     connPtr->responseStatus,
+                     reason);
 
     /*
      * Output any headers.
@@ -542,13 +537,10 @@ Ns_ConnSetTypeHeader(Ns_Conn *conn, char *type)
 void
 Ns_ConnSetLengthHeader(Ns_Conn *conn, int length)
 {
-    char  buf[100];
-    Conn *connPtr;
+    Conn *connPtr = (Conn *) conn;
 
-    connPtr = (Conn *) conn;
     connPtr->responseLength = length;
-    sprintf(buf, "%d", length);
-    Ns_ConnSetHeaders(conn, "Content-Length", buf);
+    Ns_ConnPrintfHeaders(conn, "Content-Length", "%d", length);
 }
 
 

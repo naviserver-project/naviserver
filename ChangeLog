@@ -1,5 +1,7 @@
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/return.c: Clean up some string buffer usage.
+
 	* include/ns.h:
 	* nsd/driver.c:
 	* nsd/binder.c: Add backlog arg to Ns_SockListenUnix().
