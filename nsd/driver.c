@@ -448,7 +448,7 @@ NsStartDrivers(void)
         if (drvPtr->opts & NS_DRIVER_UDP) {
             drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr, drvPtr->port);
         } else if (drvPtr->opts & NS_DRIVER_UNIX) {
-            drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr);
+            drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr, drvPtr->backlog);
         } else {
             drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port,
                                            drvPtr->backlog);

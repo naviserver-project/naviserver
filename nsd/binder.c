@@ -210,7 +210,7 @@ Ns_SockListenRaw(int proto)
  */
 
 SOCKET
-Ns_SockListenUnix(char *path)
+Ns_SockListenUnix(char *path, int backlog)
 {
     int sock = -1;
     Tcl_HashEntry *hPtr;
@@ -232,7 +232,7 @@ Ns_SockListenUnix(char *path)
         /* Not prebound, bind now */
         sock = Ns_SockBindUnix(path);
     }
-    if (sock >= 0 && listen(sock, nsconf.backlog) == -1) {
+    if (sock >= 0 && listen(sock, backlog) == -1) {
         /* Can't listen; close the opened socket */
         int err = errno;
         close(sock);

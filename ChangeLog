@@ -1,5 +1,9 @@
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/driver.c:
+	* nsd/binder.c: Add backlog arg to Ns_SockListenUnix().
+
 	* nsd/binder.c:
 	* nsd/driver.c: Localize Windows ifdefs as much as possible.
 
