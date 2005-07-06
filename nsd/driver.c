@@ -155,7 +155,7 @@ int
 Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 {
     char           *path,*address, *host, *bindaddr, *defproto, *defserver;
-    int             i, n, sockwait, defport, controlFlag;
+    int             i, n, defport, controlFlag;
     ServerMap      *mapPtr;
     Tcl_HashEntry  *hPtr;
     Ns_DString      ds;
@@ -270,49 +270,49 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 #define _MAX(x,y)       ((x) > (y) ? (x) : (y))
 #define _MIN(x,y)       ((x) > (y) ? (y) : (x))
     if (!Ns_ConfigGetInt(path, "bufsize", &n) || n < 1) { 
-        n = 16000;  /* ~16k */
+        n = DRV_BUFSIZE_INT;
     }
     drvPtr->bufsize = n;
     if (!Ns_ConfigGetInt(path, "rcvbuf", &n)) {
-        n = 0;      /* Use OS default. */
+        n = DRV_RCVBUF_INT;
     }
     drvPtr->rcvbuf = n;
     if (!Ns_ConfigGetInt(path, "sndbuf", &n)) {
-        n = 0;      /* Use OS default. */
+        n = DRV_SNDBUF_INT;
     }
     drvPtr->sndbuf = n;
-    if (!Ns_ConfigGetInt(path, "socktimeout", &n) || n < 1) {
-        n = 30;     /* 30 seconds. */
-    }
-    sockwait = n;
     if (!Ns_ConfigGetInt(path, "sendwait", &n) || n < 1) {
-        n = sockwait; /* Use previous socktimeout option. */
+        n = DRV_SNDWAIT_INT;
     }
     drvPtr->sendwait = n;
     if (!Ns_ConfigGetInt(path, "recvwait", &n) || n < 1) {
-        n = sockwait; /* Use previous socktimeout option. */
+        n = DRV_RCVWAIT_INT;
     }
     drvPtr->recvwait = n;
     if (!Ns_ConfigGetInt(path, "closewait", &n) || n < 0) {
-        n = 2;      /* 2 seconds */
+        n = DRV_CLOSEWAIT_INT;
     }
     drvPtr->closewait = n;
     if (!Ns_ConfigGetInt(path, "keepwait", &n) || n < 0) {
-        n = 30;     /* 30 seconds */
+        n = DRV_KEEPWAIT_INT;
     }
     drvPtr->keepwait = n;
+    if (!Ns_ConfigGetBool(path, "keepallmethods", &n)) {
+        n = DRV_KEEPALLMETHODS_BOOL;
+    }
+    drvPtr->keepallmethods = n;
     if (!Ns_ConfigGetInt(path, "backlog", &n) || n < 1) {
-        n = 5;      /* 5 pending connections. */
+        n = nsconf.backlog;
     }
     drvPtr->backlog = n;
     if (!Ns_ConfigGetInt(path, "maxinput", &n) || n < 1) {
-        n = 1000 * 1024;        /* 1m. */
+        n = DRV_MAXINPUT_INT;
     }
-    drvPtr->maxinput = _MAX(n, 1024);
+    drvPtr->maxinput = _MAX(n, DRV_MININPUT_INT);
     if (!Ns_ConfigGetInt(path, "maxline", &n) || n < 1) {
-        n = 4 * 1024;        /* 4k. */
+        n = DRV_MAXLINE_INT;
     }
-    drvPtr->maxline = _MAX(n, 256);
+    drvPtr->maxline = _MAX(n, DRV_MINLINE_INT);
 
     /*
      * Allow specification of logging or not of various deep

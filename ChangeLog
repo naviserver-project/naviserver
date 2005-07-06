@@ -1,3 +1,16 @@
+2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/connio.c:
+	* nsd/queue.c:
+	* nsd/return.c:
+	* nsd/driver.c:
+	* nsd/server.c:
+	* nsd/nsd.h:
+	* nsd/nsconf.c:
+	* nsd/nsconf.h: Cleanup default configuration by removing unneeded
+	values and actually using the defaults throughout the code where
+	appropriate.  Some per-server limits have been made per-driver.
+
 2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/fastpath.c:

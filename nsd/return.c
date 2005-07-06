@@ -208,6 +208,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
     char *value, *keep;
     char *key, *lengthHdr;
     Conn *connPtr;
+    Driver *drvPtr;
     int  doChunkEncoding = 0;
 
     /*
@@ -215,6 +216,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     connPtr = (Conn *) conn;
+    drvPtr = connPtr->drvPtr;
     sprintf(buf, "%d", connPtr->responseStatus);
     reason = "Unknown Reason";
     for (i = 0; i < nreasons; i++) {
@@ -254,14 +256,14 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	 * a valid and correctly set content-length header.
 	 */
 
-	if (nsconf.keepalive.enabled &&
+	if (drvPtr->keepwait > 0 &&
 	    connPtr->headers != NULL &&
 	    connPtr->request != NULL &&
 	    (( (connPtr->responseStatus >= 200 && connPtr->responseStatus < 300) &&
 	    ((lengthHdr != NULL &&
 	     connPtr->responseLength == length) || doChunkEncoding)) ||
 	    (connPtr->responseStatus == 304 || connPtr->responseStatus == 201 || connPtr->responseStatus == 207) ) &&
-	    (nsconf.keepalive.allmethods == NS_TRUE ||
+	    (drvPtr->keepallmethods == NS_TRUE ||
 	    STREQ(connPtr->request->method, "GET")) &&
 	    (key = Ns_SetIGet(conn->headers, "connection")) != NULL &&
 	    STRIEQ(key, "keep-alive")) {
@@ -702,7 +704,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
      * NB: Because we pad inside the body we may pad more than needed.
      */
     if (status >= 400) {
-	while (ds.length < servPtr->limits.errorminsize) {
+	while (ds.length < servPtr->opts.errorminsize) {
 	    Ns_DStringAppend(&ds, "                    ");
 	}
     }

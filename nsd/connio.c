@@ -559,13 +559,13 @@ Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, int *nreadPtr)
 {
     Conn	   *connPtr = (Conn *) conn;
     Request	   *reqPtr = connPtr->reqPtr;
-    NsServer	   *servPtr = connPtr->servPtr;
+    Driver     *drvPtr = connPtr->drvPtr;
     char           *eol;
     int             nread, ncopy;
 
     if (connPtr->sockPtr == NULL
 	|| (eol = strchr(reqPtr->next, '\n')) == NULL
-	|| (nread = (eol - reqPtr->next)) > servPtr->limits.maxline) {
+	|| (nread = (eol - reqPtr->next)) > drvPtr->maxline) {
 	return NS_ERROR;
     }
     ncopy = nread;
@@ -609,7 +609,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, int *nreadPtr)
 
     Ns_DStringInit(&ds);
     nread = 0;
-    maxhdr = servPtr->limits.maxheaders;
+    maxhdr = connPtr->drvPtr->maxheaders;
     status = NS_OK;
     while (nread < maxhdr && status == NS_OK) {
         Ns_DStringTrunc(&ds, 0);

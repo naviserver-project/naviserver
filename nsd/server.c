@@ -229,15 +229,19 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     }
     if (!Ns_ConfigGetBool(path, "checkmodifiedsince", 
                           &servPtr->opts.modsince)) {
-        servPtr->opts.modsince = 1;
+        servPtr->opts.modsince = SERV_MODSINCE_BOOL;
     }
     if (!Ns_ConfigGetBool(path, "flushcontent", 
                           &servPtr->opts.flushcontent)) {
-        servPtr->opts.flushcontent = 0;
+        servPtr->opts.flushcontent = SERV_FLUSHCONTENT_BOOL;
     }
     if (!Ns_ConfigGetBool(path, "noticedetail", 
                           &servPtr->opts.noticedetail)) {
-        servPtr->opts.noticedetail = 1;
+        servPtr->opts.noticedetail = SERV_NOTICEDETAIL_BOOL;
+    }
+    if (!Ns_ConfigGetInt(path, "errorminsize", 
+                         &servPtr->opts.errorminsize)) {
+        servPtr->opts.errorminsize = SERV_ERRORMINSIZE_INT;
     }
     p = Ns_ConfigGetValue(path, "headercase");
     if (p != NULL && STRIEQ(p, "tolower")) {
@@ -285,27 +289,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * Set some server limits.
-     */
-     
-    if (!Ns_ConfigGetInt(path, "sendfdthreshold", 
-                         &servPtr->limits.sendfdmin)) {
-        servPtr->limits.sendfdmin = 2048;
-    }
-    if (!Ns_ConfigGetInt(path, "errorminsize", 
-                         &servPtr->limits.errorminsize)) {
-        servPtr->limits.errorminsize = 514;
-    }
-    if (!Ns_ConfigGetInt(path, "maxline", 
-                         &servPtr->limits.maxline)) {
-        servPtr->limits.maxline = 16 * 1024;    /* 16k */
-    }
-    if (!Ns_ConfigGetInt(path, "maxheaders", 
-                         &servPtr->limits.maxheaders)) {
-        servPtr->limits.maxheaders = 64 * 1024; /* 64k */
-    }
-    
-    /*
      * Initialize Tcl.
      */
      
@@ -324,7 +307,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Tcl_IncrRefCount(servPtr->tcl.modules);
     Ns_RWLockInit(&servPtr->tcl.lock);
     if (!Ns_ConfigGetInt(path, "nsvbuckets", &n) || n < 1) {
-        n = 8;
+        n = TCL_NSVBUCKETS_INT;
     }
     servPtr->nsv.nbuckets = n;
     servPtr->nsv.buckets = NsTclCreateBuckets(server, n);
@@ -349,16 +332,16 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
     if (!Ns_ConfigGetBool(path, "cache", &i) || i) {
         if (!Ns_ConfigGetInt(path, "cachemaxsize", &n)) {
-            n = 5 * 1024 * 1000;
+            n = FASTPATH_CACHESIZE_INT;
         }
         if (!Ns_ConfigGetInt(path, "cachemaxentry", &i) || i < 0) {
-            i = n / 10;
+            i = FASTPATH_CACHEMAXENTRY_INT;
         }
         servPtr->fastpath.cachemaxentry = i;
         servPtr->fastpath.cache =  NsFastpathCache(server, n);
     }
     if (!Ns_ConfigGetBool(path, "mmap", &servPtr->fastpath.mmap)) {
-        servPtr->fastpath.mmap = 0;
+        servPtr->fastpath.mmap = FASTPATH_MMAP_BOOL;
     }
     dirf = Ns_ConfigGetValue(path, "directoryfile");
     if (dirf == NULL) {
@@ -417,7 +400,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      */
 
     path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
-    Ns_ConfigGetBool(path, "enabled", &servPtr->vhost.enabled);
+    if (!Ns_ConfigGetBool(path, "enabled", &servPtr->vhost.enabled)) {
+        servPtr->vhost.enabled = VHOST_ENABLED_BOOL;
+    }
     if (servPtr->vhost.enabled
         && Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
         Ns_Log(Error, "virtual hosting disabled, pagedir not relative: %s",
@@ -482,22 +467,22 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->adp.startpage = Ns_ConfigGetValue(path, "startpage");
     if (!Ns_ConfigGetBool(path, "enableexpire", 
                           &servPtr->adp.enableexpire)) {
-        servPtr->adp.enableexpire = 0;
+        servPtr->adp.enableexpire = ADP_ENABLEEXPIRE_BOOL;
     }
     if (!Ns_ConfigGetBool(path, "enabledebug", 
                           &servPtr->adp.enabledebug)) {
-        servPtr->adp.enabledebug = 0;
+        servPtr->adp.enabledebug = ADP_ENABLEDEBUG_BOOL;
     }
     servPtr->adp.debuginit = Ns_ConfigGetValue(path, "debuginit");
     if (servPtr->adp.debuginit == NULL) {
-        servPtr->adp.debuginit = "ns_adp_debuginit";
+        servPtr->adp.debuginit = ADP_DEBUGINIT_STRING;
     }
     servPtr->adp.defaultparser = Ns_ConfigGetValue(path, "defaultparser");
     if (servPtr->adp.defaultparser == NULL) {
-        servPtr->adp.defaultparser = "adp";
+        servPtr->adp.defaultparser = ADP_DEFPARSER_STRING;
     }
     if (!Ns_ConfigGetInt(path, "cachesize", &n)) {
-        n = 5 * 1024 * 1000;
+        n = ADP_CACHESIZE_INT;
     }
     servPtr->adp.cachesize = n;
     
@@ -507,10 +492,10 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     
     path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
     if (!Ns_ConfigGetBool(path, "enable", &servPtr->adp.compress.enable)) {
-        servPtr->adp.compress.enable = 0;
+        servPtr->adp.compress.enable = ADP_ENABLECOMPRESS_BOOL;
     }
     if (!Ns_ConfigGetInt(path, "level", &n) || n < 1 || n > 9) {
-        n = 4;
+        n = ADP_COMPRESSLEVEL_INT;
     }
     servPtr->adp.compress.level = n;
     if (!Ns_ConfigGetInt(path, "minsize", &n) || n < 0) {
@@ -630,7 +615,7 @@ CreatePool(NsServer *servPtr, char *pool)
      */
     
     if (!Ns_ConfigGetInt(path, "maxconnections", &maxconns)) {
-        maxconns = 100;
+        maxconns = SERV_MAXCONNS_INT;
     }
     connBufPtr = ns_calloc((size_t) maxconns, sizeof(Conn));
     for (n = 0; n < maxconns - 1; ++n) {
@@ -642,48 +627,15 @@ CreatePool(NsServer *servPtr, char *pool)
     
     if (!Ns_ConfigGetInt(path, "minthreads", 
                          &poolPtr->threads.min)) {
-        poolPtr->threads.min = 0;
+        poolPtr->threads.min = SERV_MINTHREADS_INT;
     }
     if (!Ns_ConfigGetInt(path, "maxthreads", 
                          &poolPtr->threads.max)) {
-        poolPtr->threads.max = 10;
+        poolPtr->threads.max = SERV_MAXTHREADS_INT;
     }
     if (!Ns_ConfigGetInt(path, "threadtimeout", 
                          &poolPtr->threads.timeout)) {
-        poolPtr->threads.timeout = 120;
-    }
-    
-    /*
-     * Determine the minimum and maximum number of threads, adjusting the
-     * values as needed.  The threadtimeout value is the maximum number of
-     * seconds a thread will wait for a connection before exiting if the
-     * current number of threads is above the minimum.
-     */
-    
-    if (poolPtr->threads.max > maxconns) {
-        Ns_Log(Warning, "serv: cannot have more maxthreads than maxconns: "
-               "%d max threads adjusted down to %d max connections",
-               poolPtr->threads.max, maxconns);
-        poolPtr->threads.max = maxconns;
-    }
-    if (poolPtr->threads.min > poolPtr->threads.max) {
-        Ns_Log(Warning, "serv: cannot have more minthreads than maxthreads: "
-               "%d min threads adjusted down to %d max threads",
-               poolPtr->threads.min, poolPtr->threads.max);
-        poolPtr->threads.min = poolPtr->threads.max;
-    }
-    
-    if (!Ns_ConfigGetInt(path, "minthreads", 
-                         &poolPtr->threads.min)) {
-        poolPtr->threads.min = 0;
-    }
-    if (!Ns_ConfigGetInt(path, "maxthreads", 
-                         &poolPtr->threads.max)) {
-        poolPtr->threads.max = 10;
-    }
-    if (!Ns_ConfigGetInt(path, "threadtimeout", 
-                         &poolPtr->threads.timeout)) {
-        poolPtr->threads.timeout = 120;
+        poolPtr->threads.timeout = SERV_THREADTIMEOUT_INT;
     }
     
     /*

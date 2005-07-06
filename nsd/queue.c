@@ -330,7 +330,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	break;
 
     case SKeepaliveIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(nsconf.keepalive.npending));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 	break;
 
     case SConnectionsIdx:
@@ -553,7 +553,7 @@ NsConnThread(void *arg)
 
     path = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
     if (!Ns_ConfigGetInt(path, "connsperthread", &cpt)) {
-        cpt = 0; /* == unlimited # of connections */
+        cpt = SERV_MAXCONNSPERTHREAD_INT;
     }
 
     ncons = cpt;

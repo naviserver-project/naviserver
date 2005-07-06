@@ -35,6 +35,7 @@
 #endif
 
 #include "ns.h"
+#include "nsconf.h"
 #include <assert.h>
 #include <sys/stat.h>
 
@@ -207,14 +208,6 @@ struct _nsconf {
 #endif
 
     struct {
-        bool enabled;
-        int timeout;
-        int maxkeep;
-        int npending;
-        int allmethods;
-    } keepalive;
-
-    struct {
         char *sharedlibrary;
         char *version;
         bool lockoninit;
@@ -373,6 +366,7 @@ typedef struct Driver {
     int opts;                   /* Driver options. */
     int closewait;              /* Graceful close timeout. */
     int keepwait;               /* Keepalive timeout. */
+    int keepallmethods;         /* Keepalive all methods or just GET? */
     SOCKET sock;                /* Listening socket. */
     int pidx;                   /* poll() index. */
     char *bindaddr;             /* Numerical listen address. */
@@ -380,6 +374,7 @@ typedef struct Driver {
     int backlog;                /* listen() backlog. */
     int maxinput;               /* Maximum request bytes to read. */
     int maxline;                /* Maximum request line size. */
+    int maxheaders;             /* Maximum number of request headers. */
     unsigned int loggingFlags;  /* Logging control flags */
 
 } Driver;
@@ -571,6 +566,7 @@ typedef struct NsServer {
         bool flushcontent;
         bool modsince;
         bool noticedetail;
+        int  errorminsize;
         char *realm;
         Ns_HeaderCaseDisposition hdrcase;
     } opts;
@@ -586,18 +582,7 @@ typedef struct NsServer {
         char *urlCharset;
         Tcl_Encoding urlEncoding;
     } encoding;
-    
-    /* 
-     * The following struct maintains conn-related limits.
-     */
 
-    struct {
-        int maxheaders;
-        int maxline;
-        int sendfdmin;
-        int errorminsize;
-    } limits;
-    
     struct {
         char *serverdir;        /* Virtual server files path */
         char *pagedir;          /* Path to public pages */

@@ -34,7 +34,6 @@
  */
 
 #include "nsd.h"
-#include "nsconf.h"
 
 NS_RCSID("@(#) $Header$");
 
@@ -207,7 +206,7 @@ NsConfUpdate(void)
      * nsmain.c
      */
          
-    nsconf.shutdowntimeout = GetInt("shutdowntimeout", SHUTDOWNTIMEOUT);
+    nsconf.shutdowntimeout = GetInt("shutdowntimeout", SHUTDOWNTIMEOUT_INT);
 
     /*
      * sched.c
@@ -219,7 +218,7 @@ NsConfUpdate(void)
      * binder.c, win32.c
      */
 
-    nsconf.backlog = GetInt("listenbacklog", BACKLOG);
+    nsconf.backlog = GetInt("listenbacklog", SOCKLISTENBACKLOG_INT);
     
     /*
      * dns.c
@@ -233,17 +232,6 @@ NsConfUpdate(void)
 	    NsEnableDNSCache(i, max);
 	}
     }
-
-    /*
-     * keepalive.c
-     */
-     
-    nsconf.keepalive.timeout = GetInt("keepalivetimeout", KEEPALIVE_TIMEOUT_INT);
-    if (nsconf.keepalive.timeout > 0) {
-	nsconf.keepalive.enabled = 1;
-    }
-    nsconf.keepalive.maxkeep = GetInt("maxkeepalive", KEEPALIVE_MAXKEEP_INT);
-    nsconf.keepalive.allmethods = GetBool("keepaliveallmethods", NS_FALSE);
 
     /*
      * tclinit.c
