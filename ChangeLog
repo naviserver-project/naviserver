@@ -1,5 +1,7 @@
 2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* TAG naviserver-4.99.0-release.
+
 	* Makefile: Add DOAP file to list of files to be included in
 	release tarball.
 
