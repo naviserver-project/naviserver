@@ -52,7 +52,10 @@ static Tcl_HashTable preboundRaw;
 static Tcl_HashTable preboundUnix;
 static Ns_Mutex lock;
 
-#ifndef _WIN32
+/*
+ * Local functions defined in this file
+ */
+
 static void PreBind(char *line);
 
 
@@ -104,7 +107,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
 
     return (SOCKET)sock;
 }
-#endif /* _WIN32 */
+
 
 /*
  *----------------------------------------------------------------------
@@ -190,7 +193,6 @@ Ns_SockListenRaw(int proto)
 }
 
 
-#ifndef _WIN32
 /*
  *----------------------------------------------------------------------
  *
@@ -214,6 +216,7 @@ Ns_SockListenUnix(char *path)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
+#ifndef _WIN32
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
@@ -237,9 +240,11 @@ Ns_SockListenUnix(char *path)
         sock = -1;
         Ns_SetSockErrno(err);
     }
-    return (SOCKET)sock;
+#endif
+
+    return (SOCKET) sock;
 }
-#endif /* _WIN32 */
+
 
 /*
  *----------------------------------------------------------------------
@@ -277,7 +282,6 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
 }
 
 
-#ifndef _WIN32
 /*
  *----------------------------------------------------------------------
  *
@@ -300,7 +304,8 @@ Ns_SockBindUnix(char *path)
 {
     int sock = -1;
     struct sockaddr_un addr;
-    
+
+#ifndef _WIN32    
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path,path, sizeof(addr.sun_path) - 1);
@@ -315,10 +320,11 @@ Ns_SockBindUnix(char *path)
         sock = -1;
         Ns_SetSockErrno(err);
     }
+#endif
     
-    return (SOCKET)sock;
+    return (SOCKET) sock;
 }
-#endif /* _WIN32 */
+
 
 /*
  *----------------------------------------------------------------------
@@ -380,8 +386,6 @@ NsInitBinder(void)
     Tcl_InitHashTable(&preboundUnix, TCL_STRING_KEYS);
 }
 
-#ifndef _WIN32
-
 
 /*
  *----------------------------------------------------------------------
@@ -402,6 +406,7 @@ NsInitBinder(void)
 void
 NsPreBind(char *args, char *file)
 {
+#ifndef _WIN32
     if (args != NULL) {
         PreBind(args);
     }
@@ -416,6 +421,7 @@ NsPreBind(char *args, char *file)
             fclose(fp);
         }
     }
+#endif
 }
 
 
@@ -438,6 +444,9 @@ NsPreBind(char *args, char *file)
 void
 NsClosePreBound(void)
 {
+#ifdef _WIN32
+    return;
+#else
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     char *addr;
@@ -519,6 +528,7 @@ NsClosePreBound(void)
     Tcl_InitHashTable(&preboundUnix, TCL_STRING_KEYS);
 
     Ns_MutexUnlock(&lock);
+#endif
 }
 
 
@@ -547,6 +557,9 @@ NsClosePreBound(void)
 static void
 PreBind(char *line)
 {
+#ifdef _WIN32
+    return;
+#else
     Tcl_HashEntry *hPtr;
     int new, sock, port;
     struct sockaddr_in sa;
@@ -662,6 +675,5 @@ PreBind(char *line)
             Ns_Log(Notice, "prebind: unix: %s = %d", line, sock);
         }
     }
+#endif
 }
-
-#endif /* _WIN32 */

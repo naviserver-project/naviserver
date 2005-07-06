@@ -447,10 +447,8 @@ NsStartDrivers(void)
     while (drvPtr != NULL) {
         if (drvPtr->opts & NS_DRIVER_UDP) {
             drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr, drvPtr->port);
-#ifndef _WIN32
         } else if (drvPtr->opts & NS_DRIVER_UNIX) {
             drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr);
-#endif
         } else {
             drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port,
                                            drvPtr->backlog);
