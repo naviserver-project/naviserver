@@ -1,3 +1,14 @@
+=================
+NaviServer 4.99.1
+=================
+
+New Features:
+
+    * HTTP Range requests for streaming media and resuming downloads 
+
+
+
+
 ======================================
 NaviServer 4.99.0, released 2005-07-05
 ======================================

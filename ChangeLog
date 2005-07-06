@@ -1,5 +1,9 @@
 2005-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/fastpath.c:
+	* tests/http_byteranges.test:
+	* NEWS: Add back preliminary support for HTTP range requests.
+
 	* configure.in:
 	* configure: Update version to 4.99.1 and regenerate configure
 	script.
