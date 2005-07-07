@@ -1,5 +1,10 @@
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/tclinit.c:
+	* nsthread/tls.c: Moved call to Tcl_FinalizeThread to end of TLS
+	cleanup to better catch any cases of Tcl being used outside
+	expected interfaces.
+
 	* nsd/tclcmds.c: Alphabetize list of Tcl commands.
 
 	* nsd/return.c: Clean up some string buffer usage.

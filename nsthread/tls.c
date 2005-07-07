@@ -185,4 +185,5 @@ NsCleanupTls(void **slots)
 	    }
 	}
     } while (retry && trys++ < 5);
+    Tcl_FinalizeThread();
 }
