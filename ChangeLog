@@ -1,5 +1,7 @@
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/tclcmds.c: Alphabetize list of Tcl commands.
+
 	* nsd/return.c: Clean up some string buffer usage.
 
 	* include/ns.h:
