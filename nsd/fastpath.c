@@ -38,7 +38,24 @@
 
 NS_RCSID("@(#) $Header$");
 
-#define MAX_RANGES      10
+/*
+ * The following structure defines the offsets parsed
+ * from Range: request heqder
+ */
+
+#define MAX_RANGES      5
+
+typedef struct {
+    int status;                /* Return status updated, 206 or 416 */
+    int count;                 /* Total number of valid ranges parsed */
+    struct {
+      unsigned long start;     /* Range start position */
+      unsigned long end;       /* Range end position */
+      unsigned long size;      /* Range absolute size in bytes */
+    } offsets[MAX_RANGES];
+    unsigned long size;        /* Total file size */
+    unsigned long mtime;       /* Last modification time */
+} Range;
 
 /*
  * The following structure defines the contents of a file
@@ -62,8 +79,8 @@ static int UrlIs(char *server, char *url, int dir);
 static int FastStat(char *file, struct stat *stPtr);
 static int FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                       char *type, char *file, struct stat *stPtr);
-static int ParseRange(Ns_Conn *conn, unsigned long size, unsigned long *offsets,
-                      int offsets_size);
+static int ParseRange(Ns_Conn *conn, Range *rnPtr);
+static int ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type);
 
 /*
  *----------------------------------------------------------------------
@@ -475,8 +492,8 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
            char *type, char *file, struct stat *stPtr)
 {
     int fd, new, nread;
-    unsigned long size, offsets[MAX_RANGES*2];
-    int result = NS_ERROR, ranges = 0;
+    int result = NS_ERROR;
+    Range range;
     char *key;
     Ns_Entry *entPtr;
     File *filePtr;
@@ -485,6 +502,14 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 #ifndef _WIN32
     FileKey ukey;
 #endif
+
+    /*
+     *  Initialize the structure for possible Range: requests
+     */
+
+    range.status = status;
+    range.size = stPtr->st_size;
+    range.mtime = stPtr->st_mtime;
 
     /*
      * Determine the mime type if not given.
@@ -516,32 +541,16 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 
     /*
      * Check if this is a Range: request, if so return requested
-     * portion of the file. Range requests are not cached.
+     * portion(s) of the file.
      */
 
-    size = stPtr->st_size;
-    if (status == 200) {
-        ranges = ParseRange(conn, stPtr->st_size, offsets, MAX_RANGES*2);
-    }
-    if (ranges == -1) {
-        /* 416 Requested Range Not Satisfiable */
-        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%lu",
-                             stPtr->st_size);
-        Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
-        return Ns_ConnFlushHeaders(conn, 416);
-    }
-    if (ranges == 1) {
-        /* Continue with returning a portion of the file */
-        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes %lu-%lu/%lu",
-                             offsets[0], offsets[1], stPtr->st_size);
-        size = (offsets[1] - offsets[0]) + 1;
-        /* 206 Partial Content */
-        status = 206;
+    if (ParseRange(conn, &range) == NS_ERROR) {
+        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%lu", range.size);
+        return Ns_ConnReturnStatus(conn, range.status);
     }
 
     if (servPtr->fastpath.cache == NULL
-        || stPtr->st_size > servPtr->fastpath.cachemaxentry
-        || ranges == 1) {
+        || stPtr->st_size > servPtr->fastpath.cachemaxentry) {
 
         /*
          * Caching is disabled or the entry is too large for the cache
@@ -552,11 +561,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 
         if (servPtr->fastpath.mmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            char *maddr = fmap.addr;
-            if (ranges > 0) {
-                maddr += offsets[0];
-            }
-            result = Ns_ConnReturnData(conn,status, maddr, size, type);
+            result = ReturnRange(conn, &range, -1, fmap.addr, fmap.size, type);
             NsMemUmap(&fmap);
         } else {
             fd = open(file, O_RDONLY | O_BINARY);
@@ -565,10 +570,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
                        strerror(errno));
                 goto notfound;
             }
-            if (ranges > 0) {
-                lseek(fd, offsets[0], SEEK_SET);
-            }
-            result = Ns_ConnReturnOpenFd(conn, status, type, fd, size);
+            result = ReturnRange(conn, &range, fd, 0, stPtr->st_size, type);
             close(fd);
         }
         
@@ -641,8 +643,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
         if (filePtr != NULL) {
             ++filePtr->refcnt;
             Ns_CacheUnlock(servPtr->fastpath.cache);
-            result = Ns_ConnReturnData(conn, status, filePtr->bytes,
-                                       filePtr->size, type);
+            result = ReturnRange(conn, &range, -1, filePtr->bytes, filePtr->size, type);
             Ns_CacheLock(servPtr->fastpath.cache);
             DecrEntry(filePtr);
         }
@@ -688,93 +689,287 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
  * ParseRange --
  *
  *      Checks for presence of Range: header, parses it and returns 
- *      the requested offsets
+ *      the requested offsets.
+ *
  *
  * Results:
- *      -1 on error, number of byte ranges parsed
+ *      NS_ERROR if byte-range is syntactically correct but unsatisfiable
+ *      NS_OK otherwise and rnPtr->count will contain number of byte ranges
+ *      parsed.
  *
  * Side effects:
- *      First range specification is honored only
+ *      - All byte-range-sets beyond MAX_RANGES will be ignored
+ *      - range->count will be updated with number of byte-range-sets parsed
+ *      - range->status may be updated with 206 or 416 codes
  *
  *----------------------------------------------------------------------
  */
 
 static int
-ParseRange(Ns_Conn *conn, unsigned long size, unsigned long *offsets,
-           int offsets_size)
+ParseRange(Ns_Conn *conn, Range *rnPtr)
 {
-    int count = 0;
-    char *range;
+    int idx = 0;
+    char *str;
 
-    if ((range = Ns_SetIGet(conn->headers, "Range")) == NULL
-        || (range = strstr(range,"bytes=")) == NULL) {
-        return 0;
+    rnPtr->count = 0;
+    if ((str = Ns_SetIGet(conn->headers, "Range")) == NULL
+        || (str = strstr(str,"bytes=")) == NULL) {
+        return NS_OK;
     }
-    range += 6;
-    memset(offsets,0,sizeof(unsigned long)*offsets_size);
+    str += 6;
 
-    while(*range && count < offsets_size-1) {
-        if (isdigit(*range)) {
-            offsets[count] = atol(range);
-            while (isdigit(*range)) range++;
-            if (*range == '-') {
-                range++;
-                if (!isdigit(*range)) {
-                    offsets[count+1] = size - 1;
+    while(*str && idx < MAX_RANGES-1) {
+        /*
+         *  Parse the format: first-byte-pos "-" last-byte-pos
+         *  The byte positions specified are inclusive. Byte count start at zero.
+         */
+        if (isdigit(*str)) {
+            rnPtr->offsets[idx].start = atol(str);
+            while (isdigit(*str)) str++;
+            if (*str == '-') {
+                str++;
+                if (!isdigit(*str)) {
+                    rnPtr->offsets[idx].end = rnPtr->size - 1;
                 } else {
-                    offsets[count+1] = atol(range);
-                    if (offsets[count] > offsets[count+1]) {
-                        return 0;
+                    rnPtr->offsets[idx].end = atol(str);
+                    if (rnPtr->offsets[idx].start > rnPtr->offsets[idx].end) {
+                        return NS_OK;
                     }
-                    if (offsets[count+1] >= size) {
-                        offsets[count+1] = size - 1;
+                    if (rnPtr->offsets[idx].end >= rnPtr->size) {
+                        rnPtr->offsets[idx].end = rnPtr->size - 1;
                     }
-                    while (isdigit(*range)) range++;
+                    while (isdigit(*str)) str++;
                 }
-                switch (*range) {
+                /* At this point we have syntactically valid byte-str-set */
+                switch (*str) {
                  case ',':
-                     range++;
+                     str++;
                  case '\0':
                      break;
                  default:
-                     return 0;
+                     return NS_OK;
                 }
-                if (offsets[count] > offsets[count+1]) {
-                    return -1;
+                /* Range is unsatisfiable */
+                if (rnPtr->offsets[idx].start > rnPtr->offsets[idx].end) {
+                    rnPtr->status = 416;
+                    return NS_ERROR;
                 }
-                count += 2;
+                /* Calculate range size */
+                rnPtr->offsets[idx].size = (rnPtr->offsets[idx].end - rnPtr->offsets[idx].start) + 1;
+                idx++;
                 continue;
             }
-        } else if (*range == '-') {
-            range++;
-            if (!isdigit(*range)) {
-                return 0;
+        } else if (*str == '-') {
+            /*
+             *  Parse the format: "-" suffix-length
+             *  Specifies the last suffix-length bytes of an entity-body
+             */
+            str++;
+            if (!isdigit(*str)) {
+                return NS_OK;
             }
-            offsets[count+1] = atol(range);
-            if (offsets[count+1] > size) {
-                offsets[count+1] = size;
+            rnPtr->offsets[idx].end = atol(str);
+            if (rnPtr->offsets[idx].end > rnPtr->size) {
+                rnPtr->offsets[idx].end = rnPtr->size;
             }
-            /* Size from the end requested, convert into offset */
-            offsets[count] = size - offsets[count+1];
-            offsets[count+1] = offsets[count] + offsets[count+1] - 1;
-            while (isdigit(*range)) range++;
-            switch (*range) {
+            /* Size from the end requested, convert into count */
+            rnPtr->offsets[idx].start = rnPtr->size - rnPtr->offsets[idx].end;
+            rnPtr->offsets[idx].end = rnPtr->offsets[idx].start + rnPtr->offsets[idx].end - 1;
+            /* At this point we have syntactically valid byte-range-set */
+            while (isdigit(*str)) str++;
+            switch (*str) {
              case ',':
-                 range++;
+                 str++;
              case '\0':
                  break;
              default:
-                 return 0;
+                 return NS_OK;
             }
-            if (offsets[count] > offsets[count+1]) {
-                return -1;
+            /* Range is unsatisfiable */
+            if (rnPtr->offsets[idx].start > rnPtr->offsets[idx].end) {
+                rnPtr->status = 416;
+                return NS_ERROR;
             }
-            count += 2;
+            /* Calculate range size */
+            rnPtr->offsets[idx].size = (rnPtr->offsets[idx].end - rnPtr->offsets[idx].start) + 1;
+            idx++;
             continue;
         }
         /* Invalid syntax */
-        return 0;
+        return NS_OK;
     }
-    return count/2;
+    /* No valid ranges found */
+    if (idx == 0) {
+        return NS_OK;
+    }
+    /*
+     * Check for If-Range: header here because it depends on valid Range:
+     * header, return the whole file if it has been changed
+     */
+    str = Ns_SetIGet(conn->headers, "If-Range");
+    if (str != NULL && rnPtr->mtime > Ns_ParseHttpTime(str)) {
+        return NS_OK;
+    }
+    /*
+     * Tell the caller how many ranges are parsed and the what return code
+     * should be used
+     */
+    rnPtr->status = 206;
+    rnPtr->count = idx;
+    /*
+     * Scan all offsets and see if they form one continious range
+     */
+    for (idx = 1;idx < rnPtr->count;idx++) {
+       if (rnPtr->offsets[idx].start - rnPtr->offsets[idx-1].end > 1) {
+           break;
+       }
+    }
+    /* It looks like they all one after another, use the first one */
+    if (idx == rnPtr->count) {
+        rnPtr->offsets[0].end = rnPtr->offsets[idx - 1].end;
+        rnPtr->offsets[0].size = (rnPtr->offsets[0].end - rnPtr->offsets[0].start) + 1;
+        rnPtr->count = 1;
+    }
+    return NS_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReturnRange --
+ *
+ *	Sets required headers, dumps them, and then writes your data.
+ *
+ * Results:
+ *	NS_OK/NS_ERROR
+ *
+ * Side effects:
+ *	May set numerous headers, will close connection.
+ *      MAX_RANGES*3 should be less than 16, because Ns_ConnSend
+ *      currently supports 16 iov buffers only.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type)
+{
+    struct iovec buf, *bufs = 0, *iovPtr = &buf;
+    int          i,result = NS_ERROR;
+    char         boundary[32];
+    time_t       now = time(0);
+    Ns_DString   ds;
+
+    switch (rnPtr->count) {
+     case 0:
+        /* No ranges, return all data */
+        if (fd != -1) {
+            return Ns_ConnReturnOpenFd(conn, rnPtr->status, type, fd, len);
+        }
+        Ns_ConnSetRequiredHeaders(conn, type, len);
+        Ns_ConnQueueHeaders(conn, rnPtr->status);
+        buf.iov_base = data;
+        buf.iov_len = len;
+        result = Ns_ConnSend(conn, &buf, 1);
+        break;
+
+     case 1:
+        /*
+         * For single byte-range-set, global Content-Range: header should be
+         * included in the reply
+         */
+
+        Ns_ConnPrintfHeaders(conn, "Content-range", "bytes %lu-%lu/%i",
+                             rnPtr->offsets[0].start, rnPtr->offsets[0].end, len);
+        if (fd != -1) {
+            lseek(fd, rnPtr->offsets[0].start, SEEK_SET);
+            return Ns_ConnReturnOpenFd(conn, rnPtr->status, type, fd, len);
+        }
+        Ns_ConnSetRequiredHeaders(conn, type, rnPtr->offsets[0].size);
+        Ns_ConnQueueHeaders(conn, rnPtr->status);
+        buf.iov_base = data + rnPtr->offsets[0].start;
+        buf.iov_len = rnPtr->offsets[0].size;
+        result = Ns_ConnSend(conn, &buf, 1);
+        break;
+
+     default:
+        sprintf(boundary,"%lu",now);
+        /* Multiple ranges, return as multipart/byterange */
+        Ns_ConnPrintfHeaders(conn, "Content-type","multipart/byteranges; boundary=%s",
+                             boundary);
+        Ns_ConnSetRequiredHeaders(conn, type, -1);
+        Ns_ConnQueueHeaders(conn, rnPtr->status);
+        Ns_DStringInit(&ds);
+
+        /*
+         * For mmap mode create 3 iovec structures for each range to
+         * contain headers, data and closing boundary and send all
+         * iov buffers for all ranges at once
+         *
+         * For fd mode, re-use the same iov struct and send headers and
+         * file contents one after another for all ranges
+         */
+
+        if (fd == -1) {
+            bufs = ns_malloc(sizeof(struct iovec) * rnPtr->count * 3);
+        }
+        for (i = 0;i < rnPtr->count;i++) {
+           if (fd == -1) {
+               /* Point to first iov struct for the given index */
+               iovPtr = &bufs[i*3];
+           }
+           /* First io vector in the triple will hold the headers */
+           iovPtr->iov_base = &ds.string[ds.length];
+           Ns_DStringPrintf(&ds,"--%s\r\n",boundary);
+           Ns_DStringPrintf(&ds,"Content-type: %s\r\n",type);
+           Ns_DStringPrintf(&ds,"Content-range: bytes %lu-%lu/%i\r\n\r\n",
+                            rnPtr->offsets[i].start, rnPtr->offsets[i].end, len);
+           iovPtr->iov_len = strlen(iovPtr->iov_base);
+           /* In fd mode, we send headers and file contents */
+           if (fd != -1) {
+               result = Ns_ConnSend(conn, iovPtr, 1);
+               if (result == NS_ERROR) {
+                   break;
+               }
+               lseek(fd, rnPtr->offsets[i].start, SEEK_SET);
+               result = Ns_ConnSendFd(conn, fd, rnPtr->offsets[i].size);
+               if (result == NS_ERROR) {
+                   break;
+               }
+           } else {
+               /* Second io vector will contain actual range buffer offset and size */
+               iovPtr++;
+               iovPtr->iov_base = data + rnPtr->offsets[i].start;
+               iovPtr->iov_len = rnPtr->offsets[i].size;
+               iovPtr++;
+           }
+           /* Third io vector will hold closing boundary */
+           iovPtr->iov_base = &ds.string[ds.length];
+           /* Last boundary should have trailing -- */
+           if (i == rnPtr->count - 1) {
+               Ns_DStringPrintf(&ds,"\r\n--%s--",boundary);
+           }
+           Ns_DStringAppend(&ds,"\r\n");
+           iovPtr->iov_len = strlen(iovPtr->iov_base);
+           /* In fd mode send boundary immediately after the contents */
+           if (fd != -1) {
+               result = Ns_ConnSend(conn, iovPtr, 1);
+               if (result == NS_ERROR) {
+                   break;
+               }
+           }
+        }
+        /* In mmap mode we send all iov buffers at once */
+        if (fd == -1) {
+            result = Ns_ConnSend(conn, bufs, rnPtr->count * 3);
+        }
+        Ns_DStringFree(&ds);
+        ns_free(bufs);
+        break;
+    }
+
+    if (result == NS_OK) {
+        result = Ns_ConnClose(conn);
+    }
+    return result;
+}

@@ -104,74 +104,53 @@ test byteranges-1.9 {Request more than exists} -constraints serverListen -body {
 
 
 
-test byteranges-2.1 {Multiple contiguous ranges} -constraints {
-     serverListen knownBug
-} -body {
+test byteranges-2.1 {Multiple contiguous ranges} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-6} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
-} -result {206 6 {bytes 0-6/10} 012345}
+} -result {206 7 {bytes 0-6/10} 0123456}
 
-test byteranges-2.2 {Multiple contiguous ranges} -constraints {
-     serverListen knownBug
-} -body {
+test byteranges-2.2 {Multiple contiguous ranges} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-5,6-8} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 9 {bytes 0-8/10} 012345678}
 
-test byteranges-2.3 {Multiple non-canonical contiguous ranges} -constraints {
-    serverListen knownBug
-} -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-6} \
-        -getheaders {Content-length Content-range} \
-        GET /10bytes
-} -result {206 6 {bytes 0-6/10} 012345}
-
-test byteranges-2.4 {Multiple non-contiguous ranges} -constraints {
-    serverListen knownBug
-} -body {
+test byteranges-2.3 {Multiple non-contiguous ranges} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range} \
         GET /10bytes
 } -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} \
-        {[^ ]+\r
+        {--[^ ]+\r
 Content-type: \*/\*\r
 Content-range: bytes 0-2/10\r
+\r
 012\r
 --[^ ]+\r
 Content-type: \*/\*\r
 Content-range: bytes 7-9/10\r
+\r
 789\r
---[^ ]+--
+--[^ ]+--\r
 }]
 
-test byteranges-2.5 {Multiple ranges, out of order} -constraints {
-    serverListen knownBug
-} -body {
+test byteranges-2.4 {Multiple ranges, out of order} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=7-9,0-2} \
-        -getheaders {Content-length Content-range} \
+        -getheaders {Content-type Content-range} \
         GET /10bytes
 } -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} \
-        {[^ ]+\r
+        {--[^ ]+\r
 Content-type: \*/\*\r
 Content-range: bytes 7-9/10\r
+\r
 789\r
 --[^ ]+\r
 Content-type: \*/\*\r
 Content-range: bytes 0-2/10\r
+\r
 012\r
---[^ ]+--
+--[^ ]+--\r
 }]
-
-test byteranges-2.6 {
-    Temporary: multiple ranges unsupported, just ignore.
-} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-6} \
-        -getheaders {Content-length Content-range} \
-        GET /10bytes
-} -result {200 10 {} 0123456789}
-
 
 
 test byteranges-3.1 {syntactically invalid} -constraints serverListen -body {

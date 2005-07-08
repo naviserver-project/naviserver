@@ -1006,6 +1006,7 @@ extern void NsRunAtExitProcs(void);
 extern int NsCloseAllFiles(int errFd);
 extern int NsMemMap(char *path, int size, int mode, FileMap *mapPtr);
 extern void NsMemUmap(FileMap *mapPtr);
+extern int Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs);
 
 #ifndef _WIN32
 extern int Ns_ConnRunRequest(Ns_Conn *conn);

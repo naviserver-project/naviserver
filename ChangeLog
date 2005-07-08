@@ -1,3 +1,11 @@
+2005-07-08  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/fastpath.c:
+	* tests/http_byteranges.test: Implemented full byte ranges
+	support including If-Range and multiple ranges. Supports
+	mmap and return from fd modes.
+
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclinit.c:
