@@ -118,9 +118,9 @@ test byteranges-2.2 {Multiple contiguous ranges} -constraints serverListen -body
 
 test byteranges-2.3 {Multiple non-contiguous ranges} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
-        -getheaders {Content-type Content-range} \
+        -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
-} -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} \
+} -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} 154 \
         {--[^ ]+\r
 Content-type: \*/\*\r
 Content-range: bytes 0-2/10\r
@@ -136,9 +136,9 @@ Content-range: bytes 7-9/10\r
 
 test byteranges-2.4 {Multiple ranges, out of order} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=7-9,0-2} \
-        -getheaders {Content-type Content-range} \
+        -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
-} -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} \
+} -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} 154 \
         {--[^ ]+\r
 Content-type: \*/\*\r
 Content-range: bytes 7-9/10\r

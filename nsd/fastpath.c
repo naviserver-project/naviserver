@@ -854,7 +854,7 @@ ParseRange(Ns_Conn *conn, Range *rnPtr)
 static int
 ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type)
 {
-    struct iovec buf, *bufs = 0, *iovPtr = &buf;
+    struct iovec bufs[MAX_RANGES*3], *iovPtr = bufs;
     int          i,result = NS_ERROR;
     char         boundary[32];
     time_t       now = time(0);
@@ -868,9 +868,9 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
         }
         Ns_ConnSetRequiredHeaders(conn, type, len);
         Ns_ConnQueueHeaders(conn, rnPtr->status);
-        buf.iov_base = data;
-        buf.iov_len = len;
-        result = Ns_ConnSend(conn, &buf, 1);
+        bufs[0].iov_base = data;
+        bufs[0].iov_len = len;
+        result = Ns_ConnSend(conn, bufs, 1);
         break;
 
      case 1:
@@ -887,37 +887,31 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
         }
         Ns_ConnSetRequiredHeaders(conn, type, rnPtr->offsets[0].size);
         Ns_ConnQueueHeaders(conn, rnPtr->status);
-        buf.iov_base = data + rnPtr->offsets[0].start;
-        buf.iov_len = rnPtr->offsets[0].size;
-        result = Ns_ConnSend(conn, &buf, 1);
+        bufs[0].iov_base = data + rnPtr->offsets[0].start;
+        bufs[0].iov_len = rnPtr->offsets[0].size;
+        result = Ns_ConnSend(conn, bufs, 1);
         break;
 
      default:
+        Ns_DStringInit(&ds);
         sprintf(boundary,"%lu",now);
         /* Multiple ranges, return as multipart/byterange */
         Ns_ConnPrintfHeaders(conn, "Content-type","multipart/byteranges; boundary=%s",
                              boundary);
-        Ns_ConnSetRequiredHeaders(conn, type, -1);
-        Ns_ConnQueueHeaders(conn, rnPtr->status);
-        Ns_DStringInit(&ds);
-
+        
         /*
-         * For mmap mode create 3 iovec structures for each range to
-         * contain headers, data and closing boundary and send all
-         * iov buffers for all ranges at once
-         *
-         * For fd mode, re-use the same iov struct and send headers and
-         * file contents one after another for all ranges
+         * Use 3 iovec structures for each range to
+         * contain starting boundary and headers, data and closing boundary
+         * and send all iov buffers for all ranges at once in mmap mode or
+         * in seperate calls for fd mode.
          */
 
-        if (fd == -1) {
-            bufs = ns_malloc(sizeof(struct iovec) * rnPtr->count * 3);
-        }
+        /* First pass, produce headers and calculate content length */
+        rnPtr->size = 0;
+        
         for (i = 0;i < rnPtr->count;i++) {
-           if (fd == -1) {
-               /* Point to first iov struct for the given index */
-               iovPtr = &bufs[i*3];
-           }
+           /* Point to first iov struct for the given index */
+           iovPtr = &bufs[i*3];
            /* First io vector in the triple will hold the headers */
            iovPtr->iov_base = &ds.string[ds.length];
            Ns_DStringPrintf(&ds,"--%s\r\n",boundary);
@@ -925,25 +919,20 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
            Ns_DStringPrintf(&ds,"Content-range: bytes %lu-%lu/%i\r\n\r\n",
                             rnPtr->offsets[i].start, rnPtr->offsets[i].end, len);
            iovPtr->iov_len = strlen(iovPtr->iov_base);
-           /* In fd mode, we send headers and file contents */
-           if (fd != -1) {
-               result = Ns_ConnSend(conn, iovPtr, 1);
-               if (result == NS_ERROR) {
-                   break;
-               }
-               lseek(fd, rnPtr->offsets[i].start, SEEK_SET);
-               result = Ns_ConnSendFd(conn, fd, rnPtr->offsets[i].size);
-               if (result == NS_ERROR) {
-                   break;
-               }
-           } else {
-               /* Second io vector will contain actual range buffer offset and size */
-               iovPtr++;
-               iovPtr->iov_base = data + rnPtr->offsets[i].start;
-               iovPtr->iov_len = rnPtr->offsets[i].size;
-               iovPtr++;
-           }
+           rnPtr->size += iovPtr->iov_len;
+
+           /*
+            * Second io vector will contain actual range buffer offset and
+            * size. It will be ignored in fd mode.
+            */
+
+           iovPtr++;
+           iovPtr->iov_base = data + rnPtr->offsets[i].start;
+           iovPtr->iov_len = rnPtr->offsets[i].size;
+           rnPtr->size += iovPtr->iov_len;
+
            /* Third io vector will hold closing boundary */
+           iovPtr++;
            iovPtr->iov_base = &ds.string[ds.length];
            /* Last boundary should have trailing -- */
            if (i == rnPtr->count - 1) {
@@ -951,20 +940,45 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
            }
            Ns_DStringAppend(&ds,"\r\n");
            iovPtr->iov_len = strlen(iovPtr->iov_base);
-           /* In fd mode send boundary immediately after the contents */
-           if (fd != -1) {
+           rnPtr->size += iovPtr->iov_len;
+        }
+
+        /* Second pass, content length is ready, send http headers and data now */
+        Ns_ConnSetRequiredHeaders(conn, type, rnPtr->size);
+        Ns_ConnQueueHeaders(conn, rnPtr->status);
+
+        /* In fd mode, we send headers and file contents in separate calls */
+        if (fd != -1) {
+            for (i = 0;i < rnPtr->count;i++) {
+               /* Point iovPtr to headers iov buffer */
+               iovPtr = &bufs[i*3];
                result = Ns_ConnSend(conn, iovPtr, 1);
                if (result == NS_ERROR) {
                    break;
                }
-           }
-        }
-        /* In mmap mode we send all iov buffers at once */
-        if (fd == -1) {
+               /* Send file content directly from open fd */
+               lseek(fd, rnPtr->offsets[i].start, SEEK_SET);
+               result = Ns_ConnSendFd(conn, fd, rnPtr->offsets[i].size);
+               if (result == NS_ERROR) {
+                   break;
+               }
+
+               /*
+                * Point iovPtr to the closing boundary iov buffer,
+                * second iov buffer is not used in fd mode
+                */
+
+               iovPtr += 2;
+               result = Ns_ConnSend(conn, iovPtr, 1);
+               if (result == NS_ERROR) {
+                   break;
+               }
+            }
+        } else {
+            /* In mmap mode we send all iov buffers at once */
             result = Ns_ConnSend(conn, bufs, rnPtr->count * 3);
         }
         Ns_DStringFree(&ds);
-        ns_free(bufs);
         break;
     }
 

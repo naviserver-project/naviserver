@@ -6,6 +6,10 @@
 	support including If-Range and multiple ranges. Supports
 	mmap and return from fd modes.
 
+	* nsd/fastpath.c: 
+        * tests/http_byteranges.test: Updated to return correct 
+        Content-length header.
+
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclinit.c:
