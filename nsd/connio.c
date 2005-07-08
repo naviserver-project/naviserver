@@ -131,14 +131,14 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
     Conn	   *connPtr = (Conn *) conn;
     int         nwrote, towrite, i, n;
-    struct iovec    sbufs[16];
+    struct iovec    sbufs[NS_CONN_MAXBUFS];
 
     if (connPtr->sockPtr == NULL) {
 	return -1;
     }
 
     /*
-     * Send up to 16 buffers, including the queued output
+     * Send up to NS_CONN_MAXBUFS(16) buffers, including the queued output
      * buffer if necessary.
      */
 
@@ -150,7 +150,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	towrite += sbufs[n].iov_len;
 	++n;
     }
-    for (i = 0; i < nbufs && n < 16; ++i) {
+    for (i = 0; i < nbufs && n < NS_CONN_MAXBUFS; ++i) {
 	if (bufs[i].iov_len > 0 && bufs[i].iov_base != NULL) {
 	    sbufs[n].iov_base = bufs[i].iov_base;
 	    sbufs[n].iov_len = bufs[i].iov_len;

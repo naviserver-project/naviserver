@@ -10,6 +10,13 @@
         * tests/http_byteranges.test: Updated to return correct 
         Content-length header.
 
+	* include/ns.h:
+	* nsd/fastpath.c:
+	* nsd/connio.c: Introducing NS_CONN_MAXBUFS parameters which is set
+	to 16 by default. It defines how many iov buffers Ns_ConnSend can to use
+	simultaneously and max number of ranges nsd supports which is 
+	NS_CONN_MAXBUFS/3
+
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclinit.c:

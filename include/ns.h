@@ -70,6 +70,7 @@
 #define NS_CONN_WRITE_ENCODED    64
 
 #define NS_CONN_MAXCLS		 16
+#define NS_CONN_MAXBUFS          16
 
 #define NS_AOLSERVER_3_PLUS
 #define NS_UNAUTHORIZED		(-2)

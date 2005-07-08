@@ -40,10 +40,10 @@ NS_RCSID("@(#) $Header$");
 
 /*
  * The following structure defines the offsets parsed
- * from Range: request heqder
+ * from Range: request header
  */
 
-#define MAX_RANGES      5
+#define MAX_RANGES      (NS_CONN_MAXBUFS/3)
 
 typedef struct {
     int status;                /* Return status updated, 206 or 416 */
@@ -845,8 +845,7 @@ ParseRange(Ns_Conn *conn, Range *rnPtr)
  *
  * Side effects:
  *	May set numerous headers, will close connection.
- *      MAX_RANGES*3 should be less than 16, because Ns_ConnSend
- *      currently supports 16 iov buffers only.
+ *      MAX_RANGES depends on NS_CONN_MAXBUFS which is used by Ns_ConnSend
  *
  *----------------------------------------------------------------------
  */
@@ -883,7 +882,7 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
                              rnPtr->offsets[0].start, rnPtr->offsets[0].end, len);
         if (fd != -1) {
             lseek(fd, rnPtr->offsets[0].start, SEEK_SET);
-            return Ns_ConnReturnOpenFd(conn, rnPtr->status, type, fd, len);
+            return Ns_ConnReturnOpenFd(conn, rnPtr->status, type, fd, rnPtr->offsets[0].size);
         }
         Ns_ConnSetRequiredHeaders(conn, type, rnPtr->offsets[0].size);
         Ns_ConnQueueHeaders(conn, rnPtr->status);

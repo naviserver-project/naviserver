@@ -68,6 +68,8 @@ ns_param   enabletclpages  true
 ns_section "ns/server/test/fastpath"
 ns_param   serverdir       testserver
 ns_param   pagedir         pages
+#ns_param   mmap            false
+#ns_param   cache           false
 
 ns_section "ns/server/test/tcl"
 ns_param   initfile        ../nsd/init.tcl
