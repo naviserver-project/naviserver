@@ -158,29 +158,6 @@ Ns_RegisterReturn(int status, char *url)
     }
 }
 
-static int
-IsSetupForChunkedEncoding(Ns_Conn *conn) 
-{
-    int headerCount = 0;
-    int i;
-    Ns_Set* outHeaders;
-
-    if (conn == NULL)
-        return 0;
-
-    outHeaders = Ns_ConnOutputHeaders(conn);
-    headerCount = Ns_SetSize (outHeaders);
-
-    if (outHeaders && headerCount) {
-        for (i = 0 ; i < headerCount ; i++) {
-           if ( !strcasecmp(Ns_SetKey (outHeaders, i), HTTP11_HDR_TE) &&
-	        !strcasecmp(Ns_SetValue (outHeaders, i), HTTP11_TE_CHUNKED) )
-	       return 1;
-           }
-    }
-    return 0;
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -190,7 +167,7 @@ IsSetupForChunkedEncoding(Ns_Conn *conn)
  *	Put the header of an HTTP response into the dstring. 
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
  *	Content length and connection-keepalive headers will be added 
@@ -208,7 +185,6 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
     char *reason;
     char *value, *keep;
     char *key, *lengthHdr;
-    int  doChunkEncoding = 0;
 
     /*
      * Construct the HTTP response status line.
@@ -221,10 +197,31 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
             break;
         }
     }
-    doChunkEncoding = IsSetupForChunkedEncoding(conn);
+
+    /*
+     * Perform some checks to ensure proper use of chunked
+     * encoding
+     */
+
+    if ((connPtr->responseStatus == 204 ||
+         connPtr->responseStatus == 206 ||
+         connPtr->responseStatus == 304)) {
+        conn->flags &= ~NS_CONN_CHUNKED;
+        Ns_SetIDeleteKey(conn->outputheaders, "Transfer-encoding");
+    }
+
+    /*
+     * This connection has been marked to return in chunked encoding
+     */
+
+    if (conn->flags & NS_CONN_CHUNKED) {
+	Ns_ConnCondSetHeaders(conn, "Transfer-encoding", "chunked");
+        Ns_SetIDeleteKey(conn->outputheaders, "Content-length");
+        connPtr->responseLength = 0;
+    }
 
     Ns_DStringPrintf(dsPtr, "HTTP/%s %d %s\r\n",
-                     doChunkEncoding ? "1.1" : "1.0",
+                     (conn->flags & NS_CONN_CHUNKED) ? "1.1" : "1.0",
                      connPtr->responseStatus,
                      reason);
 
@@ -254,10 +251,12 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	if (drvPtr->keepwait > 0 &&
 	    connPtr->headers != NULL &&
 	    connPtr->request != NULL &&
-	    (( (connPtr->responseStatus >= 200 && connPtr->responseStatus < 300) &&
-	    ((lengthHdr != NULL &&
-	     connPtr->responseLength == length) || doChunkEncoding)) ||
-	    (connPtr->responseStatus == 304 || connPtr->responseStatus == 201 || connPtr->responseStatus == 207) ) &&
+	    (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300) &&
+	    ((lengthHdr != NULL && connPtr->responseLength == length) ||
+             (conn->flags & NS_CONN_CHUNKED)) ) ||
+	    (connPtr->responseStatus == 304 ||
+             connPtr->responseStatus == 201 ||
+             connPtr->responseStatus == 207) ) &&
 	    (drvPtr->keepallmethods == NS_TRUE ||
 	    STREQ(connPtr->request->method, "GET")) &&
 	    (key = Ns_SetIGet(conn->headers, "connection")) != NULL &&
@@ -338,7 +337,7 @@ int
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
     Ns_ConnQueueHeaders(conn, status);
-    return Ns_WriteConn(conn, NULL, 0);
+    return Ns_ConnSend(conn, NULL, 0);
 }
 
 
@@ -823,6 +822,17 @@ ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
         len = 0;
     }
     result = Ns_WriteConn(conn, data, len);
+    if (result == NS_OK) {
+
+        /*
+         * In chunked mode we must send the last chunk with zero size
+         */
+
+        if (len > 0 && (conn->flags & NS_CONN_CHUNKED)) {
+            result = Ns_WriteConn(conn, 0, 0);
+        }
+    }
+
     if (result == NS_OK) {
         result = Ns_ConnClose(conn);
     }

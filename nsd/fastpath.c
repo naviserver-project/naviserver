@@ -865,11 +865,7 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
         if (fd != -1) {
             return Ns_ConnReturnOpenFd(conn, rnPtr->status, type, fd, len);
         }
-        Ns_ConnSetRequiredHeaders(conn, type, len);
-        Ns_ConnQueueHeaders(conn, rnPtr->status);
-        bufs[0].iov_base = data;
-        bufs[0].iov_len = len;
-        result = Ns_ConnSend(conn, bufs, 1);
+        result = Ns_ConnReturnData(conn, rnPtr->status, data, len, type);
         break;
 
      case 1:
@@ -877,7 +873,6 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
          * For single byte-range-set, global Content-Range: header should be
          * included in the reply
          */
-
         Ns_ConnPrintfHeaders(conn, "Content-range", "bytes %lu-%lu/%i",
                              rnPtr->offsets[0].start, rnPtr->offsets[0].end, len);
         if (fd != -1) {
@@ -886,9 +881,9 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
         }
         Ns_ConnSetRequiredHeaders(conn, type, rnPtr->offsets[0].size);
         Ns_ConnQueueHeaders(conn, rnPtr->status);
-        bufs[0].iov_base = data + rnPtr->offsets[0].start;
-        bufs[0].iov_len = rnPtr->offsets[0].size;
-        result = Ns_ConnSend(conn, bufs, 1);
+        iovPtr->iov_base = data + rnPtr->offsets[0].start;
+        iovPtr->iov_len = rnPtr->offsets[0].size;
+        result = Ns_ConnSend(conn, iovPtr, 1);
         break;
 
      default:

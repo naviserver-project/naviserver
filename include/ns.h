@@ -68,6 +68,7 @@
 #define NS_CONN_SENTHDRS	 16
 #define NS_CONN_KEEPALIVE	 32
 #define NS_CONN_WRITE_ENCODED    64
+#define NS_CONN_CHUNKED          128
 
 #define NS_CONN_MAXCLS		 16
 #define NS_CONN_MAXBUFS          16
@@ -646,6 +647,8 @@ NS_EXTERN char *Ns_ConnDriverName(Ns_Conn *conn);
 NS_EXTERN void *Ns_ConnDriverContext(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnGetWriteEncodedFlag(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag);
+NS_EXTERN int Ns_ConnGetChunkedFlag(Ns_Conn *conn);
+NS_EXTERN void Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN int Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
 NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;

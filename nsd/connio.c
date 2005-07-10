@@ -218,7 +218,8 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
  *	# of bytes written from buffer or -1 on error.
  *
  * Side effects:
- *	Stuff may be written 
+ *	Stuff may be written. In chunked mode writing 0 bytes means
+ *      terminating chunked stream with zero chunk and ending CRLF
  *
  *----------------------------------------------------------------------
  */
@@ -226,11 +227,39 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 int
 Ns_ConnWrite(Ns_Conn *conn, void *vbuf, int towrite)
 {
-    struct iovec buf;
+    int nsend;
+    char hdr[32];
+    struct iovec buf[3];
 
-    buf.iov_base = vbuf;
-    buf.iov_len = towrite;
-    return Ns_ConnSend(conn, &buf, 1);
+    if (!(conn->flags & NS_CONN_CHUNKED)) {
+
+        buf[0].iov_base = vbuf;
+        buf[0].iov_len = towrite;
+        return Ns_ConnSend(conn, buf, 1);
+    }
+
+    /*
+     * Send data as chunked: size CRLF data CRLF
+     */
+
+    buf[0].iov_base = hdr;
+    buf[0].iov_len = sprintf(hdr, "%x\r\n", towrite);
+    buf[1].iov_base = vbuf;
+    buf[1].iov_len = towrite;
+    buf[2].iov_base = "\r\n";
+    buf[2].iov_len = 2;
+
+    nsend = Ns_ConnSend(conn, buf, 3);
+
+    /*
+     *  In chunked mode we actually sent more data
+     *  but Ns_WriteConn does not know about that
+     */
+
+    if (nsend == buf[0].iov_len + buf[1].iov_len + buf[2].iov_len) {
+        nsend = towrite;
+    }
+    return nsend;
 }
 
 
@@ -403,9 +432,9 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnSendChannel, Fp, Fd --
+ * Ns_ConnSendChannel, Fp, Fd, Buf --
  *
- *	Send an open channel, FILE, or fd.
+ *	Send an open channel, FILE, fd or memory buffer.
  *
  * Results:
  *	NS_OK/NS_ERROR
@@ -768,19 +797,12 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
  */
 
 static int
-ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
+ConnSend(Ns_Conn *conn, int tosend, Tcl_Channel chan, FILE *fp, int fd)
 {
-    int             toread, nread, status;
+    int             nsend, toread, nread, status;
     char            buf[IOBUFSZ];
 
-    /*
-     * Even if nsend is 0, ensure all queued data (like HTTP response
-     * headers) get flushed.
-     */
-    if (nsend == 0) {
-        Ns_WriteConn(conn, NULL, 0);
-    }
-
+    nsend = tosend;
     status = NS_OK;
     while (status == NS_OK && nsend > 0) {
         toread = nsend;
@@ -806,5 +828,14 @@ ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
 	}
     }
 
+    /*
+     * Even if nsend is 0, ensure all queued data (like HTTP response
+     * headers) get flushed.
+     * In chunked mode we must send the last chunk with zero size
+     */
+
+    if (tosend == 0 || (conn->flags & NS_CONN_CHUNKED)) {
+        Ns_WriteConn(conn, 0, 0);
+    }
     return status;
 }

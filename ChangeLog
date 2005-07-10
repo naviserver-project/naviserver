@@ -1,5 +1,17 @@
 2005-07-08  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* include/ns.h:
+	* nsd/fastpath.c:
+	* nsd/return.c:
+	* nsd/connio.c:
+	* nsd/conn.c: Added support for chunked encoding using conn flag
+	NS_CONN_CHUNKED. Once set, output routines (Ns_ConnReturnOpenFd|File|Channel and
+        Ns_ReturnData) will perform chunked encoding automatically instead of
+        raw data output. From Tcl ns_conn chunked command is available and
+	if called with third parameter 0 or 1 can set/unset conn flag.
+
+2005-07-08  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* nsd/nsd.h:
 	* nsd/fastpath.c:
 	* tests/http_byteranges.test: Implemented full byte ranges

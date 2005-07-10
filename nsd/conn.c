@@ -867,6 +867,55 @@ Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnGetChunkedFlag --
+ *
+ *      Is the given connection set for chunked encoded writes.
+ *
+ * Results:
+ *      Boolean 
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnGetChunkedFlag(Ns_Conn *conn)
+{
+    return (conn->flags & NS_CONN_CHUNKED) ? NS_TRUE : NS_FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSetChunkedFlag --
+ *
+ *      Set the given connection chunked encoding flag per parameter.
+ *
+ * Results:
+ *      None 
+ *
+ * Side effects:
+ *      None 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag)
+{
+    if (flag) {
+        conn->flags |= NS_CONN_CHUNKED;
+    } else {
+        conn->flags &= ~NS_CONN_CHUNKED;
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -909,6 +958,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status",
         "url", "urlc", "urlencoding", "urlv", "version", "write_encoded",
+        "chunked",
         NULL
     };
     enum ISubCmdIdx {
@@ -919,7 +969,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
-        CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx
+        CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
+        CChunkedIdx
     };
 
     if (objc < 2) {
@@ -1140,6 +1191,23 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Ns_ConnSetWriteEncodedFlag(conn, write_encoded_flag);
         }
         if (Ns_ConnGetWriteEncodedFlag(conn)) {
+            Tcl_SetIntObj(result, 1);
+        } else {
+            Tcl_SetIntObj(result, 0);
+        }
+        break;
+
+    case CChunkedIdx:
+        if (objc > 2) {
+            int chunked_flag;
+            if (Tcl_GetIntFromObj(interp, objv[2], &chunked_flag)
+                != TCL_OK) {
+                Tcl_AppendResult(interp, "Invalid chunked flag", NULL );
+                return TCL_ERROR;
+            }
+            Ns_ConnSetChunkedFlag(conn, chunked_flag);
+        }
+        if (Ns_ConnGetChunkedFlag(conn)) {
             Tcl_SetIntObj(result, 1);
         } else {
             Tcl_SetIntObj(result, 0);
