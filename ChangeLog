@@ -1,3 +1,12 @@
+2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/fastpath.c:
+	* nsd/return.c:
+	* nsd/connio.c: Refactored chunked support to use Ns_connClose 
+	to send the last zero chunk. This makes chunked support universal and
+	can be used in adp as well.
+
 2005-07-08  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:

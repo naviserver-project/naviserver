@@ -68,7 +68,8 @@
 #define NS_CONN_SENTHDRS	 16
 #define NS_CONN_KEEPALIVE	 32
 #define NS_CONN_WRITE_ENCODED    64
-#define NS_CONN_CHUNKED          128
+#define NS_CONN_WRITE_CHUNKED    128
+#define NS_CONN_SENT_LAST_CHUNK  256
 
 #define NS_CONN_MAXCLS		 16
 #define NS_CONN_MAXBUFS          16

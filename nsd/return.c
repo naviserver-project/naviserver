@@ -206,7 +206,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
     if ((connPtr->responseStatus == 204 ||
          connPtr->responseStatus == 206 ||
          connPtr->responseStatus == 304)) {
-        conn->flags &= ~NS_CONN_CHUNKED;
+        conn->flags &= ~NS_CONN_WRITE_CHUNKED;
         Ns_SetIDeleteKey(conn->outputheaders, "Transfer-encoding");
     }
 
@@ -214,14 +214,14 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      * This connection has been marked to return in chunked encoding
      */
 
-    if (conn->flags & NS_CONN_CHUNKED) {
+    if (conn->flags & NS_CONN_WRITE_CHUNKED) {
 	Ns_ConnCondSetHeaders(conn, "Transfer-encoding", "chunked");
         Ns_SetIDeleteKey(conn->outputheaders, "Content-length");
         connPtr->responseLength = 0;
     }
 
     Ns_DStringPrintf(dsPtr, "HTTP/%s %d %s\r\n",
-                     (conn->flags & NS_CONN_CHUNKED) ? "1.1" : "1.0",
+                     (conn->flags & NS_CONN_WRITE_CHUNKED) ? "1.1" : "1.0",
                      connPtr->responseStatus,
                      reason);
 
@@ -253,7 +253,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 	    connPtr->request != NULL &&
 	    (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300) &&
 	    ((lengthHdr != NULL && connPtr->responseLength == length) ||
-             (conn->flags & NS_CONN_CHUNKED)) ) ||
+             (conn->flags & NS_CONN_WRITE_CHUNKED)) ) ||
 	    (connPtr->responseStatus == 304 ||
              connPtr->responseStatus == 201 ||
              connPtr->responseStatus == 207) ) &&
@@ -822,17 +822,6 @@ ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
         len = 0;
     }
     result = Ns_WriteConn(conn, data, len);
-    if (result == NS_OK) {
-
-        /*
-         * In chunked mode we must send the last chunk with zero size
-         */
-
-        if (len > 0 && (conn->flags & NS_CONN_CHUNKED)) {
-            result = Ns_WriteConn(conn, 0, 0);
-        }
-    }
-
     if (result == NS_OK) {
         result = Ns_ConnClose(conn);
     }

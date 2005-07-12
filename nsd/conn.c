@@ -886,7 +886,7 @@ Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag)
 int
 Ns_ConnGetChunkedFlag(Ns_Conn *conn)
 {
-    return (conn->flags & NS_CONN_CHUNKED) ? NS_TRUE : NS_FALSE;
+    return (conn->flags & NS_CONN_WRITE_CHUNKED) ? NS_TRUE : NS_FALSE;
 }
 
 
@@ -910,9 +910,9 @@ void
 Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag)
 {
     if (flag) {
-        conn->flags |= NS_CONN_CHUNKED;
+        conn->flags |= NS_CONN_WRITE_CHUNKED;
     } else {
-        conn->flags &= ~NS_CONN_CHUNKED;
+        conn->flags &= ~NS_CONN_WRITE_CHUNKED;
     }
 }
 
