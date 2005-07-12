@@ -43,21 +43,21 @@ static int AdpFlush(NsInterp *itPtr, int stream);
 /*
  *----------------------------------------------------------------------
  *
- * NsAdpProc --
+ * NsAdpRequestProc --
  *
- *	Check for a normal file and call Ns_AdpRequest.
+ *      Map the URL to an ADP file and run it.
  *
  * Results:
- *	A standard AOLserver request result.
+ *      A standard request result.
  *
  * Side effects:
- *	Depends on code embedded within page.
+ *      Depends on code embedded within page.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsAdpProc(void *arg, Ns_Conn *conn)
+NsAdpRequestProc(void *arg, Ns_Conn *conn)
 {
     Ns_DString file;
     int status;
@@ -66,6 +66,7 @@ NsAdpProc(void *arg, Ns_Conn *conn)
     Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
     status = Ns_AdpRequest(conn, file.string);
     Ns_DStringFree(&file);
+
     return status;
 }
 

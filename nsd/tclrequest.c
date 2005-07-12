@@ -56,7 +56,7 @@ static Ns_ObjvTable filters[] = {
  *
  * Ns_TclRequest --
  *
- *      Dummy up a direct call to NsTclRequest for a connection.
+ *      Dummy up a direct call to NsTclRequestProc for a connection.
  *
  * Results:
  *      See NsTclRequest.
@@ -72,12 +72,12 @@ Ns_TclRequest(Ns_Conn *conn, char *name)
 {
     Ns_TclCallback cb;
 
-    cb.cbProc        = &NsTclRequest;
+    cb.cbProc        = &NsTclRequestProc;
     cb.server        = Ns_ConnServer(conn);
     cb.script        = name;
     cb.scriptarg     = NULL;
 
-    return NsTclRequest(&cb, conn);
+    return NsTclRequestProc(&cb, conn);
 }
 
 
@@ -122,9 +122,9 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclRequest, script, scriptarg);
+    cbPtr = Ns_TclNewCallback(interp, NsTclRequestProc, script, scriptarg);
     Ns_RegisterRequest(itPtr->servPtr->server, method, url,
-                       NsTclRequest, Ns_TclFreeCallback, cbPtr, flags);
+                       NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags);
 
     return TCL_OK;
 }
@@ -150,7 +150,7 @@ int
 NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp   *itPtr = arg;
-    char       *method, *url, *file;
+    char       *method, *url, *file = NULL;
     int         flags = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -161,15 +161,20 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Ns_ObjvSpec args[] = {
         {"method",   Ns_ObjvString, &method,   NULL},
         {"url",      Ns_ObjvString, &url,      NULL},
-        {"file",     Ns_ObjvString, &file,     NULL},
+        {"?file",     Ns_ObjvString, &file,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
-    Ns_RegisterRequest(itPtr->servPtr->server, method, url,
-                       NsAdpRequest, ns_free, ns_strdup(file), flags);
+    if (file != NULL) {
+        Ns_RegisterRequest(itPtr->servPtr->server, method, url,
+                           NsAdpMapProc, ns_free, ns_strdup(file), flags);
+    } else {
+        Ns_RegisterRequest(itPtr->servPtr->server, method, url,
+                           NsAdpRequestProc, NULL, itPtr->servPtr, flags);
+    }
 
     return TCL_OK;
 }
@@ -254,9 +259,9 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilter, script, scriptarg);
+    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, script, scriptarg);
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                      NsTclFilter, when, cbPtr);
+                      NsTclFilterProc, when, cbPtr);
 
     return TCL_OK;
 }
@@ -296,9 +301,9 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilter, script, scriptarg);
+    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, script, scriptarg);
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
-                      NsTclFilter, NS_FILTER_VOID_TRACE, cbPtr);
+                      NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr);
 
     return TCL_OK;
 }
@@ -307,9 +312,9 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
 /*
  *----------------------------------------------------------------------
  *
- * NsAdpRequest --
+ * NsAdpMapProc --
  *
- *      Ns_OpProc for registered ADP's.
+ *      Ns_OpProc which evaluates a specifically registered adp file.
  *
  * Results:
  *      See Ns_AdpRequest.
@@ -321,16 +326,18 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 
 int
-NsAdpRequest(void *arg, Ns_Conn *conn)
+NsAdpMapProc(void *arg, Ns_Conn *conn)
 {
-    return Ns_AdpRequest(conn, (char *) arg);
+    char *adpFile = arg;
+
+    return Ns_AdpRequest(conn, adpFile);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsTclRequst --
+ * NsTclRequstProc --
  *
  *      Ns_OpProc for Tcl operations.
  *
@@ -344,7 +351,7 @@ NsAdpRequest(void *arg, Ns_Conn *conn)
  */
 
 int
-NsTclRequest(void *arg, Ns_Conn *conn)
+NsTclRequestProc(void *arg, Ns_Conn *conn)
 {
     Ns_TclCallback *cbPtr = arg;
     Tcl_Interp     *interp;
@@ -362,7 +369,7 @@ NsTclRequest(void *arg, Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclFilter --
+ * NsTclFilterProc --
  *
  *      The callback for Tcl filters. Run the script. 
  *
@@ -376,7 +383,7 @@ NsTclRequest(void *arg, Ns_Conn *conn)
  */
 
 int
-NsTclFilter(void *arg, Ns_Conn *conn, int why)
+NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
 {
     Ns_TclCallback      *cbPtr = arg;
     Tcl_DString          cmd;

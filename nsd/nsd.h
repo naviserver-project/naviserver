@@ -866,9 +866,6 @@ extern int NsInitInterp(Tcl_Interp *interp, NsServer *servPtr,
 extern void NsFreeConnInterp(Conn *connPtr)
      NS_GNUC_NONNULL(1);
 
-extern Ns_OpProc NsFastGet;
-extern Ns_OpProc NsAdpProc;
-
 extern Ns_Cache *NsFastpathCache(char *server, int size);
 
 extern void NsFreeAdp(NsInterp *itPtr);
@@ -893,9 +890,11 @@ extern Ns_SockProc NsTclSockProc;
 extern Ns_ArgProc NsTclSockArgProc;
 extern Ns_ThreadProc NsConnThread;
 extern Ns_ArgProc NsConnArgProc;
-extern Ns_FilterProc NsTclFilter;
-extern Ns_OpProc NsTclRequest;
-extern Ns_OpProc NsAdpRequest;
+extern Ns_FilterProc NsTclFilterProc;
+extern Ns_OpProc NsFastGet;
+extern Ns_OpProc NsTclRequestProc;
+extern Ns_OpProc NsAdpRequestProc;
+extern Ns_OpProc NsAdpMapProc;
 extern Ns_ArgProc NsTclRequestArgProc;
 extern Ns_TclTraceProc NsTclTraceProc;
 

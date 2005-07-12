@@ -75,9 +75,10 @@ static struct proc {
     {(void *) NsTclSockProc,       "ns:tclsockcallback",  NsTclSockArgProc},
     {(void *) NsCachePurge,        "ns:cachepurge",       NsCacheArgProc},
     {(void *) NsConnThread,        "ns:connthread",       NsConnArgProc},
-    {(void *) NsTclFilter,         "ns:tclfilter",        Ns_TclCallbackArgProc},
-    {(void *) NsTclRequest,        "ns:tclrequest",       Ns_TclCallbackArgProc},
-    {(void *) NsAdpRequest,        "ns:adprequest",       Ns_StringArgProc},
+    {(void *) NsTclFilterProc,     "ns:tclfilter",        Ns_TclCallbackArgProc},
+    {(void *) NsTclRequestProc,    "ns:tclrequest",       Ns_TclCallbackArgProc},
+    {(void *) NsAdpRequestProc,    "ns:adprequest",       ServerArgProc},
+    {(void *) NsAdpMapProc,        "ns:adpmap",           Ns_StringArgProc},
     {(void *) NsFastGet,           "ns:fastget",          ServerArgProc},
     {(void *) NsTclTraceProc,      "ns:tcltrace",         Ns_TclCallbackArgProc},
     {NULL, NULL, NULL}

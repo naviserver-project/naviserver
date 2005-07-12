@@ -524,9 +524,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         key = Ns_SetKey(set, i);
         if (!strcasecmp(key, "map")) {
             map = Ns_SetValue(set, i);
-            Ns_RegisterRequest(server, "GET",  map,NsAdpProc, NULL, servPtr, 0);
-            Ns_RegisterRequest(server, "HEAD", map,NsAdpProc, NULL, servPtr, 0);
-            Ns_RegisterRequest(server, "POST", map,NsAdpProc, NULL, servPtr, 0);
+            Ns_RegisterRequest(server, "GET",  map, NsAdpRequestProc, NULL, servPtr, 0);
+            Ns_RegisterRequest(server, "HEAD", map, NsAdpRequestProc, NULL, servPtr, 0);
+            Ns_RegisterRequest(server, "POST", map, NsAdpRequestProc, NULL, servPtr, 0);
             Ns_Log(Notice, "adp[%s]: mapped %s", server, map);
         }
     }
