@@ -40,8 +40,12 @@ if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 
-test ns_adp_chunked-1.1 {Chunked streaming} -constraints serverListen -body {
+test ns_adp_chunked-1.1 {Chunked streaming adp} -constraints serverListen -body {
     nstest_http -getbody 1 GET /ns_adp_chunked.adp
+} -result "200 {1b\r\n<BODY>this is a test</BODY>\r\n0\r\n\r\n}"
+
+test ns_adp_chunked-1.2 {Chunked tcl return} -constraints serverListen -body {
+    nstest_http -getbody 1 GET /ns_chunked.tcl
 } -result "200 {1b\r\n<BODY>this is a test</BODY>\r\n0\r\n\r\n}"
 
 cleanupTests

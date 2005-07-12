@@ -1,5 +1,11 @@
 2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* tests/ns_adp_chunked.test:
+	* tests/servers/server1/pages/ns_tcl_chunked.tcl:
+	* tests/servers/server1/pages/ns_adp_chunked.adp:
+	* tests/testserver/pages/ns_adp_chunked.adp: Added tests for chunked
+	encoding from adp files
+
 	* include/ns.h:
 	* nsd/fastpath.c:
 	* nsd/return.c:
