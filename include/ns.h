@@ -829,8 +829,6 @@ NS_EXTERN void Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
 NS_EXTERN void Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
                                       void *value);
 NS_EXTERN void Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length);
-NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
-NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
 
 /*
  * tclobjv.c
@@ -858,6 +856,13 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN int Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
+
+/*
+ * tcltime.c
+ */
+
+NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
+NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
 
 /*
  * tclxkeylist.c:
