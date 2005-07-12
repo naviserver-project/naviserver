@@ -37,6 +37,9 @@
 
 NS_RCSID("@(#) $Header$");
 
+#define _MAX(x,y)       ((x) > (y) ? (x) : (y))
+#define _MIN(x,y)       ((x) > (y) ? (y) : (x))
+
 /*
  * Defines for SockRead return code.
  */
@@ -267,8 +270,6 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->arg = init->arg;
     drvPtr->opts = init->opts;
     drvPtr->servPtr = servPtr;
-#define _MAX(x,y)       ((x) > (y) ? (x) : (y))
-#define _MIN(x,y)       ((x) > (y) ? (y) : (x))
     if (!Ns_ConfigGetInt(path, "bufsize", &n) || n < 1) { 
         n = DRV_BUFSIZE_INT;
     }
@@ -313,6 +314,10 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         n = DRV_MAXLINE_INT;
     }
     drvPtr->maxline = _MAX(n, DRV_MINLINE_INT);
+    if (!Ns_ConfigGetInt(path, "maxsize", &n) || n < 1) {
+        n = drvPtr->maxinput;
+    }
+    drvPtr->maxsize = n;
 
     /*
      * Allow specification of logging or not of various deep
@@ -679,6 +684,22 @@ NsSockClose(Sock *sockPtr, int keep)
     if (!keep) {
         (void) (*sockPtr->drvPtr->proc)(DriverClose, sock, NULL, 0);
     }
+
+#ifndef _WIN32
+    /*
+     * Close and unmmap temp file used for large content
+     */
+
+    if (sockPtr->tfd > 0) {
+        close(sockPtr->tfd);
+    }
+    sockPtr->tfd = 0;
+    if (sockPtr->taddr != NULL) {
+        munmap(sockPtr->taddr, (size_t)sockPtr->tsize);
+    }
+#endif
+
+    sockPtr->taddr = 0;
     sockPtr->keep = keep;
     Ns_MutexLock(&lock);
     if (firstClosePtr == NULL) {
@@ -1197,6 +1218,8 @@ SockAccept(Driver *drvPtr)
     
     slen = sizeof(struct sockaddr_in);
     sockPtr->drvPtr = drvPtr;
+    sockPtr->tfd = 0;
+    sockPtr->taddr = 0;
     sockPtr->keep = 0;
     sockPtr->arg = NULL;
     if (drvPtr->opts & NS_DRIVER_UDP) {
@@ -1363,6 +1386,8 @@ SockTrigger(void)
  *      the next byte to read mark and bytes available are set
  *      to the beginning of the content, just beyond the headers.
  *
+ *      Contents may be spooled into temp file and mmap-ed
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1373,7 +1398,7 @@ SockRead(Sock *sockPtr)
     struct iovec  buf;
     Request      *reqPtr;
     Tcl_DString  *bufPtr;
-    char         *s, *e, save;
+    char         *s, *e, save, tbuf[4096];
     int           cnt, len, nread, n;
     
     reqPtr = sockPtr->reqPtr;
@@ -1425,14 +1450,46 @@ SockRead(Sock *sockPtr)
             return SOCK_ERROR;
         }
     }
-    Tcl_DStringSetLength(bufPtr, len + nread);
-    buf.iov_base = bufPtr->string + reqPtr->woff;
-    buf.iov_len = nread;
+
+    /*
+     * Use temp file for large content if exceeds configured maxsize
+     */
+
+#ifndef _WIN32
+    if (reqPtr->coff > 0 && 
+        reqPtr->length > sockPtr->drvPtr->maxsize &&
+        sockPtr->tfd <= 0) {
+        sockPtr->tfd = Ns_GetTemp();
+        if (sockPtr->tfd < 0) {
+	    return SOCK_ERROR;
+	}
+        n = bufPtr->length - reqPtr->coff;
+        if (write(sockPtr->tfd, bufPtr->string + reqPtr->coff, n) != n) {
+            return SOCK_ERROR;
+        }
+        Tcl_DStringSetLength(bufPtr, 0);
+    }
+#endif
+    if (sockPtr->tfd > 0) {
+        buf.iov_base = tbuf;
+        buf.iov_len = _MIN(nread,sizeof(tbuf));
+    } else {
+        Tcl_DStringSetLength(bufPtr, len + nread);
+        buf.iov_base = bufPtr->string + reqPtr->woff;
+        buf.iov_len = nread;
+    }
+
     n = (*sockPtr->drvPtr->proc)(DriverRecv, sock, &buf, 1);
     if (n <= 0) {
         return SOCK_ERROR;
     }
-    Tcl_DStringSetLength(bufPtr, len + n);
+    if (sockPtr->tfd > 0) {
+        if (write(sockPtr->tfd, tbuf, n) != n) {
+     	    return SOCK_ERROR;
+        }
+    } else {
+        Tcl_DStringSetLength(bufPtr, len + n);
+    }
     reqPtr->woff  += n;
     reqPtr->avail += n;
     
@@ -1549,7 +1606,21 @@ SockRead(Sock *sockPtr)
      */
     
     if (reqPtr->coff > 0 && reqPtr->length <= reqPtr->avail) {
-        reqPtr->content = bufPtr->string + reqPtr->coff;
+        if (sockPtr->tfd > 0) {
+#ifndef _WIN32
+            sockPtr->tsize = reqPtr->length + 1;
+            sockPtr->taddr = mmap(0, sockPtr->tsize, PROT_READ|PROT_WRITE, MAP_PRIVATE,
+                                  sockPtr->tfd, 0);
+            if (sockPtr->taddr == MAP_FAILED) {
+                sockPtr->taddr = NULL;
+                return SOCK_ERROR;
+            }
+            reqPtr->content = sockPtr->taddr;
+            Ns_Log(Debug, "spooling content into temp file, maxsize=%d, filesize=%i", sockPtr->drvPtr->maxsize, sockPtr->tsize);
+#endif
+        } else {
+            reqPtr->content = bufPtr->string + reqPtr->coff;
+        }
         reqPtr->next = reqPtr->content;
         reqPtr->avail = reqPtr->length;
         

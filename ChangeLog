@@ -1,3 +1,12 @@
+2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd/nsd.h: Added support for spooling large uploaded
+	content into temporary file. Configuration oprion maxsize 
+	controls when to use temp file or memory buffer.
+
+	* include/ns.h:	 Added definition of Ns_ConnSend.
+
 2005-07-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

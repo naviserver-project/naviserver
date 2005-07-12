@@ -373,6 +373,7 @@ typedef struct Driver {
     int port;                   /* Port in location. */
     int backlog;                /* listen() backlog. */
     int maxinput;               /* Maximum request bytes to read. */
+    int maxsize;                /* Maximum request size in memory. */
     int maxline;                /* Maximum request line size. */
     int maxheaders;             /* Maximum number of request headers. */
     unsigned int loggingFlags;  /* Logging control flags */
@@ -408,6 +409,9 @@ typedef struct Sock {
     int pidx;                   /* poll() index. */
     Ns_Time timeout;
     Request *reqPtr;
+    int tfd;
+    char *taddr;
+    size_t tsize;
 
 } Sock;
 

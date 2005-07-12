@@ -615,6 +615,7 @@ NS_EXTERN int Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, int *nreadPtr);
 NS_EXTERN int Ns_WriteConn(Ns_Conn *conn, char *buf, int len);
 NS_EXTERN int Ns_WriteCharConn(Ns_Conn *conn, char *buf, int len);
 NS_EXTERN int Ns_ConnPuts(Ns_Conn *conn, char *string);
+NS_EXTERN int Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs);
 NS_EXTERN int Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr);
 NS_EXTERN int Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, int nsend);
 NS_EXTERN int Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, int nsend);
