@@ -97,7 +97,7 @@ typedef struct {
  */
 
 static Tcl_CmdProc PermCmd;
-static int AddCmds(Tcl_Interp *interp, void *arg);
+static Ns_TclTraceProc AddCmds;
 static int AddUserCmd(Server *servPtr, Tcl_Interp *interp,
     int argc, char **argv);
 static int AddGroupCmd(Server *servPtr, Tcl_Interp *interp,
@@ -152,7 +152,7 @@ Ns_ModuleInit(char *server, char *module)
     Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->lock);
     Ns_SetRequestAuthorizeProc(server, AuthProc);
-    Ns_TclInitInterps(server, AddCmds, servPtr);
+    Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);
     hPtr = Tcl_CreateHashEntry(&serversTable, server, &new);
     Tcl_SetHashValue(hPtr, servPtr);
     return NS_OK;

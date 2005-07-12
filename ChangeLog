@@ -1,3 +1,31 @@
+2005-07-11  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/nsmain.c:
+	* nsd/queue.c:
+	* nsd/tclcmds.c:
+	* nsd/proc.c:
+	* nsd/tclinit.c: Add generalised interp tracing mechanism which
+	replaces Ns_TclInitInterps, Ns_TclRegisterDeferred
+	etc. Restructured code for clarity.
+
+	* nsd/tclset.c:
+	* nsd/tclshare.c:
+	* nsd/tclthread.c:
+	* nsd/adprequest.c: s/NsGetInterp/NsGetInterpData/g
+
+	* nsd/Makefile:
+	* nsd/connio.c:
+	* nsd/tclatclose.c: Moved at-close traces into tclinit.c.
+
+	* nsd/tclmisc.c: Move Ns_TclPrintfResult into misc.
+
+	* nsdb/db.h:
+	* nsdb/nsdb.h:
+	* nslog/nslog.c:
+	* nsperm/nsperm.c: Remove usage of deprecated functions.
+
 2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/ns_adp_chunked.test:

@@ -66,5 +66,6 @@ Ns_ModuleInit(char *server, char *module)
 	once = 1;
     }
     NsDbInitServer(server);
-    return Ns_TclInitInterps(server, NsDbAddCmds, server);
+    return Ns_TclRegisterTrace(server, NsDbAddCmds, server,
+                               NS_TCL_TRACE_CREATE);
 }

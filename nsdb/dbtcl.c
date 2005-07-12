@@ -44,7 +44,6 @@ NS_RCSID("@(#) $Header$");
 
 typedef struct InterpData {
     char *server;
-    int   cleanup;
     Tcl_HashTable dbs;
 } InterpData;
 
@@ -60,7 +59,7 @@ static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, char *handleId,
 static Tcl_InterpDeleteProc FreeData;
 static Tcl_CmdProc DbCmd, QuoteListToListCmd, GetCsvCmd, DbErrorCodeCmd,
 	DbErrorMsgCmd, GetCsvCmd, DbConfigPathCmd, PoolDescriptionCmd;
-static Ns_TclDeferProc ReleaseDbs;
+static Ns_TclTraceProc ReleaseDbs;
 static char *datakey = "nsdb:data";
 
 
@@ -111,6 +110,7 @@ Ns_TclDbGetHandle(Tcl_Interp *interp, char *id, Ns_DbHandle **handlePtr)
 int
 NsDbAddCmds(Tcl_Interp *interp, void *arg)
 {
+    char       *server = arg;
     InterpData *idataPtr;
 
     /*
@@ -118,10 +118,10 @@ NsDbAddCmds(Tcl_Interp *interp, void *arg)
      */
 
     idataPtr = ns_malloc(sizeof(InterpData));
-    idataPtr->server = arg;
-    idataPtr->cleanup = 0;
+    idataPtr->server = server;
     Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
     Tcl_SetAssocData(interp, datakey, FreeData, idataPtr);
+    Ns_TclRegisterTrace(server, ReleaseDbs, NULL, NS_TCL_TRACE_DEALLOCATE);
 
     Tcl_CreateCommand(interp, "ns_db", DbCmd, idataPtr, NULL);
     Tcl_CreateCommand(interp, "ns_quotelisttolist", QuoteListToListCmd, idataPtr, NULL);
@@ -131,6 +131,7 @@ NsDbAddCmds(Tcl_Interp *interp, void *arg)
     Tcl_CreateCommand(interp, "ns_getcsv", GetCsvCmd, idataPtr, NULL);
     Tcl_CreateCommand(interp, "ns_dbconfigpath", DbConfigPathCmd, idataPtr, NULL);
     Tcl_CreateCommand(interp, "ns_pooldescription", PoolDescriptionCmd, idataPtr, NULL);
+
     return TCL_OK;
 }
 
@@ -948,10 +949,6 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle)
     int            new, next;
     char	   buf[100];
 
-    if (!idataPtr->cleanup) {
-	Ns_TclRegisterDeferred(interp, ReleaseDbs, idataPtr);
-	idataPtr->cleanup = 1;
-    }
     next = idataPtr->dbs.numEntries;
     do {
         sprintf(buf, "nsdb%x", next++);
@@ -1063,21 +1060,25 @@ FreeData(ClientData arg, Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-static void
+static int
 ReleaseDbs(Tcl_Interp *interp, void *arg)
 {
-    Ns_DbHandle *handlePtr;
+    Ns_DbHandle    *handlePtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    InterpData *idataPtr = arg;
+    InterpData     *idataPtr;
 
-    hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
-    while (hPtr != NULL) {
-    	handlePtr = Tcl_GetHashValue(hPtr);
-   	Ns_DbPoolPutHandle(handlePtr);
-    	hPtr = Tcl_NextHashEntry(&search);
+    idataPtr = Tcl_GetAssocData(interp, datakey, NULL);
+    if (idataPtr != NULL) {
+        hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
+        while (hPtr != NULL) {
+            handlePtr = Tcl_GetHashValue(hPtr);
+            Ns_DbPoolPutHandle(handlePtr);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Tcl_DeleteHashTable(&idataPtr->dbs);
+        Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
     }
-    Tcl_DeleteHashTable(&idataPtr->dbs);
-    Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
-    idataPtr->cleanup = 0;
+
+    return TCL_OK;
 }

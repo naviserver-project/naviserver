@@ -48,6 +48,36 @@ static int WordEndsInSemi(char *ip);
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_TclPrintfResult --
+ *
+ *      Leave a formatted message in the given Tcl interps result.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
+{
+    va_list         ap;
+    Tcl_DString     ds;
+
+    Tcl_DStringInit(&ds);
+    va_start(ap, fmt);
+    Ns_DStringVPrintf(&ds, fmt, ap);
+    va_end(ap);
+    Tcl_DStringResult(interp, &ds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclStripHtmlCmd --
  *
  *	Implements ns_striphtml. 

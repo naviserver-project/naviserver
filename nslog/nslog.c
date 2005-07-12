@@ -135,7 +135,7 @@ static int LogRoll(Log *logPtr);
 static int LogClose(Log *logPtr);
 static Ns_ArgProc LogArg;
 static Tcl_CmdProc LogCmd;
-static Ns_TclInterpInitProc AddCmds;
+static Ns_TclTraceProc AddCmds;
 
 /*
  * Static variables defined in this file
@@ -264,7 +264,8 @@ Ns_ModuleInit(char *server,char *module)
     }
     Ns_RegisterServerTrace(server,LogTrace,logPtr);
     Ns_RegisterAtShutdown(LogCloseCallback,logPtr);
-    Ns_TclInitInterps(server,AddCmds,logPtr);
+    Ns_TclRegisterTrace(server, AddCmds, logPtr, NS_TCL_TRACE_CREATE);
+
     return NS_OK;
 }
 

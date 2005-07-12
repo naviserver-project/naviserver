@@ -85,7 +85,7 @@ static int EnterSet(NsInterp *itPtr, Ns_Set *set, int flags);
 int
 Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, int flags)
 {
-    NsInterp *itPtr = NsGetInterp(interp);
+    NsInterp *itPtr = NsGetInterpData(interp);
 
     if (itPtr == NULL) {
 	Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
@@ -730,7 +730,7 @@ LookupInterpSet(Tcl_Interp *interp, char *id, int delete, Ns_Set **setPtr)
 {
     NsInterp *itPtr;
 
-    itPtr = NsGetInterp(interp);
+    itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
 	Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
 	return TCL_ERROR;

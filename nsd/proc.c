@@ -79,6 +79,7 @@ static struct proc {
     {(void *) NsTclRequest,        "ns:tclrequest",       Ns_TclCallbackArgProc},
     {(void *) NsAdpRequest,        "ns:adprequest",       Ns_StringArgProc},
     {(void *) NsFastGet,           "ns:fastget",          ServerArgProc},
+    {(void *) NsTclTraceProc,      "ns:tcltrace",         Ns_TclCallbackArgProc},
     {NULL, NULL, NULL}
 };
 

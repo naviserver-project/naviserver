@@ -941,13 +941,13 @@ NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
  *
  * CommandInit --
  *
- *      Initialize the interp with server commands.
+ *      Initialize the command interp with basic and server commands.
  *
  * Results:
- *      TCL_OK or TCL_ERROR.
+ *      Tcl result.
  *
  * Side effects:
- *      None.
+ *      Depends on init scripts.
  *
  *----------------------------------------------------------------------
  */
@@ -957,6 +957,10 @@ CommandInit(Tcl_Interp *interp)
 {
     NsServer *servPtr = NsGetServer(cmdServer);
 
+    Tcl_InitMemory(interp);
+    if (Tcl_Init(interp) != TCL_OK) {
+        Ns_TclLogError(interp);
+    }
     return NsInitInterp(interp, servPtr, NULL);
 }
 

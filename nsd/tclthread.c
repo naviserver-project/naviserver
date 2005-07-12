@@ -596,7 +596,7 @@ GetAddr(Tcl_Interp *interp, int type, char *id, void **addrPtr)
 int
 Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
 {
-    NsInterp *itPtr = NsGetInterp(interp);
+    NsInterp *itPtr = NsGetInterpData(interp);
 
     CreateTclThread(itPtr, script, (thrPtr == NULL), thrPtr);
     return NS_OK;

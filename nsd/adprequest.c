@@ -112,7 +112,7 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
      */
 
     interp = Ns_GetConnInterp(conn);
-    itPtr = NsGetInterp(interp);
+    itPtr = NsGetInterpData(interp);
     servPtr = itPtr->servPtr;
 
     /*

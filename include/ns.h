@@ -110,6 +110,17 @@
 #define NS_DRIVER_UNIX            8     /* Unix domain socket */
 #define NS_DRIVER_VERSION_1       1
 
+/*
+ * The following are valid Tcl interp traces.
+ */
+
+#define NS_TCL_TRACE_CREATE        0x01
+#define NS_TCL_TRACE_DELETE        0x02
+#define NS_TCL_TRACE_ALLOCATE      0x04
+#define NS_TCL_TRACE_DEALLOCATE    0x08
+#define NS_TCL_TRACE_GETCONN       0x10
+#define NS_TCL_TRACE_FREECONN      0x20
+
 #if defined(__alpha)
 typedef long			ns_int64;
 typedef unsigned long		ns_uint64;
@@ -844,7 +855,8 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
  * tclthread.c:
  */
 
-NS_EXTERN int Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr);
+NS_EXTERN int Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
 
 /*
@@ -1222,43 +1234,115 @@ NS_EXTERN int Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write,
  * tclinit.c:
  */
 
-NS_EXTERN int Ns_TclInit(Tcl_Interp *interp);
-NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...) NS_GNUC_PRINTF(2, 3);
-NS_EXTERN int Nsd_Init(Tcl_Interp *interp);
-NS_EXTERN int Ns_TclInitInterps(char *server, Ns_TclInterpInitProc *proc, void *arg);
-NS_EXTERN int Ns_TclInitModule(char *server, char *module);
-NS_EXTERN void Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg);
-NS_EXTERN void Ns_TclMarkForDelete(Tcl_Interp *interp);
-NS_EXTERN Tcl_Interp *Ns_TclCreateInterp(void);
-NS_EXTERN void Ns_TclDestroyInterp(Tcl_Interp *interp);
-NS_EXTERN Tcl_Interp *Ns_TclAllocateInterp(CONST char *server);
-NS_EXTERN void Ns_TclDeAllocateInterp(Tcl_Interp *interp);
-NS_EXTERN char *Ns_TclLibrary(char *server);
-NS_EXTERN char *Ns_TclInterpServer(Tcl_Interp *interp);
-NS_EXTERN Ns_Conn *Ns_TclGetConn(Tcl_Interp *interp);
-NS_EXTERN int Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, void *arg);
-NS_EXTERN int Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, void *arg);
-NS_EXTERN int Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg);
+NS_EXTERN int
+Nsd_Init(Tcl_Interp *interp);
+
+NS_EXTERN Tcl_Interp *
+Ns_TclCreateInterp(void);
+
+NS_EXTERN int
+Ns_TclInit(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_TclEval(Ns_DString *dsPtr, CONST char *server, CONST char *script)
+     NS_GNUC_NONNULL(3);
+
+NS_EXTERN Tcl_Interp *
+Ns_TclAllocateInterp(CONST char *server);
+
+NS_EXTERN void
+Ns_TclDeAllocateInterp(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN Tcl_Interp *
+Ns_GetConnInterp(Ns_Conn *conn)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Conn *
+Ns_TclGetConn(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_TclDestroyInterp(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_TclMarkForDelete(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc, void *arg, int when)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN char *
+Ns_TclLibrary(CONST char *server);
+
+NS_EXTERN char *
+Ns_TclInterpServer(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN char *
+Ns_TclLogError(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN char *
+Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_TclInitModule(CONST char *server, CONST char *module)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_FreeConnInterp(Ns_Conn *conn)
+     NS_GNUC_DEPRECATED;
+
+NS_EXTERN int
+Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, void *arg)
+     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+
+NS_EXTERN int
+Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, void *arg)
+     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+
+NS_EXTERN int
+Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
+     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+
+NS_EXTERN int
+Ns_TclInitInterps(CONST char *server, Ns_TclInterpInitProc *proc, void *arg)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED;
+
+NS_EXTERN void
+Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED;
 
 /*
- * tclop.c:
+ * tclmisc.c
+ */
+
+NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
+     NS_GNUC_PRINTF(2, 3);
+
+/*
+ * tclrequest.c:
  */
 
 NS_EXTERN int Ns_TclRequest(Ns_Conn *conn, char *proc);
-NS_EXTERN int Ns_TclEval(Ns_DString *pds, char *server, char *script);
-NS_EXTERN char *Ns_TclLogError(Tcl_Interp *interp);
-NS_EXTERN char *Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn);
-NS_EXTERN Tcl_Interp *Ns_GetConnInterp(Ns_Conn *conn);
-NS_EXTERN void Ns_FreeConnInterp(Ns_Conn *conn);
 
 /*
  * tclset.c:
  */
 
-NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, int flags);
-NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, char *setId);
-NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtrPtr);
-NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, char *setId);
+NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, int flags)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, char *setId)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtrPtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, char *setId)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * time.c:

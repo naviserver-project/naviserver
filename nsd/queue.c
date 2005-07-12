@@ -802,7 +802,7 @@ ConnRun(Conn *connPtr)
 
     NsRunCleanups(conn);
     NsClsCleanup(connPtr);
-    Ns_FreeConnInterp(conn);
+    NsFreeConnInterp(connPtr);
     if (connPtr->authUser != NULL) {
 	ns_free(connPtr->authUser);
 	connPtr->authUser = connPtr->authPasswd = NULL;

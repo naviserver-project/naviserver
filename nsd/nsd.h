@@ -468,7 +468,7 @@ typedef struct Conn {
     char idstr[16];
     
     Ns_Time startTime;
-    Tcl_Interp *interp;
+    struct NsInterp *itPtr;
 
     Tcl_Encoding encoding;
     Tcl_Encoding urlEncoding;
@@ -640,7 +640,7 @@ typedef struct NsServer {
 
     struct {         
         char *library;
-        struct Trace *traces[4];
+        struct Trace *firstTracePtr;
         char *initfile;
         Ns_RWLock lock;
         char *script;
@@ -859,9 +859,12 @@ extern void NsFreeRequest(Request *reqPtr);
 
 extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);
-extern NsInterp *NsGetInterp(Tcl_Interp *interp);
+extern NsInterp *NsGetInterpData(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 extern int NsInitInterp(Tcl_Interp *interp, NsServer *servPtr,
-                        NsInterp **itPtrPtr);
+                        NsInterp **itPtrPtr)
+     NS_GNUC_NONNULL(1);
+extern void NsFreeConnInterp(Conn *connPtr)
+     NS_GNUC_NONNULL(1);
 
 extern Ns_OpProc NsFastGet;
 extern Ns_OpProc NsAdpProc;
@@ -869,8 +872,8 @@ extern Ns_OpProc NsAdpProc;
 extern Ns_Cache *NsFastpathCache(char *server, int size);
 
 extern void NsFreeAdp(NsInterp *itPtr);
-extern void NsFreeAtClose(NsInterp *itPtr);
-extern void NsRunAtClose(Tcl_Interp *interp);
+extern void NsTclRunAtClose(NsInterp *itPtr)
+     NS_GNUC_NONNULL(1);
 
 extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url);
 extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
@@ -894,6 +897,7 @@ extern Ns_FilterProc NsTclFilter;
 extern Ns_OpProc NsTclRequest;
 extern Ns_OpProc NsAdpRequest;
 extern Ns_ArgProc NsTclRequestArgProc;
+extern Ns_TclTraceProc NsTclTraceProc;
 
 extern void NsGetCallbacks(Tcl_DString *dsPtr);
 extern void NsGetSockCallbacks(Tcl_DString *dsPtr);
@@ -944,13 +948,14 @@ extern void NsWaitShutdownProcs(Ns_Time *toPtr);
 extern void NsStartJobsShutdown(void);
 extern void NsWaitJobsShutdown(Ns_Time *toPtr);
 
-extern void NsTclInitServer(char *server);
+extern void NsTclInitServer(CONST char *server)
+     NS_GNUC_NONNULL(1);
 extern void NsLoadModules(char *server);
 extern struct Bucket *NsTclCreateBuckets(char *server, int nbuckets);
 
 extern void NsClsCleanup(Conn *connPtr);
-extern void NsTclAddCmds(Tcl_Interp *interp, NsInterp *itPtr);
-extern void NsTclAddServerCmds(Tcl_Interp *interp, NsInterp *itPtr);
+extern void NsTclAddBasicCmds(NsInterp *itPtr);
+extern void NsTclAddServerCmds(NsInterp *itPtr);
 
 extern void NsRestoreSignals(void);
 extern void NsSendSignal(int sig);
@@ -979,10 +984,10 @@ extern int NsAdpInclude(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[]);
  * Tcl support routines.
  */
 
-extern Ns_TclInterpInitProc NsTclCreateCmds;
 extern void NsTclInitQueueType(void);
 extern void NsTclInitAddrType(void);
 extern void NsTclInitTimeType(void);
+extern void NsTclInitKeylistType(void);
 extern void NsTclInitSpecType(void);
 
 /*
@@ -1006,7 +1011,6 @@ extern void NsRunAtExitProcs(void);
 extern int NsCloseAllFiles(int errFd);
 extern int NsMemMap(char *path, int size, int mode, FileMap *mapPtr);
 extern void NsMemUmap(FileMap *mapPtr);
-extern int Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs);
 
 #ifndef _WIN32
 extern int Ns_ConnRunRequest(Ns_Conn *conn);

@@ -30,7 +30,7 @@
 /*
  * tclcmds.c --
  *
- * 	Connect Tcl command names to the functions that implement them
+ *      Connect Tcl command names to the functions that implement them.
  */
 
 #include "nsd.h"
@@ -63,6 +63,7 @@ extern Tcl_ObjCmdProc
     NsTclAdpTellObjCmd,
     NsTclAdpTruncObjCmd,
     NsTclAfterObjCmd,
+    NsTclAtCloseObjCmd,
     NsTclAtExitObjCmd,
     NsTclAtShutdownObjCmd,
     NsTclAtSignalObjCmd,
@@ -191,7 +192,6 @@ extern Tcl_CmdProc
     NsTclAdpRegisterAdpCmd,
     NsTclAdpRegisterProcCmd,
     NsTclAdpStatsCmd,
-    NsTclAtCloseCmd,
     NsTclCacheFlushCmd,
     NsTclCacheKeysCmd,
     NsTclCacheNamesCmd,
@@ -233,7 +233,7 @@ typedef struct Cmd {
  * and virtual server interps.
  */
 
-static Cmd cmds[] = {
+static Cmd basicCmds[] = {
     {"env", NsTclEnvCmd, NULL},
     {"keyldel", TclX_KeyldelObjCmd, NULL},
     {"keylget", TclX_KeylgetObjCmd, NULL},
@@ -381,7 +381,7 @@ static Cmd servCmds[] = {
     {"ns_adp_stream", NULL, NsTclAdpStreamObjCmd},
     {"ns_adp_tell", NULL, NsTclAdpTellObjCmd},
     {"ns_adp_trunc", NULL, NsTclAdpTruncObjCmd},
-    {"ns_atclose", NsTclAtCloseCmd, NULL},
+    {"ns_atclose", NULL, NsTclAtCloseObjCmd},
     {"ns_chan", NULL, NsTclChanObjCmd},
     {"ns_checkurl", NULL, NsTclRequestAuthorizeObjCmd},
     {"ns_conn", NULL, NsTclConnObjCmd},
@@ -444,40 +444,42 @@ static Cmd servCmds[] = {
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAddCmds --
+ * NsTclAddBasicCmds, NsTclAddServerCmds --
  *
- *	Create basic and server Tcl commands.
+ *      Add basic and server Tcl commands to an interp.
  *
  * Results:
- *	TCL_OK. 
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-AddCmds(Cmd *cmdPtr, ClientData arg, Tcl_Interp *interp)
+AddCmds(Cmd *cmdPtr, NsInterp *itPtr)
 {
+    Tcl_Interp *interp = itPtr->interp;
+
     while (cmdPtr->name != NULL) {
-	if (cmdPtr->objProc != NULL) {
-	    Tcl_CreateObjCommand(interp, cmdPtr->name, cmdPtr->objProc, arg, NULL);
-	} else {
-	    Tcl_CreateCommand(interp, cmdPtr->name, cmdPtr->proc, arg, NULL);
-	}
-	++cmdPtr;
+        if (cmdPtr->objProc != NULL) {
+            Tcl_CreateObjCommand(interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
+        } else {
+            Tcl_CreateCommand(interp, cmdPtr->name, cmdPtr->proc, itPtr, NULL);
+        }
+        ++cmdPtr;
     }
 }
 
 void
-NsTclAddCmds(Tcl_Interp *interp, NsInterp *itPtr)
+NsTclAddBasicCmds(NsInterp *itPtr)
 {
-    AddCmds(cmds, itPtr, interp);
+    AddCmds(basicCmds, itPtr);
 }
 
 void
-NsTclAddServerCmds(Tcl_Interp *interp, NsInterp *itPtr)
+NsTclAddServerCmds(NsInterp *itPtr)
 {
-    AddCmds(servCmds, itPtr, interp);
+    AddCmds(servCmds, itPtr);
 }

@@ -34,7 +34,7 @@
 
 extern void NsDbInitPools(void);
 extern void NsDbInitServer(char *server);
-extern Ns_TclInterpInitProc NsDbAddCmds;
+extern Ns_TclTraceProc NsDbAddCmds;
 extern void 		NsDbClose(Ns_DbHandle *);
 extern void 		NsDbDisconnect(Ns_DbHandle *);
 extern struct DbDriver *NsDbGetDriver(Ns_DbHandle *);
