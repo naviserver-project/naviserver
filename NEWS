@@ -5,8 +5,14 @@ NaviServer 4.99.1
 New Features:
 
     * HTTP Range requests for streaming media and resuming downloads 
+    * Full Chunked encoding support for Fastpath, Adp and Tcl scripts
+    * Using temporary files for large uploads when content exceeds 
+      pre-configured maxsize parameter
 
+Code Changes:
 
+    * New function Ns_ConnPrintfHeaders() for adding NTTP headers in
+      printf style
 
 
 ======================================
@@ -22,7 +28,7 @@ New Features:
     * C and Tcl API for HTTP cookies #1145957
     * Add -bytes option to ns_conncptofp command
     * New command ns_conn channel #1156141
-    * Add new wtchdog feature to restart the server if it crashes
+    * Add new watchdog feature to restart the server if it crashes
     * Add ns_sha1 cryptographic hash command
     * C and Tcl API for setting response code of current connection
     * ns_accesslog can change configuration at runtime

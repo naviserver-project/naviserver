@@ -1,5 +1,7 @@
 2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* NEWS: Updated latest features and changes
+
 	* nsd/driver.c:
 	* nsd/nsd.h: Added support for spooling large uploaded
 	content into temporary file. Configuration oprion maxsize 
