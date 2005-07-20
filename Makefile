@@ -73,8 +73,13 @@ test: all
 runtest: all
 	LD_LIBRARY_PATH="./nsd:./nsthread" ./nsd/nsd -c -d -t tests/test.nscfg
 
-gdb: all
+gdbtest: all
 	@echo "set args -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)" > gdb.run
+	LD_LIBRARY_PATH="./nsd:./nsthread" gdb -x gdb.run ./nsd/nsd
+	rm gdb.run
+
+gdbruntest: all
+	@echo "set args -c -d -t tests/test.nscfg" > gdb.run
 	LD_LIBRARY_PATH="./nsd:./nsthread" gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 

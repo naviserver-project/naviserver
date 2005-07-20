@@ -1,3 +1,8 @@
+2005-07-19  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* Makefile: Add gdbruntest target to run a naviserver command
+	shell under gdb.
+
 2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* NEWS: Updated latest features and changes
