@@ -1,3 +1,19 @@
+2005-07-21  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/ns_adp_chunked.test:
+	* tests/http_chunked.test: Rename tests which handle both Tcl and
+	ADP.  Add some more tests which highlight a few bugs.
+
+	* tests/testserver/pages/ns_adp_chunked.tcl:
+	* tests/testserver/pages/http_chunked.adp: Rename file.  Handle
+	streaming and non-streaming situations, and actually write out the
+	data in two goes.  Add a workaround for a bug in the ns_conn
+	chunked switch: detect whether client is HTTP/1.1 and therefore
+	handles chunked encoding.  This needs to disappear altogether.
+
+	* tests/testserver/pages/ns_tcl_chunked.tcl: Incorporate code
+	directly into test file using ns_register_proc.
+
 2005-07-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* Makefile: Add gdbruntest target to run a naviserver command
