@@ -1,3 +1,9 @@
+2005-07-22  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/config.c: Untabify and reformat.  Add CONST declarations.
+
 2005-07-21  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/ns_adp_chunked.test:

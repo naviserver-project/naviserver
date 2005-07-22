@@ -592,15 +592,33 @@ NS_EXTERN int Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int
  * config.c:
  */
 
-NS_EXTERN char *Ns_ConfigGetValue(char *section, char *key);
-NS_EXTERN char *Ns_ConfigGetValueExact(char *section, char *key);
-NS_EXTERN int Ns_ConfigGetInt(char *section, char *key, int *valuePtr);
-NS_EXTERN int Ns_ConfigGetInt64(char *section, char *key, ns_int64 *valuePtr);
-NS_EXTERN int Ns_ConfigGetBool(char *section, char *key, int *valuePtr);
-NS_EXTERN char *Ns_ConfigGetPath(char *server, char *module, ...) NS_GNUC_SENTINEL;
-NS_EXTERN Ns_Set **Ns_ConfigGetSections(void);
-NS_EXTERN Ns_Set *Ns_ConfigGetSection(char *section);
-NS_EXTERN void Ns_GetVersion(int *major, int *minor, int *patch, int *type);
+NS_EXTERN char *
+Ns_ConfigGetValue(CONST char *section, CONST char *key);
+
+NS_EXTERN char *
+Ns_ConfigGetValueExact(CONST char *section, CONST char *key);
+
+NS_EXTERN int
+Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr);
+
+NS_EXTERN int
+Ns_ConfigGetInt64(CONST char *section, CONST char *key, ns_int64 *valuePtr);
+
+NS_EXTERN int
+Ns_ConfigGetBool(CONST char *section, CONST char *key, int *valuePtr);
+
+NS_EXTERN char *
+Ns_ConfigGetPath(CONST char *server, CONST char *module, ...)
+     NS_GNUC_SENTINEL;
+
+NS_EXTERN Ns_Set **
+Ns_ConfigGetSections(void);
+
+NS_EXTERN Ns_Set *
+Ns_ConfigGetSection(CONST char *section);
+
+NS_EXTERN void
+Ns_GetVersion(int *major, int *minor, int *patch, int *type);
 
 /*
  * conn.c:

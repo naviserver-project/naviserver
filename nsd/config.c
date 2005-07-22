@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -30,23 +30,24 @@
 /* 
  * config.c --
  *
- *	Support for the configuration file
+ *      Support for the configuration file
  */
 
 #include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
 
-#define ISSLASH(c)      ((c) == '/' || (c) == '\\')
+
+#define ISSLASH(c) ((c) == '/' || (c) == '\\')
 
 /*
- * Local procedures defined in this file.
+ * Local functions defined in this file.
  */
 
 static Tcl_CmdProc SectionCmd;
 static Tcl_CmdProc ParamCmd;
-static Ns_Set     *GetSection(char *section, int create);
-static char       *ConfigGet(char *section, char *key, int exact);
+static Ns_Set     *GetSection(CONST char *section, int create);
+static char       *ConfigGet(CONST char *section, CONST char *key, int exact);
 
 
 /*
@@ -54,19 +55,19 @@ static char       *ConfigGet(char *section, char *key, int exact);
  *
  * Ns_ConfigGetValue --
  *
- *	Return a config file value for a given key 
+ *      Return a config file value for a given key 
  *
  * Results:
- *	ASCIIZ ptr to a value 
+ *      ASCIIZ ptr to a value 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
 
 char *
-Ns_ConfigGetValue(char *section, char *key)
+Ns_ConfigGetValue(CONST char *section, CONST char *key)
 {
     return ConfigGet(section, key, 0);
 }
@@ -77,19 +78,19 @@ Ns_ConfigGetValue(char *section, char *key)
  *
  * Ns_ConfigGetValueExact --
  *
- *	Case-sensitive version of Ns_ConfigGetValue 
+ *      Case-sensitive version of Ns_ConfigGetValue 
  *
  * Results:
- *	See Ns_ConfigGetValue 
+ *      See Ns_ConfigGetValue 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
 
 char *
-Ns_ConfigGetValueExact(char *section, char *key)
+Ns_ConfigGetValueExact(CONST char *section, CONST char *key)
 {
     return ConfigGet(section, key, 1);
 }
@@ -100,22 +101,22 @@ Ns_ConfigGetValueExact(char *section, char *key)
  *
  * Ns_ConfigGetInt --
  *
- *	Fetch integer config values 
+ *      Fetch integer config values 
  *
  * Results:
- *	S_TRUE if it found an integer value; otherwise, it returns 
- *	NS_FALSE and sets the value to 0 
+ *      NS_TRUE if it found an integer value; otherwise, it returns 
+ *      NS_FALSE and sets the value to 0 
  *
  * Side effects:
- *	The integer value is returned by reference 
+ *      The integer value is returned by reference 
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConfigGetInt(char *section, char *key, int *valuePtr)
+Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr)
 {
-    char           *s;
+    char *s;
 
     s = Ns_ConfigGetValue(section, key);
     if (s == NULL || sscanf(s, "%d", valuePtr) != 1) {
@@ -130,22 +131,22 @@ Ns_ConfigGetInt(char *section, char *key, int *valuePtr)
  *
  * Ns_ConfigGetInt64 --
  *
- *	Like Ns_ConfigGetInt, but with INT64 data instead of 
- *	system-native int types. 
+ *      Like Ns_ConfigGetInt, but with INT64 data instead of 
+ *      system-native int types. 
  *
  * Results:
- *	See Ns_ConfigGetInt 
+ *      See Ns_ConfigGetInt 
  *
  * Side effects:
- *	See Ns_ConfigGetInt 
+ *      See Ns_ConfigGetInt 
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConfigGetInt64(char *section, char *key, INT64 *valuePtr)
+Ns_ConfigGetInt64(CONST char *section, CONST char *key, INT64 *valuePtr)
 {
-    char           *s;
+    char *s;
 
     s = Ns_ConfigGetValue(section, key);
     if (s == NULL || sscanf(s, NS_INT_64_FORMAT_STRING, valuePtr) != 1) {
@@ -160,41 +161,41 @@ Ns_ConfigGetInt64(char *section, char *key, INT64 *valuePtr)
  *
  * Ns_ConfigGetBool --
  *
- *	Get a boolean config value. There are many ways to represent 
- *	a boolean value. 
+ *      Get a boolean config value. There are many ways to represent 
+ *      a boolean value. 
  *
  * Results:
- *	NS_TRUE/NS_FALSE
+ *      NS_TRUE/NS_FALSE
  *
  * Side effects:
- *	The boolean value is returned by reference 
+ *      The boolean value is returned by reference 
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConfigGetBool(char *section, char *key, int *valuePtr)
+Ns_ConfigGetBool(CONST char *section, CONST char *key, int *valuePtr)
 {
-    char           *s;
+    char *s;
 
     s = Ns_ConfigGetValue(section, key);
     if (s == NULL) {
         return NS_FALSE;
     }
-    if (STREQ(s, "1") ||
-	STRIEQ(s, "y") ||
-	STRIEQ(s, "yes") ||
-	STRIEQ(s, "on") ||
-	STRIEQ(s, "t") ||
-	STRIEQ(s, "true")) {
+    if (STREQ(s, "1")
+        || STRIEQ(s, "y")
+        || STRIEQ(s, "yes")
+        || STRIEQ(s, "on")
+        || STRIEQ(s, "t")
+        || STRIEQ(s, "true")) {
 
         *valuePtr = 1;
-    } else if (STREQ(s, "0") ||
-	STRIEQ(s, "n") ||
-	STRIEQ(s, "no") ||
-	STRIEQ(s, "off") ||
-	STRIEQ(s, "f") ||
-	STRIEQ(s, "false")) {
+    } else if (STREQ(s, "0")
+               || STRIEQ(s, "n")
+               || STRIEQ(s, "no")
+               || STRIEQ(s, "off")
+               || STRIEQ(s, "f")
+               || STRIEQ(s, "false")) {
 
         *valuePtr = 0;
     } else if (sscanf(s, "%d", valuePtr) != 1) {
@@ -209,20 +210,20 @@ Ns_ConfigGetBool(char *section, char *key, int *valuePtr)
  *
  * Ns_ConfigGetPath --
  *
- *	Get the full name of a config file section if it exists. 
+ *      Get the full name of a config file section if it exists. 
  *
  * Results:
- *	A pointer to an ASCIIZ string of the full path name, or NULL 
- *	if that path is not in the config file. 
+ *      A pointer to an ASCIIZ string of the full path name, or NULL 
+ *      if that path is not in the config file. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
 
 char *
-Ns_ConfigGetPath(char *server, char *module, ...)
+Ns_ConfigGetPath(CONST char *server, CONST char *module, ...)
 {
     va_list         ap;
     char           *s;
@@ -262,14 +263,14 @@ Ns_ConfigGetPath(char *server, char *module, ...)
  *
  * Ns_ConfigGetSections --
  *
- *	Return a malloc'ed, NULL-terminated array of sets, each 
- *	corresponding to a config section 
+ *      Return a malloc'ed, NULL-terminated array of sets, each
+ *      corresponding to a config section.
  *
  * Results:
- *	An array of sets 
+ *      An array of sets.
  *
  * Side effects:
- *	The result is malloc'ed memory 
+ *      The result is malloc'ed memory.
  *
  *----------------------------------------------------------------------
  */
@@ -280,17 +281,18 @@ Ns_ConfigGetSections(void)
     Ns_Set        **sets;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    int     	    n;
+    int             n;
     
     n = nsconf.sections.numEntries + 1;
     sets = ns_malloc(sizeof(Ns_Set *) * n);
     n = 0;
     hPtr = Tcl_FirstHashEntry(&nsconf.sections, &search);
     while (hPtr != NULL) {
-    	sets[n++] = Tcl_GetHashValue(hPtr);
-    	hPtr = Tcl_NextHashEntry(&search);
+        sets[n++] = Tcl_GetHashValue(hPtr);
+        hPtr = Tcl_NextHashEntry(&search);
     }
     sets[n] = NULL;
+
     return sets;
 }
 
@@ -300,19 +302,19 @@ Ns_ConfigGetSections(void)
  *
  * Ns_ConfigGetSection --
  *
- *	Return the Ns_Set of a config section called section. 
+ *      Return the Ns_Set of a config section called section.
  *
  * Results:
- *	An Ns_Set, containing the section's parameters 
+ *      An Ns_Set containing the section's parameters, or NULL.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 Ns_Set *
-Ns_ConfigGetSection(char *section)
+Ns_ConfigGetSection(CONST char *section)
 {
     return (section ? GetSection(section, 0) : NULL);
 }
@@ -321,27 +323,23 @@ Ns_ConfigGetSection(char *section)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_GetVersion
+ * Ns_GetVersion --
  *
- *	Get the major, minor, and patchlevel version numbers and
+ *      Get the major, minor, and patchlevel version numbers and
  *      the release type. A patch is a release type NS_FINAL_RELEASE
  *      with a patchLevel > 0.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_GetVersion(majorV, minorV, patchLevelV, type)
-    int *majorV;
-    int *minorV;
-    int *patchLevelV;
-    int *type;
+Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
 {
     if (majorV != NULL) {
         *majorV = NS_MAJOR_VERSION;
@@ -363,19 +361,19 @@ Ns_GetVersion(majorV, minorV, patchLevelV, type)
  *
  * NsConfigRead --
  *
- *	Read a config file at startup.
+ *      Read a config file at startup.
  *
  * Results:
- *  	Pointer to the config buffer of an ns_malloc'ed string.
+ *      Pointer to the config buffer of an ns_malloc'ed string.
  *
  * Side Effects:
- *	Server aborts if file cannot be read for any reason.
+ *      Server aborts if file cannot be read for any reason.
  *
  *---------------------------------------------------------------------
  */
 
 char *
-NsConfigRead(char *file)
+NsConfigRead(CONST char *file)
 {
     struct stat st;
     int fd;
@@ -383,23 +381,24 @@ NsConfigRead(char *file)
     size_t n;
 
     if (stat(file, &st) != 0) {
-	Ns_Fatal("config: stat(%s) failed: %s", file, strerror(errno));
+        Ns_Fatal("config: stat(%s) failed: %s", file, strerror(errno));
     }
     if (S_ISREG(st.st_mode) == 0) {
-	Ns_Fatal("config: not regular file: %s", file);
+        Ns_Fatal("config: not regular file: %s", file);
     }
     fd = open(file, O_RDONLY);
     if (fd < 0) {
-	Ns_Fatal("config: open(%s) failed: %s", file, strerror(errno));
+        Ns_Fatal("config: open(%s) failed: %s", file, strerror(errno));
     }
     n = st.st_size;
     buf = ns_malloc(n + 1);
     n = read(fd, buf, n);
     if (n < 0) {
-	Ns_Fatal("config: read(%s) failed: %s", file, strerror(errno));
+        Ns_Fatal("config: read(%s) failed: %s", file, strerror(errno));
     }
     buf[n] = '\0';
     close(fd);
+
     return buf;
 }
 
@@ -409,20 +408,20 @@ NsConfigRead(char *file)
  *
  * NsConfigEval --
  *
- *	Eval config script in a startup Tcl interp. 
+ *      Eval config script in a startup Tcl interp.
  *
  * Results:
- *  	None.
+ *      None.
  *
  * Side Effects:
  *      Various variables in the configInterp will be set as well as
- *      the sundry configuration hashes
+ *      the sundry configuration hashes.
  *
  *---------------------------------------------------------------------
  */
 
 void
-NsConfigEval(char *config, int argc, char **argv, int optind)
+NsConfigEval(CONST char *config, int argc, char **argv, int optind)
 {
     char buf[20];
     Tcl_Interp *interp;
@@ -438,15 +437,15 @@ NsConfigEval(char *config, int argc, char **argv, int optind)
     Tcl_CreateCommand(interp, "ns_section", SectionCmd, &set, NULL);
     Tcl_CreateCommand(interp, "ns_param", ParamCmd, &set, NULL);
     for (i = 0; argv[i] != NULL; ++i) {
-	Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
     sprintf(buf, "%d", argc);
     Tcl_SetVar(interp, "argc", buf, TCL_GLOBAL_ONLY);
     sprintf(buf, "%d", optind);
     Tcl_SetVar(interp, "optind", buf, TCL_GLOBAL_ONLY);
     if (Tcl_Eval(interp, config) != TCL_OK) {
-	Ns_TclLogError(interp);
-	Ns_Fatal("config error");
+        Ns_TclLogError(interp);
+        Ns_Fatal("config error");
     }
     Ns_TclDestroyInterp(interp);
 }
@@ -455,21 +454,95 @@ NsConfigEval(char *config, int argc, char **argv, int optind)
 /*
  *----------------------------------------------------------------------
  *
- * ConfigGet --
+ * ParamCmd --
  *
- *	Return the value for key in the config section. 
+ *      Add a single entry to the current section of the config.  This
+ *      command may only be run from within an ns_section. 
  *
  * Results:
- *	Pointer to value, or NULL 
+ *      Standard Tcl Result.
  *
  * Side effects:
- *	None. 
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParamCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
+{
+    Ns_Set *set;
+
+    if (argc != 3) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"",
+                         argv[0], " key value", NULL);
+        return TCL_ERROR;
+    }
+    set = *((Ns_Set **) arg);
+    if (set == NULL) {
+        Tcl_AppendResult(interp, argv[0],
+                         " not preceded by an ns_section command.", NULL);
+        return TCL_ERROR;
+    }
+    Ns_SetPut(set, (char*) argv[1], (char*) argv[2]);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SectionCmd --
+ *
+ *      This creates a new config section and sets a shared variable
+ *      to point at a newly-allocated set for holding config data.
+ *      ns_param stores config data in the set.
+ *
+ * Results:
+ *      Standard tcl result. 
+ *
+ * Side effects:
+ *      Section set is created (if necessary).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SectionCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
+{
+    Ns_Set  **set;
+
+    if (argc != 2) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"",
+                         (char*)argv[0], " sectionname", NULL);
+        return TCL_ERROR;
+    }
+    set = (Ns_Set **) arg;
+    *set = GetSection((char*) argv[1], 1);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConfigGet --
+ *
+ *      Return the value for key in the config section.
+ *
+ * Results:
+ *      Pointer to value, or NULL.
+ *
+ * Side effects:
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 static char *
-ConfigGet(char *section, char *key, int exact)
+ConfigGet(CONST char *section, CONST char *key, int exact)
 {
     Ns_Set         *set;
     int             i;
@@ -479,11 +552,11 @@ ConfigGet(char *section, char *key, int exact)
     if (section != NULL && key != NULL) {
         set = Ns_ConfigGetSection(section);
         if (set != NULL) {
-	    if (exact) {
-            	i = Ns_SetFind(set, key);
-	    } else {
-            	i = Ns_SetIFind(set, key);
-	    }
+            if (exact) {
+                i = Ns_SetFind(set, key);
+            } else {
+                i = Ns_SetIFind(set, key);
+            }
             if (i >= 0) {
                 s = Ns_SetValue(set, i);
             }
@@ -496,101 +569,28 @@ ConfigGet(char *section, char *key, int exact)
 /*
  *----------------------------------------------------------------------
  *
- * ParamCmd --
- *
- *	Add a single nsd.ini parameter; this command may only be run 
- *	from within an ns_section. 
- *
- * Results:
- *	Standard Tcl Result 
- *
- * Side effects:
- *	A tcl variable will be created with the name 
- *	ns_cfgdata(section,key), and a set entry will be added for 
- *	the current section. 
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ParamCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
-{
-    Ns_Set *set;
-
-    if (argc != 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-		argv[0], " key value", NULL);
-	return TCL_ERROR;
-    }
-    set = *((Ns_Set **) arg);
-    if (set == NULL) {
-	Tcl_AppendResult(interp, argv[0],
-			 " not preceded by an ns_section command.", NULL);
-	return TCL_ERROR;
-    }
-    Ns_SetPut(set, (char*)argv[1], (char*)argv[2]);
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * SectionCmd --
- *
- *	This creates a new config section and sets a shared variable
- *	to point at a newly-allocated set for holding config data.
- *	ns_param stores config data in the set.
- *
- * Results:
- *	Standard tcl result. 
- *
- * Side effects:
- *	Section set is created (if necessary).
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SectionCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
-{
-    Ns_Set  **set;
-
-    if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-			 (char*)argv[0], " sectionname", NULL);
-	return TCL_ERROR;
-    }
-    set = (Ns_Set **) arg;
-    *set = GetSection((char*)argv[1], 1);
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * GetSection --
  *
- *	Creates and/or gets a config section.
+ *      Creates and/or gets a config section.
  *
  * Results:
- *	Pointer to new or existing Ns_Set for given section.
+ *      Pointer to new or existing Ns_Set for given section.
  *
  * Side effects:
- *	Section set created (if necessary).
+ *      Section set created (if necessary).
  *
  *----------------------------------------------------------------------
  */
 
 static Ns_Set *
-GetSection(char *section, int create)
+GetSection(CONST char *section, int create)
 {
-    Ns_DString ds;
+    Ns_Set        *set;
     Tcl_HashEntry *hPtr;
-    int new;
-    Ns_Set *set;
-    char *s;
+    Ns_DString     ds;
+    int            new;
+    CONST char    *p;
+    char          *s;
 
     /*
      * Clean up section name to all lowercase, trimming space
@@ -598,22 +598,22 @@ GetSection(char *section, int create)
      */
 
     Ns_DStringInit(&ds);
-    s = section;
-    while (isspace(UCHAR(*s))) {
-	++s;
+    p = section;
+    while (isspace(UCHAR(*p))) {
+        ++p;
     }
-    Ns_DStringAppend(&ds, s);
+    Ns_DStringAppend(&ds, p);
     s = ds.string;
     while (*s != '\0') {
-	if (*s == '\\') {
-	    *s = '/';
-	} else if (isupper(UCHAR(*s))) {
-	    *s = tolower(UCHAR(*s));
-	}
-	++s;
+        if (*s == '\\') {
+            *s = '/';
+        } else if (isupper(UCHAR(*s))) {
+            *s = tolower(UCHAR(*s));
+        }
+        ++s;
     }
     while (--s > ds.string && isspace(UCHAR(*s))) {
-	*s = '\0';
+        *s = '\0';
     }
     section = ds.string;
 
@@ -623,17 +623,18 @@ GetSection(char *section, int create)
  
     set = NULL;
     if (!create) {
-	hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
+        hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
     } else {
-    	hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &new);
-    	if (new) {
-	    set = Ns_SetCreate(section);
-	    Tcl_SetHashValue(hPtr, set);
-	}
+        hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &new);
+        if (new) {
+            set = Ns_SetCreate(section);
+        Tcl_SetHashValue(hPtr, set);
+        }
     }
     if (hPtr != NULL) {
-	set = Tcl_GetHashValue(hPtr);
+        set = Tcl_GetHashValue(hPtr);
     }
     Ns_DStringFree(&ds);
+
     return set;
 }
