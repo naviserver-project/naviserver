@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,32 +31,33 @@
 /*
  * modload.c --
  *
- *	Load .so files into the server and initialize them. 
+ *      Load .so files into the server and initialize them. 
  */
 
 #include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
 
+
 #if defined(USE_DLSHL)
-#include <dl.h>
+#  include <dl.h>
 #elif defined(USE_DYLD)
-#include <mach-o/dyld.h>
-static char *dylderr = "";
+#  include <mach-o/dyld.h>
+   static char *dylderr = "";
 #elif !defined(_WIN32)
-#include <dlfcn.h>
-#ifdef USE_RTLD_LAZY
-#ifdef RTLD_NOW
-#undef RTLD_NOW
-#endif
-#define RTLD_NOW RTLD_LAZY
-#endif
-#ifndef RTLD_GLOBAL
-#define RTLD_GLOBAL  0
-#endif
-#ifndef RTLD_NOW
-#define RTLD_NOW 0
-#endif
+#  include <dlfcn.h>
+#  ifdef USE_RTLD_LAZY
+#    ifdef RTLD_NOW
+#      undef RTLD_NOW
+#    endif
+#    define RTLD_NOW RTLD_LAZY
+#  endif
+#  ifndef RTLD_GLOBAL
+#    define RTLD_GLOBAL  0
+#  endif
+#  ifndef RTLD_NOW
+#    define RTLD_NOW 0
+#  endif
 #endif
 
 /*
@@ -64,21 +65,26 @@ static char *dylderr = "";
  */
 
 typedef struct Module {
-    struct Module *nextPtr;
-    char *name;
+    struct Module     *nextPtr;
+    char              *name;
     Ns_ModuleInitProc *proc;
 } Module;
+
+/*
+ * Static functions defined in this file.
+ */
+
+static void *DlOpen(CONST char *file);
+static void *DlSym(void *handle, CONST char *name);
+static void *DlSym2(void *handle, CONST char *name);
+static char *DlError(void);
 
 /*
  * Static variables defined in this file.
  */
 
-static Tcl_HashTable modulesTable;
-static void *DlOpen(char *file);
-static void *DlSym(void *handle, char *name);
-static void *DlSym2(void *handle, char *name);
-static char *DlError(void);
-static Module *firstPtr;
+static Tcl_HashTable modulesTable; /* Table of loaded, loadable modules. */
+static Module *firstPtr;           /* List of static modules to be initilaized. */
 
 
 /*
@@ -86,13 +92,13 @@ static Module *firstPtr;
  *
  * NsInitModLoad --
  *
- *	Initialize module table.
+ *      Initialize module table.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -113,22 +119,22 @@ NsInitModLoad(void)
  *
  * Ns_RegisterModule --
  *
- *	Register a static module.  This routine can only be called from
- *	a Ns_ServerInitProc passed to Ns_Main or within the Ns_ModuleInit
- *	proc of a loadable module.  It registers a module callback for
- *	for the currently initializing server.
+ *      Register a static module.  This routine can only be called from
+ *      a Ns_ServerInitProc passed to Ns_Main or within the Ns_ModuleInit
+ *      proc of a loadable module.  It registers a module callback for
+ *      for the currently initializing server.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Proc will be called after dynamic modules are loaded. 
+ *      Proc will be called after dynamic modules are loaded.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_RegisterModule(char *name, Ns_ModuleInitProc *proc)
+Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
 {
     Module *modPtr, **nextPtrPtr;
 
@@ -138,7 +144,7 @@ Ns_RegisterModule(char *name, Ns_ModuleInitProc *proc)
     modPtr->nextPtr = NULL;
     nextPtrPtr = &firstPtr;
     while (*nextPtrPtr != NULL) {
-	nextPtrPtr = &((*nextPtrPtr)->nextPtr); 
+        nextPtrPtr = &((*nextPtrPtr)->nextPtr); 
     }
     *nextPtrPtr = modPtr;
 }
@@ -149,20 +155,21 @@ Ns_RegisterModule(char *name, Ns_ModuleInitProc *proc)
  *
  * Ns_ModuleLoad --
  *
- *	Load a module and initialize it.  The result code from modules
- *	without the version symbol are ignored.
+ *      Load a module and initialize it.  The result code from modules
+ *      without the version symbol are ignored.
  *
  * Results:
- *	NS_OK or NS_ERROR 
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ModuleLoad(char *server, char *module, char *file, char *init)
+Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
+              CONST char *init)
 {
     Ns_ModuleInitProc *initProc;
     int                status = NS_OK;
@@ -170,15 +177,16 @@ Ns_ModuleLoad(char *server, char *module, char *file, char *init)
 
     initProc = Ns_ModuleSymbol(file, init);
     if (initProc == NULL) {
-	return NS_ERROR;
+        return NS_ERROR;
     }
     verPtr = Ns_ModuleSymbol(file, "Ns_ModuleVersion");
     status = (*initProc) (server, module);
     if (verPtr == NULL || *verPtr < 1) {
         status = NS_OK;
     } else if (status != NS_OK) {
-	Ns_Log(Error, "modload: init %s of %s returned: %d", file, init, status);
+        Ns_Log(Error, "modload: init %s of %s returned: %d", file, init, status);
     }
+
     return status;
 }
 
@@ -188,29 +196,29 @@ Ns_ModuleLoad(char *server, char *module, char *file, char *init)
  *
  * Ns_ModuleSymbol --
  *
- *	Load a module if it's not already loaded, and extract a 
- *	requested symbol from it. 
+ *      Load a module if it's not already loaded, and extract the
+ *      requested symbol from it.
  *
  * Results:
- *	A pointer to the symbol's value. 
+ *      A pointer to the symbol's value.
  *
  * Side effects:
- *	May load the module if it hasn't been loaded yet. 
+ *      May load the module if it hasn't been loaded yet.
  *
  *----------------------------------------------------------------------
  */
 
 void *
-Ns_ModuleSymbol(char *file, char *name)
+Ns_ModuleSymbol(CONST char *file, CONST char *name)
 {
     Tcl_HashEntry *hPtr;
     Ns_DString     ds;
-    int		   new;
-    void	  *module;
+    int            new;
+    void          *module;
     void          *symbol;
     struct stat    st;
 #ifndef _WIN32
-    FileKey	   key;
+    FileKey        key;
 #endif
 
     symbol = NULL;
@@ -219,8 +227,8 @@ Ns_ModuleSymbol(char *file, char *name)
         file = Ns_HomePath(&ds, "bin", file, NULL);
     }
     if (stat(file, &st) != 0) {
-	Ns_Log(Notice, "modload: stat(%s) failed: %s", file, strerror(errno));
-	goto done;
+        Ns_Log(Notice, "modload: stat(%s) failed: %s", file, strerror(errno));
+        goto done;
     }
 #ifdef _WIN32
     hPtr = Tcl_CreateHashEntry(&modulesTable, file, &new);
@@ -232,21 +240,23 @@ Ns_ModuleSymbol(char *file, char *name)
     if (!new) {
         module = Tcl_GetHashValue(hPtr);
     } else {
-    	Ns_Log(Notice, "modload: loading '%s'", file);
-	module = DlOpen(file);
-	if (module == NULL) {
+        Ns_Log(Notice, "modload: loading '%s'", file);
+        module = DlOpen(file);
+        if (module == NULL) {
             Ns_Log(Warning, "modload: could not load %s: %s", file, DlError());
             Tcl_DeleteHashEntry(hPtr);
-	    goto done;
-	}
+            goto done;
+        }
         Tcl_SetHashValue(hPtr, module);
     }
     symbol = DlSym(module, name);
     if (symbol == NULL) {
-	Ns_Log(Warning, "modload: could not find %s in %s", name, file);
+        Ns_Log(Warning, "modload: could not find %s in %s", name, file);
     }
-done:
+
+ done:
     Ns_DStringFree(&ds);
+
     return symbol;
 }
 
@@ -256,22 +266,22 @@ done:
  *
  * Ns_ModuleGetSymbol --
  *
- *	Locate a given symbol in the program's symbol table and 
- *	return the address of it. This differs from the other Module 
- *	functions in that it doesn't require the shared library file 
- *	name - this should sniff the entire symbol space. 
+ *      Locate a given symbol in the program's symbol table and
+ *      return the address of it. This differs from the other Module
+ *      functions in that it doesn't require the shared library file
+ *      name - this should sniff the entire symbol space.
  *
  * Results:
- *	A pointer to the requested symbol's value. 
+ *      A pointer to the requested symbol's value.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 void *
-Ns_ModuleGetSymbol(char *name)
+Ns_ModuleGetSymbol(CONST char *name)
 {
     return DlSym(NULL, name);
 }
@@ -282,19 +292,19 @@ Ns_ModuleGetSymbol(char *name)
  *
  * NsLoadModules --
  *
- *	Load all modules for given server.
+ *      Load all modules for given server.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	Will load and initialize modules. 
+ *      Will load and initialize modules.
  *
  *----------------------------------------------------------------------
  */
 
 void 
-NsLoadModules(char *server)
+NsLoadModules(CONST char *server)
 {
     Ns_Set *modules;
     int     i;
@@ -303,36 +313,36 @@ NsLoadModules(char *server)
 
     modules = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL, "modules", NULL));
     for (i = 0; modules != NULL && i < Ns_SetSize(modules); ++i) {
-	module = Ns_SetKey(modules, i);
+        module = Ns_SetKey(modules, i);
         file = Ns_SetValue(modules, i);
 
-	/*
-	 * Check for specific module init after filename.
-	 */
+        /*
+         * Check for specific module init after filename.
+         */
 
         s = strchr(file, '(');
         if (s == NULL) {
-	    init = "Ns_ModuleInit";
-	} else {
+            init = "Ns_ModuleInit";
+        } else {
             *s = '\0';
             init = s + 1;
             e = strchr(init, ')');
             if (e != NULL) {
                 *e = '\0';
             }
-	}
-
-	/*
-	 * Load the module if it's not the reserved "tcl" name.
-	 */
-	    
-       if (!STRIEQ(file, "tcl") && Ns_ModuleLoad(server, module, file, init) != NS_OK) {
-	    Ns_Fatal("modload: failed to load module '%s'", file);
         }
 
-	/*
-	 * Add this module to the server Tcl init list.
-	 */
+        /*
+         * Load the module if it's not the reserved "tcl" name.
+         */
+
+        if (!STRIEQ(file, "tcl") && Ns_ModuleLoad(server, module, file, init) != NS_OK) {
+            Ns_Fatal("modload: failed to load module '%s'", file);
+        }
+
+        /*
+         * Add this module to the server Tcl init list.
+         */
 
         Ns_TclInitModule(server, module);
 
@@ -351,18 +361,18 @@ NsLoadModules(char *server)
      */
 
     while (firstPtr != NULL) {
-    	modPtr = firstPtr;
-	firstPtr = NULL;
-    	while (modPtr != NULL) {
-	    nextPtr = modPtr->nextPtr;
-	    Ns_Log(Notice, "modload: initializing module '%s'", modPtr->name);
-	    if ((*modPtr->proc)(server, modPtr->name) != NS_OK) {
-	    	Ns_Fatal("modload: failed to initialize %s", modPtr->name);
-	    }
-	    ns_free(modPtr->name);
-	    ns_free(modPtr);
-	    modPtr = nextPtr;
-	}
+        modPtr = firstPtr;
+        firstPtr = NULL;
+        while (modPtr != NULL) {
+            nextPtr = modPtr->nextPtr;
+            Ns_Log(Notice, "modload: initializing module '%s'", modPtr->name);
+            if ((*modPtr->proc)(server, modPtr->name) != NS_OK) {
+                Ns_Fatal("modload: failed to initialize %s", modPtr->name);
+            }
+            ns_free(modPtr->name);
+            ns_free(modPtr);
+            modPtr = nextPtr;
+        }
     }
 }
 
@@ -372,63 +382,66 @@ NsLoadModules(char *server)
  *
  * DlOpen --
  *
- *	Load a dynamic library
+ *      Load a dynamic library.
  *
  * Results:
- *	An Ns_ModHandle, or NULL on failure.
+ *      An Ns_ModHandle, or NULL on failure.
  *
  * Side effects:
- *	See shl_load 
+ *      See shl_load.
  *
  *----------------------------------------------------------------------
  */
 
 static void *
-DlOpen(char *file)
+DlOpen(CONST char *file)
 {
 #if defined(USE_DYLD)
     int retry;
     NSObjectFileImage image;
     NSModule module;
-    NSObjectFileImageReturnCode	err;
+    NSObjectFileImageReturnCode err;
 
     module = NULL;
     retry  = 0;
 
     err = NSCreateObjectFileImageFromFile(file, &image);
     switch (err) {
-	case NSObjectFileImageSuccess:
+    case NSObjectFileImageSuccess:
         module = NSLinkModule(image, file, TRUE);
-	    break;
-	case NSObjectFileImageInappropriateFile:
-	    dylderr = "Inappropriate Mach-O file";
-	    retry   = 1;
-	    break;
-	case NSObjectFileImageArch:
-	    dylderr = "Inappropriate Mach-O architecture";
-	    break;
-	case NSObjectFileImageFormat:
-	    dylderr = "Invalid Mach-O file format";
-	    retry   = 1;
-	    break;
-	case NSObjectFileImageAccess:
-	    dylderr = "Permission denied";
-	    break;
-	default:
-	    dylderr = "Unknown error";
-	    break;
+        break;
+    case NSObjectFileImageInappropriateFile:
+        dylderr = "Inappropriate Mach-O file";
+        retry   = 1;
+        break;
+    case NSObjectFileImageArch:
+        dylderr = "Inappropriate Mach-O architecture";
+        break;
+    case NSObjectFileImageFormat:
+        dylderr = "Invalid Mach-O file format";
+        retry   = 1;
+        break;
+    case NSObjectFileImageAccess:
+        dylderr = "Permission denied";
+        break;
+    default:
+        dylderr = "Unknown error";
+        break;
     }
+
     if (retry) {
 
-	/*
- 	 * Fallback to open shared library.
-	 */
+        /*
+         * Fallback to open shared library.
+         */
 
-	module = (void *)NSAddImage(file,
-	        NSADDIMAGE_OPTION_WITH_SEARCHING |
-	        NSADDIMAGE_OPTION_RETURN_ON_ERROR);
+        module = (void *) NSAddImage(file,
+                              NSADDIMAGE_OPTION_WITH_SEARCHING
+                              | NSADDIMAGE_OPTION_RETURN_ON_ERROR);
     }
+
     return (void *) module;
+
 #elif defined(_WIN32)
     return (void *) LoadLibrary(file);
 #elif defined(USE_DLSHL)
@@ -444,19 +457,19 @@ DlOpen(char *file)
  *
  * DlSym --
  *
- *	Load a symbol from a shared object
+ *      Load a symbol from a shared object.
  *
  * Results:
- *	A symbol pointer or null on error. 
+ *      A symbol pointer or null on error.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 static void *
-DlSym(void *handle, char *name)
+DlSym(void *handle, CONST char *name)
 {
     Ns_DString ds;
     void *symbol;
@@ -479,7 +492,7 @@ DlSym(void *handle, char *name)
 }
 
 static void *
-DlSym2(void *handle, char *name)
+DlSym2(void *handle, CONST char *name)
 {
     void *symbol = NULL;
 
@@ -488,25 +501,26 @@ DlSym2(void *handle, char *name)
         symbol = NULL;
     }
 #elif defined(_WIN32)
-    symbol =  (void *) GetProcAddress((HMODULE) handle, name);
+    symbol = (void *) GetProcAddress((HMODULE) handle, name);
 #elif (USE_DYLD)
     symbol = (void *) NSLookupSymbolInModule(handle, name);
     if (symbol == NULL) {
-        
+
         /*
          * Fallback to get symbol from shared library
          */
 
         symbol = (void *) NSLookupSymbolInImage(handle, name,
-                NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW |
-                NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
+                              NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW
+                              | NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
     }
     if (symbol != NULL) {
-    	symbol = (void *) NSAddressOfSymbol(symbol);
+        symbol = (void *) NSAddressOfSymbol(symbol);
     }
 #else
     symbol = dlsym(handle, name);
 #endif
+
     return symbol;
 }
 
@@ -516,13 +530,13 @@ DlSym2(void *handle, char *name)
  *
  * DlError --
  *
- *	Return the error code from trying to load a shared object
+ *      Return the error code from trying to load a shared object.
  *
  * Results:
- *	A string error. 
+ *      A string error.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */

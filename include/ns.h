@@ -281,7 +281,7 @@ typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_SockProc) (SOCKET sock, void *arg, int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (char *server);
-typedef int   (Ns_ModuleInitProc) (char *server, char *module);
+typedef int   (Ns_ModuleInitProc) (CONST char *server, CONST char *module);
 typedef int   (Ns_RequestAuthorizeProc) (char *server, char *method,
 			char *url, char *user, char *pass, char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
@@ -972,10 +972,22 @@ NS_EXTERN Tcl_Encoding Ns_GetCharsetEncoding(char *charset);
  * modload.c:
  */
 
-NS_EXTERN int Ns_ModuleLoad(char *server, char *module, char *file, char *init);
-NS_EXTERN void *Ns_ModuleSymbol(char *file, char *name);
-NS_EXTERN void *Ns_ModuleGetSymbol(char *name);
-NS_EXTERN void  Ns_RegisterModule(char *name, Ns_ModuleInitProc *prco);
+NS_EXTERN void
+Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
+              CONST char *init)
+     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+NS_EXTERN void *
+Ns_ModuleSymbol(CONST char *file, CONST char *name)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void *
+Ns_ModuleGetSymbol(CONST char *name)
+     NS_GNUC_NONNULL(1);
 
 /*
  * nsthread.c:

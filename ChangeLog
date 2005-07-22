@@ -2,6 +2,10 @@
 
 	* include/ns.h:
 	* nsd/nsd.h:
+	* nsd/modload.c: Untabify and reformat.  Add CONST declarations.
+
+	* include/ns.h:
+	* nsd/nsd.h:
 	* nsd/config.c: Untabify and reformat.  Add CONST declarations.
 
 2005-07-21  Stephen Deasey  <sdeasey@users.sf.net>

@@ -953,7 +953,7 @@ extern void NsWaitJobsShutdown(Ns_Time *toPtr);
 
 extern void NsTclInitServer(CONST char *server)
      NS_GNUC_NONNULL(1);
-extern void NsLoadModules(char *server);
+extern void NsLoadModules(CONST char *server);
 extern struct Bucket *NsTclCreateBuckets(char *server, int nbuckets);
 
 extern void NsClsCleanup(Conn *connPtr);
