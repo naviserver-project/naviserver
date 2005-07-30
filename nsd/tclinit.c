@@ -689,77 +689,6 @@ Ns_TclInterpServer(Tcl_Interp *interp)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TclLogError --
- *
- *      Log the global errorInfo variable to the server log. 
- *
- * Results:
- *      Returns a pointer to the errorInfo. 
- *
- * Side effects:
- *      None. 
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Ns_TclLogError(Tcl_Interp *interp)
-{
-    CONST char *errorInfo;
-
-    errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
-    if (errorInfo == NULL) {
-        errorInfo = "";
-    }
-    Ns_Log(Error, "%s\n%s", Tcl_GetStringResult(interp), errorInfo);
- 
-   return (char *) errorInfo;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_TclLogErrorRequest --
- *
- *      Log both errorInfo and info about the HTTP request that led 
- *      to it. 
- *
- * Results:
- *      Returns a pointer to the errorInfo. 
- *
- * Side effects:
- *      None. 
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
-{
-    char *agent;
-    CONST char *errorInfo;
-
-    errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
-    if (errorInfo == NULL) {
-        errorInfo = Tcl_GetStringResult(interp);
-    }
-    agent = Ns_SetIGet(conn->headers, "user-agent");
-    if (agent == NULL) {
-        agent = "?";
-    }
-    Ns_Log(Error, "error for %s %s, "
-           "User-Agent: %s, PeerAddress: %s\n%s", 
-           conn->request->method, conn->request->url,
-           agent, Ns_ConnPeer(conn), errorInfo);
-
-    return (char*) errorInfo;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_TclInitModule --
  *
  *      Add a module name to the init list.

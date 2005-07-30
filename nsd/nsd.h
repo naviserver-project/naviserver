@@ -652,6 +652,7 @@ typedef struct NsServer {
         int length;
         int epoch;
         Tcl_Obj *modules;
+        CONST char **errorLogHeaders;
     } tcl;
     
     /*

@@ -319,6 +319,16 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Ns_MutexSetName2(&servPtr->sets.lock, "nstcl:sets", server);
 
     /*
+     * Initialize the list of connection headers to log for Tcl errors.
+     */
+
+    p = Ns_ConfigGetValue(path, "errorlogheaders");
+    if (p != NULL && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders)
+        != TCL_OK) {
+        Ns_Log(Error, "invalid error log headers: %s", p);
+    }
+
+    /*
      * Initialize the Tcl detached channel support.
      */
 

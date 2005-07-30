@@ -5,6 +5,14 @@
 	* nsd/tclinit.c: Allocate interps efficiently, max 1 per-thread
 	per-server. (RFE #1241351)
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/server.c:
+	* nsd/tclinit.c:
+	* nsd/tclmisc.c: Add Ns_TclLogErrorInfo and allow admin to
+	configure which conenction headers to log for Tcl
+	errors. (RFE #1241432)
+
 2005-07-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

@@ -1318,14 +1318,6 @@ NS_EXTERN char *
 Ns_TclInterpServer(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 
-NS_EXTERN char *
-Ns_TclLogError(Tcl_Interp *interp)
-     NS_GNUC_NONNULL(1);
-
-NS_EXTERN char *
-Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 NS_EXTERN int
 Ns_TclInitModule(CONST char *server, CONST char *module)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1360,6 +1352,18 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
 
 NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
      NS_GNUC_PRINTF(2, 3);
+
+NS_EXTERN CONST char *
+Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *info)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN CONST char *
+Ns_TclLogError(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+
+NS_EXTERN CONST char *
+Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
+     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 /*
  * tclrequest.c:

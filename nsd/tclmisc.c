@@ -78,6 +78,109 @@ Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_TclLogErrorInfo --
+ *
+ *      Log the global errorInfo variable to the server log along with
+ *      some connection info, if available.
+ *
+ * Results:
+ *      Returns a read-only pointer to the complete errorInfo.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
+{
+    NsInterp    *itPtr = NsGetInterpData(interp);
+    Ns_Conn     *conn;
+    CONST char  *errorInfo, **logHeaders, **hdr;
+    char        *value;
+    Ns_DString   ds;
+
+    if (extraInfo != NULL) {
+        Tcl_AddObjErrorInfo(interp, extraInfo, -1);
+    }
+    errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+    if (errorInfo == NULL) {
+        errorInfo = "";
+    }
+    if (itPtr != NULL && itPtr->conn != NULL) {
+        conn = itPtr->conn;
+        Ns_DStringInit(&ds);
+        Ns_DStringVarAppend(&ds, conn->request->method, " ", conn->request->url,
+                            ", PeerAddress: ", Ns_ConnPeer(conn), NULL);
+
+        logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
+        if (logHeaders != NULL) {
+            for (hdr = logHeaders; *hdr != NULL; hdr++) {
+                if ((value = Ns_SetIGet(conn->headers, *hdr)) != NULL) {
+                    Ns_DStringVarAppend(&ds, ", ", *hdr, ": ", value, NULL);
+                }
+            }
+        }
+        Ns_Log(Error, "%s\n%s", Ns_DStringValue(&ds), errorInfo);
+        Ns_DStringFree(&ds);
+    } else {
+        Ns_Log(Error, "%s\n%s", Tcl_GetStringResult(interp), errorInfo);
+    }
+
+   return errorInfo;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclLogError --
+ *
+ *      Log the global errorInfo variable to the server log. 
+ *
+ * Results:
+ *      Returns a read-only pointer to the errorInfo. 
+ *
+ * Side effects:
+ *      None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+Ns_TclLogError(Tcl_Interp *interp)
+{
+    return Ns_TclLogErrorInfo(interp, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclLogErrorRequest --
+ *
+ *      Deprecated.  See: Ns_TclLoggErrorInfo.
+ *
+ * Results:
+ *      Returns a pointer to the read-only errorInfo. 
+ *
+ * Side effects:
+ *      None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
+{
+    return Ns_TclLogErrorInfo(interp, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclStripHtmlCmd --
  *
  *	Implements ns_striphtml. 
