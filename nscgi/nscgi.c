@@ -291,10 +291,10 @@ CgiRequest(void *arg, Ns_Conn *conn)
      */
 
     if (modPtr->maxInput > 0 && conn->contentLength > modPtr->maxInput) {
-        return Ns_ReturnBadRequest(conn, "Exceeded maximum CGI input size");
+        return Ns_ConnReturnBadRequest(conn, "Exceeded maximum CGI input size");
     }
     if (CgiInit(&cgi, mapPtr, conn) != NS_OK) {
-	return Ns_ReturnNotFound(conn);
+	return Ns_ConnReturnNotFound(conn);
     } else if (cgi.interp == NULL && access(cgi.exec, X_OK) != 0) {
         if (STREQ(conn->request->method, "GET") ||
 	    STREQ(conn->request->method, "HEAD")) {
@@ -307,7 +307,7 @@ CgiRequest(void *arg, Ns_Conn *conn)
 
             status = Ns_ConnReturnFile(conn, 200, NULL, cgi.exec);
         } else {
-	    status = Ns_ReturnNotFound(conn);
+	    status = Ns_ConnReturnNotFound(conn);
 	}
 	goto done;
     }
@@ -792,7 +792,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         SetUpdate(cgiPtr->env, "PATH_INFO", "");
     }
     SetUpdate(cgiPtr->env, "GATEWAY_INTERFACE", "CGI/1.1");
-    Ns_DStringVarAppend(dsPtr, Ns_InfoServer(), "/", Ns_InfoVersion(), NULL);
+    Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NULL);
     SetUpdate(cgiPtr->env, "SERVER_SOFTWARE", dsPtr->string);
     Ns_DStringTrunc(dsPtr, 0);
     Ns_DStringPrintf(dsPtr, "HTTP/%2.1f", conn->request->version);

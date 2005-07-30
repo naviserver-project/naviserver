@@ -34,9 +34,6 @@
  *	Tcl wrappers around all thread objects 
  */
 
-#ifdef NS_NOCOMPAT
-#undef NS_NOCOMPAT
-#endif
 #include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
@@ -302,11 +299,11 @@ NsTclCondObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     int opt, result;
     static CONST char *opts[] = {
 	"abswait", "broadcast", "create", "destroy", "set",
-	"signal", "timedwait", "wait", NULL
+	"signal", "wait", NULL
     };
     enum {
 	EAbsWaitIdx, EBroadcastIdx, ECreateIdx, EDestroyIdx, ESetIdx,
-	ESignalIdx, ETimedWaitIdx, EWaitIdx
+	ESignalIdx, EWaitIdx
     };
 
     if (!GetArgs(interp, objc, objv, opts, 'e', ECreateIdx,
@@ -319,7 +316,6 @@ NsTclCondObjCmd(ClientData data, Tcl_Interp *interp, int objc,
 	Ns_CondInit(condPtr);
 	break;
     case EAbsWaitIdx:
-    case ETimedWaitIdx:
     case EWaitIdx:
         if (objc < 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "condId mutexId ?timeout?");
@@ -336,9 +332,6 @@ NsTclCondObjCmd(ClientData data, Tcl_Interp *interp, int objc,
         }
 	if (opt == EAbsWaitIdx) {
             result = Ns_CondTimedWait(condPtr, lock, &timeout);
-	} else if (opt == ETimedWaitIdx) {
-	    Ns_Event *eventPtr = (Ns_Event *) condPtr;
-            result = Ns_TimedWaitForEvent(eventPtr, lock, timeout.sec);
 	} else {
 	    if (objc < 5 || (timeout.sec == 0 && timeout.usec == 0)) {
 		Ns_CondWait(condPtr, lock);

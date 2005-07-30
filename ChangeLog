@@ -1,5 +1,13 @@
 2005-07-29  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* include/nsthread.h:
+	* nsd/tclthread.c:
+	* nsd/tclfile.c:
+	* nsthread/Makefile:
+	* nsthread/compat:
+	* nscgi/nscgi.c: Remove a bunch of truly ancient compatibility
+	macros and functions.
 
 	* nsd/tclinit.c:
 	* nsd/tclcmds.c:

@@ -1479,50 +1479,8 @@ NS_EXTERN void Ns_ConnClearQuery(Ns_Conn *conn);
  * Compatibility macros.
  */
 
-#ifndef NS_NOCOMPAT
-#define DllExport           NS_EXPORT
-#define Ns_Select	        select
-#define Ns_InfoHome()		Ns_InfoHomePath()
-#define Ns_InfoServer()		Ns_InfoServerName()
-#define Ns_InfoVersion()	Ns_InfoServerVersion()
-#define Ns_RequestAuthorize(s,m,u,au,ap,p) Ns_AuthorizeRequest(s,m,u,au,ap,p)
-#define Ns_RequestFree(r)	Ns_FreeRequest(r)
-#define Ns_ResetReturn(c)	Ns_ConnResetReturn(c)
-#define Ns_PutsConn(c,s)	Ns_ConnPuts(c,s)
-#define Ns_ExpiresHeader(c,h)	Ns_ConnSetExpiresHeader(c,h)
-#define Ns_ReturnHtml(c,s,h,l)	Ns_ConnReturnHtml(c,s,h,l)
-#define Ns_ReturnOk(c)		Ns_ConnReturnOk(c)
-#define Ns_ReturnNoResponse(c)	Ns_ConnReturnNoResponse(c)
-#define Ns_ReturnRedirect(c,l)	Ns_ConnReturnRedirect(c,l)
-#define Ns_ReturnNotModified(c)	Ns_ConnReturnNotModified(c)
-#define Ns_ReturnBadRequest(c,r) Ns_ConnReturnBadRequest(c,r)
-#define Ns_ReturnUnauthorized(c) Ns_ConnReturnUnauthorized(c)
-#define Ns_ReturnForbidden(c)	Ns_ConnReturnForbidden(c)
-#define Ns_ReturnNotFound(c)	Ns_ConnReturnNotFound(c)
-#define Ns_ReturnInternalError(c) Ns_ConnReturnInternalError(c)
-#define Ns_ReturnNotImplemented(c) Ns_ConnReturnNotImplemented(c)
-#define Ns_ReturnStatus(c,s)	Ns_ConnReturnStatus(c,s)
-#define Ns_TypeHeader(c,t)      Ns_ConnSetTypeHeader(c,t)
-#define Ns_LengthHeader(c,l)    Ns_ConnSetLengthHeader(c,l)
-#define Ns_LastModifiedHeader(c,w) Ns_ConnSetLastModifiedHeader(c,w)
-#define Ns_ReturnFile(c,s,t,f)  Ns_ConnReturnFile(c,s,t,f)
-#define Ns_ReturnOpenFile(c,s,t,f,l) Ns_ConnReturnOpenFile(c,s,t,f,l)
-#define Ns_ReturnNotice(c,s,t,m) Ns_ConnReturnNotice(c,s,t,m)
-#define Ns_ReturnAdminNotice(c,s,t,m) Ns_ConnReturnAdminNotice(c,s,t,m)
-#define Ns_HeadersFlush(c,s)    Ns_ConnFlushHeaders(c,s)
-#define Ns_HeadersPut(Nc,f,v)   Ns_ConnSetHeaders(Nc,f,v)
-#define Ns_HeadersCondPut(c,f,v) Ns_ConnCondSetHeaders(c,f,v)
-#define Ns_HeadersReplace(c,n)  Ns_ConnReplaceHeaders(c,n)
-#define Ns_HeadersRequired(c,t,l) Ns_ConnSetRequiredHeaders(c,t,l)
-#define Ns_ConfigPath           Ns_ConfigGetPath
-#define Ns_ConfigSection(s)     Ns_ConfigGetSection(s)
-#define Ns_ConfigSections()     Ns_ConfigGetSections()
-#define Ns_ConfigGet(s,k)       Ns_ConfigGetValue(s,k)
-#define Ns_ConfigGetExact(s,k)  Ns_ConfigGetValueExact(s,k)
-#define Ns_UrlEncode(p,u)       Ns_EncodeUrlCharset(p,u,NULL)
-#define Ns_UrlDecode(p,u)       Ns_DecodeUrlCharset(p,u,NULL)
-#define Ns_EncodeUrl(p,u)       Ns_EncodeUrlCharset(p,u,NULL)
-#define Ns_DecodeUrl(p,u)       Ns_DecodeUrlCharset(p,u,NULL)
+#ifdef NS_NOCOMPAT
+#  error "No compatibility macros at present"
 #endif
 
 #endif /* NS_H */
