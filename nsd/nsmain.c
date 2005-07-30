@@ -62,8 +62,6 @@ NS_RCSID("@(#) $Header$");
  * Local functions defined in this file.
  */
 
-static Tcl_AppInitProc CommandInit;
-
 static int  StartWatchedServer(void);
 static void SysLog(int priority, char *fmt, ...);
 static void WatchdogSigtermHandler(int sig);
@@ -82,7 +80,6 @@ extern void NsdInit();
  * Local variables defined in this file.
  */
 
-static char *cmdServer;      /* Command mode interp server */
 static int watchdogExit = 0; /* Watchdog loop toggle */
 
 
@@ -694,7 +691,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             NsInitServer(server, initProc);
         }
     }
-    cmdServer = server;
+    nsconf.defaultServer = server;
     
     /*
      * Load non-server modules.
@@ -748,7 +745,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         for (i = optind; i < argc; i++) {
             cmdargv[cmdargc++] = argv[i];
         }
-        Tcl_Main(cmdargc, cmdargv, CommandInit);
+        Tcl_Main(cmdargc, cmdargv, NsTclAppInit);
     }
 
     /*
@@ -933,35 +930,6 @@ NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
     Tcl_SetIntObj(Tcl_GetObjResult(interp), timeout);
 
     return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * CommandInit --
- *
- *      Initialize the command interp with basic and server commands.
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      Depends on init scripts.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-CommandInit(Tcl_Interp *interp)
-{
-    NsServer *servPtr = NsGetServer(cmdServer);
-
-    Tcl_InitMemory(interp);
-    if (Tcl_Init(interp) != TCL_OK) {
-        Ns_TclLogError(interp);
-    }
-    return NsInitInterp(interp, servPtr, NULL);
 }
 
 

@@ -1,3 +1,10 @@
+2005-07-29  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/nsmain.c:
+	* nsd/tclinit.c: Allocate interps efficiently, max 1 per-thread
+	per-server. (RFE #1241351)
+
 2005-07-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

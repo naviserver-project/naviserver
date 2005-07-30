@@ -169,6 +169,7 @@ struct _nsconf {
 
     Tcl_HashTable servertable;
     Tcl_DString servers;
+    char *defaultServer;
 
     /*
      * The following table holds config section sets from
@@ -746,12 +747,12 @@ typedef struct NsServer {
 
 typedef struct NsInterp {
 
-    struct NsInterp *nextPtr;
     Tcl_Interp *interp;
-    NsServer *servPtr;
-    int delete;
-    int epoch;
-    
+    NsServer   *servPtr;
+    int         delete;  /* Interp should be deleted on next deallocation */
+    int         epoch;   /* Run the update script if != to server epoch */
+    int         refcnt;  /* Counts recursive allocations of cached interp */
+
     /*
      * The following pointer maintains the first in
      * a FIFO list of callbacks to invoke at interp
@@ -863,12 +864,6 @@ extern void NsFreeRequest(Request *reqPtr);
 
 extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);
-extern NsInterp *NsGetInterpData(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
-extern int NsInitInterp(Tcl_Interp *interp, NsServer *servPtr,
-                        NsInterp **itPtrPtr)
-     NS_GNUC_NONNULL(1);
-extern void NsFreeConnInterp(Conn *connPtr)
-     NS_GNUC_NONNULL(1);
 
 extern Ns_Cache *NsFastpathCache(char *server, int size);
 
@@ -951,8 +946,14 @@ extern void NsWaitShutdownProcs(Ns_Time *toPtr);
 extern void NsStartJobsShutdown(void);
 extern void NsWaitJobsShutdown(Ns_Time *toPtr);
 
+extern Tcl_AppInitProc NsTclAppInit;
 extern void NsTclInitServer(CONST char *server)
      NS_GNUC_NONNULL(1);
+extern NsInterp *NsGetInterpData(Tcl_Interp *interp)
+     NS_GNUC_NONNULL(1);
+extern void NsFreeConnInterp(Conn *connPtr)
+     NS_GNUC_NONNULL(1);
+
 extern void NsLoadModules(CONST char *server);
 extern struct Bucket *NsTclCreateBuckets(char *server, int nbuckets);
 
