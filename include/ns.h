@@ -49,77 +49,123 @@
                        + NS_RELEASE_SERIAL)
 
 #ifdef NSD_EXPORTS
-#undef NS_EXTERN
-#ifdef __cplusplus
-#define NS_EXTERN		extern "C" NS_EXPORT
-#else
-#define NS_EXTERN		extern NS_EXPORT
-#endif
+# undef NS_EXTERN
+# ifdef __cplusplus
+#  define NS_EXTERN extern "C" NS_EXPORT
+# else
+#  define NS_EXTERN extern NS_EXPORT
+# endif
 #endif
 
 /*
- * Various constants.
+ * Boolean result.
  */
 
-#define NS_CONN_CLOSED		  1
-#define NS_CONN_SKIPHDRS	  2
-#define NS_CONN_SKIPBODY	  4
-#define NS_CONN_READHDRS	  8
-#define NS_CONN_SENTHDRS	 16
-#define NS_CONN_KEEPALIVE	 32
-#define NS_CONN_WRITE_ENCODED    64
-#define NS_CONN_WRITE_CHUNKED    128
-#define NS_CONN_SENT_LAST_CHUNK  256
+#define NS_TRUE                    1
+#define NS_FALSE                   0
 
-#define NS_CONN_MAXCLS		 16
-#define NS_CONN_MAXBUFS          16
+/*
+ * The following describe various properties of a connection.
+ */
 
-#define NS_AOLSERVER_3_PLUS
-#define NS_UNAUTHORIZED		(-2)
-#define NS_FORBIDDEN		(-3)
-#define NS_FILTER_BREAK		(-4)
-#define NS_FILTER_RETURN	(-5)
-#define NS_SHUTDOWN		(-4)
-#define NS_TRUE			  1
-#define NS_FALSE		  0
-#define NS_FILTER_PRE_AUTH        1
-#define NS_FILTER_POST_AUTH       2
-#define NS_FILTER_TRACE           4
-#define NS_FILTER_VOID_TRACE      8
-#define NS_REGISTER_SERVER_TRACE 16
-#define NS_OP_NOINHERIT		  2
-#define NS_OP_NODELETE		  4
-#define NS_OP_RECURSE		  8
-#define NS_SCHED_THREAD		  1
-#define NS_SCHED_ONCE		  2
-#define NS_SCHED_DAILY		  4
-#define NS_SCHED_WEEKLY		  8
-#define NS_SCHED_PAUSED		 16 
-#define NS_SCHED_RUNNING	 32 
-#define NS_SOCK_READ		  1
-#define NS_SOCK_WRITE		  2
-#define NS_SOCK_EXCEPTION	  4
-#define NS_SOCK_EXIT		  8
-#define NS_SOCK_DROP             16
-#define NS_SOCK_CANCEL           32
-#define NS_SOCK_ANY		255
-#define NS_ENCRYPT_BUFSIZE 	 16
-#define NS_DRIVER_ASYNC		  1	/* Use async read-ahead. */
-#define NS_DRIVER_SSL		  2	/* Use SSL port, protocol defaults. */
-#define NS_DRIVER_UDP             4     /* UDP socket */
-#define NS_DRIVER_UNIX            8     /* Unix domain socket */
-#define NS_DRIVER_VERSION_1       1
+#define NS_CONN_CLOSED             0x001 /* The underlying socket is closed */
+#define NS_CONN_SKIPHDRS           0x002 /* Client is HTTP/0.9, do not send HTTP headers  */
+#define NS_CONN_SKIPBODY           0x004 /* HTTP HEAD request, do not send body */
+#define NS_CONN_READHDRS           0x008 /* Unused */
+#define NS_CONN_SENTHDRS           0x010 /* Response headers have been sent to client */
+#define NS_CONN_KEEPALIVE          0x020 /* Client expects or has requested a keep-alive connection */
+#define NS_CONN_WRITE_ENCODED      0x040 /* Unused */
+#define NS_CONN_WRITE_CHUNKED      0x080 /* Client expects or has requested a chunked response */
+#define NS_CONN_SENT_LAST_CHUNK    0x100 /* Undocumented */
+
+/*
+ * The following are valid return codes from an Ns_UserAuthorizeProc.
+ */
+
+/* NS_OK                                       The user's access is authorized */
+#define NS_UNAUTHORIZED            (-2)     /* Bad user/passwd or unauthorized */
+#define NS_FORBIDDEN               (-3)     /* Authorization is not possible */
+/* NS_ERROR                                    The authorization function failed */
+
+/*
+ * The following are valid options when manipulating
+ * URL specific data.
+ */
+
+#define NS_OP_NOINHERIT            0x02 /* Match URL exactly */
+#define NS_OP_NODELETE             0x04 /* Do call previous procs Ns_OpDeleteProc */
+#define NS_OP_RECURSE              0x08 /* Also destroy registered procs below given URL */
+
+/*
+ * The following types of filters may be registered.
+ */
+
+#define NS_FILTER_PRE_AUTH         0x01 /* Runs before any Ns_UserAuthProc */
+#define NS_FILTER_POST_AUTH        0x02 /* Runs after any Ns_UserAuthProc */
+#define NS_FILTER_TRACE            0x04 /* Runs after Ns_OpProc completes successfully */
+#define NS_FILTER_VOID_TRACE       0x08 /* Run ns_register_trace procs after previous traces */
+
+/*
+ * The following are valid return codes from an Ns_FilterProc.
+ */
+
+/* NS_OK                                    Run next filter */
+#define NS_FILTER_BREAK            (-4)  /* Run next stage of connection */
+#define NS_FILTER_RETURN           (-5)  /* Close connection */
+
+/*
+ * The following are the valid attributes of a scheduled event.
+ */
+
+#define NS_SCHED_THREAD            0x01 /* Ns_SchedProc will run in detached thread */
+#define NS_SCHED_ONCE              0x02 /* Call cleanup proc after running once */
+#define NS_SCHED_DAILY             0x04 /* Event is scheduled to occur daily */
+#define NS_SCHED_WEEKLY            0x08 /* Event is scheduled to occur weekly */
+#define NS_SCHED_PAUSED            0x10 /* Event is currently paused */
+#define NS_SCHED_RUNNING           0x20 /* Event is currently running, perhaps in detached thread */
+
+/*
+ * The following define socket events for the Ns_Sock* APIs.
+ */
+
+#define NS_SOCK_READ               0x01 /* Socket is readable */
+#define NS_SOCK_WRITE              0x02 /* Socket is writeable */
+#define NS_SOCK_EXCEPTION          0x04 /* Socket has OOB data */
+#define NS_SOCK_EXIT               0x08 /* The server is shutting down */
+#define NS_SOCK_DROP               0x10 /* Unused */
+#define NS_SOCK_CANCEL             0x20 /* Remove event from sock callback thread */
+#define NS_SOCK_ANY                0x40 /* ??? */
+
+/*
+ * The following are valid comm driver options.
+ */
+
+#define NS_DRIVER_ASYNC            0x01 /* Use async read-ahead. */
+#define NS_DRIVER_SSL              0x02 /* Use SSL port, protocol defaults. */
+#define NS_DRIVER_UDP              0x04 /* Listening on a UDP socket */
+#define NS_DRIVER_UNIX             0x08 /* Listening on a Unix domain socket */
+
+#define NS_DRIVER_VERSION_1        1
 
 /*
  * The following are valid Tcl interp traces.
  */
 
-#define NS_TCL_TRACE_CREATE        0x01
-#define NS_TCL_TRACE_DELETE        0x02
-#define NS_TCL_TRACE_ALLOCATE      0x04
-#define NS_TCL_TRACE_DEALLOCATE    0x08
-#define NS_TCL_TRACE_GETCONN       0x10
-#define NS_TCL_TRACE_FREECONN      0x20
+#define NS_TCL_TRACE_CREATE        0x01 /* New interp created */
+#define NS_TCL_TRACE_DELETE        0x02 /* Interp destroyed */
+#define NS_TCL_TRACE_ALLOCATE      0x04 /* Interp allocated, possibly from thread cache */
+#define NS_TCL_TRACE_DEALLOCATE    0x08 /* Interp de-allocated, returned to thread-cache */
+#define NS_TCL_TRACE_GETCONN       0x10 /* Interp allocated for connection processing (filter, proc) */
+#define NS_TCL_TRACE_FREECONN      0x20 /* Interp finnished connection processing */
+
+/*
+ * The following define some buffer sizes and limits.
+ */
+
+#define NS_CONN_MAXCLS             16 /* Max num CLS keys which may be allocated */
+#define NS_CONN_MAXBUFS            16 /* Max num buffers which Ns_ConnSend will write */
+#define NS_ENCRYPT_BUFSIZE         16 /* Min size of buffer for Ns_Encrypt output */
+
 
 #if defined(__alpha)
 typedef long			ns_int64;
@@ -139,84 +185,71 @@ typedef unsigned long long	ns_uint64;
 typedef ns_int64 INT64;
 
 /*
- * The following flags define how Ns_Set's
- * are managed by Tcl:
- *
- * NS_TCL_SET_STATIC:	Underlying Ns_Set managed
- * 			elsewhere, only maintain a
- * 			Tcl reference.
- *
- * NS_TCL_SET_DYNAMIC:	Ownership of Ns_Set is given
- * 			entirely to Tcl, free the set
- * 			when no longer referenced in Tcl.
- *
- * In addition, the NS_TCL_SET_SHARED flag can be set
- * to make the set available to all interps.
+ * The following flags define how Ns_Set's are managed by Tcl.
  */
 
-#define NS_TCL_SET_STATIC      	  0
-#define NS_TCL_SET_DYNAMIC        1
-#define NS_TCL_SET_SHARED	  2
+#define NS_TCL_SET_STATIC          0 /* Ns_Set managed elsewhere, maintain a Tcl reference */
+#define NS_TCL_SET_DYNAMIC         1 /* Tcl owns the Ns_Set and will free when finnished */
+#define NS_TCL_SET_SHARED          2 /* Ns_Set will be shared with all interps (deprecated, see: nsv) */
 
 /*
  * Backwards compatible (and confusing) names.
  */
 
-#define NS_TCL_SET_PERSISTENT     NS_TCL_SET_SHARED
-#define NS_TCL_SET_TEMPORARY      NS_TCL_SET_STATIC
+#define NS_TCL_SET_PERSISTENT      NS_TCL_SET_SHARED
+#define NS_TCL_SET_TEMPORARY       NS_TCL_SET_STATIC
 
-#define NS_DSTRING_STATIC_SIZE    TCL_DSTRING_STATIC_SIZE
-#define NS_DSTRING_PRINTF_MAX	  2048
-
-#define NS_CACHE_FREE		((Ns_Callback *) (-1))
+#define NS_CACHE_FREE ((Ns_Callback *) (-1))
 
 #ifdef _WIN32
-NS_EXTERN char *		NsWin32ErrMsg(int err);
-NS_EXTERN SOCKET		ns_sockdup(SOCKET sock);
-NS_EXTERN int			ns_socknbclose(SOCKET sock);
-NS_EXTERN int			truncate(char *file, off_t size);
-NS_EXTERN int			link(char *from, char *to);
-NS_EXTERN int			symlink(char *from, char *to);
-NS_EXTERN int			kill(int pid, int sig);
-#define ns_sockclose		closesocket
-#define ns_sockioctl		ioctlsocket
-#define ns_sockerrno		GetLastError()
-#define ns_sockstrerror		NsWin32ErrMsg
-#define strcasecmp		_stricmp
-#define strncasecmp		_strnicmp
-#define vsnprintf		_vsnprintf
-#define snprintf		_snprintf
-#define mkdir(d,m)		_mkdir((d))
-#define ftruncate(f,s)		chsize((f),(s))
-#define EINPROGRESS		WSAEINPROGRESS
-#define EWOULDBLOCK		WSAEWOULDBLOCK
-#define F_OK			0
-#define W_OK			2
-#define R_OK			4
-#define X_OK			R_OK
+NS_EXTERN char *        NsWin32ErrMsg(int err);
+NS_EXTERN SOCKET        ns_sockdup(SOCKET sock);
+NS_EXTERN int           ns_socknbclose(SOCKET sock);
+NS_EXTERN int           truncate(char *file, off_t size);
+NS_EXTERN int           link(char *from, char *to);
+NS_EXTERN int           symlink(char *from, char *to);
+NS_EXTERN int           kill(int pid, int sig);
+#define ns_sockclose    closesocket
+#define ns_sockioctl    ioctlsocket
+#define ns_sockerrno    GetLastError()
+#define ns_sockstrerror NsWin32ErrMsg
+#define strcasecmp      _stricmp
+#define strncasecmp     _strnicmp
+#define vsnprintf       _vsnprintf
+#define snprintf        _snprintf
+#define mkdir(d,m)      _mkdir((d))
+#define ftruncate(f,s)  chsize((f),(s))
+#define EINPROGRESS     WSAEINPROGRESS
+#define EWOULDBLOCK     WSAEWOULDBLOCK
+#define F_OK            0
+#define W_OK            2
+#define R_OK            4
+#define X_OK            R_OK
+
 #else
-#define O_TEXT			0
-#define O_BINARY		0
-#define SOCKET                  int
-#define INVALID_SOCKET	        (-1)
-#define SOCKET_ERROR	        (-1)
+
+#define O_TEXT          0
+#define O_BINARY        0
+#define SOCKET          int
+#define INVALID_SOCKET  (-1)
+#define SOCKET_ERROR    (-1)
 #define NS_EXPORT
-#define ns_sockclose		close
-#define ns_socknbclose		close
-#define ns_sockioctl		ioctl
-#define ns_sockerrno		errno
-#define ns_sockstrerror		strerror
-#define ns_sockdup		dup
+#define ns_sockclose    close
+#define ns_socknbclose  close
+#define ns_sockioctl    ioctl
+#define ns_sockerrno    errno
+#define ns_sockstrerror strerror
+#define ns_sockdup      dup
 #endif
 
 /*
  * C API macros.
  */
 
-#define UCHAR(c) 		((unsigned char)(c))
-#define STREQ(a,b) 		(((*a) == (*b)) && (strcmp((a),(b)) == 0))
-#define STRIEQ(a,b)     	(strcasecmp((a),(b)) == 0)
-#define Ns_IndexCount(X) 	((X)->n)
+#define UCHAR(c)                ((unsigned char)(c))
+#define STREQ(a,b)              (((*a) == (*b)) && (strcmp((a),(b)) == 0))
+#define STRIEQ(a,b)             (strcasecmp((a),(b)) == 0)
+#define Ns_IndexCount(X)        ((X)->n)
 #define Ns_ListPush(elem,list)  ((list)=Ns_ListCons((elem),(list)))
 #define Ns_ListFirst(list)      ((list)->first)
 #define Ns_ListRest(list)       ((list)->rest)
@@ -230,16 +263,19 @@ NS_EXTERN int			kill(int pid, int sig);
  * Ns_DString's are now equivalent to Tcl_DString's starting in 4.0.
  */
 
-#define Ns_DString		Tcl_DString
-#define Ns_DStringLength	Tcl_DStringLength
-#define Ns_DStringValue		Tcl_DStringValue
-#define Ns_DStringNAppend	Tcl_DStringAppend
-#define Ns_DStringAppend(d,s)	Tcl_DStringAppend((d), (s), -1)
-#define Ns_DStringAppendElement	Tcl_DStringAppendElement
-#define Ns_DStringInit		Tcl_DStringInit
-#define Ns_DStringFree		Tcl_DStringFree
-#define Ns_DStringTrunc		Tcl_DStringTrunc
-#define Ns_DStringSetLength	Tcl_DStringSetLength
+#define Ns_DString              Tcl_DString
+#define Ns_DStringLength        Tcl_DStringLength
+#define Ns_DStringValue         Tcl_DStringValue
+#define Ns_DStringNAppend       Tcl_DStringAppend
+#define Ns_DStringAppend(d,s)   Tcl_DStringAppend((d), (s), -1)
+#define Ns_DStringAppendElement Tcl_DStringAppendElement
+#define Ns_DStringInit          Tcl_DStringInit
+#define Ns_DStringFree          Tcl_DStringFree
+#define Ns_DStringTrunc         Tcl_DStringTrunc
+#define Ns_DStringSetLength     Tcl_DStringSetLength
+#define NS_DSTRING_STATIC_SIZE  TCL_DSTRING_STATIC_SIZE
+#define NS_DSTRING_PRINTF_MAX   2048
+
 
 /*
  * This is used for logging messages.

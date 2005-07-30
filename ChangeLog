@@ -1,4 +1,12 @@
+2005-07-30  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h: Untabify and reformat some definitions. Remove
+	unused/unneeded NS_AOLSERVER_3_PLUS, NS_SHUTDOWN and
+	NS_REGISTER_SERVER_TRACE.
+
 2005-07-29  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h: 
 
 	* nslog/nslog.c: Fix use of ex-compat macro Ns_ConfigGet.
 
