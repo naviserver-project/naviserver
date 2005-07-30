@@ -147,7 +147,7 @@ proc ns_eval {args} {
 	}
 
     } elseif {$code == 1} {
-        ns_markfordelete
+        ns_ictl markfordelete
     }
     return -code $code $result
 }
@@ -664,6 +664,6 @@ _ns_savenamespaces
 # Kill this interp to save memory.
 #
 
-ns_markfordelete
+ns_ictl markfordelete
 
 # EOF $RCSfile$

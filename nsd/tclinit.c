@@ -753,14 +753,14 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     int             opt, length, when = 0, result = TCL_OK;
 
     static CONST char *opts[] = {
-        "addmodule", "cleanup", "epoch", "get", "getmodules", "save",
-        "update", "oncreate", "oncleanup", "oninit", "ondelete", "trace",
+        "addmodule", "cleanup", "epoch", "get", "getmodules", "markfordelete",
+        "save", "update", "oncreate", "oncleanup", "oninit", "ondelete", "trace",
         NULL
     };
     enum {
         IAddModuleIdx, ICleanupIdx, IEpochIdx, IGetIdx, IGetModulesIdx,
-        ISaveIdx, IUpdateIdx, IOnCreateIdx, IOnCleanupIdx, IOnInitIdx,
-        IOnDeleteIdx, ITraceIdx
+        IMarkForDeleteIdx, ISaveIdx, IUpdateIdx, IOnCreateIdx, IOnCleanupIdx,
+        IOnInitIdx, IOnDeleteIdx, ITraceIdx
     };
     Ns_ObjvTable traceWhen[] = {
         {"create",     NS_TCL_TRACE_CREATE},
@@ -848,6 +848,14 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         Ns_RWLockRdLock(&servPtr->tcl.lock);
         Tcl_SetIntObj(Tcl_GetObjResult(interp), servPtr->tcl.epoch);
         Ns_RWLockUnlock(&servPtr->tcl.lock);
+        break;
+
+    case IMarkForDeleteIdx:
+        /*
+         * The interp will be deleted on next deallocation.
+         */
+
+        itPtr->delete = 1;
         break;
 
     case ISaveIdx:
@@ -953,37 +961,6 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     }
 
     return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclMarkForDeleteObjCmd --
- *
- *      Implements ns_markfordelete.
- *
- * Results:
- *      Tcl result. 
- *
- * Side effects:
- *      See Ns_TclMarkForDelete.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclMarkForDeleteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
-{
-    NsInterp *itPtr = arg;
-
-    if (objc != 1) {
-        Tcl_WrongNumArgs(interp, 1, objv, "");
-        return TCL_ERROR;
-    }
-    itPtr->delete = 1;
-
-    return TCL_OK;
 }
 
 

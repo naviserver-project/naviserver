@@ -1,5 +1,11 @@
 2005-07-29  Stephen Deasey  <sdeasey@users.sf.net>
 
+
+	* nsd/tclinit.c:
+	* nsd/tclcmds.c:
+	* nsd/init.tcl: Remove ns_markfordelete command and roll into
+	ns_ictl as ns_ictl markfordelete.
+
 	* nsd/nsd.h:
 	* nsd/nsmain.c:
 	* nsd/tclinit.c: Allocate interps efficiently, max 1 per-thread
