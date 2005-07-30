@@ -58,20 +58,20 @@ NS_RCSID("@(#) $Header$");
 void *
 ns_realloc(void *ptr, size_t size)
 {
-    return (ptr ? Tcl_Realloc(ptr, size) : Tcl_Alloc(size));
+    return (ptr ? ckrealloc(ptr, size) : ckalloc(size));
 }
 
 void *
 ns_malloc(size_t size)
 {
-    return Tcl_Alloc(size);
+    return ckalloc(size);
 }
 
 void
 ns_free(void *ptr)
 {
     if (ptr != NULL) {
-	Tcl_Free(ptr);
+	ckfree(ptr);
     }
 }
 

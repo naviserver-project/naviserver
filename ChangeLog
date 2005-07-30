@@ -1,5 +1,10 @@
 2005-07-29  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/nsthread.h:
+	* nsthread/memory.c: Ensure callers of ns_realloc check the
+	rerturn value.  Use ckalloc etc. macros consistently for
+	debugging.
+
 	* include/ns.h:
 	* include/nsthread.h:
 	* nsd/tclthread.c:
