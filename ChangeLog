@@ -1,5 +1,7 @@
 2005-07-29  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nslog/nslog.c: Fix use of ex-compat macro Ns_ConfigGet.
+
 	* include/nsthread.h:
 	* nsthread/memory.c: Ensure callers of ns_realloc check the
 	rerturn value.  Use ckalloc etc. macros consistently for
