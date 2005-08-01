@@ -227,6 +227,9 @@ NsAdpFlush(NsInterp *itPtr)
 	&& itPtr->adp.responsePtr->length > 0) {
 	if (AdpFlush(itPtr, 1) != NS_OK) {
 	    itPtr->adp.stream = 0;
+            if (Ns_ConnGetChunkedFlag(itPtr->conn)) {
+                Ns_ConnSetChunkedFlag(itPtr->conn, 0);
+            }
 	}
     }
 }
@@ -243,7 +246,8 @@ NsAdpFlush(NsInterp *itPtr)
  *	None.
  *
  * Side effects:
- *	Headers and current data, if any, are flushed.
+ *	Headers and current data, if any, are flushed. Can enable chunked
+ *      mode depending on the browser version.
  *
  *----------------------------------------------------------------------
  */
@@ -252,8 +256,16 @@ void
 NsAdpStream(NsInterp *itPtr)
 {
     if (!itPtr->adp.stream && itPtr->conn != NULL) {
-    	itPtr->adp.stream = 1;
-	NsAdpFlush(itPtr);
+        itPtr->adp.stream = 1;
+
+        /* Switch to chunked mode if browser supports chunked encoding and 
+         * streaming is enabled.
+         */
+
+        if (itPtr->conn->request->version == 1.1) {
+            Ns_ConnSetChunkedFlag(itPtr->conn, 1);
+        }
+        NsAdpFlush(itPtr);
     }
 }
 

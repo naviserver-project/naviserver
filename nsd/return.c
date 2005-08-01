@@ -220,8 +220,9 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
         connPtr->responseLength = 0;
     }
 
-    Ns_DStringPrintf(dsPtr, "HTTP/%s %d %s\r\n",
-                     (conn->flags & NS_CONN_WRITE_CHUNKED) ? "1.1" : "1.0",
+    Ns_DStringPrintf(dsPtr, "%s %d %s\r\n",
+                     (connPtr->responseVersion != NULL) ? connPtr->responseVersion :
+                       (conn->flags & NS_CONN_WRITE_CHUNKED) ? "HTTP/1.1" : "HTTP/1.0",
                      connPtr->responseStatus,
                      reason);
 

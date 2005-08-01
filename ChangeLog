@@ -1,3 +1,21 @@
+2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd.queue.c:
+	* nsd.return.c:
+	* nsd/conn.c: added ns_conn responseversion to manually set response 
+	protocol and version to have full control about returned HTTP format.
+	For C API 2 functiosn are added: Ns_ConnResponseVersion and
+	Ns_ConnSetResponseVersion. Added responseVersion char* pointer to 
+	Conn structure. To enable response version tests ns_httptest needs
+	to be changed to return response protocol/version.
+
+	* nsd/adprequest.c:
+	* tests/http_chunked.test:
+	* tests/testserver/pages/http_chunked.adp: detects now whether client 
+	is HTTP/1.1 and therefore handles chunked encoding. 
+
 2005-07-30  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h: Untabify and reformat some definitions. Remove

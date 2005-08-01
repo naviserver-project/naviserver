@@ -263,6 +263,60 @@ Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConnResponseVersion --
+ *
+ *      Get the reponse protocol and version that will be sent 
+ *
+ * Results:
+ *      String like HTTP/1.0 
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_ConnResponseVersion(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return connPtr->responseVersion;
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSetResponseVersion --
+ *
+ *      Set the response protocol an dversion that will be sent
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnSetResponseVersion(Ns_Conn *conn, char *new_version)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    if (connPtr->responseVersion != NULL) {
+        ns_free(connPtr->responseVersion);
+    }
+    connPtr->responseVersion = ns_strcopy(new_version);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConnContentSent --
  *
  *      Return the number of bytes sent to the browser after headers
@@ -958,7 +1012,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status",
         "url", "urlc", "urlencoding", "urlv", "version", "write_encoded",
-        "chunked",
+        "chunked", "responseversion", 
         NULL
     };
     enum ISubCmdIdx {
@@ -970,7 +1024,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
-        CChunkedIdx
+        CChunkedIdx, CResponseVersionIdx
     };
 
     if (objc < 2) {
@@ -1212,6 +1266,13 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         } else {
             Tcl_SetIntObj(result, 0);
         }
+        break;
+
+    case CResponseVersionIdx:
+        if (objc > 2) {
+            Ns_ConnSetResponseVersion(conn, Tcl_GetString(objv[2]));
+        }
+        Tcl_SetResult(interp, Ns_ConnResponseVersion(conn), TCL_STATIC);
         break;
 
     case CRequestIdx:

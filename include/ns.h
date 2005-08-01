@@ -700,6 +700,8 @@ NS_EXTERN char *Ns_ConnContent(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnServer(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnResponseStatus(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status);
+NS_EXTERN char *Ns_ConnResponseVersion(Ns_Conn *conn);
+NS_EXTERN void Ns_ConnSetResponseVersion(Ns_Conn *conn, char *new_version);
 NS_EXTERN int Ns_ConnContentSent(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
 NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);

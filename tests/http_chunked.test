@@ -47,15 +47,13 @@ test http_chunked-1.1 {adp streaming w/chunks to HTTP/1.1 client} -constraints s
         GET /http_chunked.adp?stream=1
 } -result "200 chunked {} {a\r\n0123456789\r\n5\r\n01234\r\n0\r\n\r\n}"
 
-test http_chunked-1.2 {adp with buffered response} -constraints {
-    serverListen knownBug
-} -body {
+test http_chunked-1.2 {adp with buffered response} -constraints serverListen -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody t \
         GET /http_chunked.adp?stream=0
 } -result {200 {} 15 012345678901234}
 
 test http_chunked-1.3 {adp streaming to HTTP/1.0 client} -constraints serverListen -body {
-    nstest_http -setheaders {Connection keep-alive} \
+    nstest_http -http 1.0 -setheaders {Connection keep-alive} \
         -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
         GET /http_chunked.adp?stream=1
 } -result {200 {} close {} 012345678901234}

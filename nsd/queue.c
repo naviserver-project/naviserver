@@ -713,6 +713,7 @@ ConnRun(Conn *connPtr)
     connPtr->flags = 0;
     connPtr->nContentSent = 0;
     connPtr->responseStatus = 0;
+    connPtr->responseVersion = 0;
     connPtr->responseLength = 0;
     connPtr->recursionCount = 0;
     connPtr->encoding = servPtr->encoding.outputEncoding;
@@ -824,6 +825,10 @@ ConnRun(Conn *connPtr)
     connPtr->outputheaders = NULL;
     NsFreeRequest(connPtr->reqPtr);
     connPtr->reqPtr = NULL;
+    if (connPtr->responseVersion != NULL) {
+        ns_free(connPtr->responseVersion);
+        connPtr->responseVersion = NULL;
+    }
 }
 
 

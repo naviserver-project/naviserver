@@ -481,6 +481,7 @@ typedef struct Conn {
     int nContentSent;
     int responseStatus;
     int responseLength;
+    char *responseVersion;
     int recursionCount;
 
     Ns_Set *query;
