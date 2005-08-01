@@ -1,5 +1,9 @@
 2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* include/ns.h: fixed bug preventing sockcallbacks to
+	be used, NS_SOCK_ANY should be 0xff otherwise callback is
+	removed from the queue.
+
 	* include/ns.h:
 	* nsd/nsd.h:
 	* nsd.queue.c:

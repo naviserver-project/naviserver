@@ -134,7 +134,7 @@
 #define NS_SOCK_EXIT               0x08 /* The server is shutting down */
 #define NS_SOCK_DROP               0x10 /* Unused */
 #define NS_SOCK_CANCEL             0x20 /* Remove event from sock callback thread */
-#define NS_SOCK_ANY                0x40 /* ??? */
+#define NS_SOCK_ANY                0xFF /* ??? */
 
 /*
  * The following are valid comm driver options.
