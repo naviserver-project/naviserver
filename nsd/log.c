@@ -57,7 +57,7 @@ typedef struct LogCache {
  * Local functions defined in this file
  */
 
-static void      Log(Ns_LogSeverity severity, char *fmt, va_list ap);
+static void      Log(Ns_LogSeverity severity, CONST char *fmt, va_list ap);
 static int       LogStart(LogCache *cachePtr, Ns_LogSeverity severity);
 static void      LogEnd(LogCache *cachePtr);
 static void      LogFlush(LogCache *cachePtr);
@@ -65,6 +65,7 @@ static int       LogReOpen(void);
 static char     *LogTime(LogCache *cachePtr, int gmtoff, long *usecPtr);
 static LogCache *LogGetCache(void);
 static Ns_TlsCleanup LogFreeCache;
+static Tcl_PanicProc Panic;
 
 /*
  * Static variables defined in this file
@@ -97,6 +98,7 @@ NsInitLog(void)
 {
     Ns_MutexSetName(&lock, "ns:log");
     Ns_TlsAlloc(&tls, LogFreeCache);
+    Tcl_SetPanicProc(Panic);
 }
 
 
@@ -173,7 +175,7 @@ Ns_LogRoll(void)
  */
 
 void
-Ns_Log(Ns_LogSeverity severity, char *fmt, ...)
+Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
 {
     va_list ap;
 
@@ -195,13 +197,13 @@ Ns_Log(Ns_LogSeverity severity, char *fmt, ...)
  *      None.
  *
  * Side effects:
- *      WILL CAUSE THE SERVER TO EXIT!
+ *      The process will exit.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Ns_Fatal(char *fmt, ...)
+Ns_Fatal(CONST char *fmt, ...)
 {
     va_list ap;
 
@@ -531,7 +533,7 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
  */
 
 static void
-Log(Ns_LogSeverity severity, char *fmt, va_list ap)
+Log(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
 {
     LogCache *cachePtr;
 
@@ -886,4 +888,34 @@ LogFreeCache(void *arg)
     LogFlush(cachePtr);
     Ns_DStringFree(&cachePtr->buffer);
     ns_free(cachePtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Panic --
+ *
+ *      Tcl_PanicProc callback which sends a message to the server log
+ *      with severity level Fatal, and then kills the process immediately.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The process dies, possibly entering the debugger.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Panic(CONST char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    Log(Fatal, fmt, ap);
+    va_end(ap);
+
+    abort();
 }

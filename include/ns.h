@@ -322,8 +322,8 @@ typedef int   (Ns_RequestAuthorizeProc) (char *server, char *method,
 			char *url, char *user, char *pass, char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
 typedef int   (Ns_UserAuthorizeProc) (char *user, char *passwd);
-typedef int   (Ns_LogFlushProc) (char *msg, size_t len);
-typedef int   (Ns_LogProc) (Ns_DString *dsPtr, Ns_LogSeverity severity, char *fmt, va_list ap);
+typedef int   (Ns_LogFlushProc) (CONST char *msg, size_t len);
+typedef int   (Ns_LogProc) (Ns_DString *dsPtr, Ns_LogSeverity severity, CONST char *fmt, va_list ap);
 struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *CONST objv[]);
@@ -973,14 +973,31 @@ NS_EXTERN int Ns_SockPortBound(int port);
  * log.c:
  */
 
-NS_EXTERN char *Ns_InfoErrorLog(void);
-NS_EXTERN int   Ns_LogRoll(void);
-NS_EXTERN void  Ns_Log(Ns_LogSeverity severity, char *fmt, ...) NS_GNUC_PRINTF(2, 3);
-NS_EXTERN void  Ns_Fatal(char *fmt, ...) NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
-NS_EXTERN char *Ns_LogTime(char *timeBuf);
-NS_EXTERN char *Ns_LogTime2(char *timeBuf, int gmt);
-NS_EXTERN void  Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr);
-NS_EXTERN void  Ns_SetNsLogProc(Ns_LogProc *procPtr);
+NS_EXTERN char *
+Ns_InfoErrorLog(void);
+
+NS_EXTERN int
+Ns_LogRoll(void);
+
+NS_EXTERN void
+Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
+     NS_GNUC_PRINTF(2, 3);
+
+NS_EXTERN void
+Ns_Fatal(CONST char *fmt, ...)
+     NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
+
+NS_EXTERN char *
+Ns_LogTime(char *timeBuf);
+
+NS_EXTERN char *
+Ns_LogTime2(char *timeBuf, int gmt);
+
+NS_EXTERN void
+Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr);
+
+NS_EXTERN void
+Ns_SetNsLogProc(Ns_LogProc *procPtr);
 
 /*
  * rollfile.c

@@ -1,6 +1,12 @@
 2005-08-01  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
+	* nsd/log.c: Make Tcl send panic messages to the server log. Add
+	some CONST declarations and GCC attributes.
+	* nsd/unix.c: Call Tcl Panic directly from fatal signal
+	handler. Remove unneeded call to pthread_kill_other_threads_np.
+
+	* include/ns.h:
 	* nsd/dsprintf.c:
 	* nsd/dstring.c: Untabify, reformat and add CONST declarations.
 

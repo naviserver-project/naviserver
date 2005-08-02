@@ -45,7 +45,7 @@ NS_RCSID("@(#) $Header$");
  */
 
 static int Pipe(int *fds, int sockpair);
-static void FatalSignalHandler(int signal);
+static void Abort(int signal);
 
 /*
  * Static variables defined in this file.
@@ -103,11 +103,11 @@ NsBlockSignals(int debug)
      * that caused them) have an appropriate handler installed.
      */
 
-    ns_signal(SIGILL, FatalSignalHandler); 
-    ns_signal(SIGTRAP, FatalSignalHandler); 
-    ns_signal(SIGBUS, FatalSignalHandler); 
-    ns_signal(SIGSEGV, FatalSignalHandler); 
-    ns_signal(SIGFPE, FatalSignalHandler); 
+    ns_signal(SIGILL, Abort); 
+    ns_signal(SIGTRAP, Abort); 
+    ns_signal(SIGBUS, Abort); 
+    ns_signal(SIGSEGV, Abort); 
+    ns_signal(SIGFPE, Abort); 
 }
 
 
@@ -624,7 +624,7 @@ poll(struct pollfd *fds, unsigned long int nfds, int timo)
 /*
  *----------------------------------------------------------------------
  *
- * FatalSignalHandler --
+ * Abort --
  *
  *      Ensure that we drop core on fatal signals like SIGBUS and
  *      SIGSEGV.
@@ -639,17 +639,7 @@ poll(struct pollfd *fds, unsigned long int nfds, int timo)
  */
 
 static void
-FatalSignalHandler(int signal)
+Abort(int signal)
 {
-#ifdef __linux
-    /*
-     * LinuxThreads thread manager needs to kill all child threads
-     * on fatal signals, else they get left behind as dead threads.
-     * As of glibc 2.3 with NPTL, this should be a no-op.
-     */
-    pthread_kill_other_threads_np();
-#endif
-
-    Ns_Log(Fatal, "received fatal signal %d", signal);
-    abort();
+    Tcl_Panic("received fatal signal %d", signal);
 }
