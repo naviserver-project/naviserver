@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,7 +31,7 @@
 /*
  * log.c --
  *
- *	Manage the server log file.
+ *      Manage the global error log file.
  */
 
 #include "nsd.h"
@@ -43,37 +43,37 @@ NS_RCSID("@(#) $Header$");
  * cached formatted time strings and log buffers.
  */
 
-typedef struct Cache {
-    int		hold;
-    int		count;
-    time_t	gtime;
-    time_t	ltime;
-    char	gbuf[100];
-    char	lbuf[100];
+typedef struct LogCache {
+    int         hold;
+    int         count;
+    time_t      gtime;
+    time_t      ltime;
+    char        gbuf[100];
+    char        lbuf[100];
     Ns_DString  buffer;
-} Cache;
+} LogCache;
 
 /*
  * Local functions defined in this file
  */
 
-static int    LogReOpen(void);
-static void   Log(Ns_LogSeverity severity, char *fmt, va_list ap);
-static Cache *LogGetCache(void);
+static void      Log(Ns_LogSeverity severity, char *fmt, va_list ap);
+static int       LogStart(LogCache *cachePtr, Ns_LogSeverity severity);
+static void      LogEnd(LogCache *cachePtr);
+static void      LogFlush(LogCache *cachePtr);
+static int       LogReOpen(void);
+static char     *LogTime(LogCache *cachePtr, int gmtoff, long *usecPtr);
+static LogCache *LogGetCache(void);
 static Ns_TlsCleanup LogFreeCache;
-static void   LogFlush(Cache *cachePtr);
-static char  *LogTime(Cache *cachePtr, int gmtoff, long *usecPtr);
-static int    LogStart(Cache *cachePtr, Ns_LogSeverity severity);
-static void   LogEnd(Cache *cachePtr);
 
 /*
  * Static variables defined in this file
  */
 
-static Ns_Tls tls;
-static Ns_Mutex lock;
-static Ns_LogFlushProc    *flushProcPtr;
-static Ns_LogProc         *nslogProcPtr;
+static Ns_Tls           tls;
+static Ns_Mutex         lock;
+static Ns_LogProc      *logProcPtr;
+static Ns_LogFlushProc *flushProcPtr;
 
 
 /*
@@ -81,13 +81,13 @@ static Ns_LogProc         *nslogProcPtr;
  *
  * NsInitLog --
  *
- *	Initialize the log API and TLS slot.
+ *      Initialize the log API and TLS slot.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -97,8 +97,6 @@ NsInitLog(void)
 {
     Ns_MutexSetName(&lock, "ns:log");
     Ns_TlsAlloc(&tls, LogFreeCache);
-    flushProcPtr = NULL;
-    nslogProcPtr = NULL;
 }
 
 
@@ -107,13 +105,13 @@ NsInitLog(void)
  *
  * Ns_InfoErrorLog --
  *
- *	Returns the filename of the log file. 
+ *      Returns the filename of the log file.
  *
  * Results:
- *	Log file name or NULL if none. 
+ *      Log file name or NULL if none.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -130,14 +128,14 @@ Ns_InfoErrorLog(void)
  *
  * Ns_LogRoll --
  *
- *	Signal handler for SIG_HUP which will roll the files. Also a 
- *	tasty snack from Stuckey's. 
+ *      Signal handler for SIG_HUP which will roll the files. Also a
+ *      tasty snack from Stuckey's.
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR.
  *
  * Side effects:
- *	Will rename the log file and reopen it. 
+ *      Will rename the log file and reopen it.
  *
  *----------------------------------------------------------------------
  */
@@ -151,8 +149,8 @@ Ns_LogRoll(void)
         }
         Ns_Log(Notice, "log: re-opening log file '%s'", nsconf.log.file);
         if (LogReOpen() != NS_OK) {
-	    return NS_ERROR;
-	}
+            return NS_ERROR;
+        }
     }
     return NS_OK;
 }
@@ -163,13 +161,13 @@ Ns_LogRoll(void)
  *
  * Ns_Log --
  *
- *	Spit a message out to the server log. 
+ *      Send a message to the server log.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -184,28 +182,20 @@ Ns_Log(Ns_LogSeverity severity, char *fmt, ...)
     va_end(ap);
 }
 
-/* NB: For binary compatibility with previous releases. */
-
-void
-ns_serverLog(Ns_LogSeverity severity, char *fmt, va_list *vaPtr)
-{
-    Log(severity, fmt, *vaPtr);
-}
-
 
 /*
  *----------------------------------------------------------------------
  *
  * Ns_Fatal --
  *
- *	Spit a message out to the server log with severity level of 
- *	Fatal, and then terminate the nsd process. 
+ *      Send a message to the server log with severity level Fatal, and
+ *      then exit the nsd process cleanly. 
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	WILL CAUSE AOLSERVER TO EXIT! 
+ *      WILL CAUSE THE SERVER TO EXIT!
  *
  *----------------------------------------------------------------------
  */
@@ -227,15 +217,15 @@ Ns_Fatal(char *fmt, ...)
  *
  * Ns_LogTime2, Ns_LogTime --
  *
- *	Copy a local or GMT date and time string useful for common log
- *	format enties (e.g., nslog).
+ *      Copy a local or GMT date and time string useful for common log
+ *      format enties (e.g., nslog).
  *
  * Results:
- *	Pointer to given buffer.
+ *      Pointer to given buffer.
  *
  * Side effects:
- *	Will put data into timeBuf, which must be at least 41 bytes 
- *	long. 
+ *      Will put data into timeBuf, which must be at least 41 bytes
+ *      long.
  *
  *----------------------------------------------------------------------
  */
@@ -256,18 +246,79 @@ Ns_LogTime(char *timeBuf)
 
 /*
  *----------------------------------------------------------------------
+ *      
+ * Ns_SetLogFlushProc --
+ * 
+ *      Set the proc to call when writing the log. You probably want
+ *      to have a Ns_RegisterAtShutdown() call too so you can
+ *      close/finish up whatever special logging you are doing.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */ 
+   
+void
+Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
+{
+    flushProcPtr = procPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetNsLogProc --
+ *
+ *      Set the proc to call when adding a log entry.
+ *
+ *      There are 2 ways to use this override:
+ *
+ *      1. In conjunction with the Ns_SetLogFlushProc() to use the
+ *         existing AOLserver buffering and writing system. So when a
+ *         log message is added it is inserted into the log cache and
+ *         flushed later through your log flush override. To use this
+ *         write any logging data to the Ns_DString that is passed into
+ *         the Ns_Log proc.
+ *      2. Without calling Ns_SetLogFlushProc() and handle all buffering
+ *         and writing directly. LogFlush() will be called as normal but
+ *         is a no-op because nothing will have been added. Do not write
+ *         into the Ns_DString passed into the Ns_Log proc in this case.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ * 
+ *----------------------------------------------------------------------
+ */     
+
+void    
+Ns_SetNsLogProc(Ns_LogProc *procPtr)
+{
+    logProcPtr = procPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
  *
  * NsLogOpen --
  *
- *	Open the log file. Adjust configurable parameters, too. 
+ *      Open the log file. Adjust configurable parameters, too.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	Configures this module to use the newly opened log file.
- *	If LogRoll is turned on in the config file, then it registers
- *	a signal callback.
+ *      Configures this module to use the newly opened log file.
+ *      If LogRoll is turned on in the config file, then it registers
+ *      a signal callback.
  *
  *----------------------------------------------------------------------
  */
@@ -280,11 +331,11 @@ NsLogOpen(void)
      */
 
     if (LogReOpen() != NS_OK) {
-	Ns_Fatal("log: failed to open server log '%s': '%s'", 
-		 nsconf.log.file, strerror(errno));
+        Ns_Fatal("log: failed to open server log '%s': '%s'",
+                 nsconf.log.file, strerror(errno));
     }
     if (nsconf.log.flags & LOG_ROLL) {
-	Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
+        Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
     }
 }
 
@@ -294,13 +345,13 @@ NsLogOpen(void)
  *
  * NsTclLogRollObjCmd --
  *
- *	Implements ns_logroll as obj command. 
+ *      Implements ns_logroll command.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -309,7 +360,7 @@ int
 NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     if (Ns_LogRoll() != NS_OK) {
-	Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
+        Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
     }
     return TCL_OK;
 }
@@ -320,88 +371,76 @@ NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  *
  * NsTclLogCtlObjCmd --
  *
- *	Implements ns_logctl command to manage log buffering
- *	and release.
+ *      Implements ns_logctl command to manage log buffering
+ *      and release.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-	       Tcl_Obj *CONST objv[])
+NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    int len, opt;
-    Cache *cachePtr;
+    LogCache *cachePtr;
+    int       len, opt;
+
     static CONST char *opts[] = {
-	"hold",
-	"count",
-	"get",
-	"peek",
-	"flush",
-	"release",
-	"truncate",
-	NULL
+        "hold", "count", "get", "peek", "flush", "release", "truncate", NULL
     };
     enum {
-	CHoldIdx,
-	CCountIdx,
-	CGetIdx,
-	CPeekIdx,
-	CFlushIdx,
-	CReleaseIdx,
-	CTruncIdx
+        CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx, CTruncIdx
     };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
-    	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-			    &opt) != TCL_OK) {
-	return TCL_ERROR;
+                            &opt) != TCL_OK) {
+        return TCL_ERROR;
     }
     cachePtr = LogGetCache();
+
     switch (opt) {
     case CHoldIdx:
-	cachePtr->hold = 1;
-	break;
+        cachePtr->hold = 1;
+        break;
 
     case CPeekIdx:
-	Tcl_SetResult(interp, cachePtr->buffer.string, TCL_VOLATILE);
-	break;
+        Tcl_SetResult(interp, cachePtr->buffer.string, TCL_VOLATILE);
+        break;
 
     case CGetIdx:
-	Tcl_SetResult(interp, cachePtr->buffer.string, TCL_VOLATILE);
-	Ns_DStringFree(&cachePtr->buffer);
+        Tcl_SetResult(interp, cachePtr->buffer.string, TCL_VOLATILE);
+        Ns_DStringFree(&cachePtr->buffer);
         cachePtr->count = 0;
-	break;
+        break;
 
     case CReleaseIdx:
-	cachePtr->hold = 0;
-	/* FALLTHROUGH */
+        cachePtr->hold = 0;
+        /* FALLTHROUGH */
 
     case CFlushIdx:
-	LogFlush(cachePtr);
+        LogFlush(cachePtr);
         cachePtr->count = 0;
-	break;
+        break;
 
     case CCountIdx:
-	Tcl_SetIntObj(Tcl_GetObjResult(interp), cachePtr->count);
-	break;
+        Tcl_SetIntObj(Tcl_GetObjResult(interp), cachePtr->count);
+        break;
 
     case CTruncIdx:
-	len = 0;
-	if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	Ns_DStringTrunc(&cachePtr->buffer, len);
-	break;
+        len = 0;
+        if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        Ns_DStringTrunc(&cachePtr->buffer, len);
+        break;
     }
     return TCL_OK;
 }
@@ -412,59 +451,58 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclLogObjCmd --
  *
- *	Implements ns_log as obj command.
+ *      Implements ns_log as obj command.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-	       Tcl_Obj *CONST objv[])
+NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    Ns_LogSeverity severity;
-    Cache *cachePtr;
-    char *severitystr;
-    int i;
-    Ns_DString ds;
+    LogCache       *cachePtr;
+    Ns_LogSeverity  severity;
+    char           *severitystr;
+    int             i;
+    Ns_DString      ds;
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
-    	return TCL_ERROR;
+        return TCL_ERROR;
     }
-    severitystr = Tcl_GetString(objv[1]);
     cachePtr = LogGetCache();
+    severitystr = Tcl_GetString(objv[1]);
     if (STRIEQ(severitystr, "notice")) {
-	severity = Notice;
+        severity = Notice;
     } else if (STRIEQ(severitystr, "warning")) {
-	severity = Warning;
+        severity = Warning;
     } else if (STRIEQ(severitystr, "error")) {
-	severity = Error;
+        severity = Error;
     } else if (STRIEQ(severitystr, "fatal")) {
-	severity = Fatal;
+        severity = Fatal;
     } else if (STRIEQ(severitystr, "bug")) {
-	severity = Bug;
+        severity = Bug;
     } else if (STRIEQ(severitystr, "debug")) {
-	severity = Debug;
+        severity = Debug;
     } else if (Tcl_GetIntFromObj(NULL, objv[1], &i) == TCL_OK) {
-	severity = i;
+        severity = i;
     } else {
-	Tcl_AppendResult(interp, "unknown severity: \"", severitystr,
-	    "\": should be notice, warning, error, "
-	    "fatal, bug, debug or integer value", NULL);
-	return TCL_ERROR;
+        Tcl_AppendResult(interp, "unknown severity: \"", severitystr,
+                         "\": should be notice, warning, error, "
+                         "fatal, bug, debug or integer value", NULL);
+        return TCL_ERROR;
     }
 
     Ns_DStringInit(&ds);
 
     for (i = 2; i < objc; ++i) {
-	Ns_DStringVarAppend(&ds,
-	Tcl_GetString(objv[i]), i < (objc-1) ? " " : NULL, NULL);
+        Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
+                            i < (objc-1) ? " " : NULL, NULL);
     }
 
     Ns_Log(severity, "%s", ds.string);
@@ -479,15 +517,15 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * Log --
  *
- *	Add an entry to the log file if the severity is not surpressed.
- *	Or call a custom log procedure and let that worry about the
- *	severity.
+ *      Add an entry to the log file if the severity is not surpressed.
+ *      Or call a custom log procedure and let that worry about the
+ *      severity.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	May write immediately or later through buffer.
+ *      May write immediately or later through buffer.
  *
  *----------------------------------------------------------------------
  */
@@ -495,20 +533,20 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 static void
 Log(Ns_LogSeverity severity, char *fmt, va_list ap)
 {
-    Cache *cachePtr;
+    LogCache *cachePtr;
 
     cachePtr = LogGetCache();
-    if (nslogProcPtr == NULL) {
-	if (LogStart(cachePtr, severity)) {
-	    Ns_DStringVPrintf(&cachePtr->buffer, fmt, ap);
-	    LogEnd(cachePtr);
-	}
+    if (logProcPtr == NULL) {
+        if (LogStart(cachePtr, severity)) {
+            Ns_DStringVPrintf(&cachePtr->buffer, fmt, ap);
+            LogEnd(cachePtr);
+        }
     } else {
-	(*nslogProcPtr)(&cachePtr->buffer, severity, fmt, ap);
-	++cachePtr->count;
-	if (!cachePtr->hold) {
-	    LogFlush(cachePtr);
-	}
+        (*logProcPtr)(&cachePtr->buffer, severity, fmt, ap);
+        ++cachePtr->count;
+        if (!cachePtr->hold) {
+            LogFlush(cachePtr);
+        }
     }
 }
 
@@ -518,73 +556,81 @@ Log(Ns_LogSeverity severity, char *fmt, va_list ap)
  *
  * LogStart --
  *
- *	Start a log entry.
+ *      Start a log entry.
  *
  * Results:
- *	1 if log started and should be written, 0 if given severity
- *	is surpressed.
+ *      1 if log started and should be written, 0 if given severity
+ *      is surpressed.
  *
  * Side effects:
- *	May append log header to given dstring.
+ *      May append log header to given dstring.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-LogStart(Cache *cachePtr, Ns_LogSeverity severity)
+LogStart(LogCache *cachePtr, Ns_LogSeverity severity)
 {
     char *severityStr, buf[10];
-    long usec;
+    long  usec;
 
     switch (severity) {
-	case Notice:
-	    if (nsconf.log.flags & LOG_NONOTICE) {
-		return 0;
-	    }
-	    severityStr = "Notice";
-	    break;
-        case Warning:
-	    severityStr = "Warning";
-	    break;
-	case Error:
-	    severityStr = "Error";
-	    break;
-	case Fatal:
-	    severityStr = "Fatal";
-	    break;
-	case Bug:
-	    severityStr = "Bug";
-	    break;
-	case Debug:
-	    if (!(nsconf.log.flags & LOG_DEBUG)) {
-		return 0;
-	    }
-	    severityStr = "Debug";
-	    break;
-	case Dev:
-	    if (!(nsconf.log.flags & LOG_DEV)) {
-		return 0;
-	    }
-	    severityStr = "Dev";
-	    break;
-	default:
-	    if (severity > nsconf.log.maxlevel) {
-		return 0;
-	    }
-	    sprintf(buf, "Level%d", severity);
-	    severityStr = buf;
-	    break;
+    case Notice:
+        if (nsconf.log.flags & LOG_NONOTICE) {
+            return 0;
+        }
+        severityStr = "Notice";
+        break;
+
+    case Warning:
+        severityStr = "Warning";
+        break;
+
+    case Error:
+        severityStr = "Error";
+        break;
+
+    case Fatal:
+        severityStr = "Fatal";
+        break;
+
+    case Bug:
+        severityStr = "Bug";
+        break;
+
+    case Debug:
+        if (!(nsconf.log.flags & LOG_DEBUG)) {
+            return 0;
+        }
+        severityStr = "Debug";
+        break;
+
+    case Dev:
+        if (!(nsconf.log.flags & LOG_DEV)) {
+            return 0;
+        }
+        severityStr = "Dev";
+        break;
+
+    default:
+        if (severity > nsconf.log.maxlevel) {
+            return 0;
+        }
+        sprintf(buf, "Level%d", severity);
+        severityStr = buf;
+        break;
     }
     Ns_DStringAppend(&cachePtr->buffer, LogTime(cachePtr, 0, &usec));
     if (nsconf.log.flags & LOG_USEC) {
-    	Ns_DStringTrunc(&cachePtr->buffer, cachePtr->buffer.length-1);
-	Ns_DStringPrintf(&cachePtr->buffer, ".%ld]", usec);
+        Ns_DStringTrunc(&cachePtr->buffer, cachePtr->buffer.length-1);
+        Ns_DStringPrintf(&cachePtr->buffer, ".%ld]", usec);
     }
     Ns_DStringPrintf(&cachePtr->buffer, "[%d.%lu][%s] %s: ",
-	Ns_InfoPid(), (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(), severityStr);
+                     Ns_InfoPid(), (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(), severityStr);
     if (nsconf.log.flags & LOG_EXPAND) {
-	Ns_DStringAppend(&cachePtr->buffer, "\n    ");
+        Ns_DStringAppend(&cachePtr->buffer, "\n    ");
     }
+
     return 1;
 }
 
@@ -594,27 +640,27 @@ LogStart(Cache *cachePtr, Ns_LogSeverity severity)
  *
  * LogEnd --
  *
- *	Complete a log entry and flush if necessary.
+ *      Complete a log entry and flush if necessary.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	May write to log.
+ *      May write to log.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-LogEnd(Cache *cachePtr)
+LogEnd(LogCache *cachePtr)
 {
     Ns_DStringNAppend(&cachePtr->buffer, "\n", 1);
     if (nsconf.log.flags & LOG_EXPAND) {
-	Ns_DStringNAppend(&cachePtr->buffer, "\n", 1);
+        Ns_DStringNAppend(&cachePtr->buffer, "\n", 1);
     }
     ++cachePtr->count;
     if (!cachePtr->hold) {
-    	LogFlush(cachePtr);
+        LogFlush(cachePtr);
     }
 }
 
@@ -624,27 +670,27 @@ LogEnd(Cache *cachePtr)
  *
  * LogFlush --
  *
- *	Flush per-thread log entries to buffer or open file.
+ *      Flush per-thread log entries to buffer or open file.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-LogFlush(Cache *cachePtr)
+LogFlush(LogCache *cachePtr)
 {
     Ns_DString *dsPtr = &cachePtr->buffer;
 
     Ns_MutexLock(&lock);
     if (flushProcPtr == NULL) {
-	(void) write(2, dsPtr->string, (size_t)dsPtr->length);
+        (void) write(2, dsPtr->string, (size_t) dsPtr->length);
     } else {
-	(*flushProcPtr)(dsPtr->string, (size_t)dsPtr->length);
+        (*flushProcPtr)(dsPtr->string, (size_t) dsPtr->length);
     }
     Ns_MutexUnlock(&lock);
     Ns_DStringFree(dsPtr);
@@ -657,15 +703,15 @@ LogFlush(Cache *cachePtr)
  *
  * LogReOpen --
  *
- *	Open the log file name specified in the 'logFile' global. If 
- *	it's successfully opened, make that file the sink for stdout 
- *	and stderr too. 
+ *      Open the log file name specified in the 'logFile' global. If
+ *      it's successfully opened, make that file the sink for stdout
+ *      and stderr too.
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -680,37 +726,38 @@ LogReOpen(void)
     fd = open(nsconf.log.file, O_WRONLY|O_APPEND|O_CREAT, 0644);
     if (fd < 0) {
         Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
-	       nsconf.log.file, strerror(errno));
+               nsconf.log.file, strerror(errno));
         status = NS_ERROR;
     } else {
-	/*
-	 * Route stderr to the file
-	 */
-	
+        /*
+         * Route stderr to the file
+         */
+
         if (fd != STDERR_FILENO && dup2(fd, STDERR_FILENO) == -1) {
             fprintf(stdout, "dup2(%s, STDERR_FILENO) failed: %s\n",
-		nsconf.log.file, strerror(errno));
+                    nsconf.log.file, strerror(errno));
             status = NS_ERROR;
         }
-	
-	/*
-	 * Route stdout to the file
-	 */
-	
+
+        /*
+         * Route stdout to the file
+         */
+
         if (dup2(STDERR_FILENO, STDOUT_FILENO) == -1) {
             Ns_Log(Error, "log: failed to route stdout to file: '%s'",
-		   strerror(errno));
+                   strerror(errno));
             status = NS_ERROR;
         }
-	
-	/*
-	 * Clean up dangling 'open' reference to the fd
-	 */
-	
+
+        /*
+         * Clean up dangling 'open' reference to the fd
+         */
+
         if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
             close(fd);
         }
     }
+
     return status;
 }
 
@@ -720,63 +767,65 @@ LogReOpen(void)
  *
  * LogTime --
  *
- *	Get formatted local or gmt log time from per-thread cache.
+ *      Get formatted local or gmt time from per-thread cache, and
+ *      update usecPtr with current microseconds.
  *
  * Results:
- *	Pointer to per-thread buffer.
+ *      Pointer to per-thread buffer.
  *
  * Side effects:
- *	Given usecPtr updated with current microseconds.
+ *      The per-thread cache is updated with second resolution.
  *
  *----------------------------------------------------------------------
  */
 
 static char *
-LogTime(Cache *cachePtr, int gmtoff, long *usecPtr)
+LogTime(LogCache *cachePtr, int gmtoff, long *usecPtr)
 {
-    time_t   *tp;
+    time_t    *tp;
     struct tm *ptm;
-    int gmtoffset, n, sign;
-    char *bp;
-    Ns_Time now;
+    int        gmtoffset, n, sign;
+    char      *bp;
+    Ns_Time    now;
 
     if (gmtoff) {
-	tp = &cachePtr->gtime;
-	bp = cachePtr->gbuf;
+        tp = &cachePtr->gtime;
+        bp = cachePtr->gbuf;
     } else {
-	tp = &cachePtr->ltime;
-	bp = cachePtr->lbuf;
+        tp = &cachePtr->ltime;
+        bp = cachePtr->lbuf;
     }
     Ns_GetTime(&now);
     if (*tp != now.sec) {
-	*tp = now.sec;
-	ptm = ns_localtime(&now.sec);
-	n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
-	if (!gmtoff) {
-	    bp[n++] = ']';
-	    bp[n] = '\0';
-	} else {
+        *tp = now.sec;
+        ptm = ns_localtime(&now.sec);
+        n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
+        if (!gmtoff) {
+            bp[n++] = ']';
+            bp[n] = '\0';
+        } else {
 #ifdef HAVE_TM_GMTOFF
-	    gmtoffset = ptm->tm_gmtoff / 60;
+            gmtoffset = ptm->tm_gmtoff / 60;
 #else
-	    gmtoffset = -timezone / 60;
-	    if (daylight && ptm->tm_isdst) {
-		gmtoffset += 60;
-	    }
+            gmtoffset = -timezone / 60;
+            if (daylight && ptm->tm_isdst) {
+                gmtoffset += 60;
+            }
 #endif
-	    if (gmtoffset < 0) {
-		sign = '-';
-		gmtoffset *= -1;
-	    } else {
-		sign = '+';
-	    }
-	    sprintf(bp + n, 
-		    " %c%02d%02d]", sign, gmtoffset / 60, gmtoffset % 60);
-	}
+            if (gmtoffset < 0) {
+                sign = '-';
+                gmtoffset *= -1;
+            } else {
+                sign = '+';
+            }
+            sprintf(bp + n, " %c%02d%02d]",
+                    sign, gmtoffset / 60, gmtoffset % 60);
+        }
     }
     if (usecPtr != NULL) {
-	*usecPtr = now.usec;
+        *usecPtr = now.usec;
     }
+
     return bp;
 }
 
@@ -786,28 +835,29 @@ LogTime(Cache *cachePtr, int gmtoff, long *usecPtr)
  *
  * LogGetCache --
  *
- *	Get the per-thread Cache struct.
+ *      Get the per-thread LogCache struct.
  *
  * Results:
- *	Pointer to per-thread struct.
+ *      Pointer to per-thread struct.
  *
  * Side effects:
- *	None.
+ *      Memory for struct is allocated on first call.
  *
  *----------------------------------------------------------------------
  */
 
-static Cache *
+static LogCache *
 LogGetCache(void)
 {
-    Cache *cachePtr;
+    LogCache *cachePtr;
 
     cachePtr = Ns_TlsGet(&tls);
     if (cachePtr == NULL) {
-	cachePtr = ns_calloc(1, sizeof(Cache));
-	Ns_DStringInit(&cachePtr->buffer);
-	Ns_TlsSet(&tls, cachePtr);
+        cachePtr = ns_calloc(1, sizeof(LogCache));
+        Ns_DStringInit(&cachePtr->buffer);
+        Ns_TlsSet(&tls, cachePtr);
     }
+
     return cachePtr;
 }
 
@@ -817,13 +867,13 @@ LogGetCache(void)
  *
  * LogFreeCache --
  *
- *	TLS cleanup callback to destory per-thread Cache struct.
+ *      TLS cleanup callback to destory per-thread Cache struct.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -831,70 +881,9 @@ LogGetCache(void)
 static void
 LogFreeCache(void *arg)
 {
-    Cache *cachePtr = arg;
+    LogCache *cachePtr = arg;
 
     LogFlush(cachePtr);
     Ns_DStringFree(&cachePtr->buffer);
     ns_free(cachePtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *      
- * Ns_SetLogFlushProc --
- * 
- *	Set the proc to call when writing the log. You probably want
- *	to have a Ns_RegisterAtShutdown() call too so you can
- *	close/finish up whatever special logging you are doing.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */ 
-    
-void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
-{
-    flushProcPtr = procPtr;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_SetNsLogProc --
- *
- *	Set the proc to call when adding a log entry.
- *
- *	There are 2 ways to use this override:
- *
- *	1. In conjunction with the Ns_SetLogFlushProc() to use the
- *	   existing AOLserver buffering and writing system. So when a
- *	   log message is added it is inserted into the log cache and
- *	   flushed later through your log flush override. To use this
- *	   write any logging data to the Ns_DString that is passed into
- *	   the Ns_Log proc.
- *	2. Without calling Ns_SetLogFlushProc() and handle all buffering
- *	   and writing directly. LogFlush() will be called as normal but
- *	   is a no-op because nothing will have been added. Do not write
- *	   into the Ns_DString passed into the Ns_Log proc in this case.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- * 
- *----------------------------------------------------------------------
- */     
- 
-void    
-Ns_SetNsLogProc(Ns_LogProc *procPtr)
-{
-    nslogProcPtr = procPtr;
 }
