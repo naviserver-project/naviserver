@@ -1,4 +1,12 @@
-2005-07-11  Vlad Seryakov  <seryakov@users.sf.net>
+2005-08-01  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/dsprintf.c:
+	* nsd/dstring.c: Untabify, reformat and add CONST declarations.
+
+	* nsd/log.c: Untabify, reformat and touch up comments.
+
+2005-08-01  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h: fixed bug preventing sockcallbacks to
 	be used, NS_SOCK_ANY should be 0xff otherwise callback is

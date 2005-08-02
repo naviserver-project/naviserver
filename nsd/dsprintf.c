@@ -31,10 +31,10 @@
 /* 
  * dsprintf.c --
  *
- *	Safe Ns_DStringVPrint(dsPtr, fmt, va_list) for flexible
- *	format string based appending to a dstring.  This code
- *	is based on the vfprintf() function from the NetBSD sources
- *	(see copyright below).
+ *      Safe Ns_DStringVPrint(dsPtr, fmt, va_list) for flexible
+ *      format string based appending to a dstring.  This code
+ *      is based on the vfprintf() function from the NetBSD sources
+ *      (see copyright below).
  */
 
 /*	$NetBSD: vfprintf.c,v 1.35 2000/12/30 04:13:25 itojun Exp $	*/
@@ -110,7 +110,7 @@ NS_RCSID("@(#) $Header$");
 #define	ZEROPAD		0x080		/* zero (as opposed to blank) pad */
 
 char *
-Ns_DStringVPrintf(Tcl_DString *dsPtr, char *fmt0, va_list ap)
+Ns_DStringVPrintf(Tcl_DString *dsPtr, CONST char *fmt0, va_list ap)
 {
 	CONST char *fmt;/* format string */
 	int ch;	/* character from fmt */

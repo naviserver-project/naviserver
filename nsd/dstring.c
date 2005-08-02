@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,8 +31,8 @@
 /* 
  * dstring.c --
  *
- *	Ns_DString routines.  Ns_DString's are now compatible 
- *	with Tcl_DString's.
+ *      Ns_DString routines.  Ns_DString's are now compatible 
+ *      with Tcl_DString's.
  */
 
 #include "nsd.h"
@@ -45,13 +45,13 @@ NS_RCSID("@(#) $Header$");
  *
  * Ns_DStringVarAppend --
  *
- *	Append a variable number of string arguments to a dstring.
+ *      Append a variable number of string arguments to a dstring.
  *
  * Results:
- *	Pointer to current dstring value.
+ *      Pointer to current dstring value.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -64,9 +64,10 @@ Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
 
     va_start(ap, dsPtr);
     while ((s = va_arg(ap, char *)) != NULL) {
-	Ns_DStringAppend(dsPtr, s);
+        Ns_DStringAppend(dsPtr, s);
     }
     va_end(ap);
+
     return dsPtr->string;
 }
 
@@ -76,14 +77,14 @@ Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
  *
  * Ns_DStringExport --
  *
- *	Return a copy of the string value on the heap.
- *	Ns_DString is left in an initialized state.
+ *      Return a copy of the string value on the heap.
+ *      Ns_DString is left in an initialized state.
  *
  * Results:
- *	Pointer to ns_malloc'ed string which must be eventually freed.
+ *      Pointer to ns_malloc'ed string which must be eventually freed.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *
  *----------------------------------------------------------------------
@@ -95,13 +96,14 @@ Ns_DStringExport(Ns_DString *dsPtr)
     char *s;
 
     if (dsPtr->string != dsPtr->staticSpace) {
-	s = dsPtr->string;
-	dsPtr->string = dsPtr->staticSpace;
+        s = dsPtr->string;
+        dsPtr->string = dsPtr->staticSpace;
     } else {
-	s = ns_malloc((size_t)dsPtr->length+1);
-	memcpy(s, dsPtr->string, (size_t)(dsPtr->length+1));  
+        s = ns_malloc((size_t) dsPtr->length+1);
+        memcpy(s, dsPtr->string, (size_t) (dsPtr->length+1));  
     }
     Ns_DStringFree(dsPtr);
+
     return s;
 }
 
@@ -113,7 +115,7 @@ Ns_DStringExport(Ns_DString *dsPtr)
  *      Append a string including its terminating null byte.
  *
  * Results:
- *	Pointer to the current string value.
+ *      Pointer to the current string value.
  *
  * Side effects:
  *      None.
@@ -122,9 +124,9 @@ Ns_DStringExport(Ns_DString *dsPtr)
  */
 
 char *
-Ns_DStringAppendArg(Ns_DString *dsPtr, char *string)
+Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *string)
 {
-    return Ns_DStringNAppend(dsPtr, string, (int)strlen(string) + 1);
+    return Ns_DStringNAppend(dsPtr, string, (int) strlen(string) + 1);
 }
 
 
@@ -132,10 +134,10 @@ Ns_DStringAppendArg(Ns_DString *dsPtr, char *string)
  *----------------------------------------------------------------------
  * Ns_DStringPrintf --
  *
- *      Append a sequence of values using a format string
+ *      Append a sequence of values using a format string.
  *
  * Results:
- *	Pointer to the current string value.
+ *      Pointer to the current string value.
  *
  * Side effects:
  *      None.
@@ -144,7 +146,7 @@ Ns_DStringAppendArg(Ns_DString *dsPtr, char *string)
  */
 
 char *
-Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
+Ns_DStringPrintf(Ns_DString *dsPtr, CONST char *fmt, ...)
 {
     char           *str;
     va_list         ap;
@@ -152,6 +154,7 @@ Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
     va_start(ap, fmt);
     str = Ns_DStringVPrintf(dsPtr, fmt, ap);
     va_end(ap);
+
     return str;
 }
 
@@ -161,10 +164,10 @@ Ns_DStringPrintf(Ns_DString *dsPtr, char *fmt,...)
  * Ns_DStringAppendArgv --
  *
  *      Append an argv vector pointing to the null terminated
- *	strings in the given dstring.
+ *      strings in the given dstring.
  *
  * Results:
- *	Pointer char ** vector appended to end of dstring.
+ *      Pointer char ** vector appended to end of dstring.
  *
  * Side effects:
  *      None.
@@ -176,7 +179,7 @@ char **
 Ns_DStringAppendArgv(Ns_DString *dsPtr)
 {
     char *s, **argv;
-    int i, argc, len, size;
+    int   i, argc, len, size;
 
     /* 
      * Determine the number of strings.
@@ -185,8 +188,8 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
     argc = 0;
     s = dsPtr->string;
     while (*s != '\0') {
-	++argc;
-	s += strlen(s) + 1;
+        ++argc;
+        s += strlen(s) + 1;
     }
 
     /*
@@ -205,10 +208,11 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
     s = dsPtr->string;
     argv = (char **) (s + len);
     for (i = 0; i < argc; ++i) {
-	argv[i] = s;
-	s += strlen(s) + 1;
+        argv[i] = s;
+        s += strlen(s) + 1;
     }
     argv[i] = NULL;
+
     return argv;
 }
 
@@ -220,7 +224,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
  *      Allocate a new dstring.
  *
  * Results:
- *	Pointer to Ns_DString.
+ *      Pointer to Ns_DString.
  *
  * Side effects:
  *      None.
@@ -245,7 +249,7 @@ Ns_DStringPop(void)
  *      Free a dstring.
  *
  * Results:
- *	None.
+ *  None.
  *
  * Side effects:
  *      None.
@@ -265,7 +269,7 @@ Ns_DStringPush(Ns_DString *dsPtr)
  *----------------------------------------------------------------------
  * Compatibility routines --
  *
- *	Wrappers for old Ns_DString functions.
+ *  Wrappers for old Ns_DString functions.
  *
  * Results:
  *      See Tcl_DString routine.
