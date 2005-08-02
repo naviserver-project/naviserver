@@ -1,5 +1,9 @@
 2005-08-01  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/driver.c: Log a warning when no drivers are configured to
+	listen (BUG #1231853).  Driver errors during startup continue to
+	be a non-fatal error.
+
 	* include/ns.h:
 	* nsd/log.c: Make Tcl send panic messages to the server log. Add
 	some CONST declarations and GCC attributes.

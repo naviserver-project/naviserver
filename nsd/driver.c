@@ -480,6 +480,8 @@ NsStartDrivers(void)
                      ns_sockstrerror(ns_sockerrno));
         }
         Ns_ThreadCreate(DriverThread, NULL, 0, &driverThread);
+    } else {
+        Ns_Log(Warning, "no communication drivers configured");
     }
 }
 
