@@ -628,20 +628,42 @@ NS_EXTERN int Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int
  * config.c:
  */
 
+NS_EXTERN CONST char *
+Ns_ConfigString(CONST char *section, CONST char *key, CONST char *def)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_ConfigBool(CONST char *section, CONST char *key, int def)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_ConfigInt(CONST char *section, CONST char *key, int def)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
+                  int min, int max)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN char *
-Ns_ConfigGetValue(CONST char *section, CONST char *key);
+Ns_ConfigGetValue(CONST char *section, CONST char *key)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_ConfigGetValueExact(CONST char *section, CONST char *key);
+Ns_ConfigGetValueExact(CONST char *section, CONST char *key)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr);
+Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConfigGetInt64(CONST char *section, CONST char *key, ns_int64 *valuePtr);
+Ns_ConfigGetInt64(CONST char *section, CONST char *key, ns_int64 *valuePtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConfigGetBool(CONST char *section, CONST char *key, int *valuePtr);
+Ns_ConfigGetBool(CONST char *section, CONST char *key, int *valuePtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
 Ns_ConfigGetPath(CONST char *server, CONST char *module, ...)

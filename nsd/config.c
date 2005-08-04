@@ -39,6 +39,8 @@ NS_RCSID("@(#) $Header$");
 
 
 #define ISSLASH(c) ((c) == '/' || (c) == '\\')
+#define _MAX(x,y) ((x) > (y) ? (x) : (y))
+#define _MIN(x,y) ((x) > (y) ? (y) : (x))
 
 /*
  * Local functions defined in this file.
@@ -48,6 +50,125 @@ static Tcl_CmdProc SectionCmd;
 static Tcl_CmdProc ParamCmd;
 static Ns_Set     *GetSection(CONST char *section, int create);
 static char       *ConfigGet(CONST char *section, CONST char *key, int exact);
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigString --
+ *
+ *      Return a config file value, or the default if not found.
+ *
+ * Results:
+ *      Pointer to value string.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+Ns_ConfigString(CONST char *section, CONST char *key, CONST char *def)
+{
+    CONST char *value;
+
+    value = Ns_ConfigGetValue(section, key);
+    if (value == NULL) {
+        value = def;
+    }
+    return value;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigBool --
+ *
+ *      Return a boolean config file value, or the default if not
+ *      found.
+ *
+ * Results:
+ *      NS_TRUE or NS_FALSE.
+ *
+ * Side effects:
+ *      None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConfigBool(CONST char *section, CONST char *key, int def)
+{
+    int value;
+
+    if (!Ns_ConfigGetBool(section, key, &value)) {
+        value = def ? NS_TRUE : NS_FALSE;
+    }
+    return value;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigInt --
+ *
+ *      Return an integer config file value, or the default if not
+ *      found.
+ *
+ * Results:
+ *      An integer.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConfigInt(CONST char *section, CONST char *key, int def)
+{
+    int value;
+
+    if (!Ns_ConfigGetInt(section, key, &value)) {
+        value = def;
+    }
+    return value;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigIntRange --
+ *
+ *      Return an integer config file value, or the default if not
+ *      found. The returned value will be between the given min and max.
+ *
+ * Results:
+ *      An integer.
+ *
+ * Side effects:
+ *      None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
+                  int min, int max)
+{
+    int value;
+
+    value = Ns_ConfigInt(section, key, def);
+    value = _MAX(value, min);
+    value = _MIN(value, max);
+
+    return value;
+}
 
 
 /*

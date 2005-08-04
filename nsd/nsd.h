@@ -836,6 +836,14 @@ typedef struct NsInterp {
 } NsInterp;
 
 /*
+ * Global parameters.
+ */
+
+#define NsParamString(key, def) Ns_ConfigString(NS_CONFIG_PARAMETERS, (key), (def))
+#define NsParamBool(key, def) Ns_ConfigBool(NS_CONFIG_PARAMETERS, (key), (def))
+#define NsParamInt(key, def) Ns_ConfigInt(NS_CONFIG_PARAMETERS, (key), (def))
+
+/*
  * Libnsd initialization routines.
  */
 

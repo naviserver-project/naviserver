@@ -1,3 +1,10 @@
+2005-08-03  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/config.c: Add config value wrappers which handle defaults
+	and in the case of integer values, range checking. 
+
 2005-08-01  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/driver.c: Log a warning when no drivers are configured to
