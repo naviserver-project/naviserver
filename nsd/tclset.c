@@ -394,20 +394,10 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             }
 	    break;
 
-	case SFindIdx:
-	case SIFindIdx:
 	case SGetIdx:
 	case SIGetIdx:
-	case SDelkeyIdx:
-	case SIDelkeyIdx:
-	case SUniqueIdx:
-	case SIUniqueIdx:
-	    /*
-	     * These commands require a set and string key.
-	     */
-
             if (objc < 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId key");
+		Tcl_WrongNumArgs(interp, 2, objv, "setId key ?dflt?");
 		return TCL_ERROR;
             }
 	    key = Tcl_GetString(objv[3]);
@@ -420,7 +410,25 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    case SIGetIdx:
                 Tcl_SetResult(interp, Ns_SetIGetValue(set, key, def), TCL_VOLATILE);
                 break;
-		    
+            }		    
+            break;
+
+	case SFindIdx:
+	case SIFindIdx:
+	case SDelkeyIdx:
+	case SIDelkeyIdx:
+	case SUniqueIdx:
+	case SIUniqueIdx:
+	    /*
+	     * These commands require a set and string key.
+	     */
+
+            if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "setId key");
+		return TCL_ERROR;
+            }
+	    key = Tcl_GetString(objv[3]);
+	    switch (opt) {
 	    case SIFindIdx:
 		objPtr = Tcl_NewIntObj(Ns_SetIFind(set, key));
 		Tcl_SetObjResult(interp, objPtr);
