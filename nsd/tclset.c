@@ -199,7 +199,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     Ns_Set       *set, *set2Ptr, **sets;
     int           locked, i, flags;
-    char         *key, *val, *name, *split;
+    char         *key, *val, *def, *name, *split;
     Tcl_DString	  ds;
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry *hPtr;
@@ -406,21 +406,36 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	     * These commands require a set and string key.
 	     */
 
-            if (objc != 4) {
+            if (objc < 4) {
 		Tcl_WrongNumArgs(interp, 2, objv, "setId key");
 		return TCL_ERROR;
             }
 	    key = Tcl_GetString(objv[3]);
+            def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
 	    switch (opt) {
+            case SGetIdx:
+                Tcl_SetResult(interp, Ns_SetGetValue(set, key, def), TCL_VOLATILE);
+                break;
+		
+	    case SIGetIdx:
+                Tcl_SetResult(interp, Ns_SetIGetValue(set, key, def), TCL_VOLATILE);
+                break;
+		    
+	    case SIFindIdx:
+		objPtr = Tcl_NewIntObj(Ns_SetIFind(set, key));
+		Tcl_SetObjResult(interp, objPtr);
+                break;
+
 	    case SFindIdx:
 		objPtr = Tcl_NewIntObj(Ns_SetFind(set, key));
 		Tcl_SetObjResult(interp, objPtr);
                 break;
 		
-            case SGetIdx:
-                Tcl_SetResult(interp, Ns_SetGet(set, key), TCL_VOLATILE);
+	    case SIDeleteIdx:
+            case SIDelkeyIdx:
+                Ns_SetIDeleteKey(set, key);
                 break;
-		
+		    
             case SDeleteIdx:
             case SDelkeyIdx:
                 Ns_SetDeleteKey(set, key);
@@ -431,20 +446,6 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 		Tcl_SetObjResult(interp, objPtr);
                 break;
 		
-	    case SIFindIdx:
-		objPtr = Tcl_NewIntObj(Ns_SetIFind(set, key));
-		Tcl_SetObjResult(interp, objPtr);
-                break;
-
-	    case SIGetIdx:
-                Tcl_SetResult(interp, Ns_SetIGet(set, key), TCL_VOLATILE);
-                break;
-		    
-	    case SIDeleteIdx:
-            case SIDelkeyIdx:
-                Ns_SetIDeleteKey(set, key);
-                break;
-		    
             case SIUniqueIdx:
 		objPtr = Tcl_NewIntObj(Ns_SetIUnique(set, key));
 		Tcl_SetObjResult(interp, objPtr);

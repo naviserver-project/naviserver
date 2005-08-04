@@ -414,6 +414,54 @@ Ns_SetIGet(Ns_Set *set, CONST char *key)
                         (int (*) (CONST char *, CONST char *)) strcasecmp);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetGetValue --
+ *
+ *      Return the value associated with a key, case sensitive.
+ *      If no value foud, return provided default value
+ *  
+ * Results:
+ *      A value or NULL if key not found or default is NULL
+ *
+ * Side effects:
+ *      None.   
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
+{
+    char *value = Ns_SetGet(set, key);
+    if (value == NULL) value = (char*)def;
+    return value;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetIGetValue --
+ *
+ *      Return the value associated with a key, case insensitive.
+ *      If no value found, return provided default value
+ *
+ * Results:
+ *      A value or NULL if key not found or default is NULL
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def)
+{
+    char *value = Ns_SetIGet(set, key);
+    if (value == NULL) value = (char*)def;
+    return value;
+}
+
 
 /*
  *----------------------------------------------------------------------

@@ -1,3 +1,10 @@
+2005-08-04  Vlad Seryakov  <seryakov@users.sf.net>
+
+	include/ns.h:
+	nsd/set.c:
+	nsd/tclset.c: Added Ns_SetGetValue|Ns_SetIGetValue wrappers which 
+	handle defaults
+
 2005-08-03  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

@@ -1260,6 +1260,9 @@ NS_EXTERN void Ns_SetMerge(Ns_Set *high, Ns_Set *low);
 NS_EXTERN Ns_Set *Ns_SetCopy(Ns_Set *old);
 NS_EXTERN void Ns_SetMove(Ns_Set *to, Ns_Set *from);
 NS_EXTERN void Ns_SetPrint(Ns_Set *set);
+NS_EXTERN char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def);
+NS_EXTERN char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def);
+
 /*
  * see macros above for:
  *
