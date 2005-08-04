@@ -38,6 +38,15 @@
 
 NS_RCSID("@(#) $Header$");
 
+
+/*
+ * The following define available flags bits.
+ */
+
+#define LOG_ROLL     0x01
+#define LOG_EXPAND   0x02
+#define LOG_USEC     0x04
+
 /*
  * The following struct maintains per-thread
  * cached formatted time strings and log buffers.
@@ -75,6 +84,30 @@ static Ns_Tls           tls;
 static Ns_Mutex         lock;
 static Ns_LogProc      *logProcPtr;
 static Ns_LogFlushProc *flushProcPtr;
+static CONST char      *file;
+static int              flags;
+static int              maxback;
+static int              maxlevel;
+static int              maxbuffer;
+
+/*
+ * Keep the following in sync with the
+ * Ns_LogSeverity enum.
+ */
+
+static struct {
+    char   *string;
+    int     enabled;
+} logConfig[] = {
+    {"Notice",  NS_TRUE},
+    {"Warning", NS_TRUE},
+    {"Error",   NS_TRUE},
+    {"Fatal",   NS_TRUE},
+    {"Bug",     NS_TRUE},
+    {"Debug",   NS_TRUE},
+    {"Dev",     NS_TRUE}
+};
+
 
 
 /*
@@ -99,6 +132,54 @@ NsInitLog(void)
     Ns_MutexSetName(&lock, "ns:log");
     Ns_TlsAlloc(&tls, LogFreeCache);
     Tcl_SetPanicProc(Panic);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigLog --
+ *
+ *      Config the logging interface.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on config file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigLog(void)
+{
+    Ns_DString ds;
+
+    logConfig[Notice].enabled = NsParamBool("lognotice", LOG_NOTICE_BOOL);
+    logConfig[Debug].enabled  = NsParamBool("logdebug", LOG_DEBUG_BOOL);
+    logConfig[Dev].enabled    = NsParamBool("logdev", LOG_DEV_BOOL);
+
+    if (NsParamBool( "logroll", LOG_ROLL_BOOL)) {
+        flags |= LOG_ROLL;
+    }
+    if (NsParamBool("logusec", LOG_USEC_BOOL)) {
+        flags |= LOG_USEC;
+    }
+    if (NsParamBool("logexpanded", LOG_EXPANDED_BOOL)) {
+        flags |= LOG_EXPAND;
+    }
+
+    maxback = NsParamInt("logmaxbackup", LOG_MAXBACK_INT);
+    maxlevel = NsParamInt("logmaxlevel", LOG_MAXLEVEL_INT);
+    maxbuffer = NsParamInt("logmaxbuffer", LOG_MAXBUFFER_INT);
+
+    file = NsParamString("serverlog", LOG_FILE_STRING);
+    if (!Ns_PathIsAbsolute(file)) {
+        Ns_DStringInit(&ds);
+        Ns_HomePath(&ds, "log", file, NULL);
+        file = Ns_DStringExport(&ds);
+    }
 }
 
 
@@ -467,48 +548,52 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 int
 NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    LogCache       *cachePtr;
     Ns_LogSeverity  severity;
-    char           *severitystr;
-    int             i;
     Ns_DString      ds;
+    int             i;
+
+    struct {
+        char           *string;
+        Ns_LogSeverity  severity;
+    } severityTable[] = {
+        {"notice",  Notice},  {"Notice",  Notice},
+        {"warning", Warning}, {"Warning", Warning},
+        {"error",   Error},   {"Error",   Error},
+        {"fatal",   Fatal},   {"Fatal",   Fatal},
+        {"bug",     Bug},     {"Bug",     Bug},
+        {"debug",   Debug},   {"Debug",   Debug},
+        {"dev",     Dev},     {"Dev",     Dev},
+        {NULL, 0}
+    };
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
         return TCL_ERROR;
     }
-    cachePtr = LogGetCache();
-    severitystr = Tcl_GetString(objv[1]);
-    if (STRIEQ(severitystr, "notice")) {
-        severity = Notice;
-    } else if (STRIEQ(severitystr, "warning")) {
-        severity = Warning;
-    } else if (STRIEQ(severitystr, "error")) {
-        severity = Error;
-    } else if (STRIEQ(severitystr, "fatal")) {
-        severity = Fatal;
-    } else if (STRIEQ(severitystr, "bug")) {
-        severity = Bug;
-    } else if (STRIEQ(severitystr, "debug")) {
-        severity = Debug;
+    if (Tcl_GetIndexFromObjStruct(NULL, objv[1], severityTable,
+                                  sizeof(severityTable[0]), "severity",
+                                  TCL_EXACT, &i) == TCL_OK) {
+        severity = severityTable[i].severity;
     } else if (Tcl_GetIntFromObj(NULL, objv[1], &i) == TCL_OK) {
         severity = i;
     } else {
-        Tcl_AppendResult(interp, "unknown severity: \"", severitystr,
+        Tcl_AppendResult(interp, "unknown severity: \"", Tcl_GetString(objv[1]),
                          "\": should be notice, warning, error, "
-                         "fatal, bug, debug or integer value", NULL);
+                         "fatal, bug, debug, dev or integer value", NULL);
         return TCL_ERROR;
     }
 
-    Ns_DStringInit(&ds);
-
-    for (i = 2; i < objc; ++i) {
-        Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
-                            i < (objc-1) ? " " : NULL, NULL);
+    if (objc == 3) {
+        Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
+    } else {
+        Ns_DStringInit(&ds);
+        for (i = 2; i < objc; ++i) {
+            Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
+                                i < (objc-1) ? " " : NULL, NULL);
+        }
+        Ns_Log(severity, "%s", ds.string);
+        Ns_DStringFree(&ds);
     }
-
-    Ns_Log(severity, "%s", ds.string);
-    Ns_DStringFree(&ds);
 
     return TCL_OK;
 }
@@ -576,51 +661,17 @@ LogStart(LogCache *cachePtr, Ns_LogSeverity severity)
     char *severityStr, buf[10];
     long  usec;
 
-    switch (severity) {
-    case Notice:
-        if (nsconf.log.flags & LOG_NONOTICE) {
+    if (severity < (sizeof(logConfig) / sizeof(logConfig[0]))) {
+        if (!logConfig[severity].enabled) {
             return 0;
         }
-        severityStr = "Notice";
-        break;
-
-    case Warning:
-        severityStr = "Warning";
-        break;
-
-    case Error:
-        severityStr = "Error";
-        break;
-
-    case Fatal:
-        severityStr = "Fatal";
-        break;
-
-    case Bug:
-        severityStr = "Bug";
-        break;
-
-    case Debug:
-        if (!(nsconf.log.flags & LOG_DEBUG)) {
-            return 0;
-        }
-        severityStr = "Debug";
-        break;
-
-    case Dev:
-        if (!(nsconf.log.flags & LOG_DEV)) {
-            return 0;
-        }
-        severityStr = "Dev";
-        break;
-
-    default:
+        severityStr = logConfig[severity].string;
+    } else {
         if (severity > nsconf.log.maxlevel) {
             return 0;
         }
         sprintf(buf, "Level%d", severity);
         severityStr = buf;
-        break;
     }
     Ns_DStringAppend(&cachePtr->buffer, LogTime(cachePtr, 0, &usec));
     if (nsconf.log.flags & LOG_USEC) {

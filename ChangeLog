@@ -1,5 +1,16 @@
 2005-08-03  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsd.h:
+	* nsd/nsconf.h:
+	* nsd/nsconf.c:
+	* nsd/log.c: Use efficient table lookups to convert from severity
+	strings to severity levels and back again. Localize global log
+	configuration into log.c.
+	* tests/ns_log.test: Add some simple tests for the ns_log and
+	ns_logctl commands.
+	* tests/all.tcl: tcltest does not actually get confused by log
+	messages...
+
 	* include/ns.h:
 	* nsd/nsd.h:
 	* nsd/config.c: Add config value wrappers which handle defaults

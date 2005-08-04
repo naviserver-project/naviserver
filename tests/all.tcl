@@ -43,7 +43,5 @@ package require tcltest 2.2
 namespace import tcltest::*
 eval configure $argv -singleproc true -testdir [file dirname [info script]]
 
-# Output on stderr confuses tcltest
-ns_logctl hold
 
 runAllTests

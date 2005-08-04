@@ -170,37 +170,8 @@ NsConfUpdate(void)
     /*
      * log.c
      */
-    
-    if (GetBool("logusec", LOG_USEC_BOOL)) {
-	nsconf.log.flags |= LOG_USEC;
-    }
-    if (GetBool("logroll", LOG_ROLL_BOOL)) {
-	nsconf.log.flags |= LOG_ROLL;
-    }
-    if (GetBool("logexpanded", LOG_EXPANDED_BOOL)) {
-	nsconf.log.flags |= LOG_EXPAND;
-    }
-    if (GetBool("debug", LOG_DEBUG_BOOL)) {
-	nsconf.log.flags |= LOG_DEBUG;
-    }
-    if (GetBool("logdev", LOG_DEV_BOOL)) {
-	nsconf.log.flags |= LOG_DEV;
-    }
-    if (!GetBool("lognotice", LOG_NOTICE_BOOL)) {
-	nsconf.log.flags |= LOG_NONOTICE;
-    }
-    nsconf.log.maxback  = GetInt("logmaxbackup", LOG_MAXBACK_INT);
-    nsconf.log.maxlevel = GetInt("logmaxlevel", LOG_MAXLEVEL_INT);
-    nsconf.log.maxbuffer  = GetInt("logmaxbuffer", LOG_MAXBUFFER_INT);
-    nsconf.log.flushint  = GetInt("logflushinterval", LOG_FLUSHINT_INT);
-    nsconf.log.file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "serverlog");
-    if (nsconf.log.file == NULL) {
-	nsconf.log.file = "server.log";
-    }
-    if (Ns_PathIsAbsolute(nsconf.log.file) == NS_FALSE) {
-	Ns_HomePath(&ds, "log", nsconf.log.file, NULL);
-	nsconf.log.file = Ns_DStringExport(&ds);
-    }
+
+    NsConfigLog();
 
     /*
      * nsmain.c

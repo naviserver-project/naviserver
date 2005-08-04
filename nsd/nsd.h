@@ -123,13 +123,6 @@
 #define ADP_ABORT      2
 #define ADP_RETURN     4
 
-#define LOG_ROLL       1
-#define LOG_EXPAND     2
-#define LOG_DEBUG      4
-#define LOG_DEV        8
-#define LOG_NONOTICE  16
-#define LOG_USEC      32
-
 #define NSD_STRIP_WWW  1
 #define NSD_STRIP_PORT 2
 
@@ -836,14 +829,6 @@ typedef struct NsInterp {
 } NsInterp;
 
 /*
- * Global parameters.
- */
-
-#define NsParamString(key, def) Ns_ConfigString(NS_CONFIG_PARAMETERS, (key), (def))
-#define NsParamBool(key, def) Ns_ConfigBool(NS_CONFIG_PARAMETERS, (key), (def))
-#define NsParamInt(key, def) Ns_ConfigInt(NS_CONFIG_PARAMETERS, (key), (def))
-
-/*
  * Libnsd initialization routines.
  */
 
@@ -863,6 +848,15 @@ extern void NsInitSched(void);
 extern void NsInitTcl(void);
 extern void NsInitUrlSpace(void);
 extern void NsInitRequests(void);
+
+/*
+ * Configuration routines.
+ */
+
+extern void NsConfigLog(void);
+#define NsParamString(key, def) Ns_ConfigString(NS_CONFIG_PARAMETERS, (key), (def))
+#define NsParamBool(key, def) Ns_ConfigBool(NS_CONFIG_PARAMETERS, (key), (def))
+#define NsParamInt(key, def) Ns_ConfigInt(NS_CONFIG_PARAMETERS, (key), (def))
 
 extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);

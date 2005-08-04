@@ -1,0 +1,148 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_log-1.1 {basic syntax} -body {
+    ns_log
+} -returnCodes error -result {wrong # args: should be "ns_log severity string ?string ...?"}
+
+test ns_log-1.2 {basic syntax} -body {
+    ns_log ? ?
+} -returnCodes error -result {unknown severity: "?": should be notice, warning, error, fatal, bug, debug, dev or integer value}
+
+
+
+test ns_log-2.1 {basic syntax} -body {
+    ns_logctl
+} -returnCodes error -result {wrong # args: should be "ns_logctl option ?arg?"}
+
+test ns_log-2.2 {basic syntax} -body {
+    ns_logctl ?
+} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, or truncate}
+
+
+ns_logctl hold
+ns_logctl trunc
+
+test ns_log-3.1 {severity} -body {
+    ns_log notice test
+    ns_logctl get
+} -match glob -result "* Notice: test\n"
+
+test ns_log-3.2 {severity} -body {
+    ns_log warning test
+    ns_logctl get
+} -match glob -result "* Warning: test\n"
+
+test ns_log-3.3 {severity} -body {
+    ns_log error test
+    ns_logctl get
+} -match glob -result "* Error: test\n"
+
+test ns_log-3.4 {severity} -body {
+    ns_log fatal test
+    ns_logctl get
+} -match glob -result "* Fatal: test\n"
+
+test ns_log-3.5 {severity} -body {
+    ns_log bug test
+    ns_logctl get
+} -match glob -result "* Bug: test\n"
+
+test ns_log-3.6 {severity} -constraints knownBug -body {
+    ns_log debug test
+    ns_logctl get
+} -match glob -result "* Debug: test\n"
+
+test ns_log-3.7 {severity} -constraints knownBug -body {
+    ns_log dev test
+    ns_logctl get
+} -match glob -result "* Dev: test\n"
+
+
+
+test ns_log-4.1 {multiple args} -body {
+    ns_log notice one two
+    ns_logctl get
+} -match glob -result "* Notice: one two\n"
+
+test ns_log-4.2 {multiple args} -body {
+    ns_log notice one two three
+    ns_logctl get
+} -match glob -result "* Notice: one two three\n"
+
+
+
+test ns_log-5.1 {buffering} -body {
+    ns_log notice one
+    ns_log notice two
+    ns_logctl get
+} -match glob -result "* Notice: one\n* Notice: two\n"
+
+test ns_log-5.2 {count buffered log entries} -body {
+    ns_log notice one
+    ns_log notice two
+    set n [ns_logctl count]
+    ns_logctl trunc
+    set n
+} -result 2
+
+test ns_log-5.3 {peek} -body {
+    ns_log notice test
+    set equal [string equal [ns_logctl peek] [ns_logctl peek]]
+    ns_logctl trunc
+    set equal
+} -result 1
+
+test ns_log-5.4 {trunc} -body {
+    ns_log notice test
+    ns_logctl trunc
+    ns_logctl get
+} -result {}
+
+test ns_log-5.5 {trunc} -body {
+    ns_log notice test
+    ns_logctl trunc [expr [string length [ns_logctl peek]] - 2]
+    ns_logctl get
+} -match glob -result {* Notice: tes}
+
+test ns_log-5.6 {get} -body {
+    ns_log notice test
+    ns_logctl get
+    ns_logctl get
+} -result {}
+
+test ns_log-5.7 {get} -body {
+    ns_log notice test
+    set n [ns_logctl count]
+    ns_logctl get
+    lappend n [ns_logctl count]
+} -result {1 0}
+
+test ns_log-5.8 {flush} -body {
+    ns_log notice test
+    ns_logctl flush
+    ns_logctl get
+} -result {}
+
+test ns_log-5.9 {flush} -body {
+    ns_log notice test
+    set n [ns_logctl count]
+    ns_logctl flush
+    lappend n [ns_logctl count]
+} -result {1 0}
+
+
+
+ns_logctl trunc
+ns_logctl release
+
+cleanupTests
