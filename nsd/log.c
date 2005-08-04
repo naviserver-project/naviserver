@@ -202,7 +202,7 @@ NsConfigLog(void)
 char *
 Ns_InfoErrorLog(void)
 {
-    return nsconf.log.file;
+    return (char*)file;
 }
 
 
@@ -226,11 +226,11 @@ Ns_InfoErrorLog(void)
 int
 Ns_LogRoll(void)
 {
-    if (nsconf.log.file != NULL) {
-        if (access(nsconf.log.file, F_OK) == 0) {
-            Ns_RollFile(nsconf.log.file, nsconf.log.maxback);
+    if (file != NULL) {
+        if (access(file, F_OK) == 0) {
+            Ns_RollFile(file, maxback);
         }
-        Ns_Log(Notice, "log: re-opening log file '%s'", nsconf.log.file);
+        Ns_Log(Notice, "log: re-opening log file '%s'", file);
         if (LogReOpen() != NS_OK) {
             return NS_ERROR;
         }
@@ -415,9 +415,9 @@ NsLogOpen(void)
 
     if (LogReOpen() != NS_OK) {
         Ns_Fatal("log: failed to open server log '%s': '%s'",
-                 nsconf.log.file, strerror(errno));
+                 file, strerror(errno));
     }
-    if (nsconf.log.flags & LOG_ROLL) {
+    if (flags & LOG_ROLL) {
         Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
     }
 }
@@ -667,20 +667,20 @@ LogStart(LogCache *cachePtr, Ns_LogSeverity severity)
         }
         severityStr = logConfig[severity].string;
     } else {
-        if (severity > nsconf.log.maxlevel) {
+        if (severity > maxlevel) {
             return 0;
         }
         sprintf(buf, "Level%d", severity);
         severityStr = buf;
     }
     Ns_DStringAppend(&cachePtr->buffer, LogTime(cachePtr, 0, &usec));
-    if (nsconf.log.flags & LOG_USEC) {
+    if (flags & LOG_USEC) {
         Ns_DStringTrunc(&cachePtr->buffer, cachePtr->buffer.length-1);
         Ns_DStringPrintf(&cachePtr->buffer, ".%ld]", usec);
     }
     Ns_DStringPrintf(&cachePtr->buffer, "[%d.%lu][%s] %s: ",
                      Ns_InfoPid(), (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(), severityStr);
-    if (nsconf.log.flags & LOG_EXPAND) {
+    if (flags & LOG_EXPAND) {
         Ns_DStringAppend(&cachePtr->buffer, "\n    ");
     }
 
@@ -708,7 +708,7 @@ static void
 LogEnd(LogCache *cachePtr)
 {
     Ns_DStringNAppend(&cachePtr->buffer, "\n", 1);
-    if (nsconf.log.flags & LOG_EXPAND) {
+    if (flags & LOG_EXPAND) {
         Ns_DStringNAppend(&cachePtr->buffer, "\n", 1);
     }
     ++cachePtr->count;
@@ -776,10 +776,10 @@ LogReOpen(void)
     int status;
 
     status = NS_OK;
-    fd = open(nsconf.log.file, O_WRONLY|O_APPEND|O_CREAT, 0644);
+    fd = open(file, O_WRONLY|O_APPEND|O_CREAT, 0644);
     if (fd < 0) {
         Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
-               nsconf.log.file, strerror(errno));
+               file, strerror(errno));
         status = NS_ERROR;
     } else {
         /*
@@ -788,7 +788,7 @@ LogReOpen(void)
 
         if (fd != STDERR_FILENO && dup2(fd, STDERR_FILENO) == -1) {
             fprintf(stdout, "dup2(%s, STDERR_FILENO) failed: %s\n",
-                    nsconf.log.file, strerror(errno));
+                    file, strerror(errno));
             status = NS_ERROR;
         }
 

@@ -183,15 +183,6 @@ struct _nsconf {
     } state;
     
     struct {
-        char *file;
-        int flags;
-        int maxlevel;
-        int maxback;
-        int maxbuffer;
-        int flushint;
-    } log;
-
-    struct {
         int maxelapsed;
     } sched;
     

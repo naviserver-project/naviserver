@@ -1,5 +1,9 @@
 2005-08-04  Vlad Seryakov  <seryakov@users.sf.net>
 
+	nsd/log.c:
+	nsd.nsd.h: Finished log localization by removing usage of the 
+        global nsconf.log structure.
+
 	include/ns.h:
 	nsd/set.c:
 	nsd/tclset.c: Added Ns_SetGetValue|Ns_SetIGetValue wrappers which 
