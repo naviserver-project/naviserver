@@ -258,14 +258,14 @@ GetHost(Ns_DString *dsPtr, char *addr)
 
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = inet_addr(addr);
-    if ((result = getnameinfo((const struct sockaddr *) &sa,
-                    sizeof(struct sockaddr_in), buf, sizeof(buf),
-                    NULL, 0, NI_NAMEREQD)) != 0) {
-        Ns_Log(Error, "dns: getnameinfo failed: %s", gai_strerror(result));
-    } else {
+    result = getnameinfo((const struct sockaddr *) &sa,
+                         sizeof(struct sockaddr_in), buf, sizeof(buf),
+                         NULL, 0, NI_NAMEREQD);
+    if (result == 0) {
         Ns_DStringAppend(dsPtr, buf);
         status = NS_TRUE;
-        
+    } else if (result != EAI_NONAME) {
+        Ns_Log(Error, "dns: getnameinfo failed: %s", gai_strerror(result));        
     }
     return status;
 }
@@ -342,10 +342,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    if ((result = getaddrinfo(host, NULL, &hints, &res)) != 0) {
-        Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
-                gai_strerror(result));
-    } else {
+    if ((result = getaddrinfo(host, NULL, &hints, &res)) == 0) {
         ptr = res;
         while (ptr != NULL) {
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(
@@ -354,6 +351,9 @@ GetAddr(Ns_DString *dsPtr, char *host)
             ptr = ptr->ai_next;
         }
         freeaddrinfo(res);
+    } else if (result != EAI_NONAME) {
+        Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
+               gai_strerror(result));
     }
     return status;
 }
