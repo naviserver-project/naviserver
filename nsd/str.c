@@ -359,7 +359,7 @@ Ns_StrIsHost(CONST char *string)
     register CONST char *p;
 
     for (p = string; *p != '\0'; p++) {
-        if (!isalnum(*p) && *p != ':'
+        if (!isalnum(UCHAR(*p)) && *p != ':'
             && (*p != '.' || (p[0] == '.' && p[1] == '.'))) {
 
             return NS_FALSE;

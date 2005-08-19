@@ -1,5 +1,11 @@
 2005-08-18  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/fastpath.c:
+	* nsd/nsmain.c:
+	* nsd/pathname.c:
+	* nsd/str.c: Make sure ctype functions are always passed an
+	unsigned char.
+
 	* include/ns.h:
 	* nsd/str.c (Ns_StrToInt): Convenience function for parsing
 	integers.  atoi is not always threadsafe (e.g. Darwin) and

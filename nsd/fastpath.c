@@ -723,12 +723,12 @@ ParseRange(Ns_Conn *conn, Range *rnPtr)
          *  Parse the format: first-byte-pos "-" last-byte-pos
          *  The byte positions specified are inclusive. Byte count start at zero.
          */
-        if (isdigit(*str)) {
+        if (isdigit(UCHAR(*str))) {
             rnPtr->offsets[idx].start = atol(str);
-            while (isdigit(*str)) str++;
+            while (isdigit(UCHAR(*str))) str++;
             if (*str == '-') {
                 str++;
-                if (!isdigit(*str)) {
+                if (!isdigit(UCHAR(*str))) {
                     rnPtr->offsets[idx].end = rnPtr->size - 1;
                 } else {
                     rnPtr->offsets[idx].end = atol(str);
@@ -738,7 +738,7 @@ ParseRange(Ns_Conn *conn, Range *rnPtr)
                     if (rnPtr->offsets[idx].end >= rnPtr->size) {
                         rnPtr->offsets[idx].end = rnPtr->size - 1;
                     }
-                    while (isdigit(*str)) str++;
+                    while (isdigit(UCHAR(*str))) str++;
                 }
                 /* At this point we have syntactically valid byte-str-set */
                 switch (*str) {
@@ -765,7 +765,7 @@ ParseRange(Ns_Conn *conn, Range *rnPtr)
              *  Specifies the last suffix-length bytes of an entity-body
              */
             str++;
-            if (!isdigit(*str)) {
+            if (!isdigit(UCHAR(*str))) {
                 return NS_OK;
             }
             rnPtr->offsets[idx].end = atol(str);
@@ -776,7 +776,7 @@ ParseRange(Ns_Conn *conn, Range *rnPtr)
             rnPtr->offsets[idx].start = rnPtr->size - rnPtr->offsets[idx].end;
             rnPtr->offsets[idx].end = rnPtr->offsets[idx].start + rnPtr->offsets[idx].end - 1;
             /* At this point we have syntactically valid byte-range-set */
-            while (isdigit(*str)) str++;
+            while (isdigit(UCHAR(*str))) str++;
             switch (*str) {
              case ',':
                  str++;

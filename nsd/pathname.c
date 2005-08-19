@@ -38,7 +38,7 @@
 
 NS_RCSID("@(#) $Header$");
 
-#define isslash(c)	((c) == '/' || (c) == '\\')
+#define ISSLASH(c)	((c) == '/' || (c) == '\\')
 
 /*
  * Local functions defined in this file.
@@ -71,11 +71,11 @@ int
 Ns_PathIsAbsolute(CONST char *path)
 {
 #ifdef _WIN32
-    if (isalpha(*path) && path[1] == ':') {
+    if (isalpha(UCHAR(*path)) && path[1] == ':') {
 	path += 2;
     }
 #endif
-    if (isslash(*path)) {
+    if (ISSLASH(*path)) {
 	return NS_TRUE;
     }
     return NS_FALSE;
@@ -108,8 +108,8 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
     Ns_DStringInit(&tmp);
     src = Ns_DStringAppend(&tmp, path);
 #ifdef _WIN32
-    if (isalpha(*src) && src[1] == ':') {
-	if (isupper(*src)) {
+    if (isalpha(UCHAR(*src)) && src[1] == ':') {
+	if (isupper(UCHAR(*src))) {
 	    *src = tolower(*src);
 	}
 	Ns_DStringNAppend(dsPtr, src, 2);
@@ -121,7 +121,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
      * Move past leading slash(es)
      */
     
-    while (isslash(*src)) {
+    while (ISSLASH(*src)) {
 	++src;
     }
     do {
@@ -131,7 +131,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
 	 * Move to next slash
 	 */
 	
-	while (*src && !isslash(*src)) {
+	while (*src && !ISSLASH(*src)) {
 	    ++src;
 	}
 	end = *src;
@@ -236,7 +236,7 @@ Ns_HashPath(Ns_DString *dest, CONST char *string, int levels)
         if (dest->string[dest->length] != '/') {
             Ns_DStringNAppend(dest, "/", 1);
         }
-        while (*p == '.' || isslash(*p)) {
+        while (*p == '.' || ISSLASH(*p)) {
             ++p;
         }
         if (*p != '\0') {
@@ -735,7 +735,7 @@ MakePath(Ns_DString *dest, va_list *pap)
     int len;
 
     while ((s = va_arg(*pap, char *)) != NULL) {
-        if (isalpha(*s) && s[1] == ':') {
+        if (isalpha(UCHAR(*s)) && s[1] == ':') {
             char temp = *(s+2);
             *(s + 2) = 0;
             Ns_DStringNAppend(dest, s, 2);
@@ -743,13 +743,13 @@ MakePath(Ns_DString *dest, va_list *pap)
             s += 2;
         }
 	while (*s) {
-	    while (isslash(*s)) {
+	    while (ISSLASH(*s)) {
 	        ++s;
 	    }
 	    if (*s) {
 	    	Ns_DStringNAppend(dest, "/", 1);
 		len = 0;
-		while (s[len] != '\0' && !isslash(s[len])) {
+		while (s[len] != '\0' && !ISSLASH(s[len])) {
 		    ++len;
 		}
 	    	Ns_DStringNAppend(dest, s, len);

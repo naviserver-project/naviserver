@@ -596,7 +596,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     for (cwd = nsconf.home; *cwd != '\0'; cwd++) {
         if (*cwd == '\\') {
             *cwd = '/';
-        } else if (isupper(*cwd)) {
+        } else if (isupper(UCHAR(*cwd))) {
             *cwd = tolower(*cwd);
         }
     }
