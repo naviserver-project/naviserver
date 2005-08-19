@@ -1335,6 +1335,8 @@ NS_EXTERN char *Ns_StrTrimLeft(char *string);
 NS_EXTERN char *Ns_StrTrimRight(char *string);
 NS_EXTERN char *Ns_StrToLower(char *string) NS_GNUC_NONNULL(1);
 NS_EXTERN char *Ns_StrToUpper(char *string) NS_GNUC_NONNULL(1);
+NS_EXTERN int Ns_StrToInt(CONST char *string, int *intPtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN char *Ns_Match(char *a, char *b);
 NS_EXTERN char *Ns_NextWord(char *line) NS_GNUC_NONNULL(1);
 NS_EXTERN char *Ns_StrNStr(char *pattern, char *expression) NS_GNUC_NONNULL(1);

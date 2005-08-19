@@ -195,6 +195,44 @@ Ns_StrToUpper(char *string)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_StrToInt --
+ *
+ *      Attempt to convert the string value to an integer.
+ *
+ * Results:
+ *      NS_OK and *intPtr updated, NS_ERROR if the number cannot be
+ *      parsed or overflows.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_StrToInt(CONST char *string, int *intPtr)
+{
+    long  lval;
+    char *ep;
+
+    errno = 0;
+    lval = strtol(string, &ep, 10);
+    if (string[0] == '\0' || *ep != '\0') {
+        return NS_ERROR;
+    }
+    if ((errno == ERANGE && (lval == LONG_MAX || lval == LONG_MIN))
+         || (lval > INT_MAX || lval < INT_MIN)) {
+        return NS_ERROR;
+    }
+    *intPtr = (int) lval;
+
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_Match --
  *
  *      Compare the beginnings of two strings, case insensitively.

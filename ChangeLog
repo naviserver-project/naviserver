@@ -1,6 +1,11 @@
 2005-08-18  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
+	* nsd/str.c (Ns_StrToInt): Convenience function for parsing
+	integers.  atoi is not always threadsafe (e.g. Darwin) and
+	makes it impossible to handle errors, strtol makes it difficult.
+
+	* include/ns.h:
 	* nsd/str.c: Untabify and add attributes.
 
 2005-08-04  Vlad Seryakov  <seryakov@users.sf.net>
