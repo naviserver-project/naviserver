@@ -1333,13 +1333,13 @@ NS_EXTERN int Ns_SockCancelCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg)
 NS_EXTERN char *Ns_StrTrim(char *string);
 NS_EXTERN char *Ns_StrTrimLeft(char *string);
 NS_EXTERN char *Ns_StrTrimRight(char *string);
-NS_EXTERN char *Ns_StrToLower(char *string);
-NS_EXTERN char *Ns_StrToUpper(char *string);
-NS_EXTERN char *Ns_StrCaseFind(char *s1, char *s2);
+NS_EXTERN char *Ns_StrToLower(char *string) NS_GNUC_NONNULL(1);
+NS_EXTERN char *Ns_StrToUpper(char *string) NS_GNUC_NONNULL(1);
 NS_EXTERN char *Ns_Match(char *a, char *b);
-NS_EXTERN char *Ns_NextWord(char *line);
-NS_EXTERN char *Ns_StrNStr(char *pattern, char *expression);
-NS_EXTERN int Ns_StrIsHost(CONST char *string);
+NS_EXTERN char *Ns_NextWord(char *line) NS_GNUC_NONNULL(1);
+NS_EXTERN char *Ns_StrNStr(char *pattern, char *expression) NS_GNUC_NONNULL(1);
+NS_EXTERN char *Ns_StrCaseFind(char *s1, char *s2) NS_GNUC_NONNULL(1);
+NS_EXTERN int Ns_StrIsHost(CONST char *string) NS_GNUC_NONNULL(1);
 
 /*
  * tclcallbacks.c:

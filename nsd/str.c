@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,7 +31,7 @@
 /*
  * str.c --
  *
- *	Functions that deal with strings. 
+ *      Functions that deal with strings. 
  */
 
 #include "nsd.h"
@@ -44,14 +44,14 @@ NS_RCSID("@(#) $Header$");
  *
  * Ns_StrTrim --
  *
- *	Trim leading and trailing white space from a string. 
+ *      Trim leading and trailing white space from a string. 
  *
  * Results:
- *	A pointer to the trimmed string, which will be in the original 
- *	string. 
+ *      A pointer to the trimmed string, which will be in the original 
+ *      string. 
  *
  * Side effects:
- *	May modify passed-in string. 
+ *      May modify passed-in string. 
  *
  *----------------------------------------------------------------------
  */
@@ -69,14 +69,14 @@ Ns_StrTrim(char *string)
  *
  * Ns_StrTrimLeft --
  *
- *	Trim leading white space from a string. 
+ *      Trim leading white space from a string. 
  *
  * Results:
- *	A pointer to the trimmed string, which will be in the 
- *	original string. 
+ *      A pointer to the trimmed string, which will be in the 
+ *      original string. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -84,10 +84,10 @@ Ns_StrTrim(char *string)
 char *
 Ns_StrTrimLeft(char *string)
 {
-    if (string == NULL)
-        return NULL;
-    while (isspace(UCHAR(*string))) {
-        ++string;
+    if (string != NULL) {
+        while (isspace(UCHAR(*string))) {
+            ++string;
+        }
     }
     return string;
 }
@@ -99,14 +99,14 @@ Ns_StrTrimLeft(char *string)
  *
  * Ns_StrTrimRight --
  *
- *	Trim trailing white space from a string. 
+ *      Trim trailing white space from a string. 
  *
  * Results:
- *	A pointer to the trimmed string, which will be in the 
- *	original string. 
+ *      A pointer to the trimmed string, which will be in the 
+ *      original string. 
  *
  * Side effects:
- *	The string will be modified. 
+ *      The string will be modified. 
  *
  *----------------------------------------------------------------------
  */
@@ -116,14 +116,13 @@ Ns_StrTrimRight(char *string)
 {
     int len;
 
-    if (string == NULL)
-        return NULL;
-    len = strlen(string);
-    while ((--len >= 0) &&
-	   (isspace(UCHAR(string[len])) ||
-	    string[len] == '\n')) {
-	
-        string[len] = '\0';
+    if (string != NULL) {
+        len = strlen(string);
+        while ((--len >= 0)
+               && (isspace(UCHAR(string[len]))
+                   || string[len] == '\n')) {
+            string[len] = '\0';
+        }
     }
     return string;
 }
@@ -134,13 +133,13 @@ Ns_StrTrimRight(char *string)
  *
  * Ns_StrToLower --
  *
- *	All alph. chars in a string will be made to be lowercase. 
+ *      All alph. chars in a string will be made to be lowercase. 
  *
  * Results:
- *	Same string as passed in. 
+ *      Same string as passed in. 
  *
  * Side effects:
- *	Will modify string. 
+ *      Will modify string. 
  *
  *----------------------------------------------------------------------
  */
@@ -166,13 +165,13 @@ Ns_StrToLower(char *string)
  *
  * Ns_StrToUpper --
  *
- *	All alph. chars in a string will be made to be uppercase. 
+ *      All alph. chars in a string will be made to be uppercase. 
  *
  * Results:
- *	Same string as pssed in. 
+ *      Same string as pssed in. 
  *
  * Side effects:
- *	Will modify string. 
+ *      Will modify string. 
  *
  *----------------------------------------------------------------------
  */
@@ -198,15 +197,15 @@ Ns_StrToUpper(char *string)
  *
  * Ns_Match --
  *
- *	Compare the beginnings of two strings, case insensitively. 
- *	The comparison stops when the end of the shorter string is 
- *	reached. 
+ *      Compare the beginnings of two strings, case insensitively.
+ *      The comparison stops when the end of the shorter string is
+ *      reached.
  *
  * Results:
- *	NULL if no match, b if match. 
+ *      NULL if no match, b if match.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -214,10 +213,10 @@ Ns_StrToUpper(char *string)
 char *
 Ns_Match(char *a, char *b)
 {
+    char c1, c2;
+
     if (a != NULL && b != NULL) {
         while (*a != '\0' && *b != '\0') {
-            char            c1, c2;
-
             c1 = islower(UCHAR(*a)) ? *a : tolower(UCHAR(*a));
             c2 = islower(UCHAR(*b)) ? *b : tolower(UCHAR(*b));
             if (c1 != c2) {
@@ -236,14 +235,14 @@ Ns_Match(char *a, char *b)
  *
  * Ns_NextWord --
  *
- *	Return a pointer to first character of the next word in a 
- *	string; words are separated by white space. 
+ *        Return a pointer to first character of the next word in a 
+ *        string; words are separated by white space. 
  *
  * Results:
- *	A string pointer in the original string. 
+ *        A string pointer in the original string. 
  *
  * Side effects:
- *	None. 
+ *        None. 
  *
  *----------------------------------------------------------------------
  */
@@ -264,15 +263,15 @@ Ns_NextWord(char *line)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_StrCaseStr --
+ * Ns_StrCaseFind --
  *
- *	Search for first substring within string, case insensitive. 
+ *      Search for first substring within string, case insensitive. 
  *
  * Results:
- *	A pointer to where substring starts or NULL.
+ *      A pointer to where substring starts or NULL.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -287,12 +286,12 @@ char *
 Ns_StrCaseFind(char *string, char *substring)
 {
     if (strlen(string) > strlen(substring)) {
-    	while (*string != '\0') {
-	    if (Ns_Match(string, substring)) {
-	        return string;
-	    }
-	    ++string;
-	}
+        while (*string != '\0') {
+            if (Ns_Match(string, substring)) {
+                return string;
+            }
+            ++string;
+        }
     }
     return NULL;
 }
