@@ -1,3 +1,10 @@
+2005-10-01  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* .cvsignore:
+	* include/.cvsignore:
+	* nsd/.cvsignore:
+	* nsthread/.cvsignore: Tell cvs about files which it should ignore.
+
 2005-08-18  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/dns.c: Don't log host/address not found error
