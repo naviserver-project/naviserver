@@ -93,16 +93,16 @@ typedef struct Frame {
  * Local functions defined in this file.
  */
 
-static Page *ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr);
-static void PushFrame(NsInterp *itPtr, Frame *framePtr, char *file, 
+static Page *ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr);
+static void PushFrame(NsInterp *itPtr, Frame *framePtr, CONST char *file, 
                       int objc, Tcl_Obj *objv[], Tcl_DString *outputPtr);
 static void PopFrame(NsInterp *itPtr, Frame *framePtr);
 static void LogError(NsInterp *itPtr, int nscript);
-static int AdpRun(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[],
+static int AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
                   Tcl_DString *outputPtr);
 static int AdpEval(NsInterp *itPtr, AdpCode *codePtr, Tcl_Obj *objs[]);
 static void ParseFree(AdpParse *parsePtr);
-static int AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript);
+static int AdpDebug(NsInterp *itPtr, CONST char *ptr, int len, int nscript);
 static Ns_Callback FreeInterpPage;
 
 
@@ -124,7 +124,8 @@ static Ns_Callback FreeInterpPage;
  */
 
 int
-NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int safe, char *resvar)
+NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int safe,
+          CONST char *resvar)
 {
     AdpParse    parse;
     Frame       frame;
@@ -203,7 +204,8 @@ NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int safe, char *resvar)
  */
 
 int
-NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
+NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
+            CONST char *resvar)
 {
     Tcl_DString output;
     int         code;
@@ -256,7 +258,7 @@ NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
 }
 
 int
-NsAdpInclude(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[])
+NsAdpInclude(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[])
 {
     /*
      * Direct output to the current ADP output buffer.
@@ -271,7 +273,7 @@ NsAdpInclude(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[])
 }
 
 static int
-AdpRun(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[],
+AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
        Tcl_DString *outputPtr)
 {
     NsServer      *servPtr = itPtr->servPtr;
@@ -492,7 +494,7 @@ AdpRun(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[],
  */
 
 int
-NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
+NsAdpDebug(NsInterp *itPtr, CONST char *host, CONST char *port, CONST char *procs)
 {
     Tcl_Interp *interp = itPtr->interp;
     Tcl_DString ds;
@@ -601,10 +603,10 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
  */
 
 static void
-PushFrame(NsInterp *itPtr, Frame *framePtr, char *file, int objc,
+PushFrame(NsInterp *itPtr, Frame *framePtr, CONST char *file, int objc,
           Tcl_Obj *objv[], Tcl_DString *outputPtr)
 {
-    char *slash;
+    CONST char *slash;
 
     /*
      * Save current NsInterp state.
@@ -686,7 +688,7 @@ PopFrame(NsInterp *itPtr, Frame *framePtr)
  */
 
 static Page *
-ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr)
+ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
 {
     Tcl_Interp  *interp = itPtr->interp;
     Tcl_Encoding encoding;
@@ -813,7 +815,7 @@ LogError(NsInterp *itPtr, int nscript)
     Tcl_Interp *interp = itPtr->interp;
     Ns_DString  ds;
     Tcl_Obj    *objv[2];
-    char       *file, *script;
+    CONST char *file, *script;
     char        buffer[ADPEVAL_MAX_SCRIPT_TEXT+ADPEVAL_ELIPSIS_LEN+1];
     
     Ns_DStringInit(&ds);
@@ -946,7 +948,7 @@ AdpEval(NsInterp *itPtr, AdpCode *codePtr, Tcl_Obj **objs)
  */
 
 static int
-AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
+AdpDebug(NsInterp *itPtr, CONST char *ptr, int len, int nscript)
 {
     int         code, fd;
     Tcl_Interp *interp = itPtr->interp;

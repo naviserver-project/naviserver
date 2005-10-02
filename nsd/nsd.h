@@ -35,7 +35,6 @@
 #endif
 
 #include "ns.h"
-#include "nsconf.h"
 #include <assert.h>
 #include <sys/stat.h>
 
@@ -358,9 +357,9 @@ typedef struct Driver {
     int port;                   /* Port in location. */
     int backlog;                /* listen() backlog. */
     int maxinput;               /* Maximum request bytes to read. */
-    int maxsize;                /* Maximum request size in memory. */
     int maxline;                /* Maximum request line size. */
     int maxheaders;             /* Maximum number of request headers. */
+    int maxsize;                /* Maximum request size in memory. */
     unsigned int loggingFlags;  /* Logging control flags */
 
 } Driver;
@@ -557,7 +556,7 @@ typedef struct NsServer {
         bool modsince;
         bool noticedetail;
         int  errorminsize;
-        char *realm;
+        CONST char *realm;
         Ns_HeaderCaseDisposition hdrcase;
     } opts;
     
@@ -574,13 +573,13 @@ typedef struct NsServer {
     } encoding;
 
     struct {
-        char *serverdir;        /* Virtual server files path */
-        char *pagedir;          /* Path to public pages */
-        char *pageroot;         /* Absolute path to public pages */
-        char **dirv;
+        CONST char *serverdir;  /* Virtual server files path */
+        CONST char *pagedir;    /* Path to public pages */
+        CONST char *pageroot;   /* Absolute path to public pages */
+        CONST char **dirv;
         int dirc;
-        char *dirproc;
-        char *diradp;
+        CONST char *dirproc;
+        CONST char *diradp;
         bool mmap;
         int cachemaxentry;
         Ns_UrlToFileProc *url2file;
@@ -646,14 +645,14 @@ typedef struct NsServer {
      */
     
     struct {
-        char *errorpage;
-        char *startpage;
+        CONST char *errorpage;
+        CONST char *startpage;
 
         bool enableexpire;
         bool enabledebug;
 
-        char *debuginit;
-        char *defaultparser;
+        CONST char *debuginit;
+        CONST char *defaultparser;
 
         size_t cachesize;
 
@@ -860,13 +859,13 @@ extern void NsFreeRequest(Request *reqPtr);
 extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);
 
-extern Ns_Cache *NsFastpathCache(char *server, int size);
+extern Ns_Cache *NsFastpathCache(CONST char *server, int size);
 
 extern void NsFreeAdp(NsInterp *itPtr);
 extern void NsTclRunAtClose(NsInterp *itPtr)
      NS_GNUC_NONNULL(1);
 
-extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url);
+extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
 extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
 /*
@@ -897,7 +896,7 @@ extern void NsGetSockCallbacks(Tcl_DString *dsPtr);
 extern void NsGetScheduled(Tcl_DString *dsPtr);
 extern void NsGetTraces(Tcl_DString *dsPtr, char *server);
 extern void NsGetFilters(Tcl_DString *dsPtr, char *server);
-extern void NsGetRequestProcs(Tcl_DString *dsPtr, char *server);
+extern void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);
 
 #ifdef _WIN32
 extern int NsConnectService(void);
@@ -965,19 +964,19 @@ extern void NsSendSignal(int sig);
 
 extern Ns_Cache *NsAdpCache(char *server, int size);
 
-extern void NsAdpSetMimeType(NsInterp *itPtr, char *type);
-extern void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
+extern void NsAdpSetMimeType(NsInterp *itPtr, CONST char *type);
 extern void NsAdpFlush(NsInterp *itPtr);
 extern void NsAdpStream(NsInterp *itPtr);
 extern void NsAdpCompress(NsInterp *itPtr, int compress);
 extern void NsAdpParse(AdpParse *parsePtr, NsServer *servPtr, char *utf, int safe);
 
-extern int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
+extern int NsAdpDebug(NsInterp *itPtr, CONST char *host, CONST char *port,
+                      CONST char *procs);
 extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int safe,
-                     char *resvar);
+                     CONST char *resvar);
 extern int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
-                       char *resvar);
-extern int NsAdpInclude(NsInterp *itPtr, char *file, int objc, Tcl_Obj *objv[]);
+                       CONST char *resvar);
+extern int NsAdpInclude(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[]);
 
 /*
  * Tcl support routines.
@@ -1008,7 +1007,7 @@ extern void NsRunAtExitProcs(void);
  */
 
 extern int NsCloseAllFiles(int errFd);
-extern int NsMemMap(char *path, int size, int mode, FileMap *mapPtr);
+extern int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
 extern void NsMemUmap(FileMap *mapPtr);
 
 #ifndef _WIN32
@@ -1021,11 +1020,11 @@ extern int Ns_TclGetOpenFd(Tcl_Interp *, char *, int write, int *fp);
 extern void NsStopSockCallbacks(void);
 extern void NsStopScheduledProcs(void);
 extern void NsGetBuf(char **bufPtr, int *sizePtr);
-extern Tcl_Encoding NsGetTypeEncodingWithDef(char *type, int *used_default);
-extern void NsComputeEncodingFromType(char *type, Tcl_Encoding *enc,
+extern Tcl_Encoding NsGetTypeEncodingWithDef(CONST char *type, int *used_default);
+extern void NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
                                       int *new_type, Tcl_DString *type_ds);
 
-extern void NsUrlSpecificWalk(int id, char *server, Ns_ArgProc func, 
+extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, 
                               Tcl_DString *dsPtr);
 
 /*

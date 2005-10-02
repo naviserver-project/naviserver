@@ -96,10 +96,9 @@ Ns_FreeRequest(Ns_Request * request)
  */
 
 Ns_Request *
-Ns_ParseRequest(char *line)
+Ns_ParseRequest(CONST char *line)
 {
-    char       *url;
-    char       *p;
+    char       *url, *l, *p;
     Ns_DString  ds;
     Ns_Request *request;
 
@@ -114,8 +113,8 @@ Ns_ParseRequest(char *line)
         goto done;
     }
     Ns_DStringAppend(&ds, line);
-    line = Ns_StrTrim(ds.string);
-    if (*line == '\0') {
+    l = Ns_StrTrim(ds.string);
+    if (*l == '\0') {
         goto done;
     }
 
@@ -123,13 +122,13 @@ Ns_ParseRequest(char *line)
      * Save the trimmed line for logging purposes.
      */
     
-    request->line = ns_strdup(line);
+    request->line = ns_strdup(l);
 
     /*
      * Look for the minimum of method and url.
      */
     
-    url = line;
+    url = l;
     while (*url != '\0' && !isspace(UCHAR(*url))) {
         ++url;
     }
@@ -143,7 +142,7 @@ Ns_ParseRequest(char *line)
     if (*url == '\0') {
         goto done;
     }
-    request->method = ns_strdup(line);
+    request->method = ns_strdup(l);
 
 
     /*
@@ -194,7 +193,7 @@ Ns_ParseRequest(char *line)
              * Found a protocol - copy it and search for host:port.
              */
 
-	    *p++ = '\0';
+            *p++ = '\0';
             request->protocol = ns_strdup(url);
             url = p;
             if ((strlen(url) > 3) && (*p++ == '/')
@@ -279,7 +278,7 @@ Ns_SkipUrl(Ns_Request *request, int n)
  */
 
 void
-Ns_SetRequestUrl(Ns_Request * request, char *url)
+Ns_SetRequestUrl(Ns_Request * request, CONST char *url)
 {
     Ns_DString      ds;
 

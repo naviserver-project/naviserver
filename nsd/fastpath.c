@@ -75,12 +75,14 @@ typedef struct {
 
 static Ns_Callback FreeEntry;
 static void DecrEntry(File *);
-static int UrlIs(char *server, char *url, int dir);
-static int FastStat(char *file, struct stat *stPtr);
+static int UrlIs(CONST char *server, CONST char *url, int dir);
+static int FastStat(CONST char *file, struct stat *stPtr);
 static int FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
-                      char *type, char *file, struct stat *stPtr);
+                      CONST char *type, CONST char *file, struct stat *stPtr);
+static int FastGetRestart(Ns_Conn *conn, CONST char *page);
 static int ParseRange(Ns_Conn *conn, Range *rnPtr);
-static int ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type);
+static int ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, CONST char *data,
+                       int len, CONST char *type);
 
 /*
  *----------------------------------------------------------------------
@@ -98,7 +100,7 @@ static int ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len,
  */
 
 Ns_Cache *
-NsFastpathCache(char *server, int size)
+NsFastpathCache(CONST char *server, int size)
 {
     Ns_DString ds;
     Ns_Cache *fpCache;
@@ -135,7 +137,7 @@ NsFastpathCache(char *server, int size)
  */
 
 int
-Ns_ConnReturnFile(Ns_Conn *conn, int status, char *type, char *file)
+Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
     struct stat st;
     char *server;
@@ -168,8 +170,8 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, char *type, char *file)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_PageRoot(char *server)
+CONST char *
+Ns_PageRoot(CONST char *server)
 {
     NsServer *servPtr = NsGetServer(server);
  
@@ -197,7 +199,7 @@ Ns_PageRoot(char *server)
  */
 
 void
-Ns_SetUrlToFileProc(char *server, Ns_UrlToFileProc *procPtr)
+Ns_SetUrlToFileProc(CONST char *server, Ns_UrlToFileProc *procPtr)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -222,7 +224,7 @@ Ns_SetUrlToFileProc(char *server, Ns_UrlToFileProc *procPtr)
 
 
 int
-Ns_UrlToFile(Ns_DString *dsPtr, char *server, char *url)
+Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url)
 {
     NsServer *servPtr = NsGetServer(server);
     
@@ -246,19 +248,19 @@ Ns_UrlToFile(Ns_DString *dsPtr, char *server, char *url)
  */
 
 int
-Ns_UrlIsFile(char *server, char *url)
+Ns_UrlIsFile(CONST char *server, CONST char *url)
 {
     return UrlIs(server, url, 0);
 }
 
 int
-Ns_UrlIsDir(char *server, char *url)
+Ns_UrlIsDir(CONST char *server, CONST char *url)
 {
     return UrlIs(server, url, 1);
 }
 
 static int
-UrlIs(char *server, char *url, int dir)
+UrlIs(CONST char *server, CONST char *url, int dir)
 {
     Ns_DString ds;
     int is = NS_FALSE;
@@ -293,7 +295,7 @@ UrlIs(char *server, char *url, int dir)
  */
 
 static int
-FastGetRestart(Ns_Conn *conn, char *page)
+FastGetRestart(Ns_Conn *conn, CONST char *page)
 {
     int status;
     Ns_DString ds;
@@ -457,7 +459,7 @@ DecrEntry(File *filePtr)
  */
 
 static int
-FastStat(char *file, struct stat *stPtr)
+FastStat(CONST char *file, struct stat *stPtr)
 {
     if (stat(file, stPtr) != 0) {
         if (errno != ENOENT && errno != EACCES) {
@@ -489,7 +491,7 @@ FastStat(char *file, struct stat *stPtr)
 
 static int
 FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
-           char *type, char *file, struct stat *stPtr)
+           CONST char *type, CONST char *file, struct stat *stPtr)
 {
     int fd, new, nread;
     int result = NS_ERROR;
@@ -662,7 +664,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status,
 
 
 int
-NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, char *url)
+NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
 {
     int status;
     
@@ -851,7 +853,8 @@ ParseRange(Ns_Conn *conn, Range *rnPtr)
  */
 
 static int
-ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type)
+ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, CONST char *data, int len,
+            CONST char *type)
 {
     struct iovec bufs[MAX_RANGES*3], *iovPtr = bufs;
     int          i,result = NS_ERROR;
@@ -881,7 +884,7 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
         }
         Ns_ConnSetRequiredHeaders(conn, type, rnPtr->offsets[0].size);
         Ns_ConnQueueHeaders(conn, rnPtr->status);
-        iovPtr->iov_base = data + rnPtr->offsets[0].start;
+        iovPtr->iov_base = (char *) data + rnPtr->offsets[0].start;
         iovPtr->iov_len = rnPtr->offsets[0].size;
         result = Ns_ConnSend(conn, iovPtr, 1);
         break;
@@ -921,7 +924,7 @@ ReturnRange(Ns_Conn *conn, Range *rnPtr, int fd, char *data, int len, char *type
             */
 
            iovPtr++;
-           iovPtr->iov_base = data + rnPtr->offsets[i].start;
+           iovPtr->iov_base = (char *) data + rnPtr->offsets[i].start;
            iovPtr->iov_len = rnPtr->offsets[i].size;
            rnPtr->size += iovPtr->iov_len;
 

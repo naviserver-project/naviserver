@@ -68,13 +68,13 @@ static Ns_ObjvTable filters[] = {
  */
 
 int
-Ns_TclRequest(Ns_Conn *conn, char *name)
+Ns_TclRequest(Ns_Conn *conn, CONST char *name)
 {
     Ns_TclCallback cb;
 
     cb.cbProc        = &NsTclRequestProc;
     cb.server        = Ns_ConnServer(conn);
-    cb.script        = name;
+    cb.script        = (char *) name;
     cb.scriptarg     = NULL;
 
     return NsTclRequestProc(&cb, conn);

@@ -248,8 +248,8 @@ Ns_StrToInt(CONST char *string, int *intPtr)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_Match(char *a, char *b)
+CONST char *
+Ns_Match(CONST char *a, CONST char *b)
 {
     char c1, c2;
 
@@ -285,8 +285,8 @@ Ns_Match(char *a, char *b)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_NextWord(char *line)
+CONST char *
+Ns_NextWord(CONST char *line)
 {
     while (*line != '\0' && !isspace(UCHAR(*line))) {
         ++line;
@@ -314,14 +314,14 @@ Ns_NextWord(char *line)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_StrNStr(char *string, char *substring)
+CONST char *
+Ns_StrNStr(CONST char *string, CONST char *substring)
 {
     return Ns_StrCaseFind(string, substring);
 }
 
-char *
-Ns_StrCaseFind(char *string, char *substring)
+CONST char *
+Ns_StrCaseFind(CONST char *string, CONST char *substring)
 {
     if (strlen(string) > strlen(substring)) {
         while (*string != '\0') {

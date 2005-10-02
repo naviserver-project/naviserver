@@ -49,18 +49,18 @@ NS_RCSID("@(#) $Header$");
  */
 
 static int ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr);
-static int ReturnOpen(Ns_Conn *conn, int status, char *type, Tcl_Channel chan,
+static int ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
                       FILE *fp, int fd, int len);
-static int ReturnCharData(Ns_Conn *conn, int status, char *data, int len,
-                          char *type, int sendRaw);
+static int ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
+                          CONST char *type, int sendRaw);
 
 /*
  * This structure connections HTTP response codes to their descriptions.
  */
 
 static struct {
-    int   status;
-    char *reason;
+    int         status;
+    CONST char *reason;
 } reasons[] = {
     {100, "Continue"},
     {101, "Switching Protocols"},
@@ -137,7 +137,7 @@ static int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
  */
 
 void
-Ns_RegisterReturn(int status, char *url)
+Ns_RegisterReturn(int status, CONST char *url)
 {
     NsServer      *servPtr;
     Tcl_HashEntry *hPtr;
@@ -179,12 +179,10 @@ Ns_RegisterReturn(int status, char *url)
 void
 Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 {
-    Conn *connPtr = (Conn *) conn;
-    Driver *drvPtr  = (Driver *) connPtr->drvPtr;
-    int   i, length;
-    char *reason;
-    char *value, *keep;
-    char *key, *lengthHdr;
+    Conn       *connPtr = (Conn *) conn;
+    Driver     *drvPtr  = (Driver *) connPtr->drvPtr;
+    int         i, length;
+    CONST char *reason, *value, *keep, *key, *lengthHdr;
 
     /*
      * Construct the HTTP response status line.
@@ -361,7 +359,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
  */
 
 void
-Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value)
+Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
 {
     Ns_SetPut(conn->outputheaders, field, value);
 }
@@ -383,7 +381,7 @@ Ns_ConnSetHeaders(Ns_Conn *conn, char *field, char *value)
  */
 
 void
-Ns_ConnPrintfHeaders(Ns_Conn *conn, char *field, char *fmt,...)
+Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt,...)
 {
     Ns_DString ds;
     va_list ap;
@@ -414,7 +412,7 @@ Ns_ConnPrintfHeaders(Ns_Conn *conn, char *field, char *fmt,...)
  */
 
 void
-Ns_ConnCondSetHeaders(Ns_Conn *conn, char *field, char *value)
+Ns_ConnCondSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
 {
     if (Ns_SetIGet(conn->outputheaders, field) == NULL) {
         Ns_SetPut(conn->outputheaders, field, value);
@@ -465,7 +463,7 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
  */
 
 void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, int length)
 {
     Ns_DString ds;
 
@@ -514,7 +512,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length)
  */
 
 void
-Ns_ConnSetTypeHeader(Ns_Conn *conn, char *type)
+Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
 {
     Ns_ConnSetHeaders(conn, "Content-Type", type);
 }
@@ -590,7 +588,7 @@ Ns_ConnSetLastModifiedHeader(Ns_Conn *conn, time_t *mtime)
  */
 
 void
-Ns_ConnSetExpiresHeader(Ns_Conn *conn, char *expires)
+Ns_ConnSetExpiresHeader(Ns_Conn *conn, CONST char *expires)
 {
     Ns_ConnSetHeaders(conn, "Expires", expires);
 }
@@ -637,7 +635,8 @@ Ns_ConnResetReturn(Ns_Conn *conn)
  */
 
 int
-Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, char *title, char *notice)
+Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status,
+                         CONST char *title, CONST char *notice)
 {
     return Ns_ConnReturnNotice(conn, status, title, notice);
 }
@@ -660,7 +659,8 @@ Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, char *title, char *notice)
  */
 
 int
-Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
+Ns_ConnReturnNotice(Ns_Conn *conn, int status,
+                    CONST char *title, CONST char *notice)
 {
     Conn       *connPtr = (Conn *) conn;
     NsServer   *servPtr = connPtr->servPtr;
@@ -731,7 +731,8 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
  */
 
 int
-Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
+Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
+                  CONST char *type)
 {
     return ReturnCharData(conn, status, data, len, type, NS_TRUE);
 }
@@ -755,7 +756,8 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
  */
 
 int
-Ns_ConnReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type)
+Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
+                      CONST char *type)
 {
     return ReturnCharData(conn, status, data, len, type, NS_FALSE);
 }
@@ -780,8 +782,8 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type
  */
 
 static int
-ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
-               int sendRaw)
+ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
+               CONST char *type, int sendRaw)
 {
     int          result;
     Conn        *connPtr;
@@ -861,7 +863,7 @@ ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
  */
 
 int
-Ns_ConnReturnHtml(Ns_Conn *conn, int status, char *html, int len)
+Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, int len)
 {
     return Ns_ConnReturnData(conn, status, html, len, "text/html");
 }
@@ -934,7 +936,7 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
  */
 
 int
-Ns_ConnReturnRedirect(Ns_Conn *conn, char *url)
+Ns_ConnReturnRedirect(Ns_Conn *conn, CONST char *url)
 {
     Ns_DString ds, msg;
     int        result;
@@ -978,7 +980,7 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, char *url)
  */
 
 int
-Ns_ConnReturnBadRequest(Ns_Conn *conn, char *reason)
+Ns_ConnReturnBadRequest(Ns_Conn *conn, CONST char *reason)
 {
     Ns_DString ds;
     int        result;
@@ -1233,7 +1235,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
  */
 
 int
-Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, char *type,
+Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
                          Tcl_Channel chan, int len)
 {
     return ReturnOpen(conn, status, type, chan, NULL, -1, len);
@@ -1257,7 +1259,8 @@ Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, char *type,
  */
 
 int
-Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, char *type, FILE *fp, int len)
+Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
+                      FILE *fp, int len)
 {
     return ReturnOpen(conn, status, type, NULL, fp, -1, len);
 }
@@ -1280,7 +1283,8 @@ Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, char *type, FILE *fp, int len)
  */
 
 int
-Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, char *type, int fd, int len)
+Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
+                    int fd, int len)
 {
     return ReturnOpen(conn, status, type, NULL, NULL, fd, len);
 }
@@ -1342,7 +1346,7 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
  */
 
 static int
-ReturnOpen(Ns_Conn *conn, int status, char *type, Tcl_Channel chan,
+ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
            FILE *fp, int fd, int len)
 {
     int result;

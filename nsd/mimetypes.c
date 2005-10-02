@@ -31,7 +31,7 @@
 /*
  * mimetypes.c --
  *
- *	Defines standard default mime types. 
+ *      Defines standard default mime types. 
  */
 
 #include "nsd.h"
@@ -44,8 +44,8 @@ NS_RCSID("@(#) $Header$");
  * Local functions defined in this file.
  */
 
-static void AddType(char *ext, char *type);
-static char *LowerDString(Ns_DString *dsPtr, char *ext);
+static void AddType(CONST char *ext, CONST char *type);
+static char *LowerDString(Ns_DString *dsPtr, CONST char *ext);
 
 /*
  * Static variables defined in this file.
@@ -60,8 +60,8 @@ static char            *noextType = TYPE_DEFAULT;
  */
 
 static struct exttype {
-    char           *ext;
-    char           *type;
+    CONST char     *ext;
+    CONST char     *type;
 } typetab[] = {
     /*
      * Basic text/html types.
@@ -231,42 +231,42 @@ static struct exttype {
  *
  * Ns_GetMimeType --
  *
- *	Guess the mime type based on filename extension. Case is 
- *	ignored. 
+ *      Guess the mime type based on filename extension. Case is 
+ *      ignored. 
  *
  * Results:
- *	A mime type. 
+ *      A mime type. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
 
 char *
-Ns_GetMimeType(char *file)
+Ns_GetMimeType(CONST char *file)
 {
-    char          *start, *ext;
+    CONST char    *start, *ext;
     Ns_DString     ds;
-    Tcl_HashEntry *hePtr;
+    Tcl_HashEntry *hPtr;
 
     start = strrchr(file, '/');
     if (start == NULL) {
-	start = file;
+        start = file;
     }
-
     ext = strrchr(start, '.');
     if (ext == NULL) {
-	return noextType;
+        return noextType;
     }
-
     Ns_DStringInit(&ds);
     ext = LowerDString(&ds, ext);
-    hePtr = Tcl_FindHashEntry(&types, ext);
-    if (hePtr == NULL) {
-	return defaultType;
+    hPtr = Tcl_FindHashEntry(&types, ext);
+    Ns_DStringFree(&ds);
+    if (hPtr != NULL) {
+        return Tcl_GetHashValue(hPtr);
     }
-    return Tcl_GetHashValue(hePtr);
+
+    return defaultType;
 }
 
 
@@ -275,13 +275,13 @@ Ns_GetMimeType(char *file)
  *
  * NsInitMimeTypes --
  *
- *	Add compiled-in default mime types. 
+ *      Add compiled-in default mime types. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -289,7 +289,7 @@ Ns_GetMimeType(char *file)
 void
 NsInitMimeTypes(void)
 {
-    int     i;
+    int i;
 
     /*
      * Initialize hash table of file extensions.
@@ -312,13 +312,13 @@ NsInitMimeTypes(void)
  *
  * NsUpdateMimeTypes --
  *
- *	Add configured mime types. 
+ *      Add configured mime types. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -331,17 +331,17 @@ NsUpdateMimeTypes(void)
 
     set = Ns_ConfigGetSection("ns/mimetypes");
     if (set == NULL) {
-	return;
+        return;
     }
 
     defaultType = Ns_SetIGet(set, "default");
     if (defaultType == NULL) {
-	defaultType = TYPE_DEFAULT;
+        defaultType = TYPE_DEFAULT;
     }
 
     noextType = Ns_SetIGet(set, "noextension");
     if (noextType == NULL) {
-	noextType = defaultType;
+        noextType = defaultType;
     }
 
     for (i=0; i < Ns_SetSize(set); i++) {
@@ -355,13 +355,13 @@ NsUpdateMimeTypes(void)
  *
  * NsTclGuessTypeObjCmd --
  *
- *	Implements ns_guesstype. 
+ *      Implements ns_guesstype. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -369,15 +369,15 @@ NsUpdateMimeTypes(void)
 int
 NsTclGuessTypeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    char *type;
+    CONST char *type;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "filename");
         return TCL_ERROR;
     }
     type = Ns_GetMimeType(Tcl_GetString(objv[1]));
-    Tcl_SetResult(interp, type, TCL_VOLATILE);
-    
+    Tcl_SetStringObj(Tcl_GetObjResult(interp), type, -1);
+
     return TCL_OK;
 }
 
@@ -387,19 +387,19 @@ NsTclGuessTypeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *
  * AddType --
  *
- *	Add a mime type to the global hash table. 
+ *      Add a mime type to the global hash table. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
 
 static void
-AddType(char *ext, char *type)
+AddType(CONST char *ext, CONST char *type)
 {
     Ns_DString      ds;
     Tcl_HashEntry  *he;
@@ -421,28 +421,30 @@ AddType(char *ext, char *type)
  *
  * LowerDString --
  *
- *	Append a string to the dstring, converting all alphabetic 
- *	characeters to lowercase. 
+ *      Append a string to the dstring, converting all alphabetic 
+ *      characeters to lowercase. 
  *
  * Results:
- *	dsPtr->string 
+ *      dsPtr->string 
  *
  * Side effects:
- *	Appends to dstring.
+ *      Appends to dstring.
  *
  *----------------------------------------------------------------------
  */
 
 static char *
-LowerDString(Ns_DString *dsPtr, char *ext)
+LowerDString(Ns_DString *dsPtr, CONST char *ext)
 {
+    char *p;
+
     Ns_DStringAppend(dsPtr, ext);
-    ext = dsPtr->string;
-    while (*ext != '\0') {
-        if (isupper(UCHAR(*ext))) {
-            *ext = tolower(UCHAR(*ext));
+    p = dsPtr->string;
+    while (*p != '\0') {
+        if (isupper(UCHAR(*p))) {
+            *p = tolower(UCHAR(*p));
         }
-        ++ext;
+        ++p;
     }
 
     return dsPtr->string;

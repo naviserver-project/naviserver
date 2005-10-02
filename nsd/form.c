@@ -55,14 +55,14 @@ static int GetValue(char *hdr, char *att, char **vsPtr, char **vePtr);
  *
  * Ns_ConnGetQuery --
  *
- *	Get the connection query data, either by reading the content 
- *	of a POST request or get it from the query string 
+ *      Get the connection query data, either by reading the content 
+ *      of a POST request or get it from the query string 
  *
  * Results:
- *	Query data or NULL if error 
+ *      Query data or NULL if error 
  *
  * Side effects:
- *	
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -71,36 +71,36 @@ Ns_Set  *
 Ns_ConnGetQuery(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
-    Tcl_DString	    bound;
-    char	   *s, *e, *form, *formend;
+    Tcl_DString     bound;
+    char           *s, *e, *form, *formend;
     
     if (connPtr->query == NULL) {
-	connPtr->query = Ns_SetCreate(NULL);
-	if (!STREQ(connPtr->request->method, "POST")) {
-	    form = connPtr->request->query;
-	    if (form != NULL) {
-		ParseQuery(form, connPtr->query, connPtr->urlEncoding);
-	    }
-	} else if ((form = connPtr->reqPtr->content) != NULL) {
-	    Tcl_DStringInit(&bound);
-	    if (!GetBoundary(&bound, conn)) {
-		ParseQuery(form, connPtr->query, connPtr->urlEncoding);
-	    } else {
-	    	formend = form + connPtr->reqPtr->length;
-		s = NextBoundry(&bound, form, formend);
-		while (s != NULL) {
-		    s += bound.length;
-		    if (*s == '\r') ++s;
-		    if (*s == '\n') ++s;
-		    e = NextBoundry(&bound, s, formend);
-		    if (e != NULL) {
-			ParseMultiInput(connPtr, s, e);
-		    }
-		    s = e;
-		}
-	    }
-	    Tcl_DStringFree(&bound);
-	}
+        connPtr->query = Ns_SetCreate(NULL);
+        if (!STREQ(connPtr->request->method, "POST")) {
+            form = connPtr->request->query;
+            if (form != NULL) {
+                ParseQuery(form, connPtr->query, connPtr->urlEncoding);
+            }
+        } else if ((form = connPtr->reqPtr->content) != NULL) {
+            Tcl_DStringInit(&bound);
+            if (!GetBoundary(&bound, conn)) {
+                ParseQuery(form, connPtr->query, connPtr->urlEncoding);
+            } else {
+                formend = form + connPtr->reqPtr->length;
+                s = NextBoundry(&bound, form, formend);
+                while (s != NULL) {
+                    s += bound.length;
+                    if (*s == '\r') ++s;
+                    if (*s == '\n') ++s;
+                    e = NextBoundry(&bound, s, formend);
+                    if (e != NULL) {
+                        ParseMultiInput(connPtr, s, e);
+                    }
+                    s = e;
+                }
+            }
+            Tcl_DStringFree(&bound);
+        }
     }
     return connPtr->query;
 }
@@ -112,15 +112,15 @@ Ns_ConnGetQuery(Ns_Conn *conn)
  *
  * Ns_ConnClearQuery --
  *
- *	Release the any query set cached up from a previous call
+ *      Release the any query set cached up from a previous call
  *      to Ns_ConnGetQuery.  Useful if the query data requires
  *      reparsing, as when the encoding changes.
  *
  * Results:
- *	Query data or NULL if error 
+ *      Query data or NULL if error 
  *
  * Side effects:
- *	
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -129,24 +129,23 @@ void
 Ns_ConnClearQuery(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    FormFile	  *filePtr;
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+    FormFile       *filePtr;
 
-    if ((conn == NULL) ||
-        (connPtr->query == NULL)) {
+    if (conn == NULL || connPtr->query == NULL) {
         return;
     }
-    
+
     Ns_SetFree(connPtr->query);
     connPtr->query = NULL;
 
     hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
     while (hPtr != NULL) {
-	filePtr = Tcl_GetHashValue(hPtr);
-	Ns_SetFree(filePtr->hdrs);
-	ns_free(filePtr);
-	hPtr = Tcl_NextHashEntry(&search);
+        filePtr = Tcl_GetHashValue(hPtr);
+        Ns_SetFree(filePtr->hdrs);
+        ns_free(filePtr);
+        hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&connPtr->files);
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
@@ -158,13 +157,13 @@ Ns_ConnClearQuery(Ns_Conn *conn)
  *
  * Ns_QueryToSet --
  *
- *	Parse query data into an Ns_Set 
+ *      Parse query data into an Ns_Set 
  *
  * Results:
- *	NS_OK. 
+ *      NS_OK. 
  *
  * Side effects:
- *	Will add data to set without any UTF conversion.
+ *      Will add data to set without any UTF conversion.
  *
  *----------------------------------------------------------------------
  */
@@ -182,18 +181,14 @@ Ns_QueryToSet(char *query, Ns_Set *set)
  *
  * NsTclParseQueryObjCmd --
  *
- *	This procedure implements the AOLserver Tcl
- *
- *	    ns_parsequery querystring
- *
- *	command.
+ *      Implements the ns_parsequery command.
  *
  * Results:
- *	The Tcl result is a Tcl set with the parsed name-value pairs from
- *	the querystring argument
+ *      The Tcl result is a Tcl set with the parsed name-value pairs from
+ *      the querystring argument
  *
  * Side effects:
- *	None external.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -205,14 +200,14 @@ NsTclParseQueryObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "querystring");
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     set = Ns_SetCreate(NULL);
     if (Ns_QueryToSet(Tcl_GetString(objv[1]), set) != NS_OK) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"could not parse: \"", Tcl_GetString(objv[1]), "\"", NULL);
-	Ns_SetFree(set);
-	return TCL_ERROR;
+        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+            "could not parse: \"", Tcl_GetString(objv[1]), "\"", NULL);
+        Ns_SetFree(set);
+        return TCL_ERROR;
     }
     return Ns_TclEnterSet(interp, set, NS_TCL_SET_DYNAMIC);
 }
@@ -223,14 +218,14 @@ NsTclParseQueryObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
  *
  * ParseQuery --
  *
- *	Parse the given form string for URL encoded key=value pairs,
- *	converting to UTF if given encoding is not NULL.
+ *      Parse the given form string for URL encoded key=value pairs,
+ *      converting to UTF if given encoding is not NULL.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -238,34 +233,34 @@ NsTclParseQueryObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
 static void
 ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 {
-    char *p, *k, *v;
-    Tcl_DString      kds, vds;
+    char        *p, *k, *v;
+    Tcl_DString  kds, vds;
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
     p = form;
     while (p != NULL) {
-	k = p;
-	p = strchr(p, '&');
-	if (p != NULL) {
-	    *p = '\0';
-	}
-	v = strchr(k, '=');
-	if (v != NULL) {
-	    *v = '\0';
-	}
+        k = p;
+        p = strchr(p, '&');
+        if (p != NULL) {
+            *p = '\0';
+        }
+        v = strchr(k, '=');
+        if (v != NULL) {
+            *v = '\0';
+        }
         Ns_DStringTrunc(&kds, 0);
-	k = Ns_UrlQueryDecode(&kds, k, encoding);
-	if (v != NULL) {
+        k = Ns_UrlQueryDecode(&kds, k, encoding);
+        if (v != NULL) {
             Ns_DStringTrunc(&vds, 0);
-	    Ns_UrlQueryDecode(&vds, v+1, encoding);
-	    *v = '=';
-	    v = vds.string;
-	}
-	Ns_SetPut(set, k, v);
-	if (p != NULL) {
-	    *p++ = '&';
-	}
+            Ns_UrlQueryDecode(&vds, v+1, encoding);
+            *v = '=';
+            v = vds.string;
+        }
+        Ns_SetPut(set, k, v);
+        if (p != NULL) {
+            *p++ = '&';
+        }
     }
     Tcl_DStringFree(&kds);
     Tcl_DStringFree(&vds);
@@ -277,13 +272,13 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
  *
  * ParseMulitInput --
  *
- *	Parse the a multipart form input.
+ *      Parse the a multipart form input.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Records offset, lengths for files.
+ *      Records offset, lengths for files.
  *
  *----------------------------------------------------------------------
  */
@@ -294,7 +289,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
     Tcl_Encoding encoding = connPtr->urlEncoding;
     Tcl_DString kds, vds;
     Tcl_HashEntry *hPtr;
-    FormFile	  *filePtr;
+    FormFile      *filePtr;
     char *s, *e, *ks, *ke, *fs, *fe, save, saveend;
     char *key, *value, *disp;
     Ns_Set *set;
@@ -319,18 +314,18 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
     ks = fs = NULL;
     while ((e = strchr(start, '\n')) != NULL) {
-	s = start;
-	start = e + 1;
-	if (e > s && e[-1] == '\r') {
-	    --e;
-	}
-	if (s == e) {
-	    break;
-	}
-	save = *e;
-	*e = '\0';
-	Ns_ParseHeader(set, s, ToLower);
-	*e = save;
+        s = start;
+        start = e + 1;
+        if (e > s && e[-1] == '\r') {
+            --e;
+        }
+        if (s == e) {
+            break;
+        }
+        save = *e;
+        *e = '\0';
+        Ns_ParseHeader(set, s, ToLower);
+        *e = save;
     }
 
     /*
@@ -339,22 +334,22 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
     disp = Ns_SetGet(set, "content-disposition");
     if (disp != NULL && GetValue(disp, "name=", &ks, &ke)) {
-	key = Ext2Utf(&kds, ks, ke-ks, encoding);
-	if (!GetValue(disp, "filename=", &fs, &fe)) {
-	    value = Ext2Utf(&vds, start, end-start, encoding);
-	} else {
-	    value = Ext2Utf(&vds, fs, fe-fs, encoding);
-	    hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &new);
-	    if (new) {
-		filePtr = ns_malloc(sizeof(FormFile));
-		filePtr->hdrs = set;
-	    	filePtr->off = start - connPtr->reqPtr->content;
-		filePtr->len = end - start;
-		Tcl_SetHashValue(hPtr, filePtr);
-	    	set = NULL;
-	    }
-	}
-	Ns_SetPut(connPtr->query, key, value);
+        key = Ext2Utf(&kds, ks, ke-ks, encoding);
+        if (!GetValue(disp, "filename=", &fs, &fe)) {
+            value = Ext2Utf(&vds, start, end-start, encoding);
+        } else {
+            value = Ext2Utf(&vds, fs, fe-fs, encoding);
+            hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &new);
+            if (new) {
+                filePtr = ns_malloc(sizeof(FormFile));
+                filePtr->hdrs = set;
+                filePtr->off = start - connPtr->reqPtr->content;
+                filePtr->len = end - start;
+                Tcl_SetHashValue(hPtr, filePtr);
+                set = NULL;
+            }
+        }
+        Ns_SetPut(connPtr->query, key, value);
     }
 
     /*
@@ -365,7 +360,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
     Tcl_DStringFree(&kds);
     Tcl_DStringFree(&vds);
     if (set != NULL) {
-	Ns_SetFree(set);
+        Ns_SetFree(set);
     }
 }
 
@@ -375,13 +370,13 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
  *
  * GetBoundary --
  *
- *	Copy multipart/form-data boundy string, if any.
+ *      Copy multipart/form-data boundy string, if any.
  *
  * Results:
- *	1 if boundy copied, 0 otherwise.
+ *      1 if boundy copied, 0 otherwise.
  *
  * Side effects:
- *	Copies boundry string to given dstring.
+ *      Copies boundry string to given dstring.
  *
  *----------------------------------------------------------------------
  */
@@ -389,20 +384,20 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 static int
 GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
 {
-    char *type, *bs, *be;
+    CONST char *type, *bs, *be;
 
     type = Ns_SetIGet(conn->headers, "content-type");
     if (type != NULL
-	&& Ns_StrCaseFind(type, "multipart/form-data") != NULL
-	&& (bs = Ns_StrCaseFind(type, "boundary=")) != NULL) {
-	bs += 9;
-	be = bs;
-	while (*be && !isspace(UCHAR(*be))) {
-	    ++be;
-	}
-	Tcl_DStringAppend(dsPtr, "--", 2);
-	Tcl_DStringAppend(dsPtr, bs, be-bs);
-	return 1;
+        && Ns_StrCaseFind(type, "multipart/form-data") != NULL
+        && (bs = Ns_StrCaseFind(type, "boundary=")) != NULL) {
+        bs += 9;
+        be = bs;
+        while (*be && !isspace(UCHAR(*be))) {
+            ++be;
+        }
+        Tcl_DStringAppend(dsPtr, "--", 2);
+        Tcl_DStringAppend(dsPtr, bs, be-bs);
+        return 1;
     }
     return 0;
 }
@@ -413,13 +408,13 @@ GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
  *
  * NextBoundary --
  *
- *	Locate the next form boundry.
+ *      Locate the next form boundry.
  *
  * Results:
- *	Pointer to start of next input field or NULL on end of fields.
+ *      Pointer to start of next input field or NULL on end of fields.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -435,14 +430,15 @@ NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
     len = dsPtr->length-1;
     e -= len;
     do {
-	do {
-	    sc = *s++;
-	    if (s > e) {
-		return NULL;
-	    }
-	} while (sc != c);
+        do {
+            sc = *s++;
+            if (s > e) {
+                return NULL;
+            }
+        } while (sc != c);
     } while (strncmp(s, find, len) != 0);
     s--;
+
     return s;
 }
 
@@ -452,13 +448,13 @@ NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
  *
  * GetValue --
  *
- *	Determine start and end of a multipart form input value.
+ *      Determine start and end of a multipart form input value.
  *
  * Results:
- *	1 if attribute found and value parsed, 0 otherwise.
+ *      1 if attribute found and value parsed, 0 otherwise.
  *
  * Side effects:
- *	Start and end are stored in given pointers.
+ *      Start and end are stored in given pointers.
  *
  *----------------------------------------------------------------------
  */
@@ -466,29 +462,30 @@ NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
 static int
 GetValue(char *hdr, char *att, char **vsPtr, char **vePtr)
 {
-    char *s, *e;
+    CONST char *s, *e;
 
     s = Ns_StrCaseFind(hdr, att);
     if (s == NULL) {
-	return 0;
+        return 0;
     }
     s += strlen(att);
     e = s;
     if (*s != '"' && *s != '\'') {
-	/* NB: End of unquoted att=value is next space. */
-	while (*e && !isspace(UCHAR(*e))) {
-	    ++e;
-	}
+        /* NB: End of unquoted att=value is next space. */
+        while (*e && !isspace(UCHAR(*e))) {
+            ++e;
+        }
     } else {
-	/* NB: End of quoted att="value" is next quote. */
-	++e;
-	while (*e && *e != *s) {
-	    ++e;
-	}
-	++s;
+        /* NB: End of quoted att="value" is next quote. */
+        ++e;
+        while (*e && *e != *s) {
+            ++e;
+        }
+        ++s;
     }
-    *vsPtr = s;
-    *vePtr = e;
+    *vsPtr = (char *) s;
+    *vePtr = (char *) e;
+
     return 1;
 }
 
@@ -498,14 +495,14 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr)
  *
  * Ext2Utf --
  *
- *	Convert input string to UTF.
+ *      Convert input string to UTF.
  *
  * Results:
- *	Pointer to converted string.
+ *      Pointer to converted string.
  *
  * Side effects:
- *	Converted string is copied to given dstring, overwriting
- *	any previous content.
+ *      Converted string is copied to given dstring, overwriting
+ *      any previous content.
  *
  *----------------------------------------------------------------------
  */
@@ -514,12 +511,12 @@ static char *
 Ext2Utf(Tcl_DString *dsPtr, char *start, int len, Tcl_Encoding encoding)
 {
     if (encoding == NULL) {
-	Tcl_DStringTrunc(dsPtr, 0);
-	Tcl_DStringAppend(dsPtr, start, len);
+        Tcl_DStringTrunc(dsPtr, 0);
+        Tcl_DStringAppend(dsPtr, start, len);
     } else {
-	/* NB: ExternalToUtfDString will re-init dstring. */
-	Tcl_DStringFree(dsPtr);
-	Tcl_ExternalToUtfDString(encoding, start, len, dsPtr);
+        /* NB: ExternalToUtfDString will re-init dstring. */
+        Tcl_DStringFree(dsPtr);
+        Tcl_ExternalToUtfDString(encoding, start, len, dsPtr);
     }
     return dsPtr->string;
 }

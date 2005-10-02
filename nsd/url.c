@@ -31,7 +31,7 @@
 /* 
  * url.c --
  *
- *	Parse URLs.
+ *      Parse URLs.
  */
 
 #include "nsd.h"
@@ -44,25 +44,25 @@ NS_RCSID("@(#) $Header$");
  *
  * Ns_RelativeUrl --
  *
- *	If the url passed in is for this server, then the initial 
- *	part of the URL is stripped off. e.g., on a server whose 
- *	location is http://www.foo.com, Ns_RelativeUrl of 
- *	"http://www.foo.com/hello" will return "/hello". 
+ *      If the url passed in is for this server, then the initial 
+ *      part of the URL is stripped off. e.g., on a server whose 
+ *      location is http://www.foo.com, Ns_RelativeUrl of 
+ *      "http://www.foo.com/hello" will return "/hello". 
  *
  * Results:
- *	A pointer to the beginning of the relative url in the 
- *	passed-in url, or NULL if error.
+ *      A pointer to the beginning of the relative url in the 
+ *      passed-in url, or NULL if error.
  *
  * Side effects:
- *	Will set errno on error.
+ *      Will set errno on error.
  *
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_RelativeUrl(char *url, char *location)
+CONST char *
+Ns_RelativeUrl(CONST char *url, CONST char *location)
 {
-    char *v;
+    CONST char *v;
 
     if (url == NULL || location == NULL) {
         return NULL;
@@ -76,7 +76,7 @@ Ns_RelativeUrl(char *url, char *location)
      * url="http://www.foo.com/a/b" then after the call,
      * v="/a/b", or NULL if there's a mismatch.
      */
-    
+
     v = Ns_Match(location, url);
     if (v != NULL) {
         url = v;
@@ -93,24 +93,24 @@ Ns_RelativeUrl(char *url, char *location)
  *
  * Ns_ParseUrl --
  *
- *	Parse a URL into its component parts 
+ *      Parse a URL into its component parts 
  *
  * Results:
- *	NS_OK or NS_ERROR 
+ *      NS_OK or NS_ERROR 
  *
  * Side effects:
- *	Pointers to the protocol, host, port, path, and "tail" (last 
- *	path element) will be set by reference in the passed-in pointers.
- *	The passed-in url will be modified.
+ *      Pointers to the protocol, host, port, path, and "tail" (last 
+ *      path element) will be set by reference in the passed-in pointers.
+ *      The passed-in url will be modified.
  *
  *----------------------------------------------------------------------
  */
 
 int
 Ns_ParseUrl(char *url, char **pprotocol, char **phost,
-	    char **pport, char **ppath, char **ptail)
+            char **pport, char **ppath, char **ptail)
 {
-    char           *end;
+    char *end;
 
     *pprotocol = NULL;
     *phost = NULL;
@@ -127,112 +127,115 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
     
     end = strchr(url, ':');
     if (end != NULL) {
-	/*
-	 * There is a protocol specified. Clear out the colon.
-	 * Set pprotocol to the start of the protocol, and url to
-	 * the first character after the colon.
-	 *
-	 * http\0//www.foo.com:8000/baz/blah/spoo.html
-	 * ^   ^ ^
-	 * |   | +-- url
-	 * |   +-- end
-	 * +-------- *pprotocol
-	 */
-	
+
+        /*
+         * There is a protocol specified. Clear out the colon.
+         * Set pprotocol to the start of the protocol, and url to
+         * the first character after the colon.
+         *
+         * http\0//www.foo.com:8000/baz/blah/spoo.html
+         * ^   ^ ^
+         * |   | +-- url
+         * |   +-- end
+         * +-------- *pprotocol
+         */
+    
         *end = '\0';
         *pprotocol = url;
         url = end + 1;
-        if ((*url == '/') &&
-            (*(url + 1) == '/')) {
+        if (url[0] == '/' && url[1] == '/') {
 
-	    /*
-	     * There are two slashes, which means a host is specified.
-	     * Advance url past that and set *phost.
-	     *
-	     * http\0//www.foo.com:8000/baz/blah/spoo.html
-	     * ^   ^   ^
-	     * |   |   +-- url, *phost
-	     * |   +-- end
-	     * +-------- *pprotocol
-	     */
-	    
+            /*
+             * There are two slashes, which means a host is specified.
+             * Advance url past that and set *phost.
+             *
+             * http\0//www.foo.com:8000/baz/blah/spoo.html
+             * ^   ^   ^
+             * |   |   +-- url, *phost
+             * |   +-- end
+             * +-------- *pprotocol
+             */
+
             url = url + 2;
 
             *phost = url;
 
-	    /*
-	     * Look for a port number, which is optional.
-	     */
-	    
+            /*
+             * Look for a port number, which is optional.
+             */
+
             end = strchr(url, ':');
             if (end != NULL) {
-		/*
-		 * A port was specified. Clear the colon and
-		 * set *pport to the first digit.
-		 *
-		 * http\0//www.foo.com\08000/baz/blah/spoo.html
-		 * ^       ^          ^ ^
-		 * |       +-- *phost | +------ url, *pport
-		 * +----- *pprotocol  +--- end
-		 */
-		 
+
+                /*
+                 * A port was specified. Clear the colon and
+                 * set *pport to the first digit.
+                 *
+                 * http\0//www.foo.com\08000/baz/blah/spoo.html
+                 * ^       ^          ^ ^
+                 * |       +-- *phost | +------ url, *pport
+                 * +----- *pprotocol  +--- end
+                 */
+
                 *end = '\0';
                 url = end + 1;
                 *pport = url;
             }
 
-	    /*
-	     * Move up to the slash which starts the path/tail.
-	     * Clear out the dividing slash.
-	     *
-	     * http\0//www.foo.com\08000\0baz/blah/spoo.html
-	     * ^       ^            ^   ^ ^
-	     * |       |            |   | +-- url
-	     * |       +-- *phost   |   +-- end
-	     * +----- *pprotocol    +-- *pport
-	     */
-	    
+            /*
+             * Move up to the slash which starts the path/tail.
+             * Clear out the dividing slash.
+             *
+             * http\0//www.foo.com\08000\0baz/blah/spoo.html
+             * ^       ^            ^   ^ ^
+             * |       |            |   | +-- url
+             * |       +-- *phost   |   +-- end
+             * +----- *pprotocol    +-- *pport
+             */
+
             end = strchr(url, '/');
             if (end == NULL) {
-		/*
-		 * No path or tail specified. Return.
-		 */
-		
+
+                /*
+                 * No path or tail specified. Return.
+                 */
+
                 *ppath = "";
                 *ptail = "";
                 return NS_OK;
             }
             *end = '\0';
-	    url = end + 1;
+            url = end + 1;
         } else {
-	    /*
-	     * The URL must have been an odd one without a hostname.
-	     * Move the URL up past the dividing slash.
-	     *
-	     * http\0/baz/blah/spoo.html
-	     * ^   ^  ^
-	     * |   |  +-- url
-	     * |   +-- end
-	     * +-------- *pprotocol
-	     */
-	     
+
+            /*
+             * The URL must have been an odd one without a hostname.
+             * Move the URL up past the dividing slash.
+             *
+             * http\0/baz/blah/spoo.html
+             * ^   ^  ^
+             * |   |  +-- url
+             * |   +-- end
+             * +-------- *pprotocol
+             */
+
             url++;
         }
 
-	/*
-	 * Set the path to URL and advance to the last slash.
-	 * Set ptail to the character after that, or if there is none,
-	 * it becomes path and path becomes an empty string.
-	 *
-	 * http\0//www.foo.com\08000\0baz/blah/spoo.html
-	 * ^       ^            ^   ^ ^       ^^
-	 * |       |            |   | |       |+-- *ptail
-	 * |       |            |   | |       +-- end
-	 * |       |            |   | +-- *ppath
-	 * |       +-- *phost   |   +-- end
-	 * +----- *pprotocol    +-- *pport
-	 */
-	
+        /*
+         * Set the path to URL and advance to the last slash.
+         * Set ptail to the character after that, or if there is none,
+         * it becomes path and path becomes an empty string.
+         *
+         * http\0//www.foo.com\08000\0baz/blah/spoo.html
+         * ^       ^            ^   ^ ^       ^^
+         * |       |            |   | |       |+-- *ptail
+         * |       |            |   | |       +-- end
+         * |       |            |   | +-- *ppath
+         * |       +-- *phost   |   +-- end
+         * +----- *pprotocol    +-- *pport
+         */
+
         *ppath = url;
         end = strrchr(url, '/');
         if (end == NULL) {
@@ -243,21 +246,22 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             *ptail = end + 1;
         }
     } else {
-	/*
-	 * This URL does not have a colon. If it begins with a slash, then
-	 * separate the tail from the path, otherwise it's all tail.
-	 */
-	
+
+        /*
+         * This URL does not have a colon. If it begins with a slash, then
+         * separate the tail from the path, otherwise it's all tail.
+         */
+
         if (*url == '/') {
             url++;
             *ppath = url;
 
-	    /*
-	     * Find the last slash on the right and everything after that
-	     * becomes tail; if there are no slashes then it's all tail
-	     * and path is an empty string.
-	     */
-	    
+            /*
+             * Find the last slash on the right and everything after that
+             * becomes tail; if there are no slashes then it's all tail
+             * and path is an empty string.
+             */
+
             end = strrchr(url, '/');
             if (end == NULL) {
                 *ptail = *ppath;
@@ -268,10 +272,10 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
             }
         } else {
 
-	    /*
-	     * Just set the tail, there are no slashes.
-	     */
-	    
+            /*
+             * Just set the tail, there are no slashes.
+             */
+
             *ptail = url;
         }
     }
@@ -284,48 +288,53 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
  *
  * Ns_AbsoluteUrl --
  *
- *	Construct an URL based on baseurl but with as many parts of 
- *	the incomplete url as possible. 
+ *      Construct an URL based on baseurl but with as many parts of
+ *      the incomplete url as possible.
  *
  * Results:
- *	NS_OK or NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_AbsoluteUrl(Ns_DString *dsPtr, char *url, char *base)
+Ns_AbsoluteUrl(Ns_DString *dsPtr, CONST char *url, CONST char *base)
 {
-    char           *protocol, *host, *port, *path, *tail, *baseprotocol,
-                   *basehost, *baseport, *basepath, *basetail;
-    int             status = NS_OK;
+    Ns_DString  urlDs, baseDs;
+    char       *proto, *host, *port, *path, *tail;
+    char       *bproto, *bhost, *bport, *bpath, *btail;
+    int        status = NS_OK;
 
     /*
      * Copy the URL's to allow Ns_ParseUrl to destory them.
      */
 
-    url = ns_strdup(url);
-    base = ns_strdup(base);
-    Ns_ParseUrl(url, &protocol, &host, &port, &path, &tail);
-    Ns_ParseUrl(base, &baseprotocol, &basehost, &baseport, &basepath, &basetail);
-    if (baseprotocol == NULL || basehost == NULL || basepath == NULL) {
+    Ns_DStringInit(&urlDs);
+    Ns_DStringAppend(&urlDs, url);
+    Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
+
+    Ns_DStringInit(&baseDs);
+    Ns_DStringAppend(&baseDs, base);
+    Ns_ParseUrl(baseDs.string, &bproto, &bhost, &bport, &bpath, &btail);
+
+    if (bproto == NULL || bhost == NULL || bpath == NULL) {
         status = NS_ERROR;
         goto done;
     }
-    if (protocol == NULL) {
-        protocol = baseprotocol;
+    if (proto == NULL) {
+        proto = bproto;
     }
     if (host == NULL) {
-        host = basehost;
-        port = baseport;
+        host = bhost;
+        port = bport;
     }
     if (path == NULL) {
-        path = basepath;
+        path = bpath;
     }
-    Ns_DStringVarAppend(dsPtr, protocol, "://", host, NULL);
+    Ns_DStringVarAppend(dsPtr, proto, "://", host, NULL);
     if (port != NULL) {
         Ns_DStringVarAppend(dsPtr, ":", port, NULL);
     }
@@ -335,7 +344,8 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, char *url, char *base)
         Ns_DStringVarAppend(dsPtr, "/", path, "/", tail, NULL);
     }
 done:
-    ns_free(url);
-    ns_free(base);
+    Ns_DStringFree(&urlDs);
+    Ns_DStringFree(&baseDs);
+
     return status;
 }

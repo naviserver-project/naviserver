@@ -88,14 +88,14 @@ NsAdpRequestProc(void *arg, Ns_Conn *conn)
  */
 
 int
-Ns_AdpRequest(Ns_Conn *conn, char *file)
+Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
 {
     Conn             *connPtr = (Conn *) conn;
     Tcl_Interp       *interp;
     Tcl_DString       rds, tds;
     NsInterp         *itPtr;
     int               status;
-    char             *type, *start;
+    CONST char       *type, *start;
     Ns_Set           *setPtr;
     NsServer         *servPtr;
     Tcl_Obj          *objv[2];
@@ -312,7 +312,7 @@ NsAdpCompress(NsInterp *itPtr, int compress)
  */
 
 void
-NsAdpSetMimeType(NsInterp *itPtr, char *type)
+NsAdpSetMimeType(NsInterp *itPtr, CONST char *type)
 {
     Tcl_Encoding encoding;
 

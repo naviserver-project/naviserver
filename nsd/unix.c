@@ -241,7 +241,7 @@ NsSendSignal(int sig)
  */
 
 int
-NsMemMap(char *path, int size, int mode, FileMap *mapPtr)
+NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
 {
     /*
      * Open the file according to map mode

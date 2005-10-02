@@ -109,8 +109,8 @@ NsInitRequests(void)
  */
 
 void
-Ns_RegisterRequest(char *server, char *method, char *url, Ns_OpProc *proc,
-                   Ns_Callback *delete, void *arg, int flags)
+Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
+                   Ns_OpProc *proc, Ns_Callback *delete, void *arg, int flags)
 {
     Req *reqPtr;
 
@@ -144,8 +144,8 @@ Ns_RegisterRequest(char *server, char *method, char *url, Ns_OpProc *proc,
  */
 
 void
-Ns_GetRequest(char *server, char *method, char *url, Ns_OpProc **procPtr,
-              Ns_Callback **deletePtr, void **argPtr, int *flagsPtr)
+Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
+              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr, int *flagsPtr)
 {
     Req *reqPtr;
 
@@ -184,7 +184,8 @@ Ns_GetRequest(char *server, char *method, char *url, Ns_OpProc **procPtr,
  */
 
 void
-Ns_UnRegisterRequest(char *server, char *method, char *url, int inherit)
+Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
+                     int inherit)
 {
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificDestroy(server, method, url, uid,
@@ -260,7 +261,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
  */
 
 int
-Ns_ConnRedirect(Ns_Conn *conn, char *url)
+Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
 {
     int status;
 
@@ -315,7 +316,7 @@ Ns_ConnRedirect(Ns_Conn *conn, char *url)
  */
 
 void
-Ns_RegisterProxyRequest(char *server, char *method, char *protocol,
+Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *protocol,
                         Ns_OpProc *proc, Ns_Callback *delete, void *arg)
 {
     NsServer      *servPtr;
@@ -366,7 +367,8 @@ Ns_RegisterProxyRequest(char *server, char *method, char *protocol,
  */
 
 void
-Ns_UnRegisterProxyRequest(char *server, char *method, char *protocol)
+Ns_UnRegisterProxyRequest(CONST char *server, CONST char *method,
+                          CONST char *protocol)
 {
     NsServer      *servPtr;
     Ns_DString     ds;
@@ -509,7 +511,7 @@ NsTclRequestArgProc(Tcl_DString *dsPtr, void *arg)
  */
  
 void
-NsGetRequestProcs(Tcl_DString *dsPtr, char *server)
+NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server)
 {
     NsServer *servPtr;
  

@@ -45,9 +45,9 @@ NS_RCSID("@(#) $Header$");
  */
 
 static int ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan,
-    	    	    FILE *fp, int fd);
+                    FILE *fp, int fd);
 static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
-		    FILE *fp, int fd);
+                    FILE *fp, int fd);
  
 
 /*
@@ -55,13 +55,13 @@ static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
  *
  * Ns_ConnInit --
  *
- *	Initialize a connection (no longer used).
+ *      Initialize a connection (no longer used).
  *
  * Results:
- *	Always NS_OK.
+ *      Always NS_OK.
  * 
  * Side effects:
- *	None.
+ *      None.
  *
  *-----------------------------------------------------------------
  */
@@ -76,14 +76,16 @@ Ns_ConnInit(Ns_Conn *conn)
 /*
  *-----------------------------------------------------------------
  *
- * Ns_ConnClose - Close a connection.
+ * Ns_ConnClose --
+ *
+ *      Close a connection.
  *
  * Results:
- *	Always NS_OK.
+ *      Always NS_OK.
  * 
  * Side effects:
- *	The underlying socket in the connection is closed or moved
- *	to the waiting keep-alive list.
+ *      The underlying socket in the connection is closed or moved
+ *      to the waiting keep-alive list.
  *
  *-----------------------------------------------------------------
  */
@@ -91,31 +93,32 @@ Ns_ConnInit(Ns_Conn *conn)
 int
 Ns_ConnClose(Ns_Conn *conn)
 {
-    Conn             *connPtr = (Conn *)conn;
-    int		      keep;
+    Conn *connPtr = (Conn *) conn;
+    int   keep;
     
     if (connPtr->sockPtr != NULL) {
 
-	keep = (conn->flags & NS_CONN_KEEPALIVE) ? 1 : 0;
+        keep = (conn->flags & NS_CONN_KEEPALIVE) ? 1 : 0;
 
         /*
          * In chunked mode we must send the last chunk with zero size
          */
 
-        if ((conn->flags & NS_CONN_WRITE_CHUNKED) &&
-            !(conn->flags & NS_CONN_SENT_LAST_CHUNK)) {
+        if ((conn->flags & NS_CONN_WRITE_CHUNKED)
+            && !(conn->flags & NS_CONN_SENT_LAST_CHUNK)) {
             if (Ns_WriteConn(conn, 0, 0) != NS_OK) {
                 keep = 0;
             }
         }
 
-	NsSockClose(connPtr->sockPtr, keep);
-	connPtr->sockPtr = NULL;
-	connPtr->flags |= NS_CONN_CLOSED;
-	if (connPtr->itPtr != NULL) {
-	    NsTclRunAtClose(connPtr->itPtr);
-	}
+        NsSockClose(connPtr->sockPtr, keep);
+        connPtr->sockPtr = NULL;
+        connPtr->flags |= NS_CONN_CLOSED;
+        if (connPtr->itPtr != NULL) {
+            NsTclRunAtClose(connPtr->itPtr);
+        }
     }
+
     return NS_OK;
 }
 
@@ -125,16 +128,16 @@ Ns_ConnClose(Ns_Conn *conn)
  *
  * Ns_ConnSend --
  *
- *	Sends buffers to clients, including any queued
- *	write-behind data if necessary.  Unlike in
- *	previous versions of AOLserver, this routine
- *	attempts to send all data if possible.
+ *      Sends buffers to clients, including any queued
+ *      write-behind data if necessary.  Unlike in
+ *      previous versions, this routine attempts to send
+ *      all data if possible.
  *
  * Results:
- *	Number of bytes written, -1 for error on first send.
+ *      Number of bytes written, -1 for error on first send.
  *
  * Side effects:
- *	Will truncate queued data after send.
+ *      Will truncate queued data after send.
  *
  *----------------------------------------------------------------------
  */
@@ -142,12 +145,12 @@ Ns_ConnClose(Ns_Conn *conn)
 int
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
-    Conn	   *connPtr = (Conn *) conn;
-    int         nwrote, towrite, i, n;
-    struct iovec    sbufs[NS_CONN_MAXBUFS];
+    Conn         *connPtr = (Conn *) conn;
+    int           nwrote, towrite, i, n;
+    struct iovec  sbufs[NS_CONN_MAXBUFS];
 
     if (connPtr->sockPtr == NULL) {
-	return -1;
+        return -1;
     }
 
     /*
@@ -158,64 +161,66 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     towrite = 0;
     n = 0;
     if (connPtr->queued.length > 0) {
-	sbufs[n].iov_base = connPtr->queued.string;
-	sbufs[n].iov_len = connPtr->queued.length;
-	towrite += sbufs[n].iov_len;
-	++n;
+        sbufs[n].iov_base = connPtr->queued.string;
+        sbufs[n].iov_len = connPtr->queued.length;
+        towrite += sbufs[n].iov_len;
+        ++n;
     }
     for (i = 0; i < nbufs && n < NS_CONN_MAXBUFS; ++i) {
-	if (bufs[i].iov_len > 0 && bufs[i].iov_base != NULL) {
-	    sbufs[n].iov_base = bufs[i].iov_base;
-	    sbufs[n].iov_len = bufs[i].iov_len;
-	    towrite += bufs[i].iov_len;
-	    ++n;
-	}
+        if (bufs[i].iov_len > 0 && bufs[i].iov_base != NULL) {
+            sbufs[n].iov_base = bufs[i].iov_base;
+            sbufs[n].iov_len = bufs[i].iov_len;
+            towrite += bufs[i].iov_len;
+            ++n;
+        }
     }
     nbufs = n;
     bufs = sbufs;
     n = nwrote = 0;
     while (towrite > 0) {
-	n = NsSockSend(connPtr->sockPtr, bufs, nbufs);
-	if (n < 0) {
-	    break;
-	}
-	towrite -= n;
-	nwrote  += n;
-	if (towrite > 0) {
-	    for (i = 0; i < nbufs && n > 0; ++i) {
-		if (n > (int) bufs[i].iov_len) {
-		    n -= bufs[i].iov_len;
-		    bufs[i].iov_base = NULL;
-		    bufs[i].iov_len = 0;
-		} else {
-		    bufs[i].iov_base = (char *) bufs[i].iov_base + n;
-		    bufs[i].iov_len -= n;
-		    n = 0;
-		}
-	    }
-	}
+        n = NsSockSend(connPtr->sockPtr, bufs, nbufs);
+        if (n < 0) {
+            break;
+        }
+        towrite -= n;
+        nwrote  += n;
+        if (towrite > 0) {
+            for (i = 0; i < nbufs && n > 0; ++i) {
+                if (n > (int) bufs[i].iov_len) {
+                    n -= bufs[i].iov_len;
+                    bufs[i].iov_base = NULL;
+                    bufs[i].iov_len = 0;
+                } else {
+                    bufs[i].iov_base = (char *) bufs[i].iov_base + n;
+                    bufs[i].iov_len -= n;
+                    n = 0;
+                }
+            }
+        }
     }
     if (nwrote > 0) {
         connPtr->nContentSent += nwrote;
-	if (connPtr->queued.length > 0) {
-	    n = connPtr->queued.length - nwrote;
-	    if (n <= 0) {
-		nwrote -= connPtr->queued.length;
-		Tcl_DStringTrunc(&connPtr->queued, 0);
-	    } else {
-		memmove(connPtr->queued.string,
-		    connPtr->queued.string + nwrote, (size_t)n);
-		Tcl_DStringTrunc(&connPtr->queued, n);
-		nwrote = 0;
-	    }
-	}
+        if (connPtr->queued.length > 0) {
+            n = connPtr->queued.length - nwrote;
+            if (n <= 0) {
+                nwrote -= connPtr->queued.length;
+                Tcl_DStringTrunc(&connPtr->queued, 0);
+            } else {
+                memmove(connPtr->queued.string,
+                        connPtr->queued.string + nwrote, (size_t)n);
+                Tcl_DStringTrunc(&connPtr->queued, n);
+                nwrote = 0;
+            }
+        }
     } else {
+
         /*
          * Return error on first send, if any, from NsSockSend above.
          */
 
         nwrote = n;
     }
+
     return nwrote;
 }
 
@@ -225,28 +230,27 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
  *
  * Ns_ConnWrite --
  *
- *	Send a single buffer to the client.
+ *      Send a single buffer to the client.
  *
  * Results:
- *	# of bytes written from buffer or -1 on error.
+ *      # of bytes written from buffer or -1 on error.
  *
  * Side effects:
- *	Stuff may be written. In chunked mode writing 0 bytes means
+ *      Stuff may be written. In chunked mode writing 0 bytes means
  *      terminating chunked stream with zero chunk and ending CRLF
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConnWrite(Ns_Conn *conn, void *vbuf, int towrite)
+Ns_ConnWrite(Ns_Conn *conn, CONST void *vbuf, int towrite)
 {
-    int nsend;
-    char hdr[32];
+    int          nsend;
+    char         hdr[32];
     struct iovec buf[3];
 
     if (!(conn->flags & NS_CONN_WRITE_CHUNKED)) {
-
-        buf[0].iov_base = vbuf;
+        buf[0].iov_base = (void *) vbuf;
         buf[0].iov_len = towrite;
         return Ns_ConnSend(conn, buf, 1);
     }
@@ -257,7 +261,7 @@ Ns_ConnWrite(Ns_Conn *conn, void *vbuf, int towrite)
 
     buf[0].iov_base = hdr;
     buf[0].iov_len = sprintf(hdr, "%x\r\n", towrite);
-    buf[1].iov_base = vbuf;
+    buf[1].iov_base = (void *) vbuf;
     buf[1].iov_len = towrite;
     buf[2].iov_base = "\r\n";
     buf[2].iov_len = 2;
@@ -281,6 +285,7 @@ Ns_ConnWrite(Ns_Conn *conn, void *vbuf, int towrite)
     if (towrite == 0 && (conn->flags & NS_CONN_WRITE_CHUNKED)) {
         conn->flags |= NS_CONN_SENT_LAST_CHUNK;
     }
+
     return nsend;
 }
 
@@ -290,23 +295,23 @@ Ns_ConnWrite(Ns_Conn *conn, void *vbuf, int towrite)
  *
  * Ns_WriteConn --
  *
- *	This will write a buffer to the conn. It promises to write 
- *	all of it. 
+ *      This will write a buffer to the conn. It promises to write 
+ *      all of it. 
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	Stuff may be written 
+ *      Stuff may be written 
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_WriteConn(Ns_Conn *conn, char *buf, int len)
+Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int len)
 {
     if (Ns_ConnWrite(conn, buf, len) != len) {
-	return NS_ERROR;
+        return NS_ERROR;
     }
     return NS_OK;
 }
@@ -318,7 +323,7 @@ Ns_WriteConn(Ns_Conn *conn, char *buf, int len)
  *
  * Ns_WriteCharConn --
  *
- *	This will write a string buffer to the conn.  The distinction
+ *      This will write a string buffer to the conn.  The distinction
  *      being that the given data is explicitly a UTF8 character string,
  *      and will be put out in an 'encoding-aware' manner.
  *      It promises to write all of it.
@@ -336,19 +341,19 @@ Ns_WriteConn(Ns_Conn *conn, char *buf, int len)
  *      translate them to the preset encoding.
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	Stuff may be written 
+ *      Stuff may be written 
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_WriteCharConn(Ns_Conn *conn, char *buf, int len)
+Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int len)
 {
     int             status;
-    char           *utfBytes;
+    CONST char     *utfBytes;
     int             utfCount; /* # of bytes in utfBytes */
     int             utfConvertedCount;  /* # of bytes of utfBytes converted */
     char            encodedBytes[IOBUFSZ];
@@ -359,45 +364,46 @@ Ns_WriteCharConn(Ns_Conn *conn, char *buf, int len)
     status = NS_OK;
 
     if (connPtr->encoding == NULL) {
-
-	status = Ns_WriteConn(conn, buf, len);
-
+        status = Ns_WriteConn(conn, buf, len);
     } else {
 
-	utfBytes = buf;
-	utfCount = len;
-	interp = Ns_GetConnInterp(conn);
+        utfBytes = buf;
+        utfCount = len;
+        interp = Ns_GetConnInterp(conn);
 
-	while (utfCount > 0 && status == NS_OK) {
+        while (utfCount > 0 && status == NS_OK) {
 
-	    /* Convert a chunk to the desired encoding. */
+            /*
+             * Convert a chunk to the desired encoding.
+             */
 
-	    status = Tcl_UtfToExternal(interp,
-		connPtr->encoding,
-		utfBytes, utfCount,
-		0, NULL,              /* flags, encoding state */
-		encodedBytes, sizeof(encodedBytes),
-		&utfConvertedCount,
-		&encodedCount,
-		NULL                  /* # of chars encoded */
-	    );
+            status = Tcl_UtfToExternal(interp,
+                         connPtr->encoding,
+                         utfBytes, utfCount,
+                         0, NULL,              /* flags, encoding state */
+                         encodedBytes, sizeof(encodedBytes),
+                         &utfConvertedCount,
+                         &encodedCount,
+                         NULL);                /* # of chars encoded */
 
-	    if (status != TCL_OK && status != TCL_CONVERT_NOSPACE) {
-		status = NS_ERROR;
-		break;
-	    }
+            if (status != TCL_OK && status != TCL_CONVERT_NOSPACE) {
+                status = NS_ERROR;
+                break;
+            }
 
-	    /* Send the converted chunk. */
+            /*
+             * Send the converted chunk.
+             */
 
-	    status = NS_OK;
-	    buf = encodedBytes;
-	    len = encodedCount;
+            status = NS_OK;
+            buf = encodedBytes;
+            len = encodedCount;
 
-	    status = Ns_WriteConn(conn, buf, len);
+            status = Ns_WriteConn(conn, buf, len);
 
-	    utfCount -= utfConvertedCount;
-	    utfBytes += utfConvertedCount;
-	}
+            utfCount -= utfConvertedCount;
+            utfBytes += utfConvertedCount;
+        }
     }
 
     return status;
@@ -409,22 +415,22 @@ Ns_WriteCharConn(Ns_Conn *conn, char *buf, int len)
  *
  * Ns_ConnPuts --
  *
- *	Write a null-terminated string to the conn; no trailing 
- *	newline will be appended despite the name. 
+ *      Write a null-terminated string to the conn; no trailing 
+ *      newline will be appended despite the name. 
  *
  * Results:
- *	See Ns_WriteConn 
+ *      See Ns_WriteConn 
  *
  * Side effects:
- *	See Ns_WriteConn 
+ *      See Ns_WriteConn 
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConnPuts(Ns_Conn *conn, char *string)
+Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
 {
-    return Ns_WriteConn(conn, string, (int)strlen(string));
+    return Ns_WriteConn(conn, string, (int) strlen(string));
 }
 
 
@@ -433,13 +439,13 @@ Ns_ConnPuts(Ns_Conn *conn, char *string)
  *
  * Ns_ConnSendDString --
  *
- *	Write contents of a DString
+ *      Write contents of a DString
  *
  * Results:
- *	See Ns_WriteConn 
+ *      See Ns_WriteConn 
  *
  * Side effects:
- *	See Ns_WriteConn 
+ *      See Ns_WriteConn 
  *
  *----------------------------------------------------------------------
  */
@@ -456,13 +462,13 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
  *
  * Ns_ConnSendChannel, Fp, Fd, Buf --
  *
- *	Send an open channel, FILE, fd or memory buffer.
+ *      Send an open channel, FILE, fd or memory buffer.
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	See ConnSend().
+ *      See ConnSend().
  *
  *----------------------------------------------------------------------
  */
@@ -491,13 +497,13 @@ Ns_ConnSendFd(Ns_Conn *conn, int fd, int nsend)
  *
  * Ns_ConnFlushContent --
  *
- *	Finish reading waiting content.
+ *      Finish reading waiting content.
  *
  * Results:
- *	NS_OK.
+ *      NS_OK.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -505,14 +511,15 @@ Ns_ConnSendFd(Ns_Conn *conn, int fd, int nsend)
 int
 Ns_ConnFlushContent(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn    *connPtr = (Conn *) conn;
     Request *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
-	return -1;
+        return -1;
     }
     reqPtr->next  += reqPtr->avail;
     reqPtr->avail  = 0;
+
     return NS_OK;
 }
 
@@ -522,14 +529,14 @@ Ns_ConnFlushContent(Ns_Conn *conn)
  *
  * Ns_ConnGets --
  *
- *	Read in a string from a connection, stopping when either 
- *	we've run out of data, hit a newline, or had an error 
+ *      Read in a string from a connection, stopping when either 
+ *      we've run out of data, hit a newline, or had an error 
  *
  * Results:
- *	Pointer to given buffer or NULL on error.
+ *      Pointer to given buffer or NULL on error.
  *
  * Side effects:
- *	
+ *  
  *
  *----------------------------------------------------------------------
  */
@@ -541,15 +548,16 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
 
     p = buf;
     while (bufsize > 1) {
-	if (Ns_ConnRead(conn, p, 1) != 1) {
-	    return NULL;
-	}
+        if (Ns_ConnRead(conn, p, 1) != 1) {
+            return NULL;
+        }
         if (*p++ == '\n') {
             break;
-	}
+        }
         --bufsize;
     }
     *p = '\0';
+
     return buf;
 }
 
@@ -559,13 +567,13 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
  *
  * Ns_ConnRead --
  *
- *	Copy data from read-ahead buffers.
+ *      Copy data from read-ahead buffers.
  *
  * Results:
- *	Number of bytes copied.
+ *      Number of bytes copied.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -573,18 +581,19 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
 int
 Ns_ConnRead(Ns_Conn *conn, void *vbuf, int toread)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn    *connPtr = (Conn *) conn;
     Request *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
-	return -1;
+        return -1;
     }
     if (toread > reqPtr->avail) {
-	toread = reqPtr->avail;
+        toread = reqPtr->avail;
     }
     memcpy(vbuf, reqPtr->next, (size_t)toread);
     reqPtr->next  += toread;
     reqPtr->avail -= toread;
+
     return toread;
 }
 
@@ -594,13 +603,14 @@ Ns_ConnRead(Ns_Conn *conn, void *vbuf, int toread)
  *
  * Ns_ConnReadLine --
  *
- *	Read a line (\r\n or \n terminated) from the conn.
+ *      Read a line (\r\n or \n terminated) from the conn.
  *
  * Results:
- *	NS_OK or NS_ERROR 
+ *      NS_OK if a line was read.  NS_ERROR if no line ending
+ *      was found or the line would be too long.
  *
  * Side effects:
- *	Stuff may be read 
+ *      Stuff may be read 
  *
  *----------------------------------------------------------------------
  */
@@ -608,28 +618,29 @@ Ns_ConnRead(Ns_Conn *conn, void *vbuf, int toread)
 int
 Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, int *nreadPtr)
 {
-    Conn	   *connPtr = (Conn *) conn;
-    Request	   *reqPtr = connPtr->reqPtr;
+    Conn       *connPtr = (Conn *) conn;
+    Request    *reqPtr = connPtr->reqPtr;
     Driver     *drvPtr = connPtr->drvPtr;
-    char           *eol;
-    int             nread, ncopy;
+    char       *eol;
+    int         nread, ncopy;
 
     if (connPtr->sockPtr == NULL
-	|| (eol = strchr(reqPtr->next, '\n')) == NULL
-	|| (nread = (eol - reqPtr->next)) > drvPtr->maxline) {
-	return NS_ERROR;
+        || (eol = strchr(reqPtr->next, '\n')) == NULL
+        || (nread = (eol - reqPtr->next)) > drvPtr->maxline) {
+        return NS_ERROR;
     }
     ncopy = nread;
     ++nread;
     if (nreadPtr != NULL) {
- 	*nreadPtr = nread;
+        *nreadPtr = nread;
     }
     if (ncopy > 0 && eol[-1] == '\r') {
-	--ncopy;
+        --ncopy;
     }
     Ns_DStringNAppend(dsPtr, reqPtr->next, ncopy);
     reqPtr->next  += nread;
     reqPtr->avail -= nread;
+
     return NS_OK;
 }
 
@@ -639,13 +650,13 @@ Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, int *nreadPtr)
  *
  * Ns_ConnReadHeaders --
  *
- *	Read the headers and insert them into the passed-in set 
+ *      Read the headers and insert them into the passed-in set 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Stuff will be read from the conn 
+ *      Stuff will be read from the conn 
  *
  *----------------------------------------------------------------------
  */
@@ -655,7 +666,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, int *nreadPtr)
 {
     Ns_DString      ds;
     Conn           *connPtr = (Conn *) conn;
-    NsServer	   *servPtr = connPtr->servPtr;
+    NsServer       *servPtr = connPtr->servPtr;
     int             status, nread, nline, maxhdr;
 
     Ns_DStringInit(&ds);
@@ -678,9 +689,10 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, int *nreadPtr)
         }
     }
     if (nreadPtr != NULL) {
-	*nreadPtr = nread;
+        *nreadPtr = nread;
     }
     Ns_DStringFree(&ds);
+
     return status;
 }
 
@@ -690,13 +702,13 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, int *nreadPtr)
  *
  * Ns_ConnCopyToDString --
  *
- *	Copy data from a connection to a dstring.
+ *      Copy data from a connection to a dstring.
  *
  * Results:
- *	NS_OK or NS_ERROR 
+ *      NS_OK or NS_ERROR 
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -704,16 +716,17 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, int *nreadPtr)
 int
 Ns_ConnCopyToDString(Ns_Conn *conn, size_t tocopy, Ns_DString *dsPtr)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn    *connPtr = (Conn *) conn;
     Request *reqPtr = connPtr->reqPtr;
-    int ncopy = (int) tocopy;
+    int      ncopy = (int) tocopy;
 
     if (connPtr->sockPtr == NULL || reqPtr->avail < ncopy) {
-	return NS_ERROR;
+        return NS_ERROR;
     }
     Ns_DStringNAppend(dsPtr, reqPtr->next, ncopy);
     reqPtr->next  += ncopy;
     reqPtr->avail -= ncopy;
+
     return NS_OK;
 }
 
@@ -723,13 +736,13 @@ Ns_ConnCopyToDString(Ns_Conn *conn, size_t tocopy, Ns_DString *dsPtr)
  *
  * Ns_ConnCopyToFile, Fd, Channel --
  *
- *	Copy data from a connection to a channel, FILE, or fd. 
+ *      Copy data from a connection to a channel, FILE, or fd. 
  *
  * Results:
- *	NS_OK or NS_ERROR 
+ *      NS_OK or NS_ERROR 
  *
  * Side effects:
- *	See ConnCopy().
+ *      See ConnCopy().
  *
  *----------------------------------------------------------------------
  */
@@ -758,13 +771,13 @@ Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
  *
  * ConnCopy --
  *
- *	Copy connection content to a channel, FILE, or fd.
+ *      Copy connection content to a channel, FILE, or fd.
  *
  * Results:
- *  	NS_OK or NS_ERROR if not all content could be read.
+ *      NS_OK or NS_ERROR if not all content could be read.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -772,31 +785,31 @@ Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
 static int
 ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
 {
-    Conn       *connPtr = (Conn *) conn;
-    Request    *reqPtr = connPtr->reqPtr;
-    int		nwrote;
-    int		ncopy = (int) tocopy;
+    Conn    *connPtr = (Conn *) conn;
+    Request *reqPtr = connPtr->reqPtr;
+    int      nwrote;
+    int      ncopy = (int) tocopy;
 
     if (connPtr->sockPtr == NULL || reqPtr->avail < ncopy) {
-	return NS_ERROR;
+        return NS_ERROR;
     }
     while (ncopy > 0) {
-	if (chan != NULL) {
-	    nwrote = Tcl_Write(chan, reqPtr->next, ncopy);
-    	} else if (fp != NULL) {
+        if (chan != NULL) {
+            nwrote = Tcl_Write(chan, reqPtr->next, ncopy);
+        } else if (fp != NULL) {
             nwrote = fwrite(reqPtr->next, 1, (size_t)ncopy, fp);
             if (ferror(fp)) {
-		nwrote = -1;
-	    }
-	} else {
-	    nwrote = write(fd, reqPtr->next, (size_t)ncopy);
-	}
-	if (nwrote < 0) {
-	    return NS_ERROR;
-	}
-	ncopy -= nwrote;
-	reqPtr->next  += nwrote;
-	reqPtr->avail -= nwrote;
+                nwrote = -1;
+            }
+        } else {
+            nwrote = write(fd, reqPtr->next, (size_t)ncopy);
+        }
+        if (nwrote < 0) {
+            return NS_ERROR;
+        }
+        ncopy -= nwrote;
+        reqPtr->next  += nwrote;
+        reqPtr->avail -= nwrote;
     }
     return NS_OK;
 }
@@ -807,13 +820,13 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
  *
  * ConnSend --
  *
- *	Send content from a channel, FILE, or fd.
+ *      Send content from a channel, FILE, or fd.
  *
  * Results:
- *  	NS_OK or NS_ERROR if a write failed.
+ *      NS_OK or NS_ERROR if a write failed.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -821,13 +834,14 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
 static int
 ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
-    int             toread, nread, status;
-    char            buf[IOBUFSZ];
+    int   toread, nread, status;
+    char  buf[IOBUFSZ];
  
     /*
      * Even if nsend is 0, ensure all queued data (like HTTP response
      * headers) get flushed.
      */
+
     if (nsend == 0) {
         Ns_WriteConn(conn, NULL, 0);
     }

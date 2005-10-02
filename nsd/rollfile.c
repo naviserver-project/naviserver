@@ -30,7 +30,7 @@
 /*
  * rollfile.c --
  *
- *	Routines to roll files.
+ *      Routines to roll files.
  */
 
 #include "nsd.h"
@@ -38,7 +38,7 @@
 NS_RCSID("@(#) $Header$");
 
 typedef struct File {
-    time_t  	mtime;
+    time_t      mtime;
     char        name[4];
 } File;
 
@@ -58,20 +58,20 @@ static int Unlink(CONST char *file);
  *
  * Ns_RollFile --
  *
- *	Roll the log file. When the log is rolled, it gets renamed to 
- *	filename.xyz, where 000 <= xyz <= 999. Older files have 
- *	higher numbers. 
+ *      Roll the log file. When the log is rolled, it gets renamed to 
+ *      filename.xyz, where 000 <= xyz <= 999. Older files have 
+ *      higher numbers. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *  	If there were files: filename.000, filename.001, filename.002,
- *  	the names would end up thusly:
- *  	    filename.002 => filename.003
- *  	    filename.001 => filename.002
- *  	    filename.000 => filename.001
- *  	with nothing left named filename.000.
+ *      If there were files: filename.000, filename.001, filename.002,
+ *      the names would end up thusly:
+ *          filename.002 => filename.003
+ *          filename.001 => filename.002
+ *          filename.000 => filename.001
+ *      with nothing left named filename.000.
  *
  *----------------------------------------------------------------------
  */
@@ -85,43 +85,43 @@ Ns_RollFile(CONST char *file, int max)
     
     if (max < 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
-	       "must be > 0 and < 999", max);
-	return NS_ERROR;
+           "must be > 0 and < 999", max);
+        return NS_ERROR;
     }
     
     first = ns_malloc(strlen(file) + 5);
     sprintf(first, "%s.000", file);
     err = Exists(first);
     if (err > 0) {
-	next = ns_strdup(first);
-	num = 0;
-	do {
+        next = ns_strdup(first);
+        num = 0;
+        do {
             dot = strrchr(next, '.') + 1;
             sprintf(dot, "%03d", num++);
-	} while ((err = Exists(next)) == 1 && num < max);
-	num--;
-	if (err == 1) {
-    	    err = Unlink(next);
-	}
-	while (err == 0 && num-- > 0) {
+        } while ((err = Exists(next)) == 1 && num < max);
+        num--;
+        if (err == 1) {
+            err = Unlink(next);
+        }
+        while (err == 0 && num-- > 0) {
             dot = strrchr(first, '.') + 1;
             sprintf(dot, "%03d", num);
             dot = strrchr(next, '.') + 1;
             sprintf(dot, "%03d", num + 1);
-    	    err = Rename(first, next);
-	}
-	ns_free(next);
+            err = Rename(first, next);
+        }
+        ns_free(next);
     }
     if (err == 0) {
-    	err = Exists(file);
-	if (err > 0) {
-	    err = Rename(file, first);
-	}
+        err = Exists(file);
+        if (err > 0) {
+            err = Rename(file, first);
+        }
     }
     ns_free(first);
-    
+
     if (err != 0) {
-    	return NS_ERROR;
+        return NS_ERROR;
     }
     return NS_OK;
 }
@@ -132,16 +132,16 @@ Ns_RollFile(CONST char *file, int max)
  *
  * Ns_PurgeFiles, Ns_RollFileByDate --
  *
- *	Purge files by date, keeping max files.  The file parameter is
- *	used a basename to select files to purge.  Ns_RollFileByDate
- *	is a poorly named wrapper for historical reasons (rolling
- *	implies rotating filenames).
+ *      Purge files by date, keeping max files.  The file parameter is
+ *      used a basename to select files to purge.  Ns_RollFileByDate
+ *      is a poorly named wrapper for historical reasons (rolling
+ *      implies rotating filenames).
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	May remove (many) files.
+ *      May remove (many) files.
  *
  *----------------------------------------------------------------------
  */
@@ -161,11 +161,11 @@ Ns_PurgeFiles(CONST char *file, int max)
     File **files;
     int tlen, i, nfiles, status;
     Ns_DString dir, list;
-    
+
     status = NS_ERROR;
     Ns_DStringInit(&dir);
     Ns_DStringInit(&list);
-    
+
     /*
      * Determine the directory component. 
      */
@@ -173,9 +173,9 @@ Ns_PurgeFiles(CONST char *file, int max)
     Ns_NormalizePath(&dir, file);
     slash = strrchr (dir.string, '/');
     if (slash == NULL || slash[1] == '\0') {
-	Ns_Log (Error, "rollfile: failed to purge files: invalid path '%s'",
-		file);
-    	goto err;
+        Ns_Log (Error, "rollfile: failed to purge files: invalid path '%s'",
+                file);
+        goto err;
     }
     *slash = '\0';
     tail = slash + 1;
@@ -183,43 +183,44 @@ Ns_PurgeFiles(CONST char *file, int max)
     
     dp = opendir(dir.string);
     if (dp == NULL) {
-    	Ns_Log(Error, "rollfile: failed to purge files:opendir(%s) failed: '%s'",
-	       dir.string, strerror(errno));
-	goto err;
+        Ns_Log(Error, "rollfile: failed to purge files:opendir(%s) failed: '%s'",
+               dir.string, strerror(errno));
+        goto err;
     }
     while ((ent = ns_readdir(dp)) != NULL) {
-	if (strncmp(tail, ent->d_name, (size_t)tlen) != 0) {
-	    continue;
-	}
-    	if (!AppendFile(&list, dir.string, ent->d_name)) {
-	    closedir(dp);
-	    goto err;
-	}
+        if (strncmp(tail, ent->d_name, (size_t)tlen) != 0) {
+            continue;
+        }
+        if (!AppendFile(&list, dir.string, ent->d_name)) {
+            closedir(dp);
+            goto err;
+        }
     }
     closedir(dp);
 
     nfiles = list.length / sizeof(File *);
     if (nfiles >= max) {
-	files = (File **) list.string;
-	qsort(files, (size_t)nfiles, sizeof(File *), CmpFile);
-	for (i = max; i < nfiles; ++i) {
-	    if (Unlink(files[i]->name) != 0) {
-	    	goto err;
-	    }
-	}
+        files = (File **) list.string;
+        qsort(files, (size_t)nfiles, sizeof(File *), CmpFile);
+        for (i = max; i < nfiles; ++i) {
+            if (Unlink(files[i]->name) != 0) {
+                goto err;
+            }
+        }
     }
     status = NS_OK;
 
 err:
     nfiles = list.length / sizeof(File *);
     if (nfiles > 0) {
-	files = (File **) list.string;
-	for (i = 0; i < nfiles; ++i) {
-    	    ns_free(files[i]);
-	}
+        files = (File **) list.string;
+        for (i = 0; i < nfiles; ++i) {
+            ns_free(files[i]);
+        }
     }
     Ns_DStringFree(&list);
     Ns_DStringFree(&dir);
+
     return status;
 }
 
@@ -229,13 +230,13 @@ err:
  *
  * AppendFile --
  *
- *	Append a file entry with mtime to the list kept in the dstring.
+ *      Append a file entry with mtime to the list kept in the dstring.
  *
  * Results:
- *	1 if file added, 0 otherwise.
+ *      1 if file added, 0 otherwise.
  *
  * Side effects:
- *	Allocates memory for entry.
+ *      Allocates memory for entry.
  *
  *----------------------------------------------------------------------
  */
@@ -245,17 +246,18 @@ AppendFile(Ns_DString *dsPtr, CONST char *dir, CONST char *tail)
 {
     File *fPtr;
     struct stat st;
-    
+
     fPtr = ns_malloc(sizeof(File) + strlen(dir) + strlen(tail));
     sprintf(fPtr->name, "%s/%s", dir, tail);
     if (stat(fPtr->name, &st) != 0) {
-    	Ns_Log(Error, "rollfile: failed to append to file '%s': '%s'",
-	       fPtr->name, strerror(errno));
-    	ns_free(fPtr);
-	return 0;
+        Ns_Log(Error, "rollfile: failed to append to file '%s': '%s'",
+               fPtr->name, strerror(errno));
+        ns_free(fPtr);
+        return 0;
     }
     fPtr->mtime = st.st_mtime;
     Ns_DStringNAppend(dsPtr, (char *) &fPtr, sizeof(File *));
+
     return 1;
 }
 
@@ -265,13 +267,13 @@ AppendFile(Ns_DString *dsPtr, CONST char *dir, CONST char *tail)
  *
  * CmpFile --
  *
- *	qsort() callback to select oldest file.
+ *      qsort() callback to select oldest file.
  *
  * Results:
- *	Stadard qsort() result.
+ *      Stadard qsort() result.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -283,9 +285,9 @@ CmpFile(const void *arg1, const void *arg2)
     File *f2Ptr = *((File **) arg2);
     
     if (f1Ptr->mtime < f2Ptr->mtime) {
-	return 1;
+        return 1;
     } else if (f1Ptr->mtime > f2Ptr->mtime) {
-	return -1;
+        return -1;
     } 
     return 0;
 }
@@ -296,13 +298,13 @@ CmpFile(const void *arg1, const void *arg2)
  *
  * Unlink, Rename, Exists --
  *
- *	Simple wrappers used by Ns_RollFile and Ns_PurgeFiles.
+ *      Simple wrappers used by Ns_RollFile and Ns_PurgeFiles.
  *
  * Results:
- *	System call result (except Exists).
+ *      System call result (except Exists).
  *
  * Side effects:
- *	May modify filesystem.
+ *      May modify filesystem.
  *
  *----------------------------------------------------------------------
  */
@@ -311,11 +313,11 @@ static int
 Unlink(CONST char *file)
 {
     int err;
-    
+
     err = unlink(file);
     if (err != 0) {
         Ns_Log(Error, "rollfile: failed to delete file '%s': '%s'",
-	       file, strerror(errno));
+               file, strerror(errno));
     }
     return err;
 }
@@ -327,8 +329,8 @@ Rename(CONST char *from, CONST char *to)
     
     err = rename(from, to);
     if (err != 0) {
-    	Ns_Log(Error, "rollfile: failed to rename file '%s' to '%s': '%s'",
-	       from, to, strerror(errno));
+        Ns_Log(Error, "rollfile: failed to rename file '%s' to '%s': '%s'",
+               from, to, strerror(errno));
     }
     return err;
 }
@@ -339,13 +341,13 @@ Exists(CONST char *file)
     int exists;
     
     if (access(file, F_OK) == 0) {
-    	exists = 1;
+        exists = 1;
     } else if (errno == ENOENT) {
-    	exists = 0;
+        exists = 0;
     } else {
-	Ns_Log(Error, "rollfile: failed to determine if file '%s' exists: '%s'",
-	       file, strerror(errno));
-    	exists = -1;
+        Ns_Log(Error, "rollfile: failed to determine if file '%s' exists: '%s'",
+               file, strerror(errno));
+        exists = -1;
     }
     return exists;
 }

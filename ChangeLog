@@ -1,3 +1,26 @@
+2005-10-02  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/adpeval.c:
+	* nsd/adprequest.c:
+	* nsd/connio.c:
+	* nsd/encoding.c:
+	* nsd/fastpath.c:
+	* nsd/form.c:
+	* nsd/mimetypes.c:
+	* nsd/op.c:
+	* nsd/request.c:
+	* nsd/return.c:
+	* nsd/rollfile.c:
+	* nsd/str.c:
+	* nsd/tclrequest.c:
+	* nsd/unix.c:
+	* nsd/nswin32.c:
+	* nsd/url.c:
+	* nsd/urlspace.c:
+	* nsd/nsd.h:
+	* include/ns.h: Untabify, reformat, add CONST declarations and
+	GNUC attributes.
+
 2005-10-01  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/adprequest.c:
