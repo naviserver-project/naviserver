@@ -1,5 +1,18 @@
 2005-10-02  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/log.c:
+	* nsd/nsd.h: Remove NsParam* wrapper macros. Directly using
+	Ns_Config* is clearer (and grep-able).
+	* nsd/server.c:
+	* nsd/nsconf.c:
+	* nsd/queue.c: Use new Ns_Config* routines which handle defaults
+	and range checking.  Note: config file values which are less than
+	the lower bound of a range are rounded up and not converted to the
+	default value, as before.
+	* nsd/driver.c: Some config defaults have changed.
+	* nsd/nsconf.h: Removed.  Incroporated default values directly
+	into code.
+
 	* nsd/adpeval.c:
 	* nsd/adprequest.c:
 	* nsd/connio.c:

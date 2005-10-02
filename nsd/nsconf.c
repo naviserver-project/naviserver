@@ -37,13 +37,9 @@
 
 NS_RCSID("@(#) $Header$");
 
-/*
- * Local functions defined in this file.
- */
 
-static int GetInt(char *key, int def);
-static int GetBool(char *key, int def);
 struct _nsconf nsconf;
+
 
 
 /*
@@ -151,6 +147,7 @@ NsConfUpdate(void)
 {
     int i;
     Ns_DString ds;
+    char *path = NS_CONFIG_PARAMETERS;
     
     NsUpdateEncodings();
     NsUpdateMimeTypes();
@@ -163,7 +160,7 @@ NsConfUpdate(void)
      */
 
     if (!Ns_ConfigGetInt(NS_CONFIG_THREADS, "stacksize", &i)) {
-    	i = GetInt("stacksize", THREAD_STACKSIZE_INT);
+    	i = Ns_ConfigIntRange(path, "stacksize", 64*1024, 0, INT_MAX);
     }
     Ns_ThreadStackSize(i);
 
@@ -176,84 +173,46 @@ NsConfUpdate(void)
     /*
      * nsmain.c
      */
-         
-    nsconf.shutdowntimeout = GetInt("shutdowntimeout", SHUTDOWNTIMEOUT_INT);
+
+    nsconf.shutdowntimeout =
+        Ns_ConfigIntRange(path, "shutdowntimeout", 20, 0, INT_MAX);
 
     /*
      * sched.c
      */
 
-    nsconf.sched.maxelapsed = GetInt("schedmaxelapsed", SCHED_MAXELAPSED_INT);
+    nsconf.sched.maxelapsed =
+        Ns_ConfigIntRange(path, "schedmaxelapsed", 2, 0, INT_MAX);
 
     /*
      * binder.c, win32.c
      */
 
-    nsconf.backlog = GetInt("listenbacklog", SOCKLISTENBACKLOG_INT);
+    nsconf.backlog = Ns_ConfigIntRange(path, "listenbacklog", 32, 0, INT_MAX);
     
     /*
      * dns.c
      */
-     
-    if (GetBool("dnscache", DNS_CACHE_BOOL)) {
-	int max = GetInt("dnscachemaxentries", 100);
-	i = GetInt("dnscachetimeout", DNS_TIMEOUT_INT);
-	if (max > 0 && i > 0) {
-	    i *= 60; /* NB: Config minutes, seconds internally. */
-	    NsEnableDNSCache(i, max);
-	}
+
+    if (Ns_ConfigBool(path, "dnscache", NS_TRUE)) {
+        int max = Ns_ConfigInt(path, "dnscachemaxentries", 100);
+        i = Ns_ConfigInt(path, "dnscachetimeout", 60);
+        if (max > 0 && i > 0) {
+            i *= 60; /* NB: Config minutes, seconds internally. */
+            NsEnableDNSCache(i, max);
+        }
     }
 
     /*
      * tclinit.c
      */
 
-    nsconf.tcl.sharedlibrary = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "tcllibrary");
+    nsconf.tcl.sharedlibrary = Ns_ConfigGetValue(path, "tcllibrary");
     if (nsconf.tcl.sharedlibrary == NULL) {
         Ns_HomePath(&ds, "modules", "tcl", NULL);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
     }
-    nsconf.tcl.lockoninit = GetBool("tclinitlock", TCL_INITLCK_BOOL);
+    nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);
 
     Ns_DStringFree(&ds);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetInt, GetBool --
- *
- *	Helper routines for getting int or bool config values, using
- *	default values if necessary.
- *
- * Results:
- *	Int value of 1/0 bool.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-GetInt(char *key, int def)
-{
-    int i;
-
-    if (!Ns_ConfigGetInt(NS_CONFIG_PARAMETERS, key, &i) || i < 0) {
-	i = def;
-    }
-    return i;
-}
-
-static bool
-GetBool(char *key, int def)
-{
-    int i;
-
-    if (!Ns_ConfigGetBool(NS_CONFIG_PARAMETERS, key, &i)) {
-	i = def;
-    }
-    return i;
 }

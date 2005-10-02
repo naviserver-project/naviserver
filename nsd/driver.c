@@ -158,7 +158,7 @@ int
 Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 {
     char           *path,*address, *host, *bindaddr, *defproto, *defserver;
-    int             i, n, defport, controlFlag;
+    int             i, n, defport;
     ServerMap      *mapPtr;
     Tcl_HashEntry  *hPtr;
     Ns_DString      ds;
@@ -270,74 +270,38 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->arg = init->arg;
     drvPtr->opts = init->opts;
     drvPtr->servPtr = servPtr;
-    if (!Ns_ConfigGetInt(path, "bufsize", &n) || n < 1) { 
-        n = DRV_BUFSIZE_INT;
-    }
-    drvPtr->bufsize = n;
-    if (!Ns_ConfigGetInt(path, "rcvbuf", &n)) {
-        n = DRV_RCVBUF_INT;
-    }
-    drvPtr->rcvbuf = n;
-    if (!Ns_ConfigGetInt(path, "sndbuf", &n)) {
-        n = DRV_SNDBUF_INT;
-    }
-    drvPtr->sndbuf = n;
-    if (!Ns_ConfigGetInt(path, "sendwait", &n) || n < 1) {
-        n = DRV_SNDWAIT_INT;
-    }
-    drvPtr->sendwait = n;
-    if (!Ns_ConfigGetInt(path, "recvwait", &n) || n < 1) {
-        n = DRV_RCVWAIT_INT;
-    }
-    drvPtr->recvwait = n;
-    if (!Ns_ConfigGetInt(path, "closewait", &n) || n < 0) {
-        n = DRV_CLOSEWAIT_INT;
-    }
-    drvPtr->closewait = n;
-    if (!Ns_ConfigGetInt(path, "keepwait", &n) || n < 0) {
-        n = DRV_KEEPWAIT_INT;
-    }
-    drvPtr->keepwait = n;
-    if (!Ns_ConfigGetBool(path, "keepallmethods", &n)) {
-        n = DRV_KEEPALLMETHODS_BOOL;
-    }
-    drvPtr->keepallmethods = n;
-    if (!Ns_ConfigGetInt(path, "backlog", &n) || n < 1) {
-        n = nsconf.backlog;
-    }
-    drvPtr->backlog = n;
-    if (!Ns_ConfigGetInt(path, "maxinput", &n) || n < 1) {
-        n = DRV_MAXINPUT_INT;
-    }
-    drvPtr->maxinput = _MAX(n, DRV_MININPUT_INT);
-    if (!Ns_ConfigGetInt(path, "maxline", &n) || n < 1) {
-        n = DRV_MAXLINE_INT;
-    }
-    drvPtr->maxline = _MAX(n, DRV_MINLINE_INT);
-    if (!Ns_ConfigGetInt(path, "maxsize", &n) || n < 1) {
-        n = drvPtr->maxinput;
-    }
-    drvPtr->maxsize = n;
+
+    drvPtr->maxinput = Ns_ConfigIntRange(path, "maxinput", 1024*1024, 1024, INT_MAX);
+    drvPtr->maxline = Ns_ConfigIntRange(path, "maxline", 4096, 256, INT_MAX);
+    drvPtr->maxheaders = Ns_ConfigIntRange(path, "maxheaders", 128, 8, INT_MAX);
+    drvPtr->bufsize = Ns_ConfigIntRange(path, "bufsize", 16384, 1024, INT_MAX);
+    drvPtr->readahead = Ns_ConfigIntRange(path, "readahead", drvPtr->bufsize,
+                                          drvPtr->bufsize, drvPtr->maxinput);
+    drvPtr->sndbuf = Ns_ConfigIntRange(path, "sndbuf", 0, 0, INT_MAX);
+    drvPtr->rcvbuf = Ns_ConfigIntRange(path, "rcvbuf", 0, 0, INT_MAX);
+    drvPtr->sendwait = Ns_ConfigIntRange(path, "sendwait", 30, 1, INT_MAX);
+    drvPtr->recvwait = Ns_ConfigIntRange(path, "recvwait", 30, 1, INT_MAX);
+    drvPtr->closewait = Ns_ConfigIntRange(path, "closewait", 2, 0, INT_MAX);
+    drvPtr->keepwait = Ns_ConfigIntRange(path, "keepwait", 30, 0, INT_MAX);
+    drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
+    drvPtr->backlog = Ns_ConfigIntRange(path, "backlog", 64, 1, INT_MAX);
 
     /*
      * Allow specification of logging or not of various deep
      * socket handling errors.  These all default to Off.
      */
+
     drvPtr->loggingFlags = 0;
-    if (Ns_ConfigGetBool(path, "readtimeoutlogging", &controlFlag)
-        && controlFlag) {
+    if (Ns_ConfigBool(path, "readtimeoutlogging", NS_FALSE)) {
         drvPtr->loggingFlags |= LOGGING_READTIMEOUT;
     }
-    if (Ns_ConfigGetBool(path, "serverrejectlogging", &controlFlag)
-        && controlFlag) {
+    if (Ns_ConfigBool(path, "serverrejectlogging", NS_FALSE)) {
         drvPtr->loggingFlags |= LOGGING_SERVERREJECT;
     }
-    if (Ns_ConfigGetBool(path, "sockerrorlogging", &controlFlag)
-        && controlFlag) {
+    if (Ns_ConfigBool(path, "sockerrorlogging", NS_FALSE)) {
         drvPtr->loggingFlags |= LOGGING_SOCKERROR;
     }
-    if (Ns_ConfigGetBool(path, "sockshuterrorlogging", &controlFlag)
-        && controlFlag) {
+    if (Ns_ConfigBool(path, "sockshuterrorlogging", NS_FALSE)) {
         drvPtr->loggingFlags |= LOGGING_SOCKSHUTERROR;
     }
 
@@ -358,9 +322,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     drvPtr->protocol = ns_strdup(defproto);
     drvPtr->address = ns_strdup(address);
-    if (!Ns_ConfigGetInt(path, "port", &drvPtr->port)) {
-        drvPtr->port = defport;
-    }
+    drvPtr->port = Ns_ConfigInt(path, "port", defport);
     drvPtr->location = Ns_ConfigGetValue(path, "location");
     if (drvPtr->location != NULL && strstr(drvPtr->location, "://")) {
         drvPtr->location = ns_strdup(drvPtr->location);
@@ -1454,12 +1416,12 @@ SockRead(Sock *sockPtr)
     }
 
     /*
-     * Use temp file for large content if exceeds configured maxsize
+     * Use temp file for content larger than readahead bytes.
      */
 
 #ifndef _WIN32
     if (reqPtr->coff > 0 && 
-        reqPtr->length > sockPtr->drvPtr->maxsize &&
+        reqPtr->length > sockPtr->drvPtr->readahead &&
         sockPtr->tfd <= 0) {
         sockPtr->tfd = Ns_GetTemp();
         if (sockPtr->tfd < 0) {
@@ -1618,7 +1580,8 @@ SockRead(Sock *sockPtr)
                 return SOCK_ERROR;
             }
             reqPtr->content = sockPtr->taddr;
-            Ns_Log(Debug, "spooling content into temp file, maxsize=%d, filesize=%i", sockPtr->drvPtr->maxsize, sockPtr->tsize);
+            Ns_Log(Debug, "spooling content to file: readahead=%d, filesize=%i",
+                   sockPtr->drvPtr->readahead, sockPtr->tsize);
 #endif
         } else {
             reqPtr->content = bufPtr->string + reqPtr->coff;

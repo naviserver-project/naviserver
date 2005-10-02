@@ -197,7 +197,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Tcl_HashEntry *hPtr;
     Ns_DString     ds;
     NsServer      *servPtr;
-    char          *path, *spath, *map, *key, *dirf, *p;
+    CONST char    *path, *spath, *map, *key, *p;
     Ns_Set        *set;
     int            i, n, status;
 
@@ -222,39 +222,24 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     /*
      * Set some server options.
      */
-     
-    servPtr->opts.realm = Ns_ConfigGetValue(path, "realm");
-    if (servPtr->opts.realm == NULL) {
-        servPtr->opts.realm = server;
-    }
-    if (!Ns_ConfigGetBool(path, "checkmodifiedsince", 
-                          &servPtr->opts.modsince)) {
-        servPtr->opts.modsince = SERV_MODSINCE_BOOL;
-    }
-    if (!Ns_ConfigGetBool(path, "flushcontent", 
-                          &servPtr->opts.flushcontent)) {
-        servPtr->opts.flushcontent = SERV_FLUSHCONTENT_BOOL;
-    }
-    if (!Ns_ConfigGetBool(path, "noticedetail", 
-                          &servPtr->opts.noticedetail)) {
-        servPtr->opts.noticedetail = SERV_NOTICEDETAIL_BOOL;
-    }
-    if (!Ns_ConfigGetInt(path, "errorminsize", 
-                         &servPtr->opts.errorminsize)) {
-        servPtr->opts.errorminsize = SERV_ERRORMINSIZE_INT;
-    }
-    p = Ns_ConfigGetValue(path, "headercase");
-    if (p != NULL && STRIEQ(p, "tolower")) {
+
+    servPtr->opts.realm = Ns_ConfigString(path, "realm", server);
+    servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
+    servPtr->opts.flushcontent = Ns_ConfigBool(path, "flushcontent", NS_FALSE);
+    servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
+    servPtr->opts.errorminsize = Ns_ConfigInt(path, "errorminsize", 514);
+    servPtr->opts.hdrcase = Preserve;
+    p = Ns_ConfigString(path, "headercase", "preserve");
+    if (STRIEQ(p, "tolower")) {
         servPtr->opts.hdrcase = ToLower;
-    } else if (p != NULL && STRIEQ(p, "toupper")) {
+    } else if (STRIEQ(p, "toupper")) {
         servPtr->opts.hdrcase = ToUpper;
-    } else {
-        servPtr->opts.hdrcase = Preserve;
     }
     
     /*
      * Encoding defaults for the server
      */
+
     servPtr->encoding.outputCharset = Ns_ConfigGetValue(path, "outputCharset");
     if (servPtr->encoding.outputCharset != NULL) {
         servPtr->encoding.outputEncoding =
@@ -306,11 +291,8 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->tcl.modules = Tcl_NewObj();
     Tcl_IncrRefCount(servPtr->tcl.modules);
     Ns_RWLockInit(&servPtr->tcl.lock);
-    if (!Ns_ConfigGetInt(path, "nsvbuckets", &n) || n < 1) {
-        n = TCL_NSVBUCKETS_INT;
-    }
-    servPtr->nsv.nbuckets = n;
-    servPtr->nsv.buckets = NsTclCreateBuckets(server, n);
+    servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
+    servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
     Tcl_InitHashTable(&servPtr->share.inits, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->share.vars, TCL_STRING_KEYS);
     Ns_MutexSetName2(&servPtr->share.lock, "nstcl:share", server);
@@ -325,7 +307,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     p = Ns_ConfigGetValue(path, "errorlogheaders");
     if (p != NULL && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders)
         != TCL_OK) {
-        Ns_Log(Error, "invalid error log headers: %s", p);
+        Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
     }
 
     /*
@@ -340,42 +322,20 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      */
      
     path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
-    if (!Ns_ConfigGetBool(path, "cache", &i) || i) {
-        if (!Ns_ConfigGetInt(path, "cachemaxsize", &n)) {
-            n = FASTPATH_CACHESIZE_INT;
-        }
-        if (!Ns_ConfigGetInt(path, "cachemaxentry", &i) || i < 0) {
-            i = FASTPATH_CACHEMAXENTRY_INT;
-        }
-        servPtr->fastpath.cachemaxentry = i;
-        servPtr->fastpath.cache =  NsFastpathCache(server, n);
+    if (Ns_ConfigBool(path, "cache", NS_FALSE)) {
+        servPtr->fastpath.cachemaxentry =
+            Ns_ConfigIntRange(path, "cachemaxentry", 8192, 1, INT_MAX);
+        n = Ns_ConfigIntRange(path, "cachemaxsize", 5000*1024, 1, INT_MAX);
+        servPtr->fastpath.cache = NsFastpathCache(server, n);
     }
-    if (!Ns_ConfigGetBool(path, "mmap", &servPtr->fastpath.mmap)) {
-        servPtr->fastpath.mmap = FASTPATH_MMAP_BOOL;
+    servPtr->fastpath.mmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
+
+    p = Ns_ConfigGetValue(path, "directoryfile");
+    if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
+                                   &servPtr->fastpath.dirv) != TCL_OK) {
+        Ns_Log(Error, "config: directoryfile is not a list: %s", p);
     }
-    dirf = Ns_ConfigGetValue(path, "directoryfile");
-    if (dirf == NULL) {
-        dirf = Ns_ConfigGetValue(spath, "directoryfile");
-    }
-    if (dirf != NULL) {
-        dirf = ns_strdup(dirf);
-        p = dirf;
-        n = 1;
-        while ((p = (strchr(p, ','))) != NULL) {
-            ++n;
-            ++p;
-        }
-        servPtr->fastpath.dirc = n;
-        servPtr->fastpath.dirv = ns_malloc(sizeof(char *) * n);
-        for (i = 0; i < n; ++i) {
-            p = strchr(dirf, ',');
-            if (p != NULL) {
-                *p++ = '\0';
-            }
-            servPtr->fastpath.dirv[i] = dirf;
-            dirf = p;
-        }
-    }
+
     servPtr->fastpath.serverdir = Ns_ConfigGetValue(path, "serverdir");
     if (servPtr->fastpath.serverdir == NULL) {
         Ns_MakePath(&ds, Ns_InfoHomePath(), "servers", server, NULL);
@@ -384,10 +344,8 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         Ns_MakePath(&ds, Ns_InfoHomePath(), servPtr->fastpath.serverdir, NULL);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     }
-    servPtr->fastpath.pagedir = Ns_ConfigGetValue(path, "pagedir");
-    if (servPtr->fastpath.pagedir == NULL) {
-        servPtr->fastpath.pagedir = "pages";
-    }
+
+    servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
         servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
     } else {
@@ -395,14 +353,12 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
                     servPtr->fastpath.pagedir, NULL);
         servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
     }
+
     p = Ns_ConfigGetValue(path, "directorylisting");
     if (p != NULL && (STREQ(p, "simple") || STREQ(p, "fancy"))) {
         p = "_ns_dirlist";
     }
-    servPtr->fastpath.dirproc = Ns_ConfigGetValue(path, "directoryproc");
-    if (servPtr->fastpath.dirproc == NULL) {
-        servPtr->fastpath.dirproc = p;
-    }
+    servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
     servPtr->fastpath.diradp = Ns_ConfigGetValue(path, "directoryadp");
     
     /*
@@ -410,29 +366,22 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      */
 
     path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
-    if (!Ns_ConfigGetBool(path, "enabled", &servPtr->vhost.enabled)) {
-        servPtr->vhost.enabled = VHOST_ENABLED_BOOL;
-    }
+    servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
     if (servPtr->vhost.enabled
         && Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
         Ns_Log(Error, "virtual hosting disabled, pagedir not relative: %s",
                servPtr->fastpath.pagedir);
         servPtr->vhost.enabled = NS_FALSE;
     }
-    if (!Ns_ConfigGetBool(path, "stripwww", &i) || i) {
+    if (Ns_ConfigBool(path, "stripwww", NS_TRUE)) {
         servPtr->vhost.opts |= NSD_STRIP_WWW;
     }
-    if (!Ns_ConfigGetBool(path, "stripport", &i) || i) {
+    if (Ns_ConfigBool(path, "stripport", NS_TRUE)) {
         servPtr->vhost.opts |= NSD_STRIP_PORT;
     }
     servPtr->vhost.hostprefix = Ns_ConfigGetValue(path, "hostprefix");
-    Ns_ConfigGetInt(path, "hosthashlevel", &servPtr->vhost.hosthashlevel);
-    if (servPtr->vhost.hosthashlevel < 0) {
-        servPtr->vhost.hosthashlevel = 0;
-    }
-    if (servPtr->vhost.hosthashlevel > 5) {
-        servPtr->vhost.hosthashlevel = 5;
-    }
+    servPtr->vhost.hosthashlevel =
+        Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
     if (servPtr->vhost.enabled) {
         NsPageRoot(&ds, servPtr, "www.example.com:80");
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
@@ -473,45 +422,22 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      */
     
     path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
-    servPtr->adp.errorpage = Ns_ConfigGetValue(path, "errorpage");
-    servPtr->adp.startpage = Ns_ConfigGetValue(path, "startpage");
-    if (!Ns_ConfigGetBool(path, "enableexpire", 
-                          &servPtr->adp.enableexpire)) {
-        servPtr->adp.enableexpire = ADP_ENABLEEXPIRE_BOOL;
-    }
-    if (!Ns_ConfigGetBool(path, "enabledebug", 
-                          &servPtr->adp.enabledebug)) {
-        servPtr->adp.enabledebug = ADP_ENABLEDEBUG_BOOL;
-    }
-    servPtr->adp.debuginit = Ns_ConfigGetValue(path, "debuginit");
-    if (servPtr->adp.debuginit == NULL) {
-        servPtr->adp.debuginit = ADP_DEBUGINIT_STRING;
-    }
-    servPtr->adp.defaultparser = Ns_ConfigGetValue(path, "defaultparser");
-    if (servPtr->adp.defaultparser == NULL) {
-        servPtr->adp.defaultparser = ADP_DEFPARSER_STRING;
-    }
-    if (!Ns_ConfigGetInt(path, "cachesize", &n)) {
-        n = ADP_CACHESIZE_INT;
-    }
-    servPtr->adp.cachesize = n;
+    servPtr->adp.errorpage = Ns_ConfigString(path, "errorpage", NULL);
+    servPtr->adp.startpage = Ns_ConfigString(path, "startpage", NULL);
+    servPtr->adp.enableexpire = Ns_ConfigBool(path, "enableexpire", NS_FALSE);
+    servPtr->adp.enabledebug = Ns_ConfigBool(path, "enabledebug", NS_FALSE);
+    servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
+    servPtr->adp.defaultparser = Ns_ConfigString(path, "defaultparser", "adp");
+    servPtr->adp.cachesize = Ns_ConfigInt(path, "cachesize", 5000*1024);
     
     /*
      * Initialize on-the-fly compression support for ADP.
      */
     
     path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
-    if (!Ns_ConfigGetBool(path, "enable", &servPtr->adp.compress.enable)) {
-        servPtr->adp.compress.enable = ADP_ENABLECOMPRESS_BOOL;
-    }
-    if (!Ns_ConfigGetInt(path, "level", &n) || n < 1 || n > 9) {
-        n = ADP_COMPRESSLEVEL_INT;
-    }
-    servPtr->adp.compress.level = n;
-    if (!Ns_ConfigGetInt(path, "minsize", &n) || n < 0) {
-        n = 0;
-    }
-    servPtr->adp.compress.minsize = n;
+    servPtr->adp.compress.enable = Ns_ConfigBool(path, "enable", NS_FALSE);
+    servPtr->adp.compress.level = Ns_ConfigIntRange(path, "level", 4, 1, 9);
+    servPtr->adp.compress.minsize = Ns_ConfigInt(path, "minsize", 0);
     
     /*
      * Initialize the page and tag tables and locks.
@@ -623,10 +549,8 @@ CreatePool(NsServer *servPtr, char *pool)
      * is a per-set maximum number of simultaneous connections to handle
      * before NsQueueConn begins to return NS_ERROR.
      */
-    
-    if (!Ns_ConfigGetInt(path, "maxconnections", &maxconns)) {
-        maxconns = SERV_MAXCONNS_INT;
-    }
+
+    maxconns = Ns_ConfigIntRange(path, "maxconnections", 100, 1, INT_MAX);
     connBufPtr = ns_calloc((size_t) maxconns, sizeof(Conn));
     for (n = 0; n < maxconns - 1; ++n) {
         connPtr = &connBufPtr[n];
@@ -634,37 +558,11 @@ CreatePool(NsServer *servPtr, char *pool)
     }
     connBufPtr[n].nextPtr = NULL;
     poolPtr->queue.freePtr = &connBufPtr[0];
-    
-    if (!Ns_ConfigGetInt(path, "minthreads", 
-                         &poolPtr->threads.min)) {
-        poolPtr->threads.min = SERV_MINTHREADS_INT;
-    }
-    if (!Ns_ConfigGetInt(path, "maxthreads", 
-                         &poolPtr->threads.max)) {
-        poolPtr->threads.max = SERV_MAXTHREADS_INT;
-    }
-    if (!Ns_ConfigGetInt(path, "threadtimeout", 
-                         &poolPtr->threads.timeout)) {
-        poolPtr->threads.timeout = SERV_THREADTIMEOUT_INT;
-    }
-    
-    /*
-     * Determine the minimum and maximum number of threads, adjusting the
-     * values as needed.  The threadtimeout value is the maximum number of
-     * seconds a thread will wait for a connection before exiting if the
-     * current number of threads is above the minimum.
-     */
-    
-    if (poolPtr->threads.max > maxconns) {
-        Ns_Log(Warning, "serv: cannot have more maxthreads than maxconns: "
-               "%d max threads adjusted down to %d max connections",
-               poolPtr->threads.max, maxconns);
-        poolPtr->threads.max = maxconns;
-    }
-    if (poolPtr->threads.min > poolPtr->threads.max) {
-        Ns_Log(Warning, "serv: cannot have more minthreads than maxthreads: "
-               "%d min threads adjusted down to %d max threads",
-               poolPtr->threads.min, poolPtr->threads.max);
-        poolPtr->threads.min = poolPtr->threads.max;
-    }
+ 
+    poolPtr->threads.max =
+        Ns_ConfigIntRange(path, "maxthreads", 10, 0, maxconns);
+    poolPtr->threads.min =
+        Ns_ConfigIntRange(path, "minthreads", 0, 0, poolPtr->threads.max);
+    poolPtr->threads.timeout =
+        Ns_ConfigIntRange(path, "threadtimeout", 120, 0, INT_MAX);
 }

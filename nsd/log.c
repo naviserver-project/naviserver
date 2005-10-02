@@ -154,27 +154,28 @@ NsInitLog(void)
 void
 NsConfigLog(void)
 {
-    Ns_DString ds;
+    Ns_DString  ds;
+    CONST char *path = NS_CONFIG_PARAMETERS;
 
-    logConfig[Notice].enabled = NsParamBool("lognotice", LOG_NOTICE_BOOL);
-    logConfig[Debug].enabled  = NsParamBool("logdebug", LOG_DEBUG_BOOL);
-    logConfig[Dev].enabled    = NsParamBool("logdev", LOG_DEV_BOOL);
+    logConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
+    logConfig[Debug].enabled  = Ns_ConfigBool(path, "logdebug", NS_FALSE);
+    logConfig[Dev].enabled    = Ns_ConfigBool(path, "logdev", NS_FALSE);
 
-    if (NsParamBool( "logroll", LOG_ROLL_BOOL)) {
+    if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
         flags |= LOG_ROLL;
     }
-    if (NsParamBool("logusec", LOG_USEC_BOOL)) {
+    if (Ns_ConfigBool(path, "logusec", NS_FALSE)) {
         flags |= LOG_USEC;
     }
-    if (NsParamBool("logexpanded", LOG_EXPANDED_BOOL)) {
+    if (Ns_ConfigBool(path, "logexpanded", NS_FALSE)) {
         flags |= LOG_EXPAND;
     }
 
-    maxback = NsParamInt("logmaxbackup", LOG_MAXBACK_INT);
-    maxlevel = NsParamInt("logmaxlevel", LOG_MAXLEVEL_INT);
-    maxbuffer = NsParamInt("logmaxbuffer", LOG_MAXBUFFER_INT);
+    maxback = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
+    maxlevel = Ns_ConfigInt(path, "logmaxlevel", INT_MAX);
+    maxbuffer = Ns_ConfigInt(path, "logmaxbuffer", 10);
 
-    file = NsParamString("serverlog", LOG_FILE_STRING);
+    file = Ns_ConfigString(path, "serverlog", "server.log");
     if (!Ns_PathIsAbsolute(file)) {
         Ns_DStringInit(&ds);
         Ns_HomePath(&ds, "log", file, NULL);
@@ -202,7 +203,7 @@ NsConfigLog(void)
 char *
 Ns_InfoErrorLog(void)
 {
-    return (char*)file;
+    return (char*) file;
 }
 
 

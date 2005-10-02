@@ -552,10 +552,7 @@ NsConnThread(void *arg)
      */
 
     path = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
-    if (!Ns_ConfigGetInt(path, "connsperthread", &cpt)) {
-        cpt = SERV_MAXCONNSPERTHREAD_INT;
-    }
-
+    cpt = Ns_ConfigIntRange(path, "connsperthread", 0, 0, INT_MAX);
     ncons = cpt;
 
     /*
