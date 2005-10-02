@@ -30,8 +30,8 @@
 /* 
  * op.c --
  *
- *	Routines to register, unregister, and run connection request
- *  	routines (previously known as "op procs").
+ *      Routines to register, unregister, and run connection request
+ *      routines (previously known as "op procs").
  */
 
 #include "nsd.h"
@@ -44,7 +44,7 @@ NS_RCSID("@(#) $Header$");
  */
 
 typedef struct {
-    int		    refcnt;
+    int             refcnt;
     Ns_OpProc      *proc;
     Ns_Callback    *delete;
     void           *arg;
@@ -61,7 +61,7 @@ static void FreeReq(void *arg);
  * Static variables defined in this file.
  */
 
-static Ns_Mutex	      ulock;
+static Ns_Mutex       ulock;
 static int            uid;
 
 
@@ -70,13 +70,13 @@ static int            uid;
  *
  * NsInitRequests --
  *
- *	Initialize the request API.
+ *      Initialize the request API.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -95,22 +95,22 @@ NsInitRequests(void)
  *
  * Ns_RegisterRequest --
  *
- *	Register a new procedure to be called to service matching
- *  	given method and url pattern.
+ *      Register a new procedure to be called to service matching
+ *      given method and url pattern.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	Delete procedure of previously registered request, if any,
- *  	will be called unless NS_OP_NODELETE flag is set.
+ *      Delete procedure of previously registered request, if any,
+ *      will be called unless NS_OP_NODELETE flag is set.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Ns_RegisterRequest(char *server, char *method, char *url, Ns_OpProc *proc,
-    Ns_Callback *delete, void *arg, int flags)
+                   Ns_Callback *delete, void *arg, int flags)
 {
     Req *reqPtr;
 
@@ -131,21 +131,21 @@ Ns_RegisterRequest(char *server, char *method, char *url, Ns_OpProc *proc,
  *
  * Ns_GetRequest --
  *
- *	Return the procedures and context for a given method and url
- *  	pattern.
+ *      Return the procedures and context for a given method and url
+ *      pattern.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Ns_GetRequest(char *server, char *method, char *url, Ns_OpProc **procPtr,
-    Ns_Callback **deletePtr, void **argPtr, int *flagsPtr)
+              Ns_Callback **deletePtr, void **argPtr, int *flagsPtr)
 {
     Req *reqPtr;
 
@@ -157,10 +157,10 @@ Ns_GetRequest(char *server, char *method, char *url, Ns_OpProc **procPtr,
         *argPtr = reqPtr->arg;
         *flagsPtr = reqPtr->flags;
     } else {
-	*procPtr = NULL;
-	*deletePtr = NULL;
-	*argPtr = NULL;
-	*flagsPtr = 0;
+        *procPtr = NULL;
+        *deletePtr = NULL;
+        *argPtr = NULL;
+        *flagsPtr = 0;
     }
     Ns_MutexUnlock(&ulock);
 }
@@ -171,14 +171,14 @@ Ns_GetRequest(char *server, char *method, char *url, Ns_OpProc **procPtr,
  *
  * Ns_UnRegisterRequest --
  *
- *	Remove the procedure which would run for the given method and
- *  	url pattern.
+ *      Remove the procedure which would run for the given method and
+ *      url pattern.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	Requests deleteProc may run.
+ *      Requests deleteProc may run.
  *
  *----------------------------------------------------------------------
  */
@@ -188,7 +188,7 @@ Ns_UnRegisterRequest(char *server, char *method, char *url, int inherit)
 {
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificDestroy(server, method, url, uid,
-    			  inherit ? 0 : NS_OP_NOINHERIT);
+                          inherit ? 0 : NS_OP_NOINHERIT);
     Ns_MutexUnlock(&ulock);
 }
 
@@ -198,14 +198,14 @@ Ns_UnRegisterRequest(char *server, char *method, char *url, int inherit)
  *
  * Ns_ConnRunRequest --
  *
- *	Locate and execute the procedure for the given method and
- *  	url pattern.
+ *      Locate and execute the procedure for the given method and
+ *      url pattern.
  *
  * Results:
- *	Standard request procedure result, normally NS_OK.
+ *      Standard request procedure result, normally NS_OK.
  *
  * Side effects:
- *  	Depends on request procedure.
+ *      Depends on request procedure.
  *
  *----------------------------------------------------------------------
  */
@@ -219,14 +219,14 @@ Ns_ConnRunRequest(Ns_Conn *conn)
 
     Ns_MutexLock(&ulock);
     reqPtr = Ns_UrlSpecificGet(server, conn->request->method,
-    	    	    	       conn->request->url, uid);
+                               conn->request->url, uid);
     if (reqPtr == NULL) {
-    	Ns_MutexUnlock(&ulock);
-	if (STREQ(conn->request->method, "BAD")) {
-	    return Ns_ConnReturnBadRequest(conn, NULL);
-	} else {
-	   return Ns_ConnReturnNotFound(conn);
-	}
+        Ns_MutexUnlock(&ulock);
+        if (STREQ(conn->request->method, "BAD")) {
+            return Ns_ConnReturnBadRequest(conn, NULL);
+        } else {
+            return Ns_ConnReturnNotFound(conn);
+        }
     }
     ++reqPtr->refcnt;
     Ns_MutexUnlock(&ulock);
@@ -234,6 +234,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
     Ns_MutexLock(&ulock);
     FreeReq(reqPtr);
     Ns_MutexUnlock(&ulock);
+
     return status;
 }
 
@@ -243,17 +244,17 @@ Ns_ConnRunRequest(Ns_Conn *conn)
  *
  * Ns_ConnRedirect --
  *
- *	Perform an internal redirect by updating the connection's
- *  	request URL and re-authorizing and running the request.  This
- *  	Routine is used in FastPath to redirect to directory files
- *  	(e.g., index.html) and in return.c to redirect by HTTP result
- *  	code (e.g., custom not-found handler).
+ *      Perform an internal redirect by updating the connection's
+ *      request URL and re-authorizing and running the request.  This
+ *      Routine is used in FastPath to redirect to directory files
+ *      (e.g., index.html) and in return.c to redirect by HTTP result
+ *      code (e.g., custom not-found handler).
  *
  * Results:
- *	Standard request procedure result, normally NS_OK.
+ *      Standard request procedure result, normally NS_OK.
  *
  * Side effects:
- *  	Depends on request procedure.
+ *      Depends on request procedure.
  *
  *----------------------------------------------------------------------
  */
@@ -274,8 +275,8 @@ Ns_ConnRedirect(Ns_Conn *conn, char *url)
      */
 
     status = Ns_AuthorizeRequest(Ns_ConnServer(conn), conn->request->method,
-				 conn->request->url, conn->authUser,
-	 			 conn->authPasswd, Ns_ConnPeer(conn));
+                 conn->request->url, conn->authUser,
+                 conn->authPasswd, Ns_ConnPeer(conn));
     switch (status) {
     case NS_OK:
         status = Ns_ConnRunRequest(conn);
@@ -301,32 +302,32 @@ Ns_ConnRedirect(Ns_Conn *conn, char *url)
  *
  * Ns_RegisterProxyRequest --
  *
- *	Register a new procedure to be called to proxy matching
- *  	given method and protocol pattern.
+ *      Register a new procedure to be called to proxy matching
+ *      given method and protocol pattern.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	Delete procedure of previously registered request, if any.
+ *      Delete procedure of previously registered request, if any.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Ns_RegisterProxyRequest(char *server, char *method, char *protocol,
-    Ns_OpProc *proc, Ns_Callback *delete, void *arg)
+                        Ns_OpProc *proc, Ns_Callback *delete, void *arg)
 {
-    NsServer	*servPtr;
-    Req		*reqPtr;
-    Ns_DString   ds;
-    int 	 new;
+    NsServer      *servPtr;
+    Req           *reqPtr;
+    Ns_DString     ds;
+    int            new;
     Tcl_HashEntry *hPtr;
 
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
-	Ns_Log(Error, "Ns_RegisterProxyRequest: no such server: %s", server);
-	return;
+        Ns_Log(Error, "Ns_RegisterProxyRequest: no such server: %s", server);
+        return;
     }
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, method, protocol, NULL);
@@ -339,7 +340,7 @@ Ns_RegisterProxyRequest(char *server, char *method, char *protocol,
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &new);
     if (!new) {
-	FreeReq(Tcl_GetHashValue(hPtr));
+        FreeReq(Tcl_GetHashValue(hPtr));
     }
     Tcl_SetHashValue(hPtr, reqPtr);
     Ns_MutexUnlock(&servPtr->request.plock);
@@ -352,14 +353,14 @@ Ns_RegisterProxyRequest(char *server, char *method, char *protocol,
  *
  * Ns_UnRegisterProxyRequest --
  *
- *	Remove the procedure which would run for the given method and
- *  	protocol.
+ *      Remove the procedure which would run for the given method and
+ *      protocol.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	Request's deleteProc may run.
+ *      Request's deleteProc may run.
  *
  *----------------------------------------------------------------------
  */
@@ -367,22 +368,22 @@ Ns_RegisterProxyRequest(char *server, char *method, char *protocol,
 void
 Ns_UnRegisterProxyRequest(char *server, char *method, char *protocol)
 {
-    NsServer	  *servPtr;
-    Ns_DString 	   ds;
+    NsServer      *servPtr;
+    Ns_DString     ds;
     Tcl_HashEntry *hPtr;
 
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
-    	Ns_DStringInit(&ds);
-    	Ns_DStringVarAppend(&ds, method, protocol, NULL);
-    	Ns_MutexLock(&servPtr->request.plock);
-    	hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
-    	if (hPtr != NULL) {
-	    FreeReq(Tcl_GetHashValue(hPtr));
-    	    Tcl_DeleteHashEntry(hPtr);
-	}
-    	Ns_MutexUnlock(&servPtr->request.plock);
-	Ns_DStringFree(&ds);
+        Ns_DStringInit(&ds);
+        Ns_DStringVarAppend(&ds, method, protocol, NULL);
+        Ns_MutexLock(&servPtr->request.plock);
+        hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
+        if (hPtr != NULL) {
+            FreeReq(Tcl_GetHashValue(hPtr));
+            Tcl_DeleteHashEntry(hPtr);
+        }
+        Ns_MutexUnlock(&servPtr->request.plock);
+        Ns_DStringFree(&ds);
     }
 }
 
@@ -392,14 +393,14 @@ Ns_UnRegisterProxyRequest(char *server, char *method, char *protocol)
  *
  * NsConnRunProxyRequest --
  *
- *	Locate and execute the procedure for the given method and
- *  	protocol pattern.
+ *      Locate and execute the procedure for the given method and
+ *      protocol pattern.
  *
  * Results:
- *	Standard request procedure result, normally NS_OK.
+ *      Standard request procedure result, normally NS_OK.
  *
  * Side effects:
- *  	Depends on request procedure.
+ *      Depends on request procedure.
  *
  *----------------------------------------------------------------------
  */
@@ -407,12 +408,12 @@ Ns_UnRegisterProxyRequest(char *server, char *method, char *protocol)
 int
 NsConnRunProxyRequest(Ns_Conn *conn)
 {
-    Conn	  *connPtr = (Conn *) conn;
-    NsServer	  *servPtr = connPtr->servPtr;
+    Conn          *connPtr = (Conn *) conn;
+    NsServer      *servPtr = connPtr->servPtr;
     Ns_Request    *request = conn->request;
-    Req		  *reqPtr = NULL;
-    int		   status;
-    Ns_DString	   ds;
+    Req           *reqPtr = NULL;
+    int            status;
+    Ns_DString     ds;
     Tcl_HashEntry *hPtr;
 
     Ns_DStringInit(&ds);
@@ -420,19 +421,20 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
     if (hPtr != NULL) {
-	reqPtr = Tcl_GetHashValue(hPtr);
-	++reqPtr->refcnt;
+        reqPtr = Tcl_GetHashValue(hPtr);
+        ++reqPtr->refcnt;
     }
     Ns_MutexUnlock(&servPtr->request.plock);
     if (reqPtr == NULL) {
-	status = Ns_ConnReturnNotFound(conn);
+        status = Ns_ConnReturnNotFound(conn);
     } else {
-	status = (*reqPtr->proc) (reqPtr->arg, conn);
-    	Ns_MutexLock(&servPtr->request.plock);
-	FreeReq(reqPtr);
-    	Ns_MutexUnlock(&servPtr->request.plock);
+        status = (*reqPtr->proc) (reqPtr->arg, conn);
+        Ns_MutexLock(&servPtr->request.plock);
+        FreeReq(reqPtr);
+        Ns_MutexUnlock(&servPtr->request.plock);
     }
     Ns_DStringFree(&ds);
+
     return status;
 }
 
@@ -442,13 +444,13 @@ NsConnRunProxyRequest(Ns_Conn *conn)
  *
  * FreeReq --
  *
- *  	URL space callback to delete a request structure.
+ *      URL space callback to delete a request structure.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	Depends on request delete procedure.
+ *      Depends on request delete procedure.
  *
  *----------------------------------------------------------------------
  */
@@ -459,8 +461,8 @@ FreeReq(void *arg)
     Req *reqPtr = (Req *) arg;
 
     if (--reqPtr->refcnt == 0) {
-    	if (reqPtr->delete != NULL) {
-	    (*reqPtr->delete) (reqPtr->arg);
+        if (reqPtr->delete != NULL) {
+            (*reqPtr->delete) (reqPtr->arg);
         }
         ns_free(reqPtr);
     }
@@ -495,13 +497,13 @@ NsTclRequestArgProc(Tcl_DString *dsPtr, void *arg)
  *----------------------------------------------------------------------
  * NsGetRequestProcs --
  *
- *      Returns information about registered requests/procs
+ *      Returns information about registered requests/procs.
  * 
  * Results:
- *      DString with info as Tcl list
+ *      DString with info as Tcl list.
  *
  * Side effects:
- *      None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -515,9 +517,7 @@ NsGetRequestProcs(Tcl_DString *dsPtr, char *server)
     if (servPtr == NULL) {
         return;
     }
- 
     Ns_MutexLock(&ulock);
     NsUrlSpecificWalk(uid, servPtr->server, NsTclRequestArgProc, dsPtr);
     Ns_MutexUnlock(&ulock);
 }
-

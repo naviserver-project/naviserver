@@ -31,11 +31,11 @@
 /* 
  * urlspace.c --
  *
- *	This file implements a Trie data structure. It is used
- *	for "UrlSpecificData"; for example, when one registers
- *	a handler for all GET /foo/bar/ *.html requests, the data
- *	structure that holds that information is implemented herein.
- *	For full details see the file doc/urlspace.txt.
+ *      This file implements a Trie data structure. It is used
+ *      for "UrlSpecificData"; for example, when one registers
+ *      a handler for all GET /foo/bar/ *.html requests, the data
+ *      structure that holds that information is implemented herein.
+ *      For full details see the file doc/urlspace.txt.
  */
 
 #include "nsd.h"
@@ -46,7 +46,7 @@ NS_RCSID("@(#) $Header$");
  * Size of stack to keep track of server/method/url/... node path
  */
 
-#define STACK_SIZE	512
+#define STACK_SIZE  512
 
 /*
  * This optimization, when turned on, prevents the server from doing a
@@ -66,9 +66,9 @@ NS_RCSID("@(#) $Header$");
  */
 
 typedef struct {
-    int    id;                          /* Handle from Ns_UrlSpecificAlloc */
-    void  *dataInherit;                 /* User's data */
-    void  *dataNoInherit;               /* User's data */
+    int    id;                               /* Handle from Ns_UrlSpecificAlloc */
+    void  *dataInherit;                      /* User's data */
+    void  *dataNoInherit;                    /* User's data */
     void   (*deletefuncInherit) (void *);    /* Cleanup function */
     void   (*deletefuncNoInherit) (void *);  /* Cleanup function */
 } Node;
@@ -187,11 +187,11 @@ static int CmpKeyWithChannelAsStrings(char *key, Channel **channelPtrPtr);
 
 static void JunctionInit(Junction *juncPtr);
 static void JunctionAdd(Junction *juncPtr, char *seq, int id, void *data,
-			int flags, void (*deletefunc) (void *));
+            int flags, void (*deletefunc) (void *));
 static void JunctionBranchTrunc(Junction *juncPtr, char *seq, int id);
 static void *JunctionFind(Junction *juncPtr, char *seq, int id, int fast);
 static void *JunctionFindExact(Junction *juncPtr, char *seq, int id, int flags,
-			       int fast);
+                   int fast);
 static void *JunctionDelete(Junction *juncPtr, char *seq, int id, int flags);
 
 /*
@@ -207,13 +207,13 @@ static Ns_Mutex lock;
  *
  * NsInitUrlSpace --
  *
- *	Initialize the urlspace API.
+ *      Initialize the urlspace API.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -231,13 +231,13 @@ NsInitUrlSpace(void)
  *
  * Ns_UrlSpecificAlloc --
  *
- *	Allocate a unique ID to create a seperate virtual URL-space. 
+ *      Allocate a unique ID to create a seperate virtual URL-space. 
  *
  * Results:
- *	An integer handle 
+ *      An integer handle 
  *
  * Side effects:
- *	nextid will be incremented; don't call after server startup.
+ *      nextid will be incremented; don't call after server startup.
  *
  *----------------------------------------------------------------------
  */
@@ -251,6 +251,7 @@ Ns_UrlSpecificAlloc(void)
     Ns_MutexLock(&lock);
     id = nextid++;
     Ns_MutexUnlock(&lock);
+
     return id;
 }
 
@@ -260,23 +261,23 @@ Ns_UrlSpecificAlloc(void)
  *
  * Ns_UrlSpecificSet --
  *
- *	Associate data with a set of URLs matching a wildcard, or 
- *	that are simply sub-URLs.
+ *      Associate data with a set of URLs matching a wildcard, or 
+ *      that are simply sub-URLs.
  *
- *	Flags can be NS_OP_NOINHERIT or NS_OP_NODELETE.
+ *      Flags can be NS_OP_NOINHERIT or NS_OP_NODELETE.
  *
  * Results:
- *	None 
+ *      None 
  *
  * Side effects:
- *	Will set data in the urlspace trie. 
+ *      Will set data in the urlspace trie. 
  *
  *----------------------------------------------------------------------
  */
 
 void
 Ns_UrlSpecificSet(char *server, char *method, char *url, int id, void *data,
-		  int flags, void (*deletefunc) (void *))
+                  int flags, void (*deletefunc) (void *))
 {
     Ns_DString ds;
 
@@ -294,14 +295,14 @@ Ns_UrlSpecificSet(char *server, char *method, char *url, int id, void *data,
  *
  * Ns_UrlSpecificGet --
  *
- *	Find URL-specific data in the subspace identified by id that 
- *	the passed-in URL matches 
+ *      Find URL-specific data in the subspace identified by id that
+ *      the passed-in URL matches.
  *
  * Results:
- *	A pointer to user data, set with Ns_UrlSpecificSet 
+ *      A pointer to user data, set with Ns_UrlSpecificSet.
  *
  * Side effects:
- *	None 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -328,14 +329,14 @@ Ns_UrlSpecificGet(char *server, char *method, char *url, int id)
  *
  * Ns_UrlSpecificGetFast --
  *
- *	Similar to Ns_UrlSpecificGet, but doesn't support wildcards; 
- *	on the other hand, it's a lot faster. 
+ *      Similar to Ns_UrlSpecificGet, but doesn't support wildcards; 
+ *      on the other hand, it's a lot faster. 
  *
  * Results:
- *	See Ns_UrlSpecificGet 
+ *      See Ns_UrlSpecificGet 
  *
  * Side effects:
- *	None 
+ *      None 
  *
  *----------------------------------------------------------------------
  */
@@ -361,21 +362,21 @@ Ns_UrlSpecificGetFast(char *server, char *method, char *url, int id)
  *----------------------------------------------------------------------
  *
  * Ns_UrlSpecificGetExact --
- *	Similar to Ns_UrlSpecificGet, but does not support URL
- *	inheritance
+ *      Similar to Ns_UrlSpecificGet, but does not support URL
+ *      inheritance.
  *
  * Results:
- *	See Ns_UrlSpecificGet 
+ *      See Ns_UrlSpecificGet.
  *
  * Side effects:
- *	None 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 void *
 Ns_UrlSpecificGetExact(char *server, char *method, char *url, int id,
-		       int flags)
+                       int flags)
 {
     Ns_DString  ds;
     void       *data;
@@ -396,16 +397,16 @@ Ns_UrlSpecificGetExact(char *server, char *method, char *url, int id,
  *
  * Ns_UrlSpecificDestroy --
  *
- *	Delete some urlspecific data.
+ *      Delete some urlspecific data.
  *
- *	flags can be NS_OP_NODELETE, NS_OP_NOINHERIT and/or NS_OP_RECURSE
+ *      flags can be NS_OP_NODELETE, NS_OP_NOINHERIT and/or NS_OP_RECURSE
  *
  * Results:
- *	None 
+ *      None.
  *
  * Side effects:
- *	Will remove data from urlspace; don't call this after server 
- *	startup. 
+ *      Will remove data from urlspace; don't call this after server
+ *      startup.
  *
  *----------------------------------------------------------------------
  */
@@ -420,14 +421,14 @@ Ns_UrlSpecificDestroy(char *server, char *method, char *url, int id, int flags)
     MkSeq(&ds, server, method, url);
     Ns_MutexLock(&lock);
     if (flags & NS_OP_RECURSE) {
-	JunctionBranchTrunc(&urlspace, ds.string, id);
-	data = NULL;
+        JunctionBranchTrunc(&urlspace, ds.string, id);
+        data = NULL;
     } else {
-	data = JunctionDelete(&urlspace, ds.string, id, flags);
+        data = JunctionDelete(&urlspace, ds.string, id, flags);
     }
     Ns_MutexUnlock(&lock);
     Ns_DStringFree(&ds);
-    
+
     return data;
 }
 
@@ -437,14 +438,14 @@ Ns_UrlSpecificDestroy(char *server, char *method, char *url, int id, int flags)
  *
  * Ns_ServerSpecificAlloc --
  *
- *	Allocate a unique integer to be used with Ns_ServerSpecific* 
- *	calls 
+ *      Allocate a unique integer to be used with Ns_ServerSpecific*
+ *      calls.
  *
  * Results:
- *	An integer handle 
+ *      An integer handle.
  *
  * Side effects:
- *	None 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -461,20 +462,20 @@ Ns_ServerSpecificAlloc(void)
  *
  * Ns_ServerSpecificSet --
  *
- *	Set server-specific data 
+ *        Set server-specific data 
  *
  * Results:
- *	None 
+ *  None 
  *
  * Side effects:
- *	See Ns_UrlSpecificSet 
+ *  See Ns_UrlSpecificSet 
  *
  *----------------------------------------------------------------------
  */
 
 void
 Ns_ServerSpecificSet(char *handle, int id, void *data, int flags,
-		     void (*deletefunc) (void *))
+             void (*deletefunc) (void *))
 {
     Ns_UrlSpecificSet(handle, NULL, NULL, id, data, flags, deletefunc);
 }
@@ -485,13 +486,13 @@ Ns_ServerSpecificSet(char *handle, int id, void *data, int flags,
  *
  * Ns_ServerSpecificGet --
  *
- *	Get server-specific data.
+ *      Get server-specific data.
  *
  * Results:
- *	User server-specific data.
+ *      User server-specific data.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -509,13 +510,13 @@ Ns_ServerSpecificGet(char *handle, int id)
  *
  * Ns_ServerSpecificDestroy --
  *
- *	Destroy server-specific data. 
+ *      Destroy server-specific data. 
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Will remove data from urlspace.
+ *      Will remove data from urlspace.
  *
  *----------------------------------------------------------------------
  */
@@ -532,13 +533,13 @@ Ns_ServerSpecificDestroy(char *handle, int id, int flags)
  *
  * NodeDestroy --
  *
- *	Free a node and its data 
+ *      Free a node and its data 
  *
  * Results:
- *	None 
+ *      None 
  *
  * Side effects:
- *	The delete function is called and the node is freed 
+ *      The delete function is called and the node is freed 
  *
  *----------------------------------------------------------------------
  */
@@ -567,13 +568,13 @@ NodeDestroy(Node *nodePtr)
  *
  * CmpNodes --
  *
- *	Compare two Nodes by id. Ns_Index calls use this as a callback.
+ *      Compare two Nodes by id. Ns_Index calls use this as a callback.
  *
  * Results:
- *	0 if equal, 1 if left is greater, -1 if left is less.
+ *      0 if equal, 1 if left is greater, -1 if left is less.
  *
  * Side effects:
- *	None 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -583,9 +584,8 @@ CmpNodes(Node **leftPtrPtr, Node **rightPtrPtr)
 {
     if ((*leftPtrPtr)->id != (*rightPtrPtr)->id) {
         return ((*leftPtrPtr)->id > (*rightPtrPtr)->id) ? 1 : -1;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 
@@ -594,13 +594,13 @@ CmpNodes(Node **leftPtrPtr, Node **rightPtrPtr)
  *
  * CmpIdWithNode --
  *
- *	Compare a node's ID to a passed-in ID; called by Ns_Index*
+ *      Compare a node's ID to a passed-in ID; called by Ns_Index*
  *
  * Results:
- *	0 if equal; 1 if id is too high; -1 if id is too low 
+ *      0 if equal; 1 if id is too high; -1 if id is too low.
  *
  * Side effects:
- *	None 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -610,9 +610,8 @@ CmpIdWithNode(int id, Node **nodePtrPtr)
 {
     if (id != (*nodePtrPtr)->id) {
         return (id > (*nodePtrPtr)->id) ? 1 : -1;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 
@@ -621,13 +620,13 @@ CmpIdWithNode(int id, Node **nodePtrPtr)
  *
  * IndexNodeCreate --
  *
- *	Initialize a trie->indexnode structure 
+ *      Initialize a trie->indexnode structure.
  *
  * Results:
- *	A pointer to an appropriately initialized index 
+ *      A pointer to an appropriately initialized index.
  *
  * Side effects:
- *	Memory alloacted. 
+ *      Memory alloacted.
  *
  *----------------------------------------------------------------------
  */
@@ -639,8 +638,8 @@ IndexNodeCreate(void)
 
     indexPtr = ns_malloc(sizeof(Ns_Index));
     Ns_IndexInit(indexPtr, 5, (int (*) (const void *, const void *)) CmpNodes,
-        (int (*) (const void *, const void *)) CmpIdWithNode);
-    
+                 (int (*) (const void *, const void *)) CmpIdWithNode);
+
     return indexPtr;
 }
 
@@ -650,13 +649,13 @@ IndexNodeCreate(void)
  *
  * IndexNodeDestroy --
  *
- *	Wipe out a trie->indexnode structure.
+ *      Wipe out a trie->indexnode structure.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Memory freed.
+ *      Memory freed.
  *
  *----------------------------------------------------------------------
  */
@@ -680,13 +679,13 @@ IndexNodeDestroy(Ns_Index *indexPtr)
  *
  * CmpBranches --
  *
- *	Compare two branches' word members. Called by Ns_Index* 
+ *      Compare two branches' word members. Called by Ns_Index*
  *
  * Results:
- *	0 if equal, -1 if left is greater; 1 if right is greater 
+ *      0 if equal, -1 if left is greater; 1 if right is greater.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -701,22 +700,22 @@ CmpBranches(Branch **leftPtrPtr, Branch **rightPtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * CmpBranches --
+ * CmpKeyWithBranch --
  *
- *	Compare a branch's word to a passed-in key; called by 
- *	Ns_Index*.
+ *      Compare a branch's word to a passed-in key; called by
+ *      Ns_Index*.
  *
  * Results:
- *	0 if equal, -1 if left is greater; 1 if right is greater.
+ *      0 if equal, -1 if left is greater; 1 if right is greater.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-CmpKeyWithBranch(char *key, Branch ** branchPtrPtr)
+CmpKeyWithBranch(char *key, Branch **branchPtrPtr)
 {
     return strcmp(key, (*branchPtrPtr)->word);
 }
@@ -727,13 +726,13 @@ CmpKeyWithBranch(char *key, Branch ** branchPtrPtr)
  *
  * BranchDestroy --
  *
- *	Free a branch structure 
+ *      Free a branch structure.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	Will free memory. 
+ *      Will free memory.
  *
  *----------------------------------------------------------------------
  */
@@ -752,15 +751,14 @@ BranchDestroy(Branch *branchPtr)
  *
  * TrieInit --
  *
- *	Initialize a Trie data structure with 25 branches and set the 
- *	Cmp functions for Ns_Index*. 
+ *      Initialize a Trie data structure with 25 branches and set the
+ *      Cmp functions for Ns_Index*.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	The trie is initialized and memory is allocated; memory is 
- *	allocated. 
+ *      The trie is initialized and memory is allocated.
  *
  *----------------------------------------------------------------------
  */
@@ -769,8 +767,8 @@ static void
 TrieInit(Trie *triePtr)
 {
     Ns_IndexInit(&triePtr->branches, 25,
-		 (int (*) (const void *, const void *)) CmpBranches,
-		 (int (*) (const void *, const void *)) CmpKeyWithBranch);
+        (int (*) (const void *, const void *)) CmpBranches,
+        (int (*) (const void *, const void *)) CmpKeyWithBranch);
     triePtr->indexnode = NULL;
 }
 
@@ -780,39 +778,41 @@ TrieInit(Trie *triePtr)
  *
  * TrieAdd --
  *
- *	Add something to the Trie data structure, usually to the 
- *	variable urlspace. 
+ *      Add something to the Trie data structure, usually to the
+ *      variable urlspace.
  *
- *	seq is a null-delimited string of words, terminated with
- *	two nulls.
- *	id is allocated with Ns_UrlSpecificAlloc.
- *	flags is a bitmask; optionally OR NS_OP_NODELETE,
- *	NS_OP_NOINHERIT for desired behavior.
+ *      seq is a null-delimited string of words, terminated with
+ *      two nulls.
+ *      id is allocated with Ns_UrlSpecificAlloc.
+ *      flags is a bitmask; optionally OR NS_OP_NODELETE,
+ *      NS_OP_NOINHERIT for desired behavior.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	Memory is allocated. If a node is found and the 
- *	NS_OP_NODELETE is not set, the current node's data is deleted. 
+ *      Memory is allocated. If a node is found and the
+ *      NS_OP_NODELETE is not set, the current node's data is deleted.
  *
  *----------------------------------------------------------------------
  */
 
 static void
 TrieAdd(Trie *triePtr, char *seq, int id, void *data, int flags,
-	void (*deletefunc) (void *))
+        void (*deletefunc)(void *))
 {
+    Node   *nodePtr;
+    Branch *branchPtr;
+
     if (*seq == '\0') {
-        Node *nodePtr;
 
         /*
-	 * The entire sequence has been traversed, creating a branch
-	 * for each word. Now it is time to make a Node.
-	 *
-	 * First, allocate a new node or find a matching one in existance.
-	 */
-	
+         * The entire sequence has been traversed, creating a branch
+         * for each word. Now it is time to make a Node.
+         *
+         * First, allocate a new node or find a matching one in existance.
+         */
+    
         if (triePtr->indexnode == NULL) {
             triePtr->indexnode = IndexNodeCreate();
             nodePtr = NULL;
@@ -822,10 +822,10 @@ TrieAdd(Trie *triePtr, char *seq, int id, void *data, int flags,
 
         if (nodePtr == NULL) {
 
-	    /*
-	     * Create and initialize a new node.
-	     */
-	    
+            /*
+             * Create and initialize a new node.
+             */
+
             nodePtr = ns_malloc(sizeof(Node));
             nodePtr->id = id;
             Ns_IndexAdd(triePtr->indexnode, nodePtr);
@@ -835,16 +835,16 @@ TrieAdd(Trie *triePtr, char *seq, int id, void *data, int flags,
             nodePtr->deletefuncNoInherit = NULL;
         } else {
 
-	    /*
-	     * If NS_OP_NODELETE is NOT set, then delete the current node
-	     * because one already exists.
-	     */
-	    
+            /*
+             * If NS_OP_NODELETE is NOT set, then delete the current node
+             * because one already exists.
+             */
+
             if ((flags & NS_OP_NODELETE) == 0) {
                 if ((flags & NS_OP_NOINHERIT) != 0) {
                     if (nodePtr->deletefuncNoInherit != NULL) {
                         (*nodePtr->deletefuncNoInherit)
-			    (nodePtr->dataNoInherit);
+                            (nodePtr->dataNoInherit);
                     }
                 } else {
                     if (nodePtr->deletefuncInherit != NULL) {
@@ -862,17 +862,16 @@ TrieAdd(Trie *triePtr, char *seq, int id, void *data, int flags,
             nodePtr->deletefuncInherit = deletefunc;
         }
     } else {
-        Branch *branchPtr;
 
-	/*
-	 * We are parsing the middle of a sequence, such as "foo" in:
-	 * "server1\0GET\0foo\0*.html\0"
-	 *
-	 * Create a new branch and recurse to add the next word in the
-	 * sequence.
-	 */
+        /*
+         * We are parsing the middle of a sequence, such as "foo" in:
+         * "server1\0GET\0foo\0*.html\0"
+         *
+         * Create a new branch and recurse to add the next word in the
+         * sequence.
+         */
 
-	branchPtr = Ns_IndexFind(&triePtr->branches, seq);
+        branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr == NULL) {
             branchPtr = ns_malloc(sizeof(Branch));
             branchPtr->word = ns_strdup(seq);
@@ -881,7 +880,7 @@ TrieAdd(Trie *triePtr, char *seq, int id, void *data, int flags,
             Ns_IndexAdd(&triePtr->branches, branchPtr);
         }
         TrieAdd(&branchPtr->node, seq + strlen(seq) + 1, id, data, flags,
-		deletefunc);
+                deletefunc);
     }
 }
 
@@ -891,14 +890,14 @@ TrieAdd(Trie *triePtr, char *seq, int id, void *data, int flags,
  *
  * TrieTrunc --
  *
- *	Wipes out all references to id. If id==-1 then it wipes out 
- *	everything. 
+ *      Wipes out all references to id. If id==-1 then it wipes out
+ *      everything.
  *
  * Results:
- *	None 
+ *      None.
  *
  * Side effects:
- *	Nodes and branches may be destroyed/freed. 
+ *      Nodes and branches may be destroyed/freed.
  *
  *----------------------------------------------------------------------
  */
@@ -906,43 +905,41 @@ TrieAdd(Trie *triePtr, char *seq, int id, void *data, int flags,
 static void
 TrieTrunc(Trie *triePtr, int id)
 {
-    int n;
+    Branch *branchPtr;
+    Node   *nodePtr;
+    int     n, i;
 
     n = Ns_IndexCount(&triePtr->branches);
 
     if (n > 0) {
+
         /*
-	 * Loop over each branch and recurse.
-	 */
-	
-        int             i;
+         * Loop over each branch and recurse.
+         */
 
         for (i = 0; i < n; i++) {
-            Branch *branchPtr;
-
-	    branchPtr = Ns_IndexEl(&triePtr->branches, i);
+            branchPtr = Ns_IndexEl(&triePtr->branches, i);
             TrieTrunc(&branchPtr->node, id);
         }
     }
     if (triePtr->indexnode != NULL) {
         if (id != -1) {
-            Node *nodePtr;
 
-	    /*
-	     * Destroy just the node for this ID
-	     */
-	    
-	    nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
+            /*
+             * Destroy just the node for this ID
+             */
+
+            nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
             if (nodePtr != NULL) {
                 NodeDestroy(nodePtr);
                 Ns_IndexDel(triePtr->indexnode, nodePtr);
             }
         } else {
 
-	    /*
-	     * Destroy the whole index of nodes.
-	     */
-	    
+            /*
+             * Destroy the whole index of nodes.
+             */
+
             IndexNodeDestroy(triePtr->indexnode);
             triePtr->indexnode = NULL;
         }
@@ -955,13 +952,13 @@ TrieTrunc(Trie *triePtr, int id)
  *
  * TrieDestroy --
  *
- *	Delete an entire Trie.
+ *      Delete an entire Trie.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Will free all the elements of the trie.
+ *      Will free all the elements of the trie.
  *
  *----------------------------------------------------------------------
  */
@@ -969,21 +966,19 @@ TrieTrunc(Trie *triePtr, int id)
 static void
 TrieDestroy(Trie *triePtr)
 {
-    int n;
+    Branch *branchPtr;
+    int     n, i;
 
     n = Ns_IndexCount(&triePtr->branches);
 
     if (n > 0) {
-        int i;
 
-	/*
-	 * Loop over each branch and delete it
-	 */
-	
+        /*
+         * Loop over each branch and delete it
+         */
+
         for (i = 0; i < n; i++) {
-            Branch *branchPtr;
-
-	    branchPtr = Ns_IndexEl(&triePtr->branches, i);
+            branchPtr = Ns_IndexEl(&triePtr->branches, i);
             BranchDestroy(branchPtr);
         }
         Ns_IndexDestroy(&triePtr->branches);
@@ -999,13 +994,13 @@ TrieDestroy(Trie *triePtr)
  *
  * TrieBranchTrunc --
  *
- *	Cut off a branch from a trie 
+ *      Cut off a branch from a trie.
  *
  * Results:
- *	0 on success, -1 on failure 
+ *      0 on success, -1 on failure.
  *
  * Side effects:
- *	Will delete a branch. 
+ *      Will delete a branch.
  *
  *----------------------------------------------------------------------
  */
@@ -1013,28 +1008,28 @@ TrieDestroy(Trie *triePtr)
 static int
 TrieBranchTrunc(Trie *triePtr, char *seq, int id)
 {
+    Branch *branchPtr;
+
     if (*seq != '\0') {
-        Branch *branchPtr;
+        branchPtr = Ns_IndexFind(&triePtr->branches, seq);
 
-	branchPtr = Ns_IndexFind(&triePtr->branches, seq);
+        /*
+         * If this sequence exists, recursively delete it; otherwise
+         * return an error.
+         */
 
-	/*
-	 * If this sequence exists, recursively delete it; otherwise
-	 * return an error.
-	 */
-	
         if (branchPtr != NULL) {
-            return TrieBranchTrunc(&branchPtr->node, seq + strlen(seq) + 1,
-				   id);
+            return TrieBranchTrunc(&branchPtr->node, seq + strlen(seq) + 1, id);
         } else {
             return -1;
         }
     } else {
-	/*
-	 * The end of the sequence has been reached. Finish up the job
-	 * and return success.
-	 */
-	
+
+        /*
+         * The end of the sequence has been reached. Finish up the job
+         * and return success.
+         */
+
         TrieTrunc(triePtr, id);
         return 0;
     }
@@ -1046,14 +1041,14 @@ TrieBranchTrunc(Trie *triePtr, char *seq, int id)
  *
  * TrieFind --
  *
- *	Find a node in a trie matching a sequence.
+ *      Find a node in a trie matching a sequence.
  *
  * Results:
- *	Return the appropriate node's data.
+ *      Return the appropriate node's data.
  *
  * Side effects:
- *	The depth variable will be set-by-reference to the depth of
- *	the returned node. If no node is set, it will not be changed.
+ *      The depth variable will be set-by-reference to the depth of
+ *      the returned node. If no node is set, it will not be changed.
  *
  *----------------------------------------------------------------------
  */
@@ -1061,22 +1056,21 @@ TrieBranchTrunc(Trie *triePtr, char *seq, int id)
 static void *
 TrieFind(Trie *triePtr, char *seq, int id, int *depthPtr)
 {
-    void *data;
-    int   ldepth;
+    Node   *nodePtr;
+    Branch *branchPtr;
+    void   *data = NULL;
+    int     ldepth = *depthPtr;
 
-    data = NULL;
-    ldepth = *depthPtr;
     if (triePtr->indexnode != NULL) {
-        Node *nodePtr;
 
-	/*
-	 * We've reached a trie with an indexnode, which means that our
-	 * data may be here. (If node is null that means that there
-	 * is data at this branch, but not with this particular ID).
-	 */
+        /*
+         * We've reached a trie with an indexnode, which means that our
+         * data may be here. (If node is null that means that there
+         * is data at this branch, but not with this particular ID).
+         */
 
-	nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
-	
+        nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
+    
         if (nodePtr != NULL) {
             if ((*seq == '\0') && (nodePtr->dataNoInherit != NULL)) {
                 data = nodePtr->dataNoInherit;
@@ -1086,26 +1080,24 @@ TrieFind(Trie *triePtr, char *seq, int id, int *depthPtr)
         }
     }
     if (*seq != '\0') {
-        Branch *branchPtr;
 
-	/*
-	 * We have not yet reached the end of the sequence, so
-	 * recurse if there are any sub-branches
-	 */
+        /*
+         * We have not yet reached the end of the sequence, so
+         * recurse if there are any sub-branches
+         */
 
-	branchPtr = Ns_IndexFind(&triePtr->branches, seq);
+        branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         ldepth += 1;
         if (branchPtr != NULL) {
-            void *p = TrieFind(&branchPtr->node, seq + strlen(seq) + 1, id,
-			       &ldepth);
-
+            void *p = TrieFind(&branchPtr->node, seq + strlen(seq) + 1,
+                               id, &ldepth);
             if (p != NULL) {
                 data = p;
                 *depthPtr = ldepth;
             }
         }
     }
-    
+
     return data;
 }
 
@@ -1115,16 +1107,16 @@ TrieFind(Trie *triePtr, char *seq, int id, int *depthPtr)
  *
  * TrieFindExact --
  *
- *	Similar to TrieFind, but will not do inheritance.
- *      if (flags & NS_OP_NOINHERIT) then data set with
- *	that flag will be returned; otherwise only data set without that
- *	flag will be returned.
+ *      Similar to TrieFind, but will not do inheritance.
+ *      If (flags & NS_OP_NOINHERIT) then data set with that flag will
+ *      be returned; otherwise only data set without that flag will be
+ *      returned.
  *
  * Results:
- *	See TrieFind.
+ *      See TrieFind.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -1132,33 +1124,32 @@ TrieFind(Trie *triePtr, char *seq, int id, int *depthPtr)
 static void *
 TrieFindExact(Trie *triePtr, char *seq, int id, int flags)
 {
-    void *data;
+    Branch *branchPtr;
+    Node   *nodePtr;
+    void   *data = NULL;
 
-    data = NULL;
     if (*seq != '\0') {
-        Branch *branchPtr;
 
-	/*
-	 * We have not reached the end of the sequence yet, so
-	 * we must recurse.
-	 */
+        /*
+         * We have not reached the end of the sequence yet, so
+         * we must recurse.
+         */
 
-	branchPtr = Ns_IndexFind(&triePtr->branches, seq);
+        branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieFindExact(&branchPtr->node, seq + strlen(seq) + 1, id,
-                                 flags);
+            data = TrieFindExact(&branchPtr->node, seq + strlen(seq) + 1,
+                                 id, flags);
         }
     } else if (triePtr->indexnode != NULL) {
-        Node *nodePtr;
 
-	/*
-	 * We reached the end of the sequence. Grab the data from
-	 * this node. If the flag specifies NOINHERIT, then return
-	 * the non-inheriting data, otherwise return the inheriting
-	 * data.
-	 */
+        /*
+         * We reached the end of the sequence. Grab the data from
+         * this node. If the flag specifies NOINHERIT, then return
+         * the non-inheriting data, otherwise return the inheriting
+         * data.
+         */
 
-	nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
+        nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
         if (nodePtr != NULL) {
             if (flags & NS_OP_NOINHERIT) {
                 data = nodePtr->dataNoInherit;
@@ -1167,7 +1158,7 @@ TrieFindExact(Trie *triePtr, char *seq, int id, int flags)
             }
         }
     }
-    
+
     return data;
 }
 
@@ -1177,17 +1168,17 @@ TrieFindExact(Trie *triePtr, char *seq, int id, int flags)
  *
  * TrieDelete --
  *
- *	Delete a url, defined by a sequence, from a trie.
+ *      Delete a url, defined by a sequence, from a trie.
  *
- *	The NS_OP_NOINHERIT bit may be set in flags to use
- *	noninheriting data; NS_OP_NODELETE may be set to
- *	skip calling the delete function.
+ *      The NS_OP_NOINHERIT bit may be set in flags to use
+ *      noninheriting data; NS_OP_NODELETE may be set to
+ *      skip calling the delete function.
  *
  * Results:
- *	A pointer to the now-deleted data. 
+ *      A pointer to the now-deleted data. 
  *
  * Side effects:
- *	Data may be deleted. 
+ *      Data may be deleted. 
  *
  *----------------------------------------------------------------------
  */
@@ -1195,33 +1186,32 @@ TrieFindExact(Trie *triePtr, char *seq, int id, int flags)
 static void *
 TrieDelete(Trie *triePtr, char *seq, int id, int flags)
 {
-    void *data;
+    Branch *branchPtr;
+    Node   *nodePtr;
+    void   *data = NULL;
 
-    data = NULL;
     if (*seq != '\0') {
-        Branch *branchPtr;
 
-	/*
-	 * We have not yet reached the end of the sequence. So
-	 * recurse.
-	 */
+        /*
+         * We have not yet reached the end of the sequence. So
+         * recurse.
+         */
 
-	branchPtr = Ns_IndexFind(&triePtr->branches, seq);
+        branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieDelete(&branchPtr->node, seq + strlen(seq) + 1, id,
-			      flags);
+            data = TrieDelete(&branchPtr->node, seq + strlen(seq) + 1,
+                              id, flags);
         }
     } else if (triePtr->indexnode != NULL) {
-        Node *nodePtr;
 
-	/*
-	 * We've reached the end of the sequence; if a node exists for
-	 * this ID then delete the inheriting/noninheriting data (as
-	 * specified in flags) and call the delte func if requested.
-	 * The data will be set to null either way.
-	 */
+        /*
+         * We've reached the end of the sequence; if a node exists for
+         * this ID then delete the inheriting/noninheriting data (as
+         * specified in flags) and call the delte func if requested.
+         * The data will be set to null either way.
+         */
 
-	nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
+        nodePtr = Ns_IndexFind(triePtr->indexnode, (void *) id);
         if (nodePtr != NULL) {
             if (flags & NS_OP_NOINHERIT) {
                 data = nodePtr->dataNoInherit;
@@ -1244,7 +1234,7 @@ TrieDelete(Trie *triePtr, char *seq, int id, int flags)
             }
         }
     }
-    
+
     return data;
 }
 
@@ -1255,15 +1245,15 @@ TrieDelete(Trie *triePtr, char *seq, int id, int flags)
  *
  * CmpChannels --
  *
- *	Compare the filters of two channels. 
+ *      Compare the filters of two channels.
  *
  * Results:
- *	0: Not the case that one contains the other OR they both 
- *	contain each other; 1: left contains right; -1: right contans 
- *	left. 
+ *      0: Not the case that one contains the other OR they both 
+ *      contain each other; 1: left contains right; -1: right contans 
+ *      left.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1274,9 +1264,9 @@ CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr)
     int lcontainsr, rcontainsl;
 
     lcontainsr = Tcl_StringMatch((*rightPtrPtr)->filter,
-				 (*leftPtrPtr)->filter);
+                                 (*leftPtrPtr)->filter);
     rcontainsl = Tcl_StringMatch((*leftPtrPtr)->filter,
-				 (*rightPtrPtr)->filter);
+                                 (*rightPtrPtr)->filter);
 
     if (lcontainsr && rcontainsl) {
         return 0;
@@ -1284,9 +1274,8 @@ CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr)
         return 1;
     } else if (rcontainsl) {
         return -1;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 
@@ -1295,15 +1284,15 @@ CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr)
  *
  * CmpKeyWithChannel --
  *
- *	Compare a key to a channel's filter 
+ *      Compare a key to a channel's filter.
  *
  * Results:
- *	0: Not the case that one contains the other OR they both 
- *	contain each other; 1: key contains filter; -1: filter 
- *	contains key 
+ *      0: Not the case that one contains the other OR they both 
+ *      contain each other; 1: key contains filter; -1: filter 
+ *      contains key.
  *
  * Side effects:
- *	None 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1321,13 +1310,8 @@ CmpKeyWithChannel(char *key, Channel **channelPtrPtr)
         return 1;
     } else if (rcontainsl) {
         return -1;
-    } else {
-	/*
-	 * Neither is the case
-	 */
-
-        return 0;
     }
+    return 0;
 }
 #endif
 
@@ -1337,13 +1321,13 @@ CmpKeyWithChannel(char *key, Channel **channelPtrPtr)
  *
  * CmpChannelsAsStrings --
  *
- *	Compare the filters of two channels.
+ *      Compare the filters of two channels.
  *
  * Results:
- *	Same as strcmp.
+ *      Same as strcmp.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1360,13 +1344,13 @@ CmpChannelsAsStrings(Channel **leftPtrPtr, Channel **rightPtrPtr)
  *
  * CmpKeyWithChannelAsStrings --
  *
- *	Compare a string key to a channel's filter 
+ *      Compare a string key to a channel's filter 
  *
  * Results:
- *	Same as strcmp. 
+ *      Same as strcmp. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -1383,13 +1367,13 @@ CmpKeyWithChannelAsStrings(char *key, Channel **channelPtrPtr)
  *
  * JunctionInit --
  *
- *	Initialize a junction.
+ *      Initialize a junction.
  *
  * Results:
- *	None. 
+ *      None.
  *
  * Side effects:
- *	Will set up the index in a junction. 
+ *      Will set up the index in a junction.
  *
  *----------------------------------------------------------------------
  */
@@ -1413,14 +1397,14 @@ JunctionInit(Junction *juncPtr)
  *
  * JunctionBranchTrunc --
  *
- *	Truncate a branch, defined by a sequence and ID, in a 
- *	junction 
+ *      Truncate a branch, defined by a sequence and ID, in a 
+ *      junction 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	See TrieBranchTrunc 
+ *      See TrieBranchTrunc 
  *
  *----------------------------------------------------------------------
  */
@@ -1435,7 +1419,7 @@ JunctionBranchTrunc(Junction *juncPtr, char *seq, int id)
      * Loop over every channel in a junction and truncate the sequence in
      * each.
      */
-    
+
 #ifndef __URLSPACE_OPTIMIZE__
     n = Ns_IndexCount(&juncPtr->byuse);
     for (i = 0; i < n; i++) {
@@ -1457,31 +1441,31 @@ JunctionBranchTrunc(Junction *juncPtr, char *seq, int id)
  *
  * JunctionAdd --
  *
- *	This function is called from Ns_UrlSpecificSet which is 
- *	usually called from Ns_RegisterRequest, 
- *	Ns_RegisterProxyRequest, InitAliases for mapping aliases, and 
- *	the nsperm functions TribeAlloc and Ns_AddPermission for 
- *	adding permissions. It adds a sequence, terminating in a new 
- *	node, to a junction.
+ *      This function is called from Ns_UrlSpecificSet which is 
+ *      usually called from Ns_RegisterRequest, 
+ *      Ns_RegisterProxyRequest, InitAliases for mapping aliases, and 
+ *      the nsperm functions TribeAlloc and Ns_AddPermission for 
+ *      adding permissions. It adds a sequence, terminating in a new 
+ *      node, to a junction.
  *
- *	Flags may be a bit-combination of NS_OP_NOINHERIT, NS_OP_NODELETE.
- *	NOINHERIT sets the data as noninheriting, so only an exact sequence
- *	will match in the future; NODELETE means that if a node already
- *	exists with this sequence/ID it will not be deleted but replaced.
+ *      Flags may be a bit-combination of NS_OP_NOINHERIT, NS_OP_NODELETE.
+ *      NOINHERIT sets the data as noninheriting, so only an exact sequence
+ *      will match in the future; NODELETE means that if a node already
+ *      exists with this sequence/ID it will not be deleted but replaced.
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	Modifies seq, assuming
- *	seq = "handle\0method\0urltoken\0urltoken\0..\0\0\"
+ *      Modifies seq, assuming
+ *      seq = "handle\0method\0urltoken\0urltoken\0..\0\0\"
  *
  *----------------------------------------------------------------------
  */
 
 static void
 JunctionAdd(Junction *juncPtr, char *seq, int id, void *data, int flags,
-    void (*deletefunc) (void *))
+            void (*deletefunc) (void *))
 {
     Channel    *channelPtr;
     Ns_DString  dsWord;
@@ -1495,7 +1479,7 @@ JunctionAdd(Junction *juncPtr, char *seq, int id, void *data, int flags,
      * Find out how deep the sequence is, and position p at the
      * beginning of the last word in the sequence.
      */
-    
+
     for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) {
         depth++;
     }
@@ -1523,7 +1507,7 @@ JunctionAdd(Junction *juncPtr, char *seq, int id, void *data, int flags,
      * Find a channel whose filter matches what the filter on this URL
      * should be.
      */
-    
+
     channelPtr = Ns_IndexFind(&juncPtr->byname, dsWord.string);
 
     /* 
@@ -1541,13 +1525,13 @@ JunctionAdd(Junction *juncPtr, char *seq, int id, void *data, int flags,
 #endif
         Ns_IndexAdd(&juncPtr->byname, channelPtr);
     }
-    
+
     /* 
      * Now we need to create a sequence of branches in the trie (if no
      * appropriate sequence already exists) and a node at the end of it.
      * TrieAdd will do that.
      */
-    
+
     TrieAdd(&channelPtr->trie, seq, id, data, flags, deletefunc);
 
     Ns_DStringFree(&dsWord);
@@ -1560,18 +1544,18 @@ JunctionAdd(Junction *juncPtr, char *seq, int id, void *data, int flags,
  *
  * JunctionFind --
  *
- *	Locate a node for a given sequence in a junction.
- *	As usual sequence is "handle\0method\0urltoken\0...\0\0".
+ *      Locate a node for a given sequence in a junction.
+ *      As usual sequence is "handle\0method\0urltoken\0...\0\0".
  *
- *	The "fast" boolean switch makes it do strcmp instead of
- *	Tcl string matches on the filters. Not useful for wildcard
- *	matching.
+ *      The "fast" boolean switch makes it do strcmp instead of
+ *      Tcl string matches on the filters. Not useful for wildcard
+ *      matching.
  *
  * Results:
- *	User data
+ *      User data
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -1598,16 +1582,16 @@ JunctionFind(Junction *juncPtr, char *seq, int id, int fast)
 
     if (n < 2) {
         /*
-	 * If there are fewer than 2 elements then advance p to the
-	 * end of the string.
-	 */
+         * If there are fewer than 2 elements then advance p to the
+         * end of the string.
+         */
         p += strlen(p) + 1;
     }
 
     /*
      * Check filters from most restrictive to least restrictive
      */
-    
+
     data = NULL;
 #ifndef __URLSPACE_OPTIMIZE__
     l = Ns_IndexCount(&juncPtr->byuse);
@@ -1623,7 +1607,7 @@ JunctionFind(Junction *juncPtr, char *seq, int id, int fast)
     }
 #endif
 
-    /* 
+    /*
      * For __URLSPACE_OPTIMIZE__
      * Basically if we use the optimize, let's reverse the order
      * by which we search because the byname is in "almost" exact
@@ -1631,46 +1615,46 @@ JunctionFind(Junction *juncPtr, char *seq, int id, int fast)
      *
      * Loop over all the channels in the index.
      */
-    
+
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0; i < l; i++) {
         Channel *channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
-    for (i = (l - 1); i >= 0; i--) {
+   for (i = (l - 1); i >= 0; i--) {
         Channel *channelPtr = Ns_IndexEl(&juncPtr->byname, i);
 #endif
         int doit;
 
-	if (fast) {
-	    doit = !strcmp(p, channelPtr->filter);
-	} else {
-	    doit = Tcl_StringMatch(p, channelPtr->filter);
-	}
-	if (doit) {
-	    /*
-	     * We got here because this url matches the filter
-	     * (for example, it's *.adp).
-	     */
-	    
+        if (fast) {
+            doit = !strcmp(p, channelPtr->filter);
+        } else {
+            doit = Tcl_StringMatch(p, channelPtr->filter);
+        }
+        if (doit) {
+            /*
+             * We got here because this url matches the filter
+             * (for example, it's *.adp).
+             */
+
             if (data == NULL) {
-		/*
-		 * Nothing has been found so far. Traverse the channel
-		 * and find the node; set data to that. Depth will be
-		 * set to the level of the node.
-		 */
-		
+                /*
+                 * Nothing has been found so far. Traverse the channel
+                 * and find the node; set data to that. Depth will be
+                 * set to the level of the node.
+                 */
+
                 depth = 0;
                 data = TrieFind(&channelPtr->trie, seq, id, &depth);
             } else {
                 void *candidate;
                 int   cdepth;
 
-		/*
-		 * Let's see if this channel has a node that also matches
-		 * the sequence but is more specific (has a greater depth)
-		 * that the previously found node.
-		 */
-		
+                /*
+                 * Let's see if this channel has a node that also matches
+                 * the sequence but is more specific (has a greater depth)
+                 * that the previously found node.
+                 */
+
                 cdepth = 0;
                 candidate = TrieFind(&channelPtr->trie, seq, id, &cdepth);
                 if ((candidate != NULL) && (cdepth > depth)) {
@@ -1683,23 +1667,22 @@ JunctionFind(Junction *juncPtr, char *seq, int id, int fast)
 #ifdef DEBUG
         if (n >= 2) {
             if (data == NULL) {
-                fprintf(stderr, "Channel %s: No match\n",
-                    channelPtr->filter);
+                fprintf(stderr, "Channel %s: No match\n", channelPtr->filter);
             } else {
                 fprintf(stderr, "Channel %s: depth=%d, data=%p\n",
-                    channelPtr->filter, depth, data);
+                        channelPtr->filter, depth, data);
             }
         }
 #endif
-    }
+   }
 
 #ifdef DEBUG
-    if (n >= 2) {
-        fprintf(stderr, "Done.\n");
-    }
+   if (n >= 2) {
+       fprintf(stderr, "Done.\n");
+   }
 #endif
-    
-    return data;
+
+   return data;
 }
 
 
@@ -1708,13 +1691,13 @@ JunctionFind(Junction *juncPtr, char *seq, int id, int fast)
  *
  * JunctionFindExact --
  *
- *	Find a node in a junction that exactly matches a sequence.
+ *      Find a node in a junction that exactly matches a sequence.
  *
  * Results:
- *	User data.
+ *      User data.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1725,21 +1708,17 @@ JunctionFindExact(Junction *juncPtr, char *seq, int id, int flags, int fast)
     char *p;
     int   l;
     int   i;
-    int   depth;
-    void *data;
-
-    depth = 0;
+    int   depth = 0;
+    void *data = NULL;
 
     /*
      * Set p to the last element of the sequence, and
      * depth to the number of elements in the sequence.
      */
-    
+
     for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) {
         depth++;
     }
-
-    data = NULL;
 
     /*
      * First, loop through all the channels that have non-"*"
@@ -1758,23 +1737,24 @@ JunctionFindExact(Junction *juncPtr, char *seq, int id, int flags, int fast)
         Channel *channelPtr = Ns_IndexEl(&juncPtr->byname, i);
 #endif
         if (strcmp(p, channelPtr->filter) == 0) {
-	    /*
-	     * The last element of the sequence exactly matches the
-	     * filter, so this is the one. Wipe out the last word and
-	     * return whatever node coems out of TrieFindExact.
-	     */
-	    
+
+            /*
+             * The last element of the sequence exactly matches the
+             * filter, so this is the one. Wipe out the last word and
+             * return whatever node coems out of TrieFindExact.
+             */
+
             *p = '\0';
             data = TrieFindExact(&channelPtr->trie, seq, id, flags);
             goto done;
         }
     }
-    
+
     /*
      * Now go to the channel with the "*" filter and look there for 
      * an exact match:
      */
-    
+
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0; i < l; i++) {
         Channel *channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
@@ -1787,9 +1767,9 @@ JunctionFindExact(Junction *juncPtr, char *seq, int id, int flags, int fast)
             break;
         }
     }
-    
-  done:
-    
+
+    done:
+
     return data;
 }
 
@@ -1799,13 +1779,13 @@ JunctionFindExact(Junction *juncPtr, char *seq, int id, int flags, int fast)
  *
  * JunctionDelete --
  *
- *	Delete a node from a junction matching a sequence 
+ *      Delete a node from a junction matching a sequence 
  *
  * Results:
- *	A pointer to the deleted node 
+ *      A pointer to the deleted node 
  *
  * Side effects:
- *	The node will be deleted if NS_OP_NODELETE isn't set in flags 
+ *      The node will be deleted if NS_OP_NODELETE isn't set in flags 
  *
  *----------------------------------------------------------------------
  */
@@ -1816,20 +1796,17 @@ JunctionDelete(Junction *juncPtr, char *seq, int id, int flags)
     char *p;
     int   l;
     int   i;
-    int   depth;
-    void *data;
+    int   depth = 0;
+    void *data = NULL;
 
     /*
      * Set p to the last element of the sequence, and
      * depth to the number of elements in the sequence.
      */
 
-    depth = 0;
     for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) {
         depth++;
     }
-
-    data = NULL;
 
 #ifndef __URLSPACE_OPTIMIZE__
     l = Ns_IndexCount(&juncPtr->byuse);
@@ -1841,29 +1818,31 @@ JunctionDelete(Junction *juncPtr, char *seq, int id, int flags)
         Channel *channelPtr = Ns_IndexEl(&juncPtr->byname, i);
 #endif
         if ((depth == 2) && (strcmp(p, channelPtr->filter) == 0)) {
-	    /*
-	     * This filter exactly matches the last element of the
-	     * sequence, so get the node and delete it. (This is
-	     * server-specific data because depth is 2).
-	     */
-	    
+
+            /*
+             * This filter exactly matches the last element of the
+             * sequence, so get the node and delete it. (This is
+             * server-specific data because depth is 2).
+             */
+
             *p = '\0';
             data = TrieFindExact(&channelPtr->trie, seq, id, flags);
             if (data != NULL) {
                 TrieDelete(&channelPtr->trie, seq, id, flags);
             }
         } else if (Tcl_StringMatch(p, channelPtr->filter)) {
-	    /*
-	     * The filter matches, so get the node and delete it.
-	     */
-	    
+
+            /*
+             * The filter matches, so get the node and delete it.
+             */
+
             data = TrieFindExact(&channelPtr->trie, seq, id, flags);
             if (data != NULL) {
                 TrieDelete(&channelPtr->trie, seq, id, flags);
             }
         }
     }
-    
+
     return data;
 }
 
@@ -1873,14 +1852,14 @@ JunctionDelete(Junction *juncPtr, char *seq, int id, int flags)
  *
  * MkSeq --
  *
- *	Build a "sequence" out of a server/method/url; turns it into 
- *	"server\0method\0urltoken\0...\0\0" 
+ *      Build a "sequence" out of a server/method/url; turns it into
+ *      "server\0method\0urltoken\0...\0\0".
  *
  * Results:
- *	None 
+ *      None.
  *
  * Side effects:
- *	Sequence goes into ds 
+ *      Sequence goes into ds.
  *
  *----------------------------------------------------------------------
  */
@@ -1888,28 +1867,27 @@ JunctionDelete(Junction *juncPtr, char *seq, int id, int flags)
 static void
 MkSeq(Ns_DString *dsPtr, char *server, char *method, char *url)
 {
-    if ((method != NULL) && (url != NULL)) {
-        char *p;
-        int   done;
+    char *p;
+    int   done, l;
 
-	/*
-	 * It is URLspecific data, not serverspecific data
-	 * if we get here.
-	 */
-	
+    if ((method != NULL) && (url != NULL)) {
+
+        /*
+         * It is URLspecific data, not serverspecific data
+         * if we get here.
+         */
+
         Ns_DStringNAppend(dsPtr, server, (int)(strlen(server) + 1));
         Ns_DStringNAppend(dsPtr, method, (int)(strlen(method) + 1));
 
-	/*
-	 * Loop over each directory in the URL and turn the slashes
-	 * into nulls.
-	 */
-	
+        /*
+         * Loop over each directory in the URL and turn the slashes
+         * into nulls.
+         */
+
         done = 0;
         while (!done && *url != '\0') {
             if (*url != '/') {
-                int l;
-
                 p = strchr(url, '/');
                 if (p != NULL) {
                     l = p - url;
@@ -1926,18 +1904,19 @@ MkSeq(Ns_DString *dsPtr, char *server, char *method, char *url)
             }
         }
 
-	/*
-	 * Put another null on the end to mark the end of the
-	 * string.
-	 */
-	
+        /*
+         * Put another null on the end to mark the end of the
+         * string.
+         */
+
         Ns_DStringNAppend(dsPtr, "\0", 1);
     } else {
-	/*
-	 * This is Server-specific data, so there's only going to
-	 * be one element.
-	 */
-	
+
+        /*
+         * This is Server-specific data, so there's only going to
+         * be one element.
+         */
+
         Ns_DStringNAppend(dsPtr, server, (int)(strlen(server) + 1));
         Ns_DStringNAppend(dsPtr, "\0", 1);
     }
@@ -1950,13 +1929,13 @@ MkSeq(Ns_DString *dsPtr, char *server, char *method, char *url)
  *
  * indentspace --
  *
- *	Print n spaces.
+ *      Print n spaces.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Will print to stderr.
+ *      Will print to stderr.
  *
  *----------------------------------------------------------------------
  */
@@ -1970,7 +1949,7 @@ indentspace(int n)
     for (i = 0; i < n; i++) {
         fputc(' ', stderr);
     }
-}
+ }
 
 
 /*
@@ -1978,13 +1957,13 @@ indentspace(int n)
  *
  * PrintTrie --
  *
- *	Output the trie to standard error.
+ *      Output the trie to standard error.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Will write to stderr. 
+ *      Will write to stderr. 
  *
  *----------------------------------------------------------------------
  */
@@ -1992,13 +1971,13 @@ indentspace(int n)
 static void
 PrintTrie(Trie *triePtr, int indent)
 {
-    int i;
+    Branch *branch;
+    Node   *nodePtr;
+    int     i;
 
     indentspace(indent);
     fprintf(stderr, "Branches:");
     for (i = 0; i < (&(triePtr->branches))->n; i++) {
-        Branch *branch;
-
         branch = (Branch *) Ns_IndexEl(&(triePtr->branches), i);
         indentspace(indent + 2);
         fprintf(stderr, "(%s):", branch->word);
@@ -2008,8 +1987,6 @@ PrintTrie(Trie *triePtr, int indent)
     fprintf(stderr, "IndexNodes:");
     if (triePtr->indexnode != NULL) {
         for (i = 0; i < triePtr->indexnode->n; i++) {
-            Node *nodePtr;
-
             nodePtr = (Node *) Ns_IndexEl(triePtr->indexnode, i);
             indentspace(indent + 2);
             if (nodePtr->dataInherit != NULL) {
@@ -2030,13 +2007,13 @@ PrintTrie(Trie *triePtr, int indent)
  *
  * PrintJunction --
  *
- *	Print a junction to std error. 
+ *      Print a junction to std error. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	Will write to stderr. 
+ *      Will write to stderr. 
  *
  *----------------------------------------------------------------------
  */
@@ -2070,13 +2047,13 @@ PrintJunction(Junction *junctionPtr)
  *
  * PrintSeq --
  *
- *	Print a null-delimited sequence to stderr.
+ *      Print a null-delimited sequence to stderr.
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	Will write to stderr. 
+ *      Will write to stderr. 
  *
  *----------------------------------------------------------------------
  */
@@ -2102,13 +2079,13 @@ PrintSeq(char *seq)
  *
  * NsUrlSpecificWalk --
  *
- *	Walk url tree, call ArgProc function for each node 
+ *      Walk url tree, call ArgProc function for each node 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -2116,18 +2093,21 @@ PrintSeq(char *seq)
 static void
 WalkTrie(Trie *triePtr, int id, char *server, Ns_ArgProc func, Tcl_DString *dsPtr, char **stack, char *filter)
 {
-    int i, depth;
+    Branch *branch;
+    Node   *nodePtr;
+    int     i, depth;
 
     for (i = 0; i < (&triePtr->branches)->n; i++) {
-        Branch *branch;
         branch = (Branch *) Ns_IndexEl(&triePtr->branches, i);
 
         /*
          * Remember current stack depth
          */
 
-        for(depth = 0; stack[depth] != NULL && depth < STACK_SIZE-1; depth++) ;
-
+        depth = 0;
+        while (stack[depth] != NULL && depth < STACK_SIZE) {
+            depth++;
+        }
         stack[depth] = branch->word;
         WalkTrie(&(branch->node), id, server, func, dsPtr, stack, filter);
 
@@ -2139,28 +2119,27 @@ WalkTrie(Trie *triePtr, int id, char *server, Ns_ArgProc func, Tcl_DString *dsPt
     }
     if (triePtr->indexnode != NULL) {
         for (i = 0; i < triePtr->indexnode->n; i++) {
-            Node *nodePtr;
             nodePtr = (Node *) Ns_IndexEl(triePtr->indexnode, i);
-	    if (nodePtr->id == id && !strcmp(server, stack[0])) {
+            if (nodePtr->id == id && !strcmp(server, stack[0])) {
                 Tcl_DStringStartSublist(dsPtr);
 
                 /*
                  * Put stack contents into the sublist,
                  * 1st element is server, 2nd is method, the rest is url
                  */
-              
+
                 for (depth = 0; stack[depth] != NULL; depth++) {
                     switch (depth) {
-                     case 0:
-                         Tcl_DStringAppendElement(dsPtr, stack[depth]);
-                         break;
-                     case 1:
-                         Tcl_DStringAppendElement(dsPtr, stack[depth]);
-                         Tcl_DStringAppend(dsPtr, " ", 1);
-                         break;
-                     default:
-                         Ns_DStringVarAppend(dsPtr, "/", stack[depth], NULL);
-                         break;
+                    case 0:
+                        Tcl_DStringAppendElement(dsPtr, stack[depth]);
+                        break;
+                    case 1:
+                        Tcl_DStringAppendElement(dsPtr, stack[depth]);
+                        Tcl_DStringAppend(dsPtr, " ", 1);
+                        break;
+                    default:
+                        Ns_DStringVarAppend(dsPtr, "/", stack[depth], NULL);
+                        break;
                     }
                 }
                 Ns_DStringVarAppend(dsPtr, filter, " ", NULL);
@@ -2197,4 +2176,3 @@ NsUrlSpecificWalk(int id, char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
     }
     Ns_MutexUnlock(&lock);
 }
-

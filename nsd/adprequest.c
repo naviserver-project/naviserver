@@ -30,7 +30,7 @@
 /* 
  * adprequest.c --
  *
- *	ADP connection request support.
+ *      ADP connection request support.
  */
 
 #include "nsd.h"
@@ -76,13 +76,13 @@ NsAdpRequestProc(void *arg, Ns_Conn *conn)
  *
  * Ns_AdpRequest -
  *
- *  	Invoke a file for an ADP request.
+ *      Invoke a file for an ADP request.
  *
  * Results:
- *	A standard AOLserver request result.
+ *      A standard AOLserver request result.
  *
  * Side effects:
- *	Depends on code embedded within page.
+ *      Depends on code embedded within page.
  *
  *----------------------------------------------------------------------
  */
@@ -90,22 +90,22 @@ NsAdpRequestProc(void *arg, Ns_Conn *conn)
 int
 Ns_AdpRequest(Ns_Conn *conn, char *file)
 {
-    Conn	     *connPtr = (Conn *) conn;
+    Conn             *connPtr = (Conn *) conn;
     Tcl_Interp       *interp;
-    Tcl_DString	      rds, tds;
-    NsInterp          *itPtr;
+    Tcl_DString       rds, tds;
+    NsInterp         *itPtr;
     int               status;
     char             *type, *start;
     Ns_Set           *setPtr;
-    NsServer	     *servPtr;
-    Tcl_Obj	     *objv[2];
+    NsServer         *servPtr;
+    Tcl_Obj          *objv[2];
     
     /*
      * Verify the file exists.
      */
 
     if (access(file, R_OK) != 0) {
-	return Ns_ConnReturnNotFound(conn);
+        return Ns_ConnReturnNotFound(conn);
     }
 
     /*
@@ -148,10 +148,10 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
      * Enable TclPro debugging if requested.
      */
 
-    if (servPtr->adp.enabledebug &&
-	STREQ(conn->request->method, "GET") &&
-	(setPtr = Ns_ConnGetQuery(conn)) != NULL) {
-	itPtr->adp.debugFile = Ns_SetIGet(setPtr, "debug");
+    if (servPtr->adp.enabledebug
+        && STREQ(conn->request->method, "GET")
+        && (setPtr = Ns_ConnGetQuery(conn)) != NULL) {
+        itPtr->adp.debugFile = Ns_SetIGet(setPtr, "debug");
     }
 
     /*
@@ -163,11 +163,11 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
     objv[1] = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(objv[0]);
     Tcl_IncrRefCount(objv[1]);
-    if (NsAdpInclude(itPtr, start, 2, objv) != TCL_OK &&
-        itPtr->adp.exception != ADP_RETURN &&
-        itPtr->adp.exception != ADP_BREAK &&
-        itPtr->adp.exception != ADP_ABORT) {
-	Ns_TclLogError(interp);
+    if (NsAdpInclude(itPtr, start, 2, objv) != TCL_OK
+        && itPtr->adp.exception != ADP_RETURN
+        && itPtr->adp.exception != ADP_BREAK
+        && itPtr->adp.exception != ADP_ABORT) {
+        Ns_TclLogError(interp);
     }
     Tcl_DecrRefCount(objv[0]);
     Tcl_DecrRefCount(objv[1]);
@@ -179,8 +179,8 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
 
     status = NS_OK;
     if (!(conn->flags & NS_CONN_SENTHDRS)
-	    && itPtr->adp.exception != ADP_ABORT) {
-	status = AdpFlush(itPtr, 0);
+        && itPtr->adp.exception != ADP_ABORT) {
+        status = AdpFlush(itPtr, 0);
     }
 
     /*
@@ -198,6 +198,7 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
     itPtr->adp.debugFile = NULL;
     Tcl_DStringFree(&rds);
     Tcl_DStringFree(&tds);
+
     return status;
 }
 
@@ -207,14 +208,14 @@ Ns_AdpRequest(Ns_Conn *conn, char *file)
  *
  * NsAdpFlush --
  *
- *	Flush current response output to connection.
+ *      Flush current response output to connection.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None unless streaming is enabled in which case AdpFlush
- *	is called.
+ *      None unless streaming is enabled in which case AdpFlush
+ *      is called.
  *
  *----------------------------------------------------------------------
  */
@@ -223,14 +224,15 @@ void
 NsAdpFlush(NsInterp *itPtr)
 {
     if (itPtr->adp.stream
-	&& itPtr->adp.responsePtr != NULL
-	&& itPtr->adp.responsePtr->length > 0) {
-	if (AdpFlush(itPtr, 1) != NS_OK) {
-	    itPtr->adp.stream = 0;
+        && itPtr->adp.responsePtr != NULL
+        && itPtr->adp.responsePtr->length > 0) {
+
+        if (AdpFlush(itPtr, 1) != NS_OK) {
+            itPtr->adp.stream = 0;
             if (Ns_ConnGetChunkedFlag(itPtr->conn)) {
                 Ns_ConnSetChunkedFlag(itPtr->conn, 0);
             }
-	}
+        }
     }
 }
 
@@ -240,13 +242,13 @@ NsAdpFlush(NsInterp *itPtr)
  *
  * NsAdpStream --
  *
- *	Turn streaming mode on.
+ *      Turn streaming mode on.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Headers and current data, if any, are flushed. Can enable chunked
+ *      Headers and current data, if any, are flushed. Can enable chunked
  *      mode depending on the browser version.
  *
  *----------------------------------------------------------------------
@@ -275,13 +277,13 @@ NsAdpStream(NsInterp *itPtr)
  *
  * NsAdpCompress --
  *
- *	Turn on-the-fly compression on or off.
+ *      Turn on-the-fly compression on or off.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -298,13 +300,13 @@ NsAdpCompress(NsInterp *itPtr, int compress)
  *
  * NsAdpSetMimeType --
  *
- *	Sets the mime type and connection encoding for this adp.
+ *      Sets the mime type and connection encoding for this adp.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	Type may effect output encoding charset.
+ *      Type may effect output encoding charset.
  *
  *----------------------------------------------------------------------
  */
@@ -315,13 +317,13 @@ NsAdpSetMimeType(NsInterp *itPtr, char *type)
     Tcl_Encoding encoding;
 
     if (itPtr->adp.typePtr != NULL) {
-	Tcl_DStringFree(itPtr->adp.typePtr);
-	Tcl_DStringAppend(itPtr->adp.typePtr, type, -1);
-	encoding = Ns_GetTypeEncoding(type);
-	if (encoding != NULL) {
-	    Ns_ConnSetEncoding(itPtr->conn, encoding);
+        Tcl_DStringFree(itPtr->adp.typePtr);
+        Tcl_DStringAppend(itPtr->adp.typePtr, type, -1);
+        encoding = Ns_GetTypeEncoding(type);
+        if (encoding != NULL) {
+            Ns_ConnSetEncoding(itPtr->conn, encoding);
             Ns_ConnSetUrlEncoding(itPtr->conn, encoding);
-	}
+        }
     }
 }
 
@@ -331,13 +333,13 @@ NsAdpSetMimeType(NsInterp *itPtr, char *type)
  *
  * NsFreeAdp --
  *
- *	Interp delete callback to free ADP resources.
+ *      Interp delete callback to free ADP resources.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -346,7 +348,7 @@ void
 NsFreeAdp(NsInterp *itPtr)
 {
     if (itPtr->adp.cache != NULL) {
-	Ns_CacheDestroy(itPtr->adp.cache);
+        Ns_CacheDestroy(itPtr->adp.cache);
     }
 }
 
@@ -356,13 +358,13 @@ NsFreeAdp(NsInterp *itPtr)
  *
  * AdpFlush --
  *
- *	Flush the headers and/or ADP content.
+ *      Flush the headers and/or ADP content.
  *
  * Results:
- *	NS_OK or NS_ERROR if a connection write routine failed.
+ *      NS_OK or NS_ERROR if a connection write routine failed.
  *
  * Side effects:
- *  	Content is encoded and/or sent.
+ *      Content is encoded and/or sent.
  *
  *----------------------------------------------------------------------
  */
@@ -389,9 +391,9 @@ AdpFlush(NsInterp *itPtr, int stream)
 
     encoding = Ns_ConnGetEncoding(conn);
     if (encoding != NULL) {
-	Tcl_UtfToExternalDString(encoding, buf, len, &ds);
-	buf = ds.string;
-	len = ds.length;
+        Tcl_UtfToExternalDString(encoding, buf, len, &ds);
+        buf = ds.string;
+        len = ds.length;
     }
 
     /*
@@ -404,16 +406,16 @@ AdpFlush(NsInterp *itPtr, int stream)
      */
 
     if (itPtr->adp.compress
-            && itPtr->servPtr->adp.compress.enable
-            && !(conn->flags & NS_CONN_SENTHDRS)
-            && !(conn->flags & NS_CONN_SKIPBODY)
-            && !stream
-            && len >= itPtr->servPtr->adp.compress.minsize
-            && (ahdr = Ns_SetIGet(Ns_ConnHeaders(conn),
-                    "Accept-Encoding")) != NULL
-            && strstr(ahdr, "gzip") != NULL
-            && Ns_CompressGzip(buf, len, &cds,
-                itPtr->servPtr->adp.compress.level) == NS_OK) {
+        && itPtr->servPtr->adp.compress.enable
+        && !(conn->flags & NS_CONN_SENTHDRS)
+        && !(conn->flags & NS_CONN_SKIPBODY)
+        && !stream
+        && len >= itPtr->servPtr->adp.compress.minsize
+        && (ahdr = Ns_SetIGet(Ns_ConnHeaders(conn),
+                              "Accept-Encoding")) != NULL
+        && strstr(ahdr, "gzip") != NULL
+        && Ns_CompressGzip(buf, len, &cds,
+                           itPtr->servPtr->adp.compress.level) == NS_OK) {
 
         /*
          * We may want to check if Content-Encoding was already
@@ -431,11 +433,11 @@ AdpFlush(NsInterp *itPtr, int stream)
      */
 
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
-	if (itPtr->servPtr->adp.enableexpire) {
-	    Ns_ConnCondSetHeaders(conn, "Expires", "now");
-	}
-	Ns_ConnSetRequiredHeaders(conn, type, stream ? -1 : len);
-	Ns_ConnQueueHeaders(conn, 200);
+        if (itPtr->servPtr->adp.enableexpire) {
+            Ns_ConnCondSetHeaders(conn, "Expires", "now");
+        }
+        Ns_ConnSetRequiredHeaders(conn, type, stream ? -1 : len);
+        Ns_ConnQueueHeaders(conn, 200);
     }
 
     /*
@@ -450,11 +452,12 @@ AdpFlush(NsInterp *itPtr, int stream)
 
     result = Ns_WriteConn(conn, buf, len);
     if (result == NS_OK && !stream) {
-	result = Ns_ConnClose(conn);
+        result = Ns_ConnClose(conn);
     }
 
     Tcl_DStringFree(&ds);
     Tcl_DStringFree(&cds);
     Tcl_DStringTrunc(itPtr->adp.responsePtr, 0);
+
     return result;
 }

@@ -31,7 +31,7 @@
 /*
  * return.c --
  *
- *	Functions that return data to a browser. 
+ *      Functions that return data to a browser. 
  */
 
 #include "nsd.h"
@@ -50,7 +50,7 @@ NS_RCSID("@(#) $Header$");
 
 static int ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr);
 static int ReturnOpen(Ns_Conn *conn, int status, char *type, Tcl_Channel chan,
-		      FILE *fp, int fd, int len);
+                      FILE *fp, int fd, int len);
 static int ReturnCharData(Ns_Conn *conn, int status, char *data, int len,
                           char *type, int sendRaw);
 
@@ -59,7 +59,7 @@ static int ReturnCharData(Ns_Conn *conn, int status, char *data, int len,
  */
 
 static struct {
-    int	  status;
+    int   status;
     char *reason;
 } reasons[] = {
     {100, "Continue"},
@@ -115,7 +115,7 @@ static struct {
  * Static variables defined in this file.
  */
 
-static int             nreasons = (sizeof(reasons) / sizeof(reasons[0]));
+static int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 
 
 /*
@@ -123,15 +123,15 @@ static int             nreasons = (sizeof(reasons) / sizeof(reasons[0]));
  *
  * Ns_RegisterReturn --
  *
- *	Associate a URL with a status. Rather than return the
- *	default error page for this status, a redirect will be
- *	issued to the url.
+ *      Associate a URL with a status. Rather than return the
+ *      default error page for this status, a redirect will be
+ *      issued to the url.
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -139,22 +139,22 @@ static int             nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 void
 Ns_RegisterReturn(int status, char *url)
 {
-    NsServer	  *servPtr;
+    NsServer      *servPtr;
     Tcl_HashEntry *hPtr;
     int            new;
 
     servPtr = NsGetInitServer();
     if (servPtr != NULL) {
-    	hPtr = Tcl_CreateHashEntry(&servPtr->request.redirect,
-				   (char *) status, &new);
-    	if (!new) {
-	    ns_free(Tcl_GetHashValue(hPtr));
-    	}
-    	if (url == NULL) {
-	    Tcl_DeleteHashEntry(hPtr);
-    	} else {
-	    Tcl_SetHashValue(hPtr, ns_strdup(url));
-	}
+        hPtr = Tcl_CreateHashEntry(&servPtr->request.redirect,
+                   (char *) status, &new);
+        if (!new) {
+            ns_free(Tcl_GetHashValue(hPtr));
+        }
+        if (url == NULL) {
+            Tcl_DeleteHashEntry(hPtr);
+        } else {
+            Tcl_SetHashValue(hPtr, ns_strdup(url));
+        }
     }
 }
 
@@ -164,14 +164,14 @@ Ns_RegisterReturn(int status, char *url)
  *
  * Ns_ConnConstructHeaders --
  *
- *	Put the header of an HTTP response into the dstring. 
+ *      Put the header of an HTTP response into the dstring. 
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Content length and connection-keepalive headers will be added 
- *	if possible. 
+ *      Content length and connection-keepalive headers will be added 
+ *      if possible. 
  *
  *----------------------------------------------------------------------
  */
@@ -203,9 +203,9 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      * encoding
      */
 
-    if ((connPtr->responseStatus == 204 ||
-         connPtr->responseStatus == 206 ||
-         connPtr->responseStatus == 304)) {
+    if ((connPtr->responseStatus == 204
+         || connPtr->responseStatus == 206
+         || connPtr->responseStatus == 304)) {
         conn->flags &= ~NS_CONN_WRITE_CHUNKED;
         Ns_SetIDeleteKey(conn->outputheaders, "Transfer-encoding");
     }
@@ -215,14 +215,14 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     if (conn->flags & NS_CONN_WRITE_CHUNKED) {
-	Ns_ConnCondSetHeaders(conn, "Transfer-encoding", "chunked");
+        Ns_ConnCondSetHeaders(conn, "Transfer-encoding", "chunked");
         Ns_SetIDeleteKey(conn->outputheaders, "Content-length");
         connPtr->responseLength = 0;
     }
 
     Ns_DStringPrintf(dsPtr, "%s %d %s\r\n",
                      (connPtr->responseVersion != NULL) ? connPtr->responseVersion :
-                       (conn->flags & NS_CONN_WRITE_CHUNKED) ? "HTTP/1.1" : "HTTP/1.0",
+                     (conn->flags & NS_CONN_WRITE_CHUNKED) ? "HTTP/1.1" : "HTTP/1.0",
                      connPtr->responseStatus,
                      reason);
 
@@ -231,55 +231,57 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     if (conn->outputheaders != NULL) {
-	/*
-	 * Update the response length value directly from the
-	 * header to be sent, i.e., don't trust programmers
-	 * correctly called Ns_ConnSetLengthHeader().
-	 */
 
-	length = connPtr->responseLength;
-	lengthHdr = Ns_SetIGet(conn->outputheaders, "content-length");
-	if (lengthHdr != NULL) {
-	    connPtr->responseLength = atoi(lengthHdr);
-	}
-	
-	/*
-	 * Output a connection keep-alive header only on
-	 * any HTTP status 200 response which included
-	 * a valid and correctly set content-length header.
-	 */
+        /*
+         * Update the response length value directly from the
+         * header to be sent, i.e., don't trust programmers
+         * correctly called Ns_ConnSetLengthHeader().
+         */
 
-	if (drvPtr->keepwait > 0 &&
-	    connPtr->headers != NULL &&
-	    connPtr->request != NULL &&
-	    (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300) &&
-	    ((lengthHdr != NULL && connPtr->responseLength == length) ||
-             (conn->flags & NS_CONN_WRITE_CHUNKED)) ) ||
-	    (connPtr->responseStatus == 304 ||
-             connPtr->responseStatus == 201 ||
-             connPtr->responseStatus == 207) ) &&
-	    (drvPtr->keepallmethods == NS_TRUE ||
-	    STREQ(connPtr->request->method, "GET")) &&
-	    (key = Ns_SetIGet(conn->headers, "connection")) != NULL &&
-	    STRIEQ(key, "keep-alive")) {
-	    conn->flags |= NS_CONN_KEEPALIVE;
-	    keep = "keep-alive";
-	} else {
-	    keep = "close";
-	}
+        length = connPtr->responseLength;
+        lengthHdr = Ns_SetIGet(conn->outputheaders, "content-length");
+        if (lengthHdr != NULL) {
+            connPtr->responseLength = atoi(lengthHdr);
+        }
 
-	Ns_ConnCondSetHeaders(conn, "Connection", keep);
+        /*
+         * Output a connection keep-alive header only on
+         * any HTTP status 200 response which included
+         * a valid and correctly set content-length header.
+         */
 
-	for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
-	    key = Ns_SetKey(conn->outputheaders, i);
-	    value = Ns_SetValue(conn->outputheaders, i);
-	    if (key != NULL && value != NULL) {
-		Ns_DStringAppend(dsPtr, key);
-		Ns_DStringNAppend(dsPtr, ": ", 2);
-		Ns_DStringAppend(dsPtr, value);
-		Ns_DStringNAppend(dsPtr, "\r\n", 2);
-	    }
-	}
+        if (drvPtr->keepwait > 0
+            && connPtr->headers != NULL
+            && connPtr->request != NULL
+            && (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300)
+                 && ((lengthHdr != NULL && connPtr->responseLength == length)
+                     || (conn->flags & NS_CONN_WRITE_CHUNKED)) )
+                || (connPtr->responseStatus == 304
+                    || connPtr->responseStatus == 201
+                    || connPtr->responseStatus == 207) )
+            && (drvPtr->keepallmethods == NS_TRUE
+                || STREQ(connPtr->request->method, "GET"))
+            && (key = Ns_SetIGet(conn->headers, "connection")) != NULL
+            && STRIEQ(key, "keep-alive")) {
+
+            conn->flags |= NS_CONN_KEEPALIVE;
+            keep = "keep-alive";
+        } else {
+            keep = "close";
+        }
+
+        Ns_ConnCondSetHeaders(conn, "Connection", keep);
+
+        for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
+            key = Ns_SetKey(conn->outputheaders, i);
+            value = Ns_SetValue(conn->outputheaders, i);
+            if (key != NULL && value != NULL) {
+                Ns_DStringAppend(dsPtr, key);
+                Ns_DStringNAppend(dsPtr, ": ", 2);
+                Ns_DStringAppend(dsPtr, value);
+                Ns_DStringNAppend(dsPtr, "\r\n", 2);
+            }
+        }
     }
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 }
@@ -290,13 +292,13 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
  *
  * Ns_ConnQueueHeaders --
  *
- *	Format basic headers to be sent on the connection.
+ *      Format basic headers to be sent on the connection.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	See Ns_ConnConstructHeaders. 
+ *      See Ns_ConnConstructHeaders. 
  *
  *----------------------------------------------------------------------
  */
@@ -307,12 +309,12 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     Conn *connPtr = (Conn *) conn;
 
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
-    	connPtr->responseStatus = status;
-    	if (!(conn->flags & NS_CONN_SKIPHDRS)) {
-	    Ns_ConnConstructHeaders(conn, &connPtr->queued);
-	    connPtr->nContentSent -= connPtr->queued.length;
-    	}
-    	conn->flags |= NS_CONN_SENTHDRS;
+        connPtr->responseStatus = status;
+        if (!(conn->flags & NS_CONN_SKIPHDRS)) {
+            Ns_ConnConstructHeaders(conn, &connPtr->queued);
+            connPtr->nContentSent -= connPtr->queued.length;
+        }
+        conn->flags |= NS_CONN_SENTHDRS;
     }
 }
 
@@ -322,14 +324,14 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
  *
  * Ns_ConnFlushHeaders --
  *
- *	Send out a well-formed set of HTTP headers with the given 
- *	status. 
+ *      Send out a well-formed set of HTTP headers with the given 
+ *      status. 
  *
  * Results:
- *	Number of bytes written. 
+ *      Number of bytes written. 
  *
  * Side effects:
- *	See Ns_ConnQueueHeaders. 
+ *      See Ns_ConnQueueHeaders. 
  *
  *----------------------------------------------------------------------
  */
@@ -347,13 +349,13 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
  *
  * Ns_ConnSetHeaders --
  *
- *	Add an output header. 
+ *      Add an output header. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -400,13 +402,13 @@ Ns_ConnPrintfHeaders(Ns_Conn *conn, char *field, char *fmt,...)
  *
  * Ns_ConnCondSetHeaders --
  *
- *	Add an output header, only if it doesn't already exist. 
+ *      Add an output header, only if it doesn't already exist. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -425,14 +427,14 @@ Ns_ConnCondSetHeaders(Ns_Conn *conn, char *field, char *value)
  *
  * Ns_ConnReplaceHeaders --
  *
- *	Free the existing outpheaders and set them to a copy of 
- *	newheaders. 
+ *      Free the existing outpheaders and set them to a copy of 
+ *      newheaders. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -450,14 +452,14 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
  *
  * Ns_ConnSetRequiredHeaders --
  *
- *	Set a sane set of minimal headers for any response:
- *	MIME-Version, Date, Server, Content-Type, Content-Length
+ *      Set a sane set of minimal headers for any response:
+ *      MIME-Version, Date, Server, Content-Type, Content-Length
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -485,10 +487,10 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length)
      */
 
     if (type != NULL) {
-    	Ns_ConnSetTypeHeader(conn, type);
+        Ns_ConnSetTypeHeader(conn, type);
     }
     if (length >= 0) {
-	Ns_ConnSetLengthHeader(conn, length);
+        Ns_ConnSetLengthHeader(conn, length);
     }
 
     Ns_DStringFree(&ds);
@@ -500,13 +502,13 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, char *type, int length)
  *
  * Ns_ConnSetTypeHeader --
  *
- *	Sets the Content-Type HTTP output header 
+ *      Sets the Content-Type HTTP output header 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -523,13 +525,13 @@ Ns_ConnSetTypeHeader(Ns_Conn *conn, char *type)
  *
  * Ns_ConnSetLengthHeader --
  *
- *	Set the Content-Length output header. 
+ *      Set the Content-Length output header. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -549,13 +551,13 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, int length)
  *
  * Ns_ConnSetLastModifiedHeader --
  *
- *	Set the Last-Modified output header if it isn't already set. 
+ *      Set the Last-Modified output header if it isn't already set. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -576,13 +578,13 @@ Ns_ConnSetLastModifiedHeader(Ns_Conn *conn, time_t *mtime)
  *
  * Ns_ConnSetExpiresHeader --
  *
- *	Set the Expires output header. 
+ *      Set the Expires output header. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -599,13 +601,13 @@ Ns_ConnSetExpiresHeader(Ns_Conn *conn, char *expires)
  *
  * Ns_ConnResetReturn --
  *
- *	Deprecated 
+ *      Deprecated 
  *
  * Results:
- *	NS_OK 
+ *      NS_OK 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -622,14 +624,14 @@ Ns_ConnResetReturn(Ns_Conn *conn)
  *
  * Ns_ConnReturnAdminNotice --
  *
- *	Return a short notice to a client to contact system 
- *	administrator. 
+ *      Return a short notice to a client to contact system 
+ *      administrator. 
  *
  * Results:
- *	See Ns_ConnReturnNotice 
+ *      See Ns_ConnReturnNotice 
  *
  * Side effects:
- *	See Ns_ConnReturnNotice 
+ *      See Ns_ConnReturnNotice 
  *
  *----------------------------------------------------------------------
  */
@@ -646,13 +648,13 @@ Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, char *title, char *notice)
  *
  * Ns_ConnReturnNotice --
  *
- *	Return a short notice to a client. 
+ *      Return a short notice to a client. 
  *
  * Results:
- *	See Ns_ReturnHtml. 
+ *      See Ns_ReturnHtml. 
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -660,28 +662,29 @@ Ns_ConnReturnAdminNotice(Ns_Conn *conn, int status, char *title, char *notice)
 int
 Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
 {
-    Conn *connPtr = (Conn *) conn;
-    NsServer *servPtr = connPtr->servPtr;
-    Ns_DString ds;
-    int        result;
+    Conn       *connPtr = (Conn *) conn;
+    NsServer   *servPtr = connPtr->servPtr;
+    Ns_DString  ds;
+    int         result;
 
     Ns_DStringInit(&ds);
     if (title == NULL) {
         title = "Server Message";
     }
     Ns_DStringVarAppend(&ds,
-			"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
-			"<HTML>\n<HEAD>\n"
-			"<TITLE>", title, "</TITLE>\n"
-			"</HEAD>\n<BODY>\n"
-			"<H2>", title, "</H2>\n", NULL);
+            "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
+            "<HTML>\n<HEAD>\n"
+            "<TITLE>", title, "</TITLE>\n"
+            "</HEAD>\n<BODY>\n"
+            "<H2>", title, "</H2>\n", NULL);
     if (notice != NULL) {
-    	Ns_DStringVarAppend(&ds, notice, "\n", NULL);
+        Ns_DStringVarAppend(&ds, notice, "\n", NULL);
     }
 
     /*
      * Detailed server information at the bottom of the page.
      */
+
     if (servPtr->opts.noticedetail) {
         Ns_DStringVarAppend(&ds, "<P ALIGN=RIGHT><SMALL><I>",
                             Ns_InfoServerName(), "/",
@@ -695,16 +698,18 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
      * Padding that suppresses those horrible MSIE friendly errors.
      * NB: Because we pad inside the body we may pad more than needed.
      */
+
     if (status >= 400) {
-	while (ds.length < servPtr->opts.errorminsize) {
-	    Ns_DStringAppend(&ds, "                    ");
-	}
+        while (ds.length < servPtr->opts.errorminsize) {
+            Ns_DStringAppend(&ds, "                    ");
+        }
     }
     
     Ns_DStringVarAppend(&ds, "\n</BODY></HTML>\n", NULL);
-    
+
     result = Ns_ConnReturnHtml(conn, status, ds.string, ds.length);
     Ns_DStringFree(&ds);
+
     return result;
 }
 
@@ -714,13 +719,13 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
  *
  * Ns_ConnReturnData --
  *
- *	Sets required headers, dumps them, and then writes your data. 
+ *      Sets required headers, dumps them, and then writes your data. 
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	May set numerous headers, will close connection. 
+ *      May set numerous headers, will close connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -728,7 +733,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status, char *title, char *notice)
 int
 Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
 {
-   return ReturnCharData(conn, status, data, len, type, NS_TRUE);
+    return ReturnCharData(conn, status, data, len, type, NS_TRUE);
 }
 
 
@@ -737,13 +742,14 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
  *
  * Ns_ConnReturnCharData --
  *
- *	Sets required headers, dumps them, and then writes your data. 
+ *      Sets required headers, dumps them, and then writes your
+ *      data, translating from utf-8 to the correct character encoding.
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	May set numerous headers, will close connection. 
+ *      May set numerous headers, will close connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -751,7 +757,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, char *data, int len, char *type)
 int
 Ns_ConnReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type)
 {
-   return ReturnCharData(conn, status, data, len, type, NS_FALSE);
+    return ReturnCharData(conn, status, data, len, type, NS_FALSE);
 }
 
 
@@ -760,15 +766,15 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type
  *
  * ReturnCharData --
  *
- *	Sets required headers, dumps them, and then writes your data. 
+ *      Sets required headers, dumps them, and then writes your data. 
  *      If sendRaw is false, then translate the data from utf-8 to the
  *      correct character encoding if appropriate.
  *
  * Results:
- *	NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *	May set numerous headers, will close connection. 
+ *      May set numerous headers, will close connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -784,7 +790,7 @@ ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
     Tcl_DString  type_ds;
     int          new_type = NS_FALSE;
 
-    connPtr = (Conn *)conn;
+    connPtr = (Conn *) conn;
 
     /* Make sure we know what output encoding (if any) to use. */
     if (!sendRaw ) {
@@ -804,15 +810,15 @@ ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
 
         Tcl_UtfToExternalDString(connPtr->encoding, data, len, &ds);
 
-	data = Tcl_DStringValue(&ds);
-	len = Tcl_DStringLength(&ds);
+        data = Tcl_DStringValue(&ds);
+        len = Tcl_DStringLength(&ds);
 
     } else {
 
-	/* Send data unmodified. */
-	if (len == -1) {
-	    len = data ? strlen(data) : 0;
-	}
+        /* Send data unmodified. */
+        if (len == -1) {
+            len = data ? strlen(data) : 0;
+        }
 
     }
 
@@ -843,13 +849,13 @@ ReturnCharData(Ns_Conn *conn, int status, char *data, int len, char *type,
  *
  * Ns_ConnReturnHtml --
  *
- *	Return data of type text/html to client. 
+ *      Return data of type text/html to client. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	See Ns_ConnReturnData 
+ *      See Ns_ConnReturnData 
  *
  *----------------------------------------------------------------------
  */
@@ -867,13 +873,13 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, char *html, int len)
  *
  * Ns_ConnReturnOk --
  *
- *	Return a status message to the client. 
+ *      Return a status message to the client. 
  *
  * Results:
- *	See Ns_ReturnStatus 
+ *      See Ns_ReturnStatus 
  *
  * Side effects:
- *	See Ns_ReturnStatus
+ *      See Ns_ReturnStatus
  *
  *----------------------------------------------------------------------
  */
@@ -891,13 +897,13 @@ Ns_ConnReturnOk(Ns_Conn *conn)
  *
  * Ns_ConnReturnNoResponse --
  *
- *	Return a status message to the client. 
+ *      Return a status message to the client. 
  *
  * Results:
- *	See Ns_ReturnStatus
+ *      See Ns_ReturnStatus
  *
  * Side effects:
- *	See Ns_ReturnStatus 
+ *      See Ns_ReturnStatus 
  *
  *----------------------------------------------------------------------
  */
@@ -915,14 +921,14 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
  *
  * Ns_ConnReturnRedirect --
  *
- *	Return a 302 Redirection to the client, or 204 No Content if 
- *	url is null. 
+ *      Return a 302 Redirection to the client, or 204 No Content if 
+ *      url is null. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close connection. 
+ *      Will close connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -959,14 +965,14 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, char *url)
  *
  * Ns_ConnReturnBadRequest --
  *
- *	Return an 'invalid request' HTTP status line with an error 
- *	message. 
+ *      Return an 'invalid request' HTTP status line with an error 
+ *      message. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close connection. 
+ *      Will close connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -978,16 +984,17 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, char *reason)
     int        result;
 
     if (ReturnRedirect(conn, 400, &result)) {
-	return result;
+        return result;
     }
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds,
-	"The HTTP request presented by your browser is invalid.");
+        "The HTTP request presented by your browser is invalid.");
     if (reason != NULL) {
         Ns_DStringVarAppend(&ds, "<P>\n", reason, NULL);
     }
     result = Ns_ConnReturnNotice(conn, 400, "Invalid Request", ds.string);
     Ns_DStringFree(&ds);
+
     return result;
 }
 
@@ -997,14 +1004,14 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, char *reason)
  *
  * Ns_ConnReturnUnauthorized --
  *
- *	Return a 401 Unauthorized response, which will prompt the 
- *	user for a Basic authentication username/password. 
+ *      Return a 401 Unauthorized response, which will prompt the 
+ *      user for a Basic authentication username/password. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close the connection. 
+ *      Will close the connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -1012,22 +1019,23 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, char *reason)
 int
 Ns_ConnReturnUnauthorized(Ns_Conn *conn)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn       *connPtr = (Conn *) conn;
     Ns_DString  ds;
-    int	        result;
+    int         result;
 
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, "Basic realm=\"",
-	connPtr->servPtr->opts.realm, "\"", NULL);
+                        connPtr->servPtr->opts.realm, "\"", NULL);
     Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
     Ns_DStringFree(&ds);
 
     if (ReturnRedirect(conn, 401, &result)) {
         return result;
     }
+
     return Ns_ConnReturnNotice(conn, 401, "Access Denied",
-	"The requested URL cannot be accessed because a "
-	"valid username and password are required.");
+               "The requested URL cannot be accessed because a "
+               "valid username and password are required.");
 }
 
 
@@ -1036,13 +1044,13 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
  *
  * Ns_ConnReturnForbidden --
  *
- *	Return a 403 Forbidden response. 
+ *      Return a 403 Forbidden response. 
  *
  * Results:
- *	NS_OK/NS_ERROR. 
+ *      NS_OK/NS_ERROR. 
  *
  * Side effects:
- *	Will close the connection. 
+ *      Will close the connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -1053,10 +1061,11 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
     int result;
 
     if (ReturnRedirect(conn, 403, &result)) {
-	return result;
+        return result;
     }
+
     return Ns_ConnReturnNotice(conn, 403, "Forbidden",
-	"The requested URL cannot be accessed by this server.");
+               "The requested URL cannot be accessed by this server.");
 }
 
 
@@ -1065,13 +1074,13 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
  *
  * Ns_ConnReturnNotFound --
  *
- *	Return a 404 Not Found response. 
+ *      Return a 404 Not Found response. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close the connection. 
+ *      Will close the connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -1082,10 +1091,11 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
     int result;
 
     if (ReturnRedirect(conn, 404, &result)) {
-	return result;
+        return result;
     }
+
     return Ns_ConnReturnNotice(conn, 404, "Not Found",
-	"The requested URL was not found on this server.");
+               "The requested URL was not found on this server.");
 }
 
 
@@ -1094,13 +1104,13 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
  *
  * Ns_ConnReturnNotModified --
  *
- *	Return a 304 Not Modified response. 
+ *      Return a 304 Not Modified response. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close the connection. 
+ *      Will close the connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -1117,13 +1127,13 @@ Ns_ConnReturnNotModified(Ns_Conn *conn)
  *
  * Ns_ConnReturnNotImplemented --
  *
- *	Return a 501 Not Implemented response. 
+ *      Return a 501 Not Implemented response. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close the connection. 
+ *      Will close the connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -1134,11 +1144,12 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
     int result;
 
     if (ReturnRedirect(conn, 501, &result)) {
-	return result;
+        return result;
     }
+
     return Ns_ConnReturnNotice(conn, 501, "Not Implemented",
-	"The requested URL or method is not implemented "
-	"by this server.");
+               "The requested URL or method is not implemented "
+               "by this server.");
 }
 
 
@@ -1147,13 +1158,13 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
  *
  * Ns_ConnReturnInternalError --
  *
- *	Return a 500 Internal Error response. 
+ *      Return a 500 Internal Error response. 
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close the connection. 
+ *      Will close the connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -1165,11 +1176,12 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
 
     Ns_SetTrunc(conn->outputheaders, 0);
     if (ReturnRedirect(conn, 500, &result)) {
-	return result;
+        return result;
     }
+
     return Ns_ConnReturnNotice(conn, 500, "Server Error",
-	"The requested URL cannot be accessed "
-	"due to a system error on this server.");
+               "The requested URL cannot be accessed "
+               "due to a system error on this server.");
 }
 
 
@@ -1178,13 +1190,13 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
  *
  * Ns_ConnReturnStatus --
  *
- *	Return an arbitrary status code.
+ *      Return an arbitrary status code.
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR 
  *
  * Side effects:
- *	Will close the connection. 
+ *      Will close the connection. 
  *
  *----------------------------------------------------------------------
  */
@@ -1195,10 +1207,11 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
     int result;
     
     if (ReturnRedirect(conn, status, &result)) {
-    	return result;
+        return result;
     }
     Ns_ConnSetRequiredHeaders(conn, NULL, 0);
     Ns_ConnFlushHeaders(conn, status);
+
     return Ns_ConnClose(conn);
 }
 
@@ -1208,20 +1221,20 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
  *
  * Ns_ConnReturnOpenChannel --
  *
- *	Send an open channel out the conn. 
+ *      Send an open channel out the conn. 
  *
  * Results:
- *	See ReturnOpen. 
+ *      See ReturnOpen. 
  *
  * Side effects:
- *	See ReturnOpen. 
+ *      See ReturnOpen. 
  *
  *----------------------------------------------------------------------
  */
 
 int
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, char *type,
-			 Tcl_Channel chan, int len)
+                         Tcl_Channel chan, int len)
 {
     return ReturnOpen(conn, status, type, chan, NULL, -1, len);
 }
@@ -1232,13 +1245,13 @@ Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, char *type,
  *
  * Ns_ConnReturnOpenFile --
  *
- *	Send an open file out the conn. 
+ *      Send an open file out the conn. 
  *
  * Results:
- *	See ReturnOpen. 
+ *      See ReturnOpen. 
  *
  * Side effects:
- *	See ReturnOpen. 
+ *      See ReturnOpen. 
  *
  *----------------------------------------------------------------------
  */
@@ -1255,13 +1268,13 @@ Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, char *type, FILE *fp, int len)
  *
  * Ns_ConnReturnOpenFd --
  *
- *	Send an open fd out the conn. 
+ *      Send an open fd out the conn. 
  *
  * Results:
- *	See ReturnOpen. 
+ *      See ReturnOpen. 
  *
  * Side effects:
- *	See ReturnOpen. 
+ *      See ReturnOpen. 
  *
  *----------------------------------------------------------------------
  */
@@ -1278,13 +1291,13 @@ Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, char *type, int fd, int len)
  *
  * ReturnRedirect --
  *
- *	Return the appropriate redirect for a given status code. 
+ *      Return the appropriate redirect for a given status code. 
  *
  * Results:
- *	0 if no redir exists, 1 if one does. 
+ *      0 if no redir exists, 1 if one does. 
  *
  * Side effects:
- *	May write and close the conn. 
+ *      May write and close the conn. 
  *
  *----------------------------------------------------------------------
  */
@@ -1293,20 +1306,20 @@ static int
 ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
 {
     Tcl_HashEntry *hPtr;
-    Conn    	  *connPtr;
+    Conn          *connPtr;
     NsServer      *servPtr;
 
     connPtr = (Conn *) conn;
     servPtr = connPtr->servPtr;
     hPtr = Tcl_FindHashEntry(&servPtr->request.redirect, (char *) status);
     if (hPtr != NULL) {
-	if (++connPtr->recursionCount > MAX_RECURSION) {
-	    Ns_Log(Error, "return: failed to redirect '%d': "
-		   "exceeded recursion limit of %d", status, MAX_RECURSION);
-	} else {
-    	    *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
-	    return 1;
-	}
+        if (++connPtr->recursionCount > MAX_RECURSION) {
+            Ns_Log(Error, "return: failed to redirect '%d': "
+                   "exceeded recursion limit of %d", status, MAX_RECURSION);
+        } else {
+            *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
+            return 1;
+        }
     }
     return 0;
 }
@@ -1317,31 +1330,31 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
  *
  * ReturnOpen --
  *
- *	Dump an open 'something' to the conn. 
+ *      Dump an open 'something' to the conn. 
  *
  * Results:
- *	NS_OK/NS_ERROR. 
+ *      NS_OK/NS_ERROR. 
  *
  * Side effects:
- *	Will close the connection on success. 
+ *      Will close the connection on success. 
  *
  *----------------------------------------------------------------------
  */
 
 static int
 ReturnOpen(Ns_Conn *conn, int status, char *type, Tcl_Channel chan,
-	FILE *fp, int fd, int len)
+           FILE *fp, int fd, int len)
 {
     int result;
 
     Ns_ConnSetRequiredHeaders(conn, type, len);
     Ns_ConnQueueHeaders(conn, status);
     if (chan != NULL) {
-	result = Ns_ConnSendChannel(conn, chan, len);
+        result = Ns_ConnSendChannel(conn, chan, len);
     } else if (fp != NULL) {
-	result = Ns_ConnSendFp(conn, fp, len);
+        result = Ns_ConnSendFp(conn, fp, len);
     } else {
-	result = Ns_ConnSendFd(conn, fd, len);
+        result = Ns_ConnSendFd(conn, fd, len);
     }
     if (result == NS_OK) {
         result = Ns_ConnClose(conn);

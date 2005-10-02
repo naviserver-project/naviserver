@@ -1,5 +1,10 @@
 2005-10-01  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/adprequest.c:
+	* nsd/op.c:
+	* nsd/return.c:
+	* nsd/urlspace: Untabify and reformat.
+
 	* .cvsignore:
 	* include/.cvsignore:
 	* nsd/.cvsignore:
