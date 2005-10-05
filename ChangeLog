@@ -1,3 +1,10 @@
+2005-10-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nslog/nslog.c: untabified, reformatted, improved comments.
+	LogObjCmd: rewritten with Tcl_Obj interface and using TclVFS
+	wrappers for handling files. Proper locking when accessing the 
+	Log structure elements in the LogObjCmd. 
+
 2005-10-02  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/log.c:
