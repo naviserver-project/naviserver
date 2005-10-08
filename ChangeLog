@@ -11,6 +11,10 @@
 	sockaddr_in sin_len element because this is needed for
 	the Darwin getnameinfo implementation.
 
+	* tests/ns_hostbyaddr.test: resolving 0.0.0.0 on Darwin
+	always succeeds, hence this test is constrainted on
+	"nonDarwin".
+
 2005-10-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nslog/nslog.c: untabified, reformatted, improved comments.
