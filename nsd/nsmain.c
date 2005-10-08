@@ -1176,7 +1176,7 @@ WatchdogSIGTERMHandler(int sig)
 static void 
 WatchdogSIGALRMHandler(int sig)
 {
-    if (kill((pid_t) nsconf.pid, 0)) {
+    if (kill((pid_t) nsconf.pid, 0) && errno == ESRCH) {
         SysLog(LOG_WARNING, "watchdog: server %d terminated?", nsconf.pid);
         nsconf.pid = 0;
     }
