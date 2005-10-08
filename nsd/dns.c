@@ -255,8 +255,13 @@ GetHost(Ns_DString *dsPtr, char *addr)
     char buf[NI_MAXHOST];
     int result;
     int status = NS_FALSE;
-
+#ifdef __APPLE__
+    static Ns_Cs cs;
+    Ns_CsEnter(&cs);
+#endif
+    memset(&sa, 0, sizeof(struct sockaddr_in));
     sa.sin_family = AF_INET;
+    sa.sin_len = sizeof(struct sockaddr_in);
     sa.sin_addr.s_addr = inet_addr(addr);
     result = getnameinfo((const struct sockaddr *) &sa,
                          sizeof(struct sockaddr_in), buf, sizeof(buf),
@@ -265,8 +270,11 @@ GetHost(Ns_DString *dsPtr, char *addr)
         Ns_DStringAppend(dsPtr, buf);
         status = NS_TRUE;
     } else if (result != EAI_NONAME) {
-        Ns_Log(Error, "dns: getnameinfo failed: %s", gai_strerror(result));        
+        Ns_Log(Error, "dns: getnameinfo failed: %s", gai_strerror(result));
     }
+#ifdef __APPLE__
+    Ns_CsLeave(&cs);
+#endif
     return status;
 }
 
@@ -338,7 +346,10 @@ GetAddr(Ns_DString *dsPtr, char *host)
     struct addrinfo *res, *ptr;
     int result;
     int status = NS_FALSE;
-
+#ifdef __APPLE__
+    static Ns_Cs cs;
+    Ns_CsEnter(&cs);
+#endif
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -355,6 +366,9 @@ GetAddr(Ns_DString *dsPtr, char *host)
         Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
                gai_strerror(result));
     }
+#ifdef __APPLE__
+    Ns_CsLeave(&cs);
+#endif
     return status;
 }
 
