@@ -197,8 +197,9 @@ AC_CHECK_LIB(socket, getaddrinfo)
 AC_CHECK_LIB(socket, getnameinfo)
 AC_CHECK_FUNCS(getaddrinfo getnameinfo)
 if test "${ac_cv_func_getaddrinfo}" = "yes" \
-    -a "${ac_cv_func_getnameinfo}" = "yes" ; then
-    has_threadsafe_dns=yes
+    -a "${ac_cv_func_getnameinfo}" = "yes"  \
+    -a "`uname -s`" != "Darwin"; then
+        has_threadsafe_dns=yes
 fi
 if test "${has_threadsafe_dns}" != "yes" ; then
     AC_HAVE_GETHOSTBYNAME_R
@@ -209,7 +210,7 @@ if test "${has_threadsafe_dns}" != "yes" ; then
     fi
 fi
 if test "${has_threadsafe_dns}" != "yes" ; then
-  AC_MSG_WARN([dns queries will use non-threadsafe calls which could result in server instability])
+  AC_MSG_WARN([DNS queries will use MT-unsafe calls which could result in server instability])
 fi
 
 AC_MSG_CHECKING([whether to include zlib compression support])
