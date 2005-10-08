@@ -35,11 +35,6 @@
  */
 
 #include "nsd.h"
-#ifdef _WIN32
-#include <sys/utime.h>
-#else
-#include <utime.h>
-#endif
 
 NS_RCSID("@(#) $Header$");
 
@@ -143,272 +138,6 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write, int *fdPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclCpFpObjCmd --
- *
- *	Implements ns_cpfp as obj command. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclCpFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Tcl_Channel  in, out;
-    char         buf[2048];
-    char        *p;
-    int          tocopy, nread, nwrote, toread, ntotal;
-
-    if (objc != 3 && objc != 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "inChan outChan ?ncopy?");
-	return TCL_ERROR;
-    }
-    if (GetOpenChannel(interp, objv[1], 0, 1, &in) != TCL_OK ||
-	GetOpenChannel(interp, objv[2], 1, 1, &out) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (objc == 3) {
-	tocopy = -1;
-    } else {
-        if (Tcl_GetInt(interp, Tcl_GetString(objv[3]), &tocopy) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        if (tocopy < 0) {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid length \"", 
-                Tcl_GetString(objv[3]),
-		        "\": must be >= 0", NULL);
-            return TCL_ERROR;
-        }
-    }
-    
-    ntotal = 0;
-    while (tocopy != 0) {
-	toread = sizeof(buf);
-	if (tocopy > 0 && toread > tocopy) {
-	    toread = tocopy;
-	}
-	nread = Tcl_Read(in, buf, toread);
-	if (nread == 0) {
-	    break;
-	} else if (nread < 0) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "read failed: ",
-			     Tcl_PosixError(interp), NULL);
-	    return TCL_ERROR;
-	}
-	if (tocopy > 0) {
-	    tocopy -= nread;
-	}
-	p = buf;
-	while (nread > 0) {
-	    nwrote = Tcl_Write(out, p, nread);
-	    if (nwrote < 0) {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "write failed: ",
-				 Tcl_PosixError(interp), NULL);
-	        return TCL_ERROR;
-	    }
-	    nread -= nwrote;
-	    ntotal += nwrote;
-	    p += nwrote;
-	}
-    }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(ntotal));
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclCpObjCmd --
- *
- *	Implements ns_cp as obj command. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclCpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    int             nread, towrite, nwrote;
-    char            buf[4096], *src, *dst, *p, *emsg, *efile;
-    int             preserve, result, rfd, wfd;
-    struct stat     st;
-    struct utimbuf  ut;
-    
-    if (objc != 3 && objc != 4) {
-badargs:
-        Tcl_WrongNumArgs(interp, 1, objv, "?-preserve? srcfile dstfile");
-        return TCL_ERROR;
-    }
-
-    emsg  = "<unknown>";
-    efile = "";
-
-    wfd = rfd = -1;
-    result = TCL_ERROR;
-
-    if (objc == 3) {
-	preserve = 0;
-	src = Tcl_GetString(objv[1]);
-	dst = Tcl_GetString(objv[2]);
-    } else {
-	if (!STREQ(Tcl_GetString(objv[1]), "-preserve")) {
-	    goto badargs;
-	}
-	preserve = 1;
-	src = Tcl_GetString(objv[2]);
-	dst = Tcl_GetString(objv[3]);
-	if (stat(src, &st) != 0) {
-	    emsg = "stat";
-	    efile = src;
-	    goto done;
-        }
-    }
-
-    emsg = "open";
-    rfd = open(src, O_RDONLY|O_BINARY);
-    if (rfd < 0) {
-	efile = src;
-	goto done;
-    }
-    wfd = open(dst, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644);
-    if (wfd < 0) {
-	efile = dst;
-	goto done;
-    }
-
-    while ((nread = read(rfd, buf, sizeof(buf))) > 0) {
-	p = buf;
-	towrite = nread;
-	while (towrite > 0) {
-	    nwrote = write(wfd, p, (size_t)towrite);
-	    if (nwrote <= 0) {
-		emsg = "write";
-		efile = dst;
-		goto done;
-	    }
-	    towrite -= nwrote;
-	    p += nwrote;
-	}
-    }
-    if (nread < 0) {
-	emsg = "read";
-	efile = src;
-	goto done;
-    }
-
-    if (!preserve) {
-	result = TCL_OK;
-    } else {
-	efile = dst;
-	if (chmod(dst, st.st_mode) != 0) {
-	    emsg = "chmod";
-	    goto done;
-	}
-        ut.actime  = st.st_atime;
-        ut.modtime = st.st_mtime;
-        if (utime(dst, &ut) != 0) {
-	    emsg = "utime";
-	    goto done;
-	}
-	result = TCL_OK;
-    }
-
-done:
-    if (result != TCL_OK) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not ", emsg, " \"",
-                efile, "\": ", Tcl_PosixError(interp), NULL);
-    }
-    if (rfd >= 0) {
-	close(rfd);
-    }
-    if (wfd >= 0) {
-	close(wfd);
-    }
-    return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclMkdirObjCmd --
- *
- *	Implements ns_mkdir as obj command.
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclMkdirObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "dir");
-        return TCL_ERROR;
-    }
-    if (mkdir(Tcl_GetString(objv[1]), 0755) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "mkdir (\"", 
-		Tcl_GetString(objv[1]),
-		"\") failed:  ", Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclRmdirObjCmd --
- *
- *	Implements ns_rmdir 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclRmdirObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "dir");
-        return TCL_ERROR;
-    }
-    if (rmdir(Tcl_GetString(objv[1])) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "rmdir (\"", 
-		Tcl_GetString(objv[1]),
-		"\") failed:  ", Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclRollFileObjCmd --
  *
  *	Implements ns_rollfile obj command. 
@@ -464,56 +193,6 @@ int
 NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     return FileObjCmd(interp, objc, objv, "purge");
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclUnlinkObjCmd --
- *
- *	Implement ns_unlink as obj command. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclUnlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    int fComplain = NS_TRUE;
-
-    if ((objc != 2) && (objc != 3)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? filename");
-        return TCL_ERROR;
-    }
-
-    if (objc == 3) {
-	if (!STREQ(Tcl_GetString(objv[1]), "-nocomplain")) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "unknown flag \"",
-		    Tcl_GetString(objv[1]), "\": should be -nocomplain", 
-		    NULL);
-	    return TCL_ERROR;
-	} else {
-	    fComplain = NS_FALSE;
-	}
-    }
-
-    if (unlink(Tcl_GetString(objv[objc-1])) != 0) {
-	if (fComplain || errno != ENOENT) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "unlink (\"", 
-		    Tcl_GetString(objv[objc-1]),
-		    "\") failed:  ", Tcl_PosixError(interp), NULL);
-	    return TCL_ERROR;
-	}
-    }
-
-    return TCL_OK;
 }
 
 
@@ -576,40 +255,6 @@ NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         return TCL_ERROR;
     }
     Tcl_SetResult(interp, buf, TCL_VOLATILE);
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclNormalizePathObjCmd --
- *
- *	Implements ns_normalizepath as obj command. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclNormalizePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Ns_DString ds;
-
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "path");
-        return TCL_ERROR;
-    }
-    Ns_DStringInit(&ds);
-    Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
-    Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
-    Ns_DStringFree(&ds);
-    
     return TCL_OK;
 }
 
@@ -708,49 +353,6 @@ NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
 /*
  *----------------------------------------------------------------------
  *
- * NsTclLinkObjCmd --
- *
- *	Implements ns_link as obj command. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclLinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    if ((objc != 3) && (objc != 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? filename1 filename2");
-        return TCL_ERROR;
-    }
-    if (objc == 3) {
-        if (link(Tcl_GetString(objv[1]), Tcl_GetString(objv[2])) != 0) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-		    "link (\"", Tcl_GetString(objv[1]), "\", \"", 
-		    Tcl_GetString(objv[2]),
-		    "\") failed:  ", Tcl_PosixError(interp), NULL);
-            return TCL_ERROR;
-        }
-    } else {
-        if (strcmp(Tcl_GetString(objv[1]), "-nocomplain") != 0) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? filename1 filename2");
-	    return TCL_ERROR;
-        }
-        link(Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
-    }
-
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclSymlinkObjCmd --
  *
  *	Implements ns_symlink as obj command. 
@@ -768,7 +370,7 @@ int
 NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     if ((objc != 3) && (objc != 4)) {
-      badargs:
+    badargs:
         Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? filename1 filename2");
         return TCL_ERROR;
     }
@@ -788,40 +390,6 @@ NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         symlink(Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
     }
 
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclRenameObjCmd --
- *
- *	Implements ns_rename as obj command. 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclRenameObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "filename1 filename2");
-        return TCL_ERROR;
-    }
-    if (rename(Tcl_GetString(objv[1]), Tcl_GetString(objv[2])) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "rename (\"", 
-		Tcl_GetString(objv[1]), "\", \"", 
-		Tcl_GetString(objv[2]),
-		"\") failed:  ", Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
-    }
     return TCL_OK;
 }
 
@@ -955,48 +523,6 @@ NsTclFTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
             Tcl_GetString(objv[1]), "\", ",
             Tcl_GetString(objv[2]) ? Tcl_GetString(objv[2]) : "0",
             ") failed:  ", Tcl_PosixError(interp), NULL);
-        return TCL_ERROR;
-    }
-
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclChmodObjCmd --
- *
- *	NsTclChmodCmd 
- *
- * Results:
- *	Tcl result. 
- *
- * Side effects:
- *	See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclChmodObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    int mode;
-    
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "filename mode");
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetIntFromObj(interp, objv[2], &mode) != TCL_OK) {
-    	return TCL_ERROR;
-    }
-
-    if (chmod(Tcl_GetString(objv[1]), (mode_t)mode) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "chmod (\"", 
-		Tcl_GetString(objv[1]), "\", ", 
-		Tcl_GetString(objv[2]),
-		") failed:  ", Tcl_PosixError(interp), NULL);
         return TCL_ERROR;
     }
 

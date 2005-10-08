@@ -69,7 +69,9 @@ static int  WaitForServer();
 
 static void UsageError(char *msg, ...);
 static void StatusMsg(int state);
+
 static char *FindConfig(char *config);
+static char *SetCwd(char *homedir);
 
 #if (STATIC_BUILD == 1)
 extern void NsthreadsInit();
@@ -105,36 +107,27 @@ static int watchdogExit = 0; /* Watchdog loop toggle */
 int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
-    int  i, fd, sig, optind, cmdargc;
-    char **cmdargv;
-    char *config;
-    Ns_Time timeout;
-
+    int       fd, i, sig, optind, cmdargc;
+    char    **cmdargv;
+    char     *config;
+    Ns_Time   timeout;
+    
 #ifndef _WIN32
-    int  uid = -1;
-    int  gid = -1;
-    int  debug = 0;
-    int  mode = 0;
-    char *root = NULL;
-    char *garg = NULL;
-    char *uarg = NULL;
-    char *bindargs = NULL;
-    char *bindfile = NULL;
-    char *procname = NULL;
-    char *server = NULL;
-    Ns_Set *servers;
+    int       uid = -1, gid = -1, debug = 0, mode = 0;
+    char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
+    char     *bindargs = NULL, *bindfile = NULL, *procname = NULL;
+    Ns_Set   *servers;
     struct rlimit  rl;
 #else
-   char *cwd;
+    char *cwd;
     /*
      * The following variables are declared static so they
      * preserve their values when Ns_Main is re-entered by
      * the Win32 service control manager.
      */
-    static int mode = 0;
+    static int     mode = 0;
     static Ns_Set *servers;
-    static char *procname;
-    static char *server;
+    static char   *procname, *server;
 #endif
 
     /*
@@ -154,6 +147,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.started = 0;
     Ns_MutexUnlock(&nsconf.state.lock);
+
     /*
      * When run as a Win32 service, Ns_Main will be re-entered
      * in the service main thread.  In this case, jump past
@@ -318,9 +312,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     /*
      * Find the absolute config pathname and read the config data
-     * before a possible chroot().
+     * before a possible chroot(). The call to  Tcl_FindExecutable()
+     * must be done first in order to setup Tcl library, otherwise
+     * the FindConfig() which uses TclVFS wrappers will fail.
      */
-    
+
+    Tcl_FindExecutable(argv[0]);
+
+    nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
     nsconf.config = FindConfig(nsconf.config);
     config = NsConfigRead(nsconf.config);
     
@@ -422,7 +421,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
     
     /*
-     * Fork into the background and create a new session.
+     * Fork us into the background
      */
 
     if (mode == 0 || mode == 'w') {
@@ -433,7 +432,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         if (i > 0) {
             return 0;
         }
-        setsid(); /* Detaches from the controlling terminal device */
+        setsid(); /* Detach from the controlling terminal device */
     }
 
     /*
@@ -471,10 +470,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         if (chroot(root) != 0) {
             Ns_Fatal("nsmain: chroot(%s) failed: '%s'", root, strerror(errno));
         }
-        if (chdir("/") != 0) {
-            Ns_Fatal("nsmain: chdir(/) failed: '%s'", strerror(errno));
-        }
-        nsconf.home = "/";
+        nsconf.home = SetCwd("/");
     }
 
     /*
@@ -509,6 +505,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
     
 #ifdef __linux
+
     /*
      * On Linux, once a process changes uid/gid, the dumpable flag
      * is cleared, preventing a core file from being written.  On
@@ -529,14 +526,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsBlockSignals(debug);
 
-#endif
+#endif /* _WIN32 */
 
     /*
      * Initialize Tcl and eval the config file.
      */
 
-    Tcl_FindExecutable(argv[0]);
-    nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
     NsConfigEval(config, argc, argv, optind);
     ns_free(config);
     
@@ -578,34 +573,15 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     if (mode != 'c' && nsconf.home == NULL) {
         Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
     }
-    if (nsconf.home != NULL && chdir(nsconf.home) != 0) {
-        Ns_Fatal("nsmain: chdir(%s) failed: '%s'", nsconf.home, strerror(errno));
-    }
+    nsconf.home = SetCwd(nsconf.home);
     
 #ifdef _WIN32
 
     /*
-     * On Win32, first perform some additional cleanup of
-     * home, ensuring forward slashes and lowercase.
-     */
-
-    nsconf.home = getcwd(NULL, _MAX_PATH);
-    if (nsconf.home == NULL) {
-        Ns_Fatal("nsmain: getcwd failed: '%s'", strerror(errno));
-    }
-    for (cwd = nsconf.home; *cwd != '\0'; cwd++) {
-        if (*cwd == '\\') {
-            *cwd = '/';
-        } else if (isupper(UCHAR(*cwd))) {
-            *cwd = tolower(*cwd);
-        }
-    }
-
-    /*
-     * Then, connect to the service control manager if running
+     * Connect to the service control manager if running
      * as a service (see service comment above).
      */
-    
+
     if (mode == 'I' || mode == 'R' || mode == 'S') {
         int status;
         
@@ -672,7 +648,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * Create the pid file used.
+     * Create the pid file.
      */
 
     if (mode != 'c') {
@@ -1006,9 +982,9 @@ UsageError(char *msg, ...)
     	va_list ap;
     	va_start(ap, msg);
     	fprintf(stderr, "\nError: ");
-	vfprintf(stderr, msg, ap);
-	fprintf(stderr, "\n");
-	va_end(ap);
+        vfprintf(stderr, msg, ap);
+        fprintf(stderr, "\n");
+        va_end(ap);
     }
     fprintf(stderr, "\n"
 #ifdef _WIN32
@@ -1049,34 +1025,75 @@ UsageError(char *msg, ...)
  *
  * FindConfig --
  *
- *  Find the absolute pathname to the config and clean it up.
+ *      Construct the absolute pathname to the configuration file.
  *
  * Results:
- *  ns_malloc'ed string with clean path.
+ *      Tcl_Alloc'ated string with the normalized path.
  *
  * Side effects:
- *  Config path is "normalized".
+ *      Kills the server if unable to obtain normalized path
+ *      of the configuration file.
  *
  *----------------------------------------------------------------------
  */
 
 char *
-FindConfig(char *config)
+FindConfig(char *filename)
 {
-    Ns_DString ds1, ds2;
-    char cwd[PATH_MAX];
+    Tcl_Obj *conf;
+    char    *result = NULL;
 
-    Ns_DStringInit(&ds1);
-    Ns_DStringInit(&ds2);
-    if (!Ns_PathIsAbsolute(config) && getcwd(cwd, sizeof(cwd)) != NULL) {
-        Ns_MakePath(&ds2, cwd, config, NULL);
-        config = ds2.string;
+    conf = Tcl_NewStringObj(filename, -1);
+    Tcl_IncrRefCount(conf);
+    if (Tcl_FSGetNormalizedPath(NULL, conf)) {
+        result = (char *) Tcl_FSGetTranslatedStringPath(NULL, conf);
+    } else {
+        Ns_Fatal("can't resolve configuration file path");
     }
-    Ns_NormalizePath(&ds1, config);
-    config = Ns_DStringExport(&ds1);
-    Ns_DStringFree(&ds2);
-    return config;
+    Tcl_DecrRefCount(conf);
+
+    return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetCwd --
+ *
+ *      Changes the current working directory to the passed path.
+ *
+ * Results:
+ *      Tcl_Alloc'ated string with the normalized path of the 
+ *      current working directory.
+ *
+ * Side effects:
+ *      Kills server if unable to change to given directory
+ *      or if the absolute normalized path of the directory
+ *      could not be resolved.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+SetCwd(char *path)
+{
+    Tcl_Obj *pathObj;
+
+    pathObj = Tcl_NewStringObj(path, -1);
+    Tcl_IncrRefCount(pathObj);
+    if (Tcl_FSChdir(pathObj) == -1) {
+        Ns_Fatal("nsmain: chdir(%s) failed: '%s'", path, 
+                 strerror(Tcl_GetErrno()));
+    }
+    Tcl_DecrRefCount(pathObj);
+    pathObj = Tcl_FSGetCwd(NULL);
+    if (pathObj == NULL) {
+        Ns_Fatal("nsmain: can't resolve home directory path");
+    }
+
+    return (char *) Tcl_FSGetTranslatedStringPath(NULL, pathObj);
+}
+
 #ifndef _WIN32
 
 /*

@@ -152,6 +152,18 @@ Content-range: bytes 0-2/10\r
 --[^ ]+--\r
 }]
 
+test byteranges-2.5 {Multiple overlapping ranges} -constraints serverListen -body {
+    nstest_http -getbody 1 -setheaders {Range bytes=2-8,3-6,4-7} \
+        -getheaders {Content-length Content-range} \
+        GET /10bytes
+} -result {206 7 {bytes 2-8/10} 2345678}
+
+test byteranges-2.6 {Multiple overlapping ranges} -constraints serverListen -body {
+    nstest_http -getbody 1 -setheaders {Range bytes=2-8,1-6,4-9} \
+        -getheaders {Content-length Content-range} \
+        GET /10bytes
+} -result {206 9 {bytes 1-9/10} 123456789}
+
 
 test byteranges-3.1 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=3-2} \
@@ -160,53 +172,52 @@ test byteranges-3.1 {syntactically invalid} -constraints serverListen -body {
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.2 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=11-10} \
-        -getheaders {Content-length Content-range} \
-        GET /10bytes
-} -result {200 10 {} 0123456789}
-
-test byteranges-3.3 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
-test byteranges-3.4 {syntactically invalid} -constraints serverListen -body {
+test byteranges-3.3 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes 0-1} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
-test byteranges-3.5 {syntactically invalid} -constraints serverListen -body {
+test byteranges-3.4 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range 0-1} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
-test byteranges-3.6 {syntactically invalid} -constraints serverListen -body {
+test byteranges-3.5 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range =} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
-test byteranges-3.7 {syntactically invalid} -constraints serverListen -body {
+test byteranges-3.6 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range =-} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
-test byteranges-3.8 {syntactically invalid} -constraints serverListen -body {
+test byteranges-3.7 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=--6-9} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
-test byteranges-3.9 {syntactically invalid} -constraints serverListen -body {
+test byteranges-3.8 {syntactically invalid} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=1--6} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
+test byteranges-3.9 {syntactically invalid} -constraints serverListen -body {
+    nstest_http -getbody 1 -setheaders {Range bytes=1} \
+        -getheaders {Content-length Content-range} \
+        GET /10bytes
+} -result {200 10 {} 0123456789}
 
 
 test byteranges-4.1 {unsatisfiable} -constraints serverListen -body {
@@ -219,6 +230,10 @@ test byteranges-4.2 {unsatisfiable} -constraints serverListen -body {
         GET /10bytes
 } -result {416 {bytes */10}}
 
+test byteranges-4.3 {unsatisfiable} -constraints serverListen -body {
+    nstest_http -setheaders {Range bytes=11-10} -getheaders {Content-range} \
+        GET /10bytes
+} -result {416 {bytes */10}}
 
 
 cleanupTests

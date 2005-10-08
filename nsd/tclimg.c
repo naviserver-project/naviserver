@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -53,109 +53,113 @@ static int AppendObjDims(Tcl_Interp *interp, int w, int h);
  *
  * NsTclGifSizeObjCmd --
  *
- *	Implements ns_gifsize, returning a list of width and height.
+ *	    Implements ns_gifsize, returning a list of width and height.
  *
  * Results:
- *	Tcl result. 
+ *	    Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *	    See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                   Tcl_Obj *CONST objv[])
 {
-    int fd;
-    unsigned char  buf[0x300];
-    int depth, colormap, dx, dy, status;
+    unsigned char  buf[0x300], count;
+    char          *file;
+    int            depth, colormap, dx, dy, status;
+    Tcl_Channel    chan;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "gif");
+        Tcl_WrongNumArgs(interp, 1, objv, "gif_file");
         return TCL_ERROR;
     }
-    fd = open(Tcl_GetString(objv[1]), O_RDONLY|O_BINARY);
-    if (fd == -1) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not open \"", 
-            Tcl_GetString(objv[1]),
-	        "\": ", Tcl_PosixError(interp), NULL);
+    file = Tcl_GetString(objv[1]);
+    chan = Tcl_OpenFileChannel(interp, file, "r", 0);
+    if (chan == NULL) {
         return TCL_ERROR;
     }
+    if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
+        != TCL_OK) {
+        return TCL_ERROR;
+    }
+
     status = TCL_ERROR;
 
     /*
      * Read the GIF version number
      */
     
-    if (read(fd, buf, 6) != 6) {
+    if (Tcl_Read(chan, buf, 6) != 6) {
 readfail:
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not read \"", 
-            Tcl_GetString(objv[1]),
-            "\": ", Tcl_PosixError(interp), NULL);
-	goto done;
-    }
-
-    if (strncmp((char *) buf, "GIF87a", 6) && 
-	strncmp((char *) buf, "GIF89a", 6)) {
-badfile:
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid gif file: ", 
-                Tcl_GetString(objv[1]), NULL);
+        Tcl_AppendResult(interp, "could not read \"", file, "\": ",
+                         Tcl_PosixError(interp), NULL);
         goto done;
     }
 
-    if (read(fd, buf, 7) != 7) {
-	goto readfail;
+    if (strncmp((char *) buf, "GIF87a", 6) && 
+        strncmp((char *) buf, "GIF89a", 6)) {
+    badfile:
+        Tcl_AppendResult(interp, "bad gif file \"", file, "\"", NULL);
+        goto done;
     }
 
+    if (Tcl_Read(chan, buf, 7) != 7) {
+        goto readfail;
+    }
+    
     depth = 1 << ((buf[4] & 0x7) + 1);
     colormap = (buf[4] & 0x80 ? 1 : 0);
 
     if (colormap) {
-        if (read(fd, buf, (size_t)(3*depth)) != (3*depth)) {
+        if (Tcl_Read(chan, buf, (size_t)(3*depth)) != (3*depth)) {
             goto readfail;
         }
     }
 
   outerloop:
-    if (read(fd, buf, 1) != 1) {
+    if (Tcl_Read(chan, buf, 1) != 1) {
         goto readfail;
     }
 
     if (buf[0] == '!') {
-        unsigned char count;
-	
-        if (read(fd, buf, 1) != 1) {
+        if (Tcl_Read(chan, buf, 1) != 1) {
             goto readfail;
         }
-      innerloop:
-        if (read(fd, (char *) &count, 1) != 1) {
+    innerloop:
+        if (Tcl_Read(chan, (char *) &count, 1) != 1) {
             goto readfail;
         }
         if (count == 0) {
             goto outerloop;
         }
-        if (read(fd, buf, count) != count) {
+        if (Tcl_Read(chan, buf, count) != count) {
             goto readfail;
         }
         goto innerloop;
     } else if (buf[0] != ',') {
         goto badfile;
     }
-
-    if (read(fd,buf,9) != 9) {
+    
+    if (Tcl_Read(chan, buf, 9) != 9) {
         goto readfail;
     }
-
+    
     dx = 0x100 * buf[5] + buf[4];
     dy = 0x100 * buf[7] + buf[6];
-    if(AppendObjDims(interp, dx, dy) != TCL_OK) {
+
+    if (AppendObjDims(interp, dx, dy) != TCL_OK) {
 		return TCL_ERROR;
-	};
+	}
+
     status = TCL_OK;
 
 done:
-    close(fd);
+    Tcl_Close(interp, chan);
+
     return status;
 }
 
@@ -165,47 +169,48 @@ done:
  *
  * NsTclJpegSizeObjCmd --
  *
- *	Implements ns_jpegsize as obj command. 
+ *	    Implements ns_jpegsize as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *	    Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *	    See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclJpegSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclJpegSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                    Tcl_Obj *CONST objv[])
 {
-    int   code, w = 0, h = 0;
+    char       *file;
+    int         code, w = 0, h = 0;
     Tcl_Channel chan;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "file");
-	return TCL_ERROR;
-    }
-
-    chan = Tcl_OpenFileChannel(interp, Tcl_GetString(objv[1]), "r", 0);
-    if (chan == NULL) {
-        /* Tcl function will leave error message in interp's result */
+        Tcl_WrongNumArgs(interp, 1, objv, "jpeg_file");
         return TCL_ERROR;
     }
-    if (Tcl_SetChannelOption(interp, chan, "-translation", "binary") != TCL_OK) {
-        /* Tcl function will leave error message in interp's result */
+    file = Tcl_GetString(objv[1]);
+    chan = Tcl_OpenFileChannel(interp, file, "r", 0);
+    if (chan == NULL) {
+        return TCL_ERROR;
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
+        != TCL_OK) {
         return TCL_ERROR;
     }
     code = JpegSize(chan, &w, &h);
     Tcl_Close(interp, chan);
     if (code != TCL_OK) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid jpeg file: ", 
-		Tcl_GetString(objv[1]), NULL);
-	return TCL_ERROR;
+        Tcl_AppendResult(interp, "invalid jpeg file \"", file, "\"", NULL);
+        return TCL_ERROR;
     }
-    if(AppendObjDims(interp, w, h) != TCL_OK) {
-	return TCL_ERROR;
-    };
+    if (AppendObjDims(interp, w, h) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
     return TCL_OK;
 }
 
@@ -220,27 +225,28 @@ JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr)
     Tcl_WideInt  numbytes;
 
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
-	while (1) {
-	    i = JpegNextMarker(chan);
-	    if (i == EOF || i == M_SOS || i == M_EOI) {
-	    	break;
-	    }
+        while (1) {
+            i = JpegNextMarker(chan);
+            if (i == EOF || i == M_SOS || i == M_EOI) {
+                break;
+            }
             if (0xC0 <= i && i <= 0xC3) {
-		if (JpegRead2Bytes(chan) != EOF && ChanGetc(chan) != EOF
-		    && (h = JpegRead2Bytes(chan)) != EOF
-		    && (w = JpegRead2Bytes(chan)) != EOF) {
-		    *wPtr = w;
-		    *hPtr = h;
-		    return TCL_OK;
-		}
-		break;
-	    }
-	    numbytes = JpegRead2Bytes(chan);
-	    if (numbytes < 2 || Tcl_Seek(chan, numbytes - 2, SEEK_CUR) == -1) {
-	    	break;
-	    }
-	}
+                if (JpegRead2Bytes(chan) != EOF && ChanGetc(chan) != EOF
+                    && (h = JpegRead2Bytes(chan)) != EOF
+                    && (w = JpegRead2Bytes(chan)) != EOF) {
+                    *wPtr = w;
+                    *hPtr = h;
+                    return TCL_OK;
+                }
+                break;
+            }
+            numbytes = JpegRead2Bytes(chan);
+            if (numbytes < 2 || Tcl_Seek(chan, numbytes - 2, SEEK_CUR) == -1) {
+                break;
+            }
+        }
     }
+
     return TCL_ERROR;
 }
 
@@ -270,8 +276,9 @@ JpegRead2Bytes(Tcl_Channel chan)
     c1 = ChanGetc(chan);
     c2 = ChanGetc(chan);
     if (c1 == EOF || c2 == EOF) {
-	return -1;
+        return -1;
     }
+
     return (int)(((unsigned int) c1) << 8) + ((unsigned int) c2);
 }
 
@@ -310,18 +317,17 @@ JpegNextMarker(Tcl_Channel chan)
     
     c = ChanGetc(chan);
     while (c != EOF && c != 0xFF) {
-	c = ChanGetc(chan);
+        c = ChanGetc(chan);
     }
     if (c != EOF) {
-	/*
-	 * Get marker code byte, swallowing any duplicate FF bytes.
-	 */
-	
-	do {
-	    c = ChanGetc(chan);
-	} while (c == 0xFF);
+        /*
+         * Get marker code byte, swallowing any duplicate FF bytes.
+         */
+        do {
+            c = ChanGetc(chan);
+        } while (c == 0xFF);
     }
-
+    
     return c;
 }
 
@@ -348,8 +354,9 @@ ChanGetc(Tcl_Channel chan)
     unsigned char buf[1];
 
     if (Tcl_Read(chan, (char *) buf, 1) != 1) {
-	return EOF;
+        return EOF;
     }
+
     return (int) buf[0];
 }
 
@@ -384,7 +391,7 @@ AppendObjDims(Tcl_Interp *interp, int w, int h)
     if (Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(buf, -1))) {
         return TCL_ERROR;
     }
-
+    
     Tcl_SetObjResult(interp, result);
 
     return TCL_OK;

@@ -411,14 +411,21 @@ NsPreBind(char *args, char *file)
         PreBind(args);
     }
     if (file != NULL) {
-        FILE *fp;
-        fp = fopen(file, "r");
-        if (fp != NULL) {
-            char line[1024];
-            while (fgets(line, sizeof(line), fp) != NULL) {
-                PreBind(line);
+        Tcl_Channel chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
+        if (chan == NULL) {
+            Ns_Log(Error, "binder: can't open file '%s': '%s'", file,
+                   strerror(Tcl_GetErrno()));
+        } else {
+            Tcl_DString line;
+            Tcl_DStringInit(&line);
+            while(!Tcl_Eof(chan)) {
+                Tcl_DStringSetLength(&line, 0);
+                if (Tcl_Gets(chan, &line) > 0) {
+                    PreBind(Tcl_DStringValue(&line));
+                }
             }
-            fclose(fp);
+            Tcl_DStringFree(&line);
+            Tcl_Close(NULL, chan);
         }
     }
 #endif

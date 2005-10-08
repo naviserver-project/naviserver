@@ -51,6 +51,10 @@ NS_RCSID("@(#) $Header$");
  *
  * Side effects:
  *	    Numerous.
+ *      Also, note that this one is called prior getting the Tcl library
+ *      initialized by calling Tcl_FindExecutable() in nsmain(). 
+ *      Therefore, no Tcl VFS calls to the filesystem should be done in 
+ *      any of the NsInitX() below.
  *
  *----------------------------------------------------------------------
  */

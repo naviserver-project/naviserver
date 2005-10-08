@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -31,7 +31,7 @@
 /*
  * pidfile.c --
  *
- *	Implement the PID file routines.
+ *	    Implement the PID file routines.
  */
 
 #include "nsd.h"
@@ -48,15 +48,15 @@ static char *GetFile(char *procname);
 /*
  *----------------------------------------------------------------------
  *
- * NsCreatePidFile, NsRemovePidFile --
+ * NsCreatePidFile --
  *
- *	Create/remove file with current pid.
+ *      Create file with current pid.
  *
  * Results:
- *	None.
+ *	    None.
  *
  * Side effects:
- *	None.
+ *	    None.
  *
  *----------------------------------------------------------------------
  */
@@ -64,50 +64,77 @@ static char *GetFile(char *procname);
 void
 NsCreatePidFile(char *procname)
 {
-    int	  fd, n;
-    char  buf[10];
-    char *file = GetFile(procname);
+    Tcl_Channel  chan;
+    int          towrite;
+    char        *file, buf[10];
 
-    fd = open(file, O_WRONLY|O_TRUNC|O_CREAT, 0644);
-    if (fd < 0) {
+    file = GetFile(procname);
+    chan = Tcl_OpenFileChannel(NULL, file, "w", 0644);
+    if (chan == NULL) {
     	Ns_Log(Error, "pidfile: failed to open pid file '%s': '%s'",
-	       file, strerror(errno));
+               file, strerror(Tcl_GetErrno()));
     } else {
-	sprintf(buf, "%d\n", nsconf.pid);
-	n = strlen(buf);
-	if (write(fd, buf, (size_t)n) != n) {
-	    Ns_Log(Error, "pidfile: write() failed: '%s'", strerror(errno));
-	}
-        close(fd);
+        sprintf(buf, "%d\n", nsconf.pid);
+        towrite = strlen(buf);
+        if (Tcl_WriteChars(chan, buf, towrite) != towrite) {
+            Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'", 
+                   file, strerror(Tcl_GetErrno()));
+        }
+        Tcl_Close(NULL, chan);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsRemovePidFile --
+ *
+ *      Remove file with current pid.
+ *
+ * Results:
+ *	    None.
+ *
+ * Side effects:
+ *	    None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 NsRemovePidFile(char *procname)
 {
-    char *file = GetFile(procname);
+    Tcl_Obj *path;
+    char    *file;
     
-    if (unlink(file) != 0) {
+    file = GetFile(procname);
+    path = Tcl_NewStringObj(file, -1);
+    Tcl_IncrRefCount(path);
+    if (Tcl_FSDeleteFile(path) != 0) {
     	Ns_Log(Error, "pidfile: failed to remove '%s': '%s'",
-	       file, strerror(errno));
+               file, strerror(Tcl_GetErrno()));
     }
+    Tcl_DecrRefCount(path);
 }
 
 static char *
 GetFile(char *procname)
 {
+    /*
+     * FIXME: MT-UNSAFE
+     */
+
     static char *file;
     
     if (file == NULL) {
     	file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "pidfile");
-	if (file == NULL) {
+        if (file == NULL) {
     	    Ns_DString ds;
-
-	    Ns_DStringInit(&ds);
-	    Ns_HomePath(&ds, "log/nspid.", NULL);
-	    Ns_DStringAppend(&ds, procname);
-	    file = Ns_DStringExport(&ds);
-	}
+            Ns_DStringInit(&ds);
+            Ns_HomePath(&ds, "log/nspid.", NULL);
+            Ns_DStringAppend(&ds, procname);
+            file = Ns_DStringExport(&ds);
+        }
     }
+
     return file;
 }

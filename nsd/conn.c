@@ -41,7 +41,7 @@ NS_RCSID("@(#) $Header$");
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
 static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv,
                       int *offPtr, int *lenPtr);
-static Tcl_Channel MakeConnChannel(Ns_Conn *conn);
+static Tcl_Channel MakeConnChannel(Ns_Conn *conn, int spliceout);
 
 
 /*
@@ -1365,7 +1365,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CChannelIdx:
-        chan = MakeConnChannel(conn);
+        chan = MakeConnChannel(conn, 1);
         if (chan == NULL) {
             Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
             return TCL_ERROR;
@@ -1695,24 +1695,44 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr,
  *----------------------------------------------------------------------------
  */
 static Tcl_Channel
-MakeConnChannel(Ns_Conn *conn)
+MakeConnChannel(Ns_Conn *conn, int spliceout)
 {
-    int sock;
+    Tcl_Channel chan;
+    int         sock;
+    Conn       *connPtr = (Conn *) conn;
     
     /*
-     * Flush the connection, so we can safely make a dup of the socket.
-     * Without this, we may dup some unwanted data in socket buffers
-     * which may confuse the receiving side.
+     * Assures the socket is flushed
      */
 
     Ns_WriteConn(conn, NULL, 0);
 
-    sock = ns_sockdup(Ns_ConnSock(conn));
+    if (spliceout) {
+        sock = connPtr->sockPtr->sock;
+        connPtr->sockPtr->sock = INVALID_SOCKET;
+    } else {
+        sock = ns_sockdup(connPtr->sockPtr->sock);
+    }
+
     if (sock == INVALID_SOCKET) {
         return NULL;
     }
+    
+    /*
+     * At this point we may also set some other
+     * chan config options (binary,encoding, etc)
+     */
 
     Ns_SockSetBlocking(sock);
 
-    return Tcl_MakeTcpClientChannel((ClientData)sock);
+    /*
+     * Wrap a Tcl TCP channel arround the socket.
+     */
+    
+    chan = Tcl_MakeTcpClientChannel((ClientData)sock);
+    if (chan == NULL && spliceout) {
+        connPtr->sockPtr->sock = sock;
+    }
+
+    return chan;
 }

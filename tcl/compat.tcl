@@ -34,14 +34,236 @@
 #
 # compat.tcl --
 #
-#      Procs for backwards compatibility.
+#   Procs for backwards compatibility.
 #
+#
+
 #
 # ns_getchannels --
 #
-#	Return all open channels.
+#   Return all open channels.
 #
 
 proc ns_getchannels {} {
-    return [file channels]
+    file channels
 }
+
+#
+# ns_cpfp --
+#
+#   Copies ncopy bytes from input to output channel.
+#   Returns number of bytes copied.
+#
+
+proc ns_cpfp {chanin chanout {ncopy -1}} {
+    fcopy $chanin $chanout -size $ncopy
+}
+
+#
+# ns_cp --
+#
+#   Copies srcfile to dstfile, optionally assuring that 
+#   the dstfile has the same modification, access time
+#   and attributes as the srcfile.
+#
+
+proc ns_cp {args} {
+    set nargs [llength $args]
+    if {$nargs == 2} {
+        set pre 0
+        set src [lindex $args 0]
+        set dst [lindex $args 1]
+    } elseif {$nargs == 3 && [string match "-pre*" [lindex $args 0]]} {
+        set pre 1
+        set src [lindex $args 1]
+        set dst [lindex $args 2]
+    } else {
+        error "wrong # args: should be \"ns_cp ?-preserve? srcfile dstfile\""
+    }
+    file copy -force -- $src $dst
+    if {$pre} {
+        file stat $src sbuf
+        file mtime $dst $sbuf(mtime)
+        file atime $dst $sbuf(atime)
+        eval file attributes $dst [file attributes $src]
+    }
+}
+
+#
+# ns_mkdir --
+#
+#   Creates a directory.
+#
+
+proc ns_mkdir {dir} {
+    file mkdir $dir
+}
+
+#
+# ns_rmdir --
+#
+#   Deletes a directory, complaining if the passed path does not
+#   point to an empty directory.
+#
+
+proc ns_rmdir {dir} {
+    if {![file isdirectory $dir]} {
+        error "error deleting \"$dir\": not a directory"
+    }
+    file delete $dir
+}
+
+#
+# ns_unlink --
+#
+#   Deletes a file, optionaly complaining if the file is missing.
+#   It always complains if the passed path points to a directory.
+#
+
+proc ns_unlink {args} {
+    set nargs [llength $args]
+    if {$nargs == 1} {
+        set complain 1
+        set filepath [lindex $args 0]
+    } elseif {$nargs == 2 && [string match "-no*" [lindex $args 0]]} {
+        set complain 0
+        set filepath [lindex $args 1]
+    } else {
+        error "wrong # args: should be \"ns_unlink ?-nocomplain? file\""
+    }
+    if {[file isdirectory $filepath]} {
+        error "error deleting \"$filepath\": file is a directory"
+    }
+    if {$complain && ![file exists $filepath]} {
+        error "error deleting \"$filepath\": no such file"
+    }
+    file delete $filepath
+}
+
+#
+# ns_normalizepath --
+#
+#   Normalize the path. WATCH: this procedure is actually broken
+#   because it will normalize "a/b/c" to "/a/b/c" which is WRONG.
+#   This is because it mimics the broken Ns_NormalizePath C-API.
+#
+#   Please use Tcl [file normalize] instead. This always return
+#   properly normalized absolute path, as expected.
+#
+
+proc ns_normalizepath {path} {
+    if {[file pathtype $path] == "relative"} {
+        ns_log warning "normalizepath: $path; broken for relative paths"
+        ns_log warning "normalizepath: use \[file normalize\] instead"
+        set path /$path
+    }
+    file normalize $path
+}
+
+#
+# ns_link --
+#
+#   Hard-link the path to a link, eventually complaining.
+#
+
+proc ns_link {args} {
+    set nargs [llength $args]
+    if {$nargs == 2} {
+        set cpl 1
+        set src [lindex $args 0]
+        set lnk [lindex $args 1]
+    } elseif {$nargs == 3 && [string match "-no*" [lindex $args 0]]} {
+        set cpl 0
+        set src [lindex $args 1]
+        set lnk [lindex $args 2]
+    } else {
+        error "wrong # args: should be \"ns_link ?-nocomplain? path link\""
+    }
+    if {$cpl} {
+        file link -hard $lnk $src
+    } else {
+        catch {file link -hard $lnk $src}
+    }
+
+    return
+}
+
+#
+# ns_rename --
+#
+#   As we are re-implementing the ns_rename (which actually calls rename())
+#   with Tcl [file]. lets spend couple of words on the compatibility...
+#
+#   This is what "man 2 rename" says (among other things):
+#
+#     The rename() causes the link named from to be renamed as to.  
+#     If to exists, it is first removed. 
+#     Both from and to must be of the same type (that is, both directories
+#     or both non-directories), and must reside on the same file system.
+#
+#   What we cannot guarantee is:
+#
+#       "must reside on the same file system"
+#
+#   because there is no portable means in Tcl to assure this and
+#   because Tcl [file rename] is clever enough to copy-then-delete
+#   when renaming files residing on different filesystems. 
+#
+
+proc ns_rename {from to} {
+    if {[file exists $to]} {
+        if {[file type $from] != [file type $to]} {
+            error "rename (\"$from\", \"$to\"): not of the same type" 
+        }
+        file delete $to
+    }
+    file rename $from $to
+}
+
+#
+# ns_chmod --
+#
+#   Sets permissions mask of the "file" to "mode".
+#
+
+proc ns_chmod {file mode} {
+    file attributes $file -permissions $mode
+}
+
+#
+# ns_truncate --
+#
+#   This is still implement in the server code. The reason is that
+#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclFTruncateObjCmd()
+#
+
+#
+# ns_ftruncate --
+#
+#   This is still implement in the server code. The reason is that
+#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclTruncateObjCmd()
+#
+
+#
+# ns_mktemp --
+#
+#   This is still implement in the server code. The reason is that
+#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclMkTempObjCmd()
+#
+
+#
+# ns_tempnam --
+#
+#   This is still implement in the server code. The reason is that
+#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclTempNamObjCmd()
+#
+
+#
+# ns_symlink --
+#
+#   This is still implement in the server code. The reason is that
+#   the Tcl [file link] command always creates link target with 
+#   absolute path to the linked file; nsd/tclfile.c:NsTclSymlinkObjCmd()
+#
+
+

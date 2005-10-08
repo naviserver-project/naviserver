@@ -485,10 +485,10 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  *      Read a config file at startup.
  *
  * Results:
- *      Pointer to the config buffer of an ns_malloc'ed string.
+ *      Pointer to the config buffer in an ns_malloc'ed string.
  *
  * Side Effects:
- *      Server aborts if file cannot be read for any reason.
+ *      Server aborts if the file cannot be read for any reason.
  *
  *---------------------------------------------------------------------
  */
@@ -496,31 +496,50 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
 char *
 NsConfigRead(CONST char *file)
 {
-    struct stat st;
-    int fd;
-    char *buf;
-    size_t n;
+    Tcl_Channel  chan = NULL;
+    Tcl_Obj     *buf = NULL;
+    char        *call, *data, *conf = NULL;
+    int          length;
 
-    if (stat(file, &st) != 0) {
-        Ns_Fatal("config: stat(%s) failed: %s", file, strerror(errno));
-    }
-    if (S_ISREG(st.st_mode) == 0) {
-        Ns_Fatal("config: not regular file: %s", file);
-    }
-    fd = open(file, O_RDONLY);
-    if (fd < 0) {
-        Ns_Fatal("config: open(%s) failed: %s", file, strerror(errno));
-    }
-    n = st.st_size;
-    buf = ns_malloc(n + 1);
-    n = read(fd, buf, n);
-    if (n < 0) {
-        Ns_Fatal("config: read(%s) failed: %s", file, strerror(errno));
-    }
-    buf[n] = '\0';
-    close(fd);
+    /*
+     * Open the channel for reading the config file
+     */
 
-    return buf;
+    chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
+    if (chan == NULL) {
+        call = "open";
+        goto err;
+    }
+    
+    /*
+     * Slurp entire file in memory
+     */
+
+    buf = Tcl_NewObj();
+    Tcl_IncrRefCount(buf);
+    if (Tcl_ReadChars(chan, buf, -1, 0) == -1) {
+        call = "read";
+        goto err;
+    }
+
+    Tcl_Close(NULL, chan);
+    data = Tcl_GetStringFromObj(buf, &length);
+    conf = strcpy(ns_malloc(length + 1), data);
+    Tcl_DecrRefCount(buf);
+
+    return conf;
+
+ err:
+    if (chan) {
+        Tcl_Close(NULL, chan);
+    }
+    if (buf) {
+        Tcl_DecrRefCount(buf);
+    }
+    Ns_Fatal("config: can't %s file '%s': '%s'", call, file, 
+             strerror(Tcl_GetErrno()));
+
+    return NULL; /* Keep the compiler happy */
 }
 
 

@@ -1010,8 +1010,10 @@ DriverThread(void *ignored)
         if (stopping) {
             while ((drvPtr = activeDrvPtr) != NULL) {
                 activeDrvPtr = drvPtr->nextPtr;
-                ns_sockclose(drvPtr->sock);
-                drvPtr->sock = INVALID_SOCKET;
+                if (drvPtr->sock != INVALID_SOCKET) {
+                    ns_sockclose(drvPtr->sock);
+                    drvPtr->sock = INVALID_SOCKET;
+                }
                 drvPtr->nextPtr = firstDrvPtr;
                 firstDrvPtr = drvPtr;
             }
@@ -1291,8 +1293,10 @@ SockRelease(Sock *sockPtr, ReleaseReasons reason)
     (*sockPtr->drvPtr->proc)(DriverClose, (Ns_Sock *) sockPtr, NULL, 0);
     
     --nactive;
-    ns_sockclose(sockPtr->sock);
-    sockPtr->sock = INVALID_SOCKET;
+    if (sockPtr->sock != INVALID_SOCKET) {
+        ns_sockclose(sockPtr->sock);
+        sockPtr->sock = INVALID_SOCKET;
+    }
     if (sockPtr->reqPtr != NULL) {
         NsFreeRequest(sockPtr->reqPtr);
         sockPtr->reqPtr = NULL;
@@ -1581,7 +1585,7 @@ SockRead(Sock *sockPtr)
             }
             reqPtr->content = sockPtr->taddr;
             Ns_Log(Debug, "spooling content to file: readahead=%d, filesize=%i",
-                   sockPtr->drvPtr->readahead, sockPtr->tsize);
+                   sockPtr->drvPtr->readahead, (int)sockPtr->tsize);
 #endif
         } else {
             reqPtr->content = bufPtr->string + reqPtr->coff;

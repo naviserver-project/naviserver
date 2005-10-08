@@ -15,6 +15,29 @@
 	always succeeds, hence this test is constrainted on
 	"nonDarwin".
 
+	* include/ns.h:       Use (where possible) Tcl wrappers when
+	* include/nscheck.h:  accessing files on the filesystem.
+	* nsd/adpeval.c:      Exceptions are: temp files and logs.
+	* nsd/adprequest.c:   Special cases are in fastpath.c, adpeval.c,
+	* nsd/binder.c:       adprequest.c and urlopen.c where the native
+	* nsd/config.c:       call is performed first, and if failed, the
+	* nsd/conn.c:         Tcl companion is tried next. This way the
+	* nsd/driver.c:       simple but effective VFS fallback is assured. 
+	* nsd/fastpath.c:
+	* nsd/init.c:         Status before those changes is tagged as
+	* nsd/log.c:          "before-tclvfs" in order to simplify backoff
+	* nsd/modload.c:      if needed.
+	* nsd/nsconf.c:
+	* nsd/nsmain.c:
+	* nsd/pidfile.c:
+	* nsd/rollfile.c:
+	* nsd/tclcmds.c:
+	* nsd/tclfile.c:
+	* nsd/tclimg.c:
+	* nsd/urlopen.c:
+	* tcl/compat.tcl:
+	* tests/http_byteranges.test:
+
 2005-10-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nslog/nslog.c: untabified, reformatted, improved comments.

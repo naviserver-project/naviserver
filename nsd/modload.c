@@ -31,34 +31,12 @@
 /*
  * modload.c --
  *
- *      Load .so files into the server and initialize them. 
+ *      Load module files into the server and initialize them. 
  */
 
 #include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
-
-
-#if defined(USE_DLSHL)
-#  include <dl.h>
-#elif defined(USE_DYLD)
-#  include <mach-o/dyld.h>
-   static char *dylderr = "";
-#elif !defined(_WIN32)
-#  include <dlfcn.h>
-#  ifdef USE_RTLD_LAZY
-#    ifdef RTLD_NOW
-#      undef RTLD_NOW
-#    endif
-#    define RTLD_NOW RTLD_LAZY
-#  endif
-#  ifndef RTLD_GLOBAL
-#    define RTLD_GLOBAL  0
-#  endif
-#  ifndef RTLD_NOW
-#    define RTLD_NOW 0
-#  endif
-#endif
 
 /*
  * The following structure is used for static module loading.
@@ -71,20 +49,11 @@ typedef struct Module {
 } Module;
 
 /*
- * Static functions defined in this file.
- */
-
-static void *DlOpen(CONST char *file);
-static void *DlSym(void *handle, CONST char *name);
-static void *DlSym2(void *handle, CONST char *name);
-static char *DlError(void);
-
-/*
  * Static variables defined in this file.
  */
 
 static Tcl_HashTable modulesTable; /* Table of loaded, loadable modules. */
-static Module *firstPtr;           /* List of static modules to be initilaized. */
+static Module *firstPtr;           /* List of static modules to be inited. */
 
 
 /*
@@ -171,119 +140,46 @@ int
 Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
               CONST char *init)
 {
-    Ns_ModuleInitProc *initProc;
-    int                status = NS_OK;
-    int               *verPtr;
+    Ns_ModuleInitProc    *initProc = NULL;
+    int                   status, *verPtr = NULL;
+    Tcl_Obj              *path;
+    Tcl_Interp           *interp;
+    Tcl_LoadHandle        lh;
+    Tcl_FSUnloadFileProc *uPtr = NULL;
 
-    initProc = Ns_ModuleSymbol(file, init);
-    if (initProc == NULL) {
+    Ns_Log(Notice, "modload: loading %s", file);
+
+    path = Tcl_NewStringObj(file, -1);
+    Tcl_IncrRefCount(path);
+    if (Tcl_FSGetNormalizedPath(NULL, path) == NULL) {
+        Tcl_DecrRefCount(path);
+        Ns_Log(Error, "modload: %s: invalid path", file);
         return NS_ERROR;
     }
-    verPtr = Ns_ModuleSymbol(file, "Ns_ModuleVersion");
-    status = (*initProc) (server, module);
+
+    interp = Tcl_CreateInterp();
+    status = Tcl_FSLoadFile(interp, path, init, "Ns_ModuleVersion",
+                            (Tcl_PackageInitProc**)&initProc,
+                            (Tcl_PackageInitProc**)&verPtr, &lh, &uPtr);
+    Tcl_DecrRefCount(path);
+    if (status != TCL_OK) {
+        Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
+        Tcl_DeleteInterp(interp);
+        return NS_ERROR;
+    }
+    Tcl_DeleteInterp(interp);
+    if (initProc == NULL) {
+        Ns_Log(Error, "modload: %s: %s: symbol not found", file, init);
+        return NS_ERROR;
+    }
+    status = (*initProc)(server, module);
     if (verPtr == NULL || *verPtr < 1) {
         status = NS_OK;
     } else if (status != NS_OK) {
-        Ns_Log(Error, "modload: init %s of %s returned: %d", file, init, status);
+        Ns_Log(Error, "modload: %s: %s returned: %d", file, init, status);
     }
 
     return status;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ModuleSymbol --
- *
- *      Load a module if it's not already loaded, and extract the
- *      requested symbol from it.
- *
- * Results:
- *      A pointer to the symbol's value.
- *
- * Side effects:
- *      May load the module if it hasn't been loaded yet.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Ns_ModuleSymbol(CONST char *file, CONST char *name)
-{
-    Tcl_HashEntry *hPtr;
-    Ns_DString     ds;
-    int            new;
-    void          *module;
-    void          *symbol;
-    struct stat    st;
-#ifndef _WIN32
-    FileKey        key;
-#endif
-
-    symbol = NULL;
-    Ns_DStringInit(&ds);
-    if (!Ns_PathIsAbsolute(file)) {
-        file = Ns_HomePath(&ds, "bin", file, NULL);
-    }
-    if (stat(file, &st) != 0) {
-        Ns_Log(Notice, "modload: stat(%s) failed: %s", file, strerror(errno));
-        goto done;
-    }
-#ifdef _WIN32
-    hPtr = Tcl_CreateHashEntry(&modulesTable, file, &new);
-#else
-    key.dev = st.st_dev;
-    key.ino = st.st_ino;
-    hPtr = Tcl_CreateHashEntry(&modulesTable, (char *) &key, &new);
-#endif
-    if (!new) {
-        module = Tcl_GetHashValue(hPtr);
-    } else {
-        Ns_Log(Notice, "modload: loading '%s'", file);
-        module = DlOpen(file);
-        if (module == NULL) {
-            Ns_Log(Warning, "modload: could not load %s: %s", file, DlError());
-            Tcl_DeleteHashEntry(hPtr);
-            goto done;
-        }
-        Tcl_SetHashValue(hPtr, module);
-    }
-    symbol = DlSym(module, name);
-    if (symbol == NULL) {
-        Ns_Log(Warning, "modload: could not find %s in %s", name, file);
-    }
-
- done:
-    Ns_DStringFree(&ds);
-
-    return symbol;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ModuleGetSymbol --
- *
- *      Locate a given symbol in the program's symbol table and
- *      return the address of it. This differs from the other Module
- *      functions in that it doesn't require the shared library file
- *      name - this should sniff the entire symbol space.
- *
- * Results:
- *      A pointer to the requested symbol's value.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Ns_ModuleGetSymbol(CONST char *name)
-{
-    return DlSym(NULL, name);
 }
 
 
@@ -311,7 +207,8 @@ NsLoadModules(CONST char *server)
     char   *file, *module, *init = NULL, *s, *e = NULL;
     Module *modPtr, *nextPtr;
 
-    modules = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL, "modules", NULL));
+    modules = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL,
+                                                   "modules", NULL));
     for (i = 0; modules != NULL && i < Ns_SetSize(modules); ++i) {
         module = Ns_SetKey(modules, i);
         file = Ns_SetValue(modules, i);
@@ -335,9 +232,10 @@ NsLoadModules(CONST char *server)
         /*
          * Load the module if it's not the reserved "tcl" name.
          */
-
-        if (!STRIEQ(file, "tcl") && Ns_ModuleLoad(server, module, file, init) != NS_OK) {
-            Ns_Fatal("modload: failed to load module '%s'", file);
+        
+        if (!STRIEQ(file, "tcl")
+            && Ns_ModuleLoad(server, module, file, init) != NS_OK) {
+            Ns_Fatal("modload: %s: failed to load module", file);
         }
 
         /*
@@ -365,192 +263,13 @@ NsLoadModules(CONST char *server)
         firstPtr = NULL;
         while (modPtr != NULL) {
             nextPtr = modPtr->nextPtr;
-            Ns_Log(Notice, "modload: initializing module '%s'", modPtr->name);
+            Ns_Log(Notice, "modload: %s: initializing module", modPtr->name);
             if ((*modPtr->proc)(server, modPtr->name) != NS_OK) {
-                Ns_Fatal("modload: failed to initialize %s", modPtr->name);
+                Ns_Fatal("modload: %s: failed to initialize", modPtr->name);
             }
             ns_free(modPtr->name);
             ns_free(modPtr);
             modPtr = nextPtr;
         }
     }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * DlOpen --
- *
- *      Load a dynamic library.
- *
- * Results:
- *      An Ns_ModHandle, or NULL on failure.
- *
- * Side effects:
- *      See shl_load.
- *
- *----------------------------------------------------------------------
- */
-
-static void *
-DlOpen(CONST char *file)
-{
-#if defined(USE_DYLD)
-    int retry;
-    NSObjectFileImage image;
-    NSModule module;
-    NSObjectFileImageReturnCode err;
-
-    module = NULL;
-    retry  = 0;
-
-    err = NSCreateObjectFileImageFromFile(file, &image);
-    switch (err) {
-    case NSObjectFileImageSuccess:
-        module = NSLinkModule(image, file, TRUE);
-        break;
-    case NSObjectFileImageInappropriateFile:
-        dylderr = "Inappropriate Mach-O file";
-        retry   = 1;
-        break;
-    case NSObjectFileImageArch:
-        dylderr = "Inappropriate Mach-O architecture";
-        break;
-    case NSObjectFileImageFormat:
-        dylderr = "Invalid Mach-O file format";
-        retry   = 1;
-        break;
-    case NSObjectFileImageAccess:
-        dylderr = "Permission denied";
-        break;
-    default:
-        dylderr = "Unknown error";
-        break;
-    }
-
-    if (retry) {
-
-        /*
-         * Fallback to open shared library.
-         */
-
-        module = (void *) NSAddImage(file,
-                              NSADDIMAGE_OPTION_WITH_SEARCHING
-                              | NSADDIMAGE_OPTION_RETURN_ON_ERROR);
-    }
-
-    return (void *) module;
-
-#elif defined(_WIN32)
-    return (void *) LoadLibrary(file);
-#elif defined(USE_DLSHL)
-    return (void *) shl_load(file, BIND_VERBOSE|BIND_IMMEDIATE|BIND_RESTRICTED, 0);
-#else
-    return dlopen(file, RTLD_NOW|RTLD_GLOBAL);
-#endif
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * DlSym --
- *
- *      Load a symbol from a shared object.
- *
- * Results:
- *      A symbol pointer or null on error.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void *
-DlSym(void *handle, CONST char *name)
-{
-    Ns_DString ds;
-    void *symbol;
-
-    symbol = DlSym2(handle, name);
-    if (symbol == NULL) {
-
-        /*
-         * Some BSD platforms (e.g., OS/X) prepend an underscore
-         * to all symbols.
-         */
-
-        Ns_DStringInit(&ds);
-        Ns_DStringVarAppend(&ds, "_", name, NULL);
-        symbol = DlSym2(handle, ds.string);
-        Ns_DStringFree(&ds);
-    }
-
-    return symbol;
-}
-
-static void *
-DlSym2(void *handle, CONST char *name)
-{
-    void *symbol = NULL;
-
-#if defined(USE_DLSHL)
-    if (shl_findsym((shl_t *) &handle, name, TYPE_UNDEFINED, &symbol) == -1) {
-        symbol = NULL;
-    }
-#elif defined(_WIN32)
-    symbol = (void *) GetProcAddress((HMODULE) handle, name);
-#elif (USE_DYLD)
-    symbol = (void *) NSLookupSymbolInModule(handle, name);
-    if (symbol == NULL) {
-
-        /*
-         * Fallback to get symbol from shared library
-         */
-
-        symbol = (void *) NSLookupSymbolInImage(handle, name,
-                              NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW
-                              | NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
-    }
-    if (symbol != NULL) {
-        symbol = (void *) NSAddressOfSymbol(symbol);
-    }
-#else
-    symbol = dlsym(handle, name);
-#endif
-
-    return symbol;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * DlError --
- *
- *      Return the error code from trying to load a shared object.
- *
- * Results:
- *      A string error.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static char *
-DlError(void)
-{
-#if defined(USE_DLSHL)
-    return strerror(errno);
-#elif defined(_WIN32)
-    return NsWin32ErrMsg(GetLastError());
-#elif defined(USE_DYLD)
-    return dylderr;
-#else
-    return (char *) dlerror();
-#endif
 }

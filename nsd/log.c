@@ -91,8 +91,7 @@ static int              maxlevel;
 static int              maxbuffer;
 
 /*
- * Keep the following in sync with the
- * Ns_LogSeverity enum.
+ * Keep the following in sync with the Ns_LogSeverity enum.
  */
 
 static struct {
@@ -107,7 +106,6 @@ static struct {
     {"Debug",   NS_TRUE},
     {"Dev",     NS_TRUE}
 };
-
 
 
 /*
@@ -212,8 +210,7 @@ Ns_InfoErrorLog(void)
  *
  * Ns_LogRoll --
  *
- *      Signal handler for SIG_HUP which will roll the files. Also a
- *      tasty snack from Stuckey's.
+ *      Signal handler for SIG_HUP which will roll the files.
  *
  * Results:
  *      NS_OK/NS_ERROR.
@@ -236,6 +233,7 @@ Ns_LogRoll(void)
             return NS_ERROR;
         }
     }
+
     return NS_OK;
 }
 
@@ -441,11 +439,13 @@ NsLogOpen(void)
  */
 
 int
-NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                   Tcl_Obj *CONST objv[])
 {
     if (Ns_LogRoll() != NS_OK) {
         Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
     }
+
     return TCL_OK;
 }
 
@@ -468,16 +468,19 @@ NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  */
 
 int
-NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                  Tcl_Obj *CONST objv[])
 {
     LogCache *cachePtr;
     int       len, opt;
 
     static CONST char *opts[] = {
-        "hold", "count", "get", "peek", "flush", "release", "truncate", NULL
+        "hold", "count", "get", "peek", "flush", "release", 
+        "truncate", NULL
     };
     enum {
-        CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx, CTruncIdx
+        CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx, 
+        CTruncIdx
     };
 
     if (objc < 2) {
@@ -526,6 +529,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         Ns_DStringTrunc(&cachePtr->buffer, len);
         break;
     }
+
     return TCL_OK;
 }
 
@@ -547,11 +551,12 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+               Tcl_Obj *CONST objv[])
 {
-    Ns_LogSeverity  severity;
-    Ns_DString      ds;
-    int             i;
+    Ns_LogSeverity severity;
+    Ns_DString     ds;
+    int            i;
 
     struct {
         char           *string;
@@ -578,7 +583,8 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
     } else if (Tcl_GetIntFromObj(NULL, objv[1], &i) == TCL_OK) {
         severity = i;
     } else {
-        Tcl_AppendResult(interp, "unknown severity: \"", Tcl_GetString(objv[1]),
+        Tcl_AppendResult(interp, "unknown severity: \"", 
+                         Tcl_GetString(objv[1]),
                          "\": should be notice, warning, error, "
                          "fatal, bug, debug, dev or integer value", NULL);
         return TCL_ERROR;
@@ -679,8 +685,9 @@ LogStart(LogCache *cachePtr, Ns_LogSeverity severity)
         Ns_DStringTrunc(&cachePtr->buffer, cachePtr->buffer.length-1);
         Ns_DStringPrintf(&cachePtr->buffer, ".%ld]", usec);
     }
-    Ns_DStringPrintf(&cachePtr->buffer, "[%d.%lu][%s] %s: ",
-                     Ns_InfoPid(), (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(), severityStr);
+    Ns_DStringPrintf(&cachePtr->buffer, "[%d.%lu][%s] %s: ", Ns_InfoPid(), 
+                     (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(), 
+                     severityStr);
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(&cachePtr->buffer, "\n    ");
     }
@@ -773,16 +780,15 @@ LogFlush(LogCache *cachePtr)
 static int
 LogReOpen(void)
 {
-    int fd; 
-    int status;
+    int fd, status = NS_OK;
 
-    status = NS_OK;
     fd = open(file, O_WRONLY|O_APPEND|O_CREAT, 0644);
-    if (fd < 0) {
-        Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
+    if (fd == -1) {
+    	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
         status = NS_ERROR;
     } else {
+        
         /*
          * Route stderr to the file
          */
@@ -806,7 +812,7 @@ LogReOpen(void)
         /*
          * Clean up dangling 'open' reference to the fd
          */
-
+        
         if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
             close(fd);
         }
@@ -971,3 +977,4 @@ Panic(CONST char *fmt, ...)
 
     abort();
 }
+

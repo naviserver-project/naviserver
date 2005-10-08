@@ -61,7 +61,6 @@ struct _nsconf nsconf;
 void
 NsInitConf(void)
 {
-    static char cwd[PATH_MAX];
     extern char *nsBuildDate; /* NB: Declared in stamp.c */
 
     Ns_ThreadSetName("-main-");
@@ -80,9 +79,18 @@ NsInitConf(void)
     nsconf.name          = NSD_NAME;
     nsconf.version       = NSD_VERSION;
     nsconf.tcl.version	 = TCL_VERSION;
+
     time(&nsconf.boot_t);
     nsconf.pid = getpid();
-    nsconf.home = getcwd(cwd, sizeof(cwd));
+
+   /*
+    * At the time we are called here, the Tcl_VFS may not be
+    * initialized, hence we cannot figure out the current
+    * process home directory. Therefore, delegate this task
+    * to the nsmain() call, after the Tcl_FindExecutable().
+    */
+
+    nsconf.home = "/";
 
     Tcl_InitHashTable(&nsconf.sections, TCL_STRING_KEYS);
     Tcl_DStringInit(&nsconf.servers);

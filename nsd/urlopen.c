@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -30,7 +30,7 @@
 /* 
  * urlopen.c --
  *
- *	Make outgoing HTTP requests.
+ *  Make outgoing HTTP requests.
  */
 
 #include "nsd.h"
@@ -41,11 +41,11 @@ NS_RCSID("@(#) $Header$");
 #define BUFSIZE 2048
 
 typedef struct Stream {
-    SOCKET	sock;
-    int		error;
-    int		cnt;
+    SOCKET  sock;
+    int     error;
+    int     cnt;
     char       *ptr;
-    char	buf[BUFSIZE+1];
+    char    buf[BUFSIZE+1];
 } Stream;
 
 /*
@@ -61,14 +61,14 @@ static int FillBuf(Stream *sPtr);
  *
  * Ns_FetchPage --
  *
- *	Fetch a page off of this very server. Url must reference a 
- *	file in the filesystem. 
+ *      Fetch a page off of this very server. Url must reference a 
+ *      file in the filesystem. 
  *
  * Results:
- *	NS_OK or NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	The file contents will be put into the passed-in dstring.
+ *      The file contents will be put into the passed-in dstring.
  *
  *----------------------------------------------------------------------
  */
@@ -76,22 +76,32 @@ static int FillBuf(Stream *sPtr);
 int
 Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
 {
-    Ns_DString path;
-    int        fd;
-    int        nread;
-    char       buf[1024];
+    Ns_DString  ds;
+    Tcl_Channel chan = NULL;
+    int         nread, fd = -1;
+    char        buf[1024];
 
-    Ns_DStringInit(&path);
-    Ns_UrlToFile(&path, server, url);
-    fd = open(path.string, O_RDONLY|O_BINARY);
-    Ns_DStringFree(&path);
-    if (fd < 0) {
+    Ns_DStringInit(&ds);
+    Ns_UrlToFile(&ds, server, url);
+    fd = open(ds.string, O_RDONLY|O_BINARY);
+    if (fd == -1) {
+        chan = Tcl_OpenFileChannel(NULL, ds.string, "r", 0);
+    }
+    Ns_DStringFree(&ds);
+    if (fd >= 0) {
+        while ((nread = read(fd, buf, sizeof(buf))) > 0) {
+            Ns_DStringNAppend(dsPtr, buf, nread);
+        }
+        close(fd);
+    } else if (chan) {
+        while ((nread = Tcl_Read(chan, buf, sizeof(buf))) > 0) {
+            Ns_DStringNAppend(dsPtr, buf, nread);
+        }
+        Tcl_Close(NULL, chan);
+    } else {
         return NS_ERROR;
     }
-    while ((nread = read(fd, buf, sizeof(buf))) > 0) {
-        Ns_DStringNAppend(dsPtr, buf, nread);
-    }
-    close(fd);
+
     return NS_OK;
 }
 
@@ -101,15 +111,15 @@ Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
  *
  * Ns_FetchURL --
  *
- *	Open up an HTTP connection to an arbitrary URL. 
+ *      Open up an HTTP connection to an arbitrary URL. 
  *
  * Results:
- *	NS_OK or NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *	Page contents will be appended to the passed-in dstring.
- *	Headers returned to us will be put into the passed-in Ns_Set.
- *	The set name will be changed to a copy of the HTTP status line.
+ *      Page contents will be appended to the passed-in dstring.
+ *      Headers returned to us will be put into the passed-in Ns_Set.
+ *      The set name will be changed to a copy of the HTTP status line.
  *
  *----------------------------------------------------------------------
  */
@@ -117,12 +127,12 @@ Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
 int
 Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
 {
-    SOCKET  	    sock;
-    char    	   *p;
+    SOCKET          sock;
+    char           *p;
     Ns_DString      ds;
-    Stream  	    stream;
+    Stream          stream;
     Ns_Request     *request;
-    int     	    status, n;
+    int             status, n;
     unsigned int    tosend;
 
     status = NS_ERROR;    
@@ -136,7 +146,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     Ns_DStringVarAppend(&ds, "GET ", url, " HTTP/1.0", NULL);
     request = Ns_ParseRequest(ds.string);
     if (request == NULL || request->protocol == NULL ||
-	!STREQ(request->protocol, "http") || request->host == NULL) {
+        !STREQ(request->protocol, "http") || request->host == NULL) {
         Ns_Log(Notice, "urlopen: invalid url '%s'", url);
         goto done;
     }
@@ -145,9 +155,9 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     }
     sock = Ns_SockConnect(request->host, request->port);    
     if (sock == INVALID_SOCKET) {
-	Ns_Log(Error, "urlopen: failed to connect to '%s': '%s'",
-	       url, ns_sockstrerror(ns_sockerrno));
-	goto done;
+        Ns_Log(Error, "urlopen: failed to connect to '%s': '%s'",
+               url, ns_sockstrerror(ns_sockerrno));
+        goto done;
     }
 
     /*
@@ -166,11 +176,11 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
         n = send(sock, p, tosend, 0);
         if (n == SOCKET_ERROR) {
             Ns_Log(Error, "urlopen: failed to send data to '%s': '%s'",
-		   url, ns_sockstrerror(ns_sockerrno));
+                   url, ns_sockstrerror(ns_sockerrno));
             goto done;
         }
         tosend -= n;
-	p += n;
+        p += n;
     }
 
     /*
@@ -183,37 +193,37 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     stream.ptr = stream.buf;
     stream.sock = sock;
     if (!GetLine(&stream, &ds)) {
-	goto done;
+        goto done;
     }
     if (headers != NULL && strncmp(ds.string, "HTTP", 4) == 0) {
-	if (headers->name != NULL) {
-	    ns_free(headers->name);
-	}
-	headers->name = Ns_DStringExport(&ds);
+        if (headers->name != NULL) {
+            ns_free(headers->name);
+        }
+        headers->name = Ns_DStringExport(&ds);
     }
     do {
-	if (!GetLine(&stream, &ds)) {
-	    goto done;
-	}
-	if (ds.length > 0
-	    && headers != NULL
-	    && Ns_ParseHeader(headers, ds.string, Preserve) != NS_OK) {
-	    goto done;
-	}
+        if (!GetLine(&stream, &ds)) {
+            goto done;
+        }
+        if (ds.length > 0
+            && headers != NULL
+            && Ns_ParseHeader(headers, ds.string, Preserve) != NS_OK) {
+            goto done;
+        }
     } while (ds.length > 0);
-
+    
     /*
      * Without any check on limit or total size, foolishly read
      * the remaining content into the dstring.
      */
-
+    
     do {
-    	Ns_DStringNAppend(dsPtr, stream.ptr, stream.cnt);
+        Ns_DStringNAppend(dsPtr, stream.ptr, stream.cnt);
     } while (FillBuf(&stream));
     if (!stream.error) {
-    	status = NS_OK;
+        status = NS_OK;
     }
-    
+
  done:
     if (request != NULL) {
         Ns_FreeRequest(request);
@@ -222,6 +232,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
         ns_sockclose(sock);
     }
     Ns_DStringFree(&ds);
+
     return status;
 }
 
@@ -231,21 +242,22 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
  *
  * NsTclGetUrlObjCmd --
  *
- *	Implements ns_geturl. 
+ *      Implements ns_geturl. 
  *
  * Results:
- *	Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                  Tcl_Obj *CONST objv[])
 {
-    NsInterp *itPtr = arg;
+    NsInterp   *itPtr = arg;
     Ns_DString  ds;
     Ns_Set     *headers;
     int         status, code;
@@ -263,32 +275,32 @@ NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         headers = Ns_SetCreate(NULL);
     }
     Ns_DStringInit(&ds);
-	url = Tcl_GetString(objv[1]);
+    url = Tcl_GetString(objv[1]);
     if (url[1] == '/') {
-	status = Ns_FetchPage(&ds, Tcl_GetString(objv[1]), itPtr->servPtr->server);
+        status = Ns_FetchPage(&ds, url, itPtr->servPtr->server);
     } else {
-        status = Ns_FetchURL(&ds, Tcl_GetString(objv[1]), headers);
+        status = Ns_FetchURL(&ds, url, headers);
     }
     if (status != NS_OK) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not fetch: ", 
-		Tcl_GetString(objv[1]), NULL);
-	if (headers != NULL) {
-	    Ns_SetFree(headers);
-	}
-	goto done;
+        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not fetch: ",
+                               Tcl_GetString(objv[1]), NULL);
+        if (headers != NULL) {
+            Ns_SetFree(headers);
+        }
+        goto done;
     }
     if (objc == 3) {
         Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC);
         if (Tcl_ObjSetVar2(interp, objv[2], NULL, Tcl_GetObjResult(interp),
-		TCL_LEAVE_ERR_MSG) == NULL) {
-	    goto done;
-	}
+                           TCL_LEAVE_ERR_MSG) == NULL) {
+            goto done;
+        }
     }
     Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
     code = TCL_OK;
-
 done:
     Ns_DStringFree(&ds);
+
     return code;
 }
 
@@ -298,13 +310,13 @@ done:
  *
  * FillBuf --
  *
- *	Fill the socket stream buffer.
+ *      Fill the socket stream buffer.
  *
  * Results:
- *	1 if fill ok, 0 otherwise.
+ *      1 if fill ok, 0 otherwise.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -316,16 +328,19 @@ FillBuf(Stream *sPtr)
     
     n = recv(sPtr->sock, sPtr->buf, BUFSIZE, 0);
     if (n <= 0) {
-    	if (n < 0) {
-	    Ns_Log(Error, "urlopen: "
-		   "failed to fill socket stream buffer: '%s'", strerror(errno));
-	    sPtr->error = 1;
-	}
-    	return 0;
+        if (n < 0) {
+            Ns_Log(Error, "urlopen: "
+                   "failed to fill socket stream buffer: '%s'", 
+                   strerror(errno));
+            sPtr->error = 1;
+        }
+        return 0;
     }
+
     sPtr->buf[n] = '\0';
     sPtr->ptr = sPtr->buf;
     sPtr->cnt = n;
+
     return 1;
 }
 
@@ -335,14 +350,14 @@ FillBuf(Stream *sPtr)
  *
  * GetLine --
  *
- *	Copy the next line from the stream to a dstring, trimming
- *	the \n and \r.
+ *      Copy the next line from the stream to a dstring, trimming
+ *      the \n and \r.
  *
  * Results:
- *	1 or 0.
+ *      1 or 0.
  *
  * Side effects:
- *	The dstring is truncated on entry.
+ *      The dstring is truncated on entry.
  *
  *----------------------------------------------------------------------
  */
@@ -355,25 +370,26 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
 
     Ns_DStringTrunc(dsPtr, 0);
     do {
-	if (sPtr->cnt > 0) {
-	    eol = strchr(sPtr->ptr, '\n');
-	    if (eol == NULL) {
-		n = sPtr->cnt;
-	    } else {
-		*eol++ = '\0';
-		n = eol - sPtr->ptr;
-	    }
-	    Ns_DStringNAppend(dsPtr, sPtr->ptr, n - 1);
-	    sPtr->ptr += n;
-	    sPtr->cnt -= n;
-	    if (eol != NULL) {
-		n = dsPtr->length;
-		if (n > 0 && dsPtr->string[n-1] == '\r') {
-		    Ns_DStringTrunc(dsPtr, n-1);
-		}
-		return 1;
-	    }
-	}
+        if (sPtr->cnt > 0) {
+            eol = strchr(sPtr->ptr, '\n');
+            if (eol == NULL) {
+                n = sPtr->cnt;
+            } else {
+                *eol++ = '\0';
+                n = eol - sPtr->ptr;
+            }
+            Ns_DStringNAppend(dsPtr, sPtr->ptr, n - 1);
+            sPtr->ptr += n;
+            sPtr->cnt -= n;
+            if (eol != NULL) {
+                n = dsPtr->length;
+                if (n > 0 && dsPtr->string[n-1] == '\r') {
+                    Ns_DStringTrunc(dsPtr, n-1);
+                }
+                return 1;
+            }
+        }
     } while (FillBuf(sPtr));
+
     return 0;
 }

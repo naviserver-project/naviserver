@@ -1188,14 +1188,6 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
               CONST char *init)
      NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-NS_EXTERN void *
-Ns_ModuleSymbol(CONST char *file, CONST char *name)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN void *
-Ns_ModuleGetSymbol(CONST char *name)
-     NS_GNUC_NONNULL(1);
-
 /*
  * nsthread.c:
  */

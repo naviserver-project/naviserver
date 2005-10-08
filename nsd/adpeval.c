@@ -352,7 +352,7 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
      * Verify the file is an existing, ordinary file and get page code.
      */
     
-    if (stat(file, &st) != 0) {
+    if (stat(file, &st) != 0 && Tcl_Stat(file, &st) != 0) {
         Tcl_AppendResult(interp, "could not stat \"", file, "\": ", 
                          Tcl_PosixError(interp), NULL);
     } else if (S_ISREG(st.st_mode) == 0) {
@@ -694,16 +694,20 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
     Tcl_Encoding encoding;
     Tcl_DString  utf;
     char        *page, *buf;
-    int          fd, n, trys;
+    int          fd = -1, n, trys, status;
     size_t       size;
     Page         *pagePtr;
     AdpParse     parse;
+    Tcl_Channel  chan = NULL;
     
     fd = open(file, O_RDONLY | O_BINARY);
-    if (fd < 0) {
-        Tcl_AppendResult(interp, "could not open \"", file, "\": ", 
-                         Tcl_PosixError(interp), NULL);
-        return NULL;
+    if (fd == -1) {
+        chan = Tcl_OpenFileChannel(interp, file, "r", 0644);
+        if (chan == NULL) {
+            Tcl_AppendResult(interp, "could not open \"", file, "\": ", 
+                             Tcl_PosixError(interp), NULL);
+            return NULL;
+        }
     }
     
     pagePtr = NULL;
@@ -713,24 +717,33 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
     do {
 
         /*
-         * fstat the open file to ensure it has not changed or been
-         * replaced since the original stat.
+         * Re-stat the open file to ensure it has not changed
+         * or been replaced since the original stat.
          */
 
-        if (fstat(fd, stPtr) != 0) {
-            Tcl_AppendResult(interp, "could not fstat \"", file, "\": ", 
+        if (fd >= 0) {
+            status = fstat(fd, stPtr);
+        } else {
+            status = Tcl_Stat(file, stPtr);
+        }
+        if (status != 0) {
+            Tcl_AppendResult(interp, "could not stat \"", file, "\": ", 
                              Tcl_PosixError(interp), NULL);
             goto done;
         }
 
         size = stPtr->st_size;
         buf = ns_realloc(buf, size + 1);
-        
+
         /*
          * Attempt to read +1 byte to catch the file growing.
          */
         
-        n = read(fd, buf, size + 1);
+        if (fd >= 0) {
+            n = read(fd, buf, size + 1);
+        } else {
+            n = Tcl_Read(chan, buf, size + 1);
+        }
         if (n < 0) {
             Tcl_AppendResult(interp, "could not read \"", file, "\": ", 
                              Tcl_PosixError(interp), NULL);
@@ -739,11 +752,16 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
         if (n != size) {
 
             /*
-             * File is not expected size, rewind and fstat/read again.
+             * File is not of expected size, rewind and retry
              */
-            
-            if (lseek(fd, 0, SEEK_SET) != 0) {
-                Tcl_AppendResult(interp, "could not lseek \"", file, "\": ",
+
+            if (fd >= 0) {
+                status = lseek(fd, 0, SEEK_SET);
+            } else {
+                status = Tcl_Seek(chan, 0, SEEK_SET);
+            }
+            if (status != 0) {
+                Tcl_AppendResult(interp, "could not seek \"", file, "\": ",
                                  Tcl_PosixError(interp), NULL);
                 goto done;
             }
@@ -785,7 +803,12 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
 
  done:
     ns_free(buf);
-    close(fd);
+
+    if (fd >= 0) {
+        close(fd);
+    } else {
+        Tcl_Close(interp, chan);
+    }
 
     return pagePtr;
 }
