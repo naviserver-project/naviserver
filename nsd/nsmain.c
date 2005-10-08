@@ -58,13 +58,20 @@ NS_RCSID("@(#) $Header$");
 #define MIN_WORK_SECONDS   128 /* After being up for # secs, reset timers */
 #define MAX_NUM_RESTARTS   256 /* Quit after somany unsuccessful restarts */
 
+#ifdef __APPLE__
+# define WAKEUP_IN_SECONDS 600 /* Wakeup watchdog after somuch seconds */
+#else
+# define WAKEUP_IN_SECONDS   0 /* Wakeup watchdog after somuch seconds */
+#endif
+
 /*
  * Local functions defined in this file.
  */
 
 static int  StartWatchedServer(void);
 static void SysLog(int priority, char *fmt, ...);
-static void WatchdogSigtermHandler(int sig);
+static void WatchdogSIGTERMHandler(int sig);
+static void WatchdogSIGALRMHandler(int sig);
 static int  WaitForServer();
 
 static void UsageError(char *msg, ...);
@@ -1127,7 +1134,7 @@ SysLog(int priority, char *fmt, ...)
 /*
  *----------------------------------------------------------------------
  *
- * WatchdogSigtermHandler --
+ * WatchdogSIGTERMHandler --
  *
  *      Handle SIGTERM and pass to server process.
  *
@@ -1141,11 +1148,40 @@ SysLog(int priority, char *fmt, ...)
  */
 
 static void 
-WatchdogSigtermHandler(int sig)
+WatchdogSIGTERMHandler(int sig)
 {
     kill((pid_t) nsconf.pid, sig);
     watchdogExit = 1;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WatchdogSIGALRMHandler --
+ *
+ *      Handle SIGALRM to check existence of the nsconf.pid server
+ *      process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Zero-out the nsconf.pid element indicating absence of the
+ *      server process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void 
+WatchdogSIGALRMHandler(int sig)
+{
+    if (kill((pid_t) nsconf.pid, 0)) {
+        SysLog(LOG_WARNING, "watchdog: server %d terminated?", nsconf.pid);
+        nsconf.pid = 0;
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1167,15 +1203,18 @@ WatchdogSigtermHandler(int sig)
 static int 
 WaitForServer()
 {
-    int ret, status;
-    pid_t pid;
-    char *msg;
+    int    ret, status;
+    pid_t  pid;
+    char  *msg;
 
     do {
         pid = waitpid(nsconf.pid, &status, 0);
-    } while (pid == -1 && errno == EINTR);
+    } while (pid == -1 && errno == EINTR && nsconf.pid);
 
-    if (WIFEXITED(status)) {
+    if (nsconf.pid == 0) {
+        msg = "terminated";
+        ret = -1; /* Alarm handler found no server present? */
+    } else if (WIFEXITED(status)) {
         ret = WEXITSTATUS(status);
         msg = "exited";
     } else if (WIFSIGNALED(status)) {
@@ -1212,7 +1251,8 @@ WaitForServer()
 static int
 StartWatchedServer(void)
 {
-    unsigned int setSigterm = 0, startTime, numRestarts = 0, restartWait = 0;
+    unsigned int setSigHandlers=0, startTime, numRestarts=0, restartWait=0;
+    struct itimerval timer;
 
     SysLog(LOG_NOTICE, "watchdog: started.");
 
@@ -1239,13 +1279,24 @@ StartWatchedServer(void)
 
         /*
          * Register SIGTERM handler so we can gracefully stop the server. 
-         * The watchdog will exit w/o stopping the server if got signalled 
-         * with any other signal, though.
+         * The watchdog passes the signal to the server, if possible.
+         *
+         * Register SIGALRM handler to wake up the watchdog to check if
+         * the server is still present. This tries to solve issues with 
+         * signal delivery on some systems where waitpid() fails to report
+         * process exitus (i.e. it is just stuck).
          */
 
-        if (setSigterm == 0) {
-            setSigterm = 1;
-            ns_signal(SIGTERM, WatchdogSigtermHandler);
+        if (setSigHandlers == 0) {
+            setSigHandlers = 1;
+            timer.it_interval.tv_sec = WAKEUP_IN_SECONDS;
+            timer.it_value.tv_sec  = timer.it_interval.tv_sec;
+            timer.it_value.tv_usec = timer.it_interval.tv_usec = 0;
+            if (timer.it_value.tv_sec || timer.it_value.tv_usec) {
+                setitimer(ITIMER_REAL, &timer, NULL);
+                ns_signal(SIGALRM, WatchdogSIGALRMHandler);
+            }
+            ns_signal(SIGTERM, WatchdogSIGTERMHandler);
         }
 
         startTime = time(NULL);

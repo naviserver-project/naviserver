@@ -38,6 +38,15 @@
 	* tcl/compat.tcl:
 	* tests/http_byteranges.test:
 
+	* nsd/nsmain.c: added alarm of 300 seconds for the watchdog
+	on Darwin. When the alarm triggers, the watchdog re-checks
+	the existence of the server process (by sending kill 0) and
+	clears nsconf-pid value if the process is gone. This is the
+	signal to re-start the server again. All this mess is needed
+	because under some strange circumstances, the WaitForServer()
+	never returns, although the server process is already gone.
+	This smells of a broken signal delivery to me... 
+
 2005-10-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nslog/nslog.c: untabified, reformatted, improved comments.
