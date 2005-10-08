@@ -258,10 +258,12 @@ GetHost(Ns_DString *dsPtr, char *addr)
 #ifdef __APPLE__
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
-#endif
     memset(&sa, 0, sizeof(struct sockaddr_in));
-    sa.sin_family = AF_INET;
     sa.sin_len = sizeof(struct sockaddr_in);
+#else
+    memset(&sa, 0, sizeof(struct sockaddr_in));
+#endif
+    sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = inet_addr(addr);
     result = getnameinfo((const struct sockaddr *) &sa,
                          sizeof(struct sockaddr_in), buf, sizeof(buf),
