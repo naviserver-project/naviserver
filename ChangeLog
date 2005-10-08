@@ -1,9 +1,27 @@
+2005-10-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* configure.in: emit warning for Darwin builds about
+	MT-unsafeness of DNS calls (getnameinfo, getaddrinfo).
+
+	* configure: regenerated
+	
+	* nsd/dns.c: added critical sections in GetHost/GetAddr
+	when using getnameinfo/getaddrinfo on Darwin platforms.
+	Also, in GetHost(), explicitly initialize the struct
+	sockaddr_in sin_len element because this is needed for
+	the Darwin getnameinfo implementation.
+
 2005-10-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nslog/nslog.c: untabified, reformatted, improved comments.
 	LogObjCmd: rewritten with Tcl_Obj interface and using TclVFS
 	wrappers for handling files. Proper locking when accessing the 
 	Log structure elements in the LogObjCmd. 
+
+	* nsd/dns.c: fixed typo in GetAddr when using the gethostbyname
+	path. This is very needed for Apple Mac OSX since the other
+	getnameinfo/getaddrinfo calls does not seem to work correctly
+	and are also mt-unsafe, so it is a loose-loose situation.
 
 2005-10-02  Stephen Deasey  <sdeasey@users.sf.net>
 
