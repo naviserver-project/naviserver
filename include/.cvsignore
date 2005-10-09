@@ -1,3 +1,4 @@
 Makefile.global
 Makefile.module
 nsconfig.h
+stamp-h1

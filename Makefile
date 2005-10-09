@@ -36,7 +36,7 @@ include include/Makefile.global
 dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb
 
 distfiles = $(dirs) doc tcl include tests win32 *.tcl *.m4 configure \
-	Makefile install-sh README ChangeLog NEWS license.terms naviserver.rdf
+	Makefile install-sh missing README ChangeLog NEWS license.terms naviserver.rdf
 
 all: 
 	@for i in $(dirs); do \
@@ -94,15 +94,15 @@ clean:
 	done
 
 distclean: clean
-	$(RM) config.status config.log config.cache \
-	include/Makefile.global include/Makefile.module include/config.h \
+	$(RM) config.status config.log config.cache autom4te.cache aclocal.m4 configure \
+	include/{Makefile.global,Makefile.module,nsconfig.h,nsconfig.h.in,stamp-h1} \
 	naviserver-$(NS_PATCH_LEVEL).tar.gz
 
 dist:
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
-	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,Makefile.global,Makefile.module}
+	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{nsconfig.h,Makefile.global,Makefile.module,stamp-h1}
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 

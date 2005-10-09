@@ -30,15 +30,6 @@
 # $Header$
 #
 
-#
-# aclocal.m4 --
-#
-#	Autoconf include which includes the bundled TEA tcl.m4.
-#
-
-builtin(include,tcl.m4)
-
-
 dnl
 dnl Check to see what variant of gethostbyname_r() we have.  Defines
 dnl HAVE_GETHOSTBYNAME_R_{6, 5, 3} depending on what variant is found.
@@ -47,7 +38,7 @@ dnl Based on David Arnold's example from the comp.programming.threads
 dnl FAQ Q213.
 dnl
 
-AC_DEFUN(AC_HAVE_GETHOSTBYNAME_R,
+AC_DEFUN([AC_HAVE_GETHOSTBYNAME_R],
 [saved_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -lnsl"
 AC_CHECK_FUNC(gethostbyname_r, [
@@ -106,7 +97,7 @@ AC_CHECK_FUNC(gethostbyname_r, [
 ])
 CFLAGS="$saved_CFLAGS"])
 
-AC_DEFUN(AC_HAVE_GETHOSTBYADDR_R,
+AC_DEFUN([AC_HAVE_GETHOSTBYADDR_R],
 [saved_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -lnsl"
 AC_CHECK_FUNC(gethostbyaddr_r, [
@@ -133,3 +124,44 @@ AC_CHECK_FUNC(gethostbyaddr_r, [
 ])
 CFLAGS="$saved_CFLAGS"])
 
+
+dnl @synopsis AC_CHECK_STRUCT_FOR(INCLUDES,STRUCT,MEMBER,DEFINE,[no])
+dnl
+dnl Checks STRUCT for MEMBER and defines DEFINE if found.
+dnl
+dnl @version $Id$
+dnl @author Wes Hardaker <wjhardaker@ucdavis.edu>
+dnl
+AC_DEFUN([AC_CHECK_STRUCT_FOR],[
+ac_safe_struct=`echo "$2" | sed 'y%./+-%__p_%'`
+ac_safe_member=`echo "$3" | sed 'y%./+-%__p_%'`
+ac_safe_all="ac_cv_struct_${ac_safe_struct}_has_${ac_safe_member}"
+changequote(, )dnl
+  ac_uc_define=STRUCT_`echo "${ac_safe_struct}_HAS_${ac_safe_member}" | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+changequote([, ])dnl
+
+AC_MSG_CHECKING([for $2.$3])
+AC_CACHE_VAL($ac_safe_all,
+[
+if test "x$4" = "x"; then
+  defineit="= 0"
+elif test "x$4" = "xno"; then
+  defineit=""
+else
+  defineit="$4"
+fi
+AC_TRY_COMPILE([
+$1
+],[
+struct $2 testit;
+testit.$3 $defineit;
+], eval "${ac_safe_all}=yes", eval "${ac_safe_all}=no" )
+])
+
+if eval "test \"x$`echo ${ac_safe_all}`\" = \"xyes\""; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE_UNQUOTED($ac_uc_define)
+else
+  AC_MSG_RESULT(no)
+fi
+])

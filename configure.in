@@ -41,6 +41,7 @@ AC_CONFIG_SRCDIR(include/ns.h)
 AC_CONFIG_HEADER(include/nsconfig.h)
 AC_PREREQ(2.50)
 AC_REVISION($Revision$)
+AM_INIT_AUTOMAKE
 
 
 #
@@ -64,7 +65,7 @@ AC_SUBST(NS_PATCH_LEVEL)
 # Include and verify Tcl config located by --with-tcl=
 #
 
-TEA_INIT([3.2])
+TEA_INIT([3.3])
 TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
 TEA_ENABLE_THREADS
@@ -231,6 +232,7 @@ if test "${ac_zlib}" = "yes" ; then
     AC_CHECK_HEADERS(zlib.h)
     AC_CHECK_LIB(z, compress2)
 fi
+
 
 #
 # Create Makefiles.
