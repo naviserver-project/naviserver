@@ -168,7 +168,7 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
     Tcl_DecrRefCount(pathObj);
     if (status != TCL_OK) {
         Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
-        Tcl_DeleteInterp(interp);
+        Ns_TclDeAllocateInterp(interp);
         return NS_ERROR;
     }
     Ns_TclDeAllocateInterp(interp);

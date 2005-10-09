@@ -1,3 +1,10 @@
+2005-10-09  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* include/nsthread.h: MIN and MAX are defined after all, in
+	sys/param.h. Include this header.
+	* nsd/modload.c: Don't delete interp, de-allocate.
+
 2005-10-08  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/rollfile.c (Ns_PurgeFiles): Quiet compiler complaints about

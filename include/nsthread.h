@@ -143,6 +143,9 @@ NS_EXTERN int closedir(DIR *dp);
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
 
 /*
  * Various constants.
