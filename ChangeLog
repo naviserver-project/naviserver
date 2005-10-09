@@ -1,5 +1,8 @@
 2005-10-08  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/modload.c (Ns_ModuleLoad): Quiet compiler complaints about
+	pointer aliasing.  Allocate interp from per-thread cache.
+
 	* include/ns.h:
 	* nsd/config.c:
 	* nsd/driver.c: Add definition of MIN and MAX macros used by

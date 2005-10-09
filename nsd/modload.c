@@ -140,34 +140,42 @@ int
 Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
               CONST char *init)
 {
+    Tcl_PackageInitProc  *tclInitProc = NULL, *tclVerProc = NULL;
     Ns_ModuleInitProc    *initProc = NULL;
     int                   status, *verPtr = NULL;
-    Tcl_Obj              *path;
+    Tcl_Obj              *pathObj;
     Tcl_Interp           *interp;
     Tcl_LoadHandle        lh;
-    Tcl_FSUnloadFileProc *uPtr = NULL;
+    Tcl_FSUnloadFileProc *uPtr;
 
     Ns_Log(Notice, "modload: loading %s", file);
 
-    path = Tcl_NewStringObj(file, -1);
-    Tcl_IncrRefCount(path);
-    if (Tcl_FSGetNormalizedPath(NULL, path) == NULL) {
-        Tcl_DecrRefCount(path);
+    pathObj = Tcl_NewStringObj(file, -1);
+    Tcl_IncrRefCount(pathObj);
+    if (Tcl_FSGetNormalizedPath(NULL, pathObj) == NULL) {
+        Tcl_DecrRefCount(pathObj);
         Ns_Log(Error, "modload: %s: invalid path", file);
         return NS_ERROR;
     }
 
-    interp = Tcl_CreateInterp();
-    status = Tcl_FSLoadFile(interp, path, init, "Ns_ModuleVersion",
-                            (Tcl_PackageInitProc**)&initProc,
-                            (Tcl_PackageInitProc**)&verPtr, &lh, &uPtr);
-    Tcl_DecrRefCount(path);
+    interp = Ns_TclAllocateInterp(server);
+    if (interp == NULL) {
+        Ns_Log(Error, "modload: invalid server name: '%s'", server);
+        return NS_ERROR;
+    }
+    status = Tcl_FSLoadFile(interp, pathObj, init, "Ns_ModuleVersion",
+                            &tclInitProc, &tclVerProc, &lh, &uPtr);
+    Tcl_DecrRefCount(pathObj);
     if (status != TCL_OK) {
         Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
         Tcl_DeleteInterp(interp);
         return NS_ERROR;
     }
-    Tcl_DeleteInterp(interp);
+    Ns_TclDeAllocateInterp(interp);
+
+    initProc = (Ns_ModuleInitProc *) tclInitProc;
+    verPtr = (int *) tclVerProc;
+
     if (initProc == NULL) {
         Ns_Log(Error, "modload: %s: %s: symbol not found", file, init);
         return NS_ERROR;
