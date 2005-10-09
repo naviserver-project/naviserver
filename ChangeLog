@@ -1,3 +1,7 @@
+2005-10-08  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/.cvsignore: Ignore generated nsconfig.h.
+
 2005-10-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* configure.in: emit warning for Darwin builds about
