@@ -611,6 +611,35 @@ proc _ns_tclrename { oldName newName } {
     }
 }
 
+#
+# Load global binary modules.
+#
+
+ns_runonce -global {
+    ns_atprestartup {
+        set modules [ns_configsection ns/modules]
+        if {![string equal $modules ""]} {
+            foreach {module file} [ns_set array $modules] {
+                ns_moduleload -global $module $file
+            }
+        }
+    }
+}
+
+#
+# Load binary modules for this server.
+#
+
+set modules [ns_configsection ns/server/[ns_info server]/modules]
+if {![string equal $modules ""]} {
+    foreach {module file} [ns_set array $modules] {
+        if {![string equal [string tolower $module] tcl]} {
+            ns_moduleload $module $file
+        }
+        ns_ictl addmodule $module
+    }
+}
+
 
 #
 # Source the top level Tcl libraries.
@@ -645,8 +674,8 @@ _rename _rename rename
 #  simultanously.
 #
 set srv [ns_info server]
-if {![nsv_exists _ns_eval_jobq $srv]} {
-    nsv_set _ns_eval_jobq $srv [ns_job create "ns_eval_q:$srv" 1]
+ns_runonce {
+    ns_job create "ns_eval_q:$srv" 1
 }
 
 #

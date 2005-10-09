@@ -267,6 +267,12 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 }
     
 int
+NsTclAtPreStartupObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    return AtObjCmd(Ns_RegisterAtPreStartup, interp, objc, objv);
+}
+
+int
 NsTclAtStartupObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     return AtObjCmd(Ns_RegisterAtStartup, interp, objc, objv);

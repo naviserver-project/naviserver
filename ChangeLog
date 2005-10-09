@@ -1,5 +1,22 @@
 2005-10-09  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsd.h:
+	* nsd/modload.c:
+	* nsd/nsmain.c:
+	* nsd/server.c:
+	* nsd/init.tcl: Add new Tcl command ns_moduleload which loads a
+	binary module into the server and calls it's initialising
+	function.  Remove NsLoadModules and instead call ns_moduleload
+	from the init.tcl bootstrap.  Policy about where modules are
+	located and when they are loaded is now easily accessible to Tcl.
+	* nsd/tclcallbacks.c:
+	* nsd/tclmisc.c:
+	* nsd/tclcmds.c: Add new command ns_atprestartup as a simple
+	wrapper for the C equivalent.  Add new command ns_runonce which
+	ensures that the given script is run only once, either globally or
+	per virtual server, during the lifetime of the server process.
+	This simplifies initialisation.
+
 	* include/ns.h:
 	* include/nsthread.h: MIN and MAX are defined after all, in
 	sys/param.h. Include this header.

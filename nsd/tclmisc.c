@@ -78,6 +78,61 @@ Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclRunOnceObjCmd --
+ *
+ *      Implements ns_runonce.  Run the given script only once.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Depends on script.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    NsInterp             *itPtr = arg;
+    CONST char           *script;
+    int                   new, global = NS_FALSE;
+    static Tcl_HashTable  runTable;
+    static int            initialized;
+
+    Ns_ObjvSpec opts[] = {
+        {"-global", Ns_ObjvBool,  &global, (void *) NS_TRUE},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"script", Ns_ObjvString, &script, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    Ns_MasterLock();
+    if (!initialized) {
+        Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
+        initialized = NS_TRUE;
+    }
+    (void) Tcl_CreateHashEntry(global ? &runTable : &itPtr->servPtr->tcl.runTable,
+                               script, &new);
+    Ns_MasterUnlock();
+
+    if (new) {
+        return Tcl_Eval(interp, script);
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_TclLogErrorInfo --
  *
  *      Log the global errorInfo variable to the server log along with

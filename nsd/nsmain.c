@@ -677,10 +677,10 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     nsconf.defaultServer = server;
     
     /*
-     * Load non-server modules.
+     * Initialize non-server static modules.
      */
 
-    NsLoadModules(NULL);
+    NsInitStaticModules(NULL);
 
     /*
      * Run pre-startups and start the servers.

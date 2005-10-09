@@ -194,77 +194,80 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
 /*
  *----------------------------------------------------------------------
  *
- * NsLoadModules --
+ * NsTclModuleLoadObjCmd --
  *
- *      Load all modules for given server.
+ *      Implements ns_moduleload.  Load and initilize a binary module.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Will exit the server with a fatal error if module fails to load
+ *      initialize correctly.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    NsInterp   *itPtr = (NsInterp *) arg;
+    CONST char *server, *module, *file, *init = "Ns_ModuleInit";
+    int         global = NS_FALSE;
+
+    Ns_ObjvSpec opts[] = {
+        {"-global", Ns_ObjvBool,   &global, (void *) NS_TRUE},
+        {"-init",   Ns_ObjvString, &init,   NULL},
+        {"--",      Ns_ObjvBreak,  NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"module",  Ns_ObjvString, &module, NULL},
+        {"file",    Ns_ObjvString, &file,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    if (Ns_InfoStarted()) {
+        Tcl_SetResult(interp, "server already started", TCL_STATIC);
+        return TCL_ERROR;
+    }
+    if (global) {
+        server = NULL;
+    } else {
+        server = itPtr->servPtr->server;
+    }
+    if (Ns_ModuleLoad(server, module, file, init) != NS_OK) {
+        Ns_Fatal("modload: failed to load module '%s'", file);
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitStaticModules --
+ *
+ *      Initialize static modules for given server, or global static
+ *      modules if no server given.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Will load and initialize modules.
+ *      Static modules may register new static modules, so we loop
+ *      until they're all gone.
  *
  *----------------------------------------------------------------------
  */
 
 void 
-NsLoadModules(CONST char *server)
+NsInitStaticModules(CONST char *server)
 {
-    Ns_Set *modules;
-    int     i;
-    char   *file, *module, *init = NULL, *s, *e = NULL;
     Module *modPtr, *nextPtr;
-
-    modules = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL,
-                                                   "modules", NULL));
-    for (i = 0; modules != NULL && i < Ns_SetSize(modules); ++i) {
-        module = Ns_SetKey(modules, i);
-        file = Ns_SetValue(modules, i);
-
-        /*
-         * Check for specific module init after filename.
-         */
-
-        s = strchr(file, '(');
-        if (s == NULL) {
-            init = "Ns_ModuleInit";
-        } else {
-            *s = '\0';
-            init = s + 1;
-            e = strchr(init, ')');
-            if (e != NULL) {
-                *e = '\0';
-            }
-        }
-
-        /*
-         * Load the module if it's not the reserved "tcl" name.
-         */
-        
-        if (!STRIEQ(file, "tcl")
-            && Ns_ModuleLoad(server, module, file, init) != NS_OK) {
-            Ns_Fatal("modload: %s: failed to load module", file);
-        }
-
-        /*
-         * Add this module to the server Tcl init list.
-         */
-
-        Ns_TclInitModule(server, module);
-
-        if (s != NULL) {
-            *s = '(';
-            if (e != NULL) {
-                *e = ')';
-            }
-        }
-    }
-
-    /*
-     * Initialize the static modules (if any).  Note that a static
-     * module could add a new static module and so the loop is
-     * repeated until they're all gone.
-     */
 
     while (firstPtr != NULL) {
         modPtr = firstPtr;

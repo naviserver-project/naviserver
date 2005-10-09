@@ -291,6 +291,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->tcl.modules = Tcl_NewObj();
     Tcl_IncrRefCount(servPtr->tcl.modules);
     Ns_RWLockInit(&servPtr->tcl.lock);
+    Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
     servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
     servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
     Tcl_InitHashTable(&servPtr->share.inits, TCL_STRING_KEYS);
@@ -487,8 +488,8 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
     }
-    NsLoadModules(server);
     NsTclInitServer(server);
+    NsInitStaticModules(server);
     initServPtr = NULL;
 }
 

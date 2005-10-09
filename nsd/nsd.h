@@ -636,6 +636,7 @@ typedef struct NsServer {
         int length;
         int epoch;
         Tcl_Obj *modules;
+        Tcl_HashTable runTable;
         CONST char **errorLogHeaders;
     } tcl;
     
@@ -936,12 +937,12 @@ extern void NsWaitJobsShutdown(Ns_Time *toPtr);
 extern Tcl_AppInitProc NsTclAppInit;
 extern void NsTclInitServer(CONST char *server)
      NS_GNUC_NONNULL(1);
+extern void NsInitStaticModules(CONST char *server);
 extern NsInterp *NsGetInterpData(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 extern void NsFreeConnInterp(Conn *connPtr)
      NS_GNUC_NONNULL(1);
 
-extern void NsLoadModules(CONST char *server);
 extern struct Bucket *NsTclCreateBuckets(char *server, int nbuckets);
 
 extern void NsClsCleanup(Conn *connPtr);
