@@ -68,8 +68,8 @@ int
 NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
                    Tcl_Obj *CONST objv[])
 {
-    unsigned char  buf[0x300], count;
-    char          *file;
+    char           buf[0x300], *file;
+    unsigned char  count;
     int            depth, colormap, dx, dy, status;
     Tcl_Channel    chan;
 
@@ -100,8 +100,8 @@ readfail:
         goto done;
     }
 
-    if (strncmp((char *) buf, "GIF87a", 6) && 
-        strncmp((char *) buf, "GIF89a", 6)) {
+    if (strncmp(buf, "GIF87a", 6) && 
+        strncmp(buf, "GIF89a", 6)) {
     badfile:
         Tcl_AppendResult(interp, "bad gif file \"", file, "\"", NULL);
         goto done;
@@ -111,11 +111,11 @@ readfail:
         goto readfail;
     }
     
-    depth = 1 << ((buf[4] & 0x7) + 1);
-    colormap = (buf[4] & 0x80 ? 1 : 0);
+    depth = 1 << ((((unsigned char) buf[4]) & 0x7) + 1);
+    colormap = (((unsigned char) buf[4]) & 0x80 ? 1 : 0);
 
     if (colormap) {
-        if (Tcl_Read(chan, buf, (size_t)(3*depth)) != (3*depth)) {
+        if (Tcl_Read(chan, buf, (size_t) (3*depth)) != (3*depth)) {
             goto readfail;
         }
     }
@@ -148,8 +148,8 @@ readfail:
         goto readfail;
     }
     
-    dx = 0x100 * buf[5] + buf[4];
-    dy = 0x100 * buf[7] + buf[6];
+    dx = 0x100 * ((unsigned char) buf[5]) + ((unsigned char) buf[4]);
+    dy = 0x100 * ((unsigned char) buf[7]) + ((unsigned char) buf[6]);
 
     if (AppendObjDims(interp, dx, dy) != TCL_OK) {
 		return TCL_ERROR;

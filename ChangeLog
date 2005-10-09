@@ -1,5 +1,11 @@
 2005-10-08  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/rollfile.c (Ns_PurgeFiles): Quiet compiler complaints about
+	an uninitialised variable, which was fine.  Add missing error
+	return statement.
+	* nsd/tclimg.c (NsTclGifSizeObjCmd): Clarify signedness of
+	character comparisons to quiten compiler.
+
 	* nsd/modload.c (Ns_ModuleLoad): Quiet compiler complaints about
 	pointer aliasing.  Allocate interp from per-thread cache.
 

@@ -170,7 +170,7 @@ Ns_RollFileByDate(CONST char *file, int max)
 int
 Ns_PurgeFiles(CONST char *file, int max)
 {
-    File *files, *fiPtr;
+    File *fiPtr, *files = NULL;
     int   ii, nfiles, status = NS_ERROR;
 
     /*
@@ -181,6 +181,7 @@ Ns_PurgeFiles(CONST char *file, int max)
     if (nfiles == -1) {
         Ns_Log(Error, "rollfile: failed to match files '%s': %s",
                file, strerror(Tcl_GetErrno()));
+        return NS_ERROR;
     }
 
     /*
