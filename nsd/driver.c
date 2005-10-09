@@ -37,8 +37,6 @@
 
 NS_RCSID("@(#) $Header$");
 
-#define _MAX(x,y)       ((x) > (y) ? (x) : (y))
-#define _MIN(x,y)       ((x) > (y) ? (y) : (x))
 
 /*
  * Defines for SockRead return code.
@@ -1440,7 +1438,7 @@ SockRead(Sock *sockPtr)
 #endif
     if (sockPtr->tfd > 0) {
         buf.iov_base = tbuf;
-        buf.iov_len = _MIN(nread,sizeof(tbuf));
+        buf.iov_len = MIN(nread, sizeof(tbuf));
     } else {
         Tcl_DStringSetLength(bufPtr, len + nread);
         buf.iov_base = bufPtr->string + reqPtr->woff;

@@ -39,8 +39,6 @@ NS_RCSID("@(#) $Header$");
 
 
 #define ISSLASH(c) ((c) == '/' || (c) == '\\')
-#define _MAX(x,y) ((x) > (y) ? (x) : (y))
-#define _MIN(x,y) ((x) > (y) ? (y) : (x))
 
 /*
  * Local functions defined in this file.
@@ -164,8 +162,8 @@ Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
     int value;
 
     value = Ns_ConfigInt(section, key, def);
-    value = _MAX(value, min);
-    value = _MIN(value, max);
+    value = MAX(value, min);
+    value = MIN(value, max);
 
     return value;
 }

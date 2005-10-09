@@ -1,5 +1,12 @@
 2005-10-08  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/config.c:
+	* nsd/driver.c: Add definition of MIN and MAX macros used by
+	fastpath.c if not already defined, which aren't standard on
+	e.g. Linux.  Convert config.c and driver.c to use this common
+	definition.
+
 	* include/.cvsignore: Ignore generated nsconfig.h.
 
 2005-10-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>

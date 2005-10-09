@@ -249,6 +249,12 @@ NS_EXTERN int           kill(int pid, int sig);
 #define UCHAR(c)                ((unsigned char)(c))
 #define STREQ(a,b)              (((*a) == (*b)) && (strcmp((a),(b)) == 0))
 #define STRIEQ(a,b)             (strcasecmp((a),(b)) == 0)
+#ifndef MIN
+#  define MIN(x,y) ((x) > (y) ? (y) : (x))
+#endif
+#ifndef MAX
+#  define MAX(x,y) ((x) > (y) ? (x) : (y))
+#endif
 #define Ns_IndexCount(X)        ((X)->n)
 #define Ns_ListPush(elem,list)  ((list)=Ns_ListCons((elem),(list)))
 #define Ns_ListFirst(list)      ((list)->first)
