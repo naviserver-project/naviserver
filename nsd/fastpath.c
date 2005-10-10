@@ -149,11 +149,11 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     char        *server;
     NsServer    *servPtr;
     
-    if (!FastStat(file, &st)) {
+    if (FastStat(file, &st) == 0) {
         return Ns_ConnReturnNotFound(conn);
     }
-
-    server = Ns_ConnServer(conn);
+    
+    server  = Ns_ConnServer(conn);
     servPtr = NsGetServer(server);
 
     return FastReturn(servPtr, conn, status, type, file, &st);
@@ -478,7 +478,15 @@ DecrEntry(File *filePtr)
 static int
 FastStat(CONST char *file, Tcl_StatBuf *stPtr)
 {
-    if (Tcl_Stat(file, stPtr) != 0) {
+    Tcl_Obj *path;
+    int      status;
+
+    path = Tcl_NewStringObj(file, -1);
+    Tcl_IncrRefCount(path);
+    status = Tcl_FSStat(path, stPtr);
+    Tcl_DecrRefCount(path);
+
+    if (status != 0) {
         if (Tcl_GetErrno() != ENOENT && Tcl_GetErrno() != EACCES) {
             Ns_Log(Error, "fastpath: stat(%s) failed: %s", 
                    file, strerror(Tcl_GetErrno()));
