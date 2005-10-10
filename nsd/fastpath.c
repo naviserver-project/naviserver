@@ -87,9 +87,8 @@ static int  FastReturn     (NsServer *servPtr, Ns_Conn *conn, int status,
                             CONST char *type, CONST char *file, 
                             struct stat *stPtr);
 
-static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, int fd, 
-                            Tcl_Channel chan, CONST char *data, 
-                            int len, CONST char *type);
+static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan, 
+                            CONST char *data, int len, CONST char *type);
 
 /*
  *----------------------------------------------------------------------
@@ -275,7 +274,7 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 
     Ns_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK
-        && (!stat(ds.string, &st) || !Tcl_Stat(ds.string, &st))
+        && Tcl_Stat(ds.string, &st) == 0
         && ((dir && S_ISDIR(st.st_mode))
             || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
         is = NS_TRUE;
@@ -365,8 +364,7 @@ NsFastGet(void *arg, Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
-            if ((!stat(ds.string, &st) || !Tcl_Stat(ds.string, &st)) 
-                && S_ISREG(st.st_mode)) {
+            if (Tcl_Stat(ds.string, &st) == 0 && S_ISREG(st.st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
                     Ns_DStringTrunc(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
@@ -469,7 +467,7 @@ DecrEntry(File *filePtr)
 static int
 FastStat(CONST char *file, struct stat *stPtr)
 {
-    if (stat(file, stPtr) != 0 && Tcl_Stat(file, stPtr) != 0) {
+    if (Tcl_Stat(file, stPtr) != 0) {
         if (Tcl_GetErrno() != ENOENT && Tcl_GetErrno() != EACCES) {
             Ns_Log(Error, "fastpath: stat(%s) failed: %s", 
                    file, strerror(Tcl_GetErrno()));
@@ -501,7 +499,7 @@ static int
 FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
            CONST char *file, struct stat *stPtr)
 {
-    int         fd = -1, new, nread, result = NS_ERROR;
+    int         new, nread, result = NS_ERROR;
     Range       range;
     char       *key;
     Ns_Entry   *entPtr;
@@ -575,25 +573,18 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
 
         if (servPtr->fastpath.mmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            result = ReturnRange(conn,&range,-1,NULL,fmap.addr,fmap.size,type);
+            result = ReturnRange(conn,&range, NULL, fmap.addr,fmap.size, type);
             NsMemUmap(&fmap);
         } else {
-            fd = open(file, O_RDONLY|O_BINARY);
-            if (fd == -1) {
-                chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
-                if (chan == NULL) {
-                    Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
-                           file, strerror(Tcl_GetErrno()));
-                    goto notfound;
-                }
-                Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
+            chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
+            if (chan == NULL) {
+                Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
+                       file, strerror(Tcl_GetErrno()));
+                goto notfound;
             }
-            result = ReturnRange(conn,&range,fd,chan,0,stPtr->st_size,type);
-            if (fd >= 0) {
-                close(fd);
-            } else {
-                Tcl_Close(NULL, chan);
-            }
+            Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
+            result = ReturnRange(conn, &range, chan, 0, stPtr->st_size, type);
+            Tcl_Close(NULL, chan);
         }
         
     } else {
@@ -634,32 +625,24 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
              */
 
             Ns_CacheUnlock(servPtr->fastpath.cache);
-            fd = open(file, O_RDONLY|O_BINARY);
-            if (fd == -1) {
-                chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
-                if (chan == NULL) {
-                    filePtr = NULL;
-                    Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
-                           file, strerror(Tcl_GetErrno()));
-                } else {
-                    Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
-                }
+            chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
+            if (chan == NULL) {
+                filePtr = NULL;
+                Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
+                       file, strerror(Tcl_GetErrno()));
+            } else {
+                Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
             }
-            if (fd >= 0 || chan) {
+            if (chan) {
                 filePtr = ns_malloc(sizeof(File) + stPtr->st_size);
                 filePtr->refcnt = 1;
                 filePtr->size   = stPtr->st_size;
                 filePtr->mtime  = stPtr->st_mtime;
-                if (fd >= 0) {
-                    nread = read(fd, filePtr->bytes, (size_t)filePtr->size);
-                    close(fd);
-                } else {
-                    nread = Tcl_Read(chan, filePtr->bytes, filePtr->size);
-                    Tcl_Close(NULL, chan);
-                }
+                nread = Tcl_Read(chan, filePtr->bytes, filePtr->size);
+                Tcl_Close(NULL, chan);
                 if (nread != filePtr->size) {
                     Ns_Log(Warning, "fastpath: failed to read '%s': '%s'",
-                           file, strerror((fd>=0)?errno:Tcl_GetErrno()));
+                           file, strerror(Tcl_GetErrno()));
                     ns_free(filePtr);
                     filePtr = NULL;
                 }
@@ -676,7 +659,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
         if (filePtr != NULL) {
             ++filePtr->refcnt;
             Ns_CacheUnlock(servPtr->fastpath.cache);
-            result = ReturnRange(conn, &range, -1, NULL, filePtr->bytes, 
+            result = ReturnRange(conn, &range, NULL, filePtr->bytes, 
                                  filePtr->size, type);
             Ns_CacheLock(servPtr->fastpath.cache);
             DecrEntry(filePtr);
@@ -946,7 +929,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
  */
 
 static int
-ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd, Tcl_Channel chan,
+ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
             CONST char *data, int len, CONST char *type)
 {
     struct iovec bufs[MAX_RANGES*3], *iovPtr = bufs;
@@ -965,9 +948,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd, Tcl_Channel chan,
 
         status = rangesPtr->status;
 
-        if (fd >= 0) {
-            return Ns_ConnReturnOpenFd(conn, status, type, fd, len);
-        } else if (chan) {
+        if (chan) {
             return Ns_ConnReturnOpenChannel(conn, status, type, chan, len);
         } else {
             return Ns_ConnReturnData(conn, status, data, len, type);
@@ -987,10 +968,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd, Tcl_Channel chan,
         Ns_ConnSetRequiredHeaders(conn, type, roPtr->size);
         Ns_ConnQueueHeaders(conn, rangesPtr->status);
 
-        if (fd >= 0) {
-            lseek(fd, roPtr->start, SEEK_SET);
-            result = Ns_ConnSendFd(conn, fd, roPtr->size);
-        } else if (chan) {
+        if (chan) {
             Tcl_Seek(chan, roPtr->start, SEEK_SET);
             result = Ns_ConnSendChannel(conn, chan, roPtr->size);
         } else {
@@ -1044,7 +1022,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd, Tcl_Channel chan,
 
             /*
              * Second io vector will contain actual range buffer offset
-             * and size. It will be ignored in fd mode.
+             * and size. It will be ignored in chan mode.
              */
             
             iovPtr++;
@@ -1079,7 +1057,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd, Tcl_Channel chan,
         Ns_ConnSetRequiredHeaders(conn, type, rangesPtr->size);
         Ns_ConnQueueHeaders(conn, rangesPtr->status);
         
-        if (fd == -1 && chan == NULL) {
+        if (chan == NULL) {
 
             /* 
              * In mmap mode, send all iov buffers at once 
@@ -1090,7 +1068,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd, Tcl_Channel chan,
         } else {
 
             /* 
-             * In fd/chan mode, send headers and contents in separate calls 
+             * In chan mode, send headers and contents in separate calls 
              */
 
             for (i = 0; i < rangesPtr->count; i++) {
@@ -1107,23 +1085,18 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd, Tcl_Channel chan,
                 }
                 
                 /*
-                 * Send file content directly from open fd/chan
+                 * Send file content directly from open chan
                  */
                 
-                if (fd >= 0) {
-                    lseek(fd, roPtr->start, SEEK_SET);
-                    result = Ns_ConnSendFd(conn, fd, roPtr->size);
-                } else {
-                    Tcl_Seek(chan, roPtr->start, SEEK_SET);
-                    result = Ns_ConnSendChannel(conn, chan, roPtr->size);
-                }
+                Tcl_Seek(chan, roPtr->start, SEEK_SET);
+                result = Ns_ConnSendChannel(conn, chan, roPtr->size);
                 if (result == NS_ERROR) {
                     break;
                 }
 
                 /*
                  * Point iovPtr to the third (boundary) iov buffer.
-                 * The second iov buffer is not used in fd/chan mode.
+                 * The second iov buffer is not used in chan mode.
                  */
                 
                 iovPtr += 2;

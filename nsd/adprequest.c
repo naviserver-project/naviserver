@@ -103,8 +103,8 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
     /*
      * Verify the file exists.
      */
-
-    if (access(file, R_OK) != 0 && Tcl_Access(file, R_OK) != 0) {
+    
+    if (Tcl_Access(file, R_OK) != 0) {
         return Ns_ConnReturnNotFound(conn);
     }
 

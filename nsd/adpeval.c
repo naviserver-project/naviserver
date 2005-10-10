@@ -352,7 +352,7 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
      * Verify the file is an existing, ordinary file and get page code.
      */
     
-    if (stat(file, &st) != 0 && Tcl_Stat(file, &st) != 0) {
+    if (Tcl_Stat(file, &st) != 0) {
         Tcl_AppendResult(interp, "could not stat \"", file, "\": ", 
                          Tcl_PosixError(interp), NULL);
     } else if (S_ISREG(st.st_mode) == 0) {
@@ -694,20 +694,17 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
     Tcl_Encoding encoding;
     Tcl_DString  utf;
     char        *page, *buf;
-    int          fd = -1, n, trys, status;
+    int          n, trys, status;
     size_t       size;
     Page         *pagePtr;
     AdpParse     parse;
     Tcl_Channel  chan = NULL;
     
-    fd = open(file, O_RDONLY | O_BINARY);
-    if (fd == -1) {
-        chan = Tcl_OpenFileChannel(interp, file, "r", 0644);
-        if (chan == NULL) {
-            Tcl_AppendResult(interp, "could not open \"", file, "\": ", 
-                             Tcl_PosixError(interp), NULL);
-            return NULL;
-        }
+    chan = Tcl_OpenFileChannel(interp, file, "r", 0644);
+    if (chan == NULL) {
+        Tcl_AppendResult(interp, "could not open \"", file, "\": ", 
+                         Tcl_PosixError(interp), NULL);
+        return NULL;
     }
     
     pagePtr = NULL;
@@ -721,11 +718,7 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
          * or been replaced since the original stat.
          */
 
-        if (fd >= 0) {
-            status = fstat(fd, stPtr);
-        } else {
-            status = Tcl_Stat(file, stPtr);
-        }
+        status = Tcl_Stat(file, stPtr);
         if (status != 0) {
             Tcl_AppendResult(interp, "could not stat \"", file, "\": ", 
                              Tcl_PosixError(interp), NULL);
@@ -739,11 +732,7 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
          * Attempt to read +1 byte to catch the file growing.
          */
         
-        if (fd >= 0) {
-            n = read(fd, buf, size + 1);
-        } else {
-            n = Tcl_Read(chan, buf, size + 1);
-        }
+        n = Tcl_Read(chan, buf, size + 1);
         if (n < 0) {
             Tcl_AppendResult(interp, "could not read \"", file, "\": ", 
                              Tcl_PosixError(interp), NULL);
@@ -755,11 +744,7 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
              * File is not of expected size, rewind and retry
              */
 
-            if (fd >= 0) {
-                status = lseek(fd, 0, SEEK_SET);
-            } else {
-                status = Tcl_Seek(chan, 0, SEEK_SET);
-            }
+            status = Tcl_Seek(chan, 0, SEEK_SET);
             if (status != 0) {
                 Tcl_AppendResult(interp, "could not seek \"", file, "\": ",
                                  Tcl_PosixError(interp), NULL);
@@ -803,12 +788,7 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
 
  done:
     ns_free(buf);
-
-    if (fd >= 0) {
-        close(fd);
-    } else {
-        Tcl_Close(interp, chan);
-    }
+    Tcl_Close(interp, chan);
 
     return pagePtr;
 }

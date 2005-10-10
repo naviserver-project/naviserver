@@ -1,3 +1,10 @@
+2005-10-10  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/adprequest.c Removed OS/FS fallbacks. Now use TclVFS 
+	* nsd/adpeval.c    wrappers always. This simplifies code
+	* nsd/fastpath.c   and (hopefully) does not introduce any
+	* nsd/urlopen.c    (perceivable) speed penalties.
+
 2005-10-09  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* Makefile:
