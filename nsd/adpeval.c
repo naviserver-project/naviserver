@@ -93,7 +93,7 @@ typedef struct Frame {
  * Local functions defined in this file.
  */
 
-static Page *ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr);
+static Page *ParseFile(NsInterp *itPtr, CONST char *file, Tcl_StatBuf *stPtr);
 static void PushFrame(NsInterp *itPtr, Frame *framePtr, CONST char *file, 
                       int objc, Tcl_Obj *objv[], Tcl_DString *outputPtr);
 static void PopFrame(NsInterp *itPtr, Frame *framePtr);
@@ -279,8 +279,9 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
     NsServer      *servPtr = itPtr->servPtr;
     Tcl_Interp    *interp = itPtr->interp;
     Tcl_HashEntry *hPtr;
-    struct stat    st;
-    Ns_DString     tmp, path;
+    Tcl_StatBuf    st;
+    Tcl_Obj       *path;
+    Ns_DString     tmp, ds;
     Frame          frame;
     InterpPage    *ipagePtr;
     Page          *pagePtr, *oldPagePtr;
@@ -291,9 +292,8 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
 
     ipagePtr = NULL;
     pagePtr = NULL; 
-    status = TCL_ERROR;   /* Assume error until accomplished success */
     Ns_DStringInit(&tmp);
-    Ns_DStringInit(&path);
+    Ns_DStringInit(&ds);
     key = (char *) &ukey;
     
     /*
@@ -301,13 +301,13 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
      */
     
     if (Ns_PathIsAbsolute(file)) {
-        Ns_NormalizePath(&path, file);
+        Ns_NormalizePath(&ds, file);
     } else {
         Ns_MakePath(&tmp, itPtr->adp.cwd, file, NULL);
-        Ns_NormalizePath(&path, tmp.string);
+        Ns_NormalizePath(&ds, tmp.string);
         Ns_DStringTrunc(&tmp, 0);
     }
-    file = path.string;
+    file = ds.string;
     
     /*
      * Check for TclPro debugging.
@@ -330,6 +330,7 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
             Ns_ConnReturnNotice(itPtr->conn, 200, "Debug Init Failed",
                                 (char *) Tcl_GetStringResult(interp));
             itPtr->adp.exception = ADP_ABORT;
+            status = TCL_ERROR;
             goto done;
         }
     }
@@ -352,7 +353,12 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
      * Verify the file is an existing, ordinary file and get page code.
      */
     
-    if (Tcl_Stat(file, &st) != 0) {
+    path = Tcl_NewStringObj(file, -1);
+    Tcl_IncrRefCount(path);
+    status = Tcl_FSStat(path, &st);
+    Tcl_DecrRefCount(path);
+
+    if (status != 0) {
         Tcl_AppendResult(interp, "could not stat \"", file, "\": ", 
                          Tcl_PosixError(interp), NULL);
     } else if (S_ISREG(st.st_mode) == 0) {
@@ -462,13 +468,15 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
         Ns_MutexLock(&servPtr->adp.pagelock);
         ++ipagePtr->pagePtr->evals;
         Ns_MutexUnlock(&servPtr->adp.pagelock);
+    } else {
+        status = TCL_ERROR;
     }
     if (itPtr->adp.debugLevel > 0) {
         --itPtr->adp.debugLevel;
     }
     
  done:
-    Ns_DStringFree(&path);
+    Ns_DStringFree(&ds);
     Ns_DStringFree(&tmp);
 
     return status;
@@ -688,11 +696,12 @@ PopFrame(NsInterp *itPtr, Frame *framePtr)
  */
 
 static Page *
-ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
+ParseFile(NsInterp *itPtr, CONST char *file, Tcl_StatBuf *stPtr)
 {
     Tcl_Interp  *interp = itPtr->interp;
     Tcl_Encoding encoding;
     Tcl_DString  utf;
+    Tcl_Obj     *path;
     char        *page, *buf;
     int          n, trys, status;
     size_t       size;
@@ -718,7 +727,11 @@ ParseFile(NsInterp *itPtr, CONST char *file, struct stat *stPtr)
          * or been replaced since the original stat.
          */
 
-        status = Tcl_Stat(file, stPtr);
+        path = Tcl_NewStringObj(file, -1);
+        Tcl_IncrRefCount(path);
+        status = Tcl_FSStat(path, stPtr);
+        Tcl_DecrRefCount(path);
+        
         if (status != 0) {
             Tcl_AppendResult(interp, "could not stat \"", file, "\": ", 
                              Tcl_PosixError(interp), NULL);

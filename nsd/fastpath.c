@@ -79,13 +79,13 @@ static Ns_Callback FreeEntry;
 
 static void DecrEntry      (File *filePtr);
 static int  UrlIs          (CONST char *server, CONST char *url, int dir);
-static int  FastStat       (CONST char *file, struct stat *stPtr);
+static int  FastStat       (CONST char *file, Tcl_StatBuf *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  ParseRange     (Ns_Conn *conn, Range *rangesPtr);
 
 static int  FastReturn     (NsServer *servPtr, Ns_Conn *conn, int status,
                             CONST char *type, CONST char *file, 
-                            struct stat *stPtr);
+                            Tcl_StatBuf *stPtr);
 
 static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan, 
                             CONST char *data, int len, CONST char *type);
@@ -145,7 +145,7 @@ NsFastpathCache(CONST char *server, int size)
 int
 Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
-    struct stat  st;
+    Tcl_StatBuf  st;
     char        *server;
     NsServer    *servPtr;
     
@@ -268,16 +268,22 @@ Ns_UrlIsDir(CONST char *server, CONST char *url)
 static int
 UrlIs(CONST char *server, CONST char *url, int dir)
 {
-    Ns_DString  ds;
-    int         is = NS_FALSE;
-    struct stat st;
+    Ns_DString   ds;
+    int          status, is = NS_FALSE;
+    Tcl_Obj     *path;
+    Tcl_StatBuf  st;
 
     Ns_DStringInit(&ds);
-    if (Ns_UrlToFile(&ds, server, url) == NS_OK
-        && Tcl_Stat(ds.string, &st) == 0
-        && ((dir && S_ISDIR(st.st_mode))
-            || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
-        is = NS_TRUE;
+    if (Ns_UrlToFile(&ds, server, url) == NS_OK) {
+        path = Tcl_NewStringObj(ds.string, -1);
+        Tcl_IncrRefCount(path);
+        status = Tcl_FSStat(path, &st);
+        Tcl_DecrRefCount(path);
+        if (status == 0 
+            && ((dir && S_ISDIR(st.st_mode))
+                || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
+            is = NS_TRUE;
+        }
     }
     Ns_DStringFree(&ds);
 
@@ -333,11 +339,12 @@ FastGetRestart(Ns_Conn *conn, CONST char *page)
 int
 NsFastGet(void *arg, Ns_Conn *conn)
 {
-    Ns_DString  ds;
-    NsServer   *servPtr = arg;
-    char       *url = conn->request->url;
-    int         result, i;
-    struct stat st;
+    Ns_DString   ds;
+    NsServer    *servPtr = arg;
+    char        *url = conn->request->url;
+    int          status, result, i;
+    Tcl_Obj     *path;
+    Tcl_StatBuf  st;
 
     Ns_DStringInit(&ds);
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK || !FastStat(ds.string, &st)) {
@@ -364,7 +371,11 @@ NsFastGet(void *arg, Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
-            if (Tcl_Stat(ds.string, &st) == 0 && S_ISREG(st.st_mode)) {
+            path = Tcl_NewStringObj(ds.string, -1);
+            Tcl_IncrRefCount(path);
+            status = Tcl_FSStat(path, &st);
+            Tcl_DecrRefCount(path);
+            if (status == 0 && S_ISREG(st.st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
                     Ns_DStringTrunc(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
@@ -465,7 +476,7 @@ DecrEntry(File *filePtr)
  */
 
 static int
-FastStat(CONST char *file, struct stat *stPtr)
+FastStat(CONST char *file, Tcl_StatBuf *stPtr)
 {
     if (Tcl_Stat(file, stPtr) != 0) {
         if (Tcl_GetErrno() != ENOENT && Tcl_GetErrno() != EACCES) {
@@ -497,7 +508,7 @@ FastStat(CONST char *file, struct stat *stPtr)
 
 static int
 FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
-           CONST char *file, struct stat *stPtr)
+           CONST char *file, Tcl_StatBuf *stPtr)
 {
     int         new, nread, result = NS_ERROR;
     Range       range;
