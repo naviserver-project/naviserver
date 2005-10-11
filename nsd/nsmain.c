@@ -59,7 +59,7 @@ NS_RCSID("@(#) $Header$");
 #define MAX_NUM_RESTARTS   256 /* Quit after somany unsuccessful restarts */
 
 #ifdef __APPLE__
-# define WAKEUP_IN_SECONDS 600 /* Wakeup watchdog after somuch seconds */
+# define WAKEUP_IN_SECONDS 600 /* Wakeup watchdog after somany seconds */
 #else
 # define WAKEUP_IN_SECONDS   0 /* Wakeup watchdog after somuch seconds */
 #endif
@@ -1176,7 +1176,7 @@ WatchdogSIGTERMHandler(int sig)
 static void 
 WatchdogSIGALRMHandler(int sig)
 {
-    if (kill((pid_t) nsconf.pid, 0) && errno == ESRCH) {
+    if (nsconf.pid && kill((pid_t) nsconf.pid, 0) && errno == ESRCH) {
         SysLog(LOG_WARNING, "watchdog: server %d terminated?", nsconf.pid);
         nsconf.pid = 0;
     }
@@ -1204,7 +1204,7 @@ static int
 WaitForServer()
 {
     int    ret, status;
-    pid_t  pid;
+    pid_t  pid, srvpid = nsconf.pid;
     char  *msg;
 
     do {
@@ -1225,7 +1225,8 @@ WaitForServer()
         ret = -1; /* Some waitpid (or other unknown) failure? */
     }
 
-    SysLog(LOG_NOTICE, "watchdog: server %d %s (%d).", nsconf.pid, msg, ret);
+    nsconf.pid = 0;
+    SysLog(LOG_NOTICE, "watchdog: server %d %s (%d).", srvpid, msg, ret);
 
     return ret ? NS_ERROR : NS_OK;
 }
@@ -1251,7 +1252,7 @@ WaitForServer()
 static int
 StartWatchedServer(void)
 {
-    unsigned int setSigHandlers=0, startTime, numRestarts=0, restartWait=0;
+    unsigned int startTime, numRestarts = 0, restartWait = 0;
     struct itimerval timer;
 
     SysLog(LOG_NOTICE, "watchdog: started.");
@@ -1263,6 +1264,12 @@ StartWatchedServer(void)
                    restartWait, numRestarts);
             sleep(restartWait);
         }
+        if (WAKEUP_IN_SECONDS) {
+            memset(&timer, 0, sizeof(struct itimerval));
+            setitimer(ITIMER_REAL, &timer, NULL);
+            ns_signal(SIGALRM, SIG_DFL);
+        }
+        ns_signal(SIGTERM, SIG_DFL);
         nsconf.pid = ns_fork();
         if (nsconf.pid == -1) {
             SysLog(LOG_ERR, "watchdog: fork() failed: '%s'.", strerror(errno));
@@ -1284,44 +1291,34 @@ StartWatchedServer(void)
          * Register SIGALRM handler to wake up the watchdog to check if
          * the server is still present. This tries to solve issues with 
          * signal delivery on some systems where waitpid() fails to report
-         * process exitus (i.e. it is just stuck).
+         * process exitus (i.e. just stuck, although the process is gone).
          */
-
-        if (setSigHandlers == 0) {
-            setSigHandlers = 1;
+       
+        if (WAKEUP_IN_SECONDS) {
             timer.it_interval.tv_sec = WAKEUP_IN_SECONDS;
             timer.it_value.tv_sec  = timer.it_interval.tv_sec;
-            timer.it_value.tv_usec = timer.it_interval.tv_usec = 0;
-            if (timer.it_value.tv_sec || timer.it_value.tv_usec) {
-                setitimer(ITIMER_REAL, &timer, NULL);
-                ns_signal(SIGALRM, WatchdogSIGALRMHandler);
-            }
-            ns_signal(SIGTERM, WatchdogSIGTERMHandler);
+            setitimer(ITIMER_REAL, &timer, NULL);
+            ns_signal(SIGALRM, WatchdogSIGALRMHandler);
         }
-
+        ns_signal(SIGTERM, WatchdogSIGTERMHandler);
         startTime = time(NULL);
-
         if (WaitForServer() == NS_OK) {
             break;
         }
-
         if ((time(NULL) - startTime) > MIN_WORK_SECONDS) {
             restartWait = numRestarts = 0;
         }
-
         if (++numRestarts > MAX_NUM_RESTARTS) {
             SysLog(LOG_WARNING, "watchdog: exceeded restart limit of %d",
                    MAX_NUM_RESTARTS);
             break;
         }
-
         restartWait *= 2;
         if (restartWait > MAX_RESTART_SECONDS) {
             restartWait = MAX_RESTART_SECONDS;
         } else if (restartWait == 0) {
             restartWait = 1;
         }
-
     } while (!watchdogExit);
 
     SysLog(LOG_NOTICE, "watchdog: exited.");

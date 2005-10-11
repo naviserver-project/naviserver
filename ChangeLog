@@ -1,3 +1,8 @@
+2005-10-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/nsmain.c (StartWatchedServer): clear signal handlers
+	before re-starting the server.
+
 2005-10-10  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/adprequest.c Removed OS/FS fallbacks. Now use TclVFS 
