@@ -255,13 +255,13 @@ GetHost(Ns_DString *dsPtr, char *addr)
     char buf[NI_MAXHOST];
     int result;
     int status = NS_FALSE;
-#ifdef __APPLE__
+#ifndef HAVE_MTSAFE_DNS
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
+#endif
     memset(&sa, 0, sizeof(struct sockaddr_in));
+#ifdef HAVE_SOCKADDRIN_SIN_LEN
     sa.sin_len = sizeof(struct sockaddr_in);
-#else
-    memset(&sa, 0, sizeof(struct sockaddr_in));
 #endif
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = inet_addr(addr);
@@ -274,7 +274,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
     } else if (result != EAI_NONAME) {
         Ns_Log(Error, "dns: getnameinfo failed: %s", gai_strerror(result));
     }
-#ifdef __APPLE__
+#ifndef HAVE_MTSAFE_DNS
     Ns_CsLeave(&cs);
 #endif
     return status;
@@ -348,7 +348,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
     struct addrinfo *res, *ptr;
     int result;
     int status = NS_FALSE;
-#ifdef __APPLE__
+#ifndef HAVE_MTSAFE_DNS
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
 #endif
@@ -368,7 +368,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
         Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
                gai_strerror(result));
     }
-#ifdef __APPLE__
+#ifndef HAVE_MTSAFE_DNS
     Ns_CsLeave(&cs);
 #endif
     return status;
@@ -408,12 +408,10 @@ GetAddr(Ns_DString *dsPtr, char *host)
     if (result != 0) { 
         LogError("gethostbyname_r", h_errnop);
     } else {
-        ptr = (struct in_addr *) he.h_addr_list[i];
-        while (ptr != NULL) {
+        while ((ptr = (struct in_addr *) he.h_addr_list[i++]) != NULL) {
             ia.s_addr = ptr->s_addr;
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));
             status = NS_TRUE;
-            ptr = (struct in_addr *) he.h_addr_list[++i];
         }
     }
     return status;
@@ -443,12 +441,10 @@ GetAddr(Ns_DString *dsPtr, char *host)
     if (he == NULL) {
         LogError("gethostbyname", h_errno);
     } else {
-        ptr = (struct in_addr *) he->h_addr_list[i];
-        while (ptr != NULL) {
+        while ((ptr = (struct in_addr *) he->h_addr_list[i++]) != NULL) {
             ia.s_addr = ptr->s_addr;
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));
             status = NS_TRUE;
-            ptr = (struct in_addr *) he->h_addr_list[++i];
         }
     }
     Ns_CsLeave(&cs);

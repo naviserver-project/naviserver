@@ -4,6 +4,16 @@
 	ready-to-fire events in the threads event queue which 
 	reference to-be-unspliced channel.
 
+	* acinclude.m4: removed m4 checking for structure members
+
+	* configure.in: added checking for sin_len in sockaddr_in
+
+	* nsd/dns.c: added checking for HAVE_MTSAFE_DNS and add 
+	protective locks if not (Darwin).
+	Added checking for HAVE_SOCKADDRIN_SIN_LEN because Darwin
+	version of getnameinfo fails if sin_len has unsane values.
+	Fixed bug while processing results of gethostbyname.
+
 2005-10-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/nsmain.c (StartWatchedServer): clear signal handlers

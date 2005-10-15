@@ -202,7 +202,7 @@ if test "${ac_cv_func_getaddrinfo}" = "yes" \
      -a "`uname -s`" != "Darwin"; then
   have_mtsafe_dns=yes
 fi
-if test "${have_mtsafe_dns}" != "yes"
+if test "${have_mtsafe_dns}" != "yes" \
      -a "`uname -s`" != "Darwin"; then
   AC_HAVE_GETHOSTBYNAME_R
   AC_HAVE_GETHOSTBYADDR_R
