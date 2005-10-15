@@ -3,6 +3,7 @@
 	* nsd/tclfile.c (UnspliceChannel): disable any potential
 	ready-to-fire events in the threads event queue which 
 	reference to-be-unspliced channel.
+	Reformatted, untabified, beautified, commented, ...ed :-)
 
 	* acinclude.m4: removed m4 checking for structure members
 

@@ -31,7 +31,7 @@
 /*
  * tclfile.c --
  *
- *	Tcl commands that do stuff to the filesystem. 
+ *      Tcl commands that do stuff to the filesystem. 
  */
 
 #include "nsd.h"
@@ -44,12 +44,12 @@ NS_RCSID("@(#) $Header$");
  */
 
 typedef struct _NsRegChan {
-    char *name;
-    Tcl_Channel chan;
+    char        *name;
+    Tcl_Channel  chan;
 } NsRegChan;
 
-static void SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan);
-static void UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan);
+static void SpliceChannel   (Tcl_Interp *interp, Tcl_Channel chan);
+static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
 
 
 /*
@@ -57,42 +57,48 @@ static void UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan);
  *
  * Ns_TclGetOpenChannel --
  *
- *	Return an open channel with an interface similar to the
- *	pre-Tcl7.5 Tcl_GetOpenFile, used throughout AOLserver.
+ *      Return an open channel with an interface similar to the
+ *      pre-Tcl7.5 Tcl_GetOpenFile, used throughout the server.
  *
  * Results:
- *	TCL_OK or TCL_ERROR.
+ *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	The value at chanPtr is updated with a valid open Tcl_Channel.
+ *      The value at chanPtr is updated with a valid open Tcl_Channel.
  *
  *----------------------------------------------------------------------
  */
 
 static int
 GetOpenChannel(Tcl_Interp *interp, Tcl_Obj *obj, int write,
-	int check, Tcl_Channel *chanPtr)
+               int check, Tcl_Channel *chanPtr)
 {
-    return Ns_TclGetOpenChannel(interp, Tcl_GetString(obj), write, check, chanPtr);
+    return Ns_TclGetOpenChannel(interp, Tcl_GetString(obj),
+                                write, check, chanPtr);
 }
 
 int
 Ns_TclGetOpenChannel(Tcl_Interp *interp, char *chanId, int write,
-	int check, Tcl_Channel *chanPtr)
+                     int check, Tcl_Channel *chanPtr)
 {
     int mode;
 
     *chanPtr = Tcl_GetChannel(interp, chanId, &mode);
+
     if (*chanPtr == NULL) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
-    if (check &&
-	((write && !(mode & TCL_WRITABLE)) ||
-	 (!write && !(mode & TCL_READABLE)))) {
-	Tcl_AppendResult(interp, "channel \"", chanId, "\" not open for ",
-	    write ? "write" : "read", NULL);
-	return TCL_ERROR;
+    if (check == 0) {
+        return TCL_OK;
     }
+    if (( write && !(mode & TCL_WRITABLE)) 
+        ||
+        (!write && !(mode & TCL_READABLE))) {
+        Tcl_AppendResult(interp, "channel \"", chanId, "\" not open for ",
+                         write ? "writing" : "reading", NULL);
+        return TCL_ERROR;
+    }
+
     return TCL_OK;
 }
 
@@ -102,15 +108,15 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, char *chanId, int write,
  *
  * Ns_TclGetOpenFd --
  *
- *	Return an open Unix file descriptor for the given channel.
- *	This routine is used by the AOLserver * routines
- *	to provide access to the underlying socket.
+ *      Return an open Unix file descriptor for the given channel.
+ *      This routine is used by the AOLserver * routines
+ *      to provide access to the underlying socket.
  *
  * Results:
- *	TCL_OK or TCL_ERROR.
+ *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	The value at fdPtr is updated with a valid Unix file descriptor.
+ *      The value at fdPtr is updated with a valid Unix file descriptor.
  *
  *----------------------------------------------------------------------
  */
@@ -119,18 +125,20 @@ int
 Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write, int *fdPtr)
 {
     Tcl_Channel chan;
-    ClientData data;
+    ClientData  data;
 
     if (Ns_TclGetOpenChannel(interp, chanId, write, 1, &chan) != TCL_OK) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (Tcl_GetChannelHandle(chan, write ? TCL_WRITABLE : TCL_READABLE,
-			     (ClientData*) &data) != TCL_OK) {
-	Tcl_AppendResult(interp, "could not get handle for channel: ",
-			 chanId, NULL);
-	return TCL_ERROR;
+                             (ClientData*) &data) != TCL_OK) {
+        Tcl_AppendResult(interp, "could not get handle for channel: ",
+                         chanId, NULL);
+        return TCL_ERROR;
     }
+
     *fdPtr = (int) data;
+
     return TCL_OK;
 }
 
@@ -140,13 +148,13 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write, int *fdPtr)
  *
  * NsTclRollFileObjCmd --
  *
- *	Implements ns_rollfile obj command. 
+ *      Implements ns_rollfile obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -161,36 +169,38 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char *cmd)
         return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, objv[2], &max) != TCL_OK) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (max <= 0 || max > 1000) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid max \"", 
-		Tcl_GetString(objv[2]),
-	        "\": should be > 0 and <= 1000.", NULL);
+        Tcl_AppendResult(interp, "invalid max \"", Tcl_GetString(objv[2]),
+                         "\": should be > 0 and <= 1000.", NULL);
         return TCL_ERROR;
     }
     if (*cmd == 'p') {
-	status = Ns_PurgeFiles(Tcl_GetString(objv[1]), max);
+        status = Ns_PurgeFiles(Tcl_GetString(objv[1]), max);
     } else {
-	status = Ns_RollFile(Tcl_GetString(objv[1]), max);
+        status = Ns_RollFile(Tcl_GetString(objv[1]), max);
     }
     if (status != NS_OK) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "could not ", cmd, " \"", 
-		Tcl_GetString(objv[1]),
-	        "\": ", Tcl_PosixError(interp), NULL);
-	return TCL_ERROR;
+        Tcl_AppendResult(interp, "could not ", cmd, " \"",
+                         Tcl_GetString(objv[1]), "\": ",
+                         Tcl_PosixError(interp), NULL);
+        return TCL_ERROR;
     }
+
     return TCL_OK;
 }
 
 int
-NsTclRollFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRollFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                    Tcl_Obj *CONST objv[])
 {
     return FileObjCmd(interp, objc, objv, "roll");
 }
 
 int
-NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                      Tcl_Obj *CONST objv[])
 {
     return FileObjCmd(interp, objc, objv, "purge");
 }
@@ -201,13 +211,13 @@ NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *
  * NsTclMkTempCmd --
  *
- *	Implements ns_mktemp. 
+ *      Implements ns_mktemp. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	Allocates memory for the filename as a TCL_VOLATILE object.
+ *      Allocates memory for the filename as a TCL_VOLATILE object.
  *
  *----------------------------------------------------------------------
  */
@@ -219,12 +229,13 @@ NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # of args: should be \"",
-			 argv[0], " template\"", NULL);
+                         argv[0], " template\"", NULL);
         return TCL_ERROR;
     }
-
+    
     buffer = ns_strdup(argv[1]);
     Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
+
     return TCL_OK;
 }
 
@@ -234,27 +245,29 @@ NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
  *
  * NsTclTmpNamObjCmd --
  *
- *	Implements ns_tmpnam as obj command. 
+ *  Implements ns_tmpnam as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *  Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *  See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                  Tcl_Obj *CONST objv[])
 {
     char buf[L_tmpnam];
 
     if (tmpnam(buf) == NULL) {
-	Tcl_SetResult(interp, "could not generate temporary filename.", TCL_STATIC);
+        Tcl_SetResult(interp, "could not get temporary filename", TCL_STATIC);
         return TCL_ERROR;
     }
     Tcl_SetResult(interp, buf, TCL_VOLATILE);
+
     return TCL_OK;
 }
 
@@ -264,32 +277,34 @@ NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  *
  * NsTclUrl2FileObjCmd --
  *
- *	Implements ns_url2file as obj command. 
+ *      Implements ns_url2file as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                    Tcl_Obj *CONST objv[])
 {
-    NsInterp *itPtr = arg;
-    Ns_DString ds;
+    NsInterp   *itPtr = arg;
+    Ns_DString  ds;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");
         return TCL_ERROR;
     }
+    
     Ns_DStringInit(&ds);
     NsUrlToFile(&ds, itPtr->servPtr, Tcl_GetString(objv[1]));
     Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
     Ns_DStringFree(&ds);
-    
+
     return TCL_OK;
 }
 
@@ -299,24 +314,25 @@ NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *
  * NsTclKillObjCmd --
  *
- *	Implements ns_kill as obj command. 
+ *      Implements ns_kill as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                Tcl_Obj *CONST objv[])
 {
     int pid, signal;
 
     if ((objc != 3) && (objc != 4)) {
-      badargs:
+    badargs:
         Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? pid signal");
         return TCL_ERROR;
     }
@@ -328,10 +344,10 @@ NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
             return TCL_ERROR;
         }
         if (kill(pid, signal) != 0) {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "kill (\"", 
-                Tcl_GetString(objv[1]), ",", 
-                Tcl_GetString(objv[2]),
-			    "\") failed:  ", Tcl_PosixError(interp), NULL);
+            Tcl_AppendResult(interp, "kill (\"", 
+                             Tcl_GetString(objv[1]), ",", 
+                             Tcl_GetString(objv[2]), "\") failed: ", 
+                             Tcl_PosixError(interp), NULL);
             return TCL_ERROR;
         }
     } else {
@@ -346,6 +362,7 @@ NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         }
         kill(pid, signal);
     }
+
     return TCL_OK;
 }
 
@@ -355,32 +372,33 @@ NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  *
  * NsTclSymlinkObjCmd --
  *
- *	Implements ns_symlink as obj command. 
+ *      Implements ns_symlink as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                   Tcl_Obj *CONST objv[])
 {
     if ((objc != 3) && (objc != 4)) {
     badargs:
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? filename1 filename2");
+        Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? file1 file2");
         return TCL_ERROR;
     }
-
+    
     if (objc == 3) {
         if (symlink(Tcl_GetString(objv[1]), Tcl_GetString(objv[2])) != 0) {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "symlink (\"", 
-		    Tcl_GetString(objv[1]), "\", \"", 
-		    Tcl_GetString(objv[2]),
-		    "\") failed:  ", Tcl_PosixError(interp), NULL);
+            Tcl_AppendResult(interp, "symlink (\"",
+                             Tcl_GetString(objv[1]), "\", \"",
+                             Tcl_GetString(objv[2]), "\") failed: ",
+                             Tcl_PosixError(interp), NULL);
             return TCL_ERROR;
         }
     } else {
@@ -389,7 +407,7 @@ NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         }
         symlink(Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
     }
-
+    
     return TCL_OK;
 }
 
@@ -399,44 +417,46 @@ NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  *
  * NsTclWriteFpObjCmd --
  *
- *	Implements ns_writefp as obj command. 
+ *      Implements ns_writefp as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclWriteFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclWriteFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                   Tcl_Obj *CONST objv[])
 {
     NsInterp   *itPtr = arg;
     Tcl_Channel chan;
-    int	        nbytes = INT_MAX;
-    int	        result;
+    int         nbytes = INT_MAX;
+    int         result;
 
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");
-	    return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (GetOpenChannel(interp, objv[1], 0, 1, &chan) != TCL_OK) {
-	    return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (objc == 3 && Tcl_GetIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
-	    return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (itPtr->conn == NULL) {
-	    Tcl_SetResult(interp, "no connection", TCL_STATIC);
-	    return TCL_ERROR;
+        Tcl_SetResult(interp, "no connection", TCL_STATIC);
+        return TCL_ERROR;
     }
     result = Ns_ConnSendChannel(itPtr->conn, chan, nbytes);
     if (result != NS_OK) {
         Tcl_SetResult(interp, "i/o failed", TCL_STATIC);
-	    return TCL_ERROR;
+        return TCL_ERROR;
     }
+
     return TCL_OK;
 }
 
@@ -446,38 +466,38 @@ NsTclWriteFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  *
  * NsTclTruncateObjCmd --
  *
- *	Implements ns_truncate as obj command. 
+ *  Implements ns_truncate as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *  Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *  See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                    Tcl_Obj *CONST objv[])
 {
     int length;
     
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "file ?length?");
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
-
     if (objc == 2) {
-    	length = 0;
+        length = 0;
     } else if (Tcl_GetIntFromObj(interp, objv[2], &length) != TCL_OK) {
-    	return TCL_ERROR;
+        return TCL_ERROR;
     }
-
     if (truncate(Tcl_GetString(objv[1]), length) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "truncate (\"", 
-		Tcl_GetString(objv[1]), "\", ",
-		Tcl_GetString(objv[2]) ? Tcl_GetString(objv[2]) : "0",
-		") failed:  ", Tcl_PosixError(interp), NULL);
+        Tcl_AppendResult(interp, "truncate (\"", 
+                         Tcl_GetString(objv[1]), "\", ",
+                         Tcl_GetString(objv[2]) ? 
+                         Tcl_GetString(objv[2]) : "0", ") failed: ", 
+                         Tcl_PosixError(interp), NULL);
         return TCL_ERROR;
     }
 
@@ -490,39 +510,41 @@ NsTclTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *
  * NsTclFTruncateObjCmd --
  *
- *	Implements ns_ftruncate as obj command. 
+ *      Implements ns_ftruncate as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclFTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclFTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                     Tcl_Obj *CONST objv[])
 {
     int length, fd;
     
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "fileId ?length?");
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 1, &fd) != TCL_OK) {
-    	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (objc == 2) {
-    	length = 0;
+        length = 0;
     } else if (Tcl_GetInt(interp, Tcl_GetString(objv[2]), &length) != TCL_OK) {
-    	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (ftruncate(fd, length) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "ftruncate (\"", 
-            Tcl_GetString(objv[1]), "\", ",
-            Tcl_GetString(objv[2]) ? Tcl_GetString(objv[2]) : "0",
-            ") failed:  ", Tcl_PosixError(interp), NULL);
+        Tcl_AppendResult(interp, "ftruncate (\"", 
+                         Tcl_GetString(objv[1]), "\", ",
+                         Tcl_GetString(objv[2]) ? 
+                         Tcl_GetString(objv[2]) : "0", ") failed: ", 
+                         Tcl_PosixError(interp), NULL);
         return TCL_ERROR;
     }
 
@@ -535,186 +557,189 @@ NsTclFTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  *
  * NsTclChanObjCmd --
  *
- *	Implement the ns_chan command.
+ *  Implement the ns_chan command.
  *
  * Results:
- *	Tcl result. 
+ *  Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *  See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                Tcl_Obj *CONST objv[])
 {
-    NsInterp *itPtr = arg;
-    NsServer *servPtr = itPtr->servPtr;
-    Tcl_Channel chan = NULL;
-    char *name, *chanName;
-    NsRegChan *regChan = NULL;
-    int new, shared, opt;
-    Tcl_HashTable *tabPtr;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
+    NsInterp       *itPtr = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    NsRegChan      *regChan = NULL;
+
+    char           *name = NULL, *chanName = NULL;
+    int             new, shared, opt;
+    Tcl_Channel     chan = NULL;
+
+    Tcl_HashTable  *tabPtr;
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+
     static CONST char *opts[] = {
-	"cleanup", "list", "create", "put", "get", NULL
+        "cleanup", "list", "create", "put", "get", NULL
     };
+
     enum {
-	CCleanupIdx, CListIdx, CCreateIdx, CPutIdx, CGetIdx
+        CCleanupIdx, CListIdx, CCreateIdx, CPutIdx, CGetIdx
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+        return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-		            &opt) != TCL_OK) {
-	return TCL_ERROR;
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
+                            "option", 0, &opt) != TCL_OK) {
+        return TCL_ERROR;
     }
-
+    
     switch (opt) {
     case CCreateIdx:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "create channel name");
-	    return TCL_ERROR;
-	}
-	chanName = Tcl_GetString(objv[2]);
-	chan = Tcl_GetChannel(interp, chanName, NULL);
-	if (chan == (Tcl_Channel)NULL) {
-	    return TCL_ERROR;
-	}
-	if (Tcl_IsChannelShared(chan)) {
-	    Tcl_SetResult(interp, "channel is shared", TCL_STATIC);
-	    return TCL_ERROR;
-	}
-	name = Tcl_GetString(objv[3]);
-	Ns_MutexLock(&servPtr->chans.lock);
-	hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &new);
-	if (new) {
-	    regChan = ns_malloc(sizeof(NsRegChan));
-	    regChan->name = ns_malloc(strlen(chanName)+1);
-	    regChan->chan = chan;
-	    strcpy(regChan->name, chanName);
-	    Tcl_SetHashValue(hPtr, regChan);
-	}
-	Ns_MutexUnlock(&servPtr->chans.lock);
-	if (!new) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "channel with name \"", Tcl_GetString(objv[3]),
-		    "\" already exists", NULL);
-	    return TCL_ERROR;
-	}
-	UnspliceChannel(interp, chan);
-	break;
-
+        if (objc != 4) {
+            Tcl_WrongNumArgs(interp, 1, objv, "create channel name");
+            return TCL_ERROR;
+        }
+        chanName = Tcl_GetString(objv[2]);
+        chan = Tcl_GetChannel(interp, chanName, NULL);
+        if (chan == (Tcl_Channel)NULL) {
+            return TCL_ERROR;
+        }
+        if (Tcl_IsChannelShared(chan)) {
+            Tcl_SetResult(interp, "channel is shared", TCL_STATIC);
+            return TCL_ERROR;
+        }
+        name = Tcl_GetString(objv[3]);
+        Ns_MutexLock(&servPtr->chans.lock);
+        hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &new);
+        if (new) {
+            regChan = ns_malloc(sizeof(NsRegChan));
+            regChan->name = ns_malloc(strlen(chanName)+1);
+            regChan->chan = chan;
+            strcpy(regChan->name, chanName);
+            Tcl_SetHashValue(hPtr, regChan);
+        }
+        Ns_MutexUnlock(&servPtr->chans.lock);
+        if (!new) {
+            Tcl_AppendResult(interp, "channel \"", Tcl_GetString(objv[3]), 
+                             "\" already exists", NULL);
+            return TCL_ERROR;
+        }
+        UnspliceChannel(interp, chan);
+        break;
+        
     case CGetIdx:
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "get name");
-	    return TCL_ERROR;
-	}
-	name = Tcl_GetString(objv[2]);
-	Ns_MutexLock(&servPtr->chans.lock);
-	hPtr = Tcl_FindHashEntry(&servPtr->chans.table, name);
-	if (hPtr != NULL) {
-	    regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
-	    Tcl_DeleteHashEntry(hPtr);
-	}
-	Ns_MutexUnlock(&servPtr->chans.lock);
-	if (hPtr == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no such shared channel: ", name, NULL);
-	    return TCL_ERROR;
-	}
-	SpliceChannel(interp, regChan->chan);
-	Tcl_SetResult(interp, regChan->name, TCL_VOLATILE);
-	hPtr = Tcl_CreateHashEntry(&itPtr->chans, name, &new);
-	Tcl_SetHashValue(hPtr, regChan);
-	break;
-
+        if (objc != 3) {
+            Tcl_WrongNumArgs(interp, 1, objv, "get name");
+            return TCL_ERROR;
+        }
+        name = Tcl_GetString(objv[2]);
+        Ns_MutexLock(&servPtr->chans.lock);
+        hPtr = Tcl_FindHashEntry(&servPtr->chans.table, name);
+        if (hPtr != NULL) {
+            regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
+            Tcl_DeleteHashEntry(hPtr);
+        }
+        Ns_MutexUnlock(&servPtr->chans.lock);
+        if (hPtr == NULL) {
+            Tcl_AppendResult(interp, "channel \"", name, "\" not found", NULL);
+            return TCL_ERROR;
+        }
+        SpliceChannel(interp, regChan->chan);
+        Tcl_SetResult(interp, regChan->name, TCL_VOLATILE);
+        hPtr = Tcl_CreateHashEntry(&itPtr->chans, name, &new);
+        Tcl_SetHashValue(hPtr, regChan);
+        break;
+        
     case CPutIdx:
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "put name");
-	    return TCL_ERROR;
-	}
-	name = Tcl_GetString(objv[2]);
-	hPtr = Tcl_FindHashEntry(&itPtr->chans, name);
-	if (hPtr == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		   "no such shared channel: ", name, NULL);
-	    return TCL_ERROR;
-	}
-	regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
-	chan = Tcl_GetChannel(interp, regChan->name, NULL);
-	if (chan == (Tcl_Channel)NULL || chan != regChan->chan) {
-	    Tcl_DeleteHashEntry(hPtr);
-	    if (chan != regChan->chan) {
-		Tcl_SetResult(interp, "channel mismatch", TCL_STATIC);
-	    }
-	    return TCL_ERROR;
-	}
-	UnspliceChannel(interp, regChan->chan);
-	Tcl_DeleteHashEntry(hPtr);
-	Ns_MutexLock(&servPtr->chans.lock);
-	hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &new);
-	Tcl_SetHashValue(hPtr, regChan);
-	Ns_MutexUnlock(&servPtr->chans.lock);
-	break;
-
+        if (objc != 3) {
+            Tcl_WrongNumArgs(interp, 1, objv, "put name");
+            return TCL_ERROR;
+        }
+        name = Tcl_GetString(objv[2]);
+        hPtr = Tcl_FindHashEntry(&itPtr->chans, name);
+        if (hPtr == NULL) {
+            Tcl_AppendResult(interp, "channel \"", name, "\" not found", NULL);
+            return TCL_ERROR;
+        }
+        regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
+        chan = Tcl_GetChannel(interp, regChan->name, NULL);
+        if (chan == (Tcl_Channel)NULL || chan != regChan->chan) {
+            Tcl_DeleteHashEntry(hPtr);
+            if (chan != regChan->chan) {
+                Tcl_SetResult(interp, "channel mismatch", TCL_STATIC);
+            }
+            return TCL_ERROR;
+        }
+        UnspliceChannel(interp, regChan->chan);
+        Tcl_DeleteHashEntry(hPtr);
+        Ns_MutexLock(&servPtr->chans.lock);
+        hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &new);
+        Tcl_SetHashValue(hPtr, regChan);
+        Ns_MutexUnlock(&servPtr->chans.lock);
+        break;
+        
     case CListIdx:
-	if (objc != 2 && objc != 3) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "list ?-shared?");
-	    return TCL_ERROR;
-	}
-	shared = (objc == 3);
-	if (shared) {
-	    Ns_MutexLock(&servPtr->chans.lock);
-	    tabPtr = &servPtr->chans.table; 
-	} else {
-	    tabPtr = &itPtr->chans;
-	}
-	hPtr = Tcl_FirstHashEntry(tabPtr, &search);
-	while (hPtr != NULL) {
-	    Tcl_AppendElement(interp, Tcl_GetHashKey(tabPtr, hPtr));
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
-	if (shared) {
-	    Ns_MutexUnlock(&servPtr->chans.lock);
-	}
-	break;
-
+        if (objc != 2 && objc != 3) {
+            Tcl_WrongNumArgs(interp, 1, objv, "list ?-shared?");
+            return TCL_ERROR;
+        }
+        shared = (objc == 3);
+        if (shared) {
+            Ns_MutexLock(&servPtr->chans.lock);
+            tabPtr = &servPtr->chans.table; 
+        } else {
+            tabPtr = &itPtr->chans;
+        }
+        hPtr = Tcl_FirstHashEntry(tabPtr, &search);
+        while (hPtr != NULL) {
+            Tcl_AppendElement(interp, Tcl_GetHashKey(tabPtr, hPtr));
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        if (shared) {
+            Ns_MutexUnlock(&servPtr->chans.lock);
+        }
+        break;
+        
     case CCleanupIdx:
-	if (objc != 2 && objc != 3) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "cleanup ?-shared?");
-	    return TCL_ERROR;
-	}
-	shared = (objc == 3);
-	if (shared) {
-	    Ns_MutexLock(&servPtr->chans.lock);
-	    tabPtr = &servPtr->chans.table;
-	} else {
-	    tabPtr = &itPtr->chans;
-	}
-	hPtr = Tcl_FirstHashEntry(tabPtr, &search);
-	while (hPtr != NULL) {
-	    regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
-	    if (shared) {
-		Tcl_SpliceChannel(regChan->chan);
-		Tcl_UnregisterChannel((Tcl_Interp*)NULL, regChan->chan);
-	    } else {
-		Tcl_UnregisterChannel(interp, regChan->chan);
-	    }
-	    ns_free(regChan->name);
-	    ns_free(regChan);
-	    Tcl_DeleteHashEntry(hPtr);
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
-	if (shared) {
-	    Ns_MutexUnlock(&servPtr->chans.lock);
-	}
-	break;
+        if (objc != 2 && objc != 3) {
+            Tcl_WrongNumArgs(interp, 1, objv, "cleanup ?-shared?");
+            return TCL_ERROR;
+        }
+        shared = (objc == 3);
+        if (shared) {
+            Ns_MutexLock(&servPtr->chans.lock);
+            tabPtr = &servPtr->chans.table;
+        } else {
+            tabPtr = &itPtr->chans;
+        }
+        hPtr = Tcl_FirstHashEntry(tabPtr, &search);
+        while (hPtr != NULL) {
+            regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
+            if (shared) {
+                Tcl_SpliceChannel(regChan->chan);
+                Tcl_UnregisterChannel((Tcl_Interp*)NULL, regChan->chan);
+            } else {
+                Tcl_UnregisterChannel(interp, regChan->chan);
+            }
+            ns_free(regChan->name);
+            ns_free(regChan);
+            Tcl_DeleteHashEntry(hPtr);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        if (shared) {
+            Ns_MutexUnlock(&servPtr->chans.lock);
+        }
+        break;
     }
+
     return TCL_OK;
 }
 
@@ -727,7 +752,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  *      Adds the shared channel in the interp/thread. 
  *
  * Results:
- *      None.	
+ *      None.   
  *
  * Side effects:
  *      New channel appears in the interp. 
@@ -740,7 +765,7 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
     Tcl_SpliceChannel(chan);
     Tcl_RegisterChannel(interp, chan);
-    Tcl_UnregisterChannel((Tcl_Interp*)NULL, chan); /* Prevent closing */
+    Tcl_UnregisterChannel((Tcl_Interp*)NULL, chan);
 }
 
 
@@ -749,13 +774,13 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
  *
  * UnspliceChannel 
  *
- *      Divorces the channel from its owning interp/thread.	
+ *      Divorces the channel from its owning interp/thread. 
  *
  * Results:
- *      None.	
+ *      None.   
  *
  * Side effects:
- *      Channel is not accesible by Tcl scripts any more.	
+ *      Channel is not accesible by Tcl scripts any more.   
  *
  *----------------------------------------------------------------------
  */
@@ -795,4 +820,3 @@ UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 
     Tcl_CutChannel(chan);
 }
-
