@@ -148,6 +148,18 @@ NS_EXTERN int closedir(DIR *dp);
 #endif
 
 /*
+ * Some systems (Solaris) lack useful MIN/MAX macros
+ * normally defined in sys/param.h so do them here.
+ */
+
+#ifndef MIN
+#  define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+#ifndef MAX
+#  define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
+/*
  * Various constants.
  */
 

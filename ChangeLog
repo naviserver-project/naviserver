@@ -15,6 +15,9 @@
 	version of getnameinfo fails if sin_len has unsane values.
 	Fixed bug while processing results of gethostbyname.
 
+	* include/nsthread.h: added definition of MIN/MAX macros
+	since Solaris does not define them in usual place (sys/param.h)
+
 2005-10-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/nsmain.c (StartWatchedServer): clear signal handlers
