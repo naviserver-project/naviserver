@@ -763,9 +763,36 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 static void 
 UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
+    Tcl_ChannelType *chanTypePtr;
+    Tcl_DriverWatchProc *watchProc;
+
     Tcl_ClearChannelHandlers(chan);
-    Tcl_RegisterChannel((Tcl_Interp*)NULL, chan); /* Prevent closing */
+
+    chanTypePtr = Tcl_GetChannelType(chan);
+    watchProc   = Tcl_ChannelWatchProc(chanTypePtr);
+
+    /*
+     * This effectively disables processing of pending
+     * events which are ready to fire for the given 
+     * channel. If we do not do this, events will hit
+     * the detached channel which is potentially being
+     * owned by some other thread. This will wreck havoc
+     * on our memory and eventually badly hurt us...
+     */
+
+    if (watchProc) {
+        (*watchProc)(Tcl_GetChannelInstanceData(chan), 0);
+    }
+
+    /*
+     * Artificially bump the channel reference count
+     * which protects us from channel being closed
+     * during the Tcl_UnregisterChannel().
+     */
+
+    Tcl_RegisterChannel((Tcl_Interp *) NULL, chan);
     Tcl_UnregisterChannel(interp, chan);
+
     Tcl_CutChannel(chan);
 }
 

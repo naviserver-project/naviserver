@@ -1,3 +1,9 @@
+2005-10-15  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/tclfile.c (UnspliceChannel): disable any potential
+	ready-to-fire events in the threads event queue which 
+	reference to-be-unspliced channel.
+
 2005-10-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/nsmain.c (StartWatchedServer): clear signal handlers
