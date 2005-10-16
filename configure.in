@@ -236,6 +236,7 @@ if test "${ac_zlib}" = "yes" ; then
   AC_CHECK_LIB(z, compress2)
 fi
 
+
 #
 # Darwin version of getnameinfo will not work correctly
 # if we do not explicitly set sin_len element of the
@@ -244,18 +245,10 @@ fi
 # so test if this is the case.
 #
 
-AC_MSG_CHECKING([sin_len in struct sockaddr_in])
-AC_TRY_COMPILE([
-    #include <netinet/in.h>
-], [
-    struct sockaddr_in sa;
-    sa.sin_len;
-], [
-    AC_DEFINE(HAVE_SOCKADDRIN_SIN_LEN, 1, [Should we use the sin_len field of struct sockaddr_in?])
-    AC_MSG_RESULT(yes)
-], [
-    AC_MSG_RESULT(no)
-])
+AC_CHECK_MEMBERS([struct sockaddr_in.sin_len],,,[
+#include <sys/types.h>
+#include <netinet/in.h>])
+
 
 #
 # Create Makefiles.

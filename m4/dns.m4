@@ -97,6 +97,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
 ])
 CFLAGS="$saved_CFLAGS"])
 
+
+
 AC_DEFUN([AC_HAVE_GETHOSTBYADDR_R],
 [saved_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -lnsl"

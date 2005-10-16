@@ -1,3 +1,12 @@
+2005-10-15  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* Makefile:
+	* acinclude.m4:
+	* m4/dns.m4: Drop acinclude.m4 and move dns checking macros into
+	own file in m4 directory.
+	* configure.in:
+	* nsd/dns.c: Use built-in AC_CHECK_MEMBERS macro.
+
 2005-10-15  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclfile.c (UnspliceChannel): disable any potential

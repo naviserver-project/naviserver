@@ -260,7 +260,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
     Ns_CsEnter(&cs);
 #endif
     memset(&sa, 0, sizeof(struct sockaddr_in));
-#ifdef HAVE_SOCKADDRIN_SIN_LEN
+#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     sa.sin_len = sizeof(struct sockaddr_in);
 #endif
     sa.sin_family = AF_INET;
