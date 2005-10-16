@@ -103,8 +103,8 @@ static struct {
     {"Error",   NS_TRUE},
     {"Fatal",   NS_TRUE},
     {"Bug",     NS_TRUE},
-    {"Debug",   NS_TRUE},
-    {"Dev",     NS_TRUE}
+    {"Debug",   NS_FALSE},
+    {"Dev",     NS_FALSE}
 };
 
 
@@ -155,9 +155,9 @@ NsConfigLog(void)
     Ns_DString  ds;
     CONST char *path = NS_CONFIG_PARAMETERS;
 
-    logConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
     logConfig[Debug].enabled  = Ns_ConfigBool(path, "logdebug", NS_FALSE);
     logConfig[Dev].enabled    = Ns_ConfigBool(path, "logdev", NS_FALSE);
+    logConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
 
     if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
         flags |= LOG_ROLL;

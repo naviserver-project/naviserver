@@ -1,5 +1,16 @@
 2005-10-15  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/config.c: Log the section, key, value and any default, min
+	or max whenever a configuration value is looked up.  Log at level
+	Debug which by default is off. Can now quickly determine which config
+	keys are valid/used.
+	* nsd/nsmain.c:
+	* nsd/nsconf.c:
+	* nsd/log.c: Initialise log system earlier -- dissable Dev and
+	Debug log levels during early boot up.
+	* nsd/driver.c:
+	* nsd/nsd.h: Some logging cleanup.
+
 	* Makefile:
 	* acinclude.m4:
 	* m4/dns.m4: Drop acinclude.m4 and move dns checking macros into

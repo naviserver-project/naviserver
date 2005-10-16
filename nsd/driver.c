@@ -320,7 +320,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     drvPtr->protocol = ns_strdup(defproto);
     drvPtr->address = ns_strdup(address);
-    drvPtr->port = Ns_ConfigInt(path, "port", defport);
+    drvPtr->port = Ns_ConfigIntRange(path, "port", defport, 0, 65535);
     drvPtr->location = Ns_ConfigGetValue(path, "location");
     if (drvPtr->location != NULL && strstr(drvPtr->location, "://")) {
         drvPtr->location = ns_strdup(drvPtr->location);

@@ -593,7 +593,7 @@ typedef struct NsServer {
     struct {
         bool enabled;
         int opts; /* NSD_STRIP_WWW | NSD_STRIP_PORT */
-        char *hostprefix;
+        CONST char *hostprefix;
         int hosthashlevel;
         Ns_ServerRootProc *serverRootProc;
         void *serverRootArg;

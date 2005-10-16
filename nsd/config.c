@@ -48,6 +48,7 @@ static Tcl_CmdProc SectionCmd;
 static Tcl_CmdProc ParamCmd;
 static Ns_Set     *GetSection(CONST char *section, int create);
 static char       *ConfigGet(CONST char *section, CONST char *key, int exact);
+static int         ToBool(CONST char *value, int *valuePtr);
 
 
 
@@ -72,11 +73,11 @@ Ns_ConfigString(CONST char *section, CONST char *key, CONST char *def)
 {
     CONST char *value;
 
-    value = Ns_ConfigGetValue(section, key);
-    if (value == NULL) {
-        value = def;
-    }
-    return value;
+    value = ConfigGet(section, key, 0);
+    Ns_Log(Debug, "config: %s:%s value=\"%s\" default=\"%s\" (string)",
+           section, key, value, def);
+
+    return value ? value : def;
 }
 
 
@@ -100,48 +101,26 @@ Ns_ConfigString(CONST char *section, CONST char *key, CONST char *def)
 int
 Ns_ConfigBool(CONST char *section, CONST char *key, int def)
 {
-    int value;
+    CONST char *s;
+    int value, found = NS_FALSE;
 
-    if (!Ns_ConfigGetBool(section, key, &value)) {
-        value = def ? NS_TRUE : NS_FALSE;
+    s = ConfigGet(section, key, 0);
+    if (s != NULL && ToBool(s, &value)) {
+        found = NS_TRUE;
     }
-    return value;
+    Ns_Log(Debug, "config: %s:%s value=%s default=%s (bool)",
+           section, key,
+           found ? (value ? "true" : "false") : "(null)",
+           def ? "true" : "false");
+
+    return found ? value : def;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConfigInt --
- *
- *      Return an integer config file value, or the default if not
- *      found.
- *
- * Results:
- *      An integer.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConfigInt(CONST char *section, CONST char *key, int def)
-{
-    int value;
-
-    if (!Ns_ConfigGetInt(section, key, &value)) {
-        value = def;
-    }
-    return value;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConfigIntRange --
+ * Ns_ConfigInt, Ns_ConfigIntRange --
  *
  *      Return an integer config file value, or the default if not
  *      found. The returned value will be between the given min and max.
@@ -156,15 +135,37 @@ Ns_ConfigInt(CONST char *section, CONST char *key, int def)
  */
 
 int
+Ns_ConfigInt(CONST char *section, CONST char *key, int def)
+{
+    return Ns_ConfigIntRange(section, key, def, INT_MIN, INT_MAX);
+}
+
+int
 Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
                   int min, int max)
 {
+    CONST char *s;
     int value;
 
-    value = Ns_ConfigInt(section, key, def);
-    value = MAX(value, min);
-    value = MIN(value, max);
-
+    s = ConfigGet(section, key, 0);
+    if (s != NULL && Ns_StrToInt(s, &value) == NS_OK) {
+        Ns_Log(Debug, "config: %s:%s value=%d min=%d max=%d default=%d (int)",
+               section, key, value, min, max, def);
+    } else {
+        Ns_Log(Debug, "config: %s:%s value=(null) min=%d max=%d default=%d (int)",
+               section, key, min, max, def);
+        value = def;
+    }
+    if (value < min) {
+        Ns_Log(Warning, "config: %s:%s value=%d, rounded up to %d",
+               section, key, value, min);
+        value = min;
+    }
+    if (value > max) {
+        Ns_Log(Warning, "config: %s:%s value=%d, rounded down to %d",
+               section, key, value, max);
+        value = max;
+    }
     return value;
 }
 
@@ -188,7 +189,13 @@ Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
 char *
 Ns_ConfigGetValue(CONST char *section, CONST char *key)
 {
-    return ConfigGet(section, key, 0);
+    char *value;
+
+    value = ConfigGet(section, key, 0);
+    Ns_Log(Debug, "config: %s:%s value=%s (string)",
+           section, key, value);
+
+    return value;
 }
 
 
@@ -211,7 +218,13 @@ Ns_ConfigGetValue(CONST char *section, CONST char *key)
 char *
 Ns_ConfigGetValueExact(CONST char *section, CONST char *key)
 {
-    return ConfigGet(section, key, 1);
+    char *value;
+
+    value = ConfigGet(section, key, 1);
+    Ns_Log(Debug, "config: %s:%s value=%s (string, exact match)",
+           section, key, value);
+
+    return value;
 }
 
 
@@ -235,13 +248,21 @@ Ns_ConfigGetValueExact(CONST char *section, CONST char *key)
 int
 Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr)
 {
-    char *s;
+    CONST char *s;
+    int found;
 
-    s = Ns_ConfigGetValue(section, key);
-    if (s == NULL || sscanf(s, "%d", valuePtr) != 1) {
-        return NS_FALSE;
+    s = ConfigGet(section, key, 0);
+    if (s != NULL && Ns_StrToInt(s, valuePtr) == NS_OK) {
+        Ns_Log(Debug, "config: %s:%s value=%d min=%d max=%d (int)",
+               section, key, *valuePtr, INT_MIN, INT_MAX);
+        found = NS_TRUE;
+    } else {
+        Ns_Log(Debug, "config: %s:%s value=(null) min=%d max=%d (int)",
+               section, key, INT_MIN, INT_MAX);
+        *valuePtr = 0;
+        found = NS_FALSE;
     }
-    return NS_TRUE;
+    return found;
 }
 
 
@@ -295,32 +316,18 @@ Ns_ConfigGetInt64(CONST char *section, CONST char *key, INT64 *valuePtr)
 int
 Ns_ConfigGetBool(CONST char *section, CONST char *key, int *valuePtr)
 {
-    char *s;
+    CONST char *s;
+    int found = NS_FALSE;
 
-    s = Ns_ConfigGetValue(section, key);
-    if (s == NULL) {
-        return NS_FALSE;
+    s = ConfigGet(section, key, 0);
+    if (s != NULL && ToBool(s, valuePtr)) {
+        found = NS_TRUE;
     }
-    if (STREQ(s, "1")
-        || STRIEQ(s, "y")
-        || STRIEQ(s, "yes")
-        || STRIEQ(s, "on")
-        || STRIEQ(s, "t")
-        || STRIEQ(s, "true")) {
+    Ns_Log(Debug, "config: %s:%s value=%s (bool)",
+           section, key,
+           found ? (*valuePtr ? "true" : "false") : "(null)");
 
-        *valuePtr = 1;
-    } else if (STREQ(s, "0")
-               || STRIEQ(s, "n")
-               || STRIEQ(s, "no")
-               || STRIEQ(s, "off")
-               || STRIEQ(s, "f")
-               || STRIEQ(s, "false")) {
-
-        *valuePtr = 0;
-    } else if (sscanf(s, "%d", valuePtr) != 1) {
-        return NS_FALSE;
-    }
-    return NS_TRUE;
+    return found;
 }
 
 
@@ -369,6 +376,7 @@ Ns_ConfigGetPath(CONST char *server, CONST char *module, ...)
         }
     }
     va_end(ap);
+    Ns_Log(Debug, "config section: %s", Ns_DStringValue(&ds));
 
     set = Ns_ConfigGetSection(ds.string);
     Ns_DStringFree(&ds);
@@ -775,4 +783,51 @@ GetSection(CONST char *section, int create)
     Ns_DStringFree(&ds);
 
     return set;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ToBool --
+ *
+ *      Interpret value as a boolean.  There are many ways to represent 
+ *      a boolean value. 
+ *
+ * Results:
+ *      NS_TRUE if value converted to boolean, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      The boolean value is returned by reference.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ToBool(CONST char *value, int *valuePtr)
+{
+    int bool;
+
+    if (STREQ(value, "1")
+        || STRIEQ(value, "y")
+        || STRIEQ(value, "yes")
+        || STRIEQ(value, "on")
+        || STRIEQ(value, "t")
+        || STRIEQ(value, "true")) {
+
+        bool = NS_TRUE;
+    } else if (STREQ(value, "0")
+               || STRIEQ(value, "n")
+               || STRIEQ(value, "no")
+               || STRIEQ(value, "off")
+               || STRIEQ(value, "f")
+               || STRIEQ(value, "false")) {
+
+        bool = NS_FALSE;
+    } else if (Ns_StrToInt(value, &bool) != NS_OK) {
+        return NS_FALSE;
+    }
+    *valuePtr = bool ? NS_TRUE : NS_FALSE;
+
+    return NS_TRUE;
 }

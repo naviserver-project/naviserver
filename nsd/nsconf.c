@@ -157,11 +157,15 @@ NsConfUpdate(void)
     Ns_DString ds;
     char *path = NS_CONFIG_PARAMETERS;
     
+    /*
+     * log.c
+     */
+
+    NsConfigLog();
+
     NsUpdateEncodings();
     NsUpdateMimeTypes();
     NsUpdateUrlEncode();
-
-    Ns_DStringInit(&ds);
 
     /*
      * libnsthread
@@ -171,12 +175,6 @@ NsConfUpdate(void)
     	i = Ns_ConfigIntRange(path, "stacksize", 64*1024, 0, INT_MAX);
     }
     Ns_ThreadStackSize(i);
-
-    /*
-     * log.c
-     */
-
-    NsConfigLog();
 
     /*
      * nsmain.c
@@ -203,8 +201,8 @@ NsConfUpdate(void)
      */
 
     if (Ns_ConfigBool(path, "dnscache", NS_TRUE)) {
-        int max = Ns_ConfigInt(path, "dnscachemaxentries", 100);
-        i = Ns_ConfigInt(path, "dnscachetimeout", 60);
+        int max = Ns_ConfigIntRange(path, "dnscachemaxentries", 100, 0, INT_MAX);
+        i = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
         if (max > 0 && i > 0) {
             i *= 60; /* NB: Config minutes, seconds internally. */
             NsEnableDNSCache(i, max);
@@ -215,12 +213,12 @@ NsConfUpdate(void)
      * tclinit.c
      */
 
+    Ns_DStringInit(&ds);
     nsconf.tcl.sharedlibrary = Ns_ConfigGetValue(path, "tcllibrary");
     if (nsconf.tcl.sharedlibrary == NULL) {
         Ns_HomePath(&ds, "modules", "tcl", NULL);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
     }
     nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);
-
     Ns_DStringFree(&ds);
 }

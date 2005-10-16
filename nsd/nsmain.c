@@ -581,6 +581,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
     }
     nsconf.home = SetCwd(nsconf.home);
+
+    /*
+     * Update core config values.
+     */
+    
+    NsConfUpdate();
     
 #ifdef _WIN32
 
@@ -611,12 +617,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
 #endif
     
-    /*
-     * Update core config values.
-     */
-    
-    NsConfUpdate();
-
     /*
      * Open the log file now that the home directory and runtime
      * user id have been set.
