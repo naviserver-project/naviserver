@@ -1,3 +1,10 @@
+2005-10-17  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsdlog/nslog.c: missed initialization of logfile descriptor.
+	This caused us to close invalid descriptor in LogOpen. As the
+	result, the interactive NS mode assumed non-interactive use and
+	prematurely exited.
+
 2005-10-17  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nslog/nslog.c:
