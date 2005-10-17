@@ -1,3 +1,10 @@
+2005-10-17  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nslog/nslog.c:
+	* nscp/nscp.c:
+	* nscgi/nscgi.c:
+	* nsdb/dbinit.c: Use new config routines.
+
 2005-10-15  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/config.c: Log the section, key, value and any default, min

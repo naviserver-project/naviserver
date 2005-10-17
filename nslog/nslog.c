@@ -166,9 +166,9 @@ static int LogClose(Log *logPtr);
 int
 Ns_ModuleInit(char *server, char *module)
 {
-    char       *path;
+    CONST char *path, *file;
     Log        *logPtr;
-    int         opt, hour, status;
+    int         hour, status;
     Ns_DString  ds;
     static int  first = 1;
 
@@ -191,24 +191,22 @@ Ns_ModuleInit(char *server, char *module)
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Ns_DStringInit(&logPtr->buffer);
 
+    path = Ns_ConfigGetPath(server, module, NULL);
+
     /*
      * Determine the name of the log file
      */
 
-    path = Ns_ConfigGetPath(server, module, NULL);
-    logPtr->file = Ns_ConfigGetValue(path, "file");
-    if (logPtr->file == NULL) {
-        logPtr->file = "access.log";
-    }
-    logPtr->file = ns_strdup(logPtr->file);
-    
-    /*
-     * If log file is not given in absolute format, it's expected to 
-     * exist in the module specific directory. The module directory
-     * is created if necessary.
-     */
+    file = Ns_ConfigString(path, "file", "access.log");
+    if (Ns_PathIsAbsolute(file)) {
+        logPtr->file = ns_strdup(file);
+    } else {
 
-    if (Ns_PathIsAbsolute(logPtr->file) == NS_FALSE) {
+        /*
+         * If log file is not given in absolute format, it's expected to 
+         * exist in the module specific directory, which is created if necessary.
+         */
+
         Tcl_Obj *dirpath;
         Ns_ModulePath(&ds, server, module, NULL, NULL);
         dirpath = Tcl_NewStringObj(ds.string, -1);
@@ -230,30 +228,22 @@ Ns_ModuleInit(char *server, char *module)
      * Get other parameters from configuration file 
      */
 
-    logPtr->rollfmt = Ns_ConfigGetValue(path, "rollfmt");
-    if (logPtr->rollfmt != NULL) {
-        logPtr->rollfmt = ns_strdup(logPtr->rollfmt);
-    }
-    if (!Ns_ConfigGetInt(path, "maxbackup", &logPtr->maxbackup)
-        || logPtr->maxbackup < 1) {
-        logPtr->maxbackup = 100;
-    }
-    if (!Ns_ConfigGetInt(path, "maxbuffer", &logPtr->maxlines))  {
-        logPtr->maxlines = 0;
-    }
-    if (!Ns_ConfigGetBool(path, "formattedTime", &opt) || opt)  {
+    logPtr->rollfmt = ns_strcopy(Ns_ConfigGetValue(path, "rollfmt"));
+    logPtr->maxbackup = Ns_ConfigIntRange(path, "maxbackup", 100, 1, INT_MAX);
+    logPtr->maxlines = Ns_ConfigIntRange(path, "maxbuffer", 0, 0, INT_MAX);
+    if (Ns_ConfigBool(path, "formattedtime", NS_TRUE)) {
         logPtr->flags |= LOG_FMTTIME;
     }
-    if (!Ns_ConfigGetBool(path, "logcombined", &opt) || opt) {
+    if (Ns_ConfigBool(path, "logcombined", NS_TRUE)) {
         logPtr->flags |= LOG_COMBINED;
     }
-    if (Ns_ConfigGetBool(path, "logreqtime", &opt) && opt) {
+    if (Ns_ConfigBool(path, "logreqtime", NS_FALSE)) {
         logPtr->flags |= LOG_REQTIME;
     }
-    if (Ns_ConfigGetBool(path, "suppressquery", &opt) && opt) {
+    if (Ns_ConfigBool(path, "suppressquery", NS_FALSE)) {
         logPtr->flags |= LOG_SUPPRESSQUERY;
     }
-    if (Ns_ConfigGetBool(path, "checkforproxy", &opt) && opt) {
+    if (Ns_ConfigBool(path, "checkforproxy", NS_FALSE)) {
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
 
@@ -261,14 +251,12 @@ Ns_ModuleInit(char *server, char *module)
      *  Schedule various log roll and shutdown options.
      */
 
-    if (!Ns_ConfigGetInt(path, "rollhour", &hour) || hour < 0 || hour > 23) {
-        hour = 0;
-    }
-    if (!Ns_ConfigGetBool(path, "rolllog", &opt) || opt) {
+    if (Ns_ConfigBool(path, "rolllog", NS_TRUE)) {
+        hour = Ns_ConfigIntRange(path, "rollhour", 0, 0, 23);
         Ns_ScheduleDaily((Ns_SchedProc *) LogRollCallback, logPtr, 
                          0, hour, 0, NULL);
     }
-    if (Ns_ConfigGetBool(path, "rollonsignal", &opt) && opt) {
+    if (Ns_ConfigBool(path, "rollonsignal", NS_FALSE)) {
         Ns_RegisterAtSignal(LogRollCallback, logPtr);
     }
 

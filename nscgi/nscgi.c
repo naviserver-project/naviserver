@@ -36,7 +36,6 @@ NS_RCSID("@(#) $Header$");
 
 #define BUFSIZE	    4096
 #define NDSTRINGS   5
-#define DEFAULT_MAXINPUT    1024000
 #define CGI_NPH	    	1
 #define CGI_GETHOST	2
 #define CGI_ECONTENT	4
@@ -193,20 +192,11 @@ Ns_ModuleInit(char *server, char *module)
     modPtr->server = server;
     Ns_MutexInit(&modPtr->lock);
     Ns_MutexSetName2(&modPtr->lock, "nscgi", server);
-    if (!Ns_ConfigGetInt(path, "maxinput", &modPtr->maxInput)) {
-        modPtr->maxInput = DEFAULT_MAXINPUT;
-    }
-    if (!Ns_ConfigGetInt(path, "limit", &modPtr->maxCgi)) {
-        modPtr->maxCgi = 0;
-    }
-    if (!Ns_ConfigGetInt(path, "maxwait", &modPtr->maxWait)) {
-        modPtr->maxWait = 30;
-    }
-    if (!Ns_ConfigGetBool(path, "gethostbyaddr", &i)) {
-        i = 0;
-    }
-    if (i) {
-	modPtr->flags |= CGI_GETHOST;
+    modPtr->maxInput = Ns_ConfigInt(path, "maxinput", 1024000);
+    modPtr->maxCgi = Ns_ConfigInt(path, "limit", 0);
+    modPtr->maxWait = Ns_ConfigInt(path, "maxwait", 30);
+    if (Ns_ConfigBool(path, "gethostbyaddr", NS_FALSE)) {
+        modPtr->flags |= CGI_GETHOST;
     }
 
     /*
@@ -220,7 +210,7 @@ Ns_ModuleInit(char *server, char *module)
         modPtr->interps = Ns_ConfigGetSection(ds.string);
         if (modPtr->interps == NULL) {
             Ns_Log(Warning, "nscgi: no such interps section: %s",
-		   ds.string);
+                   ds.string);
         }
     	Ns_DStringTrunc(&ds, 0);
     }
@@ -230,15 +220,12 @@ Ns_ModuleInit(char *server, char *module)
         modPtr->mergeEnv = Ns_ConfigGetSection(ds.string);
         if (modPtr->mergeEnv == NULL) {
             Ns_Log(Warning, "nscgi: no such environment section: %s",
-		   ds.string);
+                   ds.string);
         }
     	Ns_DStringTrunc(&ds, 0);
     }
-    if (!Ns_ConfigGetBool(path, "systemenvironment", &i)) {
-        i = 0;
-    }
-    if (i) {
-	modPtr->flags |= CGI_SYSENV;
+    if (Ns_ConfigBool(path, "systemenvironment", NS_FALSE)) {
+        modPtr->flags |= CGI_SYSENV;
     }
 
     /*

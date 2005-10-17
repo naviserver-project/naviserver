@@ -1038,24 +1038,12 @@ CreatePool(char *pool, char *path, char *driver)
     poolPtr->pass = Ns_ConfigGetValue(path, "password");
     poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
     poolPtr->stale_on_close = 0;
-    if (!Ns_ConfigGetBool(path, "verbose", &poolPtr->fVerbose)) {
-        poolPtr->fVerbose = 0;
-    } 
-    if (!Ns_ConfigGetBool(path, "logsqlerrors", &poolPtr->fVerboseError)) {
-	poolPtr->fVerboseError = 0;
-    }
-    if (!Ns_ConfigGetInt(path, "connections", &poolPtr->nhandles)
-	|| poolPtr->nhandles <= 0) {
-        poolPtr->nhandles = 2;
-    }
-    if (Ns_ConfigGetInt(path, "MaxIdle", &i) == NS_FALSE || i < 0) {
-        i = 600;                    /* 10 minutes */
-    }
-    poolPtr->maxidle = i;
-    if (Ns_ConfigGetInt(path, "MaxOpen", &i) == NS_FALSE || i < 0) {
-        i = 3600;                   /* 1 hour */
-    }
-    poolPtr->maxopen = i;
+    poolPtr->fVerbose = Ns_ConfigBool(path, "verbose", NS_FALSE);
+    poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
+    poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
+    poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
+    poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
+
     poolPtr->firstPtr = poolPtr->lastPtr = NULL;
     for (i = 0; i < poolPtr->nhandles; ++i) {
     	handlePtr = ns_malloc(sizeof(Handle));
@@ -1086,10 +1074,8 @@ CreatePool(char *pool, char *path, char *driver)
 	handlePtr->poolname = pool;
 	ReturnHandle(handlePtr);
     }
-    if (!Ns_ConfigGetInt(path, "checkinterval", &i) || i < 0) {
-	i = 600;	/* 10 minutes. */
-    }
-    Ns_ScheduleProc(CheckPool, poolPtr, 0, i);
+    Ns_ScheduleProc(CheckPool, poolPtr, 0,
+                    Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
     return poolPtr;
 }
 

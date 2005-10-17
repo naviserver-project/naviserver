@@ -148,13 +148,8 @@ Ns_ModuleInit(char *server, char *module)
     modPtr->server = server;
     modPtr->addr = addr;
     modPtr->port = port;
-    if (!Ns_ConfigGetBool(path, "echopassword", &modPtr->echo)) {
-    	modPtr->echo = 1;
-    }
-
-    if (!Ns_ConfigGetBool(path, "cpcmdlogging", &modPtr->commandLogging)) {
-        modPtr->commandLogging = 0; /* Default to off */
-    }
+    modPtr->echo = Ns_ConfigBool(path, "echopasswd", NS_TRUE);
+    modPtr->commandLogging = Ns_ConfigBool(path, "cpcmdlogging", NS_FALSE);
 
     /*
      * Initialize the hash table of authorized users.  Entry values
