@@ -26,11 +26,13 @@ test ns_log-2.1 {basic syntax} -body {
 
 test ns_log-2.2 {basic syntax} -body {
     ns_logctl ?
-} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, or truncate}
+} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, truncate, or severity}
 
 
 ns_logctl hold
 ns_logctl trunc
+ns_logctl severity debug on
+ns_logctl severity dev on
 
 test ns_log-3.1 {severity} -body {
     ns_log notice test
@@ -57,12 +59,12 @@ test ns_log-3.5 {severity} -body {
     ns_logctl get
 } -match glob -result "* Bug: test\n"
 
-test ns_log-3.6 {severity} -constraints knownBug -body {
+test ns_log-3.6 {severity} -body {
     ns_log debug test
     ns_logctl get
 } -match glob -result "* Debug: test\n"
 
-test ns_log-3.7 {severity} -constraints knownBug -body {
+test ns_log-3.7 {severity} -body {
     ns_log dev test
     ns_logctl get
 } -match glob -result "* Dev: test\n"
@@ -142,7 +144,32 @@ test ns_log-5.9 {flush} -body {
 
 
 
+test ns_log-6.1 {configuration} -body {
+    ns_logctl severity
+} -returnCodes error -result {wrong # args: should be "ns_logctl severity severity-level ?bool?"}
+
+test ns_log-6.2 {configuration} -body {
+    ns_logctl severity ?
+} -returnCodes error -result {bad severity "?": must be notice, Notice, warning, Warning, error, Error, fatal, Fatal, bug, Bug, debug, Debug, dev, or Dev}
+
+test ns_log-6.3 {configuration} -body {
+    ns_logctl severity debug
+} -result 1
+
+test ns_log-6.4 {configuration} -body {
+    ns_logctl severity debug 0
+} -result 0
+
+test ns_log-6.5 {configuration} -body {
+    ns_logctl severity debug
+} -result 0
+
+
+
 ns_logctl trunc
 ns_logctl release
+ns_logctl severity debug off
+ns_logctl severity dev off
+
 
 cleanupTests

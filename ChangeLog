@@ -7,6 +7,12 @@
 
 2005-10-17  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/log.c:
+	* tests/ns_log.test: Add new sub-command: ns_logctl severity.
+	With this you can query and set the status of any of the log
+	levels at runtime.  For example, you could log into the control
+	port -- ns_logctl severity debug on -- to track down a problem.
+
 	* nslog/nslog.c:
 	* nscp/nscp.c:
 	* nscgi/nscgi.c:

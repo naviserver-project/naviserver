@@ -91,7 +91,10 @@ static int              maxlevel;
 static int              maxbuffer;
 
 /*
- * Keep the following in sync with the Ns_LogSeverity enum.
+ * The following table defines which severity levels
+ * are currently active.
+ *
+ * Be sure to keep the order in sync with the Ns_LogSeverity enum.
  */
 
 static struct {
@@ -105,6 +108,25 @@ static struct {
     {"Bug",     NS_TRUE},
     {"Debug",   NS_FALSE},
     {"Dev",     NS_FALSE}
+};
+
+/*
+ * The following table converts from severity string names to
+ * an Ns_LogSeverity enum value.
+ */
+
+static struct {
+    char           *string;
+    Ns_LogSeverity  severity;
+} severityTable[] = {
+    {"notice",  Notice},  {"Notice",  Notice},
+    {"warning", Warning}, {"Warning", Warning},
+    {"error",   Error},   {"Error",   Error},
+    {"fatal",   Fatal},   {"Fatal",   Fatal},
+    {"bug",     Bug},     {"Bug",     Bug},
+    {"debug",   Debug},   {"Debug",   Debug},
+    {"dev",     Dev},     {"Dev",     Dev},
+    {NULL, 0}
 };
 
 
@@ -471,16 +493,17 @@ int
 NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
                   Tcl_Obj *CONST objv[])
 {
-    LogCache *cachePtr;
-    int       len, opt;
+    LogCache       *cachePtr;
+    int             len, opt, i, bool;
+    Ns_LogSeverity  severity;
 
     static CONST char *opts[] = {
         "hold", "count", "get", "peek", "flush", "release", 
-        "truncate", NULL
+        "truncate", "severity", NULL
     };
     enum {
         CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx, 
-        CTruncIdx
+        CTruncIdx, CSeverityIdx
     };
 
     if (objc < 2) {
@@ -528,6 +551,27 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         Ns_DStringTrunc(&cachePtr->buffer, len);
         break;
+
+    case CSeverityIdx:
+        if (objc != 3 && objc != 4) {
+            Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
+            return TCL_ERROR;
+        }
+        if (Tcl_GetIndexFromObjStruct(interp, objv[2], severityTable,
+                                      sizeof(severityTable[0]), "severity",
+                                      TCL_EXACT, &i) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        severity = severityTable[i].severity;
+        if (objc == 4) {
+            if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            logConfig[severity].enabled = bool;
+        }
+        Tcl_SetBooleanObj(Tcl_GetObjResult(interp),
+                          logConfig[severity].enabled);
+        break;
     }
 
     return TCL_OK;
@@ -557,20 +601,6 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Ns_LogSeverity severity;
     Ns_DString     ds;
     int            i;
-
-    struct {
-        char           *string;
-        Ns_LogSeverity  severity;
-    } severityTable[] = {
-        {"notice",  Notice},  {"Notice",  Notice},
-        {"warning", Warning}, {"Warning", Warning},
-        {"error",   Error},   {"Error",   Error},
-        {"fatal",   Fatal},   {"Fatal",   Fatal},
-        {"bug",     Bug},     {"Bug",     Bug},
-        {"debug",   Debug},   {"Debug",   Debug},
-        {"dev",     Dev},     {"Dev",     Dev},
-        {NULL, 0}
-    };
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
