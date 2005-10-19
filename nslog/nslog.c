@@ -202,13 +202,14 @@ Ns_ModuleInit(char *server, char *module)
     if (Ns_PathIsAbsolute(file)) {
         logPtr->file = ns_strdup(file);
     } else {
+        Tcl_Obj *dirpath;
 
         /*
          * If log file is not given in absolute format, it's expected to 
-         * exist in the module specific directory, which is created if necessary.
+         * exist in the module specific directory, which is created if
+         * necessary.
          */
 
-        Tcl_Obj *dirpath;
         Ns_ModulePath(&ds, server, module, NULL, NULL);
         dirpath = Tcl_NewStringObj(ds.string, -1);
         Tcl_IncrRefCount(dirpath);
@@ -221,7 +222,7 @@ Ns_ModuleInit(char *server, char *module)
             return NS_ERROR;
         }
         Ns_DStringTrunc(&ds, 0);
-        Ns_ModulePath(&ds, server, module, logPtr->file, NULL);
+        Ns_ModulePath(&ds, server, module, file, NULL);
         logPtr->file = Ns_DStringExport(&ds);
     }
 
