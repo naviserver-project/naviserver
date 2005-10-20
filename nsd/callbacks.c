@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.lcs.mit.edu/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -30,10 +30,10 @@
 /* 
  * callbacks.c --
  *
- *	Support for Callbacks
+ *      Support for Callbacks
  *
- * 	These functions allow the registration of callbacks
- *	that are run at various points during the server's execution.
+ *      These functions allow the registration of callbacks
+ *      that are run at various points during the server's execution.
  */
 
 #include "nsd.h"
@@ -56,10 +56,11 @@ typedef struct Callback {
  */
 
 static Ns_ThreadProc RunThread;
-static void     RunCallbacks(Callback *firstPtr, int reverse);
-static void 	RunStart(Callback **firstPtrPtr, Ns_Thread *threadPtr);
-static void 	RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPtr);
-static void    *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg);
+
+static void  RunCallbacks(Callback *firstPtr, int reverse);
+static void  RunStart(Callback **firstPtrPtr, Ns_Thread *threadPtr);
+static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg);
+static void  RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPtr);
 
 /*
  * Static variables defined in this file
@@ -74,7 +75,7 @@ static Callback *firstExit;
 static Callback *firstReady;
 static Ns_Mutex  lock;
 static Ns_Cond   cond;
-static int shutdownPending;
+static int       shutdownPending;
 static Ns_Thread serverShutdownThread;
 
 void *
@@ -95,13 +96,13 @@ NsRunAtReadyProcs(void)
  *
  * Ns_RegisterAtStartup --
  *
- *	Register a callback to run at server startup 
+ *      Register a callback to run at server startup 
  *
  * Results:
- *	None 
+ *      None 
  *
  * Side effects:
- *	The callback will be registered 
+ *      The callback will be registered 
  *
  *----------------------------------------------------------------------
  */
@@ -118,13 +119,13 @@ Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
  *
  * Ns_RegisterAtPreStartup --
  *
- *	Register a callback to run at pre-server startup 
+ *      Register a callback to run at pre-server startup 
  *
  * Results:
- *	None 
+ *      None 
  *
  * Side effects:
- *	The callback will be registered 
+ *      The callback will be registered 
  *
  *----------------------------------------------------------------------
  */
@@ -141,13 +142,13 @@ Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
  *
  * Ns_RegisterAtSignal --
  *
- *	Register a callback to run when a signal arrives 
+ *      Register a callback to run when a signal arrives 
  *
  * Results:
- *	None 
+ *      None 
  *
  * Side effects:
- *	The callback will be registered
+ *      The callback will be registered
  *
  *----------------------------------------------------------------------
  */
@@ -164,15 +165,15 @@ Ns_RegisterAtSignal(Ns_Callback * proc, void *arg)
  *
  * Ns_RegisterAtServerShutdown --
  *
- *	Register a callback to run at server shutdown. This is
- *	identical to Ns_RegisterShutdown and only exists for
- *	historical reasons.
+ *      Register a callback to run at server shutdown. This is
+ *      identical to Ns_RegisterShutdown and only exists for
+ *      historical reasons.
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	The callback will be registered 
+ *      The callback will be registered 
  *
  *----------------------------------------------------------------------
  */
@@ -195,13 +196,13 @@ Ns_RegisterServerShutdown(char *ignored, Ns_Callback *proc, void *arg)
  *
  * Ns_RegisterAtShutdown --
  *
- *	Register a callback to run at server shutdown. 
+ *      Register a callback to run at server shutdown. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	The callback will be registered. 
+ *      The callback will be registered. 
  *
  *----------------------------------------------------------------------
  */
@@ -218,20 +219,19 @@ Ns_RegisterShutdown(Ns_Callback *proc, void *arg)
     return Ns_RegisterAtShutdown(proc, arg);
 }
 
-
 
 /*
  *----------------------------------------------------------------------
  *
  * Ns_RegisterAtExit --
  *
- *	Register a callback to be run at server exit. 
+ *      Register a callback to be run at server exit. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	The callback will be registerd. 
+ *      The callback will be registered. 
  *
  *----------------------------------------------------------------------
  */
@@ -248,13 +248,13 @@ Ns_RegisterAtExit(Ns_Callback * proc, void *arg)
  *
  * NsRunStartupProcs --
  *
- *	Run any callbacks registered for server startup. 
+ *      Run any callbacks registered for server startup. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	Callbacks called back. 
+ *      Callbacks called back. 
  *
  *----------------------------------------------------------------------
  */
@@ -271,13 +271,13 @@ NsRunStartupProcs(void)
  *
  * NsRunPreStartupProcs --
  *
- *	Run any callbacks registered for pre-server startup. 
+ *      Run any callbacks registered for pre-server startup. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	Callbacks called back. 
+ *      Callbacks called back. 
  *
  *----------------------------------------------------------------------
  */
@@ -294,13 +294,13 @@ NsRunPreStartupProcs(void)
  *
  * NsRunSignalProcs --
  *
- *	Run any callbacks registered for when a signal arrives 
+ *      Run any callbacks registered for when a signal arrives 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	Callbacks called back. 
+ *      Callbacks called back. 
  *
  *----------------------------------------------------------------------
  */
@@ -317,14 +317,14 @@ NsRunSignalProcs(void)
  *
  * NsRunExitProcs --
  *
- *	Run any callbacks registered for server startup, then 
- *	shutdown, then exit. 
+ *      Run any callbacks registered for server startup, then 
+ *      shutdown, then exit. 
  *
  * Results:
- *	None. 
+ *      None. 
  *
  * Side effects:
- *	Callbacks called back. 
+ *      Callbacks called back. 
  *
  *----------------------------------------------------------------------
  */
@@ -335,6 +335,7 @@ NsStartShutdownProcs(void)
     Ns_MutexLock(&lock);
     shutdownPending = 1;
     Ns_MutexUnlock(&lock);
+
     RunStart(&firstServerShutdown, &serverShutdownThread);
 }
     
@@ -360,13 +361,13 @@ NsRunAtExitProcs(void)
  *
  * RegisterAt --
  *
- *	A generic function that registers callbacks for any event 
+ *      Generic function that registers callbacks for any event 
  *
  * Results:
- *	A pointer to the newly-allocated Callback structure 
+ *      Pointer to the newly-allocated Callback structure 
  *
  * Side effects:
- *	A Callback struct will be alloacated and put in the linked list. 
+ *      Callback struct will be alloacated and put in the linked list. 
  *
  *----------------------------------------------------------------------
  */
@@ -374,7 +375,7 @@ NsRunAtExitProcs(void)
 static void *
 RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
 {
-    Callback       *cbPtr;
+    Callback   *cbPtr;
     static int first = 1;
 
     cbPtr = ns_malloc(sizeof(Callback));
@@ -386,7 +387,7 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
         first = 0;
     }
     if (shutdownPending) {
-    	ns_free(cbPtr);
+        ns_free(cbPtr);
         cbPtr = NULL;
     } else if (*firstPtrPtr == NULL) {
         *firstPtrPtr = cbPtr;
@@ -399,6 +400,7 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
         *firstPtrPtr = cbPtr;
     }
     Ns_MutexUnlock(&lock);
+
     return (void *) cbPtr;
 }
 
@@ -408,13 +410,13 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
  *
  * RunCallbacks --
  *
- *	Run all callbacks in the passed-in linked list. 
+ *      Run all callbacks in the passed-in linked list. 
  *
  * Results:
- *	None 
+ *      None 
  *
  * Side effects:
- *	Callbacks called back. 
+ *      Callbacks called back. 
  *
  *----------------------------------------------------------------------
  */
@@ -443,9 +445,9 @@ RunStart(Callback **firstPtrPtr, Ns_Thread *threadPtr)
 {
     Ns_MutexLock(&lock);
     if (*firstPtrPtr != NULL) {
-	Ns_ThreadCreate(RunThread, firstPtrPtr, 0, threadPtr);
+        Ns_ThreadCreate(RunThread, firstPtrPtr, 0, threadPtr);
     } else {
-    	*threadPtr = NULL;
+        *threadPtr = NULL;
     }
     Ns_MutexUnlock(&lock);
 }
@@ -459,13 +461,13 @@ RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPtr)
     status = NS_OK;
     Ns_MutexLock(&lock);
     while (status == NS_OK && *firstPtrPtr != NULL) {
-	status = Ns_CondTimedWait(&cond, &lock, toPtr);
+        status = Ns_CondTimedWait(&cond, &lock, toPtr);
     }
     Ns_MutexUnlock(&lock);
     if (status != NS_OK) {
-	Ns_Log(Warning, "callbacks: timeout waiting for shutdown procs");
+        Ns_Log(Warning, "callbacks: timeout waiting for shutdown procs");
     } else if (*threadPtr != NULL) {
-	Ns_ThreadJoin(threadPtr, NULL);
+        Ns_ThreadJoin(threadPtr, NULL);
     }
 }
 
@@ -485,14 +487,13 @@ RunThread(void *arg)
 
     Ns_MutexLock(&lock);
     while (*firstPtrPtr != NULL) {
-	firstPtr = *firstPtrPtr;
-	*firstPtrPtr = firstPtr->nextPtr;
-	ns_free(firstPtr);
+        firstPtr = *firstPtrPtr;
+        *firstPtrPtr = firstPtr->nextPtr;
+        ns_free(firstPtr);
     }
     Ns_CondSignal(&cond);
     Ns_MutexUnlock(&lock);
 }
-
 
 static void
 AppendList(Tcl_DString *dsPtr, char *list, Callback *firstPtr, int reverse)
