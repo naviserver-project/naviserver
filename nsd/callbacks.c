@@ -46,6 +46,7 @@ NS_RCSID("@(#) $Header$");
 
 typedef struct Callback {
     struct Callback *nextPtr;
+    struct Callback *prevPtr;
     Ns_Callback     *proc;
     void            *arg;
 } Callback;
@@ -55,7 +56,7 @@ typedef struct Callback {
  */
 
 static Ns_ThreadProc RunThread;
-static void     RunCallbacks(Callback *firstPtr);
+static void     RunCallbacks(Callback *firstPtr, int reverse);
 static void 	RunStart(Callback **firstPtrPtr, Ns_Thread *threadPtr);
 static void 	RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPtr);
 static void    *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg);
@@ -85,7 +86,7 @@ Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
 void
 NsRunAtReadyProcs(void)
 {
-    RunCallbacks(firstReady);
+    RunCallbacks(firstReady, 0);
 }
 
 
@@ -261,7 +262,7 @@ Ns_RegisterAtExit(Ns_Callback * proc, void *arg)
 void
 NsRunStartupProcs(void)
 {
-    RunCallbacks(firstStartup);
+    RunCallbacks(firstStartup, 1);
 }
 
 
@@ -284,7 +285,7 @@ NsRunStartupProcs(void)
 void
 NsRunPreStartupProcs(void)
 {
-    RunCallbacks(firstPreStartup);
+    RunCallbacks(firstPreStartup, 1);
 }
 
 
@@ -307,7 +308,7 @@ NsRunPreStartupProcs(void)
 void
 NsRunSignalProcs(void)
 {
-    RunCallbacks(firstSignal);
+    RunCallbacks(firstSignal, 1);
 }
 
 
@@ -350,7 +351,7 @@ NsWaitShutdownProcs(Ns_Time *toPtr)
 void
 NsRunAtExitProcs(void)
 {
-    RunCallbacks(firstExit);
+    RunCallbacks(firstExit, 0);
 }
 
 
@@ -381,15 +382,21 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
     cbPtr->arg = arg;
     Ns_MutexLock(&lock);
     if (first) {
-	Ns_MutexSetName(&lock, "ns:callbacks");
-	first = 0;
+        Ns_MutexSetName(&lock, "ns:callbacks");
+        first = 0;
     }
     if (shutdownPending) {
     	ns_free(cbPtr);
-	cbPtr = NULL;
+        cbPtr = NULL;
+    } else if (*firstPtrPtr == NULL) {
+        *firstPtrPtr = cbPtr;
+        cbPtr->nextPtr = NULL;
+        cbPtr->prevPtr = NULL;
     } else {
-	cbPtr->nextPtr = *firstPtrPtr;
-	*firstPtrPtr = cbPtr;
+        (*firstPtrPtr)->prevPtr = cbPtr;
+        cbPtr->nextPtr = *firstPtrPtr;
+        cbPtr->prevPtr = NULL;
+        *firstPtrPtr = cbPtr;
     }
     Ns_MutexUnlock(&lock);
     return (void *) cbPtr;
@@ -401,7 +408,7 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
  *
  * RunCallbacks --
  *
- *	Run all callbacks in the passed-in linked list 
+ *	Run all callbacks in the passed-in linked list. 
  *
  * Results:
  *	None 
@@ -413,11 +420,21 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
  */
 
 static void
-RunCallbacks(Callback *cbPtr)
+RunCallbacks(Callback *cbPtr, int reverse)
 {
+    if (reverse) {
+        while (cbPtr != NULL && cbPtr->nextPtr != NULL) {
+            cbPtr = cbPtr->nextPtr;
+        }
+    }
+
     while (cbPtr != NULL) {
         (*cbPtr->proc) (cbPtr->arg);
-        cbPtr = cbPtr->nextPtr;
+        if (reverse) {
+            cbPtr = cbPtr->prevPtr;
+        } else {
+            cbPtr = cbPtr->nextPtr;
+        }
     }
 }
 
@@ -464,7 +481,7 @@ RunThread(void *arg)
     firstPtr = *firstPtrPtr;
     Ns_MutexUnlock(&lock);
     
-    RunCallbacks(firstPtr);
+    RunCallbacks(firstPtr, 0);
 
     Ns_MutexLock(&lock);
     while (*firstPtrPtr != NULL) {
@@ -478,17 +495,26 @@ RunThread(void *arg)
 
 
 static void
-AppendList(Tcl_DString *dsPtr, char *list, Callback *firstPtr)
+AppendList(Tcl_DString *dsPtr, char *list, Callback *firstPtr, int reverse)
 {
-    Callback *cbPtr;
+    Callback *cbPtr = firstPtr;
 
-    cbPtr = firstPtr;
+    if (reverse) {
+        while (cbPtr != NULL && cbPtr->nextPtr != NULL) {
+            cbPtr = cbPtr->nextPtr;
+        }
+    }
+
     while (cbPtr != NULL) {
-	Tcl_DStringStartSublist(dsPtr);
-	Tcl_DStringAppendElement(dsPtr, list);
-	Ns_GetProcInfo(dsPtr, (void *) cbPtr->proc, cbPtr->arg);
-	Tcl_DStringEndSublist(dsPtr);
-	cbPtr = cbPtr->nextPtr;
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, list);
+        Ns_GetProcInfo(dsPtr, (void *) cbPtr->proc, cbPtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+        if (reverse) {
+            cbPtr = cbPtr->prevPtr;
+        } else {
+            cbPtr = cbPtr->nextPtr;
+        }
     }
 }
 
@@ -497,11 +523,11 @@ void
 NsGetCallbacks(Tcl_DString *dsPtr)
 {
     Ns_MutexLock(&lock);
-    AppendList(dsPtr, "prestartup", firstPreStartup);
-    AppendList(dsPtr, "startup", firstStartup);
-    AppendList(dsPtr, "signal", firstSignal);
-    AppendList(dsPtr, "servershutdown", firstServerShutdown);
-    AppendList(dsPtr, "shutdown", firstShutdown);
-    AppendList(dsPtr, "exit", firstExit);
+    AppendList(dsPtr, "prestartup", firstPreStartup, 1);
+    AppendList(dsPtr, "startup", firstStartup, 1);
+    AppendList(dsPtr, "signal", firstSignal, 1);
+    AppendList(dsPtr, "servershutdown", firstServerShutdown, 0);
+    AppendList(dsPtr, "shutdown", firstShutdown, 0);
+    AppendList(dsPtr, "exit", firstExit, 0);
     Ns_MutexUnlock(&lock);
 }

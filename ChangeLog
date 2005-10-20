@@ -1,3 +1,9 @@
+2005-10-20  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/callbacks.c: added options to run registered callbacks
+	in both FIFO and LIFO fashion. All of the start-type callbacks
+	are now executed in FIFO and all stop-type in LIFO.
+
 2005-10-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclmisc.c:
