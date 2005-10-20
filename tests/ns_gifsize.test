@@ -1,0 +1,52 @@
+#
+# $Header$
+#
+# Thanks to Michael P. Lex (Kinetiqa)
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+set home [ns_config test home]
+
+if {[file exists "${home}/images/empty.gif"] && [file readable "${home}/images/empty.gif"]} {
+    testConstraint fileExistsEmpty true
+}
+if {[file exists "${home}/images/broken.gif"] && [file readable "${home}/images/broken.gif"]} {
+    testConstraint fileExistsBroken true
+}
+if {[file exists "${home}/images/color5x200.gif"] && [file readable "${home}/images/color5x200.gif"]} {
+    testConstraint fileExistsIndexed true
+}
+if {[file exists "${home}/images/small.gif"] && [file readable "${home}/images/small.gif"]} {
+    testConstraint fileExistsSmall true
+}
+
+
+
+test ns_gifsize-1.1 {syntax} -body {
+    ns_gifsize
+} -returnCodes error -result {wrong # args: should be "ns_gifsize gif_file"}
+
+
+test ns_gifsize-2.1 {file does not exist} -body {
+    ns_gifsize "${home}/images/noexist.gif"
+} -returnCodes error -match "glob" -result {couldn't open "*": no such file or directory}
+
+test ns_gifsize-2.2 {file is empty} -constraints fileExistsEmpty -body {
+     ns_gifsize "${home}/images/empty.gif"
+} -returnCodes error -match "glob" -result {could not read "*": *}
+
+test ns_gifsize-2.3 {file is broken} -constraints fileExistsBroken -body {
+     ns_gifsize "${home}/images/broken.gif"
+} -returnCodes error -match "glob" -result {bad gif file*}
+
+test ns_gifsize-2.4 {normal indexed gif} -constraints fileExistsIndexed -body {
+     ns_gifsize "${home}/images/color5x200.gif"
+} -result [list 5 200]
+
+test ns_gifsize-2.5 {small gif} -constraints fileExistsSmall -body {
+     ns_gifsize "${home}/images/small.gif"
+} -result [list 1 1]
+
+cleanupTests

@@ -1,0 +1,23 @@
+#
+# $Header$
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+test ns_conn-1.1 {basic syntax: plain call} -body {
+     ns_conn
+} -returnCodes error -result {wrong # args: should be "ns_conn option"}
+
+test ns_conn-1.2 {basic syntax: wrong argument} -body {
+     ns_conn 123
+} -returnCodes error -result {bad option "123": must be authpassword, authuser, close, content, contentlength, copy, channel, driver, encoding, files, fileoffset, filelength, fileheaders, flags, form, headers, host, id, isconnected, location, method, outputheaders, peeraddr, peerport, port, protocol, query, request, server, sock, start, status, url, urlc, urlencoding, urlv, version, write_encoded, chunked, or responseversion}
+
+test ns_conn-2.1 {basic operation} -body {
+     ns_conn close
+} -returnCodes error -result {no current connection}
+
+
+cleanupTests

@@ -1,3 +1,19 @@
+2005-10-20  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* tests/ns_conn.test:
+	* tests/ns_crypt.test:
+	* tests/ns_env.test:
+	* tests/ns_gifsize.test:
+	* tests/ns_jpegsize.test:
+	* tests/ns_httptime.test:
+	* tests/ns_info.test:
+	* tests/ns_mime.test:
+	* tests/ns_sha1.test: various new tests, some to be 
+	improved over time (especially ns_info)
+	* tests/images/: some gif and jpeg files for the
+	image tests
+	
+
 2005-10-20  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/callbacks.c: added options to run registered callbacks

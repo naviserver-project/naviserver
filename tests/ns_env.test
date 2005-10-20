@@ -1,0 +1,64 @@
+#
+# $Header$
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+test ns_env-1.1 {basic syntax} -body {
+     ns_env
+} -returnCodes error -result {wrong # args:  should be "ns_env command ?args ...?"}
+
+test ns_env-1.2 {basic syntax} -body {
+     ns_env 123
+} -returnCodes error -result {unknown command "123": should be exists, names, get, set, or unset}
+
+test ns_env-1.3 {basic syntax} -body {
+     ns_env get
+} -returnCodes error -result {wrong # args:  should be "ns_env get ?-nocomplain? name"}
+
+
+test ns_env-2.1 {basic operation: set, exists} -setup {
+     ns_env set foo bar
+} -body {
+     ns_env exists foo
+} -cleanup {
+     ns_env unset foo
+} -result 1
+
+test ns_env-2.2 {basic operation: set, get} -setup {
+     ns_env set foo bar
+} -body {
+     ns_env get foo
+} -cleanup {
+     ns_env unset foo
+} -result "bar"
+
+test ns_env-2.3 {basic operation: unset} -setup {
+     ns_env set foo bar
+} -body {
+     ns_env unset foo
+     ns_env exists foo
+} -result 0
+
+test ns_env-2.4 {basic operation: names} -setup {
+     ns_env set zhzhzhzh bar
+} -body {
+     expr {[lsearch -exact [ns_env names] "zhzhzhzh"]>-1}
+} -result 1
+
+test ns_env-2.5 {basic operation: get -nocomplain} -body {
+     # note that this throws an error but the test case
+     # tests the implied behaviour
+     ns_env get -nocomplain NXNXNXNX
+} -result ""
+
+test ns_env-2.6 {basic operation: get} -body {
+     # note that the test case expects the implied behaviour
+     ns_env get NXNXNXNX
+} -returnCodes error -result {no such environment variable: NXNXNXNX}
+
+
+cleanupTests

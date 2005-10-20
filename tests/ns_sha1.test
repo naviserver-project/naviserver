@@ -1,0 +1,49 @@
+#
+# $Header$
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+test ns_sha1-1.1 {basic syntax: plain call} -body {
+     ns_sha1
+} -returnCodes error -result {wrong # args: should be "ns_sha1 string"}
+
+test ns_sha1-1.2 {basic syntax: plain call} -body {
+     ns_sha1
+} -returnCodes error -result {wrong # args: should be "ns_sha1 string"}
+
+
+test ns_sha1-2.1 {basic operation} -body {
+     ns_sha1 foo
+} -result "0BEEC7B5EA3F0FDBC95D0DD47F3C5BC275DA8A33"
+
+test ns_sha1-2.2 {basic operation} -body {
+     for {set i 0} {$i < 999} {incr i +1} {
+         set nssha1([ns_sha1 foo]) .
+     }
+     llength [array names nssha1]
+} -cleanup {
+     array unset nssha1
+} -result 1
+
+test ns_sha1-2.3 {basic operation} -body {
+     for {set i 0} {$i < 999} {incr i +1} {
+         set nssha1([ns_sha1 $i]) .
+     }
+     llength [array names nssha1]
+} -cleanup {
+     array unset nssha1
+} -result 999
+
+test ns_sha1-2.4 {basic operation} -body {
+     set hash1 [ns_sha1 ""]
+     set hash2 [ns_sha1 {}]
+     set hash3 [ns_sha1 [array names fjfjfjfjfj]]
+     expr {($hash1 eq $hash2) == ($hash2 eq $hash3)}
+} -result 1
+
+
+cleanupTests

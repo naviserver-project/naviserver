@@ -1,0 +1,51 @@
+#
+# $Header$
+#
+# Thanks to Michael P. Lex (Kinetiqa)
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+set home [ns_config test home]
+
+if {[file exists "${home}/images/empty.jpg"] && [file readable "${home}/images/empty.jpg"]} {
+    testConstraint fileExistsEmpty true
+}
+if {[file exists "${home}/images/broken.jpg"] && [file readable "${home}/images/broken.jpg"]} {
+    testConstraint fileExistsBroken true
+}
+if {[file exists "${home}/images/color5x200.jpg"] && [file readable "${home}/images/color5x200.jpg"]} {
+    testConstraint fileExistsColor true
+}
+if {[file exists "${home}/images/color5x200_progressive.jpg"] && [file readable "${home}/images/color5x200_progressive.jpg"]} {
+    testConstraint fileExistsProgressive true
+}
+
+
+test ns_jpegsize-1.1 {syntax} -body {
+    ns_jpegsize
+} -returnCodes error -result {wrong # args: should be "ns_jpegsize jpeg_file"}
+
+
+test ns_jpegsize-2.1 {file does not exist} -body {
+    ns_jpegsize "${home}/images/noexist.jpg"
+} -returnCodes error -match "glob" -result {couldn't open "*": no such file or directory}
+
+test ns_jpegsize-2.2 {file is empty} -constraints fileExistsEmpty -body {
+     ns_jpegsize "${home}/images/empty.jpg"
+} -returnCodes error -match "glob" -result {invalid jpeg file*}
+
+test ns_jpegsize-2.3 {file is broken} -constraints fileExistsBroken -body {
+     ns_jpegsize "${home}/images/broken.jpg"
+} -returnCodes error -match "glob" -result {invalid jpeg file*}
+
+test ns_jpegsize-2.4 {normal jpeg} -constraints fileExistsColor -body {
+     ns_jpegsize "${home}/images/color5x200.jpg"
+} -result [list 5 200]
+
+test ns_jpegsize-2.5 {normal progressive jpeg} -constraints fileExistsProgressive -body {
+     ns_jpegsize "${home}/images/color5x200_progressive.jpg"
+} -result [list 5 200]
+
+cleanupTests
