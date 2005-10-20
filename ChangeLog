@@ -1,3 +1,10 @@
+2005-10-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclmisc.c:
+	* nsd/uuencode.c:
+	* test/ns_uuencode.test: fixed bug that causes nsd to segfault if 
+	called ns_uuencode with 1 byte string
+
 2005-10-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nslog/nslog.c (Ns_ModuleInit): failed to create the log

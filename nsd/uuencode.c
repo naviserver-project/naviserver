@@ -93,7 +93,7 @@ static int pr2six[256] = {
  * Side effects:
  *      Encoded characters are placed in output which must be
  *	large enough for the result, i.e., (1 + (len * 4) / 2)
- *	bytes.
+ *	bytes, minimum outout buffer size is 4 bytes.
  *
  *----------------------------------------------------------------------
  */
