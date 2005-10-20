@@ -1,3 +1,7 @@
+2005-10-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/init.tcl: fixed to be able to load Tcl modules
+
 2005-10-20  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* tests/ns_conn.test:

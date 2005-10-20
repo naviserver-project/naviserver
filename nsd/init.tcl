@@ -633,7 +633,7 @@ ns_runonce -global {
 set modules [ns_configsection ns/server/[ns_info server]/modules]
 if {![string equal $modules ""]} {
     foreach {module file} [ns_set array $modules] {
-        if {![string equal [string tolower $module] tcl]} {
+        if {![string equal [string tolower $file] tcl]} {
             ns_moduleload $module $file
         }
         ns_ictl addmodule $module
