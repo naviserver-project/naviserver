@@ -1201,7 +1201,7 @@ NS_EXTERN char *Ns_GetThreadServer(void);
 
 NS_EXTERN void
 Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
-                   Ns_OpProc *proc, Ns_Callback *delete, void *arg, int flags)
+                   Ns_OpProc *proc, Ns_Callback *del, void *arg, int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_NONNULL(4);
 

@@ -1,6 +1,8 @@
 2005-10-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/init.tcl: fixed to be able to load Tcl modules
+	* include/ns.h: changed reserved keyword delete so C++ 
+	module scan be compiled
 
 2005-10-20  Bernd Eidenschink  <eide@users.sourceforge.net>
 
