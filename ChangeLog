@@ -1,3 +1,12 @@
+2005-10-20  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* Makefile:
+	* nsdbtest/Makefile:
+	* nsdbtest/nsdbtest.c:
+	* tests/test.nscfg:
+	* tests/nsdb.test: Implement a simple nsdb driver for testing and
+	add the beginnings of some tests.
+
 2005-10-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/init.tcl: fixed to be able to load Tcl modules

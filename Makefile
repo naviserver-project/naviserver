@@ -33,7 +33,7 @@
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest
 
 distfiles = $(dirs) doc tcl include tests win32 *.tcl configure m4 \
 	Makefile install-sh missing README ChangeLog NEWS license.terms naviserver.rdf
@@ -68,19 +68,19 @@ install-doc:
 	cd doc && /bin/sh ./install-doc $(NAVISERVER)
 
 test: all
-	LD_LIBRARY_PATH="./nsd:./nsthread" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)
+	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)
 
 runtest: all
-	LD_LIBRARY_PATH="./nsd:./nsthread" ./nsd/nsd -c -d -t tests/test.nscfg
+	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg
 
 gdbtest: all
 	@echo "set args -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)" > gdb.run
-	LD_LIBRARY_PATH="./nsd:./nsthread" gdb -x gdb.run ./nsd/nsd
+	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 gdbruntest: all
 	@echo "set args -c -d -t tests/test.nscfg" > gdb.run
-	LD_LIBRARY_PATH="./nsd:./nsthread" gdb -x gdb.run ./nsd/nsd
+	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 checkexports: all

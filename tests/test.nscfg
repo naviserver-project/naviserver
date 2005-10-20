@@ -83,6 +83,13 @@ ns_param   enable          yes
 ns_param   level           4
 ns_param   minsize         0
 
+ns_section "ns/server/test/db"
+ns_param   pools           a,b
+ns_param   defaultpool     a
+
+ns_section "ns/server/test/modules"
+ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb.so
+
 
 
 #
@@ -123,3 +130,39 @@ ns_param   pagedir         pages
 ns_section "ns/server/testvhost2/tcl"
 ns_param   initfile        ../nsd/init.tcl
 ns_param   library         [ns_config "test" home]/testserver/modules
+
+
+
+#
+# nsdb module testing.
+#
+
+ns_section "ns/db/drivers"
+ns_param   nsdbtest        [ns_config "test" home]/../nsdbtest/nsdbtest.so
+
+ns_section "ns/db/pools"
+ns_param   a               A
+ns_param   b               B
+
+ns_section "ns/db/pool/a"
+ns_param   verbose         off
+ns_param   driver          nsdbtest
+ns_param   connections     2
+ns_param   user            username
+ns_param   password        password
+ns_param   logsqlerrors    off
+ns_param   datasource      datasource_poola
+ns_param   maxidle         1
+ns_param   maxopen         1
+
+ns_section "ns/db/pool/b"
+ns_param   verbose         off
+ns_param   driver          nsdbtest
+ns_param   connections     2
+ns_param   user            username
+ns_param   password        password
+ns_param   logsqlerrors    off
+ns_param   datasource      datasource_poolb
+ns_param   maxidle         1
+ns_param   maxopen         1
+
