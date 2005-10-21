@@ -499,9 +499,6 @@ Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
     NsServer   *servPtr;
     Tcl_Interp *interp;
 
-    Ns_Log(Warning, "Ns_TclTraceCreate[%s]: %d",
-           server, when);
-
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_TclRegisterTrace: Invalid server: %s", server);

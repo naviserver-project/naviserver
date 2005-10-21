@@ -1,3 +1,7 @@
+2005-10-20  Stephen Deasey  <sd@groks.org>
+
+	* nsd/tclinit.c (Ns_TclRegisterTrace): Remove debug logging code.
+
 2005-10-20  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
