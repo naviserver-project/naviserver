@@ -1,5 +1,16 @@
 2005-10-20  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/tclobj.c: Generalise the ns_thread routines for wrapping a C
+	structs with a Tcl obj handle.  Slighlty enhanced: also allows
+	wrapping of statically allocated C structs which always have a direct
+	string name -> struct relationship.
+	* nsd/tclcmds.c:
+	* nsd/tclthread.c: Convert to Tcl objects, remove some duplicated
+	code and convert to the new ns:addr Tcl object type interface.
+	* tests/ns_thread.test: Exercise the ns_thread command and the
+	new ns:addr Tcl object type.
+
 	* nsdbtest/nsdbtest.c: Remove unused function declaration.
 
 	* nsd/tclinit.c (Ns_TclRegisterTrace): Remove debug logging code.

@@ -39,6 +39,48 @@
 NS_RCSID("@(#) $Header$");
 
 
+/*
+ * Local functions defined in this file.
+ */
+
+static Tcl_UpdateStringProc UpdateStringOfAddr;
+static Tcl_SetFromAnyProc   SetAddrFromAny;
+
+/*
+ * Local variables defined in this file.
+ */
+
+static Tcl_ObjType addrType = {
+    "ns:addr",
+    (Tcl_FreeInternalRepProc *) NULL,
+    (Tcl_DupInternalRepProc *)  NULL,
+    UpdateStringOfAddr,
+    SetAddrFromAny
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclInitAddrType --
+ *
+ *      Initialize the Tcl address object type.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsTclInitAddrType(void)
+{
+    Tcl_RegisterObjType(&addrType);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -149,3 +191,214 @@ Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length)
     memcpy(objPtr->bytes, bytes, (size_t) length + 1);
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclSetFromAnyError --
+ *
+ *      This procedure is registered as the setFromAnyProc for an
+ *      object type when it doesn't make sense to generate it's internal
+ *      form from the string representation alone.
+ *
+ * Results:
+ *      The return value is always TCL_ERROR, and an error message is
+ *      left in interp's result if interp isn't NULL.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_TclSetFromAnyError(Tcl_Interp *interp, Tcl_Obj *objPtr)
+{
+    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+                    "can't convert value to requested type except via prescribed API",
+                    -1);
+    return TCL_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclGetAddrFromObj --
+ *
+ *      Return the internal pointer of an address Tcl_Obj.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR if conversion failed or not the correct type.
+ *
+ * Side effects:
+ *      Object may be converted to address type.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_TclGetAddrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+                     CONST char *type, void **addrPtrPtr)
+{
+    if (Tcl_ConvertToType(interp, objPtr, &addrType) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
+        Tcl_AppendResult(interp, "incorrect type: ", Tcl_GetString(objPtr), NULL);
+        return TCL_ERROR;
+    }
+    *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclSetAddrObj --
+ *
+ *      Convert the given object to the ns:addr type.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclSetAddrObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
+{
+    if (Tcl_IsShared(objPtr)) {
+        Tcl_Panic("Ns_TclSetAddrObj called with shared object");
+    }
+    Ns_TclSetTwoPtrValue(objPtr, &addrType, (void *) type, addr);
+    Tcl_InvalidateStringRep(objPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclGetOpaqueFromObj --
+ *
+ *      Get the internal pointer of an address Tcl_Obj.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR if object was not of the ns:addr type.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_TclGetOpaqueFromObj(Tcl_Obj *objPtr, CONST char *type, void **addrPtrPtr)
+{
+    if (objPtr->typePtr != &addrType
+        || objPtr->internalRep.twoPtrValue.ptr1 != (void *) type) {
+        return TCL_ERROR;
+    }
+    *addrPtrPtr = objPtr->internalRep.twoPtrValue.ptr2;
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclSetOpaqueObj --
+ *
+ *      Convert the given object to the ns:addr type without
+ *      invalidating the current string rep.  It is OK if the object
+ *      is shared.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
+{
+    Ns_TclSetTwoPtrValue(objPtr, &addrType, (void *) type, addr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfAddr --
+ *
+ *      Update the string representation for an address object.
+ *      Note: This procedure does not free an existing old string rep
+ *      so storage will be lost if this has not already been done. 
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfAddr(Tcl_Obj *objPtr)
+{
+    void   *type = objPtr->internalRep.twoPtrValue.ptr1;
+    void   *addr = objPtr->internalRep.twoPtrValue.ptr2;
+    char    buf[128];
+    size_t  len;
+
+    len = snprintf(buf, sizeof(buf), "t%p a%p %s",
+                   type, addr, (char *) type);
+    Ns_TclSetStringRep(objPtr, buf, len);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetAddrFromAny --
+ *
+ *      Attempt to generate an address internal form for the Tcl object.
+ *
+ * Results:
+ *      The return value is a standard Tcl result. If an error occurs
+ *      during conversion, an error message is left in the interpreter's
+ *      result unless interp is NULL.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetAddrFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
+{
+    void *type, *addr;
+    char *string;
+
+    string = Tcl_GetString(objPtr);
+    if (sscanf(string, "t%p a%p", &type, &addr) != 2
+        || type == NULL || addr == NULL) {
+        Tcl_AppendResult(interp, "invalid address \"", string, "\"", NULL);
+        return TCL_ERROR;
+    }
+    Ns_TclSetTwoPtrValue(objPtr, &addrType, type, addr);
+
+    return TCL_OK;
+}
