@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -105,6 +105,7 @@ extern Tcl_ObjCmdProc
     NsTclModuleLoadObjCmd,
     NsTclModulePathObjCmd,
     NsTclMutexObjCmd,
+    NsTclNormalizePathObjCmd,
     NsTclNsvAppendObjCmd,
     NsTclNsvArrayObjCmd,
     NsTclNsvExistsObjCmd,
@@ -278,6 +279,7 @@ static Cmd basicCmds[] = {
     {"ns_log", NULL, NsTclLogObjCmd},
     {"ns_logctl", NULL, NsTclLogCtlObjCmd},
     {"ns_logroll", NULL, NsTclLogRollObjCmd},
+    {"ns_normalizepath", NULL, NsTclNormalizePathObjCmd},
     {"ns_mktemp", NsTclMkTempCmd, NULL},
     {"ns_modulepath", NULL, NsTclModulePathObjCmd},
     {"ns_mutex", NULL, NsTclMutexObjCmd},
@@ -377,6 +379,7 @@ static Cmd servCmds[] = {
     {"ns_headers", NULL, NsTclHeadersObjCmd},
     {"ns_ictl", NULL, NsTclICtlObjCmd},
     {"ns_library", NsTclLibraryCmd, NULL},
+    {"ns_normalizepath", NULL, NsTclNormalizePathObjCmd},
     {"ns_moduleload", NULL, NsTclModuleLoadObjCmd},
     {"ns_puts", NULL, NsTclAdpPutsObjCmd},
     {"ns_register_adp", NULL, NsTclRegisterAdpObjCmd},

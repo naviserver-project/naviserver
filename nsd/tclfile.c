@@ -550,6 +550,42 @@ NsTclFTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclNormalizePathObjCmd --
+ *
+ *	    Implements ns_normalizepath as obj command. 
+ *
+ * Results:
+ *	    Tcl result. 
+ *
+ * Side effects:
+ *	    See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclNormalizePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                         Tcl_Obj *CONST objv[])
+{
+    Ns_DString ds;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "path");
+        return TCL_ERROR;
+    }
+
+    Ns_DStringInit(&ds);
+    Ns_NormalizePath(&ds, Tcl_GetString(objv[1]));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds),
+                                              Ns_DStringLength(&ds)));
+    Ns_DStringFree(&ds);
+    
+    return TCL_OK;
+}
 
 
 /*

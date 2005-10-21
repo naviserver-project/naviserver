@@ -141,26 +141,6 @@ proc ns_unlink {args} {
 }
 
 #
-# ns_normalizepath --
-#
-#   Normalize the path. WATCH: this procedure is actually broken
-#   because it will normalize "a/b/c" to "/a/b/c" which is WRONG.
-#   This is because it mimics the broken Ns_NormalizePath C-API.
-#
-#   Please use Tcl [file normalize] instead. This always return
-#   properly normalized absolute path, as expected.
-#
-
-proc ns_normalizepath {path} {
-    if {[file pathtype $path] == "relative"} {
-        ns_log warning "normalizepath: $path; broken for relative paths"
-        ns_log warning "normalizepath: use \[file normalize\] instead"
-        set path /$path
-    }
-    file normalize $path
-}
-
-#
 # ns_link --
 #
 #   Hard-link the path to a link, eventually complaining.

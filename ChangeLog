@@ -1,3 +1,9 @@
+2005-10-21  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/tclcmds.c
+	* nsd/tclfile.c: re-born ns_normalizepath as C command
+	* tcl/compat.tcl: removed Tcl ns_normalizepath wrapper
+
 2005-10-21  Bernd Eidenschink  <eide@users.sf.net>
 
 	* tests/images/: re-added files as binaries.
