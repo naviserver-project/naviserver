@@ -185,6 +185,7 @@
 	function.  Remove NsLoadModules and instead call ns_moduleload
 	from the init.tcl bootstrap.  Policy about where modules are
 	located and when they are loaded is now easily accessible to Tcl.
+	(RFE# 1244177)
 	* nsd/tclcallbacks.c:
 	* nsd/tclmisc.c:
 	* nsd/tclcmds.c: Add new command ns_atprestartup as a simple
@@ -247,8 +248,8 @@
 	* nsd/init.c:         Status before those changes is tagged as
 	* nsd/log.c:          "before-tclvfs" in order to simplify backoff
 	* nsd/modload.c:      if needed.
-	* nsd/nsconf.c:
-	* nsd/nsmain.c:
+	* nsd/nsconf.c:			
+	* nsd/nsmain.c:	      (RFE# 1202462
 	* nsd/pidfile.c:
 	* nsd/rollfile.c:
 	* nsd/tclcmds.c:
