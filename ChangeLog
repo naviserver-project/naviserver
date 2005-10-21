@@ -1,8 +1,8 @@
-2005-10-20  Stephen Deasey  <sd@groks.org>
+2005-10-20  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsdbtest/nsdbtest.c: Remove unused function declaration.
 
 	* nsd/tclinit.c (Ns_TclRegisterTrace): Remove debug logging code.
-
-2005-10-20  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
 	* nsd/tclinit.c (Ns_TclTraceCreate): Run CREATE traces as they are

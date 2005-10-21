@@ -50,9 +50,6 @@ static int     GetRow(Ns_DbHandle *handle, Ns_Set *row);
 static int     Flush(Ns_DbHandle *handle);
 static int     ResetHandle(Ns_DbHandle *handle);
 
-static void SetTransactionState(Ns_DbHandle *handle, char *sql);
-
-
 /*
  * Local variables defined in this file.
  */
