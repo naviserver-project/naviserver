@@ -3,7 +3,13 @@
 	* nsd/tclcmds.c
 	* nsd/tclfile.c: re-born ns_normalizepath as C command
 	* tcl/compat.tcl: removed Tcl ns_normalizepath wrapper
-
+	* configure.in: cosmetic change
+	* include/Makefile.global.in: link against libnsd library
+	when linking new nsdbstest driver
+	* nsdbtest/Makefile: add MODNAME of nsdbtest so we can
+	do more checks when linking the module
+	* m4/tcl.m4: removed "-prebind" for Darwin builds
+ 
 2005-10-21  Bernd Eidenschink  <eide@users.sf.net>
 
 	* tests/images/: re-added files as binaries.

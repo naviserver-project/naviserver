@@ -108,11 +108,11 @@ case "$system" in
     if test "$TCL_EXEC_PREFIX" != "$prefix"; then
       CCRPATH="$CCRPATH \$(CCRFLAG)\$(TCL_EXEC_PREFIX)/lib"
       LDRPATH="$LDRPATH \$(LDRFLAG)\$(TCL_EXEC_PREFIX)/lib"
-	fi
-	if test -d /usr/lib/lwp; then
+    fi
+    if test -d /usr/lib/lwp; then
       CCRPATH="$CCRPATH \$(CCRFLAG)/usr/lib/lwp"
       LDRPATH="$LDRPATH \$(LDRFLAG)/usr/lib/lwp"
-	fi
+    fi
     LDSO="\$(LDLIB)"
     CCRPATHS="\$(CCRPATH)"
     LDRPATHS="\$(LDRPATH)"

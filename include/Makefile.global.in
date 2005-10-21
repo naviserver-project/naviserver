@@ -78,20 +78,24 @@ ifndef NSBUILD
     LIBS    += -lnsthread -lnsd
     INCDIR   = $(NAVISERVER)/include
 else
-    LDFLAGS	+= -L../nsthread -L../nsd
+    LDFLAGS += -L../nsthread -L../nsd -L../nsdb
     INCDIR   = ../include
     ifneq (nsthread,$(LIB))
-        LIBS += -lnsthread
-        ifneq (nsd,$(LIB))
+        LIBS += -lnsthread 
+        ifneq (nsd,$(LIB)) 
             ifneq (nsthreadtest,$(PGM))
-                LIBS += -lnsd
+                ifeq (nsdbtest,$(MODNAME))
+                    LIBS += -lnsd -lnsdb
+                else 
+                    LIBS += -lnsd
+                endif
             endif
         endif
     endif
 endif
 
 NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@ @LIBS@
-CCLIBS       = $(NSLIBS) @TCL_LD_FLAGS@
+CCLIBS       = $(NSLIBS)
 
 # Install directories
 INSTBIN      = $(NAVISERVER)/bin
