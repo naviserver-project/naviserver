@@ -131,10 +131,8 @@ test ns_info-2.27.1 {basic operation} -body {
          switch -- [lindex $_thread 0] {
 	     "-driver-" -
 	     "-sched-" -
-	     "-main-" {}
-	     "default" {
-	         set expected_threads 1
-	     }
+	     "-main-" { set expected_threads 1 }
+	     "default" {}
          }
      }
      set expected_threads
