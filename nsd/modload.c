@@ -158,20 +158,16 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
         return NS_ERROR;
     }
 
-    interp = Ns_TclAllocateInterp(server);
-    if (interp == NULL) {
-        Ns_Log(Error, "modload: invalid server name: '%s'", server);
-        return NS_ERROR;
-    }
+    interp = Tcl_CreateInterp();
     status = Tcl_FSLoadFile(interp, pathObj, init, "Ns_ModuleVersion",
                             &tclInitProc, &tclVerProc, &lh, &uPtr);
     Tcl_DecrRefCount(pathObj);
     if (status != TCL_OK) {
         Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
-        Ns_TclDeAllocateInterp(interp);
+        Tcl_DeleteInterp(interp);
         return NS_ERROR;
     }
-    Ns_TclDeAllocateInterp(interp);
+    Tcl_DeleteInterp(interp);
 
     initProc = (Ns_ModuleInitProc *) tclInitProc;
     verPtr = (int *) tclVerProc;

@@ -1,5 +1,12 @@
 2005-10-20  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/modload.c (Ns_ModuleLoad): Although the first two arguments
+	to Ns_ModuleLoad are called server and module, they're really just
+	two arbitrary strings passed to the module.  The nsdb module for
+	examples passes the driver name and configuration path.  For this
+	reason we cannot realy on knowing the current virtual server and
+	so cannot allocate an interp from the per-thread cache.
+
 	* include/ns.h:
 	* nsd/tclobj.c: Generalise the ns_thread routines for wrapping a C
 	structs with a Tcl obj handle.  Slighlty enhanced: also allows
