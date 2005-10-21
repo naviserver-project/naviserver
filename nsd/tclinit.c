@@ -476,14 +476,17 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
  *
  * Ns_TclRegisterTrace --
  *
- *      Add an interp trace.  Traces are called in FIFO order.
+ *      Add an interp trace.  Traces are called in FIFO order.  Valid
+ *      traces are: NS_TCL_TRACE... CREATE, DELETE, ALLOCATE,
+ *      DEALLOCATE, GETCONN, and FREECONN.
  *
  * Results:
  *      NS_OK if called with a non-NULL server before startup has
  *      completed, NS_ERROR otherwise.
  *
  * Side effects:
- *      None.
+ *      CREATE and ALLOCATE traces are run immediately in the current
+ *      interp (the initial bootstrap interp).
  *
  *----------------------------------------------------------------------
  */
@@ -492,23 +495,48 @@ int
 Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
                     void *arg, int when)
 {
-    Trace    *tracePtr, **firstPtrPtr;
-    NsServer *servPtr;
+    Trace      *tracePtr, **nextPtrPtr;
+    NsServer   *servPtr;
+    Tcl_Interp *interp;
+
+    Ns_Log(Warning, "Ns_TclTraceCreate[%s]: %d",
+           server, when);
 
     servPtr = NsGetServer(server);
-    if (servPtr == NULL || Ns_InfoStarted()) {
+    if (servPtr == NULL) {
+        Ns_Log(Error, "Ns_TclRegisterTrace: Invalid server: %s", server);
         return NS_ERROR;
     }
+    if (Ns_InfoStarted()) {
+        Ns_Log(Error, "Can not register Tcl trace, server already started.");
+        return NS_ERROR;
+    }
+
     tracePtr = ns_malloc(sizeof(Trace));
     tracePtr->proc = proc;
     tracePtr->arg = arg;
     tracePtr->when = when;
     tracePtr->nextPtr = NULL;
-    firstPtrPtr = &servPtr->tcl.firstTracePtr;
-    while (*firstPtrPtr != NULL) {
-        firstPtrPtr = &((*firstPtrPtr)->nextPtr);
+
+    nextPtrPtr = &servPtr->tcl.firstTracePtr;
+    while (*nextPtrPtr != NULL) {
+        nextPtrPtr = &((*nextPtrPtr)->nextPtr);
     }
-    *firstPtrPtr = tracePtr;
+    *nextPtrPtr = tracePtr;
+
+    /*
+     * Run CREATE and ALLOCATE traces immediately so that commands registered
+     * by binary modules can be called by Tcl init scripts sourced by the
+     * already initialised interp which loads the modules.
+     */
+
+    if (when & NS_TCL_TRACE_CREATE || when & NS_TCL_TRACE_ALLOCATE) {
+        interp = Ns_TclAllocateInterp(server);
+        if ((*proc)(interp, arg) != TCL_OK) {
+            Ns_TclLogError(interp);
+        }
+        Ns_TclDeAllocateInterp(interp);
+    }
 
     return NS_OK;
 }
@@ -1627,10 +1655,11 @@ DeleteInterps(void *arg)
 static void
 RunTraces(NsInterp *itPtr, int why)
 {
-    Trace *tracePtr;
+    Trace    *tracePtr;
+    NsServer *servPtr = itPtr->servPtr;
 
-    if (itPtr->servPtr != NULL) {
-        tracePtr = itPtr->servPtr->tcl.firstTracePtr;
+    if (servPtr != NULL) {
+        tracePtr = servPtr->tcl.firstTracePtr;
         while (tracePtr != NULL) {
             if ((tracePtr->when & why)) {
                 if ((*tracePtr->proc)(itPtr->interp, tracePtr->arg) != TCL_OK) {

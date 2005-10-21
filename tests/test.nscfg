@@ -75,6 +75,19 @@ ns_section "ns/server/test/tcl"
 ns_param   initfile        ../nsd/init.tcl
 ns_param   library         [ns_config "test" home]/testserver/modules
 
+ns_section "ns/server/test/module/nslog"
+ns_param   file            [ns_config "test" home]/testserver/access.log
+ns_param   formattedtime   true
+ns_param   logcombined     true
+ns_param   maxbuffer       0
+ns_param   maxbackup       1
+ns_param   rollhour        0
+ns_param   rolllog         false
+ns_param   rollonsignal    false
+ns_param   suppressquery   false
+ns_param   checkforproxy   true
+ns_param   extendedheaders "X-Test"
+
 ns_section "ns/server/test/adp"
 ns_param   map             *.adp
 
@@ -88,6 +101,7 @@ ns_param   pools           a,b
 ns_param   defaultpool     a
 
 ns_section "ns/server/test/modules"
+ns_param   nslog           [ns_config "test" home]/../nslog/nslog.so
 ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb.so
 
 

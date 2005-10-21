@@ -59,7 +59,11 @@ static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, char *handleId,
 static Tcl_InterpDeleteProc FreeData;
 static Tcl_CmdProc DbCmd, QuoteListToListCmd, GetCsvCmd, DbErrorCodeCmd,
 	DbErrorMsgCmd, GetCsvCmd, DbConfigPathCmd, PoolDescriptionCmd;
-static Ns_TclTraceProc ReleaseDbs;
+
+/*
+ * Local variables defined in this file.
+ */
+
 static char *datakey = "nsdb:data";
 
 
@@ -121,7 +125,6 @@ NsDbAddCmds(Tcl_Interp *interp, void *arg)
     idataPtr->server = server;
     Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
     Tcl_SetAssocData(interp, datakey, FreeData, idataPtr);
-    Ns_TclRegisterTrace(server, ReleaseDbs, NULL, NS_TCL_TRACE_DEALLOCATE);
 
     Tcl_CreateCommand(interp, "ns_db", DbCmd, idataPtr, NULL);
     Tcl_CreateCommand(interp, "ns_quotelisttolist", QuoteListToListCmd, idataPtr, NULL);
@@ -131,6 +134,46 @@ NsDbAddCmds(Tcl_Interp *interp, void *arg)
     Tcl_CreateCommand(interp, "ns_getcsv", GetCsvCmd, idataPtr, NULL);
     Tcl_CreateCommand(interp, "ns_dbconfigpath", DbConfigPathCmd, idataPtr, NULL);
     Tcl_CreateCommand(interp, "ns_pooldescription", PoolDescriptionCmd, idataPtr, NULL);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * NsDbReleaseHandles --
+ *
+ *      Release any database handles still held when an interp is
+ *      deallocated.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsDbReleaseHandles(Tcl_Interp *interp, void *arg)
+{
+    Ns_DbHandle    *handlePtr;
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+    InterpData     *idataPtr;
+
+    idataPtr = Tcl_GetAssocData(interp, datakey, NULL);
+    if (idataPtr != NULL) {
+        hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
+        while (hPtr != NULL) {
+            handlePtr = Tcl_GetHashValue(hPtr);
+            Ns_DbPoolPutHandle(handlePtr);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Tcl_DeleteHashTable(&idataPtr->dbs);
+        Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
+    }
 
     return TCL_OK;
 }
@@ -1042,43 +1085,4 @@ FreeData(ClientData arg, Tcl_Interp *interp)
 
     Tcl_DeleteHashTable(&idataPtr->dbs);
     ns_free(idataPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- * ReleaseDbs --
- *
- *      Release any database handles still held.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ReleaseDbs(Tcl_Interp *interp, void *arg)
-{
-    Ns_DbHandle    *handlePtr;
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
-    InterpData     *idataPtr;
-
-    idataPtr = Tcl_GetAssocData(interp, datakey, NULL);
-    if (idataPtr != NULL) {
-        hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
-        while (hPtr != NULL) {
-            handlePtr = Tcl_GetHashValue(hPtr);
-            Ns_DbPoolPutHandle(handlePtr);
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        Tcl_DeleteHashTable(&idataPtr->dbs);
-        Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
-    }
-
-    return TCL_OK;
 }

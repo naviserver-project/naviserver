@@ -1,0 +1,23 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_log-1.1 {basic syntax} -body {
+    ns_accesslog
+} -returnCodes error -result {wrong # args: should be "ns_accesslog option ?arg ...?"}
+
+test ns_log-1.2 {basic syntax} -body {
+    ns_accesslog ?
+} -returnCodes error -result {bad option "?": must be rollfmt, maxbackup, maxbuffer, extendedheaders, flags, file, or roll}
+
+
+
+cleanupTests

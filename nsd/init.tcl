@@ -606,7 +606,7 @@ proc _ns_tclrename { oldName newName } {
 	return -code error -errorinfo $err
     } else {
 	if {$is_proc == ""} {
-	    ns_ictl oninit "rename $oldName $newName"
+	    ns_ictl trace create "rename $oldName $newName"
 	}
     }
 }

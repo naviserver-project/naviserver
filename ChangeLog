@@ -1,5 +1,17 @@
 2005-10-20  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsd.h:
+	* nsd/tclinit.c (Ns_TclTraceCreate): Run CREATE traces as they are
+	registered in order to make Tcl	comamnds registered by binary
+	module available to the boot script and Tcl module files.
+	* nsd/init.tcl: Rename use of depraciated api.
+	* nsdb/db.h:
+	* nsdb/nsdb.c: 
+	* nsdb/dbtcl.c: Fix bug where Ns_TclRegisterTrace was being called
+	after server startup.
+	* tests/test.nscfg:
+	* tests/ns_accesslog.test: Add stub tests for the nslog module.
+
 	* Makefile:
 	* nsdbtest/Makefile:
 	* nsdbtest/nsdbtest.c:

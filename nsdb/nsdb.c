@@ -48,7 +48,7 @@ int Ns_ModuleVersion = 1;
  *	Module initialization point.
  *
  * Results:
- *	NS_OK.
+ *	NS_OK or NS_ERROR.
  *
  * Side effects:
  *	May load database drivers and configure pools.
@@ -66,6 +66,12 @@ Ns_ModuleInit(char *server, char *module)
 	once = 1;
     }
     NsDbInitServer(server);
-    return Ns_TclRegisterTrace(server, NsDbAddCmds, server,
-                               NS_TCL_TRACE_CREATE);
+    if (Ns_TclRegisterTrace(server, NsDbAddCmds, server,
+                            NS_TCL_TRACE_CREATE) != NS_OK
+        || Ns_TclRegisterTrace(server, NsDbReleaseHandles, NULL,
+                               NS_TCL_TRACE_DEALLOCATE) != NS_OK) {
+        return NS_ERROR;
+    }
+
+    return NS_OK;
 }
