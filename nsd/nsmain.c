@@ -54,15 +54,10 @@ NS_RCSID("@(#) $Header$");
  * The following values define the restart behaviour for watchdog mode.
  */
 
-#define MAX_RESTART_SECONDS 64 /* Max time in sec to wait between restarts */
-#define MIN_WORK_SECONDS   128 /* After being up for # secs, reset timers */
-#define MAX_NUM_RESTARTS   256 /* Quit after somany unsuccessful restarts */
-
-#ifdef __APPLE__
-# define WAKEUP_IN_SECONDS 600 /* Wakeup watchdog after somany seconds */
-#else
-# define WAKEUP_IN_SECONDS   0 /* Wakeup watchdog after somuch seconds */
-#endif
+#define MAX_RESTART_SECONDS  64 /* Max time in sec to wait between restarts */
+#define MIN_WORK_SECONDS    128 /* After being up for # secs, reset timers */
+#define MAX_NUM_RESTARTS    256 /* Quit after somany unsuccessful restarts */
+#define WAKEUP_IN_SECONDS   600 /* Wakeup watchdog after somany seconds */
 
 /*
  * Local functions defined in this file.

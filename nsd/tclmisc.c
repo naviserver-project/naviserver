@@ -591,10 +591,14 @@ WordEndsInSemi(char *ip)
 
 static char hexChars[] = "0123456789ABCDEF";
 
-#ifndef __APPLE__
+#ifndef HAVE_U_INT32_T
 typedef unsigned int u_int32_t;
+#endif
+
+#ifndef HAVE_U_INT8_T
 typedef unsigned char u_int8_t;
 #endif
+
 
 /*** FROM sha.h: ***/
 

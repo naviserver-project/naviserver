@@ -8,6 +8,12 @@
 	* nsd/modload.c (Ns_ModuleLoad): make the passed file
 	path absolute before attempting to load the module.
 
+	* nsd/tclmisc.c: removed plaform testing and added
+	platform-neutral testing for some data types.
+
+	* configure.in: added platform neutral testing for 
+	u_int32_t and u_int8_t types.
+
 2005-10-21  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclcmds.c
