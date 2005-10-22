@@ -1,3 +1,13 @@
+2005-10-22  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/nsmain.c (Ns_Main): initialize Tcl library in the
+	server process only. Fix the broken SIGINT hadling which
+	allowed us to CTRL-C the booting process at any time.
+	Watchdog wakes up every 10 minutes on all platforms.
+
+	* nsd/modload.c (Ns_ModuleLoad): make the passed file
+	path absolute before attempting to load the module.
+
 2005-10-21  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclcmds.c

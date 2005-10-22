@@ -124,14 +124,13 @@ Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
  *
  * Ns_ModuleLoad --
  *
- *      Load a module and initialize it.  The result code from modules
- *      without the version symbol are ignored.
+ *      Load a module and initialize it.
  *
  * Results:
  *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      None.
+ *      The result code from modules w/o the version symbol is ignored
  *
  *----------------------------------------------------------------------
  */
@@ -142,6 +141,7 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
 {
     Tcl_PackageInitProc  *tclInitProc = NULL, *tclVerProc = NULL;
     Ns_ModuleInitProc    *initProc = NULL;
+    Ns_DString            ds;
     int                   status, *verPtr = NULL;
     Tcl_Obj              *pathObj;
     Tcl_Interp           *interp;
@@ -150,11 +150,17 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
 
     Ns_Log(Notice, "modload: loading %s", file);
 
+    Ns_DStringInit(&ds);
+    if (!Ns_PathIsAbsolute(file)) {
+        file = Ns_HomePath(&ds, "bin", file, NULL);
+    }
     pathObj = Tcl_NewStringObj(file, -1);
+
     Tcl_IncrRefCount(pathObj);
     if (Tcl_FSGetNormalizedPath(NULL, pathObj) == NULL) {
-        Tcl_DecrRefCount(pathObj);
         Ns_Log(Error, "modload: %s: invalid path", file);
+        Tcl_DecrRefCount(pathObj);
+        Ns_DStringFree(&ds);
         return NS_ERROR;
     }
 
@@ -165,6 +171,7 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
     if (status != TCL_OK) {
         Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
         Tcl_DeleteInterp(interp);
+        Ns_DStringFree(&ds);
         return NS_ERROR;
     }
     Tcl_DeleteInterp(interp);
@@ -174,14 +181,19 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
 
     if (initProc == NULL) {
         Ns_Log(Error, "modload: %s: %s: symbol not found", file, init);
+        Ns_DStringFree(&ds);
         return NS_ERROR;
     }
+
     status = (*initProc)(server, module);
+
     if (verPtr == NULL || *verPtr < 1) {
         status = NS_OK;
     } else if (status != NS_OK) {
         Ns_Log(Error, "modload: %s: %s returned: %d", file, init, status);
     }
+
+    Ns_DStringFree(&ds);
 
     return status;
 }
