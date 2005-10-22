@@ -1,3 +1,11 @@
+2005-10-22  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tclcmds.c:
+	* nsd/tclenv.c:
+	* tests/ns_env.test: Untabify and reformat code, convert to Tcl
+	objects.  Fix bugs with -nocomplain switch and unset
+	command. (Bug# 1333280)
+
 2005-10-22  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/nsmain.c (Ns_Main): initialize Tcl library in the

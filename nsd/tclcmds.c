@@ -78,6 +78,7 @@ extern Tcl_ObjCmdProc
     NsTclCryptObjCmd,
     NsTclDeleteCookieObjCmd,
     NsTclDummyObjCmd,
+    NsTclEnvObjCmd,
     NsTclFTruncateObjCmd,
     NsTclGetAddrObjCmd,
     NsTclGetCookieObjCmd,
@@ -197,7 +198,6 @@ extern Tcl_CmdProc
     NsTclConfigSectionCmd,
     NsTclConfigSectionsCmd,
     NsTclEncodingForCharsetCmd,
-    NsTclEnvCmd,
     NsTclHrefsCmd,
     NsTclLibraryCmd,
     NsTclMkTempCmd,
@@ -228,7 +228,7 @@ typedef struct Cmd {
  */
 
 static Cmd basicCmds[] = {
-    {"env", NsTclEnvCmd, NULL},
+    {"env", NULL, NsTclEnvObjCmd},
     {"keyldel", TclX_KeyldelObjCmd, NULL},
     {"keylget", TclX_KeylgetObjCmd, NULL},
     {"keylkeys", TclX_KeylkeysObjCmd, NULL},
@@ -257,7 +257,7 @@ static Cmd basicCmds[] = {
     {"ns_critsec", NULL, NsTclCritSecObjCmd},
     {"ns_crypt", NULL, NsTclCryptObjCmd},
     {"ns_encodingforcharset", NsTclEncodingForCharsetCmd, NULL},
-    {"ns_env", NsTclEnvCmd, NULL},
+    {"ns_env", NULL, NsTclEnvObjCmd},
     {"ns_event", NULL, NsTclCondObjCmd},
     {"ns_ftruncate", NULL, NsTclFTruncateObjCmd},
     {"ns_fmttime", NULL, NsTclStrftimeObjCmd},
