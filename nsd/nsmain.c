@@ -157,39 +157,18 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     /*
      * When run as a Win32 service, Ns_Main will be re-entered
-     * in the service main thread.  In this case, jump past
-     * the point where the initial thread blocked when
-     * connected to the service control manager.
+     * in the service main thread. In this case, jump past the
+     * point where the initial thread blocked when connected to
+     * the service control manager.
      */
-     
+
 #ifdef _WIN32
     if (mode == 'S') {
         goto contservice;
     }
 #endif
 
-    /*
-     * Set up configuration defaults and initial values.
-     */
-
     nsconf.argv0 = argv[0];
-
-    /*     
-     * File descriptors 1 and 2 may not be open if the server
-     * is starting from /etc/init.  If so, open them on /dev/null
-     * as well because the server will assume they're open during
-     * initialization.  In particular, the log file will be duped
-     * to fd's 1 and 2.
-     */
-
-    fd = open(DEVNULL, O_WRONLY);
-    if (fd > 0 && fd != 1) {
-        close(fd);
-    }
-    fd = open(DEVNULL, O_WRONLY);
-    if (fd > 0 && fd != 2) {
-        close(fd);
-    }
 
     /*
      * Parse the command line arguments.
@@ -304,12 +283,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     } else if (nsconf.config == NULL) {
         UsageError("required -t <config> option not specified");
     }
-    if (mode != 'c') {
-        /*
-         * The server requires file descriptor 0 be open on /dev/null to
-         * ensure the server never blocks reading stdin.
-         */
 
+    /*
+     * For the non-interactive operation, the server requires file 
+     * descriptor 0 be open on NUL device to ensure it never blocks 
+     * while reading stdin.
+     */
+    
+    if (mode != 'c') {
         fd = open(DEVNULL, O_RDONLY);
         if (fd > 0) {
             dup2(fd, 0);
@@ -317,20 +298,42 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
     }
 
+    /*     
+     * File descriptors 1 and 2 may not be open if the server is
+     * starting from /etc/init.  If so, open them on NUL device
+     * as well, because the server will assume they're open during
+     * initialization. In particular, the log file will be duped
+     * to fd's 1 and 2.
+     */
+
+    fd = open(DEVNULL, O_WRONLY);
+    if (fd > 0 && fd != 1) {
+        close(fd);
+    }
+    fd = open(DEVNULL, O_WRONLY);
+    if (fd > 0 && fd != 2) {
+        close(fd);
+    }
+
+#ifdef  _WIN32
+
     /*
-     * Find the absolute config pathname and read the config data
-     * before a possible chroot(). The call to  Tcl_FindExecutable()
-     * must be done first in order to setup Tcl library, otherwise
-     * the FindConfig() which uses TclVFS wrappers will fail.
+     * The call to Tcl_FindExecutable() must be done before we ever
+     * attempt any file-related operation, because it is initializing
+     * the Tcl library and virtual filesystem interface.
      */
 
     Tcl_FindExecutable(argv[0]);
-
     nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
+
+    /*
+     * Locate and read the configuration file for later evaluation.
+     */
+
     nsconf.config = FindConfig(nsconf.config);
     config = NsConfigRead(nsconf.config);
-    
-#ifndef _WIN32
+
+#else
 
     /*
      * Verify the uid/gid args.
@@ -388,9 +391,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          * OK, so the caller is running as root. In such cases
          * he/she should have used "-u" to give the actual user
          * to run as (may be root as well) and optionally "-g"
-         * to set the process group. We're picky about the group
-         * though. If we were not able to figure out to which
-         * group the user belongs to, we will abort, no mercy.
+         * to set the process group.
          */
 
         if (uid == -1) {
@@ -402,6 +403,47 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                      "must specify '-g group' parameter");
         }
     }
+
+    /*
+     * Fork into the background
+     */
+
+    if (mode == 0 || mode == 'w') {
+        i = ns_fork();
+        if (i == -1) {
+            Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
+        }
+        if (i > 0) {
+            return 0;
+        }
+        setsid(); /* Detach from the controlling terminal device */
+    }
+
+    /*
+     * For watchdog mode, start the watchdog/server process pair.
+     * The watchdog will monitor and restart the server unless the
+     * server exits gracefully, either by calling exit(0) or get
+     * signalled by the SIGTERM signal.
+     * The watchdog itself will exit when the server exits gracefully,
+     * or, when get signalled by the SIGTERM signal. In the latter
+     * case, watchdog will pass the SIGTERM to the server, so both of
+     * them will gracefully exit.
+     */
+
+    if (mode == 'w') {
+        if (StartWatchedServer() == 0) {
+            return 0;
+        }
+    } else {
+        nsconf.pid = getpid();
+    }
+        
+    /*
+     * Block all signals for the duration of startup to ensure any new 
+     * threads inherit the blocked state.
+     */
+
+    NsBlockSignals(debug);
     
     /*
      * The server now uses poll() but Tcl and other components may
@@ -426,45 +468,27 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             } 
         }
     }
-    
-    /*
-     * Fork us into the background
-     */
-
-    if (mode == 0 || mode == 'w') {
-        i = ns_fork();
-        if (i == -1) {
-            Ns_Fatal("nsmain: fork() failed: '%s'", strerror(errno));
-        }
-        if (i > 0) {
-            return 0;
-        }
-        setsid(); /* Detach from the controlling terminal device */
-    }
 
     /*
-     * Optionally, start the watchdog/server process pair.
-     * The watchdog process will monitor and restart the server unless 
-     * the server exits gracefully, either by calling exit(0) or get 
-     * signalled by the SIGTERM signal.
-     * The watchdog process itself will exit when the server process 
-     * exits gracefully, or, when get signalled by the SIGTERM signal. 
-     * In the latter case, watchdog will pass the SIGTERM to the server 
-     * process, so both of them will gracefully terminate.
+     * The call to Tcl_FindExecutable() must be done before we ever
+     * attempt any file-related operation, because it is initializing
+     * the Tcl library and virtual filesystem interface.
+     */
+    
+    Tcl_FindExecutable(argv[0]);
+    nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
+    
+    /*
+     * Locate and read the configuration file for later evaluation.
      */
 
-    if (mode == 'w') {
-        if (StartWatchedServer() == 0) {
-            return 0;
-        }
-    } else {
-        nsconf.pid = getpid();
-    }
-    
+    nsconf.config = FindConfig(nsconf.config);
+    config = NsConfigRead(nsconf.config);
+            
     /*
      * Pre-bind any sockets now, before a possible setuid from root
-     * or chroot which may hide /etc/resolv.conf required to
-     * resolve name-based addresses.
+     * or chroot which may hide /etc/resolv.conf required to resolve
+     * name-based addresses.
      */
 
     NsPreBind(bindargs, bindfile);
@@ -519,24 +543,18 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Linux 2.4+, it can be set again using prctl() so that we can
      * get core files.
      */
-    
+
     if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) < 0) {
         Ns_Fatal("nsmain: prctl(PR_SET_DUMPABLE) failed: '%s'",
                  strerror(errno));
     }
-#endif
-        
-    /*
-     * Finally, block all signals for the duration of startup to ensure any
-     * new threads inherit the blocked state.
-     */
 
-    NsBlockSignals(debug);
+#endif /* __linux */
 
 #endif /* _WIN32 */
 
     /*
-     * Initialize Tcl and eval the config file.
+     * Evaluate the config file.
      */
 
     NsConfigEval(config, argc, argv, optind);
@@ -716,6 +734,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #endif
 
     if (mode == 'c') {
+
         /*
          * Initialize Tcl and start interpreting commands.
          * This function never returns, so no clean shutdown.
