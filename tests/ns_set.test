@@ -1,0 +1,386 @@
+#
+# $Header$
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+test ns_set-1.1 {basic syntax ns_set} -body {
+    ns_set
+} -returnCodes error -result {wrong # args: should be "ns_set option ?arg ...?"}
+
+test ns_set-1.2 {basic syntax ns_set} -body {
+    ns_set 123
+} -returnCodes error -result {bad option "123": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelete, idelkey, ifind, iget, isnull, iunique, key, list, merge, move, name, new, print, purge, put, size, split, truncate, unique, update, or value}
+
+test ns_set-1.6 {basic syntax ns_set array} -body {
+    ns_set array
+} -returnCodes error -result {wrong # args: should be "ns_set array setId ?args?"}
+
+test ns_set-1.7 {basic syntax ns_set cleanup} -body {
+    ns_set cleanup
+} -result {}
+
+test ns_set-1.8 {basic syntax ns_set copy} -body {
+    ns_set copy
+} -returnCodes error -result {wrong # args: should be "ns_set copy ?-shared? setId"}
+
+test ns_set-1.9 {basic syntax ns_set cput} -body {
+    ns_set cput
+} -returnCodes error -result {wrong # args: should be "ns_set cput setId ?args?"}
+
+test ns_set-1.10 {basic syntax ns_set create} -body {
+    expr {[ns_set create] ne ""}
+} -result 1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-1.11 {basic syntax ns_set delete} -body {
+    ns_set delete
+} -returnCodes error -result {wrong # args: should be "ns_set delete setId ?args?"}
+
+test ns_set-1.12 {basic syntax ns_set delkey} -body {
+    ns_set delkey
+} -returnCodes error -result {wrong # args: should be "ns_set delkey setId ?args?"}
+
+test ns_set-1.13 {basic syntax ns_set find} -body {
+    ns_set find
+} -returnCodes error -result {wrong # args: should be "ns_set find setId ?args?"}
+
+test ns_set-1.14 {basic syntax ns_set free} -body {
+    ns_set free
+} -returnCodes error -result {wrong # args: should be "ns_set free setId ?args?"}
+
+test ns_set-1.15 {basic syntax ns_set get} -body {
+    ns_set get
+} -returnCodes error -result {wrong # args: should be "ns_set get setId ?args?"}
+
+test ns_set-1.16 {basic syntax ns_set icput} -body {
+    ns_set icput
+} -returnCodes error -result {wrong # args: should be "ns_set icput setId ?args?"}
+
+test ns_set-1.17 {basic syntax ns_set idelete} -body {
+    ns_set idelete
+} -returnCodes error -result {wrong # args: should be "ns_set idelete setId ?args?"}
+
+test ns_set-1.18 {basic syntax ns_set idelkey} -body {
+    ns_set idelkey
+} -returnCodes error -result {wrong # args: should be "ns_set idelkey setId ?args?"}
+
+test ns_set-1.19 {basic syntax ns_set ifind} -body {
+    ns_set ifind
+} -returnCodes error -result {wrong # args: should be "ns_set ifind setId ?args?"}
+
+test ns_set-1.20 {basic syntax ns_set iget} -body {
+    ns_set iget
+} -returnCodes error -result {wrong # args: should be "ns_set iget setId ?args?"}
+
+test ns_set-1.21 {basic syntax ns_set isnull} -body {
+    ns_set isnull
+} -returnCodes error -result {wrong # args: should be "ns_set isnull setId ?args?"}
+
+test ns_set-1.22 {basic syntax ns_set iunique} -body {
+    ns_set iunique
+} -returnCodes error -result {wrong # args: should be "ns_set iunique setId ?args?"}
+
+test ns_set-1.23 {basic syntax ns_set key } -body {
+    ns_set key
+} -returnCodes error -result {wrong # args: should be "ns_set key setId ?args?"}
+
+test ns_set-1.24 {basic syntax ns_set list} -body {
+    ns_set list
+} -result ""
+
+test ns_set-1.25 {basic syntax ns_set merge} -body {
+    ns_set merge
+} -returnCodes error -result {wrong # args: should be "ns_set merge setId ?args?"}
+
+test ns_set-1.26 {basic syntax ns_set move} -body {
+    ns_set move
+} -returnCodes error -result {wrong # args: should be "ns_set move setId ?args?"}
+
+test ns_set-1.27 {basic syntax ns_set name} -body {
+    ns_set name
+} -returnCodes error -result {wrong # args: should be "ns_set name setId ?args?"}
+
+test ns_set-1.28 {basic syntax ns_set new} -body {
+    expr {[ns_set new] ne ""}
+} -result 1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-1.29 {basic syntax ns_set pri} -body {
+    ns_set print
+} -returnCodes error -result {wrong # args: should be "ns_set print setId ?args?"}
+
+test ns_set-1.30 {basic syntax ns_set purge} -body {
+    ns_set purge
+} -returnCodes error -result {wrong # args: should be "ns_set purge setId ?args?"}
+
+test ns_set-1.31 {basic syntax ns_set put} -body {
+    ns_set put
+} -returnCodes error -result {wrong # args: should be "ns_set put setId ?args?"}
+
+test ns_set-1.32 {basic syntax ns_set size} -body {
+    ns_set size
+} -returnCodes error -result {wrong # args: should be "ns_set size setId ?args?"}
+
+test ns_set-1.33 {basic syntax ns_set split} -body {
+    ns_set split
+} -returnCodes error -result {wrong # args: should be "ns_set split ?-shared? setId ?splitChar"}
+
+test ns_set-1.34 {basic syntax ns_set truncate} -body {
+    ns_set truncate
+} -returnCodes error -result {wrong # args: should be "ns_set truncate setId ?args?"}
+
+test ns_set-1.35 {basic syntax ns_set unique} -body {
+    ns_set unique
+} -returnCodes error -result {wrong # args: should be "ns_set unique setId ?args?"}
+
+test ns_set-1.36 {basic syntax ns_set update} -body {
+    ns_set update
+} -returnCodes error -result {wrong # args: should be "ns_set update setId ?args?"}
+
+test ns_set-1.37 {basic syntax ns_set value} -body {
+    ns_set value
+} -returnCodes error -result {wrong # args: should be "ns_set value setId ?args?"}
+
+
+test ns_set-2.0 {basic operation ns_set} -body {
+    ns_set cleanup
+    ns_set create; ns_set create; ns_set create
+    ns_set cleanup
+    ns_set list
+} -result ""
+
+test ns_set-2.1 {basic operation ns_set} -body {
+    ns_set array [ns_set create testset foo bar moo baz]
+} -result [list foo bar moo baz] -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.2 {basic operation ns_set} -body {
+    ns_set size [ns_set create testset foo bar moo baz]
+} -result 2 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.3 {basic operation ns_set} -body {
+    ns_set name [ns_set create tEsTsEt foo bar moo baz]
+} -result tEsTsEt -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.4 {basic operation ns_set} -body {
+    set setid [ns_set create testset foo bar moo baz]
+    ns_set get $setid moo
+} -result baz -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.5 {basic operation ns_set} -body {
+    set setid [ns_set create testset A 1 B 2 a 3 b 4]
+    ns_set iget $setid a
+} -result 1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.6 {basic operation ns_set} -body {
+    set setid [ns_set create testset A 1 B 2 a 3 b 4]
+    ns_set unique $setid a
+} -result 1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.7 {basic operation ns_set} -body {
+    set setid [ns_set create testset A 1 B 2 a 3 b 4]
+    ns_set iunique $setid a
+} -result 0 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.8 {basic operation ns_set} -body {
+    set x [ns_set create testset foo bar moo baz]
+    ns_set truncate $x 1
+    ns_set get $x foo
+} -result bar -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.9 {basic operation ns_set} -body {
+    set x [ns_set create testset foo bar moo baz]
+    ns_set truncate $x 1
+    ns_set get $x moo
+} -result "" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.10 {basic operation ns_set} -body {
+    set x [ns_set create testset . 0 a 1 b 2 c 3 d 4 e 5 f 6 e 7 g 8]
+    ns_set find $x e
+} -result 5 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.11 {basic operation ns_set} -body {
+    set x [ns_set create testset . 0 a 1 b 2 c 3 d 4 e 5 f 6 e 7 g 8]
+    ns_set find $x lala
+} -result -1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.12 {basic operation ns_set} -body {
+    set x [ns_set create testset . 0 a 1 b 2 c 3 d 4 e 5 f 6 e 7 g 8]
+    ns_set delete $x 8
+} -result "" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.13 {basic operation ns_set} -body {
+    set x [ns_set create testset . 0 a 1 b 2 c 3 d 4 e 5 f 6 e 7 g 8]
+    ns_set delete $x 8
+    ns_set get $x 8
+} -result "" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.14 {basic operation ns_set} -body {
+    set x [ns_set create testset foo bar]
+    ns_set update $x a b
+    ns_set update $x c d
+    ns_set update $x e f
+} -result 3 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.15 {basic operation ns_set} -body {
+    set x [ns_set create testset foo bar]
+    ns_set update $x a b
+    ns_set update $x c d
+    ns_set update $x e f
+    ns_set get $x e
+} -result f -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.16 {basic operation ns_set} -body {
+    ns_set create; ns_set create; ns_set create; ns_set create; ns_set create
+    llength [lsort -unique [ns_set list]]
+} -result 5 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.17 {basic operation ns_set} -body {
+    set x [ns_set create]
+    ns_set put $x foo bar
+    ns_set put $x foo bar
+    ns_set put $x foo bar
+} -result 2 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.18 {basic operation ns_set} -body {
+    set x [ns_set create]
+    ns_set put $x foo bar
+    ns_set put $x foo bar
+    ns_set put $x foo bar
+    ns_set array $x
+} -result [list foo bar foo bar foo bar] -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.19 {basic operation ns_set} -body {
+    set x [ns_set create]
+    ns_set put $x content.type ba1
+    ns_set put $x content.encoding ba2
+    ns_set put $x content.length ba3
+    ns_set split $x "."
+    ns_set list
+} -result [list d0 d1] -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.20 {basic operation ns_set} -body {
+    set x [ns_set create]
+    ns_set put $x the.key the.value
+    ns_set key $x 0
+} -result "the.key" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.21 {basic operation ns_set} -body {
+    set x [ns_set create]
+    ns_set put $x the.key the.value
+    ns_set value $x 0
+} -result "the.value" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.22 {basic operation ns_set} -body {
+    set x [ns_set create]
+    set y [ns_set create]
+    ns_set put $x and now
+    ns_set put $y the larch
+    ns_set merge $x $y
+    ns_set get $x the
+} -result "larch" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.23 {basic operation ns_set} -body {
+    set x [ns_set create firstset and now]
+    set y [ns_set create secondset the larch]
+    set newsetid [ns_set move $x $y]
+    ns_set get $newsetid the
+} -result "larch" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.24 {basic operation ns_set} -body {
+    set x [ns_set create firstset a 1]
+    ns_set cput $x a 1
+} -result 0 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.25 {basic operation ns_set} -body {
+    set x [ns_set create firstset a 1]
+    ns_set cput $x a 2
+    ns_set value $x 0
+} -result 1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.26 {basic operation ns_set} -body {
+    set x [ns_set create firstset a 1]
+    ns_set icput $x A 2
+    ns_set value $x 0
+} -result 1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.27 {basic operation ns_set} -body {
+    set x [ns_set create firstset a 1]
+    ns_set icput $x B 2
+} -result 1 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.28 {basic operation ns_set} -body {
+    set x [ns_set create firstset a 1]
+    ns_set icput $x B 2
+    ns_set value $x 1
+} -result 2 -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.29 {basic operation ns_set} -body {
+    set x [ns_set create firstset a 1]
+    ns_set free $x
+    ns_set get $x 0
+} -returnCodes error -result {no such set: d0} -cleanup {
+    ns_set cleanup
+}
+
+
+cleanupTests

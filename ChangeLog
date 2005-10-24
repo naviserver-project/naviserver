@@ -1,3 +1,7 @@
+2005-10-24  Bernd Eidenschink  <eide@users.sf.net>
+
+	* tests/ns_set.test: added basic tests for ns_set command.
+
 2005-10-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclcmds.c:
