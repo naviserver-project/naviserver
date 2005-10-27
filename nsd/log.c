@@ -285,6 +285,28 @@ Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
     Log(severity, fmt, ap);
     va_end(ap);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_VALog --
+ *
+ *      Send a message to the server log (varargs interface)
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
+{
+    Log(severity, fmt, *vaPtr);
+}
 
 
 /*

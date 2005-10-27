@@ -1,3 +1,8 @@
+2005-10-27  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* include/ns.h:
+	* nsd/log.c: added Ns_VALog with varargs interface
+
 2005-10-24  Bernd Eidenschink  <eide@users.sf.net>
 
 	* tests/ns_set.test: added basic tests for ns_set command.

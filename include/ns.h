@@ -1110,6 +1110,9 @@ Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
      NS_GNUC_PRINTF(2, 3);
 
 NS_EXTERN void
+Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr);
+
+NS_EXTERN void
 Ns_Fatal(CONST char *fmt, ...)
      NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
 
