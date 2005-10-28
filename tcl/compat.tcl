@@ -194,6 +194,8 @@ proc ns_rename {from to} {
     if {[file exists $to]} {
         if {[file type $from] != [file type $to]} {
             error "rename (\"$from\", \"$to\"): not of the same type" 
+        } elseif {$from == $to} {
+            error "error renaming \"$from\": file already exists"
         }
         file delete $to
     }

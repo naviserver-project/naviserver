@@ -1,3 +1,8 @@
+2005-10-28  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* tcl/compat.tcl: ns_rename now does not delete a file
+	if "from" and "to" match.
+
 2005-10-27  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/ns.h:
