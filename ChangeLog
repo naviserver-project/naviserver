@@ -1,7 +1,19 @@
 2005-11-02  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/ns_info.test: added 1 second delay to make ns_info 
-	uptime report uptie > 0
+	uptime report uptime > 0 successfuly
+
+	* configure.in:
+	* m4/cmmsg.m4:
+	* include/ns.h:
+	* nsd/binder.c:
+	* nsd/nsmain.c: Added support of binder as a separate process
+	forked before switching off root priviliges and provided
+	new API function Ns_SockListenBinder for creating
+	sockets. In this mode, no need to specify all ports in the command line
+	parameter -b. For now all modules have to call new API function in order
+	to create sockets if they are not specified using -b command line 
+	paramater.
 
 2005-10-28  Bernd Eidenschink  <eide@users.sourceforge.net>
 

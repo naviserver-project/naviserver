@@ -37,26 +37,52 @@
 #include "nsd.h"
 
 #ifndef _WIN32
-# include <sys/un.h>
+#include <sys/un.h>
+#include <sys/uio.h>
 #endif
 
-NS_RCSID("@(#) $Header$");
+#ifdef HAVE_CMMSG
+
+/*
+ * Some platforms use BSD4.4 style message passing.  This structure is used
+ * to pass the file descriptor between parent and slave.  Note that
+ * the first 3 elements must match those of the struct cmsghdr.
+ */
+
+typedef struct CMsg {
+	unsigned int len;
+	int level;
+	int type;
+	int fds[1];
+} CMsg;
+
+#endif
+
+#define REQUEST_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + 64)
+#define RESPONSE_SIZE (sizeof(int))
 
 /*
  * Local variables defined in this file
  */
 
+static Ns_Mutex lock;
 static Tcl_HashTable preboundTcp;
 static Tcl_HashTable preboundUdp;
 static Tcl_HashTable preboundRaw;
 static Tcl_HashTable preboundUnix;
-static Ns_Mutex lock;
+
+static int binderRunning;
+static int binderRequest[2];
+static int binderResponse[2];
 
 /*
  * Local functions defined in this file
  */
 
 static void PreBind(char *line);
+static void Binder(void);
+
+NS_RCSID("@(#) $Header$");
 
 
 /*
@@ -683,4 +709,320 @@ PreBind(char *line)
         }
     }
 #endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockBinder --
+ *
+ *	Create a new TCP/UDP/Unix socket bound to the specified port and 
+ *      listening for new connections.
+ *
+ *      The following types are defined:
+ *      T - TCP socket
+ *      U - UDP socket
+ *      D - Unix domain socket
+ *      R - raw socket
+ *
+ * Results:
+ *	Socket descriptor or -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+SOCKET
+Ns_SockBinderListen(int type, char *address, int port, int options)
+{
+    int err;
+    SOCKET sock;
+    char data[64];
+    struct msghdr msg;
+    struct iovec iov[4];
+#ifdef HAVE_CMMSG
+    CMsg cm;
+#endif
+
+    if (address == NULL) {
+        address = "0.0.0.0";
+    }
+    iov[0].iov_base = (caddr_t) &options;
+    iov[0].iov_len = sizeof(options);
+    iov[1].iov_base = (caddr_t) &port;
+    iov[1].iov_len = sizeof(port);
+    iov[2].iov_base = (caddr_t) &type;
+    iov[2].iov_len = sizeof(type);
+    iov[3].iov_base = (caddr_t) data;
+    iov[3].iov_len = sizeof(data);
+    memset(data, 0, sizeof(data));
+    strncpy(data, address, sizeof(data)-1);
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_iov = iov;
+    msg.msg_iovlen = 4;
+    if (sendmsg(binderRequest[1], (struct msghdr *) &msg, 0) != REQUEST_SIZE) {
+        Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: '%s'", strerror(errno));
+        return -1;
+    }
+
+    iov[0].iov_base = (caddr_t) &err;
+    iov[0].iov_len = sizeof(int);
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_iov = iov;
+    msg.msg_iovlen = 1;
+#ifdef HAVE_CMMSG
+    cm.len = sizeof(cm);
+    cm.type = SCM_RIGHTS;
+    cm.level = SOL_SOCKET;
+    msg.msg_control = (void *) &cm;
+    msg.msg_controllen = cm.len;
+    msg.msg_flags = 0;
+#else
+    msg.msg_accrights = (caddr_t) &sock;
+    msg.msg_accrightslen = sizeof(sock);
+#endif
+    if (recvmsg(binderResponse[0], (struct msghdr *) &msg, 0) != RESPONSE_SIZE) {
+        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: '%s'", strerror(errno));
+        return -1;
+    }
+#ifdef HAVE_CMMSG
+    sock = cm.fds[0];
+#endif
+
+    /*
+     * Close-on-exec, while set in the binder process by default
+     * with Ns_SockBind, is not transmitted in the sendmsg and
+     * must be set again.
+     */
+
+    if (sock != INVALID_SOCKET && Ns_CloseOnExec(sock) != NS_OK) {
+        close(sock);
+        sock = -1;
+    }
+    if (address == NULL) {
+        address = "0.0.0.0";
+    }
+    if (err == 0) {
+        Ns_Log(Notice, "Ns_SockBinderListen: listen(%s,%d) = %d", address, port, sock);
+    } else {
+        Ns_SetSockErrno(err);
+        sock = -1;
+        Ns_Log(Error, "Ns_SockBinderListen: listen(%s,%d) failed: '%s'",
+   	       address, port, ns_sockstrerror(ns_sockerrno));
+    }
+    return sock;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsForkBinder --
+ *
+ *	Fork of the slave bind/listen process.  This routine is called
+ * 	by main() when the server starts as root.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The binderRunning, binderRequest, binderResponse static variables
+ *	are updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsForkBinder(void)
+{
+    int pid, status;
+
+    /*
+     * Create two socket pipes, one for sending the request and one
+     * for receiving the response.
+     */
+
+    if (ns_sockpair(binderRequest) != 0 || ns_sockpair(binderResponse) != 0) {
+	Ns_Fatal("binder: ns_sockpair() failed: '%s'", strerror(errno));
+    }
+
+    /*
+     * Double-fork and run as a binder until the socket pairs are
+     * closed.  The server double forks to avoid problems 
+     * waiting for a child root process after the parent does a
+     * setuid(), something which appears to confuse the
+     * process-based Linux and SGI threads.
+     */
+
+    pid = ns_fork();
+    if (pid < 0) {
+	Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
+    } else if (pid == 0) {
+	pid = ns_fork();
+	if (pid < 0) {
+	    Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
+	} else if (pid == 0) {
+    	    close(binderRequest[1]);
+    	    close(binderResponse[0]);
+	    Binder();
+	}
+	exit(0);
+    }
+    if (Ns_WaitForProcess(pid, &status) != NS_OK) {
+	Ns_Fatal("binder: Ns_WaitForProcess(%d) failed: '%s'",
+		 pid, strerror(errno));
+    } else if (status != 0) {
+	Ns_Fatal("binder: process %d exited with non-zero status: %d",
+		 pid, status);
+    }
+    Ns_MutexLock(&lock);
+    binderRunning = 1;
+    Ns_MutexUnlock(&lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsStopBinder --
+ *
+ *	Close the socket to the binder after startup.  This is done
+ *	to avoid a possible security risk of binding to privileged
+ *	ports after startup.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Binder process will exit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsStopBinder(void)
+{
+    if (binderRunning) {
+	close(binderRequest[1]);
+	close(binderResponse[0]);
+	close(binderRequest[0]);
+	close(binderResponse[1]);
+	binderRunning = 0;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Binder --
+ *
+ *	Slave process bind/listen loop.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sockets are created and sent to the parent on request.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Binder(void)
+{
+    int n, err, fd;
+    char address[64];
+    struct msghdr msg;
+    struct iovec iov[4];
+    int options, type, port;
+#ifdef HAVE_CMMSG
+    CMsg cm;
+#endif
+
+    /*
+     * Endlessly listen for socket bind requests.
+     */
+
+    for (;;) {
+        iov[0].iov_base = (caddr_t) &options;
+        iov[0].iov_len = sizeof(options);
+        iov[1].iov_base = (caddr_t) &port;
+        iov[1].iov_len = sizeof(port);
+        iov[2].iov_base = (caddr_t) &type;
+        iov[2].iov_len = sizeof(type);
+        iov[3].iov_base = (caddr_t) address;
+        iov[3].iov_len = sizeof(address);
+	memset(&msg, 0, sizeof(msg));
+        msg.msg_iov = iov;
+        msg.msg_iovlen = 4;
+        type = 0;
+        err = 0;
+        do {
+            n = recvmsg(binderRequest[0], (struct msghdr *) &msg, 0);
+        } while (n == -1 && errno == EINTR);
+        if (n == 0) {
+	    break;
+	}
+        if (n != REQUEST_SIZE) {
+            Ns_Fatal("binder: recvmsg() failed: '%s'", strerror(errno));
+        }
+
+	/*
+	 * NB: Due to a bug in Solaris the slave process must
+	 * call both bind() and listen() before returning the
+	 * socket.  All other Unix versions would actually allow
+	 * just performing the bind() in the slave and allowing
+	 * the parent to perform the listen().
+	 */
+        switch (type) {
+         case 'U':
+            fd = Ns_SockListenUdp(address, port);
+            break;
+         case 'D':
+            fd = Ns_SockListenUnix(address, options);
+            break;
+         case 'R':
+            fd = Ns_SockListenRaw(options);
+            break;
+         case 'T':
+         default:
+            fd = Ns_SockListenEx(address, port, options);
+        }
+	if (fd < 0) err = errno;
+
+        iov[0].iov_base = (caddr_t) &err;
+        iov[0].iov_len = sizeof(err);
+	memset(&msg, 0, sizeof(msg));
+        msg.msg_iov = iov;
+        msg.msg_iovlen = 1;
+        if (fd != -1) {
+#ifdef HAVE_CMMSG
+	    cm.len = sizeof(cm);
+	    cm.level = SOL_SOCKET;
+	    cm.type = SCM_RIGHTS;
+	    cm.fds[0] = fd;
+	    msg.msg_control = (void *) &cm;
+	    msg.msg_controllen = cm.len;
+	    msg.msg_flags = 0;
+#else
+            msg.msg_accrights = (caddr_t) &fd;
+            msg.msg_accrightslen = sizeof(fd);
+#endif
+        }
+        do {
+            n = sendmsg(binderResponse[1], (struct msghdr *) &msg, 0);
+        } while (n == -1 && errno == EINTR);
+        if (n != RESPONSE_SIZE) {
+            Ns_Fatal("binder: sendmsg() failed: '%s'", strerror(errno));
+        }
+        if (fd != -1) {
+	
+	    /*
+	     * Close the socket as it won't be needed in the slave.
+	     */
+
+            close(fd);
+        }
+    }
 }

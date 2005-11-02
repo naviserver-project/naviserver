@@ -525,6 +525,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         if (gid != getgid() && setgid((gid_t)gid) != 0) {
             Ns_Fatal("nsmain: setgid(%d) failed: '%s'", gid, strerror(errno));
         }
+
+        /*
+         * Before setuid, fork the background binder process to
+         * listen on ports which were not pre-bound above.
+         */
+
+        NsForkBinder();
+
         if (setuid((uid_t)uid) != 0) {
             Ns_Fatal("nsmain: setuid(%d) failed: '%s'", uid, strerror(errno));
         }
@@ -726,6 +734,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     NsStartDrivers();
 #ifndef _WIN32
     NsClosePreBound();
+    NsStopBinder();
 #endif
 
     if (mode == 'c') {

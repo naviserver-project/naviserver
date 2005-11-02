@@ -1517,6 +1517,10 @@ NS_EXTERN SOCKET Ns_SockBindUdp(struct sockaddr_in *saPtr);
 NS_EXTERN SOCKET Ns_SockBindRaw(int proto);
 NS_EXTERN SOCKET Ns_SockBindUnix(char *path);
 
+NS_EXTERN void NsForkBinder(void);
+NS_EXTERN void NsStopBinder(void);
+NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int options);
+
 /*
  * sock.c:
  */
