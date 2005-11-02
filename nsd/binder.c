@@ -71,9 +71,9 @@ static Tcl_HashTable preboundUdp;
 static Tcl_HashTable preboundRaw;
 static Tcl_HashTable preboundUnix;
 
-static int binderRunning;
-static int binderRequest[2];
-static int binderResponse[2];
+static int binderRunning = 0;
+static int binderRequest[2] = { -1, -1 };
+static int binderResponse[2] = { -1, -1 };
 
 /*
  * Local functions defined in this file
@@ -876,9 +876,7 @@ NsForkBinder(void)
 	Ns_Fatal("binder: process %d exited with non-zero status: %d",
 		 pid, status);
     }
-    Ns_MutexLock(&lock);
     binderRunning = 1;
-    Ns_MutexUnlock(&lock);
 }
 
 

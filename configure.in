@@ -78,7 +78,6 @@ TEA_ENABLE_SHARED
 TEA_CONFIG_CFLAGS
 TEA_ENABLE_SYMBOLS
 TEA_TIME_HANDLER
-AC_HAVE_CMMSG
 
 #
 # Modify SHLIB_LD from tclConfig.sh as we specifically
@@ -251,6 +250,7 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len],,,[
 #include <sys/types.h>
 #include <netinet/in.h>])
 
+AC_HAVE_CMMSG
 
 #
 # Create Makefiles.
