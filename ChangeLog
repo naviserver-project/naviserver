@@ -1,3 +1,8 @@
+2005-11-02  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tests/ns_info.test: added 1 second delay to make ns_info 
+	uptime report uptie > 0
+
 2005-10-28  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* tcl/compat.tcl: ns_rename now does not delete a file
