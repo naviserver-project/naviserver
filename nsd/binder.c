@@ -131,6 +131,15 @@ Ns_SockListenEx(char *address, int port, int backlog)
         }
     }
 
+    /*
+     * If forked binder is running and we could not allocate socket
+     * directly, try to do it through the binder
+     */
+
+    if (sock == -1 && binderRunning) {
+        sock = Ns_SockBinderListen('T', address, port, backlog);
+    }
+
     return (SOCKET)sock;
 }
 
@@ -172,6 +181,14 @@ Ns_SockListenUdp(char *address, int port)
         }
     }
 
+    /*
+     * If forked binder is running and we could not allocate socket
+     * directly, try to do it through the binder
+     */
+
+    if (sock == -1 && binderRunning) {
+        sock = Ns_SockBinderListen('U', address, port, 0);
+    }
     return (SOCKET)sock;
 }
 
@@ -213,6 +230,15 @@ Ns_SockListenRaw(int proto)
     if (hPtr == NULL) {
         /* Not prebound, bind now */
         sock = Ns_SockBindRaw(proto);
+    }
+
+    /*
+     * If forked binder is running and we could not allocate socket
+     * directly, try to do it through the binder
+     */
+
+    if (sock == -1 && binderRunning) {
+        sock = Ns_SockBinderListen('R', 0, proto, proto);
     }
 
     return (SOCKET)sock;
@@ -265,6 +291,15 @@ Ns_SockListenUnix(char *path, int backlog)
         errno = err;
         sock = -1;
         Ns_SetSockErrno(err);
+    }
+
+    /*
+     * If forked binder is running and we could not allocate socket
+     * directly, try to do it through the binder
+     */
+
+    if (sock == -1 && binderRunning) {
+        sock = Ns_SockBinderListen('D', path, 0, backlog);
     }
 #endif
 
@@ -439,7 +474,7 @@ NsPreBind(char *args, char *file)
     if (file != NULL) {
         Tcl_Channel chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
         if (chan == NULL) {
-            Ns_Log(Error, "binder: can't open file '%s': '%s'", file,
+            Ns_Log(Error, "NsPreBind: can't open file '%s': '%s'", file,
                    strerror(Tcl_GetErrno()));
         } else {
             Tcl_DString line;
@@ -806,9 +841,6 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
         close(sock);
         sock = -1;
     }
-    if (address == NULL) {
-        address = "0.0.0.0";
-    }
     if (err == 0) {
         Ns_Log(Notice, "Ns_SockBinderListen: listen(%s,%d) = %d",
                address, port, sock);
@@ -852,7 +884,7 @@ NsForkBinder(void)
      */
 
     if (ns_sockpair(binderRequest) != 0 || ns_sockpair(binderResponse) != 0) {
-        Ns_Fatal("binder: ns_sockpair() failed: '%s'", strerror(errno));
+        Ns_Fatal("NsForkBinder: ns_sockpair() failed: '%s'", strerror(errno));
     }
 
     /*
@@ -865,11 +897,11 @@ NsForkBinder(void)
 
     pid = ns_fork();
     if (pid < 0) {
-        Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
+        Ns_Fatal("NsForkBinder: fork() failed: '%s'", strerror(errno));
     } else if (pid == 0) {
         pid = ns_fork();
         if (pid < 0) {
-            Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
+            Ns_Fatal("NsForkBinder: fork() failed: '%s'", strerror(errno));
         } else if (pid == 0) {
             close(binderRequest[1]);
             close(binderResponse[0]);
@@ -878,10 +910,10 @@ NsForkBinder(void)
         exit(0);
     }
     if (Ns_WaitForProcess(pid, &status) != NS_OK) {
-        Ns_Fatal("binder: Ns_WaitForProcess(%d) failed: '%s'",
+        Ns_Fatal("NsForkBinder: Ns_WaitForProcess(%d) failed: '%s'",
                  pid, strerror(errno));
     } else if (status != 0) {
-        Ns_Fatal("binder: process %d exited with non-zero status: %d",
+        Ns_Fatal("NsForkBinder: process %d exited with non-zero status: %d",
                  pid, status);
     }
     binderRunning = 1;
@@ -946,6 +978,8 @@ Binder(void)
 #ifdef HAVE_CMMSG
     CMsg cm;
 #endif
+
+    Ns_Log(Notice, "binder: started");
 
     /*
      * Endlessly listen for socket bind requests.
@@ -1035,4 +1069,5 @@ Binder(void)
             close(fd);
         }
     }
+    Ns_Log(Notice, "binder: stopped");
 }

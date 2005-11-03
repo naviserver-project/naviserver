@@ -1,5 +1,10 @@
 2005-11-02  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/binder.c: All Ns_SockListen routines support
+	forked binder now if direct socket allocation failed
+
+2005-11-02  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* tests/ns_info.test: added 1 second delay to make ns_info 
 	uptime report uptime > 0 successfuly
 
