@@ -50,10 +50,10 @@
  */
 
 typedef struct CMsg {
-	unsigned int len;
-	int level;
-	int type;
-	int fds[1];
+    unsigned int len;
+    int          level;
+    int          type;
+    int          fds[1];
 } CMsg;
 
 #endif
@@ -65,7 +65,7 @@ typedef struct CMsg {
  * Local variables defined in this file
  */
 
-static Ns_Mutex lock;
+static Ns_Mutex      lock;
 static Tcl_HashTable preboundTcp;
 static Tcl_HashTable preboundUdp;
 static Tcl_HashTable preboundRaw;
@@ -105,7 +105,7 @@ NS_RCSID("@(#) $Header$");
 SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
-    int sock = -1;
+    int                sock = -1;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -154,7 +154,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
 SOCKET
 Ns_SockListenUdp(char *address, int port)
 {
-    int sock = -1;
+    int                sock = -1;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -195,8 +195,8 @@ Ns_SockListenUdp(char *address, int port)
 SOCKET
 Ns_SockListenRaw(int proto)
 {
-    int sock = -1;
-    Tcl_HashEntry *hPtr;
+    int            sock = -1;
+    Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
     Ns_MutexLock(&lock);
@@ -238,8 +238,8 @@ Ns_SockListenRaw(int proto)
 SOCKET
 Ns_SockListenUnix(char *path, int backlog)
 {
-    int sock = -1;
-    Tcl_HashEntry *hPtr;
+    int            sock = -1;
+    Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
 #ifndef _WIN32
@@ -291,20 +291,20 @@ Ns_SockListenUnix(char *path, int backlog)
 SOCKET
 Ns_SockBindUdp(struct sockaddr_in *saPtr)
 {
-   int sock = -1, n = 1;
+    int sock = -1, n = 1;
    
-   sock = socket(AF_INET,SOCK_DGRAM, 0);
+    sock = socket(AF_INET,SOCK_DGRAM, 0);
 
-   if (sock == -1
-       || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n,sizeof(n)) == -1
-       || bind(sock,(struct sockaddr*)saPtr,sizeof(struct sockaddr_in)) == -1) {
-       int err = errno;
-       close(sock);
-       sock = -1;
-       Ns_SetSockErrno(err);
-   }
+    if (sock == -1
+        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n,sizeof(n)) == -1
+        || bind(sock,(struct sockaddr*)saPtr,sizeof(struct sockaddr_in)) == -1) {
+        int err = errno;
+        close(sock);
+        sock = -1;
+        Ns_SetSockErrno(err);
+    }
 
-   return (SOCKET)sock;
+    return (SOCKET)sock;
 }
 
 
@@ -328,7 +328,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
 SOCKET
 Ns_SockBindUnix(char *path)
 {
-    int sock = -1;
+    int                sock = -1;
     struct sockaddr_un addr;
 
 #ifndef _WIN32    
@@ -373,17 +373,17 @@ Ns_SockBindUnix(char *path)
 SOCKET
 Ns_SockBindRaw(int proto)
 {
-   int sock = -1;
+    int sock = -1;
    
-   sock = socket(AF_INET,SOCK_RAW, proto);
+    sock = socket(AF_INET,SOCK_RAW, proto);
 
-   if (sock == -1) {
-       int err = errno;
-       close(sock);
-       Ns_SetSockErrno(err);
-   }
+    if (sock == -1) {
+        int err = errno;
+        close(sock);
+        Ns_SetSockErrno(err);
+    }
 
-   return (SOCKET)sock;
+    return (SOCKET)sock;
 }
 
 
@@ -480,10 +480,10 @@ NsClosePreBound(void)
 #ifdef _WIN32
     return;
 #else
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    char *addr;
-    int port, sock;
+    Tcl_HashEntry      *hPtr;
+    Tcl_HashSearch     search;
+    char               *addr;
+    int                port, sock;
     struct sockaddr_in *saPtr;
     
     Ns_MutexLock(&lock);
@@ -593,10 +593,10 @@ PreBind(char *line)
 #ifdef _WIN32
     return;
 #else
-    Tcl_HashEntry *hPtr;
-    int new, sock, port;
+    Tcl_HashEntry      *hPtr;
+    int                new, sock, port;
+    char               *next, *str, *addr, *proto;
     struct sockaddr_in sa;
-    char *next, *str, *addr, *proto;
 
     for (;line != NULL; line = next) {
         next = strchr(line, ',');
@@ -711,13 +711,14 @@ PreBind(char *line)
 #endif
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockBinder --
+ * Ns_SockBinderListen --
  *
- *	Create a new TCP/UDP/Unix socket bound to the specified port and 
- *      listening for new connections.
+ *      Create a new TCP/UDP/Unix socket bound to the specified port
+ *      and listening for new connections.
  *
  *      The following types are defined:
  *      T - TCP socket
@@ -726,10 +727,10 @@ PreBind(char *line)
  *      R - raw socket
  *
  * Results:
- *	Socket descriptor or -1 on error.
+ *      Socket descriptor or -1 on error.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -737,11 +738,12 @@ PreBind(char *line)
 SOCKET
 Ns_SockBinderListen(int type, char *address, int port, int options)
 {
-    int err;
-    SOCKET sock;
-    char data[64];
+    int           err;
+    SOCKET        sock;
+    char          data[64];
     struct msghdr msg;
-    struct iovec iov[4];
+    struct iovec  iov[4];
+
 #ifdef HAVE_CMMSG
     CMsg cm;
 #endif
@@ -763,7 +765,8 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
     msg.msg_iov = iov;
     msg.msg_iovlen = 4;
     if (sendmsg(binderRequest[1], (struct msghdr *) &msg, 0) != REQUEST_SIZE) {
-        Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: '%s'", strerror(errno));
+        Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: '%s'",
+               strerror(errno));
         return -1;
     }
 
@@ -784,9 +787,11 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
     msg.msg_accrightslen = sizeof(sock);
 #endif
     if (recvmsg(binderResponse[0], (struct msghdr *) &msg, 0) != RESPONSE_SIZE) {
-        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: '%s'", strerror(errno));
+        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: '%s'", 
+               strerror(errno));
         return -1;
     }
+
 #ifdef HAVE_CMMSG
     sock = cm.fds[0];
 #endif
@@ -805,30 +810,33 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
         address = "0.0.0.0";
     }
     if (err == 0) {
-        Ns_Log(Notice, "Ns_SockBinderListen: listen(%s,%d) = %d", address, port, sock);
+        Ns_Log(Notice, "Ns_SockBinderListen: listen(%s,%d) = %d",
+               address, port, sock);
     } else {
         Ns_SetSockErrno(err);
         sock = -1;
         Ns_Log(Error, "Ns_SockBinderListen: listen(%s,%d) failed: '%s'",
-   	       address, port, ns_sockstrerror(ns_sockerrno));
+               address, port, ns_sockstrerror(ns_sockerrno));
     }
+
     return sock;
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
  * NsForkBinder --
  *
- *	Fork of the slave bind/listen process.  This routine is called
- * 	by main() when the server starts as root.
+ *      Fork of the slave bind/listen process.  This routine is called
+ *      by main() when the server starts as root.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	The binderRunning, binderRequest, binderResponse static variables
- *	are updated.
+ *      The binderRunning, binderRequest, binderResponse static variables
+ *      are updated.
  *
  *----------------------------------------------------------------------
  */
@@ -844,7 +852,7 @@ NsForkBinder(void)
      */
 
     if (ns_sockpair(binderRequest) != 0 || ns_sockpair(binderResponse) != 0) {
-	Ns_Fatal("binder: ns_sockpair() failed: '%s'", strerror(errno));
+        Ns_Fatal("binder: ns_sockpair() failed: '%s'", strerror(errno));
     }
 
     /*
@@ -857,24 +865,24 @@ NsForkBinder(void)
 
     pid = ns_fork();
     if (pid < 0) {
-	Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
+        Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
     } else if (pid == 0) {
-	pid = ns_fork();
-	if (pid < 0) {
-	    Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
-	} else if (pid == 0) {
-    	    close(binderRequest[1]);
-    	    close(binderResponse[0]);
-	    Binder();
-	}
-	exit(0);
+        pid = ns_fork();
+        if (pid < 0) {
+            Ns_Fatal("binder: fork() failed: '%s'", strerror(errno));
+        } else if (pid == 0) {
+            close(binderRequest[1]);
+            close(binderResponse[0]);
+            Binder();
+        }
+        exit(0);
     }
     if (Ns_WaitForProcess(pid, &status) != NS_OK) {
-	Ns_Fatal("binder: Ns_WaitForProcess(%d) failed: '%s'",
-		 pid, strerror(errno));
+        Ns_Fatal("binder: Ns_WaitForProcess(%d) failed: '%s'",
+                 pid, strerror(errno));
     } else if (status != 0) {
-	Ns_Fatal("binder: process %d exited with non-zero status: %d",
-		 pid, status);
+        Ns_Fatal("binder: process %d exited with non-zero status: %d",
+                 pid, status);
     }
     binderRunning = 1;
 }
@@ -885,15 +893,15 @@ NsForkBinder(void)
  *
  * NsStopBinder --
  *
- *	Close the socket to the binder after startup.  This is done
- *	to avoid a possible security risk of binding to privileged
- *	ports after startup.
+ *      Close the socket to the binder after startup.  This is done
+ *      to avoid a possible security risk of binding to privileged
+ *      ports after startup.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Binder process will exit.
+ *      Binder process will exit.
  *
  *----------------------------------------------------------------------
  */
@@ -902,26 +910,27 @@ void
 NsStopBinder(void)
 {
     if (binderRunning) {
-	close(binderRequest[1]);
-	close(binderResponse[0]);
-	close(binderRequest[0]);
-	close(binderResponse[1]);
-	binderRunning = 0;
+        close(binderRequest[1]);
+        close(binderResponse[0]);
+        close(binderRequest[0]);
+        close(binderResponse[1]);
+        binderRunning = 0;
     }
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
  * Binder --
  *
- *	Slave process bind/listen loop.
+ *      Slave process bind/listen loop.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Sockets are created and sent to the parent on request.
+ *      Sockets are created and sent to the parent on request.
  *
  *----------------------------------------------------------------------
  */
@@ -929,11 +938,11 @@ NsStopBinder(void)
 static void
 Binder(void)
 {
-    int n, err, fd;
-    char address[64];
+    int           options, type, port, n, err, fd;
+    char          address[64];
     struct msghdr msg;
-    struct iovec iov[4];
-    int options, type, port;
+    struct iovec  iov[4];
+
 #ifdef HAVE_CMMSG
     CMsg cm;
 #endif
@@ -951,7 +960,7 @@ Binder(void)
         iov[2].iov_len = sizeof(type);
         iov[3].iov_base = (caddr_t) address;
         iov[3].iov_len = sizeof(address);
-	memset(&msg, 0, sizeof(msg));
+        memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 4;
         type = 0;
@@ -960,49 +969,52 @@ Binder(void)
             n = recvmsg(binderRequest[0], (struct msghdr *) &msg, 0);
         } while (n == -1 && errno == EINTR);
         if (n == 0) {
-	    break;
-	}
+            break;
+        }
         if (n != REQUEST_SIZE) {
             Ns_Fatal("binder: recvmsg() failed: '%s'", strerror(errno));
         }
 
-	/*
-	 * NB: Due to a bug in Solaris the slave process must
-	 * call both bind() and listen() before returning the
-	 * socket.  All other Unix versions would actually allow
-	 * just performing the bind() in the slave and allowing
-	 * the parent to perform the listen().
-	 */
+        /*
+         * NB: Due to a bug in Solaris the slave process must
+         * call both bind() and listen() before returning the
+         * socket.  All other Unix versions would actually allow
+         * just performing the bind() in the slave and allowing
+         * the parent to perform the listen().
+         */
         switch (type) {
-         case 'U':
+        case 'U':
             fd = Ns_SockListenUdp(address, port);
             break;
-         case 'D':
+        case 'D':
             fd = Ns_SockListenUnix(address, options);
             break;
-         case 'R':
+        case 'R':
             fd = Ns_SockListenRaw(options);
             break;
-         case 'T':
-         default:
+        case 'T':
+        default:
             fd = Ns_SockListenEx(address, port, options);
         }
-	if (fd < 0) err = errno;
+
+        if (fd < 0) {
+            err = errno;
+        }
 
         iov[0].iov_base = (caddr_t) &err;
         iov[0].iov_len = sizeof(err);
-	memset(&msg, 0, sizeof(msg));
+        memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 1;
         if (fd != -1) {
 #ifdef HAVE_CMMSG
-	    cm.len = sizeof(cm);
-	    cm.level = SOL_SOCKET;
-	    cm.type = SCM_RIGHTS;
-	    cm.fds[0] = fd;
-	    msg.msg_control = (void *) &cm;
-	    msg.msg_controllen = cm.len;
-	    msg.msg_flags = 0;
+            cm.len = sizeof(cm);
+            cm.level = SOL_SOCKET;
+            cm.type = SCM_RIGHTS;
+            cm.fds[0] = fd;
+            msg.msg_control = (void *) &cm;
+            msg.msg_controllen = cm.len;
+            msg.msg_flags = 0;
 #else
             msg.msg_accrights = (caddr_t) &fd;
             msg.msg_accrightslen = sizeof(fd);
@@ -1015,10 +1027,10 @@ Binder(void)
             Ns_Fatal("binder: sendmsg() failed: '%s'", strerror(errno));
         }
         if (fd != -1) {
-	
-	    /*
-	     * Close the socket as it won't be needed in the slave.
-	     */
+    
+            /*
+             * Close the socket as it won't be needed in the slave.
+             */
 
             close(fd);
         }
