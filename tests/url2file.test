@@ -1,0 +1,125 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test url2file-1.1 {basic syntax} -body {
+    ns_url2file
+} -returnCodes error -result {wrong # args: should be "ns_url2file url"}
+
+test ns_log-1.2 {basic syntax} -body {
+    ns_register_url2file
+} -returnCodes error -result {wrong # args: should be "ns_register_url2file ?-noinherit? ?--? url script ?arg?"}
+
+test url2file-1.3 {basic syntax} -body {
+    ns_register_fasturl2file
+} -returnCodes error -result {wrong # args: should be "ns_register_fasturl2file ?-noinherit? ?--? url ?basepath?"}
+
+test url2file-1.4 {basic syntax} -body {
+    ns_unregister_url2file
+} -returnCodes error -result {wrong # args: should be "ns_unregister_url2file ?-noinherit? ?-recurse? ?--? url"}
+
+
+
+test url2file-2.1 {ns_url2file} -setup {
+    ns_register_proc GET /url2file {ns_return 200 text/plain [ns_url2file /foo] ;#}
+} -body {
+    nstest_http -getbody 1 GET /url2file
+} -cleanup {
+    ns_unregister_proc GET /url2file
+} -result [list 200 [ns_pagepath foo]]
+
+
+
+test url2file-3.1 {ns_register_url2file} -body {
+    ns_url2file /x/y
+} -result [ns_pagepath x y]
+
+test url2file-3.2 {ns_register_url2file} -setup {
+    ns_register_url2file /x {string toupper }
+} -body {
+    ns_url2file /x/y
+} -cleanup {
+    ns_unregister_url2file /x
+} -result /X/Y
+
+test url2file-3.3 {ns_register_url2file} -setup {
+    ns_register_url2file -noinherit /x {string toupper }
+} -body {
+    ns_url2file /x/y
+} -cleanup {
+    ns_unregister_url2file -noinherit /x
+} -result [ns_pagepath x y]
+
+test url2file-3.4 {ns_register_url2file} -setup {
+    ns_register_url2file /x {error x}
+} -body {
+    ns_logctl hold
+    ns_url2file /x
+    ns_logctl flush
+} -cleanup {
+    ns_unregister_url2file /x
+} -returnCodes error -result "url2file lookup failed"
+
+
+
+test url2file-4.1 {ns_register_fasturl2file} -setup {
+    ns_register_url2file /x {string toupper }
+    ns_register_fasturl2file /x/y
+} -body {
+    ns_url2file /x/y
+} -cleanup {
+    ns_unregister_url2file /x/y
+    ns_unregister_url2file /x
+} -result [ns_pagepath x y]
+
+test url2file-4.2 {ns_register_fasturl2file} -setup {
+    ns_register_fasturl2file /x /base
+} -body {
+    ns_url2file /x/y
+} -cleanup {
+    ns_unregister_url2file /x
+} -result /base/y
+
+test url2file-4.3 {ns_register_fasturl2file} -setup {
+    ns_register_fasturl2file /x base
+} -body {
+    ns_url2file /x/y
+} -cleanup {
+    ns_unregister_url2file /x
+} -result [ns_pagepath base y]
+
+
+
+test url2file-5.1 {ns_unregister_url2file -recurse} -setup {
+    ns_register_url2file /x {error /x}
+    ns_register_url2file /x/y {error /x/y}
+    ns_unregister_url2file -recurse /x
+} -body {
+    ns_url2file /x/y
+} -result [ns_pagepath x y]
+
+
+
+test url2file-6.1 {url2file info} -setup {
+    ns_register_url2file /url1 script
+    ns_register_fasturl2file /url2 /base
+} -body {
+    ns_info url2file
+} -cleanup {
+    ns_unregister_url2file /url1
+    ns_unregister_url2file /url2
+} -result [list [list [ns_info server] x /url1* ns:tclurl2file script] \
+               [list [ns_info server] x /url2* ns:mounturl2file /base /url2] \
+               [list [ns_info server] x * ns:fasturl2file [ns_info server]] ]
+
+
+
+cleanupTests

@@ -419,6 +419,13 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Ns_RegisterRequest(server, "POST", "/", NsFastGet, NULL, servPtr, 0);
 
     /*
+     * Register the url2file procs.
+     */
+
+    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0);
+    Ns_SetUrlToFileProc(server, NsUrlToFileProc);
+
+    /*
      * Initialize ADP.
      */
     

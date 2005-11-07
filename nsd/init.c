@@ -82,5 +82,6 @@ NsdInit(void)
     	NsInitTcl();
     	NsInitUrlSpace();
     	NsInitRequests();
+        NsInitUrl2File();
     }
 }

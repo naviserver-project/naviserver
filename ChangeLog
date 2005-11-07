@@ -1,3 +1,20 @@
+2005-11-06  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/Makefile:
+	* nsd/url2file.c:
+	* nsd/fastpath.c:
+	* nsd/info.c:
+	* nsd/init.c:
+	* nsd/proc.c:
+	* nsd/server.c:
+	* nsd/tclcmds.c:
+	* nsd/tclfile.c:
+	* tests/ns_info.test:
+	* tests/url2file.test: Add new, flexible urlspace-based Url2File C
+	API and matching Tcl commands. (RFE: 1333811)
+
 2005-11-02  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/binder.c: All Ns_SockListen routines support

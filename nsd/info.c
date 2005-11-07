@@ -479,7 +479,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     int opt;
     NsInterp *itPtr = arg;
-    char *elog;
+    char *server, *elog;
     Tcl_DString ds;
     static CONST char *opts[] = {
 	"address", "argv0", "boottime", "builddate", "callbacks",
@@ -487,7 +487,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	"major", "minor", "name", "nsd", "pageroot", "patchlevel",
 	"pid", "platform", "pools", "scheduled", "server", "servers",
 	"sockcallbacks", "tag", "tcllib", "threads", "uptime",
-	"version", "winnt", "filters", "traces", "requestprocs", NULL
+	"version", "winnt", "filters", "traces", "requestprocs",
+    "url2file", NULL
     };
     enum {
 	IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
@@ -496,6 +497,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
 	sockICallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
 	IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
+    IUrl2FileIdx
     };
 
     if (objc != 2) {
@@ -508,6 +510,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     }
 
     Tcl_DStringInit(&ds);
+
     switch (opt) {
     case IArgv0Idx:
 	Tcl_SetResult(interp, nsconf.argv0, TCL_STATIC);
@@ -539,21 +542,6 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     	NsGetScheduled(&ds);
 	Tcl_DStringResult(interp, &ds);
 	break;
-
-    case IFiltersIdx:
-        NsGetFilters(&ds, itPtr->servPtr ? itPtr->servPtr->server : 0);
-        Tcl_DStringResult(interp, &ds);
-        break;
-
-    case ITracesIdx:
-        NsGetTraces(&ds, itPtr->servPtr ? itPtr->servPtr->server : 0);
-        Tcl_DStringResult(interp, &ds);
-        break;
-
-    case IRequestProcsIdx:
-        NsGetRequestProcs(&ds, itPtr->servPtr ? itPtr->servPtr->server : 0);
-        Tcl_DStringResult(interp, &ds);
-        break;
 
     case ILocksIdx:
 	Ns_MutexList(&ds);
@@ -640,23 +628,53 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case IServersIdx:
 	Tcl_SetResult(interp, nsconf.servers.string, TCL_STATIC);
 	break;
+    }
 
-    case ITclLibIdx:
-    case IPageRootIdx:
-    case IServerIdx:
+    /*
+     * The following subcommands require a virtual server.
+     */
+
 	if (itPtr->servPtr == NULL) {
 	    Tcl_SetResult(interp, "no server", TCL_STATIC);
 	    return TCL_ERROR;
 	}
-	if (opt == IServerIdx) {
-            Tcl_SetResult(interp, itPtr->servPtr->server, TCL_STATIC);
-	} else if (opt == ITclLibIdx) {
-	    Tcl_SetResult(interp, itPtr->servPtr->tcl.library, TCL_STATIC);
-	} else {
+    server = itPtr->servPtr->server;
+
+    switch (opt) {
+    case IPageRootIdx:
         NsPageRoot(&ds, itPtr->servPtr, NULL);
         Tcl_DStringResult(interp, &ds);
-	}
+        break;
+
+    case IServerIdx:
+        Tcl_SetResult(interp, server, TCL_STATIC);
+        break;
+
+    case ITclLibIdx:
+        Tcl_SetResult(interp, itPtr->servPtr->tcl.library, TCL_STATIC);
+        break;
+
+    case IFiltersIdx:
+        NsGetFilters(&ds, server);
+        Tcl_DStringResult(interp, &ds);
+        break;
+
+    case ITracesIdx:
+        NsGetTraces(&ds, server);
+        Tcl_DStringResult(interp, &ds);
+        break;
+
+    case IRequestProcsIdx:
+        NsGetRequestProcs(&ds, server);
+        Tcl_DStringResult(interp, &ds);
+        break;
+
+    case IUrl2FileIdx:
+        NsGetUrl2FileProcs(&ds, server);
+        Tcl_DStringResult(interp, &ds);
+        break;
     }
+
     return TCL_OK;
 }
 

@@ -522,6 +522,7 @@ typedef int   (Ns_OpProc) (void *arg, Ns_Conn *conn);
 typedef void  (Ns_TraceProc) (void *arg, Ns_Conn *conn);
 typedef int   (Ns_FilterProc) (void *arg, Ns_Conn *conn, int why);
 typedef int   (Ns_UrlToFileProc) (Ns_DString *dsPtr, CONST char *server, CONST char *url);
+typedef int   (Ns_Url2FileProc) (Ns_DString *dsPtr, CONST char *url, void *arg);
 typedef char *(Ns_ServerRootProc) (Ns_DString  *dest, CONST char *host, void *arg);
 typedef char *(Ns_ConnLocationProc) (Ns_Conn *conn, Ns_DString *dest, void *arg);
 typedef char *(Ns_LocationProc) (Ns_Conn *conn); /* depreciated */
@@ -907,12 +908,6 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type,
 NS_EXTERN CONST char *
 Ns_PageRoot(CONST char *server)
     NS_GNUC_DEPRECATED;
-
-NS_EXTERN void
-Ns_SetUrlToFileProc(CONST char *server, Ns_UrlToFileProc *procPtr);
-
-NS_EXTERN int
-Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url);
 
 NS_EXTERN int
 Ns_UrlIsFile(CONST char *server, CONST char *url);
@@ -1780,6 +1775,32 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost, char **pport,
 NS_EXTERN int
 Ns_AbsoluteUrl(Ns_DString *pds, CONST char *url, CONST char *baseurl)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+/*
+ * url2file.c:
+ */
+
+NS_EXTERN void
+Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
+                        Ns_Url2FileProc *proc, Ns_Callback *delete,
+                        void *arg, int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void
+Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, int inherit)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void
+Ns_SetUrlToFileProc(CONST char *server, Ns_UrlToFileProc *procPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
+NS_EXTERN Ns_Url2FileProc Ns_FastUrl2FileProc;
+
 
 /*
  * urlencode.c:

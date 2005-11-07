@@ -81,6 +81,9 @@ static struct proc {
     {(void *) NsAdpMapProc,        "ns:adpmap",           Ns_StringArgProc},
     {(void *) NsFastGet,           "ns:fastget",          ServerArgProc},
     {(void *) NsTclTraceProc,      "ns:tcltrace",         Ns_TclCallbackArgProc},
+    {(void *) NsTclUrl2FileProc,   "ns:tclurl2file",      Ns_TclCallbackArgProc},
+    {(void *) NsMountUrl2FileProc, "ns:mounturl2file",    NsMountUrl2FileArgProc},
+    {(void *) Ns_FastUrl2FileProc, "ns:fasturl2file",     ServerArgProc},
     {NULL, NULL, NULL}
 };
 

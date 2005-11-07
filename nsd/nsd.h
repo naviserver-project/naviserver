@@ -839,6 +839,7 @@ extern void NsInitSched(void);
 extern void NsInitTcl(void);
 extern void NsInitUrlSpace(void);
 extern void NsInitRequests(void);
+extern void NsInitUrl2File(void);
 
 extern void NsConfigLog(void);
 
@@ -884,6 +885,10 @@ extern Ns_OpProc NsAdpRequestProc;
 extern Ns_OpProc NsAdpMapProc;
 extern Ns_ArgProc NsTclRequestArgProc;
 extern Ns_TclTraceProc NsTclTraceProc;
+extern Ns_UrlToFileProc NsUrlToFileProc;
+extern Ns_Url2FileProc NsTclUrl2FileProc;
+extern Ns_Url2FileProc NsMountUrl2FileProc;
+extern Ns_ArgProc NsMountUrl2FileArgProc;
 
 extern void NsGetCallbacks(Tcl_DString *dsPtr);
 extern void NsGetSockCallbacks(Tcl_DString *dsPtr);
@@ -891,6 +896,7 @@ extern void NsGetScheduled(Tcl_DString *dsPtr);
 extern void NsGetTraces(Tcl_DString *dsPtr, char *server);
 extern void NsGetFilters(Tcl_DString *dsPtr, char *server);
 extern void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);
+extern void NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server);
 
 #ifdef _WIN32
 extern int NsConnectService(void);

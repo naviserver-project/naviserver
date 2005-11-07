@@ -275,43 +275,6 @@ NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
- * NsTclUrl2FileObjCmd --
- *
- *      Implements ns_url2file as obj command. 
- *
- * Results:
- *      Tcl result. 
- *
- * Side effects:
- *      See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                    Tcl_Obj *CONST objv[])
-{
-    NsInterp   *itPtr = arg;
-    Ns_DString  ds;
-
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "url");
-        return TCL_ERROR;
-    }
-    
-    Ns_DStringInit(&ds);
-    NsUrlToFile(&ds, itPtr->servPtr, Tcl_GetString(objv[1]));
-    Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
-    Ns_DStringFree(&ds);
-
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclKillObjCmd --
  *
  *      Implements ns_kill as obj command. 

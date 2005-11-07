@@ -191,55 +191,6 @@ Ns_PageRoot(CONST char *server)
 
 /*
  *----------------------------------------------------------------------
- * Ns_SetUrlToFileProc --
- *
- *      Set pointer to custom routine that acts like Ns_UrlToFile();
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_SetUrlToFileProc(CONST char *server, Ns_UrlToFileProc *procPtr)
-{
-    NsServer *servPtr = NsGetServer(server);
-
-    servPtr->fastpath.url2file = procPtr;
-}
-
-
-/*
- *----------------------------------------------------------------------
- * Ns_UrlToFile --
- *
- *      Construct the filename that corresponds to a URL.
- *
- * Results:
- *      Return NS_OK on success or NS_ERROR on failure.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-
-int
-Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url)
-{
-    NsServer *servPtr = NsGetServer(server);
-    
-    return NsUrlToFile(dsPtr, servPtr, url);
-}
-
-
-/*
- *----------------------------------------------------------------------
  * Ns_UrlIsFile, Ns_UrlIsDir --
  *
  *      Check if a file/directory that corresponds to a URL exists.
@@ -694,28 +645,6 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
  notfound:
 
     return Ns_ConnReturnNotFound(conn);
-}
-
-
-int
-NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
-{
-    int status;
-    
-    if (servPtr->fastpath.url2file != NULL) {
-        status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
-    } else {
-        NsPageRoot(dsPtr, servPtr, NULL);
-        Ns_MakePath(dsPtr, url, NULL);
-        status = NS_OK;
-    }
-    if (status == NS_OK) {
-        while (dsPtr->length > 0 && dsPtr->string[dsPtr->length-1] == '/') {
-            Ns_DStringTrunc(dsPtr, dsPtr->length-1);
-        }
-    }
-
-    return status;
 }
 
 
