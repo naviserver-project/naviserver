@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -30,7 +30,7 @@
 /* 
  * info.c --
  *
- *	Ns_Info* API and ns_info command support.
+ *  Ns_Info* API and ns_info command support.
  */
 
 #include "nsd.h"
@@ -53,13 +53,13 @@ static Ns_ThreadArgProc ThreadArgProc;
  *
  * Ns_InfoHomePath --
  *
- *	Return the home dir. 
+ *      Return the home dir. 
  *
  * Results:
- *	Home dir. 
+ *      Home dir. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -76,13 +76,13 @@ Ns_InfoHomePath(void)
  *
  * Ns_InfoServerName --
  *
- *	Return the server name. 
+ *      Return the server name. 
  *
  * Results:
- *	Server name 
+ *      Server name 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -99,13 +99,13 @@ Ns_InfoServerName(void)
  *
  * Ns_InfoServerVersion --
  *
- *	Returns the server version 
+ *      Returns the server version 
  *
  * Results:
- *	String server version. 
+ *      String server version. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -122,13 +122,13 @@ Ns_InfoServerVersion(void)
  *
  * Ns_InfoConfigFile --
  *
- *	Returns path to config file. 
+ *      Returns path to config file. 
  *
  * Results:
- *	Path to config file. 
+ *      Path to config file. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -145,13 +145,13 @@ Ns_InfoConfigFile(void)
  *
  * Ns_InfoPid --
  *
- *	Returns server's PID 
+ *      Returns server's PID 
  *
  * Results:
- *	PID (tread like pid_t) 
+ *      PID (tread like pid_t) 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -168,13 +168,13 @@ Ns_InfoPid(void)
  *
  * Ns_InfoNameOfExecutable --
  *
- *	Returns the name of the nsd executable.  Quirky name is from Tcl.
+ *      Returns the name of the nsd executable.  Quirky name is from Tcl.
  *
  * Results:
- *	Name of executable, string.
+ *      Name of executable, string.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -189,15 +189,15 @@ Ns_InfoNameOfExecutable(void)
 /*
  *----------------------------------------------------------------------
  *
- *   --
+ * Ns_InfoPlatform --
  *
- *	Return platform name 
+ *      Return platform name 
  *
  * Results:
- *	Platform name, string. 
+ *      Platform name, string. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -245,13 +245,13 @@ Ns_InfoPlatform(void)
  *
  * Ns_InfoUptime --
  *
- *	Returns time server has been up. 
+ *      Returns time server has been up. 
  *
  * Results:
- *	Seconds server has been running.
+ *      Seconds server has been running.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -268,13 +268,13 @@ Ns_InfoUptime(void)
  *
  * Ns_InfoBootTime --
  *
- *	Returns time server started. 
+ *      Returns time server started. 
  *
  * Results:
- *	Treat as time_t. 
+ *      Treat as time_t. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -291,13 +291,13 @@ Ns_InfoBootTime(void)
  *
  * Ns_InfoHostname --
  *
- *	Return server hostname 
+ *      Return server hostname 
  *
  * Results:
- *	Hostname 
+ *      Hostname 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -315,13 +315,13 @@ Ns_InfoHostname(void)
  *
  * Ns_InfoAddress --
  *
- *	Return server IP address
+ *      Return server IP address
  *
  * Results:
- *	Primary (first) IP address of this machine.
+ *      Primary (first) IP address of this machine.
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -338,13 +338,13 @@ Ns_InfoAddress(void)
  *
  * Ns_InfoBuildDate --
  *
- *	Returns time server was compiled. 
+ *      Returns time server was compiled. 
  *
  * Results:
- *	String build date and time. 
+ *      String build date and time. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -361,13 +361,13 @@ Ns_InfoBuildDate(void)
  *
  * Ns_InfoShutdownPending --
  *
- *	Boolean: is a shutdown pending? 
+ *      Boolean: is a shutdown pending? 
  *
  * Results:
- *	NS_TRUE: yes, NS_FALSE: no 
+ *      NS_TRUE: yes, NS_FALSE: no 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -380,6 +380,7 @@ Ns_InfoShutdownPending(void)
     Ns_MutexLock(&nsconf.state.lock);
     stopping = nsconf.state.stopping;
     Ns_MutexUnlock(&nsconf.state.lock);
+
     return stopping;
 }
 
@@ -389,13 +390,13 @@ Ns_InfoShutdownPending(void)
  *
  * Ns_InfoStarted --
  *
- *	Boolean: has the server started up all the way yet? 
+ *      Boolean: has the server started up all the way yet? 
  *
  * Results:
- *	NS_TRUE: yes, NS_FALSE: no 
+ *      NS_TRUE: yes, NS_FALSE: no 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -408,6 +409,7 @@ Ns_InfoStarted(void)
     Ns_MutexLock(&nsconf.state.lock);
     started = nsconf.state.started;
     Ns_MutexUnlock(&nsconf.state.lock);
+
     return started;
 }
 
@@ -417,13 +419,13 @@ Ns_InfoStarted(void)
  *
  * Ns_InfoServersStarted --
  *
- *	Compatability function, same as Ns_InfoStarted 
+ *      Compatability function, same as Ns_InfoStarted 
  *
  * Results:
- *	See Ns_InfoStarted 
+ *      See Ns_InfoStarted 
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -440,13 +442,13 @@ Ns_InfoServersStarted(void)
  *
  * Ns_InfoTag --
  *
- *	Returns CVS tag of this build (meaningless without "cvs export").
+ *      Returns CVS tag of this build (meaningless without "cvs export").
  *
  * Results:
- *	A string version name. 
+ *      A string version name. 
  *
  * Side effects:
- *	None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -463,13 +465,13 @@ Ns_InfoTag(void)
  *
  * NsTclInfoObjCmd --
  *
- *	Implements ns_info. 
+ *      Implements ns_info. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -477,205 +479,211 @@ Ns_InfoTag(void)
 int
 NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    int opt;
-    NsInterp *itPtr = arg;
-    char *server, *elog;
+    int         opt;
+    NsInterp    *itPtr = arg;
+    char        *server, *elog;
     Tcl_DString ds;
+
+
     static CONST char *opts[] = {
-	"address", "argv0", "boottime", "builddate", "callbacks",
-	"config", "home", "hostname", "locks", "log",
-	"major", "minor", "name", "nsd", "pageroot", "patchlevel",
-	"pid", "platform", "pools", "scheduled", "server", "servers",
-	"sockcallbacks", "tag", "tcllib", "threads", "uptime",
-	"version", "winnt", "filters", "traces", "requestprocs",
-    "url2file", NULL
+        "address", "argv0", "boottime", "builddate", "callbacks",
+        "config", "home", "hostname", "locks", "log",
+        "major", "minor", "name", "nsd", "pageroot", "patchlevel",
+        "pid", "platform", "pools", "scheduled", "server", "servers",
+        "sockcallbacks", "tag", "tcllib", "threads", "uptime",
+        "version", "winnt", "filters", "traces", "requestprocs",
+        "url2file", NULL
     };
+
     enum {
-	IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
-	IConfigIdx, IHomeIdx, hostINameIdx, ILocksIdx, ILogIdx,
-	IMajorIdx, IMinorIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
-	IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
-	sockICallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
-	IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
-    IUrl2FileIdx
+        IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
+        IConfigIdx, IHomeIdx, hostINameIdx, ILocksIdx, ILogIdx,
+        IMajorIdx, IMinorIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
+        IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
+        sockICallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
+        IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
+        IUrl2FileIdx
     };
 
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option");
+        Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-			    &opt) != TCL_OK) {
-	return TCL_ERROR;
+                            &opt) != TCL_OK) {
+        return TCL_ERROR;
     }
-
+    
     Tcl_DStringInit(&ds);
-
+    
     switch (opt) {
     case IArgv0Idx:
-	Tcl_SetResult(interp, nsconf.argv0, TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, nsconf.argv0, TCL_STATIC);
+        return TCL_OK;
+        
     case INsdIdx:
-	Tcl_SetResult(interp, nsconf.nsd, TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, nsconf.nsd, TCL_STATIC);
+        return TCL_OK;
+        
     case INameIdx:
         Tcl_SetResult(interp, Ns_InfoServerName(), TCL_STATIC);
-	break;
-
+        return TCL_OK;
+        
     case IConfigIdx:
-	Tcl_SetResult(interp, Ns_InfoConfigFile(), TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, Ns_InfoConfigFile(), TCL_STATIC);
+        return TCL_OK;
+        
     case ICallbacksIdx:
-    	NsGetCallbacks(&ds);
-	Tcl_DStringResult(interp, &ds);
-	break;
-
+        NsGetCallbacks(&ds);
+        Tcl_DStringResult(interp, &ds);
+        return TCL_OK;
+        
     case sockICallbacksIdx:
-    	NsGetSockCallbacks(&ds);
-	Tcl_DStringResult(interp, &ds);
-	break;
-
+        NsGetSockCallbacks(&ds);
+        Tcl_DStringResult(interp, &ds);
+        break;
+        
     case IScheduledIdx:
-    	NsGetScheduled(&ds);
-	Tcl_DStringResult(interp, &ds);
-	break;
-
+        NsGetScheduled(&ds);
+        Tcl_DStringResult(interp, &ds);
+        return TCL_OK;
+        
     case ILocksIdx:
-	Ns_MutexList(&ds);
-	Tcl_DStringResult(interp, &ds);
-	break;
-
+        Ns_MutexList(&ds);
+        Tcl_DStringResult(interp, &ds);
+        return TCL_OK;
+        
     case IThreadsIdx:
-	Ns_ThreadList(&ds, ThreadArgProc);
-	Tcl_DStringResult(interp, &ds);
-	break;
-
+        Ns_ThreadList(&ds, ThreadArgProc);
+        Tcl_DStringResult(interp, &ds);
+        return TCL_OK;
+        
     case IPoolsIdx:
 #if !defined(_WIN32) && defined(USE_THREAD_ALLOC) && (STATIC_BUILD == 0)
-	Tcl_GetMemoryInfo(&ds); /* As of Tcl8.4.1 this is not exported. */
-	Tcl_DStringResult(interp, &ds);
+        Tcl_GetMemoryInfo(&ds); /* As of Tcl8.4.1 this is not exported. */
+        Tcl_DStringResult(interp, &ds);
 #endif
-	break;
-
+        return TCL_OK;
+        
     case ILogIdx:
-    elog = Ns_InfoErrorLog();
-	Tcl_SetResult(interp, elog == NULL ? "STDOUT" : elog, TCL_STATIC);
-	break;
-
+        elog = Ns_InfoErrorLog();
+        Tcl_SetResult(interp, elog == NULL ? "STDOUT" : elog, TCL_STATIC);
+        return TCL_OK;
+        
     case IPlatformIdx:
-	Tcl_SetResult(interp, Ns_InfoPlatform(), TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, Ns_InfoPlatform(), TCL_STATIC);
+        return TCL_OK;
+        
     case hostINameIdx:
-	Tcl_SetResult(interp, Ns_InfoHostname(), TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, Ns_InfoHostname(), TCL_STATIC);
+        return TCL_OK;
+        
     case IAddressIdx:
-	Tcl_SetResult(interp, Ns_InfoAddress(), TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, Ns_InfoAddress(), TCL_STATIC);
+        return TCL_OK;
+        
     case IUptimeIdx:
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoUptime()));
-	break;
-
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoUptime()));
+        return TCL_OK;
+        
     case IBoottimeIdx:
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoBootTime()));
-	break;
-
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoBootTime()));
+        return TCL_OK;
+        
     case IPidIdx:
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoPid()));
-	break;
-
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoPid()));
+        return TCL_OK;
+        
     case IMajorIdx:
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MAJOR_VERSION));
-	break;
-
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MAJOR_VERSION));
+        return TCL_OK;
+        
     case IMinorIdx:
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MINOR_VERSION));
-	break;
-
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MINOR_VERSION));
+        return TCL_OK;
+        
     case IVersionIdx:
-	Tcl_SetResult(interp, NS_VERSION, TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, NS_VERSION, TCL_STATIC);
+        return TCL_OK;
+        
     case IPatchLevelIdx:
-	Tcl_SetResult(interp, NS_PATCH_LEVEL, TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, NS_PATCH_LEVEL, TCL_STATIC);
+        return TCL_OK;
+        
     case IHomeIdx:
-	Tcl_SetResult(interp, Ns_InfoHomePath(), TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, Ns_InfoHomePath(), TCL_STATIC);
+        return TCL_OK;
+        
     case IWinntIdx:
 #ifdef _WIN32
-    Tcl_SetResult(interp, "1", TCL_STATIC);
+        Tcl_SetResult(interp, "1", TCL_STATIC);
 #else
-	Tcl_SetResult(interp, "0", TCL_STATIC);
+        Tcl_SetResult(interp, "0", TCL_STATIC);
 #endif
-	break;
-
+        return TCL_OK;
+        
     case IBuilddateIdx:
-	Tcl_SetResult(interp, Ns_InfoBuildDate(), TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, Ns_InfoBuildDate(), TCL_STATIC);
+        return TCL_OK;
+        
     case ITagIdx:
-	Tcl_SetResult(interp, Ns_InfoTag(), TCL_STATIC);
-	break;
-
+        Tcl_SetResult(interp, Ns_InfoTag(), TCL_STATIC);
+        return TCL_OK;
+        
     case IServersIdx:
-	Tcl_SetResult(interp, nsconf.servers.string, TCL_STATIC);
-	break;
+        Tcl_SetResult(interp, nsconf.servers.string, TCL_STATIC);
+        return TCL_OK;
     }
-
+    
     /*
      * The following subcommands require a virtual server.
      */
 
-	if (itPtr->servPtr == NULL) {
-	    Tcl_SetResult(interp, "no server", TCL_STATIC);
-	    return TCL_ERROR;
-	}
+    if (itPtr->servPtr == NULL) {
+        Tcl_SetResult(interp, "no server", TCL_STATIC);
+        return TCL_ERROR;
+    }
+
     server = itPtr->servPtr->server;
 
     switch (opt) {
     case IPageRootIdx:
         NsPageRoot(&ds, itPtr->servPtr, NULL);
         Tcl_DStringResult(interp, &ds);
-        break;
+        return TCL_OK;
 
     case IServerIdx:
         Tcl_SetResult(interp, server, TCL_STATIC);
-        break;
+        return TCL_OK;
 
     case ITclLibIdx:
         Tcl_SetResult(interp, itPtr->servPtr->tcl.library, TCL_STATIC);
-        break;
+        return TCL_OK;
 
     case IFiltersIdx:
         NsGetFilters(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        break;
+        return TCL_OK;
 
     case ITracesIdx:
         NsGetTraces(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        break;
+        return TCL_OK;
 
     case IRequestProcsIdx:
         NsGetRequestProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        break;
+        return TCL_OK;
 
     case IUrl2FileIdx:
         NsGetUrl2FileProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
-        break;
+        return TCL_OK;
     }
 
-    return TCL_OK;
+    Tcl_SetResult(interp, "unrecognized option", TCL_STATIC);
+
+    return TCL_ERROR;
 }
 
 
@@ -684,13 +692,13 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
  *
  * NsTclLibraryCmd --
  *
- *	Implements ns_library. 
+ *  Implements ns_library. 
  *
  * Results:
- *	Tcl result. 
+ *  Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *  See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -703,18 +711,18 @@ NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     Ns_DString ds;
 
     if (argc != 2 && argc != 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-	    argv[0], " library ?module?\"", NULL);
-	return TCL_ERROR;
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        argv[0], " library ?module?\"", NULL);
+    return TCL_ERROR;
     }
     if (STREQ(argv[1], "private")) {
-    	lib = itPtr->servPtr->tcl.library;
+        lib = itPtr->servPtr->tcl.library;
     } else if (STREQ(argv[1], "shared")) {
-    	lib = nsconf.tcl.sharedlibrary;
+        lib = nsconf.tcl.sharedlibrary;
     } else {
-	Tcl_AppendResult(interp, "unknown library \"",
-	   argv[1], "\": should be private or shared", NULL);
-	return TCL_ERROR;
+    Tcl_AppendResult(interp, "unknown library \"",
+       argv[1], "\": should be private or shared", NULL);
+    return TCL_ERROR;
     }
     Ns_DStringInit(&ds);
     Ns_MakePath(&ds, lib, argv[2], NULL);

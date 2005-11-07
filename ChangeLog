@@ -1,3 +1,8 @@
+2005-11-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/info.c: Fixed broken NsTclInfoObjCmd which failed to
+	properly process info options not tied to any specific server.
+
 2005-11-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
