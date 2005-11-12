@@ -1788,7 +1788,7 @@ Ns_AbsoluteUrl(Ns_DString *pds, CONST char *url, CONST char *baseurl)
 
 NS_EXTERN void
 Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
-                        Ns_Url2FileProc *proc, Ns_Callback *delete,
+                        Ns_Url2FileProc *proc, Ns_Callback *deletecb,
                         void *arg, int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
