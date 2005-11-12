@@ -1,15 +1,20 @@
 2005-11-12  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd.conn.c: New Ns_ConnSockPtr function
 	* nsd/info.c: Fixed sockcallbacks as unrecognosed error
 	* nssock/nssock.c:
-	* include/ns.h:
+	* include/ns.h: Added new DriverAccept call for drivers
+	to be called after accept the connection. If request struct will 
+	be provided by the driver, connection will be queued immediately and
+	driver will handle it completely. This is temporary until more generic
+	driver support will be designed.
 	* nsd/sock.c: Moved and made as public two functions from sock 
 	driver: Ns_SockRecvBufs, Ns_SockSendBufs. for new drivers, now it 
 	will be easy to re-use send/recv data from within driver's proc.
 
 	* nsd/driver.c: Split SockRead into SockRead and SockParse,
-	added new SetRequest static function that allocates request struct
-	for new connection socket.
+	added new Ns_DriverSetRequest function that allocates request 
+	struct for new connection socket.
 
 2005-11-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 

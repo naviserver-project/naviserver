@@ -488,7 +488,8 @@ typedef enum {
     DriverRecv,
     DriverSend,
     DriverKeep,
-    DriverClose
+    DriverClose,
+    DriverAccept
 } Ns_DriverCmd;
 
 /*
@@ -717,6 +718,7 @@ NS_EXTERN char *Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);
 NS_EXTERN char *Ns_ConnHost(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPort(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnSock(Ns_Conn *conn);
+NS_EXTERN Ns_Sock *Ns_ConnSockPtr(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnDriverName(Ns_Conn *conn);
 NS_EXTERN void *Ns_ConnDriverContext(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnGetWriteEncodedFlag(Ns_Conn *conn);
@@ -842,6 +844,7 @@ NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
  */
 
 NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
+NS_EXTERN void Ns_DriverSockRequest(Ns_Sock *sock, char *reqline);
 
 /*
  * dsprintf.c:

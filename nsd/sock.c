@@ -105,6 +105,7 @@ Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout)
     return n;
 }
 
+int
 Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout)
 {
     int n;

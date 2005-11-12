@@ -937,14 +937,29 @@ DriverThread(void *ignored)
                     
                     drvPtr->nextPtr = acceptDrvPtr;
                     acceptDrvPtr = drvPtr;
-                    
+
                     /*
-                     * Put the socket on the read-ahead list.
+                     * Queue the socket immediately if request is provided
                      */
-                    
-                    SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                    sockPtr->nextPtr = readPtr;
-                    readPtr = sockPtr;
+                    n = (*sockPtr->drvPtr->proc)(DriverAccept, (Ns_Sock*)sockPtr, 0, 0);
+                    if (n == NS_OK && sockPtr->reqPtr) {
+                        if (!SetServer(sockPtr)) {
+                            SockRelease(sockPtr, Reason_ServerReject);
+                        } else {
+                            if (!NsQueueConn(sockPtr, &now)) {
+                                sockPtr->nextPtr = waitPtr;
+                                waitPtr = sockPtr;
+                            }
+                        }
+                    } else {
+                       /*
+                        * Put the socket on the read-ahead list.
+                        */
+
+                        SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                        sockPtr->nextPtr = readPtr;
+                        readPtr = sockPtr;
+                    }
                 }
                 drvPtr = nextDrvPtr;
             }
@@ -1084,54 +1099,6 @@ SetServer(Sock *sockPtr)
     }
 
     return 1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetRequest --
- *
- *      Allocates new request struct for the given socket, if data is specified,
- *      it becomes parsed request struct, i.e. should be in the form: METHOD URL PROTO
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-static Request*
-SetRequest(Sock *sockPtr, char *data)
-{
-    Request      *reqPtr;
-
-    Ns_MutexLock(&reqLock);
-    reqPtr = firstReqPtr;
-    if (reqPtr != NULL) {
-        firstReqPtr = reqPtr->nextPtr;
-    }
-    Ns_MutexUnlock(&reqLock);
-    if (reqPtr == NULL) {
-        reqPtr = ns_malloc(sizeof(Request));
-        Tcl_DStringInit(&reqPtr->buffer);
-        reqPtr->headers = Ns_SetCreate(NULL);
-        reqPtr->request = NULL;
-        reqPtr->next = reqPtr->content = NULL;
-        reqPtr->length = reqPtr->avail = 0;
-        reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
-        reqPtr->leadblanks = 0;
-    }
-    sockPtr->reqPtr = reqPtr;
-    reqPtr->port = ntohs(sockPtr->sa.sin_port);
-    strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
-
-    if (data) {
-        sockPtr->reqPtr->request = Ns_ParseRequest(data);
-    }
-    return reqPtr;
 }
 
 
@@ -1415,17 +1382,15 @@ SockRead(Sock *sockPtr)
     char         tbuf[4096];
     int          len, nread, n;
     
-    reqPtr = sockPtr->reqPtr;
-    if (reqPtr == NULL) {
-        reqPtr = SetRequest(sockPtr, 0);
-    }
-    
+    Ns_DriverSockRequest(sock, 0);
+
     /*
      * On the first read, attempt to read-ahead bufsize bytes.
      * Otherwise, read only the number of bytes left in the
      * content.
      */
     
+    reqPtr = sockPtr->reqPtr;
     bufPtr = &reqPtr->buffer;
     if (reqPtr->length == 0) {
         nread = sockPtr->drvPtr->bufsize;
@@ -1671,4 +1636,55 @@ SockParse(Sock *sockPtr)
      */
     
     return SOCK_MORE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DriverSockRequest --
+ *
+ *      Allocates new request struct for the given socket, if data is specified,
+ *      it becomes parsed request struct, i.e. should be in the form: METHOD URL PROTO
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_DriverSockRequest(Ns_Sock *sock, char *reqline)
+{
+    Request      *reqPtr;
+    Sock         *sockPtr = (Sock*)sock;
+
+    reqPtr = sockPtr->reqPtr;
+    if (reqPtr == NULL) {
+        Ns_MutexLock(&reqLock);
+        reqPtr = firstReqPtr;
+        if (reqPtr != NULL) {
+            firstReqPtr = reqPtr->nextPtr;
+        }
+        Ns_MutexUnlock(&reqLock);
+        if (reqPtr == NULL) {
+            reqPtr = ns_malloc(sizeof(Request));
+            Tcl_DStringInit(&reqPtr->buffer);
+            reqPtr->headers = Ns_SetCreate(NULL);
+            reqPtr->request = NULL;
+            reqPtr->next = reqPtr->content = NULL;
+            reqPtr->length = reqPtr->avail = 0;
+            reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
+            reqPtr->leadblanks = 0;
+        }
+        sockPtr->reqPtr = reqPtr;
+        reqPtr->port = ntohs(sockPtr->sa.sin_port);
+        strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+
+        if (reqline) {
+            reqPtr->request = Ns_ParseRequest(reqline);
+        }
+    }
 }

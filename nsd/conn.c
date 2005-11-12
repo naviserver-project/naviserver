@@ -651,7 +651,7 @@ Ns_ConnPort(Ns_Conn *conn)
  *      Return the underlying socket for a connection.
  *
  * Results:
- *      A driver name 
+ *      socket descriptor
  *
  * Side effects:
  *      None
@@ -665,6 +665,30 @@ Ns_ConnSock(Ns_Conn *conn)
     Conn *connPtr = (Conn *) conn;
 
     return (connPtr->sockPtr ? connPtr->sockPtr->sock : -1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSockPtr --
+ *
+ *      Return the underlying socket for a connection.
+ *
+ * Results:
+ *      Ns_sock struct
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Sock *
+Ns_ConnSockPtr(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return (Ns_Sock*)connPtr->sockPtr;
 }
 
 
