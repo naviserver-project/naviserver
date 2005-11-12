@@ -139,7 +139,7 @@ test ns_info-2.27.1 {basic operation} -body {
 } -result 1
 
 test ns_info-2.28.1 {basic operation} -body {
-     ns_sleep 1
+     ns_sleep 2
      expr {[ns_info uptime]>1}
 } -result 1
 

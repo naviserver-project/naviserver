@@ -497,10 +497,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     enum {
         IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
-        IConfigIdx, IHomeIdx, hostINameIdx, ILocksIdx, ILogIdx,
+        IConfigIdx, IHomeIdx, IHostNameIdx, ILocksIdx, ILogIdx,
         IMajorIdx, IMinorIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
         IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
-        sockICallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
+        ISockCallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
         IUrl2FileIdx
     };
@@ -538,10 +538,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
         
-    case sockICallbacksIdx:
+    case ISockCallbacksIdx:
         NsGetSockCallbacks(&ds);
         Tcl_DStringResult(interp, &ds);
-        break;
+        return TCL_OK;
         
     case IScheduledIdx:
         NsGetScheduled(&ds);
@@ -574,7 +574,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         Tcl_SetResult(interp, Ns_InfoPlatform(), TCL_STATIC);
         return TCL_OK;
         
-    case hostINameIdx:
+    case IHostNameIdx:
         Tcl_SetResult(interp, Ns_InfoHostname(), TCL_STATIC);
         return TCL_OK;
         

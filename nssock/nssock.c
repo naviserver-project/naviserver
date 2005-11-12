@@ -45,8 +45,6 @@ int Ns_ModuleVersion = 1;
  */
 
 static Ns_DriverProc SockProc;
-static int SockRecv(SOCKET sock, struct iovec *bufs, int nbufs);
-static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs);
 
 
 /*
@@ -113,21 +111,11 @@ SockProc(Ns_DriverCmd cmd, Ns_Sock *sock, struct iovec *bufs, int nbufs)
 
     switch (cmd) {
     case DriverRecv:
-	n = SockRecv(sock->sock, bufs, nbufs);
-	if (n < 0
-	    && ns_sockerrno == EWOULDBLOCK
-	    && Ns_SockWait(sock->sock, NS_SOCK_READ, sock->driver->recvwait) == NS_OK) {
-	    n = SockRecv(sock->sock, bufs, nbufs);
-	}
+	n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, sock->driver->recvwait);
 	break;
 
     case DriverSend:
-	n = SockSend(sock->sock, bufs, nbufs);
-	if (n < 0
-	    && ns_sockerrno == EWOULDBLOCK
-	    && Ns_SockWait(sock->sock, NS_SOCK_WRITE, sock->driver->sendwait) == NS_OK) {
-	    n = SockSend(sock->sock, bufs, nbufs);
-	}
+	n = Ns_SockSendBufs(sock->sock, bufs, nbufs, sock->driver->sendwait);
 	break;
 
     case DriverKeep:
@@ -145,44 +133,3 @@ SockProc(Ns_DriverCmd cmd, Ns_Sock *sock, struct iovec *bufs, int nbufs)
 }
 
 
-static int
-SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
-{
-#ifdef _WIN32
-    int n, flags;
-
-    flags = 0;
-    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags, NULL, NULL) != 0) {
-	n = -1;
-    }
-    return n;
-#else
-    struct msghdr msg;
-
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_iov = bufs;
-    msg.msg_iovlen = nbufs;
-    return recvmsg(sock, &msg, 0);
-#endif
-}
-
-
-static int
-SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
-{
-#ifdef _WIN32
-    int n;
-
-    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, 0, NULL, NULL) != 0) {
-	n = -1;
-    }
-    return n;
-#else
-    struct msghdr msg;
-
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_iov = bufs;
-    msg.msg_iovlen = nbufs;
-    return sendmsg(sock, &msg, 0);
-#endif
-}

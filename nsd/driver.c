@@ -88,6 +88,7 @@ static void SockTrigger(void);
 static Driver *firstDrvPtr; /* First in list of all drivers. */
 static Sock *firstClosePtr; /* First conn ready for graceful close. */
 static int SockRead(Sock *sockPtr);
+static int SockParse(Sock *sockPtr);
 static void SockPoll(Sock *sockPtr, Ns_Time *timeoutPtr);
 static void SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
 static int  SetServer(Sock *sockPtr);
@@ -1083,7 +1084,54 @@ SetServer(Sock *sockPtr)
     }
 
     return 1;
-    // return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetRequest --
+ *
+ *      Allocates new request struct for the given socket, if data is specified,
+ *      it becomes parsed request struct, i.e. should be in the form: METHOD URL PROTO
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Request*
+SetRequest(Sock *sockPtr, char *data)
+{
+    Request      *reqPtr;
+
+    Ns_MutexLock(&reqLock);
+    reqPtr = firstReqPtr;
+    if (reqPtr != NULL) {
+        firstReqPtr = reqPtr->nextPtr;
+    }
+    Ns_MutexUnlock(&reqLock);
+    if (reqPtr == NULL) {
+        reqPtr = ns_malloc(sizeof(Request));
+        Tcl_DStringInit(&reqPtr->buffer);
+        reqPtr->headers = Ns_SetCreate(NULL);
+        reqPtr->request = NULL;
+        reqPtr->next = reqPtr->content = NULL;
+        reqPtr->length = reqPtr->avail = 0;
+        reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
+        reqPtr->leadblanks = 0;
+    }
+    sockPtr->reqPtr = reqPtr;
+    reqPtr->port = ntohs(sockPtr->sa.sin_port);
+    strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+
+    if (data) {
+        sockPtr->reqPtr->request = Ns_ParseRequest(data);
+    }
+    return reqPtr;
 }
 
 
@@ -1364,30 +1412,12 @@ SockRead(Sock *sockPtr)
     struct iovec  buf;
     Request      *reqPtr;
     Tcl_DString  *bufPtr;
-    char         *s, *e, save, tbuf[4096];
-    int           cnt, len, nread, n;
+    char         tbuf[4096];
+    int          len, nread, n;
     
     reqPtr = sockPtr->reqPtr;
     if (reqPtr == NULL) {
-        Ns_MutexLock(&reqLock);
-        reqPtr = firstReqPtr;
-        if (reqPtr != NULL) {
-            firstReqPtr = reqPtr->nextPtr;
-        }
-        Ns_MutexUnlock(&reqLock);
-        if (reqPtr == NULL) {
-            reqPtr = ns_malloc(sizeof(Request));
-            Tcl_DStringInit(&reqPtr->buffer);
-            reqPtr->headers = Ns_SetCreate(NULL);
-            reqPtr->request = NULL;
-            reqPtr->next = reqPtr->content = NULL;
-            reqPtr->length = reqPtr->avail = 0;
-            reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
-            reqPtr->leadblanks = 0;
-        }
-        sockPtr->reqPtr = reqPtr;
-        reqPtr->port = ntohs(sockPtr->sa.sin_port);
-        strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+        reqPtr = SetRequest(sockPtr, 0);
     }
     
     /*
@@ -1458,7 +1488,40 @@ SockRead(Sock *sockPtr)
     }
     reqPtr->woff  += n;
     reqPtr->avail += n;
+
+    return SockParse(sockPtr);
+}
+
+/*----------------------------------------------------------------------
+ *
+ * SockParse --
+ *
+ *      Construct the given conn by parsing input buffer until end of
+ *      headers.  Return NS_SOCK_READY when finnished parsing.
+ *
+ * Results:
+ *      NS_SOCK_READY:  Conn is ready for processing.
+ *      NS_SOCK_MORE:   More input is required.
+ *      NS_SOCK_ERROR:  Malformed request.
+ *
+ * Side effects:
+ *      An Ns_Request and/or Ns_Set may be allocated.
+ *      Ns_Conn buffer management offsets updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SockParse(Sock *sockPtr)
+{
+    Request      *reqPtr;
+    Tcl_DString  *bufPtr;
+    char         *s, *e, save;
+    int           cnt;
     
+    reqPtr = sockPtr->reqPtr;
+    bufPtr = &reqPtr->buffer;
+
     /*
      * Scan lines until start of content.
      */

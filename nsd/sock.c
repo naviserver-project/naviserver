@@ -49,6 +49,75 @@ NS_RCSID("@(#) $Header$");
 static SOCKET SockConnect(char *host, int port, char *lhost, int lport, int async);
 static SOCKET SockSetup(SOCKET sock);
 
+static int
+SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
+{
+#ifdef _WIN32
+    int n, flags;
+
+    flags = 0;
+    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags, NULL, NULL) != 0) {
+	n = -1;
+    }
+    return n;
+#else
+    struct msghdr msg;
+
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_iov = bufs;
+    msg.msg_iovlen = nbufs;
+    return recvmsg(sock, &msg, 0);
+#endif
+}
+
+
+static int
+SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
+{
+#ifdef _WIN32
+    int n;
+
+    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, 0, NULL, NULL) != 0) {
+	n = -1;
+    }
+    return n;
+#else
+    struct msghdr msg;
+
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_iov = bufs;
+    msg.msg_iovlen = nbufs;
+    return sendmsg(sock, &msg, 0);
+#endif
+}
+
+int
+Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout)
+{
+    int n;
+
+    n = SockRecv(sock, bufs, nbufs);
+    if (n < 0
+        && ns_sockerrno == EWOULDBLOCK
+        && Ns_SockWait(sock, NS_SOCK_READ, timeout) == NS_OK) {
+        n = SockRecv(sock, bufs, nbufs);
+    }
+    return n;
+}
+
+Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout)
+{
+    int n;
+
+    n = SockSend(sock, bufs, nbufs);
+    if (n < 0
+        && ns_sockerrno == EWOULDBLOCK
+        && Ns_SockWait(sock, NS_SOCK_WRITE, timeout) == NS_OK) {
+        n = SockSend(sock, bufs, nbufs);
+    }
+    return n;
+}
+
 
 /*
  *----------------------------------------------------------------------

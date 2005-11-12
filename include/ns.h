@@ -1524,6 +1524,9 @@ NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, int timeout);
 NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, int timeout);
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 
+NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout);
+NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout);
+
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
 NS_EXTERN SOCKET Ns_SockBind(struct sockaddr_in *psa);
 NS_EXTERN SOCKET Ns_SockListen(char *address, int port);
