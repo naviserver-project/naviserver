@@ -492,7 +492,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "pid", "platform", "pools", "scheduled", "server", "servers",
         "sockcallbacks", "tag", "tcllib", "threads", "uptime",
         "version", "winnt", "filters", "traces", "requestprocs",
-        "url2file", NULL
+        "url2file", "shutdownpending", "started", NULL
     };
 
     enum {
@@ -502,7 +502,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
         ISockCallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
-        IUrl2FileIdx
+        IUrl2FileIdx, IShutdownPendingIdx, IStartedIdx
     };
 
     if (objc != 2) {
@@ -520,7 +520,15 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case IArgv0Idx:
         Tcl_SetResult(interp, nsconf.argv0, TCL_STATIC);
         return TCL_OK;
-        
+
+    case IStartedIdx:
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoStarted()));
+        return NS_OK;
+
+    case IShutdownPendingIdx:
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoShutdownPending()));
+        return NS_OK;
+
     case INsdIdx:
         Tcl_SetResult(interp, nsconf.nsd, TCL_STATIC);
         return TCL_OK;

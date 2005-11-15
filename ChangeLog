@@ -1,4 +1,9 @@
 2005-11-12  Vlad Seryakov  <seryakov@users.sf.net>
+	
+	* nsd.info.c: Added ns_info started and 
+	ns_info shutdownpending commands
+
+2005-11-12  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd.conn.c: New Ns_ConnSockPtr function
 	* nsd/info.c: Fixed sockcallbacks as unrecognosed error
