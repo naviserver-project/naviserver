@@ -109,7 +109,7 @@ static int watchdogExit = 0; /* Watchdog loop toggle */
 int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
-    int       retcode, fd, i, sig, optind, cmdargc;
+    int       fd, i, sig, optind, cmdargc;
     char    **cmdargv;
     char     *config;
     Ns_Time   timeout;
