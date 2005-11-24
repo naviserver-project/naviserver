@@ -169,8 +169,12 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
 #else
     char *coredump;
     int exitcode, status;
-    
-    if (waitpid(pid, &status, 0) != pid) {
+    pid_t p;
+
+    do {
+       p = waitpid(pid, &status, 0);
+    } while (p != pid && errno == EINTR);
+    if (p != pid) {
         Ns_Log(Error, "waitpid(%d) failed: %s", pid, strerror(errno));
 	return NS_ERROR;
     }
