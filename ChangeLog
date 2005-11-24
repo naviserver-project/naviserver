@@ -1,13 +1,3 @@
-2005-11-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
-
-	* nsd/exec.c: Ns_WaitForProcess() ignores EINTR in waitpid
-	* nsd/nsmain.c: NsMain() calls Tcl_ThreadExit() instead of
-	simply returning to caller.
-	This triggers invocation of exit handlers registered by Tcl
-	extensions loaded into the main thread and cleanup of TLS
-	slots (indirectly, from the thread library exit call, 
-	pthread_exit or _endthreadex).
-
 2005-11-12  Vlad Seryakov  <seryakov@users.sf.net>
 	
 	* nsd.info.c: Added ns_info started and 

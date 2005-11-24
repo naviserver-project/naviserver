@@ -801,7 +801,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     NsWaitJobsShutdown(&timeout);
     NsWaitShutdownProcs(&timeout);
 
-
     /*
      * Finally, execute the exit procs directly.  Note that
      * there is not timeout check for the exit procs so they
@@ -821,14 +820,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     /*
      * The main thread exits gracefully on NS_SIGTERM.
      * All other signals are propagated to the caller.
-     * We call Tcl_ExitThread() here in order to pull
-     * registered exit handlers and trigger cleanup of
-     * the TLS storage for the current (main) thread.
      */
-
-    Tcl_ExitThread((sig == NS_SIGTERM) ? 0 : sig);
-
-    return 0; /* Never reached */
+   
+    return (sig == NS_SIGTERM) ? 0 : sig;
 }
 
 
