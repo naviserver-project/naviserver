@@ -1,3 +1,7 @@
+2005-12-03  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/ns_info.test: Add new sub-commands to failing ns_info test.
+
 2005-11-12  Vlad Seryakov  <seryakov@users.sf.net>
 	
 	* nsd.info.c: Added ns_info started and 
