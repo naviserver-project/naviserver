@@ -1243,6 +1243,11 @@ Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
                      int inherit)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+NS_EXTERN void
+Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
+                       int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 NS_EXTERN int
 Ns_ConnRunRequest(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);

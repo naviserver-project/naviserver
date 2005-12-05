@@ -187,9 +187,33 @@ void
 Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
                      int inherit)
 {
+    Ns_UnRegisterRequestEx(server, method, url, inherit ? 0 : NS_OP_NOINHERIT);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_UnRegisterRequestEx --
+ *
+ *      Remove the procedure which would run for the given method and
+ *      url pattern, passing along any flags.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Requests deleteProc may run.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
+                       int flags)
+{
     Ns_MutexLock(&ulock);
-    Ns_UrlSpecificDestroy(server, method, url, uid,
-                          inherit ? 0 : NS_OP_NOINHERIT);
+    Ns_UrlSpecificDestroy(server, method, url, uid, flags);
     Ns_MutexUnlock(&ulock);
 }
 

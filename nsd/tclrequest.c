@@ -201,10 +201,11 @@ NsTclUnRegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 {
     NsInterp *itPtr = arg;
     char     *method, *url;
-    int       flags = 0;
+    int       noinherit = 0, recurse = 0;
     
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, (void *) NS_OP_NOINHERIT},
+        {"-recurse",   Ns_ObjvBool,  &recurse,   (void *) NS_OP_RECURSE},
         {"--",         Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -216,8 +217,7 @@ NsTclUnRegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-
-    Ns_UnRegisterRequest(itPtr->servPtr->server, method, url, flags);
+    Ns_UnRegisterRequestEx(itPtr->servPtr->server, method, url, noinherit | recurse);
 
     return TCL_OK;
 }

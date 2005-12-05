@@ -1,3 +1,13 @@
+2005-12-05  Stephen Deasey  <sd@groks.org>
+
+	* include/ns.h:
+	* nsd/op.c: Add new function Ns_UnRegisterProcEx which
+	allows all urlspace flags to be set.
+	* nsd/tclrequest.c: Fix bug where noinherit procs were not being
+	deleted. Add new -recurse flag to ns_unregister_proc which deletes
+	all registered procs below the given URL.
+	* tests/ns_register_proc.test: Exercise the ns_register_proc API.
+
 2005-12-03  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/ns_info.test: Add new sub-commands to failing ns_info test.
