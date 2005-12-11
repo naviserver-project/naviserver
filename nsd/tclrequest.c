@@ -403,7 +403,6 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
 
     interp = Ns_GetConnInterp(conn);
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, NULL) != TCL_OK) {
-        Ns_TclLogError(interp);
         return Ns_ConnReturnInternalError(conn);
     }
 
@@ -443,7 +442,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
      * Start building the command with the script and arg.
      */
 
-    Tcl_DStringAppendElement(&cmd, cbPtr->script);
+    Tcl_DStringAppend(&cmd, cbPtr->script, -1);
     Tcl_DStringAppendElement(&cmd, cbPtr->scriptarg);
 
     /*

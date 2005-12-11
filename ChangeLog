@@ -8,6 +8,13 @@
 
 	* tests/ns_nsv.test: Typo: s/-setup/-body/
 
+	* tests/ns_register_filter.test: Add tests for registered filters
+	and traces.
+	* nsd/tclrequest.c: Fix bug where filter errors were being logged
+	twice. Fix bug where filter callback procs were being constructed
+	incorrectly, making it impossible to register inline script
+	fragments, rather than proc names.
+
 2005-12-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/httptime.c: Untabify and reformat.
