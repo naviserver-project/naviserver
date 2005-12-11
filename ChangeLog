@@ -1,3 +1,7 @@
+2005-12-11  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tclvar.c: Untabify and reformat.
+
 2005-12-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/httptime.c: Untabify and reformat.
