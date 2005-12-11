@@ -31,373 +31,303 @@ test ns_nsv-1.6 {basic syntax nsv_incr} -body {
 
 test ns_nsv-1.7 {basic syntax nsv_unset} -body {
     nsv_unset
-} -returnCodes error -result {wrong # args: should be "nsv_unset array ?key?"}
+} -returnCodes error -result {wrong # args: should be "nsv_unset ?-nocomplain? ?--? array ?key?"}
 
 test ns_nsv-1.8 {basic syntax nsv_array} -body {
     nsv_array
 } -returnCodes error -result {wrong # args: should be "nsv_array option ..."}
 
-test ns_nsv-1.9 {basic syntax nsv_names} -body {
+test ns_nsv-1.9 {basic syntax nsv_array} -body {
+    nsv_array ?
+} -returnCodes error -result {bad option "?": must be set, reset, get, names, size, or exists}
+
+test ns_nsv-1.10 {basic syntax nsv_names} -body {
     nsv_names zirrZarr
 } -result ""
 
 
 
-
-
 test ns_nsv-2.1 {nsv_set a key} -body {
-    nsv_set myarray foo bar
-} -result "bar"
+    nsv_set a k v
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result v
 
 test ns_nsv-2.2 {nsv_set same key} -body {
-    nsv_set myarray foo baz
-} -result "baz"
+    nsv_set a k v1
+    nsv_set a k v2
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result v2
 
 test ns_nsv-2.3 {nsv_set an "integer" key} -body {
-    nsv_set myarray 1 bar
-} -result "bar"
+    nsv_set a 1 v
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result v
 
 test ns_nsv-2.4 {nsv_set key with spaces} -body {
-    nsv_set myarray "and now to something different" foo
-} -result "foo"
+    nsv_set a "and now to something different" v
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result v
 
 test ns_nsv-2.5 {nsv_set big value} -body {
-    # set a meg
-    nsv_set myarray twofive [string repeat "x" [expr {1024*1024}]]
+    # 1MB
+    nsv_set a k [string repeat "x" [expr {1024*1024}]]
+} -cleanup {
+    nsv_unset -nocomplain a
 } -result [string repeat "x" [expr {1024*1024}]]
 
 
-
-
-
 test ns_nsv-3.1 {nsv_unset too many args} -body {
-    nsv_unset myarray foo bar baz
-} -returnCodes error -result {wrong # args: should be "nsv_unset array ?key?"}
+    nsv_unset a k v x
+} -returnCodes error -result {wrong # args: should be "nsv_unset ?-nocomplain? ?--? array ?key?"}
 
 test ns_nsv-3.2 {nsv_unset key} -setup {
-    nsv_set threetwo foo bar
+    nsv_set a k v
 } -body {
-    nsv_unset threetwo foo 
-} -cleanup {
-    if {[nsv_exists myarray threetwo]} {
-	error "threetwo(threetwo) exists after nsv_unset"
-    }
-} -result ""
+    nsv_unset a k
+    nsv_exists a k
+} -result 0
 
 test ns_nsv-3.3 {nsv_unset an "integer" key} -setup {
-    nsv_set threethree 1 bar
+    nsv_set a 1 v
 } -body {
-     nsv_unset threethree 1
-} -cleanup {
-    if {[nsv_exists threethree 1]} {
-	error "threethree(1) exists after nsv_unset"
-    }
-} -result ""
+    nsv_unset a 1
+    nsv_exists a 1
+} -result 0
 
 test ns_nsv-3.4 {nsv_unset key with spaces} -setup {
-     nsv_set threefour "and now to something different" bar
+    nsv_set a "and now to something different" v
 } -body {
-     nsv_unset threefour "and now to something different"
-} -cleanup {
-    if {[nsv_exists threefour "and now to something different"]} {
-	error "threefour(and now to something different) exists after nsv_unset"
-    }
-} -result ""
+    nsv_unset a "and now to something different"
+    nsv_exists a "and now to something different"
+} -result 0
 
 test ns_nsv-3.5 {nsv_unset array} -setup {
-     nsv_set threefive a1 x
-     nsv_set threefive a2 x
-     nsv_set threefive a3 x
-     nsv_set threefive a4 x
-     nsv_set threefive a5 x
+    nsv_set a k1 v1
+    nsv_set a k2 v2
+    nsv_set a k3 v3
 } -body {
-     nsv_unset threefive
+    nsv_unset a
+    list [nsv_exists a k1] [nsv_exists a k2] [nsv_exists a k3]
+} -result {0 0 0}
+
+test ns_nsv-3.6 {nsv_unset non-existing array} -body {
+    nsv_unset non_existing_array
+} -returnCodes error -result {no such array: non_existing_array}
+
+test ns_nsv-3.7 {nsv_unset non-existing array without complaint} -body {
+    nsv_unset -nocomplain non_existing_array
+} -result {}
+
+test ns_nsv-3.8 {nsv_unset non-existing key} -setup {
+    nsv_set a k v
+} -body {
+    nsv_unset a missing_key
 } -cleanup {
-    # don't want to use nsv_array command here.
-    foreach element [list a1 a2 a3 a4 a5] {
-	if {[nsv_exists threefive $element]} {
-	    error "threefive($element) exists after 'nsv_unset threefive'"
-        }
-    }
-} -result ""
+    nsv_unset -nocomplain a
+} -returnCodes error -result {no such key: missing_key}
 
-
-
-
-
-test ns_nsv-4.1 {nsv_array options} -body {
-    nsv_array zirrZarr
-} -returnCodes error -result {bad option "zirrZarr": must be set, reset, get, names, size, or exists}
-
-test ns_nsv-4.2 {nsv_array set} -body {
-    nsv_array set fourtwo {
-	a 1
-	b 2 
-	c 3
-        d 4
-	e 5
-    }
+test ns_nsv-3.9 {nsv_unset non-existing key without complaint} -setup {
+    nsv_set a k v
+} -body {
+    nsv_unset -nocomplain a k
 } -cleanup {
-    foreach element [list a b c d e] {
-	if {![nsv_exists fourtwo $element]} {
-	    error "fourtwo($element) does not exist after 'nsv_array set'"
-        }
-    }
-} -result ""
+    nsv_unset a
+} -result {}
+
+
+
+test ns_nsv-4.1 {nsv_array set} -body {
+    nsv_array set a {k1 v1 k2 v2}
+    list [nsv_exists a k1] [nsv_exists a k2]
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {1 1}
 
 test ns_nsv-4.3 {nsv_array names} -setup {
-    nsv_array set fourthree {
-	a 1
-	b 2 
-	c 3
-        d 4
-	e 5
-    }
+    nsv_array set a {k1 v1 k2 v2}
 } -body {
-    lsort [nsv_array names fourthree]
-} -result "a b c d e"
+    lsort [nsv_array names a]
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {k1 k2}
 
-test ns_nsv-4.4 {nsv_array get} -setup {
-    nsv_array set fourfour {
-	a 1
-	b 2 
-	c 3
-        d 4
-	e 5
-    }
+test ns_nsv-4.4 {nsv_array names glob} -setup {
+    nsv_array set a {k1 v1 K2 V2}
 } -body {
-    lsort [nsv_array get fourfour]
-} -result "1 2 3 4 5 a b c d e"
+    nsv_array names a k*
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result k1
 
-test ns_nsv-4.5 {nsv_array size} -setup {
-    nsv_array set fourfive {
-	a 1
-	b 2 
-	c 3
-        d 4
-	e 5
-    }
+test ns_nsv-4.5 {nsv_array get} -setup {
+    nsv_array set a {k1 v1 k2 v2}
 } -body {
-    nsv_array size fourfive
-} -result 5
+    lsort [nsv_array get a]
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {k1 k2 v1 v2}
 
-test ns_nsv-4.6 {nsv_array names reset} -setup {
-    nsv_array set foursix {
-	a 1
-	b 2 
-	c 3
-        d 4
-	e 5
-    }
+test ns_nsv-4.6 {nsv_array get glob} -setup {
+    nsv_array set a {k1 v1 K2 V2}
 } -body {
-    array set reset {
-	A 1
-	B 2
-	C 3
-	D 4
-	E 5
-    }
-    nsv_array reset foursix [array get reset]
-    lsort [nsv_array get foursix]
-} -result "1 2 3 4 5 A B C D E"
+    lsort [nsv_array get a k*]
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {k1 v1}
 
-test ns_nsv-4.7 {nsv_array names reset} -setup {
-    nsv_set fourseven foo bar
+test ns_nsv-4.7 {nsv_array size} -setup {
+    nsv_array set a {k1 v1 k2 v2}
 } -body {
-    nsv_array exists fourseven
+    nsv_array size a
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result 2
+
+test ns_nsv-4.8 {nsv_array names reset} -setup {
+    nsv_array set a {k1 v1 k2 v2}
+} -body {
+    nsv_array reset a {k3 v3 k4 v4}
+    lsort [nsv_array get a]
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {k3 k4 v3 v4}
+
+test ns_nsv-4.9 {nsv_array exists} -setup {
+    nsv_set a k v
+} -body {
+    nsv_array exists a
+} -cleanup {
+    nsv_unset -nocomplain a
 } -result 1
 
+test ns_nsv-4.10 {nsv_array exists} -setup {
+    nsv_array exists noexists
+} -result 0
 
 
 
+test ns_nsv-5.1 {nsv_get nonexisting key from nonexisting array} -body {
+    nsv_get noexist noexist
+} -returnCodes error -result {no such array: noexist}
 
-test ns_nsv-5.1 {nsv_get arrayname} -body {
-    nsv_get fiveone 
-} -returnCodes error -result {wrong # args: should be "nsv_get array key"}
-
-test ns_nsv-5.2 {nsv_get nonexisting key from nonexisting array} -body {
-    nsv_get fivetwo zirrZarr
-} -returnCodes error -result {no such array: fivetwo}
-
-test ns_nsv-5.3 {nsv_get nonexisting key} -setup {
-    nsv_set fivetwo moo .
+test ns_nsv-5.2 {nsv_get nonexisting key} -setup {
+    nsv_set a k1 v1
 } -body {
-    nsv_get fivetwo zirrZarr
-} -returnCodes error -result {no such key: zirrZarr}
+    nsv_get a k2
+} -cleanup {
+    nsv_unset -nocomplain a
+} -returnCodes error -result {no such key: k2}
 
-test ns_nsv-5.4 {nsv_get existing key} -body {
-    nsv_set fivethree foo bar
-    nsv_get fivethree foo
-} -result "bar"
-
-
+test ns_nsv-5.3 {nsv_get existing key} -body {
+    nsv_set a k v
+    nsv_get a k
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result v
 
 
 
 test ns_nsv-6.1 {nsv_exists nonexisting key} -body {
-    nsv_exists sixone foo
+    nsv_set a k1 v1
+    nsv_exists a k2
+} -cleanup {
+    nsv_unset -nocomplain a
 } -result 0
 
 test ns_nsv-6.2 {nsv_exists existing key} -body {
-    nsv_set sixtwo foo bar
-    nsv_exists sixtwo foo
+    nsv_set a k v
+    nsv_exists a k
+} -cleanup {
+    nsv_unset -nocomplain a
 } -result 1
 
-
-
-
-
-test ns_nsv-7.1 {nsv_append argument syntax} -body {
-    nsv_append foo
-} -returnCodes error -result {wrong # args: should be "nsv_append array key string ?string ...?"}
-
-test ns_nsv-7.2 {nsv_append} -setup {
-    if {[nsv_array exists foo]} {
-	nsv_unset foo
-    }
-} -body {
-    nsv_append foo bar baz
-    nsv_append foo bar baz
-    nsv_append foo bar baz
-} -result "bazbazbaz"
-
-
-
-
-
-test ns_nsv-8.1 {nsv_lappend argument syntax} -body {
-    nsv_lappend foo
-} -returnCodes error -result {wrong # args: should be "nsv_lappend array key string ?string ...?"}
-
-test ns_nsv-8.2 {nsv_lappend} -setup {
-    if {[nsv_array exists foo]} {
-	nsv_unset foo
-    }
-} -body {
-    nsv_lappend foo bar baz
-    nsv_lappend foo bar baz
-    nsv_lappend foo bar baz
-} -result "baz baz baz"
-
-test ns_nsv-8.3 {nsv_lappend number of elements} -setup {
-    if {[nsv_array exists foo]} {
-	nsv_unset foo
-    }
-} -body {
-    nsv_lappend foo bar [list a 1]
-    nsv_lappend foo bar [list b 2]
-    nsv_lappend foo bar [list c 3]
-    llength [nsv_get foo bar]
-} -result 3
-
-
-
-
-
-test ns_nsv-9.1 {nsv_incr without count} -setup {
-    if {[nsv_exists foo bar]} {
-	nsv_unset foo bar
-    }
-} -body {
-    nsv_incr foo bar
-    nsv_incr foo bar
-    nsv_incr foo bar
-} -result 3
-
-test ns_nsv-9.2 {nsv_incr with positive count} -setup {
-    if {[nsv_exists foo bar]} {
-	nsv_unset foo bar
-    }
-} -body {
-    nsv_incr foo bar +10
-    nsv_incr foo bar +20
-    nsv_incr foo bar +30
-} -result 60
-
-test ns_nsv-9.3 {nsv_incr with negative count} -setup {
-    if {[nsv_exists foo bar]} {
-	nsv_unset foo bar
-    }
-} -body {
-    nsv_incr foo bar -10
-    nsv_incr foo bar -20
-    nsv_incr foo bar -30
-} -result "-60"
-
-test ns_nsv-9.4 {nsv_incr with unrepresentable count} -setup {
-    if {[nsv_exists foo bar]} {
-	nsv_unset foo bar
-    }
-} -body {
-    nsv_incr foo bar +1000000000000
-} -returnCodes error -result {integer value too large to represent}
-
-test ns_nsv-9.5 {nsv_incr from negative to positive} -setup {
-    if {[nsv_exists foo bar]} {
-	nsv_unset foo bar
-    }
-    nsv_set foo bar -60
-} -body {
-    nsv_incr foo bar
-    nsv_incr foo bar
-    nsv_incr foo bar
-} -result "-57"
-
-test ns_nsv-9.6 {nsv_incr type mismatch} -setup {
-    if {[nsv_exists foo bar]} {
-	nsv_unset foo bar
-    }
-} -body {
-    nsv_incr foo bar a
-} -returnCodes error -result {expected integer but got "a"}
-
-test ns_nsv-9.7 {nsv_incr by zero} -setup {
-    if {[nsv_exists foo bar]} {
-	nsv_unset foo bar
-    }
-} -body {
-    nsv_incr foo bar +000
-    nsv_incr foo bar +00
-    nsv_incr foo bar +0
+test ns_nsv-6.3 {nsv_exists nonexisting array} -body {
+    nsv_exists noexist k
 } -result 0
 
 
 
-
-test ns_nsv-10.1 {nsv_names} -setup {
-    foreach key [list aaa bbb ccc aaaAAA bbbBBB cccCCC] {
-	if {[nsv_array exists $key]} {
-	    nsv_unset $key
-        }
-	nsv_set $key x y
-    }
-} -match regexp -body {
-    nsv_names
-} -result "cccCCC|bbbBBB|aaaAAA|ccc|bbb|aaa"
-
-test ns_nsv-10.2 {nsv_names} -setup {
-    foreach key [list aaa bbb ccc aaaAAA bbbBBB cccCCC] {
-	if {[nsv_array exists $key]} {
-	    nsv_unset $key
-        }
-	nsv_set $key x y
-    }
-} -body {
-    nsv_names ccc
-} -result "ccc"
-
-test ns_nsv-10.3 {nsv_names} -setup {
-    foreach key [list aaa bbb ccc aaaAAA bbbBBB cccCCC] {
-	if {[nsv_array exists $key]} {
-	    nsv_unset $key
-        }
-        nsv_set $key x y
-    }
-} -body {
-    nsv_names ccc*
-} -result "ccc cccCCC"
+test ns_nsv-7.1 {nsv_append} -body {
+    nsv_append a k v
+    nsv_append a k v
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result vv
 
 
+
+test ns_nsv-8.1 {nsv_lappend} -body {
+    nsv_lappend a k v
+    nsv_lappend a k v
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {v v}
+
+test ns_nsv-8.3 {nsv_lappend number of elements} -body {
+    nsv_lappend a k [list v1 v1]
+    nsv_lappend a k [list v2 v2]
+    llength [nsv_get a k]
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result 2
+
+
+
+test ns_nsv-9.1 {nsv_incr without count} -body {
+    nsv_incr a k
+    nsv_incr a k
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result 2
+
+test ns_nsv-9.2 {nsv_incr with positive count} -body {
+    nsv_incr a k +10
+    nsv_incr a k +20
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result 30
+
+test ns_nsv-9.3 {nsv_incr with negative count} -body {
+    nsv_incr a k -10
+    nsv_incr a k -20
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result -30
+
+test ns_nsv-9.4 {nsv_incr with unrepresentable count} -body {
+    nsv_incr a k +1000000000000
+} -returnCodes error -result {integer value too large to represent}
+
+test ns_nsv-9.5 {nsv_incr from negative to positive} -body {
+    nsv_set a k -1
+    nsv_incr a k
+    nsv_incr a k
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result 1
+
+test ns_nsv-9.6 {nsv_incr type mismatch} -body {
+    nsv_incr a k v
+} -returnCodes error -result {expected integer but got "v"}
+
+test ns_nsv-9.7 {nsv_incr by zero} -body {
+    nsv_incr a k +0
+    nsv_incr a k +00
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result 0
+
+
+
+test ns_nsv-10.1 {nsv_names} -body {
+    nsv_set nsv-a1 k v
+    nsv_set nsv-a2 k v
+    lsort [nsv_names nsv-a*]
+} -result {nsv-a1 nsv-a2}
 
 
 

@@ -503,31 +503,48 @@ int
 NsTclNsvUnsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     Array         *arrayPtr = NULL;
+    Tcl_Obj       *arrayObj;
     Tcl_HashEntry *hPtr = NULL;
+    char          *key = NULL;
+    int            nocomplain = 0;
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array ?key?");
+    Ns_ObjvSpec opts[] = {
+        {"-nocomplain", Ns_ObjvBool, &nocomplain, (void *) NS_TRUE},
+        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"array", Ns_ObjvObj,    &arrayObj, NULL},
+        {"?key",  Ns_ObjvString, &key,      NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    arrayPtr = LockArray(arg, interp, objv[1], 0);
+
+    arrayPtr = LockArray(arg, interp, arrayObj, 0);
     if (arrayPtr == NULL) {
+        if (nocomplain) {
+            Tcl_ResetResult(interp);
+            return TCL_OK;
+        }
         return TCL_ERROR;
     }
-    if (objc == 2) {
+    if (key == NULL) {
         Tcl_DeleteHashEntry(arrayPtr->entryPtr);
     } else {
-        hPtr = Tcl_FindHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]));
+        hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
         if (hPtr != NULL) {
             ns_free(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
     }
     UnlockArray(arrayPtr);
-    if (objc == 2) {
+    if (key == NULL) {
         FlushArray(arrayPtr);
         Tcl_DeleteHashTable(&arrayPtr->vars);
         ns_free(arrayPtr);
-    } else if (hPtr == NULL) {
+    } else if (hPtr == NULL && !nocomplain) {
         Tcl_AppendResult(interp, "no such key: ", Tcl_GetString(objv[2]), NULL);
         return TCL_ERROR;
     }

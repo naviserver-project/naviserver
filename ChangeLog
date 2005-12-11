@@ -2,6 +2,10 @@
 
 	* nsd/tclvar.c: Untabify and reformat.
 
+	* nsd/tclvar.c:
+	* tests/ns_nsv.test: Add -nocomplain switch to nsv_unset command
+	to match Tcl unset command.
+
 2005-12-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/httptime.c: Untabify and reformat.
