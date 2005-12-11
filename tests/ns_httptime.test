@@ -7,10 +7,6 @@ namespace import -force ::tcltest::*
 
 eval ::tcltest::configure $argv
 
-if {[ns_httptime 0] eq "Thu, 01 Jan 1970 00:00:00 GMT"} {
-    testConstraint correctLocale true
-}
-
 
 
 test ns_httptime-1.1 {basic syntax: plain call} -body {
@@ -41,19 +37,19 @@ test ns_httptime-1.6 {basic syntax: incorrect format} -body {
 
 test ns_httptime-2.1 {basic operation} -body {
      ns_httptime 0
-} -constraints correctLocale -result {Thu, 01 Jan 1970 00:00:00 GMT}
+} -result {Thu, 01 Jan 1970 00:00:00 GMT}
 
 test ns_httptime-2.2 {basic operation} -body {
      ns_httptime 1
-} -constraints correctLocale -result {Thu, 01 Jan 1970 00:00:01 GMT}
+} -result {Thu, 01 Jan 1970 00:00:01 GMT}
 
 test ns_httptime-2.3 {basic operation} -body {
      ns_httptime -1
-} -constraints correctLocale -result {Wed, 31 Dec 1969 23:59:59 GMT}
+} -result {Wed, 31 Dec 1969 23:59:59 GMT}
 
 test ns_httptime-2.4 {basic operation} -body {
      ns_httptime 1129794520
-} -constraints correctLocale -result {Thu, 20 Oct 2005 07:48:40 GMT}
+} -result {Thu, 20 Oct 2005 07:48:40 GMT}
 
 
 

@@ -3,6 +3,11 @@
 	* nsd/httptime.c: Untabify and reformat.
 	* tests/ns_httptime.test: Add tests for ns_parsehttptime.
 
+	* nsd/httptime.c:
+	* tests/hs_httptime.test: Use snprintf to format the date to ensure the
+	English week and month names are always used, no matter which
+	locale is in effect. (Bug# 1340755)
+
 2005-12-05  Stephen Deasey  <sd@groks.org>
 
 	* include/ns.h:

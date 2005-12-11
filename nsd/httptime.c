@@ -55,6 +55,10 @@ static CONST char *month_names[] = {
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
+static CONST char *week_names[] = {
+    "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+
 #ifdef HAVE_TIMEGM
 static Ns_Mutex lock;
 #endif
@@ -95,11 +99,15 @@ Ns_HttpTime(Ns_DString *pds, time_t *when)
     }
 
     /*
-     * This will most likely break if the locale is not an english one.
-     * The format is RFC 1123: "Sun, 06 Nov 1997 09:12:45 GMT"
+     * The format is RFC 1123 "Sun, 06 Nov 1997 09:12:45 GMT"
+     * and is locale independant, so English week and month names
+     * must always be used.
      */
 
-    strftime(buf, 40, "%a, %d %b %Y %H:%M:%S GMT", tmPtr);
+    snprintf(buf, sizeof(buf), "%s, %02d %s %d %02d:%02d:%02d GMT",
+             week_names[tmPtr->tm_wday], tmPtr->tm_mday,
+             month_names[tmPtr->tm_mon], tmPtr->tm_year + 1900,
+             tmPtr->tm_hour, tmPtr->tm_min, tmPtr->tm_sec);
     Ns_DStringAppend(pds, buf);
 
     return pds->string;
