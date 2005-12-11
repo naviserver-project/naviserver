@@ -204,7 +204,7 @@ test ns_nsv-4.9 {nsv_array exists} -setup {
     nsv_unset -nocomplain a
 } -result 1
 
-test ns_nsv-4.10 {nsv_array exists} -setup {
+test ns_nsv-4.10 {nsv_array exists} -body {
     nsv_array exists noexists
 } -result 0
 
