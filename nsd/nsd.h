@@ -879,7 +879,7 @@ extern Ns_ArgProc NsTclSockArgProc;
 extern Ns_ThreadProc NsConnThread;
 extern Ns_ArgProc NsConnArgProc;
 extern Ns_FilterProc NsTclFilterProc;
-extern Ns_OpProc NsFastGet;
+extern Ns_OpProc NsFastPathProc;
 extern Ns_OpProc NsTclRequestProc;
 extern Ns_OpProc NsAdpRequestProc;
 extern Ns_OpProc NsAdpMapProc;

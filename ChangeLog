@@ -8,6 +8,23 @@
 	English week and month names are always used, no matter which
 	locale is in effect. (Bug# 1340755)
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/fastpath.c:
+	* nsd/tclrequest.c:
+	* nsd/tclcmds.c:
+	* nsd/server.c:
+	* nsd/proc.c:
+	* tests/ns_register_proc.test: Add new Tcl command ns_register_fastpath
+	which re-register the original fastpath proc for static file serving,
+	for the specified method and URL.  This allows e.g. a Tcl proc to
+	be registered as the default handler for the URL / and then
+	override this with the fastpath proc for /images.  The fastpath
+	proc invokes no Tcl and therefore does not allocate an interp.
+	Non-Tcl using threads can be segregated using the conn pool
+	mechanism.
+	(RFE: http://sf.net/tracker/index.php?func=detail&aid=1012770&group_id=3152&atid=353152)
+
 2005-12-05  Stephen Deasey  <sd@groks.org>
 
 	* include/ns.h:

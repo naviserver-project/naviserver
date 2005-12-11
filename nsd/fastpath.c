@@ -244,37 +244,7 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 
 /*
  *----------------------------------------------------------------------
- * FastGetRestart --
- *
- *      Construct the full URL and redirect internally.
- *
- * Results:
- *      See Ns_ConnRedirect().
- *
- * Side effects:
- *      See Ns_ConnRedirect().
- *
- *----------------------------------------------------------------------
- */
-
-static int
-FastGetRestart(Ns_Conn *conn, CONST char *page)
-{
-    int        status;
-    Ns_DString ds;
-
-    Ns_DStringInit(&ds);
-    Ns_MakePath(&ds, conn->request->url, page, NULL);
-    status = Ns_ConnRedirect(conn, ds.string);
-    Ns_DStringFree(&ds);
-
-    return status;
-}
-
-
-/*
- *----------------------------------------------------------------------
- * NsFastGet --
+ * Ns_FastPathProc, NsFastPathProc --
  *
  *      Return the contents of a URL.
  *
@@ -288,7 +258,19 @@ FastGetRestart(Ns_Conn *conn, CONST char *page)
  */
 
 int
-NsFastGet(void *arg, Ns_Conn *conn)
+Ns_FastPathProc(void *arg, Ns_Conn *conn)
+{
+    char     *server = arg;
+    NsServer *servPtr;
+
+    if ((servPtr = NsGetServer(server)) == NULL) {
+        return NS_ERROR;
+    }
+    return NsFastPathProc(servPtr, conn);
+}
+
+int
+NsFastPathProc(void *arg, Ns_Conn *conn)
 {
     Ns_DString   ds;
     NsServer    *servPtr = arg;
@@ -359,6 +341,36 @@ NsFastGet(void *arg, Ns_Conn *conn)
     Ns_DStringFree(&ds);
 
     return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * FastGetRestart --
+ *
+ *      Construct the full URL and redirect internally.
+ *
+ * Results:
+ *      See Ns_ConnRedirect().
+ *
+ * Side effects:
+ *      See Ns_ConnRedirect().
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FastGetRestart(Ns_Conn *conn, CONST char *page)
+{
+    int        status;
+    Ns_DString ds;
+
+    Ns_DStringInit(&ds);
+    Ns_MakePath(&ds, conn->request->url, page, NULL);
+    status = Ns_ConnRedirect(conn, ds.string);
+    Ns_DStringFree(&ds);
+
+    return status;
 }
 
 

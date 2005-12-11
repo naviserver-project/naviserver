@@ -133,6 +133,51 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclRegisterFastPathObjCmd --
+ *
+ *      Implements ns_register_fastpath as obj command.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      See docs.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                            Tcl_Obj *CONST objv[], int adp)
+{
+    NsInterp       *itPtr = arg;
+    char           *method, *url;
+    int             flags = 0;
+
+    Ns_ObjvSpec opts[] = {
+        {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
+        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"method",     Ns_ObjvString, &method, NULL},
+        {"url",        Ns_ObjvString, &url,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    Ns_RegisterRequest(itPtr->servPtr->server, method, url,
+                       NsFastPathProc, NULL, itPtr->servPtr, flags);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclRegisterAdpObjCmd --
  *
  *      Implements ns_register_adp as obj command.

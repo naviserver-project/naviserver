@@ -414,9 +414,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      * Register the fastpath requests.
      */
     
-    Ns_RegisterRequest(server, "GET", "/", NsFastGet, NULL, servPtr, 0);
-    Ns_RegisterRequest(server, "HEAD", "/", NsFastGet, NULL, servPtr, 0);
-    Ns_RegisterRequest(server, "POST", "/", NsFastGet, NULL, servPtr, 0);
+    Ns_RegisterRequest(server, "GET", "/", NsFastPathProc, NULL, servPtr, 0);
+    Ns_RegisterRequest(server, "HEAD", "/", NsFastPathProc, NULL, servPtr, 0);
+    Ns_RegisterRequest(server, "POST", "/", NsFastPathProc, NULL, servPtr, 0);
 
     /*
      * Register the url2file procs.

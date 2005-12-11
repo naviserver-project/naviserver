@@ -918,6 +918,8 @@ Ns_UrlIsFile(CONST char *server, CONST char *url);
 NS_EXTERN int
 Ns_UrlIsDir(CONST char *server, CONST char *url);
 
+NS_EXTERN Ns_OpProc Ns_FastPathProc;
+
 /*
  * filter.c:
  */

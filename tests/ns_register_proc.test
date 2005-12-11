@@ -18,6 +18,10 @@ test proc-1.2 {basic syntax} -body {
     ns_unregister_proc
 } -returnCodes error -result {wrong # args: should be "ns_unregister_proc ?-noinherit? ?-recurse? ?--? method url"}
 
+test proc-1.3 {basic syntax} -body {
+    ns_register_fastpath
+} -returnCodes error -result {wrong # args: should be "ns_register_fastpath ?-noinherit? ?--? method url"}
+
 
 
 test proc-2.1 {register/unregister} -body {
@@ -98,6 +102,17 @@ test proc-4.1 {glob} -setup {
 } -cleanup {
     ns_unregister_proc GET /proc-4.1*
 } -result {200 proc-4.1}
+
+
+
+test proc-5.1 {fastpath} -setup {
+    ns_register_proc GET /10bytes {ns_return 200 text/plain error ;#}
+    ns_register_fastpath GET /10bytes
+} -body {
+    nstest_http -getbody 1 GET /10bytes
+} -cleanup {
+    ns_unregister_proc GET /10bytes
+} -result {200 0123456789}
 
 
 
