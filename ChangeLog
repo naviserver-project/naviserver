@@ -1,3 +1,8 @@
+2005-12-10  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/httptime.c: Untabify and reformat.
+	* tests/ns_httptime.test: Add tests for ns_parsehttptime.
+
 2005-12-05  Stephen Deasey  <sd@groks.org>
 
 	* include/ns.h:

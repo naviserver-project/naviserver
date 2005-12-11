@@ -31,8 +31,8 @@
 /* 
  * httptime.c --
  *
- *	Manipulate times and dates; this is strongly influenced
- *	by HTSUtils.c from CERN. See also RFC 1123.
+ *      Manipulate times and dates; this is strongly influenced
+ *      by HTSUtils.c from CERN. See also RFC 1123.
  */
 
 #include "nsd.h"
@@ -50,8 +50,7 @@ static int MakeMonth(char *s);
  * Static variables defined in this file
  */
 
-static char *month_names[12] =
-{
+static CONST char *month_names[] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
@@ -66,15 +65,15 @@ static Ns_Mutex lock;
  *
  * Ns_Httptime --
  *
- *	Convert a time_t into a time/date format used in HTTP
- *	(see RFC 1123). If passed-in time is null, then the
- *	current time will be used.
+ *      Convert a time_t into a time/date format used in HTTP
+ *      (see RFC 1123). If passed-in time is null, then the
+ *      current time will be used.
  *
  * Results:
- *	The string time, or NULL if error. 
+ *      The string time, or NULL if error.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -99,10 +98,10 @@ Ns_HttpTime(Ns_DString *pds, time_t *when)
      * This will most likely break if the locale is not an english one.
      * The format is RFC 1123: "Sun, 06 Nov 1997 09:12:45 GMT"
      */
-    
-    strftime(buf, 40, "%a, %d %b %Y %H:%M:%S GMT", tmPtr);
 
+    strftime(buf, 40, "%a, %d %b %Y %H:%M:%S GMT", tmPtr);
     Ns_DStringAppend(pds, buf);
+
     return pds->string;
 }
 
@@ -112,15 +111,15 @@ Ns_HttpTime(Ns_DString *pds, time_t *when)
  *
  * Ns_ParseHttpTime --
  *
- *	Take a time in one of three formats and convert it to a time_t. 
- *	Formats are: "Thursday, 10-Jun-93 01:29:59 GMT", "Thu, 10 
- *	Jan 1993 01:29:59 GMT", or "Wed Jun  9 01:29:59 1993 GMT"
+ *      Take a time in one of three formats and convert it to a time_t. 
+ *      Formats are: "Thursday, 10-Jun-93 01:29:59 GMT", "Thu, 10 
+ *      Jan 1993 01:29:59 GMT", or "Wed Jun  9 01:29:59 1993 GMT"
  *
  * Results:
- *	0 if error, or standard time_t.
+ *      Standard time_t or 0 on error.
  *
  * Side effects:
- *	None. 
+ *      Unable to parse the Unix epoch because result is 0.
  *
  *----------------------------------------------------------------------
  */
@@ -151,34 +150,34 @@ Ns_ParseHttpTime(char *str)
     s = strchr(str, ',');
     if (s != NULL) {
 
-	/*
-	 * Advance S to the first non-space after the comma
-	 * which should be the first digit of the day.
-	 */
-	
+        /*
+         * Advance S to the first non-space after the comma
+         * which should be the first digit of the day.
+         */
+
         s++;
         while (*s && *s == ' ') {
             s++;
-	}
+        }
 
-	/*
-	 * Figure out which format it is in. If there is a hyphen, then
-	 * it must be the first format.
-	 */
-	
+        /*
+         * Figure out which format it is in. If there is a hyphen, then
+         * it must be the first format.
+         */
+
         if (strchr(s, '-') != NULL) {
             if (strlen(s) < 18) {
                 return 0;
             }
 
-	    /*
-	     * The format is:
-	     *
-	     * Thursday, 10-Jun-93 01:29:59 GMT
-	     *           ^
-	     *           +--s
-	     */
-	    
+            /*
+             * The format is:
+             *
+             * Thursday, 10-Jun-93 01:29:59 GMT
+             *           ^
+             *           +--s
+             */
+
             tm.tm_mday = MakeNum(s);
             tm.tm_mon = MakeMonth(s + 3);
             tm.tm_year = MakeNum(s + 7);
@@ -190,14 +189,14 @@ Ns_ParseHttpTime(char *str)
                 return 0;
             }
 
-	    /*
-	     * The format is:
-	     *
-	     * Thu, 10 Jan 1993 01:29:59 GMT
-	     *      ^
-	     *      +--s
-	     */
-	    
+            /*
+             * The format is:
+             *
+             * Thu, 10 Jan 1993 01:29:59 GMT
+             *      ^
+             *      +--s
+             */
+
             tm.tm_mday = MakeNum(s);
             tm.tm_mon = MakeMonth(s + 3);
             tm.tm_year = (100 * MakeNum(s + 7) - 1900) + MakeNum(s + 9);
@@ -207,18 +206,18 @@ Ns_ParseHttpTime(char *str)
         }
     } else {
 
-	/*
-	 * No commas, so it must be the third, fixed field, format:
-	 *
-	 * Wed Jun  9 01:29:59 1993 GMT
-	 *
-	 * Advance s to the first letter of the month.
-	 */
-	 
+        /*
+         * No commas, so it must be the third, fixed field, format:
+         *
+         * Wed Jun  9 01:29:59 1993 GMT
+         *
+         * Advance s to the first letter of the month.
+         */
+
         s = str;
         while (*s && *s == ' ') {
             s++;
-	}
+        }
         if ((int) strlen(s) < 24) {
             return 0;
         }
@@ -233,7 +232,7 @@ Ns_ParseHttpTime(char *str)
     /*
      * If there are any impossible values, then return an error.
      */
-    
+
     if (tm.tm_sec < 0 || tm.tm_sec > 59 ||
         tm.tm_min < 0 || tm.tm_min > 59 ||
         tm.tm_hour < 0 || tm.tm_hour > 23 ||
@@ -250,6 +249,7 @@ Ns_ParseHttpTime(char *str)
 #else
     t = mktime(&tm) - timezone;
 #endif
+
     return t;
 }
 
@@ -259,13 +259,13 @@ Ns_ParseHttpTime(char *str)
  *
  * NsTclParseHttpTimeObjCmd --
  *
- *	Implements ns_parsehttptime as obj command. 
+ *      Implements ns_parsehttptime as obj command.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      Day and month names may have capitalisation bashed.
  *
  *----------------------------------------------------------------------
  */
@@ -281,11 +281,12 @@ NsTclParseHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
     }
     time = Ns_ParseHttpTime(Tcl_GetString(objv[1]));
     if (time == 0) {
-	Tcl_AppendResult(interp, "invalid time: ",
-		Tcl_GetString(objv[1]), NULL);
-	return TCL_ERROR;
+        Tcl_AppendResult(interp, "invalid time: ",
+                         Tcl_GetString(objv[1]), NULL);
+        return TCL_ERROR;
     }
     Tcl_SetLongObj(Tcl_GetObjResult(interp), time);
+
     return TCL_OK;
 }
 
@@ -295,13 +296,13 @@ NsTclParseHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclHttpTimeObjCmd --
  *
- *	Implements ns_httptime as obj command. 
+ *      Implements ns_httptime as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -323,8 +324,8 @@ NsTclHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     time = (time_t) itime;
     Ns_DStringInit(&ds);
     Ns_HttpTime(&ds, &time);
-    Tcl_SetResult(interp, Ns_DStringExport(&ds), (Tcl_FreeProc *) ns_free);
-    Ns_DStringFree(&ds);
+    Tcl_DStringResult(interp, &ds);
+
     return TCL_OK;
 }
 
@@ -334,14 +335,14 @@ NsTclHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *
  * MakeNum --
  *
- *	Convert a one or two-digit day into an integer, allowing a 
- *	space in the first position. 
+ *      Convert a one or two-digit day into an integer, allowing a
+ *      space in the first position.
  *
  * Results:
- *	An integer.
+ *      An integer.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -362,14 +363,14 @@ MakeNum(char *s)
  *
  * MakeMonth --
  *
- *	Convert a three-digit abbreviated month name into a number; 
- *	e.g., Jan=0, Feb=1, etc. 
+ *      Convert a three-digit abbreviated month name into a number;
+ *      e.g., Jan=0, Feb=1, etc.
  *
  * Results:
- *	An integral month number. 
+ *      An integral month number.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -383,7 +384,7 @@ MakeMonth(char *s)
      * Make sure it's capitalized like this:
      * "Jan"
      */
-     
+
     *s = toupper(*s);
     *(s + 1) = tolower(*(s + 1));
     *(s + 2) = tolower(*(s + 2));
@@ -391,8 +392,8 @@ MakeMonth(char *s)
     for (i = 0; i < 12; i++) {
         if (!strncmp(month_names[i], s, 3)) {
             return i;
-	}
+        }
     }
+
     return 0;
 }
-
