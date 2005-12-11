@@ -95,12 +95,17 @@ Ns_RegisterFilter(char *server, char *method, char *url,
     fPtr->url = ns_strdup(url);
     fPtr->when = when;
     fPtr->arg = arg;
-    fPtr->nextPtr = NULL;
-    fPtrPtr = &servPtr->filter.firstFilterPtr;
-    while (*fPtrPtr != NULL) {
-    	fPtrPtr = &((*fPtrPtr)->nextPtr);
+    if (when & NS_FILTER_FIRST) {
+        fPtr->nextPtr = servPtr->filter.firstFilterPtr;
+        servPtr->filter.firstFilterPtr = fPtr;
+    } else {
+        fPtr->nextPtr = NULL;
+        fPtrPtr = &servPtr->filter.firstFilterPtr;
+        while (*fPtrPtr != NULL) {
+            fPtrPtr = &((*fPtrPtr)->nextPtr);
+        }
+        *fPtrPtr = fPtr;
     }
-    *fPtrPtr = fPtr;
     return (void *) fPtr;
 }
 

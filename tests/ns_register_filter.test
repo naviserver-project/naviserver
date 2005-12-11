@@ -12,7 +12,7 @@ eval ::tcltest::configure $argv
 
 test filter-1.1 {basic syntax} -body {
     ns_register_filter
-} -returnCodes error -result {wrong # args: should be "ns_register_filter when method urlPattern script ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? when method urlPattern script ?arg?"}
 
 test filter-1.2 {basic syntax} -body {
     ns_register_filter when GET / aproc
@@ -143,6 +143,27 @@ test filter-4.1 {glob} -setup {
     nsv_unset -nocomplain . .
     ns_unregister_proc GET /filter-4.1
 } -result {200 filter-4.1}
+
+
+
+test filter-5.1 {filter -first} -setup {
+    ns_register_filter preauth GET /filter-5.1 {
+        nsv_lappend . . filter-5.1-1
+        return filter_ok
+        ;# }
+    ns_register_filter -first preauth GET /filter-5.1 {
+        nsv_lappend . . filter-5.1-2
+        return filter_ok
+        ;# }
+    ns_register_proc GET /filter-5.1 {
+        ns_return 200 text/plain [nsv_get . .]
+        ;# }
+} -body {
+    nstest_http -getbody 1 GET /filter-5.1
+} -cleanup {
+    nsv_unset -nocomplain . .
+    ns_unregister_proc GET /filter-5.1
+} -result {200 {filter-5.1-2 filter-5.1-1}}
 
 
 

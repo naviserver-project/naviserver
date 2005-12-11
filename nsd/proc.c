@@ -76,6 +76,7 @@ static struct proc {
     {(void *) NsCachePurge,        "ns:cachepurge",       NsCacheArgProc},
     {(void *) NsConnThread,        "ns:connthread",       NsConnArgProc},
     {(void *) NsTclFilterProc,     "ns:tclfilter",        Ns_TclCallbackArgProc},
+    {(void *) NsShortcutFilterProc, "ns:shortcutfilter",  NULL},
     {(void *) NsTclRequestProc,    "ns:tclrequest",       Ns_TclCallbackArgProc},
     {(void *) NsAdpRequestProc,    "ns:adprequest",       ServerArgProc},
     {(void *) NsAdpMapProc,        "ns:adpmap",           Ns_StringArgProc},

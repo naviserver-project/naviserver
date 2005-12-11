@@ -292,6 +292,11 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     char            *method, *urlPattern, *script, *scriptarg = "";
     int              when = 0;
 
+    Ns_ObjvSpec opts[] = {
+        {"-first", Ns_ObjvBool,  &when, (void *) NS_FILTER_FIRST},
+        {"--",     Ns_ObjvBreak, NULL,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},
         {"method",     Ns_ObjvString, &method,     NULL},
@@ -300,13 +305,54 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
         {"?arg",       Ns_ObjvString, &scriptarg,  NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
     cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, script, scriptarg);
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                       NsTclFilterProc, when, cbPtr);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclShortcutFilterObjCmd --
+ *
+ *      Implements ns_shortcut_filter.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Other filters that also match when+method+urlPattern will not run.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    NsInterp  *itPtr = arg;
+    char      *server = itPtr->servPtr->server;
+    char      *method, *urlPattern;
+    int        when = NS_FILTER_FIRST;
+
+    Ns_ObjvSpec args[] = {
+        {"when",       Ns_ObjvFlags,  &when,       filters},
+        {"method",     Ns_ObjvString, &method,     NULL},
+        {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    Ns_RegisterFilter(server, method, urlPattern,
+                      NsShortcutFilterProc, when, NULL);
 
     return TCL_OK;
 }
@@ -494,4 +540,27 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
     Tcl_DStringFree(&cmd);
 
     return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsShortcutFilterProc --
+ *
+ *      The callback for Tcl shortcut filters.
+ *
+ * Results:
+ *      Always NS_FILTER_BREAK.
+ *
+ * Side effects:
+ *      No other filters of this type will run for this connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsShortcutFilterProc(void *arg, Ns_Conn *conn, int why)
+{
+    return NS_FILTER_BREAK;
 }

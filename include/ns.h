@@ -104,6 +104,7 @@
 #define NS_FILTER_POST_AUTH        0x02 /* Runs after any Ns_UserAuthProc */
 #define NS_FILTER_TRACE            0x04 /* Runs after Ns_OpProc completes successfully */
 #define NS_FILTER_VOID_TRACE       0x08 /* Run ns_register_trace procs after previous traces */
+#define NS_FILTER_FIRST            0x10 /* Register filter at head of queue. */
 
 /*
  * The following are valid return codes from an Ns_FilterProc.

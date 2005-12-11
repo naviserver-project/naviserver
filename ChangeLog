@@ -15,6 +15,20 @@
 	incorrectly, making it impossible to register inline script
 	fragments, rather than proc names.
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/filter.c:
+	* nsd/tclrequest.c:
+	* nsd/proc.c:
+	* nsd/tclcmds.c:
+	* tests/ns_register_filter.test: Add switch -first to
+	ns_register_filter command, allowing filters to be registered at
+	the head of the queue.  Add new command ns_shortcut_filter
+	which registers a C filter callback which simply returns
+	NS_FILTER_BREAK, preventing any other filters of the same type
+	from running. For further explanation, see:
+	http://sf.net/tracker/index.php?func=detail&aid=1012103&group_id=3152&atid=353152
+
 2005-12-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/httptime.c: Untabify and reformat.
