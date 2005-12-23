@@ -157,12 +157,12 @@ test ns_info-2.31.1 {basic operation} -body {
 
 test ns_info-2.31.2 {basic operation} -setup {
      proc _filter_do_nothing {args} {
-         return ""
+         return filter_ok
      }
-     ns_register_filter preauth GET / _filter_do_nothing
+     ns_register_filter preauth GET /ns_info-2.31.2 _filter_do_nothing
 } -body {
      ns_info filters
-} -result {{GET / preauth ns:tclfilter _filter_do_nothing {}}}
+} -match glob -result {*{GET /ns_info-2.31.2 preauth ns:tclfilter _filter_do_nothing}*}
 
 
 test ns_info-2.32.1 {basic operation} -body {

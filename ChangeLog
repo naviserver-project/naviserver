@@ -1,3 +1,10 @@
+2005-12-22  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tclrequest.c:
+	* tests/ns_register_filter.test:
+	* tests/ns_info.test: Fix bug where blank arg was being passed to
+	filter and trace procs when no arg was registered.
+
 2005-12-11  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclvar.c: Untabify and reformat.

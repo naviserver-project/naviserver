@@ -167,4 +167,56 @@ test filter-5.1 {filter -first} -setup {
 
 
 
+test filter-6.1 {no filter scriptarg} -setup {
+    ns_register_filter preauth  GET /filter-6.1 {
+        nsv_lappend . . }
+} -body {
+    ns_logctl severity Error off
+    nstest_http -getbody 1 GET /filter-6.1
+    ns_logctl severity Error on
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {preauth}
+
+test filter-6.2 {filter scriptarg} -setup {
+    ns_register_filter preauth  GET /filter-6.2 {
+        nsv_lappend . . } x
+} -body {
+    ns_logctl severity Error off
+    nstest_http -getbody 1 GET /filter-6.2
+    ns_logctl severity Error on
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {x preauth}
+
+test filter-6.3 {no trace scriptarg} -setup {
+    ns_register_trace GET /trace-6.3 {
+        nsv_lappend . . ignore }
+} -body {
+    ns_logctl severity Error on
+    nstest_http -getbody 1 GET /trace-6.3
+    ns_logctl severity Error on
+    after 2500
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {ignore}
+
+test filter-6.4 {trace scriptarg} -setup {
+    ns_register_trace GET /trace-6.4 {
+        nsv_lappend . . ignore } x
+} -body {
+    ns_logctl severity Error on
+    nstest_http -getbody 1 GET /trace-6.4
+    ns_logctl severity Error on
+    after 2500
+    nsv_get . .
+} -cleanup {
+    nsv_unset -nocomplain . .
+} -result {ignore x}
+
+
+
 cleanupTests

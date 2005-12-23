@@ -103,7 +103,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
-    char           *method, *url, *script, *scriptarg = "";
+    char           *method, *url, *script, *scriptarg = NULL;
     int             flags = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -289,7 +289,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     NsInterp        *itPtr = arg;
     Ns_TclCallback  *cbPtr;
-    char            *method, *urlPattern, *script, *scriptarg = "";
+    char            *method, *urlPattern, *script, *scriptarg = NULL;
     int              when = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -485,11 +485,14 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
     Tcl_DStringInit(&cmd);
 
     /*
-     * Start building the command with the script and arg.
+     * This really should be: cmd why ?arg?, but why and arg
+     * are reversed for backwards compatibility.
      */
 
     Tcl_DStringAppend(&cmd, cbPtr->script, -1);
-    Tcl_DStringAppendElement(&cmd, cbPtr->scriptarg);
+    if (cbPtr->scriptarg != NULL) {
+        Tcl_DStringAppendElement(&cmd, cbPtr->scriptarg);
+    }
 
     /*
      * Append the 'why'
@@ -504,6 +507,9 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
         break;
     case NS_FILTER_TRACE:
         Tcl_DStringAppendElement(&cmd, "trace");
+        break;
+    case NS_FILTER_VOID_TRACE:
+        /* Registered with ns_register_trace; always type VOID TRACE, so don't append. */
         break;
     }
 
@@ -533,7 +539,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
     } else if (STREQ(result, "filter_return")) {
         status = NS_FILTER_RETURN;
     } else {
-        Ns_Log(Warning, "tclfilter: %s return invalid result: %s",
+        Ns_Log(Error, "tclfilter: %s return invalid result: %s",
                cbPtr->script, result);
         status = NS_ERROR;
     }
