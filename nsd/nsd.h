@@ -638,6 +638,9 @@ typedef struct NsServer {
         Tcl_Obj *modules;
         Tcl_HashTable runTable;
         CONST char **errorLogHeaders;
+        Tcl_HashTable caches;
+        Ns_Mutex cachelock;
+        int cacheTimeout;
     } tcl;
     
     /*
@@ -872,8 +875,6 @@ extern Ns_SchedProc NsTclSchedProc;
 extern Ns_ServerRootProc NsTclServerRoot;
 extern Ns_ThreadProc NsTclThread;
 extern Ns_ArgProc NsTclThreadArgProc;
-extern Ns_Callback NsCachePurge;
-extern Ns_ArgProc NsCacheArgProc;
 extern Ns_SockProc NsTclSockProc;
 extern Ns_ArgProc NsTclSockArgProc;
 extern Ns_ThreadProc NsConnThread;

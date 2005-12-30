@@ -292,6 +292,10 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Tcl_IncrRefCount(servPtr->tcl.modules);
     Ns_RWLockInit(&servPtr->tcl.lock);
     Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
+    Ns_MutexInit(&servPtr->tcl.cachelock);
+    Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
+    servPtr->tcl.cacheTimeout =
+        Ns_ConfigIntRange(path, "cachetimeout", 3, 0, INT_MAX);
     servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
     servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
     Tcl_InitHashTable(&servPtr->share.inits, TCL_STRING_KEYS);

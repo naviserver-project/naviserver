@@ -1,8 +1,8 @@
 #
-# The contents of this file are subject to the AOLserver Public License
+# The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://aolserver.com/.
+# http://www.mozilla.org/.
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -25,38 +25,45 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
+
 #
 # $Header$
 #
 
-INSTALL	= install-init
-LIB	= nsd
-PGM	= nsd
-PGMOBJS	= main.o
-LIBINIT	= NsdInit
-HDRS	= nsd.h
+#
+# cache.tcl --
+#
+#     Simple cache for procs and commands.
+#
 
-LOBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
-	  cache.o callbacks.o cls.o compress.o config.o conn.o connio.o \
-	  cookies.o crypt.o dns.o driver.o dsprintf.o dstring.o encoding.o exec.o \
-	  fastpath.o fd.o filter.o form.o httptime.o index.o info.o \
-	  init.o lisp.o listen.o log.o mimetypes.o modload.o nsconf.o \
-	  nsmain.o nsthread.o op.o pathname.o pidfile.o proc.o queue.o \
-	  quotehtml.o random.o request.o return.o rollfile.o sched.o \
-	  server.o set.o sock.o sockcallback.o str.o \
-	  tclcache.o tclcallbacks.o tclcmds.o tclconf.o tclenv.o tclfile.o tclhttp.o tclimg.o \
-	  tclinit.o tcljob.o tclmisc.o tclobj.o tclobjv.o tclrequest.o tclresp.o \
-	  tclsched.o tclset.o tclshare.o tclsock.o tclthread.o tcltime.o tclvar.o \
-	  tclxkeylist.o unix.o url.o url2file.o urlencode.o urlopen.o urlspace.o \
-	  uuencode.o
+set path "ns/server/[ns_info server]/tcl"
+ns_cache_create ns:memoize \
+    [ns_config -int $path memoizecache [expr 1024*1024*10]]
 
-LIBOBJS	= $(LOBJS) stamp.o
 
-include ../include/Makefile.build
+proc ns_memoize {args} {
+    ns_parseargs {{-timeout ""} {-ttl 0} -- script args} $args
 
-stamp.o: $(LOBJS)
-	$(CC) -c -o stamp.o stamp.c
+    if {![string equal $timeout ""]} {
+        set timeout "-timeout $timeout"
+    }
+    set key [concat $script $args]
+    eval ns_cache_eval $timeout -ttl $ttl -- ns:memoize [list $key] $script $args
+}
 
-install-init:
-	$(INSTALL_DATA) init.tcl $(INSTBIN)/
+
+
+proc ns_memoize_flush {{pattern ""}} {
+    if {[string equal $pattern ""]} {
+        return [ns_cache_flush ns:memoize]
+    } else {
+        return [ns_cache_flush -glob -- ns:memoize $pattern]
+    }
+}
+
+
+
+proc ns_memoize_stats args {
+    return [ns_cache_stats ns:memoize]
+}

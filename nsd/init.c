@@ -68,7 +68,6 @@ NsdInit(void)
         once = 1;
     	NsInitBinder();
     	NsInitLog();
-    	NsInitCache();
     	NsInitConf();
     	NsInitEncodings();
     	NsInitListen();

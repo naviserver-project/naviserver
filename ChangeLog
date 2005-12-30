@@ -1,3 +1,50 @@
+2005-12-30  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/init.c:
+	* nsd/proc.c:
+	* nsd/cache.c: Global hash of cache names removed; access no
+	longer available via Ns_CacheFind() or ns_cache_names.  Caches
+	have unique locking requirements and lifetimes which could be
+	violated by e.g. running ns_cache_stats on a thread local cache as the
+	thread is exiting.
+
+	New Ns_CacheCreateEx() allows creating a cache which has both a
+	size and a time limit.
+
+	Caches with time limits are calculated differently.  Previous
+	behaviour was to periodically check the last access time of each
+	cache entry and flush those which had expired.  A busy cache could
+	grow without bound.  New behaviour is to check for expirey each time
+	an entry is retrieved from the cache.  All caches can (and should)
+	be size limited.  Timeouts may be specified per cache and per
+	entry using new Ns_CacheSetValueExpires().
+
+	Ns_CacheFlush() now returns the number of entries flushed.
+
+	New Ns_CacheStats() takes over from ns_cache_stats for non-Tcl
+	caches. Stats are returned in Tcl "array get" format.
+
+	Removed Ns_CacheMalloc(), Ns_CacheFree() and Ns_CacheName().
+
+	Move Tcl commands to tclcache.c.
+
+	* nsd/Makefile:
+	* nsd/tclcmds.c:
+	* nsd/tclcache.c:
+	* tests/ns_cache.test: Add new Tcl commands ns_cache_create,
+	_eval, _append, _lappend, and _incr. (RFE# 1119257)
+
+	Old commands ns_cache_names, _keys, _flush and _stats now only
+	work on Tcl caches.  ns_cache_size has been removed; the size is
+	now reported along with other statistics. These commands now only
+	work on Tcl caches.
+
+	* tcl/cache.tcl: New ns_memoize and related commands which act
+	just like ns_cache_eval but use the script as a key into the
+	memoize cache.
+
 2005-12-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclrequest.c:

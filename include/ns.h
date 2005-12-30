@@ -200,7 +200,7 @@ typedef ns_int64 INT64;
 #define NS_TCL_SET_PERSISTENT      NS_TCL_SET_SHARED
 #define NS_TCL_SET_TEMPORARY       NS_TCL_SET_STATIC
 
-#define NS_CACHE_FREE ((Ns_Callback *) (-1))
+#define NS_CACHE_FREE ns_free
 
 #ifdef _WIN32
 NS_EXTERN char *        NsWin32ErrMsg(int err);
@@ -570,34 +570,114 @@ NS_EXTERN int  Ns_AuthorizeUser(char *user, char *passwd);
  * cache.c:
  */
 
-NS_EXTERN Ns_Cache *Ns_CacheCreate(char *name, int keys, time_t timeout,
-				Ns_Callback *freeProc);
-NS_EXTERN Ns_Cache *Ns_CacheCreateSz(char *name, int keys, size_t maxSize,
-				  Ns_Callback *freeProc);
-NS_EXTERN void Ns_CacheDestroy(Ns_Cache *cache);
-NS_EXTERN Ns_Cache *Ns_CacheFind(char *name);
-NS_EXTERN void *Ns_CacheMalloc(Ns_Cache *cache, size_t len);
-NS_EXTERN void Ns_CacheFree(Ns_Cache *cache, void *bytes);
-NS_EXTERN Ns_Entry *Ns_CacheFindEntry(Ns_Cache *cache, char *key);
-NS_EXTERN Ns_Entry *Ns_CacheCreateEntry(Ns_Cache *cache, char *key, int *newPtr);
-NS_EXTERN char *Ns_CacheName(Ns_Entry *entry);
-NS_EXTERN char *Ns_CacheKey(Ns_Entry *entry);
-NS_EXTERN void *Ns_CacheGetValue(Ns_Entry *entry);
-NS_EXTERN void Ns_CacheSetValue(Ns_Entry *entry, void *value);
-NS_EXTERN void Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size);
-NS_EXTERN void Ns_CacheUnsetValue(Ns_Entry *entry);
-NS_EXTERN void Ns_CacheDeleteEntry(Ns_Entry *entry);
-NS_EXTERN void Ns_CacheFlushEntry(Ns_Entry *entry);
-NS_EXTERN Ns_Entry *Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search);
-NS_EXTERN Ns_Entry *Ns_CacheNextEntry(Ns_CacheSearch *search);
-NS_EXTERN void Ns_CacheFlush(Ns_Cache *cache);
-NS_EXTERN void Ns_CacheLock(Ns_Cache *cache);
-NS_EXTERN int Ns_CacheTryLock(Ns_Cache *cache);
-NS_EXTERN void Ns_CacheUnlock(Ns_Cache *cache);
-NS_EXTERN int Ns_CacheTimedWait(Ns_Cache *cache, Ns_Time *timePtr);
-NS_EXTERN void Ns_CacheWait(Ns_Cache *cache);
-NS_EXTERN void Ns_CacheSignal(Ns_Cache *cache);
-NS_EXTERN void Ns_CacheBroadcast(Ns_Cache *cache);
+NS_EXTERN Ns_Cache *
+Ns_CacheCreate(CONST char *name, int keys, time_t ttl, Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Cache *
+Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Cache *
+Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize,
+                 Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheDestroy(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Entry *
+Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN Ns_Entry *
+Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN Ns_Entry *
+Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t timeout)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN char *
+Ns_CacheKey(Ns_Entry *entry)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void *
+Ns_CacheGetValue(Ns_Entry *entry)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN size_t
+Ns_CacheGetSize(Ns_Entry *entry)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheSetValue(Ns_Entry *entry, void *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, time_t ttl)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheUnsetValue(Ns_Entry *entry)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheDeleteEntry(Ns_Entry *entry)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheFlushEntry(Ns_Entry *entry)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Entry *
+Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN Ns_Entry *
+Ns_CacheNextEntry(Ns_CacheSearch *search)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_CacheFlush(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheLock(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_CacheTryLock(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheUnlock(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheWait(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_CacheTimedWait(Ns_Cache *cache, Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheSignal(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheBroadcast(Ns_Cache *cache)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * callbacks.c:
