@@ -1929,34 +1929,26 @@ NS_EXTERN int Ns_UrlSpecificAlloc(void);
 
 NS_EXTERN void
 Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
-                  void *data, int flags, void (*deletefunc)(void *));
+                  void *data, int flags, void (*deletefunc)(void *))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
-Ns_UrlSpecificGet(CONST char *server, CONST char *method, CONST char *url, int id);
+Ns_UrlSpecificGet(CONST char *server, CONST char *method, CONST char *url, int id)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
-Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url, int id);
+Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url, int id)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
 Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
-                       int id, int flags);
+                       int id, int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
 Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
-                      int id, int flags);
-
-NS_EXTERN int
-Ns_ServerSpecificAlloc(void);
-
-NS_EXTERN void
-Ns_ServerSpecificSet(CONST char *handle, int id, void *data, int flags,
-                     void (*deletefunc)(void *));
-
-NS_EXTERN void *
-Ns_ServerSpecificGet(CONST char *handle, int id);
-
-NS_EXTERN void *
-Ns_ServerSpecificDestroy(CONST char *handle, int id, int flags);
+                      int id, int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * fd.c:

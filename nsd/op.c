@@ -55,6 +55,7 @@ typedef struct {
  * Static functions defined in this file.
  */
 
+static void WalkCallback(Tcl_DString *dsPtr, void *arg);
 static void FreeReq(void *arg);
 
 /*
@@ -467,6 +468,45 @@ NsConnRunProxyRequest(Ns_Conn *conn)
 
 /*
  *----------------------------------------------------------------------
+ * NsGetRequestProcs --
+ *
+ *      Get a description of each registered request for the given
+ *      server.
+ * 
+ * Results:
+ *      DString with info in Tcl list form.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+ 
+void
+NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server)
+{
+    NsServer *servPtr;
+ 
+    servPtr = NsGetServer(server);
+    if (servPtr == NULL) {
+        return;
+    }
+    Ns_MutexLock(&ulock);
+    NsUrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
+    Ns_MutexUnlock(&ulock);
+}
+
+static void
+WalkCallback(Tcl_DString *dsPtr, void *arg)
+{
+     Req *reqPtr = arg;
+
+     Ns_GetProcInfo(dsPtr, (void *) reqPtr->proc, reqPtr->arg);
+}
+
+
+/*
+ *----------------------------------------------------------------------
  *
  * FreeReq --
  *
@@ -492,58 +532,4 @@ FreeReq(void *arg)
         }
         ns_free(reqPtr);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsRequestArgProc --
- *
- *      Proc info routine to copy Tcl request proc.
- *
- * Results:
- *      None.
- *      
- * Side effects:
- *      Will copy script to given dstring.
- *
- *----------------------------------------------------------------------
- */
- 
-void
-NsTclRequestArgProc(Tcl_DString *dsPtr, void *arg)
-{
-     Req *reqPtr = arg;
-
-     Ns_GetProcInfo(dsPtr, (void *) reqPtr->proc, reqPtr->arg);
-}
-
-
-/*
- *----------------------------------------------------------------------
- * NsGetRequestProcs --
- *
- *      Returns information about registered requests/procs.
- * 
- * Results:
- *      DString with info as Tcl list.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
- 
-void
-NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server)
-{
-    NsServer *servPtr;
- 
-    servPtr = NsGetServer(server);
-    if (servPtr == NULL) {
-        return;
-    }
-    Ns_MutexLock(&ulock);
-    NsUrlSpecificWalk(uid, servPtr->server, NsTclRequestArgProc, dsPtr);
-    Ns_MutexUnlock(&ulock);
 }

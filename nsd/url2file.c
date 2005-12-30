@@ -67,7 +67,7 @@ typedef struct {
 
 static Ns_Callback FreeMount;
 static void FreeUrl2File(void *arg);
-static void Url2FileProcInfo(Ns_DString *dsPtr, void *arg);
+static void WalkCallback(Ns_DString *dsPtr, void *arg);
 
 /*
  * Static variables defined in this file.
@@ -582,7 +582,7 @@ NsMountUrl2FileArgProc(Tcl_DString *dsPtr, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * NsGetUrl2FileProcsProcs --
+ * NsGetUrl2FileProcs --
  *
  *      Append information about registered url2file procs to dstring.
  *
@@ -599,12 +599,12 @@ void
 NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server)
 {
     Ns_MutexLock(&ulock);
-    NsUrlSpecificWalk(uid, server, Url2FileProcInfo, dsPtr);
+    NsUrlSpecificWalk(uid, server, WalkCallback, dsPtr);
     Ns_MutexUnlock(&ulock);
 }
 
 static void
-Url2FileProcInfo(Ns_DString *dsPtr, void *arg)
+WalkCallback(Ns_DString *dsPtr, void *arg)
 {
     Url2File *u2fPtr = arg;
 

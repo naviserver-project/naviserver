@@ -1,6 +1,20 @@
 2005-12-30  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
+	* nsd/init.c:
+	* nsd/urlspace.c:
+	* tests/url2file.test: Split the urlspace by key ID and remove the
+	global lock. Remove unused Ns_ServerSpecific*() routines.
+
+	Make NsUrlSpecificWalk() emit an entry for both inherit and
+	noinherit data, identifying each with a keyword.  Don't emit the
+	server name, which is redundant, and separate the URL from the
+	filter. (RFE: 1377113)
+
+	* nsd/op.c:
+	* nsd/url2file.c: Clarify naming of urlspecifc walk callbacks.
+
+	* include/ns.h:
 	* nsd/nsd.h:
 	* nsd/init.c:
 	* nsd/proc.c:

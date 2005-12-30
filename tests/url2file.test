@@ -116,9 +116,9 @@ test url2file-6.1 {url2file info} -setup {
 } -cleanup {
     ns_unregister_url2file /url1
     ns_unregister_url2file /url2
-} -result [list [list [ns_info server] x /url1* ns:tclurl2file script] \
-               [list [ns_info server] x /url2* ns:mounturl2file /base /url2] \
-               [list [ns_info server] x * ns:fasturl2file [ns_info server]] ]
+} -result [list [list x /url1 * inherit ns:tclurl2file script] \
+               [list x /url2 * inherit ns:mounturl2file /base /url2] \
+               [list x / * inherit ns:fasturl2file [ns_info server]] ]
 
 
 

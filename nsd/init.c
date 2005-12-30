@@ -79,7 +79,6 @@ NsdInit(void)
     	NsInitQueue();
     	NsInitSched();
     	NsInitTcl();
-    	NsInitUrlSpace();
     	NsInitRequests();
         NsInitUrl2File();
     }
