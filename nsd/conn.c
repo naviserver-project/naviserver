@@ -1030,6 +1030,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     static CONST char *opts[] = {
         "authpassword", "authuser", "close", "content", "contentlength",
+	"contentsentlength",
         "copy", "channel", "driver", "encoding", "files", "fileoffset",
         "filelength", "fileheaders", "flags", "form", "headers",
         "host", "id", "isconnected", "location", "method",
@@ -1041,7 +1042,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
     enum ISubCmdIdx {
         CAuthPasswordIdx, CAuthUserIdx, CCloseIdx, CContentIdx,
-        CContentLengthIdx, CCopyIdx, CChannelIdx, CDriverIdx, CEncodingIdx,
+        CContentLengthIdx, CContentSentLenIdx, CCopyIdx, CChannelIdx, CDriverIdx, CEncodingIdx,
         CFilesIdx, CFileOffIdx, CFileLenIdx, CFileHdrIdx, CFlagsIdx,
         CFormIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
         CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
@@ -1396,6 +1397,20 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         }
         Tcl_RegisterChannel(interp, chan);
         Tcl_SetStringObj(result, Tcl_GetChannelName(chan), -1);
+	break;
+
+    case CContentSentLenIdx:
+        if (objc == 2) {
+            Tcl_SetIntObj(result, connPtr->nContentSent);
+        } else if (objc == 3) {
+            if (Tcl_GetIntFromObj(interp, objv[2], &connPtr->nContentSent) != TCL_OK) {
+                return TCL_ERROR;
+            }
+        } else {
+            Tcl_WrongNumArgs(interp, 2, objv, "?value?");
+            return TCL_ERROR;
+        }
+	break;
     }
 
     return TCL_OK;

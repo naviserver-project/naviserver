@@ -252,6 +252,17 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len],,,[
 
 AC_HAVE_CMMSG
 
+dnl ** Check for inet_ntop
+AC_MSG_CHECKING(for inet_ntop)
+AC_TRY_COMPILE([#include <sys/socket.h>
+#include <arpa/inet.h>], [inet_ntop(0, (char *)0, (char *)0, 0);], has_inet_ntop=yes, has_inet_ntop=no)
+if test "$has_inet_ntop" = yes; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_INET_NTOP,,[we can use inet_ntop()])
+else
+    AC_MSG_RESULT(no)
+fi
+
 #
 # Create Makefiles.
 #

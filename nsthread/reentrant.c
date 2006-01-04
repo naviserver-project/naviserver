@@ -72,6 +72,9 @@ char *
 ns_inet_ntoa(struct in_addr addr)
 {
     Tls *tlsPtr = GetTls();
+#if defined(HAVE_INET_NTOP)
+    inet_ntop(AF_INET, &addr, tlsPtr->nabuf, sizeof(tlsPtr->nabuf)); 
+#else
     union {
     	unsigned long l;
     	unsigned char b[4];
@@ -79,6 +82,7 @@ ns_inet_ntoa(struct in_addr addr)
     
     u.l = (unsigned long) addr.s_addr;
     sprintf(tlsPtr->nabuf, "%u.%u.%u.%u", u.b[0], u.b[1], u.b[2], u.b[3]);
+#endif
     return tlsPtr->nabuf;
 }
 

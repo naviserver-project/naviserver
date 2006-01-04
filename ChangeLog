@@ -1,3 +1,13 @@
+2006-01-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* configure.in:  added test for inet_ntop.
+	* nsthread/reentrant.c: use inet_ntop when available which fixes a
+	bug on 64 bit ppc, at least under linux.
+	* nsd/conn.c: added option to [ns_conn] to set/query contentsentlength
+	for getting the correct length into the logfile, when files are
+	delivered via event driven I/O. Thanks to Gustaf Neumann for providing
+	above fixes.
+
 2006-01-04  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
