@@ -1,3 +1,14 @@
+2006-01-04  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/Makefile:
+	* nsd/nsmain.c:
+	* nsd/sock.c:
+	* nsd/task.c: Backport AOLserver task queues.  Callbacks are
+	registered to run in a seperate thread in response to socket
+	read/write events.
+
 2005-12-30  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

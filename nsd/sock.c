@@ -712,6 +712,70 @@ Ns_SockStrError(int err)
 /*
  *----------------------------------------------------------------------
  *
+ * NsPoll --
+ *
+ *      Poll file descriptors using an absolute timeout and restarting
+ *      after any interrupts which may be received.
+ *
+ * Results:
+ *      See poll(2) man page.
+ *
+ * Side effects:
+ *      See poll(2) man page.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
+{
+    Ns_Time now, diff;
+    int     i, n, ms;
+
+    /*
+     * Clear revents.
+     */
+
+    for (i = 0; i < nfds; ++i) {
+        pfds[i].revents = 0;
+    }
+
+    /*
+     * Determine relative time from absolute time and continue polling
+     * if any interrupts are received.
+     */
+
+    do {
+        if (timeoutPtr == NULL) {
+            ms = -1;
+        } else {
+            Ns_GetTime(&now);
+            if (Ns_DiffTime(timeoutPtr, &now, &diff) <= 0) {
+                ms = 0;
+            } else {
+                ms = diff.sec * 1000 + diff.usec / 1000;
+            }
+        }
+        n = poll(pfds, (size_t) nfds, ms);
+    } while (n < 0 && ns_sockerrno == EINTR);
+
+    /*
+     * Poll errors are not tolerated in as they must indicate
+     * a code error which if ignored could lead to data loss and/or
+     * endless polling loops and error messages.
+     */
+
+    if (n < 0) {
+        Ns_Fatal("poll() failed: %s", ns_sockstrerror(ns_sockerrno));
+    }
+
+    return n;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockSetup --
  *
  *	Setup new sockets for close-on-exec and possibly duped high.

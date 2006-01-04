@@ -850,6 +850,7 @@ extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);
 extern int  NsSockSend(Sock *sockPtr, struct iovec *bufs, int nbufs);
 extern void NsSockClose(Sock *sockPtr, int keep);
+extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 
 extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
@@ -938,6 +939,8 @@ extern void NsStartSockShutdown(void);
 extern void NsWaitSockShutdown(Ns_Time *toPtr);
 extern void NsStartShutdownProcs(void);
 extern void NsWaitShutdownProcs(Ns_Time *toPtr);
+extern void NsStartTaskQueueShutdown(void);
+extern void NsWaitTaskQueueShutdown(Ns_Time *toPtr);
 
 extern void NsStartJobsShutdown(void);
 extern void NsWaitJobsShutdown(Ns_Time *toPtr);

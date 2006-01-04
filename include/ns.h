@@ -135,7 +135,9 @@
 #define NS_SOCK_EXIT               0x08 /* The server is shutting down */
 #define NS_SOCK_DROP               0x10 /* Unused */
 #define NS_SOCK_CANCEL             0x20 /* Remove event from sock callback thread */
-#define NS_SOCK_ANY                0xFF /* ??? */
+#define NS_SOCK_TIMEOUT            0x40 /* Timeout waiting for socket event. */
+#define NS_SOCK_INIT               0x80 /* Initialise a Task callback. */
+#define NS_SOCK_ANY                (NS_SOCK_READ|NS_SOCK_WRITE|NS_SOCK_EXCEPTION)
 
 /*
  * The following are valid comm driver options.
@@ -277,6 +279,17 @@ NS_EXTERN int           kill(int pid, int sig);
 #define NS_DSTRING_STATIC_SIZE  TCL_DSTRING_STATIC_SIZE
 #define NS_DSTRING_PRINTF_MAX   2048
 
+/*
+ * Typedefs of variables
+ */
+
+typedef struct _Ns_Cache        *Ns_Cache;
+typedef struct _Ns_Entry        *Ns_Entry;
+typedef Tcl_HashSearch           Ns_CacheSearch;
+typedef struct _Ns_Cls          *Ns_Cls;
+typedef void                    *Ns_OpContext;
+typedef struct _Ns_TaskQueue    *Ns_TaskQueue;
+typedef struct _Ns_Task         *Ns_Task;
 
 /*
  * This is used for logging messages.
@@ -316,6 +329,7 @@ typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_SockProc) (SOCKET sock, void *arg, int why);
+typedef void  (Ns_TaskProc) (Ns_Task *task, SOCKET sock, void *arg, int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (char *server);
 typedef int   (Ns_ModuleInitProc) (CONST char *server, CONST char *module);
@@ -528,17 +542,6 @@ typedef int   (Ns_Url2FileProc) (Ns_DString *dsPtr, CONST char *url, void *arg);
 typedef char *(Ns_ServerRootProc) (Ns_DString  *dest, CONST char *host, void *arg);
 typedef char *(Ns_ConnLocationProc) (Ns_Conn *conn, Ns_DString *dest, void *arg);
 typedef char *(Ns_LocationProc) (Ns_Conn *conn); /* depreciated */
-
-/*
- * Typedefs of variables
- */
-
-typedef struct _Ns_Cache	*Ns_Cache;
-typedef struct _Ns_Entry	*Ns_Entry;
-typedef Tcl_HashSearch 		 Ns_CacheSearch;
-
-typedef struct _Ns_Cls 		*Ns_Cls;
-typedef void 	      		*Ns_OpContext;
 
 /*
  * adpparse.c:
@@ -1085,6 +1088,50 @@ NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
 
 NS_EXTERN void Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
 NS_EXTERN double Ns_DRand(void);
+
+/* 
+ * task.c: 
+ */
+
+NS_EXTERN Ns_TaskQueue *
+Ns_CreateTaskQueue(char *name)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_DestroyTaskQueue(Ns_TaskQueue *queue)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Task *
+Ns_TaskCreate(SOCKET sock, Ns_TaskProc *proc, void *arg)
+    NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_TaskRun(Ns_Task *task)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_TaskCallback(Ns_Task *task, int when, Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_TaskDone(Ns_Task *task)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_TaskCancel(Ns_Task *task)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN SOCKET
+Ns_TaskFree(Ns_Task *task)
+    NS_GNUC_NONNULL(1);
 
 /*
  * tclobj.c:
