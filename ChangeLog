@@ -1,3 +1,8 @@
+2006-01-07  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/driver.c (DriverThread): Add Push() macro to clarify list
+	processing of sockets and drivers.
+
 2006-01-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tests/ns_conn.test: fixed basic command test to recognize

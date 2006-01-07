@@ -92,6 +92,7 @@ static int SockParse(Sock *sockPtr);
 static void SockPoll(Sock *sockPtr, Ns_Time *timeoutPtr);
 static void SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
 static int  SetServer(Sock *sockPtr);
+#define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
 
 /*
  * Static variables defined in this file.
@@ -720,11 +721,9 @@ DriverThread(void *ignored)
     while (drvPtr != NULL) {
         nextDrvPtr = drvPtr->nextPtr;
         if (drvPtr->sock != INVALID_SOCKET) {
-            drvPtr->nextPtr = activeDrvPtr;
-            activeDrvPtr = drvPtr;
+            Push(drvPtr, activeDrvPtr);
         } else {
-            drvPtr->nextPtr = firstDrvPtr;
-            firstDrvPtr = drvPtr;
+            Push(drvPtr, firstDrvPtr);
         }
         drvPtr = nextDrvPtr;
     }
@@ -825,8 +824,7 @@ DriverThread(void *ignored)
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, Reason_CloseTimeout);
                 } else {
-                    sockPtr->nextPtr = closePtr;
-                    closePtr = sockPtr;
+                    Push(sockPtr, closePtr);
                 }
                 sockPtr = nextPtr;
             }
@@ -844,8 +842,7 @@ DriverThread(void *ignored)
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, Reason_ReadTimeout);
                 } else {
-                    sockPtr->nextPtr = readPtr;
-                    readPtr = sockPtr;
+                    Push(sockPtr, readPtr);
                 }
             } else {
 
@@ -867,15 +864,13 @@ DriverThread(void *ignored)
                 switch (n) {
                 case SOCK_MORE:
                     SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                    sockPtr->nextPtr = readPtr;
-                    readPtr = sockPtr;
+                    Push(sockPtr, readPtr);
                     break;
                 case SOCK_READY:
                     if (!SetServer(sockPtr)) {
                         SockRelease(sockPtr, Reason_ServerReject);
                     } else {
-                        sockPtr->nextPtr = waitPtr;
-                        waitPtr = sockPtr;
+                        Push(sockPtr, waitPtr);
                     }
                     break;
                 default:
@@ -902,8 +897,7 @@ DriverThread(void *ignored)
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
                 if (waitPtr != NULL || !NsQueueConn(sockPtr, &now)) {
-                    sockPtr->nextPtr = waitPtr;
-                    waitPtr = sockPtr;
+                    Push(sockPtr, waitPtr);
                 }
                 sockPtr = nextPtr;
             }
@@ -925,18 +919,16 @@ DriverThread(void *ignored)
                     /*
                      * Add this driver to the temporary idle list.
                      */
-                    
-                    drvPtr->nextPtr = idleDrvPtr;
-                    idleDrvPtr = drvPtr;
+
+                    Push(drvPtr, idleDrvPtr);
 
                 } else {
 
                     /*
                      * Add this driver to the temporary accepted list.
                      */
-                    
-                    drvPtr->nextPtr = acceptDrvPtr;
-                    acceptDrvPtr = drvPtr;
+
+                    Push(drvPtr, acceptDrvPtr);
 
                     /*
                      * Queue the socket immediately if request is provided
@@ -947,8 +939,7 @@ DriverThread(void *ignored)
                             SockRelease(sockPtr, Reason_ServerReject);
                         } else {
                             if (!NsQueueConn(sockPtr, &now)) {
-                                sockPtr->nextPtr = waitPtr;
-                                waitPtr = sockPtr;
+                                Push(sockPtr, waitPtr);
                             }
                         }
                     } else {
@@ -957,8 +948,7 @@ DriverThread(void *ignored)
                         */
 
                         SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                        sockPtr->nextPtr = readPtr;
-                        readPtr = sockPtr;
+                        Push(sockPtr, readPtr);
                     }
                 }
                 drvPtr = nextDrvPtr;
@@ -972,13 +962,11 @@ DriverThread(void *ignored)
             
             while ((drvPtr = acceptDrvPtr) != NULL) {
                 acceptDrvPtr = drvPtr->nextPtr;
-                drvPtr->nextPtr = activeDrvPtr;
-                activeDrvPtr = drvPtr;
+                Push(drvPtr, activeDrvPtr);
             }
             while ((drvPtr = idleDrvPtr) != NULL) {
                 idleDrvPtr = drvPtr->nextPtr;
-                drvPtr->nextPtr = activeDrvPtr;
-                activeDrvPtr = drvPtr;
+                Push(drvPtr, activeDrvPtr);
             }
         }
         
@@ -1003,15 +991,13 @@ DriverThread(void *ignored)
             nextPtr = sockPtr->nextPtr;
             if (sockPtr->keep) {
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
-                sockPtr->nextPtr = readPtr;
-                readPtr = sockPtr;
+                Push(sockPtr, readPtr);
             } else {
                 if (shutdown(sockPtr->sock, 1) != 0) {
                     SockRelease(sockPtr, Reason_SockShutError);
                 } else {
                     SockTimeout(sockPtr, &now, sockPtr->drvPtr->closewait);
-                    sockPtr->nextPtr = closePtr;
-                    closePtr = sockPtr;
+                    Push(sockPtr, closePtr);
                 }
             }
             sockPtr = nextPtr;
@@ -1028,8 +1014,7 @@ DriverThread(void *ignored)
                     ns_sockclose(drvPtr->sock);
                     drvPtr->sock = INVALID_SOCKET;
                 }
-                drvPtr->nextPtr = firstDrvPtr;
-                firstDrvPtr = drvPtr;
+                Push(drvPtr, firstDrvPtr);
             }
         }
     }
