@@ -894,6 +894,16 @@ DriverThread(void *ignored)
                 nextPtr->nextPtr = sockPtr;
                 sockPtr = nextPtr;
             }
+
+            /*
+             * Hint: NsQueueConn may fail to queue a certain
+             * socket to the designated connection queue. 
+             * In such case, ALL ready sockets will be put on
+             * the waiting list until the next interation, 
+             * regardless of which connection queue they are 
+             * to be queued.
+             */
+
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
                 if (waitPtr != NULL || !NsQueueConn(sockPtr, &now)) {
@@ -933,7 +943,8 @@ DriverThread(void *ignored)
                     /*
                      * Queue the socket immediately if request is provided
                      */
-                    n = (*sockPtr->drvPtr->proc)(DriverAccept, (Ns_Sock*)sockPtr, 0, 0);
+                    n = (*sockPtr->drvPtr->proc)(DriverAccept,
+                                                 (Ns_Sock*)sockPtr, 0, 0);
                     if (n == NS_OK && sockPtr->reqPtr) {
                         if (!SetServer(sockPtr)) {
                             SockRelease(sockPtr, Reason_ServerReject);

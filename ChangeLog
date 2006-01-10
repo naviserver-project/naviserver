@@ -1,3 +1,7 @@
+2006-01-10  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/driver.c (DriverThread): Added some clarifying comments
+
 2006-01-07  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/driver.c (DriverThread): Add Push() macro to clarify list
