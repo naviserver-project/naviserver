@@ -518,11 +518,11 @@ Ns_SetDelete(Ns_Set *set, int index)
 
         ns_free(set->fields[index].name);
         ns_free(set->fields[index].value);
+        --set->size;
         for (i = index; i < set->size; ++i) {
             set->fields[i].name = set->fields[i + 1].name;
             set->fields[i].value = set->fields[i + 1].value;
         }
-        --set->size;
     }
 }
 

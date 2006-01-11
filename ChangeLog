@@ -1,3 +1,8 @@
+2006-01-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/set.c (Ns_SetDelete): fixed off-by-one error when
+	compacting the set after element deletion.
+
 2006-01-10  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/driver.c (DriverThread): Added some clarifying comments
