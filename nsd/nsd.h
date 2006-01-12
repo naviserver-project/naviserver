@@ -360,6 +360,7 @@ typedef struct Driver {
     int maxline;                /* Maximum request line size. */
     int maxheaders;             /* Maximum number of request headers. */
     int readahead;              /* Maximum request size in memory. */
+    int uploadsize;             /* Minimum upload size for statistics tracking. */
     unsigned int loggingFlags;  /* Logging control flags */
 
 } Driver;
@@ -396,6 +397,12 @@ typedef struct Sock {
     int tfd;
     char *taddr;
     size_t tsize;
+
+    struct {
+      char *url;
+      unsigned long size;
+      unsigned long length;
+    } upload;
 
 } Sock;
 

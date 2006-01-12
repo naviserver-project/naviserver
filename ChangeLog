@@ -1,3 +1,14 @@
+2006-01-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd.nsd.c:
+	* nsd/tclcmds.c: Added spooler support which handles
+	upload process in separate thread. During the uploading new command 
+	ns_upload_stats is available which accepts full url with query
+	parametrs of the uploading connection. On uploading finish, 
+	statistics is cleared from the memory. Spooler can be disabled 
+	using ns_param spooler false in the nssock section of nsd.tcl.
+
 2006-01-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/set.c (Ns_SetDelete): fixed off-by-one error when
