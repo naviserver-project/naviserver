@@ -449,7 +449,8 @@ typedef struct Ns_TclCallback {
     void           *cbProc;
     CONST char     *server;
     char           *script;
-    char           *scriptarg;
+    int             argc;
+    char          **argv;
 } Ns_TclCallback;
 
 /*
@@ -1746,16 +1747,15 @@ Ns_StrIsHost(CONST char *string)
  */
 
 NS_EXTERN Ns_TclCallback *Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc,
-                                            char *script, char *scriptarg);
-NS_EXTERN Ns_TclCallback *Ns_TclNewCallbackObj(Tcl_Interp *interp,
-                                               void *cbProc,
-                                               Tcl_Obj *scriptObjPtr,
-                                               Tcl_Obj *argObjPtr);
+                                            Tcl_Obj *scriptObjPtr, int objc,
+                                            Tcl_Obj *CONST objv[]);
+
 NS_EXTERN int Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
                                  Ns_DString *result, ...) NS_GNUC_SENTINEL;
+
 NS_EXTERN Ns_Callback Ns_TclCallbackProc;
 NS_EXTERN Ns_Callback Ns_TclFreeCallback;
-NS_EXTERN Ns_ArgProc Ns_TclCallbackArgProc;
+NS_EXTERN Ns_ArgProc  Ns_TclCallbackArgProc;
 
 /*
  * tclenv.c:

@@ -1,3 +1,19 @@
+2006-01-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	ATTENTION: Tcl compatibility affected.
+
+	* include/ns.h:
+	* nsd/conn.c:    
+	* nsd/pathname.c:
+	* nsd/tclcallbacks.c:
+	* nsd/tclinit.c:
+	* nsd/tclrequest.c:
+	* nsd/tclsched.c:
+	* nsd/url2file.c:
+	* tests/ns_register_filter.test:
+	* tests/ns_register_proc.test:
+	* tests/url2file.test: Implemented RFE #1404901.
+
 2006-01-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c:

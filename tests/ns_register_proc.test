@@ -12,7 +12,7 @@ eval ::tcltest::configure $argv
 
 test proc-1.1 {basic syntax} -body {
     ns_register_proc
-} -returnCodes error -result {wrong # args: should be "ns_register_proc ?-noinherit? ?--? method url script ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_proc ?-noinherit? ?--? method url script ?args?"}
 
 test proc-1.2 {basic syntax} -body {
     ns_unregister_proc

@@ -774,8 +774,9 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     NsServer       *servPtr = itPtr->servPtr;
     Defer          *deferPtr;
     Ns_TclCallback *cbPtr;
-    char           *script, *scriptArg = NULL;
-    int             opt, length, when = 0, result = TCL_OK;
+    Tcl_Obj        *scriptObj;
+    char           *script;
+    int             remain = 0, opt, length, when = 0, result = TCL_OK;
 
     static CONST char *opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules", "markfordelete",
@@ -798,8 +799,8 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
     Ns_ObjvSpec traceArgs[] = {
         {"when",       Ns_ObjvFlags,  &when,      traceWhen},
-        {"script",     Ns_ObjvString, &script,    NULL},
-        {"?scriptArg", Ns_ObjvString, &scriptArg, NULL},
+        {"script",     Ns_ObjvObj,    &scriptObj, NULL},
+        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -979,8 +980,8 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                           TCL_STATIC);
             return TCL_ERROR;
         }
-        cbPtr = Ns_TclNewCallback(itPtr->interp, NsTclTraceProc,
-                                  script, scriptArg);
+        cbPtr = Ns_TclNewCallback(itPtr->interp, NsTclTraceProc, scriptObj, 
+                                  remain, objv + (objc - remain));
         (void) Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when);
         break;
     }

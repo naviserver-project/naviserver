@@ -663,21 +663,22 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
  */
 
 int
-NsTclServerRootProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclServerRootProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                          Tcl_Obj *CONST objv[])
 {
-    NsServer        *servPtr = NsGetInitServer();
-    Ns_TclCallback  *cbPtr;
+    NsServer       *servPtr = NsGetInitServer();
+    Ns_TclCallback *cbPtr;
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "script ?arg?");
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
         return TCL_ERROR;
     }
     if (servPtr == NULL) {
         Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
         return TCL_ERROR;
     }
-    cbPtr = Ns_TclNewCallbackObj(interp, NsTclServerRoot,
-                                 objv[1], (objc > 2) ? objv[2] : NULL);
+    cbPtr = Ns_TclNewCallback(interp, NsTclServerRoot, objv[1],
+                              objc - 2, objv + 2);
     Ns_SetServerRootProc(NsTclServerRoot, cbPtr);
 
     return TCL_OK;

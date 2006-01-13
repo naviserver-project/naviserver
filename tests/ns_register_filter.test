@@ -12,7 +12,7 @@ eval ::tcltest::configure $argv
 
 test filter-1.1 {basic syntax} -body {
     ns_register_filter
-} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? when method urlPattern script ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? when method urlPattern script ?args?"}
 
 test filter-1.2 {basic syntax} -body {
     ns_register_filter when GET / aproc
@@ -20,7 +20,7 @@ test filter-1.2 {basic syntax} -body {
 
 test filter-1.3 {basic syntax} -body {
     ns_register_trace
-} -returnCodes error -result {wrong # args: should be "ns_register_trace method urlPattern script ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_trace method urlPattern script ?args?"}
 
 
 
@@ -179,9 +179,9 @@ test filter-6.1 {no filter scriptarg} -setup {
     nsv_unset -nocomplain . .
 } -result {preauth}
 
-test filter-6.2 {filter scriptarg} -setup {
+test filter-6.2 {filter scriptargs} -setup {
     ns_register_filter preauth  GET /filter-6.2 {
-        nsv_lappend . . } x
+        nsv_lappend . . } x y z
 } -body {
     ns_logctl severity Error off
     nstest_http -getbody 1 GET /filter-6.2
@@ -189,9 +189,9 @@ test filter-6.2 {filter scriptarg} -setup {
     nsv_get . .
 } -cleanup {
     nsv_unset -nocomplain . .
-} -result {x preauth}
+} -result {preauth x y z}
 
-test filter-6.3 {no trace scriptarg} -setup {
+test filter-6.3 {no trace scriptargs} -setup {
     ns_register_trace GET /trace-6.3 {
         nsv_lappend . . ignore }
 } -body {
@@ -204,9 +204,9 @@ test filter-6.3 {no trace scriptarg} -setup {
     nsv_unset -nocomplain . .
 } -result {ignore}
 
-test filter-6.4 {trace scriptarg} -setup {
+test filter-6.4 {trace scriptargs} -setup {
     ns_register_trace GET /trace-6.4 {
-        nsv_lappend . . ignore } x
+        nsv_lappend . . ignore } x y z
 } -body {
     ns_logctl severity Error on
     nstest_http -getbody 1 GET /trace-6.4
@@ -215,7 +215,7 @@ test filter-6.4 {trace scriptarg} -setup {
     nsv_get . .
 } -cleanup {
     nsv_unset -nocomplain . .
-} -result {ignore x}
+} -result {ignore x y z}
 
 
 

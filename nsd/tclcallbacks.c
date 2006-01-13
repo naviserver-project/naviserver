@@ -55,7 +55,7 @@ static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TclNewCallback, Ns_TclNewCallbackObj --
+ * Ns_TclNewCallback --
  *
  *      Create a new script callback.
  *
@@ -63,32 +63,32 @@ static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp,
  *      Pointer to Ns_TclCallback.
  *
  * Side effects:
- *      Copies are made of script and scriptarg.
+ *      Copies are made of script and arguments
  *
  *----------------------------------------------------------------------
  */
 
-Ns_TclCallback *
-Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc,
-                  char *script, char *scriptarg)
+Ns_TclCallback*
+Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc, Tcl_Obj *scriptObjPtr,
+                  int objc, Tcl_Obj *CONST objv[])
 {
+    int             ii;
     Ns_TclCallback *cbPtr;
+    
+    cbPtr = ns_malloc(sizeof(Ns_TclCallback) + objc * sizeof(char *));
+    cbPtr->cbProc = cbProc;
+    cbPtr->server = Ns_TclInterpServer(interp);
+    cbPtr->script = ns_strdup(Tcl_GetString(scriptObjPtr));
+    cbPtr->argc   = objc;
+    cbPtr->argv   = (char **)((char *)cbPtr + sizeof(Ns_TclCallback));
 
-    cbPtr = ns_malloc(sizeof(Ns_TclCallback));
-    cbPtr->cbProc    = cbProc;
-    cbPtr->server    = Ns_TclInterpServer(interp);
-    cbPtr->script    = ns_strdup(script);
-    cbPtr->scriptarg = ns_strcopy(scriptarg);
+    if (objc) {
+        for (ii = 0; ii < objc; ii++) {
+            cbPtr->argv[ii] = ns_strdup(Tcl_GetString(objv[ii]));
+        }
+    }
 
     return cbPtr;
-}
-
-Ns_TclCallback *
-Ns_TclNewCallbackObj(Tcl_Interp *interp, void *cbProc,
-                     Tcl_Obj *objPtr, Tcl_Obj *argObjPtr)
-{
-    return Ns_TclNewCallback(interp, cbProc, Tcl_GetString(objPtr),
-                             (argObjPtr ? Tcl_GetString(argObjPtr) : NULL));
 }
 
 
@@ -111,10 +111,14 @@ Ns_TclNewCallbackObj(Tcl_Interp *interp, void *cbProc,
 void
 Ns_TclFreeCallback(void *arg)
 {
+    int             ii;
     Ns_TclCallback *cbPtr = arg;
 
+    for (ii = 0; ii < cbPtr->argc; ii++) {
+        ns_free(cbPtr->argv[ii]);
+    }
+
     ns_free(cbPtr->script);
-    ns_free(cbPtr->scriptarg);
     ns_free(cbPtr);
 }
 
@@ -138,13 +142,14 @@ Ns_TclFreeCallback(void *arg)
  */
 
 int
-Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr, Ns_DString *result, ...)
+Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
+                   Ns_DString *result, ...)
 {
     va_list      ap;
     Ns_DString   ds;
     char        *arg;
     int          deallocInterp = 0;
-    int          status = TCL_ERROR;
+    int          ii, status = TCL_ERROR;
 
     if (interp == NULL) {
         interp = Ns_TclAllocateInterp(cbPtr->server);
@@ -158,8 +163,8 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr, Ns_DString *result
             Ns_DStringAppendElement(&ds, arg);
         }
         va_end(ap);
-        if (cbPtr->scriptarg) {
-            Ns_DStringAppendElement(&ds, cbPtr->scriptarg);
+        for (ii = 0; ii < cbPtr->argc; ii++) {
+            Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
         }
         status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         if (status != TCL_OK) {
@@ -225,11 +230,12 @@ Ns_TclCallbackProc(void *arg)
 void
 Ns_TclCallbackArgProc(Tcl_DString *dsPtr, void *arg)
 {
+    int             ii;
     Ns_TclCallback *cbPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, cbPtr->script);
-    if (cbPtr->scriptarg != NULL) {
-        Tcl_DStringAppendElement(dsPtr, cbPtr->scriptarg);
+    for (ii = 0; ii < cbPtr->argc; ii++) {
+        Tcl_DStringAppendElement(dsPtr, cbPtr->argv[ii]);
     }
 }
 
@@ -255,12 +261,12 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_TclCallback *cbPtr;
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "script ?arg?");
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
         return TCL_ERROR;
     }
-    cbPtr = Ns_TclNewCallbackObj(interp, Ns_TclCallbackProc,
-                                 objv[1], (objc == 3) ? objv[2] : NULL);
+    cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc, objv[1], 
+                              objc - 2, objv + 2);
     (*atProc)(Ns_TclCallbackProc, cbPtr);
 
     return TCL_OK;

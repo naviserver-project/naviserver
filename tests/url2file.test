@@ -16,7 +16,7 @@ test url2file-1.1 {basic syntax} -body {
 
 test ns_log-1.2 {basic syntax} -body {
     ns_register_url2file
-} -returnCodes error -result {wrong # args: should be "ns_register_url2file ?-noinherit? ?--? url script ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_url2file ?-noinherit? ?--? url script ?args?"}
 
 test url2file-1.3 {basic syntax} -body {
     ns_register_fasturl2file

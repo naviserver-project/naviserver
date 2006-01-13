@@ -1435,21 +1435,21 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
 int
 NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
-                        Tcl_Obj **objv)
+                        Tcl_Obj *CONST objv[])
 {
     NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "script ?arg?");
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
         return TCL_ERROR;
     }
     if (servPtr == NULL) {
         Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
         return TCL_ERROR;
     }
-    cbPtr = Ns_TclNewCallbackObj(interp, NsTclConnLocation,
-                                 objv[1], (objc > 2) ? objv[2] : NULL);
+    cbPtr = Ns_TclNewCallback(interp, NsTclConnLocation, objv[1], 
+                              objc - 2, objv + 2);
     Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
 
     return TCL_OK;

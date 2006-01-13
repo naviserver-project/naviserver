@@ -72,10 +72,11 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *name)
 {
     Ns_TclCallback cb;
 
-    cb.cbProc        = &NsTclRequestProc;
-    cb.server        = Ns_ConnServer(conn);
-    cb.script        = (char *) name;
-    cb.scriptarg     = NULL;
+    cb.cbProc = &NsTclRequestProc;
+    cb.server = Ns_ConnServer(conn);
+    cb.script = (char *) name;
+    cb.argc   = 0;
+    cb.argv   = NULL;
 
     return NsTclRequestProc(&cb, conn);
 }
@@ -103,8 +104,9 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
-    char           *method, *url, *script, *scriptarg = NULL;
-    int             flags = 0;
+    Tcl_Obj        *scriptObj;
+    char           *method, *url;
+    int             flags = 0, remain = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
@@ -114,15 +116,16 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Ns_ObjvSpec args[] = {
         {"method",     Ns_ObjvString, &method,    NULL},
         {"url",        Ns_ObjvString, &url,       NULL},
-        {"script",     Ns_ObjvString, &script,    NULL},
-        {"?arg",       Ns_ObjvString, &scriptarg, NULL},
+        {"script",     Ns_ObjvObj,    &scriptObj, NULL},
+        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclRequestProc, script, scriptarg);
+    cbPtr = Ns_TclNewCallback(interp, NsTclRequestProc, scriptObj,
+                              remain, objv + (objc - remain));
     Ns_RegisterRequest(itPtr->servPtr->server, method, url,
                        NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags);
 
@@ -289,8 +292,9 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     NsInterp        *itPtr = arg;
     Ns_TclCallback  *cbPtr;
-    char            *method, *urlPattern, *script, *scriptarg = NULL;
-    int              when = 0;
+    char            *method, *urlPattern;
+    Tcl_Obj         *scriptObj;
+    int              remain = 0, when = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-first", Ns_ObjvBool,  &when, (void *) NS_FILTER_FIRST},
@@ -301,15 +305,16 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
         {"when",       Ns_ObjvFlags,  &when,       filters},
         {"method",     Ns_ObjvString, &method,     NULL},
         {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
-        {"script",     Ns_ObjvString, &script,     NULL},
-        {"?arg",       Ns_ObjvString, &scriptarg,  NULL},
+        {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
+        {"?args",      Ns_ObjvArgs,   &remain,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, script, scriptarg);
+    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj, 
+                              remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                       NsTclFilterProc, when, cbPtr);
 
@@ -379,20 +384,23 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
-    char           *method, *urlPattern, *script, *scriptarg = NULL;
+    char           *method, *urlPattern;
+    Tcl_Obj        *scriptObj;
+    int             remain = 0;
 
     Ns_ObjvSpec args[] = {
         {"method",     Ns_ObjvString, &method,     NULL},
         {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
-        {"script",     Ns_ObjvString, &script,     NULL},
-        {"?arg",       Ns_ObjvString, &scriptarg,  NULL},
+        {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
+        {"?args",      Ns_ObjvArgs,   &remain,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, script, scriptarg);
+    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj, 
+                              remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                       NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr);
 
@@ -478,24 +486,20 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
     Ns_TclCallback      *cbPtr = arg;
     Tcl_DString          cmd;
     Tcl_Interp          *interp;
-    int                  status;
+    int                  ii, status;
     CONST char          *result;
-
+    
     interp = Ns_GetConnInterp(conn);
     Tcl_DStringInit(&cmd);
-
+    
     /*
-     * This really should be: cmd why ?arg?, but why and arg
-     * are reversed for backwards compatibility.
+     * Append the command
      */
-
+    
     Tcl_DStringAppend(&cmd, cbPtr->script, -1);
-    if (cbPtr->scriptarg != NULL) {
-        Tcl_DStringAppendElement(&cmd, cbPtr->scriptarg);
-    }
-
+    
     /*
-     * Append the 'why'
+     * Append the 'why' argument
      */
 
     switch (why) {
@@ -511,6 +515,14 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
     case NS_FILTER_VOID_TRACE:
         /* Registered with ns_register_trace; always type VOID TRACE, so don't append. */
         break;
+    }
+
+    /*
+     * Append optional arguments
+     */
+
+    for (ii = 0; ii < cbPtr->argc; ii++) {
+        Tcl_DStringAppendElement(&cmd, cbPtr->argv[ii]);
     }
 
     /*

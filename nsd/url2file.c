@@ -364,24 +364,26 @@ NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
-    char           *url, *script, *scriptarg = NULL;
-    int             flags = 0;
-
+    char           *url;
+    Tcl_Obj        *scriptObj;
+    int             remain = 0, flags = 0;
+    
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,   &flags,    (void *) NS_OP_NOINHERIT},
-        {"--",         Ns_ObjvBreak,  NULL,      NULL},
+        {"-noinherit", Ns_ObjvBool,   &flags,     (void *) NS_OP_NOINHERIT},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"url",        Ns_ObjvString, &url,       NULL},
-        {"script",     Ns_ObjvString, &script,    NULL},
-        {"?arg",       Ns_ObjvString, &scriptarg, NULL},
+        {"script",     Ns_ObjvObj,    &scriptObj, NULL},
+        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    cbPtr = Ns_TclNewCallback(interp, NsTclUrl2FileProc, script, scriptarg);
+    cbPtr = Ns_TclNewCallback(interp, NsTclUrl2FileProc, scriptObj,
+                              remain, objv + (objc - remain));
     Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
                             NsTclUrl2FileProc, Ns_TclFreeCallback, cbPtr, flags);
 
