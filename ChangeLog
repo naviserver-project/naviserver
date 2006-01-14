@@ -3,6 +3,9 @@
 	* nsd/tclmisc.c (NsTclHTUUEncodeObjCmd): properly handles
 	binary strings. Fixes Bug #1405988.
 
+	* nsd/driver.c (NsStopDrivers): does not attempt to trigger
+	spooler pipe if spooler thread disabled.
+
 2006-01-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	ATTENTION: Tcl compatibility affected.

@@ -520,7 +520,7 @@ NsStopDrivers(void)
     Ns_MutexUnlock(&drvLock);
 
     Ns_MutexLock(&spoolerLock);
-    if (!spoolerStopped && !spoolerShutdown) {
+    if (!spoolerDisabled && !spoolerStopped && !spoolerShutdown) {
         Ns_Log(Notice, "spooler: triggering shutdown");
         spoolerShutdown = 1;
         SockTrigger(spoolerPipe[1]);
