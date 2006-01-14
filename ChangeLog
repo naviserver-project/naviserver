@@ -1,3 +1,8 @@
+2006-01-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/tclmisc.c (NsTclHTUUEncodeObjCmd): properly handles
+	binary strings. Fixes Bug #1405988.
+
 2006-01-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	ATTENTION: Tcl compatibility affected.

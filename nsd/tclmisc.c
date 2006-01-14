@@ -445,7 +445,7 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 int
 NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    char *string;
+    unsigned char *string;
     char *result;
     int   nbytes;
 
@@ -453,9 +453,9 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
-    string = Tcl_GetStringFromObj(objv[1], &nbytes);
+    string = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
     result = ns_malloc((size_t) 1 + (4 * MAX(nbytes,2)) / 2);
-    Ns_HtuuEncode((unsigned char *) string, (size_t)nbytes, result);
+    Ns_HtuuEncode(string, (size_t)nbytes, result);
     Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
     return TCL_OK;
 }
