@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -64,8 +64,8 @@ static int WordEndsInSemi(char *ip);
 void
 Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
 {
-    va_list         ap;
-    Tcl_DString     ds;
+    va_list     ap;
+    Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
     va_start(ap, fmt);
@@ -92,7 +92,8 @@ Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
  */
 
 int
-NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                   Tcl_Obj *CONST objv[])
 {
     NsInterp             *itPtr = arg;
     CONST char           *script;
@@ -118,8 +119,8 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         Tcl_InitHashTable(&runTable, TCL_STRING_KEYS);
         initialized = NS_TRUE;
     }
-    (void) Tcl_CreateHashEntry(global ? &runTable : &itPtr->servPtr->tcl.runTable,
-                               script, &new);
+    (void) Tcl_CreateHashEntry(global ? &runTable :
+                               &itPtr->servPtr->tcl.runTable, script, &new);
     Ns_MasterUnlock();
 
     if (new) {
@@ -238,13 +239,13 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
  *
  * NsTclStripHtmlCmd --
  *
- *	Implements ns_striphtml. 
+ *      Implements ns_striphtml. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -253,7 +254,7 @@ int
 NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
     int   intag;     /* flag to see if are we inside a tag */
-    int	  intspec;   /* flag to see if we are inside a special char */
+    int   intspec;   /* flag to see if we are inside a special char */
     char *inString;  /* copy of input string */
     char *inPtr;     /* moving pointer to input string */
     char *outPtr;    /* moving pointer to output string */
@@ -279,25 +280,25 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
             intag = 1;
 
         } else if (intag && (*inPtr == '>')) {
-	    /* inside a tag that closes */
+        /* inside a tag that closes */
             intag = 0;
 
         } else if (intspec && (*inPtr == ';')) {
-	    /* inside a special character that closes */
-            intspec = 0;		
+        /* inside a special character that closes */
+            intspec = 0;        
 
         } else if (!intag && !intspec) {
-	    /* regular text */
+        /* regular text */
 
             if (*inPtr == '&') {
-		/* starting a new special character */
+        /* starting a new special character */
                 intspec=WordEndsInSemi(inPtr);
-	    }
+        }
 
             if (!intspec) {
-		/* incr pointer only if we're not in something htmlish */
+        /* incr pointer only if we're not in something htmlish */
                 *outPtr++ = *inPtr;
-	    }
+        }
         }
         ++inPtr;
     }
@@ -318,19 +319,20 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
  *
  * NsTclCryptObjCmd --
  *
- *	Implements ns_crypt as ObjCommand. 
+ *      Implements ns_crypt as ObjCommand. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                 Tcl_Obj *CONST objv[])
 {
     char buf[NS_ENCRYPT_BUFSIZE];
 
@@ -338,7 +340,9 @@ NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
         Tcl_WrongNumArgs(interp, 1, objv, "key salt");
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, Ns_Encrypt(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), buf), TCL_VOLATILE);
+    Tcl_SetResult(interp,
+                  Ns_Encrypt(Tcl_GetString(objv[1]),
+                             Tcl_GetString(objv[2]), buf), TCL_VOLATILE);
 
     return TCL_OK;
 }
@@ -349,13 +353,13 @@ NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
  *
  * NsTclHrefsCmd --
  *
- *	Implements ns_hrefs. 
+ *      Implements ns_hrefs. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -370,17 +374,17 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          argv[0], " html\"", (char *) NULL);
         return TCL_ERROR;
     }
-
+    
     p = argv[1];
     while ((s = strchr(p, '<')) && (e = strchr(s, '>'))) {
-	++s;
-	*e = '\0';
-	while (*s && isspace(UCHAR(*s))) {
-	    ++s;
-	}
-	if ((*s == 'a' || *s == 'A') && isspace(UCHAR(s[1]))) {
-	    ++s;
-	    while (*s) {
+        ++s;
+        *e = '\0';
+        while (*s && isspace(UCHAR(*s))) {
+            ++s;
+        }
+        if ((*s == 'a' || *s == 'A') && isspace(UCHAR(s[1]))) {
+            ++s;
+            while (*s) {
                 if (!strncasecmp(s, "href", 4)) {
                     s += 4;
                     while (*s && isspace(UCHAR(*s))) {
@@ -417,9 +421,9 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                 }
                 ++s;
             }
-	}
-	*e++ = '>';
-	p = e;
+        }
+        *e++ = '>';
+        p = e;
     }
 
     return TCL_OK;
@@ -431,32 +435,35 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
  *
  * NsTclHTUUEncodeObjCmd --
  *
- *	Implements ns_uuencode as obj command.
+ *      Implements ns_uuencode as obj command.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
+                      Tcl_Obj **objv)
 {
     unsigned char *string;
-    char *result;
-    int   nbytes;
+    char          *result;
+    int            nbytes;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
+
     string = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
     result = ns_malloc((size_t) 1 + (4 * MAX(nbytes,2)) / 2);
     Ns_HtuuEncode(string, (size_t)nbytes, result);
     Tcl_SetResult(interp, result, (Tcl_FreeProc *) ns_free);
+
     return TCL_OK;
 }
 
@@ -466,19 +473,20 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
  *
  * HTUUDecodeObjcmd --
  *
- *	Implements ns_uudecode as obj command. 
+ *      Implements ns_uudecode as obj command. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
+                      Tcl_Obj **objv)
 {
     int            size;
     char          *string;
@@ -488,6 +496,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
     }
+
     string = Tcl_GetStringFromObj(objv[1], &size);
     size += 3;
     decoded = ns_malloc(size);
@@ -495,6 +504,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
     decoded[size] = '\0';
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, size));
     ns_free(decoded);
+
     return TCL_OK;
 }
 
@@ -504,13 +514,13 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
  *
  * NsTclCrashCmd --
  *
- *	Crash the server to test exception handling.
+ *      Crash the server to test exception handling.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Server will segfault.
+ *      Server will segfault.
  *
  *----------------------------------------------------------------------
  */
@@ -518,7 +528,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
 int
 NsTclCrashCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
-    char           *death;
+    char *death;
 
     death = NULL;
     *death = 1;
@@ -566,26 +576,26 @@ WordEndsInSemi(char *ip)
 }
 
 /*
- *      The SHA1 routines are borrowed from libmd, which contains the following header:
+ *  The SHA1 routines are borrowed from libmd:
  *
- *          * sha.c - NIST Secure Hash Algorithm, FIPS PUB 180 and 180.1.
- *          * The algorithm is by spook(s) unknown at the U.S. National Security Agency.
- *          *
- *          * Written 2 September 1992, Peter C. Gutmann.
- *          * This implementation placed in the public domain.
- *          *
- *          * Modified 1 June 1993, Colin Plumb.
- *          * Modified for the new SHS based on Peter Gutmann's work,
- *          * 18 July 1994, Colin Plumb.
- *          *
- *          * Renamed to SHA and comments updated a bit 1 November 1995, Colin Plumb.
- *          * These modifications placed in the public domain.
- *          *
- *          * Comments to pgut1@cs.aukuni.ac.nz
- *          *
- *          * Hacked for use in libmd by Martin Hinner <mhi@penguin.cz>
+ *  * sha.c - NIST Secure Hash Algorithm, FIPS PUB 180 and 180.1.
+ *  * The algorithm is by spook(s) unknown at the U.S. National Security Agency.
+ *  *
+ *  * Written 2 September 1992, Peter C. Gutmann.
+ *  * This implementation placed in the public domain.
+ *  *
+ *  * Modified 1 June 1993, Colin Plumb.
+ *  * Modified for the new SHS based on Peter Gutmann's work,
+ *  * 18 July 1994, Colin Plumb.
+ *  *
+ *  * Renamed to SHA and comments updated a bit 1 November 1995, Colin Plumb.
+ *  * These modifications placed in the public domain.
+ *  *
+ *  * Comments to pgut1@cs.aukuni.ac.nz
+ *  *
+ *  * Hacked for use in libmd by Martin Hinner <mhi@penguin.cz>
  *
- *      This Tcl library was hacked by Jon Salz <jsalz@mit.edu>.
+ *  This Tcl library was hacked by Jon Salz <jsalz@mit.edu>.
  *
  */
 
@@ -981,7 +991,8 @@ SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
  */
 
 int
-NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                Tcl_Obj *CONST objv[])
 {
     SHA_CTX        ctx;
     unsigned char  digest[20];
@@ -992,7 +1003,7 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
 
     str = Tcl_GetStringFromObj(objv[1],&strLen);
@@ -1001,12 +1012,12 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     SHAFinal(digest, &ctx);
 
     for (i = 0; i < 20; ++i) {
-	digestChars[i * 2] = hexChars[digest[i] >> 4];
-	digestChars[i * 2 + 1] = hexChars[digest[i] & 0xF];
+        digestChars[i * 2] = hexChars[digest[i] >> 4];
+        digestChars[i * 2 + 1] = hexChars[digest[i] & 0xF];
     }
-    digestChars[40] = '\0';
 
+    digestChars[40] = '\0';
     Tcl_AppendResult(interp, digestChars, NULL);
-    
+
     return NS_OK;
 }
