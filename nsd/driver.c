@@ -519,13 +519,15 @@ NsStopDrivers(void)
     }
     Ns_MutexUnlock(&drvLock);
 
-    Ns_MutexLock(&spoolerLock);
-    if (!spoolerDisabled && !spoolerStopped && !spoolerShutdown) {
-        Ns_Log(Notice, "spooler: triggering shutdown");
-        spoolerShutdown = 1;
-        SockTrigger(spoolerPipe[1]);
+    if (!spoolerDisabled) {
+        Ns_MutexLock(&spoolerLock);
+        if (!spoolerStopped && !spoolerShutdown) {
+            Ns_Log(Notice, "spooler: triggering shutdown");
+            spoolerShutdown = 1;
+            SockTrigger(spoolerPipe[1]);
+        }
+        Ns_MutexUnlock(&spoolerLock);
     }
-    Ns_MutexUnlock(&spoolerLock);
 }
 
 
@@ -572,25 +574,27 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
         }
     }
 
-    Ns_MutexLock(&spoolerLock);
-    while (!spoolerStopped && status == NS_OK) {
-        status = Ns_CondTimedWait(&spoolerCond, &spoolerLock, toPtr);
-    }
-    Ns_MutexUnlock(&spoolerLock);
-    if (status != NS_OK) {
-        Ns_Log(Warning, "spooler: timeout waiting for shutdown");
-    } else {
-        Ns_Log(Notice, "spooler: shutdown complete");
-        spoolerThread = NULL;
-        ns_sockclose(spoolerPipe[0]);
-        ns_sockclose(spoolerPipe[1]);
-        Ns_MutexLock(&uploadLock);
-        hPtr = Tcl_FirstHashEntry(&uploadTable, &search);
-        while (hPtr != NULL) {
-            Tcl_DeleteHashEntry(hPtr);
-            hPtr = Tcl_NextHashEntry(&search);
+    if (!spoolerDisabled) {
+        Ns_MutexLock(&spoolerLock);
+        while (!spoolerStopped && status == NS_OK) {
+            status = Ns_CondTimedWait(&spoolerCond, &spoolerLock, toPtr);
         }
-        Ns_MutexUnlock(&uploadLock);
+        Ns_MutexUnlock(&spoolerLock);
+        if (status != NS_OK) {
+            Ns_Log(Warning, "spooler: timeout waiting for shutdown");
+        } else {
+            Ns_Log(Notice, "spooler: shutdown complete");
+            spoolerThread = NULL;
+            ns_sockclose(spoolerPipe[0]);
+            ns_sockclose(spoolerPipe[1]);
+            Ns_MutexLock(&uploadLock);
+            hPtr = Tcl_FirstHashEntry(&uploadTable, &search);
+            while (hPtr != NULL) {
+                Tcl_DeleteHashEntry(hPtr);
+                hPtr = Tcl_NextHashEntry(&search);
+            }
+            Ns_MutexUnlock(&uploadLock);
+        }
     }
 }
 
