@@ -1,3 +1,10 @@
+2006-01-16  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* tests/ns_base64encode.test: Basic tests for ns_base64encode
+	and ns_base64decode
+	* nsd/uuencode.c: Fixed appending of extra newline in certain
+	line break situations. Fixes Bug #1407112.
+
 2006-01-15  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c:

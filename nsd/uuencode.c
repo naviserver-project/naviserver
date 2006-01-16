@@ -112,20 +112,21 @@ Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
     p = input;
     q = (unsigned char *) output;
     for (n = len / 3; n > 0; --n) {
+        /*
+         * Add wrapping newline to be compatible with GNU uuencode
+         * if line length exceeds max line length - without adding
+         * extra newline character
+         */
+        if (line >= 60) {
+            *q++ = '\n'; 
+	    line = 0;
+        }       
 	*q++ = ENC(p[0] >> 2);
 	*q++ = ENC(((p[0] << 4) & 060) | ((p[1] >> 4) & 017));
 	*q++ = ENC(((p[1] << 2) & 074) | ((p[2] >> 6) & 03));
 	*q++ = ENC(p[2] & 077);
 	p += 3;
         line += 4;
-        /*
-         * Add wrapping newline to be compatible with GNU uuencode
-         */
-    
-        if (line == 60) {
-            *q++ = '\n'; 
-	    line = 0;
-        }       
     }
 
     /*
