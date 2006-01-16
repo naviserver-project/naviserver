@@ -845,7 +845,15 @@ ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
     if (nsend == 0) {
         Ns_WriteConn(conn, NULL, 0);
     }
- 
+
+    /*
+     * Check for submision into writer queue
+     */
+
+    if (NsQueueWriter(conn, nsend, chan, fp, fd) == NS_OK) {
+        return NS_OK;
+    }
+
     status = NS_OK;
     while (status == NS_OK && nsend > 0) {
         toread = nsend;

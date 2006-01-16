@@ -1,3 +1,18 @@
+2006-01-15  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd/connio.c:
+	* nsd.nsd.h: This is experimental feature to use separate writer
+	thread for sending large files to multiple clients. By default it 
+	is disabled so nobody should be affected by this feature. Still need
+	more testing but can be very usefull, keeping it in CVS makes it easier 
+	to track then in local copy, i keep loosing local modifications
+	all the time.
+	
+	* nsd/driver.c: Changes poolto from -1 to 60 seconds in DriverThread and
+	SpolerThread to wake up from pool. Once a minute will not kill the server 
+	but will ensure it will never get into race condition.
+
 2006-01-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclmisc.c (NsTclHTUUEncodeObjCmd): properly handles

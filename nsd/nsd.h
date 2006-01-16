@@ -361,6 +361,7 @@ typedef struct Driver {
     int maxheaders;             /* Maximum number of request headers. */
     int readahead;              /* Maximum request size in memory. */
     int uploadsize;             /* Minimum upload size for statistics tracking. */
+    int writersize;             /* Maximum content size when to use writer thread. */
     unsigned int loggingFlags;  /* Logging control flags */
 
 } Driver;
@@ -862,6 +863,8 @@ extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
+extern int NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd);
+
 extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);
 
@@ -948,7 +951,6 @@ extern void NsStartShutdownProcs(void);
 extern void NsWaitShutdownProcs(Ns_Time *toPtr);
 extern void NsStartTaskQueueShutdown(void);
 extern void NsWaitTaskQueueShutdown(Ns_Time *toPtr);
-
 extern void NsStartJobsShutdown(void);
 extern void NsWaitJobsShutdown(Ns_Time *toPtr);
 
