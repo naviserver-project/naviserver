@@ -114,11 +114,11 @@ Ns_ConnClose(Ns_Conn *conn)
         NsSockClose(connPtr->sockPtr, keep);
         connPtr->sockPtr = NULL;
         connPtr->flags |= NS_CONN_CLOSED;
-        if (connPtr->itPtr != NULL) {
-            NsTclRunAtClose(connPtr->itPtr);
-        }
     }
 
+    if (connPtr->itPtr != NULL) {
+        NsTclRunAtClose(connPtr->itPtr);
+    }
     return NS_OK;
 }
 
