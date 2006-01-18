@@ -203,12 +203,19 @@ ns_param   enabledebug     false     ;# Allow Tclpro debugging with "?debug".
 # Socket driver module (HTTP)  -- nssock
 #
 ns_section "ns/server/${servername}/module/nssock"
-ns_param   port            $httpport
-ns_param   hostname        $hostname
-ns_param   address         $address
-#ns_param   maxinput	   1024000  ;# Max upload size
-#ns_param   maxline	   4096     ;# Max line size
-#ns_param   bufsize        16000    ;# Read-ahead buffer size
+ns_param   port           $httpport
+ns_param   hostname       $hostname
+ns_param   address        $address
+
+#ns_param  maxinput	  1024000 ;# Max upload size
+#ns_param  maxline	  4096    ;# Max line size
+#ns_param  bufsize        16384   ;# Read-ahead buffer size
+
+#ns_param  readahead      16384   ;# Max upload size when to use spooler
+#ns_param  uploadsize     2048    ;# Max upload size when to use statistics
+#ns_param  spoolerthreads 1       ;# Number of spooler threads
+#ns_param  writerthreads  0       ;# Number of writer threads
+#ns_param  writersize     1048576 ;# Number of writer threads
 
 #
 # Socket driver logging controls. Default is no logging.

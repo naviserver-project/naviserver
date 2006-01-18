@@ -1,5 +1,6 @@
 2006-01-18  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* sample-config.tcl: Added spooler/writer related options
 	* nsd/driver.c:
 	* nsd/nsd.h: Rewrote driver's spooler/writer support
 	to make them cleaner and to support multiple spooler/writer
