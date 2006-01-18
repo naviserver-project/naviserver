@@ -2420,8 +2420,6 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
     WriterQueue *queuePtr;
     int trigger = 0;
 
-    Ns_Log(Notice, "Writer: check %d %d %d %d", writerThreads, nsend,connPtr->drvPtr->writersize,(conn->flags & NS_CONN_WRITE_CHUNKED));
-
     if (writerThreads == 0 ||
         nsend < connPtr->drvPtr->writersize ||
         (conn->flags & NS_CONN_WRITE_CHUNKED)) {
