@@ -521,7 +521,6 @@ NsConnThread(void *arg)
     Conn            *connPtr;
     Ns_Time          wait, *timePtr;
     unsigned int     id;
-    Ns_DString	     ds;
     int              status, cpt, ncons;
     char            *p, *path;
     Ns_Thread	     joinThread;
@@ -534,14 +533,9 @@ NsConnThread(void *arg)
     Ns_MutexLock(&servPtr->pools.lock);
     id = poolPtr->threads.nextid++;
     Ns_MutexUnlock(&servPtr->pools.lock);
-    Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, "-conn:", servPtr->server, NULL);
-    if (poolPtr->pool != NULL) {
-    	Ns_DStringVarAppend(&ds, ":", poolPtr->pool, NULL);
-    }
-    Ns_DStringPrintf(&ds, ":%d", id);
-    Ns_ThreadSetName(ds.string);
-    Ns_DStringFree(&ds);
+
+    p = (poolPtr->pool != NULL && *poolPtr->pool ? poolPtr->pool : 0);
+    Ns_ThreadSetName("-conn:%s%s%s:%d", servPtr->server, p ? ":" : "", p ? p : "", id);
 
     /*
      * See how many connections this thread should run.

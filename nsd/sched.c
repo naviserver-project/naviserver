@@ -656,7 +656,7 @@ static void
 EventThread(void *arg)
 {
     Event          *ePtr;
-    char	    name[20], idle[20];
+    char	    idle[20];
     time_t	    now;
 
     sprintf(idle, "-sched:idle%d-", (int) arg);
@@ -677,8 +677,7 @@ EventThread(void *arg)
 	}
 	--nIdleThreads;
 	Ns_MutexUnlock(&lock);
-    	sprintf(name, "-sched:%u-", ePtr->id);
-    	Ns_ThreadSetName(name);
+    	Ns_ThreadSetName("-sched:%u-", ePtr->id);
     	(*ePtr->proc) (ePtr->arg, (int)ePtr->id);
     	Ns_ThreadSetName(idle);
     	time(&now);

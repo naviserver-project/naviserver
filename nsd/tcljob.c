@@ -1056,16 +1056,14 @@ JobThread(void *arg)
 {
     Tcl_Interp          *interp;
     Job                 *jobPtr;
-    char                buf[100];
     CONST char          *err;
     Queue               *queuePtr;
     Tcl_HashEntry       *jPtr;
 
     Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
-    snprintf(buf, 100, "-ns_job_%x-", tp.nextThreadId++);
-    Ns_ThreadSetName(buf);
-    Ns_Log(Notice, "Starting thread: %s", buf);
+    Ns_ThreadSetName("-ns_job_%x-", tp.nextThreadId++);
+    Ns_Log(Notice, "Starting thread: -ns_job_%x-", tp.nextThreadId);
     while (1) {
 	++tp.nidle;
 	while (((jobPtr = getNextJob()) == NULL) &&

@@ -267,12 +267,15 @@ Ns_ThreadGetName(void)
  */
 
 void
-Ns_ThreadSetName(char *name)
+Ns_ThreadSetName(char *name,...)
 {
     Thread *thisPtr = GetThread();
+    va_list ap;
 
     Ns_MasterLock();
-    strncpy(thisPtr->name, name, NS_THREAD_NAMESIZE);
+    va_start(ap, name);
+    vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
+    va_end(ap);
     Ns_MasterUnlock();
 }
 

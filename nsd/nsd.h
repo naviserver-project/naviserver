@@ -363,7 +363,6 @@ typedef struct Driver {
     int uploadsize;             /* Minimum upload size for statistics tracking. */
     int writersize;             /* Maximum content size when to use writer thread. */
     unsigned int loggingFlags;  /* Logging control flags */
-
 } Driver;
 
 /*

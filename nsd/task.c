@@ -780,10 +780,8 @@ TaskThread(void *arg)
     Task          *taskPtr, *nextPtr, *firstWaitPtr;
     struct pollfd *pfds;
     Ns_Time        now, *timeoutPtr;
-    char           name[NAME_SIZE+10];
 
-    sprintf(name, "task:%s", queuePtr->name);
-    Ns_ThreadSetName(name);
+    Ns_ThreadSetName("task:%s", queuePtr->name);
     Ns_Log(Notice, "starting");
 
     max = 100;

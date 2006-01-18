@@ -2,6 +2,13 @@
 
 	* nsd/driver.c: Improved Writer thread support, now it is 
         possible to have multiple writer thread for better performance.
+        * nstread/thread.c: Make Ns_ThreadSetName to accept sprintf-like 
+        variable list of arguments
+	* nsd/sched.c:
+	* nsd/tcljob.c
+	* nsd/queue.c:
+	* nsd/task.c: Changed setting thread name using new sprintf-like
+	arguments
 
 2006-01-16  Bernd Eidenschink  <eide@users.sourceforge.net>
 

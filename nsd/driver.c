@@ -165,8 +165,8 @@ static int spoolerShutdown = 0;     /* Flag to indicate shutdown. */
 static int spoolerDisabled = 0;     /* Flag to enable/disable the upload spooler. */
 static Sock *spoolerSockPtr = NULL; /* List of spooled Sock structures. */
 
-static int writerThreads = 1;       /* Number of writer threads to run. */
 static Ns_Mutex writerLock;         /* Lock around writer queues. */
+static int writerThreads = 0;       /* Number of writer threads to run. */
 static WriterQueue *firstQueuePtr = NULL; /* List of writer threads. */
 static WriterQueue *curQueuePtr = NULL; /* Current writer thread */
 
@@ -406,6 +406,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     if (!Ns_ConfigBool(path, "spooler", NS_TRUE)) {
         spoolerDisabled = 1;
+    } else {
+        Ns_Log(Notice, "%s: enable spooler thread for uploads >= %d bytes", module, drvPtr->uploadsize);
     }
 
     /*
@@ -415,6 +417,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     writerThreads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
     if (writerThreads > 0) {
         drvPtr->writersize = Ns_ConfigIntRange(path, "writersize", 1024*1024, 1024*1024, INT_MAX);
+        Ns_Log(Notice, "%s: enable %d writer thread(s) for downloads >= %d bytes", module, writerThreads, drvPtr->writersize);
         for (i = 0; i < writerThreads; i++) {
             WriterQueue *queuePtr = ns_calloc(1, sizeof(WriterQueue));
             queuePtr->id = i;
@@ -689,9 +692,9 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
         }
         Ns_MutexUnlock(&queuePtr->lock);
         if (status != NS_OK) {
-            Ns_Log(Warning, "writer: %d: timeout waiting for shutdown", queuePtr->id);
+            Ns_Log(Warning, "writer%d: timeout waiting for shutdown", queuePtr->id);
         } else {
-            Ns_Log(Notice, "writer: %d: shutdown complete", queuePtr->id);
+            Ns_Log(Notice, "writer%d: shutdown complete", queuePtr->id);
             queuePtr->thread = NULL;
             ns_sockclose(queuePtr->pipe[0]);
             ns_sockclose(queuePtr->pipe[1]);
@@ -2257,17 +2260,17 @@ WriterThread(void *arg)
     struct pollfd pfds[1];
     struct iovec vbuf;
 
-    Ns_ThreadSetName("-writer-");
+    Ns_ThreadSetName("-writer%d-", queuePtr->id);
 
     /*
      * Loop forever until signalled to shutdown and all
      * connections are complete and gracefully closed.
      */
 
-    Ns_Log(Notice, "writer: %d: accepting connections", queuePtr->id);
-    writePtr = NULL;
+    Ns_Log(Notice, "writer%d: accepting connections", queuePtr->id);
     Ns_GetTime(&now);
     stopping = 0;
+    writePtr = NULL;
     pfds[0].fd = queuePtr->pipe[0];
     pfds[0].events = POLLIN;
 
@@ -2416,6 +2419,8 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
     WriterSock *sockPtr;
     WriterQueue *queuePtr;
     int trigger = 0;
+
+    Ns_Log(Notice, "Writer: check %d %d %d %d", writerThreads, nsend,connPtr->drvPtr->writersize,(conn->flags & NS_CONN_WRITE_CHUNKED));
 
     if (writerThreads == 0 ||
         nsend < connPtr->drvPtr->writersize ||
