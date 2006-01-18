@@ -139,6 +139,9 @@
 
 typedef int bool;
 
+struct Sock;
+struct NsServer;
+
 struct _nsconf {
     char *argv0;
     char *nsd;
@@ -234,6 +237,38 @@ typedef struct FileMap {
 } FileMap;
 
 /*
+ * The following structure maintains writer socket
+ */
+
+typedef struct WriterSock {
+    struct WriterSock *nextPtr;
+    struct Sock       *sockPtr;
+    int                fd;
+    int                nread;
+    int                nsend;
+    int                flags;
+    int                bufsize;
+    char               buf[2048];
+} WriterSock;
+
+/*
+ * The following structure maintains a queue of sockets for
+ * each writer or spooler thread
+ */
+
+typedef struct SpoolerQueue {
+    struct SpoolerQueue  *nextPtr;
+    void                *sockPtr;     /* List of spooled socket structures. */
+    SOCKET               pipe[2];     /* Trigger to wakeup WriterThread/SpoolerThread. */
+    Ns_Mutex             lock;        /* Lock around spooled list. */
+    Ns_Cond              cond;        /* Cond for stopped flag. */
+    Ns_Thread            thread;      /* Running WriterThread/Spoolerthread. */
+    int                  stopped;     /* Flag to indicate thread stopped. */
+    int                  shutdown;    /* Flag to indicate shutdown. */
+    int                  id;
+} SpoolerQueue;
+
+/*
  * For the time being, don't try to be very clever
  * and define (platform-neutral) just those two modes
  * for mapping the files.
@@ -319,8 +354,6 @@ typedef struct Request {
  * a driver initialized with Ns_DriverInit.
  */
 
-struct NsServer;
-
 typedef struct Driver {
 
     /*
@@ -360,9 +393,24 @@ typedef struct Driver {
     int maxline;                /* Maximum request line size. */
     int maxheaders;             /* Maximum number of request headers. */
     int readahead;              /* Maximum request size in memory. */
-    int uploadsize;             /* Minimum upload size for statistics tracking. */
-    int writersize;             /* Maximum content size when to use writer thread. */
     unsigned int loggingFlags;  /* Logging control flags */
+
+    struct {
+      int threads;               /* Number of spooler threads to run. */
+      int uploadsize;            /* Minimum upload size for statistics tracking. */
+      Ns_Mutex lock;             /* Lock around upload table. */
+      Tcl_HashTable table;       /* Hash table of uploads. */
+      SpoolerQueue *firstPtr;    /* Spooler thread queue. */
+      SpoolerQueue *curPtr;      /* Current spooler thread */
+    } spooler;
+
+    struct {
+      int threads;               /* Number of writer threads to run. */
+      int maxsize;               /* Maximum content size when to use writer thread. */
+      Ns_Mutex lock;             /* Lock around writer queues. */
+      SpoolerQueue *firstPtr;    /* List of writer threads. */
+      SpoolerQueue *curPtr;      /* Current writer thread */
+    } writer;
 } Driver;
 
 /*

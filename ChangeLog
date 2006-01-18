@@ -1,3 +1,16 @@
+2006-01-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd/nsd.h: Rewrote driver's spooler/writer support
+	to make them cleaner and to support multiple spooler/writer
+	threads for each driver. Before that, global spooler variables
+	got overwritten if multiple drivers are loaded. Also, 
+	simplified driver thread, removed rotating driver's list, in 
+	case of usual one driver operation that was just waste of CPU
+	cycles. For multiple drivers, spawning separate thread for each
+	would be better solution, it can be considered for future driver 
+	encancements.
+
 2006-01-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c: Improved Writer thread support, now it is 

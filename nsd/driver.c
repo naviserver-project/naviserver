@@ -81,42 +81,12 @@ typedef struct ServerMap {
     char      location[1];
 } ServerMap;
 
-static Tcl_HashTable uploadTable; /* Hash table of uploads. */
-static Ns_Mutex uploadLock;       /* Lock around upload table. */
-
-/*
- * The following maintains writer threads and sockets to be written to the clients
- */
-
-typedef struct WriterSock {
-    struct WriterSock *nextPtr;
-    Sock              *sockPtr;
-    int                fd;
-    int                nread;
-    int                nsend;
-    int                flags;
-    int                bufsize;
-    char               buf[2048];
-} WriterSock;
-
-typedef struct WriterQueue {
-    struct WriterQueue  *nextPtr;
-    WriterSock          *sockPtr;     /* List of spooled Sock structures. */
-    SOCKET               pipe[2];     /* Trigger to wakeup SpoolThread. */
-    Ns_Mutex             lock;        /* Lock around spooled list. */
-    Ns_Cond              cond;        /* Cond for stopped flag. */
-    Ns_Thread            thread;      /* Running SpoolThread. */
-    int                  stopped;     /* Flag to indicate writer thread stopped. */
-    int                  shutdown;    /* Flag to indicate shutdown. */
-    int                  id;
-} WriterQueue;
-
 /*
  * Static functions defined in this file.
  */
 
 static Ns_ThreadProc DriverThread;
-static Ns_ThreadProc SpoolThread;
+static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 static int  SetServer(Sock *sockPtr);
 static Sock *SockAccept(Driver *drvPtr);
@@ -129,8 +99,8 @@ static void SockClose(Sock *sockPtr, int keep);
 static int SockRead(Sock *sockPtr, int spooler);
 static int SockParse(Sock *sockPtr, int spooler);
 
-static int SockSpoolerPush(Sock *sockPtr);
-static Sock *SockSpoolerPop(void);
+static int SockSpoolerPush(Driver *drvPtr, Sock *sockPtr);
+static Sock *SockSpoolerPop(SpoolerQueue *queuePtr);
 
 static void SockWriterRelease(WriterSock *sockPtr, ReleaseReasons reason, int err);
 
@@ -156,20 +126,6 @@ static int driverShutdown = 0;      /* Flag to indicate shutdown. */
 static Sock *firstSockPtr = NULL;   /* Free list of Sock structures. */
 static Sock *firstClosePtr;         /* First conn ready for graceful close. */
 
-static SOCKET spoolerPipe[2];       /* Trigger to wakeup SpoolThread. */
-static Ns_Mutex spoolerLock;        /* Lock around spooled list. */
-static Ns_Cond spoolerCond;         /* Cond for stopped flag. */
-static Ns_Thread spoolerThread;     /* Running SpoolThread. */
-static int spoolerStopped = 0;      /* Flag to indicate spooler thread stopped. */
-static int spoolerShutdown = 0;     /* Flag to indicate shutdown. */
-static int spoolerDisabled = 0;     /* Flag to enable/disable the upload spooler. */
-static Sock *spoolerSockPtr = NULL; /* List of spooled Sock structures. */
-
-static Ns_Mutex writerLock;         /* Lock around writer queues. */
-static int writerThreads = 0;       /* Number of writer threads to run. */
-static WriterQueue *firstQueuePtr = NULL; /* List of writer threads. */
-static WriterQueue *curQueuePtr = NULL; /* Current writer thread */
-
 #define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
 
 
@@ -193,9 +149,7 @@ void
 NsInitDrivers(void)
 {
     Tcl_InitHashTable(&hosts, TCL_STRING_KEYS);
-    Ns_MutexInit(&uploadLock);
     Ns_MutexSetName(&drvLock, "ns:upload");
-    Tcl_InitHashTable(&uploadTable, TCL_STRING_KEYS);
 }
 
 
@@ -338,7 +292,6 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->bufsize = Ns_ConfigIntRange(path, "bufsize", 16384, 1024, INT_MAX);
     drvPtr->readahead = Ns_ConfigIntRange(path, "readahead", drvPtr->bufsize,
                                           drvPtr->bufsize, drvPtr->maxinput);
-    drvPtr->uploadsize = Ns_ConfigIntRange(path, "uploadsize", 2048, 1024, INT_MAX);
     drvPtr->sndbuf = Ns_ConfigIntRange(path, "sndbuf", 0, 0, INT_MAX);
     drvPtr->rcvbuf = Ns_ConfigIntRange(path, "rcvbuf", 0, 0, INT_MAX);
     drvPtr->sendwait = Ns_ConfigIntRange(path, "sendwait", 30, 1, INT_MAX);
@@ -404,24 +357,30 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      * Check if upload spooler has been disabled
      */
 
-    if (!Ns_ConfigBool(path, "spooler", NS_TRUE)) {
-        spoolerDisabled = 1;
-    } else {
-        Ns_Log(Notice, "%s: enable spooler thread for uploads >= %d bytes", module, drvPtr->uploadsize);
+    drvPtr->spooler.threads = Ns_ConfigIntRange(path, "spoolerthreads", 1, 0, 32);
+    if (drvPtr->spooler.threads > 0) {;
+        drvPtr->spooler.uploadsize = Ns_ConfigIntRange(path, "uploadsize", 2048, 1024, INT_MAX);
+        Tcl_InitHashTable(&drvPtr->spooler.table, TCL_STRING_KEYS);
+        Ns_Log(Notice, "%s: enable %d spooler thread(s) for uploads >= %d bytes", module, drvPtr->spooler.threads, drvPtr->readahead);
+        for (i = 0; i < drvPtr->spooler.threads; i++) {
+            SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
+            queuePtr->id = i;
+            Push(queuePtr, drvPtr->spooler.firstPtr);
+        }
     }
 
     /*
      * Number of writer threads
      */
 
-    writerThreads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
-    if (writerThreads > 0) {
-        drvPtr->writersize = Ns_ConfigIntRange(path, "writersize", 1024*1024, 1024*1024, INT_MAX);
-        Ns_Log(Notice, "%s: enable %d writer thread(s) for downloads >= %d bytes", module, writerThreads, drvPtr->writersize);
-        for (i = 0; i < writerThreads; i++) {
-            WriterQueue *queuePtr = ns_calloc(1, sizeof(WriterQueue));
+    drvPtr->writer.threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
+    if (drvPtr->writer.threads > 0) {
+        drvPtr->writer.maxsize = Ns_ConfigIntRange(path, "writersize", 1024*1024, 1024*1024, INT_MAX);
+        Ns_Log(Notice, "%s: enable %d writer thread(s) for downloads >= %d bytes", module, drvPtr->writer.threads, drvPtr->writer.maxsize);
+        for (i = 0; i < drvPtr->writer.threads; i++) {
+            SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
             queuePtr->id = i;
-            Push(queuePtr, firstQueuePtr);
+            Push(queuePtr, drvPtr->writer.firstPtr);
         }
     }
 
@@ -491,7 +450,7 @@ void
 NsStartDrivers(void)
 {
     Driver *drvPtr;
-    WriterQueue *queuePtr;
+    SpoolerQueue *queuePtr;
 
     /*
      * Listen on all drivers.
@@ -515,6 +474,32 @@ NsStartDrivers(void)
             Ns_SockSetNonBlocking(drvPtr->sock);
             Ns_Log(Notice, "%s: listening on %s:%d",
                    drvPtr->name, drvPtr->address, drvPtr->port);
+
+            /*
+             * Create the spooler thread(s).
+             */
+
+            queuePtr = drvPtr->spooler.firstPtr;
+            while (queuePtr) {
+                if (ns_sockpair(queuePtr->pipe) != 0) {
+                    Ns_Fatal("driver: ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
+                }
+                Ns_ThreadCreate(SpoolerThread, queuePtr, 0, &queuePtr->thread);
+                queuePtr = queuePtr->nextPtr;
+            }
+
+            /*
+             * Create the writer thread(s)
+             */
+
+            queuePtr = drvPtr->writer.firstPtr;
+            while (queuePtr) {
+                if (ns_sockpair(queuePtr->pipe) != 0) {
+                    Ns_Fatal("driver: ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
+                }
+                Ns_ThreadCreate(WriterThread, queuePtr, 0, &queuePtr->thread);
+                queuePtr = queuePtr->nextPtr;
+            }
         }
         drvPtr = drvPtr->nextPtr;
     }
@@ -525,38 +510,11 @@ NsStartDrivers(void)
 
     if (firstDrvPtr != NULL) {
         if (ns_sockpair(drvPipe) != 0) {
-            Ns_Fatal("driver: ns_sockpair() failed: %s",
-                     ns_sockstrerror(ns_sockerrno));
+            Ns_Fatal("driver: ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
         }
         Ns_ThreadCreate(DriverThread, NULL, 0, &driverThread);
     } else {
         Ns_Log(Warning, "no communication drivers configured");
-    }
-
-    /*
-     * Create the spooler thread.
-     */
-
-    if (spoolerDisabled == 0) {
-        if (ns_sockpair(spoolerPipe) != 0) {
-            Ns_Fatal("driver: ns_sockpair() failed: %s",
-                     ns_sockstrerror(ns_sockerrno));
-        }
-        Ns_ThreadCreate(SpoolThread, NULL, 0, &spoolerThread);
-    }
-
-    /*
-     * Create the writer thread(s)
-     */
-
-    queuePtr = firstQueuePtr;
-    while (queuePtr) {
-        if (ns_sockpair(queuePtr->pipe) != 0) {
-            Ns_Fatal("driver: ns_sockpair() failed: %s",
-                     ns_sockstrerror(ns_sockerrno));
-        }
-        Ns_ThreadCreate(WriterThread, queuePtr, 0, &queuePtr->thread);
-        queuePtr = queuePtr->nextPtr;
     }
 }
 
@@ -581,7 +539,9 @@ NsStartDrivers(void)
 void
 NsStopDrivers(void)
 {
-    WriterQueue *queuePtr;
+    int i;
+    Driver *drvPtr;
+    SpoolerQueue *queuePtr, *queueList[2];
 
     Ns_MutexLock(&drvLock);
     if (!drvStopped && !driverShutdown) {
@@ -591,26 +551,28 @@ NsStopDrivers(void)
     }
     Ns_MutexUnlock(&drvLock);
 
-    if (!spoolerDisabled) {
-        Ns_MutexLock(&spoolerLock);
-        if (!spoolerStopped && !spoolerShutdown) {
-            Ns_Log(Notice, "spooler: triggering shutdown");
-            spoolerShutdown = 1;
-            SockTrigger(spoolerPipe[1]);
-        }
-        Ns_MutexUnlock(&spoolerLock);
-    }
+    /*
+     * Shutdown all spooler and writer threads
+     */
 
-    queuePtr = firstQueuePtr;
-    while (queuePtr) {
-        Ns_MutexLock(&queuePtr->lock);
-        if (!queuePtr->stopped && !queuePtr->shutdown) {
-            Ns_Log(Notice, "writer: %d: triggering shutdown", queuePtr->id);
-            queuePtr->shutdown = 1;
-            SockTrigger(queuePtr->pipe[1]);
+    drvPtr = firstDrvPtr;
+    while (drvPtr != NULL) {
+        queueList[0] = drvPtr->writer.firstPtr;
+        queueList[1] = drvPtr->spooler.firstPtr;
+        for (i = 0; i < 2; i++) {
+            queuePtr = queueList[i];
+            while (queuePtr) {
+                Ns_MutexLock(&queuePtr->lock);
+                if (!queuePtr->stopped && !queuePtr->shutdown) {
+                    Ns_Log(Notice, "%s%d: triggering shutdown", (i ? "spooler" : "writer"), queuePtr->id);
+                    queuePtr->shutdown = 1;
+                    SockTrigger(queuePtr->pipe[1]);
+                }
+                Ns_MutexUnlock(&queuePtr->lock);
+                queuePtr = queuePtr->nextPtr;
+            }
         }
-        Ns_MutexUnlock(&queuePtr->lock);
-        queuePtr = queuePtr->nextPtr;
+        drvPtr = drvPtr->nextPtr;
     }
 }
 
@@ -635,10 +597,11 @@ NsStopDrivers(void)
 void
 NsWaitDriversShutdown(Ns_Time *toPtr)
 {
-    int status = NS_OK;
+    int i, status = NS_OK;
+    Driver *drvPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
-    WriterQueue *queuePtr;
+    SpoolerQueue *queuePtr, *queueList[2];
 
     Ns_MutexLock(&drvLock);
     while (!drvStopped && status == NS_OK) {
@@ -659,47 +622,35 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
         }
     }
 
-    if (!spoolerDisabled) {
-        status = NS_OK;
-        Ns_MutexLock(&spoolerLock);
-        while (!spoolerStopped && status == NS_OK) {
-            status = Ns_CondTimedWait(&spoolerCond, &spoolerLock, toPtr);
-        }
-        Ns_MutexUnlock(&spoolerLock);
-        if (status != NS_OK) {
-            Ns_Log(Warning, "spooler: timeout waiting for shutdown");
-        } else {
-            Ns_Log(Notice, "spooler: shutdown complete");
-            spoolerThread = NULL;
-            ns_sockclose(spoolerPipe[0]);
-            ns_sockclose(spoolerPipe[1]);
-            Ns_MutexLock(&uploadLock);
-            hPtr = Tcl_FirstHashEntry(&uploadTable, &search);
-            while (hPtr != NULL) {
-                Tcl_DeleteHashEntry(hPtr);
-                hPtr = Tcl_NextHashEntry(&search);
-            }
-            Ns_MutexUnlock(&uploadLock);
-        }
-    }
+    /*
+     * Wait for shutdown of all spooler and writer threads
+     */
 
-    queuePtr = firstQueuePtr;
-    while (queuePtr) {
-        status = NS_OK;
-        Ns_MutexLock(&queuePtr->lock);
-        while (!queuePtr->stopped && status == NS_OK) {
-            status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, toPtr);
+    drvPtr = firstDrvPtr;
+    while (drvPtr != NULL) {
+        queueList[0] = drvPtr->writer.firstPtr;
+        queueList[1] = drvPtr->spooler.firstPtr;
+        for (i = 0; i < 2; i++) {
+            queuePtr = queueList[i];
+            while (queuePtr) {
+                status = NS_OK;
+                Ns_MutexLock(&queuePtr->lock);
+                while (!queuePtr->stopped && status == NS_OK) {
+                    status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, toPtr);
+                }
+                Ns_MutexUnlock(&queuePtr->lock);
+                if (status != NS_OK) {
+                    Ns_Log(Warning, "%s%d: timeout waiting for shutdown", (i ? "spooler" : "writer"), queuePtr->id);
+                } else {
+                    Ns_Log(Notice, "%s%d: shutdown complete", (i ? "spooler" : "writer"), queuePtr->id);
+                    queuePtr->thread = NULL;
+                    ns_sockclose(queuePtr->pipe[0]);
+                    ns_sockclose(queuePtr->pipe[1]);
+                }
+                queuePtr = queuePtr->nextPtr;
+            }
         }
-        Ns_MutexUnlock(&queuePtr->lock);
-        if (status != NS_OK) {
-            Ns_Log(Warning, "writer%d: timeout waiting for shutdown", queuePtr->id);
-        } else {
-            Ns_Log(Notice, "writer%d: shutdown complete", queuePtr->id);
-            queuePtr->thread = NULL;
-            ns_sockclose(queuePtr->pipe[0]);
-            ns_sockclose(queuePtr->pipe[1]);
-        }
-        queuePtr = queuePtr->nextPtr;
+        drvPtr = drvPtr->nextPtr;
     }
 }
 
@@ -872,9 +823,8 @@ DriverThread(void *ignored)
     char    c, drain[1024];
     int     n, stopping, pollto;
     Sock   *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
-    Driver *activeDrvPtr;
-    Driver *drvPtr, *nextDrvPtr, *idleDrvPtr, *acceptDrvPtr;
     Ns_Time timeout, now, diff;
+    Driver *drvPtr;
     unsigned int nfds;           /* Number of Sock to poll(). */
     unsigned int maxfds;         /* Max pollfd's in pfds. */
     struct pollfd *pfds;         /* Array of pollfds to poll(). */
@@ -882,23 +832,6 @@ DriverThread(void *ignored)
     
     Ns_ThreadSetName("-driver-");
     Ns_Log(Notice, "starting");
-
-    /*
-     * Build up the list of active drivers.
-     */
-
-    activeDrvPtr = NULL;
-    drvPtr = firstDrvPtr;
-    firstDrvPtr = NULL;
-    while (drvPtr != NULL) {
-        nextDrvPtr = drvPtr->nextPtr;
-        if (drvPtr->sock != INVALID_SOCKET) {
-            Push(drvPtr, activeDrvPtr);
-        } else {
-            Push(drvPtr, firstDrvPtr);
-        }
-        drvPtr = nextDrvPtr;
-    }
 
     /*
      * Loop forever until signalled to shutdown and all
@@ -923,12 +856,14 @@ DriverThread(void *ignored)
         
         nfds = 1;
         if (waitPtr == NULL) {
-            drvPtr = activeDrvPtr;
+            drvPtr = firstDrvPtr;
             while (drvPtr != NULL) {
-                pfds[nfds].fd = drvPtr->sock;
-                pfds[nfds].events = POLLIN;
-                drvPtr->pidx = nfds++;
-                drvPtr = drvPtr->nextPtr;
+                if (drvPtr->sock != INVALID_SOCKET) {
+                    pfds[nfds].fd = drvPtr->sock;
+                    pfds[nfds].events = POLLIN;
+                    drvPtr->pidx = nfds++;
+                    drvPtr = drvPtr->nextPtr;
+                }
             }
         }
         
@@ -1035,7 +970,7 @@ DriverThread(void *ignored)
                 
                 switch (n) {
                 case SOCK_SPOOL:
-                    if (!SockSpoolerPush(sockPtr)) {
+                    if (!SockSpoolerPush(sockPtr->drvPtr, sockPtr)) {
                         Push(sockPtr, readPtr);
                     }
                     break;
@@ -1094,28 +1029,10 @@ DriverThread(void *ignored)
          */
         
         if (waitPtr == NULL) {
-            drvPtr = activeDrvPtr;
-            activeDrvPtr = idleDrvPtr = acceptDrvPtr = NULL;
+            drvPtr = firstDrvPtr;
             while (drvPtr != NULL) {
-                nextDrvPtr = drvPtr->nextPtr;
-                if (waitPtr != NULL
-                    || (!(pfds[drvPtr->pidx].revents & POLLIN))
-                    || ((sockPtr = SockAccept(drvPtr)) == NULL)) {
-                    
-                    /*
-                     * Add this driver to the temporary idle list.
-                     */
-                    
-                    Push(drvPtr, idleDrvPtr);
-                    
-
-                } else {
-
-                    /*
-                     * Add this driver to the temporary accepted list.
-                     */
-                    
-                    Push(drvPtr, acceptDrvPtr);
+                if ((pfds[drvPtr->pidx].revents & POLLIN) &&
+                    (sockPtr = SockAccept(drvPtr)) != NULL) {
 
                     /*
                      * Queue the socket immediately if request is provided
@@ -1138,22 +1055,7 @@ DriverThread(void *ignored)
                         Push(sockPtr, readPtr);
                     }
                 }
-                drvPtr = nextDrvPtr;
-            }
-            
-            /*
-             * Put the active driver list back together with the idle
-             * drivers first but otherwise in the original order.  This
-             * should ensure round-robin service of the drivers.
-             */
-            
-            while ((drvPtr = acceptDrvPtr) != NULL) {
-                acceptDrvPtr = drvPtr->nextPtr;
-                Push(drvPtr, activeDrvPtr);
-            }
-            while ((drvPtr = idleDrvPtr) != NULL) {
-                idleDrvPtr = drvPtr->nextPtr;
-                Push(drvPtr, activeDrvPtr);
+                drvPtr = drvPtr->nextPtr;
             }
         }
         
@@ -1195,13 +1097,13 @@ DriverThread(void *ignored)
          */
         
         if (stopping) {
-            while ((drvPtr = activeDrvPtr) != NULL) {
-                activeDrvPtr = drvPtr->nextPtr;
+            drvPtr = firstDrvPtr;
+            while (drvPtr != NULL) {
                 if (drvPtr->sock != INVALID_SOCKET) {
                     ns_sockclose(drvPtr->sock);
                     drvPtr->sock = INVALID_SOCKET;
                 }
-                Push(drvPtr, firstDrvPtr);
+                drvPtr = drvPtr->nextPtr;
             }
         }
     }
@@ -1582,12 +1484,12 @@ SockClose(Sock *sockPtr, int keep)
 
     if (sockPtr->upload.url != NULL) {
         Ns_Log(Debug, "upload stats deleted: %s, %lu %lu", sockPtr->upload.url, sockPtr->upload.length, sockPtr->upload.size);
-        Ns_MutexLock(&uploadLock);
-        hPtr = Tcl_FindHashEntry(&uploadTable, sockPtr->upload.url);
+        Ns_MutexLock(&sockPtr->drvPtr->spooler.lock);
+        hPtr = Tcl_FindHashEntry(&sockPtr->drvPtr->spooler.table, sockPtr->upload.url);
         if (hPtr != NULL) {
             Tcl_DeleteHashEntry(hPtr);
         }
-        Ns_MutexUnlock(&uploadLock);
+        Ns_MutexUnlock(&sockPtr->drvPtr->spooler.lock);
         ns_free(sockPtr->upload.url);
         sockPtr->upload.url = NULL;
     }
@@ -1675,7 +1577,7 @@ SockRead(Sock *sockPtr, int spooler)
          * it is running
          */
 
-        if (spooler == 0 && spoolerDisabled == 0) {
+        if (spooler == 0 && sockPtr->drvPtr->spooler.threads > 0) {
             return SOCK_SPOOL;
         }
 
@@ -1910,7 +1812,7 @@ SockParse(Sock *sockPtr, int spooler)
      */
 
     if (sockPtr->upload.url == NULL) {
-        if (reqPtr->length > 0 && reqPtr->avail > sockPtr->drvPtr->uploadsize) {
+        if (reqPtr->length > 0 && reqPtr->avail > sockPtr->drvPtr->spooler.uploadsize) {
             Tcl_HashEntry *hPtr;
             Ns_Request *req = reqPtr->request;
 
@@ -1918,17 +1820,17 @@ SockParse(Sock *sockPtr, int spooler)
             sprintf(sockPtr->upload.url, "%s?%s", req->url, (req->query ? req->query : ""));
             sockPtr->upload.length = reqPtr->length;
             sockPtr->upload.size = reqPtr->avail;
-            Ns_MutexLock(&uploadLock);
-            hPtr = Tcl_CreateHashEntry(&uploadTable, sockPtr->upload.url, &cnt);
+            Ns_MutexLock(&sockPtr->drvPtr->spooler.lock);
+            hPtr = Tcl_CreateHashEntry(&sockPtr->drvPtr->spooler.table, sockPtr->upload.url, &cnt);
             Tcl_SetHashValue(hPtr, sockPtr);
-            Ns_MutexUnlock(&uploadLock);
+            Ns_MutexUnlock(&sockPtr->drvPtr->spooler.lock);
             Ns_Log(Debug, "upload stats created for %s", sockPtr->upload.url);
         }
     } else {
-        Ns_MutexLock(&uploadLock);
+        Ns_MutexLock(&sockPtr->drvPtr->spooler.lock);
         sockPtr->upload.length = reqPtr->length;
         sockPtr->upload.size = reqPtr->avail;
-        Ns_MutexUnlock(&uploadLock);
+        Ns_MutexUnlock(&sockPtr->drvPtr->spooler.lock);
     }
     
     return SOCK_MORE;
@@ -1991,19 +1893,25 @@ NsTclUploadStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     char buf[64] = "";
     Tcl_HashEntry *hPtr;
     Sock *sockPtr;
+    Driver *drvPtr;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");
         return TCL_ERROR;
     }
 
-    Ns_MutexLock(&uploadLock);
-    hPtr = Tcl_FindHashEntry(&uploadTable, Tcl_GetString(objv[1]));
-    if (hPtr != NULL) {
-        sockPtr = Tcl_GetHashValue(hPtr);
-        sprintf(buf, "%lu %lu", sockPtr->upload.length, sockPtr->upload.size);
+    drvPtr = firstDrvPtr;
+    while (drvPtr != NULL) {
+        Ns_MutexLock(&drvPtr->spooler.lock);
+        hPtr = Tcl_FindHashEntry(&drvPtr->spooler.table, Tcl_GetString(objv[1]));
+        if (hPtr != NULL) {
+            sockPtr = Tcl_GetHashValue(hPtr);
+            sprintf(buf, "%lu %lu", sockPtr->upload.length, sockPtr->upload.size);
+            break;
+        }
+        Ns_MutexUnlock(&drvPtr->spooler.lock);
+        drvPtr = drvPtr->nextPtr;
     }
-    Ns_MutexUnlock(&uploadLock);
     Tcl_AppendResult(interp, buf, NULL);
     return NS_OK;
 }
@@ -2028,8 +1936,9 @@ NsTclUploadStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 static void
-SpoolThread(void *ignored)
+SpoolerThread(void *arg)
 {
+    SpoolerQueue *queuePtr = (SpoolerQueue*)arg;
     char c;
     int n, stopping, pollto;
     Sock  *sockPtr, *nextPtr, *waitPtr, *readPtr;
@@ -2037,20 +1946,20 @@ SpoolThread(void *ignored)
     unsigned int nfds, maxfds;
     struct pollfd *pfds;
     
-    Ns_ThreadSetName("-spooler-");
+    Ns_ThreadSetName("-spooler%d-", queuePtr->id);
 
     /*
      * Loop forever until signalled to shutdown and all
      * connections are complete and gracefully closed.
      */
 
-    Ns_Log(Notice, "spooler: accepting connections");
+    Ns_Log(Notice, "spooler%d: accepting connections", queuePtr->id);
     waitPtr = readPtr = NULL;
     Ns_GetTime(&now);
     stopping = 0;
     maxfds = 100;
     pfds = ns_malloc(maxfds * sizeof(struct pollfd));
-    pfds[0].fd = spoolerPipe[0];
+    pfds[0].fd = queuePtr->pipe[0];
     pfds[0].events = POLLIN;
 
     while (!stopping || nactive) {
@@ -2096,7 +2005,7 @@ SpoolThread(void *ignored)
             Ns_Fatal("driver: poll() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
-        if ((pfds[0].revents & POLLIN) && recv(spoolerPipe[0], &c, 1, 0) != 1) {
+        if ((pfds[0].revents & POLLIN) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
             Ns_Fatal("spooler: trigger recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -2177,7 +2086,7 @@ SpoolThread(void *ignored)
          * Add more connections from the spooler queue
          */
         
-        if (waitPtr == NULL && ((sockPtr = SockSpoolerPop()))) {
+        if (waitPtr == NULL && ((sockPtr = SockSpoolerPop(queuePtr)))) {
             SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
             Push(sockPtr, readPtr);
         }
@@ -2186,49 +2095,63 @@ SpoolThread(void *ignored)
          * Check for shutdown 
          */
         
-        Ns_MutexLock(&spoolerLock);
-        stopping = spoolerShutdown;
-        Ns_MutexUnlock(&spoolerLock);
+        Ns_MutexLock(&queuePtr->lock);
+        stopping = queuePtr->shutdown;
+        Ns_MutexUnlock(&queuePtr->lock);
     }
     Ns_Log(Notice, "exiting");
-    Ns_MutexLock(&spoolerLock);
-    spoolerStopped = 1;
-    Ns_CondBroadcast(&spoolerCond);
-    Ns_MutexUnlock(&spoolerLock);
+    Ns_MutexLock(&queuePtr->lock);
+    queuePtr->stopped = 1;
+    Ns_CondBroadcast(&queuePtr->cond);
+    Ns_MutexUnlock(&queuePtr->lock);
 }
 
 static int
-SockSpoolerPush(Sock *sockPtr)
+SockSpoolerPush(Driver *drvPtr, Sock *sockPtr)
 {
     int trigger = 0;
+    SpoolerQueue *queuePtr;
 
-    Ns_MutexLock(&spoolerLock);
-    if (spoolerSockPtr == NULL) {
+    /*
+     * Get the next spooler thread from the list, all spooler requests are
+     * rotated between all spooler threads
+     */
+
+    Ns_MutexLock(&drvPtr->spooler.lock);
+    if (drvPtr->spooler.curPtr == NULL) {
+        drvPtr->spooler.curPtr = drvPtr->spooler.firstPtr;
+    }
+    queuePtr = drvPtr->spooler.curPtr;
+    drvPtr->spooler.curPtr = drvPtr->spooler.curPtr->nextPtr;
+    Ns_MutexUnlock(&drvPtr->spooler.lock);
+
+    Ns_MutexLock(&queuePtr->lock);
+    if (queuePtr->sockPtr == NULL) {
         trigger = 1;
     }
-    Push(sockPtr, spoolerSockPtr);
-    Ns_MutexUnlock(&spoolerLock);
+    Push(sockPtr, queuePtr->sockPtr);
+    Ns_MutexUnlock(&queuePtr->lock);
 
     /*
      * Wake up spooler thread
      */
 
     if (trigger) {
-        SockTrigger(spoolerPipe[1]);
+        SockTrigger(queuePtr->pipe[1]);
     }
     return 1;
 }
 
-Sock *SockSpoolerPop(void)
+Sock *SockSpoolerPop(SpoolerQueue *queuePtr)
 {
     Sock *sockPtr = 0;
 
-    Ns_MutexLock(&spoolerLock);
-    sockPtr = spoolerSockPtr;
-    if (spoolerSockPtr) {
-         spoolerSockPtr = spoolerSockPtr->nextPtr;
+    Ns_MutexLock(&queuePtr->lock);
+    sockPtr = (Sock*)queuePtr->sockPtr;
+    if (queuePtr->sockPtr) {
+         queuePtr->sockPtr = ((Sock*)queuePtr->sockPtr)->nextPtr;
     }
-    Ns_MutexUnlock(&spoolerLock);
+    Ns_MutexUnlock(&queuePtr->lock);
     return sockPtr;
 }
 
@@ -2252,7 +2175,7 @@ Sock *SockSpoolerPop(void)
 static void
 WriterThread(void *arg)
 {
-    WriterQueue *queuePtr = (WriterQueue*)arg;
+    SpoolerQueue *queuePtr = (SpoolerQueue*)arg;
     Ns_Time now;
     char c, *bufPtr;
     int n, err, stopping, pollto, toread, maxsize, status;
@@ -2417,11 +2340,14 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
     Conn *connPtr = (Conn*)conn;
     WriterSock *sockPtr;
-    WriterQueue *queuePtr;
+    SpoolerQueue *queuePtr;
+    Driver *drvPtr;
     int trigger = 0;
 
-    if (writerThreads == 0 ||
-        nsend < connPtr->drvPtr->writersize ||
+    drvPtr = connPtr->sockPtr->drvPtr;
+
+    if (drvPtr->writer.threads == 0 ||
+        nsend < drvPtr->writer.maxsize ||
         (conn->flags & NS_CONN_WRITE_CHUNKED)) {
         return NS_ERROR;
     }
@@ -2458,13 +2384,13 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
      * rotated between all writer threads
      */
 
-    Ns_MutexLock(&writerLock);
-    if (curQueuePtr == NULL) {
-        curQueuePtr = firstQueuePtr;
+    Ns_MutexLock(&drvPtr->writer.lock);
+    if (drvPtr->writer.curPtr == NULL) {
+        drvPtr->writer.curPtr = drvPtr->writer.firstPtr;
     }
-    queuePtr = curQueuePtr;
-    curQueuePtr = curQueuePtr->nextPtr;
-    Ns_MutexUnlock(&writerLock);
+    queuePtr = drvPtr->writer.curPtr;
+    drvPtr->writer.curPtr = drvPtr->writer.curPtr->nextPtr;
+    Ns_MutexUnlock(&drvPtr->writer.lock);
 
     /*
      * Now add new writer socket to the writer thread's queue
