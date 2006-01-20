@@ -14,14 +14,19 @@ Contents
     3. Compiling and installing
     4. Mailing lists
 
+
 1. Introduction
 ---------------
 
 NaviServer is maintained, enhanced, and distributed freely by the
 open source community.  The home for NaviServer sources and bug/patch
-database is localted on SourceForge site:
+database is located on SourceForge site:
 
    http://sourceforge.net/projects/naviserver
+
+Another resource is the NaviServer wiki:
+
+   http://naviserver.sourceforge.net
 
 NaviServer is a freely available open source package.  See the file
 "license.terms" for complete information.
@@ -32,7 +37,7 @@ NaviServer is a freely available open source package.  See the file
 
 Documentation will be available in the "doc" subdirectory. At this
 point the documentation is incomplete and is considered to be the
-work in progress. One done, it will be distributed in Unix nroff
+work in progress. Once done, it will be distributed in Unix nroff
 format (suitable for viewing with Unix "man" command) and HTML 
 format (suitable for viewing with any HTML-compatible browser).
 
@@ -65,8 +70,8 @@ be easy.  To compile and install:
 3c.     Download, configure, build, and install.
 	The following should work:
 
-	% gunzip < naviserver-4.0.10.src.tar.gz | tar xvf -
-	% cd naviserver-4.0.10
+	% gunzip < naviserver-4.99.0.tar.gz | tar xvf -
+	% cd naviserver-4.99.0
 	% ./configure 
 	% make install
 
@@ -109,14 +114,14 @@ be easy.  To compile and install:
 3e.	Try running the server in a shell window:
 
 	% cd /usr/local/ns
-	% bin/nsd -ft nsd.tcl
+	% bin/nsd -f -t nsd.tcl
 
 
 4. Mailing lists
 ----------------
 
 There are mailing lists for NaviServer to discuss anything from
-configuration, development, and future direction.  To join visit:
+configuration, development, and future direction. To join visit:
 
   http://sourceforge.net/projects/naviserver
 
