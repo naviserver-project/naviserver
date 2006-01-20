@@ -46,16 +46,19 @@ all:
 install: install-binaries install-doc
 
 install-binaries: all
-	for i in bin lib log include modules/tcl servers/server1/pages; do \
+	for i in bin lib logs include tcl pages conf modules cgi-bin; do \
 		$(MKDIR) $(NAVISERVER)/$$i; \
 	done
 	for i in include/*.h include/Makefile.global include/Makefile.module; do \
 		$(INSTALL_DATA) $$i $(INSTHDR)/; \
 	done
 	for i in tcl/*.tcl; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/modules/tcl/; \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/tcl/; \
 	done
-	$(INSTALL_DATA) sample-config.tcl $(NAVISERVER)/
+	for i in contrib/nsd.tcl contrib/mimetypes.tcl sample-config.tcl; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
+	done
+	$(INSTALL_DATA) contrib/index.adp $(NAVISERVER)/pages/
 	$(INSTALL_SH) install-sh $(INSTBIN)/
 	for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \

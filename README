@@ -114,7 +114,7 @@ be easy.  To compile and install:
 3e.	Try running the server in a shell window:
 
 	% cd /usr/local/ns
-	% bin/nsd -f -t nsd.tcl
+	% bin/nsd -f -t conf/nsd.tcl
 
 
 4. Mailing lists

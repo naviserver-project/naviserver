@@ -2,6 +2,16 @@
 
 	* tcl/stats.tcl: fixed all bugs and it runs now under naviserver
 	properly
+	* m4/tcl.m4: check for USE_THREAD_ALLOC in tclConfig.sh
+	* Makefile: simplify installation  structure, create conf/, logs/,
+	tcl/ directories.
+	* sample-config.tcl: re-formatted and make it run, added more
+	descriptions
+	* contrib/nsd.tcl:
+	* contrib/mimetypes.tcl: added new example configs
+	* include/Makefile.global.in: chanage to simpler installation 
+	structure
+	* contrib/index.adp: Added default index page
 
 2006-01-19  Vlad Seryakov  <seryakov@users.sf.net>
 

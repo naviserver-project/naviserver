@@ -102,8 +102,8 @@ INSTBIN      = $(NAVISERVER)/bin
 INSTLIB      = $(NAVISERVER)/lib
 INSTHDR      = $(NAVISERVER)/include
 INSTMOD      = $(NAVISERVER)/modules
-INSTTCL      = $(NAVISERVER)/modules/tcl
-INSTSRV      = $(NAVISERVER)/servers/server1
+INSTTCL      = $(NAVISERVER)/tcl
+INSTSRV      = $(NAVISERVER)/
 INSTSRVMOD   = $(INSTSRV)/modules
 INSTSRVPAG   = $(INSTSRV)/pages
 

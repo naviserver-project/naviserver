@@ -527,8 +527,12 @@ AC_DEFUN([TEA_ENABLE_THREADS], [
 
 	if test "${TEA_PLATFORM}" != "windows" ; then
 	    # We are always OK on Windows, so check what this platform wants.
-            AC_DEFINE(USE_THREAD_ALLOC, 1,
-                [Do we want to use the threaded memory allocator?])
+            case ${TCL_DEFS} in
+   	        *DUSE_THREAD_ALLOC=1*)
+                     AC_DEFINE(USE_THREAD_ALLOC, 1,
+                          [Do we want to use the threaded memory allocator?])
+	             ;;
+	    esac
 	    AC_DEFINE(_REENTRANT, 1, [Do we want the reentrant OS API?])
 	    AC_DEFINE(_THREAD_SAFE, 1, [Do we want the thread-safe OS API?])
 	    AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
