@@ -383,3 +383,21 @@ proc ns_set_precision {precision} {
 proc ns_updateheader {key value} {
     ns_set update [ns_conn outputheaders] $key $value
 }
+
+# Read contents of the given file
+proc ns_fileread { filename } {
+    set fd [open $filename]
+    fconfigure $fd -translation binary -encoding binary
+    set data [read $fd]
+    close $fd
+    return $data
+}
+
+# Write given data into the file
+proc ns_filewrite { filename data { mode w } } {
+    set fd [open $filename $mode]
+    fconfigure $fd -translation binary -encoding binary
+    puts -nonewline $fd $data
+    close $fd
+}
+

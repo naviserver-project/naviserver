@@ -54,6 +54,8 @@ if $on {
     ns_register_proc POST /*.tcl ns_sourceproc
     ns_register_proc HEAD /*.tcl ns_sourceproc
     set errorPage [ns_config "${path}/tcl" errorpage]
+    set size [ns_config "ns/server/[ns_info server]" filecachesize 5000000]
+    ns_cache_create ns:filecache $size
 }
 
 
@@ -69,45 +71,28 @@ proc ns_tcl_abort {} {
 #      Support for caching Tcl-page bytecodes.
 #
 
-if { ![string equal [info commands "ns_cache"] ""] } {
+# Get the contents of a file from the cache or disk.
+proc ns_sourcefile {filename} {
 
-    ns_cache create util_file_contents_cached -thread 1 \
-        -size [ns_config "ns/server/[ns_info server]" SourceCacheSize 5000000]
-
-    # Get the contents of a file from the cache or disk.
-    proc ns_sourcefile {filename} {
-        file stat $filename stat
-        set current_cookie [list $stat(mtime) $stat(ctime) $stat(ino) $stat(dev)]
-        set cached_p [ns_cache get util_file_contents_cached $filename pair]
-        if {$cached_p} {
-            set cached_cookie [lindex $pair 0]
-            if {![string equal $cached_cookie $current_cookie]} {
-                ns_cache flush util_file_contents_cached $filename
-                set cached_p 0
-            }
-        }
-        if {!$cached_p} {
-            # Now cache the Tcl_Obj in a thread-local cache.
-            set pair [ns_cache eval util_file_contents_cached $filename {
-                set fd [open $filename]
-                set contents [read $fd]
-                close $fd
-                list $current_cookie $contents
-            }]
-        }
-        # And here's the magic part.  We're using "for" here to translate the
-        # text source file into bytecode, which will be associated with the 
-        # Tcl_Obj we just cached (as its internal representation).  "eval"
-        # doesn't do this as the eval provided in Tcl uses the TCL_EVAL_DIRECT
-        # flag, and hence interprets the text directly.
-        uplevel [for [lindex $pair 1] {0} {} {}]
+    file stat $filename stat
+    set current_cookie [list $stat(mtime) $stat(ctime) $stat(ino) $stat(dev)]
+    # Read current cached file
+    set pair [ns_cache_eval ns:filecache $filename {
+        list $current_cookie [ns_fileread $filename]
+    }]
+    # If file changed, re-read it
+    if {![string equal [lindex $pair 0] $current_cookie]} {
+        ns_cache_flush ns:filecache $filename
+        set pair [ns_cache_eval ns:filecache $filename {
+            list $current_cookie [ns_fileread $filename]
+        }]
     }
-
-} else {
-
-    proc ns_sourcefile {filename} {
-        uplevel source $filename
-    }
+    # And here's the magic part.  We're using "for" here to translate the
+    # text source file into bytecode, which will be associated with the 
+    # Tcl_Obj we just cached (as its internal representation).  "eval"
+    # doesn't do this as the eval provided in Tcl uses the TCL_EVAL_DIRECT
+    # flag, and hence interprets the text directly.
+    uplevel [for [lindex $pair 1] {0} {} {}]
 }
 
 proc ns_sourceproc { args } {
