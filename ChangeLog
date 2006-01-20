@@ -1,3 +1,8 @@
+2006-01-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/stats.tcl: fixed all bugs and it runs now under naviserver
+	properly
+
 2006-01-19  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:

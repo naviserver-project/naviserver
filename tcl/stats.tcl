@@ -27,7 +27,7 @@ set url [ns_config $path url "/_stats"]
 
 nsv_set _ns_stats enabled       $enabled
 nsv_set _ns_stats url           $url
-nsv_set _ns_stats user          [ns_config $path user "aolserver"]
+nsv_set _ns_stats user          [ns_config $path user "naviserver"]
 nsv_set _ns_stats password      [ns_config $path password "stats"]
 
 if {$enabled} {
@@ -172,12 +172,8 @@ proc _ns_stats.cache {} {
     set results ""
 
     foreach cache [ns_cache_names] {
-        set t [ns_cache_stats $cache]
-
-        scan [ns_cache_size $cache] "%d %d" M N
-        scan $t "entries: %d  flushed: %d  hits: %d  misses: %d  hitrate: %d" e f h m p
-
-        lappend results [list $cache $M $N $e $f $h $m "$p%"]
+        array set t [ns_cache_stats $cache]
+        lappend results [list $cache $t(maxsize) $t(size) $t(entries) $t(flushed) $t(hits) $t(missed) "$t(hitrate)%"]
     }
 
     set colTitles   [list Cache Max Current Entries Flushes Hits Misses "Hit Rate"]
@@ -290,7 +286,10 @@ proc _ns_stats.mempools {} {
     set tlocks 0
     set twaits 0
     set tfree 0
-    set tops 0   
+    set tops 0
+    set ov 0
+    set op 0
+    set av 0
 
     set html [_ns_stats.header Memory]
 
@@ -361,14 +360,17 @@ proc _ns_stats.mempools {} {
         <br>"
     }
 
-    set ov [expr $talloc - $trequest]
-    set op [format %4.2f [expr $ov.0 * 100 / $trequest.0]]
-    set av [format %4.2f [expr 100.0 - ($tlocks.0 * 100) / $tops.0]]
-
-    if {$tlocks > 0} {
-	    set wr [format %4.2f [expr $twaits.0 / $tlocks.0]]
+    if { $trequest > 0 } {
+        set ov [expr $talloc - $trequest]
+        set op [format %4.2f [expr $ov.0 * 100 / $trequest.0]]
+    }
+    if { $tops > 0 } {
+    	set av [format %4.2f [expr 100.0 - ($tlocks.0 * 100) / $tops.0]]
+    }
+    if { $tlocks > 0 } {
+	set wr [format %4.2f [expr $twaits.0 / $tlocks.0]]
     } else {
-	    set wr N/A
+	set wr N/A
     }
 
     append html "\
@@ -408,7 +410,7 @@ proc _ns_stats.process {} {
         "Page Root" [ns_info pageroot] \
         "Tcl Library" [ns_info tcllib] \
         Log [ns_info log] \
-        Version "[ns_info version] ([ns_info label])" \
+        Version "[ns_info version]" \
         "Build Date" [ns_info builddate] \
         Servers [join [ns_info servers] <br>] \
         Threads [join [ns_server threads] <br>] \
