@@ -929,7 +929,7 @@ NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
  */
 
 NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
-NS_EXTERN void Ns_DriverSockRequest(Ns_Sock *sock, char *reqline);
+NS_EXTERN int Ns_DriverSockRequest(Ns_Sock *sock, char *reqline);
 
 /*
  * dsprintf.c:

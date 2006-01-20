@@ -1037,9 +1037,10 @@ DriverThread(void *ignored)
                     /*
                      * Queue the socket immediately if request is provided
                      */
+
                     n = (*sockPtr->drvPtr->proc)(DriverAccept, (Ns_Sock*)sockPtr, 0, 0);
-                    if (n == NS_OK && sockPtr->reqPtr) {
-                        if (!SetServer(sockPtr)) {
+                    if (n == NS_OK) {
+                        if (sockPtr->reqPtr == NULL || !SetServer(sockPtr)) {
                             SockRelease(sockPtr, Reason_ServerReject, 0);
                         } else {
                             if (!NsQueueConn(sockPtr, &now)) {
@@ -1047,6 +1048,7 @@ DriverThread(void *ignored)
                             }
                         }
                     } else {
+
                        /*
                         * Put the socket on the read-ahead list.
                         */
@@ -1533,7 +1535,9 @@ SockRead(Sock *sockPtr, int spooler)
     char         tbuf[4096];
     int          len, nread, n;
     
-    Ns_DriverSockRequest(sock, 0);
+    if (Ns_DriverSockRequest(sock, 0) != NS_OK) {
+        return NS_ERROR;
+    }
 
     /*
      * On the first read, attempt to read-ahead bufsize bytes.
@@ -1845,7 +1849,7 @@ SockParse(Sock *sockPtr, int spooler)
  *      it becomes parsed request struct, i.e. should be in the form: METHOD URL PROTO
  *
  * Results:
- *      None.
+ *      NS_ERROR if request cannot be parsed.
  *
  * Side effects:
  *      None
@@ -1853,7 +1857,7 @@ SockParse(Sock *sockPtr, int spooler)
  *----------------------------------------------------------------------
  */
 
-void
+int
 Ns_DriverSockRequest(Ns_Sock *sock, char *reqline)
 {
     Request      *reqPtr;
@@ -1877,14 +1881,20 @@ Ns_DriverSockRequest(Ns_Sock *sock, char *reqline)
             reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
             reqPtr->leadblanks = 0;
         }
-        sockPtr->reqPtr = reqPtr;
-        reqPtr->port = ntohs(sockPtr->sa.sin_port);
-        strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+    }
+    sockPtr->reqPtr = reqPtr;
+    reqPtr->port = ntohs(sockPtr->sa.sin_port);
+    strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
 
-        if (reqline) {
-            reqPtr->request = Ns_ParseRequest(reqline);
+    if (reqline) {
+        reqPtr->request = Ns_ParseRequest(reqline);
+        if (reqPtr->request == NULL) {
+            NsFreeRequest(reqPtr);
+            sockPtr->reqPtr = NULL;
+            return NS_ERROR;
         }
     }
+    return NS_OK;
 }
 
 int

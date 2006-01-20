@@ -1,3 +1,9 @@
+2006-01-19  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/driver.c: Fixed bug in Ns_DriverSockRequest when existing 
+	structure is used. Returns NS_ERROR now if cannot parse given url. 
+
 2006-01-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* sample-config.tcl: Added spooler/writer related options
