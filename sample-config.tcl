@@ -38,10 +38,10 @@
 #
 #  % cp sample-config.tcl myconfig.tcl
 #  % vi myconfig.tcl		(edit as needed)
-#  % bin/nsd -ft myconfig.tcl	(test in foreground)
+#  % bin/nsd -f -t myconfig.tcl	(test in foreground)
 #  % bin/nsd -t myconfig.tcl	(run in background)
 #  % gdb bin/nsd
-#  (gdb) run -fdt myconfig.tcl	(run in debugger)
+#  (gdb) run -f -d -t myconfig.tcl (run in debugger)
 #
 
 #
@@ -227,10 +227,13 @@ ns_param   	threadtimeout   	120
 # ADP (AOLserver Dynamic Page) configuration
 #
 ns_section 	"ns/server/${servername}/adp"
+
 # Extensions to parse as ADP's.
 ns_param   	map             	"/*.adp"
+
 # Set "Expires: now" on all ADP's.
 ns_param   	enableexpire    	false
+
 # Allow Tclpro debugging with "?debug".
 ns_param   	enabledebug     	false
 
@@ -239,10 +242,26 @@ ns_param   	map             	"/*.u_adp"
 ns_param   	map             	"/*.gb_adp"
 ns_param   	map             	"/*.sjis_adp"
 
+# ADP start page to use for empty ADP requests
+#ns_param   	startpage      		$pagedir/index.adp
+
 # ADP error page.
 #ns_param   	errorpage      		$pagedir/errorpage.adp
 
 
+#
+# Server specific Tcl setup
+#
+
+ns_section      "ns/server/${servername}/tcl"
+
+# Number of buckets in Tcl hash table for nsv vars
+ns_param        nsvbuckets              16
+
+# Path to private Tcl modules
+ns_param        library                 ${homedir}/modules/tcl
+
+#
 # Fast Path --
 #
 #  Fast path configuration is used to configure options used for serving 

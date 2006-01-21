@@ -90,9 +90,8 @@ ns_section	"ns/server/${server}/adp/parsers"
 ns_param	fancy			".adp"
 
 ns_section	"ns/server/${server}/tcl"
-ns_param	debug			false
 ns_param	nsvbuckets		16
-ns_param	library			${home}
+ns_param	library			${home}/modules/tcl
 
 ns_section      "ns/server/${server}/module/nscgi"
 ns_param        map                     "GET  /cgi-bin ${home}/cgi-bin"
