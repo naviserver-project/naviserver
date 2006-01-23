@@ -191,7 +191,7 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  * NsTclCacheIncrObjCmd --
  *
  *      Treat the value of the cached object as in integer and
- *      increment it.  No value is trated as starting at zero.a
+ *      increment it.  No value is treated as starting at zero.a
  *
  * Results:
  *      TCL result.
@@ -238,6 +238,48 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     }
     SetEntry(interp, entry, Tcl_NewIntObj(cur + incr), ttl);
     Ns_CacheUnlock(cache);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCacheExistsObjCmd --
+ *
+ *      Returns 1 if entry exists in the cache and not expired yet
+ *
+ * Results:
+ *      TCL result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclCacheExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_Cache *cache;
+    Ns_Entry *entry;
+    char     *key;
+    int       rc = 0;
+
+    Ns_ObjvSpec args[] = {
+        {"cache",    ObjvCache,     &cache, arg},
+        {"key",      Ns_ObjvString, &key,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    Ns_CacheLock(cache);
+    if ((entry = Ns_CacheFindEntry(cache, key)) != NULL) {
+        rc = 1;
+    }
+    Ns_CacheUnlock(cache);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
 
     return TCL_OK;
 }

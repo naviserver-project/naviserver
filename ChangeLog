@@ -2,6 +2,10 @@
 
 	* m4/tcl.m4: Fixed bug with extra single quote for
 	bash 3.1
+	* tests/nscache.test:
+	* nsd/tclcache.c:
+	* nsd/tclcmds.c: Added ns_cache_exists command for cases when
+	just existence needed without retrieving the whole cache entry
 
 2006-01-23  Bernd Eidenschink  <eide@users.sf.net>
 

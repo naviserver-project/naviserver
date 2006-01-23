@@ -94,7 +94,7 @@ test ns_info-2.18.1 {basic operation} -body {
 } -result 1
 
 test ns_info-2.19.1 {basic operation} -body {
-     expr {[llength [ns_info pools]]>0}
+     expr {[llength [ns_info pools]]<=0}
 } -result 1
 
 test ns_info-2.20.1 {basic operation} -body {

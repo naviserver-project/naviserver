@@ -48,6 +48,10 @@ test cache-1.8 {basic syntax} -body {
 } -returnCodes error -result {wrong # args: should be "ns_cache_lappend ?-timeout timeout? ?-ttl ttl? ?--? cache key args"}
 
 test cache-1.9 {basic syntax} -body {
+    ns_cache_exists
+} -returnCodes error -result {wrong # args: should be "ns_cache_exists cache key"}
+
+test cache-1.10 {basic syntax} -body {
     ns_memoize
 } -returnCodes error -result {wrong # args: should be "?-timeout timeout? ?-ttl ttl? ?--? script ?args?"}
 
@@ -55,7 +59,7 @@ test cache-1.9 {basic syntax} -body {
 
 test cache-2.1 {cache names} -body {
     lsort [ns_cache_names]
-} -result {c1 c2 ns:memoize}
+} -result {c1 c2 ns:filecache ns:memoize}
 
 
 
@@ -88,7 +92,19 @@ test cache-4.4 {cache keys} -body {
     ns_cache_flush c1
 } -result {k1 k2}
 
+test cache-4.5 {cache exists} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_exists c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result {1}
 
+test cache-4.6 {cache exists} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_exists c1 k2
+} -cleanup {
+    ns_cache_flush c1
+} -result {0}
 
 test cache-5.1 {cache flush} -body {
     ns_cache_flush c1
