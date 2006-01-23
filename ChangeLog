@@ -1,3 +1,8 @@
+2006-01-23  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* m4/tcl.m4: Fixed bug with extra single quote for
+	bash 3.1
+
 2006-01-23  Bernd Eidenschink  <eide@users.sf.net>
 
 	* tcl/sendmail.tcl: Added character encoding for subject and body,
