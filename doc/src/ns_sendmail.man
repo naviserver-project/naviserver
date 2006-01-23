@@ -1,0 +1,209 @@
+[manpage_begin ns_sendmail 3 1.0]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {sending mail}]
+
+
+[description]
+
+[emph ns_sendmail] is a procedure for sending email from a Tcl script through a remote 
+SMTP server. It now supports character encoding of subject and body,
+message-id creation, quoted printable text and AUTH PLAIN mechanism. It is backwards
+compatible.
+
+[para]
+The helper command [emph ns_sendmail_config] returns or logs the current configuration
+for ns_sendmail.
+
+[para]
+In the default configuration mail is sent to "localhost" on port 25. Usually "localhost"
+resolves to the host where NaviServer is deployed and the running SMTP server accepts mail
+from the local machine. 
+[para]
+In order to send mail directly to a specified SMTP server other than
+localhost some form of authentication may be required. The AUTH PLAIN mechanism is supported 
+as it is offered by most SMTP servers and easy to implement. Note, however, it is a plaintext 
+mechanism and not secure. Also note that ns_sendmail does not verify if AUTH PLAIN is offered 
+by the SMTP server at all.
+
+In case of an error the error code and message are returned.
+
+[section COMMANDS]
+[list_begin definitions]
+[call [cmd ns_sendmail] [arg to] [arg from] [arg subject] [arg body] [opt headers] [opt bcc] [opt cc]]
+
+[arg to]
+	Email address of recipient. To send a real name along with the address
+	give the name and place the latter between "<" and ">" like "John Foo <j.foo@example.com>".
+	This also applies to [emph from], [emph cc] and [emph bcc].
+	Can be a comma-separated string with multiple recipients.
+[nl]
+[arg from]
+	Email address of sender.
+[nl]
+[arg subject]
+	Subject of the mail.
+[nl]
+[arg body]
+	Body of the mail.
+[nl]
+[arg ?headers?]
+	An ns_set of key-value pairs. The set will become part of the email header.
+	May be left empty.
+[nl]
+[arg ?bcc?]
+	Email address of undisclosed recipient.
+	Can be a comma-separated string with multiple undisclosed recipients.
+[nl]
+[arg ?cc?]
+	Email address of additional recipient.
+	Can be a comma-separated string with multiple recipients.
+
+[call [cmd ns_sendmail_config] [opt log]]
+
+ns_sendmail_config returns the current configuration that is
+set up in the configuration file. Returns either an 
+array usable by "array get" or logs to the server logfile.
+
+
+[list_end]
+
+
+[section CONFIGURATION]
+
+[para]
+[strong {Basic configuration options:}]
+
+[list_begin definitions]
+[lst_item "smtphost = mail.domain.tld"]
+	The hostname or IP of the mail server. Default is localhost.
+	Full qualified hostname is a good choice (mail.example.com).
+[lst_item "smtpport = 25"]
+	The port for the connection. Default is 25.
+[lst_item "smtptimeout = 60"]
+	After smtptimeout seconds of inactivity (no answer from server) connection is closed.
+[list_end]
+
+[para]
+[strong {Extended configuration options:}]
+[para]
+Note: "boolean" in NaviServer configuration means value can be one of "true", "false", "on", "off", "0" or "1".
+[list_begin definitions]
+[lst_item "smtplogmode = false (boolean)"]
+	If true no attempt to set up a connection to smtphost:smtpport is made,
+	every part of the connection process is just logged to the server logfile.
+	Default is false.
+[lst_item "smtpmsgid = on (boolean)"]
+	If true ns_sendmail creates a message_id. If a key "message_id" is user
+	defined in the optional "headers"-set the latter is used.
+	Default is false.
+[lst_item "smtpmsgidhostname = host.domain.tld"]
+	This string is used when ns_sendmail tells the server that it wants to use
+	SMTP (HELO host.domain.tld) or ESMTP (EHLO host.domain.tld) communication.
+	Some servers have restrictive rules and expect fully qualified domain names here.
+	It is further used as right part of the message-id. 
+[lst_item "smtpencodingmode = on (boolean)"]
+	Message subject and body are by default sent in the default server encoding.
+	If this is set true 
+	(a) the encoding defined in smtpencoding will be used and
+	(b) Subject and body will be transformed to QUOTED PRINTABLE format.
+	Default is false. 
+[lst_item "smtpencoding = utf-8"]
+	If smtpencodingmode is set true subject and body will be encoded with
+	the encoding defined in smtpencoding, e.g. "iso8859-15".
+[lst_item "smtpauthuser = account--0123"]
+	ns_sendmail supports now the simple PLAIN AUTH mechanism to authenticate
+	against a SMTP server. It should be sufficient to provide
+	a mailbox account or email address ("smtpauthuser") and a password (see "smtpauthpassword").
+	It is possible to give a different authorization identifier (userid) and
+	authentication identifier (authid/realm) by separating them with a nullbyte ("userid\0realm").
+	Default is empty string to not use SMTP authentication.
+[lst_item "smtpauthpassword = mysecret"]
+	The password to use for PLAIN AUTHentication if smtpauthuser is set.
+[list_end]
+
+[section ALTERNATIVES]
+See the excellent TCL Standard Library smtp and mime packages.
+
+[section EXAMPLES]
+[emph "Log current configuration to server log:"]
+[example_begin]
+% ns_sendmail_config log
+smtpconfiguration:
+        smtphost = mail.domain.tld
+        smtpport = 25
+        smtptimeout = 60
+        smtplogmode = false
+        smtpmsgid = on
+        smtpmsgidhostname = host.domain.tld
+        smtpencodingmode = on
+        smtpencoding = iso8859-15
+        smtpauthuser = account--0123
+        smtpauthpassword = mysecret
+[example_end]
+
+[para]
+[emph "Default use:"]
+[example_begin]
+% ns_sendmail to@example.com from@example.com "My subject" "My body"
+[example_end]
+
+
+[para]
+[emph "Separate multiple recipients with a comma (to,cc,bcc):"]
+[example_begin]
+% ns_sendmail "to1@example.com,to2@example.com" \
+	from@example.com "My subject" "My body"
+[example_end]
+
+
+[para]
+[emph "You may give real names along with email address:"]
+[example_begin]
+% ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
+	from@example.com "My subject" "My body"
+[example_end]
+
+
+[para]
+[emph "For cc and bcc, leave header field empty, if you don't need it anyway:"]
+[example_begin]
+% ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
+	from@example.com "My subject" "My body" "" "Ben Care <bencare@example.com>"
+[example_end]
+
+
+[para]
+[emph "Header field is an ns_set array:"]
+[example_begin]
+% set SMTP_setid [lb]ns_set create SMTPHeaders "Reply-To" "marketing@example.com"[rb]
+% ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
+	from@example.com "My subject" "My body" $SMTP_setid \
+	"Ben Care <bencare@example.com>"
+[example_end]
+
+[para]
+[emph "Use smtplogmode to not send mail but watch transaction in server log:"]
+[example_begin]
+% ns_sendmail "Mr. White <white@example.com>" "Mr. Black <black@example.com>" "log" "this message"
+Notice: S: Helo sock12 HELO devserver 60
+Notice: S: Mail black@example.com sock12 MAIL FROM:<black@example.com> 60
+Notice: S: Rcpt white@example.com sock12 RCPT TO:<white@example.com> 60
+Notice: S: Data sock12 DATA 60
+Notice: S: Data sock12 To: Mr. White <white@example.com>
+From: Mr. Black <black@example.com>
+Subject: log
+Date: Mon, 23 Jan 2006 09:25:22 GMT
+
+this message
+
+. 60
+Notice: S: Quit sock12 QUIT 60
+[example_end]
+
+
+
+[see_also nsd]
+
+[keywords NaviServer ns_sendmail ns_sendmail_config mail smtp RFC2822]
+
+[manpage_end]

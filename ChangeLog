@@ -1,3 +1,14 @@
+2006-01-23  Bernd Eidenschink  <eide@users.sf.net>
+
+	* tcl/sendmail.tcl: Added character encoding for subject and body,
+	message-id creation, quoted printable text and AUTH PLAIN
+	mechanism (all optional).
+	* doc/src/ns_sendmail.man:
+	* doc/src/README.doc:
+	* doc/man/ns_sendmail.n:
+	* doc/html/ns_sendmail.html: Doctools documentation file for new
+	ns_sendmail functionality as well as examples created with dtplite
+
 2006-01-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/file.tcl: Changes to use new cache API

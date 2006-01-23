@@ -1,0 +1,22 @@
+
+$Id$
+
+This directory holds NaviServer documentation sources in doctools format.
+
+Use 'dtplite' (part of tcllib) to create various target formats like
+nroff or HTML.
+
+
+Creation of documentation will be automated and eventually become part of 
+the build process.
+
+
+Examples:
+
+% dtplite -o - nroff ns_sendmail.man >ns_sendmail.n
+% dtplite -o - html  ns_sendmail.man >ns_sendmail.html
+
+Man supports also compressed pages:
+% dtplite -o - nroff ns_sendmail.man | gzip >ns_sendmail.n.gz
+
+% man -l ns_sendmail.n.gz
