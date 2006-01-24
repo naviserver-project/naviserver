@@ -108,27 +108,30 @@ static int
 SockProc(Ns_DriverCmd cmd, Ns_Sock *sock, struct iovec *bufs, int nbufs)
 {
     int n;
+    Ns_Time timeout = {0,0};
 
     switch (cmd) {
     case DriverRecv:
-	n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, sock->driver->recvwait);
-	break;
-
+        timeout.sec = sock->driver->recvwait;
+        n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, &timeout);
+        break;
     case DriverSend:
-	n = Ns_SockSendBufs(sock->sock, bufs, nbufs, sock->driver->sendwait);
-	break;
-
+        timeout.sec = sock->driver->sendwait;
+        n = Ns_SockSendBufs(sock->sock, bufs, nbufs, &timeout);
+        break;
+        
     case DriverKeep:
     case DriverClose:
-	/* NB: Nothing to do. */
-	n = 0;
-	break;
-
+        /* NB: Nothing to do. */
+        n = 0;
+        break;
+        
     default:
-	/* Unsupported command. */
-	n = -1;
-	break;
+        /* Unsupported command. */
+        n = -1;
+        break;
     }
+
     return n;
 }
 

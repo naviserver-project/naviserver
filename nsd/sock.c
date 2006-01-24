@@ -92,28 +92,28 @@ SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
 }
 
 int
-Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout)
+Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 {
     int n;
 
     n = SockRecv(sock, bufs, nbufs);
     if (n < 0
         && ns_sockerrno == EWOULDBLOCK
-        && Ns_SockWait(sock, NS_SOCK_READ, timeout) == NS_OK) {
+        && Ns_SockTimedWait(sock, NS_SOCK_READ, timeoutPtr) == NS_OK) {
         n = SockRecv(sock, bufs, nbufs);
     }
     return n;
 }
 
 int
-Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout)
+Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 {
     int n;
 
     n = SockSend(sock, bufs, nbufs);
     if (n < 0
         && ns_sockerrno == EWOULDBLOCK
-        && Ns_SockWait(sock, NS_SOCK_WRITE, timeout) == NS_OK) {
+        && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
         n = SockSend(sock, bufs, nbufs);
     }
     return n;
@@ -137,14 +137,14 @@ Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout)
  */
 
 int
-Ns_SockRecv(SOCKET sock, void *buf, size_t toread, int timeout)
+Ns_SockRecv(SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
 {
     int		nread;
 
     nread = recv(sock, buf, toread, 0);
     if (nread == -1
 	&& ns_sockerrno == EWOULDBLOCK
-	&& Ns_SockWait(sock, NS_SOCK_READ, timeout) == NS_OK) {
+	&& Ns_SockTimedWait(sock, NS_SOCK_READ, timePtr) == NS_OK) {
 	nread = recv(sock, buf, toread, 0);
     }
     return nread;
@@ -169,14 +169,14 @@ Ns_SockRecv(SOCKET sock, void *buf, size_t toread, int timeout)
  */
 
 int
-Ns_SockSend(SOCKET sock, void *buf, size_t towrite, int timeout)
+Ns_SockSend(SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
 {
     int nwrote;
 
     nwrote = send(sock, buf, towrite, 0);
     if (nwrote == -1
     	&& ns_sockerrno == EWOULDBLOCK
-	&& Ns_SockWait(sock, NS_SOCK_WRITE, timeout) == NS_OK) {
+	&& Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
     	nwrote = send(sock, buf, towrite, 0);
     }
     return nwrote;
@@ -186,7 +186,7 @@ Ns_SockSend(SOCKET sock, void *buf, size_t towrite, int timeout)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockWait --
+ * Ns_SockTimedWait --
  *
  *	Wait for I/O.
  *
@@ -200,37 +200,35 @@ Ns_SockSend(SOCKET sock, void *buf, size_t towrite, int timeout)
  */
 
 int
-Ns_SockWait(SOCKET sock, int what, int timeout)
+Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr)
 {
+    int n, msec = timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000;
     struct pollfd pfd;
-    int n;
 
-    if (timeout < 0) {
-    	return NS_TIMEOUT;
-    }
-    timeout *= 1000;
     pfd.fd = sock;
+
     switch (what) {
     case NS_SOCK_READ:
-	pfd.events = POLLIN;
-	break;
+        pfd.events = POLLIN;
+        break;
     case NS_SOCK_WRITE:
-	pfd.events = POLLOUT;
-	break;
+        pfd.events = POLLOUT;
+        break;
     case NS_SOCK_EXCEPTION:
-	pfd.events = POLLPRI;
-	break;
+        pfd.events = POLLPRI;
+        break;
     default:
-	return NS_ERROR;
-	break;
+        return NS_ERROR;
+        break;
     }
     pfd.revents = 0;
     do {
-	n = poll(&pfd, 1, timeout);
+        n = poll(&pfd, 1, msec);
     } while (n < 0 && errno == EINTR);
     if (n > 0) {
-	return NS_OK;
+        return NS_OK;
     }
+
     return NS_TIMEOUT;
 }
 
@@ -410,13 +408,14 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  */
 
 SOCKET
-Ns_SockTimedConnect(char *host, int port, int timeout)
+Ns_SockTimedConnect(char *host, int port, Ns_Time *timePtr)
 {
-    return Ns_SockTimedConnect2(host, port, NULL, 0, timeout);
+    return Ns_SockTimedConnect2(host, port, NULL, 0, timePtr);
 }
 
 SOCKET
-Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, int timeout)
+Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, 
+                     Ns_Time *timePtr)
 {
     SOCKET         sock;
     int            err;
@@ -430,7 +429,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, int timeout)
     sock = SockConnect(host, port, lhost, lport, 1);
     if (sock != INVALID_SOCKET) {
         len = sizeof(err);
-        if (Ns_SockWait(sock, NS_SOCK_WRITE, timeout) == NS_OK
+        if (Ns_SockTimedWait(sock, NS_SOCK_WRITE, timePtr) == NS_OK
             && getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *) &err, &len) == 0
             && err == 0) {
             return sock;

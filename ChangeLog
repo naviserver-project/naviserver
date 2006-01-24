@@ -1,3 +1,15 @@
+2006-01-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	ATTENTION: C-compatibility affected.
+
+	* include/ns.h
+	* nsd/sock.c:
+	* nsd/tcljob.c:
+	* nsd/tclsock.c:
+	* nsd/nssock.c: Implemented RFE #1413620. Changed
+	all C-API calls accepting an integer timeout in
+	seconds/msecs to allow Ns_Time struct ptr instead.
+
 2006-01-23  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* m4/tcl.m4: Fixed bug with extra single quote for

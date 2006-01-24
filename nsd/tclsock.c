@@ -376,13 +376,14 @@ NsTclSockOpenObjCmd(
 )
 {
     SOCKET sock;
+    Ns_Time timeout;
     char *host, *lhost = NULL, *opt, *val;
-    int lport = 0, port, first, async = 0, timeout = -1;
+    int lport = 0, port, first, async = 0, msec = -1;
 
     if (objc < 3 || objc > 9) {
       syntax:
         Tcl_WrongNumArgs(interp, 1, objv,
-                "?(-nonblock | -async) | -timeout seconds? "
+                "?(-nonblock | -async) | -timeout timeout? "
                 "?-localhost host? ?-localport port? host port");
         return TCL_ERROR;
     }
@@ -391,7 +392,7 @@ NsTclSockOpenObjCmd(
      * Parse optional arguments.  Note that either the:
      *     -nonblock | -async
      * or
-     *     -timeout seconds
+     *     -timeout seconds?:microseconds?
      * combinations are accepted.
      */
 
@@ -401,7 +402,7 @@ NsTclSockOpenObjCmd(
             break; /* End of options */
         }
         if (STREQ(opt, "-nonblock") || STREQ(opt, "-async")) {
-            if (timeout >= 0) {
+            if (msec >= 0) {
                 goto syntax;
             }
             async = 1;
@@ -419,9 +420,10 @@ NsTclSockOpenObjCmd(
             if (++first >= objc || async) {
                 goto syntax;
             }
-            if (Tcl_GetIntFromObj(interp, objv[first], &timeout) != TCL_OK) {
+            if (Ns_TclGetTimeFromObj(interp, objv[first], &timeout) != TCL_OK) {
                 return TCL_ERROR;
             }
+            msec = timeout.sec * 1000 + timeout.usec / 1000;
         } else if (STREQ(opt, "-localport")) {
             if (++first >= objc) {
                 goto syntax;
@@ -476,10 +478,10 @@ NsTclSockOpenObjCmd(
 
     if (async) {
         sock = Ns_SockAsyncConnect2(host, port, lhost, lport);
-    } else if (timeout < 0) {
+    } else if (msec < 0) {
         sock = Ns_SockConnect2(host, port, lhost, lport);
     } else {
-        sock = Ns_SockTimedConnect2(host, port, lhost, lport, timeout);
+        sock = Ns_SockTimedConnect2(host, port, lhost, lport, &timeout);
     }
 
     if (sock == INVALID_SOCKET) {
@@ -526,7 +528,8 @@ NsTclSelectObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 
     status = TCL_ERROR;
     if (objc != 6 && objc != 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?-timeout sec? rfds wfds efds");
+    badargs:
+        Tcl_WrongNumArgs(interp, 1, objv, "?-timeout timeout? rfds wfds efds");
         return TCL_ERROR;
     }
     if (objc == 4) {
@@ -535,8 +538,7 @@ NsTclSelectObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     } else {
         tvPtr = &tv;
         if (strcmp(Tcl_GetString(objv[1]), "-timeout") != 0) {
-        	Tcl_WrongNumArgs(interp, 1, objv, "?-timeout sec? rfds wfds efds");
-	    	return TCL_ERROR;
+        	goto badargs;
         }
         if (Ns_TclGetTimeFromObj(interp, objv[2], &timeout) != TCL_OK) {
             return TCL_ERROR;

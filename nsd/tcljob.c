@@ -564,7 +564,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             argIndex = 2;
             if ((objc != 4) && (objc != 6)) {
                 Tcl_WrongNumArgs(interp, 2, objv,
-                                 "?-timeout seconds:microseconds? queueId jobId");
+                                 "?-timeout timeout? queueId jobId");
                 return TCL_ERROR;
             }
             if (objc > 4) {
@@ -726,8 +726,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             argIndex = 2;
             if ((objc != 3) && (objc != 5)) {
-                Tcl_WrongNumArgs(interp, 2, objv,
-                                 "?-timeout seconds:microseconds? queueId");
+                Tcl_WrongNumArgs(interp, 2, objv, "?-timeout timeout? queueId");
                 return TCL_ERROR;
             }       
             if (objc > 3) {

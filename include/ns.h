@@ -477,8 +477,8 @@ typedef struct Ns_Driver {
     char    *location;      /* Location, e.g, "http://foo:9090" */
     char    *address;       /* Address in location, e.g. "foo" */
     char    *protocol;      /* Protocol in location, e.g, "http" */
-    int      sendwait;      /* send() I/O timeout. */
-    int      recvwait;      /* recv() I/O timeout. */
+    int      sendwait;      /* send() I/O timeout in seconds */
+    int      recvwait;      /* recv() I/O timeout in seconds */
     int      bufsize;       /* Conn bufsize (0 for SSL) */
     int      sndbuf;        /* setsockopt() SNDBUF option. */
     int      rcvbuf;        /* setsockopt() RCVBUF option. */
@@ -1659,12 +1659,15 @@ NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int opti
  * sock.c:
  */
 
-NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, int timeout);
-NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, int timeout);
-NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
-
-NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout);
-NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, int timeout);
+NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
+NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, 
+                          Ns_Time *timeoutPtr);
+NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, 
+                          Ns_Time *timeoutPtr);
+NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
+                              Ns_Time *timeoutPtr);
+NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, 
+                              Ns_Time *timeoutPtr);
 
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
 NS_EXTERN SOCKET Ns_SockBind(struct sockaddr_in *psa);
@@ -1675,8 +1678,9 @@ NS_EXTERN SOCKET Ns_SockConnect(char *host, int port);
 NS_EXTERN SOCKET Ns_SockConnect2(char *host, int port, char *lhost, int lport);
 NS_EXTERN SOCKET Ns_SockAsyncConnect(char *host, int port);
 NS_EXTERN SOCKET Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport);
-NS_EXTERN SOCKET Ns_SockTimedConnect(char *host, int port, int timeout);
-NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, int timeout);
+NS_EXTERN SOCKET Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr);
+NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, 
+                                      Ns_Time *timeoutPtr);
 
 NS_EXTERN int Ns_SockSetNonBlocking(SOCKET sock);
 NS_EXTERN int Ns_SockSetBlocking(SOCKET sock);
