@@ -1,5 +1,8 @@
 2006-01-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
+	* nsd/urlspace.c (JunctionFind): fixed typo in which caused
+	code to fail to compile with a standard C compiler.
+
 	ATTENTION: C-compatibility affected.
 
 	* include/ns.h
