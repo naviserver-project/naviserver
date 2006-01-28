@@ -340,7 +340,7 @@ ns_param  	spoolerthreads 		1
 # Number of writer threads
 ns_param  	writerthreads  		0
 
-# Number of writer threads
+# Min return file size when to use writer
 ns_param  	writersize     		1048576
 
 # Timed-out waiting for complete request.
