@@ -1,6 +1,10 @@
-=================
-NaviServer 4.99.1
-=================
+======================================
+NaviServer 4.99.1, released 2006-01-02
+======================================
+
+This is just a part of numerous additions, improvements and
+fixes since 4.99.0 release. For the complete set, please consult
+the ChangeLog file.
 
 New Features:
 
@@ -8,12 +12,35 @@ New Features:
     * Full Chunked encoding support for Fastpath, Adp and Tcl scripts
     * Using temporary files for large uploads when content exceeds 
       pre-configured maxsize parameter
+    * New spooler thread for handling large file uploads
+    * New [ns_upload_stats] command to gather upload statistics
+    * New spooler thread for handling large file uploads
+    * Added ns_conn responseversion to manually set response protocol
+      and version to have full control about returned HTTP format
+    * Add C-level support for TclVFS (all IO on files done with Tcl wrappers)
+    * Add new command [ns_atprestartup].
+    * Add new command [ns_runonce] which ensures that the given script is
+      run only once, either globally or per virtual server, during the 
+      lifetime of the server process.
+    * New autogen/TEA3 compatible configuration
+    * Add new command [ns_logctl severity]
+    * Added many new test (this is an evolving effort)
+    * Added support of binder as a separate process
+    * Added [ns_info started] and [ns_info shutdownpending] commands
+    * Add new Tcl command [ns_register_fastpath]
+    * Added Tcl interface to C-level cache routines.
+    * Added first traces of documentation based on Tcl doctools
 
 Code Changes:
 
     * New function Ns_ConnPrintfHeaders() for adding NTTP headers in
       printf style
-
+    * Allocate interps efficiently, max 1 per-thread per-server
+    * Add Ns_TclLogErrorInfo and allow admin to configure which 
+      conenction headers to log for Tcl errors
+    * Remove [ns_markfordelete] command and roll into ns_ictl as
+      [ns_ictl markfordelete]
+    * Make Tcl send panic messages to the server log.
 
 ======================================
 NaviServer 4.99.0, released 2005-07-05
