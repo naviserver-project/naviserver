@@ -101,7 +101,7 @@ distclean: clean
 	include/{Makefile.global,Makefile.module,nsconfig.h,nsconfig.h.in,stamp-h1} \
 	naviserver-$(NS_PATCH_LEVEL).tar.gz
 
-dist:
+dist: clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
