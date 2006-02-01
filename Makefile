@@ -106,6 +106,7 @@ dist:
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{nsconfig.h,Makefile.global,Makefile.module,stamp-h1}
+	find naviserver-$(NS_PATCH_LEVEL) \( -name CVS -o -name ".#*" -o -name "*~" -o -name "#*#" \) -depth -exec $(RM) {} \;
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
