@@ -30,6 +30,7 @@ New Features:
     * Add new Tcl command [ns_register_fastpath]
     * Added Tcl interface to C-level cache routines.
     * Added first traces of documentation based on Tcl doctools
+    * New simplified deployment directory structure
 
 Code Changes:
 
