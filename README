@@ -57,8 +57,8 @@ be easy.  To compile and install:
 	(e.g., /usr/local/ns) or in some other location.
 	The following should work:
 
-	% gunzip < tcl8.4.0-src.tar.gz | tar xvf -
-	% cd tcl8.4.0/unix
+	% gunzip < tcl8.4.12-src.tar.gz | tar xvf -
+	% cd tcl8.4.12/unix
 	% ./configure --prefix=/usr/local/ns --enable-threads
 	% make install
 	
@@ -70,8 +70,8 @@ be easy.  To compile and install:
 3c.     Download, configure, build, and install.
 	The following should work:
 
-	% gunzip < naviserver-4.99.0.tar.gz | tar xvf -
-	% cd naviserver-4.99.0
+	% gunzip < naviserver-4.99.1.tar.gz | tar xvf -
+	% cd naviserver-4.99.1
 	% ./configure 
 	% make install
 
@@ -82,7 +82,7 @@ be easy.  To compile and install:
 		Path to library installation directory of Tcl where
 		configure can find the tclConfig.sh script.  Without
 		this option, configure will search around for
-		tclConfig.sh, perhaps finding it in ../tcl8.4.0/unix.
+		tclConfig.sh, perhaps finding it in ../tcl8.4.12/unix.
 
 	--enable-symbols
 

@@ -1,3 +1,14 @@
+2006-02-01  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* include/Makefile.global.in: CP uses -pR options as
+	those are supported on all platforms we currently 
+	compile on (Solaris, Linux, Mac OSX).
+
+	* Makefile: added find expression to purge junk files
+	before making the distribution tarball.
+
+	* README: Reflect 4.99.1 and 8.4.12 Tcl. 
+
 2006-01-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/urlspace.c (JunctionFind): fixed typo in which caused
