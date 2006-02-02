@@ -1,3 +1,8 @@
+2006-02-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsthread/nsthreadtest.c: malloc testing uses random
+	block sizes of up to 16K to better simulate real-world.
+
 2006-02-02  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* README: synced Tcl and NaviServer ./configure arguments

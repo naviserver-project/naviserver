@@ -225,10 +225,11 @@ AtExit(void)
 /*
  * MemThread, MemTime -
  *
- *	Time allocations of malloc and zippy ns_malloc.
+ *	Time allocations of malloc and MT-optmized ns_malloc
  */
 
 #define NA 10000
+#define BS 1024*16
 
 int             nthreads = 10;
 int             memstart;
@@ -237,7 +238,7 @@ int             nrunning;
 void
 MemThread(void *arg)
 {
-    int             i;
+    int             i,n;
     void           *ptr;
 
     Ns_MutexLock(&lock);
@@ -250,14 +251,15 @@ MemThread(void *arg)
 
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
+	n = random() % BS;
 	if (arg) {
 	    if (ptr)
 		ns_free(ptr);
-	    ptr = ns_malloc(10);
+	    ptr = ns_malloc(n);
 	} else {
 	    if (ptr)
 		free(ptr);
-	    ptr = malloc(10);
+	    ptr = malloc(n);
 	}
     }
 }
@@ -276,7 +278,6 @@ MemTime(int ns)
     Ns_MutexUnlock(&lock);
     printf("starting %d %smalloc threads...", nthreads, ns ? "ns_" : "");
     fflush(stdout);
-    Ns_GetTime(&start);
     for (i = 0; i < nthreads; ++i) {
 	Ns_ThreadCreate(MemThread, (void *) ns, 0, &tids[i]);
     }
@@ -288,6 +289,7 @@ MemTime(int ns)
     fflush(stdout);
     memstart = 1;
     Ns_CondBroadcast(&cond);
+    Ns_GetTime(&start);
     Ns_MutexUnlock(&lock);
     for (i = 0; i < nthreads; ++i) {
 	Ns_ThreadJoin(&tids[i], NULL);
