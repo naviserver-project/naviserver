@@ -72,7 +72,7 @@ be easy.  To compile and install:
 
 	% gunzip < naviserver-4.99.1.tar.gz | tar xvf -
 	% cd naviserver-4.99.1
-	% ./configure 
+	% ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib
 	% make install
 
 	The server's configure script takes the following options:
@@ -101,7 +101,11 @@ be easy.  To compile and install:
         your Purify executable along with any options you desire, e.g.,
 
         make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
- 
+
+
+        If you checked out the source directly from CVS on SourceForge
+        replace "./configure" in the example above with "./autogen.sh"
+        to get initial makefiles created.
 
 3d.     Create and edit a config file, nsd.tcl by convention.
 	A sample is provided to get started:

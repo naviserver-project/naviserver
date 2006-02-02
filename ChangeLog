@@ -1,3 +1,8 @@
+2006-02-02  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* README: synced Tcl and NaviServer ./configure arguments
+	in compile example. Added note for use of autogen.sh.
+
 2006-02-01  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/Makefile.global.in: CP uses -pR options as
