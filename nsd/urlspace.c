@@ -1373,6 +1373,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
     int   i, n;
     void *data;
     int   depth;
+    int   doit;
 
     n = 0;
 
