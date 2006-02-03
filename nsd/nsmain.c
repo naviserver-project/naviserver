@@ -71,6 +71,7 @@ static int  WaitForServer();
 
 static void UsageError(char *msg, ...);
 static void StatusMsg(int state);
+static void LogTclVersion(void);
 
 static char *FindConfig(char *config);
 static char *SetCwd(char *homedir);
@@ -93,15 +94,15 @@ static int watchdogExit = 0; /* Watchdog loop toggle */
  *
  * Ns_Main --
  *
- *  The NaviServer startup routine called from main().  Startup is
- *  somewhat complicated to ensure certain things happen in the
- *  correct order.
+ *      The NaviServer startup routine called from main(). Startup is
+ *      somewhat complicated to ensure certain things happen in the
+ *      correct order.
  *
  * Results:
- *  Returns 0 to main() on final exit.
+ *      Returns 0 to main() on final exit.
  *
  * Side effects:
- *  Many - read comments below.
+ *      Many - read comments below.
  *
  *----------------------------------------------------------------------
  */
@@ -319,6 +320,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     Tcl_FindExecutable(argv[0]);
+    LogTclVersion();
     nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
 
     /*
@@ -471,8 +473,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
     
     Tcl_FindExecutable(argv[0]);
+    LogTclVersion();
     nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
-    
+
     /*
      * Locate and read the configuration file for later evaluation.
      */
@@ -834,14 +837,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
  *
  * Ns_WaitForStartup --
  *
- *  Blocks thread until the server has completed loading modules, 
- *  sourcing Tcl, and is ready to begin normal operation. 
+ *      Blocks thread until the server has completed loading modules, 
+ *      sourcing Tcl, and is ready to begin normal operation. 
  *
  * Results:
- *  NS_OK/NS_ERROR 
+ *      NS_OK 
  *
  * Side effects:
- *  None. 
+ *      None. 
  *
  *----------------------------------------------------------------------
  */
@@ -871,13 +874,13 @@ Ns_WaitForStartup(void)
  *
  * Ns_StopSerrver --
  *
- *  Shutdown a server.
+ *      Shutdown a server.
  *
  * Results:
- *  None.
+ *      None.
  *
  * Side effects:
- *  Server will begin shutdown process. 
+ *      Server will begin shutdown process. 
  *
  *----------------------------------------------------------------------
  */
@@ -947,14 +950,14 @@ NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
  *
  * StatusMsg --
  *
- *  Print a status message to the log file.  Initial messages log
- *  security status to ensure setuid()/setgid() works as expected.
+ *      Print a status message to the log file.  Initial messages log
+ *      security status to ensure setuid()/setgid() works as expected.
  *
  * Results:
- *  None.
+ *      None.
  *
  * Side effects:
- *  None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -995,15 +998,43 @@ StatusMsg(int state)
 /*
  *----------------------------------------------------------------------
  *
- * UsageError --
+ * LogTclVersion --
  *
- *  Print a command line usage error message and exit.
+ *      Emit Tcl library version to server log.
  *
  * Results:
- *  None.
+ *      None.
  *
  * Side effects:
- *  Server exits.
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+LogTclVersion(void)
+{
+    int major, minor, patch;
+
+    Tcl_GetVersion(&major, &minor, &patch, NULL);
+    Ns_Log(Notice, "nsmain: Tcl version: %d.%d.%d", major, minor, patch);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UsageError --
+ *
+ *      Print a command line usage error message and exit.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Server exits.
  *
  *----------------------------------------------------------------------
  */

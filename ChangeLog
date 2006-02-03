@@ -2,6 +2,8 @@
 
 	* sample-config.tcl.in: new file
 	* sample-congig.tcl: removed
+	* nsd/nsmain.c: added LogTclVersion to log the version
+	of the currently used Tcl library on server startup.
 
 2006-02-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
