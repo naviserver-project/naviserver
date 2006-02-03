@@ -73,6 +73,10 @@ NsCreatePidFile(char *procname)
     if (chan == NULL) {
     	Ns_Log(Error, "pidfile: failed to open pid file '%s': '%s'",
                file, strerror(Tcl_GetErrno()));
+    } else if (Tcl_SetChannelOption(NULL, chan, "-translation", "binary")
+               != TCL_OK) {
+    	Ns_Log(Error, "pidfile: failed to set channel option '%s': '%s'",
+               file, strerror(Tcl_GetErrno()));
     } else {
         sprintf(buf, "%d\n", nsconf.pid);
         towrite = strlen(buf);
