@@ -1,3 +1,7 @@
+2006-02-03  Vlad Seryakov <seryakov@users.sourceforge.net>
+
+	* include/Makefile.module.in: Added clean-bak target
+
 2006-02-03  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* sample-config.tcl.in: new file
