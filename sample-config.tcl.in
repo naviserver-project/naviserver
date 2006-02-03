@@ -48,11 +48,12 @@
 # Set some Tcl variables that are commonly used throughout this file.
 #
 
+# Absolute path to the installation directory
+set homedir	@NAVISERVER@
+
+# Name/description of the virtual server
 set servername	"server1"
 set serverdesc	"Server Name"
-
-# Absolute path to installation directory
-set homedir	/usr/local/ns
 
 # The hostname, address and port for nssock should be set to actual values.
 set hostname	[ns_info hostname]

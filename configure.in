@@ -263,8 +263,4 @@ else
     AC_MSG_RESULT(no)
 fi
 
-#
-# Create Makefiles.
-#
-
-AC_OUTPUT(include/Makefile.global include/Makefile.module)
+AC_OUTPUT(include/Makefile.global include/Makefile.module sample-config.tcl)
