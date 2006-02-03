@@ -274,7 +274,11 @@ Ns_ThreadSetName(char *name,...)
 
     Ns_MasterLock();
     va_start(ap, name);
+#ifndef _WIN32
     vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
+#else
+    _vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
+#endif
     va_end(ap);
     Ns_MasterUnlock();
 }
