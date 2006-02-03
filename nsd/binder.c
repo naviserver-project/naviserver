@@ -84,6 +84,7 @@ static void Binder(void);
 
 NS_RCSID("@(#) $Header$");
 
+#ifndef _WIN32
 
 /*
  *----------------------------------------------------------------------
@@ -142,7 +143,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
 
     return (SOCKET)sock;
 }
-
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -364,9 +365,9 @@ SOCKET
 Ns_SockBindUnix(char *path)
 {
     int                sock = -1;
+#ifndef _WIN32    
     struct sockaddr_un addr;
 
-#ifndef _WIN32    
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path,path, sizeof(addr.sun_path) - 1);
@@ -774,8 +775,9 @@ SOCKET
 Ns_SockBinderListen(int type, char *address, int port, int options)
 {
     int           err;
-    SOCKET        sock;
+    SOCKET        sock = -1;
     char          data[64];
+#ifndef WIN32
     struct msghdr msg;
     struct iovec  iov[4];
 
@@ -850,7 +852,7 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
         Ns_Log(Error, "Ns_SockBinderListen: listen(%s,%d) failed: '%s'",
                address, port, ns_sockstrerror(ns_sockerrno));
     }
-
+#endif /* _WIN32 */
     return sock;
 }
 
@@ -877,7 +879,7 @@ void
 NsForkBinder(void)
 {
     int pid, status;
-
+#ifndef _WIN32
     /*
      * Create two socket pipes, one for sending the request and one
      * for receiving the response.
@@ -916,6 +918,7 @@ NsForkBinder(void)
         Ns_Fatal("NsForkBinder: process %d exited with non-zero status: %d",
                  pid, status);
     }
+#endif /* _WIN32 */
     binderRunning = 1;
 }
 
@@ -972,6 +975,7 @@ Binder(void)
 {
     int           options, type, port, n, err, fd;
     char          address[64];
+#ifndef _WIN32
     struct msghdr msg;
     struct iovec  iov[4];
 
@@ -1069,5 +1073,6 @@ Binder(void)
             close(fd);
         }
     }
+#endif /* _WIN32 */
     Ns_Log(Notice, "binder: stopped");
 }
