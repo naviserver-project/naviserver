@@ -1,11 +1,14 @@
 2006-02-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
+	* configure.in: bumped working version to 4.99.2
+
 	* TAG naviserver-4.99.1-release.
 
 2006-02-03  Vlad Seryakov <seryakov@users.sourceforge.net>
 
 	* include/Makefile.module.in: Added clean-bak target
 
+2006-02-03  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* sample-config.tcl.in: new file
 	* sample-congig.tcl: removed
