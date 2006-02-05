@@ -1,5 +1,22 @@
 2006-02-05  Stephen Deasey <sdeasey@users.sf.net>
 
+	* Makefile:
+	* configure.in:
+	* include/config.h.in:
+	* include/nsconfig.h.in:
+	* include/ns.h:
+	* include/nsthread.h:
+	* nsthread/thread.h:
+	* include/.cvsignore: Autoconf config defs now saved in private
+	config.h which is not installed so we don't pollute the namespace
+	of modules.  Version info now substituted into nsversion.h.
+	* nsd/compress.c:
+	* nsd/main.c:
+	* nsd/nsd.h:
+	* nsd/tclcallbacks.c:
+	* nsd/tclobjv.c: Include the private nsd.h header to pick up
+	config definitions.
+
 	* tests/ns_info.test: Fix test for ns_info pools when Tcl is
 	built with --enable-symbols.  Fix test for ns_info builddate for
 	night owls.

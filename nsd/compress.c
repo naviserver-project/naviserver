@@ -33,7 +33,7 @@
  * Support for simple gzip compression using Zlib.
  */
 
-#include "ns.h"
+#include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
 

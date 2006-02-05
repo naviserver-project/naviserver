@@ -1,4 +1,4 @@
 Makefile.global
 Makefile.module
-nsconfig.h
+config.h
 stamp-h1

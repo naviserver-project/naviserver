@@ -38,15 +38,9 @@
 #ifndef NS_H
 #define NS_H
 
-#define NS_ALPHA_RELEASE 0
-#define NS_BETA_RELEASE  1
-#define NS_FINAL_RELEASE 2
-
+#include "nsversion.h"
 #include "nsthread.h"
 
-#define NS_VERSION_NUM (NS_MAJOR_VERSION * 10000 \
-                       + NS_MINOR_VERSION * 100 \
-                       + NS_RELEASE_SERIAL)
 
 #ifdef NSD_EXPORTS
 # undef NS_EXTERN

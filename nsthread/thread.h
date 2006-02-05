@@ -38,6 +38,7 @@
 #ifndef THREAD_H
 #define THREAD_H
 
+#include "config.h"
 #include "nsthread.h"
 
 extern void   NsthreadsInit(void);
