@@ -30,9 +30,7 @@ test ns_info-2.3.1 {basic operation} -body {
 
 test ns_info-2.4.1 {basic operation builddate: positive if builddate = day of test} -body {
      foreach {month day year blub time} [split [ns_info builddate]] {break}
-     set _todaybuilt [clock format [clock scan "$month $day $year"] -format "%d"]
-     set _todaydate [clock format [clock scan "today"] -format "%d"]
-     expr {$_todaybuilt == $_todaydate}
+    regexp {[0-9]{10}} [clock scan "$month $day $year"] match
 } -result 1
 
 test ns_info-2.5.1 {basic operation} -body {
@@ -94,7 +92,8 @@ test ns_info-2.18.1 {basic operation} -body {
 } -result 1
 
 test ns_info-2.19.1 {basic operation} -body {
-     expr {[llength [ns_info pools]]<=0}
+    expr {[llength [ns_info pools]] == 0 \
+              || [string match thread* [lindex [ns_info pools] 0 0]]}
 } -result 1
 
 test ns_info-2.20.1 {basic operation} -body {

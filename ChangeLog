@@ -1,3 +1,9 @@
+2006-02-05  Stephen Deasey <sdeasey@users.sf.net>
+
+	* tests/ns_info.test: Fix test for ns_info pools when Tcl is
+	built with --enable-symbols.  Fix test for ns_info builddate for
+	night owls.
+
 2006-02-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* configure.in: bumped working version to 4.99.2
