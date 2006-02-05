@@ -1,5 +1,7 @@
 2006-02-05  Stephen Deasey <sdeasey@users.sf.net>
 
+	* naviserver.rdf: Update version info in DOAP project description.
+
 	* configure.in: Emit a warning if zlib compression support is
 	requested (default) but the zlib.h header or the compress2
 	function can not be found.
