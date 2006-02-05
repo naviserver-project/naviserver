@@ -1,5 +1,9 @@
 2006-02-05  Stephen Deasey <sdeasey@users.sf.net>
 
+	* configure.in: Emit a warning if zlib compression support is
+	requested (default) but the zlib.h header or the compress2
+	function can not be found.
+
 	* Makefile:
 	* configure.in:
 	* include/config.h.in:
