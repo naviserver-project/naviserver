@@ -1424,11 +1424,9 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0; i < l; i++) {
-        int doit;
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     for (i = (l - 1); i >= 0; i--) {
-        int doit;
         channelPtr = Ns_IndexEl(&juncPtr->byname, i);
 #endif
         if (fast) {

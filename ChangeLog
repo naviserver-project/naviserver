@@ -1,5 +1,9 @@
 2006-02-05  Stephen Deasey <sdeasey@users.sf.net>
 
+	* nsd/urlspace.c: Remove 'doit' variables with local scope to
+	prevent warning about unused variable with same name in function
+	scope.
+
 	* naviserver.rdf: Update version info in DOAP project description.
 
 	* configure.in: Emit a warning if zlib compression support is
