@@ -1,4 +1,17 @@
 ======================================
+NaviServer 4.99.2, released XXXX-XX-XX
+======================================
+
+New Features:
+
+    * Added Tcl-trace based interpreter initialization
+
+Code Changes:
+
+Bug Fixes:
+
+
+======================================
 NaviServer 4.99.1, released 2006-01-02
 ======================================
 

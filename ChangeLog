@@ -1,3 +1,12 @@
+2006-02-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* tcl/ttrace.tcl: new file (implements RFE #1166553)
+	* nsd/init.tcl: added hooks to use trace-based interp inits
+	* sample-config.in: add setup for trace-based interp inits
+	(disabled per default)
+	* Makefile: include sample-config.tcl.in in "make dist"
+	* NEWS: added remarks about new trace interp inits
+
 2006-02-05  Stephen Deasey <sdeasey@users.sf.net>
 
 	* nsd/urlspace.c: Remove 'doit' variables with local scope to
