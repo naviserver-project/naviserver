@@ -38,6 +38,24 @@
 #
 
 #
+# Define "use_trace_inits" to true for using trace-based interp inits.
+#
+
+set section ns/server/[ns_info server]/ttrace
+set use_trace_inits [ns_config -bool $section enabletraces false]
+
+if {$use_trace_inits} {
+    set tracelib [file join [ns_library shared] ttrace.tcl]
+    if {![file exists $tracelib]} {
+        ns_log warning "Disabling trace interp inits (no trace lib found)"
+        set use_trace_inits 0
+    } else {
+        source $tracelib
+        ttrace::enable
+    }
+}
+
+#
 # ns_module --
 #
 #   Set or return information about
@@ -640,59 +658,110 @@ if {![string equal $modules ""]} {
     }
 }
 
+if {$use_trace_inits} {
 
-#
-# Source the top level Tcl libraries.
-#
+    #
+    # Here, the much sexier ns_evil :-)
+    # Shouldn't be evil any more!
+    #
 
-#
-# Temporarily intercept renames.
-#
-rename rename _rename
-_rename _ns_tclrename rename
+    proc ns_eval {cmd args} {
+        if {$cmd == "-sync" || $cmd == "-pending"} {
+            # ? Do we need this anymore ?
+            set cmd  [lindex $args 0]
+            set args [lrange $args 1 end]
+        }
+        ttrace::enable
+        set code [catch {eval $cmd $args} result]
+        ttrace::disable
+        if {$code} {
+            ns_markfordelete
+        } else {
+            ns_ictl save [ttrace::getscript]
+        }
+        return -code $code $result
+    }
 
-_ns_sourcefiles [ns_library shared] [ns_library private]
+    #
+    # Source the Tcl libraries and modules
+    #
 
-#
-# Source the module-specific Tcl libraries.
-#
+    _ns_sourcefiles [ns_library shared] [ns_library private]
+    foreach module [ns_ictl getmodules] {
+        _ns_sourcemodule $module
+    }
 
-foreach module [ns_ictl getmodules] {
-    _ns_sourcemodule $module
+    #
+    # Register procedures which need to be 
+    # pre-loaded and not lazy-resolved.
+    #
+
+    ttrace::preload ns_init
+    ttrace::preload ns_cleanup
+
+    #
+    # Disable tracing and generate compact
+    # sexy script for later interp inits.
+    #
+
+    ttrace::disable
+    ns_ictl save [ttrace::getscript]
+
+} else {
+
+    #
+    # Source the top level Tcl libraries.
+    #
+    
+    #
+    # Temporarily intercept renames.
+    #
+    rename rename _rename
+    _rename _ns_tclrename rename
+    
+    _ns_sourcefiles [ns_library shared] [ns_library private]
+    
+    #
+    # Source the module-specific Tcl libraries.
+    #
+    
+    foreach module [ns_ictl getmodules] {
+        _ns_sourcemodule $module
+    }
+    
+    #
+    # Revert to the standard rename defn
+    #
+    _rename rename _ns_tclrename
+    _rename _rename rename
+    
+    #
+    # Create a job queue for ns_eval processing
+    #  This queue must be a single-server queue; we don't
+    #  want to be processing multiple ns_eval requests
+    #  simultanously.
+    #
+    set srv [ns_info server]
+    ns_runonce {
+        ns_job create "ns_eval_q:$srv" 1
+    }
+    
+    #
+    # Save the current namespaces.
+    #
+    
+    rename _ns_sourcemodule {}
+    rename _ns_sourcefiles  {}
+    rename _ns_sourcefile   {}
+    
+    ns_cleanup
+    _ns_savenamespaces
+    
+    #
+    # Kill this interp to save memory.
+    #
+    
+    ns_ictl markfordelete
 }
-
-#
-# Revert to the standard rename defn
-#
-_rename rename _ns_tclrename
-_rename _rename rename
-
-#
-# Create a job queue for ns_eval processing
-#  This queue must be a single-server queue; we don't
-#  want to be processing multiple ns_eval requests
-#  simultanously.
-#
-set srv [ns_info server]
-ns_runonce {
-    ns_job create "ns_eval_q:$srv" 1
-}
-
-#
-# Save the current namespaces.
-#
-
-rename _ns_sourcemodule {}
-rename _ns_sourcefiles  {}
-rename _ns_sourcefile   {}
-
-ns_cleanup
-_ns_savenamespaces
-
-#
-# Kill this interp to save memory.
-#
-
-ns_ictl markfordelete
 
 # EOF $RCSfile$
