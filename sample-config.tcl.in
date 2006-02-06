@@ -74,6 +74,15 @@ set pageroot	pages
 set pagedir	$serverdir/$pageroot
 
 #
+# Set enabletraces to "true" to use Tcl-trace based interp initialization.
+# This cuts server memory footprint to about a third and speeds-up the
+# thread initializations.
+#
+
+ns_section ns/server/$servername/ttrace
+ns_param 	enabletraces		false
+
+#
 # Modules to load
 #
 
