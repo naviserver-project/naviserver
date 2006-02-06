@@ -100,7 +100,7 @@ clean:
 distclean: clean
 	$(RM) config.status config.log config.cache autom4te.cache aclocal.m4 configure \
 	include/{Makefile.global,Makefile.module,config.h,config.h.in,stamp-h1} \
-	naviserver-$(NS_PATCH_LEVEL).tar.gz
+	naviserver-$(NS_PATCH_LEVEL).tar.gz sample-config.tcl
 
 dist: clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
