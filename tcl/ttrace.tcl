@@ -55,416 +55,405 @@
 #
 #   o. [namespace forget] is still not implemented
 #   o. [namespace origin cmd] breaks if cmd is not already defined
-#
-#   I left this deliberately. I didn't want to override the 
-#   [namespace] command in order to avoid potential slowdown.
+#   o. [info procs] does not return list of all cached procedures
 #
 
-namespace eval ttrace {
+ns_runonce {
 
-    # Setup some compatibility wrappers
-    variable tvers 0
-    variable elock [ns_mutex create traceepochmutex]
+    namespace eval ttrace {
 
-    # Package variables
-    variable resolvers ""     ; # List of registered resolvers
-    variable tracers   ""     ; # List of registered cmd tracers
-    variable scripts   ""     ; # List of registered script makers
-    variable enables   ""     ; # List of trace-enable callbacks
-    variable disables  ""     ; # List of trace-disable callbacks
-    variable preloads  ""     ; # List of procedure names to preload
-    variable enabled   0      ; # True if trace is enabled
-    variable config           ; # Array with config options
-
-    variable epoch     -1     ; # The initialization epoch
-    variable cleancnt   0     ; # Counter of registered cleaners
-
-    # Package private namespaces
-    namespace eval resolve "" ; # Commands for resolving commands
-    namespace eval trace   "" ; # Commands registered for tracing
-    namespace eval enable  "" ; # Commands invoked at trace enable
-    namespace eval disable "" ; # Commands invoked at trace disable
-    namespace eval script  "" ; # Commands for generating scripts
-
-    # Exported commands
-    namespace export unknown
-
-    # Initialize ttrace shared state
-    if {[nsv_array exists ttrace] == 0} {
-        nsv_set ttrace lastepoch $epoch
-        nsv_set ttrace epochlist ""
-    }
-
-    # Initially, allow creation of epochs
-    set config(-doepochs) 1
-
-    proc eval {cmd args} {
-        set nmsp [::uplevel namespace current]
-        enable
-        set code [catch {namespace eval $nmsp ::uplevel [list $cmd $args]} result]
-        disable
-        if {$code == 0} {
-            ns_ictl save [getscript]
-        } else {
-            ns_ictl markfordelete
+        # Setup some compatibility wrappers
+        variable tvers 0
+        variable elock [ns_mutex create traceepochmutex]
+        
+        # Package variables
+        variable resolvers ""     ; # List of registered resolvers
+        variable tracers   ""     ; # List of registered cmd tracers
+        variable scripts   ""     ; # List of registered script makers
+        variable enables   ""     ; # List of trace-enable callbacks
+        variable disables  ""     ; # List of trace-disable callbacks
+        variable preloads  ""     ; # List of procedure names to preload
+        variable enabled   0      ; # True if trace is enabled
+        variable config           ; # Array with config options
+        
+        variable epoch     -1     ; # The initialization epoch
+        variable cleancnt   0     ; # Counter of registered cleaners
+        
+        # Package private namespaces
+        namespace eval resolve "" ; # Commands for resolving commands
+        namespace eval trace   "" ; # Commands registered for tracing
+        namespace eval enable  "" ; # Commands invoked at trace enable
+        namespace eval disable "" ; # Commands invoked at trace disable
+        namespace eval script  "" ; # Commands for generating scripts
+        
+        # Exported commands
+        namespace export unknown
+        
+        # Initialize ttrace shared state
+        if {[nsv_array exists ttrace] == 0} {
+            nsv_set ttrace lastepoch $epoch
+            nsv_set ttrace epochlist ""
         }
-        return -code $code $result
-    }
+        
+        # Allow creation of interp initialization epochs
+        set config(-doepochs) 1
 
-    proc config {args} {
-        variable config
-        if {[llength $args] == 0} {
-            array get config
-        } elseif {[llength $args] == 1} {
-            set opt [lindex $args 0]
-            set config($opt)
-        } else {
-            set opt [lindex $args 0]
-            set val [lindex $args 1]
-            set config($opt) $val
+        proc eval {cmd args} {
+            set nmsp [::uplevel namespace current]
+            enable
+            set code [catch {
+                namespace eval $nmsp ::uplevel [list $cmd $args]
+            } result]
+            disable
+            if {$code == 0} {
+                ns_ictl save [getscript]
+            } else {
+                ns_ictl markfordelete
+            }
+            return -code $code $result
         }
-    }
 
-    proc enable {} {
-        variable config
-        variable tracers
-        variable enables
-        variable enabled
-        incr enabled 1
-        if {$enabled > 1} {
-            return
-        }
-        if {$config(-doepochs) != 0} {
-            variable epoch [_newepoch]
-        }
-        set nsp [namespace current]
-        foreach enabler $enables {
-            enable::_$enabler
-        }
-        foreach trace $tracers {
-            if {[info commands $trace] != ""} {
-                trace add execution $trace leave ${nsp}::trace::_$trace
+        proc config {args} {
+            variable config
+            if {[llength $args] == 0} {
+                array get config
+            } elseif {[llength $args] == 1} {
+                set config([lindex $args 0])
+            } else {
+                set config([lindex $args 0]) [lindex $args 1]
             }
         }
-    }
 
-    proc disable {} {
-        variable enabled
-        variable tracers
-        variable disables
-        incr enabled -1
-        if {$enabled > 0} {
-            return
-        }
-        set nsp [namespace current]
-        foreach disabler $disables {
-            disable::_$disabler
-        }
-        foreach trace $tracers {
-            if {[info commands $trace] != ""} {
-                trace remove execution $trace leave ${nsp}::trace::_$trace
+        proc enable {} {
+            variable config
+            variable tracers
+            variable enables
+            variable enabled
+            incr enabled 1
+            if {$enabled > 1} {
+                return
+            }
+            if {$config(-doepochs) != 0} {
+                variable epoch [_newepoch]
+            }
+            set nsp [namespace current]
+            foreach enabler $enables {
+                enable::_$enabler
+            }
+            foreach trace $tracers {
+                if {[info commands $trace] != ""} {
+                    trace add execution $trace leave ${nsp}::trace::_$trace
+                }
             }
         }
-    }
 
-    proc isenabled {} {
-        variable enabled
-        expr {$enabled > 0}
-    }
-
-    proc update {{from -1}} {
-        if {$from == -1} { 
-            variable epoch [nsv_set ttrace lastepoch]
-        } else {
-            if {[lsearch [nsv_set ttrace epochlist] $from] == -1} {
-                error "no such epoch: $from"
+        proc disable {} {
+            variable enabled
+            variable tracers
+            variable disables
+            incr enabled -1
+            if {$enabled > 0} {
+                return
             }
-            variable epoch $from
-        }
-        uplevel [getscript]
-    } 
-
-    proc getscript {} {
-        variable preloads
-        variable epoch
-        variable scripts
-        append script [_serializensp] \n
-        append script "::namespace eval [namespace current] {" \n
-        append script "::namespace export unknown" \n
-        append script "_useepoch $epoch" \n
-        append script "}" \n
-        foreach cmd $preloads {
-            append script [_serializeproc $cmd] \n
-        }
-        foreach maker $scripts {
-            append script [script::_$maker]
-        }
-        return $script
-    }
-
-    proc cleanup {args} {
-        foreach cmd [info commands resolve::cleaner_*] {
-            uplevel $cmd $args
-        }
-    }
-
-    proc preload {cmd} {
-        variable preloads
-        if {[lsearch $preloads $cmd] == -1} {
-            lappend preloads $cmd
-        }
-    }
-
-    proc atenable {cmd arglist body} {
-        variable enables
-        if {[lsearch $enables $cmd] == -1} {
-            lappend enables $cmd
-            set cmd [namespace current]::enable::_$cmd
-            proc $cmd $arglist $body
-            return $cmd
-        }
-    }
-    
-    proc atdisable {cmd arglist body} {
-        variable disables
-        if {[lsearch $disables $cmd] == -1} {
-            lappend disables $cmd
-            set cmd [namespace current]::disable::_$cmd
-            proc $cmd $arglist $body
-            return $cmd
-        }
-    }
-     
-    proc addtrace {cmd arglist body} {
-        variable tracers
-        if {[lsearch $tracers $cmd] == -1} {
-            lappend tracers $cmd
-            set tracer [namespace current]::trace::_$cmd
-            proc $tracer $arglist $body
-            if {[isenabled]} {
-                trace add execution $cmd leave $tracer
+            set nsp [namespace current]
+            foreach disabler $disables {
+                disable::_$disabler
             }
-            return $tracer
+            foreach trace $tracers {
+                if {[info commands $trace] != ""} {
+                    trace remove execution $trace leave ${nsp}::trace::_$trace
+                }
+            }
         }
-    }
 
-    proc addscript {cmd body} {
-        variable scripts
-        if {[lsearch $scripts $cmd] == -1} {
-            lappend scripts $cmd
-            set cmd [namespace current]::script::_$cmd
+        proc isenabled {} {
+            variable enabled
+            expr {$enabled > 0}
+        }
+
+        proc update {{from -1}} {
+            if {$from == -1} { 
+                variable epoch [nsv_set ttrace lastepoch]
+            } else {
+                if {[lsearch [nsv_set ttrace epochlist] $from] == -1} {
+                    error "no such epoch: $from"
+                }
+                variable epoch $from
+            }
+            uplevel [getscript]
+        } 
+
+        proc getscript {} {
+            variable preloads
+            variable epoch
+            variable scripts
+            append script [_serializensp] \n
+            append script "::namespace eval [namespace current] {" \n
+            append script "::namespace export unknown" \n
+            append script "_useepoch $epoch" \n
+            append script "}" \n
+            foreach cmd $preloads {
+                append script [_serializeproc $cmd] \n
+            }
+            foreach maker $scripts {
+                append script [script::_$maker]
+            }
+            return $script
+        }
+
+        proc cleanup {args} {
+            foreach cmd [info commands resolve::cleaner_*] {
+                uplevel $cmd $args
+            }
+        }
+
+        proc preload {cmd} {
+            variable preloads
+            if {[lsearch $preloads $cmd] == -1} {
+                lappend preloads $cmd
+            }
+        }
+
+        proc atenable {cmd arglist body} {
+            variable enables
+            if {[lsearch $enables $cmd] == -1} {
+                lappend enables $cmd
+                set cmd [namespace current]::enable::_$cmd
+                proc $cmd $arglist $body
+                return $cmd
+            }
+        }
+
+        proc atdisable {cmd arglist body} {
+            variable disables
+            if {[lsearch $disables $cmd] == -1} {
+                lappend disables $cmd
+                set cmd [namespace current]::disable::_$cmd
+                proc $cmd $arglist $body
+                return $cmd
+            }
+        }
+
+        proc addtrace {cmd arglist body} {
+            variable tracers
+            if {[lsearch $tracers $cmd] == -1} {
+                lappend tracers $cmd
+                set tracer [namespace current]::trace::_$cmd
+                proc $tracer $arglist $body
+                if {[isenabled]} {
+                    trace add execution $cmd leave $tracer
+                }
+                return $tracer
+            }
+        }
+
+        proc addscript {cmd body} {
+            variable scripts
+            if {[lsearch $scripts $cmd] == -1} {
+                lappend scripts $cmd
+                set cmd [namespace current]::script::_$cmd
+                proc $cmd args $body
+                return $cmd
+            }
+        }
+
+        proc addresolver {cmd arglist body} {
+            variable resolvers
+            if {[lsearch $resolvers $cmd] == -1} {
+                lappend resolvers $cmd
+                set cmd [namespace current]::resolve::$cmd
+                proc $cmd $arglist $body
+                return $cmd
+            }
+        }
+
+        proc addcleanup {body} {
+            variable cleancnt
+            set cmd [namespace current]::resolve::cleaner_[incr cleancnt]
             proc $cmd args $body
             return $cmd
         }
-    }
 
-    proc addresolver {cmd arglist body} {
-        variable resolvers
-        if {[lsearch $resolvers $cmd] == -1} {
-            lappend resolvers $cmd
-            set cmd [namespace current]::resolve::$cmd
-            proc $cmd $arglist $body
-            return $cmd
+        proc addentry {cmd var val} {
+            variable epoch
+            nsv_set ${epoch}-$cmd $var $val
         }
-    }
 
-    proc addcleanup {body} {
-        variable cleancnt
-        set cmd [namespace current]::resolve::cleaner_[incr cleancnt]
-        proc $cmd args $body
-        return $cmd
-    }
-
-    proc addentry {cmd var val} {
-        variable epoch
-        nsv_set ${epoch}-$cmd $var $val
-    }
-
-    proc delentry {cmd var} {
-        variable epoch
-        set ei $::errorInfo
-        set ec $::errorCode
-        catch {nsv_unset ${epoch}-$cmd $var}
-        set ::errorInfo $ei
-        set ::errorCode $ec
-    }
-
-    proc getentry {cmd var} {
-        variable epoch
-        set ei $::errorInfo
-        set ec $::errorCode
-        if {[catch {nsv_set ${epoch}-$cmd $var} val]} {
+        proc delentry {cmd var} {
+            variable epoch
+            set ei $::errorInfo
+            set ec $::errorCode
+            catch {nsv_unset ${epoch}-$cmd $var}
             set ::errorInfo $ei
             set ::errorCode $ec
-            set val ""
         }
-        return $val
-    }
 
-    proc getentries {cmd {pattern *}} {
-        variable epoch
-        nsv_array names ${epoch}-$cmd $pattern
-    }
-
-    proc unknown {args} {
-        set cmd [lindex $args 0]
-        if {[uplevel ttrace::_resolve [list $cmd]]} {
-            set c [catch {uplevel $cmd [lrange $args 1 end]} r]
-        } else {
-            set c [catch {::eval ::tcl::unknown $args} r]
+        proc getentry {cmd var} {
+            variable epoch
+            set ei $::errorInfo
+            set ec $::errorCode
+            if {[catch {nsv_set ${epoch}-$cmd $var} val]} {
+                set ::errorInfo $ei
+                set ::errorCode $ec
+                set val ""
+            }
+            return $val
         }
-        return -code $c -errorcode $::errorCode -errorinfo $::errorInfo $r
-    }
 
-    proc _resolve {cmd} {
-        variable resolvers
-        foreach resolver $resolvers {
-            if {[uplevel [info comm resolve::$resolver] [list $cmd]]} {
+        proc getentries {cmd {pattern *}} {
+            variable epoch
+            nsv_array names ${epoch}-$cmd $pattern
+        }
+
+        proc unknown {args} {
+            set cmd [lindex $args 0]
+            if {[uplevel ttrace::_resolve [list $cmd]]} {
+                set c [catch {uplevel $cmd [lrange $args 1 end]} r]
+            } else {
+                set c [catch {::eval ::tcl::unknown $args} r]
+            }
+            return -code $c -errorcode $::errorCode -errorinfo $::errorInfo $r
+        }
+
+        proc _resolve {cmd} {
+            variable resolvers
+            foreach resolver $resolvers {
+                if {[uplevel [info comm resolve::$resolver] [list $cmd]]} {
+                    return 1
+                }
+            }
+            return 0
+        }
+
+        proc _getthreads {} {
+            set threads ""
+            foreach entry [ns_info threads] {
+                lappend threads [lindex $entry 2]
+            }
+            return $threads
+        }
+
+        proc _newepoch {} {
+            variable elock
+            ns_mutex lock $elock
+            set old [nsv_set  ttrace lastepoch]
+            set new [nsv_incr ttrace lastepoch]
+            nsv_lappend ttrace $new [ns_thread getid]
+            if {$old >= 0} {
+                _copyepoch $old $new
+                _delepochs
+            }
+            nsv_lappend ttrace epochlist $new
+            ns_mutex unlock $elock
+            return $new
+        }
+
+        proc _copyepoch {old new} {
+            foreach var [nsv_names $old-*] {
+                set cmd [lindex [split $var -] 1]
+                nsv_array reset $new-$cmd [nsv_array get $var]
+            }
+        }
+
+        proc _delepochs {} {
+            set tlist [_getthreads]
+            set elist ""
+            foreach epoch [nsv_set ttrace epochlist] {
+                if {[_delepoch $epoch $tlist] == 0} {
+                    lappend elist $epoch
+                } else {
+                    nsv_unset ttrace $epoch
+                }
+            }
+            nsv_set ttrace epochlist $elist
+        }
+
+        proc _delepoch {epoch threads} {
+            set self [ns_thread getid] 
+            foreach tid [nsv_set ttrace $epoch] {
+                if {$tid != $self && [lsearch $threads $tid] >= 0} {
+                    lappend alive $tid
+                }
+            }
+            if {[info exists alive]} {
+                nsv_set ttrace $epoch $alive
+                return 0
+            } else {
+                foreach var [nsv_names $epoch-*] {
+                    nsv_unset $var
+                }
                 return 1
             }
         }
-        return 0
-    }
 
-    proc _getthread {} {
-        if {[info commands ns_thread] == ""} {
-            thread::id
-        } else {
-            ns_thread getid
-        }
-    }
-
-    proc _getthreads {} {
-        set threads ""
-        foreach entry [ns_info threads] {
-            lappend threads [lindex $entry 2]
-        }
-        return $threads
-    }
-
-    proc _newepoch {} {
-        variable elock
-        ns_mutex lock $elock
-        set old [nsv_set  ttrace lastepoch]
-        set new [nsv_incr ttrace lastepoch]
-        nsv_lappend ttrace $new [_getthread]
-        if {$old >= 0} {
-            _copyepoch $old $new
-            _delepochs
-        }
-        nsv_lappend ttrace epochlist $new
-        ns_mutex unlock $elock
-        return $new
-    }
-
-    proc _copyepoch {old new} {
-        foreach var [nsv_names $old-*] {
-            set cmd [lindex [split $var -] 1]
-            nsv_array reset $new-$cmd [nsv_array get $var]
-        }
-    }
-
-    proc _delepochs {} {
-        set tlist [_getthreads]
-        set elist ""
-        foreach epoch [nsv_set ttrace epochlist] {
-            if {[_dropepoch $epoch $tlist] == 0} {
-                lappend elist $epoch
-            } else {
-                nsv_unset ttrace $epoch
+        proc _useepoch {epoch} {
+            if {$epoch >= 0} {
+                set tid [ns_thread getid]
+                if {[lsearch [nsv_set ttrace $epoch] $tid] == -1} {
+                    nsv_lappend ttrace $epoch $tid
+                }
             }
         }
-        nsv_set ttrace epochlist $elist
-    }
 
-    proc _dropepoch {epoch threads} {
-        set self [_getthread] 
-        foreach tid [nsv_set ttrace $epoch] {
-            if {$tid != $self && [lsearch $threads $tid] >= 0} {
-                lappend alive $tid
+        proc _serializeproc {cmd} {
+            set dargs [info args $cmd]
+            set pbody [info body $cmd]
+            set pargs ""
+            foreach arg $dargs {
+                if {![info default $cmd $arg def]} {
+                    lappend pargs $arg
+                } else {
+                    lappend pargs [list $arg $def]
+                }
             }
-        }
-        if {[info exists alive]} {
-            nsv_set ttrace $epoch $alive
-            return 0
-        } else {
-            foreach var [nsv_names $epoch-*] {
-                nsv_unset $var
+            set nsp [namespace qualifier $cmd]
+            if {$nsp == ""} {
+                set nsp "::"
             }
-            return 1
+            append res "::namespace eval $nsp {" \n
+            append res "::proc [namespace tail $cmd] [list $pargs] [list $pbody]" \n
+            append res "}" \n
+        }
+
+        proc _serializensp {{nsp ""} {result _}} {
+            upvar $result res
+            if {$nsp == ""} {
+                set nsp [namespace current]
+            }
+            append res "::namespace eval $nsp {" \n
+            foreach var [info vars ${nsp}::*] {
+                set vname [namespace tail $var]
+                if {[array exists $var] == 0} {
+                    append res "::variable $vname {[set $var]}" \n
+                } else {
+                    append res "::variable $vname" \n
+                    append res "::array set $vname [list [array get $var]]" \n
+                }
+            }
+            foreach cmd [info procs ${nsp}::*] {
+                append res [_serializeproc $cmd] \n
+            }
+            append res "}" \n
+            foreach nn [namespace children $nsp] {
+                _serializensp $nn res
+            }
+            return $res
         }
     }
-
-    proc _useepoch {epoch} {
-        if {$epoch >= 0} {
-            set tid [_getthread]
-            if {[lsearch [nsv_set ttrace $epoch] $tid] == -1} {
-                nsv_lappend ttrace $epoch $tid
-            }
-        }
-    }
-
-    proc _serializeproc {cmd} {
-        set dargs [info args $cmd]
-        set pbody [info body $cmd]
-        set pargs ""
-        foreach arg $dargs {
-            if {![info default $cmd $arg def]} {
-                lappend pargs $arg
-            } else {
-                lappend pargs [list $arg $def]
-            }
-        }
-        set nsp [namespace qualifier $cmd]
-        if {$nsp == ""} {
-            set nsp "::"
-        }
-        append res "::namespace eval $nsp {" \n
-        append res "::proc [namespace tail $cmd] [list $pargs] [list $pbody]" \n
-        append res "}" \n
-    }
-
-    proc _serializensp {{nsp ""} {result _}} {
-        upvar $result res
-        if {$nsp == ""} {
-            set nsp [namespace current]
-        }
-        append res "::namespace eval $nsp {" \n
-        foreach var [info vars ${nsp}::*] {
-            set vname [namespace tail $var]
-            if {[array exists $var] == 0} {
-                append res "::variable $vname {[set $var]}" \n
-            } else {
-                append res "::variable $vname" \n
-                append res "::array set $vname [list [array get $var]]" \n
-            }
-        }
-        foreach cmd [info procs ${nsp}::*] {
-            append res [_serializeproc $cmd] \n
-        }
-        append res "}" \n
-        foreach nn [namespace children $nsp] {
-            _serializensp $nn res
-        }
-        return $res
-    }
-}
-
-#
-# The code below is ment to be run once during the application start. 
-# It provides implementation of tracing callbacks for some Tcl commands.
-# Users can supply their own tracer implementations on-the-fly.
-#
-# The code below will create traces for the following Tcl commands:
-#    "namespace", "variable", "load", "proc" and "rename"
-#
-# Also, the Tcl object extension XOTcl 1.3.8 is handled and all XOTcl
-# related things, like classes and objects are traced (many thanks to
-# Gustaf Neumann from XOTcl for his kind help and support). 
-#
-
-eval {
-
+    
+    #
+    # The code below is ment to be run once during the application start. 
+    # It provides implementation of tracing callbacks for some Tcl commands.
+    # Users can supply their own tracer implementations on-the-fly.
+    #
+    # The code below will create traces for the following Tcl commands:
+    #    "namespace", "variable", "load", "proc" and "rename"
+    #
+    # Also, the Tcl object extension XOTcl 1.3.8 is handled and all XOTcl
+    # related things, like classes and objects are traced (many thanks to
+    # Gustaf Neumann from XOTcl for his kind help and support). 
+    #
+    
     #
     # Register the "load" trace. This will create 
     # the following key/value pair in the "load" store:
