@@ -73,14 +73,6 @@ set pageroot	pages
 # Absolute path to pages directory
 set pagedir	$serverdir/$pageroot
 
-#
-# Set enabletraces to "true" to use Tcl-trace based interp initialization.
-# This cuts server memory footprint to about a third and speeds-up the
-# thread initializations.
-#
-
-ns_section ns/server/$servername/ttrace
-ns_param 	enabletraces		false
 
 #
 # Modules to load
@@ -270,6 +262,9 @@ ns_param        nsvbuckets              16
 
 # Path to private Tcl modules
 ns_param        library                 ${homedir}/modules/tcl
+
+# Set to "true" to use Tcl-trace based interp initialization.
+ns_param 	lazyloader		false
 
 #
 # Fast Path --

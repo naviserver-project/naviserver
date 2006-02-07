@@ -41,13 +41,13 @@
 # Define "use_trace_inits" to true for using trace-based interp inits.
 #
 
-set section ns/server/[ns_info server]/ttrace
-set use_trace_inits [ns_config -bool $section enabletraces false]
+set section ns/server/[ns_info server]/tcl
+set use_trace_inits [ns_config -bool $section lazyloader false]
 
 if {$use_trace_inits} {
     set tracelib [file join [ns_library shared] ttrace.tcl]
     if {![file exists $tracelib]} {
-        ns_log warning "Disabling trace interp inits (no trace lib found)"
+        ns_log warning "Disabling lazy loading (no trace lib found)"
         set use_trace_inits 0
     } else {
         source $tracelib
