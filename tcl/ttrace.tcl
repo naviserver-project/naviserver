@@ -141,7 +141,7 @@ ns_runonce {
                 enable::_$enabler
             }
             foreach trace $tracers {
-                if {[info commands $trace] != ""} {
+                if {[info commands $trace] ne ""} {
                     trace add execution $trace leave ${nsp}::trace::_$trace
                 }
             }
@@ -160,7 +160,7 @@ ns_runonce {
                 disable::_$disabler
             }
             foreach trace $tracers {
-                if {[info commands $trace] != ""} {
+                if {[info commands $trace] ne ""} {
                     trace remove execution $trace leave ${nsp}::trace::_$trace
                 }
             }
@@ -407,7 +407,7 @@ ns_runonce {
                 }
             }
             set nsp [namespace qualifier $cmd]
-            if {$nsp == ""} {
+            if {$nsp eq ""} {
                 set nsp "::"
             }
             append res "::namespace eval $nsp {" \n
@@ -417,7 +417,7 @@ ns_runonce {
 
         proc _serializensp {{nsp ""} {result _}} {
             upvar $result res
-            if {$nsp == ""} {
+            if {$nsp eq ""} {
                 set nsp [namespace current]
             }
             append res "::namespace eval $nsp {" \n
@@ -472,7 +472,7 @@ ns_runonce {
         }
         set image [lindex $cmdline 1]
         set initp [lindex $cmdline 2]
-        if {$initp == ""} {
+        if {$initp eq ""} {
             foreach pkg [info loaded] {
                 if {[lindex $pkg 0] == $image} {
                     set initp [lindex $pkg 1]
@@ -514,7 +514,7 @@ ns_runonce {
         }
         set nop [lindex $cmdline 1]
         set cns [uplevel namespace current]
-        if {$cns == "::"} {
+        if {$cns eq "::"} {
             set cns ""
         }
         switch -glob $nop {
@@ -586,7 +586,7 @@ ns_runonce {
         set opts [lrange $cmdline 1 end]
         if {[llength $opts]} {
             set cns [uplevel namespace current]
-            if {$cns == "::"} {
+            if {$cns eq "::"} {
                 set cns ""
             }
             foreach {var val} $opts {
@@ -635,7 +635,7 @@ ns_runonce {
             return
         }
         set cns [uplevel namespace current]
-        if {$cns == "::"} {
+        if {$cns eq "::"} {
             set cns ""
         }
         set old [lindex $cmdline 1]
@@ -643,7 +643,7 @@ ns_runonce {
             set old ${cns}::$old
         }
         set new [lindex $cmdline 2]
-        if {$new != ""} {
+        if {$new ne ""} {
             if {![string match "::*" $new]} {
                 set new ${cns}::$new
             }
@@ -681,7 +681,7 @@ ns_runonce {
             return
         }
         set cns [uplevel namespace current]
-        if {$cns == "::"} {
+        if {$cns eq "::"} {
             set cns ""
         }
         set cmd [lindex $cmdline 1]
@@ -699,7 +699,7 @@ ns_runonce {
             }
         }
         set pdef [ttrace::getentry proc $cmd]
-        if {$pdef == ""} {
+        if {$pdef eq ""} {
             set epoch -1 ; # never traced before
         } else {
             set epoch [lindex $pdef 0]
@@ -709,11 +709,11 @@ ns_runonce {
 
     ttrace::addscript proc {
         return {
-            if {[info command ::tcl::unknown] == ""} {
+            if {[info command ::tcl::unknown] eq ""} {
                 rename ::unknown ::tcl::unknown
                 namespace import -force ::ttrace::unknown
             }
-            if {[info command ::tcl::info] == ""} {
+            if {[info command ::tcl::info] eq ""} {
                 rename ::info ::tcl::info
             }
             proc ::info args {
@@ -729,7 +729,7 @@ ns_runonce {
                     return [uplevel ::tcl::info $args]
                 }
                 set cns [uplevel namespace current]
-                if {$cns == "::"} {
+                if {$cns eq "::"} {
                     set cns ""
                 }
                 set pat [lindex $args 1]
@@ -766,7 +766,7 @@ ns_runonce {
     ttrace::addresolver resolveprocs {cmd {export 0}} {
         set cns [uplevel namespace current]
         set name [namespace tail $cmd]
-        if {$cns == "::"} {
+        if {$cns eq "::"} {
             set cns ""
         }
         if {![string match "::*" $cmd]} {
@@ -777,9 +777,9 @@ ns_runonce {
             set gcmd $cmd
         }
         set pdef [ttrace::getentry proc $ncmd]
-        if {$pdef == ""} {
+        if {$pdef eq ""} {
             set pdef [ttrace::getentry proc $gcmd]
-            if {$pdef == ""} {
+            if {$pdef eq ""} {
                 return 0
             }
             set cmd $gcmd
@@ -788,13 +788,13 @@ ns_runonce {
         }
         set epoch [lindex $pdef 0]
         set pnsp  [lindex $pdef 1]
-        if {$pnsp != ""} {
+        if {$pnsp ne ""} {
             set nsp [namespace qual $cmd]
-            if {$nsp == ""} {
+            if {$nsp eq ""} {
                 set nsp ::
             }
             set cmd ${pnsp}::$name
-            if {[resolveprocs $cmd 1] == 0 && [info commands $cmd] == ""} {
+            if {[resolveprocs $cmd 1] == 0 && [info commands $cmd] eq ""} {
                 return 0
             }
             namespace eval $nsp "namespace import -force $cmd"
@@ -802,7 +802,7 @@ ns_runonce {
             uplevel 0 [list ::proc $cmd [lindex $pdef 2] [lindex $pdef 3]]
             if {$export} {
                 set nsp [namespace qual $cmd]
-                if {$nsp == ""} {
+                if {$nsp eq ""} {
                     set nsp ::
                 }
                 namespace eval $nsp "namespace export $name"
@@ -830,13 +830,13 @@ ns_runonce {
     #
 
     ttrace::atenable XOTclEnabler {args} {
-        if {[info commands ::xotcl::Class] == ""} {
+        if {[info commands ::xotcl::Class] eq ""} {
             return
         }
-        if {[info commands _creator] == ""} {
+        if {[info commands _creator] eq ""} {
             ::xotcl::Class create ::xotcl::_creator -instproc create {args} {
                 set result [next]
-                if {![string match ::xotcl::_* $result]} {
+                if {![string match "::xotcl::_*" $result]} {
                     ttrace::addentry xotcl $result ""
                 }
                 return $result
@@ -846,8 +846,8 @@ ns_runonce {
     }
 
     ttrace::atdisable XOTclDisabler {args} {
-        if {   [info commands ::xotcl::Class] == "" 
-            || [info commands ::xotcl::_creator] == ""} {
+        if {   [info commands ::xotcl::Class] eq "" 
+            || [info commands ::xotcl::_creator] eq ""} {
             return
         }
         ::xotcl::Class instmixin ""
@@ -857,17 +857,17 @@ ns_runonce {
     set resolver [ttrace::addresolver resolveclasses {classname} {
         set cns [uplevel namespace current]
         set script [ttrace::getentry xotcl $classname]
-        if {$script == ""} {
+        if {$script eq ""} {
             set name [namespace tail $classname]
-            if {$cns == "::"} {
+            if {$cns eq "::"} {
                 set script [ttrace::getentry xotcl ::$name]
             } else {
                 set script [ttrace::getentry xotcl ${cns}::$name]
-                if {$script == ""} {
+                if {$script eq ""} {
                     set script [ttrace::getentry xotcl ::$name]
                 }
             }
-            if {$script == ""} {
+            if {$script eq ""} {
                 return 0 ; # Peng! No cigar...
             }
         }
@@ -878,7 +878,7 @@ ns_runonce {
     ttrace::addscript xotcl [subst -nocommands {
         if {![catch {Serializer new} ss]} {
             foreach entry [ttrace::getentries xotcl] {
-                if {[ttrace::getentry xotcl \$entry] == ""} {
+                if {[ttrace::getentry xotcl \$entry] eq ""} {
                     ttrace::addentry xotcl \$entry [\$ss serialize \$entry]
                 }
             }
@@ -897,10 +897,10 @@ ns_runonce {
         variable resolveproc
         foreach cmd [array names resolveproc] {
             set def [ttrace::getentry proc $cmd]
-            if {$def != ""} {
+            if {$def ne ""} {
                 set new [lindex $def 0]
                 set old $resolveproc($cmd)
-                if {[info command $cmd] != "" && $new != $old} {
+                if {[info command $cmd] ne "" && $new != $old} {
                     catch {rename $cmd ""}
                 }
             }

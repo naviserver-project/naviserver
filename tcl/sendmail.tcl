@@ -41,10 +41,10 @@ proc _ns_smtp_send { mode wfp string timeout } {
         return ""
     }
 
-    if {[lindex [ns_sockselect -timeout $timeout {} $wfp {}] 1] == ""} {
+    if {[lindex [ns_sockselect -timeout $timeout {} $wfp {}] 1] eq ""} {
         error "$mode: Timeout writing to SMTP host"
     }
-    puts $wfp $string\r
+    puts $wfp "$string\r"
     flush $wfp
 }
 
@@ -55,7 +55,7 @@ proc _ns_smtp_recv { mode rfp check timeout { error 1 } } {
     }
 
     while (1) {
-      if {[lindex [ns_sockselect -timeout $timeout $rfp {} {}] 0] == ""} {
+      if {[lindex [ns_sockselect -timeout $timeout $rfp {} {}] 0] eq ""} {
         error "$mode: Timeout reading from SMTP host"
       }
       set line [gets $rfp]
@@ -66,7 +66,7 @@ proc _ns_smtp_recv { mode rfp check timeout { error 1 } } {
         ns_log Error ns_sendmail: $errmsg
         break
       }
-      if ![string match "-" [string range $line 3 3]] { break }
+      if {[string range $line 3 3] ne "-"} { break }
     }
 }
 
@@ -132,12 +132,12 @@ proc ns_sendmail { to from subject body {headers {}} {bcc {}} {cc {}} } {
     ## Original ns_sendmail functionality is preserved.
 
     ## Read CC/BCC addresses from extra headers if any
-    if { $headers != "" } {
-      if { [set addr [ns_set iget $headers cc]] != "" } {
+    if { $headers ne "" } {
+      if { [set addr [ns_set iget $headers cc]] ne "" } {
         ns_set idelkey $headers cc
         append cc , $addr
       }
-      if { [set addr [ns_set iget $headers bcc]] != "" } {
+      if { [set addr [ns_set iget $headers bcc]] ne "" } {
         ns_set idelkey $headers bcc
         append bcc , $addr
       }
@@ -145,7 +145,7 @@ proc ns_sendmail { to from subject body {headers {}} {bcc {}} {cc {}} } {
 
     ## Get smtp server into, if none then use localhost
     set smtp [ns_config ns/parameters smtphost]
-    if [string match "" $smtp] { 
+    if {$smtp eq ""} { 
         set smtp [ns_config ns/parameters mailhost "localhost"] 
     }
     set timeout [ns_config ns/parameters smtptimeout "60"]
@@ -159,7 +159,7 @@ proc ns_sendmail { to from subject body {headers {}} {bcc {}} {cc {}} } {
             set subject "=?$target_encoding?Q?[_ns_sendmail_qp [encoding convertto $target_encoding $subject]]?="
         }
         set body [_ns_sendmail_breaklines [_ns_sendmail_qp [encoding convertto $target_encoding $body]]]
-        if { $headers == "" } {
+        if { $headers eq "" } {
             set headers [ns_set create headers]
             ns_set put $headers "MIME-Version" "1.0"
             ns_set put $headers "Content-Type" "text/plain; charset=\"${target_encoding}\"" 
@@ -181,19 +181,19 @@ proc ns_sendmail { to from subject body {headers {}} {bcc {}} {cc {}} } {
     set tolist [list]
     regsub -all {[\n\r]} $to {} to
     foreach addr [split $to ,] {
-      if { [set addr [string trim $addr]] != "" } { lappend tolist $addr }
+      if { [set addr [string trim $addr]] ne "" } { lappend tolist $addr }
     }
 
     set cclist [list]
     regsub -all {[\n\r]} $cc {} cc
     foreach addr [split $cc ,] {
-      if { [set addr [string trim $addr]] != "" } { lappend cclist $addr }
+      if { [set addr [string trim $addr]] ne "" } { lappend cclist $addr }
     }
     
     set bcclist [list]
     regsub -all {[\n\r]} $bcc {} bcc
     foreach addr [split $bcc ,] {
-      if { [set addr [string trim $addr]] != "" } { lappend bcclist $addr }
+      if { [set addr [string trim $addr]] ne "" } { lappend bcclist $addr }
     }
 
     ## Send it along to _ns_sendmail
@@ -218,7 +218,7 @@ proc _ns_sendmail {smtp smtpport timeout tolist cclist bcclist from subject body
     if { $cclist != "" } { append msg "Cc: [join $cclist ","]\n" }
 
     ## Insert extra headers, if any (not for BCC)
-    if { $headers != "" } {
+    if { $headers ne "" } {
       set size [ns_set size $headers]
       for {set i 0} {$i < $size} {incr i} {
 	append msg "[ns_set key $headers $i]: [ns_set value $headers $i]\n"
@@ -286,7 +286,7 @@ proc _ns_sendmail {smtp smtpport timeout tolist cclist bcclist from subject body
       _ns_smtp_recv "Mail $from" $rfp 250 $timeout
       ## Loop through To list via multiple RCPT TO lines
       foreach to $tolist {
-        if { $to == "" } { continue }
+        if { $to eq "" } { continue }
         regexp {.*<(.*)>} $to null to
         _ns_smtp_send "Rcpt $to" $wfp "RCPT TO:<$to>" $timeout
         _ns_smtp_recv "Rcpt $to" $rfp 250 $timeout 0
@@ -294,7 +294,7 @@ proc _ns_sendmail {smtp smtpport timeout tolist cclist bcclist from subject body
 
       ## Loop through CC list via multiple RCPT TO lines
       foreach to $cclist {
-        if { $to == "" } { continue }
+        if { $to eq "" } { continue }
         regexp {.*<(.*)>} $to null to
         _ns_smtp_send "Rcpt $to" $wfp "RCPT TO:<$to>" $timeout
 	_ns_smtp_recv "Rcpt $to" $rfp 250 $timeout 0
@@ -303,7 +303,7 @@ proc _ns_sendmail {smtp smtpport timeout tolist cclist bcclist from subject body
       ## Loop through BCC list via multiple RCPT TO lines
       ## A BCC should never, ever appear in the header.  Ever.  Not even.
       foreach to $bcclist {
-        if { $to == "" } { continue }
+        if { $to eq "" } { continue }
         regexp {.*<(.*)>} $to null to
         _ns_smtp_send "Rcpt $to" $wfp "RCPT TO:<$to>" $timeout
         _ns_smtp_recv "Rcpt $to" $rfp 250 $timeout 0

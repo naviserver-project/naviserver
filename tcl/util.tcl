@@ -66,7 +66,7 @@ proc ns_findset {sets name} {
 proc getformdata {formVar} {
     upvar $formVar form
     set form [ns_conn form]
-    if {[string match "" $form]} {
+    if {$form eq ""} {
 	ns_returnbadrequest "Missing HTML FORM data"
 	return 0
     }
@@ -74,7 +74,7 @@ proc getformdata {formVar} {
 }
 
 proc ns_paren {val} {
-    if {$val != ""} {
+    if {$val ne ""} {
 	return "($val)"
     } else {
 	return ""
@@ -100,7 +100,7 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
 
     set newhtml ""
 
-    while {$htmlpiece != ""} {
+    while {$htmlpiece ne ""} {
 	if {[string index $htmlpiece 0] == "<"} {
 	    regexp {<([^>]*)>(.*)} $htmlpiece m tag htmlpiece
 	    set tag [string trim $tag]
@@ -193,7 +193,7 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
 
 			regexp {^([^<]*)(.*)} $htmlpiece m txt htmlpiece
 
-			if {[string match "" $value]} {
+			if {$value eq ""} {
 			    set value [string trim $txt]
 			}
 
@@ -283,15 +283,15 @@ proc ns_htmlselect args {
     set sort 0
     set labels {}
     while {[string index [lindex $args 0] 0] == "-"} {
-	if {[lindex $args 0] == "-multi"} {
+	if {[lindex $args 0] eq "-multi"} {
 	    set multi 1
 	    set args [lreplace $args 0 0]
 	}
-	if {[lindex $args 0] == "-sort"} {
+	if {[lindex $args 0] eq "-sort"} {
 	    set sort 1
 	    set args [lreplace $args 0 0]
 	}
-	if {[lindex $args 0] == "-labels"} {
+	if {[lindex $args 0] eq "-labels"} {
 	    set labels [lindex $args 1]
 	    set args [lreplace $args 0 1]
 	}
@@ -322,7 +322,7 @@ proc ns_htmlselect args {
     set len [llength $values]
     set lvpairs {}
     for {set i 0} {$i < $len} {incr i} {
-	if {[string match "" $labels]} {
+	if {$labels eq ""} {
 	    set label [lindex $values $i]
 	} else {
 	    set label [lindex $labels $i]

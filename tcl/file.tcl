@@ -47,7 +47,7 @@ set on [ns_config -bool $path enabletclpages off]
 ns_log notice "conf: \[$path\]enabletclpages = $on"
 
 
-if $on {
+if {$on} {
     ns_share errorPage
     ns_log notice "tcl: enabling .tcl pages"
     ns_register_proc GET /*.tcl ns_sourceproc 
@@ -81,7 +81,7 @@ proc ns_sourcefile {filename} {
         list $current_cookie [ns_fileread $filename]
     }]
     # If file changed, re-read it
-    if {![string equal [lindex $pair 0] $current_cookie]} {
+    if {[lindex $pair 0] ne $current_cookie } {
         ns_cache_flush ns:filecache $filename
         set pair [ns_cache_eval ns:filecache $filename {
             list $current_cookie [ns_fileread $filename]
@@ -117,11 +117,11 @@ proc ns_sourceproc { args } {
         set errorInfo ""
     }
 	
-    if { $code == 1 && $errorCode == "NS_TCL_ABORT" } {
+    if { $code == 1 && $errorCode eq "NS_TCL_ABORT" } {
         return
     }
 
-    if { $errorPage == "" } {
+    if { $errorPage eq "" } {
         return -code $code -errorcode $errorCode -errorinfo $errorInfo $result
     } else {
         ## Custom error page -- unfortunately we can't pass parameters.

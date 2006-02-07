@@ -102,7 +102,7 @@ $up
 
     foreach f [lsort [glob -nocomplain $dir/*]] {
 	set tail [file tail $f]
-	if {$hidedot && [string match .* $tail]} {
+	if {$hidedot && [string match ".*" $tail]} {
 	    continue
 	}
         if {[file isdirectory $f]} { 

@@ -1,3 +1,23 @@
+2006-02-08  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* nsdb/util.tcl:
+	* nsperm/init.tcl:
+	* tcl/stats.tcl:
+	* tcl/file.tcl:
+	* tcl/cache.tcl:
+	* tcl/util.tcl: 
+	* tcl/ttrace.tcl: "legacy" files, contd.
+
+2006-02-07  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* tcl/form.tcl:
+	* tcl/http.tcl:
+	* tcl/charsets.tcl:
+	* tcl/fastpath.tcl:
+	* tcl/sendmail.tcl: fixed non-braced expressions and standardized
+	comparisons with TCL string operators. Thanks to Gustaf Neumann
+	for providing the fixes! There are still some legacy files left.
+
 2006-02-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsthread/nsthreadtest.c: Includes "config.h" to get 

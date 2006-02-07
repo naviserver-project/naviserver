@@ -65,7 +65,7 @@
 
 proc ns_queryget {key {value ""}}  {
     set form [ns_getform]
-    if { $form != "" } {
+    if { $form ne "" } {
 	set tmp [ns_set iget $form $key]
 	if {[string length $tmp]} {
 	    set value $tmp
@@ -83,7 +83,7 @@ proc ns_queryget {key {value ""}}  {
 
 proc ns_querygetall {key {def_result ""}} {
     set form [ns_getform]
-    if {$form != ""} {
+    if {$form ne ""} {
         set result ""
         set size [ns_set size $form]
         set lkey [string tolower $key]
@@ -98,7 +98,7 @@ proc ns_querygetall {key {def_result ""}} {
                 }
             }
         }
-        if {[string length $result] == 0} {
+        if {$result eq ""} {
             set result $def_result
         }
      } else {
@@ -117,7 +117,7 @@ proc ns_querygetall {key {def_result ""}} {
 proc ns_queryexists { key } {
     set form [ns_getform]
     set i -1
-    if { $form != "" } {
+    if { $form ne "" } {
 	set i [ns_set ifind $form $key]
     }
     return [expr {$i >= 0}]
@@ -140,7 +140,7 @@ proc ns_getform {{charset ""}}  {
     # If a charset has been specified, use ns_urlcharset to
     # alter the current conn's urlcharset.
     # This can cause cached formsets to get flushed.
-    if {$charset != ""} {
+    if {$charset ne ""} {
 	ns_urlcharset $charset
     }
 
@@ -152,7 +152,7 @@ proc ns_getform {{charset ""}}  {
 		set hdr [ns_conn fileheaders $file]
 		set type [ns_set get $hdr content-type]
 	    	set fp ""
-	    	while {$fp == ""} {
+	    	while {$fp eq ""} {
 			set tmpfile [ns_tmpnam]
 			set fp [ns_openexcl $tmpfile]
 	    	}
@@ -196,7 +196,7 @@ proc ns_getformfile {name} {
 proc ns_openexcl file {
     if {[catch { set fp [open $file {RDWR CREAT EXCL} ] } err]} {
 	global errorCode
-	if { [lindex $errorCode 1] != "EEXIST"} {
+	if { [lindex $errorCode 1] ne "EEXIST"} {
 	    return -code error $err
 	}
 	return ""
@@ -218,7 +218,7 @@ proc ns_resetcachedform { { newform "" } } {
     if {[info exists _ns_form]} {
 	unset _ns_form
     }
-    if {[string compare $newform ""] != 0} {
+    if {$newform ne "" } {
         set _ns_form $newform
     }
 }

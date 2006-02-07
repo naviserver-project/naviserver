@@ -47,7 +47,7 @@ proc init_nsperm { } {
 	while {![eof $file]} {
 	    set line [gets $file]
 	    if {[string range $line 0 0] != "#"} {
-		if {[string length $line] > 0} {
+		if {$line ne ""} {
 		    set list [split $line :]
 		    if {[llength $list] != 2} {
 			ns_log error "init_nsperm: bad line in $filename: $line"
@@ -73,7 +73,7 @@ proc init_nsperm { } {
 	while {![eof $file]} {
 	    set line [gets $file]
 	    if {[string range $line 0 0] != "#"} {
-		if {[string length $line] > 0} {
+		if {$line ne ""} {
 		    set list [split $line :]
 		    if {[llength $list] != 2} {
 			ns_log error "init_nsperm: bad line in $filename: $line"
@@ -103,7 +103,7 @@ proc init_nsperm { } {
 	while {![eof $file]} {
 	    set line [gets $file]
 	    if {[string range $line 0 0] != "#"} {
-		if {[string length $line] > 0} {
+		if {$line ne ""} {
 		    set list [split $line :]
 		    if {[llength $list] != 7} {
 			ns_log error "nsperm_init: bad line in $filename: $line"
@@ -140,7 +140,7 @@ proc init_nsperm { } {
 	while {![eof $file]} {
 	    set line [gets $file]
 	    if {[string range $line 0 0] != "#"} {
-		if {[string length $line] > 0} {
+		if {$line ne ""} {
 		    set list [split $line :]
 		    if {[llength $list] != 4} {
 			ns_log error "nsperm_init: bad line in $filename: $line"
@@ -168,7 +168,7 @@ proc init_nsperm { } {
 	while {![eof $file]} {
 	    set line [gets $file]
 	    if {[string range $line 0 0] != "#"} {
-		if {[string length $line] > 0} {
+		if {$line ne ""} {
 		    if {[llength $line] != 5} {
 			ns_log error "nsperm_init: bad line in $filename: $line"
 		    } else {
@@ -178,7 +178,7 @@ proc init_nsperm { } {
 			set url [lindex $line 3]
 			set entity [lindex $line 4]
 			set cmd "ns_perm $action"
-			if {$inherit == "noinherit"} {
+			if {$inherit eq "noinherit"} {
 			    append cmd " -noinherit"
 			}
 			append cmd " $method $url \"$entity\""
@@ -221,7 +221,7 @@ proc ns_permpasswd { targetuser oldpass newpass } {
 	set line [gets $file]
 	set aline $line
 	if {[string range $line 0 0] != "#"} {
-	    if {[string length $line] > 0} {
+	    if {$line ne ""} {
 		set list [split $line :]
 		if {[llength $list] != 7} {
 		    ns_log error "ns_permpassword: bad line in $filename: $line"

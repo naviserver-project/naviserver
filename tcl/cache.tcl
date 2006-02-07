@@ -39,13 +39,13 @@
 
 set path "ns/server/[ns_info server]/tcl"
 ns_cache_create ns:memoize \
-    [ns_config -int $path memoizecache [expr 1024*1024*10]]
+    [ns_config -int $path memoizecache [expr {1024*1024*10}]]
 
 
 proc ns_memoize {args} {
     ns_parseargs {{-timeout ""} {-ttl 0} -- script args} $args
 
-    if {![string equal $timeout ""]} {
+    if {$timeout ne "" } {
         set timeout "-timeout $timeout"
     }
     set key [concat $script $args]
@@ -55,7 +55,7 @@ proc ns_memoize {args} {
 
 
 proc ns_memoize_flush {{pattern ""}} {
-    if {[string equal $pattern ""]} {
+    if {$pattern eq ""} {
         return [ns_cache_flush ns:memoize]
     } else {
         return [ns_cache_flush -glob -- ns:memoize $pattern]
