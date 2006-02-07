@@ -1,13 +1,29 @@
 #
-# ttrace.tcl --
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.mozilla.org/.
 #
-# Copyright (C) 2003 Zoran Vasiljevic, Archiware GmbH. All Rights Reserved.
-# 
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
 #
-# Rcsid: @(#)$Id$
-# ----------------------------------------------------------------------------
+# Alternatively, the contents of this file may be used under the terms
+# of the GNU General Public License (the "GPL"), in which case the
+# provisions of GPL are applicable instead of those above.  If you wish
+# to allow use of your version of this file only under the terms of the
+# GPL and not to allow others to use your version of this file under the
+# License, indicate your decision by deleting the provisions above and
+# replace them with the notice and other provisions required by the GPL.
+# If you do not delete the provisions above, a recipient may use your
+# version of this file under either the License or the GPL.
+#
+
+#
+# $Header$
+#
+
 #
 # User level commands:
 #
@@ -40,28 +56,15 @@
 #   o. [namespace forget] is still not implemented
 #   o. [namespace origin cmd] breaks if cmd is not already defined
 #
-#      I left this deliberately. I didn't want to override the 
-#      [namespace] command in order to avoid potential slowdown.
+#   I left this deliberately. I didn't want to override the 
+#   [namespace] command in order to avoid potential slowdown.
 #
 
 namespace eval ttrace {
 
     # Setup some compatibility wrappers
-    if {[info commands nsv_set] != ""} {
-        variable tvers 0
-        variable mutex ns_mutex
-        variable elock [$mutex create traceepochmutex]
-        variable store nsv_
-    } elseif {![catch {package require Thread} version]} {
-        variable tvers $version
-        variable mutex thread::mutex
-        variable elock [$mutex create]
-        variable store tsv::
-    } else {
-        error "requires Naviserver or Tcl threading extension"
-    }
-
-    package provide Ttrace 1.1
+    variable tvers 0
+    variable elock [ns_mutex create traceepochmutex]
 
     # Package variables
     variable resolvers ""     ; # List of registered resolvers
@@ -87,9 +90,9 @@ namespace eval ttrace {
     namespace export unknown
 
     # Initialize ttrace shared state
-    if {[${store}array exists ttrace] == 0} {
-        ${store}set ttrace lastepoch $epoch
-        ${store}set ttrace epochlist ""
+    if {[nsv_array exists ttrace] == 0} {
+        nsv_set ttrace lastepoch $epoch
+        nsv_set ttrace epochlist ""
     }
 
     # Initially, allow creation of epochs
@@ -100,20 +103,10 @@ namespace eval ttrace {
         enable
         set code [catch {namespace eval $nmsp ::uplevel [list $cmd $args]} result]
         disable
-        if {[info commands ns_ictl] == ""} {
-            if {$code == 0} {
-                variable tvers
-                getscript
-                if {$tvers >= "2.6"} {
-                    thread::broadcast {package require Ttrace; ttrace::update}
-                }
-            }
+        if {$code == 0} {
+            ns_ictl save [getscript]
         } else {
-            if {$code == 0} {
-                ns_ictl save [getscript]
-            } else {
-                ns_ictl markfordelete
-            }
+            ns_ictl markfordelete
         }
         return -code $code $result
     }
@@ -180,11 +173,10 @@ namespace eval ttrace {
     }
 
     proc update {{from -1}} {
-        variable store
         if {$from == -1} { 
-            variable epoch [${store}set ttrace lastepoch]
+            variable epoch [nsv_set ttrace lastepoch]
         } else {
-            if {[lsearch [${store}set ttrace epochlist] $from] == -1} {
+            if {[lsearch [nsv_set ttrace epochlist] $from] == -1} {
                 error "no such epoch: $from"
             }
             variable epoch $from
@@ -284,27 +276,24 @@ namespace eval ttrace {
     }
 
     proc addentry {cmd var val} {
-        variable store
         variable epoch
-        ${store}set ${epoch}-$cmd $var $val
+        nsv_set ${epoch}-$cmd $var $val
     }
 
     proc delentry {cmd var} {
-        variable store
         variable epoch
         set ei $::errorInfo
         set ec $::errorCode
-        catch {${store}unset ${epoch}-$cmd $var}
+        catch {nsv_unset ${epoch}-$cmd $var}
         set ::errorInfo $ei
         set ::errorCode $ec
     }
 
     proc getentry {cmd var} {
-        variable store
         variable epoch
         set ei $::errorInfo
         set ec $::errorCode
-        if {[catch {${store}set ${epoch}-$cmd $var} val]} {
+        if {[catch {nsv_set ${epoch}-$cmd $var} val]} {
             set ::errorInfo $ei
             set ::errorCode $ec
             set val ""
@@ -313,9 +302,8 @@ namespace eval ttrace {
     }
 
     proc getentries {cmd {pattern *}} {
-        variable store
         variable epoch
-        ${store}array names ${epoch}-$cmd $pattern
+        nsv_array names ${epoch}-$cmd $pattern
     }
 
     proc unknown {args} {
@@ -347,80 +335,71 @@ namespace eval ttrace {
     }
 
     proc _getthreads {} {
-        if {[info commands ns_thread] == ""} {
-            return [thread::names]
-        } else {
-            foreach entry [ns_info threads] {
-                lappend threads [lindex $entry 2]
-            }
-            return $threads
+        set threads ""
+        foreach entry [ns_info threads] {
+            lappend threads [lindex $entry 2]
         }
+        return $threads
     }
 
     proc _newepoch {} {
-        variable store
         variable elock
-        variable mutex
-        $mutex lock $elock
-        set old [${store}set ttrace lastepoch]
-        set new [${store}incr ttrace lastepoch]
-        ${store}lappend ttrace $new [_getthread]
+        ns_mutex lock $elock
+        set old [nsv_set  ttrace lastepoch]
+        set new [nsv_incr ttrace lastepoch]
+        nsv_lappend ttrace $new [_getthread]
         if {$old >= 0} {
             _copyepoch $old $new
             _delepochs
         }
-        ${store}lappend ttrace epochlist $new
-        $mutex unlock $elock
+        nsv_lappend ttrace epochlist $new
+        ns_mutex unlock $elock
         return $new
     }
 
     proc _copyepoch {old new} {
-        variable store
-        foreach var [${store}names $old-*] {
+        foreach var [nsv_names $old-*] {
             set cmd [lindex [split $var -] 1]
-            ${store}array reset $new-$cmd [${store}array get $var]
+            nsv_array reset $new-$cmd [nsv_array get $var]
         }
     }
 
     proc _delepochs {} {
-        variable store
         set tlist [_getthreads]
         set elist ""
-        foreach epoch [${store}set ttrace epochlist] {
+        foreach epoch [nsv_set ttrace epochlist] {
             if {[_dropepoch $epoch $tlist] == 0} {
                 lappend elist $epoch
             } else {
-                ${store}unset ttrace $epoch
+                nsv_unset ttrace $epoch
             }
         }
-        ${store}set ttrace epochlist $elist
+        nsv_set ttrace epochlist $elist
     }
 
     proc _dropepoch {epoch threads} {
-        variable store
         set self [_getthread] 
-        foreach tid [${store}set ttrace $epoch] {
+        foreach tid [nsv_set ttrace $epoch] {
             if {$tid != $self && [lsearch $threads $tid] >= 0} {
                 lappend alive $tid
             }
         }
         if {[info exists alive]} {
-            ${store}set ttrace $epoch $alive
+            nsv_set ttrace $epoch $alive
             return 0
         } else {
-            foreach var [${store}names $epoch-*] {
-                ${store}unset $var
+            foreach var [nsv_names $epoch-*] {
+                nsv_unset $var
             }
             return 1
         }
     }
 
     proc _useepoch {epoch} {
-        variable store
         if {$epoch >= 0} {
             set tid [_getthread]
-            if {[lsearch [${store}set ttrace $epoch] $tid] == -1} {
-                ${store}lappend ttrace $epoch $tid
+            if {[lsearch [nsv_set ttrace $epoch] $tid] == -1} {
+                nsv_lappend ttrace $epoch $tid
             }
         }
     }
@@ -436,7 +415,7 @@ namespace eval ttrace {
                 lappend pargs [list $arg $def]
             }
         }
-        set nsp [namespace qual $cmd]
+        set nsp [namespace qualifier $cmd]
         if {$nsp == ""} {
             set nsp "::"
         }
@@ -479,7 +458,7 @@ namespace eval ttrace {
 # The code below will create traces for the following Tcl commands:
 #    "namespace", "variable", "load", "proc" and "rename"
 #
-# Also, the Tcl object extension XOTcl 1.1.0 is handled and all XOTcl
+# Also, the Tcl object extension XOTcl 1.3.8 is handled and all XOTcl
 # related things, like classes and objects are traced (many thanks to
 # Gustaf Neumann from XOTcl for his kind help and support). 
 #
