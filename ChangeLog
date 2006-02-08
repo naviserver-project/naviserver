@@ -3,6 +3,11 @@
 	* configure.in:
 	* m4/tcl.m4: added TEA 3.5. Scrapped testing for 
 	MACOSX_DEPLOYMENT_TARGET.
+	* nsd/cache.c: Implemented RFE #1427620
+	* tests/test.nscfg: Set cachetimeout to 360 secs
+	* tests/ns_cache.test: Reduced number of threads
+	testing cache stability from 100 to 16 as it was
+	blowing up smaller machines
 
 2006-02-08  Bernd Eidenschink  <eide@users.sourceforge.net>
 

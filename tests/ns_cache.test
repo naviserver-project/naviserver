@@ -184,7 +184,7 @@ test cache-7.1 {cache stats} -body {
     lsort [array names stats]
 } -cleanup {
     unset -nocomplain stats
-} -result {entries flushed hitrate hits maxsize missed size}
+} -result {entries expired flushed hitrate hits maxsize missed pruned size}
 
 
 
@@ -282,14 +282,15 @@ test cache-10.5 {memoize flush glob} -body {
 
 
 test ns_cache-11.1 {stability} -body {
-    for {set i 0} {$i < 100} {incr i} {
-        ns_thread begindetached "
-            for {set j 0} {\$j < 1000} {incr j} {
-                for {set x 0} {\$x < 10000} {incr x} {set a b}
+    set nt 16
+    for {set i 0} {$i < $nt} {incr i} {
+        ns_thread begindetached {  
+            for {set j 0} {$j < 1000} {incr j} {
+                for {set x 0} {$x < 10000} {incr x} {set a b}
                 ns_cache_eval c1 k1 {return a}
                 ns_thread yield
             }
-        "
+        }
     }
     ns_thread begindetached {
         for {set j 0} {$j < 1000} {incr j} {

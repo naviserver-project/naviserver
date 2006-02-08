@@ -805,7 +805,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 
     Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
                      "flushed %u hits %u missed %u hitrate %u "
-                     "expired %u, pruned %u",
+                     "expired %u pruned %u",
                      (unsigned long) cachePtr->maxSize,
                      (unsigned long) cachePtr->currentSize,
                      cachePtr->entriesTable.numEntries, cachePtr->nflushed,
