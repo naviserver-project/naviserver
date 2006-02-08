@@ -74,6 +74,7 @@ ns_param   pagedir         pages
 ns_section "ns/server/test/tcl"
 ns_param   initfile        ../nsd/init.tcl
 ns_param   library         [ns_config "test" home]/testserver/modules
+ns_param   cachetimeout    360 
 
 ns_section "ns/server/test/module/nslog"
 ns_param   file            [ns_config "test" home]/testserver/access.log
