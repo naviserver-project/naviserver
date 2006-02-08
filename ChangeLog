@@ -8,6 +8,9 @@
 	* tests/ns_cache.test: Reduced number of threads
 	testing cache stability from 100 to 16 as it was
 	blowing up smaller machines
+	* doc/src/man.macros: new file
+	* doc/src/README.doc: clarify that "man -l" will
+	only work on Linux when using gzipped manpages.
 
 2006-02-08  Bernd Eidenschink  <eide@users.sourceforge.net>
 

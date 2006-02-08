@@ -13,10 +13,11 @@ the build process.
 
 Examples:
 
-% dtplite -o - nroff ns_sendmail.man >ns_sendmail.n
 % dtplite -o - html  ns_sendmail.man >ns_sendmail.html
+% dtplite -o - nroff ns_sendmail.man >ns_sendmail.n
+% nroff -man ns_sendmail.n
 
-Man supports also compressed pages:
+On Linux, "man" supports also compressed pages:
+
 % dtplite -o - nroff ns_sendmail.man | gzip >ns_sendmail.n.gz
-
 % man -l ns_sendmail.n.gz
