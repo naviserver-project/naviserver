@@ -69,7 +69,7 @@ AC_SUBST(NS_RELEASE_LEVEL)
 # Include and verify Tcl config located by --with-tcl=
 #
 
-TEA_INIT([3.3])
+TEA_INIT([3.5])
 TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
 TEA_ENABLE_THREADS

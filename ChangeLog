@@ -1,3 +1,9 @@
+2006-02-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* configure.in:
+	* m4/tcl.m4: added TEA 3.5. Scrapped testing for 
+	MACOSX_DEPLOYMENT_TARGET.
+
 2006-02-08  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* nsdb/util.tcl:
