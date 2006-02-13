@@ -155,9 +155,10 @@ NsConnectService(void)
 {
     SERVICE_TABLE_ENTRY table[2];
     char buf[PATH_MAX];
-    char *log, *null;
+    char *log = NULL, *null;
     int fd;
     BOOL ok;
+    HANDLE fi;
 
     /*
      * Open a temporary log, ensuring it's opened
@@ -179,7 +180,27 @@ NsConnectService(void)
     freopen(null, "rt", stdin);
     freopen(log, "wt", stdout);
     freopen(log, "wt", stderr);
+
+    /* 
+     * Ensure that Windows & Tcl handles are correctly defined
+     * since Tcl relies on that when creating a new thread/interpreter
+     */
+       
+    fi = (HANDLE) _get_osfhandle(_fileno(stdin));
+    if (fi != INVALID_HANDLE_VALUE) {
+        SetStdHandle(STD_INPUT_HANDLE, fi);
+    }
+    fi = (HANDLE) _get_osfhandle(_fileno(stdout));
+    if (fi != INVALID_HANDLE_VALUE) {
+        SetStdHandle(STD_OUTPUT_HANDLE, fi);
+    }
+    fi = (HANDLE) _get_osfhandle(_fileno(stderr));
+    if (fi != INVALID_HANDLE_VALUE) {
+        SetStdHandle(STD_ERROR_HANDLE, fi);
+    }
+
     Ns_Log(Notice, "nswin32: connecting to service control manager");
+
     service = 1;
     table[0].lpServiceName = NSD_NAME;
     table[0].lpServiceProc = ServiceMain;
@@ -484,7 +505,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
     }
 
     if (hndl == NULL || hndl == INVALID_HANDLE_VALUE) {
-        Ns_Log(Error, "CreateFile(%s): %s", path, GetLastError());
+        Ns_Log(Error, "CreateFile(%s): %d", path, GetLastError());
         return NS_ERROR;
     }
 
@@ -498,7 +519,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
                              name);
 
     if (mobj == NULL || mobj == INVALID_HANDLE_VALUE) {
-        Ns_Log(Error, "CreateFileMapping(%s): %s", path, GetLastError());
+        Ns_Log(Error, "CreateFileMapping(%s): %d", path, GetLastError());
         CloseHandle(hndl);
         return NS_ERROR;
     }
@@ -510,7 +531,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
                          size);
 
     if (addr == NULL) {
-        Ns_Log(Warning, "MapViewOfFile(%s): %s", path, GetLastError());
+        Ns_Log(Warning, "MapViewOfFile(%s): %d", path, GetLastError());
         CloseHandle(mobj);
         CloseHandle(hndl);
         return NS_ERROR;

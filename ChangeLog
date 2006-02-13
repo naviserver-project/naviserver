@@ -1,3 +1,8 @@
+2006-02-13  Ibrahim Tannir  <itannir@users.sf.net>
+	* nsd/nswin32.c: fixed assigning the stdin, stdout, stderr channels
+	  in order for Tcl to attach them properly when a new thread/interp
+	  is created.
+	
 2006-02-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* configure.in:
