@@ -394,6 +394,8 @@ typedef struct Driver {
     int maxline;                /* Maximum request line size. */
     int maxheaders;             /* Maximum number of request headers. */
     int readahead;              /* Maximum request size in memory. */
+    int queuesize;              /* Current number of sockets in the queue */
+    int maxqueuesize;           /* Maximum number of sockets in the queue */
     unsigned int loggingFlags;  /* Logging control flags */
 
     struct {

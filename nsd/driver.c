@@ -108,8 +108,6 @@ static void SockWriterRelease(WriterSock *sockPtr, ReleaseReasons reason, int er
  * Static variables defined in this file.
  */
 
-static int nactive;                 /* Active sockets. */
-
 static Tcl_HashTable hosts;         /* Host header to server table. */
 static ServerMap *defMapPtr = NULL; /* Default server when not found in table. */
 
@@ -300,6 +298,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->keepwait = Ns_ConfigIntRange(path, "keepwait", 30, 0, INT_MAX);
     drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
     drvPtr->backlog = Ns_ConfigIntRange(path, "backlog", 64, 1, INT_MAX);
+    drvPtr->maxqueuesize = Ns_ConfigIntRange(path, "maxqueuesize", 256, 1, INT_MAX);
 
     /*
      * Allow specification of logging or not of various deep
@@ -847,7 +846,7 @@ DriverThread(void *ignored)
     pfds[0].fd = drvPipe[0];
     pfds[0].events = POLLIN;
 
-    while (!stopping || nactive) {
+    while (!stopping) {
 
         /*
          * Set the bits for all active drivers if a connection
@@ -1031,7 +1030,8 @@ DriverThread(void *ignored)
         if (waitPtr == NULL) {
             drvPtr = firstDrvPtr;
             while (drvPtr != NULL) {
-                if ((pfds[drvPtr->pidx].revents & POLLIN) &&
+                if (drvPtr->queuesize < drvPtr->maxqueuesize &&
+                    (pfds[drvPtr->pidx].revents & POLLIN) &&
                     (sockPtr = SockAccept(drvPtr)) != NULL) {
 
                     /*
@@ -1318,7 +1318,7 @@ SockAccept(Driver *drvPtr)
         setsockopt(sockPtr->sock, SOL_SOCKET, SO_RCVBUF,
         (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
     }
-    ++nactive;
+    drvPtr->queuesize++;
 
     return sockPtr;
 }
@@ -1393,7 +1393,7 @@ SockRelease(Sock *sockPtr, ReleaseReasons reason, int err)
 
     SockClose(sockPtr, 0);
     
-    --nactive;
+    sockPtr->drvPtr->queuesize--;
     if (sockPtr->sock != INVALID_SOCKET) {
         ns_sockclose(sockPtr->sock);
         sockPtr->sock = INVALID_SOCKET;
@@ -1972,7 +1972,7 @@ SpoolerThread(void *arg)
     pfds[0].fd = queuePtr->pipe[0];
     pfds[0].events = POLLIN;
 
-    while (!stopping || nactive) {
+    while (!stopping) {
 
         /*
          * Set the bits for all active drivers if a connection
@@ -2207,7 +2207,7 @@ WriterThread(void *arg)
     pfds[0].fd = queuePtr->pipe[0];
     pfds[0].events = POLLIN;
 
-    while (!stopping || nactive) {
+    while (!stopping) {
 
         /*
          * Select and drain the trigger pipe if necessary.

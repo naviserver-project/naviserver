@@ -54,6 +54,9 @@
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
+/* Define to 1 if you have the `lseek64' function. */
+#undef HAVE_LSEEK64
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -62,6 +65,9 @@
 
 /* Do we have <net/errno.h>? */
 #undef HAVE_NET_ERRNO_H
+
+/* Define to 1 if you have the `open64' function. */
+#undef HAVE_OPEN64
 
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
@@ -215,9 +221,6 @@
 /* UNDER_CE version */
 #undef UNDER_CE
 
-/* Should we use <a.out.h> when doing dynamic loading? */
-#undef USE_A_OUT_H
-
 /* Do we need a special AIX hack for timezones? */
 #undef USE_DELTA_FOR_TZ
 
@@ -229,12 +232,6 @@
 
 /* Define to 1 if the <mach-o/dyld.h> header should be used. */
 #undef USE_DYLD
-
-/* Should we use <sys/exec_aout.h> when doing dynamic loading? */
-#undef USE_SYS_EXEC_AOUT_H
-
-/* Should we use <sys/exec.h> when doing dynamic loading? */
-#undef USE_SYS_EXEC_H
 
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
@@ -251,6 +248,9 @@
 
 /* Add the _LARGEFILE64_SOURCE flag when building */
 #undef _LARGEFILE64_SOURCE
+
+/* Add the _LARGEFILE_SOURCE64 flag when building */
+#undef _LARGEFILE_SOURCE64
 
 /* # needed in sys/socket.h Should OS/390 do the right thing with sockets? */
 #undef _OE_SOCKETS
