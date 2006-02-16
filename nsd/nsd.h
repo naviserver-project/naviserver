@@ -244,12 +244,14 @@ typedef struct FileMap {
 typedef struct WriterSock {
     struct WriterSock *nextPtr;
     struct Sock       *sockPtr;
+    Tcl_Obj           *obj;
     int                fd;
     int                nread;
-    int                nsend;
+    int                nsent;
+    int                size;
     int                flags;
     int                bufsize;
-    char               buf[2048];
+    unsigned char      *buf;
 } WriterSock;
 
 /*
@@ -410,6 +412,7 @@ typedef struct Driver {
     struct {
       int threads;               /* Number of writer threads to run. */
       int maxsize;               /* Maximum content size when to use writer thread. */
+      int bufsize;               /* Size of the output buffer. */
       Ns_Mutex lock;             /* Lock around writer queues. */
       SpoolerQueue *firstPtr;    /* List of writer threads. */
       SpoolerQueue *curPtr;      /* Current writer thread */
@@ -913,7 +916,8 @@ extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
-extern int NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd);
+extern int NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan,
+                         FILE *fp, int fd, Tcl_Obj *obj);
 
 extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);

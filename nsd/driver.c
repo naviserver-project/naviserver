@@ -375,7 +375,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->writer.threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
     if (drvPtr->writer.threads > 0) {
         drvPtr->writer.maxsize = Ns_ConfigIntRange(path, "writersize", 1024*1024, 1024*1024, INT_MAX);
-        Ns_Log(Notice, "%s: enable %d writer thread(s) for downloads >= %d bytes", module, drvPtr->writer.threads, drvPtr->writer.maxsize);
+        drvPtr->writer.bufsize = Ns_ConfigIntRange(path, "writerbufsize", 2048, 512, INT_MAX);
+        Ns_Log(Notice, "%s: enable %d writer thread(s) for downloads >= %d bytes, bufsize=%d bytes", module,
+                       drvPtr->writer.threads, drvPtr->writer.maxsize, drvPtr->writer.bufsize);
         for (i = 0; i < drvPtr->writer.threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
             queuePtr->id = i;
@@ -2187,7 +2189,7 @@ WriterThread(void *arg)
 {
     SpoolerQueue *queuePtr = (SpoolerQueue*)arg;
     Ns_Time now;
-    char c, *bufPtr;
+    unsigned char c, *bufPtr;
     int n, err, stopping, pollto, toread, maxsize, status;
     WriterSock *curPtr, *nextPtr, *writePtr;
     struct pollfd pfds[1];
@@ -2242,40 +2244,44 @@ WriterThread(void *arg)
 
             n = err = status = NS_OK;
 
-            if (curPtr->nsend > 0) {
+            if (curPtr->size > 0) {
 
-                /*
-                 *  Case when bufsize > 0 means that we have leftover
-                 *  from previous send, fill up the rest of the buffer
-                 *  and retransmit it with new portion from the file
-                 */
+                if (curPtr->fd > -1) {
 
-                if (curPtr->bufsize > 0) {
-                    bufPtr = curPtr->buf + (sizeof(curPtr->buf) - curPtr->bufsize);
-                    memmove(curPtr->buf, bufPtr, curPtr->bufsize);
-                    bufPtr = curPtr->buf + curPtr->bufsize;
-                    maxsize = sizeof(curPtr->buf) - curPtr->bufsize;
-                } else {
-                    bufPtr = curPtr->buf;
-                    maxsize = sizeof(curPtr->buf);
-                }
-                toread = curPtr->nread;
-                if (toread > maxsize) {
-                    toread = maxsize;
-                }
+                    maxsize = curPtr->sockPtr->drvPtr->writer.bufsize;
 
-                /*
-                 * Read whatever we have left in the file
-                 */
+                    /*
+                     *  Case when bufsize > 0 means that we have leftover
+                     *  from previous send, fill up the rest of the buffer
+                     *  and retransmit it with new portion from the file
+                     */
 
-                if (toread > 0) {
-                     n = read(curPtr->fd, bufPtr, (size_t)toread);
-                     if (n <= 0) {
-                         status = NS_ERROR;
-                     } else {
-                         curPtr->nread -= n;
-                         curPtr->bufsize += n;
-                     }
+                    if (curPtr->bufsize > 0) {
+                        bufPtr = curPtr->buf + (sizeof(curPtr->buf) - curPtr->bufsize);
+                        memmove(curPtr->buf, bufPtr, curPtr->bufsize);
+                        bufPtr = curPtr->buf + curPtr->bufsize;
+                        maxsize -= curPtr->bufsize;
+                    } else {
+                        bufPtr = curPtr->buf;
+                    }
+                    toread = curPtr->nread;
+                    if (toread > maxsize) {
+                        toread = maxsize;
+                    }
+
+                    /*
+                     * Read whatever we have left in the file
+                     */
+
+                    if (toread > 0) {
+                         n = read(curPtr->fd, bufPtr, (size_t)toread);
+                         if (n <= 0) {
+                             status = NS_ERROR;
+                         } else {
+                             curPtr->nread -= n;
+                             curPtr->bufsize += n;
+                         }
+                    }
                 }
 
                 /*
@@ -2288,8 +2294,12 @@ WriterThread(void *arg)
                     vbuf.iov_len = curPtr->bufsize;
                     n = NsSockSend(curPtr->sockPtr, &vbuf, 1);
                     if (n > 0) {
-                        curPtr->nsend -= n;
+                        curPtr->size -= n;
+                        curPtr->nsent += n;
                         curPtr->bufsize -= n;
+                        if (curPtr->obj) {
+                            curPtr->buf += n;
+                        }
                     } else {
                         err = errno;
                         status = NS_ERROR;
@@ -2299,7 +2309,7 @@ WriterThread(void *arg)
             if (status != NS_OK) {
                 SockWriterRelease(curPtr, Reason_SockWriteError, err);
             } else {
-                if (curPtr->nsend > 0) {
+                if (curPtr->size > 0) {
                     Push(curPtr, writePtr);
                 } else {
                     SockWriterRelease(curPtr, 0, 0);
@@ -2339,14 +2349,20 @@ WriterThread(void *arg)
 static void
 SockWriterRelease(WriterSock *sockPtr, ReleaseReasons reason, int err)
 {
-    Ns_Log(Notice, "Writer: closed fd=%d, error=%d", sockPtr->fd, err);
+    Ns_Log(Notice, "Writer: closed fd=%d, error=%d, sent=%d", sockPtr->fd, err, sockPtr->nsent);
     SockRelease(sockPtr->sockPtr, reason, err);
-    close(sockPtr->fd);
+    if (sockPtr->fd > -1) {
+        close(sockPtr->fd);
+        ns_free(sockPtr->buf);
+    }
+    if (sockPtr->obj) {
+        Tcl_DecrRefCount(sockPtr->obj);
+    }
     ns_free(sockPtr);
 }
 
 int
-NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
+NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_Obj *obj)
 {
     Conn *connPtr = (Conn*)conn;
     WriterSock *sockPtr;
@@ -2371,6 +2387,7 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
     sockPtr = (WriterSock*)ns_calloc(1, sizeof(WriterSock));
     sockPtr->sockPtr = connPtr->sockPtr;
     sockPtr->flags = connPtr->flags;
+    sockPtr->fd = -1;
     if (chan != NULL) {
         if (Tcl_GetChannelHandle(chan, TCL_READABLE, (ClientData)&sockPtr->fd) != TCL_OK) {
             ns_free(sockPtr);
@@ -2378,11 +2395,21 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
         }
     } else if (fp != NULL) {
         sockPtr->fd = fileno(fp);
-    } else {
+    } else if (fd != -1) {
         sockPtr->fd = fd;
+    } else {
+        sockPtr->obj = obj;
     }
-    sockPtr->fd = ns_sockdup(sockPtr->fd);
-    sockPtr->nsend = nsend;
+    if (sockPtr->fd > -1) {
+        sockPtr->fd = ns_sockdup(sockPtr->fd);
+        sockPtr->buf = ns_malloc(drvPtr->writer.bufsize);
+    }
+    if (sockPtr->obj) {
+        Tcl_IncrRefCount(sockPtr->obj);
+        sockPtr->buf = Tcl_GetByteArrayFromObj(sockPtr->obj, &nsend);
+        sockPtr->bufsize = nsend;
+    }
+    sockPtr->size = nsend;
     sockPtr->nread = nsend;
     connPtr->sockPtr = NULL;
     // To keep nslog happy about content size returned
@@ -2422,5 +2449,16 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
     }
 
     Ns_Log(Notice, "Writer: %d: started fd=%d: %d bytes: %s", queuePtr->id, sockPtr->fd, nsend, connPtr->reqPtr->request->url);
+    return NS_OK;
+}
+
+int
+NsTclQueueWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "data");
+        return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(NsQueueWriter(Ns_GetConn(), 0, NULL, NULL, -1, objv[1])));
     return NS_OK;
 }

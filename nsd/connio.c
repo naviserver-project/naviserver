@@ -850,7 +850,7 @@ ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
      * Check for submision into writer queue
      */
 
-    if (NsQueueWriter(conn, nsend, chan, fp, fd) == NS_OK) {
+    if (NsQueueWriter(conn, nsend, chan, fp, fd, 0) == NS_OK) {
         return NS_OK;
     }
 
