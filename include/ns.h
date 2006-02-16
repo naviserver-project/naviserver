@@ -485,6 +485,7 @@ typedef struct Ns_Driver {
 
 typedef struct Ns_Sock {
     Ns_Driver *driver;
+    struct sockaddr_in sa;
     SOCKET sock;
     void  *arg;
 } Ns_Sock;

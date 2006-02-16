@@ -430,9 +430,10 @@ typedef struct Sock {
      */
 
     struct Driver *drvPtr;
+    struct sockaddr_in sa;
     SOCKET sock;
     void *arg;
-
+    
     /*
      * Private to Sock.
      */
@@ -440,7 +441,6 @@ typedef struct Sock {
     struct Sock *nextPtr;
     struct NsServer *servPtr;
     char *location;
-    struct sockaddr_in sa;
     int keep;
     int pidx;                   /* poll() index. */
     Ns_Time timeout;

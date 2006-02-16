@@ -3,7 +3,10 @@
 	src/driver.c:
 	src/nsd.h: Added maxqueuesize parameter to limit incoming 
 	sockets queue size to prevent possible DoS attacks, 
-	default size set to 256.
+	default size set to 256. 
+	include/ns.h: Made struct sockaddr_in sa public in
+	Ns_Sock and Sock in private nsd.h to have access to it
+	from communication modules without using private nsd.h 
 
 2006-02-13  Ibrahim Tannir  <itannir@users.sf.net>
 	* nsd/nswin32.c: fixed assigning the stdin, stdout, stderr channels
