@@ -2331,6 +2331,7 @@ WriterThread(void *arg)
             Push(curPtr, writePtr);
             curPtr = nextPtr;
         }
+        queuePtr->curPtr = writePtr;
 
         /*
          * Check for shutdown
@@ -2349,7 +2350,7 @@ WriterThread(void *arg)
 static void
 SockWriterRelease(WriterSock *sockPtr, ReleaseReasons reason, int err)
 {
-    Ns_Log(Notice, "Writer: closed fd=%d, error=%d, sent=%d", sockPtr->fd, err, sockPtr->nsent);
+    Ns_Log(Notice, "Writer: closed fd=%d, error=%d, sent=%u", sockPtr->fd, err, sockPtr->nsent);
     SockRelease(sockPtr->sockPtr, reason, err);
     if (sockPtr->fd > -1) {
         close(sockPtr->fd);
@@ -2369,6 +2370,10 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_
     SpoolerQueue *queuePtr;
     Driver *drvPtr;
     int trigger = 0;
+
+    if (conn == NULL) {
+        return NS_ERROR;
+    }
 
     drvPtr = connPtr->sockPtr->drvPtr;
 
@@ -2393,12 +2398,18 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_
             ns_free(sockPtr);
             return NS_ERROR;
         }
-    } else if (fp != NULL) {
+    } else
+    if (fp != NULL) {
         sockPtr->fd = fileno(fp);
-    } else if (fd != -1) {
+    } else
+    if (fd != -1) {
         sockPtr->fd = fd;
-    } else {
+    } else
+    if (obj != NULL ) {
         sockPtr->obj = obj;
+    } else {
+        ns_free(sockPtr);
+        return NS_ERROR;
     }
     if (sockPtr->fd > -1) {
         sockPtr->fd = ns_sockdup(sockPtr->fd);
@@ -2448,17 +2459,82 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_
         SockTrigger(queuePtr->pipe[1]);
     }
 
-    Ns_Log(Notice, "Writer: %d: started fd=%d: %d bytes: %s", queuePtr->id, sockPtr->fd, nsend, connPtr->reqPtr->request->url);
+    Ns_Log(Notice, "Writer: %d: started fd=%d: %u bytes: %s", queuePtr->id, sockPtr->fd, nsend,
+           connPtr->reqPtr->request->url);
     return NS_OK;
 }
 
 int
-NsTclQueueWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "data");
+    int fd, opt;
+    Driver *drvPtr;
+    WriterSock *sockPtr;
+    SpoolerQueue *queuePtr;
+    Tcl_DString ds;
+
+    static CONST char *opts[] = {
+        "submit", "submitfile", "list", NULL
+    };
+
+    enum {
+        cmdSubmitIdx, cmdSubmitFileIdx, cmdListIdx
+    };
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(NsQueueWriter(Ns_GetConn(), 0, NULL, NULL, -1, objv[1])));
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, 
+                            "option", 0, &opt) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    
+    switch (opt) {
+    case cmdSubmitIdx:
+        if (objc < 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "data");
+            return TCL_ERROR;
+        }
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(NsQueueWriter(Ns_GetConn(), 0, NULL, NULL, -1, objv[2])));
+        break;
+
+    case cmdSubmitFileIdx:
+        if (objc < 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "filename");
+            return TCL_ERROR;
+        }
+        fd = open(Tcl_GetString(objv[2]), O_RDONLY);
+        if (fd == -1) {
+            Tcl_AppendResult(interp, "error opening file: ", Tcl_GetString(objv[2]), ": ", strerror(errno), 0);
+            return TCL_ERROR;
+        }
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(NsQueueWriter(Ns_GetConn(), 0, NULL, NULL, fd, NULL)));
+        close(fd);
+        break;
+
+    case cmdListIdx:
+        Tcl_DStringInit(&ds);
+        drvPtr = firstDrvPtr;
+        while (drvPtr != NULL) {
+              queuePtr = drvPtr->writer.firstPtr;
+              while (queuePtr != NULL) {
+                    Ns_MutexLock(&queuePtr->lock);
+                    sockPtr = queuePtr->curPtr;
+                    while (sockPtr != NULL) {
+                          Ns_DStringPrintf(&ds, "%s %s %d %u %u ", drvPtr->name,
+                                            ns_inet_ntoa(sockPtr->sockPtr->sa.sin_addr),
+                                            sockPtr->fd, sockPtr->size, sockPtr->nsent);
+                          sockPtr = sockPtr->nextPtr;
+                    }
+                    Ns_MutexUnlock(&queuePtr->lock);
+                    queuePtr = queuePtr->nextPtr;
+              }
+              drvPtr = drvPtr->nextPtr;
+        }
+        Tcl_AppendResult(interp, ds.string, 0);
+        Tcl_DStringFree(&ds);
+        break;
+    }
     return NS_OK;
 }

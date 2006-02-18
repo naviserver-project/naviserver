@@ -261,7 +261,8 @@ typedef struct WriterSock {
 
 typedef struct SpoolerQueue {
     struct SpoolerQueue  *nextPtr;
-    void                *sockPtr;     /* List of spooled socket structures. */
+    void                *sockPtr;     /* List of submitted socket structures. */
+    void                *curPtr;      /* List of processed socket structures. */
     SOCKET               pipe[2];     /* Trigger to wakeup WriterThread/SpoolerThread. */
     Ns_Mutex             lock;        /* Lock around spooled list. */
     Ns_Cond              cond;        /* Cond for stopped flag. */

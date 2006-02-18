@@ -1,3 +1,10 @@
+2006-02-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd/tclcmds.c:
+	* nsd/nsd.h: Updated writer support, Tcl command renamed to
+	ns_writer with options submit, submitfile, list
+
 2006-02-15  Vlad Seryakov  <seryakov@users.sf.net>
 
 	src/driver.c:

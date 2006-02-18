@@ -198,7 +198,7 @@ extern Tcl_ObjCmdProc
     NsTclWriteFpObjCmd,
     NsTclWriteObjCmd,
     NsTclUploadStatsObjCmd,
-    NsTclQueueWriterObjCmd;;
+    NsTclWriterObjCmd;;
 
 extern Tcl_CmdProc
     NsTclAdpDebugCmd,
@@ -445,7 +445,7 @@ static Cmd servCmds[] = {
     {"nsv_unset", NULL, NsTclNsvUnsetObjCmd},
 
     {"ns_upload_stats", NULL, NsTclUploadStatsObjCmd},
-    {"ns_queue_writer", NULL, NsTclQueueWriterObjCmd},
+    {"ns_writer", NULL, NsTclWriterObjCmd},
 
     /*
      * Add more server Tcl commands here.
