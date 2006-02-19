@@ -1,8 +1,8 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://aolserver.com/.
+ * http://www.mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
@@ -38,9 +38,6 @@
 
 NS_RCSID("@(#) $Header$");
 
-static Ns_Mutex lock;
-static Ns_Cond cond;
-static Ns_Thread tickThread;
 static Ns_ThreadProc ServiceTicker;
 static void StopTicker(void);
 static void StartTicker(DWORD pending);
@@ -50,12 +47,20 @@ static BOOL WINAPI ConsoleHandler(DWORD code);
 static void ReportStatus(DWORD state, DWORD code, DWORD hint);
 static void ExitService(void);
 static char *GetServiceName(Ns_DString *dsPtr, char *server);
+
+/*
+ * Static variables used in this file
+ */
+
+static Ns_Mutex lock;
+static Ns_Cond cond;
+static Ns_Thread tickThread;
 static SERVICE_STATUS_HANDLE hStatus = 0;
 static SERVICE_STATUS curStatus;
-static Ns_Tls   tls;
-static int service;
+static Ns_Tls tls;
+static int service = 0;
 static int tick;
-static int sigpending;
+static int sigpending = 0;
 static int servicefailed = 0;
 
 #define SysErrMsg() (NsWin32ErrMsg(GetLastError()))
@@ -138,7 +143,7 @@ NsWin32ErrMsg(int err)
  *
  * NsConnectService --
  *
- *  Attach to the service control manager at startup.
+ *      Attach to the service control manager at startup.
  *
  * Results:
  *      None.
@@ -154,38 +159,33 @@ int
 NsConnectService(void)
 {
     SERVICE_TABLE_ENTRY table[2];
-    char buf[PATH_MAX];
-    char *log = NULL, *null;
-    int fd;
-    BOOL ok;
+    char  *nul = "nul:", buf[PATH_MAX];
+    BOOL   ok;
     HANDLE fi;
 
     /*
-     * Open a temporary log, ensuring it's opened
-     * on fd 2 for later dup2 in NsLogOpen().
+     * Close all opened streams at this point
      */
 
-    log = null = "nul:";
-    if (GetTempPath(sizeof(buf) - sizeof(NSD_NAME) - 7, buf) > 0) {
-        strcat(buf, NSD_NAME ".XXXXXX");
-        log = _mktemp(buf);
-    }
-    if (log == NULL) {
-        log = null;
-    }
     _fcloseall();
-    for (fd = 0; fd < 3; ++fd) {
-        close(fd);
-    }
-    freopen(null, "rt", stdin);
-    freopen(log, "wt", stdout);
-    freopen(log, "wt", stderr);
+
+    /*
+     * Re-route std streams to null because they will be
+     * handled separately, i.e. re-routed to log file in 
+     * the LogReOpen() function. The stdin remains bound
+     * to nul: device forever.
+     */
+
+    freopen(nul, "rt", stdin);
+    freopen(nul, "wt", stdout);
+    freopen(nul, "wt", stderr);
 
     /* 
-     * Ensure that Windows & Tcl handles are correctly defined
-     * since Tcl relies on that when creating a new thread/interpreter
+     * Ensure that stdio handles are correctly set.
+     * Fail to do this will result in Tcl library
+     * thinking that no stdio handles are defined.
      */
-       
+
     fi = (HANDLE) _get_osfhandle(_fileno(stdin));
     if (fi != INVALID_HANDLE_VALUE) {
         SetStdHandle(STD_INPUT_HANDLE, fi);
@@ -202,17 +202,17 @@ NsConnectService(void)
     Ns_Log(Notice, "nswin32: connecting to service control manager");
 
     service = 1;
+
     table[0].lpServiceName = NSD_NAME;
     table[0].lpServiceProc = ServiceMain;
     table[1].lpServiceName = NULL;
     table[1].lpServiceProc = NULL;
+
     ok = StartServiceCtrlDispatcher(table);
+
     if (!ok) {
-        Ns_Log(Error, "nswin32: "
-               "failed to contact service control dispatcher: '%s'",
+        Ns_Log(Error, "nswin32: StartServiceCtrlDispatcher(): '%s'",
                SysErrMsg());
-    } else if (log != null) {
-        unlink(log);
     }
 
     return (ok ? NS_OK : NS_ERROR);
@@ -280,8 +280,7 @@ NsRemoveService(char *server)
  *      None.
  *
  * Side effects:
- *      Service should appear in the list in the services 
- *      control panel.
+ *      Service should appear in the list in the services control panel.
  *
  *----------------------------------------------------------------------
  */
