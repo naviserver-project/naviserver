@@ -390,7 +390,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     if (servPtr->vhost.enabled) {
         NsPageRoot(&ds, servPtr, "www.example.com:80");
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
-        Ns_DStringTrunc(&ds, 0);
+        Ns_DStringSetLength(&ds, 0);
     }
     
     /*

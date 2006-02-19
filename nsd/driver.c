@@ -413,7 +413,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                     mapPtr = ns_malloc(sizeof(ServerMap) + ds.length);
                     mapPtr->servPtr  = servPtr;
                     strcpy(mapPtr->location, ds.string);
-                    Ns_DStringTrunc(&ds, 0);
+                    Ns_DStringSetLength(&ds, 0);
                     if (defMapPtr == NULL && STREQ(defserver, server)) {
                         defMapPtr = mapPtr;
                     }

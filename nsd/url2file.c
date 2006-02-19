@@ -245,7 +245,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
     }
     if (status == NS_OK) {
         while (dsPtr->length > 0 && dsPtr->string[dsPtr->length -1] == '/') {
-            Ns_DStringTrunc(dsPtr, dsPtr->length -1);
+            Ns_DStringSetLength(dsPtr, dsPtr->length -1);
         }
     }
     return status;

@@ -168,7 +168,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
         }
         status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         if (status != TCL_OK) {
-            Ns_DStringTrunc(&ds, 0);
+            Ns_DStringSetLength(&ds, 0);
             Ns_DStringAppend(&ds, "\n    while executing callback\n");
             Ns_GetProcInfo(&ds, cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);

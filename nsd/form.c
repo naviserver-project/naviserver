@@ -249,10 +249,10 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
         if (v != NULL) {
             *v = '\0';
         }
-        Ns_DStringTrunc(&kds, 0);
+        Ns_DStringSetLength(&kds, 0);
         k = Ns_UrlQueryDecode(&kds, k, encoding);
         if (v != NULL) {
-            Ns_DStringTrunc(&vds, 0);
+            Ns_DStringSetLength(&vds, 0);
             Ns_UrlQueryDecode(&vds, v+1, encoding);
             *v = '=';
             v = vds.string;
@@ -511,7 +511,7 @@ static char *
 Ext2Utf(Tcl_DString *dsPtr, char *start, int len, Tcl_Encoding encoding)
 {
     if (encoding == NULL) {
-        Tcl_DStringTrunc(dsPtr, 0);
+        Tcl_DStringSetLength(dsPtr, 0);
         Tcl_DStringAppend(dsPtr, start, len);
     } else {
         /* NB: ExternalToUtfDString will re-init dstring. */

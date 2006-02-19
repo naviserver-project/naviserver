@@ -204,11 +204,11 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
             n = connPtr->queued.length - nwrote;
             if (n <= 0) {
                 nwrote -= connPtr->queued.length;
-                Tcl_DStringTrunc(&connPtr->queued, 0);
+                Tcl_DStringSetLength(&connPtr->queued, 0);
             } else {
                 memmove(connPtr->queued.string,
                         connPtr->queued.string + nwrote, (size_t)n);
-                Tcl_DStringTrunc(&connPtr->queued, n);
+                Tcl_DStringSetLength(&connPtr->queued, n);
                 nwrote = 0;
             }
         }
@@ -674,7 +674,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, int *nreadPtr)
     maxhdr = connPtr->drvPtr->maxheaders;
     status = NS_OK;
     while (nread < maxhdr && status == NS_OK) {
-        Ns_DStringTrunc(&ds, 0);
+        Ns_DStringSetLength(&ds, 0);
         status = Ns_ConnReadLine(conn, &ds, &nline);
         if (status == NS_OK) {
             nread += nline;

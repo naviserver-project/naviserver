@@ -1015,7 +1015,7 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
                              (*specPtr->key == '?') ? "?" : "");
         }
     }
-    Ns_DStringTrunc(&ds, Ns_DStringLength(&ds) - 1);
+    Ns_DStringSetLength(&ds, Ns_DStringLength(&ds) - 1);
     Tcl_WrongNumArgs(interp, objc, objv, ds.string);
     Ns_DStringFree(&ds);
 }

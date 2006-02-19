@@ -457,7 +457,7 @@ AdpFlush(NsInterp *itPtr, int stream)
 
     Tcl_DStringFree(&ds);
     Tcl_DStringFree(&cds);
-    Tcl_DStringTrunc(itPtr->adp.responsePtr, 0);
+    Tcl_DStringSetLength(itPtr->adp.responsePtr, 0);
 
     return result;
 }

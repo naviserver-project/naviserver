@@ -468,7 +468,7 @@ HttpSend(SOCKET sock, void *arg, int why)
     httpPtr->len -= n;
     if (httpPtr->len == 0) {
         shutdown(sock, 1);
-        Tcl_DStringTrunc(&httpPtr->ds, 0);
+        Tcl_DStringSetLength(&httpPtr->ds, 0);
         Ns_MutexLock(&lock);
         httpPtr->state = REQ_RECV;
         Ns_MutexUnlock(&lock);

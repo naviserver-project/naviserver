@@ -405,7 +405,7 @@ Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
  *      There are 2 ways to use this override:
  *
  *      1. In conjunction with the Ns_SetLogFlushProc() to use the
- *         existing AOLserver buffering and writing system. So when a
+ *         existing server buffering and writing system. So when a
  *         log message is added it is inserted into the log cache and
  *         flushed later through your log flush override. To use this
  *         write any logging data to the Ns_DString that is passed into
@@ -549,7 +549,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     case CGetIdx:
         Tcl_SetResult(interp, cachePtr->buffer.string, TCL_VOLATILE);
-        Ns_DStringFree(&cachePtr->buffer);
+        Ns_DStringSetLength(&cachePtr->buffer, 0);
         cachePtr->count = 0;
         break;
 
@@ -571,7 +571,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
             return TCL_ERROR;
         }
-        Ns_DStringTrunc(&cachePtr->buffer, len);
+        Ns_DStringSetLength(&cachePtr->buffer, len);
         break;
 
     case CSeverityIdx:
@@ -734,7 +734,7 @@ LogStart(LogCache *cachePtr, Ns_LogSeverity severity)
     }
     Ns_DStringAppend(&cachePtr->buffer, LogTime(cachePtr, 0, &usec));
     if (flags & LOG_USEC) {
-        Ns_DStringTrunc(&cachePtr->buffer, cachePtr->buffer.length-1);
+        Ns_DStringSetLength(&cachePtr->buffer, cachePtr->buffer.length-1);
         Ns_DStringPrintf(&cachePtr->buffer, ".%ld]", usec);
     }
     Ns_DStringPrintf(&cachePtr->buffer, "[%d.%lu][%s] %s: ", Ns_InfoPid(), 
@@ -806,7 +806,7 @@ LogFlush(LogCache *cachePtr)
         (*flushProcPtr)(dsPtr->string, (size_t) dsPtr->length);
     }
     Ns_MutexUnlock(&lock);
-    Ns_DStringFree(dsPtr);
+    Ns_DStringSetLength(dsPtr, 0);
     cachePtr->count = 0;
 }
 

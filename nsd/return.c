@@ -474,7 +474,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, int length)
     Ns_DStringInit(&ds);
     Ns_ConnCondSetHeaders(conn, "MIME-Version", "1.0");
     Ns_ConnCondSetHeaders(conn, "Date", Ns_HttpTime(&ds, NULL));
-    Ns_DStringTrunc(&ds, 0);
+    Ns_DStringSetLength(&ds, 0);
 
     Ns_DStringVarAppend(&ds, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NULL);
     Ns_ConnCondSetHeaders(conn, "Server", ds.string);

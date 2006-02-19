@@ -299,7 +299,7 @@ NsFastPathProc(void *arg, Ns_Conn *conn)
          */
 
         for (i = 0; i < servPtr->fastpath.dirc; ++i) {
-            Ns_DStringTrunc(&ds, 0);
+            Ns_DStringSetLength(&ds, 0);
             if (NsUrlToFile(&ds, servPtr, url) != NS_OK) {
                 goto notfound;
             }
@@ -310,7 +310,7 @@ NsFastPathProc(void *arg, Ns_Conn *conn)
             Tcl_DecrRefCount(path);
             if (status == 0 && S_ISREG(st.st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
-                    Ns_DStringTrunc(&ds, 0);
+                    Ns_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
                     result = Ns_ConnReturnRedirect(conn, ds.string);
                 } else {

@@ -156,7 +156,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
      * Send a simple HTTP GET request.
      */
      
-    Ns_DStringTrunc(&ds, 0);
+    Ns_DStringSetLength(&ds, 0);
     Ns_DStringVarAppend(&ds, "GET ", request->url, NULL);
     if (request->query != NULL) {
         Ns_DStringVarAppend(&ds, "?", request->query, NULL);
@@ -360,7 +360,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
     char *eol;
     int n;
 
-    Ns_DStringTrunc(dsPtr, 0);
+    Ns_DStringSetLength(dsPtr, 0);
     do {
         if (sPtr->cnt > 0) {
             eol = strchr(sPtr->ptr, '\n');
@@ -376,7 +376,7 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
             if (eol != NULL) {
                 n = dsPtr->length;
                 if (n > 0 && dsPtr->string[n-1] == '\r') {
-                    Ns_DStringTrunc(dsPtr, n-1);
+                    Ns_DStringSetLength(dsPtr, n-1);
                 }
                 return 1;
             }

@@ -1,3 +1,27 @@
+2006-02-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/adpcmds.c:  Replaced references to Ns_DStringTrunc
+	* nsd/adpeval.c:  and Tcl_DStringTrunc with Ns_DStringSetLength
+	* nsd/adpparse.c: and Tcl_DStringSetLength.
+	* nsd/adprequest.c:
+	* nsd/connio.c:
+	* nsd/driver.c:
+	* nsd/dstring.c:
+	* nsd/fastpath.c:
+	* nsd/form.c:
+	* nsd/pathname.c:
+	* nsd/request.c:
+	* nsd/return.c:
+	* nsd/server.c:
+	* nsd/tclcallbacks.c:
+	* nsd/tclhttp.c:
+	* nsd/tclobjv.c:
+	* nsd/url2file.c:
+	* nsd/urlopen.c:
+
+	* nsd/log.c: Fixed potential freeing of already 
+	freed memory during LogFlush/LogFreeCache sequence.
+
 2006-02-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c:

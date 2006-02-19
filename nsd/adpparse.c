@@ -312,7 +312,7 @@ GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr)
     while (s < e  && !isspace(UCHAR(*s))) {
 	++s;
     }
-    Tcl_DStringTrunc(dsPtr, 0);
+    Tcl_DStringSetLength(dsPtr, 0);
     Tcl_DStringAppend(dsPtr, t, s - t);
     if (aPtr != NULL) {
 	while (s < e && isspace(UCHAR(*s))) {

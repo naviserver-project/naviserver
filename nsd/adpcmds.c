@@ -476,7 +476,7 @@ NsTclAdpTruncObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	return TCL_ERROR;
     }
 
-    Ns_DStringTrunc(itPtr->adp.outputPtr, length);
+    Ns_DStringSetLength(itPtr->adp.outputPtr, length);
     return TCL_OK;
 }
 

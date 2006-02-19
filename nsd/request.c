@@ -368,7 +368,7 @@ SetUrl(Ns_Request * request, char *url)
         p = url;
     }
     Ns_NormalizePath(&ds2, p);
-    Ns_DStringTrunc(&ds1, 0);
+    Ns_DStringSetLength(&ds1, 0);
 
     /*
      * Append a trailing slash to the normalized URL if the original URL

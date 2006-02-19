@@ -305,7 +305,7 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
     } else {
         Ns_MakePath(&tmp, itPtr->adp.cwd, file, NULL);
         Ns_NormalizePath(&ds, tmp.string);
-        Ns_DStringTrunc(&tmp, 0);
+        Ns_DStringSetLength(&tmp, 0);
     }
     file = ds.string;
     
@@ -346,7 +346,7 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
                                             itPtr->servPtr->adp.cachesize,
                                             FreeInterpPage);
 #endif
-        Ns_DStringTrunc(&tmp, 0);
+        Ns_DStringSetLength(&tmp, 0);
     }
     
     /*
@@ -999,7 +999,7 @@ AdpDebug(NsInterp *itPtr, CONST char *ptr, int len, int nscript)
                 Tcl_AppendResult(interp, "write to \"", debugfile,
                                  "\" failed: ", Tcl_PosixError(interp), NULL);
             } else {
-                Ns_DStringTrunc(&ds, 0);
+                Ns_DStringSetLength(&ds, 0);
                 Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
                 code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
             }

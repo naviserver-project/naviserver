@@ -309,7 +309,7 @@ Ns_DStringSetLength(Ns_DString *dsPtr, int length)
 void
 Ns_DStringTrunc(Ns_DString *dsPtr, int length)
 {
-    Tcl_DStringTrunc(dsPtr, length);
+    Tcl_DStringSetLength(dsPtr, length);
 }
 
 #undef Ns_DStringNAppend
