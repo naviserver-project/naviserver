@@ -1,3 +1,7 @@
+2006-02-19  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/getopt.h: Remove unused header.
+
 2006-02-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/adpcmds.c:  Replaced references to Ns_DStringTrunc
