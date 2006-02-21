@@ -244,7 +244,7 @@ typedef struct FileMap {
 typedef struct WriterSock {
     struct WriterSock *nextPtr;
     struct Sock       *sockPtr;
-    Tcl_Obj           *obj;
+    char              *data;
     int                fd;
     int                nread;
     int                nsent;
@@ -917,8 +917,8 @@ extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
-extern int NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan,
-                         FILE *fp, int fd, Tcl_Obj *obj);
+extern int NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan,
+                         FILE *fp, int fd, const char *data);
 
 extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);

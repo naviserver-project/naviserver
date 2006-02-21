@@ -1,3 +1,11 @@
+2006-02-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd/nsd.h:
+	* nsd/connio.c: Changed writer to duplicate given memory buffer because
+	using Tcl_Obj between threads is not thread-safe. Renamed NSQueueWriter into
+	NsWriterQueue to be in the same convention with Tcl API.
+
 2006-02-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/getopt.h: Remove unused header.

@@ -2297,7 +2297,7 @@ WriterThread(void *arg)
                         curPtr->size -= n;
                         curPtr->nsent += n;
                         curPtr->bufsize -= n;
-                        if (curPtr->obj) {
+                        if (curPtr->data) {
                             curPtr->buf += n;
                         }
                     } else {
@@ -2356,14 +2356,12 @@ SockWriterRelease(WriterSock *sockPtr, ReleaseReasons reason, int err)
         close(sockPtr->fd);
         ns_free(sockPtr->buf);
     }
-    if (sockPtr->obj) {
-        Tcl_DecrRefCount(sockPtr->obj);
-    }
+    ns_free(sockPtr->data);
     ns_free(sockPtr);
 }
 
 int
-NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_Obj *obj)
+NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, const char *data)
 {
     Conn *connPtr = (Conn*)conn;
     WriterSock *sockPtr;
@@ -2405,8 +2403,9 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_
     if (fd != -1) {
         sockPtr->fd = fd;
     } else
-    if (obj != NULL ) {
-        sockPtr->obj = obj;
+    if (data != NULL ) {
+        sockPtr->data = ns_malloc(nsend + 1);
+        memcpy(sockPtr->data, data, nsend);
     } else {
         ns_free(sockPtr);
         return NS_ERROR;
@@ -2415,9 +2414,8 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_
         sockPtr->fd = ns_sockdup(sockPtr->fd);
         sockPtr->buf = ns_malloc(drvPtr->writer.bufsize);
     }
-    if (sockPtr->obj) {
-        Tcl_IncrRefCount(sockPtr->obj);
-        sockPtr->buf = Tcl_GetByteArrayFromObj(sockPtr->obj, &nsend);
+    if (sockPtr->data) {
+        sockPtr->buf = (unsigned char*)sockPtr->data;
         sockPtr->bufsize = nsend;
     }
     sockPtr->size = nsend;
@@ -2467,7 +2465,8 @@ NsQueueWriter(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd, Tcl_
 int
 NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    int fd, opt;
+    char *data;
+    int fd, opt, size;
     Driver *drvPtr;
     WriterSock *sockPtr;
     SpoolerQueue *queuePtr;
@@ -2496,7 +2495,10 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
             Tcl_WrongNumArgs(interp, 2, objv, "data");
             return TCL_ERROR;
         }
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(NsQueueWriter(Ns_GetConn(), 0, NULL, NULL, -1, objv[2])));
+        data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
+        if (data) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(NsWriterQueue(Ns_GetConn(), size, NULL, NULL, -1, data)));
+        }
         break;
 
     case cmdSubmitFileIdx:
@@ -2509,7 +2511,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
             Tcl_AppendResult(interp, "error opening file: ", Tcl_GetString(objv[2]), ": ", strerror(errno), 0);
             return TCL_ERROR;
         }
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(NsQueueWriter(Ns_GetConn(), 0, NULL, NULL, fd, NULL)));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(NsWriterQueue(Ns_GetConn(), 0, NULL, NULL, fd, NULL)));
         close(fd);
         break;
 
