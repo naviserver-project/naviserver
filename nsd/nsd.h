@@ -703,6 +703,17 @@ typedef struct NsServer {
         Tcl_HashTable caches;
         Ns_Mutex cachelock;
         int cacheTimeout;
+        
+        /*
+         * The following track synchronization
+         * objects which are looked up by name.
+         */
+
+        Tcl_HashTable mutexTable;
+        Tcl_HashTable csTable;
+        Tcl_HashTable semaTable;
+        Tcl_HashTable condTable;
+        Tcl_HashTable rwTable;
     } tcl;
     
     /*

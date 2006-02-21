@@ -296,6 +296,12 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
     servPtr->tcl.cacheTimeout =
         Ns_ConfigIntRange(path, "cachetimeout", 3, 0, INT_MAX);
+    Tcl_InitHashTable(&servPtr->tcl.mutexTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.csTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.semaTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.condTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.rwTable, TCL_STRING_KEYS);
+
     servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
     servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
     Tcl_InitHashTable(&servPtr->share.inits, TCL_STRING_KEYS);

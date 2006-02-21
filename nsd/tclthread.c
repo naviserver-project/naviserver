@@ -55,8 +55,8 @@ typedef struct TclThreadArg {
  */
 
 static int GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
-                   CONST char *opts[], int *optPtr, int createOpt,
-                   CONST char *type, void **addrPtr);
+                   CONST char *opts[], int *optPtr, int createOpt, int destroyOpt,
+                   CONST char *type, void **addrPtr, Tcl_HashTable *table);
 static void CreateTclThread(NsInterp *itPtr, char *script, int detached,
                             Ns_Thread *thrPtr);
 
@@ -243,8 +243,9 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclMutexObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
+    NsInterp *itPtr = (NsInterp *) arg;
     void     *lockArg;
     Ns_Mutex *lockPtr;
     int       opt;
@@ -255,8 +256,8 @@ NsTclMutexObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     enum {
         MCreateIdx, MDestroyIdx, MLockIdx, MUnlockIdx
     };
-    if (GetArgs(interp, objc, objv, opts, &opt, MCreateIdx,
-                mutexAddr, &lockArg) != TCL_OK) {
+    if (GetArgs(interp, objc, objv, opts, &opt, MCreateIdx, MDestroyIdx,
+                mutexAddr, &lockArg, &itPtr->servPtr->tcl.mutexTable) != TCL_OK) {
         return TCL_ERROR;
     }
     lockPtr = (Ns_Mutex*) lockArg;
@@ -301,11 +302,12 @@ NsTclMutexObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclCritSecObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    void  *csArg;
-    Ns_Cs *csPtr;
-    int    opt;
+    NsInterp *itPtr = (NsInterp *) arg;
+    void     *csArg;
+    Ns_Cs    *csPtr;
+    int       opt;
  
     static CONST char *opts[] = {
         "create", "destroy", "enter", "leave", NULL
@@ -313,8 +315,8 @@ NsTclCritSecObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     enum {
         CCreateIdx, CDestroyIdx, CEnterIdx, CLeaveIdx
     };
-    if (GetArgs(interp, objc, objv, opts, &opt, CCreateIdx,
-                critsecAddr, &csArg) != TCL_OK) {
+    if (GetArgs(interp, objc, objv, opts, &opt, CCreateIdx, CDestroyIdx,
+                critsecAddr, &csArg, &itPtr->servPtr->tcl.csTable) != TCL_OK) {
         return TCL_ERROR;
     }
     csPtr = (Ns_Cs*) csArg;
@@ -356,11 +358,12 @@ NsTclCritSecObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclSemaObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSemaObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    void    *semaArg;
-    Ns_Sema *semaPtr;
-    int      opt, cnt;
+    NsInterp *itPtr = (NsInterp *) arg;
+    void     *semaArg;
+    Ns_Sema  *semaPtr;
+    int       opt, cnt;
 
     static CONST char *opts[] = {
         "create", "destroy", "release", "wait", NULL
@@ -368,8 +371,8 @@ NsTclSemaObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
     enum {
         SCreateIdx, SDestroyIdx, SReleaseIdx, SWaitIdx
     };
-    if (GetArgs(interp, objc, objv, opts, &opt, SCreateIdx,
-                semaAddr, &semaArg) != TCL_OK) {
+    if (GetArgs(interp, objc, objv, opts, &opt, SCreateIdx, SDestroyIdx,
+                semaAddr, &semaArg, &itPtr->servPtr->tcl.semaTable) != TCL_OK) {
         return TCL_ERROR;
     }
     semaPtr = (Ns_Sema*) semaArg;
@@ -425,8 +428,9 @@ NsTclSemaObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
  */
 
 int
-NsTclCondObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
+    NsInterp *itPtr = (NsInterp *) arg;
     void     *condArg;
     void     *lockArg;
     Ns_Cond  *condPtr;
@@ -442,8 +446,8 @@ NsTclCondObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
         EAbsWaitIdx, EBroadcastIdx, ECreateIdx, EDestroyIdx, ESetIdx,
         ESignalIdx, EWaitIdx
     };
-    if (GetArgs(interp, objc, objv, opts, &opt, ECreateIdx,
-                condAddr, &condArg) != TCL_OK) {
+    if (GetArgs(interp, objc, objv, opts, &opt, ECreateIdx, EDestroyIdx,
+                condAddr, &condArg, &itPtr->servPtr->tcl.condTable) != TCL_OK) {
         return TCL_ERROR;
     }
     condPtr = (Ns_Cond*) condArg;
@@ -527,8 +531,9 @@ NsTclCondObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
  */
 
 int
-NsTclRWLockObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
+    NsInterp  *itPtr = (NsInterp *) arg;
     void      *rwlockArg;
     Ns_RWLock *rwlockPtr;
     int        opt;
@@ -541,8 +546,8 @@ NsTclRWLockObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         RCreateIdx, RDestroyIdx, RReadLockIdx, RReadUnlockIdx,
         RWriteLockIdx, RWriteUnlockIdx, RUnlockIdx
     };
-    if (GetArgs(interp, objc, objv, opts, &opt, RCreateIdx,
-                rwlockAddr, &rwlockArg) != TCL_OK) {
+    if (GetArgs(interp, objc, objv, opts, &opt, RCreateIdx, RDestroyIdx,
+                rwlockAddr, &rwlockArg, &itPtr->servPtr->tcl.rwTable) != TCL_OK) {
         return TCL_ERROR;
     }
     rwlockPtr = (Ns_RWLock*) rwlockArg;
@@ -702,11 +707,13 @@ CreateTclThread(NsInterp *itPtr, char *script, int detached, Ns_Thread *thrPtr)
  */
 
 static int
-GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], CONST char *opts[],
-        int *optPtr, int createOpt, CONST char *type, void **addrPtr)
+GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
+        CONST char *opts[], int *optPtr, int createOpt, int destroyOpt,
+        CONST char *type, void **addrPtr, Tcl_HashTable *table)
 {
-    void *addr;
-    int   opt;
+    Tcl_HashEntry  *hPtr;
+    void           *addr;
+    int             opt, new;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -723,8 +730,32 @@ GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], CONST char *opts[],
             Tcl_WrongNumArgs(interp, 2, objv, "object");
             return TCL_ERROR;
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], type, &addr) != TCL_OK) {
-            return TCL_ERROR;
+        if (Ns_TclGetOpaqueFromObj(objv[2], type, &addr) != TCL_OK
+            && Ns_TclGetAddrFromObj(interp, objv[2], type, &addr) != TCL_OK) {
+
+            Tcl_ResetResult(interp);
+            Ns_MasterLock();
+            if (opt == destroyOpt) {
+                hPtr = Tcl_FindHashEntry(table, Tcl_GetString(objv[2]));
+                if (hPtr == NULL) {
+                    Ns_MasterUnlock();
+                    Tcl_SetResult(interp,
+                        "synchronization object does not exist", TCL_STATIC);
+                    return TCL_ERROR;
+                }
+                addr = Tcl_GetHashValue(hPtr);
+                Tcl_DeleteHashEntry(hPtr);
+            } else {
+                hPtr = Tcl_CreateHashEntry(table, Tcl_GetString(objv[2]), &new);
+                if (new) {
+                    addr = ns_calloc(1, sizeof(void *));
+                    Tcl_SetHashValue(hPtr, addr);
+                    Ns_TclSetOpaqueObj(objv[2], type, addr);
+                } else {
+                    addr = Tcl_GetHashValue(hPtr);
+                }
+            }
+            Ns_MasterUnlock();
         }
     }
     *addrPtr = addr;

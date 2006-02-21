@@ -1,3 +1,13 @@
+2006-02-21  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/server.c:
+	* nsd/tclcmds.c:
+	* nsd/tclthread.c:
+	* tests/ns_thread.test: Thread synchronization commands can now
+	take a name rather than a reference and the object will be auto
+	created and initialised.
+
 2006-02-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c:
