@@ -16,11 +16,11 @@ test ns_thread-1.1 {basic syntax} -body {
 
 test ns_thread-1.2 {basic syntax} -body {
     ns_mutex ?
-} -returnCodes error -result {bad option "?": must be create, destroy, lock, or unlock}
+} -returnCodes error -result {bad option "?": must be create, destroy, eval, lock, or unlock}
 
 test ns_thread-1.3 {basic syntax} -body {
     ns_critsec ?
-} -returnCodes error -result {bad option "?": must be create, destroy, enter, or leave}
+} -returnCodes error -result {bad option "?": must be create, destroy, enter, eval, or leave}
 
 test ns_thread-1.4 {basic syntax} -body {
     ns_sema ?
@@ -32,7 +32,7 @@ test ns_thread-1.5 {basic syntax} -body {
 
 test ns_thread-1.6 {basic syntax} -body {
     ns_rwlock ?
-} -returnCodes error -result {bad option "?": must be create, destroy, readlock, readunlock, writelock, writeunlock, or unlock}
+} -returnCodes error -result {bad option "?": must be create, destroy, readlock, readunlock, readeval, writelock, writeunlock, writeeval, or unlock}
 
 
 
@@ -98,6 +98,18 @@ test ns_thread-3.4 {destroy a named mutex which doesn't exist} -body {
     ns_mutex destroy test:namedoesnotexist
 } -returnCodes error -result {synchronization object does not exist}
 
+test ns_thread-3.5 {mutex eval locked} -body {
+    ns_mutex eval test:evalmutex {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
+
+test ns_thread-3.6 {mutex eval args} -body {
+    ns_mutex eval test:evalmutex
+} -returnCodes error -result {wrong # args: should be "ns_mutex eval test:evalmutex script"}
+
 
 
 test ns_thread-4.1 {create and destroy a critical section} -body {
@@ -122,6 +134,18 @@ test ns_thread-4.3 {enter and then leave a named critical section} -body {
     ns_critsec leave test:cs
     ns_critsec destroy test:cs
 } -result {}
+
+test ns_thread-4.4 {critical section eval} -body {
+    ns_critsec eval test:evalcs {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
+
+test ns_thread-4.5 {critical section eval args} -body {
+    ns_critsec eval test:evalcs
+} -returnCodes error -result {wrong # args: should be "ns_critsec eval test:evalcs script"}
 
 
 
@@ -168,7 +192,29 @@ test ns_thread-6.4 {named rw lock} -body {
     ns_rwlock destroy test:rwlock
 } -result {}
 
+test ns_thread-6.5 {rwlock eval read-locked} -body {
+    ns_rwlock readeval test:rwlock {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
 
+test ns_thread-6.6 {rwlock eval write-locked} -body {
+    ns_rwlock writeeval test:rwlock {
+        set a b
+    }
+} -cleanup {
+    unset -nocomplain a
+} -result b
+
+test ns_thread-6.7 {rwlock readeval args} -body {
+    ns_rwlock readeval test:rwlock
+} -returnCodes error -result {wrong # args: should be "ns_rwlock readeval test:rwlock script"}
+
+test ns_thread-6.8 {rwlock writeeval args} -body {
+    ns_rwlock writeeval test:rwlock
+} -returnCodes error -result {wrong # args: should be "ns_rwlock writeeval test:rwlock script"}
 
 
 

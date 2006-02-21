@@ -248,13 +248,13 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
     NsInterp *itPtr = (NsInterp *) arg;
     void     *lockArg;
     Ns_Mutex *lockPtr;
-    int       opt;
+    int       opt, status = TCL_OK;
 
     static CONST char *opts[] = {
-        "create", "destroy", "lock", "unlock", NULL
+        "create", "destroy", "eval", "lock", "unlock", NULL
     };
     enum {
-        MCreateIdx, MDestroyIdx, MLockIdx, MUnlockIdx
+        MCreateIdx, MDestroyIdx, MEvalIdx, MLockIdx, MUnlockIdx
     };
     if (GetArgs(interp, objc, objv, opts, &opt, MCreateIdx, MDestroyIdx,
                 mutexAddr, &lockArg, &itPtr->servPtr->tcl.mutexTable) != TCL_OK) {
@@ -275,13 +275,22 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
     case MUnlockIdx:
         Ns_MutexUnlock(lockPtr);
         break;
+    case MEvalIdx:
+        if (objc != 4) {
+            Tcl_WrongNumArgs(interp, 3, objv, "script");
+            return TCL_ERROR;
+        }
+        Ns_MutexLock(lockPtr);
+        status = Tcl_EvalObjEx(interp, objv[3], 0);
+        Ns_MutexUnlock(lockPtr);
+        break;
     case MDestroyIdx:
         Ns_MutexDestroy(lockPtr);
         ns_free(lockPtr);
         break;
     }
 
-    return TCL_OK;
+    return status;
 }
 
 
@@ -307,13 +316,13 @@ NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
     NsInterp *itPtr = (NsInterp *) arg;
     void     *csArg;
     Ns_Cs    *csPtr;
-    int       opt;
+    int       opt, status = TCL_OK;
  
     static CONST char *opts[] = {
-        "create", "destroy", "enter", "leave", NULL
+        "create", "destroy", "enter", "eval", "leave", NULL
     };
     enum {
-        CCreateIdx, CDestroyIdx, CEnterIdx, CLeaveIdx
+        CCreateIdx, CDestroyIdx, CEnterIdx, CEvalIdx, CLeaveIdx
     };
     if (GetArgs(interp, objc, objv, opts, &opt, CCreateIdx, CDestroyIdx,
                 critsecAddr, &csArg, &itPtr->servPtr->tcl.csTable) != TCL_OK) {
@@ -331,13 +340,22 @@ NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
     case CLeaveIdx:
         Ns_CsLeave(csPtr);
         break;
+    case CEvalIdx:
+        if (objc != 4) {
+            Tcl_WrongNumArgs(interp, 3, objv, "script");
+            return TCL_ERROR;
+        }
+        Ns_CsEnter(csPtr);
+        status = Tcl_EvalObjEx(interp, objv[3], 0);
+        Ns_CsLeave(csPtr);
+        break;
     case CDestroyIdx:
         Ns_CsDestroy(csPtr);
         ns_free(csPtr);
         break;
     }
 
-    return TCL_OK;
+    return status;
 }
 
 
@@ -536,15 +554,15 @@ NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     NsInterp  *itPtr = (NsInterp *) arg;
     void      *rwlockArg;
     Ns_RWLock *rwlockPtr;
-    int        opt;
+    int        opt, status = TCL_OK;
 
     static CONST char *opts[] = {
-        "create", "destroy", "readlock", "readunlock",
-        "writelock", "writeunlock", "unlock", NULL
+        "create", "destroy", "readlock", "readunlock", "readeval",
+        "writelock", "writeunlock", "writeeval", "unlock", NULL
     };
     enum {
-        RCreateIdx, RDestroyIdx, RReadLockIdx, RReadUnlockIdx,
-        RWriteLockIdx, RWriteUnlockIdx, RUnlockIdx
+        RCreateIdx, RDestroyIdx, RReadLockIdx, RReadUnlockIdx, RReadEvalIdx,
+        RWriteLockIdx, RWriteUnlockIdx, RWriteEvalIdx, RUnlockIdx
     };
     if (GetArgs(interp, objc, objv, opts, &opt, RCreateIdx, RDestroyIdx,
                 rwlockAddr, &rwlockArg, &itPtr->servPtr->tcl.rwTable) != TCL_OK) {
@@ -571,13 +589,33 @@ NsTclRWLockObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         Ns_RWLockUnlock(rwlockPtr);
         break;
 
+    case RReadEvalIdx:
+        if (objc != 4) {
+            Tcl_WrongNumArgs(interp, 3, objv, "script");
+            return TCL_ERROR;
+        }
+        Ns_RWLockRdLock(rwlockPtr);
+        status = Tcl_EvalObjEx(interp, objv[3], 0);
+        Ns_RWLockUnlock(rwlockPtr);
+        break;
+
+    case RWriteEvalIdx:
+        if (objc != 4) {
+            Tcl_WrongNumArgs(interp, 3, objv, "script");
+            return TCL_ERROR;
+        }
+        Ns_RWLockWrLock(rwlockPtr);
+        status = Tcl_EvalObjEx(interp, objv[3], 0);
+        Ns_RWLockUnlock(rwlockPtr);
+        break;
+
     case RDestroyIdx:
         Ns_RWLockDestroy(rwlockPtr);
         ns_free(rwlockPtr);
         break;
     }
 
-    return TCL_OK;
+    return status;
 }
 
 

@@ -1,5 +1,11 @@
 2006-02-21  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/tclthread.c:
+	* tests/ns_thread.test: Add "eval" subcommand to ns_mutex
+	etc. which takes a lock, evals the given script, then ensures the
+	lock is unlocked before returning. Useful when the script has an
+	error.
+
 	* nsd/nsd.h:
 	* nsd/server.c:
 	* nsd/tclcmds.c:
