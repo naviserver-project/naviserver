@@ -38,7 +38,36 @@
 
 NS_RCSID("@(#) $Header$");
 
-#define IOBUFSZ 2048
+
+/*
+ * UIO_MAXIOV defines the maximum number of buffers the OS
+ * will accept at one time to calls such as witev().
+ */
+
+#if defined(HAVE_SYS_UIO_H)
+# include <sys/uio.h>
+#elif defined(HAVE_UIO_H)
+# include <uio.h>
+#endif
+
+#ifndef UIO_MAXIOV
+# ifdef IOV_MAX
+#  define UIO_MAXIOV IOV_MAX
+# else
+#  define UIO_MAXIOV 16 /* posix minimum */
+# endif
+#endif
+
+
+/*
+ * The following is used to allocate a buffer on the stack for
+ * encoding character data and stransfering data from disk to
+ * the network, and so defines the chunk size of writes to the
+ * network.
+ */
+
+#define IOBUFSZ 8192
+
 
 /*
  * Local functions defined in this file
@@ -101,12 +130,15 @@ Ns_ConnClose(Ns_Conn *conn)
         keep = (conn->flags & NS_CONN_KEEPALIVE) ? 1 : 0;
 
         /*
-         * In chunked mode we must send the last chunk with zero size
+         * In chunked mode we must signify the last chunk with a
+         * chunk of zero size. Send any queued but unsent headers.
          */
 
-        if ((conn->flags & NS_CONN_WRITE_CHUNKED)
-            && !(conn->flags & NS_CONN_SENT_LAST_CHUNK)) {
-            if (Ns_WriteConn(conn, 0, 0) != NS_OK) {
+        if (((conn->flags & NS_CONN_WRITE_CHUNKED)
+             && !(conn->flags & NS_CONN_SENT_LAST_CHUNK))
+            || connPtr->queued.length > 0) {
+
+            if (Ns_WriteConn(conn, NULL, 0) != NS_OK) {
                 keep = 0;
             }
         }
@@ -128,16 +160,16 @@ Ns_ConnClose(Ns_Conn *conn)
  *
  * Ns_ConnSend --
  *
- *      Sends buffers to clients, including any queued
- *      write-behind data if necessary.  Unlike in
- *      previous versions, this routine attempts to send
- *      all data if possible.
+ *      Send buffers to client, including any queued
+ *      write-behind data if necessary.
  *
  * Results:
- *      Number of bytes written, -1 for error on first send.
+ *      Number of bytes of given buffers written, -1 for
+ *      error on first send.
  *
  * Side effects:
- *      Will truncate queued data after send.
+ *      Will truncate any queued data after send.  May send data
+ *      in multiple packets if nbufs is large.
  *
  *----------------------------------------------------------------------
  */
@@ -146,58 +178,79 @@ int
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
     Conn         *connPtr = (Conn *) conn;
-    int           nwrote, towrite, i, n;
-    struct iovec  sbufs[NS_CONN_MAXBUFS];
+    int           nwrote, towrite, sent, i, n, sn;
+    struct iovec  sbufs[UIO_MAXIOV];
 
     if (connPtr->sockPtr == NULL) {
         return -1;
     }
 
+    towrite = nwrote = 0;
+    n  = 0;
+    sn = 0;
+
     /*
-     * Send up to NS_CONN_MAXBUFS(16) buffers, including the queued output
-     * buffer if necessary.
+     * Send any queued write-behind data.
      */
 
-    towrite = 0;
-    n = 0;
     if (connPtr->queued.length > 0) {
-        sbufs[n].iov_base = connPtr->queued.string;
-        sbufs[n].iov_len = connPtr->queued.length;
-        towrite += sbufs[n].iov_len;
-        ++n;
+        sbufs[sn].iov_base = connPtr->queued.string;
+        sbufs[sn].iov_len = connPtr->queued.length;
+        towrite += sbufs[sn].iov_len;
+        ++sn;
     }
-    for (i = 0; i < nbufs && n < NS_CONN_MAXBUFS; ++i) {
-        if (bufs[i].iov_len > 0 && bufs[i].iov_base != NULL) {
-            sbufs[n].iov_base = bufs[i].iov_base;
-            sbufs[n].iov_len = bufs[i].iov_len;
-            towrite += bufs[i].iov_len;
+
+    /*
+     * Send up to UIO_MAXIOV buffers of data at a time.
+     */
+
+    while (n < nbufs || towrite > 0) {
+
+        while (n < nbufs && sn < UIO_MAXIOV) {
+            if (bufs[n].iov_len > 0 && bufs[n].iov_base != NULL) {
+                sbufs[sn].iov_base = bufs[n].iov_base;
+                sbufs[sn].iov_len = bufs[n].iov_len;
+                towrite += bufs[n].iov_len;
+                ++sn;
+            }
             ++n;
         }
-    }
-    nbufs = n;
-    bufs = sbufs;
-    n = nwrote = 0;
-    while (towrite > 0) {
-        n = NsSockSend(connPtr->sockPtr, bufs, nbufs);
-        if (n < 0) {
+
+        sent = NsSockSend(connPtr->sockPtr, sbufs, sn);
+        if (sent < 0) {
             break;
         }
-        towrite -= n;
-        nwrote  += n;
-        if (towrite > 0) {
-            for (i = 0; i < nbufs && n > 0; ++i) {
-                if (n > (int) bufs[i].iov_len) {
-                    n -= bufs[i].iov_len;
-                    bufs[i].iov_base = NULL;
-                    bufs[i].iov_len = 0;
+        towrite -= sent;
+        nwrote  += sent;
+
+        /*
+         * If all the data was not sent, move the remaining buffs
+         * to the beginning to make room for more so that we always
+         * send the maximum number of buffers in one shot.
+         */
+
+        if (towrite > 0 || n < nbufs) {
+            for (i = 0; i < sn && sent > 0; ++i) {
+                if (sent >= (int) sbufs[i].iov_len) {
+                    sent -= sbufs[i].iov_len;
                 } else {
-                    bufs[i].iov_base = (char *) bufs[i].iov_base + n;
-                    bufs[i].iov_len -= n;
-                    n = 0;
+                    sbufs[i].iov_base = (char *) sbufs[i].iov_base + sent;
+                    sbufs[i].iov_len -= sent;
+                    sent = 0;
                 }
+            }
+            sn -= i;
+            if (towrite > 0 && sn > 0) {
+                memmove(sbufs, sbufs + (i-1), (size_t) sizeof(struct iovec) * sn);
+                continue;
             }
         }
     }
+
+    /*
+     * Truncate the queued data buffer.
+     */
+
     if (nwrote > 0) {
         connPtr->nContentSent += nwrote;
         if (connPtr->queued.length > 0) {
@@ -207,7 +260,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
                 Tcl_DStringSetLength(&connPtr->queued, 0);
             } else {
                 memmove(connPtr->queued.string,
-                        connPtr->queued.string + nwrote, (size_t)n);
+                        connPtr->queued.string + nwrote, (size_t) n);
                 Tcl_DStringSetLength(&connPtr->queued, n);
                 nwrote = 0;
             }
@@ -228,100 +281,81 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnWrite --
+ * Ns_ConnWrite, Ns_ConnWriteV --
  *
- *      Send a single buffer to the client.
+ *      Send one or more buffers of raw bytes to the client, possibly
+ *      using the HTTP chunked encoding.
  *
  * Results:
  *      # of bytes written from buffer or -1 on error.
  *
  * Side effects:
- *      Stuff may be written. In chunked mode writing 0 bytes means
- *      terminating chunked stream with zero chunk and ending CRLF
+ *      In chunked mode, writing 0 bytes means terminating chunked
+ *      stream with the zero chunk and trailing \r\n.
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConnWrite(Ns_Conn *conn, CONST void *vbuf, int towrite)
+Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, int towrite)
 {
-    int          nsend;
-    char         hdr[32];
-    struct iovec buf[3];
+    struct iovec vbuf;
+
+    vbuf.iov_base = (void *) buf;
+    vbuf.iov_len = towrite;
+    return Ns_ConnWriteV(conn, &vbuf, 1);
+}
+
+int
+Ns_ConnWriteV(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+{
+    int           i, towrite, nwrote;
+    char          hdr[32];
+    struct iovec  iov[32];
+    struct iovec *sbufs = iov;
 
     if (!(conn->flags & NS_CONN_WRITE_CHUNKED)) {
-        buf[0].iov_base = (void *) vbuf;
-        buf[0].iov_len = towrite;
-        return Ns_ConnSend(conn, buf, 1);
+        nwrote = Ns_ConnSend(conn, bufs, nbufs);
+    } else {
+
+        /*
+         * Send data with HTTP chunked encoding.
+         */
+
+        if (nbufs + 2 > (sizeof(iov) / sizeof(struct iovec))) {
+            sbufs = ns_calloc(nbufs + 2, sizeof(struct iovec));
+        }
+        for (i = 0, towrite = 0; i < nbufs; i++) {
+            towrite += bufs[i].iov_len;
+        }
+        sbufs[0].iov_base = hdr;
+        sbufs[0].iov_len = sprintf(hdr, "%x\r\n", towrite);
+        (void) memcpy(sbufs+1, bufs, nbufs * sizeof(struct iovec));
+        sbufs[nbufs+1].iov_base = "\r\n";
+        sbufs[nbufs+1].iov_len = 2;
+        nwrote = Ns_ConnSend(conn, sbufs, nbufs+2);
+        if (sbufs != iov) {
+            ns_free(sbufs);
+        }
+
+        /*
+         * Zero bytes signals the the last chunked buffer
+         * has been sent.
+         */
+
+        if (bufs[nbufs-1].iov_len == 0) {
+            conn->flags |= NS_CONN_SENT_LAST_CHUNK;
+        }
     }
 
-    /*
-     * Send data as chunked: size CRLF data CRLF
-     */
-
-    buf[0].iov_base = hdr;
-    buf[0].iov_len = sprintf(hdr, "%x\r\n", towrite);
-    buf[1].iov_base = (void *) vbuf;
-    buf[1].iov_len = towrite;
-    buf[2].iov_base = "\r\n";
-    buf[2].iov_len = 2;
-
-    nsend = Ns_ConnSend(conn, buf, 3);
-
-    /*
-     *  In chunked mode we actually sent more data
-     *  but Ns_WriteConn does not know about that
-     */
-
-    if (nsend == buf[0].iov_len + buf[1].iov_len + buf[2].iov_len) {
-        nsend = towrite;
-    }
-
-    /*
-     *  We should mark when zero length buffer was sent because it will be
-     *  considered as last chunk
-     */
-
-    if (towrite == 0 && (conn->flags & NS_CONN_WRITE_CHUNKED)) {
-        conn->flags |= NS_CONN_SENT_LAST_CHUNK;
-    }
-
-    return nsend;
+    return nwrote;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_WriteConn --
- *
- *      This will write a buffer to the conn. It promises to write 
- *      all of it. 
- *
- * Results:
- *      NS_OK/NS_ERROR
- *
- * Side effects:
- *      Stuff may be written 
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int len)
-{
-    if (Ns_ConnWrite(conn, buf, len) != len) {
-        return NS_ERROR;
-    }
-    return NS_OK;
-}
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_WriteCharConn --
+ * Ns_ConnWriteChars, Ns_ConnWriteVChars --
  *
  *      This will write a string buffer to the conn.  The distinction
  *      being that the given data is explicitly a UTF8 character string,
@@ -350,60 +384,76 @@ Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int len)
  */
 
 int
-Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int len)
+Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, int towrite)
 {
-    int             status;
-    CONST char     *utfBytes;
-    int             utfCount; /* # of bytes in utfBytes */
-    int             utfConvertedCount;  /* # of bytes of utfBytes converted */
-    char            encodedBytes[IOBUFSZ];
-    int             encodedCount; /* # of bytes converted in encodedBytes */
-    Tcl_Interp     *interp;
+    struct iovec sbuf;
+
+    sbuf.iov_base = (void *) buf;
+    sbuf.iov_len = towrite;
+    return Ns_ConnWriteVChars(conn, &sbuf, 1);
+}
+
+int
+Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+{
     Conn           *connPtr = (Conn *)conn;
+    int             n, status;
+    CONST char     *utfBytes;
+    int             utfCount;          /* # of bytes in utfBytes */
+    int             utfConvertedCount; /* # of bytes of utfBytes converted */
+    char            encodedBytes[IOBUFSZ];
+    int             encodedCount;      /* # of bytes converted in encodedBytes */
 
-    status = NS_OK;
+    if (connPtr->encoding == NULL
+        || nbufs == 0
+        || (nbufs == 1 && bufs[nbufs-1].iov_len == 0)) {
 
-    if (connPtr->encoding == NULL) {
-        status = Ns_WriteConn(conn, buf, len);
-    } else {
+        return Ns_ConnWriteV(conn, bufs, nbufs);
+    }
 
-        utfBytes = buf;
-        utfCount = len;
-        interp = Ns_GetConnInterp(conn);
+    /*
+     * Coalesce buffers into single encodedBytes buffer as they are
+     * encoded.  Send to client each time encodedBytes fills.
+     */
 
-        while (utfCount > 0 && status == NS_OK) {
+    status   = NS_OK;
+    n        = 0;
+    utfBytes = bufs[n].iov_base;
+    utfCount = bufs[n].iov_len;
 
-            /*
-             * Convert a chunk to the desired encoding.
-             */
+    while (utfCount > 0 && status == NS_OK) {
 
-            status = Tcl_UtfToExternal(interp,
-                         connPtr->encoding,
-                         utfBytes, utfCount,
-                         0, NULL,              /* flags, encoding state */
-                         encodedBytes, sizeof(encodedBytes),
-                         &utfConvertedCount,
-                         &encodedCount,
-                         NULL);                /* # of chars encoded */
+        /*
+         * Encode as much of this buffer as will fit into
+         * encodedBytes in the desired encoding.
+         */
 
-            if (status != TCL_OK && status != TCL_CONVERT_NOSPACE) {
-                status = NS_ERROR;
-                break;
-            }
+        status = Tcl_UtfToExternal(NULL,
+                     connPtr->encoding,
+                     utfBytes, utfCount,
+                     0, NULL,              /* flags, encoding state */
+                     encodedBytes, sizeof(encodedBytes),
+                     &utfConvertedCount,
+                     &encodedCount,
+                     NULL);                /* # of chars encoded */
 
-            /*
-             * Send the converted chunk.
-             */
+        if (status != TCL_OK && status != TCL_CONVERT_NOSPACE) {
+            status = NS_ERROR;
+            break;
+        }
 
-            status = NS_OK;
-            buf = encodedBytes;
-            len = encodedCount;
+        if (encodedCount == sizeof(encodedBytes)
+            || (n == nbufs-1 && utfConvertedCount == utfCount)) {
 
-            status = Ns_WriteConn(conn, buf, len);
-
+            status = Ns_WriteConn(conn, encodedBytes, encodedCount);
             utfCount -= utfConvertedCount;
             utfBytes += utfConvertedCount;
-        }
+            continue;
+         }
+
+        n++;
+        utfBytes = bufs[n].iov_base;
+        utfCount = bufs[n].iov_len;
     }
 
     return status;
@@ -413,16 +463,52 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int len)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnPuts --
+ * Ns_WriteConn, Ns_WriteCharConn --
  *
- *      Write a null-terminated string to the conn; no trailing 
- *      newline will be appended despite the name. 
+ *      Write a single buffer of bytes or characters to the conn. It
+ *      promises to write all of it. 
  *
  * Results:
- *      See Ns_WriteConn 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      See Ns_WriteConn 
+ *      See Ns_ConnWrite(), Ns_ConnWriteChars().
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int towrite)
+{
+    if (Ns_ConnWrite(conn, buf, towrite) < towrite) {
+        return NS_ERROR;
+    }
+    return NS_OK;
+}
+
+int
+Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
+{
+    if (Ns_ConnWriteChars(conn, buf, towrite) < towrite) {
+        return NS_ERROR;
+    }
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnPuts --
+ *
+ *      Write a null-terminated string directly to the conn; no
+ *      trailing newline will be appended despite the name. 
+ *
+ * Results:
+ *      NS_OK or NS_ERROR.
+ *
+ * Side effects:
+ *      See Ns_WriteConn().
  *
  *----------------------------------------------------------------------
  */
@@ -439,13 +525,13 @@ Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
  *
  * Ns_ConnSendDString --
  *
- *      Write contents of a DString
+ *      Write contents of a DString directly to the conn.
  *
  * Results:
- *      See Ns_WriteConn 
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      See Ns_WriteConn 
+ *      See Ns_WriteConn().
  *
  *----------------------------------------------------------------------
  */
@@ -460,12 +546,12 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnSendChannel, Fp, Fd, Buf --
+ * Ns_ConnSendChannel, Fp, Fd --
  *
- *      Send an open channel, FILE, fd or memory buffer.
+ *      Send an open channel, FILE or fd.
  *
  * Results:
- *      NS_OK/NS_ERROR
+ *      NS_OK/NS_ERROR.
  *
  * Side effects:
  *      See ConnSend().

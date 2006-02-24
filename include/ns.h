@@ -830,11 +830,23 @@ Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, int towrite)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int len)
+Ns_ConnWriteV(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, int towrite)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int len)
+Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int towrite)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int

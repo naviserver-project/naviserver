@@ -1,5 +1,32 @@
 2006-02-23  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* configure.in:
+	* include/ns.h:
+	* nsd/connio.c: Make Ns_ConnSend() write all the buffers it is
+	given to the connection, writing in batches up to the OS limit for
+	max number of iovec buffs. Previous behaviour was to give up
+	after buffer 16.
+
+	UIO_MAXIOV is now detected as on some OS' it is significantly
+	larger than the old default of 16 (e.g. on Linux it is 1024).
+
+	Increased the IO buffer size used for encoding character data
+	before sending and for transfering data from disk to network. Up
+	from 2k to 8k. This is allocated on the stack so can't be too
+	big. It is important for this buffer to be large as it controls
+	the number of network packets used to send common items such as
+	ADP pages when the encoding != utf-8.
+
+	New routines Ns_ConnWriteV() and Ns_ConnWriteVChars() expose a
+	scatter/gather interface for sending data. WriteVChars encodes
+	character data as required and calls down to WriteV. WriteV
+	performs HTTP chunked encoding if required and calls down to
+	Ns_ConnSend().
+
+	Ns_ConnClose now flushes unsent queued headers/data before
+	closing, allowing headers and first data to be sent as a single
+	packet in some cases.
+
 	* nsd/sock.c: Untabify, reformat and move code around. Add new
 	comments and clarify existing ones. Add some debug logging for
 	socket send timeouts.
