@@ -1,3 +1,8 @@
+2006-02-24  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/connio.c: check for buffer size -1 because
+	Tcl_UtfToExternal fills the buffer no to the end
+
 2006-02-23  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/init.tcl: Untabify and reindent. Use eq and ne when testing

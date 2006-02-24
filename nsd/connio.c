@@ -442,7 +442,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
             break;
         }
 
-        if (encodedCount == sizeof(encodedBytes)
+        if (encodedCount == sizeof(encodedBytes)-1
             || (n == nbufs-1 && utfConvertedCount == utfCount)) {
 
             status = Ns_WriteConn(conn, encodedBytes, encodedCount);
