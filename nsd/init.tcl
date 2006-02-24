@@ -37,8 +37,12 @@
 #   Core script to initialize a virtual server at startup.
 #
 
+ns_log notice "nsd/init.tcl: Booting virtual server: [ns_info server]..."
+
+
 #
-# Define "use_trace_inits" to true for using trace-based interp inits.
+# Ttrace must be loaded before all other Tcl files if
+# lazy loading is enabled.
 #
 
 set section ns/server/[ns_info server]/tcl
@@ -47,7 +51,7 @@ set use_trace_inits [ns_config -bool $section lazyloader false]
 if {$use_trace_inits} {
     set tracelib [file join [ns_library shared] ttrace.tcl]
     if {![file exists $tracelib]} {
-        ns_log warning "Disabling lazy loading (no trace lib found)"
+        ns_log error "Disabling lazy loading (no trace lib found)"
         set use_trace_inits 0
     } else {
         source $tracelib
@@ -70,10 +74,10 @@ proc ns_module {key {val ""}} {
         private -
         library -
         shared  {
-            if {$key == "library"} {
+            if {$key eq "library"} {
                 set key private
             }
-            if {$val != ""} {
+            if {$val ne ""} {
                 set _module($key) $val
             }
             if {[info exists _module($key)]} {
@@ -113,25 +117,25 @@ proc ns_eval {args} {
     if {$len == 0} {
         return
     }
-    if {$len > 1 && [string match "-sync" [lindex $args 0]]} {
-	set sync 1
-	set args [lreplace $args 0 0]
-	incr len -1
-    } elseif {[string match "-pending" [lindex $args 0]]} {
-	if {$len != 1} {
-	    error "ns_eval: command arguments not allowed with -pending"
-	}
-	set jlist [ns_job joblist [nsv_get _ns_eval_jobq [ns_info server]]]
-	set res [list]
-	foreach job $jlist {
-	    array set jstate $job
-	    set scr $jstate(script)
-	    # Strip off the constant, non-user supplied cruft
-	    set scr [lindex $scr 1]
-	    set stime $jstate(starttime)
-	    lappend res [list $stime $scr]
-	}
-	return $res
+    if {$len > 1 && [lindex $args 0] eq "-synch"} {
+        set sync 1
+        set args [lreplace $args 0 0]
+        incr len -1
+    } elseif {[lindex $args 0] eq "-pending"} {
+        if {$len != 1} {
+            error "ns_eval: command arguments not allowed with -pending"
+        }
+        set jlist [ns_job joblist [nsv_get _ns_eval_jobq [ns_info server]]]
+        set res [list]
+        foreach job $jlist {
+            array set jstate $job
+            set scr $jstate(script)
+            # Strip off the constant, non-user supplied cruft
+            set scr [lindex $scr 1]
+            set stime $jstate(starttime)
+            lappend res [list $stime $scr]
+        }
+        return $res
     }
     if {$len == 1} {
         set args [lindex $args 0]
@@ -148,21 +152,21 @@ proc ns_eval {args} {
         # environment.
         # Note that running the _ns_eval must be serialized for this
         # server.  We are handling this by establishing that the
-	# ns_job queue handling these requests will run only a single
-	# thread.
-	set qid [nsv_get _ns_eval_jobq [ns_info server]]
-	set scr [list _ns_eval $args]
-	if {$sync} {
-	    set th_code [catch {
-		set job_id [ns_job queue $qid $scr]
-		ns_job wait $qid $job_id
-		     } th_result]
-	} else {
-	    set th_code [catch {ns_job queue -detached $qid $scr} th_result]
-	}
-	if {$th_code} {
-	    return -code $th_code $th_result
-	}
+        # ns_job queue handling these requests will run only a single
+        # thread.
+        set qid [nsv_get _ns_eval_jobq [ns_info server]]
+        set scr [list _ns_eval $args]
+        if {$sync} {
+            set th_code [catch {
+                set job_id [ns_job queue $qid $scr]
+                ns_job wait $qid $job_id
+            } th_result]
+        } else {
+            set th_code [catch {ns_job queue -detached $qid $scr} th_result]
+        }
+        if {$th_code} {
+            return -code $th_code $th_result
+        }
 
     } elseif {$code == 1} {
         ns_ictl markfordelete
@@ -210,25 +214,25 @@ proc _ns_eval {args} {
 
 proc _ns_helper_eval {args} {
     set didsaveproc 0
-    if {[info proc _saved_ns_eval] == ""} {
-	rename ns_eval _saved_ns_eval
-	proc ns_eval {args} {
+    if {[info proc _saved_ns_eval] eq ""} {
+        rename ns_eval _saved_ns_eval
+        proc ns_eval {args} {
             set len [llength $args]
             if {$len == 0} {
                 return
             } elseif {$len == 1} {
                 set args [lindex $args 0]
             }
-	    uplevel 1 $args
-	}
-	set didsaveproc 1
+            uplevel 1 $args
+        }
+        set didsaveproc 1
     }
 
     set code [catch {uplevel 1 [eval concat $args]} result]
 
     if $didsaveproc {
-	rename ns_eval ""
-	rename _saved_ns_eval ns_eval
+        rename ns_eval ""
+        rename _saved_ns_eval ns_eval
     }
     return -code $code $result
 }
@@ -315,9 +319,8 @@ proc ns_cleanupvars {} {
         }
     }
 
-    global errorInfo errorCode
-    set errorInfo ""
-    set errorCode ""
+    set ::errorInfo ""
+    set ::errorCode ""
 }
 
 
@@ -357,7 +360,7 @@ proc _ns_savenamespaces {} {
     foreach n $nslist {
         foreach {ns_script ns_import} [_ns_getscript $n] {
             append script [list namespace eval $n $ns_script] \n
-            if {$ns_import != ""} {
+            if {$ns_import ne ""} {
                 append import [list namespace eval $n $ns_import] \n
             }
         }
@@ -373,12 +376,12 @@ proc _ns_savenamespaces {} {
 #
 
 proc _ns_sourcemodule module {
-    set shared  [ns_library shared  $module]
-    set private [ns_library private $module]
+    set shared        [ns_library shared  $module]
+    set private       [ns_library private $module]
     ns_module name    $module
     ns_module private $private
     ns_module shared  $shared
-    _ns_sourcefiles $shared $private
+    _ns_sourcefiles   $shared $private
     ns_module clear
 }
 
@@ -400,7 +403,7 @@ proc _ns_sourcefiles {shared private} {
 
     foreach file [lsort [glob -nocomplain $shared/*.tcl]] {
         set tail [file tail $file]
-        if {$tail == "init.tcl"} {
+        if {$tail eq "init.tcl"} {
             _ns_sourcefile $file
         } else {
             if {![file exists $private/$tail]} {
@@ -416,7 +419,7 @@ proc _ns_sourcefiles {shared private} {
 
     foreach file [lsort [glob -nocomplain $private/*.tcl]] {
         set tail [file tail $file]
-        if {$tail == "init.tcl"} {
+        if {$tail eq "init.tcl"} {
             _ns_sourcefile $file
         } else {
             lappend files $file
@@ -440,9 +443,9 @@ proc _ns_sourcefiles {shared private} {
 #
 
 proc _ns_sourcefile {file} {
+    ns_log debug nsd/init.tcl: Loading $file
     if {[catch {source $file} err]} {
-        global errorInfo errorCode
-        ns_log error "tcl: source $file failed: $err\n$errorCode\n$errorInfo"
+        ns_log error "nsd/init.tcl: Loading $file failed: $err\n$::errorCode\n$::errorInfo"
     }
 }
 
@@ -476,7 +479,7 @@ proc _ns_getnamespaces {listVar {top "::"}} {
 proc _ns_getpackages {} {
     append script [subst {set ::_pkglist [list [info loaded]]}] \n
     append script {
-        if {[::info commands ::tcl::_load] != ""} {
+        if {[::info commands ::tcl::_load] ne ""} {
             rename ::tcl::_load ""
         }
         rename ::load ::tcl::_load
@@ -484,7 +487,7 @@ proc _ns_getpackages {} {
             set libfile [lindex $args 0]
             for {set i 0} {$i < [llength $::_pkglist]} {incr i} {
                 set toload [lindex $::_pkglist $i]
-                if {$libfile == [lindex $toload 0]} {
+                if {$libfile eq [lindex $toload 0]} {
                     eval ::tcl::_load $toload
                     set ::_pkglist [lreplace $::_pkglist $i $i]
                     return
@@ -550,7 +553,7 @@ proc _ns_getscript n {
             ::set _orig [::namespace origin $_proc]
             ::set _args ""
             ::set _prcs($_proc) 1
-            ::if {$_orig == [::namespace which -command $_proc]} {
+            ::if {$_orig eq [::namespace which -command $_proc]} {
                 # original procedure; get the definition
                 ::foreach _arg [::info args $_proc] {
                     if {[::info default $_proc $_arg _def]} {
@@ -572,8 +575,9 @@ proc _ns_getscript n {
 
         ::foreach _cmnd [::info commands [::namespace current]::*] {
             ::set _orig [::namespace origin $_cmnd]
-            ::if {[::info exists _prcs($_cmnd)] == 0 
-                    && $_orig != [::namespace which -command $_cmnd]} {
+            ::if {![::info exists _prcs($_cmnd)]
+                && $_orig ne [::namespace which -command $_cmnd]} {
+
                 ::append _import [::list namespace import -force $_orig] \n
             }
         }
@@ -613,6 +617,7 @@ proc _ns_getscript n {
 #   once the library sourcing is completed.  It assumes that
 #   the native Tcl rename is accessed as '_rename', as established
 #   by the sequence:
+#
 #     rename rename _rename
 #     _rename _ns_tclrename rename
 #   
@@ -621,11 +626,11 @@ proc _ns_getscript n {
 proc _ns_tclrename { oldName newName } {
     set is_proc [info procs $oldName]
     if {[catch {_rename $oldName $newName} err]} {
-	return -code error -errorinfo $err
+        return -code error -errorinfo $err
     } else {
-	if {$is_proc == ""} {
-	    ns_ictl trace create "rename $oldName $newName"
-	}
+        if {$is_proc eq ""} {
+            ns_ictl trace create "rename $oldName $newName"
+        }
     }
 }
 
@@ -636,7 +641,7 @@ proc _ns_tclrename { oldName newName } {
 ns_runonce -global {
     ns_atprestartup {
         set modules [ns_configsection ns/modules]
-        if {![string equal $modules ""]} {
+        if {$modules ne ""} {
             foreach {module file} [ns_set array $modules] {
                 ns_moduleload -global $module $file
             }
@@ -649,9 +654,9 @@ ns_runonce -global {
 #
 
 set modules [ns_configsection ns/server/[ns_info server]/modules]
-if {![string equal $modules ""]} {
+if {$modules ne ""} {
     foreach {module file} [ns_set array $modules] {
-        if {![string equal [string tolower $file] tcl]} {
+        if {[string tolower $file] ne "tcl"} {
             ns_moduleload $module $file
         }
         ns_ictl addmodule $module
@@ -666,7 +671,7 @@ if {$use_trace_inits} {
     #
 
     proc ns_eval {cmd args} {
-        if {$cmd == "-sync" || $cmd == "-pending"} {
+        if {$cmd eq "-sync" || $cmd eq "-pending"} {
             # ? Do we need this anymore ?
             set cmd  [lindex $args 0]
             set args [lrange $args 1 end]

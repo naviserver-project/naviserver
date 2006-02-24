@@ -1,5 +1,9 @@
 2006-02-23  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/init.tcl: Untabify and reindent. Use eq and ne when testing
+	string equality. Add some debug logging to the module loading
+	process.
+
 	* nsd/tclresp.c:
 	* tests/tclresp.test: 
 	* tests/http_chunked.test: ns_headers now queues, but does not
