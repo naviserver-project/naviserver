@@ -1,5 +1,7 @@
 2006-02-23  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/conn.c: Use Tcl boolean objects instead of ints.
+
 	* configure.in:
 	* include/ns.h:
 	* nsd/connio.c: Make Ns_ConnSend() write all the buffers it is

@@ -1262,35 +1262,25 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case CWriteEncodedIdx:
         if (objc > 2) {
             int write_encoded_flag;
-            if (Tcl_GetIntFromObj(interp, objv[2], &write_encoded_flag)
+            if (Tcl_GetBooleanFromObj(interp, objv[2], &write_encoded_flag)
                 != TCL_OK) {
-                Tcl_AppendResult(interp, "Invalid write-encoded flag", NULL );
                 return TCL_ERROR;
             }
             Ns_ConnSetWriteEncodedFlag(conn, write_encoded_flag);
         }
-        if (Ns_ConnGetWriteEncodedFlag(conn)) {
-            Tcl_SetIntObj(result, 1);
-        } else {
-            Tcl_SetIntObj(result, 0);
-        }
+        Tcl_SetBooleanObj(result, Ns_ConnGetWriteEncodedFlag(conn));
         break;
 
     case CChunkedIdx:
         if (objc > 2) {
             int chunked_flag;
-            if (Tcl_GetIntFromObj(interp, objv[2], &chunked_flag)
+            if (Tcl_GetBooleanFromObj(interp, objv[2], &chunked_flag)
                 != TCL_OK) {
-                Tcl_AppendResult(interp, "Invalid chunked flag", NULL );
                 return TCL_ERROR;
             }
             Ns_ConnSetChunkedFlag(conn, chunked_flag);
         }
-        if (Ns_ConnGetChunkedFlag(conn)) {
-            Tcl_SetIntObj(result, 1);
-        } else {
-            Tcl_SetIntObj(result, 0);
-        }
+        Tcl_SetBooleanObj(result, Ns_ConnGetChunkedFlag(conn));
         break;
 
     case CResponseVersionIdx:
