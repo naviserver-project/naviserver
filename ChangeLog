@@ -1,3 +1,9 @@
+2006-02-23  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/sock.c: Untabify, reformat and move code around. Add new
+	comments and clarify existing ones. Add some debug logging for
+	socket send timeouts.
+
 2006-02-21  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclthread.c:

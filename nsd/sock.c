@@ -31,16 +31,18 @@
 /*
  * sock.c --
  *
- *  Wrappers and convenience functions for TCP/IP stuff. 
+ *      Wrappers and convenience functions for TCP/IP stuff. 
  */
 
 #include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
 
+
 #ifndef INADDR_NONE
 #define INADDR_NONE -1
 #endif
+
 
 /*
  * Local functions defined in this file
@@ -49,54 +51,26 @@ NS_RCSID("@(#) $Header$");
 static SOCKET SockConnect(char *host, int port, char *lhost, int lport,
                           int async);
 static SOCKET SockSetup(SOCKET sock);
-
-static int
-SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
-{
-#ifdef _WIN32
-    int n, flags;
-
-    flags = 0;
-    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags, 
-                NULL, NULL) != 0) {
-        n = -1;
-    }
-
-    return n;
-#else
-    struct msghdr msg;
-
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_iov = bufs;
-    msg.msg_iovlen = nbufs;
-
-    return recvmsg(sock, &msg, 0);
-#endif
-}
+static int SockRecv(SOCKET sock, struct iovec *bufs, int nbufs);
+static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs);
 
 
-static int
-SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
-{
-#ifdef _WIN32
-    int n;
-
-    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, 0, 
-                NULL, NULL) != 0) {
-        n = -1;
-    }
-
-    return n;
-#else
-    struct msghdr msg;
-
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_iov = bufs;
-    msg.msg_iovlen = nbufs;
-
-    return sendmsg(sock, &msg, 0);
-#endif
-}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockRecvBufs --
+ *
+ *      Read data from a non-blocking socket into a vector of buffers.
+ *
+ * Results:
+ *      Number of bytes read or -1 on error.
+ *
+ * Side effects:
+ *      May wait for given timeout if first attempt would block.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
@@ -114,6 +88,24 @@ Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
     return n;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockSendBufs --
+ *
+ *      Send a vector of buffers on a non-blocking socket. Not all
+ *      data may be sent.
+ *
+ * Results:
+ *      Number of bytes sent or -1 on error.
+ *
+ * Side effects:
+ *      May wait for given timeout if first attempt would block.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                 Ns_Time *timeoutPtr)
@@ -121,7 +113,6 @@ Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
     int n;
 
     n = SockSend(sock, bufs, nbufs);
-
     if (n < 0
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
@@ -469,13 +460,13 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
  *
  * Ns_SockSetNonBlocking --
  *
- *      Set a socket nonblocking. 
+ *      Set a socket nonblocking.
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -498,13 +489,13 @@ Ns_SockSetNonBlocking(SOCKET sock)
  *
  * Ns_SockSetBlocking --
  *
- *  Set a socket blocking. 
+ *      Set a socket blocking.
  *
  * Results:
- *  NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR.
  *
  * Side effects:
- *  None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -600,55 +591,6 @@ Ns_SockPipe(SOCKET socks[2])
 /*
  *----------------------------------------------------------------------
  *
- * SockConnect --
- *
- *      Open a TCP connection to a host/port. 
- *
- * Results:
- *      A socket or -1 on error. 
- *
- * Side effects:
- *      If async is true, the returned socket will be nonblocking. 
- *
- *----------------------------------------------------------------------
- */
-
-static SOCKET
-SockConnect(char *host, int port, char *lhost, int lport, int async)
-{
-    SOCKET             sock;
-    struct sockaddr_in lsa;
-    struct sockaddr_in sa;
-    int                err;
-
-    if (Ns_GetSockAddr(&sa, host, port) != NS_OK ||
-        Ns_GetSockAddr(&lsa, lhost, lport) != NS_OK) {
-        return INVALID_SOCKET;
-    }
-    sock = Ns_SockBind(&lsa);
-    if (sock != INVALID_SOCKET) {
-        if (async) {
-            Ns_SockSetNonBlocking(sock);
-        }
-        if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
-            err = ns_sockerrno;
-            if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
-                ns_sockclose(sock);
-                sock = INVALID_SOCKET;
-            }
-        }
-        if (async && sock != INVALID_SOCKET) {
-            Ns_SockSetBlocking(sock);
-        }
-    }
-
-    return sock;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_SockCloseLater --
  *
  *      Register a callback to close a socket when writable.  This
@@ -723,7 +665,7 @@ Ns_SetSockErrno(int err)
 #endif
 }
 
-char           *
+char *
 Ns_SockStrError(int err)
 {
 #ifdef _WIN32
@@ -801,6 +743,55 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * SockConnect --
+ *
+ *      Open a TCP connection to a host/port. 
+ *
+ * Results:
+ *      A socket or -1 on error. 
+ *
+ * Side effects:
+ *      If async is true, the returned socket will be nonblocking. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static SOCKET
+SockConnect(char *host, int port, char *lhost, int lport, int async)
+{
+    SOCKET             sock;
+    struct sockaddr_in lsa;
+    struct sockaddr_in sa;
+    int                err;
+
+    if (Ns_GetSockAddr(&sa, host, port) != NS_OK ||
+        Ns_GetSockAddr(&lsa, lhost, lport) != NS_OK) {
+        return INVALID_SOCKET;
+    }
+    sock = Ns_SockBind(&lsa);
+    if (sock != INVALID_SOCKET) {
+        if (async) {
+            Ns_SockSetNonBlocking(sock);
+        }
+        if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
+            err = ns_sockerrno;
+            if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
+                ns_sockclose(sock);
+                sock = INVALID_SOCKET;
+            }
+        }
+        if (async && sock != INVALID_SOCKET) {
+            Ns_SockSetBlocking(sock);
+        }
+    }
+
+    return sock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockSetup --
  *
  *      Setup new sockets for close-on-exec and possibly duped high.
@@ -830,4 +821,100 @@ SockSetup(SOCKET sock)
     (void) fcntl(sock, F_SETFD, 1);
 #endif
     return sock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockRecv --
+ *
+ *      Read data from a non-blocking socket into a vector of buffers.
+ *
+ * Results:
+ *      Number of bytes read or -1 on error.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
+{
+    int n;
+
+#ifdef _WIN32
+    int flags;
+
+    flags = 0;
+    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags, 
+                NULL, NULL) != 0) {
+        n = -1;
+    }
+
+    return n;
+#else
+    struct msghdr msg;
+
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_iov = bufs;
+    msg.msg_iovlen = nbufs;
+
+    n = recvmsg(sock, &msg, 0);
+
+    if (n < 0) {
+        Ns_Log(Debug, "SockRecv: %s",
+               ns_sockstrerror(ns_sockerrno));
+    }
+    return n;
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockSend --
+ *
+ *      Send a vector of buffers on a non-blocking socket. Not all
+ *      data may be sent.
+ *
+ * Results:
+ *      Number of bytes sent or -1 on error.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
+{
+    int n;
+
+#ifdef _WIN32
+    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, 0, 
+                NULL, NULL) != 0) {
+        n = -1;
+    }
+
+    return n;
+#else
+    struct msghdr msg;
+
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_iov = bufs;
+    msg.msg_iovlen = nbufs;
+
+    n = sendmsg(sock, &msg, 0);
+
+    if (n < 0) {
+        Ns_Log(Debug, "SockSend: %s",
+               ns_sockstrerror(ns_sockerrno));
+    }
+    return n;
+#endif
 }
