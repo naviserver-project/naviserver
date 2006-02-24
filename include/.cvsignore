@@ -1,5 +1,6 @@
 Makefile.global
 Makefile.module
 config.h
+config.h.in
 nsversion.h
 stamp-h1
