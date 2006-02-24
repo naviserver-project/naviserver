@@ -785,18 +785,23 @@ static int
 ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
                CONST char *type, int sendRaw)
 {
+    Conn        *connPtr = (Conn *) conn;
     int          result;
-    Conn        *connPtr;
-    Tcl_DString  ds;
     Tcl_Encoding enc;
     Tcl_DString  type_ds;
     int          new_type = NS_FALSE;
 
-    connPtr = (Conn *) conn;
-
-    /* Make sure we know what output encoding (if any) to use. */
-    if (!sendRaw ) {
-
+    if (conn->flags & NS_CONN_SKIPBODY) {
+        data = NULL;
+        len = 0;
+    }
+    if (len < 0) {
+        len = data ? strlen(data) : 0;
+    }
+    if (len > 0 && !sendRaw) {
+        /*
+         * Make sure we know what output encoding (if any) to use.
+         */
         NsComputeEncodingFromType(type, &enc, &new_type, &type_ds);
         if (new_type) {
             type = Tcl_DStringValue(&type_ds);
@@ -807,36 +812,11 @@ ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
             sendRaw = NS_TRUE;
         }
     }
-
-    if (!sendRaw) {
-
-        Tcl_UtfToExternalDString(connPtr->encoding, data, len, &ds);
-
-        data = Tcl_DStringValue(&ds);
-        len = Tcl_DStringLength(&ds);
-
-    } else {
-
-        /* Send data unmodified. */
-        if (len == -1) {
-            len = data ? strlen(data) : 0;
-        }
-
-    }
-
     Ns_ConnSetRequiredHeaders(conn, type, len);
     Ns_ConnQueueHeaders(conn, status);
-    if (conn->flags & NS_CONN_SKIPBODY) {
-        data = NULL;
-        len = 0;
-    }
-    result = Ns_WriteConn(conn, data, len);
+    result = Ns_WriteCharConn(conn, data, len);
     if (result == NS_OK) {
         result = Ns_ConnClose(conn);
-    }
-
-    if (!sendRaw && (connPtr->encoding != NULL)) {
-        Tcl_DStringFree(&ds);
     }
     if (new_type) {
         Tcl_DStringFree(&type_ds);

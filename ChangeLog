@@ -1,5 +1,7 @@
 2006-02-23  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/return.c: Let connio.c handle character encoding.
+
 	* nsd/conn.c: Use Tcl boolean objects instead of ints.
 
 	* configure.in:
