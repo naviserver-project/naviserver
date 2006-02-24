@@ -113,7 +113,7 @@ test tclresp-1.12.2 {basic syntax} -body {
 
 test tclresp-1.13.1 {basic syntax} -body {
     ns_write
-} -returnCodes error -result {wrong # args: should be "ns_write string"}
+} -returnCodes error -result {wrong # args: should be "ns_write data ?data ...?"}
 
 test tclresp-1.13.2 {basic syntax} -body {
     ns_write x
@@ -330,12 +330,68 @@ test tclresp-11.1 {ns_returnredirect} -constraints serverListen -setup {
 
 
 test tclresp-12.1 {ns_write} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_headers 200; ns_write x ;#}
+    ns_register_proc GET /tclresp {
+        ns_headers 200
+        ns_write x
+    }
 } -body {
     nstest_http -getbody 1 GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
 } -result {200 x}
+
+test tclresp-12.2 {ns_write multiple buffers, encoded} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        ns_conn write_encoded 1
+        ns_headers 200
+        ns_write x x x
+    }
+} -body {
+    nstest_http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -result {200 xxx}
+
+test tclresp-12.3 {ns_write multiple buffers, binary} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        ns_conn write_encoded 0
+        ns_headers 200
+        ns_write x x x
+    }
+} -body {
+    nstest_http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -result {200 xxx}
+
+test tclresp-12.4 {
+    ns_write many buffers (more than OS limit of UIO_MAXIOV)
+} -constraints serverListen -setup {
+
+    ns_register_proc GET /tclresp {
+        ns_headers 200
+        eval ns_write [split [string repeat x 2000] ""]
+    }
+} -body {
+    nstest_http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -result "200 [string repeat x 2000]"
+
+test tclresp-12.5 {
+    ns_write multiple buffers, some with odd sizes
+} -constraints serverListen -setup {
+
+    ns_register_proc GET /tclresp {
+        ns_headers 200
+        ns_write x xx "" x ""
+    }
+} -body {
+    nstest_http -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -result {200 xxxx}
+
 
 
 

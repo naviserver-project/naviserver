@@ -43,6 +43,7 @@ NS_RCSID("@(#) $Header$");
  * Static functions defined in this file.
  */
 
+static int WritevObjs(Tcl_Interp *interp, Ns_Conn *conn, int objc, Tcl_Obj *CONST objv[]);
 static int Result(Tcl_Interp *interp, int result);
 static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
 
@@ -53,8 +54,9 @@ static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
  *
  * NsTclHeadersObjCmd --
  *
- *      Implements ns_headers.  Set default response headers and flush
- *      all headers to client.
+ *      Implements ns_headers. Queue default response headers, which
+ *      will be sent on the first IO (e.g. ns_write) or otherwise when
+ *      the connection is closed.
  *
  * Results:
  *      Tcl result.
@@ -89,8 +91,9 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
         return TCL_ERROR;
     }
     Ns_ConnSetRequiredHeaders(conn, type, len);
+    Ns_ConnQueueHeaders(conn, status);
 
-    return Result(interp, Ns_ConnFlushHeaders(conn, status));
+    return Result(interp, 1);
 }
 
 
@@ -99,13 +102,14 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  *
  * NsTclWriteObjCmd --
  *
- *      Implements ns_write.  Send string directly to client.
+ *      Implements ns_write.  Send data directly to client without
+ *      buffering.
  *
  * Results:
  *      Tcl result.
  *
  * Side effects:
- *      String may be transcoded.
+ *      String may be transcoded. Data may be sent HTTP chunked.
  *
  *----------------------------------------------------------------------
  */
@@ -114,37 +118,15 @@ int
 NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
-    char    *bytes;
-    int      length;
-    int      result;
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string");
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "data ?data ...?");
         return TCL_ERROR;
     }
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-
-    /*
-     * Treat string as binary unless the WriteEncodedFlag is set
-     * on the current conn.  This flag is manipulated via
-     * ns_startcontent or ns_conn write_encoded.
-     */
-
-    if (Ns_ConnGetWriteEncodedFlag(conn) &&
-        (Ns_ConnGetEncoding(conn) != NULL)) {
-
-        bytes = Tcl_GetStringFromObj(objv[1], &length);
-        result = Ns_WriteCharConn(conn, bytes, length);
-
-    } else {
-
-        bytes = (char *) Tcl_GetByteArrayFromObj(objv[1], &length);
-        result = Ns_WriteConn(conn, bytes, length);
-    }
-
-    return Result(interp, result);
+    return WritevObjs(interp, conn, objc - 1, objv + 1);
 }
 
 
@@ -154,7 +136,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
  * NsTclReturnObjCmd --
  *
  *      Implements ns_return.  Send complete response to client with
- *      given string as body.
+ *      given data as body.
  *
  * Results:
  *      Tcl result.
@@ -632,10 +614,71 @@ NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     return Result(interp, Ns_ConnReturnRedirect(conn, Tcl_GetString(objv[1])));
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WritevObjs --
+ *
+ *      Write the given Tcl obects directly to the client using
+ *      vectored IO.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      String may be encoded if the WriteEncoded flag of the conn
+ *      is set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+WritevObjs(Tcl_Interp *interp, Ns_Conn *conn, int objc, Tcl_Obj *CONST objv[])
+{
+    int           length, towrite, nwrote, i;
+    int           binary = 0;
+    struct iovec  iov[32];
+    struct iovec *sbufs = iov;
+
+    /*
+     * Treat string as binary unless the WriteEncodedFlag is set
+     * on the current conn.  This flag is manipulated via
+     * ns_startcontent or ns_conn write_encoded.
+     */
+
+    if (!Ns_ConnGetWriteEncodedFlag(conn)) {
+        binary = 1;
+    }
+    if (objc > sizeof(iov) / sizeof(struct iovec)) {
+        sbufs = ns_calloc(objc, sizeof(struct iovec));
+    }
+    towrite = 0;
+    for (i = 0; i < objc; i++) {
+        if (binary) {
+            sbufs[i].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
+        } else {
+            sbufs[i].iov_base = Tcl_GetStringFromObj(objv[i], &length);
+        }
+        sbufs[i].iov_len = length;
+        towrite += length;
+    };
+    if (binary) {
+        nwrote = Ns_ConnWriteV(conn, sbufs, objc);
+    } else {
+        nwrote = Ns_ConnWriteVChars(conn, sbufs, objc);
+    }
+    if (sbufs != iov) {
+        ns_free(sbufs);
+    }
+    return Result(interp, (nwrote < towrite) ? TCL_ERROR : TCL_OK);
+}
+
 static int
 Result(Tcl_Interp *interp, int result)
 {
-    Tcl_SetResult(interp, result == NS_OK ? "1" : "0", TCL_STATIC);
+    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result == NS_OK ? 1 : 0);
     return TCL_OK;
 }
 

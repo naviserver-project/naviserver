@@ -1,5 +1,16 @@
 2006-02-23  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/tclresp.c:
+	* tests/tclresp.test: 
+	* tests/http_chunked.test: ns_headers now queues, but does not
+	flush, the headers.  Headers are sent when the first data packet.
+
+	ns_write will send multiple args efficiently using
+	scatter/gather IO.
+
+	ns_return no longer handles character encoding redundantly. Now
+	handled by the underlying Ns_WriteCharConn().
+
 	* nsd/return.c: Let connio.c handle character encoding.
 
 	* nsd/conn.c: Use Tcl boolean objects instead of ints.

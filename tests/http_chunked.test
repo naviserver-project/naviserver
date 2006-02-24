@@ -65,7 +65,42 @@ test http_chunked-2.1 {Tcl streaming w/chunks to HTTP/1.1 client} -constraints s
         ns_conn chunked 1 ;# remove this explicit call
         ns_headers 200 text/plain
         ns_write 0123456789
-        ns_write 01234 ;#}
+        ns_write 01234
+    }
+} -body {
+    nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        GET /tclchunked
+} -cleanup {
+    ns_unregister_proc GET /tclchunked
+} -result "200 chunked {} {a\r\n0123456789\r\n5\r\n01234\r\n0\r\n\r\n}"
+
+test http_chunked-2.1.1 {Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client} \
+    -constraints serverListen -setup {
+
+    ns_register_proc GET /tclchunked {
+        ns_conn chunked 1
+        ns_conn write_encoded 0
+        ns_headers 200 text/plain
+        ns_write 01234 56789
+        ns_write 01234
+    }
+} -body {
+    nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        GET /tclchunked
+} -cleanup {
+    ns_unregister_proc GET /tclchunked
+} -result "200 chunked {} {a\r\n0123456789\r\n5\r\n01234\r\n0\r\n\r\n}"
+
+test http_chunked-2.1.2 {Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client} \
+    -constraints serverListen -setup {
+
+    ns_register_proc GET /tclchunked {
+        ns_conn chunked 1
+        ns_conn write_encoded 1
+        ns_headers 200 text/plain
+        ns_write 01234 56789
+        ns_write 01234
+    }
 } -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
@@ -77,7 +112,8 @@ test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverList
     ns_register_proc GET /tclchunked {
         ns_headers 200 text/plain
         ns_write 0123456789
-        ns_write 01234 ;#}
+        ns_write 01234
+    }
 } -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
@@ -86,7 +122,7 @@ test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverList
 } -result {200 {} {} 012345678901234}
 
 test http_chunked-2.3 {Tcl response of known size to HTTP/1.1 client} -constraints serverListen -setup {
-    ns_register_proc GET /tclchunked {ns_return 200 text/plain 01234 ;#}
+    ns_register_proc GET /tclchunked {ns_return 200 text/plain 01234}
 } -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
