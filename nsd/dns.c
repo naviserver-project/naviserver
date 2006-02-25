@@ -62,7 +62,7 @@ extern int h_errno;
 
 typedef struct Value {
     time_t      expires;
-    char	value[1];
+    char    value[1];
 } Value;
 
 typedef int (GetProc)(Ns_DString *dsPtr, char *key);
@@ -83,7 +83,7 @@ static int cachetimeout;
 static GetProc GetAddr;
 static GetProc GetHost;
 static int DnsGet(GetProc *getProc, Ns_DString *dsPtr,
-	Ns_Cache **cachePtr, char *key, int all);
+    Ns_Cache **cachePtr, char *key, int all);
 
 #if !defined(HAVE_GETADDRINFO) && !defined(HAVE_GETNAMEINFO)
 static void LogError(char *func, int h_errnop);
@@ -97,10 +97,11 @@ static void LogError(char *func, int h_errnop);
  *      Convert an IP address to a hostname or vice versa.
  *
  * Results:
- *	See DnsGet().
+ *      NS_TRUE and result is appended to dstring, NS_FALSE if name or
+ *      address not found. An error message may be logged if not found.
  *
  * Side effects:
- *      A new entry is entered into the hash table.
+ *      Result may be cached.
  *
  *----------------------------------------------------------------------
  */
@@ -127,10 +128,10 @@ static int
 DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache **cachePtr, char *key, int all)
 {
     int             status = NS_FALSE, new, timeout;
-    Value   	   *vPtr  = NULL;
+    Value          *vPtr  = NULL;
     Ns_Entry       *ePtr  = NULL;
-    Ns_Cache	   *cache = NULL;
-    time_t	    now;
+    Ns_Cache       *cache = NULL;
+    time_t      now;
 
     /*
      * Get the cache, if enabled.
@@ -148,42 +149,42 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache **cachePtr, char *key, int 
     if (cache == NULL) {
         status = (*getProc)(dsPtr, key);
     } else {
-	time(&now);
-	Ns_CacheLock(cache);
-	ePtr = Ns_CacheCreateEntry(cache, key, &new);
-	if (!new) {
-	    while (ePtr != NULL &&
-		    (vPtr = Ns_CacheGetValue(ePtr)) == NULL) {
-		Ns_CacheWait(cache);
-		ePtr = Ns_CacheFindEntry(cache, key);
-	    }
-	    if (ePtr == NULL) {
-	        status = NS_FALSE;
-	    } else if (vPtr->expires < now) {
-		Ns_CacheUnsetValue(ePtr);
-		new = 1;
-	    } else {
-		Ns_DStringAppend(dsPtr, vPtr->value);
-		status = NS_TRUE;
-	    }
-	}
-	if (new) {
-	    Ns_CacheUnlock(cache);
-	    status = (*getProc)(dsPtr, key);
-	    Ns_CacheLock(cache);
-	    ePtr = Ns_CacheCreateEntry(cache, key, &new);
-	    if (status != NS_TRUE) {
-		Ns_CacheFlushEntry(ePtr);
-	    } else {
-	    	Ns_CacheUnsetValue(ePtr);
-		vPtr = ns_malloc(sizeof(Value) + dsPtr->length);
-		vPtr->expires = now + timeout;
-		strcpy(vPtr->value, dsPtr->string);
-		Ns_CacheSetValueSz(ePtr, vPtr, 1);
-	    }
-	    Ns_CacheBroadcast(cache);
-	}
-	Ns_CacheUnlock(cache);
+        time(&now);
+        Ns_CacheLock(cache);
+        ePtr = Ns_CacheCreateEntry(cache, key, &new);
+        if (!new) {
+            while (ePtr != NULL &&
+                   (vPtr = Ns_CacheGetValue(ePtr)) == NULL) {
+                Ns_CacheWait(cache);
+                ePtr = Ns_CacheFindEntry(cache, key);
+            }
+            if (ePtr == NULL) {
+                status = NS_FALSE;
+            } else if (vPtr->expires < now) {
+                Ns_CacheUnsetValue(ePtr);
+                new = 1;
+            } else {
+                Ns_DStringAppend(dsPtr, vPtr->value);
+                status = NS_TRUE;
+            }
+        }
+        if (new) {
+            Ns_CacheUnlock(cache);
+            status = (*getProc)(dsPtr, key);
+            Ns_CacheLock(cache);
+            ePtr = Ns_CacheCreateEntry(cache, key, &new);
+            if (status != NS_TRUE) {
+                Ns_CacheFlushEntry(ePtr);
+            } else {
+                Ns_CacheUnsetValue(ePtr);
+                vPtr = ns_malloc(sizeof(Value) + dsPtr->length);
+                vPtr->expires = now + timeout;
+                strcpy(vPtr->value, dsPtr->string);
+                Ns_CacheSetValueSz(ePtr, vPtr, 1);
+            }
+            Ns_CacheBroadcast(cache);
+        }
+        Ns_CacheUnlock(cache);
     }
 
     if (status == NS_TRUE && getProc == GetAddr && !all) {
@@ -208,7 +209,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache **cachePtr, char *key, int 
  *      None.
  *
  * Side effects:
- *	Futher DNS lookups will be cached up to given timeout.
+ *      Futher DNS lookups will be cached up to given timeout.
  *
  *----------------------------------------------------------------------
  */
@@ -220,9 +221,9 @@ NsEnableDNSCache(int timeout, int maxentries)
     Ns_MutexLock(&lock);
     cachetimeout = timeout;
     hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
-	(size_t) maxentries, ns_free);
+                                 (size_t) maxentries, ns_free);
     addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
-	(size_t) maxentries, ns_free);
+                                 (size_t) maxentries, ns_free);
     Ns_MutexUnlock(&lock);
 }
 
@@ -233,12 +234,12 @@ NsEnableDNSCache(int timeout, int maxentries)
  *
  *      Perform the actual lookup by host or address.
  *
- *	NOTE: A critical section is used instead of a mutex
- *	to ensure waiting on a condition and not mutex spin waiting.
+ *      NOTE: A critical section is used instead of a mutex
+ *      to ensure waiting on a condition and not mutex spin waiting.
  *
  * Results:
  *      If a name can be found, the function returns NS_TRUE; otherwise, 
- *	it returns NS_FALSE.
+ *      it returns NS_FALSE.
  *
  * Side effects:
  *      Result is appended to dsPtr.
@@ -259,12 +260,15 @@ GetHost(Ns_DString *dsPtr, char *addr)
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
 #endif
+
     memset(&sa, 0, sizeof(struct sockaddr_in));
+
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     sa.sin_len = sizeof(struct sockaddr_in);
 #endif
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = inet_addr(addr);
+
     result = getnameinfo((const struct sockaddr *) &sa,
                          sizeof(struct sockaddr_in), buf, sizeof(buf),
                          NULL, 0, NI_NAMEREQD);
@@ -277,6 +281,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
 #ifndef HAVE_MTSAFE_DNS
     Ns_CsLeave(&cs);
 #endif
+
     return status;
 }
 
@@ -293,7 +298,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
 
     sa.sin_addr.s_addr = inet_addr(addr);
     hePtr = gethostbyaddr_r((char *) &sa.sin_addr, sizeof(struct in_addr),
-            AF_INET, &he, buf, sizeof(buf), &h_errnop);
+                AF_INET, &he, buf, sizeof(buf), &h_errnop);
     if (hePtr == NULL) {
         LogError("gethostbyaddr_r", h_errnop);
     } else if (he.h_name != NULL) {
@@ -323,16 +328,16 @@ GetHost(Ns_DString *dsPtr, char *addr)
 
     sa.sin_addr.s_addr = inet_addr(addr);
     if (sa.sin_addr.s_addr != INADDR_NONE) {
-	Ns_CsEnter(&cs);
+        Ns_CsEnter(&cs);
         he = gethostbyaddr((char *) &sa.sin_addr,
-			   sizeof(struct in_addr), AF_INET);
-	if (he == NULL) {
-	    LogError("gethostbyaddr", h_errno);
-	} else if (he->h_name != NULL) {
-	    Ns_DStringAppend(dsPtr, he->h_name);
-	    status = NS_TRUE;
-	}
-	Ns_CsLeave(&cs);
+                           sizeof(struct in_addr), AF_INET);
+        if (he == NULL) {
+            LogError("gethostbyaddr", h_errno);
+        } else if (he->h_name != NULL) {
+            Ns_DStringAppend(dsPtr, he->h_name);
+            status = NS_TRUE;
+        }
+        Ns_CsLeave(&cs);
     }
     return status;
 }
@@ -352,14 +357,16 @@ GetAddr(Ns_DString *dsPtr, char *host)
     static Ns_Cs cs;
     Ns_CsEnter(&cs);
 #endif
+
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
+
     if ((result = getaddrinfo(host, NULL, &hints, &res)) == 0) {
         ptr = res;
         while (ptr != NULL) {
-            Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(
-                        ((struct sockaddr_in *) ptr->ai_addr)->sin_addr));
+            Tcl_DStringAppendElement(dsPtr,
+                ns_inet_ntoa(((struct sockaddr_in *) ptr->ai_addr)->sin_addr));
             status = NS_TRUE;
             ptr = ptr->ai_next;
         }
@@ -448,6 +455,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
         }
     }
     Ns_CsLeave(&cs);
+
     return status;
 }
 
@@ -459,7 +467,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
  * LogError -
  *
  *      Log errors which may indicate a failure in the underlying
- *	resolver.
+ *      resolver.
  *
  * Results:
  *      None.
@@ -479,37 +487,36 @@ LogError(char *func, int h_errnop)
 
     e = NULL;
     switch (h_errnop) {
-	case HOST_NOT_FOUND:
-	    /* Log nothing. */
-	    return;
-	    break;
+    case HOST_NOT_FOUND:
+        /* Log nothing. */
+        return;
+        break;
 
-	case TRY_AGAIN:
-	    h = "temporary error - try again";
-	    break;
+    case TRY_AGAIN:
+        h = "temporary error - try again";
+        break;
 
-	case NO_RECOVERY:
-	    h = "unexpected server failure";
-	    break;
+    case NO_RECOVERY:
+        h = "unexpected server failure";
+        break;
 
-	case NO_DATA:
-	    h = "no valid IP address";
-	    break;
+    case NO_DATA:
+        h = "no valid IP address";
+        break;
 
 #ifdef NETDB_INTERNAL
-	case NETDB_INTERNAL:
-	    h = "netdb internal error: ";
-	    e = strerror(errno);
-	    break;
+    case NETDB_INTERNAL:
+        h = "netdb internal error: ";
+        e = strerror(errno);
+        break;
 #endif
 
-	default:
-	    sprintf(buf, "unknown error #%d", h_errnop);
-	    h = buf;
+    default:
+        sprintf(buf, "unknown error #%d", h_errnop);
+        h = buf;
     }
 
     Ns_Log(Error, "dns: %s failed: %s%s", func, h, e ? e : "");
 }
 
 #endif
-

@@ -1,3 +1,7 @@
+2006-02-25  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/cache.c: Untabify and reformat.
+
 2006-02-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tcl/ttrace.tcl: added implicit support for XOTcl 1.3
