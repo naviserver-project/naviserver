@@ -1,3 +1,9 @@
+2006-02-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* tcl/ttrace.tcl: added implicit support for XOTcl 1.3
+	and modified [load] tracer to load packages which were
+	not traced.
+
 2006-02-24  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/connio.c: check for buffer size -1 because

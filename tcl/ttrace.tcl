@@ -440,7 +440,7 @@ ns_runonce {
             return $res
         }
     }
-    
+
     #
     # The code below is ment to be run once during the application start. 
     # It provides implementation of tracing callbacks for some Tcl commands.
@@ -836,14 +836,9 @@ ns_runonce {
     # during code tracing. It is done during the script
     # generation. In this step, only the placeholder is set.
     #
-    # NOTE: we assume all XOTcl commands are imported in global namespace
-    #
-
-    ttrace::atenable XOTclEnabler {args} {
-        if {[info commands ::xotcl::Class] eq ""} {
-            return
-        }
-        if {[info commands _creator] eq ""} {
+    
+    if {![catch {package require XOTcl 1.3}]} {
+        ttrace::atenable XOTclEnabler {args} {
             ::xotcl::Class create ::xotcl::_creator -instproc create {args} {
                 set result [next]
                 if {![string match "::xotcl::_*" $result]} {
@@ -851,51 +846,43 @@ ns_runonce {
                 }
                 return $result
             }
+            ::xotcl::Class instmixin ::xotcl::_creator
+            package require xotcl::serializer
         }
-        ::xotcl::Class instmixin ::xotcl::_creator
-    }
-
-    ttrace::atdisable XOTclDisabler {args} {
-        if {   [info commands ::xotcl::Class] eq "" 
-            || [info commands ::xotcl::_creator] eq ""} {
-            return
+        ttrace::atdisable XOTclDisabler {args} {
+            ::xotcl::Class instmixin ""
+            catch {::xotcl::_creator destroy}
         }
-        ::xotcl::Class instmixin ""
-        ::xotcl::_creator destroy
-    }
-
-    set resolver [ttrace::addresolver resolveclasses {classname} {
-        set cns [uplevel namespace current]
-        set script [ttrace::getentry xotcl $classname]
-        if {$script eq ""} {
-            set name [namespace tail $classname]
-            if {$cns eq "::"} {
-                set script [ttrace::getentry xotcl ::$name]
-            } else {
-                set script [ttrace::getentry xotcl ${cns}::$name]
-                if {$script eq ""} {
+        set resolver [ttrace::addresolver resolveclasses {classname} {
+            set cns [uplevel namespace current]
+            set script [ttrace::getentry xotcl $classname]
+            if {$script eq ""} {
+                set name [namespace tail $classname]
+                if {$cns eq "::"} {
                     set script [ttrace::getentry xotcl ::$name]
+                } else {
+                    set script [ttrace::getentry xotcl ${cns}::$name]
+                    if {$script eq ""} {
+                        set script [ttrace::getentry xotcl ::$name]
+                    }
+                }
+                if {$script eq ""} {
+                    return 0 ; # Peng! No cigar...
                 }
             }
-            if {$script eq ""} {
-                return 0 ; # Peng! No cigar...
-            }
-        }
-        uplevel [list namespace eval $cns $script]
-        return 1
-    }]
-
-    ttrace::addscript xotcl [subst -nocommands {
-        if {![catch {Serializer new} ss]} {
+            uplevel [list namespace eval $cns $script]
+            return 1
+        }]
+        ttrace::addscript xotcl [subst -nocommands {
+            set ss [::xotcl::serializer::Serializer new -volatile]
             foreach entry [ttrace::getentries xotcl] {
                 if {[ttrace::getentry xotcl \$entry] eq ""} {
                     ttrace::addentry xotcl \$entry [\$ss serialize \$entry]
                 }
             }
-            \$ss destroy
             return {::xotcl::Class proc __unknown name {$resolver \$name}}
-        }
-    }]
+        }]
+    }
 
     #
     # Register callback to be called on cleanup.
