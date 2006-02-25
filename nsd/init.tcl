@@ -39,7 +39,6 @@
 
 ns_log notice "nsd/init.tcl: Booting virtual server: [ns_info server]..."
 
-
 #
 # Ttrace must be loaded before all other Tcl files if
 # lazy loading is enabled.
@@ -50,11 +49,10 @@ set use_trace_inits [ns_config -bool $section lazyloader false]
 
 if {$use_trace_inits} {
     set tracelib [file join [ns_library shared] ttrace.tcl]
-    if {![file exists $tracelib]} {
-        ns_log error "Disabling lazy loading (no trace lib found)"
+    if {[catch {source $tracelib} err]} {
+        ns_log warning "Disabling lazy loading: $err"
         set use_trace_inits 0
     } else {
-        source $tracelib
         ttrace::enable
     }
 }
@@ -635,39 +633,40 @@ proc _ns_tclrename { oldName newName } {
 }
 
 #
-# Load global binary modules.
+# Load binary modules for any virtual server (once only).
 #
 
 ns_runonce -global {
-    ns_atprestartup {
-        set modules [ns_configsection ns/modules]
-        if {$modules ne ""} {
-            foreach {module file} [ns_set array $modules] {
-                ns_moduleload -global $module $file
-            }
+    set modules [ns_configsection ns/modules]
+    if {$modules ne ""} {
+        foreach {module file} [ns_set array $modules] {
+            ns_moduleload -global $module $file
         }
     }
 }
 
 #
-# Load binary modules for this server.
+# Load binary modules for current virtual server (once per server)
 #
 
-set modules [ns_configsection ns/server/[ns_info server]/modules]
-if {$modules ne ""} {
-    foreach {module file} [ns_set array $modules] {
-        if {[string tolower $file] ne "tcl"} {
-            ns_moduleload $module $file
+ns_runonce {
+    set modules [ns_configsection ns/server/[ns_info server]/modules]
+    if {$modules ne ""} {
+        foreach {module file} [ns_set array $modules] {
+            if {[string tolower $file] ne "tcl"} {
+                ns_moduleload $module $file
+            }
+            ns_ictl addmodule $module
         }
-        ns_ictl addmodule $module
     }
 }
 
 if {$use_trace_inits} {
 
     #
-    # Here, the much sexier ns_evil :-)
-    # Shouldn't be evil any more!
+    # Used to evaluate Tcl code which is then
+    # "automagically" known in current as well
+    # as in other threads.
     #
 
     proc ns_eval {cmd args} {

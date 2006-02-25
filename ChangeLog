@@ -8,6 +8,9 @@
 	and modified [load] tracer to load packages which were
 	not traced.
 
+	* nsd/init.tcl: global modules loaded before per-server
+	modules.
+
 2006-02-24  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/connio.c: check for buffer size -1 because
