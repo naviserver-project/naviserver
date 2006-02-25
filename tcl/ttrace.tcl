@@ -471,22 +471,32 @@ ns_runonce {
             return
         }
         set image [lindex $cmdline 1]
-        set initp [lindex $cmdline 2]
-        if {$initp eq ""} {
+        set iproc [lindex $cmdline 2]
+        if {$iproc eq ""} {
             foreach pkg [info loaded] {
                 if {[lindex $pkg 0] == $image} {
-                    set initp [lindex $pkg 1]
+                    set iproc [lindex $pkg 1]
                 }
             }
         }
-        ttrace::addentry load $image $initp
+        ttrace::addentry load $image $iproc
     }
 
     ttrace::addscript load {
         append res "\n"
-        foreach entry [ttrace::getentries load] {
-            set initp [ttrace::getentry load $entry]
-            append res "::load {} $initp" \n
+        # Load all traced packages
+        foreach image [ttrace::getentries load] {
+            set iproc [ttrace::getentry load $image]
+            append res "::load {} $iproc" \n
+            set loaded($image) 1
+        }
+        # Load all the rest missed by trace
+        foreach pkg [info loaded] {
+            set image [lindex $pkg 0]
+            if {![info exists loaded($image)]} {
+                set iproc [lindex $pkg 1]
+                append res "::load {} $iproc" \n
+            }
         }
         return $res
     }
