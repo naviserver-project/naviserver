@@ -1,6 +1,14 @@
+2006-02-27  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/connio.c (Ns_ConnSend):
+	* tests/tclresp.test: Fix bug with buffer management triggered by
+	data too large to be sent in a single call to the OS. Don't copy
+	unsent iovec's around if there are no additional ones to be added
+	to the set.
+
 2006-02-25  Stephen Deasey  <sdeasey@users.sf.net>
 
-	* nsd/cache.c: Untabify and reformat.
+	* nsd/dns.c: Untabify and reformat.
 
 2006-02-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 

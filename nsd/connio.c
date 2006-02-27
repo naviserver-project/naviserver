@@ -178,73 +178,89 @@ int
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
     Conn         *connPtr = (Conn *) conn;
-    int           nwrote, towrite, sent, i, n, sn;
-    struct iovec  sbufs[UIO_MAXIOV];
+    int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
+    int           nwrote = 0, towrite = 0;
+    int           n, sent = -1;
+    struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
 
     if (connPtr->sockPtr == NULL) {
         return -1;
     }
 
-    towrite = nwrote = 0;
-    n  = 0;
-    sn = 0;
+    sbufPtr = sbufs;
+    sbufLen = UIO_MAXIOV;
 
     /*
      * Send any queued write-behind data.
      */
 
     if (connPtr->queued.length > 0) {
-        sbufs[sn].iov_base = connPtr->queued.string;
-        sbufs[sn].iov_len = connPtr->queued.length;
-        towrite += sbufs[sn].iov_len;
-        ++sn;
+        sbufPtr[sbufIdx].iov_base = connPtr->queued.string;
+        sbufPtr[sbufIdx].iov_len = connPtr->queued.length;
+        towrite += sbufPtr[sbufIdx].iov_len;
+        sbufIdx++;
+        nsbufs++;
     }
 
     /*
-     * Send up to UIO_MAXIOV buffers of data at a time.
+     * Send up to UIO_MAXIOV buffers of data at a time and strip out
+     * empty buffers.
      */
 
-    while (n < nbufs || towrite > 0) {
+    while (bufIdx < nbufs || towrite > 0) {
 
-        while (n < nbufs && sn < UIO_MAXIOV) {
-            if (bufs[n].iov_len > 0 && bufs[n].iov_base != NULL) {
-                sbufs[sn].iov_base = bufs[n].iov_base;
-                sbufs[sn].iov_len = bufs[n].iov_len;
-                towrite += bufs[n].iov_len;
-                ++sn;
+        while (bufIdx < nbufs && sbufIdx < sbufLen) {
+            if (bufs[bufIdx].iov_len > 0 && bufs[bufIdx].iov_base != NULL) {
+                sbufPtr[sbufIdx].iov_base = bufs[bufIdx].iov_base;
+                sbufPtr[sbufIdx].iov_len = bufs[bufIdx].iov_len;
+                towrite += sbufPtr[sbufIdx].iov_len;
+                sbufIdx++;
+                nsbufs++;
             }
-            ++n;
+            bufIdx++;
         }
 
-        sent = NsSockSend(connPtr->sockPtr, sbufs, sn);
+        sent = NsSockSend(connPtr->sockPtr, sbufPtr, nsbufs);
         if (sent < 0) {
             break;
         }
         towrite -= sent;
         nwrote  += sent;
 
-        /*
-         * If all the data was not sent, move the remaining buffs
-         * to the beginning to make room for more so that we always
-         * send the maximum number of buffers in one shot.
-         */
+        if (towrite > 0) {
 
-        if (towrite > 0 || n < nbufs) {
-            for (i = 0; i < sn && sent > 0; ++i) {
-                if (sent >= (int) sbufs[i].iov_len) {
-                    sent -= sbufs[i].iov_len;
+            /*
+             * Move the send buffer index to the first buffer which has bytes
+             * which remain unsent.
+             */
+
+            for (sbufIdx = 0; sbufIdx < nsbufs && sent > 0; sbufIdx++) {
+                if (sent >= (int) sbufPtr[sbufIdx].iov_len) {
+                    sent -= sbufPtr[sbufIdx].iov_len;
                 } else {
-                    sbufs[i].iov_base = (char *) sbufs[i].iov_base + sent;
-                    sbufs[i].iov_len -= sent;
-                    sent = 0;
+                    sbufPtr[sbufIdx].iov_base = (char *) sbufPtr[sbufIdx].iov_base + sent;
+                    sbufPtr[sbufIdx].iov_len -= sent;
+                    break;
                 }
             }
-            sn -= i;
-            if (towrite > 0 && sn > 0) {
-                memmove(sbufs, sbufs + (i-1), (size_t) sizeof(struct iovec) * sn);
-                continue;
+            
+            /*
+             * If there are more whole buffers to send, move the remaining unsent
+             * buffers to the beginning of the iovec array so that we always send
+             * the maximum number of buffers the OS can handle.
+             */
+
+            if (bufIdx < nbufs - 1) {
+                memmove(sbufPtr, sbufPtr + sbufIdx, (size_t) sizeof(struct iovec) * nsbufs);
+            } else {
+                sbufPtr = sbufPtr + sbufIdx;
+                sbufLen = nsbufs - sbufIdx;
             }
+            nsbufs -= sbufIdx;
+        } else {
+            nsbufs = 0;
         }
+        sbufIdx = 0;
     }
 
     /*
@@ -271,7 +287,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
          * Return error on first send, if any, from NsSockSend above.
          */
 
-        nwrote = n;
+        nwrote = sent;
     }
 
     return nwrote;
