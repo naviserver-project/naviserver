@@ -637,10 +637,12 @@ proc _ns_tclrename { oldName newName } {
 #
 
 ns_runonce -global {
-    set modules [ns_configsection ns/modules]
-    if {$modules ne ""} {
-        foreach {module file} [ns_set array $modules] {
-            ns_moduleload -global $module $file
+    ns_atprestartup {
+        set modules [ns_configsection ns/modules]
+        if {$modules ne ""} {
+             foreach {module file} [ns_set array $modules] {
+                 ns_moduleload -global $module $file
+             }
         }
     }
 }

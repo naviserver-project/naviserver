@@ -1,3 +1,8 @@
+2006-02-27  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/init.tcl: reverted change to way global modules are
+	loaded, as this was A Bad Thing.
+
 2006-02-27  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/connio.c (Ns_ConnSend):
