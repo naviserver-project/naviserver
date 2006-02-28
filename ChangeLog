@@ -1,3 +1,10 @@
+2006-02-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/tclcmds.c:
+	* nsd/tclrequest.c: Add ns_register_proxy Tcl command and make
+	Ns_RegisterProxyRequest public API
+
 2006-02-27  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/init.tcl: reverted change to way global modules are

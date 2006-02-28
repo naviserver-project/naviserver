@@ -136,6 +136,56 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclRegisterProxyObjCmd --
+ *
+ *      Implements ns_register_proxy as obj command. 
+ *
+ * Results:
+ *      Tcl result. 
+ *
+ * Side effects:
+ *      See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                        Tcl_Obj *CONST objv[], int adp)
+{
+    NsInterp       *itPtr = arg;
+    Ns_TclCallback *cbPtr;
+    Tcl_Obj        *scriptObj;
+    char           *method, *protocol;
+    int             remain = 0;
+
+    Ns_ObjvSpec opts[] = {
+        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"method",     Ns_ObjvString, &method,    NULL},
+        {"protocol",   Ns_ObjvString, &protocol,  NULL},
+        {"script",     Ns_ObjvObj,    &scriptObj, NULL},
+        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    cbPtr = Ns_TclNewCallback(interp, NsTclRequestProc, scriptObj,
+                              remain, objv + (objc - remain));
+    Ns_RegisterProxyRequest(itPtr->servPtr->server, method, protocol,
+                       NsTclRequestProc, Ns_TclFreeCallback, cbPtr);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclRegisterFastPathObjCmd --
  *
  *      Implements ns_register_fastpath as obj command.

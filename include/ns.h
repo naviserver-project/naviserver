@@ -1369,6 +1369,12 @@ Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
     NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
+Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *protocol,
+                        Ns_OpProc *proc, Ns_Callback *del, void *arg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
+    NS_GNUC_NONNULL(4);
+
+NS_EXTERN void
 Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
               int *flagsPtr)
@@ -1379,6 +1385,11 @@ Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
 NS_EXTERN void
 Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
                      int inherit)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void
+Ns_UnRegisterProxyRequest(CONST char *server, CONST char *method,
+                          CONST char *protocol)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
