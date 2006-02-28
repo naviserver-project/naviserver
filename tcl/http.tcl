@@ -454,4 +454,56 @@ proc _ns_http_puts {timeout sock string} {
     puts $sock $string
 }
 
+#
+# Simple http proxy handler, to enable set enablehttpproxy in the
+# nsd.tcl, all requests that start with http:// will be proxied.
+#
+
+if { [ns_config -bool ns/server/[ns_info server] enablehttpproxy off] } {
+  ns_register_proxy GET http ns_proxy_handler_http
+  ns_register_proxy POST http ns_proxy_handler_http
+}
+
+proc ns_proxy_handler_http { args } {
+
+    if { [set port [ns_conn port]] == 0 } { set port 80 }
+    set url [ns_conn protocol]://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
+    ns_log notice HTTP Proxy request: [ns_conn method]: $url: [ns_conn content]
+
+    set http [ns_httpopen [ns_conn method] $url [ns_conn headers] 30 [ns_conn content]]
+    set rfd [lindex $http 0]
+    close [lindex $http 1]
+    set headers [lindex $http 2]
+    set response [ns_set name $headers]
+    set status [lindex $response 1]
+    set length [ns_set iget $headers content-length]
+    if { $length eq "" } {
+        set length -1
+    }
+    ns_write $response\r\n
+    for { set i 0 } { $i < [ns_set size $headers] } { incr i } {
+      ns_write "[ns_set key $headers $i]: [ns_set value $headers $i]\r\n"
+    }
+    ns_write "\r\n"
+    if { [catch {
+      while {1} {
+         set buf [_ns_http_read 30 $rfd $length]
+         ns_write $buf
+         if { $buf eq "" } {
+           break
+         }
+         if { $length > 0 } {
+           incr length -[string length $buf]
+           if { $length <= 0 } {
+             break
+           }
+         }
+      }
+    } errmsg] } {
+      ns_log Error $errmsg
+    }
+    ns_set free $headers
+    close $rfd
+}
+
 

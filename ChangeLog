@@ -1,5 +1,6 @@
 2006-02-28  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* tcl/http.tcl: Added simple http proxy, disabled by default
 	* include/ns.h:
 	* nsd/tclcmds.c:
 	* nsd/tclrequest.c: Add ns_register_proxy Tcl command and make
