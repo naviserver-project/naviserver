@@ -893,7 +893,7 @@ DriverThread(void *ignored)
         /*
          * Select and drain the trigger pipe if necessary.
          */
-        
+
         pfds[0].revents = 0;
         do {
             n = poll(pfds, nfds, pollto);
@@ -1558,7 +1558,11 @@ SockRead(Sock *sockPtr, int spooler)
     Tcl_DString  *bufPtr;
     char         tbuf[4096];
     int          len, nread, n;
-    
+
+    /*
+     * Initialize Request structure
+     */
+
     if (Ns_DriverSockRequest(sock, 0) != NS_OK) {
         return SOCK_ERROR;
     }
@@ -1632,6 +1636,7 @@ SockRead(Sock *sockPtr, int spooler)
         buf.iov_base = bufPtr->string + reqPtr->woff;
         buf.iov_len = nread;
     }
+
     n = (*sockPtr->drvPtr->proc)(DriverRecv, sock, &buf, 1);
     if (n <= 0) {
         return SOCK_READERROR;
@@ -1763,6 +1768,9 @@ SockParse(Sock *sockPtr, int spooler)
                 length = atoi(s);
                 if (length >= 0) {
                     reqPtr->length = length;
+                    if (reqPtr->length > sockPtr->drvPtr->maxinput) {
+                        return SOCK_ENTITYTOOLARGE;
+                    }
                 }
 
             }
@@ -1924,10 +1932,10 @@ Ns_DriverSockRequest(Ns_Sock *sock, char *reqline)
             reqPtr->coff = reqPtr->woff = reqPtr->roff = 0;
             reqPtr->leadblanks = 0;
         }
+        reqPtr->port = ntohs(sockPtr->sa.sin_port);
+        strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
     }
     sockPtr->reqPtr = reqPtr;
-    reqPtr->port = ntohs(sockPtr->sa.sin_port);
-    strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
 
     if (reqline) {
         reqPtr->request = Ns_ParseRequest(reqline);
@@ -2042,7 +2050,7 @@ SpoolerThread(void *arg)
             if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
                 pollto = diff.sec * 1000 + diff.usec / 1000;
             } else {
-                pollto = 60 * 1000;
+                pollto = 0;
             }
         }
         
