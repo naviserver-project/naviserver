@@ -374,7 +374,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     drvPtr->writer.threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
     if (drvPtr->writer.threads > 0) {
-        drvPtr->writer.maxsize = Ns_ConfigIntRange(path, "writersize", 1024*1024, 1024*1024, INT_MAX);
+        drvPtr->writer.maxsize = Ns_ConfigIntRange(path, "writersize", 1024*1024, 1024, INT_MAX);
         drvPtr->writer.bufsize = Ns_ConfigIntRange(path, "writerbufsize", 2048, 512, INT_MAX);
         Ns_Log(Notice, "%s: enable %d writer thread(s) for downloads >= %d bytes, bufsize=%d bytes", module,
                        drvPtr->writer.threads, drvPtr->writer.maxsize, drvPtr->writer.bufsize);

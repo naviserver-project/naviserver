@@ -154,6 +154,7 @@ proc nstest_http {args} {
             # Raw data.
             #
 
+            set response ""
             set body $line
             append body [_ns_http_read $timeout $rfd -1]
         }
@@ -189,7 +190,7 @@ proc nstest_http {args} {
         }
     }
     ns_set free $hdrs
-    if {[string is true $getbody]} {
+    if {[string is true $getbody] && $body ne ""} {
         lappend response $body
     }
 

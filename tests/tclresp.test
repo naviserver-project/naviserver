@@ -163,15 +163,15 @@ test tclresp-3.1 {ns_return} -constraints serverListen -setup {
     ns_unregister_proc GET /tclresp
 } -result {200 text/plain 1 x}
 
-test tclresp-3.2 {ns_return} -constraints serverListen -setup {
+test tclresp-3.2 {ns_return via spooler thread} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
-        ns_return 200 text/plain [string repeat x 1024]
+        ns_return 200 text/plain [string repeat x 1027]
     }
 } -body {
     nstest_http -getbody 1 GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result [list 200 [string repeat x 1024]]
+} -result [list 200 [string repeat x 1027]]
 
 test tclresp-3.3 {ns_return large string} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
