@@ -1,0 +1,34 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
+}
+
+
+
+test encoding-1.1 {IO buffer transcoding} -setup {
+    ns_register_proc GET /encoding {
+        # Force encoding from internal utf-8 to something else.
+        # Size of data to return > IOBUFSZ (connio.c) to trigger
+        # multiple encoding passes.
+        ns_conn encoding iso8859-2
+        ns_return 200 text/plain [string repeat x 8193]
+    }
+} -body {
+    nstest_http -getbody 1 GET /encoding
+} -cleanup {
+    ns_unregister_proc GET /encoding
+} -result [list 200 [string repeat x 8193]]
+
+
+
+cleanupTests

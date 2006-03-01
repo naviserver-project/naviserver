@@ -1,5 +1,8 @@
 2006-02-28  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* tests/encoding.test: Add test which exposes off by 1 bug in
+	encoding buffer management reported by Vlad on the 24th.
+
 	* nsd/driver.c:
 	* tests/test.nscfg:
 	* tests/http.test:
