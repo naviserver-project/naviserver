@@ -101,8 +101,8 @@ proc nstest_http {args} {
         } else {
             _ns_http_puts $timeout $wfd "\r"
         }
-        ns_set free $hdrs
-        close $wfd
+        catch {ns_set free $hdrs}
+        catch {close $wfd}
 
         #
         # Read the response.
@@ -160,7 +160,7 @@ proc nstest_http {args} {
         }
 
 
-        close $rfd
+        catch {close $rfd}
 
     } errMsg]} {
 
@@ -169,13 +169,10 @@ proc nstest_http {args} {
         #
 
         global errorInfo
-        catch {
-            close $wfd
-            close $rfd
-        }
-        if {[info exists hdrs]} {
-            ns_set free $hdrs
-        }
+        ns_log error $errorInfo $errMsg
+        catch {close $wfd}
+        catch {close $rfd}
+        catch {ns_set free $hdrs}
         return -code error -errorinfo $errorInfo $errMsg
 
     }
@@ -189,7 +186,7 @@ proc nstest_http {args} {
             lappend response [ns_set iget $hdrs $h]
         }
     }
-    ns_set free $hdrs
+    catch {ns_set free $hdrs}
     if {[string is true $getbody] && $body ne ""} {
         lappend response $body
     }

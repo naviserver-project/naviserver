@@ -39,29 +39,24 @@ NS_RCSID("@(#) $Header$");
 
 
 /*
- * Defines for SockRead return code.
+ * Defines for SockRead return and reason codes.
  */
 
-#define SOCK_READY  0
-#define SOCK_MORE   1
-#define SOCK_SPOOL  2
-#define SOCK_ERROR  (-1)
-
-/*
- * Defines for SockRelease reason codes.
- *
- */
-
-typedef enum {
-    Reason_Close,
-    Reason_CloseTimeout,
-    Reason_ReadTimeout,
-    Reason_WriteTimeout,
-    Reason_ServerReject,
-    Reason_SockReadError,
-    Reason_SockWriteError,
-    Reason_SockShutError
-} ReleaseReasons;
+#define SOCK_READY                   0
+#define SOCK_MORE                    1
+#define SOCK_SPOOL                   2
+#define SOCK_ERROR                  (-1)
+#define SOCK_CLOSE                  (-2)
+#define SOCK_CLOSETIMEOUT           (-3)
+#define SOCK_READTIMEOUT            (-4)
+#define SOCK_WRITETIMEOUT           (-5)
+#define SOCK_SERVERREJECT           (-6)
+#define SOCK_READERROR              (-7)
+#define SOCK_WRITEERROR             (-8)
+#define SOCK_SHUTERROR              (-9)
+#define SOCK_REQUESTURITOOLONG      (-10)
+#define SOCK_BADREQUEST             (-11)
+#define SOCK_ENTITYTOOLARGE         (-12)
 
 /*
  * LoggingFlag mask values
@@ -90,7 +85,7 @@ static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 static int  SetServer(Sock *sockPtr);
 static Sock *SockAccept(Driver *drvPtr);
-static void SockRelease(Sock *sockPtr, ReleaseReasons reason, int err);
+static void SockRelease(Sock *sockPtr, int reason, int err);
 static void SockTrigger(SOCKET sock);
 static void SockPoll(Sock *sockPtr, int type, struct pollfd **pfds, unsigned int *nfds,
                      unsigned int *maxfds, Ns_Time *timeoutPtr);
@@ -102,7 +97,7 @@ static int SockParse(Sock *sockPtr, int spooler);
 static int SockSpoolerPush(Driver *drvPtr, Sock *sockPtr);
 static Sock *SockSpoolerPop(SpoolerQueue *queuePtr);
 
-static void SockWriterRelease(WriterSock *sockPtr, ReleaseReasons reason, int err);
+static void SockWriterRelease(WriterSock *sockPtr, int reason, int err);
 
 /*
  * Static variables defined in this file.
@@ -930,7 +925,7 @@ DriverThread(void *ignored)
                     }
                 }
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                    SockRelease(sockPtr, Reason_CloseTimeout, 0);
+                    SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
                 } else {
                     Push(sockPtr, closePtr);
                 }
@@ -948,7 +943,7 @@ DriverThread(void *ignored)
             nextPtr = sockPtr->nextPtr;
             if (!(pfds[sockPtr->pidx].revents & POLLIN)) {
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                    SockRelease(sockPtr, Reason_ReadTimeout, 0);
+                    SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
                     Push(sockPtr, readPtr);
                 }
@@ -981,13 +976,13 @@ DriverThread(void *ignored)
                     break;
                 case SOCK_READY:
                     if (!SetServer(sockPtr)) {
-                        SockRelease(sockPtr, Reason_ServerReject, 0);
+                        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
                     } else {
                         Push(sockPtr, waitPtr);
                     }
                     break;
                 default:
-                    SockRelease(sockPtr, Reason_SockReadError, errno);
+                    SockRelease(sockPtr, n, errno);
                     break;
                 }
             }
@@ -1043,7 +1038,7 @@ DriverThread(void *ignored)
                     n = (*sockPtr->drvPtr->proc)(DriverAccept, (Ns_Sock*)sockPtr, 0, 0);
                     if (n == NS_OK) {
                         if (sockPtr->reqPtr == NULL || !SetServer(sockPtr)) {
-                            SockRelease(sockPtr, Reason_ServerReject, 0);
+                            SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
                         } else {
                             if (!NsQueueConn(sockPtr, &now)) {
                                 Push(sockPtr, waitPtr);
@@ -1087,7 +1082,7 @@ DriverThread(void *ignored)
                 Push(sockPtr, readPtr);
             } else {
                 if (shutdown(sockPtr->sock, 1) != 0) {
-                    SockRelease(sockPtr, Reason_SockShutError, errno);
+                    SockRelease(sockPtr, SOCK_SHUTERROR, errno);
                 } else {
                     SockTimeout(sockPtr, &now, sockPtr->drvPtr->closewait);
                     Push(sockPtr, closePtr);
@@ -1344,17 +1339,19 @@ SockAccept(Driver *drvPtr)
  */
 
 static void
-SockRelease(Sock *sockPtr, ReleaseReasons reason, int err)
+SockRelease(Sock *sockPtr, int reason, int err)
 {
     char *errMsg = NULL;
+    struct iovec iov;
 
     switch (reason) {
-    case Reason_Close:
-    case Reason_CloseTimeout:
+    case SOCK_CLOSE:
+    case SOCK_CLOSETIMEOUT:
         /* This is normal, never log. */
         break;
-    case Reason_ReadTimeout:
-    case Reason_WriteTimeout:
+
+    case SOCK_READTIMEOUT:
+    case SOCK_WRITETIMEOUT:
         /*
          * For this case, whether this is acceptable or not
          * depends upon whether this sock was a keep-alive
@@ -1365,30 +1362,55 @@ SockRelease(Sock *sockPtr, ReleaseReasons reason, int err)
             errMsg = "Timeout during read";
         }
         break;
-    case Reason_ServerReject:
+
+    case SOCK_SERVERREJECT:
         if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERREJECT) {
             errMsg = "No Server found for request";
         }
         break;
-    case Reason_SockReadError:
+
+    case SOCK_READERROR:
         if (sockPtr->drvPtr->loggingFlags & LOGGING_SOCKERROR) {
             errMsg = "Unable to read request";
         }
         break;
-    case Reason_SockWriteError:
+
+    case SOCK_WRITEERROR:
         if (sockPtr->drvPtr->loggingFlags & LOGGING_SOCKERROR) {
             errMsg = "Unable to write request";
         }
         break;
-    case Reason_SockShutError:
+
+    case SOCK_SHUTERROR:
         if (sockPtr->drvPtr->loggingFlags & LOGGING_SOCKSHUTERROR) {
             errMsg = "Unable to shutdown socket";
         }
         break;
+
+    case SOCK_REQUESTURITOOLONG:
+        errMsg = "Request-URI Too Long";
+        iov.iov_base = "HTTP/1.0 414 Request-URI Too Long\r\n\r\n";
+        iov.iov_len = strlen(iov.iov_base);
+        (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock*)sockPtr, &iov, 1);
+        break;
+
+    case SOCK_BADREQUEST:
+        errMsg = "Bad Request";
+        iov.iov_base = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        iov.iov_len = strlen(iov.iov_base);
+        (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock*)sockPtr, &iov, 1);
+        break;
+
+    case SOCK_ENTITYTOOLARGE:
+        errMsg = "Request Entity Too Large";
+        iov.iov_base = "HTTP/1.0 413 Bad Request\r\n\r\n";
+        iov.iov_len = strlen(iov.iov_base);
+        (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock*)sockPtr, &iov, 1);
+        break;
     }
     if (errMsg != NULL) {
-        Ns_Log( Error, "Releasing Socket; %s %s, FD = %d, Peer = %s:%d",
-                errMsg, (err ? strerror(err) : ""), sockPtr->sock,
+        Ns_Log( Error, "Releasing Socket; %s %s(%d/%d), FD = %d, Peer = %s:%d",
+                errMsg, (err ? strerror(err) : ""), reason, err, sockPtr->sock,
                 ns_inet_ntoa(sockPtr->sa.sin_addr),
                 ntohs(sockPtr->sa.sin_port));
     }
@@ -1538,7 +1560,7 @@ SockRead(Sock *sockPtr, int spooler)
     int          len, nread, n;
     
     if (Ns_DriverSockRequest(sock, 0) != NS_OK) {
-        return NS_ERROR;
+        return SOCK_ERROR;
     }
 
     /*
@@ -1597,7 +1619,7 @@ SockRead(Sock *sockPtr, int spooler)
 	}
         n = bufPtr->length - reqPtr->coff;
         if (write(sockPtr->tfd, bufPtr->string + reqPtr->coff, n) != n) {
-            return SOCK_ERROR;
+            return SOCK_WRITEERROR;
         }
         Tcl_DStringSetLength(bufPtr, 0);
     }
@@ -1610,20 +1632,27 @@ SockRead(Sock *sockPtr, int spooler)
         buf.iov_base = bufPtr->string + reqPtr->woff;
         buf.iov_len = nread;
     }
-
     n = (*sockPtr->drvPtr->proc)(DriverRecv, sock, &buf, 1);
     if (n <= 0) {
-        return SOCK_ERROR;
+        return SOCK_READERROR;
     }
     if (sockPtr->tfd > 0) {
         if (write(sockPtr->tfd, tbuf, n) != n) {
-     	    return SOCK_ERROR;
+     	    return SOCK_WRITEERROR;
         }
     } else {
         Tcl_DStringSetLength(bufPtr, len + n);
     }
     reqPtr->woff  += n;
     reqPtr->avail += n;
+
+    /*
+     * Check the hard limit for max uploaded content size
+     */
+
+    if (reqPtr->avail > sockPtr->drvPtr->maxinput) {
+        return SOCK_ENTITYTOOLARGE;
+    }
 
     return SockParse(sockPtr, spooler);
 }
@@ -1684,7 +1713,10 @@ SockParse(Sock *sockPtr, int spooler)
          */
 
         if ((e - s) > sockPtr->drvPtr->maxline) {
-            return SOCK_ERROR;
+            if (reqPtr->request == NULL) {
+                return SOCK_REQUESTURITOOLONG;
+            }
+            return SOCK_BADREQUEST;
         }
 
         /*
@@ -1745,7 +1777,7 @@ SockParse(Sock *sockPtr, int spooler)
                      * Invalid request.
                      */
                     
-                    return SOCK_ERROR;
+                    return SOCK_BADREQUEST;
                 }
 
             } else if (Ns_ParseHeader(reqPtr->headers, s, Preserve) != NS_OK) {
@@ -1754,8 +1786,17 @@ SockParse(Sock *sockPtr, int spooler)
                  * Invalid header.
                  */
                 
-                return SOCK_ERROR;
+                return SOCK_BADREQUEST;
             }
+
+            /*
+             * Check for max number of headers
+             */
+
+            if (Ns_SetSize(reqPtr->headers) > sockPtr->drvPtr->maxheaders) {
+                return SOCK_BADREQUEST;
+            }
+
             *e = save;
             if (reqPtr->request->version <= 0.0) {
              
@@ -2001,7 +2042,7 @@ SpoolerThread(void *arg)
             if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
                 pollto = diff.sec * 1000 + diff.usec / 1000;
             } else {
-                pollto = 0;
+                pollto = 60 * 1000;
             }
         }
         
@@ -2032,7 +2073,7 @@ SpoolerThread(void *arg)
             nextPtr = sockPtr->nextPtr;
             if (!(pfds[sockPtr->pidx].revents & POLLIN)) {
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                    SockRelease(sockPtr, Reason_ReadTimeout, 0);
+                    SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
                     Push(sockPtr, readPtr);
                 }
@@ -2060,13 +2101,13 @@ SpoolerThread(void *arg)
                     break;
                 case SOCK_READY:
                     if (!SetServer(sockPtr)) {
-                        SockRelease(sockPtr, Reason_ServerReject, 0);
+                        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
                     } else {
                         Push(sockPtr, waitPtr);
                     }
                     break;
                 default:
-                    SockRelease(sockPtr, Reason_SockReadError, errno);
+                    SockRelease(sockPtr, n, errno);
                     break;
                 }
             }
@@ -2307,7 +2348,7 @@ WriterThread(void *arg)
                 }
             }
             if (status != NS_OK) {
-                SockWriterRelease(curPtr, Reason_SockWriteError, err);
+                SockWriterRelease(curPtr, SOCK_WRITEERROR, err);
             } else {
                 if (curPtr->size > 0) {
                     Push(curPtr, writePtr);
@@ -2348,9 +2389,9 @@ WriterThread(void *arg)
 }
 
 static void
-SockWriterRelease(WriterSock *sockPtr, ReleaseReasons reason, int err)
+SockWriterRelease(WriterSock *sockPtr, int reason, int err)
 {
-    Ns_Log(Notice, "Writer: closed fd=%d, error=%d, sent=%u", sockPtr->fd, err, sockPtr->nsent);
+    Ns_Log(Notice, "Writer: closed fd=%d, error=%d/%d, sent=%u", sockPtr->fd, reason, err, sockPtr->nsent);
     SockRelease(sockPtr->sockPtr, reason, err);
     if (sockPtr->fd > -1) {
         close(sockPtr->fd);

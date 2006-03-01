@@ -43,8 +43,8 @@ ns_param   maxheaders      16
 ns_param   maxinput        1000001
 ns_param   bufsize         1024
 ns_param   readahead       1025
-ns_param   sndbuf          9
-ns_param   rcvbuf          9
+#ns_param   sndbuf          9
+#ns_param   rcvbuf          9
 ns_param   spoolerthreads  3
 ns_param   uploadsize      1026
 ns_param   writerthreads   3

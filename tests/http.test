@@ -45,7 +45,7 @@ if {[ns_config test listenport]} {
 
 test http-1.1 {bad request} -constraints serverListen -body {
     nstest_http -getbody 1 bogus
-} -result {}
+} -result {400}
 
 test http-1.2 {HTTP/0.9 GET} -constraints serverListen -body {
     nstest_http -http "" -getbody 1 GET /noexist
@@ -75,7 +75,6 @@ test http-2.2 {HTTP/1.1 GET large file sent via writer threads} \
 
 
 test http-3.1 {limits: request line length} -constraints {
-    knownBug
     serverListen
 } -setup {
     ns_register_proc GET /limits {
@@ -85,10 +84,9 @@ test http-3.1 {limits: request line length} -constraints {
     nstest_http -http 1.1 -getbody 1 GET /limits?[string repeat x 1050]
 } -cleanup {
     ns_unregister_proc GET /limits
-} -result 414  ;# Connection is closed, but HTTP error should be reported
+} -result 414
 
 test http-3.2 {limits: header line length} -constraints {
-    knownBug
     serverListen
 } -setup {
     ns_register_proc GET /limits {
@@ -100,7 +98,7 @@ test http-3.2 {limits: header line length} -constraints {
         GET /limits
 } -cleanup {
     ns_unregister_proc GET /limits
-} -result 400  ;# Connection is closed, but HTTP error should be reported
+} -result 400
 
 test http-3.3 {limits: too many headers} -constraints serverListen -setup {
     ns_register_proc GET /limits {

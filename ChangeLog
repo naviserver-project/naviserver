@@ -1,3 +1,15 @@
+2006-03-01  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* tests/http.test:
+	* tests/test.nscfg
+	* tests/testserver/modules/testhttp.tcl: Fixed error reporting during
+	request parsing, now server returns 414/400 return codes and honors
+	maxinput/maxheaders parameters. Test http-4.5 does not hang actually 
+	but with sndbuf/rcvbug set to so small values it takes very logn time to
+	read the request, by putting Ns_Log in SockRead i was seeing reading by
+	64/192 bytes but the server was operational.
+
 2006-02-28  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/encoding.test: Add test which exposes off by 1 bug in
