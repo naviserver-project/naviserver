@@ -165,11 +165,19 @@ proc nstest_http {args} {
     } errMsg]} {
 
         #
+        # For Bad requests we can still read the response
+        #
+        if {![catch { set line [_ns_http_gets $timeout $rfd] }]} {
+            if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
+                return $response
+            }
+        }
+
+        #
         # Something went wrong during the request, so return an error.
         #
 
         global errorInfo
-        ns_log error $errorInfo $errMsg
         catch {close $wfd}
         catch {close $rfd}
         catch {ns_set free $hdrs}
