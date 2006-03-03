@@ -1294,7 +1294,7 @@ SockAccept(Driver *drvPtr)
         firstSockPtr = sockPtr;
         return NULL;
     }
-    
+
     /*
      * Even though the socket should have inherited
      * non-blocking from the accept socket, set again
@@ -1313,7 +1313,7 @@ SockAccept(Driver *drvPtr)
     }
     if (drvPtr->rcvbuf > 0) {
         setsockopt(sockPtr->sock, SOL_SOCKET, SO_RCVBUF,
-        (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
+                   (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
     }
     drvPtr->queuesize++;
 
@@ -1419,7 +1419,9 @@ SockRelease(Sock *sockPtr, int reason, int err)
     
     sockPtr->drvPtr->queuesize--;
     if (sockPtr->sock != INVALID_SOCKET) {
-        ns_sockclose(sockPtr->sock);
+        if (!(sockPtr->drvPtr->opts & NS_DRIVER_UDP)) {
+            ns_sockclose(sockPtr->sock);
+        }
         sockPtr->sock = INVALID_SOCKET;
     }
     if (sockPtr->reqPtr != NULL) {
