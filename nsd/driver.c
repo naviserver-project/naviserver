@@ -2294,11 +2294,8 @@ WriterThread(void *arg)
              */
 
             n = err = status = NS_OK;
-
             if (curPtr->size > 0) {
-
                 if (curPtr->fd > -1) {
-
                     maxsize = curPtr->sockPtr->drvPtr->writer.bufsize;
 
                     /*
@@ -2343,7 +2340,7 @@ WriterThread(void *arg)
                 if (status == NS_OK) {
                     vbuf.iov_base = (void *) curPtr->buf;
                     vbuf.iov_len = curPtr->bufsize;
-                    n = NsSockSend(curPtr->sockPtr, &vbuf, 1);
+                    n = (*curPtr->sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock*)curPtr->sockPtr, &vbuf, 1);
                     if (n > 0) {
                         curPtr->size -= n;
                         curPtr->nsent += n;
