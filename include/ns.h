@@ -373,6 +373,7 @@ typedef struct Ns_Request {
     int             urlc;
     char          **urlv;
     double          version;
+    char           *versionstring;
 } Ns_Request;
 
 /*

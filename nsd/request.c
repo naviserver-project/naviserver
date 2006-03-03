@@ -39,8 +39,6 @@
 
 NS_RCSID("@(#) $Header$");
 
-#define HTTP "HTTP/"
-
 /*
  * Local functions defined in this file.
  */
@@ -71,6 +69,7 @@ Ns_FreeRequest(Ns_Request * request)
         ns_free(request->line);
         ns_free(request->method);
         ns_free(request->protocol);
+        ns_free(request->versionstring);
         ns_free(request->host);
         ns_free(request->query);
         FreeUrl(request);
@@ -144,32 +143,36 @@ Ns_ParseRequest(CONST char *line)
     }
     request->method = ns_strdup(l);
 
-
     /*
      * Look for a valid version.
      */
     
-    request->version = 0.0;
     p = url + strlen(url);
-    while (p-- > url) {
-        if (!isdigit(UCHAR(*p)) && *p != '.') {
-            break;
-        }
-    }
-    p -= (sizeof(HTTP) - 2);
-    if (p >= url) {
-        if (strncmp(p, HTTP, sizeof(HTTP) - 1) == 0) {
 
-            /*
-             * If atof fails, version will be set to 0 and the server
-             * will treat the connection as if it had no HTTP/n.n keyword.
-             */
-	    
-            *p = '\0';
-            p += sizeof(HTTP) - 1;
-            request->version = atof(p);
+    /*
+     * Assume valid HTTP/n.n keyword, allow any other protocol in version
+     * to support RTS, SIP and other similar protocols
+     */
+
+    if (p - url > 4 &&
+        isdigit(UCHAR(*(--p))) &&
+        *(--p) == '.' &&
+        isdigit(UCHAR(*(--p))) &&
+        *(--p) == '/') {
+
+        *p = '\0';
+        request->version = atof(p + 1);
+        while (p > url && !isspace(UCHAR(*p))) {
+            --p;
         }
+        *p = '\0';
+        request->versionstring = ns_strdup(p + 1);
     }
+
+    /*
+     * The rest is url
+     */
+
     url = Ns_StrTrim(url);
     if (*url == '\0') {
         goto done;
@@ -179,9 +182,6 @@ Ns_ParseRequest(CONST char *line)
      * Look for a protocol in the URL.
      */
     
-    request->protocol = NULL;
-    request->host = NULL;
-    request->port = 0;
     if (*url != '/') {
         p = url;
         while (*p != '\0' && *p != '/' && *p != ':') {

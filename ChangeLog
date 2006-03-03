@@ -1,3 +1,14 @@
+2006-03-02  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/request.c:
+	* nsd.conn.c: Add versionstring into Ns_Request struct
+	and made request parser more generic regarding protocol version
+	to allow other http-like protocols to be parsed by same code
+
+	* nsd/driver.c: Some minor cleanups and temp hack in SpoolerThread
+	until the real bug will be discovered
+
 2006-03-01  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c:

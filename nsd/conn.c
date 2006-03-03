@@ -291,7 +291,7 @@ Ns_ConnResponseVersion(Ns_Conn *conn)
  *
  * Ns_ConnSetResponseVersion --
  *
- *      Set the response protocol an dversion that will be sent
+ *      Set the response protocol and version that will be sent
  *
  * Results:
  *      None
@@ -1037,7 +1037,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status",
         "url", "urlc", "urlencoding", "urlv", "version", "write_encoded",
-        "chunked", "responseversion", 
+        "chunked", "responseversion", "versionstring",
         NULL
     };
     enum ISubCmdIdx {
@@ -1049,7 +1049,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
-        CChunkedIdx, CResponseVersionIdx
+        CChunkedIdx, CResponseVersionIdx, CVersionStringIdx
     };
 
     if (objc < 2) {
@@ -1324,6 +1324,10 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     
     case CVersionIdx:
         Tcl_SetDoubleObj(result, request->version);
+        break;
+
+    case CVersionStringIdx:
+        Tcl_SetResult(interp, request->versionstring, TCL_STATIC);
         break;
 
     case CLocationIdx:
