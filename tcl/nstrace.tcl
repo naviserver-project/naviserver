@@ -27,28 +27,30 @@
 #
 # User level commands:
 #
-#   ttrace::eval           top-level wrapper (ttrace-savvy eval)
-#   ttrace::enable         activates registered Tcl command traces
-#   ttrace::disable        terminates tracing of Tcl commands
-#   ttrace::isenabled      returns true if ttrace is enabled
-#   ttrace::cleanup        bring the interp to a pristine state
-#   ttrace::update         update interp to the latest trace epoch
-#   ttrace::config         setup some configuration options
-#   ttrace::getscript      returns a script for initializing interps
+#   nstrace::enable         activates registered Tcl command traces
+#   nstrace::disable        terminates tracing of Tcl commands
+#   nstrace::isenabled      returns true if nstrace is enabled
+#   nstrace::cleanup        bring the interp to a pristine state
+#   nstrace::update         update interp to the latest trace epoch
+#   nstrace::config         setup some configuration options
+#   nstrace::getscript      returns a script for initializing interps
+#
 #
 # Commands used for/from trace callbacks:
 #
-#   ttrace::atenable       register callback to be done at trace enable
-#   ttrace::atdisable      register callback to be done at trace disable
-#   ttrace::addtrace       register user-defined tracer callback
-#   ttrace::addscript      register user-defined script generator
-#   ttrace::addresolver    register user-defined command resolver
-#   ttrace::addcleanup     register user-defined cleanup procedures
-#   ttrace::addentry       adds one entry into the named trace store
-#   ttrace::getentry       returns the entry value from the named store
-#   ttrace::delentry       removes the entry from the named store
-#   ttrace::getentries     returns all entries from the named store
-#   ttrace::preload        register procedures to be preloaded always
+#   nstrace::atenable       register callback at trace enable
+#   nstrace::atdisable      register callback at trace disable
+#   nstrace::addtrace       register tracer callback
+#   nstrace::addscript      register script generator
+#   nstrace::addresolver    register command resolver
+#   nstrace::addcleanup     register cleanup procedure
+#
+#   nstrace::addentry       adds one entry into the named trace store
+#   nstrace::getentry       returns the entry value from the named store
+#   nstrace::delentry       removes the entry from the named store
+#   nstrace::getentries     returns all entries from the named store
+#
+#   nstrace::loadproc       register procedure to be preloaded always
 #
 #
 # Limitations:
@@ -60,9 +62,8 @@
 
 ns_runonce {
 
-    namespace eval ttrace {
+    namespace eval nstrace {
 
-        # Setup some compatibility wrappers
         variable tvers 0
         variable elock [ns_mutex create traceepochmutex]
         
@@ -89,29 +90,14 @@ ns_runonce {
         # Exported commands
         namespace export unknown
         
-        # Initialize ttrace shared state
-        if {[nsv_array exists ttrace] == 0} {
-            nsv_set ttrace lastepoch $epoch
-            nsv_set ttrace epochlist ""
+        # Initialize nstrace shared state
+        if {[nsv_array exists nstrace] == 0} {
+            nsv_set nstrace lastepoch $epoch
+            nsv_set nstrace epochlist ""
         }
         
         # Allow creation of interp initialization epochs
-        set config(-doepochs) 1
-
-        proc eval {cmd args} {
-            set nmsp [::uplevel namespace current]
-            enable
-            set code [catch {
-                namespace eval $nmsp ::uplevel [list $cmd $args]
-            } result]
-            disable
-            if {$code == 0} {
-                ns_ictl save [getscript]
-            } else {
-                ns_ictl markfordelete
-            }
-            return -code $code $result
-        }
+        set config(-doepochs)  1
 
         proc config {args} {
             variable config
@@ -173,9 +159,9 @@ ns_runonce {
 
         proc update {{from -1}} {
             if {$from == -1} { 
-                variable epoch [nsv_set ttrace lastepoch]
+                variable epoch [nsv_set nstrace lastepoch]
             } else {
-                if {[lsearch [nsv_set ttrace epochlist] $from] == -1} {
+                if {[lsearch [nsv_set nstrace epochlist] $from] == -1} {
                     error "no such epoch: $from"
                 }
                 variable epoch $from
@@ -207,7 +193,7 @@ ns_runonce {
             }
         }
 
-        proc preload {cmd} {
+        proc loadproc {cmd} {
             variable preloads
             if {[lsearch $preloads $cmd] == -1} {
                 lappend preloads $cmd
@@ -307,7 +293,7 @@ ns_runonce {
 
         proc unknown {args} {
             set cmd [lindex $args 0]
-            if {[uplevel ttrace::_resolve [list $cmd]]} {
+            if {[uplevel nstrace::_resolve [list $cmd]]} {
                 set c [catch {uplevel $cmd [lrange $args 1 end]} r]
             } else {
                 set c [catch {::eval ::tcl::unknown $args} r]
@@ -336,14 +322,14 @@ ns_runonce {
         proc _newepoch {} {
             variable elock
             ns_mutex lock $elock
-            set old [nsv_set  ttrace lastepoch]
-            set new [nsv_incr ttrace lastepoch]
-            nsv_lappend ttrace $new [ns_thread getid]
+            set old [nsv_set  nstrace lastepoch]
+            set new [nsv_incr nstrace lastepoch]
+            nsv_lappend nstrace $new [ns_thread getid]
             if {$old >= 0} {
                 _copyepoch $old $new
                 _delepochs
             }
-            nsv_lappend ttrace epochlist $new
+            nsv_lappend nstrace epochlist $new
             ns_mutex unlock $elock
             return $new
         }
@@ -358,25 +344,25 @@ ns_runonce {
         proc _delepochs {} {
             set tlist [_getthreads]
             set elist ""
-            foreach epoch [nsv_set ttrace epochlist] {
+            foreach epoch [nsv_set nstrace epochlist] {
                 if {[_delepoch $epoch $tlist] == 0} {
                     lappend elist $epoch
                 } else {
-                    nsv_unset ttrace $epoch
+                    nsv_unset nstrace $epoch
                 }
             }
-            nsv_set ttrace epochlist $elist
+            nsv_set nstrace epochlist $elist
         }
 
         proc _delepoch {epoch threads} {
             set self [ns_thread getid] 
-            foreach tid [nsv_set ttrace $epoch] {
+            foreach tid [nsv_set nstrace $epoch] {
                 if {$tid != $self && [lsearch $threads $tid] >= 0} {
                     lappend alive $tid
                 }
             }
             if {[info exists alive]} {
-                nsv_set ttrace $epoch $alive
+                nsv_set nstrace $epoch $alive
                 return 0
             } else {
                 foreach var [nsv_names $epoch-*] {
@@ -389,13 +375,14 @@ ns_runonce {
         proc _useepoch {epoch} {
             if {$epoch >= 0} {
                 set tid [ns_thread getid]
-                if {[lsearch [nsv_set ttrace $epoch] $tid] == -1} {
-                    nsv_lappend ttrace $epoch $tid
+                if {[lsearch [nsv_set nstrace $epoch] $tid] == -1} {
+                    nsv_lappend nstrace $epoch $tid
                 }
             }
         }
 
         proc _serializeproc {cmd} {
+            set pname [namespace tail $cmd]
             set dargs [info args $cmd]
             set pbody [info body $cmd]
             set pargs ""
@@ -407,17 +394,17 @@ ns_runonce {
                 }
             }
             set nsp [namespace qualifier $cmd]
-            if {$nsp eq ""} {
-                set nsp "::"
+            if {$nsp eq {}} {
+                set nsp {::}
             }
             append res "::namespace eval $nsp {" \n
-            append res "::proc [namespace tail $cmd] [list $pargs] [list $pbody]" \n
+            append res "::proc $pname [list $pargs] [list $pbody]" \n
             append res "}" \n
         }
 
         proc _serializensp {{nsp ""} {result _}} {
             upvar $result res
-            if {$nsp eq ""} {
+            if {$nsp eq {}} {
                 set nsp [namespace current]
             }
             append res "::namespace eval $nsp {" \n
@@ -442,20 +429,16 @@ ns_runonce {
     }
 
     #
-    # The code below is ment to be run once during the application start. 
-    # It provides implementation of tracing callbacks for some Tcl commands.
+    # The code below provides implementation of tracing callbacks
+    # for following basic Tcl commands:
+    # 
+    #    [namespace], [variable], [load], [proc], [rename]
+    #
     # Users can supply their own tracer implementations on-the-fly.
     #
-    # The code below will create traces for the following Tcl commands:
-    #    "namespace", "variable", "load", "proc" and "rename"
+
     #
-    # Also, the Tcl object extension XOTcl 1.3.8 is handled and all XOTcl
-    # related things, like classes and objects are traced (many thanks to
-    # Gustaf Neumann from XOTcl for his kind help and support). 
-    #
-    
-    #
-    # Register the "load" trace. This will create 
+    # Register the [load] trace. This will create 
     # the following key/value pair in the "load" store:
     #
     #  --- key ----              --- value ---
@@ -466,31 +449,31 @@ ns_runonce {
     # but we store the path to the image file as well.
     #
 
-    ttrace::addtrace load {cmdline code args} {
+    nstrace::addtrace load {cmdline code args} {
         if {$code != 0} {
             return
         }
         set image [lindex $cmdline 1]
         set iproc [lindex $cmdline 2]
-        if {$iproc eq ""} {
+        if {$iproc eq {}} {
             foreach pkg [info loaded] {
-                if {[lindex $pkg 0] == $image} {
+                if {[lindex $pkg 0] eq $image} {
                     set iproc [lindex $pkg 1]
                 }
             }
         }
-        ttrace::addentry load $image $iproc
+        nstrace::addentry load $image $iproc
     }
 
-    ttrace::addscript load {
-        append res "\n"
+    nstrace::addscript load {
+        append res \n
         # Load all traced packages
-        foreach image [ttrace::getentries load] {
-            set iproc [ttrace::getentry load $image]
+        foreach image [nstrace::getentries load] {
+            set iproc [nstrace::getentry load $image]
             append res "::load {} $iproc" \n
             set loaded($image) 1
         }
-        # Load all the rest missed by trace
+        # Load all the rest missed by tracing
         foreach pkg [info loaded] {
             set image [lindex $pkg 0]
             if {![info exists loaded($image)]} {
@@ -502,7 +485,7 @@ ns_runonce {
     }
 
     #
-    # Register the "namespace" trace. This will create 
+    # Register the [namespace] trace. This will create 
     # the following key/value entry in "namespace" store:
     #
     #  --- key ----                   --- value ---
@@ -518,41 +501,41 @@ ns_runonce {
     # command or procedure is imported from.
     #
 
-    ttrace::addtrace namespace {cmdline code args} {
+    nstrace::addtrace namespace {cmdline code args} {
         if {$code != 0} {
             return
         }
         set nop [lindex $cmdline 1]
         set cns [uplevel namespace current]
-        if {$cns eq "::"} {
-            set cns ""
+        if {$cns eq {::}} {
+            set cns {}
         }
         switch -glob $nop {
             eva* {
                 set nsp [lindex $cmdline 2]
-                if {![string match "::*" $nsp]} {
+                if {![string match {::*} $nsp]} {
                     set nsp ${cns}::$nsp
                 }
-                ttrace::addentry namespace $nsp 1
+                nstrace::addentry namespace $nsp 1
             }
             imp* {
                 # - parse import arguments (skip opt "-force")
                 set opts [lrange $cmdline 2 end]
-                if {[string match "-fo*" [lindex $opts 0]]} {
+                if {[string match {-fo*} [lindex $opts 0]]} {
                     set opts [lrange $cmdline 3 end]
                 }
                 # - register all imported procs and commands
                 foreach opt $opts {
-                    if {![string match "::*" [::namespace qual $opt]]} {
+                    if {![string match {::*} [::namespace qual $opt]]} {
                         set opt ${cns}::$opt
                     }
                     # - first import procs
-                    foreach entry [ttrace::getentries proc $opt] {
+                    foreach entry [nstrace::getentries proc $opt] {
                         set cmd ${cns}::[::namespace tail $entry]
                         set nsp [::namespace qual $entry]
                         set done($cmd) 1
-                        set entry [list 0 $nsp "" ""]
-                        ttrace::addentry proc $cmd $entry
+                        set entry [list 0 $nsp {} {}]
+                        nstrace::addentry proc $cmd $entry
                     }
 
                     # - then import commands
@@ -560,8 +543,8 @@ ns_runonce {
                         set cmd ${cns}::[::namespace tail $entry]
                         set nsp [::namespace qual $entry]
                         if {[info exists done($cmd)] == 0} {
-                            set entry [list 0 $nsp "" ""]
-                            ttrace::addentry proc $cmd $entry
+                            set entry [list 0 $nsp {} {}]
+                            nstrace::addentry proc $cmd $entry
                         }
                     }
                 }
@@ -569,16 +552,16 @@ ns_runonce {
         }
     }
 
-    ttrace::addscript namespace {
+    nstrace::addscript namespace {
         append res \n
-        foreach entry [ttrace::getentries namespace] {
+        foreach entry [nstrace::getentries namespace] {
             append res "::namespace eval $entry {}" \n
         }
         return $res
     }
 
     #
-    # Register the "variable" trace. This will create 
+    # Register the [variable] trace. This will create 
     # the following key/value entry in the "variable" store:
     #
     #  --- key ----                   --- value ---
@@ -589,28 +572,28 @@ ns_runonce {
     # value at the time of script generation.
     #
 
-    ttrace::addtrace variable {cmdline code args} {
+    nstrace::addtrace variable {cmdline code args} {
         if {$code != 0} {
             return
         }
         set opts [lrange $cmdline 1 end]
         if {[llength $opts]} {
             set cns [uplevel namespace current]
-            if {$cns eq "::"} {
-                set cns ""
+            if {$cns eq {::}} {
+                set cns {}
             }
             foreach {var val} $opts {
-                if {![string match "::*" $var]} {
+                if {![string match {::*} $var]} {
                     set var ${cns}::$var
                 }
-                ttrace::addentry variable $var 1
+                nstrace::addentry variable $var 1
             }
         }
     }
 
-    ttrace::addscript variable {
+    nstrace::addscript variable {
         append res \n
-        foreach entry [ttrace::getentries variable] {
+        foreach entry [nstrace::getentries variable] {
             set cns [namespace qual $entry]
             set var [namespace tail $entry]
             append res "::namespace eval $cns {" \n
@@ -622,14 +605,14 @@ ns_runonce {
             } else {
                 append res \n
             }
-            append res } \n
+            append res "}" \n
         }
         return $res
     }
 
 
     #
-    # Register the "rename" trace. It will create 
+    # Register the [rename] trace. It will create 
     # the following key/value pair in "rename" store:
     #
     #  --- key ----              --- value ---
@@ -640,40 +623,40 @@ ns_runonce {
     # any traced procedure definitions.
     #
 
-    ttrace::addtrace rename {cmdline code args} {
+    nstrace::addtrace rename {cmdline code args} {
         if {$code != 0} {
             return
         }
         set cns [uplevel namespace current]
-        if {$cns eq "::"} {
-            set cns ""
+        if {$cns eq {::}} {
+            set cns {}
         }
         set old [lindex $cmdline 1]
-        if {![string match "::*" $old]} {
+        if {![string match {::*} $old]} {
             set old ${cns}::$old
         }
         set new [lindex $cmdline 2]
-        if {$new ne ""} {
-            if {![string match "::*" $new]} {
+        if {$new ne {}} {
+            if {![string match {::*} $new]} {
                 set new ${cns}::$new
             }
-            ttrace::addentry rename $old $new
+            nstrace::addentry rename $old $new
         } else {
-            ttrace::delentry proc $old
+            nstrace::delentry proc $old
         }
     }
 
-    ttrace::addscript rename {
+    nstrace::addscript rename {
         append res \n
-        foreach old [ttrace::getentries rename] {
-            set new [ttrace::getentry rename $old]
+        foreach old [nstrace::getentries rename] {
+            set new [nstrace::getentry rename $old]
             append res "::rename $old {$new}" \n
         }
         return $res
     }
 
     #
-    # Register the "proc" trace. This will create 
+    # Register the [proc] trace. This will create 
     # the following key/value pair in the "proc" store:
     #
     #  --- key ----              --- value ---
@@ -686,21 +669,21 @@ ns_runonce {
     # implementation also.
     #
 
-    ttrace::addtrace proc {cmdline code args} {
+    nstrace::addtrace proc {cmdline code args} {
         if {$code != 0} {
             return
         }
         set cns [uplevel namespace current]
-        if {$cns eq "::"} {
-            set cns ""
+        if {$cns eq {::}} {
+            set cns {}
         }
         set cmd [lindex $cmdline 1]
-        if {![string match "::*" $cmd]} {
+        if {![string match {::*} $cmd]} {
             set cmd ${cns}::$cmd
         }
         set dargs [info args $cmd]
         set pbody [info body $cmd]
-        set pargs ""
+        set pargs {}
         foreach arg $dargs {
             if {![info default $cmd $arg def]} {
                 lappend pargs $arg
@@ -708,22 +691,22 @@ ns_runonce {
                 lappend pargs [list $arg $def]
             }
         }
-        set pdef [ttrace::getentry proc $cmd]
-        if {$pdef eq ""} {
+        set pdef [nstrace::getentry proc $cmd]
+        if {$pdef eq {}} {
             set epoch -1 ; # never traced before
         } else {
             set epoch [lindex $pdef 0]
         }
-        ttrace::addentry proc $cmd [list [incr epoch] "" $pargs $pbody]
+        nstrace::addentry proc $cmd [list [incr epoch] {} $pargs $pbody]
     }
 
-    ttrace::addscript proc {
+    nstrace::addscript proc {
         return {
-            if {[info command ::tcl::unknown] eq ""} {
+            if {[info command ::tcl::unknown] eq {}} {
                 rename ::unknown ::tcl::unknown
-                namespace import -force ::ttrace::unknown
+                namespace import -force ::nstrace::unknown
             }
-            if {[info command ::tcl::info] eq ""} {
+            if {[info command ::tcl::info] eq {}} {
                 rename ::info ::tcl::info
             }
             proc ::info args {
@@ -731,7 +714,7 @@ ns_runonce {
                 set hit [lsearch -glob {commands procs args default body} $cmd*]
                 if {$hit > 1} {
                     if {[catch {uplevel ::tcl::info $args}]} {
-                        uplevel ttrace::_resolve [list [lindex $args 1]]
+                        uplevel nstrace::_resolve [list [lindex $args 1]]
                     }
                     return [uplevel ::tcl::info $args]
                 }
@@ -739,19 +722,19 @@ ns_runonce {
                     return [uplevel ::tcl::info $args]
                 }
                 set cns [uplevel namespace current]
-                if {$cns eq "::"} {
-                    set cns ""
+                if {$cns eq {::}} {
+                    set cns {}
                 }
                 set pat [lindex $args 1]
-                if {![string match "::*" $pat]} {
+                if {![string match {::*} $pat]} {
                     set pat ${cns}::$pat
                 }
-                set fns [ttrace::getentries proc $pat]
+                set fns [nstrace::getentries proc $pat]
                 if {[string match $cmd* commands]} {
-                    set fns [concat $fns [ttrace::getentries xotcl $pat]]
+                    set fns [concat $fns [nstrace::getentries xotcl $pat]]
                 }
                 foreach entry $fns {
-                    if {$cns != [namespace qual $entry]} {
+                    if {$cns ne [namespace qual $entry]} {
                         set lazy($entry) 1
                     } else {
                         set lazy([namespace tail $entry]) 1
@@ -766,30 +749,29 @@ ns_runonce {
     }
 
     #
-    # Register procedure resolver. This will try to
-    # resolve the command in the current namespace
-    # first, and if not found, in global namespace.
-    # It also handles commands imported from other
-    # namespaces.
+    # Procedure resolver will try to resolve the command
+    # in the current namespace first, and if not found,
+    # in global namespace. It also handles commands 
+    # imported from other namespaces.
     #
 
-    ttrace::addresolver resolveprocs {cmd {export 0}} {
+    nstrace::addresolver resolveprocs {cmd {export 0}} {
         set cns [uplevel namespace current]
         set name [namespace tail $cmd]
-        if {$cns eq "::"} {
-            set cns ""
+        if {$cns eq {::}} {
+            set cns {}
         }
-        if {![string match "::*" $cmd]} {
+        if {![string match {::*} $cmd]} {
             set ncmd ${cns}::$cmd
             set gcmd ::$cmd
         } else {
             set ncmd $cmd
             set gcmd $cmd
         }
-        set pdef [ttrace::getentry proc $ncmd]
-        if {$pdef eq ""} {
-            set pdef [ttrace::getentry proc $gcmd]
-            if {$pdef eq ""} {
+        set pdef [nstrace::getentry proc $ncmd]
+        if {$pdef eq {}} {
+            set pdef [nstrace::getentry proc $gcmd]
+            if {$pdef eq {}} {
                 return 0
             }
             set cmd $gcmd
@@ -798,13 +780,13 @@ ns_runonce {
         }
         set epoch [lindex $pdef 0]
         set pnsp  [lindex $pdef 1]
-        if {$pnsp ne ""} {
+        if {$pnsp ne {}} {
             set nsp [namespace qual $cmd]
-            if {$nsp eq ""} {
+            if {$nsp eq {}} {
                 set nsp ::
             }
             set cmd ${pnsp}::$name
-            if {[resolveprocs $cmd 1] == 0 && [info commands $cmd] eq ""} {
+            if {[resolveprocs $cmd 1] == 0 && [info commands $cmd] eq {}} {
                 return 0
             }
             namespace eval $nsp "namespace import -force $cmd"
@@ -812,7 +794,7 @@ ns_runonce {
             uplevel 0 [list ::proc $cmd [lindex $pdef 2] [lindex $pdef 3]]
             if {$export} {
                 set nsp [namespace qual $cmd]
-                if {$nsp eq ""} {
+                if {$nsp eq {}} {
                     set nsp ::
                 }
                 namespace eval $nsp "namespace export $name"
@@ -824,81 +806,21 @@ ns_runonce {
     }
 
     #
-    # For XOTcl, the entire item introspection/tracing
-    # is delegated to XOTcl itself.
-    # The xotcl store is filled with this:
-    #
-    #  --- key ----               --- value ---
-    #  ::fully::qualified::item   <body>
-    #
-    # The <body> is the script used to generate the entire
-    # item (class, object). Note that we do not fill in this
-    # during code tracing. It is done during the script
-    # generation. In this step, only the placeholder is set.
-    #
-    
-    if {![catch {package require XOTcl 1.3}]} {
-        ttrace::atenable XOTclEnabler {args} {
-            ::xotcl::Class create ::xotcl::_creator -instproc create {args} {
-                set result [next]
-                if {![string match "::xotcl::_*" $result]} {
-                    ttrace::addentry xotcl $result ""
-                }
-                return $result
-            }
-            ::xotcl::Class instmixin ::xotcl::_creator
-            package require xotcl::serializer
-        }
-        ttrace::atdisable XOTclDisabler {args} {
-            ::xotcl::Class instmixin ""
-            catch {::xotcl::_creator destroy}
-        }
-        set resolver [ttrace::addresolver resolveclasses {classname} {
-            set cns [uplevel namespace current]
-            set script [ttrace::getentry xotcl $classname]
-            if {$script eq ""} {
-                set name [namespace tail $classname]
-                if {$cns eq "::"} {
-                    set script [ttrace::getentry xotcl ::$name]
-                } else {
-                    set script [ttrace::getentry xotcl ${cns}::$name]
-                    if {$script eq ""} {
-                        set script [ttrace::getentry xotcl ::$name]
-                    }
-                }
-                if {$script eq ""} {
-                    return 0 ; # Peng! No cigar...
-                }
-            }
-            uplevel [list namespace eval $cns $script]
-            return 1
-        }]
-        ttrace::addscript xotcl [subst -nocommands {
-            set ss [::xotcl::serializer::Serializer new -volatile]
-            foreach entry [ttrace::getentries xotcl] {
-                if {[ttrace::getentry xotcl \$entry] eq ""} {
-                    ttrace::addentry xotcl \$entry [\$ss serialize \$entry]
-                }
-            }
-            return {::xotcl::Class proc __unknown name {$resolver \$name}}
-        }]
-    }
-
-    #
     # Register callback to be called on cleanup.
-    # This will trash lazily loaded procs which
-    # have changed since.
+    # This will trash changed lazy-loaded procs.
+    #
+    # NOTE: this is the performance KILLER.
     # 
 
-    ttrace::addcleanup {
+    nstrace::addcleanup {
         variable resolveproc
         foreach cmd [array names resolveproc] {
-            set def [ttrace::getentry proc $cmd]
-            if {$def ne ""} {
+            set def [nstrace::getentry proc $cmd]
+            if {$def ne {}} {
                 set new [lindex $def 0]
                 set old $resolveproc($cmd)
-                if {[info command $cmd] ne "" && $new != $old} {
-                    catch {rename $cmd ""}
+                if {[info command $cmd] ne {} && $new ne $old} {
+                    catch {rename $cmd {}}
                 }
             }
         }
