@@ -334,10 +334,10 @@ proc _ns_stats.mempools {} {
 		    incr talloc $na
 		    incr trequest $nr
 		    incr tused $nu
-
+            
 		    if {$nr != 0} {
 			    set ov [expr {$na - $nr}]
-			    set op [format %4.2f%% [expr {$ov.0 * 100 / $nr.0}]]
+			    set op [format %4.2f%% [expr {double($ov) * 100 / $nr}]]
 		    } else {
 			    set ov "N/A"
 			    set op "N/A"
@@ -362,13 +362,13 @@ proc _ns_stats.mempools {} {
 
     if { $trequest > 0 } {
         set ov [expr {$talloc - $trequest}]
-        set op [format %4.2f [expr {$ov.0 * 100 / $trequest.0}]]
+        set op [format %4.2f [expr {double($ov) * 100 / $trequest}]]
     }
     if { $tops > 0 } {
-    	set av [format %4.2f [expr {100.0 - ($tlocks.0 * 100) / $tops.0}]]
+    	set av [format %4.2f [expr {double(100) - (double($tlocks) * 100) / $tops}]]
     }
     if { $tlocks > 0 } {
-	set wr [format %4.2f [expr {$twaits.0 / $tlocks.0}]]
+	set wr [format %4.2f [expr {double($twaits) / $tlocks}]]
     } else {
 	set wr N/A
     }
