@@ -1,3 +1,28 @@
+2006-03-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* sample-config.tcl: fixed comment about default
+	username/password for stats interface. 
+
+	* tcl/ttrace.tcl: removed
+
+	* tcl/nstrace.tcl: new file w/o implicit relation
+	to XOTcl package. All packages must now register
+	callbacks to nstrace by providing their own code.
+	The nstrace is now always loaded/present in the
+	interp (see changes to nsd/init.tcl below).
+
+	* tcl/stats.tcl: fixed some broken expressions,
+	perhaps due to a bug in Tcl expression evaluator 
+
+	* nsd/init.tcl: reorganized for better readability.
+	All temporary procs are now prepended "_" instead
+	of "_ns_" prefix. Added clarification comment about
+	possible choices for interp initialization strategy.
+	Always load nstrace.tcl library even if not configured.
+	This allows extensions to use nstrace::isenabled 
+	procedure to find out if the trace is active or not  
+	and/or to register their own tracer implementations.
+
 2006-03-03  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c: Use driver proc in WriterThread to ensure 
