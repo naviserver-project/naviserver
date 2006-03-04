@@ -556,8 +556,8 @@ ns_param 	maxthreads 		10
 #
 #    http://<host>:<port>/_stats
 # 
-#  3. Configure user. (Optional: default = naviserver)
-#  4. Configure password. (Optional: default = stats)
+#  3. Configure user. (Optional: default = nsadmin)
+#  4. Configure password. (Optional: default = nsadmin)
 #
 #  For added security it is recommended that configure your own
 #  URL, user, and password instead of using the default values.
