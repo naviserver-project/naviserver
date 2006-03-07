@@ -194,6 +194,8 @@ proc nstest_http {args} {
             lappend response [ns_set iget $hdrs $h]
         }
     }
+    catch {close $rfd}
+    catch {close $wfd}
     catch {ns_set free $hdrs}
     if {[string is true $getbody] && $body ne ""} {
         lappend response $body

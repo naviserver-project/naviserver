@@ -1,3 +1,7 @@
+2006-03-03  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c: Still small experiments with spooler bug
+
 2006-03-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* sample-config.tcl: fixed comment about default

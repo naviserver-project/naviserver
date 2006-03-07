@@ -94,8 +94,7 @@ static void SockClose(Sock *sockPtr, int keep);
 static int SockRead(Sock *sockPtr, int spooler);
 static int SockParse(Sock *sockPtr, int spooler);
 
-static int SockSpoolerPush(Driver *drvPtr, Sock *sockPtr);
-static Sock *SockSpoolerPop(SpoolerQueue *queuePtr);
+static int SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr);
 
 static void SockWriterRelease(WriterSock *sockPtr, int reason, int err);
 
@@ -966,7 +965,7 @@ DriverThread(void *ignored)
                 
                 switch (n) {
                 case SOCK_SPOOL:
-                    if (!SockSpoolerPush(sockPtr->drvPtr, sockPtr)) {
+                    if (!SockSpoolerQueue(sockPtr->drvPtr, sockPtr)) {
                         Push(sockPtr, readPtr);
                     }
                     break;
@@ -2035,7 +2034,7 @@ SpoolerThread(void *arg)
         
         nfds = 1;
         if (readPtr == NULL) {
-            pollto = 60 * 1000;
+            pollto = 30 * 1000;
         } else {
             timeout.sec = INT_MAX;
             timeout.usec = LONG_MAX;
@@ -2052,12 +2051,6 @@ SpoolerThread(void *arg)
         }
 
         /*
-         * Temporary hack to make test not hanging, not sure why, still need debugging
-         */
-
-        pollto = 1;
-
-        /*
          * Select and drain the trigger pipe if necessary.
          */
 
@@ -2069,8 +2062,7 @@ SpoolerThread(void *arg)
             Ns_Fatal("driver: poll() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
-        if ((pfds[0].revents & POLLIN) &&
-            recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+        if ((pfds[0].revents & POLLIN) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
             Ns_Fatal("spooler: trigger recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -2096,7 +2088,6 @@ SpoolerThread(void *arg)
                  * If enabled, perform read-ahead now.
                  */
                 
-                sockPtr->keep = 0;
                 n = SockRead(sockPtr, 1);
 
                 /*
@@ -2148,10 +2139,14 @@ SpoolerThread(void *arg)
          * Add more connections from the spooler queue
          */
         
+        Ns_MutexLock(&queuePtr->lock);
         if (waitPtr == NULL) {
-            if (((sockPtr = SockSpoolerPop(queuePtr)))) {
+            sockPtr = (Sock*)queuePtr->sockPtr;
+            queuePtr->sockPtr = NULL;
+            while (sockPtr != NULL) {
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
                 Push(sockPtr, readPtr);
+                sockPtr = sockPtr->nextPtr;
             }
         }
 
@@ -2159,7 +2154,6 @@ SpoolerThread(void *arg)
          * Check for shutdown 
          */
         
-        Ns_MutexLock(&queuePtr->lock);
         stopping = queuePtr->shutdown;
         Ns_MutexUnlock(&queuePtr->lock);
     }
@@ -2171,7 +2165,7 @@ SpoolerThread(void *arg)
 }
 
 static int
-SockSpoolerPush(Driver *drvPtr, Sock *sockPtr)
+SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
 {
     int trigger = 0;
     SpoolerQueue *queuePtr;
@@ -2195,6 +2189,7 @@ SockSpoolerPush(Driver *drvPtr, Sock *sockPtr)
     }
     Push(sockPtr, queuePtr->sockPtr);
     Ns_MutexUnlock(&queuePtr->lock);
+    Ns_Log(Notice, "Spooler: %d: started fd=%d: %u bytes", queuePtr->id, sockPtr->sock, sockPtr->reqPtr->length);
 
     /*
      * Wake up spooler thread
@@ -2204,19 +2199,6 @@ SockSpoolerPush(Driver *drvPtr, Sock *sockPtr)
         SockTrigger(queuePtr->pipe[1]);
     }
     return 1;
-}
-
-Sock *SockSpoolerPop(SpoolerQueue *queuePtr)
-{
-    Sock *sockPtr = 0;
-
-    Ns_MutexLock(&queuePtr->lock);
-    sockPtr = (Sock*)queuePtr->sockPtr;
-    if (queuePtr->sockPtr) {
-         queuePtr->sockPtr = ((Sock*)queuePtr->sockPtr)->nextPtr;
-    }
-    Ns_MutexUnlock(&queuePtr->lock);
-    return sockPtr;
 }
 
 /*
