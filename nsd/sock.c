@@ -439,13 +439,22 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
      */
     
     sock = SockConnect(host, port, lhost, lport, 1);
+
     if (sock != INVALID_SOCKET) {
         len = sizeof(err);
-        if (Ns_SockTimedWait(sock, NS_SOCK_WRITE, timePtr) == NS_OK
-            && getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *) &err,
-                          &len) == 0
-            && err == 0) {
-            return sock;
+        err = Ns_SockTimedWait(sock, NS_SOCK_WRITE, timePtr);
+        switch (err) {
+        case NS_OK:
+            len = sizeof(err);
+            if (!getsockopt(sock, SOL_SOCKET, SO_ERROR, (char *)&err, &len)) {
+                return sock;
+            }
+            break;
+        case NS_TIMEOUT:
+            errno = ETIMEDOUT;
+            break;
+        default:
+            break;
         }
         ns_sockclose(sock);
         sock = INVALID_SOCKET;
