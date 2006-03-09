@@ -31,36 +31,36 @@
 # $Header$
 #
 
-# http.tcl -
-#	Routines for opening non-blocking HTTP connections through
-#	the Tcl socket interface.
+# http.tcl
+#
+#   Routines for making non-blocking HTTP connections through
+#   the ns_socket interface.
 #
 
 #
-# ==========================================================================
-# API procs
-# ==========================================================================
-
+# ns_httpopen --
 #
-# ns_httpopen -
-#	Fetch a web page; see docs for full details.
+#   Opens connection to remote client using http protocol.
 #
 # Results:
-#	A tcl list {read file handle} {write file handle} {result headers set}
+#   Tcl list {read channel} {write channel} {result headers set}
+#   Channels are left in blocking mode and binary translation.
 #
 # Side effects:
-#	May throw an error on failure.
+#   None.
 #
 
 proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
+
     #
-    # Determine if url is local; prepend site address if so
+    # Determine if url is local; prepend site address if yes
     #
 
     if {[string match "/*" $url]} {
-        set host "http://[ns_config ns/server/[ns_info server]/module/nssock hostname]"
-        set port [ns_config ns/server/[ns_info server]/module/nssock port]             
-        if { $port != 80 } {
+        set conf ns/server/[ns_info server]/module/nssock
+        set host "http://[ns_config $conf hostname]"
+        set port [ns_config $conf port]             
+        if {$port != 80} {
             append host ":$port"
         }
         set url "$host$url"
@@ -69,441 +69,485 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
     #
     # Verify that the URL is an HTTP url.
     #
-    
+
     if {![string match "http://*" $url]} {
-	return -code error "Invalid url \"$url\": "\
-		"ns_httpopen only supports HTTP"
+        error "Invalid url \"$url\": " "ns_httpopen only supports HTTP"
     }
 
     #
     # Find each element in the URL
     #
-    
-    set url [split $url /]
-    set hp [split [lindex $url 2] :]
+
+    set url  [split $url /]
+    set hp   [split [lindex $url 2] :]
     set host [lindex $hp 0]
     set port [lindex $hp 1]
-    if {[string match $port ""]} {
-	set port 80
+
+    if {$port eq {}} {
+        set port 80
     }
+
     set uri /[join [lrange $url 3 end] /]
 
     #
     # Open a TCP connection to the host:port
     #
-    
-    set fds [ns_sockopen -nonblock $host $port]
+
+    set fds [ns_sockopen -timeout $timeout $host $port]
     set rfd [lindex $fds 0]
     set wfd [lindex $fds 1]
+
+    fconfigure $rfd -translation auto -encoding utf-8 -blocking 0
+    fconfigure $wfd -translation crlf -encoding utf-8
+
     if {[catch {
-	#
-	# First write the request, then the headers if they exist.
-	#
-	
-	_ns_http_puts $timeout $wfd "$method $uri HTTP/1.0\r"
-	
-	if {$rqset ne ""} {
-	    #
-	    # There are request headers
-	    #
-	    
-	    for {set i 0} {$i < [ns_set size $rqset]} {incr i} {
-		set key [ns_set key $rqset $i]
-		set val [ns_set value $rqset $i]
-		_ns_http_puts $timeout $wfd "$key: $val\r"
-	    }
-	} else {
-	    #
-	    # No headers were specified, so send a minimum set of
-	    # required headers.
-	    #
-	    
-	    _ns_http_puts $timeout $wfd "Accept: */*\r"
-	    _ns_http_puts $timeout $wfd \
-		    "User-Agent: [ns_info name]-Tcl/[ns_info version]\r"
-	}
 
-	#
-	# Always send a Host: header because virtual hosting happens
-	# even with HTTP/1.0.
-	#
-	
-	if { $port == 80 } {
-	    set hostheader "Host: ${host}\r"
-	} else {
-	    set hostheader "Host: ${host}:${port}\r"
-	}
-	_ns_http_puts $timeout $wfd $hostheader
+        #
+        # First write the request, then the headers.
+        #
 
-	#
-	# If optional content exists, then output that. Otherwise spit
-	# out a newline to end the headers.
-	#
-	
-	if {$pdata ne ""} {
-	    _ns_http_puts $timeout $wfd "\r\n$pdata\r"
-	} else {
-	    _ns_http_puts $timeout $wfd "\r"
-	}
-	flush $wfd
+        _ns_http_puts $timeout $wfd "$method $uri HTTP/1.0"
 
-	#
-	# Create a new set; its name will be the result line from
-	# the server. Then read headers into the set.
-	#
-	
-	set rpset [ns_set new [_ns_http_gets $timeout $rfd]]
-	while {1} {
-	    set line [_ns_http_gets $timeout $rfd]
-	    if {![string length $line]} {
-		break
-	    }
-	    ns_parseheader $rpset $line
-	}
-    } errMsg]} {
-	#
-	# Something went wrong during the request, so return an error.
-	#
-	
-	global errorInfo
-	close $wfd
-	close $rfd
-	if {[info exists rpset]} {
-	    ns_set free $rpset
-	}
-	return -code error -errorinfo $errorInfo $errMsg
+        if {$rqset ne {}} {
+            
+            #
+            # There are request headers to pass.
+            #
+            
+            for {set i 0} {$i < [ns_set size $rqset]} {incr i} {
+                set key [ns_set key   $rqset $i]
+                set val [ns_set value $rqset $i]
+                _ns_http_puts $timeout $wfd "$key: $val"
+            }
+
+        } else {
+
+            #
+            # No headers were specified, so send a minimum set
+            # of required headers.
+            #
+
+            _ns_http_puts $timeout $wfd "Accept: */*"
+            _ns_http_puts $timeout $wfd \
+                "User-Agent: [ns_info name]-Tcl/[ns_info version]"
+        }
+
+        #
+        # Always send a Host: header because virtual hosting happens
+        # even with HTTP/1.0.
+        #
+
+        if {$port == 80} {
+            _ns_http_puts $timeout $wfd "Host: $host"
+        } else {
+            _ns_http_puts $timeout $wfd "Host: $host:$port"
+        }
+
+        #
+        # If optional content exists, send it.
+        #
+
+        _ns_http_puts $timeout $wfd ""
+
+        if {$pdata ne {}} {
+            _ns_http_puts $timeout $wfd $pdata
+        }
+
+        flush $wfd
+
+        #
+        # Create a new set; its name will be the result line from
+        # the server. Then read headers into the set.
+        #
+
+        set rpset [ns_set new [_ns_http_gets $timeout $rfd]]
+        while {1} {
+            set line [_ns_http_gets $timeout $rfd]
+            if {![string length $line]} {
+                break ; # Empty line - end of headers
+            }
+            ns_parseheader $rpset $line
+        }
+
+    } err]} {
+
+        #
+        # Something went wrong during the request, so return an error.
+        #
+
+        close $wfd
+        close $rfd
+
+        if {[info exists rpset]} {
+            ns_set free $rpset
+        }
+
+        return -code error -errorinfo $::errorInfo $err
     }
 
     #
-    # Return a list of read file, write file, and headers set.
+    # Return a list of read, write channel
+    # and headers from remote.
     #
-    
+
+    foreach fd [list $rfd $wfd] {
+        fconfigure $fd -translation binary -blocking 1
+    }
+
     return [list $rfd $wfd $rpset]
 }
 
 #
-# ns_httppost -
-#	Perform a POST request. This wraps ns_httpopen.
+# ns_httppost --
+#
+#   Perform a POST request. This wraps ns_httpopen.
 #
 # Results:
-#	The URL content.
+#   The URL content.
 #
 # Side effects:
+#   None.
 #
 
 proc ns_httppost {url {rqset ""} {qsset ""} {type ""} {timeout 30}} {
+
     #
     # Build the request. Since we're posting, we have to set
-    # content-type and content-length ourselves. We'll add these to
-    # rqset, overwriting if they already existed, which they
-    # shouldn't.
+    # content-type and content-length ourselves. We'll add 
+    # these to rqset, overwriting ones already in the set.
     #
 
-    if {$rqset eq ""} { 
-	set rqset [ns_set new rqset]
-	ns_set put $rqset "Accept" "*/*\r"
-	ns_set put $rqset "User-Agent" "[ns_info name]-Tcl/[ns_info version]\r"
+    if {$rqset eq {}} {
+        
+        #
+        # Generate minimum set of headers for remote
+        #
+        
+        set rqset [ns_set new rqset]
+        ns_set put $rqset "Accept" "*/*"
+        ns_set put $rqset "User-Agent" "[ns_info name]-Tcl/[ns_info version]"
     }
-    if {$type eq ""} {
-	ns_set put $rqset "Content-type" "application/x-www-form-urlencoded"
-    } else {
-	ns_set put $rqset "Content-type" "$type"
+
+    if {$type eq {}} {
+        set type "application/x-www-form-urlencoded"
     }
 
+    ns_set put $rqset "Content-type" "$type"
+
     #
-    # Build the query string to POST with
+    # Build the query string to POST with.
     #
 
-    set querystring ""
-    if {$qsset ne ""} {
-	for {set i 0} {$i < [ns_set size $qsset]} {incr i} {
-	    set key [ns_set key $qsset $i]
-	    set value [ns_set value $qsset $i]
-	    if { $i > 0 } {
-		append querystring "&"
-	    }
-	    append querystring "$key=[ns_urlencode $value]"
-	}
-	ns_log notice "QS that will be sent is $querystring"
-	ns_set put $rqset "Content-length" [string length $querystring]
+    set pdata {}
+
+    if {$qsset eq {}} {
+        ns_set put $rqset "Content-length" "0"
     } else {
-	ns_log notice "QS string is empty"
-	ns_set put $rqset "Content-length" "0"
+        for {set i 0} {$i < [ns_set size $qsset]} {incr i} {
+            set key [ns_set key   $qsset $i]
+            set val [ns_set value $qsset $i]
+            if {$i > 0} {
+                append pdata "&"
+            }
+            append pdata $key "=" [ns_urlencode $val]
+        }
+        ns_set put $rqset "Content-length" [string length $pdata]
     }
 
     #
     # Perform the actual request.
     #
-    
-    set http [ns_httpopen POST $url $rqset $timeout $querystring]
-    set rfd [lindex $http 0]
-    close [lindex $http 1]
-    set headers [lindex $http 2]
 
-    set length [ns_set iget $headers content-length]
-    if {$length eq ""} {
-	set length -1
-    }
-    set err [catch {
-	#
-	# Read the content.
-	#
-	
-	while {1} {
-	    set buf [_ns_http_read $timeout $rfd $length]
-	    append page $buf
-	    if {$buf eq ""} {
-		break
-	    }
-	    if {$length > 0} {
-		incr length -[string length $buf]
-		if {$length <= 0} {
-		    break
-		}
-	    }
-	}
-    } errMsg]
+    set fds [ns_httpopen POST $url $rqset $timeout $pdata]
+    set rfd [lindex $fds 0]
+    set wfd [lindex $fds 1]; close $wfd
 
+    set headers [lindex $fds 2]
+    set length  [ns_set iget $headers "Content-Length"]
     ns_set free $headers
-    close $rfd
-    if {$err} {
-	global errorInfo
-	return -code error -errorinfo $errorInfo $errMsg
+
+    if {$length eq {}} {
+        set length -1
     }
-    return $page
+
+    set err [catch {_ns_http_getcontent $timeout $rfd $length} content]
+    close $rfd
+
+    if {$err} {
+        return -code error -errorinfo $::errorInfo $content
+    }
+
+    return $content
 }
 
 #
-# ns_httpget -
-#	Perform a GET request. This wraps ns_httpopen, but it also
-#	knows how to follow redirects and will read the content into
-#	a buffer.
+# ns_httpget --
+#
+#   Perform a GET request. This wraps ns_httpopen, but it also
+#   knows how to follow redirects and will read the content into
+#   a buffer.
 #
 # Results:
-#	The URL content.
+#   The URL content.
 #
 # Side effects:
-#	Will only follow redirections 10 levels deep.
+#   Will only follow redirections up to 10 levels deep.
 #
 
 proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
+
     if {[incr depth] > 10} {
-	return -code error "ns_httpget: Recursive redirection: $url"
+        return -code error "ns_httpget: recursive redirection: $url"
     }
-    
+
     #
     # Perform the actual request.
     #
-    
-    set http [ns_httpopen GET $url $rqset $timeout]
-    set rfd [lindex $http 0]
-    close [lindex $http 1]
-    set headers [lindex $http 2]
+
+    set fds [ns_httpopen GET $url $rqset $timeout]
+    set rfd [lindex $fds 0]
+    set wfd [lindex $fds 1]; close $wfd
+
+    set headers  [lindex $fds 2]
     set response [ns_set name $headers]
-    set status [lindex $response 1]
+    set status   [lindex $response 1]
+
     if {$status == 302} {
-	#
-	# The response was a redirect, so free the headers and
-	# recurse.
-	#
-	set location [ns_set iget $headers location]
-	if {$location ne ""} {
-	    ns_set free $headers
-	    close $rfd
-	    if {[string first http:// $location] != 0} {
-		set url2 [split $url /]
-		set hp [split [lindex $url2 2] :]
-		set host [lindex $hp 0]
-		set port [lindex $hp 1]
-		if {[string match $port ""]} {
+
+        #
+        # The response was a redirect, recurse.
+        #
+
+        set location [ns_set iget $headers "Location"]
+        if {$location ne {}} {
+            ns_set free $headers
+            close $rfd
+            if {[string first http:// $location] != 0} {
+                set url2 [split $url /]
+                set hp   [split [lindex $url2 2] ":"]
+                set host [lindex $hp 0]
+                set port [lindex $hp 1]
+                if {[string match $port ""]} {
                     set port 80
                 }
-		regexp "^(.*)://" $url match method
-		
-		set location "$method://$host:$port/$location"
-	    }
-	    return [ns_httpget $location $timeout $depth]
-	}
+                regexp "^(.*)://" $url match proto
+                set location "$proto://$host:$port/$location"
+            }
+            return [ns_httpget $location $timeout $depth $rqset]
+        }
     }
-    
-    set length [ns_set iget $headers content-length]
-    if {$length eq ""} {
-	set length -1
-    }
-    set err [catch {
-	#
-	# Read the content.
-	#
-	
-	while {1} {
-	    set buf [_ns_http_read $timeout $rfd $length]
-	    append page $buf
-	    if {$buf eq ""} {
-		break
-	    }
-	    if {$length > 0} {
-		incr length -[string length $buf]
-		if {$length <= 0} {
-		    break
-		}
-	    }
-	}
-    } errMsg]
 
+    set length [ns_set iget $headers "Content-Length"]
     ns_set free $headers
-    close $rfd
-    if {$err} {
-	global errorInfo
-	return -code error -errorinfo $errorInfo $errMsg
+
+    if {$length eq {}} {
+        set length -1
     }
-    return $page
+
+    set err [catch {_ns_http_getcontent $timeout $rfd $length} content]
+    close $rfd
+
+    if {$err} {
+        return -code error -errorinfo $::errorInfo $content
+    }
+
+    return $content
 }
 
 
-# ==========================================================================
-# Local procs
-# ==========================================================================
-
 #
-# _ns_http_readable -
-#	Return the number of bytes available to read from a
-# 	socket without blocking, waiting up to $timeout seconds for bytes to
-# 	arrive if none are currently available.
+# _ns_http_readable --
+#
+#   Return the number of bytes available to read from socket 
+#   without blocking. Waits up to $timeout seconds for bytes
+#   to arrive. Trigger error on timeout. On EOF returns zero.
 #
 # Results:
-#	Number of bytes that are waiting to be read
+#   Number of bytes waiting to be read
+#
+# Side effects:
+#   None.
 #
 
 proc _ns_http_readable {timeout sock} {
+
     set nread [ns_socknread $sock]
-    if {!$nread} {
-	set sel [ns_sockselect -timeout $timeout $sock {} {}]
-	if {"" eq [lindex $sel 0]} {
-	    return -code error "ns_sockreadwait: Timeout waiting for remote"
-	}
-	set nread [ns_socknread $sock]
+
+    if {$nread == 0} {
+        set sel [ns_sockselect -timeout $timeout $sock {} {}]
+        if {[lindex $sel 0] eq {}} {
+            return -code error "_ns_http_readable: read timed out"
+        }
     }
+
     return $nread
 }
 
 
 #
-# _ns_http_read -
-#	Read upto $length bytes from a socket without blocking.
+# _ns_http_read --
+#
+#   Read up to $length bytes from a socket without blocking.
 #
 # Results:
-#	Up to $length bytes that were read from the socket. May
-#	throw and error on EOF.
+#   Up to $length bytes that were read from the socket.
+#   or zero bytes on EOF. Throws error on timeout.
+#
+# Side effects:
+#   None.
 #
 
 proc _ns_http_read {timeout sock length} {
-    set buf ""
+
     set nread [_ns_http_readable $timeout $sock]
-    if {$nread > 0} {
-	if {$length > 0 && $length < $nread} {
-	    set nread $length
-	}
-	set buf [read $sock $nread]
+
+    if {$length > 0 && $length < $nread} {
+        set nread $length
     }
-    return $buf
+
+    read $sock $nread
 }
 
 
 #
 # _ns_http_gets -
-#	Carefully read lines, one character at a time, from a
-# 	socket to avoid blocking.
+#
+#   Read a line from socket w/o blocking.
 #
 # Results:
-#	One line read from the socket
+#   A line read from the socket or error on EOF or timeout.
+#
+# Side effects:
+#   None.
 #
 
 proc _ns_http_gets {timeout sock} {
-    set line ""
-    set done 0
-    while {!$done} {
-	set nline [_ns_http_readable $timeout $sock]
-	if {!$nline} {set done 1}
-	while {!$done && $nline > 0} {
-	    set char [read $sock 1]
-	    if {$char eq "\n"} {set done 1}
-	    append line $char
-	    incr nline -1
-	}
+
+    while {[gets $sock line] == -1} {
+        if {[eof $sock]} {
+            return -code error "_hs_http_gets: premature end of data"
+        }
+        _ns_http_readable $timeout $sock
     }
-    string trimright $line
+
+    return $line
 }
 
 
 #
-# _ns_http_puts -
-#	Send a string out a socket.  If the socket buffer is
-# 	full, wait for up to $timeout seconds.
+# _ns_http_puts --
+#
+#   Send a string to socket. If the socket buffer is
+#   full, wait for up to $timeout seconds.
 #
 # Results:
-#	None.
+#   None.
 #
 # Side effects:
-#	May return with an error code on timeout.
+#   None.
 #
 
 proc _ns_http_puts {timeout sock string} {
-    if {[lindex [ns_sockselect -timeout $timeout {} $sock {}] 1] == ""} {
-	return -code error "ns_socksend: Timeout writing to socket"
+
+    if {[lindex [ns_sockselect -timeout $timeout {} $sock {}] 1] eq {}} {
+        return -code error "_ns_http_puts: write timed out"
     }
+
     puts $sock $string
 }
 
+
 #
-# Simple http proxy handler, to enable set enablehttpproxy in the
-# nsd.tcl, all requests that start with http:// will be proxied.
+# _ns_http_getcontent --
+#
+#   Slurps entire content from socket into memory.
+#
+# Results:
+#   Content read from socket.
+#
+# Side effects:
+#   Sends received content buffer-wise to currently opened
+#   connection (if any) if the optional arg "copy" is true.
 #
 
-if { [ns_config -bool ns/server/[ns_info server] enablehttpproxy off] } {
-  ns_register_proxy GET http ns_proxy_handler_http
-  ns_register_proxy POST http ns_proxy_handler_http
+proc _ns_http_getcontent {timeout sock length {copy 0}} {
+
+    set content ""
+
+    while {1} {
+        set buf [_ns_http_read $timeout $sock $length]
+        set len [string length $buf]
+        if {$len == 0} {
+            break
+        }
+        if {$copy} {
+            ns_write $buf
+        } else {
+            append content $buf
+        }
+        if {$length >= 0} {
+            set length [expr {$length - $len}]
+            if {$length <= 0} {
+                break
+            }
+        }
+    }
+
+    return $content
 }
 
-proc ns_proxy_handler_http { args } {
+#
+# Simple http proxy handler.
+# All requests that start with http:// will be proxied.
+#
 
-    if { [set port [ns_conn port]] == 0 } { set port 80 }
-    set url [ns_conn protocol]://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
-    ns_log notice HTTP Proxy request: [ns_conn method]: $url: [ns_conn content]
+if {[ns_config -bool ns/server/[ns_info server] enablehttpproxy off]} {
+    ns_register_proxy GET  http ns_proxy_handler_http
+    ns_register_proxy POST http ns_proxy_handler_http
+}
 
-    set http [ns_httpopen [ns_conn method] $url [ns_conn headers] 30 [ns_conn content]]
-    set rfd [lindex $http 0]
-    close [lindex $http 1]
-    set headers [lindex $http 2]
+proc ns_proxy_handler_http {args} {
+    
+    set port [ns_conn port]
+    if {$port == 0} {
+        set port 80
+    }
+    set cont   [ns_conn content]
+    set prot   [ns_conn protocol]
+    set mathod [ns_conn method]
+
+    set url $prot://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
+
+    ns_log notice "HTTP Proxy request: $method: $url: $cont"
+
+    set fds [ns_httpopen $method $url [ns_conn headers] 30 $cont]
+    set rfd [lindex $fds 0]
+    set wfd [lindex $fds 1]; close $wfd
+
+    set headers  [lindex $fds 2]
     set response [ns_set name $headers]
-    set status [lindex $response 1]
-    set length [ns_set iget $headers content-length]
-    if { $length eq "" } {
+    set status   [lindex $response 1]
+    set length   [ns_set iget $headers "Content-Length"]
+    if {$length eq {}} {
         set length -1
     }
-    ns_write $response\r\n
-    for { set i 0 } { $i < [ns_set size $headers] } { incr i } {
-      ns_write "[ns_set key $headers $i]: [ns_set value $headers $i]\r\n"
+
+    if {[catch {
+        ns_write "$response\r\n"
+        for {set i 0} {$i < [ns_set size $headers]} {incr i} {
+            set key [ns_set key   $headers $i]
+            set val [ns_set value $headers $i]
+            ns_write "$key: $val\r\n"
+        }
+        ns_write "\r\n"
+        _ns_http_getcontent 30 $rfd $length 1
+    } err]} {
+        ns_log error $err
     }
-    ns_write "\r\n"
-    if { [catch {
-      while {1} {
-         set buf [_ns_http_read 30 $rfd $length]
-         ns_write $buf
-         if { $buf eq "" } {
-           break
-         }
-         if { $length > 0 } {
-           incr length -[string length $buf]
-           if { $length <= 0 } {
-             break
-           }
-         }
-      }
-    } errmsg] } {
-      ns_log Error $errmsg
-    }
+
     ns_set free $headers
     close $rfd
 }
 
+# EOF $RCSfile$
 

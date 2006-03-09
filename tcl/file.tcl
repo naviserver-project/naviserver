@@ -34,7 +34,7 @@
 #
 # file.tcl --
 #
-#      Support for .tcl-style dynamic pages.
+#   Support for .tcl-style dynamic pages.
 #
 
 #
@@ -46,85 +46,112 @@ set path ns/server/[ns_info server]
 set on [ns_config -bool $path enabletclpages off]
 ns_log notice "conf: \[$path\]enabletclpages = $on"
 
-
 if {$on} {
-    ns_share errorPage
     ns_log notice "tcl: enabling .tcl pages"
-    ns_register_proc GET /*.tcl ns_sourceproc 
+    nsv_set ns:tclfile errorpage [ns_config "${path}/tcl" errorpage]
+    ns_register_proc GET  /*.tcl ns_sourceproc
     ns_register_proc POST /*.tcl ns_sourceproc
     ns_register_proc HEAD /*.tcl ns_sourceproc
-    set errorPage [ns_config "${path}/tcl" errorpage]
-    set size [ns_config "ns/server/[ns_info server]" filecachesize 5000000]
-    ns_cache_create ns:filecache $size
+    ns_cache_create ns:filecache [ns_config $path filecachesize 5000000]
 }
 
 
 #
-# ns_tcl_abort is a work-alike ns_adp_abort.
+# ns_tcl_abort --
 #
+#   Work-alike ns_adp_abort. To be called from within Tcl pages
+#   to suspend futher processing without generating error.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   Throws Tcl error wich is being caught by [ns_sourcefile]
+#
+
 proc ns_tcl_abort {} {
     error ns_tcl_abort "" NS_TCL_ABORT
 }
 
+
 #
+# ns_sourcefile --
 #
-#      Support for caching Tcl-page bytecodes.
+#   Get the contents of a file from the cache or disk
+#   and source it. Uses tricks to cache Tcl bytecodes
+#   and hope to gain some percent of speed that way.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   Caches the file content and Tcl_Obj's rep of the
+#   sourced script in per-thread cache (is this true?)
 #
 
-# Get the contents of a file from the cache or disk.
 proc ns_sourcefile {filename} {
 
     file stat $filename stat
-    set current_cookie [list $stat(mtime) $stat(ctime) $stat(ino) $stat(dev)]
+    set current_cookie $stat(mtime):$stat(ctime):$stat(ino):$stat(dev)
+
+    #
     # Read current cached file
+    #
+
     set pair [ns_cache_eval ns:filecache $filename {
         list $current_cookie [ns_fileread $filename]
     }]
-    # If file changed, re-read it
-    if {[lindex $pair 0] ne $current_cookie } {
+
+    #
+    # If changed, re-cache it
+    #
+
+    if {[lindex $pair 0] ne $current_cookie} {
         ns_cache_flush ns:filecache $filename
         set pair [ns_cache_eval ns:filecache $filename {
             list $current_cookie [ns_fileread $filename]
         }]
     }
-    # And here's the magic part.  We're using "for" here to translate the
+
+    #
+    # And here's the magic part. We're using "for" here to translate the
     # text source file into bytecode, which will be associated with the 
     # Tcl_Obj we just cached (as its internal representation).  "eval"
     # doesn't do this as the eval provided in Tcl uses the TCL_EVAL_DIRECT
     # flag, and hence interprets the text directly.
+    #
+
     uplevel [for [lindex $pair 1] {0} {} {}]
 }
 
-proc ns_sourceproc { args } {
+#
+# ns_sourceproc --
+#
+#   Callback for sourcing Tcl pages.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   May create new cached content in memory.
+#
 
-    ns_share errorPage
+proc ns_sourceproc {args} {
 
     set file [ns_url2file [ns_conn url]]
-    if { ![file exists $file] } {
+    if {![file exists $file]} {
         ns_returnnotfound
         return
     }
-    set code [catch { ns_sourcefile $file } result ]
-
-    global errorCode errorInfo
-	
-    if { ![info exists errorCode] } {
-        # Tcl bug workaround.
-        set errorCode NONE
-    }
-    if { ![info exists errorInfo] } {
-        # Another Tcl bug workaround.
-        set errorInfo ""
-    }
-	
-    if { $code == 1 && $errorCode eq "NS_TCL_ABORT" } {
+    set code [catch {ns_sourcefile $file} res]
+    if {$code == 1 && $::errorCode eq "NS_TCL_ABORT"} {
         return
     }
-
-    if { $errorPage eq "" } {
-        return -code $code -errorcode $errorCode -errorinfo $errorInfo $result
-    } else {
-        ## Custom error page -- unfortunately we can't pass parameters.
-        source $errorPage
+    set errp [nsv_get ns:tclfile errorpage]
+    if {$errp eq {}} {
+        return -code $code -errorcode $::errorCode -errorinfo $::errorInfo $res
     }
+    source $errp
 }
+
+# EOF $RCSfile$

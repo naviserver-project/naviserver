@@ -41,7 +41,13 @@
 #
 # ns_getchannels --
 #
-#   Return all open channels.
+#   Returns all opened channels.
+#
+# Results:
+#   List of opened channel handles.
+#
+# Side effects:
+#   None.
 #
 
 proc ns_getchannels {} {
@@ -52,19 +58,32 @@ proc ns_getchannels {} {
 # ns_cpfp --
 #
 #   Copies ncopy bytes from input to output channel.
-#   Returns number of bytes copied.
+#
+# Results:
+#   Number of bytes copied.
+#
+# Side effects:
+#   None.
 #
 
 proc ns_cpfp {chanin chanout {ncopy -1}} {
     fcopy $chanin $chanout -size $ncopy
 }
 
+
 #
 # ns_cp --
 #
-#   Copies srcfile to dstfile, optionally assuring that 
-#   the dstfile has the same modification, access time
-#   and attributes as the srcfile.
+#   Copies srcfile to dstfile.
+#   Syntax: ns_cp ?-preserve? srcfile dstfile
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   Assures that the dstfile has the same modification,
+#   access time and attributes as the srcfile if the 
+#   optional "-preserve" argument is given.
 #
 
 proc ns_cp {args} {
@@ -89,21 +108,35 @@ proc ns_cp {args} {
     }
 }
 
+
 #
 # ns_mkdir --
 #
 #   Creates a directory.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
 #
 
 proc ns_mkdir {dir} {
     file mkdir $dir
 }
 
+
 #
 # ns_rmdir --
 #
 #   Deletes a directory, complaining if the passed path does not
 #   point to an empty directory.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
 #
 
 proc ns_rmdir {dir} {
@@ -113,11 +146,20 @@ proc ns_rmdir {dir} {
     file delete $dir
 }
 
+
 #
 # ns_unlink --
 #
 #   Deletes a file, optionaly complaining if the file is missing.
 #   It always complains if the passed path points to a directory.
+#
+#   Syntax: ns_unlink ?-nocomplain? file
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
 #
 
 proc ns_unlink {args} {
@@ -140,10 +182,18 @@ proc ns_unlink {args} {
     file delete $filepath
 }
 
+
 #
 # ns_link --
 #
 #   Hard-link the path to a link, eventually complaining.
+#   Syntax: ns_link ?-nocomplain? path link
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
 #
 
 proc ns_link {args} {
@@ -172,25 +222,32 @@ proc ns_link {args} {
 # ns_rename --
 #
 #   As we are re-implementing the ns_rename (which actually calls rename())
-#   with Tcl [file]. lets spend couple of words on the compatibility...
+#   with Tcl [file], lets spend couple of words on the compatibility...
 #
 #   This is what "man 2 rename" says (among other things):
 #
-#     The rename() causes the link named from to be renamed as to.  
-#     If to exists, it is first removed. 
-#     Both from and to must be of the same type (that is, both directories
-#     or both non-directories), and must reside on the same file system.
+#     The rename() causes the link named "from" to be renamed as "to".  
+#     If "to" exists, it is first removed. 
+#     Both "from" and "to" must be of the same type (that is, both dirs
+#     or both non-dirs), and must reside on the same file system.
 #
 #   What we cannot guarantee is:
 #
 #       "must reside on the same file system"
 #
-#   because there is no portable means in Tcl to assure this and
-#   because Tcl [file rename] is clever enough to copy-then-delete
-#   when renaming files residing on different filesystems. 
+#   This is because there is no portable means in Tcl to assure this
+#   and because Tcl [file rename] is clever enough to copy-then-delete
+#   when renaming files residing on different filesystems.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
 #
 
 proc ns_rename {from to} {
+
     if {[file exists $to]} {
         if {[file type $from] != [file type $to]} {
             error "rename (\"$from\", \"$to\"): not of the same type" 
@@ -202,15 +259,23 @@ proc ns_rename {from to} {
     file rename $from $to
 }
 
+
 #
 # ns_chmod --
 #
 #   Sets permissions mask of the "file" to "mode".
 #
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
+#
 
 proc ns_chmod {file mode} {
     file attributes $file -permissions $mode
 }
+
 
 #
 # ns_truncate --
@@ -248,4 +313,5 @@ proc ns_chmod {file mode} {
 #   absolute path to the linked file; nsd/tclfile.c:NsTclSymlinkObjCmd()
 #
 
+# EOF $RCSfile$
 

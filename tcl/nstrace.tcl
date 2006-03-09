@@ -25,33 +25,85 @@
 #
 
 #
-# User level commands:
+# This file implements set of commands and utilities to manage
+# Tcl interpreter initialization for NaviServer.
 #
-#   nstrace::enable         activates registered Tcl command traces
-#   nstrace::disable        terminates tracing of Tcl commands
-#   nstrace::isenabled      returns true if nstrace is enabled
-#   nstrace::cleanup        bring the interp to a pristine state
-#   nstrace::update         update interp to the latest trace epoch
-#   nstrace::config         setup some configuration options
-#   nstrace::getscript      returns a script for initializing interps
+# What all this stuff does is simple: synthetize a Tcl script used
+# to initialize new Tcl interpreters created by the NaviServer C-code.
 #
 #
-# Commands used for/from trace callbacks:
+# There are basically two strategies:
 #
-#   nstrace::atenable       register callback at trace enable
-#   nstrace::atdisable      register callback at trace disable
-#   nstrace::addtrace       register tracer callback
-#   nstrace::addscript      register script generator
-#   nstrace::addresolver    register command resolver
-#   nstrace::addcleanup     register cleanup procedure
+#  A. Run an introspective script against an initialized
+#     startup interpreter and collect definitions of some
+#     "known" things: loaded packages, created Tcl procs,
+#     namespaces and namespaced variables. Then stuff all
+#     this data in a (potentially huge) script and run 
+#     this script against virgin Tcl interp.
+#     This script is obtained by the [nstrace::statescript]
+#     command (see below).
 #
-#   nstrace::addentry       adds one entry into the named trace store
-#   nstrace::getentry       returns the entry value from the named store
-#   nstrace::delentry       removes the entry from the named store
-#   nstrace::getentries     returns all entries from the named store
 #
-#   nstrace::loadproc       register procedure to be preloaded always
+#  B. Register traces on selected Tcl commands and get state
+#     they create in a set of shared variables (the epoch). 
+#     Then start bootstraping the interp. This will trigger
+#     trace callbacks and they will start filling the epoch.
+#     After the bootstrapping is done, synthetize a script 
+#     containing minimal fixed state (variables, modules) and
+#     a definition of [unknown] command which will on-demand
+#     load procedure definitions out of the epoch state.
+#     This script is obtained by the [nstrace::tracescript]
+#     command (see below).
 #
+#
+# Which one of the above 2 strategies is currently used by the 
+# server is controlled by the "lazyloader" parameter of the Tcl 
+# library, as defined in the server configuration file.
+# The A. strategy is selected by setting the parameter to false.
+# The B. strategy is selected by setting the parameter to true.
+#
+#
+# In order to influence script generation, users can add their
+# own tracing implementations. Per default, tracers and other 
+# supporting callbacks for the following Tcl commands are provided
+# by default:
+# 
+#     load, namespace, variable, proc, rename
+#
+# For the information of how to add new tracer (and other callbacks)
+# in order to customize script generation, please look into the source 
+# code of already provided callbacks (as stated above).
+# 
+#
+# Summary of commands:
+#
+#   nstrace::enabletrace   activates registered Tcl command traces
+#   nstrace::disabletrace  terminates tracing of Tcl commands
+#   nstrace::tracescript   returns a script for initializing interps
+#
+#   nstrace::enablestate   activates generation of the state script
+#   nstrace::disablestate  terminates generation of the state script
+#   nstrace::statescript   returns a script for initializing interps
+#
+#   nstrace::isactive      returns true if tracing Tcl commands is on
+#   nstrace::config        setup some configuration options
+#
+#   nstrace::includeproc   proc will be permanent part of the script
+#   nstrace::excludensp    skip serializing the given namespace
+#
+#   nstrace::namespaces    returns list of namespaces for the given parent
+#
+#   nstrace::addtrace      registers custom tracer callback
+#   nstrace::addscript     registers custom script generator
+#   nstrace::addresolver   registers custom command resolver
+#
+#   nstrace::enablecode    returns signal about start of tracing
+#   nstrace::disablecode   returns signal about stop of tracing
+#
+#   nstrace::addentry      adds one entry into the named trace store
+#   nstrace::getentry      returns the entry value from the named store
+#   nstrace::delentry      removes the entry from the named store
+#   nstrace::getentries    returns all entries from the named store
 #
 # Limitations:
 #
@@ -66,25 +118,20 @@ ns_runonce {
 
         variable tvers 0
         variable elock [ns_mutex create traceepochmutex]
-        
-        # Package variables
-        variable resolvers ""     ; # List of registered resolvers
-        variable tracers   ""     ; # List of registered cmd tracers
-        variable scripts   ""     ; # List of registered script makers
-        variable enables   ""     ; # List of trace-enable callbacks
-        variable disables  ""     ; # List of trace-disable callbacks
-        variable preloads  ""     ; # List of procedure names to preload
-        variable enabled   0      ; # True if trace is enabled
+
+        # Private variables
+        variable resolvers ""     ; # List of resolvers
+        variable tracers   ""     ; # List of tracers
+        variable scripts   ""     ; # List of script gegerators
+        variable inclproc  ""     ; # List of procs to preload
+        variable exclnsp   ""     ; # List of namespaces to exclude
+        variable enabled    0     ; # True if trace is enabled
         variable config           ; # Array with config options
-        
         variable epoch     -1     ; # The initialization epoch
-        variable cleancnt   0     ; # Counter of registered cleaners
         
-        # Package private namespaces
+        # Private namespaces
         namespace eval resolve "" ; # Commands for resolving commands
         namespace eval trace   "" ; # Commands registered for tracing
-        namespace eval enable  "" ; # Commands invoked at trace enable
-        namespace eval disable "" ; # Commands invoked at trace disable
         namespace eval script  "" ; # Commands for generating scripts
         
         # Exported commands
@@ -99,6 +146,10 @@ ns_runonce {
         # Allow creation of interp initialization epochs
         set config(-doepochs)  1
 
+        #
+        # Used to set/get nstrace options.
+        #
+
         proc config {args} {
             variable config
             if {[llength $args] == 0} {
@@ -110,10 +161,14 @@ ns_runonce {
             }
         }
 
-        proc enable {} {
+        #
+        # Starts the tracing session by passing the enable code
+        # to all registered trace callbacks
+        #
+
+        proc enabletrace {} {
             variable config
             variable tracers
-            variable enables
             variable enabled
             incr enabled 1
             if {$enabled > 1} {
@@ -123,102 +178,289 @@ ns_runonce {
                 variable epoch [_newepoch]
             }
             set nsp [namespace current]
-            foreach enabler $enables {
-                enable::_$enabler
-            }
+            set on  [enablecode]
             foreach trace $tracers {
-                if {[info commands $trace] ne ""} {
-                    trace add execution $trace leave ${nsp}::trace::_$trace
-                }
+                ${nsp}::trace::_$trace ${nsp}::trace::_$trace $on
             }
         }
 
-        proc disable {} {
+        #
+        # Stopts the tracing session by passing the diaable code
+        # to all registered trace callbacks
+        #
+
+        proc disabletrace {} {
             variable enabled
             variable tracers
-            variable disables
             incr enabled -1
             if {$enabled > 0} {
                 return
             }
             set nsp [namespace current]
-            foreach disabler $disables {
-                disable::_$disabler
-            }
+            set off [disablecode]
             foreach trace $tracers {
-                if {[info commands $trace] ne ""} {
-                    trace remove execution $trace leave ${nsp}::trace::_$trace
+                ${nsp}::trace::_$trace ${nsp}::trace::_$trace $off
+            }
+        }
+
+        #
+        # Starts the interp state gathering. This step prepares
+        # the stage for the [statescript] command.
+        #
+
+        proc enablestate {} {
+            variable tracers
+            set nsp [namespace current]
+            set on  [enablecode]
+            #
+            # Activate [rename] and [load] tracers so we can 
+            # catch renaming commands and loading packages.
+            #
+            foreach trace $tracers {
+                if {$trace eq {rename} || $trace eq {load}} {
+                    ${nsp}::trace::_$trace ${nsp}::trace::_$trace $on
                 }
             }
         }
 
-        proc isenabled {} {
+        #
+        # Stops the intep state gathering. After this call, we can
+        # safely call [statescript] to get the blueprint script.
+        #
+
+        proc disablestate {} {
+            variable tracers
+            set nsp [namespace current]
+            set off [disablecode]
+            #
+            # Disable activated [rename] / [load] tracers
+            #
+            foreach trace $tracers {
+                if {$trace eq {rename} || $trace eq {load}} {
+                    ${nsp}::trace::_$trace ${nsp}::trace::_$trace $off
+                }
+            }
+        }
+
+        #
+        # Returns code to signal trace enable. This command is mainly
+        # used from trace callbacks as [enabletrace] will call each 
+        # callback with this code to signalize start of tracing.
+        # 
+
+        proc enablecode {} {
+            return 126
+        }
+
+        #
+        # Returns code to signal trace disable. This command is mainly 
+        # used from trace callbacks as [disabletrace] will call each
+        # callback with this code to signalize end of tracing.
+        #
+
+        proc disablecode {} {
+            return 127
+        }
+
+        #
+        # Returns true if the tracing mechanism is on
+        #
+
+        proc isactive {} {
             variable enabled
             expr {$enabled > 0}
         }
 
-        proc update {{from -1}} {
-            if {$from == -1} { 
-                variable epoch [nsv_set nstrace lastepoch]
-            } else {
-                if {[lsearch [nsv_set nstrace epochlist] $from] == -1} {
-                    error "no such epoch: $from"
-                }
-                variable epoch $from
-            }
-            uplevel [getscript]
-        } 
+        #
+        # This one synthetizes script used to pull state out of the 
+        # shared variables filled in by the Tcl command tracing.
+        #
 
-        proc getscript {} {
-            variable preloads
+        proc tracescript {{file ""}} {
+            variable inclproc
             variable epoch
             variable scripts
-            append script [_serializensp] \n
-            append script "::namespace eval [namespace current] {" \n
-            append script "::namespace export unknown" \n
+
+            set script {}
+            set import {}
+
+            #
+            # Serialize nstrace namespace
+            # as we need it loaded always.
+            #
+
+            foreach n [namespaces [namespace current]] {
+                foreach {s i} [_serializensp $n] {
+                    if {[string length $s]} {
+                        append script "namespace eval $n {" \n
+                        append script $s  \n
+                        append script "}" \n
+                    }
+                    if {[string length $i]} {
+                        append import "namespace eval $n {" \n
+                        append import $i  \n
+                        append import "}" \n
+                    }
+                }
+            }
+
+            #
+            # Invoke script generators
+            #
+
+            foreach cmd $scripts {
+                append script [script::_$cmd] \n
+            }
+
+            #
+            # Add imported commands
+            #
+
+            if {[string length $import]} {
+                append script $import \n
+            }
+            
+            #
+            # Tell to use current initialization epoch
+            #
+
+            append script "namespace eval [namespace current] {" \n
             append script "_useepoch $epoch" \n
             append script "}" \n
-            foreach cmd $preloads {
-                append script [_serializeproc $cmd] \n
-            }
-            foreach maker $scripts {
-                append script [script::_$maker]
-            }
-            return $script
-        }
 
-        proc cleanup {args} {
-            foreach cmd [info commands resolve::cleaner_*] {
-                uplevel $cmd $args
+            #
+            # Script is output to file mainly for
+            # interactive debugging purposes.
+            #
+
+            if {$file != ""} {
+                _savescript $file $script
+            } else {
+                return $script
             }
         }
 
-        proc loadproc {cmd} {
-            variable preloads
-            if {[lsearch $preloads $cmd] == -1} {
-                lappend preloads $cmd
+        #
+        # This one generates full-blown script with entire 
+        # interpreter state.
+        #
+
+        proc statescript {{file ""}} {
+            variable scripts
+
+            set script {}
+            set import {}
+
+            #
+            # Invoke [load] script generator first
+            # as this must pull up all loaded mods.
+            #
+
+            foreach cmd $scripts {
+                if {$cmd eq {load}} {
+                    append script [script::_$cmd] \n
+                }
+            }
+
+            #
+            # Invoke rest of script generators, but skip
+            # [rename] as this will be loaded last.
+            #
+
+            foreach cmd $scripts {
+                if {$cmd ne {load} && $cmd ne {rename}} {
+                    append script [script::_$cmd] \n
+                }
+            }
+
+            #
+            # Serialize all known namespaces. At this
+            # point user callbacks have possibly masked
+            # some of the existing namespaces.
+            #
+
+            foreach n [namespaces] {
+                foreach {s i} [_serializensp $n] {
+                    if {[string length $s]} {
+                        append script "namespace eval $n {" \n
+                        append script $s  \n
+                        append script "}" \n
+                    }
+                    if {[string length $i]} {
+                        append import "namespace eval $n {" \n
+                        append import $i  \n
+                        append import "}" \n
+                    }
+                }
+            }
+
+            #
+            # Import commands from other namespaces
+            #
+
+            if {[string length $import]} {
+                append script $import \n
+            }
+
+            #
+            # Invoke [rename] script generators last
+            #
+
+            foreach cmd $scripts {
+                if {$cmd eq {rename}} {
+                    append script [script::_$cmd] \n
+                }
+            }
+
+            #
+            # Script is output to file mainly for
+            # interactive debugging purposes.
+            #
+
+            if {$file != ""} {
+                _savescript $file $script
+            } else {
+                return $script
             }
         }
 
-        proc atenable {cmd arglist body} {
-            variable enables
-            if {[lsearch $enables $cmd] == -1} {
-                lappend enables $cmd
-                set cmd [namespace current]::enable::_$cmd
-                proc $cmd $arglist $body
-                return $cmd
+        #
+        # This is used to include a Tcl procedure into the blueprint
+        # script. Such procedures will not be lazy-loaded by the 
+        # [nstrace::unknown].
+        #
+        # This is NOT affecting [statescript] collection!
+        #
+
+        proc includeproc {cmd} {
+            variable inclproc
+            if {[lsearch $inclproc $cmd] == -1} {
+                lappend inclproc $cmd
             }
         }
 
-        proc atdisable {cmd arglist body} {
-            variable disables
-            if {[lsearch $disables $cmd] == -1} {
-                lappend disables $cmd
-                set cmd [namespace current]::disable::_$cmd
-                proc $cmd $arglist $body
-                return $cmd
+        #
+        # This is used to exclude Tcl namespace definition from the
+        # inclusion in the blueprint script. Some Tcl extensions
+        # (mainly OO-type) handle their own namespaces which can't 
+        # be easily handled by the generic serialization script.
+        # Such namespaces may contain additional client data which
+        # is not visible from the Tcl level thus can't be simply
+        # serialized by a Tcl level script.
+        #
+        # This is NOT affecting [tracescript] collection!
+        #
+
+        proc excludensp {nsp} {
+            variable exclnsp
+            if {[lsearch $exclnsp $nsp] == -1} {
+                lappend exclnsp $nsp
             }
         }
+
+        #
+        # Registers custom tracer callback.
+        #
 
         proc addtrace {cmd arglist body} {
             variable tracers
@@ -226,13 +468,24 @@ ns_runonce {
                 lappend tracers $cmd
                 set tracer [namespace current]::trace::_$cmd
                 proc $tracer $arglist $body
-                if {[isenabled]} {
-                    trace add execution $cmd leave $tracer
+                if {[isactive]} {
+                    if {[info commands $cmd] ne {}} {
+                        trace add execution $cmd leave $tracer
+                    } else {
+                        $tracer $tracer [enablecode]
+                    }
                 }
                 return $tracer
             }
         }
 
+        #
+        # Registers script-creator callback. Such callbacks
+        # are called by the [nstrace::tracescript] or
+        # [nstrace::statescript] to create blueprint script
+        # used to initialize interp.
+        #
+        
         proc addscript {cmd body} {
             variable scripts
             if {[lsearch $scripts $cmd] == -1} {
@@ -242,6 +495,12 @@ ns_runonce {
                 return $cmd
             }
         }
+
+        #
+        # Registes resolver callback. Such callbacks are
+        # called by the [nstrace::unknown] procedure to
+        # locate requested item in one of the trace stores.
+        #
 
         proc addresolver {cmd arglist body} {
             variable resolvers
@@ -253,32 +512,36 @@ ns_runonce {
             }
         }
 
-        proc addcleanup {body} {
-            variable cleancnt
-            set cmd [namespace current]::resolve::cleaner_[incr cleancnt]
-            proc $cmd args $body
-            return $cmd
-        }
+        #
+        # Adds one item definition 
+        # to the named trace store
+        #
 
-        proc addentry {cmd var val} {
+        proc addentry {store var val} {
             variable epoch
-            nsv_set ${epoch}-$cmd $var $val
+            nsv_set nstrace-${store}-${epoch} $var $val
         }
 
-        proc delentry {cmd var} {
+        #
+        # Deletes one item definition
+        # from the named trace store
+        #
+
+        proc delentry {store var} {
+            variable epoch
+            nsv_unset -nocomplain nstrace-${store}-${epoch} $var
+        }
+
+        #
+        # Get item definition from 
+        # the named trace store 
+        #
+
+        proc getentry {store var} {
             variable epoch
             set ei $::errorInfo
             set ec $::errorCode
-            catch {nsv_unset ${epoch}-$cmd $var}
-            set ::errorInfo $ei
-            set ::errorCode $ec
-        }
-
-        proc getentry {cmd var} {
-            variable epoch
-            set ei $::errorInfo
-            set ec $::errorCode
-            if {[catch {nsv_set ${epoch}-$cmd $var} val]} {
+            if {[catch {nsv_set nstrace-${store}-${epoch} $var} val]} {
                 set ::errorInfo $ei
                 set ::errorCode $ec
                 set val ""
@@ -286,10 +549,24 @@ ns_runonce {
             return $val
         }
 
-        proc getentries {cmd {pattern *}} {
+        #
+        # List items in the named trace store
+        #
+
+        proc getentries {store {pattern *}} {
             variable epoch
-            nsv_array names ${epoch}-$cmd $pattern
+            nsv_array names nstrace-${store}-${epoch} $pattern
         }
+
+        #
+        # This command overlays the standard Tcl [unknown] 
+        # command. It is used to locate and re-generate
+        # the item definition out of the state captured in
+        # thred shared variables. It invokes registered 
+        # resolver procedures one by one until the item
+        # is located. If unable to locate the item, the
+        # control is passed to the underlying Tcl [unknown].
+        #
 
         proc unknown {args} {
             set cmd [lindex $args 0]
@@ -301,6 +578,132 @@ ns_runonce {
             return -code $c -errorcode $::errorCode -errorinfo $::errorInfo $r
         }
 
+        #
+        # Returns the list of namespaces starting with the 
+        # given namespace and working down the namespace tree.
+        #
+
+        proc namespaces {{top "::"}} {
+            variable nsplist
+            set nsplist ""
+            _namespaces $top
+            set result $nsplist
+            set nsplist ""
+            return $result
+        }
+
+        #
+        # Helper procedure for [namespaces]
+        #
+
+        proc _namespaces {top} {
+            variable nsplist
+            lappend nsplist $top
+            foreach nsp [namespace children $top] {
+                _namespaces $nsp
+            }
+        }
+
+        #
+        # Generates scipts to re-generate namespace definition.
+        # Returns two scripts: first is used to re-generate 
+        # namespace with all its procedures and variables
+        # and second is used to import commands/procedures
+        # from other namespaces.
+        #
+        # Normally the import script must be included after
+        # all namespace scripts for all namespaces have been
+        # collected as they will actually generate places
+        # where commands are/will-be imported from.
+        #
+
+        proc _serializensp {nsp} {
+            variable exclnsp
+            if {[lsearch $exclnsp $nsp] >= 0} {
+                return
+            }
+            set script {}
+            set import {}
+            foreach vn [info vars ${nsp}::*] {
+                append script [_varscript $vn]
+            }
+            foreach pn [info procs ${nsp}::*] {
+                set orig [namespace origin $pn]
+                if {$orig ne [namespace which -command $pn]} {
+                    append import "namespace import -force $orig" \n
+                } else {
+                    append script [_procscript $pn]
+                }
+            }
+            foreach cn [info commands ${nsp}::*] {
+                set orig [namespace origin $cn]
+                if {[info procs $cn] eq {} &&
+                    $orig ne [namespace which -command $cn]} {
+                    append import "namespace import -force $orig" \n
+                }
+            }
+            foreach ex [namespace eval $nsp [list namespace export]] {
+                append script "namespace export $ex" \n
+            }
+            list $script $import
+        }
+
+        #
+        # Helper to return a script to re-generate Tcl procedure.
+        # Caller must wrap this script into [namespace eval] 
+        # command as the procedure will not generate the procedure
+        # under fully qualified name.
+        #
+
+        proc _procscript {cmd} {
+            set pargs {}
+            foreach arg [info args $cmd] {
+                if {![info default $cmd $arg def]} {
+                    lappend pargs $arg
+                } else {
+                    lappend pargs [list $arg $def]
+                }
+            }
+            set pname [namespace tail $cmd]
+            set pbody [info body $cmd]
+            append script "proc $pname [list $pargs] [list $pbody]" \n
+        }
+
+        #
+        # Helper to return a script to re-generate Tcl variable.
+        # Caller must wrap this script into [namespace eval]
+        # command as the procedure will not generate the variable
+        # under fully qualified name.
+        #
+
+        proc _varscript {var} {
+            set vname [namespace tail $var]
+            if {[array exists $var] == 0} {
+                append script "variable $vname [list [set $var]]" \n
+            } else {
+                append script "variable $vname" \n
+                append script "array set $vname [list [array get $var]]" \n
+            }
+        }
+
+        #
+        # Helper procedure to save a script to a file.
+        # This is mainly used for debugging.
+        #
+
+        proc _savescript {file script} {
+            if {[catch {open $file w} chan] == 0} {
+                puts $chan $script
+                close $chan
+            }
+        }
+
+        #
+        # Procedure invoking registered resolvers to lookup
+        # the given command. First resolver which successfully
+        # resolves the command stops the resolving process.
+        #
+
         proc _resolve {cmd} {
             variable resolvers
             foreach resolver $resolvers {
@@ -311,6 +714,11 @@ ns_runonce {
             return 0
         }
 
+        #
+        # List ID's of all known threads in the process.
+        # This is used for epoch management.
+        #
+
         proc _getthreads {} {
             set threads ""
             foreach entry [ns_info threads] {
@@ -318,6 +726,13 @@ ns_runonce {
             }
             return $threads
         }
+
+        #
+        # Creates new tracing epoch by copying the current
+        # tracing state into new set of shared variables.
+        # The old epoch remains active until there are any
+        # threads active which still use the old state.
+        #
 
         proc _newepoch {} {
             variable elock
@@ -334,12 +749,22 @@ ns_runonce {
             return $new
         }
 
+        #
+        # Helper procedure to _newepoch to copy the trace
+        # state from one to another set of shared variables.
+        #
+
         proc _copyepoch {old new} {
-            foreach var [nsv_names $old-*] {
+            foreach var [nsv_names nstrace-*-${old}] {
                 set cmd [lindex [split $var -] 1]
-                nsv_array reset $new-$cmd [nsv_array get $var]
+                nsv_array reset nstrace-${cmd}-${new} [nsv_array get $var]
             }
         }
+
+        #
+        # Delete tracing epochs when they are not referenced
+        # by any active thread.
+        #
 
         proc _delepochs {} {
             set tlist [_getthreads]
@@ -354,6 +779,12 @@ ns_runonce {
             nsv_set nstrace epochlist $elist
         }
 
+        #
+        # Helper procedure to _delepochs. It conditionally
+        # deletes one trace epoch which is not referenced
+        # by any active thread.
+        #
+
         proc _delepoch {epoch threads} {
             set self [ns_thread getid] 
             foreach tid [nsv_set nstrace $epoch] {
@@ -365,12 +796,18 @@ ns_runonce {
                 nsv_set nstrace $epoch $alive
                 return 0
             } else {
-                foreach var [nsv_names $epoch-*] {
+                foreach var [nsv_names nstrace-*-${epoch}] {
                     nsv_unset $var
                 }
                 return 1
             }
         }
+
+        #
+        # Procedure used to select one specific epoch. This is 
+        # normally part of the blueprint script generated by 
+        # the [nstrace::tracescript] procedure.
+        #
 
         proc _useepoch {epoch} {
             if {$epoch >= 0} {
@@ -379,62 +816,22 @@ ns_runonce {
                     nsv_lappend nstrace $epoch $tid
                 }
             }
-        }
-
-        proc _serializeproc {cmd} {
-            set pname [namespace tail $cmd]
-            set dargs [info args $cmd]
-            set pbody [info body $cmd]
-            set pargs ""
-            foreach arg $dargs {
-                if {![info default $cmd $arg def]} {
-                    lappend pargs $arg
-                } else {
-                    lappend pargs [list $arg $def]
-                }
-            }
-            set nsp [namespace qualifier $cmd]
-            if {$nsp eq {}} {
-                set nsp {::}
-            }
-            append res "::namespace eval $nsp {" \n
-            append res "::proc $pname [list $pargs] [list $pbody]" \n
-            append res "}" \n
-        }
-
-        proc _serializensp {{nsp ""} {result _}} {
-            upvar $result res
-            if {$nsp eq {}} {
-                set nsp [namespace current]
-            }
-            append res "::namespace eval $nsp {" \n
-            foreach var [info vars ${nsp}::*] {
-                set vname [namespace tail $var]
-                if {[array exists $var] == 0} {
-                    append res "::variable $vname {[set $var]}" \n
-                } else {
-                    append res "::variable $vname" \n
-                    append res "::array set $vname [list [array get $var]]" \n
-                }
-            }
-            foreach cmd [info procs ${nsp}::*] {
-                append res [_serializeproc $cmd] \n
-            }
-            append res "}" \n
-            foreach nn [namespace children $nsp] {
-                _serializensp $nn res
-            }
-            return $res
-        }
+        }        
     }
 
     #
     # The code below provides implementation of tracing callbacks
-    # for following basic Tcl commands:
+    # for following Tcl commands:
     # 
-    #    [namespace], [variable], [load], [proc], [rename]
+    #    [namespace]
+    #    [variable]
+    #    [load]
+    #    [proc]
+    #    [rename]
     #
-    # Users can supply their own tracer implementations on-the-fly.
+    # Those callbacks are needed to support basic introspection
+    # capabilities for Tcl commands/packages. For customization,
+    # users can supply their own tracers on-the-fly.
     #
 
     #
@@ -451,6 +848,11 @@ ns_runonce {
 
     nstrace::addtrace load {cmdline code args} {
         if {$code != 0} {
+            if {$code == [nstrace::enablecode]} {
+                trace add execution load leave $cmdline
+            } elseif {$code == [nstrace::disablecode]} {
+                trace remove execution load leave $cmdline
+            }
             return
         }
         set image [lindex $cmdline 1]
@@ -466,11 +868,11 @@ ns_runonce {
     }
 
     nstrace::addscript load {
-        append res \n
+        append script \n
         # Load all traced packages
         foreach image [nstrace::getentries load] {
             set iproc [nstrace::getentry load $image]
-            append res "::load {} $iproc" \n
+            append script "load {} $iproc" \n
             set loaded($image) 1
         }
         # Load all the rest missed by tracing
@@ -478,10 +880,10 @@ ns_runonce {
             set image [lindex $pkg 0]
             if {![info exists loaded($image)]} {
                 set iproc [lindex $pkg 1]
-                append res "::load {} $iproc" \n
+                append script "load {} $iproc" \n
             }
         }
-        return $res
+        return $script
     }
 
     #
@@ -503,6 +905,11 @@ ns_runonce {
 
     nstrace::addtrace namespace {cmdline code args} {
         if {$code != 0} {
+            if {$code == [nstrace::enablecode]} {
+                trace add execution namespace leave $cmdline
+            } elseif {$code == [nstrace::disablecode]} {
+                trace remove execution namespace leave $cmdline
+            }
             return
         }
         set nop [lindex $cmdline 1]
@@ -553,11 +960,11 @@ ns_runonce {
     }
 
     nstrace::addscript namespace {
-        append res \n
+        append script \n
         foreach entry [nstrace::getentries namespace] {
-            append res "::namespace eval $entry {}" \n
+            append script "namespace eval $entry {}" \n
         }
-        return $res
+        return $script
     }
 
     #
@@ -574,6 +981,11 @@ ns_runonce {
 
     nstrace::addtrace variable {cmdline code args} {
         if {$code != 0} {
+            if {$code == [nstrace::enablecode]} {
+                trace add execution variable leave $cmdline
+            } elseif {$code == [nstrace::disablecode]} {
+                trace remove execution variable leave $cmdline
+            }
             return
         }
         set opts [lrange $cmdline 1 end]
@@ -592,22 +1004,22 @@ ns_runonce {
     }
 
     nstrace::addscript variable {
-        append res \n
+        append script \n
         foreach entry [nstrace::getentries variable] {
-            set cns [namespace qual $entry]
+            set nsp [namespace qual $entry]
             set var [namespace tail $entry]
-            append res "::namespace eval $cns {" \n
-            append res "::variable $var"
+            append script "namespace eval $nsp {" \n
+            append script "variable $var"
             if {[array exists $entry]} {
-                append res "\n::array set $var [list [array get $entry]]" \n
+                append script \n "array set $var [list [array get $entry]]" \n
             } elseif {[info exists $entry]} {
-                append res " [list [set $entry]]" \n 
+                append script " [list [set $entry]]" \n 
             } else {
-                append res \n
+                append script \n
             }
-            append res "}" \n
+            append script "}" \n
         }
-        return $res
+        return $script
     }
 
 
@@ -625,6 +1037,11 @@ ns_runonce {
 
     nstrace::addtrace rename {cmdline code args} {
         if {$code != 0} {
+            if {$code == [nstrace::enablecode]} {
+                trace add execution rename leave $cmdline
+            } elseif {$code == [nstrace::disablecode]} {
+                trace remove execution rename leave $cmdline
+            }
             return
         }
         set cns [uplevel namespace current]
@@ -647,12 +1064,12 @@ ns_runonce {
     }
 
     nstrace::addscript rename {
-        append res \n
+        append script \n
         foreach old [nstrace::getentries rename] {
             set new [nstrace::getentry rename $old]
-            append res "::rename $old {$new}" \n
+            append script "rename $old {$new}" \n
         }
-        return $res
+        return $script
     }
 
     #
@@ -671,6 +1088,11 @@ ns_runonce {
 
     nstrace::addtrace proc {cmdline code args} {
         if {$code != 0} {
+            if {$code == [nstrace::enablecode]} {
+                trace add execution proc leave $cmdline
+            } elseif {$code == [nstrace::disablecode]} {
+                trace remove execution proc leave $cmdline
+            }
             return
         }
         set cns [uplevel namespace current]
@@ -681,10 +1103,9 @@ ns_runonce {
         if {![string match {::*} $cmd]} {
             set cmd ${cns}::$cmd
         }
-        set dargs [info args $cmd]
         set pbody [info body $cmd]
         set pargs {}
-        foreach arg $dargs {
+        foreach arg [info args $cmd] {
             if {![info default $cmd $arg def]} {
                 lappend pargs $arg
             } else {
@@ -701,6 +1122,9 @@ ns_runonce {
     }
 
     nstrace::addscript proc {
+        if {[llength [nstrace::getentries proc]] == 0} {
+            return
+        }
         return {
             if {[info command ::tcl::unknown] eq {}} {
                 rename ::unknown ::tcl::unknown
@@ -749,7 +1173,7 @@ ns_runonce {
     }
 
     #
-    # Procedure resolver will try to resolve the command
+    # The proc resolver will try to resolve the command
     # in the current namespace first, and if not found,
     # in global namespace. It also handles commands 
     # imported from other namespaces.
@@ -786,7 +1210,7 @@ ns_runonce {
                 set nsp ::
             }
             set cmd ${pnsp}::$name
-            if {[resolveprocs $cmd 1] == 0 && [info commands $cmd] eq {}} {
+            if {[resolveprocs $cmd 1] == 0} {
                 return 0
             }
             namespace eval $nsp "namespace import -force $cmd"
@@ -804,27 +1228,7 @@ ns_runonce {
         set resolveproc($cmd) $epoch
         return 1
     }
-
-    #
-    # Register callback to be called on cleanup.
-    # This will trash changed lazy-loaded procs.
-    #
-    # NOTE: this is the performance KILLER.
-    # 
-
-    nstrace::addcleanup {
-        variable resolveproc
-        foreach cmd [array names resolveproc] {
-            set def [nstrace::getentry proc $cmd]
-            if {$def ne {}} {
-                set new [lindex $def 0]
-                set old $resolveproc($cmd)
-                if {[info command $cmd] ne {} && $new ne $old} {
-                    catch {rename $cmd {}}
-                }
-            }
-        }
-    }
 }
 
-# EOF
+# EOF $RCSfile$
+

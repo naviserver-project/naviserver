@@ -34,13 +34,24 @@
 #
 # cache.tcl --
 #
-#     Simple cache for procs and commands.
+#   Simple cache for procs and commands.
 #
 
 set path "ns/server/[ns_info server]/tcl"
 ns_cache_create ns:memoize \
     [ns_config -int $path memoizecache [expr {1024*1024*10}]]
 
+#
+# ns_memoize --
+#
+#	This procedure...
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
+#
 
 proc ns_memoize {args} {
     ns_parseargs {{-timeout ""} {-ttl 0} -- script args} $args
@@ -53,6 +64,17 @@ proc ns_memoize {args} {
 }
 
 
+#
+# ns_memoize_flush --
+#
+#	This procedure...
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
+#
 
 proc ns_memoize_flush {{pattern ""}} {
     if {$pattern eq ""} {
@@ -63,7 +85,20 @@ proc ns_memoize_flush {{pattern ""}} {
 }
 
 
+#
+# ns_memoize_stats --
+#
+#	This procedure...
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
+#
 
 proc ns_memoize_stats args {
     return [ns_cache_stats ns:memoize]
 }
+
+# EOF $RCSfile$

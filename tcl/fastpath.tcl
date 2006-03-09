@@ -41,26 +41,59 @@
 #   below to handle directory listings.
 #
 
-set path "ns/server/[ns_info server]/fastpath"
-nsv_set _ns_fastpath type [ns_config $path directorylisting none]
-nsv_set _ns_fastpath hidedot [ns_config -bool $path hidedotfiles 1]
-nsv_set _ns_fastpath toppage [ns_config -bool $path returnmwtoppage 0]
-nsv_set _ns_fastpath builddirs [ns_config -bool $path builddirs 0]
-nsv_set _ns_fastpath serverlog [ns_config -bool $path serverlog 1]
+set path ns/server/[ns_info server]/fastpath
+
+nsv_set _ns_fastpath type      [ns_config $path directorylisting   none]
+nsv_set _ns_fastpath hidedot   [ns_config -bool $path hidedotfiles    1]
+nsv_set _ns_fastpath toppage   [ns_config -bool $path returnmwtoppage 0]
+nsv_set _ns_fastpath builddirs [ns_config -bool $path builddirs       0]
+nsv_set _ns_fastpath serverlog [ns_config -bool $path serverlog       1]
+
+#
+# ns_returnok --
+#
+#   Closes current connection by returning HTTP code 200.
+#
+# Results:
+#   Same as [ns_return]
+#
+# Side effects:
+#   None.
+#
+
+proc ns_returnok {} {
+    ns_return 200 text/plain {}
+}
+
 
 #
 # _ns_dirlist --
 #
-#   Handle directory listings.  This code is invoked from C.
+#   Handle directory listings. This code is invoked from C.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   Produces output to currently opened connection.
 #
 
 proc _ns_dirlist {} {
+
+    if {![ns_conn isconnected]} {
+        return
+    }
+
     set url [ns_conn url]
     set dir [ns_url2file $url]
-    set location [ns_conn location]
+    set loc [ns_conn location]
+
+    #
+    # Enforce being called with trailing "/"
+    #
 
     if {[string index $url end] ne "/"} {
-        ns_returnredirect "$location$url/"
+        ns_returnredirect "$loc$url/"
         return
     }
 
@@ -71,75 +104,67 @@ proc _ns_dirlist {} {
     #
 
     switch [nsv_get _ns_fastpath type] {
-	simple {
-	    set simple 1
-	}
-	fancy {
-	    set simple 0
-	}
-	none -
-	default {
-	    return [ns_returnnotfound]
-	}
+        simple  { set simple 1 }
+        fancy   { set simple 0 }
+        default { return [ns_returnnotfound] }
     }
 
-    set hidedot [nsv_get _ns_fastpath hidedot]
-    
-    set prefix "${location}${url}"
-    set up "<a href=..>..</a>"
+    set prefix "${loc}${url}"
+    set uptree "<a href=..>..</a>"
+
     if {$simple} {
-	append list "
+        append html "
 <pre>
-$up
+$uptree
 "
     } else {
-	append list "
+        append html "
 <table>
 <tr align=left><th>File</th><th>Size</th><th>Date</th></tr>
-<tr align=left><td colspan=3>$up</td></tr>
+<tr align=left><td colspan=3>$uptree</td></tr>
 "
     }
 
-    foreach f [lsort [glob -nocomplain $dir/*]] {
-	set tail [file tail $f]
-	if {$hidedot && [string match ".*" $tail]} {
-	    continue
-	}
+    if {[nsv_get _ns_fastpath hidedot]} {
+        set files [glob -nocomplain -directory $dir *]
+    } else {
+        set files [glob -nocomplain -directory $dir .* *]
+    }
+
+    #
+    # Visit every file and format display
+    #
+
+    foreach f [lsort $files] {
+        set tail [file tail $f]
         if {[file isdirectory $f]} { 
             append tail "/"
         }
-	
-	set link "<a href=\"${prefix}${tail}\">${tail}</a>"
-
-	if {$simple} {
-	    append list $link\n
-	} else {
-	    
-	    if {[catch {
-		file stat $f stat
-	    } errMsg ]} {
-		append list "
-<tr align=left><td>$link</td><td>N/A</td><td>N/A</td></tr>\n
-"
-	    } else {
-		set size [expr {$stat(size) / 1000 + 1}]K
-		set mtime $stat(mtime)
-		set time [clock format $mtime -format "%d-%h-%Y %H:%M"]
-		append list "
-<tr align=left><td>$link</td><td>$size</td><td>$time</td></tr>\n
-"
-	    }
-	}
+        set link "<a href=\"${prefix}${tail}\">${tail}</a>"
+        if {$simple} {
+            append html $link \n
+        } else {
+            if {[catch {file stat $f stat}]} {
+                append html "
+<tr align=left><td>$link</td><td>N/A</td><td>N/A</td></tr>
+" \n
+            } else {
+                set size  [expr {$stat(size)/1000 + 1}]K
+                set mtime $stat(mtime)
+                set time  [clock format $mtime -format "%d-%h-%Y %H:%M"]
+                append html "
+<tr align=left><td>$link</td><td>$size</td><td>$time</td></tr>
+" \n
+            }
+        }
     }
     if {$simple} {
-	append list "</pre>"
+        append html "</pre>"
     } else {
-	append list "</table>"
+        append html "</table>"
     }
-    ns_returnnotice 200 $url $list
+    
+    ns_returnnotice 200 $url $html
 }
 
-proc ns_returnok {} {
-    ns_return 200 text/plain ""
-}
-
+# EOF $RCSfile$

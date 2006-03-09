@@ -62,15 +62,24 @@
 #
 #	Get a value from the http form.
 #
+# Results:
+#   Value for the given key or empty if no form found.
+#
+# Side effects:
+#   May cache current form.
+#
 
 proc ns_queryget {key {value ""}}  {
+
     set form [ns_getform]
-    if { $form ne "" } {
-	set tmp [ns_set iget $form $key]
-	if {[string length $tmp]} {
-	    set value $tmp
-	}
+
+    if {$form ne {}} {
+        set tmp [ns_set iget $form $key]
+        if {[string length $tmp]} {
+            set value $tmp
+        }
     }
+
     return $value
 }
 
@@ -80,16 +89,30 @@ proc ns_queryget {key {value ""}}  {
 #
 #	Get all values of the same key name from the http form.
 #
+# Results:
+#   Values of the key or def_result if no value found.
+#
+# Side effects:
+#   May cache current form.
+#
 
 proc ns_querygetall {key {def_result ""}} {
+
     set form [ns_getform]
-    if {$form ne ""} {
-        set result ""
+    
+    if {$form eq {}} {
+        set result $def_result
+    } else {
+        set result {}
         set size [ns_set size $form]
         set lkey [string tolower $key]
-        # loop over all keys in the formdata, find all that case-
-        # insensitively match the passed-in key, and append the values
-        # a a return list.
+
+        #
+        # Loop over all keys in the formdata, find all that
+        # case-insensitively match the passed-in key and 
+        # append the values to the return list.
+        #
+
         for {set i 0} {$i < $size} {incr i} {
             set k [ns_set key $form $i]
             if {[string tolower $k] == $lkey} {
@@ -98,12 +121,11 @@ proc ns_querygetall {key {def_result ""}} {
                 }
             }
         }
-        if {$result eq ""} {
+        if {$result eq {}} {
             set result $def_result
         }
-     } else {
-        set result $def_result
-     }
+    }
+
      return $result
 }
 
@@ -113,13 +135,22 @@ proc ns_querygetall {key {def_result ""}} {
 #
 #	Check if a form key exists.
 #
+# Results:
+#   True of the key exists or false if not.
+#
+# Side effects:
+#   May cache current form.
+#
 
-proc ns_queryexists { key } {
+proc ns_queryexists {key} {
+
     set form [ns_getform]
     set i -1
-    if { $form ne "" } {
-	set i [ns_set ifind $form $key]
+
+    if {$form ne {}} {
+        set i [ns_set ifind $form $key]
     }
+
     return [expr {$i >= 0}]
 }
 
@@ -130,42 +161,56 @@ proc ns_queryexists { key } {
 #	Return the connection form, copying multipart form data
 #	into temp files if necessary.
 #
+# Results:
+#   A set with form key/value pairs or empty if no form found
+#
+# Side effects:
+#   May create number of temporary files for multipart-form-data
+#   forms containing data from uploaded files. Also registers
+#   an [ns_atclose] callback to delete those file on conn close.
+#
 
 proc ns_getform {{charset ""}}  {
-    global _ns_form _ns_formfiles
 
-    if { ![ns_conn isconnected] } { return }
+    global _ns_form _ns_formfiles
+    
+    if {![ns_conn isconnected]} {
+        return
+    }
 
     #
-    # If a charset has been specified, use ns_urlcharset to
-    # alter the current conn's urlcharset.
+    # If a charset has been specified, use ns_urlcharset
+    # to alter the current conn's urlcharset.
     # This can cause cached formsets to get flushed.
-    if {$charset ne ""} {
-	ns_urlcharset $charset
+    #
+
+    if {$charset ne {}} {
+        ns_urlcharset $charset
     }
 
     if {![info exists _ns_form]} {
-	set _ns_form [ns_conn form]
-	foreach {file} [ns_conn files] {
-		set off [ns_conn fileoffset $file]
-		set len [ns_conn filelength $file]
-		set hdr [ns_conn fileheaders $file]
-		set type [ns_set get $hdr content-type]
+        set _ns_form [ns_conn form]
+        foreach {file} [ns_conn files] {
+            set off [ns_conn fileoffset $file]
+            set len [ns_conn filelength $file]
+            set hdr [ns_conn fileheaders $file]
 	    	set fp ""
-	    	while {$fp eq ""} {
-			set tmpfile [ns_tmpnam]
-			set fp [ns_openexcl $tmpfile]
+	    	while {$fp eq {}} {
+                set tmpfile [ns_tmpnam]
+                set fp [ns_openexcl $tmpfile]
 	    	}
-		fconfigure $fp -translation binary 
-		ns_conn copy $off $len $fp
-		close $fp
-		ns_atclose "ns_unlink -nocomplain $tmpfile"
-		set _ns_formfiles($file) $tmpfile
+            ns_atclose [list file delete $tmpfile]
+            fconfigure $fp -translation binary 
+            ns_conn copy $off $len $fp
+            close $fp
+            set _ns_formfiles($file) $tmpfile
+            set type [ns_set get $hdr content-type]
 	    	ns_set put $_ns_form $file.content-type $type
-		# NB: Insecure, access via ns_getformfile.
+            # NB: Insecure, access via ns_getformfile.
 	    	ns_set put $_ns_form $file.tmpfile $tmpfile
-	}
+        }
     }
+
     return $_ns_form
 }
 
@@ -175,32 +220,48 @@ proc ns_getform {{charset ""}}  {
 #
 #	Return a tempfile for a form file field.
 #
+# Result:
+#   Path of the temporary file or empty if no file found
+#
+# Side effects:
+#   None.
+#
 
 proc ns_getformfile {name} {
+
     global _ns_formfiles
 
     ns_getform
-    if {![info exists _ns_formfiles($name)]} {
-	return ""
+
+    if {[info exists _ns_formfiles($name)]} {
+        return $_ns_formfiles($name)
     }
-    return $_ns_formfiles($name)
 }
 
 
 #
 # ns_openexcl --
 #
-#	Open a file with exclusive rights.  This call will fail if 
+#	Open a file with exclusive rights. This call will fail if 
 #	the file already exists in which case "" is returned.
+#
+# Results:
+#   Path of the temporary file or empty if unable to create one.
+#
+# Side effects:
+#   Will attempt unlimited number of times to create new file.
+#   This might potentially last long time.
+#
 
-proc ns_openexcl file {
-    if {[catch { set fp [open $file {RDWR CREAT EXCL} ] } err]} {
-	global errorCode
-	if { [lindex $errorCode 1] ne "EEXIST"} {
-	    return -code error $err
-	}
-	return ""
+proc ns_openexcl {file} {
+
+    if {[catch {set fp [open $file {RDWR CREAT EXCL}]} err]} {
+        if {[lindex $::errorCode 1] ne "EEXIST"} {
+            return -code error $err
+        }
+        return
     }
+    
     return $fp
 }
 
@@ -209,16 +270,23 @@ proc ns_openexcl file {
 # ns_resetcachedform --
 #
 #	Reset the http form set currently cached (if any),
-#       optionally to be replaced by the given form set.
+#   optionally to be replaced by the given form set.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
 #
 
-proc ns_resetcachedform { { newform "" } } {
+proc ns_resetcachedform {{newform ""}} {
+    
     global _ns_form
-
+    
     if {[info exists _ns_form]} {
-	unset _ns_form
+        unset _ns_form
     }
-    if {$newform ne "" } {
+    if {$newform ne {}} {
         set _ns_form $newform
     }
 }
@@ -228,13 +296,21 @@ proc ns_resetcachedform { { newform "" } } {
 # ns_isformcached --
 #
 #	Predicate function to answer whether there is
-#       a http form set currently cached.
+#   a http form set currently cached.
+#
+# Result:
+#   True of form is already cached, false otherwise.
+#
+# Side effects:
+#   None.
 #
 
-proc ns_isformcached { } {
+proc ns_isformcached {} {
+
     global _ns_form
+
     return [info exists _ns_form]
 }
 
-
+# EOF $RCSfile$
 

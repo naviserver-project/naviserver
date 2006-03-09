@@ -1,4 +1,32 @@
-2006-03-03  Vlad Seryakov  <seryakov@users.sf.net>
+2006-03-09  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* tcl/cache.tcl:     Reformated, added proper function
+	* tcl/charsets.tcl:  headers, newly indented.
+	* tcl/compat.tcl:    The http.tcl and sendmail.tcl are
+	* tcl/fastpath.tcl:  rewritten to take advantage of 
+	* tcl/file.tcl:      automatic end-of-line handling of
+	* tcl/form.tcl:      Tcl channels. Also, fixed some bugs
+	* tcl/http.tcl:      in EOF handling in both files. Fixed
+	* tcl/nstrace.tcl:   bug in line-break algorythm for
+	* tcl/sendmail.tcl:  quoted-printable MIME content with 
+	* tcl/stats.tcl:     non-ascii data in sendmail.tcl.
+	* tcl/util.tcl :     The nstrace.tcl is now self-contained
+        and requires, nor loads, any external modules.
+
+	* nsd/init.tcl: Moved introspective script to nstrace.tcl.
+	The nstrace is now the sole interface for handling script 
+	generation for interp initializations. Please look into
+	the tcl/nstrace.tcl for more information.
+
+2006-03-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/nsd/sock.c (Ns_SockTimedConnect2) Sets errno to ETIMEDOUT
+	if unable to connect and the optional timer is expired.
+	
+	* tcl/debug.tcl:
+	* tcl/prodebug.tcl: Removed ancient TclPro support files
+
+2006-03-07  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c: Still small experiments with spooler bug
 
