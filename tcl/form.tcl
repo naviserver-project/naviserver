@@ -36,22 +36,22 @@
 #
 # Multi-part forms are described in RFC 1867:
 #
-#	http://www.ietf.org/rfc/rfc1867.txt
+#   http://www.ietf.org/rfc/rfc1867.txt
 #
 # Briefly, use:
 #
-#	<form enctype="multipart/form-data" action="url" method=post>
-#	First file: <input name="file1" type="file">
-#	Second file: <input name="file2" type="file">
-#	<input type="submit">
-#	</form>
+#   <form enctype="multipart/form-data" action="url" method=post>
+#   First file: <input name="file1" type="file">
+#   Second file: <input name="file2" type="file">
+#   <input type="submit">
+#   </form>
 #
 # and then access with:
 #
-#	set tmpfile1 [ns_getformfile file1]
-#	set tmpfile2 [ns_getformfile file2]
-#	set fp1 [open $tmpfile1]
-#	set fp2 [open $tmpfile2]
+#   set tmpfile1 [ns_getformfile file1]
+#   set tmpfile2 [ns_getformfile file2]
+#   set fp1 [open $tmpfile1]
+#   set fp2 [open $tmpfile2]
 #
 # Temp files created by ns_getform are removed when the connection closes.
 #
@@ -60,7 +60,7 @@
 #
 # ns_queryget --
 #
-#	Get a value from the http form.
+#   Get a value from the http form.
 #
 # Results:
 #   Value for the given key or empty if no form found.
@@ -87,7 +87,7 @@ proc ns_queryget {key {value ""}}  {
 #
 # ns_querygetall --
 #
-#	Get all values of the same key name from the http form.
+#   Get all values of the same key name from the http form.
 #
 # Results:
 #   Values of the key or def_result if no value found.
@@ -133,7 +133,7 @@ proc ns_querygetall {key {def_result ""}} {
 #
 # ns_queryexists --
 #
-#	Check if a form key exists.
+#   Check if a form key exists.
 #
 # Results:
 #   True of the key exists or false if not.
@@ -158,8 +158,8 @@ proc ns_queryexists {key} {
 #
 # ns_getform --
 #
-#	Return the connection form, copying multipart form data
-#	into temp files if necessary.
+#   Return the connection form, copying multipart form data
+#   into temp files if necessary.
 #
 # Results:
 #   A set with form key/value pairs or empty if no form found
@@ -187,6 +187,15 @@ proc ns_getform {{charset ""}}  {
     if {$charset ne {}} {
         ns_urlcharset $charset
     }
+    
+    #
+    # This depends on the fact that global variables
+    # in the interpreter are cleaned up on connection
+    # close by the [ns_cleanup] command.
+    #
+    # Also, form caching over the global Tcl variable
+    # is not needed any as all is done on C-level.
+    #
 
     if {![info exists _ns_form]} {
         set _ns_form [ns_conn form]
@@ -194,20 +203,20 @@ proc ns_getform {{charset ""}}  {
             set off [ns_conn fileoffset $file]
             set len [ns_conn filelength $file]
             set hdr [ns_conn fileheaders $file]
-	    	set fp ""
-	    	while {$fp eq {}} {
+            set fp ""
+            while {$fp eq {}} {
                 set tmpfile [ns_tmpnam]
                 set fp [ns_openexcl $tmpfile]
-	    	}
+            }
             ns_atclose [list file delete $tmpfile]
             fconfigure $fp -translation binary 
             ns_conn copy $off $len $fp
             close $fp
             set _ns_formfiles($file) $tmpfile
             set type [ns_set get $hdr content-type]
-	    	ns_set put $_ns_form $file.content-type $type
+            ns_set put $_ns_form $file.content-type $type
             # NB: Insecure, access via ns_getformfile.
-	    	ns_set put $_ns_form $file.tmpfile $tmpfile
+            ns_set put $_ns_form $file.tmpfile $tmpfile
         }
     }
 
@@ -218,7 +227,7 @@ proc ns_getform {{charset ""}}  {
 #
 # ns_getformfile --
 #
-#	Return a tempfile for a form file field.
+#   Return a tempfile for a form file field.
 #
 # Result:
 #   Path of the temporary file or empty if no file found
@@ -242,8 +251,8 @@ proc ns_getformfile {name} {
 #
 # ns_openexcl --
 #
-#	Open a file with exclusive rights. This call will fail if 
-#	the file already exists in which case "" is returned.
+#   Open a file with exclusive rights. This call will fail if 
+#   the file already exists in which case "" is returned.
 #
 # Results:
 #   Path of the temporary file or empty if unable to create one.
@@ -269,14 +278,16 @@ proc ns_openexcl {file} {
 #
 # ns_resetcachedform --
 #
-#	Reset the http form set currently cached (if any),
+#   Reset the http form set currently cached (if any),
 #   optionally to be replaced by the given form set.
 #
 # Results:
 #   None.
 #
 # Side effects:
-#   None.
+#   This procedure is deprecated in favour of 
+#   [ns_conn encoding] which clears form cached
+#   on the C-level in the connection structure.
 #
 
 proc ns_resetcachedform {{newform ""}} {
@@ -295,14 +306,15 @@ proc ns_resetcachedform {{newform ""}} {
 #
 # ns_isformcached --
 #
-#	Predicate function to answer whether there is
+#   Predicate function to answer whether there is
 #   a http form set currently cached.
 #
 # Result:
 #   True of form is already cached, false otherwise.
 #
 # Side effects:
-#   None.
+#   This procedure is deprecated as connection forms
+#   are already cached on the C-level
 #
 
 proc ns_isformcached {} {
