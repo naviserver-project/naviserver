@@ -87,9 +87,7 @@
 #   nstrace::isactive      returns true if tracing Tcl commands is on
 #   nstrace::config        setup some configuration options
 #
-#   nstrace::includeproc   proc will be permanent part of the script
 #   nstrace::excludensp    skip serializing the given namespace
-#
 #   nstrace::namespaces    returns list of namespaces for the given parent
 #
 #   nstrace::addtrace      registers custom tracer callback
@@ -122,7 +120,6 @@ ns_runonce {
         variable resolvers ""     ; # List of resolvers
         variable tracers   ""     ; # List of tracers
         variable scripts   ""     ; # List of script gegerators
-        variable inclproc  ""     ; # List of procs to preload
         variable exclnsp   ""     ; # List of namespaces to exclude
         variable enabled    0     ; # True if trace is enabled
         variable config           ; # Array with config options
@@ -276,7 +273,6 @@ ns_runonce {
         #
 
         proc tracescript {{file ""}} {
-            variable inclproc
             variable epoch
             variable scripts
 
@@ -420,21 +416,6 @@ ns_runonce {
                 _savescript $file $script
             } else {
                 return $script
-            }
-        }
-
-        #
-        # This is used to include a Tcl procedure into the blueprint
-        # script. Such procedures will not be lazy-loaded by the 
-        # [nstrace::unknown].
-        #
-        # This is NOT affecting [statescript] collection!
-        #
-
-        proc includeproc {cmd} {
-            variable inclproc
-            if {[lsearch $inclproc $cmd] == -1} {
-                lappend inclproc $cmd
             }
         }
 
