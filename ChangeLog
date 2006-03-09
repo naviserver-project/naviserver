@@ -17,6 +17,11 @@
 	The nstrace is now the sole interface for handling script 
 	generation for interp initializations. Please look into
 	the tcl/nstrace.tcl for more information.
+	Removed ns_init and ns_cleanup procedures and use trace
+	callbacks instead.
+	
+	* nsd/queue.c (ConnRun): uses Ns_ConnClearQuery() to
+	avoid code duplication.
 
 2006-03-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 

@@ -796,7 +796,7 @@ ConnRun(Conn *connPtr)
 	ns_free(connPtr->authUser);
 	connPtr->authUser = connPtr->authPasswd = NULL;
     }
-    Ns_ConnClearQuery(connPtr);
+    Ns_ConnClearQuery(conn);
     Tcl_DStringFree(&connPtr->queued);
     Ns_SetFree(connPtr->outputheaders);
     connPtr->outputheaders = NULL;
