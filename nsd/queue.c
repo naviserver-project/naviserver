@@ -683,9 +683,6 @@ ConnRun(Conn *connPtr)
 {
     Ns_Conn 	  *conn = (Ns_Conn *) connPtr;
     NsServer	  *servPtr = connPtr->servPtr;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    FormFile	  *filePtr;
     int            i, status;
     char	  *auth;
 	
@@ -799,18 +796,7 @@ ConnRun(Conn *connPtr)
 	ns_free(connPtr->authUser);
 	connPtr->authUser = connPtr->authPasswd = NULL;
     }
-    if (connPtr->query != NULL) {
-	Ns_SetFree(connPtr->query);
-	connPtr->query = NULL;
-    }
-    hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
-    while (hPtr != NULL) {
-	filePtr = Tcl_GetHashValue(hPtr);
-	Ns_SetFree(filePtr->hdrs);
-	ns_free(filePtr);
-	hPtr = Tcl_NextHashEntry(&search);
-    }
-    Tcl_DeleteHashTable(&connPtr->files);
+    Ns_ConnClearQuery(connPtr);
     Tcl_DStringFree(&connPtr->queued);
     Ns_SetFree(connPtr->outputheaders);
     connPtr->outputheaders = NULL;
