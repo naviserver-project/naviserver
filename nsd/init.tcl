@@ -192,26 +192,21 @@ if {$use_trace_inits} {
 
 
 #
-# ns_init --
-#
-#   Initialize the interp.  This is called
-#   by the Ns_TclAllocateInterp() C-function.
+# Initialize the interp.
 #
 
-proc ns_init {} {
+set _allocate_callback {
     ns_ictl update
 }
 
+ns_ictl trace allocate $_allocate_callback
 
 #
-# ns_cleanup --
-#
-#   Cleanup the interp, performing garbage 
-#   collection tasks. This is called 
-#   by the Ns_TclDeAllocateInterp() C-function.
+# Cleanup the interp, performing garbage 
+# collection tasks.
 #
 
-proc ns_cleanup {} {
+set _deallocate_callback {
 
     #
     # Close opened channels
@@ -254,6 +249,7 @@ proc ns_cleanup {} {
     ns_ictl cleanup;  # Internal cleanup (e.g,. Ns_TclRegisterDefer's)
 }
 
+ns_ictl trace deallocate $_deallocate_callback
 
 #
 # ns_reinit --
@@ -270,10 +266,10 @@ proc ns_cleanup {} {
 #   }
 #
 
-proc ns_reinit {} {
-    ns_cleanup
-    ns_init
-}
+proc ns_reinit {} [subst {
+    $_deallocate_callback
+    $_allocate_callback
+}]
 
 
 #
@@ -393,15 +389,6 @@ if {$use_trace_inits} {
     foreach module [ns_ictl getmodules] {
         __ns_sourcemodule $module
     }
-
-    #
-    # Register procedures which need to be pre-loaded 
-    # and not lazy-resolved as they will be called 
-    # from the server C-code.
-    #
-
-    nstrace::includeproc ns_init
-    nstrace::includeproc ns_cleanup
 
     #
     # Disable tracing and generate compact
