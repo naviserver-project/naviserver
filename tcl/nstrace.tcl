@@ -28,8 +28,8 @@
 # This file implements set of commands and utilities to manage
 # Tcl interpreter initialization for NaviServer.
 #
-# What all this stuff does is simple: synthetize a Tcl script used
-# to initialize new Tcl interpreters created by the NaviServer C-code.
+# What all this stuff does is simple: synthetize a Tcl script
+# used to initialize new Tcl interpreters.
 #
 #
 # There are basically two strategies:
@@ -38,7 +38,7 @@
 #     startup interpreter and collect definitions of some
 #     "known" things: loaded packages, created Tcl procs,
 #     namespaces and namespaced variables. Then stuff all
-#     this data in a (potentially huge) script and run 
+#     this data in a (potentially large) script and run 
 #     this script against virgin Tcl interp.
 #     This script is obtained by the [nstrace::statescript]
 #     command (see below).
@@ -50,29 +50,28 @@
 #     trace callbacks and they will start filling the epoch.
 #     After the bootstrapping is done, synthetize a script 
 #     containing minimal fixed state (variables, modules) and
-#     a definition of [unknown] command which will on-demand
+#     a definition of [unknown] command which will on-demand
 #     load procedure definitions out of the epoch state.
 #     This script is obtained by the [nstrace::tracescript]
 #     command (see below).
 #
 #
 # Which one of the above 2 strategies is currently used by the 
-# server is controlled by the "lazyloader" parameter of the Tcl 
+# server, is controlled by the "lazyloader" parameter of the Tcl 
 # library, as defined in the server configuration file.
 # The A. strategy is selected by setting the parameter to false.
 # The B. strategy is selected by setting the parameter to true.
 #
 #
 # In order to influence script generation, users can add their
-# own tracing implementations. Per default, tracers and other 
-# supporting callbacks for the following Tcl commands are provided
-# by default:
+# own tracing implementations. Tracers and other supporting
+# callbacks for the following Tcl commands are provided per
+# default:
 # 
 #     load, namespace, variable, proc, rename
 #
-# For the information of how to add new tracer (and other callbacks)
-# in order to customize script generation, please look into the source 
-# code of already provided callbacks (as stated above).
+# For the information of how to add new tracers please look
+# into the source code of already provided callbacks.
 # 
 #
 # Summary of commands:
