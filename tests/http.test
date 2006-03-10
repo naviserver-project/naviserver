@@ -162,10 +162,10 @@ test http-4.5 {HTTP/1.1 PUT one more large file} -constraints serverListen -setu
         ns_return 200 text/plain [ns_conn content]
     }
 } -body {
-    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 10000]
+    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 1000000]
 } -cleanup {
     ns_unregister_proc PUT /put
-} -result [list 200 [string repeat x 10000]]
+} -result [list 200 [string repeat x 1000000]]
 
 ns_log warning ---> about to run http-4.6
 test http-4.6 {HTTP/1.1 PUT file larger than maxinput} -constraints serverListen -setup {

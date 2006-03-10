@@ -45,6 +45,7 @@ proc nstest_http {args} {
     set host localhost
     set port [ns_config "ns/module/nssock" port]
     set timeout 10
+    set state send
 
     #
     # Open a TCP connection to the host:port
@@ -114,6 +115,7 @@ proc nstest_http {args} {
         # Read the response.
         #
 
+        set state read
         set hdrs [ns_set create]
         set line [nstest_http_gets $timeout $rfd]
 
@@ -173,8 +175,11 @@ proc nstest_http {args} {
         #
         # For Bad requests we can still read the response
         #
-        if {![catch { set line [nstest_http_gets $timeout $rfd] }]} {
+
+        if {$state == "send" && ![catch { set line [nstest_http_gets $timeout $rfd] }]} {
             if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
+                catch {close $rfd}
+                catch {close $wfd}
                 return $response
             }
         }
@@ -183,10 +188,10 @@ proc nstest_http {args} {
         # Something went wrong during the request, so return an error.
         #
 
-        catch {close $wfd}
         catch {close $rfd}
+        catch {close $wfd}
         catch {ns_set free $hdrs}
-        return -code error -errorinfo $::errorInfo $errMsg
+        return -code error -errorinfo $errMsg
 
     }
 
@@ -200,7 +205,6 @@ proc nstest_http {args} {
         }
     }
     catch {close $rfd}
-    catch {close $wfd}
     catch {ns_set free $hdrs}
     if {[string is true $getbody] && $body ne {}} {
         lappend response $body
