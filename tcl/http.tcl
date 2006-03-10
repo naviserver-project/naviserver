@@ -378,6 +378,7 @@ proc _ns_http_readable {timeout sock} {
         if {[lindex $sel 0] eq {}} {
             return -code error "_ns_http_readable: read timed out"
         }
+        set nread [ns_socknread $sock]
     }
 
     return $nread
