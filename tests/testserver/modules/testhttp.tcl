@@ -50,9 +50,12 @@ proc nstest_http {args} {
     # Open a TCP connection to the host:port
     #
     
-    set fds [ns_sockopen -nonblock $host $port]
+    set fds [ns_sockopen -timeout $timeout $host $port]
     set rfd [lindex $fds 0]
     set wfd [lindex $fds 1]
+
+    fconfigure $rfd -translation crlf -blocking 0
+    fconfigure $wfd -translation crlf
 
     if {[catch {
 
@@ -88,20 +91,23 @@ proc nstest_http {args} {
         #
 
         if {[string equal $http ""]} {
-            set request "$method $url\r"
+            set request "$method $url"
         } else {
-            set request "$method $url HTTP/$http\r"
+            set request "$method $url HTTP/$http"
         }
-        _ns_http_puts $timeout $wfd $request
+        nstest_http_puts $timeout $wfd $request
         for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
-            _ns_http_puts $timeout $wfd "[ns_set key $hdrs $i]: [ns_set value $hdrs $i]\r"
+            set key [ns_set key $hdrs $i]
+            set val [ns_set value $hdrs $i]
+            nstest_http_puts $timeout $wfd "$key: $val"
         }
+
+        nstest_http_puts $timeout $wfd ""
         if {[string length $body] > 0} {
-            _ns_http_puts $timeout $wfd "\r\n$body\r"
-        } else {
-            _ns_http_puts $timeout $wfd "\r"
+            nstest_http_puts $timeout $wfd $body
         }
-        catch {ns_set free $hdrs}
+
+        ns_set free $hdrs
         catch {close $wfd}
 
         #
@@ -109,7 +115,7 @@ proc nstest_http {args} {
         #
 
         set hdrs [ns_set create]
-        set line [_ns_http_gets $timeout $rfd]
+        set line [nstest_http_gets $timeout $rfd]
 
         if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
 
@@ -118,7 +124,7 @@ proc nstest_http {args} {
             #
 
             while {1} {
-                set line [_ns_http_gets $timeout $rfd]
+                set line [nstest_http_gets $timeout $rfd]
                 if {![string length $line]} {
                     break
                 }
@@ -131,17 +137,18 @@ proc nstest_http {args} {
 
             set body ""
             set length [ns_set iget $hdrs content-length]
-            if {[string equal $length ""]} {
+            if {$length eq {}} {
                 set length -1
             }
             while {1} {
-                set buf [_ns_http_read $timeout $rfd $length]
-                append body $buf
-                if {[string equal $buf ""]} {
+                set buf [nstest_http_read $timeout $rfd $length]
+                set len [string length $buf]
+                if {$len == 0} {
                     break
                 }
+                append body $buf
                 if {$length > 0} {
-                    incr length -[string length $buf]
+                    set length [expr {$length - $len}]
                     if {$length <= 0} {
                         break
                     }
@@ -156,9 +163,8 @@ proc nstest_http {args} {
 
             set response ""
             set body $line
-            append body [_ns_http_read $timeout $rfd -1]
+            append body [nstest_http_read $timeout $rfd -1]
         }
-
 
         catch {close $rfd}
 
@@ -167,7 +173,7 @@ proc nstest_http {args} {
         #
         # For Bad requests we can still read the response
         #
-        if {![catch { set line [_ns_http_gets $timeout $rfd] }]} {
+        if {![catch { set line [nstest_http_gets $timeout $rfd] }]} {
             if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
                 return $response
             }
@@ -177,11 +183,10 @@ proc nstest_http {args} {
         # Something went wrong during the request, so return an error.
         #
 
-        global errorInfo
         catch {close $wfd}
         catch {close $rfd}
         catch {ns_set free $hdrs}
-        return -code error -errorinfo $errorInfo $errMsg
+        return -code error -errorinfo $::errorInfo $errMsg
 
     }
 
@@ -197,9 +202,56 @@ proc nstest_http {args} {
     catch {close $rfd}
     catch {close $wfd}
     catch {ns_set free $hdrs}
-    if {[string is true $getbody] && $body ne ""} {
+    if {[string is true $getbody] && $body ne {}} {
         lappend response $body
     }
 
     return $response
+}
+
+proc nstest_http_gets {timeout sock} {
+
+    while {[gets $sock line] == -1} {
+        if {[eof $sock]} {
+            return -code error "nstest_http_gets: premature end of data"
+        }
+        nstest_http_readable $timeout $sock
+    }
+
+    return $line
+}
+
+proc nstest_http_puts {timeout sock string} {
+
+    if {[lindex [ns_sockselect -timeout $timeout {} $sock {}] 1] eq {}} {
+        return -code error "nstest_http_puts: write timed out"
+    }
+
+    puts $sock $string
+}
+
+proc nstest_http_readable {timeout sock} {
+
+    set nread [ns_socknread $sock]
+
+    if {$nread == 0} {
+        set sel [ns_sockselect -timeout $timeout $sock {} {}]
+        if {[lindex $sel 0] eq {}} {
+            return -code error "nstest_http_readable: read timed out"
+        }
+        set nread [ns_socknread $sock]
+    }
+
+    return $nread
+}
+
+proc nstest_http_read {timeout sock length} {
+
+    set nread [nstest_http_readable $timeout $sock]
+
+    if {$length > 0 && $length < $nread} {
+        set nread $length
+    }
+
+    read $sock $nread
 }
