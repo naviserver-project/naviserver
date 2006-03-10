@@ -121,17 +121,17 @@ test byteranges-2.3 {Multiple non-contiguous ranges} -constraints serverListen -
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
 } -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} 154 \
-        {--[^ ]+\r
-Content-type: \*/\*\r
-Content-range: bytes 0-2/10\r
-\r
-012\r
---[^ ]+\r
-Content-type: \*/\*\r
-Content-range: bytes 7-9/10\r
-\r
-789\r
---[^ ]+--\r
+        {--[^ ]+
+Content-type: \*/\*
+Content-range: bytes 0-2/10
+
+012
+--[^ ]+
+Content-type: \*/\*
+Content-range: bytes 7-9/10
+
+789
+--[^ ]+--
 }]
 
 test byteranges-2.4 {Multiple ranges, out of order} -constraints serverListen -body {
@@ -139,17 +139,17 @@ test byteranges-2.4 {Multiple ranges, out of order} -constraints serverListen -b
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
 } -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} 154 \
-        {--[^ ]+\r
-Content-type: \*/\*\r
-Content-range: bytes 7-9/10\r
-\r
-789\r
---[^ ]+\r
-Content-type: \*/\*\r
-Content-range: bytes 0-2/10\r
-\r
-012\r
---[^ ]+--\r
+        {--[^ ]+
+Content-type: \*/\*
+Content-range: bytes 7-9/10
+
+789
+--[^ ]+
+Content-type: \*/\*
+Content-range: bytes 0-2/10
+
+012
+--[^ ]+--
 }]
 
 test byteranges-2.5 {Multiple overlapping ranges} -constraints serverListen -body {

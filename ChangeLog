@@ -1,3 +1,22 @@
+2006-03-10  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* tests/testserver/modules/testhttp.tcl:
+	Made self-consistent; it does not attempt to use unpublished
+	Tcl API calls. Also, preform implicit network-line-end
+	translations by Tcl sock handling instead of passing this task
+	to user. Means: data sent and received is always in normalized
+	internal new-line format instead of new-line/carriage-return format.
+
+	* tcl/http.tcl: The _ns_http_readable was broken as it did not
+	correctly refresh the number of bytes in the socket after waiting
+	for the data to arrive.
+
+	* tests/http_byteranges.test:
+	* tests/http_chunked.test: Data returned from nstest_http calls
+	is now in standard internal newline format and not in the network
+	format, so we had to fix some regexps which check returned results
+	accordingly.
+
 2006-03-09  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tcl/cache.tcl:     Reformated, added proper function
