@@ -2087,7 +2087,7 @@ SpoolerThread(void *arg)
                 /*
                  * If enabled, perform read-ahead now.
                  */
-                
+             
                 n = SockRead(sockPtr, 1);
 
                 /*
@@ -2144,9 +2144,10 @@ SpoolerThread(void *arg)
             sockPtr = (Sock*)queuePtr->sockPtr;
             queuePtr->sockPtr = NULL;
             while (sockPtr != NULL) {
+                nextPtr = sockPtr->nextPtr;
                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
                 Push(sockPtr, readPtr);
-                sockPtr = sockPtr->nextPtr;
+                sockPtr = nextPtr;
             }
         }
 
