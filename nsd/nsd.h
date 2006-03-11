@@ -260,7 +260,7 @@ typedef struct WriterSock {
  */
 
 typedef struct SpoolerQueue {
-    struct SpoolerQueue  *nextPtr;
+    struct SpoolerQueue *nextPtr;
     void                *sockPtr;     /* List of submitted socket structures. */
     void                *curPtr;      /* List of processed socket structures. */
     SOCKET               pipe[2];     /* Trigger to wakeup WriterThread/SpoolerThread. */
@@ -313,7 +313,7 @@ typedef struct AdpCode {
  */
 
 typedef struct AdpParse {
-    AdpCode code;
+    AdpCode     code;
     Tcl_DString hdr;
     Tcl_DString text;
 } AdpParse;
@@ -358,6 +358,24 @@ typedef struct Request {
  * a driver initialized with Ns_DriverInit.
  */
 
+typedef struct _DrvSpooler {
+    int threads;               /* Number of spooler threads to run. */
+    int uploadsize;            /* Minimum upload size for stats tracking. */
+    Ns_Mutex lock;             /* Lock around upload table. */
+    Tcl_HashTable table;       /* Hash table of uploads. */
+    SpoolerQueue *firstPtr;    /* Spooler thread queue. */
+    SpoolerQueue *curPtr;      /* Current spooler thread */
+} DrvSpooler;
+
+typedef struct _DrvWriter {
+    int threads;               /* Number of writer threads to run. */
+    int maxsize;               /* Max content size to use writer thread. */
+    int bufsize;               /* Size of the output buffer. */
+    Ns_Mutex lock;             /* Lock around writer queues. */
+    SpoolerQueue *firstPtr;    /* List of writer threads. */
+    SpoolerQueue *curPtr;      /* Current writer thread */
+} DrvWriter;
+
 typedef struct Driver {
 
     /*
@@ -371,11 +389,11 @@ typedef struct Driver {
     char *location;             /* Location, e.g, "http://foo:9090" */
     char *address;              /* Address in location, e.g. "foo" */
     char *protocol;             /* Protocol in location, e.g, "http" */
-    int sendwait;               /* send() I/O timeout. */
-    int recvwait;               /* recv() I/O timeout. */
-    int bufsize;                /* Conn bufsize (0 for SSL) */
-    int sndbuf;                 /* setsockopt() SNDBUF option. */
-    int rcvbuf;                 /* setsockopt() RCVBUF option. */
+    int   sendwait;             /* send() I/O timeout. */
+    int   recvwait;             /* recv() I/O timeout. */
+    int   bufsize;              /* Conn bufsize (0 for SSL) */
+    int   sndbuf;               /* setsockopt() SNDBUF option. */
+    int   rcvbuf;               /* setsockopt() RCVBUF option. */
 
     /*
      * Private to Driver.
@@ -401,23 +419,9 @@ typedef struct Driver {
     int maxqueuesize;           /* Maximum number of sockets in the queue */
     unsigned int loggingFlags;  /* Logging control flags */
 
-    struct {
-      int threads;               /* Number of spooler threads to run. */
-      int uploadsize;            /* Minimum upload size for statistics tracking. */
-      Ns_Mutex lock;             /* Lock around upload table. */
-      Tcl_HashTable table;       /* Hash table of uploads. */
-      SpoolerQueue *firstPtr;    /* Spooler thread queue. */
-      SpoolerQueue *curPtr;      /* Current spooler thread */
-    } spooler;
+    DrvSpooler spooler;         /* Tracks upload spooler threads */
+    DrvWriter  writer;          /* Tracks writer threads */
 
-    struct {
-      int threads;               /* Number of writer threads to run. */
-      int maxsize;               /* Maximum content size when to use writer thread. */
-      int bufsize;               /* Size of the output buffer. */
-      Ns_Mutex lock;             /* Lock around writer queues. */
-      SpoolerQueue *firstPtr;    /* List of writer threads. */
-      SpoolerQueue *curPtr;      /* Current writer thread */
-    } writer;
 } Driver;
 
 /*
@@ -426,6 +430,12 @@ typedef struct Driver {
  * during request read-ahead before connection processing
  * and keepalive after connection processing.
  */
+
+typedef struct _UploadStats {
+    char          *url;         /* Key to lookup */ 
+    unsigned long  size;        /* Size of the upload */
+    unsigned long  length;      /* Size of the upload done so far */
+} UploadStats;
 
 typedef struct Sock {
 
@@ -453,11 +463,7 @@ typedef struct Sock {
     char *taddr;
     size_t tsize;
 
-    struct {
-      char *url;
-      unsigned long size;
-      unsigned long length;
-    } upload;
+    UploadStats upload;
 
 } Sock;
 
@@ -468,8 +474,8 @@ typedef struct Sock {
 
 typedef struct FormFile {
     Ns_Set *hdrs;
-    off_t off;
-    off_t len;
+    off_t   off;
+    off_t   len;
 } FormFile;
 
 /*
