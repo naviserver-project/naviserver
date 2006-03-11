@@ -93,12 +93,17 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
     # Open a TCP connection to the host:port
     #
 
-    set fds [ns_sockopen -timeout $timeout $host $port]
+    set fds [ns_sockopen -nonblock $host $port]
     set rfd [lindex $fds 0]
     set wfd [lindex $fds 1]
 
+    set sockerr [fconfigure $rfd -error]
+    if {$sockerr ne {}} {
+        return -code error $sockerr
+    }
+
     fconfigure $rfd -translation auto -encoding utf-8 -blocking 0
-    fconfigure $wfd -translation crlf -encoding utf-8
+    fconfigure $wfd -translation crlf -encoding utf-8 -blocking 1
 
     if {[catch {
 
@@ -120,6 +125,14 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
                 _ns_http_puts $timeout $wfd "$key: $val"
             }
 
+            if {$pdata ne {}} {
+                set pdlen [ns_set iget $rqset "Content-Length"]
+                if {$pdlen eq {}} {
+                    set pdlen [string length $pdata]
+                    _ns_http_puts $timeout $wfd "Content-Length: $pdlen"
+                }
+            }
+
         } else {
 
             #
@@ -130,6 +143,11 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
             _ns_http_puts $timeout $wfd "Accept: */*"
             _ns_http_puts $timeout $wfd \
                 "User-Agent: [ns_info name]-Tcl/[ns_info version]"
+            
+            if {$pdata ne {}} {
+                set pdlen [string length $pdata]
+                _ns_http_puts $timeout $wfd "Content-Length: $pdlen"
+            }
         }
 
         #
@@ -148,12 +166,12 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
         #
 
         _ns_http_puts $timeout $wfd ""
+        flush $wfd
 
         if {$pdata ne {}} {
-            _ns_http_puts $timeout $wfd $pdata
+            fconfigure $wfd -translation binary -blocking 1
+            _ns_http_write $timeout $wfd $pdata $pdlen
         }
-
-        flush $wfd
 
         #
         # Create a new set; its name will be the result line from
@@ -175,8 +193,8 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
         # Something went wrong during the request, so return an error.
         #
 
-        close $wfd
-        close $rfd
+        catch {close $wfd}
+        catch {close $rfd}
 
         if {[info exists rpset]} {
             ns_set free $rpset
@@ -372,10 +390,9 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
 proc _ns_http_readable {timeout sock} {
 
     set nread [ns_socknread $sock]
-
     if {$nread == 0} {
-        set sel [ns_sockselect -timeout $timeout $sock {} {}]
-        if {[lindex $sel 0] eq {}} {
+        set ready [ns_sockselect -timeout $timeout $sock {} {}]
+        if {[lindex $ready 0] eq {}} {
             return -code error "_ns_http_readable: read timed out"
         }
         set nread [ns_socknread $sock]
@@ -401,7 +418,6 @@ proc _ns_http_readable {timeout sock} {
 proc _ns_http_read {timeout sock length} {
 
     set nread [_ns_http_readable $timeout $sock]
-
     if {$length > 0 && $length < $nread} {
         set nread $length
     }
@@ -450,13 +466,65 @@ proc _ns_http_gets {timeout sock} {
 
 proc _ns_http_puts {timeout sock string} {
 
-    if {[lindex [ns_sockselect -timeout $timeout {} $sock {}] 1] eq {}} {
+    set ready [ns_sockselect -timeout $timeout {} $sock {}]
+    if {[lindex $ready 1] eq {}} {
         return -code error "_ns_http_puts: write timed out"
     }
 
     puts $sock $string
 }
 
+#
+# _ns_http_write --
+#
+#   Send a string to socket. If the buffer is
+#   full, wait for up to $timeout seconds.
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   None.
+#
+
+proc _ns_http_write {timeout sock string {length -1}} {
+
+    set ready [ns_sockselect -timeout $timeout {} $sock {}]
+    if {[lindex $ready 1] eq {}} {
+        return -code error "_ns_http_puts: write timed out"
+    }
+
+    puts -nonewline $sock $string; flush $sock
+
+    return
+    
+    #
+    # Experimental/debugging block-wise write
+    #
+
+    if {$length == -1} {
+        set length [string length $string]
+    }
+
+    set len [fconfigure $sock -buffersize]
+    set beg 0
+    set end [expr {$len - 1}]
+
+    while {$beg < $length} {
+        if {$end >= $length} {
+            set end [expr {$length - 1}]
+        }
+        set ready [ns_sockselect -timeout $timeout {} $sock {}]
+        if {[lindex $ready 1] eq {}} {
+            return -code error "_ns_http_puts: write timed out"
+        }
+        puts -nonewline $sock [string range $string $beg $end]
+        incr beg $len
+        incr end $len
+    }
+
+    flush $sock
+}
 
 #
 # _ns_http_getcontent --

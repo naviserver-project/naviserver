@@ -51,12 +51,17 @@ proc nstest_http {args} {
     # Open a TCP connection to the host:port
     #
     
-    set fds [ns_sockopen -timeout $timeout $host $port]
+    set fds [ns_sockopen -nonblock $host $port]
     set rfd [lindex $fds 0]
     set wfd [lindex $fds 1]
 
-    fconfigure $rfd -translation crlf -blocking 0
-    fconfigure $wfd -translation crlf
+    set sockerr [fconfigure $rfd -error]
+    if {$sockerr ne {}} {
+        return -code error $sockerr
+    }
+
+    fconfigure $rfd -translation auto -encoding utf-8 -blocking 0
+    fconfigure $wfd -translation crlf -encoding utf-8 -blocking 1
 
     if {[catch {
 
@@ -78,13 +83,16 @@ proc nstest_http {args} {
         ns_set icput $hdrs Accept */*
         ns_set icput $hdrs Connection close
         ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
+
         if {[string equal $port 80]} {
             ns_set icput $hdrs Host $host
         } else {
             ns_set icput $hdrs Host $host:$port
         }
-        if {[string length $body] > 0} {
-            ns_set icput $hdrs Content-Length [string length $body]
+
+        if {$body ne {}} {
+            set blen [string length $body]
+            ns_set icput $hdrs Content-Length $blen
         }
 
         #
@@ -96,7 +104,9 @@ proc nstest_http {args} {
         } else {
             set request "$method $url HTTP/$http"
         }
+
         nstest_http_puts $timeout $wfd $request
+
         for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
             set key [ns_set key $hdrs $i]
             set val [ns_set value $hdrs $i]
@@ -104,12 +114,14 @@ proc nstest_http {args} {
         }
 
         nstest_http_puts $timeout $wfd ""
-        if {[string length $body] > 0} {
-            nstest_http_puts $timeout $wfd $body
+        flush $wfd
+
+        if {$body ne {}} {
+            fconfigure $wfd -translation binary -blocking 1
+            nstest_http_write $timeout $wfd $body $blen
         }
 
         ns_set free $hdrs
-        catch {close $wfd}
 
         #
         # Read the response.
@@ -168,8 +180,6 @@ proc nstest_http {args} {
             append body [nstest_http_read $timeout $rfd -1]
         }
 
-        catch {close $rfd}
-
     } errMsg]} {
 
         #
@@ -180,6 +190,7 @@ proc nstest_http {args} {
             if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
                 catch {close $rfd}
                 catch {close $wfd}
+                catch {ns_set free $hdrs}
                 return $response
             }
         }
@@ -191,6 +202,7 @@ proc nstest_http {args} {
         catch {close $rfd}
         catch {close $wfd}
         catch {ns_set free $hdrs}
+
         return -code error -errorinfo $errMsg
 
     }
@@ -204,8 +216,11 @@ proc nstest_http {args} {
             lappend response [ns_set iget $hdrs $h]
         }
     }
+
     catch {close $rfd}
+    catch {close $wfd}
     catch {ns_set free $hdrs}
+
     if {[string is true $getbody] && $body ne {}} {
         lappend response $body
     }
@@ -227,7 +242,8 @@ proc nstest_http_gets {timeout sock} {
 
 proc nstest_http_puts {timeout sock string} {
 
-    if {[lindex [ns_sockselect -timeout $timeout {} $sock {}] 1] eq {}} {
+    set ready [ns_sockselect -timeout $timeout {} $sock {}]
+    if {[lindex $ready 1] eq {}} {
         return -code error "nstest_http_puts: write timed out"
     }
 
@@ -237,10 +253,9 @@ proc nstest_http_puts {timeout sock string} {
 proc nstest_http_readable {timeout sock} {
 
     set nread [ns_socknread $sock]
-
     if {$nread == 0} {
-        set sel [ns_sockselect -timeout $timeout $sock {} {}]
-        if {[lindex $sel 0] eq {}} {
+        set ready [ns_sockselect -timeout $timeout $sock {} {}]
+        if {[lindex $ready 0] eq {}} {
             return -code error "nstest_http_readable: read timed out"
         }
         set nread [ns_socknread $sock]
@@ -252,10 +267,48 @@ proc nstest_http_readable {timeout sock} {
 proc nstest_http_read {timeout sock length} {
 
     set nread [nstest_http_readable $timeout $sock]
-
     if {$length > 0 && $length < $nread} {
         set nread $length
     }
 
     read $sock $nread
+}
+
+proc nstest_http_write {timeout sock string {length -1}} {
+
+    set ready [ns_sockselect -timeout $timeout {} $sock {}]
+    if {[lindex $ready 1] eq {}} {
+        return -code error "nstest_http_puts: write timed out"
+    }
+
+    puts -nonewline $sock $string; flush $sock
+
+    return
+    
+    #
+    # Experimental/debugging block-wise write
+    # 
+
+    if {$length == -1} {
+        set length [string length $string]
+    }
+
+    set len [fconfigure $sock -buffersize]
+    set beg 0
+    set end [expr {$len - 1}]
+
+    while {$beg < $length} {
+        if {$end >= $length} {
+            set end [expr {$length - 1}]
+        }
+        set ready [ns_sockselect -timeout $timeout {} $sock {}]
+        if {[lindex $ready 1] eq {}} {
+            return -code error "nstest_http_puts: write timed out"
+        }
+        puts -nonewline $sock [string range $string $beg $end]
+        incr beg $len
+        incr end $len
+    }
+
+    flush $sock
 }
