@@ -319,6 +319,7 @@ typedef void  (Ns_ElemVoidProc) (void *);
 typedef void *(Ns_ElemValProc) (void *);
 typedef int   (Ns_ElemTestProc) (void *);
 typedef void  (Ns_Callback) (void *arg);
+typedef void  (Ns_ShutdownProc) (Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
@@ -683,15 +684,11 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
  * callbacks.c:
  */
 
-NS_EXTERN void *Ns_RegisterAtStartup(Ns_Callback *proc, void *arg);
 NS_EXTERN void *Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg);
+NS_EXTERN void *Ns_RegisterAtStartup(Ns_Callback *proc, void *arg);
 NS_EXTERN void *Ns_RegisterAtSignal(Ns_Callback *proc, void *arg);
-NS_EXTERN void *Ns_RegisterServerShutdown(char *server, Ns_Callback *proc,
-				       void *arg);
-NS_EXTERN void *Ns_RegisterShutdown(Ns_Callback *proc, void *arg);
-NS_EXTERN void *Ns_RegisterAtServerShutdown(Ns_Callback *proc, void *arg);
-NS_EXTERN void *Ns_RegisterAtShutdown(Ns_Callback *proc, void *arg);
 NS_EXTERN void *Ns_RegisterAtReady(Ns_Callback *proc, void *arg);
+NS_EXTERN void *Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg);
 NS_EXTERN void *Ns_RegisterAtExit(Ns_Callback *proc, void *arg);
 
 /*

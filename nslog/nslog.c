@@ -133,7 +133,7 @@ typedef struct {
  */
 
 static Ns_Callback     LogRollCallback;
-static Ns_Callback     LogCloseCallback;
+static Ns_ShutdownProc LogCloseCallback;
 static Ns_TraceProc    LogTrace;
 static Ns_ArgProc      LogArg;
 static Ns_TclTraceProc AddCmds;
@@ -932,9 +932,11 @@ LogCallback(int(proc)(Log *), void *arg, char *desc)
 }
 
 static void
-LogCloseCallback(void *arg)
+LogCloseCallback(Ns_Time *toPtr, void *arg)
 {
-    LogCallback(LogClose, arg, "close");
+    if (toPtr == NULL) {
+        LogCallback(LogClose, arg, "close");
+    }
 }
 
 static void

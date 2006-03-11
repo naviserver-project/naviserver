@@ -1,3 +1,22 @@
+2006-03-10  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/callbacks.c:
+	* nsd/tclcallbacks.c:
+	* nslog/nslog.c: Remove old variants of shutdown registration:
+	Ns_RegisterServerShutdown(), Ns_RegisterAtServerShutdown() and
+	Ns_RegisterShutdown().
+
+	Ns_RegisterAtShutdown() now takes a Ns_ShutdownProc callback, whos
+	signature includes an absolute timeout arg. This callback will be
+	run twice:  First with a NULL timeout to indicate shutdown
+	processing should be initiated. If shutdown work can be completed
+	quickly, it should be done here.  Second, with a timeout parameter
+	which can be passed to e.g. Ns_CondTimedWait() etc.
+
+	The idea is to make the pattern NsStartFooShutdown(),
+	NsWaitFooShutdown(toPtr) cleaner to implement.
+
 2006-03-10  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/testserver/modules/testhttp.tcl:

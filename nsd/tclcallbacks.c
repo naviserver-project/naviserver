@@ -47,6 +47,7 @@ typedef void *(AtProc)(Ns_Callback *, void *);
  * Local functions defined in this file
  */
 
+static Ns_ShutdownProc ShutdownProc;
 static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp,
                     int objc, Tcl_Obj *CONST objv[]);
 
@@ -245,13 +246,13 @@ Ns_TclCallbackArgProc(Tcl_DString *dsPtr, void *arg)
  *
  * AtObjCmd --
  *
- *      Implements ns_atsignal, ns_atshutdown, ns_atstartup, ns_atexit.
+ *      Implements ns_atprestartup, ns_atstartup, ns_atsignal, ns_atexit.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      Script will be run some time in the future when the event occurs.
  *
  *----------------------------------------------------------------------
  */
@@ -291,13 +292,57 @@ NsTclAtSignalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 }
 
 int
-NsTclAtShutdownObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    return AtObjCmd(Ns_RegisterShutdown, interp, objc, objv);
-}
-
-int
 NsTclAtExitObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     return AtObjCmd(Ns_RegisterAtExit, interp, objc, objv);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAtShutdownObjCmd --
+ *
+ *      Implements ns_atshutdown.  The callback timeout parameter is
+ *      ignored.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclAtShutdownObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_TclCallback *cbPtr;
+    static int      once = 0;
+
+    if (!once) {
+        Ns_RegisterProcInfo(ShutdownProc, "ns:tclshutdown",
+                            Ns_TclCallbackArgProc);
+        once = 1;
+    }
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
+        return TCL_ERROR;
+    }
+    cbPtr = Ns_TclNewCallback(interp, ShutdownProc, objv[1], 
+                              objc - 2, objv + 2);
+    Ns_RegisterAtShutdown(ShutdownProc, cbPtr);
+
+    return TCL_OK;
+}
+
+static void
+ShutdownProc(Ns_Time *toPtr, void *arg)
+{
+    Ns_TclCallback *cbPtr = arg;
+
+    if (toPtr == NULL) {
+        (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, NULL);
+    }
 }

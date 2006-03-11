@@ -40,6 +40,7 @@
 
 NS_RCSID("@(#) $Header$");
 
+
 /*
  * This structure is used as nodes in a linked list of callbacks.
  */
@@ -47,7 +48,7 @@ NS_RCSID("@(#) $Header$");
 typedef struct Callback {
     struct Callback *nextPtr;
     struct Callback *prevPtr;
-    Ns_Callback     *proc;
+    void            *proc;
     void            *arg;
 } Callback;
 
@@ -55,12 +56,10 @@ typedef struct Callback {
  * Local functions defined in this file
  */
 
-static Ns_ThreadProc RunThread;
+static Ns_ThreadProc ShutdownThread;
 
 static void  RunCallbacks(Callback *firstPtr, int reverse);
-static void  RunStart(Callback **firstPtrPtr, Ns_Thread *threadPtr);
-static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg);
-static void  RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPtr);
+static void *RegisterAt(Callback **firstPtrPtr, void *proc, void *arg);
 
 /*
  * Static variables defined in this file
@@ -69,14 +68,14 @@ static void  RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPt
 static Callback *firstPreStartup;
 static Callback *firstStartup;
 static Callback *firstSignal;
-static Callback *firstServerShutdown;
 static Callback *firstShutdown;
 static Callback *firstExit;
 static Callback *firstReady;
 static Ns_Mutex  lock;
 static Ns_Cond   cond;
 static int       shutdownPending;
-static Ns_Thread serverShutdownThread;
+static int       shutdownComplete;
+static Ns_Thread shutdownThread;
 
 void *
 Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
@@ -163,37 +162,6 @@ Ns_RegisterAtSignal(Ns_Callback * proc, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_RegisterAtServerShutdown --
- *
- *      Register a callback to run at server shutdown. This is
- *      identical to Ns_RegisterShutdown and only exists for
- *      historical reasons.
- *
- * Results:
- *      None. 
- *
- * Side effects:
- *      The callback will be registered 
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Ns_RegisterAtServerShutdown(Ns_Callback *proc, void *arg)
-{
-    return RegisterAt(&firstServerShutdown, proc, arg);
-}
-
-void *
-Ns_RegisterServerShutdown(char *ignored, Ns_Callback *proc, void *arg)
-{
-    return Ns_RegisterAtServerShutdown(proc, arg);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_RegisterAtShutdown --
  *
  *      Register a callback to run at server shutdown. 
@@ -208,15 +176,9 @@ Ns_RegisterServerShutdown(char *ignored, Ns_Callback *proc, void *arg)
  */
 
 void *
-Ns_RegisterAtShutdown(Ns_Callback *proc, void *arg)
+Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
 {
     return RegisterAt(&firstShutdown, proc, arg);
-}
-
-void *
-Ns_RegisterShutdown(Ns_Callback *proc, void *arg)
-{
-    return Ns_RegisterAtShutdown(proc, arg);
 }
 
 
@@ -315,6 +277,117 @@ NsRunSignalProcs(void)
 /*
  *----------------------------------------------------------------------
  *
+ * NsStartShutdownProcs --
+ *
+ *      Run all shutdown procs sequentially in a detached thread. This
+ *      proc returns immediately.
+ *
+ * Results:
+ *      None. 
+ *
+ * Side effects:
+ *      Depends on registered shutdown procs.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsStartShutdownProcs()
+{
+    Ns_MutexLock(&lock);
+    shutdownPending = 1;
+    if (firstShutdown != NULL) {
+        Ns_ThreadCreate(ShutdownThread, firstShutdown, 0, &shutdownThread);
+    }
+    Ns_MutexUnlock(&lock);
+}
+
+static void
+ShutdownThread(void *arg)
+{
+    Callback         *cbPtr;
+    Ns_ShutdownProc  *proc;
+
+    Ns_ThreadSetName("-shutdown-");
+
+    /*
+     * Well behaved callbacks will return quickly, deferring lengthy
+     * work to threads which will be waited upon with NsWaitShutdownProcs().
+     */
+
+    for (cbPtr = arg; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
+        proc = cbPtr->proc;
+        (*proc)(NULL, cbPtr->arg);
+    }
+
+    Ns_MutexLock(&lock);
+    shutdownComplete = 1;
+    Ns_CondSignal(&cond);
+    Ns_MutexUnlock(&lock);
+}
+    
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsWaitShutdownProcs --
+ *
+ *      Wait for detached shutdown thread to complete, then wait for
+ *      shutdown callbacks individually.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Give up waiting if timeout expires.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsWaitShutdownProcs(Ns_Time *toPtr)
+{
+    Callback         *cbPtr;
+    Ns_ShutdownProc  *proc;
+    int               status = NS_OK;
+
+    if (shutdownThread == NULL) {
+        return; /* No shutdown callbacks. */
+    }
+
+    /*
+     * Wait for the shutdown thread to finnish running shutdown
+     * notification and one-shot callbacks.
+     */
+
+    Ns_MutexLock(&lock);
+    while (status == NS_OK && !shutdownComplete) {
+        status = Ns_CondTimedWait(&cond, &lock, toPtr);
+    }
+    Ns_MutexUnlock(&lock);
+
+    if (status != NS_OK) {
+        Ns_Log(Warning, "shutdown: timeout waiting for shutdown procs");
+    } else {
+
+        /*
+         * Wait for each callback to complete.  Well behaved callbacks will
+         * return immediately if timeout has expired.
+         */
+
+        for (cbPtr = firstShutdown; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
+            proc = cbPtr->proc;
+            (*proc)(toPtr, cbPtr->arg);
+        }
+
+        Ns_ThreadJoin(&shutdownThread, NULL);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsRunExitProcs --
  *
  *      Run any callbacks registered for server startup, then 
@@ -328,26 +401,6 @@ NsRunSignalProcs(void)
  *
  *----------------------------------------------------------------------
  */
-
-void
-NsStartShutdownProcs(void)
-{
-    Ns_MutexLock(&lock);
-    shutdownPending = 1;
-    Ns_MutexUnlock(&lock);
-
-    RunStart(&firstServerShutdown, &serverShutdownThread);
-}
-    
-void
-NsWaitShutdownProcs(Ns_Time *toPtr)
-{
-    Ns_Thread thread;
-
-    RunWait(&firstServerShutdown, &serverShutdownThread, toPtr);
-    RunStart(&firstShutdown, &thread);
-    RunWait(&firstShutdown, &thread, toPtr);
-}
 
 void
 NsRunAtExitProcs(void)
@@ -373,7 +426,7 @@ NsRunAtExitProcs(void)
  */
 
 static void *
-RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
+RegisterAt(Callback **firstPtrPtr, void *proc, void *arg)
 {
     Callback   *cbPtr;
     static int first = 1;
@@ -424,6 +477,8 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg)
 static void
 RunCallbacks(Callback *cbPtr, int reverse)
 {
+    Ns_Callback *proc;
+
     if (reverse) {
         while (cbPtr != NULL && cbPtr->nextPtr != NULL) {
             cbPtr = cbPtr->nextPtr;
@@ -431,68 +486,14 @@ RunCallbacks(Callback *cbPtr, int reverse)
     }
 
     while (cbPtr != NULL) {
-        (*cbPtr->proc) (cbPtr->arg);
+        proc = cbPtr->proc;
+        (*proc)(cbPtr->arg);
         if (reverse) {
             cbPtr = cbPtr->prevPtr;
         } else {
             cbPtr = cbPtr->nextPtr;
         }
     }
-}
-
-static void
-RunStart(Callback **firstPtrPtr, Ns_Thread *threadPtr)
-{
-    Ns_MutexLock(&lock);
-    if (*firstPtrPtr != NULL) {
-        Ns_ThreadCreate(RunThread, firstPtrPtr, 0, threadPtr);
-    } else {
-        *threadPtr = NULL;
-    }
-    Ns_MutexUnlock(&lock);
-}
-
-
-static void
-RunWait(Callback **firstPtrPtr, Ns_Thread *threadPtr, Ns_Time *toPtr)
-{
-    int status;
-
-    status = NS_OK;
-    Ns_MutexLock(&lock);
-    while (status == NS_OK && *firstPtrPtr != NULL) {
-        status = Ns_CondTimedWait(&cond, &lock, toPtr);
-    }
-    Ns_MutexUnlock(&lock);
-    if (status != NS_OK) {
-        Ns_Log(Warning, "callbacks: timeout waiting for shutdown procs");
-    } else if (*threadPtr != NULL) {
-        Ns_ThreadJoin(threadPtr, NULL);
-    }
-}
-
-
-static void
-RunThread(void *arg)
-{
-    Callback **firstPtrPtr = arg;
-    Callback *firstPtr;
-
-    Ns_ThreadSetName("-shutdown-");
-    Ns_MutexLock(&lock);
-    firstPtr = *firstPtrPtr;
-    Ns_MutexUnlock(&lock);
-    
-    RunCallbacks(firstPtr, 0);
-
-    Ns_MutexLock(&lock);
-    while (*firstPtrPtr != NULL) {
-        firstPtr = *firstPtrPtr;
-        *firstPtrPtr = firstPtr->nextPtr;
-        ns_free(firstPtr);
-    }
-    Ns_CondSignal(&cond);
-    Ns_MutexUnlock(&lock);
 }
 
 static void
@@ -527,7 +528,6 @@ NsGetCallbacks(Tcl_DString *dsPtr)
     AppendList(dsPtr, "prestartup", firstPreStartup, 1);
     AppendList(dsPtr, "startup", firstStartup, 1);
     AppendList(dsPtr, "signal", firstSignal, 1);
-    AppendList(dsPtr, "servershutdown", firstServerShutdown, 0);
     AppendList(dsPtr, "shutdown", firstShutdown, 0);
     AppendList(dsPtr, "exit", firstExit, 0);
     Ns_MutexUnlock(&lock);
