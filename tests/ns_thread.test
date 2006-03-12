@@ -50,7 +50,7 @@ test ns_thread-2.2 {wait for thread thread} -body {
 
 test ns_thread-2.3 {get thread id of self} -body {
     ns_thread id
-} -match regexp -result {.[0-9]+}
+} -match regexp -result {[0-9]+}
 
 test ns_thread-2.4 {thread name} -body {
     ns_thread wait [ns_thread create {ns_thread name threadtest}]
