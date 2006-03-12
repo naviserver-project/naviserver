@@ -55,6 +55,59 @@ static Ns_Mutex lock;
 static int debugMode;
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsBlockSignal --
+ *
+ *      Mask one specific signale
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Signal will be pending until NsRestoreSignal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsBlockSignal(int signal)
+{
+    sigset_t set;
+    
+    sigemptyset(&set);
+    sigaddset(&set, signal);
+    ns_sigmask(SIG_BLOCK, &set, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsUnblockSignal --
+ *
+ *      Restores one specific signal.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Signal will be unblock.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsUnblockSignal(int signal)
+{
+    sigset_t set;
+
+    sigemptyset(&set);
+    sigaddset(&set, signal);
+    ns_sigmask(SIG_UNBLOCK, &set, NULL);
+}
+
 
 /*
  *----------------------------------------------------------------------

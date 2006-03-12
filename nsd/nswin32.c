@@ -71,6 +71,52 @@ void NsdInit(void);
 /*
  *----------------------------------------------------------------------
  *
+ * NsBlockSignal --
+ *
+ *      Mask one specific signale
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsBlockSignal(int signal)
+{
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsUnblockSignal --
+ *
+ *      Restores one specific signal.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Signal will be unblock.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsUnblockSignal(int signal)
+{
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DllMain --
  *
  *      Init routine for the nsd.dll which setups TLS for Win32 errors

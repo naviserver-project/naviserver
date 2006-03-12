@@ -100,10 +100,12 @@
 #ifdef _WIN32
   #define NS_SIGHUP   1
   #define NS_SIGINT   2
+  #define NS_SIGPIPE 13
   #define NS_SIGTERM 15
 #else
   #define NS_SIGHUP  SIGHUP
   #define NS_SIGINT  SIGINT
+  #define NS_SIGPIPE SIGPIPE
   #define NS_SIGTERM SIGTERM
 #endif
 
@@ -1000,6 +1002,8 @@ extern void NsUpdateUrlEncode(void);
 extern void NsRunPreStartupProcs(void);
 extern void NsStartServers(void);
 extern void NsBlockSignals(int debug);
+extern void NsBlockSignal(int signal);
+extern void NsUnblockSignal(int signal);
 extern int  NsHandleSignals(void);
 extern void NsStopDrivers(void);
 extern void NsPreBind(char *bindargs, char *bindfile);

@@ -748,6 +748,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          */
 
         NsRestoreSignals();
+        NsBlockSignal(NS_SIGPIPE);
         cmdargv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
         cmdargc = 0;
         cmdargv[cmdargc++] = argv[0];
