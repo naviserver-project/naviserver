@@ -186,13 +186,14 @@ proc nstest_http {args} {
         # For Bad requests we can still read the response
         #
 
-        if {$state == "send" && ![catch { set line [nstest_http_gets $timeout $rfd] }]} {
-            if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
-                catch {close $rfd}
-                catch {close $wfd}
-                catch {ns_set free $hdrs}
-                return $response
-            }
+        if {$state eq {read} && [info exists response]
+            || ($state eq {send}
+                && [catch {set line [nstest_http_gets $timeout $rfd]}] == 0
+                && [regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response])} {
+            catch {close $rfd}
+            catch {close $wfd}
+            catch {ns_set free $hdrs}
+            return $response
         }
 
         #
@@ -276,14 +277,14 @@ proc nstest_http_read {timeout sock length} {
 
 proc nstest_http_write {timeout sock string {length -1}} {
 
-    set ready [ns_sockselect -timeout $timeout {} $sock {}]
-    if {[lindex $ready 1] eq {}} {
-        return -code error "nstest_http_puts: write timed out"
-    }
+     set ready [ns_sockselect -timeout $timeout {} $sock {}]
+     if {[lindex $ready 1] eq {}} {
+         return -code error "nstest_http_puts: write timed out"
+     }
+ 
+     puts -nonewline $sock $string; flush $sock
 
-    puts -nonewline $sock $string; flush $sock
-
-    return
+     return
     
     #
     # Experimental/debugging block-wise write
