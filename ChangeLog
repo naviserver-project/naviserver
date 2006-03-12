@@ -9,6 +9,10 @@
 
 	* tests/testserver/modules/testhttp.tcl: Added
 	nstest_http_write function to upload content.
+	Fixed to report HTTP status as often as possible.
+
+	* tests/http.test: Removed ns_log warnings before
+	running http tests 4.4, 4.5 and 4.6
 
 	* tcl/http.tcl: Added _ns_http_write wrapper to
 	uplad content.

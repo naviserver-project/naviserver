@@ -103,13 +103,12 @@ test http-3.2 {limits: header line length} -constraints {
 test http-3.3 {limits: too many headers} -constraints serverListen -setup {
     ns_register_proc GET /limits {
         set h [ns_conn headers]
-        ns_return 200 text/plain \
+        ns_return 200 text/plain \  
             "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
     }
 } -body {
     nstest_http -http 1.1 -getbody 1 \
-        -setheaders [split [string repeat xy 1024] ""]\
-        GET /limits
+        -setheaders [split [string repeat xy 1024] ""] GET /limits
 } -cleanup {
     ns_unregister_proc GET /limits
 } -result 400
@@ -156,7 +155,6 @@ test http-4.4 {HTTP/1.1 PUT very large file} -constraints serverListen -setup {
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1000000]]
 
-ns_log warning ---> about to run http-4.5
 test http-4.5 {HTTP/1.1 PUT one more large file} -constraints serverListen -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
@@ -167,7 +165,6 @@ test http-4.5 {HTTP/1.1 PUT one more large file} -constraints serverListen -setu
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1000000]]
 
-ns_log warning ---> about to run http-4.6
 test http-4.6 {HTTP/1.1 PUT file larger than maxinput} -constraints serverListen -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
