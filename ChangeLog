@@ -1,3 +1,28 @@
+2006-03-12  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* drv/driver.c: Fixed endless loop in SpoolerThread.
+	Also reformated, newly indented and made more readable.
+
+	* nsd/nsd.h: Cosmetic changes. Added typedefs for 
+	some internally used structures. Added typdefs for new
+	NsBlockSignal, NsRestoreSignal and def for NS_SIGPIPE.
+
+	* tests/testserver/modules/testhttp.tcl: Added
+	nstest_http_write function to upload content.
+
+	* tcl/http.tcl: Added _ns_http_write wrapper to
+	uplad content.
+
+	* tests/ns_thread.test: Thread ID's can be very small 
+	(single digit numbers) on Solaris. Also, fixed regexps
+	for testing thread/mutex/condvar handles on Solaris.
+	
+	* nsd/nsmain.c:
+	* nsd/unix.c:
+	* nsd/nswin32.c: Added blocking for signals, more
+	specifically for the SIGPIPE signal.
+	Otherwise, our process may get killed during net tests.
+
 2006-03-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
