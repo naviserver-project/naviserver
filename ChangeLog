@@ -1,3 +1,7 @@
+2006-03-12  Vlad Seryakov  <seryakov@users.sf.net>
+
+	tcl/util.tcl: fixed typo in ns_setexpires proc
+
 2006-03-12  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* drv/driver.c: Fixed endless loop in SpoolerThread.

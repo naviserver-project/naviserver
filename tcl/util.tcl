@@ -83,7 +83,7 @@ proc ns_adp_include {args} {
 proc ns_setexpires {args} {
 
     set secs [lindex $args [expr {[llength $args] - 1}]]
-    set when [ns_httptime [expr {$secsarg + [clock seconds]}]]
+    set when [ns_httptime [expr {$secs + [clock seconds]}]]
     ns_set update [ns_conn outputheaders] Expires $when
 }
 
