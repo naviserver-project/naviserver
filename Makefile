@@ -52,7 +52,7 @@ install-dirs: all
 		$(MKDIR) $(NAVISERVER)/$$i; \
 	done
 
-install-config:
+install-config: all
 	for i in contrib/nsd.tcl contrib/mimetypes.tcl sample-config.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
