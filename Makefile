@@ -44,25 +44,34 @@ all:
 		( cd $$i && $(MAKE) all ) || exit 1; \
 	done
 
-install: install-binaries install-doc
+install: install-dirs install-include install-tcl install-modules \
+	install-config install-doc
 
-install-binaries: all
+install-dirs: all
 	for i in bin lib logs include tcl pages conf modules cgi-bin; do \
 		$(MKDIR) $(NAVISERVER)/$$i; \
 	done
-	for i in include/*.h include/Makefile.global include/Makefile.module; do \
-		$(INSTALL_DATA) $$i $(INSTHDR)/; \
-	done
-	for i in tcl/*.tcl; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/tcl/; \
-	done
+
+install-config:
 	for i in contrib/nsd.tcl contrib/mimetypes.tcl sample-config.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
 	$(INSTALL_DATA) contrib/index.adp $(NAVISERVER)/pages/
 	$(INSTALL_SH) install-sh $(INSTBIN)/
+
+install-modules: all
 	for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \
+	done
+
+install-tcl: all
+	for i in tcl/*.tcl; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/tcl/; \
+	done
+
+install-include: all
+	for i in include/*.h include/Makefile.global include/Makefile.module; do \
+		$(INSTALL_DATA) $$i $(INSTHDR)/; \
 	done
 
 install-tests:
