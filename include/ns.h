@@ -1715,6 +1715,7 @@ NS_EXTERN char *Ns_SockStrError(int err);
  */
 
 NS_EXTERN int Ns_SockCallback(SOCKET sock, Ns_SockProc *proc, void *arg, int when);
+NS_EXTERN int Ns_SockCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout);
 NS_EXTERN void Ns_SockCancelCallback(SOCKET sock);
 NS_EXTERN int Ns_SockCancelCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg);
 

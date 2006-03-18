@@ -732,14 +732,14 @@ int
 NsTclSockCallbackObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
                 Tcl_Obj *CONST objv[])
 {
-    SOCKET    sock;
-    int       when;
     char     *s;
+    SOCKET    sock;
+    int       when, timeout = 0;
     Callback *cbPtr;
     NsInterp *itPtr = arg;
 
-    if (objc != 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "sockId script when");
+    if (objc < 4) {
+        Tcl_WrongNumArgs(interp, 1, objv, "sockId script when ?timeout?");
         return TCL_ERROR;
     }
     s = Tcl_GetString(objv[3]);
@@ -790,8 +790,11 @@ NsTclSockCallbackObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     cbPtr->chan = NULL;
     cbPtr->when = when;
     strcpy(cbPtr->script, Tcl_GetString(objv[2]));
-    if (Ns_SockCallback(sock, NsTclSockProc, cbPtr,
-                        when | NS_SOCK_EXIT) != NS_OK) {
+    if (objc > 4) {
+        timeout = atoi(Tcl_GetString(objv[4]));
+    }
+    if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
+                        when | NS_SOCK_EXIT, timeout) != NS_OK) {
         Tcl_SetResult(interp, "could not register callback", TCL_STATIC);
         ns_sockclose(sock);
         ns_free(cbPtr);
@@ -1113,7 +1116,9 @@ NsTclSockProc(SOCKET sock, void *arg, int why)
         Tcl_RegisterChannel(interp, cbPtr->chan);
         Tcl_DStringAppend(&script, cbPtr->script, -1);
         Tcl_DStringAppendElement(&script, Tcl_GetChannelName(cbPtr->chan));
-        if (why == NS_SOCK_READ) {
+        if (why == NS_SOCK_TIMEOUT) {
+            w = "t";
+        } else if (why == NS_SOCK_READ) {
             w = "r";
         } else if (why == NS_SOCK_WRITE) {
             w = "w";

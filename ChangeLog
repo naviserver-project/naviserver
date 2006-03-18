@@ -1,3 +1,7 @@
+2006-03-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	nsd/sockcallbacks.c: Changed timeout handling
+        
 2006-03-18  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 	
 	* nsd/tclresp.c: Fixed bad return value(s) in NsTclHeadersObjCmd
