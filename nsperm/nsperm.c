@@ -265,7 +265,7 @@ AuthProc(char *server, char *method, char *url, char *user, char *pass,
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     int status;
-    char *group, buf[16];
+    char *group, buf[NS_ENCRYPT_BUFSIZE];
 
     if (user == NULL) {
 	user = "";

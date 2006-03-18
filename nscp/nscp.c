@@ -508,7 +508,7 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 {
     Tcl_HashEntry *hPtr;
     Tcl_DString uds, pds;
-    char *encpass, *user, *pass, msg[255], buf[30];
+    char *encpass, *user, *pass, msg[255], buf[NS_ENCRYPT_BUFSIZE];
     int ok;
 
     user = NULL;

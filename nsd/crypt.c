@@ -31,6 +31,20 @@
 
 NS_RCSID("@(#) $Header$");
 
+#ifdef __linux
+
+char           *
+Ns_Encrypt(pw, salt, iobuf)
+    char           *pw;
+    char           *salt;
+    char            iobuf[];
+{
+    strcpy(iobuf, crypt(pw, salt));
+    return iobuf;
+}
+
+#else
+
 /*
  * This program implements the Proposed Federal Information Processing Data
  * Encryption Standard. See Federal Register, March 17, 1975 (40FR12134)
@@ -423,3 +437,5 @@ Ns_Encrypt(pw, salt, iobuf)
 
     return (iobuf);
 }
+
+#endif

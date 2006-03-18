@@ -1,3 +1,12 @@
+2006-03-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	configure.in:
+        include/ns.h:
+        nscp/nscp.c:
+        nsd/crypt.c:
+        nsperm/nsperm.c: For Linux systems use native crypt which supports
+        MD5 digests, increase encryption buffer
+        
 2006-03-13  Vlad Seryakov  <seryakov@users.sf.net>
 
 	Makefile: Made install modular so parts can be installed

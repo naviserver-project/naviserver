@@ -270,4 +270,11 @@ else
     AC_MSG_RESULT(no)
 fi
 
+# Use native crypt if possible
+case "`uname`" in
+  Linux)
+     LIBS="-lcrypt $LIBS"
+  ;;
+esac
+
 AC_OUTPUT(include/nsversion.h include/Makefile.global include/Makefile.module sample-config.tcl)
