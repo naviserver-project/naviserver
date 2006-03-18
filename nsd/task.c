@@ -864,10 +864,11 @@ TaskThread(void *arg)
                 pfds[nfds].fd = taskPtr->sock;
                 pfds[nfds].events = taskPtr->events;
                 pfds[nfds].revents = 0;
-                if ((taskPtr->flags & TASK_TIMEOUT) && (timeoutPtr == NULL
-                                                        || Ns_DiffTime(&taskPtr->timeout,
-                                                                       timeoutPtr, NULL) < 0)) {
-                    timeoutPtr = &taskPtr->timeout;
+                if (taskPtr->flags & TASK_TIMEOUT) {
+                    if ((timeoutPtr == NULL ||
+                        Ns_DiffTime(&taskPtr->timeout, timeoutPtr, NULL) < 0)) {
+                        timeoutPtr = &taskPtr->timeout;
+                    }
                 }
                 taskPtr->nextWaitPtr = firstWaitPtr;
                 firstWaitPtr = taskPtr;

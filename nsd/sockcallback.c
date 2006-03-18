@@ -49,6 +49,7 @@ typedef struct Callback {
     int                  when;
     Ns_SockProc         *proc;
     void                *arg;
+    Ns_Time              timeout;
 } Callback;
 
 /*
@@ -56,7 +57,7 @@ typedef struct Callback {
  */
 
 static Ns_ThreadProc SockCallbackThread;
-static int Queue(SOCKET sock, Ns_SockProc *proc, void *arg, int when);
+static int Queue(SOCKET sock, Ns_SockProc *proc, void *arg, int when, Ns_Time *timeout);
 static void CallbackTrigger(void);
 
 /*
@@ -93,7 +94,13 @@ static Tcl_HashTable table;
 int
 Ns_SockCallback(SOCKET sock, Ns_SockProc *proc, void *arg, int when)
 {
-    return Queue(sock, proc, arg, when);
+    return Queue(sock, proc, arg, when, 0);
+}
+
+int
+Ns_SockCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg, int when, Ns_Time *timeout)
+{
+    return Queue(sock, proc, arg, when, timeout);
 }
 
 
@@ -123,7 +130,7 @@ Ns_SockCancelCallback(SOCKET sock)
 int
 Ns_SockCancelCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg)
 {
-    return Queue(sock, proc, arg, NS_SOCK_CANCEL);
+    return Queue(sock, proc, arg, NS_SOCK_CANCEL, 0);
 }
 
 
@@ -217,16 +224,20 @@ CallbackTrigger(void)
  */
 
 static int
-Queue(SOCKET sock, Ns_SockProc *proc, void *arg, int when)
+Queue(SOCKET sock, Ns_SockProc *proc, void *arg, int when, Ns_Time *timeout)
 {
     Callback   *cbPtr;
     int         status, trigger, create;
 
-    cbPtr = ns_malloc(sizeof(Callback));
+    cbPtr = ns_calloc(1, sizeof(Callback));
     cbPtr->sock = sock;
     cbPtr->proc = proc;
     cbPtr->arg = arg;
     cbPtr->when = when;
+    if (timeout != NULL) {
+        cbPtr->timeout.sec = timeout->sec;
+        cbPtr->timeout.usec = timeout->usec;
+    }
     trigger = create = 0;
     Ns_MutexLock(&lock);
     if (shutdownPending) {
@@ -284,12 +295,13 @@ SockCallbackThread(void *ignored)
 {
     char          c;
     int           when[3], events[3];
-    int           n, i, new, stop;
+    int           n, i, new, stop, revents;
     int		  max, nfds;
     Callback     *cbPtr, *nextPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     struct pollfd *pfds;
+    Ns_Time       now, *timeoutPtr = NULL;
 
     Ns_ThreadSetName("-socks-");
     Ns_WaitForStartup();
@@ -305,7 +317,8 @@ SockCallbackThread(void *ignored)
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     pfds[0].fd = trigPipe[0];
     pfds[0].events = POLLIN;
-    
+    Ns_GetTime(&now);
+
     while (1) {
 
 	/*
@@ -372,6 +385,12 @@ SockCallbackThread(void *ignored)
                     }
         	}
 		++nfds;
+                if (cbPtr->timeout.sec > 0) {
+                    if (timeoutPtr == NULL ||
+                        Ns_DiffTime(&cbPtr->timeout, timeoutPtr, NULL) < 0) {
+                        timeoutPtr = &cbPtr->timeout;
+                    }
+                }
 	    }
 	    hPtr = Tcl_NextHashEntry(&search);
         }
@@ -385,12 +404,7 @@ SockCallbackThread(void *ignored)
 	    break;
 	}
 	pfds[0].revents = 0;
-	do {
-	    n = poll(pfds, (size_t)nfds, -1);
-	} while (n < 0 && errno == EINTR);
-	if (n < 0) {
-	    Ns_Fatal("poll() failed: %s", strerror(errno));
-	}
+        n = NsPoll(pfds, nfds, timeoutPtr);
 	if ((pfds[0].revents & POLLIN) && recv(trigPipe[0], &c, 1, 0) != 1) {
 	    Ns_Fatal("trigger read() failed: %s", strerror(errno));
 	}
@@ -398,17 +412,26 @@ SockCallbackThread(void *ignored)
     	/*
 	 * Execute any ready callbacks.
 	 */
-	 
+
+        Ns_GetTime(&now);
     	hPtr = Tcl_FirstHashEntry(&table, &search);
 	while (n > 0 && hPtr != NULL) {
 	    cbPtr = Tcl_GetHashValue(hPtr);
-            for (i = 0; i < 3; ++i) {
+            for (revents = 0, i = 0; i < 3; ++i) {
                 if ((cbPtr->when & when[i])
 		    && (pfds[cbPtr->idx].revents & events[i])) {
                     if (!((*cbPtr->proc)(cbPtr->sock, cbPtr->arg, when[i]))) {
 			cbPtr->when = 0;
 		    }
+                    revents++;
                 }
+            }
+            // No events, check for timeout
+            if (!revents &&
+                cbPtr->timeout.sec > 0 &&
+                Ns_DiffTime(&cbPtr->timeout, &now, NULL) < 0) {
+                (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, NS_SOCK_TIMEOUT);
+                cbPtr->when = 0;
             }
 	    hPtr = Tcl_NextHashEntry(&search);
         }

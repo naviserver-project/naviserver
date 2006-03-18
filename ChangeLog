@@ -1,5 +1,9 @@
 2006-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
+	nsd/sockcallbacks.c:
+	nsd/tasks.c: Updated to support timeouts in socket
+	callbacks, minor reformats
+
 	configure.in:
         include/ns.h:
         nscp/nscp.c:
