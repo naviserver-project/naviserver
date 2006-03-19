@@ -388,7 +388,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     spPtr = &drvPtr->spooler;
-    spPtr->threads = Ns_ConfigIntRange(path, "spoolerthreads", 1, 0, 32);
+    spPtr->threads = Ns_ConfigIntRange(path, "spoolerthreads", 0, 0, 32);
     
     if (spPtr->threads > 0) {;
         spPtr->uploadsize = Ns_ConfigIntRange(path, "uploadsize", 
