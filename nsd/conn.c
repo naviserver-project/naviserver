@@ -338,6 +338,30 @@ Ns_ConnContentSent(Ns_Conn *conn)
     return connPtr->nContentSent;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSetContentSent --
+ *
+ *      Set the number of bytes sent to the browser after headers
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnSetContentSent(Ns_Conn *conn, int length)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    connPtr->nContentSent = length;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -689,6 +713,34 @@ Ns_ConnSockPtr(Ns_Conn *conn)
     Conn *connPtr = (Conn *) conn;
 
     return (Ns_Sock*)connPtr->sockPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSockContent --
+ *
+ *      Returns read buffer for incoming requests
+ *
+ * Results:
+ *      NULL if no content have been read yet
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_DString *
+Ns_ConnSockContent(Ns_Conn *conn)
+{
+    Conn     *connPtr = (Conn*)conn;
+    Ns_DString *bufPtr;
+
+    if (connPtr->reqPtr != NULL) {
+        return &connPtr->reqPtr->buffer;
+    }
+    return NULL;
 }
 
 

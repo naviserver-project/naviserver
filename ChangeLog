@@ -1,3 +1,11 @@
+2006-03-19  Vlad Seryakov  <seryakov@users.sf.net>
+
+	include/ns.h:
+        nsd/driver.c:
+        nsd/conn.c: Added new public functions Ns_DriverSockContent,
+        Ns_ConnSockContent and Ns_ConnSetContentSent. Imporved UDP driver
+        support.
+        
 2006-03-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/driver.c: Set spoolerthreads to 0 by default

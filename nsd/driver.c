@@ -847,6 +847,15 @@ NsSockClose(Sock *sockPtr, int keep)
 {
     int trigger = 0;
 
+    /*
+     * Shortcut for UDP sockets, no need for close lingering process
+     */
+
+    if (sockPtr->drvPtr->opts & NS_DRIVER_UDP) {
+        SockRelease(sockPtr, 0, 0);
+        return;
+    }
+
     SockClose(sockPtr, keep);
 
     Ns_MutexLock(&drvLock);
@@ -1576,7 +1585,7 @@ SockClose(Sock *sockPtr, int keep)
         keep = 0;
     }
     if (keep == 0) {
-        (void) (*drvPtr->proc)(DriverClose, sock, NULL, 0);
+        (*drvPtr->proc)(DriverClose, sock, NULL, 0);
     }
 
 #ifndef _WIN32
@@ -2071,13 +2080,56 @@ Ns_DriverSockRequest(Ns_Sock *sock, char *reqline)
     return NS_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DriverSockContent --
+ *
+ *      Returns read buffer for incoming requests
+ *
+ * Results:
+ *      NULL if no content have been read yet
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_DString *
+Ns_DriverSockContent(Ns_Sock *sock)
+{
+    Sock     *sockPtr = (Sock*)sock;
+
+    if (sockPtr->reqPtr != NULL) {
+        return &sockPtr->reqPtr->buffer;
+    }
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclUploadStatsObjCmd --
+ *
+ *      Returns upload progess statistics for the given url
+ *
+ * Results:
+ *      string in interp result with current length and total size
+ *
+ * Side effects:
+ *      Returns empty once upload completed
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 NsTclUploadStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                        Tcl_Obj *CONST objv[])
 {
     char        buf[64] = "";
     Driver     *drvPtr;
-    DrvSpooler *spPtr = &drvPtr->spooler;
+    DrvSpooler *spPtr;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");
@@ -2088,6 +2140,7 @@ NsTclUploadStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     while (drvPtr != NULL) {
         Tcl_HashEntry *hPtr;
+        spPtr = &drvPtr->spooler;
         Ns_MutexLock(&spPtr->lock);
         hPtr = Tcl_FindHashEntry(&spPtr->table, Tcl_GetString(objv[1]));
         if (hPtr != NULL) {

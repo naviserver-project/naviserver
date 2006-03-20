@@ -787,6 +787,7 @@ NS_EXTERN void Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status);
 NS_EXTERN char *Ns_ConnResponseVersion(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetResponseVersion(Ns_Conn *conn, char *new_version);
 NS_EXTERN int Ns_ConnContentSent(Ns_Conn *conn);
+NS_EXTERN void Ns_ConnSetContentSent(Ns_Conn *conn, int length);
 NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
 NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
@@ -797,6 +798,7 @@ NS_EXTERN char *Ns_ConnHost(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnPort(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnSock(Ns_Conn *conn);
 NS_EXTERN Ns_Sock *Ns_ConnSockPtr(Ns_Conn *conn);
+NS_EXTERN Ns_DString *Ns_ConnSockContent(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnDriverName(Ns_Conn *conn);
 NS_EXTERN void *Ns_ConnDriverContext(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnGetWriteEncodedFlag(Ns_Conn *conn);
@@ -935,6 +937,7 @@ NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
 
 NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
 NS_EXTERN int Ns_DriverSockRequest(Ns_Sock *sock, char *reqline);
+NS_EXTERN Ns_DString *Ns_DriverSockContent(Ns_Sock *sock);
 
 /*
  * dsprintf.c:
