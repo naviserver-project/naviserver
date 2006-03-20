@@ -735,7 +735,6 @@ Ns_DString *
 Ns_ConnSockContent(Ns_Conn *conn)
 {
     Conn     *connPtr = (Conn*)conn;
-    Ns_DString *bufPtr;
 
     if (connPtr->reqPtr != NULL) {
         return &connPtr->reqPtr->buffer;
