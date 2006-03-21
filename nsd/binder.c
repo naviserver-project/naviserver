@@ -371,8 +371,7 @@ Ns_SockBindUnix(char *path)
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path,path, sizeof(addr.sun_path) - 1);
-    unlink(path);
-    
+
     sock = socket(AF_UNIX,SOCK_STREAM, 0);
     
     if (sock == -1
