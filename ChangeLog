@@ -2,7 +2,8 @@
 
 	nsd/binder.c: BindUnix should not delete the socket file otherwise
 	clients will not be able to connect to it. Changedd API to support optional
-	accesss mode for the Unix domain file
+	accesss mode for the Unix domain file. Added DGRAM socket types for
+ 	Unix domain sockets.
 
 2006-03-19  Vlad Seryakov  <seryakov@users.sf.net>
 

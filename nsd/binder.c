@@ -257,7 +257,8 @@ Ns_SockListenRaw(int proto)
  *      Socket descriptor or -1 on error.
  *
  * Side effects:
- *      May create a new socket if none prebound.
+ *      May create a new socket if none prebound. If backlog is zero,
+ *      DGRAM socket will be created otherwise STREAM socket
  *
  *----------------------------------------------------------------------
  */
@@ -283,7 +284,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
     Ns_MutexUnlock(&lock);
     if (hPtr == NULL) {
         /* Not prebound, bind now */
-        sock = Ns_SockBindUnix(path, mode);
+        sock = Ns_SockBindUnix(path, backlog > 0 ? SOCK_STREAM : SOCK_DGRAM, mode);
     }
     if (sock >= 0 && backlog > 0 && listen(sock, backlog) == -1) {
         /* Can't listen; close the opened socket */
@@ -329,7 +330,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
 {
     int sock = -1, n = 1;
    
-    sock = socket(AF_INET,SOCK_DGRAM, 0);
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (sock == -1
         || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n,sizeof(n)) == -1
@@ -362,7 +363,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
  */
 
 SOCKET
-Ns_SockBindUnix(char *path, int mode)
+Ns_SockBindUnix(char *path, int socktype, int mode)
 {
     int                sock = -1;
 #ifndef _WIN32    
@@ -373,7 +374,7 @@ Ns_SockBindUnix(char *path, int mode)
     strncpy(addr.sun_path, path, sizeof(addr.sun_path) - 1);
     unlink(path);
 
-    sock = socket(AF_UNIX,SOCK_STREAM, 0);
+    sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
     
     if (sock == -1
         || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
@@ -412,7 +413,7 @@ Ns_SockBindRaw(int proto)
 {
     int sock = -1;
    
-    sock = socket(AF_INET,SOCK_RAW, proto);
+    sock = socket(AF_INET, SOCK_RAW, proto);
 
     if (sock == -1) {
         int err = errno;
@@ -741,7 +742,7 @@ PreBind(char *line)
                 Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
                 continue;
             }
-            sock = Ns_SockBindUnix(line, 0);
+            sock = Ns_SockBindUnix(line, SOCK_STREAM, 0);
             if (sock == -1) {
                 Ns_Log(Error, "prebind: unix: %s: %s", proto, strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);
