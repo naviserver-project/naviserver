@@ -506,10 +506,10 @@ NsStartDrivers(void)
 
         } else if (drvPtr->opts & NS_DRIVER_UNIX) {
             drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr,
-                                             drvPtr->backlog);
+                                             drvPtr->backlog, 0);
         } else {
             drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr,
-                                           drvPtr->port,drvPtr->backlog);
+                                           drvPtr->port, drvPtr->backlog);
         }
         if (drvPtr->sock == INVALID_SOCKET) {
             Ns_Log(Error, "%s: failed to listen on %s:%d: %s",

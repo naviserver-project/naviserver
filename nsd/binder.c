@@ -263,7 +263,7 @@ Ns_SockListenRaw(int proto)
  */
 
 SOCKET
-Ns_SockListenUnix(char *path, int backlog)
+Ns_SockListenUnix(char *path, int backlog, int  mode)
 {
     int            sock = -1;
     Tcl_HashEntry  *hPtr;
@@ -283,9 +283,9 @@ Ns_SockListenUnix(char *path, int backlog)
     Ns_MutexUnlock(&lock);
     if (hPtr == NULL) {
         /* Not prebound, bind now */
-        sock = Ns_SockBindUnix(path);
+        sock = Ns_SockBindUnix(path, mode);
     }
-    if (sock >= 0 && listen(sock, backlog) == -1) {
+    if (sock >= 0 && backlog > 0 && listen(sock, backlog) == -1) {
         /* Can't listen; close the opened socket */
         int err = errno;
         close(sock);
@@ -300,7 +300,7 @@ Ns_SockListenUnix(char *path, int backlog)
      */
 
     if (sock == -1 && binderRunning) {
-        sock = Ns_SockBinderListen('D', path, 0, backlog);
+        sock = Ns_SockBinderListen('D', path, mode, backlog);
     }
 #endif
 
@@ -362,7 +362,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
  */
 
 SOCKET
-Ns_SockBindUnix(char *path)
+Ns_SockBindUnix(char *path, int mode)
 {
     int                sock = -1;
 #ifndef _WIN32    
@@ -370,12 +370,14 @@ Ns_SockBindUnix(char *path)
 
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path,path, sizeof(addr.sun_path) - 1);
+    strncpy(addr.sun_path, path, sizeof(addr.sun_path) - 1);
+    unlink(path);
 
     sock = socket(AF_UNIX,SOCK_STREAM, 0);
     
     if (sock == -1
-        || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+        || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
+        || (mode && chmod(path, mode) == -1)) {
         int err = errno;
         close(sock);
         sock = -1;
@@ -610,7 +612,7 @@ NsClosePreBound(void)
  *          addr:port[/protocol]
  *          port[/protocol]
  *          0/icmp[/count]
- *          /path
+ *          /path[|mode]
  *
  * Results:
  *      None.
@@ -629,7 +631,7 @@ PreBind(char *line)
     return;
 #else
     Tcl_HashEntry      *hPtr;
-    int                new, sock, port;
+    int                new, sock, port, mode;
     char               *next, *str, *addr, *proto;
     struct sockaddr_in sa;
 
@@ -728,12 +730,18 @@ PreBind(char *line)
         }
 
         if (Ns_PathIsAbsolute(line)) {
+            /* Parse mode */
+            str = strchr(str,'|');
+            if (str) {
+                *(str++) = '\0';
+                mode = atoi(str);
+            }
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &new);
             if (!new) {
                 Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
                 continue;
             }
-            sock = Ns_SockBindUnix(line);
+            sock = Ns_SockBindUnix(line, 0);
             if (sock == -1) {
                 Ns_Log(Error, "prebind: unix: %s: %s", proto, strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);
@@ -1024,7 +1032,7 @@ Binder(void)
             fd = Ns_SockListenUdp(address, port);
             break;
         case 'D':
-            fd = Ns_SockListenUnix(address, options);
+            fd = Ns_SockListenUnix(address, options, port);
             break;
         case 'R':
             fd = Ns_SockListenRaw(options);

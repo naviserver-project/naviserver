@@ -1664,11 +1664,11 @@ NS_EXTERN char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def);
 NS_EXTERN SOCKET Ns_SockListenEx(char *address, int port, int backlog);
 NS_EXTERN SOCKET Ns_SockListenUdp(char *address, int port);
 NS_EXTERN SOCKET Ns_SockListenRaw(int proto);
-NS_EXTERN SOCKET Ns_SockListenUnix(char *path, int backlog);
+NS_EXTERN SOCKET Ns_SockListenUnix(char *path, int backlog, int mode);
 
 NS_EXTERN SOCKET Ns_SockBindUdp(struct sockaddr_in *saPtr);
 NS_EXTERN SOCKET Ns_SockBindRaw(int proto);
-NS_EXTERN SOCKET Ns_SockBindUnix(char *path);
+NS_EXTERN SOCKET Ns_SockBindUnix(char *path, int mode);
 
 NS_EXTERN void NsForkBinder(void);
 NS_EXTERN void NsStopBinder(void);
