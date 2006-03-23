@@ -791,6 +791,7 @@ NS_EXTERN void Ns_ConnSetContentSent(Ns_Conn *conn, int length);
 NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
 NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
+NS_EXTERN char *Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr);
 NS_EXTERN int Ns_ConnPeerPort(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED;
 NS_EXTERN char *Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);

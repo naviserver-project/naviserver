@@ -412,6 +412,32 @@ Ns_ConnPeer(Ns_Conn *conn)
     return connPtr->reqPtr->peer;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSetPeer --
+ *
+ *      Set the peer's internet address and port
+ *
+ * Results:
+ *      A string IP address 
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    connPtr->reqPtr->port = ntohs(saPtr->sin_port);
+    strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(saPtr->sin_addr));
+    return connPtr->reqPtr->peer;
+}
+
 
 /*
  *----------------------------------------------------------------------

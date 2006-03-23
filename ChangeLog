@@ -1,3 +1,8 @@
+2006-03-23  Vlad Seryakov  <seryakov@users.sf.net>
+
+	include/ns.h:
+	nsd/conn.c: Added new public API function Ns_ConnSetPeer
+
 2006-03-21  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/binder.c: BindUnix should not delete the socket file otherwise
