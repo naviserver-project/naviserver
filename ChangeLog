@@ -1,3 +1,7 @@
+2006-03-27  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* contrib/nsd.tcl: Added smtp configuration parameters
+
 2006-03-23  Vlad Seryakov  <seryakov@users.sf.net>
 
 	include/ns.h:

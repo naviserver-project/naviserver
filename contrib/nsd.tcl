@@ -20,6 +20,17 @@ ns_param	pidfile			${home}/logs/nsd.pid
 ns_param        outputcharset   	iso8859-1
 ns_param        urlcharset      	iso8859-1
 
+ns_param        smtphost                "localhost"
+ns_param        smtpport                25
+ns_param        smtptimeout             60
+ns_param        smtplogmode             false
+ns_param        smtpmsgid               false
+ns_param        smtpmsgidhostname       ""
+ns_param        smtpencodingmode        false
+ns_param        smtpencoding            "utf-8"
+ns_param        smtpauthuser            ""
+ns_param        smtpauthpassword        ""
+
 ns_section	"ns/threads"
 ns_param	stacksize		[expr 1024*1024]
 
