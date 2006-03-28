@@ -961,7 +961,7 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * Ns_LogRoll --
  *
- *      Signal handler for SIG_HUP which will roll the files.
+ *      Signal handler for SIGHUP which will roll the files.
  *
  * Results:
  *      NS_OK/NS_ERROR.
@@ -979,6 +979,10 @@ Ns_LogRoll(void)
 
     if (file != NULL) {
 	NsAsyncWriterQueueDisable(0);
+#ifdef _WIN32
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+#endif
 
         if (access(file, F_OK) == 0) {
             Ns_RollFile(file, maxback);
