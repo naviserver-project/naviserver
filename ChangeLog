@@ -1,3 +1,8 @@
+2006-03-28  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+	
+	* nsd/tclresp.c: Fixed bad return value(s) in NsTclHeadersObjCmd
+	and WritevObjs. Reformatted and indented.
+	
 2006-03-27  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* contrib/nsd.tcl: Added smtp configuration parameters
@@ -27,11 +32,6 @@
 	nsd/driver.c: Set spoolerthreads to 0 by default
 	nsd/sockcallbacks.c: Changed timeout handling
         
-2006-03-18  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
-	
-	* nsd/tclresp.c: Fixed bad return value(s) in NsTclHeadersObjCmd
-	and WritevObjs. Reformatted and indented.
-	
 2006-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/sockcallbacks.c:
