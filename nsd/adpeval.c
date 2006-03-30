@@ -708,14 +708,15 @@ ParseFile(NsInterp *itPtr, CONST char *file, Tcl_StatBuf *stPtr)
     Page         *pagePtr;
     AdpParse     parse;
     Tcl_Channel  chan = NULL;
-    
+
     chan = Tcl_OpenFileChannel(interp, file, "r", 0644);
     if (chan == NULL) {
         Tcl_AppendResult(interp, "could not open \"", file, "\": ", 
                          Tcl_PosixError(interp), NULL);
         return NULL;
     }
-    
+    Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
+
     pagePtr = NULL;
     buf = NULL;
     trys = 0;

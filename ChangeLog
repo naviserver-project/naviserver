@@ -1,3 +1,8 @@
+2006-03-30  Ibrahim Tannir <itannir@users.sf.net>
+
+	* nsd/adpeval.c:  added translation binary in ParseFile,
+	otherwise reading Windows files may break (size != n).
+
 2006-03-28  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 	
 	* nsd/tclresp.c: Fixed bad return value(s) in NsTclHeadersObjCmd
