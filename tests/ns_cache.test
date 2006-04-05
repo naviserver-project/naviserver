@@ -55,7 +55,13 @@ test cache-1.10 {basic syntax} -body {
     ns_memoize
 } -returnCodes error -result {wrong # args: should be "?-timeout timeout? ?-ttl ttl? ?--? script ?args?"}
 
+test cache-1.11 {basic syntax} -body {
+    ns_cache_get
+} -returnCodes error -result {wrong # args: should be "ns_cache_get cache key"}
 
+test cache-1.12 {basic syntax} -body {
+    ns_cache_set
+} -returnCodes error -result {wrong # args: should be "ns_cache_set ?-timeout timeout? ?-ttl ttl? ?--? cache key value"}
 
 test cache-2.1 {cache names} -body {
     lsort [ns_cache_names]
@@ -243,6 +249,12 @@ test cache-9.5 {cache lappend multiple values} -body {
     ns_cache_flush c1
 } -result {a b c}
 
+test cache-9.6 {cache set/get} -body {
+    ns_cache_set c1 k1 val1
+    ns_cache_get c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result val1
 
 
 test cache-10.1 {memoize} -body {

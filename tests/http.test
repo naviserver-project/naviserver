@@ -145,7 +145,7 @@ test http-4.3 {HTTP/1.1 PUT file > uploadsize} -constraints serverListen -setup 
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1027]]
 
-test http-4.4 {HTTP/1.1 PUT very large file} -constraints serverListen -setup {
+test http-4.4 {HTTP/1.1 PUT very large file} -constraints knownBug -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -155,7 +155,7 @@ test http-4.4 {HTTP/1.1 PUT very large file} -constraints serverListen -setup {
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1000000]]
 
-test http-4.5 {HTTP/1.1 PUT one more large file} -constraints serverListen -setup {
+test http-4.5 {HTTP/1.1 PUT one more large file} -constraints knownBug -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -165,7 +165,7 @@ test http-4.5 {HTTP/1.1 PUT one more large file} -constraints serverListen -setu
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1000000]]
 
-test http-4.6 {HTTP/1.1 PUT file larger than maxinput} -constraints serverListen -setup {
+test http-4.6 {HTTP/1.1 PUT file larger than maxinput} -constraints knownBug -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }

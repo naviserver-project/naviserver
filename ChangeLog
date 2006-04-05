@@ -1,5 +1,8 @@
 2006-04-05  Vlad Seryakov  <seryakov@users.sf.net>
 
+	tests/http.test: Disable writer test for now to be able to
+	run other tests
+	tests/nscache.test: Added test for two new commands
 	nsd/tclcache.c:
 	nsd/tclcmds.c: Added 2 new cache commands ns_cache_get and
 	ns_cache_set for easier cache manipulation
