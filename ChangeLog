@@ -1,3 +1,9 @@
+2006-04-05  Vlad Seryakov  <seryakov@users.sf.net>
+
+	nsd/tclcache.c:
+	nsd/tclcmds.c: Added 2 new cache commands ns_cache_get and
+	ns_cache_set for easier cache manipulation
+
 2006-03-30  Ibrahim Tannir <itannir@users.sf.net>
 
 	* nsd/adpeval.c:  added translation binary in ParseFile,

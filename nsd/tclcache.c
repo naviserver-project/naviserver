@@ -284,6 +284,96 @@ NsTclCacheExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCacheGetObjCmd --
+ *
+ *      Returns entry value if entry exists in the cache and not expired yet
+ *
+ * Results:
+ *      TCL result with entry value or empty result
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_Cache *cache;
+    Ns_Entry *entry;
+    char     *key;
+
+    Ns_ObjvSpec args[] = {
+        {"cache",    ObjvCache,     &cache, arg},
+        {"key",      Ns_ObjvString, &key,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    Ns_CacheLock(cache);
+    if ((entry = Ns_CacheFindEntry(cache, key)) != NULL) {
+        Tcl_SetStringObj(Tcl_GetObjResult(interp),
+                         Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
+    }
+    Ns_CacheUnlock(cache);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCacheSetObjCmd --
+ *
+ *      Set new value of the cache entry
+ *
+ * Results:
+ *      TCL result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclCacheSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    NsInterp *itPtr = arg;
+    Ns_Cache *cache;
+    Ns_Entry *entry;
+    char     *key, *value = 0;
+    int       new, timeout = -1, ttl = 0;
+
+    Ns_ObjvSpec opts[] = {
+        {"-timeout", Ns_ObjvInt,   &timeout, NULL},
+        {"-ttl",     Ns_ObjvInt,   &ttl,     NULL},
+        {"--",       Ns_ObjvBreak, NULL,     NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"cache",    ObjvCache,     &cache, arg},
+        {"key",      Ns_ObjvString, &key,   NULL},
+        {"value",    Ns_ObjvString, &value, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    if ((entry = CreateEntry(itPtr, cache, key, &new, timeout)) == NULL) {
+        return TCL_ERROR;
+    }
+    Tcl_SetStringObj(Tcl_GetObjResult(interp), value, -1);
+    SetEntry(interp, entry, NULL, ttl);
+    Ns_CacheUnlock(cache);
+
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------
