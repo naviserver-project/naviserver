@@ -299,7 +299,10 @@ test ns_cache-11.1 {stability} -body {
         ns_thread begindetached {  
             for {set j 0} {$j < 1000} {incr j} {
                 for {set x 0} {$x < 10000} {incr x} {set a b}
-                ns_cache_eval c1 k1 {return a}
+                ns_cache_eval -ttl 1 c1 k1 {
+                  ns_cache_set c1 $j $j
+                  return a
+                } 
                 ns_thread yield
             }
         }
@@ -307,6 +310,7 @@ test ns_cache-11.1 {stability} -body {
     ns_thread begindetached {
         for {set j 0} {$j < 1000} {incr j} {
             for {set x 0} {$x < 10000} {incr x} {set a b}
+            ns_cache_get c1 $j
             ns_cache_flush c1
             ns_thread yield
         }
