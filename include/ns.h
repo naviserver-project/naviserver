@@ -1679,6 +1679,7 @@ NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int opti
  * sock.c:
  */
 
+NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, 
                           Ns_Time *timeoutPtr);

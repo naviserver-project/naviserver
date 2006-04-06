@@ -608,6 +608,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             entry = Ns_CacheNextEntry(&search);
         }
     }
+    Ns_CacheBroadcast(cache);
     Ns_CacheUnlock(cache);
     Tcl_SetIntObj(Tcl_GetObjResult(interp), nflushed);
 
@@ -720,8 +721,8 @@ SetEntry(Tcl_Interp *interp, Ns_Entry *entry, Tcl_Obj *valObj, int ttl)
         objPtr = Tcl_GetObjResult(interp);
     }
     string = Tcl_GetStringFromObj(objPtr, &len);
-    value = ns_malloc(len + 1);
-    memcpy(value, string, len + 1);
+    value = ns_malloc(len);
+    memcpy(value, string, len);
     Ns_CacheSetValueExpires(entry, value, len, ttl);
     if (valObj != NULL) {
         Tcl_SetObjResult(interp, valObj);

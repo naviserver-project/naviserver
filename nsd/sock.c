@@ -240,6 +240,28 @@ Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr)
     return NS_TIMEOUT;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockWait --
+ *
+ *      Wait for I/O. Compatibility function for older modules.
+ *
+ * Results:
+ *      NS_OK, NS_TIMEOUT, or NS_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_SockWait(SOCKET sock, int what, int timeout)
+{
+    Ns_Time tm = { timeout, 0 };
+    return Ns_SockTimedWait(sock, what, &t);
+}
 
 /*
  *----------------------------------------------------------------------

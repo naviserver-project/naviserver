@@ -1,3 +1,11 @@
+2006-04-06  Vlad Seryakov  <seryakov@users.sf.net>
+
+	include/ns.h:
+	nsd/sock.c: Added Ns_SockWait function for compatibility reasons,
+	i.e. nsopenssl uses this.
+
+	nsd/tclcache.c: extar byte allocating is not necessary
+
 2006-04-05  Vlad Seryakov  <seryakov@users.sf.net>
 
 	tests/http.test: Disable writer test for now to be able to
