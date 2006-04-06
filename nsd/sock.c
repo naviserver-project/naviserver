@@ -260,7 +260,7 @@ int
 Ns_SockWait(SOCKET sock, int what, int timeout)
 {
     Ns_Time tm = { timeout, 0 };
-    return Ns_SockTimedWait(sock, what, &t);
+    return Ns_SockTimedWait(sock, what, &tm);
 }
 
 /*
