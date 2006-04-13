@@ -1,18 +1,32 @@
+2006-04-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/tclimg.c: Added processing for PNG files. Also added
+	commands to compute image type, mimetype and size regardless
+	of the image type, by performing internal magic lookup to
+	decide which type of image they are handling.
+
+	* nsd/tclcmds.c: Added ns_imgsize, ns_imgtype, ns_imgmime
+	commands. These commands operate on any supported image: 
+	gif, png and jpeg. The ns_pngsize is added to complete 
+	ns_jpegsize and ns_gifsize set, although those are deprecated
+	in favour of more simple ns_img[].
+	
 2006-04-06  Vlad Seryakov  <seryakov@users.sf.net>
 
-	include/ns.h:
-	nsd/sock.c: Added Ns_SockWait function for compatibility reasons,
+	* include/ns.h:
+	* nsd/sock.c: Added Ns_SockWait function for compatibility reasons,
 	i.e. nsopenssl uses this.
 
-	nsd/tclcache.c: extar byte allocating is not necessary
+	* nsd/tclcache.c: extar byte allocating is not necessary
 
 2006-04-05  Vlad Seryakov  <seryakov@users.sf.net>
 
-	tests/http.test: Disable writer test for now to be able to
+	* tests/http.test: Disable writer test for now to be able to
 	run other tests
-	tests/nscache.test: Added test for two new commands
-	nsd/tclcache.c:
-	nsd/tclcmds.c: Added 2 new cache commands ns_cache_get and
+
+	* tests/nscache.test: Added test for two new commands
+	* nsd/tclcache.c:
+	* nsd/tclcmds.c: Added 2 new cache commands ns_cache_get and
 	ns_cache_set for easier cache manipulation
 
 2006-03-30  Ibrahim Tannir <itannir@users.sf.net>
@@ -31,15 +45,15 @@
 
 2006-03-23  Vlad Seryakov  <seryakov@users.sf.net>
 
-	include/ns.h:
-	nsd/conn.c: Added new public API function Ns_ConnSetPeer
+	* include/ns.h:
+	* nsd/conn.c: Added new public API function Ns_ConnSetPeer
 
 2006-03-21  Vlad Seryakov  <seryakov@users.sf.net>
 
-	nsd/binder.c: BindUnix should not delete the socket file otherwise
-	clients will not be able to connect to it. Changedd API to support optional
-	accesss mode for the Unix domain file. Added DGRAM socket types for
- 	Unix domain sockets.
+	* nsd/binder.c: BindUnix should not delete the socket file otherwise
+	clients will not be able to connect to it. Changedd API to support 
+	optional accesss mode for the Unix domain file. Added DGRAM socket
+	types for Unix domain sockets.
 
 2006-03-19  Vlad Seryakov  <seryakov@users.sf.net>
 
@@ -51,30 +65,30 @@
         
 2006-03-18  Vlad Seryakov  <seryakov@users.sf.net>
 
-	nsd/driver.c: Set spoolerthreads to 0 by default
-	nsd/sockcallbacks.c: Changed timeout handling
+	* nsd/driver.c: Set spoolerthreads to 0 by default
+	* nsd/sockcallbacks.c: Changed timeout handling
         
 2006-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
-	nsd/sockcallbacks.c:
-	nsd/tasks.c: Updated to support timeouts in socket
+	* nsd/sockcallbacks.c:
+	* nsd/tasks.c: Updated to support timeouts in socket
 	callbacks, minor reformats
 
-	configure.in:
-        include/ns.h:
-        nscp/nscp.c:
-        nsd/crypt.c:
-        nsperm/nsperm.c: For Linux systems use native crypt which supports
+	* configure.in:
+        * include/ns.h:
+        * nscp/nscp.c:
+        * nsd/crypt.c:
+        * nsperm/nsperm.c: For Linux systems use native crypt which supports
         MD5 digests, increase encryption buffer
         
 2006-03-13  Vlad Seryakov  <seryakov@users.sf.net>
 
-	Makefile: Made install modular so parts can be installed
+	* Makefile: Made install modular so parts can be installed
 	without installing everything
 
 2006-03-12  Vlad Seryakov  <seryakov@users.sf.net>
 
-	tcl/util.tcl: fixed typo in ns_setexpires proc
+	* tcl/util.tcl: fixed typo in ns_setexpires proc
 
 2006-03-12  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 

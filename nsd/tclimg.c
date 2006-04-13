@@ -30,7 +30,7 @@
 /*
  * tclimg.c --
  *
- *	Commands for image files.
+ *  Commands for image files.
  */
 
 #include "nsd.h"
@@ -38,14 +38,187 @@
 NS_RCSID("@(#) $Header$");
 
 /*
+ * Image types recognized and processed here
+ */
+enum imgtype {
+    unknown,
+    jpeg,
+    gif,
+    png
+};
+
+/*
+ * For parsing JPEG stream
+ */
+
+#define M_SOI 0xD8 /* Start Of Image (beginning of datastream) */
+#define M_EOI 0xD9 /* End Of Image (end of datastream) */
+#define M_SOS 0xDA /* Start Of Scan (begins compressed data) */
+
+/*
  * Local functions defined in this file
  */
 
-static int ChanGetc(Tcl_Channel chan);
-static int JpegNextMarker(Tcl_Channel chan);
 static int JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr);
+static int PngSize (Tcl_Channel chan, int *wPtr, int *hPtr);
+static int GifSize (Tcl_Channel chan, int *wPtr, int *hPtr);
+
 static int JpegRead2Bytes(Tcl_Channel chan);
+static int JpegNextMarker(Tcl_Channel chan);
+
+static enum imgtype GetImageType(Tcl_Channel chan);
+
 static int AppendObjDims(Tcl_Interp *interp, int w, int h);
+
+static int ChanGetc(Tcl_Channel chan);
+static Tcl_Channel GetFileChan(Tcl_Interp *interp, char *path);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclImgTypeObjCmd --
+ *
+ *      Implements ns_imgtype as obj command.
+ *
+ * Results:
+ *      Tcl result. 
+ *
+ * Side effects:
+ *      See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclImgTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                   Tcl_Obj *CONST objv[])
+{
+    char       *file, *type;
+    Tcl_Channel chan;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "file");
+        return TCL_ERROR;
+    }
+
+    file = Tcl_GetString(objv[1]);
+    chan = GetFileChan(interp, file);
+    if (chan == NULL) {
+        return TCL_ERROR;
+    }
+
+    switch (GetImageType(chan)) {
+    case jpeg:    type = "jpeg";    break;
+    case png:     type = "png";     break;
+    case gif:     type = "gif";     break;
+    case unknown: type = "unknown"; break;
+    }
+
+    Tcl_Close(interp, chan);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclImgMimeObjCmd --
+ *
+ *      Implements ns_imgmime as obj command.
+ *
+ * Results:
+ *      Tcl result. 
+ *
+ * Side effects:
+ *      See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclImgMimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                   Tcl_Obj *CONST objv[])
+{
+    char       *file, *mime;
+    Tcl_Channel chan;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "file");
+        return TCL_ERROR;
+    }
+
+    file = Tcl_GetString(objv[1]);
+    chan = GetFileChan(interp, file);
+    if (chan == NULL) {
+        return TCL_ERROR;
+    }
+
+    switch (GetImageType(chan)) {
+    case jpeg:    mime = "image/jpeg";    break;
+    case png:     mime = "image/png";     break;
+    case gif:     mime = "image/gif";     break;
+    case unknown: mime = "image/unknown"; break;
+    }
+
+    Tcl_Close(interp, chan);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(mime, -1));
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclImgSizeObjCmd --
+ *
+ *      Implements ns_imgsize as obj command.
+ *
+ * Results:
+ *      Tcl result. 
+ *
+ * Side effects:
+ *      See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclImgSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                   Tcl_Obj *CONST objv[])
+{
+    char       *file;
+    int         w, h, status;
+    Tcl_Channel chan;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "file");
+        return TCL_ERROR;
+    }
+
+    file = Tcl_GetString(objv[1]);
+    chan = GetFileChan(interp, file);
+    if (chan == NULL) {
+        return TCL_ERROR;
+    }
+
+    switch (GetImageType(chan)) {
+    case jpeg:    status = JpegSize(chan, &w, &h); break;
+    case png:     status =  PngSize(chan, &w, &h); break;
+    case gif:     status =  GifSize(chan, &w, &h); break;
+    case unknown: status = TCL_ERROR; break;
+    }
+
+    Tcl_Close(interp, chan);
+
+    if (status != TCL_OK) {
+        return AppendObjDims(interp, 0, 0);
+    }
+
+    return AppendObjDims(interp, w, h);
+}
 
 
 /*
@@ -53,13 +226,13 @@ static int AppendObjDims(Tcl_Interp *interp, int w, int h);
  *
  * NsTclGifSizeObjCmd --
  *
- *	    Implements ns_gifsize, returning a list of width and height.
+ *      Implements ns_gifsize as obj command.
  *
  * Results:
- *	    Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	    See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -68,99 +241,73 @@ int
 NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
                    Tcl_Obj *CONST objv[])
 {
-    char           buf[0x300], *file;
-    unsigned char  count;
-    int            depth, colormap, dx, dy, status;
-    Tcl_Channel    chan;
+    char       *file;
+    int         w, h;
+    Tcl_Channel chan;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "gif_file");
         return TCL_ERROR;
     }
     file = Tcl_GetString(objv[1]);
-    chan = Tcl_OpenFileChannel(interp, file, "r", 0);
+    chan = GetFileChan(interp, file);
     if (chan == NULL) {
         return TCL_ERROR;
     }
-    if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
-        != TCL_OK) {
+    if (GetImageType(chan) != gif || GifSize(chan, &w, &h) != TCL_OK) {
+        Tcl_Close(interp, chan);
+        Tcl_AppendResult(interp, "invalid GIF file \"", file, "\"", NULL);
         return TCL_ERROR;
     }
 
-    status = TCL_ERROR;
-
-    /*
-     * Read the GIF version number
-     */
-    
-    if (Tcl_Read(chan, buf, 6) != 6) {
-readfail:
-        Tcl_AppendResult(interp, "could not read \"", file, "\": ",
-                         Tcl_PosixError(interp), NULL);
-        goto done;
-    }
-
-    if (strncmp(buf, "GIF87a", 6) && 
-        strncmp(buf, "GIF89a", 6)) {
-    badfile:
-        Tcl_AppendResult(interp, "bad gif file \"", file, "\"", NULL);
-        goto done;
-    }
-
-    if (Tcl_Read(chan, buf, 7) != 7) {
-        goto readfail;
-    }
-    
-    depth = 1 << ((((unsigned char) buf[4]) & 0x7) + 1);
-    colormap = (((unsigned char) buf[4]) & 0x80 ? 1 : 0);
-
-    if (colormap) {
-        if (Tcl_Read(chan, buf, (size_t) (3*depth)) != (3*depth)) {
-            goto readfail;
-        }
-    }
-
-  outerloop:
-    if (Tcl_Read(chan, buf, 1) != 1) {
-        goto readfail;
-    }
-
-    if (buf[0] == '!') {
-        if (Tcl_Read(chan, buf, 1) != 1) {
-            goto readfail;
-        }
-    innerloop:
-        if (Tcl_Read(chan, (char *) &count, 1) != 1) {
-            goto readfail;
-        }
-        if (count == 0) {
-            goto outerloop;
-        }
-        if (Tcl_Read(chan, buf, count) != count) {
-            goto readfail;
-        }
-        goto innerloop;
-    } else if (buf[0] != ',') {
-        goto badfile;
-    }
-    
-    if (Tcl_Read(chan, buf, 9) != 9) {
-        goto readfail;
-    }
-    
-    dx = 0x100 * ((unsigned char) buf[5]) + ((unsigned char) buf[4]);
-    dy = 0x100 * ((unsigned char) buf[7]) + ((unsigned char) buf[6]);
-
-    if (AppendObjDims(interp, dx, dy) != TCL_OK) {
-		return TCL_ERROR;
-	}
-
-    status = TCL_OK;
-
-done:
     Tcl_Close(interp, chan);
 
-    return status;
+    return AppendObjDims(interp, w, h);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclPngSizeObjCmd --
+ *
+ *      Implements ns_pngsize as obj command.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      See docs. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclPngSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+                   Tcl_Obj *CONST objv[])
+{
+    char       *file;
+    int         w, h;
+    Tcl_Channel chan;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "png_file");
+        return TCL_ERROR;
+    }
+    file = Tcl_GetString(objv[1]);
+    chan = GetFileChan(interp, file);
+    if (chan == NULL) {
+        return TCL_ERROR;
+    }
+    if (GetImageType(chan) != png || PngSize(chan, &w, &h) != TCL_OK) {
+        Tcl_Close(interp, chan);
+        Tcl_AppendResult(interp, "invalid PNG file \"", file, "\"", NULL);
+        return TCL_ERROR;
+    }
+
+    Tcl_Close(interp, chan);
+
+    return AppendObjDims(interp, w, h);
 }
 
 
@@ -169,13 +316,13 @@ done:
  *
  * NsTclJpegSizeObjCmd --
  *
- *	    Implements ns_jpegsize as obj command. 
+ *      Implements ns_jpegsize as obj command.
  *
  * Results:
- *	    Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	    See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
@@ -185,7 +332,7 @@ NsTclJpegSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                     Tcl_Obj *CONST objv[])
 {
     char       *file;
-    int         code, w = 0, h = 0;
+    int         w = 0, h = 0;
     Tcl_Channel chan;
 
     if (objc != 2) {
@@ -193,30 +340,151 @@ NsTclJpegSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
     file = Tcl_GetString(objv[1]);
-    chan = Tcl_OpenFileChannel(interp, file, "r", 0);
+    chan = GetFileChan(interp, file);
     if (chan == NULL) {
         return TCL_ERROR;
     }
-    if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
-        != TCL_OK) {
+    if (GetImageType(chan) != jpeg || JpegSize(chan, &w, &h) != TCL_OK) {
+        Tcl_Close(interp, chan);
+        Tcl_AppendResult(interp, "invalid JPEG file \"", file, "\"", NULL);
         return TCL_ERROR;
     }
-    code = JpegSize(chan, &w, &h);
+
     Tcl_Close(interp, chan);
-    if (code != TCL_OK) {
-        Tcl_AppendResult(interp, "invalid jpeg file \"", file, "\"", NULL);
+
+    return AppendObjDims(interp, w, h);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GifSize --
+ *
+ *      Parses out the size of the GIF image.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      Seeks the channel back and forth.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GifSize(Tcl_Channel chan, int *wPtr, int *hPtr)
+{  
+    unsigned char count, buf[0x300];
+    int           depth, colormap;
+
+    /*
+     * Skip the magic as caller has already
+     * checked it allright.
+     */
+
+    if (Tcl_Read(chan, (char*)buf, 6) != 6) {
         return TCL_ERROR;
     }
-    if (AppendObjDims(interp, w, h) != TCL_OK) {
+
+    if (Tcl_Read(chan, (char*)buf, 7) != 7) {
         return TCL_ERROR;
     }
+    
+    depth = 1 << (((buf[4]) & 0x7) + 1);
+    colormap = ((buf[4]) & 0x80 ? 1 : 0);
+
+    if (colormap) {
+        if (Tcl_Read(chan, (char*)buf, (size_t) (3*depth)) != (3*depth)) {
+            return TCL_ERROR;
+        }
+    }
+
+  outerloop:
+    if (Tcl_Read(chan, (char*)buf, 1) != 1) {
+        return TCL_ERROR;
+    }
+
+    if (buf[0] == '!') {
+        if (Tcl_Read(chan, (char*)buf, 1) != 1) {
+            return TCL_ERROR;
+        }
+    innerloop:
+        if (Tcl_Read(chan, (char*) &count, 1) != 1) {
+            return TCL_ERROR;
+        }
+        if (count == 0) {
+            goto outerloop;
+        }
+        if (Tcl_Read(chan, (char*)buf, count) != count) {
+            return TCL_ERROR;
+        }
+        goto innerloop;
+    } else if (buf[0] != ',') {
+        return TCL_ERROR;
+    }
+    
+    if (Tcl_Read(chan, (char*)buf, 9) != 9) {
+        return TCL_ERROR;
+    }
+    
+    *wPtr = 0x100 * (buf[5]) + (buf[4]);
+    *hPtr = 0x100 * (buf[7]) + (buf[6]);
 
     return TCL_OK;
 }
 
-#define M_SOI   0xD8		/* Start Of Image (beginning of datastream) */
-#define M_EOI   0xD9		/* End Of Image (end of datastream) */
-#define M_SOS   0xDA		/* Start Of Scan (begins compressed data) */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PngSize --
+ *
+ *      Parses out the size of PNG image.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      Seeks the channel back and forth.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PngSize(Tcl_Channel chan, int *wPtr, int *hPtr)
+{
+    unsigned int w, h;
+
+    if (Tcl_Seek(chan, 16, SEEK_SET) == -1 || Tcl_Eof(chan)) {
+        return TCL_ERROR;
+    }
+
+    Tcl_Read(chan, (char *)&w, 4); 
+    Tcl_Read(chan, (char *)&h, 4);
+
+    *wPtr = htonl(w);
+    *hPtr = htonl(h);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * JpegSize --
+ *
+ *      Parses out the size of JPEG image out of JPEG stream.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      Seeks the channel back and forth.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr)
@@ -256,14 +524,14 @@ JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr)
  *
  * JpegRead2Bytes --
  *
- *	Read 2 bytes, convert to unsigned int. All 2-byte quantities 
- *	in JPEG markers are MSB first. 
+ *  Read 2 bytes, convert to unsigned int. All 2-byte quantities 
+ *  in JPEG markers are MSB first. 
  *
  * Results:
- *	The two byte value, or -1 on error. 
+ *  The two byte value, or -1 on error. 
  *
  * Side effects:
- *	Advances file pointer. 
+ *  Advances file pointer. 
  *
  *----------------------------------------------------------------------
  */
@@ -288,20 +556,20 @@ JpegRead2Bytes(Tcl_Channel chan)
  *
  * JpegNextMarker --
  *
- *	Find the next JPEG marker and return its marker code. We 
- *	expect at least one FF byte, possibly more if the compressor 
- *	used FFs to pad the file. There could also be non-FF garbage 
- *	between markers. The treatment of such garbage is 
- *	unspecified; we choose to skip over it but emit a warning 
- *	msg. This routine must not be used after seeing SOS marker, 
- *	since it will not deal correctly with FF/00 sequences in the 
- *	compressed image data... 
+ *  Find the next JPEG marker and return its marker code. We 
+ *  expect at least one FF byte, possibly more if the compressor 
+ *  used FFs to pad the file. There could also be non-FF garbage 
+ *  between markers. The treatment of such garbage is 
+ *  unspecified; we choose to skip over it but emit a warning 
+ *  msg. This routine must not be used after seeing SOS marker, 
+ *  since it will not deal correctly with FF/00 sequences in the 
+ *  compressed image data... 
  *
  * Results:
- *	The next marker code.
+ *  The next marker code.
  *
  * Side effects:
- *	Will eat up any duplicate FF bytes.
+ *  Will eat up any duplicate FF bytes.
  *
  *----------------------------------------------------------------------
  */
@@ -335,15 +603,73 @@ JpegNextMarker(Tcl_Channel chan)
 /*
  *----------------------------------------------------------------------
  *
- * ChanGetc --
+ * GetImageType --
  *
- *	Read a single unsigned char from a channel.
+ *      Examines image type by looking up some magic numbers.
  *
  * Results:
- *	Character or EOF. 
+ *      Image type.
  *
  * Side effects:
- *	None.
+ *      Seeks the channel back and forth.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static enum imgtype
+GetImageType(Tcl_Channel chan)
+{
+    unsigned char buf[8]; 
+    enum imgtype type = unknown;
+
+    unsigned char jpeg_magic  [] = {0xff, 0xd8};
+    unsigned char jpeg_trail  [] = {0xff, 0xd9};
+
+    unsigned char gif87_magic [] = {'G','I','F','8','7','a'};
+    unsigned char gif89_magic [] = {'G','I','F','8','9','a'};
+
+    unsigned char png_magic   [] = {0x89,0x50,0x4e,0x47,0xd,0xa,0x1a,0xa};
+
+    Tcl_Seek(chan, 0, SEEK_SET);
+
+    if (Tcl_Read(chan, (char*)buf, sizeof(buf)) != sizeof(buf)) {
+        Tcl_Seek(chan, 0, SEEK_SET);
+        return type;
+    }
+    
+    if (!memcmp(buf, jpeg_magic, sizeof(jpeg_magic))) {
+        unsigned char trail[] = {0x00, 0x00};
+        Tcl_Seek(chan,  0, SEEK_END);
+        Tcl_Seek(chan, -2, SEEK_CUR);
+        Tcl_Read(chan, (char*)trail, 2);
+        if (!memcmp(trail, jpeg_trail, 2)) {
+            type = jpeg;
+        }
+    } else if (   !memcmp(gif87_magic, buf, sizeof(gif87_magic)) 
+               || !memcmp(gif89_magic, buf, sizeof(gif89_magic))) {
+        type = gif;
+    } else if (!memcmp(png_magic, buf, sizeof(png_magic))) {
+        type = png;
+    }
+
+    Tcl_Seek(chan, 0, SEEK_SET);
+
+    return type;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ChanGetc --
+ *
+ *  Read a single unsigned char from a channel.
+ *
+ * Results:
+ *  Character or EOF. 
+ *
+ * Side effects:
+ *  None.
  *
  *----------------------------------------------------------------------
  */
@@ -366,13 +692,13 @@ ChanGetc(Tcl_Channel chan)
  *
  * AppendObjDims --
  *
- *	Format and append width and height dimensions.
+ *  Format and append width and height dimensions.
  *
  * Results:
- *	None.
+ *  None.
  *
  * Side effects:
- *	List elements appended to interp result.
+ *  List elements appended to interp result.
  *
  *----------------------------------------------------------------------
  */
@@ -395,4 +721,38 @@ AppendObjDims(Tcl_Interp *interp, int w, int h)
     Tcl_SetObjResult(interp, result);
 
     return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetFileChan --
+ *
+ *      Opens the (binary) channel to a file.
+ *
+ * Results:
+ *      Tcl_Channel or NULL on error.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Channel
+GetFileChan(Tcl_Interp *interp, char *path)
+{
+    Tcl_Channel chan;
+
+    chan = Tcl_OpenFileChannel(interp, path, "r", 0);
+    if (chan != NULL) {
+        if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
+            != TCL_OK) {
+            Tcl_Close(interp, chan);
+            return NULL;
+        }
+    }
+
+    return chan;
 }
