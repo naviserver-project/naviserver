@@ -721,8 +721,9 @@ SetEntry(Tcl_Interp *interp, Ns_Entry *entry, Tcl_Obj *valObj, int ttl)
         objPtr = Tcl_GetObjResult(interp);
     }
     string = Tcl_GetStringFromObj(objPtr, &len);
-    value = ns_malloc(len);
+    value = ns_malloc(len+1);
     memcpy(value, string, len);
+    value[len] = 0;
     Ns_CacheSetValueExpires(entry, value, len, ttl);
     if (valObj != NULL) {
         Tcl_SetObjResult(interp, valObj);

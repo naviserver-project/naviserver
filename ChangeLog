@@ -1,3 +1,7 @@
+2006-04-13  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclcache.c: make sure the value is zero ended
+
 2006-04-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclimg.c: Added processing for PNG files. Also added
