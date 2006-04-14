@@ -261,6 +261,7 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t ti
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;
         Tcl_SetHashValue(hPtr, ePtr);
+        Push(ePtr);
     } else {
         ePtr = Tcl_GetHashValue(hPtr);
 
@@ -283,16 +284,17 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t ti
                 return NULL;
             }
         }
-        if (Expired(ePtr)) {
-            *newPtr = 1;
-            ExpireEntry(ePtr);
-            ++cachePtr->nmiss;
-        } else {
-            Delink(ePtr);
-            ++cachePtr->nhit;
-        }
+
+        /*
+         * The entry may have expired already when we come here.
+         * We have two choices:
+         *    o. re-use the expired entry (and save ourselves some time)
+         *    o. delete the entry and re-create it again
+         * Opt to first choice for now, until somebody complains.
+         */
+
+        ++cachePtr->nhit;
     }
-    Push(ePtr);
 
     return (Ns_Entry *) ePtr;
 }

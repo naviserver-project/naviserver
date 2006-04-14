@@ -3,6 +3,14 @@
 	* tests/ns_gifsize.test:
 	* tests/ns_jpegsize.test: Fixed to match new error messages
 
+	* nsd/cache.c: Fixed Ns_CacheWaitCreateEntry() NOT to delete
+	existing cache entry in case entry is expired.
+	This is one possible fix for this call, as it was trashing 
+	memory by reusing already deleted (expired) entries before.
+	Another possible fix is to delete and re-create expired
+	entry, but this costs more time, although it may be a more
+	correct thing to do.
+
 2006-04-13  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclcache.c: make sure the value is zero ended
