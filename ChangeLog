@@ -1,3 +1,10 @@
+2006-04-14  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclinit.c:
+        * nsd/tclcmds.c: Added new Tcl command ns_tls for
+        thread specific local caches. Tcl tls is ns_set structure,
+        so thread specific storage is key value pairs.
+
 2006-04-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tests/ns_gifsize.test:

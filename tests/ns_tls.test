@@ -1,0 +1,30 @@
+#
+# $Header$
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+test ns_tls-1.1 {syntax} -body {
+    ns_tls
+} -returnCodes error -result {wrong # args: should be "ns_tls option ?arg?"}
+
+test ns_tls-1.2 {syntax} -body {
+    ns_tls invalidarg
+} -returnCodes error -result {bad option "invalidarg": must be set, get, array, or clear}
+
+test ns_tls-2.1 {set values} -body {
+    ns_tls set a 1 b 2
+    ns_tls get a
+} -result 1
+
+test ns_tls-2.2 {array} -body {
+     ns_tls array
+} -result {a 1 b 2}
+
+test ns_tls-2.3 {clear} -body {
+     ns_tls clear
+     ns_tls array
+} -result {}
+
+cleanupTests

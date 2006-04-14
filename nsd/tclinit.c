@@ -87,6 +87,7 @@ static NsInterp *NewInterpData(Tcl_Interp *interp);
 static int UpdateInterp(NsInterp *itPtr);
 static Tcl_InterpDeleteProc FreeInterpData;
 static Ns_TlsCleanup DeleteInterps;
+static Ns_TlsCleanup DeleteTlsTcl;
 static void RunTraces(NsInterp *itPtr, int why);
 static int RegisterAt(Ns_TclTraceProc *proc, void *arg, int when);
 
@@ -95,6 +96,7 @@ static int RegisterAt(Ns_TclTraceProc *proc, void *arg, int when);
  */
 
 static Ns_Tls tls;    /* Slot for per-thread Tcl interp cache. */
+static Ns_Tls tlsTcl; /* Tls for per-thread Tcl API. */
 
 
 /*
@@ -123,6 +125,13 @@ NsInitTcl(void)
      */
 
     Ns_TlsAlloc(&tls, DeleteInterps);
+
+    /*
+     * Allocate per thread local storage that can be used from Tcl API
+     * for saving thread specific data.
+    */
+
+    Ns_TlsAlloc(&tlsTcl, DeleteTlsTcl);
 }
 
 
@@ -1666,5 +1675,114 @@ RunTraces(NsInterp *itPtr, int why)
             }
             tracePtr = tracePtr->nextPtr;
         }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclTlsObjCmd --
+ *
+ *      Implements ns_tls command to access thread specific storage
+ *
+ * Results:
+ *      TCL_OK.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclTlsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+{
+    int opt;
+    Ns_DString ds;
+    Ns_Set *setPtr;
+    char *dflt = NULL;
+
+    static CONST char *opts[] = {
+        "set", "get", "array", "clear",
+        NULL
+    };
+    enum {
+        ISetIdx, IGetIdx, IArrayIdx, IClearIdx,
+    };
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &opt) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    setPtr = Ns_TlsGet(&tlsTcl);
+    if (setPtr == NULL) {
+        setPtr = Ns_SetCreate(NULL);
+        Ns_TlsSet(&tlsTcl, setPtr);
+    }
+    switch (opt) {
+     case ISetIdx:
+         if (objc < 4) {
+	     Tcl_WrongNumArgs(interp, 2, objv, "key value ...");
+	     return TCL_ERROR;
+         }
+         for (opt = 2; opt < objc - 1; opt += 2) {
+             Ns_SetPut(setPtr, Tcl_GetString(objv[opt]), Tcl_GetString(objv[opt+1]));
+         }
+         break;
+
+     case IGetIdx:
+         if (objc < 3) {
+	     Tcl_WrongNumArgs(interp, 2, objv, "key ?dflt?");
+	     return TCL_ERROR;
+         }
+         if (objc > 3) {
+             dflt = Tcl_GetString(objv[3]);
+         }
+         Tcl_SetResult(interp, Ns_SetIGetValue(setPtr, Tcl_GetString(objv[2]), dflt), TCL_VOLATILE);
+         break;
+
+     case IArrayIdx:
+         Tcl_DStringInit(&ds);
+	 for (opt = 0; opt < Ns_SetSize(setPtr); ++opt) {
+	     Tcl_DStringAppendElement(&ds, Ns_SetKey(setPtr, opt));
+	     Tcl_DStringAppendElement(&ds, Ns_SetValue(setPtr, opt));
+	 }
+	 Tcl_DStringResult(interp, &ds);
+         break;
+
+     case IClearIdx:
+         Ns_SetFree(setPtr);
+         Ns_TlsSet(&tlsTcl, NULL);
+         break;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeleteTlsTcl --
+ *
+ *      Delete all thread specific storage
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DeleteTlsTcl(void *arg)
+{
+    Ns_Set *setPtr = arg;
+
+    if (setPtr) {
+        Ns_SetFree(setPtr);
     }
 }
