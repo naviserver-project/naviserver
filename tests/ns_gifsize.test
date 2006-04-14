@@ -35,11 +35,11 @@ test ns_gifsize-2.1 {file does not exist} -body {
 
 test ns_gifsize-2.2 {file is empty} -constraints fileExistsEmpty -body {
      ns_gifsize "${home}/images/empty.gif"
-} -returnCodes error -match "glob" -result {could not read "*": *}
+} -returnCodes error -match "glob" -result {invalid GIF file*}
 
 test ns_gifsize-2.3 {file is broken} -constraints fileExistsBroken -body {
      ns_gifsize "${home}/images/broken.gif"
-} -returnCodes error -match "glob" -result {bad gif file*}
+} -returnCodes error -match "glob" -result {invalid GIF file*}
 
 test ns_gifsize-2.4 {normal indexed gif} -constraints fileExistsIndexed -body {
      ns_gifsize "${home}/images/color5x200.gif"

@@ -34,11 +34,11 @@ test ns_jpegsize-2.1 {file does not exist} -body {
 
 test ns_jpegsize-2.2 {file is empty} -constraints fileExistsEmpty -body {
      ns_jpegsize "${home}/images/empty.jpg"
-} -returnCodes error -match "glob" -result {invalid jpeg file*}
+} -returnCodes error -match "glob" -result {invalid JPEG file*}
 
 test ns_jpegsize-2.3 {file is broken} -constraints fileExistsBroken -body {
      ns_jpegsize "${home}/images/broken.jpg"
-} -returnCodes error -match "glob" -result {invalid jpeg file*}
+} -returnCodes error -match "glob" -result {invalid JPEG file*}
 
 test ns_jpegsize-2.4 {normal jpeg} -constraints fileExistsColor -body {
      ns_jpegsize "${home}/images/color5x200.jpg"
