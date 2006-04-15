@@ -1,3 +1,9 @@
+2006-04-15  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/nsthread.h: Introduced new error code NS_FTAL
+        * nsd/driver.c: Made handling UDP driver more reliably against
+        QoS attacks and error handling.
+        
 2006-04-14  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclinit.c:

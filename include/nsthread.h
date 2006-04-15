@@ -165,6 +165,7 @@ NS_EXTERN int closedir(DIR *dp);
 #define NS_OK              	0
 #define NS_ERROR         	(-1)
 #define NS_TIMEOUT       	(-2)
+#define NS_FATAL               	(-3)
 #define NS_THREAD_DETACHED	1
 #define NS_THREAD_JOINED	2
 #define NS_THREAD_EXITED	4

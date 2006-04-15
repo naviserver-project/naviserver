@@ -1125,7 +1125,8 @@ DriverThread(void *ignored)
 
                     n = (*sockPtr->drvPtr->proc)(DriverAccept,
                                                  (Ns_Sock*)sockPtr, 0, 0);
-                    if (n == NS_OK) {
+                    switch (n) {
+                    case NS_OK:
                         if (sockPtr->reqPtr == NULL || !SetServer(sockPtr)) {
                             SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
                         } else {
@@ -1133,7 +1134,13 @@ DriverThread(void *ignored)
                                 Push(sockPtr, waitPtr);
                             }
                         }
-                    } else {
+                        break;
+
+                    case NS_FATAL:
+                        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
+                        break;
+
+                    default:
 
                        /*
                         * Put the socket on the read-ahead list.
