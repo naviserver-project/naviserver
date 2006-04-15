@@ -1,5 +1,8 @@
 2006-04-15  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsmain.c (Ns_Main): Copy executable name as memory is freed
+	and reused later during Tcl initialisation.
+
 	* nsd/tclcmds.c: Cache commands require a virtual server context.
 	* nsd/tclcache.c: Don't artificially inflate flush stats when a
 	Tcl script under evaluation errors.

@@ -321,7 +321,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     Tcl_FindExecutable(argv[0]);
     LogTclVersion();
-    nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
+    nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     /*
      * Locate and read the configuration file for later evaluation.
@@ -474,7 +474,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     
     Tcl_FindExecutable(argv[0]);
     LogTclVersion();
-    nsconf.nsd = (char *) Tcl_GetNameOfExecutable();
+    nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     /*
      * Locate and read the configuration file for later evaluation.
