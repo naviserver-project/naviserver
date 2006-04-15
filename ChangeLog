@@ -1,5 +1,9 @@
 2006-04-15  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/tclcmds.c: Cache commands require a virtual server context.
+	* nsd/tclcache.c: Don't artificially inflate flush stats when a
+	Tcl script under evaluation errors.
+
 	* nsd/cache.c:
 	* tests/ns_cache.test: Clarify responsibilities of
 	Ns_CacheCreateEntry, and Ns_CacheWaitCreateEntry. The first

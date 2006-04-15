@@ -172,7 +172,8 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         entry = Ns_CacheCreateEntry(cache, key, &new);
         if (status != TCL_OK && status != TCL_RETURN) {
             status = TCL_ERROR;
-            Ns_CacheFlushEntry(entry);
+            Ns_CacheUnsetValue(entry);
+            Ns_CacheDeleteEntry(entry);
         } else {
             status = TCL_OK;
             SetEntry(interp, entry, NULL, ttl);
