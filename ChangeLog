@@ -1,3 +1,14 @@
+2006-04-15  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/cache.c:
+	* tests/ns_cache.test: Clarify responsibilities of
+	Ns_CacheCreateEntry, and Ns_CacheWaitCreateEntry. The first
+	guarantees an Ns_Entry as a result and handles expirey, the second
+	can return NULL only on timeout waiting for another thread to
+	update the same entry.  Previously a simultaneous flush would also
+	cause a NULL return -- now however the entry is recreated. Fix bug
+	with ExpireEntry: unset the value but do not delete the entry.
+
 2006-04-15  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/nsthread.h: Introduced new error code NS_FTAL

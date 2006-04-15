@@ -220,20 +220,17 @@ Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheCreateEntry, Ns_CacheWaitCreateEntry --
+ * Ns_CacheCreateEntry --
  *
  *      Create a new cache entry or return an existing one with the
- *      given key.  Wait up to timeout seconds for another thread to
- *      complete an update.
+ *      given key.
  *
  * Results:
- *      A pointer to a new cache entry or NULL on timeout or flush.
+ *      A pointer to a cache entry.
  *
  * Side effects:
- *      Memory will be allocated for the new cache entry and it will 
+ *      Memory may be allocated for the new cache entry and it will
  *      be inserted into the cache.
- *
- *      Cache lock may be released and re-acquired.
  *
  *----------------------------------------------------------------------
  */
@@ -241,62 +238,87 @@ Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
 Ns_Entry *
 Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
 {
-    return Ns_CacheWaitCreateEntry(cache, key, newPtr, 0);
-}
-
-Ns_Entry *
-Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t timeout)
-{
     Cache         *cachePtr = (Cache *) cache;
     Tcl_HashEntry *hPtr;
     Entry         *ePtr;
-    Ns_Time        time;
-    CONST char    *value;
-    int            status;
 
     hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, newPtr);
     if (*newPtr) {
-        ++cachePtr->nmiss;
         ePtr = ns_calloc(1, sizeof(Entry));
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;
         Tcl_SetHashValue(hPtr, ePtr);
-        Push(ePtr);
+        ++cachePtr->nmiss;
     } else {
         ePtr = Tcl_GetHashValue(hPtr);
-
-        if (timeout > 0 && (value = Ns_CacheGetValue((Ns_Entry *) ePtr)) == NULL) {
-
-            /*
-             * Wait for another thread to complete an update.
-             */
-
-            Ns_GetTime(&time);
-            Ns_IncrTime(&time, timeout, 0);
-
-            status = NS_OK;
-            do {
-                status = Ns_CacheTimedWait(cache, &time);
-            } while (status == NS_OK
-                     && (ePtr = (Entry *) Ns_CacheFindEntry(cache, key)) != NULL
-                     && (value = Ns_CacheGetValue((Ns_Entry *) ePtr)) == NULL);
-            if (ePtr == NULL || value == NULL) {
-                return NULL;
-            }
+        if (Expired(ePtr)) {
+            *newPtr = 1;
+            ExpireEntry(ePtr);
+            ++cachePtr->nmiss;
+        } else {
+            ++cachePtr->nhit;
         }
-
-        /*
-         * The entry may have expired already when we come here.
-         * We have two choices:
-         *    o. re-use the expired entry (and save ourselves some time)
-         *    o. delete the entry and re-create it again
-         * Opt to first choice for now, until somebody complains.
-         */
-
-        ++cachePtr->nhit;
+        Delink(ePtr);
     }
+    Push(ePtr);
 
     return (Ns_Entry *) ePtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CacheWaitCreateEntry --
+ *
+ *      Create a new cache entry or return an existing one with the
+ *      given key.  Wait up to timeout seconds for another thread to
+ *      complete an update.
+ *
+ * Results:
+ *      A pointer to a new cache entry or NULL on timeout.
+ *
+ * Side effects:
+ *      Cache lock may be released and re-acquired.
+ *
+ *      NB. Do not mix calls to Ns_CacheCreateEntry and
+ *      Ns_CacheWaitCreateEntry.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Entry *
+Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t timeout)
+{
+    Ns_Entry      *entry;
+    Ns_Time        time, *timePtr;
+    CONST char    *value;
+    int            new, status = NS_OK;
+
+    entry = Ns_CacheCreateEntry(cache, key, &new);
+    if (!new && (value = Ns_CacheGetValue(entry)) == NULL) {
+
+        /*
+         * Wait for another thread to complete an update.
+         */
+
+        if (timeout > 0) {
+            Ns_GetTime(&time);
+            Ns_IncrTime(&time, timeout, 0);
+            timePtr = &time;
+        } else {
+            timePtr = NULL;
+        }
+
+        do {
+            status = Ns_CacheTimedWait(cache, &time);
+            entry = Ns_CacheCreateEntry(cache, key, &new);
+        } while (status == NS_OK && !new
+                 && (value = Ns_CacheGetValue(entry)) == NULL);
+    }
+    *newPtr = new;
+
+    return status == NS_OK ? entry : NULL;
 }
 
 
@@ -837,7 +859,7 @@ Expired(Entry *ePtr)
 {
     Ns_Time  now;
 
-    if (ePtr->expires.sec > 0 || ePtr->expires.usec > 0) {
+    if (ePtr->expires.sec > 0) {
         Ns_GetTime(&now);
         if (Ns_DiffTime(&ePtr->expires, &now, NULL) < 0) {
             return 1;
@@ -935,11 +957,11 @@ ExpireEntry(Entry *ePtr)
 {
     ++ePtr->cachePtr->nexpired;
 
-    Ns_CacheUnsetValue((Ns_Entry *)ePtr);
-    Ns_CacheDeleteEntry((Ns_Entry *)ePtr);
+    Ns_CacheUnsetValue((Ns_Entry *) ePtr);
 
     return;
 }
+
 
 /*
  *----------------------------------------------------------------------

@@ -163,25 +163,55 @@ test cache-5.6 {cache flush multiple glob keys} -body {
 
 
 
-test cache-6.1 {eval with args} -body {
+test cache-6.1 {eval with arg} -body {
+    ns_cache_eval c1 k1 {return a}
+} -cleanup {
+    ns_cache_flush c1
+} -result a
+
+test cache-6.2 {eval with args} -body {
     ns_cache_eval c1 k1 concat a b c
 } -cleanup {
     ns_cache_flush c1
 } -result {a b c}
 
-test cache-6.2 {eval timeout switch} -body {
+test cache-6.3 {eval, same value} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k1 {return a}
+} -cleanup {
+    ns_cache_flush c1
+} -result a
+
+test cache-6.4 {eval, different value} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_eval c1 k1 {return b}
+} -cleanup {
+    ns_cache_flush c1
+} -result a
+
+test cache-6.5 {eval timeout switch} -body {
     ns_cache_eval -timeout 1 -- c1 k1 {return a}
 } -cleanup {
     ns_cache_flush c1
 } -result a
 
-test cache-6.2 {eval ttl} -body {
+test cache-6.6 {eval ttl} -body {
     ns_cache_eval -ttl 1 -- c1 k1 {return a}
-    after 1500
+    after 2000
     ns_cache_eval c1 k1 {return b}
 } -cleanup {
     ns_cache_flush c1
 } -result b
+
+test cache-6.7 {nested eval} -body {
+    ns_cache_eval c1 k1 {
+        ns_cache_eval c1 k2 {
+            ns_cache_eval c1 k3 return a
+        }
+    }
+} -cleanup {
+    ns_cache_flush c1
+} -result a
 
 
 
@@ -255,6 +285,7 @@ test cache-9.6 {cache set/get} -body {
 } -cleanup {
     ns_cache_flush c1
 } -result val1
+
 
 
 test cache-10.1 {memoize} -body {
