@@ -1142,7 +1142,8 @@ NsTclInitServer(CONST char *server)
  *      Tcl result.
  *
  * Side effects:
- *      Depends on Tcl init script sourced by Tcl_Init.
+ *      Override Tcl exit command so that propper server shutdown
+ *      takes place.
  *
  *----------------------------------------------------------------------
  */
@@ -1151,14 +1152,6 @@ int
 NsTclAppInit(Tcl_Interp *interp)
 {
     NsServer      *servPtr;
-    NsInterp      *itPtr;
-    Tcl_HashEntry *hPtr;
-
-    /*
-     * There can only be one interp per-server per-thread, and it
-     * needs to be the one Tcl just handed us.  Clear out any
-     * previously cached interp.
-     */
 
     servPtr = NsGetServer(nsconf.defaultServer);
     if (servPtr == NULL) {
@@ -1166,20 +1159,12 @@ NsTclAppInit(Tcl_Interp *interp)
                nsconf.defaultServer);
         return TCL_ERROR;
     }
-
-    hPtr = GetCacheEntry(servPtr);
-    itPtr = Tcl_GetHashValue(hPtr);
-    if (itPtr != NULL) {
-        Ns_TclDestroyInterp(itPtr->interp);
-        Tcl_SetHashValue(hPtr, NULL);
-    }
-
     if (Tcl_Init(interp) != TCL_OK) {
-        Ns_TclLogError(interp);
+        return TCL_ERROR;
     }
     Tcl_SetVar(interp, "tcl_rcFileName", "~/.nsdrc", TCL_GLOBAL_ONLY);
-
-    itPtr = PopInterp(servPtr, interp);
+    Tcl_Eval(interp, "proc exit {} ns_shutdown");
+    (void) PopInterp(servPtr, interp);
 
     return TCL_OK;
 }

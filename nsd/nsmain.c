@@ -60,8 +60,20 @@ NS_RCSID("@(#) $Header$");
 #define WAKEUP_IN_SECONDS   600 /* Wakeup watchdog after somany seconds */
 
 /*
+ * The following structure is used to pass command line args to
+ * the command interpreter thread.
+ */
+
+typedef struct Args {
+    char **argv;
+    int    argc;
+} Args;
+
+/*
  * Local functions defined in this file.
  */
+
+static Ns_ThreadProc CmdThread;
 
 static int  StartWatchedServer(void);
 static void SysLog(int priority, char *fmt, ...);
@@ -110,8 +122,8 @@ static int watchdogExit = 0; /* Watchdog loop toggle */
 int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
-    int       fd, i, sig, optind, cmdargc;
-    char    **cmdargv;
+    Args      cmd;
+    int       fd, i, sig, optind;
     char     *config;
     Ns_Time   timeout;
     
@@ -280,38 +292,46 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         UsageError("required -t <config> option not specified");
     }
 
-    /*
-     * For the non-interactive operation, the server requires file 
-     * descriptor 0 be open on NUL device to ensure it never blocks 
-     * while reading stdin.
-     */
-    
-    if (mode != 'c') {
+
+    if (mode == 'c') {
+        cmd.argv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
+        cmd.argc = 0;
+        cmd.argv[cmd.argc++] = argv[0];
+        for (i = optind; i < argc; i++) {
+            cmd.argv[cmd.argc++] = argv[i];
+        }
+        Ns_ThreadCreate(CmdThread, &cmd, 0, NULL);
+    } else {
+
+        /*
+         * For the non-interactive operation, the server requires file 
+         * descriptor 0 be open on NUL device to ensure it never blocks 
+         * while reading stdin.
+         */
+
         fd = open(DEVNULL, O_RDONLY);
         if (fd > 0) {
             dup2(fd, 0);
             close(fd);
         }
-    }
 
-    /*     
-     * File descriptors 1 and 2 may not be open if the server is
-     * starting from /etc/init.  If so, open them on NUL device
-     * as well, because the server will assume they're open during
-     * initialization. In particular, the log file will be duped
-     * to fd's 1 and 2.
-     */
+        /*
+         * File descriptors 1 and 2 may not be open if the server is
+         * starting from /etc/init.  If so, open them on NUL device
+         * as well, because the server will assume they're open during
+         * initialization. In particular, the log file will be duped
+         * to fd's 1 and 2.
+         */
 
-    fd = open(DEVNULL, O_WRONLY);
-    if (fd > 0 && fd != 1) {
-        close(fd);
+        fd = open(DEVNULL, O_WRONLY);
+        if (fd > 0 && fd != 1) {
+            close(fd);
+        }
+        fd = open(DEVNULL, O_WRONLY);
+        if (fd > 0 && fd != 2) {
+            close(fd);
+        }
     }
-    fd = open(DEVNULL, O_WRONLY);
-    if (fd > 0 && fd != 2) {
-        close(fd);
-    }
-
-#ifdef  _WIN32
 
     /*
      * The call to Tcl_FindExecutable() must be done before we ever
@@ -330,7 +350,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     nsconf.config = FindConfig(nsconf.config);
     config = NsConfigRead(nsconf.config);
 
-#else
+#ifndef _WIN32
 
     /*
      * Verify the uid/gid args.
@@ -467,23 +487,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * The call to Tcl_FindExecutable() must be done before we ever
-     * attempt any file-related operation, because it is initializing
-     * the Tcl library and virtual filesystem interface.
-     */
-    
-    Tcl_FindExecutable(argv[0]);
-    LogTclVersion();
-    nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
-
-    /*
-     * Locate and read the configuration file for later evaluation.
-     */
-
-    nsconf.config = FindConfig(nsconf.config);
-    config = NsConfigRead(nsconf.config);
-            
-    /*
      * Pre-bind any sockets now, before a possible setuid from root
      * or chroot which may hide /etc/resolv.conf required to resolve
      * name-based addresses.
@@ -557,7 +560,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
 #endif /* __linux */
 
-#endif /* _WIN32 */
+#endif /* ! _WIN32 */
 
     /*
      * Evaluate the config file.
@@ -682,9 +685,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Create the pid file.
      */
 
-    if (mode != 'c') {
-        NsCreatePidFile(procname);
-    }
+    NsCreatePidFile(procname);
 
     /*
      * Initialize the virtual servers.
@@ -712,6 +713,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsRunPreStartupProcs();
     NsStartServers();
+    NsStartDrivers();
 
     /*
      * Signal startup is complete.
@@ -734,29 +736,10 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * and then close any remaining pre-bound sockets.
      */
 
-    NsStartDrivers();
 #ifndef _WIN32
     NsClosePreBound();
     NsStopBinder();
 #endif
-
-    if (mode == 'c') {
-
-        /*
-         * Initialize Tcl and start interpreting commands.
-         * This function never returns, so no clean shutdown.
-         */
-
-        NsRestoreSignals();
-        NsBlockSignal(NS_SIGPIPE);
-        cmdargv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
-        cmdargc = 0;
-        cmdargv[cmdargc++] = argv[0];
-        for (i = optind; i < argc; i++) {
-            cmdargv[cmdargc++] = argv[i];
-        }
-        Tcl_Main(cmdargc, cmdargv, NsTclAppInit);
-    }
 
     /*
      * Once the drivers listen thread is started, this thread will just
@@ -1288,6 +1271,7 @@ WaitForServer()
 
     return ret ? NS_ERROR : NS_OK;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -1384,3 +1368,33 @@ StartWatchedServer(void)
     return 0;
 }
 #endif /* _WIN32 */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CmdThread --
+ *
+ *      Run a command shell accepting commands on standard input.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CmdThread(void *arg)
+{
+    Args *cmd = arg;
+
+    Ns_WaitForStartup();
+
+    NsRestoreSignals();
+    NsBlockSignal(NS_SIGPIPE);
+
+    Tcl_Main(cmd->argc, cmd->argv, NsTclAppInit);
+}

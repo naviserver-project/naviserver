@@ -1,3 +1,10 @@
+2006-04-18  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsmain.c:
+	* nsd/tclinit.c: Run command interpreter in seperate thread,
+	leaving main thread to shut down the server cleanly when the exit
+	command is run.
+
 2006-04-15  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsmain.c (Ns_Main): Copy executable name as memory is freed
