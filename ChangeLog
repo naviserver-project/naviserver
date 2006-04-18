@@ -1,5 +1,9 @@
 2006-04-18  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/cache.c:
+	* nsd/dns.c:
+	* nsd/nsconf.c: Use new API for DNS cache code.
+
 	* nsd/nsmain.c:
 	* nsd/tclinit.c: Run command interpreter in seperate thread,
 	leaving main thread to shut down the server cleanly when the exit

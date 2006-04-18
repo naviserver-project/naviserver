@@ -437,9 +437,9 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, time_t ttl)
     Ns_CacheUnsetValue(entry);
     ePtr->value = value;
     ePtr->size = size;
-    if (ttl > 0) {
+    if (ttl > 0 || cachePtr->ttl > 0) {
         Ns_GetTime(&now);
-        Ns_IncrTime(&ePtr->expires, ttl, 0);
+        Ns_IncrTime(&ePtr->expires, ttl ? ttl : cachePtr->ttl, 0);
     }
     cachePtr->currentSize += size;
     if (ePtr->cachePtr->maxSize > 0) {

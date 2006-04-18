@@ -56,14 +56,6 @@ NS_RCSID("@(#) $Header$");
 extern int h_errno;
 #endif
 
-/*
- * The following structure maintains a cached lookup value.
- */
-
-typedef struct Value {
-    time_t      expires;
-    char    value[1];
-} Value;
 
 typedef int (GetProc)(Ns_DString *dsPtr, char *key);
 
@@ -73,8 +65,7 @@ typedef int (GetProc)(Ns_DString *dsPtr, char *key);
 
 static Ns_Cache *hostCache;
 static Ns_Cache *addrCache;
-static Ns_Mutex lock;
-static int cachetimeout;
+
 
 /*
  * Static functions defined in this file
@@ -83,15 +74,17 @@ static int cachetimeout;
 static GetProc GetAddr;
 static GetProc GetHost;
 static int DnsGet(GetProc *getProc, Ns_DString *dsPtr,
-    Ns_Cache **cachePtr, char *key, int all);
+                  Ns_Cache *cache, char *key, int all);
 
 #if !defined(HAVE_GETADDRINFO) && !defined(HAVE_GETNAMEINFO)
 static void LogError(char *func, int h_errnop);
 #endif
 
+
 
 /*
  *----------------------------------------------------------------------
+ *
  * Ns_GetHostByAddr, Ns_GetAddrByHost --
  *
  *      Convert an IP address to a hostname or vice versa.
@@ -109,91 +102,74 @@ static void LogError(char *func, int h_errnop);
 int
 Ns_GetHostByAddr(Ns_DString *dsPtr, char *addr)
 {
-    return DnsGet(GetHost, dsPtr, &hostCache, addr, 0);
+    return DnsGet(GetHost, dsPtr, hostCache, addr, 0);
 }
 
 int
 Ns_GetAddrByHost(Ns_DString *dsPtr, char *host)
 {
-    return DnsGet(GetAddr, dsPtr, &addrCache, host, 0);
+    return DnsGet(GetAddr, dsPtr, addrCache, host, 0);
 }
 
 int
 Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host)
 {
-    return DnsGet(GetAddr, dsPtr, &addrCache, host, 1);
+    return DnsGet(GetAddr, dsPtr, addrCache, host, 1);
 }
 
 static int
-DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache **cachePtr, char *key, int all)
+DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
 {
-    int             status = NS_FALSE, new, timeout;
-    Value          *vPtr  = NULL;
-    Ns_Entry       *ePtr  = NULL;
-    Ns_Cache       *cache = NULL;
-    time_t      now;
-
-    /*
-     * Get the cache, if enabled.
-     */
-
-    Ns_MutexLock(&lock);
-    cache = *cachePtr;
-    timeout = cachetimeout;
-    Ns_MutexUnlock(&lock);
+    Ns_Entry    *entry;
+    Ns_DString  ds;
+    int          new, status;
 
     /*
      * Call getProc directly or through cache.
      */
 
+    Ns_DStringInit(&ds);
     if (cache == NULL) {
-        status = (*getProc)(dsPtr, key);
+        status = (*getProc)(&ds, key);
     } else {
-        time(&now);
+
         Ns_CacheLock(cache);
-        ePtr = Ns_CacheCreateEntry(cache, key, &new);
-        if (!new) {
-            while (ePtr != NULL &&
-                   (vPtr = Ns_CacheGetValue(ePtr)) == NULL) {
-                Ns_CacheWait(cache);
-                ePtr = Ns_CacheFindEntry(cache, key);
-            }
-            if (ePtr == NULL) {
-                status = NS_FALSE;
-            } else if (vPtr->expires < now) {
-                Ns_CacheUnsetValue(ePtr);
-                new = 1;
-            } else {
-                Ns_DStringAppend(dsPtr, vPtr->value);
-                status = NS_TRUE;
-            }
+        entry = Ns_CacheWaitCreateEntry(cache, key, &new, -1);
+        if (entry == NULL) {
+            Ns_CacheUnlock(cache);
+            Ns_Log(Bug, "dns: error waiting for cache entry");
+            return NS_FALSE;
         }
         if (new) {
             Ns_CacheUnlock(cache);
-            status = (*getProc)(dsPtr, key);
+            status = (*getProc)(&ds, key);
             Ns_CacheLock(cache);
-            ePtr = Ns_CacheCreateEntry(cache, key, &new);
+            entry = Ns_CacheCreateEntry(cache, key, &new);
             if (status != NS_TRUE) {
-                Ns_CacheFlushEntry(ePtr);
+                Ns_CacheFlushEntry(entry);
             } else {
-                Ns_CacheUnsetValue(ePtr);
-                vPtr = ns_malloc(sizeof(Value) + dsPtr->length);
-                vPtr->expires = now + timeout;
-                strcpy(vPtr->value, dsPtr->string);
-                Ns_CacheSetValueSz(ePtr, vPtr, 1);
+                Ns_CacheSetValueSz(entry, ns_strdup(ds.string), ds.length);
             }
             Ns_CacheBroadcast(cache);
+        } else {
+            Ns_DStringNAppend(&ds, Ns_CacheGetValue(entry),
+                               Ns_CacheGetSize(entry));
+            status = NS_TRUE;
         }
         Ns_CacheUnlock(cache);
     }
 
-    if (status == NS_TRUE && getProc == GetAddr && !all) {
-        char *p = dsPtr->string;
-        while (*p && !isspace(UCHAR(*p))) {
-            ++p;
+    if (status == NS_TRUE) {
+        if (getProc == GetAddr && !all) {
+            char *p = ds.string;
+            while (*p && !isspace(UCHAR(*p))) {
+                ++p;
+            }
+            Ns_DStringSetLength(&ds, p - ds.string);
         }
-        Tcl_DStringSetLength(dsPtr, p - dsPtr->string);
+        Ns_DStringNAppend(dsPtr, ds.string, ds.length);
     }
+    Ns_DStringFree(&ds);
 
     return status;
 }
@@ -215,16 +191,12 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache **cachePtr, char *key, int 
  */
 
 void
-NsEnableDNSCache(int timeout, int maxentries)
+NsEnableDNSCache(int timeout, int maxsize)
 {
-    Ns_MutexSetName(&lock, "ns:dns");
-    Ns_MutexLock(&lock);
-    cachetimeout = timeout;
-    hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
-                                 (size_t) maxentries, ns_free);
-    addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
-                                 (size_t) maxentries, ns_free);
-    Ns_MutexUnlock(&lock);
+    hostCache = Ns_CacheCreateEx("ns:dnshost", TCL_STRING_KEYS,
+                                 timeout, (size_t) maxsize, ns_free);
+    addrCache = Ns_CacheCreateEx("ns:dnsaddr", TCL_STRING_KEYS,
+                                 timeout, (size_t) maxsize, ns_free);
 }
 
 
