@@ -1,0 +1,102 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test ns_schedule-1.1 {basic syntax} -body {
+    ns_schedule_proc
+} -returnCodes error -result {wrong # args: should be "ns_schedule_proc ?-once? ?-thread? ?--? interval script ?args?"}
+
+test ns_schedule-1.2 {basic syntax} -body {
+    ns_unschedule_proc
+} -returnCodes error -result {wrong # args: should be "ns_unschedule_proc id"}
+
+test ns_schedule-1.3 {basic syntax} -body {
+    ns_schedule_daily
+} -returnCodes error -result {wrong # args: should be "ns_schedule_daily ?-once? ?-thread? ?--? hour minute script ?args?"}
+
+test ns_schedule-1.4 {basic syntax} -body {
+    ns_schedule_weekly
+} -returnCodes error -result {wrong # args: should be "ns_schedule_weekly ?-once? ?-thread? ?--? day hour minute script ?args?"}
+
+test ns_schedule-1.5 {basic syntax} -body {
+    ns_after
+} -returnCodes error -result {wrong # args: should be "ns_after seconds script ?args?"}
+
+test ns_schedule-1.6 {basic syntax} -body {
+    ns_pause
+} -returnCodes error -result {wrong # args: should be "ns_pause id"}
+
+test ns_schedule-1.7 {basic syntax} -body {
+    ns_cancel
+} -returnCodes error -result {wrong # args: should be "ns_cancel id"}
+
+test ns_schedule-1.8 {basic syntax} -body {
+    ns_resume
+} -returnCodes error -result {wrong # args: should be "ns_resume id"}
+
+
+
+test ns_schedule-2.1 {schedule proc: interval} -body {
+    set id [ns_schedule_proc 1 {nsv_lappend . . ns_schedule-2.1}]
+    after 2500
+    ns_unschedule_proc $id
+    nsv_get . .
+} -cleanup {
+    nsv_unset . .
+} -match glob -result {ns_schedule-2.1 ns_schedule-2.1*}
+
+test ns_schedule-2.2 {schedule proc once} -body {
+    set id [ns_schedule_proc -once -- 1 {nsv_lappend . . ns_schedule-2.2}]
+    after 2500
+    ns_unschedule_proc $id
+    nsv_get . .
+} -cleanup {
+    nsv_unset . .
+} -result ns_schedule-2.2
+
+test ns_schedule-2.3 {non thread procs run serially} -body {
+    ns_schedule_proc -once -- 1 {
+        after 2000
+        nsv_set . 1 [clock seconds]
+    }
+    ns_schedule_proc -once -- 1 {
+        after 2000
+        nsv_set . 2 [clock seconds]
+    }
+    after 6000
+    expr {[nsv_get . 1] - [nsv_get . 2]}
+} -cleanup {
+    nsv_unset -nocomplain . 1
+    nsv_unset -nocomplain . 2
+} -result 2
+
+test ns_schedule-2.4 {thread procs run concurrently} -body {
+    ns_schedule_proc -once -thread -- 1 {
+        after 2200
+        nsv_set . 1 [clock seconds]
+    }
+    ns_schedule_proc -once -- 1 {
+        after 2200
+        nsv_set . 2 [clock seconds]
+    }
+    after 6000
+    set delta [expr {[nsv_get . 1] - [nsv_get . 2]}]
+    expr $delta < 2
+} -cleanup {
+    nsv_unset -nocomplain . 1
+    nsv_unset -nocomplain . 2
+    unset -nocomplain delta
+} -result 1
+
+
+
+
+cleanupTests

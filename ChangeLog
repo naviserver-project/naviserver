@@ -1,5 +1,8 @@
 2006-04-18  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* tests/ns_schedule.test: Add a couple of tests for scheduled
+	procs.
+
 	* nsd/cache.c:
 	* nsd/dns.c:
 	* nsd/nsconf.c: Use new API for DNS cache code.
