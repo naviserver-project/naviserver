@@ -1,7 +1,17 @@
+2006-04-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/driver.c: Perform reverse lookup on hostname given the IP
+	address only if hostname param not specified in nssock section
+ 	for the socket driver.
+        In some situations, reverse lookup will not be successful which
+	inhibits us to start properly (which we could). 
+
+	* nsd/tclinit.c: Removed traces of ns_tls support.
+ 
 2006-04-18  Vlad Seryakov  <seryakov@users.sf.net>
 
-	nsd/tclinit.c:
-	nsd/tclcmds.c: Remove ns_tls implementation
+	* nsd/tclinit.c:
+	* nsd/tclcmds.c: Remove ns_tls implementation
 
 2006-04-18  Stephen Deasey  <sdeasey@users.sf.net>
 

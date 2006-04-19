@@ -210,7 +210,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     if (address == NULL) {
         he = gethostbyname(host ? host : Ns_InfoHostname());
-        
+
         /*
          * If the lookup suceeded but the resulting hostname does not
          * appear to be fully qualified, attempt a reverse lookup on the
@@ -219,29 +219,30 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
          * NB: This is a common but sloppy configuration for a Unix
          * network.
          */
-        
-        if (he != NULL && he->h_name != NULL &&
+
+        if (host == NULL && he != NULL && he->h_name != NULL &&
             strchr(he->h_name, '.') == NULL) {
-            he = gethostbyaddr(he->h_addr, he->h_length, he->h_addrtype);
+            he = gethostbyaddr(he->h_addr_list[0],he->h_length,he->h_addrtype);
         }
-        
+
         /*
          * If the lookup suceeded, use the first address in host entry list.
          */
         
         if (he == NULL || he->h_name == NULL) {
-            Ns_Log(Error, "%s: could not resolve %s: %s", module,
-                   host ? host : Ns_InfoHostname(), strerror(errno));
+            Ns_Log(Error, "%s: could not resolve %s", module,
+                   host ? host : Ns_InfoHostname());
             return NS_ERROR;
         }
         if (*(he->h_addr_list) == NULL) {
-            Ns_Log(Error, "%s: no addresses for %s", module, he->h_name);
+            Ns_Log(Error, "%s: no addresses for %s", module,
+                   he->h_name);
             return NS_ERROR;
         }
 
-        memcpy(&ia.s_addr, *(he->h_addr_list), sizeof(ia.s_addr));
+        memcpy(&ia.s_addr, he->h_addr_list[0], sizeof(ia.s_addr));
         address = ns_inet_ntoa(ia);
-        
+
         /*
          * Finally, if no hostname was specified, set it to the hostname
          * derived from the lookup(s) above.
