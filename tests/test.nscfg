@@ -63,6 +63,13 @@ ns_param   testvhost2      testvhost2:[ns_config "test" listenport]
 ns_section "ns/parameters"
 ns_param   home            [ns_config "test" home]
 ns_param   tcllibrary      [ns_config "test" home]/../tcl
+ns_param   logdebug        false
+
+ns_section "ns/fastpath"
+ns_param   cache           true
+ns_param   cachemaxsize    2055
+ns_param   cachemaxentry   32
+ns_param   mmap            false
 
 ns_section "ns/servers"
 ns_param   testvhost       "Virtual Host Test Server"
@@ -82,8 +89,6 @@ ns_param   enabletclpages  true
 ns_section "ns/server/test/fastpath"
 ns_param   serverdir       testserver
 ns_param   pagedir         pages
-#ns_param   mmap            false
-#ns_param   cache           false
 
 ns_section "ns/server/test/tcl"
 ns_param   initfile        ../nsd/init.tcl

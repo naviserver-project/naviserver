@@ -38,6 +38,7 @@
 
 NS_RCSID("@(#) $Header$");
 
+
 /*
  * The following structures define the offsets parsed
  * from the "Range:" request header
@@ -71,6 +72,7 @@ typedef struct {
     char   bytes[1];  /* Grown to actual file size. */
 } File;
 
+
 /*
  * Local functions defined in this file
  */
@@ -82,22 +84,31 @@ static int  UrlIs          (CONST char *server, CONST char *url, int dir);
 static int  FastStat       (CONST char *file, Tcl_StatBuf *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  ParseRange     (Ns_Conn *conn, Range *rangesPtr);
-
 static int  FastReturn     (NsServer *servPtr, Ns_Conn *conn, int status,
                             CONST char *type, CONST char *file, 
                             Tcl_StatBuf *stPtr);
-
 static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan, 
                             CONST char *data, int len, CONST char *type);
+
+
+/*
+ * Local variables defined in this file.
+ */
+
+static Ns_Cache *cache;    /* Global cache of pages for all virtual servers.     */
+static int       maxentry; /* Maximum size of an individual entry in the cache.  */
+static int       usemmap;  /* Use the mmap() system call to read data from disk. */
+
+
 
 /*
  *----------------------------------------------------------------------
- * NsFastpathCache --
+ * NsConfigFastpath --
  *
- *      Initialize the fastpath cache.
+ *      Initialize the global fastpath cache.
  *
  * Results:
- *      Pointer to Ns_Cache.
+ *      None.
  *
  * Side effects:
  *      None.
@@ -105,24 +116,25 @@ static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
  *----------------------------------------------------------------------
  */
 
-Ns_Cache *
-NsFastpathCache(CONST char *server, int size)
+void
+NsConfigFastpath()
 {
-    Ns_DString  ds;
-    Ns_Cache   *fpCache;
-    int         keys;
+    char  *path;
 
 #ifdef _WIN32
-    keys = TCL_STRING_KEYS;
+#  define CACHE_KEYS TCL_STRING_KEYS
 #else
-    keys = FILE_KEYS;
+#  define CACHE_KEYS FILE_KEYS
 #endif
-    Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, "nsfp:", server, NULL);
-    fpCache = Ns_CacheCreateSz(ds.string, keys, (size_t) size, FreeEntry);
-    Ns_DStringFree(&ds);
 
-    return fpCache;
+    path = Ns_ConfigGetPath(NULL, NULL, "fastpath", NULL);
+    usemmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
+    if (Ns_ConfigBool(path, "cache", NS_FALSE)) {
+        cache = Ns_CacheCreateSz("nsfp", CACHE_KEYS,
+                    Ns_ConfigIntRange(path, "cachemaxsize", 1024*10000, 1024, INT_MAX),
+                    FreeEntry);
+        maxentry =  Ns_ConfigIntRange(path, "cachemaxentry", 8192, 8, INT_MAX);
+    }
 }
 
 
@@ -484,7 +496,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
     int         new, nread, result = NS_ERROR;
     Range       range;
     char       *key;
-    Ns_Entry   *entPtr;
+    Ns_Entry   *entry;
     File       *filePtr;
     FileMap     fmap;
     Tcl_Channel chan = NULL;
@@ -545,17 +557,16 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
      * cached copy.
      */
 
-    if (servPtr->fastpath.cache == NULL
-        || stPtr->st_size > servPtr->fastpath.cachemaxentry) {
+    if (cache == NULL || stPtr->st_size > maxentry) {
 
         /*
          * Caching is disabled or the entry is too large for the cache
          * so send the content directly.
          */
 
-        if (servPtr->fastpath.mmap
+        if (usemmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            result = ReturnRange(conn,&range, NULL, fmap.addr,fmap.size, type);
+            result = ReturnRange(conn, &range, NULL, fmap.addr, fmap.size, type);
             NsMemUmap(&fmap);
         } else {
             chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
@@ -584,20 +595,19 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
         key = (char *) &ukey;
 #endif
         filePtr = NULL;
-        Ns_CacheLock(servPtr->fastpath.cache);
-        entPtr = Ns_CacheCreateEntry(servPtr->fastpath.cache, key, &new);
+        Ns_CacheLock(cache);
+        entry = Ns_CacheWaitCreateEntry(cache, key, &new, -1);
 
-        if (!new) {
-            while (entPtr && (filePtr = Ns_CacheGetValue(entPtr)) == NULL) {
-                Ns_CacheWait(servPtr->fastpath.cache);
-                entPtr = Ns_CacheFindEntry(servPtr->fastpath.cache, key);
-            }
-            if (filePtr 
-                && (filePtr->mtime != stPtr->st_mtime 
-                    || filePtr->size != stPtr->st_size)) {
-                Ns_CacheUnsetValue(entPtr);
-                new = 1;
-            }
+        /*
+         * Validate entry.
+         */
+
+        if (!new
+            && (filePtr = Ns_CacheGetValue(entry)) != NULL
+            && (filePtr->mtime != stPtr->st_mtime 
+                || filePtr->size != stPtr->st_size)) {
+            Ns_CacheUnsetValue(entry);
+            new = 1;
         }
 
         if (new) {
@@ -606,7 +616,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
              * Read and cache new or invalidated entries in one big chunk.
              */
 
-            Ns_CacheUnlock(servPtr->fastpath.cache);
+            Ns_CacheUnlock(cache);
             chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
             if (chan == NULL) {
                 filePtr = NULL;
@@ -629,24 +639,24 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
                     filePtr = NULL;
                 }
             }
-            Ns_CacheLock(servPtr->fastpath.cache);
-            entPtr = Ns_CacheCreateEntry(servPtr->fastpath.cache, key, &new);
+            Ns_CacheLock(cache);
+            entry = Ns_CacheCreateEntry(cache, key, &new);
             if (filePtr != NULL) {
-                Ns_CacheSetValueSz(entPtr, filePtr, (size_t)filePtr->size);
+                Ns_CacheSetValueSz(entry, filePtr, (size_t) (filePtr->size + sizeof(File)));
             } else {
-                Ns_CacheFlushEntry(entPtr);
+                Ns_CacheFlushEntry(entry);
             }
-            Ns_CacheBroadcast(servPtr->fastpath.cache);
+            Ns_CacheBroadcast(cache);
         }
         if (filePtr != NULL) {
             ++filePtr->refcnt;
-            Ns_CacheUnlock(servPtr->fastpath.cache);
+            Ns_CacheUnlock(cache);
             result = ReturnRange(conn, &range, NULL, filePtr->bytes, 
                                  filePtr->size, type);
-            Ns_CacheLock(servPtr->fastpath.cache);
+            Ns_CacheLock(cache);
             DecrEntry(filePtr);
         }
-        Ns_CacheUnlock(servPtr->fastpath.cache);
+        Ns_CacheUnlock(cache);
         if (filePtr == NULL) {
             goto notfound;
         }

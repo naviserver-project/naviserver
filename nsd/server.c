@@ -333,13 +333,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      */
      
     path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
-    if (Ns_ConfigBool(path, "cache", NS_FALSE)) {
-        servPtr->fastpath.cachemaxentry =
-            Ns_ConfigIntRange(path, "cachemaxentry", 8192, 1, INT_MAX);
-        n = Ns_ConfigIntRange(path, "cachemaxsize", 5000*1024, 1, INT_MAX);
-        servPtr->fastpath.cache = NsFastpathCache(server, n);
-    }
-    servPtr->fastpath.mmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
 
     p = Ns_ConfigGetValue(path, "directoryfile");
     if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,

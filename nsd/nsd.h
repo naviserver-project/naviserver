@@ -650,10 +650,7 @@ typedef struct NsServer {
         int dirc;
         CONST char *dirproc;
         CONST char *diradp;
-        bool mmap;
-        int cachemaxentry;
         Ns_UrlToFileProc *url2file;
-        Ns_Cache *cache;
     } fastpath;
 
     /*
@@ -908,7 +905,6 @@ typedef struct NsInterp {
  */
 
 extern void NsInitBinder(void);
-extern void NsInitCache(void);
 extern void NsInitConf(void);
 extern void NsInitEncodings(void);
 extern void NsInitListen(void);
@@ -926,6 +922,10 @@ extern void NsInitRequests(void);
 extern void NsInitUrl2File(void);
 
 extern void NsConfigLog(void);
+extern void NsConfigFastpath();
+extern void NsUpdateMimeTypes(void);
+extern void NsUpdateEncodings(void);
+extern void NsUpdateUrlEncode(void);
 
 extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);
@@ -941,8 +941,6 @@ extern int NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan,
 
 extern NsServer *NsGetServer(CONST char *server);
 extern NsServer *NsGetInitServer(void);
-
-extern Ns_Cache *NsFastpathCache(CONST char *server, int size);
 
 extern void NsFreeAdp(NsInterp *itPtr);
 extern void NsTclRunAtClose(NsInterp *itPtr)
@@ -996,9 +994,6 @@ extern void NsRemovePidFile(char *service);
 
 extern void NsLogOpen(void);
 extern void NsTclInitObjs(void);
-extern void NsUpdateMimeTypes(void);
-extern void NsUpdateEncodings(void);
-extern void NsUpdateUrlEncode(void);
 extern void NsRunPreStartupProcs(void);
 extern void NsStartServers(void);
 extern void NsBlockSignals(int debug);

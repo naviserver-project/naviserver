@@ -1,3 +1,12 @@
+2006-04-19  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/nsconf.c:	
+	* nsd/server.c:
+	* nsd/fastpath.c:
+	* tests/test.nscfg: Make page cache process global rather than per
+	virtual server.
+
 2006-04-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/driver.c: Perform reverse lookup on hostname given the IP

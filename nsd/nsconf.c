@@ -157,11 +157,8 @@ NsConfUpdate(void)
     Ns_DString ds;
     char *path = NS_CONFIG_PARAMETERS;
     
-    /*
-     * log.c
-     */
-
     NsConfigLog();
+    NsConfigFastpath();
 
     NsUpdateEncodings();
     NsUpdateMimeTypes();
