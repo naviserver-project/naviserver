@@ -284,6 +284,8 @@ typedef struct _Ns_Cls          *Ns_Cls;
 typedef void                    *Ns_OpContext;
 typedef struct _Ns_TaskQueue    *Ns_TaskQueue;
 typedef struct _Ns_Task         *Ns_Task;
+typedef struct _Ns_EventQueue   *Ns_EventQueue;
+typedef struct _Ns_Event        *Ns_Event;
 
 /*
  * This is used for logging messages.
@@ -325,6 +327,7 @@ typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_SockProc) (SOCKET sock, void *arg, int why);
 typedef void  (Ns_TaskProc) (Ns_Task *task, SOCKET sock, void *arg, int why);
+typedef void  (Ns_EventProc) (Ns_Event *event, SOCKET sock, void *arg, Ns_Time *now, int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (char *server);
 typedef int   (Ns_ModuleInitProc) (CONST char *server, CONST char *module);
@@ -979,6 +982,34 @@ Ns_DStringPop(void)
 NS_EXTERN void
 Ns_DStringPush(Ns_DString *dsPtr)
      NS_GNUC_DEPRECATED;
+
+/*
+ * event.c
+ */
+
+NS_EXTERN Ns_EventQueue *
+Ns_CreateEventQueue(int maxevents);
+
+NS_EXTERN int
+Ns_EventEnqueue(Ns_EventQueue *queue, SOCKET sock, Ns_EventProc *proc, void *arg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+NS_EXTERN void
+Ns_EventCallback(Ns_Event *event, int when, Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_RunEventQueue(Ns_EventQueue *queue)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_TriggerEventQueue(Ns_EventQueue *queue)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_ExitEventQueue(Ns_EventQueue *queue)
+    NS_GNUC_NONNULL(1);
+    
 
 /*
  * exec.c:

@@ -1,3 +1,13 @@
+2006-04-22  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/Makefile:
+	* nsd/event.c: Add new event driven I/O API. Unlike the existing
+	task and sockcallback mechanisms, this deals only with IO, not threads
+	and allocates no memory at runtime, making it suitable for the
+	main driver thread, spooler etc.  Things should be merged at
+	some point.
+
 2006-04-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
