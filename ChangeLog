@@ -1,3 +1,15 @@
+2006-04-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/nsmain.c: Reorganized so first call to a Tcl_FindExecutable()
+	is done after all ns_fork's - see large comment in-place.
+	Assure Tcl version is logged to the log-file.
+	Added descriptive run state enumerator so run states can now be
+	easier tracked by looking at the code.
+
+	* nsd/binder.c: Made ifdef _WIN32 more clear and unified.
+	At some point we should create separate file in order not
+	to obfuscate code with numerous ifdef's.
+	
 2006-04-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

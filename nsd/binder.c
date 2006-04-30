@@ -31,7 +31,7 @@
 /* 
  * binder.c --
  *
- * Support for pre-bound privileged ports.
+ * Support for pre-bound privileged ports for Unix
  */
 
 #include "nsd.h"
@@ -84,7 +84,6 @@ static void Binder(void);
 
 NS_RCSID("@(#) $Header$");
 
-#ifndef _WIN32
 
 /*
  *----------------------------------------------------------------------
@@ -107,6 +106,7 @@ SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
     int                sock = -1;
+#ifndef _WIN32
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -140,10 +140,10 @@ Ns_SockListenEx(char *address, int port, int backlog)
     if (sock == -1 && binderRunning) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
-
+#endif /* _WIN32 */
     return (SOCKET)sock;
 }
-#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -190,6 +190,7 @@ Ns_SockListenUdp(char *address, int port)
     if (sock == -1 && binderRunning) {
         sock = Ns_SockBinderListen('U', address, port, 0);
     }
+
     return (SOCKET)sock;
 }
 
@@ -267,10 +268,10 @@ SOCKET
 Ns_SockListenUnix(char *path, int backlog, int  mode)
 {
     int            sock = -1;
+#ifndef _WIN32
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
-#ifndef _WIN32
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
@@ -303,8 +304,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
     if (sock == -1 && binderRunning) {
         sock = Ns_SockBinderListen('D', path, mode, backlog);
     }
-#endif
-
+#endif /* _WIN32 */
     return (SOCKET) sock;
 }
 
@@ -329,7 +329,7 @@ SOCKET
 Ns_SockBindUdp(struct sockaddr_in *saPtr)
 {
     int sock = -1, n = 1;
-   
+
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (sock == -1
@@ -366,7 +366,7 @@ SOCKET
 Ns_SockBindUnix(char *path, int socktype, int mode)
 {
     int                sock = -1;
-#ifndef _WIN32    
+#ifndef _WIN32
     struct sockaddr_un addr;
 
     memset(&addr, 0, sizeof(addr));
@@ -384,8 +384,7 @@ Ns_SockBindUnix(char *path, int socktype, int mode)
         sock = -1;
         Ns_SetSockErrno(err);
     }
-#endif
-    
+#endif /* _WIN32 */
     return (SOCKET) sock;
 }
 
@@ -412,7 +411,7 @@ SOCKET
 Ns_SockBindRaw(int proto)
 {
     int sock = -1;
-   
+
     sock = socket(AF_INET, SOCK_RAW, proto);
 
     if (sock == -1) {
@@ -492,7 +491,7 @@ NsPreBind(char *args, char *file)
             Tcl_Close(NULL, chan);
         }
     }
-#endif
+#endif /* _WIN32 */
 }
 
 
@@ -515,9 +514,7 @@ NsPreBind(char *args, char *file)
 void
 NsClosePreBound(void)
 {
-#ifdef _WIN32
-    return;
-#else
+#ifndef _WIN32
     Tcl_HashEntry      *hPtr;
     Tcl_HashSearch     search;
     char               *addr;
@@ -599,7 +596,7 @@ NsClosePreBound(void)
     Tcl_InitHashTable(&preboundUnix, TCL_STRING_KEYS);
 
     Ns_MutexUnlock(&lock);
-#endif
+#endif /* _WIN32 */
 }
 
 
@@ -628,9 +625,7 @@ NsClosePreBound(void)
 static void
 PreBind(char *line)
 {
-#ifdef _WIN32
-    return;
-#else
+#ifndef _WIN32
     Tcl_HashEntry      *hPtr;
     int                new, sock, port, mode;
     char               *next, *str, *addr, *proto;
@@ -782,10 +777,10 @@ PreBind(char *line)
 SOCKET
 Ns_SockBinderListen(int type, char *address, int port, int options)
 {
-    int           err;
     SOCKET        sock = -1;
-    char          data[64];
 #ifndef WIN32
+    int           err;
+    char          data[64];
     struct msghdr msg;
     struct iovec  iov[4];
 
@@ -886,8 +881,9 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
 void
 NsForkBinder(void)
 {
-    int pid, status;
 #ifndef _WIN32
+    int pid, status;
+
     /*
      * Create two socket pipes, one for sending the request and one
      * for receiving the response.
@@ -926,8 +922,8 @@ NsForkBinder(void)
         Ns_Fatal("NsForkBinder: process %d exited with non-zero status: %d",
                  pid, status);
     }
-#endif /* _WIN32 */
     binderRunning = 1;
+#endif /* _WIN32 */
 }
 
 
@@ -981,9 +977,9 @@ NsStopBinder(void)
 static void
 Binder(void)
 {
+#ifndef _WIN32
     int           options, type, port, n, err, fd;
     char          address[64];
-#ifndef _WIN32
     struct msghdr msg;
     struct iovec  iov[4];
 
@@ -1081,6 +1077,6 @@ Binder(void)
             close(fd);
         }
     }
-#endif /* _WIN32 */
     Ns_Log(Notice, "binder: stopped");
+#endif /* _WIN32 */
 }
