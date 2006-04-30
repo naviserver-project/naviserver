@@ -46,6 +46,12 @@ all:
 
 install: install-dirs install-include install-tcl install-modules \
 	install-config install-doc
+	@echo ""
+	@echo "Installation complete, now you can run NaviServer by typing"
+	@echo "the command below and access the server at http://localhost:8080"
+	@echo ""
+	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/nsd.tcl"
+	@echo ""
 
 install-dirs: all
 	for i in bin lib logs include tcl pages conf modules cgi-bin; do \
