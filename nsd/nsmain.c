@@ -70,6 +70,18 @@ typedef struct Args {
 } Args;
 
 /*
+ * This one is used to better track run state 
+ * when looking at the code
+ */
+
+typedef enum _runState {
+    starting,  /* == 0 */
+    running,   /* == 1 */
+    stopping,  /* == 2 */
+    exiting    /* == 3 */
+} runState;
+
+/*
  * Local functions defined in this file.
  */
 
@@ -82,7 +94,7 @@ static void WatchdogSIGALRMHandler(int sig);
 static int  WaitForServer();
 
 static void UsageError(char *msg, ...);
-static void StatusMsg(int state);
+static void StatusMsg(runState state);
 static void LogTclVersion(void);
 
 static char *FindConfig(char *config);
@@ -291,8 +303,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     } else if (nsconf.config == NULL) {
         UsageError("required -t <config> option not specified");
     }
-
-
     if (mode == 'c') {
         cmd.argv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
         cmd.argc = 0;
@@ -308,13 +318,13 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          * descriptor 0 be open on NUL device to ensure it never blocks 
          * while reading stdin.
          */
-
+        
         fd = open(DEVNULL, O_RDONLY);
         if (fd > 0) {
             dup2(fd, 0);
             close(fd);
         }
-
+        
         /*
          * File descriptors 1 and 2 may not be open if the server is
          * starting from /etc/init.  If so, open them on NUL device
@@ -322,7 +332,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          * initialization. In particular, the log file will be duped
          * to fd's 1 and 2.
          */
-
+        
         fd = open(DEVNULL, O_WRONLY);
         if (fd > 0 && fd != 1) {
             close(fd);
@@ -332,23 +342,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             close(fd);
         }
     }
-
-    /*
-     * The call to Tcl_FindExecutable() must be done before we ever
-     * attempt any file-related operation, because it is initializing
-     * the Tcl library and virtual filesystem interface.
-     */
-
-    Tcl_FindExecutable(argv[0]);
-    LogTclVersion();
-    nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
-
-    /*
-     * Locate and read the configuration file for later evaluation.
-     */
-
-    nsconf.config = FindConfig(nsconf.config);
-    config = NsConfigRead(nsconf.config);
 
 #ifndef _WIN32
 
@@ -485,6 +478,27 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             } 
         }
     }
+
+    /*
+     * The call to Tcl_FindExecutable() must be done before we ever
+     * attempt any file-related operation, because it is initializing
+     * the Tcl library and Tcl VFS (virtual filesystem interface)
+     * which is used throughout the code.
+     * Side-effect of this call is initialization of the notifier
+     * subsystem. The notifier subsystem creates special private
+     * notifier thread and we should better do this after all those 
+     * ns_fork's above...
+     */
+
+    Tcl_FindExecutable(argv[0]);
+    nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
+
+    /*
+     * Locate and read the configuration file for later evaluation.
+     */
+
+    nsconf.config = FindConfig(nsconf.config);
+    config = NsConfigRead(nsconf.config);
 
     /*
      * Pre-bind any sockets now, before a possible setuid from root
@@ -659,7 +673,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * generated some messages.
      */
      
-    StatusMsg(0);
+    StatusMsg(starting);
+    LogTclVersion();
 
 #ifndef _WIN32
 
@@ -719,7 +734,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Signal startup is complete.
      */
 
-    StatusMsg(1);
+    StatusMsg(running);
+
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.started = 1;
     Ns_CondBroadcast(&nsconf.state.cond);
@@ -756,7 +772,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * timeout for all systems to complete shutown.
      */
 
-    StatusMsg(2);
+    StatusMsg(stopping);
+
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.stopping = 1;
     if (nsconf.shutdowntimeout < 0) {
@@ -805,7 +822,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     NsRemovePidFile(procname);
-    StatusMsg(3);
+    StatusMsg(exiting);
 
     /*
      * The main thread exits gracefully on NS_SIGTERM.
@@ -947,21 +964,21 @@ NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
  */
 
 static void
-StatusMsg(int state)
+StatusMsg(runState state)
 {
     char *what;
 
     switch (state) {
-    case 0:
+    case starting:
         what = "starting";
         break;
-    case 1:
+    case running:
         what = "running";
         break;
-    case 2:
+    case stopping:
         what = "stopping";
         break;
-    case 3:
+    case exiting:
         what = "exiting";
         break;
     default:
@@ -971,7 +988,7 @@ StatusMsg(int state)
     Ns_Log(Notice, "nsmain: %s/%s %s",
            Ns_InfoServerName(), Ns_InfoServerVersion(), what);
 #ifndef _WIN32
-    if (state < 2) {
+    if (state == starting || state == running) {
         Ns_Log(Notice, "nsmain: security info: uid=%d, euid=%d, gid=%d, egid=%d",
                (int)getuid(), (int)geteuid(), (int)getgid(), (int)getegid());
     }
