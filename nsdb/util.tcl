@@ -40,6 +40,28 @@
 nsv_set _nsdb months [list January February March April May June \
 	July August September October November December]
 
+#
+# Register proc that will close all database connections
+# on server shutdown
+#
+
+if { [ns_config -bool ns/parameters dbcloseonexit off] } {
+  ns_log Notice conf: enabling nsdb onexit handler
+  ns_atexit ns_dbshutdown
+}
+
+#
+# ns_dbshutdown
+#
+#       Called at server exit and closed all confogured pools
+#
+
+proc ns_dbshutdown { args } {
+
+    foreach pool [ns_db pools] {
+      ns_db bouncepool $pool 
+    }
+}
 
 #
 # ns_dbquotename -

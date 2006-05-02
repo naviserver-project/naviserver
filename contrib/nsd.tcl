@@ -19,6 +19,7 @@ ns_param	serverlog		${home}/logs/nsd.log
 ns_param	pidfile			${home}/logs/nsd.pid
 ns_param        outputcharset   	iso8859-1
 ns_param        urlcharset      	iso8859-1
+ns_param	dbcloseonexit		off
 
 ns_param        smtphost                "localhost"
 ns_param        smtpport                25

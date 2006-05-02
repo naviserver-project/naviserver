@@ -1,3 +1,8 @@
+2006-05-01  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsdb/util.tcl: Adding dbcloseonexit parameter that will 
+	register atexit handler for closing all db pools on server exit
+
 2006-04-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/nsmain.c: Reorganized so first call to a Tcl_FindExecutable()
