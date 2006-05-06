@@ -38,6 +38,7 @@
 NS_RCSID("@(#) $Header$");
 
 #include <poll.h>
+#include <grp.h>
 
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 1
