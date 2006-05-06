@@ -256,9 +256,9 @@ Ns_HashPath(Ns_DString *dest, CONST char *string, int levels)
  *
  * Ns_LibPath --
  *
- *	Returns the path where AOLserver libraries exist, with 
- *	varargs appended to it with slashes between each, stopping at 
- *	null arg. 
+ *	Returns the path where server libraries exist, with 
+ *	varargs appended to it with slashes between each,
+ *  stopping at null arg. 
  *
  * Results:
  *	dest->string
@@ -276,6 +276,39 @@ Ns_LibPath(Ns_DString *dest, ...)
     char    *path;
 
     Ns_MakePath(dest, Ns_InfoHomePath(), "lib", NULL);
+    va_start(ap, dest);
+    path = MakePath(dest, &ap);
+    va_end(ap);
+
+    return path;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_BinPath --
+ *
+ *	Returns the path where server binaries exist, with 
+ *	varargs appended to it with slashes between each,
+ *  stopping at null arg. 
+ *
+ * Results:
+ *	dest->string
+ *
+ * Side effects:
+ *	Appends to dest. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_BinPath(Ns_DString *dest, ...)
+{
+    va_list  ap;
+    char    *path;
+
+    Ns_MakePath(dest, Ns_InfoHomePath(), "bin", NULL);
     va_start(ap, dest);
     path = MakePath(dest, &ap);
     va_end(ap);

@@ -1,3 +1,29 @@
+2006-05-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* include/ns.h
+	* nsd/pathname.c: Added Ns_BinPath. I'm not sure if this
+	was already there and somebody removed it or not, but this
+	one is really handy.
+
+	* nsproxy/Makefile
+	* nsproxy/ns_proxy.man:
+	* nsproxy/nsproxy.c:
+	* nsproxy/nsproxy.h
+	* nsproxy/nsproxylib.c:
+	* nsproxy/nsproxymod.c: Added ns_proxy mod from AOLserver 4.5.
+	Improvements vs. the original code: 
+          o. proxy handles can be used as Tcl commands for simpler
+	     OO-like programming 
+	  o. proxy slaves can be told to expire automatically
+	     after some predefined idle time  
+	  o  proxy slaves can setuid() to some other user ID 
+	     if the parent process runs as superuser.
+	  o. proxy subsystem is garbage-collected properly on exit
+
+	NOTE: ns_proxy module is work in progress and is this not
+	included in the standard make machinery. There are still
+	things to do: complete the doc, write testsuite.
+
 2006-05-01  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsdb/util.tcl: Adding dbcloseonexit parameter that will 
