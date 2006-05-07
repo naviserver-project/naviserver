@@ -1,3 +1,7 @@
+2006-06-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* Makefile: Included nsproxy into make process
+
 2006-05-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/ns.h

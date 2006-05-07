@@ -33,7 +33,7 @@
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsproxy
 
 distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
 	Makefile install-sh missing README ChangeLog NEWS \
