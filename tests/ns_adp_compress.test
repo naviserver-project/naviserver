@@ -51,7 +51,7 @@ test ns_adp_conpress-1.2 {Accept-Encoding gzip} -constraints serverListen -body 
                       -getheaders {content-encoding} -getbody 1 GET /ns_adp_compress.adp]
     binary scan [lindex $response 2] "H*" values
     list [lindex $response 0] [lindex $response 1] [regexp -all -inline {..} $values]
-} -result "200 gzip \{1f 8b 08 00 00 00 00 00 00 03 2b c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 00 26 33 05 16 0d 1e e7 ea 00 00 00 0e\}"
+} -result "200 gzip \{1f 8b 08 00 00 00 00 00 00 03 2b c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 00 26 33 05 16 0a 1e e7 ea 00 00 00 0e\}"
 
 
 

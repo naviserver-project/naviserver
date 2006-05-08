@@ -1,5 +1,6 @@
 2006-05-07  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* tests/ns_adp_compress.test: Updated result, tested on Firefox
 	* nsd/conn.c:
 	* nsd/return.c:
 	* tests/ns_conn.tests: Added keepalive command to
