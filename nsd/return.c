@@ -248,7 +248,8 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
          * a valid and correctly set content-length header.
          */
 
-        if (drvPtr->keepwait > 0
+        if (conn->flags & NS_CONN_KEEPALIVE ||
+            (drvPtr->keepwait > 0
             && connPtr->headers != NULL
             && connPtr->request != NULL
             && (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300)
@@ -260,7 +261,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
             && (drvPtr->keepallmethods == NS_TRUE
                 || STREQ(connPtr->request->method, "GET"))
             && (key = Ns_SetIGet(conn->headers, "connection")) != NULL
-            && STRIEQ(key, "keep-alive")) {
+            && STRIEQ(key, "keep-alive"))) {
 
             conn->flags |= NS_CONN_KEEPALIVE;
             keep = "keep-alive";

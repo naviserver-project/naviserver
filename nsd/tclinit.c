@@ -87,7 +87,6 @@ static NsInterp *NewInterpData(Tcl_Interp *interp);
 static int UpdateInterp(NsInterp *itPtr);
 static Tcl_InterpDeleteProc FreeInterpData;
 static Ns_TlsCleanup DeleteInterps;
-static Ns_TlsCleanup DeleteTlsTcl;
 static void RunTraces(NsInterp *itPtr, int why);
 static int RegisterAt(Ns_TclTraceProc *proc, void *arg, int when);
 

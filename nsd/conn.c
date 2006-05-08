@@ -1114,7 +1114,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status",
         "url", "urlc", "urlencoding", "urlv", "version", "write_encoded",
-        "chunked", "responseversion", "versionstring",
+        "chunked", "responseversion", "versionstring", "keepalive",
         NULL
     };
     enum ISubCmdIdx {
@@ -1126,7 +1126,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
-        CChunkedIdx, CResponseVersionIdx, CVersionStringIdx
+        CChunkedIdx, CResponseVersionIdx, CVersionStringIdx, CKeepAliveIdx
     };
 
     if (objc < 2) {
@@ -1159,7 +1159,22 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case CIsConnectedIdx:
         /* NB: Not reached - silence compiler warning. */
         break;
-        
+
+    case CKeepAliveIdx:
+        if (objc > 2) {
+            int flag;
+            if (Tcl_GetIntFromObj(interp, objv[2], &flag) != TCL_OK) {
+                return NS_ERROR;
+            }
+            if (flag) {
+                connPtr->flags |= NS_CONN_KEEPALIVE;
+            } else {
+                connPtr->flags &= ~NS_CONN_KEEPALIVE;
+            }
+        }
+        Tcl_SetIntObj(result, conn->flags & NS_CONN_KEEPALIVE);
+        break;
+
     case CUrlvIdx:
         if (objc == 2) {
             for (idx = 0; idx < request->urlc; idx++) {

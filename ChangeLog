@@ -1,3 +1,12 @@
+2006-05-07  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/conn.c:
+	* nsd/return.c:
+	* tests/ns_conn.tests: Added keepalive command to
+	ns_conn to enable/disable keepalive for connection, can 
+	be usefull when peersistent connection is needed without
+	full HTTP/1.1 comformance
+
 2006-06-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* Makefile: Included nsproxy into make process
