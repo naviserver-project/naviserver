@@ -1,3 +1,8 @@
+2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * nsd/return.c: Make ReturnCharData to use Ns_WriteConn
+        when sendRaw is specified, so pure binary data can be delivered
+
 2006-05-07  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/ns_adp_compress.test: Updated result, tested on Firefox
