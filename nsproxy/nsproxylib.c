@@ -2073,9 +2073,9 @@ static void
 Kill(Proc *procPtr, int sig)
 {
     Ns_Log(Warning, "[%s]: pid %d won't die - sending signal %d",
-           procPtr->poolPtr->name, procPtr->pid, sig);
+           procPtr->poolPtr->name, (int)procPtr->pid, sig);
     if (kill(procPtr->pid, sig) != 0 && errno != ESRCH) {
-        Ns_Log(Error, "kill(%d, %d) failed: %s", procPtr->pid, sig,
+        Ns_Log(Error, "kill(%d, %d) failed: %s", (int)procPtr->pid, sig,
                strerror(errno));
     }
 }
@@ -2217,7 +2217,11 @@ ReaperThread(void *ignored)
 
                 reaperState = sleeping;
                 Ns_CondBroadcast(&pcond);
-                Ns_CondTimedWait(&pcond, &plock, &tout);
+                if (tout.sec == INT_MAX && tout.usec == LONG_MAX) {
+                    Ns_CondWait(&pcond, &plock);
+                } else {
+                    Ns_CondTimedWait(&pcond, &plock, &tout);
+                }
                 reaperState = running;
             }
         }
@@ -2248,7 +2252,7 @@ ReaperThread(void *ignored)
             if (!zombie) {
                 Ns_WaitProcess(procPtr->pid);
             } else {
-                Ns_Log(Warning, "zombie: %d", procPtr->pid);
+                Ns_Log(Warning, "zombie: %d", (int)procPtr->pid);
             }
             ns_free(procPtr);
             Ns_MutexLock(&plock);
