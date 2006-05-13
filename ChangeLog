@@ -1,3 +1,38 @@
+2006-05-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* sampe-config.tcl.in: Loads nsproxy module and initializes
+	with all the default values. The default values are the same
+	as ones compiled in the code. Those are just listed for the
+	illustration purposes.
+	
+	* nsproxy/Makefile
+	* nsproxy/ns_proxy.man:
+	* nsproxy/ns_proxy.test:
+	* nsproxy/nsproxy.c:
+	* nsproxy/nsproxy.h:
+	* nsproxy/nsproxylib.c:
+	* nsproxy/nsproxymod.c: Summary of changes below:
+
+	o. Fixed deadly embrace between the reaper and user threads.
+	o .Improved reaper functionality and made -minslaves/-maxslaves
+	   behave properly.
+	o. Made all pool config options now settable over the configuration
+	   file. The config command now properly returns result dependent
+	   on the command arguments in style of other similar Tcl commands,
+	   like [fconfigure] for example.
+	o. Added rudimentary but sufficient C-API for evaluating Tcl
+	   code over the proxy from within of the C-code. One must include
+	   nsproxy.h and link with -lnsproxy library. See nsproxy.h for the
+	   list of supported calls.
+
+	Code is now fairly tested and can be evaluated in lab environment;
+	consider feature full but still beta-quality for now.
+
+	* tests/ns_proxy.test: First couple of tests. Still more
+	to come...
+
+	* tests/test.nscfg: Added loading of nsproxy in the test server.
+	
 2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/return.c: Make ReturnCharData to use Ns_WriteConn

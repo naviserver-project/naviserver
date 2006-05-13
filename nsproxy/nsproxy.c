@@ -30,7 +30,7 @@
 /*
  * nsproxy.c --
  *
- *	    Simple main for ns_proxy slave.
+ *      Simple main for ns_proxy slave.
  */
 
 #include "nsproxy.h"

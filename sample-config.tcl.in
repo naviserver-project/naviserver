@@ -84,6 +84,7 @@ ns_param	nslog 			${homedir}/bin/nslog.so
 ns_param	nscgi 			${homedir}/bin/nscgi.so
 ns_param	nsperm 			${homedir}/bin/nsperm.so
 ns_param 	nscp 			${homedir}/bin/nscp.so
+ns_param	nsproxy			${homedir}/bin/nsproxy.so
 
 # Tcl modules are loaded here as well, they should be put
 # under tcl/ in separate directory each
@@ -452,8 +453,8 @@ ns_param   	map 			"POST /cgi-bin /usr/local/cgi"
 ns_section 	"ns/server/${servername}/module/nscp"
 ns_param 	address 		127.0.0.1
 ns_param 	port 			9999
-ns_param 	echopassword 		true
-ns_param 	cpcmdlogging 		false
+ns_param 	echopassword    true
+ns_param 	cpcmdlogging    false
 
 ns_section 	"ns/server/${servername}/module/nscp/users"
 ns_param 	user 			"nsadmin:t2GqvvaiIUbF2:"
@@ -569,3 +570,23 @@ ns_param 	url 			/_stats
 ns_param 	user 			nsadmin
 ns_param 	password 		nsadmin
  
+#
+# Tcl Proxy module -- nsproxy
+#
+# Below is the list of all supported configuration options
+# for the nsproxy module filled in with their default values.
+# This list of default values is also compiled in the code 
+# in case you ommit the ns_param lines.
+#
+
+ns_section  "ns/server/${servername}/module/nsproxy"
+
+ns_param    exec            ${homedir}/bin/nsproxy ; # Proxy program to start
+ns_param    evaltimeout     0       ; # Timeout (ms) when evaluating scripts
+ns_param    gettimeout      0       ; # Timeout (ms) when getting proxy handles
+ns_param    sendtimeout     1000    ; # Timeout (ms) to send data
+ns_param    recvtimeout     1000    ; # Timeout (ms) to receive results
+ns_param    waittimeout     100     ; # Timeout (ms) to wait for slaveis to die
+ns_param    maxslaves       4       ; # Max number of allowed proxies slaves alive
+ns_param    minslaves       0       ; # Min number of proxy slaves alive
+

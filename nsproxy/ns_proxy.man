@@ -40,7 +40,7 @@ processes) are normally created on demand when requested and connected
 to the parent process via pipes used to send scripts and receive response.
 Proxies remain active until the parent process exits, effectively closing
 all pipes to the slave processes, or when their idle timer expires, depending
-on the setup of the [arg pool] (see [cmd "ns_proxy config"]).
+on the setup of the [arg pool] (see [cmd "ns_proxy configure"]).
 
 [section COMMANDS]
 [list_begin definitions]
@@ -67,12 +67,24 @@ evaluating scripts with the Unix [emph ps] command as the proxy slave
 process re-writes it's command argument space with the request
 script before evaluation and clears it after sending the result.
 
+[call [cmd "ns_proxy free"] [arg pool]]
+Returns a list of all free proxies for the given [arg pool]. Free
+proxies are those which are sitting in the pool queue waiting to
+be used by the [cmd "ns_proxy get"] command. Some proxies may have
+an active slave process attached, some not.
 
-[call [cmd "ns_proxy config"] [arg pool] [opt {-key val -key val...}]]
-Configures options for the pool specified by [arg pool]. The pool
-is created with default options if it does not already exist. The
-result of [cmd "ns_proxy config"] is a list of the current options
-in the [opt {-key val ...}] form. Configurable options include:
+[call [cmd "ns_proxy clear"] [opt pool]]
+Stop all slave processes attached to free proxies for all pools or
+for the given [opt pool].
+
+[call [cmd "ns_proxy configure"] [arg pool] [opt {-key val -key val...}]]
+Configures options for the [arg pool]. The [arg pool] is created with 
+default options if it does not already exist. Default options for the
+[arg pool] are taken from the NaviServer configuration file under the
+section "ns/server/$servername/module/nsproxy". In case
+the library is loaded in plain Tcl shell, defefault configuration options
+are fixed and cannot be changed w/o recompiling the code.
+Configurable options include:
 
 [list_begin definitions]
 
@@ -87,11 +99,11 @@ being returned to the caller. This can be used to re-initalizes
 the slave state. The default is no script.
 
 [lst_item {-minslaves n}]
-Sets the minimum number of proxy slave processes to pre-start before
-any allocations.  This defaults to 0 which results in on-demand
-start the first time proxies are requested. Setting it to a higher
-number can be useful if initialization takes a significant amount
-of time.
+Sets the minimum number of proxy slave processes to maintain while
+reaping idle or excessive proxies. This defaults to 0 which results
+in on-demand start the first time proxies are requested. Setting it
+to a higher number can be useful if initialization of slaves takes 
+a significant amount of time.
 
 [lst_item {-maxslaves n}]
 Sets the maximum number of proxy slave processes. Requests for
@@ -108,23 +120,22 @@ process. It is possible to create a custom program and enter the
 proxy event loop with the [emph Ns_ProxyMain] application startup
 routine; see the source code for details.
 
-[lst_item {-getimeout ms}]
+[lst_item {-gettimeout ms}]
 Specifies the maximum time to wait to allocate handles from the pool.
-The default is 500 milliseconds, i.e., 1/2 of a second.
+The default is 5000 milliseconds.
 
 [lst_item {-evaltimeout ms}]
 Specifies the maximum time to wait for a script to be evaluated in
 a proxy. This parameter can be overridden on a per-call basis with
 the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
-The default is 100 milliseconds, i.e., 1/10 of a second which assumes
-scripts are evaluated with minimal delay.
+The default is 0 milliseconds i.e. infinite.
 
 [lst_item {-sendtimeout ms}]
 [lst_item {-recvtimeout ms}]
 Specifies the maximium time to wait to send a script and receive a
-result from a proxy.  The default is 100 milliseconds, i.e., 1/10
-of a second which assumes minimal delay sending and receiving
-reasonably sized scripts and results over the connecting pipe.
+result from a proxy.  The default is 1000 milliseconds which assumes
+minimal delay sending and receiving reasonably sized scripts and 
+results over the connecting pipe.
 
 [lst_item {-waittimeout ms}]
 Specifies the maximum time to wait for a proxy to exit. The wait
@@ -138,17 +149,19 @@ resulting in a more disruptive SIGTERM or SIGKILL.
 
 [lst_item {-idletimeout ms}]
 Specifies the maximum time for an idle slave process to live.
+Minimum value is 1000 milliseconds. Default is zero (disabled).
 After expiry of the idle timeout, the reaper thread will close
 the connection pipe and wait [arg -waittimeout] milliseconds 
-for the process to exit. If the timeout is exceeded, the reaper
-will send a SIGTERM signal and finally a SIGKILL signal to ensure 
-the process eventually exits.
+for the process to die. If the timeout is exceeded, the reaper
+will send a SIGTERM signal and finally a SIGKILL signal (waiting
+[arg -waittimeout] milliseconds in between) to ensure the process 
+eventually exits.
 [nl]
-Slave processes which are bound to threads (i.e. whose handles
-are already attached to some Tcl interps by the means of the
-[cmd "ns_proxy get"] command) are not expired automatically.
-The idle timer starts to count at the moment their handles are
-put back to the pool by the [cmd "ns_proxy put"] command.
+Slave processes whose handles are already attached to some Tcl 
+interps by the means of the [cmd "ns_proxy get"] command) are not 
+expired automatically. The idle timer starts to count at the moment 
+their handles are put back to the pool by the [cmd "ns_proxy put"] 
+command.
 
 [list_end]
 
@@ -169,7 +182,17 @@ possible deadlock conditions.
 The handle returned by this command can be used as a scalar value for
 other [cmd ns_proxy] commands, or it can be used as Tcl command itself
 (see [cmd "ns_proxy eval"] for more information).
-
+[nl]
+The proxy [arg pool] naming convention allows proxy slaves to be started
+under different Unix UID/GID then the server itself. For that to work, 
+the server must be running under root user (UID = 0). The naming
+convention is simple: pool_name:<optional_user_id>:<optional_group_id>.
+For example, to start the proxy for the pool "mypool" with user UID 
+of 100 the pool name can be constructed as: "mypool:100". To start the 
+proxy with UID of 100 and group GID of 200: "mypool:100:200". Instead
+of numeric values you can also use user/group names.
+Beware: if the main server is not running under privileged root user, 
+the startup of the proxy under some alternative UID/GID may fail.
 
 [call [cmd "ns_proxy ping"] [arg handle]]
 This command sends a null request to the proxy specified by the
@@ -185,7 +208,7 @@ The optional [opt timeout] argument specifies a maximum number of
 milliseconds to wait for the command to complete before raising an
 error (see ERROR HANDLING below for details on handling errors).
 [nl]
-Alternatively, the [arg handle] may be used as Tcl command like 
+Alternatively, the [arg handle] itself may be used as Tcl command like 
 in the example below:
 [nl]
 [example {
@@ -253,11 +276,11 @@ Timeout waiting behind other threads also allocating handles from
 the requested pool.
 
 [lst_item "pool disabled"]
-The maximum number of handles in the pool was set with the [arg -max]
+The maximum number of handles in the pool was set with the [arg -maxslaves]
 config option to 0.
 
 [lst_item "insufficient handles"]
-The maximum number of handles in the pool set with the [arg -max] 
+The maximum number of handles in the pool set with the [arg -maxslaves] 
 config option was less than the requested number of handles.
 
 [list_end]
@@ -265,6 +288,34 @@ config option was less than the requested number of handles.
 
 [section EXAMPLES]
 [para]
+The following demonstrates sending a script to a remote proxy:
+[example {
+
+        set handle [ns_proxy get myproxy]
+        ns_proxy eval $handle {info patchlevel}
+        ns_proxy release $handle
+
+}]
+Alternatively, instead of using the scalar handle you can use
+the handle directly as an Tcl command:
+[example {
+
+        set handle [ns_proxy get myproxy]
+        $handle {info patchlevel}
+        rename $handle ""
+
+}]
+The following demonstrates using multiple proxies:
+[example {
+
+	ns_proxy config myproxy -maxslaves 10
+	set handles [ns_proxy get myproxy -handle 10]
+	foreach h $handles {
+		$h {puts "alive: [pid]"}
+	}
+	ns_proxy cleanup
+
+}]
 
 [see_also nsd]
 [keywords NaviServer ns_proxy]

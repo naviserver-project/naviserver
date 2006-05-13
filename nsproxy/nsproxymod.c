@@ -30,8 +30,8 @@
 /*
  * nsproxymod.c --
  *
- *	Loadable module for Naviserver to add the ns_proxy command
- *	and cleanup trace.
+ *      Loadable module for Naviserver to add the ns_proxy command
+ *      and cleanup trace.
  */
 
 #include "nsproxy.h"
@@ -42,10 +42,20 @@ static Ns_TclTraceProc InitInterp;
 
 int Ns_ModuleVersion = 1;
 
+typedef struct {
+    char *server;
+    char *module;
+} SrvMod;
+
+static SrvMod srvmod;
+
 int
 Ns_ModuleInit(char *server, char *module)
 {
-    Ns_TclRegisterTrace(server, InitInterp, NULL, NS_TCL_TRACE_CREATE);
+    srvmod.server = ns_strdup(server);
+    srvmod.module = ns_strdup(module);
+
+    Ns_TclRegisterTrace(server, InitInterp, (void*)&srvmod, NS_TCL_TRACE_CREATE);
     Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
     Ns_RegisterAtExit(Ns_ProxyExit, NULL);
 
@@ -55,5 +65,15 @@ Ns_ModuleInit(char *server, char *module)
 static int
 InitInterp(Tcl_Interp *interp, void *arg)
 {
-    return Ns_ProxyInit(interp);
+    int status;
+    SrvMod *sm = (SrvMod *)arg;
+
+    status = Ns_ProxyInit(interp);
+    if (status == TCL_OK) {
+        InterpData *idataPtr = Tcl_GetAssocData(interp, ASSOC_DATA, NULL);
+        idataPtr->server = sm->server;
+        idataPtr->module = sm->module;
+    }
+
+    return status;
 }

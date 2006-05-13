@@ -45,9 +45,37 @@
 #define NS_EXTERN extern NS_EXPORT
 #endif
 
-NS_EXTERN int Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *proc);
-NS_EXTERN int Ns_ProxyInit(Tcl_Interp *interp);
-NS_EXTERN Ns_TclTraceProc Ns_ProxyCleanup;
-NS_EXTERN Ns_Callback     Ns_ProxyExit;
+/*
+ * The following structure is allocated per-interp
+ * to manage per-interp state of the module. This 
+ * is used from both nsproxymod.c and nsproxylib.c
+ */
+
+typedef struct InterpData {
+    char *server;
+    char *module;
+    Tcl_HashTable ids;
+    Tcl_HashTable cnts;
+} InterpData;
+
+#define ASSOC_DATA "nsproxy:data"
+
+NS_EXTERN int Ns_ProxyMain (int argc, char **argv, Tcl_AppInitProc *proc);
+NS_EXTERN int Ns_ProxyInit (Tcl_Interp *interp);
+NS_EXTERN Ns_TclTraceProc  Ns_ProxyCleanup;
+NS_EXTERN Ns_Callback      Ns_ProxyExit;
+
+/*
+ * Small proxy API so C-level code can also
+ * take advantage of proxy communication
+ */
+
+typedef void* PROXY;
+
+NS_EXTERN int  Ns_ProxyGet  (Tcl_Interp *interp, char *pool, PROXY *handlePtr,
+                             int ms);
+NS_EXTERN int  Ns_ProxyEval (Tcl_Interp *interp, PROXY handle, char *script,
+                             int ms);
+NS_EXTERN void Ns_ProxyPut  (PROXY handle);
 
 #endif /* NSPROXY_H */
