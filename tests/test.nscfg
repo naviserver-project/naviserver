@@ -120,11 +120,13 @@ ns_section "ns/server/test/db"
 ns_param   pools           a,b
 ns_param   defaultpool     a
 
+ns_section "ns/server/test/module/nsproxy"
+ns_param   exec            [ns_config "test" home]/../nsproxy/nsproxy
+
 ns_section "ns/server/test/modules"
 ns_param   nslog           [ns_config "test" home]/../nslog/nslog.so
 ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb.so
-
-
+ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy.so
 
 #
 # Virtual host test server config.
