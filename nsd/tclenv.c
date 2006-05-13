@@ -252,17 +252,35 @@ PutEnv(Tcl_Interp *interp, char *name, char *value)
     len = strlen(name);
     if (value != NULL) {
         len += strlen(value) + 1;
+    } else {
+        len += 1;
     }
     /* NB: Use malloc() directly as putenv() would expect. */
     s = malloc(len + 1);
     if (s == NULL) {
-        Tcl_SetResult(interp,
-                      "could not allocate memory for new env entry", TCL_STATIC);
+        Tcl_SetResult(interp, "could not allocate memory for new env entry",
+                      TCL_STATIC);
         return TCL_ERROR;
     }
+
+    /*
+     * This complication for value == NULL below is needed on 
+     * some platforms (Solaris) which do not have unsetenv()
+     * and are picky if we try to pass a value to putenv not
+     * conforming to the "name=value" format.
+     *
+     * This trick will of course work only for platforms which
+     * conform to Single Unix Spec and actually uses the storage
+     * passed to putenv() to hold the environ entry.
+     * However, there are some libc implementations (notably 
+     * recent BSDs) that do not obey SUS but copy the presented
+     * string. This method fails on such platforms.
+     */
+
     strcpy(s, name);
+    strcat(s, "=");
+
     if (value != NULL) {
-        strcat(s, "=");
         strcat(s, value);
     }
     if (putenv(s) != 0) {
@@ -270,6 +288,10 @@ PutEnv(Tcl_Interp *interp, char *name, char *value)
                          s, "\": ", Tcl_PosixError(interp), NULL);
         free(s);
         return TCL_ERROR;
+    }
+    if (value == NULL) {
+        strcpy(s, "=");
+        putenv(s);
     }
 
     return TCL_OK;

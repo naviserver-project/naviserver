@@ -33,6 +33,10 @@
 
 	* tests/test.nscfg: Added loading of nsproxy in the test server.
 	
+	* nsd/tclenv.c: Fixed PutEnv() to work correctly on all platforms we
+	support. The problem was that it was not simple to unset an env
+	variable w/o empolying some dirty tricks.
+
 2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/return.c: Make ReturnCharData to use Ns_WriteConn
