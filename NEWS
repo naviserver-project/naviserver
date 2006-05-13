@@ -5,6 +5,7 @@ NaviServer 4.99.2, released XXXX-XX-XX
 New Features:
 
     * Added Tcl-trace based interpreter initialization
+    * Added nsproxy module
 
 Code Changes:
 
