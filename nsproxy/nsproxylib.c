@@ -34,7 +34,7 @@
  */
 
 #include "nsproxy.h"
-#ifdef HAVE_STDINT
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
 
@@ -66,16 +66,16 @@ typedef struct Proc {
  */
 
 typedef struct Req {
-    uint32_t len;
-    uint16_t major;
-    uint16_t minor;
+    u_int32_t len;
+    u_int16_t major;
+    u_int16_t minor;
 } Req;
 
 typedef struct Res {
-    uint32_t code;
-    uint32_t clen;
-    uint32_t ilen;
-    uint32_t rlen;
+    u_int32_t code;
+    u_int32_t clen;
+    u_int32_t ilen;
+    u_int32_t rlen;
 } Res;
 
 /*
@@ -286,7 +286,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_DString  in, out;
     char        *script, *active, *dots;
     char        *uarg = NULL, *user = NULL, *group = NULL;
-    uint16_t     major, minor;
+    u_int16_t     major, minor;
 
     if (argc > 4 || argc < 3) {
         char *pgm = strrchr(argv[0], '/');
@@ -905,7 +905,7 @@ static int
 SendBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 {
     int          n;
-    uint32_t     ulen;
+    u_int32_t    ulen;
     struct iovec iov[2];
 
     ulen = htonl(dsPtr->length);
@@ -949,7 +949,7 @@ SendBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 static int
 RecvBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr, int *errnumPtr)
 {
-    uint32_t     ulen;
+    u_int32_t    ulen;
     char        *ptr;
     int          n, len, avail;
     struct iovec iov[2];
