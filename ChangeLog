@@ -37,6 +37,8 @@
 	support. The problem was that it was not simple to unset an env
 	variable w/o empolying some dirty tricks.
 
+	* configure.in: Added check for unsetenv() function.
+
 2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/return.c: Make ReturnCharData to use Ns_WriteConn

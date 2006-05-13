@@ -249,6 +249,13 @@ PutEnv(Tcl_Interp *interp, char *name, char *value)
     char   *s;
     size_t  len;
 
+#ifdef HAVE_UNSETENV
+    if (value == NULL) {
+        unsetenv(name);
+        return TCL_OK;
+    }
+#endif
+
     len = strlen(name);
     if (value != NULL) {
         len += strlen(value) + 1;
