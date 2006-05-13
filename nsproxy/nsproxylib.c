@@ -583,7 +583,7 @@ Ns_ProxyExit(void *ignored)
     if (reap) {
         ReapProxies();
     }
-
+return;
     /*
      * Now terminate the thread
      */
@@ -591,7 +591,7 @@ Ns_ProxyExit(void *ignored)
     Ns_MutexLock(&plock);
     if (reaperState != stopped) {
         reaperState = stopping;
-        Ns_CondSignal(&pcond);
+        Ns_CondBroadcast(&pcond);
         while (reaperState != stopped) {
             Ns_CondWait(&pcond, &plock);
         }
