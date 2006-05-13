@@ -148,7 +148,7 @@ AC_SUBST(NAVISERVER)
 # Additional checks.
 #
 
-AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h)
+AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h)
 AC_CHECK_TYPES(u_int32_t)
 AC_CHECK_TYPES(u_int8_t)
 AC_CHECK_FUNCS(timegm fork1 poll drand48 random _NSGetEnviron unsetenv)

@@ -34,7 +34,9 @@
  */
 
 #include "nsproxy.h"
+#ifdef HAVE_STDINT
 #include <stdint.h>
+#endif
 
 NS_RCSID("@(#) $Header$");
 
