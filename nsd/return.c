@@ -308,7 +308,10 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     Conn *connPtr = (Conn *) conn;
 
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
-        connPtr->responseStatus = status;
+        /* 200 is default, don't stomp custom redirects. */
+        if (status != 200) {
+            connPtr->responseStatus = status;
+        }
         if (!(conn->flags & NS_CONN_SKIPHDRS)) {
             Ns_ConnConstructHeaders(conn, &connPtr->queued);
             connPtr->nContentSent -= connPtr->queued.length;
@@ -1306,6 +1309,7 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
             Ns_Log(Error, "return: failed to redirect '%d': "
                    "exceeded recursion limit of %d", status, MAX_RECURSION);
         } else {
+            connPtr->responseStatus = status;
             *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
             return 1;
         }

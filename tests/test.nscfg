@@ -95,6 +95,9 @@ ns_param   initfile        ../nsd/init.tcl
 ns_param   library         [ns_config "test" home]/testserver/modules
 ns_param   cachetimeout    360 
 
+ns_section "ns/server/test/redirects"
+ns_param   400             "/400return.adp"
+
 ns_section "ns/server/test/module/nslog"
 ns_param   file            [ns_config "test" home]/testserver/access.log
 ns_param   formattedtime   true

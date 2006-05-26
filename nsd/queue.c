@@ -705,7 +705,7 @@ ConnRun(Conn *connPtr)
     connPtr->request = connPtr->reqPtr->request;
     connPtr->flags = 0;
     connPtr->nContentSent = 0;
-    connPtr->responseStatus = 0;
+    connPtr->responseStatus = 200;
     connPtr->responseVersion = 0;
     connPtr->responseLength = 0;
     connPtr->recursionCount = 0;

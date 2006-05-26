@@ -1,3 +1,11 @@
+2006-05-26  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/queue.c:
+	* nsd/return.c:
+	* tests/test.nscfg:
+	* tests/errordoc.test: Make sure custom error documents return the
+	correct HTTP error code.
+
 2006-05-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* sampe-config.tcl.in: Loads nsproxy module and initializes
