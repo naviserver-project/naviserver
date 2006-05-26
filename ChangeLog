@@ -1,5 +1,19 @@
 2006-05-26  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* include/ns.h:
+	* nsd/return.c:
+	* nsd/tclrequest.c:
+	* nsd/tclresp.c:
+	* nsd/tclcallbacks.c:
+	* nsd/tclcmds.c:
+	* nsd/tclcache.c:
+	* nsd/tclinit.c:
+	* nsd/tcljob.c:
+	* nsd/conn.c:
+	* tests/timeout.test: Catch Tcl errors with error code NS_TIMEOUT
+	and return an HTTP 503 Unavailable response. Update some Tcl
+	commande to set the NS_TIMEOUT error code.
+
 	* nsd/queue.c:
 	* nsd/return.c:
 	* tests/test.nscfg:

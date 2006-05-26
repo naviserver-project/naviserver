@@ -1608,6 +1608,10 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
+Ns_ConnReturnUnavailable(Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
 Ns_ConnReturnStatus(Ns_Conn *conn, int status)
     NS_GNUC_NONNULL(1);
 

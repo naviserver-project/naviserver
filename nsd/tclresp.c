@@ -534,6 +534,13 @@ NsTclReturnForbiddenObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnForbidden);
 }
 
+int
+NsTclReturnUnavailableObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                             Tcl_Obj *CONST objv[])
+{
+    return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnUnavailable);
+}
+
 
 /*
  *----------------------------------------------------------------------

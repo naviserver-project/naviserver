@@ -608,6 +608,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                                                 &queuePtr->lock, &timeout);
                     if (timedOut == NS_TIMEOUT) {
                         Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
+                        Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);
                         jobPtr->req = JOB_NONE;
                         ReleaseQueue(queuePtr, 0);
                         return TCL_ERROR;
@@ -749,6 +750,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                                                 &queuePtr->lock, &timeout);
                     if (timedOut == NS_TIMEOUT) {
                         Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
+                        Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);
                         ReleaseQueue(queuePtr, 0);
                         return TCL_ERROR;
                     }

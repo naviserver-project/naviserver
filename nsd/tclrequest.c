@@ -494,7 +494,8 @@ NsAdpMapProc(void *arg, Ns_Conn *conn)
  *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      '500 Internal Server Error' sent to client if Tcl script fails.
+ *      '500 Internal Server Error' sent to client if Tcl script
+ *      fails, or '503 Service Unavailable' on an NS_TIMEOUT exception.
  *
  *----------------------------------------------------------------------
  */
@@ -504,13 +505,24 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
 {
     Ns_TclCallback *cbPtr = arg;
     Tcl_Interp     *interp;
+    Ns_DString      ds;
+    int             status = NS_OK;
 
     interp = Ns_GetConnInterp(conn);
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, NULL) != TCL_OK) {
-        return Ns_ConnReturnInternalError(conn);
+        if (STREQ(Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY), "NS_TIMEOUT")) {
+            Ns_DStringInit(&ds);
+            Ns_GetProcInfo(&ds, NsTclRequestProc, arg);
+            Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
+            Ns_DStringFree(&ds);
+            status = Ns_ConnReturnUnavailable(conn);
+        } else {
+            Ns_TclLogError(interp);
+            status = Ns_ConnReturnInternalError(conn);
+        }
     }
 
-    return NS_OK;
+    return status;
 }
 
 
@@ -534,19 +546,19 @@ int
 NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
 {
     Ns_TclCallback      *cbPtr = arg;
-    Tcl_DString          cmd;
+    Tcl_DString          ds;
     Tcl_Interp          *interp;
     int                  ii, status;
     CONST char          *result;
     
     interp = Ns_GetConnInterp(conn);
-    Tcl_DStringInit(&cmd);
+    Tcl_DStringInit(&ds);
     
     /*
      * Append the command
      */
     
-    Tcl_DStringAppend(&cmd, cbPtr->script, -1);
+    Tcl_DStringAppend(&ds, cbPtr->script, -1);
     
     /*
      * Append the 'why' argument
@@ -554,13 +566,13 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
 
     switch (why) {
     case NS_FILTER_PRE_AUTH:
-        Tcl_DStringAppendElement(&cmd, "preauth");
+        Tcl_DStringAppendElement(&ds, "preauth");
         break;
     case NS_FILTER_POST_AUTH:
-        Tcl_DStringAppendElement(&cmd, "postauth");
+        Tcl_DStringAppendElement(&ds, "postauth");
         break;
     case NS_FILTER_TRACE:
-        Tcl_DStringAppendElement(&cmd, "trace");
+        Tcl_DStringAppendElement(&ds, "trace");
         break;
     case NS_FILTER_VOID_TRACE:
         /* Registered with ns_register_trace; always type VOID TRACE, so don't append. */
@@ -572,7 +584,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
      */
 
     for (ii = 0; ii < cbPtr->argc; ii++) {
-        Tcl_DStringAppendElement(&cmd, cbPtr->argv[ii]);
+        Tcl_DStringAppendElement(&ds, cbPtr->argv[ii]);
     }
 
     /*
@@ -580,32 +592,46 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
      */
     
     Tcl_AllowExceptions(interp);
-    status = Tcl_EvalEx(interp, cmd.string, cmd.length, 0);
-    if (status != TCL_OK) {
-        Ns_TclLogError(interp);
-    }
-
-    /*
-     * Determine the filter result code.
-     */
-
+    status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
     result = Tcl_GetStringResult(interp);
-    if (why == NS_FILTER_VOID_TRACE) {
-        status = NS_OK;
-    } else if (status != TCL_OK) {
-        status = NS_ERROR;
-    } else if (STREQ(result, "filter_ok")) {
-        status = NS_OK;
-    } else if (STREQ(result, "filter_break")) {
-        status = NS_FILTER_BREAK;
-    } else if (STREQ(result, "filter_return")) {
-        status = NS_FILTER_RETURN;
+    Ns_DStringSetLength(&ds, 0);
+
+    if (status != TCL_OK) {
+
+        /*
+         * Handle Tcl errors and timeouts.
+         */
+
+        if (STREQ(Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY), "NS_TIMEOUT")) {
+            Ns_GetProcInfo(&ds, NsTclFilterProc, arg);
+            Ns_Log(Dev, "%s: %s", ds.string, result);
+            Ns_ConnReturnUnavailable(conn);
+            status = NS_FILTER_RETURN;
+        } else {
+            Ns_TclLogError(interp);
+            status = NS_ERROR;
+        }
     } else {
-        Ns_Log(Error, "tclfilter: %s return invalid result: %s",
-               cbPtr->script, result);
-        status = NS_ERROR;
+
+        /*
+         * Determine the filter result code.
+         */
+
+        if (why == NS_FILTER_VOID_TRACE) {
+            status = NS_OK;
+        } else if (STREQ(result, "filter_ok")) {
+            status = NS_OK;
+        } else if (STREQ(result, "filter_break")) {
+            status = NS_FILTER_BREAK;
+        } else if (STREQ(result, "filter_return")) {
+            status = NS_FILTER_RETURN;
+        } else {
+            Ns_Log(Error, "ns:tclfilter: %s return invalid result: %s",
+                   cbPtr->script, result);
+            status = NS_ERROR;
+        }
     }
-    Tcl_DStringFree(&cmd);
+    Ns_DStringFree(&ds);
 
     return status;
 }

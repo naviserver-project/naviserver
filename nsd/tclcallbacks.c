@@ -173,7 +173,9 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
             Ns_DStringAppend(&ds, "\n    while executing callback\n");
             Ns_GetProcInfo(&ds, cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
-            Ns_TclLogError(interp);
+            if (deallocInterp) {
+                Ns_TclLogError(interp);
+            }
         } else if (result != NULL) {
             Ns_DStringAppend(result, Tcl_GetStringResult(interp));
         }

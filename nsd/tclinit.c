@@ -1238,8 +1238,12 @@ int
 NsTclTraceProc(Tcl_Interp *interp, void *arg)
 {
     Ns_TclCallback *cbPtr = arg;
+    int             status;
 
-    return Ns_TclEvalCallback(interp, cbPtr, NULL, NULL);
+    status = Ns_TclEvalCallback(interp, cbPtr, NULL, NULL);
+    if (status != TCL_OK) {
+        Ns_TclLogError(interp);
+    }
 }
 
 

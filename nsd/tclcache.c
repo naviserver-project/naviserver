@@ -666,7 +666,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *      an update.
  *
  * Results:
- *      Pointer to entry, or NULL on flush or timeout.
+ *      Pointer to entry, or NULL timeout.
  *
  * Side effects:
  *      Cache will be left locked if function returns entry.
@@ -687,8 +687,8 @@ CreateEntry(NsInterp *itPtr, Ns_Cache *cache, char *key, int *newPtr,
     entry = Ns_CacheWaitCreateEntry(cache, key, newPtr, timeout);
     if (entry == NULL) {
         Ns_CacheUnlock(cache);
-        Tcl_AppendResult(itPtr->interp,
-            "timeout waiting for update or entry flushed: ", key, NULL);
+        Tcl_SetErrorCode(itPtr->interp, "NS_TIMEOUT", NULL);
+        Tcl_AppendResult(itPtr->interp, "timeout waiting for update: ", key, NULL);
     }
     return entry;
 }
