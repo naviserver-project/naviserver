@@ -682,9 +682,8 @@ CreateEntry(NsInterp *itPtr, Ns_Cache *cache, char *key, int *newPtr,
     Ns_Entry *entry;
 
     if (timeout < 0) {
-        time_t timeout2;
-        Ns_CacheGetConfig(cache, 0, 0, &timeout2);
-        if (!(timeout = timeout2)) {
+        Ns_CacheGetConfig(cache, 0, 0, ((void*)&timeout));
+        if (timeout <= 0) {
             timeout = itPtr->servPtr->tcl.cacheTimeout;
         }
     }
