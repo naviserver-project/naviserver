@@ -615,6 +615,10 @@ NS_EXTERN size_t
 Ns_CacheGetSize(Ns_Entry *entry)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_Time
+Ns_CacheGetExpiration(Ns_Entry *entry)
+   NS_GNUC_NONNULL(1);
+
 NS_EXTERN void
 Ns_CacheSetValue(Ns_Entry *entry, void *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);

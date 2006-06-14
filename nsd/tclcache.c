@@ -329,6 +329,50 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclCacheInfoObjCmd --
+ *
+ *      Returns entry size and expiration if entry exists in the cache and not expired yet
+ *
+ * Results:
+ *      TCL result with entry size and expiration or empty result
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclCacheInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_Cache *cache;
+    Ns_Entry *entry;
+    Ns_DString  ds;
+    Ns_Time  expires;
+    char     *key;
+
+    Ns_ObjvSpec args[] = {
+        {"cache",    ObjvCache,     &cache, arg},
+        {"key",      Ns_ObjvString, &key,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    Ns_CacheLock(cache);
+    if ((entry = Ns_CacheFindEntry(cache, key)) != NULL) {
+        Ns_DStringInit(&ds);
+        expires = Ns_CacheGetExpiration(entry);
+        Ns_DStringPrintf(&ds, "size %u expires %lu", Ns_CacheGetSize(entry), expires.sec);
+        Tcl_DStringResult(interp, &ds);
+    }
+    Ns_CacheUnlock(cache);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclCacheSetObjCmd --
  *
  *      Set new value of the cache entry

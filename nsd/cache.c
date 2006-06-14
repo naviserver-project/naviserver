@@ -401,6 +401,30 @@ Ns_CacheGetSize(Ns_Entry *entry)
     return ePtr->size;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CacheGetExpiration --
+ *
+ *      Get the expiraton of a cache entry.
+ *
+ * Results:
+ *      The Ns_Time structure if the expires is set.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Time
+Ns_CacheGetExpiration(Ns_Entry *entry)
+{
+    Entry *ePtr = (Entry *) entry;
+
+    return ePtr->expires;
+}
+
 
 /*
  *----------------------------------------------------------------------

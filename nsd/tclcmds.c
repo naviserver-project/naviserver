@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -73,6 +73,7 @@ extern Tcl_ObjCmdProc
     NsTclCacheCreateObjCmd,
     NsTclCacheEvalObjCmd,
     NsTclCacheGetObjCmd,
+    NsTclCacheInfoObjCmd,
     NsTclCacheSetObjCmd,
     NsTclCacheFlushObjCmd,
     NsTclCacheIncrObjCmd,
@@ -385,6 +386,7 @@ static Cmd servCmds[] = {
     {"ns_cache_append", NULL, NsTclCacheAppendObjCmd},
     {"ns_cache_create", NULL, NsTclCacheCreateObjCmd},
     {"ns_cache_eval", NULL, NsTclCacheEvalObjCmd},
+    {"ns_cache_info", NULL, NsTclCacheInfoObjCmd},
     {"ns_cache_get", NULL, NsTclCacheGetObjCmd},
     {"ns_cache_set", NULL, NsTclCacheSetObjCmd},
     {"ns_cache_flush", NULL, NsTclCacheFlushObjCmd},

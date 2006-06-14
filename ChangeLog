@@ -10,6 +10,10 @@
 	create, cache will behave as before, taking -timeout or using 
 	global value from the config. Introduced new API function 
 	Ns_CacheGetConfig that returns configured cache parameters.
+	
+	* nsd/tclcmds.c: Added new public function Ns_CacheGetExpiration 
+	and Tcl command	ns_cache_info that returns entry size and 
+	expiration if set.
 
 	* nsd/nsconf.c:
 	* nsd/dns.c: Updated to reflect API  change and added new config 
