@@ -29,7 +29,7 @@ test cache-1.3 {basic syntax} -body {
 
 test cache-1.4 {basic syntax} -body {
     ns_cache_create
-} -returnCodes error -result {wrong # args: should be "ns_cache_create ?-ttl ttl? ?--? cache size"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_create ?-ttl ttl? ?-timeout timeout? ?--? cache size"}
 
 test cache-1.5 {basic syntax} -body {
     ns_cache_eval

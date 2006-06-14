@@ -1,5 +1,6 @@
 2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* tests/ns_cache.test:
 	* include/ns.h:
 	* nsd/cache.c:
 	* nsd/tclcache.c: Added timeout parameter to Ns_CacheCreateEx
