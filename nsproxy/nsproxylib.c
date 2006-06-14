@@ -36,6 +36,9 @@
 #include "nsproxy.h"
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
+#else
+typedef unsigned int u_int32_t;
+typedef unsigned short int u_int16_t;
 #endif
 
 NS_RCSID("@(#) $Header$");
