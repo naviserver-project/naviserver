@@ -683,6 +683,10 @@ NS_EXTERN void
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN void
+Ns_CacheGetConfig(Ns_Cache *cache, time_t *ttl, size_t *maxsize, time_t *timeout)
+    NS_GNUC_NONNULL(1);
+
 /*
  * callbacks.c:
  */

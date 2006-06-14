@@ -842,6 +842,38 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
                      cachePtr->nexpired, cachePtr->npruned);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CacheGetConfig --
+ *
+ *      Returns configured cache parameters
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_CacheGetConfig(Ns_Cache *cache, time_t *ttl, size_t *maxsize, time_t *timeout)
+{
+    Cache        *cachePtr = (Cache *) cache;
+
+    if (ttl) {
+        *ttl = cachePtr->ttl;
+    }
+    if (maxsize) {
+        *maxsize = cachePtr->maxSize;
+    }
+    if (timeout) {
+        *timeout = cachePtr->timeout;
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------

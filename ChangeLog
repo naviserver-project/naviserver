@@ -7,7 +7,8 @@
 	global config.tcl.cachetimeout and will eliminate specifying 
 	-timeout on every ns_cache_eval call. If specified as 0 on cache 
 	create, cache will behave as before, taking -timeout or using 
-	global value from the config.
+	global value from the config. Introduced new API function 
+	Ns_CacheGetConfig that returns configured cache parameters.
 
 	* nsd/nsconf.c:
 	* nsd/dns.c: Updated to reflect API  change and added new config 

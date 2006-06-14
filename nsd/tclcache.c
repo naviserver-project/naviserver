@@ -682,7 +682,11 @@ CreateEntry(NsInterp *itPtr, Ns_Cache *cache, char *key, int *newPtr,
     Ns_Entry *entry;
 
     if (timeout < 0) {
-        timeout = itPtr->servPtr->tcl.cacheTimeout;
+        time_t timeout2;
+        Ns_CacheGetConfig(cache, 0, 0, &timeout2);
+        if (!(timeout = timeout2)) {
+            timeout = itPtr->servPtr->tcl.cacheTimeout;
+        }
     }
     Ns_CacheLock(cache);
     entry = Ns_CacheWaitCreateEntry(cache, key, newPtr, timeout);
