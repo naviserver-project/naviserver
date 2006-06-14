@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * nsconf.c --
  *
  *	Various core configuration.
@@ -66,11 +66,11 @@ NsInitConf(void)
     Ns_ThreadSetName("-main-");
 
     /*
-     * At library load time the server is considered started. 
+     * At library load time the server is considered started.
      * Normally it's marked stopped immediately by Ns_Main unless
      * libnsd is being used for some other, non-server program.
      */
-     
+
     nsconf.state.started = 1;
     Ns_MutexInit(&nsconf.state.lock);
     Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
@@ -156,7 +156,7 @@ NsConfUpdate(void)
     int i;
     Ns_DString ds;
     char *path = NS_CONFIG_PARAMETERS;
-    
+
     NsConfigLog();
     NsConfigFastpath();
 
@@ -192,17 +192,18 @@ NsConfUpdate(void)
      */
 
     nsconf.backlog = Ns_ConfigIntRange(path, "listenbacklog", 32, 0, INT_MAX);
-    
+
     /*
      * dns.c
      */
 
     if (Ns_ConfigBool(path, "dnscache", NS_TRUE)) {
         int max = Ns_ConfigIntRange(path, "dnscachemaxsize", 1024*500, 0, INT_MAX);
+        int timeout = Ns_ConfigIntRange(path, "dnswaittimeout", 5, 0, INT_MAX);
         i = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
         if (max > 0 && i > 0) {
             i *= 60; /* NB: Config minutes, seconds internally. */
-            NsEnableDNSCache(i, max);
+            NsEnableDNSCache(i, max, timeout);
         }
     }
 

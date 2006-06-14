@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * tclcache.c --
  *
  *      Tcl cache commands.
@@ -77,10 +77,11 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Tcl_HashEntry *hPtr;
     Ns_Cache      *cache;
     char          *name;
-    int            new, maxSize, ttl = 0;
+    int            new, maxSize, ttl = 0, timeout = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-ttl",     Ns_ObjvInt,   &ttl, NULL},
+        {"-timeout", Ns_ObjvInt,   &timeout, NULL},
         {"--",       Ns_ObjvBreak, NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -97,7 +98,7 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &new);
     if (new) {
         cache = Ns_CacheCreateEx(name, TCL_STRING_KEYS,
-                                 ttl, maxSize, ns_free);
+                                 ttl, maxSize, timeout, ns_free);
         Tcl_SetHashValue(hPtr, cache);
     }
     Ns_MutexUnlock(&servPtr->tcl.cachelock);
@@ -516,7 +517,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     Ns_CacheSearch  search;
     char           *key, *pattern = NULL;
     Ns_DString      ds;
-    
+
     Ns_ObjvSpec args[] = {
         {"cache",    ObjvCache,     &cache,   arg},
         {"?pattern", Ns_ObjvString, &pattern, NULL},
@@ -568,7 +569,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     Ns_CacheSearch  search;
     char           *key, *pattern;
     int             i, nflushed = 0, glob = NS_FALSE, npatterns = 0;
-    
+
     Ns_ObjvSpec opts[] = {
         {"-glob",    Ns_ObjvBool,  &glob, (void *) NS_TRUE},
         {"--",       Ns_ObjvBreak, NULL,  NULL},

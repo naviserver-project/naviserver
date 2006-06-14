@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -191,12 +191,12 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
  */
 
 void
-NsEnableDNSCache(int timeout, int maxsize)
+NsEnableDNSCache(int timeout, int maxsize, int cachetimeout)
 {
     hostCache = Ns_CacheCreateEx("ns:dnshost", TCL_STRING_KEYS,
-                                 timeout, (size_t) maxsize, ns_free);
+                                 timeout, (size_t) maxsize, cachetimeout, ns_free);
     addrCache = Ns_CacheCreateEx("ns:dnsaddr", TCL_STRING_KEYS,
-                                 timeout, (size_t) maxsize, ns_free);
+                                 timeout, (size_t) maxsize, cachetimeout, ns_free);
 }
 
 
@@ -210,7 +210,7 @@ NsEnableDNSCache(int timeout, int maxsize)
  *      to ensure waiting on a condition and not mutex spin waiting.
  *
  * Results:
- *      If a name can be found, the function returns NS_TRUE; otherwise, 
+ *      If a name can be found, the function returns NS_TRUE; otherwise,
  *      it returns NS_FALSE.
  *
  * Side effects:
@@ -368,7 +368,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
     int i = 0;
     int h_errnop;
     int status = NS_FALSE;
-    
+
     memset(buf, 0, sizeof(buf));
 
 #if defined(HAVE_GETHOSTBYNAME_R_6)
@@ -384,7 +384,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
     h_errnop = h_errno;
 #endif
 
-    if (result != 0) { 
+    if (result != 0) {
         LogError("gethostbyname_r", h_errnop);
     } else {
         while ((ptr = (struct in_addr *) he.h_addr_list[i++]) != NULL) {

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -169,7 +169,7 @@ typedef long			ns_int64;
 typedef unsigned long		ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%ld"
 #elif defined(_WIN32)
-typedef int			mode_t;  /* Bug: #703061 */ 
+typedef int			mode_t;  /* Bug: #703061 */
 typedef __int64			ns_int64;
 typedef unsigned __int64	ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%I64d"
@@ -531,7 +531,7 @@ typedef struct Ns_DriverInitData {
 } Ns_DriverInitData;
 
 /*
- * More typedefs of functions 
+ * More typedefs of functions
  */
 
 typedef void  (Ns_ArgProc) (Tcl_DString *dsPtr, void *arg);
@@ -584,7 +584,7 @@ Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freePr
 
 NS_EXTERN Ns_Cache *
 Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize,
-                 Ns_Callback *freeProc)
+                 time_t timeout, Ns_Callback *freeProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -1009,7 +1009,7 @@ Ns_TriggerEventQueue(Ns_EventQueue *queue)
 NS_EXTERN void
 Ns_ExitEventQueue(Ns_EventQueue *queue)
     NS_GNUC_NONNULL(1);
-    
+
 
 /*
  * exec.c:
@@ -1088,7 +1088,7 @@ NS_EXTERN void Ns_IndexIntInit(Ns_Index *indexPtr, int inc);
 /*
  * see macros above for:
  *
- * Ns_IndexCount(X) 
+ * Ns_IndexCount(X)
  */
 
 /*
@@ -1130,8 +1130,8 @@ NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
 NS_EXTERN void Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
 NS_EXTERN double Ns_DRand(void);
 
-/* 
- * task.c: 
+/*
+ * task.c:
  */
 
 NS_EXTERN Ns_TaskQueue *
@@ -1717,13 +1717,13 @@ NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int opti
 
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, 
+NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,
                           Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, 
+NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend,
                           Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                               Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, 
+NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                               Ns_Time *timeoutPtr);
 
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
@@ -1736,7 +1736,7 @@ NS_EXTERN SOCKET Ns_SockConnect2(char *host, int port, char *lhost, int lport);
 NS_EXTERN SOCKET Ns_SockAsyncConnect(char *host, int port);
 NS_EXTERN SOCKET Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport);
 NS_EXTERN SOCKET Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr);
-NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, 
+NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
                                       Ns_Time *timeoutPtr);
 
 NS_EXTERN int Ns_SockSetNonBlocking(SOCKET sock);

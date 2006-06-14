@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -120,7 +120,7 @@
 #define NS_CONFIG_PARAMETERS "ns/parameters"
 #define NS_CONFIG_THREADS    "ns/threads"
 
-#define ADP_OK         0  
+#define ADP_OK         0
 #define ADP_BREAK      1
 #define ADP_ABORT      2
 #define ADP_RETURN     4
@@ -186,12 +186,12 @@ struct _nsconf {
         int started;
         int stopping;
     } state;
-    
+
     struct {
         int maxelapsed;
     } sched;
-    
-#ifdef _WIN32    
+
+#ifdef _WIN32
     struct {
         bool checkexit;
     } exec;
@@ -202,7 +202,7 @@ struct _nsconf {
         char *version;
         bool lockoninit;
     } tcl;
-    
+
     struct {
         char *outputCharset;
         Tcl_Encoding  outputEncoding;
@@ -278,8 +278,8 @@ typedef struct SpoolerQueue {
  * For the time being, don't try to be very clever
  * and define (platform-neutral) just those two modes
  * for mapping the files.
- * Although the underlying implementation(s) can do 
- * much more, we really need only one (read-maps) now. 
+ * Although the underlying implementation(s) can do
+ * much more, we really need only one (read-maps) now.
  */
 
 #ifdef _WIN32
@@ -310,7 +310,7 @@ typedef struct AdpCode {
 } AdpCode;
 
 /*
- * The following structure is used to accumulate the 
+ * The following structure is used to accumulate the
  * results of parsing an ADP string.
  */
 
@@ -344,7 +344,7 @@ typedef struct Request {
     int leadblanks;             /* Number of leading blank lines read */
 
     /*
-     * The following offsets are used to manage 
+     * The following offsets are used to manage
      * the buffer read-ahead process.
      */
 
@@ -434,7 +434,7 @@ typedef struct Driver {
  */
 
 typedef struct _UploadStats {
-    char          *url;         /* Key to lookup */ 
+    char          *url;         /* Key to lookup */
     unsigned long  size;        /* Size of the upload */
     unsigned long  length;      /* Size of the upload done so far */
 } UploadStats;
@@ -449,7 +449,7 @@ typedef struct Sock {
     struct sockaddr_in sa;
     SOCKET sock;
     void *arg;
-    
+
     /*
      * Private to Sock.
      */
@@ -490,7 +490,7 @@ typedef struct Conn {
     /*
      * Visible in an Ns_Conn:
      */
-    
+
     Ns_Request *request;
 
     Ns_Set *headers;
@@ -505,7 +505,7 @@ typedef struct Conn {
     /*
      * Visible only in a Conn:
      */
-    
+
     struct Conn *prevPtr;
     struct Conn *nextPtr;
     struct Sock *sockPtr;
@@ -521,10 +521,10 @@ typedef struct Conn {
     struct Request  *reqPtr;
     struct NsServer *servPtr;
     struct Driver   *drvPtr;
- 
+
     int id;
     char idstr[16];
-    
+
     Ns_Time startTime;
     struct NsInterp *itPtr;
 
@@ -575,14 +575,14 @@ typedef struct ConnPool {
         Ns_Cond  cond;
 
     } queue;
-    
+
     /*
      * The following struct maintins the state of the threads.  Min and max
      * threads are determined at startup and then NsQueueConn ensures the
      * current number of threads remains within that range with individual
      * threads waiting no more than the timeout for a connection to
      * arrive.  The number of idle threads is maintained for the benefit of
-     * the ns_server command. 
+     * the ns_server command.
      */
 
     struct {
@@ -616,11 +616,11 @@ typedef struct NsServer {
         ConnPool *defaultPtr;
         Ns_Thread joinThread;
     } pools;
-    
-    /* 
+
+    /*
      * The following struct maintains various server options.
      */
-    
+
     struct {
         bool flushcontent;
         bool modsince;
@@ -629,7 +629,7 @@ typedef struct NsServer {
         CONST char *realm;
         Ns_HeaderCaseDisposition hdrcase;
     } opts;
-    
+
     /*
      * Encoding defaults for the server
      */
@@ -672,7 +672,7 @@ typedef struct NsServer {
     /*
      * The following struct maintains request tables.
      */
-    
+
     struct {
         Ns_RequestAuthorizeProc *authProc;
         Tcl_HashTable redirect;
@@ -689,12 +689,12 @@ typedef struct NsServer {
         struct Trace *firstTracePtr;
         struct Trace *firstCleanupPtr;
     } filter;
-    
+
     /*
      * The following struct maintains the core Tcl config.
      */
 
-    struct {         
+    struct {
         char *library;
         struct Trace *firstTracePtr;
         char *initfile;
@@ -708,7 +708,7 @@ typedef struct NsServer {
         Tcl_HashTable caches;
         Ns_Mutex cachelock;
         int cacheTimeout;
-        
+
         /*
          * The following track synchronization
          * objects which are looked up by name.
@@ -720,12 +720,12 @@ typedef struct NsServer {
         Tcl_HashTable condTable;
         Tcl_HashTable rwTable;
     } tcl;
-    
+
     /*
      * The following struct maintains ADP config,
      * registered tags, and read-only page text.
      */
-    
+
     struct {
         CONST char *errorpage;
         CONST char *startpage;
@@ -751,7 +751,7 @@ typedef struct NsServer {
         } compress;
 
     } adp;
-    
+
     /*
      * The following struct maintains the Ns_Set's
      * entered into Tcl with NS_TCL_SET_SHARED.
@@ -760,34 +760,34 @@ typedef struct NsServer {
     struct {
         Ns_Mutex lock;
         Tcl_HashTable table;
-    } sets;    
-    
+    } sets;
+
     /*
      * The following struct maintains the arrays
      * for the nsv commands.
      */
-    
+
     struct {
         struct Bucket *buckets;
         int nbuckets;
     } nsv;
-    
+
     /*
      * The following struct maintains the vars and
      * lock for the old ns_var command.
      */
-    
+
     struct {
         Ns_Mutex lock;
         Tcl_HashTable table;
     } var;
-    
+
     /*
      * The following struct maintains the init state
      * of ns_share variables, updated with the
      * ns_share -init command.
      */
-    
+
     struct {
         Ns_Cs cs;
         Ns_Mutex lock;
@@ -807,7 +807,7 @@ typedef struct NsServer {
     } chans;
 
 } NsServer;
-    
+
 /*
  * The following structure is allocated for each interp.
  */
@@ -825,41 +825,41 @@ typedef struct NsInterp {
      * a FIFO list of callbacks to invoke at interp
      * de-allocate time.
      */
-    
+
     struct Defer *firstDeferPtr;
-    
+
     /*
      * The following pointer maintains the first in
      * a LIFO list of scripts to evaluate when a
      * connection closes.
      */
-    
+
     struct AtClose *firstAtClosePtr;
-    
+
     /*
      * The following pointer and struct maintain state for
      * the active connection, if any, and support the ns_conn
      * command.
      */
-    
+
 #define CONN_TCLFORM    1
 #define CONN_TCLHDRS    2
 #define CONN_TCLOUTHDRS 4
-    
+
     Ns_Conn *conn;
-    
+
     struct {
         int  flags;
         char form[16];
         char hdrs[16];
         char outhdrs[16];
     } nsconn;
-    
+
     /*
      * The following struct maintains per-interp ADP
      * context including the private pages cache.
      */
-    
+
     struct {
         bool stream;
         bool compress;
@@ -877,27 +877,27 @@ typedef struct NsInterp {
         Tcl_DString *responsePtr;
         Tcl_DString *typePtr;
     } adp;
-    
+
     /*
      * The following table maintains private Ns_Set's
      * entered into this interp.
      */
 
     Tcl_HashTable sets;
-    
+
     /*
      * The following table maintains shared channels
      * register with the ns_chan command.
      */
-    
+
     Tcl_HashTable chans;
-    
+
     /*
      * The following table maintains the Tcl HTTP requests.
      */
-    
+
     Tcl_HashTable https;
-    
+
 } NsInterp;
 
 /*
@@ -1007,7 +1007,7 @@ extern void NsInitServer(char *server, Ns_ServerInitProc *initProc);
 extern char *NsConfigRead(CONST char *file);
 extern void NsConfigEval(CONST char *config, int argc, char **argv, int optind);
 extern void NsConfUpdate(void);
-extern void NsEnableDNSCache(int timeout, int maxentries);
+extern void NsEnableDNSCache(int timeout, int maxentries, int cachetimeout);
 extern void NsStopServers(Ns_Time *toPtr);
 extern void NsStartServer(NsServer *servPtr);
 extern void NsStopServer(NsServer *servPtr);
@@ -1016,7 +1016,7 @@ extern void NsStartDrivers(void);
 extern void NsWaitDriversShutdown(Ns_Time *toPtr);
 extern void NsStartSchedShutdown(void);
 extern void NsWaitSchedShutdown(Ns_Time *toPtr);
-extern void NsStartSockShutdown(void); 
+extern void NsStartSockShutdown(void);
 extern void NsWaitSockShutdown(Ns_Time *toPtr);
 extern void NsStartShutdownProcs(void);
 extern void NsWaitShutdownProcs(Ns_Time *toPtr);
@@ -1109,7 +1109,7 @@ extern Tcl_Encoding NsGetTypeEncodingWithDef(CONST char *type, int *used_default
 extern void NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
                                       int *new_type, Tcl_DString *type_ds);
 
-extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, 
+extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
                               Tcl_DString *dsPtr);
 
 /*

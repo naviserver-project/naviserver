@@ -1,3 +1,18 @@
+2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/cache.c:
+	* nsd/tclcache.c: Added timeout parameter to Ns_CacheCreateEx
+	to assign cache-specific timeout which will be used instead of 
+	global config.tcl.cachetimeout and will eliminate specifying 
+	-timeout on every ns_cache_eval call. If specified as 0 on cache 
+	create, cache will behave as before, taking -timeout or using 
+	global value from the config.
+
+	* nsd/nsconf.c:
+	* nsd/dns.c: Updated to reflect API  change and added new config 
+	parameter dnswaittimeout which is set to 0 by default
+
 2006-06-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclinit.c: Fixed return value of non-void call. 

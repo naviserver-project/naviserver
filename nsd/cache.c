@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * cache.c --
  *
  *      Size and time limited caches.
@@ -66,6 +66,7 @@ typedef struct Cache {
     Tcl_HashEntry *hPtr;
     int            keys;
     time_t         ttl;
+    time_t         timeout;
     size_t         maxSize;
     size_t         currentSize;
     Ns_Callback   *freeProc;
@@ -110,17 +111,17 @@ static void PruneEntry(Entry *ePtr);
 Ns_Cache *
 Ns_CacheCreate(CONST char *name, int keys, time_t ttl, Ns_Callback *freeProc)
 {
-    return Ns_CacheCreateEx(name, keys, ttl, 0, freeProc);
+    return Ns_CacheCreateEx(name, keys, ttl, 0, 0, freeProc);
 }
 
 Ns_Cache *
 Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
 {
-    return Ns_CacheCreateEx(name, keys, -1, maxSize, freeProc);
+    return Ns_CacheCreateEx(name, keys, -1, maxSize, 0, freeProc);
 }
 
 Ns_Cache *
-Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize,
+Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize, time_t timeout,
                  Ns_Callback *freeProc)
 {
     Cache *cachePtr;
@@ -128,6 +129,7 @@ Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize,
     cachePtr = ns_calloc(1, sizeof(Cache));
     cachePtr->freeProc       = freeProc;
     cachePtr->ttl            = ttl;
+    cachePtr->timeout        = timeout;
     cachePtr->maxSize        = maxSize;
     cachePtr->currentSize    = 0;
     cachePtr->keys           = keys;
@@ -185,7 +187,7 @@ Ns_CacheDestroy(Ns_Cache *cache)
  *      not exist or the entry has expired.
  *
  * Side effects:
- *      If still valid, the cache entry will move to the top 
+ *      If still valid, the cache entry will move to the top
  *      of the LRU list. Expired entries or entries without
  *      assigned value will not be touched nor reported.
  *
@@ -292,6 +294,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
 Ns_Entry *
 Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t timeout)
 {
+    Cache *cachePtr = (Cache *) cache;
     Ns_Entry      *entry;
     Ns_Time        time, *timePtr;
     CONST char    *value;
@@ -304,7 +307,7 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t ti
          * Wait for another thread to complete an update.
          */
 
-        if (timeout > 0) {
+        if (timeout > 0 || (timeout = cachePtr->timeout) > 0) {
             Ns_GetTime(&time);
             Ns_IncrTime(&time, timeout, 0);
             timePtr = &time;
@@ -404,15 +407,15 @@ Ns_CacheGetSize(Ns_Entry *entry)
  *
  * Ns_CacheSetValue, Ns_CacheSetValueSz --
  *
- *      Free the cache entry's previous contents, set it to the new 
- *      contents, increase the size of the cache, and prune until 
- *      it's back under the maximum size. 
+ *      Free the cache entry's previous contents, set it to the new
+ *      contents, increase the size of the cache, and prune until
+ *      it's back under the maximum size.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
- *      Cache pruning and freeing of old contents may occur. 
+ *      Cache pruning and freeing of old contents may occur.
  *
  *----------------------------------------------------------------------
  */
@@ -476,7 +479,7 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 {
     Entry *ePtr = (Entry *) entry;
     Cache *cachePtr;
- 
+
     if (ePtr->value != NULL) {
         cachePtr = ePtr->cachePtr;
         cachePtr->currentSize -= ePtr->size;
@@ -744,7 +747,7 @@ int
 Ns_CacheTimedWait(Ns_Cache *cache, Ns_Time *timePtr)
 {
     Cache *cachePtr = (Cache *) cache;
-    
+
     return Ns_CondTimedWait(&cachePtr->cond, &cachePtr->lock, timePtr);
 }
 
@@ -773,7 +776,7 @@ void
 Ns_CacheSignal(Ns_Cache *cache)
 {
     Cache *cachePtr = (Cache *) cache;
-    
+
     Ns_CondSignal(&cachePtr->cond);
 }
 
@@ -794,12 +797,12 @@ Ns_CacheSignal(Ns_Cache *cache)
  *
  *----------------------------------------------------------------------
  */
-    
+
 void
 Ns_CacheBroadcast(Ns_Cache *cache)
 {
     Cache *cachePtr = (Cache *) cache;
-    
+
     Ns_CondBroadcast(&cachePtr->cond);
 }
 
@@ -911,7 +914,7 @@ IsSet(Entry *ePtr)
  *
  *----------------------------------------------------------------------
  */
- 
+
 static void
 Delink(Entry *ePtr)
 {
