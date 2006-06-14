@@ -1,3 +1,11 @@
+2006-06-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/tclinit.c: Fixed return value of non-void call. 
+	* nsd/cache.c:  Fixed Ns_CacheSetValueExpires() to correctly
+	set expiry time of the entry.
+	Changed Ns_CacheFindEntry() NOT to auto-expire expired entries
+	as this collides with Ns_CacheWaitCreateEntry API call.
+
 2006-05-26  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

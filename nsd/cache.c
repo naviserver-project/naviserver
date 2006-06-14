@@ -84,10 +84,10 @@ typedef struct Cache {
  * Local functions defined in this file
  */
 
-static int  Expired(Entry *ePtr);
+static int  IsExpired(Entry *ePtr);
+static int  IsSet(Entry *ePtr);
 static void Delink(Entry *ePtr);
 static void Push(Entry *ePtr);
-static void ExpireEntry(Entry *ePtr);
 static void PruneEntry(Entry *ePtr);
 
 
@@ -185,8 +185,9 @@ Ns_CacheDestroy(Ns_Cache *cache)
  *      not exist or the entry has expired.
  *
  * Side effects:
- *      The cache entry will be flushed if it has expired, or will
- *      move to the top of the LRU list if valid.
+ *      If still valid, the cache entry will move to the top 
+ *      of the LRU list. Expired entries or entries without
+ *      assigned value will not be touched nor reported.
  *
  *----------------------------------------------------------------------
  */
@@ -204,11 +205,10 @@ Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
         return NULL;
     }
     ePtr = Tcl_GetHashValue(hPtr);
-    if (Expired(ePtr)) {
-        ExpireEntry(ePtr);
+    if (IsExpired(ePtr) || !IsSet(ePtr)) {
         ++cachePtr->nmiss;
         return NULL;
-    };
+    }
     ++cachePtr->nhit;
     Delink(ePtr);
     Push(ePtr);
@@ -230,7 +230,8 @@ Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
  *
  * Side effects:
  *      Memory may be allocated for the new cache entry and it will
- *      be inserted into the cache.
+ *      be inserted into the cache. For expired entries, their value
+ *      will be unset as we expect from the caller to set it new.
  *
  *----------------------------------------------------------------------
  */
@@ -251,12 +252,13 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
         ++cachePtr->nmiss;
     } else {
         ePtr = Tcl_GetHashValue(hPtr);
-        if (Expired(ePtr)) {
-            *newPtr = 1;
-            ExpireEntry(ePtr);
-            ++cachePtr->nmiss;
-        } else {
+        if (!IsExpired(ePtr)) {
             ++cachePtr->nhit;
+        } else {
+            ++ePtr->cachePtr->nexpired;
+            ++cachePtr->nmiss;
+            *newPtr = 1;
+            Ns_CacheUnsetValue((Ns_Entry *)ePtr);
         }
         Delink(ePtr);
     }
@@ -430,16 +432,17 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, time_t ttl)
 {
-    Entry   *ePtr = (Entry *) entry;
-    Cache   *cachePtr = ePtr->cachePtr;
-    Ns_Time  now;
+    Entry *ePtr = (Entry *) entry;
+    Cache *cachePtr = ePtr->cachePtr;
 
     Ns_CacheUnsetValue(entry);
     ePtr->value = value;
     ePtr->size = size;
     if (ttl > 0 || cachePtr->ttl > 0) {
-        Ns_GetTime(&now);
+        Ns_GetTime(&ePtr->expires);
         Ns_IncrTime(&ePtr->expires, ttl ? ttl : cachePtr->ttl, 0);
+    } else {
+        ePtr->expires.sec = ePtr->expires.usec = 0;
     }
     cachePtr->currentSize += size;
     if (ePtr->cachePtr->maxSize > 0) {
@@ -537,10 +540,9 @@ Ns_CacheFlushEntry(Ns_Entry *entry)
     Entry *ePtr = (Entry *) entry;
 
     ++ePtr->cachePtr->nflushed;
+
     Ns_CacheUnsetValue(entry);
     Ns_CacheDeleteEntry(entry);
-
-    return;
 }
 
 
@@ -841,7 +843,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 /*
  *----------------------------------------------------------------------
  *
- * Expired --
+ * IsExpired --
  *
  *      Check if an entry has expired.
  *
@@ -855,7 +857,7 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
  */
 
 static int
-Expired(Entry *ePtr)
+IsExpired(Entry *ePtr)
 {
     Ns_Time  now;
 
@@ -866,6 +868,29 @@ Expired(Entry *ePtr)
         }
     }
     return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsSet --
+ *
+ *      Check if an entry has been set.
+ *
+ * Results:
+ *      1 if entry is set, 0 otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+IsSet(Entry *ePtr)
+{
+    return ePtr->value != NULL;
 }
 
 
@@ -939,33 +964,6 @@ Push(Entry *ePtr)
 /*
  *----------------------------------------------------------------------
  *
- * ExpireEntry --
- *
- *      Flush an expired entry.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ExpireEntry(Entry *ePtr)
-{
-    ++ePtr->cachePtr->nexpired;
-
-    Ns_CacheUnsetValue((Ns_Entry *) ePtr);
-
-    return;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * PruneEntry --
  *
  *      Flush an entry to adjust the size of the cache.
@@ -986,6 +984,4 @@ PruneEntry(Entry *ePtr)
 
     Ns_CacheUnsetValue((Ns_Entry *)ePtr);
     Ns_CacheDeleteEntry((Ns_Entry *)ePtr);
-
-    return;
 }
