@@ -1244,6 +1244,8 @@ NsTclTraceProc(Tcl_Interp *interp, void *arg)
     if (status != TCL_OK) {
         Ns_TclLogError(interp);
     }
+
+    return status;
 }
 
 
