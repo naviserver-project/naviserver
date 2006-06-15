@@ -1,27 +1,43 @@
 2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
 
+        * nsd/sock.c: Make Ns_SockTimedWait have NULL as timeoutPtr so it will
+        check for immediate condition of the socket without waiting.
+
+        * nsd/nsd.h:
+        * nsd/driver.c: Improved WriterThread to not to block on sending
+        data and honor timeout if socket still not ready.
+
+        * nsd/return.c: Added Accept-Ranges header as default to
+        inform clients that we support range requests. Tested with
+        mplayer HTTP streaming.
+
+        *tests/testserver/pages/timeout.tcl:
+        *tests/testserver/pages/400return.adp: Added missing files
+
+2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* tests/ns_cache.test:
 	* include/ns.h:
 	* nsd/cache.c:
 	* nsd/tclcache.c: Added timeout parameter to Ns_CacheCreateEx
-	to assign cache-specific timeout which will be used instead of 
-	global config.tcl.cachetimeout and will eliminate specifying 
-	-timeout on every ns_cache_eval call. If specified as 0 on cache 
-	create, cache will behave as before, taking -timeout or using 
-	global value from the config. Introduced new API function 
+	to assign cache-specific timeout which will be used instead of
+	global config.tcl.cachetimeout and will eliminate specifying
+	-timeout on every ns_cache_eval call. If specified as 0 on cache
+	create, cache will behave as before, taking -timeout or using
+	global value from the config. Introduced new API function
 	Ns_CacheGetConfig that returns configured cache parameters.
-	
-	* nsd/tclcmds.c: Added new public function Ns_CacheGetExpiration 
-	and Tcl command	ns_cache_info that returns entry size and 
+
+	* nsd/tclcmds.c: Added new public function Ns_CacheGetExpiration
+	and Tcl command	ns_cache_info that returns entry size and
 	expiration if set.
 
 	* nsd/nsconf.c:
-	* nsd/dns.c: Updated to reflect API  change and added new config 
+	* nsd/dns.c: Updated to reflect API  change and added new config
 	parameter dnswaittimeout which is set to 0 by default
 
 2006-06-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* nsd/tclinit.c: Fixed return value of non-void call. 
+	* nsd/tclinit.c: Fixed return value of non-void call.
 	* nsd/cache.c:  Fixed Ns_CacheSetValueExpires() to correctly
 	set expiry time of the entry.
 	Changed Ns_CacheFindEntry() NOT to auto-expire expired entries
@@ -55,7 +71,7 @@
 	with all the default values. The default values are the same
 	as ones compiled in the code. Those are just listed for the
 	illustration purposes.
-	
+
 	* nsproxy/Makefile
 	* nsproxy/ns_proxy.man:
 	* nsproxy/ns_proxy.test:
@@ -83,7 +99,7 @@
 	to come...
 
 	* tests/test.nscfg: Added loading of nsproxy in the test server.
-	
+
 	* nsd/tclenv.c: Fixed PutEnv() to work correctly on all platforms we
 	support. The problem was that it was not simple to unset an env
 	variable w/o empolying some dirty tricks.
@@ -101,7 +117,7 @@
 	* nsd/conn.c:
 	* nsd/return.c:
 	* tests/ns_conn.tests: Added keepalive command to
-	ns_conn to enable/disable keepalive for connection, can 
+	ns_conn to enable/disable keepalive for connection, can
 	be usefull when peersistent connection is needed without
 	full HTTP/1.1 comformance
 
@@ -122,12 +138,12 @@
 	* nsproxy/nsproxy.h
 	* nsproxy/nsproxylib.c:
 	* nsproxy/nsproxymod.c: Added ns_proxy mod from AOLserver 4.5.
-	Improvements vs. the original code: 
+	Improvements vs. the original code:
           o. proxy handles can be used as Tcl commands for simpler
-	     OO-like programming 
+	     OO-like programming
 	  o. proxy slaves can be told to expire automatically
-	     after some predefined idle time  
-	  o  proxy slaves can setuid() to some other user ID 
+	     after some predefined idle time
+	  o  proxy slaves can setuid() to some other user ID
 	     if the parent process runs as superuser.
 	  o. proxy subsystem is garbage-collected properly on exit
 
@@ -137,7 +153,7 @@
 
 2006-05-01  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsdb/util.tcl: Adding dbcloseonexit parameter that will 
+	* nsdb/util.tcl: Adding dbcloseonexit parameter that will
 	register atexit handler for closing all db pools on server exit
 	* Makefile: Added contrib into distfiles
 
@@ -152,7 +168,7 @@
 	* nsd/binder.c: Made ifdef _WIN32 more clear and unified.
 	At some point we should create separate file in order not
 	to obfuscate code with numerous ifdef's.
-	
+
 2006-04-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
@@ -166,7 +182,7 @@
 2006-04-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
-	* nsd/nsconf.c:	
+	* nsd/nsconf.c:
 	* nsd/server.c:
 	* nsd/fastpath.c:
 	* tests/test.nscfg: Make page cache process global rather than per
@@ -178,10 +194,10 @@
 	address only if hostname param not specified in nssock section
  	for the socket driver.
         In some situations, reverse lookup will not be successful which
-	inhibits us to start properly (which we could). 
+	inhibits us to start properly (which we could).
 
 	* nsd/tclinit.c: Removed traces of ns_tls support.
- 
+
 2006-04-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclinit.c:
@@ -224,7 +240,7 @@
 	* include/nsthread.h: Introduced new error code NS_FTAL
         * nsd/driver.c: Made handling UDP driver more reliably against
         QoS attacks and error handling.
-        
+
 2006-04-14  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclinit.c:
@@ -239,7 +255,7 @@
 
 	* nsd/cache.c: Fixed Ns_CacheWaitCreateEntry() NOT to delete
 	existing cache entry in case entry is expired.
-	This is one possible fix for this call, as it was trashing 
+	This is one possible fix for this call, as it was trashing
 	memory by reusing already deleted (expired) entries before.
 	Another possible fix is to delete and re-create expired
 	entry, but this costs more time, although it may be a more
@@ -257,11 +273,11 @@
 	decide which type of image they are handling.
 
 	* nsd/tclcmds.c: Added ns_imgsize, ns_imgtype, ns_imgmime
-	commands. These commands operate on any supported image: 
-	gif, png and jpeg. The ns_pngsize is added to complete 
+	commands. These commands operate on any supported image:
+	gif, png and jpeg. The ns_pngsize is added to complete
 	ns_jpegsize and ns_gifsize set, although those are deprecated
 	in favour of more simple ns_img[].
-	
+
 2006-04-06  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:
@@ -286,10 +302,10 @@
 	otherwise reading Windows files may break (size != n).
 
 2006-03-28  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
-	
+
 	* nsd/tclresp.c: Fixed bad return value(s) in NsTclHeadersObjCmd
 	and WritevObjs. Reformatted and indented.
-	
+
 2006-03-27  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* contrib/nsd.tcl: Added smtp configuration parameters
@@ -302,7 +318,7 @@
 2006-03-21  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/binder.c: BindUnix should not delete the socket file otherwise
-	clients will not be able to connect to it. Changedd API to support 
+	clients will not be able to connect to it. Changedd API to support
 	optional accesss mode for the Unix domain file. Added DGRAM socket
 	types for Unix domain sockets.
 
@@ -313,12 +329,12 @@
         nsd/conn.c: Added new public functions Ns_DriverSockContent,
         Ns_ConnSockContent and Ns_ConnSetContentSent. Imporved UDP driver
         support.
-        
+
 2006-03-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c: Set spoolerthreads to 0 by default
 	* nsd/sockcallbacks.c: Changed timeout handling
-        
+
 2006-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/sockcallbacks.c:
@@ -331,7 +347,7 @@
         * nsd/crypt.c:
         * nsperm/nsperm.c: For Linux systems use native crypt which supports
         MD5 digests, increase encryption buffer
-        
+
 2006-03-13  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* Makefile: Made install modular so parts can be installed
@@ -346,7 +362,7 @@
 	* drv/driver.c: Fixed endless loop in SpoolerThread.
 	Also reformated, newly indented and made more readable.
 
-	* nsd/nsd.h: Cosmetic changes. Added typedefs for 
+	* nsd/nsd.h: Cosmetic changes. Added typedefs for
 	some internally used structures. Added typdefs for new
 	NsBlockSignal, NsRestoreSignal and def for NS_SIGPIPE.
 
@@ -360,10 +376,10 @@
 	* tcl/http.tcl: Added _ns_http_write wrapper to
 	uplad content.
 
-	* tests/ns_thread.test: Thread ID's can be very small 
+	* tests/ns_thread.test: Thread ID's can be very small
 	(single digit numbers) on Solaris. Also, fixed regexps
 	for testing thread/mutex/condvar handles on Solaris.
-	
+
 	* nsd/nsmain.c:
 	* nsd/unix.c:
 	* nsd/nswin32.c: Added blocking for signals, more
@@ -418,23 +434,23 @@
 	* tcl/cache.tcl:     Reformated, added proper function
 	* tcl/charsets.tcl:  headers, newly indented.
 	* tcl/compat.tcl:    The http.tcl and sendmail.tcl are
-	* tcl/fastpath.tcl:  rewritten to take advantage of 
+	* tcl/fastpath.tcl:  rewritten to take advantage of
 	* tcl/file.tcl:      automatic end-of-line handling of
 	* tcl/form.tcl:      Tcl channels. Also, fixed some bugs
 	* tcl/http.tcl:      in EOF handling in both files. Fixed
 	* tcl/nstrace.tcl:   bug in line-break algorythm for
-	* tcl/sendmail.tcl:  quoted-printable MIME content with 
+	* tcl/sendmail.tcl:  quoted-printable MIME content with
 	* tcl/stats.tcl:     non-ascii data in sendmail.tcl.
 	* tcl/util.tcl :     The nstrace.tcl is now self-contained
         and requires, nor loads, any external modules.
 
 	* nsd/init.tcl: Moved introspective script to nstrace.tcl.
-	The nstrace is now the sole interface for handling script 
+	The nstrace is now the sole interface for handling script
 	generation for interp initializations. Please look into
 	the tcl/nstrace.tcl for more information.
 	Removed ns_init and ns_cleanup procedures and use trace
 	callbacks instead.
-	
+
 	* nsd/queue.c (ConnRun): uses Ns_ConnClearQuery() to
 	avoid code duplication.
 
@@ -442,7 +458,7 @@
 
 	* nsd/nsd/sock.c (Ns_SockTimedConnect2) Sets errno to ETIMEDOUT
 	if unable to connect and the optional timer is expired.
-	
+
 	* tcl/debug.tcl:
 	* tcl/prodebug.tcl: Removed ancient TclPro support files
 
@@ -453,7 +469,7 @@
 2006-03-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* sample-config.tcl: fixed comment about default
-	username/password for stats interface. 
+	username/password for stats interface.
 
 	* tcl/ttrace.tcl: removed
 
@@ -464,21 +480,21 @@
 	interp (see changes to nsd/init.tcl below).
 
 	* tcl/stats.tcl: fixed some broken expressions,
-	perhaps due to a bug in Tcl expression evaluator 
+	perhaps due to a bug in Tcl expression evaluator
 
 	* nsd/init.tcl: reorganized for better readability.
 	All temporary procs are now prepended "_" instead
 	of "_ns_" prefix. Added clarification comment about
 	possible choices for interp initialization strategy.
 	Always load nstrace.tcl library even if not configured.
-	This allows extensions to use nstrace::isenabled 
-	procedure to find out if the trace is active or not  
+	This allows extensions to use nstrace::isenabled
+	procedure to find out if the trace is active or not
 	and/or to register their own tracer implementations.
 
 2006-03-03  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/driver.c: Use driver proc in WriterThread to ensure 
-	proper driver's protocol processing, minor cleanups and changes to 
+	* nsd/driver.c: Use driver proc in WriterThread to ensure
+	proper driver's protocol processing, minor cleanups and changes to
 	support UDP socket driver
 
 2006-03-02  Vlad Seryakov  <seryakov@users.sf.net>
@@ -499,7 +515,7 @@
 	* tests/test.nscfg
 	* tests/testserver/modules/testhttp.tcl: Fixed error reporting during
 	request parsing, now server returns 414/400 return codes and honors
-	maxinput/maxheaders parameters. Test http-4.5 does not hang actually 
+	maxinput/maxheaders parameters. Test http-4.5 does not hang actually
 	but with sndbuf/rcvbug set to so small values it takes very logn time to
 	read the request, by putting Ns_Log in SockRead i was seeing reading by
 	64/192 bytes but the server was operational.
@@ -564,7 +580,7 @@
 	process.
 
 	* nsd/tclresp.c:
-	* tests/tclresp.test: 
+	* tests/tclresp.test:
 	* tests/http_chunked.test: ns_headers now queues, but does not
 	flush, the headers.  Headers are sent when the first data packet.
 
@@ -658,7 +674,7 @@
 	* nsd/url2file.c:
 	* nsd/urlopen.c:
 
-	* nsd/log.c: Fixed potential freeing of already 
+	* nsd/log.c: Fixed potential freeing of already
 	freed memory during LogFlush/LogFreeCache sequence.
 
 2006-02-18  Vlad Seryakov  <seryakov@users.sf.net>
@@ -671,28 +687,28 @@
 2006-02-15  Vlad Seryakov  <seryakov@users.sf.net>
 
 	src/driver.c:
-	src/nsd.h: Added maxqueuesize parameter to limit incoming 
-	sockets queue size to prevent possible DoS attacks, 
-	default size set to 256. 
+	src/nsd.h: Added maxqueuesize parameter to limit incoming
+	sockets queue size to prevent possible DoS attacks,
+	default size set to 256.
 	include/ns.h: Made struct sockaddr_in sa public in
 	Ns_Sock and Sock in private nsd.h to have access to it
-	from communication modules without using private nsd.h 
+	from communication modules without using private nsd.h
 
 	src/driver.c:
 	nsd/nsd.h:
 	nsd/tclcmds.c: Added ns_queue_writer Tcl command that submits
-	Tcl_Obj to the writer thread. Writer thread will send this Tcl 
+	Tcl_Obj to the writer thread. Writer thread will send this Tcl
 	object to the client.
 
 2006-02-13  Ibrahim Tannir  <itannir@users.sf.net>
 	* nsd/nswin32.c: fixed assigning the stdin, stdout, stderr channels
 	  in order for Tcl to attach them properly when a new thread/interp
 	  is created.
-	
+
 2006-02-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* configure.in:
-	* m4/tcl.m4: added TEA 3.5. Scrapped testing for 
+	* m4/tcl.m4: added TEA 3.5. Scrapped testing for
 	MACOSX_DEPLOYMENT_TARGET.
 	* nsd/cache.c: Implemented RFE #1427620
 	* tests/test.nscfg: Set cachetimeout to 360 secs
@@ -710,7 +726,7 @@
 	* tcl/stats.tcl:
 	* tcl/file.tcl:
 	* tcl/cache.tcl:
-	* tcl/util.tcl: 
+	* tcl/util.tcl:
 	* tcl/ttrace.tcl: "legacy" files, contd.
 
 2006-02-07  Bernd Eidenschink  <eide@users.sourceforge.net>
@@ -725,7 +741,7 @@
 
 2006-02-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* nsthread/nsthreadtest.c: Includes "config.h" to get 
+	* nsthread/nsthreadtest.c: Includes "config.h" to get
 	STATIC_BUILD defined.
 
 	* tcl/ttrace.tcl: Removed compat code for Tcl threading extension.
@@ -733,7 +749,7 @@
 	Changed license to Mozilla.
 
 	* sample-config.tcl.in:
-	* nsd/init.tcl: Trace inits now controled under ns/section/server/tcl 
+	* nsd/init.tcl: Trace inits now controled under ns/section/server/tcl
 	and lazyloader ns_param.
 
 2006-02-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -809,13 +825,13 @@
 2006-02-01  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/Makefile.global.in: CP uses -pR options as
-	those are supported on all platforms we currently 
+	those are supported on all platforms we currently
 	compile on (Solaris, Linux, Mac OSX).
 
 	* Makefile: added find expression to purge junk files
 	before making the distribution tarball.
 
-	* README: Reflect 4.99.1 and 8.4.12 Tcl. 
+	* README: Reflect 4.99.1 and 8.4.12 Tcl.
 
 2006-01-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
@@ -865,15 +881,15 @@
 	descriptions
 	* contrib/nsd.tcl:
 	* contrib/mimetypes.tcl: added new example configs
-	* include/Makefile.global.in: chanage to simpler installation 
+	* include/Makefile.global.in: chanage to simpler installation
 	structure
 	* contrib/index.adp: Added default index page
 
 2006-01-19  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:
-	* nsd/driver.c: Fixed bug in Ns_DriverSockRequest when existing 
-	structure is used. Returns NS_ERROR now if cannot parse given url. 
+	* nsd/driver.c: Fixed bug in Ns_DriverSockRequest when existing
+	structure is used. Returns NS_ERROR now if cannot parse given url.
 
 2006-01-18  Vlad Seryakov  <seryakov@users.sf.net>
 
@@ -882,18 +898,18 @@
 	* nsd/nsd.h: Rewrote driver's spooler/writer support
 	to make them cleaner and to support multiple spooler/writer
 	threads for each driver. Before that, global spooler variables
-	got overwritten if multiple drivers are loaded. Also, 
-	simplified driver thread, removed rotating driver's list, in 
+	got overwritten if multiple drivers are loaded. Also,
+	simplified driver thread, removed rotating driver's list, in
 	case of usual one driver operation that was just waste of CPU
 	cycles. For multiple drivers, spawning separate thread for each
-	would be better solution, it can be considered for future driver 
+	would be better solution, it can be considered for future driver
 	encancements.
 
 2006-01-17  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/driver.c: Improved Writer thread support, now it is 
+	* nsd/driver.c: Improved Writer thread support, now it is
         possible to have multiple writer thread for better performance.
-        * nstread/thread.c: Make Ns_ThreadSetName to accept sprintf-like 
+        * nstread/thread.c: Make Ns_ThreadSetName to accept sprintf-like
         variable list of arguments
 	* nsd/sched.c:
 	* nsd/tcljob.c
@@ -913,14 +929,14 @@
 	* nsd/driver.c:
 	* nsd/connio.c:
 	* nsd.nsd.h: This is experimental feature to use separate writer
-	thread for sending large files to multiple clients. By default it 
+	thread for sending large files to multiple clients. By default it
 	is disabled so nobody should be affected by this feature. Still need
-	more testing but can be very usefull, keeping it in CVS makes it easier 
+	more testing but can be very usefull, keeping it in CVS makes it easier
 	to track then in local copy, i keep loosing local modifications
 	all the time.
-	
+
 	* nsd/driver.c: Changes poolto from -1 to 60 seconds in DriverThread and
-	SpolerThread to wake up from pool. Once a minute will not kill the server 
+	SpolerThread to wake up from pool. Once a minute will not kill the server
 	but will ensure it will never get into race condition.
 
 2006-01-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -936,7 +952,7 @@
 	ATTENTION: Tcl compatibility affected.
 
 	* include/ns.h:
-	* nsd/conn.c:    
+	* nsd/conn.c:
 	* nsd/pathname.c:
 	* nsd/tclcallbacks.c:
 	* nsd/tclinit.c:
@@ -952,10 +968,10 @@
 	* nsd/driver.c:
 	* nsd.nsd.c:
 	* nsd/tclcmds.c: Added spooler support which handles
-	upload process in separate thread. During the uploading new command 
+	upload process in separate thread. During the uploading new command
 	ns_upload_stats is available which accepts full url with query
-	parametrs of the uploading connection. On uploading finish, 
-	statistics is cleared from the memory. Spooler can be disabled 
+	parametrs of the uploading connection. On uploading finish,
+	statistics is cleared from the memory. Spooler can be disabled
 	using ns_param spooler false in the nssock section of nsd.tcl.
 
 2006-01-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -1139,8 +1155,8 @@
 	* tests/ns_info.test: Add new sub-commands to failing ns_info test.
 
 2005-11-12  Vlad Seryakov  <seryakov@users.sf.net>
-	
-	* nsd.info.c: Added ns_info started and 
+
+	* nsd.info.c: Added ns_info started and
 	ns_info shutdownpending commands
 
 2005-11-12  Vlad Seryakov  <seryakov@users.sf.net>
@@ -1149,16 +1165,16 @@
 	* nsd/info.c: Fixed sockcallbacks as unrecognosed error
 	* nssock/nssock.c:
 	* include/ns.h: Added new DriverAccept call for drivers
-	to be called after accept the connection. If request struct will 
+	to be called after accept the connection. If request struct will
 	be provided by the driver, connection will be queued immediately and
 	driver will handle it completely. This is temporary until more generic
 	driver support will be designed.
-	* nsd/sock.c: Moved and made as public two functions from sock 
-	driver: Ns_SockRecvBufs, Ns_SockSendBufs. for new drivers, now it 
+	* nsd/sock.c: Moved and made as public two functions from sock
+	driver: Ns_SockRecvBufs, Ns_SockSendBufs. for new drivers, now it
 	will be easy to re-use send/recv data from within driver's proc.
 
 	* nsd/driver.c: Split SockRead into SockRead and SockParse,
-	added new Ns_DriverSetRequest function that allocates request 
+	added new Ns_DriverSetRequest function that allocates request
 	struct for new connection socket.
 
 2005-11-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -1190,7 +1206,7 @@
 
 2005-11-02  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* tests/ns_info.test: added 1 second delay to make ns_info 
+	* tests/ns_info.test: added 1 second delay to make ns_info
 	uptime report uptime > 0 successfuly
 
 	* configure.in:
@@ -1202,7 +1218,7 @@
 	new API function Ns_SockListenBinder for creating
 	sockets. In this mode, no need to specify all ports in the command line
 	parameter -b. For now all modules have to call new API function in order
-	to create sockets if they are not specified using -b command line 
+	to create sockets if they are not specified using -b command line
 	paramater.
 
 2005-10-28  Bernd Eidenschink  <eide@users.sourceforge.net>
@@ -1240,7 +1256,7 @@
 	* nsd/tclmisc.c: removed plaform testing and added
 	platform-neutral testing for some data types.
 
-	* configure.in: added platform neutral testing for 
+	* configure.in: added platform neutral testing for
 	u_int32_t and u_int8_t types.
 
 2005-10-21  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -1254,7 +1270,7 @@
 	* nsdbtest/Makefile: add MODNAME of nsdbtest so we can
 	do more checks when linking the module
 	* m4/tcl.m4: removed "-prebind" for Darwin builds
- 
+
 2005-10-21  Bernd Eidenschink  <eide@users.sf.net>
 
 	* tests/images/: re-added files as binaries.
@@ -1290,7 +1306,7 @@
 	module available to the boot script and Tcl module files.
 	* nsd/init.tcl: Rename use of depraciated api.
 	* nsdb/db.h:
-	* nsdb/nsdb.c: 
+	* nsdb/nsdb.c:
 	* nsdb/dbtcl.c: Fix bug where Ns_TclRegisterTrace was being called
 	after server startup.
 	* tests/test.nscfg:
@@ -1306,7 +1322,7 @@
 2005-10-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/init.tcl: fixed to be able to load Tcl modules
-	* include/ns.h: changed reserved keyword delete so C++ 
+	* include/ns.h: changed reserved keyword delete so C++
 	module scan be compiled
 
 2005-10-20  Bernd Eidenschink  <eide@users.sourceforge.net>
@@ -1319,11 +1335,11 @@
 	* tests/ns_httptime.test:
 	* tests/ns_info.test:
 	* tests/ns_mime.test:
-	* tests/ns_sha1.test: various new tests, some to be 
+	* tests/ns_sha1.test: various new tests, some to be
 	improved over time (especially ns_info)
 	* tests/images/: some gif and jpeg files for the
 	image tests
-	
+
 
 2005-10-20  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
@@ -1335,7 +1351,7 @@
 
 	* nsd/tclmisc.c:
 	* nsd/uuencode.c:
-	* test/ns_uuencode.test: fixed bug that causes nsd to segfault if 
+	* test/ns_uuencode.test: fixed bug that causes nsd to segfault if
 	called ns_uuencode with 1 byte string
 
 2005-10-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -1386,7 +1402,7 @@
 2005-10-15  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclfile.c (UnspliceChannel): disable any potential
-	ready-to-fire events in the threads event queue which 
+	ready-to-fire events in the threads event queue which
 	reference to-be-unspliced channel.
 	Reformatted, untabified, beautified, commented, ...ed :-)
 
@@ -1394,7 +1410,7 @@
 
 	* configure.in: added checking for sin_len in sockaddr_in
 
-	* nsd/dns.c: added checking for HAVE_MTSAFE_DNS and add 
+	* nsd/dns.c: added checking for HAVE_MTSAFE_DNS and add
 	protective locks if not (Darwin).
 	Added checking for HAVE_SOCKADDRIN_SIN_LEN because Darwin
 	version of getnameinfo fails if sin_len has unsane values.
@@ -1410,7 +1426,7 @@
 
 2005-10-10  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* nsd/adprequest.c Removed OS/FS fallbacks. Now use TclVFS 
+	* nsd/adprequest.c Removed OS/FS fallbacks. Now use TclVFS
 	* nsd/adpeval.c    wrappers always. This simplifies code
 	* nsd/fastpath.c   and (hopefully) does not introduce any
 	* nsd/urlopen.c    (perceivable) speed penalties.
@@ -1487,7 +1503,7 @@
 	MT-unsafeness of DNS calls (getnameinfo, getaddrinfo).
 
 	* configure: regenerated
-	
+
 	* nsd/dns.c: added critical sections in GetHost/GetAddr
 	when using getnameinfo/getaddrinfo on Darwin platforms.
 	Also, in GetHost(), explicitly initialize the struct
@@ -1505,12 +1521,12 @@
 	* nsd/binder.c:       adprequest.c and urlopen.c where the native
 	* nsd/config.c:       call is performed first, and if failed, the
 	* nsd/conn.c:         Tcl companion is tried next. This way the
-	* nsd/driver.c:       simple but effective VFS fallback is assured. 
+	* nsd/driver.c:       simple but effective VFS fallback is assured.
 	* nsd/fastpath.c:
 	* nsd/init.c:         Status before those changes is tagged as
 	* nsd/log.c:          "before-tclvfs" in order to simplify backoff
 	* nsd/modload.c:      if needed.
-	* nsd/nsconf.c:			
+	* nsd/nsconf.c:
 	* nsd/nsmain.c:	      (RFE# 1202462
 	* nsd/pidfile.c:
 	* nsd/rollfile.c:
@@ -1528,14 +1544,14 @@
 	signal to re-start the server again. All this mess is needed
 	because under some strange circumstances, the WaitForServer()
 	never returns, although the server process is already gone.
-	This smells of a broken signal delivery to me... 
+	This smells of a broken signal delivery to me...
 
 2005-10-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nslog/nslog.c: untabified, reformatted, improved comments.
 	LogObjCmd: rewritten with Tcl_Obj interface and using TclVFS
-	wrappers for handling files. Proper locking when accessing the 
-	Log structure elements in the LogObjCmd. 
+	wrappers for handling files. Proper locking when accessing the
+	Log structure elements in the LogObjCmd.
 
 	* nsd/dns.c: fixed typo in GetAddr when using the gethostbyname
 	path. This is very needed for Apple Mac OSX since the other
@@ -1612,12 +1628,12 @@
 2005-08-04  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/log.c:
-	nsd.nsd.h: Finished log localization by removing usage of the 
+	nsd.nsd.h: Finished log localization by removing usage of the
         global nsconf.log structure.
 
 	include/ns.h:
 	nsd/set.c:
-	nsd/tclset.c: Added Ns_SetGetValue|Ns_SetIGetValue wrappers which 
+	nsd/tclset.c: Added Ns_SetGetValue|Ns_SetIGetValue wrappers which
 	handle defaults
 
 2005-08-03  Stephen Deasey  <sdeasey@users.sf.net>
@@ -1636,7 +1652,7 @@
 	* include/ns.h:
 	* nsd/nsd.h:
 	* nsd/config.c: Add config value wrappers which handle defaults
-	and in the case of integer values, range checking. 
+	and in the case of integer values, range checking.
 
 2005-08-01  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -1666,17 +1682,17 @@
 	* nsd/nsd.h:
 	* nsd.queue.c:
 	* nsd.return.c:
-	* nsd/conn.c: added ns_conn responseversion to manually set response 
+	* nsd/conn.c: added ns_conn responseversion to manually set response
 	protocol and version to have full control about returned HTTP format.
 	For C API 2 functiosn are added: Ns_ConnResponseVersion and
-	Ns_ConnSetResponseVersion. Added responseVersion char* pointer to 
+	Ns_ConnSetResponseVersion. Added responseVersion char* pointer to
 	Conn structure. To enable response version tests ns_httptest needs
 	to be changed to return response protocol/version.
 
 	* nsd/adprequest.c:
 	* tests/http_chunked.test:
-	* tests/testserver/pages/http_chunked.adp: detects now whether client 
-	is HTTP/1.1 and therefore handles chunked encoding. 
+	* tests/testserver/pages/http_chunked.adp: detects now whether client
+	is HTTP/1.1 and therefore handles chunked encoding.
 
 2005-07-30  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -1686,7 +1702,7 @@
 
 2005-07-29  Stephen Deasey  <sdeasey@users.sf.net>
 
-	* include/ns.h: 
+	* include/ns.h:
 
 	* nslog/nslog.c: Fix use of ex-compat macro Ns_ConfigGet.
 
@@ -1759,7 +1775,7 @@
 
 	* nsd/driver.c:
 	* nsd/nsd.h: Added support for spooling large uploaded
-	content into temporary file. Configuration oprion maxsize 
+	content into temporary file. Configuration oprion maxsize
 	controls when to use temp file or memory buffer.
 
 	* include/ns.h:	 Added definition of Ns_ConnSend.
@@ -1822,7 +1838,7 @@
 	* include/ns.h:
 	* nsd/fastpath.c:
 	* nsd/return.c:
-	* nsd/connio.c: Refactored chunked support to use Ns_connClose 
+	* nsd/connio.c: Refactored chunked support to use Ns_connClose
 	to send the last zero chunk. This makes chunked support universal and
 	can be used in adp as well.
 
@@ -1846,15 +1862,15 @@
 	support including If-Range and multiple ranges. Supports
 	mmap and return from fd modes.
 
-	* nsd/fastpath.c: 
-        * tests/http_byteranges.test: Updated to return correct 
+	* nsd/fastpath.c:
+        * tests/http_byteranges.test: Updated to return correct
         Content-length header.
 
 	* include/ns.h:
 	* nsd/fastpath.c:
 	* nsd/connio.c: Introducing NS_CONN_MAXBUFS parameters which is set
 	to 16 by default. It defines how many iov buffers Ns_ConnSend can to use
-	simultaneously and max number of ranges nsd supports which is 
+	simultaneously and max number of ranges nsd supports which is
 	NS_CONN_MAXBUFS/3
 
 2005-07-06  Stephen Deasey  <sdeasey@users.sf.net>
@@ -1961,7 +1977,7 @@
 	* ns/include:
 	 nsd/return.c: removed unsed NsConnPrintfHeader. Renamed
 	 Ns_ConnVSetHeaders into Ns_ConnPrintfHeaders.
-	
+
 
 2005-06-28  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -1973,7 +1989,7 @@
 	* nsd/return.c: Added Ns_ConnVSetHeaders function to add
         headers to the output in printf-style way.
 
-	* nsd/fastpath.c: Added support for Range: headers in the 
+	* nsd/fastpath.c: Added support for Range: headers in the
 	requests to return partial content
 
 2005-06-27  Zoran Vasiljevic  <vasiljevic@users.sf.net>
@@ -1987,8 +2003,8 @@
 	option of the "ns_shutdown" command, hence avoiding different
 	ways to force server restarts on different platforms.
 	Removed experimental ReportException() call since it does
-	not really seem to prevent the default handling in Windows where 
-	a Window pops up and the user has to confirm. Such behaviour 
+	not really seem to prevent the default handling in Windows where
+	a Window pops up and the user has to confirm. Such behaviour
 	prevents the service control manager to restart the service.
 
 	* nsd/return.c: removed unneeded Ns_ConnReturnPath() added by
@@ -2000,7 +2016,7 @@
 
 2005-06-27  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/tclcmds.c: #ifdef-ed NsTclFailServiceObjCmd with WIN32 to 
+	* nsd/tclcmds.c: #ifdef-ed NsTclFailServiceObjCmd with WIN32 to
 	allow nsd to be compiled on Unix again.
 
 2005-06-24  Ibrahim Tannir  <itannir@users.sf.net>
@@ -2008,7 +2024,7 @@
 	* include/nscheck.h: VC for Windows cannot handle GNU preprocessor
 	directives and macros (fixed).
 
-	* nsd/driver.c: 
+	* nsd/driver.c:
 	* nsd/binder.c: Excluded Unix calls from Windows code since some
 	of the structs needed to compile them are missing in Windows.
 
@@ -2037,7 +2053,7 @@
 	* nssock.dsp:
 	* nsthread.dsp: Changed projects to compile for and link with
 	mutithreading & debug enabled libs (MTd instead of MDd).
-	
+
 	* main.vcproj:
 	* nscgi.vcproj:
 	* nscp.vcproj:
@@ -2050,14 +2066,14 @@
 
 2005-06-18  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/connio.c: Fixed bad return code for Ns_ConnReadLine as per 
+	* nsd/connio.c: Fixed bad return code for Ns_ConnReadLine as per
         AOLServer bug report from the mailing list
 
 	* sample-config.tcl: added maxline parameter for nssock section
 
 	* nsd/driver.c:
-	* nsd.nsd.h: added maxline parameter to driver section, checks 
-	for line size limit in the request, defaults to 4k. 
+	* nsd.nsd.h: added maxline parameter to driver section, checks
+	for line size limit in the request, defaults to 4k.
 
 2005-06-17  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -2087,7 +2103,7 @@
 
 2005-06-13  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
-	* nsd/compress.c: Fixed Ns_CompressGzip() declaration 
+	* nsd/compress.c: Fixed Ns_CompressGzip() declaration
 	when --without-zlib is used during compilation
 	(first arg was lacking the "const" qualifier).
 
@@ -2160,7 +2176,7 @@
 2005-06-11  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/exec.c:     Fixed various places where log calls
-	* nsd/nsmain.c:   were fed with wrong number or wrong 
+	* nsd/nsmain.c:   were fed with wrong number or wrong
 	* nsd/driver.c:   types of arguments.
 
 	* nsd/nsd.h:      Added wrappers for mem-mapping files in
@@ -2171,7 +2187,7 @@
 2005-06-10  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/driver.c:
-        * nsd/binder.c: Determine path using Ns_PathIsAbsolute for Unix 
+        * nsd/binder.c: Determine path using Ns_PathIsAbsolute for Unix
 	domain sockets
 
 	* nsd/tclresp.c: removed ns_returnbinary command. Added -binary
@@ -2184,17 +2200,17 @@
 
 	* nsd/init.c: NsInitBinder is also done for Windows as for Unix.
 
-	* nsd/binder.c: Attempt to unify usage and call-conventions on various 
-	Ns_SockListenXXX and Ns_SockBindXXX calls for various protocols 
+	* nsd/binder.c: Attempt to unify usage and call-conventions on various
+	Ns_SockListenXXX and Ns_SockBindXXX calls for various protocols
 	(tcp, udp, raw, unix).
 	Also, parts not needed for windows build (pre-binding) are ifdef'ed out.
 	Still open: handling of Unix-domain sockets on Windows. It might compile
-	but will definitely not work because of the address parsing issues 
+	but will definitely not work because of the address parsing issues
 	(windows files do not begin with slash). This has to be sorted out.
 
 2005-06-10  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* tests/tclresp.test: updated to reflect parameters change 
+	* tests/tclresp.test: updated to reflect parameters change
 	for ns_respond, new -binary flag
 
 	* nsd/binder.c: make Ns_SockListenUnix to use prebound
@@ -2208,7 +2224,7 @@
 	Replaced GNU poll implementation.
 
 	* nsd/unix.c: Cosmetic changes (reformatted, untabified).
-	
+
 2005-06-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* configure.in:
@@ -2259,14 +2275,14 @@
 2005-06-08  Vlad Seryakov  <seryakov@users.sf.net>
 
         * sample-config.tcl: added example of dynamic virtual hosting
-       
+
         * include/ns.h:
 	* nsd/tclobjv.c: added Ns_ObjvByteArray function to
         accept binary arrays as input parameters.
 
 	* nsd/tclcmds.c:
 	* nsd/tclresp.c: added ns_returnbinary command to be able
-	to return possibly binary data to the connection. Currently 
+	to return possibly binary data to the connection. Currently
 	ns_return family support this from files or open fds only.
         Added -binary flag to ns_respond to return binary data without
         encoding conversion.
@@ -2388,12 +2404,12 @@
 
 2005-05-04  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
-	* nsd/unix.c: modified poll() wrapper to work on Darwin 6.x 
+	* nsd/unix.c: modified poll() wrapper to work on Darwin 6.x
 	in addition to 7.x and 8.x versions. Also, heavily reformatted
 	poll() wrapper to be easily readable.
 
 	* nsd/tclmisc.c: conditionally define u_int32_t and u_int8_t
-	on Darwin since it has the definition already. 
+	on Darwin since it has the definition already.
 
 2005-04-30  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -2458,8 +2474,8 @@
 
 2005-04-26  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* tcl/file.tcl: added support for caching tcl bytecode if 
-	ns_cache module is loaded, it is used to be in tclcache.tcl 
+	* tcl/file.tcl: added support for caching tcl bytecode if
+	ns_cache module is loaded, it is used to be in tclcache.tcl
 	file which is missing in NS
 
 2005-04-21  Zoran Vasiljevic  <vasiljevic@users.sf.net>
@@ -2469,8 +2485,8 @@
 
 2005-04-17  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
-	* nsd/conn.c: removed "ns_conn flush" option added 
-	recently since not needed. The trick is done with 
+	* nsd/conn.c: removed "ns_conn flush" option added
+	recently since not needed. The trick is done with
 	the "ns_headers" command.
 
 2005-04-18  Stephen Deasey  <sdeasey@users.sf.net>
@@ -2552,7 +2568,7 @@
 	* nsd/dns.c: Fixed GetAddr() when dealing with gethostbyname_r
 	  calls. In some/many cases we ended up in an infinite loop.
 
-	* nsd/tclobjv.c: SetSpecFromAny does not invalidate string rep 
+	* nsd/tclobjv.c: SetSpecFromAny does not invalidate string rep
 	  of the passed object after converting it to the ns:spec
 	  object type. This will definitely corrupt the interp literal
 	  table and result in process exitus when the interp is being
@@ -2614,8 +2630,8 @@
 	* nsd/nsd.h:
 	* nsd/info.c:
 	* nsd/op.c:
-	* nsd/urlspace.c: Added support for ns_info filters, 
-	  ns_info traces, ns_info requestprocs commands using new 
+	* nsd/urlspace.c: Added support for ns_info filters,
+	  ns_info traces, ns_info requestprocs commands using new
  	  Tcl callback interface. New commands show information about
 	  registered filters/procs same way as ns_info scheduled does.
 	  (RFE #1161597)
@@ -2636,7 +2652,7 @@
 
 	* tcl/file.tcl:
 	* tcl/util.tcl: Remove support for old connId parameter.
-	
+
 	* include/ns.h:
 	* nsd/nsd.h:
 	* nsd/Makefile:
@@ -2646,7 +2662,7 @@
 	* nsd/proc.c:
 	* nsd/tclcmds.c:
 	* nsd/tclsched.c: Update to use new callback and parse proc APIs.
-	
+
 	* include/ns.h:
 	* nsd/Makefile:
 	* nsd/tclcmds.c:
@@ -2677,9 +2693,9 @@
 
 2005-03-22  Vlad Seryakov <vlad@crystalballinc.com>
 
-         nsd/driver.c:  Ensure that socket driver's DriverClose callback 
-         gets executed when the socket is released.  This was causing a 
-         memory leak for HTTPS connections with nsopenssl when a Keep-Alive 
+         nsd/driver.c:  Ensure that socket driver's DriverClose callback
+         gets executed when the socket is released.  This was causing a
+         memory leak for HTTPS connections with nsopenssl when a Keep-Alive
          HTTP request timed out. Closes SF Bug #1160850 from AOLServer.
 
 2005-03-18  Zoran Vasiljevic  <vasiljevic@users.sf.net>
@@ -2699,7 +2715,7 @@
 
 	* nsd/conn.c: Added [ns_conn channel] (RFE #1156141)
 	  Also, added [ns_conncptofp ?-bytes toCopy? channel]
-	  (RFE #1156899). This change scraps parsing of the 
+	  (RFE #1156899). This change scraps parsing of the
 	  dummy connId argument left for 2.x server compat.
 
 	* nsd/nsd.h
@@ -2713,9 +2729,9 @@
 
 2005-03-08  Vlad Seryakov <vlad@crystalballinc.com>
 
-	* nslog/nslog.c: as Stephan pointed there is possibility for 
-	server to crash under some conditions accessing already freed 
-	extheaders pointer. So i put lock before putting extheaders values 
+	* nslog/nslog.c: as Stephan pointed there is possibility for
+	server to crash under some conditions accessing already freed
+	extheaders pointer. So i put lock before putting extheaders values
         in the log, in most cases extheaders are empty so there is no overhead.
 
 2005-03-07  Zoran Vasiljevic  <vasiljevic@users.sf.net>
@@ -2744,7 +2760,7 @@
 
 	* nsd/conn.c include/ns.h Add Ns_ConnSetResponseStatus command to
         be able to se response status without touching headers. Also
-        ns_conn status has been extended with ability to set response 
+        ns_conn status has been extended with ability to set response
         status if third argument is provided. ns_conn status ?newStatus?
 
         * nslog/nslog.c: changed syntax to conform naviserver style,
@@ -2759,7 +2775,7 @@
 
 	* nslog/nslog.c: redone options support for the module
         using flags, added commands to ns_accesslog to change flags and/or
-        extended headers on the fly 
+        extended headers on the fly
 
 2005-02-27  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -2782,7 +2798,7 @@
 
 	* nsd/Makefile: Added compliation directive for nsd/tclobjv.c
 
-	* include/ns.h: Added declarations... 
+	* include/ns.h: Added declarations...
  	 for following structs:
 	    o. Ns_ObjvSpec
 	    o. Ns_ObjvTable
@@ -2800,12 +2816,12 @@
 	    o. Ns_ObjvBreak
 	    o. Ns_ObjvArgs
 	  This all implements new argument parsing code from Stephen.
- 
+
 2005-02-26  Zoran Vasiljevic  <vasiljevic@users.sf.net>
 
 	* nsd/unix.c:
 	* include/ns.h: added Ns_GetNameForUid(), Ns_GetNameForGid()
-	
+
 	* nsd/nsmain.c: allows server to be started as uid == 0
 	  if both of the following are true:
 	     o. the caller process is running as root (getuid() == 0)
@@ -2815,27 +2831,27 @@
 
 2005-02-24  Vlad Seryakov <vlad@crystalballinc.com>
 
-	* include/ns.h nsd/nsd.h nsd/binder.c: changed server name 
+	* include/ns.h nsd/nsd.h nsd/binder.c: changed server name
 	  from AOLserver to NaviServer in ns_info command.
-	  New ListenXXX family functions declared in the ns.h file. 
+	  New ListenXXX family functions declared in the ns.h file.
 
 2005-02-22  Vlad Seryakov <vlad@crystalballinc.com>
 
 	* nsd/tclsched.c nsd/tclcmds.c doc/at.n: added ns_atstartup
-	  Tcl command to be run after server started and initialized. 
+	  Tcl command to be run after server started and initialized.
 	  Update documentation about those commands, kind of.
 
 2005-02-17  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/tclfile.c: fixed broken NsTclChanObjCmd command which
-	  caused server crashes when trasporting channels between 
+	  caused server crashes when trasporting channels between
 	  threads when linked against Tcl 8.4+ library (Bug #1143586)
 
 2005-02-16 Vlad Seryakov <vlad@crystalballinc.com>
 
-	* Makefile configure configure.in sample-config.tcl 
-	  include/Makefile.build include/Makefile.global.in 
-	  include/Makefile.module.in include/ns.h include/nsdb.h 
+	* Makefile configure configure.in sample-config.tcl
+	  include/Makefile.build include/Makefile.global.in
+	  include/Makefile.module.in include/ns.h include/nsdb.h
 	  include/nsextmsg.h include/nspd.h include/nsthread.h
 	  tcl/charsets.tcl tcl/compat.tcl tcl/debug.tcl tcl/fastpath.tcl
 	  tcl/file.tcl tcl/form.tcl tcl/http.tcl tcl/init.tcl
@@ -2847,13 +2863,13 @@
 
 	* nsd/binder.c: added UDP/UNIX/RAW protocols to the sockets,
 
-	* nsd/init.c: call InitLog before dns resolver will try to resolve 
+	* nsd/init.c: call InitLog before dns resolver will try to resolve
 	  local host, this prevents server crash
 
 	* nsd/tclsock.c: back ported from CVS 4.1, added -localhost/-localport
 	  to ns_scokopen
 
-	* nsdb/dbdrv.c: if driver set exception in select, do to rewrite it 
+	* nsdb/dbdrv.c: if driver set exception in select, do to rewrite it
 	  in the server
 
 2005-02-15  Zoran Vasiljevic <vasiljevic@users.sf.net>

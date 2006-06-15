@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * sock.c --
  *
- *      Wrappers and convenience functions for TCP/IP stuff. 
+ *      Wrappers and convenience functions for TCP/IP stuff.
  */
 
 #include "nsd.h"
@@ -131,7 +131,7 @@ Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
  *      Timed recv() from a non-blocking socket.
  *
  * Results:
- *      Number of bytes read 
+ *      Number of bytes read
  *
  * Side effects:
  *      May wait for given timeout.
@@ -165,7 +165,7 @@ Ns_SockRecv(SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
  *      NOTE: This may not write all of the data you send it!
  *
  * Results:
- *      Number of bytes written, -1 for error 
+ *      Number of bytes written, -1 for error
  *
  * Side effects:
  *      May wait given timeout.
@@ -209,10 +209,12 @@ Ns_SockSend(SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
 int
 Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr)
 {
-    int           n, msec;
+    int           n, msec = 0;
     struct pollfd pfd;
 
-    msec = timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000;
+    if (timeoutPtr != NULL) {
+        msec = timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000;
+    }
     pfd.fd = sock;
 
     switch (what) {
@@ -271,7 +273,7 @@ Ns_SockWait(SOCKET sock, int what, int timeout)
  *      Listen for connections with default backlog.
  *
  * Results:
- *      A socket or -1 on error. 
+ *      A socket or -1 on error.
  *
  * Side effects:
  *      None.
@@ -294,7 +296,7 @@ Ns_SockListen(char *address, int port)
  *      Accept a TCP socket, setting close on exec.
  *
  * Results:
- *      A socket or -1 on error. 
+ *      A socket or -1 on error.
  *
  * Side effects:
  *      None.
@@ -322,13 +324,13 @@ Ns_SockAccept(SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
  *
  * Ns_SockBind --
  *
- *      Create a TCP socket and bind it to the passed-in address. 
+ *      Create a TCP socket and bind it to the passed-in address.
  *
  * Results:
- *      A socket or -1 on error. 
+ *      A socket or -1 on error.
  *
  * Side effects:
- *      Will set SO_REUSEADDR on the socket. 
+ *      Will set SO_REUSEADDR on the socket.
  *
  *----------------------------------------------------------------------
  */
@@ -353,7 +355,7 @@ Ns_SockBind(struct sockaddr_in *saPtr)
     if (sock != INVALID_SOCKET) {
         n = 1;
         if (saPtr->sin_port != 0) {
-            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, 
+            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
                        (char *) &n, sizeof(n));
         }
         if (bind(sock, (struct sockaddr *) saPtr,
@@ -362,7 +364,7 @@ Ns_SockBind(struct sockaddr_in *saPtr)
             sock = INVALID_SOCKET;
         }
     }
-    
+
     return sock;
 }
 
@@ -372,13 +374,13 @@ Ns_SockBind(struct sockaddr_in *saPtr)
  *
  * Ns_SockConnect --
  *
- *      Open a TCP connection to a host/port. 
+ *      Open a TCP connection to a host/port.
  *
  * Results:
- *      A socket, or -1 on error. 
+ *      A socket, or -1 on error.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -401,13 +403,13 @@ Ns_SockConnect2(char *host, int port, char *lhost, int lport)
  *
  * Ns_SockAsyncConnect --
  *
- *      Like Ns_SockConnect, but uses a nonblocking socket. 
+ *      Like Ns_SockConnect, but uses a nonblocking socket.
  *
  * Results:
- *      A socket, or -1 on error. 
+ *      A socket, or -1 on error.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -430,13 +432,13 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  *
  * Ns_SockTimedConnect --
  *
- *      Like Ns_SockConnect, but with an optional timeout in seconds. 
+ *      Like Ns_SockConnect, but with an optional timeout in seconds.
  *
  * Results:
- *      A socket, or -1 on error. 
+ *      A socket, or -1 on error.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -448,7 +450,7 @@ Ns_SockTimedConnect(char *host, int port, Ns_Time *timePtr)
 }
 
 SOCKET
-Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, 
+Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
                      Ns_Time *timePtr)
 {
     SOCKET    sock;
@@ -459,7 +461,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
      * Connect to the host asynchronously and wait for
      * it to connect.
      */
-    
+
     sock = SockConnect(host, port, lhost, lport, 1);
 
     if (sock != INVALID_SOCKET) {
@@ -549,14 +551,14 @@ Ns_SockSetBlocking(SOCKET sock)
  *
  * Ns_GetSockAddr --
  *
- *      Take a host/port and fill in a sockaddr_in structure 
- *      appropriately. Host may be an IP address or a DNS name. 
+ *      Take a host/port and fill in a sockaddr_in structure
+ *      appropriately. Host may be an IP address or a DNS name.
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      May perform DNS query. 
+ *      May perform DNS query.
  *
  *----------------------------------------------------------------------
  */
@@ -582,7 +584,7 @@ Ns_GetSockAddr(struct sockaddr_in *saPtr, char *host, int port)
             }
         }
     }
-    
+
     memset(saPtr, 0, sizeof(struct sockaddr_in));
     saPtr->sin_family = AF_INET;
     saPtr->sin_addr = ia;
@@ -597,13 +599,13 @@ Ns_GetSockAddr(struct sockaddr_in *saPtr, char *host, int port)
  *
  * Ns_SockPipe --
  *
- *      Create a pair of unix-domain sockets. 
+ *      Create a pair of unix-domain sockets.
  *
  * Results:
- *      See socketpair(2) 
+ *      See socketpair(2)
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -655,7 +657,7 @@ Ns_SockCloseLater(SOCKET sock)
  *
  * Ns_SockErrno --
  *
- *      Errno/GetLastError utility routines. 
+ *      Errno/GetLastError utility routines.
  *
  * Results:
  *      See code.
@@ -776,13 +778,13 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
  *
  * SockConnect --
  *
- *      Open a TCP connection to a host/port. 
+ *      Open a TCP connection to a host/port.
  *
  * Results:
- *      A socket or -1 on error. 
+ *      A socket or -1 on error.
  *
  * Side effects:
- *      If async is true, the returned socket will be nonblocking. 
+ *      If async is true, the returned socket will be nonblocking.
  *
  *----------------------------------------------------------------------
  */
@@ -880,7 +882,7 @@ SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
     int flags;
 
     flags = 0;
-    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags, 
+    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags,
                 NULL, NULL) != 0) {
         n = -1;
     }
@@ -927,7 +929,7 @@ SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
     int n;
 
 #ifdef _WIN32
-    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, 0, 
+    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, 0,
                 NULL, NULL) != 0) {
         n = -1;
     }

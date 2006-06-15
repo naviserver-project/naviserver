@@ -391,7 +391,7 @@ typedef struct Ns_Conn {
     char       *authUser;
     char       *authPasswd;
     int         contentLength;
-    int         flags;		/* Currently, only NS_CONN_CLOSED. */
+    int         flags;
 } Ns_Conn;
 
 /*

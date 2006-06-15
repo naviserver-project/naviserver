@@ -251,7 +251,7 @@ typedef struct WriterSock {
     int                nread;
     int                nsent;
     int                size;
-    int                flags;
+    unsigned int       flags;
     int                bufsize;
     unsigned char      *buf;
 } WriterSock;
