@@ -558,10 +558,10 @@ QueueEvent(Event *ePtr, time_t *nowPtr)
      * heap it up into place.  The queue array is extended
      * if necessary.
      */
-     
+
     ePtr->qid = ++nqueue;
     if (maxqueue <= nqueue) {
-	maxqueue += 1000;
+	maxqueue += 50;
 	queue = ns_realloc(queue, (sizeof(Event *)) * (maxqueue + 1));
     }
     queue[nqueue] = ePtr;

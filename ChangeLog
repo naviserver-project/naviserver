@@ -1,3 +1,8 @@
+2006-05-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/sched.c: Make scheduler queue Events increments by 50 instead of 1000
+	in order not to waste a lot fo memory
+
 2006-05-10  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/sock.c: Make Ns_SockTimedWait have NULL as timeoutPtr so it will
