@@ -44,33 +44,40 @@ ns_cache_create ns:memoize \
 #
 # ns_memoize --
 #
-#	This procedure...
+#	Evaluate the given script or proc and cache the result. Future calls
+#   will return the cached value (if not expired).
+#
+#   See ns_cache_eval for details.
 #
 # Results:
-#   None.
+#   Result of evaluating script.
 #
 # Side effects:
-#   None.
+#   See ns_cache_eval.
 #
 
 proc ns_memoize {args} {
-    ns_parseargs {{-timeout ""} {-ttl 0} -- script args} $args
+    ns_parseargs {{-timeout ""} {-expires ""} -- script args} $args
 
-    if {$timeout ne "" } {
+    if {$timeout ne ""} {
         set timeout "-timeout $timeout"
     }
+    if {$expires ne ""} {
+        set expires "-expires $expires"
+    }
     set key [concat $script $args]
-    eval ns_cache_eval $timeout -ttl $ttl -- ns:memoize [list $key] $script $args
+    eval ns_cache_eval $timeout $expires -- \
+        ns:memoize [list $key] $script $args
 }
 
 
 #
 # ns_memoize_flush --
 #
-#	This procedure...
+#	Flush memoized results which match given glob pattern.
 #
 # Results:
-#   None.
+#   Number of results flushed.
 #
 # Side effects:
 #   None.
@@ -88,16 +95,16 @@ proc ns_memoize_flush {{pattern ""}} {
 #
 # ns_memoize_stats --
 #
-#	This procedure...
+#	Returns the stats for the memoize cache.
 #
 # Results:
-#   None.
+#   List of stats in array get format.
 #
 # Side effects:
 #   None.
 #
 
-proc ns_memoize_stats args {
+proc ns_memoize_stats {} {
     return [ns_cache_stats ns:memoize]
 }
 

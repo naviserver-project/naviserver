@@ -1,3 +1,72 @@
+2006-06-19  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/fastpath.c:
+	* nsd/adpeval.c: Use Ns_CacheDeleteEntry instead of
+	Ns_CacheFlushEntry to prevent genuine flush stats being inflated.
+
+	* tcl/cache.tcl:
+	* nsd/nsconf.c:
+	* nsd/dns.c: Update to new API.
+
+	* nsd/nsd.h:
+	* nsd/server.c: Remove tcl cache timeout param in anticipation of new
+	limits API.
+
+	* nsd/tclcmds.c: Remove ns_cache _get _set _exists _info
+	commands. The first three are racey and can be emulated with _eval
+	and the new -force switch.  The new -contents switch to the _stats
+	command replaces _info, discouraging racey check-and-set usage.
+
+	* nsd/tcltime.c:
+	* nsd/tclobjv.c: New Ns_ObjvTime parse callback for the Ns_Time
+	type. Handy for passing absolute time deadlines to routines which
+	timeout.
+
+	* include/ns.h:
+	* nsd/cache.c: New Ns_CacheResetStats routine.
+
+	Ns_CacheGetConfig removed -- caches are immutable; the current
+	settings can be looked up in the config file.
+
+	Directly expire entries from within all routines which return one,
+	but but only if the value is not null, indicating no concurrent
+	update is in progress.
+
+	Use Ns_CacheDeleteEntry to remove an entry from the cache without
+	updating the stats. Flush stats should reflect explicit flushes
+	only.
+
+	Log stats when a cache is destroyed.
+
+	* nsd/tclcache.c: ns_cache_create now takes a -maxentry option
+	which is the maximum size of an entry allowed in the cache. This
+	prevents one large entry completely emptying an otherwise usefully
+	full cache.
+
+	The ns_cache_create -timeout switch has been removed in
+	anticipation of a general purpose limits scheme.
+
+	The -timeout option is now expected to be an absolute time in the
+	future, not an offset from the current time. This is awkward to
+	use manually, but should not be needed with the above mentioned
+	limits scheme. The -ttl option has been renames -expires and is
+	also an absolute time.
+
+	ns_cache_eval now takes a -force switch which will unconditioanly
+	replace any exiting entry, whether it has expired or not. Replaces
+	_set.
+
+	ns_cache_stats -content dumps the size and expirey for each
+	entry in the cache. Adding the -reset switch to either mode resets
+	the stats to zero.
+
+	
+
+	
+
+	* tests/ns_cache.test: Try to exercise the underlying Ns_CacheFind
+	harder with some more flush tests.
+
 2006-05-19  Vlad Seryakov  <seryakov@users.sf.net>
 
         * tclimg.c: Removed compiler warnings

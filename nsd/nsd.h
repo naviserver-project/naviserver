@@ -707,7 +707,6 @@ typedef struct NsServer {
         CONST char **errorLogHeaders;
         Tcl_HashTable caches;
         Ns_Mutex cachelock;
-        int cacheTimeout;
 
         /*
          * The following track synchronization
@@ -1007,7 +1006,7 @@ extern void NsInitServer(char *server, Ns_ServerInitProc *initProc);
 extern char *NsConfigRead(CONST char *file);
 extern void NsConfigEval(CONST char *config, int argc, char **argv, int optind);
 extern void NsConfUpdate(void);
-extern void NsEnableDNSCache(int timeout, int maxentries, int cachetimeout);
+extern void NsEnableDNSCache(int maxsize, int ttl, int timeout);
 extern void NsStopServers(Ns_Time *toPtr);
 extern void NsStartServer(NsServer *servPtr);
 extern void NsStopServer(NsServer *servPtr);

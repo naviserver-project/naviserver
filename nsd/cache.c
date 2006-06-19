@@ -51,9 +51,9 @@ typedef struct Entry {
     struct Entry   *prevPtr;
     struct Cache   *cachePtr;
     Tcl_HashEntry  *hPtr;
-    Ns_Time         expires;
+    Ns_Time         expires;  /* Absolute ttl timeout. */
     size_t          size;
-    void           *value;
+    void           *value;    /* Will appear NULL for concurrent updates. */
 } Entry;
 
 /*
@@ -65,19 +65,23 @@ typedef struct Cache {
     Entry         *lastEntryPtr;
     Tcl_HashEntry *hPtr;
     int            keys;
-    time_t         ttl;
-    time_t         timeout;
     size_t         maxSize;
     size_t         currentSize;
     Ns_Callback   *freeProc;
     Ns_Mutex       lock;
     Ns_Cond        cond;
-    unsigned int   nhit;
-    unsigned int   nmiss;
-    unsigned int   nflushed;
-    unsigned int   npruned;
-    unsigned int   nexpired;
     Tcl_HashTable  entriesTable;
+
+    struct {
+        unsigned int   nhit;      /* Successful gets. */
+        unsigned int   nmiss;     /* Unsuccessful gets. */
+        unsigned int   nexpired;  /* Unsuccessful gets due to entry expiry. */
+        unsigned int   nflushed;  /* Explicit flushes by user code. */
+        unsigned int   npruned;   /* Evictions due to size constraint. */
+    } stats;
+
+    char name[1];
+
 } Cache;
 
 
@@ -85,19 +89,17 @@ typedef struct Cache {
  * Local functions defined in this file
  */
 
-static int  IsExpired(Entry *ePtr);
-static int  IsSet(Entry *ePtr);
+static int  Expired(Entry *ePtr, Ns_Time *nowPtr);
 static void Delink(Entry *ePtr);
 static void Push(Entry *ePtr);
-static void PruneEntry(Entry *ePtr);
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheCreate, Ns_CacheCreateSz, Ns_CacheCreateEx --
+ * Ns_CacheCreateSz --
  *
- *      Create a new time and/or size based cache.
+ *      Create a new size limited cache.
  *
  * Results:
  *      A pointer to the new cache.
@@ -109,35 +111,21 @@ static void PruneEntry(Entry *ePtr);
  */
 
 Ns_Cache *
-Ns_CacheCreate(CONST char *name, int keys, time_t ttl, Ns_Callback *freeProc)
-{
-    return Ns_CacheCreateEx(name, keys, ttl, 0, 0, freeProc);
-}
-
-Ns_Cache *
 Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
-{
-    return Ns_CacheCreateEx(name, keys, -1, maxSize, 0, freeProc);
-}
-
-Ns_Cache *
-Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize, time_t timeout,
-                 Ns_Callback *freeProc)
 {
     Cache *cachePtr;
 
-    cachePtr = ns_calloc(1, sizeof(Cache));
+    cachePtr = ns_calloc(1, sizeof(Cache) + strlen(name));
+    strcpy(cachePtr->name, name);
     cachePtr->freeProc       = freeProc;
-    cachePtr->ttl            = ttl;
-    cachePtr->timeout        = timeout;
     cachePtr->maxSize        = maxSize;
     cachePtr->currentSize    = 0;
     cachePtr->keys           = keys;
-    cachePtr->nhit           = 0;
-    cachePtr->nmiss          = 0;
-    cachePtr->nflushed       = 0;
-    cachePtr->npruned        = 0;
-    cachePtr->nexpired       = 0;
+    cachePtr->stats.nhit     = 0;
+    cachePtr->stats.nmiss    = 0;
+    cachePtr->stats.nexpired = 0;
+    cachePtr->stats.nflushed = 0;
+    cachePtr->stats.npruned  = 0;
 
     Ns_MutexSetName2(&cachePtr->lock, "ns:cache", name);
     Tcl_InitHashTable(&cachePtr->entriesTable, keys);
@@ -157,7 +145,7 @@ Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize, time_t 
  *      None.
  *
  * Side effects:
- *      Cache no longer usable.
+ *      Statistics logged, cache no longer usable.
  *
  *----------------------------------------------------------------------
  */
@@ -165,7 +153,12 @@ Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize, time_t 
 void
 Ns_CacheDestroy(Ns_Cache *cache)
 {
-    Cache *cachePtr = (Cache *) cache;
+    Cache      *cachePtr = (Cache *) cache;
+    Ns_DString  ds;
+
+    Ns_DStringInit(&ds);
+    Ns_Log(Notice, "cache[%s]: %s", cachePtr->name, Ns_CacheStats(cache, &ds));
+    Ns_DStringFree(&ds);
 
     Ns_CacheFlush(cache);
     Ns_MutexDestroy(&cachePtr->lock);
@@ -187,9 +180,7 @@ Ns_CacheDestroy(Ns_Cache *cache)
  *      not exist or the entry has expired.
  *
  * Side effects:
- *      If still valid, the cache entry will move to the top
- *      of the LRU list. Expired entries or entries without
- *      assigned value will not be touched nor reported.
+ *      A valid entry will move to the top of the LRU list.
  *
  *----------------------------------------------------------------------
  */
@@ -203,15 +194,29 @@ Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
 
     hPtr = Tcl_FindHashEntry(&cachePtr->entriesTable, key);
     if (hPtr == NULL) {
-        ++cachePtr->nmiss;
+        /*
+         * Entry does not exist at all.
+         */
+        ++cachePtr->stats.nmiss;
         return NULL;
     }
     ePtr = Tcl_GetHashValue(hPtr);
-    if (IsExpired(ePtr) || !IsSet(ePtr)) {
-        ++cachePtr->nmiss;
+    if (ePtr->value == NULL) {
+        /*
+         * Entry is being updated by some other thread.
+         */
+        ++cachePtr->stats.nmiss;
         return NULL;
     }
-    ++cachePtr->nhit;
+    if (Expired(ePtr, NULL)) {
+        /*
+         * Entry exists but has expired.
+         */
+        Ns_CacheDeleteEntry((Ns_Entry *) ePtr);
+        ++cachePtr->stats.nmiss;
+        return NULL;
+    }
+    ++cachePtr->stats.nhit;
     Delink(ePtr);
     Push(ePtr);
 
@@ -231,9 +236,7 @@ Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
  *      A pointer to a cache entry.
  *
  * Side effects:
- *      Memory may be allocated for the new cache entry and it will
- *      be inserted into the cache. For expired entries, their value
- *      will be unset as we expect from the caller to set it new.
+ *      Existing, expired entries will be unset and reported as new.
  *
  *----------------------------------------------------------------------
  */
@@ -244,27 +247,28 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
     Cache         *cachePtr = (Cache *) cache;
     Tcl_HashEntry *hPtr;
     Entry         *ePtr;
+    int            new;
 
-    hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, newPtr);
-    if (*newPtr) {
+    hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, &new);
+    if (new) {
         ePtr = ns_calloc(1, sizeof(Entry));
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;
         Tcl_SetHashValue(hPtr, ePtr);
-        ++cachePtr->nmiss;
+        ++cachePtr->stats.nmiss;
     } else {
         ePtr = Tcl_GetHashValue(hPtr);
-        if (!IsExpired(ePtr)) {
-            ++cachePtr->nhit;
+        if (Expired(ePtr, NULL)) {
+            ++cachePtr->stats.nexpired;
+            Ns_CacheUnsetValue((Ns_Entry *) ePtr);
+            new = 1;
         } else {
-            ++ePtr->cachePtr->nexpired;
-            ++cachePtr->nmiss;
-            *newPtr = 1;
-            Ns_CacheUnsetValue((Ns_Entry *)ePtr);
+            ++cachePtr->stats.nhit;
         }
         Delink(ePtr);
     }
     Push(ePtr);
+    *newPtr = new;
 
     return (Ns_Entry *) ePtr;
 }
@@ -276,50 +280,33 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
  * Ns_CacheWaitCreateEntry --
  *
  *      Create a new cache entry or return an existing one with the
- *      given key.  Wait up to timeout seconds for another thread to
- *      complete an update.
+ *      given key.  Wait until the given absolute timeout for another
+ *      thread to complete an update.
  *
  * Results:
- *      A pointer to a new cache entry or NULL on timeout.
+ *      A pointer to a new cache entry, or NULL on timeout.
  *
  * Side effects:
  *      Cache lock may be released and re-acquired.
- *
- *      NB. Do not mix calls to Ns_CacheCreateEntry and
- *      Ns_CacheWaitCreateEntry.
  *
  *----------------------------------------------------------------------
  */
 
 Ns_Entry *
-Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t timeout)
+Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr,
+                        Ns_Time *timeoutPtr)
 {
-    Cache *cachePtr = (Cache *) cache;
     Ns_Entry      *entry;
-    Ns_Time        time, *timePtr;
-    CONST char    *value;
     int            new, status = NS_OK;
 
     entry = Ns_CacheCreateEntry(cache, key, &new);
-    if (!new && (value = Ns_CacheGetValue(entry)) == NULL) {
-
-        /*
-         * Wait for another thread to complete an update.
-         */
-
-        if (timeout > 0 || (timeout = cachePtr->timeout) > 0) {
-            Ns_GetTime(&time);
-            Ns_IncrTime(&time, timeout, 0);
-            timePtr = &time;
-        } else {
-            timePtr = NULL;
-        }
-
+    if (!new && Ns_CacheGetValue(entry) == NULL) {
         do {
-            status = Ns_CacheTimedWait(cache, &time);
+            status = Ns_CacheTimedWait(cache, timeoutPtr);
             entry = Ns_CacheCreateEntry(cache, key, &new);
-        } while (status == NS_OK && !new
-                 && (value = Ns_CacheGetValue(entry)) == NULL);
+        } while (status == NS_OK
+                 && !new
+                 && Ns_CacheGetValue(entry) == NULL);
     }
     *newPtr = new;
 
@@ -355,12 +342,12 @@ Ns_CacheKey(Ns_Entry *entry)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheGetValue --
+ * Ns_CacheGetValue, Ns_CacheGetSize, Ns_CacheGetExpirey --
  *
- *      Get the value (contents) of a cache entry.
+ *      Get the value, size or expirey of a cache entry.
  *
  * Results:
- *      A pointer to the cache entry's contents.
+ *      As specified.
  *
  * Side effects:
  *      None.
@@ -371,65 +358,26 @@ Ns_CacheKey(Ns_Entry *entry)
 void *
 Ns_CacheGetValue(Ns_Entry *entry)
 {
-    Entry *ePtr = (Entry *) entry;
-
-    return ePtr->value;
+    return ((Entry *) entry)->value;
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_CacheGetSize --
- *
- *      Get the size of the value (contents) of a cache entry.
- *
- * Results:
- *      The size in bytes or 0 if the size is unknown.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
 
 size_t
 Ns_CacheGetSize(Ns_Entry *entry)
 {
-    Entry *ePtr = (Entry *) entry;
-
-    return ePtr->size;
+    return ((Entry *) entry)->size;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Ns_CacheGetExpiration --
- *
- *      Get the expiraton of a cache entry.
- *
- * Results:
- *      The Ns_Time structure if the expires is set.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-Ns_Time
-Ns_CacheGetExpiration(Ns_Entry *entry)
+Ns_Time *
+Ns_CacheGetExpirey(Ns_Entry *entry)
 {
-    Entry *ePtr = (Entry *) entry;
-
-    return ePtr->expires;
+    return &((Entry *) entry)->expires;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheSetValue, Ns_CacheSetValueSz --
+ * Ns_CacheSetValue, Ns_CacheSetValueSz, Ns_CacheSetValueExpires --
  *
  *      Free the cache entry's previous contents, set it to the new
  *      contents, increase the size of the cache, and prune until
@@ -453,11 +401,12 @@ Ns_CacheSetValue(Ns_Entry *entry, void *value)
 void
 Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 {
-    Ns_CacheSetValueExpires(entry, value, size, 0);
+    Ns_CacheSetValueExpires(entry, value, size, NULL);
 }
 
 void
-Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, time_t ttl)
+Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
+                        Ns_Time *timeoutPtr)
 {
     Entry *ePtr = (Entry *) entry;
     Cache *cachePtr = ePtr->cachePtr;
@@ -465,17 +414,15 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, time_t ttl)
     Ns_CacheUnsetValue(entry);
     ePtr->value = value;
     ePtr->size = size;
-    if (ttl > 0 || cachePtr->ttl > 0) {
-        Ns_GetTime(&ePtr->expires);
-        Ns_IncrTime(&ePtr->expires, ttl ? ttl : cachePtr->ttl, 0);
-    } else {
-        ePtr->expires.sec = ePtr->expires.usec = 0;
+    if (timeoutPtr != NULL) {
+        ePtr->expires = *timeoutPtr;
     }
     cachePtr->currentSize += size;
     if (ePtr->cachePtr->maxSize > 0) {
         while (cachePtr->currentSize > cachePtr->maxSize &&
                cachePtr->lastEntryPtr != ePtr) {
-            PruneEntry(cachePtr->lastEntryPtr);
+            Ns_CacheDeleteEntry((Ns_Entry *) cachePtr->lastEntryPtr);
+            ++cachePtr->stats.npruned;
         }
     }
 }
@@ -520,34 +467,7 @@ Ns_CacheUnsetValue(Ns_Entry *entry)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheDeleteEntry --
- *
- *      Delete an entry from the cache table and free memory.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_CacheDeleteEntry(Ns_Entry *entry)
-{
-    Entry *ePtr = (Entry *) entry;
-
-    Delink(ePtr);
-    Tcl_DeleteHashEntry(ePtr->hPtr);
-    ns_free(ePtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_CacheFlushEntry --
+ * Ns_CacheFlushEntry, Ns_CacheDeleteEntry --
  *
  *      Delete an entry from the cache table after first unsetting
  *      the current entry value (if any).
@@ -556,7 +476,8 @@ Ns_CacheDeleteEntry(Ns_Entry *entry)
  *      None.
  *
  * Side effects:
- *      Statistics updated.
+ *      Statistics updated on flush.
+ *      NB: Entries under concurrent update are also deleted.
  *
  *----------------------------------------------------------------------
  */
@@ -566,10 +487,19 @@ Ns_CacheFlushEntry(Ns_Entry *entry)
 {
     Entry *ePtr = (Entry *) entry;
 
-    ++ePtr->cachePtr->nflushed;
+    ePtr->cachePtr->stats.nflushed++;
+    Ns_CacheDeleteEntry(entry);
+}
+
+void
+Ns_CacheDeleteEntry(Ns_Entry *entry)
+{
+    Entry *ePtr = (Entry *) entry;
 
     Ns_CacheUnsetValue(entry);
-    Ns_CacheDeleteEntry(entry);
+    Delink(ePtr);
+    Tcl_DeleteHashEntry(ePtr->hPtr);
+    ns_free(ePtr);
 }
 
 
@@ -584,7 +514,7 @@ Ns_CacheFlushEntry(Ns_Entry *entry)
  *      Number of entries flushed.
  *
  * Side effects:
- *      None.
+ *      Cache stats updated, concurrent updates skipped.
  *
  *----------------------------------------------------------------------
  */
@@ -592,16 +522,19 @@ Ns_CacheFlushEntry(Ns_Entry *entry)
 int
 Ns_CacheFlush(Ns_Cache *cache)
 {
+    Cache          *cachePtr = (Cache *) cache;
     Ns_CacheSearch  search;
     Ns_Entry       *entry;
     int             nflushed = 0;
 
     entry = Ns_CacheFirstEntry(cache, &search);
     while (entry != NULL) {
-        Ns_CacheFlushEntry(entry);
+        Ns_CacheDeleteEntry(entry);
         entry = Ns_CacheNextEntry(&search);
         nflushed++;
     }
+    ++cachePtr->stats.nflushed;
+
     return nflushed;
 }
 
@@ -611,14 +544,14 @@ Ns_CacheFlush(Ns_Cache *cache)
  *
  * Ns_CacheFirstEntry --
  *
- *      Return a pointer to the first entry in the cache (in no
+ *      Return a pointer to the first valid entry in the cache (in no
  *      particular order).
  *
  * Results:
- *      A pointer to said entry.
+ *      A pointer to said entry, or NULL if no valid entries.
  *
  * Side effects:
- *      None.
+ *      Expired entries are flushed, concurrent updates are skipped.
  *
  *----------------------------------------------------------------------
  */
@@ -627,14 +560,23 @@ Ns_Entry *
 Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 {
     Cache          *cachePtr = (Cache *) cache;
-    Tcl_HashSearch *sPtr = (Tcl_HashSearch *) search;
     Tcl_HashEntry  *hPtr;
+    Ns_Entry       *entry;
 
-    hPtr = Tcl_FirstHashEntry(&cachePtr->entriesTable, sPtr);
-    if (hPtr == NULL) {
-        return NULL;
+    Ns_GetTime(&search->now);
+    hPtr = Tcl_FirstHashEntry(&cachePtr->entriesTable, &search->hsearch);
+    while (hPtr != NULL) {
+        entry = Tcl_GetHashValue(hPtr);
+        if (Ns_CacheGetValue(entry) != NULL) {
+            if (!Expired((Entry *) entry, &search->now)) {
+                return entry;
+            }
+            ++cachePtr->stats.nexpired;
+            Ns_CacheDeleteEntry(entry);
+        }
+        hPtr = Tcl_NextHashEntry(&search->hsearch);
     }
-    return (Ns_Entry *) Tcl_GetHashValue(hPtr);
+    return NULL;
 }
 
 
@@ -647,10 +589,10 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
  *      walk through the whole cache.
  *
  * Results:
- *      Pointer to next entry, or NULL when all entries visited.
+ *      Pointer to next valid entry, or NULL when all entries visited.
  *
  * Side effects:
- *      None.
+ *      Expired entries are flushed, concurrent updates skipped.
  *
  *----------------------------------------------------------------------
  */
@@ -658,14 +600,22 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 Ns_Entry *
 Ns_CacheNextEntry(Ns_CacheSearch *search)
 {
-    Tcl_HashSearch *sPtr = (Tcl_HashSearch *) search;
     Tcl_HashEntry  *hPtr;
+    Ns_Entry       *entry;
 
-    hPtr = Tcl_NextHashEntry(sPtr);
-    if (hPtr == NULL) {
-        return NULL;
+    hPtr = Tcl_NextHashEntry(&search->hsearch);
+    while (hPtr != NULL) {
+        entry = Tcl_GetHashValue(hPtr);
+        if (Ns_CacheGetValue(entry) != NULL) {
+            if (!Expired((Entry *) entry, &search->now)) {
+                return entry;
+            }
+            ((Entry *) entry)->cachePtr->stats.nexpired++;
+            Ns_CacheDeleteEntry(entry);
+        }
+        hPtr = Tcl_NextHashEntry(&search->hsearch);
     }
-    return (Ns_Entry *) Tcl_GetHashValue(hPtr);
+    return NULL;
 }
 
 
@@ -839,7 +789,7 @@ Ns_CacheBroadcast(Ns_Cache *cache)
  *      Append statistics about cache usage to dstring.
  *
  * Results:
- *      None.
+ *      Pointer to current string value.
  *
  * Side effects:
  *      None.
@@ -847,31 +797,32 @@ Ns_CacheBroadcast(Ns_Cache *cache)
  *----------------------------------------------------------------------
  */
 
-void
+char *
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 {
     Cache        *cachePtr = (Cache *) cache;
     unsigned int  total, hitrate;
 
-    total = cachePtr->nhit + cachePtr->nmiss;
-    hitrate = (total ? (cachePtr->nhit * 100) / total : 0);
+    total = cachePtr->stats.nhit + cachePtr->stats.nmiss;
+    hitrate = (total ? (cachePtr->stats.nhit * 100) / total : 0);
 
-    Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
-                     "flushed %u hits %u missed %u hitrate %u "
-                     "expired %u pruned %u",
-                     (unsigned long) cachePtr->maxSize,
-                     (unsigned long) cachePtr->currentSize,
-                     cachePtr->entriesTable.numEntries, cachePtr->nflushed,
-                     cachePtr->nhit, cachePtr->nmiss, hitrate,
-                     cachePtr->nexpired, cachePtr->npruned);
+    return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
+               "flushed %u hits %u missed %u hitrate %u "
+               "expired %u pruned %u",
+               (unsigned long) cachePtr->maxSize,
+               (unsigned long) cachePtr->currentSize,
+               cachePtr->entriesTable.numEntries, cachePtr->stats.nflushed,
+               cachePtr->stats.nhit, cachePtr->stats.nmiss, hitrate,
+               cachePtr->stats.nexpired, cachePtr->stats.npruned);
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
- * Ns_CacheGetConfig --
+ * Ns_CacheResetStats --
  *
- *      Returns configured cache parameters
+ *      Set all statictics to zero.
  *
  * Results:
  *      None.
@@ -883,28 +834,20 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
  */
 
 void
-Ns_CacheGetConfig(Ns_Cache *cache, time_t *ttl, size_t *maxsize, time_t *timeout)
+Ns_CacheResetStats(Ns_Cache *cache)
 {
-    Cache        *cachePtr = (Cache *) cache;
+    Cache *cachePtr = (Cache *) cache;
 
-    if (ttl) {
-        *ttl = cachePtr->ttl;
-    }
-    if (maxsize) {
-        *maxsize = cachePtr->maxSize;
-    }
-    if (timeout) {
-        *timeout = cachePtr->timeout;
-    }
+    memset(&cachePtr->stats, 0, sizeof(cachePtr->stats));
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * IsExpired --
+ * Expired --
  *
- *      Check if an entry has expired.
+ *      Has the absolute ttl expired?
  *
  * Results:
  *      1 if entry has expired, 0 otherwise.
@@ -916,40 +859,20 @@ Ns_CacheGetConfig(Ns_Cache *cache, time_t *ttl, size_t *maxsize, time_t *timeout
  */
 
 static int
-IsExpired(Entry *ePtr)
+Expired(Entry *ePtr, Ns_Time *nowPtr)
 {
     Ns_Time  now;
 
     if (ePtr->expires.sec > 0) {
-        Ns_GetTime(&now);
-        if (Ns_DiffTime(&ePtr->expires, &now, NULL) < 0) {
+        if (nowPtr == NULL) {
+            Ns_GetTime(&now);
+            nowPtr = &now;
+        }
+        if (Ns_DiffTime(&ePtr->expires, nowPtr, NULL) < 0) {
             return 1;
         }
     }
     return 0;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * IsSet --
- *
- *      Check if an entry has been set.
- *
- * Results:
- *      1 if entry is set, 0 otherwise.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-IsSet(Entry *ePtr)
-{
-    return ePtr->value != NULL;
 }
 
 
@@ -1017,30 +940,4 @@ Push(Entry *ePtr)
     if (ePtr->cachePtr->lastEntryPtr == NULL) {
         ePtr->cachePtr->lastEntryPtr = ePtr;
     }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * PruneEntry --
- *
- *      Flush an entry to adjust the size of the cache.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-PruneEntry(Entry *ePtr)
-{
-    ++ePtr->cachePtr->npruned;
-
-    Ns_CacheUnsetValue((Ns_Entry *)ePtr);
-    Ns_CacheDeleteEntry((Ns_Entry *)ePtr);
 }

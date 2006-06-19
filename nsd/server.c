@@ -294,8 +294,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
     Ns_MutexInit(&servPtr->tcl.cachelock);
     Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
-    servPtr->tcl.cacheTimeout =
-        Ns_ConfigIntRange(path, "cachetimeout", 3, 0, INT_MAX);
     Tcl_InitHashTable(&servPtr->tcl.mutexTable, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->tcl.csTable, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->tcl.semaTable, TCL_STRING_KEYS);

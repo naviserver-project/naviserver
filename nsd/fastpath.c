@@ -596,7 +596,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
 #endif
         filePtr = NULL;
         Ns_CacheLock(cache);
-        entry = Ns_CacheWaitCreateEntry(cache, key, &new, -1);
+        entry = Ns_CacheWaitCreateEntry(cache, key, &new, NULL);
 
         /*
          * Validate entry.
@@ -644,7 +644,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
             if (filePtr != NULL) {
                 Ns_CacheSetValueSz(entry, filePtr, (size_t) (filePtr->size + sizeof(File)));
             } else {
-                Ns_CacheFlushEntry(entry);
+                Ns_CacheDeleteEntry(entry);
             }
             Ns_CacheBroadcast(cache);
         }

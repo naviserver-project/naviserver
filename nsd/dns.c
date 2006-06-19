@@ -59,13 +59,6 @@ extern int h_errno;
 
 typedef int (GetProc)(Ns_DString *dsPtr, char *key);
 
-/*
- * Static variables defined in this file
- */
-
-static Ns_Cache *hostCache;
-static Ns_Cache *addrCache;
-
 
 /*
  * Static functions defined in this file
@@ -79,6 +72,16 @@ static int DnsGet(GetProc *getProc, Ns_DString *dsPtr,
 #if !defined(HAVE_GETADDRINFO) && !defined(HAVE_GETNAMEINFO)
 static void LogError(char *func, int h_errnop);
 #endif
+
+
+/*
+ * Static variables defined in this file
+ */
+
+static Ns_Cache *hostCache;
+static Ns_Cache *addrCache;
+static int       ttl;       /* Time in senconds each entry can live in the cache. */
+static int       timeout;   /* Time in seconds to wait for concurrent update.  */
 
 
 
@@ -120,9 +123,10 @@ Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host)
 static int
 DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
 {
-    Ns_Entry    *entry;
+    Ns_Entry   *entry;
     Ns_DString  ds;
-    int          new, status;
+    Ns_Time     time;
+    int         new, status;
 
     /*
      * Call getProc directly or through cache.
@@ -133,27 +137,32 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
         status = (*getProc)(&ds, key);
     } else {
 
+        Ns_GetTime(&time);
+        Ns_IncrTime(&time, timeout, 0);
+
         Ns_CacheLock(cache);
-        entry = Ns_CacheWaitCreateEntry(cache, key, &new, -1);
+        entry = Ns_CacheWaitCreateEntry(cache, key, &new, &time);
         if (entry == NULL) {
             Ns_CacheUnlock(cache);
-            Ns_Log(Bug, "dns: error waiting for cache entry");
+            Ns_Log(Notice, "dns: timeout waiting for concurrent update");
             return NS_FALSE;
         }
         if (new) {
             Ns_CacheUnlock(cache);
             status = (*getProc)(&ds, key);
             Ns_CacheLock(cache);
-            entry = Ns_CacheCreateEntry(cache, key, &new);
             if (status != NS_TRUE) {
-                Ns_CacheFlushEntry(entry);
+                Ns_CacheDeleteEntry(entry);
             } else {
-                Ns_CacheSetValueSz(entry, ns_strdup(ds.string), ds.length);
+                Ns_GetTime(&time);
+                Ns_IncrTime(&time, ttl, 0);
+                Ns_CacheSetValueExpires(entry, ns_strdup(ds.string), ds.length,
+                                        &time);
             }
             Ns_CacheBroadcast(cache);
         } else {
             Ns_DStringNAppend(&ds, Ns_CacheGetValue(entry),
-                               Ns_CacheGetSize(entry));
+                              Ns_CacheGetSize(entry));
             status = NS_TRUE;
         }
         Ns_CacheUnlock(cache);
@@ -185,18 +194,18 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
  *      None.
  *
  * Side effects:
- *      Futher DNS lookups will be cached up to given timeout.
+ *      Futher DNS lookups will be cached using given ttl.
  *
  *----------------------------------------------------------------------
  */
 
 void
-NsEnableDNSCache(int timeout, int maxsize, int cachetimeout)
+NsEnableDNSCache(int maxsize, int ttl, int timeout)
 {
-    hostCache = Ns_CacheCreateEx("ns:dnshost", TCL_STRING_KEYS,
-                                 timeout, (size_t) maxsize, cachetimeout, ns_free);
-    addrCache = Ns_CacheCreateEx("ns:dnsaddr", TCL_STRING_KEYS,
-                                 timeout, (size_t) maxsize, cachetimeout, ns_free);
+    hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
+                                 (size_t) maxsize, ns_free);
+    addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
+                                 (size_t) maxsize, ns_free);
 }
 
 

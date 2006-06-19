@@ -380,7 +380,7 @@ AdpRun(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[],
             ipagePtr = Ns_CacheGetValue(ePtr);
             if (ipagePtr->pagePtr->mtime != st.st_mtime 
                 || ipagePtr->pagePtr->size != st.st_size) {
-                Ns_CacheFlushEntry(ePtr);
+                Ns_CacheDeleteEntry(ePtr);
                 ipagePtr = NULL;
             }
         }

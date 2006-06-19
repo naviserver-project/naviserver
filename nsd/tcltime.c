@@ -160,6 +160,37 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_TclGetTimePtrFromObj --
+ *
+ *      Convert the Tcl_Obj to an Ns_Time type and return a pointer to
+ *      it's internal rep.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR if not a valid Ns_Time.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr)
+{
+    if (objPtr->typePtr != &timeType) {
+        if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
+            return TCL_ERROR;
+        }
+    }
+    *timePtrPtr = ((Ns_Time *) &objPtr->internalRep);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclTimeObjCmd --
  *
  *      Implements ns_time. 

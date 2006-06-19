@@ -40,15 +40,25 @@ NS_RCSID("@(#) $Header$");
 
 
 /*
+ * The following defines a Tcl cache.
+ */
+
+typedef struct TclCache {
+    Ns_Cache   *cache;
+    int         ttl;      /* Default ttl (time to live) for cache entries. */
+    size_t      maxEntry; /* Maximum size of a single entry in the cache. */
+} TclCache;
+
+
+/*
  * Local functions defined in this file
  */
 
 static int CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                              Tcl_Obj *CONST objv[], int append);
-static Ns_Entry *CreateEntry(NsInterp *itPtr, Ns_Cache *cache, char *key,
-                             int *newPtr, int timeout);
-static void SetEntry(Tcl_Interp *interp, Ns_Entry *entry, Tcl_Obj *valObj,
-                     int ttl);
+static Ns_Entry *CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key,
+                             int *newPtr, Ns_Time *timeoutPtr);
+static void SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr);
 static Ns_ObjvProc ObjvCache;
 
 
@@ -75,15 +85,15 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     NsInterp      *itPtr = arg;
     NsServer      *servPtr = itPtr->servPtr;
     Tcl_HashEntry *hPtr;
-    Ns_Cache      *cache;
+    TclCache      *cPtr;
     char          *name;
-    int            new, maxSize, ttl = 0, timeout = 0;
+    int            new, maxSize, maxEntry = 0, ttl = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-ttl",     Ns_ObjvInt,   &ttl, NULL},
-        {"-timeout", Ns_ObjvInt,   &timeout, NULL},
-        {"--",       Ns_ObjvBreak, NULL,     NULL},
-        {NULL, NULL, NULL, NULL}
+        {"-ttl",      Ns_ObjvInt,   &ttl,      NULL},
+        {"-maxentry", Ns_ObjvInt,   &maxEntry, NULL},
+        {"--",        Ns_ObjvBreak, NULL,      NULL},
+        {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"cache",   Ns_ObjvString, &name,    NULL},
@@ -97,9 +107,11 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Ns_MutexLock(&servPtr->tcl.cachelock);
     hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &new);
     if (new) {
-        cache = Ns_CacheCreateEx(name, TCL_STRING_KEYS,
-                                 ttl, maxSize, timeout, ns_free);
-        Tcl_SetHashValue(hPtr, cache);
+        cPtr = ns_malloc(sizeof(TclCache));
+        cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, maxSize, ns_free);
+        cPtr->ttl = ttl;
+        cPtr->maxEntry = maxEntry;
+        Tcl_SetHashValue(hPtr, cPtr);
     }
     Ns_MutexUnlock(&servPtr->tcl.cachelock);
 
@@ -122,11 +134,13 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *      and the result is stored in the cache and returned. Script
  *      errors are propagated.
  *
+ *      The -force switch causes an existing valid entry to replaced.
+ *
  * Results:
  *      TCL result.
  *
  * Side effects:
- *      None.
+ *      Other threads may block waiting for this update to complete.
  *
  *----------------------------------------------------------------------
  */
@@ -135,20 +149,21 @@ int
 NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
-    Ns_Cache *cache;
+    TclCache *cPtr;
     Ns_Entry *entry;
     char     *key;
-    int       new, status = TCL_OK;
-    int       nargs, timeout = -1, ttl = 0;
+    Ns_Time  *timeoutPtr = NULL, *expPtr = NULL;
+    int       nargs, new, force = NS_FALSE, status = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
-        {"-timeout", Ns_ObjvInt,   &timeout, NULL},
-        {"-ttl",     Ns_ObjvInt,   &ttl,     NULL},
-        {"--",       Ns_ObjvBreak, NULL,     NULL},
+        {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
+        {"-expires", Ns_ObjvTime,  &expPtr,     NULL},
+        {"-force",   Ns_ObjvBool,  &force,      (void *) NS_TRUE},
+        {"--",       Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cache,  arg},
+        {"cache",    ObjvCache,     &cPtr,   itPtr},
         {"key",      Ns_ObjvString, &key,    NULL},
         {"args",     Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
@@ -156,32 +171,31 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if ((entry = CreateEntry(itPtr, cache, key, &new, timeout)) == NULL) {
+
+    if ((entry = CreateEntry(itPtr, cPtr, key, &new, timeoutPtr)) == NULL) {
         return TCL_ERROR;
     }
-    if (!new) {
+    if (!new && !force) {
         Tcl_SetStringObj(Tcl_GetObjResult(interp),
                          Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
     } else {
-        Ns_CacheUnlock(cache);
+        Ns_CacheUnlock(cPtr->cache);
         if (nargs == 1) {
             status = Tcl_EvalObjEx(interp, objv[objc-1], 0);
         } else {
             status = Tcl_EvalObjv(interp, nargs, objv + (objc-nargs), 0);
         }
-        Ns_CacheLock(cache);
-        entry = Ns_CacheCreateEntry(cache, key, &new);
+        Ns_CacheLock(cPtr->cache);
         if (status != TCL_OK && status != TCL_RETURN) {
             status = TCL_ERROR;
-            Ns_CacheUnsetValue(entry);
             Ns_CacheDeleteEntry(entry);
         } else {
             status = TCL_OK;
-            SetEntry(interp, entry, NULL, ttl);
+            SetEntry(cPtr, entry, Tcl_GetObjResult(interp), expPtr);
         }
-        Ns_CacheBroadcast(cache);
+        Ns_CacheBroadcast(cPtr->cache);
     }
-    Ns_CacheUnlock(cache);
+    Ns_CacheUnlock(cPtr->cache);
 
     return status;
 }
@@ -193,7 +207,7 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  * NsTclCacheIncrObjCmd --
  *
  *      Treat the value of the cached object as in integer and
- *      increment it.  No value is treated as starting at zero.a
+ *      increment it.  New values start at zero.
  *
  * Results:
  *      TCL result.
@@ -208,20 +222,21 @@ int
 NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
-    Ns_Cache *cache;
+    TclCache *cPtr;
     Ns_Entry *entry;
+    Tcl_Obj  *valObj;
     char     *key;
     int       new, cur, incr = 1;
-    int       timeout = -1, ttl = 0;
+    Ns_Time  *timeoutPtr = NULL, *expPtr = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-timeout", Ns_ObjvInt,   &timeout, NULL},
-        {"-ttl",     Ns_ObjvInt,   &ttl,     NULL},
-        {"--",       Ns_ObjvBreak, NULL,     NULL},
+        {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
+        {"-expires", Ns_ObjvTime,  &expPtr,     NULL},
+        {"--",       Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cache, arg},
+        {"cache",    ObjvCache,     &cPtr, itPtr},
         {"key",      Ns_ObjvString, &key,   NULL},
         {"?incr",    Ns_ObjvInt,    &incr,  NULL},
         {NULL, NULL, NULL, NULL}
@@ -229,193 +244,19 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if ((entry = CreateEntry(itPtr, cache, key, &new, timeout)) == NULL) {
+    if ((entry = CreateEntry(itPtr, cPtr, key, &new, timeoutPtr)) == NULL) {
         return TCL_ERROR;
     }
     if (new) {
         cur = 0;
     } else if (Tcl_GetInt(interp, Ns_CacheGetValue(entry), &cur) != TCL_OK) {
-        Ns_CacheUnlock(cache);
+        Ns_CacheUnlock(cPtr->cache);
         return TCL_ERROR;
     }
-    SetEntry(interp, entry, Tcl_NewIntObj(cur + incr), ttl);
-    Ns_CacheUnlock(cache);
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclCacheExistsObjCmd --
- *
- *      Returns 1 if entry exists in the cache and not expired yet
- *
- * Results:
- *      TCL result.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclCacheExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Ns_Cache *cache;
-    Ns_Entry *entry;
-    char     *key;
-    int       rc = 0;
-
-    Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cache, arg},
-        {"key",      Ns_ObjvString, &key,   NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    Ns_CacheLock(cache);
-    if ((entry = Ns_CacheFindEntry(cache, key)) != NULL) {
-        rc = 1;
-    }
-    Ns_CacheUnlock(cache);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclCacheGetObjCmd --
- *
- *      Returns entry value if entry exists in the cache and not expired yet
- *
- * Results:
- *      TCL result with entry value or empty result
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Ns_Cache *cache;
-    Ns_Entry *entry;
-    char     *key;
-
-    Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cache, arg},
-        {"key",      Ns_ObjvString, &key,   NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    Ns_CacheLock(cache);
-    if ((entry = Ns_CacheFindEntry(cache, key)) != NULL) {
-        Tcl_SetStringObj(Tcl_GetObjResult(interp),
-                         Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
-    }
-    Ns_CacheUnlock(cache);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclCacheInfoObjCmd --
- *
- *      Returns entry size and expiration if entry exists in the cache and not expired yet
- *
- * Results:
- *      TCL result with entry size and expiration or empty result
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclCacheInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    Ns_Cache *cache;
-    Ns_Entry *entry;
-    Ns_DString  ds;
-    Ns_Time  expires;
-    char     *key;
-
-    Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cache, arg},
-        {"key",      Ns_ObjvString, &key,   NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    Ns_CacheLock(cache);
-    if ((entry = Ns_CacheFindEntry(cache, key)) != NULL) {
-        Ns_DStringInit(&ds);
-        expires = Ns_CacheGetExpiration(entry);
-        Ns_DStringPrintf(&ds, "size %u expires %lu", Ns_CacheGetSize(entry), expires.sec);
-        Tcl_DStringResult(interp, &ds);
-    }
-    Ns_CacheUnlock(cache);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclCacheSetObjCmd --
- *
- *      Set new value of the cache entry
- *
- * Results:
- *      TCL result.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclCacheSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    NsInterp *itPtr = arg;
-    Ns_Cache *cache;
-    Ns_Entry *entry;
-    char     *key, *value = 0;
-    int       new, timeout = -1, ttl = 0;
-
-    Ns_ObjvSpec opts[] = {
-        {"-timeout", Ns_ObjvInt,   &timeout, NULL},
-        {"-ttl",     Ns_ObjvInt,   &ttl,     NULL},
-        {"--",       Ns_ObjvBreak, NULL,     NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cache, arg},
-        {"key",      Ns_ObjvString, &key,   NULL},
-        {"value",    Ns_ObjvString, &value, NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    if ((entry = CreateEntry(itPtr, cache, key, &new, timeout)) == NULL) {
-        return TCL_ERROR;
-    }
-    Tcl_SetStringObj(Tcl_GetObjResult(interp), value, -1);
-    SetEntry(interp, entry, NULL, ttl);
-    Ns_CacheUnlock(cache);
+    valObj = Tcl_GetObjResult(interp);
+    Tcl_SetIntObj(valObj, cur += incr);    
+    SetEntry(cPtr, entry, valObj, expPtr);
+    Ns_CacheUnlock(cPtr->cache);
 
     return TCL_OK;
 }
@@ -426,7 +267,7 @@ NsTclCacheSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *
  * NsTclCacheAppendObjCmd, NsTclCacheLappendObjCmd --
  *
- *      Append one or more elements to cache value.
+ *      Append one or more elements to cached value.
  *
  * Results:
  *      TCL result.
@@ -454,21 +295,21 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[], int append)
 {
     NsInterp *itPtr = arg;
-    Ns_Cache *cache;
+    TclCache *cPtr;
     Ns_Entry *entry;
-    Tcl_Obj  *resultObj;
+    Tcl_Obj  *valObj;
     char     *key;
     int       i, new, nelements;
-    int       timeout = -1, ttl = 0;
+    Ns_Time  *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-timeout", Ns_ObjvInt,   &timeout, NULL},
-        {"-ttl",     Ns_ObjvInt,   &ttl,     NULL},
-        {"--",       Ns_ObjvBreak, NULL,     NULL},
+        {"-timeout", Ns_ObjvTime, &timeoutPtr, NULL},
+        {"-expires", Ns_ObjvTime, &expPtr,     NULL},
+        {"--",       Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache", ObjvCache,     &cache,     arg},
+        {"cache", ObjvCache,     &cPtr,      itPtr},
         {"key",   Ns_ObjvString, &key,       NULL},
         {"args",  Ns_ObjvArgs,   &nelements, NULL},
         {NULL, NULL, NULL, NULL}
@@ -476,25 +317,25 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if ((entry = CreateEntry(itPtr, cache, key, &new, timeout)) == NULL) {
+    if ((entry = CreateEntry(itPtr, cPtr, key, &new, timeoutPtr)) == NULL) {
         return TCL_ERROR;
     }
-    resultObj = Tcl_GetObjResult(interp);
+    valObj = Tcl_GetObjResult(interp);
     if (!new) {
-        Tcl_SetStringObj(resultObj,
+        Tcl_SetStringObj(valObj,
             Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
     }
     for (i = objc - nelements; i < objc; i++) {
         if (append) {
-            Tcl_AppendObjToObj(resultObj, objv[i]);
-        } else if (Tcl_ListObjAppendElement(interp, resultObj, objv[i])
+            Tcl_AppendObjToObj(valObj, objv[i]);
+        } else if (Tcl_ListObjAppendElement(interp, valObj, objv[i])
                    != TCL_OK) {
-            Ns_CacheUnlock(cache);
+            Ns_CacheUnlock(cPtr->cache);
             return TCL_ERROR;
         }
     }
-    SetEntry(interp, entry, NULL, ttl);
-    Ns_CacheUnlock(cache);
+    SetEntry(cPtr, entry, valObj, expPtr);
+    Ns_CacheUnlock(cPtr->cache);
 
     return TCL_OK;
 }
@@ -505,13 +346,13 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclCacheNamesObjCmd --
  *
- *      Spit back a list of cache names.
+ *      Return a list of Tcl cache names for the current server.
  *
  * Results:
  *      Tcl result.
  *
  * Side effects:
- *      A list of cache names will be appended to the interp result.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -541,7 +382,7 @@ NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *
  * NsTclCacheKeysObjCmd --
  *
- *      Get a list of all keys in a cache, or only those matching
+ *      Get a list of all valid keys in a cache, or only those matching
  *      pattern, if given.
  *
  * Results:
@@ -556,14 +397,14 @@ NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    Ns_Cache       *cache;
+    TclCache       *cPtr;
     Ns_Entry       *entry;
     Ns_CacheSearch  search;
     char           *key, *pattern = NULL;
     Ns_DString      ds;
 
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cache,   arg},
+        {"cache",    ObjvCache,     &cPtr,    arg},
         {"?pattern", Ns_ObjvString, &pattern, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -572,8 +413,8 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     }
 
     Ns_DStringInit(&ds);
-    Ns_CacheLock(cache);
-    entry = Ns_CacheFirstEntry(cache, &search);
+    Ns_CacheLock(cPtr->cache);
+    entry = Ns_CacheFirstEntry(cPtr->cache, &search);
     while (entry != NULL) {
         key = Ns_CacheKey(entry);
         if (pattern == NULL || Tcl_StringMatch(key, pattern)) {
@@ -581,7 +422,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         }
         entry = Ns_CacheNextEntry(&search);
     }
-    Ns_CacheUnlock(cache);
+    Ns_CacheUnlock(cPtr->cache);
     Ns_DStringFree(&ds);
 
     return TCL_OK;
@@ -593,8 +434,9 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  *
  * NsTclCacheFlushObjCmd --
  *
- *      Flush all entries from a cache, or the single entry identified
- *      by key.  Return the number of entries flushed.
+ *      Flush all entries from a cache, or the entries identified
+ *      by the given keys.  Return the number of entries flushed.
+ *      NB: Concurrent updates are skipped.
  *
  * Results:
  *      TCL result.
@@ -608,6 +450,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 int
 NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
+    TclCache       *cPtr;
     Ns_Cache       *cache;
     Ns_Entry       *entry;
     Ns_CacheSearch  search;
@@ -620,13 +463,14 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,    &cache,     arg},
+        {"cache",    ObjvCache,    &cPtr,      arg},
         {"?args",    Ns_ObjvArgs,  &npatterns, NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+    cache = cPtr->cache;
 
     Ns_CacheLock(cache);
     if (npatterns == 0) {
@@ -634,7 +478,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     } else if (!glob) {
         for (i = npatterns; i > 0; i--) {
             entry = Ns_CacheFindEntry(cache, Tcl_GetString(objv[objc-i]));
-            if (entry != NULL) {
+            if (entry != NULL && Ns_CacheGetValue(entry) != NULL) {
                 Ns_CacheFlushEntry(entry);
                 nflushed++;
             }
@@ -654,7 +498,6 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             entry = Ns_CacheNextEntry(&search);
         }
     }
-    Ns_CacheBroadcast(cache);
     Ns_CacheUnlock(cache);
     Tcl_SetIntObj(Tcl_GetObjResult(interp), nflushed);
 
@@ -667,13 +510,15 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *
  * NsTclCacheStatsObjCmds --
  *
- *      Returns stats on a cache.
+ *      Returns stats on a cache. The size and expirey time of each
+ *      entry in the cache is also appended if the -contents switch
+ *      is given.
  *
  * Results:
  *      Tcl result.
  *
  * Side effects:
- *      Results will be appended to interp.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -681,20 +526,56 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    Ns_Cache   *cache;
-    Ns_DString  ds;
+    TclCache       *cPtr;
+    Ns_Cache       *cache;
+    Ns_CacheSearch  search;
+    Ns_Entry       *entry;
+    Ns_DString      ds;
+    size_t          size;
+    Ns_Time        *timePtr;
+    int             contents = NS_FALSE, reset = NS_FALSE;
 
-    Ns_ObjvSpec args[] = {
-        {"cache", ObjvCache, &cache, arg},
+    Ns_ObjvSpec opts[] = {
+        {"-contents", Ns_ObjvBool,  &contents, (void *) NS_TRUE},
+        {"-reset",    Ns_ObjvBool,  &reset,    (void *) NS_TRUE},
+        {"--",        Ns_ObjvBreak, NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    Ns_ObjvSpec args[] = {
+        {"cache", ObjvCache, &cPtr, arg},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+    cache = cPtr->cache;
     Ns_DStringInit(&ds);
+
     Ns_CacheLock(cache);
-    Ns_CacheStats(cache, &ds);
+    if (contents) {
+        Tcl_DStringStartSublist(&ds);
+        entry = Ns_CacheFirstEntry(cache, &search);
+        while (entry != NULL) {
+            size = Ns_CacheGetSize(entry);
+            timePtr = Ns_CacheGetExpirey(entry);
+            if (timePtr->usec == 0) {
+                Ns_DStringPrintf(&ds, "%lu %ld ",
+                                 (unsigned long) size, timePtr->sec);
+            } else {
+                Ns_DStringPrintf(&ds, "%lu %ld:%ld ",
+                                 (unsigned long) size, timePtr->sec, timePtr->usec);
+            }
+            entry = Ns_CacheNextEntry(&search);
+        }
+        Tcl_DStringEndSublist(&ds);
+    } else {
+        Ns_CacheStats(cache, &ds);
+    }
+    if (reset) {
+        Ns_CacheResetStats(cache);
+    }
     Ns_CacheUnlock(cache);
+
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
@@ -711,7 +592,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *      an update.
  *
  * Results:
- *      Pointer to entry, or NULL timeout.
+ *      Pointer to entry, or NULL on timeout.
  *
  * Side effects:
  *      Cache will be left locked if function returns entry.
@@ -720,23 +601,19 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  */
 
 static Ns_Entry *
-CreateEntry(NsInterp *itPtr, Ns_Cache *cache, char *key, int *newPtr,
-            int timeout)
+CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key, int *newPtr,
+            Ns_Time *timeoutPtr)
 {
+    Ns_Cache *cache = cPtr->cache;
     Ns_Entry *entry;
 
-    if (timeout < 0) {
-        Ns_CacheGetConfig(cache, 0, 0, ((void*)&timeout));
-        if (timeout <= 0) {
-            timeout = itPtr->servPtr->tcl.cacheTimeout;
-        }
-    }
     Ns_CacheLock(cache);
-    entry = Ns_CacheWaitCreateEntry(cache, key, newPtr, timeout);
+    entry = Ns_CacheWaitCreateEntry(cache, key, newPtr, timeoutPtr);
     if (entry == NULL) {
         Ns_CacheUnlock(cache);
         Tcl_SetErrorCode(itPtr->interp, "NS_TIMEOUT", NULL);
-        Tcl_AppendResult(itPtr->interp, "timeout waiting for update: ", key, NULL);
+        Tcl_AppendResult(itPtr->interp, "timeout waiting for concurrent update: ",
+                         key, NULL);
     }
     return entry;
 }
@@ -747,35 +624,37 @@ CreateEntry(NsInterp *itPtr, Ns_Cache *cache, char *key, int *newPtr,
  *
  * SetEntry --
  *
- *      Set the value of the cache entry using valObj.  If interp
- *      is not NULL, also set it as the Tcl result.
+ *      Set the value of the cache entry if not above max entry size.
  *
  * Results:
- *      None.
+ *      1 if entry set, 0 otherwise.
  *
  * Side effects:
- *      valObj will be owned by interp if not NULL.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-SetEntry(Tcl_Interp *interp, Ns_Entry *entry, Tcl_Obj *valObj, int ttl)
+SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr)
 {
     char    *string, *value;
     int      len;
-    Tcl_Obj *objPtr = valObj;
+    Ns_Time  now;
 
-    if (objPtr == NULL) {
-        objPtr = Tcl_GetObjResult(interp);
-    }
-    string = Tcl_GetStringFromObj(objPtr, &len);
-    value = ns_malloc(len+1);
-    memcpy(value, string, len);
-    value[len] = 0;
-    Ns_CacheSetValueExpires(entry, value, len, ttl);
-    if (valObj != NULL) {
-        Tcl_SetObjResult(interp, valObj);
+    string = Tcl_GetStringFromObj(valObj, &len);
+    if (cPtr->maxEntry > 0 && len > cPtr->maxEntry) {
+        Ns_CacheDeleteEntry(entry);
+    } else {
+        value = ns_malloc(len+1);
+        memcpy(value, string, len);
+        value[len] = '\0';
+        if (expPtr == NULL && cPtr->ttl > 0) {
+            Ns_GetTime(&now);
+            Ns_IncrTime(&now, cPtr->ttl, 0);
+            expPtr = &now;
+        }
+        Ns_CacheSetValueExpires(entry, value, len, expPtr);
     }
 }
 
@@ -800,7 +679,7 @@ static int
 ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
           Tcl_Obj *CONST objv[])
 {
-    Ns_Cache          **cachePtrPtr = spec->dest;
+    TclCache          **cPtrPtr = spec->dest;
     NsInterp           *itPtr = spec->arg;
     NsServer           *servPtr = itPtr->servPtr;
     Tcl_HashEntry      *hPtr;
@@ -809,7 +688,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     if (*objcPtr < 1) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **) cachePtrPtr) != TCL_OK) {
+    if (Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **) cPtrPtr) != TCL_OK) {
         Ns_MutexLock(&servPtr->tcl.cachelock);
         hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, Tcl_GetString(objv[0]));
         Ns_MutexUnlock(&servPtr->tcl.cachelock);
@@ -817,8 +696,8 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             Tcl_AppendResult(interp, "no such cache: ", Tcl_GetString(objv[0]), NULL);
             return TCL_ERROR;
         }
-        *cachePtrPtr = Tcl_GetHashValue(hPtr);
-        Ns_TclSetOpaqueObj(objv[0], cacheType, *cachePtrPtr);
+        *cPtrPtr = Tcl_GetHashValue(hPtr);
+        Ns_TclSetOpaqueObj(objv[0], cacheType, *cPtrPtr);
     }
     *objcPtr -= 1;
 
