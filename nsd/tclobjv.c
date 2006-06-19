@@ -51,7 +51,7 @@ static Ns_ObjvProc ObjvTclArgs;
 static void FreeSpecs(Ns_ObjvSpec *optSpec);
 static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valObjPtr);
 static void
-WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, 
+WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              int objc, Tcl_Obj *CONST objv[]);
 
 
@@ -118,7 +118,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (optSpec && optSpec->key) {
         while (remain > 0) {
             if (Tcl_GetIndexFromObjStruct(NULL, objv[objc - remain], optSpec,
-                                          sizeof(Ns_ObjvSpec), "option", 
+                                          sizeof(Ns_ObjvSpec), "option",
                                           TCL_EXACT, &optIndex) != TCL_OK) {
                 break;
             }
@@ -300,6 +300,43 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ObjvEval --
+ *
+ *      Consume exactly one argument, returning a pointer to the result
+ *      of eval into *spec->dest.
+ *
+ *      If spec->arg is != NULL it is assumed to be a pointer to an
+ *      int and the returned string length will be left in it.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+              Tcl_Obj *CONST objv[])
+{
+    char **dest = spec->dest;
+
+    if (*objcPtr > 0) {
+        if (Tcl_EvalObjEx(interp, objv[0], 0) == TCL_ERROR) {
+            return TCL_ERROR;
+        }
+        *dest = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), (int *) spec->arg);
+        *objcPtr -= 1;
+        return TCL_OK;
+    }
+    return TCL_ERROR;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -396,8 +433,8 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int             tableIdx;
 
     if (*objcPtr > 0) {
-        if (Tcl_GetIndexFromObjStruct(interp, objv[0], tablePtr, 
-                                      sizeof(Ns_ObjvTable), "option", 
+        if (Tcl_GetIndexFromObjStruct(interp, objv[0], tablePtr,
+                                      sizeof(Ns_ObjvTable), "option",
                                       TCL_EXACT, &tableIdx) != TCL_OK) {
             return TCL_ERROR;
         }
@@ -449,8 +486,8 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
         return TCL_ERROR;
     }
     for (i = 0; i < flagc; ++i) {
-    	if (Tcl_GetIndexFromObjStruct(interp, flagv[i], tablePtr, 
-                                      sizeof(Ns_ObjvTable), "flag", 
+    	if (Tcl_GetIndexFromObjStruct(interp, flagv[i], tablePtr,
+                                      sizeof(Ns_ObjvTable), "flag",
                                       TCL_EXACT, &tableIdx) != TCL_OK) {
             return TCL_ERROR;
     	}
@@ -473,7 +510,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *      Always TCL_BREAK.
  *
  * Side effects:
- *      Option processing will end successfully, argument processing 
+ *      Option processing will end successfully, argument processing
  *      will begin.
  *
  *----------------------------------------------------------------------
@@ -547,7 +584,7 @@ NsTclParseArgsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
     opts = objv[1]->internalRep.twoPtrValue.ptr1;
-    args = objv[1]->internalRep.twoPtrValue.ptr2;    
+    args = objv[1]->internalRep.twoPtrValue.ptr2;
     if (Ns_ParseObjv(opts, args, interp, 0, argc, argv) != NS_OK) {
         return TCL_ERROR;
     }
@@ -943,6 +980,8 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST 
  *
  *      Strip any leading "-" or "?" from the key and set a variable
  *      with the resulting name.
+ *      If key starts with $ then evaluate Tcl script and assign result
+ *      to the variable
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -961,10 +1000,20 @@ SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj)
     if (name[0] == '-' || name[0] == '?') {
         name++;
     }
+
+    if (name[0] == '$') {
+        name++;
+        if (Tcl_EvalObjEx(interp, valueObj, 0) == TCL_ERROR) {
+            return TCL_ERROR;
+        }
+        valueObj = Tcl_GetObjResult(interp);
+    }
+
     if (Tcl_SetVar2Ex(interp, name, NULL, valueObj,
                       TCL_LEAVE_ERR_MSG) == NULL) {
         return TCL_ERROR;
     }
+    Tcl_ResetResult(interp);
     return TCL_OK;
 }
 

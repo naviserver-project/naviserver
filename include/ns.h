@@ -1235,6 +1235,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
+NS_EXTERN Ns_ObjvProc Ns_ObjvEval;
 
 /*
  * tclthread.c:
