@@ -5,7 +5,7 @@
         * include/ns.h:
         * nsd/tclobjv.c: Added Ns_ObjvEval for runtime
         arguments evaluation and extended ns_parseargs so that
-        params in form {-$name {script}} will be assigned with default
+        params in form {-name {=$script}} will be assigned with default
         value of the script result.
 
 2006-05-18  Vlad Seryakov  <seryakov@users.sf.net>

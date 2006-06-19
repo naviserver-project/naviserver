@@ -90,7 +90,7 @@ test ns_parseargs-5.2 {Defaults} -body {
 } -result [list aaa xxx yyy [list 3 2 1]]
 
 test ns_parseargs-5.3 {Defaults script} -body {
-    ns_parseargs {-a -b -c -d -e {-$l {info level}} } {-b B -d D}
+    ns_parseargs {-a -b -c -d -e {-l {=$info level}} } {-b B -d D}
     list [info exists a] $b [info exists c] $d [info exists e] [set l]
 } -cleanup {
     unset -nocomplain -- a b c d e l
