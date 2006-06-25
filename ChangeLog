@@ -1,3 +1,11 @@
+2006-05-25  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/sock.c:
+        * nsd/driver.c: As Stephen corrected, Ns_SockTimedWait should 
+        treat timeout as NULL for indefinite wait as in other similar calls.
+        WriterThread will pass timeout with 0 values to just check if 
+        socket is writable or not.
+        
 2006-06-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/fastpath.c:

@@ -209,7 +209,7 @@ Ns_SockSend(SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
 int
 Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr)
 {
-    int           n, msec = 0;
+    int           n, msec = -1;
     struct pollfd pfd;
 
     if (timeoutPtr != NULL) {

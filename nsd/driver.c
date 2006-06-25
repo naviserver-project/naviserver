@@ -2419,7 +2419,7 @@ WriterThread(void *arg)
     int             n, err, stopping, pollto, toread, maxsize, status;
 
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
-    Ns_Time         now;
+    Ns_Time         now, timeout;
 
     Sock           *sockPtr;
     Driver         *drvPtr;
@@ -2438,6 +2438,7 @@ WriterThread(void *arg)
 
     Ns_Log(Notice, "writer%d: accepting connections", queuePtr->id);
     Ns_GetTime(&now);
+    memset(&timeout, 0, sizeof(timeout));
     stopping = 0;
     writePtr = NULL;
     pfds[0].fd = queuePtr->pipe[0];
@@ -2539,7 +2540,7 @@ WriterThread(void *arg)
                  */
 
                 if (status == NS_OK) {
-                    status = Ns_SockTimedWait(curPtr->sockPtr->sock, NS_SOCK_WRITE, NULL);
+                    status = Ns_SockTimedWait(curPtr->sockPtr->sock, NS_SOCK_WRITE, &timeout);
                     switch (status) {
                     case NS_OK:
                         vbuf.iov_len = curPtr->bufsize;
