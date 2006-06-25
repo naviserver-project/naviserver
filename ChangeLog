@@ -1,5 +1,7 @@
 2006-05-25  Vlad Seryakov  <seryakov@users.sf.net>
 
+        * nsd/driver.c: Updated NsTclWriterObjCmd to use TclVFS open call
+        
 	* nsd/sock.c:
         * nsd/driver.c: As Stephen corrected, Ns_SockTimedWait should 
         treat timeout as NULL for indefinite wait as in other similar calls.

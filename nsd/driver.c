@@ -2756,7 +2756,8 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
     char         *data;
-    int           fd, opt, size;
+    int           opt, size, rc;
+    Tcl_Channel   chan;
     Tcl_DString   ds;
     Driver       *drvPtr;
     DrvWriter    *wrPtr;
@@ -2798,17 +2799,14 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "filename");
             return TCL_ERROR;
         }
-        /* FIXME: TclVFS */
-        fd = open(Tcl_GetString(objv[2]), O_RDONLY);
-        if (fd == -1) {
-            Tcl_AppendResult(interp, "error opening file: ",
-                             Tcl_GetString(objv[2]), ": ", strerror(errno), 0);
+        chan = Tcl_OpenFileChannel(interp, Tcl_GetString(objv[2]), "r", 0644);
+        if (chan == NULL) {
             return TCL_ERROR;
-        } else {
-            int nwq = NsWriterQueue(Ns_GetConn(), 0, NULL, NULL, fd, NULL);
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(nwq));
-            close(fd);
         }
+        Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
+        rc = NsWriterQueue(Ns_GetConn(), 0, chan, NULL, 0, NULL);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+        Tcl_Close(NULL, chan);
         break;
 
     case cmdListIdx:
