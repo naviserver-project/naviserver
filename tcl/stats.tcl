@@ -105,10 +105,10 @@ proc _ns_stats.handleUrl {} {
 
 proc _ns_stats.header {{stat ""}} {
     if {[string length $stat]} {
-        set title "AOLserver Stats: [ns_info hostname] - $stat"
+        set title "Naviserver Stats: [ns_info hostname] - $stat"
         set nav "<a href=index.adp><font color=#ffffff>Main Menu</font></a> &gt; <font color=#ffcc00>$stat</font>"
     } else {
-        set title "AOLserver Stats: [ns_info hostname]"
+        set title "Naviserver Stats: [ns_info hostname]"
         set nav "<font color=#ffcc00><font color=#ffcc00>Main Menu</font>"
     }
 

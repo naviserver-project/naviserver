@@ -1,3 +1,8 @@
+2006-05-27  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsdb/dbtcl.c: Converted all Tcl string commands into 
+	object commands
+
 2006-05-25  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/driver.c: Updated NsTclWriterObjCmd to use TclVFS open call
