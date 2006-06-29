@@ -909,7 +909,6 @@ DriverThread(void *ignored)
     struct pollfd *pfds;   /* Array of pollfds to poll(). */
 
     Ns_ThreadSetName("-driver-");
-    Ns_Log(Notice, "starting");
 
     /*
      * Loop forever until signalled to shutdown and all

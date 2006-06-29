@@ -1,3 +1,9 @@
+2006-05-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclinit.c: Ported ns_ictl cancel and threads commands
+	from AOLserver 4.5
+	* nsd/driver.c: Removed meaningless Ns_Log call
+
 2006-05-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsdb/dbtcl.c: Converted all Tcl string commands into 
