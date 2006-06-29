@@ -141,6 +141,8 @@
 #define NS_DRIVER_SSL              0x02 /* Use SSL port, protocol defaults. */
 #define NS_DRIVER_UDP              0x04 /* Listening on a UDP socket */
 #define NS_DRIVER_UNIX             0x08 /* Listening on a Unix domain socket */
+#define NS_DRIVER_QUEUE_ONACCEPT   0x10 /* Queue socket on accept */
+#define NS_DRIVER_QUEUE_ONREAD     0x20 /* Queue socket on first network read */
 
 #define NS_DRIVER_VERSION_1        1
 
@@ -513,7 +515,7 @@ typedef enum {
     DriverSend,
     DriverKeep,
     DriverClose,
-    DriverAccept
+    DriverQueue
 } Ns_DriverCmd;
 
 /*
@@ -948,8 +950,7 @@ NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
  */
 
 NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
-NS_EXTERN int Ns_DriverSockRequest(Ns_Sock *sock, char *reqline);
-NS_EXTERN Ns_DString *Ns_DriverSockContent(Ns_Sock *sock);
+NS_EXTERN int Ns_DriverSetRequest(Ns_Sock *sock, char *reqline);
 
 /*
  * dsprintf.c:

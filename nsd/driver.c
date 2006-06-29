@@ -89,6 +89,8 @@ static Ns_ThreadProc WriterThread;
 
 static int   SetServer(Sock *sockPtr);
 static Sock *SockAccept(Driver *drvPtr);
+static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
+static void  SockPrepare(Sock *sockPtr);
 static void  SockRelease(Sock *sockPtr, int reason, int err);
 static void  SockTrigger(SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
@@ -472,6 +474,51 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
 
     return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DriverSetRequest --
+ *
+ *      Parses request line and sets as current Request struct, should be
+ *      in the form: METHOD URL ?PROTO?
+ *
+ * Results:
+ *      NS_ERROR in case of empty line
+ *      NS_FATAL if request cannot be parsed.
+ *      NS_OK if parsed sucessfully
+ *
+ * Side effects:
+ *      This is supposed to be called from drivers before the
+ *      socket is queued, usually from DriverQueue command.
+ *      Primary purpose is to allow non-HTTP drivers to setup
+ *      request line so registered callback proc will be called
+ *      during connection processing
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_DriverSetRequest(Ns_Sock *sock, char *reqline)
+{
+    Request *reqPtr;
+    Sock     *sockPtr = (Sock*)sock;
+
+    SockPrepare(sockPtr);
+
+    if (reqline) {
+        reqPtr = sockPtr->reqPtr;
+        reqPtr->request = Ns_ParseRequest(reqline);
+        if (reqPtr->request == NULL) {
+            NsFreeRequest(reqPtr);
+            sockPtr->reqPtr = NULL;
+            return NS_FATAL;
+        }
+        return NS_OK;
+    }
+
+    return NS_ERROR;
 }
 
 
@@ -1065,9 +1112,7 @@ DriverThread(void *ignored)
                     break;
 
                 case SOCK_READY:
-                    if (!SetServer(sockPtr)) {
-                        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
-                    } else {
+                    if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                         Push(sockPtr, waitPtr);
                     }
                     break;
@@ -1104,7 +1149,7 @@ DriverThread(void *ignored)
 
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (waitPtr != NULL || !NsQueueConn(sockPtr, &now)) {
+                if (waitPtr != NULL || SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                     Push(sockPtr, waitPtr);
                 }
                 sockPtr = nextPtr;
@@ -1126,25 +1171,13 @@ DriverThread(void *ignored)
                      * Queue the socket immediately if request is provided
                      */
 
-                    n = (*sockPtr->drvPtr->proc)(DriverAccept,
-                                                 (Ns_Sock*)sockPtr, 0, 0);
-                    switch (n) {
-                    case NS_OK:
-                        if (sockPtr->reqPtr == NULL || !SetServer(sockPtr)) {
-                            SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
-                        } else {
-                            if (!NsQueueConn(sockPtr, &now)) {
-                                Push(sockPtr, waitPtr);
-                            }
+                    if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONACCEPT) {
+
+                        if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+                            Push(sockPtr, waitPtr);
                         }
-                        break;
 
-                    case NS_FATAL:
-                        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
-                        break;
-
-                    default:
-
+                    } else {
                        /*
                         * Put the socket on the read-ahead list.
                         */
@@ -1241,11 +1274,9 @@ SetServer(Sock *sockPtr)
     sockPtr->servPtr  = sockPtr->drvPtr->servPtr;
     sockPtr->location = sockPtr->drvPtr->location;
 
-    if (sockPtr->reqPtr) {
-        host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
-        if (!host && sockPtr->reqPtr->request->version >= 1.1) {
-            status = 0;
-        }
+    host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
+    if (!host && sockPtr->reqPtr->request->version >= 1.1) {
+        status = 0;
     }
     if (sockPtr->servPtr == NULL) {
         if (host) {
@@ -1272,6 +1303,112 @@ SetServer(Sock *sockPtr)
     }
 
     return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockPrepare
+ *
+ *      Prepares for reading from the socket, allocates new request struct
+ *      for the given socket, copies remote ip address and port
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SockPrepare(Sock *sockPtr)
+{
+    Request *reqPtr;
+
+    if (sockPtr->reqPtr != NULL) {
+        return;
+    }
+    reqPtr = sockPtr->reqPtr;
+    Ns_MutexLock(&reqLock);
+    reqPtr = firstReqPtr;
+    if (reqPtr != NULL) {
+        firstReqPtr = reqPtr->nextPtr;
+    }
+    Ns_MutexUnlock(&reqLock);
+    if (reqPtr == NULL) {
+        reqPtr = ns_malloc(sizeof(Request));
+        Tcl_DStringInit(&reqPtr->buffer);
+        reqPtr->headers    = Ns_SetCreate(NULL);
+        reqPtr->request    = NULL;
+        reqPtr->next       = NULL;
+        reqPtr->content    = NULL;
+        reqPtr->length     = 0;
+        reqPtr->avail      = 0;
+        reqPtr->coff       = 0;
+        reqPtr->woff       = 0;
+        reqPtr->roff       = 0;
+        reqPtr->leadblanks = 0;
+    }
+    reqPtr->port = ntohs(sockPtr->sa.sin_port);
+    strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+    sockPtr->reqPtr = reqPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockQueue --
+ *
+ *      Puts socket into connection queue
+ *
+ *      Call driver's queue handler for the last checks before actual
+ *      connection enqueue. NS_ERROR is valid here because that means
+ *      driver does not implement this call, we care about NS_FATAL status
+ *      only which means we cannot queue this socket. It is driver's responsibility
+ *      to allocate Request structure via Ns_DriverSetRequest call, otherwise
+ *      for all non-HTTP or not-parsed sockets this call will fail
+ *
+ * Results:
+ *      NS_OK if queued,
+ *      NS_ERROR if socket closed because of error
+ *      NS_TIMEOUT if queue is full
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SockQueue(Sock *sockPtr, Ns_Time *timePtr)
+{
+    int status;
+
+    /*
+     *  Ask driver if we are allowed and ready to queue this socket
+     */
+
+    status = (*sockPtr->drvPtr->proc)(DriverQueue, (Ns_Sock*)sockPtr, NULL, 0);
+
+    /*
+     *  Verify the conditions, Request struct should exists already
+     */
+
+    if (status == NS_FATAL || sockPtr->reqPtr == NULL || !SetServer(sockPtr)) {
+        SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
+        return NS_ERROR;
+    }
+
+    /*
+     *  Actual queueing, if not ready spool to the waiting list
+     */
+
+    if (!NsQueueConn(sockPtr, timePtr)) {
+        return NS_TIMEOUT;
+    }
+    return NS_OK;
 }
 
 
@@ -1683,9 +1820,7 @@ SockRead(Sock *sockPtr, int spooler)
      * Initialize Request structure
      */
 
-    if (Ns_DriverSockRequest(sock, 0) != NS_OK) {
-        return SOCK_ERROR;
-    }
+    SockPrepare(sockPtr);
 
     /*
      * On the first read, attempt to read-ahead bufsize bytes.
@@ -1778,6 +1913,14 @@ SockRead(Sock *sockPtr, int spooler)
 
     if (reqPtr->avail > sockPtr->drvPtr->maxinput) {
         return SOCK_ENTITYTOOLARGE;
+    }
+
+    /*
+     *  Queue the socket after first network read
+     */
+
+    if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONREAD) {
+        return SOCK_READY;
     }
 
     return SockParse(sockPtr, spooler);
@@ -2025,96 +2168,6 @@ SockParse(Sock *sockPtr, int spooler)
     }
 
     return SOCK_MORE;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_DriverSockRequest --
- *
- *      Allocates new request struct for the given socket, if data is
- *      specified, it becomes parsed request struct, i.e. should be
- *      in the form: METHOD URL PROTO
- *
- * Results:
- *      NS_ERROR if request cannot be parsed.
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_DriverSockRequest(Ns_Sock *sock, char *reqline)
-{
-    Request *reqPtr;
-    Sock     *sockPtr = (Sock*)sock;
-
-    reqPtr = sockPtr->reqPtr;
-    if (reqPtr == NULL) {
-        Ns_MutexLock(&reqLock);
-        reqPtr = firstReqPtr;
-        if (reqPtr != NULL) {
-            firstReqPtr = reqPtr->nextPtr;
-        }
-        Ns_MutexUnlock(&reqLock);
-        if (reqPtr == NULL) {
-            reqPtr = ns_malloc(sizeof(Request));
-            Tcl_DStringInit(&reqPtr->buffer);
-            reqPtr->headers    = Ns_SetCreate(NULL);
-            reqPtr->request    = NULL;
-            reqPtr->next       = NULL;
-            reqPtr->content    = NULL;
-            reqPtr->length     = 0;
-            reqPtr->avail      = 0;
-            reqPtr->coff       = 0;
-            reqPtr->woff       = 0;
-            reqPtr->roff       = 0;
-            reqPtr->leadblanks = 0;
-        }
-        reqPtr->port = ntohs(sockPtr->sa.sin_port);
-        strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
-        sockPtr->reqPtr = reqPtr;
-    }
-
-    if (reqline) {
-        reqPtr->request = Ns_ParseRequest(reqline);
-        if (reqPtr->request == NULL) {
-            NsFreeRequest(reqPtr);
-            sockPtr->reqPtr = NULL;
-            return NS_ERROR;
-        }
-    }
-
-    return NS_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_DriverSockContent --
- *
- *      Returns read buffer for incoming requests
- *
- * Results:
- *      NULL if no content have been read yet
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-Ns_DString *
-Ns_DriverSockContent(Ns_Sock *sock)
-{
-    Sock     *sockPtr = (Sock*)sock;
-
-    if (sockPtr->reqPtr != NULL) {
-        return &sockPtr->reqPtr->buffer;
-    }
-    return NULL;
 }
 
 /*

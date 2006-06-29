@@ -1,3 +1,29 @@
+2006-05-29  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/driver.c: Redefined driver hooks, removed not very
+	well defined API functions. Added 2 new flags, NS_DRIVER_QUEUE_ONACCEPT 
+	and NS_DRIVER_QUEUE_ONREAD. They will tell driver when to queue
+	socket, just after accept or after first netwrok read. Primary
+	purpose to cut driver processing early for TCP driver that 
+	need its own protocol(ex. SMTP,POP3) or for others and UDP protocols, 
+	driver will read the request and will try to queue the socket after
+	first read. Added new driver command DriverQueue, which will be called 
+	just before socket queue. Only special drivers that need to setup
+	request url/protocol will use it, that's why new public API
+	Ns_DriverSetRequest. Module installed request proc for 
+	method/url/protocol, like:
+
+        Ns_RegisterRequest(server, "SYSLOG",  "/", RequestProc, NULL, srvPtr, 0);
+
+        In order this proc will be called, socket need to set request line
+	with "SYSLOG /", so it will be set in DriverQueue call just before
+	driver will put the socket into connection queue. This change does 
+	not affect existing HTTP request processing.
+	
+	* nsd/queue.c: Removed old and unused API function.
+
+
 2006-05-28  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclinit.c: Ported ns_ictl cancel and threads commands
