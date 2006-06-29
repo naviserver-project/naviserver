@@ -1755,6 +1755,7 @@ DeleteData(void *arg)
     hPtr = Tcl_FirstHashEntry(&dataPtr->interps, &search);
     while (hPtr != NULL) {
         while ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
+            Tcl_SetHashValue(hPtr, NULL);
             Ns_TclDestroyInterp(itPtr->interp);
         }
         hPtr = Tcl_NextHashEntry(&search);
