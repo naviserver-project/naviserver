@@ -1,5 +1,11 @@
 2006-05-29  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsdb/dbtcl.c: Added -delimiter parameter to
+	ns_getcsv that will allow parsing CSV files with different
+	delimiters
+
+2006-05-29  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* include/ns.h:
 	* nsd/driver.c: Redefined driver hooks, removed not very
 	well defined API functions. Added 2 new flags, NS_DRIVER_QUEUE_ONACCEPT 

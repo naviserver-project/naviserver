@@ -823,16 +823,27 @@ static int
 GetCsvObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     int             ncols, inquote, quoted, blank;
-    char            c, *p, buf[20];
+    char            c, *p, buf[20], *delimiter = ",", *fileId, *varName;
     const char	   *result;
     Tcl_DString     line, cols, elem;
     Tcl_Channel	    chan;
 
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "fileId varName");
+    Ns_ObjvSpec opts[] = {
+        {"-delimiter", Ns_ObjvString,   &delimiter, NULL},
+        {"--",         Ns_ObjvBreak,    NULL,       NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"fileId",     Ns_ObjvString, &fileId,   NULL},
+        {"varName",    Ns_ObjvString, &varName,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 0, &chan) == TCL_ERROR) {
+
+    if (Ns_TclGetOpenChannel(interp, fileId, 0, 0, &chan) == TCL_ERROR) {
         return TCL_ERROR;
     }
 
@@ -840,8 +851,7 @@ GetCsvObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[
     if (Tcl_Gets(chan, &line) < 0) {
 	Tcl_DStringFree(&line);
     	if (!Tcl_Eof(chan)) {
-	    Tcl_AppendResult(interp, "could not read from ", Tcl_GetString(objv[1]),
-	        ": ", Tcl_PosixError(interp), NULL);
+	    Tcl_AppendResult(interp, "could not read from ", fileId, ": ", Tcl_PosixError(interp), NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetResult(interp, "-1", TCL_STATIC);
@@ -889,7 +899,7 @@ loopstart:
                 blank = 0;
             } else if ((c == '\r') || (elem.length == 0 && isspace(UCHAR(c)))) {
                 continue;
-            } else if (c == ',') {
+            } else if (strchr(delimiter,c) != NULL) {
                 if (!quoted) {
                     Ns_StrTrimRight(elem.string);
                 }
@@ -910,7 +920,7 @@ loopstart:
 	Tcl_DStringAppendElement(&cols, elem.string);
         ncols++;
     }
-    result = Tcl_SetVar(interp, Tcl_GetString(objv[2]), cols.string, TCL_LEAVE_ERR_MSG);
+    result = Tcl_SetVar(interp, varName, cols.string, TCL_LEAVE_ERR_MSG);
     Tcl_DStringFree(&line);
     Tcl_DStringFree(&cols);
     Tcl_DStringFree(&elem);
