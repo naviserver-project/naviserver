@@ -342,9 +342,7 @@ NsTclAtShutdownObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 static void
 ShutdownProc(Ns_Time *toPtr, void *arg)
 {
-    Ns_TclCallback *cbPtr = arg;
-
     if (toPtr == NULL) {
-        (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, NULL);
+        Ns_TclCallbackProc(arg);
     }
 }

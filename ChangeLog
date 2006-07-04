@@ -1,3 +1,51 @@
+2006-07-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/tclcallbacks.c: Use our own wrapper Ns_TclCallbackProc()
+	in ShutdownProc(). 
+
+	* include/ns.h: Some cosmetic formatting to honour the 80-chars
+	margin-width. Declared Ns_SetLogFlushProc() and Ns_SetNsLogProc()
+	deprecated in favour of Ns_AddLogFilter() and Ns_RemoveLogFilter().
+
+	* nsd/log.c: Make Ns_SetLogFlushProc() and Ns_SetNsLogProc() issue
+	fatal message when used. Added Ns_AddLogFilter() and 
+	Ns_RemoveLogFilter() C-API calls as hook into new log processing.
+	The log processing/cache is now always handled by the server. Users
+	can register log callbacks and those will be invoked in the LIFO
+	fashion for each log entry added by the Ns_Log() function or
+	[ns_log] Tcl command. Each callback can prevent execution of all
+	registered callbacks below by triggering Tcl error. One predefined
+	callback is always registered: the callback to write to the standard
+	error file-descriptor (routed to the server log file). Any log entries
+	are always emitted there. The [ns_logctl] is extended to include 
+	[ns_log logctl register] and [ns_log logctl unregister] commands which
+	in turn call the C-API calls from above. Those two serve for doing
+	registration and unregistration of Tcl-based log callbacks. Each Tcl
+	based log callbacck is called by the C-code as follows:
+
+ 		<callback> severity timestamp logmsg ?args?
+
+        Example: 
+		# Declare Tcl callback
+		proc logclbk {severity stamp logmsg myarg} {
+		    # do something 
+		}
+		# Register it with NsLog
+		ns_log logctl register logclbk my_own_arg
+
+		# Emit some log line
+		ns_log notice "The test"
+
+		# The callback will be executed as follows
+		logclbk 1152034107:2399005 Notice "The test" my_own_arg
+
+	The timestamp is in the string representation of the Ns_Time
+	structure (<seconds>:<microseconds>).
+
+        The [ns_log logctl truncate] semantic is changed: before it was
+	used to truncate the log cache to a given number of bytes; now
+	it truncates the log cache to the given number of cache entries. 
+	
 2006-05-29  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsdb/dbtcl.c: Added -delimiter parameter to

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- *
+ * 
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -171,7 +171,7 @@ typedef long			ns_int64;
 typedef unsigned long		ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%ld"
 #elif defined(_WIN32)
-typedef int			mode_t;  /* Bug: #703061 */
+typedef int			mode_t;  /* Bug: #703061 */ 
 typedef __int64			ns_int64;
 typedef unsigned __int64	ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%I64d"
@@ -281,6 +281,7 @@ NS_EXTERN int           kill(int pid, int sig);
 
 typedef struct _Ns_Cache        *Ns_Cache;
 typedef struct _Ns_Entry        *Ns_Entry;
+typedef Tcl_HashSearch           Ns_CacheSearch;
 typedef struct _Ns_Cls          *Ns_Cls;
 typedef void                    *Ns_OpContext;
 typedef struct _Ns_TaskQueue    *Ns_TaskQueue;
@@ -336,21 +337,10 @@ typedef int   (Ns_RequestAuthorizeProc) (char *server, char *method,
 			char *url, char *user, char *pass, char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
 typedef int   (Ns_UserAuthorizeProc) (char *user, char *passwd);
-typedef int   (Ns_LogFlushProc) (CONST char *msg, size_t len);
-typedef int   (Ns_LogProc) (Ns_DString *dsPtr, Ns_LogSeverity severity, CONST char *fmt, va_list ap);
 struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *CONST objv[]);
 
-
-/*
- * An Ns_Cache search iterator.
- */
-
-typedef struct Ns_CacheSearch {
-    Tcl_HashSearch hsearch;
-    Ns_Time        now;
-} Ns_CacheSearch;
 
 /*
  * The field of a key-value data structure.
@@ -401,7 +391,7 @@ typedef struct Ns_Conn {
     char       *authUser;
     char       *authPasswd;
     int         contentLength;
-    int         flags;
+    int         flags;		/* Currently, only NS_CONN_CLOSED. */
 } Ns_Conn;
 
 /*
@@ -541,18 +531,44 @@ typedef struct Ns_DriverInitData {
 } Ns_DriverInitData;
 
 /*
- * More typedefs of functions
+ * More typedefs of functions 
  */
 
-typedef void  (Ns_ArgProc) (Tcl_DString *dsPtr, void *arg);
-typedef int   (Ns_OpProc) (void *arg, Ns_Conn *conn);
-typedef void  (Ns_TraceProc) (void *arg, Ns_Conn *conn);
-typedef int   (Ns_FilterProc) (void *arg, Ns_Conn *conn, int why);
-typedef int   (Ns_UrlToFileProc) (Ns_DString *dsPtr, CONST char *server, CONST char *url);
-typedef int   (Ns_Url2FileProc) (Ns_DString *dsPtr, CONST char *url, void *arg);
-typedef char *(Ns_ServerRootProc) (Ns_DString  *dest, CONST char *host, void *arg);
-typedef char *(Ns_ConnLocationProc) (Ns_Conn *conn, Ns_DString *dest, void *arg);
-typedef char *(Ns_LocationProc) (Ns_Conn *conn); /* depreciated */
+typedef void (Ns_ArgProc)
+    (Tcl_DString *dsPtr, void *arg);
+
+typedef int (Ns_OpProc)
+    (void *arg, Ns_Conn *conn);
+
+typedef void (Ns_TraceProc)
+    (void *arg, Ns_Conn *conn);
+
+typedef int (Ns_FilterProc)
+    (void *arg, Ns_Conn *conn, int why);
+
+typedef int (Ns_LogFilter)
+    (void *arg, Ns_LogSeverity severity, Ns_Time *time, char *msg, int len);
+
+typedef int (Ns_UrlToFileProc)
+    (Ns_DString *dsPtr, CONST char *server, CONST char *url);
+
+typedef int (Ns_Url2FileProc) 
+    (Ns_DString *dsPtr, CONST char *url, void *arg);
+
+typedef char* (Ns_ServerRootProc)
+    (Ns_DString  *dest, CONST char *host, void *arg);
+
+typedef char* (Ns_ConnLocationProc)
+    (Ns_Conn *conn, Ns_DString *dest, void *arg);
+
+typedef int (Ns_LogProc)               /* Deprecated */
+    (Ns_DString *dsPtr, Ns_LogSeverity severity, CONST char *fmt, va_list ap);
+
+typedef int (Ns_LogFlushProc)          /* Deprecated */
+    (CONST char *msg, size_t len);
+
+typedef char *(Ns_LocationProc)        /* Deprecated */
+    (Ns_Conn *conn);
 
 /*
  * adpparse.c:
@@ -585,7 +601,16 @@ NS_EXTERN int  Ns_AuthorizeUser(char *user, char *passwd);
  */
 
 NS_EXTERN Ns_Cache *
+Ns_CacheCreate(CONST char *name, int keys, time_t ttl, Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Cache *
 Ns_CacheCreateSz(CONST char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Cache *
+Ns_CacheCreateEx(CONST char *name, int keys, time_t ttl, size_t maxSize,
+                 Ns_Callback *freeProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -601,7 +626,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_Entry *
-Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, Ns_Time *timeoutPtr)
+Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t timeout)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
@@ -616,10 +641,6 @@ NS_EXTERN size_t
 Ns_CacheGetSize(Ns_Entry *entry)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN Ns_Time *
-Ns_CacheGetExpirey(Ns_Entry *entry)
-   NS_GNUC_NONNULL(1);
-
 NS_EXTERN void
 Ns_CacheSetValue(Ns_Entry *entry, void *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -629,8 +650,7 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        Ns_Time *timeoutPtr)
+Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, time_t ttl)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -685,13 +705,9 @@ NS_EXTERN void
 Ns_CacheBroadcast(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN char *
+NS_EXTERN void
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN void
-Ns_CacheResetStats(Ns_Cache *cache)
-    NS_GNUC_NONNULL(1);
 
 /*
  * callbacks.c:
@@ -1018,7 +1034,7 @@ Ns_TriggerEventQueue(Ns_EventQueue *queue)
 NS_EXTERN void
 Ns_ExitEventQueue(Ns_EventQueue *queue)
     NS_GNUC_NONNULL(1);
-
+    
 
 /*
  * exec.c:
@@ -1097,7 +1113,7 @@ NS_EXTERN void Ns_IndexIntInit(Ns_Index *indexPtr, int inc);
 /*
  * see macros above for:
  *
- * Ns_IndexCount(X)
+ * Ns_IndexCount(X) 
  */
 
 /*
@@ -1139,8 +1155,8 @@ NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
 NS_EXTERN void Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
 NS_EXTERN double Ns_DRand(void);
 
-/*
- * task.c:
+/* 
+ * task.c: 
  */
 
 NS_EXTERN Ns_TaskQueue *
@@ -1232,12 +1248,10 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvDouble;
 NS_EXTERN Ns_ObjvProc Ns_ObjvString;
 NS_EXTERN Ns_ObjvProc Ns_ObjvByteArray;
 NS_EXTERN Ns_ObjvProc Ns_ObjvObj;
-NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
-NS_EXTERN Ns_ObjvProc Ns_ObjvEval;
 
 /*
  * tclthread.c:
@@ -1253,7 +1267,6 @@ NS_EXTERN int Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
 
 NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
 NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
-NS_EXTERN int Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr);
 
 /*
  * tclxkeylist.c:
@@ -1306,10 +1319,16 @@ Ns_LogTime2(char *timeBuf, int gmt)
     NS_GNUC_NONNULL(1);;
 
 NS_EXTERN void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr);
+Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr) NS_GNUC_DEPRECATED; 
 
 NS_EXTERN void
-Ns_SetNsLogProc(Ns_LogProc *procPtr);
+Ns_SetNsLogProc(Ns_LogProc *procPtr)  NS_GNUC_DEPRECATED;
+
+NS_EXTERN void
+Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freePtr);
+
+NS_EXTERN void
+Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg);
 
 /*
  * rollfile.c
@@ -1729,13 +1748,13 @@ NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int opti
 
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,
+NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, 
                           Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend,
+NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, 
                           Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                               Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
+NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, 
                               Ns_Time *timeoutPtr);
 
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
@@ -1748,7 +1767,7 @@ NS_EXTERN SOCKET Ns_SockConnect2(char *host, int port, char *lhost, int lport);
 NS_EXTERN SOCKET Ns_SockAsyncConnect(char *host, int port);
 NS_EXTERN SOCKET Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport);
 NS_EXTERN SOCKET Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr);
-NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
+NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, 
                                       Ns_Time *timeoutPtr);
 
 NS_EXTERN int Ns_SockSetNonBlocking(SOCKET sock);
