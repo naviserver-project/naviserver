@@ -345,7 +345,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
  *      None.
  *
  * Side effects:
- *      Will emit fatal message to error log.
+ *      Will exit the server.
  *
  *----------------------------------------------------------------------
  */
@@ -353,15 +353,13 @@ Ns_LogTime2(char *timeBuf, int gmt)
 void
 Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
 {
-    Ns_Log(Fatal, "Ns_SetLogFlushProc: deprecated,"
-           " use Ns_AddLogFilter() instead");
+    Ns_Fatal("Ns_SetLogFlushProc: deprecated, use Ns_AddLogFilter() instead");
 }
 
 void
 Ns_SetNsLogProc(Ns_LogProc *procPtr)
 {
-    Ns_Log(Fatal, "Ns_SetNsLogProc: deprecated,"
-           " use Ns_AddLogFilter() instead");
+    Ns_Fatal("Ns_SetNsLogProc: deprecated, use Ns_AddLogFilter() instead");
 }
 
 

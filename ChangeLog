@@ -10,6 +10,9 @@
 	* include/ns.h: Fixed so the compilation works again after
 	cache.c and related changes.
 
+	* nsd/log.c: Uses Ns_Fatal wrapper for Ns_SetLogFlushProc
+	and Ns_SetNsLogProc
+
 2006-07-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclcallbacks.c: Use our own wrapper Ns_TclCallbackProc()
