@@ -1,3 +1,8 @@
+2006-07-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* include/ns.h: Fixed so the compilation works again after
+	cache.c and related changes.
+
 2006-07-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclcallbacks.c: Use our own wrapper Ns_TclCallbackProc()

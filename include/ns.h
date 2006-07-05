@@ -279,9 +279,13 @@ NS_EXTERN int           kill(int pid, int sig);
  * Typedefs of variables
  */
 
+typedef struct Ns_CacheSearch {
+    Ns_Time        now;
+    Tcl_HashSearch hsearch;
+} Ns_CacheSearch;
+
 typedef struct _Ns_Cache        *Ns_Cache;
 typedef struct _Ns_Entry        *Ns_Entry;
-typedef Tcl_HashSearch           Ns_CacheSearch;
 typedef struct _Ns_Cls          *Ns_Cls;
 typedef void                    *Ns_OpContext;
 typedef struct _Ns_TaskQueue    *Ns_TaskQueue;
@@ -626,8 +630,9 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_Entry *
-Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, time_t timeout)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, 
+                        Ns_Time *timeoutPtr) NS_GNUC_NONNULL(1) 
+     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
 Ns_CacheKey(Ns_Entry *entry)
@@ -641,6 +646,9 @@ NS_EXTERN size_t
 Ns_CacheGetSize(Ns_Entry *entry)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN Ns_Time *
+Ns_CacheGetExpirey(Ns_Entry *entry);
+
 NS_EXTERN void
 Ns_CacheSetValue(Ns_Entry *entry, void *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -650,8 +658,8 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, time_t ttl)
-    NS_GNUC_NONNULL(1);
+Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, 
+                        Ns_Time *timeoutPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_CacheUnsetValue(Ns_Entry *entry)
@@ -705,9 +713,12 @@ NS_EXTERN void
 Ns_CacheBroadcast(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void
+NS_EXTERN char*
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_CacheResetStats(Ns_Cache *cache);
 
 /*
  * callbacks.c:
@@ -1252,6 +1263,8 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
+NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
+
 
 /*
  * tclthread.c:
@@ -1266,7 +1279,10 @@ NS_EXTERN int Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
  */
 
 NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
-NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
+NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
+                                   Ns_Time *timePtr);
+NS_EXTERN int Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
+                                      Ns_Time **timePtrPtr);
 
 /*
  * tclxkeylist.c:
