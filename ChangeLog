@@ -1,3 +1,10 @@
+2006-07-05  Bernd Eidenschink  <eide@users.sourceforge.net>
+
+	* contrib/start-scripts/naviserver.SuSE: Added start script
+	suitable for /etc/init.d which implements start, stop, restart,
+	try-restart, realstop, version, probe, status. Configurable
+	for use with or without watchdog and chroot environment.
+
 2006-07-05  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/ns.h: Fixed so the compilation works again after
