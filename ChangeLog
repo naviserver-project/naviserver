@@ -1,3 +1,7 @@
+2006-07-06  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tests/nsdb.text: Updated with new error message
+
 2006-07-05  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* contrib/start-scripts/naviserver.SuSE: Added start script

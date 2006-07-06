@@ -12,7 +12,7 @@ eval ::tcltest::configure $argv
 
 test ns_db-1.1 {basic syntax} -body {
     ns_db
-} -returnCodes error -result {wrong # of args: should be "ns_db command ?args ...?}
+} -returnCodes error -result {wrong # args: should be "ns_db option ?arg ...?"}
 
 
 
