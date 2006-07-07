@@ -787,7 +787,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
      * or if severity level out of range(s).
      */
     
-    if (   severity > maxlevel
+    if ((maxlevel && severity > maxlevel)
         || severity > (sizeof(logConfig)/sizeof(logConfig[0]))
         || logConfig[severity].enabled == 0) {
         return;
@@ -800,19 +800,13 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
      */
 
     len = Ns_DStringLength(&cachePtr->buffer);
-    entryPtr = (LogEntry *)(Ns_DStringValue(&cachePtr->buffer) + len);
-    len += sizeof(LogEntry);
     Ns_DStringNAppend(&cachePtr->buffer, (void*)&entry, sizeof(LogEntry));
-
-    entryPtr->severity = severity;
-    Ns_GetTime(&entryPtr->stamp);
-
-    /*
-     * Append variable-length message
-     */
-
     Ns_DStringVPrintf(&cachePtr->buffer, fmt, ap);
-    entryPtr->loglen = Ns_DStringLength(&cachePtr->buffer) - len;
+
+    entryPtr = (LogEntry *)(Ns_DStringValue(&cachePtr->buffer) + len);
+    entryPtr->severity = severity;
+    entryPtr->loglen = Ns_DStringLength(&cachePtr->buffer) - len - sizeof(LogEntry);
+    Ns_GetTime(&entryPtr->stamp);
 
     cachePtr->count++;
 
