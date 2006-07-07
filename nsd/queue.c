@@ -686,6 +686,7 @@ ConnRun(Conn *connPtr)
     connPtr->responseVersion = 0;
     connPtr->responseLength = 0;
     connPtr->recursionCount = 0;
+    connPtr->keep = -1;          /* Default keep-alive rules apply */
     connPtr->encoding = servPtr->encoding.outputEncoding;
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
     Tcl_DStringInit(&connPtr->queued);

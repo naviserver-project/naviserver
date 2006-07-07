@@ -127,7 +127,7 @@ Ns_ConnClose(Ns_Conn *conn)
     
     if (connPtr->sockPtr != NULL) {
 
-        keep = (conn->flags & NS_CONN_KEEPALIVE) ? 1 : 0;
+        keep = connPtr->keep > 0 ? 1 : 0;
 
         /*
          * In chunked mode we must signify the last chunk with a

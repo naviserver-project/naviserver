@@ -67,10 +67,9 @@
 #define NS_CONN_SKIPBODY           0x004 /* HTTP HEAD request, do not send body */
 #define NS_CONN_READHDRS           0x008 /* Unused */
 #define NS_CONN_SENTHDRS           0x010 /* Response headers have been sent to client */
-#define NS_CONN_KEEPALIVE          0x020 /* Client expects or has requested a keep-alive connection */
-#define NS_CONN_WRITE_ENCODED      0x040 /* Unused */
-#define NS_CONN_WRITE_CHUNKED      0x080 /* Client expects or has requested a chunked response */
-#define NS_CONN_SENT_LAST_CHUNK    0x100 /* Undocumented */
+#define NS_CONN_WRITE_ENCODED      0x020 /* Unused */
+#define NS_CONN_WRITE_CHUNKED      0x040 /* Client expects or has requested a chunked response */
+#define NS_CONN_SENT_LAST_CHUNK    0x080 /* Marks that the last chunk was sent in chunked mode */
 
 /*
  * The following are valid return codes from an Ns_UserAuthorizeProc.

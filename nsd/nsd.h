@@ -536,6 +536,7 @@ typedef struct Conn {
     int responseLength;
     char *responseVersion;
     int recursionCount;
+    int keep;
 
     Ns_Set *query;
     Tcl_HashTable files;

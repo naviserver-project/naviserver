@@ -1163,16 +1163,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case CKeepAliveIdx:
         if (objc > 2) {
             int flag;
-            if (Tcl_GetIntFromObj(interp, objv[2], &flag) != TCL_OK) {
+            if (Tcl_GetIntFromObj(interp, objv[2], &connPtr->keep) != TCL_OK) {
                 return NS_ERROR;
             }
-            if (flag) {
-                connPtr->flags |= NS_CONN_KEEPALIVE;
-            } else {
-                connPtr->flags &= ~NS_CONN_KEEPALIVE;
-            }
         }
-        Tcl_SetIntObj(result, conn->flags & NS_CONN_KEEPALIVE);
+        Tcl_SetIntObj(result, connPtr->keep);
         break;
 
     case CUrlvIdx:

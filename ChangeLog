@@ -2,6 +2,14 @@
 
 	* tests/nsdb.text: Updated with new error message
 
+	* include/ns.h:
+	* nsd/conn.c:
+	* nsd/queue.c:
+	* nsd/return.c: Make ns_conn keepliave 0|1 to enable or 
+	disable keep-alive on current connection. Removed flag 
+	NS_CONN_KEEPALIVE and instead connPtr->keep is used to 
+	control keepailve behaviour.
+	
 2006-07-05  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* contrib/start-scripts/naviserver.SuSE: Added start script

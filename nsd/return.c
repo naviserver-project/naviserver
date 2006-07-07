@@ -248,22 +248,23 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
          * a valid and correctly set content-length header.
          */
 
-        if (conn->flags & NS_CONN_KEEPALIVE ||
-            (drvPtr->keepwait > 0
-            && connPtr->headers != NULL
-            && connPtr->request != NULL
-            && (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300)
+        if (connPtr->keep > 0 ||
+            (connPtr->keep < 0
+             && drvPtr->keepwait > 0
+             && connPtr->headers != NULL
+             && connPtr->request != NULL
+             && (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300)
                  && ((lengthHdr != NULL && connPtr->responseLength == length)
                      || (conn->flags & NS_CONN_WRITE_CHUNKED)) )
                 || (connPtr->responseStatus == 304
                     || connPtr->responseStatus == 201
                     || connPtr->responseStatus == 207) )
-            && (drvPtr->keepallmethods == NS_TRUE
-                || STREQ(connPtr->request->method, "GET"))
-            && (key = Ns_SetIGet(conn->headers, "connection")) != NULL
-            && STRIEQ(key, "keep-alive"))) {
+             && (drvPtr->keepallmethods == NS_TRUE
+                 || STREQ(connPtr->request->method, "GET"))
+             && (key = Ns_SetIGet(conn->headers, "connection")) != NULL
+                 && STRIEQ(key, "keep-alive"))) {
 
-            conn->flags |= NS_CONN_KEEPALIVE;
+            connPtr->keep = 1;
             keep = "keep-alive";
         } else {
             keep = "close";
