@@ -45,7 +45,8 @@ NS_RCSID("@(#) $Header$");
 
 typedef struct TclCache {
     Ns_Cache   *cache;
-    int         ttl;      /* Default ttl (time to live) for cache entries. */
+    Ns_Time     timeout;  /* Default timeout for concurrent updates. */
+    Ns_Time     expires;  /* Default time-to-live for cache entries. */
     size_t      maxEntry; /* Maximum size of a single entry in the cache. */
 } TclCache;
 
@@ -87,12 +88,14 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Tcl_HashEntry *hPtr;
     TclCache      *cPtr;
     char          *name;
-    int            new, maxSize, maxEntry = 0, ttl = 0;
+    int            new, maxSize, maxEntry = 0;
+    Ns_Time       *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-ttl",      Ns_ObjvInt,   &ttl,      NULL},
-        {"-maxentry", Ns_ObjvInt,   &maxEntry, NULL},
-        {"--",        Ns_ObjvBreak, NULL,      NULL},
+        {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
+        {"-expires",  Ns_ObjvTime,  &expPtr,     NULL},
+        {"-maxentry", Ns_ObjvInt,   &maxEntry,   NULL},
+        {"--",        Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -107,10 +110,15 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     Ns_MutexLock(&servPtr->tcl.cachelock);
     hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &new);
     if (new) {
-        cPtr = ns_malloc(sizeof(TclCache));
+        cPtr = ns_calloc(1, sizeof(TclCache));
         cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, maxSize, ns_free);
-        cPtr->ttl = ttl;
         cPtr->maxEntry = maxEntry;
+        if (timeoutPtr != NULL) {
+            cPtr->timeout = *timeoutPtr;
+        }
+        if (expPtr != NULL) {
+            cPtr->expires = *expPtr;
+        }
         Tcl_SetHashValue(hPtr, cPtr);
     }
     Ns_MutexUnlock(&servPtr->tcl.cachelock);
@@ -606,7 +614,14 @@ CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key, int *newPtr,
 {
     Ns_Cache *cache = cPtr->cache;
     Ns_Entry *entry;
+    Ns_Time   time;
 
+    if (timeoutPtr == NULL
+        && (cPtr->timeout.sec > 0 || cPtr->timeout.usec > 0)) {
+        timeoutPtr = Ns_AbsoluteTime(&time, &cPtr->timeout);
+    } else {
+        timeoutPtr = Ns_AbsoluteTime(&time, timeoutPtr);
+    }
     Ns_CacheLock(cache);
     entry = Ns_CacheWaitCreateEntry(cache, key, newPtr, timeoutPtr);
     if (entry == NULL) {
@@ -640,7 +655,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr)
 {
     char    *string, *value;
     int      len;
-    Ns_Time  now;
+    Ns_Time  time;
 
     string = Tcl_GetStringFromObj(valObj, &len);
     if (cPtr->maxEntry > 0 && len > cPtr->maxEntry) {
@@ -649,11 +664,12 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr)
         value = ns_malloc(len+1);
         memcpy(value, string, len);
         value[len] = '\0';
-        if (expPtr == NULL && cPtr->ttl > 0) {
-            Ns_GetTime(&now);
-            Ns_IncrTime(&now, cPtr->ttl, 0);
-            expPtr = &now;
-        }
+        if (expPtr == NULL
+            && (cPtr->expires.sec > 0 || cPtr->expires.usec > 0)) {
+            expPtr = Ns_AbsoluteTime(&time, &cPtr->expires);
+        } else {
+            expPtr = Ns_AbsoluteTime(&time, expPtr);
+        }     
         Ns_CacheSetValueExpires(entry, value, len, expPtr);
     }
 }

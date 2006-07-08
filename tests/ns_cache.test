@@ -11,7 +11,7 @@ eval ::tcltest::configure $argv
 
 
 ns_cache_create -maxentry 10 -- c1 1024
-ns_cache_create -ttl 100 -- c2 [expr 1024 * 1024]
+ns_cache_create -expires 100 -- c2 [expr 1024 * 1024]
 
 
 
@@ -29,7 +29,7 @@ test cache-1.3 {basic syntax} -body {
 
 test cache-1.4 {basic syntax} -body {
     ns_cache_create
-} -returnCodes error -result {wrong # args: should be "ns_cache_create ?-ttl ttl? ?-maxentry maxentry? ?--? cache size"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_create ?-timeout timeout? ?-expires expires? ?-maxentry maxentry? ?--? cache size"}
 
 test cache-1.5 {basic syntax} -body {
     ns_cache_eval
@@ -49,7 +49,7 @@ test cache-1.8 {basic syntax} -body {
 
 test cache-1.10 {basic syntax} -body {
     ns_memoize
-} -returnCodes error -result {wrong # args: should be "?-timeout timeout? ?-expires expires? ?-force? ?--? script ?args?"}
+} -returnCodes error -result {wrong # args: should be "?-timeout timeout? ?-expires expires? ?--? script ?args?"}
 
 
 
@@ -60,7 +60,7 @@ test cache-2.1 {cache names} -body {
 
 
 test cache-3.1 {cache create} -body {
-    ns_cache_create -ttl 3 -- c3 1024
+    ns_cache_create -expires 3 -- c3 1024
 } -result {}
 
 
@@ -120,7 +120,7 @@ test cache-5.4 {flush multiple keys} -body {
     ns_cache_flush c1
 } -result k3
 
-test cache-5.4.1 {flush expired key (Ns_CacheFindEntry)} -body {
+test cache-5.4.1 {flush expired key absolute time (Ns_CacheFindEntry)} -body {
     ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
     after 2000
     ns_cache_flush c1 k1
@@ -128,9 +128,26 @@ test cache-5.4.1 {flush expired key (Ns_CacheFindEntry)} -body {
     ns_cache_flush c1
 } -result 0
 
-test cache-5.4.2 {flush expired key (Ns_CacheFirstEntry, Ns_CacheNextEntry)} -body {
+test cache-5.4.1.1 {flush expired key relative time (Ns_CacheFindEntry)} -body {
+    ns_cache_eval -expires 1 -- c1 k1 {return a}
+    after 2000
+    ns_cache_flush c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.4.2 {flush expired key, abs time (Ns_CacheFirstEntry, Ns_CacheNextEntry)} -body {
     ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
     ns_cache_eval -expires [ns_time incr [ns_time get] 1] -- c1 k2 {return b}
+    after 2000
+    ns_cache_flush c1
+} -cleanup {
+    ns_cache_flush c1
+} -result 0
+
+test cache-5.4.2.1 {flush expired key, rel time (Ns_CacheFirstEntry, Ns_CacheNextEntry)} -body {
+    ns_cache_eval -expires 1 -- c1 k1 {return a}
+    ns_cache_eval -expires 1 -- c1 k2 {return b}
     after 2000
     ns_cache_flush c1
 } -cleanup {
@@ -226,12 +243,23 @@ test cache-6.4.1 {eval maxentry size} -body {
     ns_cache_flush c1
 } -result k1
 
-test cache-6.5 {eval: wait timeout} -body {
+test cache-6.5 {eval: wait timeout absolute} -body {
     ns_thread begindetached {
         ns_cache_eval -- c1 k1 {after 3000; return a}
     }
     after 1000
     ns_cache_eval -timeout [ns_time incr [ns_time get] 1] -- c1 k1 {return a}
+} -cleanup {
+    after 3200
+    ns_cache_flush c1
+} -returnCodes error -result "timeout waiting for concurrent update: k1"
+
+test cache-6.5.1 {eval: wait timeout relative} -body {
+    ns_thread begindetached {
+        ns_cache_eval -- c1 k1 {after 3000; return a}
+    }
+    after 1000
+    ns_cache_eval -timeout 1 -- c1 k1 {return a}
 } -cleanup {
     after 3200
     ns_cache_flush c1

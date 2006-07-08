@@ -320,6 +320,7 @@ NS_EXTERN void Ns_GetTime(Ns_Time *timePtr);
 NS_EXTERN void Ns_AdjTime(Ns_Time *timePtr);
 NS_EXTERN int  Ns_DiffTime(Ns_Time *t1, Ns_Time *t0, Ns_Time *resultPtr);
 NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec);
+NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr);
 
 /*
  * tls.c:

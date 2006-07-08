@@ -1,3 +1,13 @@
+2006-07-08  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/nsthread.h:
+	* nsthread/time.c:
+	* nsd/tclcache.c:
+	* tests/ns_cache.test: Add per-cache default timeouts. Timeout
+	values passed using the -timeout switch can now be absolute or
+	relative to the current time. Large values are assumed to be
+	absolute, small values relative. 
+
 2006-07-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/log.c: Fixed some struct arithmetic which ended up

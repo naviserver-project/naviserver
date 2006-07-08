@@ -178,3 +178,36 @@ Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec)
     timePtr->sec += sec;
     Ns_AdjTime(timePtr);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AbsoluteTime --
+ *
+ *      Return an absolute time in the future given adjPtr. Small
+ *      values of adjPtr are added to the current time, large values
+ *      are assumed to be absolute already. NULL is infinity.
+ *
+ * Results:
+ *      Pointer to absPtr if adusted, adjPtr otherwise.
+ *
+ * Side effects:
+ *      Ns_Time structure pointed to by absPtr may be adjusted upwards.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Time *
+Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
+{
+    if (adjPtr == NULL) {
+        return NULL;
+    }
+    if (adjPtr->sec < 1000000000) {
+        Ns_GetTime(absPtr);
+        Ns_IncrTime(absPtr, adjPtr->sec, adjPtr->usec);
+        return absPtr;
+    }
+    return adjPtr;
+}
