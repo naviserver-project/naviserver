@@ -1,5 +1,20 @@
 2006-07-08  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/limits.c:
+	* tcl/limits.tcl:
+	* nsd/Makefile:
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/conn.c:
+	* nsd/init.c:
+	* nsd/tclcmds.c:
+	* tests/ns_limits.test:
+	* test/ns_conn.test:
+	* tests/test.nscfg: Add new ns_limits_ commands to manipulate
+	per-request limits. Not hooked up to request processing yet,
+	requires some work to move conn allocation back into the driver
+	code.
+
 	* include/nsthread.h:
 	* nsthread/time.c:
 	* nsd/tclcache.c:

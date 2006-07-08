@@ -481,6 +481,32 @@ typedef struct FormFile {
 } FormFile;
 
 /*
+ * The following structure defines per-request limits.
+ */
+
+typedef struct NsLimits {
+    char            *name;
+    unsigned int     maxrun;    /* Max conns to run at once. */
+    unsigned int     maxwait;   /* Max conns waiting to run before being dropped. */
+    size_t	         maxupload; /* Max data accepted. */
+    int              timeout;   /* Seconds allowed for conn to complete. */
+
+    Ns_Mutex         lock;      /* Lock for state and stats. */
+
+    struct {
+        unsigned int nrunning;  /* Conns currently running. */
+        unsigned int nwaiting;  /* Conns waiting to run. */
+    } state;
+
+    struct {
+        unsigned int ndropped;  /* Drops due to ... */
+        unsigned int noverflow; /* Max upload exceeded. */
+        unsigned int ntimeout;  /* Timeout exceeded. */
+    } stats;
+
+} NsLimits;
+
+/*
  * The following structure maintains state for a connection
  * being processed.
  */
@@ -509,6 +535,9 @@ typedef struct Conn {
     struct Conn *prevPtr;
     struct Conn *nextPtr;
     struct Sock *sockPtr;
+
+    NsLimits *limitsPtr; /* Per-connection limits */
+    Ns_Time   timeout;   /* Absolute timeout (startTime + limit). */
 
     /*
      * The following are copied from sockPtr so they're valid
@@ -914,6 +943,7 @@ extern void NsInitMimeTypes(void);
 extern void NsInitModLoad(void);
 extern void NsInitProcInfo(void);
 extern void NsInitQueue(void);
+extern void NsInitLimits(void);
 extern void NsInitDrivers(void);
 extern void NsInitSched(void);
 extern void NsInitTcl(void);
@@ -1042,6 +1072,13 @@ extern void NsTclAddServerCmds(NsInterp *itPtr);
 
 extern void NsRestoreSignals(void);
 extern void NsSendSignal(int sig);
+
+/*
+ * Conn routines.
+ */
+
+extern NsLimits *NsGetRequestLimits(char *server, char *method, char *url);
+
 
 /*
  * ADP routines.

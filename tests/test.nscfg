@@ -71,6 +71,16 @@ ns_param   cachemaxsize    2055
 ns_param   cachemaxentry   32
 ns_param   mmap            false
 
+ns_section "ns/limits"
+ns_param   confLimit1      "Config File Limit One"
+ns_param   confLimit2      "Config File Limit Two"
+
+ns_section "ns/limit/confLimit1"
+ns_param   maxrun          99
+
+ns_section "ns/limit/confLimit2"
+# unspecified, use defaults.
+
 ns_section "ns/servers"
 ns_param   testvhost       "Virtual Host Test Server"
 ns_param   testvhost2      "Virtual Host Test Server with custom procs"
@@ -89,6 +99,9 @@ ns_param   enabletclpages  true
 ns_section "ns/server/test/fastpath"
 ns_param   serverdir       testserver
 ns_param   pagedir         pages
+
+ns_section "ns/server/test/limits"
+ns_param   confLimit1      "GET /confLimit1"
 
 ns_section "ns/server/test/tcl"
 ns_param   initfile        ../nsd/init.tcl

@@ -1075,6 +1075,32 @@ Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConnTimeout --
+ *
+ *      Absolute time value beyond which conn should not wait for
+ *      resources.
+ *
+ * Results:
+ *      Pointer to Ns_Time value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Time *
+Ns_ConnTimeout(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->timeout;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclConnObjCmd --
  *
  *      Implements ns_conn as an obj command. 
@@ -1112,7 +1138,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "filelength", "fileheaders", "flags", "form", "headers",
         "host", "id", "isconnected", "location", "method",
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
-        "query", "request", "server", "sock", "start", "status",
+        "query", "request", "server", "sock", "start", "status", "timeout",
         "url", "urlc", "urlencoding", "urlv", "version", "write_encoded",
         "chunked", "responseversion", "versionstring", "keepalive",
         NULL
@@ -1124,7 +1150,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CFormIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
         CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
-        CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CUrlIdx,
+        CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CTimeoutIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
         CChunkedIdx, CResponseVersionIdx, CVersionStringIdx, CKeepAliveIdx
     };
@@ -1445,6 +1471,10 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         } else {
             Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
         }
+        break;
+
+    case CTimeoutIdx:
+        Ns_TclSetTimeObj(Tcl_GetObjResult(interp), Ns_ConnTimeout(conn));
         break;
 
     case CSockIdx:

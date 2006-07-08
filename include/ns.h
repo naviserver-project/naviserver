@@ -828,7 +828,6 @@ NS_EXTERN void Ns_ConnSetResponseVersion(Ns_Conn *conn, char *new_version);
 NS_EXTERN int Ns_ConnContentSent(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetContentSent(Ns_Conn *conn, int length);
 NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
-NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr);
 NS_EXTERN int Ns_ConnPeerPort(Ns_Conn *conn);
@@ -848,6 +847,8 @@ NS_EXTERN void Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN int Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
 NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
+NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
+NS_EXTERN Ns_Time *Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 /*
  * connio.c:
