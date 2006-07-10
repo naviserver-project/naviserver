@@ -2553,14 +2553,15 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     drvPtr->spooler.curPtr = drvPtr->spooler.curPtr->nextPtr;
     Ns_MutexUnlock(&drvPtr->spooler.lock);
 
+    Ns_Log(Notice, "Spooler: %d: started fd=%d: %u bytes",
+           queuePtr->id, sockPtr->sock, sockPtr->reqPtr->length);
+
     Ns_MutexLock(&queuePtr->lock);
     if (queuePtr->sockPtr == NULL) {
         trigger = 1;
     }
     Push(sockPtr, queuePtr->sockPtr);
     Ns_MutexUnlock(&queuePtr->lock);
-    Ns_Log(Notice, "Spooler: %d: started fd=%d: %u bytes",
-           queuePtr->id, sockPtr->sock, sockPtr->reqPtr->length);
 
     /*
      * Wake up spooler thread
