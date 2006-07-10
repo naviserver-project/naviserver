@@ -2905,6 +2905,9 @@ NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd,
     wrPtr->curPtr = wrPtr->curPtr->nextPtr;
     Ns_MutexUnlock(&wrPtr->lock);
 
+    Ns_Log(Notice, "Writer: %d: started sock=%d, fd=%d: size=%u, flags=%X: %s",
+           queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd, nsend, wrSockPtr->flags, connPtr->reqPtr->request->url);
+
     /*
      * Now add new writer socket to the writer thread's queue
      */
@@ -2923,9 +2926,6 @@ NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd,
     if (trigger) {
         SockTrigger(queuePtr->pipe[1]);
     }
-
-    Ns_Log(Notice, "Writer: %d: started sock=%d, fd=%d: size=%u, flags=%X: %s",
-           queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd, nsend, wrSockPtr->flags, connPtr->reqPtr->request->url);
 
     return NS_OK;
 }

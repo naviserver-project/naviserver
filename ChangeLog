@@ -1,3 +1,8 @@
+2006-07-10  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c: Fixed crash when accessing writer 
+	sock after it has been submitted to the queue
+
 2006-07-10  Stephen Deasey  <sd@groks.org>
 
 	* nsd/nsd.h:
