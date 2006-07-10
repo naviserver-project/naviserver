@@ -1187,11 +1187,9 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CKeepAliveIdx:
-        if (objc > 2) {
-            int flag;
-            if (Tcl_GetIntFromObj(interp, objv[2], &connPtr->keep) != TCL_OK) {
-                return NS_ERROR;
-            }
+        if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2],
+                                          &connPtr->keep) != TCL_OK) {
+            return NS_ERROR;
         }
         Tcl_SetIntObj(result, connPtr->keep);
         break;
