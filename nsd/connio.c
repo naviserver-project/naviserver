@@ -220,7 +220,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
             bufIdx++;
         }
 
-        sent = NsSockSend(connPtr->sockPtr, sbufPtr, nsbufs);
+        sent = NsDriverSend(connPtr->sockPtr, sbufPtr, nsbufs);
         if (sent < 0) {
             break;
         }
@@ -284,7 +284,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     } else {
 
         /*
-         * Return error on first send, if any, from NsSockSend above.
+         * Return error on first send, if any, from NsDriverSend above.
          */
 
         nwrote = sent;

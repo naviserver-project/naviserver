@@ -1,3 +1,10 @@
+2006-07-10  Stephen Deasey  <sd@groks.org>
+
+	* nsd/nsd.h:
+	* nsd/driver.c:
+	* nsd/connio.c: Create wrappers for the driver callback functions
+	and document. Wrap some of the messy error reporting code.
+
 2006-07-08  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/limits.c:

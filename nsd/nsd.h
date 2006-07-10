@@ -957,9 +957,18 @@ extern void NsUpdateMimeTypes(void);
 extern void NsUpdateEncodings(void);
 extern void NsUpdateUrlEncode(void);
 
+/*
+ * Socket driver callbacks.
+ */
+
+extern int NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
+extern int NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs);
+extern int NsDriverQueue(Sock *sockPtr);
+extern int NsDriverKeep(Sock *sockPtr);
+extern void NsDriverClose(Sock *sockPtr);
+
 extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);
-extern int  NsSockSend(Sock *sockPtr, struct iovec *bufs, int nbufs);
 extern void NsSockClose(Sock *sockPtr, int keep);
 extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 

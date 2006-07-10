@@ -92,6 +92,7 @@ static Sock *SockAccept(Driver *drvPtr);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
 static void  SockPrepare(Sock *sockPtr);
 static void  SockRelease(Sock *sockPtr, int reason, int err);
+static void  SockSendResponse(Sock *sockPtr, int code);
 static void  SockTrigger(SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
 static void  SockClose(Sock *sockPtr, int keep);
@@ -855,31 +856,6 @@ NsFreeRequest(Request *reqPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsSockSend --
- *
- *      Send buffers via the socket's driver callback.
- *
- * Results:
- *      # of bytes sent or -1 on error.
- *
- * Side effects:
- *      Depends on driver proc.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsSockSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
-{
-    Ns_Sock *sock = (Ns_Sock *) sockPtr;
-
-    return (*sockPtr->drvPtr->proc)(DriverSend, sock, bufs, nbufs);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsSockClose --
  *
  *      Return a connction to the DriverThread for closing or keepalive.
@@ -922,6 +898,126 @@ NsSockClose(Sock *sockPtr, int keep)
         SockTrigger(drvPipe[1]);
     }
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverRecv --
+ *
+ *      Read data from the socket into the given vector of buffers.
+ *
+ * Results:
+ *      Number of bytes read, or -1 on error.
+ *
+ * Side effects:
+ *      Depends on driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
+{
+    return (*sockPtr->drvPtr->proc)(DriverRecv, (Ns_Sock *) sockPtr, bufs, nbufs);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverSend --
+ *
+ *      Write a vector of buffers to the socket via the driver callback.
+ *
+ * Results:
+ *      Number of bytes written, or -1 on error.
+ *
+ * Side effects:
+ *      Depends on driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
+{
+    return (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock *) sockPtr, bufs, nbufs);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverQueue --
+ *
+ *      Can the given socket be queued for connection processing?
+ *
+ * Results:
+ *      NS_OK:    socket can be queued.
+ *      NS_ERROR: driver does not implement this callback.
+ *      NS_FATAL: socket should not be queued. Close socket?
+ *
+ * Side effects:
+ *      Depends on driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsDriverQueue(Sock *sockPtr)
+{
+    return (*sockPtr->drvPtr->proc)(DriverQueue, (Ns_Sock *) sockPtr, NULL, 0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverKeep --
+ *
+ *      Can the given socket be kept open in the hopes that another
+ *      request will arrive before the keepwait timeout expires?
+ *
+ * Results:
+ *      0 if the socket is OK for keepalive, 1 if this is not possible.
+ *
+ * Side effects:
+ *      Depends on driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsDriverKeep(Sock *sockPtr)
+{
+    return (*sockPtr->drvPtr->proc)(DriverKeep, (Ns_Sock *) sockPtr, NULL, 0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverClose --
+ *
+ *      Notify the driver that the socket is about to be closed.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsDriverClose(Sock *sockPtr)
+{
+    (void) (*sockPtr->drvPtr->proc)(DriverClose, (Ns_Sock *) sockPtr, NULL, 0);
+}
+
+
 
 
 /*
@@ -1390,7 +1486,7 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
      *  Ask driver if we are allowed and ready to queue this socket
      */
 
-    status = (*sockPtr->drvPtr->proc)(DriverQueue, (Ns_Sock*)sockPtr, NULL, 0);
+    status = NsDriverQueue(sockPtr);
 
     /*
      *  Verify the conditions, Request struct should exists already
@@ -1586,8 +1682,7 @@ SockAccept(Driver *drvPtr)
 static void
 SockRelease(Sock *sockPtr, int reason, int err)
 {
-    char         *errMsg = NULL;
-    struct iovec  iov;
+    char *errMsg = NULL;
 
     switch (reason) {
     case SOCK_CLOSE:
@@ -1634,29 +1729,23 @@ SockRelease(Sock *sockPtr, int reason, int err)
 
     case SOCK_REQUESTURITOOLONG:
         errMsg = "Request-URI Too Long";
-        iov.iov_base = "HTTP/1.0 414 Request-URI Too Long\r\n\r\n";
-        iov.iov_len  = strlen(iov.iov_base);
-        (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock*)sockPtr, &iov, 1);
+        SockSendResponse(sockPtr, 414);
         break;
 
     case SOCK_BADREQUEST:
         errMsg = "Bad Request";
-        iov.iov_base = "HTTP/1.0 400 Bad Request\r\n\r\n";
-        iov.iov_len  = strlen(iov.iov_base);
-        (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock*)sockPtr, &iov, 1);
+        SockSendResponse(sockPtr, 400);
         break;
 
     case SOCK_ENTITYTOOLARGE:
         errMsg = "Request Entity Too Large";
-        iov.iov_base = "HTTP/1.0 413 Bad Request\r\n\r\n";
-        iov.iov_len  = strlen(iov.iov_base);
-        (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock*)sockPtr, &iov, 1);
+        SockSendResponse(sockPtr, 413);
         break;
     }
     if (errMsg != NULL) {
-        Ns_Log( Error, "Releasing Socket; %s %s(%d/%d), FD = %d, Peer = %s:%d",
-                errMsg, (err ? strerror(err) : ""), reason, err, sockPtr->sock,
-                ns_inet_ntoa(sockPtr->sa.sin_addr),ntohs(sockPtr->sa.sin_port));
+        Ns_Log(Debug, "Releasing Socket; %s %s(%d/%d), FD = %d, Peer = %s:%d",
+               errMsg, (err ? strerror(err) : ""), reason, err, sockPtr->sock,
+               ns_inet_ntoa(sockPtr->sa.sin_addr),ntohs(sockPtr->sa.sin_port));
     }
 
     SockClose(sockPtr, 0);
@@ -1677,6 +1766,46 @@ SockRelease(Sock *sockPtr, int reason, int err)
     sockPtr->nextPtr = firstSockPtr;
     firstSockPtr     = sockPtr;
     Ns_MutexUnlock(&drvLock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockSendResponse --
+ *
+ *      Send an HTTP response directly to the client using the
+ *      driver callback.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      FIXME: This may block the driver thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+SockSendResponse(Sock *sockPtr, int code)
+{
+    struct iovec iov;
+    char *response;
+
+    switch (code) {
+    case 400:
+        response = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        break;
+    case 413:
+        response = "HTTP/1.0 413 Bad Request\r\n\r\n";
+        break;
+    case 414:
+        response = "HTTP/1.0 414 Request-URI Too Long\r\n\r\n";
+        break;
+    }
+    iov.iov_base = response;
+    iov.iov_len = strlen(response);
+    NsDriverSend(sockPtr, &iov, 1);
 }
 
 
@@ -1724,15 +1853,14 @@ SockTrigger(SOCKET fd)
 static void
 SockClose(Sock *sockPtr, int keep)
 {
-    Ns_Sock *sock = (Ns_Sock *) sockPtr;
     Driver  *drvPtr = sockPtr->drvPtr;
     UploadStats *statsPtr = &sockPtr->upload;
 
-    if (keep && (*drvPtr->proc)(DriverKeep, sock, NULL, 0) != 0) {
+    if (keep && NsDriverKeep(sockPtr) != 0) {
         keep = 0;
     }
     if (keep == 0) {
-        (*drvPtr->proc)(DriverClose, sock, NULL, 0);
+        NsDriverClose(sockPtr);
     }
 
 #ifndef _WIN32
@@ -1806,7 +1934,6 @@ SockClose(Sock *sockPtr, int keep)
 static int
 SockRead(Sock *sockPtr, int spooler)
 {
-    Ns_Sock      *sock   = (Ns_Sock *) sockPtr;
     Driver       *drvPtr = sockPtr->drvPtr;
     DrvSpooler   *spPtr  = &drvPtr->spooler;
     Request      *reqPtr = NULL;
@@ -1891,7 +2018,7 @@ SockRead(Sock *sockPtr, int spooler)
         buf.iov_len = nread;
     }
 
-    n = (*sockPtr->drvPtr->proc)(DriverRecv, sock, &buf, 1);
+    n = NsDriverRecv(sockPtr, &buf, 1);
 
     if (n <= 0) {
         return SOCK_READERROR;
@@ -2597,7 +2724,7 @@ WriterThread(void *arg)
                     case NS_OK:
                         vbuf.iov_len = curPtr->bufsize;
                         vbuf.iov_base = (void *) curPtr->buf;
-                        n = NsSockSend(curPtr->sockPtr, &vbuf, 1);
+                        n = NsDriverSend(curPtr->sockPtr, &vbuf, 1);
                         if (n < curPtr->bufsize) {
                             err = errno;
                             status = NS_ERROR;
