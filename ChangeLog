@@ -3,6 +3,9 @@
 	* nsd/driver.c: Fixed crash when accessing writer 
 	sock after it has been submitted to the queue
 
+	Fixed crash and put back functinality to make nsopenssl
+	work again, in one of the previous changes that got broken.
+
 2006-07-10  Stephen Deasey  <sd@groks.org>
 
 	* nsd/nsd.h:

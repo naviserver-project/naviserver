@@ -1370,9 +1370,11 @@ SetServer(Sock *sockPtr)
     sockPtr->servPtr  = sockPtr->drvPtr->servPtr;
     sockPtr->location = sockPtr->drvPtr->location;
 
-    host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
-    if (!host && sockPtr->reqPtr->request->version >= 1.1) {
-        status = 0;
+    if (sockPtr->reqPtr != NULL) {
+        host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
+        if (!host && sockPtr->reqPtr->request->version >= 1.1) {
+            status = 0;
+        }
     }
     if (sockPtr->servPtr == NULL) {
         if (host) {
@@ -1492,7 +1494,10 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
      *  Verify the conditions, Request struct should exists already
      */
 
-    if (status == NS_FATAL || sockPtr->reqPtr == NULL || !SetServer(sockPtr)) {
+    if (status == NS_FATAL ||
+        (sockPtr->drvPtr->opts & NS_DRIVER_ASYNC &&
+         sockPtr->reqPtr == NULL) ||
+        !SetServer(sockPtr)) {
         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
         return NS_ERROR;
     }
