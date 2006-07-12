@@ -1302,7 +1302,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
 {
     int             ii, ret;
     void           *logfile = (void *)STDERR_FILENO;
-    char            buf[16];
+    Tcl_Obj        *stamp;
     Ns_DString      ds;
     Tcl_Interp     *interp;
     Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
@@ -1314,18 +1314,25 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
         return NS_ERROR;
     }
 
+    Ns_DStringInit(&ds);
+    stamp = Tcl_NewObj();
+    Ns_TclSetTimeObj(stamp, stampPtr);
+
     /*
      * Construct args for passing to the callback script:
      *
      *      callback severity timestamp log ?arg...?
+     *
+     * The script may contain blanks therefore append
+     * as regular string instead of as list element.
+     * Other arguments are appended to it as elements.
      */
 
-    Ns_DStringInit(&ds);
-    sprintf(buf, "%u", (unsigned int)stampPtr->sec);
-    Ns_DStringAppendElement(&ds, cbPtr->script);
+    Ns_DStringAppend(&ds, cbPtr->script);
     Ns_DStringAppendElement(&ds, SeverityName(severity));
-    Ns_DStringAppendElement(&ds, buf);
+    Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
     Ns_DStringAppendElement(&ds, msg);
+    Tcl_DecrRefCount(stamp);
     for (ii = 0; ii < cbPtr->argc; ii++) {
         Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
     }

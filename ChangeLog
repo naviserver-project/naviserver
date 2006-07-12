@@ -1,8 +1,7 @@
 2006-07-12  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* nsd/log.c: LogToTcl passes timestamp in [clock seconds] 
-	instead of Ns_Time format as we still do not have proper
-	ns_time commands/wrappers.
+	* nsd/log.c: Fixed command building in LogToTcl when 
+	registered script contains blanks. 
 
 2006-07-10  Vlad Seryakov  <seryakov@users.sf.net>
 
