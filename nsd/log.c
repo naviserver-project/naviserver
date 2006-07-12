@@ -1302,8 +1302,8 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
 {
     int             ii, ret;
     void           *logfile = (void *)STDERR_FILENO;
+    char            buf[16];
     Ns_DString      ds;
-    Tcl_Obj        *stamp;
     Tcl_Interp     *interp;
     Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
@@ -1320,14 +1320,12 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
      *      callback severity timestamp log ?arg...?
      */
 
-    stamp = Tcl_NewObj();
-    Ns_TclSetTimeObj(stamp, stampPtr);
     Ns_DStringInit(&ds);
+    sprintf(buf, "%u", (unsigned int)stampPtr->sec);
     Ns_DStringAppendElement(&ds, cbPtr->script);
     Ns_DStringAppendElement(&ds, SeverityName(severity));
-    Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
+    Ns_DStringAppendElement(&ds, buf);
     Ns_DStringAppendElement(&ds, msg);
-    Tcl_DecrRefCount(stamp);
     for (ii = 0; ii < cbPtr->argc; ii++) {
         Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
     }
