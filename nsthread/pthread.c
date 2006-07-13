@@ -309,19 +309,25 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
     pthread_t thr;
     int err;
 
-    /*
-     * Set the stack size.  It could be smarter to leave the default 
-     * on platforms which map large stacks with guard zones
-     * (e.g., Solaris and Linux).
-     */
-
     err = pthread_attr_init(&attr);
     if (err != 0) {
         NsThreadFatal(func, "pthread_attr_init", err);
     }
-    err = pthread_attr_setstacksize(&attr, (size_t) stacksize); 
-    if (err != 0) {
-        NsThreadFatal(func, "pthread_attr_setstacksize", err);
+
+    /*
+     * Set the stack size if specified explicitly.  It is smarter
+     * to leave the default  on platforms which map large stacks
+     * with guard zones (e.g., Solaris and Linux).
+     */
+
+    if (stacksize > 0) {
+        if (stacksize < PTHREAD_STACK_MIN) {
+            stacksize = PTHREAD_STACK_MIN;
+        }
+        err = pthread_attr_setstacksize(&attr, (size_t) stacksize); 
+        if (err != 0) {
+            NsThreadFatal(func, "pthread_attr_setstacksize", err);
+        }
     }
 
     /*

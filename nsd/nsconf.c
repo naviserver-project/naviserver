@@ -165,13 +165,14 @@ NsConfUpdate(void)
     NsUpdateUrlEncode();
 
     /*
-     * libnsthread
+     * Set a default stacksize, if specified. Use OS default otherwise.
      */
 
-    if (!Ns_ConfigGetInt(NS_CONFIG_THREADS, "stacksize", &i)) {
-    	i = Ns_ConfigIntRange(path, "stacksize", 64*1024, 0, INT_MAX);
+    if ((i = Ns_ConfigIntRange(NS_CONFIG_THREADS, "stacksize", 0, 0, INT_MAX)) > 0
+        || (i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX)) > 0) {
+
+        Ns_ThreadStackSize(i);   
     }
-    Ns_ThreadStackSize(i);
 
     /*
      * nsmain.c

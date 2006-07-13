@@ -38,13 +38,6 @@
 
 NS_RCSID("@(#) $Header$");
 
-/*
- * The following constants define the default and minimum stack
- * sizes for new threads.
- */
-
-#define STACK_DEFAULT	65536	/* 64k */
-#define STACK_MIN	16384	/* 16k */
 
 /*
  * The following structure maintains all state for a thread
@@ -77,7 +70,7 @@ static Thread *firstThreadPtr;
  */
 
 static Ns_Tls key;
-static long stacksize = STACK_DEFAULT;
+static long defstacksize;
 
 
 /*
@@ -134,15 +127,8 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
 
     Ns_MasterLock();
 
-    /*
-     * Determine the stack size and impose a 16k minimum.
-     */
-
     if (stack <= 0) {
-	stack = stacksize;
-    }
-    if (stack < STACK_MIN) {
-	stack = STACK_MIN;
+        stack = defstacksize;
     }
 
     /*
@@ -167,13 +153,13 @@ Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stack,
  *
  * Ns_ThreadStackSize --
  *
- *	Set default stack size.
+ *      Set default stack size.
  *
  * Results:
- *	Previous stack size.
+ *      Previous stack size.
  *
  * Side effects:
- *	New threads will use default size.
+ *      New threads will use default size.
  *
  *----------------------------------------------------------------------
  */
@@ -184,11 +170,12 @@ Ns_ThreadStackSize(long size)
     long prev;
 
     Ns_MasterLock();
-    prev = stacksize;
+    prev = defstacksize;
     if (size > 0) {
-	stacksize = size;
+        defstacksize = size;
     }
     Ns_MasterUnlock();
+
     return prev;
 }
 

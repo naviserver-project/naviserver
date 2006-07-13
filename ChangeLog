@@ -1,5 +1,13 @@
 2006-07-13  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsconf.c:
+	* nsthread/thread.c:
+	* nsthread/pthread.c: Don't enforce an upper bound on the stack
+	size, use the OS provided default.  It only makes sense to
+	*reduce* the size of the stack if you have many threads and you
+	know for sure you have low stack usage.  As this is (currently) a
+	process-wide setting, you never can be sure...
+
 	* nsd/cookies.c: Fix bug with missing path when setting cookies.
 	* tests/cookies.test: Add tests so this doesn't happen again...
 
