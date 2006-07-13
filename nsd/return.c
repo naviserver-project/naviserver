@@ -814,6 +814,7 @@ ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
         }
         if (enc != NULL) {
             connPtr->encoding = enc;
+            connPtr->flags |= NS_CONN_WRITE_CHUNKED;
         } else if (connPtr->encoding == NULL) {
             sendRaw = NS_TRUE;
         }
