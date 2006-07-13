@@ -1,5 +1,7 @@
 2006-07-13  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/driver.c: Make sure upload stats lock is always unlocked.
+
 	* nsd/nsconf.c:
 	* nsthread/thread.c:
 	* nsthread/pthread.c: Don't enforce an upper bound on the stack

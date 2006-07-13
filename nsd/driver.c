@@ -2322,35 +2322,37 @@ int
 NsTclUploadStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                        Tcl_Obj *CONST objv[])
 {
-    char        buf[64] = "";
-    Driver     *drvPtr;
-    DrvSpooler *spPtr;
+    Driver        *drvPtr;
+    DrvSpooler    *spoolPtr;
+    Tcl_HashEntry *hPtr;
+    Sock          *sockPtr;
+    UploadStats   *statsPtr;
+    char          *url, buf[64] = "";
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");
         return TCL_ERROR;
     }
 
+    url = Tcl_GetString(objv[1]);
     drvPtr = firstDrvPtr;
+    statsPtr = NULL;
 
-    while (drvPtr != NULL) {
-        Tcl_HashEntry *hPtr;
-        spPtr = &drvPtr->spooler;
-        Ns_MutexLock(&spPtr->lock);
-        hPtr = Tcl_FindHashEntry(&spPtr->table, Tcl_GetString(objv[1]));
+    while (drvPtr != NULL && statsPtr != NULL) {
+        spoolPtr = &drvPtr->spooler;
+        Ns_MutexLock(&spoolPtr->lock);
+        hPtr = Tcl_FindHashEntry(&spoolPtr->table, url);
         if (hPtr != NULL) {
-            Sock *sockPtr = (Sock *)Tcl_GetHashValue(hPtr);
-            UploadStats *statsPtr = &sockPtr->upload;
+            sockPtr = Tcl_GetHashValue(hPtr);
+            statsPtr = &sockPtr->upload;
             sprintf(buf, "%lu %lu", statsPtr->length, statsPtr->size);
-            break;
         }
-        Ns_MutexUnlock(&spPtr->lock);
+        Ns_MutexUnlock(&spoolPtr->lock);
         drvPtr = drvPtr->nextPtr;
     }
-
     Tcl_AppendResult(interp, buf, NULL);
 
-    return NS_OK;
+    return TCL_OK;
 }
 
 /*
