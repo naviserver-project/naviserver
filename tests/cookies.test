@@ -1,0 +1,189 @@
+#
+# $Header$
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+eval ::tcltest::configure $argv
+
+
+
+test cookie-1.1 {basic syntax} -body {
+    ns_getcookie
+} -returnCodes error -result {wrong # args: should be "ns_getcookie name ?default?"}
+
+test cookie-1.2 {basic syntax} -body {
+    ns_setcookie
+} -returnCodes error -result {No connection available.}
+
+test cookie-1.3 {basic syntax} -body {
+    ns_deletecookie
+} -returnCodes error -result {No connection available.}
+
+
+
+test cookie-2.1 {set plain cookie} -setup {
+    ns_register_proc GET /cookie-2.1 {
+        ns_setcookie x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.1
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.1
+} -result {200 x=\"y\"}
+
+test cookie-2.2 {set cookie w/wierd chars} -setup {
+    ns_register_proc GET /cookie-2.2 {
+        ns_setcookie x " %/&"
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.2
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.2
+} -result {200 x=\"+%25%2f%26\"}
+
+test cookie-2.3 {secure cookie} -setup {
+    ns_register_proc GET /cookie-2.3 {
+        ns_setcookie -secure 1 -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.3
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.3
+} -result {200 {x="y"; Secure}}
+
+test cookie-2.4 {set cookie w/ domain} -setup {
+    ns_register_proc GET /cookie-2.4 {
+        ns_setcookie -domain example.com -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.4
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.4
+} -result {200 {x="y"; Domain=example.com}}
+
+test cookie-2.5 {set cookie w/ path} -setup {
+    ns_register_proc GET /cookie-2.5 {
+        ns_setcookie -path /foo/bar -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.5
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.5
+} -result {200 {x="y"; Path=/foo/bar}}
+
+test cookie-2.6 {set cookie w/ max age} -setup {
+    ns_register_proc GET /cookie-2.6 {
+        ns_setcookie -maxage 99 -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.6
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.6
+} -result {200 {x="y"; Max-Age=99}}
+
+test cookie-2.7 {set cookie w/ infinite lifetime} -setup {
+    ns_register_proc GET /cookie-2.7 {
+        ns_setcookie -maxage -1 -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.7
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.7
+} -result {200 {x="y"; Expires=Fri, 01-Jan-2035 01:00:00 GMT}}
+
+
+
+test cookie-3.1 {delete cookie} -setup {
+    ns_register_proc GET /cookie-3.1 {
+        ns_deletecookie x
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-3.1
+} -cleanup {
+    ns_unregister_proc GET /cookie-3.1
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT}}
+
+test cookie-3.2 {delete cookie w/ all options} -setup {
+    ns_register_proc GET /cookie-3.2 {
+        ns_deletecookie -secure 1 -domain example.com -path /foo/bar -- x
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-3.2
+} -cleanup {
+    ns_unregister_proc GET /cookie-3.2
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure}}
+
+
+
+test cookie-4.1 {get cookie} -setup {
+    ns_register_proc GET /cookie-4.1 {
+        ns_return 200 text/plain [ns_getcookie x]
+    }
+} -body {
+    nstest_http -setheaders {Cookie x=y} -getbody 1 GET /cookie-4.1
+} -cleanup {
+    ns_unregister_proc GET /cookie-4.1
+} -result {200 y}
+
+test cookie-4.2 {get quoted cookie} -setup {
+    ns_register_proc GET /cookie-4.2 {
+        ns_return 200 text/plain [ns_getcookie x]
+    }
+} -body {
+    nstest_http -setheaders {Cookie x=\"y\"} -getbody 1 GET /cookie-4.2
+} -cleanup {
+    ns_unregister_proc GET /cookie-4.2
+} -result {200 y}
+
+test cookie-4.3 {get existing cookie w/ default} -setup {
+    ns_register_proc GET /cookie-4.3 {
+        ns_return 200 text/plain [ns_getcookie x z]
+    }
+} -body {
+    nstest_http -setheaders {Cookie x=y} -getbody 1 GET /cookie-4.3
+} -cleanup {
+    ns_unregister_proc GET /cookie-4.3
+} -result {200 y}
+
+test cookie-4.4 {get missing cookie w/ default} -setup {
+    ns_register_proc GET /cookie-4.4 {
+        ns_return 200 text/plain [ns_getcookie x z]
+    }
+} -body {
+    nstest_http -getbody 1 GET /cookie-4.4
+} -cleanup {
+    ns_unregister_proc GET /cookie-4.4
+} -result {200 z}
+
+test cookie-4.5 {get missing cookie} -setup {
+    ns_register_proc GET /cookie-4.5 {
+        catch {ns_getcookie x} err
+        ns_return 200 text/plain $err
+    }
+} -body {
+    nstest_http -getbody 1 GET /cookie-4.5
+} -cleanup {
+    ns_unregister_proc GET /cookie-4.5
+} -result {200 {no matching cookie}}
+
+
+
+#
+# TODO: exercise the cookie parser with bad input...
+#
+
+
+
+cleanupTests

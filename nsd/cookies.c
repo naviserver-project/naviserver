@@ -88,7 +88,7 @@ Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
         Ns_DStringVarAppend(&cookie, "; Domain=", domain, NULL);
     }
     if (path != NULL) {
-        Ns_DStringVarAppend(&cookie, "; Path=", domain, NULL);
+        Ns_DStringVarAppend(&cookie, "; Path=", path, NULL);
     }
     if (secure == NS_TRUE) {
         Ns_DStringAppend(&cookie, "; Secure");
@@ -231,6 +231,9 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     };
     if (conn == NULL || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
+    }
+    if (maxage < 0) {
+        maxage = INT_MAX; /* "Infinite" lifetime. */
     }
 
     Ns_ConnSetCookieEx(conn, name, data, maxage, domain, path, secure);
