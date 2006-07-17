@@ -26,7 +26,8 @@ test ns_log-2.1 {basic syntax} -body {
 
 test ns_log-2.2 {basic syntax} -body {
     ns_logctl ?
-} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, truncate, or severity}
+} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, truncate, severity, register, or unregister}
+
 
 
 ns_logctl hold
@@ -111,10 +112,12 @@ test ns_log-5.4 {trunc} -body {
 } -result {}
 
 test ns_log-5.5 {trunc} -body {
-    ns_log notice test
-    ns_logctl trunc [expr [string length [ns_logctl peek]] - 2]
+    ns_log notice test1
+    ns_log notice test2
+    ns_logctl trunc [expr [llength [split [ns_logctl peek] "\n"]] - 2]
     ns_logctl get
-} -match glob -result {* Notice: tes}
+} -match glob -result {* Notice: test1
+}
 
 test ns_log-5.6 {get} -body {
     ns_log notice test
