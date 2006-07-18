@@ -200,12 +200,14 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
  */
 
 void
-NsEnableDNSCache(int maxsize, int ttl, int timeout)
+NsEnableDNSCache(int amaxsize, int attl, int atimeout)
 {
+    ttl = attl;
+    timeout = atimeout;
     hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
-                                 (size_t) maxsize, ns_free);
+                                 (size_t) amaxsize, ns_free);
     addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
-                                 (size_t) maxsize, ns_free);
+                                 (size_t) amaxsize, ns_free);
 }
 
 

@@ -1,3 +1,7 @@
+2006-07-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/dns.c: Make sure given ttl and timeout are saved and used by dns cache
+
 2006-07-17  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tests/ns_log.test: Adjusted tests for new syntax
