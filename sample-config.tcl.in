@@ -457,7 +457,7 @@ ns_param 	echopassword    true
 ns_param 	cpcmdlogging    false
 
 ns_section 	"ns/server/${servername}/module/nscp/users"
-ns_param 	user 			"nsadmin:x:"
+ns_param 	user 			"nsadmin:t2GqvvaiIUbF2:"
 
 #
 # Example: Host headers based virtual servers.
