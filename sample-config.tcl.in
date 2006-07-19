@@ -341,7 +341,7 @@ ns_param  	readahead      		16384
 ns_param  	uploadsize     		2048
 
 # Number of spooler threads
-ns_param  	spoolerthreads 		1
+ns_param  	spoolerthreads 		0
 
 # Number of writer threads
 ns_param  	writerthreads  		0
@@ -457,7 +457,7 @@ ns_param 	echopassword    true
 ns_param 	cpcmdlogging    false
 
 ns_section 	"ns/server/${servername}/module/nscp/users"
-ns_param 	user 			"nsadmin:t2GqvvaiIUbF2:"
+ns_param 	user 			"nsadmin:x:"
 
 #
 # Example: Host headers based virtual servers.

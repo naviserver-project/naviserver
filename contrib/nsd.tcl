@@ -41,7 +41,7 @@ ns_param	noextension     	text/plain
 source					${home}/conf/mimetypes.tcl
 
 ns_section	"ns/db/drivers"
-#ns_param        postgres        	${home}/bin/nspostgres.so
+#ns_param        postgres        	${home}/bin/nsdbpg.so
 
 ns_section	"ns/db/pools"
 #ns_param	postgres		"PostgresSQL Database"    
@@ -61,7 +61,6 @@ ns_section	"ns/servers"
 ns_param	${server}		"Naviserver"
 
 ns_section	"ns/server/${server}"
-ns_param	pageroot		${home}/pages
 ns_param	globalstats     	true
 ns_param	urlstats        	true
 ns_param	maxurlstats     	1000
