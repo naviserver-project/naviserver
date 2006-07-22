@@ -48,6 +48,16 @@ static void CleanupTls(void *arg);
 static void *ThreadMain(void *arg);
 
 /*
+ * Solaris has weird way to declare this one so 
+ * we just make a shortcut because this is what
+ * the (solaris) definition really does.
+ */
+
+#if defined(__sun__)
+#define PTHREAD_STACK_MIN  ((size_t)sysconf(_SC_THREAD_STACK_MIN))
+#endif
+
+/*
  * The following single Tls key is used to store the nsthread
  * Tls slots.
  */

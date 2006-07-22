@@ -1,3 +1,8 @@
+2006-07-22  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsthread/pthread.c: Added definition of PTHREAD_STACK_MIN
+	for Solaris.
+
 2006-07-21  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/file.tcl: Use wrapped Tcl proc aroun d.tcl file instead of
