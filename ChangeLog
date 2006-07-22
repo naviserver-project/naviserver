@@ -1,3 +1,8 @@
+2006-07-21  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/file.tcl: Use wrapped Tcl proc aroun d.tcl file instead of
+	not exactly as needed global ns_cache.
+
 2006-07-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/dns.c: Make sure given ttl and timeout are saved and used by dns cache

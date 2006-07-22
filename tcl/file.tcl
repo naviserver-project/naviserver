@@ -52,7 +52,6 @@ if {$on} {
     ns_register_proc GET  /*.tcl ns_sourceproc
     ns_register_proc POST /*.tcl ns_sourceproc
     ns_register_proc HEAD /*.tcl ns_sourceproc
-    ns_cache_create ns:filecache [ns_config $path filecachesize 5000000]
 }
 
 
@@ -85,43 +84,25 @@ proc ns_tcl_abort {} {
 #   None.
 #
 # Side effects:
-#   Caches the file content and Tcl_Obj's rep of the
-#   sourced script in per-thread cache (is this true?)
+#   Each .tcl file will be wrapped into Tcl proc in every thread
 #
 
-proc ns_sourcefile {filename} {
+proc ns_sourcefile { path } {
 
-    file stat $filename stat
-    set current_cookie $stat(mtime):$stat(ctime):$stat(ino):$stat(dev)
+    set proc0 [info procs ns:tclcache_$path]
+    file stat $path stat
+    set cookie0 $stat(mtime):$stat(ctime):$stat(ino):$stat(dev)
 
-    #
-    # Read current cached file
-    #
-
-    set pair [ns_cache_eval ns:filecache $filename {
-        list $current_cookie [ns_fileread $filename]
-    }]
-
-    #
-    # If changed, re-cache it
-    #
-
-    if {[lindex $pair 0] ne $current_cookie} {
-        ns_cache_flush ns:filecache $filename
-        set pair [ns_cache_eval ns:filecache $filename {
-            list $current_cookie [ns_fileread $filename]
-        }]
+    # Verify file modification time
+    if { $proc0 == "" || [$proc0 1] != $cookie0 } {
+      set code [ns_fileread $path]
+      proc ns:tclcache_$path { {getcookie 0} } "
+         if { \$getcookie } { return $cookie0 }
+         $code
+      "
     }
-
-    #
-    # And here's the magic part. We're using "for" here to translate the
-    # text source file into bytecode, which will be associated with the 
-    # Tcl_Obj we just cached (as its internal representation).  "eval"
-    # doesn't do this as the eval provided in Tcl uses the TCL_EVAL_DIRECT
-    # flag, and hence interprets the text directly.
-    #
-
-    uplevel [for [lindex $pair 1] {0} {} {}]
+    # Run the proc
+    ns:tclcache_$path
 }
 
 #
