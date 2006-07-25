@@ -97,6 +97,24 @@
 #include <netdb.h>
 #include <sys/uio.h>
 
+#ifdef HAVE_POLL
+#include <poll.h>
+#else
+#define POLLIN   001
+#define POLLPRI  002
+#define POLLOUT  004
+#define POLLNORM POLLIN
+#define POLLERR  010
+#define POLLHUP  020
+#define POLLNVAL 040
+struct pollfd {
+    int fd;
+    short int events;
+    short int revents;
+};
+extern int poll(struct pollfd *, unsigned long, int);
+#endif /* HAVE_POLL */
+
 #else
 
 #ifndef WIN32_LEAN_AND_MEAN

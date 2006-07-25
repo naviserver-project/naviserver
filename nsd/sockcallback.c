@@ -421,10 +421,10 @@ SockCallbackThread(void *ignored)
 	}
 	pfds[0].revents = 0;
         do {
-            n = poll(pfds, nfds, pollto);
+            n = ns_poll(pfds, nfds, pollto);
         } while (n < 0  && errno == EINTR);
         if (n < 0) {
-            Ns_Fatal("sockcallback: poll() failed: %s",
+            Ns_Fatal("sockcallback: ns_poll() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
 	if ((pfds[0].revents & POLLIN) && recv(trigPipe[0], &c, 1, 0) != 1) {

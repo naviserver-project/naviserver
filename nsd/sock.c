@@ -233,7 +233,7 @@ Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr)
     }
     pfd.revents = 0;
     do {
-        n = poll(&pfd, 1, msec);
+        n = ns_poll(&pfd, 1, msec);
     } while (n < 0 && errno == EINTR);
     if (n > 0) {
         return NS_OK;
@@ -756,7 +756,7 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
                 ms = diff.sec * 1000 + diff.usec / 1000;
             }
         }
-        n = poll(pfds, (size_t) nfds, ms);
+        n = ns_poll(pfds, (size_t) nfds, ms);
     } while (n < 0 && ns_sockerrno == EINTR);
 
     /*
@@ -766,7 +766,7 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
      */
 
     if (n < 0) {
-        Ns_Fatal("poll() failed: %s", ns_sockstrerror(ns_sockerrno));
+        Ns_Fatal("ns_poll() failed: %s", ns_sockstrerror(ns_sockerrno));
     }
 
     return n;

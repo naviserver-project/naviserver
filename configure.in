@@ -151,7 +151,7 @@ AC_SUBST(NAVISERVER)
 AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h)
 AC_CHECK_TYPES(u_int32_t)
 AC_CHECK_TYPES(u_int8_t)
-AC_CHECK_FUNCS(timegm fork1 poll drand48 random _NSGetEnviron unsetenv)
+AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv)
 AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD, 1, [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
 AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL, 1, [Define to 1 if the <dl.h> header should be used.]),)
 AC_MSG_CHECKING([need for dup high])
@@ -162,6 +162,16 @@ AC_TRY_RUN([
   }
 ], AC_DEFINE(USE_DUPHIGH, 1, [need for dup high]) as_ok=yes, as_ok=no, as_ok=no)
 AC_MSG_RESULT($as_ok)
+
+#
+# Darwin's port of poll() is broken as it may return
+# socket as writable although it ain't. We provide
+# our own alternative implementation which is known
+# to be working. For other platforms, use if there.
+#
+if test "`uname -s`" != "Darwin"; then
+    AC_CHECK_FUNCS(poll)
+fi
 
 #
 # Normally, we'd link the resulting server image

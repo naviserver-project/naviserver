@@ -43,7 +43,6 @@ typedef unsigned short int u_int16_t;
 
 NS_RCSID("@(#) $Header$");
 
-#include <poll.h>
 #include <grp.h>
 
 #define MAJOR_VERSION 1
@@ -1170,7 +1169,7 @@ WaitFd(int fd, int event, int ms)
     pfd.events = event;
     pfd.revents = 0;
     do {
-        n = poll(&pfd, 1, ms);
+        n = ns_poll(&pfd, 1, ms);
     } while (n == -1 && errno == EINTR);
     if (n == -1) {
         n = 0;

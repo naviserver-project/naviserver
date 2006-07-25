@@ -1,3 +1,19 @@
+2006-07-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: New ns_proxy commands: send,wait,recv
+	* nsproxy/ns_prox.man:  Added [ns_proxy send,wait,recv]
+	* tests/ns_proxy.test:  Adjusted tests
+
+	* include/ns.h:         Added ns_poll() wrapper which defaults 
+	* include/nsthread.h:   to the platform implementation of
+	* nsd/driver.c:         poll() except on Darwin where our own
+	* nsd/nsd.h:            implmenentation is used. Replaced all
+	* nsd/nswin32.c:        internal uses of poll() with ns_poll().
+	* nsd/sock.c:
+	* nsd/sockcallback.c:
+	* nsd/unix.c:
+	* configure.in:
+
 2006-07-22  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsthread/pthread.c: Added definition of PTHREAD_STACK_MIN

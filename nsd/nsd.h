@@ -57,24 +57,6 @@
   #include <sys/mman.h>
 #endif  /* WIN32 */
 
-#ifdef HAVE_POLL
-  #include <poll.h>
-#else
-  #define POLLIN   001
-  #define POLLPRI  002
-  #define POLLOUT  004
-  #define POLLNORM POLLIN
-  #define POLLERR  010
-  #define POLLHUP  020
-  #define POLLNVAL 040
-  struct pollfd {
-      int fd;
-      short int events;
-      short int revents;
-  };
-  extern int poll(struct pollfd *, unsigned long, int);
-#endif
-
 #ifdef __linux
   #include <sys/prctl.h>
 #endif

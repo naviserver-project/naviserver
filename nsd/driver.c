@@ -1121,12 +1121,12 @@ DriverThread(void *ignored)
         pfds[0].revents = 0;
 
         do {
-            n = poll(pfds, nfds, pollto);
+            n = ns_poll(pfds, nfds, pollto);
         } while (n < 0  && errno == EINTR);
 
         if (n < 0) {
             errstr = ns_sockstrerror(ns_sockerrno);
-            Ns_Fatal("driver: poll() failed: %s", errstr);
+            Ns_Fatal("driver: ns_poll() failed: %s", errstr);
         }
 
         if ((pfds[0].revents & POLLIN)
@@ -1819,7 +1819,7 @@ SockSendResponse(Sock *sockPtr, int code)
  *
  * SockTrigger --
  *
- *      Wakeup DriversThread from blocking poll().
+ *      Wakeup DriversThread from blocking ns_poll().
  *
  * Results:
  *      None.
@@ -2434,10 +2434,10 @@ SpoolerThread(void *arg)
         pfds[0].revents = 0;
 
         do {
-            n = poll(pfds, nfds, pollto);
+            n = ns_poll(pfds, nfds, pollto);
         } while (n < 0  && errno == EINTR);
         if (n < 0) {
-            Ns_Fatal("driver: poll() failed: %s",
+            Ns_Fatal("driver: ns_poll() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
         if ((pfds[0].revents & POLLIN)
@@ -2641,10 +2641,10 @@ WriterThread(void *arg)
             pfds[0].revents = 0;
             pollto = 30 * 1000;  /* Wake up every 30 seconds just in case */
             do {
-                n = poll(pfds, 1, pollto);
+                n = ns_poll(pfds, 1, pollto);
             } while (n < 0  && errno == EINTR);
             if (n < 0) {
-                Ns_Fatal("driver: poll() failed: %s",
+                Ns_Fatal("driver: ns_poll() failed: %s",
                          ns_sockstrerror(ns_sockerrno));
             }
             if ((pfds[0].revents & POLLIN)

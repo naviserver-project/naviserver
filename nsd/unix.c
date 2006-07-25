@@ -598,7 +598,13 @@ Ns_GetGid(char *group)
     return retcode;
 }
 
-#ifndef HAVE_POLL
+#ifdef HAVE_POLL
+ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
+{
+    return poll(fds, nfds, timo);
+}
+#else
+
 /*
  * -----------------------------------------------------------------
  *  Copyright 1994 University of Washington
@@ -615,7 +621,7 @@ Ns_GetGid(char *group)
  */
 
 int
-poll(struct pollfd *fds, unsigned long int nfds, int timo)
+ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
 {
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;

@@ -2122,6 +2122,7 @@ NS_EXTERN void Ns_ReleaseTemp(int fd);
 
 NS_EXTERN int ns_sockpair(SOCKET *socks);
 NS_EXTERN int ns_pipe(int *fds);
+NS_EXTERN int ns_poll(struct pollfd *fds, unsigned long int nfds, int timo);
 NS_EXTERN int Ns_GetNameForUid(Ns_DString *dsPtr, int uid);
 NS_EXTERN int Ns_GetNameForGid(Ns_DString *dsPtr, int gid);
 NS_EXTERN int Ns_GetUserHome(Ns_DString *dsPtr, char *user);
