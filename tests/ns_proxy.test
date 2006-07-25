@@ -15,7 +15,7 @@ test ns_proxy-1.1 {basic syntax} -body {
 
 test ns_proxy-1.2 {basic syntax} -body {
     ns_proxy ?
-} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, active, free, handles, or clear}
+} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, active, free, handles, clear, send, wait, or recv}
 
 
 test ns_proxy-2.1 {configuration syntax} -body {
@@ -101,7 +101,7 @@ test ns_proxy-3.7 {get too many handles} -body {
 test ns_proxy-3.8 {get from pool disabled} -body {
     ns_proxy configure testpool -maxslaves 0
     ns_proxy get testpool
-} -returnCodes error -result {could not allocate from pool "testpool": pool disabled}
+} -returnCodes error -result {could not allocate from pool "testpool": insufficient handles}
 
 test ns_proxy-3.9 {get deadlock} -body {
     set ::errorCode ""
@@ -111,7 +111,7 @@ test ns_proxy-3.9 {get deadlock} -body {
     list $code $result $::errorCode
 } -cleanup {
     ns_proxy cleanup
-} -result {1 {interp already owns handles from pool "testpool"} {NSPROXY DEADLOCK {interp already owns handles}}}
+} -result {1 {could not allocate from pool "testpool": allocation deadlock} {NSPROXY EDeadlock {allocation deadlock}}}
 
 test ns_proxy-3.10 {get with timeout on pool} -body {
     ns_proxy configure testpool -gettimeout 100
@@ -123,7 +123,7 @@ test ns_proxy-3.10 {get with timeout on pool} -body {
 } -cleanup {
     ns_proxy cleanup
     ns_proxy configure testpool -gettimeout 0
-} -result {1 {could not allocate from pool "testpool": proxy timeout} {NSPROXY NOHANDLE {proxy timeout}}}
+} -result {1 {could not allocate from pool "testpool": timeout waiting for handle} {NSPROXY EGetTimeout {timeout waiting for handle}}}
 
 test ns_proxy-3.11 {get with timeout on command} -body {
     ns_proxy get testpool -handles 2
@@ -133,7 +133,7 @@ test ns_proxy-3.11 {get with timeout on command} -body {
     }]
 } -cleanup {
     ns_proxy cleanup
-} -result {1 {could not allocate from pool "testpool": proxy timeout} {NSPROXY NOHANDLE {proxy timeout}}}
+} -result {1 {could not allocate from pool "testpool": timeout waiting for handle} {NSPROXY EGetTimeout {timeout waiting for handle}}}
 
 test ns_proxy-3.12 {get with bad init} -body {
     ns_proxy clear testpool
@@ -178,7 +178,7 @@ test ns_proxy-4.3 {ping dead proxy} -body {
 } -cleanup {
     ns_proxy cleanup
     ns_proxy configure testpool -evaltimeout 0
-} -result {1 {proxy call failed: no running process} {NSPROXY DEAD {no running process}}}
+} -match glob -result {1 {could not send script "<empty>" to proxy "testpool-*": currently evaluating a script} {NSPROXY EBusy {currently evaluating a script}}}
 
 test ns_proxy-5.0 {eval over handle} -body {
     ns_proxy eval [ns_proxy get testpool] "set a 1"
@@ -199,21 +199,21 @@ test ns_proxy-5.2 {eval with pool timeout} -body {
 } -cleanup {
     ns_proxy configure testpool -evaltimeout 0
     ns_proxy cleanup
-} -result {1 {proxy call failed: timeout waiting for response} {NSPROXY TIMEOUT {timeout waiting for response}}}
+} -match glob -result {1 {wait for proxy "testpool-*" failed: timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.3 {eval with proxy timeout} -body {
     set code [catch {ns_proxy eval [ns_proxy get testpool] "after 2000" 1000} result]   
     list $code $result $::errorCode
 } -cleanup {
     ns_proxy cleanup
-} -result {1 {proxy call failed: timeout waiting for response} {NSPROXY TIMEOUT {timeout waiting for response}}}
+} -match glob -result {1 {wait for proxy "testpool-*" failed: timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.4 {eval with command timeout} -body {
     set code [catch {[ns_proxy get testpool] "after 2000" 1000} result] 
     list $code $result $::errorCode
 } -cleanup {
     ns_proxy cleanup
-} -result {1 {proxy call failed: timeout waiting for response} {NSPROXY TIMEOUT {timeout waiting for response}}}
+} -match glob -result {1 {wait for proxy "testpool-*" failed: timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.5 {eval with bad command timeout} -body {
     [ns_proxy get testpool] "after 2000" dummy
