@@ -34,12 +34,6 @@
  */
 
 #include "nsproxy.h"
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#else
-typedef unsigned int u_int32_t;
-typedef unsigned short int u_int16_t;
-#endif
 
 NS_RCSID("@(#) $Header$");
 
@@ -47,6 +41,14 @@ NS_RCSID("@(#) $Header$");
 
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 1
+
+#ifndef HAVE_U_INT32_T
+typedef unsigned int u_int32_t;
+#endif
+
+#ifndef HAVE_U_INT16_T
+typedef unsigned short int u_int16_t;
+#endif
 
 /*
  * The following structure defines a running proxy slave process.

@@ -150,6 +150,7 @@ AC_SUBST(NAVISERVER)
 
 AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h)
 AC_CHECK_TYPES(u_int32_t)
+AC_CHECK_TYPES(u_int16_t)
 AC_CHECK_TYPES(u_int8_t)
 AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv)
 AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD, 1, [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
