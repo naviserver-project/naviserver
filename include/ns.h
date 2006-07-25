@@ -38,9 +38,9 @@
 #ifndef NS_H
 #define NS_H
 
+#include "config.h"
 #include "nsversion.h"
 #include "nsthread.h"
-
 
 #ifdef NSD_EXPORTS
 # undef NS_EXTERN

@@ -34,7 +34,6 @@
  #define _GNU_SOURCE
 #endif
 
-#include "config.h"
 #include "ns.h"
 #include <assert.h>
 #include <sys/stat.h>
