@@ -34,6 +34,7 @@
  #define _GNU_SOURCE
 #endif
 
+#include "config.h"
 #include "ns.h"
 #include <assert.h>
 #include <sys/stat.h>
@@ -54,6 +55,7 @@
   #include <grp.h>
   #include <pthread.h>
   #include <sys/mman.h>
+  #include <poll.h>
 #endif  /* WIN32 */
 
 #ifdef __linux

@@ -38,7 +38,6 @@
 #ifndef NS_H
 #define NS_H
 
-#include "config.h"
 #include "nsversion.h"
 #include "nsthread.h"
 
@@ -178,6 +177,7 @@ typedef unsigned __int64	ns_uint64;
 typedef long long 		ns_int64;
 typedef unsigned long long	ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%lld"
+
 #endif
 
 typedef ns_int64 INT64;
