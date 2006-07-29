@@ -38,17 +38,11 @@
 NS_RCSID("@(#) $Header$");
 
 #include <grp.h>
+#include <poll.h>
+#include <sys/types.h>
 
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 1
-
-#ifndef HAVE_U_INT32_T
-typedef unsigned int u_int32_t;
-#endif
-
-#ifndef HAVE_U_INT16_T
-typedef unsigned short int u_int16_t;
-#endif
 
 /*
  * The following structure defines a running proxy slave process.
@@ -70,16 +64,16 @@ typedef struct Proc {
  */
 
 typedef struct Req {
-    u_int32_t len;
-    u_int16_t major;
-    u_int16_t minor;
+    uint32_t len;
+    uint16_t major;
+    uint16_t minor;
 } Req;
 
 typedef struct Res {
-    u_int32_t code;
-    u_int32_t clen;
-    u_int32_t ilen;
-    u_int32_t rlen;
+    uint32_t code;
+    uint32_t clen;
+    uint32_t ilen;
+    uint32_t rlen;
 } Res;
 
 /*
@@ -327,7 +321,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_DString  in, out;
     char        *script, *active, *dots;
     char        *uarg = NULL, *user = NULL, *group = NULL;
-    u_int16_t     major, minor;
+    uint16_t     major, minor;
 
     if (argc > 4 || argc < 3) {
         char *pgm = strrchr(argv[0], '/');
@@ -1055,7 +1049,7 @@ static int
 SendBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 {
     int          n;
-    u_int32_t    ulen;
+    uint32_t    ulen;
     struct iovec iov[2];
 
     ulen = htonl(dsPtr->length);
@@ -1099,7 +1093,7 @@ SendBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 static int
 RecvBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 {
-    u_int32_t    ulen;
+    uint32_t    ulen;
     char        *ptr;
     int          n, len, avail;
     struct iovec iov[2];
