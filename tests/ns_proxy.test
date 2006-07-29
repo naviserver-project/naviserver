@@ -8,7 +8,6 @@ namespace import -force ::tcltest::*
 
 eval ::tcltest::configure $argv
 
-
 test ns_proxy-1.1 {basic syntax} -body {
     ns_proxy
 } -returnCodes error -result {wrong # args: should be "ns_proxy option ?args"}
@@ -16,7 +15,6 @@ test ns_proxy-1.1 {basic syntax} -body {
 test ns_proxy-1.2 {basic syntax} -body {
     ns_proxy ?
 } -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, active, free, handles, clear, send, wait, or recv}
-
 
 test ns_proxy-2.1 {configuration syntax} -body {
     ns_proxy config
@@ -30,7 +28,7 @@ test ns_proxy-2.3 {configuration options types} -body {
     ns_proxy configure testpool -gettimeout dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-2.3 {configuration options types} -body {
+test ns_proxy-2.4 {configuration options types} -body {
     ns_proxy configure testpool -evaltimeout dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
@@ -38,23 +36,23 @@ test ns_proxy-2.5 {configuration options types} -body {
     ns_proxy configure testpool -recvtimeout dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-2.5 {configuration options types} -body {
+test ns_proxy-2.6 {configuration options types} -body {
     ns_proxy configure testpool -waittimeout dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-2.6 {configuration options types} -body {
+test ns_proxy-2.7 {configuration options types} -body {
     ns_proxy configure testpool -idletimeout dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-2.7 {configuration options types} -body {
+test ns_proxy-2.8 {configuration options types} -body {
     ns_proxy configure testpool -maxslaves dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-2.8 {configuration options types} -body {
+test ns_proxy-2.9 {configuration options types} -body {
     ns_proxy configure testpool -minslaves dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-2.9 {clear slaves basic syntax} -body {
+test ns_proxy-2.10 {clear slaves basic syntax} -body {
     ns_proxy clear a b
 } -returnCodes error -result {wrong # args: should be "ns_proxy clear ?pool?"}
 
@@ -104,7 +102,6 @@ test ns_proxy-3.8 {get from pool disabled} -body {
 } -returnCodes error -result {could not allocate from pool "testpool": insufficient handles}
 
 test ns_proxy-3.9 {get deadlock} -body {
-    set ::errorCode ""
     ns_proxy configure testpool -maxslaves 2
     ns_proxy get testpool
     set code [catch {ns_proxy get testpool} result]
@@ -152,7 +149,6 @@ test ns_proxy-3.13 {put with bad re-init} -body {
     ns_proxy cleanup
     ns_proxy configure testpool -reinit ""
 }  -returnCodes error -result {invalid command name "dummy"}
-
 
 test ns_proxy-4.0 {ping syntax} -body {
     ns_proxy ping
@@ -221,14 +217,6 @@ test ns_proxy-5.5 {eval with bad command timeout} -body {
     ns_proxy cleanup
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-5.5 {check active} -body {
-    set tid [ns_thread begin {[ns_proxy get testpool] "after 2000"}]
-    after 1000
-    ns_proxy active testpool
-} -cleanup {
-    ns_thread wait $tid
-} -match glob -result {testpool-* {after 2000}}
-
 test ns_proxy-5.6 {check active} -body {
     set tid [ns_thread begin {[ns_proxy get testpool] "after 2000"}]
     after 1000
@@ -237,6 +225,13 @@ test ns_proxy-5.6 {check active} -body {
     ns_thread wait $tid
 } -match glob -result {testpool-* {after 2000}}
 
+test ns_proxy-5.7 {check active} -body {
+    set tid [ns_thread begin {[ns_proxy get testpool] "after 2000"}]
+    after 1000
+    ns_proxy active testpool
+} -cleanup {
+    ns_thread wait $tid
+} -match glob -result {testpool-* {after 2000}}
 
 test ns_proxy-6.0 {free check} -body {
     ns_proxy configure testpool -maxslaves 5
@@ -250,7 +245,6 @@ test ns_proxy-6.0 {free check} -body {
 } -cleanup {
     ns_proxy cleanup
 } -result {4 3 2 1 0}
-
 
 ns_proxy cleanup
 ns_proxy clear

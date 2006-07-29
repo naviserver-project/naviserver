@@ -1,3 +1,10 @@
+2006-07-29  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: List of free proxies could get
+	corrupted under some circumstances. This has been fixed now.
+
+	* tests/ns_proxy.test: Fixed enumeration of tests.
+
 2006-07-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: New ns_proxy commands: send,wait,recv
