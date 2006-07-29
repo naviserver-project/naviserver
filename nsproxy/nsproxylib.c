@@ -234,24 +234,6 @@ static Proc    *firstClosePtr;  /* processes which are being closed. */
 
 static Ns_DString defexec;      /* Stores full path of the proxy executable */
 
-
-static int CHECKPOOL(Pool *poolPtr)
-{
-    Proxy *proxyPtr = poolPtr->firstPtr;
-    int nfree = poolPtr->nfree;
-
-    while (nfree > 0) {
-        nfree--;
-        proxyPtr = proxyPtr->nextPtr;
-    }
-
-    if (proxyPtr != NULL) {
-        char *dead = NULL;
-        strcpy(dead, "meat");
-    }
-
-    return 0;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -2024,9 +2006,6 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
                 *proxyPtrPtr = proxyPtr;
             }
             err = ENone;
-
-            CHECKPOOL(poolPtr);
-
         }
         poolPtr->waiting = 0;
         Ns_CondBroadcast(&poolPtr->cond);
@@ -2598,8 +2577,6 @@ PushProxy(Proxy *proxyPtr)
         CloseProxy(proxyPtr);
         FreeProxy(proxyPtr);
     }
-
-    CHECKPOOL(poolPtr);
 }
 
 
