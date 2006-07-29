@@ -184,6 +184,7 @@ static void   FreePool(Pool *poolPtr);
 
 static Proxy* CreateProxy(Pool *poolPtr);
 static Err    PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms);
+static void   PushProxy(Proxy *proxyPtr);
 static int    GetProxy(InterpData *idataPtr, char *proxyId, Proxy **proxyPtrPtr);
 
 static int    Eval(Tcl_Interp *interp, Proxy *proxyPtr, char *script, int ms);
@@ -193,7 +194,6 @@ static int    Recv(Tcl_Interp *interp, Proxy *proxyPtr);
 
 static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr);
 static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr);
-static void   PutProxy(Proxy *proxyPtr);
 static void   CloseProxy(Proxy *proxyPtr);
 static void   FreeProxy(Proxy *proxyPtr);
 static void   ResetProxy(Proxy *proxyPtr);
@@ -234,6 +234,24 @@ static Proc    *firstClosePtr;  /* processes which are being closed. */
 
 static Ns_DString defexec;      /* Stores full path of the proxy executable */
 
+
+static int CHECKPOOL(Pool *poolPtr)
+{
+    Proxy *proxyPtr = poolPtr->firstPtr;
+    int nfree = poolPtr->nfree;
+
+    while (nfree > 0) {
+        nfree--;
+        proxyPtr = proxyPtr->nextPtr;
+    }
+
+    if (proxyPtr != NULL) {
+        char *dead = NULL;
+        strcpy(dead, "meat");
+    }
+
+    return 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -683,7 +701,7 @@ Ns_ProxyGet(Tcl_Interp *interp, char *poolName, PROXY* handlePtr, int ms)
      */
 
     if (CheckProxy(interp, proxyPtr) != ENone) {
-        PutProxy(proxyPtr);
+        PushProxy(proxyPtr);
         Ns_CondBroadcast(&poolPtr->cond);
         return TCL_ERROR;
     }
@@ -713,7 +731,7 @@ Ns_ProxyGet(Tcl_Interp *interp, char *poolName, PROXY* handlePtr, int ms)
 void
 Ns_ProxyPut(PROXY handle)
 {
-    PutProxy((Proxy *)handle);
+    PushProxy((Proxy *)handle);
 }
 
 
@@ -1914,7 +1932,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     if (err != ENone) {
         while ((proxyPtr = firstPtr) != NULL) {
             firstPtr = proxyPtr->nextPtr;
-            PutProxy(proxyPtr);
+            PushProxy(proxyPtr);
         }
         Ns_CondBroadcast(&poolPtr->cond);
         return TCL_ERROR;
@@ -2006,6 +2024,9 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
                 *proxyPtrPtr = proxyPtr;
             }
             err = ENone;
+
+            CHECKPOOL(poolPtr);
+
         }
         poolPtr->waiting = 0;
         Ns_CondBroadcast(&poolPtr->cond);
@@ -2533,7 +2554,7 @@ FreePool(Pool *poolPtr)
 /*
  *----------------------------------------------------------------------
  *
- * PutProxy --
+ * PushProxy --
  *
  *      Return a proxy to the pool.
  *
@@ -2547,7 +2568,7 @@ FreePool(Pool *poolPtr)
  */
 
 static void
-PutProxy(Proxy *proxyPtr)
+PushProxy(Proxy *proxyPtr)
 {
     Pool *poolPtr = proxyPtr->poolPtr;
 
@@ -2561,24 +2582,24 @@ PutProxy(Proxy *proxyPtr)
         }
         proxyPtr->cntPtr = NULL;
     }
-
     Ns_MutexLock(&poolPtr->lock);
     poolPtr->nused--;
     poolPtr->nfree++;
-    if (poolPtr->max >= (poolPtr->nused + poolPtr->nfree)) {
-        if (poolPtr->firstPtr != NULL) {
-            proxyPtr->nextPtr = poolPtr->firstPtr;
-        }
+    if ((poolPtr->nused + poolPtr->nfree) <= poolPtr->max) {
+        proxyPtr->nextPtr = poolPtr->firstPtr;
         poolPtr->firstPtr = proxyPtr;
         proxyPtr = NULL;
+    } else {
+        poolPtr->nfree--;
     }
     Ns_CondBroadcast(&poolPtr->cond);
     Ns_MutexUnlock(&poolPtr->lock);
     if (proxyPtr != NULL) {
-        poolPtr->nfree--;
         CloseProxy(proxyPtr);
         FreeProxy(proxyPtr);
     }
+
+    CHECKPOOL(poolPtr);
 }
 
 
@@ -2620,7 +2641,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     }
 
     ResetProxy(proxyPtr);
-    PutProxy(proxyPtr);
+    PushProxy(proxyPtr);
 
     return result;
 }
