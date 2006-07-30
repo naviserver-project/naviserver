@@ -39,7 +39,16 @@ NS_RCSID("@(#) $Header$");
 
 #include <grp.h>
 #include <poll.h>
-#include <sys/types.h>
+
+/*
+ * It is pain in the neck to get a satisfactory definition of
+ * u_int_XX_t or uintXX_t as different OS'es do that in different
+ * header files and sometimes even do not define such types at all.
+ * We choose to define them ourselves here and stop the blues.
+ */
+
+typedef unsigned int   uint32;
+typedef unsigned short uint16;
 
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 1
@@ -64,16 +73,16 @@ typedef struct Proc {
  */
 
 typedef struct Req {
-    uint32_t len;
-    uint16_t major;
-    uint16_t minor;
+    uint32 len;
+    uint16 major;
+    uint16 minor;
 } Req;
 
 typedef struct Res {
-    uint32_t code;
-    uint32_t clen;
-    uint32_t ilen;
-    uint32_t rlen;
+    uint32 code;
+    uint32 clen;
+    uint32 ilen;
+    uint32 rlen;
 } Res;
 
 /*
@@ -321,7 +330,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_DString  in, out;
     char        *script, *active, *dots;
     char        *uarg = NULL, *user = NULL, *group = NULL;
-    uint16_t     major, minor;
+    uint16       major, minor;
 
     if (argc > 4 || argc < 3) {
         char *pgm = strrchr(argv[0], '/');
@@ -1049,7 +1058,7 @@ static int
 SendBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 {
     int          n;
-    uint32_t    ulen;
+    uint32       ulen;
     struct iovec iov[2];
 
     ulen = htonl(dsPtr->length);
@@ -1093,7 +1102,7 @@ SendBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 static int
 RecvBuf(Proc *procPtr, int ms, Tcl_DString *dsPtr)
 {
-    uint32_t    ulen;
+    uint32       ulen;
     char        *ptr;
     int          n, len, avail;
     struct iovec iov[2];
