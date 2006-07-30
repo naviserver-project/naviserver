@@ -1,3 +1,19 @@
+2006-07-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* include/nsthread.h: Removed declaration of things normally
+	declared in poll.h. We assume that all platforms that we 
+	support have poll implementation in place, thus include the
+	poll.h unconditionally.
+
+	* include/ns.h:
+	* nsd/nsd.h: config.h is now (again) only included in nsd.h
+	as it otherwise causes trouble when linking another TEA compatible
+	packages with the server as it re-declares PACKAGE_* stuff.
+
+	* nsproxy/nsproxylib.c: Do not use u_int8/16/32_t typedefs as
+	some platforms (Solaris) do not declare them; use uint8/16/32_t
+	instead as they are defined everywhere in sys/types.h.
+
 2006-07-29  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: List of free proxies could get

@@ -96,6 +96,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <sys/uio.h>
+#include <poll.h>
 
 #else
 
