@@ -151,7 +151,7 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
     }
     if (CloseHandle(process) != TRUE) {
         Ns_Log(Warning, "exec: failed to close handle for process %d: %s",
-	       pid, NsWin32ErrMsg(GetLastError()));
+               pid, NsWin32ErrMsg(GetLastError()));
         status = NS_ERROR;
     }
     if (status == NS_OK) {
@@ -165,39 +165,39 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
         }
     }
     return status;
-
+    
 #else
     char *coredump;
     int exitcode, status;
     pid_t p;
-
+    
     do {
-       p = waitpid(pid, &status, 0);
+        p = waitpid(pid, &status, 0);
     } while (p != pid && errno == EINTR);
     if (p != pid) {
         Ns_Log(Error, "waitpid(%d) failed: %s", pid, strerror(errno));
-	return NS_ERROR;
+        return NS_ERROR;
     }
     if (WIFSIGNALED(status)) {
     	coredump = "";
 #ifdef WCOREDUMP
         if (WCOREDUMP(status)) {
-	    coredump = " - core dumped";
-	}
+            coredump = " - core dumped";
+        }
 #endif
-        Ns_Log(Error, "process %d killed with signal %d%s", pid,
-	    WTERMSIG(status), coredump);
+        Ns_Log(Error, "process %d killed with signal %d (%s)%s", pid,
+               WTERMSIG(status), strsignal(WTERMSIG(status)), coredump);
     } else if (!WIFEXITED(status)) {
     	Ns_Log(Error, "waitpid(%d): invalid status: %d", pid, status);
     } else {
     	exitcode = WEXITSTATUS(status);
     	if (exitcode != 0) {
             Ns_Log(Warning, "process %d exited with non-zero exit code: %d",
-               pid, exitcode);
+                   pid, exitcode);
     	}
     	if (exitcodePtr != NULL) {
     	    *exitcodePtr = exitcode;
-	}
+        }
     }
     return NS_OK;
 #endif /* _WIN32 */
