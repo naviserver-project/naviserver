@@ -62,7 +62,10 @@ typedef struct Proc {
     struct Proc *nextPtr;
     int          rfd;
     int          wfd;
+    int          signal;
+    int          sigsent;
     pid_t        pid;
+    Ns_Time      stop;
     Ns_Time      expire;
 } Proc;
 
@@ -218,7 +221,7 @@ static void   SetOpt(char *str, char **optPtr);
 static void   ReaperThread(void *ignored);
 static void   CloseProc(Proc *procPtr);
 static void   ReapProxies(void);
-static void   Kill(char *pool, int pid, int sig);
+static void   Kill(int pid, int sig);
 
 static void   AppendStr(Tcl_Interp *interp, CONST char *flag, char *val);
 static void   AppendInt(Tcl_Interp *interp, CONST char *flag, int i);
@@ -355,6 +358,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     major = htons(MAJOR_VERSION);
     minor = htons(MINOR_VERSION);
     proc.pid = -1;
+
     proc.rfd = dup(0);
     if (proc.rfd < 0) {
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
@@ -371,9 +375,19 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     if (dup(2) != 1) {
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
+    
+    /*
+     * Make sure possible child processes do not inherit this one.
+     * As, when the user evalutes the "exec" command, the child 
+     * process(es) will otherwise inherit the descriptor and keep
+     * it open even if the proxy process is killed in the meantime.
+     * This will of course block the caller, possibly forever.
+     */
+
+    Ns_CloseOnExec(proc.wfd);
 
     /*
-     * Create the interp and initialize with user init proc, if any.
+     * Create the interp, initialize with user init proc, if any.
      */
 
     interp = Ns_TclCreateInterp();
@@ -476,7 +490,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
             Ns_Fatal("nsproxy: setuid(%d) failed: %s", uid, strerror(errno));
         }
     }
-    
+
     /*
      * Loop continuously processing proxy requests.
      */
@@ -1009,7 +1023,6 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr)
 {
     Pool        *poolPtr = proxyPtr->poolPtr;
     Proc        *procPtr = proxyPtr->procPtr;
-    Tcl_DString  out;
     int          result;
     Err          err = ENone;
 
@@ -1018,15 +1031,14 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr)
     } else if (proxyPtr->state == Busy) {
         err = ENoWait;
     } else {
-        Tcl_DStringInit(&out);
-        if (!RecvBuf(procPtr, poolPtr->trecv, &out)) {
+        Tcl_DStringTrunc(&proxyPtr->out, 0);
+        if (!RecvBuf(procPtr, poolPtr->trecv, &proxyPtr->out)) {
             err = ERecv;
-        } else if (Import(interp, &out, &result) != TCL_OK) {
+        } else if (Import(interp, &proxyPtr->out, &result) != TCL_OK) {
             err = EImport;
         } else {
             proxyPtr->state = Idle;
         }
-        Tcl_DStringFree(&out);
         ResetProxy(proxyPtr);
     }
     if (err != ENone) {
@@ -1171,10 +1183,10 @@ WaitFd(int fd, int event, int ms)
     int           n;
 
     pfd.fd = fd;
-    pfd.events = event;
-    pfd.revents = 0;
+    pfd.events = event | POLLPRI | POLLERR;
+    pfd.revents = pfd.events;
     do {
-        n = ns_poll(&pfd, 1, ms);
+        n = poll(&pfd, 1, ms);
     } while (n == -1 && errno == EINTR);
     if (n == -1) {
         n = 0;
@@ -1501,10 +1513,17 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
         break;
 
     case PHandlesIdx:
+        if (objc == 3) {
+            poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+        } else {
+            poolPtr = NULL;
+        }
         hPtr = Tcl_FirstHashEntry(&idataPtr->ids, &search);
         while (hPtr != NULL) {
             proxyPtr = (Proxy *)Tcl_GetHashValue(hPtr);
-            Tcl_AppendElement(interp, proxyPtr->id);
+            if (poolPtr == NULL || poolPtr == proxyPtr->poolPtr) {
+                Tcl_AppendElement(interp, proxyPtr->id);
+            }
             hPtr = Tcl_NextHashEntry(&search);
         }
         break;
@@ -2065,7 +2084,7 @@ GetPool(char *poolName, InterpData *idataPtr)
             poolPtr->tget  = 0;
             poolPtr->tsend = 5000;
             poolPtr->trecv = 5000;
-            poolPtr->twait = 500;
+            poolPtr->twait = 1000;
             poolPtr->max   = 4;
             poolPtr->min   = 0;
         } else {
@@ -2073,7 +2092,7 @@ GetPool(char *poolName, InterpData *idataPtr)
             poolPtr->tget  = Ns_ConfigInt(path, "gettimeout",  0);
             poolPtr->tsend = Ns_ConfigInt(path, "sendtimeout", 5000);
             poolPtr->trecv = Ns_ConfigInt(path, "recvtimeout", 5000);
-            poolPtr->twait = Ns_ConfigInt(path, "waittimeout", 500);
+            poolPtr->twait = Ns_ConfigInt(path, "waittimeout", 1000);
             poolPtr->max   = Ns_ConfigInt(path, "maxslaves", 4);
             poolPtr->min   = Ns_ConfigInt(path, "minslaves", 0);
         }
@@ -2176,8 +2195,7 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     Pool *poolPtr = proxyPtr->poolPtr;
     Err err = ENone;
 
-    if (proxyPtr->procPtr != NULL 
-        && Eval(interp, proxyPtr, NULL, -1) != TCL_OK) {
+    if (proxyPtr->procPtr && Eval(interp, proxyPtr, NULL, -1) != TCL_OK) {
         CloseProxy(proxyPtr);
         Tcl_ResetResult(interp);
     }
@@ -2213,7 +2231,7 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  *
  * Side effects:
  *      Puts the proc structure to the close list so the reaper thread
- *      can eventually close it.
+ *      can eventually close it. Assumes global lock is held.
  *
  *----------------------------------------------------------------------
  */
@@ -2221,7 +2239,24 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 static void
 CloseProc(Proc *procPtr)
 {
+    int ms = procPtr->poolPtr->twait;
+
+    /*
+     * Set the time to kill the process. This time us used
+     * for loop calculations in the reaper thread.
+     */
+
+    Ns_GetTime(&procPtr->stop);
+    Ns_IncrTime(&procPtr->stop, ms/1000, (ms%1000) * 1000);
+
     close(procPtr->wfd);
+    procPtr->signal  = 0;
+    procPtr->sigsent = 0;
+
+    /*
+     * Put on the head of the close list
+     */
+
     procPtr->nextPtr = firstClosePtr;
     firstClosePtr = procPtr;
 }
@@ -2273,10 +2308,8 @@ CloseProxy(Proxy *proxyPtr)
  */
 
 static void
-Kill(char *pool, int pid, int sig)
+Kill(int pid, int sig)
 {
-    Ns_Log(Warning, "[%s]: pid %d won't die - sending signal %d",
-           pool, pid, sig);
     if (kill((pid_t)pid, sig) != 0 && errno != ESRCH) {
         Ns_Log(Error, "kill(%d, %d) failed: %s", pid, sig, strerror(errno));
     }
@@ -2307,10 +2340,9 @@ ReaperThread(void *ignored)
     Tcl_HashSearch  search;
     Proxy          *proxyPtr, *prevPtr, *nextPtr;
     Pool           *poolPtr;
-    Proc           *procPtr;
+    Proc           *procPtr, *prevProcPtr, *tmpProcPtr;
     Ns_Time         tout, now, diff;
-    char           *poolname;
-    int             ms, zombie, expire, ntotal, fd, pid;
+    int             ms, expire, ntotal;
 
     Ns_MutexLock(&plock);
 
@@ -2323,144 +2355,182 @@ ReaperThread(void *ignored)
     while (1) {
 
         Ns_GetTime(&now);
-        
-        if (firstClosePtr == NULL) {
 
+        tout.sec  = INT_MAX;
+        tout.usec = LONG_MAX;
+
+        /*
+         * Check all proxy pools and see if there are 
+         * idle processes we can get rid off. Also 
+         * adjust the time to wait until the next
+         * run of the loop. 
+         */
+
+        hPtr = Tcl_FirstHashEntry(&pools, &search);
+        while (hPtr != NULL) {
+            
             /*
-             * Calculate maximum time to wait for any slave
-             * to become idle (i.e. its idle timer expires)
-             * and while here, prune excessive proxies.
+             * Get max time to wait for the whole pool
              */
-
-            tout.sec = INT_MAX;
-            tout.usec = LONG_MAX;
-
-            hPtr = Tcl_FirstHashEntry(&pools, &search);
-            while (hPtr != NULL) {
-
-                /*
-                 * Get max time to wait for the whole pool
-                 */
-
-                poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
-                Ns_MutexLock(&poolPtr->lock);
-                if (poolPtr->tidle) {
-                    diff = now;
-                    ms = poolPtr->tidle;
-                    Ns_IncrTime(&diff, ms/1000, (ms%1000) * 1000);
-                    if (Ns_DiffTime(&diff, &tout, NULL) < 0) {
-                        tout = diff;
-                    }
+            
+            poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
+            Ns_MutexLock(&poolPtr->lock);
+            if (poolPtr->tidle) {
+                diff = now;
+                ms = poolPtr->tidle;
+                Ns_IncrTime(&diff, ms/1000, (ms%1000) * 1000);
+                if (Ns_DiffTime(&diff, &tout, NULL) < 0) {
+                    tout = diff;
                 }
-
-                /*
-                 * Get max time to wait for one of the slaves.
-                 * This is less then time for the whole pool.
-                 */                
-
-                proxyPtr = poolPtr->firstPtr;
-                prevPtr = NULL;
-                while (proxyPtr != NULL) {
-                    nextPtr = proxyPtr->nextPtr;
-                    procPtr = proxyPtr->procPtr;
-                    ntotal  = poolPtr->nfree + poolPtr->nused;
-                    expire  = poolPtr->max < ntotal;
-                    if (procPtr) {
-                        if (Ns_DiffTime(&procPtr->expire, &tout, NULL) <= 0) {
-                            tout = procPtr->expire;
-                        }
-                        expire |= Ns_DiffTime(&procPtr->expire,&now,NULL) <= 0;
-                    }
-                    if (expire && poolPtr->min < ntotal) {
-
-                        /*
-                         * Excessive or timed-out slave; destroy
-                         */
-
-                        if (prevPtr != NULL) {
-                            prevPtr->nextPtr = proxyPtr->nextPtr;
-                        }
-                        if (proxyPtr == poolPtr->firstPtr) {
-                            poolPtr->firstPtr = proxyPtr->nextPtr;
-                        }
-                        if (procPtr) {
-                            CloseProc(procPtr);
-                        }
-                        FreeProxy(proxyPtr);
-                        proxyPtr = NULL;
-                        poolPtr->nfree--;
-
-                    } else if (expire) {
-
-                        /* 
-                         * The min constraint does not allow teardown
-                         * so re-set the expiry time for later 
-                         */
-
-                        SetExpire(procPtr);
-                    }
-                    if (proxyPtr != NULL) {
-                        prevPtr = proxyPtr;
-                    }
-                    proxyPtr = nextPtr;
-                }
-                Ns_MutexUnlock(&poolPtr->lock);
-                hPtr = Tcl_NextHashEntry(&search);
             }
+            
+            /*
+             * Get max time to wait for one of the slaves.
+             * This is less then time for the whole pool.
+             */                
+            
+            proxyPtr = poolPtr->firstPtr;
+            prevPtr = NULL;
+            while (proxyPtr != NULL) {
+                nextPtr = proxyPtr->nextPtr;
+                procPtr = proxyPtr->procPtr;
+                ntotal  = poolPtr->nfree + poolPtr->nused;
+                expire  = poolPtr->max < ntotal;
+                if (procPtr) {
+                    if (Ns_DiffTime(&procPtr->expire, &tout, NULL) <= 0) {
+                        tout = procPtr->expire;
+                    }
+                    expire |= Ns_DiffTime(&procPtr->expire,&now,NULL) <= 0;
+                }
+                if (expire && poolPtr->min < ntotal) {
+                    
+                    /*
+                     * Excessive or timed-out slave; destroy
+                     */
+                    
+                    if (prevPtr != NULL) {
+                        prevPtr->nextPtr = proxyPtr->nextPtr;
+                    }
+                    if (proxyPtr == poolPtr->firstPtr) {
+                        poolPtr->firstPtr = proxyPtr->nextPtr;
+                    }
+                    if (procPtr) {
+                        CloseProc(procPtr);
+                    }
+                    FreeProxy(proxyPtr);
+                    proxyPtr = NULL;
+                    poolPtr->nfree--;
+                    
+                } else if (expire) {
+                    
+                    /* 
+                     * The min constraint does not allow teardown
+                     * so re-set the expiry time for later 
+                     */
+                    
+                    SetExpire(procPtr);
+                }
+                if (proxyPtr != NULL) {
+                    prevPtr = proxyPtr;
+                }
+                proxyPtr = nextPtr;
+            }
+            Ns_MutexUnlock(&poolPtr->lock);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
 
-            if (Ns_DiffTime(&tout, &now, &diff) > 0) {
+        /*
+         * Check any closing procs. Also adjust the time
+         * to wait until the next run of the loop. 
+         */
 
+        procPtr = firstClosePtr;
+        prevProcPtr = NULL;
+
+        while (procPtr != NULL) {
+            if (Ns_DiffTime(&now, &procPtr->stop, NULL) > 0) {
+                
                 /*
-                 * No slaves expired yet. Wait until some
-                 * get closed or expired..
+                 * Stop time expired, add new quantum and signal
+                 * the process to exit. After one quantum has 
+                 * expired, be polite and try the TERM signal.
+                 * If this does not get the process down within
+                 * the second quantum, try the KILL signal.
+                 * If this does not get the process down within
+                 * the third quantum, abort - we have a zombie.
                  */
 
-                reaperState = Sleeping;
-                Ns_CondBroadcast(&pcond);
-                if (tout.sec == INT_MAX && tout.usec == LONG_MAX) {
-                    Ns_CondWait(&pcond, &plock);
+                Ns_IncrTime(&procPtr->stop, procPtr->poolPtr->twait/1000,
+                            (procPtr->poolPtr->twait%1000) * 1000);
+                switch (procPtr->signal) {
+                case 0:       procPtr->signal = SIGTERM; break;
+                case SIGTERM: procPtr->signal = SIGKILL; break;
+                case SIGKILL: procPtr->signal = -1;      break;
+                }
+            }
+            if (procPtr->signal == -1 || WaitFd(procPtr->rfd, POLLIN, 0)) {
+
+                /*
+                 * We either have a zombie or the process has exited ok
+                 * so splice it out the list.
+                 */
+                
+                if (procPtr->signal >= 0) {
+                    Ns_WaitProcess(procPtr->pid); /* Should not really wait */
                 } else {
-                    Ns_CondTimedWait(&pcond, &plock, &tout);
+                    Ns_Log(Warning, "zombie: %d", procPtr->pid);
                 }
-                if (reaperState == Stopping) {
-                    break;
+                if (prevProcPtr != NULL) {
+                    prevProcPtr->nextPtr = procPtr->nextPtr;
+                } else {
+                    firstClosePtr = procPtr->nextPtr;
                 }
-                reaperState = Running;
+
+                tmpProcPtr = procPtr->nextPtr;
+                close(procPtr->rfd);
+                ns_free(procPtr);
+                procPtr = tmpProcPtr;
+
+            } else {
+
+                /*
+                 * Process is still arround, try killing it but leave it
+                 * in the list. Calculate the latest time we'll visit 
+                 * this one again.
+                 */
+
+                if (Ns_DiffTime(&procPtr->stop, &tout, NULL) < 0) {
+                    tout = procPtr->stop;
+                }
+                if (procPtr->signal != procPtr->sigsent) {
+                    Ns_Log(Warning, "[%s]: pid %d won't die, send signal %d",
+                           procPtr->poolPtr->name,procPtr->pid,procPtr->signal);
+                    Kill(procPtr->pid, procPtr->signal);
+                    procPtr->sigsent = procPtr->signal;
+                }
+                prevProcPtr = procPtr;
+                procPtr = procPtr->nextPtr;
             }
         }
 
-        if (firstClosePtr != NULL) {
+        /*
+         * Here we wait until signalled or at most the
+         * time we need to expire next slave or kill
+         * some of them found on the close list.
+         */
 
-            /*
-             * Slave is on the close list, close it.
-             * Release mutex since this may take time.
-             */
-            
-            procPtr = firstClosePtr;
-            firstClosePtr = procPtr->nextPtr;
-            ms  = procPtr->poolPtr->twait;
-            fd  = procPtr->rfd;
-            pid = procPtr->pid;
-            poolname = procPtr->poolPtr->name;
-            Ns_MutexUnlock(&plock);
-            zombie = 0;
-            if (!WaitFd(fd, POLLIN, ms)) {
-                Kill(poolname, pid, 15 /* SIGTERM */);
-                if (!WaitFd(fd, POLLIN, ms)) {
-                    Kill(poolname, pid, 9 /* SIGKILL */);
-                    if (!WaitFd(fd, POLLIN, ms)) {
-                        zombie = 1;
-                    }
-                }
-            }
-            close(fd);
-            if (zombie == 0) {
-                Ns_WaitProcess(pid);
+        if (Ns_DiffTime(&tout, &now, &diff) > 0) {
+            reaperState = Sleeping;
+            Ns_CondBroadcast(&pcond);
+            if (tout.sec == INT_MAX && tout.usec == LONG_MAX) {
+                Ns_CondWait(&pcond, &plock);
             } else {
-                Ns_Log(Warning, "zombie: %d", pid);
+                Ns_CondTimedWait(&pcond, &plock, &tout);
             }
-            ns_free(procPtr);
-            Ns_MutexLock(&plock);
+            if (reaperState == Stopping) {
+                break;
+            }
+            reaperState = Running;
         }
     }
 
@@ -2605,7 +2675,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     int         result = TCL_OK;
     Tcl_CmdInfo cmdinfo;
 
-    if (proxyPtr->poolPtr->reinit != NULL) {
+    if (proxyPtr->state == Idle && proxyPtr->poolPtr->reinit != NULL) {
         result = Eval(interp, proxyPtr, proxyPtr->poolPtr->reinit, -1);
     }
     if (proxyPtr->cmdToken != NULL) {
@@ -2760,8 +2830,8 @@ DeleteData(ClientData arg, Tcl_Interp *interp)
  *
  * ReapProxies --
  *
- *      Wakes up the reaper thread and waits until it does its
- *      job and goes sleeping again.
+ *      Wakes up the reaper thread and waits until it does
+ *      it's job and goes sleeping again.
  *
  * Results:
  *      None.
@@ -2773,7 +2843,7 @@ DeleteData(ClientData arg, Tcl_Interp *interp)
  */
 
 static void
-ReapProxies(void)
+ReapProxies()
 {
     Ns_MutexLock(&plock);
     if (reaperState == Stopped) {
@@ -2826,6 +2896,7 @@ ResetProxy(Proxy *proxyPtr)
         proxyPtr->state = Idle;
     }
     Tcl_DStringTrunc(&proxyPtr->in, 0);
+    Tcl_DStringTrunc(&proxyPtr->out, 0);
 }
 
 /*
@@ -2892,7 +2963,7 @@ ProxyError(Tcl_Interp *interp, Err err)
         break;
     case EImport:
         code = "EImport";
-        msg = "invalided response";
+        msg = "invalid response";
         break;
     case EInit:
         code = "EInit";

@@ -1,3 +1,19 @@
+2006-08-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: Set pipes in the child proxy to
+	close-on-exec otherwise we may block forever if we 
+	attempt to kill the proxy running "exec" Tcl command.
+	
+	Redesigned reaper thread not to block the caller by
+	waiting on slave proxy processes to exit.
+
+	The [ns_proxy handle] command accepts one optional argument
+	which is interpreted as pool name and only those handles 
+	belonging to the given pool are reported.
+
+	* nsd/exec.c: Ns_WaitForProcess() logs also the signal name
+	in addition to signal number.
+
 2006-07-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/nsthread.h: Removed declaration of things normally
