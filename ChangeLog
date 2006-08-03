@@ -2,6 +2,11 @@
 
 	* nsproxy/nsproxylib.c: Define 30 seconds grace period
 	to wait for proxies cleanup on application exit.
+	Always use wrappers when operating on Tcl/Ns Dstrings.
+	The Ns_ProxyMain explicitly calls Tcl_FindExectuable()
+	so the default encoding is properly set. Otherwise troubles
+	arise when sending scripts containing paths which in turn
+	contain special multinational characters.
 
 	* nsproxy/nsproxymod.c: Calls Ns_ProxyExit with 30 secs
 	graceful timeout.

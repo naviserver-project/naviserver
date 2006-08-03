@@ -390,6 +390,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
      * Create the interp, initialize with user init proc, if any.
      */
 
+    Tcl_FindExecutable(argv[0]);
     interp = Ns_TclCreateInterp();
     if (init != NULL) {
         if ((*init)(interp) != TCL_OK) {
@@ -499,10 +500,10 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_DStringInit(&out);
 
     while (RecvBuf(&proc, -1, &in)) {
-        if (in.length < sizeof(Req)) {
+        if (Tcl_DStringLength(&in) < sizeof(Req)) {
             break;
         }
-        reqPtr = (Req *) in.string;
+        reqPtr = (Req *) Tcl_DStringValue(&in);
         if (reqPtr->major != major || reqPtr->minor != minor) {
             Ns_Fatal("nsproxy: version mismatch");
         }
@@ -510,7 +511,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         if (len == 0) {
             Export(NULL, TCL_OK, &out); 
         } else if (len > 0) {
-            script = in.string + sizeof(Req);
+            script = Tcl_DStringValue(&in) + sizeof(Req);
             if (active != NULL) {
                 n = len;
                 if (n < max) {
@@ -1501,8 +1502,9 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
         proxyPtr = poolPtr->runPtr;
         while (proxyPtr != NULL) {
             if (proxyPtr->state != Idle) {
+                char *str = Tcl_DStringValue(&proxyPtr->in) + sizeof(Req);
                 Tcl_AppendElement(interp, proxyPtr->id);
-                Tcl_AppendElement(interp, proxyPtr->in.string + sizeof(Req));
+                Tcl_AppendElement(interp, str);
             }
             proxyPtr = proxyPtr->nextPtr;
         }
@@ -2089,7 +2091,7 @@ GetPool(char *poolName, InterpData *idataPtr)
         if (path != NULL && (exec = Ns_ConfigGetValue(path, "exec")) != NULL) {
             SetOpt(exec, &poolPtr->exec);
         } else {
-            SetOpt(defexec.string, &poolPtr->exec);
+            SetOpt(Ns_DStringValue(&defexec), &poolPtr->exec);
         }
         if (path == NULL) {
             poolPtr->teval = 0;
@@ -2490,7 +2492,7 @@ ReaperThread(void *ignored)
                 if (procPtr->signal >= 0) {
                     Ns_WaitProcess(procPtr->pid); /* Should not really wait */
                 } else {
-                    Ns_Log(Warning, "nsproxy: zombie: %d", procPtr->pid);
+                    Ns_Log(Warning, "nsproxy: zombie: %d", (int)procPtr->pid);
                 }
                 if (prevProcPtr != NULL) {
                     prevProcPtr->nextPtr = procPtr->nextPtr;
@@ -2516,7 +2518,8 @@ ReaperThread(void *ignored)
                 }
                 if (procPtr->signal != procPtr->sigsent) {
                     Ns_Log(Warning, "[%s]: pid %d won't die, send signal %d",
-                           procPtr->poolPtr->name,procPtr->pid,procPtr->signal);
+                           procPtr->poolPtr->name, (int)procPtr->pid,
+                           (int)procPtr->signal);
                     Kill(procPtr->pid, procPtr->signal);
                     procPtr->sigsent = procPtr->signal;
                 }
