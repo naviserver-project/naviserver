@@ -525,7 +525,8 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
             result = Tcl_EvalEx(interp, script, len, 0);
             Export(interp, result, &out); 
             if (active != NULL) {
-                active[0] = '\0';
+                memset(active, ' ', max);
+                strcpy(active, "{<idle>}");
             }
         } else {
             Ns_Fatal("nsproxy: invalid length");
