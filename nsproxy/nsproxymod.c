@@ -52,12 +52,22 @@ static SrvMod srvmod;
 int
 Ns_ModuleInit(char *server, char *module)
 {
+    Ns_Time wait;
+
     srvmod.server = ns_strdup(server);
     srvmod.module = ns_strdup(module);
 
+    /*
+     * Wait somuch for the teardown of nsproxy processes
+     * at application exit.
+     */
+
+    wait.sec = 30;
+    wait.usec = 0;
+
     Ns_TclRegisterTrace(server, InitInterp, (void*)&srvmod, NS_TCL_TRACE_CREATE);
     Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
-    Ns_RegisterAtExit(Ns_ProxyExit, NULL);
+    Ns_RegisterAtExit(Ns_ProxyExit, (void*)&wait);
 
     return NS_OK;
 }

@@ -3,6 +3,9 @@
 	* nsproxy/nsproxylib.c: Define 30 seconds grace period
 	to wait for proxies cleanup on application exit.
 
+	* nsproxy/nsproxymod.c: Calls Ns_ProxyExit with 30 secs
+	graceful timeout.
+
 2006-08-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Set pipes in the child proxy to
