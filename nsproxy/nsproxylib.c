@@ -65,7 +65,6 @@ typedef struct Proc {
     int          signal;
     int          sigsent;
     pid_t        pid;
-    Ns_Time      stop;
     Ns_Time      expire;
 } Proc;
 
@@ -149,7 +148,7 @@ typedef struct Pool {
     Ns_Cond        cond;     /* Cond for use while allocating handles */
 } Pool;
 
-#define MIN_IDLE_TIMEOUT 1000 /* == 1 second */
+#define MIN_IDLE_TIMEOUT 10000 /* == 1 second */
 
 /*
  * The following enum lists all possible error conditions.
@@ -612,6 +611,8 @@ Ns_ProxyExit(void *arg)
      * If yes, we will leak memory on exit.
      */
 
+    Ns_Log(Notice, "nsproxy: shutdown started");
+
     Ns_MutexLock(&plock);
     hPtr = Tcl_FirstHashEntry(&pools, &search);
     while (hPtr != NULL) {
@@ -631,47 +632,48 @@ Ns_ProxyExit(void *arg)
         FreePool(poolPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
-    reap = (reaperState == Stopped && firstClosePtr != NULL);
+    reap = firstClosePtr != NULL || reaperState != Stopped;
     Tcl_DeleteHashTable(&pools);
     Ns_MutexUnlock(&plock);
 
-    /*
-     * If the reaper thread is not running, start it now
-     * so it can close proxies placed on the close list
-     * by the code above.
-     */
-
-    if (reap) {
-        ReapProxies();
+    if (!reap) {
+        Ns_Log(Notice, "nsproxy: shutdown complete");
+        return;
     }
 
     /*
-     * Now terminate the thread
+     * There is something on the close list. Start
+     * the reaper thread if not done already and
+     * wait for it to gracefully exit.
      */
-    
+
+    ReapProxies();
+
     toutPtr = (Ns_Time *) arg;
     if (toutPtr != NULL) {
         Ns_GetTime(&wait);
         Ns_IncrTime(&wait, toutPtr->sec, toutPtr->usec);
     }
 
+    Ns_Log(Notice, "nsproxy: shutdown pending");
+
     Ns_MutexLock(&plock);
-    if (reaperState != Stopped) {
-        reaperState = Stopping;
-        status = NS_OK;
-        Ns_CondSignal(&pcond);
-        while (reaperState != Stopped && status == NS_OK) {
-            if (toutPtr != NULL) {
-                status = Ns_CondTimedWait(&pcond, &plock, &wait);
-                if (status != NS_OK) {
-                    Ns_Log(Warning, "nsproxy: timeout waiting for reaper exit");
-                }
-            } else {
-                Ns_CondWait(&pcond, &plock);
+    reaperState = Stopping;
+    status = NS_OK;
+    Ns_CondSignal(&pcond);
+    while (reaperState != Stopped && status == NS_OK) {
+        if (toutPtr != NULL) {
+            status = Ns_CondTimedWait(&pcond, &plock, &wait);
+            if (status != NS_OK) {
+                Ns_Log(Warning, "nsproxy: timeout waiting for reaper exit");
             }
+        } else {
+            Ns_CondWait(&pcond, &plock);
         }
     }
     Ns_MutexUnlock(&plock);
+
+    Ns_Log(Notice, "nsproxy: shutdown complete");
 }
 
 
@@ -832,6 +834,8 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     procPtr->wfd = rpipe[1];
 
     SetExpire(procPtr);
+
+    Ns_Log(Debug, "nsproxy: slave %d started", procPtr->pid);
 
     return procPtr;
 }
@@ -2100,7 +2104,8 @@ GetPool(char *poolName, InterpData *idataPtr)
             poolPtr->tsend = 5000;
             poolPtr->trecv = 5000;
             poolPtr->twait = 1000;
-            poolPtr->max   = 4;
+            poolPtr->tidle = 5*60*1000;
+            poolPtr->max   = 8;
             poolPtr->min   = 0;
         } else {
             poolPtr->teval = Ns_ConfigInt(path, "evaltimeout", 0);
@@ -2108,7 +2113,8 @@ GetPool(char *poolName, InterpData *idataPtr)
             poolPtr->tsend = Ns_ConfigInt(path, "sendtimeout", 5000);
             poolPtr->trecv = Ns_ConfigInt(path, "recvtimeout", 5000);
             poolPtr->twait = Ns_ConfigInt(path, "waittimeout", 1000);
-            poolPtr->max   = Ns_ConfigInt(path, "maxslaves", 4);
+            poolPtr->tidle = Ns_ConfigInt(path, "idletimeout", 5*60*1000);
+            poolPtr->max   = Ns_ConfigInt(path, "maxslaves", 8);
             poolPtr->min   = Ns_ConfigInt(path, "minslaves", 0);
         }
         for (i = 0; i < poolPtr->max; i++) {
@@ -2229,6 +2235,9 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
             err = ENone;
             Tcl_ResetResult(interp);
         }
+        if (err != EExec) {
+            ReapProxies();
+        }
     }
 
     return err;
@@ -2259,10 +2268,11 @@ CloseProc(Proc *procPtr)
     /*
      * Set the time to kill the process. This time us used
      * for loop calculations in the reaper thread.
+     * Note that we use the expire timer for this purpose.
      */
 
-    Ns_GetTime(&procPtr->stop);
-    Ns_IncrTime(&procPtr->stop, ms/1000, (ms%1000) * 1000);
+    Ns_GetTime(&procPtr->expire);
+    Ns_IncrTime(&procPtr->expire, ms/1000, (ms%1000) * 1000);
 
     close(procPtr->wfd);
     procPtr->signal  = 0;
@@ -2274,6 +2284,8 @@ CloseProc(Proc *procPtr)
 
     procPtr->nextPtr = firstClosePtr;
     firstClosePtr = procPtr;
+
+    Ns_Log(Debug, "nsproxy: slace %d closed", procPtr->pid);
 }
 
 /*
@@ -2357,7 +2369,7 @@ ReaperThread(void *ignored)
     Pool           *poolPtr;
     Proc           *procPtr, *prevProcPtr, *tmpProcPtr;
     Ns_Time         tout, now, diff;
-    int             ms, expire, ntotal, indefinite;
+    int             ms, expire, ntotal;
 
     Ns_MutexLock(&plock);
 
@@ -2463,7 +2475,7 @@ ReaperThread(void *ignored)
         prevProcPtr = NULL;
 
         while (procPtr != NULL) {
-            if (Ns_DiffTime(&now, &procPtr->stop, NULL) > 0) {
+            if (Ns_DiffTime(&now, &procPtr->expire, NULL) > 0) {
                 
                 /*
                  * Stop time expired, add new quantum and signal
@@ -2475,7 +2487,7 @@ ReaperThread(void *ignored)
                  * the third quantum, abort - we have a zombie.
                  */
 
-                Ns_IncrTime(&procPtr->stop, procPtr->poolPtr->twait/1000,
+                Ns_IncrTime(&procPtr->expire, procPtr->poolPtr->twait/1000,
                             (procPtr->poolPtr->twait%1000) * 1000);
                 switch (procPtr->signal) {
                 case 0:       procPtr->signal = SIGTERM; break;
@@ -2514,8 +2526,8 @@ ReaperThread(void *ignored)
                  * this one again.
                  */
 
-                if (Ns_DiffTime(&procPtr->stop, &tout, NULL) < 0) {
-                    tout = procPtr->stop;
+                if (Ns_DiffTime(&procPtr->expire, &tout, NULL) < 0) {
+                    tout = procPtr->expire;
                 }
                 if (procPtr->signal != procPtr->sigsent) {
                     Ns_Log(Warning, "[%s]: pid %d won't die, send signal %d",
@@ -2537,14 +2549,13 @@ ReaperThread(void *ignored)
 
         if (Ns_DiffTime(&tout, &now, &diff) > 0) {
             reaperState = Sleeping;
-            indefinite  = (tout.sec == INT_MAX) && (tout.usec == LONG_MAX);
             Ns_CondBroadcast(&pcond);
-            if (indefinite) {
+            if (tout.sec == INT_MAX && tout.usec == LONG_MAX) {
                 Ns_CondWait(&pcond, &plock);
             } else {
                 Ns_CondTimedWait(&pcond, &plock, &tout);
             }
-            if (indefinite && reaperState == Stopping) {
+            if (reaperState == Stopping) {
                 break;
             }
             reaperState = Running;
