@@ -835,7 +835,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
 
     SetExpire(procPtr);
 
-    Ns_Log(Debug, "nsproxy: slave %d started", procPtr->pid);
+    Ns_Log(Debug, "nsproxy: slave %d started", (int) procPtr->pid);
 
     return procPtr;
 }
@@ -2285,7 +2285,7 @@ CloseProc(Proc *procPtr)
     procPtr->nextPtr = firstClosePtr;
     firstClosePtr = procPtr;
 
-    Ns_Log(Debug, "nsproxy: slace %d closed", procPtr->pid);
+    Ns_Log(Debug, "nsproxy: slave %d closed", (int) procPtr->pid);
 }
 
 /*
