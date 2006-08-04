@@ -1694,13 +1694,6 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
                         }
                         proxyPtr = proxyPtr->nextPtr;
                     }
-                    proxyPtr = poolPtr->runPtr;
-                    while (proxyPtr != NULL) {
-                        if (proxyPtr->procPtr) {
-                            SetExpire(proxyPtr->procPtr);
-                        }
-                        proxyPtr = proxyPtr->nextPtr;
-                    }
                     reap = 1;
                     break;
                 }
@@ -2668,6 +2661,7 @@ PushProxy(Proxy *proxyPtr)
     if ((poolPtr->nused + poolPtr->nfree) <= poolPtr->max) {
         proxyPtr->nextPtr = poolPtr->firstPtr;
         poolPtr->firstPtr = proxyPtr;
+        SetExpire(proxyPtr->procPtr);
         proxyPtr = NULL;
     } else {
         poolPtr->nfree--;
