@@ -38,7 +38,7 @@
 
 proc nstest_http {args} {
     ns_parseargs {
-        -setheaders -getheaders {-getbody 0} {-http 1.0} --
+        {-encoding "utf-8"} -setheaders -getheaders {-getbody 0} {-http 1.0} --
         method {url ""} {body ""}
     } $args
 
@@ -60,8 +60,8 @@ proc nstest_http {args} {
         return -code error $sockerr
     }
 
-    fconfigure $rfd -translation auto -encoding utf-8 -blocking 0
-    fconfigure $wfd -translation crlf -encoding utf-8 -blocking 1
+    fconfigure $rfd -translation auto -encoding $encoding -blocking 0
+    fconfigure $wfd -translation crlf -encoding $encoding -blocking 1
 
     if {[catch {
 
@@ -272,7 +272,7 @@ proc nstest_http_read {timeout sock length} {
         set nread $length
     }
 
-    read $sock $nread
+    return [read $sock $nread]
 }
 
 proc nstest_http_write {timeout sock string {length -1}} {

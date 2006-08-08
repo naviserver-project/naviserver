@@ -158,10 +158,10 @@ test tclresp-2.3 {ns_headers} -constraints serverListen -setup {
 test tclresp-3.1 {ns_return} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {ns_return 200 text/plain x ;#}
 } -body {
-    nstest_http -getbody 1 -getheaders {content-type content-length} GET /tclresp
+    nstest_http -getbody 1 -getheaders {content-length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain 1 x}
+} -result {200 1 x}
 
 test tclresp-3.2 {ns_return via spooler thread} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
@@ -208,10 +208,10 @@ test tclresp-4.1 {ns_respond} -constraints serverListen -setup {
 test tclresp-4.2 {ns_respond} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {ns_respond -type text/plain -string x ;#}
 } -body {
-    nstest_http -getbody 1 -getheaders {content-type content-length} GET /tclresp
+    nstest_http -getbody 1 -getheaders {content-length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain 1 x}
+} -result {200 1 x}
 
 test tclresp-4.3 {ns_respond} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {ns_respond -status 200 -string x ;#}
