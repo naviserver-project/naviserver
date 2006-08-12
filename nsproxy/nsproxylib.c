@@ -2364,13 +2364,13 @@ ReaperThread(void *ignored)
     Ns_Time         tout, now, diff;
     int             ms, expire, ntotal;
 
+    Ns_ThreadSetName("-nsproxy:reap-");
+    Ns_Log(Notice, "starting");
+
     Ns_MutexLock(&plock);
 
     reaperState = Running;
     Ns_CondSignal(&pcond); /* Wakeup starter thread */
-
-    Ns_ThreadSetName("-nsproxy:reap-");
-    Ns_Log(Notice, "starting");
 
     while (1) {
 
@@ -2557,10 +2557,11 @@ ReaperThread(void *ignored)
 
     reaperState = Stopped;
     Ns_CondSignal(&pcond);
-    Ns_Log(Notice, "exiting");
     Ns_MutexUnlock(&plock);
+
+    Ns_Log(Notice, "exiting");
 }
- 
+
 
 /*
  *----------------------------------------------------------------------
