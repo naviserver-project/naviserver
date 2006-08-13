@@ -1,6 +1,14 @@
 2006-08-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* tests/ns_proxy.test: Tst for [ns_proxy handles ?pool?]
+	* tests/ns_proxy.test: Test for [ns_proxy handles ?pool?]
+	* nsproxy/nsproxylib.c: Fixed PushProxy() to honour 
+	proxies without associated slave to be set for expiration.
+
+	* nsd/log.c: Rewritten caching of log entries to use 
+	separate caches for entry structures and log texts.
+	Attempt to stuff both in a dynamic string and cast
+	when needed did not work on some architectures because
+	of padding/alignment requirements.
 
 2006-08-12  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 

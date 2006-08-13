@@ -860,7 +860,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
 static void
 LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc)
 {
-    int          nentry = 0, offset = 0;
+    int          nentry = 0;
     char        *log;
     LogEntry    *ePtr;
     LogClbk     *cPtr;
