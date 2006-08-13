@@ -1,3 +1,22 @@
+2006-08-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* tests/ns_proxy.test: Tst for [ns_proxy handles ?pool?]
+
+2006-08-12  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: Removed Ns_Log calls outside the
+	global locks in ReaperThread as this may lead to deadlocks
+	in Ns_ProxyInit() when somebody registered Tcl callbacks
+	to the ns_log facility. If the current thread has never
+	loaded an Tcl interpreter (and the reaper thread does not
+	do that explicitly) one will be loaded at the latest at 
+	that point when first call to Ns_Log has been made and 
+	there is a Tcl callback registered. In this scenario, the
+	Ns_ProxyInit will be called by the server Tcl tracing
+	facility and this will lock the global proxy lock. If at
+	that time somebody is already holding the global lock, 
+	we'll have a deadlock.
+
 2006-08-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Improved teardown of nsproxy

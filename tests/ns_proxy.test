@@ -225,15 +225,7 @@ test ns_proxy-5.6 {check active} -body {
     ns_thread wait $tid
 } -match glob -result {testpool-* {after 2000}}
 
-test ns_proxy-5.7 {check active} -body {
-    set tid [ns_thread begin {[ns_proxy get testpool] "after 2000"}]
-    after 1000
-    ns_proxy active testpool
-} -cleanup {
-    ns_thread wait $tid
-} -match glob -result {testpool-* {after 2000}}
-
-test ns_proxy-6.0 {free check} -body {
+test ns_proxy-5.7 {check free} -body {
     ns_proxy configure testpool -maxslaves 5
     ns_proxy get testpool -handles 5
     set result ""
@@ -245,6 +237,17 @@ test ns_proxy-6.0 {free check} -body {
 } -cleanup {
     ns_proxy cleanup
 } -result {4 3 2 1 0}
+
+test ns_proxy-5.8 {check handles for pool} -body {
+    ns_proxy get testpool1
+    ns_proxy get testpool -handles 2
+    set a [llength [ns_proxy handles]]
+    set b [llength [ns_proxy handles testpool]]
+    set c [llength [ns_proxy handles testpool1]]
+    expr {$a == $b + $c}
+} -cleanup {
+    ns_proxy cleanup
+} -result {1}
 
 ns_proxy cleanup
 ns_proxy clear
