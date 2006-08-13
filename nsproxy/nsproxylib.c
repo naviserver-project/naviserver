@@ -2662,7 +2662,9 @@ PushProxy(Proxy *proxyPtr)
     if ((poolPtr->nused + poolPtr->nfree) <= poolPtr->max) {
         proxyPtr->nextPtr = poolPtr->firstPtr;
         poolPtr->firstPtr = proxyPtr;
-        SetExpire(proxyPtr->procPtr);
+        if (proxyPtr->procPtr) {
+            SetExpire(proxyPtr->procPtr);
+        }
         proxyPtr = NULL;
     } else {
         poolPtr->nfree--;
