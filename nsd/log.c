@@ -48,6 +48,20 @@ NS_RCSID("@(#) $Header$");
 #define LOG_USEC   0x04
 
 /*
+ * The following struct represents a log entry header as stored in 
+ * the per-thread cache. It is followed by a variable-length log 
+ * string as passed by the caller (format expanded).
+ */
+
+typedef struct LogEntry {
+    Ns_LogSeverity   severity;  /* Entry's severity */
+    Ns_Time          stamp;     /* Timestamp of the entry */
+    int              offset;    /* Offset into the text buffer */
+    int              length;    /* Length of the log message */
+    struct LogEntry *nextPtr;   /* Next in the list of entries */
+} LogEntry;
+
+/*
  * The following struct maintains per-thread cached log entries. 
  * The cache is a simple dynamic string where variable-length 
  * LogEntry'ies (see below) are appended, one after another.
@@ -55,25 +69,15 @@ NS_RCSID("@(#) $Header$");
 
 typedef struct LogCache {
     int         hold;         /* Flag: keep log entries in cache */
-    int         count;        /* Number of log entries kept in cache */
+    int         count;        /* Number of entries held in the cache */
     time_t      gtime;        /* For GMT time calculation */
     time_t      ltime;        /* For local time calculations */
     char        gbuf[100];    /* Buffer for GMT time string rep */
     char        lbuf[100];    /* Buffer for local time string rep */
-    Ns_DString  buffer;       /* The log entries cache */
+    LogEntry   *firstEntry;   /* First in the list of log entries */
+    LogEntry   *currEntry;    /* Current in the list of log entries */
+    Ns_DString  buffer;       /* The log entries cache text-cache */
 } LogCache;
-
-/*
- * The following struct represents a log entry header as stored in 
- * the per-thread cache. It is followed by a variable-length log 
- * string as passed by the caller (format expanded).
- */
-
-typedef struct LogEntry {
-    Ns_LogSeverity severity;  /* Entry's severity */
-    Ns_Time        stamp;     /* Timestamp of the entry */
-    int            loglen;    /* Length of the following log message */
-} LogEntry;
 
 /*
  * The following struct represents one registered log callback.
@@ -657,8 +661,6 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Ns_MutexLock(&lock);
         LogFlush(cachePtr, callbacks, -1, 1);
         Ns_MutexUnlock(&lock);
-        Ns_DStringSetLength(&cachePtr->buffer, 0);
-        cachePtr->count = 0;
         break;
 
     case CCountIdx:
@@ -778,9 +780,9 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 static void
 LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
 {
-    int       len;
+    int       length, offset;
     LogCache *cachePtr;
-    LogEntry *entryPtr, entry;
+    LogEntry *entryPtr = NULL;
 
     /*
      * Skip if logging for selected severity is disabled
@@ -796,19 +798,39 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
     cachePtr = GetCache();
 
     /*
-     * Append log entry record.
+     * Append new or reuse log entry record.
      */
 
-    len = Ns_DStringLength(&cachePtr->buffer);
-    Ns_DStringNAppend(&cachePtr->buffer, (void*)&entry, sizeof(LogEntry));
-    Ns_DStringVPrintf(&cachePtr->buffer, fmt, ap);
+    if (cachePtr->currEntry != NULL) {
+        entryPtr = cachePtr->currEntry->nextPtr;
+    } else {
+        entryPtr = cachePtr->firstEntry;
+    }
+    if (entryPtr == NULL) {
+        entryPtr = ns_malloc(sizeof(LogEntry));
+        entryPtr->nextPtr = NULL;
+        if (cachePtr->currEntry != NULL) {
+            cachePtr->currEntry->nextPtr = entryPtr;
+        } else {
+            cachePtr->firstEntry = entryPtr;
+        }
+    }
 
-    entryPtr = (LogEntry *)(Ns_DStringValue(&cachePtr->buffer) + len);
+    cachePtr->currEntry = entryPtr;
+    cachePtr->count++;
+
+    offset = Ns_DStringLength(&cachePtr->buffer);
+    Ns_DStringVPrintf(&cachePtr->buffer, fmt, ap);
+    length = Ns_DStringLength(&cachePtr->buffer) - offset;
+    
     entryPtr->severity = severity;
-    entryPtr->loglen = Ns_DStringLength(&cachePtr->buffer) - len - sizeof(LogEntry);
+    entryPtr->offset   = offset;
+    entryPtr->length   = length;
     Ns_GetTime(&entryPtr->stamp);
 
-    cachePtr->count++;
+    /*
+     * Flush it out if not held
+     */
 
     if (!cachePtr->hold) {
         Ns_MutexLock(&lock);
@@ -838,45 +860,50 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
 static void
 LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc)
 {
-    int          ii, len, upto, skip;
-    char        *log, *buf;
+    int          nentry = 0, offset = 0;
+    char        *log;
     LogEntry    *ePtr;
     LogClbk     *cPtr;
 
-    upto = (count < 0) ? cachePtr->count : count;
-    if (upto > cachePtr->count) {
-        upto = cachePtr->count;
-    }
-    for (len = 0, ii = 0, skip = 0; ii < upto; ii++) {
-        buf  = Ns_DStringValue(&cachePtr->buffer) + len;
-        log  = buf + sizeof(LogEntry);
-        ePtr = (LogEntry *)buf;
+    ePtr = cachePtr->firstEntry;
+    while (ePtr != NULL && cachePtr->currEntry) {
+        log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
         cPtr = listPtr;
         while (cPtr != NULL) {
-            if (cPtr->proc == NULL) {
-                skip++;
-            } else {
-                if ((*cPtr->proc)(cPtr->arg, ePtr->severity, &ePtr->stamp,
-                                  log, ePtr->loglen) == NS_ERROR) {
-                    /*
-                     * Callback signalized error. Per definition we will
-                     * skip invoking other registered callbacks. In such
-                     * case we must assure that the current log entry 
-                     * eventually gets written into some log sink, so we
-                     * use the default logfile sink.
-                     */
-                    LogToFile((void*)STDERR_FILENO, ePtr->severity,
-                              &ePtr->stamp, log, ePtr->loglen);
-                    break;
-                }
+            if (cPtr->proc && (*cPtr->proc)(cPtr->arg, ePtr->severity, 
+                                            &ePtr->stamp, log, 
+                                            ePtr->length) == NS_ERROR) {
+                /*
+                 * Callback signalized error. Per definition we will
+                 * skip invoking other registered callbacks. In such
+                 * case we must assure that the current log entry 
+                 * eventually gets written into some log sink, so we
+                 * use the default logfile sink.
+                 */
+                LogToFile((void*)STDERR_FILENO, ePtr->severity,
+                          &ePtr->stamp, log, ePtr->length);
+                break;
             }
             cPtr = cPtr->prevPtr;
         }
-        len += sizeof(LogEntry) + ePtr->loglen;
+        nentry++;
+        if ((count > 0 && nentry >= count) || ePtr == cachePtr->currEntry) {
+            break;
+        }
+        ePtr = ePtr->nextPtr;
     }
+
     if (trunc) {
-        cachePtr->count = skip;
-        Ns_DStringSetLength(&cachePtr->buffer, skip ? len : 0);
+        if (count > 0) {
+            int length = ePtr ? ePtr->offset + ePtr->length : 0;
+            cachePtr->count = length ? nentry : 0;
+            cachePtr->currEntry = ePtr;
+            Ns_DStringSetLength(&cachePtr->buffer, length);
+        } else {
+            cachePtr->count = 0;
+            cachePtr->currEntry = NULL;
+            Ns_DStringSetLength(&cachePtr->buffer, 0);
+        }
     }
 }
 
@@ -1057,11 +1084,17 @@ static void
 FreeCache(void *arg)
 {
     LogCache *cachePtr = (LogCache *)arg;
+    LogEntry *entryPtr, *tmpPtr;
 
     Ns_MutexLock(&lock);
     LogFlush(cachePtr, callbacks, -1, 1);
     Ns_MutexUnlock(&lock);
-
+    entryPtr = cachePtr->firstEntry;
+    while (entryPtr != NULL) {
+        tmpPtr = entryPtr->nextPtr;
+        ns_free(entryPtr);
+        entryPtr = tmpPtr;
+    }
     Ns_DStringFree(&cachePtr->buffer);
     ns_free(cachePtr);
 }
@@ -1301,6 +1334,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
          char *msg, int len)
 {
     int             ii, ret;
+    char            c;
     void           *logfile = (void *)STDERR_FILENO;
     Tcl_Obj        *stamp;
     Ns_DString      ds;
@@ -1331,8 +1365,11 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
     Ns_DStringAppend(&ds, cbPtr->script);
     Ns_DStringAppendElement(&ds, SeverityName(severity));
     Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
-    Ns_DStringAppendElement(&ds, msg);
     Tcl_DecrRefCount(stamp);
+    c = *(msg + len);
+    *(msg + len) = 0;
+    Ns_DStringAppendElement(&ds, msg);
+    *(msg + len) = c;
     for (ii = 0; ii < cbPtr->argc; ii++) {
         Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
     }
