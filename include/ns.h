@@ -458,6 +458,17 @@ typedef struct Ns_TclCallback {
 #ifdef _WIN32
 
 /*
+ * Windows does not have this declared.
+ * The defined value has no meaning.
+ * It just have to exist and it needs
+ * to be accepted by any strerror() call. 
+ */
+
+#ifndef ETIMEDOUT
+#define ETIMEDOUT 1
+#endif
+
+/*
  * The following structure defines an I/O
  * scatter/gather buffer for WIN32.
  */

@@ -2,6 +2,14 @@
 
 	* include/ns.h: Added definitions for poll() emulation
 	under Windows, as we do not include poll.h there.
+	Also, defined ETIMEDOUT so we get the compilation done.
+	The defined value for ETIMEDOUT has no other meaning
+	then to be accepted by eventual strerror() so we had
+	to "invent" something appropriate. Unfortunately the
+	build-in set of errno values in Windows does not seem
+	to have any "near" candidate to the Unix pendant so 
+	we just defined it to one (1). This way it will at least
+	work, albeit not have too much sense in error messages.
 
 2006-08-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
