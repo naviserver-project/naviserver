@@ -455,17 +455,35 @@ typedef struct Ns_TclCallback {
     char          **argv;
 } Ns_TclCallback;
 
+#ifdef _WIN32
+
 /*
  * The following structure defines an I/O
  * scatter/gather buffer for WIN32.
  */
 
-#ifdef _WIN32
 struct iovec {
     u_long      iov_len;     /* the length of the buffer */
     char FAR *  iov_base;    /* the pointer to the buffer */
 };
-#endif
+
+/*
+ * The following is for supporting
+ * our own poll() emulation.
+ */
+
+#define POLLIN  0x0001
+#define POLLPRI 0x0002
+#define POLLOUT 0x0004
+#define POLLERR 0x0008
+#define POLLHUP 0x0010
+struct pollfd {
+    int            fd;
+    unsigned short events;
+    unsigned short revents;
+};
+
+#endif /* _WIN32 */
 
 /*
  * The following structure defines a driver.
