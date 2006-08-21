@@ -205,7 +205,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
          || connPtr->responseStatus == 206
          || connPtr->responseStatus == 304)) {
         conn->flags &= ~NS_CONN_WRITE_CHUNKED;
-        Ns_SetIDeleteKey(conn->outputheaders, "Transfer-encoding");
+        Ns_SetIDeleteKey(conn->outputheaders, HTTP11_HDR_TE);
     }
 
     /*
@@ -213,7 +213,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     if (conn->flags & NS_CONN_WRITE_CHUNKED) {
-        Ns_ConnCondSetHeaders(conn, "Transfer-encoding", "chunked");
+        Ns_ConnCondSetHeaders(conn, HTTP11_HDR_TE, HTTP11_TE_CHUNKED);
         Ns_SetIDeleteKey(conn->outputheaders, "Content-length");
         connPtr->responseLength = 0;
     }
