@@ -1,3 +1,7 @@
+2006-08-26  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/http.tcl: Fixed http proxy bug, added simple ip access restrictions
+
 2006-08-21  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/return.c: Use our own defined macros HTTP11_HDR_TE

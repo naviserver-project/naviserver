@@ -573,21 +573,27 @@ proc _ns_http_getcontent {timeout sock length {copy 0}} {
 if {[ns_config -bool ns/server/[ns_info server] enablehttpproxy off]} {
     ns_register_proxy GET  http ns_proxy_handler_http
     ns_register_proxy POST http ns_proxy_handler_http
+    nsv_set ns:proxy allow [ns_config ns/server/[ns_info server] allowhttpproxy]
 }
 
 proc ns_proxy_handler_http {args} {
     
+    set ipaddr [ns_conn peeraddr]
+    set allow [nsv_get ns:proxy allow]
+    if { [lsearch -exact $allow $ipaddr] == -1 } {
+      ns_log Error ns_proxy_handler_http: access denied for [ns_conn peeraddr]
+      ns_returnnotfound
+    }
+
     set port [ns_conn port]
     if {$port == 0} {
         set port 80
     }
     set cont   [ns_conn content]
     set prot   [ns_conn protocol]
-    set mathod [ns_conn method]
+    set method [ns_conn method]
 
     set url $prot://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
-
-    ns_log notice "HTTP Proxy request: $method: $url: $cont"
 
     set fds [ns_httpopen $method $url [ns_conn headers] 30 $cont]
     set rfd [lindex $fds 0]
