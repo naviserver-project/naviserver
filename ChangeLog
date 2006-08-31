@@ -1,3 +1,8 @@
+2006-08-31  Stephen Deasey  <sd@groks.org>
+
+	* nsd/tclresp.c: Don't update the interp result directly as under
+	some circumstances it can be a shared object.
+
 2006-08-26  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/http.tcl: Fixed http proxy bug, added simple ip access restrictions

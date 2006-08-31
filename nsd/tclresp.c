@@ -731,7 +731,7 @@ WritevObjs(Tcl_Interp *interp, Ns_Conn *conn, int objc, Tcl_Obj *CONST objv[])
 static int
 Result(Tcl_Interp *interp, int result)
 {
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result == NS_OK ? 1 : 0);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result == NS_OK ? 1 : 0));
     return TCL_OK;
 }
 
