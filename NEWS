@@ -4,12 +4,163 @@ NaviServer 4.99.2, released XXXX-XX-XX
 
 New Features:
 
-    * Added Tcl-trace based interpreter initialization
-    * Added nsproxy module
+    * New lazy Tcl interpreter initialization option. Saves memory and speeds
+      intialisation of interp on first use by defining procs on-demand.
+      See: tcl/lazyloader parameter below.
+    * New module nsproxy executes Tcl scripts via pool of external
+      processes. Useful to keep buggy/non-thread-safe code issolated from
+      main server process. See also: ns_job.
+    * Log filter callbacks (Tcl and C) may be added to the error log stream
+      to handle particular kinds of log messages by e.g. logging to a seperate
+      file.
+    * New limits feature. Connection limits can be bundled together into a
+      named set of limits and then applied to a subset of the URL
+      hierarchy. The max number of connection threads running and waiting to
+      run a URL, the max upload file size, and the max time a connection
+      should wait to run are all configurable.
+      See ns/limits parameters below.
+    * ns_cache_create now takes a -maxentry switch limits the max size of an
+      entry allowed into the cache to prevent wasteful cache flushes.
+    * ns_cache_create now takes a -timeout switch which is the default timeout
+      for one thread to wait for another to complete an ns_cache_eval command,
+      if the -timeout switch is not given to the ns_cache_eval command itself.
+    * Time values passed to commands such as the -timeout switch of
+      ns_cache_eval now distinguish between an absolute time in the future and
+      an offset from the current time. A heuristic is used: large values are
+      absolute times in the future.
+    * A new [ns_cache_eval -force ...] switch replaces any existing cached value
+      whether it is up to date or not.
+    * A new ns_cache_stats -contents switch dumps the expirey and size of each
+      entry in the cache cache. Useful when developing / testing to check
+      utilisation.
+    * The new [ns_conn keepalive ?bool?] sub-command dissables or requests
+      keepalive behaviour for the current connection.
+    * ns_getcsv now takes a -delimiter switch.
+    * New [ns_ictl threads] and [ns_ictl cancel tid] commands to list
+      and cancle threads with active Tcl interps using the Tcl asynchronous
+      notification mechanism.
+      Warning: Tcl releases before 2006-07-11 are buggy and may crash(?).
+    * ns_parseargs: default values can now be specified with a leading '='
+      which signifies the value should be eval'ed to generate the default.
+    * Commands which timeout now set a NS_TIMEOUT Tcl error code, which if not
+      caught is reported as an HTTP 503 Unavailable response.
+    * Handle png images, as well as existing gif and jpg with new ns_img*
+      commands.
+    * New [ns_mutex eval script] to safely handle unlocking on error.
+    * Thread commands now takes names as well as thread-object references.
+
+
+Bug Fixes:
+
+    * Fix path attribute of HTP Cookie string.
+    * Make sure upload stats lock is unloacked after use.
+    * Fix crash in writer thread logging already freed data.
+    * Fix crashes in cache code due to incorrect expired entry flushing fixed.
+    * Only add cache commands to virtual server interps.
+    * Don't inflate flush-stats on cache eval error.
+    * Custom error documents (return redirects) now send back the correct HTTP
+    * response code. Used to always report 200, success.
+    * Make unsetting an environment variable work cross platform.
+    * Fix bug where executable name was freed before use.
+    * Don't delete bound Unix domain sockets.
+    * Fix typo in ns_setexpires command.
+    * Windows: block SIGPIPE.
+    * Windows: fix stdin, stdout, stderr channel initialisation.
+    * Fix infinite loop in spooler thread code.
+    * Message line-breaking of email bodies sent with ns_sendmail now works
+      correctly for non ASCII data.
+
+
+Configuration Changes:
+
+    Please update your server configuration files to take account of the
+    following new features and changes.
+
+    * Fastpath static page configuration is now a global setting rather then
+      per-server:
+
+      ns_section "ns/fastpath"
+      ns_param mmap          flase    ;# Use mmap(2) to read files from disk.
+      ns_param cache         false    ;# Cache file contents in memory.
+      ns_param cachemaxsize  10240000 ;# Size of file cache, if enabled.
+      ns_param cachemaxentry 8192     ;# Don't cache files larger than this.
+
+    * Global thread stacksize configuration deprecated. Server now uses OS
+      default. Only explicitly set the stacksize to some smaller than default
+      value if you need to save memory because your server has a lot of
+      threads, and you know for certain this won't cause problems with deeply
+      nested Tcl or ADP scripts.
+
+      ns_section "ns/parameters"      ;# or "ns/threads"
+      ns_param stacksize     100000   ;# DON'T DO THIS.
+
+    * The dnscachemaxentries config param has been renamed dnscachemaxsize to
+      more accurately reflect what the setting does. A new setting
+      dnswaittimeout has been added:
+
+      ns_section "ns/parameters"
+      ns_param dnscache        true   ;# Enable the DNS query cache.
+      ns_param dnscachemaxsize 512000 ;# Max memory for cache.
+      ns_param dnscachetimeout 60     ;# Minutes to cache a DNS query.
+      ns_param dnstimeout      5      ;# Seconds to wait for query answer.
+
+    * The buffer size used by the writer thread is now configurable:
+
+      ns_section "ns/server/server1/module/nssock"
+      ns_param writerbufsize   8192   ;# Read from file in bufsize chunks.
+
+    * The Tcl lazy loader may be enabled with the following parameter:
+
+      ns_section "ns/server/server1/tcl"
+      ns_param lazyloader      false  ;# Define procs in thread-interps on
+      demand.
+
+    * New sections for server limits:
+
+      ns_section "ns/limits"
+      ns_param default         "Default Limits" ;# Defines a limit.
+
+      ns_section "ns/limit/default"
+      ns_param maxrun          100       ;# Conn threads running for limit.
+      ns_param maxwait         100       ;# Conn threads waiting for limit.
+      ns_param maxupload       102400000 ;# Max size of file upload in bytes.
+      ns_param timeout         60        ;# Total seconds to wait for resources.
+
+      ns_section "ns/server/server1/limits"
+      ns_param default         "GET  /*" ;# Map default limit to URL.
+      ns_param default         "POST /*"
+      ns_param default         "HEAD /*"
+
 
 Code Changes:
 
-Bug Fixes:
+   * Experimental event driven IO API, Ns_Event*().
+   * New Ns_RegisterAtShutdown() proc handles notification of shutdown and
+     wait for completion with timeout.
+   * Make Ns_RegisterProxy() public, add ns_register_proxy command.
+   * Vectored IO support:
+
+       Ns_ConnSend() now sends all given buffers. Used to send 16 and silently
+       discard the rest.
+
+       Increase max iov buffs sent at once.
+
+       Expose iov functionality to higher layers with Ns_ConnWriteVChars(),
+       which handles character data, and Ns_ConnWriteV(), which manages data
+       streaming.
+
+       ns_write now takes a vector of buffers.
+
+   * Use *DStingSetLength() rather than *DStringTrunc() throughout code to try
+     and prevent excess malloc/free activity.
+
+   The following routines have been removed, deprecated or dissabled.
+
+   * Removed: Ns_RegisterServerShutdown(), Ns_RegisterAtServerShutdown(),
+     Ns_RegisterShutdown().
+     See: Ns_RegisterAtShutdown().
+   * Dissabled: Ns_LogSetLogFlushProc(), Ns_SetNsLogProc().
+     See: Ns_AddLogfilter(), Ns_RemoveLofFilter().
 
 
 ======================================
