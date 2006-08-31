@@ -24,6 +24,7 @@ test ns_base64decode-1.4 {basic syntax: plain call} -body {
 } -returnCodes error -result {wrong # args: should be "ns_base64decode string"}
 
 
+
 test ns_uuencode-2.1 {basic operation ns_uuencode} -body {
      ns_uuencode "true friends stab you in the front"
 } -result "dHJ1ZSBmcmllbmRzIHN0YWIgeW91IGluIHRoZSBmcm9udA=="
@@ -40,450 +41,45 @@ test ns_base64decode-3.2 {basic operation ns_base64decode} -body {
      ns_base64decode "dHJ1ZSBmcmllbmRzIHN0YWIgeW91IGluIHRoZSBmcm9udA=="
 } -result "true friends stab you in the front"
 
+test ns_base64encode-3.3 {line wrap at char 60} -body {
+     ns_base64encode "true friends stab you in the front one two three four five six seven eight nine"
+} -result "dHJ1ZSBmcmllbmRzIHN0YWIgeW91IGluIHRoZSBmcm9udCBvbmUgdHdvIHRo
+cmVlIGZvdXIgZml2ZSBzaXggc2V2ZW4gZWlnaHQgbmluZQ=="
 
-#test ns_uuencode-4.1 {basic operation: caused server abort} -body {
-#     ns_uuencode @
-#} -match "glob" -result "*"
+
+
+test ns_uuencode-4.1 {test crash bug...} -body {
+     ns_uuencode @
+} -result "QA=="
+
+
 
 test ns_guesstype-5.1 {basic syntax: ns_guesstype} -body {
      ns_guesstype
 } -returnCodes error -result {wrong # args: should be "ns_guesstype filename"}
 
-test ns_guesstype-5.2 {basic syntax: ns_guesstype} -body {
+test ns_guesstype-5.2 {no extension} -body {
      ns_guesstype x
 } -result "*/*"
 
-test ns_guesstype-6.1 {basic operation: ns_guesstype} -body {
-     ns_guesstype "filename.adp"
-} -match "glob" -result "text/html;*"
+test ns_guesstype-5.3 {no extension, path} -body {
+     ns_guesstype /x/y/z
+} -result "*/*"
 
-test ns_guesstype-6.2 {basic operation: ns_guesstype} -body {
-     ns_guesstype "filename.dci"
-} -match "glob" -result "text/html;*"
+test ns_guesstype-5.4 {path, extension} -body {
+     ns_guesstype /x/y/z.txt
+} -result "text/plain"
 
-test ns_guesstype-6.3 {basic operation: ns_guesstype} -body {
-     ns_guesstype "filename.htm"
-} -match "glob" -result "text/html;*"
 
-test ns_guesstype-6.4 {basic operation: ns_guesstype} -body {
+
+test ns_guesstype-6.1 {spot check: .html} -body {
      ns_guesstype "filename.html"
-} -match "glob" -result "text/html;*"
+} -match "glob" -result "text/html*"
 
-test ns_guesstype-6.5 {basic operation: ns_guesstype} -body {
-     ns_guesstype "filename.sht"
-} -match "glob" -result "text/html;*"
-
-test ns_guesstype-6.6 {basic operation: ns_guesstype} -body {
-     ns_guesstype "filename.shtml"
-} -match "glob" -result "text/html;*"
-
-test ns_guesstype-6.7 {basic operation: ns_guesstype with extension .323} -body {
-     ns_guesstype "filename.323"
-} -match "glob" -result "text/h323*"
-
-test ns_guesstype-6.8 {basic operation: ns_guesstype with extension .ai} -body {
-     ns_guesstype "filename.ai"
-} -match "glob" -result "application/postscript*"
-
-test ns_guesstype-6.9 {basic operation: ns_guesstype with extension .aif} -body {
-     ns_guesstype "filename.aif"
-} -match "glob" -result "audio/aiff*"
-
-test ns_guesstype-6.10 {basic operation: ns_guesstype with extension .aifc} -body {
-     ns_guesstype "filename.aifc"
-} -match "glob" -result "audio/aiff*"
-
-test ns_guesstype-6.11 {basic operation: ns_guesstype with extension .aiff} -body {
-     ns_guesstype "filename.aiff"
-} -match "glob" -result "audio/aiff*"
-
-test ns_guesstype-6.12 {basic operation: ns_guesstype with extension .ani} -body {
-     ns_guesstype "filename.ani"
-} -match "glob" -result "application/x-navi-animation*"
-
-test ns_guesstype-6.13 {basic operation: ns_guesstype with extension .art} -body {
-     ns_guesstype "filename.art"
-} -match "glob" -result "image/x-art*"
-
-test ns_guesstype-6.14 {basic operation: ns_guesstype with extension .asf} -body {
-     ns_guesstype "filename.asf"
-} -match "glob" -result "video/x-ms-asf*"
-
-test ns_guesstype-6.15 {basic operation: ns_guesstype with extension .asr} -body {
-     ns_guesstype "filename.asr"
-} -match "glob" -result "video/x-ms-asf*"
-
-test ns_guesstype-6.16 {basic operation: ns_guesstype with extension .asx} -body {
-     ns_guesstype "filename.asx"
-} -match "glob" -result "video/x-ms-asf*"
-
-test ns_guesstype-6.17 {basic operation: ns_guesstype with extension .atom} -body {
-     ns_guesstype "filename.atom"
-} -match "glob" -result "application/atom+xml*"
-
-test ns_guesstype-6.18 {basic operation: ns_guesstype with extension .au} -body {
-     ns_guesstype "filename.au"
-} -match "glob" -result "audio/basic*"
-
-test ns_guesstype-6.19 {basic operation: ns_guesstype with extension .avi} -body {
-     ns_guesstype "filename.avi"
-} -match "glob" -result "video/x-msvideo*"
-
-test ns_guesstype-6.20 {basic operation: ns_guesstype with extension .bin} -body {
-     ns_guesstype "filename.bin"
-} -match "glob" -result "application/x-macbinary*"
-
-test ns_guesstype-6.21 {basic operation: ns_guesstype with extension .bmp} -body {
-     ns_guesstype "filename.bmp"
-} -match "glob" -result "image/bmp*"
-
-test ns_guesstype-6.22 {basic operation: ns_guesstype with extension .cer} -body {
-     ns_guesstype "filename.cer"
-} -match "glob" -result "application/x-x509-ca-cert*"
-
-test ns_guesstype-6.23 {basic operation: ns_guesstype with extension .class} -body {
-     ns_guesstype "filename.class"
-} -match "glob" -result "application/octet-stream*"
-
-test ns_guesstype-6.24 {basic operation: ns_guesstype with extension .cpio} -body {
-     ns_guesstype "filename.cpio"
-} -match "glob" -result "application/x-cpio*"
-
-test ns_guesstype-6.25 {basic operation: ns_guesstype with extension .css} -body {
-     ns_guesstype "filename.css"
-} -match "glob" -result "text/css*"
-
-test ns_guesstype-6.26 {basic operation: ns_guesstype with extension .csv} -body {
-     ns_guesstype "filename.csv"
-} -match "glob" -result "text/csv*"
-
-test ns_guesstype-6.27 {basic operation: ns_guesstype with extension .dcr} -body {
-     ns_guesstype "filename.dcr"
-} -match "glob" -result "application/x-director*"
-
-test ns_guesstype-6.28 {basic operation: ns_guesstype with extension .der} -body {
-     ns_guesstype "filename.der"
-} -match "glob" -result "application/x-x509-ca-cert*"
-
-test ns_guesstype-6.29 {basic operation: ns_guesstype with extension .dia} -body {
-     ns_guesstype "filename.dia"
-} -match "glob" -result "application/x-dia*"
-
-test ns_guesstype-6.30 {basic operation: ns_guesstype with extension .dir} -body {
-     ns_guesstype "filename.dir"
-} -match "glob" -result "application/x-director*"
-
-test ns_guesstype-6.31 {basic operation: ns_guesstype with extension .doc} -body {
-     ns_guesstype "filename.doc"
-} -match "glob" -result "application/msword*"
-
-test ns_guesstype-6.32 {basic operation: ns_guesstype with extension .dot} -body {
-     ns_guesstype "filename.dot"
-} -match "glob" -result "application/msword*"
-
-test ns_guesstype-6.33 {basic operation: ns_guesstype with extension .dp} -body {
-     ns_guesstype "filename.dp"
-} -match "glob" -result "application/commonground*"
-
-test ns_guesstype-6.34 {basic operation: ns_guesstype with extension .dtd} -body {
-     ns_guesstype "filename.dtd"
-} -match "glob" -result "application/xml-dtd*"
-
-test ns_guesstype-6.35 {basic operation: ns_guesstype with extension .dxr} -body {
-     ns_guesstype "filename.dxr"
-} -match "glob" -result "application/x-director*"
-
-test ns_guesstype-6.36 {basic operation: ns_guesstype with extension .elm} -body {
-     ns_guesstype "filename.elm"
-} -match "glob" -result "text/plain*"
-
-test ns_guesstype-6.37 {basic operation: ns_guesstype with extension .eml} -body {
-     ns_guesstype "filename.eml"
-} -match "glob" -result "text/plain*"
-
-test ns_guesstype-6.38 {basic operation: ns_guesstype with extension .eps} -body {
-     ns_guesstype "filename.eps"
-} -match "glob" -result "application/postscript*"
-
-test ns_guesstype-6.39 {basic operation: ns_guesstype with extension .exe} -body {
-     ns_guesstype "filename.exe"
-} -match "glob" -result "application/octet-stream*"
-
-test ns_guesstype-6.40 {basic operation: ns_guesstype with extension .gbt} -body {
-     ns_guesstype "filename.gbt"
-} -match "glob" -result "text/plain*"
-
-test ns_guesstype-6.41 {basic operation: ns_guesstype with extension .gif} -body {
+test ns_guesstype-6.2 {spot check: .gif} -body {
      ns_guesstype "filename.gif"
-} -match "glob" -result "image/gif*"
+} -result "image/gif"
 
-test ns_guesstype-6.42 {basic operation: ns_guesstype with extension .gz} -body {
-     ns_guesstype "filename.gz"
-} -match "glob" -result "application/x-compressed*"
-
-test ns_guesstype-6.43 {basic operation: ns_guesstype with extension .h} -body {
-     ns_guesstype "filename.h"
-} -match "glob" -result "text/plain*"
-
-test ns_guesstype-6.44 {basic operation: ns_guesstype with extension .hqx} -body {
-     ns_guesstype "filename.hqx"
-} -match "glob" -result "application/mac-binhex40*"
-
-test ns_guesstype-6.45 {basic operation: ns_guesstype with extension .ico} -body {
-     ns_guesstype "filename.ico"
-} -match "glob" -result "image/x-icon*"
-
-test ns_guesstype-6.46 {basic operation: ns_guesstype with extension .ica} -body {
-     ns_guesstype "filename.ica"
-} -match "glob" -result "application/x-ica*"
-
-test ns_guesstype-6.47 {basic operation: ns_guesstype with extension .ics} -body {
-     ns_guesstype "filename.ics"
-} -match "glob" -result "text/calendar*"
-
-test ns_guesstype-6.48 {basic operation: ns_guesstype with extension .ifb} -body {
-     ns_guesstype "filename.ifb"
-} -match "glob" -result "text/calendar*"
-
-test ns_guesstype-6.49 {basic operation: ns_guesstype with extension .jar} -body {
-     ns_guesstype "filename.jar"
-} -match "glob" -result "application/x-java-archive*"
-
-test ns_guesstype-6.50 {basic operation: ns_guesstype with extension .jfif} -body {
-     ns_guesstype "filename.jfif"
-} -match "glob" -result "image/jpeg*"
-
-test ns_guesstype-6.51 {basic operation: ns_guesstype with extension .jng} -body {
-     ns_guesstype "filename.jng"
-} -match "glob" -result "image/x-jng*"
-
-test ns_guesstype-6.52 {basic operation: ns_guesstype with extension .jpe} -body {
-     ns_guesstype "filename.jpe"
-} -match "glob" -result "image/jpeg*"
-
-test ns_guesstype-6.53 {basic operation: ns_guesstype with extension .jpg} -body {
-     ns_guesstype "filename.jpg"
-} -match "glob" -result "image/jpeg*"
-
-test ns_guesstype-6.54 {basic operation: ns_guesstype with extension .jpeg} -body {
-     ns_guesstype "filename.jpeg"
-} -match "glob" -result "image/jpeg*"
-
-test ns_guesstype-6.55 {basic operation: ns_guesstype with extension .js} -body {
-     ns_guesstype "filename.js"
-} -match "glob" -result "application/x-javascript*"
-
-test ns_guesstype-6.56 {basic operation: ns_guesstype with extension .ls} -body {
-     ns_guesstype "filename.ls"
-} -match "glob" -result "application/x-javascript*"
-
-test ns_guesstype-6.57 {basic operation: ns_guesstype with extension .m3u} -body {
-     ns_guesstype "filename.m3u"
-} -match "glob" -result "audio/x-mpegurl*"
-
-test ns_guesstype-6.58 {basic operation: ns_guesstype with extension .m4a} -body {
-     ns_guesstype "filename.m4a"
-} -match "glob" -result "audio/mp4*"
-
-test ns_guesstype-6.59 {basic operation: ns_guesstype with extension .m4p} -body {
-     ns_guesstype "filename.m4p"
-} -match "glob" -result "audio/mp4*"
-
-test ns_guesstype-6.60 {basic operation: ns_guesstype with extension .man} -body {
-     ns_guesstype "filename.man"
-} -match "glob" -result "application/x-troff-man*"
-
-test ns_guesstype-6.61 {basic operation: ns_guesstype with extension .map} -body {
-     ns_guesstype "filename.map"
-} -match "glob" -result "application/x-navimap*"
-
-test ns_guesstype-6.62 {basic operation: ns_guesstype with extension .mdb} -body {
-     ns_guesstype "filename.mdb"
-} -match "glob" -result "application/x-msaccess*"
-
-test ns_guesstype-6.63 {basic operation: ns_guesstype with extension .mid} -body {
-     ns_guesstype "filename.mid"
-} -match "glob" -result "audio/x-midi*"
-
-test ns_guesstype-6.64 {basic operation: ns_guesstype with extension .midi} -body {
-     ns_guesstype "filename.midi"
-} -match "glob" -result "audio/x-midi*"
-
-test ns_guesstype-6.65 {basic operation: ns_guesstype with extension .mng} -body {
-     ns_guesstype "filename.mng"
-} -match "glob" -result "image/x-mng*"
-
-test ns_guesstype-6.66 {basic operation: ns_guesstype with extension .mocha} -body {
-     ns_guesstype "filename.mocha"
-} -match "glob" -result "application/x-javascript*"
-
-test ns_guesstype-6.67 {basic operation: ns_guesstype with extension .mov} -body {
-     ns_guesstype "filename.mov"
-} -match "glob" -result "video/quicktime*"
-
-test ns_guesstype-6.68 {basic operation: ns_guesstype with extension .mp2} -body {
-     ns_guesstype "filename.mp2"
-} -match "glob" -result "audio/mpeg*"
-
-test ns_guesstype-6.69 {basic operation: ns_guesstype with extension .mp3} -body {
-     ns_guesstype "filename.mp3"
-} -match "glob" -result "audio/mpeg*"
-
-test ns_guesstype-6.70 {basic operation: ns_guesstype with extension .mp4} -body {
-     ns_guesstype "filename.mp4"
-} -match "glob" -result "audio/mp4*"
-
-test ns_guesstype-6.71 {basic operation: ns_guesstype with extension .mpe} -body {
-     ns_guesstype "filename.mpe"
-} -match "glob" -result "video/mpeg*"
-
-test ns_guesstype-6.72 {basic operation: ns_guesstype with extension .mpeg} -body {
-     ns_guesstype "filename.mpeg"
-} -match "glob" -result "video/mpeg*"
-
-test ns_guesstype-6.73 {basic operation: ns_guesstype with extension .mpg} -body {
-     ns_guesstype "filename.mpg"
-} -match "glob" -result "video/mpeg*"
-
-test ns_guesstype-6.74 {basic operation: ns_guesstype with extension .mpga} -body {
-     ns_guesstype "filename.mpga"
-} -match "glob" -result "video/mpeg*"
-
-test ns_guesstype-6.75 {basic operation: ns_guesstype with extension .mpv2} -body {
-     ns_guesstype "filename.mpv2"
-} -match "glob" -result "video/mpeg*"
-
-test ns_guesstype-6.76 {basic operation: ns_guesstype with extension .mxu} -body {
-     ns_guesstype "filename.mxu"
-} -match "glob" -result "video/vnd.mpegurl*"
-
-test ns_guesstype-6.77 {basic operation: ns_guesstype with extension .nvd} -body {
-     ns_guesstype "filename.nvd"
-} -match "glob" -result "application/x-navidoc*"
-
-test ns_guesstype-6.78 {basic operation: ns_guesstype with extension .nvm} -body {
-     ns_guesstype "filename.nvm"
-} -match "glob" -result "application/x-navimap*"
-
-test ns_guesstype-6.79 {basic operation: ns_guesstype with extension .ogg} -body {
-     ns_guesstype "filename.ogg"
-} -match "glob" -result "application/ogg*"
-
-test ns_guesstype-6.80 {basic operation: ns_guesstype with extension .pbm} -body {
-     ns_guesstype "filename.pbm"
-} -match "glob" -result "image/x-portable-bitmap*"
-
-test ns_guesstype-6.81 {basic operation: ns_guesstype with extension .pdf} -body {
-     ns_guesstype "filename.pdf"
-} -match "glob" -result "application/pdf*"
-
-test ns_guesstype-6.82 {basic operation: ns_guesstype with extension .pgm} -body {
-     ns_guesstype "filename.pgm"
-} -match "glob" -result "image/x-portable-graymap*"
-
-test ns_guesstype-6.83 {basic operation: ns_guesstype with extension .pic} -body {
-     ns_guesstype "filename.pic"
-} -match "glob" -result "image/pict*"
-
-test ns_guesstype-6.84 {basic operation: ns_guesstype with extension .pict} -body {
-     ns_guesstype "filename.pict"
-} -match "glob" -result "image/pict*"
-
-test ns_guesstype-6.85 {basic operation: ns_guesstype with extension .pnm} -body {
-     ns_guesstype "filename.pnm"
-} -match "glob" -result "image/x-portable-anymap*"
-
-test ns_guesstype-6.86 {basic operation: ns_guesstype with extension .png} -body {
-     ns_guesstype "filename.png"
-} -match "glob" -result "image/png*"
-
-test ns_guesstype-6.87 {basic operation: ns_guesstype with extension .pot} -body {
-     ns_guesstype "filename.pot"
-} -match "glob" -result "application/vnd.ms-powerpoint*"
-
-test ns_guesstype-6.88 {basic operation: ns_guesstype with extension .pps} -body {
-     ns_guesstype "filename.pps"
-} -match "glob" -result "application/vnd.ms-powerpoint*"
-
-test ns_guesstype-6.89 {basic operation: ns_guesstype with extension .ppt} -body {
-     ns_guesstype "filename.ppt"
-} -match "glob" -result "application/vnd.ms-powerpoint*"
-
-test ns_guesstype-6.90 {basic operation: ns_guesstype with extension .ps} -body {
-     ns_guesstype "filename.ps"
-} -match "glob" -result "application/postscript*"
-
-test ns_guesstype-6.91 {basic operation: ns_guesstype with extension .pub} -body {
-     ns_guesstype "filename.pub"
-} -match "glob" -result "application/x-mspubllisher*"
-
-test ns_guesstype-6.92 {basic operation: ns_guesstype with extension .qt} -body {
-     ns_guesstype "filename.qt"
-} -match "glob" -result "video/quicktime*"
-
-test ns_guesstype-6.93 {basic operation: ns_guesstype with extension .ra} -body {
-     ns_guesstype "filename.ra"
-} -match "glob" -result "audio/x-pn-realaudio*"
-
-test ns_guesstype-6.94 {basic operation: ns_guesstype with extension .ram} -body {
-     ns_guesstype "filename.ram"
-} -match "glob" -result "audio/x-pn-realaudio*"
-
-test ns_guesstype-6.95 {basic operation: ns_guesstype with extension .ras} -body {
-     ns_guesstype "filename.ras"
-} -match "glob" -result "image/x-cmu-raster*"
-
-test ns_guesstype-6.96 {basic operation: ns_guesstype with extension .rdf} -body {
-     ns_guesstype "filename.rdf"
-} -match "glob" -result "application/rdf+xml*"
-
-test ns_guesstype-6.97 {basic operation: ns_guesstype with extension .rgb} -body {
-     ns_guesstype "filename.rgb"
-} -match "glob" -result "image/x-rgb*"
-
-test ns_guesstype-6.98 {basic operation: ns_guesstype with extension .rtf} -body {
-     ns_guesstype "filename.rtf"
-} -match "glob" -result "text/rtf*"
-
-test ns_guesstype-6.99 {basic operation: ns_guesstype with extension .rtx} -body {
-     ns_guesstype "filename.rtx"
-} -match "glob" -result "text/richtext*"
-
-test ns_guesstype-6.100 {basic operation: ns_guesstype with extension .rss} -body {
-     ns_guesstype "filename.rss"
-} -match "glob" -result "application/rss+xml*"
-
-test ns_guesstype-6.101 {basic operation: ns_guesstype with extension .sit} -body {
-     ns_guesstype "filename.sit"
-} -match "glob" -result "application/x-stuffit*"
-
-test ns_guesstype-6.102 {basic operation: ns_guesstype with extension .smi} -body {
-     ns_guesstype "filename.smi"
-} -match "glob" -result "application/smil*"
-
-test ns_guesstype-6.103 {basic operation: ns_guesstype with extension .smil} -body {
-     ns_guesstype "filename.smil"
-} -match "glob" -result "application/smil*"
-
-test ns_guesstype-6.104 {basic operation: ns_guesstype with extension .snd} -body {
-     ns_guesstype "filename.snd"
-} -match "glob" -result "audio/basic*"
-
-test ns_guesstype-6.105 {basic operation: ns_guesstype with extension .spx} -body {
-     ns_guesstype "filename.spx"
-} -match "glob" -result "application/ogg*"
-
-test ns_guesstype-6.106 {basic operation: ns_guesstype with extension .sql} -body {
-     ns_guesstype "filename.sql"
-} -match "glob" -result "application/x-sql*"
-
-test ns_guesstype-6.107 {basic operation: ns_guesstype with extension .stc} -body {
-     ns_guesstype "filename.stc"
-} -match "glob" -result "application/vnd.sun.xml.calc.template*"
-
-
-
- 
 
 
 cleanupTests

@@ -488,7 +488,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     static CONST char *opts[] = {
         "address", "argv0", "boottime", "builddate", "callbacks",
         "config", "home", "hostname", "locks", "log",
-        "major", "minor", "name", "nsd", "pageroot", "patchlevel",
+        "major", "minor", "mimetypes", "name", "nsd", "pageroot", "patchlevel",
         "pid", "platform", "pools", "scheduled", "server", "servers",
         "sockcallbacks", "tag", "tcllib", "threads", "uptime",
         "version", "winnt", "filters", "traces", "requestprocs",
@@ -498,7 +498,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     enum {
         IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
         IConfigIdx, IHomeIdx, IHostNameIdx, ILocksIdx, ILogIdx,
-        IMajorIdx, IMinorIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
+        IMajorIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
         IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
         ISockCallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
@@ -608,6 +608,11 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         
     case IMinorIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MINOR_VERSION));
+        return TCL_OK;
+
+    case IMimeIdx:
+        NsGetMimeTypes(&ds);
+        Tcl_DStringResult(interp, &ds);
         return TCL_OK;
         
     case IVersionIdx:

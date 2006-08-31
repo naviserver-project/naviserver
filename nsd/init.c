@@ -73,7 +73,6 @@ NsdInit(void)
     	NsInitListen();
         NsInitLimits();
     	NsInitInfo();
-    	NsInitMimeTypes();
     	NsInitModLoad();
     	NsInitProcInfo();
     	NsInitDrivers();

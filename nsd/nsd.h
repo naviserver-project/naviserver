@@ -922,7 +922,6 @@ extern void NsInitEncodings(void);
 extern void NsInitListen(void);
 extern void NsInitLog(void);
 extern void NsInitInfo(void);
-extern void NsInitMimeTypes(void);
 extern void NsInitModLoad(void);
 extern void NsInitProcInfo(void);
 extern void NsInitQueue(void);
@@ -936,7 +935,7 @@ extern void NsInitUrl2File(void);
 
 extern void NsConfigLog(void);
 extern void NsConfigFastpath();
-extern void NsUpdateMimeTypes(void);
+extern void NsConfigMimeTypes(void);
 extern void NsUpdateEncodings(void);
 extern void NsUpdateUrlEncode(void);
 
@@ -1000,6 +999,7 @@ extern Ns_ArgProc NsMountUrl2FileArgProc;
 extern void NsGetCallbacks(Tcl_DString *dsPtr);
 extern void NsGetSockCallbacks(Tcl_DString *dsPtr);
 extern void NsGetScheduled(Tcl_DString *dsPtr);
+extern void NsGetMimeTypes(Tcl_DString *dsPtr);
 extern void NsGetTraces(Tcl_DString *dsPtr, char *server);
 extern void NsGetFilters(Tcl_DString *dsPtr, char *server);
 extern void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);

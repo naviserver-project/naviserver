@@ -159,9 +159,9 @@ NsConfUpdate(void)
 
     NsConfigLog();
     NsConfigFastpath();
+    NsConfigMimeTypes();
 
     NsUpdateEncodings();
-    NsUpdateMimeTypes();
     NsUpdateUrlEncode();
 
     /*

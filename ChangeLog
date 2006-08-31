@@ -1,5 +1,15 @@
 2006-08-31  Stephen Deasey  <sd@groks.org>
 
+	* nsd/nsd.h:
+	* nsd/info.c:
+	* nsd/init.c:
+	* nsd/mimetypes.c:
+	* nsd/nsconf.c:
+	* tests/ns_info.test:
+	* tests/ns_mime.test: Merge in the mime-types from contrib. Add
+	new command ns_info mimetypes which returns the list of file
+	extension to mime-type mappings at runtime.
+
 	* nsd/tclresp.c: Don't update the interp result directly as under
 	some circumstances it can be a shared object.
 
