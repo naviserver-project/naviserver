@@ -1,3 +1,10 @@
+2006-09-04  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c: Silence compiler warning and removed
+	limitation in the DriverThread/SpoolerThread during queueing read sockets, if
+	one failed to queue it will not skip queuing other read sock but will try
+	to submit all
+
 2006-08-31  Stephen Deasey  <sd@groks.org>
 
 	* NEWS: Update with some of the latest changes. Added a new

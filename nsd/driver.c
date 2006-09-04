@@ -1234,18 +1234,9 @@ DriverThread(void *ignored)
                 Push(nextPtr, sockPtr);
             }
 
-            /*
-             * Hint: NsQueueConn may fail to queue a certain
-             * socket to the designated connection queue.
-             * In such case, ALL ready sockets will be put on
-             * the waiting list until the next interation,
-             * regardless of which connection queue they are
-             * to be queued.
-             */
-
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (waitPtr != NULL || SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+                if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                     Push(sockPtr, waitPtr);
                 }
                 sockPtr = nextPtr;
@@ -1798,14 +1789,15 @@ SockSendResponse(Sock *sockPtr, int code)
     char *response;
 
     switch (code) {
-    case 400:
-        response = "HTTP/1.0 400 Bad Request\r\n\r\n";
-        break;
     case 413:
         response = "HTTP/1.0 413 Bad Request\r\n\r\n";
         break;
     case 414:
         response = "HTTP/1.0 414 Request-URI Too Long\r\n\r\n";
+        break;
+    case 400:
+    default:
+        response = "HTTP/1.0 400 Bad Request\r\n\r\n";
         break;
     }
     iov.iov_base = response;
@@ -2501,7 +2493,7 @@ SpoolerThread(void *arg)
             }
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (waitPtr != NULL || !NsQueueConn(sockPtr, &now)) {
+                if (!NsQueueConn(sockPtr, &now)) {
                     Push(sockPtr, waitPtr);
                 }
                 sockPtr = nextPtr;
