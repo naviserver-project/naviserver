@@ -5,6 +5,9 @@
 	one failed to queue it will not skip queuing other read sock but will try
 	to submit all
 
+	* tests/testserver/modules/testhttp.tcl: Make nstest_http chunked-encoding aware
+        i.e. it will concatenate all chunk sinto single body which will be returned. 
+
 2006-08-31  Stephen Deasey  <sd@groks.org>
 
 	* NEWS: Update with some of the latest changes. Added a new
