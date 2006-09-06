@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -42,7 +42,7 @@ NS_RCSID("@(#) $Header$");
  * Local functions defined in this file.
  */
 
-static char *GetFile(char *procname);
+static Tcl_Obj *GetFile(char *procname);
 
 
 /*
@@ -64,28 +64,30 @@ static char *GetFile(char *procname);
 void
 NsCreatePidFile(char *procname)
 {
+    Tcl_Obj     *path;
     Tcl_Channel  chan;
     int          towrite;
-    char        *file, buf[10];
+    char         buf[10];
 
-    file = GetFile(procname);
-    chan = Tcl_OpenFileChannel(NULL, file, "w", 0644);
+    path = GetFile(procname);
+    chan = Tcl_OpenFileChannel(NULL, Tcl_GetString(path), "w", 0644);
     if (chan == NULL) {
     	Ns_Log(Error, "pidfile: failed to open pid file '%s': '%s'",
-               file, strerror(Tcl_GetErrno()));
+               Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else if (Tcl_SetChannelOption(NULL, chan, "-translation", "binary")
                != TCL_OK) {
     	Ns_Log(Error, "pidfile: failed to set channel option '%s': '%s'",
-               file, strerror(Tcl_GetErrno()));
+               Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else {
         sprintf(buf, "%d\n", nsconf.pid);
         towrite = strlen(buf);
         if (Tcl_WriteChars(chan, buf, towrite) != towrite) {
-            Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'", 
-                   file, strerror(Tcl_GetErrno()));
+            Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'",
+                   Tcl_GetString(path), strerror(Tcl_GetErrno()));
         }
         Tcl_Close(NULL, chan);
     }
+    Tcl_DecrRefCount(path);
 }
 
 /*
@@ -108,37 +110,31 @@ void
 NsRemovePidFile(char *procname)
 {
     Tcl_Obj *path;
-    char    *file;
-    
-    file = GetFile(procname);
-    path = Tcl_NewStringObj(file, -1);
+
+    path = GetFile(procname);
     Tcl_IncrRefCount(path);
     if (Tcl_FSDeleteFile(path) != 0) {
     	Ns_Log(Error, "pidfile: failed to remove '%s': '%s'",
-               file, strerror(Tcl_GetErrno()));
+               Tcl_GetString(path), strerror(Tcl_GetErrno()));
     }
     Tcl_DecrRefCount(path);
 }
 
-static char *
+static Tcl_Obj *
 GetFile(char *procname)
 {
-    /*
-     * FIXME: MT-UNSAFE
-     */
+    char *file;
+    Tcl_Obj *path;
 
-    static char *file;
-    
+    file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "pidfile");
     if (file == NULL) {
-    	file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "pidfile");
-        if (file == NULL) {
-    	    Ns_DString ds;
-            Ns_DStringInit(&ds);
-            Ns_HomePath(&ds, "log/nspid.", NULL);
-            Ns_DStringAppend(&ds, procname);
-            file = Ns_DStringExport(&ds);
-        }
+        Ns_DString ds;
+        Ns_DStringInit(&ds);
+        Ns_HomePath(&ds, "logs/nsd.pid", NULL);
+        path = Tcl_NewStringObj(ds.string, -1);
+        Ns_DStringFree(&ds);
+    } else {
+        path = Tcl_NewStringObj(file, -1);
     }
-
-    return file;
+    return path;
 }

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -48,8 +48,8 @@ NS_RCSID("@(#) $Header$");
 #define LOG_USEC   0x04
 
 /*
- * The following struct represents a log entry header as stored in 
- * the per-thread cache. It is followed by a variable-length log 
+ * The following struct represents a log entry header as stored in
+ * the per-thread cache. It is followed by a variable-length log
  * string as passed by the caller (format expanded).
  */
 
@@ -62,8 +62,8 @@ typedef struct LogEntry {
 } LogEntry;
 
 /*
- * The following struct maintains per-thread cached log entries. 
- * The cache is a simple dynamic string where variable-length 
+ * The following struct maintains per-thread cached log entries.
+ * The cache is a simple dynamic string where variable-length
  * LogEntry'ies (see below) are appended, one after another.
  */
 
@@ -87,7 +87,7 @@ typedef struct LogCache {
  */
 
 typedef struct LogClbk {
-    Ns_LogFilter    *proc;    /* User-given function for generating logs */ 
+    Ns_LogFilter    *proc;    /* User-given function for generating logs */
     Ns_Callback     *free;    /* User-given function to free passed arg */
     void            *arg;     /* Argument passed to proc and free */
     struct LogClbk  *nextPtr; /* Maintains double linked list */
@@ -280,7 +280,7 @@ Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
  * Ns_Fatal --
  *
  *      Send a message to the server log with severity level Fatal,
- *      and then exit the nsd process cleanly. 
+ *      and then exit the nsd process cleanly.
  *
  * Results:
  *      None.
@@ -332,7 +332,7 @@ char *
 Ns_LogTime2(char *timeBuf, int gmt)
 {
     Ns_Time now;
-    
+
     Ns_GetTime(&now);
     return strcpy(timeBuf, LogTime(GetCache(), &now, gmt));
 }
@@ -434,7 +434,7 @@ Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg)
  *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -488,10 +488,10 @@ NsConfigLog(void)
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
     maxlevel = Ns_ConfigInt(path, "logmaxlevel", INT_MAX);
 
-    file = Ns_ConfigString(path, "serverlog", "server.log");
+    file = Ns_ConfigString(path, "serverlog", "nsd.log");
     if (!Ns_PathIsAbsolute(file)) {
         Ns_DStringInit(&ds);
-        Ns_HomePath(&ds, "log", file, NULL);
+        Ns_HomePath(&ds, "logs", file, NULL);
         file = Ns_DStringExport(&ds);
     }
 }
@@ -549,7 +549,7 @@ NsLogOpen(void)
  */
 
 int
-NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     if (Ns_LogRoll() != NS_OK) {
@@ -577,7 +577,7 @@ NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
     int             count, opt, i, bool;
@@ -587,11 +587,11 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     LogClbk         clbk, *clbkPtr = &clbk;
 
     static CONST char *opts[] = {
-        "hold", "count", "get", "peek", "flush", "release", 
+        "hold", "count", "get", "peek", "flush", "release",
         "truncate", "severity", "register", "unregister", NULL
     };
     enum {
-        CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx, 
+        CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx,
         CTruncIdx, CSeverityIdx, CRegisterIdx, CUnregisterIdx
     };
 
@@ -622,7 +622,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
             return TCL_ERROR;
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], logClbkAddr, 
+        if (Ns_TclGetAddrFromObj(interp, objv[2], logClbkAddr,
                                  (void *)&clbkPtr) != TCL_OK) {
             return TCL_ERROR;
         }
@@ -633,7 +633,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         cachePtr->hold = 1;
         break;
 
-    case CPeekIdx: 
+    case CPeekIdx:
         memset(clbkPtr, 0, sizeof(LogClbk));
         clbkPtr->proc = LogToDString;
         clbkPtr->arg  = (void*)&ds;
@@ -720,7 +720,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                Tcl_Obj *CONST objv[])
 {
     Ns_LogSeverity severity;
@@ -738,7 +738,7 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     } else if (Tcl_GetIntFromObj(NULL, objv[1], &i) == TCL_OK) {
         severity = i;
     } else {
-        Tcl_AppendResult(interp, "unknown severity: \"", 
+        Tcl_AppendResult(interp, "unknown severity: \"",
                          Tcl_GetString(objv[1]),
                          "\": should be notice, warning, error, "
                          "fatal, bug, debug, dev or integer value", NULL);
@@ -788,7 +788,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
      * Skip if logging for selected severity is disabled
      * or if severity level out of range(s).
      */
-    
+
     if ((maxlevel && severity > maxlevel)
         || severity > (sizeof(logConfig)/sizeof(logConfig[0]))
         || logConfig[severity].enabled == 0) {
@@ -822,7 +822,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
     offset = Ns_DStringLength(&cachePtr->buffer);
     Ns_DStringVPrintf(&cachePtr->buffer, fmt, ap);
     length = Ns_DStringLength(&cachePtr->buffer) - offset;
-    
+
     entryPtr->severity = severity;
     entryPtr->offset   = offset;
     entryPtr->length   = length;
@@ -870,13 +870,13 @@ LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc)
         log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
         cPtr = listPtr;
         while (cPtr != NULL) {
-            if (cPtr->proc && (*cPtr->proc)(cPtr->arg, ePtr->severity, 
-                                            &ePtr->stamp, log, 
+            if (cPtr->proc && (*cPtr->proc)(cPtr->arg, ePtr->severity,
+                                            &ePtr->stamp, log,
                                             ePtr->length) == NS_ERROR) {
                 /*
                  * Callback signalized error. Per definition we will
                  * skip invoking other registered callbacks. In such
-                 * case we must assure that the current log entry 
+                 * case we must assure that the current log entry
                  * eventually gets written into some log sink, so we
                  * use the default logfile sink.
                  */
@@ -937,7 +937,7 @@ LogOpen(void)
                file, strerror(errno));
         status = NS_ERROR;
     } else {
-        
+
         /*
          * Route stderr to the file
          */
@@ -961,7 +961,7 @@ LogOpen(void)
         /*
          * Clean up dangling 'open' reference to the fd
          */
-        
+
         if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
             close(fd);
         }
@@ -1248,8 +1248,8 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%ld]", stamp->usec);
     }
-    Ns_DStringPrintf(dsPtr, "[%d.%lu][%s] %s: ", Ns_InfoPid(), 
-                     (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(), 
+    Ns_DStringPrintf(dsPtr, "[%d.%lu][%s] %s: ", Ns_InfoPid(),
+                     (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(),
                      SeverityName(severity));
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(dsPtr, "\n    ");
@@ -1313,8 +1313,8 @@ LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  *
  *      This function may return NS_ERROR in which case the
  *      caller should skip invoking other registered callbacks.
- *      In such case, a log-entry with the error message is 
- *      produced in the default log sink (log file). 
+ *      In such case, a log-entry with the error message is
+ *      produced in the default log sink (log file).
  *      For all other cases, caller should continue with the
  *      next registered callback.
  *
@@ -1323,7 +1323,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  *
  * Side effects:
  *      This call deliberately does not use Ns_TclEvalCallback(),
- *      as if the Tcl code throws error, that one will invoke 
+ *      as if the Tcl code throws error, that one will invoke
  *      Ns_TclLogError() and will deadlock in the log code.
  *
  *----------------------------------------------------------------------
@@ -1408,7 +1408,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
  *----------------------------------------------------------------------
  */
 
-static char* 
+static char*
 SeverityName(Ns_LogSeverity severity)
 {
     char *severityStr, buf[10];
@@ -1419,7 +1419,7 @@ SeverityName(Ns_LogSeverity severity)
         severityStr = buf;
         sprintf(buf, "Level%d", severity);
     }
-    
+
     return severityStr;
 }
 

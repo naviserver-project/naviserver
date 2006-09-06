@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * server.c --
  *
  *      Routines for managing NsServer structures.
@@ -44,7 +44,7 @@ NS_RCSID("@(#) $Header$");
 static void CreatePool(NsServer *servPtr, char *pool);
 
 /*
- * Static variables defined in this file. 
+ * Static variables defined in this file.
  */
 
 static NsServer *initServPtr; /* Holds currently initializing server. */
@@ -206,15 +206,15 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         Ns_Log(Error, "duplicate server: %s", server);
         return;
     }
-    Tcl_DStringAppendElement(&nsconf.servers, server);   
+    Tcl_DStringAppendElement(&nsconf.servers, server);
     servPtr = ns_calloc(1, sizeof(NsServer));
     Tcl_SetHashValue(hPtr, servPtr);
     initServPtr = servPtr;
-    
+
     /*
      * Create a new NsServer.
      */
-     
+
     Ns_DStringInit(&ds);
     spath = path = Ns_ConfigGetPath(server, NULL, NULL);
     servPtr->server = server;
@@ -235,7 +235,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     } else if (STRIEQ(p, "toupper")) {
         servPtr->opts.hdrcase = ToUpper;
     }
-    
+
     /*
      * Encoding defaults for the server
      */
@@ -276,11 +276,11 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     /*
      * Initialize Tcl.
      */
-     
+
     path = Ns_ConfigGetPath(server, NULL, "tcl", NULL);
     servPtr->tcl.library = Ns_ConfigGetValue(path, "library");
     if (servPtr->tcl.library == NULL) {
-        Ns_ModulePath(&ds, server, "tcl", NULL);
+        Ns_ModulePath(&ds, "modules", "tcl", NULL);
         servPtr->tcl.library = Ns_DStringExport(&ds);
     }
     servPtr->tcl.initfile = Ns_ConfigGetValue(path, "initfile");
@@ -329,10 +329,10 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     /*
      * Initialize the fastpath.
      */
-     
+
     path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
 
-    p = Ns_ConfigGetValue(path, "directoryfile");
+    p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");
     if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
                                    &servPtr->fastpath.dirv) != TCL_OK) {
         Ns_Log(Error, "config: directoryfile is not a list: %s", p);
@@ -340,7 +340,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
 
     servPtr->fastpath.serverdir = Ns_ConfigGetValue(path, "serverdir");
     if (servPtr->fastpath.serverdir == NULL) {
-        Ns_MakePath(&ds, Ns_InfoHomePath(), "servers", server, NULL);
+        Ns_MakePath(&ds, Ns_InfoHomePath(), server, NULL);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     } else if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
         Ns_MakePath(&ds, Ns_InfoHomePath(), servPtr->fastpath.serverdir, NULL);
@@ -362,7 +362,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     }
     servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
     servPtr->fastpath.diradp = Ns_ConfigGetValue(path, "directoryadp");
-    
+
     /*
      * Initialize virtual hosting.
      */
@@ -389,11 +389,11 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
         Ns_DStringSetLength(&ds, 0);
     }
-    
+
     /*
      * Configure the url, proxy and redirect requests.
      */
-    
+
     Tcl_InitHashTable(&servPtr->request.proxy, TCL_STRING_KEYS);
     Ns_MutexInit(&servPtr->request.plock);
     Ns_MutexSetName2(&servPtr->request.plock, "nsd:proxy", server);
@@ -410,11 +410,11 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
             Ns_RegisterReturn(status, map);
         }
     }
-    
+
     /*
      * Register the fastpath requests.
      */
-    
+
     Ns_RegisterRequest(server, "GET", "/", NsFastPathProc, NULL, servPtr, 0);
     Ns_RegisterRequest(server, "HEAD", "/", NsFastPathProc, NULL, servPtr, 0);
     Ns_RegisterRequest(server, "POST", "/", NsFastPathProc, NULL, servPtr, 0);
@@ -429,7 +429,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     /*
      * Initialize ADP.
      */
-    
+
     path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
     servPtr->adp.errorpage = Ns_ConfigString(path, "errorpage", NULL);
     servPtr->adp.startpage = Ns_ConfigString(path, "startpage", NULL);
@@ -438,33 +438,45 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
     servPtr->adp.defaultparser = Ns_ConfigString(path, "defaultparser", "adp");
     servPtr->adp.cachesize = Ns_ConfigInt(path, "cachesize", 5000*1024);
-    
+
     /*
      * Initialize on-the-fly compression support for ADP.
      */
-    
+
     path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
     servPtr->adp.compress.enable = Ns_ConfigBool(path, "enable", NS_FALSE);
     servPtr->adp.compress.level = Ns_ConfigIntRange(path, "level", 4, 1, 9);
     servPtr->adp.compress.minsize = Ns_ConfigInt(path, "minsize", 0);
-    
+
     /*
      * Initialize the page and tag tables and locks.
      */
-    
+
     Tcl_InitHashTable(&servPtr->adp.pages, FILE_KEYS);
     Ns_MutexInit(&servPtr->adp.pagelock);
     Ns_CondInit(&servPtr->adp.pagecond);
     Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
     Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->adp.taglock);
-    
+
     /*
      * Register ADP for any requested URLs.
      */
-    
+
     path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
     set = Ns_ConfigGetSection(path);
+
+    /*
+     *  If ADP processing is not disabled and no map is configured
+     *  setup adp hanlders for all .adp files
+     */
+
+    key = Ns_ConfigString(path, "map", NULL);
+    if (key == NULL && set != NULL &&
+        Ns_ConfigBool(path, "disabled", NS_FALSE) == NS_FALSE) {
+        Ns_SetPut(set, "map", "/*.adp");
+    }
+
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
         key = Ns_SetKey(set, i);
         if (!strcasecmp(key, "map")) {
@@ -475,16 +487,16 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
             Ns_Log(Notice, "adp[%s]: mapped %s", server, map);
         }
     }
-    
+
     /*
      * Call the static server init proc, if any, which may register
      * static modules.
      */
-    
+
     if (initProc != NULL) {
         (*initProc)(server);
     }
-    
+
     /*
      * Load modules and initialize Tcl.  The order is significant.
      */
@@ -539,7 +551,7 @@ CreatePool(NsServer *servPtr, char *pool)
         /*
          * Map requested method/URL's to this pool.
          */
-        
+
         path = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool, NULL);
         set = Ns_ConfigGetSection(path);
         for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
@@ -548,7 +560,7 @@ CreatePool(NsServer *servPtr, char *pool)
             }
         }
     }
- 
+
     poolPtr->nextPtr = servPtr->pools.firstPtr;
     servPtr->pools.firstPtr = poolPtr;
 
@@ -567,7 +579,7 @@ CreatePool(NsServer *servPtr, char *pool)
     }
     connBufPtr[n].nextPtr = NULL;
     poolPtr->queue.freePtr = &connBufPtr[0];
- 
+
     poolPtr->threads.max =
         Ns_ConfigIntRange(path, "maxthreads", 10, 0, maxconns);
     poolPtr->threads.min =

@@ -1,3 +1,26 @@
+2006-09-06  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/nsconf.c:
+	* nsd/server.c: Make tcllibray, library, serverdir to reflect
+	defaults from the sample config according to simplified one-server 
+	configuration which is common and easy to understand for newcomers.
+
+	This will also allow to run server with minimal nsd.tcl
+	which could be good to have with required settings only for easy 
+	maintanence.
+
+	ns/parameters/tcllibray points to [ns_info home]/tcl
+	ns/server/${server}/tcl/library points to [ns_info home]/modules/tcl
+	ns/server/${server}/fastpath/serverdir points to [ns_info home]
+	ns/server/${server}/fastpath/directoryfile points to "index.adp index.tcl index.html index.htm"
+	ns/server/${server}/adp/map points to "/*.adp"
+
+	* nsd/pidfile.c: Make it thread safe and reflect default config value
+
+	* nslog/nslog.c: Make it use default log file in logs/access.log if logs/ directory 
+	exists or create new directorty under servers/server/modules/nslog as fallback if 
+	no file config options is specified
+
 2006-09-04  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c: Silence compiler warning and removed

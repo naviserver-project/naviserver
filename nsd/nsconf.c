@@ -171,7 +171,7 @@ NsConfUpdate(void)
     if ((i = Ns_ConfigIntRange(NS_CONFIG_THREADS, "stacksize", 0, 0, INT_MAX)) > 0
         || (i = Ns_ConfigIntRange(path, "stacksize", 0, 0, INT_MAX)) > 0) {
 
-        Ns_ThreadStackSize(i);   
+        Ns_ThreadStackSize(i);
     }
 
     /*
@@ -215,7 +215,7 @@ NsConfUpdate(void)
     Ns_DStringInit(&ds);
     nsconf.tcl.sharedlibrary = Ns_ConfigGetValue(path, "tcllibrary");
     if (nsconf.tcl.sharedlibrary == NULL) {
-        Ns_HomePath(&ds, "modules", "tcl", NULL);
+        Ns_HomePath(&ds, "tcl", NULL);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
     }
     nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);

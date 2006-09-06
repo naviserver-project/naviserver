@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright(C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  *
  */
 
-/* 
+/*
  * nslog.c --
  *
  * This file implements the access log using NCSA Common Log format.
@@ -157,7 +157,7 @@ static int LogClose(Log *logPtr);
  *
  * Side effects:
  *      Log file is opened, trace routine is registered, and, if
- *      configured, log file roll signal and scheduled procedures 
+ *      configured, log file roll signal and scheduled procedures
  *      are registered.
  *
  *----------------------------------------------------------------------
@@ -172,7 +172,7 @@ Ns_ModuleInit(char *server, char *module)
     Ns_DString  ds;
     static int  first = 1;
 
-    /* 
+    /*
      * Register the info callbacks just once. This assumes we are
      * called w/o locking from within the server startup.
      */
@@ -203,31 +203,44 @@ Ns_ModuleInit(char *server, char *module)
         logPtr->file = ns_strdup(file);
     } else {
         Tcl_Obj *dirpath;
+        Tcl_StatBuf *stPtr;
 
         /*
-         * If log file is not given in absolute format, it's expected to 
-         * exist in the module specific directory, which is created if
-         * necessary.
+         * If log file is not given in absolute format, it's expected to
+         * exist in the global logs directory if such exists or module
+         * specific directory, which is created if necessary.
          */
 
-        Ns_ModulePath(&ds, server, module, NULL, NULL);
+        Ns_HomePath(&ds, "logs", NULL);
         dirpath = Tcl_NewStringObj(ds.string, -1);
         Tcl_IncrRefCount(dirpath);
-        status = Tcl_FSCreateDirectory(dirpath);
+        stPtr = Tcl_AllocStatBuf();
+        status = Tcl_FSStat(dirpath, stPtr);
+        Tcl_Free((char*)stPtr);
         Tcl_DecrRefCount(dirpath);
-        if (status && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
-            Ns_Log(Error,"nslog: create directory (%s) failed: '%s'", 
-                   ds.string, strerror(Tcl_GetErrno()));
-            Ns_DStringFree(&ds);
-            return NS_ERROR;
+        Ns_DStringVarAppend(&ds, "/", file, NULL);
+
+        if (status) {
+            Ns_DStringTrunc(&ds, 0);
+            Ns_ModulePath(&ds, server, module, NULL, NULL);
+            dirpath = Tcl_NewStringObj(ds.string, -1);
+            Tcl_IncrRefCount(dirpath);
+            status = Tcl_FSCreateDirectory(dirpath);
+            Tcl_DecrRefCount(dirpath);
+            if (status && Tcl_GetErrno() != EEXIST && Tcl_GetErrno() != EISDIR) {
+                Ns_Log(Error,"nslog: create directory (%s) failed: '%s'",
+                       ds.string, strerror(Tcl_GetErrno()));
+                Ns_DStringFree(&ds);
+                return NS_ERROR;
+            }
+            Ns_DStringTrunc(&ds, 0);
+            Ns_ModulePath(&ds, server, module, file, NULL);
         }
-        Ns_DStringTrunc(&ds, 0);
-        Ns_ModulePath(&ds, server, module, file, NULL);
         logPtr->file = Ns_DStringExport(&ds);
     }
 
-    /* 
-     * Get other parameters from configuration file 
+    /*
+     * Get other parameters from configuration file
      */
 
     logPtr->rollfmt = ns_strcopy(Ns_ConfigGetValue(path, "rollfmt"));
@@ -249,33 +262,33 @@ Ns_ModuleInit(char *server, char *module)
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
 
-    /* 
+    /*
      *  Schedule various log roll and shutdown options.
      */
 
     if (Ns_ConfigBool(path, "rolllog", NS_TRUE)) {
         hour = Ns_ConfigIntRange(path, "rollhour", 0, 0, 23);
-        Ns_ScheduleDaily((Ns_SchedProc *) LogRollCallback, logPtr, 
+        Ns_ScheduleDaily((Ns_SchedProc *) LogRollCallback, logPtr,
                          0, hour, 0, NULL);
     }
     if (Ns_ConfigBool(path, "rollonsignal", NS_FALSE)) {
         Ns_RegisterAtSignal(LogRollCallback, logPtr);
     }
 
-    /* 
-     * Parse extended headers; it is just a list of names 
+    /*
+     * Parse extended headers; it is just a list of names
      */
 
     Ns_DStringInit(&ds);
     Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), NULL);
-    if (Tcl_SplitList(NULL, ds.string, &logPtr->numheaders, 
+    if (Tcl_SplitList(NULL, ds.string, &logPtr->numheaders,
                       &logPtr->extheaders) != TCL_OK) {
         Ns_Log(Error,"nslog: invalid %s/extendedHeaders parameter: '%s'",
                path, ds.string);
     }
     Ns_DStringFree(&ds);
 
-    /* 
+    /*
      *  Open the log and register the trace
      */
 
@@ -286,7 +299,7 @@ Ns_ModuleInit(char *server, char *module)
     Ns_RegisterServerTrace(server, LogTrace, logPtr);
     Ns_RegisterAtShutdown(LogCloseCallback, logPtr);
     Ns_TclRegisterTrace(server, AddCmds, logPtr, NS_TCL_TRACE_CREATE);
-    
+
     return NS_OK;
 }
 
@@ -308,7 +321,7 @@ Ns_ModuleInit(char *server, char *module)
  *----------------------------------------------------------------------
  */
 
-static void 
+static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
     Log         *logPtr = arg;
@@ -321,7 +334,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_DStringInit(&ds);
     Ns_MutexLock(&logPtr->lock);
 
-    /* 
+    /*
      * Compute the request's elapsed time
      */
 
@@ -362,8 +375,8 @@ LogTrace(void *arg, Ns_Conn *conn)
             Ns_DStringVarAppend(&ds," - ", conn->authUser, " ", NULL);
         }
     }
-    
-    /* 
+
+    /*
      * Append a common log format time stamp including GMT offset
      */
 
@@ -373,11 +386,11 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_LogTime(buf);
     }
     Ns_DStringAppend(&ds, buf);
-    
-    /* 
+
+    /*
      * Append the request line plus query data (if configured)
      */
-    
+
     if (conn->request && conn->request->line) {
         if ((logPtr->flags & LOG_SUPPRESSQUERY)) {
             Ns_DStringVarAppend(&ds, " \"", conn->request->url, "\" ", NULL);
@@ -388,7 +401,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringAppend(&ds," \"\" ");
     }
 
-    /* 
+    /*
      * Construct and append the HTTP status code and bytes sent
      */
 
@@ -396,7 +409,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     sprintf(buf, "%d %u ", n ? n : 200, Ns_ConnContentSent(conn));
     Ns_DStringAppend(&ds,buf);
 
-    /* 
+    /*
      * Append the referer and user-agent headers (if any)
      */
 
@@ -413,8 +426,8 @@ LogTrace(void *arg, Ns_Conn *conn)
         }
         Ns_DStringAppend(&ds, "\"");
     }
-    
-    /* 
+
+    /*
      * Append the request's elapsed time (if enabled)
      */
 
@@ -423,7 +436,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringAppend(&ds, buf);
     }
 
-    /* 
+    /*
      * Append the extended headers (if any)
      */
 
@@ -435,11 +448,11 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringVarAppend(&ds, " \"", p, "\"", NULL);
     }
 
-    /* 
+    /*
      * Append the trailing newline and optionally
      * flush the buffer
      */
-    
+
     Ns_DStringAppend(&ds, "\n");
 
     if (logPtr->maxlines == 0) {
@@ -453,7 +466,7 @@ LogTrace(void *arg, Ns_Conn *conn)
             status = NS_OK;
         }
     }
-    
+
     Ns_MutexUnlock(&logPtr->lock);
     Ns_DStringFree(&ds);
 
@@ -490,11 +503,11 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     Log         *logPtr = arg;
 
     enum {
-        ROLLFMT, MAXBACKUP, MAXBUFFER, EXTHDRS, 
+        ROLLFMT, MAXBACKUP, MAXBUFFER, EXTHDRS,
         FLAGS, FILE, ROLL
     };
     static CONST char *subcmd[] = {
-        "rollfmt", "maxbackup", "maxbuffer", "extendedheaders", 
+        "rollfmt", "maxbackup", "maxbuffer", "extendedheaders",
         "flags", "file", "roll", NULL
     };
 
@@ -561,7 +574,7 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
         break;
 
-    case EXTHDRS: 
+    case EXTHDRS:
         if (objc > 2) {
             strarg = Tcl_GetString(objv[2]);
             if (Tcl_SplitList(interp, strarg, &status, &hdrs) != TCL_OK) {
@@ -733,7 +746,7 @@ static int
 LogOpen(Log *logPtr)
 {
     int fd;
-    
+
     fd = open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
     if (fd == -1) {
         Ns_Log(Error,"nslog: error '%s' opening '%s'",
@@ -746,7 +759,7 @@ LogOpen(Log *logPtr)
 
     logPtr->fd = fd;
     Ns_Log(Notice,"nslog: opened '%s'", logPtr->file);
-    
+
     return NS_OK;
 }
 
@@ -866,7 +879,7 @@ LogRoll(Log *logPtr)
             char        timeBuf[512];
             Ns_DString  ds;
             struct tm  *ptm = ns_localtime(&now);
-            
+
             strftime(timeBuf, sizeof(timeBuf)-1, logPtr->rollfmt, ptm);
             Ns_DStringInit(&ds);
             Ns_DStringVarAppend(&ds, logPtr->file,".", timeBuf, NULL);
@@ -924,7 +937,7 @@ LogCallback(int(proc)(Log *), void *arg, char *desc)
     Ns_MutexLock(&logPtr->lock);
     status =(*proc)(logPtr);
     Ns_MutexUnlock(&logPtr->lock);
-    
+
     if (status != NS_OK) {
         Ns_Log(Error,"nslog: failed: %s '%s': '%s'", desc, logPtr->file,
                strerror(Tcl_GetErrno()));

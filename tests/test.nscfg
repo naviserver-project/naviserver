@@ -80,6 +80,7 @@ ns_param        .iso2utf_adp          "iso-8859-1"
 ns_section "ns/parameters"
 ns_param   home            [ns_config "test" home]
 ns_param   tcllibrary      [ns_config "test" home]/../tcl
+ns_param   pidfile         [ns_config "test" home]/testserver/nsd.pid
 ns_param   logdebug        false
 
 ns_param   URLCharset      iso-8859-1
