@@ -7,6 +7,9 @@
 # Once nscp module is enabled it will accept telnet into nscp on 127.0.0.1:2080
 #
 
+ns_section	"ns/servers"
+ns_param	default		Naviserver
+
 ns_section      "ns/server/default/modules"
 #ns_param        nscp            nscp.so
 ns_param        nssock          nssock.so
