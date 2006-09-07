@@ -1,0 +1,34 @@
+[manpage_begin Ns_config n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc[para]ns_config - Extract configuration information from the server
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[para]ns_config ?-exact | -bool | -int? section key&nbsp;?default?
+
+[list_end]
+
+[description]
+[para]This command returns the value associated with the key in the specified section of the current server's configuration.  If default is specified, and the section and key are not defined, then default is returned.  If default is not specified in this situation, an empty string is returned.
+[para]If -exact is specified, matching on key is case-sensitive.  By default, matching is case-insensitive.
+[para]If -bool is specified, ns_config will perform the conversion of a boolean value from "on", "1", "y", "yes", "t", and "true" to "1", and it will convert a boolean value of "off", "0", "n", "no", "f", and "false" to "0".  If a boolean contains any other value, a warning is written to the server log and an empty string is returned.  If the configuration value is not defined, an empty string is returned.
+[para]If -int is specified, ns_config will return the integer value of the specified key.  If there is a non-integer value in the configuration, a warning is written to the log file and an empty string is returned. 
+[section EXAMPLES]
+
+[example_begin]
+ % ns_config ns/parameters debug
+ off
+[example_end]
+
+[example_begin]
+ % string length 
+]
+
+[manpage_end]
+

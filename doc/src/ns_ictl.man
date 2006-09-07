@@ -1,0 +1,97 @@
+[manpage_begin Ns_ictl n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_ictl - Manipulate and introspect Tcl interpreter internals
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_ictl option&nbsp;?arg arg ...?
+
+
+[list_end]
+
+[description]
+
+ This command provides a mechanism to control Tcl interpreter internals.
+
+ The legal options (which may be abbreviated) are:
+
+[call [cmd  ns_ictl addmodule module]]
+
+ Adds a module to the list of modules, and returns the new list as the result.
+
+ This command simply appends the module to the list.  It doesn't perform any loading of modules themselves.
+
+[call [cmd  ns_ictl cleanup]]
+
+ Runs all of the cleanup traces, and does any other necessary interpreter cleanup.
+
+[call [cmd  ns_ictl epoch]]
+
+ Returns the current epoch for the interpreter.
+
+[call [cmd  ns_ictl get]]
+
+ Returns the script that is executed at interpreter initialization time.
+
+[call [cmd  ns_ictl getmodules]]
+
+ Returns a list of currently loaded modules.
+
+[call [cmd  ns_ictl save script]]
+
+ Replaces the current interpreter initialization script with the new script.
+
+[call [cmd  ns_ictl update]]
+
+ Update the state (procs, namespaces) of an interpreter.
+
+[call [cmd  ns_ictl oncreate script]]
+
+ Registers a script to be executed at Tcl interpreter create time.
+
+[call [cmd  ns_ictl oncleanup script]]
+
+ Registers a script to be executed at Tcl interpreter cleanup time.
+
+[call [cmd  ns_ictl oninit script]]
+
+ Registers a script to be executed at Tcl interpreter init time.  This can only be used during server initialization phase of server startup.
+
+[call [cmd  ns_ictl ondelete script]]
+
+ Registers a script to be executed at Tcl interpreter delete time.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_ictl epoch
+   1
+[example_end]
+
+[example_begin]
+   % ns_ictl getmodules
+   nsdb nslog nscp
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_cleanup, ns_init, ns_markfordelete
+
+
+[para]
+
+]
+
+[manpage_end]
+

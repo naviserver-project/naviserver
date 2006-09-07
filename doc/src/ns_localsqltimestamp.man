@@ -1,0 +1,53 @@
+[manpage_begin Ns_localsqltimestamp n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_localsqltimestamp - Return a SQL timestamp containing the local time.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_localsqltimestamp
+
+
+[list_end]
+
+[description]
+
+ This command returns a timestamp value that encodes the local time in ANSI SQL format (YYYY-MM-DD hh24:mm:ss).
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_localsqltimestamp
+   2004-06-22 23:00:27
+[example_end]
+
+ This command is equivalent to the following:
+
+[example_begin]
+   % ns_fmttime ns_time "%Y-%m-%d %H:%M:%S"
+[example_end]
+
+[example_begin]
+   % clock format ns_time -format "%Y-%m-%d %H:%M:%S"
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_localtime
+
+
+[para]
+]
+
+[manpage_end]
+

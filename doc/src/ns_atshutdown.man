@@ -1,0 +1,94 @@
+[manpage_begin Ns_atshutdown n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc[para]ns_atshutdown - Queue a script to run when the server is shutting down
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[para]ns_atshutdown script&nbsp;?arg?
+
+[list_end]
+
+[description]
+[para]This command queues a script to run when the server is shutting down.  The script and optional arg are concatenated together and added to the list of shutdown callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
+[section EXAMPLES]
+[para]Use ns_atsignal to stop long running processes. It seems that <strong>ns_atshutdown</strong> and ns_atexit are called after connection and scheduled threads have been killed, so those commands can not be used for that type of signal.
+
+[example_begin]
+   # Create share variables for each signal
+   foreach signal {SIGHUP TERM EXIT} {
+       nsv_set . $signal 0
+       ns_log notice "Listening for $signal"
+   }
+   proc heard_signal signal {
+       nsv_set . $signal 1
+       ns_log notice "Heard $signal"
+   }
+   ns_atsignal heard_signal SIGHUP
+   ns_atshutdown heard_signal TERM
+   ns_atexit heard_signal EXIT
+   
+   # Long running proc
+   proc infinite_loop {} {
+       set status "RUN"
+       while {1} {
+           # Do some work
+           ns_sleep 1
+           ns_log notice "infinite_loop working, status: $status"
+           # Poll for signals
+           foreach signal {SIGHUP TERM EXIT} {
+               if {[nsv_get . $signal]} {
+                   set status $signal
+               }
+           }
+           if {$signal ne "RUN"} {
+               break
+           }
+       }
+       # Save work
+       ns_log notice "infinite_loop stopped, status: $status"
+   }
+   ns_schedule_proc -thread -once 10 infinite_loop
+[example_end]
+
+[para]Sample log file output from AOLserver 4.0.3 for ns_atsignal:
+
+[example_begin]
+   [01/Aug/2006:10:30:56][1359.1][-main-] Notice: Heard SIGHUP
+   [01/Aug/2006:10:30:56][1359.8][-sched:12-] Notice: infinite_loop stopped, status: SIGHUP
+   [01/Aug/2006:10:30:56][1359.9][-conn:server::0] Notice: infinite_loop stopped, status: SIGHUP
+[example_end]
+
+[para]Sample log file output from AOLserver 4.0.3 for <strong>ns_atshutdown</strong> and ns_atexit:
+
+[example_begin]
+   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: nsmain: AOLserver/4.0.3 stopping
+   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: serv: stopping server: server
+   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: serv: connection threads stopped
+   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: driver: shutdown complete
+   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: sched: shutdown pending
+   [31/Jul/2006:15:57:52][3583.3][-sched-] Notice: sched: shutdown started
+   [31/Jul/2006:15:57:52][3583.3][-sched-] Notice: sched: waiting for event threads...
+   [31/Jul/2006:15:57:52][3583.8][-sched:idle0-] Notice: exiting
+   [31/Jul/2006:15:57:52][3583.3][-sched-] Notice: sched: shutdown complete
+   [31/Jul/2006:15:57:53][3583.9][-shutdown-] Notice: Heard TERM
+   [31/Jul/2006:15:57:53][3583.9][-shutdown-] Notice: nslog: closing '/var/log/aolserver/server.log'
+   [31/Jul/2006:15:57:53][3583.1][-main-] Notice: Heard EXIT
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+[para]ns_atclose, ns_atexit, ns_atsignal
+
+
+[para]
+]
+
+[manpage_end]
+

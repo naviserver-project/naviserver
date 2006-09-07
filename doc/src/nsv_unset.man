@@ -1,0 +1,47 @@
+[manpage_begin Nsv_unset n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ nsv_unset - Unset an array or a key
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ nsv_unset array ?key?
+
+
+[list_end]
+
+[description]
+
+ Unset an array or a single key from an array. If successful returns an empty string.
+
+[section EXAMPLES]
+
+[example_begin]
+   % nsv_unset shared_array key1
+[example_end]
+
+[para]unset a key
+
+[example_begin]
+   %nsv_unset shared_array
+[example_end]
+
+[para]unset an array
+
+[see_also nsd]
+[keywords 
+
+ 
+
+]
+
+[manpage_end]
+

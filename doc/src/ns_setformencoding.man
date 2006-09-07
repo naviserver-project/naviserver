@@ -1,0 +1,39 @@
+[manpage_begin Ns_setformencoding n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+	    
+[titledesc
+ ns_setformencoding - Set the form encoding of the current connection
+
+[para]
+SYNOPSIS
+
+ ns_setformencoding charset
+
+
+[list_end]
+
+[description]
+
+ Set the form encoding of the current connection. If the connection's urlencoding value is being changed then flush any form set cached locally, ns_conn will do the same.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_setformencoding iso-8859-1
+   iso8859-1
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_charsets ns_urlcharset
+
+
+[para]
+
+]
+
+[manpage_end]
+

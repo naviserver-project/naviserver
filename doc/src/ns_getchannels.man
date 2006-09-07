@@ -1,0 +1,34 @@
+[manpage_begin Ns_getchannels n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_getchannels - Return a list of all open Tcl I/O channels
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_getchannels 
+
+
+[list_end]
+
+[description]
+
+ This command returns a Tcl list of all open Tcl I/O channels.  This command is defined in tcl/compat.tcl as a wrapper to the Tcl [file channels] command.
+
+
+[see_also nsd]
+[keywords 
+
+ Tcl [file channels] 
+
+]
+
+[manpage_end]
+

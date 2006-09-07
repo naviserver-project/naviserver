@@ -1,0 +1,13 @@
+[manpage_begin Ns_cache_flush n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+	    [para]Overview
+Remove cache entry
+[para]Syntax
+ns_cache_flush cache key
+[para]Description
+This function removes the cache entry specified by key from the cache specified by cache.
+
+
+[manpage_end]
+

@@ -1,0 +1,11 @@
+[manpage_begin Ns_event n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+	    [para]See: ns_cond
+
+
+[para]
+
+
+[manpage_end]
+

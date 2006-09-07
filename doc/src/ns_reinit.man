@@ -1,0 +1,36 @@
+[manpage_begin Ns_reinit n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_reinit - Reinitialize the current interpreter
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_reinit
+
+
+[list_end]
+
+[description]
+
+ This command reinitializes the current interpreter by calling ns_cleanup then ns_init.
+
+
+[see_also nsd]
+[keywords 
+
+ ns_cleanup, ns_ictl, ns_init, ns_markfordelete
+
+
+[para]
+]
+
+[manpage_end]
+

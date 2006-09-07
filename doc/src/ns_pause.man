@@ -1,0 +1,50 @@
+[manpage_begin Ns_pause n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_pause - Pause a scheduled script from running
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_pause id
+
+
+[list_end]
+
+[description]
+
+ This command pauses a scheduled script from running at its next scheduled time.  Returns 1 on success, 0 on failure.
+
+[section EXAMPLES]
+
+[example_begin]
+   % set id [[ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }]]
+   19
+[example_end]
+
+[example_begin]
+   % ns_pause $id
+   1
+[example_end]
+
+[example_begin]
+   % ns_unschedule_proc $id
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_info scheduled, 
+
+]
+
+[manpage_end]
+

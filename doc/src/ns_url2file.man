@@ -1,0 +1,43 @@
+[manpage_begin Ns_url2file n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_url2file - Return the path to a file referenced by a URL
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_url2file url
+
+
+[list_end]
+
+[description]
+
+ This command returns the absolute path to a file referenced by the given URL.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_url2file /test.adp
+   /usr/local/aolserver/servers/server1/pages/test.adp
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ none
+
+
+[para]
+]
+
+[manpage_end]
+

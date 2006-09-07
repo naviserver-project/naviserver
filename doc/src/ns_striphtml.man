@@ -1,0 +1,37 @@
+[manpage_begin Ns_striphtml n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_striphtml - Remove HTML tags from a string
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_striphtml html
+
+
+[list_end]
+
+[description]
+
+ Returns the contents of html with any HTML tags removed.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_striphtml "&lt;MARQUEE direction='right'&gt;&lt;BLINK&gt;Hello World!&lt;/BLINK&gt;&lt;/MARQUEE&gt;"
+   Hello World!
+[example_end]
+
+
+[para]
+
+
+[manpage_end]
+

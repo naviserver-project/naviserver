@@ -1,0 +1,42 @@
+[manpage_begin Ns_param n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+
+[titledesc
+ ns_param - Set a configuration parameter for a section
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_param key value
+
+
+[list_end]
+
+[description]
+
+ This command sets the value for the particular key in the current section as previously set using ns_section.  This command is only available at server startup when parsing the config .tcl file.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_section "ns/server/$servername/section"
+   % ns_param someSetting someValue
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_config, ns_configsection, ns_configsections, ns_section
+
+]
+
+[manpage_end]
+

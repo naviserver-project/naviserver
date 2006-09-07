@@ -1,0 +1,48 @@
+[manpage_begin Ns_gifsize n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_gifsize - Determine the width and height of a GIF87 or GIF89 image
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_gifsize filename
+
+
+[list_end]
+
+[description]
+
+ Returns a list of two elements, the width and height of the GIF file specified by filename. An error is generated if the file does not exist or if it is not a GIF file.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_gifsize screenshot.gif
+   1024 768
+[example_end]
+
+[example_begin]
+   % ns_gifsize test.html
+   invalid gif file: test.html
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_jpegsize, the nsimage module
+
+
+[para]
+]
+
+[manpage_end]
+

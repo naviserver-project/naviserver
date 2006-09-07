@@ -1,0 +1,41 @@
+[manpage_begin Nsv_incr n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ nsv_incr - Increment the value of the element in the nsv array arrayName specified by key
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ nsv_incr arrayName key ?increment?
+
+
+[list_end]
+
+[description]
+
+ If increment is supplied then its value (which must be an integer) is added to the value of the element key; otherwise 1 is added to the value of the element key. Unlike the TCL equivalent if key does not exists it is created. Returns the new value of the element specified by key. Internally interlocked so it is thread safe, no mutex required.
+
+[section EXAMPLES]
+
+[example_begin]
+   % nsv_incr shared_array foo
+   1
+   % nsv_incr shared_array foo -1
+   0
+[example_end]
+
+[para]Is this a good implementation with behavior similar to using ns_mutex or ns_critsec, except that later threads do not wait for the first thread to exit the script?
+
+ What you're looking for is a kind of "ns_mutex trylock" type of functionality, where if the mutex is locked the caller doesn't block/sleep, but if it's unlocked, the caller locks the mutex.  Interesting approach using NSVs, sure! -- 
+
+]
+
+[manpage_end]
+

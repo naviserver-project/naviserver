@@ -1,0 +1,42 @@
+[manpage_begin Ns_parsequery n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_parsequery - Parse a URL query string into an ns_set.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_parsequery querystring
+
+
+[list_end]
+
+[description]
+
+ This command parses the specified querystring into an ns_set, which is returned.  The keys and values will be decoded.
+
+[section EXAMPLES]
+
+[example_begin]
+   % set s [[ns_parsequery "msg=Hello+World%21&amp;a=b&amp;a=b&amp;c=d"]]
+   d0
+[example_end]
+
+[example_begin]
+   % ns_set array $s
+   msg {Hello World!} a b a b c d
+[example_end]
+
+
+[para]
+
+
+[manpage_end]
+

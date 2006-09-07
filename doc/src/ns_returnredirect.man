@@ -1,0 +1,34 @@
+[manpage_begin Ns_returnredirect n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_returnredirect - Redirect the client to another location
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_returnredirect ?connid? url
+
+
+[list_end]
+
+[description]
+
+ This command redirects the client by returning a 302 (Redirection) HTTP status code, and a Location header pointing at url.
+
+ The optional connid parameter is deprecated and should not be used.  If url is not specified, a 204 (No Content) HTTP status code is returned.
+
+ NOTE: The script does not end at the time this command is invoked.  ns_adp_abort or ns_adp_return should be called to end script processing after ns_returnredirect.
+
+ 2005may23 
+
+]
+
+[manpage_end]
+

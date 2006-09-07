@@ -1,0 +1,29 @@
+[manpage_begin Ns_cp n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc[para]ns_cp - Copy one file to another.
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[para]ns_cp ?-preserve? file1 file2
+[para]
+DESCRIPTION
+[para]ns_cp copies the contents of file1 to file2, just like the Unix "cp" command. The default directory is the home directory for the server.
+[para]If -preserve is specified, the copied file will retain the creation time, modification time, owner, and mode of the original file, just like the Unix "cp -p" command. 
+
+[see_also nsd]
+[keywords 
+[para]Tcl [file copy], ns_cpfp
+
+
+[para]
+
+]
+
+[manpage_end]
+

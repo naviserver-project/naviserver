@@ -1,0 +1,46 @@
+[manpage_begin Ns_symlink n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_symlink - Create a symbolic link
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_symlink ?-nocomplain? filename1 filename2
+
+
+[list_end]
+
+[description]
+
+ This command creates a symbolic link named filename2 that points to the file or directory specified by filename1.  If the link fails, a Tcl error is generated, unless -nocomplain is specified.
+
+ This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use
+
+[para]Tcl's file link command instead.  In other words, this:
+
+[example_begin]
+   ns_symlink $file1 $file2
+[example_end]
+
+[para]is equivalent to:
+
+[example_begin]
+   file link -symbolic $file1 $file2
+[example_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_symlink 
+]
+
+[manpage_end]
+

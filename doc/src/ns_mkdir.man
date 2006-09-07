@@ -1,0 +1,71 @@
+[manpage_begin Ns_mkdir n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_mkdir - Create a directory
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_mkdir dir
+
+
+[list_end]
+
+[description]
+
+ This command creates a new directory in the filesystem, and throws an error if the target directory already exists.
+
+ This is a legacy command from when Tcl did not have this functionality.  It is now recomended you use
+
+[para]Tcl's file mkdir command instead.  In other words, this:
+
+[example_begin]
+   ns_mkdir $dir
+[example_end]
+
+[para]is equivalent to:
+
+[example_begin]
+   file mkdir $dir
+[example_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_mkdir /tmp/ns_mkdir
+[example_end]
+
+[example_begin]
+   % file isdirectory /tmp/ns_mkdir
+   1
+[example_end]
+
+[example_begin]
+   % catch {ns_mkdir /tmp} err
+   1
+[example_end]
+
+[example_begin]
+   % set err 
+   mkdir ("/tmp") failed:  file already exists
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_chmod, ns_link, ns_rename, ns_rmdir, ns_symlink
+
+
+[para]
+]
+
+[manpage_end]
+

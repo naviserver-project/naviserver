@@ -1,0 +1,78 @@
+[manpage_begin Ns_adp_stats n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_adp_stats - Return statistics about cached ADP pages.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_adp_stats
+
+
+[list_end]
+
+[description]
+
+ Returns statistics about ADP pages that have been cached.  The result is a list of lists, where each sublist contains 2 items: File, Statistics.  File is the complete path in the file system to a cached adp file, Statistics is a list containing statistics about that cached file in a format similar to Tcl's array get format.  Currently, the keys in Statistics are:
+
+[call [cmd  dev]]
+
+ Drive number of the disk containing the file.
+
+[call [cmd  ino]]
+
+ Number of the information node (the inode) for the file.  The inode describes the file date and time stamps, permissions, and content on UNIX file systems.
+
+[call [cmd  mtime]]
+
+ Time the file was last modified, 
+
+[call [cmd  refcnt]]
+
+ Reference Count, the adp will be removed from the cache if this reaches zero.
+
+[call [cmd  evals]]
+
+ Number of times this adp has been evaluated.
+
+[call [cmd  size]]
+
+ Size of the file in bytes.
+
+[call [cmd  blocks]]
+
+ Total number of blocks in the adp file, including html blocks and script blocks.
+
+[call [cmd  scripts]]
+
+ Number of script blocks in the adp file.
+
+[section EXAMPLES]
+
+[example_begin]
+   % foreach {file stats} <strong>ns_adp_stats</strong> {
+         append output "\nFILE: ${file}\n" 
+         foreach {key value} $stats {
+             append output "    ${key} ==> ${value}\n"
+         }
+     }
+     set output
+[example_end]
+
+ See stats.tcl in the standard AOLserver distribution for a more complicated example.
+
+[para]NOTES
+
+ On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino, so dev and ino will always be reported as 0 when running AOLserver on Windows. 
+
+]
+
+[manpage_end]
+

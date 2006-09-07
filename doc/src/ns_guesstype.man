@@ -1,0 +1,168 @@
+[manpage_begin Ns_guesstype n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_guesstype - Lookup MIME type based on file extension.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_guesstype filename
+
+
+[list_end]
+
+[description]
+
+ This command guesses and returns the MIME type of a file, based on the extension of filename.  A large set of default extension to MIME type mappings is built into the command:
+
+[call [cmd  .adp    returns "text/html; charset=iso-8859-1"]]
+<li> .dci    returns "text/html; charset=iso-8859-1"
+<li> .htm    returns "text/html; charset=iso-8859-1"
+<li> .html   returns "text/html; charset=iso-8859-1"
+<li> .sht    returns "text/html; charset=iso-8859-1"
+<li> .shtml  returns "text/html; charset=iso-8859-1"
+<li> .ai     returns "application/postscript"
+<li> .aif    returns "audio/aiff"
+<li> .aifc   returns "audio/aiff"
+<li> .aiff   returns "audio/aiff"
+<li> .ani    returns "application/x-navi-animation"
+<li> .art    returns "image/x-art"
+<li> .au     returns "audio/basic"
+<li> .avi    returns "video/x-msvideo"
+<li> .bin    returns "application/x-macbinary"
+<li> .bmp    returns "image/bmp"
+<li> .css    returns "text/css"
+<li> .csv    returns "application/csv"
+<li> .dcr    returns "application/x-director"
+<li> .dir    returns "application/x-director"
+<li> .dp     returns "application/commonground"
+<li> .dxr    returns "application/x-director"
+<li> .elm    returns "text/plain"
+<li> .eml    returns "text/plain"
+<li> .exe    returns "application/octet-stream"
+<li> .gbt    returns "text/plain"
+<li> .gif    returns "image/gif"
+<li> .gz     returns "application/x-compressed"
+<li> .hqx    returns "application/mac-binhex40"
+<li> .jfif   returns "image/jpeg"
+<li> .jpe    returns "image/jpeg"
+<li> .jpg    returns "image/jpeg"
+<li> .jpeg   returns "image/jpeg"
+<li> .js     returns "application/x-javascript"
+<li> .ls     returns "application/x-javascript"
+<li> .map    returns "application/x-navimap"
+<li> .mid    returns "audio/x-midi"
+<li> .midi   returns "audio/x-midi"
+<li> .mocha  returns "application/x-javascript"
+<li> .mov    returns "video/quicktime"
+<li> .mpe    returns "video/mpeg"
+<li> .mpeg   returns "video/mpeg"
+<li> .mpg    returns "video/mpeg"
+<li> .nvd    returns "application/x-navidoc"
+<li> .nvm    returns "application/x-navimap"
+<li> .pbm    returns "image/x-portable-bitmap"
+<li> .pdf    returns "application/pdf"
+<li> .pgm    returns "image/x-portable-graymap"
+<li> .pic    returns "image/pict"
+<li> .pict   returns "image/pict"
+<li> .pnm    returns "image/x-portable-anymap"
+<li> .png    returns "image/png"
+<li> .ps     returns "application/postscript"
+<li> .qt     returns "video/quicktime"
+<li> .ra     returns "audio/x-pn-realaudio"
+<li> .ram    returns "audio/x-pn-realaudio"
+<li> .ras    returns "image/x-cmu-raster"
+<li> .rgb    returns "image/x-rgb"
+<li> .rtf    returns "application/rtf"
+<li> .sit    returns "application/x-stuffit"
+<li> .snd    returns "audio/basic"
+<li> .sql    returns "application/x-sql"
+<li> .stl    returns "application/x-navistyle"
+<li> .tar    returns "application/x-tar"
+<li> .tcl    returns "text/plain"
+<li> .text   returns "text/plain"
+<li> .tgz    returns "application/x-compressed"
+<li> .tif    returns "image/tiff"
+<li> .tiff   returns "image/tiff"
+<li> .txt    returns "text/plain"
+<li> .xbm    returns "image/x-xbitmap"
+<li> .xpm    returns "image/x-xpixmap"
+<li> .xht    returns "application/xhtml+xml"
+<li> .xhtml  returns "application/xhtml+xml"
+<li> .xml    returns "text/xml"
+<li> .xsl    returns "text/xml"
+<li> .vrml   returns "x-world/x-vrml"
+<li> .wav    returns "audio/x-wav"
+<li> .wrl    returns "x-world/x-vrml"
+<li> .z      returns "application/x-compressed"
+<li> .zip    returns "application/x-zip-compressed"
+
+ The MIME type returned for an extension can be overriden in the AOLserver config file, and new mappings can be added, e.g.
+
+[example_begin]
+   ns_section "ns/mimetypes"
+   ns_param  ".xls"        "application/vnd.ms-excel"     &nbsp;;# Add a mapping for Excel files
+   ns_param  ".sjis_html"  "text/html; charset=shift_jis" &nbsp;;# Adding a mapping, specifing charset
+   ns_param  ".adp"        "text/html; charset=UTF-8"     &nbsp;;# Overriding an existing mapping
+[example_end]
+
+ The MIME type to be returned for files with unrecognized or missing extensions can also be specified in the "ns/mimetypes" section of the config file, e.g.
+
+[example_begin]
+   ns_section "ns/mimetypes"
+   ns_param  default      "*/*" &nbsp;;# MIME type for unrecognized extension.
+   ns_param  noextension  "*/*" &nbsp;;# MIME type for missing extension.
+[example_end]
+
+ If default is not configured, "*/*" will be returned for files with unrecognized extensions.  If noextension is not configured, the MIME type configured as default (or "*/*") will be used.
+
+[section EXAMPLES]
+
+ (Assuming configured with the examples above)
+
+[example_begin]
+   % ns_guesstype "hello.jpg"
+   image/jpeg
+[example_end]
+
+[example_begin]
+   % ns_guesstype "hello.xls"
+   application/vnd.ms-excel
+[example_end]
+
+[example_begin]
+   % ns_guesstype "hello.html"
+   text/html; charset=iso-8859-1
+[example_end]
+
+[example_begin]
+   % ns_guesstype "world.adp"
+   text/html; charset=UTF-8
+[example_end]
+
+[example_begin]
+   % ns_guesstype "world.doc"
+[example_end]
+
+[call [cmd /*]]
+
+[example_begin]
+   % ns_guesstype somefile
+[example_end]
+
+[call [cmd /*]]
+
+
+[para]
+
+
+
+[manpage_end]
+

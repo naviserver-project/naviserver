@@ -1,0 +1,44 @@
+[manpage_begin Ns_section n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_section - Specify the current configuration section.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_section sectionname
+
+
+[list_end]
+
+[description]
+
+ This command sets the current section to define parameters for using ns_param.  This command is only available at server startup when parsing the config .tcl file.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_section "ns/server/$servername/section"
+   % ns_param someSetting someValue
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_config, ns_configsection, ns_configsections, ns_param
+
+
+[para]
+
+]
+
+[manpage_end]
+

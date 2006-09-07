@@ -1,0 +1,11 @@
+[manpage_begin Ns_puts n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+	    [para]Deprecated.  See: ns_adp_puts
+
+
+[para]
+
+
+[manpage_end]
+

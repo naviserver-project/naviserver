@@ -1,0 +1,106 @@
+[manpage_begin Ns_queryget n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_queryget - Get a value from the query data that was part of the HTTP request
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_queryget key&nbsp;?value?
+
+
+[list_end]
+
+[description]
+
+ This command looks in the query data for the specified key, and returns the value that was included in the HTTP request.  If the key does not exist in the query data, an empty string is returned.  The key is interpreted in a case-insensitive manner.
+
+ If the optional value argument is specified, and the key does not exist in the query data, the specified value is returned instead of an empty string.  This capability allows for providing a default value if the key doesn't exist. 
+
+ This function works for simple forms as well as for multipart formdata. 
+
+ For files uploaded with the Netscape file upload widget, the file that was uploaded is an entry in the query data. See Example 3, below. 
+
+[section EXAMPLES]
+
+ Example 1:
+
+[example_begin]
+   set x [ns_queryget name]
+   
+[example_end]
+
+ If "name" is a key in the query data, the variable x will be set to the value associated with the "name" key.     If "name" is not a key in the query data, "" will be returned.
+
+ Example 2: 
+
+[example_begin]
+   set x [ns_queryget name Hoover]
+[example_end]
+
+ If "name" is a key in the query data, the variable x will be set to the value associated with the "name" key. If "name" is not a key in the query data, "Hoover" will be returned.
+
+ Example 3: Given this HTML form: 
+
+[example_begin]
+   &lt;form enctype=multipart/form-data method=POST
+      action=/formtest&gt;
+   Local file: &lt;input name=clientfile type=file&gt;
+   To remote file: &lt;INPUT TYPE=text NAME=path VALUE="" SIZE=80&gt;
+   &lt;input name=submit type=submit value=Upload&gt;
+   &lt;/form&gt;
+   
+[example_end]
+
+ and this POST handler: 
+
+[example_begin]
+   proc formtest { } {
+       set remotefile [ns_queryget path]
+       set localfile [ns_queryget clientfile]
+       set where_the_data_is [ns_queryget clientfile.tmpfile]
+   }&nbsp;;# formtest
+   
+[example_end]
+
+ Suppose the user specified "spoon.txt" as the Local File and "/oop/ack/tick.txt" as the Remote File, and then     submitted the form. The variable values in the formtest procedure will be: remotefile = "/oop/ack/tick.txt"
+
+[example_begin]
+   localfile = "spoon.txt"
+   _the_data = something like: "/var/tmp/baaa29444"
+     
+[example_end]
+
+ If you want to use the contents of the uploaded file, you can open it by executing: 
+
+[example_begin]
+   open [ns_queryget clientfile.tmpfile]
+   
+[example_end]
+
+ You can then read it and manipulate it as you want. Note, however, that this tmp file will be deleted once the connection closes.
+
+[para]NOTES
+
+ Note that despite it's name, ns_queryget works on POST form data as well as query string data.
+
+
+[see_also nsd]
+[keywords 
+
+ ns_queryexists, ns_querygetall
+
+
+[para]
+
+]
+
+[manpage_end]
+

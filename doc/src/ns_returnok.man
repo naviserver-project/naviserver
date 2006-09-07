@@ -1,0 +1,44 @@
+[manpage_begin Ns_returnok n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_returnok - Return a 200 (Ok) status message to the client
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_returnok
+
+
+[list_end]
+
+[description]
+
+ This command returns 200 (Ok) to the client.
+
+ Note: No data is returned to the client when this command is invoked.
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_returnok
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_return, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnforbidden, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnredirect, ns_returnunauthorized
+
+
+[para]
+]
+
+[manpage_end]
+

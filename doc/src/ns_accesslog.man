@@ -1,0 +1,130 @@
+[manpage_begin ns_accesslog n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {ns_accesslog - Control the nslog access log module}]
+
+[description]
+
+This command provides a mechanism to control the nslog access log module.
+The legal options (which may be abbreviated) are:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_accesslog] [arg option] [arg ?arg?]]
+
+[call [cmd ns_accesslog] [arg file]]
+
+Returns the name of the access log file for the current (possibly virtual) server.
+The default is relative to the server's module directory in "nslog/access.log".
+
+[call [cmd ns_accesslog] [arg roll] [arg ?file?]]
+
+Rolls the access log, or optionally some other file.  See ns_logroll for log rolling behavior.
+However, instead of the max backup being specified in "ns/parameters" as "logmaxbackup", it is
+specified in section "ns/server/$servername/module/nslog" as "maxbackup" and defaults to 100.
+
+[call [cmd ns_accesslog] [arg rollfmt]]
+
+Set or return folling format
+
+[call [cmd ns_accesslog] [arg flags] [arg ?flags?]]
+
+Set or return current flags such as logcombined/formattedtime/suppressquery/checkforproxy
+
+[call [cmd ns_accesslog] [arg maxbuffer] [arg ?maxnum?]]
+
+Set or return max number of lines in the buffer
+
+[call [cmd ns_accesslog] [arg maxbackup] [arg ?maxbum?]]
+
+Set or return max number of backup files
+
+[call [cmd ns_accesslog] [arg extendedheaders] [arg ?headers?]]
+
+Set or return extended headers to be logged
+
+[list_end]
+
+[section CONFIGURATION]
+
+[list_begin definitions]
+[lst_item "ns_section ns/server/\${servername}/module/nslog"]
+
+[lst_item "ns_param file access.log"]
+Name to the log file
+
+[lst_item "ns_param formattedtime true"]
+true==common log format
+
+[lst_item "ns_param logcombined false"]
+true==NCSA combined format
+
+[lst_item "ns_param maxbuffer 0"]
+Max # of lines in the buffer
+
+[lst_item "ns_param maxbackup 5"]
+Max # of files to keep when rolling
+
+[lst_item "ns_param rollhour 0"]
+Time to roll log
+
+[lst_item "ns_param rolllog true"]
+true==roll the log
+
+[lst_item "ns_param rollonsignal true"]
+true==roll the log on SIGHUP
+
+[lst_item "ns_param suppressquery false"]
+true==Don't show query string in the log
+
+[lst_item "ns_param checkforproxy false"]
+true==check for X-Forwarded-For header
+
+[lst_item "ns_param extendedheaders {Referer X-Forwarded-For}"]
+List of add. headers
+
+[list_end]
+
+[para]
+When supressquery is true, the side-effect is that the real URI is
+returned, so places where trailing slash returns "index.html" logs
+as "index.html"
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_accesslog file
+   /home/aolserver/servers/exampleServer/modules/nslog/access.log
+[example_end]
+
+[example_begin]
+   % ns_modulepath exampleServer nslog/access.log
+   /home/aolserver/servers/exampleServer/modules/nslog/access.log
+[example_end]
+
+[example_begin]
+   # This will roll the access.log
+   % ns_accesslog roll
+[example_end]
+
+[example_begin]
+   nscp:2> ns_accesslog flags
+   logCombined formattedTime
+
+   nscp:3> ns_accesslog flags [list logCombined formattedTime checkForProxy]
+   logCombined formattedTime checkForProxy
+
+   nscp:4> ns_accesslog extendedheaders
+
+   nscp:5> ns_accesslog extendedheaders [list X-Forwarded-For Accepted]
+   X-Forwarded-For Accepted
+[example_end]
+
+[see_also nsd]
+[keywords ns_logroll, ns_modulepath]
+
+[manpage_end]
+

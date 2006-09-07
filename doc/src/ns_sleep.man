@@ -1,0 +1,42 @@
+[manpage_begin Ns_sleep n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_sleep - Sleep for a specified number of seconds
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_sleep seconds
+
+
+[list_end]
+
+[description]
+
+ Sleeps for the number of seconds specified in seconds.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_sleep 2
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ 
+
+
+[para]
+]
+
+[manpage_end]
+

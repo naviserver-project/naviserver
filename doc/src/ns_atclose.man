@@ -1,0 +1,30 @@
+[manpage_begin Ns_atclose n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc[para]ns_atclose - Queue a script to run after the current connection is closed
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[para]ns_atclose script&nbsp;?arg?
+
+[list_end]
+
+[description]
+[para]This command queues a script to run after the current connection is closed.  The script and optional arg are concatenated together and added to the list of at-close callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
+[section EXAMPLES]
+
+[see_also nsd]
+[keywords 
+[para]ns_atexit, ns_atshutdown, ns_atsignal
+
+
+[para]
+]
+
+[manpage_end]
+

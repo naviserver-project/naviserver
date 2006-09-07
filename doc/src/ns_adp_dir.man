@@ -1,0 +1,37 @@
+[manpage_begin Ns_adp_dir n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_adp_dir - Returns the current working directory for an ADP page
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_adp_dir
+
+
+[list_end]
+
+[description]
+
+ This command returns the current working directory of the current ADP page.~~~If this command is not called from inside an ADP page, "/" is returned instead.
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_adp_dir
+[example_end]
+
+
+[para]
+
+
+
+[manpage_end]
+

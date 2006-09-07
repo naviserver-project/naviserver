@@ -1,0 +1,66 @@
+[manpage_begin Ns_cond n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_cond - Operate on condition variables
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_cond option&nbsp;?arg arg ...?
+
+
+[list_end]
+
+[description]
+
+ This command provides a mechanism to manipulate condition variables.  The legal options (which may be abbreviated) are:
+
+[call [cmd  ns_cond broadcast object]]
+
+ Wakes up all threads waiting on the specified object.
+
+[call [cmd  ns_cond create]]
+
+ Initializes a new condition variable and returns a handle to it.
+
+[call [cmd  ns_cond destroy object]]
+
+ Destroys the condition variable and frees any resources it was using.
+
+ NOTE: No threads must be waiting on the condition variable, or else the behavior is undefined and will likely crash the server.
+
+[call [cmd  ns_cond set object]]
+<li> ns_cond signal object
+
+ Wakes up one thread waiting on the specified object.  If more than one thread is waiting, only one is woken up.  If no threads are waiting, nothing happens.
+
+[call [cmd  ns_cond abswait condId mutexId&nbsp;?timeout?]]
+
+ Waits on a condition variable.  timeout is an absolute time in Unix seconds when to wait until.  If not specified, timeout defaults to 0, which causes the command to not sleep at all.  Returns 1 on success or 0 on timeout.
+
+[call [cmd  ns_cond timedwait condId mutexId&nbsp;?timeout? ]]
+<li> ns_cond wait condId mutexId&nbsp;?timeout? 
+
+ Waits on a condition variable.  If timeout is not specified, the thread will sleep indefinitely.  Otherwise, the thread will wait up to timeout seconds.  Returns 1 on success or 0 on timeout.
+
+[section EXAMPLES]
+
+[see_also nsd]
+[keywords 
+
+ ns_event, ns_mutex, ns_thread
+
+
+[para]
+
+]
+
+[manpage_end]
+

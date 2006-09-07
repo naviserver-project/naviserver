@@ -1,0 +1,44 @@
+[manpage_begin Ns_htmlselect n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_htmlselect - Build an HTML SELECT form widget from the specified data
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_htmlselect ?-multi?&nbsp;?-sort?&nbsp;?-labels labels? name values&nbsp;?selectedData?
+
+
+[list_end]
+
+[description]
+
+ This command builds an HTML SELECT tag using the passed-in data.
+
+ If -multi is specified, the SELECT will be generated with the MULTIPLE attribute to allow multiple options to be selected.  This option also affects the SIZE attribute output for the SELECT.  If -multi is specified, the SIZE attribute will be set to 5 or the number of elements in values, whichever is less.  If -multi is not specified, then the SIZE attribute will be set to 5 if there are more than 25 elements in values.  If there are 25 or fewer elements in values, the SIZE attribute will be omitted (equivalent to SIZE=1).
+
+ If -sort is specified, the option list of the SELECT will be sorted according to the elements of labels, or the elements of values if labels is not specified.  
+
+ labels is an optional list of labels to display.  If not specified, the elements of values will be used.  The order and number of the labels list must match the order and number of the values list.
+
+ name specifies the NAME attribute of the SELECT.
+
+ values is a list of the OPTIONs for the SELECT. If a labels list is not specified, the values themselves will be used as the OPTION labels.  
+
+ selectedData is an optional list of the OPTIONs that will be selected by default.
+
+[section EXAMPLES]
+
+[example_begin]
+   % set favoriteAnimal [[ns_htmlselect_old -sort -labels [list dog cat cow]] "favoriteAnimal" 
+
+
+[manpage_end]
+

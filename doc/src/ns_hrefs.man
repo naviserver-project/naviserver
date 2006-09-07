@@ -1,0 +1,32 @@
+[manpage_begin Ns_hrefs n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_hrefs - Returns URLs from anchor elements in a chunk of HTML
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_hrefs html
+
+
+[list_end]
+
+[description]
+
+ This command finds the anchor elements (&lt;A&gt;) in a chunk of HTML, html, and returns a list of the URLs in those elements' href attributes.
+
+[section EXAMPLES]
+
+[example_begin]
+   % set html {One good website is &lt;A href='
+
+
+[manpage_end]
+

@@ -1,0 +1,43 @@
+[manpage_begin Ns_issmallint n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_smallint - Test to see if a number is a 'smallint'
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_smallint value
+
+
+[list_end]
+
+[description]
+
+ This command returns true only if value consists entirely of digits, and contains from 1 to 6 digits.~~~False is returned in all other cases.
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_issmallint 12
+   ns_issmallint thisswillreturn0
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ @@COMMAND_RELATED_COMMANDS@@
+
+
+[para]
+]
+
+[manpage_end]
+

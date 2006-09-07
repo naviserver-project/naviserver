@@ -1,0 +1,46 @@
+[manpage_begin Ns_returnunauthorized n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_returnunauthorized - Return a 401 (Unauthorized) status message to the client
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_returnunauthorized ?connid?
+
+
+[list_end]
+
+[description]
+
+ This command informs the client that they are not authorized to access the URL that was requested.  Depending on the client, this may trigger the client to prompt its user to provide authentication credentials (such as username and password) which it can issue a subsequent request providing those details.
+
+ The optional connid parameter is deprecated and should not be used.
+
+ Note: The script does not end at the time this command is invoked.  ns_adp_abort or ns_adp_return should be called to end script processing after ns_returnunauthorized.
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_returnunauthorized
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_return, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnforbidden, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnok, ns_returnredirect
+
+
+[para]
+]
+
+[manpage_end]
+

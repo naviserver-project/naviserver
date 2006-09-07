@@ -1,0 +1,38 @@
+[manpage_begin Ns_write n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_write - Write data to the current connection's socket.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_write ?connid? string
+
+
+[list_end]
+
+[description]
+
+ This command writes the string immediately to the current connection's socket.  It can be used in place of ns_return or ns_respond to send back responses.  AOLserver will not include any headers when using ns_write.
+
+ Returns 1 if write was successful and 0 if write failed.  This can be useful to determine if the client has closed the connection, possibly by hitting the stop button.
+
+
+[see_also nsd]
+[keywords 
+
+ ns_writefp, ns_return
+
+
+[para]
+]
+
+[manpage_end]
+

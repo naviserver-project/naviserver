@@ -1,0 +1,59 @@
+[manpage_begin Ns_tagelement n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_tagelement - Find the value of an attribute in an HTML element.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_tagelement tag attribute
+
+
+[list_end]
+
+[description]
+
+ This command takes a string containing an HTML element, tag, and searches it for the specified attribute.  If the attribute is found, its value is returned.  If the attribute is not found, an empty string is returned.  If the attribute's value is surrounded by double quotes, they will be removed.
+
+[section EXAMPLES]
+
+[example_begin]
+
+% set tag {&lt;img height=150 border=&quot;0&quot; class=&quot;c1 c2&quot; src='me.jpg'&gt;}
+&lt;img height=150 border=&quot;0&quot; class=&quot;c1 c2&quot; src='me.jpg'&gt;
+
+% ns_tagelement $tag id
+
+% ns_tagelement $tag border
+150
+
+% ns_tagelement $tag class 
+c1 c2
+
+% ns_tagelement $tag src
+'me.jpg'
+[example_end]
+
+[para]NOTES
+
+ Is not removing single quotes surrounding the value a bug?
+
+
+[see_also nsd]
+[keywords 
+
+ ns_tagelementset
+
+
+[para]
+]
+
+[manpage_end]
+

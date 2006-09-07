@@ -1,0 +1,46 @@
+[manpage_begin Ns_returnforbidden n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_returnforbidden - Return a 403 (Forbidden) status message to the client
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_returnforbidden ?connid?
+
+
+[list_end]
+
+[description]
+
+ This command informs the client that they are forbidden from accessing the URL that was requested.  This means that the authentication information in the request failed to grant them access.
+
+ The optional connid parameter is deprecated and should not be used.
+
+ Note: The script does not end at the time this command is invoked.  ns_adp_abort or ns_adp_return should be called to end script processing after ns_returnforbidden.
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_returnforbidden
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_return, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnok, ns_returnredirect, ns_returnunauthorized
+
+
+[para]
+]
+
+[manpage_end]
+

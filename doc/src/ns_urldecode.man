@@ -1,0 +1,27 @@
+[manpage_begin Ns_urldecode n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_urldecode - URL decoding
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_urldecode ?-charset charset? data
+
+
+[list_end]
+
+[description]
+
+ This command decodes a string according to the rules for URL encoding defined in 
+]
+
+[manpage_end]
+

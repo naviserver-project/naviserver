@@ -1,0 +1,12 @@
+[manpage_begin Ns_register_filter n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[para]Additional notes:
+[para]The manual page says "The URLpattern can contain standard string-matching characters". To be more precise the allowed matching characters are determined by .
+
+
+
+[manpage_end]
+

@@ -1,0 +1,27 @@
+[manpage_begin Ns_parsehttptime n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_parsehttptime - Convert a HTTP date format string into seconds
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_parsehttptime httptime
+
+
+[list_end]
+
+[description]
+
+ This command parses a string containing an HTTP date format string (see 
+]
+
+[manpage_end]
+

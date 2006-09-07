@@ -1,0 +1,55 @@
+[manpage_begin Ns_resume n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_resume - Resume a previously paused scheduled script
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_resume id
+
+
+[list_end]
+
+[description]
+
+ This command resumes scheduling of a previously paused script via ns_pause.  Returns 1 on success, 0 on failure.
+
+[section EXAMPLES]
+
+[example_begin]
+   % set id [[ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }]]
+   19
+[example_end]
+
+[example_begin]
+   % ns_pause $id
+   1
+[example_end]
+
+[example_begin]
+   % ns_resume $id
+   1
+[example_end]
+
+[example_begin]
+   % ns_unschedule_proc $id
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_info scheduled, ns_pause, ns_unschedule_proc
+
+]
+
+[manpage_end]
+

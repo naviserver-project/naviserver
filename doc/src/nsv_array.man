@@ -1,0 +1,86 @@
+[manpage_begin Nsv_array n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ nsv_array - Tcl array functionality in nsvs
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ nsv_array get array ?pattern?
+
+ nsv_array set array value-list
+
+ nsv_array reset array value-list
+
+ nsv_array exists array
+
+ nsv_array size array
+
+ nsv_array names array ?pattern?
+
+
+[list_end]
+
+[description]
+
+ nsv_array works much like the Tcl array command.
+
+[section EXAMPLES]
+[para]Basic
+
+[example_begin]
+   % nsv_array set shared_array { key1 value1 key2 value2 }
+   
+   % nsv_array get shared_array
+   key1 value1 key2 value2
+[example_end]
+
+[example_begin]
+   % nsv_array reset shared_array { key3 value3 }
+[example_end]
+
+[example_begin]
+   % nsv_array exists shared_array
+   1
+[example_end]
+
+[example_begin]
+   % nsv_array size shared_array
+   1
+[example_end]
+
+[example_begin]
+   % nsv_array names shared_array
+   key3
+[example_end]
+
+[para]Working with tcl arrays
+
+[example_begin]
+   % nsv_array set shared_array [array get tmp_shared_array]
+[example_end]
+
+[example_begin]
+   % array set tmp_shared_array [nsv_array get shared_array]
+[example_end]
+
+[example_begin]
+   % nsv_array reset shared_array [array get tmp_shared_array]
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ 
+]
+
+[manpage_end]
+

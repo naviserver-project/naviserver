@@ -1,0 +1,61 @@
+[manpage_begin Ns_quotehtml n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_quotehtml - Escape HTML characters so they appear as-is in HTML pages
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_quotehtml html
+
+
+[list_end]
+
+[description]
+
+ Returns the contents of html with certain characters that are special in HTML replaced with an escape code.  This allows text displayed in a webpage that might otherwise be interpreted as containing HTML markup instructions to be interpreted as literal characters to be displayed.  Specifically:
+
+[call [cmd  &lt; becomes &amp;lt;]]
+<li> &gt; becomes &amp;gt;
+<li> &amp; becomes &amp;amp;
+<li> ' becomes &amp;#39;
+<li> " becomes &amp;#34;
+
+ All other characters are unmodified in the output.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_quotehtml "Hello World!"
+   Hello World!
+[example_end]
+
+[example_begin]
+   % ns_quotehtml "The &lt;STRONG&gt; tag is used to indicate strongly emphasized text."
+   The &amp;lt;STRONG&amp;gt; tag is used to indicate strongly emphasized text.
+[example_end]
+
+[example_begin]
+   % ns_quotehtml {&lt;span class="foo"&gt;}
+   &amp;lt;span class=&amp;#34;foo&amp;#34;&amp;gt;
+[example_end]
+
+[para]
+NOTES
+
+ The set of characters that are substituted and their replacements may be different in previous versions of AOLserver.  For example, AOLserver 2.x does not escape single or double-quotes.
+
+
+[para]
+
+
+
+[manpage_end]
+

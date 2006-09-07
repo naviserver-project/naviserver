@@ -1,0 +1,43 @@
+[manpage_begin Ns_urlcharset n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_urlcharset - Set the current connections url charset
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_urlcharset charset
+
+
+[list_end]
+
+[description]
+
+ Set the current connections urlcharset. Returns the encoding value for the specified charset. If the connection's urlencoding value is being changed then flush any form set cached locally, ns_conn will do the same.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_urlcharset iso-8859-1
+   iso8859-1
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_charsets
+
+
+[para]
+]
+
+[manpage_end]
+

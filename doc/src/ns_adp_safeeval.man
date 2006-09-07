@@ -1,0 +1,9 @@
+[manpage_begin Ns_adp_safeeval n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+	    [para]Hi
+
+
+
+[manpage_end]
+

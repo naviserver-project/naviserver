@@ -1,0 +1,28 @@
+[manpage_begin Ns_httptime n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_httptime - Convert seconds to HTTP date format
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_httptime time
+
+
+[list_end]
+
+[description]
+
+ This command converts the time, specified as the number of seconds from 00:00:00 UTC Jan 1, 1970, to a string in HTTP date format (see 
+
+]
+
+[manpage_end]
+

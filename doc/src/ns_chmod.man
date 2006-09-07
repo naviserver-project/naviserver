@@ -1,0 +1,57 @@
+[manpage_begin Ns_chmod n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_chmod - Change a file's access permissions
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_chmod filename mode
+
+
+[list_end]
+
+[description]
+
+ This command changes the permissions on a file or directory specified by filename to mode, in the same manner as the Unix chmod(1) command-line utility.
+
+ This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use
+
+[para]Tcl's file attributes -permissions command instead.  In other words, this:
+
+[example_begin]
+   ns_chmod /tmp/ns_chmod 0755
+[example_end]
+
+[para]is equivalent to:
+
+[example_begin]
+   file attributes /tmp/ns_chmod -permissions 0755
+[example_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   # can't think of a non-trivial example here
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_link, ns_mkdir, ns_rename, ns_rmdir, ns_symlink
+
+
+[para]
+
+]
+
+[manpage_end]
+

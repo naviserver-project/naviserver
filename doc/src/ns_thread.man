@@ -1,0 +1,64 @@
+[manpage_begin Ns_thread n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_thread - Operate on threads
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_thread option&nbsp;?arg arg ...?
+
+
+[list_end]
+
+[description]
+
+ This command provides a mechanism to manipulate threads.  The legal options (which may be abbreviated) are:
+
+[call [cmd  ns_thread begin script]]
+<li> ns_thread create script
+
+ Initializes a new thread and starts it executing script.  Threads created this way are joinable and must be ns_thread joined, otherwise the resources held by the thread will not be freed until the thread is joined.  Returns a handle to the new thread.
+
+[call [cmd  ns_thread begindetached script]]
+
+ Initializes a new thread and starts it executing script.  Threads created this way are detached and do not need to be (nor can be) joined.
+
+[call [cmd  ns_thread get]]
+
+ Returns the handle for the current thread.
+
+[call [cmd  ns_thread getid ~~~]]
+<li> ns_thread id
+
+ Returns the current thread's thread ID as an integer.  This thread ID corresponds to the third element in the sub-list returned from ns_info threads.
+
+[call [cmd  ns_thread name ?name?]]
+
+ Returns the name of the current thread.  Optionally sets the thread name if name is specified.
+
+[call [cmd  ns_thread join tid ~~~]]
+<li> ns_thread wait tid
+
+ Attempts to join the thread specified by thread handle tid.  If the thread is still executing, the caller will block until the thread being joined completes.  Returns the return value of the script that the thread being joined was executing.
+
+ NOTE: Attempting to join a thread that has already been joined will currently crash the server.
+
+[call [cmd  ns_thread yield]]
+
+ Causes the current thread to yield its CPU to other running threads.
+
+[para]NOTES
+[para]Calling ns_thread join on an invalid thread ID or a thread ID that has already been joined will cause the server to abort with a fatal error.  See 
+
+]
+
+[manpage_end]
+

@@ -1,0 +1,40 @@
+[manpage_begin ns_hostbyaddr n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {ns_hostbyaddr - Reverse lookup an IP address to its hostname}]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_hostbyaddr] [arg address]]
+
+[nl]
+[arg address]
+IP Address to be resolved into hostname
+
+[list_end]
+
+[description]
+This command resolves an IP address to its hostname.  If the IP address cannot be resolved, it throws an error.
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_hostbyaddr 127.0.0.1
+ localhost
+[example_end]
+
+[example_begin]
+ % ns_hostbyaddr 0.0.0.0
+ could not lookup 0.0.0.0
+     while executing
+ "ns_hostbyaddr 0.0.0.0"
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_addrbyhost]
+
+[manpage_end]
+

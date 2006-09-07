@@ -1,0 +1,47 @@
+[manpage_begin Ns_unschedule_proc n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_unschedule_proc - Unschedule a previously scheduled script
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_unschedule_proc id
+
+
+[list_end]
+
+[description]
+
+ This command unschedules a previous scheduled script.  NOTE: Current behavior is to silently return without error if the id doesn't represent a currently scheduled ID.
+
+[section EXAMPLES]
+
+[example_begin]
+   % set id [[ns_schedule_proc -once 60 { test }]]
+   123
+[example_end]
+
+[example_begin]
+   % ns_unschedule_proc $id
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_after, ns_info scheduled, ns_pause, ns_resume, ns_schedule_proc, ns_schedule_daily, ns_schedule_weekly
+
+
+[para]
+]
+
+[manpage_end]
+

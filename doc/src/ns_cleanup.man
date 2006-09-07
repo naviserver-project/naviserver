@@ -1,0 +1,28 @@
+[manpage_begin Ns_cleanup n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_cleanup - Clean up the current Tcl interpreter
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_cleanup
+
+
+[list_end]
+
+[description]
+
+ This command cleans up the current Tcl interp, performing various garbage collection tasks.  This command is invoked by the 
+
+]
+
+[manpage_end]
+

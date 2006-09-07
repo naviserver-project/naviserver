@@ -1,0 +1,8 @@
+[manpage_begin Ns_encrypt n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+	    [para]See 
+
+
+[manpage_end]
+

@@ -1,0 +1,25 @@
+[manpage_begin Ns_uuencode n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_uuencode - Binary-to-text encoding using "htuu" encoding
+
+[para]SYNOPSYS
+
+ ns_uuencode string
+
+
+[list_end]
+
+[description]
+
+ This command performs a binary-to-text encoding on string.  There is an arbitrary limit of 48 bytes for the input string.  The encoded string will be approximately 33% longer than the original.
+
+ NOTE: This is HTTP-style uuencoding/uudecoding which is sometimes called "htuu" (see 
+
+]
+
+[manpage_end]
+

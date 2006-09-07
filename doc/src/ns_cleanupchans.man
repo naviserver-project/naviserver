@@ -1,0 +1,33 @@
+[manpage_begin Ns_cleanupchans n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_cleanupchans - Close all I/O channels except the std ones
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_cleanupchans 
+
+
+[list_end]
+
+[description]
+
+ This command closes all shared channels (via ns_chan) and all regular channels except those that match the glob expression "std*" where the intention is to not close stdin, stdout and stderr.  This command is defined in tcl/init.tcl and is also called as part of ns_cleanup.
+
+
+[see_also nsd]
+[keywords 
+
+ ns_chan, ns_cleanup, ns_getchannels, Tcl [file channels] 
+]
+
+[manpage_end]
+

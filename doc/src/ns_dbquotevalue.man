@@ -1,0 +1,59 @@
+[manpage_begin Ns_dbquotevalue n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_dbquotevalue - Prepare a value string for inclusion in an SQL statement.
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_dbquotevalue value&nbsp;?type?
+
+
+[list_end]
+
+[description]
+
+ This command prepares the string value for inclusion in an SQL statement.  If value is "", ns_dbquotevalue will return the string "NULL".  If value is not "", the returned value depends on type.  If type is one of: bigint, bit, decimal, double, float, int, integer, numeric, real, smallint, or tinyint, then value will be returned without modification.  When type is any other string, or if type is omitted, value will be surrounded by single quotes, and any single quotes that it contains will be escaped by translation into two single quotes.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_dbquotevalue ""
+   NULL
+[example_end]
+
+[example_begin]
+   % ns_dbquotevalue 45.3 float
+   45.3
+[example_end]
+
+[example_begin]
+   % ns_dbquotevalue "John's Car"
+   'Johns Car'
+[example_end]
+
+[example_begin]
+   % set company "John's Cheese Factory"
+   % ns_db dml $db "INSERT INTO companies (name) VALUES ([ns_dbquotevalue $company])"
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_dbquotename
+
+
+[para]
+
+]
+
+[manpage_end]
+

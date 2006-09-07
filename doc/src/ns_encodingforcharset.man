@@ -1,0 +1,43 @@
+[manpage_begin Ns_encodingforcharset n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_encodingforcharset - Return the name of the encoding for the specified charset
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_encodingforcharset charset
+
+
+[list_end]
+
+[description]
+
+ Returns the name of the encoding for the specified charset.
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_encodingforcharset windows-1258
+   cp1258
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_charsets
+
+
+[para]
+]
+
+[manpage_end]
+

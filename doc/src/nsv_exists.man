@@ -1,0 +1,49 @@
+[manpage_begin Nsv_exists n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ nsv_exists - Test whether a key exists
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ nsv_exists array key
+
+
+[list_end]
+
+[description]
+
+ Test whether a key exists in the nsv array.
+
+[section EXAMPLES]
+
+[example_begin]
+   % nsv_exists shared_array key1
+   1
+[example_end]
+
+[para]the key exists
+
+[example_begin]
+   % nsv_exists shared_array key2
+   0
+[example_end]
+
+[para]the key does not exist 
+
+[see_also nsd]
+[keywords 
+
+ 
+
+]
+
+[manpage_end]
+

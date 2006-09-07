@@ -1,0 +1,37 @@
+[manpage_begin Ns_urlencode n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_urlencode - Encode a string to its URL-encoded representation
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_urlencode ?-charset charset? data
+
+
+[list_end]
+
+[description]
+
+ This command encodes a string according to the rules for URL encoding defined in 
+   http%3a%2f%2fwww%2eaolserver%2ecom%2f
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_urldecode
+
+
+]
+
+[manpage_end]
+

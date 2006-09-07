@@ -1,0 +1,10 @@
+[manpage_begin Ns_share n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[para]The use of ns_share is deprecated. Careless use of ns_share commands can severely limit the scalability of an application. 
+]
+
+[manpage_end]
+

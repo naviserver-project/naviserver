@@ -1,0 +1,91 @@
+[manpage_begin Ns_httpopen n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[para]
+NAME
+
+ ns_httpopen - Fetch a web page
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_httpopen method url&nbsp;?rqset?&nbsp;?timeout?&nbsp;?pdata?
+
+
+[list_end]
+
+[description]
+
+ This command opens an http connection to a web page used to fetch its contents via the method, which may be POST, GET, or another valid http method.  If the act of opening the connections fails, it may throw an error.
+
+ The url may be either absolute () or local (/page). If it is local, the host and port number of the server are added.
+
+ The parameter rqset is the handle for an ns_set containing headers to send with the request. The timeout is the number of seconds to wait for the connection to open.  Pdata is the  extra data to send with the request (i.e. post data). If pdata is specified, the caller is responsible for supplying the Content-length and Content-type headers in rqset
+
+ The call returns a list with these three elements: a file descriptor for reading, a file descriptor for writing, and a set ID for a set describing the connection. 
+
+ Note: This command is currently implemented in Tcl, in the source file tcl/http.tcl
+
+[section EXAMPLES]
+
+[example_begin]
+
+    # A proc to post some data to a url and return the result
+    proc postit {url data} {
+        set rqset [ns_set new rqset]
+        ns_set put $rqset &quot;Accept&quot; &quot;*/*&quot;
+        ns_set put $rqset &quot;User-Agent&quot; &quot;[ns_info name]-Tcl/[ns_info version]&quot;
+        # ns_set put $rqset &quot;Content-type&quot; &quot;text/xml&quot;
+        ns_set put $rqset &quot;Content-type&quot; &quot;application/x-www-form-urlencoded&quot;
+        ns_set put $rqset &quot;Content-length&quot; [string length $data]
+        set timeout 15
+        set connInfo [ns_httpopen POST $url $rqset $timeout $data]
+        foreach {rfd wfd headers} $connInfo break
+        close $wfd
+        set length [ns_set iget $headers content-length]
+        if {[string match &quot;&quot; $length]} {
+            set length -1
+        }
+        set page &quot;&quot;
+        set err [catch {
+            # Read the content.
+            while {1} {
+                set buf [_ns_http_read $timeout $rfd $length]
+                append page $buf
+                if {[string match &quot;&quot; $buf]} {
+                    break
+                }
+                if {$length &gt; 0} {
+                    incr length -[string length $buf]
+                    if {$length &lt;= 0} {
+                        break
+                    }
+                }
+            }
+        } errMsg]
+        ns_set free $headers
+        close $rfd
+        if {$err} {
+            return -code error -errorinfo $::errorInfo $errMsg
+        }
+        return $page
+    }
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+
+ ns_http, ns_httpget, ns_httppost
+
+
+]
+
+[manpage_end]
+

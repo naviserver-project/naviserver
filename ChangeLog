@@ -26,6 +26,8 @@
 	index.adp: Make it in the top level
 	simple-config.tcl: smallest and simplest possible config file
 
+	Makefile: reflect recent changes in contrib and config giles
+
 2006-09-07  Bernd Eidenschink  <eide@users.sf.net>
 
 	* doc/src/commandlist.man: First shot of a document listing all

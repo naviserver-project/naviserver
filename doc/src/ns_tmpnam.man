@@ -1,0 +1,37 @@
+[manpage_begin Ns_tmpnam n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc[para]ns_tmpnam - Generate a temporary file name
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[para]ns_tmpnam
+
+[list_end]
+
+[description]
+[para]This command generates a filename that can safely be used for a temporary file.  ns_tmpnam uses the tmpnam() function, therefore the behavior will depend on the operating system.
+[section EXAMPLES]
+
+[example_begin]
+ % ns_tmpnam
+ /tmp/fileCQwPYG
+[example_end]
+
+
+[see_also nsd]
+[keywords 
+[para]ns_mktemp
+
+
+[para]
+
+]
+
+[manpage_end]
+

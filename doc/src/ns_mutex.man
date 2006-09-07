@@ -1,0 +1,37 @@
+[manpage_begin Ns_mutex n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc
+ ns_mutex - Operate on mutexes
+
+]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ ns_mutex option&nbsp;?arg arg ...?
+
+
+[list_end]
+
+[description]
+
+ This command provides a mechanism to manipulate mutexes.  The legal options (which may be abbreviated) are:
+
+[call [cmd  ns_mutex create ?name?]]
+
+ Initializes a new mutual exclusion (mutex) lock and returns a handle to it.  If name is provided the mutex name will be set to this value.
+
+[call [cmd  ns_mutex destroy object]]
+
+ Destroys the mutex and frees any resources it was using.
+
+ NOTE: The mutex must be unlocked, or else the behavior is undefined and will likely crash the server.  Before using this, you should probably look at 
+]
+
+[manpage_end]
+
