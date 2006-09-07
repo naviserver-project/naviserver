@@ -13,5 +13,5 @@ Optional: list and description of sub-commands.
 Put some examples here to illustrate command usage.
 
 [see_also nsd]
-[keywords NaviServer ns_proxy]
+[keywords NaviServer]
 [manpage_end]
