@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -169,7 +169,7 @@ typedef long			ns_int64;
 typedef unsigned long		ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%ld"
 #elif defined(_WIN32)
-typedef int			mode_t;  /* Bug: #703061 */ 
+typedef int			mode_t;  /* Bug: #703061 */
 typedef __int64			ns_int64;
 typedef unsigned __int64	ns_uint64;
 #define NS_INT_64_FORMAT_STRING "%I64d"
@@ -461,7 +461,7 @@ typedef struct Ns_TclCallback {
  * Windows does not have this declared.
  * The defined value has no meaning.
  * It just have to exist and it needs
- * to be accepted by any strerror() call. 
+ * to be accepted by any strerror() call.
  */
 
 #ifndef ETIMEDOUT
@@ -563,7 +563,7 @@ typedef struct Ns_DriverInitData {
 } Ns_DriverInitData;
 
 /*
- * More typedefs of functions 
+ * More typedefs of functions
  */
 
 typedef void (Ns_ArgProc)
@@ -584,7 +584,7 @@ typedef int (Ns_LogFilter)
 typedef int (Ns_UrlToFileProc)
     (Ns_DString *dsPtr, CONST char *server, CONST char *url);
 
-typedef int (Ns_Url2FileProc) 
+typedef int (Ns_Url2FileProc)
     (Ns_DString *dsPtr, CONST char *url, void *arg);
 
 typedef char* (Ns_ServerRootProc)
@@ -658,8 +658,8 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_Entry *
-Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr, 
-                        Ns_Time *timeoutPtr) NS_GNUC_NONNULL(1) 
+Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr,
+                        Ns_Time *timeoutPtr) NS_GNUC_NONNULL(1)
      NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
@@ -686,7 +686,7 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size, 
+Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
                         Ns_Time *timeoutPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -825,6 +825,9 @@ Ns_ConfigGetSections(void);
 
 NS_EXTERN Ns_Set *
 Ns_ConfigGetSection(CONST char *section);
+
+NS_EXTERN Ns_Set *
+Ns_ConfigCreateSection(CONST char *section);
 
 NS_EXTERN void
 Ns_GetVersion(int *major, int *minor, int *patch, int *type);
@@ -1074,7 +1077,7 @@ Ns_TriggerEventQueue(Ns_EventQueue *queue)
 NS_EXTERN void
 Ns_ExitEventQueue(Ns_EventQueue *queue)
     NS_GNUC_NONNULL(1);
-    
+
 
 /*
  * exec.c:
@@ -1153,7 +1156,7 @@ NS_EXTERN void Ns_IndexIntInit(Ns_Index *indexPtr, int inc);
 /*
  * see macros above for:
  *
- * Ns_IndexCount(X) 
+ * Ns_IndexCount(X)
  */
 
 /*
@@ -1195,8 +1198,8 @@ NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
 NS_EXTERN void Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
 NS_EXTERN double Ns_DRand(void);
 
-/* 
- * task.c: 
+/*
+ * task.c:
  */
 
 NS_EXTERN Ns_TaskQueue *
@@ -1308,9 +1311,9 @@ NS_EXTERN int Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
  */
 
 NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
-NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
+NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                                    Ns_Time *timePtr);
-NS_EXTERN int Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
+NS_EXTERN int Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                                       Ns_Time **timePtrPtr);
 
 /*
@@ -1364,7 +1367,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
     NS_GNUC_NONNULL(1);;
 
 NS_EXTERN void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr) NS_GNUC_DEPRECATED; 
+Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr) NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
 Ns_SetNsLogProc(Ns_LogProc *procPtr)  NS_GNUC_DEPRECATED;
@@ -1793,13 +1796,13 @@ NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int opti
 
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv, 
+NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,
                           Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend, 
+NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend,
                           Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                               Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs, 
+NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                               Ns_Time *timeoutPtr);
 
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
@@ -1812,7 +1815,7 @@ NS_EXTERN SOCKET Ns_SockConnect2(char *host, int port, char *lhost, int lport);
 NS_EXTERN SOCKET Ns_SockAsyncConnect(char *host, int port);
 NS_EXTERN SOCKET Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport);
 NS_EXTERN SOCKET Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr);
-NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport, 
+NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
                                       Ns_Time *timeoutPtr);
 
 NS_EXTERN int Ns_SockSetNonBlocking(SOCKET sock);

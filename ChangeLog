@@ -2,11 +2,11 @@
 
 	* nsd/nsconf.c:
 	* nsd/server.c: Make tcllibray, library, serverdir to reflect
-	defaults from the sample config according to simplified one-server 
+	defaults from the sample config according to simplified one-server
 	configuration which is common and easy to understand for newcomers.
 
 	This will also allow to run server with minimal nsd.tcl
-	which could be good to have with required settings only for easy 
+	which could be good to have with required settings only for easy
 	maintanence.
 
 	ns/parameters/tcllibray points to [ns_info home]/tcl
@@ -17,9 +17,29 @@
 
 	* nsd/pidfile.c: Make it thread safe and reflect default config value
 
-	* nslog/nslog.c: Make it use default log file in logs/access.log if logs/ directory 
-	exists or create new directorty under servers/server/modules/nslog as fallback if 
+	* nslog/nslog.c: Make it use default log file in logs/access.log if logs/ directory
+	exists or create new directorty under servers/server/modules/nslog as fallback if
 	no file config options is specified
+
+	* tcl/fastpath.tcl:
+	* nsd/server.c: Make default diirectorylisting type as simple
+
+	* nscp/nscp.c: If module enabled without any config, by default
+	listen on 127.0.0.1:2080 and add empty user so locally it is possible to
+	telnet without password
+
+        * include/ns.h:
+        * nsd/config.c: Added new public function Ns_ConfigCreateSection which works
+	like Ns_ConfigGetSection but creates new section if it does not exist
+
+	* nsd/nsmain.c: If no servers defined in the config, server with name "default"
+	will be auto-created and started with default config values.
+
+	* nsd/nsmain.c: If home parameter is not specified, installation path
+	will be taken from executable binary, Unix support for now only
+
+	* contrib/nsd-min.tcl: Added example of smallest and minimum config file
+	that can be loaded and have working functional server
 
 2006-09-04  Vlad Seryakov  <seryakov@users.sf.net>
 
@@ -29,7 +49,7 @@
 	to submit all
 
 	* tests/testserver/modules/testhttp.tcl: Make nstest_http chunked-encoding aware
-        i.e. it will concatenate all chunk sinto single body which will be returned. 
+        i.e. it will concatenate all chunk sinto single body which will be returned.
 
 2006-08-31  Stephen Deasey  <sd@groks.org>
 
@@ -67,17 +87,17 @@
 	then to be accepted by eventual strerror() so we had
 	to "invent" something appropriate. Unfortunately the
 	build-in set of errno values in Windows does not seem
-	to have any "near" candidate to the Unix pendant so 
+	to have any "near" candidate to the Unix pendant so
 	we just defined it to one (1). This way it will at least
 	work, albeit not have too much sense in error messages.
 
 2006-08-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tests/ns_proxy.test: Test for [ns_proxy handles ?pool?]
-	* nsproxy/nsproxylib.c: Fixed PushProxy() to honour 
+	* nsproxy/nsproxylib.c: Fixed PushProxy() to honour
 	proxies without associated slave to be set for expiration.
 
-	* nsd/log.c: Rewritten caching of log entries to use 
+	* nsd/log.c: Rewritten caching of log entries to use
 	separate caches for entry structures and log texts.
 	Attempt to stuff both in a dynamic string and cast
 	when needed did not work on some architectures because
@@ -90,12 +110,12 @@
 	in Ns_ProxyInit() when somebody registered Tcl callbacks
 	to the ns_log facility. If the current thread has never
 	loaded an Tcl interpreter (and the reaper thread does not
-	do that explicitly) one will be loaded at the latest at 
-	that point when first call to Ns_Log has been made and 
+	do that explicitly) one will be loaded at the latest at
+	that point when first call to Ns_Log has been made and
 	there is a Tcl callback registered. In this scenario, the
 	Ns_ProxyInit will be called by the server Tcl tracing
 	facility and this will lock the global proxy lock. If at
-	that time somebody is already holding the global lock, 
+	that time somebody is already holding the global lock,
 	we'll have a deadlock.
 
 2006-08-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -115,7 +135,7 @@
 	arise when sending scripts containing paths which in turn
 	contain special multinational characters.
 	Force-fill in the last argument of the proxy command line
-	with some string after the evaluation, as otherwise the 
+	with some string after the evaluation, as otherwise the
 	previously executed command is shown. This is observed
 	only on Linux.
 
@@ -125,14 +145,14 @@
 2006-08-02  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Set pipes in the child proxy to
-	close-on-exec otherwise we may block forever if we 
+	close-on-exec otherwise we may block forever if we
 	attempt to kill the proxy running "exec" Tcl command.
-	
+
 	Redesigned reaper thread not to block the caller by
 	waiting on slave proxy processes to exit.
 
 	The [ns_proxy handle] command accepts one optional argument
-	which is interpreted as pool name and only those handles 
+	which is interpreted as pool name and only those handles
 	belonging to the given pool are reported.
 
 	* nsd/exec.c: Ns_WaitForProcess() logs also the signal name
@@ -141,7 +161,7 @@
 2006-07-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/nsthread.h: Removed declaration of things normally
-	declared in poll.h. We assume that all platforms that we 
+	declared in poll.h. We assume that all platforms that we
 	support have poll implementation in place, thus include the
 	poll.h unconditionally.
 
@@ -167,7 +187,7 @@
 	* nsproxy/ns_prox.man:  Added [ns_proxy send,wait,recv]
 	* tests/ns_proxy.test:  Adjusted tests
 
-	* include/ns.h:         Added ns_poll() wrapper which defaults 
+	* include/ns.h:         Added ns_poll() wrapper which defaults
 	* include/nsthread.h:   to the platform implementation of
 	* nsd/driver.c:         poll() except on Darwin where our own
 	* nsd/nsd.h:            implmenentation is used. Replaced all
@@ -219,12 +239,12 @@
 
 2006-07-12  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* nsd/log.c: Fixed command building in LogToTcl when 
-	registered script contains blanks. 
+	* nsd/log.c: Fixed command building in LogToTcl when
+	registered script contains blanks.
 
 2006-07-10  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/driver.c: Fixed crash when accessing writer 
+	* nsd/driver.c: Fixed crash when accessing writer
 	sock after it has been submitted to the queue
 
 	Fixed crash and put back functinality to make nsopenssl
@@ -260,7 +280,7 @@
 	* tests/ns_cache.test: Add per-cache default timeouts. Timeout
 	values passed using the -timeout switch can now be absolute or
 	relative to the current time. Large values are assumed to be
-	absolute, small values relative. 
+	absolute, small values relative.
 
 2006-07-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
@@ -274,11 +294,11 @@
 	* include/ns.h:
 	* nsd/conn.c:
 	* nsd/queue.c:
-	* nsd/return.c: Make ns_conn keepliave 0|1 to enable or 
-	disable keep-alive on current connection. Removed flag 
-	NS_CONN_KEEPALIVE and instead connPtr->keep is used to 
+	* nsd/return.c: Make ns_conn keepliave 0|1 to enable or
+	disable keep-alive on current connection. Removed flag
+	NS_CONN_KEEPALIVE and instead connPtr->keep is used to
 	control keepailve behaviour.
-	
+
 2006-07-05  Bernd Eidenschink  <eide@users.sourceforge.net>
 
 	* contrib/start-scripts/naviserver.SuSE: Added start script
@@ -297,14 +317,14 @@
 2006-07-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclcallbacks.c: Use our own wrapper Ns_TclCallbackProc()
-	in ShutdownProc(). 
+	in ShutdownProc().
 
 	* include/ns.h: Some cosmetic formatting to honour the 80-chars
 	margin-width. Declared Ns_SetLogFlushProc() and Ns_SetNsLogProc()
 	deprecated in favour of Ns_AddLogFilter() and Ns_RemoveLogFilter().
 
 	* nsd/log.c: Make Ns_SetLogFlushProc() and Ns_SetNsLogProc() issue
-	fatal message when used. Added Ns_AddLogFilter() and 
+	fatal message when used. Added Ns_AddLogFilter() and
 	Ns_RemoveLogFilter() C-API calls as hook into new log processing.
 	The log processing/cache is now always handled by the server. Users
 	can register log callbacks and those will be invoked in the LIFO
@@ -313,7 +333,7 @@
 	registered callbacks below by triggering Tcl error. One predefined
 	callback is always registered: the callback to write to the standard
 	error file-descriptor (routed to the server log file). Any log entries
-	are always emitted there. The [ns_logctl] is extended to include 
+	are always emitted there. The [ns_logctl] is extended to include
 	[ns_log logctl register] and [ns_log logctl unregister] commands which
 	in turn call the C-API calls from above. Those two serve for doing
 	registration and unregistration of Tcl-based log callbacks. Each Tcl
@@ -321,10 +341,10 @@
 
  		<callback> severity timestamp logmsg ?args?
 
-        Example: 
+        Example:
 		# Declare Tcl callback
 		proc logclbk {severity stamp logmsg myarg} {
-		    # do something 
+		    # do something
 		}
 		# Register it with NsLog
 		ns_log logctl register logclbk my_own_arg
@@ -340,8 +360,8 @@
 
         The [ns_log logctl truncate] semantic is changed: before it was
 	used to truncate the log cache to a given number of bytes; now
-	it truncates the log cache to the given number of cache entries. 
-	
+	it truncates the log cache to the given number of cache entries.
+
 2006-05-29  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsdb/dbtcl.c: Added -delimiter parameter to
@@ -352,25 +372,25 @@
 
 	* include/ns.h:
 	* nsd/driver.c: Redefined driver hooks, removed not very
-	well defined API functions. Added 2 new flags, NS_DRIVER_QUEUE_ONACCEPT 
+	well defined API functions. Added 2 new flags, NS_DRIVER_QUEUE_ONACCEPT
 	and NS_DRIVER_QUEUE_ONREAD. They will tell driver when to queue
 	socket, just after accept or after first netwrok read. Primary
-	purpose to cut driver processing early for TCP driver that 
-	need its own protocol(ex. SMTP,POP3) or for others and UDP protocols, 
+	purpose to cut driver processing early for TCP driver that
+	need its own protocol(ex. SMTP,POP3) or for others and UDP protocols,
 	driver will read the request and will try to queue the socket after
-	first read. Added new driver command DriverQueue, which will be called 
+	first read. Added new driver command DriverQueue, which will be called
 	just before socket queue. Only special drivers that need to setup
 	request url/protocol will use it, that's why new public API
-	Ns_DriverSetRequest. Module installed request proc for 
+	Ns_DriverSetRequest. Module installed request proc for
 	method/url/protocol, like:
 
         Ns_RegisterRequest(server, "SYSLOG",  "/", RequestProc, NULL, srvPtr, 0);
 
         In order this proc will be called, socket need to set request line
 	with "SYSLOG /", so it will be set in DriverQueue call just before
-	driver will put the socket into connection queue. This change does 
+	driver will put the socket into connection queue. This change does
 	not affect existing HTTP request processing.
-	
+
 	* nsd/queue.c: Removed old and unused API function.
 
 
@@ -382,19 +402,19 @@
 
 2006-05-27  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsdb/dbtcl.c: Converted all Tcl string commands into 
+	* nsdb/dbtcl.c: Converted all Tcl string commands into
 	object commands
 
 2006-05-25  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/driver.c: Updated NsTclWriterObjCmd to use TclVFS open call
-        
+
 	* nsd/sock.c:
-        * nsd/driver.c: As Stephen corrected, Ns_SockTimedWait should 
+        * nsd/driver.c: As Stephen corrected, Ns_SockTimedWait should
         treat timeout as NULL for indefinite wait as in other similar calls.
-        WriterThread will pass timeout with 0 values to just check if 
+        WriterThread will pass timeout with 0 values to just check if
         socket is writable or not.
-        
+
 2006-06-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/fastpath.c:
@@ -457,9 +477,9 @@
 	entry in the cache. Adding the -reset switch to either mode resets
 	the stats to zero.
 
-	
 
-	
+
+
 
 	* tests/ns_cache.test: Try to exercise the underlying Ns_CacheFind
 	harder with some more flush tests.

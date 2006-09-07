@@ -340,7 +340,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
 
     servPtr->fastpath.serverdir = Ns_ConfigGetValue(path, "serverdir");
     if (servPtr->fastpath.serverdir == NULL) {
-        Ns_MakePath(&ds, Ns_InfoHomePath(), server, NULL);
+        Ns_MakePath(&ds, Ns_InfoHomePath(), NULL);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     } else if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
         Ns_MakePath(&ds, Ns_InfoHomePath(), servPtr->fastpath.serverdir, NULL);
@@ -356,7 +356,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
     }
 
-    p = Ns_ConfigGetValue(path, "directorylisting");
+    p = Ns_ConfigString(path, "directorylisting", "simple");
     if (p != NULL && (STREQ(p, "simple") || STREQ(p, "fancy"))) {
         p = "_ns_dirlist";
     }

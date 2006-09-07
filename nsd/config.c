@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * config.c --
  *
  *      Support for the configuration file
@@ -93,7 +93,7 @@ Ns_ConfigString(CONST char *section, CONST char *key, CONST char *def)
  *      NS_TRUE or NS_FALSE.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -129,7 +129,7 @@ Ns_ConfigBool(CONST char *section, CONST char *key, int def)
  *      An integer.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -175,13 +175,13 @@ Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
  *
  * Ns_ConfigGetValue --
  *
- *      Return a config file value for a given key 
+ *      Return a config file value for a given key
  *
  * Results:
- *      ASCIIZ ptr to a value 
+ *      ASCIIZ ptr to a value
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -204,13 +204,13 @@ Ns_ConfigGetValue(CONST char *section, CONST char *key)
  *
  * Ns_ConfigGetValueExact --
  *
- *      Case-sensitive version of Ns_ConfigGetValue 
+ *      Case-sensitive version of Ns_ConfigGetValue
  *
  * Results:
- *      See Ns_ConfigGetValue 
+ *      See Ns_ConfigGetValue
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -233,14 +233,14 @@ Ns_ConfigGetValueExact(CONST char *section, CONST char *key)
  *
  * Ns_ConfigGetInt --
  *
- *      Fetch integer config values 
+ *      Fetch integer config values
  *
  * Results:
- *      NS_TRUE if it found an integer value; otherwise, it returns 
- *      NS_FALSE and sets the value to 0 
+ *      NS_TRUE if it found an integer value; otherwise, it returns
+ *      NS_FALSE and sets the value to 0
  *
  * Side effects:
- *      The integer value is returned by reference 
+ *      The integer value is returned by reference
  *
  *----------------------------------------------------------------------
  */
@@ -271,14 +271,14 @@ Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr)
  *
  * Ns_ConfigGetInt64 --
  *
- *      Like Ns_ConfigGetInt, but with INT64 data instead of 
- *      system-native int types. 
+ *      Like Ns_ConfigGetInt, but with INT64 data instead of
+ *      system-native int types.
  *
  * Results:
- *      See Ns_ConfigGetInt 
+ *      See Ns_ConfigGetInt
  *
  * Side effects:
- *      See Ns_ConfigGetInt 
+ *      See Ns_ConfigGetInt
  *
  *----------------------------------------------------------------------
  */
@@ -301,14 +301,14 @@ Ns_ConfigGetInt64(CONST char *section, CONST char *key, INT64 *valuePtr)
  *
  * Ns_ConfigGetBool --
  *
- *      Get a boolean config value. There are many ways to represent 
- *      a boolean value. 
+ *      Get a boolean config value. There are many ways to represent
+ *      a boolean value.
  *
  * Results:
  *      NS_TRUE/NS_FALSE
  *
  * Side effects:
- *      The boolean value is returned by reference 
+ *      The boolean value is returned by reference
  *
  *----------------------------------------------------------------------
  */
@@ -336,14 +336,14 @@ Ns_ConfigGetBool(CONST char *section, CONST char *key, int *valuePtr)
  *
  * Ns_ConfigGetPath --
  *
- *      Get the full name of a config file section if it exists. 
+ *      Get the full name of a config file section if it exists.
  *
  * Results:
- *      A pointer to an ASCIIZ string of the full path name, or NULL 
- *      if that path is not in the config file. 
+ *      A pointer to an ASCIIZ string of the full path name, or NULL
+ *      if that path is not in the config file.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -409,7 +409,7 @@ Ns_ConfigGetSections(void)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     int             n;
-    
+
     n = nsconf.sections.numEntries + 1;
     sets = ns_malloc(sizeof(Ns_Set *) * n);
     n = 0;
@@ -444,6 +444,28 @@ Ns_Set *
 Ns_ConfigGetSection(CONST char *section)
 {
     return (section ? GetSection(section, 0) : NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigCreateSection --
+ *
+ *      Return the Ns_Set of a config section called section.
+ *
+ * Results:
+ *      An Ns_Set containing the section's parameters, or NULL.
+ *
+ * Side effects:
+ *      New section can be created if it does not exist
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Set *
+Ns_ConfigCreateSection(CONST char *section)
+{
+    return (section ? GetSection(section, 1) : NULL);
 }
 
 
@@ -516,7 +538,7 @@ NsConfigRead(CONST char *file)
         call = "open";
         goto err;
     }
-    
+
     /*
      * Slurp entire file in memory
      */
@@ -542,7 +564,7 @@ NsConfigRead(CONST char *file)
     if (buf) {
         Tcl_DecrRefCount(buf);
     }
-    Ns_Fatal("config: can't %s file '%s': '%s'", call, file, 
+    Ns_Fatal("config: can't %s file '%s': '%s'", call, file,
              strerror(Tcl_GetErrno()));
 
     return NULL; /* Keep the compiler happy */
@@ -603,7 +625,7 @@ NsConfigEval(CONST char *config, int argc, char **argv, int optind)
  * ParamCmd --
  *
  *      Add a single entry to the current section of the config.  This
- *      command may only be run from within an ns_section. 
+ *      command may only be run from within an ns_section.
  *
  * Results:
  *      Standard Tcl Result.
@@ -646,7 +668,7 @@ ParamCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
  *      ns_param stores config data in the set.
  *
  * Results:
- *      Standard tcl result. 
+ *      Standard tcl result.
  *
  * Side effects:
  *      Section set is created (if necessary).
@@ -766,7 +788,7 @@ GetSection(CONST char *section, int create)
     /*
      * Return config set, creating if necessary.
      */
- 
+
     set = NULL;
     if (!create) {
         hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
@@ -791,8 +813,8 @@ GetSection(CONST char *section, int create)
  *
  * ToBool --
  *
- *      Interpret value as a boolean.  There are many ways to represent 
- *      a boolean value. 
+ *      Interpret value as a boolean.  There are many ways to represent
+ *      a boolean value.
  *
  * Results:
  *      NS_TRUE if value converted to boolean, NS_FALSE otherwise.

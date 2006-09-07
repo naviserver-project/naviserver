@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -55,10 +55,10 @@ typedef struct Mod {
 
 static Ns_ThreadProc EvalThread;
 
-/* 
+/*
  * The following structure is allocated for each session.
  */
- 
+
 typedef struct Sess {
     Mod *modPtr;
     char *user;
@@ -112,7 +112,7 @@ int Ns_ModuleVersion = 1;
  *
  *----------------------------------------------------------------------
  */
- 
+
 int
 Ns_ModuleInit(char *server, char *module)
 {
@@ -123,13 +123,13 @@ Ns_ModuleInit(char *server, char *module)
     Ns_Set *set;
     Tcl_HashEntry *hPtr;
 
-    /* 
+    /*
      * Create the listening socket and callback.
      */
 
     path = Ns_ConfigGetPath(server, module, NULL);
-    if (((addr = Ns_ConfigGetValue(path, "address")) == NULL)
-	 || (!Ns_ConfigGetInt(path, "port", &port)) )  {
+    if (((addr = (char*)Ns_ConfigString(path, "address", "127.0.0.1")) == NULL)
+	 || (port = Ns_ConfigInt(path, "port", 2080)) <= 0 )  {
 	Ns_Log(Error, "nscp: address and port must be specified in config");
 	return NS_ERROR;
     }
@@ -163,6 +163,20 @@ Ns_ModuleInit(char *server, char *module)
     Tcl_InitHashTable(&modPtr->users, TCL_STRING_KEYS);
     path = Ns_ConfigGetPath(server, module, "users", NULL);
     set = Ns_ConfigGetSection(path);
+
+    /*
+     * In default local mode just create empty user without password
+     */
+
+    if (set == NULL && !strcmp(addr, "127.0.0.1")) {
+        Ns_DString ds;
+        Ns_DStringInit(&ds);
+        path = Ns_ModulePath(&ds, server, module, "users", NULL);
+        set = Ns_ConfigCreateSection(path);
+        Ns_SetPut(set, "user", "::");
+        Ns_DStringFree(&ds);
+    }
+
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
 	key = Ns_SetKey(set, i);
 	user = Ns_SetValue(set, i);
@@ -193,7 +207,6 @@ Ns_ModuleInit(char *server, char *module)
     }
     Ns_SockCallback(lsock, AcceptProc, modPtr, NS_SOCK_READ|NS_SOCK_EXIT);
     Ns_RegisterProcInfo((void *)AcceptProc, "nscp", ArgProc);
-
     return NS_OK;
 }
 
@@ -304,7 +317,7 @@ EvalThread(void *arg)
     /*
      * Initialize the thread and login the user.
      */
-     
+
     interp = NULL;
     Tcl_DStringInit(&ds);
     Tcl_DStringInit(&unameDS);
@@ -442,7 +455,7 @@ GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 	    result = 0;
 	    goto bail;
 	}
-	
+
 	/*
 	 * Deal with telnet IAC commands in some sane way.
 	 */

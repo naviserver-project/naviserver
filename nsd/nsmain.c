@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * nsmain.c --
  *
  *  NaviServer Ns_Main() startup routine.
@@ -70,7 +70,7 @@ typedef struct Args {
 } Args;
 
 /*
- * This one is used to better track run state 
+ * This one is used to better track run state
  * when looking at the code
  */
 
@@ -138,7 +138,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     int       fd, i, sig, optind;
     char     *config;
     Ns_Time   timeout;
-    
+
 #ifndef _WIN32
     int       uid = -1, gid = -1, debug = 0, mode = 0;
     char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
@@ -294,7 +294,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
     }
     if (mode == 'V') {
-        printf("NaviServer/%s\n", NSD_VERSION); 
+        printf("NaviServer/%s\n", NSD_VERSION);
         printf("   CVS Tag:         %s\n", Ns_InfoTag());
         printf("   Built:           %s\n", Ns_InfoBuildDate());
         printf("   Tcl version:     %s\n", nsconf.tcl.version);
@@ -314,17 +314,17 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     } else {
 
         /*
-         * For the non-interactive operation, the server requires file 
-         * descriptor 0 be open on NUL device to ensure it never blocks 
+         * For the non-interactive operation, the server requires file
+         * descriptor 0 be open on NUL device to ensure it never blocks
          * while reading stdin.
          */
-        
+
         fd = open(DEVNULL, O_RDONLY);
         if (fd > 0) {
             dup2(fd, 0);
             close(fd);
         }
-        
+
         /*
          * File descriptors 1 and 2 may not be open if the server is
          * starting from /etc/init.  If so, open them on NUL device
@@ -332,7 +332,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          * initialization. In particular, the log file will be duped
          * to fd's 1 and 2.
          */
-        
+
         fd = open(DEVNULL, O_WRONLY);
         if (fd > 0 && fd != 1) {
             close(fd);
@@ -348,7 +348,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     /*
      * Verify the uid/gid args.
      */
-    
+
     if (uarg != NULL) {
         uid = Ns_GetUid(uarg);
         if (uid == -1) {
@@ -362,7 +362,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                 Ns_Fatal("nsmain: unknown user '%s'", uarg);
             }
             /*
-             * Set user-passed value to NULL, causing supplementary 
+             * Set user-passed value to NULL, causing supplementary
              * groups to be ignored later.
              */
             uarg = NULL;
@@ -391,7 +391,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * If running as privileged user (root) check given user/group 
+     * If running as privileged user (root) check given user/group
      * information and bail-out if any of them not really known.
      */
 
@@ -447,14 +447,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     } else {
         nsconf.pid = getpid();
     }
-        
+
     /*
-     * Block all signals for the duration of startup to ensure any new 
+     * Block all signals for the duration of startup to ensure any new
      * threads inherit the blocked state.
      */
 
     NsBlockSignals(debug);
-    
+
     /*
      * The server now uses poll() but Tcl and other components may
      * still use select() which will likely break when fd's exceed
@@ -475,7 +475,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                 Ns_Log(Warning, "nsmain: "
                        "setrlimit(RLIMIT_NOFILE, %u) failed: '%s'",
                        (unsigned int)rl.rlim_max, strerror(errno));
-            } 
+            }
         }
     }
 
@@ -486,7 +486,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * which is used throughout the code.
      * Side-effect of this call is initialization of the notifier
      * subsystem. The notifier subsystem creates special private
-     * notifier thread and we should better do this after all those 
+     * notifier thread and we should better do this after all those
      * ns_fork's above...
      */
 
@@ -520,16 +520,16 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * If caller is running as the privileged user, change 
+     * If caller is running as the privileged user, change
      * to the run time (given) user and/or group now.
      */
 
     if (getuid() == 0) {
-        
+
         /*
          * Set or clear supplementary groups.
          */
-        
+
         if (uarg != NULL) {
             if (initgroups(uarg, (gid_t)gid) != 0) {
                 Ns_Fatal("nsmain: initgroups(%s, %d) failed: '%s'",
@@ -541,7 +541,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
                          strerror(errno));
             }
         }
-        
+
         if (gid != getgid() && setgid((gid_t)gid) != 0) {
             Ns_Fatal("nsmain: setgid(%d) failed: '%s'", gid, strerror(errno));
         }
@@ -557,7 +557,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             Ns_Fatal("nsmain: setuid(%d) failed: '%s'", uid, strerror(errno));
         }
     }
-    
+
 #ifdef __linux
 
     /*
@@ -582,23 +582,24 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsConfigEval(config, argc, argv, optind);
     ns_free(config);
-    
+
     /*
-     * Ensure servers where defined.
+     * If no servers were defained, autocreate server "default"
+     * so all default config values will be used for that server
      */
 
-    servers = Ns_ConfigGetSection("ns/servers");
-    if (servers == NULL || Ns_SetSize(servers) == 0) {
-        Ns_Fatal("nsmain: no servers defined");
+    servers = Ns_ConfigCreateSection("ns/servers");
+    if (Ns_SetSize(servers) == 0) {
+        Ns_SetPut(servers, "default", "Default NaviServer");
     }
-    
+
     /*
      * If a single server was specified, ensure it exists
      * and update the pointer to the config string (the
      * config server strings are considered the unique
      * server "handles").
      */
-    
+
     if (server != NULL) {
         i = Ns_SetFind(servers, server);
         if (i < 0) {
@@ -610,25 +611,45 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     /*
      * Set the procname used for the pid file.
      */
-    
+
     procname = (server ? server : Ns_SetKey(servers, 0));
-    
+
     /*
      * Verify and change to the home directory.
      */
-    
+
     nsconf.home = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "home");
     if (mode != 'c' && nsconf.home == NULL) {
-        Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
+
+        /*
+         *  We will try to figure out our installation directory from
+         *  executable binary, will not be too smart, just check for simple
+         *  case when nsd is in bin/ subdirectory according to our make install
+         *  All custom installation will require "home" config parameter to be
+         *  specified in the nsd.tcl
+         *
+         *  TODO: Make this compatible for all platforms, this is initial proof of concept
+         */
+
+        if (Ns_PathIsAbsolute(nsconf.nsd)) {
+            char *ptr = strstr(nsconf.nsd, "/bin/");
+            if (ptr != NULL) {
+                nsconf.home = ns_calloc(1, ptr - nsconf.nsd + 1);
+                strncpy(nsconf.home, nsconf.nsd, ptr - nsconf.nsd);
+            }
+        }
+        if (nsconf.home == NULL) {
+            Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
+        }
     }
     nsconf.home = SetCwd(nsconf.home);
 
     /*
      * Update core config values.
      */
-    
+
     NsConfUpdate();
-    
+
 #ifdef _WIN32
 
     /*
@@ -638,7 +659,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     if (mode == 'I' || mode == 'R' || mode == 'S') {
         int status;
-        
+
         Ns_ThreadSetName("-service-");
         switch (mode) {
         case 'I':
@@ -653,26 +674,26 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
         return (status == NS_OK ? 0 : 1);
     }
-    
+
  contservice:
 
 #endif
-    
+
     /*
      * Open the log file now that the home directory and runtime
      * user id have been set.
      */
-     
+
     if (mode != 'c' && mode != 'f') {
         NsLogOpen();
     }
 
     /*
      * Log the first startup message which should be the first
-     * output to the open log file unless the config script 
+     * output to the open log file unless the config script
      * generated some messages.
      */
-     
+
     StatusMsg(starting);
     LogTclVersion();
 
@@ -681,7 +702,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     /*
      * Log the current open file limit.
      */
-     
+
     if (getrlimit(RLIMIT_NOFILE, &rl) != 0) {
         Ns_Log(Warning, "nsmain: "
                "getrlimit(RLIMIT_NOFILE) failed: '%s'", strerror(errno));
@@ -705,7 +726,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     /*
      * Initialize the virtual servers.
      */
-    
+
     if (server != NULL) {
         NsInitServer(server, initProc);
     } else {
@@ -715,7 +736,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
     }
     nsconf.defaultServer = server;
-    
+
     /*
      * Initialize non-server static modules.
      */
@@ -782,7 +803,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     Ns_GetTime(&timeout);
     Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
     Ns_MutexUnlock(&nsconf.state.lock);
-    
+
     /*
      * First, stop the drivers and servers threads.
      */
@@ -795,7 +816,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * for them to complete.
      */
 
-    NsStartSchedShutdown(); 
+    NsStartSchedShutdown();
     NsStartSockShutdown();
     NsStartTaskQueueShutdown();
     NsStartJobsShutdown();
@@ -828,7 +849,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * The main thread exits gracefully on NS_SIGTERM.
      * All other signals are propagated to the caller.
      */
-   
+
     return (sig == NS_SIGTERM) ? 0 : sig;
 }
 
@@ -838,14 +859,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
  *
  * Ns_WaitForStartup --
  *
- *      Blocks thread until the server has completed loading modules, 
- *      sourcing Tcl, and is ready to begin normal operation. 
+ *      Blocks thread until the server has completed loading modules,
+ *      sourcing Tcl, and is ready to begin normal operation.
  *
  * Results:
- *      NS_OK 
+ *      NS_OK
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -855,7 +876,7 @@ Ns_WaitForStartup(void)
 {
 
     /*
-     * This dirty-read is worth the effort. 
+     * This dirty-read is worth the effort.
      */
     if (nsconf.state.started) {
         return NS_OK;
@@ -881,7 +902,7 @@ Ns_WaitForStartup(void)
  *      None.
  *
  * Side effects:
- *      Server will begin shutdown process. 
+ *      Server will begin shutdown process.
  *
  *----------------------------------------------------------------------
  */
@@ -903,7 +924,7 @@ Ns_StopServer(char *server)
  *      to exit cleanly before giving up.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      If -restart was specified and watchdog is active, server
@@ -1083,7 +1104,7 @@ UsageError(char *msg, ...)
         "\n", nsconf.argv0);
     exit(msg ? 1 : 0);
 }
-    
+
 
 /*
  *----------------------------------------------------------------------
@@ -1128,7 +1149,7 @@ FindConfig(char *filename)
  *      Changes the current working directory to the passed path.
  *
  * Results:
- *      Tcl_Alloc'ated string with the normalized path of the 
+ *      Tcl_Alloc'ated string with the normalized path of the
  *      current working directory.
  *
  * Side effects:
@@ -1147,7 +1168,7 @@ SetCwd(char *path)
     pathObj = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(pathObj);
     if (Tcl_FSChdir(pathObj) == -1) {
-        Ns_Fatal("nsmain: chdir(%s) failed: '%s'", path, 
+        Ns_Fatal("nsmain: chdir(%s) failed: '%s'", path,
                  strerror(Tcl_GetErrno()));
     }
     Tcl_DecrRefCount(pathObj);
@@ -1177,7 +1198,7 @@ SetCwd(char *path)
  *----------------------------------------------------------------------
  */
 
-static void 
+static void
 SysLog(int priority, char *fmt, ...)
 {
     va_list ap;
@@ -1186,7 +1207,7 @@ SysLog(int priority, char *fmt, ...)
     va_start(ap, fmt);
     vsyslog(priority, fmt, ap);
     va_end(ap);
-    closelog();    
+    closelog();
 }
 
 /*
@@ -1205,7 +1226,7 @@ SysLog(int priority, char *fmt, ...)
  *----------------------------------------------------------------------
  */
 
-static void 
+static void
 WatchdogSIGTERMHandler(int sig)
 {
     kill((pid_t) nsconf.pid, sig);
@@ -1231,7 +1252,7 @@ WatchdogSIGTERMHandler(int sig)
  *----------------------------------------------------------------------
  */
 
-static void 
+static void
 WatchdogSIGALRMHandler(int sig)
 {
     if (nsconf.pid && kill((pid_t) nsconf.pid, 0) && errno == ESRCH) {
@@ -1258,7 +1279,7 @@ WatchdogSIGALRMHandler(int sig)
  *----------------------------------------------------------------------
  */
 
-static int 
+static int
 WaitForServer()
 {
     int    ret, status;
@@ -1318,7 +1339,7 @@ StartWatchedServer(void)
 
     do {
         if (restartWait) {
-            SysLog(LOG_WARNING, 
+            SysLog(LOG_WARNING,
                    "watchdog: waiting %d seconds before restart %d.",
                    restartWait, numRestarts);
             sleep(restartWait);
@@ -1344,15 +1365,15 @@ StartWatchedServer(void)
         /* Watchdog process */
 
         /*
-         * Register SIGTERM handler so we can gracefully stop the server. 
+         * Register SIGTERM handler so we can gracefully stop the server.
          * The watchdog passes the signal to the server, if possible.
          *
          * Register SIGALRM handler to wake up the watchdog to check if
-         * the server is still present. This tries to solve issues with 
+         * the server is still present. This tries to solve issues with
          * signal delivery on some systems where waitpid() fails to report
          * process exitus (i.e. just stuck, although the process is gone).
          */
-       
+
         if (WAKEUP_IN_SECONDS) {
             timer.it_interval.tv_sec = WAKEUP_IN_SECONDS;
             timer.it_value.tv_sec  = timer.it_interval.tv_sec;
