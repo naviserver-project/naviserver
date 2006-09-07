@@ -19,8 +19,12 @@
 
 	contrib/mimetypes.tcl: Removed as all mime types are embedded already
 
-	contrib/nsd.tcl:
-	contrib/nsd-min.tcl: Disable nscp module by default
+	contrib/nsd.tcl: nscp is disabled by default
+
+	contrib/nsd-min.tcl: Deleted
+
+	index.adp: Make it in the top level
+	simple-config.tcl: smallest and simplest possible config file
 
 2006-09-07  Bernd Eidenschink  <eide@users.sf.net>
 

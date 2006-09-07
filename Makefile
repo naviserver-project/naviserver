@@ -59,10 +59,10 @@ install-dirs: all
 	done
 
 install-config: all
-	for i in contrib/nsd.tcl contrib/mimetypes.tcl sample-config.tcl; do \
+	for i in contrib/nsd.tcl sample-config.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
-	for i in contrib/index.adp contrib/nsconfig.tcl contrib/nsstats.tcl; do \
+	for i in index.adp; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/; \
 	done
 	$(INSTALL_SH) install-sh $(INSTBIN)/
