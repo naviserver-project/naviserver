@@ -83,7 +83,7 @@ ns_param	nssock			${homedir}/bin/nssock.so
 ns_param	nslog 			${homedir}/bin/nslog.so
 ns_param	nscgi 			${homedir}/bin/nscgi.so
 ns_param	nsperm 			${homedir}/bin/nsperm.so
-ns_param 	nscp 			${homedir}/bin/nscp.so
+#ns_param 	nscp 			${homedir}/bin/nscp.so
 ns_param	nsproxy			${homedir}/bin/nsproxy.so
 
 # Tcl modules are loaded here as well, they should be put
@@ -547,29 +547,6 @@ ns_section 	"ns/server/server1/pool/fast"
 ns_param 	map 			"GET /faststuff.adp"
 ns_param 	maxthreads 		10
 
-#
-# Example:  Web based stats interface.
-#
-#  To enable:
-#
-#  1. Configure whether or not stats are enabled. (Optional: default = false)
-#  2. Configure URL for statistics. (Optional: default = /_stats)
-#
-#    http://<host>:<port>/_stats
-# 
-#  3. Configure user. (Optional: default = nsadmin)
-#  4. Configure password. (Optional: default = nsadmin)
-#
-#  For added security it is recommended that configure your own
-#  URL, user, and password instead of using the default values.
-#
-
-ns_section 	"ns/server/stats"
-ns_param 	enabled 		1
-ns_param 	url 			/_stats
-ns_param 	user 			nsadmin
-ns_param 	password 		nsadmin
- 
 #
 # Tcl Proxy module -- nsproxy
 #

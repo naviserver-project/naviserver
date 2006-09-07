@@ -2,7 +2,7 @@ set             home            	/usr/local/ns
 set		server			default
 
 ns_section      "ns/server/${server}/modules"
-ns_param        nscp            	${home}/bin/nscp.so
+#ns_param        nscp            	${home}/bin/nscp.so
 ns_param        nssock          	${home}/bin/nssock.so
 ns_param        nslog           	${home}/bin/nslog.so 
 ns_param        nscgi			${home}/bin/nscgi.so
@@ -38,7 +38,6 @@ ns_param	stacksize		[expr 1024*1024]
 ns_section	"ns/mimetypes"
 ns_param	default         	text/plain
 ns_param	noextension     	text/plain
-source					${home}/conf/mimetypes.tcl
 
 ns_section	"ns/db/drivers"
 #ns_param        postgres        	${home}/bin/nsdbpg.so
@@ -133,9 +132,3 @@ ns_param        address         	127.0.0.1
 
 ns_section	"ns/server/${server}/module/nscp/users"
 ns_param        user            	"::"
-
-ns_section 	ns/server/stats
-ns_param 	enabled 		1
-ns_param 	url 			/_stats
-ns_param 	user 			nsadmin
-ns_param 	password 		nsadmin

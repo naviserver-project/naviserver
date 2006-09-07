@@ -17,6 +17,11 @@
 	contrib/nsstats.tcl: those script now act as page not tcl library file which
 	makes it easy to administer without server restart
 
+	contrib/mimetypes.tcl: Removed as all mime types are embedded already
+
+	contrib/nsd.tcl:
+	contrib/nsd-min.tcl: Disable nscp module by default
+
 2006-09-07  Bernd Eidenschink  <eide@users.sf.net>
 
 	* doc/src/commandlist.man: First shot of a document listing all

@@ -34,6 +34,9 @@
 #
 #   Set of procedures implementing the NaviServer runtime statistics
 #
+#   To use it, just drop it somewehere under naviserver pageroot which is usually
+#   /usr/local/ns/pages and point browser to it
+#
 
 # If this pages needs to be restricted assign username and password here
 set user ""

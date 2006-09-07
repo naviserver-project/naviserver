@@ -29,8 +29,8 @@
 #   which takes runtime config and allows to modify and re-create new nsd.tcl file or
 #   even replace existing one if priviliges allow.
 #
-#   To use it, just drop it somwehere under naviserver pageroot is usually
-#   /usr/local/ns/pages and add the following entries into config file (it shows default values).
+#   To use it, just drop it somewehere under naviserver pageroot which is usually
+#   /usr/local/ns/pages and point browser to it
 #
 
 # If this page needs to be restricted assign username and password here
