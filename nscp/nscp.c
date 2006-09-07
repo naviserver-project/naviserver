@@ -173,7 +173,7 @@ Ns_ModuleInit(char *server, char *module)
         Ns_DStringInit(&ds);
         path = Ns_ModulePath(&ds, server, module, "users", NULL);
         set = Ns_ConfigCreateSection(path);
-        Ns_SetPut(set, "user", "::");
+        Ns_SetUpdate(set, "user", "::");
         Ns_DStringFree(&ds);
     }
 

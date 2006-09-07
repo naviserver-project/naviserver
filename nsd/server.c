@@ -474,7 +474,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     key = Ns_ConfigString(path, "map", NULL);
     if (key == NULL && set != NULL &&
         Ns_ConfigBool(path, "disabled", NS_FALSE) == NS_FALSE) {
-        Ns_SetPut(set, "map", "/*.adp");
+        Ns_SetUpdate(set, "map", "/*.adp");
     }
 
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {

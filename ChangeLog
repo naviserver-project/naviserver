@@ -1,3 +1,22 @@
+2006-09-07  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/server.c:
+	* nsd/config.c:
+	* nsd/nsmain.c: This is experimental but i think it can stay in the core
+	because i ran all tests and i do not see any problems but only benefits:
+
+        Any call to Ns_ConfigXXX family will try to locate config parameter but if it 
+	does not exists it will auto-create section and parameter key. If default was given, 
+	it will assign default value. this way we have the whole config tree in the memory
+	which can be view now more effectivelly with nsconfig.tcl script which will be 
+	installed now by default with make install. Ns_ConfigCreateSection will auto-create
+	section during startup only, it does call Ns_InfoStarted() which is very quick and 
+	after server started, config behaves as ussual.
+
+	contrib/nsconfig.tcl:
+	contrib/nsstats.tcl: those script now act as page not tcl library file which
+	makes it easy to administer without server restart
+
 2006-09-07  Bernd Eidenschink  <eide@users.sf.net>
 
 	* doc/src/commandlist.man: First shot of a document listing all

@@ -22,9 +22,10 @@
   </P>
   <HR>
   <P>
-  The Naviserver statistics <A HREF="_stats">page</A>
-  can be usefull in resolving performance issues.
-  </P>
+  <UL>
+  <LI>The Naviserver statistics <A HREF="nsstats.tcl">page</A> can be usefull in resolving performance issues.
+  <LI>The Naviserver runtime config <A HREF="nsconfig.tcl">page</A> can be usefull in reviewing server's setup.
+  </UL>
  </BODY>
 </HTML>
 

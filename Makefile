@@ -62,7 +62,9 @@ install-config: all
 	for i in contrib/nsd.tcl contrib/mimetypes.tcl sample-config.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
-	$(INSTALL_DATA) contrib/index.adp $(NAVISERVER)/pages/
+	for i in contrib/index.adp contrib/nsconfig.tcl contrib/nsstats.tcl; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/
+	done
 	$(INSTALL_SH) install-sh $(INSTBIN)/
 
 install-modules: all

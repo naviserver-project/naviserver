@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -30,83 +30,44 @@
 # $Header$
 
 #
-# stats.tcl --
+# nsstats.tcl --
 #
-#   Set of procedures implementing the /_stat
+#   Set of procedures implementing the NaviServer runtime statistics
 #
 
-set path "ns/server/stats"
-set enabled [ns_config -bool $path enabled 0]
-set url [ns_config $path url "/_stats"]
+# If this pages needs to be restricted assign username and password here
+set user ""
+set password ""
 
-nsv_set _ns_stats thread_0      "NS_OK"
-nsv_set _ns_stats thread_-1     "NS_ERROR"
-nsv_set _ns_stats thread_-2     "NS_TIMEOUT"
-nsv_set _ns_stats thread_200    "NS_THREAD_MAXTLS"
-nsv_set _ns_stats thread_1      "NS_THREAD_DETACHED"
-nsv_set _ns_stats thread_2      "NS_THREAD_JOINED"
-nsv_set _ns_stats thread_4      "NS_THREAD_EXITED"
-nsv_set _ns_stats thread_32     "NS_THREAD_NAMESIZE"
+if { ![nsv_exists _ns_stats threads_0] } {
+  nsv_set _ns_stats thread_0      "NS_OK"
+  nsv_set _ns_stats thread_-1     "NS_ERROR"
+  nsv_set _ns_stats thread_-2     "NS_TIMEOUT"
+  nsv_set _ns_stats thread_200    "NS_THREAD_MAXTLS"
+  nsv_set _ns_stats thread_1      "NS_THREAD_DETACHED"
+  nsv_set _ns_stats thread_2      "NS_THREAD_JOINED"
+  nsv_set _ns_stats thread_4      "NS_THREAD_EXITED"
+  nsv_set _ns_stats thread_32     "NS_THREAD_NAMESIZE"
 
-nsv_set _ns_stats sched_1       "thread"
-nsv_set _ns_stats sched_2       "once"
-nsv_set _ns_stats sched_4       "daily"
-nsv_set _ns_stats sched_8       "weekly"
-nsv_set _ns_stats sched_16      "paused"
-nsv_set _ns_stats sched_32      "running"
+  nsv_set _ns_stats sched_1       "thread"
+  nsv_set _ns_stats sched_2       "once"
+  nsv_set _ns_stats sched_4       "daily"
+  nsv_set _ns_stats sched_8       "weekly"
+  nsv_set _ns_stats sched_16      "paused"
+  nsv_set _ns_stats sched_32      "running"
 
-nsv_set _ns_stats sched_thread  1
-nsv_set _ns_stats sched_once    2
-nsv_set _ns_stats sched_daily   4
-nsv_set _ns_stats sched_weekly  8
-nsv_set _ns_stats sched_paused  16
-nsv_set _ns_stats sched_running 32
-
-nsv_set _ns_stats enabled       $enabled
-nsv_set _ns_stats url           $url
-nsv_set _ns_stats user          [ns_config $path user "naviserver"]
-nsv_set _ns_stats password      [ns_config $path password "stats"]
-
-if {$enabled} {
-    ns_register_proc GET $url/* _ns_stats.handleUrl
-    ns_log notice "stats: web stats enabled for '$url'"
-}
-
-proc _ns_stats.handleUrl {} {
-    set page [ns_conn urlv [expr {[ns_conn urlc] - 1}]]
-    
-    switch -exact $page {
-        "adp.adp" -
-        "cache.adp" -
-        "index.adp" -
-        "locks.adp" -
-        "log.adp" -
-        "mempools.adp" -
-        "process.adp" -
-        "sched.adp" -
-        "threads.adp" {
-            set rootname [file rootname $page]
-        }
-        default {
-            set rootname "index"
-        }
-    }
-      
-    set user [nsv_get _ns_stats user]
-    set password [nsv_get _ns_stats password]
-
-    if {[ns_conn authuser] != $user || [ns_conn authpassword] != $password} {
-        ns_returnunauthorized
-    } else {
-        ns_set update [ns_conn outputheaders] "Expires" "now"
-        ns_return 200 text/html [_ns_stats.$rootname]
-    }
+  nsv_set _ns_stats sched_thread  1
+  nsv_set _ns_stats sched_once    2
+  nsv_set _ns_stats sched_daily   4
+  nsv_set _ns_stats sched_weekly  8
+  nsv_set _ns_stats sched_paused  16
+  nsv_set _ns_stats sched_running 32
 }
 
 proc _ns_stats.header {{stat ""}} {
     if {[string length $stat]} {
         set title "Naviserver Stats: [ns_info hostname] - $stat"
-        set nav "<a href=index.adp><font color=#ffffff>Main Menu</font></a> &gt; <font color=#ffcc00>$stat</font>"
+        set nav "<a href=?@page=index><font color=#ffffff>Main Menu</font></a> &gt; <font color=#ffcc00>$stat</font>"
     } else {
         set title "Naviserver Stats: [ns_info hostname]"
         set nav "<font color=#ffcc00><font color=#ffcc00>Main Menu</font>"
@@ -144,20 +105,19 @@ proc _ns_stats.footer {} {
 
 proc _ns_stats.index {} {
     set html [_ns_stats.header]
-    set baseUrl [nsv_get _ns_stats url]
-    
+
     append html "\
-    o <a href=$baseUrl/adp.adp>ADP</a><br>
-    o <a href=$baseUrl/cache.adp>Cache</a><br>
-    o <a href=$baseUrl/locks.adp>Locks</a><br>
-    o <a href=$baseUrl/log.adp>Log</a><br>
-    o <a href=$baseUrl/mempools.adp>Memory</a><br>
-    o <a href=$baseUrl/process.adp>Process</a><br>
-    o <a href=$baseUrl/sched.adp>Scheduled Proceedures</a><br>
-    o <a href=$baseUrl/threads.adp>Threads</a><br>"
-    
+    o <a href=?@page=adp>ADP</a><br>
+    o <a href=?@page=cache>Cache</a><br>
+    o <a href=?@page=locks>Locks</a><br>
+    o <a href=?@page=log>Log</a><br>
+    o <a href=?@page=mempools>Memory</a><br>
+    o <a href=?@page=process>Process</a><br>
+    o <a href=?@page=sched>Scheduled Proceedures</a><br>
+    o <a href=?@page=threads>Threads</a><br>"
+
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -190,9 +150,9 @@ proc _ns_stats.adp {} {
     set rows [_ns_stats.sortResults $results [expr {$col - 1}] $numericSort $reverseSort]
 
     set html [_ns_stats.header ADP]
-    append html [_ns_stats.results $col $colTitles adp.adp $rows $reverseSort]
+    append html [_ns_stats.results $col $colTitles ?@page=adp $rows $reverseSort]
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -215,11 +175,11 @@ proc _ns_stats.cache {} {
 
     set colTitles   [list Cache Max Current Entries Flushes Hits Misses "Hit Rate"]
     set rows        [_ns_stats.sortResults $results [expr {$col - 1}] $numericSort $reverseSort]
-    
+
     set html [_ns_stats.header Cache]
-    append html [_ns_stats.results $col $colTitles cache.adp $rows $reverseSort]
+    append html [_ns_stats.results $col $colTitles ?@page=cache $rows $reverseSort]
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -271,9 +231,9 @@ proc _ns_stats.locks {} {
 
         lappend rows [list "<font color=$color>$name</font>" "<font color=$color>$owner</font>" "<font color=$color>$id</font>" "<font color=$color>$nlock</font>" "<font color=$color>$nbusy</font>" "<font color=$color>$contention</font>"]
     }
-    
+
     set html [_ns_stats.header Locks]
-    
+
     if {![ns_config -bool ns/threads mutexmeter 0]} {
         set msg "\
         Mutex metering not enabled. To enable add the following to your server configuration:
@@ -281,13 +241,13 @@ proc _ns_stats.locks {} {
 ns_section ns/threads
 ns_param mutexmeter true
 </pre>"
-        
+
         append html [_ns_stats.msg warning $msg]
     }
-    
-    append html [_ns_stats.results $col $colTitles locks.adp $rows $reverseSort]
+
+    append html [_ns_stats.results $col $colTitles ?@page=locks $rows $reverseSort]
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -312,7 +272,7 @@ proc _ns_stats.log {} {
     set html [_ns_stats.header Log]
     append html "<font size=2><pre>$log</pre></font>"
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -371,7 +331,7 @@ proc _ns_stats.mempools {} {
 		    incr talloc $na
 		    incr trequest $nr
 		    incr tused $nu
-            
+
 		    if {$nr != 0} {
 			    set ov [expr {$na - $nr}]
 			    set op [format %4.2f%% [expr {double($ov) * 100 / $nr}]]
@@ -433,7 +393,7 @@ proc _ns_stats.mempools {} {
     </table>"
 
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -483,7 +443,7 @@ proc _ns_stats.process {} {
     </table>"
 
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -543,9 +503,9 @@ proc _ns_stats.sched {} {
     set colTitles [list ID Status Callback Data Flags "Last Queue" "Last Start" "Last End" Duration "Next Run"]
 
     set html [_ns_stats.header "Scheduled Proceedures"]
-    append html [_ns_stats.results $col $colTitles sched.adp $rows $reverseSort]
+    append html [_ns_stats.results $col $colTitles ?@page=sched $rows $reverseSort]
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -571,22 +531,22 @@ proc _ns_stats.threads {} {
         set create  [_ns_stats.fmtTime [lindex $t 4]]
         set proc    [lindex $t 5]
         set arg     [lindex $t 6]
-        
+
         if {"p:0x0" eq $proc} {
             set proc "NULL"
         }
-        
+
         if {"a:0x0" eq $arg} {
             set arg "NULL"
         }
-        
+
         lappend rows [list $thread $parent $id $flags $create $proc $arg]
     }
 
     set html [_ns_stats.header Threads]
-    append html [_ns_stats.results $col $colTitles threads.adp $rows $reverseSort]
+    append html [_ns_stats.results $col $colTitles ?@page=threads $rows $reverseSort]
     append html [_ns_stats.footer]
-    
+
     return $html
 }
 
@@ -604,7 +564,7 @@ proc _ns_stats.results {{selectedColNum ""} {colTitles ""} {colUrl ""} {rows ""}
             set colColor($colNum)           "#ffffff"
         }
     }
-    
+
     set html "\
     <table border=0 cellpadding=0 cellspacing=1 bgcolor=#cccccc>
     <tr>
@@ -613,7 +573,7 @@ proc _ns_stats.results {{selectedColNum ""} {colTitles ""} {colUrl ""} {rows ""}
         <tr>"
 
     set i 1
-    
+
     foreach title $colTitles {
         set url $colUrl
 
@@ -641,7 +601,7 @@ proc _ns_stats.results {{selectedColNum ""} {colTitles ""} {colUrl ""} {rows ""}
 
         incr i
     }
-   
+
     append html "</tr>"
 
     foreach row $rows {
@@ -667,13 +627,13 @@ proc _ns_stats.results {{selectedColNum ""} {colTitles ""} {colUrl ""} {rows ""}
 
         append html "</tr>"
     }
-    
+
     append html "\
         </table>
         </td>
     </tr>
     </table>"
-    
+
     return $html
 }
 
@@ -796,7 +756,7 @@ proc _ns_stats.cmpField {v1 v2} {
             set cmp [_ns_stats.cmpNumeric $v1 $v2]
         }
     } else {
-        if {$_sortListTmp(reverse)} { 
+        if {$_sortListTmp(reverse)} {
             set cmp [string compare $v2 $v1]
         } else {
             set cmp [string compare $v1 $v2]
@@ -816,4 +776,18 @@ proc _ns_stats.cmpNumeric {n1 n2} {
     return 0
 }
 
-# EOF $RCSfile$
+# Main processing logic
+set page [ns_queryget @page]
+if { [info command _ns_stats.$page] == "" } {
+  set page index
+}
+
+# Check user access if configured
+if { $user != "" && ([ns_conn authuser] != $user || [ns_conn authpassword] != $password) } {
+  ns_returnunauthorized
+  return
+}
+# Produce page
+ns_set update [ns_conn outputheaders] "Expires" "now"
+ns_return 200 text/html [_ns_stats.$page]
+
