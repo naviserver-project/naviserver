@@ -63,7 +63,7 @@ install-config: all
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
 	for i in contrib/index.adp contrib/nsconfig.tcl contrib/nsstats.tcl; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/; \
 	done
 	$(INSTALL_SH) install-sh $(INSTBIN)/
 
