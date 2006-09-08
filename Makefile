@@ -50,7 +50,7 @@ install: install-dirs install-include install-tcl install-modules \
 	@echo "Installation complete, now you can run NaviServer by typing"
 	@echo "the command below and access the server at http://localhost:8080"
 	@echo ""
-	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/nsd.tcl"
+	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/nsd-config.tcl"
 	@echo " or"
 	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/sample-config.tcl"
 	@echo " or"
@@ -63,7 +63,7 @@ install-dirs: all
 	done
 
 install-config: all
-	for i in contrib/nsd.tcl sample-config.tcl simple-config.tcl; do \
+	for i in nsd-config.tcl sample-config.tcl simple-config.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
 	for i in index.adp; do \
