@@ -106,7 +106,7 @@ static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 static LogClbk* AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free);
 static void RemClbk(LogClbk *clbkPtr, int unlocked);
 
-static char* SeverityName(Ns_LogSeverity sev);
+static char* SeverityName(Ns_LogSeverity sev, char *buf);
 
 static LogCache* GetCache(void);
 static Ns_TlsCleanup FreeCache;
@@ -1238,6 +1238,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
             char *msg, int len)
 {
     Ns_DString *dsPtr  = (Ns_DString *)arg;
+    char       sevname[32];
 
     /*
      * Add the log stamp
@@ -1250,7 +1251,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
     }
     Ns_DStringPrintf(dsPtr, "[%d.%lu][%s] %s: ", Ns_InfoPid(),
                      (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(),
-                     SeverityName(severity));
+                     SeverityName(severity, sevname));
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(dsPtr, "\n    ");
     }
@@ -1334,7 +1335,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
          char *msg, int len)
 {
     int             ii, ret;
-    char            c;
+    char            c, sevname[32];
     void           *logfile = (void *)STDERR_FILENO;
     Tcl_Obj        *stamp;
     Ns_DString      ds;
@@ -1363,7 +1364,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
      */
 
     Ns_DStringAppend(&ds, cbPtr->script);
-    Ns_DStringAppendElement(&ds, SeverityName(severity));
+    Ns_DStringAppendElement(&ds, SeverityName(severity, sevname));
     Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
     Tcl_DecrRefCount(stamp);
     c = *(msg + len);
@@ -1400,7 +1401,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
  *      Returns string representation of the log severity
  *
  * Results:
- *      Pointer to a static string with the string rep.
+ *      Pointer to a string with the string rep.
  *
  * Side effects:
  *      None.
@@ -1408,10 +1409,10 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
  *----------------------------------------------------------------------
  */
 
-static char*
-SeverityName(Ns_LogSeverity severity)
+static char* 
+SeverityName(Ns_LogSeverity severity, char *buf)
 {
-    char *severityStr, buf[10];
+    char *severityStr;
 
     if (severity < (sizeof(logConfig) / sizeof(logConfig[0]))) {
         severityStr = logConfig[severity].string;

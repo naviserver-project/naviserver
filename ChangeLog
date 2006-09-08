@@ -1,3 +1,11 @@
+2006-09-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/log.c: SeverityName() changed to accept one more argument
+	as buffer where to return severity name, if it has to be 
+	calculated for the given level. Before we were just returning
+	the pointer to a buffer allocated on the stack, which was a 
+	bad thing to do.
+
 2006-09-07  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/server.c:
