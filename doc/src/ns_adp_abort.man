@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_adp_abort - Stop processing of the current ADP and discard queued output
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_adp_abort ?retval?
-
-
-[list_end]
+[titledesc {ns_adp_abort - Stop processing of the current ADP and discard queued output}]
 
 [description]
 
@@ -26,6 +13,17 @@
 
  The optional retval becomes the return value of the ADP if specified, otherwise an empty string is returned.
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_adp_abort] [opt [arg retval]]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
 [example_begin]
@@ -34,7 +32,7 @@
     
    ns_returnredirect 
 
-]
+[example_end]
 
 [manpage_end]
 

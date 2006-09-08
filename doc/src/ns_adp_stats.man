@@ -3,24 +3,21 @@
 
 
 
-[titledesc
- ns_adp_stats - Return statistics about cached ADP pages.
+[titledesc {ns_adp_stats - Return statistics about cached ADP pages}]
 
-]
+[description]
+
+ Returns statistics about ADP pages that have been cached.  The result is a list of lists, where each sublist contains 2 items: File, Statistics.  File is the complete path in the file system to a cached adp file, Statistics is a list containing statistics about that cached file in a format similar to Tcl's array get format.  Currently, the keys in Statistics are:
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_adp_stats
+[call [cmd ns_adp_stats]]
 
 
-[list_end]
-
-[description]
-
- Returns statistics about ADP pages that have been cached.  The result is a list of lists, where each sublist contains 2 items: File, Statistics.  File is the complete path in the file system to a cached adp file, Statistics is a list containing statistics about that cached file in a format similar to Tcl's array get format.  Currently, the keys in Statistics are:
 
 [call [cmd  dev]]
 
@@ -54,6 +51,8 @@
 
  Number of script blocks in the adp file.
 
+[list_end]
+
 [section EXAMPLES]
 
 [example_begin]
@@ -66,13 +65,13 @@
      set output
 [example_end]
 
- See stats.tcl in the standard AOLserver distribution for a more complicated example.
+ See stats.tcl in the standard NaviServer distribution for a more complicated example.
 
 [para]NOTES
 
- On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino, so dev and ino will always be reported as 0 when running AOLserver on Windows. 
+ On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino, so dev and ino will always be reported as 0 when running NaviServer on Windows. 
 
-]
+
 
 [manpage_end]
 

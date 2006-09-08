@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_smallint - Test to see if a number is a 'smallint'
+[titledesc {ns_smallint - Test to see if a number is a 'smallint'}]
 
-]
+[description]
+
+ This command returns true only if value consists entirely of digits, and contains from 1 to 6 digits.~~~False is returned in all other cases.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_smallint value
+[call [cmd ns_smallint] [arg value]]
 
 
 [list_end]
 
-[description]
-
- This command returns true only if value consists entirely of digits, and contains from 1 to 6 digits.~~~False is returned in all other cases.
 
 [section EXAMPLES]
 
@@ -31,13 +29,6 @@
 
 
 [see_also nsd]
-[keywords 
-
- @@COMMAND_RELATED_COMMANDS@@
-
-
-[para]
-]
 
 [manpage_end]
 

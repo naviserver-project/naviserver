@@ -3,26 +3,24 @@
 
 
 
-[titledesc[para]ns_normalizepath - Normalize a path
-]
+[titledesc {ns_normalizepath - Normalize a path}]
+
+[description]
+[para]ns_normalizepath removes any extraneous slashes from the path and resolves "." and ".." references. For example: [lb]ns_normalizepath /dog/cat/../.. /rat/../../dog//mouse/..[rb]
+[para]returns: /dog 
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_normalizepath path
+[call [cmd ns_normalizepath] [arg path]]
 
 [list_end]
 
-[description]
-[para]ns_normalizepath removes any extraneous slashes from the path and resolves "." and ".." references. For example: [ns_normalizepath /dog/cat/../.. /rat/../../dog//mouse/..]
-[para]returns: /dog 
 
 [see_also nsd]
-[keywords 
-[para]Tcl [file normalize] 
+[keywords {Tcl [file normalize]}]
 
-]
 
 [manpage_end]
 

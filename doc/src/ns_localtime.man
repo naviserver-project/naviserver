@@ -3,36 +3,35 @@
 
 
 
-[para]
-NAME
-
- ns_localtime - Return current time in local timezone
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_localtime
-
-
-[list_end]
+[titledesc {ns_localtime - Return current time in local timezone}]
 
 [description]
 
  This command returns a nine-element Tcl list representing the current time in the system's current timezone.  The structure of the list corresponds to the Unix struct tm time structure:
 
-[call [cmd  seconds (0-59)]]
-<li> minutes (0-59)
-<li> hours (0-23)
-<li> dayofmonth (1-31)
-<li> monthofyear (0-11)
-<li> year (year-1900)
-<li> dayofweek (0-6, Sunday=0)
-<li> dayofyear (0-365)
-<li> isdst (>0 if Daylight Savings Time is in effect)
+[list_begin definitions]
+[call [cmd  ns_localtime] [arg seconds]]
+[lst_item] minutes (0-59)
+[lst_item] hours (0-23)
+[lst_item] dayofmonth (1-31)
+[lst_item] monthofyear (0-11)
+[lst_item] year (year-1900)
+[lst_item] dayofweek (0-6, Sunday=0)
+[lst_item] dayofyear (0-365)
+[lst_item] isdst (>0 if Daylight Savings Time is in effect)
+
+[list_end]
+
+[section {COMMANDS}]
+
+
+[list_begin definitions]
+
+
+[call [cmd ns_localtime]]
+
+
+[list_end]
 
 
 [section EXAMPLES]
@@ -44,11 +43,7 @@ NAME
 
 
 [see_also nsd]
-[keywords 
-
- ns_fmttime, ns_gmtime, ns_httptime, ns_parsehttptime, ns_parsetime, ns_time
-
-]
+[keywords ns_fmttime ns_gmtime ns_httptime ns_parsehttptime ns_parsetime ns_time]
 
 [manpage_end]
 

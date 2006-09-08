@@ -1,8 +1,10 @@
 [manpage_begin Ns_httppost n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-	    [para]Nothing much here, is there?
-[para]See 
+[titledesc {title}]
+
+[description]
+123
 
 
 [manpage_end]

@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_paren - Surround string with parentheses
+[titledesc {ns_paren - Surround string with parentheses}]
 
-]
+[description]
+
+ This command returns string inside left and right parentheses, unless string is the empty string, for which an empty string is returned.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_paren string
+ [call [cmd ns_paren] [arg string]]
 
 
 [list_end]
 
-[description]
-
- This command returns string inside left and right parentheses, unless string is the empty string, for which an empty string is returned.
 
 [section EXAMPLES]
 

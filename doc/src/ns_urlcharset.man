@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_urlcharset - Set the current connections url charset
+[titledesc {ns_urlcharset - Set the current connections url charset}]
 
-]
+[description]
+
+ Set the current connections urlcharset. Returns the encoding value for the specified charset. If the connection's urlencoding value is being changed then flush any form set cached locally, ns_conn will do the same.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_urlcharset charset
+ [call [cmd ns_urlcharset] [arg charset]]
 
 
 [list_end]
 
-[description]
-
- Set the current connections urlcharset. Returns the encoding value for the specified charset. If the connection's urlencoding value is being changed then flush any form set cached locally, ns_conn will do the same.
 
 [section EXAMPLES]
 
@@ -31,13 +29,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_charsets
-
-
-[para]
-]
+[keywords ns_charsets]
 
 [manpage_end]
 

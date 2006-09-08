@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_adp_parse - Parse an ADP file or string and return its output
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_adp_parse ?-file|-string? arg&nbsp;?arg ...?
-
-
-[list_end]
+[titledesc {ns_adp_parse - Parse an ADP file or string and return its output}]
 
 [description]
 
@@ -32,16 +19,27 @@
 
  If this call is a nested ADP evaluation (where one ADP calls another), an error will be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations. 
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_adp_parse] [arg {-file|-string}] [opt [arg {arg ...}]]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
 [example_begin]
-   % ns_adp_parse -string {&lt;% return [[expr 2 + 2]] %&gt;}
+   % ns_adp_parse -string {&lt;% return [lb][lb]expr 2 + 2[rb][rb] %&gt;}
    4
 [example_end]
 
 [example_begin]
    % ns_adp_parse -file 
-]
+[example_end]
 
 [manpage_end]
 

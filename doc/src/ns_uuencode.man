@@ -3,15 +3,7 @@
 
 
 
-[titledesc
- ns_uuencode - Binary-to-text encoding using "htuu" encoding
-
-[para]SYNOPSYS
-
- ns_uuencode string
-
-
-[list_end]
+[titledesc {ns_uuencode - Binary-to-text encoding using "htuu" encoding}]
 
 [description]
 
@@ -19,7 +11,14 @@
 
  NOTE: This is HTTP-style uuencoding/uudecoding which is sometimes called "htuu" (see 
 
-]
+[list_begin definitions]
+
+ [call [cmd ns_uuencode] [arg string]]
+
+
+[list_end]
+
+
 
 [manpage_end]
 

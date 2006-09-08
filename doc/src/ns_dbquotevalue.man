@@ -3,24 +3,20 @@
 
 
 
-[titledesc
- ns_dbquotevalue - Prepare a value string for inclusion in an SQL statement.
+[titledesc {ns_dbquotevalue - Prepare a value string for inclusion in an SQL statement}]
 
-]
+[description]
+
+ This command prepares the string value for inclusion in an SQL statement.  If value is "", ns_dbquotevalue will return the string "NULL".  If value is not "", the returned value depends on type.  If type is one of: bigint, bit, decimal, double, float, int, integer, numeric, real, smallint, or tinyint, then value will be returned without modification.  When type is any other string, or if type is omitted, value will be surrounded by single quotes, and any single quotes that it contains will be escaped by translation into two single quotes.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-
- ns_dbquotevalue value&nbsp;?type?
+[call [cmd ns_dbquotevalue] [arg value] [opt [arg type]]]
 
 
 [list_end]
-
-[description]
-
- This command prepares the string value for inclusion in an SQL statement.  If value is "", ns_dbquotevalue will return the string "NULL".  If value is not "", the returned value depends on type.  If type is one of: bigint, bit, decimal, double, float, int, integer, numeric, real, smallint, or tinyint, then value will be returned without modification.  When type is any other string, or if type is omitted, value will be surrounded by single quotes, and any single quotes that it contains will be escaped by translation into two single quotes.
 
 [section EXAMPLES]
 
@@ -41,19 +37,12 @@
 
 [example_begin]
    % set company "John's Cheese Factory"
-   % ns_db dml $db "INSERT INTO companies (name) VALUES ([ns_dbquotevalue $company])"
+   % ns_db dml $db "INSERT INTO companies (name) VALUES ([lb]ns_dbquotevalue $company[rb])"
 [example_end]
 
 
 [see_also nsd]
-[keywords 
-
- ns_dbquotename
-
-
-[para]
-
-]
+[keywords ns_dbquotename]
 
 [manpage_end]
 

@@ -3,25 +3,22 @@
 
 
 
-[titledesc
- ns_parsehttptime - Convert a HTTP date format string into seconds
+[titledesc {ns_parsehttptime - Convert a HTTP date format string into seconds}]
 
-]
+[description]
+
+ This command parses a string containing an HTTP date format string (see 
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_parsehttptime httptime
+ [call [cmd ns_parsehttptime] [arg httptime]]
 
 
 [list_end]
 
-[description]
-
- This command parses a string containing an HTTP date format string (see 
-]
 
 [manpage_end]
 

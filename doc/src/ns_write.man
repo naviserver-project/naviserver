@@ -3,36 +3,28 @@
 
 
 
-[titledesc
- ns_write - Write data to the current connection's socket.
+[titledesc {ns_write - Write data to the current connection's socket}]
 
-]
+[description]
+
+ This command writes the string immediately to the current connection's socket.  It can be used in place of ns_return or ns_respond to send back responses.  NaviServer will not include any headers when using ns_write.
+
+ Returns 1 if write was successful and 0 if write failed.  This can be useful to determine if the client has closed the connection, possibly by hitting the stop button.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_write ?connid? string
+ [call [cmd ns_write] [opt [arg connid]] [arg string]]
 
 
 [list_end]
 
-[description]
-
- This command writes the string immediately to the current connection's socket.  It can be used in place of ns_return or ns_respond to send back responses.  AOLserver will not include any headers when using ns_write.
-
- Returns 1 if write was successful and 0 if write failed.  This can be useful to determine if the client has closed the connection, possibly by hitting the stop button.
-
 
 [see_also nsd]
-[keywords 
+[keywords ns_writefp ns_return]
 
- ns_writefp, ns_return
-
-
-[para]
-]
 
 [manpage_end]
 

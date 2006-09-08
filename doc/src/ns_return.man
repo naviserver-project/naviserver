@@ -3,33 +3,7 @@
 
 
 
-[para]
-
-[titledesc[para]ns_connsendfp, ns_respond, ns_return, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnforbidden, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnredirect, ns_returnunauthorized, ns_write - commands
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
- ns_connsendfp fp len
- ns_respond
- ns_return status type string
- ns_returnadminnotice status msg&nbsp;?longmsg?
- ns_returnbadrequest reason
- ns_returnerror status msg
- ns_returnfile status type filename
- ns_returnforbidden
- ns_returnfp status type fileid len
- ns_returnnotfound
- ns_returnnotice status msg&nbsp;?longmsg?
- ns_returnredirect location
- ns_returnunauthorized
- ns_write string
-
-
-[list_end]
+[titledesc {ns_connsendfp, ns_respond, ns_return, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnforbidden, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnredirect, ns_returnunauthorized, ns_write - commands}]
 
 [description]
 [para]These procedures provide a simple interface for returning information to the client. They build HTTP/1.0 headers and send the appropriate data out the socket to the client. The script does not end at the time ns_return* is invoked so you can continue processing data after the client has gotten the data and closed the socket.
@@ -67,49 +41,75 @@
  503 Service Unavailable
  504 Gateway Time-out
 
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[lst_item] ns_connsendfp fp len
+[lst_item] ns_respond
+[lst_item] ns_return status type string
+[lst_item] ns_returnadminnotice status msg&nbsp;?longmsg?
+[lst_item] ns_returnbadrequest reason
+[lst_item] ns_returnerror status msg
+[lst_item] ns_returnfile status type filename
+[lst_item] ns_returnforbidden
+[lst_item] ns_returnfp status type fileid len
+[lst_item] ns_returnnotfound
+[lst_item] ns_returnnotice status msg&nbsp;?longmsg?
+[lst_item] ns_returnredirect location
+[lst_item] ns_returnunauthorized
+[lst_item] ns_write string
+
+
+[list_end]
+
+[list_begin definitions]
+
+
 [call [cmd  ns_connsendfp]]
-[para] This function writes len bytes of the specified channel or file to the conn.
+ This function writes len bytes of the specified channel or file to the conn.
 
 [call [cmd  ns_return]]
-[para] Sends back both the headers and the string.
+ Sends back both the headers and the string.
 
 [call [cmd  ns_returnadminnotice]]
-[para] Wraps the text msg and longmsg in some html, appends a line with a link to "" based on the virtual server parameter "WebMaster".
+ Wraps the text msg and longmsg in some html, appends a line with a link to "" based on the virtual server parameter "WebMaster".
 
 [call [cmd  ns_returnbadrequest]]
-[para] Returns a 400 status code and a formatted HTML message containing the reason text.
+ Returns a 400 status code and a formatted HTML message containing the reason text.
 
 [call [cmd  ns_returnerror]]
-[para] Wraps the text msg in some html and returns that to the client.
+ Wraps the text msg in some html and returns that to the client.
 
 [call [cmd  ns_returnfile]]
-[para] Sends back the headers and the contents of the file.
+ Sends back the headers and the contents of the file.
 
 [call [cmd  ns_returnforbidden]]
-[para] Returns a 403 status code.
+ Returns a 403 status code.
 
 [call [cmd  ns_returnfp]]
-[para] First sends the appropriate headers. Next, it writes out the contents of file from the current file position until the end of the file.
+ First sends the appropriate headers. Next, it writes out the contents of file from the current file position until the end of the file.
 
 [call [cmd  ns_returnnotfound]]
-[para] Returns a 404 status code.
+ Returns a 404 status code.
 
 [call [cmd  ns_returnnotice]]
-[para] Wraps the text msg and longmsg in some html and returns that to the client.
+ Wraps the text msg and longmsg in some html and returns that to the client.
 
 [call [cmd  ns_returnredirect]]
-[para] Returns a redirect to the passed in location
+ Returns a redirect to the passed in location
 
 [call [cmd  ns_returnunauthorized]]
-[para] Returns a 401 status code
+ Returns a 401 status code
 
 [call [cmd  ns_write]]
-[para] Writes the string out the connection. You can use it instead of the ns_return or ns_respond functions to build HTTP responses. AOLserver will not include the usual headers on the output data. The script does not end at the time ns_write* is invoked so you can continue processing data after the client has gotten the data and closed the socket.
+ Writes the string out the connection. You can use it instead of the ns_return or ns_respond functions to build HTTP responses. NaviServer will not include the usual headers on the output data. The script does not end at the time ns_write* is invoked so you can continue processing data after the client has gotten the data and closed the socket.
 
-<div class="editsection" style="float:right;margin-left:5px;">[edit]</div><h2> SEE ALSO </h2>
- ns_connsendfp, ns_respond, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnforbidden, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnredirect, ns_returnunauthorized, ns_write
+[list_end]
 
-[para]
+[see_also ns_connsendfp ns_respond ns_returnadminnotice ns_returnbadrequest ns_returnerror ns_returnfile ns_returnforbidden ns_returnfp ns_returnnotfound ns_returnnotice ns_returnredirect ns_returnunauthorized ns_write]
 
 
 

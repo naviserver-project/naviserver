@@ -1,7 +1,7 @@
 [manpage_begin Ns_shutdown n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_shutdown - Shut down AOLserver}]
+[titledesc {ns_shutdown - Shut down NaviServer}]
 
 [description]
 This command shuts down the server.  If [emph timeout] is not specified

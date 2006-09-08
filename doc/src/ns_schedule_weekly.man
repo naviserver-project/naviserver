@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_schedule_weekly - Schedule a script to run on a certain day of the week at a certain time
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_schedule_weekly ?-once?&nbsp;?-thread? day hour minute script
-
-
-[list_end]
+[titledesc {ns_schedule_weekly - Schedule a script to run on a certain day of the week at a certain time}]
 
 [description]
 
@@ -24,10 +11,21 @@
 
  NOTE: day, hour and minute are specified in local time.  Beware of Daylight Savings Time shifts affecting the time of day when the script will execute.
 
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_schedule_weekly] [opt [arg -once]] [opt [arg -thread]] [arg day] [arg hour] [arg minute] [arg script]]
+
+
+[list_end]
+
 [section EXAMPLES]
 
 [example_begin]
-   % set id [[ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }]]
+   % set id [lb][lb]ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }[rb][rb]
    123
 [example_end]
 
@@ -37,13 +35,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_after, ns_info scheduled, ns_pause, ns_resume, ns_schedule_proc, ns_schedule_daily, ns_unschedule_proc
-
-
-[para]
-]
+[keywords ns_after ns_info scheduled ns_pause ns_resume ns_schedule_proc ns_schedule_daily ns_unschedule_proc]
 
 [manpage_end]
 

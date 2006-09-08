@@ -1,6 +1,10 @@
 [manpage_begin Ns_respond n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
+[titledesc {title}]
+
+[description]
+
 	    [para]ns_respond
 Overview
 [para]Build a complete response
@@ -14,11 +18,11 @@ Example
 [para]Using ns_respond, it's easy to do an HTTP redirect:
 
 [example_begin]
-   set headers [ns_set new myheaders]
+   set headers [lb]ns_set new myheaders[rb]
    ns_set put $headers location 
    ns_respond -status 302 -type text/plain \
    	-string "redirection" -headers $headers
-
+[example_end]
 
 [manpage_end]
 

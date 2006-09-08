@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- nsv_names - List the nsvs in use
+[titledesc {nsv_names - List the nsvs in use}]
 
-]
+[description]
+
+ Return a list of all the nsvs in use, optionally only those matching pattern. If no matching nsvs are in use returns the empty string.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- nsv_names ?pattern?
+ [call [cmd nsv_names] [opt [arg pattern]]]
 
 
 [list_end]
 
-[description]
-
- Return a list of all the nsvs in use, optionally only those matching pattern. If no matching nsvs are in use returns the empty string.
 
 [section EXAMPLES]
 
@@ -31,10 +29,6 @@
 
 
 [see_also nsd]
-[keywords 
-
- 
-]
 
 [manpage_end]
 

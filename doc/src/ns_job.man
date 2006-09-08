@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_job - Implement job queues and thread pools for evaluating Tcl scripts
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_job option&nbsp;?arg arg ...?
-
-
-[list_end]
+[titledesc {ns_job - Implement job queues and thread pools for evaluating Tcl scripts}]
 
 [description]
 
@@ -24,11 +11,23 @@
 
  This command provides a means for queueing Tcl scripts for evaluation by a pool of threads.  The legal options (which may be abbreviated) are:
 
-[call [cmd  ns_job create ?-desc description? queueId&nbsp;?maxthreads?]]
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd  ns_job] [arg option] [opt [arg {arg arg ...}]]]
+
+
+[list_end]
+
+[list_begin definitions]
+
+[call [cmd  ns_job] [arg create] [opt [arg {-desc description}]] [arg queueId] [opt [arg maxthreads]]]
 
  Create a new job queue called queueId. If maxthreads is not specified, then the default of 4 is used.
 
-[call [cmd  ns_job queue ?-detached? queueId script]]
+[call [cmd  ns_job] [arg queue] [opt [arg {-detached}]] [arg queueId] [arg script]]
 
  Add a new job to the queue. If there are less than maxthreads current running then the job will be started. If there are maxthreads currently running then this new job will be queued.
 
@@ -36,37 +35,36 @@
 
  The new job's ID is returned.
 
-[call [cmd  ns_job wait ?-timeout seconds:microseconds? queueId jobId]]
+[call [cmd  ns_job] [arg wait] [opt [arg {-timeout seconds:microseconds}]] [arg queueId] [arg jobId]]
 
  Wait for the specified queued or running job to finish.  ns_job wait returns the results of the script.
 
  An error is thrown if the specified timeout period is reached.
 
-[call [cmd  ns_job waitany ?-timeout seconds:microseconds? queueId]]
+[call [cmd  ns_job] [arg waitany] [opt [arg {-timeout seconds:microseconds}]] [arg queueId]]
 
  Wait for any job on the queue complete.
 
  An error is thrown if the specified timeout period is reached.
 
-[call [cmd  ns_job cancel queueId jobId]]
+[call [cmd  ns_job] [arg cancel] [arg queueId] [arg jobId]]
 
  Remove the specified job from the queue. If the job is currently running, then the job will be removed from the queue when it completes.
-
  1 (true) is returned if the job is currently running and can not be cancelled.
 
-[call [cmd  ns_job delete queueId]]
+[call [cmd  ns_job] [arg delete] [arg queueId]]
 
  Request that the specified queue be deleted. The queue will only be deleted when all jobs are removed.
 
-[call [cmd  ns_job jobs queueId]]
+[call [cmd  ns_job] [arg jobs] [arg queueId]]
 
  Return a list of the job IDs.
 
-[call [cmd  ns_job queues]]
+[call [cmd  ns_job] [arg queues]]
 
  Returns a list of the queue IDs.
 
-[call [cmd  ns_job threadlist]]
+[call [cmd  ns_job] [arg threadlist]]
 
  Returns a list of the thread pool's fields.
 
@@ -78,7 +76,7 @@
 
  req stop - The thread pools is being stopped. This probably means that the server is shutting down.
 
-[call [cmd  ns_job queuelist]]
+[call [cmd  ns_job] [arg queuelist]]
 
  Returns a list of the queues. A queue has the following fields:
 
@@ -92,7 +90,7 @@
 
  REQ delete - Someone requested this queue be deleted. Queue will not be deleted until all the jobs on the queue are removed.
 
-[call [cmd  ns_job joblist queueId]]
+[call [cmd  ns_job] [arg joblist] [arg queueId]]
 
  Returns a list the jobs in the specified queue. A job has the following fields:
 
@@ -114,16 +112,14 @@
 
  req - The job is required.   Return values are none, wait, cancel.
 
-[call [cmd  ns_job genid]]
+[call [cmd  ns_job] [arg genid]]
 
  Generate a new unique ID. This new ID can be used as the queue ID without conflicting with any other queue ID.
 
-[para]
-EXAMPLES
+[list_end]
 
 [see_also nsd]
-[keywords 
-]
+
 
 [manpage_end]
 

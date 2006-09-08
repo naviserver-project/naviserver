@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_returnunauthorized - Return a 401 (Unauthorized) status message to the client
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_returnunauthorized ?connid?
-
-
-[list_end]
+[titledesc {ns_returnunauthorized - Return a 401 (Unauthorized) status message to the client}]
 
 [description]
 
@@ -26,6 +13,17 @@
 
  Note: The script does not end at the time this command is invoked.  ns_adp_abort or ns_adp_return should be called to end script processing after ns_returnunauthorized.
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_returnunauthorized] [opt [arg connid]]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
 [example_begin]
@@ -34,13 +32,9 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_return, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnforbidden, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnok, ns_returnredirect
+[keywords ns_return ns_returnadminnotice ns_returnbadrequest ns_returnerror ns_returnfile ns_returnforbidden ns_returnfp ns_returnnotfound ns_returnnotice ns_returnok ns_returnredirect]
 
 
-[para]
-]
 
 [manpage_end]
 

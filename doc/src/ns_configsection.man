@@ -3,25 +3,23 @@
 
 
 
-[para]
-NAME
-[para]ns_configsection - Return a handle to an ns_set for a section of the server's configuration
-]
+[titledesc {ns_configsection - Return a handle to an ns_set for a section of the server's configuration}]
+
+[description]
+[para]This command returns a handle for an ns_set which contains all the parameter key-value pairs for the section from the server's configuration.  If the section is not defined, this command returns an empty string.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_configsection section
+[call [cmd ns_configsection] [arg section]]
 
 [list_end]
 
-[description]
-[para]This command returns a handle for an ns_set which contains all the parameter key-value pairs for the section from the server's configuration.  If the section is not defined, this command returns an empty string.
 [section EXAMPLES]
 
 [example_begin]
- % set setId [ns_configsection ns/parameters]
+ % set setId [lb]ns_configsection ns/parameters[rb]
  t0
 [example_end]
 
@@ -31,16 +29,14 @@ NAME
 [example_end]
 
 [example_begin]
- % array set a [ns_set array $setId]
+ % array set a [lb]ns_set array $setId[rb]
  % array names a
  EnableAdmin MailHost Home Group User debug
 [example_end]
 
 
 [see_also nsd]
-[keywords 
-[para]ns_config, ns_configsections, ns_set
-]
+[keywords ns_config ns_configsections ns_set]
 
 [manpage_end]
 

@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_localsqltimestamp - Return a SQL timestamp containing the local time.
+[titledesc {ns_localsqltimestamp - Return a SQL timestamp containing the local time}]
 
-]
+[description]
+
+ This command returns a timestamp value that encodes the local time in ANSI SQL format (YYYY-MM-DD hh24:mm:ss).
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_localsqltimestamp
+[call [cmd ns_localsqltimestamp]]
 
 
 [list_end]
-
-[description]
-
- This command returns a timestamp value that encodes the local time in ANSI SQL format (YYYY-MM-DD hh24:mm:ss).
 
 [section EXAMPLES]
 
@@ -41,13 +39,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_localtime
-
-
-[para]
-]
+[keywords ns_localtime]
 
 [manpage_end]
 

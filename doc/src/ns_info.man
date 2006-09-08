@@ -3,60 +3,62 @@
 
 
 
-[titledesc
- ns_info - Return information about various aspects of the running AOLserver
+[titledesc {ns_info - Return information about various aspects of the running NaviServer}]
 
-]
+
+[description]
+
+ This command provides information about the current state of the running NaviServer.  The legal options (which may be abbreviated) are:
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_info option&nbsp;?arg arg ...?
+[call [cmd ns_info] [arg option] [opt [arg {arg arg ...}]]]
 
 
 [list_end]
 
-[description]
 
- This command provides information about the current state of the running AOLserver.  The legal options (which may be abbreviated) are:
+[list_begin definitions]
 
-[call [cmd  ns_info address]]
+[call [cmd  ns_info] [arg address]]
 
  returns the primary IP address of this machine, or "0.0.0.0" if unable to determine
 
-[call [cmd  ns_info argv0]]
+[call [cmd  ns_info] [arg argv0]]
 <li> ns_info boottime
 
  returns the time in epoch seconds since the current server was started
 
-[call [cmd  ns_info builddate]]
+[call [cmd  ns_info] [arg builddate]]
 
  returns the date and time at which the current server was compiled, e.g.: "Jul 20 2004 at 14:57:20"
 
-[call [cmd  ns_info callbacks]]
+[call [cmd  ns_info] [arg callbacks]]
 <li> ns_info config
 
  returns the absolute path to the config file used to start the server
 
-[call [cmd  ns_info home]]
+[call [cmd  ns_info] [arg home]]
 
  returns the current working directory of the server
 
-[call [cmd  ns_info hostname]]
+[call [cmd  ns_info] [arg hostname]]
 
  returns the value of gethostname(), or "localhost" if that fails
 
-[call [cmd  ns_info label]]
+[call [cmd  ns_info] [arg label]]
 
  returns the value of NSD_LABEL from nsd.h, e.g. "aolserver4_0"
 
-[call [cmd  ns_info locks]]
+[call [cmd  ns_info] [arg locks]]
 
  lists the mutexes that currently exist.  A 5-element list is returned for each mutex: 
 
-]
+[list_end]
 
 [manpage_end]
 

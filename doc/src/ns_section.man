@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_section - Specify the current configuration section.
+[titledesc {ns_section - Specify the current configuration section}]
 
-]
+[description]
+
+ This command sets the current section to define parameters for using ns_param.  This command is only available at server startup when parsing the config .tcl file.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_section sectionname
+ [call [cmd ns_section] [arg sectionname]]
 
 
 [list_end]
 
-[description]
-
- This command sets the current section to define parameters for using ns_param.  This command is only available at server startup when parsing the config .tcl file.
 
 [section EXAMPLES]
 
@@ -31,14 +29,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_config, ns_configsection, ns_configsections, ns_param
-
-
-[para]
-
-]
+[keywords ns_config ns_configsection ns_configsections ns_param]
 
 [manpage_end]
 

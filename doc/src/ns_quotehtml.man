@@ -3,32 +3,32 @@
 
 
 
-[titledesc
- ns_quotehtml - Escape HTML characters so they appear as-is in HTML pages
+[titledesc {ns_quotehtml - Escape HTML characters so they appear as-is in HTML pages}]
 
-]
+[description]
+
+ Returns the contents of html with certain characters that are special in HTML replaced with an escape code.  This allows text displayed in a webpage that might otherwise be interpreted as containing HTML markup instructions to be interpreted as literal characters to be displayed.  Specifically:
+
+ns_quotehtml > becomes &amp;
+[list_begin definitions]
+[lst_item] &gt; becomes &amp;gt;
+[lst_item] &amp; becomes &amp;amp;
+[lst_item] ' becomes &amp;#39;
+[lst_item] " becomes &amp;#34;
+[list_end]
+
+ All other characters are unmodified in the output.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_quotehtml html
+ [call [cmd ns_quotehtml] [arg html]]5B
 
 
 [list_end]
 
-[description]
-
- Returns the contents of html with certain characters that are special in HTML replaced with an escape code.  This allows text displayed in a webpage that might otherwise be interpreted as containing HTML markup instructions to be interpreted as literal characters to be displayed.  Specifically:
-
-[call [cmd  &lt; becomes &amp;lt;]]
-<li> &gt; becomes &amp;gt;
-<li> &amp; becomes &amp;amp;
-<li> ' becomes &amp;#39;
-<li> " becomes &amp;#34;
-
- All other characters are unmodified in the output.
 
 [section EXAMPLES]
 
@@ -50,10 +50,7 @@
 [para]
 NOTES
 
- The set of characters that are substituted and their replacements may be different in previous versions of AOLserver.  For example, AOLserver 2.x does not escape single or double-quotes.
-
-
-[para]
+ The set of characters that are substituted and their replacements may be different in previous versions of NaviServer.  For example, NaviServer 2.x does not escape single or double-quotes.
 
 
 

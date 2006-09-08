@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- nsv_unset - Unset an array or a key
+[titledesc {nsv_unset - Unset an array or a key}]
 
-]
+[description]
+
+ Unset an array or a single key from an array. If successful returns an empty string.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- nsv_unset array ?key?
+ [call [cmd nsv_unset] [arg array] [opt [arg key]]]
 
 
 [list_end]
 
-[description]
-
- Unset an array or a single key from an array. If successful returns an empty string.
 
 [section EXAMPLES]
 
@@ -37,11 +35,7 @@
 [para]unset an array
 
 [see_also nsd]
-[keywords 
 
- 
-
-]
 
 [manpage_end]
 

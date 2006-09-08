@@ -3,19 +3,19 @@
 
 
 
-[titledesc[para]ns_jpegsize - Determine the width and height of a JPEG image.
-]
+[titledesc {ns_jpegsize - Determine the width and height of a JPEG image}]
+
+[description]
+[para]Returns a list of two elements, the width and height of the JPEG file specified by filename.  An error is generated if the file does not exist or if it is not a JPEG file.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_jpegsize filename
+[call [cmd ns_jpegsize] [arg filename]]
 
 [list_end]
 
-[description]
-[para]Returns a list of two elements, the width and height of the JPEG file specified by filename.  An error is generated if the file does not exist or if it is not a JPEG file.
 [section EXAMPLES]
 
 [example_begin]
@@ -30,12 +30,8 @@
 
 
 [see_also nsd]
-[keywords 
-[para]ns_gifsize, the nsimage module
+[keywords ns_gifsize ns_image ]
 
-
-[para]
-]
 
 [manpage_end]
 

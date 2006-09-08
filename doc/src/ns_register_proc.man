@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_register_proc - Register a procedure for a method/URL combination
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_register_proc ?-noinherit? method URL myproc&nbsp;?args?
-
-
-[list_end]
+[titledesc {ns_register_proc - Register a procedure for a method/URL combination}]
 
 [description]
 
@@ -27,6 +14,17 @@
  If -noinherit is not specified, the requested URL can match the specified URL or any URL below it.  For example, if the URL specified with ns_register_proc is /foo/bar, procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar, provided there is not already another procedure registered for that exact URL or for an URL with a closer match.
 
  Note that you must use a glob-style matching character if you want inheritance for file names.  For example, if you want /foo/bar to match /foo/bar.html, you must use: 
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_register_proc] [opt [arg -noinherit]] [arg method] [arg URL] [arg myproc] [opt [arg args]]]
+
+
+[list_end]
+
 
 [example_begin]
    ns_register_proc /foo/bar*
@@ -81,11 +79,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_unregister_proc
-
-]
+[keywords ns_unregister_proc]
 
 [manpage_end]
 

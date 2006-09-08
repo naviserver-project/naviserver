@@ -1,10 +1,12 @@
 [manpage_begin Ns_checkurl n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-	    [para]See: ns_requestauthorize
+[titledesc {title}]
 
+[description]
+123
 
-[para]
+[keywords ns_requestauthorize]
 
 
 [manpage_end]

@@ -1,12 +1,10 @@
 [manpage_begin Ns_httpget n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-	    [para]See: ns_http
-[para]As of AOLserver 4.0, <strong>ns_httpget</strong> is deprecated.
+[titledesc {title}]
 
-
-[para]
-
+[description]
+123
 
 
 [manpage_end]

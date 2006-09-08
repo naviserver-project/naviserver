@@ -1,7 +1,9 @@
 [manpage_begin Ns_adp_exception n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-	    [para]ns_adp_exception ?state?
+[description]
+
+[para]ns_adp_exception ?state?
 [para]This function is used to examine  the  current  ADP
 exception  state.   The  function  returns 0 if the
 exception state is ok and 1 otherwise.
@@ -10,6 +12,7 @@ able with that name will be set for the caller, and
 will contain the exception state with  one  of  the
 following possible values:
 
+[list_begin definitions]
 [call [cmd  ok        ]]
 
   ADP was evaluated successfully
@@ -30,6 +33,7 @@ following possible values:
 
   Unrecognized exception status.  This should not occur.
 
+[list_end]
 
 
 

@@ -3,6 +3,10 @@
 
 [titledesc {ns_addrbyhost - Forward lookup a hostname to its IP address}]
 
+[description]
+
+ This command resolves a hostname to its IP address.  If the hostname cannot be resolved, it throws an error.
+
 [section {COMMANDS}]
 
 [list_begin definitions]
@@ -15,9 +19,6 @@ Name of the hostname to be resolved into IP address
 
 [list_end]
 
-[description]
-
- This command resolves a hostname to its IP address.  If the hostname cannot be resolved, it throws an error.
 
 [section EXAMPLES]
 

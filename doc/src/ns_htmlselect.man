@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_htmlselect - Build an HTML SELECT form widget from the specified data
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_htmlselect ?-multi?&nbsp;?-sort?&nbsp;?-labels labels? name values&nbsp;?selectedData?
-
-
-[list_end]
+[titledesc {ns_htmlselect - Build an HTML SELECT form widget from the specified data}]
 
 [description]
 
@@ -34,11 +21,22 @@
 
  selectedData is an optional list of the OPTIONs that will be selected by default.
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_htmlselect] [opt [arg -multi]] [opt [arg {-sort}]] [opt [arg {-labels labels}]] [arg name] [arg values] [opt [arg selectedData]]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
 [example_begin]
-   % set favoriteAnimal [[ns_htmlselect_old -sort -labels [list dog cat cow]] "favoriteAnimal" 
-
+   % set favoriteAnimal [lb][lb]ns_htmlselect_old -sort -labels [lb]list dog cat cow[rb][rb] "favoriteAnimal"[rb]
+[example_end]
 
 [manpage_end]
 

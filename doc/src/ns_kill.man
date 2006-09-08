@@ -3,33 +3,26 @@
 
 
 
-[titledesc
- ns_kill - send a process a signal
+[titledesc {ns_kill - send a process a signal}]
 
-]
+[description]
+
+ This command sends the process pid the signal signal.  If -nocomplain is specified, no error will be returned on failure.  signal should be an integer, i.e., 1 for SIGHUP, 9 for SIGKILL, 15 for SIGTERM, etc.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_kill ?-nocomplain? pid signal
+[call [cmd ns_kill] [opt [arg {-nocomplain}]] [arg pid] [arg signal]]
 
 
 [list_end]
 
-[description]
-
- This command sends the process pid the signal signal.  If -nocomplain is specified, no error will be returned on failure.  signal should be an integer, i.e., 1 for SIGHUP, 9 for SIGKILL, 15 for SIGTERM, etc.
 
 
 [see_also nsd]
-[keywords 
-
- ns_job
-
-
-]
+[keywords ns_job]
 
 [manpage_end]
 

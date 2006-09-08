@@ -3,41 +3,37 @@
 
 
 
-[titledesc
- ns_server - Get state of the server's connection pools and queues
+[titledesc {ns_server - Get state of the server's connection pools and queues}]
 
-]
+[description]
+
+ This command provides a way to examine the current server's connection pools and queues.  The legal options (which may be abbreviated) are:
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_server option&nbsp;?pool?
+ [call [cmd ns_server] [opt [arg pool]]]
 
 
 [list_end]
 
-[description]
+[list_begin definitions]
 
- This command provides a way to examine the current server's connection pools and queues.  The legal options (which may be abbreviated) are:
-
-[call [cmd  ns_server active ?pool?]]
-<li> ns_server all ?pool?
-<li> ns_server connections ?pool?
-<li> ns_server keepalive ?pool?
-<li> ns_server pools ?pool?
-<li> ns_server queued ?pool?
-<li> ns_server threads ?pool?
+[call [cmd  ns_server] [arg active] [opt [arg pool]]]
+[lst_item] ns_server all ?pool?
+[lst_item] ns_server connections ?pool?
+[lst_item] ns_server keepalive ?pool?
+[lst_item] ns_server pools ?pool?
+[lst_item] ns_server queued ?pool?
+[lst_item] ns_server threads ?pool?
 
  Returns a list of key-value pairs identifying the number of connection threads and what state they are currently in.
 
-[call [cmd  ns_server waiting ?pool?]]
+[call [cmd  ns_server] [arg waiting] [opt [arg pool]]]
 
-[para]NOTES
-
- See 
-]
+[list_end]
 
 [manpage_end]
 

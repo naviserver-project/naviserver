@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_eval - Evaluate tcl in multiple interpreters
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_eval ?-sync?&nbsp;?-pending?&nbsp;?args?
-
-
-[list_end]
+[titledesc {ns_eval - Evaluate tcl in multiple interpreters}]
 
 [description]
 
@@ -29,9 +16,21 @@
  ns_eval is designed to work whether you pass your script as one argument or many arguments. In order to accomplish this, the arguments are passed through:
 
 [example_begin]
-   uplevel 1 [eval concat $args][example_end]
+   uplevel 1 [lb]eval concat $args[rb]
+[example_end]
 
  which means that there are two rounds of concat behavior, unlike a straight eval.  See the example below of unsetting a global variable to see how this can play out.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_eval] [opt [arg -sync]] [opt [arg -pending]] [opt [arg args]]]
+
+
+[list_end]
+
 
 [section EXAMPLES]
 
@@ -53,20 +52,15 @@
 
 [example_begin]
    # Unset an array variable in all interpreters.
-   ns_eval {{if {[info exists myGlobal]} {unset myGlobal}}}
+   ns_eval {{if {[lb]info exists myGlobal[rb]} {unset myGlobal}}}
    # The code that ends up being evaluated in each interpeter is:
-   # if {[info exists myGlobal]} {unset myGlobal}    
+   # if {[lb]info exists myGlobal[rb]} {unset myGlobal}    
 [example_end]
 
 
 [see_also nsd]
-[keywords 
+[keywords ns_cleanup ns_ictl ns_init ns_markfordelete ns_reinit]
 
- ns_cleanup, ns_ictl, ns_init, ns_markfordelete, ns_reinit
-
-
-[para]
-]
 
 [manpage_end]
 

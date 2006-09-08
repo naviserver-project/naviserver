@@ -3,26 +3,24 @@
 
 
 
-[titledesc
- ns_after - Execute a command after a time delay
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_after seconds script
-
-
-[list_end]
+[titledesc {ns_after - Execute a command after a time delay}]
 
 [description]
 
  This command executes a script in the background after a number of seconds time delay.  It does this by scheduling a one-shot event in the scheduler.  Uncaught script errors will go to the server log.  It returns an ID which can be used to unschedule the execution of the script (if seconds hasn't elapsed) using ns_unschedule_proc.
 
  The script when executed will run in the scheduler thread.  If the script is long-running, this may interfere with the execution of other scheduled scripts, in which case ns_schedule_proc should be used instead of ns_after.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_after] [arg seconds] [arg script]]
+
+
+[list_end]
 
 [section EXAMPLES]
 
@@ -33,14 +31,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_info scheduled, ns_pause, ns_resume, ns_schedule_daily, ns_schedule_proc, ns_schedule_weekly, ns_unschedule_proc
-
-
-[para]
-
-]
+[keywords ns_info scheduled ns_pause ns_resume ns_schedule_daily ns_schedule_proc ns_schedule_weekly ns_unschedule_proc]
 
 [manpage_end]
 

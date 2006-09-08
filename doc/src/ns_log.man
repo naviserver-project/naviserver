@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_log - Send messages to the server log
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_log severity string&nbsp;?string ...?
-
-
-[list_end]
+[titledesc {ns_log - Send messages to the server log}]
 
 [description]
 
@@ -38,9 +25,20 @@
 
  bug  - Something occurred that implies that there is a bug in the code.
 
- debug - If the server is in Debug  mode,  the  message  is printed.  Debug  mode  is specified in the [ns/parameters] section of the configuration file. Otherwise, the  message is not printed.
+ debug - If the server is in Debug  mode,  the  message  is printed.  Debug  mode  is specified in the [lb]ns/parameters[rb] section of the configuration file. Otherwise, the  message is not printed.
 
 [para]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_log] [arg severity] [arg string] [opt [arg {string ...}]]]
+
+
+[list_end]
+
 EXAMPLES
 
 [example_begin]
@@ -55,13 +53,9 @@ EXAMPLES
 
 
 [see_also nsd]
-[keywords 
-
- ns_info log, ns_logctl, ns_logroll
+[keywords {ns_info log} ns_logctl ns_logroll]
 
 
-[para]
-]
 
 [manpage_end]
 

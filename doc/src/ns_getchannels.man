@@ -3,32 +3,26 @@
 
 
 
-[titledesc
- ns_getchannels - Return a list of all open Tcl I/O channels
+[titledesc {ns_getchannels - Return a list of all open Tcl I/O channels}]
 
-]
+[description]
+
+ This command returns a Tcl list of all open Tcl I/O channels.  This command is defined in tcl/compat.tcl as a wrapper to the Tcl [lb]file channels[rb] command.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_getchannels 
+[call [cmd ns_getchannels]]
 
 
 [list_end]
 
-[description]
-
- This command returns a Tcl list of all open Tcl I/O channels.  This command is defined in tcl/compat.tcl as a wrapper to the Tcl [file channels] command.
 
 
 [see_also nsd]
-[keywords 
-
- Tcl [file channels] 
-
-]
+[keywords Tcl {file channels}]
 
 [manpage_end]
 

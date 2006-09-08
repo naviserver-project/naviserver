@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- keylget - Return value associated with key from the keyed list in listvar
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- keylget listvar&nbsp;?key?&nbsp;?retvar | {}?
-
-
-[list_end]
+[titledesc {keylget - Return value associated with key from the keyed list in listvar}]
 
 [description]
 
@@ -28,7 +15,18 @@
 
  If key is omitted, then a list of all the keys in the keyed list is returned similar to 
 
-]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd keylget] [arg listvar] [opt [arg key]] [opt [arg retvar]]]
+
+
+[list_end]
+
+
 
 [manpage_end]
 

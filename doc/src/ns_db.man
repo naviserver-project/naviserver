@@ -3,54 +3,53 @@
 
 
 
-[titledesc
- ns_db - Standard database access API.
+[titledesc {ns_db - Standard database access API}]
 
-]
+[description]
+[para]This command provides a mechanism to access databases.  The legal options (which may be abbreviated) are:
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_db option&nbsp;?arg arg ...?
+[call [cmd ns_db] [arg option] [opt [arg {arg arg ...}]]]
 
 
 [list_end]
 
-[description]
-[para]This command provides a mechanism to access databases.  The legal options (which may be abbreviated) are:
+[list_begin definitions]
 
-[call [cmd  ns_db bindrow dbhandle]]
+[call [cmd  ns_db] [arg bindrow] [arg dbhandle]]
 <li> ns_db bouncepool poolname
 
  Marks all database handles for the specified database pool as stale. When any database handle currently open is put back into the pool, its connection to the database will be reset.
 
-[call [cmd  ns_db cancel dbhandle]]
+[call [cmd  ns_db] [arg cancel] [arg dbhandle]]
 <li> ns_db close dbhandle
 
  Closes the connection. Use this function only on handles that were obtained by the ns_db open function.  The server automatically close handles when the operation is complete, so you don't normally have to call this function.
 
-[call [cmd  ns_db connected dbhandle]]
+[call [cmd  ns_db] [arg connected] [arg dbhandle]]
 <li> ns_db datasource dbhandle
 
  Returns the datasource for the database pool.
 
-[call [cmd  ns_db dbtype dbhandle]]
+[call [cmd  ns_db] [arg dbtype] [arg dbhandle]]
 
  Returns the database type for the database pool.
 
-[call [cmd  ns_db dml dbhandle sql]]
+[call [cmd  ns_db] [arg dml] [arg dbhandle] [arg sql]]
 <li> ns_db driver dbhandle
 
  Returns the name of the driver of the handle.
 
-[call [cmd  ns_db exception dbhandle]]
+[call [cmd  ns_db] [arg exception] [arg dbhandle]]
 <li> ns_db exec dbhandle sqlcommand
 
  Executes the specified SQL command. It returns either NS_DML (if the SQL command is a DML or DDL command) or NS_ROWS (if the SQL command returns rows, such as a SELECT).  This function can be used for ad hoc querying, where you don't know what kind of SQL command will be executed.  
 
-[call [cmd  ns_db flush dbhandle]]
+[call [cmd  ns_db] [arg flush] [arg dbhandle]]
 <li> ns_db gethandle ?-timeout timeout? poolname&nbsp;?nhandles?
 <li> ns_db getrow dbhandle setId
 <li> ns_db open driver datasource user password
@@ -60,19 +59,19 @@
 
  Puts the handle back in the pool.  The server will automatically return any open handles to the pool after a page has finished executing.
 
-[call [cmd  ns_db 1row dbhandle sql]]
+[call [cmd  ns_db] [arg 1row] [arg dbhandle] [arg sql]]
 
  This command expects the SQL to be a select statement that returns exactly one row and returns that row as an ns_set.  An error is returned if zero or more than one row is returned.
 
-[call [cmd  ns_db 0or1row dbhandle sql]]
+[call [cmd  ns_db] [arg 0or1row] [arg dbhandle] [arg sql]]
 
  This command expects the SQL to be a select statement that returns exactly zero or one row. On zero rows, a null string is returned. On one row, a newly allocated ns_set is returned.  An error is thrown if more then one row is returned.
 
-[call [cmd  ns_db password dbhandle]]
+[call [cmd  ns_db] [arg password] [arg dbhandle]]
 
  Returns the password of the user for the database pool.
 
-[call [cmd  ns_db select dbhandle sql]]
+[call [cmd  ns_db] [arg select] [arg dbhandle] [arg sql]]
 <li> ns_db setexception dbhandle code message
 <li> ns_db sp_exec dbhandle
 <li> ns_db sp_getparams
@@ -83,17 +82,16 @@
 
  Returns the user for the database pool.
 
-[call [cmd  ns_db verbose dbhandle&nbsp;?on | off?]]
+[call [cmd ns_db] [arg verbose] [arg dbhandle] [opt [arg {on | off}]]]
+
+[list_end]
 
 [section EXAMPLES]
 
 [see_also nsd]
-[keywords 
+[keywords ns_buildsqldate ns_buildsqltime ns_buildsqltimestamp ns_dbquotename ns_dbquotevalue ns_localsqltimestamp ns_parsesqldate ns_parsesqltime ns_parsesqltimestamp ns_writecsv]
 
- ns_buildsqldate, ns_buildsqltime, ns_buildsqltimestamp, ns_dbquotename, ns_dbquotevalue, ns_localsqltimestamp, ns_parsesqldate, ns_parsesqltime, ns_parsesqltimestamp, ns_writecsv
 
- The tutorial 
-]
 
 [manpage_end]
 

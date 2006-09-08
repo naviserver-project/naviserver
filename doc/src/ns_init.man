@@ -3,20 +3,19 @@
 
 
 
-[titledesc[para]ns_init - Initialize the current Tcl interp
-]
+[titledesc {ns_init - Initialize the current Tcl interp}]
+
+[description]
+This command initializes the current Tcl interp.  (Exactly what does this mean?  What actually gets done?)  This command is invoked by the 
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_init
+[call [cmd ns_init]]
 
 [list_end]
 
-[description]
-[para]This command initializes the current Tcl interp.  (Exactly what does this mean?  What actually gets done?)  This command is invoked by the 
-]
 
 [manpage_end]
 

@@ -3,26 +3,24 @@
 
 
 
-[titledesc
- ns_rename - Rename a file
+[titledesc {ns_rename - Rename a file}]
 
-]
+[description]
+
+ This command renames the file or directory file1 to the file or directory file2.  Make sure that file1 exists the directories in which file1 and file2 reside exist, and that they are read/write accessible to the user that is running the NaviServer process.  Caution: ns_rename will silently overwrite file2 if it is a file that already exists.
+
+ This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use Tcl's file rename command instead.  In other words, this:
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_rename file1 file2
+ [call [cmd ns_rename] [arg file1] [arg file2]]
 
 
 [list_end]
-
-[description]
-
- This command renames the file or directory file1 to the file or directory file2.  Make sure that file1 exists the directories in which file1 and file2 reside exist, and that they are read/write accessible to the user that is running the AOLserver process.  Caution: ns_rename will silently overwrite file2 if it is a file that already exists.
-
- This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use Tcl's file rename command instead.  In other words, this:
 
 [example_begin]
    ns_rename $file1 $file2
@@ -39,7 +37,7 @@
 [example_begin]
    # create an empty file called /tmp/ns_rename
    close 
-]
+[example_end]
 
 [manpage_end]
 

@@ -3,19 +3,21 @@
 
 
 
-[titledesc[para]ns_atshutdown - Queue a script to run when the server is shutting down
-]
+[titledesc {ns_atshutdown - Queue a script to run when the server is shutting down}]
+
+
+[description]
+This command queues a script to run when the server is shutting down.  The script and optional arg are concatenated together and added to the list of shutdown callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_atshutdown script&nbsp;?arg?
+[call [cmd ns_atshutdown] [arg script] [opt [arg arg]]]
 
 [list_end]
 
-[description]
-[para]This command queues a script to run when the server is shutting down.  The script and optional arg are concatenated together and added to the list of shutdown callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
 [section EXAMPLES]
 [para]Use ns_atsignal to stop long running processes. It seems that <strong>ns_atshutdown</strong> and ns_atexit are called after connection and scheduled threads have been killed, so those commands can not be used for that type of signal.
 
@@ -42,7 +44,7 @@
            ns_log notice "infinite_loop working, status: $status"
            # Poll for signals
            foreach signal {SIGHUP TERM EXIT} {
-               if {[nsv_get . $signal]} {
+               if {[lb]nsv_get . $signal[rb]} {
                    set status $signal
                }
            }
@@ -56,39 +58,35 @@
    ns_schedule_proc -thread -once 10 infinite_loop
 [example_end]
 
-[para]Sample log file output from AOLserver 4.0.3 for ns_atsignal:
+[para]Sample log file output from NaviServer 4.0.3 for ns_atsignal:
 
 [example_begin]
-   [01/Aug/2006:10:30:56][1359.1][-main-] Notice: Heard SIGHUP
-   [01/Aug/2006:10:30:56][1359.8][-sched:12-] Notice: infinite_loop stopped, status: SIGHUP
-   [01/Aug/2006:10:30:56][1359.9][-conn:server::0] Notice: infinite_loop stopped, status: SIGHUP
+   [lb]01/Aug/2006:10:30:56[rb][lb]1359.1[rb][lb]-main-[rb] Notice: Heard SIGHUP
+   [lb]01/Aug/2006:10:30:56[rb][lb]1359.8[rb][lb]-sched:12-[rb] Notice: infinite_loop stopped, status: SIGHUP
+   [lb]01/Aug/2006:10:30:56[rb][lb]1359.9[rb][lb]-conn:server::0[rb] Notice: infinite_loop stopped, status: SIGHUP
 [example_end]
 
-[para]Sample log file output from AOLserver 4.0.3 for <strong>ns_atshutdown</strong> and ns_atexit:
+[para]Sample log file output from NaviServer 4.0.3 for <strong>ns_atshutdown</strong> and ns_atexit:
 
 [example_begin]
-   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: nsmain: AOLserver/4.0.3 stopping
-   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: serv: stopping server: server
-   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: serv: connection threads stopped
-   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: driver: shutdown complete
-   [31/Jul/2006:15:57:52][3583.1][-main-] Notice: sched: shutdown pending
-   [31/Jul/2006:15:57:52][3583.3][-sched-] Notice: sched: shutdown started
-   [31/Jul/2006:15:57:52][3583.3][-sched-] Notice: sched: waiting for event threads...
-   [31/Jul/2006:15:57:52][3583.8][-sched:idle0-] Notice: exiting
-   [31/Jul/2006:15:57:52][3583.3][-sched-] Notice: sched: shutdown complete
-   [31/Jul/2006:15:57:53][3583.9][-shutdown-] Notice: Heard TERM
-   [31/Jul/2006:15:57:53][3583.9][-shutdown-] Notice: nslog: closing '/var/log/aolserver/server.log'
-   [31/Jul/2006:15:57:53][3583.1][-main-] Notice: Heard EXIT
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: nsmain: NaviServer/4.0.3 stopping
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: serv: stopping server: server
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: serv: connection threads stopped
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: driver: shutdown complete
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: sched: shutdown pending
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.3[rb][lb]-sched-[rb] Notice: sched: shutdown started
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.3[rb][lb]-sched-[rb] Notice: sched: waiting for event threads...
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.8[rb][lb]-sched:idle0-[rb] Notice: exiting
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.3[rb][lb]-sched-[rb] Notice: sched: shutdown complete
+   [lb]31/Jul/2006:15:57:53[rb][lb]3583.9[rb][lb]-shutdown-[rb] Notice: Heard TERM
+   [lb]31/Jul/2006:15:57:53[rb][lb]3583.9[rb][lb]-shutdown-[rb] Notice: nslog: closing '/var/log/naviserver/server.log'
+   [lb]31/Jul/2006:15:57:53[rb][lb]3583.1[rb][lb]-main-[rb] Notice: Heard EXIT
 [example_end]
 
 
 [see_also nsd]
-[keywords 
-[para]ns_atclose, ns_atexit, ns_atsignal
+[keywords ns_atclose ns_atexit ns_atsignal]
 
-
-[para]
-]
 
 [manpage_end]
 

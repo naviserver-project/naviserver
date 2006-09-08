@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_returnredirect - Redirect the client to another location
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_returnredirect ?connid? url
-
-
-[list_end]
+[titledesc {ns_returnredirect - Redirect the client to another location}]
 
 [description]
 
@@ -26,9 +13,17 @@
 
  NOTE: The script does not end at the time this command is invoked.  ns_adp_abort or ns_adp_return should be called to end script processing after ns_returnredirect.
 
- 2005may23 
 
-]
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_returnredirect] [opt [arg connid]] [arg url]]
+
+
+[list_end]
+
 
 [manpage_end]
 

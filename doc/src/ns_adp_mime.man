@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_adp_mime - Get or set the mime type for the current ADP page
+[titledesc {ns_adp_mime - Get or set the mime type for the current ADP page}]
 
-]
+[description]
+
+ This command will either get or set the mime type returned to the client when the parsing of the page is complete.~~~If called with no arguments, the current mime type will be returned.~~~If called with one argument, the mime type will be set to the given mime type.~~~Note: This command should not be called outside an ADP page.
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_adp_mime ?mimetype?
+[call [cmd ns_adp_mime] [opt [arg mimetype]]]
 
 
 [list_end]
-
-[description]
-
- This command will either get or set the mime type returned to the client when the parsing of the page is complete.~~~If called with no arguments, the current mime type will be returned.~~~If called with one argument, the mime type will be set to the given mime type.~~~Note: This command should not be called outside an ADP page.
 
 [section EXAMPLES]
 
@@ -31,13 +29,10 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_adp_mimetype (duplicate command)
+[keywords ns_adp_mimetype (duplicate command)]
 
 
-[para]
-]
+
 
 [manpage_end]
 

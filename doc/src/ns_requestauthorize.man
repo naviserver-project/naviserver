@@ -3,26 +3,24 @@
 
 
 
-[titledesc
- ns_requestauthorize - perform authorization check
+[titledesc {ns_requestauthorize - perform authorization check}]
 
-]
+[description]
+
+ Ask the server to check permissions using the authProc provided by the nsperm module.  This function does the same permission check that the NaviServer does before serving a URL if the nsperm module is loaded.
+
+ The algorithm is as follows:
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_requestauthorize method url authuser authpasswd&nbsp;?ipaddr?
+ [call [cmd ns_requestauthorize] [arg method] [arg url] [arg authuser] [arg authpasswd] [opt [arg ipaddr]]]
 
 
 [list_end]
 
-[description]
-
- Ask the server to check permissions using the authProc provided by the nsperm module.  This function does the same permission check that the AOLserver does before serving a URL if the nsperm module is loaded.
-
- The algorithm is as follows:
 
 [example_begin]
   1. If the authuser is "nsadmin", the password is correct, and the IP address of the client is allowed nsadmin access, then access is authorized. 
@@ -56,20 +54,14 @@
 
  This command returns one of the following values:
 
-[call [cmd  OK - The user has permission to execute this URL and method.]]
+call cmd  OK - The user has permission to execute this URL and method
 <li> ERROR - There was an error performing the check.
 <li> FORBIDDEN - There is no possible user/password/IP address combination that would give authorization.
 <li> UNAUTHORIZED - The user does not have permission to execute this URL and method.
 
 
 [see_also nsd]
-[keywords 
-
- ns_checkurl, nsperm
-
-
-[para]
-]
+[keywords ns_checkurl nsperm]
 
 [manpage_end]
 

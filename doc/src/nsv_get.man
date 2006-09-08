@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- nsv_get - Get a key value
+[titledesc {nsv_get - Get a key value}]
 
-]
+[description]
+
+ Get the value for the key from the nsv array.  Error occurs if key does not exist.
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- nsv_get array key
+ [call [cmd nsv_get] [arg array] [arg key]]
 
 
 [list_end]
-
-[description]
-
- Get the value for the key from the nsv array.  Error occurs if key does not exist.
 
 [section EXAMPLES]
 
@@ -31,11 +29,7 @@
 
 
 [see_also nsd]
-[keywords 
 
- 
-
-]
 
 [manpage_end]
 

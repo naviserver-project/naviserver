@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_encodingfortype - Return the encoding implied by the given mime type string
+[titledesc {ns_encodingfortype - Return the encoding implied by the given mime type string}]
 
-]
+[description]
+
+ Parses the given mime-type string to determine the character encoding implied by it.  Will use the configured OutputCharset if no charset is explicitly specified in the given string.
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_encodingfortype mime-type
+[call [cmd ns_encodingfortype] [arg mime-type]]
 
 
 [list_end]
-
-[description]
-
- Parses the given mime-type string to determine the character encoding implied by it.  Will use the configured OutputCharset if no charset is explicitly specified in the given string.
 
 [section EXAMPLES]
 
@@ -31,13 +29,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_charsets ns_urlcharset
-
-
-[para]
-]
+[keywords ns_charsets ns_urlcharset]
 
 [manpage_end]
 

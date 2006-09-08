@@ -1,8 +1,10 @@
 [manpage_begin Ns_returnfile n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-	    [para]For now, see ns_return
+[titledesc {title}]
 
+[description]
+123
 
 [manpage_end]
 

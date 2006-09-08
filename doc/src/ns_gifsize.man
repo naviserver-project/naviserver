@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_gifsize - Determine the width and height of a GIF87 or GIF89 image
+[titledesc {ns_gifsize - Determine the width and height of a GIF87 or GIF89 image}]
 
-]
+[description]
+
+ Returns a list of two elements, the width and height of the GIF file specified by filename. An error is generated if the file does not exist or if it is not a GIF file.
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_gifsize filename
+[call [cmd ns_gifsize] [arg filename]]
 
 
 [list_end]
-
-[description]
-
- Returns a list of two elements, the width and height of the GIF file specified by filename. An error is generated if the file does not exist or if it is not a GIF file.
 
 [section EXAMPLES]
 
@@ -36,13 +34,9 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_jpegsize, the nsimage module
+[keywords ns_jpegsize ns_imgsize]
 
 
-[para]
-]
 
 [manpage_end]
 

@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_mkdir - Create a directory
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_mkdir dir
-
-
-[list_end]
+[titledesc {ns_mkdir - Create a directory}]
 
 [description]
 
@@ -25,6 +12,17 @@
  This is a legacy command from when Tcl did not have this functionality.  It is now recomended you use
 
 [para]Tcl's file mkdir command instead.  In other words, this:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_mkdir] [arg dir]]
+
+
+[list_end]
+
 
 [example_begin]
    ns_mkdir $dir
@@ -59,13 +57,8 @@
 
 
 [see_also nsd]
-[keywords 
+[keywords ns_chmod ns_link ns_rename ns_rmdir ns_symlink]
 
- ns_chmod, ns_link, ns_rename, ns_rmdir, ns_symlink
-
-
-[para]
-]
 
 [manpage_end]
 

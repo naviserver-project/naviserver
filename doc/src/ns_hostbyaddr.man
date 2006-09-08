@@ -3,6 +3,9 @@
 
 [titledesc {ns_hostbyaddr - Reverse lookup an IP address to its hostname}]
 
+[description]
+This command resolves an IP address to its hostname.  If the IP address cannot be resolved, it throws an error.
+
 [section {COMMANDS}]
 
 [list_begin definitions]
@@ -15,8 +18,6 @@ IP Address to be resolved into hostname
 
 [list_end]
 
-[description]
-This command resolves an IP address to its hostname.  If the IP address cannot be resolved, it throws an error.
 
 [section EXAMPLES]
 

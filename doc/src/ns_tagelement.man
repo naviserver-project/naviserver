@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_tagelement - Find the value of an attribute in an HTML element.
+[titledesc {ns_tagelement - Find the value of an attribute in an HTML element.}]
 
-]
+[description]
+
+ This command takes a string containing an HTML element, tag, and searches it for the specified attribute.  If the attribute is found, its value is returned.  If the attribute is not found, an empty string is returned.  If the attribute's value is surrounded by double quotes, they will be removed.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_tagelement tag attribute
+ [call [cmd ns_tagelement] [arg tag] [arg attribute]]
 
 
 [list_end]
 
-[description]
-
- This command takes a string containing an HTML element, tag, and searches it for the specified attribute.  If the attribute is found, its value is returned.  If the attribute is not found, an empty string is returned.  If the attribute's value is surrounded by double quotes, they will be removed.
 
 [section EXAMPLES]
 
@@ -47,13 +45,7 @@ c1 c2
 
 
 [see_also nsd]
-[keywords 
-
- ns_tagelementset
-
-
-[para]
-]
+[keywords ns_tagelementset]
 
 [manpage_end]
 

@@ -3,26 +3,22 @@
 
 
 
-[titledesc
- ns_httptime - Convert seconds to HTTP date format
+[titledesc {ns_httptime - Convert seconds to HTTP date format}]
 
-]
+[description]
+
+ This command converts the time, specified as the number of seconds from 00:00:00 UTC Jan 1, 1970, to a string in HTTP date format (see 
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_httptime time
+[call [cmd ns_httptime] [arg time]]
 
 
 [list_end]
 
-[description]
-
- This command converts the time, specified as the number of seconds from 00:00:00 UTC Jan 1, 1970, to a string in HTTP date format (see 
-
-]
 
 [manpage_end]
 

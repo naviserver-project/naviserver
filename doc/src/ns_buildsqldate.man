@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_buildsqldate - Build a SQL date value from specified month, day, and year
+[titledesc {ns_buildsqldate - Build a SQL date value from specified month, day, and year}]
 
-]
+[description]
+
+ This command builds a SQL date string out of the specified month, day, and year.  The month can be the month number (1 - 12) or the full, capitalized month name (January, February, ..., December).  The day must be a number from 1 - 31, and the year must be a 4-digit year (e.g., 1957).  An error is returned if any of the argument values are invalid.  The resulting string can be used in an SQL statement.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_buildsqldate month day year
+[call [cmd ns_buildsqldate] [arg month] [arg day] [arg year]]
 
 
 [list_end]
 
-[description]
-
- This command builds a SQL date string out of the specified month, day, and year.  The month can be the month number (1 - 12) or the full, capitalized month name (January, February, ..., December).  The day must be a number from 1 - 31, and the year must be a 4-digit year (e.g., 1957).  An error is returned if any of the argument values are invalid.  The resulting string can be used in an SQL statement.
 
 [section EXAMPLES]
 
@@ -37,7 +35,7 @@
 
 [example_begin]
    % set thedate 
-]
+[example_end]
 
 [manpage_end]
 

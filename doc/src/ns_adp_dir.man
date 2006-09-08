@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_adp_dir - Returns the current working directory for an ADP page
+[titledesc {ns_adp_dir - Returns the current working directory for an ADP page}]
 
-]
+[description]
+
+This command returns the current working directory of the current ADP page.~~~If this command is not called from inside an ADP page, "/" is returned instead.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_adp_dir
+[call [cmd ns_adp_dir]]
 
 
 [list_end]
 
-[description]
-
- This command returns the current working directory of the current ADP page.~~~If this command is not called from inside an ADP page, "/" is returned instead.
 
 [section EXAMPLES]
 

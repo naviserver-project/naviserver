@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_queryexists - Check for a key in the query data that was part of the HTTP request
+[titledesc {ns_queryexists - Check for a key in the query data that was part of the HTTP request}]
 
-]
+[description]
+
+ This command looks in the query data for the specified key.  If the key exists, 1 is returned; otherwise 0 is returned.  The key is interpreted in a case-insensitive manner.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_queryexists key
+ [call [cmd ns_queryexists] [arg key]]
 
 
 [list_end]
 
-[description]
-
- This command looks in the query data for the specified key.  If the key exists, 1 is returned; otherwise 0 is returned.  The key is interpreted in a case-insensitive manner.
 
 [section EXAMPLES]
 
@@ -29,7 +27,7 @@
    proc queryexiststest { } {
        if {
 
-]
+[example_end]
 
 [manpage_end]
 

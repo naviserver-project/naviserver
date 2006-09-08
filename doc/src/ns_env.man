@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_env - Return, change or add a value of an environment variable
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_env option&nbsp;?arg arg ...?
-
-
-[list_end]
+[titledesc {ns_env - Return, change or add a value of an environment variable}]
 
 [description]
 
@@ -28,6 +15,17 @@
  ns_env unset ?-nocomplain? name
 
  This command has yet to be Tcl_Obj'ified.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_env] [arg option] [opt [arg {arg arg ...}]]]
+
+
+[list_end]
+
 
 [section EXAMPLES]
 
@@ -49,11 +47,6 @@
 
 
 [see_also nsd]
-[keywords 
-
-
-[para]
-]
 
 [manpage_end]
 

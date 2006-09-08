@@ -3,74 +3,75 @@
 
 
 
-[titledesc
- ns_critsec - Operate on critical section objects
+[titledesc {ns_critsec - Operate on critical section objects}]
 
-]
+[description]
+
+ This command provides a mechanism to manipulate critical section objects.  The legal options (which may be abbreviated) are:
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_critsec option&nbsp;?arg arg ...?
+[call [cmd ns_critsec] [arg option] [opt [arg {arg arg ...}]]]
 
 
 [list_end]
 
-[description]
+[list_begin definitions]
 
- This command provides a mechanism to manipulate critical section objects.  The legal options (which may be abbreviated) are:
-
-[call [cmd  ns_critsec create]]
+[call [cmd  ns_critsec] [arg create]]
 
  Initializes a new critical section object and returns a handle to it.
 
-[call [cmd  ns_critsec destroy object]]
+[call [cmd  ns_critsec] [arg destroy] [arg object]]
 
  Destroys the critical section object and frees any resources it was using.
 
-[call [cmd  ns_critsec enter object]]
+[call [cmd  ns_critsec] [arg enter] [arg object]]
 
  Enters the critical section.  The thread will block if another thread is already in the critical section.
 
-[call [cmd  ns_critsec leaves object]]
+[call [cmd  ns_critsec] [arg leaves] [arg object]]
 
  Leaves the critical section.  When the thread leaves the critical section as many times as it has entered, a notification will be sent to other threads that are waiting on the critical section.
 
+[list_end]
+
 [section EXAMPLES]
-[para]Is this the right way to use this command? The example is contrived, but I wanted to call ns_critsec multiple times.
+Is this the right way to use this command? The example is contrived, but I wanted to call ns_critsec multiple times.
 
 [example_begin]
    # If a thread is executing any of these procs, no other
    # thread can execute any of these procs until the first
    # thread has completely finished.
    
-   nsv_set . special_file_critsec [ns_critsec create]
+   nsv_set . special_file_critsec [lb]ns_critsec create[rb]
    
    proc write_special_file {data} {
-       set critsec [nsv_get . special_file_critsec]
+       set critsec [lb]nsv_get . special_file_critsec[rb]
        ns_critsec enter $critsec
-       set handle [open special_file w]
+       set handle [lb]open special_file w[rb]
        puts $handle $data
        close $handle
        ns_critsec leave $critsec
    }
    
    proc read_special_file {} {
-       set critsec [nsv_get . special_file_critsec]
+       set critsec [lb]nsv_get . special_file_critsec[rb]
        ns_critsec enter $critsec
-       set handle [open special_file r]
-       set result [read $handle]
+       set handle [lb]open special_file r[rb]
+       set result [lb]read $handle[rb]
        close $handle
        ns_critsec leave $critsec
        return $result
    }
    
    proc change_special_file {data} {
-       set critsec [nsv_get . special_file_critsec]
+       set critsec [lb]nsv_get . special_file_critsec[rb]
        ns_critsec enter $critsec
-       set result [read_special_file]
+       set result [lb]read_special_file[rb]
        write_special_file $data
        ns_critsec leave $critsec
        return $result
@@ -78,15 +79,7 @@
 [example_end]
 
 
-[see_also nsd]
-[keywords 
-
- ns_cond, ns_event, ns_mutex, ns_thread
-
-
-[para]
-
-]
+[keywords nsd ns_cond ns_event ns_mutex ns_thread]
 
 [manpage_end]
 

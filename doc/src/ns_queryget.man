@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_queryget - Get a value from the query data that was part of the HTTP request
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_queryget key&nbsp;?value?
-
-
-[list_end]
+[titledesc {ns_queryget - Get a value from the query data that was part of the HTTP request}]
 
 [description]
 
@@ -28,12 +15,23 @@
 
  For files uploaded with the Netscape file upload widget, the file that was uploaded is an entry in the query data. See Example 3, below. 
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_queryget] [arg key] [opt [arg value]]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
  Example 1:
 
 [example_begin]
-   set x [ns_queryget name]
+   set x [lb]ns_queryget name[rb]
    
 [example_end]
 
@@ -42,7 +40,7 @@
  Example 2: 
 
 [example_begin]
-   set x [ns_queryget name Hoover]
+   set x [lb]ns_queryget name Hoover[rb]
 [example_end]
 
  If "name" is a key in the query data, the variable x will be set to the value associated with the "name" key. If "name" is not a key in the query data, "Hoover" will be returned.
@@ -63,9 +61,9 @@
 
 [example_begin]
    proc formtest { } {
-       set remotefile [ns_queryget path]
-       set localfile [ns_queryget clientfile]
-       set where_the_data_is [ns_queryget clientfile.tmpfile]
+       set remotefile [lb]ns_queryget path[rb]
+       set localfile [lb]ns_queryget clientfile[rb]
+       set where_the_data_is [lb]ns_queryget clientfile.tmpfile[rb]
    }&nbsp;;# formtest
    
 [example_end]
@@ -81,7 +79,7 @@
  If you want to use the contents of the uploaded file, you can open it by executing: 
 
 [example_begin]
-   open [ns_queryget clientfile.tmpfile]
+   open [lb]ns_queryget clientfile.tmpfile[rb]
    
 [example_end]
 
@@ -93,14 +91,8 @@
 
 
 [see_also nsd]
-[keywords 
+[keywords  ns_queryexists ns_querygetall]
 
- ns_queryexists, ns_querygetall
-
-
-[para]
-
-]
 
 [manpage_end]
 

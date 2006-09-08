@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_sleep - Sleep for a specified number of seconds
+[titledesc {ns_sleep - Sleep for a specified number of seconds}]
 
-]
+[description]
+
+ Sleeps for the number of seconds specified in seconds.
+
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_sleep seconds
+ [call [cmd ns_sleep] [arg seconds]]
 
 
 [list_end]
-
-[description]
-
- Sleeps for the number of seconds specified in seconds.
 
 [section EXAMPLES]
 
@@ -30,13 +28,7 @@
 
 
 [see_also nsd]
-[keywords 
 
- 
-
-
-[para]
-]
 
 [manpage_end]
 

@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- nsv_set - Set a key value
+[titledesc {nsv_set - Set a key value}]
 
-]
+[description]
+
+ Set the value for a key in an nsv array. Returns the value the key is set to.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- nsv_set array key value
+ [call [cmd nsv_set] [arg array] [arg key] [arg value]]
 
 
 [list_end]
 
-[description]
-
- Set the value for a key in an nsv array. Returns the value the key is set to.
 
 [section EXAMPLES]
 
@@ -31,10 +29,6 @@
 
 
 [see_also nsd]
-[keywords 
-
- 
-]
 
 [manpage_end]
 

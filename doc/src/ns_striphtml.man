@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_striphtml - Remove HTML tags from a string
+[titledesc {ns_striphtml - Remove HTML tags from a string}]
 
-]
+[description]
+
+ Returns the contents of html with any HTML tags removed.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_striphtml html
+ [call [cmd ns_striphtml] [arg html]]
 
 
 [list_end]
 
-[description]
-
- Returns the contents of html with any HTML tags removed.
 
 [section EXAMPLES]
 
@@ -29,8 +27,6 @@
    Hello World!
 [example_end]
 
-
-[para]
 
 
 [manpage_end]

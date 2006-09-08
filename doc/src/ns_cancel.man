@@ -1,7 +1,11 @@
 [manpage_begin Ns_cancel n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-	    [para]See: ns_unschedule_proc
+[titledesc title]
+
+[description]
+
+[keywords ns_unschedule_proc]
 
 
 

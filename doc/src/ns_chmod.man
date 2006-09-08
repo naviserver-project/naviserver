@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_chmod - Change a file's access permissions
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_chmod filename mode
-
-
-[list_end]
+[titledesc {ns_chmod - Change a file's access permissions}]
 
 [description]
 
@@ -25,6 +12,17 @@
  This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use
 
 [para]Tcl's file attributes -permissions command instead.  In other words, this:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_chmod] [arg filename] [arg mode]]
+
+
+[list_end]
+
 
 [example_begin]
    ns_chmod /tmp/ns_chmod 0755
@@ -44,14 +42,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_link, ns_mkdir, ns_rename, ns_rmdir, ns_symlink
-
-
-[para]
-
-]
+[keywords ns_link ns_mkdir ns_rename ns_rmdir ns_symlink]
 
 [manpage_end]
 

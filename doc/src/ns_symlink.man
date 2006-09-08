@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_symlink - Create a symbolic link
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_symlink ?-nocomplain? filename1 filename2
-
-
-[list_end]
+[titledesc {ns_symlink - Create a symbolic link}]
 
 [description]
 
@@ -25,6 +12,17 @@
  This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use
 
 [para]Tcl's file link command instead.  In other words, this:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_symlink] [opt [arg -nocomplain]] [arg filename1] [arg filename2]]
+
+
+[list_end]
+
 
 [example_begin]
    ns_symlink $file1 $file2
@@ -40,7 +38,7 @@
 
 [example_begin]
    % ns_symlink 
-]
+[example_end]
 
 [manpage_end]
 

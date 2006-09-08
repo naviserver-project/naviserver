@@ -3,24 +3,24 @@
 
 
 
-[titledesc[para]ns_stats - Return command stats information
-]
+[titledesc {ns_stats - Return command stats information}]
+
+[description]
+[para]This command returns proc call stats for procs which match the glob pattern.  Results are sorted based on option which can be one of the following:
+
+call cmd  -count: results are sorted by count in descending order (default)
+<li> -name: results are sorted by proc name in ascending order
+
+[para]In order to instruct NaviServer to keep these stats, you must define two settings in your nsd.tcl, in section ns/server/${server_name}/tcl:
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_stats ?option?&nbsp;?pattern?
+[call [cmd ns_stats] [opt [arg pattern]]]
 
 [list_end]
 
-[description]
-[para]This command returns proc call stats for procs which match the glob pattern.  Results are sorted based on option which can be one of the following:
-
-[call [cmd  -count: results are sorted by count in descending order (default)]]
-<li> -name: results are sorted by proc name in ascending order
-
-[para]In order to instruct AOLserver to keep these stats, you must define two settings in your nsd.tcl, in section ns/server/${server_name}/tcl:
 
 [example_begin]
  ns_section ns/server/${server_name}/tcl
@@ -45,16 +45,16 @@
 [example_end]
 
 [para]Otherwise, statmaxbuf specifies the number of entries in the stats buffer hash table.
-[para]This is all documented from AOLserver 3.4.2, nsd/tclstats.c.
+[para]This is all documented from NaviServer 3.4.2, nsd/tclstats.c.
 [section EXAMPLES]
 [para]Here is a sample ns_stats.adp to use to display the output of ns_stats:
 
 [example_begin]
  &lt;xmp&gt;
  &lt;%
- ns_adp_puts [[format "%-60s %s" command {times invoked}]]
+ ns_adp_puts [lb][lb]format "%-60s %s" command {times invoked}[rb][rb]
  ns_adp_puts "
-]
+[example_end]
 
 [manpage_end]
 

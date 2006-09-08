@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_charsets - Determine the charsets for which we have encodings
+[titledesc {ns_charsets - Determine the charsets for which we have encodings}]
 
-]
+[description]
+
+ Returns a list of charsets for which we have encodings.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_charsets
+[call [cmd ns_charsets]]
 
 
 [list_end]
 
-[description]
-
- Returns a list of charsets for which we have encodings.
 
 [section EXAMPLES]
 
@@ -31,13 +29,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_encodingforcharset
-
-
-[para]
-]
+[keywords ns_encodingforcharset]
 
 [manpage_end]
 

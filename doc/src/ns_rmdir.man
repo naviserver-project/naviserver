@@ -2,21 +2,7 @@
 [moddesc {NaviServer Built-in Commands}]
 
 
-
-[titledesc
- ns_rmdir - Remove a directory
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_rmdir dir
-
-
-[list_end]
+[titledesc {ns_rmdir - Remove a directory}]
 
 [description]
 
@@ -24,7 +10,18 @@
 
  This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use
 
-[para]Tcl's 'file delete command instead.  In other words, this:
+Tcl's 'file delete command instead.  In other words, this:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_rmdir] [arg dir]]
+
+
+[list_end]
+
 
 [example_begin]
    ns_rmdir $dir
@@ -48,13 +45,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_chmod, ns_link, ns_mkdir, ns_rename, ns_symlink
-
-
-[para]
-]
+[keywords ns_chmod ns_link ns_mkdir ns_rename ns_symlink]
 
 [manpage_end]
 

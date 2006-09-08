@@ -3,29 +3,27 @@
 
 
 
-[titledesc
- ns_unschedule_proc - Unschedule a previously scheduled script
+[titledesc {ns_unschedule_proc - Unschedule a previously scheduled script}]
 
-]
+[description]
+
+ This command unschedules a previous scheduled script.  NOTE: Current behavior is to silently return without error if the id doesn't represent a currently scheduled ID.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_unschedule_proc id
+ [call [cmd ns_unschedule_proc] [arg id]]
 
 
 [list_end]
 
-[description]
-
- This command unschedules a previous scheduled script.  NOTE: Current behavior is to silently return without error if the id doesn't represent a currently scheduled ID.
 
 [section EXAMPLES]
 
 [example_begin]
-   % set id [[ns_schedule_proc -once 60 { test }]]
+   % set id [lb][lb]ns_schedule_proc -once 60 { test }[rb][rb]
    123
 [example_end]
 
@@ -35,13 +33,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_after, ns_info scheduled, ns_pause, ns_resume, ns_schedule_proc, ns_schedule_daily, ns_schedule_weekly
-
-
-[para]
-]
+[keywords ns_after ns_info scheduled ns_pause ns_resume ns_schedule_proc ns_schedule_daily ns_schedule_weekly]
 
 [manpage_end]
 

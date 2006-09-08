@@ -3,35 +3,37 @@
 
 
 
-[titledesc
- ns_mutex - Operate on mutexes
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_mutex option&nbsp;?arg arg ...?
-
-
-[list_end]
+[titledesc {ns_mutex - Operate on mutexes}]
 
 [description]
 
  This command provides a mechanism to manipulate mutexes.  The legal options (which may be abbreviated) are:
 
-[call [cmd  ns_mutex create ?name?]]
+[section {COMMANDS}]
+
+
+[list_begin definitions]
+
+
+ [call [cmd ns_mutex] [arg option] [opt [arg {arg arg ...}]]]
+
+
+[list_end]
+
+[list_begin definitions]
+
+
+[call [cmd  ns_mutex] [arg create] [opt [arg name]]]
 
  Initializes a new mutual exclusion (mutex) lock and returns a handle to it.  If name is provided the mutex name will be set to this value.
 
-[call [cmd  ns_mutex destroy object]]
+[call [cmd  ns_mutex] [arg destroy] [arg object]]
 
  Destroys the mutex and frees any resources it was using.
 
  NOTE: The mutex must be unlocked, or else the behavior is undefined and will likely crash the server.  Before using this, you should probably look at 
-]
+
+[list_end]
 
 [manpage_end]
 

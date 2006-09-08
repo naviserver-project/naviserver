@@ -1,9 +1,10 @@
 [manpage_begin Ns_getformfile n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-	    [para]nn
+[titledesc {title}]
 
-
+[description]
+123
 
 [manpage_end]
 

@@ -3,34 +3,32 @@
 
 
 
-[titledesc
- nsv_array - Tcl array functionality in nsvs
+[titledesc {nsv_array - Tcl array functionality in nsvs}]
 
-]
+[description]
+
+ nsv_array works much like the Tcl array command.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- nsv_array get array ?pattern?
+ [lst_item]nsv_array get array ?pattern?
 
- nsv_array set array value-list
+ [lst_item]nsv_array set array value-list
 
- nsv_array reset array value-list
+[lst_item] nsv_array reset array value-list
 
- nsv_array exists array
+[lst_item] nsv_array exists array
 
- nsv_array size array
+[lst_item] nsv_array size array
 
- nsv_array names array ?pattern?
+[lst_item] nsv_array names array ?pattern?
 
 
 [list_end]
 
-[description]
-
- nsv_array works much like the Tcl array command.
 
 [section EXAMPLES]
 [para]Basic
@@ -64,23 +62,20 @@
 [para]Working with tcl arrays
 
 [example_begin]
-   % nsv_array set shared_array [array get tmp_shared_array]
+   % nsv_array set shared_array [lb]array get tmp_shared_array[rb]
 [example_end]
 
 [example_begin]
-   % array set tmp_shared_array [nsv_array get shared_array]
+   % array set tmp_shared_array [lb]nsv_array get shared_array[rb]
 [example_end]
 
 [example_begin]
-   % nsv_array reset shared_array [array get tmp_shared_array]
+   % nsv_array reset shared_array [lb]array get tmp_shared_array[rb]
 [example_end]
 
 
 [see_also nsd]
-[keywords 
 
- 
-]
 
 [manpage_end]
 

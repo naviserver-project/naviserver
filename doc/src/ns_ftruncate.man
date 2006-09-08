@@ -3,25 +3,22 @@
 
 
 
-[titledesc[para]ns_ftruncate - truncate an open Tcl channel to a specified length
-]
+[titledesc {ns_ftruncate - truncate an open Tcl channel to a specified length}]
+
+[description]
+This command truncates an open Tcl channel fileId to the size of length bytes.  If length is not specified then it is assumed to be zero.  This command is similar to the TclX [lb]ftruncate[rb] command.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_ftruncate fileId&nbsp;?length?
+[call [cmd ns_ftruncate] [arg fileId] [opt [arg length]]]
 
 [list_end]
 
-[description]
-[para]This command truncates an open Tcl channel fileId to the size of length bytes.  If length is not specified then it is assumed to be zero.  This command is similar to the TclX [ftruncate] command.
 
 [see_also nsd]
-[keywords 
-[para]TclX [ftruncate] 
-
-]
+[keywords TclX ftruncate]
 
 [manpage_end]
 

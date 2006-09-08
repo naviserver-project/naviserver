@@ -3,28 +3,25 @@
 
 
 
-[titledesc[para]ns_atexit - Queue a script to run before server terminates
-]
+[titledesc {ns_atexit - Queue a script to run before server terminates}]
+
+[description]
+[para]This command queues a script to run right before the server terminates.  The script and optional arg are concatenated together and added to the list of at-exit callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_atexit script&nbsp;?arg?
+[call [cmd ns_atexit] [arg script] [opt [arg arg]]]
 
 [list_end]
 
-[description]
-[para]This command queues a script to run right before the server terminates.  The script and optional arg are concatenated together and added to the list of at-exit callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
 [section EXAMPLES]
 
 [see_also nsd]
-[keywords 
-[para]ns_atclose, ns_atshutdown, ns_atsignal
+[keywords ns_atclose ns_atshutdown ns_atsignal]
 
 
-[para]
-]
 
 [manpage_end]
 

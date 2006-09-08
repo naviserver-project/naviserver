@@ -3,29 +3,27 @@
 
 
 
-[titledesc
- ns_resume - Resume a previously paused scheduled script
+[titledesc {ns_resume - Resume a previously paused scheduled script}]
 
-]
+[description]
+
+ This command resumes scheduling of a previously paused script via ns_pause.  Returns 1 on success, 0 on failure.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_resume id
+ [call [cmd ns_resume] [arg id]]
 
 
 [list_end]
 
-[description]
-
- This command resumes scheduling of a previously paused script via ns_pause.  Returns 1 on success, 0 on failure.
 
 [section EXAMPLES]
 
 [example_begin]
-   % set id [[ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }]]
+   % set id [lb][lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb][rb]
    19
 [example_end]
 
@@ -45,11 +43,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_info scheduled, ns_pause, ns_unschedule_proc
-
-]
+[keywords ns_info scheduled ns_pause ns_unschedule_proc]
 
 [manpage_end]
 

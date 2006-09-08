@@ -1,3 +1,10 @@
+2006-09-08  Bernd Eidenschink  <eide@users.sf.net>
+
+	* doc/src/*.man: Rewrote Vlads auto-imported documentation so that
+	it compiles with dtplite. Next step is to finetune the contents
+	during the documentation process.
+	doc/src/commandlist.man should finally become a TOC and reference the files.
+	
 2006-09-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/log.c: SeverityName() changed to accept one more argument

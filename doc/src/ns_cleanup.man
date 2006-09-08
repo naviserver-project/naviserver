@@ -3,26 +3,22 @@
 
 
 
-[titledesc
- ns_cleanup - Clean up the current Tcl interpreter
+[titledesc {ns_cleanup - Clean up the current Tcl interpreter}]
 
-]
+[description]
+
+ This command cleans up the current Tcl interp, performing various garbage collection tasks.  This command is invoked by the 
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_cleanup
+[call [cmd ns_cleanup]]
 
 
 [list_end]
 
-[description]
-
- This command cleans up the current Tcl interp, performing various garbage collection tasks.  This command is invoked by the 
-
-]
 
 [manpage_end]
 

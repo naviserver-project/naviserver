@@ -3,22 +3,12 @@
 
 
 
-[titledesc
-       ns_register_proc - Register a procedure for a method/URL combination
+[titledesc {ns_register_proc - Register a procedure for a method/URL combination}]
 
-]
+[description]
 
 [section {COMMANDS}]
 
-[list_begin definitions]
-
-
-       ns_register_proc ?-noinherit? method URL myproc ?args?
-
-
-[list_end]
-
-[description]
 
               ns_register_proc  registers  the procname to handle
               the  specified  method/URL  combination.  When  the
@@ -184,10 +174,17 @@
               "quark".
 
 
-[see_also nsd]
-[keywords 
+[list_begin definitions]
 
-]
+
+[call [cmd ns_register_proc] [opt [arg -noinherit]] [arg method] [arg URL] [arg myproc] [opt [arg args]]]
+
+
+[list_end]
+
+
+[see_also nsd]
+
 
 [manpage_end]
 

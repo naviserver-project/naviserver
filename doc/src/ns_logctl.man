@@ -3,23 +3,7 @@
 
 
 
-[para]
-
-
-[titledesc
- ns_logctl - Control buffering of log messages
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_logctl option&nbsp;?arg arg ...?
-
-
-[list_end]
+[titledesc {ns_logctl - Control buffering of log messages}]
 
 [description]
 
@@ -27,33 +11,47 @@
 
  The legal options are:
 
-[call [cmd  ns_logctl hold]]
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_logctl] [arg option] [opt [arg {arg arg ...}]]]
+
+
+[list_end]
+
+[list_begin definitions]
+
+[call [cmd  ns_logctl] [arg hold]]
 
  Turn buffering of log messages on.  Log messages are no longer written directly to the server log.
 
-[call [cmd  ns_logctl count]]
+[call [cmd  ns_logctl] [arg count]]
 
  Returns a count of the buffered log messages.
 
-[call [cmd  ns_logctl peek]]
+[call [cmd  ns_logctl] [arg peek]]
 
  Returns the buffered log messages without affecting the cache.
 
-[call [cmd  ns_logctl get]]
+[call [cmd  ns_logctl] [arg get]]
 
  Returns the buffered log messages and removes them from the buffer without writing them to the log.
 
-[call [cmd  ns_logctl flush]]
+[call [cmd  ns_logctl] [arg flush]]
 
  Write the buffered log messages.
 
-[call [cmd  ns_logctl release]]
+[call [cmd  ns_logctl] [arg release]]
 
  Write the buffered log messages and turn buffering off.
 
-[call [cmd  ns_logctl truncate len]]
+[call [cmd  ns_logctl] [arg truncate] [arg len]]
 
  Truncate the buffer at length len.
+
+[list_end]
 
 [section EXAMPLES]
 
@@ -66,8 +64,8 @@
     %&gt;
 
     &lt;%
-      if {[ns_logctl count] &gt; 0} {
-        ns_adp_puts &quot;&lt;hr&gt;&lt;p&gt;Page generated log messages:&lt;/p&gt;&lt;pre&gt;[ns_logctl peek]&lt;/pre&gt;
+      if {[lb]ns_logctl count[rb] &gt; 0} {
+        ns_adp_puts &quot;&lt;hr&gt;&lt;p&gt;Page generated log messages:&lt;/p&gt;&lt;pre&gt;[lb]ns_logctl peek[rb]&lt;/pre&gt;
       }
       ns_logctl release
     %&gt;
@@ -75,11 +73,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_log
-
-]
+[keywords ns_log]
 
 [manpage_end]
 

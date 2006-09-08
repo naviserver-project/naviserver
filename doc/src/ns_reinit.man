@@ -3,34 +3,27 @@
 
 
 
-[titledesc
- ns_reinit - Reinitialize the current interpreter
+[titledesc {ns_reinit - Reinitialize the current interpreter}]
 
-]
+[description]
+
+ This command reinitializes the current interpreter by calling ns_cleanup then ns_init.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_reinit
+ [call [cmd ns_reinit]]
 
 
 [list_end]
 
-[description]
-
- This command reinitializes the current interpreter by calling ns_cleanup then ns_init.
 
 
 [see_also nsd]
-[keywords 
+[keywords ns_cleanup ns_ictl ns_init ns_markfordelete]
 
- ns_cleanup, ns_ictl, ns_init, ns_markfordelete
-
-
-[para]
-]
 
 [manpage_end]
 

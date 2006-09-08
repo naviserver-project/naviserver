@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_crypt - Encrypt a string for use as a password
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_crypt key salt
-
-
-[list_end]
+[titledesc {ns_crypt - Encrypt a string for use as a password}]
 
 [description]
 
@@ -26,6 +13,17 @@
 
  The algorithm used is a one-way cipher, which means that the original plain-text key cannot be derived knowing the encrypted string alone.  However, since only up to the first 8 bytes of key are significant, this means only a 64-bit key, which is reasonably attacked with modern computers with ordinary brute-force attacks today.
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_crypt] [arg key] [arg salt]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
 [example_begin]
@@ -34,12 +32,7 @@
 [example_end]
 
 
-[see_also nsd]
-[keywords 
-
- ns_uuencode, ns_uudecode, ns_sha1
-
-]
+[keywords nsd ns_uuencode, ns_uudecode, ns_sha1]
 
 [manpage_end]
 

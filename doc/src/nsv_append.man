@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- nsv_append - Append to the value specified by the key
+[titledesc {nsv_append - Append to the value specified by the key}]
 
-]
+[description]
+
+ Append all of the value arguments to the current value of variable key in the array. If key doesn't exist, it is given a value equal to the concatenation of all the value arguments
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- nsv_append array key value ?value ...?
+ [call [cmd nsv_append] [arg array] [arg key] [arg value] [opt [arg {value ...}]]]
 
 
 [list_end]
 
-[description]
-
- Append all of the value arguments to the current value of variable key in the array. If key doesn't exist, it is given a value equal to the concatenation of all the value arguments
 
 [section EXAMPLES]
 
@@ -31,10 +29,6 @@
 
 
 [see_also nsd]
-[keywords 
-
- 
-]
 
 [manpage_end]
 

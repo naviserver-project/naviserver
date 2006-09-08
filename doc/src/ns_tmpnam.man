@@ -3,19 +3,19 @@
 
 
 
-[titledesc[para]ns_tmpnam - Generate a temporary file name
-]
+[titledesc {ns_tmpnam - Generate a temporary file name}]
+
+[description]
+This command generates a filename that can safely be used for a temporary file.  ns_tmpnam uses the tmpnam() function, therefore the behavior will depend on the operating system.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_tmpnam
+[call [cmd ns_tmpnam]]
 
 [list_end]
 
-[description]
-[para]This command generates a filename that can safely be used for a temporary file.  ns_tmpnam uses the tmpnam() function, therefore the behavior will depend on the operating system.
 [section EXAMPLES]
 
 [example_begin]
@@ -25,13 +25,9 @@
 
 
 [see_also nsd]
-[keywords 
-[para]ns_mktemp
+[keywords ns_mktemp]
 
 
-[para]
-
-]
 
 [manpage_end]
 

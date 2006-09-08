@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_url2file - Return the path to a file referenced by a URL
+[titledesc {ns_url2file - Return the path to a file referenced by a URL}]
 
-]
+[description]
+
+ This command returns the absolute path to a file referenced by the given URL.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_url2file url
+ [call [cmd ns_url2file] [arg url]]
 
 
 [list_end]
 
-[description]
-
- This command returns the absolute path to a file referenced by the given URL.
 
 [section EXAMPLES]
 
@@ -31,13 +29,7 @@
 
 
 [see_also nsd]
-[keywords 
 
- none
-
-
-[para]
-]
 
 [manpage_end]
 

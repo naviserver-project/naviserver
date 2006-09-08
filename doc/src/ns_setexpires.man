@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_setexpires - Set the current connections Expires header to the current time plus seconds seconds
+[titledesc {ns_setexpires - Set the current connections Expires header to the current time plus seconds seconds}]
 
-]
+[description]
+
+ Set the current connections Expires header to the current time plus seconds seconds
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_setexpires seconds
+ [call [cmd ns_setexpires] [arg seconds]]
 
 
 [list_end]
 
-[description]
-
- Set the current connections Expires header to the current time plus seconds seconds
 
 [section EXAMPLES]
 
@@ -32,13 +30,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_time ns_conn
-
-
-[para]
-]
+[keywords ns_time ns_conn]
 
 [manpage_end]
 

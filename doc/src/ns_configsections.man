@@ -3,19 +3,19 @@
 
 
 
-[titledesc[para]ns_configsections - Return a list of handles to ns_sets for every section in the server's configuration
-]
+[titledesc {ns_configsections - Return a list of handles to ns_sets for every section in the server's configuration}]
+
+[description]
+[para]This command returns a list of ns_sets for every section in the server's configuration.  The corresponding ns_sets contain the key-value pairs for the configuration section that the ns_set represents.  
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_configsections
+[call [cmd ns_configsections]]
 
 [list_end]
 
-[description]
-[para]This command returns a list of ns_sets for every section in the server's configuration.  The corresponding ns_sets contain the key-value pairs for the configuration section that the ns_set represents.  
 [section EXAMPLES]
 
 [example_begin]
@@ -30,12 +30,8 @@
 
 
 [see_also nsd]
-[keywords 
-[para]ns_config, ns_configsection, ns_set
+[keywords ns_config ns_configsection ns_set]
 
-
-[para]
-]
 
 [manpage_end]
 

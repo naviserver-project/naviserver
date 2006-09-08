@@ -3,22 +3,7 @@
 
 
 
-[para]
-NAME
-
- ns_httpopen - Fetch a web page
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_httpopen method url&nbsp;?rqset?&nbsp;?timeout?&nbsp;?pdata?
-
-
-[list_end]
+[titledesc {ns_httpopen - Fetch a web page}]
 
 [description]
 
@@ -32,43 +17,53 @@ NAME
 
  Note: This command is currently implemented in Tcl, in the source file tcl/http.tcl
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_httpopen] [arg method] [arg url] [opt [arg rqset]] [opt [arg timeout]] [opt [arg pdata]]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
 [example_begin]
 
     # A proc to post some data to a url and return the result
     proc postit {url data} {
-        set rqset [ns_set new rqset]
-        ns_set put $rqset &quot;Accept&quot; &quot;*/*&quot;
-        ns_set put $rqset &quot;User-Agent&quot; &quot;[ns_info name]-Tcl/[ns_info version]&quot;
-        # ns_set put $rqset &quot;Content-type&quot; &quot;text/xml&quot;
-        ns_set put $rqset &quot;Content-type&quot; &quot;application/x-www-form-urlencoded&quot;
-        ns_set put $rqset &quot;Content-length&quot; [string length $data]
+        set rqset [lb]ns_set new rqset[rb]
+        ns_set put $rqset "Accept" "*/*"
+        ns_set put $rqset "User-Agent" "[lb]ns_info name[rb]-Tcl/[lb]ns_info version[rb]"
+        # ns_set put $rqset "Content-type" "text/xml"
+        ns_set put $rqset "Content-type" "application/x-www-form-urlencoded"
+        ns_set put $rqset "Content-length" [lb]string length $data[rb]
         set timeout 15
-        set connInfo [ns_httpopen POST $url $rqset $timeout $data]
+        set connInfo [lb]ns_httpopen POST $url $rqset $timeout $data[rb]
         foreach {rfd wfd headers} $connInfo break
         close $wfd
-        set length [ns_set iget $headers content-length]
-        if {[string match &quot;&quot; $length]} {
+        set length [lb]ns_set iget $headers content-length[rb]
+        if {[lb]string match "" $length[rb]} {
             set length -1
         }
-        set page &quot;&quot;
-        set err [catch {
+        set page ""
+        set err [lb]catch {
             # Read the content.
             while {1} {
-                set buf [_ns_http_read $timeout $rfd $length]
+                set buf [lb]_ns_http_read $timeout $rfd $length[rb]
                 append page $buf
-                if {[string match &quot;&quot; $buf]} {
+                if {[lb]string match "" $buf[rb]} {
                     break
                 }
-                if {$length &gt; 0} {
-                    incr length -[string length $buf]
-                    if {$length &lt;= 0} {
+                if {$length > 0} {
+                    incr length -[lb]string length $buf[rb]
+                    if {$length >= 0} {
                         break
                     }
                 }
             }
-        } errMsg]
+        } errMsg[rb]
         ns_set free $headers
         close $rfd
         if {$err} {
@@ -80,12 +75,7 @@ NAME
 
 
 [see_also nsd]
-[keywords 
-
- ns_http, ns_httpget, ns_httppost
-
-
-]
+[keywords ns_http ns_httpget ns_httppost]
 
 [manpage_end]
 

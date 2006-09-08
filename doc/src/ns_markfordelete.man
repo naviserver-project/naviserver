@@ -3,28 +3,23 @@
 
 
 
-[titledesc[para]ns_markfordelete - Mark the current Tcl interp to be deleted on next cleanup
-]
+[titledesc {ns_markfordelete - Mark the current Tcl interp to be deleted on next cleanup}]
+
+[description]
+[para]This command marks the current Tcl interp to be deleted on next cleanup.  This is useful when it's necessary to delete an interp after it has been modified in a way that cannot be safely cleaned up, such as by the TclPro debugger.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_markfordelete
+[call [cmd ns_markfordelete]]
 
 [list_end]
 
-[description]
-[para]This command marks the current Tcl interp to be deleted on next cleanup.  This is useful when it's necessary to delete an interp after it has been modified in a way that cannot be safely cleaned up, such as by the TclPro debugger.
 
 [see_also nsd]
-[keywords 
-[para]ns_cleanup, ns_init
+[keywords ns_cleanup ns_init]
 
-
-[para]
-
-]
 
 [manpage_end]
 

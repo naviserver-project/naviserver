@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_querygetall - Get multiple query values from the HTTP request
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_querygetall key&nbsp;?def_result?
-
-
-[list_end]
+[titledesc {ns_querygetall - Get multiple query values from the HTTP request}]
 
 [description]
 
@@ -26,15 +13,18 @@
 
  Note that despite it's name, ns_querygetall works on POST form data as well as query string data.
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+ [call [cmd ns_querygetall] [arg key] [opt [arg def_result]]]
+
+[list_end]
+
+
 
 [see_also nsd]
-[keywords 
-
- ns_queryexists, ns_queryget
-
-
-[para]
-]
+[keywords ns_queryexists ns_queryget]
 
 [manpage_end]
 

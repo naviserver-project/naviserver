@@ -12,14 +12,14 @@ The legal options (which may be abbreviated) are:
 
 [list_begin definitions]
 
-[call [cmd ns_accesslog] [arg option] [arg ?arg?]]
+[call [cmd ns_accesslog] [arg option] [opt [arg arg]]]
 
 [call [cmd ns_accesslog] [arg file]]
 
 Returns the name of the access log file for the current (possibly virtual) server.
 The default is relative to the server's module directory in "nslog/access.log".
 
-[call [cmd ns_accesslog] [arg roll] [arg ?file?]]
+[call [cmd ns_accesslog] [arg roll] [opt [arg file]]]
 
 Rolls the access log, or optionally some other file.  See ns_logroll for log rolling behavior.
 However, instead of the max backup being specified in "ns/parameters" as "logmaxbackup", it is
@@ -29,19 +29,19 @@ specified in section "ns/server/$servername/module/nslog" as "maxbackup" and def
 
 Set or return folling format
 
-[call [cmd ns_accesslog] [arg flags] [arg ?flags?]]
+[call [cmd ns_accesslog] [arg flags] [opt [arg flags]]]
 
 Set or return current flags such as logcombined/formattedtime/suppressquery/checkforproxy
 
-[call [cmd ns_accesslog] [arg maxbuffer] [arg ?maxnum?]]
+[call [cmd ns_accesslog] [arg maxbuffer] [opt [arg maxnum]]]
 
 Set or return max number of lines in the buffer
 
-[call [cmd ns_accesslog] [arg maxbackup] [arg ?maxbum?]]
+[call [cmd ns_accesslog] [arg maxbackup] [opt [arg maxbum]]]
 
 Set or return max number of backup files
 
-[call [cmd ns_accesslog] [arg extendedheaders] [arg ?headers?]]
+[call [cmd ns_accesslog] [arg extendedheaders] [opt [arg headers]]]
 
 Set or return extended headers to be logged
 

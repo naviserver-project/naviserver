@@ -3,36 +3,30 @@
 
 
 
-[para]
-NAME
+[titledesc {ns_gmtime - Return current time in Greenwich Mean Time (GMT)}]
 
- ns_gmtime - Return current time in Greenwich Mean Time (GMT)
+[description]
+This command returns a nine-element Tcl list representing the current time in Greenwich Mean Time (GMT).  The structure of the list corresponds to the Unix struct tm time structure:
 
-]
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_gmtime
+[call [cmd  ns_gmtime] [arg seconds]]
+[nl] minutes (0-59)
+[nl] hours (0-23)
+[nl] dayofmonth (1-31)
+[nl] monthofyear (0-11)
+[nl] year (year-1900)
+[nl] dayofweek (0-6, Sunday=0)
+[nl] dayofyear (0-365)
+[nl] isdst (>0 if Daylight Savings Time is in effect)
 
 
 [list_end]
 
-[description]
-
- This command returns a nine-element Tcl list representing the current time in Greenwich Mean Time (GMT).  The structure of the list corresponds to the Unix struct tm time structure:
-
-[call [cmd  seconds (0-59)]]
-<li> minutes (0-59)
-<li> hours (0-23)
-<li> dayofmonth (1-31)
-<li> monthofyear (0-11)
-<li> year (year-1900)
-<li> dayofweek (0-6, Sunday=0)
-<li> dayofyear (0-365)
-<li> isdst (>0 if Daylight Savings Time is in effect)
 
 [section EXAMPLES]
 
@@ -43,11 +37,7 @@ NAME
 
 
 [see_also nsd]
-[keywords 
-
- ns_fmttime, ns_httptime, ns_localtime, ns_parsehttptime, ns_parsetime, ns_time
-
-]
+[keywords ns_fmttime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
 
 [manpage_end]
 

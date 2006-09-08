@@ -3,29 +3,27 @@
 
 
 
-[titledesc
- ns_parsequery - Parse a URL query string into an ns_set.
+[titledesc {ns_parsequery - Parse a URL query string into an ns_set}]
 
-]
+[description]
+
+ This command parses the specified querystring into an ns_set, which is returned.  The keys and values will be decoded.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_parsequery querystring
+ [call [cmd ns_parsequery] [arg querystring]]
 
 
 [list_end]
 
-[description]
-
- This command parses the specified querystring into an ns_set, which is returned.  The keys and values will be decoded.
 
 [section EXAMPLES]
 
 [example_begin]
-   % set s [[ns_parsequery "msg=Hello+World%21&amp;a=b&amp;a=b&amp;c=d"]]
+   % set s [lb][lb]ns_parsequery "msg=Hello+World%21&amp;a=b&amp;a=b&amp;c=d"[rb][rb]
    d0
 [example_end]
 

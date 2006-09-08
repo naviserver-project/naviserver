@@ -3,29 +3,27 @@
 
 
 
-[titledesc
- ns_pause - Pause a scheduled script from running
+[titledesc {ns_pause - Pause a scheduled script from running}]
 
-]
+[description]
+
+ This command pauses a scheduled script from running at its next scheduled time.  Returns 1 on success, 0 on failure.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_pause id
+ [call [cmd ns_pause] [arg id]]
 
 
 [list_end]
 
-[description]
-
- This command pauses a scheduled script from running at its next scheduled time.  Returns 1 on success, 0 on failure.
 
 [section EXAMPLES]
 
 [example_begin]
-   % set id [[ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }]]
+   % set id [lb][lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb][rb]
    19
 [example_end]
 
@@ -40,11 +38,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_info scheduled, 
-
-]
+[keywords ns_info scheduled]
 
 [manpage_end]
 

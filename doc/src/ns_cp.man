@@ -3,27 +3,21 @@
 
 
 
-[titledesc[para]ns_cp - Copy one file to another.
-]
+[titledesc {ns_cp - Copy one file to another}]
+
+[description]
+ns_cp copies the contents of file1 to file2, just like the Unix "cp" command. The default directory is the home directory for the server.
+If -preserve is specified, the copied file will retain the creation time, modification time, owner, and mode of the original file, just like the Unix "cp -p" command. 
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[para]ns_cp ?-preserve? file1 file2
-[para]
-DESCRIPTION
-[para]ns_cp copies the contents of file1 to file2, just like the Unix "cp" command. The default directory is the home directory for the server.
-[para]If -preserve is specified, the copied file will retain the creation time, modification time, owner, and mode of the original file, just like the Unix "cp -p" command. 
+[call [cmd ns_cp] [opt [arg -preserve]] [arg file1] [arg file2]]
 
-[see_also nsd]
-[keywords 
-[para]Tcl [file copy], ns_cpfp
+[list_end]
 
-
-[para]
-
-]
+[keywords nsd {Tcl [lb]file copy[rb]} ns_cpfp]
 
 [manpage_end]
 

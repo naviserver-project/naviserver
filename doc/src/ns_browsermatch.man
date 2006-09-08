@@ -3,24 +3,22 @@
 
 
 
-[titledesc
- ns_browsermatch - Match against the User-Agent header
+[titledesc {ns_browsermatch - Match against the User-Agent header}]
 
-]
+[description]
+
+ This command returns a boolean indicating if the pattern matches the User-Agent header on the current HTTP request.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- ns_browsermatch ?connId? pattern
+[call [cmd ns_browsermatch] [opt [arg connId]] [arg pattern]]
 
 
 [list_end]
 
-[description]
-
- This command returns a boolean indicating if the pattern matches the User-Agent header on the current HTTP request.
 
 [section EXAMPLES]
 
@@ -31,10 +29,7 @@
 
 
 [see_also nsd]
-[keywords 
-
- ns_browsertype, ns_conn headers, Tcl [string match] 
-]
+[keywords ns_browsertype {ns_conn headers} Tcl [lb]string match[rb]]
 
 [manpage_end]
 

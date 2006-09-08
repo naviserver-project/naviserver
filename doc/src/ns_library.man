@@ -3,20 +3,7 @@
 
 
 
-[titledesc
- ns_library - Get the paths to the private and shared Tcl libraries
-
-]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- ns_library library&nbsp;?module?
-
-
-[list_end]
+[titledesc {ns_library - Get the paths to the private and shared Tcl libraries}]
 
 [description]
 
@@ -26,6 +13,17 @@
 
  The optional module is simply concatenated to the path returned from ns_library.
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_library] [arg library] [opt [arg module]]]
+
+
+[list_end]
+
+
 [section EXAMPLES]
 
 [example_begin]
@@ -34,7 +32,7 @@
 [example_end]
 
 [example_begin]
-   % file join [ns_info home] modules tcl
+   % file join [lb]ns_info home[rb] modules tcl
    /home/aolserver/modules/tcl
 [example_end]
 
@@ -44,20 +42,13 @@
 [example_end]
 
 [example_begin]
-   % file join [ns_info tcllib] exampleModule
+   % file join [lb]ns_info tcllib[rb] exampleModule
    /home/aolserver/servers/exampleServer/tcl/exampleModule
 [example_end]
 
 
 [see_also nsd]
-[keywords 
-
- ns_info home, ns_info tcllib
-
-
-[para]
-
-]
+[keywords ns_info home ns_info tcllib]
 
 [manpage_end]
 
