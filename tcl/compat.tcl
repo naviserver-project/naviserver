@@ -104,7 +104,7 @@ proc ns_cp {args} {
         file stat $src sbuf
         file mtime $dst $sbuf(mtime)
         file atime $dst $sbuf(atime)
-        eval file attributes $dst [file attributes $src]
+        eval file attributes [list $dst] [file attributes $src]
     }
 }
 
