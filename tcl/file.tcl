@@ -94,7 +94,7 @@ proc ns_sourcefile { path } {
     set cookie0 $stat(mtime):$stat(ctime):$stat(ino):$stat(dev)
 
     # Verify file modification time
-    if { $proc0 == "" || [$proc0 1] != $cookie0 } {
+    if { $proc0 eq "" || [$proc0 1] ne $cookie0 } {
       set code [ns_fileread $path]
       proc ns:tclcache_$path { {getcookie 0} } "
          if { \$getcookie } { return $cookie0 }
