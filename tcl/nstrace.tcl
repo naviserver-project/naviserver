@@ -287,12 +287,12 @@ ns_runonce {
             foreach n [namespaces [namespace current]] {
                 foreach {s i} [_serializensp $n] {
                     if {[string length $s]} {
-                        append script "namespace eval $n {" \n
+                        append script "namespace eval [list $n] {" \n
                         append script $s  \n
                         append script "}" \n
                     }
                     if {[string length $i]} {
-                        append import "namespace eval $n {" \n
+                        append import "namespace eval [list $n] {" \n
                         append import $i  \n
                         append import "}" \n
                     }
@@ -319,7 +319,7 @@ ns_runonce {
             # Tell to use current initialization epoch
             #
 
-            append script "namespace eval [namespace current] {" \n
+            append script "namespace eval [list [namespace current]] {" \n
             append script "_useepoch $epoch" \n
             append script "}" \n
 
@@ -328,7 +328,7 @@ ns_runonce {
             # interactive debugging purposes.
             #
 
-            if {$file != ""} {
+            if {$file ne ""} {
                 _savescript $file $script
             } else {
                 return $script
@@ -377,12 +377,12 @@ ns_runonce {
             foreach n [namespaces] {
                 foreach {s i} [_serializensp $n] {
                     if {[string length $s]} {
-                        append script "namespace eval $n {" \n
+                        append script "namespace eval [list $n] {" \n
                         append script $s  \n
                         append script "}" \n
                     }
                     if {[string length $i]} {
-                        append import "namespace eval $n {" \n
+                        append import "namespace eval [list $n] {" \n
                         append import $i  \n
                         append import "}" \n
                     }
@@ -412,7 +412,7 @@ ns_runonce {
             # interactive debugging purposes.
             #
 
-            if {$file != ""} {
+            if {$file ne ""} {
                 _savescript $file $script
             } else {
                 return $script
@@ -551,7 +551,7 @@ ns_runonce {
         proc unknown {args} {
             set cmd [lindex $args 0]
             if {[uplevel nstrace::_resolve [list $cmd]]} {
-                set c [catch {uplevel $cmd [lrange $args 1 end]} r]
+                set c [catch {uplevel 1 $cmd [lrange $args 1 end]} r]
             } else {
                 set c [catch {::eval ::tcl::unknown $args} r]
             }
@@ -610,7 +610,7 @@ ns_runonce {
             foreach pn [info procs ${nsp}::*] {
                 set orig [namespace origin $pn]
                 if {$orig ne [namespace which -command $pn]} {
-                    append import "namespace import -force $orig" \n
+                    append import "namespace import -force [list $orig]" \n
                 } else {
                     append script [_procscript $pn]
                 }
@@ -619,13 +619,13 @@ ns_runonce {
                 set orig [namespace origin $cn]
                 if {[info procs $cn] eq {} &&
                     $orig ne [namespace which -command $cn]} {
-                    append import "namespace import -force $orig" \n
+                    append import "namespace import -force [list $orig]" \n
                 }
             }
             foreach ex [namespace eval $nsp [list namespace export]] {
-                append script "namespace export $ex" \n
+                append script "namespace export [list $ex]" \n
             }
-            list $script $import
+            return [list $script $import]
         }
 
         #
@@ -646,7 +646,7 @@ ns_runonce {
             }
             set pname [namespace tail $cmd]
             set pbody [info body $cmd]
-            append script "proc $pname [list $pargs] [list $pbody]" \n
+            append script "proc [list $pname] [list $pargs] [list $pbody]" \n
         }
 
         #
@@ -659,10 +659,10 @@ ns_runonce {
         proc _varscript {var} {
             set vname [namespace tail $var]
             if {[array exists $var] == 0} {
-                append script "variable $vname [list [set $var]]" \n
+                append script "variable [list $vname] [list [set $var]]" \n
             } else {
-                append script "variable $vname" \n
-                append script "array set $vname [list [array get $var]]" \n
+                append script "variable [list $vname]" \n
+                append script "array set [list $vname] [list [array get $var]]" \n
             }
         }
 
@@ -687,7 +687,7 @@ ns_runonce {
         proc _resolve {cmd} {
             variable resolvers
             foreach resolver $resolvers {
-                if {[uplevel [info comm resolve::$resolver] [list $cmd]]} {
+                if {[uplevel 1 [info comm resolve::$resolver] [list $cmd]]} {
                     return 1
                 }
             }
@@ -768,7 +768,7 @@ ns_runonce {
         proc _delepoch {epoch threads} {
             set self [ns_thread getid] 
             foreach tid [nsv_set nstrace $epoch] {
-                if {$tid != $self && [lsearch $threads $tid] >= 0} {
+                if {$tid ne $self && [lsearch $threads $tid] >= 0} {
                     lappend alive $tid
                 }
             }
@@ -852,7 +852,7 @@ ns_runonce {
         # Load all traced packages
         foreach image [nstrace::getentries load] {
             set iproc [nstrace::getentry load $image]
-            append script "load {} $iproc" \n
+            append script "load {} [list $iproc]" \n
             set loaded($image) 1
         }
         # Load all the rest missed by tracing
@@ -860,7 +860,7 @@ ns_runonce {
             set image [lindex $pkg 0]
             if {![info exists loaded($image)]} {
                 set iproc [lindex $pkg 1]
-                append script "load {} $iproc" \n
+                append script "load {} [list $iproc]" \n
             }
         }
         return $script
@@ -897,7 +897,7 @@ ns_runonce {
         if {$cns eq {::}} {
             set cns {}
         }
-        switch -glob $nop {
+        switch -glob -- $nop {
             eva* {
                 set nsp [lindex $cmdline 2]
                 if {![string match {::*} $nsp]} {
@@ -942,7 +942,7 @@ ns_runonce {
     nstrace::addscript namespace {
         append script \n
         foreach entry [nstrace::getentries namespace] {
-            append script "namespace eval $entry {}" \n
+            append script "namespace eval [list $entry] {}" \n
         }
         return $script
     }
@@ -988,10 +988,10 @@ ns_runonce {
         foreach entry [nstrace::getentries variable] {
             set nsp [namespace qual $entry]
             set var [namespace tail $entry]
-            append script "namespace eval $nsp {" \n
-            append script "variable $var"
+            append script "namespace eval [list $nsp] {" \n
+            append script "variable [list $var]"
             if {[array exists $entry]} {
-                append script \n "array set $var [list [array get $entry]]" \n
+                append script \n "array set [list $var] [list [array get $entry]]" \n
             } elseif {[info exists $entry]} {
                 append script " [list [set $entry]]" \n 
             } else {
@@ -1047,7 +1047,7 @@ ns_runonce {
         append script \n
         foreach old [nstrace::getentries rename] {
             set new [nstrace::getentry rename $old]
-            append script "rename $old {$new}" \n
+            append script "rename [list $old] [list $new]" \n
         }
         return $script
     }
@@ -1117,15 +1117,15 @@ ns_runonce {
                 set cmd [lindex $args 0]
                 set hit [lsearch -glob {commands procs args default body} $cmd*]
                 if {$hit > 1} {
-                    if {[catch {uplevel ::tcl::info $args}]} {
-                        uplevel nstrace::_resolve [list [lindex $args 1]]
+                    if {[catch {uplevel 1 ::tcl::info $args}]} {
+                        uplevel 1 nstrace::_resolve [list [lindex $args 1]]
                     }
-                    return [uplevel ::tcl::info $args]
+                    return [uplevel 1 ::tcl::info $args]
                 }
                 if {$hit == -1} {
-                    return [uplevel ::tcl::info $args]
+                    return [uplevel 1 ::tcl::info $args]
                 }
-                set cns [uplevel namespace current]
+                set cns [uplevel 1 namespace current]
                 if {$cns eq {::}} {
                     set cns {}
                 }
@@ -1193,7 +1193,7 @@ ns_runonce {
             if {[resolveprocs $cmd 1] == 0} {
                 return 0
             }
-            namespace eval $nsp "namespace import -force $cmd"
+            namespace eval $nsp [list namespace import -force $cmd]
         } else {
             uplevel 0 [list ::proc $cmd [lindex $pdef 2] [lindex $pdef 3]]
             if {$export} {
@@ -1201,7 +1201,7 @@ ns_runonce {
                 if {$nsp eq {}} {
                     set nsp ::
                 }
-                namespace eval $nsp "namespace export $name"
+                namespace eval $nsp [list namespace export $name]
             }
         }
         variable resolveproc
