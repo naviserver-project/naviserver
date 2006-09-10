@@ -1,3 +1,21 @@
+2006-09-10  Michael A. Cleverly <cleverly@users.sourceforge.net>
+
+	* tcl/charsets.tcl:
+	* tcl/compat.tcl:
+	* tcl/file.tcl:
+	* tcl/http.tcl:
+	* tcl/limits.tcl:
+	* tcl/nstrace.tcl:
+	* tcl/util.tcl:
+	* nsperm/init.tcl:
+	* nsdb/util.tcl:
+	* nsd/init.tcl: Minor pedantic updates consisting mainly of 
+	adding extra-paranoid [list] quoting when building up scripts
+	that are to be [eval]'ed, and adding "--" (end of switches marker)
+	to regexp, switch, glob, etc., where the next option was user
+	supplied input that might conceivably someday/somewhere begin
+	with a hyphen and be misinterpreted as an option switch.
+
 2006-09-08  Bernd Eidenschink  <eide@users.sf.net>
 
 	* doc/src/*.man: Rewrote Vlads auto-imported documentation so that
