@@ -143,7 +143,7 @@ proc ns_cookiecharset {name} {
 
     foreach cookie $cookies {
         set cookie [string trim $cookie]
-        if {[regexp "$name=(.*)" $cookie junk charset]} {
+        if {[regexp -- "$name=(.*)" $cookie junk charset]} {
             break
         }
     }
