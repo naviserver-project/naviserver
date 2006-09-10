@@ -37,12 +37,12 @@
 #
 
 proc init_nsperm { } {
-    set dir "[ns_info home]/servers/[ns_info server]/modules/nsperm"
+    set dir [file join [ns_info home] servers [ns_info server] modules nsperm]
 
     #
     # Parse hosts.allow
     #
-    set filename "$dir/hosts.allow"
+    set filename [file join $dir hosts.allow]
     if {[catch {set file [open $filename r]} ignore] == 0} {
 	while {![eof $file]} {
 	    set line [gets $file]
@@ -68,7 +68,7 @@ proc init_nsperm { } {
     #
     # Parse hosts.deny
     #
-    set filename "$dir/hosts.deny"
+    set filename [file join $dir hosts.deny]
     if {[catch {set file [open $filename r]} ignore] == 0} {
 	while {![eof $file]} {
 	    set line [gets $file]
@@ -98,7 +98,7 @@ proc init_nsperm { } {
     #
     # Parse passwd
     #
-    set filename "$dir/passwd"
+    set filename [file join $dir passwd]
     if {[catch {set file [open $filename r]} ignore] == 0} {
 	while {![eof $file]} {
 	    set line [gets $file]
@@ -111,17 +111,17 @@ proc init_nsperm { } {
 			set user [lindex $list 0]
 			set pass [lindex $list 1]
 			set uf1 [lindex $list 4]
-			set cmd "ns_perm adduser $user \"$pass\" \"$uf1\""
+			set cmd "ns_perm adduser [list $user] [list $pass] [list $uf1]"
 			if {[info exists _ns_allow($user)]} {
 			    append cmd " -allow "
 			    foreach a $_ns_allow($user) {
-				append cmd " $a"
+				append cmd " [list $a]"
 			    }
 			} 
 			if {[info exists _ns_deny($user)]} {
 			    append cmd " -deny "
 			    foreach a $_ns_deny($user) {
-				append cmd " $a"
+				append cmd " [list $a]"
 			    }
 			}
 			eval $cmd
@@ -135,7 +135,7 @@ proc init_nsperm { } {
     #
     # Parse group
     #
-    set filename "$dir/group"
+    set filename [file join $dir group]
     if {[catch {set file [open $filename r]} ignore] == 0} {
 	while {![eof $file]} {
 	    set line [gets $file]
@@ -147,10 +147,10 @@ proc init_nsperm { } {
 		    } else {
 			set group [lindex $list 0]
 			set users [split [lindex $list 3] ,]
-			set cmd "ns_perm addgroup $group"
+			set cmd "ns_perm addgroup [list $group]"
 			foreach user $users {
 			    set user [string trim $user]
-			    append cmd " $user"
+			    append cmd " [list $user]"
 			}
 			eval $cmd
 		    }
@@ -163,7 +163,7 @@ proc init_nsperm { } {
     #
     # Parse perms
     #
-    set filename "$dir/perms"
+    set filename [file join $dir perms]
     if {[catch {set file [open $filename r]} ignore] == 0} {
 	while {![eof $file]} {
 	    set line [gets $file]
@@ -177,11 +177,11 @@ proc init_nsperm { } {
 			set method [lindex $line 2]
 			set url [lindex $line 3]
 			set entity [lindex $line 4]
-			set cmd "ns_perm $action"
+			set cmd "ns_perm [list $action]"
 			if {$inherit eq "noinherit"} {
 			    append cmd " -noinherit"
 			}
-			append cmd " $method $url \"$entity\""
+			append cmd " [list $method] [list $url] [list $entity]"
 			eval $cmd
 		    }
 		}
@@ -202,8 +202,8 @@ proc init_nsperm { } {
 #
 
 proc ns_permpasswd { targetuser oldpass newpass } {
-    set dir "[ns_info home]/servers/[ns_info server]/modules/nsperm"
-    set filename "$dir/passwd"
+    set dir [file join [ns_info home] servers [ns_info server] modules nsperm]
+    set filename [file join $dir passwd]
     set file [open $filename r]
     set oldfile ""
 
