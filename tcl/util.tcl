@@ -147,7 +147,7 @@ proc ns_filewrite {filename data {mode w}} {
 proc ns_findset {sets name} {
 
     foreach set $sets {
-        if {[ns_set name $set] == $name} {
+        if {[ns_set name $set] eq $name} {
             return $set
         }
     }
@@ -187,7 +187,7 @@ proc ns_parsetime {option time} {
 
 proc getformdata {formVar} {
 
-    upvar $formVar form
+    upvar 1 $formVar form
 
     set form [ns_conn form]
     if {$form eq {}} {
@@ -268,16 +268,16 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
             regexp {<([^>]*)>(.*)} $htmlpiece m tag htmlpiece
             set tag [string trim $tag]
             set CAPTAG [string toupper $tag]
-            switch -regexp $CAPTAG {
+            switch -regexp -- $CAPTAG {
                 {^INPUT} {
                     if {[regexp {TYPE=("IMAGE"|"SUBMIT"|"RESET"|IMAGE|SUBMIT|RESET)} $CAPTAG]} {
                         append newhtml <$tag>
                     } elseif {[regexp {TYPE=("CHECKBOX"|CHECKBOX|"RADIO"|RADIO)} $CAPTAG]} {
                         set name [ns_tagelement $tag NAME]
-                        if {$name == $dataname} {
+                        if {$name eq $dataname} {
                             set value [ns_tagelement $tag VALUE]
                             regsub -all -nocase { *CHECKED} $tag {} tag
-                            if {$value == $datavalue} {
+                            if {$value eq $datavalue} {
                                 append tag " CHECKED"
                             }
                         }
@@ -290,7 +290,7 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                         ## then we add/replace the VALUE tag
                         
                         set name [ns_tagelement $tag NAME]
-                        if {$name == $dataname} {
+                        if {$name eq $dataname} {
                             ns_tagelementset tag VALUE $datavalue
                         }
                         append newhtml <$tag>
@@ -303,7 +303,7 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                     ###
                     
                     set name [ns_tagelement $tag NAME]
-                    if {$name == $dataname} {
+                    if {$name eq $dataname} {
                         while {![regexp -nocase {^<( *)/TEXTAREA} $htmlpiece]} {
                             regexp {^.[^<]*(.*)} $htmlpiece m htmlpiece
                         }
@@ -318,7 +318,7 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                     #   snam is the variable name, sflg is 1 if nothing's
                     ### been added, smul is 1 if it's MULTIPLE selection
                     
-                    if {[ns_tagelement $tag NAME] == $dataname} {
+                    if {[ns_tagelement $tag NAME] eq $dataname} {
                         set inkeyselect 1
                         set addoption 1
                     } else {
@@ -340,7 +340,7 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                         if {$value eq ""} {
                             set value [string trim $txt]
                         }
-                        if {$value == $datavalue} {
+                        if {$value eq $datavalue} {
                             append tag " SELECTED"
                             set addoption 0
                         }
@@ -385,9 +385,9 @@ proc ns_tagelement {tag key} {
     set qq {"([^\"]*)"}               ; # Matches what's in quotes
     set pp {([^ >]*)}                 ; # Matches a word (mind yer pp and qq)
     
-    if {[regexp -nocase "$key *= *$qq" $tag m name]} {
+    if {[regexp -nocase -- "$key *= *$qq" $tag m name]} {
         # Do nothing
-    } elseif {[regexp -nocase "$key *= *$pp" $tag m name]} {
+    } elseif {[regexp -nocase -- "$key *= *$pp" $tag m name]} {
         # Do nothing
     } else {
         set name ""
@@ -409,8 +409,8 @@ proc ns_tagelementset {tagvar key value} {
     set qq {"([^\"]*)"}                ; # Matches what's in quotes
     set pp {([^ >]*)}                  ; # Matches a word (mind yer pp and qq)
     
-    regsub -all -nocase "$key=$qq" $tag {} tag
-    regsub -all -nocase "$key *= *$pp" $tag {} tag
+    regsub -all -nocase -- "$key=$qq" $tag {} tag
+    regsub -all -nocase -- "$key *= *$pp" $tag {} tag
     append tag " value=\"$value\""
 }
 
@@ -515,7 +515,7 @@ proc ns_htmlselect args {
 
 proc ns_browsermatch {args} {
 
-    set glob [lindex $args [expr {[llength $args] - 1}]]
+    set glob [lindex $args end]
     set agnt [ns_set iget [ns_conn headers] user-agent]
     string match $glob $agnt
 }
