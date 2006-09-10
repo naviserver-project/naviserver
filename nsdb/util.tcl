@@ -59,7 +59,7 @@ if { [ns_config -bool ns/parameters dbcloseonexit off] } {
 proc ns_dbshutdown { args } {
 
     foreach pool [ns_db pools] {
-      ns_db bouncepool $pool 
+        catch {ns_db bouncepool $pool}
     }
 }
 
@@ -136,7 +136,7 @@ proc ns_localsqltimestamp {} {
 proc ns_parsesqldate {opt sqldate} {
     scan $sqldate "%04d-%02d-%02d" year month day
 
-    switch $opt {
+    switch -- $opt {
 	month {return [lindex [nsv_get _nsdb months] [expr {$month - 1}]]}
 	day {return $day}
 	year {return $year}
@@ -156,7 +156,7 @@ proc ns_parsesqltime {opt sqltime} {
 	set seconds 0
     }
 
-    switch $opt {
+    switch -- $opt {
 	time {
 	    if {$hours == 0} {
 		set hours 12
@@ -190,7 +190,7 @@ proc ns_parsesqltime {opt sqltime} {
 
 proc ns_parsesqltimestamp {opt sqltimestamp} {
 
-    switch $opt {
+    switch -- $opt {
 	month -
 	day -
 	year {return [ns_parsesqldate $opt [lindex [split $sqltimestamp " "] 0]]}
