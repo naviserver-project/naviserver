@@ -330,7 +330,7 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
     set response [ns_set name $headers]
     set status   [lindex $response 1]
 
-    if {$status == 302} {
+    if {$status == 301 || $status == 302 || $status == 303 || $status == 307} {
 
         #
         # The response was a redirect, recurse.
