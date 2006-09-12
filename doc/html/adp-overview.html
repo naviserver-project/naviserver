@@ -88,15 +88,17 @@ You can also include files and parse other ADPs from within your ADPs.
 <p>
 
 Here are some examples of applications you can use ADPs for:
+
 <p>
+
  * Returning HTML conditionally
 
 <p>
 
-<p>
   * Retrieving information from a database to use in a page 
 
 <p>
+
   * Inserting information from a form into a database
 <p>
 
@@ -113,7 +115,6 @@ approach.
 
 <p>
 
-<p>
   * Inheritance: If you want one Tcl script to handle an URL and all
  of its sub-URLs, it's better to store the script in a Tcl library
  and register it using ns_register_proc to handle an URL hierarchy.
@@ -123,14 +124,12 @@ approach.
 
 <p>
 
-<p>
   * Special Extenstions: If you want one Tcl script to handle all
  files with a specific extension, like /*.csv, you would register
  the script with ns_register_proc to handle those files.
 
 <p>
 
-<p>
   * Scheduled Procedures: If you want a Tcl script to be run at
  specific intervals, you can use the ns_schedule_* functions to run
  a script from the Tcl library at scheduled intervals. These
@@ -139,7 +138,6 @@ approach.
 
 <p>
 
-<p>
   * Filters: If you want a Tcl script to be called at
  pre-authorization, post-authorization, or trace time for a group
  of URLs, you would register a filter using the ns_register_filter
@@ -147,7 +145,6 @@ approach.
 
 <p>
 
-<p>
   * Re-using Tcl Scripts: If there are Tcl scripts that you want to
  use in multiple situations, you can store them in a Tcl library
  and invoke them from within any ADP or Tcl script.
@@ -170,7 +167,6 @@ commands and process.
 <p>
 
 
-<p>
   * Use the Map configuration parameter to determine
  which files are to be processed. For example, you can specify that
  all files with the .adp extension are to be processed by the
@@ -179,7 +175,6 @@ commands and process.
 
 <p>
 
-<p>
   * If you want to register your own ADP tags, you must set the Fancy
  parameter to On. It also allows you to use the <server> ...
  </server> ADP syntax and determine whether ADP tags can be
@@ -208,8 +203,7 @@ Default Value
 
 <p>
 
-Description
-Cache 
+Description Cache 
 
 <p>
 
@@ -217,8 +211,7 @@ on
 
 <p>
 
-Boolean value. If set to on, ADP caching is enabled.
-DebugInit
+Boolean value. If set to on, ADP caching is enabled. DebugInit
 
 <p>
 
@@ -236,8 +229,7 @@ off
 <p>
 
 Boolean value. If set to on, the "Expires: now" header is set on all
-outgoing ADPs.
-EnableCompress 
+outgoing ADPs. EnableCompress 
 
 <p>
 
@@ -392,8 +384,7 @@ Insert Tcl commands between any of the following sets of HTML tags:
 
 <p>
 
-<p>
-  * &lt;script language=tcl runat=server stream=on>
+  * &lt;script language=tcl runat=server stream=on&gt;
 
 <p>
 
@@ -401,7 +392,7 @@ Insert Tcl commands between any of the following sets of HTML tags:
 
 <p>
 
-  </script>
+  &lt;/script&gt;
 
 <p>
 
@@ -437,7 +428,6 @@ the connection is going through a proxy server.
 
 <p>
 
-<p>
   * &lt;% ... %&gt;
 
 <p>
@@ -451,7 +441,6 @@ inside HTML tags.
 
 <p>
 
-<p>
   * &lt;%= ... %&gt;
 
 <p>
@@ -489,7 +478,6 @@ are pre-defined for NaviServer:
 
 <p>
 
-<p>
   * adp: The "adp" parser handles only the &lt;% ... %&gt; syntax and the
  &lt;%= ... %&gt; syntax for ADPs. This parser offers the best
  performance.
@@ -514,6 +502,7 @@ C API function.
 To configure ADP parsers, set parameters in two configuration file
 sections as follows:
  1. Map parsers to file extensions in the
+
 <pre>
  ns/server/servername/adp/parsers configuration file section. For
  example:
@@ -573,15 +562,23 @@ This section contains the following ADP examples:
 <p>
 
  Example 1: Return partial HTML page conditionally
-<br>
+
+<p>
+
  Example 2: Return full HTML page conditionally
-<br>
+
+<p>
+
  Example 3: Return information from the database
-<br>
+
+<p>
+
  Example 4: Get form information and insert into the database
-<br>
+
+<p>
+
  Example 5: ADP sampler with includes, recursion, and streaming
-<br>
+
 
 <p>
 
@@ -593,6 +590,7 @@ This ADP example tests for various browsers and returns a different
 message in each case.
 
 <p>
+
 <pre>
  <HTML>
  <HEAD>
@@ -619,6 +617,7 @@ Browser Example
  %>
  </BODY></HTML>
 </pre>
+
 <p>
 
  Example 2: Return full HTML page conditionally
@@ -636,6 +635,7 @@ frames.
 This is the cookbook.html file containing the form:
 
 <p>
+
 <pre>
 
  <HTML>
@@ -660,6 +660,7 @@ Frames
  </BODY></HTML>
 
 </pre>
+
 <p>
 
 
@@ -667,6 +668,7 @@ This is the ADP, cookbook.adp, that determines the response and
 displays the appropriate page:
 
 <p>
+
 <pre>
 
  <HTML>
@@ -685,6 +687,7 @@ displays the appropriate page:
  </BODY></HTML>
 
 </pre>
+
 <p>
 
 The cookset.html file contains a frame set for the cookbook. The
@@ -709,6 +712,7 @@ The first ADP, db.adp, creates a form with a select box with the list
 of database tables:
 
 <p>
+
 <pre>
 
  <HTML>
@@ -738,11 +742,13 @@ ns_puts "<OPTION VALUE=\"$table\">$table"
  </BODY></HTML>
 
 </pre>
+
 <p>
 
 The second ADP, db2.adp, is used as the POST from the first ADP:
 
 <p>
+
 <pre>
 
  <HTML>
@@ -773,6 +779,7 @@ The second ADP, db2.adp, is used as the POST from the first ADP:
  </HTML>
 
 </pre>
+
 <p>
 
  Example 4: Get form information and insert into the database
@@ -792,6 +799,7 @@ Here is the survey.html file, which consists of a simple form and a
 submit button which calls an ADP:
 
 <p>
+
 <pre>
  <HTML>
  <HEAD>
@@ -829,7 +837,6 @@ ASCII version of this newsletter by email
  </BODY></HTML>
 
 </pre>
-<p>
 
 <p>
 
@@ -838,6 +845,7 @@ inserts it into the database, sends email to the subscription
 administrator and the user, and displays a confirmation message:
 
 <p>
+
 <pre>
  <HTML>
  <HEAD>
@@ -864,8 +872,7 @@ Online Newsletter Subscription
 
  # Update database with new subscription
  set db [ns_db gethandle]
- ns_db dml $db \
- "insert into test values ([ns_dbquotevalue $name],
+ ns_db dml $db "insert into test values ([ns_dbquotevalue $name],
 [ns_dbquotevalue $title], $notify, $sendemail,
 [ns_dbquotevalue $emailaddr])"
 
@@ -873,13 +880,10 @@ Online Newsletter Subscription
  set body "A new newsletter subscription was added for "
  append body $name
  append body ". The database has been updated."
- ns_sendmail "subscript@thecompany.com" "dbadmin@thecompany.com"
-\
- "New Subscription" $body
+ ns_sendmail "subscript@thecompany.com" "dbadmin@thecompany.com" "New Subscription" $body
 
  # Send email message to user
- set body "Your online newsletter subscription has been successfully
-processed."
+ set body "Your online newsletter subscription has been successfully processed."
  ns_sendmail $emailaddr "dbadmin@thecompany.com" \
  "Your Online Subscription" $body
 
@@ -896,6 +900,7 @@ via email."
  </BODY></HTML>
 
 </pre>
+
 <p>
 
 
@@ -908,6 +913,7 @@ scripts using the various ADP syntaxes. It invokes some Tcl functions,
 includes a file, executes another ADP, and uses streaming.
 
 <p>
+
 <pre>
  <HTML>
  <HEAD>
@@ -955,16 +961,22 @@ includes a file, executes another ADP, and uses streaming.
  </HTML>
 
 </pre>
+
 <p>
 
-The standard-header file referenced in the above example looks like
-this:
-<p>This is a standard header.
+The standard-header file referenced in the above example looks like this:
+
+<p>
+
+This is a standard header.
 
 <p>
 
 The time.adp file referenced in the example looks like this:
- <p>The time is: &lt;%=[ns_httptime [ns_time]]%&gt;<p>
+
+<p>
+
+The time is: &lt;%=[ns_httptime [ns_time]]%&gt;
 
 <p>
 

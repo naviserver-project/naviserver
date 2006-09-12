@@ -145,18 +145,15 @@ Command Line:
 
 <p>
 
-Description:
- nsd -t nsd.tcl
+Description: nsd -t nsd.tcl
 
 <p>
 
-This is the simplest form of the command line.
- nsd -ft nsd.tcl
+This is the simplest form of the command line. nsd -ft nsd.tcl
 
 <p>
 
-NaviServer will be run in the foreground.
- nsd -fkt nsd.tcl -r /newroot
+NaviServer will be run in the foreground. nsd -fkt nsd.tcl -r /newroot
 
 <p>
 
@@ -174,21 +171,26 @@ An NaviServer installation requires regular maintenance as follows:
 
 <p>
 
-<br>
+<p>
+
   * Make regular backups of pages and associated files for each
  virtual server.
 
-<br>
+<p>
+
   * Make regular backups of the access log.
 
-<br>
+<p>
+
   * Make regular backups of the server log, especially if verbose
  messages are enabled.
 
-<br>
+<p>
+
   * Make regular backups of the Tcl directory(ies).
 
-<br>
+<p>
+
   * Make regular backups of the bin directory, especially if you have
  customized loadable modules.
 
@@ -197,7 +199,7 @@ An NaviServer installation requires regular maintenance as follows:
 Each of these maintenance tasks is described in the following
 sections.
 
-  
+ 
 
 <p>
 
@@ -550,19 +552,16 @@ permissions records as follows:
 
 <p>
 
-<br>
   * Maintain the same permission records for GET and POST; they
  actually provide the same permissions.
 
 <p>
 
-<br>
   * Remove any permission records related to network publishing (PUT,
  DELETE, MKDIR, and BROWSE) for all users except nsadmin.
 
 <p>
 
-<br>
   * Keep in mind the inheritance rules for permission records. In
  general, a permission record for a directory also applies to the
  directories underneath it.
@@ -602,27 +601,29 @@ possible, because they are more secure than earlier versions of
 NaviServer.
 
 <p>
+
   * NaviServer can be run in a chroot environment.
 
-<br>
+<p>
 
   * The configuration file, which has a new Tcl format, is executed in
  a separate, temporary interpreter that is destroyed before startup
  begins. The configuration file memory buffer is then zeroed after
  parsing.
 
-<br>
+<p>
 
   * The nsd binary can be stored outside the root directory because
  NaviServer no longer locates and re-executes itself.
 
-<br>
+<p>
 
   * The configuration file can be stored outside the root directory,
  because NaviServer opens and reads the configuration file before
  running chroot().
 
-<br>
+<p>
+
   * The new nscp module, which allows connections only from localhost,
  provides a secure control port interface that allows ad hoc Tcl
  evaluation and other server administration features. For more
@@ -646,20 +647,17 @@ benefits:
 
 <p>
 
-<br>
   * The chroot() system call updates the process such that all
  absolute filenames are relative to a new root directory instead of
  the actual mounted file system.
 
 <p>
 
-<br>
   * The chroot() call is irrevocable. Once chroot() returns, the
  server cannot access any file above the new root directory.
 
 <p>
 
-<br>
   * Although it does not actually protect any of the underlying
  content, scripts, or protected databases, chroot() is the single
  most effective tool for protecting the server machine and
@@ -672,14 +670,21 @@ To run NaviServer in a chroot() environment, you need only copy a few
 files and directories to the new root directory. For example, on the
 SGI platform, you would execute the following commands to create new
 directories and copy the necessary files to them:
+
 <p>
 
 mkdir $root/dev $root/tmp $root/etc
-<br>
+
+<p>
+
 chmod 1777 $root/tmp
-<br>
+
+<p>
+
 cd $root/dev; /dev/MAKEDEV generic usema
-<br>
+
+<p>
+
 cp /etc/passwd /etc/resolve.conf $root/etc
 
 <p>
@@ -735,28 +740,34 @@ are:
 
 <p>
 
-<br>
   * File system related functions, such as open, read, and puts
 
-<br>
+<p>
+
   * The NaviServer ns_sock* Tcl functions
 
-<br>
+<p>
+
   * The Tcl socket routines
 
-<br>
+<p>
+
   * The exec command
 
-<br>
+<p>
+
   * The file command, or at least the delete and rename features
 
-<br>
+<p>
+
   * The exit command
 
 <p>
 
 This code example disables the open command:
+
 <p>
+
 <pre>
 static int
 AddCmds(Tcl_Interp, void *arg) {
@@ -769,6 +780,7 @@ BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
     Tcl_AppendResult(interp, "disabled command: ", argv[0], NULL);
     return TCL_ERROR;
 }
+
 </pre>
 
 <p>

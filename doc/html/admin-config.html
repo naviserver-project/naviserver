@@ -26,14 +26,6 @@
 
 <p>
 
-<a href=config-detailed.html>Detailed Description of Configuration Parameters</a>
-
-<p>
-
-<a href=config-reference.tcl.txt>Annotated NaviServer Configuration Reference "config-reference.tcl"</a>
-
-<p>
-
 <h2><a name=1>NaviServer Configuration</a></h2>
 
 <p>
@@ -230,128 +222,93 @@ pages will be stored and which databases will be accessible.
 <p>
 
 <br>
-* Parameters: This part of the configuration file contains
+
+<ul>
+
+<li> Parameters: This part of the configuration file contains
  parameters that apply to the NaviServer process:
- + ns/parameters specifies parameters such as the NaviServer home
-directory.
+ <ul>
+ <li> ns/parameters specifies parameters such as the NaviServer home directory.
+ <li> MIME Types: This part of the configuration file lists global MIME types.
+ <li> ns/mimetypes maps file name extensions to content-type headers.
+ </ul>
 
-<p>
-
-<br>
-* MIME Types: This part of the configuration file lists global MIME
- types.
- + ns/mimetypes maps file name extensions to content-type
-headers.
-
-<p>
-
-<br>
-* Servers: This part of the configuration file configures one or
+<li> Servers: This part of the configuration file configures one or
  more servers, one of which that can be run within each NaviServer
- process. It is the top level in a hierarchy of sections for each
- server.
- + ns/servers lists and names all of the servers.
- + ns/server/servername configures an individual server.
- + ns/server/servername/adp configures NaviServer Dynamic Pages
-(ADPs) for the server.
- + ns/server/servername/adp/parsers configures ADP parsers.
- + ns/server/servername/db configures database connections used
-by the server.
- + ns/server/servername/fastpath configures fastpath serving of
-static files.
- + ns/server/servername/realms configures logging realms for
-individual modules.
- + ns/server/servername/redirects configures redirects.
- + ns/server/servername/tcl configures Tcl for the server.
- + ns/server/servername/modules lists the modules available to
-each server.
-o ns/server/servername/module/nscgi configures CGI
+ process. It is the top level in a hierarchy of sections for each server.
+ <ul>
+ <li> ns/servers lists and names all of the servers.
+ <li> ns/server/servername configures an individual server.
+ <li> ns/server/servername/adp configures NaviServer Dynamic Pages (ADPs) for the server.
+ <li> ns/server/servername/adp/parsers configures ADP parsers.
+ <li> ns/server/servername/db configures database connections used by the server.
+ <li> ns/server/servername/fastpath configures fastpath serving of static files.
+ <li> ns/server/servername/realms configures logging realms for individual modules.
+ <li> ns/server/servername/redirects configures redirects.
+ <li> ns/server/servername/tcl configures Tcl for the server.
+ <li> ns/server/servername/modules lists the modules available to each server.
+ </ul>
+
+<li> ns/server/servername/module/nscgi configures CGI
   (Common Gateway Interface) for the server. See also the
   CGI interpreters and CGI environment configuration
   sections on page 48 for additional CGI configuration.
-o ns/server/servername/module/nscp configures the control
+
+<li> ns/server/servername/module/nscp configures the control
   port administration interface.
-o ns/server/servername/module/nscp/users configures the
+
+<li> ns/server/servername/module/nscp/users configures the
   users allowed to access the control port administration
   interface.
-o ns/server/servername/module/nslog configures the access
+
+<li> ns/server/servername/module/nslog configures the access
   log module loaded into a server.
-o ns/server/servername/module/nsperm configures the
+
+<li> ns/server/servername/module/nsperm configures the
   permissions module loaded into a server.
-o ns/server/servername/module/nssock configures the
+
+<li> ns/server/servername/module/nssock configures the
   sockets module loaded into a server.
-o ns/server/servername/module/nsvhr configures the
+
+<li> ns/server/servername/module/nsvhr configures the
   virtual host redirection module loaded into a server.
-o ns/server/servername/module/nsvhr/maps configures
+
+<li> ns/server/servername/module/nsvhr/maps configures
   virtual host redirection mappings.
-o ns/server/servername/module/nsunix configures a UNIX
+
+<li> ns/server/servername/module/nsunix configures a UNIX
   domain socket driver.
 
-<p>
-
-<br>
-* Database Drivers and Pools: This part of the configuration file
+<li> Database Drivers and Pools: This part of the configuration file
  configures the database drivers (the type of database you will be
  using) and the database pools (connections to the database).
- + ns/db/drivers lists the database drivers available to
-NaviServer. Currently internal database drivers are available
-for SOLID and Postgres. An external database driver is
-available for Sybase.
-o ns/db/driver/extname configures an external database
-  driver.
- + ns/db/pools lists the database pools available to NaviServer.
-o ns/db/pool/pool-name configures a database pool, which
+
+ <ul>
+ <li> ns/db/drivers lists the database drivers available to
+  NaviServer. Currently internal database drivers are available
+  for SOLID and Postgres. An external database driver is
+  available for Sybase.
+ <li> ns/db/driver/extname configures an external database   driver.
+ <li> ns/db/pools lists the database pools available to NaviServer.
+ <li> ns/db/pool/pool-name configures a database pool, which
   determines the database to access and how many
   connections there will be to it.
+ </ul>
 
-<p>
-
-<br>
-* CGI Interpreters: This section allows you to configure the
+<li> CGI Interpreters: This section allows you to configure the
  interpreters to execute for CGI scripts that end with certain file
  extensions. For example, you can configure the perl.exe
  interpreter to be invoked for all CGI's that end in .pl.
- + ns/interps/interps-name defines an interps section for CGI
-modules.
 
-<p>
+ <ul>
+ <li> ns/interps/interps-name defines an interps section for CGI modules.
+ <li> CGI Environment: This section allows you to configure environment
+  variables in addition to the standard CGI environment variables
+  for all CGI's or specific CGI interpreters.
+ <li> ns/environment/environment-name defines an environment section for CGI modules.
+ </ul>
 
-<br>
-* CGI Environment: This section allows you to configure environment
- variables in addition to the standard CGI environment variables
- for all CGI's or specific CGI interpreters.
- + ns/environment/environment-name defines an environment
-section for CGI modules.
-
-<p>
-
-<br>
-* SGI IRIX Sproc-based Threads: This section configures sproc-based
- threads on either IRIX 5.3 or 6.2 (not the pthread-based approach
- available on IRIX 6.2).
- + ns/threads configures sproc-based threads.
-
-<p>
-
-The parameters for each of the configuration file sections are
-described below.
-
-<p>
-
-
-
-<p>
-
- 
-
-<p>
-
-
-
-<p>
-
-
-  
+</ul>
 
 <p>
 
