@@ -1,3 +1,7 @@
+2006-09-12  Bernd Eidenschink  <eide@users.sf.net>
+
+	* doc/src/: Added missing documentation templates for commands.
+	
 2006-09-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* index.adp:
