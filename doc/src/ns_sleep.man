@@ -17,6 +17,11 @@
 
  [call [cmd ns_sleep] [arg seconds]]
 
+[arg seconds]
+The value of seconds should be a positive integer (or  zero,  in  which
+case  the  function returns immediately).  An error will result if seconds
+is not specified, if a negative integer is specified, or if a 
+non-integer is specified.
 
 [list_end]
 

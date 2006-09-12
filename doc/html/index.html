@@ -1,0 +1,133 @@
+<html>
+<head>
+<title>NaviServer: Multi-threaded web server platform</title>
+
+<style>
+#main {
+ padding-left: 20px;
+}
+
+#left 
+{
+ float: left;
+ width: 180px;
+ margin: 2px 0px 40px 0px;
+ border: 1px solid #aaaaaa;
+ background-color: #ffffff;
+}
+
+#foot 
+{
+ clear: both;
+ background-color: #ffffff;
+ border-top: 0px solid;
+ color: #666666;
+ font-family: verdana, arial, sans-serif;
+ font-size: x-small;
+ text-align: center;
+ text-decoration: none;
+}
+
+.tocTitle
+{ 
+ background-color: #eeeeee;
+ color: #444444;
+ font-family: verdana, arial, sans-serif; 
+ font-size: x-small;
+ text-decoration: none; 
+ font-weight:bold;
+ line-height: 200%;
+ padding-left: 5px;
+} 
+
+.tocItem
+{ 
+ font-family: verdana, arial, sans-serif; 
+ font-size: x-small;
+ text-decoration: none; 
+ line-height: 45%;
+ padding-left: 10px;
+} 
+
+.tocSubItem
+{ 
+ padding-left: 25px;
+} 
+
+</style>
+
+<script language=javascript>
+
+function getUrl(url)
+{
+   // Create new request
+   try { req = new ActiveXObject('Msxml2.XMLHTTP'); } catch (e) {
+     try { req = new ActiveXObject('Microsoft.XMLHTTP'); } catch (e) { req = null; }
+   }
+   if(!req && typeof XMLHttpRequest != 'undefined') req = new XMLHttpRequest();
+   if(req) {
+     var now = new Date();
+     req.open('GET',url+'?'+now.getTime(),0);
+     req.send(null);
+     document.getElementById('main').innerHTML = req.responseText;
+   }
+}
+
+</script>
+
+</head>
+
+<body bgcolor="#ffffff">
+<a href="http://www.naviserver.org/"><img src="naviserver.png" alt="Naviserver Logo" border="0"></a></p>
+<hr size="1" width="100%">
+
+<table border=0>
+<tr valign=top>
+<td>
+
+<div id="left">
+<p class="tocTitle">What is NaviServer</p>
+<p class="tocItem"><a href="javascript:getUrl('main-history.html');" >History</a></p>
+<p class="tocItem"><a href="javascript:getUrl('main-features.html');" >Features</a></p>
+<p class="tocItem"><a href="javascript:getUrl('main-faq.html');" >FAQ</a></p>
+
+<p class="tocTitle">Documentation</p>
+<p class="tocItem">Administration</p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('admin-install.html'); >Installation</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('admin-config.html'); >Configuration</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('admin-maintenance.html'); >Maintenance</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('admin-tuning.html'); >Tuning and Scaling</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('admin-db.html'); >Database</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('module-nscgi.html'); >CGI</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('module-nscp.html'); >Control Port</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('module-nsperm.html'); >Permissions</a></p>
+
+<p class="tocItem">Development</p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('main-standards.html'); >Coding Standards</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('adp-overview.html'); >ADP Overview</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-overview.html'); >Tcl Overview</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-general.html'); >General Tcl Information</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-libraries.html'); >Tcl Libraries</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-nsv.html'); >nsv Commands</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-examples.html'); >Tcl Examples</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('c-driverdb.html'); >Database Driver</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('c-urlspace.html'); >Urlspace</a></p>
+</div>
+
+</td>
+
+<td width=100% >
+
+<div id=main></div>
+
+</td>
+</tr>
+</table>
+
+<div id="foot">
+  <hr size="1" width="50%">
+  <p>Copyright 2006 by the NaviServer Project</p>
+</div>
+
+</body>
+</html>

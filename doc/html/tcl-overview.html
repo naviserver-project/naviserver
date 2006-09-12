@@ -1,0 +1,166 @@
+<html>
+<head>
+<title>NaviServer</title>
+</head>
+<body>
+
+<h1>NaviServer Tcl Overview</h1>
+
+<a href=#1>What is Tcl?</a>
+
+<p>
+
+<a href=#2>Why Use Tcl?</a>
+
+<p>
+
+<a href=#3>ADPs and Tcl Libraries</a>
+
+<p>
+
+
+<h2><a name=1>What is Tcl?</a></h2>
+
+<p>
+
+Tcl is a programming system developed by John Ousterhout at the
+University of California, Berkeley. According to Dr. Ousterhout:
+
+<p>
+
+<blockquote>
+<i>
+Tcl is a simple scripting language for controlling and extending
+applications; its name stands for "tool command language". Tcl
+provides generic programming facilities, such as variables and loops
+and procedures, that are useful in a variety of applications.
+Furthermore, Tcl is embedable. Its interpreter is a library of C
+procedures that can easily be incorporated into applications, and each
+application can extend the core Tcl features with additional commands
+for that application.
+</i>
+</blockquote>
+
+
+<p>
+
+NaviServer supports the Tcl v7.6 commands. When you write NaviServer
+extensions in Tcl, you use the core functionality of Tcl as well as a
+set of NaviServer-specific Tcl functions. For example, there is an
+NaviServer Tcl function called ns_conn that allows your Tcl script to
+obtain information about the current connection. In addition,
+functions are available for returning results to Web clients,
+accessing databases, and managing the permissions (access control)
+system.
+
+<p>
+
+This book describes the two different methods for extending NaviServer
+with Tcl, using NaviServer Dynamic Pages (Chapter 2) and Tcl libraries
+(see Chapter 3), plus general information on using Tcl with either
+method (see Chapter 4). It also provides a reference for NaviServer's
+Tcl API (see Chapter 5).
+
+<p>
+
+ Recommended Reading
+
+<p>
+
+For more information on the Tcl language, we recommend the following
+sources:
+<p>
+  * Practical Programming in Tcl and Tk, by Brent B. Welch (Prentice
+ Hall PTR, 1995)
+<p>
+  * Tcl and the Tk Toolkit, by John K. Ousterhout (Addison-Wesley,
+ 1994)
+<p>
+  * For the complete manual pages for the Tcl v7.6 commands, visit the
+ web site http://www.scriptics.com/man.
+<p>
+  * Philip Greenspun's web site,
+ http://www-swiss.ai.mit.edu/wtr/dead-trees/, which includes
+ chapters from his book, Database Backed Web Sites, The Thinking
+ Person's Guide to Web Publishing, and numerous examples of
+ NaviServer Tcl database applications.
+<p>
+  * The web site:
+ http://www.yahoo.com/Computers_and_Internet/Programming_Languages/
+ Tcl_Tk
+
+<p>
+
+<h2><a name=2>Why Use Tcl?</a></h2>
+
+<p>
+
+You can extend NaviServer using Tcl, C, or CGI. However, using Tcl has
+the following advantages:
+<p>
+  * Creating new Tcl scripts is very easy. You can embed Tcl scripts
+ directly into HTML pages using NaviServer Dynamic Pages (ADPs), or
+ you can create .tcl files and register them to handle URLs or URL
+ hierarchies.
+<p>
+  * Tcl's scripting language is easier to learn and use than compiled
+ programming languages. It provides general programming
+ capabilities, such as variables, loops, and procedures, but it
+ doesn't require strong type definitions or compilation. Plus,
+ NaviServer's Tcl interface provides a complete set of Tcl
+ extensions specifically oriented towards web server applications,
+ such as returning content to the client, accessing form data,
+ accessing databases, and logging.
+<p>
+  * Many of the basic NaviServer services are implemented as Tcl
+ scripts. In fact, most of the database operations such as handling
+ database inserts, queries, and updates, are written as Tcl
+ scripts. Not only has the Tcl interface greatly reduced the
+ development time for the NaviServer engineering team, it also
+ allows you to easily modify the basic database operations by
+ simply editing the Tcl scripts that implement the functionality.
+<p>
+  * The Tcl and C interfaces typically provide better performance than
+ CGI. However, if you have existing CGI programs, you may want to
+ use NaviServer's CGI interfaces to take advantage of
+ previously-existing code.
+
+<p>
+
+The C interface for NaviServer is described in the NaviServer C
+Developer's Guide, and the CGI interface is desribed in the NaviServer
+Administrator's Guide.
+
+<p>
+
+
+
+<h2><a name=3>ADPs and Tcl Libraries</a></h2>
+
+<p>
+
+There are two ways to extend NaviServer using Tcl, and each is
+better-suited to different situations:
+<p>
+  * NaviServer Dynamic Pages (ADPs): ADPs allow you to embed Tcl
+ scripts directly into HTML pages. The script(s) are interpreted
+ dynamically when the page is accessed. ADPs are ideal in
+ situations where you want to generate all or part of a specific
+ page dynamically. You can re-use code by storing Tcl scripts in
+ Tcl libraries and invoking them from within multiple ADPs. You can
+ also include files and parse other ADPs from within your ADPs.
+
+<p>
+
+  * Tcl Libraries: The alternative to embedding Tcl scripts in HTML
+ pages using ADPs, is to store Tcl scripts in Tcl libraries. You
+ can define scripts that can be called from ADPs, schedule
+ procedures to run at certain times, register scripts to handle
+ specific URLs or URL hierarchies, register scripts to handle all
+ URLs with a specific file extension, and register filters to be
+ run in addition to a URL's registered procedure.
+
+<p>
+
+</body>
+</html>

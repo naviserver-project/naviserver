@@ -90,6 +90,10 @@ install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
+	$(MKDIR) $(NAVISERVER)/pages/doc
+	for i in doc/html/*.html; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc/; \
+	done
 	cd doc && /bin/sh ./install-doc $(NAVISERVER)
 
 test: all

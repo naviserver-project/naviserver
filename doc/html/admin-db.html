@@ -1,0 +1,518 @@
+<html>
+<head>
+<title>NaviServer</title>
+</head>
+<body>
+
+<h1>NaviServer Database Administration Guide</h1>
+
+<p>
+
+<a href=#1>What is a Database?</a>
+
+<p>
+
+<a href=#2>Databases and NaviServer</a>
+
+<p>
+
+<a href=#3>Internal vs. External Drivers</a>
+
+<p>
+
+<a href=#4>Available Database Drivers</a>
+
+<p>
+
+<a href=#5>Internal Database Drivers</a>
+
+<p>
+
+<a href=#6>External Database Drivers</a>
+
+<p>
+
+<a href=#7>Developing Database Drivers for NaviServer</a>
+
+
+<p>
+
+<h2><a name=1>What is a Database?</a></h2>
+
+<p>
+
+A database is a collection of data stored in a computer. A Database
+Management System (DBMS) is a software package that efficiently
+manages databases and lets one or more people use or modify the
+contents of the database. The main function of the DBMS is to manage
+the internal representation of the data in a form optimized for
+computer access, and to respond to requests from users to access or
+modify the data. The DBMS translates these requests into database
+commands that it then performs on the data.
+
+<p>
+
+One of the most common and powerful languages for accessing databases
+is SQL. SQL (Structured Query Language) commands perform actions on
+the database. There are two types of SQL commands: DDL (Data
+Definition Language) commands, which are used to define the structure
+of the data, and DML (Data Manipulation Language) commands, which are
+used to manipulate the data itself. The data is organized into tables
+in the database. Tables contain rows (sometimes called records) and
+columns (sometimes called fields). The structure of the table and its
+columns is defined by DDL commands. The commands to insert or update
+values in the rows of the table are DML commands.
+
+<p>
+
+
+<h2><a name=2>Databases and NaviServer</a></h2>
+
+<p>
+
+NaviServer can be configured to have access to multiple databases
+through NaviServer's database drivers. NaviServer creates a database
+pool, a group of connections to a database, for each database it
+accesses.
+
+<p>
+
+You can write your own Tcl or C extensions to
+access the database. See the Tcl Developer's Guide and the C
+Developer's Guide for more information.
+
+<p>
+
+<h2><a name=3>Internal vs. External Drivers</a></h2>
+
+<p>
+
+Prior to Version 2.1, NaviServer provided a tightly-coupled solution to
+database driver integration, with database client libraries linked
+directly into the server. Such database drivers are called internal
+drivers.
+
+<p>
+
+Since Version 2.1, NaviServer provides an additional, loosely-coupled
+architecture, where NaviServer redirects all database requests to a
+separate process known as the database proxy daemon. This is
+accomplished using a special external driver, which looks just like an
+internal database driver to NaviServer.
+
+<p>
+
+
+
+<p>
+
+ 
+
+<p>
+
+
+
+<p>
+
+
+  
+
+<h2><a name=4>Available Database Drivers</a></h2>
+
+<p>
+
+NaviServer provides internal database drivers for Postgres and Solid.
+NaviServer also provides external database drivers for Sybase.
+Third-party database drivers are provided for Oracle, Informix, and
+InterBase.
+
+<p>
+
+Database Type of Driver Location
+Postgres95/PostgreSQL Internal A free implementation of SQL, available
+at: http://www.postgresql.org
+
+<p>
+
+Database driver available at: /examples/c/postgres
+Solid Internal A reasonably priced RDBMS available on several
+platforms at: http://www.solidtech.com
+
+<p>
+
+Database driver available at: /examples/c/solid
+Sybase External A well-known RDBMS available at: http://www.sybase.com
+
+<p>
+
+Database driver available at: /examples/c/nssybpd
+
+<p>
+
+Note: Since we cannot ship anything that includes Sybase's client
+libraries, you'll need to compile the Sybase driver example.
+
+<p>
+
+Oracle 8 Internal or External The most popular RDBMS.
+
+<p>
+
+Database driver available from ArsDigita at:
+http://arsdigita.com/services.html
+Informix Universal Server Internal or External A well-known RDBMS.
+
+<p>
+
+Database driver available from ArsDigita at:
+http://arsdigita.com/services.html
+InterBase External Database driver available at:
+http://www.lavsa.com/sskracic/aolinterbase/
+
+<p>
+
+
+
+<p>
+
+ 
+
+<p>
+
+
+
+<p>
+
+
+  
+
+<h2><a name=5>Internal Database Drivers</a></h2>
+
+<p>
+
+ Configuration
+
+<p>
+
+Configuration for an internal database driver consists of setting
+parameters for the internal driver and creating a database pool that
+uses that driver.
+
+<p>
+
+The internal database driver parameters can be typed directly in the
+configuration file as described below. This example describes the
+steps involved in configuring an internal driver to interface with the
+Postgres or Solid driver.
+
+<p>
+
+Configure an Internal Database Driver
+
+<p>
+
+<br>
+ 1. Edit your NaviServer configuration file, usually named nsd.tcl.
+<br>
+ 2. Add a configuration file section called ns/db/drivers:
+<br>
+ ns_section "ns/db/drivers"
+<br>
+ 3. List the database drivers you will be using. For example:
+<br>
+ ns_section "ns/db/drivers"
+<br>
+ ns_param postgres nspostgres.so
+<br>
+ ns_param solid nssolid.so
+<br>
+ 4. Add a configuration file section to list your database pools. For
+ example:
+<br>
+ ns_section "ns/db/pools"
+<br>
+ ns_param mypool "This pool will use Solid"
+<br>
+ 5. Add a configuration file section to define the database pool you
+ have named. For example:
+<br>
+ ns_section "ns/db/pool/mypool"
+<br>
+ ns_param Driver solid
+<br>
+ ns_param Datasource "TCP/IP hostname 1313"
+<br>
+ ns_param Connection 1
+<br>
+ 6. Choose which server or servers is to have access to the database
+ pools you have defined. For each server, add a configuration file
+ section to define which database pools it can access. For example:
+<br>
+ ns_section "ns/server/servername/db"
+<br>
+ ns_params Pools *
+
+<p>
+
+  The "*" designation means that this server can access any of the
+ defined database pools.
+
+<p>
+
+ Solid Database
+
+<p>
+
+The SOLID database is a reasonably-priced database from Solid
+Information Technology that can be installed on many platforms.
+NaviServer provides an internal database driver for the SOLID database.
+Temporary evalation copies can be downloaded from their web site,
+http://www.solidtech.com. There are some special considerations with
+using the SOLID database that are addressed in this section.
+
+<p>
+
+This database driver is installed in the same way as other database
+drivers. Add nssolid.so as a database driver in the ns/db/drivers
+section of the configuration file. When you create a database pool for
+it, the correct format for the datasource is this:
+ TCP/IP hostname 1313
+
+<p>
+
+TCP/IP specifies the protocol with which the SOLID NaviServer driver
+will communicate with the SOLID database server. The hostname is the
+fully-qualified hostname on which the SOLID database server resides,
+and 1313 is the port on that server where it is listening.
+
+<p>
+
+If you are using the nssolid database driver on Solaris 2.5.1, you
+need to set the LD_PRELOAD environment variable as follows:
+ setenv LD_PRELOAD /usr/lib/libm.so.1
+
+<p>
+
+Note that the Solid database driver only works with nsdp under Irix.
+
+<p>
+
+Special thanks to Robert Locke for contributing the code for this
+module.
+
+<p>
+
+
+
+<h2><a name=6>External Database Drivers</a></h2>
+
+<p>
+
+The external driver sends messages to the external database proxy
+daemon instead of calling database client libraries directly. This
+database proxy daemon can be a local or remote process. The reason for
+this seemingly unnecessary indirection is that some database client
+libraries are undesirable partners in the NaviServer process space. For
+example, they may make assumptions regarding per-process resources
+such as signals, or they may not be thread-safe. Also, platforms
+without support for a particular database client library can still
+interface with a database via a remote database proxy daemon.
+
+<p>
+
+A database proxy daemon is created for each connection in an NaviServer
+database pool. Like connections within a pool configured for an
+internal driver, the connections associated with proxy daemons are
+efficiently managed by the NaviServer on an ad hoc basis. Thus,
+database proxy daemon processes are created and shut down by the
+NaviServer as demand for concurrent database handles varies over time.
+
+<p>
+
+This distributed approach is not intended to replace the existing
+practice of linking database client libraries into the server via a
+driver. It merely provides an alternative interface
+mechanism--augmenting the choices available to developers who are
+extending the NaviServer database interface capabilities. It is likely,
+however, that this distributed approach, i.e. a separate process per
+database connection, will improve overall database throughput, even
+with the additional communication overhead. We expect this performance
+improvement because vendor-supplied database client libraries, running
+within a multi-threaded server, must limit concurrency via resource
+locks.
+
+<p>
+
+ Configuration
+
+<p>
+
+Configuration for an external database driver consists of setting
+parameters for the external driver and creating a database pool that
+uses that driver. An external driver is configured to spawn and
+communicate with a database-specific proxy daemon. Database proxy
+daemons are provided for Sybase.
+
+<p>
+
+The following example describes the steps involved in configuring an
+external driver to interface with the Sybase proxy daemon.
+
+<p>
+
+Configure an External Database Driver
+
+<p>
+
+<br>
+ 1. Edit your NaviServer configuration file, usually named nsd.tcl.
+<br>
+ 2. Add a configuration file section called ns/db/drivers:
+<br>
+ ns_section "ns/db/drivers"
+<br>
+ 3. List the Sybase database driver. For example:
+<br>
+ ns_section "ns/db/drivers"
+<br>
+ ns_param extsyb nssybpd.so
+<br>
+ 4. Configure the Sybase driver. For example:
+<br>
+ ns_section "ns/db/driver/extsyb"
+<br>
+ ns_param LocalDaemon nssybpd
+<br>
+ ns_param Param SYBASE-env-variable
+<br>
+
+<p>
+ 
+  The Param parameter should be set to the value of the SYBASE
+ environment variable.
+
+<p>
+
+<br>
+ 5. Add a configuration file section to list your database pools. For
+ example:
+<br>
+ ns_section "ns/db/pools"
+<br>
+ ns_param mypool "This pool will use Sybase"
+<br>
+ 6. Add a configuration file section to define the database pool you
+ have named. For example:
+<br>
+ ns_section "ns/db/pool/mypool"
+<br>
+ ns_param Driver extsyb
+<br>
+ 7. Choose which server or servers is to have access to the database
+ pools you have defined. For each server, add a configuration file
+ section to define which database pools it can access. For example:
+<br>
+ ns_section "ns/server/servername/db"
+<br>
+ ns_params Pools *
+
+<p>
+
+  The "*" designation means that this server can access any of the
+ defined database pools. 
+
+<p>
+
+ Remote Database Proxy Daemons
+
+<p>
+
+The previous example showed configuration of a local proxy daemon. One
+of the advantages of the external driver interface is that you are
+free to run database proxy daemons on any other host, perhaps one on
+which database vendor client libraries are more readily available or
+more reliable.
+
+<p>
+
+The following example shows how to configure an interface to a proxy
+daemon on a remote machine.
+
+<p>
+
+Configure a Remote External Database Driver
+
+<p>
+
+<br>
+ 1. Edit your NaviServer configuration file as described in the
+ previous section, "External Database Drivers" section.
+<br>
+ 2. In the ns/db/drivers/extsyb configuration section, delete the
+ definition for the LocalDaemon parameter.
+<br>
+ 3. Add definitions for the RemoteHost and RemotePort parameters. For
+ example:
+<br>
+ ns_section "ns/db/driver/extsyb"
+<br>
+ ns_param RemoteHost host-name
+<br>
+ ns_param RemotePort port-number
+<br>
+ ns_param Param SYBASE-env-variable
+<br>
+ 4. Run nssybpd, or configure inetd as shown in the next step instead.
+<br>
+ For example:
+<br>
+ nssybpd 8199
+<br>
+ 5. As an alternative to running nssybpd as shown in the previous
+ step, you can configure inetd on the target remote machine as
+ follows.
+<br>
+1. Add the following line to /etc/inet/services:
+<br>
+ nssybpd 8199/tcp
+<br>
+1. Add the following line to /etc/inet/inetd.conf:
+<br>
+ nssybpd stream tcp nowait sa /serverhome/bin/nssybpd nssybpd
+<br>
+
+<p>
+
+  (Type the above all on one line.)
+
+<p>
+
+ 1. Send a SIGHUP signal to your inetd process.
+
+<p>
+
+ Tcl Interface
+
+<p>
+
+In addition to the built-in, database-driver independent ns_db Tcl
+functions, the ns_ext function is available for special functions that
+relate to the external driver mechanism. In general, you will not need
+to use ns_ext for most database operations. The ns_ext functions are
+used primarily by the ns_db functions, but ns_ext is provided in the
+event that you need to call it directly.
+
+<p>
+
+<h2><a name=7>Developing Database Drivers for NaviServer</a></h2>
+
+<p>
+
+For information on developing your own database drivers, see the
+Database Drivers Development guide.
+
+<p>
+
+</body>
+</html>
+

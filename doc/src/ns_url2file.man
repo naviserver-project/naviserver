@@ -8,6 +8,7 @@
 [description]
 
  This command returns the absolute path to a file referenced by the given URL.
+ The file returned is located in the "pages" directory on  the current virtual server.
 
 [section {COMMANDS}]
 
@@ -21,6 +22,12 @@
 
 
 [section EXAMPLES]
+This is especially useful when using the ns_adp_include command. 
+
+[example_begin]
+   <% ns_adp_include [ns_url2file /include/myfile.inc] %>
+[example_end]
+
 
 [example_begin]
    % ns_url2file /test.adp

@@ -23,8 +23,17 @@
   <HR>
   <P>
   <UL>
-  <LI>The Naviserver statistics <A HREF="nsstats.tcl">page</A> can be usefull in resolving performance issues.
-  <LI>The Naviserver runtime config <A HREF="nsconfig.tcl">page</A> can be usefull in reviewing server's setup.
+  <LI>The Naviserver <A HREF=doc/>documentation<A> has been included with this distribution.
+  <%
+    if { [file exists [ns_info pageroot]/nsstats.tcl] } {
+      ns_adp_puts {<LI>The Naviserver <A HREF="nsstats.tcl">Statistics page</A> can be useful in resolving performance issues.}
+    }
+  %>
+  <%
+    if { [file exists [ns_info pageroot]/nsconf.tcl] } {
+      ns_adp_puts {<LI>The Naviserver runtime <A HREF="nsconf.tcl">Config page</A> can be useful in reviewing server's setup.}
+    }
+  %>
   </UL>
  </BODY>
 </HTML>

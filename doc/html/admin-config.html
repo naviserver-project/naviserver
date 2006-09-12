@@ -1,0 +1,506 @@
+<html>
+<head>
+<title>NaviServer</title>
+</head>
+<body>
+
+<h1>NaviServer Configuration Guide</h1>
+
+<a href=#1>NaviServer Configuration</a>
+
+<p>
+
+<a href=#2>Configuration File Structure</a>
+
+<p>
+
+<a href=#3>Configuration File Hierarchy</a>
+
+<p>
+
+<a href=#4>Configuration File Reference</a>
+
+<p>
+
+<a href=#5>Example Configuration Files</a>
+
+<p>
+
+<a href=config-detailed.html>Detailed Description of Configuration Parameters</a>
+
+<p>
+
+<a href=config-reference.tcl.txt>Annotated NaviServer Configuration Reference "config-reference.tcl"</a>
+
+<p>
+
+<h2><a name=1>NaviServer Configuration</a></h2>
+
+<p>
+
+NaviServer has many configurable parameters, all of which are set in
+the NaviServer configuration file. This chapter provides a reference of
+the configuration file structure and parameters so that you can edit
+the configuration file directly.
+
+<p>
+
+By modifying and/or adding NaviServer configuration parameters, you
+can:
+
+<br>
+  * Define multiple servers, one of which will run within each running NaviServer process.
+
+<p>
+
+<br>
+* Define multiple database pools with different data sources that
+ can be accessed by any or all of the servers.
+
+<p>
+
+<br>
+* Configure various NaviServer capabilities or optionally-loaded
+ modules for each of the servers.
+
+<p>
+
+ What is a database pool?
+
+<p>
+
+A database pool is a set of connections to a database. NaviServer
+currently supports direct connections to the SOLID and Postgres
+databases. NaviServer also supports an external connection to Sybase.
+Third-party database drivers are available for Oracle, Informix, and
+InterBase. As far as configuration is concerned, you simply specify a
+database (or data source) that you want NaviServer to access. NaviServer
+then manages a set of connections to the database that it uses
+internally to efficiently process database operations. You can also
+access these connections directly through the Tcl and C interfaces.
+
+<p>
+
+ What are the default NaviServer capabilities?
+
+<p>
+
+The following capabilites are provided by default for every server and
+can be configured by manually editing the configuration file.
+
+<p>
+
+<br>
+* ADPs: This capability allows you to embed Tcl scripts within an
+ HTML page. The pages are parsed and run on the server when the
+ page is accessed.
+
+<p>
+
+<br>
+* db: This capability allows you to use NaviServer's database
+ services.
+
+<p>
+
+<br>
+* tcl: This capability allows you to use NaviServer's Tcl API. See
+ the Tcl Developer's Guide for information on Tcl.
+
+<p>
+
+ What is an NaviServer module?
+
+<p>
+
+NaviServer modules are shared libraries or dynamically-linked libraries
+that provide specific sets of capabilities that you can load in your
+servers. The following modules are provided:
+
+<p>
+
+<br>
+* nscgi: This capability allows you to run CGI programs from
+ NaviServer.
+
+<p>
+
+<br>
+* nscp: This module enables the control port interface that allows
+ you to administer a running server.
+
+<p>
+
+<br>
+* nslog: This module enables access logging in the CERN Common Log
+ Format. The nslog module can also log the Refer and User-Agent
+ client headers.
+
+<p>
+
+<br>
+* nsperm: This module enables access control capabilities --
+ defining users, groups, and permissions.
+
+<p>
+
+<br>
+* nssock: This module enables communications using ordinary TCP/IP
+ Internet sockets.
+
+<p>
+
+<br>
+* nsvhr: This module enables virtual host redirection.
+
+<p>
+
+<br>
+* nsunix: This module enables communications using the nsvhr module
+ to proxy over a UNIX domain socket.
+
+<p>
+
+
+
+<p>
+
+ 
+
+<p>
+
+
+
+<p>
+
+
+
+<h2><a name=2>Configuration File Structure</a></h2>
+
+<p>
+
+This section describes the format of the configuration file and
+provides detailed information on individual NaviServer parameters.
+
+<p>
+
+The configuration file is normally the nsd.tcl file in the NaviServer
+home directory (the directory where NaviServer was installed). You must
+specify the configuration file when you start up NaviServer with the -c
+command line flag.
+
+<p>
+
+The configuration file is a Tcl file that can be modified with a text
+editor such as vi or emacs on Unix. The file is made up of named
+sections with one or more parameters. Each section heading is of the
+form "ns/...". Each parameter is composed of a parameter name and a
+parameter value. The parameters of a section continue until a new
+section is defined or until the end of the file.
+
+<p>
+
+The ns_section and ns_param Tcl functions are used to define each
+section and the parameters for each section in the configuration file.
+The general format of the configuration file is as follows:
+ ns_section "ns/..."
+ ns_param param-name param-value
+ ...
+
+<p>
+
+Configuration file examples begin on page 79. The default
+configuration file is shown on page 79.
+
+<p>
+
+<h2><a name=3>Configuration File Hierarchy</a></h2>
+
+<p>
+
+Although there are a large number of configurable parameters for
+NaviServer, most of them are not required. Also, the parameters are
+organized into a hierarchy branching off of the following main
+sections, letting you configure NaviServer at a global level, configure
+each server, and configure each database you will be accessing. This
+hierarchy of sections allows you maximum flexibility to provide
+exactly the capabilities you need on each server, including where
+pages will be stored and which databases will be accessible.
+
+<p>
+
+<br>
+* Parameters: This part of the configuration file contains
+ parameters that apply to the NaviServer process:
+ + ns/parameters specifies parameters such as the NaviServer home
+directory.
+
+<p>
+
+<br>
+* MIME Types: This part of the configuration file lists global MIME
+ types.
+ + ns/mimetypes maps file name extensions to content-type
+headers.
+
+<p>
+
+<br>
+* Servers: This part of the configuration file configures one or
+ more servers, one of which that can be run within each NaviServer
+ process. It is the top level in a hierarchy of sections for each
+ server.
+ + ns/servers lists and names all of the servers.
+ + ns/server/servername configures an individual server.
+ + ns/server/servername/adp configures NaviServer Dynamic Pages
+(ADPs) for the server.
+ + ns/server/servername/adp/parsers configures ADP parsers.
+ + ns/server/servername/db configures database connections used
+by the server.
+ + ns/server/servername/fastpath configures fastpath serving of
+static files.
+ + ns/server/servername/realms configures logging realms for
+individual modules.
+ + ns/server/servername/redirects configures redirects.
+ + ns/server/servername/tcl configures Tcl for the server.
+ + ns/server/servername/modules lists the modules available to
+each server.
+o ns/server/servername/module/nscgi configures CGI
+  (Common Gateway Interface) for the server. See also the
+  CGI interpreters and CGI environment configuration
+  sections on page 48 for additional CGI configuration.
+o ns/server/servername/module/nscp configures the control
+  port administration interface.
+o ns/server/servername/module/nscp/users configures the
+  users allowed to access the control port administration
+  interface.
+o ns/server/servername/module/nslog configures the access
+  log module loaded into a server.
+o ns/server/servername/module/nsperm configures the
+  permissions module loaded into a server.
+o ns/server/servername/module/nssock configures the
+  sockets module loaded into a server.
+o ns/server/servername/module/nsvhr configures the
+  virtual host redirection module loaded into a server.
+o ns/server/servername/module/nsvhr/maps configures
+  virtual host redirection mappings.
+o ns/server/servername/module/nsunix configures a UNIX
+  domain socket driver.
+
+<p>
+
+<br>
+* Database Drivers and Pools: This part of the configuration file
+ configures the database drivers (the type of database you will be
+ using) and the database pools (connections to the database).
+ + ns/db/drivers lists the database drivers available to
+NaviServer. Currently internal database drivers are available
+for SOLID and Postgres. An external database driver is
+available for Sybase.
+o ns/db/driver/extname configures an external database
+  driver.
+ + ns/db/pools lists the database pools available to NaviServer.
+o ns/db/pool/pool-name configures a database pool, which
+  determines the database to access and how many
+  connections there will be to it.
+
+<p>
+
+<br>
+* CGI Interpreters: This section allows you to configure the
+ interpreters to execute for CGI scripts that end with certain file
+ extensions. For example, you can configure the perl.exe
+ interpreter to be invoked for all CGI's that end in .pl.
+ + ns/interps/interps-name defines an interps section for CGI
+modules.
+
+<p>
+
+<br>
+* CGI Environment: This section allows you to configure environment
+ variables in addition to the standard CGI environment variables
+ for all CGI's or specific CGI interpreters.
+ + ns/environment/environment-name defines an environment
+section for CGI modules.
+
+<p>
+
+<br>
+* SGI IRIX Sproc-based Threads: This section configures sproc-based
+ threads on either IRIX 5.3 or 6.2 (not the pthread-based approach
+ available on IRIX 6.2).
+ + ns/threads configures sproc-based threads.
+
+<p>
+
+The parameters for each of the configuration file sections are
+described below.
+
+<p>
+
+
+
+<p>
+
+ 
+
+<p>
+
+
+
+<p>
+
+
+  
+
+<p>
+
+ Note on Boolean Parameter Values:
+
+<p>
+
+There are several ways to specify a boolean parameter value. The
+reference tables below use "on" for true and "off" for false. However,
+any of the following values are valid:
+
+<p>
+
+Boolean Value
+
+<p>
+
+Equivalent Boolean Values
+
+<p>
+
+on
+
+<p>
+
+y, yes, t, true, 1 (one)
+
+<p>
+
+off
+
+<p>
+
+n, no, f, false, 0 (zero)
+
+<p>
+
+
+<h2><a name=5>Example Configuration Files</a></h2>
+
+<p>
+
+ Default Configuration File
+
+<p>
+
+The default sample-config.tcl comes with NaviServer. There is one server defined,
+server1, which contains the nscp, nslog, and nssock modules. You can
+define multiple servers, but only one of them can be run with each
+command line execution.  All this information is defined at the top of the file.
+
+<p>
+<a href=sample-config.tcl.txt>sample-config.tcl</a>
+
+<p>
+
+ Configuration for Multiple Database Pools
+
+<p>
+
+This configuration file defines one server named default and two
+database pools named defdb and otherdb. A few things to note about
+this configuration file are:
+
+<p>
+
+SOLID and Postgres database pools: The defdb database pool is
+associated with an SOLID database, and the otherdb database pool is
+associated with a Postgres database. (See the driver parameters in the
+ns/db/pool/pool-name sections.)
+
+<p>
+
+SOLID and Postgres drivers: The drivers used for all of the defined
+database pools are listed in the ns/db/drivers section.
+
+<p>
+
+Database pools accessible by each server: The pools parameter in the
+ns/server/default/db section specifies which database pool the default
+server has access to. In this example, the default server can access
+both the otherdb and the defdb database pools.
+
+<p>
+<pre>
+#
+# Database drivers
+#
+# Two pools are given here.  Sybase uses the Sybase client libraries,
+# obtained from Sybase.  Postgres is freely available at
+# www.postgresql.org.  Sybase uses an external proxy daemon while
+# Postgres uses an internal driver.  The Sybase driver requires some
+# configuration in ns/db/driver/sybase_driver to tell th "nsext.so"
+# driver where to find the nssybpd executable and some other things.
+# The Postgres driver doesn't need any of that because it's internal
+# and does not use nsext.so.
+#
+ns_section "ns/db/drivers"
+ns_param   sybase_driver   nsext.so       ;# Use nsext.so for a proxy daemon
+ns_param   postgres_driver nspostgres.so  ;# An internal driver
+
+ns_section "ns/db/driver/sybase_driver"
+ns_param   localdaemon     nssybpd        ;# Name of the proxy daemon executable
+ns_param   param           path_to_sybase ;# Usually the $SYBASE env var
+
+ns_section "ns/db/pools"
+ns_param   sybase_pool    "Sybase Pool"
+ns_param   postgres_pool  "Postgres Pool"
+
+ns_section "ns/db/pool/sybase_pool"
+ns_param   driver          sybase_driver
+ns_param   datasource      SERVER_NAME:database_name
+ns_param   user            user_name
+ns_param   password        password
+ns_param   connections     1
+ns_param   logsqlerrors    true      ;# Verbose SQL query error logging
+ns_param   verbose         false     ;# Verbose error logging
+ns_param   maxidle         600       ;# Max time to keep idle db conn open
+ns_param   maxopen         3600      ;# Max time to keep active db conn open
+
+ns_section "ns/db/pool/postgres_pool"
+ns_param   driver          postgres_driver
+ns_param   datasource      HOSTNAME:PORT:database_name
+ns_param   user            user_name
+ns_param   password        password
+ns_param   connections     1
+ns_param   logsqlerrors    true      ;# Verbose SQL query error logging
+ns_param   verbose         false     ;# Verbose error logging
+ns_param   maxidle         600       ;# Max time to keep idle db conn open
+ns_param   maxopen         3600      ;# Max time to keep active db conn open
+
+
+#
+# Accessing DB pools
+#
+# In the case of virtual servers you can give different virtual
+# servers access to different databases, or you can let them access
+# them all.  AOLserver 3.x does not use virtual servers so the only
+# useful value is "*", but if you use one config file for multiple nsd
+# processes, or you are using a version of AOLserver that supports
+# virtual servers, then you should list the pools you want to access.
+#
+ns_section "ns/server/${servername}/db"
+ns_param pools          *            ;# Wildcard gives access to all
+ns_param defaultpool    sybase_pool
+
+</pre>
+<p>
+
+</body>
+</html>
+

@@ -1,3 +1,10 @@
+2006-09-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* index.adp:
+	* Makefile:
+	* doc/: Removed obsolete man pages, make install-doc
+	will copy new html files from doc/html under pages/doc
+
 2006-09-10  Michael A. Cleverly <cleverly@users.sourceforge.net>
 
 	* tcl/charsets.tcl:
