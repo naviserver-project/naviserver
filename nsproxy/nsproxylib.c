@@ -602,7 +602,7 @@ Ns_ProxyExit(void *arg)
     Ns_Time        *toutPtr, wait;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    int             reap, status;
+    int             reap, status, numactive;
 
     /*
      * Cleanup all known pools. This will put all idle
@@ -627,9 +627,20 @@ Ns_ProxyExit(void *arg)
             FreeProxy(proxyPtr);
             proxyPtr = tmpPtr;
         }
+        proxyPtr = poolPtr->runPtr;
+        numactive = 0;
+        while (proxyPtr != NULL) {
+            numactive++;
+            proxyPtr = proxyPtr->nextPtr;
+        }
         Ns_MutexUnlock(&poolPtr->lock);
         Tcl_DeleteHashEntry(hPtr);
-        FreePool(poolPtr);
+        if (numactive == 0) {
+            FreePool(poolPtr);
+        } else {
+            Ns_Log(Warning, "nsproxy: pool \"%s\" not destroyed, "
+                   "has %d active slaves", poolPtr->name, numactive);
+        }
         hPtr = Tcl_NextHashEntry(&search);
     }
     reap = firstClosePtr != NULL || reaperState != Stopped;

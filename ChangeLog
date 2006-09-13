@@ -1,3 +1,9 @@
+2006-09-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: Ns_ProxyExit() avoids tearing down
+	pools having slaves on the run list, as this may lead to 
+	memory violations. At the moment we just "leak" those pools.
+
 2006-09-12  Bernd Eidenschink  <eide@users.sf.net>
 
 	* doc/src/: Added missing documentation templates for commands.
