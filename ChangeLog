@@ -1,3 +1,7 @@
+2006-09-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	nsd/init.tcl: Fixed a bug which prevented loadin .tcl files on startup
+
 2006-09-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Ns_ProxyExit() avoids tearing down

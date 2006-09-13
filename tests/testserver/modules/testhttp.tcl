@@ -35,7 +35,6 @@
 #     the Tcl socket interface.
 #
 
-
 proc nstest_http {args} {
     ns_parseargs {
         {-encoding "utf-8"} -setheaders -getheaders {-chunked 1} {-getbody 0} {-http 1.0} --

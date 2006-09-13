@@ -73,7 +73,7 @@ proc __ns_sourcelibs {{modname ""}} {
 
     set sharedlib  [eval ns_library shared  [list $modname]]
     set privatelib [eval ns_library private [list $modname]]
-
+ 
     set files ""
 
     #
@@ -81,7 +81,7 @@ proc __ns_sourcelibs {{modname ""}} {
     # sourcing init.tcl immediately if it exists.
     #
 
-    foreach file [lsort [glob -nocomplain -dir -- $sharedlib *.tcl]] {
+    foreach file [lsort [glob -nocomplain -- $sharedlib/*.tcl]] {
         set tail [file tail $file]
         if {$tail eq {init.tcl}} {
             __ns_sourcefile $file
@@ -95,7 +95,7 @@ proc __ns_sourcelibs {{modname ""}} {
     # sourcing init.tcl immediately if it exists.
     #
 
-    foreach file [lsort [glob -nocomplain -dir -- $privatelib *.tcl]] {
+    foreach file [lsort [glob -nocomplain -- $privatelib/*.tcl]] {
         set tail [file tail $file]
         if {$tail eq {init.tcl}} {
             __ns_sourcefile $file
