@@ -10,11 +10,11 @@ eval ::tcltest::configure $argv
 
 test ns_proxy-1.1 {basic syntax} -body {
     ns_proxy
-} -returnCodes error -result {wrong # args: should be "ns_proxy option ?args"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy option ?args?"}
 
 test ns_proxy-1.2 {basic syntax} -body {
     ns_proxy ?
-} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, active, free, handles, clear, send, wait, or recv}
+} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, free, active, handles, clear, send, wait, recv, or pools}
 
 test ns_proxy-2.1 {configuration syntax} -body {
     ns_proxy config
@@ -22,7 +22,7 @@ test ns_proxy-2.1 {configuration syntax} -body {
 
 test ns_proxy-2.2 {configuration options} -body {
     ns_proxy configure testpool
-} -match glob -result {-exec * -init * -reinit * -maxslaves * -minslaves * -gettimeout * -evaltimeout * -sendtimeout * -recvtimeout * -waittimeout * -idletimeout *}
+} -match glob -result {-exec * -init * -reinit * -maxslaves * -gettimeout * -evaltimeout * -sendtimeout * -recvtimeout * -waittimeout * -idletimeout *}
 
 test ns_proxy-2.3 {configuration options types} -body {
     ns_proxy configure testpool -gettimeout dummy
@@ -46,10 +46,6 @@ test ns_proxy-2.7 {configuration options types} -body {
 
 test ns_proxy-2.8 {configuration options types} -body {
     ns_proxy configure testpool -maxslaves dummy
-} -returnCodes error -result {expected integer but got "dummy"}
-
-test ns_proxy-2.9 {configuration options types} -body {
-    ns_proxy configure testpool -minslaves dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
 test ns_proxy-2.10 {clear slaves basic syntax} -body {
@@ -195,35 +191,27 @@ test ns_proxy-5.2 {eval with pool timeout} -body {
 } -cleanup {
     ns_proxy configure testpool -evaltimeout 0
     ns_proxy cleanup
-} -match glob -result {1 {wait for proxy "testpool-*" failed: timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
+} -match glob -result {1 {could not wait for proxy "testpool-*": timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.3 {eval with proxy timeout} -body {
     set code [catch {ns_proxy eval [ns_proxy get testpool] "after 2000" 1000} result]   
     list $code $result $::errorCode
 } -cleanup {
     ns_proxy cleanup
-} -match glob -result {1 {wait for proxy "testpool-*" failed: timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
+} -match glob -result {1 {could not wait for proxy "testpool-*": timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.4 {eval with command timeout} -body {
     set code [catch {[ns_proxy get testpool] "after 2000" 1000} result] 
     list $code $result $::errorCode
 } -cleanup {
     ns_proxy cleanup
-} -match glob -result {1 {wait for proxy "testpool-*" failed: timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
+} -match glob -result {1 {could not wait for proxy "testpool-*": timeout waiting for evaluation} {NSPROXY EEvalTimeout {timeout waiting for evaluation}}}
 
 test ns_proxy-5.5 {eval with bad command timeout} -body {
     [ns_proxy get testpool] "after 2000" dummy
 } -cleanup {
     ns_proxy cleanup
 } -returnCodes error -result {expected integer but got "dummy"}
-
-test ns_proxy-5.6 {check active} -body {
-    set tid [ns_thread begin {[ns_proxy get testpool] "after 2000"}]
-    after 1000
-    ns_proxy active testpool
-} -cleanup {
-    ns_thread wait $tid
-} -match glob -result {testpool-* {after 2000}}
 
 test ns_proxy-5.7 {check free} -body {
     ns_proxy configure testpool -maxslaves 5
@@ -248,6 +236,37 @@ test ns_proxy-5.8 {check handles for pool} -body {
 } -cleanup {
     ns_proxy cleanup
 } -result {1}
+
+test ns_proxy-5.9 {check pool resize} -body {
+    set result ""
+    ns_proxy configure testpool -maxslaves 5
+    lappend result [llength [ns_proxy free testpool]]
+    ns_proxy configure testpool -maxslaves 8
+    lappend result [llength [ns_proxy free testpool]]
+    ns_proxy configure testpool -maxslaves 5
+    lappend result [llength [ns_proxy free testpool]]
+    set result
+} -cleanup {
+    ns_proxy cleanup
+} -result {5 8 5}
+
+test ns_proxy-5.10 {check active} -body {
+    set result ""
+    ns_proxy config testpool -maxslaves 8
+    set proxies [ns_proxy get testpool -handles 4]
+    foreach p $proxies {
+        ns_proxy send $p "after 1000"
+    }
+    lappend result [llength [ns_proxy active testpool]]
+    foreach p $proxies {
+        ns_proxy wait $p 2000
+        ns_proxy recv $p
+        lappend result [llength [ns_proxy active testpool]]
+    }
+    set result
+} -cleanup {
+    ns_proxy cleanup
+} -result {8 6 4 2 0}
 
 ns_proxy cleanup
 ns_proxy clear

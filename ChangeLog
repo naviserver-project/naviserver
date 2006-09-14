@@ -1,3 +1,20 @@
+2006-09-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: Fixed various MT-safeness issues 
+	all arround the code. Removed "-minslaves" pool configuration
+	option, as it was both broken and meaníngless.
+	Returning a non-idle proxy back to the pool forcefully closes
+	the corresponding slave process.
+	Added new command [ns_proxy pools] to dynamically obtain the
+	list of available pools.
+	Fixed broken [ns_proxy active] which failed to report all but
+	the first active proxy.
+
+	* nsproxy/ns_proxy.man: Added some flesh.
+
+	* tests/ns_proxy.test: Adjusted to match new command line and
+	sytax. Added couple of tests to check [ns_proxy active] command.
+
 2006-09-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	nsd/init.tcl: Fixed a bug which prevented loadin .tcl files on startup
