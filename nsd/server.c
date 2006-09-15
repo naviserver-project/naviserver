@@ -280,7 +280,7 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     path = Ns_ConfigGetPath(server, NULL, "tcl", NULL);
     servPtr->tcl.library = Ns_ConfigGetValue(path, "library");
     if (servPtr->tcl.library == NULL) {
-        Ns_ModulePath(&ds, "modules", "tcl", NULL);
+        Ns_ModulePath(&ds, NULL, "tcl", NULL);
         servPtr->tcl.library = Ns_DStringExport(&ds);
     }
     servPtr->tcl.initfile = Ns_ConfigGetValue(path, "initfile");

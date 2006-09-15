@@ -22,6 +22,12 @@
 	commands.
 
 	* tests/ns_proxy.test: Added more tests.
+
+	* nsd/server.c: NsInitServer(): Fixed wrongly calculated path to
+	the server-private Tcl library. According to the new simplified
+	schema, the path to the private tcl lib is "$home/modules/tcl"
+	but the code calculated "$home/modules/modules/tcl" instead.
+        This has now been fixed.
 	
 2006-09-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 	option, as it was both broken and meaníngless.
