@@ -63,7 +63,7 @@ typedef struct InterpData {
 NS_EXTERN int Ns_ProxyMain (int argc, char **argv, Tcl_AppInitProc *proc);
 NS_EXTERN int Ns_ProxyInit (Tcl_Interp *interp);
 NS_EXTERN Ns_TclTraceProc  Ns_ProxyCleanup;
-NS_EXTERN Ns_Callback      Ns_ProxyExit;
+NS_EXTERN Ns_ShutdownProc  Ns_ProxyShutdown;
 
 /*
  * Small proxy API so C-level code can also
