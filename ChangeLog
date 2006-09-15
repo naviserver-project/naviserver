@@ -1,7 +1,29 @@
-2006-09-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+2006-09-15  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* nsproxy/nsproxylib.c: Fixed various MT-safeness issues 
-	all arround the code. Removed "-minslaves" pool configuration
+	* nsproxy/nsproxymod.c: Registers Ns_Shutdown instead of Ns_Exit
+	callback to teardown the proxy.
+
+	* nsproxy/nsproxy.h: Exports Ns_ProxyShutdown instead of 
+	Ns_ProxyExit
+
+	* nsproxy/nsproxylib.c: Added new command [ns_proxy stop] which
+	kills slaves of the running proxies. Changed format of the result
+	of the [ns_proxy active] to be a list of lists. Each sublist is
+	in key/value format containing information about the proxy handle,
+	the pid of the slave, the start-time and the executing script.
+	Also, the command now accepts one optional argument: the handle of
+	the proxy for which to return the status report.
+	Changed [ns_proxy clear] to require the pool argument.
+	The [ns_proxy clear] and [ns_proxy stop] commands are now symetric
+	where the former operates on the idle proxies and the latter on the
+	running proxies.
+
+	* nsproxy/ns_proxy.man: Updated documentation for new/changed
+	commands.
+
+	* tests/ns_proxy.test: Added more tests.
+	
+2006-09-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 	option, as it was both broken and meaníngless.
 	Returning a non-idle proxy back to the pool forcefully closes
 	the corresponding slave process.

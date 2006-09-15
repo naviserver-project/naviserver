@@ -14,7 +14,7 @@ test ns_proxy-1.1 {basic syntax} -body {
 
 test ns_proxy-1.2 {basic syntax} -body {
     ns_proxy ?
-} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, free, active, handles, clear, send, wait, recv, or pools}
+} -returnCodes error -result {bad option "?": must be get, put, release, eval, cleanup, configure, ping, free, active, handles, clear, stop, send, wait, recv, or pools}
 
 test ns_proxy-2.1 {configuration syntax} -body {
     ns_proxy config
@@ -49,8 +49,8 @@ test ns_proxy-2.8 {configuration options types} -body {
 } -returnCodes error -result {expected integer but got "dummy"}
 
 test ns_proxy-2.10 {clear slaves basic syntax} -body {
-    ns_proxy clear a b
-} -returnCodes error -result {wrong # args: should be "ns_proxy clear ?pool?"}
+    ns_proxy clear
+} -returnCodes error -result {wrong # args: should be "ns_proxy clear pool ?handle?"}
 
 test ns_proxy-3.1 {get base syntax} -body {
     ns_proxy get
@@ -266,9 +266,33 @@ test ns_proxy-5.10 {check active} -body {
     set result
 } -cleanup {
     ns_proxy cleanup
-} -result {8 6 4 2 0}
+} -result {4 3 2 1 0}
+
+test ns_proxy-5.10 {check killing active proxy} -body {
+    set result ""
+    ns_proxy config testpool -maxslaves 8
+    set proxies [ns_proxy get testpool -handles 1]
+    foreach p $proxies {
+        ns_proxy send $p "after 100000"
+    }
+    foreach p $proxies {
+        ns_proxy stop testpool $p
+    }
+    after 1000
+    foreach state [ns_proxy active testpool] {
+        array set ar $state
+        lappend result $ar(slave)
+        unset ar
+    }
+    set result
+} -cleanup {
+    ns_proxy cleanup
+} -result {0}
+
 
 ns_proxy cleanup
-ns_proxy clear
+foreach pool [ns_proxy pools] {
+    ns_proxy clear $pool
+}
 
 cleanupTests
