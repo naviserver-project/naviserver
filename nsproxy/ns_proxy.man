@@ -73,14 +73,28 @@ module registers a trace to release all handles via the
 after some transaction, for example, at the end of a connection.
 
 
-[call [cmd "ns_proxy active"] [arg pool]]
-Returns a list of all currently evaluating scripts in proxies for
-the given [arg pool].  The output is a list which includes two
-elements: the string name of the proxy handle and the string for
-the script being executed. It is also possible to view the currently
-evaluating scripts with the Unix [emph ps] command as the proxy slave
-process re-writes it's command argument space with the request
-script before evaluation and clears it after sending the result.
+[call [cmd "ns_proxy active"] [arg pool] [opt handle]]
+Returns a list of currently evaluating scripts in proxies for
+the given [arg pool]. The output is one or more lists, depending on
+the optional [opt handle] argument. If the optional argument is
+given, only the status of the proxy for the given handle is 
+returned and the result is a one-element list. Otherwise, stati of 
+all active proxies for the given [arg pool] are returned and the
+result is a list of two or more elements.
+Each element itself is a list which includes several keys: [emph handle], 
+[emph slave], [emph start], [emph script] and their associated values. 
+This format is suitable for filling in an Tcl array with the 
+[cmd "array set"] Tcl command. 
+The [emph handle] key contains the handle of the proxy. 
+The [emph slave] key contains the process-id of the slave process.
+The [emph start] key contains the timestamp with the absolute time
+when this proxy has been activated. The timestamp is in format that
+[cmd ns_time] command understands.
+The [emph script] contains the script passed to the proxy for execution.
+It is also possible to view the currently evaluating scripts with the 
+Unix [emph ps] command as the proxy slave process re-writes it's command
+argument space with the request script before evaluation and clears it 
+after sending the result.
 
 
 [call [cmd "ns_proxy free"] [arg pool]]
@@ -91,9 +105,18 @@ an active slave process attached, some not. If a slave process is
 not attached to the free proxy, a new one will be created as soon
 as the proxy is requested by some thread.
 
-[call [cmd "ns_proxy clear"] [opt pool]]
-Stop slave processes attached to free proxies for all pools or
-for the given [opt pool].
+
+[call [cmd "ns_proxy clear"] [arg pool] [opt handle]]
+Stop all slave processes attached to free proxies for the given [arg pool].
+If the optional [opt handle] is given, it stops the process only for
+that handle.
+
+
+[call [cmd "ns_proxy stop"] [arg pool] [opt handle]]
+Stop all slave processes attached to running proxies for the given [arg pool].
+If the optional [opt handle] is given, it stops the process only for
+that handle.
+
 
 [call [cmd "ns_proxy configure"] [arg pool] [opt {-key val -key val...}]]
 Configures options for the [arg pool]. The [arg pool] is created with 
