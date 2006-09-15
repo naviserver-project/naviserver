@@ -488,10 +488,10 @@ NsConfigLog(void)
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
     maxlevel = Ns_ConfigInt(path, "logmaxlevel", INT_MAX);
 
-    file = Ns_ConfigString(path, "serverlog", "nsd.log");
+    file = Ns_ConfigString(path, "serverlog", "logs/nsd.log");
     if (!Ns_PathIsAbsolute(file)) {
         Ns_DStringInit(&ds);
-        Ns_HomePath(&ds, "logs", file, NULL);
+        Ns_HomePath(&ds, file, NULL);
         file = Ns_DStringExport(&ds);
     }
 }
@@ -1409,7 +1409,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
  *----------------------------------------------------------------------
  */
 
-static char* 
+static char*
 SeverityName(Ns_LogSeverity severity, char *buf)
 {
     char *severityStr;

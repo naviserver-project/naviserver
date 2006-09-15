@@ -213,9 +213,9 @@ NsConfUpdate(void)
      */
 
     Ns_DStringInit(&ds);
-    nsconf.tcl.sharedlibrary = Ns_ConfigGetValue(path, "tcllibrary");
-    if (nsconf.tcl.sharedlibrary == NULL) {
-        Ns_HomePath(&ds, "tcl", NULL);
+    nsconf.tcl.sharedlibrary = (char*)Ns_ConfigString(path, "tcllibrary", "tcl");
+    if (!Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary)) {
+        Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, NULL);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
     }
     nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);

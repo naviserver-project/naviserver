@@ -1,3 +1,16 @@
+2006-09-15  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* log.c:
+	* nsd/server.c:
+	* nsd/nsconf.c: Make all path related parameters work
+	  the same way:
+            - if not specified, use default
+            - if absolute, use as given
+            - if relative, construct under server home dir
+
+          This affects the following parameters:
+	    home, pagedir, library, tcllibrary, initfile, serverlog
+
 2006-09-15  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxymod.c: Registers Ns_Shutdown instead of Ns_Exit

@@ -278,14 +278,15 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      */
 
     path = Ns_ConfigGetPath(server, NULL, "tcl", NULL);
-    servPtr->tcl.library = Ns_ConfigGetValue(path, "library");
-    if (servPtr->tcl.library == NULL) {
-        Ns_ModulePath(&ds, NULL, "tcl", NULL);
+    servPtr->tcl.library = (char*)Ns_ConfigString(path, "library", "modules/tcl");
+    if (!Ns_PathIsAbsolute(servPtr->tcl.library)) {
+        Ns_HomePath(&ds, servPtr->tcl.library, NULL);
         servPtr->tcl.library = Ns_DStringExport(&ds);
     }
-    servPtr->tcl.initfile = Ns_ConfigGetValue(path, "initfile");
-    if (servPtr->tcl.initfile == NULL) {
-        Ns_HomePath(&ds, "bin", "init.tcl", NULL);
+
+    servPtr->tcl.initfile = (char*)Ns_ConfigString(path, "initfile", "bin/init.tcl");
+    if (!Ns_PathIsAbsolute(servPtr->tcl.initfile) ) {
+        Ns_HomePath(&ds, servPtr->tcl.initfile, NULL);
         servPtr->tcl.initfile = Ns_DStringExport(&ds);
     }
     servPtr->tcl.modules = Tcl_NewObj();
@@ -338,12 +339,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         Ns_Log(Error, "config: directoryfile is not a list: %s", p);
     }
 
-    servPtr->fastpath.serverdir = Ns_ConfigGetValue(path, "serverdir");
-    if (servPtr->fastpath.serverdir == NULL) {
-        Ns_MakePath(&ds, Ns_InfoHomePath(), NULL);
-        servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
-    } else if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
-        Ns_MakePath(&ds, Ns_InfoHomePath(), servPtr->fastpath.serverdir, NULL);
+    servPtr->fastpath.serverdir = (char*)Ns_ConfigString(path, "serverdir", "");
+    if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
+        Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
         servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
     }
 
