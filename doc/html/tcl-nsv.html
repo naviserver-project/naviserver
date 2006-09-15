@@ -1,8 +1,3 @@
-<html>
-<head>
-<title>NaviServer</title>
-</head>
-<body>
 
 <h1>NaviServer nsv Commands</h1>
 
@@ -21,22 +16,22 @@ The following commands currently make up the nsv interface:
 
 <p>
 
-    	nsv_get - get key value 
-<br>
+    	nsv_get - get key value
+<p>
     	nsv_exists - check key existence
-<br>
+<p>
     	nsv_set - set key value
-<br>
+<p>
     	nsv_append - append value
-<br>
+<p>
     	nsv_lappend - append value as list element
-<br>
+<p>
     	nsv_incr - increment and return value
-<br>
+<p>
     	nsv_unset - unset a value
-<br>
+<p>
     	nsv_array - manage nsv arrays
-<br>
+<p>
 
 <p>
 
@@ -46,7 +41,10 @@ command:
 
 <p>
 
+<pre.
+
 	nsv_set myarray foo $value
+</pre>
 
 <p>
 
@@ -54,7 +52,11 @@ and to get a value, simply use the nsv_get command:
 
 <p>
 
+<pre>
+
 	set value [nsv_get myarray foo]
+
+</pre>
 
 <p>
 
@@ -66,14 +68,15 @@ and to get a value, simply use the nsv_get command:
 
 <p>
 
-Migrating from ns_share is straightforward.  If your init.tcl included
-commands such as:
+Migrating from ns_share is straightforward.  If your init.tcl included commands such as:
 
 <p>
 
+<pre.
+
 	ns_share myshare
-<br>
 	set myshare(lock) [ns_mutex create]
+</pre>
 
 <p>
 
@@ -81,7 +84,10 @@ use instead:
 
 <p>
 
+<pre>
+
 	nsv_set myshare lock [ns_mutex create]
+</pre>
 
 <p>
 
@@ -89,13 +95,14 @@ In your procedures, instead of:
 
 <p>
 
+<pre>
+
 	proc myproc {} {
 		ns_share myshare
-
-<p>
-
 		ns_mutex lock $myshare(lock)
 		...
+
+</pre>
 
 <p>
 
@@ -103,11 +110,14 @@ use:
 
 <p>
 
+<pre>
+
+
 	proc myproc {} {
-<br>
 		ns_mutex lock [nsv_get myshare lock]
-<br>
 		...
+
+</pre>
 
 <p>
 
@@ -115,17 +125,17 @@ and within an ADP page, instead of:
 
 <p>
 
+<pre>
+
+
 	&lt;%
-<br>
 	ns_share myshare
-<br>
 	ns_puts $myshare(key1)
-<br>
 	%&gt;
 
-<p>
-
 	&lt;%=$myshare(key2)%&gt;
+
+</pre>
 
 <p>
 
@@ -133,15 +143,15 @@ use:
 
 <p>
 
+<pre>
+
 	&lt;%
-<br>
 	ns_puts [nsv_get myshare key1]
-<br>
 	%&gt;
 
-<p>
-
 	&lt;%=[nsv_get myshare key2]%&gt;
+
+</pre>
 
 <p>
 
@@ -155,11 +165,13 @@ perhaps just ".". For example, if you had:
 
 <p>
 
+<pre>
+
 	ns_share mylock myfile
-<br>
 	set myfile /tmp/some.file
-<br>
 	set mylock [ns_mutex create]
+
+</pre.
 
 <p>
 
@@ -167,9 +179,11 @@ you can use:
 
 <p>
 
+<pre>
 	nsv_set . myfile /tmp/some.file
-<br>
 	nsv_set . mylock [ns_mutex create]
+
+</pre>
 
 <p>
 
@@ -182,47 +196,32 @@ One advantages of nsv is built in interlocking for thread safety.
 For example, consider a case of a "increment-by-one" unique id system.
 Here's the ns_share solution:
 
-<p>
+<pre>
 
 	ns_share ids
-<br>
 	set ids(lock) [ns_mutex create]
-<br>
 	set ids(next) 0
 
-<p>
-
 	proc nextid {} {
-<br>
 		ns_share ids
-<br>
 		ns_mutex lock $ids(lock)
-<br>
 		set next [incr ids(next)]
-<br>
 		ns_mutex unlock $ids(lock)
-<br>
 		return $next
-<br>
 	}
 
-<p>
+</pre>
 
 and here's an nsv solution:
 
-<p>
-
+<pre>
 	nsv_set ids next 0
 
-<p>
-
 	proc nextid {} {
-<br>
 		return [nsv_incr ids next]
-<br>
 	}
 
-<p>
+</pre>
 
 Note that the nsv solution does not need a mutex as the nsv_incr command
 is internally interlocked.
@@ -260,23 +259,14 @@ new temporary array is being constructed, other threads can access the
 old array without delay or inconsistant data.  You can even reset a
 complete nsv array in one step with "reset".  For example, instead of:
 
-<p>
-
+<pre>
 	ns_share lock meta
-<br>
 	set lock [ns_mutex create]
-
-<p>
-
 	ns_mutex lock $lock
-<br>
 	unset meta
-<br>
 	array set meta [array get tmpmeta]
-<br>
 	ns_mutex unlock $lock
-
-<p>
+</pre>
 
 you can simply use:
 
@@ -296,9 +286,9 @@ Other options for the nsv_array command include:
 <p>
 
 	nsv_exists array - test existance of array
-<br>
+<p>
 	nsv_size array - return # of elements in array
-<br>
+<p>
 	nsv_names array - return keys of array
 
 <p>
@@ -317,9 +307,11 @@ The number of buckets to be used can be configured by setting the
 
 <p>
 
+<pre>
+
 	[ns/server/server1/tcl]
-<br>
-	nsvbuckets=20
+        nsvbuckets=20
+</pre>
 
 <p>
 
@@ -328,10 +320,10 @@ the lock contention, if any, by enabling mutex metering:
 
 <p>
 
+<pre>
 	[ns/threads]
-<br>
-	mutexmetering=on
-
+        mutexmetering=on
+</pre>
 <p>
 
 and then viewing the results of "ns_info locks" command after the server
@@ -339,5 +331,5 @@ has been running for some time.  The nsv locks all have names of the
 form "nsv:##".  If you find many lock attempts which did not successed
 immediately, try increasing nsvbuckets.
 
-</body>
-</html>
+
+

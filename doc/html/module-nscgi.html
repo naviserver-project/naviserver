@@ -1,317 +1,387 @@
-<html>
-<head>
-<title>NaviServer CGI Interface Guide</title>
-</head>
-<body>
 
 <h1>NaviServer CGI Interface Guide</h1>
 
-<ol>
-<li><a href=#1>What is CGI and How Does it Work?</a></li>
- 
-<li><a href=#2>Configuring CGI with NaviServer</a></li>
+<a href=#1>What is CGI and How Does it Work?</a>
 
-<li><a href=#3>How Web Pages Run CGI Programs</a></li>
+<p>
 
-<li><a href=#4>Input to CGI Programs</a></li>
+<a href=#2>Configuring CGI with NaviServer</a>
 
-<li><a href=#5>Output from CGI Programs</a></li>
+<p>
 
-<li><a href=#6>Advice for CGI Programming</a></li>
+<a href=#3>How Web Pages Run CGI Programs</a>
 
-<li><a href=#7>CGI Examples</a></li>
-</ol>
+<p>
 
+<a href=#4>Input to CGI Programs</a>
+
+<p>
+
+<a href=#5>Output from CGI Programs</a>
+
+<p>
+
+<a href=#6>Advice for CGI Programming</a>
+
+<p>
+
+<a href=#7>CGI Examples</a>
+
+<p>
 
 <h2><a name=1>What is CGI and How Does it Work?</a></h2>
 
-<p>CGI (Common Gateway Interface) is a standard way of running programs
+<p>
+
+CGI (Common Gateway Interface) is a standard way of running programs
 from a Web server. Often, CGI programs are used to generate pages
 dynamically or to perform some other action when someone fills out an
 HTML form and clicks the submit button. NaviServer provides full
-support for CGI v1.1.</p>
+support for CGI v1.1.
 
-<p>Basically, CGI works like this:</p>
+<p>
 
-<p>A reader sends a URL that causes the NaviServer to use CGI to run a
- program. The NaviServer passes input from the reader to the program
- and output from the program back to the reader. CGI acts as a
- "gateway" between the NaviServer and the program you write.</p>
+Basically, CGI works like this:
 
-<p>The program run by CGI can be any type of executable file on the
+<p>
+
+A reader sends a URL that causes the NaviServer to use CGI to run a
+program. The NaviServer passes input from the reader to the program
+and output from the program back to the reader. CGI acts as a
+"gateway" between the NaviServer and the program you write.
+
+<p>
+
+The program run by CGI can be any type of executable file on the
 server platform. For example, you can use C, C++, Perl, Unix shell
 scripts, Fortran, or any other compiled or interpreted language. You
 can also use Tcl scripts with CGI, though the NaviServer API will not
-be available to them.</p>
+be available to them.
 
-<p>With NaviServer, you have the option of using the embedded Tcl and C
+<p>
+
+With NaviServer, you have the option of using the embedded Tcl and C
 interfaces instead of CGI. Typically, the Tcl and C interfaces provide
 better performance than CGI. (See the NaviServer Tcl Developer's Guide
 for information on the Tcl interface and the NaviServer C Developer's
-Guide for information on the C interface.)</p>
+Guide for information on the C interface.)
 
-<p>You may want to use CGI for existing, shareware, or freeware programs
+<p>
+
+You may want to use CGI for existing, shareware, or freeware programs
 that use the standard CGI input, output, and environment variables.
 Since CGI is a standard interface used by many Web servers, there are
 lots of example programs and function libraries available on the World
 Wide Web and by ftp. This chapter describes the interface and points
-you to locations where you can download examples.</p>
+you to locations where you can download examples.
 
-<p>For example, suppose you have a form that lets people comment on your
+<p>
+
+For example, suppose you have a form that lets people comment on your
 Web pages. You want the comments emailed to you and you want to
-automatically generate a page and send it back to your reader.</p>
+automatically generate a page and send it back to your reader.
 
 <ol>
- <li><p>The reader fills out your form and clicks the "Submit"
-button. The FORM tag in your page might look like this:</p>
+
+<li> The reader fills out your form and clicks the "Submit" button.
+     The FORM tag in your page might look like this:
 
 <pre>
+
 &lt;FORM METHOD="POST" ACTION="/cgi-bin/myprog"&gt;
+
 </pre>
 
-<p>The METHOD controls how the information typed into the form is
- passed to your program. It can be "GET" or "POST". The ACTION
- determines which program should be run.</p>
+<p>
 
-<p>Other ways for a reader to run a program are by providing a direct
- link to the program without allowing the reader to supply any
- variables through a form, or by using the ISINDEX tag.</p></li>
+The METHOD controls how the information typed into the form is
+passed to your program. It can be "GET" or "POST". The ACTION
+determines which program should be run.
 
-<li>When NaviServer gets a request for a URL that maps to a CGI
- directory or a CGI file extension (as defined in the configuration
- file), it starts a separate process and runs the
- program within that process. The NaviServer also sets up a number of
- environment variable within that process. These environment variables
- include some standard CGI variables, and optionally
- any variables you define in the configuration file for this type of
- program.</li>
+<p>
 
-<li><p>The program runs. The program can be any type of
- executable program. For example, you can use C, C++, Perl, Unix shell
- scripts, or Fortran.</p>
+Other ways for a reader to run a program are by providing a direct
+link to the program without allowing the reader to supply any
+variables through a form, or by using the ISINDEX tag.
 
-<p>In this example, the program takes the comments from the form as
- input and sends them to you as email. If
- the form method is "GET", it gets the input from an
- environment variable. If the form method is "POST", it
- gets the input from standard input. It also assembles a
- HTML page and sends it to standard output.</p></li>
+<li> When NaviServer gets a request for a URL that maps to a CGI
+     directory or a CGI file extension (as defined in the configuration
+     file), it starts a separate process and runs the
+     program within that process. The NaviServer also sets up a number of
+     environment variable within that process. These environment variables
+     include some standard CGI variables, and optionally
+     any variables you define in the configuration file for this type of
+     program.
 
-<li>Any information the program passes to standard output is
- automatically sent to the NaviServer when the program finishes
- running.</li>
+<li> The program runs. The program can be any type of
+     executable program. For example, you can use C, C++, Perl, Unix shell
+     scripts, or Fortran.
 
-<li>The server adds any header information needed to identify the
- output and sends it back to the reader's browser, which displays the
- output.</li>
+     <p>
+
+     In this example, the program takes the comments from the form as
+     input and sends them to you as email. If
+     the form method is "GET", it gets the input from an
+     environment variable. If the form method is "POST", it
+     gets the input from standard input. It also assembles a
+     HTML page and sends it to standard output.
+
+<li> Any information the program passes to standard output is
+     automatically sent to the NaviServer when the program finishes running.
+
+<li> The server adds any header information needed to identify the
+     output and sends it back to the reader's browser, which displays the
+     output.
+
 </ol>
 
 <h2><a name=2>Configuring CGI with NaviServer</a></h2>
 
-<p>You can control the behavior of NaviServer's CGI interface by setting
+<p>
+
+You can control the behavior of NaviServer's CGI interface by setting
 parameters in a configuration file. For example, you can control which
 files and directories are treated as CGI programs, you can determine
 how to run various types of programs, and you can set a group of
-environment variables for each type of program you use.</p>
+environment variables for each type of program you use.
 
-<p>Note that if you're defining multiple servers, you will need to
-configure the CGI interface for each server.</p>
+<p>
+
+Note that if you're defining multiple servers, you will need to
+configure the CGI interface for each server.
 
 <p>
 
 To enable and configure CGI:
 
 <ol>
-<li>Edit your NaviServer configuration file, usually named nsd.tcl.</li>
 
-<li><p>Choose the server for which you want to enable CGI. Add the CGI
- module to that server. For example:</p>
+<li>Edit your NaviServer configuration file, usually named nsd.tcl.
 
-<pre>
- ns_section "ns/server/Server1/modules"
- ns_param nscgi nscgi.so
-</pre></li>
+<li>Choose the server for which you want to enable CGI. Add the CGI
+    module to that server. For example:
 
-<li><p>Add a section for the server called
-ns/server/server-name/modules/nscgi. For example:</p>
-<pre>
- ns_section "ns/server/Server1/modules/nscgi"
-</pre></li>
+    <pre>
+     ns_section "ns/server/Server1/modules"
+     ns_param nscgi nscgi.so
+    </pre>
 
-<li><p>Add CGI mappings for the server to define the method, URL, and
- directory where the CGI programs reside. For example:</p>
-<pre>
- ns_section "ns/server/Server1/modules/nscgi"
- ns_param Map "GET /cgi /usr/local/cgi"
- ns_param Map "POST /*.cgi"
-</pre></li>
+<li>Add a section for the server called
+    ns/server/server-name/modules/nscgi. For example:
 
- <li>Modify other CGI parameters as needed.</li>
+    <pre>
+     ns_section "ns/server/Server1/modules/nscgi"
+    </pre>
 
- <li><p>If you plan to use a program which requires an interpreter, e.g.,
- Perl or a shell script, you will need to define an Interpreter in
- the Interps section. Follow these steps:</p>
-  <ul>
+<li>Add CGI mappings for the server to define the method, URL, and
+    directory where the CGI programs reside. For example:
 
-   <li><p>Add a definition for the Interps parameter to your CGI
-   configuration section. For example:</p>
+    <pre>
+     ns_section "ns/server/Server1/modules/nscgi"
+     ns_param Map "GET /cgi /usr/local/cgi"
+     ns_param Map "POST /*.cgi"
+    </pre>
 
-<pre>
-  ns_section "ns/server/Server1/modules/nscgi"
-  ns_param Map "GET /cgi /usr/local/cgi"
-  ns_param Map "POST /*.cgi"
-  ns_param Interps CGIinterps
-</pre></li>
+<li>Modify other CGI parameters as needed.
 
-  <li><p>Then add an interpreter section containing interpreter
-definitions. For example:</p>
+<li>If you plan to use a program which requires an interpreter, e.g.,
+    Perl or a shell script, you will need to define an Interpreter in
+    the Interps section. Follow these steps:
 
-<pre>
-  ns_section "ns/interps/CGIinterps"
-  ns_param .pl "c:\perl\bin\perl.exe"
-  ns_param .sh "c:\mks\mksnt\sh.exe(MKSenv)"
-</pre>
-  </li>
- </ul>
-</li>
+    <ul>
 
+    <li>Add a definition for the Interps parameter to your CGI
+        configuration section. For example:
+
+    <pre>
+      ns_section "ns/server/Server1/modules/nscgi"
+      ns_param Map "GET /cgi /usr/local/cgi"
+      ns_param Map "POST /*.cgi"
+      ns_param Interps CGIinterps
+    </pre>
+
+    <li>Then add an interpreter section containing interpreter
+        definitions. For example:
+
+    <pre>
+      ns_section "ns/interps/CGIinterps"
+      ns_param .pl "c:\perl\bin\perl.exe"
+      ns_param .sh "c:\mks\mksnt\sh.exe(MKSenv)"
+    </pre>
+
+    </ul>
 
 <p>
 
- <li><p> If the interpreter requires environment variables, you will need
- to define an Environment section. Follow these steps:</p>
-  <ul>
-   <li><p>Add a definition for the Environment parameter to your CGI
-configuration section. For example:</p>
+<li>If the interpreter requires environment variables, you will need
+    to define an Environment section. Follow these steps:
 
-<pre>
-  ns_section "ns/server/Server1/modules/nscgi"
-  ns_param Map "GET /cgi /usr/local/cgi"
-  ns_param Map "POST /*.cgi"
-  ns_param Interps CGIinterps
-  ns_param Environment CGIenvironment
-</pre>
-   </li>
+    <ul>
 
-   <li><p>Then add an environment section containing variable
-definitions. For example:</p>
+    <li>Add a definition for the Environment parameter to your CGI
+        configuration section. For example:
 
-<pre>
-  ns_section "ns/interps/CGIenvironment"
-  ns_param var1 var1-definition
-  ns_param var2 var2-definition
-</pre>
+        <pre>
+          ns_section "ns/server/Server1/modules/nscgi"
+          ns_param Map "GET /cgi /usr/local/cgi"
+          ns_param Map "POST /*.cgi"
+          ns_param Interps CGIinterps
+          ns_param Environment CGIenvironment
+        </pre>
+
+
+   <li>Then add an environment section containing variable
+       definitions. For example:
+
+       <pre>
+         ns_section "ns/interps/CGIenvironment"
+         ns_param var1 var1-definition
+         ns_param var2 var2-definition
+       </pre>
 
 </ol>
 
 <h2><a name=3>How Web Pages Run CGI Programs</a></h2>
 
-<p>There are several ways a Web page can run a CGI program:</p>
+<p>
+
+There are several ways a Web page can run a CGI program:
 
 <ul>
-  <li>Direct Link: A link in your page can reference a CGI program
- directly. Normally, such links are used when you do not need to
- send any variables to the program.</li>
- 
- <li><p>ISINDEX Tag: This tag can be included in the <HEAD> section of
- the page. For example, you could add this tag:
-&lt;ISINDEX HREF="/cgi-bin/search.pl" PROMPT="Search for:"&gt;</p>
 
-  <p>Normally, the ISINDEX tag is used to run search programs, but
- this is not a requirement. You can use this tag to run CGI programs
- if you don't care where the field is located in your page and your
- program accepts a single variable.</p>
+<li>Direct Link: A link in your page can reference a CGI program
+    directly. Normally, such links are used when you do not need to
+    send any variables to the program.
 
-<p>When you use this tag, the browser adds a field to the Web page.
- Readers can type a string in this field. The server
- decodes the text the reader typed and sends it to your
- CGI program as separate command-line arguments. The
- advantage is you don't need to decode the input.</p></li>
+<li>ISINDEX Tag: This tag can be included in the <HEAD> section of
+    the page. For example, you could add this tag:
+    &lt;ISINDEX HREF="/cgi-bin/search.pl" PROMPT="Search for:"&gt;
 
-<li><p>Form: You can create a form with multiple fields. Use forms to run
- CGI programs when your readers can choose or type values for one
- or more variables.The METHOD attribute of the FORM can be either
- "GET" or "POST".</p>
- <ul>
-  <li>The "GET" method causes the field names and values to be
-passed to the program in the QUERY_STRING environment
-variable.</li>
+    <p>
 
-  <li>The "POST" method causes the field names and values to be
-passed to the program through standard input. If the input
-from your form may be long, it is best to use the POST method
-because long strings can be truncated when they are assigned
-to an environment variable.</li>
- </ul>
-</li>
+    Normally, the ISINDEX tag is used to run search programs, but
+    this is not a requirement. You can use this tag to run CGI programs
+    if you don't care where the field is located in your page and your
+    program accepts a single variable.
+
+   <p>
+
+   When you use this tag, the browser adds a field to the Web page.
+   Readers can type a string in this field. The server
+   decodes the text the reader typed and sends it to your
+   CGI program as separate command-line arguments. The
+   advantage is you don't need to decode the input.
+
+<li>Form: You can create a form with multiple fields. Use forms to run
+    CGI programs when your readers can choose or type values for one
+    or more variables.The METHOD attribute of the FORM can be either
+    "GET" or "POST".
+
+    <ul>
+
+    <li>The "GET" method causes the field names and values to be
+        passed to the program in the QUERY_STRING environment
+        variable.
+
+    <li>The "POST" method causes the field names and values to be
+        passed to the program through standard input. If the input
+        from your form may be long, it is best to use the POST method
+        because long strings can be truncated when they are assigned
+        to an environment variable.
+    </ul>
+
 </ul>
 
 <h3>URLs that Run CGI Programs</h3>
 
-<p>For each method of running a CGI program described in the previous
+<p>
+
+For each method of running a CGI program described in the previous
 section, the browser software sends a URL to the server. (In addition,
 the HTTP header sent with the URL includes some environment
-variables).</p>
+variables).
 
-<p>Generally the URL to run a CGI program can have these parts:</p>
+<p>
 
-<p>CGI path[/extra path information ][?query string]</p>
+Generally the URL to run a CGI program can have these parts:
+
+<p>
+
+CGI path[/extra path information ][?query string]
 
 <ul>
+
 <li>The CGI path is the location of the CGI program to run. The path
- can be a relative or absolute reference to the program file.</li>
+    can be a relative or absolute reference to the program file.
 
 <li>The optional extra path information can be included in the URL to
- provide either a directory location the CGI program should use or
- some extra information for the CGI program. The path is relative
- to the root directory for Web pages. The extra path information is
- available to the CGI program in the PATH_INFO environment
- variable.</li>
+    provide either a directory location the CGI program should use or
+    some extra information for the CGI program. The path is relative
+    to the root directory for Web pages. The extra path information is
+    available to the CGI program in the PATH_INFO environment
+    variable.
 
 <li>The optional query string is preceded by a question mark (?) and
- contains either a single variable or a set of field names and
- variables for the CGI program to use. The query string is
- available to the CGI program in either the QUERY_STRING
- environment variable or the standard input location (if the form
- method is POST).</li>
+    contains either a single variable or a set of field names and
+    variables for the CGI program to use. The query string is
+    available to the CGI program in either the QUERY_STRING
+    environment variable or the standard input location (if the form
+    method is POST).
+
 </ul>
 
-<p>For example, the query string from a form with 3 fields could be:</p>
+<p>
 
-<p>Field1=Value1&amp;Field2=Value2&amp;Field3=Value3</p>
+For example, the query string from a form with 3 fields could be:
 
-<p>Spaces in the query string are replaced with plus signs (+). Any
- special characters (such as ?, =, &, +) are replaced with %xx, where
- xx is the hexadecimal value for that character.</p>
+<p>
 
-<p>Here are some examples of URLs that could run a CGI program:</p>
+Field1=Value1&amp;Field2=Value2&amp;Field3=Value3
+
+<p>
+
+Spaces in the query string are replaced with plus signs (+). Any
+special characters (such as ?, =, &, +) are replaced with %xx, where
+xx is the hexadecimal value for that character.
+
+<p>
+
+Here are some examples of URLs that could run a CGI program:
 
 <ul>
- <li><p>http://www.mysite.com/cgi-bin/gettime</p>
 
-<p>This URL runs the gettime program, which could return a page with
- the current time. There are no variables, so you might
- use this as a direct link.</p></li>
+<li>http://www.mysite.com/cgi-bin/gettime
 
-<li><p>http://www.mysite.com/cgi-bin/listdir/misc/mydir</p>
+   <p>
 
-<p>This URL runs the listdir program and passes it /misc/mydir as
- extra path information. This might be a direct link in a
- page.</p></li>
+   This URL runs the gettime program, which could return a page with
+   the current time. There are no variables, so you might
+   use this as a direct link.
 
-<li><p>http://www.mysite.com/cgi-bin/search?navigate</p>
+<li>http://www.mysite.com/cgi-bin/listdir/misc/mydir
 
-<p>This URL runs the search program and passes it the word
- "navigate" as input. This URL doesn't include any field
- names, so it might be passed by pages with an ISINDEX
- tag.</p>
+   <p>
 
-<li><p>http://www.webcrawler.com/cgi-bin/WebQuery?searchText=word</p>
+   This URL runs the listdir program and passes it /misc/mydir as
+   extra path information. This might be a direct link in a page.
 
-<p>This is a real URL that runs the WebCrawler search program and
- passes a value for the searchText field of "word".
- Normally, CGI programs that accept field values like
- these are run from a form.</p></li>
+<li>http://www.mysite.com/cgi-bin/search?navigate
+
+   <p>
+
+   This URL runs the search program and passes it the word
+   "navigate" as input. This URL doesn't include any field
+   names, so it might be passed by pages with an ISINDEX tag.
+
+<li>http://www.webcrawler.com/cgi-bin/WebQuery?searchText=word
+
+   <p>
+
+   This is a real URL that runs the WebCrawler search program and
+   passes a value for the searchText field of "word".
+   Normally, CGI programs that accept field values like
+   these are run from a form.
+
 </ul>
 
 <p>
@@ -319,28 +389,31 @@ variables).</p>
 If your programs are not executed, make sure the program file allows
  read and execute access.
 
-</p>
+
 
 <h2><a name=4>Input to CGI Programs</a></h2>
 
-<p>CGI programs can get input from these sources:</p>
+<p>
+
+CGI programs can get input from these sources:
 
 <ul>
 
 <li>Command line: The only type of input that go to the command line
- of a CGI program are values typed into an ISINDEX field and
- query strings that do not contain an "=" sign (from a direct
- link). Forms cannot send variables to the command line.
-</li>
+    of a CGI program are values typed into an ISINDEX field and
+    query strings that do not contain an "=" sign (from a direct
+    link). Forms cannot send variables to the command line.
+
 <li>Environment variables: A number of standard environment variables
- are always available to the CGI program. You can
- specify additional environment variables in the NaviServer
- configuration file. And, if the METHOD for a form
- is GET, the field names and values are stored in the QUERY_STRING
- environment variable.
-</li>
+    are always available to the CGI program. You can
+    specify additional environment variables in the NaviServer
+    configuration file. And, if the METHOD for a form
+    is GET, the field names and values are stored in the QUERY_STRING
+    environment variable.
+
 <li>Standard input: If the METHOD for a form is POST, the field names
- and values are sent to standard input.</li>
+    and values are sent to standard input.
+
 </ul>
 
 
@@ -381,8 +454,10 @@ set BROWSER = $HTTP_USER_AGENT
 
 <h3>Standard Environment Variables</h3>
 
-<p>These standard environment variables are defined for all CGI programs
-by the NaviServer:</p>
+<p>
+
+These standard environment variables are defined for all CGI programs
+by the NaviServer:
 
 <p>
 
@@ -455,9 +530,13 @@ HTTP_USER_AGENT variable.
 <p>
 
 Examples:
-<br>
+
+<p>
+
  */*, application/x-navidoc
-<br>
+
+<p>
+
  */*, image/gif, image/x-xbitmap, image/jpeg
 
 <p>
@@ -574,15 +653,19 @@ Example: /NaviServer/pages/misc/mydir
 This variable contains information passed by a form or link to the
 program. The QUERY_STRING contains information in the following
 situations:
- <br>
- * The reader submitted a form that uses the GET method.
- <br>
- * The reader submitted a query in a page with the ISINDEX tag.
- (The text the user types is also decoded and sent to the program's
- command line in this situation. The QUERY_STRING provides the
- non-decoded information.)
- <br>
- * A direct link included information after a "?" in the URL.
+
+<ul>
+
+<li> The reader submitted a form that uses the GET method.
+
+<li> The reader submitted a query in a page with the ISINDEX tag.
+     (The text the user types is also decoded and sent to the program's
+     command line in this situation. The QUERY_STRING provides the
+     non-decoded information.)
+
+<li> A direct link included information after a "?" in the URL.
+
+</ul>
 
 <p>
 
@@ -597,12 +680,15 @@ The QUERY_STRING is encoded in a format like this:
 Your CGI program should decode the QUERY_STRING. Functions that decode
 this string are publicly available functions for most languages. The
 string encoding follows these rules:
- <br>
- * Field name/value pairs are separated by an "&" sign.
- <br>
- * A field's name and its value are separated by an "=" sign. Field
- names are specified by the NAME attribute. Field values depend on
- the type of field:
+
+<ul>
+
+<li>Field name/value pairs are separated by an "&" sign.
+
+<li>A field's name and its value are separated by an "=" sign. Field
+    names are specified by the NAME attribute. Field values depend on
+    the type of field:
+</ul>
 
 <p>
 
@@ -663,12 +749,15 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
 
 <p>
 
- <br>
- * Spaces are replaced by "+" signs.
- <br>
- * Special characters are replaced by a "%" sign followed by the
+<ul>
+
+<li> Spaces are replaced by "+" signs.
+
+<li> Special characters are replaced by a "%" sign followed by the
  hexadecimal value of the character. Here are some common
  characters and their hex values:
+
+</ul>
 
 <p>
 
@@ -868,24 +957,6 @@ C or C++
 Bourne shell
  read input (reads contents to $input variable)
 
-<p>
-
-
-
-<p>
-
- 
-
-<p>
-
-
-
-<p>
-
-
-  
-
-<p>
 
 <h2><a name=5>Output from CGI Programs</a></h2>
 
@@ -897,6 +968,7 @@ you to send text to standard output in different ways. Here are some
 examples:
 
 <p>
+
 <pre>
 
 C or C++
@@ -947,11 +1019,13 @@ before sending the output to the reader's browser:
 <p>
 
 <pre>
+
 HTTP/1.0 200 OK
 MIME-Version: 1.0
 Server: NaviServer/3.0
 Date: Monday, 06-Nov-95 17:50:15 GMT
 Content-length: 20134
+
 </pre>
 
 <p>
@@ -980,7 +1054,9 @@ required. Your program should always send the Content-type header
 below it are optional. For example,
 
 <p>
+
 <pre>
+
 Content-type: text/html
 
 &lt;HTML&gt;
@@ -989,6 +1065,7 @@ Content-type: text/html
 &lt;/HTML&gt;
 
 </pre>
+
 <p>
 
  Content-type:
@@ -1117,50 +1194,55 @@ from the CGI program.
 
 <p>
 
- <br>
- * Which language should I use? You can use any language you feel
+<ul>
+
+<li> Which language should I use? You can use any language you feel
  comfortable programming in. Of course, programs usually run faster
  in compiled language, so if your program is computationally
  intensive, you might want to use C or another compiled language.
  Most of the examples and shareware programs available on the Web
  are written in C or Perl.
- <br>
- * How can I prevent CGI programs from causing security problems? A
+
+
+<li> How can I prevent CGI programs from causing security problems? A
  CGI program is basically a program that you let anyone else in the
  world run on your system. Someone with bad intentions could cause
  you some problems if you don't follow these rules:
- <br>
- + Keep your CGI programs in a separate CGI directory or give
-them the file extension you specify in the configuration
-file. Don't give outsiders write access to these files and
-directories This should prevent casual users from reading,
-modifying, or adding CGI programs.
- <br>
- + Don't allow server-parsed HTML to run on your CGI directory
-or on files with extensions mapped as CGI programs.
- <br>
- + Don't trust the data the browser sends to your program. Parse
-the QUERY_STRING or standard input. If your program is a
-non-compiled script, characters with special meanings in that
-language can cause problems if the browser fails to encode
-them as hexadecimal values.
- <br>
- + Check for odd file names and directory paths in the input.
-For example, you should be careful about allow paths
-containing: ., ../, //, or the name of the directory that
-contains your CGI programs.
- <br>
- + Be careful with statements that construct and execute a
-command line or system call using input from the reader. For
-example, be careful using the eval statement in Perl and the
-Bourne shell. If the reader sends input that begins with a
-semicolon (;), they may be able to get your system to perform
-any command they like. Likewise, if you use calls to popen()
-and system(), make sure you put a backslash (\) before any
-characters with special meaning in the shell that will run.
- <br>
- * How can I debug my CGI programs? Errors that go to the stderr
- location will be available in the NaviServer's server.log file.
+
+ <ul>
+
+ <li> Keep your CGI programs in a separate CGI directory or give
+      them the file extension you specify in the configuration
+      file. Don't give outsiders write access to these files and
+      directories This should prevent casual users from reading,
+      modifying, or adding CGI programs.
+
+ <li> Don't allow server-parsed HTML to run on your CGI directory
+      or on files with extensions mapped as CGI programs.
+
+ <li> Don't trust the data the browser sends to your program. Parse
+      the QUERY_STRING or standard input. If your program is a
+      non-compiled script, characters with special meanings in that
+      language can cause problems if the browser fails to encode
+      them as hexadecimal values.
+
+ <li> Check for odd file names and directory paths in the input.
+      For example, you should be careful about allow paths
+      containing: ., ../, //, or the name of the directory that
+      contains your CGI programs.
+
+ <li> Be careful with statements that construct and execute a
+      command line or system call using input from the reader. For
+      example, be careful using the eval statement in Perl and the
+      Bourne shell. If the reader sends input that begins with a
+      semicolon (;), they may be able to get your system to perform
+      any command they like. Likewise, if you use calls to popen()
+      and system(), make sure you put a backslash (\) before any
+      characters with special meaning in the shell that will run.
+ </ul>
+
+<li> How can I debug my CGI programs? Errors that go to the stderr
+     location will be available in the NaviServer's server.log file.
 
 <p>
 
@@ -1177,38 +1259,38 @@ characters with special meaning in the shell that will run.
   If your programs are not executed, make sure the program file
  allows read and execute access.
 
+</ul>
+
 <p>
 
 
 <h2><a name=7>CGI Examples</a></h2>
 
-<p>You can download lots of examples and working CGI programs from the
-Web. Here are some places to look:</p>
+<p>
+
+You can download lots of examples and working CGI programs from the Web. Here are some places to look:
 
 <ul>
- <li>Yahoo's page of links to CGI information:
- http://www.yahoo.com/Computers_and_Internet/Internet/
-World_Wide_Web/CGI___Common_Gateway_Interface/
-</li>
- <li><p>NCSA's ftp site:
- ftp://ftp.ncsa.uiuc.edu/Web/httpd/Unix/ncsa_httpd/cgi/</p>
 
-<p>This site includes set of functions for decoding the QUERY_STRING
- environment variable or standard input to your program in C
- (ncsa-default.tar.Z), (cgi-lib.pl.Z), and Bourne shell scripts
- (AA-1.2.tar.Z).</p>
+<li>Yahoo's page of links to CGI information:
+    http://www.yahoo.com/Computers_and_Internet/Internet/World_Wide_Web/CGI___Common_Gateway_Interface/
 
- <li>List of Perl archives:
- http://www.seas.upenn.edu/~mengwong/perlhtml.html
- </li>
- <li>Virtual Library list of CGI resources:
- http://www.charm.net/~web/Vlib/Providers/CGI.html
- </li>
- <li>Various script examples at MIT:
- http://www-genome.wi.mit.edu/WWW/tools/scripting/
- </li>
+<li>NCSA's ftp site:
+    ftp://ftp.ncsa.uiuc.edu/Web/httpd/Unix/ncsa_httpd/cgi/
+
+    <p>
+
+    This site includes set of functions for decoding the QUERY_STRING
+    environment variable or standard input to your program in C
+    (ncsa-default.tar.Z), (cgi-lib.pl.Z), and Bourne shell scripts (AA-1.2.tar.Z).
+
+<li>List of Perl archives:
+    http://www.seas.upenn.edu/~mengwong/perlhtml.html
+
+<li>Virtual Library list of CGI resources:
+    http://www.charm.net/~web/Vlib/Providers/CGI.html
+
+<li>Various script examples at MIT:
+    http://www-genome.wi.mit.edu/WWW/tools/scripting/
 </ul>
-
-</body>
-</html>
 

@@ -1,8 +1,3 @@
-<html>
-<head>
-<title>NaviServer</title>
-</head>
-<body>
 
 <h1>NaviServer Tcl Libraries</h1>
 
@@ -54,13 +49,16 @@ script to a specific URL or URL hierarchy, plus the Tcl scripts that
 will handle the URL(s). This example shows the ns_register_proc
 function being used to bind the Tcl procedure "hello" to handle a GET
 request for /example/hello, plus the "hello" procedure itself:
+
+<p>
+
  ns_register_proc GET /example/hello hello
 
 <p>
 
 <pre>
  proc hello {conn context} {
- ns_return $conn 200 text/plain "Hello World"
+   ns_return $conn 200 text/plain "Hello World"
  }
 </pre>
 
@@ -81,22 +79,6 @@ same URL.
 <p>
 
 
-
-<p>
-
- 
-
-
-<p>
-
-
-
-<p>
-
-  
-
-<p>
-
 <h2><a name=1>When to Use Tcl Libraries</a></h2>
 
 <p>
@@ -104,33 +86,46 @@ same URL.
 The alternative to embedding Tcl scripts in HTML pages using ADPs (see
 Chapter 2), is to store Tcl scripts in Tcl libraries. The situations
 listed below are well-suited to the Tcl libraries approach.
+
 <p>
-  * Inheritance: If you want one Tcl script to handle an URL and all
+
+<ul>
+
+<li> Inheritance: If you want one Tcl script to handle an URL and all
  of its sub-URLs, it's better to store the script in a Tcl library
  and register it using ns_register_proc to handle an URL hierarchy.
  For example, you may want to manage a server domain name change by
  redirecting every response to the corresponding domain name on
  another server.
+
 <p>
-  * Special Extensions: If you want one Tcl script to handle all files
+
+<li> Special Extensions: If you want one Tcl script to handle all files
  with a specific extension, like /*.csv, you would register the
  script with ns_register_proc to handle those files.
+
 <p>
-  * Scheduled Procedures: If you want a Tcl script to be run at
+
+<li> Scheduled Procedures: If you want a Tcl script to be run at
  specific intervals, you can use the ns_schedule_* functions to run
  a script from the Tcl library at scheduled intervals. These
  procedures do not normally involve returning HTML pages and so are
  not well suited to ADPs.
+
 <p>
-  * Filters: If you want a Tcl script to be called at
+
+<li> Filters: If you want a Tcl script to be called at
  pre-authorization, post-authorization, or trace time for a group
  of URLs, you would register a filter using the ns_register_filter
  function.
+
 <p>
-  * Re-using Tcl Scripts: If there are Tcl scripts that you want to
+
+<li> Re-using Tcl Scripts: If there are Tcl scripts that you want to
  use in multiple situations, you can store them in a Tcl library
  and invoke them from within any ADP or Tcl script.
 
+</ul>
 
 <p>
 
@@ -140,9 +135,16 @@ listed below are well-suited to the Tcl libraries approach.
 <p>
 
 Tcl libraries are initialized from a Tcl directory specified for each
-server. The Tcl directory is specified with the Library configuration
-parameter. It defaults to /servers/servername/modules/tcl.You can
-specify a Tcl directory for each server.
+server. The private Tcl directory is specified with the Library configuration
+parameter in the ns/server/servername/tcl section.
+It defaults to /modules/tcl under NaviSerer hom einstallation.
+You can specify a Tcl directory for each server.
+
+<p>
+
+The shared Tcl libray directory is specified by tcllibrary
+parameter in the ns/parameters section and it defaults to
+/tcl under NaviServer home installation.
 
 <p>
 
@@ -159,18 +161,25 @@ scripts physically separate from the scripts supplied by NaviServer.
 
 At server startup time, Tcl initialization is performed in the
 following steps for the server:
+
 <p>
- 1. If a Tcl directory is specified, the init.tcl file in that
+
+
+<ol>
+
+<li> If a Tcl directory is specified, the init.tcl file in that
  directory is sourced first (if it exists), and then all the
  remaining .tcl files are sourced alphabetically.
 
 <p>
 
- 2. For each module (including any Tcl-only modules as described on
+<li> For each module (including any Tcl-only modules as described on
  page 25) in the server: If a private Tcl directory is specified,
  the init.tcl file in the module-name subdirectory of the private
  directory is sourced first (if it exists), and then all the
  remaining .tcl files are sourced alphabetically.
+
+</ol>
 
 <p>
 
@@ -185,13 +194,18 @@ corresponding module. For example, if the ServerA server has a Tcl
 directory defined as /home/mydir/tcl/a, and the nsdb and perm modules
 are loaded, then the following directories will be initialized as
 server start-up:
-<br>
+
+<p>
+
  /home/mydir/tcl/a
-<br>
+
+<p>
+
  /home/mydir/tcl/a/nsdb
-<br>
+
+<p>
+
  /home/mydir/tcl/a/perm
-<br>
 
 <p>
 
@@ -207,11 +221,11 @@ into the server using the "Tcl" keyword.
 
 To load a Tcl-only module, add the following line to your
 configuration file:
-<br>
+
+<p>
+
  ns_section "ns/server/servername/modules"
-<br>
  ns_param mytcl Tcl
-<br>
 
 <p>
 
@@ -227,55 +241,67 @@ corresponding Tcl directories are initialized.
 
 <p>
 
- Example of Tcl Initialization with Tcl-only Modules
+ <h3>Example of Tcl Initialization with Tcl-only Modules</h3>
 
 <p>
 
 This example shows demonstrates the order in which Tcl scripts are
 initialized at startup time for a server. The Library parameter is not
-set, so the library for S1 defaults to /servers/S1/modules/tcl. A
+set, so the library for S1 defaults to /modules/tcl. A
 Tcl-only module called M1 is loaded for S1 as follows:
+
+<p>
+
  ns_section "ns/server/S1/modules"
  ns_param M1 Tcl
 
 <p>
 
-The library for server S1 (/servers/S1/modules/tcl) contains these
-files:
-<br>
+The library for server S1 (/modules/tcl) contains these files:
+
+<p>
+
  abc.tcl
 
 <p>
 
-The library for module M1 (/servers/S1/modules/tcl/M1) contains these
-files:
-<br>
+The library for module M1 (/modules/tcl/M1) contains these files:
+
+<p>
+
  init.tcl
-<br>
+
+<p>
+
  priv.tcl
-<br>
+
+<p>
+
  script1.tcl
-<br>
 
 <p>
 
 The Tcl files will be sourced in this order:
-<br>
- /servers/S1/module/tcl/abc.tcl
-<br>
- /servers/S1/module/tcl/M1/init.tcl
-<br>
- /servers/S1/module/tcl/M1/priv.tcl
-<br>
- /servers/S1/module/tcl/M1/script1.tcl
-<br>
 
 <p>
 
+ /module/tcl/abc.tcl
 
 <p>
 
-  Configuration for Tcl Libraries
+ /module/tcl/M1/init.tcl
+
+<p>
+
+ /module/tcl/M1/priv.tcl
+
+<p>
+
+ /module/tcl/M1/script1.tcl
+
+<p>
+
+  <h3>Configuration for Tcl Libraries</h3>
 
 <p>
 
@@ -283,11 +309,18 @@ Configuration for Tcl libraries is handled in the
 ns/server/server-name/tcl section of the configuration file. The
 parameters in that section are described in detail on page 61 of the
 NaviServer Administrator's Guide. Some parameters to note are:
+
 <p>
-  * Debug, which prints the names of files sourced at server startup
- to the log file
+
+<ul>
+
+<li> Debug, which prints the names of files sourced at server startup to the log file
+
 <p>
-  * Library, which defines the Tcl library for the server
+
+<li> Library, which defines the Tcl library for the server
+
+</ul>
 
 <p>
 
@@ -303,36 +336,39 @@ Follow these steps to build and debug your Tcl scripts:
 
 <p>
 
- 1. Create a .tcl file containing a Tcl script in the directory
+<ol>
+
+<li> Create a .tcl file containing a Tcl script in the directory
  specified by the Library parameter (see page 26) for your server.
  Include a call to ns_register_proc to register your script to an
  URL or URL hierarchy.
 
 <p>
 
- 2. Test your script by accessing an URL that it is registered for.
+<li> Test your script by accessing an URL that it is registered for.
  For example, if you registered the hello script to the
  /example/hello URL as follows:
-<br>
+
+<p>
+
  ns_register_proc GET /example/hello hello
 
 <p>
 
   Then you would test the script by visiting the URL
 
-<br>
+<p>
 
  http://yourserver/example/hello.
 
 <p>
 
- 3. After testing your script, you may want to make changes to it.
+<li> After testing your script, you may want to make changes to it.
  Edit the script file and open the URL associated with the script
  (such as the /example/hello URL in the above example) again in
  your browser and perform a Reload to see the new results.
 
-<p>
+</ol>
 
-</body>
-</html>
+<p>
 

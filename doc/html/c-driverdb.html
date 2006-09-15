@@ -1,8 +1,3 @@
-<html>
-<head>
-<title>NaviServer</title>
-</head>
-<body>
 
 <h1>NaviServer Database Driver Development Guide</h1>
 
@@ -70,33 +65,48 @@ enforced, and can be changed at the programmer's discretion.
 
 Before developing a database driver, you need to decide whether the
 driver will be internal or external:
+
 <p>
-  * Internal: An internal driver is tightly coupled with the
-    NaviServer; the database client libraries are linked directly into
-    the server.
+
+<ul>
+
+<li> Internal: An internal driver is tightly coupled with the
+     NaviServer; the database client libraries are linked directly into
+     the server.
 <p>
-  * External: An external driver is loosely coupled; the nsext driver
-    sends messages to an external database proxy daemon instead of
-    calling the database client libraries directly. This database
-    proxy daemon can be a local or remote process.
+
+<li> External: An external driver is loosely coupled; the nsext driver
+     sends messages to an external database proxy daemon instead of
+     calling the database client libraries directly. This database
+     proxy daemon can be a local or remote process.
+</ul>
 
 <p>
 
 While an internal driver can be faster and can use less resources than
 an external driver, there are several reasons to develop an external
 driver:
-<p>
-  * Many database client libraries are not thread-safe -- you'll need
-    to be very careful about locking the libraries to use them in an
-    internal driver, and this can unnecessarily slow down simultaneous
-    queries.
-<p>
-  * Many database client libraries make assumptions regarding
-    per-process resources such as signals.
-<p>
-  * An external driver can be used to access a database from a
-    platform that may not be supported by the database client library.
 
+<p>
+
+<ul>
+
+<li> Many database client libraries are not thread-safe -- you'll need
+     to be very careful about locking the libraries to use them in an
+     internal driver, and this can unnecessarily slow down simultaneous
+     queries.
+<p>
+
+<li> Many database client libraries make assumptions regarding
+     per-process resources such as signals.
+
+<p>
+
+
+<li> An external driver can be used to access a database from a
+     platform that may not be supported by the database client library.
+
+</ul>
 
 <p>
 
@@ -106,34 +116,24 @@ driver:
 
 The set of function points that a database driver implements and what
 NaviServer expects is as follows:
-<br>
- 1. Name
-<br>
- 2. Database type
-<br>
- 3. Server initialization
-<br>
- 4. Open a database connection
-<br>
- 5. Close a database connection
-<br>
- 6. Get row from table
-<br>
- 7. Flush
-<br>
- 8. Cancel a database connection
-<br>
- 9. Get information about a table
-<br>
-10. Get list of tables
-<br>
-11. Best row identifier (identifies each row uniquely)
-<br>
-12. Execute SQL query
-<br>
-13. Optional: Reset a database handle when it gets checked back into
+
+<ol>
+
+<li> Name
+<li> Database type
+<li> Server initialization
+<li> Open a database connection
+<li> Close a database connection
+<li> Get row from table
+<li> Flush
+<li> Cancel a database connection
+<li> Get information about a table
+<li> Get list of tables
+<li> Best row identifier (identifies each row uniquely)
+<li> Execute SQL query
+<li> Optional: Reset a database handle when it gets checked back into
     the pool.
-<br>
+</ol>
 
 <p>
 
@@ -146,6 +146,7 @@ all the functions implemented by the driver. Here's an example from
 the Postgres95 db driver:
 
 <pre>
+
 static Ns_DbProc PgProcs[] = {
     {DbFn_Name, (void *) Ns_PgName},
     {DbFn_DbType, (void *) Ns_PgDbType},
@@ -188,7 +189,9 @@ In more detail, here's what each of these functions needs to do:
 
 <p>
 
- 1. char *Ns_dbms-nameName(Ns_DbHandle *handle);
+<ol>
+
+<li> char *Ns_dbms-nameName(Ns_DbHandle *handle);
 
 <p>
 
@@ -197,7 +200,7 @@ In more detail, here's what each of these functions needs to do:
 
 <p>
 
- 2. char *Ns_dbms-nameDbType(Ns_DbHandle *handle);
+<li> char *Ns_dbms-nameDbType(Ns_DbHandle *handle);
 
 <p>
 
@@ -206,7 +209,7 @@ In more detail, here's what each of these functions needs to do:
 
 <p>
 
- 3. int Ns_dbms-nameServerInit(char *hServer, char *hModule, char
+<li> int Ns_dbms-nameServerInit(char *hServer, char *hModule, char
     *hDriver);
 
 <p>
@@ -220,7 +223,7 @@ In more detail, here's what each of these functions needs to do:
 
 <p>
 
- 4. int Ns_dbms-nameOpenDb(Ns_DbHandle *dbh);
+<li> int Ns_dbms-nameOpenDb(Ns_DbHandle *dbh);
 
 <p>
 
@@ -281,7 +284,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
- 5. int Ns_dbms-nameCloseDb(Ns_DbHandle *handle);
+<li> int Ns_dbms-nameCloseDb(Ns_DbHandle *handle);
 
 <p>
 
@@ -292,7 +295,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
- 6. int Ns_dbms-nameGetRow(Ns_DbHandle *handle, Ns_Set *row);
+<li> int Ns_dbms-nameGetRow(Ns_DbHandle *handle, Ns_Set *row);
 
 <p>
 
@@ -322,7 +325,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
- 7. int Ns_dbms-nameFlush(Ns_DbHandle *handle);
+<li> int Ns_dbms-nameFlush(Ns_DbHandle *handle);
 
 <p>
 
@@ -335,7 +338,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
- 8. int Ns_dbms-nameCancel(Ns_DbHandle *handle);
+<li> int Ns_dbms-nameCancel(Ns_DbHandle *handle);
 
 <p>
 
@@ -344,7 +347,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
- 9. Ns_DbTableInfo *Ns_dbms-nameGetTableInfo(Ns_DbHandle *handle, char
+<li> Ns_DbTableInfo *Ns_dbms-nameGetTableInfo(Ns_DbHandle *handle, char
     *table, int fExtended);
 
 <p>
@@ -373,7 +376,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
-10. char *Ns_dbms-nameTableList(Ns_DString *pds, Ns_DbHandle *handle,
+<li> char *Ns_dbms-nameTableList(Ns_DString *pds, Ns_DbHandle *handle,
     int includesystem);
 
 <p>
@@ -389,9 +392,10 @@ typedef struct Ns_DbHandle {
 <p>
 
  Ns_DStringNAppend(pds, table, strlen(table) +1);
+
 <p>
 
-11. char *Ns_dbms-nameBestRowId(Ns_DString *pds, Ns_DbHandle *handle,
+<li> char *Ns_dbms-nameBestRowId(Ns_DString *pds, Ns_DbHandle *handle,
     char *table);
 
 <p>
@@ -406,7 +410,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
-12. int Ns_dbms-nameExec(Ns_DbHandle *handle, char *sql);
+<li> int Ns_dbms-nameExec(Ns_DbHandle *handle, char *sql);
 
 <p>
 
@@ -424,7 +428,7 @@ typedef struct Ns_DbHandle {
 
 <p>
 
-13. int Ns_dbms-nameResetHandle(Ns_DbHandle *handle);
+<li> int Ns_dbms-nameResetHandle(Ns_DbHandle *handle);
 
 <p>
 
@@ -434,6 +438,7 @@ typedef struct Ns_DbHandle {
              setting the handle to autocommit mode and aborting any
              uncommitted transactions.
 
+</ol>
 
 <p>
 
@@ -465,7 +470,7 @@ daemons for more information and dbms-specific examples.
 
 <p>
 
- Functions to be Implemented
+ <h3>Functions to be Implemented</h3>
 
 <p>
 
@@ -473,7 +478,9 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 1. void *Ns_PdDbInit (void)
+<ol>
+
+<li> void *Ns_PdDbInit (void)
 
 <p>
 
@@ -486,7 +493,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 2. void Ns_PdDbCleanup(void *handle)
+<li> void Ns_PdDbCleanup(void *handle)
 
 <p>
 
@@ -497,7 +504,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 3. void Ns_PdDbOpen(void *handle, char *openArgs)
+<li> void Ns_PdDbOpen(void *handle, char *openArgs)
 
 <p>
 
@@ -511,7 +518,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 4. void Ns_PdDbClose(void *handle)
+<li> void Ns_PdDbClose(void *handle)
 
 <p>
 
@@ -523,7 +530,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 5. void Ns_PdDbExec(void *handle, char *sql)
+<li> void Ns_PdDbExec(void *handle, char *sql)
 
 <p>
 
@@ -538,7 +545,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 6. void Ns_PdDbFlush(void *handle)
+<li> void Ns_PdDbFlush(void *handle)
 
 <p>
 
@@ -552,7 +559,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 7. void Ns_PdDbCancel(void *handle)
+<li> void Ns_PdDbCancel(void *handle)
 
 <p>
 
@@ -564,7 +571,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 8. void Ns_PdDbBindRow (void *handle)
+<li> void Ns_PdDbBindRow (void *handle)
 
 <p>
 
@@ -577,7 +584,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
- 9. void Ns_PdDbGetRow(void *handle, char *columnCount)
+<li> void Ns_PdDbGetRow(void *handle, char *columnCount)
 
 <p>
 
@@ -591,7 +598,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-10. void Ns_PdDbTableList (void *handle, char *includeSystem)
+<li> void Ns_PdDbTableList (void *handle, char *includeSystem)
 
 <p>
 
@@ -608,23 +615,26 @@ The set of functions that need to be implemented are:
              should:
 
 <p>
+       <ol>
 
-       + Call Ns_PdSendString with an OK_STATUS.
-
-<br>
-
-       + Call Ns_PdSendString with a size of the item (table name).
+       <li> Call Ns_PdSendString with an OK_STATUS.
 
 <br>
 
-       + Call Ns_PdSendData to send the actual data associated with
+       <li> Call Ns_PdSendString with a size of the item (table name).
+
+<br>
+
+       <li> Call Ns_PdSendData to send the actual data associated with
          the name and to signal the end of data.
 
 <br>
 
-       + If an exception occurs during the processing of the table
+       <li> If an exception occurs during the processing of the table
          data, then this function should send the partial data to the
          client and indicate an error with Ns_PdDbLog.
+
+       </ol>
 
 <p>
 
@@ -634,7 +644,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-11. void Ns_PdDbGetTableInfo(void *handle, char *tableName)
+<li> void Ns_PdDbGetTableInfo(void *handle, char *tableName)
 
 <p>
 
@@ -649,29 +659,31 @@ The set of functions that need to be implemented are:
 
 <p>
 
-<br>
+       <ol>
 
-       + Call Ns_PdSendString with an OK_STATUS.
+       <li> Call Ns_PdSendString with an OK_STATUS.
 
-<br>
+<p>
 
-       + Call Ns_PdSendRowInfo to send to the client the column info.
+       <li> Call Ns_PdSendRowInfo to send to the client the column info.
 
-<br>
+<p>
 
-       + Call Ns_PdSendRowInfo to send to the client subsequent row
+       <li> Call Ns_PdSendRowInfo to send to the client subsequent row
          info.
 
-<br>
+<p>
 
-       + Call Ns_PdSendData to indicate to the client that END_DATA
+       <li> Call Ns_PdSendData to indicate to the client that END_DATA
          has been reached.
 
-<br>
+<p>
 
-       + If an exception occurs during the processing of the row info,
+       <li> If an exception occurs during the processing of the row info,
          then this function should send the partial data to the client
          and indicate an error with Ns_PdDbLog.
+
+       </ol>
 
 <p>
 
@@ -681,7 +693,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-12. void Ns_PdDbBestRowId(void *handle, char *tableName)
+<li> void Ns_PdDbBestRowId(void *handle, char *tableName)
 
 <p>
 
@@ -697,7 +709,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-13. void Ns_PdDbIndentify(void *handle)
+<li> void Ns_PdDbIndentify(void *handle)
 
 <p>
 
@@ -706,7 +718,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-14. void Ns_PdDbGetTypes(void *handle)
+<li> void Ns_PdDbGetTypes(void *handle)
 
 <p>
 
@@ -715,7 +727,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-15. void Ns_PdDbResultId(void *handle)
+<li> void Ns_PdDbResultId(void *handle)
 
 <p>
 
@@ -725,7 +737,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-16. void Ns_PdDbResultRows(void *handle)
+<li> void Ns_PdDbResultRows(void *handle)
 
 <p>
 
@@ -734,7 +746,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-17. void Ns_PdDbSetMaxRows(void *handle, char *maxRows)
+<li> void Ns_PdDbSetMaxRows(void *handle, char *maxRows)
 
 <p>
 
@@ -748,7 +760,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-18. void Ns_PdDbSpExec(void *handle)
+<li> void Ns_PdDbSpExec(void *handle)
 
 <p>
 
@@ -757,7 +769,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-19. void Ns_PdDbSpGetParams(void *handle)
+<li> void Ns_PdDbSpGetParams(void *handle)
 
 <p>
 
@@ -766,7 +778,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-20. void Ns_PdDbSpReturnCode (void *handle)
+<li> void Ns_PdDbSpReturnCode (void *handle)
 
 <p>
 
@@ -775,7 +787,7 @@ The set of functions that need to be implemented are:
 
 <p>
 
-21. void Ns_PdDbSpSetParam (void *handle, char *args)
+<li> void Ns_PdDbSpSetParam (void *handle, char *args)
 
 <p>
 
@@ -784,15 +796,17 @@ The set of functions that need to be implemented are:
 
 <p>
 
-22. void Ns_PdDbSpStart(void *handle, char *procname)
+<li> void Ns_PdDbSpStart(void *handle, char *procname)
 
 <p>
 
      This function begins the definition of a stored procedure.
 
+</ol>
+
 <p>
 
- Utility Functions
+ <h3>Utility Functions</h3>
 
 <p>
 
@@ -804,7 +818,9 @@ message is printed to the syslog and the function returns.
 
 <p>
 
- 1. void Ns_PdLog(Ns_PdLogMsgType errtype, char *fmt, ...)
+<ol>
+
+<li> void Ns_PdLog(Ns_PdLogMsgType errtype, char *fmt, ...)
 
 <p>
 
@@ -814,7 +830,7 @@ message is printed to the syslog and the function returns.
 
 <p>
 
- 2. void Ns_PdSendString(char *string)
+<li> void Ns_PdSendString(char *string)
 
 <p>
 
@@ -822,7 +838,7 @@ message is printed to the syslog and the function returns.
 
 <p>
 
- 3. void Ns_PdSendException(char *code, char *msg)
+<li> void Ns_PdSendException(char *code, char *msg)
 
 <p>
 
@@ -831,7 +847,7 @@ message is printed to the syslog and the function returns.
 
 <p>
 
- 4. Ns_PdParseOpenArgs(char *openargs, char **datasource, char **user,
+<li> Ns_PdParseOpenArgs(char *openargs, char **datasource, char **user,
     char **password, char **param)
 
 <p>
@@ -842,7 +858,7 @@ message is printed to the syslog and the function returns.
 
 <p>
 
- 5. void Ns_PdSendRowInfo(Ns_PdRowInfo * rowInfo)
+<li> void Ns_PdSendRowInfo(Ns_PdRowInfo * rowInfo)
 
 <p>
 
@@ -851,7 +867,7 @@ message is printed to the syslog and the function returns.
 
 <p>
 
- 6. void Ns_PdSendData(char *data, int len)
+<li> void Ns_PdSendData(char *data, int len)
 
 <p>
 
@@ -861,7 +877,7 @@ message is printed to the syslog and the function returns.
 
 <p>
 
- 7. void Ns_PdFreeRowInfo(Ns_PdRowInfo * rowInfo, int fFreeData)
+<li> void Ns_PdFreeRowInfo(Ns_PdRowInfo * rowInfo, int fFreeData)
 
 <p>
 
@@ -870,19 +886,21 @@ message is printed to the syslog and the function returns.
              associated with the Ns_PdRowData structure (encapsulated
              in Ns_PdRowInfo) as well.
 
+</ol>
+
 <p>
 
- Constants
+ <h3>Constants</h3>
 
 <p>
 
 The following constants are used in the example drivers:
 
-<br>
+<p>
 
  #define EXCEPTION_CODE_MAX 32
 
-<br>
+<p>
 
  #define EXCEPTION_MSG_MAX 4096
 
@@ -895,8 +913,5 @@ words, you can have an exception message of up to 4095 bytes,
 reserving the last byte for a null byte.
 
 <p>
-
-</body>
-</html>
 
 

@@ -1,14 +1,9 @@
-<html>
-<head>
-<title>NaviServer</title>
-</head>
-<body>
 
 <h1>NaviServer Permissions and Access Control Guide</h1>
 
 <p>
 
-  Access Control
+  <h2>Access Control</h2>
 
 <p>
 
@@ -37,7 +32,7 @@ in this chapter.
 
 <p>
 
- Users and Groups
+ <h2>Users and Groups</h2>
 
 <p>
 
@@ -48,7 +43,7 @@ NaviServer pages directory where they can store content.
 
 <p>
 
- Defining Users
+ <h2>Defining Users</h2>
 
 <p>
 
@@ -77,22 +72,24 @@ other user.
 
 <p>
 
- Defining Groups
+ <h2>Defining Groups</h2>
 
 <p>
 
 To define NaviServer groups, you need to create entries for them in the
 group file, which resides in the /modules/nsperm directory. The
 default group file contains:
+
 <p>
+
+<pre>
+
 system:::nsadmin
-<br>
 users:::nsadmin,nobody
-<br>
 all:::nsadmin,nobody,""
-<br>
 public:::""
-<br>
+
+</pre>
 
 <p>
 
@@ -108,7 +105,7 @@ users, all, and public, with the listed users in each.
 
 <p>
 
- Permissions
+ <h2>Permissions</h2>
 
 <p>
 
@@ -125,7 +122,7 @@ users in the system group can set permission records directly.
 
 <p>
 
- Permissions Inheritance
+ <h2>Permissions Inheritance</h2>
 
 <p>
 
@@ -137,7 +134,7 @@ is no specific permission record for /a/b/c.htm.
 
 <p>
 
- Setting Permissions for Users and Groups
+ <h2>Setting Permissions for Users and Groups</h2>
 
 <p>
 
@@ -148,6 +145,7 @@ any permission entries, but it contains the following comments, which
 explain how to add entries to the file:
 
 <pre>
+
 # This is the NaviServer perms file which defines which users
 # and groups may or may not visit certain URLs.
 #
@@ -169,7 +167,7 @@ explain how to add entries to the file:
 
 <p>
 
- Allowing Hosts
+ <h2>Allowing Hosts</h2>
 
 <p>
 
@@ -180,6 +178,7 @@ default hosts.allow file contains:
 
 
 <pre>
+
 #
 # This is the NaviServer hosts.alow file. It allows you to specify
 # which hosts may log in as certain users. If you have an entry
@@ -190,20 +189,24 @@ default hosts.allow file contains:
 #
 # nsadmin: 10.0.0.0/255.0.0.0, .internal.mycompany.com, home.me.com
 #
-</prE>
+</pre>
 
 <p>
 
 The format for entries in the file is:
-<br>
+
+<p>
 username: host, host, host ...
 
 <p>
 
 where username is a user defined in the passwd file and host can be
 specified in either of these forms:
+
 <p>
-  * ipaddress/netmask
+<ul>
+
+<li> ipaddress/netmask
 
 <p>
 
@@ -212,7 +215,7 @@ specified in either of these forms:
 
 <p>
 
-  * a fully-qualified host name
+<li> a fully-qualified host name
 
 <p>
 
@@ -220,12 +223,14 @@ specified in either of these forms:
 
 <p>
 
-  * part of a host name
+<li> part of a host name
 
 <p>
 
   For example, .bar.com, which would match anything ending in
  .bar.com.
+
+</ul>
 
 <p>
 
@@ -234,7 +239,7 @@ to gain access.
 
 <p>
 
- Denying Hosts
+ <h2>Denying Hosts</h2>
 
 <p>
 
@@ -244,6 +249,7 @@ allows you to specify which hosts cannot log in as certain users. The
 default hosts.deny file contains:
 
 <pre>
+
 #
 # This is the NaviServer hosts.deny file. It allows you to specify
 # which hosts may not log in as certain users. If you have an
@@ -271,7 +277,9 @@ specified in either of these forms:
 
 <p>
 
-  * ipaddress/netmask
+<ul>
+
+<li> ipaddress/netmask
 
 <p>
 
@@ -280,7 +288,7 @@ specified in either of these forms:
 
 <p>
 
-  * a fully-qualified host name
+<li> a fully-qualified host name
 
 <p>
 
@@ -288,15 +296,14 @@ specified in either of these forms:
 
 <p>
 
-  * part of a host name
+<li> part of a host name
 
 <p>
 
   For example, .bar.com, which would match anything ending in
  .bar.com.
 
-<p>
+</ul>
 
-</body>
-</html>
+<p>
 

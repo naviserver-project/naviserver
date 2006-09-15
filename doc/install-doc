@@ -50,14 +50,12 @@ do
 	d=$1/man/man$n
 	echo Installing $n manpages in $d...
 	mkdir -p $d
-	for i in *.$n
+	for i in man/*.$n
 	do
 		o=$d/$i
 		rm -f $o
 		sed -e '/man\.macros/r man.macros' -e '/man\.macros/d' $i > $o
 		chmod 444 $o
 	done
-	echo Cross-linking $n manpages in $d...
-	/bin/sh ./mkLinks $d
 done
 exit 0
