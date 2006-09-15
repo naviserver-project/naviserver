@@ -8,7 +8,7 @@
 
 <p>NaviServer is distributed in source form.
 
-<b>Getting Started</b>
+<h2>Getting Started</h2>
 
 <p>
 
@@ -17,57 +17,69 @@ NaviServer is reasonably portable and known to compile and run on the following 
 <ul>
 
 <li>Linux 2.2 and better (x86 and others)
+
 <li>FreeBSD 3.4 and better (x86 and others)
+
 <li>OpenBSD 2.5 and better (x86 and others)
+
 <li>Solaris 2.x and better (SPARC and x86)
+
 <li>IRIX 6.x (mips)
+
 <li>HP/UX 10 and 11 (hppa)
+
 <li>DEC Tru64 &amp;OSF/1 4.0 and better (alpha)
+
 <li>UnixWare 7.x and better (x86)
+
 <li>Apple OS/X "Darwin"
+
 </ul>
 
 <p>
 
 It's likely NaviServer can compile on other systems and/or higher or  lower
- numbered versions but this has not been extensively tested.  The primary
- development platforms for NaviServer at AOL are IRIX 6.4  and Solaris 7. 
- We also use HP/UX 10.20/11.0, Solaris 2.6, and VA Linux 6.2.1 (Linux 2.2).
+numbered versions but this has not been extensively tested.  The primary
+development platforms for NaviServer at AOL are IRIX 6.4  and Solaris 7.
+We also use HP/UX 10.20/11.0, Solaris 2.6, and VA Linux 6.2.1 (Linux 2.2).
 
 <p>
 
 You will need a <b>C compiler</b>.  The best one to use is GNU GCC from
- <a href="http://www.gnu.org/">http://www.gnu.org</a> and its mirrors.  The versions
- we use are 2.95.2.  NaviServer (and the  included Tcl libraries) are written
- entirely in ANSI standard C.
+<a href="http://www.gnu.org/">http://www.gnu.org</a> and its mirrors.  The versions
+we use are 2.95.2.  NaviServer (and the  included Tcl libraries) are written
+entirely in ANSI standard C.
 
 <p>
 
-<b>GNU make</b> is also required.  It is also available from the GNU web
- site.
+<b>GNU make</b> is also required.  It is also available from the GNU web site.
 
 <p>
 
-<b>Building</b>
+<h2>Building</h2>
 
 <p>
 
 We've tried to make building NaviServer as simple as possible.  On the supported
- platforms, simply typing "<b>gmake</b>" will build the server and its standard
- modules.
+platforms, simply typing "<b>gmake</b>" will build the server and its standard
+modules.
 
 <p>
 
 <ol>
+
   <li>Check the include/Makefile.global file for platform-specific options. Most platforms use gcc.
+
   <li>Enable optional modules.  The default Makefile builds nssock, nscgi, nscp, nslog, nsperm, and nsdb.
-  <li>Type "<tt>gmake</tt>", ensuring the make which is executed is GNU make. 
+
+  <li>Type "<tt>gmake</tt>", ensuring the make which is executed is GNU make.
       You might want to call your GNU Make "gmake" instead of "make".
+
 </ol>
 
 Some modules use third-party libraries.  If the library is missing, the NaviServer
- build will continue without error -- it just will not build the offending
- module.  
+build will continue without error -- it just will not build the offending
+module.
 
 <p>
 
@@ -81,21 +93,21 @@ settings throughout the NaviServer environment.
 
 <p>
 
-<b>Installing</b>
+<h2>Installing</h2>
 
 <p>
 
 Type "<tt><b>gmake install</b></tt>" to make a production server.  This
- will create an installation directory at /usr/local/ns/, populate
- the directories with various  startup files and  configuration files, copy
- the binaries to the /usr/local/ns/bin directory, and finish.  To install
- confidence tests, type "make install-tests" and they will appear in the
- tests/ directory of your server's pageroot.  The default location for installations
- can be overridden by typing "<tt><b>gmake install PREFIX=/your/directory/</b></tt>".
+will create an installation directory at <tt>/usr/local/ns/</tt>, populate
+the directories with various  startup files and  configuration files, copy
+the binaries to the <tt>/usr/local/ns/bin</tt> directory, and finish.  To install
+confidence tests, type "make install-tests" and they will appear in the
+tests/ directory of your server's pageroot.  The default location for installations
+can be overridden by typing "<tt><b>gmake install PREFIX=/your/directory/</b></tt>".
 
 <p>
 
-<b>Configuring</b>
+<h2>Configuring</h2>
 
 <p>
 
@@ -104,9 +116,9 @@ represents a complete configuration of NaviServer.  This configuration will:
 
 <ol>
   <li>Listen for http connections on your computer's  primary interface at port 8000.  To use another port  and/or
-      select interfaces,  you can set the "post" and "address" parameters.
+      select interfaces, you can set the "post" and "address" parameters.
 
-  <li>Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.</li>
+  <li>Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.
 
 </ol>
 
@@ -135,14 +147,14 @@ server will  setuid(2) after startup.
 <p>
 
 You may either specify a Unix username or numeric uid, e.g.:   <tt>./bin/nsd
- -t ./config.tcl -u user -g group</tt></p> For the mode  of operation, there are 
+-t ./config.tcl -u user -g group</tt></p> For the mode  of operation, there are
 three choices: <b>Foreground, Background, </b>and <b>Inittab.</b>
 
 <p>
 
-In <b>Foreground </b>mode , the server starts  and emits diagnostic log messages 
- directly to the  terminal window.   This is useful for testing, configuration
- or debugging  a server.  To start the server in foreground mode use:
+In <b>Foreground </b>mode , the server starts  and emits diagnostic log messages
+directly to the  terminal window.   This is useful for testing, configuration
+or debugging  a server.  To start the server in foreground mode use:
 
 <p>
 
@@ -151,18 +163,24 @@ In <b>Foreground </b>mode , the server starts  and emits diagnostic log messages
 <p>
 
 To stop a server running the foreground simply press  interrupt on your keyboard
- (e.g., ctrl-c or the DEL key) which will send a SIGINT to the server and
- initiate shutdown.
+(e.g., ctrl-c or the DEL key) which will send a SIGINT to the server and
+initiate shutdown.
 
 <p>
 
-In <b>Background </b>mode, the server  forks and disassociates from the terminal. 
+In <b>Background </b>mode, the server  forks and disassociates from the terminal.
 Diagnostic messages  are  appended to log/server.log.  This  is a  typical
-daemon-style mode of operation.  To start the server in  background  mode
-use:   <tt>./bin/nsd -t ./config.tcl -u user -g group</tt>.  To stop a server
-running  the background  you may either use the kill(2) command to send
-a SIGTERM to the background  process id(*) or the special -K flag of the
-nsd binary.  This flag  will determine the process id from a special marker 
+daemon-style mode of operation.  To start the server in  background  mode use:
+
+<p>
+
+<tt>./bin/nsd -t ./config.tcl -u user -g group</tt>
+
+<p>
+
+To stop a server running  the background  you may either use the kill(2) command
+to send a SIGTERM to the background  process id(*) or the special -K flag of the
+nsd binary.  This flag  will determine the process id from a special marker
 file, send the signal and wait for shutdown, e.g.:
 
 <p>
@@ -176,7 +194,7 @@ You may also use the -k flag to kill and restart a  background server.
 <p>
 
 
-In <b>Inittab </b>mode, the server runs in the foreground  but opens the 
+In <b>Inittab</b> mode, the server runs in the foreground  but opens the
 log file as with background mode.  This mode is used  when the server is
 started from an entry in the /etc/inittab file.   The benefit of this mode
 is that init will restart the server if it  happens to crash.   Production
@@ -191,10 +209,10 @@ and full pathnames:
 <p>
 
 To restart a server you can simply kill the current server with the -K flag
- as with the background  mode; init will then restart the server for you. 
- To stop a  server running in inittab mode  you must comment out or remove
- the  entry from the /etc/inittab file  and signal the init process to re-read 
- inittab with the "<tt>init q</tt>" command.
+as with the background  mode; init will then restart the server for you.
+To stop a  server running in inittab mode  you must comment out or remove
+the  entry from the /etc/inittab file  and signal the init process to re-read
+inittab with the "<tt>init q</tt>" command.
 
 <p>
 

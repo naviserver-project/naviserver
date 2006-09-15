@@ -66,23 +66,23 @@ Some things to notice about the configuration are:
 
 <p>
 
-<br>
-* The port parameter defines the port that the interface will listen
- on. The default is 9999.
+<ul>
 
-<br>
-* The address parameter defines the hostname to bind to. The default
- is 127.0.0.1 so that you can only connect to the control port if
- you are already logged on to the computer where the server is
- running.
+<li> The port parameter defines the port that the interface will listen
+     on. The default is 9999.
 
-<br>
 
-* The user parameter defines users who can log into the control
- port. There are three semicolon-separated fields. The first is
- username (nsadmin); the second is a Unix-like password hash.  You
- can create a password by typing "ns_crypt mypasswd salt".  As with
- Unix, only the first four characters are used.
+<li> The address parameter defines the hostname to bind to. The default
+     is 127.0.0.1 so that you can only connect to the control port if
+     you are already logged on to the computer where the server is
+     running.
+
+<li> The user parameter defines users who can log into the control
+     port. There are three semicolon-separated fields. The first is
+     username (nsadmin); the second is a Unix-like password hash.  You
+     can create a password by typing "ns_crypt mypasswd salt".  As with
+     Unix, only the first four characters are used.
+</ul>
 
 <p>
 
@@ -98,67 +98,77 @@ configuration.
 To use the control port interface, follow these steps:
 
 <p>
- 1. Telnet to the address and port number defined in the /module/nscp
- section for the server. For example:
 
-<p>
-telnet localhost 9999
- 
-<p>
-The session responds with:
+<ol>
 
-<pre>
-Trying 127.0.0.1...
-Connected to localhost.
-Escape character is '^]'.
-login: 
-</pre>
-<p>
+<li> Telnet to the address and port number defined in the /module/nscp
+     section for the server. For example:
 
-2. At the login prompt, type a valid username. The username must be
-one of the usernames defined in the /module/nscp/users section of
-the configuration file. For example:
+     <p>
 
-<pre>
-login: nsadmin
-</pre>
+     telnet localhost 9999
 
-The session responds with:
+     <p>
 
-<pre>
-password:
-</pre>
+     The session responds with:
 
-<p>
+     <pre>
+     Trying 127.0.0.1...
+     Connected to localhost.
+     Escape character is '^]'.
+     login:
+     </pre>
 
- 3. At the password prompt, type the password associated with the
- username you specified.  The default is "x".
+     <p>
 
-<p>
+<li> At the login prompt, type a valid username. The username must be
+     one of the usernames defined in the /module/nscp/users section of
+     the configuration file. For example:
 
-  The session responds with:
+     <p>
 
-<pre>
-Welcome to servername running at /usr/local/ns/bin/nsd (pid 22413)
-NaviServer/3.4.2 (nsd_v3_r4_p2) for solaris built on Sep 18 2001 at 16:59:11
-CVS Tag: $Name$
+     <pre>
+     login: nsadmin
+     </pre>
 
-servername:nscp 1> 
-</pre>
+     The session responds with:
 
-<p>
+     <pre>
+     password:
+     </pre>
 
- 4. At the prompt you can type nearly any Tcl command
- available to NaviServer Tcl libraries and ADPs.
+     <p>
 
-<p>
+<li> At the password prompt, type the password associated with the
+     username you specified.  The default is "x".
 
- 5. When you're done, just type "exit" and you will be logged off.
+     <p>
+
+     The session responds with:
+
+     <pre>
+     Welcome to servername running at /usr/local/ns/bin/nsd (pid 22413)
+     NaviServer/4.99.2 for linux built on Sep  7 2006 at 20:38:59
+     CVS Tag: $Name$
+
+     servername:nscp 1>
+     </pre>
+
+     <p>
+
+<li> At the prompt you can type nearly any Tcl command
+     available to NaviServer Tcl libraries and ADPs.
+
+    <p>
+
+<li> When you're done, just type "exit" and you will be logged off.
+
+</ul>
 
 <p>
 
 <h2>Useful Commands</h2>
- 
+
 Type "lsort [info commands]" for a complete list of commands available
 to you.  You can type nearly any Tcl command available to NaviServer
 Tcl libraries and ADPs.  This includes the complete Tcl core and
@@ -170,11 +180,18 @@ sorted list of NaviServer Tcl commands.
 Useful commands:
 
 <p>
-* ns_shutdown  -- Shuts down the server.
-<br>
-* ns_info uptime  -- How long the server has been running.
-<br>
-* exit -- Exit the control port.
+
+<ul>
+
+<li>ns_shutdown  -- Shuts down the server.
+
+<li>ns_info uptime  -- How long the server has been running.
+
+<li>ns_info threads  -- How many threads are running
+
+<li>exit -- Exit the control port.
+
+</ul>
 
 <p>
 
