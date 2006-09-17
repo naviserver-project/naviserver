@@ -76,7 +76,7 @@ Ns_UrlSpecificSet("server1", "GET", "/foo/bar/*.html", myID, myData,
 ------------------------------------------------------------------------------
 
 urlspace: JUNCTION
-  byname: INDEX [*][ ][ ][ ][ ]
+  byname: INDEX [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
                  |
   +--------------+
   |
@@ -85,7 +85,7 @@ CHANNEL
   filter:  CHAR*   "*.html"
   trie:    TRIE
              indexnode: INDEX* (NULL)
-	     branches:  INDEX  [*][ ][ ][ ][ ]
+	     branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
 	                        |
   +-----------------------------+
   |
@@ -94,7 +94,7 @@ BRANCH
   word: CHAR* "server1"
   node: TRIE
           indexnode: INDEX* (NULL)
-	  branches:  INDEX  [*][ ][ ][ ][ ]
+	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
 	                     |
   +--------------------------+
   |
@@ -103,7 +103,7 @@ BRANCH
   word: CHAR* "GET"
   node: TRIE
           indexnode: INDEX* (NULL)
-	  branches:  INDEX  [*][ ][ ][ ][ ]
+	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
 	                     |
   +--------------------------+
   |
@@ -112,7 +112,7 @@ BRANCH
   word: CHAR* "foo"
   node: TRIE
           indexnode: INDEX* (NULL)
-	  branches:  INDEX  [*][ ][ ][ ][ ]
+	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
 	                     |
   +--------------------------+
   |
@@ -120,8 +120,8 @@ BRANCH
 BRANCH
   word: CHAR* "*.html"
   node: TRIE
-          indexnode: INDEX* -----------------> [*][ ][ ][ ][ ]
-	  branches:  INDEX  [ ][ ][ ][ ][ ]     |
+          indexnode: INDEX* -----------------> [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+	  branches:  INDEX  [lb] [rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]     |
 	                                        |
   +---------------------------------------------+
   |

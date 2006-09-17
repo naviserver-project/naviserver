@@ -58,31 +58,31 @@ install: install-dirs install-include install-tcl install-modules \
 	@echo ""
 
 install-dirs: all
-	for i in bin lib logs include tcl pages conf modules cgi-bin; do \
+	@for i in bin lib logs include tcl pages conf modules cgi-bin; do \
 		$(MKDIR) $(NAVISERVER)/$$i; \
 	done
 
 install-config: all
-	for i in nsd-config.tcl sample-config.tcl simple-config.tcl; do \
+	@for i in nsd-config.tcl sample-config.tcl simple-config.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
-	for i in index.adp; do \
+	@for i in index.adp; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/; \
 	done
 	$(INSTALL_SH) install-sh $(INSTBIN)/
 
 install-modules: all
-	for i in $(dirs); do \
+	@for i in $(dirs); do \
 		(cd $$i && $(MAKE) install) || exit 1; \
 	done
 
 install-tcl: all
-	for i in tcl/*.tcl; do \
+	@for i in tcl/*.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/tcl/; \
 	done
 
 install-include: all
-	for i in include/*.h include/Makefile.global include/Makefile.module; do \
+	@for i in include/*.h include/Makefile.global include/Makefile.module; do \
 		$(INSTALL_DATA) $$i $(INSTHDR)/; \
 	done
 
@@ -95,6 +95,12 @@ install-doc:
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc/; \
 	done
 	cd doc && /bin/sh ./install-doc $(NAVISERVER)
+
+build-doc:
+	@for i in doc/src/*.man; do \
+		echo "Building HTML from $$i..."; \
+		dtplite -o doc/html/`basename $$i .man`.html html $$i; \
+	done
 
 test: all
 	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)

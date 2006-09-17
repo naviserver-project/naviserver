@@ -277,7 +277,7 @@ you'll notice multiple nsd  processes.  This is normal and represents the
 individual threads.  The main  process id can be determined  by checking
 the log/nsd.pid file or looking  at the last few entries  of the server
 log, each of which will include the process  id and thread  id in the form
-[pid.tid].  You can also telnet to the control port and type "ns_info pid".
+[lb]pid.tid[rb].  You can also telnet to the control port and type "ns_info pid".
 
 
 [para]

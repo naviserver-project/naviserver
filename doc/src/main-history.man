@@ -1,5 +1,7 @@
 [manpage_begin {History of NaviServer} n 4.99.2]
 
+[description]
+
 [section {History of NaviServer}]
 
 America Online acquired a small company called NaviSoft several years

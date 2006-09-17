@@ -10,7 +10,7 @@
 [para]
 
 
-bin/nsd [ -i | -f ] [-s servername] [ -d ] [ -k | -K ] [ -V ] [ -r root ] {-c | -t} config
+bin/nsd [lb] -i | -f [rb] [lb]-s servername[lb] [lb] -d [lb] [lb] -k | -K [lb] [lb] -V [lb] [lb] -r root [lb] {-c | -t} config
 
 Options:
 
@@ -597,8 +597,7 @@ Files:
 [para]
 
 
-[titledesc {NaviServer Security Guide}]
-[description]
+[section {NaviServer Security Guide}]
 
 
 This chapter provides guidelines for ensuring the security of systems
@@ -996,7 +995,7 @@ AddCmds(Tcl_Interp, void *arg) {
 
 static int
 BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
-    Tcl_AppendResult(interp, "disabled command: ", argv[0], NULL);
+    Tcl_AppendResult(interp, "disabled command: ", argv[lb]0[rb], NULL);
     return TCL_ERROR;
 }
 

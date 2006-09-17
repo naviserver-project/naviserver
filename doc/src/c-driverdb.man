@@ -192,7 +192,7 @@ Ns_DbDriverInit(char *hDriver, char *configPath)
      * Nsdb will later call the Ns_PgServerInit() function
      * for each virtual server which utilizes nsdb.
      */
-    if (Ns_DbRegisterDriver(hDriver, &(PgProcs[0])) != NS_OK) {
+    if (Ns_DbRegisterDriver(hDriver, &(PgProcs[lb]0[rb])) != NS_OK) {
         Ns_Log(Error, "Ns_DbDriverInit(%s):  Could not register the %s driver.",
             hDriver, pgName);
         return NS_ERROR;
@@ -291,11 +291,11 @@ typedef struct Ns_DbHandle {
                            /* used by internal DbAPI */
     int         connected;
     int         verbose;   /* used for verbose error messages */
-                           /* equivalent to [ns/db/pool/poolname] Verbose=On */
+                           /* equivalent to [lb]ns/db/pool/poolname[rb] Verbose=On */
                            /* used by internal Db API */
     Ns_Set     *row;       /* used for row data during binds, getrows, etc.*/
                            /* used by internal Db API */
-    char        cExceptionCode[6];
+    char        cExceptionCode[lb]6[rb];
     Ns_DString  dsExceptionMsg;
     void       *context;
     void       *statement; /* used by ODBC driver statements */
@@ -447,10 +447,10 @@ typedef struct Ns_DbHandle {
 [example_begin]
 
     set->name           = "column_name";
-    set->field[0].name  = "column_type";
-    set->field[0].value = "text";
-    set->field[1].name  = "column_notnull";
-    set->field[1].value = "t";
+    set->field[lb]0[rb].name  = "column_type";
+    set->field[lb]0[rb].value = "text";
+    set->field[lb]1[rb].name  = "column_notnull";
+    set->field[lb]1[rb].value = "t";
 
 [example_end]
 

@@ -90,7 +90,7 @@ and to get a value, simply use the nsv_get command:
 [example_begin]
 
 
-	set value [nsv_get myarray foo]
+	set value [lb]nsv_get myarray foo[rb]
 
 
 [example_end]
@@ -121,7 +121,7 @@ Migrating from ns_share is straightforward.  If your init.tcl included commands 
 [example_begin]
 
 	ns_share myshare
-	set myshare(lock) [ns_mutex create]
+	set myshare(lock) [lb]ns_mutex create[rb]
 
 [example_end]
 
@@ -140,7 +140,7 @@ use instead:
 [example_begin]
 
 
-	nsv_set myshare lock [ns_mutex create]
+	nsv_set myshare lock [lb]ns_mutex create[rb]
 
 [example_end]
 
@@ -184,7 +184,7 @@ use:
 
 
 	proc myproc {} {
-		ns_mutex lock [nsv_get myshare lock]
+		ns_mutex lock [lb]nsv_get myshare lock[rb]
 		...
 
 
@@ -206,12 +206,12 @@ and within an ADP page, instead of:
 
 
 
-	&lt;%
+	<%
 	ns_share myshare
 	ns_puts $myshare(key1)
-	%&gt;
+	%>
 
-	&lt;%=$myshare(key2)%&gt;
+	<%=$myshare(key2)%>
 
 
 [example_end]
@@ -231,11 +231,11 @@ use:
 [example_begin]
 
 
-	&lt;%
-	ns_puts [nsv_get myshare key1]
-	%&gt;
+	<%
+	ns_puts [lb]nsv_get myshare key1[rb]
+	%>
 
-	&lt;%=[nsv_get myshare key2]%&gt;
+	<%=[lb]nsv_get myshare key2[rb]%>
 
 
 [example_end]
@@ -263,7 +263,7 @@ perhaps just ".". For example, if you had:
 
 	ns_share mylock myfile
 	set myfile /tmp/some.file
-	set mylock [ns_mutex create]
+	set mylock [lb]ns_mutex create[rb]
 
 [example_end]
 
@@ -281,7 +281,7 @@ you can use:
 [example_begin]
 
 	nsv_set . myfile /tmp/some.file
-	nsv_set . mylock [ns_mutex create]
+	nsv_set . mylock [lb]ns_mutex create[rb]
 
 
 [example_end]
@@ -307,13 +307,13 @@ Here's the ns_share solution:
 
 
 	ns_share ids
-	set ids(lock) [ns_mutex create]
+	set ids(lock) [lb]ns_mutex create[rb]
 	set ids(next) 0
 
 	proc nextid {} {
 		ns_share ids
 		ns_mutex lock $ids(lock)
-		set next [incr ids(next)]
+		set next [lb]incr ids(next)[rb]
 		ns_mutex unlock $ids(lock)
 		return $next
 	}
@@ -330,7 +330,7 @@ and here's an nsv solution:
 	nsv_set ids next 0
 
 	proc nextid {} {
-		return [nsv_incr ids next]
+		return [lb]nsv_incr ids next[rb]
 	}
 
 
@@ -359,7 +359,7 @@ from ordinary Tcl arrays.  For example, to copy from Tcl use:
 [para]
 
 
-	nsv_array set meta [array get tmpmeta]
+	nsv_array set meta [lb]array get tmpmeta[rb]
 
 
 [para]
@@ -371,7 +371,7 @@ and to copy to Tcl use:
 [para]
 
 
-	array set metacopy [nsv_array get meta]
+	array set metacopy [lb]nsv_array get meta[rb]
 
 
 [para]
@@ -389,10 +389,10 @@ complete nsv array in one step with "reset".  For example, instead of:
 [example_begin]
 
 	ns_share lock meta
-	set lock [ns_mutex create]
+	set lock [lb]ns_mutex create[rb]
 	ns_mutex lock $lock
 	unset meta
-	array set meta [array get tmpmeta]
+	array set meta [lb]array get tmpmeta[rb]
 	ns_mutex unlock $lock
 
 [example_end]
@@ -404,7 +404,7 @@ you can simply use:
 [para]
 
 
-	nsv_array reset meta [array get tmpmeta]
+	nsv_array reset meta [lb]array get tmpmeta[rb]
 
 
 [para]
@@ -459,7 +459,7 @@ The number of buckets to be used can be configured by setting the
 [example_begin]
 
 
-	[ns/server/server1/tcl]
+	[lb]ns/server/server1/tcl[rb]
         nsvbuckets=20
 
 [example_end]
@@ -479,7 +479,7 @@ the lock contention, if any, by enabling mutex metering:
 
 [example_begin]
 
-	[ns/threads]
+	[lb]ns/threads[rb]
         mutexmetering=on
 
 [example_end]

@@ -293,7 +293,7 @@ better-suited to different situations:
 [example_begin]
 
     #init time:
-    set sharedFile [open myfile.dat]
+    set sharedFile [lb]open myfile.dat[rb]
     detach $sharedFile
 
 [example_end]
@@ -331,8 +331,8 @@ better-suited to different situations:
 
 [example_begin]
 
-    set sharedLock [ns_mutex create]
-    set sharedFile [open myfile.dat]
+    set sharedLock [lb]ns_mutex create[rb]
+    set sharedFile [lb]open myfile.dat[rb]
     detach $sharedFile
 
 [example_end]
@@ -453,7 +453,7 @@ better-suited to different situations:
     ns_register_proc GET /example/showrefer showheader REFER
 
     proc showheader {conn key} {
-          set value [ns_set get [ns_conn headers $conn] $key]
+          set value [lb]ns_set get [lb]ns_conn headers $conn[rb] $key[rb]
           ns_return $conn 200 text/plain "$key: $value"
     }
 
@@ -533,8 +533,8 @@ ns_register_proc GET /example/showbrowser showheader USER-AGENT
 ns_register_proc GET /example/showrefer showheader REFERER
 
 proc showheader {conn key} {
-    set value [ns_set iget [ns_conn headers $conn] $key]
-  ns_return $conn 200 text/plain "$key: $value"
+    set value [lb]ns_set iget [lb]ns_conn headers $conn[rb] $key[rb]
+    ns_return $conn 200 text/plain "$key: $value"
 }
 
 [example_end]
@@ -604,7 +604,7 @@ Verb: <INPUT TYPE=text NAME=verb2><BR>
 "}
 
 proc genstory {conn ignore} {
-  set formdata [ns_conn form $conn]
+  set formdata [lb]ns_conn form $conn[rb]
 
   if {$formdata == ""} {
     ns_return $conn 200 text/plain "Need form data!"
@@ -614,36 +614,34 @@ proc genstory {conn ignore} {
   # Build up a human-readable representation of the form data.
 
   set hrformdata "<dl>"
-  set size [ns_set size $formdata]
+  set size [lb]ns_set size $formdata[rb]
   for {set i 0} {$i < $size} {incr i} {
-    append hrformdata "<dt>[ns_set key $formdata $i]</dt>\
-     <dd>[ns_set value $formdata $i]</dd>"
+    append hrformdata "<dt>[lb]ns_set key $formdata $i[rb]</dt><dd>[lb]ns_set value $formdata $i[rb]</dd>"
   }
   append hrformdata "</dl>"
 
   ns_return $conn 200 text/html \
 "<HTML>
 <HEAD>
-<TITLE>The story of [ns_set get $formdata name1] and
-[ns_set get $formdata name2]</TITLE>
+<TITLE>The story of [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb]</TITLE>
 </HEAD>
 <BODY>
 <H1>
-The story of [ns_set get $formdata name1] and
-[ns_set get $formdata name2]
+The story of [lb]ns_set get $formdata name1[rb] and [lb]ns_set get $formdata name2[rb]
 </H1>
-<P>Once upon a time [ns_set get $formdata name1] and
-[ns_set get $formdata name2] went for a
-walk in the woods looking for a [ns_set get $formdata noun1].
-[ns_set get $formdata name1] was
-feeling [ns_set get $formdata adjective1] because
-[ns_set get $formdata name2] was so
-[ns_set get $formdata adjective2].  So
-[ns_set get $formdata name1] decided to
-[ns_set get $formdata verb1] [ns_set get $formdata name2]
-with a [ns_set get $formdata noun2].  This made
-[ns_set get $formdata name2] [ns_set get $formdata verb2]
-[ns_set get $formdata name1].
+<P>Once upon a time [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb] went for a
+walk in the woods looking for a [lb]ns_set get $formdata noun1[rb].
+[lb]ns_set get $formdata name1[rb] was
+feeling [lb]ns_set get $formdata adjective1[rb] because
+[lb]ns_set get $formdata name2[rb] was so
+[lb]ns_set get $formdata adjective2[rb].  So
+[lb]ns_set get $formdata name1[rb] decided to
+[lb]ns_set get $formdata verb1[rb] [lb]ns_set get $formdata name2[rb]
+with a [lb]ns_set get $formdata noun2[rb].  This made
+[lb]ns_set get $formdata name2[rb] [lb]ns_set get $formdata verb2[rb]
+[lb]ns_set get $formdata name1[rb].
 <P><CENTER>The End</CENTER>
 The form data that made this possible:<BR>
 $hrformdata
@@ -688,7 +686,7 @@ script.
 # * A counter is used to loop through all the key
 #   value pairs in the form.
 
-set formdata [ns_conn form $conn]
+set formdata [lb]ns_conn form $conn[rb]
 
 if {$formdata == ""} {
     ns_return $conn 200 text/plain "Need form data!"
@@ -698,36 +696,36 @@ if {$formdata == ""} {
 # Build up a human-readable representation of the form data.
 
 set hrformdata "<dl>"
-set size [ns_set size $formdata]
+set size [lb]ns_set size $formdata[rb]
 for {set i 0} {$i < $size} {incr i} {
-    append hrformdata "<dt>[ns_set key $formdata $i]</dt>\
-        <dd>[ns_set value $formdata $i]</dd>"
+    append hrformdata "<dt>[lb]ns_set key $formdata $i[rb]</dt>\
+        <dd>[lb]ns_set value $formdata $i[rb]</dd>"
 }
 append hrformdata "</dl>"
 
 ns_return $conn 200 text/html \
 "<HTML>
 <HEAD>
-<TITLE>The story of [ns_set get $formdata name1] and
-[ns_set get $formdata name2]</TITLE>
+<TITLE>The story of [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb]</TITLE>
 </HEAD>
 <BODY>
 <H1>
-The story of [ns_set get $formdata name1] and
-[ns_set get $formdata name2]
+The story of [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb]
 </H1>
-<P>Once upon a time [ns_set get $formdata name1] and
-[ns_set get $formdata name2] went for a
-walk in the woods looking for a [ns_set get $formdata noun1].
-[ns_set get $formdata name1] was
-feeling [ns_set get $formdata adjective1] because
-[ns_set get $formdata name2] was so
-[ns_set get $formdata adjective2].  So
-[ns_set get $formdata name1] decided to
-[ns_set get $formdata verb1] [ns_set get $formdata name2]
-with a [ns_set get $formdata noun2].  This made
-[ns_set get $formdata name2] [ns_set get $formdata verb2]
-[ns_set get $formdata name1].
+<P>Once upon a time [lb]ns_set get $formdata name1[rb] and
+[lb]ns_set get $formdata name2[rb] went for a
+walk in the woods looking for a [lb]ns_set get $formdata noun1[rb].
+[lb]ns_set get $formdata name1[rb] was
+feeling [lb]ns_set get $formdata adjective1[rb] because
+[lb]ns_set get $formdata name2[rb] was so
+[lb]ns_set get $formdata adjective2[rb].  So
+[lb]ns_set get $formdata name1[rb] decided to
+[lb]ns_set get $formdata verb1[rb] [lb]ns_set get $formdata name2[rb]
+with a [lb]ns_set get $formdata noun2[rb].  This made
+[lb]ns_set get $formdata name2[rb] [lb]ns_set get $formdata verb2[rb]
+[lb]ns_set get $formdata name1[rb].
 <P><CENTER>The End</CENTER>
 The form data that made this possible:<BR>
 $hrformdata
@@ -800,9 +798,9 @@ ns_register_proc GET /example/not_here2 not_here2
 ns_register_proc GET /example/not_here3 not_here3
 
 proc not_here {conn ignore} {
-  set headers [ns_set new myheaders]
+  set headers [lb]ns_set new myheaders[rb]
   ns_set put $headers Location \
-      [ns_conn location $conn]/example/finaldest
+      [lb]ns_conn location $conn[rb]/example/finaldest
   ns_respond $conn -status 302 -type text/plain \
       -string "Redirection" -headers $headers
 }
@@ -811,15 +809,15 @@ proc not_here2 {conn context} {
   set content \
 "<HTML><HEAD><TITLE>Redirection</TITLE></HEAD><BODY>
 <H1>Redirection</H1>The actual location of what you were looking for is
-<A HREF=\"[ns_conn location $conn]/example/finaldest\"> here.</A>
+<A HREF=\"[lb]ns_conn location $conn[rb]/example/finaldest\"> here.</A>
 </BODY></HTML>"
 
   ns_write $conn \
 "HTTP/1.0 302 Document follows
 MIME-Version: 1.0
 Content-Type: text/html
-Content-Length: [string length $content]
-Location: [ns_conn location $conn]/example/finaldest
+Content-Length: [lb]string length $content[rb]
+Location: [lb]ns_conn location $conn[rb]/example/finaldest
 
 $content"
 }
@@ -831,10 +829,10 @@ proc finaldest {conn context} {
 
 proc not_here3 {conn context} {
   ns_returnredirect $conn \
-      [ns_conn location $conn]/example/finaldest
+      [lb]ns_conn location $conn[rb]/example/finaldest
 }
 
-</pre.
+[example_end]
 
 
 [subsection {Example 5: desctable}]
@@ -877,27 +875,24 @@ describes the columns of a database table using the NaviServer
 ns_register_proc GET /example/describetable describetable
 
 proc describetable {conn ignore} {
-    if {[ns_conn urlc $conn] != 4} {
-    return [ns_returnbadrequest $conn \
-            "Missing table name and/or poolname"]
+    if {[lb]ns_conn urlc $conn[rb] != 4} {
+    return [lb]ns_returnbadrequest $conn "Missing table name and/or poolname"[rb]
     }
-    set pool [lindex [ns_conn urlv $conn] 2]
-    if {[lsearch $pool [ns_db pools]] == -1} {
-    return [ns_returnbadrequest $conn \
-            "Pool $pool does not exist"]
+    set pool [lb]lindex [lb]ns_conn urlv $conn] 2[rb]
+    if {[lb]lsearch $pool [lb]ns_db pools[rb][rb] == -1} {
+    return [lb]ns_returnbadrequest $conn "Pool $pool does not exist"[rb]
     }
-    set db [ns_db gethandle $pool]
-    set table [lindex [ns_conn urlv $conn] 3]
-    set tinfo [ns_table info $db $table]
+    set db [lb]ns_db gethandle $pool[rb]
+    set table [lb]lindex [lb]ns_conn urlv $conn] 3[rb]
+    set tinfo [lb]ns_table info $db $table[rb]
     if {$tinfo == ""} {
-    return [ns_returnbadrequest $conn \
-            "Table $table does not exist"]
+    return [lb]ns_returnbadrequest $conn "Table $table does not exist"[rb]
     }
     set output "<dl>"
-    set size [ns_column count $tinfo]
+    set size [lb]ns_column count $tinfo[rb]
     for {set i 0} {$i < $size} {incr i} {
-    append output "<dt>[ns_column name $tinfo $i] \
-                <dd>[ns_column typebyindex $tinfo $i]</dd>"
+    append output "<dt>[lb]ns_column name $tinfo $i[rb] \
+                <dd>[lb]ns_column typebyindex $tinfo $i[rb]</dd>"
     }
     append output "</dl><hr>"
     ns_returnnotice $conn 200 "Table $table in pool $pool" $output
@@ -944,11 +939,10 @@ ns_register_proc GET /example/getemps getemps
 
 proc getemps {conn context} {
         set ul "<UL>"
-        set db [ns_db gethandle [ns_config [ns_dbconfigpath] "DefaultPool"]]
-        set row [ns_db select $db \
-        "select emp_name from employees order by emp_name;"]
-        while { [ns_db getrow $db $row] } {
-            append ul "<LI>[ns_set get $row emp_name] \n"
+        set db [lb]ns_db gethandle [lb]ns_config [lb]ns_dbconfigpath[rb] "DefaultPool"[rb][rb]
+        set row [lb]ns_db select $db "select emp_name from employees order by emp_name;"[rb]
+        while { [lb]ns_db getrow $db $row] } {
+            append ul "<LI>[lb]ns_set get $row emp_name[rb] \n"
         }
         append ul "</UL>"
         ns_returnnotice $conn 200 "Employee list" $ul
@@ -976,7 +970,7 @@ WinCGI interface.
 # This Tcl script emulates the WinCGI interface of the WebSite server.
 # To use, move this file to your Tcl library directory (normally the
 # modules/tcl directory of the NaviServer directory), set the
-# following nsd.ini variables in the [ns\server\<server-name>\wincgi]
+# following nsd.ini variables in the [lb]ns\server\<server-name>\wincgi]
 # section, and restart the server.
 #
 # key     default    description
@@ -997,17 +991,17 @@ WinCGI interface.
 # Fetch the variables from the configuration file.
 #
 global WinCGI
-set WinCGI(section) "ns\\server\\[ns_info server]\\wincgi"
-if {[set WinCGI(prefix) [ns_config $WinCGI(section) prefix]] == ""} {
+set WinCGI(section) "ns\\server\\[lb]ns_info server]\\wincgi"
+if {[lb]set WinCGI(prefix) [lb]ns_config $WinCGI(section) prefix[rb][rb] == ""} {
     set WinCGI(prefix) /cgi-win
 }
-if {[set WinCGI(dir) [ns_config $WinCGI(section) dir]] == ""} {
-    set WinCGI(dir) [ns_info home]/$WinCGI(prefix)
+if {[lb]set WinCGI(dir) [lb]ns_config $WinCGI(section) dir[rb][rb] == ""} {
+    set WinCGI(dir) [lb]ns_info home[rb]/$WinCGI(prefix)
 }
-if {[set WinCGI(gmtoff) [ns_config $WinCGI(section) gmtoff]] == ""} {
+if {[lb]set WinCGI(gmtoff) [lb]ns_config $WinCGI(section) gmtoff[rb][rb] == ""} {
     set WinCGI(gmtoff) 0
 }
-if {[set WinCGI(debug) [ns_config -bool $WinCGI(section) debug]] == ""} {
+if {[lb]set WinCGI(debug) [lb]ns_config -bool $WinCGI(section) debug[rb][rb] == ""} {
     set WinCGI(debug) 0
 }
 
@@ -1026,47 +1020,47 @@ proc win-cgi {conn ignored} {
     global WinCGI
 
     # The program is the second part of the WinCGI URL.
-    set args [join [split [ns_conn query $conn] &]]
-    set pgm [lindex [ns_conn urlv $conn] 1]
+    set args [lb]join [lb]split [lb]ns_conn query $conn[rb] &[rb][rb]
+    set pgm [lb]lindex [lb]ns_conn urlv $conn[rb] 1[rb]
     regsub -all {\+} $args " " args
-    foreach e [split $WinCGI(dir)/$pgm /] {
+    foreach e [lb]split $WinCGI(dir)/$pgm /] {
             if {$e != ""} {lappend exec $e}
     }
-    set exec [join $exec \\]
-    if ![file executable $exec] {
-            return [ns_returnnotfound $conn]
+    set exec [lb]join $exec [rb]
+    if ![lb]file executable $exec[rb] {
+            return [lb]ns_returnnotfound $conn[rb]
     }
 
     # WinCGI requires a few temporary files.
-    set ini [ns_tmpnam]
-    set inp [ns_tmpnam]
-    set out [ns_tmpnam]
+    set ini [lb]ns_tmpnam[rb]
+    set inp [lb]ns_tmpnam[rb]
+    set out [lb]ns_tmpnam[rb]
 
     # Copy the request content to the input file.
-    set fp [open $inp w]
+    set fp [lb]open $inp w[rb]
     ns_writecontent $conn $fp
-    set len [tell $fp]
+    set len [lb]tell $fp[rb]
     close $fp
 
     # Create the WinCGI variables .ini file.
-    set fp [open $ini w]
-    puts $fp {[CGI]}
+    set fp [lb]open $ini w[rb]
+    puts $fp {[lb]CGI[rb]}
     puts $fp \
 "Request Protocol=HTTP/1.0
-Request Method=[ns_conn method $conn]
+Request Method=[lb]ns_conn method $conn[rb]
 Executable Path=$WinCGI(prefix)/$pgm
-Server Software=[ns_info name]/[ns_info version]
-Server Name=[ns_info name]
-Server Port=[ns_info version]
-Server Admin=[ns_config NaviServer WebMaster]
+Server Software=[lb]ns_info name]/[lb]ns_info version[rb]
+Server Name=[lb]ns_info name[rb]
+Server Port=[lb]ns_info version[rb]
+Server Admin=[lb]ns_config NaviServer WebMaster[rb]
 CGI Version=CGI/1.2 (Win)
-Remote Address=[ns_conn peeraddr $conn]
+Remote Address=[lb]ns_conn peeraddr $conn[rb]
 Authentication Method=Basic
-Authentication Realm=[ns_conn location $conn]
+Authentication Realm=[lb]ns_conn location $conn[rb]
 Content Type=application/x-www-form-urlencoded
 Content Length=$len"
     puts $fp ""
-    puts $fp {[System]}
+    puts $fp {[lb]System[rb]}
     puts $fp \
 "GMT Offset=$WinCGI(gmtoff)
 Debug Mode=Yes
@@ -1075,25 +1069,25 @@ Content File=$inp"
 
     # Set any POST or query form variables.
     puts $fp ""
-    puts $fp {[Form Literal]}
-    set form [ns_conn form $conn]
+    puts $fp {[lb]Form Literal[rb]}
+    set form [lb]ns_conn form $conn[rb]
     if {$form != ""} {
-            for {set i 0} {$i < [ns_set size $form]} {incr i} {
-                    set key [ns_set key $form $i]
-                    set value [ns_set value $form $i]
+            for {set i 0} {$i < [lb]ns_set size $form[rb]} {incr i} {
+                    set key [lb]ns_set key $form $i[rb]
+                    set value [lb]ns_set value $form $i[rb]
                     puts $fp "$key=$value"
             }
     }
 
     # Set the accept headers and accumulate the extra headers.
     puts $fp ""
-    puts $fp {[Accept]}
-    set headers [ns_conn headers $conn]
+    puts $fp {[lb]Accept[rb]}
+    set headers [lb]ns_conn headers $conn[rb]
     set extras ""
-    for {set i 0} {$i < [ns_set size $headers]} {incr i} {
-            set key [ns_set key $headers $i]
-            set ukey [string toupper $key]
-            set value [ns_set value $headers $i]
+    for {set i 0} {$i < [lb]ns_set size $headers[rb]} {incr i} {
+            set key [lb]ns_set key $headers $i[rb]
+            set ukey [lb]string toupper $key[rb]
+            set value [lb]ns_set value $headers $i[rb]
             if {$ukey == "ACCEPT"} {
                     puts $fp "$value=Yes"
             } elseif {$key != "CONTENT-LENGTH" && $key != "CONTENT-TYPE"} {
@@ -1101,7 +1095,7 @@ Content File=$inp"
             }
     }
     puts $fp ""
-    puts $fp {[Extra Headers]}
+    puts $fp {[lb]Extra Headers[rb]}
     puts $fp $extras
     close $fp
 
@@ -1110,17 +1104,17 @@ Content File=$inp"
     # program can be misbehaved, returning a non-zero
     # exit status or not creating the output file.
     catch {exec "$exec $ini $inp $out $args"}
-    if [catch {set fp [open $out]}] {
+    if [lb]catch {set fp [lb]open $out]}[rb] {
             ns_returnerror $conn 500 "WinCGI exec failed"
     } else {
             set type text/html
             set status 200
-            while {[gets $fp line] > 0} {
-                    set line [string trim $line]
+            while {[lb]gets $fp line[rb] > 0} {
+                    set line [lb]string trim $line[rb]
                     if {$line == ""} break
-                    set head [split $line :]
-                    set key [string tolower [string trim [lindex $head 0]]]
-                    set value [string trim [lindex $head 1]]
+                    set head [lb]split $line :[rb]
+                    set key [lb]string tolower [lb]string trim [lb]lindex $head 0[rb][rb][rb]
+                    set value [lb]string trim [lb]lindex $head 1[rb][rb]
                     if {$key == "content-type"} {
                             set type $value
                     } elseif {$key == "location"} {
@@ -1129,10 +1123,10 @@ Content File=$inp"
                             set status $status
                     }
             }
-            set page [read $fp]
+            set page [lb]read $fp[rb]
             close $fp
 
-            if [info exists location] {
+            if [lb]info exists location[rb] {
                     ns_returnredirect $conn $location
             } else {
                     ns_return $conn $status $type $page

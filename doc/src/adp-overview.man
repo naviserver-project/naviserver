@@ -203,7 +203,9 @@ Section [emph {ns/server/servername/adp}]:
 [para]
 
 
-[list_begin bullet] [emph {Cache}] - If set to on, ADP caching is enabled.
+[list_begin bullet]
+
+[bullet] [emph {Cache}] - If set to on, ADP caching is enabled.
 
 
 [nl]
@@ -311,7 +313,7 @@ with the extensions .adp or .asp will be parsed, and all files in the
 [bullet] [emph {StartPage}]  - The file to be run on every connection instead of the requested ADP.
      It can be used to perform routine initialization. It would then
      usually include the requested ADP by calling:
-     ns_adp_include [ns_adp_argv 0]
+     ns_adp_include [lb]ns_adp_argv 0[rb]
 
 
 [nl]
@@ -764,11 +766,11 @@ This ADP example tests for various browsers and returns a different message in e
 
  <%
  ns_puts "Hello"
- set ua [ns_set get [ns_conn headers] "user-agent"]
+ set ua [lb]ns_set get [lb]ns_conn headers[rb] "user-agent"[rb]
  ns_puts "$ua "
- if [string match "*MSIE*" $ua] {
+ if [lb]string match "*MSIE*" $ua[rb] {
   ns_puts "This is MS Internet Explorer"
- } elseif [string match "*Mozilla*" $ua] {
+ } elseif [lb]string match "*Mozilla*" $ua[rb] {
   ns_puts "This is Netscape or a Netscapecompatible browser"
  } else {
   ns_puts "Couldn't determine the browser"
@@ -849,8 +851,8 @@ displays the appropriate page:
  <BODY BGCOLOR="#ffffff">
  <%
  # Get form data and assign to variables
- set r [ns_conn form $conn]
- set question [ns_set get $r question]
+ set r [lb]ns_conn form $conn[rb]
+ set question [lb]ns_set get $r question[rb]
  # Display cookbook in appropriate format
  if {$question == "yes"} {ns_adp_include cookset.html} \
  else {ns_adp_include cook.html}
@@ -908,11 +910,11 @@ of database tables:
  <FORM METHOD=POST ACTION=db2.adp>
  <SELECT NAME=Table>
  <%
- set db [ns_db gethandle]
+ set db [lb]ns_db gethandle[rb]
  set sql "select * from tables"
- set row [ns_db select $db $sql]
- while {[ns_db getrow $db $row]} {
- set table [ns_set get $row name]
+ set row [lb]ns_db select $db $sql[rb]
+ while {[lb]ns_db getrow $db $row[rb]} {
+ set table [lb]ns_set get $row name[rb]
  ns_puts "<OPTION VALUE=\"$table\">$table"
  }
  %>
@@ -944,18 +946,18 @@ The second ADP, db2.adp, is used as the POST from the first ADP:
  <BODY>
  <H1>DB Example page 2</H1>
  <%
- set table [ns_set get [ns_conn form $conn] Table]
- set db [ns_db gethandle]
+ set table [lb]ns_set get [lb]ns_conn form $conn[rb] Table[rb]
+ set db [lb]ns_db gethandle[rb]
  %>
  Contents of <%=$table%>:
  <Table border=1>
  <%
-  set row [ns_db select $db "select * from $table"]
-  set size [ns_set size $row]
-  while {[ns_db getrow $db $row]} {
+  set row [lb]ns_db select $db "select * from $table"[rb]
+  set size [lb]ns_set size $row[rb]
+  while {[lb]ns_db getrow $db $row[rb]} {
     ns_puts "<tr>"
     for {set i 0} {$i < $size} {incr i} {
-      ns_puts "<td>[ns_set value $row $i]</td>"
+      ns_puts "<td>[lb]ns_set value $row $i[rb]</td>"
     }
     ns_puts "</tr>"
   }
@@ -1053,22 +1055,22 @@ administrator and the user, and displays a confirmation message:
  Thank You for subscribing to our newsletter!
  <%
  # Get form data and assign to variables
- set r [ns_conn form $conn]
- set name [ns_set get $r name]
- set title [ns_set get $r title]
- set notify [ns_set get $r notify]
- set sendemail [ns_set get $r sendemail]
- set emailaddr [ns_set get $r emailaddr]
+ set r [lb]ns_conn form $conn[rb]
+ set name [lb]ns_set get $r name[rb]
+ set title [lb]ns_set get $r title[rb]
+ set notify [lb]ns_set get $r notify[rb]
+ set sendemail [lb]ns_set get $r sendemail[rb]
+ set emailaddr [lb]ns_set get $r emailaddr[rb]
 
  # Set subscription options explicity to 0 if not checked
  if {$notify != 1} {set notify 0}
  if {$sendemail != 1} {set sendemail 0}
 
  # Update database with new subscription
- set db [ns_db gethandle]
- ns_db dml $db "insert into test values ([ns_dbquotevalue $name],
-                                         [ns_dbquotevalue $title], $notify, $sendemail,
-                                         [ns_dbquotevalue $emailaddr])"
+ set db [lb]ns_db gethandle[rb]
+ ns_db dml $db "insert into test values ([lb]ns_dbquotevalue $name[rb],
+                                         [lb]ns_dbquotevalue $title[rb], $notify, $sendemail,
+                                         [lb]ns_dbquotevalue $emailaddr[rb])"
 
  # Send email message to subscription administrator
  set body "A new newsletter subscription was added for "
@@ -1125,7 +1127,7 @@ includes a file, executes another ADP, and uses streaming.
 
  ## Proxies should cache this page for a maximum of 1 hour:
  ns_setexpires $conn 3600
- set host [ns_set iget [ns_conn headers $conn] host]
+ set host [lb]ns_set iget [lb]ns_conn headers $conn[rb] host[rb]
 
  ## How many times has this page been accessed
  ## since the server was started?
@@ -1187,7 +1189,7 @@ The time.adp file referenced in the example looks like this:
 [para]
 
 
-The time is: <%=[ns_httptime [ns_time]]%>
+The time is: <%=[lb]ns_httptime [lb]ns_time[rb][rb]%>
 
 
 [para]
