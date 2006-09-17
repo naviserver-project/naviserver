@@ -1,206 +1,258 @@
+[manpage_begin {NaviServer Maintenance Guide} n 4.99.2]
 
-<h1>NaviServer Maintenance Guide</h1>
+[titledesc {NaviServer Maintenance Guide}]
 
-<p>
+[description]
 
-<a href=#1>Command line parameters</a>
+[section {NaviServer Command Line}]
 
-<p>
 
-<a href=#2>NaviServer Maintenance</a>
+[para]
 
-<p>
-
-<a href=#3>Maintain the NaviServer Directories</a>
-
-<p>
-
-<a href=#4>NaviServer Directory Map</a>
-
-<p>
-
-<a href=#5>NaviServer Security Guide</a>
-
-<p>
-<a href=#6>Recommended Security Modifications</a>
-
-<p>
-
-<h2><a name=1>NaviServer Command Line</a></h2>
-
-<p>
 
 bin/nsd [ -i | -f ] [-s servername] [ -d ] [ -k | -K ] [ -V ] [ -r root ] {-c | -t} config
 
 Options:
 
-<p>
 
-<ul>
+[para]
 
-<li> <tt>-i</tt>
 
-     <p>
+[list_begin bullet]
+
+[bullet] [emph {-i}]
+
+
+[nl]
+
 
      Run NaviServer from /etc/inittab. This option is similar to -f except
      that stdout goes to the server.log file.
 
-<li> <tt>-f</tt>
+[bullet] [emph {-f}]
 
-     <p>
+
+[nl]
+
 
      Run NaviServer in the foreground.
 
-<li> <tt>-s servername</tt>
+[bullet] [emph {-s servername}]
 
-     <p>
+
+[nl]
+
 
      Specify the server to run, if the configuration file defines multiple
      servers. The Server1 server will be run by default.
 
-<li> <tt>-d</tt>
+[bullet] [emph {-d}]
 
-     <p>
+
+[nl]
+
 
      Run NaviServer in the debugger (ignore SIGINT).
 
-<li> <tt>-k</tt>
+[bullet] [emph {-k}]
 
-     <p>
+
+[nl]
+
 
      Kill the running NaviServer (based on pidfile) and continue.
 
-<li> <tt>-K</tt>
+[bullet] [emph {-K}]
 
-     <p>
+
+[nl]
+
 
      Kill the running NaviServer (based on pidfile) and terminate.
 
-<li> <tt>-V</tt>
+[bullet] [emph {-V}]
 
-     <p>
+
+[nl]
+
 
      Print the version number of NaviServer.
 
-<li> <tt>-r root</tt>
+[bullet] [emph {-r root}]
 
-     <p>
+
+[nl]
+
 
      Perform chroot to a new root directory.
 
-<li> <tt>{-c|-t} config</tt>
+[bullet] [emph {{-c|-t} config}]
 
-     <p>
+
+[nl]
+
 
      Required. Specify -c if the configuration file is in the .ini format
      from previous NaviServer versions or -t if the configuration file is in
      .tcl format. Specify the path to the configuration file.
-</ul>
 
-<p>
+[list_end]
 
- <h3>Examples</h3>
 
-<p>
 
-<tt>nsd -t nsd.tcl</tt>
+[para]
 
-<p>
+
+ [subsection {Examples}]
+
+
+[para]
+
+
+[emph {nsd -t nsd.tcl}]
+
+
+[para]
+
 
 This is the simplest form of the command line.
 
-<p>
 
-<tt>nsd -ft nsd.tcl</tt>
+[para]
 
-<p>
+
+[emph {nsd -ft nsd.tcl}]
+
+
+[para]
+
 
 NaviServer will be run in the foreground.
 
-<p>
 
-<tt>nsd -fkt nsd.tcl -r /newroot</tt>
+[para]
 
-<p>
+
+[emph {nsd -fkt nsd.tcl -r /newroot}]
+
+
+[para]
+
 
 NaviServer will be run in a chroot environment, and any
 currently-running server will be killed.
 
-<p>
 
-<h2><a name=2>NaviServer Maintenance</a></h2>
+[para]
 
-<p>
+
+[section {NaviServer Maintenance}]
+
+
+[para]
+
 
 An NaviServer installation requires regular maintenance as follows:
 
-<p>
 
-<ol>
+[para]
 
-<li> Make regular backups of pages and associated files for each
+
+
+[list_begin enum]
+
+
+[enum] Make regular backups of pages and associated files for each
      virtual server.
 
-<p>
 
-<li> Make regular backups of the access log.
+[nl]
 
-<p>
 
-<li> Make regular backups of the server log, especially if verbose
+[enum] Make regular backups of the access log.
+
+
+[nl]
+
+
+[enum] Make regular backups of the server log, especially if verbose
      messages are enabled.
 
-<p>
 
-<li> Make regular backups of the Tcl directory(ies).
+[nl]
 
-<p>
 
-<li> Make regular backups of the bin directory, especially if you have
+[enum] Make regular backups of the Tcl directory(ies).
+
+
+[nl]
+
+
+[enum] Make regular backups of the bin directory, especially if you have
      customized loadable modules.
 
-</ul>
 
-<p>
+[list_end]
+
+
+
+[para]
+
 
 Each of these maintenance tasks is described in the following sections.
 
-<p>
 
-<h2><a name=3>Maintain the NaviServer Directories</a></h2>
+[para]
 
-<p>
+
+[section {Maintain the NaviServer Directories}]
+
+
+[para]
+
 
 The NaviServer directories described below should be backed up
 regularly to ensure against file system failure.
 
-<p>
 
- <h3>Back Up the Pages Directory</h3>
+[para]
 
-<p>
+
+ [subsection {Back Up the Pages Directory}]
+
+
+[para]
+
 
 The location of the pages directory for each virtual server is
 determined by the server-specific PageDir entry in the NaviServer
 configuration file. Normally, it is the /pages subdirectory under
 the NaviServer home directory.
 
-<p>
+
+[para]
+
 
 Use whatever file system backup procedure you have in place at your
 site. To schedule nightly backups, use the Unix cron facility.
 
-<p>
 
- <h3>Back Up the Access Log</h3>
+[para]
 
-<p>
+
+ [subsection {Back Up the Access Log}]
+
+
+[para]
+
 
 The access log file needs to be backed up regularly. By default, the
 access log for each virtual server is in the
 /logs/access.log file under the NaviServer home directory.
 
-<p>
+
+[para]
+
 
 The access log can be configured to limit the number of old logs
 maintained (with the MaxBackup parameter). This sets an upper limit on
@@ -212,11 +264,15 @@ parameter in the configuration file is set to 5, only five old access
 log files will remain on disk. When a sixth log file needs to be
 opened, the oldest log is removed.
 
-<p>
 
- <h3>Back Up the Server Log</h3>
+[para]
 
-<p>
+
+ [subsection {Back Up the Server Log}]
+
+
+[para]
+
 
 Ordinarily, the server log file grows at a slow rate and does not need
 regular truncation. However, while debugging new applications, you
@@ -226,11 +282,15 @@ default). Every SQL statement sent to the database is logged in the
 error log and causes the file to grow much more quickly. In this case
 you may want to back up the error log.
 
-<p>
 
- <h3>Back Up the Tcl Scripts Directory</h3>
+[para]
 
-<p>
+
+ [subsection {Back Up the Tcl Scripts Directory}]
+
+
+[para]
+
 
 The Tcl scripts directory contains the source to the Tcl scripts that
 provide the server with much of its advanced functionality. Tcl
@@ -238,18 +298,24 @@ scripts for each virtual server are stored in the
 /tcl subdirectory by default, and global Tcl scripts are
 stored in the /modules/tcl subdirectory by default.
 
-<p>
+
+[para]
+
 
 If you write new Tcl scripts or edit the existing ones, you must
 ensure your changes are saved regularly to a safe place. Also, be sure
 that any external files utilized by your Tcl scripts are backed up
 too, including files outside the NaviServer home directory.
 
-<p>
 
- <h3>Back Up the bin Directory</h3>
+[para]
 
-<p>
+
+ [subsection {Back Up the bin Directory}]
+
+
+[para]
+
 
 The /bin subdirectory of the NaviServer home is the location of the
 NaviServer binary and the default location of any dynamically loadable
@@ -259,11 +325,15 @@ avoid having to recompile them after a file system failure. Also, be
 sure to back up your module source code.
 
 
-<p>
 
-<h2><a name=4>Directory Map</a></h2>
+[para]
 
-<p>
+
+[section {Directory Map}]
+
+
+[para]
+
 
 This table describes all of the directories that are created under the
 NaviServer installation directory when you install NaviServer. It lists
@@ -272,139 +342,199 @@ configuration parameters that affect the directory or the files in the
 directory, and references to where you can find more information on
 the associated NaviServer features.
 
-<p>
 
-<tt>/bin</tt>
+[para]
 
-<p>
+
+[emph {/bin}]
+
+
+[para]
+
 
 Directory containing the NaviServer binary and the default directory
 for any dynamically-loadable C modules.
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  .so files
  nsd
  translate-ini
 
-<p>
 
-<tt>/include</tt>
+[para]
 
-<p>
+
+[emph {/include}]
+
+
+[para]
+
 
 Directory containing header files for NaviServer.
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  .h files
 
-<p>
 
-<tt>/lib</tt>
+[para]
 
-<p>
+
+[emph {/lib}]
+
+
+[para]
+
 
 Directory containing static libraries used for building customized
 components to NaviServer. This directory currently only includes the
 libnspd.a file that can be used to build database proxy daemons
 (external database drivers).
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  libnsd.so
  libnsdb.so
  libnsthread.so
  libnsproxy.so
 
-<p>
 
-<tt>/logs</tt>
+[para]
 
-<p>
+
+[emph {/logs}]
+
+
+[para]
+
 
 Directory containing log files and the server pid file.
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  access.log
  server.log
  nsd.pid
 
-<p>
 
-<tt>/modules</tt>
+[para]
 
-<p>
+
+[emph {/modules}]
+
+
+[para]
+
 
 Contains directories for each configured module that operates across
 servers, such as the tcl module.
 
-<p>
 
-<tt>/modules/nscp</tt>
+[para]
 
-<p>
+
+[emph {/modules/nscp}]
+
+
+[para]
+
 
 Directory containing files related to control port interface.
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  tcsh.inputrc
 
-<p>
+
+[para]
 
 
-<tt>/tcl</tt>
 
-<p>
+[emph {/tcl}]
+
+
+[para]
+
 
 Default directory for shared Tcl script library. Also contains
 subdirectories containing Tcl examples and Tcl scripts for various
 modules.
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  .tcl files
 
-<p>
 
-<tt>/modules/nsperm</tt>
+[para]
 
-<p>
+
+[emph {/modules/nsperm}]
+
+
+[para]
+
 
 Directory containing user, group, and permissions files which is used to provide access control
 for NaviServer.
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  passwd file
  group file
@@ -412,249 +542,351 @@ Files:
  hosts.deny file
  perms file
 
-<p>
 
-<tt>/modules/tcl</tt>
+[para]
 
-<p>
+
+[emph {/modules/tcl}]
+
+
+[para]
+
 
 Default directory for private Tcl script library for this server.
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  .tcl files
 
-<p>
+
+[para]
 
 
-<tt>/pages</tt>
 
-<p>
+[emph {/pages}]
+
+
+[para]
+
 
 Default directory where pages and graphics for the server are stored.
 Users can optionally have individual subdirectories of this directory
 (see UserDir, below).
 
-<p>
+
+[para]
+
 
 Files:
 
-<p>
+
+[para]
+
 
  typically, .htm, .html, .shtml, and .adp files
 
-<p>
 
-<h1><a name=5>NaviServer Security Guide</a></h1>
+[para]
+
+
+[titledesc {NaviServer Security Guide}]
+[description]
+
 
 This chapter provides guidelines for ensuring the security of systems
 running NaviServer. It describes the issues that must be considered and
 the associated modifications that should be made to NaviServer
 installations.
 
-<p>
 
- <h3>General nsadmin Passwords</h3>
+[para]
 
-<p>
+
+ [subsection {General nsadmin Passwords}]
+
+
+[para]
+
 
 By default, the nsadmin password for NaviServer is either set to NULL
 or to a poor password. Set an acceptable password for nsadmin as
 described below.
 
-<p>
+
+[para]
+
 
 Edit the nsadmin entry in the /modules/nsperm/passwd file. For
 example, the default passwd file contains this nsadmin entry:
  nsadmin:CUdnvgBYocLSI:::::
 
-<p>
+
+[para]
+
 
 Substitute an alternate encrypted password in place of CUdnvgBYocLSI.
 
-<p>
+
+[para]
+
 
 To encrypt a password, you can copy an already-encrypted password from
 the /etc/passwd file or run the bin/nspasswd utility. It will prompt
 you for a password and return the encrypted version of the password.
 
-<p>
+
+[para]
+
 
 For more information about the passwd file, see the "Defining Users"
 section.
 
-<p>
 
- <h3>Permission Settings</h3>
+[para]
 
-<p>
+
+ [subsection {Permission Settings}]
+
+
+[para]
+
 
 It is more secure to avoid using the nsperm module and use file-level
 security for ADPs. If you must use the nsperm module, set appropriate
 permissions records as follows:
 
-<p>
 
-<ol>
+[para]
 
-<li> Maintain the same permission records for GET and POST; they
+
+
+[list_begin enum]
+
+
+[enum] Maintain the same permission records for GET and POST; they
      actually provide the same permissions.
 
-<p>
 
-<li> Remove any permission records related to network publishing (PUT,
+[nl]
+
+
+[enum] Remove any permission records related to network publishing (PUT,
      DELETE, MKDIR, and BROWSE) for all users except nsadmin.
 
-<p>
 
-<li> Keep in mind the inheritance rules for permission records. In
+[nl]
+
+
+[enum] Keep in mind the inheritance rules for permission records. In
      general, a permission record for a directory also applies to the
      directories underneath it.
-</ul>
 
-<p>
+[list_end]
+
+
+
+[para]
+
 
 To define NaviServer permissions, create permission entries for them in
 the perms file, which resides in the /modules/nsperm directory. The
 default perms file does not contain any permission entries, but it
 contains comments that explain how to add entries to the file.
 
-<p>
+
+[para]
+
 
 For more information about setting permissions, see the "Permissions"
 section.
 
-<p>
 
-<h2><a name=6>Recommended Security Modifications</a></h2>
+[para]
 
-<p>
+
+[section {Recommended Security Modifications}]
+
+
+[para]
+
 
 The actions described in this section are recommended, but not
 required, to ensure the security of systems running NaviServer.
 
-<p>
 
- <h3>NaviServer Version</h3>
+[para]
 
-<p>
+
+ [subsection {NaviServer Version}]
+
+
+[para]
+
 
 In general, NaviServer versions 4.99 and higher should be used whenever
 possible, because they are more secure than earlier versions of
 NaviServer.
 
-<p>
 
-<ul>
+[para]
 
-<li> NaviServer can be run in a chroot environment.
 
-<p>
+[list_begin bullet]
 
-<li> The configuration file, which has a new Tcl format, is executed in
+[bullet] NaviServer can be run in a chroot environment.
+
+
+[nl]
+
+
+[bullet] The configuration file, which has a new Tcl format, is executed in
      a separate, temporary interpreter that is destroyed before startup
      begins. The configuration file memory buffer is then zeroed after
      parsing.
 
-<p>
 
-<li> The nsd binary can be stored outside the root directory because
+[nl]
+
+
+[bullet] The nsd binary can be stored outside the root directory because
      NaviServer no longer locates and re-executes itself.
 
-<p>
 
-<li> The configuration file can be stored outside the root directory,
+[nl]
+
+
+[bullet] The configuration file can be stored outside the root directory,
      because NaviServer opens and reads the configuration file before
      running chroot().
 
-<p>
 
-<li> The nscp module, which allows connections only from localhost,
+[nl]
+
+
+[bullet] The nscp module, which allows connections only from localhost,
      provides a secure control port interface that allows ad hoc Tcl
      evaluation and other server administration features. For more
      information about the control port interface, see the "NaviServer's
      Control Port Interface" section.
-</ul>
 
-<p>
+[list_end]
 
- <h3>Secure chroot Environment</h3>
 
-<p>
+
+[para]
+
+
+ [subsection {Secure chroot Environment}]
+
+
+[para]
+
 
 NaviServer should be run in a secure chroot() environment whenever
 possible.
 
-<p>
+
+[para]
+
 
 In Versions 4.99 or higher, NaviServer supports a -r command line option
 to run NaviServer in a chroot() environment. It provides the following
 benefits:
 
-<p>
 
-<ul>
+[para]
 
-<li> The chroot() system call updates the process such that all
+
+[list_begin bullet]
+
+[bullet] The chroot() system call updates the process such that all
      absolute filenames are relative to a new root directory instead of
      the actual mounted file system.
 
-<p>
 
-<li> The chroot() call is irrevocable. Once chroot() returns, the
+[nl]
+
+
+[bullet] The chroot() call is irrevocable. Once chroot() returns, the
      server cannot access any file above the new root directory.
 
-<p>
 
-<li> Although it does not actually protect any of the underlying
+[nl]
+
+
+[bullet] Although it does not actually protect any of the underlying
      content, scripts, or protected databases, chroot() is the single
      most effective tool for protecting the server machine and
      sensitive information, such as user passwords and configuration
      files, from view.
-</ul>
 
-<p>
+[list_end]
+
+
+
+[para]
+
 
 To run NaviServer in a chroot() environment, you need only copy a few
 files and directories to the new root directory. For example, on the
 SGI platform, you would execute the following commands to create new
 directories and copy the necessary files to them:
 
-<p>
+
+[para]
+
 
 mkdir $root/dev $root/tmp $root/etc
 
-<p>
+
+[para]
+
 
 chmod 1777 $root/tmp
 
-<p>
+
+[para]
+
 
 cd $root/dev; /dev/MAKEDEV generic usema
 
-<p>
+
+[para]
+
 
 cp /etc/passwd /etc/resolve.conf $root/etc
 
-<p>
+
+[para]
+
 
 Then, you can run NaviServer with the -r option as in this example:
  nsd -t nsd.tcl -r $root
 
-<p>
+
+[para]
+
 
 For more information about the nsd command line, see the "NaviServer
 Command Line" section.
 
-<p>
 
- <h3>Restricted Content</h3>
+[para]
 
-<p>
+
+ [subsection {Restricted Content}]
+
+
+[para]
+
 
 Determine whether any of the content available to an NaviServer in a
 chroot() environment would be restricted. In general, NaviServer should
@@ -662,7 +894,9 @@ be read-only and everything it can read should be world-readable. This
 allows the NaviServer administrator to ignore the nsperm module
 altogether.
 
-<p>
+
+[para]
+
 
 If any of the content available to NaviServer is restricted, the
 NaviServer administrator needs to define the appropriate permissions
@@ -670,62 +904,90 @@ with the nsperm module. The administrator should be very clear which
 areas are blocked off and know both the URL and METHOD for the
 restricted areas.
 
-<p>
+
+[para]
+
 
 It is preferable to allow the GET method for all URLs and have nothing
 restricted accessible through NaviServer.
 
-<p>
 
- <h3>Tcl Library</h3>
+[para]
 
-<p>
+
+ [subsection {Tcl Library}]
+
+
+[para]
+
 
 Limit the available Tcl functions to just those functions that are
 necessary by that particular NaviServer installation. Purge the Tcl
 library of unnecessary functions. For example, if the site doesn't
 send e-mail, remove the ns_sendmail procedures.
 
-<p>
+
+[para]
+
 
 Some potentially unsafe commands you may want to consider removing
 are:
 
-<p>
 
-<ul>
+[para]
 
-<li> File system related functions, such as open, read, and puts
 
-<p>
+[list_begin bullet]
 
-<li> The NaviServer ns_sock* Tcl functions
+[bullet] File system related functions, such as open, read, and puts
 
-<p>
 
-<li> The Tcl socket routines
+[nl]
 
-<p>
 
-<li> The exec command
+[bullet] The NaviServer ns_sock* Tcl functions
 
-<p>
 
-<li> The file command, or at least the delete and rename features
+[nl]
 
-<p>
 
-<li> The exit command
+[bullet] The Tcl socket routines
 
-</ul>
 
-<p>
+[nl]
+
+
+[bullet] The exec command
+
+
+[nl]
+
+
+[bullet] The file command, or at least the delete and rename features
+
+
+[nl]
+
+
+[bullet] The exit command
+
+
+[list_end]
+
+
+
+[para]
+
 
 This code example disables the open command:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 static int
 AddCmds(Tcl_Interp, void *arg) {
     Tcl_CreateCommand(interp, "open", BadCmd, NULL, NULL);
@@ -738,18 +1000,26 @@ BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
     return TCL_ERROR;
 }
 
-</pre>
 
-<p>
+[example_end]
 
- <h3>Database Access</h3>
 
-<p>
+
+[para]
+
+
+ [subsection {Database Access}]
+
+
+[para]
+
 
 Database access should be restricted with read-only logins to the
 server and queries through stored procedures.
 
-<p>
+
+[para]
+
 
 For more information about the Tcl functions for stored procedures,
 see the "ns_db" section of the NaviServer Tcl Developer's Guide. For
@@ -757,24 +1027,26 @@ more information about the C functions for stored procedures, see the
 "Stored Procedure Functions" section of the NaviServer C Developer's
 Guide.
 
-<p>
 
- <h3>Control Port Interface</h3>
+[para]
 
-<p>
+
+ [subsection {Control Port Interface}]
+
+
+[para]
+
 
 The control port interface should not be used unless absolutely
 necessary. Although it is more secure than the /NS/Admin interface
 from earlier NaviServer versions because it only allows connections
 from localhost, it still poses a risk potential.
 
-<p>
+
+[para]
+
 
 For more information about the control port interface, see the
 "NaviServer's Control Port Interface" section.
 
-
-<p>
-
-
-
+[manpage_end]

@@ -1,5 +1,6 @@
+[manpage_begin {History of NaviServer} n 4.99.2]
 
-<h2>History of NaviServer</h2>
+[section {History of NaviServer}]
 
 America Online acquired a small company called NaviSoft several years
 ago just before that company delivered a document management and
@@ -12,7 +13,9 @@ in its implementation of the HTTP PUT and BROWSE methods for remote
 editting of web content.  In these ways it was many years ahead of
 Microsoft Frontpage and Netscape Navigator Gold.
 
-<p>
+
+[para]
+
 
 In the years since then, NaviSoft created the NaviHosting service and
 created a group of software tools around it that was used by GNN,
@@ -23,26 +26,30 @@ added exciting new features to AOLServer, like ADP server-side HTML
 scripts, caching--even an FTP server.  The team also maintained the
 many software applications that supported GNN, PrimeHost, and AOL.
 
-<p>
 
-Finally, in 1999, the entire AOLServer code base was overhauled and 
-<a href=http://news.com.com/2100-1023-228252.html>released to the Open 
-Source community as NaviServer 3.0</a> under the 
-<a href=/license/>AOLserver Public License</a>, an application of the 
-<a href=http://mozilla.org/MPL>Mozilla Public License</a>. 
+[para]
 
-<p>
 
-America Online continues to use AOLServer throughout its business--from 
-<a href=http://home.digitalcity.com/>Digital City</a> to 
-<a href=http://home.netscape.com/</a>Netscape</a> to 
-<a href=http://compuserve.com/>CompuServe</a> to the 
-<a href=http://aol.com/>America Online</a> service itself.
+Finally, in 1999, the entire AOLServer code base was overhauled and
+[uri http://news.com.com/2100-1023-228252.html] released to the Open
+Source community as NaviServer 3.0 under the AOLserver Public License,
+an application of the Mozilla Public License.
 
-<p>
+[para]
+
+
+America Online continues to use AOLServer throughout its business--from
+[uri http://home.digitalcity.com/] Digital City to
+[uri http://home.netscape.com] Netscape to
+[uri http://compuserve.com/] CompuServe to the
+[uri http://aol.com/] America Online service itself.
+
+
+[para]
+
 
 In 2005 new project called NaviServer was created which was a fork of
 AOLServer 4.0.11.
 
 
-
+[manpage_end]

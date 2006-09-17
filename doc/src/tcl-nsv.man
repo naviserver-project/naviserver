@@ -1,5 +1,9 @@
+[manpage_begin {NaviServer nsv Commands} n 4.99.2]
 
-<h1>NaviServer nsv Commands</h1>
+[titledesc {NaviServer nsv Commands}]
+
+[description]
+
 
 The nsv commands provide a high performance data sharing mechanism.
 This facility is much flexible alternative to the obsolete ns_share
@@ -8,124 +12,198 @@ In addition, lock contention is managed in a much more scalable
 way--something that is not possible with the obsolete ns_share
 facility.
 
-<h2>Basics</h2>
+[section {Basics}]
 
-<p>
+
+[para]
+
 
 The following commands currently make up the nsv interface:
 
-<p>
+
+[para]
+
 
     	nsv_get - get key value
-<p>
-    	nsv_exists - check key existence
-<p>
-    	nsv_set - set key value
-<p>
-    	nsv_append - append value
-<p>
-    	nsv_lappend - append value as list element
-<p>
-    	nsv_incr - increment and return value
-<p>
-    	nsv_unset - unset a value
-<p>
-    	nsv_array - manage nsv arrays
-<p>
 
-<p>
+[para]
+
+    	nsv_exists - check key existence
+
+[para]
+
+    	nsv_set - set key value
+
+[para]
+
+    	nsv_append - append value
+
+[para]
+
+    	nsv_lappend - append value as list element
+
+[para]
+
+    	nsv_incr - increment and return value
+
+[para]
+
+    	nsv_unset - unset a value
+
+[para]
+
+    	nsv_array - manage nsv arrays
+
+[para]
+
+
+
+[para]
+
 
 Commands for the most part mirror the cooresponding Tcl command for
 ordinary variables.  Basically, to set a value, simply use the nsv_set
 command:
 
-<p>
 
-<pre.
+[para]
+
+
+[example_begin]
 
 	nsv_set myarray foo $value
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 and to get a value, simply use the nsv_get command:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 	set value [nsv_get myarray foo]
 
-</pre>
 
-<p>
-
+[example_end]
 
 
-<p>
 
-<h2>Migrating From ns_share</h2>
+[para]
 
-<p>
+
+
+
+
+[para]
+
+
+[section {Migrating From ns_share}]
+
+
+[para]
+
 
 Migrating from ns_share is straightforward.  If your init.tcl included commands such as:
 
-<p>
 
-<pre.
+[para]
+
+
+[example_begin]
 
 	ns_share myshare
 	set myshare(lock) [ns_mutex create]
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 use instead:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 	nsv_set myshare lock [ns_mutex create]
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 In your procedures, instead of:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 	proc myproc {} {
 		ns_share myshare
 		ns_mutex lock $myshare(lock)
 		...
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 use:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 
 	proc myproc {} {
 		ns_mutex lock [nsv_get myshare lock]
 		...
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 and within an ADP page, instead of:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 
 	&lt;%
@@ -135,15 +213,23 @@ and within an ADP page, instead of:
 
 	&lt;%=$myshare(key2)%&gt;
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 use:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 	&lt;%
 	ns_puts [nsv_get myshare key1]
@@ -151,9 +237,13 @@ use:
 
 	&lt;%=[nsv_get myshare key2]%&gt;
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 
 Notice that, unlike ns_share, no command is required to define the
@@ -163,40 +253,58 @@ are supported.  However, to migrate from ns_share you can simply package
 up all existing ns_share scalars into a single array with a short name,
 perhaps just ".". For example, if you had:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 	ns_share mylock myfile
 	set myfile /tmp/some.file
 	set mylock [ns_mutex create]
 
-</pre.
+[example_end]
 
-<p>
+
+
+
 
 you can use:
 
-<p>
 
-<pre>
+
+
+
+
+[example_begin]
+
 	nsv_set . myfile /tmp/some.file
 	nsv_set . mylock [ns_mutex create]
 
-</pre>
 
-<p>
+[example_end]
 
 
-<h2>Multithreading Features</h2>
 
-<p>
+[para]
+
+
+
+[section {Multithreading Features}]
+
+
+[para]
+
 
 One advantages of nsv is built in interlocking for thread safety.
 For example, consider a case of a "increment-by-one" unique id system.
 Here's the ns_share solution:
 
-<pre>
+
+[example_begin]
+
 
 	ns_share ids
 	set ids(lock) [ns_mutex create]
@@ -210,46 +318,64 @@ Here's the ns_share solution:
 		return $next
 	}
 
-</pre>
+
+[example_end]
+
 
 and here's an nsv solution:
 
-<pre>
+
+[example_begin]
+
 	nsv_set ids next 0
 
 	proc nextid {} {
 		return [nsv_incr ids next]
 	}
 
-</pre>
+
+[example_end]
+
 
 Note that the nsv solution does not need a mutex as the nsv_incr command
 is internally interlocked.
 
-<p>
+
+[para]
 
 
-<h2>Compatibility with Tcl Arrays</h2>
 
-<p>
+[section {Compatibility with Tcl Arrays}]
+
+
+[para]
+
 
 Another useful feature of nsv is the nsv_array command which works much
 like the Tcl array command.  This can be used to import and export values
 from ordinary Tcl arrays.  For example, to copy from Tcl use:
 
-<p>
+
+[para]
+
 
 	nsv_array set meta [array get tmpmeta]
 
-<p>
+
+[para]
+
 
 and to copy to Tcl use:
 
-<p>
+
+[para]
+
 
 	array set metacopy [nsv_array get meta]
 
-<p>
+
+[para]
+
 
 As with all other nsv command, nsv_array is atomic and no explicit
 locking is required.  This feature can be used to contruct a new nsv
@@ -259,44 +385,64 @@ new temporary array is being constructed, other threads can access the
 old array without delay or inconsistant data.  You can even reset a
 complete nsv array in one step with "reset".  For example, instead of:
 
-<pre>
+
+[example_begin]
+
 	ns_share lock meta
 	set lock [ns_mutex create]
 	ns_mutex lock $lock
 	unset meta
 	array set meta [array get tmpmeta]
 	ns_mutex unlock $lock
-</pre>
+
+[example_end]
+
 
 you can simply use:
 
-<p>
+
+[para]
+
 
 	nsv_array reset meta [array get tmpmeta]
 
-<p>
+
+[para]
+
 
 The reset option will flush and then reset all values atomically,
 eliminating the need for the explicit lock.
 
-<p>
+
+[para]
+
 
 Other options for the nsv_array command include:
 
-<p>
+
+[para]
+
 
 	nsv_exists array - test existance of array
-<p>
+
+[para]
+
 	nsv_size array - return # of elements in array
-<p>
+
+[para]
+
 	nsv_names array - return keys of array
 
-<p>
+
+[para]
 
 
-<h2>Configuration</h2>
 
-<p>
+[section {Configuration}]
+
+
+[para]
+
 
 The nsv system uses a common multithreading technique to reduce the
 potential for lock contention which is to split the locks to acheive
@@ -305,26 +451,42 @@ buckets and only the arrays within a particular bucket share a lock.
 The number of buckets to be used can be configured by setting the
 "nsvbuckets" tcl parameters, e.g.:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 	[ns/server/server1/tcl]
         nsvbuckets=20
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 The default is 8 which should be reasonalbe.  Note that you can monitor
 the lock contention, if any, by enabling mutex metering:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 	[ns/threads]
         mutexmetering=on
-</pre>
-<p>
+
+[example_end]
+
+
+[para]
+
 
 and then viewing the results of "ns_info locks" command after the server
 has been running for some time.  The nsv locks all have names of the
@@ -332,4 +494,4 @@ form "nsv:##".  If you find many lock attempts which did not successed
 immediately, try increasing nsvbuckets.
 
 
-
+[manpage_end]

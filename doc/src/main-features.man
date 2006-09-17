@@ -1,21 +1,28 @@
+[manpage_begin {NaviServer Features} n 4.99.2]
 
-<h1>NaviServer Features</h1>
+[titledesc {NaviServer Features}]
+[description]
 
-<h2>What is NaviServer?</h2>
+
+[section {What is NaviServer?}]
 
 NaviServer is a World Wide Web server that provides access control and
 database connections and runs on multiple UNIX platforms. NaviServer
 can access SQL databases including Sybase, SOLID, Postgres, and some
 third-party database drivers.
 
-<p>
+
+[para]
+
 
 NaviServer is extendable with both C and Tcl APIs that expose core
 functions and provide primitives for accessing the database. NaviServer
 also provides optional CGI support, although the C and Tcl APIs are
 more powerful, offer superior performance, and are easier to use.
 
-<p>
+
+[para]
+
 
 You can configure multiple servers within one NaviServer configuration
 file, and then specify which server to run when you run NaviServer.
@@ -23,63 +30,85 @@ NaviServer also uses a multi-threaded design on all supported
 platforms. You can configure the number of threads each server can
 use.
 
-<p>
+
+[para]
+
 
 NaviServer offers direct connections to SQL databases such as Postgres, Sybase, MS SQLServer.
 Third-party database drivers are provided for Oracle, Informix, and Interbase. You
 can even configure NaviServer to have connections to multiple databases
 and specify which databases are available to each server.
 
-<p>
+
+[para]
+
 
 NaviServer also includes server administration capabilities. An access
 control system allows you to specify separate permissions for each
 combination of URL and HTTP method (GET, PUT, or POST). You can also
 specify users and groups who are allowed access to NaviServer.
 
-<p>
 
-<h2>Features</h2>
+[para]
+
+
+[section {Features}]
 
  NaviServer Administration Features
 
-<p>
 
-<ul>
+[para]
 
-<li> Access Control:
 
-     <p>
+[list_begin bullet]
+
+[bullet] Access Control:
+
+
+[nl]
+
 
      NaviServer's access control system allows you to define users, assign
      users to groups, and set permissions for users, groups, and hosts.
 
-     <p>
+
+[nl]
+
 
      When defining permissions for the NaviServer, you can specify lists of
      users to allow or disallow, lists of groups to allow or disallow, and
      hosts (specified either by host name or IP address) to allow or
      disallow for each method/URL combination..
 
-     <p>
 
-<li> Multi-homing:
+[nl]
 
-     <p>
+
+[bullet] Multi-homing:
+
+
+[nl]
+
 
      NaviServer allows you to run multiple servers on one host by attaching
      them to different port and/or IP address combinations.
 
-     <p>
+
+[nl]
+
 
      See the "Configuration for Multiple IP Addresses" section for
      information on configuring NaviServer for multi-homing.
 
-     <p>
 
-<li> Database Services Features
+[nl]
 
-     <p>
+
+[bullet] Database Services Features
+
+
+[nl]
+
 
      NaviServer manages pools of open connections to databases. These pools
      let NaviServer quickly service simultaneous database requests (without
@@ -87,15 +116,21 @@ specify users and groups who are allowed access to NaviServer.
      number of HTTP requests from overloading the system. Both the Tcl and
      C APIs provide access to these database pools.
 
-     <p>
 
-<li> Programming Interface Features
+[nl]
 
-     <p>
 
-     <li> Tcl Interface:
+[bullet] Programming Interface Features
 
-     <p>
+
+[nl]
+
+
+     [bullet] Tcl Interface:
+
+
+[nl]
+
 
      NaviServer can be extended using the Tcl scripting language. NaviServer
      provides a powerful Tcl API containing a full array of functions and
@@ -105,27 +140,37 @@ specify users and groups who are allowed access to NaviServer.
      state, access the sockets and threads interfaces, roll access logs,
      maintain permissions, access the database, and much more.
 
-     <p>
+
+[nl]
+
 
      You can create scripts in a private Tcl library for each server, or in
      a library shared by multiple servers. Since Tcl is embedded in
      NaviServer, a separate process is not required to run a Tcl script,
      making Tcl extensions much more efficient than CGI-based extensions.
 
-     <p>
 
-<li> NaviServer Dynamic Pages (ADPs)
+[nl]
 
-     <p>
+
+[bullet] NaviServer Dynamic Pages (ADPs)
+
+
+[nl]
+
 
      ADPs allow you to embed Tcl scripts directly into HTML pages. The
      script(s) are interpreted dynamically when the page is accessed.
 
-     <p>
 
-<li> C Interface:
+[nl]
 
-     <p>
+
+[bullet] C Interface:
+
+
+[nl]
+
 
      NaviServer can also be extended with the C API. The C API lets you
      write your own logging routines, access control system, communications
@@ -133,23 +178,31 @@ specify users and groups who are allowed access to NaviServer.
      and structures you need to access NaviServer's core functionality and
      the database.
 
-     <p>
+
+[nl]
+
 
      To use the C API, you compile your C module into a Unix shared
      library. NaviServer will dynamically load the module and call your
      initialization function.
 
-     <p>
 
-<li> CGI Support, Including CGI File Type Activation:
+[nl]
 
-     <p>
+
+[bullet] CGI Support, Including CGI File Type Activation:
+
+
+[nl]
+
 
      NaviServer provides full CGI support. Because running a CGI program
      requires a separate process to be created, it is less efficient than
      extending NaviServer with Tcl or C.
 
-     <p>
+
+[nl]
+
 
      You can configure NaviServer to look for CGI programs in a specific
      directory, or you can store CGI programs near the HTML files and refer
@@ -158,11 +211,15 @@ specify users and groups who are allowed access to NaviServer.
      NaviServer to activate the .cgi file type in specific directories or
      groups of directories.
 
-</ul>
 
-<p>
+[list_end]
 
-<h3>High Performance</h3>
+
+
+[para]
+
+
+[subsection {High Performance}]
 
 Fast and efficient handling of simultaneous connections through a combination
 of multi-threading, in-memory caching, and single-threaded asynchronous I/O.
@@ -170,55 +227,71 @@ of multi-threading, in-memory caching, and single-threaded asynchronous I/O.
 NaviServer has an advanced multithreaded architecture.  Multithreading
 features include:
 
-<ul>
+[list_begin bullet]
 
-<li>Fast response without having to fork for each connection.
+[bullet]Fast response without having to fork for each connection.
 
-    <p>
 
-<li>Multiple, simultaneous servicing of connections.
+[nl]
 
-    <p>
 
-<li>Ability to keep state in the address space of the single
+[bullet]Multiple, simultaneous servicing of connections.
+
+
+[nl]
+
+
+[bullet]Ability to keep state in the address space of the single
     NaviServer process - no need to maintain slow and messy external
     files!
 
-    <p>
 
-<li>Simple programming model where each request is handled in its own
+[nl]
+
+
+[bullet]Simple programming model where each request is handled in its own
     thread, freeing the programmer from the worry of a long running
     request blocking the server.
-    <p>
 
-<li>Fully configurable minimum and maximum number of threads on a
+[nl]
+
+
+[bullet]Fully configurable minimum and maximum number of threads on a
     per-virtual server basis. Threads are transparently added when
     demand rises and then slowly exit as demand falls.
 
-    <p>
 
-<li>The Tcl interface is fully multi-threaded aware - no special steps
+[nl]
+
+
+[bullet]The Tcl interface is fully multi-threaded aware - no special steps
     are required to ensure proper concurrent script evaluation.
 
-    <p>
 
-<li>The <B><I><A NAME=nsthread>nsthread</A> </I></B>
+[nl]
+
+
+[bullet]The [emph {[emph {<A NAME=nsthread>nsthread }]}]
     platform-independent C API for multithreaded programming which
     includes:
 
-    <ul>
+    [list_begin bullet]
 
-    <li>Functions to create and wait for new threads
+    [bullet]Functions to create and wait for new threads
 
-    <li>Mutex, critical section, semaphore, and event objects to protect shared resources
+    [bullet]Mutex, critical section, semaphore, and event objects to protect shared resources
 
-    <li>Thread local storage for maintaining per-thread data
+    [bullet]Thread local storage for maintaining per-thread data
 
-    </ul>
 
-    <p>
+[list_end]
 
-<li>The nsthread interface allows the NaviServer programmer to write
+
+
+[nl]
+
+
+[bullet]The nsthread interface allows the NaviServer programmer to write
     new C functions which use advanced multithreaded locking and
     synchronization techniques independent of the host platform. In
     fact, the NaviServer is written entirely using the nsthread
@@ -226,272 +299,358 @@ features include:
     anywhere in the NaviServer or in any NaviServer module. No other Web
     server provides this level of multithreaded programming support!
 
-    <p>
 
-<li>NaviServer performs in-memory caching of pages and scripts, and
+[nl]
+
+
+[bullet]NaviServer performs in-memory caching of pages and scripts, and
     single-threaded asynchronous I/O for returning static content.
 
-    <p>
 
-</ul>
+[nl]
 
-<h3>Tcl Scripting</h3>
+
+
+[list_end]
+
+
+[subsection {Tcl Scripting}]
 
 Quickly add dynamic content to your website:
 
-<ul>
+[list_begin bullet]
 
-<li>Integrated multi-threaded interpreter runs scripts in parallel in one process
+[bullet]Integrated multi-threaded interpreter runs scripts in parallel in one process
     with complete access to server state
 
-<li>NaviServer Dynamic Pages (ADP's) allow embedding of Tcl scripts in HTML pages
+[bullet]NaviServer Dynamic Pages (ADP's) allow embedding of Tcl scripts in HTML pages
 
-<li>Rich, easy-to-use scripting language loaded with new NaviServer-specific
+[bullet]Rich, easy-to-use scripting language loaded with new NaviServer-specific
     extensions for building web applications
 
-<li>Ability to add your own C commands to the language
+[bullet]Ability to add your own C commands to the language
 
-</ul>
+
+[list_end]
+
 
 NaviServer includes the Tcl (Tool Command Language) scripting language
 as an integral part of its architecture:
 
-<ul>
+[list_begin bullet]
 
-<li>The Tcl interface allows you to quickly build custom Web
+[bullet]The Tcl interface allows you to quickly build custom Web
     applications without C code or messy CGIs.
 
-    <p>
 
-<li>The Tcl interface is multithreaded, allowing more than one Tcl
+[nl]
+
+
+[bullet]The Tcl interface is multithreaded, allowing more than one Tcl
     script to operate in one or more virtual servers simultaneously.
 
-    <p>
 
-<li>Built-in Tcl scripts operate up to 10 times faster than comparable
+[nl]
+
+
+[bullet]Built-in Tcl scripts operate up to 10 times faster than comparable
     Perl-based CGIs.
 
-    <p>
 
-<li>The Tcl interface can be extended to include your own custom Tcl
+[nl]
+
+
+[bullet]The Tcl interface can be extended to include your own custom Tcl
     commands written as Tcl procedures or as C primitives.
 
-    <p>
 
-<li>NaviServer extends Tcl to include commands for accessing one more
+[nl]
+
+
+[bullet]NaviServer extends Tcl to include commands for accessing one more
     open databases without writing any C code or executing slow
     external CGIs.
 
-    <p>
 
-<li>The Tcl interface includes useful commands for accessing HTML form
+[nl]
+
+
+[bullet]The Tcl interface includes useful commands for accessing HTML form
     data and information about the active connection.
 
-    <p>
 
-<li>The Tcl interface provides a command for opening a TCP/IP socket
+[nl]
+
+
+[bullet]The Tcl interface provides a command for opening a TCP/IP socket
     which can be used to implement a quick HTTP transaction to another
     Web server or send Email using SMTP (a procedure for sending email
     is included).
 
-    <p>
 
-<li>Resources allocated during evaluation of a Tcl script (e.g., open
+[nl]
+
+
+[bullet]Resources allocated during evaluation of a Tcl script (e.g., open
     database handles, open files, Ns_Set data) are automatically
     garbage collected after the script returns, freeing the script
     developer of these tedious tasks.
 
-<p>
 
-<li>Tcl scripts can be in the pages directory along with the HTML
+[nl]
+
+
+[bullet]Tcl scripts can be in the pages directory along with the HTML
     pages and images or in a special Tcl library directory:
 
-    <p>
 
-    <ul>
+[nl]
 
-    <li>Scripts in the pages directory are evaluated on each
+
+    [list_begin bullet]
+
+    [bullet]Scripts in the pages directory are evaluated on each
         transaction which is ideal for quick script development.
 
-    <li>Scripts in the library directories are evaluated at startup
+    [bullet]Scripts in the library directories are evaluated at startup
         time for fast response without having to open and read the
         script file.
 
-    </ul>
 
-<p>
+[list_end]
 
-<li>NaviServer includes an HTML-forms based interface for creating and
+
+
+[nl]
+
+
+[bullet]NaviServer includes an HTML-forms based interface for creating and
     updating Tcl scripts which are located in the Tcl library
     directory. Also included is a simple HTML form for ad-hoc
     evaluation of a Tcl script typed directly into a text area box.
 
-    <p>
 
-<li>Tcl, unlike Java, has been in use by a large user community for
+[nl]
+
+
+[bullet]Tcl, unlike Java, has been in use by a large user community for
     years (join the comp.lang.tcl newsgroup) and is well documented by
     the creator of Tcl, John Ousterhout of Sun Microsystems.
 
-    <p>
 
-<li>NaviServer Dynamic Pages (ADP's) are HTML pages that are parsed and
+[nl]
+
+
+[bullet]NaviServer Dynamic Pages (ADP's) are HTML pages that are parsed and
     run on the server when the page is accessed -- ADPs contain HTML
     tags and Tcl scripts.  ADPs are ideal in situations where you want
     to generate part or all of a specific page dynamically.
 
-<p>
 
-</ul>
+[nl]
 
-<p>
 
-<h3>Complete C API</h3>
+
+[list_end]
+
+
+
+[para]
+
+
+[subsection {Complete C API}]
 
 Write custom dynamically loaded modules for:
 
-<ul>
+[list_begin bullet]
 
-<li>Handling requests
+[bullet]Handling requests
 
-<li>Translating URLs
+[bullet]Translating URLs
 
-<li>Logging
+[bullet]Logging
 
-<li>Database access
+[bullet]Database access
 
-<li>Thread creation and synchronization
+[bullet]Thread creation and synchronization
 
-<li>And much more!
+[bullet]And much more!
 
-</ul>
+
+[list_end]
+
 
 
 The NaviServer includes a complete C API. Using the C API you can write:
 
-<ul>
+[list_begin bullet]
 
-<li>Custom request functions to handle HTTP request to an URL or a
+[bullet]Custom request functions to handle HTTP request to an URL or a
     complete hierarchy of URLs.
 
-    <p>
 
-<li>Custom URL-to-file translation routines to convert an HTTP URL to
+[nl]
+
+
+[bullet]Custom URL-to-file translation routines to convert an HTTP URL to
     a file in the local filesystem. This can be used to map URLs to
     one or more filesystem directories as required for maintenance or
     load balancing.
 
-    <p>
 
-<li>New Tcl commands for use in your Tcl scripts. NaviServer provides
+[nl]
+
+
+[bullet]New Tcl commands for use in your Tcl scripts. NaviServer provides
     initialization functions to ensure your command is available in
     all the Tcl interpreters in a virtual server Tcl interpreter pool.
 
-    <p>
 
-<li>Database drivers to interface NaviServer to your own DBMS.
+[nl]
 
-    <p>
 
-<li>Communications drivers so NaviServer can implement HTTP over a new
+[bullet]Database drivers to interface NaviServer to your own DBMS.
+
+
+[nl]
+
+
+[bullet]Communications drivers so NaviServer can implement HTTP over a new
     underlying protocol:
 
-   <ul>
+   [list_begin bullet]
 
-   <li>The included <I><B>nssock</B></I> module implements HTTP over
+   [bullet]The included [emph {[emph {nssock}]}] module implements HTTP over
        regular TCP/IP sockets just like other basic Web servers such
        as NCSA, CERN, or WebSite.
 
-       <p>
 
-   <li>Filter functions which run at any stage of each HTTP request. A
+[nl]
+
+
+   [bullet]Filter functions which run at any stage of each HTTP request. A
        filter can be used to implement logging - in fact, this is how the
-       <I><B>nslog</B></I> Common Log Format logging module works.
+       [emph {[emph {nslog}]}] Common Log Format logging module works.
 
-       <p>
 
-   <li>A scheduled procedure which runs at regular intervals. A scheduled
+[nl]
+
+
+   [bullet]A scheduled procedure which runs at regular intervals. A scheduled
        procedure can be used in conjunction with a filter function to
        implement a statistics gathering system.
 
-       <p>
 
-   </ul>
+[nl]
 
-</ul>
 
-<p>
+
+[list_end]
+
+
+
+[list_end]
+
+
+
+[para]
+
 
 No other Web server C API is as complete and powerful as the NaviServer
 C API!
 
-<p>
 
-<h3>SQL Database Services</h3>
+[para]
+
+
+[subsection {SQL Database Services}]
 
 Powerful and easy access to a variety of SQL databases. Driver source
 for PostgreSQL and Sybase/MSSQLServer are included with others available from third
 parties.
 
-<p>
+
+[para]
+
 NaviServer includes loads of features to help you connect your website
 to SQL databases:
 
-<ul>
+[list_begin bullet]
 
-<li>Provides a platform independent interface to SQL relational databases.
+[bullet]Provides a platform independent interface to SQL relational databases.
 
-    <p>
 
-<li>Connects to underlying database servers through plug-in database
+[nl]
+
+
+[bullet]Connects to underlying database servers through plug-in database
     drivers:
 
-    <p>
 
-    <ul>
+[nl]
 
-    <li>Included are drivers for Sybase, MS SQLserver, and PostgreSQL.
 
-        <p>
+    [list_begin bullet]
 
-    <li>The NaviServer/AOLserver Communities have also contributed drivers for
+    [bullet]Included are drivers for Sybase, MS SQLserver, and PostgreSQL.
+
+
+[nl]
+
+
+    [bullet]The NaviServer/AOLserver Communities have also contributed drivers for
         Informix, Oracle, Interbase, and MySQL.
 
-        <p>
 
-    </ul>
+[nl]
 
-<li>NaviServer maintains one or more <I><B>pools</B></I> with one or
+
+
+[list_end]
+
+
+[bullet]NaviServer maintains one or more [emph {[emph {pools}]}] with one or
     more open database connections. By maintaining open connections,
     HTTP requests have instant access to the database instead of
     incurring the expensive startup time of a CGI-based solution.
 
-    <p>
 
-<li>Requests are queued in first in, first out order to ensure
+[nl]
+
+
+[bullet]Requests are queued in first in, first out order to ensure
     efficient and fair use of database resources.
 
-    <p>
 
-<li>Database operations are available through both the C and Tcl API's.
+[nl]
 
-    <p>
 
-</ul>
+[bullet]Database operations are available through both the C and Tcl API's.
 
-<p>
 
-<h3>Secure Sockets Layer</h3>
+[nl]
+
+
+
+[list_end]
+
+
+
+[para]
+
+
+[subsection {Secure Sockets Layer}]
 
 SSL enables network encryption for e-commerce applications via openssl module.
 
-<p>
 
-<h3>Hierarchical Access Control</h3>
+[para]
+
+
+[subsection {Hierarchical Access Control}]
 
 Restrict access to all or part of your Web through lists of users,
 groups, and/or client address.
 
-<p>
 
-
-
+[manpage_end]

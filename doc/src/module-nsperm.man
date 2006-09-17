@@ -1,11 +1,15 @@
+[manpage_begin {NaviServer Permissions and Access Control Guide} n 4.99.2]
 
-<h1>NaviServer Permissions and Access Control Guide</h1>
+[titledesc {NaviServer Permissions and Access Control Guide}]
 
-<p>
+[description]
 
-  <h2>Access Control</h2>
 
-<p>
+[section {Access Control}]
+
+
+[para]
+
 
 NaviServer allows you to define users and groups of users, and assign
 permission records to individual pages or entire page hierarchies.
@@ -13,118 +17,166 @@ NaviServer users are distinct from operating system users. A permission
 record lets you allow or disallow lists of users, lists of groups, and
 lists of hosts for a method and URL combination.
 
-<p>
+
+[para]
+
 
 NaviServer requires one special user, nsadmin. This user is always
 allowed access to any URL on an NaviServer. The nsadmin user is similar
 to the Unix root user.
 
-<p>
+
+[para]
+
 
 NaviServer is configured by default with the nsadmin user, a system
 group, a public group, and a users group.
 
-<p>
+
+[para]
+
 
 You can change the permissions given to the system, public, and users
 groups and assign users to them by following the procedures described
 in this chapter.
 
-<p>
 
- <h2>Users and Groups</h2>
+[para]
 
-<p>
+
+ [section {Users and Groups}]
+
+
+[para]
+
 
 NaviServer users are identified by short user names. These user names
 can be any name you choose; they are completely independent of the
 Unix login accounts. New users can be assigned subdirectories of the
 NaviServer pages directory where they can store content.
 
-<p>
 
- <h2>Defining Users</h2>
+[para]
 
-<p>
+
+ [section {Defining Users}]
+
+
+[para]
+
 
 To define NaviServer users, you need to create entries for them in the
 passwd file, which resides in the /modules/nsperm directory. The
 default passwd file contains:
 
-<p>
+
+[para]
+
 ""::::::
-<br>
+
+[para]
+
 nsadmin:CUdnvgBYocLSI:::::
-<br>
+
+[para]
+
 nobody::::::
 
-<p>
+
+[para]
+
 
 The format is the same as the format for the /etc/passwd file.
 NaviServer ignores all but the first two fields, which are the user
 name and the encrypted password. The password itself is encrypted the
 same way as Unix passwords.
 
-<p>
+
+[para]
+
 
 The "" user is the unauthenticated user and is treated the same as any
 other user.
 
-<p>
 
- <h2>Defining Groups</h2>
+[para]
 
-<p>
+
+ [section {Defining Groups}]
+
+
+[para]
+
 
 To define NaviServer groups, you need to create entries for them in the
 group file, which resides in the /modules/nsperm directory. The
 default group file contains:
 
-<p>
 
-<pre>
+[para]
+
+
+
+[example_begin]
+
 
 system:::nsadmin
 users:::nsadmin,nobody
 all:::nsadmin,nobody,""
 public:::""
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 The format is the same as the format for the /etc/group file.
 NaviServer ignores all but the first and last fields, which are the
 name of the group and a comma-separated list of users in the group.
 
-<p>
+
+[para]
+
 
 The default group file, shown above, creates groups called system,
 users, all, and public, with the listed users in each.
 
 
-<p>
 
- <h2>Permissions</h2>
+[para]
 
-<p>
+
+ [section {Permissions}]
+
+
+[para]
+
 
 Permission records indicate the allowed access for a particular URL
 and method (GET, and PUT). GET access to an URL allows the user to
 display the page, or submit information in a form. PUT access allows
 the user to write to the page or delete the page.
 
-<p>
+
+[para]
+
 
 Once you have defined authorized NaviServer users and groups, you can
 maintain NaviServer permission records. Normally, only nsadmin and
 users in the system group can set permission records directly.
 
-<p>
 
- <h2>Permissions Inheritance</h2>
+[para]
 
-<p>
+
+ [section {Permissions Inheritance}]
+
+
+[para]
+
 
 To simplify the permission structure and reduce the number of
 permission records you need to maintain, you can specify that a
@@ -132,11 +184,15 @@ permission record is inherited by more specific URLs. For example, a
 permission record for /a/b would be inherited by /a/b/c.htm if there
 is no specific permission record for /a/b/c.htm.
 
-<p>
 
- <h2>Setting Permissions for Users and Groups</h2>
+[para]
 
-<p>
+
+ [section {Setting Permissions for Users and Groups}]
+
+
+[para]
+
 
 To define NaviServer permissions for users and groups, you need to
 create permission entries for them in the perms file, which resides in
@@ -144,7 +200,9 @@ the /modules/nsperm directory. The default perms file does not contain
 any permission entries, but it contains the following comments, which
 explain how to add entries to the file:
 
-<pre>
+
+[example_begin]
+
 
 # This is the NaviServer perms file which defines which users
 # and groups may or may not visit certain URLs.
@@ -163,13 +221,19 @@ explain how to add entries to the file:
 # Example:
 # denyuser  inherit GET /NS ""
 # allowuser inherit GET /NS nsadmin
-</pre>
 
-<p>
+[example_end]
 
- <h2>Allowing Hosts</h2>
 
-<p>
+
+[para]
+
+
+ [section {Allowing Hosts}]
+
+
+[para]
+
 
 You can specifically allow hosts to log in as certain users. The
 hosts.allow file, which resides in the /modules/nsperm directory,
@@ -177,7 +241,9 @@ allows you to specify which hosts may log in as certain users. The
 default hosts.allow file contains:
 
 
-<pre>
+
+[example_begin]
+
 
 #
 # This is the NaviServer hosts.alow file. It allows you to specify
@@ -189,66 +255,96 @@ default hosts.allow file contains:
 #
 # nsadmin: 10.0.0.0/255.0.0.0, .internal.mycompany.com, home.me.com
 #
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 The format for entries in the file is:
 
-<p>
+
+[para]
+
 username: host, host, host ...
 
-<p>
+
+[para]
+
 
 where username is a user defined in the passwd file and host can be
 specified in either of these forms:
 
-<p>
-<ul>
 
-<li> ipaddress/netmask
+[para]
 
-<p>
+[list_begin bullet]
+
+[bullet] ipaddress/netmask
+
+
+[nl]
+
 
   For example, a host specified as 10.0.0.0/255.0.0.0 matches any
  IP address that begins with 10.
 
-<p>
 
-<li> a fully-qualified host name
+[nl]
 
-<p>
+
+[bullet] a fully-qualified host name
+
+
+[nl]
+
 
   For example, foo.bar.com.
 
-<p>
 
-<li> part of a host name
+[nl]
 
-<p>
+
+[bullet] part of a host name
+
+
+[nl]
+
 
   For example, .bar.com, which would match anything ending in
  .bar.com.
 
-</ul>
 
-<p>
+[list_end]
+
+
+
+[para]
+
 
 Any user in this file must be coming from one of the listed addresses
 to gain access.
 
-<p>
 
- <h2>Denying Hosts</h2>
+[para]
 
-<p>
+
+ [section {Denying Hosts}]
+
+
+[para]
+
 
 You can specifically deny hosts from logging in as certain users. The
 hosts.deny file, which resides in the /modules/nsperm directory,
 allows you to specify which hosts cannot log in as certain users. The
 default hosts.deny file contains:
 
-<pre>
+
+[example_begin]
+
 
 #
 # This is the NaviServer hosts.deny file. It allows you to specify
@@ -260,50 +356,70 @@ default hosts.deny file contains:
 #
 # nsadmin: hacker.badguy.com, .aol.com, 10.2.114.0/255.255.255.0
 #
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 The format for entries in the file is:
 
-<p>
+
+[para]
+
 
 username: host, host, host ...
 
-<p>
+
+[para]
+
 
 where username is a user defined in the passwd file and host can be
 specified in either of these forms:
 
-<p>
 
-<ul>
+[para]
 
-<li> ipaddress/netmask
 
-<p>
+[list_begin bullet]
+
+[bullet] ipaddress/netmask
+
+
+[nl]
+
 
   For example, a host specified as 10.0.0.0/255.0.0.0 matches any
  IP address that begins with 10.
 
-<p>
 
-<li> a fully-qualified host name
+[nl]
 
-<p>
+
+[bullet] a fully-qualified host name
+
+
+[nl]
+
 
   For example, foo.bar.com.
 
-<p>
 
-<li> part of a host name
+[nl]
 
-<p>
+
+[bullet] part of a host name
+
+
+[nl]
+
 
   For example, .bar.com, which would match anything ending in
  .bar.com.
 
-</ul>
 
-<p>
+[list_end]
 
+[manpage_end]

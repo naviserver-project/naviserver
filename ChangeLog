@@ -1,3 +1,9 @@
+2006-09-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* doc/src:
+	* doc/html: Moved all .html under src and converted them into doctools format.
+	Not all files are in valid doctools format yet but it is matter of editing.
+
 2006-09-15  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* log.c:

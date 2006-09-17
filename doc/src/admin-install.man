@@ -1,136 +1,172 @@
+[manpage_begin {NaviServer Installation Guide} n 4.99.2]
 
-<h1>NaviServer Installation Guide</h1>
+[titledesc {NaviServer Installation Guide}]
 
-<p>NaviServer is distributed in source form.
+[description]
 
-<h2>Getting Started</h2>
 
-<p>
+
+[para]
+
+NaviServer is distributed in source form.
+
+[section {Getting Started}]
+
+
+[para]
+
 
 NaviServer is reasonably portable and known to compile and run on the following platforms:
 
-<ul>
+[list_begin bullet]
 
-<li>Linux 2.2 and better (x86 and others)
+[bullet]Linux 2.2 and better (x86 and others)
 
-<li>FreeBSD 3.4 and better (x86 and others)
+[bullet]FreeBSD 3.4 and better (x86 and others)
 
-<li>OpenBSD 2.5 and better (x86 and others)
+[bullet]OpenBSD 2.5 and better (x86 and others)
 
-<li>Solaris 2.x and better (SPARC and x86)
+[bullet]Solaris 2.x and better (SPARC and x86)
 
-<li>IRIX 6.x (mips)
+[bullet]IRIX 6.x (mips)
 
-<li>HP/UX 10 and 11 (hppa)
+[bullet]HP/UX 10 and 11 (hppa)
 
-<li>DEC Tru64 &amp;OSF/1 4.0 and better (alpha)
+[bullet]DEC Tru64 &amp;OSF/1 4.0 and better (alpha)
 
-<li>UnixWare 7.x and better (x86)
+[bullet]UnixWare 7.x and better (x86)
 
-<li>Apple OS/X "Darwin"
+[bullet]Apple OS/X "Darwin"
 
-</ul>
 
-<p>
+[list_end]
+
+
+
+[para]
+
 
 It's likely NaviServer can compile on other systems and/or higher or  lower
 numbered versions but this has not been extensively tested.  The primary
 development platforms for NaviServer at AOL are IRIX 6.4  and Solaris 7.
 We also use HP/UX 10.20/11.0, Solaris 2.6, and VA Linux 6.2.1 (Linux 2.2).
 
-<p>
 
-You will need a <b>C compiler</b>.  The best one to use is GNU GCC from
-<a href="http://www.gnu.org/">http://www.gnu.org</a> and its mirrors.  The versions
+[para]
+
+
+You will need a [emph {C compiler}].  The best one to use is GNU GCC from
+<a href="http://www.gnu.org/">http://www.gnu.org and its mirrors.  The versions
 we use are 2.95.2.  NaviServer (and the  included Tcl libraries) are written
 entirely in ANSI standard C.
 
-<p>
 
-<b>GNU make</b> is also required.  It is also available from the GNU web site.
+[para]
 
-<p>
 
-<h2>Building</h2>
+[emph {GNU make}] is also required.  It is also available from the GNU web site.
 
-<p>
+
+[para]
+
+
+[section {Building}]
+
+
+[para]
+
 
 We've tried to make building NaviServer as simple as possible.  On the supported
-platforms, simply typing "<b>gmake</b>" will build the server and its standard
+platforms, simply typing [emph {gmake}] will build the server and its standard
 modules.
 
-<p>
 
-<ol>
+[para]
 
-  <li>Check the include/Makefile.global file for platform-specific options. Most platforms use gcc.
 
-  <li>Enable optional modules.  The default Makefile builds nssock, nscgi, nscp, nslog, nsperm, and nsdb.
 
-  <li>Type "<tt>gmake</tt>", ensuring the make which is executed is GNU make.
+[list_begin enum]
+
+
+  [enum]Check the include/Makefile.global file for platform-specific options. Most platforms use gcc.
+
+  [enum]Enable optional modules.  The default Makefile builds nssock, nscgi, nscp, nslog, nsperm, and nsdb.
+
+  [enum]Type "[emph {gmake}]", ensuring the make which is executed is GNU make.
       You might want to call your GNU Make "gmake" instead of "make".
 
-</ol>
+
+[list_end]
+
 
 Some modules use third-party libraries.  If the library is missing, the NaviServer
 build will continue without error -- it just will not build the offending
 module.
 
-<p>
 
-<i>
+[para]
 
-Note: If you have any problems building, the two files <b>include/Makefile.global</b> and
-<b>include/Makefile.module</b> have all the information you need to change
+
+Note: If you have any problems building, the two files [emph {include/Makefile.global}] and
+[emph {include/Makefile.module}] have all the information you need to change
 settings throughout the NaviServer environment.
 
-</i>
+[para]
 
-<p>
 
-<h2>Installing</h2>
+[section {Installing}]
 
-<p>
 
-Type "<tt><b>gmake install</b></tt>" to make a production server.  This
-will create an installation directory at <tt>/usr/local/ns/</tt>, populate
+[para]
+
+
+Type "[emph {gmake install}]" to make a production server.  This
+will create an installation directory at [emph {/usr/local/ns/}], populate
 the directories with various  startup files and  configuration files, copy
-the binaries to the <tt>/usr/local/ns/bin</tt> directory, and finish.  To install
+the binaries to the [emph {/usr/local/ns/bin}] directory, and finish.  To install
 confidence tests, type "make install-tests" and they will appear in the
 tests/ directory of your server's pageroot.  The default location for installations
-can be overridden by typing "<tt><b>gmake install PREFIX=/your/directory/</b></tt>".
+can be overridden by typing "[emph {gmake install PREFIX=/your/directory/}]".
 
-<p>
 
-<h2>Configuring</h2>
+[para]
 
-<p>
+
+[section {Configuring}]
+
+
+[para]
+
 
 The installation directory contains a file named "sample-config.tcl" which
 represents a complete configuration of NaviServer.  This configuration will:
 
-<ol>
-  <li>Listen for http connections on your computer's  primary interface at port 8000.  To use another port  and/or
+
+[list_begin enum]
+
+  [enum]Listen for http connections on your computer's  primary interface at port 8000.  To use another port  and/or
       select interfaces, you can set the "post" and "address" parameters.
 
-  <li>Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.
+  [enum]Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.
 
-</ol>
 
-<p>
+[list_end]
 
-<i>
+
+
+[para]
+
 
 Note: Some modules have been disabled in the sample nsd.tcl  for security
-reasons. They are <b>nscp </b>and <b>nsperm</b>.  They aren't required  to run a
+reasons. They are [emph {nscp}] and [emph {nsperm}].  They aren't required  to run a
 server unless you want to use  the Control Port and/or the Permissions
 module, respectively.  Before using  them, change the passwords and
 default permissions  by following the instructions  in the NaviServer
 documentation.
 
-</i>
 
-<p>
+[para]
+
 
 Although  you must be root to start NaviServer,  the server itself must
 change to a  regular user shortly after initialization.   You either
@@ -139,57 +175,76 @@ not be able to listen  for connections on privileged ports such as port
 80)  or you must include  a -u user command line flag to which the
 server will  setuid(2) after startup.
 
-<p>
 
-You may either specify a Unix username or numeric uid, e.g.:   <tt>./bin/nsd
--t ./config.tcl -u user -g group</tt></p> For the mode  of operation, there are
-three choices: <b>Foreground, Background, </b>and <b>Inittab.</b>
+[para]
 
-<p>
 
-In <b>Foreground </b>mode , the server starts  and emits diagnostic log messages
+You may either specify a Unix username or numeric uid, e.g.:   [emph {./bin/nsd
+-t ./config.tcl -u user -g group}]</p> For the mode  of operation, there are
+three choices: [emph {Foreground, Background,}] and [emph {Inittab.}]
+
+[para]
+
+
+In [emph {Foreground }]mode , the server starts  and emits diagnostic log messages
 directly to the  terminal window.   This is useful for testing, configuration
 or debugging  a server.  To start the server in foreground mode use:
 
-<p>
 
-<tt>/bin/nsd  -ft ./config.tcl -u user -g group</tt>
+[para]
 
-<p>
+
+[emph {/bin/nsd  -ft ./config.tcl -u user -g group}]
+
+
+[para]
+
 
 To stop a server running the foreground simply press  interrupt on your keyboard
 (e.g., ctrl-c or the DEL key) which will send a SIGINT to the server and
 initiate shutdown.
 
-<p>
 
-In <b>Background </b>mode, the server  forks and disassociates from the terminal.
+[para]
+
+
+In [emph {Background }]mode, the server  forks and disassociates from the terminal.
 Diagnostic messages  are  appended to log/server.log.  This  is a  typical
 daemon-style mode of operation.  To start the server in  background  mode use:
 
-<p>
 
-<tt>./bin/nsd -t ./config.tcl -u user -g group</tt>
+[para]
 
-<p>
+
+[emph {./bin/nsd -t ./config.tcl -u user -g group}]
+
+
+[para]
+
 
 To stop a server running  the background  you may either use the kill(2) command
 to send a SIGTERM to the background  process id(*) or the special -K flag of the
 nsd binary.  This flag  will determine the process id from a special marker
 file, send the signal and wait for shutdown, e.g.:
 
-<p>
 
-<tt>./bin/nsd -Kt ./config.tcl -u user -g group</tt>
+[para]
 
-<p>
+
+[emph {./bin/nsd -Kt ./config.tcl -u user -g group}]
+
+
+[para]
+
 
 You may also use the -k flag to kill and restart a  background server.
 
-<p>
+
+[para]
 
 
-In <b>Inittab</b> mode, the server runs in the foreground  but opens the
+
+In [emph {Inittab}] mode, the server runs in the foreground  but opens the
 log file as with background mode.  This mode is used  when the server is
 started from an entry in the /etc/inittab file.   The benefit of this mode
 is that init will restart the server if it  happens to crash.   Production
@@ -197,21 +252,25 @@ servers at AOL normally run in this mode.   To run the server  from /etc/inittab
 add an entry similar to the following, substituting the proper id, run levels,
 and full pathnames:
 
-<p>
 
-<tt>w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd.tcl -u user -g group</tt>
+[para]
 
-<p>
+
+[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd.tcl -u user -g group}]
+
+
+[para]
+
 
 To restart a server you can simply kill the current server with the -K flag
 as with the background  mode; init will then restart the server for you.
 To stop a  server running in inittab mode  you must comment out or remove
 the  entry from the /etc/inittab file  and signal the init process to re-read
-inittab with the "<tt>init q</tt>" command.
+inittab with the "[emph {init q}]" command.
 
-<p>
 
-<i>
+[para]
+
 
 Note:  While running NaviServer on some Unix platforms (e.g., Linux,  SGI),
 you'll notice multiple nsd  processes.  This is normal and represents the
@@ -220,14 +279,12 @@ the log/nsd.pid file or looking  at the last few entries  of the server
 log, each of which will include the process  id and thread  id in the form
 [pid.tid].  You can also telnet to the control port and type "ns_info pid".
 
-</i>
 
+[para]
 
-<p>
 
 For more detailed configuration  information  refer to the online documentation
-at <a href="http://http://sourceforge.net/projects/naviserver//">http://sourceforge.net/projects/naviserver/</a>.
+at [uri http://sourceforge.net/projects/naviserver/].
 
 
-
-
+[manpage_end]

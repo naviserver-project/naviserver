@@ -1,64 +1,14 @@
+[manpage_begin {NaviServer ADP Development} n 4.99.2]
 
-<h1>NaviServer ADP Development</h1>
+[titledesc {NaviServer ADP Development}]
 
-<p>
+[description]
 
-<a href=../tcl/api/>NaviServer Tcl API Reference</a>
-
-<p>
-
-<a href=http://tcl.activestate.com/man/>Tcl Language Manuals</a>
-
-<p>
-
-<a href=../tech/standards.html>NaviServer Engineering Standards Manual</a>
-
-<p>
-
-<a href=#1>What Are ADPs?</a>
-
-<p>
-
-<a href=#2>When to Use ADPs</a>
-
-<p>
-
-<a href=#3>When to Use Tcl Libraries</a>
-
-<p>
-
-<a href=#4>Configuring ADP Processing</a>
-
-<p>
-
-<a href=#5>Building ADPs</a>
-
-<p>
-
-<a href=#6>Debugging ADPs with TclPro</a>
-
-<p>
-
-<a href=#7>ADP Syntax</a>
-
-<p>
-
-<a href=#8>Registered ADP Tags</a>
-
-<p>
-
-<a href=#9>ADP Parsers</a>
-
-<p>
-
-<a href=#10>Example ADPs</a>
-
-<p>
+[section {What Are ADPs?}]
 
 
-<h2><a name=1>What Are ADPs?</a></h2>
+[para]
 
-<p>
 
 Probably the easiest way to make NaviServer output dynamic content is
 to embed a Tcl script in an HTML page with NaviServer Dynamic Pages
@@ -68,44 +18,62 @@ embedded within the HTML tags. The embedded Tcl scripts can call other
 Tcl scripts that reside in separate files, allowing you to reuse Tcl
 code.
 
-<p>
+
+[para]
 
 
-<h2><a name=2>When to Use ADPs</a></h2>
 
-<p>
+[section {When to Use ADPs}]
+
+
+[para]
+
 
 ADPs are ideal in situations where you want to generate all or part of
 a specific page dynamically. You can re-use code by storing Tcl
 scripts in Tcl libraries and invoking them from within multiple ADPs.
 You can also include files and parse other ADPs from within your ADPs.
 
-<p>
+
+[para]
+
 
 Here are some examples of applications you can use ADPs for:
 
-<p>
 
-<ul>
-
-<li> Returning HTML conditionally
-
-<p>
-
-<li> Retrieving information from a database to use in a page
-
-<p>
-
-<li> Inserting information from a form into a database
-
-</ul>
-
-<p>
+[para]
 
 
-<h2><a name=3>When to Use Tcl Libraries</a></h2>
+[list_begin bullet]
 
-<p>
+[bullet] Returning HTML conditionally
+
+
+[nl]
+
+
+[bullet] Retrieving information from a database to use in a page
+
+
+[nl]
+
+
+[bullet] Inserting information from a form into a database
+
+
+[list_end]
+
+
+
+[para]
+
+
+
+[section {When to Use Tcl Libraries}]
+
+
+[para]
+
 
 The alternative to embedding Tcl scripts in HTML pages using ADPs, is
 to store Tcl scripts in Tcl libraries and register them to handle
@@ -113,305 +81,417 @@ specific URLs or URL hierarchies. There are some situations, such as
 those listed below, that are better suited to the Tcl libraries
 approach.
 
-<p>
 
-<ul>
+[para]
 
-<li> Inheritance: If you want one Tcl script to handle an URL and all
+
+[list_begin bullet]
+
+[bullet] Inheritance: If you want one Tcl script to handle an URL and all
  of its sub-URLs, it's better to store the script in a Tcl library
  and register it using ns_register_proc to handle an URL hierarchy.
  For example, you may want to manage a server domain name change by
  redirecting every response to the corresponding domain name on
  another server.
 
-<p>
 
-<li> Special Extenstions: If you want one Tcl script to handle all
+[nl]
+
+
+[bullet] Special Extenstions: If you want one Tcl script to handle all
  files with a specific extension, like /*.csv, you would register
  the script with ns_register_proc to handle those files.
 
-<p>
 
-<li> Scheduled Procedures: If you want a Tcl script to be run at
+[nl]
+
+
+[bullet] Scheduled Procedures: If you want a Tcl script to be run at
  specific intervals, you can use the ns_schedule_* functions to run
  a script from the Tcl library at scheduled intervals. These
  procedures do not normally involve returning HTML pages and so are
  not well suited to ADPs.
 
-<p>
 
-<li> Filters: If you want a Tcl script to be called at
+[nl]
+
+
+[bullet] Filters: If you want a Tcl script to be called at
  pre-authorization, post-authorization, or trace time for a group
  of URLs, you would register a filter using the ns_register_filter
  function.
 
-<p>
 
-<li> Re-using Tcl Scripts: If there are Tcl scripts that you want to
+[nl]
+
+
+[bullet] Re-using Tcl Scripts: If there are Tcl scripts that you want to
  use in multiple situations, you can store them in a Tcl library
  and invoke them from within any ADP or Tcl script.
 
-</ul>
 
-<p>
+[list_end]
 
 
-<h2><a name=4>Configuring ADP Processing</a></h2>
 
-<p>
+[para]
+
+
+
+[section {Configuring ADP Processing}]
+
+
+[para]
+
 
 Since you will be creating HTML pages that contain Tcl scripts, you
 will need to specify which pages the server will need to parse for Tcl
 commands and process.
 
-<p>
 
- <h3>Required Configuration Parameters</h3>
-
-<p>
-
-<ul>
+[para]
 
 
-<li> Use the Map configuration parameter to determine
+ [subsection {Required Configuration Parameters}]
+
+
+[para]
+
+
+[list_begin bullet]
+
+
+[bullet] Use the Map configuration parameter to determine
  which files are to be processed. For example, you can specify that
  all files with the .adp extension are to be processed by the
  server. Or, you can specify that all files that reside in a
  certain directory (for example, /usr/pages/adp) will be processed.
 
-<p>
 
-<li> If you want to register your own ADP tags, you must set the Fancy
+[nl]
+
+
+[bullet] If you want to register your own ADP tags, you must set the Fancy
  parameter to On. It also allows you to use the <server> ...
  </server> ADP syntax and determine whether ADP tags can be
  registered after startup.
 
-</ul>
 
-<p>
+[list_end]
 
- <h3>List of Configuration Parameters</h3>
 
-<p>
+
+[para]
+
+
+ [subsection {List of Configuration Parameters}]
+
+
+[para]
+
 
 The following table describes all the parameters that can be set
 within the ADP section of the configuration file:
 
-<p>
 
-Section <b>ns/server/servername/adp</b>:
+[para]
 
-<p>
 
-<ul> <b>Cache</b> - If set to on, ADP caching is enabled.
+Section [emph {ns/server/servername/adp}]:
 
-<p>
+
+[para]
+
+
+[list_begin bullet] [emph {Cache}] - If set to on, ADP caching is enabled.
+
+
+[nl]
+
 
 Deafult: on
 
-<p>
 
-<li> <b>DebugInit</b> - The procedure to run when debugging begins.
+[nl]
 
-<p>
+
+[bullet] [emph {DebugInit}] - The procedure to run when debugging begins.
+
+
+[nl]
+
 
 Deafult: ns_adp_debuginit
 
-<p>
+
+[nl]
 
 
-<li> <b>EnableExpire</b> - If set to on, the "Expires: now" header is set on all
+
+[bullet] [emph {EnableExpire}] - If set to on, the "Expires: now" header is set on all
      outgoing ADPs
 
-<p>
+
+[nl]
+
 
 Default: off
 
-<p>
 
-<li> <b>EnableCompress</b> - If set to on, extraneous spaces within an HTML page are removed
+[nl]
 
-<p>
+
+[bullet] [emph {EnableCompress}] - If set to on, extraneous spaces within an HTML page are removed
+
+
+[nl]
+
 
 Default: off
 
-<p>
 
-<li> <b>EnableDebug</b> - If set to on, appending "?debug" to a URL will enable TclPro debugging
+[nl]
 
-<p>
+
+[bullet] [emph {EnableDebug}] - If set to on, appending "?debug" to a URL will enable TclPro debugging
+
+
+[nl]
+
 
 Deafult: off
 
-<p>
 
-<li> <b>Fancy</b> - If set to on, "fancy" ADPs are enabled, meaning that:
+[nl]
+
+
+[bullet] [emph {Fancy}] - If set to on, "fancy" ADPs are enabled, meaning that:
      the TagLocks parameter is enabled the <server>...</server> syntax is
      enabled the ns_register_adptag and ns_adp_registertag commands are
      enabled registered ADP tags are enabled
 
-<p>
+
+[nl]
+
 
 Deafult: off
 
-<p>
 
-<li> <b>Map</b> - The Map parameter specifies which pages the server will parse. You can
+[nl]
+
+
+[bullet] [emph {Map}] - The Map parameter specifies which pages the server will parse. You can
      specify a file extension (such as /*.adp) or a directory (such as
      /usr/pages/adp). If no directory is specified, the pages directory is
      assumed. The wildcards * ? and [] can be included in the Map
     s pecification. You can specify multiple Map settings.
 
-<p>
+
+[nl]
+
 
 The following example specifies that all files in the pages directory
 with the extensions .adp or .asp will be parsed, and all files in the
 /usr/pages/myadps directory will be parsed.
 
-<pre>
+
+[example_begin]
+
  Map "/*.adp"
  Map "/*.asp"
  Map "/usr/pages/myadps"
-</pre>
 
-<p>
+[example_end]
 
-<li> <b>StartPage</b>  - The file to be run on every connection instead of the requested ADP.
+
+
+[nl]
+
+
+[bullet] [emph {StartPage}]  - The file to be run on every connection instead of the requested ADP.
      It can be used to perform routine initialization. It would then
      usually include the requested ADP by calling:
      ns_adp_include [ns_adp_argv 0]
 
-<p>
 
-<li> <b>TagLocks</b> - If set to on, ADP tags may be registered after server
+[nl]
+
+
+[bullet] [emph {TagLocks}] - If set to on, ADP tags may be registered after server
      startup. Pages will be served less quickly when this is turned on.
      If set to off, ADP tags can only be registered before the first ADP is served.
 
-<p>
+
+[nl]
+
 
 Default: off
 
-</ul>
 
-<p>
+[list_end]
 
 
-<h2><a name=5>Building ADPs</a></h2>
 
-<p>
+[para]
 
-<ol>
 
-<li> Create an HTML page. Use an HTML editor or a file editor to create
+
+[section {Building ADPs}]
+
+
+[para]
+
+
+
+[list_begin enum]
+
+
+[enum] Create an HTML page. Use an HTML editor or a file editor to create
  an HTML page. Be sure to either name the file with the correct
  extension or save it in the correct directory on your server as
  specified by the Map parameter setting.
 
-<p>
+
+[nl]
+
 
   If you plan to use the Tcl script to return part or all of the
  page's content, just omit that part of the page, but you
  can create all of the surrounding HTML.
 
-<p>
 
-<li> Add your Tcl scripts with a file editor. Insert your Tcl scripts
+[nl]
+
+
+[enum] Add your Tcl scripts with a file editor. Insert your Tcl scripts
  in the HTML file where you want them to be processed. Be sure to
- enclose each Tcl script using one of the &lt;SCRIPT&gt; or &lt;% ...%&gt;
+ enclose each Tcl script using one of the <SCRIPT> or <% ...%>
  syntaxes . Save the HTML file.
 
-<p>
 
-<li> View the HTML page in a browser. Visit the page you have created
+[nl]
+
+
+[enum] View the HTML page in a browser. Visit the page you have created
  in a browser to see if the Tcl scripts work correctly. If you have
  set the EnableDebug parameter, you can append "?debug" to the URL
  to enable TclPro debugging.
 
-<p>
 
-<li> Continue editing and viewing until it works correctly. Continue
+[nl]
+
+
+[enum] Continue editing and viewing until it works correctly. Continue
  editing the page in a file editor, saving it, and refreshing it in
  a browser until it works the way you want it to.
 
-</ol>
 
-<p>
+[list_end]
 
 
-<h2><a name=6>Debugging ADPs with TclPro</a></h2>
 
-<p>
+[para]
+
+
+
+[section {Debugging ADPs with TclPro}]
+
+
+[para]
+
 
 To debug your ADPs with TclPro, follow these steps:
 
-<p>
 
-<ul>
+[para]
 
-<li> Download and install TclPro from http://www.scriptics.com/tclpro/.
+
+[list_begin bullet]
+
+[bullet] Download and install TclPro from http://www.scriptics.com/tclpro/.
  Temporary licenses are available.
 
-<li> Copy the prodebug.tcl file from the TclPro distribution to the
+[bullet] Copy the prodebug.tcl file from the TclPro distribution to the
  modules/tcl directory.
 
-<li> Set the EnableDebug parameter in the ns/server/servername/adp
+[bullet] Set the EnableDebug parameter in the ns/server/servername/adp
  section of the configuration file to On.
 
-<li> Run TclPro and start a "remote project", which puts TclPro into a
+[bullet] Run TclPro and start a "remote project", which puts TclPro into a
  mode waiting for NaviServer to connect.
 
-<li> Open an ADP file with the ?debug=<pattern> query string in
+[bullet] Open an ADP file with the ?debug=<pattern> query string in
  addition to any other query data you may send. NaviServer will then
  trap on ADP files matching the pattern. For example, you can just
  use debug=*.adp to trap all files, or you can use
  debug=someinclude.inc file to trap in an included file.
 
-</ul>
 
-<p>
+[list_end]
+
+
+
+[para]
+
 
   To set a breakpoint in a procedure you'll have to "instrument"
  the procedure either after the debugger traps the first
  time or with the "dproc=<pattern>" query argument.
 
-<p>
+
+[para]
 
 
-<h2><a name=7>ADP Syntax</a></h2>
 
-<p>
+[section {ADP Syntax}]
+
+
+[para]
+
 
 There are three different syntaxes you can use to embed a Tcl script
 into an HTML page. Not all syntaxes are available with all ADP
 parsers. You must be using the appropriate ADP parser to process a
 specific syntax.
 
-<p>
+
+[para]
+
 
 Insert Tcl commands between any of the following sets of HTML tags:
 
-<p>
 
-<ul>
+[para]
 
-<li> &lt;script language=tcl runat=server stream=on&gt;
 
-<p>
+[list_begin bullet]
+
+[bullet] <script language=tcl runat=server stream=on>
+
+
+[nl]
+
 
   ...
 
-<p>
 
-  &lt;/script&gt;
+[nl]
 
-<p>
+
+  </script>
+
+
+[nl]
+
 
 You must have the Fancy parameter set to On to use this
 syntax. The contents of the script are interpreted using the Tcl
 interpreter. The result is not inserted into the page, however. You
 can use the ns_puts Tcl function to put content into the page.
 
-<p>
+
+[nl]
+
 
 The language=tcl attribute is optional. Future enhancements to ADPs
 will include the capability to embed scripts in other scripting
@@ -419,13 +499,17 @@ languages, and you will be able to configure the default language. If
 the language attribute is set to anything except tcl, the script will
 not be processed, and a warning will be written to the log file.
 
-<p>
+
+[nl]
+
 
 The runat=server attribute is required. If this attribute is missing,
 the script will not be processed. The runat=server attribute is
 necessary so that client-side scripts are not executed accidentally.
 
-<p>
+
+[nl]
+
 
 The stream=on attribute is optional. If it is included, all output for
 the rest of the page is streamed out to the browser as soon as it's
@@ -436,11 +520,15 @@ is that the server cannot return a Content-length header with the
 response. Content-length can speed up the connection, especially if
 the connection is going through a proxy server.
 
-<p>
 
-<li> &lt;% ... %&gt;
+[nl]
 
-<p>
+
+[bullet] <% ... %>
+
+
+[nl]
+
 
 This syntax is evaluated exactly the same as the first syntax, above,
 except that you cannot specify any of the attributes. The language=Tcl
@@ -449,96 +537,132 @@ this syntax, but output within this syntax will be streamed if
 streaming was turned on in a previous script. This syntax can be used
 inside HTML tags.
 
-<p>
 
-<li> &lt;%= ... %&gt;
+[nl]
 
-<p>
+
+[bullet] <%= ... %>
+
+
+[nl]
+
 
 The Tcl commands within these tags are evaluated as the argument to an
 ns_puts command, which inserts the results into the page. This syntax
 can be used inside HTML tags.
 
-</ul>
 
-<p>
+[list_end]
 
 
-<h2><a name=8>Registered ADP Tags</a></h2>
 
-<p>
+[para]
+
+
+
+[section {Registered ADP Tags}]
+
+
+[para]
+
 
 You can define your own ADP tags with the ns_adp_registertag or the
 ns_register_adptag Tcl functions.
 
-<p>
+
+[para]
+
 
 You must have the Fancy parameter set to On to use registered ADP
 tags. You can also set the Taglocks parameter to prevent new
 registered tags from being created after the first ADP has been
 served.
 
-<p>
+
+[para]
 
 
-<h2><a name=9>ADP Parsers</a></h2>
 
-<p>
+[section {ADP Parsers}]
+
+
+[para]
+
 
 An ADP parser implements a specific syntax for ADPs. Two ADP parsers
 are pre-defined for NaviServer:
 
-<p>
 
-<ol>
+[para]
 
-<li> adp: The "adp" parser handles only the &lt;% ... %&gt; syntax and the
- &lt;%= ... %&gt; syntax for ADPs. This parser offers the best
+
+
+[list_begin enum]
+
+
+[enum] adp: The "adp" parser handles only the <% ... %> syntax and the
+ <%= ... %> syntax for ADPs. This parser offers the best
  performance.
- fancy: The "fancy" parser handles the &lt;script language=tcl
+ fancy: The "fancy" parser handles the <script language=tcl
  runat=server stream=on> syntax in addition to the other two
  syntaxes. It also handles registered ADP tags. The TagLocks
  parameter is enabled, and the ns_register_adptag and
  ns_adp_registertag commands are enabled. This parser offers a
  moderate performance degradation as compared to the "adp" parser.
 
-<p>
+
+[nl]
+
 
 You can register additional ADP parsers using the Ns_AdpRegisterParser
 C API function.
 
-<p>
+
+[nl]
+
 
  Configuration
 
-<p>
+
+[nl]
+
 
 To configure ADP parsers, set parameters in two configuration file
 sections as follows:
  1. Map parsers to file extensions in the
 
-<pre>
+
+[example_begin]
+
  ns/server/servername/adp/parsers configuration file section. For
  example:
  ns_section "ns/server/server1/adp/parsers"
  ns_param "adp" ".adp"
  ns_param "fancy" ".fadp"
-</pre>
 
-<p>
+[example_end]
+
+
+
+[nl]
+
 
   The above configuration specifies that ADPs with the .adp
  extension will be parsed using the "adp" parser, and ADPs
  with the .fadp extension will be parsed using the "fancy"
  parser.
 
-<p>
 
-<li> Define a default parser in the ns/server/servername/adp section.
+[nl]
+
+
+[enum] Define a default parser in the ns/server/servername/adp section.
  The default parser will be used for any ADPs with file extensions
  not associated with a parser. For example:
 
-<pre>
+
+[example_begin]
+
  ns_section "ns/server/server1/adp"
  ns_param "map" "/*.adp"
  ns_param "map" "/*.inc"
@@ -547,9 +671,13 @@ sections as follows:
  ns_section "ns/server/server1/adp/parsers"
  ns_param "adp" ".adp"
  ns_param "fancy" ".fadp"
-</pre>
 
-<p>
+[example_end]
+
+
+
+[nl]
+
 
   ADPs with the .adp extension will use the "adp" parser, and ADPs
  with the .fadp extension will use the "fancy" extension,
@@ -558,57 +686,83 @@ sections as follows:
  allowed, the "adp" parser will be used for those ADPs,
  because no parser is associated with the .inc extension.
 
-</ol>
 
-<p>
+[list_end]
+
+
+
+[para]
+
 
 For more information on configuring ADPs, see the ADP configuration
 file sections starting on page page 56 of the NaviServer
 Administrator's Guide.
 
-<p>
+
+[para]
 
 
-<h2><a name=10>Example ADPs</a></h2>
 
-<p>
+[section {Example ADPs}]
+
+
+[para]
+
 
 This section contains the following ADP examples:
 
-<p>
+
+[para]
+
 
  Example 1: Return partial HTML page conditionally
 
-<p>
+
+[para]
+
 
  Example 2: Return full HTML page conditionally
 
-<p>
+
+[para]
+
 
  Example 3: Return information from the database
 
-<p>
+
+[para]
+
 
  Example 4: Get form information and insert into the database
 
-<p>
+
+[para]
+
 
  Example 5: ADP sampler with includes, recursion, and streaming
 
 
-<p>
+
+[para]
+
 
  Example 1: Return partial HTML page conditionally
 
-<p>
+
+[para]
+
 
 This ADP example tests for various browsers and returns a different message in each case.
 
-<p>
 
-<pre>
+[para]
 
- &lt;%
+
+
+[example_begin]
+
+
+ <%
  ns_puts "Hello"
  set ua [ns_set get [ns_conn headers] "user-agent"]
  ns_puts "$ua "
@@ -619,15 +773,21 @@ This ADP example tests for various browsers and returns a different message in e
  } else {
   ns_puts "Couldn't determine the browser"
  }
- %&gt;
+ %>
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
  Example 2: Return full HTML page conditionally
 
-<p>
+
+[para]
+
 
 This example consists of a form, cookbook.html, that asks the user
 whether they want to view a page with or without frames, and an ADP,
@@ -635,67 +795,89 @@ cookbook.adp, that determines the response and displays the
 appropriate page, either the page with frames or the page without
 frames.
 
-<p>
+
+[para]
+
 
 This is the cookbook.html file containing the form:
 
-<p>
 
-<pre>
+[para]
 
- &lt;HTML&gt;
- &lt;HEAD&gt;&lt;TITLE&gt;The ABC's of Fruit Cookbook&lt;/TITLE&gt;&lt;/HEAD&gt;
- &lt;BODY BGCOLOR="#ffffff"&gt;
- &lt;H1&gt;The ABC's of Fruit Cookbook&lt;/H1&gt;
- &lt;P&gt;
+
+
+[example_begin]
+
+
+ <HTML>
+ <HEAD><TITLE>The ABC's of Fruit Cookbook</TITLE></HEAD>
+ <BODY BGCOLOR="#ffffff">
+ <H1>The ABC's of Fruit Cookbook</H1>
+ <P>
  How would you like to view this cookbook?
- &lt;FORM ACTION="cookbook.adp" METHOD="POST"&gt;
- &lt;INPUT TYPE="radio" NAME="question" VALUE="yes" CHECKED&gt;With Frames&lt;BR&gt;
- &lt;INPUT TYPE="radio" NAME="question" VALUE="no"&gt;Without Frames
- &lt;P&gt;
- &lt;INPUT TYPE=submit VALUE="View Cookbook"&gt;
- &lt;/FORM&gt;
- &lt;P&gt;
- &lt;/BODY&gt;
- &lt;/HTML&gt;
+ <FORM ACTION="cookbook.adp" METHOD="POST">
+ <INPUT TYPE="radio" NAME="question" VALUE="yes" CHECKED>With Frames<BR>
+ <INPUT TYPE="radio" NAME="question" VALUE="no">Without Frames
+ <P>
+ <INPUT TYPE=submit VALUE="View Cookbook">
+ </FORM>
+ <P>
+ </BODY>
+ </HTML>
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 
 This is the ADP, cookbook.adp, that determines the response and
 displays the appropriate page:
 
-<p>
 
-<pre>
+[para]
 
- &lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;The ABC's of Fruit Cookbook&lt;/TITLE&gt;&lt;/HEAD&gt;
- &lt;BODY BGCOLOR="#ffffff"&gt;
- &lt;%
+
+
+[example_begin]
+
+
+ <HTML><HEAD><TITLE>The ABC's of Fruit Cookbook</TITLE></HEAD>
+ <BODY BGCOLOR="#ffffff">
+ <%
  # Get form data and assign to variables
  set r [ns_conn form $conn]
  set question [ns_set get $r question]
  # Display cookbook in appropriate format
  if {$question == "yes"} {ns_adp_include cookset.html} \
  else {ns_adp_include cook.html}
- %&gt;
- &lt;/BODY&gt;&lt;/HTML&gt;
+ %>
+ </BODY></HTML>
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 The cookset.html file contains a frame set for the cookbook. The
 cook.html file contains the cookbook without frames.
 
-<p>
+
+[para]
+
 
 
 Example 3: Return information from the database
 
-<p>
+
+[para]
+
 
 This example retrieves information from the database -- a list of
 tables -- and returns it as the options in a select box. When the user
@@ -703,78 +885,98 @@ chooses a table from the list, another ADP is run as the POST for the
 form which retrieves information from the database on the chosen
 table.
 
-<p>
+
+[para]
+
 
 The first ADP, db.adp, creates a form with a select box with the list
 of database tables:
 
-<p>
 
-<pre>
+[para]
 
- &lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;DB Example&lt;/TITLE&gt;&lt;/HEAD&gt;
- &lt;BODY&gt;
- &lt;H1&gt;DB Example&lt;/H1&gt;
- &lt;P&gt;
+
+
+[example_begin]
+
+
+ <HTML><HEAD><TITLE>DB Example</TITLE></HEAD>
+ <BODY>
+ <H1>DB Example</H1>
+ <P>
  Select a db table from the default db pool:
- &lt;FORM METHOD=POST ACTION=db2.adp&gt;
- &lt;SELECT NAME=Table&gt;
- &lt;%
+ <FORM METHOD=POST ACTION=db2.adp>
+ <SELECT NAME=Table>
+ <%
  set db [ns_db gethandle]
  set sql "select * from tables"
  set row [ns_db select $db $sql]
  while {[ns_db getrow $db $row]} {
  set table [ns_set get $row name]
- ns_puts "&lt;OPTION VALUE=\"$table\"&gt;$table"
+ ns_puts "<OPTION VALUE=\"$table\">$table"
  }
- %&gt;
- &lt;/SELECT&gt;
- &lt;INPUT type=submit value="Show Data"&gt;
- &lt;/FORM&gt;
- &lt;/BODY&gt;
- &lt;/HTML&gt;
+ %>
+ </SELECT>
+ <INPUT type=submit value="Show Data">
+ </FORM>
+ </BODY>
+ </HTML>
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 The second ADP, db2.adp, is used as the POST from the first ADP:
 
-<p>
 
-<pre>
+[para]
 
- &lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;DB Example page 2&lt;/TITLE&gt;&lt;/HEAD&gt;
- &lt;BODY&gt;
- &lt;H1&gt;DB Example page 2&lt;/H1&gt;
- &lt;%
+
+
+[example_begin]
+
+
+ <HTML><HEAD><TITLE>DB Example page 2</TITLE></HEAD>
+ <BODY>
+ <H1>DB Example page 2</H1>
+ <%
  set table [ns_set get [ns_conn form $conn] Table]
  set db [ns_db gethandle]
- %&gt;
- Contents of &lt;%=$table%&gt;:
- &lt;Table border=1&gt;
- &lt;%
+ %>
+ Contents of <%=$table%>:
+ <Table border=1>
+ <%
   set row [ns_db select $db "select * from $table"]
   set size [ns_set size $row]
   while {[ns_db getrow $db $row]} {
-    ns_puts "&lt;tr&gt;"
-    for {set i 0} {$i &lt; $size} {incr i} {
-      ns_puts "&lt;td&gt;[ns_set value $row $i]&lt;/td&gt;"
+    ns_puts "<tr>"
+    for {set i 0} {$i < $size} {incr i} {
+      ns_puts "<td>[ns_set value $row $i]</td>"
     }
-    ns_puts "&lt;/tr&gt;"
+    ns_puts "</tr>"
   }
- %&gt;
- &lt;/table&gt;
- &lt;/BODY&gt;
- &lt;/HTML&gt;
+ %>
+ </table>
+ </BODY>
+ </HTML>
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
  Example 4: Get form information and insert into the database
 
-<p>
+
+[para]
+
 
 This is another database example, but one where the user types
 information into a form, and the submit runs an ADP that enters the
@@ -783,59 +985,73 @@ the db administrator and the user that the record was updated. The
 survey.html file contains the form and calls the survey.adp file as
 the POST action.
 
-<p>
+
+[para]
+
 
 Here is the survey.html file, which consists of a simple form and a
 submit button which calls an ADP:
 
-<p>
 
-<pre>
- &lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;Survey Form&lt;/TITLE&gt;
- &lt;/HEAD&gt;
- &lt;BODY BGCOLOR="#ffffff"&gt;
- &lt;H2&gt;Online Newsletter Subscription&lt;/H2&gt;
- &lt;P&gt;
- &lt;I&gt;Sign up to be notified when this web site changes, or to receive an ASCII version via email. Thanks!&lt;/I&gt;
- &lt;FORM ACTION="survey.adp" METHOD="POST"&gt;
- &lt;B&gt;Name&lt;/B&gt;
- &lt;INPUT TYPE="text" NAME="name" SIZE="40"&gt;
- &lt;P&gt;
- &lt;B&gt;Title &lt;/B&gt;
- &lt;INPUT TYPE="text" NAME="title" SIZE="40" MAXLENGTH="80"&gt;
- &lt;P&gt;
- &lt;INPUT TYPE="checkbox" NAME="notify" VALUE="1"&gt;Notify me by email when this newsletter changes online
- &lt;P&gt;
- &lt;INPUT TYPE="checkbox" NAME="sendemail" VALUE="1"&gt;Send me an ASCII version of this newsletter by email
- &lt;P&gt;
- &lt;B&gt;Email Address
- &lt;/B&gt;
- &lt;INPUT TYPE="text" NAME="emailaddr" SIZE="40" MAXLENGTH="60"&gt;
- &lt;P&gt;
- &lt;INPUT TYPE=submit&gt;
- &lt;/FORM&gt;
- &lt;P&gt;
- &lt;/BODY&gt;
- &lt;/HTML&gt;
+[para]
 
-</pre>
 
-<p>
+
+[example_begin]
+
+ <HTML><HEAD><TITLE>Survey Form</TITLE>
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+ <H2>Online Newsletter Subscription</H2>
+ <P>
+ <I>Sign up to be notified when this web site changes, or to receive an ASCII version via email. Thanks!</I>
+ <FORM ACTION="survey.adp" METHOD="POST">
+ <B>Name</B>
+ <INPUT TYPE="text" NAME="name" SIZE="40">
+ <P>
+ <B>Title </B>
+ <INPUT TYPE="text" NAME="title" SIZE="40" MAXLENGTH="80">
+ <P>
+ <INPUT TYPE="checkbox" NAME="notify" VALUE="1">Notify me by email when this newsletter changes online
+ <P>
+ <INPUT TYPE="checkbox" NAME="sendemail" VALUE="1">Send me an ASCII version of this newsletter by email
+ <P>
+ <B>Email Address
+ </B>
+ <INPUT TYPE="text" NAME="emailaddr" SIZE="40" MAXLENGTH="60">
+ <P>
+ <INPUT TYPE=submit>
+ </FORM>
+ <P>
+ </BODY>
+ </HTML>
+
+
+[example_end]
+
+
+
+[para]
+
 
 Here is the survey.adp file, which gets the form data from the survey,
 inserts it into the database, sends email to the subscription
 administrator and the user, and displays a confirmation message:
 
-<p>
 
-<pre>
- &lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;Subscription Processed Successfully&lt;/TITLE&gt;
- &lt;/HEAD&gt;
- &lt;BODY BGCOLOR="#ffffff"&gt;
- &lt;H2&gt;Online Newsletter Subscription&lt;/H2&gt;
- &lt;P&gt;
+[para]
+
+
+
+[example_begin]
+
+ <HTML><HEAD><TITLE>Subscription Processed Successfully</TITLE>
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+ <H2>Online Newsletter Subscription</H2>
+ <P>
  Thank You for subscribing to our newsletter!
- &lt;%
+ <%
  # Get form data and assign to variables
  set r [ns_conn form $conn]
  set name [ns_set get $r name]
@@ -871,31 +1087,41 @@ administrator and the user, and displays a confirmation message:
  if {$sendemail == 1} {
    ns_puts "Future issues of the newsletter will be sent to you via email."
  }
- %&gt;
- &lt;/BODY&gt;
- &lt;/HTML&gt;
+ %>
+ </BODY>
+ </HTML>
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 
  Example 5: ADP sampler with includes, recursion, and streaming
 
-<p>
+
+[para]
+
 
 The following HTML is an example of a page containing several Tcl
 scripts using the various ADP syntaxes. It invokes some Tcl functions,
 includes a file, executes another ADP, and uses streaming.
 
-<p>
 
-<pre>
- &lt;HTML&gt;&lt;HEAD&gt;&lt;TITLE&gt;This is a test of ADP&lt;/TITLE&gt;
- &lt;/HEAD&gt;
- &lt;BODY&gt;
- &lt;H1&gt;This is a test of ADP&lt;/H1&gt;
- &lt;%
+[para]
+
+
+
+[example_begin]
+
+ <HTML><HEAD><TITLE>This is a test of ADP</TITLE>
+ </HEAD>
+ <BODY>
+ <H1>This is a test of ADP</H1>
+ <%
 
  ## Proxies should cache this page for a maximum of 1 hour:
  ns_setexpires $conn 3600
@@ -905,60 +1131,71 @@ includes a file, executes another ADP, and uses streaming.
  ## since the server was started?
  ns_share -init {set count 0} count
  incr count
- %&gt;
+ %>
 
- Number of accesses since server start: &lt;%=$count%&gt;&lt;br&gt;
- tcl_version: &lt;%=$tcl_version%&gt;&lt;br&gt;
- tcl_library: &lt;%=$tcl_library%&gt;&lt;br&gt;
- Host: &lt;%= $host %&gt;&lt;br&gt;
+ Number of accesses since server start: <%=$count%><br>
+ tcl_version: <%=$tcl_version%><br>
+ tcl_library: <%=$tcl_library%><br>
+ Host: <%= $host %><br>
 
- &lt;!-- Include the contents of a file: --&gt;
- &lt;%
+ <!-- Include the contents of a file: -->
+ <%
  ns_adp_include standard-header
- %&gt;
+ %>
 
- &lt;script language=tcl runat=server&gt;
+ <script language=tcl runat=server>
  ## You can do recursive ADP processing as well:
  ns_adp_include time.adp
- &lt;/script&gt;
+ </script>
 
- &lt;P&gt;Here's an example of streaming:
- &lt;script stream=on runat="server"&gt;
- ns_puts "&lt;br&gt;1...&lt;br&gt;"
+ <P>Here's an example of streaming:
+ <script stream=on runat="server">
+ ns_puts "<br>1...<br>"
  ns_sleep 2
- ns_puts "2...&lt;br&gt;"
+ ns_puts "2...<br>"
  ns_sleep 2
- ns_puts "3!&lt;br&gt;"
- &lt;/script&gt;
- &lt;p&gt;
- &lt;b&gt;End&lt;/b&gt;
- &lt;/BODY&gt;
- &lt;/HTML&gt;
+ ns_puts "3!<br>"
+ </script>
+ <p>
+ <b>End</b>
+ </BODY>
+ </HTML>
 
-</pre>
 
-<p>
+[example_end]
+
+
+
+[para]
+
 
 The standard-header file referenced in the above example looks like this:
 
-<p>
+
+[para]
+
 
 This is a standard header.
 
-<p>
+
+[para]
+
 
 The time.adp file referenced in the example looks like this:
 
-<p>
 
-The time is: &lt;%=[ns_httptime [ns_time]]%&gt;
+[para]
 
-<p>
+
+The time is: <%=[ns_httptime [ns_time]]%>
+
+
+[para]
+
 
 Because of the streaming used in the last script, the "1...", "2...",
 "3!" and "End" part of the page will be displayed gradually.
 
-<p>
 
 
-
+[manpage_end]

@@ -1,24 +1,36 @@
+[manpage_begin {NaviServer Tuning and Scaling Guide} n 4.99.2]
 
-<h1>NaviServer Tuning and Scaling Guide</h1>
+[titledesc {NaviServer Tuning and Scaling Guide}]
+
+[description]
+
 
 NaviServer is immensely scalable because it has to be.&nbsp; It is the web server
 for the most heavily-used production environment in the world -- AOL.
 
-<p>
 
-<h3>Only load modules you need</h3>
+[para]
 
-<p>
+
+[subsection {Only load modules you need}]
+
+
+[para]
+
 
 Modules like "nsperm" register extra requests that are checked on each connection,
 for example. Other modules like nscgi and nscp do not need to be loaded
 if you're not actually using CGI or the control port, respectively.
 
-<p>
 
-<h3>Turn off DNS lookups wherever possible</h3>
+[para]
 
-<p>
+
+[subsection {Turn off DNS lookups wherever possible}]
+
+
+[para]
+
 
 The nslog module has these turned off by default, but it helps to see if
 it your configuration has it turned off. Also, the nsperm module uses DNS
@@ -28,11 +40,15 @@ it's off by default (gethostbyaddr setting). If you must use DNS, NaviServer
 has a DNS cache that can be tweaked -- see "dnscache" and "dnscachetimeout"
 in the config reference.
 
-<p>
 
-<h3>Use the standard ADP parser</h3>
+[para]
 
-<p>
+
+[subsection {Use the standard ADP parser}]
+
+
+[para]
+
 
 The default parser is fully functional but leaves out thing such as registered
 ADP tags and the "SCRIPT" tag. The default parser is much more efficient
@@ -40,11 +56,15 @@ than the fancy parser and should be used on heavily-loaded sites. In the
 ns/server/servername/adp/parsers section, only 'ns_param adp ".adp"' should
 be listed.
 
-<p>
 
-<h3>Experiment with the ADP cache</h3>
+[para]
 
-<p>
+
+[subsection {Experiment with the ADP cache}]
+
+
+[para]
+
 
 In the ns/server/servername/adp section, the parameters are "cache", "cachesize",
 and "threadcache". NaviServer defaults to a 5-megabyte cache. This cache
@@ -53,22 +73,30 @@ parsed once and every subsequent time they are run directly out of memory.
 This means, though, that you should have a fair amount of core memory on
 your system to accomodate the cache if you decide to make it very large.
 
-<p>
 
-<h3>Experiment with the FastPath cache</h3>
+[para]
 
-<p>
+
+[subsection {Experiment with the FastPath cache}]
+
+
+[para]
+
 
 This is a separate cache used to store static HTML pages. The section is
 ns/server/servername/fastpath, and the optionjs are "cache", "cachemaxentry",
 and "cachemaxsize". Like the ADP cache, this defaults to 5 megabytes.
 On some systems enabling the "mmap" parameter can make it work even faster.
 
-<p>
 
-<h3>Disable CheckModifiedSince</h3>
+[para]
 
-<p>
+
+[subsection {Disable CheckModifiedSince}]
+
+
+[para]
+
 
 Is your site updated rarely or often? On some slower systems, setting "checkmodifiedsince"
 to false in the "ns/server/servername" section can speed up things considerably
@@ -76,11 +104,15 @@ as NaviServer reads all scripts and data directly from the in-memory cache
 without checking to see if the file has changed each time a cache entry
 is hit.
 
-<p>
 
-<h3>Tune the Threads</h3>
+[para]
 
-<p>
+
+[subsection {Tune the Threads}]
+
+
+[para]
+
 
 Thread settings are sometimes helpful, sometimes not. In ns/server/servername,
 the options are "connsperthread", "flushcontent", "maxconnections", "maxdropped",
@@ -90,11 +122,15 @@ adjusted based on your load. Along with "maxthreads", the "maxconnections"
 setting can be tricky, since making it too large can cause your system to
 thrash.
 
-<p>
 
-<h3>Monitor the Memory</h3>
+[para]
 
-<p>
+
+[subsection {Monitor the Memory}]
+
+
+[para]
+
 
 Memory considerations are paramount on heavily-used servers. Use the "ps
 -leaf" on most systems to look at the "nsd" processes. Nearly all the memory
@@ -102,15 +138,21 @@ used by nsd should be in RSS (resident set size). If the nsd process' RSS
 is less than 2/3 its SZ, then it's a good chance that your operating system
 is thrashing, meaning it's spending more time managing memory than allowing
 the system to work to its capacity. Some operating systems actually limit
-the total RSS used by any one process. That<br>
+the total RSS used by any one process. That
+[para]
+
 1-gigabyte machine might only allow NaviServer to use 500 megabytes of core
 at any one time -- this is especially the case with SGI servers.
 
-<p>
 
-<h3>Beware the Database</h3>
+[para]
 
-<p>
+
+[subsection {Beware the Database}]
+
+
+[para]
+
 
 Databases are a bottleneck. Do you use lots of simple queries that return
 a hoard of data? Investigate using stored procedures or finely-tuned queries
@@ -118,11 +160,15 @@ so that you get only the data you actually want and make the database do
 the work it was designed to do. Don't make your system spend its time putting
 together those ns_getrow structures.
 
-<p>
 
-<h3>Collect metrics and use them</h3>
+[para]
 
-<p>
+
+[subsection {Collect metrics and use them}]
+
+
+[para]
+
 
 NaviServer has a built-in statistics-gathering system that collects data on
 the caches, tcl interps, threads, and other interesting data. We use these
@@ -132,7 +178,5 @@ more threads, etc).  The file "nstelemetry.adp" can be dropped into any
 running server to get a snapshot of how it's doing. The "nsstats"
 modules is available in the modules repository.
 
-<p>
 
-
-
+[manpage_end]
