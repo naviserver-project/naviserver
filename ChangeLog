@@ -1,3 +1,7 @@
+2006-09-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	tcl/http.tcl: Updated and fixed minor bugs in http proxy script
+
 2006-09-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* doc/src:

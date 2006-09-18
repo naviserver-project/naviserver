@@ -573,16 +573,24 @@ proc _ns_http_getcontent {timeout sock length {copy 0}} {
 if {[ns_config -bool ns/server/[ns_info server] enablehttpproxy off]} {
     ns_register_proxy GET  http ns_proxy_handler_http
     ns_register_proxy POST http ns_proxy_handler_http
+    nsv_set ns:proxy debug [ns_config -bool ns/server/[ns_info server] debughttpproxy off]
     nsv_set ns:proxy allow [ns_config ns/server/[ns_info server] allowhttpproxy]
 }
 
 proc ns_proxy_handler_http {args} {
     
+    set allow 0
     set ipaddr [ns_conn peeraddr]
-    set allow [nsv_get ns:proxy allow]
-    if { [lsearch -exact $allow $ipaddr] == -1 } {
-      ns_log Error ns_proxy_handler_http: access denied for [ns_conn peeraddr]
+    foreach host [nsv_get ns:proxy allow] {
+      if {[string match -nocase $host $ipaddr]} {
+          set allow 1
+          break 
+      }
+    }
+    if { !$allow } {
+      ns_log Error ns_proxy_handler_http: access denied for $ipaddr
       ns_returnnotfound
+      return
     }
 
     set port [ns_conn port]
@@ -592,12 +600,20 @@ proc ns_proxy_handler_http {args} {
     set cont   [ns_conn content]
     set prot   [ns_conn protocol]
     set method [ns_conn method]
+    set headers [ns_conn headers]
+    ns_set idelkey $headers Host
 
     set url $prot://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
 
-    set fds [ns_httpopen $method $url [ns_conn headers] 30 $cont]
+    if {[nsv_get ns:proxy debug] == 1} {
+        ns_log notice ns_proxy_handler_http: $ipaddr: $url
+    }
+
+    set fds [ns_httpopen $method $url $headers 30 $cont]
     set rfd [lindex $fds 0]
-    set wfd [lindex $fds 1]; close $wfd
+    set wfd [lindex $fds 1]
+    catch { close $wfd }
+    ns_set free $headers
 
     set headers  [lindex $fds 2]
     set response [ns_set name $headers]
@@ -617,11 +633,11 @@ proc ns_proxy_handler_http {args} {
         ns_write "\r\n"
         _ns_http_getcontent 30 $rfd $length 1
     } err]} {
-        ns_log error $err
+        ns_log error ns_proxy_handler_http: $ipaddr: $err
     }
 
     ns_set free $headers
-    close $rfd
+    catch { close $rfd }
 }
 
 # EOF $RCSfile$
