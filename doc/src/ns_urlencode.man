@@ -33,7 +33,7 @@
 [section {EXAMPLES}]
 
 [example_begin]
-  set     link      [ns_urlencode      http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3]
+  set link [lb]ns_urlencode http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3[rb]
   ns_adp_puts "<a href=[ns_urlencode $link]>click</a>"
 [example_end]
 

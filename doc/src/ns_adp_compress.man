@@ -27,7 +27,7 @@ Description for arg1
 [strong {Basic configuration options:}]
         
 [list_begin definitions]
-[lst_item PARAM1 = CONFIGVALUE1] 
+[lst_item {{PARAM1 = CONFIGVALUE1}}] 
 [list_end]
 
 [section EXAMPLES]

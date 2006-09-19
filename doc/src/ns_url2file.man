@@ -25,7 +25,7 @@
 This is especially useful when using the ns_adp_include command. 
 
 [example_begin]
-   <% ns_adp_include [ns_url2file /include/myfile.inc] %>
+   <% ns_adp_include [lb]ns_url2file /include/myfile.inc[rb] %>
 [example_end]
 
 

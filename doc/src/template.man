@@ -1,4 +1,4 @@
-[manpage_begin $COMMAND_NAME n $SERVER_VERSION]
+[manpage_begin COMMAND_NAME n SERVER_VERSION]
 [moddesc {NaviServer Built-in Commands}]
 
 [titledesc {one-line summary what the command does}]
@@ -25,7 +25,7 @@ Description for arg1
 [strong {Basic configuration options:}]
         
 [list_begin definitions]
-[lst_item PARAM1 = CONFIGVALUE1] 
+[lst_item {{PARAM1 = CONFIGVALUE1}}] 
 [list_end]
 
 [section EXAMPLES]
