@@ -243,8 +243,6 @@ To enable and configure CGI:
 
 [list_end]
 
-
-
 [nl]
 
 
@@ -281,15 +279,11 @@ To enable and configure CGI:
 
 [example_end]
 
-
+[list_end]
 
 [list_end]
 
-
 [section {How Web Pages Run CGI Programs}]
-
-
-[nl]
 
 
 There are several ways a Web page can run a CGI program:
@@ -350,25 +344,22 @@ There are several ways a Web page can run a CGI program:
 [subsection {URLs that Run CGI Programs}]
 
 
-[nl]
-
-
 For each method of running a CGI program described in the previous
 section, the browser software sends a URL to the server. (In addition,
 the HTTP header sent with the URL includes some environment
 variables).
 
 
-[nl]
+[para]
 
 
 Generally the URL to run a CGI program can have these parts:
 
 
-[nl]
+[para]
 
 
-CGI path[/extra path information ][?query string]
+CGI path[lb]/extra path information [rb][lb]?query string[rb]
 
 [list_begin bullet]
 
@@ -394,19 +385,19 @@ CGI path[/extra path information ][?query string]
 
 
 
-[nl]
+[para]
 
 
 For example, the query string from a form with 3 fields could be:
 
 
-[nl]
+[para]
 
 
 Field1=Value1&amp;Field2=Value2&amp;Field3=Value3
 
 
-[nl]
+[para]
 
 
 Spaces in the query string are replaced with plus signs (+). Any
@@ -414,7 +405,7 @@ special characters (such as ?, =, &, +) are replaced with %xx, where
 xx is the hexadecimal value for that character.
 
 
-[nl]
+[para]
 
 
 Here are some examples of URLs that could run a CGI program:
@@ -466,7 +457,7 @@ Here are some examples of URLs that could run a CGI program:
 
 
 
-[nl]
+[para]
 
 
 If your programs are not executed, make sure the program file allows
@@ -477,7 +468,7 @@ If your programs are not executed, make sure the program file allows
 [section {Input to CGI Programs}]
 
 
-[nl]
+[para]
 
 
 CGI programs can get input from these sources:
@@ -507,13 +498,13 @@ CGI programs can get input from these sources:
 [subsection {Accessing Environment Variables}]
 
 
-[nl]
+[para]
 
 
 Different languages allow you to access environment variables in
 different ways. Here are some examples:
 
-<h4>C or C++</h4>
+<emph {C or C++}]
 
 
 [example_begin]
@@ -527,7 +518,7 @@ char *browser = getenv("HTTP_USER_AGENT");
 
 
 
-<h4>Perl</h4>
+[emph {Perl}]
 
 
 [example_begin]
@@ -537,7 +528,7 @@ $browser = $ENV{`HTTP_USER_AGENT'};
 [example_end]
 
 
-<h4>Bourne shell</h4>
+[emph {Bourne shell}]
 
 
 [example_begin]
@@ -547,7 +538,7 @@ BROWSER=$HTTP_USER_AGENT
 [example_end]
 
 
-<h4>C shell</h4>
+[emph {C shell}]
 
 
 [example_begin]
@@ -560,20 +551,20 @@ set BROWSER = $HTTP_USER_AGENT
 [subsection {Standard Environment Variables}]
 
 
-[nl]
+[para]
 
 
 These standard environment variables are defined for all CGI programs
 by the NaviServer:
 
 
-[nl]
+[para]
 
 
  AUTH_TYPE:
 
 
-[nl]
+[para]
 
 
 If the server supports user authentication, and the script is
@@ -582,19 +573,19 @@ validate the user. For CGI programs run by NaviServer, this is always
 "Basic".
 
 
-[nl]
+[para]
 
 
 Example: Basic
 
 
-[nl]
+[para]
 
 
  CONTENT_LENGTH:
 
 
-[nl]
+[para]
 
 
 If the CGI program is run by a form with the POST method, this
@@ -604,19 +595,19 @@ so in some languages (such as C and Perl) you should check this
 variable to find out how many bytes to read from standard input.
 
 
-[nl]
+[para]
 
 
 Example: 442
 
 
-[nl]
+[para]
 
 
  CONTENT_TYPE:
 
 
-[nl]
+[para]
 
 
 If the CGI program is run by a form with the POST method, this
@@ -626,31 +617,31 @@ application/x-www-form-urlencoded. Other types may be added in the
 future.
 
 
-[nl]
+[para]
 
 
  GATEWAY_INTERFACE:
 
 
-[nl]
+[para]
 
 
 The version number of the CGI specification this server supports.
 
 
-[nl]
+[para]
 
 
 Example: CGI/1.1
 
 
-[nl]
+[para]
 
 
  HTTP_ACCEPT:
 
 
-[nl]
+[para]
 
 
 A comma-separated list of the MIME types the browser will accept, as
@@ -661,31 +652,31 @@ you may also want to check the browser name, which is specified by the
 HTTP_USER_AGENT variable.
 
 
-[nl]
+[para]
 
 
 Examples:
 
 
-[nl]
+[para]
 
 
  */*, application/x-navidoc
 
 
-[nl]
+[para]
 
 
  */*, image/gif, image/x-xbitmap, image/jpeg
 
 
-[nl]
+[para]
 
 
  HTTP_FROM:
 
 
-[nl]
+[para]
 
 
 This variable may contain the email address of the reader who caused
@@ -694,19 +685,19 @@ address for privacy reasons. And, users may enter false email
 addresses in their preferences settings.
 
 
-[nl]
+[para]
 
 
 Example: itsme@mydomain.com
 
 
-[nl]
+[para]
 
 
  HTTP_IF_MODIFIED_SINCE:
 
 
-[nl]
+[para]
 
 
 This variable contains a date and time if the browser wants a response
@@ -715,19 +706,19 @@ The date is in GMT standard time. Many browsers do not send this
 information.
 
 
-[nl]
+[para]
 
 
 Example: Thursday, 23-Nov-95 17:00:00 GMT
 
 
-[nl]
+[para]
 
 
  HTTP_REFERER:
 
 
-[nl]
+[para]
 
 
 This variable contains the URL of the page or other location from
@@ -736,38 +727,38 @@ if the reader runs the program from a form, this variable contains the
 URL of that form.
 
 
-[nl]
+[para]
 
 
 Example: http://www.mydomain.com/mydir/feedback.htm
 
 
-[nl]
+[para]
 
 
  HTTP_USER_AGENT:
 
 
-[nl]
+[para]
 
 
 This variable tells which browser the reader is using to send the
 request. Normally, the format is "browser name/version".
 
 
-[nl]
+[para]
 
 
 Example: Mozilla/1.2N (Windows; I; 16bit)
 
 
-[nl]
+[para]
 
 
  PATH_INFO:
 
 
-[nl]
+[para]
 
 
 This variable contains any extra path information included in the URL
@@ -777,13 +768,13 @@ following URL runs the listdir program and passes it /misc/mydir as
 extra path information:
 
 
-[nl]
+[para]
 
 
  http://www.mysite.com/cgi-bin/listdir/misc/mydir
 
 
-[nl]
+[para]
 
 
 Another use for this type of URL is to pass information to the program
@@ -791,26 +782,25 @@ without using a form or to pass form-specific variables in addition to
 the user-specified variables. For example:
 
 
-[nl]
+[para]
 
 
  http://www.mysite.com/cgi-bin/search/keyword=navigate
 
 
-[nl]
+[para]
 
 
-Examples: /misc/mydir
- /keyword=navigate
+Examples: /misc/mydir/keyword=navigate
 
 
-[nl]
+[para]
 
 
  PATH_TRANSLATED:
 
 
-[nl]
+[para]
 
 
 This variable translates the relative path from PATH_INFO into the
@@ -820,19 +810,19 @@ view, need not reveal the physical location of your files on the
 server.
 
 
-[nl]
+[para]
 
 
 Example: /NaviServer/pages/misc/mydir
 
 
-[nl]
+[para]
 
 
  QUERY_STRING:
 
 
-[nl]
+[para]
 
 
 This variable contains information passed by a form or link to the
@@ -855,19 +845,19 @@ situations:
 
 
 
-[nl]
+[para]
 
 
 The QUERY_STRING is encoded in a format like this:
 
 
-[nl]
+[para]
 
 
  Field1=Value1&Field2=Value2&Field3=Value3
 
 
-[nl]
+[para]
 
 
 Your CGI program should decode the QUERY_STRING. Functions that decode
@@ -886,7 +876,7 @@ string encoding follows these rules:
 
 
 
-[nl]
+[para]
 
 
   Text field and text area: The value is the text typed into the
@@ -894,14 +884,14 @@ string encoding follows these rules:
  character encoded as described below.
 
 
-[nl]
+[para]
 
 
   Radio Buttons: The value is the value of the button that is
  selected.
 
 
-[nl]
+[para]
 
 
   Checkbox: The name and value usually appear in the list only if
@@ -909,7 +899,7 @@ string encoding follows these rules:
  the checkbox only.
 
 
-[nl]
+[para]
 
 
   Selection List: The value of a selection list is the text of the
@@ -918,7 +908,7 @@ string encoding follows these rules:
  item that is selected.
 
 
-[nl]
+[para]
 
 
   Image Field: Two name value pairs are sent. ".x" and ".y" are
@@ -927,13 +917,13 @@ string encoding follows these rules:
  upper-left corner of the image). For example:
 
 
-[nl]
+[para]
 
 
  Figfield.x=185&Figfield.y=37
 
 
-[nl]
+[para]
 
 
 Hidden Fields: You can use hidden fields with fixed values (or values
@@ -942,14 +932,14 @@ Hidden Fields: You can use hidden fields with fixed values (or values
  fields visible.
 
 
-[nl]
+[para]
 
 
 Range Fields: The value is the numeric value of the field (sent as a
  string). Some browsers do not support range fields.
 
 
-[nl]
+[para]
 
 
 Named Submit Buttons: You can place multiple Submit buttons in a form.
@@ -961,7 +951,7 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
  buttons.
 
 
-[nl]
+[para]
 
 
 [list_begin bullet]
@@ -977,7 +967,7 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
 
 
 
-[nl]
+[para]
 
 
  # -- %23
@@ -994,32 +984,32 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
  return -- %09
 
 
-[nl]
+[para]
 
 
  REMOTE_ADDR:
 
 
-[nl]
+[para]
 
 
 The IP address of the machine from which or through which the browser
 is making the request. This information is always available.
 
 
-[nl]
+[para]
 
 
 Example: 199.221.53.76
 
 
-[nl]
+[para]
 
 
  REMOTE_HOST:
 
 
-[nl]
+[para]
 
 
 The full domain name of the machine from which or through which the
@@ -1028,19 +1018,19 @@ browser did not send the information, use the REMOTE_ADDR variable
 instead.
 
 
-[nl]
+[para]
 
 
 Example: mybox.company.com
 
 
-[nl]
+[para]
 
 
  REMOTE_USER:
 
 
-[nl]
+[para]
 
 
 If the server prompted the reader for a username and password because
@@ -1048,19 +1038,19 @@ the script is protected by the NaviServer's access control, this
 variable contains the username the reader provided.
 
 
-[nl]
+[para]
 
 
 Example: nsadmin
 
 
-[nl]
+[para]
 
 
  REQUEST_METHOD:
 
 
-[nl]
+[para]
 
 
 The method used to send the request to the server. For direct links,
@@ -1069,13 +1059,13 @@ or "POST". Another method is "HEAD", which CGI programs can treat like
 "GET" or can provide header information without page contents.
 
 
-[nl]
+[para]
 
 
  SCRIPT_NAME:
 
 
-[nl]
+[para]
 
 
 The virtual path to the CGI script or program being executed from the
@@ -1084,39 +1074,39 @@ the program generates a page that contains a form that can be used to
 run the program again -- for example, to search for another string.
 
 
-[nl]
+[para]
 
 
 Example: /cgi-bin/search
 
 
-[nl]
+[para]
 
 
  SERVER_NAME:
 
 
-[nl]
+[para]
 
 
 The full hostname, domain name alias, or IP address of the server that
 ran the CGI program.
 
 
-[nl]
+[para]
 
 
 Example: www.mysite.com
  128.111.115.9
 
 
-[nl]
+[para]
 
 
  SERVER_PORT:
 
 
-[nl]
+[para]
 
 
 The server port number to which the request was sent. This may be any
@@ -1124,57 +1114,57 @@ number between 1 and 65,535 (that is not already a well-known port).
 The default is 80.
 
 
-[nl]
+[para]
 
 
 Example: 80
 
 
-[nl]
+[para]
 
 
  SERVER_PROTOCOL:
 
 
-[nl]
+[para]
 
 
 The name and version number of the information protocol used to pass
 this request from the client to the server.
 
 
-[nl]
+[para]
 
 
 Example: HTTP/1.0
 
 
-[nl]
+[para]
 
 
  SERVER_SOFTWARE:
 
 
-[nl]
+[para]
 
 
 The name and version number of the server software running the CGI
 program.
 
 
-[nl]
+[para]
 
 
 Example: NaviServer/3.0
 
 
-[nl]
+[para]
 
 
  Other Environment Variables:
 
 
-[nl]
+[para]
 
 
 In addition to the preceding environment variables, the HTTP header
@@ -1185,20 +1175,20 @@ may exclude any headers it has already processed, such as
 Content-type, and Content-length.
 
 
-[nl]
+[para]
 
 
 Also, you can specify environment variables to be passed to a CGI
 program in the NaviServer configuration file.
 
 
-[nl]
+[para]
 
 
  Accessing Standard Input
 
 
-[nl]
+[para]
 
 
 If a form uses the POST method to send a request, the field names and
@@ -1208,7 +1198,7 @@ standard input string is the same as the format of the QUERY_STRING
 environment variable when the GET method is used.
 
 
-[nl]
+[para]
 
 
 Different languages allow you to access the standard input in
@@ -1216,7 +1206,7 @@ different ways. Here are some simplified examples. Your programs
 should also do some error checking.
 
 
-[nl]
+[para]
 
 
 C or C++
@@ -1225,16 +1215,16 @@ C or C++
  #define MAX_CONTENT_LENGTH 10000
 
 
-[nl]
+[para]
 
 
  char *inputlenstr;
  int inputlen;
  int status;
- char inputtext[MAX_INPUT_LENGTH+1];
+ char inputtext[lb]MAX_INPUT_LENGTH+1[rb];
 
 
-[nl]
+[para]
 
 
  inputlenstr = getenv("CONTENT_LENGTH");
@@ -1242,7 +1232,7 @@ C or C++
  status = fread(inputtext, 1, inputlen, stdin);
 
 
-[nl]
+[para]
 
 
 Bourne shell
@@ -1252,7 +1242,7 @@ Bourne shell
 [section {Output from CGI Programs}]
 
 
-[nl]
+[para]
 
 
 To send output from a CGI program to the reader's browser, you send
@@ -1261,7 +1251,7 @@ you to send text to standard output in different ways. Here are some
 examples:
 
 
-[nl]
+[para]
 
 
 
@@ -1290,13 +1280,13 @@ echo You are using $HTTP_USER_AGENT.\</BODY\>
 
 
 
-[nl]
+[para]
 
 
  HTTP Headers
 
 
-[nl]
+[para]
 
 
 Messages sent between a Web browser and a Web server contain header
@@ -1305,20 +1295,20 @@ interpret the information. The header information is not displayed by
 the browser.
 
 
-[nl]
+[para]
 
 
 The NaviServer automatically generates some HTTP header information and
 your program can add other information to the header.
 
 
-[nl]
+[para]
 
 
  Header Information Generated by NaviServer
 
 
-[nl]
+[para]
 
 
 When your CGI program sends output to the standard output location,
@@ -1326,7 +1316,7 @@ the server automatically adds the following HTTP header information
 before sending the output to the reader's browser:
 
 
-[nl]
+[para]
 
 
 
@@ -1344,7 +1334,7 @@ Content-length: 20134
 
 
 
-[nl]
+[para]
 
 
 However, if the name of your CGI program begins with "nph-", the
@@ -1358,13 +1348,13 @@ the response code and content length are written out as 0 (zero) and 0
 (zero) in the access log file.
 
 
-[nl]
+[para]
 
 
  Header Information Generated by Your Program
 
 
-[nl]
+[para]
 
 
 You can specify header information at the beginning of the output you
@@ -1375,7 +1365,7 @@ required. Your program should always send the Content-type header
 below it are optional. For example,
 
 
-[nl]
+[para]
 
 
 
@@ -1394,13 +1384,13 @@ Content-type: text/html
 
 
 
-[nl]
+[para]
 
 
  Content-type:
 
 
-[nl]
+[para]
 
 
 You should always use this header to specify the MIME type of the
@@ -1412,19 +1402,19 @@ image/gif or image/jpeg. You can send any type of output from your CGI
 program -- just be sure to specify the correct MIME type.
 
 
-[nl]
+[para]
 
 
 Example: Content-type: text/html
 
 
-[nl]
+[para]
 
 
  Content-encoding:
 
 
-[nl]
+[para]
 
 
 Use this header if the output you are sending is compressed. The
@@ -1433,19 +1423,19 @@ example, use x-gzip for GNU zip compression and x-compress for
 standard UNIX compression.
 
 
-[nl]
+[para]
 
 
 Example: Content-encoding: x-compress
 
 
-[nl]
+[para]
 
 
  Expires:
 
 
-[nl]
+[para]
 
 
 Use this header to specify when the browser should consider the file
@@ -1454,19 +1444,19 @@ the page from their local cache of pages or to reload the file from
 the server.
 
 
-[nl]
+[para]
 
 
 Example: Expires: Monday, 06-Nov-95 17:50:15 GMT
 
 
-[nl]
+[para]
 
 
  Location:
 
 
-[nl]
+[para]
 
 
 Use this header if you want to send an existing document as output.
@@ -1480,7 +1470,7 @@ that file will be resolved using the directory that contains the CGI
 program.
 
 
-[nl]
+[para]
 
 
 If you send a Location header, you do not need to send a Content-type
@@ -1490,19 +1480,19 @@ redirection. You can specfy any type of URL as the output location.
 For example, you can send an FTP, Gopher, or News URL.
 
 
-[nl]
+[para]
 
 
 Example: Location: http://www.my.org/outbox/accepted.html
 
 
-[nl]
+[para]
 
 
  Status:
 
 
-[nl]
+[para]
 
 
 The NaviServer sends a status code to the browser in the first line of
@@ -1510,7 +1500,7 @@ every HTTP header. The default status code for success is "200 OK".
 You can send other status codes by specifying the Status header.
 
 
-[nl]
+[para]
 
 
 Some browsers may not know how to handle all HTTP status codes, so
@@ -1518,32 +1508,32 @@ your program should also send HTML output after the header to describe
 error situations that occur.
 
 
-[nl]
+[para]
 
 
 Example: Status: 401 Unauthorized
 
 
-[nl]
+[para]
 
 
  Sending HTML
 
 
-[nl]
+[para]
 
 
 To send a Web page to a reader's browser from a CGI program, first
 output this line followed by a blank line:
 
 
-[nl]
+[para]
 
 
  Content-type: text/html
 
 
-[nl]
+[para]
 
 
 Then, generate and output the HTML tags and content that make up the
@@ -1551,7 +1541,7 @@ page. You can send any HTML tags you would normally use when creating
 pages.
 
 
-[nl]
+[para]
 
 
 If the file you want to send already exists, you can use the Location
@@ -1559,14 +1549,14 @@ header described in the previous section to send that file as output
 from the CGI program.
 
 
-[nl]
+[para]
 
 
 
 [section {Advice for CGI Programming}]
 
 
-[nl]
+[para]
 
 
 [list_begin bullet]
@@ -1645,14 +1635,14 @@ from the CGI program.
 
 
 
-[nl]
+[para]
 
 
 
 [section {CGI Examples}]
 
 
-[nl]
+[para]
 
 
 You can download lots of examples and working CGI programs from the Web. Here are some places to look:
