@@ -47,15 +47,15 @@ typedef struct {
     char *module;
 } SrvMod;
 
-static SrvMod srvmod;
-
 int
 Ns_ModuleInit(char *server, char *module)
 {
-    srvmod.server = ns_strdup(server);
-    srvmod.module = ns_strdup(module);
+    SrvMod *smPtr = ns_malloc(sizeof(SrvMod));
 
-    Ns_TclRegisterTrace(server, InitInterp, (void*)&srvmod, NS_TCL_TRACE_CREATE);
+    smPtr->server = ns_strdup(server);
+    smPtr->module = ns_strdup(module);
+
+    Ns_TclRegisterTrace(server, InitInterp, (void*)smPtr, NS_TCL_TRACE_CREATE);
     Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
     Ns_RegisterAtShutdown(Ns_ProxyShutdown, NULL);
 
@@ -66,13 +66,13 @@ static int
 InitInterp(Tcl_Interp *interp, void *arg)
 {
     int status;
-    SrvMod *sm = (SrvMod *)arg;
+    SrvMod *smPtr = (SrvMod *)arg;
 
     status = Ns_ProxyInit(interp);
     if (status == TCL_OK) {
         InterpData *idataPtr = Tcl_GetAssocData(interp, ASSOC_DATA, NULL);
-        idataPtr->server = sm->server;
-        idataPtr->module = sm->module;
+        idataPtr->server = smPtr->server;
+        idataPtr->module = smPtr->module;
     }
 
     return status;

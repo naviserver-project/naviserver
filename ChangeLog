@@ -1,3 +1,14 @@
+2006-09-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: Removed extra (unneeded) broadcasting the
+	pool condition variable. Also, in PushProxy(), the pool
+	condition variable is conditionally broadcasted.
+	Renamed Proc to Slave to avoid name-clashes with the rest of the
+	code where procPtr usually means something else.
+
+	* insproxy/nsproxymod.c: Structure holding the server and module
+	information is now allocated from the heap instead of being static.
+
 2006-09-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	tcl/http.tcl: Updated and fixed minor bugs in http proxy script
