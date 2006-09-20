@@ -57,6 +57,9 @@ NS_RCSID("@(#) $Header$");
 #define SOCK_REQUESTURITOOLONG   (-10)
 #define SOCK_BADREQUEST          (-11)
 #define SOCK_ENTITYTOOLARGE      (-12)
+#define SOCK_BADHEADER           (-13)
+#define SOCK_TOOMANYHEADERS      (-14)
+#define SOCK_LINETOOLONG         (-15)
 
 /*
  * LoggingFlag mask values
@@ -65,6 +68,7 @@ NS_RCSID("@(#) $Header$");
 #define LOGGING_SERVERREJECT     (1<<1)
 #define LOGGING_SOCKERROR        (1<<2)
 #define LOGGING_SOCKSHUTERROR    (1<<3)
+#define LOGGING_BADREQUEST       (1<<4)
 
 /* WriterSock flags, keep it in upper range not to conflict with Conn flags */
 
@@ -92,7 +96,7 @@ static Sock *SockAccept(Driver *drvPtr);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
 static void  SockPrepare(Sock *sockPtr);
 static void  SockRelease(Sock *sockPtr, int reason, int err);
-static void  SockSendResponse(Sock *sockPtr, int code);
+static void  SockSendResponse(Sock *sockPtr, int code, char *msg);
 static void  SockTrigger(SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
 static void  SockClose(Sock *sockPtr, int keep);
@@ -353,6 +357,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
     if (Ns_ConfigBool(path, "sockshuterrorlogging", NS_FALSE)) {
         drvPtr->loggingFlags |= LOGGING_SOCKSHUTERROR;
+    }
+    if (Ns_ConfigBool(path, "badrequestlogging", NS_FALSE)) {
+        drvPtr->loggingFlags |= LOGGING_BADREQUEST;
     }
 
     /*
@@ -1723,25 +1730,52 @@ SockRelease(Sock *sockPtr, int reason, int err)
         }
         break;
 
-    case SOCK_REQUESTURITOOLONG:
-        errMsg = "Request-URI Too Long";
-        SockSendResponse(sockPtr, 414);
-        break;
-
     case SOCK_BADREQUEST:
         errMsg = "Bad Request";
-        SockSendResponse(sockPtr, 400);
+        SockSendResponse(sockPtr, 400, errMsg);
+        break;
+
+    case SOCK_REQUESTURITOOLONG:
+        if (sockPtr->drvPtr->loggingFlags & LOGGING_BADREQUEST) {
+            errMsg = "Request-URI Too Long";
+        }
+        SockSendResponse(sockPtr, 414, errMsg);
+        break;
+
+
+    case SOCK_LINETOOLONG:
+        if (sockPtr->drvPtr->loggingFlags & LOGGING_BADREQUEST) {
+            errMsg = "Request Line Too Long";
+        }
+        SockSendResponse(sockPtr, 400, errMsg);
+        break;
+
+    case SOCK_TOOMANYHEADERS:
+        if (sockPtr->drvPtr->loggingFlags & LOGGING_BADREQUEST) {
+            errMsg = "Too Many Request Headers";
+        }
+        SockSendResponse(sockPtr, 414, errMsg);
+        break;
+
+    case SOCK_BADHEADER:
+        if (sockPtr->drvPtr->loggingFlags & LOGGING_BADREQUEST) {
+            errMsg = "Invalid Request Header";
+        }
+        SockSendResponse(sockPtr, 400, errMsg);
         break;
 
     case SOCK_ENTITYTOOLARGE:
-        errMsg = "Request Entity Too Large";
-        SockSendResponse(sockPtr, 413);
+        if (sockPtr->drvPtr->loggingFlags & LOGGING_BADREQUEST) {
+            errMsg = "Request Entity Too Large";
+        }
+        SockSendResponse(sockPtr, 413, errMsg);
         break;
     }
     if (errMsg != NULL) {
-        Ns_Log(Debug, "Releasing Socket; %s %s(%d/%d), FD = %d, Peer = %s:%d",
+        Ns_Log(Error, "Releasing Socket; %s %s(%d/%d), FD = %d, Peer = %s:%d %s",
                errMsg, (err ? strerror(err) : ""), reason, err, sockPtr->sock,
-               ns_inet_ntoa(sockPtr->sa.sin_addr),ntohs(sockPtr->sa.sin_port));
+               ns_inet_ntoa(sockPtr->sa.sin_addr), ntohs(sockPtr->sa.sin_port),
+               sockPtr->reqPtr ? sockPtr->reqPtr->buffer.string : "");
     }
 
     SockClose(sockPtr, 0);
@@ -1783,26 +1817,37 @@ SockRelease(Sock *sockPtr, int reason, int err)
  */
 
 void
-SockSendResponse(Sock *sockPtr, int code)
+SockSendResponse(Sock *sockPtr, int code, char *msg)
 {
-    struct iovec iov;
-    char *response;
+    struct iovec iov[3];
+    char header[32], *response = NULL;
 
     switch (code) {
     case 413:
-        response = "HTTP/1.0 413 Bad Request\r\n\r\n";
+        if (response == NULL) {
+            response = "Bad Request";
+        }
         break;
     case 414:
-        response = "HTTP/1.0 414 Request-URI Too Long\r\n\r\n";
+        if (response == NULL) {
+            response = "Request-URI Too Long";
+        }
         break;
     case 400:
     default:
-        response = "HTTP/1.0 400 Bad Request\r\n\r\n";
+        if (response == NULL) {
+            response = "Bad Request";
+        }
         break;
     }
-    iov.iov_base = response;
-    iov.iov_len = strlen(response);
-    NsDriverSend(sockPtr, &iov, 1);
+    sprintf(header,"HTTP/1.0 %d ", code);
+    iov[0].iov_base = header;
+    iov[0].iov_len = strlen(header);
+    iov[1].iov_base = response;
+    iov[1].iov_len = strlen(response);
+    iov[2].iov_base = "\r\n\r\n";
+    iov[2].iov_len = 4;
+    NsDriverSend(sockPtr, iov, 3);
 }
 
 
@@ -2114,7 +2159,7 @@ SockParse(Sock *sockPtr, int spooler)
             if (reqPtr->request == NULL) {
                 return SOCK_REQUESTURITOOLONG;
             }
-            return SOCK_BADREQUEST;
+            return SOCK_LINETOOLONG;
         }
 
         /*
@@ -2187,7 +2232,7 @@ SockParse(Sock *sockPtr, int spooler)
                  * Invalid header.
                  */
 
-                return SOCK_BADREQUEST;
+                return SOCK_BADHEADER;
             }
 
             /*
@@ -2195,7 +2240,7 @@ SockParse(Sock *sockPtr, int spooler)
              */
 
             if (Ns_SetSize(reqPtr->headers) > drvPtr->maxheaders) {
-                return SOCK_BADREQUEST;
+                return SOCK_TOOMANYHEADERS;
             }
 
             *e = save;

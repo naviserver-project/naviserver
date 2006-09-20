@@ -1,3 +1,9 @@
+2006-09-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver: Added debugging support for malformed requests, more 
+	detailed error loggging if enabled, introduced new parameter for nssock: 
+	badrequestlogging, if enabled all bad requests will be logged
+
 2006-09-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Removed extra (unneeded) broadcasting the
@@ -11,7 +17,7 @@
 
 2006-09-18  Vlad Seryakov  <seryakov@users.sf.net>
 
-	tcl/http.tcl: Updated and fixed minor bugs in http proxy script
+	* tcl/http.tcl: Updated and fixed minor bugs in http proxy script
 
 2006-09-17  Vlad Seryakov  <seryakov@users.sf.net>
 
