@@ -207,7 +207,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 
     case TIdIdx:
     case TGetIdIdx:
-        Tcl_SetIntObj(Tcl_GetObjResult(interp), Ns_ThreadId());
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ThreadId()));
         break;
 
     case TNameIdx:
@@ -505,9 +505,9 @@ NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         }
 
         if (result == NS_OK) {
-            Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
         } else if (result == NS_TIMEOUT) {
-            Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
         } else {
             return TCL_ERROR;
         }

@@ -102,6 +102,34 @@ NsTclInitTimeType()
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_TclNewTimeObj --
+ *
+ *      Creates new time object.
+ *
+ * Results:
+ *      Pointer to new time object.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Ns_TclNewTimeObj(Ns_Time *timePtr)
+{
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
+    Tcl_InvalidateStringRep(objPtr);
+    SetTimeInternalRep(objPtr, timePtr);
+    
+    return objPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_TclSetTimeObj --
  *
  *      Set a Tcl_Obj to an Ns_Time object.
@@ -220,7 +248,7 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
 
     if (objc < 2) {
-        Tcl_SetLongObj(Tcl_GetObjResult(interp), time(NULL));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj(time(NULL)));
         return TCL_OK;
     }
 
@@ -298,12 +326,13 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK) {
             return TCL_ERROR;
         }
-        Tcl_SetLongObj(Tcl_GetObjResult(interp),
-                       opt == TSecondsIdx ? result.sec : result.usec);
+        Tcl_SetObjResult(interp, Tcl_NewLongObj(opt == TSecondsIdx ? 
+                                                result.sec : result.usec));
         return TCL_OK;
         break;
     }
-    Ns_TclSetTimeObj(Tcl_GetObjResult(interp), &result);
+
+    Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&result));
 
     return TCL_OK;
 }

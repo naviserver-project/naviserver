@@ -173,7 +173,7 @@ NsTclEnvObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
             Tcl_WrongNumArgs(interp, 2, objv, "name");
             goto done;
         }
-        Tcl_SetBooleanObj(Tcl_GetObjResult(interp), getenv(Tcl_GetString(objv[2])) ? 1 : 0);
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(getenv(Tcl_GetString(objv[2])) ? 1 : 0));
         break;
 
     case INamesIdx:

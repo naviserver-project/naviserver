@@ -961,7 +961,7 @@ NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
     Ns_MutexUnlock(&nsconf.state.lock);
 
     NsSendSignal(signal);
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), timeout);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(timeout));
 
     return TCL_OK;
 }

@@ -1124,7 +1124,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Ns_Request *request;
     Tcl_Encoding encoding;
     Tcl_Channel chan;
-    Tcl_Obj *result;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     FormFile *filePtr;
@@ -1133,7 +1132,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     static CONST char *opts[] = {
         "authpassword", "authuser", "close", "content", "contentlength",
-	"contentsentlength",
+	    "contentsentlength",
         "copy", "channel", "driver", "encoding", "files", "fileoffset",
         "filelength", "fileheaders", "flags", "form", "headers",
         "host", "id", "isconnected", "location", "method",
@@ -1145,7 +1144,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
     enum ISubCmdIdx {
         CAuthPasswordIdx, CAuthUserIdx, CCloseIdx, CContentIdx,
-        CContentLengthIdx, CContentSentLenIdx, CCopyIdx, CChannelIdx, CDriverIdx, CEncodingIdx,
+        CContentLengthIdx, CContentSentLenIdx, CCopyIdx, CChannelIdx, CDriverIdx,        CEncodingIdx,
         CFilesIdx, CFileOffIdx, CFileLenIdx, CFileHdrIdx, CFlagsIdx,
         CFormIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
         CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
@@ -1164,14 +1163,12 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         return TCL_ERROR;
     }
     
-    result  = Tcl_GetObjResult(interp);
-    
     /*
      * Only the "isconnected" option operates without a conn.
      */
     
     if (opt == CIsConnectedIdx) {
-        Tcl_SetBooleanObj(result, connPtr ? 1 : 0);
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connPtr ? 1 : 0));
         return TCL_OK;
     }
     if (connPtr == NULL) {
@@ -1191,7 +1188,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                                           &connPtr->keep) != TCL_OK) {
             return NS_ERROR;
         }
-        Tcl_SetIntObj(result, connPtr->keep);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
         break;
 
     case CUrlvIdx:
@@ -1225,13 +1222,13 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK) {
                 return TCL_ERROR;
             }
-            result = Tcl_NewStringObj(Ns_ConnContent(conn)+off, len);
-            Tcl_SetObjResult(interp, result);
+            Tcl_SetObjResult(interp, 
+                             Tcl_NewStringObj(Ns_ConnContent(conn)+off, len));
         }
         break;
         
     case CContentLengthIdx:
-        Tcl_SetIntObj(result, conn->contentLength);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(conn->contentLength));
         break;
         
     case CEncodingIdx:
@@ -1245,7 +1242,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             connPtr->encoding = encoding;
         }
         if (connPtr->encoding != NULL) {
-            Tcl_SetStringObj(result, Tcl_GetEncodingName(connPtr->encoding), -1);
+            CONST char *encname = Tcl_GetEncodingName(connPtr->encoding);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(encname, -1));
         }
         break;
     
@@ -1270,7 +1268,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             connPtr->urlEncoding = encoding;
         }
         if (connPtr->urlEncoding != NULL) {
-            Tcl_SetStringObj(result, Tcl_GetEncodingName(connPtr->urlEncoding), -1);
+            CONST char *encname = Tcl_GetEncodingName(connPtr->urlEncoding);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(encname, -1));
         }
         break;
     
@@ -1279,7 +1278,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
     
     case CPeerPortIdx:
-        Tcl_SetIntObj(result, Ns_ConnPeerPort(conn));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnPeerPort(conn)));
         break;
 
     case CHeadersIdx:
@@ -1344,9 +1343,9 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         }
         filePtr = Tcl_GetHashValue(hPtr);
         if (opt == CFileOffIdx) {
-            Tcl_SetLongObj(result, (long) filePtr->off);
+            Tcl_SetObjResult(interp, Tcl_NewLongObj((long) filePtr->off));
         } else if (opt == CFileLenIdx) {
-            Tcl_SetLongObj(result, (long) filePtr->len);
+            Tcl_SetObjResult(interp, Tcl_NewLongObj((long) filePtr->len));
         } else {
             Ns_TclEnterSet(interp, filePtr->hdrs, NS_TCL_SET_STATIC);
         }
@@ -1379,7 +1378,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             }
             Ns_ConnSetWriteEncodedFlag(conn, write_encoded_flag);
         }
-        Tcl_SetBooleanObj(result, Ns_ConnGetWriteEncodedFlag(conn));
+        Tcl_SetObjResult(interp, 
+                         Tcl_NewBooleanObj(Ns_ConnGetWriteEncodedFlag(conn)));
         break;
 
     case CChunkedIdx:
@@ -1391,7 +1391,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             }
             Ns_ConnSetChunkedFlag(conn, chunked_flag);
         }
-        Tcl_SetBooleanObj(result, Ns_ConnGetChunkedFlag(conn));
+        Tcl_SetObjResult(interp, 
+                         Tcl_NewBooleanObj(Ns_ConnGetChunkedFlag(conn)));
         break;
 
     case CResponseVersionIdx:
@@ -1418,7 +1419,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
     
     case CPortIdx:
-        Tcl_SetIntObj(result, request->port);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(request->port));
         break;
 
     case CUrlIdx:
@@ -1430,11 +1431,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
     
     case CUrlcIdx:
-        Tcl_SetIntObj(result, request->urlc);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(request->urlc));
         break;
     
     case CVersionIdx:
-        Tcl_SetDoubleObj(result, request->version);
+        Tcl_SetObjResult(interp, Tcl_NewDoubleObj(request->version));
         break;
 
     case CVersionStringIdx:
@@ -1464,31 +1465,31 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             if (Tcl_GetIntFromObj(interp, objv[2], &status) != TCL_OK) {
                 return TCL_ERROR;
             }
-            Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
+            Tcl_SetObjResult(interp,Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
             Ns_ConnSetResponseStatus(conn, status);
         } else {
-            Tcl_SetIntObj(result, Ns_ConnResponseStatus(conn));
+            Tcl_SetObjResult(interp,Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
         }
         break;
 
     case CTimeoutIdx:
-        Ns_TclSetTimeObj(Tcl_GetObjResult(interp), Ns_ConnTimeout(conn));
+        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(Ns_ConnTimeout(conn)));
         break;
 
     case CSockIdx:
-        Tcl_SetIntObj(result, Ns_ConnSock(conn));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnSock(conn)));
         break;
     
     case CIdIdx:
-        Tcl_SetIntObj(result, Ns_ConnId(conn));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnId(conn)));
         break;
     
     case CFlagsIdx:
-        Tcl_SetIntObj(result, connPtr->flags);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->flags));
         break;
 
     case CStartIdx:
-        Ns_TclSetTimeObj(result, &connPtr->startTime);
+        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&connPtr->startTime));
         break;
 
     case CCloseIdx:
@@ -1505,14 +1506,15 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return TCL_ERROR;
         }
         Tcl_RegisterChannel(interp, chan);
-        Tcl_SetStringObj(result, Tcl_GetChannelName(chan), -1);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),-1));
 	break;
 
     case CContentSentLenIdx:
         if (objc == 2) {
-            Tcl_SetIntObj(result, connPtr->nContentSent);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->nContentSent));
         } else if (objc == 3) {
-            if (Tcl_GetIntFromObj(interp, objv[2], &connPtr->nContentSent) != TCL_OK) {
+            if (Tcl_GetIntFromObj(interp, objv[2], &connPtr->nContentSent) 
+                != TCL_OK) {
                 return TCL_ERROR;
             }
         } else {

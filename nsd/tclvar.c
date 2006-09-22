@@ -138,7 +138,7 @@ NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     }
     hPtr = Tcl_FindHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]));
     if (hPtr != NULL) {
-        Tcl_SetStringObj(Tcl_GetObjResult(interp), Tcl_GetHashValue(hPtr), -1);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
     }
     UnlockArray(arrayPtr);
     if (hPtr == NULL) {
@@ -184,7 +184,7 @@ NsTclNsvExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
         }
         UnlockArray(arrayPtr);
     }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), exists);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(exists));
 
     return TCL_OK;
 }
@@ -269,10 +269,9 @@ NsTclNsvIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         result = Tcl_GetInt(interp, value, &current);
     }
     if (result == TCL_OK) {
-        Tcl_Obj *obj = Tcl_GetObjResult(interp);
-        current += count;
-        Tcl_SetIntObj(obj, current);
+        Tcl_Obj *obj = Tcl_NewIntObj(current += count);
         UpdateVar(hPtr, obj);
+        Tcl_SetObjResult(interp, obj);
     }
     UnlockArray(arrayPtr);
 
@@ -390,7 +389,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
     Tcl_HashSearch  search;
     char           *pattern, *key;
     int             i, opt, lobjc, size;
-    Tcl_Obj        *result, **lobjv;
+    Tcl_Obj       **lobjv;
 
     static CONST char *opts[] = {
         "set", "reset", "get", "names", "size", "exists", NULL
@@ -407,7 +406,6 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
                             &opt) != TCL_OK) {
         return TCL_ERROR;
     }
-    result = Tcl_GetObjResult(interp);
     switch (opt) {
     case CSetIdx:
     case CResetIdx:
@@ -448,9 +446,9 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
             UnlockArray(arrayPtr);
         }
         if (opt == CExistsIdx) {
-            Tcl_SetBooleanObj(result, size);
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(size));
         } else {
-            Tcl_SetIntObj(result, size);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
         }
         break;
 
@@ -834,7 +832,7 @@ NsTclVarObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         } else {
             hPtr = Tcl_FindHashEntry(tablePtr, var);
             if (opt == VExistsIdx) {
-                Tcl_SetBooleanObj(Tcl_GetObjResult(interp), hPtr ? 1 : 0);
+                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(hPtr ? 1 : 0));
             } else if (hPtr == NULL) {
                 Tcl_AppendResult(interp, "no such variable \"", var, 
                                  "\"", NULL);

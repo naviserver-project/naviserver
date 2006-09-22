@@ -1,3 +1,24 @@
+2006-09-22  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsd/tclinit.c:    Avoids setting objects obtained from
+	* nsd/adpcmds.c:    the interpreter result, as this may
+	* nsd/conn.c:       contain objects that are shared.
+	* nsd/httptime.c:   So constructs like this:
+	* nsd/mimetypes.c:  
+	* nsd/nsmain.c:     Tcl_SetIntObj(Tcl_GetObjResult(interp), n));
+	* nsd/random.c: 
+	* nsd/tclcache.c:   are rewritten to read:
+	* nsd/tclenv.c:
+	* nsd/tclhttp.c:    Tcl_SetObjResult(interp, Tcl_NewIntObj(n));
+	* nsd/tcljob.c:
+	* nsd/tclthread.c:  This is done for all "known" Tcl object types
+	* nsd/tcltime.c:    like: int, string, boolean, long, and our 
+	* nsd/tclvar.c:     custom object types like: time.
+	* nsd/tclxkeylist.c: 
+
+	* include/ns.h: 
+	* nsd/tcltime.c: Added Ns_TclNewTimeObj() exported API.
+
 2006-09-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver: Added debugging support for malformed requests, more 

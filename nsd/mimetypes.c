@@ -740,7 +740,7 @@ NsTclGuessTypeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         return TCL_ERROR;
     }
     type = Ns_GetMimeType(Tcl_GetString(objv[1]));
-    Tcl_SetStringObj(Tcl_GetObjResult(interp), type, -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
 
     return TCL_OK;
 }

@@ -1441,7 +1441,7 @@ TclX_KeylgetObjCmd (clientData, interp, objc, objv)
                                   (char *) NULL);
             return TCL_ERROR;
         } else {
-            Tcl_SetBooleanObj (Tcl_GetObjResult (interp), FALSE);
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(FALSE));
             return TCL_OK;
         }
     }
@@ -1462,7 +1462,7 @@ TclX_KeylgetObjCmd (clientData, interp, objc, objv)
                           valuePtr, TCL_PARSE_PART1|TCL_LEAVE_ERR_MSG) == NULL)
             return TCL_ERROR;
     }
-    Tcl_SetBooleanObj (Tcl_GetObjResult (interp), TRUE);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TRUE));
     return TCL_OK;
 }
 

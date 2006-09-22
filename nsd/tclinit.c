@@ -901,7 +901,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return TCL_ERROR;
         }
         Ns_RWLockRdLock(&servPtr->tcl.lock);
-        Tcl_SetIntObj(Tcl_GetObjResult(interp), servPtr->tcl.epoch);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(servPtr->tcl.epoch));
         Ns_RWLockUnlock(&servPtr->tcl.lock);
         break;
 
@@ -974,7 +974,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Tcl_WrongNumArgs(interp, 2, objv, "script");
             return TCL_ERROR;
         }
-        script = Tcl_GetString(objv[objc-1]);
+        scriptObj = objv[objc-1];
 
         switch (opt) {
         case IOnInitIdx:
@@ -1761,7 +1761,12 @@ DeleteData(void *arg)
         hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&dataPtr->interps);
+
+    /*
+     * FIXME: This might core under circumstances
+     */
     Tcl_AsyncDelete(dataPtr->cancel);
+
     ns_free(dataPtr);
 }
 

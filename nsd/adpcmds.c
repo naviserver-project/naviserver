@@ -688,7 +688,7 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     } else {
 	bool = 1;
     }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), bool);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(bool));
     if (objc == 2) {
 	switch (itPtr->adp.exception) {
 	case ADP_OK:

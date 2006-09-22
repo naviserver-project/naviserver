@@ -184,8 +184,8 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         return TCL_ERROR;
     }
     if (!new && !force) {
-        Tcl_SetStringObj(Tcl_GetObjResult(interp),
-                         Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_CacheGetValue(entry),
+                                                  Ns_CacheGetSize(entry)));
     } else {
         Ns_CacheUnlock(cPtr->cache);
         if (nargs == 1) {
@@ -261,9 +261,9 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         Ns_CacheUnlock(cPtr->cache);
         return TCL_ERROR;
     }
-    valObj = Tcl_GetObjResult(interp);
-    Tcl_SetIntObj(valObj, cur += incr);    
+    valObj = Tcl_NewIntObj(cur += incr);
     SetEntry(cPtr, entry, valObj, expPtr);
+    Tcl_SetObjResult(interp, valObj);
     Ns_CacheUnlock(cPtr->cache);
 
     return TCL_OK;
@@ -328,10 +328,9 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if ((entry = CreateEntry(itPtr, cPtr, key, &new, timeoutPtr)) == NULL) {
         return TCL_ERROR;
     }
-    valObj = Tcl_GetObjResult(interp);
+    valObj = Tcl_NewObj();
     if (!new) {
-        Tcl_SetStringObj(valObj,
-            Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
+        Tcl_SetStringObj(valObj, Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
     }
     for (i = objc - nelements; i < objc; i++) {
         if (append) {
@@ -343,6 +342,7 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
     }
     SetEntry(cPtr, entry, valObj, expPtr);
+    Tcl_SetObjResult(interp, valObj);
     Ns_CacheUnlock(cPtr->cache);
 
     return TCL_OK;
@@ -507,7 +507,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         }
     }
     Ns_CacheUnlock(cache);
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), nflushed);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(nflushed));
 
     return TCL_OK;
 }

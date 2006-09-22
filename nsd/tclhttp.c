@@ -182,7 +182,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         }
         httpPtr = Tcl_GetHashValue(hPtr);
         Tcl_DeleteHashEntry(hPtr);
-        Tcl_SetIntObj(Tcl_GetObjResult(interp), HttpAbort(httpPtr));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(HttpAbort(httpPtr)));
         break;
 
     case HWaitIdx:
@@ -253,7 +253,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         if (result == NULL) {
             return TCL_ERROR;
         }
-        Tcl_SetBooleanObj(Tcl_GetObjResult(interp), status == NS_OK ? 1 : 0);
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
         break;
 
     case HCleanupIdx:

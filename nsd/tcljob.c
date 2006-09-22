@@ -694,8 +694,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             } 
             Ns_CondBroadcast(&queuePtr->cond);
             Ns_CondBroadcast(&tp.cond);
-            Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 
-                              jobPtr->state == JOB_RUNNING);
+            Tcl_SetObjResult(interp,
+                             Tcl_NewBooleanObj(jobPtr->state == JOB_RUNNING));
             ReleaseQueue(queuePtr, 0);
         }
         break;
