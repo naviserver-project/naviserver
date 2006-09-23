@@ -7,7 +7,7 @@
 
 [description]
 
- This command encodes a string according to the rules for URL encoding defined in 
+ This command encodes a string according to the rules for URL encoding defined in
  RFC #1738, Uniform Resource Locators.
 
  ns_urlencode codes  all  non-alphanumeric  characters  in  data.  The
@@ -34,7 +34,7 @@
 
 [example_begin]
   set link [lb]ns_urlencode http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3[rb]
-  ns_adp_puts "<a href=[ns_urlencode $link]>click</a>"
+  ns_adp_puts "<a href=[lb]ns_urlencode $link[rb]>click</a>"
 [example_end]
 
 [see_also nsd]
