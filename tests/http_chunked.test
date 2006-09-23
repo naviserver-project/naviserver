@@ -45,7 +45,7 @@ if {[ns_config test listenport]} {
 test http_chunked-1.1 {adp streaming w/chunks to HTTP/1.1 client} -constraints serverListen -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody t \
         GET /http_chunked.adp?stream=1
-} -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
+} -result "200 chunked {} 012345678901234"
 
 test http_chunked-1.2 {adp with buffered response} -constraints serverListen -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody t \
@@ -72,7 +72,7 @@ test http_chunked-2.1 {Tcl streaming w/chunks to HTTP/1.1 client} -constraints s
         GET /tclchunked
 } -cleanup {
     ns_unregister_proc GET /tclchunked
-} -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
+} -result "200 chunked {} 012345678901234"
 
 test http_chunked-2.1.1 {Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client} \
     -constraints serverListen -setup {
@@ -89,7 +89,7 @@ test http_chunked-2.1.1 {Tcl streaming multiple binary buffers w/chunks to HTTP/
         GET /tclchunked
 } -cleanup {
     ns_unregister_proc GET /tclchunked
-} -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
+} -result "200 chunked {} 012345678901234"
 
 test http_chunked-2.1.2 {Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client} \
     -constraints serverListen -setup {
@@ -106,7 +106,7 @@ test http_chunked-2.1.2 {Tcl streaming multiple binary buffers w/chunks to HTTP/
         GET /tclchunked
 } -cleanup {
     ns_unregister_proc GET /tclchunked
-} -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
+} -result "200 chunked {} 012345678901234"
 
 test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverListen -setup {
     ns_register_proc GET /tclchunked {
@@ -128,7 +128,7 @@ test http_chunked-2.3 {Tcl response of known size to HTTP/1.1 client} -constrain
         GET /tclchunked
 } -cleanup {
     ns_unregister_proc GET /tclchunked
-} -result {200 {} 5 01234}
+} -result {200 chunked {} 01234}
 
 
 

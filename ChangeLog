@@ -1,28 +1,35 @@
+2006-09-23  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * nsd/connio.c: Fixed bug in Ns_ConnWriteVChars which prevented to
+        send correctly nultiple small buffers.
+        * tests/*: Updated test to mark encoding as knownBug until fixed and
+        http chunked test according to updated ns_httptest
+
 2006-09-22  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclinit.c:    Avoids setting objects obtained from
 	* nsd/adpcmds.c:    the interpreter result, as this may
 	* nsd/conn.c:       contain objects that are shared.
 	* nsd/httptime.c:   So constructs like this:
-	* nsd/mimetypes.c:  
+	* nsd/mimetypes.c:
 	* nsd/nsmain.c:     Tcl_SetIntObj(Tcl_GetObjResult(interp), n));
-	* nsd/random.c: 
+	* nsd/random.c:
 	* nsd/tclcache.c:   are rewritten to read:
 	* nsd/tclenv.c:
 	* nsd/tclhttp.c:    Tcl_SetObjResult(interp, Tcl_NewIntObj(n));
 	* nsd/tcljob.c:
 	* nsd/tclthread.c:  This is done for all "known" Tcl object types
-	* nsd/tcltime.c:    like: int, string, boolean, long, and our 
+	* nsd/tcltime.c:    like: int, string, boolean, long, and our
 	* nsd/tclvar.c:     custom object types like: time.
-	* nsd/tclxkeylist.c: 
+	* nsd/tclxkeylist.c:
 
-	* include/ns.h: 
+	* include/ns.h:
 	* nsd/tcltime.c: Added Ns_TclNewTimeObj() exported API.
 
 2006-09-20  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/driver: Added debugging support for malformed requests, more 
-	detailed error loggging if enabled, introduced new parameter for nssock: 
+	* nsd/driver: Added debugging support for malformed requests, more
+	detailed error loggging if enabled, introduced new parameter for nssock:
 	badrequestlogging, if enabled all bad requests will be logged
 
 2006-09-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
@@ -64,7 +71,7 @@
 	* nsproxy/nsproxymod.c: Registers Ns_Shutdown instead of Ns_Exit
 	callback to teardown the proxy.
 
-	* nsproxy/nsproxy.h: Exports Ns_ProxyShutdown instead of 
+	* nsproxy/nsproxy.h: Exports Ns_ProxyShutdown instead of
 	Ns_ProxyExit
 
 	* nsproxy/nsproxylib.c: Added new command [ns_proxy stop] which
@@ -89,7 +96,7 @@
 	schema, the path to the private tcl lib is "$home/modules/tcl"
 	but the code calculated "$home/modules/modules/tcl" instead.
         This has now been fixed.
-	
+
 2006-09-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 	option, as it was both broken and meaníngless.
 	Returning a non-idle proxy back to the pool forcefully closes
@@ -111,13 +118,13 @@
 2006-09-13  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Ns_ProxyExit() avoids tearing down
-	pools having slaves on the run list, as this may lead to 
+	pools having slaves on the run list, as this may lead to
 	memory violations. At the moment we just "leak" those pools.
 
 2006-09-12  Bernd Eidenschink  <eide@users.sf.net>
 
 	* doc/src/: Added missing documentation templates for commands.
-	
+
 2006-09-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* index.adp:
@@ -136,7 +143,7 @@
 	* tcl/util.tcl:
 	* nsperm/init.tcl:
 	* nsdb/util.tcl:
-	* nsd/init.tcl: Minor pedantic updates consisting mainly of 
+	* nsd/init.tcl: Minor pedantic updates consisting mainly of
 	adding extra-paranoid [list] quoting when building up scripts
 	that are to be [eval]'ed, and adding "--" (end of switches marker)
 	to regexp, switch, glob, etc., where the next option was user
@@ -149,13 +156,13 @@
 	it compiles with dtplite. Next step is to finetune the contents
 	during the documentation process.
 	doc/src/commandlist.man should finally become a TOC and reference the files.
-	
+
 2006-09-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/log.c: SeverityName() changed to accept one more argument
-	as buffer where to return severity name, if it has to be 
+	as buffer where to return severity name, if it has to be
 	calculated for the given level. Before we were just returning
-	the pointer to a buffer allocated on the stack, which was a 
+	the pointer to a buffer allocated on the stack, which was a
 	bad thing to do.
 
 2006-09-07  Vlad Seryakov  <seryakov@users.sf.net>
@@ -165,12 +172,12 @@
 	* nsd/nsmain.c: This is experimental but i think it can stay in the core
 	because i ran all tests and i do not see any problems but only benefits:
 
-        Any call to Ns_ConfigXXX family will try to locate config parameter but if it 
-	does not exists it will auto-create section and parameter key. If default was given, 
+        Any call to Ns_ConfigXXX family will try to locate config parameter but if it
+	does not exists it will auto-create section and parameter key. If default was given,
 	it will assign default value. this way we have the whole config tree in the memory
-	which can be view now more effectivelly with nsconfig.tcl script which will be 
+	which can be view now more effectivelly with nsconfig.tcl script which will be
 	installed now by default with make install. Ns_ConfigCreateSection will auto-create
-	section during startup only, it does call Ns_InfoStarted() which is very quick and 
+	section during startup only, it does call Ns_InfoStarted() which is very quick and
 	after server started, config behaves as ussual.
 
 	contrib/nsconfig.tcl:
@@ -192,7 +199,7 @@
 
 	* doc/src/commandlist.man: First shot of a document listing all
 	available server commands, to act as a TOC later. Alpha stage.
-	
+
 2006-09-06  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/nsconf.c:

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -77,7 +77,7 @@ static int ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan,
                     FILE *fp, int fd);
 static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
                     FILE *fp, int fd);
- 
+
 
 /*
  *-----------------------------------------------------------------
@@ -88,7 +88,7 @@ static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
  *
  * Results:
  *      Always NS_OK.
- * 
+ *
  * Side effects:
  *      None.
  *
@@ -111,7 +111,7 @@ Ns_ConnInit(Ns_Conn *conn)
  *
  * Results:
  *      Always NS_OK.
- * 
+ *
  * Side effects:
  *      The underlying socket in the connection is closed or moved
  *      to the waiting keep-alive list.
@@ -124,7 +124,7 @@ Ns_ConnClose(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
     int   keep;
-    
+
     if (connPtr->sockPtr != NULL) {
 
         keep = connPtr->keep > 0 ? 1 : 0;
@@ -243,7 +243,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
                     break;
                 }
             }
-            
+
             /*
              * If there are more whole buffers to send, move the remaining unsent
              * buffers to the beginning of the iovec array so that we always send
@@ -394,7 +394,7 @@ Ns_ConnWriteV(Ns_Conn *conn, struct iovec *bufs, int nbufs)
  *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      Stuff may be written 
+ *      Stuff may be written
  *
  *----------------------------------------------------------------------
  */
@@ -419,6 +419,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     int             utfConvertedCount; /* # of bytes of utfBytes converted */
     char            encodedBytes[IOBUFSZ];
     int             encodedCount;      /* # of bytes converted in encodedBytes */
+    int             encodedOffset;
 
     if (connPtr->encoding == NULL
         || nbufs == 0
@@ -436,6 +437,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     n        = 0;
     utfBytes = bufs[n].iov_base;
     utfCount = bufs[n].iov_len;
+    encodedOffset = 0;
 
     while (utfCount > 0 && status == NS_OK) {
 
@@ -448,7 +450,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
                      connPtr->encoding,
                      utfBytes, utfCount,
                      0, NULL,              /* flags, encoding state */
-                     encodedBytes, sizeof(encodedBytes),
+                     encodedBytes + encodedOffset, sizeof(encodedBytes) - encodedOffset,
                      &utfConvertedCount,
                      &encodedCount,
                      NULL);                /* # of chars encoded */
@@ -458,10 +460,10 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
             break;
         }
 
-        if (encodedCount == sizeof(encodedBytes)-1
+        if (encodedCount + encodedOffset == sizeof(encodedBytes)-1
             || (n == nbufs-1 && utfConvertedCount == utfCount)) {
 
-            status = Ns_WriteConn(conn, encodedBytes, encodedCount);
+            status = Ns_WriteConn(conn, encodedBytes, encodedCount + encodedOffset);
             utfCount -= utfConvertedCount;
             utfBytes += utfConvertedCount;
             continue;
@@ -470,6 +472,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         n++;
         utfBytes = bufs[n].iov_base;
         utfCount = bufs[n].iov_len;
+        encodedOffset += encodedCount;
     }
 
     return status;
@@ -482,7 +485,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
  * Ns_WriteConn, Ns_WriteCharConn --
  *
  *      Write a single buffer of bytes or characters to the conn. It
- *      promises to write all of it. 
+ *      promises to write all of it.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -518,7 +521,7 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
  * Ns_ConnPuts --
  *
  *      Write a null-terminated string directly to the conn; no
- *      trailing newline will be appended despite the name. 
+ *      trailing newline will be appended despite the name.
  *
  * Results:
  *      NS_OK or NS_ERROR.
@@ -631,14 +634,14 @@ Ns_ConnFlushContent(Ns_Conn *conn)
  *
  * Ns_ConnGets --
  *
- *      Read in a string from a connection, stopping when either 
- *      we've run out of data, hit a newline, or had an error 
+ *      Read in a string from a connection, stopping when either
+ *      we've run out of data, hit a newline, or had an error
  *
  * Results:
  *      Pointer to given buffer or NULL on error.
  *
  * Side effects:
- *  
+ *
  *
  *----------------------------------------------------------------------
  */
@@ -712,7 +715,7 @@ Ns_ConnRead(Ns_Conn *conn, void *vbuf, int toread)
  *      was found or the line would be too long.
  *
  * Side effects:
- *      Stuff may be read 
+ *      Stuff may be read
  *
  *----------------------------------------------------------------------
  */
@@ -752,13 +755,13 @@ Ns_ConnReadLine(Ns_Conn *conn, Ns_DString *dsPtr, int *nreadPtr)
  *
  * Ns_ConnReadHeaders --
  *
- *      Read the headers and insert them into the passed-in set 
+ *      Read the headers and insert them into the passed-in set
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      Stuff will be read from the conn 
+ *      Stuff will be read from the conn
  *
  *----------------------------------------------------------------------
  */
@@ -807,7 +810,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, int *nreadPtr)
  *      Copy data from a connection to a dstring.
  *
  * Results:
- *      NS_OK or NS_ERROR 
+ *      NS_OK or NS_ERROR
  *
  * Side effects:
  *      None.
@@ -838,10 +841,10 @@ Ns_ConnCopyToDString(Ns_Conn *conn, size_t tocopy, Ns_DString *dsPtr)
  *
  * Ns_ConnCopyToFile, Fd, Channel --
  *
- *      Copy data from a connection to a channel, FILE, or fd. 
+ *      Copy data from a connection to a channel, FILE, or fd.
  *
  * Results:
- *      NS_OK or NS_ERROR 
+ *      NS_OK or NS_ERROR
  *
  * Side effects:
  *      See ConnCopy().
@@ -938,7 +941,7 @@ ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
     int   toread, nread, status;
     char  buf[IOBUFSZ];
- 
+
     /*
      * Even if nsend is 0, ensure all queued data (like HTTP response
      * headers) get flushed.
