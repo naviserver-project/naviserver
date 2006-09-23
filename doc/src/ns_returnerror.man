@@ -3,7 +3,7 @@
 [manpage_begin ns_returnerror n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_returnerror - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_returnerror command in detail.

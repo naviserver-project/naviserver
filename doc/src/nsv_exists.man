@@ -1,9 +1,7 @@
-[manpage_begin Nsv_exists n 4.99]
+[manpage_begin nsv_exists n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {nsv_exists - Test whether a key exists}]
+[titledesc {Test whether a key exists}]
 
 [description]
 
@@ -34,7 +32,7 @@
    0
 [example_end]
 
-[para]the key does not exist 
+[para]the key does not exist
 
 [see_also nsd]
 

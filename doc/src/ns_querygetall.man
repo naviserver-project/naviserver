@@ -1,9 +1,9 @@
-[manpage_begin Ns_querygetall n 4.99]
+[manpage_begin ns_querygetall n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_querygetall - Get multiple query values from the HTTP request}]
+[titledesc {Get multiple query values from the HTTP request}]
 
 [description]
 

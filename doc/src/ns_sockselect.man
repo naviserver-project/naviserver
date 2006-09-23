@@ -3,7 +3,7 @@
 [manpage_begin ns_sockselect n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_sockselect - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_sockselect command in detail.

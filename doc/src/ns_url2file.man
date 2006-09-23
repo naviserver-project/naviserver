@@ -1,9 +1,9 @@
-[manpage_begin Ns_url2file n 4.99]
+[manpage_begin ns_url2file n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_url2file - Return the path to a file referenced by a URL}]
+[titledesc {Return the path to a file referenced by a URL}]
 
 [description]
 

@@ -1,9 +1,7 @@
-[manpage_begin Ns_adp_mimetype n 4.99]
+[manpage_begin ns_adp_mimetype n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_adp_mimetype - Get or set the mime type for the current ADP page}]
+[titledesc {Get or set the mime type for the current ADP page}]
 
 [description]
 

@@ -1,4 +1,4 @@
-[manpage_begin TOC n 4.99.2]
+[manpage_begin {All Tcl Commands by Category} n 4.99.2]
 [moddesc {NaviServer Built-in Commands}]
 
 [titledesc {NaviServer commands}]
@@ -384,9 +384,6 @@ removed; now ns_ictl markfordelete; 2005-07-29
 [call [cmd ns_register_url2file]]
 [call [cmd ns_unregister_url2file]]
 [list_end]
-
-
-
 
 [see_also nsd]
 [keywords NaviServer]

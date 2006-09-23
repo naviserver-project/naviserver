@@ -1,9 +1,7 @@
-[manpage_begin Nsv_incr n 4.99]
+[manpage_begin nsv_incr n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {nsv_incr - Increment the value of the element in the nsv array arrayName specified by key}]
+[titledesc {Increment the value of the element in the nsv array arrayName specified by key}]
 
 [description]
 

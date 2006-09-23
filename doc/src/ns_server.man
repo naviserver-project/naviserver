@@ -1,9 +1,9 @@
-[manpage_begin Ns_server n 4.99]
+[manpage_begin ns_server n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_server - Get state of the server's connection pools and queues}]
+[titledesc {Get state of the server's connection pools and queues}]
 
 [description]
 

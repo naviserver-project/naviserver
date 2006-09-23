@@ -1,9 +1,9 @@
-[manpage_begin Ns_ictl n 4.99]
+[manpage_begin ns_ictl n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_ictl - Manipulate and introspect Tcl interpreter internals}]
+[titledesc {Manipulate and introspect Tcl interpreter internals}]
 
 [description]
 

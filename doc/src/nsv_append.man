@@ -1,9 +1,9 @@
-[manpage_begin Nsv_append n 4.99]
+[manpage_begin nsv_append n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {nsv_append - Append to the value specified by the key}]
+[titledesc {Append to the value specified by the key}]
 
 [description]
 

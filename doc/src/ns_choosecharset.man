@@ -1,9 +1,9 @@
-[manpage_begin Ns_choosecharset n 4.99]
+[manpage_begin ns_choosecharset n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_choosecharset - Return the name of the most appropriate charset for the request}]
+[titledesc {Return the name of the most appropriate charset for the request}]
 
 [description]
 

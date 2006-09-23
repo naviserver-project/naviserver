@@ -1,15 +1,13 @@
-[manpage_begin Ns_adp_parse n 4.99]
+[manpage_begin ns_adp_parse n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_adp_parse - Parse an ADP file or string and return its output}]
+[titledesc {Parse an ADP file or string and return its output}]
 
 [description]
 
  This command processes an ADP from either a file or a string, returning the output.  The first arg specifies the filename or contains the string to parse, depending on -file or -string.
 
- If you need to process a second ADP from inside an ADP, it is usually better to use ns_adp_include, because that command resolves relative pathnames passed to it.  Also note that ns_adp_parse will ignore any directives to turn on streaming.  Tcl_Eval() is used to evaluate the Tcl commands in the ADP. 
+ If you need to process a second ADP from inside an ADP, it is usually better to use ns_adp_include, because that command resolves relative pathnames passed to it.  Also note that ns_adp_parse will ignore any directives to turn on streaming.  Tcl_Eval() is used to evaluate the Tcl commands in the ADP.
 
  If you use the -string syntax, then arg is a string containing ADP syntax to be parsed.  Note that when you call this command with the -string syntax from inside an ADP, the string cannot contain the "&lt;% ... %&gt;" syntax.  The -string syntax is the default.
 
@@ -17,7 +15,7 @@
 
  You can pass optional arguments to the ADP.  The arguments can be accessed within the ADP using the ns_adp_argc, ns_adp_argv and ns_adp_bind_args commands.
 
- If this call is a nested ADP evaluation (where one ADP calls another), an error will be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations. 
+ If this call is a nested ADP evaluation (where one ADP calls another), an error will be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations.
 
 [section {COMMANDS}]
 
@@ -38,7 +36,7 @@
 [example_end]
 
 [example_begin]
-   % ns_adp_parse -file 
+   % ns_adp_parse -file
 [example_end]
 
 [manpage_end]

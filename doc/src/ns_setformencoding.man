@@ -1,8 +1,8 @@
-[manpage_begin Ns_setformencoding n 4.99]
+[manpage_begin ns_setformencoding n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 	    
-[titledesc {ns_setformencoding - Set the form encoding of the current connection}]
+[titledesc {Set the form encoding of the current connection}]
 
 [description]
 

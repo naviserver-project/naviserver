@@ -1,13 +1,19 @@
-[manpage_begin Ns_return n 4.99]
+[manpage_begin ns_return n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_connsendfp, ns_respond, ns_return, ns_returnadminnotice, ns_returnbadrequest, ns_returnerror, ns_returnfile, ns_returnforbidden, ns_returnfp, ns_returnnotfound, ns_returnnotice, ns_returnredirect, ns_returnunauthorized, ns_write - commands}]
+[titledesc {Return data to the client}]
 
 [description]
-[para]These procedures provide a simple interface for returning information to the client. They build HTTP/1.0 headers and send the appropriate data out the socket to the client. The script does not end at the time ns_return* is invoked so you can continue processing data after the client has gotten the data and closed the socket.
-[para]type should be a MIME type (see ns_guesstype for a list). status is a three-digit number fitting the pattern below:
+
+[para]
+These procedures provide a simple interface for returning information to the client.
+They build HTTP/1.0 headers and send the appropriate data out the socket to the client. The script
+does not end at the time ns_return* is invoked so you can continue processing data after the client
+has gotten the data and closed the socket.
+
+[para]
+type should be a MIME type (see ns_guesstype for a list). status is a three-digit number
+fitting the pattern below:
 
  1xx Informational - Not used, but reserved for future use.
  2xx Success - The action was successfully received, understood, and accepted.

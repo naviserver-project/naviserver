@@ -1,9 +1,7 @@
-[manpage_begin Ns_adp_stats n 4.99]
+[manpage_begin ns_adp_stats n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_adp_stats - Return statistics about cached ADP pages}]
+[titledesc {Return statistics about cached ADP pages}]
 
 [description]
 
@@ -29,7 +27,7 @@
 
 [call [cmd  mtime]]
 
- Time the file was last modified, 
+ Time the file was last modified,
 
 [call [cmd  refcnt]]
 
@@ -57,7 +55,7 @@
 
 [example_begin]
    % foreach {file stats} <strong>ns_adp_stats</strong> {
-         append output "\nFILE: ${file}\n" 
+         append output "\nFILE: ${file}\n"
          foreach {key value} $stats {
              append output "    ${key} ==> ${value}\n"
          }
@@ -69,7 +67,7 @@
 
 [para]NOTES
 
- On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino, so dev and ino will always be reported as 0 when running NaviServer on Windows. 
+ On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino, so dev and ino will always be reported as 0 when running NaviServer on Windows.
 
 
 

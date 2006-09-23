@@ -1,17 +1,17 @@
-[manpage_begin Ns_register_adp n 4.99]
+[manpage_begin ns_register_adp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {title}]
+[titledesc {register ADP handler for the specific url}]
 
 [description]
 
-Similar to Registered Procedures, all requests to a particular URL 
-can be captured but in this situation processing can be performed 
-by an ADP file. Giving additional functionality of being able to make 
-changes a lot more rapidly. 
+Similar to Registered Procedures, all requests to a particular URL
+can be captured but in this situation processing can be performed
+by an ADP file. Giving additional functionality of being able to make
+changes a lot more rapidly.
 
-[para]This also provides a method of making view controls at ADP level 
-rather than at TCL level, which keeps development at an 
+[para]This also provides a method of making view controls at ADP level
+rather than at TCL level, which keeps development at an
 appropriate abstracted level.
 
 [para]Syntax:

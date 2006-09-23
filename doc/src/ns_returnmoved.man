@@ -1,7 +1,7 @@
-[manpage_begin Ns_returnmoved n 4.99]
+[manpage_begin ns_returnmoved n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_returnmoved - Returns HTTP 301 Permanently Moved}]
+[titledesc {Returns HTTP 301 Permanently Moved}]
 
 [description]
 

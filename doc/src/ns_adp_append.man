@@ -1,9 +1,9 @@
-[manpage_begin Ns_adp_append n 4.99]
+[manpage_begin ns_adp_append n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_adp_append - Append data to the output buffer for the current connection}]
+[titledesc {Append data to the output buffer for the current connection}]
 
 [description]
 

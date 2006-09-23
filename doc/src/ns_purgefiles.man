@@ -3,7 +3,7 @@
 [manpage_begin ns_purgefiles n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_purgefiles - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_purgefiles command in detail.

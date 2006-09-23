@@ -1,9 +1,7 @@
-[manpage_begin Ns_adp_tell n 4.99]
+[manpage_begin ns_adp_tell n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_adp_tell - Get number of bytes in current ADP output buffer}]
+[titledesc {Get number of bytes in current ADP output buffer}]
 
 [description]
 

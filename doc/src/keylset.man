@@ -1,9 +1,9 @@
-[manpage_begin Keylset n 4.99]
+[manpage_begin keylset n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {keylset - Set a key-value pair in a keyed list}]
+[titledesc {Set a key-value pair in a keyed list}]
 
 [description]
 

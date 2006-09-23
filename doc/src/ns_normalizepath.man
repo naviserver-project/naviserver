@@ -1,9 +1,9 @@
-[manpage_begin Ns_normalizepath n 4.99]
+[manpage_begin ns_normalizepath n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_normalizepath - Normalize a path}]
+[titledesc {Normalize a path}]
 
 [description]
 [para]ns_normalizepath removes any extraneous slashes from the path and resolves "." and ".." references. For example: [lb]ns_normalizepath /dog/cat/../.. /rat/../../dog//mouse/..[rb]

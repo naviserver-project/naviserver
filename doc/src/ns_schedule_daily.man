@@ -1,9 +1,9 @@
-[manpage_begin Ns_schedule_daily n 4.99]
+[manpage_begin ns_schedule_daily n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_schedule_daily - Schedule a script to run daily at a certain time}]
+[titledesc {Schedule a script to run daily at a certain time}]
 
 [description]
 

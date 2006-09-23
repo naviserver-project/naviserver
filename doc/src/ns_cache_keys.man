@@ -1,7 +1,7 @@
-[manpage_begin Ns_cache_keys n 4.99]
+[manpage_begin ns_cache_keys n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {title}]
+[titledesc {return all keys from the cache}]
 
 [description]
 ns_cache_keys

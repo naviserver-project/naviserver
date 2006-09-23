@@ -1,9 +1,9 @@
-[manpage_begin Ns_write n 4.99]
+[manpage_begin ns_write n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_write - Write data to the current connection's socket}]
+[titledesc {Write data to the current connection's socket}]
 
 [description]
 

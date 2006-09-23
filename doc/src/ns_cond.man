@@ -1,9 +1,9 @@
-[manpage_begin Ns_cond n 4.99]
+[manpage_begin ns_cond n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_cond - Operate on condition variables}]
+[titledesc {Operate on condition variables}]
 
 [description]
 

@@ -1,7 +1,7 @@
 [manpage_begin ns_hostbyaddr n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_hostbyaddr - Reverse lookup an IP address to its hostname}]
+[titledesc {Reverse lookup an IP address to its hostname}]
 
 [description]
 This command resolves an IP address to its hostname.  If the IP address cannot be resolved, it throws an error.

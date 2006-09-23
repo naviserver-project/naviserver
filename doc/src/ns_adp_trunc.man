@@ -1,9 +1,7 @@
-[manpage_begin Ns_adp_trunc n 4.99]
+[manpage_begin ns_adp_trunc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_adp_trunc - Truncate the ADP output buffer}]
+[titledesc {Truncate the ADP output buffer}]
 
 [description]
 

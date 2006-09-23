@@ -1,9 +1,9 @@
-[manpage_begin Ns_dbquotevalue n 4.99]
+[manpage_begin ns_dbquotevalue n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_dbquotevalue - Prepare a value string for inclusion in an SQL statement}]
+[titledesc {Prepare a value string for inclusion in an SQL statement}]
 
 [description]
 

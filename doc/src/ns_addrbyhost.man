@@ -1,7 +1,7 @@
 [manpage_begin ns_addrbyhost n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_addrbyhost - Forward lookup a hostname to its IP address}]
+[titledesc {Forward lookup a hostname to its IP address}]
 
 [description]
 

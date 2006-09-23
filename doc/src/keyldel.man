@@ -1,9 +1,7 @@
-[manpage_begin Keyldel n 4.99]
+[manpage_begin keyldel n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {keyldel - Delete key and value from keyed list}]
+[titledesc {Delete key and value from keyed list}]
 
 [description]
 Delete key and value from keyed list

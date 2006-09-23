@@ -1,9 +1,9 @@
-[manpage_begin Ns_mutex n 4.99]
+[manpage_begin ns_mutex n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_mutex - Operate on mutexes}]
+[titledesc {Operate on mutexes}]
 
 [description]
 

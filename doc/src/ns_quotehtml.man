@@ -1,9 +1,9 @@
-[manpage_begin Ns_quotehtml n 4.99]
+[manpage_begin ns_quotehtml n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_quotehtml - Escape HTML characters so they appear as-is in HTML pages}]
+[titledesc {Escape HTML characters so they appear as-is in HTML pages}]
 
 [description]
 

@@ -3,7 +3,7 @@
 [manpage_begin ns_sockcallback n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_sockcallback - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_sockcallback command in detail.

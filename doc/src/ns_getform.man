@@ -1,9 +1,9 @@
-[manpage_begin Ns_getform n 4.99]
+[manpage_begin ns_getform n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_getform - Return an ns_set that contains all of the query data that was part of the HTTP request}]
+[titledesc {Return an ns_set that contains all of the query data that was part of the HTTP request}]
 
 [description]
 

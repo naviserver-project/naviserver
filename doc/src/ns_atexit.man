@@ -1,9 +1,7 @@
-[manpage_begin Ns_atexit n 4.99]
+[manpage_begin ns_atexit n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_atexit - Queue a script to run before server terminates}]
+[titledesc {Queue a script to run before server terminates}]
 
 [description]
 [para]This command queues a script to run right before the server terminates.  The script and optional arg are concatenated together and added to the list of at-exit callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.

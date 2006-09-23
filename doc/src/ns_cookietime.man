@@ -1,7 +1,7 @@
-[manpage_begin Ns_cookietime n 4.99]
+[manpage_begin ns_cookietime n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_cookietime - Convert seconds to Netscape's cookie date format}]
+[titledesc {Convert seconds to Netscape's cookie date format}]
 
 [description]
 

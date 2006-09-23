@@ -1,4 +1,7 @@
-[manpage_begin Ns_adp_exception n 4.99]
+[manpage_begin ns_adp_exception n 4.99]
+
+[titledesc {Examine the current ADP exception  state}]
+
 [moddesc {NaviServer Built-in Commands}]
 
 [description]

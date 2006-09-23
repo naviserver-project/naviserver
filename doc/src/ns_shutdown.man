@@ -1,7 +1,7 @@
-[manpage_begin Ns_shutdown n 4.99]
+[manpage_begin ns_shutdown n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_shutdown - Shut down NaviServer}]
+[titledesc {Shut down NaviServer}]
 
 [description]
 This command shuts down the server.  If [emph timeout] is not specified

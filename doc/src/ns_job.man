@@ -1,9 +1,9 @@
-[manpage_begin Ns_job n 4.99]
+[manpage_begin ns_job n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_job - Implement job queues and thread pools for evaluating Tcl scripts}]
+[titledesc {Implement job queues and thread pools for evaluating Tcl scripts}]
 
 [description]
 

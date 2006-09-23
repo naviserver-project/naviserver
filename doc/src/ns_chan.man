@@ -1,9 +1,9 @@
-[manpage_begin Ns_chan n 4.99]
+[manpage_begin ns_chan n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_chan - Share Tcl channels between threads and interpreters}]
+[titledesc {Share Tcl channels between threads and interpreters}]
 
 [description]
 123

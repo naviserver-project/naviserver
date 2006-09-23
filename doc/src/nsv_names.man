@@ -1,9 +1,7 @@
-[manpage_begin Nsv_names n 4.99]
+[manpage_begin nsv_names n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {nsv_names - List the nsvs in use}]
+[titledesc {List the nsvs in use}]
 
 [description]
 

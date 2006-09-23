@@ -1,7 +1,7 @@
 [manpage_begin ns_accesslog n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_accesslog - Control the nslog access log module}]
+[titledesc {Control the nslog access log module}]
 
 [description]
 

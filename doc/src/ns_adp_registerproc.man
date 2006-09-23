@@ -1,9 +1,7 @@
-[manpage_begin Ns_adp_registerproc n 4.99]
+[manpage_begin ns_adp_registerproc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_register_proc - Register a procedure for a method/URL combination}]
+[titledesc {Register a procedure for a method/URL combination}]
 
 [description]
 
@@ -24,17 +22,17 @@
 
               If  -noinherit  is not specified, the requested URL
               can match the specified URL or any  URL  below  it.
-              For  example,  if  the URL specified with ns_register_proc 
+              For  example,  if  the URL specified with ns_register_proc
               is /foo/bar, procname will be  called  for
               /foo/bar,  /foo/bar/hmm,  and  any  other URL below
               /foo/bar, provided there  is  not  already  another
               procedure  registered  for that exact URL or for an
               URL with a closer match.
 
-              Note that you must use a glob-style matching  character  
+              Note that you must use a glob-style matching  character
               if  you want inheritance for file names. For
               example,   if   you   want   /foo/bar   to    match
-              /foo/bar.html,   you   must  use:  
+              /foo/bar.html,   you   must  use:
 
 [example_begin]
                      ns_register_proc /foo/bar*
@@ -61,8 +59,8 @@
               closer match. Cproc (not Bproc) will be called when
               the   requested   URL   is   equal   to   or  below
               /foo/bar/hmm.  Syntax for the registered  procedure
-              The conn (connection) argument is optional for procedures 
-              registered by ns_register_proc if the  procedure  has  
+              The conn (connection) argument is optional for procedures
+              registered by ns_register_proc if the  procedure  has
               0 or 1 arguments (not including conn).
               The following examples show the variations that can
               be used in this case:
@@ -85,10 +83,10 @@
                     }&nbsp;;# conncontext
 [example_end]
 
-              The conn (connection) argument is required for procedures 
-              registered by ns_register_proc if the  procedure  
+              The conn (connection) argument is required for procedures
+              registered by ns_register_proc if the  procedure
               has  2  or  more  arguments  (not including
-              conn). The conn argument will be  filled  automatically  
+              conn). The conn argument will be  filled  automatically
               with  the  connection information. The first
               argument following conn will always take the  value
               supplied  by  ns_register_proc, if there is one, or
@@ -113,8 +111,8 @@
               closer match. Cproc (not Bproc) will be called when
               the   requested   URL   is   equal   to   or  below
               /foo/bar/hmm.  Syntax for the registered  procedure
-              The conn (connection) argument is optional for procedures 
-              registered by ns_register_proc if the  procedure  
+              The conn (connection) argument is optional for procedures
+              registered by ns_register_proc if the  procedure
               has  0 or 1 arguments (not including conn).
               The following examples show the variations that can
               be used in this case:
@@ -123,7 +121,7 @@
                     ns_register_proc GET /noargs noargs
                     ns_register_proc GET /context context fnord
                     ns_register_proc GET /conncontext conncontext greeble
- 
+
                     proc noargs { } {
                         ns_returnnotice 200 "noargs"
                     }&nbsp;;# noargs
@@ -137,10 +135,10 @@
                     }&nbsp;;# conncontext
 [example_end]
 
-              The conn (connection) argument is required for procedures 
-              registered by ns_register_proc if the  procedure  has  2  
+              The conn (connection) argument is required for procedures
+              registered by ns_register_proc if the  procedure  has  2
               or  more  arguments  (not including
-              conn). The conn argument will be  filled  automatically  
+              conn). The conn argument will be  filled  automatically
               with  the  connection information. The first
               argument following conn will always take the  value
               supplied  by  ns_register_proc, if there is one, or
@@ -161,7 +159,7 @@
                     }
 [example_end]
 
-              When a GET of /twoargs is requested, the conn argument  
+              When a GET of /twoargs is requested, the conn argument
               will  be  filled  automatically,  the context
               argument will be assigned "fnord" and  the  greeble
               argument will be assigned the default value "bork".

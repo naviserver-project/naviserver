@@ -1,9 +1,9 @@
-[manpage_begin Ns_mkdir n 4.99]
+[manpage_begin ns_mkdir n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_mkdir - Create a directory}]
+[titledesc {Create a directory}]
 
 [description]
 

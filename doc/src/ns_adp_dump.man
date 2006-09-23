@@ -1,9 +1,7 @@
-[manpage_begin Ns_adp_dump n 4.99]
+[manpage_begin ns_adp_dump n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_adp_dump - Return the contents of the current ADP output buffer}]
+[titledesc {Return the contents of the current ADP output buffer}]
 
 [description]
 

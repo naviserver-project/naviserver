@@ -1,10 +1,10 @@
-[manpage_begin Ns_param n 4.99]
+[manpage_begin ns_param n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
 
-[titledesc {ns_param - Set a configuration parameter for a section}]
+[titledesc {Set a configuration parameter for a section}]
 
 [description]
 

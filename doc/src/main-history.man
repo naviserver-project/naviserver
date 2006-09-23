@@ -1,5 +1,7 @@
 [manpage_begin {History of NaviServer} n 4.99.2]
 
+[titledesc {History of NaviServer}]
+
 [description]
 
 [section {History of NaviServer}]

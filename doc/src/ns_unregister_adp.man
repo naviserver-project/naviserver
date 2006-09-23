@@ -3,7 +3,7 @@
 [manpage_begin ns_unregister_adp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_unregister_adp - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_unregister_adp command in detail.

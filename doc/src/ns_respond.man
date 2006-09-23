@@ -1,27 +1,27 @@
-[manpage_begin Ns_respond n 4.99]
+[manpage_begin ns_respond n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {title}]
+[titledesc {return a complete response tot he client}]
 
 [description]
 
-	    [para]ns_respond
-Overview
-[para]Build a complete response
+Build a complete response
+
 Syntax
 [para]ns_respond&nbsp;?-status status?&nbsp;?-type type?
 [para]{?-string string? |&nbsp;?-file file? |&nbsp;?-fileid fileid? }
 [para]?-length length?&nbsp;?-headers setId?
+
 Description
 [para]ns_respond builds a complete response for the client with all of the specified information in the header.
+
 Example
 [para]Using ns_respond, it's easy to do an HTTP redirect:
 
 [example_begin]
    set headers [lb]ns_set new myheaders[rb]
-   ns_set put $headers location 
-   ns_respond -status 302 -type text/plain \
-   	-string "redirection" -headers $headers
+   ns_set put $headers location
+   ns_respond -status 302 -type text/plain -string "redirection" -headers $headers
 [example_end]
 
 [manpage_end]

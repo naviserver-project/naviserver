@@ -1,8 +1,8 @@
-[manpage_begin Ns_rmdir n 4.99]
+[manpage_begin ns_rmdir n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
-[titledesc {ns_rmdir - Remove a directory}]
+[titledesc {Remove a directory}]
 
 [description]
 

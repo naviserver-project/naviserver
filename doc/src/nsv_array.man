@@ -1,9 +1,7 @@
-[manpage_begin Nsv_array n 4.99]
+[manpage_begin nsv_array n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {nsv_array - Tcl array functionality in nsvs}]
+[titledesc {Tcl array functionality in nsvs}]
 
 [description]
 
@@ -35,7 +33,7 @@
 
 [example_begin]
    % nsv_array set shared_array { key1 value1 key2 value2 }
-   
+
    % nsv_array get shared_array
    key1 value1 key2 value2
 [example_end]

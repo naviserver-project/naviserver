@@ -27,12 +27,12 @@ are loaded differently. Instead of being listed with other modules in
 the ns/server/server-name/modules section of the configuration file, a
 database driver is listed in the ns/db/drivers section -- a database
 driver is not tied to a particular virtual server. The database driver
-initialization function must call Ns_DbRegisterDriver() with an array
+initialization function must call ns_DbRegisterDriver() with an array
 of pointers to functions. These functions are then later used by
 NaviServer to perform database operations. The virtual server
 initialization function is called each time nsdb is loaded into a
 virtual server. The server initialization function
-(Ns_dbms-nameServerInit) adds the Tcl command ns_dbms-name to the
+(ns_dbms-nameServerInit) adds the Tcl command ns_dbms-name to the
 server's Tcl interpreters. The ns_dbms-name command can then be used
 to fetch driver-specific information about an active connection.
 
@@ -156,9 +156,9 @@ NaviServer expects is as follows:
 
 The database driver's job is to make the appropriate DBMS-specific
 function calls that will implement these functions. The driver must
-provide an implementation of the function Ns_DbDriverInit; This
+provide an implementation of the function ns_DbDriverInit; This
 function is executed once, when the server starts up. The most
-important thing it does is call Ns_DbRegisterDriver with an array of
+important thing it does is call ns_DbRegisterDriver with an array of
 all the functions implemented by the driver. Here's an example from
 the Postgres95 db driver:
 
@@ -166,38 +166,38 @@ the Postgres95 db driver:
 [example_begin]
 
 
-static Ns_DbProc PgProcs[] = {
-    {DbFn_Name, (void *) Ns_PgName},
-    {DbFn_DbType, (void *) Ns_PgDbType},
-    {DbFn_OpenDb, (void *) Ns_PgOpenDb},
-    {DbFn_CloseDb, (void *) Ns_PgCloseDb},
-    {DbFn_DML, (void *) Ns_PgCmd},
-    {DbFn_Select, (void *) Ns_PgSelect},
-    {DbFn_GetRow, (void *) Ns_PgGetRow},
-    {DbFn_Flush, (void *) Ns_PgFlush},
-    {DbFn_Cancel, (void *) Ns_PgFlush},
-    {DbFn_GetTableInfo, (void *) Ns_PgGetTableInfo},
-    {DbFn_TableList, (void *) Ns_PgTableList},
-    {DbFn_BestRowId, (void *) Ns_PgBestRowId},
-    {DbFn_ServerInit, (void *) Ns_PgServerInit},
+static ns_DbProc PgProcs[] = {
+    {DbFn_Name, (void *) ns_PgName},
+    {DbFn_DbType, (void *) ns_PgDbType},
+    {DbFn_OpenDb, (void *) ns_PgOpenDb},
+    {DbFn_CloseDb, (void *) ns_PgCloseDb},
+    {DbFn_DML, (void *) ns_PgCmd},
+    {DbFn_Select, (void *) ns_PgSelect},
+    {DbFn_GetRow, (void *) ns_PgGetRow},
+    {DbFn_Flush, (void *) ns_PgFlush},
+    {DbFn_Cancel, (void *) ns_PgFlush},
+    {DbFn_GetTableInfo, (void *) ns_PgGetTableInfo},
+    {DbFn_TableList, (void *) ns_PgTableList},
+    {DbFn_BestRowId, (void *) ns_PgBestRowId},
+    {DbFn_ServerInit, (void *) ns_PgServerInit},
     {DbFn_ResetHandle, (void *) NULL},
     {0, NULL}
 };
 
 DllExport int
-Ns_DbDriverInit(char *hDriver, char *configPath)
+ns_DbDriverInit(char *hDriver, char *configPath)
 {
     /*
      * Register the Postgres95 driver functions with nsdb.
-     * Nsdb will later call the Ns_PgServerInit() function
+     * Nsdb will later call the ns_PgServerInit() function
      * for each virtual server which utilizes nsdb.
      */
-    if (Ns_DbRegisterDriver(hDriver, &(PgProcs[lb]0[rb])) != NS_OK) {
-        Ns_Log(Error, "Ns_DbDriverInit(%s):  Could not register the %s driver.",
+    if (ns_DbRegisterDriver(hDriver, &(PgProcs[lb]0[rb])) != NS_OK) {
+        ns_Log(Error, "ns_DbDriverInit(%s):  Could not register the %s driver.",
             hDriver, pgName);
         return NS_ERROR;
     }
-    Ns_Log(Notice, "%s loaded.", pgName);
+    ns_Log(Notice, "%s loaded.", pgName);
     return NS_OK;
 }
 
@@ -218,7 +218,7 @@ In more detail, here's what each of these functions needs to do:
 [list_begin enum]
 
 
-[enum] char *Ns_dbms-nameName(Ns_DbHandle *handle);
+[enum] char *ns_dbms-nameName(ns_DbHandle *handle);
 
 
 [nl]
@@ -231,7 +231,7 @@ In more detail, here's what each of these functions needs to do:
 [nl]
 
 
-[enum] char *Ns_dbms-nameDbType(Ns_DbHandle *handle);
+[enum] char *ns_dbms-nameDbType(ns_DbHandle *handle);
 
 
 [nl]
@@ -244,17 +244,17 @@ In more detail, here's what each of these functions needs to do:
 [nl]
 
 
-[enum] int Ns_dbms-nameServerInit(char *hServer, char *hModule, char
+[enum] int ns_dbms-nameServerInit(char *hServer, char *hModule, char
     *hDriver);
 
 
 [nl]
 
 
-     Ns_dbms-nameServerInit calls another function named
-             Ns_dbms_nameInterpInit which is responsible for adding
-             the command Ns_dbms-name to a single Tcl interpreter.
-             Ns_dbms-nameServerInit calls Ns_dbms-nameInterpInit for
+     ns_dbms-nameServerInit calls another function named
+             ns_dbms_nameInterpInit which is responsible for adding
+             the command ns_dbms-name to a single Tcl interpreter.
+             ns_dbms-nameServerInit calls ns_dbms-nameInterpInit for
              each interpreter in the virtual server that is being
              initialized.
 
@@ -262,14 +262,14 @@ In more detail, here's what each of these functions needs to do:
 [nl]
 
 
-[enum] int Ns_dbms-nameOpenDb(Ns_DbHandle *dbh);
+[enum] int ns_dbms-nameOpenDb(ns_DbHandle *dbh);
 
 
 [nl]
 
 
      This function takes a pointer (typically known as the "handle")
-             to the Ns_DbHandle structure as an argument. The handle
+             to the ns_DbHandle structure as an argument. The handle
              contains information such as the driver name, name of the
              datasource, user name and password, name of the database
              pool and some other parameters. The structure is as
@@ -281,7 +281,7 @@ In more detail, here's what each of these functions needs to do:
 
 [example_begin]
 
-typedef struct Ns_DbHandle {
+typedef struct ns_DbHandle {
     char       *driver;
     char       *datasource;
     char       *user;
@@ -293,14 +293,14 @@ typedef struct Ns_DbHandle {
     int         verbose;   /* used for verbose error messages */
                            /* equivalent to [lb]ns/db/pool/poolname[rb] Verbose=On */
                            /* used by internal Db API */
-    Ns_Set     *row;       /* used for row data during binds, getrows, etc.*/
+    ns_Set     *row;       /* used for row data during binds, getrows, etc.*/
                            /* used by internal Db API */
     char        cExceptionCode[lb]6[rb];
-    Ns_DString  dsExceptionMsg;
+    ns_DString  dsExceptionMsg;
     void       *context;
     void       *statement; /* used by ODBC driver statements */
     int         fetchingRows;
-} Ns_DbHandle;
+} ns_DbHandle;
 
 [example_end]
 
@@ -326,7 +326,7 @@ typedef struct Ns_DbHandle {
              unable to establish a connection to the database server,
              or if it is unable to perform the required database
              specific functions, it returns NS_ERROR. The status is
-             logged by using the Ns_Log function.
+             logged by using the ns_Log function.
 
 
 [nl]
@@ -339,7 +339,7 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
-[enum] int Ns_dbms-nameCloseDb(Ns_DbHandle *handle);
+[enum] int ns_dbms-nameCloseDb(ns_DbHandle *handle);
 
 
 [nl]
@@ -354,14 +354,14 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
-[enum] int Ns_dbms-nameGetRow(Ns_DbHandle *handle, Ns_Set *row);
+[enum] int ns_dbms-nameGetRow(ns_DbHandle *handle, ns_Set *row);
 
 
 [nl]
 
 
      The results of a SELECT query are usually a number of rows.
-             Ns_dbms-nameGetRow is responsible to obtain these rows
+             ns_dbms-nameGetRow is responsible to obtain these rows
              from the database and return them to NaviServer for
              display/manipulation. This function typically does the
              following:
@@ -384,7 +384,7 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
- Ns_SetPutValue(row, (int) i, colval);
+ ns_SetPutValue(row, (int) i, colval);
 
 
 [nl]
@@ -396,7 +396,7 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
-[enum] int Ns_dbms-nameFlush(Ns_DbHandle *handle);
+[enum] int ns_dbms-nameFlush(ns_DbHandle *handle);
 
 
 [nl]
@@ -413,7 +413,7 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
-[enum] int Ns_dbms-nameCancel(Ns_DbHandle *handle);
+[enum] int ns_dbms-nameCancel(ns_DbHandle *handle);
 
 
 [nl]
@@ -426,7 +426,7 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
-[enum] Ns_DbTableInfo *Ns_dbms-nameGetTableInfo(Ns_DbHandle *handle, char
+[enum] ns_DbTableInfo *ns_dbms-nameGetTableInfo(ns_DbHandle *handle, char
     *table, int fExtended);
 
 
@@ -436,7 +436,7 @@ typedef struct Ns_DbHandle {
      This function returns table-specific information such as number
              of attributes in the table, their types etc. The third
              parameter is for internal use and can be ignored.
-             Ns_DbTableInfo is a array of Ns_Set * and the sets
+             ns_DbTableInfo is a array of ns_Set * and the sets
              contain something resembling the following:
 
 
@@ -467,7 +467,7 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
-[enum] char *Ns_dbms-nameTableList(Ns_DString *pds, Ns_DbHandle *handle,
+[enum] char *ns_dbms-nameTableList(ns_DString *pds, ns_DbHandle *handle,
     int includesystem);
 
 
@@ -477,7 +477,7 @@ typedef struct Ns_DbHandle {
      This function builds a database-specific SELECT statement which
              returns a list of all tables in the database. The
              function returns this list. In case of a NULL table name,
-             a warning is logged by Ns_Log. The list of tables should
+             a warning is logged by ns_Log. The list of tables should
              be returned in the pds parameter in the form
              "string\0string\0string\0", which can be implemented as
              follows:
@@ -486,13 +486,13 @@ typedef struct Ns_DbHandle {
 [nl]
 
 
- Ns_DStringNAppend(pds, table, strlen(table) +1);
+ ns_DStringNAppend(pds, table, strlen(table) +1);
 
 
 [nl]
 
 
-[enum] char *Ns_dbms-nameBestRowId(Ns_DString *pds, Ns_DbHandle *handle,
+[enum] char *ns_dbms-nameBestRowId(ns_DString *pds, ns_DbHandle *handle,
     char *table);
 
 
@@ -504,14 +504,14 @@ typedef struct Ns_DbHandle {
              some cases, the system table containing table information
              contains a unique identifier for each table. In such
              cases, this identifier is returned. The pds parameter is
-             an initialized Ns_DString that gets the primary key
-             (e.g., in Postgres, Ns_DStringNAppend(pds, "oid", 4)).
+             an initialized ns_DString that gets the primary key
+             (e.g., in Postgres, ns_DStringNAppend(pds, "oid", 4)).
 
 
 [nl]
 
 
-[enum] int Ns_dbms-nameExec(Ns_DbHandle *handle, char *sql);
+[enum] int ns_dbms-nameExec(ns_DbHandle *handle, char *sql);
 
 
 [nl]
@@ -522,18 +522,18 @@ typedef struct Ns_DbHandle {
              NS_ROWS. If the command was DDL or DML, then the function
              should return NS_DML. And of course if there is an error
              executing the SQL, the function should return NS_ERROR.
-             It is recommended that you define one Ns_dbms-nameExec
+             It is recommended that you define one ns_dbms-nameExec
              procedure that handles both queries that return rows and
-             those that do not. When Ns_DbExec is invoked in
-             NaviServer, it calls whatever Ns_DbExec function is
-             defined. When Ns_DbSelect is invoked, it tries Ns_DbExec
-             first and then Ns_DbSelect.
+             those that do not. When ns_DbExec is invoked in
+             NaviServer, it calls whatever ns_DbExec function is
+             defined. When ns_DbSelect is invoked, it tries ns_DbExec
+             first and then ns_DbSelect.
 
 
 [nl]
 
 
-[enum] int Ns_dbms-nameResetHandle(Ns_DbHandle *handle);
+[enum] int ns_dbms-nameResetHandle(ns_DbHandle *handle);
 
 
 [nl]
@@ -603,7 +603,7 @@ The set of functions that need to be implemented are:
 [list_begin enum]
 
 
-[enum] void *Ns_PdDbInit (void)
+[enum] void *ns_PdDbInit (void)
 
 
 [nl]
@@ -620,7 +620,7 @@ The set of functions that need to be implemented are:
 [nl]
 
 
-[enum] void Ns_PdDbCleanup(void *handle)
+[enum] void ns_PdDbCleanup(void *handle)
 
 
 [nl]
@@ -635,7 +635,7 @@ The set of functions that need to be implemented are:
 [nl]
 
 
-[enum] void Ns_PdDbOpen(void *handle, char *openArgs)
+[enum] void ns_PdDbOpen(void *handle, char *openArgs)
 
 
 [nl]
@@ -643,17 +643,17 @@ The set of functions that need to be implemented are:
 
      This function opens a connection to the database based on the
              openArgs passed in. The handle passed in is the handle
-             that was returned by Ns_PdDbInit, and will usually be
+             that was returned by ns_PdDbInit, and will usually be
              cast to some driver-specific data structure. If the open
              operation is successful, this function should call
-             Ns_PdSendString with OK_STATUS. On failure, the function
-             should use Ns_PdSendString to return an error string.
+             ns_PdSendString with OK_STATUS. On failure, the function
+             should use ns_PdSendString to return an error string.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbClose(void *handle)
+[enum] void ns_PdDbClose(void *handle)
 
 
 [nl]
@@ -661,52 +661,52 @@ The set of functions that need to be implemented are:
 
      This function closes the database. It should not free the
              database handle. If the close operation is successful,
-             this function should call Ns_PdSendString with OK_STATUS.
-             On failure, the function should use Ns_PdSendString to
+             this function should call ns_PdSendString with OK_STATUS.
+             On failure, the function should use ns_PdSendString to
              return an error string.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbExec(void *handle, char *sql)
+[enum] void ns_PdDbExec(void *handle, char *sql)
 
 
 [nl]
 
 
      This function executes a SQL query. If the SQL is executed
-             successfully, this function should call Ns_PdSendString
+             successfully, this function should call ns_PdSendString
              with OK_STATUS followed by either
-             Ns_PdSendString(EXEC_RET_ROWS) or
-             Ns_PdSendString(EXEC_RET_DML), depending on whether the
+             ns_PdSendString(EXEC_RET_ROWS) or
+             ns_PdSendString(EXEC_RET_DML), depending on whether the
              SQL returned rows or was a DML statement. On failure, the
-             function should use Ns_PdSendException to return an
+             function should use ns_PdSendException to return an
              error.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbFlush(void *handle)
+[enum] void ns_PdDbFlush(void *handle)
 
 
 [nl]
 
 
      Flushes any pending data. Usually this function will call
-             Ns_PdDbCancel or something similiar along with any other
+             ns_PdDbCancel or something similiar along with any other
              database specific clean-up routines. If the flush
              operation is successful, this function should call
-             Ns_PdSendString with an OK_STATUS. On failure, the
-             function should use Ns_PdSendString to return an error
+             ns_PdSendString with an OK_STATUS. On failure, the
+             function should use ns_PdSendString to return an error
              string.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbCancel(void *handle)
+[enum] void ns_PdDbCancel(void *handle)
 
 
 [nl]
@@ -714,15 +714,15 @@ The set of functions that need to be implemented are:
 
      This function cancels the current database operation. If the
              cancel operation was successful, this function should
-             call Ns_PdSendString with OK_STATUS. On failure, the
-             function should use Ns_PdSendString to return an error
+             call ns_PdSendString with OK_STATUS. On failure, the
+             function should use ns_PdSendString to return an error
              string.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbBindRow (void *handle)
+[enum] void ns_PdDbBindRow (void *handle)
 
 
 [nl]
@@ -731,15 +731,15 @@ The set of functions that need to be implemented are:
      This function should retrieve from the DBMS a list of column
              names of rows and return this data to the client. If the
              bind-row operation is successful, this function should
-             call Ns_PdSendString with an OK_STATUS. On failure this
+             call ns_PdSendString with an OK_STATUS. On failure this
              function should return an exception code with
-             Ns_PdSendException.
+             ns_PdSendException.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbGetRow(void *handle, char *columnCount)
+[enum] void ns_PdDbGetRow(void *handle, char *columnCount)
 
 
 [nl]
@@ -748,16 +748,16 @@ The set of functions that need to be implemented are:
      This function should retrieve from the DBMS the row associated
              with the columnCount column and send this data to the
              client. If the get-row operation was successful, this
-             function should call Ns_PdSendString with an OK_STATUS
-             and then send the data with Ns_PdDbSendData. On failure,
-             the function should use Ns_PdSendException to return an
+             function should call ns_PdSendString with an OK_STATUS
+             and then send the data with ns_PdDbSendData. On failure,
+             the function should use ns_PdSendException to return an
              error.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbTableList (void *handle, char *includeSystem)
+[enum] void ns_PdDbTableList (void *handle, char *includeSystem)
 
 
 [nl]
@@ -784,19 +784,19 @@ The set of functions that need to be implemented are:
 [list_begin enum]
 
 
-       [enum] Call Ns_PdSendString with an OK_STATUS.
+       [enum] Call ns_PdSendString with an OK_STATUS.
 
 
 [nl]
 
 
-       [enum] Call Ns_PdSendString with a size of the item (table name).
+       [enum] Call ns_PdSendString with a size of the item (table name).
 
 
 [nl]
 
 
-       [enum] Call Ns_PdSendData to send the actual data associated with
+       [enum] Call ns_PdSendData to send the actual data associated with
          the name and to signal the end of data.
 
 
@@ -805,7 +805,7 @@ The set of functions that need to be implemented are:
 
        [enum] If an exception occurs during the processing of the table
          data, then this function should send the partial data to the
-         client and indicate an error with Ns_PdDbLog.
+         client and indicate an error with ns_PdDbLog.
 
 
 [list_end]
@@ -817,13 +817,13 @@ The set of functions that need to be implemented are:
 
      If an exception is raised before successfully retrieving some of
              the table data, then this function should call
-             Ns_PdSendException to return an error.
+             ns_PdSendException to return an error.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbGetTableInfo(void *handle, char *tableName)
+[enum] void ns_PdDbGetTableInfo(void *handle, char *tableName)
 
 
 [nl]
@@ -848,26 +848,26 @@ The set of functions that need to be implemented are:
 [list_begin enum]
 
 
-       [enum] Call Ns_PdSendString with an OK_STATUS.
+       [enum] Call ns_PdSendString with an OK_STATUS.
 
 
 [nl]
 
 
-       [enum] Call Ns_PdSendRowInfo to send to the client the column info.
+       [enum] Call ns_PdSendRowInfo to send to the client the column info.
 
 
 [nl]
 
 
-       [enum] Call Ns_PdSendRowInfo to send to the client subsequent row
+       [enum] Call ns_PdSendRowInfo to send to the client subsequent row
          info.
 
 
 [nl]
 
 
-       [enum] Call Ns_PdSendData to indicate to the client that END_DATA
+       [enum] Call ns_PdSendData to indicate to the client that END_DATA
          has been reached.
 
 
@@ -876,7 +876,7 @@ The set of functions that need to be implemented are:
 
        [enum] If an exception occurs during the processing of the row info,
          then this function should send the partial data to the client
-         and indicate an error with Ns_PdDbLog.
+         and indicate an error with ns_PdDbLog.
 
 
 [list_end]
@@ -888,13 +888,13 @@ The set of functions that need to be implemented are:
 
      If an exception is raised before successfully retrieving some of
              the row info, then this function should call
-             Ns_PdSendException to return an error.
+             ns_PdSendException to return an error.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbBestRowId(void *handle, char *tableName)
+[enum] void ns_PdDbBestRowId(void *handle, char *tableName)
 
 
 [nl]
@@ -904,49 +904,49 @@ The set of functions that need to be implemented are:
              database and sends this to the client. If a table has a
              primary key, NaviServer can perform row updates and
              deletes. If the best-row-id operation is successful, this
-             function should call Ns_PdSendString with an OK_STATUS.
-             If a best-row-id is found then call Ns_PdSendString with
-             the column name; otherwise, call Ns_PdSendString with
+             function should call ns_PdSendString with an OK_STATUS.
+             If a best-row-id is found then call ns_PdSendString with
+             the column name; otherwise, call ns_PdSendString with
              NO_BESTROWID. On failure this function should return an
-             exception code with Ns_PdSendException.
+             exception code with ns_PdSendException.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbIndentify(void *handle)
+[enum] void ns_PdDbIndentify(void *handle)
 
 
 [nl]
 
 
      This function sends a string identifying the proxy daemon name
-             and version with Ns_PdSendString.
+             and version with ns_PdSendString.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbGetTypes(void *handle)
+[enum] void ns_PdDbGetTypes(void *handle)
 
 
 [nl]
 
 
      This function sends a string of the data types for the database
-             with Ns_PdSendString.
+             with ns_PdSendString.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbResultId(void *handle)
+[enum] void ns_PdDbResultId(void *handle)
 
 
 [nl]
 
 
-     This function sends to the client with Ns_PdSendString the id of
+     This function sends to the client with ns_PdSendString the id of
              the last object affected by an exec command or a null
              terminated string.
 
@@ -954,20 +954,20 @@ The set of functions that need to be implemented are:
 [nl]
 
 
-[enum] void Ns_PdDbResultRows(void *handle)
+[enum] void ns_PdDbResultRows(void *handle)
 
 
 [nl]
 
 
-     This function sends to the client with Ns_PdSendString the number
+     This function sends to the client with ns_PdSendString the number
              of rows affected by last exec command.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbSetMaxRows(void *handle, char *maxRows)
+[enum] void ns_PdDbSetMaxRows(void *handle, char *maxRows)
 
 
 [nl]
@@ -975,30 +975,30 @@ The set of functions that need to be implemented are:
 
      This function sets the max rows for the database. If this
              function is successful or the SQL command is undefined
-             for your specific DBMS, it should call Ns_PdSendString
+             for your specific DBMS, it should call ns_PdSendString
              with an OK_STATUS. If set-max-rows is defined for your
              specific DBMS and there is an exception raised, then this
              function should send an exception code with
-             Ns_PdSendException.
+             ns_PdSendException.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbSpExec(void *handle)
+[enum] void ns_PdDbSpExec(void *handle)
 
 
 [nl]
 
 
      This function executes a stored procedure that has been
-             initialized with Ns_PdDbSpStart and Ns_PdDbSpSetParam.
+             initialized with ns_PdDbSpStart and ns_PdDbSpSetParam.
 
 
 [nl]
 
 
-[enum] void Ns_PdDbSpGetParams(void *handle)
+[enum] void ns_PdDbSpGetParams(void *handle)
 
 
 [nl]
@@ -1011,7 +1011,7 @@ The set of functions that need to be implemented are:
 [nl]
 
 
-[enum] void Ns_PdDbSpReturnCode (void *handle)
+[enum] void ns_PdDbSpReturnCode (void *handle)
 
 
 [nl]
@@ -1024,7 +1024,7 @@ The set of functions that need to be implemented are:
 [nl]
 
 
-[enum] void Ns_PdDbSpSetParam (void *handle, char *args)
+[enum] void ns_PdDbSpSetParam (void *handle, char *args)
 
 
 [nl]
@@ -1037,7 +1037,7 @@ The set of functions that need to be implemented are:
 [nl]
 
 
-[enum] void Ns_PdDbSpStart(void *handle, char *procname)
+[enum] void ns_PdDbSpStart(void *handle, char *procname)
 
 
 [nl]
@@ -1073,13 +1073,13 @@ message is printed to the syslog and the function returns.
 [list_begin enum]
 
 
-[enum] void Ns_PdLog(Ns_PdLogMsgType errtype, char *fmt, ...)
+[enum] void ns_PdLog(ns_PdLogMsgType errtype, char *fmt, ...)
 
 
 [nl]
 
 
-     The Ns_PdLog function sends a formatted messages to the client.
+     The ns_PdLog function sends a formatted messages to the client.
              Allowable values for the log type are the following with
              a default type of Error: Notice, Trace, Error.
 
@@ -1087,7 +1087,7 @@ message is printed to the syslog and the function returns.
 [nl]
 
 
-[enum] void Ns_PdSendString(char *string)
+[enum] void ns_PdSendString(char *string)
 
 
 [nl]
@@ -1099,7 +1099,7 @@ message is printed to the syslog and the function returns.
 [nl]
 
 
-[enum] void Ns_PdSendException(char *code, char *msg)
+[enum] void ns_PdSendException(char *code, char *msg)
 
 
 [nl]
@@ -1112,7 +1112,7 @@ message is printed to the syslog and the function returns.
 [nl]
 
 
-[enum] Ns_PdParseOpenArgs(char *openargs, char **datasource, char **user,
+[enum] ns_PdParseOpenArgs(char *openargs, char **datasource, char **user,
     char **password, char **param)
 
 
@@ -1121,26 +1121,26 @@ message is printed to the syslog and the function returns.
 
      This function parses the datasource, user, password, and param
              parameters leaving missing elements as NULL. This
-             function is normally called from within Ns_PdDbOpen.
+             function is normally called from within ns_PdDbOpen.
 
 
 [nl]
 
 
-[enum] void Ns_PdSendRowInfo(Ns_PdRowInfo * rowInfo)
+[enum] void ns_PdSendRowInfo(ns_PdRowInfo * rowInfo)
 
 
 [nl]
 
 
-     This function sends a row encapsulated in an Ns_PdRowInfo
+     This function sends a row encapsulated in an ns_PdRowInfo
              structure to the client.
 
 
 [nl]
 
 
-[enum] void Ns_PdSendData(char *data, int len)
+[enum] void ns_PdSendData(char *data, int len)
 
 
 [nl]
@@ -1154,16 +1154,16 @@ message is printed to the syslog and the function returns.
 [nl]
 
 
-[enum] void Ns_PdFreeRowInfo(Ns_PdRowInfo * rowInfo, int fFreeData)
+[enum] void ns_PdFreeRowInfo(ns_PdRowInfo * rowInfo, int fFreeData)
 
 
 [nl]
 
 
-     This function frees a Ns_PdRowInfo data structure. If fFreeData
+     This function frees a ns_PdRowInfo data structure. If fFreeData
              is a non-zero value, then this function frees the data
-             associated with the Ns_PdRowData structure (encapsulated
-             in Ns_PdRowInfo) as well.
+             associated with the ns_PdRowData structure (encapsulated
+             in ns_PdRowInfo) as well.
 
 
 [list_end]

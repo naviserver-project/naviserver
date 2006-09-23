@@ -1,9 +1,9 @@
-[manpage_begin Ns_link n 4.99]
+[manpage_begin ns_link n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_link - Create a hard link}]
+[titledesc {Create a hard link}]
 
 [description]
 

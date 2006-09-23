@@ -1,4 +1,4 @@
-[manpage_begin Ns_http n 4.99]
+[manpage_begin ns_http n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 

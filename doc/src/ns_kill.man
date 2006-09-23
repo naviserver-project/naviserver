@@ -1,9 +1,9 @@
-[manpage_begin Ns_kill n 4.99]
+[manpage_begin ns_kill n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_kill - send a process a signal}]
+[titledesc {send a process a signal}]
 
 [description]
 

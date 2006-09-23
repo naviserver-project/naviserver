@@ -1,9 +1,9 @@
-[manpage_begin Ns_uudecode n 4.99]
+[manpage_begin ns_uudecode n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_uudecode - Binary-to-text decoding using "htuu" encoding}]
+[titledesc {Binary-to-text decoding using "htuu" encoding}]
 
 [description]
 

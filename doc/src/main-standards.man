@@ -187,7 +187,7 @@ possible.
 [para]
 
 
-API functions (Ns_*) come first; exported functions that are not API
+API functions (ns_*) come first; exported functions that are not API
 calls (Ns*) come after those; static functions come last. Logical
 groups of functions can be separated like this:
 
@@ -447,7 +447,7 @@ is in uppercase. For example,
 
 [enum]Any name that refers to a pointer ends in Ptr. If it is a pointer
 to a pointer, then it ends in PtrPtr. Exceptions to this rule include
-opaque handles for structures (such as Ns_ModLogHandle) and char *
+opaque handles for structures (such as ns_ModLogHandle) and char *
 variables that refer to null-terminated strings. Also, static buffers
 should not have the Ptr suffix, as in this case:
 
@@ -463,7 +463,7 @@ should not have the Ptr suffix, as in this case:
 in Proc, as should typedefs for such variables.
 [nl]
  [emph {typedef int
-(Ns_OpProc) (void *argPtr, Ns_Conn *connPtr) Ns_OpProc
+(ns_OpProc) (void *argPtr, ns_Conn *connPtr) ns_OpProc
 *opProc;}]
 
 
@@ -479,10 +479,10 @@ uppercase. Underscores separate multiple words (as in NS_TRUE).
 [section {Function names contain meaning}]
 
 Public exported functions that are part of the API should begin with
-Ns_, as in:
+ns_, as in:
 
 [example_begin]
-extern int Ns_ConnPort(Ns_Conn *conn);
+extern int ns_ConnPort(ns_Conn *conn);
 [example_end]
 
 
@@ -500,7 +500,7 @@ extern void NsDbInit(void);
 Global variables that do [emph {not}] have static scope begin with ns, as in:
 
 [example_begin]
-Ns_Cache *nsAdpCachePtr = NULL;
+ns_Cache *nsAdpCachePtr = NULL;
 [example_end]
 
 
@@ -697,7 +697,7 @@ conditions from the code that follows.
 
 if (foo == bar &&
     baz == spoo &&
-    Ns_FooBarBaz() == NS_TRUE) {
+    ns_FooBarBaz() == NS_TRUE) {
 
     ...
 }

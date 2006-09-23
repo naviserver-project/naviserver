@@ -1,9 +1,9 @@
-[manpage_begin Ns_parsequery n 4.99]
+[manpage_begin ns_parsequery n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_parsequery - Parse a URL query string into an ns_set}]
+[titledesc {Parse a URL query string into an ns_set}]
 
 [description]
 

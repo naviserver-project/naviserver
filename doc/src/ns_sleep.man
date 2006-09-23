@@ -1,9 +1,9 @@
-[manpage_begin Ns_sleep n 4.99]
+[manpage_begin ns_sleep n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_sleep - Sleep for a specified number of seconds}]
+[titledesc {Sleep for a specified number of seconds}]
 
 [description]
 

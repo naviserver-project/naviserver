@@ -3,7 +3,7 @@
 [manpage_begin ns_writefp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_writefp - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_writefp command in detail.

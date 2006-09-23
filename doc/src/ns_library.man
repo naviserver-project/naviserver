@@ -1,9 +1,9 @@
-[manpage_begin Ns_library n 4.99]
+[manpage_begin ns_library n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_library - Get the paths to the private and shared Tcl libraries}]
+[titledesc {Get the paths to the private and shared Tcl libraries}]
 
 [description]
 

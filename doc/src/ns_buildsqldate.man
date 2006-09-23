@@ -1,9 +1,7 @@
-[manpage_begin Ns_buildsqldate n 4.99]
+[manpage_begin ns_buildsqldate n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_buildsqldate - Build a SQL date value from specified month, day, and year}]
+[titledesc {Build a SQL date value from specified month, day, and year}]
 
 [description]
 
@@ -34,7 +32,7 @@
 [example_end]
 
 [example_begin]
-   % set thedate 
+   % set thedate
 [example_end]
 
 [manpage_end]

@@ -1,9 +1,7 @@
-
-
 [manpage_begin ns_atprestartup n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_atprestartup - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_atprestartup command in detail.
@@ -22,12 +20,12 @@ Description for arg1
 [list_end]
 
 [section CONFIGURATION]
-        
+
 [para]
 [strong {Basic configuration options:}]
-        
+
 [list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
+[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]

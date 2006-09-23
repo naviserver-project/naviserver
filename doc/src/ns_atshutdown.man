@@ -1,9 +1,7 @@
-[manpage_begin Ns_atshutdown n 4.99]
+[manpage_begin ns_atshutdown n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_atshutdown - Queue a script to run when the server is shutting down}]
+[titledesc {Queue a script to run when the server is shutting down}]
 
 
 [description]
@@ -34,7 +32,7 @@ This command queues a script to run when the server is shutting down.  The scrip
    ns_atsignal heard_signal SIGHUP
    ns_atshutdown heard_signal TERM
    ns_atexit heard_signal EXIT
-   
+
    # Long running proc
    proc infinite_loop {} {
        set status "RUN"

@@ -1,9 +1,9 @@
-[manpage_begin Ns_logctl n 4.99]
+[manpage_begin ns_logctl n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_logctl - Control buffering of log messages}]
+[titledesc {Control buffering of log messages}]
 
 [description]
 

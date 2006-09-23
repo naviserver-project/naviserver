@@ -1,9 +1,9 @@
-[manpage_begin Ns_queryget n 4.99]
+[manpage_begin ns_queryget n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_queryget - Get a value from the query data that was part of the HTTP request}]
+[titledesc {Get a value from the query data that was part of the HTTP request}]
 
 [description]
 

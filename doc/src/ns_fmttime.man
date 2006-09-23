@@ -1,9 +1,9 @@
-[manpage_begin Ns_fmttime n 4.99]
+[manpage_begin ns_fmttime n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_fmttime - Convert seconds to a human-readable format using templates}]
+[titledesc {Convert seconds to a human-readable format using templates}]
 
 [description]
 

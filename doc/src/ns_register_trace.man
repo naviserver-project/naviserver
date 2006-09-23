@@ -3,7 +3,7 @@
 [manpage_begin ns_register_trace n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_register_trace - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_register_trace command in detail.

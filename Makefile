@@ -97,9 +97,10 @@ install-doc:
 	cd doc && /bin/sh ./install-doc $(NAVISERVER)
 
 build-doc:
-	@for i in doc/src/*.man; do \
-		echo "Building HTML from $$i..."; \
-		dtplite -o doc/html/`basename $$i .man`.html html $$i; \
+	cd doc/src && dtplite -o ../html/ html .
+	cd doc/src && \
+	for f in *.man; do \
+		dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
 	done
 
 test: all

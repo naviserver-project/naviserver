@@ -1,7 +1,7 @@
-[manpage_begin Ns_adp_safeeval n 4.99]
+[manpage_begin ns_adp_safeeval n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {title description}]
+[titledesc {Evaluate in safe Tcl interp}]
 
 [description]
 description

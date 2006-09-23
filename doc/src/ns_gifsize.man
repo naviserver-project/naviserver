@@ -1,9 +1,9 @@
-[manpage_begin Ns_gifsize n 4.99]
+[manpage_begin ns_gifsize n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_gifsize - Determine the width and height of a GIF87 or GIF89 image}]
+[titledesc {Determine the width and height of a GIF87 or GIF89 image}]
 
 [description]
 

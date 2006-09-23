@@ -1,9 +1,7 @@
-[manpage_begin Nsv_unset n 4.99]
+[manpage_begin nsv_unset n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {nsv_unset - Unset an array or a key}]
+[titledesc {Unset an array or a key}]
 
 [description]
 

@@ -1,9 +1,9 @@
-[manpage_begin Ns_parsehttptime n 4.99]
+[manpage_begin ns_parsehttptime n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_parsehttptime - Convert a HTTP date format string into seconds}]
+[titledesc {Convert a HTTP date format string into seconds}]
 
 [description]
 

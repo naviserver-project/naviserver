@@ -3,7 +3,7 @@
 [manpage_begin ns_returnadminnotice n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {ns_returnadminnotice - one-line summary what the command does}]
+[titledesc {one-line summary what the command does}]
 
 [description]
 One or more paragraphs describing the ns_returnadminnotice command in detail.

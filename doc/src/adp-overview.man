@@ -616,7 +616,7 @@ are pre-defined for NaviServer:
 [nl]
 
 
-You can register additional ADP parsers using the Ns_AdpRegisterParser
+You can register additional ADP parsers using the ns_AdpRegisterParser
 C API function.
 
 

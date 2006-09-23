@@ -1,9 +1,9 @@
-[manpage_begin Ns_eval n 4.99]
+[manpage_begin ns_eval n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_eval - Evaluate tcl in multiple interpreters}]
+[titledesc {Evaluate tcl in multiple interpreters}]
 
 [description]
 

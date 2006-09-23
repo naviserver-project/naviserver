@@ -1,9 +1,9 @@
-[manpage_begin Ns_ftruncate n 4.99]
+[manpage_begin ns_ftruncate n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_ftruncate - truncate an open Tcl channel to a specified length}]
+[titledesc {truncate an open Tcl channel to a specified length}]
 
 [description]
 This command truncates an open Tcl channel fileId to the size of length bytes.  If length is not specified then it is assumed to be zero.  This command is similar to the TclX [lb]ftruncate[rb] command.

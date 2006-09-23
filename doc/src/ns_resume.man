@@ -1,9 +1,9 @@
-[manpage_begin Ns_resume n 4.99]
+[manpage_begin ns_resume n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_resume - Resume a previously paused scheduled script}]
+[titledesc {Resume a previously paused scheduled script}]
 
 [description]
 

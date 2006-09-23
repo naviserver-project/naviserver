@@ -1,9 +1,7 @@
-[manpage_begin Ns_after n 4.99]
+[manpage_begin ns_after n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_after - Execute a command after a time delay}]
+[titledesc {Execute a command after a time delay}]
 
 [description]
 

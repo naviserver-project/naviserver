@@ -1,7 +1,7 @@
-[manpage_begin Ns_httppost n 4.99]
+[manpage_begin ns_httppost n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {title}]
+[titledesc {submit form using HTTP POST method}]
 
 [description]
 123

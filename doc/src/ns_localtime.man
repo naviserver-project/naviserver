@@ -1,9 +1,9 @@
-[manpage_begin Ns_localtime n 4.99]
+[manpage_begin ns_localtime n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_localtime - Return current time in local timezone}]
+[titledesc {Return current time in local timezone}]
 
 [description]
 

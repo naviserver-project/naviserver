@@ -1,9 +1,7 @@
-[manpage_begin Nsv_set n 4.99]
+[manpage_begin nsv_set n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {nsv_set - Set a key value}]
+[titledesc {Set a key value}]
 
 [description]
 

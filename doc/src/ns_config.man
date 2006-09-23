@@ -1,9 +1,9 @@
-[manpage_begin Ns_config n 4.99]
+[manpage_begin ns_config n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_config - Extract configuration information from the server}]
+[titledesc {Extract configuration information from the server}]
 
 [description]
 [para]This command returns the value associated with the key in the specified section of the current server's configuration.  If default is specified, and the section and key are not defined, then default is returned.  If default is not specified in this situation, an empty string is returned.

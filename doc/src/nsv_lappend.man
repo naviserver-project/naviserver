@@ -1,9 +1,7 @@
-[manpage_begin Nsv_lappend n 4.99]
+[manpage_begin nsv_lappend n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {nsv_lappend - Append to the list specified by the key}]
+[titledesc {Append to the list specified by the key}]
 
 [description]
 

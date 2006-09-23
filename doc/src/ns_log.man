@@ -1,9 +1,9 @@
-[manpage_begin Ns_log n 4.99]
+[manpage_begin ns_log n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_log - Send messages to the server log}]
+[titledesc {Send messages to the server log}]
 
 [description]
 

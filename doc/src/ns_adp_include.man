@@ -1,9 +1,7 @@
-[manpage_begin Ns_adp_include n 4.99]
+[manpage_begin ns_adp_include n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_adp_include - Parse an ADP file and return its output}]
+[titledesc {Parse an ADP file and return its output}]
 
 [description]
 

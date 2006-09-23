@@ -1,9 +1,9 @@
-[manpage_begin Ns_critsec n 4.99]
+[manpage_begin ns_critsec n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_critsec - Operate on critical section objects}]
+[titledesc {Operate on critical section objects}]
 
 [description]
 

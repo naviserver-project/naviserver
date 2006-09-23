@@ -1,9 +1,9 @@
-[manpage_begin Ns_dbquotename n 4.99]
+[manpage_begin ns_dbquotename n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_dbquotename - Surround a name with double quotes if it contains a space}]
+[titledesc {Surround a name with double quotes if it contains a space}]
 
 [description]
 

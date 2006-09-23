@@ -1,9 +1,9 @@
-[manpage_begin Ns_pause n 4.99]
+[manpage_begin ns_pause n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_pause - Pause a scheduled script from running}]
+[titledesc {Pause a scheduled script from running}]
 
 [description]
 

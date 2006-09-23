@@ -1,9 +1,9 @@
-[manpage_begin Ns_setexpires n 4.99]
+[manpage_begin ns_setexpires n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_setexpires - Set the current connections Expires header to the current time plus seconds seconds}]
+[titledesc {Set the current connections Expires header to the current time plus seconds seconds}]
 
 [description]
 

@@ -1,9 +1,7 @@
-[manpage_begin Ns_browsermatch n 4.99]
+[manpage_begin ns_browsermatch n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-[titledesc {ns_browsermatch - Match against the User-Agent header}]
+[titledesc {Match against the User-Agent header}]
 
 [description]
 

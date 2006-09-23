@@ -1,9 +1,9 @@
-[manpage_begin Ns_formfieldcharset n 4.99]
+[manpage_begin ns_formfieldcharset n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_formfieldcharset - Set the urlencoding to the charset given in the named form field if it exists}]
+[titledesc {Set the urlencoding to the charset given in the named form field if it exists}]
 
 [description]
 

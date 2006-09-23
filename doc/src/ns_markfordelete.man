@@ -1,9 +1,9 @@
-[manpage_begin Ns_markfordelete n 4.99]
+[manpage_begin ns_markfordelete n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_markfordelete - Mark the current Tcl interp to be deleted on next cleanup}]
+[titledesc {Mark the current Tcl interp to be deleted on next cleanup}]
 
 [description]
 [para]This command marks the current Tcl interp to be deleted on next cleanup.  This is useful when it's necessary to delete an interp after it has been modified in a way that cannot be safely cleaned up, such as by the TclPro debugger.

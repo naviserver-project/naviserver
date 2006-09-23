@@ -1,9 +1,9 @@
-[manpage_begin Ns_encodingfortype n 4.99]
+[manpage_begin ns_encodingfortype n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_encodingfortype - Return the encoding implied by the given mime type string}]
+[titledesc {Return the encoding implied by the given mime type string}]
 
 [description]
 

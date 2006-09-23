@@ -1,9 +1,9 @@
-[manpage_begin Ns_urlencode n 4.99]
+[manpage_begin ns_urlencode n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_urlencode - Encode a string to its URL-encoded representation}]
+[titledesc {Encode a string to its URL-encoded representation}]
 
 [description]
 
@@ -34,7 +34,7 @@
 
 [example_begin]
   set link [lb]ns_urlencode http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3[rb]
-  ns_adp_puts "<a href=[lb]ns_urlencode $link[rb]>click</a>"
+  ns_adp_puts "<a href=[lb]ns_urlencode [lb]set link[rb][rb]>click</a>"
 [example_end]
 
 [see_also nsd]

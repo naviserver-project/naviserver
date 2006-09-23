@@ -52,7 +52,7 @@ trie. They are:
 
 
 Another data structure, called an Index, which is manipulated by the
-Ns_Index API calls, is used by the urlspace code. An Index is an
+ns_Index API calls, is used by the urlspace code. An Index is an
 ordered list of pointers. The order is determined by callback
 functions. See index.c for the scoop on that.
 
@@ -63,7 +63,7 @@ calling
 [para]
 
 
-Ns_UrlSpecificSet("server1", "GET", "/foo/bar/*.html", myID, myData,
+ns_UrlSpecificSet("server1", "GET", "/foo/bar/*.html", myID, myData,
                   0, MyDeleteProc);
 
 [para]

@@ -1,9 +1,9 @@
-[manpage_begin Ns_modulepath n 4.99]
+[manpage_begin ns_modulepath n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_modulepath - Get the paths to a server's modules}]
+[titledesc {Get the paths to a server's modules}]
 
 [description]
 

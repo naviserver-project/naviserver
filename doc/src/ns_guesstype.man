@@ -1,9 +1,9 @@
-[manpage_begin Ns_guesstype n 4.99]
+[manpage_begin ns_guesstype n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_guesstype - Lookup MIME type based on file extension}]
+[titledesc {Lookup MIME type based on file extension}]
 
 [description]
 

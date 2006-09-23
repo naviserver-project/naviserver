@@ -1,9 +1,9 @@
-[manpage_begin Ns_cp n 4.99]
+[manpage_begin ns_cp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_cp - Copy one file to another}]
+[titledesc {Copy one file to another}]
 
 [description]
 ns_cp copies the contents of file1 to file2, just like the Unix "cp" command. The default directory is the home directory for the server.

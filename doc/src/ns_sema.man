@@ -1,9 +1,9 @@
-[manpage_begin Ns_sema n 4.99]
+[manpage_begin ns_sema n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_sema - Operate on semaphore-like objects}]
+[titledesc {Operate on semaphore-like objects}]
 
 [description]
 

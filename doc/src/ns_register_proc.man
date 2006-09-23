@@ -1,9 +1,9 @@
-[manpage_begin Ns_register_proc n 4.99]
+[manpage_begin ns_register_proc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
 
 
-[titledesc {ns_register_proc - Register a procedure for a method/URL combination}]
+[titledesc {Register a procedure for a method/URL combination}]
 
 [description]
 
