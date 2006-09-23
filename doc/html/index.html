@@ -5,6 +5,9 @@
 <style>
 #main {
  padding-left: 20px;
+ max-height: 600;
+ overflow-x: hidden;
+ overflow-y: auto;
 }
 
 #left
@@ -14,12 +17,12 @@
  margin: 2px 0px 40px 0px;
  border: 1px solid #aaaaaa;
  background-color: #ffffff;
+ -moz-border-radius: 5px;
 }
 
 #foot
 {
  clear: both;
- background-color: #ffffff;
  border-top: 0px solid;
  color: #666666;
  font-family: verdana, arial, sans-serif;
@@ -69,6 +72,7 @@ function getUrl(url)
      var now = new Date();
      req.open('GET',url+'?'+now.getTime(),0);
      req.send(null);
+     document.getElementById('main').style.maxHeight = document.body.scrollHeight - 100;
      document.getElementById('main').innerHTML = req.responseText;
    }
 }
@@ -77,9 +81,8 @@ function getUrl(url)
 
 </head>
 
-<body bgcolor="#ffffff">
-<a href="http://www.naviserver.org/"><img src="naviserver.png" alt="Naviserver Logo" border="0"></a></p>
-<hr size="1" width="100%">
+<body bgcolor="#eeeeee">
+<a href="http://www.naviserver.org/"><img src="ns_small.gif" alt="Naviserver Logo" border="0"></a>
 
 <table border=0>
 <tr valign=top>
@@ -104,6 +107,7 @@ function getUrl(url)
 <p class="tocItem tocSubItem"><a href=javascript:getUrl('adp-overview.html'); >ADP Overview</a></p>
 <p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-overview.html'); >Tcl Overview</a></p>
 <p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-libraries.html'); >Tcl Libraries</a></p>
+<p class="tocItem tocSubItem"><a href=javascript:getUrl('commandlist.html'); >Tcl API</a></p>
 <p class="tocItem tocSubItem"><a href=javascript:getUrl('tcl-nsv.html'); >nsv Commands</a></p>
 <p class="tocItem tocSubItem"><a href=javascript:getUrl('c-driverdb.html'); >Database Driver</a></p>
 <p class="tocItem tocSubItem"><a href=javascript:getUrl('c-urlspace.html'); >Urlspace</a></p>
