@@ -90,15 +90,23 @@ install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
-	$(MKDIR) $(NAVISERVER)/pages/doc
-	for i in doc/html/*.html; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc/; \
+	@$(MKDIR) $(NAVISERVER)/pages/doc
+	echo Installing html files in $(NAVISERVER)/pages/doc...; \
+	@for i in doc/html/*.html; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
 	done
-	cd doc && /bin/sh ./install-doc $(NAVISERVER)
+	@for n in 1 3 n; do \
+		d=$(NAVISERVER)/man/man$$n; \
+		echo Installing $$n manpages in $$d...; \
+		$(MKDIR) $$d; \
+		for i in `find doc/man/ -name *.$$n -print`; do \
+			$(INSTALL_DATA) $$i $$d; \
+		done; \
+	done
 
 build-doc:
-	cd doc/src && dtplite -o ../html/ html .
-	cd doc/src && \
+	@cd doc/src && $(MKDIR) ../html && dtplite -o ../html/ html .
+	@cd doc/src && $(MKDIR) ../man && \
 	for f in *.man; do \
 		dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
 	done
