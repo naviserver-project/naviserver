@@ -131,6 +131,21 @@ can be overridden by typing "[emph {gmake install PREFIX=/your/directory/}]".
 
 [para]
 
+[section {downloading and Installing Modules}]
+
+To download and install additional modules:
+
+[example_begin]
+
+% cvs -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver login
+% cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P modules
+% cd modules
+% make install
+
+[example_end]
+
+Not all modules will be compiled by default due to external dependencies, so
+please look into module's README file for any additional information.
 
 [section {Configuring}]
 

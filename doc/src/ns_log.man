@@ -1,31 +1,43 @@
 [manpage_begin ns_log n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Send messages to the server log}]
 
 [description]
 
- This command sends a messages to the server log with severity and the one or more string args concatenated together with a single whitespace separating each arg.
+This command sends a messages to the server log with severity and the one or more string args
+concatenated together with a single whitespace separating each arg.
 
- Note that this only queues messages for the log and does not actually guarantee that the message is immediately written to the log.  The server can be instructed to queue messages in the cache via ns_logctl hold.
+[para]
 
- Log messages are written to the server log which is the file that is returned from ns_info log.
+Note that this only queues messages for the log and does not actually guarantee that
+the message is immediately written to the log.  The server can be instructed to queue
+ messages in the cache via ns_logctl hold.
 
- The following are the acceptable severity levels:
+[para]
+Log messages are written to the server log which is the file that is returned from ns_info log.
 
- notice - Something interesting occurred.
+The following are the acceptable severity levels:
 
- warning - Something  that  could  mean  something  bad occurred.
+[list_begin bullet]
 
- error - Something bad occurred.
+[bullet] notice - Something interesting occurred.
 
- fatal -  Something extremely bad occurred. The server will generally shut down after logging the message.
+[bullet] warning - Something  that  could  mean  something  bad occurred.
 
- bug  - Something occurred that implies that there is a bug in the code.
+[bullet] error - Something bad occurred.
 
- debug - If the server is in Debug  mode,  the  message  is printed.  Debug  mode  is specified in the [lb]ns/parameters[rb] section of the configuration file. Otherwise, the  message is not printed.
+[bullet] fatal -  Something extremely bad occurred. The server will generally shut down after logging the message.
+
+[bullet] bug  - Something occurred that implies that there is a bug in the code.
+
+[bullet] debug - If the server is in Debug  mode,  the  message  is printed. 
+         Debug  mode  is specified in the [lb]ns/parameters[rb] section of the
+         configuration file. Otherwise, the  message is not printed.
+
+[bullet] dev - Development messages, controlled by logdev parameter in config file
+
+[list_end]
 
 [para]
 

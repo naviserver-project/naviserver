@@ -120,6 +120,16 @@ be easy.  To compile and install:
 	% cd /usr/local/ns
 	% bin/nsd -f -t conf/nsd.tcl
 
+3f.	To download and install additional modules:
+
+	% cvs -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver login
+ 	% cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P modules
+	% cd modules
+	% make install
+
+	Not all modules will be compiled by default due to external dependencies, so
+	please look into module's README file for any additional information.
+
 
 4. Mailing lists
 ----------------

@@ -1,0 +1,98 @@
+[manpage_begin {Managing TCL interpreter initialization} n 4.99.2]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Managing TCL interpreter initialization}]
+
+[description]
+
+This file implements set of commands and utilities to manage Tcl interpreter
+initialization for NaviServer. What all this stuff does is simple: synthetize
+a Tcl script used to initialize new Tcl interpreters.
+
+[para]
+
+There are basically two strategies:
+
+[list_begin bullet]
+
+[bullet] A. Run an introspective script against an initialized startup interpreter
+         and collect definitions of some "known" things: loaded packages, created 
+         Tcl procs, namespaces and namespaced variables. Then stuff all this data
+         in a (potentially large) script and run this script against virgin Tcl
+         interp. This script is obtained by the [lb]nstrace::statescript[rb] command (see below).
+
+[bullet] B. Register traces on selected Tcl commands and get state they create in a set of
+         shared variables (the epoch). Then start bootstraping the interp. This will
+         trigger trace callbacks and they will start filling the epoch. After the
+         bootstrapping is done, synthetize a script containing minimal fixed state
+         (variables, modules) and a definition of [lb]unknown[rb] command which will
+         on-demand load procedure definitions out of the epoch state. This script
+         is obtained by the [lb]nstrace::tracescript[rb] command (see below).
+[list_end]
+
+Which one of the above 2 strategies is currently used by the server, is controlled by
+the [emph lazyloader] parameter of the Tcl library, as defined in the server configuration
+file. The A. strategy is selected by setting the parameter to false. The B. strategy is
+selected by setting the parameter to true.
+
+[para]
+
+In order to influence script generation, users can add their own tracing implementations.
+Tracers and other supporting callbacks for the following Tcl commands are provided per default:
+
+[example_begin]
+    load, namespace, variable, proc, rename
+[example_end]
+
+For the information of how to add new tracers please look into the source code of already provided callbacks.
+
+[para]
+
+[section {Summary of commands}]
+
+[list_begin definitions]
+
+[lst_item {nstrace::enabletrace   activates registered Tcl command traces}]
+
+[lst_item {nstrace::disabletrace  terminates tracing of Tcl commands}]
+[lst_item {nstrace::tracescript   returns a script for initializing interps}]
+
+[lst_item {nstrace::enablestate   activates generation of the state script}]
+[lst_item {nstrace::disablestate  terminates generation of the state script}]
+[lst_item {nstrace::statescript   returns a script for initializing interps}]
+
+[lst_item {nstrace::isactive      returns true if tracing Tcl commands is on}]
+[lst_item {nstrace::config        setup some configuration options}]
+
+[lst_item {nstrace::excludensp    skip serializing the given namespace}]
+[lst_item {nstrace::namespaces    returns list of namespaces for the given parent}]
+
+[lst_item {nstrace::addtrace      registers custom tracer callback}]
+[lst_item {nstrace::addscript     registers custom script generator}]
+[lst_item {nstrace::addresolver   registers custom command resolver}]
+
+[lst_item {nstrace::enablecode    returns signal about start of tracing}]
+[lst_item {nstrace::disablecode   returns signal about stop of tracing}]
+
+[lst_item {nstrace::addentry      adds one entry into the named trace store}]
+[lst_item {nstrace::getentry      returns the entry value from the named store}]
+[lst_item {nstrace::delentry      removes the entry from the named store}]
+[lst_item {nstrace::getentries    returns all entries from the named store}]
+
+[list_end]
+
+[para]
+
+[section Limitations]
+
+[list_begin enum]
+
+[enum] [lb]namespace forget[rb] is still not implemented
+[enum] [lb]namespace origin cmd[rb] breaks if cmd is not already defined
+[enum] [lb]info procs[rb] does not return list of all cached procedures 
+
+[list_end]
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]

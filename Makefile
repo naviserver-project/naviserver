@@ -90,10 +90,13 @@ install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
-	@$(MKDIR) $(NAVISERVER)/pages/doc
+	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
 	echo Installing html files in $(NAVISERVER)/pages/doc...; \
 	@for i in doc/html/*.html; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
+	done
+	@for i in doc/html/files/*.html; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc/files; \
 	done
 	@for n in 1 3 n; do \
 		d=$(NAVISERVER)/man/man$$n; \
