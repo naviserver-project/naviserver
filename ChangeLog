@@ -1,7 +1,19 @@
+2006-09-26  Bernd Eidenschink  <eide@users.sf.net>
+
+        * contrib/banners/ns_poweredby.gif:
+        * contrib/banners/ns_poweredby.png:
+	* contrib/banners/ns_logosmall.gif:
+	* contrib/banners/ns_logosmall.png:
+	* contrib/banners/ns_logobig.gif:
+	* contrib/banners/ns_logobig.png:
+	* contrib/banners/msie.html:
+	* contrib/banners/README: Added two sets of banners (GIF/PNG)
+	for NaviServer
+
 2006-09-23  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/connio.c: Fixed bug in Ns_ConnWriteVChars which prevented to
-        send correctly nultiple small buffers.
+        send correctly multiple small buffers.
         * tests/*: Updated test to mark encoding as knownBug until fixed and
         http chunked test according to updated ns_httptest
 
