@@ -38,7 +38,7 @@ NaviServer or any other module documentation found in the tcllib package.
 When you're done, be sure to "cvs add" and "cvs commit" the file.
 
 The resulting documentation is automatically generated in nroff and html
-format when you invoke "make doc" in the top-level distribution directory. 
+format when you invoke "make build-doc" in the top-level distribution directory. 
 The output files are stored under "doc/man" and "doc/html" for the 
 corresponding format(s). 
 
