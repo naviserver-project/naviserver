@@ -1,39 +1,25 @@
-
-
 [manpage_begin ns_serverpath n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Returns absolute path to current virtual server home}]
 
 [description]
-One or more paragraphs describing the ns_serverpath command in detail.
+This is virtual hosting aware command that returns absolute path to the server home
+for current virtual server context
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
-
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
-[list_end]
+[call [cmd ns_serverpath]]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+oss2:nscp 6> ns_serverpath
+/usr/local/ns
+
 [example_end]
 
 

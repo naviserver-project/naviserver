@@ -1,44 +1,42 @@
-
-
 [manpage_begin ns_hashpath n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Break path into subdirectories}]
 
 [description]
-One or more paragraphs describing the ns_hashpath command in detail.
+Hash the leading characters of string into a path, skipping periods and slashes.
+If string contains less characters than levels requested, '_' characters are used as padding.
+For example, given the string 'foo' and the levels 2, 3:
+  foo, 2 -> /f/o
+  foo, 3 -> /f/o/o
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_hashpath] [arg string] [arg levels]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg string]
+Path to be broken
 
-[list_end]
+[nl]
+[arg levels]
+How many subdirecotries to make
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+oss2:nscp 13> ns_hashpath foo 3
+/f/o/o
+
 [example_end]
 
 
 [see_also nsd]
 [keywords NaviServer]
 [manpage_end]
-
 
