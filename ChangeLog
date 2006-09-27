@@ -1,5 +1,7 @@
 2006-09-27  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/driver.c: Fixed bug in ns_upload_stats
+
 	* nsd/config.c: Changed log Debug level to Dev level
 	to make logfile not filled with too many debug messages
 

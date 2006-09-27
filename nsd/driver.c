@@ -2375,16 +2375,18 @@ NsTclUploadStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     drvPtr = firstDrvPtr;
     statsPtr = NULL;
 
-    while (drvPtr != NULL && statsPtr != NULL) {
+    while (drvPtr != NULL && statsPtr == NULL) {
         spoolPtr = &drvPtr->spooler;
-        Ns_MutexLock(&spoolPtr->lock);
-        hPtr = Tcl_FindHashEntry(&spoolPtr->table, url);
-        if (hPtr != NULL) {
-            sockPtr = Tcl_GetHashValue(hPtr);
-            statsPtr = &sockPtr->upload;
-            sprintf(buf, "%lu %lu", statsPtr->length, statsPtr->size);
+        if (spoolPtr->uploadsize > 0) {
+            Ns_MutexLock(&spoolPtr->lock);
+            hPtr = Tcl_FindHashEntry(&spoolPtr->table, url);
+            if (hPtr != NULL) {
+                sockPtr = Tcl_GetHashValue(hPtr);
+                statsPtr = &sockPtr->upload;
+                sprintf(buf, "%lu %lu", statsPtr->length, statsPtr->size);
+            }
+            Ns_MutexUnlock(&spoolPtr->lock);
         }
-        Ns_MutexUnlock(&spoolPtr->lock);
         drvPtr = drvPtr->nextPtr;
     }
     Tcl_AppendResult(interp, buf, NULL);
