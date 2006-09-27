@@ -1,34 +1,30 @@
-
-
 [manpage_begin ns_upload_stats n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Return realtime statistic about being uploaded file}]
 
 [description]
-One or more paragraphs describing the ns_upload_stats command in detail.
+This command is useful in case of uploading big files and giving users some
+progress statistics about the process. It works by creating special counter for
+the uploaded url and keeps updating it while the file is being uploaded. Once
+file is uploaded completely this statistics is removed from the local cache.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_upload_stats url] [arg url]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg url]
+This is the url where the file is being uploaded
 
 [list_end]
 
 [section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
-[list_end]
+
+ns_section ns/server/default/nssock
+ns_param        uploadsize              2048
 
 [section EXAMPLES]
 
@@ -40,5 +36,3 @@ Put some examples here to illustrate command usage.
 [see_also nsd]
 [keywords NaviServer]
 [manpage_end]
-
-
