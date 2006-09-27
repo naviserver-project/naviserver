@@ -1,3 +1,10 @@
+2006-09-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* Makefile:
+	* contrib/examples: Added examples dir with index page and
+	upload script. Updated makefile to do exampels installation
+	during make install
+
 2006-09-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c: Fixed bug in ns_upload_stats

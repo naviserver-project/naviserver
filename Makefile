@@ -45,7 +45,7 @@ all:
 	done
 
 install: install-dirs install-include install-tcl install-modules \
-	install-config install-doc
+	install-config install-doc install-examples
 	@echo ""
 	@echo "Installation complete, now you can run NaviServer by typing"
 	@echo "the command below and access the server at http://localhost:8080"
@@ -91,7 +91,7 @@ install-tests:
 
 install-doc:
 	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
-	echo Installing html files in $(NAVISERVER)/pages/doc...; \
+	echo Installing html files in $(NAVISERVER)/pages/doc...
 	@for i in doc/html/*.html; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
 	done
@@ -105,6 +105,12 @@ install-doc:
 		for i in `find doc/man/ -name *.$$n -print`; do \
 			$(INSTALL_DATA) $$i $$d; \
 		done; \
+	done
+
+install-examples:
+	@$(MKDIR) $(NAVISERVER)/pages/examples
+	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/examples/; \
 	done
 
 build-doc:

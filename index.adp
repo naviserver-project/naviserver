@@ -23,16 +23,31 @@
   <HR>
   <P>
   <UL>
-  <LI>The Naviserver <A HREF=doc/>documentation<A> has been included with this distribution.
+
+  <LI>The Naviserver <A HREF=doc/>Documentation<A> has been included with this distribution.<P>
+
+  <LI>The Naviserver <A HREF=examples/>Examples<A> include useful scripts and tricks.<P>
+
   <%
-    if { [file exists [ns_info pageroot]/nsstats.tcl] } {
-      ns_adp_puts {<LI>The Naviserver <A HREF="nsstats.tcl">Statistics page</A> can be useful in resolving performance issues.}
-    }
+   ns_adp_puts {<LI>The Naviserver <A HREF="nsstats.tcl">Statistics page</A> can be
+                    useful in resolving performance issues.<P>}
+
+   if { ![file exists [ns_info pageroot]/nsstats.tcl] } {
+     ns_adp_puts {<I>Currently it is not installed, to install you need to
+                     download modules and do make install in nsstats directory
+                  </I>}
+   }
   %>
+
   <%
-    if { [file exists [ns_info pageroot]/nsconf.tcl] } {
-      ns_adp_puts {<LI>The Naviserver runtime <A HREF="nsconf.tcl">Config page</A> can be useful in reviewing server's setup.}
-    }
+   ns_adp_puts {<LI>The Naviserver runtime <A HREF="nsconf.tcl">Config page</A> can be
+                    useful in reviewing server's setup.<P>}
+
+   if { ![file exists [ns_info pageroot]/nsconf.tcl] } {
+     ns_adp_puts {<I>Currently it is not installed, to install you need to
+                     download modules and do make install in nsconf directory
+                  </I>}
+   }
   %>
   </UL>
  </BODY>
