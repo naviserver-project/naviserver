@@ -104,59 +104,19 @@ TclX_WrongArgs (interp, commandNameObj, string)
     char        *string;
 {
     char    *commandName;
-    Tcl_Obj *resultPtr = Tcl_GetObjResult (interp);
     int      commandLength;
 
     commandName = Tcl_GetStringFromObj (commandNameObj, &commandLength);
 
-    Tcl_AppendStringsToObj (resultPtr,
+    Tcl_AppendResult (interp,
                 tclXWrongArgs,
                 commandName,
                 (char *)NULL);
 
     if (*string != '\0') {
-    Tcl_AppendStringsToObj (resultPtr, " ", string, (char *)NULL);
+    Tcl_AppendResult (interp, " ", string, (char *)NULL);
     }
     return TCL_ERROR;
-}
-
-/*-----------------------------------------------------------------------------
- * TclX_AppendObjResult --
- *
- *   Append a variable number of strings onto the object result already
- * present for an interpreter.  If the object is shared, the current contents
- * are discarded.
- *
- * Parameters:
- *   o interp - Interpreter to set the result in.
- *   o args - Strings to append, terminated by a NULL.
- *-----------------------------------------------------------------------------
- */
-void
-TclX_AppendObjResult TCL_VARARGS_DEF (Tcl_Interp *, arg1)
-{
-    Tcl_Interp *interp;
-    Tcl_Obj *resultPtr;
-    va_list argList;
-    char *string;
-
-    interp = TCL_VARARGS_START (Tcl_Interp *, arg1, argList);
-    resultPtr = Tcl_GetObjResult (interp);
-
-    if (Tcl_IsShared(resultPtr)) {
-        resultPtr = Tcl_NewStringObj((char *)NULL, 0);
-        Tcl_SetObjResult(interp, resultPtr);
-    }
-
-    TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
-    while (1) {
-        string = va_arg(argList, char *);
-        if (string == NULL) {
-            break;
-        }
-        Tcl_AppendToObj (resultPtr, string, -1);
-    }
-    va_end(argList);
 }
 
 /*-----------------------------------------------------------------------------
@@ -669,23 +629,21 @@ ValidateKey (interp, key, keyLen, isPath)
     char *keyp;
 
     if (strlen (key) != (size_t) keyLen) {
-        Tcl_AppendStringsToObj (Tcl_GetObjResult (interp),
-                                "keyed list key may not be a ",
-                                "binary string", (char *) NULL);
+        Tcl_AppendResult (interp, "keyed list key may not be a ",
+                          "binary string", (char *) NULL);
         return TCL_ERROR;
     }
     if (key [0] == '\0') {
-        Tcl_AppendStringsToObj (Tcl_GetObjResult (interp),
-                                "keyed list key may not be an ",
-                                "empty string", (char *) NULL);
+        Tcl_AppendResult (interp, "keyed list key may not be an ",
+                          "empty string", (char *) NULL);
         return TCL_ERROR;
     }
     for (keyp = key; *keyp != '\0'; keyp++) {
         if ((!isPath) && (*keyp == '.')) {
-            Tcl_AppendStringsToObj (Tcl_GetObjResult (interp),
-                                    "keyed list key may not contain a \".\"; ",
-                                    "it is used as a separator in key paths",
-                                    (char *) NULL);
+            Tcl_AppendResult (interp,
+                              "keyed list key may not contain a \".\"; ",
+                              "it is used as a separator in key paths",
+                              (char *) NULL);
             return TCL_ERROR;
         }
     }
@@ -882,21 +840,17 @@ ObjToKeyedListEntry (interp, objPtr, entryPtr)
     int keyLen;
 
     if (Tcl_ListObjGetElements (interp, objPtr, &objc, &objv) != TCL_OK) {
-        Tcl_ResetResult (interp);
-        Tcl_AppendStringsToObj (Tcl_GetObjResult (interp),
-                                "keyed list entry not a valid list, ",
-                                "found \"", 
-                                Tcl_GetStringFromObj (objPtr, NULL),
-                                "\"", (char *) NULL);
+        Tcl_AppendResult (interp, "keyed list entry not a valid list, ",
+                          "found \"", Tcl_GetStringFromObj (objPtr, NULL),
+                          "\"", (char *) NULL);
         return TCL_ERROR;
     }
 
     if (objc != 2) {
-        Tcl_AppendStringsToObj (Tcl_GetObjResult (interp),
-                                "keyed list entry must be a two ",
-                                "element list, found \"",
-                                Tcl_GetStringFromObj (objPtr, NULL),
-                                "\"", (char *) NULL);
+        Tcl_AppendResult(interp, "keyed list entry must be a two ",
+                         "element list, found \"",
+                         Tcl_GetStringFromObj (objPtr, NULL),
+                         "\"", (char *) NULL);
         return TCL_ERROR;
     }
 
@@ -1436,9 +1390,8 @@ TclX_KeylgetObjCmd (clientData, interp, objc, objv)
      */
     if (status == TCL_BREAK) {
         if (objc == 3) {
-            TclX_AppendObjResult (interp, "key \"",  key,
-                                  "\" not found in keyed list",
-                                  (char *) NULL);
+            Tcl_AppendResult (interp, "key \"",  key,
+                              "\" not found in keyed list", (char *) NULL);
             return TCL_ERROR;
         } else {
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(FALSE));
@@ -1569,8 +1522,9 @@ TclX_KeyldelObjCmd (clientData, interp, objc, objv)
             Tcl_DecrRefCount (keylPtr);
             return TCL_ERROR;
         }
-        if (keylVarPtr != keylPtr)
+        if (keylVarPtr != keylPtr) {
             Tcl_DecrRefCount (keylPtr);
+        }
     }
     keylPtr = keylVarPtr;
 
@@ -1583,8 +1537,8 @@ TclX_KeyldelObjCmd (clientData, interp, objc, objv)
         status = TclX_KeyedListDelete (interp, keylPtr, key);
         switch (status) {
           case TCL_BREAK:
-            TclX_AppendObjResult (interp, "key not found: \"",
-                                  key, "\"", (char *) NULL);
+            Tcl_AppendResult (interp, "key not found: \"", key, "\"", 
+                              (char *) NULL);
             return TCL_ERROR;
           case TCL_ERROR:
             return TCL_ERROR;
@@ -1638,9 +1592,9 @@ TclX_KeylkeysObjCmd (clientData, interp, objc, objv)
     status = TclX_KeyedListGetKeys (interp, keylPtr, key, &listObjPtr);
     switch (status) {
       case TCL_BREAK:
-        TclX_AppendObjResult (interp, "key not found: \"", key, "\"",
-                              (char *) NULL);
-        return TCL_ERROR;
+          Tcl_AppendResult (interp, "key not found: \"", key, "\"",
+                            (char *) NULL);
+          return TCL_ERROR;
       case TCL_ERROR:
         return TCL_ERROR;
     }

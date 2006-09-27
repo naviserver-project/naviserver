@@ -1,3 +1,12 @@
+2006-09-27  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: Added "-maxruns" parameter for proxy queue
+	to limit number of runs in the proxy. After reaching the limit 
+	the proxy slave process is automatically restarted.
+
+	* nsproxy/ns_proxy.man: Updated docs.
+	* tests/ns_proxy.test: Added tests to check -maxruns option.
+
 2006-09-26  Bernd Eidenschink  <eide@users.sf.net>
 
         * contrib/banners/ns_poweredby.gif:

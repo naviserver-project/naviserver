@@ -147,6 +147,10 @@ new proxy processes. Setting this value to 0 disables the pool,
 causing all subsequent allocation requests to fail immediately
 (currently allocated proxies, if any, remain valid).
 
+[lst_item {-maxruns n}]
+Sets the maximum number of activation of the proxy slave process.
+When the limit it reached, the slave process is automatically restarted.
+
 [lst_item {-exec program}]
 Specifies the filename of a slave proxy program.  This defaults to
 [emph nsproxy] in the [emph bin] subdirectory of the NaviServer

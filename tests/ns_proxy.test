@@ -22,7 +22,7 @@ test ns_proxy-2.1 {configuration syntax} -body {
 
 test ns_proxy-2.2 {configuration options} -body {
     ns_proxy configure testpool
-} -match glob -result {-exec * -init * -reinit * -maxslaves * -gettimeout * -evaltimeout * -sendtimeout * -recvtimeout * -waittimeout * -idletimeout *}
+} -match glob -result {-exec * -init * -reinit * -maxslaves * -maxruns * -gettimeout * -evaltimeout * -sendtimeout * -recvtimeout * -waittimeout * -idletimeout *}
 
 test ns_proxy-2.3 {configuration options types} -body {
     ns_proxy configure testpool -gettimeout dummy
@@ -46,6 +46,10 @@ test ns_proxy-2.7 {configuration options types} -body {
 
 test ns_proxy-2.8 {configuration options types} -body {
     ns_proxy configure testpool -maxslaves dummy
+} -returnCodes error -result {expected integer but got "dummy"}
+
+test ns_proxy-2.9 {configuration options types} -body {
+    ns_proxy configure testpool -maxruns dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
 test ns_proxy-2.10 {clear slaves basic syntax} -body {
@@ -289,6 +293,29 @@ test ns_proxy-5.10 {check killing active proxy} -body {
     ns_proxy cleanup
 } -result {0}
 
+test ns_proxy-5.11 {check maxruns >= 0} -body {
+    set result ""
+    ns_proxy config testpool -maxruns 1
+    set proxy [ns_proxy get testpool]
+    ns_proxy eval $proxy "set a 1"
+    set code [catch {ns_proxy eval $proxy "set a"} err]
+    lappend result $code $err
+} -cleanup {
+    ns_proxy cleanup
+    ns_proxy config testpool -maxruns 0
+} -result {1 {can't read "a": no such variable}}
+
+test ns_proxy-5.12 {check maxruns == 0} -body {
+    set result ""
+    ns_proxy config testpool -maxruns 0
+    set proxy [ns_proxy get testpool]
+    ns_proxy eval $proxy "set a 1"
+    set code [catch {ns_proxy eval $proxy "set a"} err]
+    lappend result $code $err
+} -cleanup {
+    ns_proxy cleanup
+    ns_proxy config testpool -maxruns 0
+} -result {0 1}
 
 ns_proxy cleanup
 foreach pool [ns_proxy pools] {
