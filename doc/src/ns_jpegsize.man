@@ -1,8 +1,6 @@
 [manpage_begin ns_jpegsize n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Determine the width and height of a JPEG image}]
 
 [description]
@@ -25,13 +23,10 @@
 
 [example_begin]
    % ns_jpegsize test.html
-   invalid jpeg file: test.html
+   invalid JPEG file: "test.html"
 [example_end]
 
-
 [see_also nsd]
-[keywords ns_gifsize ns_image ]
-
+[keywords ns_gifsize ns_pngsize ns_imgsize ns_imgmime ns_imgtype]
 
 [manpage_end]
-
