@@ -5,14 +5,22 @@
 
 [description]
 
- This command reads file and parses its contents as an ADP and returns the output to the caller.  file is relative to the caller's directory unless an absolute pathname is used.  Optional args can be passed which are accessed using ns_adp_argc, ns_adp_argv and ns_adp_bind_args commands in the callee.
+ This command reads file and parses its contents as an ADP and returns the output to the caller.
+ file is relative to the caller's directory unless an absolute pathname is used.
+ Optional args can be passed which are accessed using ns_adp_argc, ns_adp_argv and
+ ns_adp_bind_args commands in the callee.
 
- Note that ADP streaming cannot be turned on using ns_adp_stream from within an ADP executed with the ns_adp_include command.  Tcl commands in the ADP will be evaluated in a new scope.
+[para]
+ Note that ADP streaming cannot be turned on using ns_adp_stream from within an ADP
+ executed with the ns_adp_include command.  Tcl commands in the ADP will be evaluated
+ in a new scope.
 
+[para]
  ADPs can be nested by including each other up to the maximum of 256 levels deep.
 
- This command is only available from an ADP.  Use ns_adp_parse to parse ADPs from outside the context of an ADP.
-
+[para]
+ This command is only available from an ADP.  Use ns_adp_parse to parse ADPs
+ from outside the context of an ADP.
 
 [section {COMMANDS}]
 
@@ -33,20 +41,20 @@
     ###
 
     # In a.adp:
-    &lt;% ns_adp_include b.adp %&gt;
+    <% ns_adp_include b.adp %>
 
     # In b.adp:
-    &lt;% ns_adp_puts &quot;Hello, world!&quot; %&gt;
+    <% ns_adp_puts &quot;Hello, world!&quot; %>
 
     ###
     ### Example #2: Caller outputs to ADP buffer.
     ###
 
     # In a.adp:
-    &lt;% ns_adp_puts ns_adp_include arg b.adp %&gt;
+    <% ns_adp_puts ns_adp_include arg b.adp %>
 
     # In b.adp:
-    &lt;% return &quot;Hello, world!&quot; %&gt;
+    <% return &quot;Hello, world!&quot; %>
 [example_end]
 
 

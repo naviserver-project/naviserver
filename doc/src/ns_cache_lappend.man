@@ -1,37 +1,40 @@
 [manpage_begin ns_cache_lappend n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Append list item to cache entry}]
 
 [description]
-One or more paragraphs describing the ns_cache_lappend command in detail.
+Works similar to Tcl command lappend but instead of local list it uses calue
+from the cache and reassignes it with Tcl list with appended new item
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_cache_lappend] [arg ?-timeout timeout?] [arg ?-expires expires?] [arg ?--?] [arg cache] [arg key] [arg args]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg cache]
+Cache name
 
-[list_end]
+[arg key]
+Cache entry key in the cache that needs data to be appended
 
-[section CONFIGURATION]
+[arg args]
+String to be appended
 
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+ns_cache_lappend mycache mykey 1
+1
+
+ns_cache_lappend mycache mykey 2
+1 2
+
 [example_end]
 
 

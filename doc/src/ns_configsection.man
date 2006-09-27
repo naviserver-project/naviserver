@@ -1,12 +1,12 @@
 [manpage_begin ns_configsection n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Return a handle to an ns_set for a section of the server's configuration}]
 
 [description]
-[para]This command returns a handle for an ns_set which contains all the parameter key-value pairs for the section from the server's configuration.  If the section is not defined, this command returns an empty string.
+[para]This command returns a handle for an ns_set which contains all the parameter
+key-value pairs for the section from the server's configuration.  If the section
+is not defined, this command returns an empty string.
 
 [section {COMMANDS}]
 

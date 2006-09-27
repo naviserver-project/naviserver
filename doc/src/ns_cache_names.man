@@ -1,10 +1,10 @@
 [manpage_begin ns_cache_names n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {return names of all caches}]
+[titledesc {Return names of all caches}]
 
 [description]
-
+Returns list with all created cache names
 
 [manpage_end]
 

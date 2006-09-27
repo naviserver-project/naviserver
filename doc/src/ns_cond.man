@@ -1,8 +1,6 @@
 [manpage_begin ns_cond n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Operate on condition variables}]
 
 [description]
@@ -45,7 +43,7 @@
  Waits on a condition variable.  timeout is an absolute time in Unix seconds when to wait until.  If not specified, timeout defaults to 0, which causes the command to not sleep at all.  Returns 1 on success or 0 on timeout.
 
 [call [cmd  ns_cond] [arg timedwait] [arg condId] [arg mutexId] [opt [arg timeout]]]
-<li> ns_cond wait condId mutexId&nbsp;?timeout? 
+<li> ns_cond wait condId mutexId&nbsp;?timeout?
 
  Waits on a condition variable.  If timeout is not specified, the thread will sleep indefinitely.  Otherwise, the thread will wait up to timeout seconds.  Returns 1 on success or 0 on timeout.
 

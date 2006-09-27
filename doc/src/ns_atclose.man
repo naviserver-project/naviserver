@@ -4,7 +4,10 @@
 [titledesc {Queue a script to run after the current connection is closed}]
 
 [description]
-[para]This command queues a script to run after the current connection is closed.  The script and optional arg are concatenated together and added to the list of at-close callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
+
+This command queues a script to run after the current connection is closed.  The script
+and optional arg are concatenated together and added to the list of at-close callbacks.
+The scripts are executed in the global scope in LIFO (last in, first out) order.
 
 [section {COMMANDS}]
 
@@ -13,8 +16,6 @@
 [call [cmd ns_atclose] [arg script] [opt [arg arg]]]
 
 [list_end]
-
-[section EXAMPLES]
 
 [see_also nsd]
 [keywords ns_atexit ns_atshutdown ns_atsignal]

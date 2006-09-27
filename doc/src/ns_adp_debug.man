@@ -1,44 +1,32 @@
-
-
 [manpage_begin ns_adp_debug n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Connect to the TclPro debugger if not already connected}]
 
 [description]
-One or more paragraphs describing the ns_adp_debug command in detail.
-
-[section {COMMANDS}]
-Optional: list and description of sub-commands.
+Initialize the debugger by calling the debug init proc with
+the hostname and port of the debugger and a pattern of procs
+to auto-instrument
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_adp_debug] [arg procs] [arg host] [arg port]]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg procs]
+Pattern of procs to be debugged
+
+[nl]
+[arg host]
+Host where TclProc is running
+
+[nl]
+[arg port]
+Port TcPro is listening
 
 [list_end]
-
-[section CONFIGURATION]
-
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
-[list_end]
-
-[section EXAMPLES]
-
-[example_begin]
-Put some examples here to illustrate command usage.
-[example_end]
-
 
 [see_also nsd]
 [keywords NaviServer]
 [manpage_end]
-
 

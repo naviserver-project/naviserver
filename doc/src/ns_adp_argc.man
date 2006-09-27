@@ -1,8 +1,6 @@
 [manpage_begin ns_adp_argc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Return the number of arguments to the current ADP}]
 
 [description]
@@ -24,14 +22,14 @@
 
 [example_begin]
    # In a.adp:
-   &lt;% ns_adp_include b.adp example a b c %&gt;
+   <% ns_adp_include b.adp example a b c %>
 [example_end]
 
 [example_begin]
    # In b.adp:
-   &lt;%
-     ns_adp_argc      &nbsp;;# =&gt; 5
-   %&gt;
+   <%
+     ns_adp_argc      &nbsp;;# => 5
+   %>
 [example_end]
 
 

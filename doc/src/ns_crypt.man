@@ -1,8 +1,6 @@
 [manpage_begin ns_crypt n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Encrypt a string for use as a password}]
 
 [description]

@@ -1,8 +1,6 @@
 [manpage_begin ns_db n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Standard database access API}]
 
 [description]
@@ -47,7 +45,7 @@
 [call [cmd  ns_db] [arg exception] [arg dbhandle]]
 <li> ns_db exec dbhandle sqlcommand
 
- Executes the specified SQL command. It returns either NS_DML (if the SQL command is a DML or DDL command) or NS_ROWS (if the SQL command returns rows, such as a SELECT).  This function can be used for ad hoc querying, where you don't know what kind of SQL command will be executed.  
+ Executes the specified SQL command. It returns either NS_DML (if the SQL command is a DML or DDL command) or NS_ROWS (if the SQL command returns rows, such as a SELECT).  This function can be used for ad hoc querying, where you don't know what kind of SQL command will be executed.
 
 [call [cmd  ns_db] [arg flush] [arg dbhandle]]
 <li> ns_db gethandle ?-timeout timeout? poolname&nbsp;?nhandles?

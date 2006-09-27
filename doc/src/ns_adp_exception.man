@@ -6,39 +6,42 @@
 
 [description]
 
-[para]ns_adp_exception ?state?
-[para]This function is used to examine  the  current  ADP
-exception  state.   The  function  returns 0 if the
-exception state is ok and 1 otherwise.
-[para]If the optional state argument is passed,  a  vari-
-able with that name will be set for the caller, and
-will contain the exception state with  one  of  the
+[para]
+
+ns_adp_exception ?state?
+
+[para]
+This function is used to examine  the  current  ADP exception  state.
+The  function  returns 0 if the exception state is ok and 1 otherwise.
+
+[para]
+If the optional state argument is passed,  a  variable with that name will
+be set for the caller, and will contain the exception state with  one  of  the
 following possible values:
 
 [list_begin definitions]
-[call [cmd  ok        ]]
 
-  ADP was evaluated successfully
+[call [cmd  ok]]
 
-[call [cmd  overflow  ]]
+ADP was evaluated successfully
 
-  Stack overflow occurred.  This might happen, for example, if there was a recursive call to ns_adp_include.
+[call [cmd  overflow]]
 
-[call [cmd  abort     ]]
+Stack overflow occurred.  This might happen, for example, if there was a recursive call to ns_adp_include.
 
-  An attempt to debug failed or ns_adp_abort was called.
+[call [cmd  abort]]
 
-[call [cmd  break     ]]
+An attempt to debug failed or ns_adp_abort was called.
 
-  ns_adp_break was called
+[call [cmd  break]]
 
-[call [cmd  unknown   ]]
+ns_adp_break was called
 
-  Unrecognized exception status.  This should not occur.
+[call [cmd  unknown]]
+
+Unrecognized exception status.  This should not occur.
 
 [list_end]
-
-
 
 [manpage_end]
 

@@ -1,37 +1,31 @@
 [manpage_begin ns_cache_stats n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Output statistics about cache}]
 
 [description]
-One or more paragraphs describing the ns_cache_stats command in detail.
+This command returns statistics about given cache like size, number of
+entries and usage stats.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_cache_stats] [arg ?-contents?] [arg ?-reset?] [arg ?--?] [arg cache]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg cache]
+Name of the cache
 
-[list_end]
-
-[section CONFIGURATION]
-
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+oss2:nscp 17> ns_cache_stats ns:memoize
+maxsize 10485760 size 0 entries 0 flushed 0 hits 0 missed 0 hitrate 0 expired 0 pruned 0
+
 [example_end]
 
 

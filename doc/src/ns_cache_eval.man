@@ -1,37 +1,42 @@
 [manpage_begin ns_cache_eval n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Execute Tcl script and assign its value ti the cache entry}]
 
 [description]
-One or more paragraphs describing the ns_cache_eval command in detail.
+This command atomically sets and gets a cache value. First, it
+looks up key in the cache. If it finds an entry, it returns the value
+of that entry. Otherwise, it executes script, stores the return value
+in the cache, and also returns that value.
+
+Script may optionally use the return command to return its
+value. For example, this will store the value "2" in mycache,
+if mykey is not already present:
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_cache_eval] [arg ?-timeout timeout?] [arg ?-expires expires?] [arg ?-force?] [arg ?--?] [arg cache] [arg key] [arg args]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg cache]
+Name of the cache
 
-[list_end]
+[nl]
+[arg key]
+Key entry which will be assigned with script result
 
-[section CONFIGURATION]
-
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+ns_cache_eval mycache mykey {
+    expr {1+1}
+}
+
 [example_end]
 
 

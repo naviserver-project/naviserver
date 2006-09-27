@@ -5,7 +5,8 @@
 
 [description]
 
- This commands appends the string to the output buffer for the current connection.  If -nonewline is specified, a line terminator is not appended after string.
+ This commands appends the string to the output buffer for the current connection.
+ If -nonewline is specified, a line terminator is not appended after string.
 
 
 [section {COMMANDS}]

@@ -5,7 +5,10 @@
 
 [description]
 
- Returns statistics about ADP pages that have been cached.  The result is a list of lists, where each sublist contains 2 items: File, Statistics.  File is the complete path in the file system to a cached adp file, Statistics is a list containing statistics about that cached file in a format similar to Tcl's array get format.  Currently, the keys in Statistics are:
+ Returns statistics about ADP pages that have been cached.  The result is a list of lists, where
+ each sublist contains 2 items: File, Statistics.  File is the complete path in the file system to
+ a cached adp file, Statistics is a list containing statistics about that cached file in a
+ format similar to Tcl's array get format.  Currently, the keys in Statistics are:
 
 
 [section {COMMANDS}]
@@ -23,7 +26,8 @@
 
 [call [cmd  ino]]
 
- Number of the information node (the inode) for the file.  The inode describes the file date and time stamps, permissions, and content on UNIX file systems.
+ Number of the information node (the inode) for the file.  The inode describes
+ the file date and time stamps, permissions, and content on UNIX file systems.
 
 [call [cmd  mtime]]
 
@@ -65,9 +69,11 @@
 
  See stats.tcl in the standard NaviServer distribution for a more complicated example.
 
-[para]NOTES
+[para]
+NOTES
 
- On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino, so dev and ino will always be reported as 0 when running NaviServer on Windows.
+ On the Windows platform, adp filenames are used as Hash table keys instead of dev and ino,
+ so dev and ino will always be reported as 0 when running NaviServer on Windows.
 
 
 

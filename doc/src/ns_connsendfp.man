@@ -1,5 +1,3 @@
-
-
 [manpage_begin ns_connsendfp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
@@ -22,12 +20,12 @@ Description for arg1
 [list_end]
 
 [section CONFIGURATION]
-        
+
 [para]
 [strong {Basic configuration options:}]
-        
+
 [list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
+[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]

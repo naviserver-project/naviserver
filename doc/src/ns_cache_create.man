@@ -1,37 +1,31 @@
 [manpage_begin ns_cache_create n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Create cache}]
 
 [description]
-One or more paragraphs describing the ns_cache_create command in detail.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_cache_create] [arg ?-timeout timeout?] [arg ?-expires expires?] [arg ?-maxentry maxentry?] [arg ?--?] [arg cache] [arg size]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg cache]
+Cache name
 
-[list_end]
+[arg size]
+Max size of the cache, 0 if unlimited
 
-[section CONFIGURATION]
-
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+ns_cache_create testcache 1024
+
 [example_end]
 
 

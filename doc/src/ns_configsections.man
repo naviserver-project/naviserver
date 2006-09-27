@@ -1,12 +1,12 @@
 [manpage_begin ns_configsections n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Return a list of handles to ns_sets for every section in the server's configuration}]
 
 [description]
-[para]This command returns a list of ns_sets for every section in the server's configuration.  The corresponding ns_sets contain the key-value pairs for the configuration section that the ns_set represents.  
+[para]This command returns a list of ns_sets for every section in the server's configuration.
+The corresponding ns_sets contain the key-value pairs for the configuration
+section that the ns_set represents.
 
 [section {COMMANDS}]
 

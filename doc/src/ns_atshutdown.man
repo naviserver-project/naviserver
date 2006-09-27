@@ -5,7 +5,9 @@
 
 
 [description]
-This command queues a script to run when the server is shutting down.  The script and optional arg are concatenated together and added to the list of shutdown callbacks.  The scripts are executed in the global scope in LIFO (last in, first out) order.
+This command queues a script to run when the server is shutting down.  The script and optional
+arg are concatenated together and added to the list of shutdown callbacks.
+The scripts are executed in the global scope in LIFO (last in, first out) order.
 
 
 [section {COMMANDS}]
@@ -17,7 +19,10 @@ This command queues a script to run when the server is shutting down.  The scrip
 [list_end]
 
 [section EXAMPLES]
-[para]Use ns_atsignal to stop long running processes. It seems that <strong>ns_atshutdown</strong> and ns_atexit are called after connection and scheduled threads have been killed, so those commands can not be used for that type of signal.
+
+Use ns_atsignal to stop long running processes. It seems that ns_atshutdown
+and ns_atexit are called after connection and scheduled threads have been killed,
+so those commands can not be used for that type of signal.
 
 [example_begin]
    # Create share variables for each signal
@@ -64,10 +69,11 @@ This command queues a script to run when the server is shutting down.  The scrip
    [lb]01/Aug/2006:10:30:56[rb][lb]1359.9[rb][lb]-conn:server::0[rb] Notice: infinite_loop stopped, status: SIGHUP
 [example_end]
 
-[para]Sample log file output from NaviServer 4.0.3 for <strong>ns_atshutdown</strong> and ns_atexit:
+[para]
+Sample log file output from NaviServer 4.99.2 for ns_atshutdown and ns_atexit:
 
 [example_begin]
-   [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: nsmain: NaviServer/4.0.3 stopping
+   [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: nsmain: NaviServer/4.99.2 stopping
    [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: serv: stopping server: server
    [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: serv: connection threads stopped
    [lb]31/Jul/2006:15:57:5[rb][lb]3583.1[rb][lb]-main-[rb] Notice: driver: shutdown complete

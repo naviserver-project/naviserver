@@ -1,39 +1,22 @@
 [manpage_begin ns_atprestartup n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Execute Tcl script before server startup}]
 
 [description]
-One or more paragraphs describing the ns_atprestartup command in detail.
+Tcl script will be execute just before server start-up
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_atprestartup] [arg script] [arg ?args?]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg script]
+Tcl script to be called before server start
 
 [list_end]
-
-[section CONFIGURATION]
-
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
-[list_end]
-
-[section EXAMPLES]
-
-[example_begin]
-Put some examples here to illustrate command usage.
-[example_end]
-
 
 [see_also nsd]
 [keywords NaviServer]

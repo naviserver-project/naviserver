@@ -4,8 +4,22 @@
 [titledesc {Evaluate in safe Tcl interp}]
 
 [description]
-description
 
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_safeeval] [arg page] [arg ?args ...?]
+
+[nl]
+[arg page]
+Page to be evaluated
+
+[nl]
+[arg args]
+Additional arguments
+
+[list_end]
 
 [manpage_end]
 

@@ -1,8 +1,6 @@
 [manpage_begin ns_charsets n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Determine the charsets for which we have encodings}]
 
 [description]

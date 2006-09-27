@@ -5,8 +5,12 @@
 
 [description]
 
- This command turns on "streaming mode" of ADP output, where output is immediately sent instead of queued up in an output buffer.  All data in the current ADP output buffer is flushed and written to the client and any subsequent data will be immediately written as well.
+ This command turns on "streaming mode" of ADP output, where output is immediately
+ sent instead of queued up in an output buffer.  All data in the current ADP output
+ buffer is flushed and written to the client and any subsequent data will be
+ immediately written as well.
 
+[para]
  Streaming is only available when using the "fancy" ADP parser.  See the
 
 [section {COMMANDS}]

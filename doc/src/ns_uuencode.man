@@ -1,24 +1,31 @@
 [manpage_begin ns_uuencode n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Binary-to-text encoding using "htuu" encoding}]
 
 [description]
 
- This command performs a binary-to-text encoding on string.  There is an arbitrary limit of 48 bytes for the input string.  The encoded string will be approximately 33% longer than the original.
+ This command performs a binary-to-text encoding on string.  The encoded string will
+ be approximately 33% longer than the original.
 
- NOTE: This is HTTP-style uuencoding/uudecoding which is sometimes called "htuu" (see 
+ NOTE: This is HTTP-style uuencoding/uudecoding which is sometimes called "htuu" (see
 
 [list_begin definitions]
 
  [call [cmd ns_uuencode] [arg string]]
 
-
 [list_end]
 
+[section EXAMPLES]
 
+[example_begin]
+
+oss2:nscp 7> ns_uuencode test
+dGVzdA==
+
+oss2:nscp 6> ns_uudecode dGVzdA==
+test
+
+[example_end]
 
 [manpage_end]
-

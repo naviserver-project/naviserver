@@ -1,8 +1,6 @@
 [manpage_begin ns_critsec n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Operate on critical section objects}]
 
 [description]
@@ -46,9 +44,9 @@ Is this the right way to use this command? The example is contrived, but I wante
    # If a thread is executing any of these procs, no other
    # thread can execute any of these procs until the first
    # thread has completely finished.
-   
+
    nsv_set . special_file_critsec [lb]ns_critsec create[rb]
-   
+
    proc write_special_file {data} {
        set critsec [lb]nsv_get . special_file_critsec[rb]
        ns_critsec enter $critsec
@@ -57,7 +55,7 @@ Is this the right way to use this command? The example is contrived, but I wante
        close $handle
        ns_critsec leave $critsec
    }
-   
+
    proc read_special_file {} {
        set critsec [lb]nsv_get . special_file_critsec[rb]
        ns_critsec enter $critsec
@@ -67,7 +65,7 @@ Is this the right way to use this command? The example is contrived, but I wante
        ns_critsec leave $critsec
        return $result
    }
-   
+
    proc change_special_file {data} {
        set critsec [lb]nsv_get . special_file_critsec[rb]
        ns_critsec enter $critsec

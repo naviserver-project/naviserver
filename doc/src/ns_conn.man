@@ -1,8 +1,6 @@
 [manpage_begin ns_conn n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Find information about the current HTTP connection}]
 
 [description]
@@ -115,7 +113,7 @@ The legal options (which may be abbreviated) are:
 
 [call [cmd  ns_conn] [arg version]]
 
- Returns the version of the HTTP request. This is usually 1.0 or 1.1. 
+ Returns the version of the HTTP request. This is usually 1.0 or 1.1.
 
 [list_end]
 

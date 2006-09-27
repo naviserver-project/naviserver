@@ -5,7 +5,8 @@
 
 [description]
 
- This command converts the time, specified as the number of seconds from 00:00:00 UTC Jan 1, 1970, to a string in Netscape's old cookie "Expires" date format (see 
+ This command converts the time, specified as the number of seconds from 00:00:00 UTC Jan 1, 1970,
+ to a string in Netscape's old cookie "Expires" date format (see
 
 
 [section {COMMANDS}]

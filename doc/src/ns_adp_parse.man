@@ -5,17 +5,31 @@
 
 [description]
 
- This command processes an ADP from either a file or a string, returning the output.  The first arg specifies the filename or contains the string to parse, depending on -file or -string.
+ This command processes an ADP from either a file or a string, returning the output.
+ The first arg specifies the filename or contains the string to parse, depending on -file or -string.
 
- If you need to process a second ADP from inside an ADP, it is usually better to use ns_adp_include, because that command resolves relative pathnames passed to it.  Also note that ns_adp_parse will ignore any directives to turn on streaming.  Tcl_Eval() is used to evaluate the Tcl commands in the ADP.
+[para]
+ If you need to process a second ADP from inside an ADP, it is usually better to use
+ ns_adp_include, because that command resolves relative pathnames passed to it.  Also
+ note that ns_adp_parse will ignore any directives to turn on streaming.  Tcl_Eval()
+ is used to evaluate the Tcl commands in the ADP.
 
- If you use the -string syntax, then arg is a string containing ADP syntax to be parsed.  Note that when you call this command with the -string syntax from inside an ADP, the string cannot contain the "&lt;% ... %&gt;" syntax.  The -string syntax is the default.
+[para]
+ If you use the -string syntax, then arg is a string containing ADP syntax to be parsed.
+ Note that when you call this command with the -string syntax from inside an ADP, the
+ string cannot contain the "<% ... %>" syntax.  The -string syntax is the default.
 
- If you use the -file syntax, then arg is the absolute path to the file containing the ADP to be parsed.
+[para]
+ If you use the -file syntax, then arg is the absolute path to the file containing the
+ ADP to be parsed.
 
- You can pass optional arguments to the ADP.  The arguments can be accessed within the ADP using the ns_adp_argc, ns_adp_argv and ns_adp_bind_args commands.
+[para]
+ You can pass optional arguments to the ADP.  The arguments can be accessed within the
+ ADP using the ns_adp_argc, ns_adp_argv and ns_adp_bind_args commands.
 
- If this call is a nested ADP evaluation (where one ADP calls another), an error will be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations.
+[para]
+ If this call is a nested ADP evaluation (where one ADP calls another), an error will
+ be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations.
 
 [section {COMMANDS}]
 
