@@ -13,7 +13,7 @@ file is uploaded completely this statistics is removed from the local cache.
 
 [list_begin definitions]
 
-[call [cmd ns_upload_stats url] [arg url]]
+[call [cmd ns_upload_stats] [arg url]]
 
 [nl]
 [arg url]

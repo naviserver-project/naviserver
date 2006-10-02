@@ -12,7 +12,7 @@ created if it does not exist.
 
 [list_begin definitions]
 
-[call [cmd ns_cache_incr] [arg ?-timeout timeout?] [arg ?-expires expires?] [arg ?--?] [arg cache] [arg key] [arg ?incr?]]
+[call [cmd ns_cache_incr] [arg {?-timeout timeout?}] [arg {?-expires expires?}] [arg ?--?] [arg cache] [arg key] [arg ?incr?]]
 
 [nl]
 [arg 1]

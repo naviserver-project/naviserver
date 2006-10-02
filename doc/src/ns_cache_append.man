@@ -9,7 +9,7 @@
 
 [list_begin definitions]
 
-[call [cmd ns_cache_append] [arg ?-timeout timeout?] [arg ?-expires expires?] [arg ?--?] [arg cache] [arg key] [arg args]]
+[call [cmd ns_cache_append] [arg {?-timeout timeout?}] [arg {?-expires expires?}] [arg ?--?] [arg cache] [arg key] [arg args]]
 
 [nl]
 [arg cache]

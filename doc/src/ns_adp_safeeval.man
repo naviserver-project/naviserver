@@ -9,7 +9,7 @@
 
 [list_begin definitions]
 
-[call [cmd ns_adp_safeeval] [arg page] [arg ?args ...?]
+[call [cmd ns_adp_safeeval] [arg page] [arg {?args ...?}]]
 
 [nl]
 [arg page]

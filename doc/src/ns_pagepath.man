@@ -13,6 +13,8 @@ pages for the current virtual server
 
 [call [cmd ns_pagepath]]
 
+[list_end]
+
 [section EXAMPLES]
 
 [example_begin]

@@ -17,7 +17,7 @@ if mykey is not already present:
 
 [list_begin definitions]
 
-[call [cmd ns_cache_eval] [arg ?-timeout timeout?] [arg ?-expires expires?] [arg ?-force?] [arg ?--?] [arg cache] [arg key] [arg args]]
+[call [cmd ns_cache_eval] [arg {?-timeout timeout?}] [arg {?-expires expires?}] [arg ?-force?] [arg ?--?] [arg cache] [arg key] [arg args]]
 
 [nl]
 [arg cache]

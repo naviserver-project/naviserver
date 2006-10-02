@@ -13,6 +13,8 @@ for current virtual server context
 
 [call [cmd ns_serverpath]]
 
+[list_end]
+
 [section EXAMPLES]
 
 [example_begin]
