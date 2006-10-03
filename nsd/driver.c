@@ -559,13 +559,15 @@ NsStartDrivers(void)
     drvPtr = firstDrvPtr;
 
     while (drvPtr != NULL) {
-        if (drvPtr->opts & NS_DRIVER_UDP) {
+        if (drvPtr->opts & NS_DRIVER_UNIX) {
+            drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr,
+                                             drvPtr->opts & NS_DRIVER_UDP ? 0 :
+                                                            drvPtr->backlog, 0);
+
+        } else if (drvPtr->opts & NS_DRIVER_UDP) {
             drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr,
                                             drvPtr->port);
 
-        } else if (drvPtr->opts & NS_DRIVER_UNIX) {
-            drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr,
-                                             drvPtr->backlog, 0);
         } else {
             drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr,
                                            drvPtr->port, drvPtr->backlog);
