@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * binder.c --
  *
  * Support for pre-bound privileged ports for Unix
@@ -333,8 +333,9 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (sock == -1
-        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n,sizeof(n)) == -1
-        || bind(sock,(struct sockaddr*)saPtr,sizeof(struct sockaddr_in)) == -1) {
+        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
+        || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
+        || bind(sock,(struct sockaddr*)saPtr, sizeof(struct sockaddr_in)) == -1) {
         int err = errno;
         close(sock);
         sock = -1;
@@ -375,7 +376,7 @@ Ns_SockBindUnix(char *path, int socktype, int mode)
     unlink(path);
 
     sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
-    
+
     if (sock == -1
         || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
         || (mode && chmod(path, mode) == -1)) {
@@ -520,7 +521,7 @@ NsClosePreBound(void)
     char               *addr;
     int                port, sock;
     struct sockaddr_in *saPtr;
-    
+
     Ns_MutexLock(&lock);
 
     /*
@@ -533,7 +534,7 @@ NsClosePreBound(void)
         addr = ns_inet_ntoa(saPtr->sin_addr);
         port = htons(saPtr->sin_port);
         sock = (int)Tcl_GetHashValue(hPtr);
-        Ns_Log(Warning, "prebind: closed unused TCP socket: %s:%d = %d", 
+        Ns_Log(Warning, "prebind: closed unused TCP socket: %s:%d = %d",
                addr, port, sock);
         close(sock);
         Tcl_DeleteHashEntry(hPtr);
@@ -552,7 +553,7 @@ NsClosePreBound(void)
         addr = ns_inet_ntoa(saPtr->sin_addr);
         port = htons(saPtr->sin_port);
         sock = (int)Tcl_GetHashValue(hPtr);
-        Ns_Log(Warning, "prebind: closed unused UDP socket: %s:%d = %d", 
+        Ns_Log(Warning, "prebind: closed unused UDP socket: %s:%d = %d",
                addr, port, sock);
         close(sock);
         Tcl_DeleteHashEntry(hPtr);
@@ -569,7 +570,7 @@ NsClosePreBound(void)
     while (hPtr != NULL) {
         sock = (int)Tcl_GetHashKey(&preboundRaw, hPtr);
         port = (int)Tcl_GetHashValue(hPtr);
-        Ns_Log(Warning, "prebind: closed unused raw socket: %d = %d", 
+        Ns_Log(Warning, "prebind: closed unused raw socket: %d = %d",
                port, sock);
         close(sock);
         Tcl_DeleteHashEntry(hPtr);
@@ -616,8 +617,8 @@ NsClosePreBound(void)
  *      None.
  *
  * Side effects:
- *      Sockets are left in bound state for later listen 
- *      in Ns_SockListenXXX.  
+ *      Sockets are left in bound state for later listen
+ *      in Ns_SockListenXXX.
  *
  *----------------------------------------------------------------------
  */
@@ -653,7 +654,7 @@ PreBind(char *line)
             *str++ = '\0';
             proto = str;
         }
-        
+
         if (!strcmp(proto,"tcp") && port > 0) {
             if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: tcp: invalid address: %s:%d",
@@ -827,7 +828,7 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
     msg.msg_accrightslen = sizeof(sock);
 #endif
     if (recvmsg(binderResponse[0], (struct msghdr *) &msg, 0) != RESPONSE_SIZE) {
-        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: '%s'", 
+        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: '%s'",
                strerror(errno));
         return -1;
     }
@@ -895,7 +896,7 @@ NsForkBinder(void)
 
     /*
      * Double-fork and run as a binder until the socket pairs are
-     * closed.  The server double forks to avoid problems 
+     * closed.  The server double forks to avoid problems
      * waiting for a child root process after the parent does a
      * setuid(), something which appears to confuse the
      * process-based Linux and SGI threads.
@@ -1069,7 +1070,7 @@ Binder(void)
             Ns_Fatal("binder: sendmsg() failed: '%s'", strerror(errno));
         }
         if (fd != -1) {
-    
+
             /*
              * Close the socket as it won't be needed in the slave.
              */

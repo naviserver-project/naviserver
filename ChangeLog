@@ -1,3 +1,7 @@
+2006-10-04  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/binder.c: Make UDP sockets support broadcast option by default
+
 2006-10-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/tclthread.c: Fixed handling of mutex identifiers
