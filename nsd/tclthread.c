@@ -57,6 +57,8 @@ typedef struct TclThreadArg {
 static int GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
                    CONST char *opts[], int *optPtr, int createOpt, int destroyOpt,
                    CONST char *type, void **addrPtr, Tcl_HashTable *table);
+static int GetAddr(Tcl_Interp *interp, Tcl_Obj *argObj, CONST char *type,
+                   void **addrPtr, Tcl_HashTable *table);
 static void CreateTclThread(NsInterp *itPtr, char *script, int detached,
                             Ns_Thread *thrPtr);
 
@@ -481,7 +483,8 @@ NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
             Tcl_WrongNumArgs(interp, 2, objv, "condId mutexId ?timeout?");
             return TCL_ERROR;
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[3], mutexAddr, &lockArg) != TCL_OK) {
+        if (GetAddr(interp, objv[3], mutexAddr, &lockArg,
+                    &itPtr->servPtr->tcl.mutexTable) != TCL_OK) {
             return TCL_ERROR;
         }
         lockPtr = (Ns_Mutex*) lockArg;
@@ -801,3 +804,45 @@ GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
 
     return TCL_OK;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAddr --
+ *
+ *      Obtain the address-value from the passed object which is 
+ *      expected to be of the Address type. If the object is not
+ *      of the address type, it is converted to one with the new 
+ *      dinamically allocated address set as the object value.
+ *      Note: string rep of the passed object is not invalidated!
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetAddr(Tcl_Interp *interp, Tcl_Obj *argObj, CONST char *name, void **addrPtr, 
+        Tcl_HashTable *table)
+{
+    Tcl_HashEntry *hPtr = NULL;
+
+    if (Ns_TclGetOpaqueFromObj(argObj, name, addrPtr) == TCL_OK
+        || Ns_TclGetAddrFromObj(interp, argObj, name, addrPtr) == TCL_OK) {
+        return TCL_OK;
+    }
+    Ns_MasterLock();
+    hPtr = Tcl_FindHashEntry(table, Tcl_GetString(argObj));
+    if (hPtr) {
+        *addrPtr = Tcl_GetHashValue(hPtr);
+    }
+    Ns_MasterUnlock();
+
+    return (hPtr == NULL) ? TCL_ERROR : TCL_OK;
+}
+
