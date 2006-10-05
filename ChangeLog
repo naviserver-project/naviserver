@@ -3,6 +3,11 @@
 	* doc/src/ns_memoize.man: Add description of the memoize
 	commands. (All 3 commands described in a single man page.)
 
+	* doc/src/version_include.in:
+	* configure.in: Set a variable "version" and substitute the
+	PACKAGE_VERSION into it.
+	* doc/src/ns_memoize.man: Use the version variable.
+
 2006-10-04  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/binder.c: Make UDP sockets support broadcast option by default

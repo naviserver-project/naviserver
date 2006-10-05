@@ -1,4 +1,6 @@
-[manpage_begin ns_memoize n 4.99]
+[include version_include]
+
+[manpage_begin ns_memoize n [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
 [titledesc {evaluate a Tcl script and cache the result}]
 

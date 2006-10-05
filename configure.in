@@ -288,4 +288,10 @@ case "`uname`" in
   ;;
 esac
 
-AC_OUTPUT(include/nsversion.h include/Makefile.global include/Makefile.module sample-config.tcl)
+AC_OUTPUT(
+include/nsversion.h
+include/Makefile.global
+include/Makefile.module
+sample-config.tcl
+doc/src/version_include
+)
