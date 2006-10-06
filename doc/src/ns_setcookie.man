@@ -1,39 +1,55 @@
-
-
-[manpage_begin ns_setcookie n 4.99]
+[include version_include]
+[manpage_begin ns_setcookie n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Sets cookie to be returned to the browser}]
 
 [description]
-One or more paragraphs describing the ns_setcookie command in detail.
+This command sets cookie with value that will be returned to the browser in
+Set-Cookie HTTP header. More than one cookie can be set but each cookie name should
+be different, otherwise it will be replaced with last value.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_setcookie] [arg -max_age] [arg -domain] [arg -secure] [arg -path] [arg name] [arg value]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg -domain]
+Specifies the domain(s) to which this cookie applies
 
-[list_end]
+[nl]
+[arg -secure]
+Specifies to the user agent that the cookie should only be transmitted back to
+the server of secure transport
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
+[nl]
+[arg -path]
+Specifies a subset of URLs to which this cookie applies. It must be a prefix
+of the URL being accessed
+
+[nl]
+[arg -max_age]
+Specifies the maximum age of the cookies in seconds (consistent with RFC 2109).
+If max_age < 0, it will be set forever.
+
+[nl]
+[arg name]
+Name of the cookie
+
+[nl]
+[arg value]
+New value to be assigned
+
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+ns_setcookie -max_age 3600 -path / -domain google.com SID 1
+
 [example_end]
 
 

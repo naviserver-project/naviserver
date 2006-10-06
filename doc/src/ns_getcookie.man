@@ -1,39 +1,35 @@
-
-
-[manpage_begin ns_getcookie n 4.99]
+[include version_include]
+[manpage_begin ns_getcookie n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Returns cookie by name}]
 
 [description]
-One or more paragraphs describing the ns_getcookie command in detail.
+This command returns value of the cookie by name, cookies are stored in HTTP headers 
+and are sent by browser if domain/path matched. 
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_getcookie] [arg name] [arg ?default?]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg name]
+Name of cookie
 
-[list_end]
+[nl]
+[arg default]
+This value will be returned if no cookie will be found
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+set session_id [lb]ns_getcookie session_id[rb]
+
 [example_end]
 
 
