@@ -125,8 +125,12 @@ proc ns_sourceproc {args} {
         return
     }
     set code [catch {ns_sourcefile $file} res]
-    if {$code == 1 && $::errorCode eq "NS_TCL_ABORT"} {
-        return
+    if {$code == 1} {
+       if {$::errorCode eq "NS_TCL_ABORT"} {
+           return
+       }
+       # Invalidate proc
+       proc ns:tclcache_$path {} {}
     }
     set errp [nsv_get ns:tclfile errorpage]
     if {$errp eq {}} {

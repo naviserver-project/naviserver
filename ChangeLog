@@ -1,3 +1,7 @@
+2006-10-07  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/file.tcl: Invalidate cache proc on Tcl error
+
 2006-10-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* m4/tcl.m4: Update to latest from Tcl CVS. No more annoying
