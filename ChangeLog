@@ -1,3 +1,9 @@
+2006-10-06  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* m4/tcl.m4: Update to latest from Tcl CVS. No more annoying
+	messages about underquoted macros when generating the build
+	scripts!
+
 2006-10-05  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* doc/src/ns_memoize.man: Add description of the memoize
