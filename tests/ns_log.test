@@ -167,7 +167,25 @@ test ns_log-6.5 {configuration} -body {
     ns_logctl severity debug
 } -result 0
 
-
+test ns_log-7.0 {two callbacks test} -body {
+    unset -nocomplain glob
+    set ::glob 0
+    proc logclbk1 args {
+        incr ::glob
+    }
+    proc logclbk2 args {
+        incr ::glob 
+    }
+    set handle1 [ns_logctl register logclbk1]
+    set handle2 [ns_logctl register logclbk2]
+    ns_log notice "Log callback test 7.0"
+    ns_logctl flush
+    set ::glob
+} -cleanup {
+    unset -nocomplain glob
+    ns_logctl unregister $handle1
+    ns_logctl unregister $handle2
+} -result 2
 
 ns_logctl trunc
 ns_logctl release

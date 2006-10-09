@@ -1,7 +1,8 @@
-2006-10-09  Vlad Seryakov  <seryakov@users.sf.net>
+2006-10-09  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tcl/file.tcl: Fixed variable typo.
 	* nsd/log.c: Avoid holding lock during callback invocation.
+	* test/ns_log.test: Added test for callbacks.
 	
 2006-10-07  Vlad Seryakov  <seryakov@users.sf.net>
 
