@@ -62,24 +62,6 @@ typedef struct LogEntry {
 } LogEntry;
 
 /*
- * The following struct maintains per-thread cached log entries.
- * The cache is a simple dynamic string where variable-length
- * LogEntry'ies (see below) are appended, one after another.
- */
-
-typedef struct LogCache {
-    int         hold;         /* Flag: keep log entries in cache */
-    int         count;        /* Number of entries held in the cache */
-    time_t      gtime;        /* For GMT time calculation */
-    time_t      ltime;        /* For local time calculations */
-    char        gbuf[100];    /* Buffer for GMT time string rep */
-    char        lbuf[100];    /* Buffer for local time string rep */
-    LogEntry   *firstEntry;   /* First in the list of log entries */
-    LogEntry   *currEntry;    /* Current in the list of log entries */
-    Ns_DString  buffer;       /* The log entries cache text-cache */
-} LogCache;
-
-/*
  * The following struct represents one registered log callback.
  * Log callbacks are used to produce log lines into the log sinks
  * and are invoked one by one for every log entry in the cache.
@@ -95,6 +77,26 @@ typedef struct LogClbk {
 } LogClbk;
 
 /*
+ * The following struct maintains per-thread cached log entries.
+ * The cache is a simple dynamic string where variable-length
+ * LogEntry'ies (see below) are appended, one after another.
+ */
+
+typedef struct LogCache {
+    int         hold;         /* Flag: keep log entries in cache */
+    int         count;        /* Number of entries held in the cache */
+    int         epoch;        /* Epoch of the callbacks list */
+    time_t      gtime;        /* For GMT time calculation */
+    time_t      ltime;        /* For local time calculations */
+    char        gbuf[100];    /* Buffer for GMT time string rep */
+    char        lbuf[100];    /* Buffer for local time string rep */
+    LogClbk    *callbacks;     /* Cached list of logging callbacks */
+    LogEntry   *firstEntry;   /* First in the list of log entries */
+    LogEntry   *currEntry;    /* Current in the list of log entries */
+    Ns_DString  buffer;       /* The log entries cache text-cache */
+} LogCache;
+
+/*
  * Local functions defined in this file
  */
 
@@ -104,7 +106,9 @@ static void  LogFlush(LogCache *cachePtr, LogClbk *list, int cnt, int trunc);
 static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 
 static LogClbk* AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free);
-static void RemClbk(LogClbk *clbkPtr, int unlocked);
+static void     RemClbk(LogClbk *clbkPtr, int unlocked);
+
+static void UpdateCallbacks(LogCache *cachePtr);
 
 static char* SeverityName(Ns_LogSeverity sev, char *buf);
 
@@ -126,6 +130,7 @@ static CONST char  *file;
 static int          flags;
 static int          maxback;
 static int          maxlevel;
+static int          epoch;
 static LogClbk     *callbacks;
 static CONST char  *logClbkAddr = "ns:logcallback";
 
@@ -658,9 +663,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         /* FALLTHROUGH */
 
     case CFlushIdx:
-        Ns_MutexLock(&lock);
         LogFlush(cachePtr, callbacks, -1, 1);
-        Ns_MutexUnlock(&lock);
         break;
 
     case CCountIdx:
@@ -833,9 +836,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
      */
 
     if (!cachePtr->hold) {
-        Ns_MutexLock(&lock);
         LogFlush(cachePtr, callbacks, -1, 1);
-        Ns_MutexUnlock(&lock);
     }
 }
 
@@ -858,12 +859,23 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
  */
 
 static void
-LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc)
+LogFlush(LogCache *cachePtr, LogClbk *clbkListPtr, int count, int trunc)
 {
     int          nentry = 0;
     char        *log;
     LogEntry    *ePtr;
-    LogClbk     *cPtr;
+    LogClbk     *cPtr, *listPtr;
+    
+    if (clbkListPtr != callbacks) {
+        listPtr = clbkListPtr; /* A non-global list */
+    } else {
+        Ns_MutexLock(&lock);
+        if (cachePtr->callbacks == NULL || cachePtr->epoch != epoch) {
+            UpdateCallbacks(cachePtr);
+        }
+        Ns_MutexUnlock(&lock);
+        listPtr = cachePtr->callbacks;
+    }
 
     ePtr = cachePtr->firstEntry;
     while (ePtr != NULL && cachePtr->currEntry) {
@@ -1084,21 +1096,84 @@ static void
 FreeCache(void *arg)
 {
     LogCache *cachePtr = (LogCache *)arg;
-    LogEntry *entryPtr, *tmpPtr;
+    LogEntry *entryPtr;
+    LogClbk  *clbkPtr;
+    void     *tmpPtr;
 
-    Ns_MutexLock(&lock);
     LogFlush(cachePtr, callbacks, -1, 1);
-    Ns_MutexUnlock(&lock);
+    clbkPtr = cachePtr->callbacks;
+    while (clbkPtr != NULL) {
+        tmpPtr = (void *)clbkPtr->nextPtr;
+        ns_free(clbkPtr);
+        clbkPtr = (LogClbk *)tmpPtr;
+    }
     entryPtr = cachePtr->firstEntry;
     while (entryPtr != NULL) {
-        tmpPtr = entryPtr->nextPtr;
+        tmpPtr = (void *)entryPtr->nextPtr;
         ns_free(entryPtr);
-        entryPtr = tmpPtr;
+        entryPtr = (LogEntry *)tmpPtr;
     }
     Ns_DStringFree(&cachePtr->buffer);
     ns_free(cachePtr);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateCallbacks --
+ *
+ *      Update private list of callbacks for the given cache.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static void
+UpdateCallbacks(LogCache *cachePtr)
+{
+    LogClbk *cPtr, *tmpPtr, *newPtr;
+
+    /*
+     * Invalidate cached list
+     */
+
+    cPtr = cachePtr->callbacks;
+    while (cPtr != NULL) {
+        tmpPtr = cPtr->nextPtr;
+        ns_free(cPtr);
+        cPtr = tmpPtr;
+    }
+
+    cachePtr->callbacks = NULL;
+
+    /*
+     * Build a new copy
+     */
+
+    cPtr = callbacks;
+    while (cPtr != NULL) {
+        newPtr = ns_malloc(sizeof(LogClbk));
+        *newPtr = *cPtr;
+        if (cachePtr->callbacks == NULL) {
+            cachePtr->callbacks = newPtr;
+            newPtr->nextPtr = NULL;
+        } else {
+            tmpPtr->prevPtr = newPtr;
+            newPtr->nextPtr = tmpPtr;    
+        }
+        newPtr->prevPtr = NULL;
+        tmpPtr = newPtr;
+        cPtr = cPtr->prevPtr;
+    }
+
+    cachePtr->epoch = epoch;
+}
+        
 
 /*
  *----------------------------------------------------------------------
@@ -1168,6 +1243,8 @@ AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free)
     clbkPtr->arg  = arg;
     clbkPtr->free = free;
 
+    epoch++;
+
     Ns_MutexUnlock(&lock);
 
     return clbkPtr;
@@ -1210,6 +1287,7 @@ RemClbk(LogClbk *clbkPtr, int unlocked)
     }
 
     ns_free(clbkPtr);
+    epoch++;
 
     if (!unlocked) {
         Ns_MutexUnlock(&lock);

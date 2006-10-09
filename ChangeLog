@@ -1,3 +1,8 @@
+2006-10-09  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/file.tcl: Fixed variable typo.
+	* nsd/log.c: Avoid holding lock during callback invocation.
+	
 2006-10-07  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/file.tcl: Invalidate cache proc on Tcl error
