@@ -119,12 +119,12 @@ proc ns_sourcefile { path } {
 
 proc ns_sourceproc {args} {
 
-    set file [ns_url2file [ns_conn url]]
-    if {![file exists $file]} {
+    set path [ns_url2file [ns_conn url]]
+    if {![file exists $path]} {
         ns_returnnotfound
         return
     }
-    set code [catch {ns_sourcefile $file} res]
+    set code [catch {ns_sourcefile $path} res]
     if {$code == 1} {
        if {$::errorCode eq "NS_TCL_ABORT"} {
            return
