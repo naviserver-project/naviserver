@@ -330,7 +330,7 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
     set response [ns_set name $headers]
     set status   [lindex $response 1]
 
-    if {$status == 301 || $status == 302 || $status == 303 || $status == 307} {
+    if {$status == 302} {
 
         #
         # The response was a redirect, recurse.
@@ -356,6 +356,7 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
     }
 
     set length [ns_set iget $headers "Content-Length"]
+    set encoding [ns_set iget $headers "Transfer-Encoding"]
     ns_set free $headers
 
     if {$length eq {}} {
@@ -367,6 +368,32 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
 
     if {$err} {
         return -code error -errorinfo $::errorInfo $content
+    }
+
+    #
+    # Try to parse chunked encoding and concatenate all
+    # chunks into one body
+    #
+
+    if {$encoding == "chunked"} {
+        set text ""
+        set offset 0
+        while {1} {
+            # Parse size header
+            set end [string first "\n" $content $offset]
+            if {$end == -1} {
+                break
+            }
+            set size [scan [string range $content $offset $end] %x]
+            if {$size == 0 || $size == ""} {
+                break
+            }
+            set offset [incr end]
+            # Read data
+            append text [string range $content $offset [expr $offset+$size-1]]
+            incr offset [incr size]
+        }
+        set content $text
     }
 
     return $content
@@ -573,24 +600,16 @@ proc _ns_http_getcontent {timeout sock length {copy 0}} {
 if {[ns_config -bool ns/server/[ns_info server] enablehttpproxy off]} {
     ns_register_proxy GET  http ns_proxy_handler_http
     ns_register_proxy POST http ns_proxy_handler_http
-    nsv_set ns:proxy debug [ns_config -bool ns/server/[ns_info server] debughttpproxy off]
     nsv_set ns:proxy allow [ns_config ns/server/[ns_info server] allowhttpproxy]
 }
 
 proc ns_proxy_handler_http {args} {
     
-    set allow 0
     set ipaddr [ns_conn peeraddr]
-    foreach host [nsv_get ns:proxy allow] {
-      if {[string match -nocase $host $ipaddr]} {
-          set allow 1
-          break 
-      }
-    }
-    if { !$allow } {
-      ns_log Error ns_proxy_handler_http: access denied for $ipaddr
+    set allow [nsv_get ns:proxy allow]
+    if { [lsearch -exact $allow $ipaddr] == -1 } {
+      ns_log Error ns_proxy_handler_http: access denied for [ns_conn peeraddr]
       ns_returnnotfound
-      return
     }
 
     set port [ns_conn port]
@@ -600,20 +619,12 @@ proc ns_proxy_handler_http {args} {
     set cont   [ns_conn content]
     set prot   [ns_conn protocol]
     set method [ns_conn method]
-    set headers [ns_conn headers]
-    ns_set idelkey $headers Host
 
     set url $prot://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
 
-    if {[nsv_get ns:proxy debug] == 1} {
-        ns_log notice ns_proxy_handler_http: $ipaddr: $url
-    }
-
-    set fds [ns_httpopen $method $url $headers 30 $cont]
+    set fds [ns_httpopen $method $url [ns_conn headers] 30 $cont]
     set rfd [lindex $fds 0]
-    set wfd [lindex $fds 1]
-    catch { close $wfd }
-    ns_set free $headers
+    set wfd [lindex $fds 1]; close $wfd
 
     set headers  [lindex $fds 2]
     set response [ns_set name $headers]
@@ -633,11 +644,11 @@ proc ns_proxy_handler_http {args} {
         ns_write "\r\n"
         _ns_http_getcontent 30 $rfd $length 1
     } err]} {
-        ns_log error ns_proxy_handler_http: $ipaddr: $err
+        ns_log error $err
     }
 
     ns_set free $headers
-    catch { close $rfd }
+    close $rfd
 }
 
 # EOF $RCSfile$

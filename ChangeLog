@@ -1,3 +1,8 @@
+2006-10-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/http.tcl: Added chunked support, ns_httpget will return
+	only data without chunked headers
+
 2006-10-09  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* tcl/file.tcl: Fixed variable typo.

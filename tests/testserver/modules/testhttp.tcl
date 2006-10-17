@@ -240,7 +240,7 @@ proc nstest_http {args} {
                   break
               }
               set size [scan [string range $body $offset $end] %x]
-              if {$size == 0} {
+              if {$size == 0 || $size == ""} {
                   break
               }
               set offset [incr end]
