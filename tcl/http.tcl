@@ -610,6 +610,7 @@ proc ns_proxy_handler_http {args} {
     if { [lsearch -exact $allow $ipaddr] == -1 } {
       ns_log Error ns_proxy_handler_http: access denied for [ns_conn peeraddr]
       ns_returnnotfound
+      return
     }
 
     set port [ns_conn port]
