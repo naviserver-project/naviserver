@@ -88,7 +88,7 @@ if [ "$NS_CHROOT" = "no" ]; then
     NS_PIDFILE=/usr/local/ns/logs/nsd.pid
 elif [ "$NS_CHROOT" = "yes" ]; then
     NS_TITLE="$NS_TITLE (chroot)"
-    NS_CHROOT=/opt/${nsd_ident}/nsd
+    NS_CAGE=/opt/${nsd_ident}/nsd
     NS_PIDFILE=/logs/nsd.pid
     # note that it is possible - and a good idea - to place the
     # configuration and the binary outside the chroot cage
@@ -120,7 +120,7 @@ if [ "$NS_CHROOT" == "yes" ]; then
 
     # set up the specific startup command, relevant argument for
     # chroot configs is '-r'
-    cmdline=$(echo $NS_BINARY $NS_WATCHDOG -t $NS_CONFIG -u $NS_USER -g $NS_GROUP -r $NS_CHROOT "$@")
+    cmdline=$(echo $NS_BINARY $NS_WATCHDOG -t $NS_CONFIG -u $NS_USER -g $NS_GROUP -r $NS_CAGE "$@")
 else
     # set up the specific startup command
     cmdline=$(echo $NS_BINARY $NS_WATCHDOG -t $NS_CONFIG -u $NS_USER -g $NS_GROUP "$@")

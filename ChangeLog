@@ -1,3 +1,8 @@
+2006-10-19  Bernd Eidenschink  <eide@users.sf.net>
+
+	* contrib/start-scripts/naviserver.SuSE: Renamed a variable that
+	prohibited starting the server in chroot mode.
+
 2006-10-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/http.tcl: Added chunked support, ns_httpget will return
