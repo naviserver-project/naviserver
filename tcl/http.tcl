@@ -155,10 +155,12 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
         # even with HTTP/1.0.
         #
 
-        if {$port == 80} {
-            _ns_http_puts $timeout $wfd "Host: $host"
-        } else {
-            _ns_http_puts $timeout $wfd "Host: $host:$port"
+        if {$rqset == {} || [ns_set iget $rqset Host] == ""} {
+            if {$port == 80} {
+                _ns_http_puts $timeout $wfd "Host: $host"
+            } else {
+                _ns_http_puts $timeout $wfd "Host: $host:$port"
+            }
         }
 
         #
@@ -605,10 +607,16 @@ if {[ns_config -bool ns/server/[ns_info server] enablehttpproxy off]} {
 
 proc ns_proxy_handler_http {args} {
     
-    set ipaddr [ns_conn peeraddr]
-    set allow [nsv_get ns:proxy allow]
-    if { [lsearch -exact $allow $ipaddr] == -1 } {
-      ns_log Error ns_proxy_handler_http: access denied for [ns_conn peeraddr]
+    set allow 0
+    set peeraddr [ns_conn peeraddr]
+    foreach ip [nsv_get ns:proxy allow] {
+      if { [string match $ip $peeraddr] } {
+        set allow 1
+        break
+      }
+    }
+    if { $allow != 1 } {
+      ns_log Error ns_proxy_handler_http: access denied for $peeraddr
       ns_returnnotfound
       return
     }

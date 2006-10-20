@@ -1,3 +1,8 @@
+2006-10-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/http.tcl: Fixed bug in proxy handler not returning after redirect and
+	updated ns_httpopen not to include Host: header if it already exists
+
 2006-10-19  Bernd Eidenschink  <eide@users.sf.net>
 
 	* contrib/start-scripts/naviserver.SuSE: Renamed a variable that
