@@ -1,3 +1,8 @@
+2006-10-30  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/set/c: Updated Ns_SetGetValue/Ns_SetIGetValue  to return default
+        value if returned value is NULL or empty string
+
 2006-10-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/http.tcl: Fixed bug in proxy handler not returning after redirect and

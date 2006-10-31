@@ -420,7 +420,7 @@ Ns_SetIGet(Ns_Set *set, CONST char *key)
  * Ns_SetGetValue --
  *
  *      Return the value associated with a key, case sensitive.
- *      If no value foud, return provided default value
+ *      If no value found or it is empty, return provided default value
  *  
  * Results:
  *      A value or NULL if key not found or default is NULL
@@ -434,7 +434,7 @@ Ns_SetIGet(Ns_Set *set, CONST char *key)
 char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
 {
     char *value = Ns_SetGet(set, key);
-    if (value == NULL) value = (char*)def;
+    if (value == NULL || *value == '\0') value = (char*)def;
     return value;
 }
 
@@ -444,7 +444,7 @@ char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
  * Ns_SetIGetValue --
  *
  *      Return the value associated with a key, case insensitive.
- *      If no value found, return provided default value
+ *      If no value found or it is empty, return provided default value
  *
  * Results:
  *      A value or NULL if key not found or default is NULL
@@ -458,7 +458,7 @@ char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
 char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def)
 {
     char *value = Ns_SetIGet(set, key);
-    if (value == NULL) value = (char*)def;
+    if (value == NULL || *value == '\0') value = (char*)def;
     return value;
 }
 
