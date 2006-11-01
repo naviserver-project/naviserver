@@ -101,7 +101,8 @@ typedef struct LogCache {
 
 static int   LogOpen(void);
 static void  LogAdd(Ns_LogSeverity sev, CONST char *fmt, va_list ap);
-static void  LogFlush(LogCache *cachePtr, LogClbk *list, int cnt, int trunc);
+static void  LogFlush(LogCache *cachePtr, LogClbk *list, int cnt, 
+                      int trunc, int lock);
 static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 
 static LogClbk* AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free);
@@ -642,7 +643,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         clbkPtr->proc = LogToDString;
         clbkPtr->arg  = (void*)&ds;
         Ns_DStringInit(&ds);
-        LogFlush(cachePtr, clbkPtr, -1, 0);
+        LogFlush(cachePtr, clbkPtr, -1, 0, 0);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds),-1));
         Ns_DStringFree(&ds);
         break;
@@ -652,7 +653,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         clbkPtr->proc = LogToDString;
         clbkPtr->arg  = (void*)&ds;
         Ns_DStringInit(&ds);
-        LogFlush(cachePtr, clbkPtr, -1, 1);
+        LogFlush(cachePtr, clbkPtr, -1, 1, 0);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds),-1));
         Ns_DStringFree(&ds);
         break;
@@ -662,7 +663,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         /* FALLTHROUGH */
 
     case CFlushIdx:
-        LogFlush(cachePtr, callbacks, -1, 1);
+        LogFlush(cachePtr, callbacks, -1, 1, 1);
         break;
 
     case CCountIdx:
@@ -675,7 +676,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             return TCL_ERROR;
         }
         memset(clbkPtr, 0, sizeof(LogClbk));
-        LogFlush(cachePtr, clbkPtr, count, 1);
+        LogFlush(cachePtr, clbkPtr, count, 1, 0);
         break;
 
     case CSeverityIdx:
@@ -835,7 +836,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
      */
 
     if (!cachePtr->hold) {
-        LogFlush(cachePtr, callbacks, -1, 1);
+        LogFlush(cachePtr, callbacks, -1, 1, 1);
     }
 }
 
@@ -858,29 +859,29 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
  */
 
 static void
-LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc)
+LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc, int locked)
 {
-    int          status, nentry = 0;
-    char        *log;
-    LogEntry    *ePtr;
-    LogClbk     *cPtr;
-    
+    int       status, nentry = 0;
+    char     *log;
+    LogEntry *ePtr;
+    LogClbk  *cPtr;
+
     ePtr = cachePtr->firstEntry;
     while (ePtr != NULL && cachePtr->currEntry) {
         log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
-        if (listPtr == callbacks) {
+        if (locked) {
             Ns_MutexLock(&lock);
         }
         cPtr = listPtr;
         while (cPtr != NULL) {
             if (cPtr->proc != NULL) {
-                if (listPtr == callbacks) {
+                if (locked) {
                     cPtr->refcnt++;
                     Ns_MutexUnlock(&lock);
                 }
                 status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
                                        &ePtr->stamp, log, ePtr->length);
-                if (listPtr == callbacks) {
+                if (locked) {
                     Ns_MutexLock(&lock);
                     cPtr->refcnt--;
                     Ns_CondBroadcast(&cond);
@@ -900,7 +901,7 @@ LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc)
             }
             cPtr = cPtr->prevPtr;
         }
-        if (listPtr == callbacks) {
+        if (locked) {
             Ns_MutexUnlock(&lock);
         }
         nentry++;
@@ -1103,7 +1104,7 @@ FreeCache(void *arg)
     LogCache *cachePtr = (LogCache *)arg;
     LogEntry *entryPtr, *tmpPtr;
 
-    LogFlush(cachePtr, callbacks, -1, 1);
+    LogFlush(cachePtr, callbacks, -1, 1, 1);
     entryPtr = cachePtr->firstEntry;
     while (entryPtr != NULL) {
         tmpPtr = entryPtr->nextPtr;
