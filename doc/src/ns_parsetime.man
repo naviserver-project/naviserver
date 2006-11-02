@@ -1,14 +1,16 @@
 [manpage_begin ns_parsetime n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Return an element from the time structure list}]
 
 
 [description]
 
- This command takes a nine-element Tcl list as time representing the Unix struct tm structure (as would be returned from ns_gmtime or ns_localtime) and based on option, returns an element from the list.  The valid options are: sec, min, hour, mday, mon, year, wday, yday, isdst.  The options are listed in order of the actual elements in the Tcl list itself.
+This command takes a nine-element Tcl list as time representing the Unix struct 
+tm structure (as would be returned from ns_gmtime or ns_localtime) and based on 
+option, returns an element from the list.  The valid options are: sec, min, hour,
+mday, mon, year, wday, yday, isdst.  The options are listed in order of the actual
+elements in the Tcl list itself.
 
 
 [list_begin definitions]

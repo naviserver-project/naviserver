@@ -1,8 +1,6 @@
 [manpage_begin ns_striphtml n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Remove HTML tags from a string}]
 
 [description]
@@ -14,7 +12,7 @@
 [list_begin definitions]
 
 
- [call [cmd ns_striphtml] [arg html]]
+[call [cmd ns_striphtml] [arg html]]
 
 
 [list_end]
@@ -23,7 +21,7 @@
 [section EXAMPLES]
 
 [example_begin]
-   % ns_striphtml "&lt;MARQUEE direction='right'&gt;&lt;BLINK&gt;Hello World!&lt;/BLINK&gt;&lt;/MARQUEE&gt;"
+   % ns_striphtml "<MARQUEE direction='right'><BLINK>Hello World!</BLINK></MARQUEE>"
    Hello World!
 [example_end]
 

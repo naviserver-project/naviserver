@@ -1,39 +1,38 @@
-
-
 [manpage_begin ns_headers n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Flush response headers}]
 
 [description]
-One or more paragraphs describing the ns_headers command in detail.
+Queue default response headers, which will be sent on the first IO (e.g. ns_write) or otherwise when
+the connection is closed.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_headers] [arg status] [opt [arg type]] [opt [arg len]]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg status]
+HTTP response status
 
-[list_end]
+[nl]
+[arg type]
+Content-type header value
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
+[nl]
+[arg len]
+Content-length header value
+
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+ns_headers 200 text/html
+
 [example_end]
 
 

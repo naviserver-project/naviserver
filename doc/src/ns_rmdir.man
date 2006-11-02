@@ -1,23 +1,21 @@
 [manpage_begin ns_rmdir n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
 [titledesc {Remove a directory}]
 
 [description]
 
- This command removes a directory from the filesystem.
+This command removes a directory from the filesystem.
 
- This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use
-
-Tcl's 'file delete command instead.  In other words, this:
+This is a legacy command from when Tcl did not have this functionality. 
+It is now recommended you use Tcl's 'file delete command instead.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- [call [cmd ns_rmdir] [arg dir]]
+[call [cmd ns_rmdir] [arg dir]]
 
 
 [list_end]

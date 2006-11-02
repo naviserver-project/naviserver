@@ -1,41 +1,73 @@
-
-
 [manpage_begin ns_perm n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Add users, groups, and permissions}]
 
 [description]
-One or more paragraphs describing the ns_perm command in detail.
+
+ns_perm adduser adds the user with the specified name and the encrypted password (encpass)
+and the specified user text (userfield) into the users database.
+
+If -allow and hostnames are specified, the user will be allowed on the specified hostnames.
+If -deny and hostnames are specified, the user will be denied on the specified hostnames. 
+The hostname must be specified as ipaddress/netmask or dnshostname. For example: 
+128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
+
+ns_perm addgroup creates a new group with the specified name that includes the users listed after the name.
+
+ns_perm allowuser allows the specified user access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
+URL are allowed as well.
+
+ns_perm denyuser denies the specified user access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
+URL are denied as well.
+
+ns_perm allowgroup allows the specified group access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that 
+URL are allowed as well.
+
+ns_perm denygroup denies the specified group access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that 
+URL are denied as well.
+
+ns_perm checkpass checks that the specified plain-text password is correct for the specified user.
+A Tcl error is thrown if it does not match.
+
+ns_perm setpass updates the specified user's password to the encrypted password encpass. The password
+should be encrypted using ns_encrypt.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
 [call [cmd COMMAND_NAME] [arg 1]]
 
-[nl]
-[arg 1]
-Description for arg1
+ns_perm adduser name encpass userfield ?-allow | -deny host ...?
 
-[list_end]
+ns_perm addgroup name user ?user ...?
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
+ns_perm allowuser ?-noinherit? method url user
+
+ns_perm denyuser ?-noinherit? method url user
+
+ns_perm allowgroup ?-noinherit? method url group
+
+ns_perm denygroup ?-noinherit? method url group
+
+ns_perm checkpass user passwd
+
+ns_perm setpass user encpass 
+
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
 [example_end]
 
+Note: To use this function after server startup, the SkipLocks parameter
+(see Naviserver Administrator's Guide) must be set to On.
 
 [see_also nsd]
 [keywords NaviServer]

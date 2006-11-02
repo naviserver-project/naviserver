@@ -5,21 +5,21 @@
 
 [description]
 
- This command redirects the client by returning a 301 (Permanently Moved) HTTP status code, and a Location header pointing at url.
+This command redirects the client by returning a 301 (Permanently Moved) HTTP status code,
+and a Location header pointing at url.
 
- NOTE: The script does not end at the time this command is invoked.  ns_adp_abort or ns_adp_return should be called to end script processing after ns_returnmoved.
+NOTE: The script does not end at the time this command is invoked.  ns_adp_abort or
+ns_adp_return should be called to end script processing after ns_returnmoved.
 
-[para]CODE
+[para]
 
- NOTE: This command is not yet part of the standard core Tcl API for NaviServer.
+NOTE: This command is not yet part of the standard core Tcl API for NaviServer.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-
- [call [cmd ns_returnmoved] [arg url]]
-
+[call [cmd ns_returnmoved] [arg url]]
 
 [list_end]
 
@@ -28,17 +28,14 @@
 
   proc ns_returnmoved {url} {
       ns_set update [lb]ns_conn outputheaders[rb] Location $url
-      ns_return 301 &quot;text/html&quot; [lb]subst \
-  {&lt;!DOCTYPE HTML PUBLIC &quot;-//IETF//DTD HTML 2.0//EN&quot;&gt;
-  &lt;HTML&gt;
-  &lt;HEAD&gt;
-  &lt;TITLE&gt;Moved&lt;/TITLE&gt;
-  &lt;/HEAD&gt;
-  &lt;BODY&gt;
-  &lt;H2&gt;Moved&lt;/H2&gt;
-  &lt;A HREF=&quot;$url&quot;&gt;The requested URL has moved here.&lt;/A&gt;
-  &lt;P ALIGN=RIGHT&gt;&lt;SMALL&gt;&lt;I&gt;[lb]ns_info name[rb]/[lb]ns_info patchlevel[rb] on [lb]ns_conn location[rb]&lt;/I&gt;&lt;/SMALL&gt;&lt;/P&gt;
-  &lt;/BODY&gt;&lt;/HTML&gt;}[rb]
+      ns_return 301 "text/html" [lb]subst \
+  {<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+  <HTML><HEAD><TITLE>Moved</TITLE></HEAD>
+  <BODY>
+  <H2>Moved</H2>
+  <A HREF="$url"<The requested URL has moved here.</A>
+  <P ALIGN=RIGHT><SMALL><I><[lb]ns_info name[rb]/[lb]ns_info patchlevel[rb] on [lb]ns_conn location[rb]</I></SMALL></P>
+  </BODY></HTML>}[rb]
   }
 [example_end]
 

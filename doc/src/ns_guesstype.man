@@ -1,18 +1,16 @@
 [manpage_begin ns_guesstype n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Lookup MIME type based on file extension}]
 
 [description]
 
- This command guesses and returns the MIME type of a file, based on the extension of filename.  A large set of default extension to MIME type mappings is built into the command:
+This command guesses and returns the MIME type of a file, based on the extension of filename.  
+A large set of default extension to MIME type mappings is built into the command:
 
 [section {COMMANDS}]
 
 [list_begin definitions]
-
 
 [call [cmd ns_guesstype] [arg filename]]
 

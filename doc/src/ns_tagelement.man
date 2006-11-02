@@ -1,20 +1,21 @@
 [manpage_begin ns_tagelement n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Find the value of an attribute in an HTML element.}]
 
 [description]
 
- This command takes a string containing an HTML element, tag, and searches it for the specified attribute.  If the attribute is found, its value is returned.  If the attribute is not found, an empty string is returned.  If the attribute's value is surrounded by double quotes, they will be removed.
+This command takes a string containing an HTML element, tag, and searches it
+for the specified attribute.  If the attribute is found, its value is returned.
+If the attribute is not found, an empty string is returned.  If the attribute's
+value is surrounded by double quotes, they will be removed.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- [call [cmd ns_tagelement] [arg tag] [arg attribute]]
+[call [cmd ns_tagelement] [arg tag] [arg attribute]]
 
 
 [list_end]
@@ -24,8 +25,8 @@
 
 [example_begin]
 
-% set tag {&lt;img height=150 border=&quot;0&quot; class=&quot;c1 c2&quot; src='me.jpg'&gt;}
-&lt;img height=150 border=&quot;0&quot; class=&quot;c1 c2&quot; src='me.jpg'&gt;
+% set tag {<img height=150 border=0 class="c1 c2" src='me.jpg'>}
+<img height=150 border=0 class="c1 c2" src='me.jpg'>
 
 % ns_tagelement $tag id
 
@@ -39,10 +40,11 @@ c1 c2
 'me.jpg'
 [example_end]
 
-[para]NOTES
+[para]
 
- Is not removing single quotes surrounding the value a bug?
+NOTES
 
+Is not removing single quotes surrounding the value a bug?
 
 [see_also nsd]
 [keywords ns_tagelementset]

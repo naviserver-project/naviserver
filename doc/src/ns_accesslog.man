@@ -97,12 +97,12 @@ as "index.html"
 
 [example_begin]
    % ns_accesslog file
-   /home/aolserver/servers/exampleServer/modules/nslog/access.log
+   /home/ns/servers/exampleServer/modules/nslog/access.log
 [example_end]
 
 [example_begin]
    % ns_modulepath exampleServer nslog/access.log
-   /home/aolserver/servers/exampleServer/modules/nslog/access.log
+   /home/ns/servers/exampleServer/modules/nslog/access.log
 [example_end]
 
 [example_begin]

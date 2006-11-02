@@ -1,23 +1,22 @@
-
-
 [manpage_begin ns_writer n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Manage files with writer thread}]
 
 [description]
-One or more paragraphs describing the ns_writer command in detail.
+This command allows to submit data or file to be returned to the client connection using writer
+thread instead of current connection thread. Writer thread processes multiple sockets using async socket
+operations which consumes less resources than returning multiple files to the slow clients in separate thread.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_writer] [arg list]]
 
-[nl]
-[arg 1]
-Description for arg1
+[call [cmd ns_writer] [arg submit] [arg data]]
+
+[call [cmd ns_writer] [arg submitfile] [arg file]]
 
 [list_end]
 
@@ -27,13 +26,26 @@ Description for arg1
 [strong {Basic configuration options:}]
         
 [list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
+[lst_item {ns_section "ns/server/default/module/nssock"}]
+[lst_item {ns_param writerthreads 1}]
+[lst_item {ns_param writersize [expr 1024*1024]}] 
 [list_end]
+
+[para]
+writerthreads parameter specified how many writer threads will be used, multiple threads
+will be rotated to spread the load across all threads
+
+[para]
+writersize specifies minimal size of the file to be considered for writer thread, this parameter
+is used by connection thread when returning file and if size exceeds configured value, file will be 
+returned via writer thread and connection thread will be released to handle other requests.
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+ns_writer submitfile /tmp/biglist.txt
+
 [example_end]
 
 

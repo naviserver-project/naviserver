@@ -1,25 +1,25 @@
 [manpage_begin ns_returnnotfound n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Return a 404 (Not Found) status message to the client}]
 
 [description]
 
- This command informs the client that the content they requested could not be located given the URL that was requested.
+This command informs the client that the content they requested could not be
+located given the URL that was requested.
 
- The optional connid parameter is deprecated and should not be used.
+The optional connid parameter is deprecated and should not be used.
 
- Note: The script does not end at the time this command is invoked.  ns_adp_abort or ns_adp_return should be called to end script processing after ns_returnnotfound.
-
+Note: The script does not end at the time this command is invoked. 
+ns_adp_abort or ns_adp_return should be called to end script
+processing after ns_returnnotfound.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- [call [cmd ns_returnnotfound] [opt [arg connid]]]
+[call [cmd ns_returnnotfound] [opt [arg connid]]]
 
 
 [list_end]
@@ -33,8 +33,6 @@
 
 [see_also nsd]
 [keywords ns_return ns_returnadminnotice ns_returnbadrequest ns_returnerror ns_returnfile ns_returnforbidden ns_returnfp ns_returnnotice ns_returnok ns_returnredirect ns_returnunauthorized]
-
-
 
 [manpage_end]
 

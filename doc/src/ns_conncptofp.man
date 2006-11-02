@@ -1,37 +1,22 @@
 [manpage_begin ns_conncptofp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Write content to a file}]
 
 [description]
-One or more paragraphs describing the ns_conncptofp command in detail.
+This function writes all the content (including any embedded null characters) to the specified file.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_conncptofp] [arg fileId]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
 [example_end]
 
 

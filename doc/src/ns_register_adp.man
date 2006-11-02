@@ -10,17 +10,21 @@ can be captured but in this situation processing can be performed
 by an ADP file. Giving additional functionality of being able to make
 changes a lot more rapidly.
 
-[para]This also provides a method of making view controls at ADP level
+[para]
+This also provides a method of making view controls at ADP level
 rather than at TCL level, which keeps development at an
 appropriate abstracted level.
 
-[para]Syntax:
+[section COMMANDS]
 
-[para]ns_register_adp GET|POST /URL/* FILE
+[list_begin definitions]
 
-[para]Both registered ADP pages, and registered procedures will be called
+[call [cmd ns_register_adp] [arg GET|POST] [arg /URL/*] [arg FILE]]
+
+[list_end]
+
+Both registered ADP pages, and registered procedures will be called
 irregardless of to original requested target existing or not.
-
 
 [manpage_end]
 

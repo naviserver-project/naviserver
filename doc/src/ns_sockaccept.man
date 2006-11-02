@@ -1,39 +1,33 @@
-
-
 [manpage_begin ns_sockaccept n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Accept a new socket connection}]
 
 [description]
-One or more paragraphs describing the ns_sockaccept command in detail.
+ns_sockaccept accepts a new connection pending on sockid.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_sockaccept] [arg sockid]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+#listen for connections on port 9000
+set sock [lb]ns_socklisten * 9000[rb]
+
+#wait for new connection
+set fds [lb]ns_sockaccept $sock[rb]
+set rfd [lb]lindex $fds 0[rb]
+set wfd [lb]lindex $fds 1[rb]
+puts $wfd "Hello!"
+close $rfd
+close $wfd
+close $sock
 [example_end]
 
 

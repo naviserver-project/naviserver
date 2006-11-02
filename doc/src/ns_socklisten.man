@@ -1,44 +1,29 @@
-
-
 [manpage_begin ns_socklisten n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Create a new socket listening for connections}]
 
 [description]
-One or more paragraphs describing the ns_socklisten command in detail.
+ns_socklisten creates a new socket listening for connections at
+the specified interface address and port. "*" can be used as the
+address argument to specify all addresses.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_socklisten] [arg address] [arg port]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
 [example_end]
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer ns_sockaccept]
 [manpage_end]
 
 

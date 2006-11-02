@@ -4,7 +4,8 @@
 [titledesc {Determine the width and height of a GIF87 or GIF89 image}]
 
 [description]
-Returns a list of two elements, the width and height of the GIF file specified by filename. An error is generated if the file does not exist or if it is not a GIF file.
+Returns a list of two elements, the width and height of the GIF file specified by filename. 
+An error is generated if the file does not exist or if it is not a GIF file.
 
 [section {COMMANDS}]
 

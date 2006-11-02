@@ -1,13 +1,12 @@
 [manpage_begin ns_parsequery n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Parse a URL query string into an ns_set}]
 
 [description]
 
- This command parses the specified querystring into an ns_set, which is returned.  The keys and values will be decoded.
+This command parses the specified querystring into an ns_set, which is returned. 
+The keys and values will be decoded.
 
 [section {COMMANDS}]
 

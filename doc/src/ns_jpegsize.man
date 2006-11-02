@@ -4,7 +4,8 @@
 [titledesc {Determine the width and height of a JPEG image}]
 
 [description]
-[para]Returns a list of two elements, the width and height of the JPEG file specified by filename.  An error is generated if the file does not exist or if it is not a JPEG file.
+Returns a list of two elements, the width and height of the JPEG file specified by filename.
+An error is generated if the file does not exist or if it is not a JPEG file.
 
 [section {COMMANDS}]
 

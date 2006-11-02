@@ -2,27 +2,26 @@
 [moddesc {NaviServer Built-in Commands}]
 
 
-
 [titledesc {Return, change or add a value of an environment variable}]
 
 [description]
 
- This command provides thread-safe (unlike Tcl env array) access to the environemnt variables of the currently running nsd process.  The legal options (which may NOT be abbreviated) are:
- ns_env names
- ns_env exists name
- ns_env get ?-nocomplain? name
- ns_env set name value
- ns_env unset ?-nocomplain? name
-
- This command has yet to be Tcl_Obj'ified.
+This command provides thread-safe (unlike Tcl env array) access to the environemnt
+variables of the currently running nsd process.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
+[call [cmd ns_env] [arg names]]
 
-[call [cmd ns_env] [arg option] [opt [arg {arg arg ...}]]]
+[call [cmd ns_env] [arg exists] [arg name]]
 
+[call [cmd ns_env] [arg get] [opt [arg -nocomplain]] [arg name]]
+
+[call [cmd ns_env] [arg set] [arg name] [arg value]]
+
+[call [cmd ns_env] [arg unset] [opt [arg -nocomplain]] [arg name]]
 
 [list_end]
 

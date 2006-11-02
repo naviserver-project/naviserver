@@ -1,39 +1,37 @@
 [manpage_begin ns_http n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc { ns_http - Simple HTTP client functionality}]
 
 [description]
 
- This command provides a simple HTTP client mechanism.
-
- The legal options (which may be abbreviated) are:
+This command provides a simple HTTP client mechanism.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 [call [cmd  ns_http] [arg cancel] [arg id]]
+
 [lst_item] ns_http cleanup
 [lst_item] ns_http queue method url&nbsp;?body?&nbsp;?headers?
 
-
- body is the value which will be sent as the HTTP request body.  headers is the ns_set ID containing the additional headers to include in the HTTP request.
+body is the value which will be sent as the HTTP request body.  headers is the ns_set
+ID containing the additional headers to include in the HTTP request.
 
 [list_end]
-
 
 [list_begin definitions]
  [call [cmd ns_http] [arg option] [opt [arg {arg arg ...}]]]
 [list_end]
 
 [list_begin definitions]
+
 [call [cmd ns_http] [arg wait] [arg id] [arg resultsVar] [opt [arg timeout]] [opt [arg headers]] [opt [arg {-servicetime svcTime}]]]
 
-
- resultsVar is the name of a variable that should be used to store the HTTP response body.  Default timeout is "2:0" (2s, 0usec).  headers is the ns_set ID which will receive the headers from the HTTP response.
+resultsVar is the name of a variable that should be used to store the HTTP response body. 
+Default timeout is "2:0" (2s, 0usec).  headers is the ns_set ID which will receive the 
+headers from the HTTP response.
 
 [list_end]
 

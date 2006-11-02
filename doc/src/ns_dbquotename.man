@@ -1,13 +1,12 @@
 [manpage_begin ns_dbquotename n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Surround a name with double quotes if it contains a space}]
 
 [description]
 
- This command surrounds name with double quotes if it contains a space.  The resulting name can then be used in SQL statements for names of database objects such as tables or columns.
+This command surrounds name with double quotes if it contains a space.  
+The resulting name can then be used in SQL statements for names of database objects such as tables or columns.
 
 [section {COMMANDS}]
 

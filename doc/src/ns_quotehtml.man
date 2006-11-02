@@ -1,18 +1,20 @@
 [manpage_begin ns_quotehtml n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Escape HTML characters so they appear as-is in HTML pages}]
 
 [description]
 
- Returns the contents of html with certain characters that are special in HTML replaced with an escape code.  This allows text displayed in a webpage that might otherwise be interpreted as containing HTML markup instructions to be interpreted as literal characters to be displayed.  Specifically:
+Returns the contents of html with certain characters that are special in HTML
+replaced with an escape code.  This allows text displayed in a webpage that
+might otherwise be interpreted as containing HTML markup instructions to be
+interpreted as literal characters to be displayed.  Specifically:
 
 ns_quotehtml > becomes &amp;
+
 [list_begin definitions]
-[lst_item] &gt; becomes &amp;gt;
-[lst_item] &amp; becomes &amp;amp;
+[lst_item] > becomes &amp;gt;
+[lst_item] " becomes &amp;amp;
 [lst_item] ' becomes &amp;#39;
 [lst_item] " becomes &amp;#34;
 [list_end]

@@ -1,5 +1,3 @@
-
-
 [manpage_begin ns_serverrootproc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 

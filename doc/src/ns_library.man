@@ -1,17 +1,18 @@
 [manpage_begin ns_library n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Get the paths to the private and shared Tcl libraries}]
 
 [description]
 
- This command returns the path to the private and shared Tcl libraries, optionally specifying a module as well.
+This command returns the path to the private and shared Tcl libraries, optionally specifying a module as well.
 
-[para]library must either be "private" or "shared".  The private library is the same as what's returned from ns_info tcllib as defined in the config .tcl at server start-up.  The shared library is relative to the path specified by ns_info home, in the "modules/tcl" subdirectory.
+library must either be "private" or "shared".  The private library is the same
+as what's returned from ns_info tcllib as defined in the config .tcl at server
+start-up.  The shared library is relative to the path specified by ns_info home,
+in the "modules/tcl" subdirectory.
 
- The optional module is simply concatenated to the path returned from ns_library.
+The optional module is simply concatenated to the path returned from ns_library.
 
 [section {COMMANDS}]
 
@@ -28,22 +29,22 @@
 
 [example_begin]
    % ns_library shared
-   /home/aolserver/modules/tcl
+   /home/ns/modules/tcl
 [example_end]
 
 [example_begin]
    % file join [lb]ns_info home[rb] modules tcl
-   /home/aolserver/modules/tcl
+   /home/ns/modules/tcl
 [example_end]
 
 [example_begin]
    % ns_library private exampleModule
-   /home/aolserver/servers/exampleServer/tcl/exampleModule
+   /home/ns/servers/exampleServer/tcl/exampleModule
 [example_end]
 
 [example_begin]
    % file join [lb]ns_info tcllib[rb] exampleModule
-   /home/aolserver/servers/exampleServer/tcl/exampleModule
+   /home/ns/servers/exampleServer/tcl/exampleModule
 [example_end]
 
 

@@ -1,37 +1,22 @@
 [manpage_begin ns_connsendfp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Write contents of file to conn}]
 
 [description]
-One or more paragraphs describing the ns_connsendfp command in detail.
+This function writes len bytes of the specified channel or file to the conn.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_connsendfp] [arg fp] [arg len]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-
-[para]
-[strong {Basic configuration options:}]
-
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}]
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
 [example_end]
 
 

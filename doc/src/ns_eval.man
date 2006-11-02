@@ -2,32 +2,36 @@
 [moddesc {NaviServer Built-in Commands}]
 
 
-
 [titledesc {Evaluate tcl in multiple interpreters}]
 
 [description]
 
- This command causes args to be sourced as a script in all Tcl interpreters for the current virtual server.  Normally, the ns_eval is asynchronous and the script isn't immediately evaluated in the other interpreters until their next atalloc event.  If the -sync option is specified, ns_eval blocks until all servers have executed the script.
+This command causes args to be sourced as a script in all Tcl interpreters for the current
+virtual server.  Normally, the ns_eval is asynchronous and the script isn't immediately 
+evaluated in the other interpreters until their next atalloc event.  If the -sync option
+is specified, ns_eval blocks until all servers have executed the script.
 
- The -pending flag, which cannot be specified with any other flags or args, returns a list of the scritps still waiting to be evaluated in the various interpreters.
+[para]
+The -pending flag, which cannot be specified with any other flags or args, returns a list of
+the scritps still waiting to be evaluated in the various interpreters.
 
- NOTE: This command is currently implemented in Tcl, in the source file nsd/init.tcl.
+[para]
+NOTE: This command is currently implemented in Tcl, in the source file nsd/init.tcl.
 
- ns_eval is designed to work whether you pass your script as one argument or many arguments. In order to accomplish this, the arguments are passed through:
+ns_eval is designed to work whether you pass your script as one argument or many arguments.
+In order to accomplish this, the arguments are passed through:
 
 [example_begin]
    uplevel 1 [lb]eval concat $args[rb]
 [example_end]
 
- which means that there are two rounds of concat behavior, unlike a straight eval.  See the example below of unsetting a global variable to see how this can play out.
+which means that there are two rounds of concat behavior, unlike a straight eval.  See the example below of unsetting a global variable to see how this can play out.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-
 [call [cmd ns_eval] [opt [arg -sync]] [opt [arg -pending]] [opt [arg args]]]
-
 
 [list_end]
 

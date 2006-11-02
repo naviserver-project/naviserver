@@ -1,15 +1,11 @@
 [manpage_begin ns_ictl n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Manipulate and introspect Tcl interpreter internals}]
 
 [description]
 
- This command provides a mechanism to control Tcl interpreter internals.
-
- The legal options (which may be abbreviated) are:
+This command provides a mechanism to control Tcl interpreter internals.
 
 [section {COMMANDS}]
 
@@ -18,7 +14,6 @@
 
 [call [cmd ns_ictl] [arg option] [opt [arg {arg arg ...}]]]
 
-
 [list_end]
 
 
@@ -26,49 +21,50 @@
 
 [call [cmd  ns_ictl] [arg addmodule] [arg module]]
 
- Adds a module to the list of modules, and returns the new list as the result.
+Adds a module to the list of modules, and returns the new list as the result.
 
- This command simply appends the module to the list.  It doesn't perform any loading of modules themselves.
+This command simply appends the module to the list.  It doesn't perform any loading of modules themselves.
 
 [call [cmd  ns_ictl] [arg cleanup]]
 
- Runs all of the cleanup traces, and does any other necessary interpreter cleanup.
+Runs all of the cleanup traces, and does any other necessary interpreter cleanup.
 
 [call [cmd  ns_ictl] [arg epoch]]
 
- Returns the current epoch for the interpreter.
+Returns the current epoch for the interpreter.
 
 [call [cmd  ns_ictl] [arg get]]
 
- Returns the script that is executed at interpreter initialization time.
+Returns the script that is executed at interpreter initialization time.
 
 [call [cmd  ns_ictl] [arg getmodules]]
 
- Returns a list of currently loaded modules.
+Returns a list of currently loaded modules.
 
 [call [cmd  ns_ictl] [arg save] [arg script]]
 
- Replaces the current interpreter initialization script with the new script.
+Replaces the current interpreter initialization script with the new script.
 
 [call [cmd  ns_ictl] [arg update]]
 
- Update the state (procs, namespaces) of an interpreter.
+Update the state (procs, namespaces) of an interpreter.
 
 [call [cmd  ns_ictl] [arg oncreate] [arg script]]
 
- Registers a script to be executed at Tcl interpreter create time.
+Registers a script to be executed at Tcl interpreter create time.
 
 [call [cmd  ns_ictl] [arg oncleanup] [arg script]]
 
- Registers a script to be executed at Tcl interpreter cleanup time.
+Registers a script to be executed at Tcl interpreter cleanup time.
 
 [call [cmd  ns_ictl] [arg oninit] [arg script]]
 
- Registers a script to be executed at Tcl interpreter init time.  This can only be used during server initialization phase of server startup.
+Registers a script to be executed at Tcl interpreter init time.  This can only be used
+during server initialization phase of server startup.
 
 [call [cmd  ns_ictl] [arg ondelete] [arg script]]
 
- Registers a script to be executed at Tcl interpreter delete time.
+Registers a script to be executed at Tcl interpreter delete time.
 
 [list_end]
 

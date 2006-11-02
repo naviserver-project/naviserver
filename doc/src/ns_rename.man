@@ -1,15 +1,17 @@
 [manpage_begin ns_rename n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Rename a file}]
 
 [description]
 
- This command renames the file or directory file1 to the file or directory file2.  Make sure that file1 exists the directories in which file1 and file2 reside exist, and that they are read/write accessible to the user that is running the NaviServer process.  Caution: ns_rename will silently overwrite file2 if it is a file that already exists.
+This command renames the file or directory file1 to the file or directory file2. 
+Make sure that file1 exists the directories in which file1 and file2 reside exist,
+and that they are read/write accessible to the user that is running the NaviServer
+process.  Caution: ns_rename will silently overwrite file2 if it is a file that already exists.
 
- This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use Tcl's file rename command instead.  In other words, this:
+This is a legacy command from when Tcl did not have this functionality.  It is now recommended
+you use Tcl's file rename command instead.  In other words, this:
 
 
 [section {COMMANDS}]

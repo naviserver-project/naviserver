@@ -1,28 +1,27 @@
 [manpage_begin ns_unregister_proc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
-
 [titledesc {Unregisters a procedure for a method/URL combination}]
 
 [description]
 
- ns_unregister_proc unregisters the procname to handle the specified method/URL combination.
+ns_unregister_proc unregisters the procname to handle the specified method/URL combination.
 
- This command unregisters any Tcl or C functions previously registered for this method/URL combination and with the same inheritance setting.  That is, if the -noinherit flag is specified with ns_unregister_proc, the function previously registered with the -noinherit flag using ns_register_proc (or the NS_OP_NOINHERIT flag in ns_RegisterRequest) will be unregistered.  If -noinherit is omitted, the function previously registered without the -noinherit flag (or the NS_OP_NOINHERIT flag) will be unregistered.
-
+This command unregisters any Tcl or C functions previously registered for this method/URL
+combination and with the same inheritance setting.  That is, if the -noinherit flag is
+specified with ns_unregister_proc, the function previously registered with the -noinherit
+flag using ns_register_proc (or the NS_OP_NOINHERIT flag in ns_RegisterRequest) will be
+unregistered.  If -noinherit is omitted, the function previously registered without the
+-noinherit flag (or the NS_OP_NOINHERIT flag) will be unregistered.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- [call [cmd ns_unregister_proc] [opt [arg -noinherit]] [arg method] [arg URL]]
-
+[call [cmd ns_unregister_proc] [opt [arg -noinherit]] [arg method] [arg URL]]
 
 [list_end]
-
 
 [see_also nsd]
 [keywords ns_register_proc]

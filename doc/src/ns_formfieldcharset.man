@@ -1,13 +1,13 @@
 [manpage_begin ns_formfieldcharset n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Set the urlencoding to the charset given in the named form field if it exists}]
 
 [description]
 
- Examine the incoming form for a field with the given name, which is expected to contain the character set that the data is encoded.  If this field is found, use that charset to set the urlencoding for the current connection.
+Examine the incoming form for a field with the given name, which is expected to contain
+the character set that the data is encoded.  If this field is found, use that charset 
+to set the urlencoding for the current connection.
 
 
 [section {COMMANDS}]

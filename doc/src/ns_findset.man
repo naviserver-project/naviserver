@@ -1,13 +1,12 @@
 [manpage_begin ns_findset n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Find a set by its name from a list of sets}]
 
 [description]
 
- This command is used to find a set by its name from a list of sets and returns the setId of the first set whose name matches name, or returns an empty string if no set matches.
+This command is used to find a set by its name from a list of sets and returns the setId 
+of the first set whose name matches name, or returns an empty string if no set matches.
 
 [section {COMMANDS}]
 

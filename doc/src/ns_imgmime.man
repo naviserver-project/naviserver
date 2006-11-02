@@ -4,7 +4,7 @@
 [titledesc {Return the MIME type of an image}]
 
 [description]
-[para]Returns the MIME type of an image based on the image type (and not just
+Returns the MIME type of an image based on the image type (and not just
 the file extension). Currently JPEG, GIF and PNG files are supported, so the result can be one of
 "image/jpeg", "image/gif" or "image/png". If the filetype is not recognized
 the type "image/unknown" is returned. An error is generated if the file does

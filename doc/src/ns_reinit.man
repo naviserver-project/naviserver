@@ -1,8 +1,6 @@
 [manpage_begin ns_reinit n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Reinitialize the current interpreter}]
 
 [description]

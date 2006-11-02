@@ -1,39 +1,46 @@
-
-
 [manpage_begin ns_sockopen n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Connect to a remote host on the specified port}]
 
 [description]
-One or more paragraphs describing the ns_sockopen command in detail.
+ns_sockopen uses socket(), bind(), and connect() calls to connect to the
+remote host (host) on the specified port (port). ns_sockopen returns a
+list of two file ids: the first one for reads and the second one for writes.
+
+[para]
+
+The -nonblock option specifies that ns_sockopen will return immediately,
+while the connect is still in progress by the operating system. If you
+use -nonblock, you then can call ns_sockcheck with the write file id to
+see if the connect was actually completed.
+
+[para]
+The -timeout option specifies how long to wait for the connect to be made in seconds before timing out.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_sockopen] [opt [arg -nonblock]] [opt [arg -timeout]] [arg host] [arg port]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+set fds [lb]ns_sockopen www.aolserver.com 80[rb]
+set rid [lb]lindex $fds 0[rb]
+set wid [lb]lindex $fds 1[rb]
+puts $wid "GET /index.htm HTTP/1.0\r\n\r"
+flush $wid
+while {[lb]set line [lb]string trim [lb]gets $rid[rb][rb][rb] != ""} {
+  lappend headers $line
+}
+set page [lb]read $rid[rb]
+close $rid
+close $wid
+
 [example_end]
 
 

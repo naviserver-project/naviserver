@@ -1,10 +1,27 @@
 [manpage_begin ns_returnfile n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {return file to the client}]
+[titledesc {Sends back the headers and the contents of the file}]
 
 [description]
-123
+ns_returnfile sends back the headers and the contents of the file.
 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_returnfile] [arg status] [arg type] [arg filename]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
 [manpage_end]
+
 

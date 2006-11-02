@@ -1,5 +1,4 @@
 
-
 [manpage_begin ns_parseargs n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 

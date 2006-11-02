@@ -1,17 +1,15 @@
 [manpage_begin ns_link n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Create a hard link}]
 
 [description]
 
- This command creates a hard link named filename2 that points to the file or directory specified by filename1.  If the link fails, a Tcl error is generated, unless -nocomplain is specified.
+This command creates a hard link named filename2 that points to the file or directory 
+pecified by filename1.  If the link fails, a Tcl error is generated, unless -nocomplain is specified.
 
- This is a legacy command from when Tcl did not have this functionality.  It is now recommended you use
-
-[para]Tcl's file link command instead.  In other words, this:
+This is a legacy command from when Tcl did not have this functionality.  It is now recommended 
+you use Tcl's file link command instead. 
 
 [section {COMMANDS}]
 

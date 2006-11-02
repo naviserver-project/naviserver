@@ -1,10 +1,18 @@
 [manpage_begin ns_getformfile n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {return a tempfile for a form file field}]
+[titledesc {Return a tempfile for a form file field}]
 
 [description]
 
+
+[section COMMANDs]
+
+[list_begin definitions]
+
+[call [cmd ns_getformfile] [arg name]]
+
+[list_end]
 
 [manpage_end]
 

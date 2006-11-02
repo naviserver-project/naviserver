@@ -4,7 +4,7 @@
 [titledesc {Determine the width and height of a JPEG, GIF or PNG image}]
 
 [description]
-[para]Returns a list of two elements, the width and height of the file
+Returns a list of two elements, the width and height of the file
 specified by filename. Currently files of type JPEG, GIF or PNG are
 supported. An error is generated if the file does not exist. If the filetype
 is not supported the resulting list returns width and height set to 0 (Whereas

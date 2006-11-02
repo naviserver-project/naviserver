@@ -1,39 +1,23 @@
 
-
 [manpage_begin ns_returnnotice n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Send a response to client with given status code, title and message}]
 
 [description]
-One or more paragraphs describing the ns_returnnotice command in detail.
+Wraps the text msg and longmsg in some html and returns that to the client.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_returnnotice] [arg status] [arg msg] [opt [arg longmsg]]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
 [example_end]
 
 

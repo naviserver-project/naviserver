@@ -1,30 +1,28 @@
 [manpage_begin ns_register_proc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Register a procedure for a method/URL combination}]
 
 [description]
 
- ns_register_proc registers the procname to handle the specified method/URL combination.  When the server gets a matching request, it calls procname with the connection id and any arguments specified here.
+ns_register_proc registers the procname to handle the specified method/URL combination. 
+When the server gets a matching request, it calls procname with the connection id and
+any arguments specified here.
 
- If -noinherit is specified, the requested URL must match the specified URL exactly.  For example, if the URL specified with ns_register_proc is /foo/bar, procname will not be called unless the requested URL is exactly /foo/bar.
+[para]
+If -noinherit is specified, the requested URL must match the specified URL exactly.
+For example, if the URL specified with ns_register_proc is /foo/bar, procname will
+not be called unless the requested URL is exactly /foo/bar.
 
- If -noinherit is not specified, the requested URL can match the specified URL or any URL below it.  For example, if the URL specified with ns_register_proc is /foo/bar, procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar, provided there is not already another procedure registered for that exact URL or for an URL with a closer match.
+[para]
+If -noinherit is not specified, the requested URL can match the specified URL or any
+URL below it.  For example, if the URL specified with ns_register_proc is /foo/bar,
+procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar,
+provided there is not already another procedure registered for that exact URL or for
+an URL with a closer match.
 
- Note that you must use a glob-style matching character if you want inheritance for file names.  For example, if you want /foo/bar to match /foo/bar.html, you must use: 
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-
- [call [cmd ns_register_proc] [opt [arg -noinherit]] [arg method] [arg URL] [arg myproc] [opt [arg args]]]
-
-
-[list_end]
-
+Note that you must use a glob-style matching character if you want inheritance
+for file names.  For example, if you want /foo/bar to match /foo/bar.html, you must use: 
 
 [example_begin]
    ns_register_proc /foo/bar*
@@ -38,7 +36,13 @@
    ns_register_proc GET /foo/bar/hmm Cproc
 [example_end]
 
- Aproc will be called when the requested URL is exactly /foo/bar.  Bproc will be called when the requested URL is below /foo/bar, provided there is not already another procedure registered to be called for that exact URL or for an URL with a closer match.  Cproc (not Bproc) will be called when the requested URL is equal to or below /foo/bar/hmm.  Syntax for the registered procedure The conn (connection) argument is optional for procedures registered by ns_register_proc if the procedure has 0 or 1 arguments (not including conn).  The following examples show the variations that can be used in this case:
+ Aproc will be called when the requested URL is exactly /foo/bar.  Bproc will be called when
+ the requested URL is below /foo/bar, provided there is not already another procedure registered
+ to be called for that exact URL or for an URL with a closer match.  Cproc (not Bproc) will be
+ called when the requested URL is equal to or below /foo/bar/hmm.  Syntax for the registered
+ procedure The conn (connection) argument is optional for procedures registered by ns_register_proc
+ if the procedure has 0 or 1 arguments
+ (not including conn).  The following examples show the variations that can be used in this case:
 
 [example_begin]
    ns_register_proc GET /noargs noargs
@@ -47,18 +51,23 @@
    
    proc noargs { } {
        ns_returnnotice 200 "noargs"
-   }&nbsp;;# noargs
+   };# noargs
    
    proc context { context } {
        ns_returnnotice 200 "context is $context"
-   }&nbsp;;# context
+   };# context
    
    proc conncontext { conn context } {
        ns_returnnotice 200 "conncontext is $context"
-   }&nbsp;;# conncontext
+   };# conncontext
 [example_end]
 
- The conn (connection) argument is required for procedures registered by ns_register_proc if the procedure has 2 or more arguments (not including conn).  The conn argument will be filled automatically with the connection information.  The first argument following conn will always take the value supplied by ns_register_proc, if there is one, or an empty value.  All other arguments must supply a default value.  The following examples show the variations that can be used in this case:
+The conn (connection) argument is required for procedures registered by ns_register_proc if the
+procedure has 2 or more arguments (not including conn).  The conn argument will be filled
+automatically with the connection information.  The first argument following conn will always
+take the value supplied by ns_register_proc, if there is one, or an empty value.  All other
+arguments must supply a default value.  The following examples show the variations that can
+be used in this case:
 
 [example_begin]
    ns_register_proc GET /twoargs twoargs fnord
@@ -73,9 +82,21 @@
    }
 [example_end]
 
- When a GET of /twoargs is requested, the conn argument will be filled automatically, the context argument will be assigned "fnord" and the greeble argument will be assigned the default value "bork".
+When a GET of /twoargs is requested, the conn argument will be filled automatically,
+the context argument will be assigned "fnord" and the greeble argument will be assigned
+the default value "bork".
 
- When a GET of /threeargs is requested, the conn argument will be filled automatically, the context argument will be assigned "fnord" and the greeble argument will be assigned "fjord", and the hoover argument will be assigned the default value "quark".
+When a GET of /threeargs is requested, the conn argument will be filled automatically,
+the context argument will be assigned "fnord" and the greeble argument will be assigned "fjord",
+and the hoover argument will be assigned the default value "quark".
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+ [call [cmd ns_register_proc] [opt [arg -noinherit]] [arg method] [arg URL] [arg myproc] [opt [arg args]]]
+
+[list_end]
 
 
 [see_also nsd]

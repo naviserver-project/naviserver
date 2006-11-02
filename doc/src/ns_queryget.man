@@ -1,19 +1,24 @@
 [manpage_begin ns_queryget n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Get a value from the query data that was part of the HTTP request}]
 
 [description]
 
- This command looks in the query data for the specified key, and returns the value that was included in the HTTP request.  If the key does not exist in the query data, an empty string is returned.  The key is interpreted in a case-insensitive manner.
+This command looks in the query data for the specified key, and returns the value that 
+was included in the HTTP request.  If the key does not exist in the query data, an
+empty string is returned.  The key is interpreted in a case-insensitive manner.
 
- If the optional value argument is specified, and the key does not exist in the query data, the specified value is returned instead of an empty string.  This capability allows for providing a default value if the key doesn't exist. 
+[para]
+If the optional value argument is specified, and the key does not exist in the query data, 
+the specified value is returned instead of an empty string.  This capability allows for 
+providing a default value if the key doesn't exist. 
 
- This function works for simple forms as well as for multipart formdata. 
+[para]
+This function works for simple forms as well as for multipart formdata. 
 
- For files uploaded with the Netscape file upload widget, the file that was uploaded is an entry in the query data. See Example 3, below. 
+For files uploaded with the Netscape file upload widget, the file that was uploaded is an 
+entry in the query data. See Example 3, below. 
 
 [section {COMMANDS}]
 

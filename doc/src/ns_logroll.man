@@ -1,19 +1,30 @@
 [manpage_begin ns_logroll n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Roll the server log}]
 
 [description]
 
- This command rolls the server log.  The server log is the file returned from ns_info log and is configured through the "serverlog" parameter in the "ns/parameters" section.  The default is the file "log/server.log" in the NaviServer home directory.
+This command rolls the server log.  The server log is the file returned from ns_info log
+and is configured through the "serverlog" parameter in the "ns/parameters" section.  The
+default is the file "log/server.log" in the NaviServer home directory.
 
- The number of backup log files to keep is controlled by the server configuration parameter "logmaxbackup" (I believe this is incorrect -- I believe it is maxbackup not logmaxbackup -jfr) in the "ns/parameters" section.  "logmaxbackup" must be greater than or equal to zero and less than 1000.  (Note: The source emits an error message that disagrees with the code in nsd/rollfile.c on lines 82--84.)
+[para]
+The number of backup log files to keep is controlled by the server configuration
+parameter "logmaxbackup" (I believe this is incorrect -- I believe it is maxbackup
+not logmaxbackup -jfr) in the "ns/parameters" section.  "logmaxbackup" must be 
+greater than or equal to zero and less than 1000.  (Note: The source emits an 
+error message that disagrees with the code in nsd/rollfile.c on lines 82--84.)
 
- Backup files are created by testing for the existance of the filename and the backup number (i.e., ".012") appended.  If the file representing the max backup count exists, it's deleted.  Then, all files are renamed to their next higher filename.  Then, the log file is renamed to "filename.000".  A new log file is then created and opened to be used as the new log file.
+[para]
+Backup files are created by testing for the existance of the filename and the 
+backup number (i.e., ".012") appended.  If the file representing the max backup
+count exists, it's deleted.  Then, all files are renamed to their next higher 
+filename.  Then, the log file is renamed to "filename.000".  A new log file is
+then created and opened to be used as the new log file.
 
- This command's effect can also be triggered by sending the server a SIGHUP signal as well.
+[para]
+This command's effect can also be triggered by sending the server a SIGHUP signal as well.
 
 [section {COMMANDS}]
 

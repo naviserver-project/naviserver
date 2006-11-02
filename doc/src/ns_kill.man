@@ -1,13 +1,13 @@
 [manpage_begin ns_kill n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {send a process a signal}]
 
 [description]
 
- This command sends the process pid the signal signal.  If -nocomplain is specified, no error will be returned on failure.  signal should be an integer, i.e., 1 for SIGHUP, 9 for SIGKILL, 15 for SIGTERM, etc.
+This command sends the process pid the signal signal.  If -nocomplain is specified,
+no error will be returned on failure.  signal should be an integer, i.e., 1 for SIGHUP,
+9 for SIGKILL, 15 for SIGTERM, etc.
 
 [section {COMMANDS}]
 

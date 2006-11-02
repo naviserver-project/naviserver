@@ -2,14 +2,16 @@
 [moddesc {NaviServer Built-in Commands}]
 
 
-
 [titledesc {Implement job queues and thread pools for evaluating Tcl scripts}]
 
 [description]
 
- ns_job manages a thread pool and a set of named "queues". Queues have a max number of threads and when the current number of running thread reaches "max" then jobs are queued.  New threads are created when there are less than maxthread number of idle threads.
+ns_job manages a thread pool and a set of named "queues". Queues have a max number of
+threads and when the current number of running thread reaches "max" then jobs are 
+queued.  New threads are created when there are less than maxthread number of idle threads.
 
- This command provides a means for queueing Tcl scripts for evaluation by a pool of threads.  The legal options (which may be abbreviated) are:
+[para]
+This command provides a means for queueing Tcl scripts for evaluation by a pool of threads. 
 
 [section {COMMANDS}]
 
@@ -25,96 +27,121 @@
 
 [call [cmd  ns_job] [arg create] [opt [arg {-desc description}]] [arg queueId] [opt [arg maxthreads]]]
 
- Create a new job queue called queueId. If maxthreads is not specified, then the default of 4 is used.
+Create a new job queue called queueId. If maxthreads is not specified, then the default of 4 is used.
 
 [call [cmd  ns_job] [arg queue] [opt [arg {-detached}]] [arg queueId] [arg script]]
 
- Add a new job to the queue. If there are less than maxthreads current running then the job will be started. If there are maxthreads currently running then this new job will be queued.
+Add a new job to the queue. If there are less than maxthreads current running then the job will
+be started. If there are maxthreads currently running then this new job will be queued.
 
- If -detached, then the job will be claned up when it completes; no wait will be necessary.
+[nl]
+If -detached, then the job will be claned up when it completes; no wait will be necessary.
 
- The new job's ID is returned.
+[nl]
+The new job's ID is returned.
 
 [call [cmd  ns_job] [arg wait] [opt [arg {-timeout seconds:microseconds}]] [arg queueId] [arg jobId]]
 
- Wait for the specified queued or running job to finish.  ns_job wait returns the results of the script.
+Wait for the specified queued or running job to finish.  ns_job wait returns the results of the script.
 
- An error is thrown if the specified timeout period is reached.
+An error is thrown if the specified timeout period is reached.
 
 [call [cmd  ns_job] [arg waitany] [opt [arg {-timeout seconds:microseconds}]] [arg queueId]]
 
- Wait for any job on the queue complete.
+Wait for any job on the queue complete.
 
- An error is thrown if the specified timeout period is reached.
+An error is thrown if the specified timeout period is reached.
 
 [call [cmd  ns_job] [arg cancel] [arg queueId] [arg jobId]]
 
- Remove the specified job from the queue. If the job is currently running, then the job will be removed from the queue when it completes.
- 1 (true) is returned if the job is currently running and can not be cancelled.
+Remove the specified job from the queue. If the job is currently running, then the job will be
+removed from the queue when it completes.
+
+1 (true) is returned if the job is currently running and can not be cancelled.
 
 [call [cmd  ns_job] [arg delete] [arg queueId]]
 
- Request that the specified queue be deleted. The queue will only be deleted when all jobs are removed.
+Request that the specified queue be deleted. The queue will only be deleted when all jobs are removed.
 
 [call [cmd  ns_job] [arg jobs] [arg queueId]]
 
- Return a list of the job IDs.
+Return a list of the job IDs.
 
 [call [cmd  ns_job] [arg queues]]
 
- Returns a list of the queue IDs.
+Returns a list of the queue IDs.
 
 [call [cmd  ns_job] [arg threadlist]]
 
- Returns a list of the thread pool's fields.
+Returns a list of the thread pool's fields.
 
- maxthreads - Max number of threads for all the queues in the thread pool.
+[nl]
+maxthreads - Max number of threads for all the queues in the thread pool.
 
- numthreads - Number of allocated threads.
+[nl]
+numthreads - Number of allocated threads.
 
- numidle - Number of currently idle threads.
+[nl]
+numidle - Number of currently idle threads.
 
- req stop - The thread pools is being stopped. This probably means that the server is shutting down.
+[nl]
+req stop - The thread pools is being stopped. This probably means that the server is shutting down.
 
 [call [cmd  ns_job] [arg queuelist]]
 
- Returns a list of the queues. A queue has the following fields:
+Returns a list of the queues. A queue has the following fields:
 
- name - Name of the queue.
+[nl]
+name - Name of the queue.
 
- desc - Description of the queue.
+[nl]
+desc - Description of the queue.
 
- maxthreads - Max number of threads to run for this queue.
+[nl]
+maxthreads - Max number of threads to run for this queue.
 
- numrunning - Number of currently running jobs in this queue.
+[nl]
+numrunning - Number of currently running jobs in this queue.
 
- REQ delete - Someone requested this queue be deleted. Queue will not be deleted until all the jobs on the queue are removed.
+[nl]
+REQ delete - Someone requested this queue be deleted. Queue will not be deleted until all the jobs on the queue are removed.
 
 [call [cmd  ns_job] [arg joblist] [arg queueId]]
 
- Returns a list the jobs in the specified queue. A job has the following fields:
+Returns a list the jobs in the specified queue. A job has the following fields:
 
- id - Job's ID
+[nl]
+id - Job's ID
 
- state - The state of the job.  The return values are as follows:
+[nl]
+state - The state of the job.  The return values are as follows:
 
- scheduled - The job is scheduled to run.
+[nl]
+scheduled - The job is scheduled to run.
 
- running - The job is currently running.
+[nl]
+running - The job is currently running.
 
- done - The job has completed.
+[nl]
+done - The job has completed.
 
- results - If the job has completed, then this field will contain the results. If the job is running or scheduled to run, then this will contain the script.
+[nl]
+results - If the job has completed, then this field will contain the results. If the job is running 
+or scheduled to run, then this will contain the script.
 
- code - When the job is done, this will contain the return code. Return codes are TCL_OK, TCL_ERROR, TCL_RETURN, TCL_BREAK, TCL_CONTINUE.
+[nl]
+code - When the job is done, this will contain the return code. Return codes are 
+TCL_OK, TCL_ERROR, TCL_RETURN, TCL_BREAK, TCL_CONTINUE.
 
- type - The type of job.  A job's return value is nondetached or detached.
+[nl]
+type - The type of job.  A job's return value is nondetached or detached.
 
- req - The job is required.   Return values are none, wait, cancel.
+[nl]
+req - The job is required.   Return values are none, wait, cancel.
 
 [call [cmd  ns_job] [arg genid]]
 
- Generate a new unique ID. This new ID can be used as the queue ID without conflicting with any other queue ID.
+Generate a new unique ID. This new ID can be used as the queue ID without conflicting with any other queue ID.
 
 [list_end]
 

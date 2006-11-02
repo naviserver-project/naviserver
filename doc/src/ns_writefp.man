@@ -1,39 +1,41 @@
 
-
 [manpage_begin ns_writefp n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Write file contents to the connection}]
 
 [description]
-One or more paragraphs describing the ns_writefp command in detail.
+ns_writefp writes the contents of the specified file to the connection.
+You can specify the number of bytes to be copied in the nbytes argument.
+By default, the entire file is copied.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_writefp] [arg fileid] [opt [arg nbytes]]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg fileid]
+Opened Tcl file stream
 
-[list_end]
+[nl]
+[arg nbytes]
+How many bytes to send, all if not specified
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+ns_register_proc GET /sampleWriteFp sampleWriteFp
+
+proc sampleWriteFp { conn ignore } {
+
+  set file [lb]open "/home/people/juan/machine.txt" r[rb]
+  ns_writefp $file
+  close $file
+}
 [example_end]
 
 

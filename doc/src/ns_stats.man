@@ -1,17 +1,20 @@
 [manpage_begin ns_stats n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Return command stats information}]
 
 [description]
-[para]This command returns proc call stats for procs which match the glob pattern.  Results are sorted based on option which can be one of the following:
 
-call cmd  -count: results are sorted by count in descending order (default)
-<li> -name: results are sorted by proc name in ascending order
+This command returns proc call stats for procs which match the glob pattern. 
+Results are sorted based on option which can be one of the following:
 
-[para]In order to instruct NaviServer to keep these stats, you must define two settings in your nsd.tcl, in section ns/server/${server_name}/tcl:
+-count: results are sorted by count in descending order (default)
+-name: results are sorted by proc name in ascending order
+
+[para]
+
+In order to instruct NaviServer to keep these stats, you must define two
+settings in your nsd.tcl, in section ns/server/${server_name}/tcl
 
 [section {COMMANDS}]
 
@@ -21,20 +24,23 @@ call cmd  -count: results are sorted by count in descending order (default)
 
 [list_end]
 
-
 [example_begin]
  ns_section ns/server/${server_name}/tcl
  ns_param statlevel x
  ns_param statmaxbuf y
 [example_end]
 
-[para]Stats will be collected if statlevel is greater than 0.  It gets passed to Tcl_CreateTrace() like so:
+[para]
+
+Stats will be collected if statlevel is greater than 0.  It gets passed to Tcl_CreateTrace() like so:
 
 [example_begin]
  Tcl_CreateTrace(interp, nsconf.tcl.statlevel, StatsTrace, NULL);
 [example_end]
 
-[para]If statsmaxbuf is less than or equal to zero, there will be no stats buffer and the global table will be updated directly, according to the comment:
+[para]
+If statsmaxbuf is less than or equal to zero, there will be no
+stats buffer and the global table will be updated directly, according to the comment:
 
 [example_begin]
    236     /*
@@ -44,16 +50,15 @@ call cmd  -count: results are sorted by count in descending order (default)
    240      */
 [example_end]
 
-[para]Otherwise, statmaxbuf specifies the number of entries in the stats buffer hash table.
-[para]This is all documented from NaviServer 3.4.2, nsd/tclstats.c.
+Otherwise, statmaxbuf specifies the number of entries in the stats buffer hash table.
+This is all documented from NaviServer 3.4.2, nsd/tclstats.c.
+
 [section EXAMPLES]
-[para]Here is a sample ns_stats.adp to use to display the output of ns_stats:
+
+Here is a sample ns_stats.adp to use to display the output of ns_stats:
 
 [example_begin]
- &lt;xmp&gt;
- &lt;%
  ns_adp_puts [lb][lb]format "%-60s %s" command {times invoked}[rb][rb]
- ns_adp_puts "
 [example_end]
 
 [manpage_end]

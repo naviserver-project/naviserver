@@ -1,10 +1,14 @@
 [manpage_begin ns_share n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {shared variables, deprecated}]
+[titledesc {Share variable among all Tcl interpreters, deprecated}]
 
 [description]
-
+Makes the specified variable(s) available to all Tcl interpreters in a
+virtual server. Normally, variables are only available to the current Tcl
+interpreter, unless the SharedGlobals parameter is On. Usually, ns_share
+should be called in a script designed to be run only once, such as in the
+init.tcl script for private or shared libraries.
 
 [manpage_end]
 

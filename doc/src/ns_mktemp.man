@@ -2,14 +2,20 @@
 [moddesc {NaviServer Built-in Commands}]
 
 
-
 [titledesc {Make a unique temporary file name}]
 
 [description]
 
- This command is a wrapper around the mktemp(3) function in the C standard library. It takes a template, which is a string whose last six characters must be XXXXXX, and returns a new string where those are replaced with random characters such as to make the string a unique file name. It is commonly used to safely create temporary files.
+This command is a wrapper around the mktemp(3) function in the C standard library. 
+It takes a template, which is a string whose last six characters must be XXXXXX, 
+and returns a new string where those are replaced with random characters such as 
+to make the string a unique file name. It is commonly used to safely create temporary files.
 
- Note that some implementations of mktemp are not so safe - it creates predictable/only a small number of variations - please consult your system's man pages if this might be an issue to you. NaviServer could potentially be improved to use mkstemp instead.
+[para]
+Note that some implementations of mktemp are not so safe - it creates
+predictable/only a small number of variations - please consult your 
+system's man pages if this might be an issue to you. NaviServer could
+potentially be improved to use mkstemp instead.
 
 [section {COMMANDS}]
 

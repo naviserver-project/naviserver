@@ -1,15 +1,12 @@
 [manpage_begin ns_info n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Return information about various aspects of the running NaviServer}]
 
 
 [description]
 
- This command provides information about the current state of the running NaviServer.  The legal options (which may be abbreviated) are:
-
+This command provides information about the current state of the running NaviServer. 
 
 [section {COMMANDS}]
 
@@ -26,37 +23,43 @@
 
 [call [cmd  ns_info] [arg address]]
 
- returns the primary IP address of this machine, or "0.0.0.0" if unable to determine
+Returns the primary IP address of this machine, or "0.0.0.0" if unable to determine
 
 [call [cmd  ns_info] [arg argv0]]
-<li> ns_info boottime
 
- returns the time in epoch seconds since the current server was started
+Returns file path to executable binary
+
+[call [cmd ns_info] [arg boottime]]
+
+Returns the time in epoch seconds since the current server was started
 
 [call [cmd  ns_info] [arg builddate]]
 
- returns the date and time at which the current server was compiled, e.g.: "Jul 20 2004 at 14:57:20"
+Returns the date and time at which the current server was compiled, e.g.: "Jul 20 2004 at 14:57:20"
 
 [call [cmd  ns_info] [arg callbacks]]
-<li> ns_info config
 
- returns the absolute path to the config file used to start the server
+Returns all registered startup/exit/shutdown callbacks
+
+[call [cmd ns_info] [arg config]]
+
+Returns the absolute path to the config file used to start the server
 
 [call [cmd  ns_info] [arg home]]
 
- returns the current working directory of the server
+Returns the current working directory of the server
 
 [call [cmd  ns_info] [arg hostname]]
 
- returns the value of gethostname(), or "localhost" if that fails
+Returns the value of gethostname(), or "localhost" if that fails
 
 [call [cmd  ns_info] [arg label]]
 
- returns the value of NSD_LABEL from nsd.h, e.g. "aolserver4_0"
+Returns the value of NSD_LABEL from nsd.h, e.g. "NaviServer4_99"
 
 [call [cmd  ns_info] [arg locks]]
 
- lists the mutexes that currently exist.  A 5-element list is returned for each mutex: 
+Lists the mutexes that currently exist.  A 5-element list is returned for each mutex: 
 
 [list_end]
 

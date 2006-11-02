@@ -1,41 +1,98 @@
-
-
 [manpage_begin ns_register_adptag n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Register a tag for use within an ADP}]
 
 [description]
-One or more paragraphs describing the ns_register_adptag command in detail.
 
-[section {COMMANDS}]
-Optional: list and description of sub-commands.
+ns_register_adptag registers a procedure to be called when the specified beginning and
+ending tags are used in an ADP. The command is the beginning tag to look for, and the
+endcommand is the ending tag to look for. The proc is the procedure that will be called
+when Naviserver encounters those tags when processing an ADP.
 
-[list_begin definitions]
+[para]
+There are two ways to use ns_register_adptag, with and without the endcommand parameter:
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[list_begin bullet]
 
-[nl]
-[arg 1]
-Description for arg1
+[bullet] If the endcommand parameter is specified, the procedure you specify with proc must be of the form:
+
+         [nl]
+         proc myadpproc { string tagset }
+
+         [nl]
+         The string is the string of characters between the beginning tag and the ending tag.
+         The tagset is an ns_set of parameters that were specified with the beginning tag. 
+         The return value of the procedure will be sent to the browser in place of the string
+         of text that was specified between the beginning and ending tags.
+         [nl]
+         The string is not parsed, which means that you cannot include ADP tags in the string unless
+         you execute ns_adp_parse on the string inside the procedure that processes the registered ADP tag.
+
+[bullet] If endcommand is not specified, then no closing tag is required. The procedure (proc)
+         will be called every time the specified command is encountered. The procedure should 
+         take one parameter, an ns_set containing the parameters to the tag:
+         [nl]
+         proc myadpproc { tagset }
 
 [list_end]
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
+Note: This function cannot be called after the server has started. It must be called in a 
+Tcl script in a virtual server's Tcl directory so that it can be initialized at server startup time.
+
+
+[section {COMMANDS}]
+
 [list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
+
+[call [cmd ns_register_adptag] [arg command] [opt [arg endcommand]] [arg proc]]
+
 [list_end]
 
 [section EXAMPLES]
 
+For example, suppose you want to register a tag that displays the enclosed text only if it is Christmas. You could register the tag as follows:
+
+
 [example_begin]
-Put some examples here to illustrate command usage.
+
+  ns_register_adptag "christmas" "/christmas" xmas
+
+  proc xmas {string tagset} {
+    if { [lb]ns_fmttime [lb]ns_time[rb] "%m/%d"[rb] == "12/25" } {
+    return $string
+  }
+}
+
 [example_end]
 
+Then, in an ADP, you could use these tags:
+
+[example_begin]
+
+<christmas>Merry Christmas to all, and to all a good night!</christmas>
+
+[example_end]
+
+This example shows the use a registered tag without an endcommand. The tag is registered as follows:
+
+[example_begin]
+
+ns_register_adptag hello helloproc
+
+proc helloproc { tags } {
+   return "Hello, [lb]ns_set get $tags name[rb]."
+}
+
+[example_end]
+
+In an ADP, you could then use this tag:
+
+[example_begin]
+
+<hello name=Bob>
+
+[example_end]
 
 [see_also nsd]
 [keywords NaviServer]

@@ -31,7 +31,7 @@ This is especially useful when using the ns_adp_include command.
 
 [example_begin]
    % ns_url2file /test.adp
-   /usr/local/aolserver/servers/server1/pages/test.adp
+   /usr/local/ns/pages/test.adp
 [example_end]
 
 

@@ -1,13 +1,12 @@
 [manpage_begin ns_resume n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Resume a previously paused scheduled script}]
 
 [description]
 
- This command resumes scheduling of a previously paused script via ns_pause.  Returns 1 on success, 0 on failure.
+This command resumes scheduling of a previously paused script via ns_pause.
+Returns 1 on success, 0 on failure.
 
 [section {COMMANDS}]
 

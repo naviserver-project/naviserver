@@ -1,13 +1,16 @@
 [manpage_begin ns_tagelementset n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Set the value of the value attribute in an HTML element}]
 
 [description]
 
- This command takes a variable name to upvar, tagvar.  The variable should exist in the calling environment and should contain an HTML element that has had its closing ">" removed.  The string is searched for the attribute attribute, which will be removed if found.  A value attribute will be added to the end of the string with value value, which will be surrounded with double quotes.  This procedure does not close the tag with a ">".
+This command takes a variable name to upvar, tagvar.  The variable should exist
+in the calling environment and should contain an HTML element that has had its
+closing ">" removed.  The string is searched for the attribute attribute, which
+will be removed if found.  A value attribute will be added to the end of the string
+with value value, which will be surrounded with double quotes.  This procedure does
+not close the tag with a ">".
 
 
 [section {COMMANDS}]
@@ -15,7 +18,7 @@
 [list_begin definitions]
 
 
- [call [cmd ns_tagelementset] [arg tagvar] [arg attribute] [arg value]]
+[call [cmd ns_tagelementset] [arg tagvar] [arg attribute] [arg value]]
 
 
 [list_end]
@@ -23,25 +26,23 @@
 [section EXAMPLES]
 
 [example_begin]
-   % set tag {&lt;input type="hidden" name="myfield" value="100"}
-   &lt;input type="hidden" name="myfield" value="100"
+   % set tag {<input type="hidden" name="myfield" value="100"}
+   <input type="hidden" name="myfield" value="100"
 [example_end]
 
 [example_begin]
    % ns_tagelementset tag value 250
-   &lt;input type="hidden" name="myfield"  value="250"
+   <input type="hidden" name="myfield"  value="250"
 [example_end]
 
-[para]NOTES
+[para]
 
- I believe using "value" as the attribute name in the output instead of the passed in attribute may be a bug.
+NOTES
 
+I believe using "value" as the attribute name in the output instead of the passed in attribute may be a bug.
 
 [see_also nsd]
 [keywords ns_tagelement]
-
-
-
 
 [manpage_end]
 

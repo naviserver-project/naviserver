@@ -1,15 +1,18 @@
 [manpage_begin ns_fmttime n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Convert seconds to a human-readable format using templates}]
 
 [description]
 
- This command produces a string representation of time in seconds since 00:00:00 UTC Jan 1, 1970.
+This command produces a string representation of time in seconds since 00:00:00 UTC Jan 1, 1970.
 
- ns_fmttime uses the strftime() system call, so valid fmt strings will vary from platform to platform.  Consult your operating system's documentation for strftime() to see what valid fmt strings can contain.  fmt defaults to "%c" which is supposed to be the preferred date and time representation for the current locale, which on some platforms should be "%a %b %e %H:%M:%S %Z %Y".
+[para]
+ns_fmttime uses the strftime() system call, so valid fmt strings will vary from platform 
+to platform.  Consult your operating system's documentation for strftime() to see what 
+valid fmt strings can contain.  fmt defaults to "%c" which is supposed to be the preferred
+date and time representation for the current locale, which on some platforms should be 
+"%a %b %e %H:%M:%S %Z %Y".
 
 
 [section {COMMANDS}]

@@ -4,7 +4,7 @@
 [titledesc {Return the type of an image}]
 
 [description]
-[para]Returns the type of an image if it can be identified by the particular
+Returns the type of an image if it can be identified by the particular
 image header. Currently JPEG, GIF and PNG files are supported. The result is one of
 "jpeg", "gif" or "png". If the filetype is not recognized
 the type "unknown" is returned. An error is generated if the file does

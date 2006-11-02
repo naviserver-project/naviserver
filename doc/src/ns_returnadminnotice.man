@@ -1,39 +1,24 @@
-
-
 [manpage_begin ns_returnadminnotice n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Return a short notice to a client to contact system administrator}]
 
 [description]
-One or more paragraphs describing the ns_returnadminnotice command in detail.
+ns_returnadminnotice performs the same function as ns_returnnotice,
+except that it appends a line with a link to "mailto:serveradministrator"
+based on the virtual server parameter "WebMaster".
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_returnadminnotice] [arg status] [arg msg] [opt [arg longmsg]]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
 [example_end]
 
 

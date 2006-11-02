@@ -1,13 +1,11 @@
 [manpage_begin ns_sleep n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Sleep for a specified number of seconds}]
 
 [description]
 
- Sleeps for the number of seconds specified in seconds.
+Sleeps for the number of seconds specified in seconds.
 
 
 [section {COMMANDS}]
@@ -15,7 +13,7 @@
 [list_begin definitions]
 
 
- [call [cmd ns_sleep] [arg seconds]]
+[call [cmd ns_sleep] [arg seconds]]
 
 [arg seconds]
 The value of seconds should be a positive integer (or  zero,  in  which

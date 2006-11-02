@@ -1,21 +1,24 @@
 [manpage_begin ns_httpopen n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Fetch a web page}]
 
 [description]
 
- This command opens an http connection to a web page used to fetch its contents via the method, which may be POST, GET, or another valid http method.  If the act of opening the connections fails, it may throw an error.
+This command opens an http connection to a web page used to fetch its contents
+via the method, which may be POST, GET, or another valid http method.  If the
+act of opening the connections fails, it may throw an error.
+The url may be either absolute () or local (/page). If it is local, the host and
+port number of the server are added.
+The parameter rqset is the handle for an ns_set containing headers to send with
+the request. The timeout is the number of seconds to wait for the connection to
+open.  Pdata is the  extra data to send with the request (i.e. post data). If
+pdata is specified, the caller is responsible for supplying the Content-length
+and Content-type headers in rqset The call returns a list with these three elements:
+a file descriptor for reading, a file descriptor for writing, and a set ID for a set
+describing the connection. 
 
- The url may be either absolute () or local (/page). If it is local, the host and port number of the server are added.
-
- The parameter rqset is the handle for an ns_set containing headers to send with the request. The timeout is the number of seconds to wait for the connection to open.  Pdata is the  extra data to send with the request (i.e. post data). If pdata is specified, the caller is responsible for supplying the Content-length and Content-type headers in rqset
-
- The call returns a list with these three elements: a file descriptor for reading, a file descriptor for writing, and a set ID for a set describing the connection. 
-
- Note: This command is currently implemented in Tcl, in the source file tcl/http.tcl
+Note: This command is currently implemented in Tcl, in the source file tcl/http.tcl
 
 [section {COMMANDS}]
 

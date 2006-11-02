@@ -1,22 +1,23 @@
 [manpage_begin ns_write n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Write data to the current connection's socket}]
 
 [description]
 
- This command writes the string immediately to the current connection's socket.  It can be used in place of ns_return or ns_respond to send back responses.  NaviServer will not include any headers when using ns_write.
-
- Returns 1 if write was successful and 0 if write failed.  This can be useful to determine if the client has closed the connection, possibly by hitting the stop button.
+This command writes the string immediately to the current connection's socket.
+It can be used in place of ns_return or ns_respond to send back responses.
+NaviServer will not include any headers when using ns_write.
+Returns 1 if write was successful and 0 if write failed. 
+This can be useful to determine if the client has closed the connection,
+possibly by hitting the stop button.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- [call [cmd ns_write] [opt [arg connid]] [arg string]]
+[call [cmd ns_write] [opt [arg connid]] [arg string]]
 
 
 [list_end]

@@ -1,12 +1,10 @@
 [manpage_begin ns_init n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Initialize the current Tcl interp}]
 
 [description]
-This command initializes the current Tcl interp.  (Exactly what does this mean?  What actually gets done?)  This command is invoked by the 
+This command initializes the current Tcl interp.
 
 [section {COMMANDS}]
 

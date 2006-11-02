@@ -1,17 +1,14 @@
 [manpage_begin ns_mkdir n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Create a directory}]
 
 [description]
 
- This command creates a new directory in the filesystem, and throws an error if the target directory already exists.
+This command creates a new directory in the filesystem, and throws an error if the target directory already exists.
 
- This is a legacy command from when Tcl did not have this functionality.  It is now recomended you use
-
-[para]Tcl's file mkdir command instead.  In other words, this:
+This is a legacy command from when Tcl did not have this functionality.  It is now recomended
+you use Tcl's file mkdir command instead.
 
 [section {COMMANDS}]
 

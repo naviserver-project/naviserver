@@ -1,41 +1,46 @@
-
-
 [manpage_begin ns_register_trace n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Register a Tcl trace script to a method and matching URL}]
 
 [description]
-One or more paragraphs describing the ns_register_trace command in detail.
+ns_register_trace registers a Tcl script as a trace for the specified method/URL
+combination. After the server handles the request for the specified method on an
+URL that matches the URLpattern, it calls the trace script with the connection id
+and any arguments (args) specified.
+
+The URLpattern can contain standard string-matching characters. For example, these are valid URLpatterns:
+
+[para]
+/employees/*.tcl
+[para]
+/accounts/*/out
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_register_trace] [arg method] [arg URLpattern] [arg script] [opt [arg args]]]
 
-[nl]
-[arg 1]
-Description for arg1
-
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
 [example_end]
 
+[section NOTES]
+
+ns_register_trace is similar to ns_register_proc except that the
+pattern-matching for the URL is performed differently. With ns_register_proc,
+the specified URL is used to match that URL and any URL below it in the hierarchy.
+Wildcards such as "*" are meaningful only for the final part of the URL, such as
+/scripts/*.tcl. With ns_register_trace, the URLpattern is used to match URLs as
+a string with standard string-matching characters.
+
+[para]
+ns_register_proc results in a single match, whereas multiple ns_register_trace's
+can be matched and will be called. 
 
 [see_also nsd]
 [keywords NaviServer]

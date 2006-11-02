@@ -1,44 +1,37 @@
-
-
 [manpage_begin ns_returnunavailable n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Return a 503 (Service Unavailable) status message to the client}]
 
 [description]
-One or more paragraphs describing the ns_returnunavailable command in detail.
+
+This command informs the client that the server was unable to perform the request.
+
+The optional connid parameter is deprecated and should not be used.
+
+Note: The script does not end at the time this command is invoked. 
+ns_adp_abort or ns_adp_return should be called to end script
+processing after ns_returnnotfound.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
 
-[nl]
-[arg 1]
-Description for arg1
+[call [cmd ns_returnunavailable] [opt [arg connid]]]
 
-[list_end]
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+   ns_returnunavailable
 [example_end]
 
 
 [see_also nsd]
-[keywords NaviServer]
-[manpage_end]
+[keywords ns_return ns_returnadminnotice ns_returnbadrequest ns_returnerror ns_returnfile ns_returnforbidden ns_returnfp ns_returnnotice ns_returnok ns_returnredirect ns_returnunauthorized]
 
+[manpage_end]
 

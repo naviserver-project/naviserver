@@ -1,13 +1,17 @@
 [manpage_begin ns_schedule_proc n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {Schedule a script to run after a certain number of seconds}]
 
 [description]
 
- This command schedules a script to be run after a certain number of seconds.  Returns the ID of the newly scheduled script.  If -once is specified, then the script is run once and then unscheduled, otherwise it will continue to run every interval seconds.  If -thread is specified, then the script will be run in its own thread, otherwise it will run in the scheduler's thread.  If the script is long-running, this may interfere with the running of other scheduled scripts, so long-running scripts should be run in their own threads.
+This command schedules a script to be run after a certain number of seconds.
+Returns the ID of the newly scheduled script.  If -once is specified, then the
+script is run once and then unscheduled, otherwise it will continue to run every
+interval seconds.  If -thread is specified, then the script will be run in its
+own thread, otherwise it will run in the scheduler's thread.  If the script is
+long-running, this may interfere with the running of other scheduled scripts,
+so long-running scripts should be run in their own threads.
 
 
 [section {COMMANDS}]

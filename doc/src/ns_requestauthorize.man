@@ -1,22 +1,70 @@
 [manpage_begin ns_requestauthorize n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-
-
 [titledesc {perform authorization check}]
 
 [description]
 
- Ask the server to check permissions using the authProc provided by the nsperm module.  This function does the same permission check that the NaviServer does before serving a URL if the nsperm module is loaded.
+This function does the same permission check that the NaviServer does before serving
+a URL. If the nsperm module is loaded, the algorithm is as follows. See Chapter 6 in
+the Naviserver Administrator's Guide for information on access control, including permissions.
 
- The algorithm is as follows:
+[list_begin bullet]
+
+[bullet] If the authuser is "nsadmin", the password is correct, and the IP
+          address of the client is allowed nsadmin access, then access is authorized.
+
+[bullet] Find the relevant permission record. If an exact match for the method and URL
+         combination is not found, the end of the URL is pared down until a match is found.
+         For example, if there is no match for `/products/cereals/raisin_bran.html,' then
+         the server looks for a permission record for the URL `/products/cereals.' If that
+         permission record is specified as "Exact URL match is NOT required", then that
+          permission record is used.
+[list_end]
+
+[para]
+By default, the server comes with a row that says GET on `/' is open to the world.
+
+[para]
+If no relevant permission record is found, access is denied (forbidden).
+
+[list_begin bullet]
+
+[bullet] If the authuser is in the "Allow Users" list, access is permitted. If the authuser
+         is a member of a group in the "Allow Groups" list and not in the "Deny Users' list,
+          access is permitted.
+
+[bullet] If the host is in the "Hosts to allow" list, access is permitted. If the host
+         is in the "Hosts to deny" list, access is denied.
+
+[bullet] If the request does not come in with authorization data, access is denied.
+
+[bullet] The user and password are verified. If there is no password specified in the database,
+         any password is accepted.
+
+[bullet]  Otherwise, access is denied.
+
+[list_end]
+
+[section {RETURN VALUES}]
+
+The following values can be returned by ns_requestauthorize.
+
+[list_begin bullet]
+
+[bullet] OK The user has permission to execute this URL and method.
+[bullet] DENIED The user does not have permission to execute this URL and method.
+[bullet] FORBIDDEN There is no possible user/password/IP Address combination that would give authorization.
+[bullet] ERROR There was an error.
+
+[list_end]
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- [call [cmd ns_requestauthorize] [arg method] [arg url] [arg authuser] [arg authpasswd] [opt [arg ipaddr]]]
+[call [cmd ns_requestauthorize] [arg method] [arg url] [arg authuser] [arg authpasswd] [opt [arg ipaddr]]]
 
 
 [list_end]
