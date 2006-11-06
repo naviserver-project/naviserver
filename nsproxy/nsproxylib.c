@@ -294,7 +294,11 @@ Nsproxy_Init(Tcl_Interp *interp)
     }
     Ns_MutexUnlock(&plock);
 
-    return Ns_ProxyInit(interp);
+    if (interp != NULL) {
+        return Ns_ProxyInit(interp);
+    }
+
+    return TCL_OK;
 }
 
 

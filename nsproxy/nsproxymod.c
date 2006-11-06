@@ -55,6 +55,8 @@ Ns_ModuleInit(char *server, char *module)
     smPtr->server = ns_strdup(server);
     smPtr->module = ns_strdup(module);
 
+    Nsproxy_Init(NULL);
+
     Ns_TclRegisterTrace(server, InitInterp, (void*)smPtr, NS_TCL_TRACE_CREATE);
     Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
     Ns_RegisterAtShutdown(Ns_ProxyShutdown, NULL);
