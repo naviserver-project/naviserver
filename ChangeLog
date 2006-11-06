@@ -1,3 +1,8 @@
+2006-11-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsproxy/nsproxylib.c: Nsproxy_Init initializes thread-wide
+	data while Ns_ProxyInit initializes only the Tcl interface.
+
 2006-11-01  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsd/log.c: LogFlush now accepts one extra argument that

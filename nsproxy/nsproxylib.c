@@ -283,6 +283,17 @@ static Ns_DString defexec;      /* Stores full path of the proxy executable */
 int
 Nsproxy_Init(Tcl_Interp *interp)
 {
+    static int once = 0;
+
+    Ns_MutexLock(&plock);
+    if (!once) {
+        once = 1;
+        Ns_DStringInit(&defexec);
+        Ns_BinPath(&defexec, "nsproxy", NULL);
+        Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
+    }
+    Ns_MutexUnlock(&plock);
+
     return Ns_ProxyInit(interp);
 }
 
@@ -306,17 +317,7 @@ Nsproxy_Init(Tcl_Interp *interp)
 int
 Ns_ProxyInit(Tcl_Interp *interp)
 {
-    static int once = 0;
     InterpData *idataPtr;
-
-    Ns_MutexLock(&plock);
-    if (!once) {
-        once = 1;
-        Ns_DStringInit(&defexec);
-        Ns_BinPath(&defexec, "nsproxy", NULL);
-        Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
-    }
-    Ns_MutexUnlock(&plock);
 
     idataPtr = ns_calloc(1, sizeof(InterpData));
     Tcl_InitHashTable(&idataPtr->ids, TCL_STRING_KEYS);
