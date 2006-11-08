@@ -2774,7 +2774,7 @@ WriterThread(void *arg)
                         vbuf.iov_len = curPtr->bufsize;
                         vbuf.iov_base = (void *) curPtr->buf;
                         n = NsDriverSend(curPtr->sockPtr, &vbuf, 1);
-                        if (n < curPtr->bufsize) {
+                        if (n < 0) {
                             err = errno;
                             status = NS_ERROR;
                         } else {
