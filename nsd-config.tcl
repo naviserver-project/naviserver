@@ -26,6 +26,7 @@ ns_param        smtpmsgid               false
 ns_param        smtpmsgidhostname       ""
 ns_param        smtpencodingmode        false
 ns_param        smtpencoding            "utf-8"
+ns_param        smtpauthmode            ""
 ns_param        smtpauthuser            ""
 ns_param        smtpauthpassword        ""
 

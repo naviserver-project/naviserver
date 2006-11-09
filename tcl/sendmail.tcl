@@ -240,7 +240,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
     # AUTH PLAIN and AUTH LOGIN are supported.
     #
 
-    set authmode [ns_config ns/parameters smtpauthmode]
+    set authmode [string tolower [ns_config ns/parameters smtpauthmode]]
     set user [ns_config ns/parameters smtpauthuser]
     set pass [ns_config ns/parameters smtpauthpassword]
 

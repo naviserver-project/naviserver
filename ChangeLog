@@ -1,5 +1,10 @@
 2006-11-09  Bernd Eidenschink  <eide@users.sf.net>
 
+	* nsd-config.tcl: Added config parameter smtpauthmode
+	* tcl/sendmail.tcl: smtpauthmode param now case-insensitive
+
+2006-11-09  Bernd Eidenschink  <eide@users.sf.net>
+
 	* tcl/sendmail.tcl: Added AUTH LOGIN support (which is very similar
 	to AUTH PLAIN) to ns_sendmail command
 	* doc/src/ns_sendmail.man: Updated documentation for ns_sendmail
