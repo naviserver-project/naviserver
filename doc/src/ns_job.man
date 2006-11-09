@@ -29,13 +29,17 @@ This command provides a means for queueing Tcl scripts for evaluation by a pool 
 
 Create a new job queue called queueId. If maxthreads is not specified, then the default of 4 is used.
 
-[call [cmd  ns_job] [arg queue] [opt [arg {-detached}]] [arg queueId] [arg script]]
+[call [cmd  ns_job] [arg queue] [opt [arg {-detached}]] [opt [arg {-jobid id}]] [arg queueId] [arg script]]
 
 Add a new job to the queue. If there are less than maxthreads current running then the job will
 be started. If there are maxthreads currently running then this new job will be queued.
 
 [nl]
 If -detached, then the job will be claned up when it completes; no wait will be necessary.
+
+[nl]
+if -jobid is specified, it will be used as new job id instead of auto-genereated one. If 
+such job already exists, erro will be fired.
 
 [nl]
 The new job's ID is returned.
@@ -51,6 +55,10 @@ An error is thrown if the specified timeout period is reached.
 Wait for any job on the queue complete.
 
 An error is thrown if the specified timeout period is reached.
+
+[call [cmd  ns_job] [arg exists] [arg queueId] [arg jobId]]
+
+Returns 1 if such job is running the the given queue, otherwise returns 0.
 
 [call [cmd  ns_job] [arg cancel] [arg queueId] [arg jobId]]
 
