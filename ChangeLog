@@ -3,6 +3,9 @@
 	* nsd/driver.c: Fixed bug with not handling partial
 	writes in writer thread
 
+        * nsd/tcljob.c: Exteneded job API to support ns_job exists
+        command and allow to specify jobid in ns_job queue command
+
 2006-11-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Nsproxy_Init initializes thread-wide
@@ -40,7 +43,7 @@
 	* tcl/file.tcl: Fixed variable typo.
 	* nsd/log.c: Avoid holding lock during callback invocation.
 	* test/ns_log.test: Added test for callbacks.
-	
+
 2006-10-07  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/file.tcl: Invalidate cache proc on Tcl error
@@ -73,7 +76,7 @@
 
 2006-10-02  Vlad Seryakov  <seryakov@users.sf.net>
 
-	nsd/driver.c: Make driver to use Unix domain sockets of 
+	nsd/driver.c: Make driver to use Unix domain sockets of
 	type DGRAM and STREAM
 
 2006-09-28  Vlad Seryakov  <seryakov@users.sf.net>
@@ -93,7 +96,7 @@
 2006-09-27  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Added "-maxruns" parameter for proxy queue
-	to limit number of runs in the proxy. After reaching the limit 
+	to limit number of runs in the proxy. After reaching the limit
 	the proxy slave process is automatically restarted.
 
 	* nsproxy/ns_proxy.man: Updated docs.
