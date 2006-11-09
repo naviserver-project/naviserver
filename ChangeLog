@@ -1,3 +1,9 @@
+2006-11-09  Bernd Eidenschink  <eide@users.sf.net>
+
+	* tcl/sendmail.tcl: Added AUTH LOGIN support (which is very similar
+	to AUTH PLAIN) to ns_sendmail command
+	* doc/src/ns_sendmail.man: Updated documentation for ns_sendmail
+
 2006-10-30  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c: Fixed bug with not handling partial

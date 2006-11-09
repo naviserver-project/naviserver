@@ -7,7 +7,7 @@
 
 [emph ns_sendmail] is a procedure for sending email from a Tcl script through a remote 
 SMTP server. It now supports character encoding of subject and body,
-message-id creation, quoted printable text and AUTH PLAIN mechanism. It is backwards
+message-id creation, quoted printable text, AUTH PLAIN and LOGIN mechanisms. It is backwards
 compatible.
 
 [para]
@@ -20,10 +20,11 @@ resolves to the host where NaviServer is deployed and the running SMTP server ac
 from the local machine. 
 [para]
 In order to send mail directly to a specified SMTP server other than
-localhost some form of authentication may be required. The AUTH PLAIN mechanism is supported 
-as it is offered by most SMTP servers and easy to implement. Note, however, it is a plaintext 
-mechanism and not secure. Also note that ns_sendmail does not verify if AUTH PLAIN is offered 
-by the SMTP server at all.
+localhost some form of authentication may be required. The AUTH PLAIN and
+LOGIN mechanisms are supported as they are offered by most SMTP servers and
+easy to implement. Note, however, they are plaintext 
+mechanisms and not secure. Also note that ns_sendmail does not verify if AUTH
+PLAIN or LOGIN are offered by the SMTP server at all.
 
 In case of an error the error code and message are returned.
 
@@ -110,15 +111,17 @@ Note: "boolean" in NaviServer configuration means value can be one of "true", "f
 [lst_item "smtpencoding = utf-8"]
 	If smtpencodingmode is set true subject and body will be encoded with
 	the encoding defined in smtpencoding, e.g. "iso8859-15".
+[lst_item "smtpauthmode = mode"]
+        Where mode is either PLAIN or LOGIN. If left empty but smtpauthuser and smtpauthpassword defined, PLAIN is assumed as default.
 [lst_item "smtpauthuser = account--0123"]
-	ns_sendmail supports now the simple PLAIN AUTH mechanism to authenticate
+	ns_sendmail supports now the simple PLAIN AUTH and LOGIN mechanisms to authenticate
 	against a SMTP server. It should be sufficient to provide
 	a mailbox account or email address ("smtpauthuser") and a password (see "smtpauthpassword").
 	It is possible to give a different authorization identifier (userid) and
 	authentication identifier (authid/realm) by separating them with a nullbyte ("userid\0realm").
 	Default is empty string to not use SMTP authentication.
 [lst_item "smtpauthpassword = mysecret"]
-	The password to use for PLAIN AUTHentication if smtpauthuser is set.
+	The password to use for PLAIN AUTHentication or LOGIN if smtpauthuser is set.
 [list_end]
 
 [section ALTERNATIVES]
@@ -137,6 +140,7 @@ smtpconfiguration:
         smtpmsgidhostname = host.domain.tld
         smtpencodingmode = on
         smtpencoding = iso8859-15
+        smtpauthmode = PLAIN
         smtpauthuser = account--0123
         smtpauthpassword = mysecret
 [example_end]

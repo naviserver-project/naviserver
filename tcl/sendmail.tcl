@@ -235,10 +235,12 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
 
     #
     # Get auth data for connection to SMTP. We just
-    # blindly send this data with AUTH PLAIN to the
-    # remote server w/o being asked for.
+    # blindly send this data to the remote server w/o 
+    # being asked for.
+    # AUTH PLAIN and AUTH LOGIN are supported.
     #
 
+    set authmode [ns_config ns/parameters smtpauthmode]
     set user [ns_config ns/parameters smtpauthuser]
     set pass [ns_config ns/parameters smtpauthpassword]
 
@@ -270,7 +272,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
         _ns_smtp_recv "Start" $rfd 220
 
         #
-        # Optionaly authorize (PLAIN)
+        # Optionaly authorize (PLAIN or LOGIN)
         #
 
         if {$user ne {} && $pass ne {}} {
@@ -283,8 +285,28 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
                 # Self constructed user and realm
                 set token [ns_base64encode"${user}\0${pass}"]
             }
-            _ns_smtp_send "AUTH PLAIN" $wfd "AUTH PLAIN $token"
-            _ns_smtp_recv "AUTH PLAIN" $rfd 235
+
+            #
+            # Use AUTH PLAIN if no or no other mode is defined
+            #
+            if {$authmode eq {} || $authmode eq "PLAIN"} {
+
+                _ns_smtp_send "AUTH PLAIN" $wfd "AUTH PLAIN $token"
+                _ns_smtp_recv "AUTH PLAIN" $rfd 235
+
+            } elseif {$authmode eq "LOGIN"} {
+
+                _ns_smtp_send "AUTH LOGIN" $wfd "AUTH LOGIN"
+                _ns_smtp_recv "AUTH LOGIN" $rfd 334
+                # send username if AUTH LOGIN is supported
+                _ns_smtp_send "AUTH LOGIN" $wfd [ns_base64encode $user]
+                _ns_smtp_recv "AUTH LOGIN" $rfd 334
+                # then send password
+                _ns_smtp_send "AUTH LOGIN" $wfd [ns_base64encode $pass]
+                _ns_smtp_recv "AUTH LOGIN" $rfd 235
+
+            }
+
         } else {
             _ns_smtp_send "Helo" $wfd "HELO $host"
             _ns_smtp_recv "Helo" $rfd 250
@@ -364,6 +386,7 @@ proc ns_sendmail_config {{mode ""}} {
              smtpmsgidhostname [ns_config ns/parameters smtpmsgidhostname] \
              smtpencodingmode  [ns_config ns/parameters smtpencodingmode]  \
              smtpencoding      [ns_config ns/parameters smtpencoding]      \
+             smtpauthmode      [ns_config ns/parameters smtpauthmode]      \
              smtpauthuser      [ns_config ns/parameters smtpauthuser]      \
              smtpauthpassword  [ns_config ns/parameters smtpauthpassword]]
 
