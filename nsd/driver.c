@@ -1594,14 +1594,15 @@ SockAccept(Driver *drvPtr)
     int          slen;
 
     /*
-     * Allocate and/or initialize a connection structure.
+     * Allocate and/or initialize a Sock structure.
+     * Size the sock according to allocated sls slots.
      */
 
     sockPtr = firstSockPtr;
     if (sockPtr != NULL) {
         firstSockPtr = sockPtr->nextPtr;
     } else {
-        sockPtr = ns_malloc(sizeof(Sock));
+        sockPtr = ns_calloc(1, sizeof(Sock) + nsconf.nextSlsId);
         sockPtr->reqPtr = NULL;
     }
 
@@ -1906,6 +1907,8 @@ SockClose(Sock *sockPtr, int keep)
     if (keep == 0) {
         NsDriverClose(sockPtr);
     }
+
+    NsSlsCleanup(sockPtr);
 
 #ifndef _WIN32
 

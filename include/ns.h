@@ -286,6 +286,7 @@ typedef struct Ns_CacheSearch {
 typedef struct _Ns_Cache        *Ns_Cache;
 typedef struct _Ns_Entry        *Ns_Entry;
 typedef struct _Ns_Cls          *Ns_Cls;
+typedef struct _Ns_Sls          *Ns_Sls;
 typedef void                    *Ns_OpContext;
 typedef struct _Ns_TaskQueue    *Ns_TaskQueue;
 typedef struct _Ns_Task         *Ns_Task;
@@ -524,7 +525,7 @@ typedef struct Ns_Sock {
     Ns_Driver *driver;
     struct sockaddr_in sa;
     SOCKET sock;
-    void  *arg;
+    void  *arg;             /* DEPRECATED: See Ns_Sls */
 } Ns_Sock;
 
 /*
@@ -1790,6 +1791,38 @@ NS_EXTERN SOCKET Ns_SockBindUnix(char *path, int socktype, int mode);
 NS_EXTERN void NsForkBinder(void);
 NS_EXTERN void NsStopBinder(void);
 NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int options);
+
+/*
+ * sls.s
+ */
+
+NS_EXTERN void
+Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_SlsSet(Ns_Sls *slsPtr, Ns_Sock *sock, void *data)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void *
+Ns_SlsGet(Ns_Sls *slsPtr, Ns_Sock *sock)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_SlsSetKeyed(Ns_Sock *sock, CONST char *key, CONST char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN char *
+Ns_SlsGetKeyed(Ns_Sock *sock, CONST char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN char *
+Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * sock.c:

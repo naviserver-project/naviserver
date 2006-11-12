@@ -144,6 +144,12 @@ struct _nsconf {
     int backlog;
 
     /*
+     * Slot IDs for socket local storage.
+     */
+
+    int nextSlsId;
+
+    /*
      * The following table holds the configured virtual servers.
      * The dstring maintains a Tcl list of the names.
      */
@@ -449,6 +455,8 @@ typedef struct Sock {
     size_t tsize;
 
     UploadStats upload;
+
+    void *sls[1];               /* Slots for sls storage. */
 
 } Sock;
 
@@ -928,6 +936,7 @@ extern void NsInitQueue(void);
 extern void NsInitLimits(void);
 extern void NsInitDrivers(void);
 extern void NsInitSched(void);
+extern void NsInitSls(void);
 extern void NsInitTcl(void);
 extern void NsInitUrlSpace(void);
 extern void NsInitRequests(void);
@@ -1058,6 +1067,7 @@ extern void NsFreeConnInterp(Conn *connPtr)
 
 extern struct Bucket *NsTclCreateBuckets(char *server, int nbuckets);
 
+extern void NsSlsCleanup(Sock *sockPtr);
 extern void NsClsCleanup(Conn *connPtr);
 extern void NsTclAddBasicCmds(NsInterp *itPtr);
 extern void NsTclAddServerCmds(NsInterp *itPtr);

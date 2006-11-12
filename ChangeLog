@@ -1,3 +1,17 @@
+2006-11-12  Stephen Deasey  <sd@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h
+	* nsd/sls.c:
+	* nsd/tclcmds.c:
+	* nsd/driver.c:
+	* nsd/init.c:
+	* nsd/Makefile:
+	* doc/src/mann/ns_sls.man:
+	* tests/ns_sls.test: Add Ns_Sls* and ns_sls commands supporting
+	socket-local-storage (data which persists for the lifetime of an
+	open TCP connection). Fixes Bug #1522162.
+
 2006-11-09  Bernd Eidenschink  <eide@users.sf.net>
 
 	* nsd-config.tcl: Added config parameter smtpauthmode

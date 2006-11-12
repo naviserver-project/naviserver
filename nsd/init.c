@@ -66,9 +66,10 @@ NsdInit(void)
 
     if (!once) {
         once = 1;
-    	NsInitBinder();
+        NsInitSls();  /* Checks if server started. */
+    	NsInitConf(); /* <- Server marked 'started' during library load. */
     	NsInitLog();
-    	NsInitConf();
+    	NsInitBinder();
     	NsInitEncodings();
     	NsInitListen();
         NsInitLimits();
