@@ -84,6 +84,20 @@ TEA_ENABLE_SYMBOLS
 TEA_TIME_HANDLER
 
 #
+# Extract Tcl library path and library name.
+#
+
+TCL_LIB_PATH=`dirname $TCL_STUB_LIB_PATH`
+LDFLAGS="$LDFLAGS -L$TCL_LIB_PATH"
+AC_SUBST(TCL_LIB_PATH)
+
+TCL_LIB=`echo $TCL_LIB_FILE | sed -r 's/lib(tcl[[8-9]]\.[[0-9]]g?).*/\1/'`
+AC_SUBST(TCL_LIB)
+
+AC_SUBST(TCL_EXEC_PREFIX)
+
+
+#
 # Modify SHLIB_LD from tclConfig.sh as we specifically
 # name shared library _init functions.
 #
@@ -163,6 +177,15 @@ AC_TRY_RUN([
   }
 ], AC_DEFINE(USE_DUPHIGH, 1, [need for dup high]) as_ok=yes, as_ok=no, as_ok=no)
 AC_MSG_RESULT($as_ok)
+
+#
+# Tcl_GetMemoryInfo() is exported depending on a complex set of compilation
+# flags. Physically check to see if it's actually available.
+#
+
+AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
+             AC_DEFINE([HAVE_TCL_GETMEMORYINFO], 1,
+                       [Define to 1 if Tcl exports the Tcl_GetMemoryInfo function.]))
 
 #
 # Darwin's port of poll() is broken as it may return

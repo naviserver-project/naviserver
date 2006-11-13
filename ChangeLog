@@ -1,5 +1,11 @@
 2006-11-12  Stephen Deasey  <sd@users.sf.net>
 
+        * configure.in:
+	* nsd/info.c:
+	* nsthread/nsthreadtest.c: Check for presence of Tcl_GetMemoryInfo
+	in Tcl library. This isn't exported when Tcl is built with the
+	custom memory allocator dissabled.
+
 	* include/ns.h:
 	* nsd/nsd.h
 	* nsd/sls.c:

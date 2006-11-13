@@ -567,8 +567,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         return TCL_OK;
         
     case IPoolsIdx:
-#if !defined(_WIN32) && defined(USE_THREAD_ALLOC) && (STATIC_BUILD == 0)
-        Tcl_GetMemoryInfo(&ds); /* As of Tcl8.4.1 this is not exported. */
+#ifdef HAVE_TCL_GETMEMORYINFO
+        Tcl_GetMemoryInfo(&ds);
         Tcl_DStringResult(interp, &ds);
 #endif
         return TCL_OK;

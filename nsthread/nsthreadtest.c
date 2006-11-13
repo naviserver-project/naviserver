@@ -336,8 +336,7 @@ DumperThread(void *arg)
 	DumpString(&ds);
 	Ns_MutexList(&ds);
 	DumpString(&ds);
-#if !defined(_WIN32) && defined(USE_THREAD_ALLOC) && (STATIC_BUILD == 0)
-	/* NB: Not yet exported in WIN32 Tcl. */
+#ifdef HAVE_TCL_GETMEMORYINFO
 	Tcl_GetMemoryInfo(&ds);
 #endif
 	DumpString(&ds);
