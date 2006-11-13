@@ -599,6 +599,7 @@ Ns_GetGid(char *group)
 }
 
 #ifdef HAVE_POLL
+int
 ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
 {
     return poll(fds, nfds, timo);

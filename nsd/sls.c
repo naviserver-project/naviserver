@@ -335,6 +335,7 @@ NsTclSlsObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Ns_Sock    *sock;
     Ns_DString  ds;
     char       *data;
+    int         cmd;
 
     if ((conn = Ns_TclGetConn(interp)) == NULL
         || (sock = Ns_ConnSockPtr(conn)) == NULL) {
@@ -348,14 +349,14 @@ NsTclSlsObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
     enum ISubCmdIdx {
         CArrayIdx, CGetIdx, CSetIdx, CUnsetIdx
-    } cmd;
+    };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "command");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0,
-                            (int *) &cmd) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0, &cmd)
+            != TCL_OK) {
         return TCL_ERROR;
     }
 

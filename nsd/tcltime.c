@@ -120,7 +120,6 @@ Ns_TclNewTimeObj(Ns_Time *timePtr)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
-    Tcl_InvalidateStringRep(objPtr);
     SetTimeInternalRep(objPtr, timePtr);
     
     return objPtr;
@@ -146,6 +145,9 @@ Ns_TclNewTimeObj(Ns_Time *timePtr)
 void
 Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
+    if (Tcl_IsShared(objPtr)) {
+        Tcl_Panic("Ns_TclSetTimeObj called with shared object");
+    }
     Tcl_InvalidateStringRep(objPtr);
     SetTimeInternalRep(objPtr, timePtr);
 }
@@ -179,7 +181,7 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
         if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
             return TCL_ERROR;
         }
-        *timePtr = *((Ns_Time *) &objPtr->internalRep);
+        *timePtr = *((Ns_Time *) (void *) &objPtr->internalRep);
     }
     return TCL_OK;
 }
@@ -210,7 +212,7 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
             return TCL_ERROR;
         }
     }
-    *timePtrPtr = ((Ns_Time *) &objPtr->internalRep);
+    *timePtrPtr = ((Ns_Time *) (void *) &objPtr->internalRep);
 
     return TCL_OK;
 }
@@ -507,7 +509,7 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
 static void
 UpdateStringOfTime(Tcl_Obj *objPtr)
 {
-    Ns_Time *timePtr = (Ns_Time *) &objPtr->internalRep;
+    Ns_Time *timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
     int      len;
     char     buf[100];
 
@@ -545,7 +547,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
     char    *str, *sep;
     Ns_Time  time;
-    int      result;
+    int      value, result;
 
     str = Tcl_GetString(objPtr);
     sep = strchr(str, ':');
@@ -556,14 +558,16 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         time.usec = 0;
     } else {
         *sep = '\0';
-        result = Tcl_GetInt(interp, str, (int *) &time.sec);
+        result = Tcl_GetInt(interp, str, &value);
+        time.sec = value;
         *sep = ':';
         if (result != TCL_OK) {
             return TCL_ERROR;
         }
-        if (Tcl_GetInt(interp, sep+1, (int *) &time.usec) != TCL_OK) {
+        if (Tcl_GetInt(interp, sep+1, &value) != TCL_OK) {
             return TCL_ERROR;
         }
+        time.usec = value;
     }
     Ns_AdjTime(&time);
     SetTimeInternalRep(objPtr, &time);
@@ -592,8 +596,12 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 static void
 SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
+    if (Tcl_IsShared(objPtr)) {
+        Tcl_Panic("SetTimeInternalRep called with shared object");
+    }
+
     Ns_TclResetObjType(objPtr, &timeType);
-    *((Ns_Time *) &objPtr->internalRep) = *timePtr;
+    *((Ns_Time *) (void *) &objPtr->internalRep) = *timePtr;
     Tcl_InvalidateStringRep(objPtr);
     objPtr->length = 0;  /* ensure there's no stumbling */
 }

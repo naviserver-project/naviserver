@@ -41,7 +41,7 @@ AC_CONFIG_SRCDIR(include/ns.h)
 AC_CONFIG_HEADER(include/config.h)
 AC_PREREQ(2.50)
 AC_REVISION($Revision$)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wall -Wno-implicit-int foreign])
 
 
 #
