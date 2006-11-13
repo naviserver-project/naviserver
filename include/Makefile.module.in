@@ -74,7 +74,7 @@ endif
 ifdef MOD
     BUILD     += $(MOD)
     INSTALL   += install-mod
-    CLEAN     += clean-mod clean-bak
+    CLEAN     += clean-mod
     ifeq ($(origin MODOBJS), undefined)
         MODOBJS	= $(OBJS)
     endif
@@ -91,7 +91,7 @@ ifdef LIB
     LIBFILE	 = lib$(LIB)$(LIBEXT)
     BUILD   += $(LIBFILE)
     INSTALL += install-lib
-    CLEAN   += clean-lib clean-bak
+    CLEAN   += clean-lib
     MODLIBS += $(LIBFILE)
     PGMLIBS += $(LIBFILE)
 endif
@@ -100,7 +100,7 @@ ifdef ALIB
     ALIBFILE  = lib$(ALIB).a
     BUILD    += $(ALIBFILE)
     INSTALL  += install-alib
-    CLEAN    += clean-alib clean-bak
+    CLEAN    += clean-alib
     MODLIBS  += $(ALIBFILE)
     PGMLIBS  += $(ALIBFILE)
 endif
@@ -108,15 +108,11 @@ endif
 ifdef PGM
     BUILD   += $(PGM)
     INSTALL += install-pgm
-    CLEAN   += clean-pgm clean-bak
+    CLEAN   += clean-pgm
 endif
 
 ifdef LIBHDRS
     INSTALL += install-hdrs
-endif
-
-ifndef BAKFILES
-    BAKFILES = *~ *.bak
 endif
 
 ifdef NSBUILD
@@ -183,7 +179,4 @@ clean-alib:
 clean-pgm:
 	$(RM) $(PGM) $(PGMOBJS)
 
-clean-bak:
-	$(RM) $(BAKFILES)
-
-.PHONY: clean-mod clean-lib clean-alib clean-pgm clean-bak
+.PHONY: clean-mod clean-lib clean-alib clean-pgm

@@ -1,12 +1,15 @@
 2006-11-12  Stephen Deasey  <sd@users.sf.net>
 
-        * configure.in:
+	* Makefile:
+	* include/Makefile.module.in: Don't clobber editor backup files.
+
+	* configure.in:
 	* nsd/sls.c:
 	* nsd/tcltime.c:
 	* nsd/unix.c: Quiten some compiler alias warnings, including some
 	ugly casts in tcltime.c.
 
-        * configure.in:
+	* configure.in:
 	* nsd/info.c:
 	* nsthread/nsthreadtest.c: Check for presence of Tcl_GetMemoryInfo
 	in Tcl library. This isn't exported when Tcl is built with the
