@@ -1,3 +1,9 @@
+2006-11-14  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/sendmail.tcl: Fixed the bug or weird behaviour when sending big 
+	attachments, because socket is nonblocking sending big chunk in one puts
+	does not work, so need to do split and send line by line
+
 2006-11-14  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* doc/src/man3/Ns_Sls.man: Document the C API for SLS data. Tcl

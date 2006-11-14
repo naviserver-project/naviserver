@@ -508,7 +508,10 @@ proc _ns_smtp_send {mode sock string} {
         return -code error "$mode: Timeout writing to SMTP host"
     }
 
-    puts $sock $string; flush $sock
+    foreach line [split $string "\n"] {
+      puts $sock $line
+    }
+    flush $sock
 }
 
 
