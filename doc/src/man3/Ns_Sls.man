@@ -1,0 +1,159 @@
+[include ../version_include]
+
+[manpage_begin {Ns_SlsAlloc, Ns_SlsSet, Ns_SlsGet, Ns_SlsSetKeyed, Ns_SlsGetKeyed} 3 [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {socket local storage}]
+
+[description]
+
+The underlying TCP socket used by a NaviServer connection may be kept open and
+reused by following connections, e.g. during HTTP keep-alive . Using SLS you
+can save data with the socket, for the lifetime of the TCP connection.
+
+[para]
+There are two ways to save data: 1) by first allocating a slot you can save
+a pointer to arbitrary data; 2) using a string key you can save string data,
+which is also easily available via the Tcl [cmd ns_sls] API.
+
+[para]
+The following functions require an active connection -- they should be called
+from e.g. a registered proc or filter.
+
+
+[section FUNCTIONS]
+[list_begin definitions]
+
+
+[call [fun Ns_SlsAlloc] [arg sls] [arg cleanup]]
+
+Allocate a new SLS slot. Must be called before the server completes startup.
+
+
+[call [fun Ns_SlsSet] [arg sls] [arg sock] [arg data]]
+
+Save data in an SLS slot for the given connection socket. Any previously saved
+data for this slot will be freed using the registered cleanup function. The
+data will be freed automatically when the socket is closed.
+
+
+[call [fun Ns_SlsGet] [arg sls] [arg sock]]
+
+Get the data associated with the given SLS slot and connection socket. If the
+slsPtr is invalid, the socket is invalid or closed, or no data has been saved
+in this slot then NULL is returned.
+
+
+[call [fun Ns_SlsSetKeyed] [arg sock] [arg [const key]] [arg [const value]]]
+
+Copy the NUL terminated c-string [arg value] into SLS storage identified by
+[arg key]. The copied string will be automatically freed when the TCP socket
+closes, or when a new value is set with the same key. Data set using this
+API is available to Tcl code using the [cmd "ns_sls get"] command.
+
+
+[call [fun Ns_SlsGetKeyed] [arg sock] [arg [const key]]]
+
+Returns a pointer to a NUL terminated c-string -- data previously saved via
+[fun Ns_SlsSetKeyed] or [cmd "ns_sls set"]. NULL is returned if the connection
+socket is invalid, the key does not exist, or the saved data actually is NULL.
+
+[list_end]
+
+
+[section ARGUMENTS]
+[list_begin arg]
+
+[arg_def "Ns_Sls *" sls in/out]
+
+An opaque SLS slot handle.
+
+
+[arg_def "Ns_Sock *" sock in]
+
+Pointer to the Ns_Sock structure associated with the current connection.
+
+
+[arg_def [const "void *"] data in]
+
+The data to save in an SLS slot.
+
+
+[arg_def [const "char *"] key in]
+
+Keye identifying string data.
+
+
+[arg_def [const "char *"] value in]
+
+NUL terminated c-string value stored using the keyed data API. Memory is
+allocated and a copy is made. The [arg value] is also available via the
+[cmd "ns_sls get"] command.
+
+
+[arg_def "Ns_Callback *" cleanup in]
+
+An optional callback function to free slot data. The original data will be
+passed as the callback argument.
+
+[list_end]
+
+
+
+[section EXAMPLES]
+
+Log the number of connections handled by a single TCP socket:
+
+[example_begin]
+    #include "ns.h"
+
+    typedef struct Data {
+        int counter;
+    } Data;
+
+    static Ns_Callback   Cleanup;
+    static Ns_FilterProc Filter;
+
+    static [type Ns_Sls] slot;
+
+    int
+    Ns_ModuleInit(CONST char *server, CONST char *module)
+    {
+        [fun Ns_SlsAlloc](&slot, Cleanup);
+        (void) Ns_RegisterFilter(server, "GET", "/*", Filter,
+                                 NS_FILTER_PRE_AUTH, NULL);
+    }
+
+    static int
+    Filter(void *arg, Ns_Conn *conn, int why)
+    {
+        Ns_Sock *sock = Ns_ConnSockPtr(conn);
+        [type Ns_Sls]  *slot;
+        Data    *data;
+
+        data = [fun Ns_SlsGet](&slot, sock);
+        if (!data) {
+            data = ns_malloc(sizeof(Data));
+            data->counter = 0;
+            [fun Ns_SlsSet](&slot, sock, data)
+        }
+        data->counter++;
+
+        return NS_OK;
+    }
+
+    static int
+    Cleanup(void *arg)
+    {
+        Data *data = arg;
+
+        Ns_Log(Notice, "Example: sls counter: %d", data->counter);
+        ns_free(data);
+    }
+
+[example_end]
+
+
+[see_also ns_sls Ns_Cls Ns_Tls]
+[keywords sls storage data]
+
+[manpage_end]

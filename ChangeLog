@@ -1,4 +1,9 @@
-2006-11-12  Stephen Deasey  <sd@users.sf.net>
+2006-11-14  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* doc/src/man3/Ns_Sls.man: Document the C API for SLS data. Tcl
+	doctools is hurting...
+
+2006-11-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* Makefile:
 	* include/Makefile.module.in: Don't clobber editor backup files.
