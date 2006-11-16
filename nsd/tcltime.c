@@ -120,6 +120,7 @@ Ns_TclNewTimeObj(Ns_Time *timePtr)
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
+    Tcl_InvalidateStringRep(objPtr);
     SetTimeInternalRep(objPtr, timePtr);
     
     return objPtr;
@@ -596,12 +597,6 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 static void
 SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
-    if (Tcl_IsShared(objPtr)) {
-        Tcl_Panic("SetTimeInternalRep called with shared object");
-    }
-
     Ns_TclResetObjType(objPtr, &timeType);
     *((Ns_Time *) (void *) &objPtr->internalRep) = *timePtr;
-    Tcl_InvalidateStringRep(objPtr);
-    objPtr->length = 0;  /* ensure there's no stumbling */
 }
