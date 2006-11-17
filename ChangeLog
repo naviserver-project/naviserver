@@ -1,3 +1,7 @@
+2006-11-17  Bernd Eidenschink  <eide@users.sf.net>
+
+	* nsd/mimetypes.c: Added recommended MIME types for OpenDocument documents.
+
 2006-11-16  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tcltime.c: Remove excessive check for shared object when
