@@ -271,8 +271,7 @@ features include:
 [nl]
 
 
-[bullet]The [emph {[emph {<A NAME=nsthread>nsthread }]}]
-    platform-independent C API for multithreaded programming which
+[bullet]The nsthread platform-independent C API for multithreaded programming which
     includes:
 
     [list_begin bullet]
@@ -308,7 +307,6 @@ features include:
 
 
 [nl]
-
 
 
 [list_end]
@@ -520,7 +518,7 @@ The NaviServer includes a complete C API. Using the C API you can write:
 
    [list_begin bullet]
 
-   [bullet]The included [emph {[emph {nssock}]}] module implements HTTP over
+   [bullet]The included nssock module implements HTTP over
        regular TCP/IP sockets just like other basic Web servers such
        as NCSA, CERN, or WebSite.
 
@@ -530,7 +528,7 @@ The NaviServer includes a complete C API. Using the C API you can write:
 
    [bullet]Filter functions which run at any stage of each HTTP request. A
        filter can be used to implement logging - in fact, this is how the
-       [emph {[emph {nslog}]}] Common Log Format logging module works.
+       nslog Common Log Format logging module works.
 
 
 [nl]
@@ -609,7 +607,7 @@ to SQL databases:
 [list_end]
 
 
-[bullet]NaviServer maintains one or more [emph {[emph {pools}]}] with one or
+[bullet]NaviServer maintains one or more pools with one or
     more open database connections. By maintaining open connections,
     HTTP requests have instant access to the database instead of
     incurring the expensive startup time of a CGI-based solution.

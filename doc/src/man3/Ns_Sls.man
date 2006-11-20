@@ -1,4 +1,4 @@
-[include ../version_include]
+[include version_include]
 
 [manpage_begin {Ns_SlsAlloc, Ns_SlsSet, Ns_SlsGet, Ns_SlsSetKeyed, Ns_SlsGetKeyed} 3 [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
