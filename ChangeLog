@@ -1,3 +1,10 @@
+2006-11-27  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tcljob.c:
+	* doc/src/ns_job.man: Added -head parameter to ns_job queue
+	which if given places new job to the beginning of the queue. By 
+	default all new jobs are added to the end.
+
 2006-11-17  Bernd Eidenschink  <eide@users.sf.net>
 
 	* nsd/mimetypes.c: Added recommended MIME types for OpenDocument documents.

@@ -454,11 +454,12 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * Add a new job the specified queue.
              */
 
-            int job_type = JOB_NON_DETACHED;
+            int head = 0, jobType = JOB_NON_DETACHED;
             char *script = NULL;
 
             Ns_ObjvSpec opts[] = {
-                {"-detached",  Ns_ObjvBool,    &job_type, (void *) JOB_DETACHED},
+                {"-head",      Ns_ObjvBool,    &head,     (void *) 1},
+                {"-detached",  Ns_ObjvBool,    &jobType,  (void *) JOB_DETACHED},
                 {"-jobid",     Ns_ObjvString,  &jobId,    NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -483,7 +484,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              */
 
             jobPtr = NewJob((itPtr->servPtr ? itPtr->servPtr->server : NULL),
-                            queuePtr->name, job_type, script);
+                            queuePtr->name, jobType, script);
             Ns_GetTime(&jobPtr->startTime);
 
             if (tp.req == THREADPOOL_REQ_STOP
@@ -525,14 +526,21 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             }
 
             /*
-             * Add the job to the thread pool's job list.
+             * Add the job to the thread pool's job list, if -head is
+             * specified, insert new job at the beginning, otherwise append
+             * new job to the end
              */
 
-            nextPtrPtr = &tp.firstPtr;
-            while (*nextPtrPtr != NULL) {
-                nextPtrPtr = &((*nextPtrPtr)->nextPtr);
+            if (head) {
+                jobPtr->nextPtr = tp.firstPtr;
+                tp.firstPtr = jobPtr;
+            } else {
+                nextPtrPtr = &tp.firstPtr;
+                while (*nextPtrPtr != NULL) {
+                    nextPtrPtr = &((*nextPtrPtr)->nextPtr);
+                }
+                *nextPtrPtr = jobPtr;
             }
-            *nextPtrPtr = jobPtr;
 
             /*
              * Start a new thread if there are less than maxThreads currently

@@ -42,6 +42,10 @@ if -jobid is specified, it will be used as new job id instead of auto-genereated
 such job already exists, erro will be fired.
 
 [nl]
+if -head is specified, then new job will be inserted in the beginning of the joblist,otherwise
+and by default every new job is added to the end of the job list.
+
+[nl]
 The new job's ID is returned.
 
 [call [cmd  ns_job] [arg wait] [opt [arg {-timeout seconds:microseconds}]] [arg queueId] [arg jobId]]
