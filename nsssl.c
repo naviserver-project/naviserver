@@ -36,6 +36,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/rand.h>
 
 #define SSL_VERSION  "0.1"
 
@@ -58,7 +59,7 @@ static Ns_Mutex *locks;
 NS_EXPORT int Ns_ModuleInit(char *server, char *module)
 {
     Ns_DString ds;
-    int num_locks, n;
+    int num, n;
     char *path, *value;
     SSLDriver *drvPtr;
     Ns_DriverInitData init;
@@ -81,9 +82,9 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
 
     Ns_DStringInit(&ds);
 
-    num_locks = CRYPTO_num_locks();
-    locks = ns_calloc(num_locks, sizeof(*locks));
-    for (n = 0; n < num_locks; n++) {
+    num = CRYPTO_num_locks();
+    locks = ns_calloc(num, sizeof(*locks));
+    for (n = 0; n < num; n++) {
 	Ns_DStringPrintf(&ds, "nsssl:%d", n);
         Ns_MutexSetName(locks + n, ds.string);
 	Ns_DStringTrunc(&ds, 0);
@@ -151,6 +152,19 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
     SSL_CTX_set_mode(drvPtr->ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SINGLE_DH_USE);
     SSL_CTX_set_options(drvPtr->ctx, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+
+    // Seed the OpenSSL Pseudo-Random Number Generator.
+    Ns_DStringSetLength(&ds, 1024);
+    for (num = 0; !RAND_status() && num < 3; num++) {
+        Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
+        for (n = 0; n < 1024; n++) {
+            ds.string[n] = Ns_DRand();
+        }
+        RAND_seed(ds.string, 1024);
+    }
+    if (!RAND_status()) {
+        Ns_Log(Warning, "nsssl: PRNG fails to have enough entropy");
+    }
 
     Ns_TclRegisterTrace(server, SSLInterpInit, drvPtr, NS_TCL_TRACE_CREATE);
     Ns_DStringFree(&ds);
