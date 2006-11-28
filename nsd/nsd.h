@@ -237,11 +237,11 @@ typedef struct WriterSock {
     struct Sock       *sockPtr;
     char              *data;
     int                fd;
-    int                nread;
-    int                nsent;
-    int                size;
+    Tcl_WideInt        nread;
+    Tcl_WideInt        nsent;
+    Tcl_WideInt        size;
+    Tcl_WideInt        bufsize;
     unsigned int       flags;
-    int                bufsize;
     unsigned char      *buf;
 } WriterSock;
 
@@ -966,7 +966,7 @@ extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
-extern int NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan,
+extern int NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
                          FILE *fp, int fd, const char *data);
 
 extern NsServer *NsGetServer(CONST char *server);

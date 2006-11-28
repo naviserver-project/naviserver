@@ -7,6 +7,12 @@
 	make it flexible in returning parts of file via wruter thread. Added
 	example of ns_writer usage.
 
+	* nsd/driver.c: Updated Writer functions to Tcl_WideInt to support
+	files over 2Gb in size. Still a lot of routines need to be updated 
+	which return files, like Ns_ConnSend and etc. The minor obstacle also 
+	that GNU printf checker does not support new formats like %q in 
+	Ns_DStringPrintf.
+
 2006-11-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c:
@@ -40,6 +46,7 @@
 	* include/Makefile.module.in: Don't clobber editor backup files.
 
 	* configure.in:
+
 	* nsd/sls.c:
 	* nsd/tcltime.c:
 	* nsd/unix.c: Quiten some compiler alias warnings, including some
