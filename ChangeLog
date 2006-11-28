@@ -1,3 +1,12 @@
+2006-11-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* doc/src/ns_writer.man:
+	* contrib/examples/writer.tcl: Updated ns_writer command to 
+	support submitfile which was broken. Aed additional arguments to 
+	make it flexible in returning parts of file via wruter thread. Added
+	example of ns_writer usage.
+
 2006-11-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c:

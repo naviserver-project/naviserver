@@ -14,9 +14,31 @@ operations which consumes less resources than returning multiple files to the sl
 
 [call [cmd ns_writer] [arg list]]
 
+[nl]
+Returns list of all currently submitted files
+
 [call [cmd ns_writer] [arg submit] [arg data]]
 
-[call [cmd ns_writer] [arg submitfile] [arg file]]
+[nl]
+Submit arbitrary data to be returned via writer, data can be binary
+
+[call [cmd ns_writer] [arg submitfile] [opt [arg -headers]] [opt [arg {-offset offset}]] [opt [arg {-size size}]] [arg file]]
+
+[nl]
+Submits file to be returned, optionally the following arguments can be used:
+
+[nl]
+[arg -headers]
+Tells the writer to provide required HTTP headers, like content size, type and status.
+
+[nl]
+[arg -offset]
+If specified, file will be returned starting with this offset
+
+[nl]
+[arg -size]
+If not specified, the whole file will be retuned, otherwise only given part. Can be combined with -offset
+to return chunks of file
 
 [list_end]
 

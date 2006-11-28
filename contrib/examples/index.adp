@@ -19,6 +19,10 @@
 <LI> <A HREF=upload.tcl>Upload</A> page with progress statistcs, shows percentage
      of completion during the upload.
 
+<LI> <A HREF=writer.tcl>Writer</A> page with example how writer threads can be used
+     to return huge files. It shows all files that are in <%=[ns_info home]%>/modules/movies
+     directory.
+
 </UL>
 
 </HTML>

@@ -2900,12 +2900,6 @@ NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    /*
-     * Flush the headers
-     */
-
-    Ns_WriteConn(conn, NULL, 0);
-
     wrSockPtr = (WriterSock*)ns_calloc(1, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
     wrSockPtr->sockPtr->timeout.sec = 0;
@@ -2943,6 +2937,12 @@ NsWriterQueue(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     /* To keep nslog happy about content size returned */
     connPtr->nContentSent = nsend;
+
+    /*
+     * Flush the headers
+     */
+
+    Ns_WriteConn(conn, NULL, 0);
 
     /*
      * Get the next writer thread from the list, all writer requests are
@@ -2986,10 +2986,10 @@ int
 NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
-    char         *data;
-    int           opt, size, rc;
+    int           opt, rc;
     Tcl_Channel   chan;
     Tcl_DString   ds;
+    Ns_Conn      *conn;
     Driver       *drvPtr;
     DrvWriter    *wrPtr;
     WriterSock   *wrSockPtr;
@@ -3011,34 +3011,102 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                             "option", 0, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
+    conn = Ns_GetConn();
 
     switch (opt) {
-    case cmdSubmitIdx:
+    case cmdSubmitIdx: {
+        int size;
+        char *data;
+
         if (objc < 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "data");
             return TCL_ERROR;
         }
-        data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
-        if (data) {
-            int nwq = NsWriterQueue(Ns_GetConn(), size, NULL, NULL, -1, data);
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(nwq));
-        }
-        break;
-
-    case cmdSubmitFileIdx:
-        if (objc < 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "filename");
+        if (conn == NULL) {
+            Tcl_AppendResult(interp, "no connection", NULL);
             return TCL_ERROR;
         }
-        chan = Tcl_OpenFileChannel(interp, Tcl_GetString(objv[2]), "r", 0644);
+        data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
+        if (data) {
+            rc = NsWriterQueue(conn, size, NULL, NULL, -1, data);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+        }
+        break;
+    }
+
+    case cmdSubmitFileIdx: {
+        char *name;
+        Tcl_StatBuf stat;
+        Tcl_Obj *file = NULL;
+        Conn *connPtr = (Conn *) conn;
+        Tcl_WideInt headers = 0, offset = 0, size = 0;
+
+        Ns_ObjvSpec opts[] = {
+            {"-headers",  Ns_ObjvBool,    &headers, (void *) NS_TRUE},
+            {"-offset",   Ns_ObjvWideInt, &offset,  NULL},
+            {"-size",     Ns_ObjvWideInt, &size,    NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+        Ns_ObjvSpec args[] = {
+            {"file",      Ns_ObjvObj,     &file,    NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        }
+
+        if (conn == NULL) {
+            Tcl_AppendResult(interp, "no connection", NULL);
+            return TCL_ERROR;
+        }
+
+        name = Tcl_GetString(file);
+
+        if (size <= 0) {
+            rc = Tcl_FSStat(file, &stat);
+            if (rc != 0) {
+                Tcl_AppendResult(interp, "stat failed for ", name, " : ", strerror(Tcl_GetErrno()), NULL);
+                return TCL_ERROR;
+            }
+            size = stat.st_size;
+        }
+
+        chan = Tcl_OpenFileChannel(interp, name, "r", 0644);
         if (chan == NULL) {
             return TCL_ERROR;
         }
         Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
-        rc = NsWriterQueue(Ns_GetConn(), 0, chan, NULL, 0, NULL);
+
+        if (offset > 0) {
+            Tcl_Seek(chan, offset, SEEK_SET);
+        }
+
+        /*
+         *  The caller requested that we build required headers
+         */
+
+        if (headers) {
+            Ns_ConnSetRequiredHeaders(conn, Ns_GetMimeType(name), size);
+            Ns_ConnQueueHeaders(conn, 200);
+        }
+
+        rc = NsWriterQueue(conn, size, chan, NULL, 0, NULL);
+
+        /*
+         *  If failed, we need to cleanup queued headers so we exit with clean
+         *  state and the caller can return appropriate return code
+         */
+
+        if (rc != NS_OK && headers) {
+            Ns_DStringSetLength(&connPtr->queued, 0);
+        }
+
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         Tcl_Close(NULL, chan);
+
         break;
+    }
 
     case cmdListIdx:
         Tcl_DStringInit(&ds);
