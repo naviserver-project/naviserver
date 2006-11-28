@@ -1,0 +1,44 @@
+SSL driver for NaviServer 4.x
+Release 0.1
+vlad@crystalballinc.com
+
+This is NaviServer module that implements HTTP over SSL support and
+adds new ns_ssl command.
+
+/*--------------------------------------------------------------------*/
+
+
+ Configuration
+ 
+   nsd.tcl
+ 
+   ns_section    ns/servers/server/modules
+   ns_param      nsssl        		nsssl.so
+ 
+   ns_section    ns/servers/server/module/nsssl
+   ns_param	 certificate 		/usr/local/ns/modules/nsssl/server.pem
+   ns_param      address    		0.0.0.0
+   ns_param      port       		443
+   ns_param      ciphers                "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP"
+   ns_param      protocols              "!SSLv2"
+ 
+  certificate is required and will not run without it, it should contain cert and privkey
+
+  ciphers parameter defines which ciphers will be used, by default nsssl uses all ciphers
+
+  protocols parameter defines which protocols can be disabled, options are:
+            !SSLv2 !SSLv3 !TLSv1, by default all protocosl are enabled
+
+  all other driver related parameters can be specified, see nssock for more details
+
+ Creating self-signed certificate
+
+  openssl genrsa 1024 > host.key
+  openssl req -new -x509 -nodes -sha1 -days 365 -key host.key > host.cert
+  cat host.cert host.key > server.pem
+  rm -rf host.cert host.key
+
+ Authors
+ 
+     Vlad Seryakov vlad@crystalballinc.com
+
