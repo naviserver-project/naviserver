@@ -38,6 +38,13 @@ crash the server.  Before using this, you should probably look at
 ns_mutex lock acquires the specified mutual exclusion lock. The mutexid argument is
 the mutex ID returned by ns_mutex create when the mutex was created.
 
+[call [cmd  ns_mutex] [arg trylock] [arg object]]
+
+ns_mutex trylock tries to acquire the specified mutual exclusion lock. The mutexid argument is
+the mutex ID returned by ns_mutex create when the mutex was created. If the mutex is locked
+successfully, return value of 0 is returned. non-zero return value indicates that the mutex is
+already locked by someone else
+
 [call [cmd  ns_mutex] [arg unlock] [arg object]]
 
 ns_mutex unlock unlocks the specified mutual exclusion lock. The mutexid argument is

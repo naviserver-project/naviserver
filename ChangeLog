@@ -1,3 +1,9 @@
+2006-11-29  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* doc/src/ns_mutex.man:
+	* nsd/tclthread.c: Added ns_mutex trylock command to Tcl API,
+	this is valid C API function, return 0 on lock or < 0 if already locked
+
 2006-11-28  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/driver.c:

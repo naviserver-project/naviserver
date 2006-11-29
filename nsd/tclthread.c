@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * tclthread.c --
  *
- *      Tcl wrappers around all thread objects 
+ *      Tcl wrappers around all thread objects
  */
 
 #include "nsd.h"
@@ -253,10 +253,10 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
     int       opt, status = TCL_OK;
 
     static CONST char *opts[] = {
-        "create", "destroy", "eval", "lock", "unlock", NULL
+        "create", "destroy", "eval", "lock", "trylock", "unlock", NULL
     };
     enum {
-        MCreateIdx, MDestroyIdx, MEvalIdx, MLockIdx, MUnlockIdx
+        MCreateIdx, MDestroyIdx, MEvalIdx, MLockIdx, MTryLockIdx, MUnlockIdx
     };
     if (GetArgs(interp, objc, objv, opts, &opt, MCreateIdx, MDestroyIdx,
                 mutexAddr, &lockArg, &itPtr->servPtr->tcl.mutexTable) != TCL_OK) {
@@ -273,6 +273,9 @@ NsTclMutexObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
         break;
     case MLockIdx:
         Ns_MutexLock(lockPtr);
+        break;
+    case MTryLockIdx:
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_MutexTryLock(lockPtr)));
         break;
     case MUnlockIdx:
         Ns_MutexUnlock(lockPtr);
@@ -319,7 +322,7 @@ NsTclCritSecObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
     void     *csArg;
     Ns_Cs    *csPtr;
     int       opt, status = TCL_OK;
- 
+
     static CONST char *opts[] = {
         "create", "destroy", "enter", "eval", "leave", NULL
     };
@@ -738,7 +741,7 @@ CreateTclThread(NsInterp *itPtr, char *script, int detached, Ns_Thread *thrPtr)
  *      Generic argument parser for thread-object commands.
  *
  * Results:
- *      TCL_OK or TCL_ERROR. 
+ *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
  *      Memory for a thread-object may be allocated with an Address type
@@ -811,9 +814,9 @@ GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
  *
  * GetAddr --
  *
- *      Obtain the address-value from the passed object which is 
+ *      Obtain the address-value from the passed object which is
  *      expected to be of the Address type. If the object is not
- *      of the address type, it is converted to one with the new 
+ *      of the address type, it is converted to one with the new
  *      dinamically allocated address set as the object value.
  *      Note: string rep of the passed object is not invalidated!
  *
@@ -827,7 +830,7 @@ GetArgs(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
  */
 
 static int
-GetAddr(Tcl_Interp *interp, Tcl_Obj *argObj, CONST char *name, void **addrPtr, 
+GetAddr(Tcl_Interp *interp, Tcl_Obj *argObj, CONST char *name, void **addrPtr,
         Tcl_HashTable *table)
 {
     Tcl_HashEntry *hPtr = NULL;
