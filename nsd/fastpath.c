@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -47,15 +47,15 @@ NS_RCSID("@(#) $Header$");
 #define MAX_RANGES  (NS_CONN_MAXBUFS/3)
 
 typedef struct {
-    unsigned long start;   /* Start position */
-    unsigned long end;     /* End position (inclusive) */
-    unsigned long size;    /* Absolute size in bytes */
+    Tcl_WideInt start;   /* Start position */
+    Tcl_WideInt end;     /* End position (inclusive) */
+    Tcl_WideInt size;    /* Absolute size in bytes */
 } RangeOffset;
 
 typedef struct {
     int           status;  /* Return status: 206 or 416 */
     int           count;   /* Number of valid ranges parsed */
-    unsigned long size;    /* File size */
+    Tcl_WideInt size;    /* File size */
     unsigned long mtime;   /* File modification time */
     RangeOffset   offsets[MAX_RANGES];
 } Range;
@@ -85,10 +85,10 @@ static int  FastStat       (CONST char *file, Tcl_StatBuf *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  ParseRange     (Ns_Conn *conn, Range *rangesPtr);
 static int  FastReturn     (NsServer *servPtr, Ns_Conn *conn, int status,
-                            CONST char *type, CONST char *file, 
+                            CONST char *type, CONST char *file,
                             Tcl_StatBuf *stPtr);
-static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan, 
-                            CONST char *data, int len, CONST char *type);
+static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
+                            CONST char *data, Tcl_WideInt len, CONST char *type);
 
 
 /*
@@ -143,10 +143,10 @@ NsConfigFastpath()
  *
  * Ns_ConnReturnFile --
  *
- *      Send the contents of a file out the conn. 
+ *      Send the contents of a file out the conn.
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
  *      See FastReturn.
@@ -160,11 +160,11 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     Tcl_StatBuf  st;
     char        *server;
     NsServer    *servPtr;
-    
+
     if (FastStat(file, &st) == 0) {
         return Ns_ConnReturnNotFound(conn);
     }
-    
+
     server  = Ns_ConnServer(conn);
     servPtr = NsGetServer(server);
 
@@ -192,7 +192,7 @@ CONST char *
 Ns_PageRoot(CONST char *server)
 {
     NsServer *servPtr = NsGetServer(server);
- 
+
     if (servPtr != NULL) {
         return servPtr->fastpath.pageroot;
     }
@@ -242,7 +242,7 @@ UrlIs(CONST char *server, CONST char *url, int dir)
         Tcl_IncrRefCount(path);
         status = Tcl_FSStat(path, &st);
         Tcl_DecrRefCount(path);
-        if (status == 0 
+        if (status == 0
             && ((dir && S_ISDIR(st.st_mode))
                 || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
             is = NS_TRUE;
@@ -306,7 +306,7 @@ NsFastPathProc(void *arg, Ns_Conn *conn)
     } else if (S_ISDIR(st.st_mode)) {
 
         /*
-         * For directories, search for a matching directory file and 
+         * For directories, search for a matching directory file and
          * restart the connection if found.
          */
 
@@ -336,7 +336,7 @@ NsFastPathProc(void *arg, Ns_Conn *conn)
          * If no index file was found, invoke a directory listing
          * ADP or Tcl proc if configured.
          */
-        
+
         if (servPtr->fastpath.diradp != NULL) {
             result = Ns_AdpRequest(conn, servPtr->fastpath.diradp);
         } else if (servPtr->fastpath.dirproc != NULL) {
@@ -463,7 +463,7 @@ FastStat(CONST char *file, Tcl_StatBuf *stPtr)
 
     if (status != 0) {
         if (Tcl_GetErrno() != ENOENT && Tcl_GetErrno() != EACCES) {
-            Ns_Log(Error, "fastpath: stat(%s) failed: %s", 
+            Ns_Log(Error, "fastpath: stat(%s) failed: %s",
                    file, strerror(Tcl_GetErrno()));
         }
         return 0;
@@ -516,16 +516,16 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
     /*
      * Determine the mime type if not given.
      */
-    
+
     if (type == NULL) {
         type = Ns_GetMimeType(file);
     }
-    
+
     /*
      * Set the last modified header if not set yet.
      * If not modified since last request, return now.
      */
-     
+
     Ns_ConnSetLastModifiedHeader(conn, &stPtr->st_mtime);
     if (Ns_ConnModifiedSince(conn, stPtr->st_mtime) == NS_FALSE) {
         return Ns_ConnReturnNotModified(conn);
@@ -535,9 +535,9 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
      * For no output (i.e., HEAD request), just send required
      * headers.
      */
-     
+
     if (conn->flags & NS_CONN_SKIPBODY) {
-        Ns_ConnSetRequiredHeaders(conn, type, (int) stPtr->st_size);
+        Ns_ConnSetRequiredHeaders(conn, type, stPtr->st_size);
         return Ns_ConnFlushHeaders(conn, status);
     }
 
@@ -547,13 +547,13 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
      */
 
     if (ParseRange(conn, &range) == NS_ERROR) {
-        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%lu", range.size);
+        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%llu", range.size);
         return Ns_ConnReturnStatus(conn, range.status);
     }
 
     /*
      * Depending on the size of the content and state of the fastpath cache,
-     * either return the data directly, or cache it first and return the 
+     * either return the data directly, or cache it first and return the
      * cached copy.
      */
 
@@ -579,14 +579,14 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
             result = ReturnRange(conn, &range, chan, 0, stPtr->st_size, type);
             Tcl_Close(NULL, chan);
         }
-        
+
     } else {
 
         /*
-         * Search for an existing cache entry for this file, validating 
+         * Search for an existing cache entry for this file, validating
          * the contents against the current file mtime and size.
          */
-        
+
 #ifdef _WIN32
         key = file;
 #else
@@ -604,14 +604,14 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
 
         if (!new
             && (filePtr = Ns_CacheGetValue(entry)) != NULL
-            && (filePtr->mtime != stPtr->st_mtime 
+            && (filePtr->mtime != stPtr->st_mtime
                 || filePtr->size != stPtr->st_size)) {
             Ns_CacheUnsetValue(entry);
             new = 1;
         }
 
         if (new) {
-            
+
             /*
              * Read and cache new or invalidated entries in one big chunk.
              */
@@ -651,7 +651,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
         if (filePtr != NULL) {
             ++filePtr->refcnt;
             Ns_CacheUnlock(cache);
-            result = ReturnRange(conn, &range, NULL, filePtr->bytes, 
+            result = ReturnRange(conn, &range, NULL, filePtr->bytes,
                                  filePtr->size, type);
             Ns_CacheLock(cache);
             DecrEntry(filePtr);
@@ -731,7 +731,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
         return NS_OK;
     }
     rangestr += 6; /* Skip "bytes=" */
-    
+
     while (*rangestr && index < MAX_RANGES-1) {
 
         thisPtr = &rangesPtr->offsets[index];
@@ -740,12 +740,12 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
         thisPtr->size  = 0;
 
         if (isdigit(UCHAR(*rangestr))) {
-            
+
             /*
              * Parse: first-byte-pos "-" last-byte-pos
              */
 
-            thisPtr->start = atol(rangestr);
+            thisPtr->start = atoll(rangestr);
             while (isdigit(UCHAR(*rangestr))) {
                 rangestr++;
             }
@@ -756,7 +756,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
             if (!isdigit(UCHAR(*rangestr))) {
                 thisPtr->end = rangesPtr->size - 1;
             } else {
-                thisPtr->end = atol(rangestr);
+                thisPtr->end = atoll(rangestr);
                 while (isdigit(UCHAR(*rangestr))) {
                     rangestr++;
                 }
@@ -775,7 +775,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
             if (!isdigit(UCHAR(*rangestr))) {
                 return NS_OK; /* Invalid syntax? */
             }
-            thisPtr->end = atol(rangestr);
+            thisPtr->end = atoll(rangestr);
             while (isdigit(UCHAR(*rangestr))) {
                 rangestr++;
             }
@@ -784,7 +784,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
             }
 
             /*
-             * Size from the end; convert into count 
+             * Size from the end; convert into count
              */
 
             thisPtr->start = rangesPtr->size - thisPtr->end;
@@ -814,7 +814,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
         }
 
         /*
-         * We are now done with the syntax of the range so go check 
+         * We are now done with the syntax of the range so go check
          * the semantics of the values...
          */
 
@@ -838,8 +838,8 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
         /*
          * RFC 2616: 14.35.1 Byte Ranges
          *
-         *  "If the last-byte-pos value is present, it MUST be greater 
-         *   than or equal to the first-byte-pos in that byte-range-spec, 
+         *  "If the last-byte-pos value is present, it MUST be greater
+         *   than or equal to the first-byte-pos in that byte-range-spec,
          *   or the byte-range-spec is syntactically invalid."
          *
          */
@@ -849,12 +849,12 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
         }
 
         /*
-         * Check this range overlapping with the former. 
+         * Check this range overlapping with the former.
          * The standard does not cleary specify how to
          * check those. Therefore, here is what we do:
          *
          *  a. for non-overlapping ranges: keep both
-         *  b. for overlapping ranges: collapse into one 
+         *  b. for overlapping ranges: collapse into one
          */
 
         if (prevPtr == NULL
@@ -900,7 +900,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
 
 static int
 ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
-            CONST char *data, int len, CONST char *type)
+            CONST char *data, Tcl_WideInt len, CONST char *type)
 {
     struct iovec bufs[MAX_RANGES*3], *iovPtr = bufs;
     int          status, i, result = NS_ERROR;
@@ -912,7 +912,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
     switch (rangesPtr->count) {
     case 0:
 
-        /* 
+        /*
          * No ranges: send all data, close connection and return
          */
 
@@ -927,12 +927,12 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
     case 1:
 
         /*
-         * Single byte-range-set: global Content-Range: header 
+         * Single byte-range-set: global Content-Range: header
          * will be included in the reply
          */
 
         roPtr = &rangesPtr->offsets[0];
-        Ns_ConnPrintfHeaders(conn, "Content-range", "bytes %lu-%lu/%i",
+        Ns_ConnPrintfHeaders(conn, "Content-range", "bytes %llu-%llu/%llu",
                              roPtr->start, roPtr->end, len);
 
         Ns_ConnSetRequiredHeaders(conn, type, roPtr->size);
@@ -950,8 +950,8 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
 
     default:
 
-         /* 
-          * Multiple ranges, return as multipart/byterange 
+         /*
+          * Multiple ranges, return as multipart/byterange
           */
 
         Ns_DStringInit(&ds);
@@ -962,30 +962,30 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
          * Use 3 iovec structures for each range to contain
          * starting boundary headers, data and closing boundary.
          */
-        
-        /* 
-         * First pass, produce headers and calculate content length 
+
+        /*
+         * First pass, produce headers and calculate content length
          */
-        
+
         rangesPtr->size = 0;
-        
+
         for (i = 0; i < rangesPtr->count; i++) {
             roPtr = &rangesPtr->offsets[i];
 
-            /* 
-             * Point to first iov struct for the given index 
+            /*
+             * Point to first iov struct for the given index
              */
- 
+
             iovPtr = &bufs[i*3];
-            
+
             /*
              * First io vector in the triple will hold the headers
              */
-            
+
             iovPtr->iov_base = &ds.string[ds.length];
             Ns_DStringPrintf(&ds,"--%s\r\n",boundary);
             Ns_DStringPrintf(&ds,"Content-type: %s\r\n",type);
-            Ns_DStringPrintf(&ds,"Content-range: bytes %lu-%lu/%i\r\n\r\n",
+            Ns_DStringPrintf(&ds,"Content-range: bytes %llu-%llu/%llu\r\n\r\n",
                              roPtr->start, roPtr->end, len);
             iovPtr->iov_len = strlen(iovPtr->iov_base);
             rangesPtr->size += iovPtr->iov_len;
@@ -994,23 +994,23 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
              * Second io vector will contain actual range buffer offset
              * and size. It will be ignored in chan mode.
              */
-            
+
             iovPtr++;
             iovPtr->iov_base = (char *) data + roPtr->start;
             iovPtr->iov_len  = roPtr->size;
             rangesPtr->size += iovPtr->iov_len;
-            
-            /* 
-             * Third io vector will hold closing boundary 
+
+            /*
+             * Third io vector will hold closing boundary
              */
-            
+
             iovPtr++;
             iovPtr->iov_base = &ds.string[ds.length];
-            
-            /* 
-             * Last boundary should have trailing -- 
+
+            /*
+             * Last boundary should have trailing --
              */
-            
+
             if (i == rangesPtr->count - 1) {
                 Ns_DStringPrintf(&ds,"\r\n--%s--",boundary);
             }
@@ -1019,33 +1019,33 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
             iovPtr->iov_len = strlen(iovPtr->iov_base);
             rangesPtr->size += iovPtr->iov_len;
         }
-        
-        /* 
-         * Second pass, send http headers and data 
+
+        /*
+         * Second pass, send http headers and data
          */
 
         Ns_ConnSetRequiredHeaders(conn, type, rangesPtr->size);
         Ns_ConnQueueHeaders(conn, rangesPtr->status);
-        
+
         if (chan == NULL) {
 
-            /* 
-             * In mmap mode, send all iov buffers at once 
+            /*
+             * In mmap mode, send all iov buffers at once
              */
 
             result = Ns_ConnSend(conn, bufs, rangesPtr->count * 3);
 
         } else {
 
-            /* 
-             * In chan mode, send headers and contents in separate calls 
+            /*
+             * In chan mode, send headers and contents in separate calls
              */
 
             for (i = 0; i < rangesPtr->count; i++) {
                 roPtr = &rangesPtr->offsets[i];
 
-                /* 
-                 * Point iovPtr to headers iov buffer 
+                /*
+                 * Point iovPtr to headers iov buffer
                  */
 
                 iovPtr = &bufs[i*3];
@@ -1053,11 +1053,11 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
                 if (result == NS_ERROR) {
                     break;
                 }
-                
+
                 /*
                  * Send file content directly from open chan
                  */
-                
+
                 Tcl_Seek(chan, roPtr->start, SEEK_SET);
                 result = Ns_ConnSendChannel(conn, chan, roPtr->size);
                 if (result == NS_ERROR) {
@@ -1068,7 +1068,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
                  * Point iovPtr to the third (boundary) iov buffer.
                  * The second iov buffer is not used in chan mode.
                  */
-                
+
                 iovPtr += 2;
                 result = Ns_ConnSend(conn, iovPtr, 1);
                 if (result == NS_ERROR) {

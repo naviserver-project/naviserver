@@ -50,7 +50,7 @@ NS_RCSID("@(#) $Header$");
 
 static int ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr);
 static int ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
-                      FILE *fp, int fd, int len);
+                      FILE *fp, int fd, Tcl_WideInt len);
 static int ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
                           CONST char *type, int sendRaw);
 
@@ -468,7 +468,7 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
  */
 
 void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, int length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
 {
     Ns_DString ds;
 
@@ -541,12 +541,12 @@ Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
  */
 
 void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, int length)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
 {
     Conn *connPtr = (Conn *) conn;
 
     connPtr->responseLength = length;
-    Ns_ConnPrintfHeaders(conn, "Content-Length", "%d", length);
+    Ns_ConnPrintfHeaders(conn, "Content-Length", "%llu", length);
 }
 
 
@@ -1259,7 +1259,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 
 int
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
-                         Tcl_Channel chan, int len)
+                         Tcl_Channel chan, Tcl_WideInt len)
 {
     return ReturnOpen(conn, status, type, chan, NULL, -1, len);
 }
@@ -1283,7 +1283,7 @@ Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
 
 int
 Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
-                      FILE *fp, int len)
+                      FILE *fp, Tcl_WideInt len)
 {
     return ReturnOpen(conn, status, type, NULL, fp, -1, len);
 }
@@ -1307,7 +1307,7 @@ Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
 
 int
 Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
-                    int fd, int len)
+                    int fd, Tcl_WideInt len)
 {
     return ReturnOpen(conn, status, type, NULL, NULL, fd, len);
 }
@@ -1371,7 +1371,7 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
 
 static int
 ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
-           FILE *fp, int fd, int len)
+           FILE *fp, int fd, Tcl_WideInt len)
 {
     int result;
 

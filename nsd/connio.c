@@ -41,7 +41,7 @@ NS_RCSID("@(#) $Header$");
 
 /*
  * UIO_MAXIOV defines the maximum number of buffers the OS
- * will accept at one time to calls such as witev().
+ * will accept at one time to calls such as writev().
  */
 
 #if defined(HAVE_SYS_UIO_H)
@@ -73,7 +73,7 @@ NS_RCSID("@(#) $Header$");
  * Local functions defined in this file
  */
 
-static int ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan,
+static int ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
                     FILE *fp, int fd);
 static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
                     FILE *fp, int fd);
@@ -579,19 +579,19 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
  */
 
 int
-Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, int nsend)
+Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
 {
     return ConnSend(conn, nsend, chan, NULL, -1);
 }
 
 int
-Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, int nsend)
+Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
 {
     return ConnSend(conn, nsend, NULL, fp, -1);
 }
 
 int
-Ns_ConnSendFd(Ns_Conn *conn, int fd, int nsend)
+Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
 {
     return ConnSend(conn, nsend, NULL, NULL, fd);
 }
@@ -937,9 +937,9 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
  */
 
 static int
-ConnSend(Ns_Conn *conn, int nsend, Tcl_Channel chan, FILE *fp, int fd)
+ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
-    int   toread, nread, status;
+    Tcl_WideInt toread, nread, status;
     char  buf[IOBUFSZ];
 
     /*

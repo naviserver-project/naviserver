@@ -2647,7 +2647,8 @@ WriterThread(void *arg)
 {
 
     unsigned char   c, *bufPtr;
-    int             n, err, stopping, pollto, toread, maxsize, status;
+    int             n, err, stopping, pollto, status;
+    Tcl_WideInt     toread, maxsize;
 
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     Ns_Time         now, timeout;
@@ -2866,8 +2867,8 @@ WriterThread(void *arg)
 static void
 SockWriterRelease(WriterSock *wrSockPtr, int reason, int err)
 {
-    Ns_Log(Notice, "Writer: closed sock=%d, fd=%d, error=%d/%d, sent=%.0f, flags=%X",
-           wrSockPtr->sockPtr->sock, wrSockPtr->fd, reason, err, (double)wrSockPtr->nsent, wrSockPtr->flags);
+    Ns_Log(Notice, "Writer: closed sock=%d, fd=%d, error=%d/%d, sent=%llu, flags=%X",
+           wrSockPtr->sockPtr->sock, wrSockPtr->fd, reason, err, wrSockPtr->nsent, wrSockPtr->flags);
     SockRelease(wrSockPtr->sockPtr, reason, err);
     if (wrSockPtr->fd > -1) {
         close(wrSockPtr->fd);
@@ -2931,18 +2932,19 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
         wrSockPtr->buf = (unsigned char*)wrSockPtr->data;
         wrSockPtr->bufsize = nsend;
     }
-    wrSockPtr->size = nsend;
-    wrSockPtr->nread = nsend;
-    connPtr->sockPtr = NULL;
-
-    /* To keep nslog happy about content size returned */
-    connPtr->nContentSent = nsend;
 
     /*
      * Flush the headers
      */
 
     Ns_WriteConn(conn, NULL, 0);
+
+    wrSockPtr->size = nsend;
+    wrSockPtr->nread = nsend;
+    connPtr->sockPtr = NULL;
+
+    /* To keep nslog happy about content size returned */
+    connPtr->nContentSent = nsend;
 
     /*
      * Get the next writer thread from the list, all writer requests are
@@ -2957,8 +2959,8 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     wrPtr->curPtr = wrPtr->curPtr->nextPtr;
     Ns_MutexUnlock(&wrPtr->lock);
 
-    Ns_Log(Notice, "Writer: %d: started sock=%d, fd=%d: size=%.0f, flags=%X: %s",
-           queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd, (double)nsend, wrSockPtr->flags, connPtr->reqPtr->request->url);
+    Ns_Log(Notice, "Writer: %d: started sock=%d, fd=%d: size=%llu, flags=%X: %s",
+           queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd, nsend, wrSockPtr->flags, connPtr->reqPtr->request->url);
 
     /*
      * Now add new writer socket to the writer thread's queue
@@ -3118,9 +3120,9 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Ns_MutexLock(&queuePtr->lock);
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
-                    Ns_DStringPrintf(&ds, "%s %s %d %.0f %.0f ", drvPtr->name,
+                    Ns_DStringPrintf(&ds, "%s %s %d %llu %llu ", drvPtr->name,
                                      ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
-                                     wrSockPtr->fd, (double)wrSockPtr->size, (double)wrSockPtr->nsent);
+                                     wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
                 Ns_MutexUnlock(&queuePtr->lock);

@@ -932,15 +932,15 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, int nsend)
+Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, int nsend)
+Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnSendFd(Ns_Conn *conn, int fd, int nsend)
+Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -1601,7 +1601,7 @@ Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt, ...)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(3, 4);
 
 NS_EXTERN void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, int length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -1609,7 +1609,7 @@ Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, int length)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -1698,16 +1698,16 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
 
 NS_EXTERN int
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
-                         Tcl_Channel chan, int len)
+                         Tcl_Channel chan, Tcl_WideInt len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
 Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
-                      FILE *fp, int len)
+                      FILE *fp, Tcl_WideInt len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
-Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type, int fd, int len)
+Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type, int fd, Tcl_WideInt len)
     NS_GNUC_NONNULL(1);
 
 /*

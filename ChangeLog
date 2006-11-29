@@ -13,6 +13,15 @@
 	that GNU printf checker does not support new formats like %q in 
 	Ns_DStringPrintf.
 
+	* nsd/ns.h:
+	* nsd/fastpath.c:
+	* nsd/return.c:
+	* nsd/connio.c:
+	* nsd/driver.c:
+	* nsd/nsd.h: Writer thread currently is the only way to return files 
+	bigger than 2Gb in size. Finally made it work with huge files.
+	CORRECTION: Now ns_respond or fastpath can return files bigger than 2GB as well.
+	
 2006-11-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c:
