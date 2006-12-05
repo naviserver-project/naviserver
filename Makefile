@@ -89,7 +89,7 @@ install-include: all
 install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
-install-doc:
+install-doc: build-doc
 	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
 	echo Installing html files in $(NAVISERVER)/pages/doc...
 	@for i in doc/html/*.html; do \

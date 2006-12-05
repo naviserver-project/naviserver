@@ -24,7 +24,7 @@
   <P>
   <UL>
 
-  <LI>The Naviserver <A HREF=doc/>Documentation<A> has been included with this distribution.<P>
+  <LI>The Naviserver <A HREF=doc/toc.html>Documentation<A> has been included with this distribution.<P>
 
   <LI>The Naviserver <A HREF=examples/>Examples<A> include useful scripts and tricks.<P>
 
