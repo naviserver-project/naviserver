@@ -442,7 +442,7 @@ if {$use_trace_inits} {
             if {$len != 1} {
                 error "ns_eval: command arguments not allowed with -pending"
             }
-            set jlist [ns_job joblist [nsv_get _ns_eval_jobq [ns_info server]]]
+            set jlist [ns_job joblist "ns_eval_q:[ns_info server]"]
             set res [list]
             foreach job $jlist {
                 array set jstate $job
@@ -478,7 +478,7 @@ if {$use_trace_inits} {
             # thread.
             #
 
-            set qid [nsv_get _ns_eval_jobq [ns_info server]]
+            set qid "ns_eval_q:[ns_info server]"
             set scr [list _ns_eval $args]
             if {$sync} {
                 set th_code [catch {
