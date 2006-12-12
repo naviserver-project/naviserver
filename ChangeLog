@@ -1,13 +1,26 @@
+2006-12-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * nsd.nsd.h:
+        * nsd/driver.c:
+        * sample-config.tcl.in:
+        * nsd-config.tcl: Added optional parameter to drivers "acceptsize" that
+        is 1 by default, if set to higher number it will tell the driver to
+        accept more than one request, which as tests showed helps to process
+        more requests, because if we have many sockets in the driver's queue it takes
+        time to scan all of them and new requests are waiting to be accepted. Some
+        benchmarking showed that if set to 10 it improves req/sec rate by 10% on simple
+        ADP requests. If not set, driver works as usually.
+
 2006-12-07  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/init.tcl: Fixed bug in ns_eval initialization using 
+	* nsd/init.tcl: Fixed bug in ns_eval initialization using
 	non-existent nsv array
 
 2006-12-04  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* Makefile:
 	* index.adp: Minor changes to make installation work and smoothed some edges
-	
+
 2006-11-29  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* doc/src/ns_mutex.man:
@@ -18,15 +31,15 @@
 
 	* nsd/driver.c:
 	* doc/src/ns_writer.man:
-	* contrib/examples/writer.tcl: Updated ns_writer command to 
-	support submitfile which was broken. Aed additional arguments to 
+	* contrib/examples/writer.tcl: Updated ns_writer command to
+	support submitfile which was broken. Aed additional arguments to
 	make it flexible in returning parts of file via wruter thread. Added
 	example of ns_writer usage.
 
 	* nsd/driver.c: Updated Writer functions to Tcl_WideInt to support
-	files over 2Gb in size. Still a lot of routines need to be updated 
-	which return files, like Ns_ConnSend and etc. The minor obstacle also 
-	that GNU printf checker does not support new formats like %q in 
+	files over 2Gb in size. Still a lot of routines need to be updated
+	which return files, like Ns_ConnSend and etc. The minor obstacle also
+	that GNU printf checker does not support new formats like %q in
 	Ns_DStringPrintf.
 
 	* nsd/ns.h:
@@ -34,15 +47,15 @@
 	* nsd/return.c:
 	* nsd/connio.c:
 	* nsd/driver.c:
-	* nsd/nsd.h: Writer thread currently is the only way to return files 
+	* nsd/nsd.h: Writer thread currently is the only way to return files
 	bigger than 2Gb in size. Finally made it work with huge files.
 	CORRECTION: Now ns_respond or fastpath can return files bigger than 2GB as well.
-	
+
 2006-11-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c:
 	* doc/src/ns_job.man: Added -head parameter to ns_job queue
-	which if given places new job to the beginning of the queue. By 
+	which if given places new job to the beginning of the queue. By
 	default all new jobs are added to the end.
 
 2006-11-17  Bernd Eidenschink  <eide@users.sf.net>
@@ -56,7 +69,7 @@
 
 2006-11-14  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* tcl/sendmail.tcl: Fixed the bug or weird behaviour when sending big 
+	* tcl/sendmail.tcl: Fixed the bug or weird behaviour when sending big
 	attachments, because socket is nonblocking sending big chunk in one puts
 	does not work, so need to do split and send line by line
 

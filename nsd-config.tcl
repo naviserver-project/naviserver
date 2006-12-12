@@ -3,7 +3,7 @@ set             home            	/usr/local/ns
 ns_section      "ns/server/default/modules"
 #ns_param        nscp            	nscp.so
 ns_param        nssock          	nssock.so
-ns_param        nslog           	nslog.so 
+ns_param        nslog           	nslog.so
 ns_param        nscgi			nscgi.so
 ns_param        nsdb            	nsdb.so
 
@@ -31,7 +31,7 @@ ns_param        smtpauthuser            ""
 ns_param        smtpauthpassword        ""
 
 ns_section	"ns/threads"
-ns_param	stacksize		[expr 1024*1024]
+ns_param	stacksize		[expr 512*1024]
 
 ns_section	"ns/mimetypes"
 ns_param	default         	text/plain
@@ -41,7 +41,7 @@ ns_section	"ns/db/drivers"
 #ns_param        postgres        	nsdbpg.so
 
 ns_section	"ns/db/pools"
-#ns_param	postgres		"PostgresSQL Database"    
+#ns_param	postgres		"PostgresSQL Database"
 
 ns_section      "ns/db/pool/pgsql"
 ns_param        driver          	postgres
@@ -63,6 +63,7 @@ ns_param	urlstats        	true
 ns_param	maxurlstats     	1000
 ns_param        checkmodifiedsince      true
 ns_param	enabletclpages  	true
+ns_param        minthreads              10
 ns_param	maxthreads		100
 ns_param	maxconnections		100
 ns_param	threadtimeout		1800
@@ -74,7 +75,7 @@ ns_section	"ns/server/default/fastpath"
 ns_param	serverdir		${home}
 ns_param	pagedir        		pages
 ns_param	directoryfile		"index.adp index.tcl index.html index.htm"
-ns_param	directoryproc   	_ns_dirlist           
+ns_param	directoryproc   	_ns_dirlist
 ns_param	directorylisting 	fancy
 
 ns_section	"ns/server/default/vhost"
@@ -123,6 +124,12 @@ ns_param	spoolerthreads		1
 ns_param	uploadsize		[expr 1024*1024*1]
 ns_param	writerthreads		0
 ns_param	writersize		[expr 1024*1024*5]
+ns_param        backlog                 1024
+ns_param        acceptsize              10
+ns_param        closewait               0
+ns_param        rcvbuf                  512000
+ns_param        sndbuf                  512000
+ns_param        maxqueuesize            1024
 
 ns_section      "ns/server/default/module/nscp"
 ns_param        port            	4080

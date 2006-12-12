@@ -337,6 +337,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                                              drvPtr->bufsize,
                                              drvPtr->bufsize, drvPtr->maxinput);
 
+    drvPtr->acceptsize   = Ns_ConfigIntRange(path, "acceptsize",
+                                             1,           1, INT_MAX);
+
     drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
 
     /*
@@ -1052,7 +1055,7 @@ static void
 DriverThread(void *ignored)
 {
     char          *errstr, c, drain[1024];
-    int            n, stopping, pollto;
+    int            n, stopping, pollto, accepted;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
     Ns_Time        timeout, now, diff;
     Driver        *drvPtr;
@@ -1259,29 +1262,42 @@ DriverThread(void *ignored)
         if (waitPtr == NULL) {
             drvPtr = firstDrvPtr;
             while (drvPtr != NULL) {
-                if (drvPtr->queuesize < drvPtr->maxqueuesize
-                    && (pfds[drvPtr->pidx].revents & POLLIN)
-                    && (sockPtr = SockAccept(drvPtr)) != NULL) {
 
-                    /*
-                     * Queue the socket immediately if request is provided
-                     */
+                /*
+                 * If configured, try to accept more than one request, under heavy load
+                 * this helps to process more requests
+                 */
 
-                    if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONACCEPT) {
+                accepted = 0;
+                do {
+                   sockPtr = NULL;
+                   if (drvPtr->queuesize < drvPtr->maxqueuesize
+                       && (pfds[drvPtr->pidx].revents & POLLIN)
+                       && (sockPtr = SockAccept(drvPtr)) != NULL) {
 
-                        if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                            Push(sockPtr, waitPtr);
-                        }
-
-                    } else {
                        /*
-                        * Put the socket on the read-ahead list.
+                        * Queue the socket immediately if request is provided
                         */
 
-                        SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                        Push(sockPtr, readPtr);
-                    }
-                }
+                       if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONACCEPT) {
+
+                           if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+                               Push(sockPtr, waitPtr);
+                           }
+
+                       } else {
+
+                          /*
+                           * Put the socket on the read-ahead list.
+                           */
+
+                           SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                           Push(sockPtr, readPtr);
+                       }
+                       accepted++;
+                   }
+                } while (sockPtr != NULL && accepted < drvPtr->acceptsize);
+
                 drvPtr = drvPtr->nextPtr;
             }
         }
