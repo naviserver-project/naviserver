@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -89,17 +89,15 @@ proc ns_tcl_abort {} {
 
 proc ns_sourcefile { path } {
 
-    set proc0 [info procs ns:tclcache_$path]
     file stat $path stat
     set cookie0 $stat(mtime):$stat(ctime):$stat(ino):$stat(dev)
+    set proc0 [info procs ns:tclcache.$path]
 
     # Verify file modification time
-    if { $proc0 eq "" || [$proc0 1] ne $cookie0 } {
+    if { $proc0 eq "" || [$proc0] ne $cookie0 } {
       set code [ns_fileread $path]
-      proc ns:tclcache_$path { {getcookie 0} } "
-         if { \$getcookie } { return $cookie0 }
-         $code
-      "
+      proc ns:tclcache_$path {} "$code"
+      proc ns:tclcache.$path {} "return $cookie0"
     }
     # Run the proc
     ns:tclcache_$path

@@ -1,5 +1,7 @@
 2006-12-11  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* tcl/file.tcl: Split into separate cache and coookie procs, runs faster
+
         * nsd.nsd.h:
         * nsd/driver.c:
         * sample-config.tcl.in:
