@@ -1269,34 +1269,32 @@ DriverThread(void *ignored)
                  */
 
                 accepted = 0;
-                do {
-                   sockPtr = NULL;
-                   if (drvPtr->queuesize < drvPtr->maxqueuesize
+                while (accepted < drvPtr->acceptsize &&
+                       drvPtr->queuesize < drvPtr->maxqueuesize
                        && (pfds[drvPtr->pidx].revents & POLLIN)
                        && (sockPtr = SockAccept(drvPtr)) != NULL) {
 
+                    /*
+                     * Queue the socket immediately if request is provided
+                     */
+
+                    if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONACCEPT) {
+
+                        if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+                            Push(sockPtr, waitPtr);
+                        }
+
+                    } else {
+
                        /*
-                        * Queue the socket immediately if request is provided
+                        * Put the socket on the read-ahead list.
                         */
 
-                       if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONACCEPT) {
-
-                           if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                               Push(sockPtr, waitPtr);
-                           }
-
-                       } else {
-
-                          /*
-                           * Put the socket on the read-ahead list.
-                           */
-
-                           SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                           Push(sockPtr, readPtr);
-                       }
-                       accepted++;
-                   }
-                } while (sockPtr != NULL && accepted < drvPtr->acceptsize);
+                        SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                        Push(sockPtr, readPtr);
+                    }
+                    accepted++;
+                }
 
                 drvPtr = drvPtr->nextPtr;
             }
