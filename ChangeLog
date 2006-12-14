@@ -14,6 +14,9 @@
         files using fatspath with native system calls. Same goes for adp reading.
         By default Tcl VFS is compiled in.
 
+        Added new command ns_filestat as a fast version of file stat in case when Tcl
+        VFS is not compiled in.
+
 2006-12-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/file.tcl: Split into separate cache and coookie procs, runs faster
