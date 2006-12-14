@@ -56,7 +56,7 @@ We also use HP/UX 10.20/11.0, Solaris 2.6, and VA Linux 6.2.1 (Linux 2.2).
 
 
 You will need a [emph {C compiler}].  The best one to use is GNU GCC from
-<a href="http://www.gnu.org/">http://www.gnu.org and its mirrors.  The versions
+[uri http://www.gnu.org] and its mirrors.  The versions
 we use are 2.95.2.  NaviServer (and the  included Tcl libraries) are written
 entirely in ANSI standard C.
 
@@ -77,27 +77,16 @@ entirely in ANSI standard C.
 
 
 We've tried to make building NaviServer as simple as possible.  On the supported
-platforms, simply typing [emph {gmake}] will build the server and its standard
-modules.
+platforms, simply type:
 
+[example_begin]
+
+./configure
+make
+
+[example_end]
 
 [para]
-
-
-
-[list_begin enum]
-
-
-  [enum]Check the include/Makefile.global file for platform-specific options. Most platforms use gcc.
-
-  [enum]Enable optional modules.  The default Makefile builds nssock, nscgi, nscp, nslog, nsperm, and nsdb.
-
-  [enum]Type "[emph {gmake}]", ensuring the make which is executed is GNU make.
-      You might want to call your GNU Make "gmake" instead of "make".
-
-
-[list_end]
-
 
 Some modules use third-party libraries.  If the library is missing, the NaviServer
 build will continue without error -- it just will not build the offending
@@ -120,7 +109,7 @@ settings throughout the NaviServer environment.
 [para]
 
 
-Type "[emph {gmake install}]" to make a production server.  This
+Type "[emph {make install}]" to make a production server.  This
 will create an installation directory at [emph {/usr/local/ns/}], populate
 the directories with various  startup files and  configuration files, copy
 the binaries to the [emph {/usr/local/ns/bin}] directory, and finish.  To install
@@ -131,16 +120,16 @@ can be overridden by typing "[emph {gmake install PREFIX=/your/directory/}]".
 
 [para]
 
-[section {downloading and Installing Modules}]
+[section {Downloading and Installing Modules}]
 
 To download and install additional modules:
 
 [example_begin]
 
-% cvs -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver login
-% cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P modules
-% cd modules
-% make install
+cvs -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver login
+cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P modules
+cd modules
+make install
 
 [example_end]
 
@@ -149,25 +138,22 @@ please look into module's README file for any additional information.
 
 [section {Configuring}]
 
-
 [para]
 
 
-The installation directory contains a file named "sample-config.tcl" which
-represents a complete configuration of NaviServer.  This configuration will:
+The installation directory contains several config files under /usr/local/ns/conf installation directory.
+This configuration will:
 
 
 [list_begin enum]
 
   [enum]Listen for http connections on your computer's  primary interface at port 8000.  To use another port  and/or
-      select interfaces, you can set the "post" and "address" parameters.
+        select interfaces, you can set the "post" and "address" parameters.
 
   [enum]Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.
 
 
 [list_end]
-
-
 
 [para]
 
@@ -182,7 +168,6 @@ documentation.
 
 [para]
 
-
 Although  you must be root to start NaviServer,  the server itself must
 change to a  regular user shortly after initialization.   You either
 need to start the  server as a non-root user (in which case you  will
@@ -194,9 +179,13 @@ server will  setuid(2) after startup.
 [para]
 
 
-You may either specify a Unix username or numeric uid, e.g.:   [emph {./bin/nsd
--t ./config.tcl -u user -g group}]</p> For the mode  of operation, there are
-three choices: [emph {Foreground, Background,}] and [emph {Inittab.}]
+You may either specify a Unix username or numeric uid, e.g.: 
+[emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
+
+[para]
+
+For the mode  of operation, there are three choices: 
+[emph {Foreground, Background,}] and [emph {Inittab.}]
 
 [para]
 
@@ -208,9 +197,7 @@ or debugging  a server.  To start the server in foreground mode use:
 
 [para]
 
-
-[emph {/bin/nsd  -ft ./config.tcl -u user -g group}]
-
+[emph {bin/nsd  -ft conf/nsd-config.tcl -u user -g group}]
 
 [para]
 
@@ -231,7 +218,7 @@ daemon-style mode of operation.  To start the server in  background  mode use:
 [para]
 
 
-[emph {./bin/nsd -t ./config.tcl -u user -g group}]
+[emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
 
 
 [para]
@@ -246,7 +233,7 @@ file, send the signal and wait for shutdown, e.g.:
 [para]
 
 
-[emph {./bin/nsd -Kt ./config.tcl -u user -g group}]
+[emph {bin/nsd -Kt conf/nsd-config.tcl -u user -g group}]
 
 
 [para]
@@ -271,7 +258,7 @@ and full pathnames:
 [para]
 
 
-[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd.tcl -u user -g group}]
+[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd-config.tcl -u user -g group}]
 
 
 [para]

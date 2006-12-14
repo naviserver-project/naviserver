@@ -31,9 +31,11 @@ If VarName is not specified, then ns_filestat behaves similar to file exists, ju
 [section EXAMPLES]
 
 [example_begin]
-   if { [ns_filestat /tmp/info.txt stat] } {
+
+   if { [lb]ns_filestat /tmp/info.txt stat[rb] } {
      ns_log notice $stat(size)
    }
+
 [example_end]
 
 

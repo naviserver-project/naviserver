@@ -5,11 +5,8 @@
 [description]
 
 
-NaviServer is immensely scalable because it has to be.&nbsp; It is the web server
+NaviServer is immensely scalable because it has to be. It is based on the web server
 for the most heavily-used production environment in the world -- AOL.
-
-
-[para]
 
 
 [subsection {Only load modules you need}]
@@ -21,9 +18,6 @@ for the most heavily-used production environment in the world -- AOL.
 Modules like "nsperm" register extra requests that are checked on each connection,
 for example. Other modules like nscgi and nscp do not need to be loaded
 if you're not actually using CGI or the control port, respectively.
-
-
-[para]
 
 
 [subsection {Turn off DNS lookups wherever possible}]
@@ -41,25 +35,6 @@ has a DNS cache that can be tweaked -- see "dnscache" and "dnscachetimeout"
 in the config reference.
 
 
-[para]
-
-
-[subsection {Use the standard ADP parser}]
-
-
-[para]
-
-
-The default parser is fully functional but leaves out thing such as registered
-ADP tags and the "SCRIPT" tag. The default parser is much more efficient
-than the fancy parser and should be used on heavily-loaded sites. In the
-ns/server/servername/adp/parsers section, only 'ns_param adp ".adp"' should
-be listed.
-
-
-[para]
-
-
 [subsection {Experiment with the ADP cache}]
 
 
@@ -73,10 +48,6 @@ parsed once and every subsequent time they are run directly out of memory.
 This means, though, that you should have a fair amount of core memory on
 your system to accomodate the cache if you decide to make it very large.
 
-
-[para]
-
-
 [subsection {Experiment with the FastPath cache}]
 
 
@@ -87,9 +58,6 @@ This is a separate cache used to store static HTML pages. The section is
 ns/server/servername/fastpath, and the optionjs are "cache", "cachemaxentry",
 and "cachemaxsize". Like the ADP cache, this defaults to 5 megabytes.
 On some systems enabling the "mmap" parameter can make it work even faster.
-
-
-[para]
 
 
 [subsection {Disable CheckModifiedSince}]
@@ -105,9 +73,6 @@ without checking to see if the file has changed each time a cache entry
 is hit.
 
 
-[para]
-
-
 [subsection {Tune the Threads}]
 
 
@@ -121,10 +86,6 @@ defaults are optimal, with the exception of maxthreads which should be carefully
 adjusted based on your load. Along with "maxthreads", the "maxconnections"
 setting can be tricky, since making it too large can cause your system to
 thrash.
-
-
-[para]
-
 
 [subsection {Monitor the Memory}]
 
@@ -145,9 +106,6 @@ the total RSS used by any one process. That
 at any one time -- this is especially the case with SGI servers.
 
 
-[para]
-
-
 [subsection {Beware the Database}]
 
 
@@ -160,10 +118,6 @@ so that you get only the data you actually want and make the database do
 the work it was designed to do. Don't make your system spend its time putting
 together those ns_getrow structures.
 
-
-[para]
-
-
 [subsection {Collect metrics and use them}]
 
 
@@ -174,9 +128,9 @@ NaviServer has a built-in statistics-gathering system that collects data on
 the caches, tcl interps, threads, and other interesting data. We use these
 at AOL to gather an immense amount of data on how the systems are working
 and where they need to be improved (more cache, less cache, more memory,
-more threads, etc).  The file "nstelemetry.adp" can be dropped into any
-running server to get a snapshot of how it's doing. The "nsstats"
-modules is available in the modules repository.
+more threads, etc).  The module "nsstats" can be dropped into any
+running server to get a snapshot of how it's doing. The module is available
+in the modules repository.
 
 
 [manpage_end]

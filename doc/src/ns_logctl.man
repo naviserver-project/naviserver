@@ -55,18 +55,18 @@ displaying log messages at the end of an ADP page, for example.
 
 [example_begin]
 
-    &lt;%
+    <%
       ns_logctl hold
 
       ... do some stuff here ...
-    %&gt;
+    %>;
 
-    &lt;%
-      if {[lb]ns_logctl count[rb] &gt; 0} {
-        ns_adp_puts &quot;&lt;hr&gt;&lt;p&gt;Page generated log messages:&lt;/p&gt;&lt;pre&gt;[lb]ns_logctl peek[rb]&lt;/pre&gt;
+    <%
+      if {[lb]ns_logctl count[rb] > 0} {
+        ns_adp_puts "<hr>Page generated log messages:</p><pre>[lb]ns_logctl peek[rb]</pre>"
       }
       ns_logctl release
-    %&gt;
+    %>;
 [example_end]
 
 

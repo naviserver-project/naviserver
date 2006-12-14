@@ -8,8 +8,6 @@
 
 
 [para]
-
-
 Probably the easiest way to make NaviServer output dynamic content is
 to embed a Tcl script in an HTML page with NaviServer Dynamic Pages
 (ADPs). ADPs are HTML pages that are parsed and run on the server when
@@ -19,16 +17,10 @@ Tcl scripts that reside in separate files, allowing you to reuse Tcl
 code.
 
 
-[para]
-
-
-
 [section {When to Use ADPs}]
 
 
 [para]
-
-
 ADPs are ideal in situations where you want to generate all or part of
 a specific page dynamically. You can re-use code by storing Tcl
 scripts in Tcl libraries and invoking them from within multiple ADPs.
@@ -36,36 +28,18 @@ You can also include files and parse other ADPs from within your ADPs.
 
 
 [para]
-
-
 Here are some examples of applications you can use ADPs for:
-
-
-[para]
 
 
 [list_begin bullet]
 
 [bullet] Returning HTML conditionally
 
-
-[nl]
-
-
 [bullet] Retrieving information from a database to use in a page
-
-
-[nl]
-
 
 [bullet] Inserting information from a form into a database
 
-
 [list_end]
-
-
-
-[para]
 
 
 
@@ -73,16 +47,11 @@ Here are some examples of applications you can use ADPs for:
 
 
 [para]
-
-
 The alternative to embedding Tcl scripts in HTML pages using ADPs, is
 to store Tcl scripts in Tcl libraries and register them to handle
 specific URLs or URL hierarchies. There are some situations, such as
 those listed below, that are better suited to the Tcl libraries
 approach.
-
-
-[para]
 
 
 [list_begin bullet]
@@ -95,16 +64,9 @@ approach.
  another server.
 
 
-[nl]
-
-
 [bullet] Special Extenstions: If you want one Tcl script to handle all
  files with a specific extension, like /*.csv, you would register
  the script with ns_register_proc to handle those files.
-
-
-[nl]
-
 
 [bullet] Scheduled Procedures: If you want a Tcl script to be run at
  specific intervals, you can use the ns_schedule_* functions to run
@@ -112,18 +74,10 @@ approach.
  procedures do not normally involve returning HTML pages and so are
  not well suited to ADPs.
 
-
-[nl]
-
-
 [bullet] Filters: If you want a Tcl script to be called at
  pre-authorization, post-authorization, or trace time for a group
  of URLs, you would register a filter using the ns_register_filter
  function.
-
-
-[nl]
-
 
 [bullet] Re-using Tcl Scripts: If there are Tcl scripts that you want to
  use in multiple situations, you can store them in a Tcl library
@@ -134,28 +88,16 @@ approach.
 
 
 
-[para]
-
-
-
 [section {Configuring ADP Processing}]
 
 
 [para]
-
-
 Since you will be creating HTML pages that contain Tcl scripts, you
 will need to specify which pages the server will need to parse for Tcl
 commands and process.
 
 
-[para]
-
-
  [subsection {Required Configuration Parameters}]
-
-
-[para]
 
 
 [list_begin bullet]
@@ -168,26 +110,11 @@ commands and process.
  certain directory (for example, /usr/pages/adp) will be processed.
 
 
-[nl]
-
-
-[bullet] If you want to register your own ADP tags, you must set the Fancy
- parameter to On. It also allows you to use the <server> ...
- </server> ADP syntax and determine whether ADP tags can be
- registered after startup.
-
-
 [list_end]
 
 
 
-[para]
-
-
  [subsection {List of Configuration Parameters}]
-
-
-[para]
 
 
 The following table describes all the parameters that can be set
@@ -196,106 +123,37 @@ within the ADP section of the configuration file:
 
 [para]
 
-
 Section [emph {ns/server/servername/adp}]:
-
-
-[para]
 
 
 [list_begin bullet]
 
-[bullet] [emph {Cache}] - If set to on, ADP caching is enabled.
+[bullet] [emph {Cache}] - If set to on, ADP caching is enabled, Default: on
 
 
-[nl]
-
-
-Deafult: on
-
-
-[nl]
-
-
-[bullet] [emph {DebugInit}] - The procedure to run when debugging begins.
-
-
-[nl]
-
-
-Deafult: ns_adp_debuginit
-
-
-[nl]
-
-
+[bullet] [emph {DebugInit}] - The procedure to run when debugging begins,
+         Deafult: ns_adp_debuginit
 
 [bullet] [emph {EnableExpire}] - If set to on, the "Expires: now" header is set on all
-     outgoing ADPs
+         outgoing ADPs, Default: off
 
+[bullet] [emph {EnableCompress}] - If set to on, extraneous spaces within an HTML page are removed,
+         Default: off
 
-[nl]
-
-
-Default: off
-
-
-[nl]
-
-
-[bullet] [emph {EnableCompress}] - If set to on, extraneous spaces within an HTML page are removed
-
-
-[nl]
-
-
-Default: off
-
-
-[nl]
-
-
-[bullet] [emph {EnableDebug}] - If set to on, appending "?debug" to a URL will enable TclPro debugging
-
-
-[nl]
-
-
-Deafult: off
-
-
-[nl]
-
-
-[bullet] [emph {Fancy}] - If set to on, "fancy" ADPs are enabled, meaning that:
-     the TagLocks parameter is enabled the <server>...</server> syntax is
-     enabled the ns_register_adptag and ns_adp_registertag commands are
-     enabled registered ADP tags are enabled
-
-
-[nl]
-
-
-Deafult: off
-
-
-[nl]
-
+[bullet] [emph {EnableDebug}] - If set to on, appending "?debug" to a URL will enable TclPro debugging,
+         Default: off
 
 [bullet] [emph {Map}] - The Map parameter specifies which pages the server will parse. You can
-     specify a file extension (such as /*.adp) or a directory (such as
-     /usr/pages/adp). If no directory is specified, the pages directory is
-     assumed. The wildcards * ? and [] can be included in the Map
-    s pecification. You can specify multiple Map settings.
-
-
+         specify a file extension (such as /*.adp) or a directory (such as
+         /usr/pages/adp). If no directory is specified, the pages directory is
+         assumed. The wildcards * ? and [] can be included in the Map
+         specification. You can specify multiple Map settings.
 [nl]
 
 
 The following example specifies that all files in the pages directory
 with the extensions .adp or .asp will be parsed, and all files in the
 /usr/pages/myadps directory will be parsed.
-
 
 [example_begin]
 
@@ -306,43 +164,20 @@ with the extensions .adp or .asp will be parsed, and all files in the
 [example_end]
 
 
-
-[nl]
-
-
 [bullet] [emph {StartPage}]  - The file to be run on every connection instead of the requested ADP.
      It can be used to perform routine initialization. It would then
      usually include the requested ADP by calling:
      ns_adp_include [lb]ns_adp_argv 0[rb]
 
 
-[nl]
-
-
 [bullet] [emph {TagLocks}] - If set to on, ADP tags may be registered after server
      startup. Pages will be served less quickly when this is turned on.
-     If set to off, ADP tags can only be registered before the first ADP is served.
-
-
-[nl]
-
-
-Default: off
-
+     If set to off, ADP tags can only be registered before the first ADP is served,
+     Default: off
 
 [list_end]
 
-
-
-[para]
-
-
-
 [section {Building ADPs}]
-
-
-[para]
-
 
 
 [list_begin enum]
@@ -361,27 +196,15 @@ Default: off
  page's content, just omit that part of the page, but you
  can create all of the surrounding HTML.
 
-
-[nl]
-
-
 [enum] Add your Tcl scripts with a file editor. Insert your Tcl scripts
  in the HTML file where you want them to be processed. Be sure to
  enclose each Tcl script using one of the <SCRIPT> or <% ...%>
  syntaxes . Save the HTML file.
 
-
-[nl]
-
-
 [enum] View the HTML page in a browser. Visit the page you have created
  in a browser to see if the Tcl scripts work correctly. If you have
  set the EnableDebug parameter, you can append "?debug" to the URL
  to enable TclPro debugging.
-
-
-[nl]
-
 
 [enum] Continue editing and viewing until it works correctly. Continue
  editing the page in a file editor, saving it, and refreshing it in
@@ -389,11 +212,6 @@ Default: off
 
 
 [list_end]
-
-
-
-[para]
-
 
 
 [section {Debugging ADPs with TclPro}]
@@ -432,18 +250,9 @@ To debug your ADPs with TclPro, follow these steps:
 [list_end]
 
 
-
-[para]
-
-
-  To set a breakpoint in a procedure you'll have to "instrument"
+ To set a breakpoint in a procedure you'll have to "instrument"
  the procedure either after the debugger traps the first
  time or with the "dproc=<pattern>" query argument.
-
-
-[para]
-
-
 
 [section {ADP Syntax}]
 
@@ -470,24 +279,13 @@ Insert Tcl commands between any of the following sets of HTML tags:
 
 [bullet] <script language=tcl runat=server stream=on>
 
-
-[nl]
-
-
+[example_begin]
+  <script language=tcl runat=server stream=on>
   ...
-
-
-[nl]
-
-
   </script>
+[example_end]
 
-
-[nl]
-
-
-You must have the Fancy parameter set to On to use this
-syntax. The contents of the script are interpreted using the Tcl
+The contents of the script are interpreted using the Tcl
 interpreter. The result is not inserted into the page, however. You
 can use the ns_puts Tcl function to put content into the page.
 
@@ -512,7 +310,6 @@ necessary so that client-side scripts are not executed accidentally.
 
 [nl]
 
-
 The stream=on attribute is optional. If it is included, all output for
 the rest of the page is streamed out to the browser as soon as it's
 ready. Streaming is useful when your script may take a long time to
@@ -521,10 +318,6 @@ page gradually as the script is running. One disadvantage of streaming
 is that the server cannot return a Content-length header with the
 response. Content-length can speed up the connection, especially if
 the connection is going through a proxy server.
-
-
-[nl]
-
 
 [bullet] <% ... %>
 
@@ -540,9 +333,6 @@ streaming was turned on in a previous script. This syntax can be used
 inside HTML tags.
 
 
-[nl]
-
-
 [bullet] <%= ... %>
 
 
@@ -555,12 +345,6 @@ can be used inside HTML tags.
 
 
 [list_end]
-
-
-
-[para]
-
-
 
 [section {Registered ADP Tags}]
 
@@ -575,134 +359,9 @@ ns_register_adptag Tcl functions.
 [para]
 
 
-You must have the Fancy parameter set to On to use registered ADP
-tags. You can also set the Taglocks parameter to prevent new
+You can also set the Taglocks parameter to prevent new
 registered tags from being created after the first ADP has been
 served.
-
-
-[para]
-
-
-
-[section {ADP Parsers}]
-
-
-[para]
-
-
-An ADP parser implements a specific syntax for ADPs. Two ADP parsers
-are pre-defined for NaviServer:
-
-
-[para]
-
-
-
-[list_begin enum]
-
-
-[enum] adp: The "adp" parser handles only the <% ... %> syntax and the
- <%= ... %> syntax for ADPs. This parser offers the best
- performance.
- fancy: The "fancy" parser handles the <script language=tcl
- runat=server stream=on> syntax in addition to the other two
- syntaxes. It also handles registered ADP tags. The TagLocks
- parameter is enabled, and the ns_register_adptag and
- ns_adp_registertag commands are enabled. This parser offers a
- moderate performance degradation as compared to the "adp" parser.
-
-
-[nl]
-
-
-You can register additional ADP parsers using the ns_AdpRegisterParser
-C API function.
-
-
-[nl]
-
-
- Configuration
-
-
-[nl]
-
-
-To configure ADP parsers, set parameters in two configuration file
-sections as follows:
- 1. Map parsers to file extensions in the
-
-
-[example_begin]
-
- ns/server/servername/adp/parsers configuration file section. For
- example:
- ns_section "ns/server/server1/adp/parsers"
- ns_param "adp" ".adp"
- ns_param "fancy" ".fadp"
-
-[example_end]
-
-
-
-[nl]
-
-
-  The above configuration specifies that ADPs with the .adp
- extension will be parsed using the "adp" parser, and ADPs
- with the .fadp extension will be parsed using the "fancy"
- parser.
-
-
-[nl]
-
-
-[enum] Define a default parser in the ns/server/servername/adp section.
- The default parser will be used for any ADPs with file extensions
- not associated with a parser. For example:
-
-
-[example_begin]
-
- ns_section "ns/server/server1/adp"
- ns_param "map" "/*.adp"
- ns_param "map" "/*.inc"
- ns_param "map" "/*.fadp"
- ns_param "DefaultParser" "adp"
- ns_section "ns/server/server1/adp/parsers"
- ns_param "adp" ".adp"
- ns_param "fancy" ".fadp"
-
-[example_end]
-
-
-
-[nl]
-
-
-  ADPs with the .adp extension will use the "adp" parser, and ADPs
- with the .fadp extension will use the "fancy" extension,
- as described above. The default ADP parser will be the
- "adp" parser. Since ADPs with the .inc extension are also
- allowed, the "adp" parser will be used for those ADPs,
- because no parser is associated with the .inc extension.
-
-
-[list_end]
-
-
-
-[para]
-
-
-For more information on configuring ADPs, see the ADP configuration
-file sections starting on page page 56 of the NaviServer
-Administrator's Guide.
-
-
-[para]
-
 
 
 [section {Example ADPs}]
