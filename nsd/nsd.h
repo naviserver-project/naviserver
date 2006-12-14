@@ -92,6 +92,26 @@
   #define NS_SIGTERM SIGTERM
 #endif
 
+#ifdef USE_TCLVFS
+  #define FileChannel                  Tcl_Channel
+  #define FileStat                     Tcl_StatBuf
+  #define NsFastErrno                  Tcl_GetErrno()
+  #define NsFastRead(chan,buf,size)    Tcl_Read(chan,(char*)buf,(int)size);
+  #define NsFastWrite(chan,buf,size)   Tcl_Write(chan,(char*)buf,(int)size);
+  #define NsFastClose(chan)            Tcl_Close(NULL, chan)
+  #define NsFastSeek(chan,offset,mode) Tcl_Seek(chan,offset,mode)
+  #define NsFastTell(chan)             Tcl_Tell(chan)
+#else
+  #define FileChannel                  int
+  #define FileStat                     struct stat
+  #define NsFastErrno                  errno
+  #define NsFastRead(chan,buf,size)    read(chan,buf,size);
+  #define NsFastWrite(chan,buf,size)   write(chan,buf,size);
+  #define NsFastClose(chan)            close(chan)
+  #define NsFastSeek(chan,offset,mode) lseek(chan,offset,mode)
+  #define NsFastTell(chan)             lseek(chan,0,SEEK_CUR)
+#endif
+
 /*
  * Constants
  */
@@ -1134,6 +1154,10 @@ extern void NsRunAtExitProcs(void);
 extern int NsCloseAllFiles(int errFd);
 extern int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
 extern void NsMemUmap(FileMap *mapPtr);
+
+int NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights);
+int NsFastFD(FileChannel chan);
+int NsFastStat(CONST char *file, FileStat *stPtr);
 
 #ifndef _WIN32
 extern int Ns_ConnRunRequest(Ns_Conn *conn);

@@ -331,14 +331,14 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                                              30,           0, INT_MAX);
 
     drvPtr->backlog      = Ns_ConfigIntRange(path, "backlog",
-                                             64,           1, INT_MAX);
+                                             256,          1, INT_MAX);
 
     drvPtr->readahead    = Ns_ConfigIntRange(path, "readahead",
                                              drvPtr->bufsize,
                                              drvPtr->bufsize, drvPtr->maxinput);
 
     drvPtr->acceptsize   = Ns_ConfigIntRange(path, "acceptsize",
-                                             1,           1, INT_MAX);
+                                             drvPtr->backlog, 1, INT_MAX);
 
     drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
 
@@ -3002,8 +3002,7 @@ int
 NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
-    int           opt, rc;
-    Tcl_Channel   chan;
+    int           fd, opt, rc;
     Tcl_DString   ds;
     Ns_Conn      *conn;
     Driver       *drvPtr;
@@ -3052,7 +3051,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     case cmdSubmitFileIdx: {
         char *name;
-        Tcl_StatBuf stat;
+        struct stat st;
         Tcl_Obj *file = NULL;
         Conn *connPtr = (Conn *) conn;
         Tcl_WideInt headers = 0, offset = 0, size = 0;
@@ -3080,22 +3079,21 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         name = Tcl_GetString(file);
 
         if (size <= 0) {
-            rc = Tcl_FSStat(file, &stat);
-            if (rc != 0) {
-                Tcl_AppendResult(interp, "stat failed for ", name, " : ", strerror(Tcl_GetErrno()), NULL);
+            rc = stat(name, &st);
+            if (rc != NS_OK) {
+                Tcl_AppendResult(interp, "stat failed for ", name, NULL);
                 return TCL_ERROR;
             }
-            size = stat.st_size;
+            size = st.st_size;
         }
 
-        chan = Tcl_OpenFileChannel(interp, name, "r", 0644);
-        if (chan == NULL) {
+        fd = open(name, O_RDONLY);
+        if (fd == -1) {
             return TCL_ERROR;
         }
-        Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
 
         if (offset > 0) {
-            Tcl_Seek(chan, offset, SEEK_SET);
+            lseek(fd, offset, SEEK_SET);
         }
 
         /*
@@ -3107,7 +3105,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Ns_ConnQueueHeaders(conn, 200);
         }
 
-        rc = NsWriterQueue(conn, size, chan, NULL, 0, NULL);
+        rc = NsWriterQueue(conn, size, NULL, NULL, fd, NULL);
 
         /*
          *  If failed, we need to cleanup queued headers so we exit with clean
@@ -3119,7 +3117,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
 
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-        Tcl_Close(NULL, chan);
+        close(fd);
 
         break;
     }

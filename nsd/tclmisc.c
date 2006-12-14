@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * tclmisc.c --
  *
- *	Implements a lot of Tcl API commands. 
+ *	Implements a lot of Tcl API commands.
  */
 
 #include "nsd.h"
@@ -193,13 +193,13 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
  *
  * Ns_TclLogError --
  *
- *      Log the global errorInfo variable to the server log. 
+ *      Log the global errorInfo variable to the server log.
  *
  * Results:
- *      Returns a read-only pointer to the errorInfo. 
+ *      Returns a read-only pointer to the errorInfo.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -219,10 +219,10 @@ Ns_TclLogError(Tcl_Interp *interp)
  *      Deprecated.  See: Ns_TclLoggErrorInfo.
  *
  * Results:
- *      Returns a pointer to the read-only errorInfo. 
+ *      Returns a pointer to the read-only errorInfo.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -239,13 +239,13 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
  *
  * NsTclStripHtmlCmd --
  *
- *      Implements ns_striphtml. 
+ *      Implements ns_striphtml.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -285,7 +285,7 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 
         } else if (intspec && (*inPtr == ';')) {
         /* inside a special character that closes */
-            intspec = 0;        
+            intspec = 0;
 
         } else if (!intag && !intspec) {
         /* regular text */
@@ -307,7 +307,7 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
     *outPtr = '\0';
 
     Tcl_SetResult(interp, inString, TCL_VOLATILE);
-    
+
     ns_free(inString);
 
     return TCL_OK;
@@ -319,13 +319,13 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
  *
  * NsTclCryptObjCmd --
  *
- *      Implements ns_crypt as ObjCommand. 
+ *      Implements ns_crypt as ObjCommand.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -353,13 +353,13 @@ NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclHrefsCmd --
  *
- *      Implements ns_hrefs. 
+ *      Implements ns_hrefs.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -374,7 +374,7 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
                          argv[0], " html\"", (char *) NULL);
         return TCL_ERROR;
     }
-    
+
     p = argv[1];
     while ((s = strchr(p, '<')) && (e = strchr(s, '>'))) {
         ++s;
@@ -438,10 +438,10 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
  *      Implements ns_uuencode as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -473,13 +473,13 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
  *
  * HTUUDecodeObjcmd --
  *
- *      Implements ns_uudecode as obj command. 
+ *      Implements ns_uudecode as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -491,7 +491,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
     int            size;
     char          *string;
     unsigned char *decoded;
- 
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
@@ -965,7 +965,7 @@ SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
       digest[i * 4 + 2] = (u_int8_t) (t >> 8);
       digest[i * 4 + 3] = (u_int8_t) t;
     }
-  
+
  memset(ctx, 0, sizeof(ctx)); 			/* In case it's sensitive */
 }
 
@@ -1000,7 +1000,7 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     int            i;
     char          *str;
     int            strLen;
-    
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
         return TCL_ERROR;
@@ -1019,5 +1019,67 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     digestChars[40] = '\0';
     Tcl_AppendResult(interp, digestChars, NULL);
 
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileStatCmd --
+ *
+ *      Works as file stat command but uses native call when Tcl VFS is
+ *      not compiled. The reason for this when native calls are used for speed,
+ *      having still slow file stat does not help, need to use native call
+ *      and file stat is the most used command
+ *
+ * Results:
+ *	NS_OK
+ *
+ * Side effects:
+ *	Tcl result is set to a string value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                Tcl_Obj *CONST objv[])
+{
+    FileStat st;
+    char *name;
+
+    if (objc != 3) {
+        Tcl_WrongNumArgs(interp, 1, objv, "file varname");
+        return TCL_ERROR;
+    }
+    if (NsFastStat(Tcl_GetString(objv[1]), &st) != NS_OK) {
+        Tcl_AppendResult(interp, "0", NULL);
+        return NS_OK;
+    }
+    name = Tcl_GetString(objv[2]);
+    Tcl_SetVar2Ex(interp, name, "ino", Tcl_NewWideIntObj(st.st_ino), 0);
+    Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewLongObj(st.st_nlink), 0);
+    Tcl_SetVar2Ex(interp, name, "uid", Tcl_NewIntObj(st.st_uid), 0);
+    Tcl_SetVar2Ex(interp, name, "gid", Tcl_NewIntObj(st.st_gid), 0);
+    Tcl_SetVar2Ex(interp, name, "size", Tcl_NewWideIntObj(st.st_size), 0);
+    Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewLongObj(st.st_atime), 0);
+    Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewLongObj(st.st_atime), 0);
+    Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewLongObj(st.st_atime), 0);
+    Tcl_SetVar2Ex(interp, name, "mode", Tcl_NewIntObj(st.st_mode), 0);
+    Tcl_SetVar2Ex(interp, name, "type", Tcl_NewStringObj(
+                  (S_ISREG(st.st_mode) ? "file" :
+                        S_ISDIR(st.st_mode) ? "directory" :
+                          S_ISCHR(st.st_mode) ? "characterSpecial" :
+                            S_ISBLK(st.st_mode) ? "blockSpecial" :
+                              S_ISFIFO(st.st_mode) ? "fifo" :
+#ifdef S_ISLNK
+                                S_ISLNK(st.st_mode) ? "link" :
+#endif
+#ifdef S_ISSOCK
+                                  S_ISSOCK(st.st_mode) ? "socket" :
+#endif
+                   ""), -1), 0);
+
+    Tcl_AppendResult(interp, "1", NULL);
     return NS_OK;
 }

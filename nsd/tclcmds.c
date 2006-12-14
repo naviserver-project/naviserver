@@ -208,7 +208,8 @@ extern Tcl_ObjCmdProc
     NsTclWriteFpObjCmd,
     NsTclWriteObjCmd,
     NsTclUploadStatsObjCmd,
-    NsTclWriterObjCmd;;
+    NsTclWriterObjCmd,
+    NsTclFileStatObjCmd;
 
 extern Tcl_CmdProc
     NsTclAdpDebugCmd,
@@ -344,6 +345,7 @@ static Cmd basicCmds[] = {
     {"ns_uudecode", NULL, NsTclHTUUDecodeObjCmd},
     {"ns_uuencode", NULL, NsTclHTUUEncodeObjCmd},
     {"ns_writefp", NULL, NsTclWriteFpObjCmd},
+    {"ns_filestat", NULL, NsTclFileStatObjCmd},
 
     /*
      * Add more basic Tcl commands here.

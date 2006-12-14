@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -51,19 +51,19 @@ static int CmpFile(const void *p1, const void *p2);
 static int Rename(CONST char *from, CONST char *to);
 static int Exists(CONST char *file);
 static int Unlink(CONST char *file);
- 
+
 
 /*
  *----------------------------------------------------------------------
  *
  * Ns_RollFile --
  *
- *      Roll the log file. When the log is rolled, it gets renamed to 
- *      filename.xyz, where 000 <= xyz <= 999. Older files have 
- *      higher numbers. 
+ *      Roll the log file. When the log is rolled, it gets renamed to
+ *      filename.xyz, where 000 <= xyz <= 999. Older files have
+ *      higher numbers.
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
  *      If there were files: filename.000, filename.001, filename.002,
@@ -81,13 +81,13 @@ Ns_RollFile(CONST char *file, int max)
 {
     char *first, *next, *dot;
     int   num, err;
-    
+
     if (max < 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
                "must be > 0 and < 999", max);
         return NS_ERROR;
     }
-    
+
     first = ns_malloc(strlen(file) + 5);
     sprintf(first, "%s.000", file);
     err = Exists(first);
@@ -96,7 +96,7 @@ Ns_RollFile(CONST char *file, int max)
         next = ns_strdup(first);
         num = 0;
 
-        /* 
+        /*
          * Find the highest version
          */
 
@@ -111,8 +111,8 @@ Ns_RollFile(CONST char *file, int max)
             err = Unlink(next); /* The excessive version */
         }
 
-        /* 
-         * Shift *.010 -> *.011, *:009 -> *.010, etc 
+        /*
+         * Shift *.010 -> *.011, *:009 -> *.010, etc
          */
 
         while (err == 0 && num-- > 0) {
@@ -153,7 +153,7 @@ Ns_RollFile(CONST char *file, int max)
  *      implies rotating filenames).
  *
  * Results:
- *      NS_OK/NS_ERROR 
+ *      NS_OK/NS_ERROR
  *
  * Side effects:
  *      May remove (many) files.
@@ -199,7 +199,7 @@ Ns_PurgeFiles(CONST char *file, int max)
     }
 
     status = NS_OK;
-    
+
  err:
     if (nfiles > 0) {
         for (ii = 0, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
@@ -217,7 +217,7 @@ Ns_PurgeFiles(CONST char *file, int max)
  * MatchFiles --
  *
  *      Find plain files in the file's parent directory matching the
- *      "filename*" pattern. 
+ *      "filename*" pattern.
  *
  * Results:
  *      Number of files found, or -1 on error. If any files found,
@@ -237,6 +237,7 @@ MatchFiles(CONST char *filename, File **files)
     Tcl_Obj          *path, *pathElems, *parent, *patternObj;
     Tcl_Obj          *matched, **matchElems;
     Tcl_GlobTypeData  types;
+    FileStat          st;
     File             *fiPtr;
     int               numElems, code, ii, jj;
     char             *pattern;
@@ -283,18 +284,16 @@ MatchFiles(CONST char *filename, File **files)
         numElems = -1;
     } else {
 
-        /* 
+        /*
          * Construct array of File's to pass to caller
          */
 
         Tcl_ListObjGetElements(NULL, matched, &numElems, &matchElems);
 
         if (numElems > 0) {
-            Tcl_StatBuf *stPtr;
             *files = ns_malloc(sizeof(File) * numElems);
-            stPtr = Tcl_AllocStatBuf();
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {
-                if (Tcl_FSStat(matchElems[ii], stPtr) != 0) {
+                if (NsFastStat(Tcl_GetString(matchElems[ii]), &st) != NS_OK) {
                     for (jj = 0, fiPtr = *files; jj < ii; jj++, fiPtr++) {
                         Tcl_DecrRefCount(fiPtr->path);
                     }
@@ -302,19 +301,18 @@ MatchFiles(CONST char *filename, File **files)
                     numElems = -1;
                     break;
                 }
-                fiPtr->mtime = stPtr->st_mtime;
+                fiPtr->mtime = st.st_mtime;
                 fiPtr->path  = matchElems[ii];
                 Tcl_IncrRefCount(fiPtr->path);
             }
-            Tcl_Free((char*)stPtr);
         }
     }
- 
+
     Tcl_DecrRefCount(path);
     Tcl_DecrRefCount(parent);
     Tcl_DecrRefCount(pathElems);
     Tcl_DecrRefCount(matched);
-  
+
     return numElems;
 }
 
@@ -335,12 +333,12 @@ MatchFiles(CONST char *filename, File **files)
  *----------------------------------------------------------------------
  */
 
-static int 
+static int
 CmpFile(const void *arg1, const void *arg2)
 {
     File *f1Ptr = (File *) arg1;
     File *f2Ptr = (File *) arg2;
-    
+
     if (f1Ptr->mtime < f2Ptr->mtime) {
         return 1;
     } else if (f1Ptr->mtime > f2Ptr->mtime) {
@@ -366,7 +364,7 @@ CmpFile(const void *arg1, const void *arg2)
  *
  *----------------------------------------------------------------------
  */
- 
+
 static int
 Unlink(CONST char *file)
 {

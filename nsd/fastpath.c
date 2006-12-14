@@ -81,13 +81,12 @@ static Ns_Callback FreeEntry;
 
 static void DecrEntry      (File *filePtr);
 static int  UrlIs          (CONST char *server, CONST char *url, int dir);
-static int  FastStat       (CONST char *file, Tcl_StatBuf *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  ParseRange     (Ns_Conn *conn, Range *rangesPtr);
 static int  FastReturn     (NsServer *servPtr, Ns_Conn *conn, int status,
                             CONST char *type, CONST char *file,
-                            Tcl_StatBuf *stPtr);
-static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
+                            FileStat *stPtr);
+static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
                             CONST char *data, Tcl_WideInt len, CONST char *type);
 
 
@@ -157,11 +156,11 @@ NsConfigFastpath()
 int
 Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
-    Tcl_StatBuf  st;
+    FileStat  st;
     char        *server;
     NsServer    *servPtr;
 
-    if (FastStat(file, &st) == 0) {
+    if (NsFastStat(file, &st) != NS_OK) {
         return Ns_ConnReturnNotFound(conn);
     }
 
@@ -233,16 +232,12 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 {
     Ns_DString   ds;
     int          status, is = NS_FALSE;
-    Tcl_Obj     *path;
-    Tcl_StatBuf  st;
+    FileStat  st;
 
     Ns_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK) {
-        path = Tcl_NewStringObj(ds.string, -1);
-        Tcl_IncrRefCount(path);
-        status = Tcl_FSStat(path, &st);
-        Tcl_DecrRefCount(path);
-        if (status == 0
+        status = NsFastStat(ds.string, &st);
+        if (status == NS_OK
             && ((dir && S_ISDIR(st.st_mode))
                 || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
             is = NS_TRUE;
@@ -288,11 +283,11 @@ NsFastPathProc(void *arg, Ns_Conn *conn)
     NsServer    *servPtr = arg;
     char        *url = conn->request->url;
     int          status, result, i;
-    Tcl_Obj     *path;
-    Tcl_StatBuf  st;
+    FileStat  st;
 
     Ns_DStringInit(&ds);
-    if (NsUrlToFile(&ds, servPtr, url) != NS_OK || !FastStat(ds.string, &st)) {
+    if (NsUrlToFile(&ds, servPtr, url) != NS_OK ||
+        NsFastStat(ds.string, &st) != NS_OK) {
         goto notfound;
     }
     if (S_ISREG(st.st_mode)) {
@@ -316,11 +311,8 @@ NsFastPathProc(void *arg, Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
-            path = Tcl_NewStringObj(ds.string, -1);
-            Tcl_IncrRefCount(path);
-            status = Tcl_FSStat(path, &st);
-            Tcl_DecrRefCount(path);
-            if (status == 0 && S_ISREG(st.st_mode)) {
+            status = NsFastStat(ds.string, &st);
+            if (status == NS_OK && S_ISREG(st.st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
                     Ns_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
@@ -433,16 +425,15 @@ DecrEntry(File *filePtr)
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * FastStat --
+ * NsFastOpen --
  *
- *      Stat a file, logging an error on unexpected results.
+ *      Open a file
  *
  * Results:
- *      1 if stat ok, 0 otherwise.
+ *      Returns NS_OK on success, NS_ERROR on error
  *
  * Side effects:
  *      None.
@@ -450,26 +441,126 @@ DecrEntry(File *filePtr)
  *----------------------------------------------------------------------
  */
 
-static int
-FastStat(CONST char *file, Tcl_StatBuf *stPtr)
+int
+NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights)
 {
+#ifdef USE_TCLVFS
+    Tcl_Channel channel;
+
+    channel = Tcl_OpenFileChannel(NULL, file, "r", rights);
+    if (channel == NULL) {
+        return NS_ERROR;
+    }
+    Tcl_SetChannelOption(NULL, channel, "-translation", "binary");
+    memcpy(chan, &channel, sizeof(channel));
+    return NS_OK;
+#else
+    int fd, flags = 0;
+
+    while (*mode) {
+        switch (*mode) {
+         case 'r':
+             flags |= O_RDONLY;
+             break;
+         case 'w':
+             flags |= O_CREAT|O_TRUNC;
+             break;
+         case 'a':
+             flags |= O_APPEND;
+             break;
+         case 'b':
+             flags |= O_BINARY;
+             break;
+         case '+':
+             flags |= O_RDWR;
+             flags &= ~O_RDONLY;
+             flags &= ~O_WRONLY;
+             break;
+        }
+        mode++;
+    }
+    fd = open(file, flags, rights);
+    if (fd == -1) {
+        return NS_ERROR;
+    }
+    memcpy(chan, &fd, sizeof(fd));
+    return NS_OK;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsFastStat --
+ *
+ *      Stat a file, logging an error on unexpected results.
+ *
+ * Results:
+ *      NS_OK if stat ok, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsFastStat(CONST char *file, FileStat *stPtr)
+{
+    int      status, err;
+
+#ifdef USE_TCLVFS
     Tcl_Obj *path;
-    int      status;
 
     path = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(path);
     status = Tcl_FSStat(path, stPtr);
+    err = Tcl_GetErrno();
     Tcl_DecrRefCount(path);
+#else
+    status = stat(file, stPtr);
+    err = errno;
+#endif
 
     if (status != 0) {
-        if (Tcl_GetErrno() != ENOENT && Tcl_GetErrno() != EACCES) {
+        if (err != ENOENT && err != EACCES) {
             Ns_Log(Error, "fastpath: stat(%s) failed: %s",
-                   file, strerror(Tcl_GetErrno()));
+                   file, strerror(err));
         }
-        return 0;
+        return NS_ERROR;
     }
 
-    return 1;
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsFastTell --
+ *
+ *      Returns current position in the file
+ *
+ * Results:
+ *      Returns current position, -1 on error
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsFastFD(FileChannel chan)
+{
+#ifdef USE_TCLVFS
+    int fd;
+    if (Tcl_GetChannelHandle(chan, TCL_READABLE, (ClientData)&fd) != TCL_OK) {
+        return -1;
+    }
+    return fd;
+#else
+    return chan;
+#endif
 }
 
 
@@ -491,7 +582,7 @@ FastStat(CONST char *file, Tcl_StatBuf *stPtr)
 
 static int
 FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
-           CONST char *file, Tcl_StatBuf *stPtr)
+           CONST char *file, FileStat *stPtr)
 {
     int         new, nread, result = NS_ERROR;
     Range       range;
@@ -499,7 +590,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
     Ns_Entry   *entry;
     File       *filePtr;
     FileMap     fmap;
-    Tcl_Channel chan = NULL;
+    FileChannel chan = 0;
 
 #ifndef _WIN32
     FileKey     ukey;
@@ -566,18 +657,17 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
 
         if (usemmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            result = ReturnRange(conn, &range, NULL, fmap.addr, fmap.size, type);
+            result = ReturnRange(conn, &range, 0, fmap.addr, fmap.size, type);
             NsMemUmap(&fmap);
         } else {
-            chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
-            if (chan == NULL) {
+            result = NsFastOpen(&chan, file, "r", 0644);
+            if (result == NS_ERROR) {
                 Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
-                       file, strerror(Tcl_GetErrno()));
+                       file, strerror(NsFastErrno));
                 goto notfound;
             }
-            Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
             result = ReturnRange(conn, &range, chan, 0, stPtr->st_size, type);
-            Tcl_Close(NULL, chan);
+            NsFastClose(chan);
         }
 
     } else {
@@ -617,24 +707,22 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
              */
 
             Ns_CacheUnlock(cache);
-            chan = Tcl_OpenFileChannel(NULL, file, "r", 0644);
-            if (chan == NULL) {
+            result = NsFastOpen(&chan, file, "r", 0644);
+            if (result == NS_ERROR) {
                 filePtr = NULL;
                 Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
-                       file, strerror(Tcl_GetErrno()));
-            } else {
-                Tcl_SetChannelOption(NULL, chan, "-translation", "binary");
+                       file, strerror(NsFastErrno));
             }
             if (chan) {
                 filePtr = ns_malloc(sizeof(File) + stPtr->st_size);
                 filePtr->refcnt = 1;
                 filePtr->size   = stPtr->st_size;
                 filePtr->mtime  = stPtr->st_mtime;
-                nread = Tcl_Read(chan, filePtr->bytes, filePtr->size);
-                Tcl_Close(NULL, chan);
+                nread = NsFastRead(chan, filePtr->bytes, filePtr->size);
+                NsFastClose(chan);
                 if (nread != filePtr->size) {
                     Ns_Log(Warning, "fastpath: failed to read '%s': '%s'",
-                           file, strerror(Tcl_GetErrno()));
+                           file, strerror(NsFastErrno));
                     ns_free(filePtr);
                     filePtr = NULL;
                 }
@@ -651,7 +739,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
         if (filePtr != NULL) {
             ++filePtr->refcnt;
             Ns_CacheUnlock(cache);
-            result = ReturnRange(conn, &range, NULL, filePtr->bytes,
+            result = ReturnRange(conn, &range, 0, filePtr->bytes,
                                  filePtr->size, type);
             Ns_CacheLock(cache);
             DecrEntry(filePtr);
@@ -899,7 +987,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
  */
 
 static int
-ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
+ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
             CONST char *data, Tcl_WideInt len, CONST char *type)
 {
     struct iovec bufs[MAX_RANGES*3], *iovPtr = bufs;
@@ -919,7 +1007,11 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
         status = rangesPtr->status;
 
         if (chan) {
+#ifdef USE_TCLVFS
             return Ns_ConnReturnOpenChannel(conn, status, type, chan, len);
+#else
+            return Ns_ConnReturnOpenFd(conn, status, type, chan, len);
+#endif
         } else {
             return Ns_ConnReturnData(conn, status, data, len, type);
         }
@@ -939,8 +1031,12 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
         Ns_ConnQueueHeaders(conn, rangesPtr->status);
 
         if (chan) {
-            Tcl_Seek(chan, roPtr->start, SEEK_SET);
+            NsFastSeek(chan, roPtr->start, SEEK_SET);
+#ifdef USE_TCLVFS
             result = Ns_ConnSendChannel(conn, chan, roPtr->size);
+#else
+            result = Ns_ConnSendFd(conn, chan, roPtr->size);
+#endif
         } else {
             iovPtr->iov_base = (char *) data + roPtr->start;
             iovPtr->iov_len  = roPtr->size;
@@ -1027,8 +1123,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
         Ns_ConnSetRequiredHeaders(conn, type, rangesPtr->size);
         Ns_ConnQueueHeaders(conn, rangesPtr->status);
 
-        if (chan == NULL) {
-
+        if (!chan) {
             /*
              * In mmap mode, send all iov buffers at once
              */
@@ -1058,8 +1153,13 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, Tcl_Channel chan,
                  * Send file content directly from open chan
                  */
 
-                Tcl_Seek(chan, roPtr->start, SEEK_SET);
+                NsFastSeek(chan, roPtr->start, SEEK_SET);
+#ifdef USE_TCLVFS
+
                 result = Ns_ConnSendChannel(conn, chan, roPtr->size);
+#else
+                result = Ns_ConnSendFd(conn, chan, roPtr->size);
+#endif
                 if (result == NS_ERROR) {
                     break;
                 }

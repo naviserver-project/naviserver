@@ -304,6 +304,8 @@ else
     AC_MSG_RESULT(no)
 fi
 
+AC_ARG_ENABLE(tclvfs, [--disable-tclvfs  Disable Tcl VFS], , AC_DEFINE(USE_TCLVFS,1,[use TCL VFS]))
+
 # Use native crypt if possible
 case "`uname`" in
   Linux)

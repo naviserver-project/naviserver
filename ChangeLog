@@ -1,3 +1,19 @@
+2006-12-13  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * configure.in:
+        * nsd/fastpath.c:
+        * nsd/driver.c:
+        * nsd/adpeval.c:
+        * nsd/tclmisc.c:
+        * nsd/tclcmds.c:
+        * nsd/nsd.h: Added option to configure --disable-tclvfs which
+        makes the server to use native system calls instead of Tcl VFS layer.
+        Introduces several internal functions nsFastXXX which implement open, read,
+        write, stat, close operations. Most of them are defines, open and stat are
+        C wrapper functions. Testing showed 30% speed increase in serving static
+        files using fatspath with native system calls. Same goes for adp reading.
+        By default Tcl VFS is compiled in.
+
 2006-12-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/file.tcl: Split into separate cache and coookie procs, runs faster
