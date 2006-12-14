@@ -702,7 +702,7 @@ ParseFile(NsInterp *itPtr, CONST char *file, FileStat *stPtr)
     size_t       size;
     Page         *pagePtr;
     AdpParse     parse;
-    Tcl_Channel  chan = NULL;
+    FileChannel  chan = 0;
 
     status = NsFastOpen(&chan, file, "r", 0644);
     if (status == NS_ERROR) {
