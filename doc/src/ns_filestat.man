@@ -10,25 +10,28 @@ returned from the kernel call.  VarName is treated as an array variable, and the
 that  variable are set: atime, ctime, dev, gid, ino, mode, mtime, nlink, size, type, uid.  Each element
 except type is a decimal string with the value of the corresponding field from the stat  return  struc-
 ture;  see the manual entry for stat for details on the meanings of the values.  The type element gives
-the type of the file in the same form returned by the command file type.  This command returns 1 if system 
+the type of the file in the same form returned by the command file type.  This command returns 1 if system
 call was successful and array varianle is set or 0 in case of any error or file not found.
 
 [para]
-If TCL VFS was compiled this command is similar to Tcl file stat command. In case of no TCL VFS, this 
-command uses direct system call stat and is much faster. 
+If TCL VFS was compiled this command is similar to Tcl file stat command. In case of no TCL VFS, this
+command uses direct system call stat and is much faster.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_filestat] [arg FileName] [arg VarName]]
+[call [cmd ns_filestat] [arg FileName] [opt [arg VarName]]]
+
+If VarName is not specified, then ns_filestat behaves similar to file exists, just returns
+1 if file exisst, 0 if not accesable
 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-   if { [ns_filestat /tmp/info.txt stat] } { 
+   if { [ns_filestat /tmp/info.txt stat] } {
      ns_log notice $stat(size)
    }
 [example_end]
