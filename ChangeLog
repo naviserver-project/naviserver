@@ -1,3 +1,19 @@
+2006-12-16  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/Makefile:
+	* nsd/nsd.h:
+	* nsd/progress.c:
+	* nsd/driver.c:
+	* nsd/nsconf.c:
+	* nsd/tclcmds.c:
+	* tests/progress.test:
+	* tests/test.nscfg: Move the large file upload progress tracker
+	from driver.c into it's own file. Config knob is now:
+	ns/parameters:progressminsize and works for both conventional and
+	spooled uploads.
+
+	* nsd/sls.c: Fix bug resizing memory for new sls slots.
+
 2006-12-13  Vlad Seryakov  <seryakov@users.sf.net>
 
         * configure.in:

@@ -160,6 +160,7 @@ NsConfUpdate(void)
     NsConfigLog();
     NsConfigFastpath();
     NsConfigMimeTypes();
+    NsConfigProgress();
 
     NsUpdateEncodings();
     NsUpdateUrlEncode();

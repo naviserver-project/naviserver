@@ -107,7 +107,7 @@ Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
         Ns_Log(Bug, "Ns_SlsAlloc: server already started");
     }
     id = nsconf.nextSlsId++;
-    cleanupProcs = ns_realloc(cleanupProcs, sizeof(Ns_Callback *) * id+1);
+    cleanupProcs = ns_realloc(cleanupProcs, sizeof(Ns_Callback *) * nsconf.nextSlsId);
     cleanupProcs[id] = cleanup;
 
     *slsPtr = (void *) id;

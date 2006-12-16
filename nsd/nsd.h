@@ -371,9 +371,7 @@ typedef struct Request {
 
 typedef struct _DrvSpooler {
     int threads;               /* Number of spooler threads to run. */
-    int uploadsize;            /* Minimum upload size for stats tracking. */
-    Ns_Mutex lock;             /* Lock around upload table. */
-    Tcl_HashTable table;       /* Hash table of uploads. */
+    Ns_Mutex lock;             /* Lock around spooler queue. */
     SpoolerQueue *firstPtr;    /* Spooler thread queue. */
     SpoolerQueue *curPtr;      /* Current spooler thread */
 } DrvSpooler;
@@ -443,12 +441,6 @@ typedef struct Driver {
  * and keepalive after connection processing.
  */
 
-typedef struct _UploadStats {
-    char          *url;         /* Key to lookup */
-    unsigned long  size;        /* Size of the upload */
-    unsigned long  length;      /* Size of the upload done so far */
-} UploadStats;
-
 typedef struct Sock {
 
     /*
@@ -474,8 +466,6 @@ typedef struct Sock {
     int tfd;
     char *taddr;
     size_t tsize;
-
-    UploadStats upload;
 
     void *sls[1];               /* Slots for sls storage. */
 
@@ -1145,6 +1135,13 @@ extern void NsRunSignalProcs(void);
 extern void NsRunStartupProcs(void);
 extern void NsRunAtReadyProcs(void);
 extern void NsRunAtExitProcs(void);
+
+/*
+ * Upload progress routines.
+ */
+
+extern void NsConfigProgress(void);
+extern void NsUpdateProgress(Ns_Sock *sock);
 
 
 /*

@@ -136,6 +136,7 @@ extern Tcl_ObjCmdProc
     NsTclParseQueryObjCmd,
     NsTclPngSizeObjCmd,
     NsTclPauseObjCmd,
+    NsTclProgressObjCmd,
     NsTclPurgeFilesObjCmd,
     NsTclRWLockObjCmd,
     NsTclRandObjCmd,
@@ -207,7 +208,6 @@ extern Tcl_ObjCmdProc
     NsTclWriteContentObjCmd,
     NsTclWriteFpObjCmd,
     NsTclWriteObjCmd,
-    NsTclUploadStatsObjCmd,
     NsTclWriterObjCmd,
     NsTclFileStatObjCmd;
 
@@ -466,7 +466,7 @@ static Cmd servCmds[] = {
     {"nsv_set", NULL, NsTclNsvSetObjCmd},
     {"nsv_unset", NULL, NsTclNsvUnsetObjCmd},
 
-    {"ns_upload_stats", NULL, NsTclUploadStatsObjCmd},
+    {"ns_upload_stats", NULL, NsTclProgressObjCmd},
     {"ns_writer", NULL, NsTclWriterObjCmd},
 
     /*

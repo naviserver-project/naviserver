@@ -407,10 +407,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     spPtr = &drvPtr->spooler;
     spPtr->threads = Ns_ConfigIntRange(path, "spoolerthreads", 0, 0, 32);
 
-    if (spPtr->threads > 0) {;
-        spPtr->uploadsize = Ns_ConfigIntRange(path, "uploadsize",
-                                              2048, 1024, INT_MAX);
-        Tcl_InitHashTable(&spPtr->table, TCL_STRING_KEYS);
+    if (spPtr->threads > 0) {
         Ns_Log(Notice, "%s: enable %d spooler thread(s) "
                "for uploads >= %d bytes", module,
                spPtr->threads, drvPtr->readahead);
@@ -1604,7 +1601,6 @@ static Sock *
 SockAccept(Driver *drvPtr)
 {
     Sock        *sockPtr;
-    UploadStats *statsPtr;
     int          slen;
 
     /*
@@ -1616,7 +1612,8 @@ SockAccept(Driver *drvPtr)
     if (sockPtr != NULL) {
         firstSockPtr = sockPtr->nextPtr;
     } else {
-        sockPtr = ns_calloc(1, sizeof(Sock) + nsconf.nextSlsId);
+        sockPtr = ns_calloc(1, sizeof(Sock)
+                               + (nsconf.nextSlsId * sizeof(Ns_Callback *)));
         sockPtr->reqPtr = NULL;
     }
 
@@ -1631,12 +1628,6 @@ SockAccept(Driver *drvPtr)
     sockPtr->taddr   = 0;
     sockPtr->keep    = 0;
     sockPtr->arg     = NULL;
-
-    statsPtr = &sockPtr->upload;
-
-    statsPtr->url    = NULL;
-    statsPtr->size   = 0;
-    statsPtr->length = 0;
 
     if (drvPtr->opts & NS_DRIVER_UDP) {
         sockPtr->sock = drvPtr->sock;
@@ -1912,9 +1903,6 @@ SockTrigger(SOCKET fd)
 static void
 SockClose(Sock *sockPtr, int keep)
 {
-    Driver  *drvPtr = sockPtr->drvPtr;
-    UploadStats *statsPtr = &sockPtr->upload;
-
     if (keep && NsDriverKeep(sockPtr) != 0) {
         keep = 0;
     }
@@ -1940,28 +1928,6 @@ SockClose(Sock *sockPtr, int keep)
     sockPtr->taddr = 0;
     sockPtr->keep  = keep;
 #endif
-
-    /*
-     * Cleanup upload statistics hash table
-     */
-
-    if (statsPtr->url != NULL) {
-        Tcl_HashEntry *hPtr;
-        DrvSpooler *spoolPtr = &drvPtr->spooler;
-
-        Ns_MutexLock(&spoolPtr->lock);
-        hPtr = Tcl_FindHashEntry(&spoolPtr->table, statsPtr->url);
-        if (hPtr != NULL) {
-            Tcl_DeleteHashEntry(hPtr);
-        }
-        Ns_MutexUnlock(&spoolPtr->lock);
-
-        Ns_Log(Debug, "upload stats deleted: %s, %lu %lu",
-               statsPtr->url, statsPtr->length, statsPtr->size);
-
-        ns_free(statsPtr->url);
-        statsPtr->url = NULL;
-    }
 }
 
 
@@ -2140,11 +2106,7 @@ SockParse(Sock *sockPtr, int spooler)
     Tcl_DString  *bufPtr;
     char         *s, *e, save;
     int           cnt;
-
     Driver       *drvPtr = sockPtr->drvPtr;
-    DrvSpooler   *spPtr  = &drvPtr->spooler;
-
-    UploadStats  *statsPtr = &sockPtr->upload;
 
     reqPtr = sockPtr->reqPtr;
     bufPtr = &reqPtr->buffer;
@@ -2312,105 +2274,13 @@ SockParse(Sock *sockPtr, int spooler)
         return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
     }
 
+    NsUpdateProgress((Ns_Sock *) sockPtr);
+
     /*
      * Wait for more input.
      */
 
-    if (spooler == 0) {
-        return SOCK_MORE;
-    }
-
-    /*
-     * Create/update upload stats hash entry
-     */
-
-    if (statsPtr->url == NULL) {
-        if (reqPtr->length > 0 && reqPtr->avail > spPtr->uploadsize) {
-            Ns_Request *req = reqPtr->request;
-            Tcl_HashEntry *hPtr;
-            size_t len = strlen(req->url) + 1;
-
-            if (req->query == NULL) {
-                statsPtr->url = ns_calloc(1, len);
-                strcpy(statsPtr->url, req->url);
-            } else {
-                len += strlen(req->query) + 1; /* for '?' delimiter */
-                statsPtr->url = ns_calloc(1, len);
-                sprintf(statsPtr->url, "%s?%s", req->url, req->query);
-            }
-
-            statsPtr->length = reqPtr->length;
-            statsPtr->size = reqPtr->avail;
-
-            Ns_MutexLock(&spPtr->lock);
-            hPtr = Tcl_CreateHashEntry(&spPtr->table, statsPtr->url, &cnt);
-            Tcl_SetHashValue(hPtr, sockPtr);
-            Ns_MutexUnlock(&spPtr->lock);
-            Ns_Log(Debug, "upload stats created for %s", statsPtr->url);
-        }
-    } else {
-        Ns_MutexLock(&spPtr->lock);
-        statsPtr->length = reqPtr->length;
-        statsPtr->size = reqPtr->avail;
-        Ns_MutexUnlock(&spPtr->lock);
-    }
-
     return SOCK_MORE;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclUploadStatsObjCmd --
- *
- *      Returns upload progess statistics for the given url
- *
- * Results:
- *      string in interp result with current length and total size
- *
- * Side effects:
- *      Returns empty once upload completed
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclUploadStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                       Tcl_Obj *CONST objv[])
-{
-    Driver        *drvPtr;
-    DrvSpooler    *spoolPtr;
-    Tcl_HashEntry *hPtr;
-    Sock          *sockPtr;
-    UploadStats   *statsPtr;
-    char          *url, buf[64] = "";
-
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "url");
-        return TCL_ERROR;
-    }
-
-    url = Tcl_GetString(objv[1]);
-    drvPtr = firstDrvPtr;
-    statsPtr = NULL;
-
-    while (drvPtr != NULL && statsPtr == NULL) {
-        spoolPtr = &drvPtr->spooler;
-        if (spoolPtr->uploadsize > 0) {
-            Ns_MutexLock(&spoolPtr->lock);
-            hPtr = Tcl_FindHashEntry(&spoolPtr->table, url);
-            if (hPtr != NULL) {
-                sockPtr = Tcl_GetHashValue(hPtr);
-                statsPtr = &sockPtr->upload;
-                sprintf(buf, "%lu %lu", statsPtr->length, statsPtr->size);
-            }
-            Ns_MutexUnlock(&spoolPtr->lock);
-        }
-        drvPtr = drvPtr->nextPtr;
-    }
-    Tcl_AppendResult(interp, buf, NULL);
-
-    return TCL_OK;
 }
 
 /*
