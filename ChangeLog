@@ -1,3 +1,7 @@
+2006-12-19  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsdb/dbtcl.c: Removed extra definition of ns_getcsv command
+
 2006-12-16  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/Makefile:
