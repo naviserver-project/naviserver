@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * adprequest.c --
  *
  *      ADP connection request support.
@@ -99,11 +99,11 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
     Ns_Set           *setPtr;
     NsServer         *servPtr;
     Tcl_Obj          *objv[2];
-    
+
     /*
      * Verify the file exists.
      */
-    
+
     if (Tcl_Access(file, R_OK) != 0) {
         return Ns_ConnReturnNotFound(conn);
     }
@@ -123,7 +123,6 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
     Tcl_DStringInit(&rds);
     Tcl_DStringInit(&tds);
     itPtr->adp.responsePtr = &rds;
-    itPtr->adp.outputPtr = itPtr->adp.responsePtr;
     itPtr->adp.typePtr = &tds;
 
     /*
@@ -187,7 +186,6 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
      * Cleanup the per-thead ADP context.
      */
 
-    itPtr->adp.outputPtr = NULL;
     itPtr->adp.responsePtr = NULL;
     itPtr->adp.typePtr = NULL;
     itPtr->adp.exception = ADP_OK;
@@ -260,7 +258,7 @@ NsAdpStream(NsInterp *itPtr)
     if (!itPtr->adp.stream && itPtr->conn != NULL) {
         itPtr->adp.stream = 1;
 
-        /* Switch to chunked mode if browser supports chunked encoding and 
+        /* Switch to chunked mode if browser supports chunked encoding and
          * streaming is enabled.
          */
 

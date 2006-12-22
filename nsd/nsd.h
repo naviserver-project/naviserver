@@ -904,7 +904,6 @@ typedef struct NsInterp {
         int debugInit;
         char *debugFile;
         Ns_Cache *cache;
-        Tcl_DString *outputPtr;
         Tcl_DString *responsePtr;
         Tcl_DString *typePtr;
     } adp;

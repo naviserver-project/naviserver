@@ -264,12 +264,12 @@ NsAdpInclude(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[])
      * Direct output to the current ADP output buffer.
      */
 
-    if (itPtr->adp.outputPtr == NULL) {
-        Tcl_SetResult(itPtr->interp, "no connection", TCL_STATIC);
+    if (itPtr->adp.responsePtr == NULL) {
+        Tcl_SetResult(itPtr->interp, "This function cannot be used outside of an ADP", TCL_STATIC);
         return TCL_ERROR;
     }
 
-    return AdpRun(itPtr, file, objc, objv, itPtr->adp.outputPtr);
+    return AdpRun(itPtr, file, objc, objv, itPtr->adp.responsePtr);
 }
 
 static int
@@ -619,8 +619,8 @@ PushFrame(NsInterp *itPtr, Frame *framePtr, CONST char *file, int objc,
     framePtr->cwd = itPtr->adp.cwd;
     framePtr->objc = itPtr->adp.objc;
     framePtr->objv = itPtr->adp.objv;
-    framePtr->outputPtr = itPtr->adp.outputPtr;
-    itPtr->adp.outputPtr = outputPtr;
+    framePtr->outputPtr = itPtr->adp.responsePtr;
+    itPtr->adp.responsePtr = outputPtr;
     itPtr->adp.objc = objc;
     itPtr->adp.objv = objv;
     ++itPtr->adp.depth;
@@ -668,7 +668,7 @@ PopFrame(NsInterp *itPtr, Frame *framePtr)
     itPtr->adp.objc = framePtr->objc;
     itPtr->adp.objv = framePtr->objv;
     itPtr->adp.cwd = framePtr->cwd;
-    itPtr->adp.outputPtr = framePtr->outputPtr;
+    itPtr->adp.responsePtr = framePtr->outputPtr;
     --itPtr->adp.depth;
     Ns_DStringFree(&framePtr->cwdBuf);
 }
@@ -898,8 +898,8 @@ AdpEval(NsInterp *itPtr, AdpCode *codePtr, Tcl_Obj **objs)
              * this loop.  Need to check it before trying to use it.
              */
 
-            if( itPtr->adp.outputPtr != NULL ) {
-                Ns_DStringNAppend(itPtr->adp.outputPtr, ptr, len);
+            if( itPtr->adp.responsePtr != NULL ) {
+                Ns_DStringNAppend(itPtr->adp.responsePtr, ptr, len);
             }
         } else {
             len = -len;
