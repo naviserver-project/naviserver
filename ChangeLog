@@ -1,3 +1,10 @@
+2006-12-21  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tcljob.c: added ns_job configure command with argument -jobsperthread
+	that defines many jobs each thread can process and then gracefully exit, this
+	works the same way as connsperthread config parameter for connection threads 
+	to help reduce memory consumption and cleanup Tcl resources
+
 2006-12-19  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsdb/dbtcl.c: Removed extra definition of ns_getcsv command

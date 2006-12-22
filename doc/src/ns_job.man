@@ -25,6 +25,17 @@ This command provides a means for queueing Tcl scripts for evaluation by a pool 
 
 [list_begin definitions]
 
+[call [cmd  ns_job] [arg configure] [opt [arg {-jobsperthread N}]]]
+
+Configures jobs system, parameters are:
+
+[arg -jobsperthread] defines how many jobs each thread can process and then gracefully exit, this
+works the same way as connsperthread config parameter for connection threads to help reduce memory
+consumption and cleanup Tcl resources.
+
+[nl]
+Without any arguments, the command just returns current settings values
+
 [call [cmd  ns_job] [arg create] [opt [arg {-desc description}]] [arg queueId] [opt [arg maxthreads]]]
 
 Create a new job queue called queueId. If maxthreads is not specified, then the default of 4 is used.

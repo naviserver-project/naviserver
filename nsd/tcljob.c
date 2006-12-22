@@ -167,6 +167,7 @@ typedef struct ThreadPool {
     int                nthreads;
     int                nidle;
     Job               *firstPtr;
+    int                jobsPerThread;
 } ThreadPool;
 
 
@@ -246,6 +247,7 @@ NsTclInitQueueType(void)
     tp.nidle = 0;
     tp.firstPtr = NULL;
     tp.req = THREADPOOL_REQ_NONE;
+    tp.jobsPerThread = 0;
 }
 
 
@@ -350,13 +352,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     static CONST char *opts[] = {
         "cancel", "create", "delete", "genid", "jobs", "joblist",
         "threadlist", "queue", "queues", "queuelist", "wait",
-        "waitany",  "exists", NULL
+        "waitany",  "exists", "configure", NULL
     };
 
     enum {
         JCancelIdx, JCreateIdx, JDeleteIdx, JGenIDIdx, JJobsIdx, JJobsListIdx,
         JThreadListIdx, JQueueIdx, JQueuesIdx, JQueueListIdx, JWaitIdx,
-        JWaitAnyIdx, JExistsIdx
+        JWaitAnyIdx, JExistsIdx, JConfigureIdx
     };
 
     if (objc < 2) {
@@ -371,6 +373,37 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     code = TCL_OK;
 
     switch (opt) {
+    case JConfigureIdx:
+        {
+            /*
+             * ns_job configure
+             *
+             * Configure jobs subsystem
+             */
+
+            int jpt = -1;
+
+            Ns_ObjvSpec opts[] = {
+                {"-jobsperthread",  Ns_ObjvInt,  &jpt,    NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec args[] = {
+                {NULL, NULL, NULL, NULL}
+            };
+
+            if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+                return TCL_ERROR;
+            }
+            Ns_MutexLock(&tp.queuelock);
+            if (jpt >= 0) {
+                tp.jobsPerThread = jpt;
+            }
+            snprintf(buf, sizeof(buf), "jobsperthread %d", tp.jobsPerThread);
+            Ns_MutexUnlock(&tp.queuelock);
+            Tcl_AppendResult(interp, buf, NULL);
+        }
+        break;
+
     case JCreateIdx:
         {
             /*
@@ -1080,13 +1113,24 @@ JobThread(void *arg)
     CONST char    *err;
     Queue         *queuePtr;
     Tcl_HashEntry *jPtr;
+    int            jpt, njobs;
 
     Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
     Ns_ThreadSetName("-ns_job_%x-", tp.nextThreadId++);
     Ns_Log(Notice, "Starting thread: -ns_job_%x-", tp.nextThreadId);
 
-    while (1) {
+    /*
+     * See how many jobs this thread should run.
+     * Setting this parameter to > 0 will cause the
+     * thread to graceously exit, after processing that
+     * many job requests, thus initiating kind-of Tcl-level
+     * garbage collection.
+     */
+
+    jpt = njobs = tp.jobsPerThread;
+
+    while (jpt == 0 || njobs > 0) {
         ++tp.nidle;
         while (((jobPtr = GetNextJob()) == NULL) &&
                !(tp.req == THREADPOOL_REQ_STOP)) {
@@ -1143,6 +1187,10 @@ JobThread(void *arg)
 
         Ns_CondBroadcast(&queuePtr->cond);
         ReleaseQueue(queuePtr, 1);
+
+        if (jpt && --njobs <= 0) {
+            break; /* Served given # of jobs in this thread */
+        }
     }
 
     --tp.nthreads;
