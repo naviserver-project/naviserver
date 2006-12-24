@@ -236,6 +236,18 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         servPtr->opts.hdrcase = ToUpper;
     }
 
+    if (!Ns_ConfigGetBool(path, "gzip", &i) || i) {
+    	servPtr->opts.flags |= SERV_GZIP;
+    }
+    if (!Ns_ConfigGetInt(path, "gzipmin", &i) || i <= 0) {
+	i = 4 * 1024;
+    }
+    servPtr->opts.gzipmin = i;
+    if (!Ns_ConfigGetInt(path, "gziplevel", &i) || i < 0 || i > 9) {
+	i = 4;
+    }
+    servPtr->opts.gziplevel = i;
+
     /*
      * Encoding defaults for the server
      */
@@ -436,6 +448,46 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
     servPtr->adp.defaultparser = Ns_ConfigString(path, "defaultparser", "adp");
     servPtr->adp.cachesize = Ns_ConfigInt(path, "cachesize", 5000*1024);
+    servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
+    servPtr->adp.bufsize = Ns_ConfigInt(path, "bufsize", 1 * 1024 * 1000);
+
+    servPtr->adp.flags = 0;
+    if (Ns_ConfigGetBool(path, "nocache", &i) && i) {
+    	servPtr->adp.flags |= ADP_NOCACHE;
+    }
+    if (Ns_ConfigGetBool(path, "enableexpire", &i) && i) {
+    	servPtr->adp.flags |= ADP_EXPIRE;
+    }
+    if (Ns_ConfigGetBool(path, "enabledebug", &i) && i) {
+    	servPtr->adp.flags |= ADP_DEBUG;
+    }
+    if (Ns_ConfigGetBool(path, "safeeval", &i) && i) {
+    	servPtr->adp.flags |= ADP_SAFE;
+    }
+    if (Ns_ConfigGetBool(path, "singlescript", &i) && i) {
+    	servPtr->adp.flags |= ADP_SINGLE;
+    }
+    if (Ns_ConfigGetBool(path, "gzip", &i) && i) {
+    	servPtr->adp.flags |= ADP_GZIP;
+    }
+    if (Ns_ConfigGetBool(path, "trace", &i) && i) {
+    	servPtr->adp.flags |= ADP_TRACE;
+    }
+    if (!Ns_ConfigGetBool(path, "detailerror", &i) || i) {
+    	servPtr->adp.flags |= ADP_DETAIL;
+    }
+    if (Ns_ConfigGetBool(path, "stricterror", &i) && i) {
+    	servPtr->adp.flags |= ADP_STRICT;
+    }
+    if (Ns_ConfigGetBool(path, "displayerror", &i) && i) {
+    	servPtr->adp.flags |= ADP_DISPLAY;
+    }
+    if (Ns_ConfigGetBool(path, "trimspace", &i) && i) {
+    	servPtr->adp.flags |= ADP_TRIM;
+    }
+    if (!Ns_ConfigGetBool(path, "autoabort", &i) || i) {
+    	servPtr->adp.flags |= ADP_AUTOABORT;
+    }
 
     /*
      * Initialize on-the-fly compression support for ADP.
@@ -479,9 +531,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         key = Ns_SetKey(set, i);
         if (!strcasecmp(key, "map")) {
             map = Ns_SetValue(set, i);
-            Ns_RegisterRequest(server, "GET",  map, NsAdpRequestProc, NULL, servPtr, 0);
-            Ns_RegisterRequest(server, "HEAD", map, NsAdpRequestProc, NULL, servPtr, 0);
-            Ns_RegisterRequest(server, "POST", map, NsAdpRequestProc, NULL, servPtr, 0);
+            Ns_RegisterRequest(server, "GET",  map, NsAdpProc, NULL, servPtr, 0);
+            Ns_RegisterRequest(server, "HEAD", map, NsAdpProc, NULL, servPtr, 0);
+            Ns_RegisterRequest(server, "POST", map, NsAdpProc, NULL, servPtr, 0);
             Ns_Log(Notice, "adp[%s]: mapped %s", server, map);
         }
     }

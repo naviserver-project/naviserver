@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * tclrequest.c --
  *
  *      Routines for Tcl proc, filter and ADP registered requests.
@@ -62,7 +62,7 @@ static Ns_ObjvTable filters[] = {
  *      See NsTclRequest.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -87,19 +87,19 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *name)
  *
  * NsTclRegisterProcObjCmd --
  *
- *      Implements ns_register_proc as obj command. 
+ *      Implements ns_register_proc as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj *CONST objv[], int adp)
 {
     NsInterp       *itPtr = arg;
@@ -138,19 +138,19 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclRegisterProxyObjCmd --
  *
- *      Implements ns_register_proxy as obj command. 
+ *      Implements ns_register_proxy as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj *CONST objv[], int adp)
 {
     NsInterp       *itPtr = arg;
@@ -200,7 +200,7 @@ NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                             Tcl_Obj *CONST objv[], int adp)
 {
     NsInterp       *itPtr = arg;
@@ -236,10 +236,10 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *      Implements ns_register_adp as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -286,10 +286,10 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *      Implements ns_unregister_proc and ns_unregister_adp commands.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -300,7 +300,7 @@ NsTclUnRegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     NsInterp *itPtr = arg;
     char     *method, *url;
     int       noinherit = 0, recurse = 0;
-    
+
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &noinherit, (void *) NS_OP_NOINHERIT},
         {"-recurse",   Ns_ObjvBool,  &recurse,   (void *) NS_OP_RECURSE},
@@ -326,13 +326,13 @@ NsTclUnRegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *
  * NsTclRegisterFilterObjCmd --
  *
- *      Implements ns_register_filter. 
+ *      Implements ns_register_filter.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -363,7 +363,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj, 
+    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj,
                               remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                       NsTclFilterProc, when, cbPtr);
@@ -421,10 +421,10 @@ NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
  *      Implements ns_register_trace as obj command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -449,7 +449,7 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj, 
+    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj,
                               remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                       NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr);
@@ -469,7 +469,7 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
  *      See Ns_AdpRequest.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -480,6 +480,28 @@ NsAdpMapProc(void *arg, Ns_Conn *conn)
     char *adpFile = arg;
 
     return Ns_AdpRequest(conn, adpFile);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsAdpRequestProc --
+ *
+ *	Ns_OpProc for registered ADP's.
+ *
+ * Results:
+ *	See Ns_AdpRequest.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsAdpRequestProc(void *arg, Ns_Conn *conn)
+{
+    return Ns_AdpRequest(conn, (char *) arg);
 }
 
 
@@ -531,13 +553,13 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
  *
  * NsTclFilterProc --
  *
- *      The callback for Tcl filters. Run the script. 
+ *      The callback for Tcl filters. Run the script.
  *
  * Results:
  *      NS_OK, NS_FILTER_RETURN, or NS_FILTER_BREAK.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -550,16 +572,16 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
     Tcl_Interp          *interp;
     int                  ii, status;
     CONST char          *result;
-    
+
     interp = Ns_GetConnInterp(conn);
     Tcl_DStringInit(&ds);
-    
+
     /*
      * Append the command
      */
-    
+
     Tcl_DStringAppend(&ds, cbPtr->script, -1);
-    
+
     /*
      * Append the 'why' argument
      */
@@ -590,7 +612,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
     /*
      * Run the script.
      */
-    
+
     Tcl_AllowExceptions(interp);
     status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
     result = Tcl_GetStringResult(interp);

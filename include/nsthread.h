@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -81,7 +81,7 @@
 /*
  * Workaround until we have ENOTSUP in errno.h
  */
-#define ENOTSUP         EOPNOTSUPP    
+#define ENOTSUP         EOPNOTSUPP
 #endif
 #endif
 
@@ -176,7 +176,7 @@ NS_EXTERN int closedir(DIR *dp);
 /*
  * The following objects are defined as pointers to dummy structures
  * to ensure proper type checking.  The actual objects underlying
- * objects are platform specific. 
+ * objects are platform specific.
  */
 
 typedef struct Ns_Thread_	*Ns_Thread;
@@ -312,6 +312,7 @@ NS_EXTERN char *Ns_ThreadGetName(void);
 NS_EXTERN char *Ns_ThreadGetParent(void);
 NS_EXTERN long Ns_ThreadStackSize(long size);
 NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc);
+NS_EXTERN int Ns_CheckStack(void);
 
 /*
  * time.c:

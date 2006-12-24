@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * init.c --
  *
  *      NaviServer libnsd entry.
@@ -52,8 +52,8 @@ NS_RCSID("@(#) $Header$");
  * Side effects:
  *	    Numerous.
  *      Also, note that this one is called prior getting the Tcl library
- *      initialized by calling Tcl_FindExecutable() in nsmain(). 
- *      Therefore, no Tcl VFS calls to the filesystem should be done in 
+ *      initialized by calling Tcl_FindExecutable() in nsmain().
+ *      Therefore, no Tcl VFS calls to the filesystem should be done in
  *      any of the NsInitX() below.
  *
  *----------------------------------------------------------------------

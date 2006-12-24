@@ -149,6 +149,7 @@ ns_param   extendedheaders "X-Test"
 ns_section "ns/server/test/adp"
 ns_param   map             *.adp
 ns_param   map             *_adp
+ns_param   nocache         true 
 
 ns_section "ns/server/test/adp/compress"
 ns_param   enable          yes

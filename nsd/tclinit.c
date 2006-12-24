@@ -94,8 +94,8 @@ typedef struct AtClose {
 static NsInterp *PopInterp(NsServer *servPtr, Tcl_Interp *interp);
 static void PushInterp(NsInterp *itPtr);
 static Tcl_HashEntry *GetCacheEntry(NsServer *servPtr);
-static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr);
-static NsInterp *NewInterpData(Tcl_Interp *interp);
+static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr);
+static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr);
 static int UpdateInterp(NsInterp *itPtr);
 static Tcl_InterpDeleteProc FreeInterpData;
 static void RunTraces(NsInterp *itPtr, int why);
@@ -193,7 +193,7 @@ Nsd_Init(Tcl_Interp *interp)
 Tcl_Interp *
 Ns_TclCreateInterp(void)
 {
-    return CreateInterp(NULL);
+    return Ns_TclAllocateInterp(NULL);
 }
 
 
@@ -216,7 +216,9 @@ Ns_TclCreateInterp(void)
 int
 Ns_TclInit(Tcl_Interp *interp)
 {
-    (void) NewInterpData(interp);
+    NsServer *servPtr = NsGetServer(NULL);
+
+    NewInterpData(interp, servPtr);
     return TCL_OK;
 }
 
@@ -1358,9 +1360,9 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
             Ns_CsEnter(&lock);
         }
         if (interp != NULL) {
-            itPtr = NewInterpData(interp);
+            itPtr = NewInterpData(interp, servPtr);
         } else {
-            interp = CreateInterp(&itPtr);
+            interp = CreateInterp(&itPtr, servPtr);
         }
         if (servPtr != NULL) {
             itPtr->servPtr = servPtr;
@@ -1481,7 +1483,7 @@ GetCacheEntry(NsServer *servPtr)
  */
 
 static Tcl_Interp *
-CreateInterp(NsInterp **itPtrPtr)
+CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
 {
     NsInterp   *itPtr;
     Tcl_Interp *interp;
@@ -1500,7 +1502,7 @@ CreateInterp(NsInterp **itPtrPtr)
      * Allocate and associate a new NsInterp struct for the interp.
      */
 
-    itPtr = NewInterpData(interp);
+    itPtr = NewInterpData(interp, servPtr);
     if (itPtrPtr != NULL) {
         *itPtrPtr = itPtr;
     }
@@ -1528,7 +1530,7 @@ CreateInterp(NsInterp **itPtrPtr)
  */
 
 static NsInterp *
-NewInterpData(Tcl_Interp *interp)
+NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 {
     static volatile int initialized = 0;
     NsInterp *itPtr;
@@ -1559,10 +1561,11 @@ NewInterpData(Tcl_Interp *interp)
     if (itPtr == NULL) {
         itPtr = ns_calloc(1, sizeof(NsInterp));
         itPtr->interp = interp;
-        itPtr->servPtr = NULL;
+        itPtr->servPtr = servPtr;
         Tcl_InitHashTable(&itPtr->sets, TCL_STRING_KEYS);
         Tcl_InitHashTable(&itPtr->chans, TCL_STRING_KEYS);
         Tcl_InitHashTable(&itPtr->https, TCL_STRING_KEYS);
+        NsAdpInit(itPtr);
 
         /*
          * Associate the new NsInterp with this interp.  At interp delete
@@ -1645,7 +1648,7 @@ FreeInterpData(ClientData arg, Tcl_Interp *interp)
 {
     NsInterp *itPtr = arg;
 
-    NsFreeAdp(itPtr);
+    NsAdpFree(itPtr);
     Tcl_DeleteHashTable(&itPtr->sets);
     Tcl_DeleteHashTable(&itPtr->chans);
     Tcl_DeleteHashTable(&itPtr->https);

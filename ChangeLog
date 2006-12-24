@@ -1,3 +1,31 @@
+2006-12-23  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* doc/src/ns_adp_registertag.man
+	* doc/src/ns_adp.man:
+	* doc/src/ns_adp_ctl.man:
+	* include/ns.h:
+	* include/nsthread.h:
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/adpparse.c:
+	* nsd/adprequest.c:
+	* nsd/init.c:
+	* nsd/nsconf.c:
+	* nsd/nsd.h:
+	* nsd/return.c:
+	* nsd/server.c:
+	* nsd/tclcmds.c:
+	* nsd/tclinit.c:
+	* nsd/tclrequest.c: Ported ADP engine from AOLserver 4.5 with minor 
+	modifications. This port brings much better performance to ADP pages and
+	more options for controling ADP behavior. Before the port, NS was much slower
+	than AS in benchmarks with default index.adp page from AOLserver, now it is 
+	about 20-30% faster which i believe because of Naviserver driver.
+
+	* tests/test.nscfg: Updated adp section with nocache parameter to
+	disable ADP result caching, new ADP engine does not detect ns_adp_stream
+	inside cached page
+
 2006-12-21  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adpeval.c:

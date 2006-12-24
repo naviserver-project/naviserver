@@ -618,6 +618,10 @@ NS_EXTERN int
 Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN int
+Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr)
+   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * auth.c:
  */
@@ -837,6 +841,7 @@ Ns_GetVersion(int *major, int *minor, int *patch, int *type);
  * conn.c:
  */
 
+NS_EXTERN int Ns_ConnId(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnContentFd(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN Tcl_Encoding Ns_ConnGetEncoding(Ns_Conn *conn);
@@ -882,6 +887,8 @@ NS_EXTERN int Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
 NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
 NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
 NS_EXTERN Ns_Time *Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+NS_EXTERN char *Ns_ConnGetType(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_ConnSetType(Ns_Conn *conn, char *type) NS_GNUC_NONNULL(1);
 
 /*
  * connio.c:
@@ -1586,6 +1593,10 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 
 NS_EXTERN void
 Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void
+Ns_ConnUpdateHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void

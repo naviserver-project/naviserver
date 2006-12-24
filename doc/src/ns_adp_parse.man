@@ -5,8 +5,35 @@
 
 [description]
 
- This command processes an ADP from either a file or a string, returning the output.
- The first arg specifies the filename or contains the string to parse, depending on -file or -string.
+This function processes the specified ADP file or string and returns
+the result as a string. Processing a second ADP from inside an ADP
+is normally best done with ns_adp_include as that command
+resolves relative pathnames passed to it.  Also note that
+ns_adp_parse will ignore any directives to turn on streaming.
+Tcl_Eval is used to evaluate the Tcl commands in the ADP.
+
+[para]
+The -string adp option can be used to parse a string of ADP
+text.  Although the <% ... %> syntax is allowed in the string,
+if you have this embedded in an ADP, you have to be careful in
+constructing the string that you do not prematurely terminate an
+enclosing script.
+
+[para]
+The -file file option can be used to parse ADP contained in
+the given file.  This use is similar to that of ns_adp_include
+except the result is returned by the command instead of automatically
+being appended to the output stream.
+
+[para]
+The -global and -local options are deprecated. All calls
+are now local to the current ADP call frame such that the -local
+option is ignored and the -global option generates an error.
+
+[para]
+Additional arguments are passed to the ADP execution and can be
+accessed via the ns_adp_argc, ns_adp_argv, and
+ns_adp_bind_args commands.
 
 [para]
  If you need to process a second ADP from inside an ADP, it is usually better to use
@@ -36,8 +63,7 @@
 [list_begin definitions]
 
 
-[call [cmd ns_adp_parse] [arg {-file|-string}] [opt [arg {arg ...}]]]
-
+[call [cmd ns_adp_parse] [arg -file file] [arg -string string] [opt [arg -savedresult varName]] [opt [arg -cwd path]] [opt args ...]]
 
 [list_end]
 

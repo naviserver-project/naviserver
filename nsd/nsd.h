@@ -299,6 +299,21 @@ typedef struct SpoolerQueue {
   #define NS_MMAP_WRITE  PROT_WRITE
 #endif
 
+/*
+ * The following structure maintains an ADP call frame.
+ */
+
+typedef struct AdpFrame {
+    struct AdpFrame   *prevPtr;
+    int		       line;
+    int                objc;
+    Tcl_Obj	      *ident;
+    Tcl_Obj          **objv;
+    char	      *savecwd;
+    char	      *file;
+    Ns_DString         cwdbuf;
+    Tcl_DString	      *outputPtr;
+} AdpFrame;
 
 /*
  * The following structure defines blocks of ADP.  The
@@ -306,28 +321,43 @@ typedef struct SpoolerQueue {
  * indicating text to copy and negative values indicating
  * scripts to evaluate.  The text and script chars are
  * packed together without null char separators starting
- * at base.  The len and base data are either stored
- * in an AdpParse structure or copied at the end of
- * a cached Page structure.
+ * at base.  The len data is stored at the end of the
+ * text dstring when parsing is complete.
  */
 
 typedef struct AdpCode {
-    int nblocks;
-    int nscripts;
-    char *base;
-    int *len;
+    int		nblocks;
+    int		nscripts;
+    int	       *len;
+    int	       *line;
+    Tcl_DString text;
 } AdpCode;
 
+#define AdpCodeLen(cp,i)	((cp)->len[(i)])
+#define AdpCodeLine(cp,i)	((cp)->line[(i)])
+#define AdpCodeText(cp)		((cp)->text.string)
+#define AdpCodeBlocks(cp)	((cp)->nblocks)
+#define AdpCodeScripts(cp)	((cp)->nscripts)
+
 /*
- * The following structure is used to accumulate the
- * results of parsing an ADP string.
+ * Various ADP option bits.
  */
 
-typedef struct AdpParse {
-    AdpCode     code;
-    Tcl_DString hdr;
-    Tcl_DString text;
-} AdpParse;
+#define ADP_SAFE	0x01	/* Use Tcl_SafeEval for ADP. */
+#define ADP_SINGLE	0x02	/* Combine blocks into a single script. */
+#define ADP_DEBUG	0x04	/* Enable debugging. */
+#define ADP_EXPIRE	0x08	/* Send Expires: now header on output. */
+#define ADP_NOCACHE	0x10	/* Disable caching. */
+#define ADP_TRACE	0x20	/* Trace execution. */
+#define ADP_GZIP	0x80	/* Enable gzip compression. */
+#define ADP_DETAIL	0x100	/* Log connection details on error. */
+#define ADP_STRICT	0x200	/* Strict error handling. */
+#define ADP_DISPLAY	0x400	/* Display error messages in output stream. */
+#define ADP_TRIM	0x800	/* Display error messages in output stream. */
+#define ADP_FLUSHED	0x1000	/* Some output has been sent. */
+#define ADP_ERRLOGGED	0x2000	/* Error message has already been logged. */
+#define ADP_AUTOABORT	0x4000	/* Raise abort on flush error. */
+#define ADP_EVAL_FILE	0x8000	/* Object to evaluate is a file. */
 
 /*
  * The following structure defines the entire request
@@ -756,8 +786,16 @@ typedef struct NsServer {
      * The following struct maintains ADP config,
      * registered tags, and read-only page text.
      */
+    /*
+     * The following struct maintains ADP config,
+     * registered tags, and read-only page text.
+     */
 
     struct {
+        int flags;
+        int tracesize;
+        int bufsize;
+
         CONST char *errorpage;
         CONST char *startpage;
 
@@ -891,21 +929,22 @@ typedef struct NsInterp {
      * context including the private pages cache.
      */
 
-    struct {
-        bool stream;
-        bool compress;
-        int exception;
-        int depth;
-        int objc;
-        Tcl_Obj **objv;
-        char *cwd;
-        int errorLevel;
-        int debugLevel;
-        int debugInit;
-        char *debugFile;
-        Ns_Cache *cache;
-        Tcl_DString *responsePtr;
-        Tcl_DString *typePtr;
+    struct adp {
+	int		   flags;
+	int		   exception;
+	int		   refresh;
+	size_t		   bufsize;
+	int                errorLevel;
+	int                debugLevel;
+	int                debugInit;
+	char              *debugFile;
+	Ns_Cache	  *cache;
+	int                depth;
+	char		  *cwd;
+	struct AdpFrame	  *framePtr;
+	Ns_Conn		  *conn;
+	Tcl_Channel	   chan;
+	Tcl_DString	   output;
     } adp;
 
     /*
@@ -945,6 +984,7 @@ extern void NsInitProcInfo(void);
 extern void NsInitQueue(void);
 extern void NsInitLimits(void);
 extern void NsInitDrivers(void);
+extern void NsInitServers(void);
 extern void NsInitSched(void);
 extern void NsInitSls(void);
 extern void NsInitTcl(void);
@@ -1007,6 +1047,7 @@ extern Ns_FilterProc NsShortcutFilterProc;
 extern Ns_OpProc NsFastPathProc;
 extern Ns_OpProc NsTclRequestProc;
 extern Ns_OpProc NsAdpRequestProc;
+extern Ns_OpProc NsAdpProc;
 extern Ns_OpProc NsAdpMapProc;
 extern Ns_ArgProc NsTclRequestArgProc;
 extern Ns_TclTraceProc NsTclTraceProc;
@@ -1097,20 +1138,25 @@ extern NsLimits *NsGetRequestLimits(char *server, char *method, char *url);
  */
 
 extern Ns_Cache *NsAdpCache(char *server, int size);
-
-extern void NsAdpSetMimeType(NsInterp *itPtr, CONST char *type);
-extern void NsAdpFlush(NsInterp *itPtr);
-extern void NsAdpStream(NsInterp *itPtr);
-extern void NsAdpCompress(NsInterp *itPtr, int compress);
-extern void NsAdpParse(AdpParse *parsePtr, NsServer *servPtr, char *utf, int safe);
-
-extern int NsAdpDebug(NsInterp *itPtr, CONST char *host, CONST char *port,
-                      CONST char *procs);
-extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int safe,
-                     CONST char *resvar);
+extern void NsAdpSetMimeType(NsInterp *itPtr, char *type);
+extern void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
+extern int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
+extern int NsAdpAppend(NsInterp *itPtr, char *buf, int len);
+extern int NsAdpFlush(NsInterp *itPtr, int stream);
+extern int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
+extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags,
+                     char *resvar);
 extern int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
-                       CONST char *resvar);
-extern int NsAdpInclude(NsInterp *itPtr, CONST char *file, int objc, Tcl_Obj *objv[]);
+                       int flags, char *resvar);
+extern int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
+			char *file, Ns_Time *ttlPtr);
+extern void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
+		       int flags);
+extern void NsAdpFreeCode(AdpCode *codePtr);
+extern void NsAdpLogError(NsInterp *itPtr);
+extern void NsAdpInit(NsInterp *itPtr);
+extern void NsAdpReset(NsInterp *itPtr);
+extern void NsAdpFree(NsInterp *itPtr);
 
 /*
  * Tcl support routines.

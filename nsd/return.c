@@ -372,6 +372,28 @@ Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConnUpdateHeaders --
+ *
+ *      Update an output header.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnUpdateHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+{
+    Ns_SetUpdate(conn->outputheaders, field, value);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConnPrintfHeaders --
  *
  *      Add a printf-style string as an output header.
@@ -520,7 +542,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
 void
 Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
 {
-    Ns_ConnSetHeaders(conn, "Content-Type", type);
+    Ns_ConnUpdateHeaders(conn, "Content-Type", type);
 }
 
 
