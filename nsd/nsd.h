@@ -315,6 +315,7 @@ typedef struct AdpFrame {
     Tcl_DString	      *outputPtr;
 } AdpFrame;
 
+
 /*
  * The following structure defines blocks of ADP.  The
  * len pointer is an array of ints with positive values
@@ -358,6 +359,8 @@ typedef struct AdpCode {
 #define ADP_ERRLOGGED	0x2000	/* Error message has already been logged. */
 #define ADP_AUTOABORT	0x4000	/* Raise abort on flush error. */
 #define ADP_EVAL_FILE	0x8000	/* Object to evaluate is a file. */
+#define ADP_EVAL_TCL	0x10000	/* Object to evaluate is a Tcl file. */
+#define ADP_STREAM	0x20000	/* Enable ADP streaming. */
 
 /*
  * The following structure defines the entire request
@@ -520,7 +523,7 @@ typedef struct NsLimits {
     char            *name;
     unsigned int     maxrun;    /* Max conns to run at once. */
     unsigned int     maxwait;   /* Max conns waiting to run before being dropped. */
-    size_t	         maxupload; /* Max data accepted. */
+    size_t	     maxupload; /* Max data accepted. */
     int              timeout;   /* Seconds allowed for conn to complete. */
 
     Ns_Mutex         lock;      /* Lock for state and stats. */
@@ -794,18 +797,15 @@ typedef struct NsServer {
     struct {
         int flags;
         int tracesize;
-        int bufsize;
+        size_t bufsize;
+        size_t cachesize;
 
         CONST char *errorpage;
         CONST char *startpage;
+        CONST char *debuginit;
 
         bool enableexpire;
         bool enabledebug;
-
-        CONST char *debuginit;
-        CONST char *defaultparser;
-
-        size_t cachesize;
 
         Ns_Cond pagecond;
         Ns_Mutex pagelock;
@@ -1048,6 +1048,7 @@ extern Ns_OpProc NsFastPathProc;
 extern Ns_OpProc NsTclRequestProc;
 extern Ns_OpProc NsAdpRequestProc;
 extern Ns_OpProc NsAdpProc;
+extern Ns_OpProc NsTclProc;
 extern Ns_OpProc NsAdpMapProc;
 extern Ns_ArgProc NsTclRequestArgProc;
 extern Ns_TclTraceProc NsTclTraceProc;
@@ -1149,9 +1150,9 @@ extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags,
 extern int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
                        int flags, char *resvar);
 extern int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
-			char *file, Ns_Time *ttlPtr);
+			char *file, Ns_Time *ttlPtr, int flags);
 extern void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
-		       int flags);
+		       int flags, CONST char* file);
 extern void NsAdpFreeCode(AdpCode *codePtr);
 extern void NsAdpLogError(NsInterp *itPtr);
 extern void NsAdpInit(NsInterp *itPtr);

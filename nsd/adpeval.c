@@ -163,7 +163,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags, char *resvar)
     if (flags & ADP_EVAL_FILE) {
     	result = AdpSource(itPtr, objc, objv, obj0, NULL, flags, &output);
     } else {
-    	NsAdpParse(&code, itPtr->servPtr, obj0, flags);
+    	NsAdpParse(&code, itPtr->servPtr, obj0, flags, NULL);
     	result = AdpExec(itPtr, objc, objv, NULL, &code, NULL, &output);
     	NsAdpFreeCode(&code);
     }
@@ -209,10 +209,9 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags, char *resvar)
 
 int
 NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-		Ns_Time *ttlPtr)
+		Ns_Time *ttlPtr, int flags)
 {
     Ns_DString *outputPtr;
-    int flags = itPtr->adp.flags;
 
     /*
      * If an ADP execution is already active, use the current output
@@ -224,7 +223,8 @@ NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     } else {
 	outputPtr = &itPtr->adp.output;
     }
-    return AdpSource(itPtr, objc, objv, file, ttlPtr, flags, outputPtr);
+    return AdpSource(itPtr, objc, objv, file, ttlPtr, flags | itPtr->adp.flags,
+                     outputPtr);
 }
 
 
@@ -539,10 +539,23 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 		result = AdpExec(itPtr, objc, objv, file, codePtr,
 				 ipagePtr->objs, &tmp);
 		--itPtr->adp.refresh;
-		if (result == TCL_OK) {
+                if (result == TCL_OK) {
 		    cachePtr = ns_malloc(sizeof(AdpCache));
+
+                    /*
+                     * Turn off TCL mode after cached result, in caching mode
+                     * we wrap Tcl file into proc 'adp:filename' and return
+                     * as result only
+                     *      ns_adp_append {<% adp:filename %>}
+                     *
+                     * This result will be cached as result and every time we call
+                     * that Tcl file, cached command will be executed as long as
+                     * file is unchanged, if modified then the file will be reloaded,
+                     * recompiled into same Tcl proc and cached
+                     */
+
 		    NsAdpParse(&cachePtr->code, itPtr->servPtr, tmp.string,
-			       flags);
+			       flags & ~ADP_EVAL_TCL, file);
 		    Ns_GetTime(&cachePtr->expires);
 		    Ns_IncrTime(&cachePtr->expires, ttlPtr->sec, ttlPtr->usec);
 	    	    cachePtr->refcnt = 1;
@@ -801,7 +814,7 @@ ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
 	pagePtr->cachePtr = NULL;
 	pagePtr->mtime = stPtr->st_mtime;
 	pagePtr->size = stPtr->st_size;
-	NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags);
+	NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags, file);
 	Tcl_DStringFree(&utf);
     }
 
@@ -901,7 +914,7 @@ NsAdpLogError(NsInterp *itPtr)
 	if (objv[1] == NULL) {
 	    objv[1] = Tcl_GetObjResult(interp);
 	}
-	(void) NsAdpInclude(itPtr, 2, objv, adp, NULL);
+	(void) NsAdpInclude(itPtr, 2, objv, adp, NULL, 0);
 	Tcl_DecrRefCount(objv[0]);
 	--itPtr->adp.errorLevel;
     }
@@ -967,7 +980,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     for (i = 0; itPtr->adp.exception == ADP_OK && i < nblocks; ++i) {
 	frame.line = AdpCodeLine(codePtr, i);
 	len = AdpCodeLen(codePtr, i);
-	if (itPtr->adp.flags & ADP_TRACE) {
+        if (itPtr->adp.flags & ADP_TRACE) {
 	    AdpTrace(itPtr, ptr, len);
 	}
 	if (len > 0) {

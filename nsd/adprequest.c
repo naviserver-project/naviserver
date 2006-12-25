@@ -68,7 +68,40 @@ NsAdpProc(void *arg, Ns_Conn *conn)
 
     Ns_DStringInit(&file);
     Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
-    status = Ns_AdpRequestEx(conn, file.string, ttlPtr);
+    status = Ns_AdpRequestEx(conn, file.string, ttlPtr, 0);
+    Ns_DStringFree(&file);
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclProc --
+ *
+ *	Check for a normal file and call Ns_AdpRequest.
+ *
+ * Results:
+ *	A standard AOLserver request result.
+ *
+ * Side effects:
+ *	Depends on code embedded within page.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclProc(void *arg, Ns_Conn *conn)
+{
+    Ns_Time *ttlPtr = arg;
+    Ns_DString file, ds;
+    int status;
+
+    Ns_DStringInit(&ds);
+    Ns_DStringInit(&file);
+    Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
+    status = Ns_AdpRequestEx(conn, file.string, ttlPtr, ADP_EVAL_TCL);
+    Ns_DStringInit(&ds);
     Ns_DStringFree(&file);
     return status;
 }
@@ -94,11 +127,11 @@ NsAdpProc(void *arg, Ns_Conn *conn)
 int
 Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
 {
-    return Ns_AdpRequestEx(conn, file, NULL);
+    return Ns_AdpRequestEx(conn, file, NULL, 0);
 }
 
 int
-Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr)
+Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
 {
     Conn	     *connPtr = (Conn *) conn;
     Tcl_Interp       *interp;
@@ -151,7 +184,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr)
     objv[1] = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(objv[0]);
     Tcl_IncrRefCount(objv[1]);
-    result = NsAdpInclude(itPtr, 2, objv, start, ttlPtr);
+    result = NsAdpInclude(itPtr, 2, objv, start, ttlPtr, flags);
     Tcl_DecrRefCount(objv[0]);
     Tcl_DecrRefCount(objv[1]);
     if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
@@ -240,7 +273,8 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 	    }
 	} else {
 	    if (conn->flags & NS_CONN_CLOSED) {
-		Tcl_SetResult(interp, "adp flush failed: connection closed",
+                result = TCL_OK;
+                Tcl_SetResult(interp, "adp flush failed: connection closed",
 			      TCL_STATIC);
 	    } else {
 
@@ -330,6 +364,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 
     if (!stream) {
         NsAdpReset(itPtr);
+        result = Ns_ConnClose(conn);
     }
     return result;
 }

@@ -312,7 +312,6 @@ NS_EXTERN char *Ns_ThreadGetName(void);
 NS_EXTERN char *Ns_ThreadGetParent(void);
 NS_EXTERN long Ns_ThreadStackSize(long size);
 NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc);
-NS_EXTERN int Ns_CheckStack(void);
 
 /*
  * time.c:

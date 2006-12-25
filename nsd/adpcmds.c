@@ -115,14 +115,14 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	"bufsize", "channel",
 	"autoabort", "detailerror", "displayerror", "expire", "gzip",
 	"nocache", "safe", "singlescript", "stricterror", "trace",
-	"trimspace",
+	"trimspace", "stream",
 	NULL
     };
     enum {
 	CBufSizeIdx, CChanIdx,
 	CAbortIdx, CDetailIdx, CDispIdx, CExpireIdx, CGzipIdx,
 	CNoCacheIdx, CSafeIdx, CSingleIdx, CStrictIdx, CTraceIdx,
-	CTrimIdx
+	CTrimIdx, CStreamIdx
     };
     int opt, flag, old, new;
 
@@ -217,6 +217,9 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	    break;
 	case CTrimIdx:
 	    flag = ADP_TRIM;
+	    break;
+	case CStreamIdx:
+	    flag = ADP_STREAM;
 	    break;
 	}
 	old = (itPtr->adp.flags & flag);
@@ -398,7 +401,7 @@ badargs:
     	Tcl_DStringAppend(dsPtr, "%>", 2);
 	return TCL_OK;
     }
-    return NsAdpInclude(arg, objc, objv, file, ttlPtr);
+    return NsAdpInclude(arg, objc, objv, file, ttlPtr, 0);
 }
 
 
@@ -1027,7 +1030,7 @@ NsTclAdpStreamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
-    itPtr->adp.bufsize = 0;
+    itPtr->adp.flags |= ADP_STREAM;
     return NsTclAdpFlushObjCmd(arg, interp, objc, objv);
 }
 
@@ -1140,7 +1143,8 @@ NsAdpAppend(NsInterp *itPtr, char *buf, int len)
 	return TCL_ERROR;
     }
     Ns_DStringNAppend(bufPtr, buf, len);
-    if (bufPtr->length > itPtr->adp.bufsize && NsAdpFlush(itPtr, 1) != TCL_OK) {
+    if (((itPtr->adp.flags & ADP_STREAM) || bufPtr->length > itPtr->adp.bufsize)
+        && NsAdpFlush(itPtr, 1) != TCL_OK) {
 	return TCL_ERROR;
     }
     return TCL_OK;

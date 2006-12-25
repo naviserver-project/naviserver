@@ -1,5 +1,23 @@
 2006-12-23  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* include/ns.h:
+	* include/nsthread.h:
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/adpparse.c:
+	* nsd/adprequest.c:
+	* nsd/nsconf.c:
+	* nsd/nsd.h:
+	* nsd/server.c: Updated ADP engine to support .tcl files instead of
+	Tcl based handler. ADP engine will perform caching and compiling Tcl
+	files into Tcl procs and automatic expiration if needed.
+	New parameter enabletclpages in the ns/server/server1/adp section now can
+	be used to turn this option on, the old Tcl-only handler is still in the
+	file.tcl. Speed benchmarks show pretty significate speed boost using
+	ADP engine for .tcl files along with less memory consumption.
+
+2006-12-23  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* doc/src/ns_adp_registertag.man
 	* doc/src/ns_adp.man:
 	* doc/src/ns_adp_ctl.man:

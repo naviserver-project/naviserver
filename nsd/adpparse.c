@@ -235,7 +235,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 void
-NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags)
+NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char* file)
 {
     int             level, stream, streamdone;
     Tag            *tagPtr;
@@ -258,8 +258,50 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags)
     codePtr->nscripts = codePtr->nblocks = 0;
     parse.line = 0;
     parse.codePtr = codePtr;
+
     Tcl_DStringInit(&parse.lens);
     Tcl_DStringInit(&parse.lines);
+    Tcl_DStringInit(&tag);
+
+    /*
+     * Special case when we evalutating Tcl file, we just wrap it as
+     * Tcl proc and save in ADP block with cache enabled or
+     * just execute the Tcl code in case of cache disabled
+     */
+
+    if (flags & ADP_EVAL_TCL) {
+	int size, adplen;
+
+        size = adplen = strlen(adp);
+        if (flags & ADP_NOCACHE) {
+            Tcl_DStringAppend(&codePtr->text, adp, adplen);
+        } else {
+            Ns_DStringPrintf(&tag, "proc adp:%s {} {", file);
+            Tcl_DStringAppend(&codePtr->text, tag.string, tag.length);
+            size += tag.length;
+            Tcl_DStringAppend(&codePtr->text, adp, adplen);
+            Tcl_DStringSetLength(&tag, 0);
+            Ns_DStringPrintf(&tag, "}\nns_adp_append {<%% adp:%s %%>}", file);
+            Tcl_DStringAppend(&codePtr->text, tag.string, tag.length);
+            size += tag.length;
+        }
+        ++codePtr->nblocks;
+        ++codePtr->nscripts;
+        size = -size;
+	Tcl_DStringAppend(&parse.lens, (char *) &size, LENSZ);
+	Tcl_DStringAppend(&parse.lines, (char *) &parse.line, LENSZ);
+	for (s = adp; *s != '\0'; s++) {
+	    if (*s == '\n') {
+	    	++parse.line;
+	    }
+	}
+        AppendLengths(codePtr, (int *) parse.lens.string, (int *)
+		  parse.lines.string);
+        Tcl_DStringFree(&parse.lens);
+        Tcl_DStringFree(&parse.lines);
+        Tcl_DStringFree(&tag);
+        return;
+    }
 
     /*
      * Parse ADP one tag at a time.
@@ -269,7 +311,6 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags)
     streamdone = stream = 0;
     level = 0;
     state = TagNext;
-    Tcl_DStringInit(&tag);
     Ns_RWLockRdLock(&servPtr->adp.taglock);
     while ((s = strchr(adp, '<')) && (e = strchr(s, '>'))) {
 	/*

@@ -236,18 +236,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         servPtr->opts.hdrcase = ToUpper;
     }
 
-    if (!Ns_ConfigGetBool(path, "gzip", &i) || i) {
-    	servPtr->opts.flags |= SERV_GZIP;
-    }
-    if (!Ns_ConfigGetInt(path, "gzipmin", &i) || i <= 0) {
-	i = 4 * 1024;
-    }
-    servPtr->opts.gzipmin = i;
-    if (!Ns_ConfigGetInt(path, "gziplevel", &i) || i < 0 || i > 9) {
-	i = 4;
-    }
-    servPtr->opts.gziplevel = i;
-
     /*
      * Encoding defaults for the server
      */
@@ -446,7 +434,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->adp.enableexpire = Ns_ConfigBool(path, "enableexpire", NS_FALSE);
     servPtr->adp.enabledebug = Ns_ConfigBool(path, "enabledebug", NS_FALSE);
     servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
-    servPtr->adp.defaultparser = Ns_ConfigString(path, "defaultparser", "adp");
     servPtr->adp.cachesize = Ns_ConfigInt(path, "cachesize", 5000*1024);
     servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
     servPtr->adp.bufsize = Ns_ConfigInt(path, "bufsize", 1 * 1024 * 1000);
@@ -454,6 +441,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->adp.flags = 0;
     if (Ns_ConfigGetBool(path, "nocache", &i) && i) {
     	servPtr->adp.flags |= ADP_NOCACHE;
+    }
+    if (Ns_ConfigGetBool(path, "stream", &i) && i) {
+    	servPtr->adp.flags |= ADP_STREAM;
     }
     if (Ns_ConfigGetBool(path, "enableexpire", &i) && i) {
     	servPtr->adp.flags |= ADP_EXPIRE;
@@ -490,30 +480,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * Initialize on-the-fly compression support for ADP.
-     */
-
-    path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
-    servPtr->adp.compress.enable = Ns_ConfigBool(path, "enable", NS_FALSE);
-    servPtr->adp.compress.level = Ns_ConfigIntRange(path, "level", 4, 1, 9);
-    servPtr->adp.compress.minsize = Ns_ConfigInt(path, "minsize", 0);
-
-    /*
-     * Initialize the page and tag tables and locks.
-     */
-
-    Tcl_InitHashTable(&servPtr->adp.pages, FILE_KEYS);
-    Ns_MutexInit(&servPtr->adp.pagelock);
-    Ns_CondInit(&servPtr->adp.pagecond);
-    Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
-    Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
-    Ns_RWLockInit(&servPtr->adp.taglock);
-
-    /*
      * Register ADP for any requested URLs.
      */
 
-    path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
     set = Ns_ConfigGetSection(path);
 
     /*
@@ -537,6 +506,38 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
             Ns_Log(Notice, "adp[%s]: mapped %s", server, map);
         }
     }
+
+    /*
+     * Enable processing Tcl files using ADP engine, Tcl file will be read and wrapped
+     * into Tcl proc and executed by ADP processor
+     */
+
+    if (Ns_ConfigBool(path, "enabletclpages", NS_FALSE)) {
+        Ns_RegisterRequest(server, "GET",  "/*.tcl", NsTclProc, NULL, servPtr, 0);
+        Ns_RegisterRequest(server, "HEAD", "/*.tcl", NsTclProc, NULL, servPtr, 0);
+        Ns_RegisterRequest(server, "POST", "/*.tcl", NsTclProc, NULL, servPtr, 0);
+        Ns_Log(Notice, "tcl[%s]: mapped /*.tcl", server);
+    }
+
+    /*
+     * Initialize on-the-fly compression support for ADP.
+     */
+
+    path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
+    servPtr->adp.compress.enable = Ns_ConfigBool(path, "enable", NS_FALSE);
+    servPtr->adp.compress.level = Ns_ConfigIntRange(path, "level", 4, 1, 9);
+    servPtr->adp.compress.minsize = Ns_ConfigInt(path, "minsize", 0);
+
+    /*
+     * Initialize the page and tag tables and locks.
+     */
+
+    Tcl_InitHashTable(&servPtr->adp.pages, FILE_KEYS);
+    Ns_MutexInit(&servPtr->adp.pagelock);
+    Ns_CondInit(&servPtr->adp.pagecond);
+    Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
+    Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
+    Ns_RWLockInit(&servPtr->adp.taglock);
 
     /*
      * Call the static server init proc, if any, which may register

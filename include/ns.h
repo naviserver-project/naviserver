@@ -619,7 +619,7 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr)
+Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
