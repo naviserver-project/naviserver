@@ -1,5 +1,5 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Naviserver Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://aolserver.com/.
@@ -9,7 +9,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is AOLserver Code and related documentation
+ * The Original Code is Naviserver Code and related documentation
  * distributed by AOL.
  *
  * The Initial Developer of the Original Code is America Online,
@@ -51,7 +51,7 @@ NS_RCSID("@(#) $Header$");
  *	Check for a normal file and call Ns_AdpRequest.
  *
  * Results:
- *	A standard AOLserver request result.
+ *	A standard Naviserver request result.
  *
  * Side effects:
  *	Depends on code embedded within page.
@@ -82,7 +82,7 @@ NsAdpProc(void *arg, Ns_Conn *conn)
  *	Check for a normal file and call Ns_AdpRequest.
  *
  * Results:
- *	A standard AOLserver request result.
+ *	A standard Naviserver request result.
  *
  * Side effects:
  *	Depends on code embedded within page.
@@ -91,17 +91,15 @@ NsAdpProc(void *arg, Ns_Conn *conn)
  */
 
 int
-NsTclProc(void *arg, Ns_Conn *conn)
+NsAdpTclProc(void *arg, Ns_Conn *conn)
 {
     Ns_Time *ttlPtr = arg;
-    Ns_DString file, ds;
+    Ns_DString file;
     int status;
 
-    Ns_DStringInit(&ds);
     Ns_DStringInit(&file);
     Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
     status = Ns_AdpRequestEx(conn, file.string, ttlPtr, ADP_EVAL_TCL);
-    Ns_DStringInit(&ds);
     Ns_DStringFree(&file);
     return status;
 }
@@ -116,7 +114,7 @@ NsTclProc(void *arg, Ns_Conn *conn)
  *	timeout.
  *
  * Results:
- *	A standard AOLserver request result.
+ *	A standard Naviserver request result.
  *
  * Side effects:
  *	Depends on code embedded within page.

@@ -1,3 +1,16 @@
+2006-12-24  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/adpparse.c:
+	* nsd/adprequest.c:
+        * nsd/tclcmds.c:
+        * nsd/server.c:
+	* nsd/nsd.h: Changed singlescript behaviour, made it in one pass
+        without copying the whole page using temporary buffer. Added new
+        ns_adp_info command that can be usefull in the templating engines
+        based on ADP.
+
 2006-12-23  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:
@@ -34,10 +47,10 @@
 	* nsd/server.c:
 	* nsd/tclcmds.c:
 	* nsd/tclinit.c:
-	* nsd/tclrequest.c: Ported ADP engine from AOLserver 4.5 with minor 
+	* nsd/tclrequest.c: Ported ADP engine from AOLserver 4.5 with minor
 	modifications. This port brings much better performance to ADP pages and
 	more options for controling ADP behavior. Before the port, NS was much slower
-	than AS in benchmarks with default index.adp page from AOLserver, now it is 
+	than AS in benchmarks with default index.adp page from AOLserver, now it is
 	about 20-30% faster which i believe because of Naviserver driver.
 
 	* tests/test.nscfg: Updated adp section with nocache parameter to
@@ -51,14 +64,14 @@
 	* nsd/adpcmds.c:
 	* nsd/adprequest.c:
 	* nsd/nsd.h: Simplified ADP processing and the way the parser outputs
-	the result, almost all ns_adp_ functions now will return result to the 
+	the result, almost all ns_adp_ functions now will return result to the
 	caller as Tcl result. This will make it much easier and more effective
-	to build templating or other engines on top of adp parser. All adp pages i 
+	to build templating or other engines on top of adp parser. All adp pages i
 	could find works the same way as before.
 
 	* nsd/tcljob.c: added ns_job configure command with argument -jobsperthread
 	that defines many jobs each thread can process and then gracefully exit, this
-	works the same way as connsperthread config parameter for connection threads 
+	works the same way as connsperthread config parameter for connection threads
 	to help reduce memory consumption and cleanup Tcl resources
 
 2006-12-19  Vlad Seryakov  <seryakov@users.sf.net>

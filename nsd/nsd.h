@@ -305,8 +305,10 @@ typedef struct SpoolerQueue {
 
 typedef struct AdpFrame {
     struct AdpFrame   *prevPtr;
-    int		       line;
-    int                objc;
+    unsigned short     line;
+    unsigned short     objc;
+    time_t    	       mtime;
+    off_t     	       size;
     Tcl_Obj	      *ident;
     Tcl_Obj          **objv;
     char	      *savecwd;
@@ -1048,7 +1050,7 @@ extern Ns_OpProc NsFastPathProc;
 extern Ns_OpProc NsTclRequestProc;
 extern Ns_OpProc NsAdpRequestProc;
 extern Ns_OpProc NsAdpProc;
-extern Ns_OpProc NsTclProc;
+extern Ns_OpProc NsAdpTclProc;
 extern Ns_OpProc NsAdpMapProc;
 extern Ns_ArgProc NsTclRequestArgProc;
 extern Ns_TclTraceProc NsTclTraceProc;

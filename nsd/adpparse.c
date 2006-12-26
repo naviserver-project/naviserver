@@ -1,5 +1,5 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://aolserver.com/.
@@ -79,38 +79,14 @@ typedef struct Parse {
  * Local functions defined in this file
  */
 
-static void AppendBlock(Parse *parsePtr, char *s, char *e, int type);
+static void AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags);
 static void AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae,
-		      char *se);
+		      char *se, int flags);
 static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 		       Tcl_Obj **objv, int type);
-static void Blocks2Script(AdpCode *codePtr);
 static void AppendLengths(AdpCode *codePtr, int *lens, int *lines);
 static void GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr);
 static char *GetScript(char *tag, char *a, char *e, int *streamPtr);
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_AdpRegisterParser --
- *
- *	Register an ADP parser (no longer supported).
- *
- * Results:
- *	NS_ERROR.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_AdpRegisterParser(char *extension, Ns_AdpParserProc *proc)
-{
-    return NS_ERROR;
-}
 
 
 /*
@@ -346,7 +322,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 		     * opening <% before searching for next ADP tag.
 		     */
 
-		    AppendBlock(&parse, text, s + 2, 't');
+		    AppendBlock(&parse, text, s + 2, 't', flags);
 		    text = s + 2; /* NB: Next text after invalid opening <%. */
 		} else {
 		    /*
@@ -355,12 +331,12 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 		     * continue looking for next ADP tag.
 		     */
 
-		    AppendBlock(&parse, text, s, 't');
+		    AppendBlock(&parse, text, s, 't', flags);
 		    if (!(flags & ADP_SAFE)) {
 		        if (s[2] != '=') {
-		            AppendBlock(&parse, s + 2, e, 's');
+		            AppendBlock(&parse, s + 2, e, 's', flags);
 		        } else {
-		            AppendBlock(&parse, s + 3, e, 'S');
+		            AppendBlock(&parse, s + 3, e, 'S', flags);
 		        }
 		    }
 		    text = e + 2; /* NB: Next text after valid closing %>. */
@@ -378,7 +354,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 		     * Append text and begin looking for closing </script> tag.
 		     */
 
-		    AppendBlock(&parse, text, s, 't');
+		    AppendBlock(&parse, text, s, 't', flags);
 		    state = TagScript;
 		    level = 1;
 	    	} else {
@@ -391,10 +367,10 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 			 * and begin looking for required closing tag.
 			 */
 
-			AppendBlock(&parse, text, s, 't');
+			AppendBlock(&parse, text, s, 't', flags);
 		        tagPtr = Tcl_GetHashValue(hPtr);
 		        if (tagPtr->endtag == NULL) {
-			    AppendTag(&parse, tagPtr, a, e, NULL);
+			    AppendTag(&parse, tagPtr, a, e, NULL, flags);
 			    text = e + 1;
 			} else {
 			    as = a;
@@ -428,10 +404,10 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 
 		    if (!(flags & ADP_SAFE)) {
 			if (stream && !streamdone) {
-			    AppendBlock(&parse, "ns_adp_stream", NULL, 's');
+			    AppendBlock(&parse, "ns_adp_stream", NULL, 's', flags);
 			    streamdone = 1;
 			}
-			AppendBlock(&parse, script, s, 's');
+			AppendBlock(&parse, script, s, 's', flags);
 		    }
 		    text = e + 1;
 		    state = TagNext;
@@ -456,7 +432,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 		     * being looking for next ADP tag.
 		     */
 
-		    AppendTag(&parse, tagPtr, as, ae, s);
+		    AppendTag(&parse, tagPtr, as, ae, s, flags);
 		    text = e + 1;
 		    state = TagNext;
 		}
@@ -473,19 +449,23 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
     Ns_RWLockUnlock(&servPtr->adp.taglock);
 
     /*
-     * Append the remaining text block and complete the parse code structure.
+     * Append the remaining text block
      */
 
-    AppendBlock(&parse, text, text + strlen(text), 't');
-    AppendLengths(codePtr, (int *) parse.lens.string, (int *)
-		  parse.lines.string);
+    AppendBlock(&parse, text, text + strlen(text), 't', flags);
 
     /*
-     * If requested, collapse blocks to a single Tcl script.
+     * If requested, collapse blocks to a single Tcl script and
+     * and complete the parse code structure.
      */
 
     if (flags & ADP_SINGLE) {
-    	Blocks2Script(codePtr);
+        int line = 0, len = -codePtr->text.length;
+        codePtr->nscripts = codePtr->nblocks = 1;
+        AppendLengths(codePtr, &len, &line);
+    } else {
+        AppendLengths(codePtr, (int *)parse.lens.string,
+                      (int *)parse.lines.string);
     }
 
     Tcl_DStringFree(&parse.lens);
@@ -536,30 +516,56 @@ NsAdpFreeCode(AdpCode *codePtr)
  */
 
 static void
-AppendBlock(Parse *parsePtr, char *s, char *e, int type)
+AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
 {
     AdpCode *codePtr = parsePtr->codePtr;
-    int len;
+    int save, len;
 
-    if (s < e) {
-	++codePtr->nblocks;
-	len = e - s;
-	if (type == 'S') {
-	    len += APPEND_LEN;
-	    Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
-	}
-	Tcl_DStringAppend(&codePtr->text, s, e - s);
-	if (type != 't') {
-	    ++codePtr->nscripts;
-	    len = -len;
-	}
-	Tcl_DStringAppend(&parsePtr->lens, (char *) &len, LENSZ);
-	Tcl_DStringAppend(&parsePtr->lines, (char *) &parsePtr->line, LENSZ);
-	while (s < e) {
-	    if (*s++ == '\n') {
-	    	++parsePtr->line;
-	    }
-	}
+    if (s >= e) {
+        return;
+    }
+
+    if (flags & ADP_SINGLE) {
+        switch (type) {
+         case 'S':
+            len += APPEND_LEN;
+            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+            Tcl_DStringAppend(&codePtr->text, s, e - s);
+            break;
+
+         case 't':
+            save = *e;
+	    *e = '\0';
+            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+	    Tcl_DStringAppendElement(&codePtr->text, s);
+	    *e = save;
+            break;
+
+         default:
+            Tcl_DStringAppend(&codePtr->text, s, e - s);
+        }
+        Tcl_DStringAppend(&codePtr->text, "\n", 1);
+
+    } else {
+
+        ++codePtr->nblocks;
+        len = e - s;
+        if (type == 'S') {
+            len += APPEND_LEN;
+            Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
+        }
+        Tcl_DStringAppend(&codePtr->text, s, e - s);
+        if (type != 't') {
+            ++codePtr->nscripts;
+            len = -len;
+        }
+        Tcl_DStringAppend(&parsePtr->lens, (char *) &len, LENSZ);
+        Tcl_DStringAppend(&parsePtr->lines, (char *) &parsePtr->line, LENSZ);
+        while (s < e) {
+            if (*s++ == '\n') {
+                ++parsePtr->line;
+            }
+        }
     }
 }
 
@@ -785,7 +791,7 @@ GetScript(char *tag, char *a, char *e, int *streamPtr)
  */
 
 static void
-AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se)
+AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, int flags)
 {
     Tcl_DString script;
     char save;
@@ -817,60 +823,8 @@ AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se)
     }
     /* NB: Close ns_adp_append subcommand. */
     Tcl_DStringAppend(&script, "]", 1);
-    AppendBlock(parsePtr, script.string, script.string+script.length, 's');
+    AppendBlock(parsePtr, script.string, script.string+script.length, 's', flags);
     Tcl_DStringFree(&script);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Blocks2Script --
- *
- *	Collapse text/script blocks in a parse structure into a single
- *	script.  This enables a complete scripts to be made up of
- *	multiple blocks, e.g., <% if $true { %> Text <% } %>.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Parse structure is updated to a single script block.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-Blocks2Script(AdpCode *codePtr)
-{
-    char *adp, save;
-    int i, len, line;
-    Tcl_DString tmp;
-
-    Tcl_DStringInit(&tmp);
-    adp = codePtr->text.string;
-    for (i = 0; i < codePtr->nblocks; ++i) {
-	len = codePtr->len[i];
-	if (len < 0) {
-	    len = -len;
-	    Tcl_DStringAppend(&tmp, adp, len);
-	} else {
-	    Tcl_DStringAppend(&tmp, "ns_adp_append", -1);
-	    save = adp[len];
-	    adp[len] = '\0';
-	    Tcl_DStringAppendElement(&tmp, adp);
-	    adp[len] = save;
-	}
-	Tcl_DStringAppend(&tmp, "\n", 1);
-	adp += len;
-    }
-    Tcl_DStringTrunc(&codePtr->text, 0);
-    Tcl_DStringAppend(&codePtr->text, tmp.string, tmp.length);
-    codePtr->nscripts = codePtr->nblocks = 1;
-    line = 0;
-    len = -tmp.length;
-    AppendLengths(codePtr, &len, &line);
-    Tcl_DStringFree(&tmp);
 }
 
 

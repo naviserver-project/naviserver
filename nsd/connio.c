@@ -82,29 +82,6 @@ static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
 /*
  *-----------------------------------------------------------------
  *
- * Ns_ConnInit --
- *
- *      Initialize a connection (no longer used).
- *
- * Results:
- *      Always NS_OK.
- *
- * Side effects:
- *      None.
- *
- *-----------------------------------------------------------------
- */
-
-int
-Ns_ConnInit(Ns_Conn *conn)
-{
-    return NS_OK;
-}
-
-
-/*
- *-----------------------------------------------------------------
- *
  * Ns_ConnClose --
  *
  *      Close a connection.

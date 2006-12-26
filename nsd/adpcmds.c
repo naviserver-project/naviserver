@@ -1,5 +1,5 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://aolserver.com/.
@@ -346,18 +346,19 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp *itPtr = arg;
     Tcl_DString *dsPtr;
-    int i, skip, cache;
+    int i, skip, cache, flags;
     Ns_Time *ttlPtr, ttl;
     char *file;
 
     if (objc < 2) {
 badargs:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-cache ttl | -nocache? "
+	Tcl_WrongNumArgs(interp, 1, objv, "?-cache ttl | -nocache? ?-tcl? "
 					  "file ?args ...?");
 	return TCL_ERROR;
     }
     ttlPtr = NULL;
     skip = cache = 1;
+    flags = 0;
     file = Tcl_GetString(objv[1]);
     if (STREQ(file, "-nocache")) {
 	if (objc < 3) {
@@ -365,7 +366,8 @@ badargs:
 	}
 	cache = 0;
 	skip = 2;
-    } else if (STREQ(file, "-cache")) {
+    } else
+    if (STREQ(file, "-cache")) {
 	if (objc < 4) {
 	    goto badargs;
 	}
@@ -381,6 +383,13 @@ badargs:
 	ttlPtr = &ttl;
 	skip = 3;
     }
+    if (STREQ(file, "-tcl")) {
+        skip++;
+        if (objc < skip + 1) {
+	    goto badargs;
+	}
+        flags |= ADP_EVAL_FILE;
+    }
     file = Tcl_GetString(objv[skip]);
     objc -= skip;
     objv += skip;
@@ -395,13 +404,16 @@ badargs:
 	    return TCL_ERROR;
 	}
     	Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
+        if (flags & ADP_EVAL_FILE) {
+            Tcl_DStringAppendElement(dsPtr, "-tcl");
+        }
     	for (i = 0; i < objc; ++i) {
 	    Tcl_DStringAppendElement(dsPtr, Tcl_GetString(objv[i]));
     	}
     	Tcl_DStringAppend(dsPtr, "%>", 2);
 	return TCL_OK;
     }
-    return NsAdpInclude(arg, objc, objv, file, ttlPtr, 0);
+    return NsAdpInclude(arg, objc, objv, file, ttlPtr, flags);
 }
 
 
@@ -435,7 +447,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (objc < 2) {
 badargs:
 	Tcl_WrongNumArgs(interp, 1, objv,
-                         "?-file|-string? ?-savedresult varname? ?-cwd path? "
+                         "?-file|-tcl|-string? ?-savedresult varname? ?-cwd path? ?-nocache?"
 			 "arg ?arg ...?");
         return TCL_ERROR;
     }
@@ -445,23 +457,35 @@ badargs:
 	if (STREQ(opt, "-global")) {
 	    Tcl_SetResult(interp, "option -global unsupported", TCL_STATIC);
 	    return TCL_ERROR;
-	} else if (STREQ(opt, "-file")) {
+	} else
+        if (STREQ(opt, "-file")) {
 	    isfile = 1;
-        } else if (STREQ(opt, "-savedresult")) {
+        } else
+        if (STREQ(opt, "-tcl")) {
+	    isfile = 1;
+            flags |= ADP_EVAL_TCL;
+        } else
+        if (STREQ(opt, "-nocache")) {
+            flags |= ADP_NOCACHE;
+        } else
+        if (STREQ(opt, "-savedresult")) {
 	    if (++i < objc) {
                 resvar = Tcl_GetString(objv[i]);
             } else {
                 goto badargs;
             }
-        } else if (STREQ(opt, "-cwd")) {
+        } else
+        if (STREQ(opt, "-cwd")) {
 	    if (++i < objc) {
                 cwd = Tcl_GetString(objv[i]);
             } else {
                 goto badargs;
             }
-	} else if (STREQ(opt, "-safe")) {
+	} else
+        if (STREQ(opt, "-safe")) {
 	    flags |= ADP_SAFE;
-	} else if (!STREQ(opt, "-string") && !STREQ(opt, "-local")) {
+	} else
+        if (!STREQ(opt, "-string") && !STREQ(opt, "-local")) {
 	    break;
 	}
     }
@@ -770,6 +794,45 @@ NsTclAdpDumpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclAdpInfoObjCmd --
+ *
+ *	Process the Tcl ns_adp_info commands to return the current file name,
+ *  	size and modification time
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *  	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclAdpInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+		   Tcl_Obj **objv)
+{
+    AdpFrame *framePtr;
+    Tcl_Obj *result;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+    if (GetFrame(arg, &framePtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    result = Tcl_NewListObj(0,0);
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(framePtr->file, -1));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(framePtr->size));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewLongObj(framePtr->mtime));
+    Tcl_SetObjResult(interp, result);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclAdpArgcObjCmd --
  *
  *	Process the Tcl ns_adp_args commands to return the number of
@@ -857,7 +920,7 @@ NsTclAdpArgvObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclAdpBindArgsObjCmd --
  *
- *	Process the Tcl ns_adp_bind_args commands to copy arguements
+ *	Process the Tcl ns_adp_bind_args commands to copy arguments
  *  	from the current frame into local variables.
  *
  * Results:
@@ -1025,12 +1088,21 @@ NsTclAdpStreamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 		     Tcl_Obj **objv)
 {
     NsInterp *itPtr = arg;
+    int stream = 1;
 
-    if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
-	return TCL_ERROR;
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?boolean?");
+        return TCL_ERROR;
     }
-    itPtr->adp.flags |= ADP_STREAM;
+    if (objc >= 2
+	    && Tcl_GetBooleanFromObj(interp, objv[1], &stream) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (stream) {
+	itPtr->adp.flags |= ADP_STREAM;
+    } else {
+	itPtr->adp.flags &= ~ADP_STREAM;
+    }
     return NsTclAdpFlushObjCmd(arg, interp, objc, objv);
 }
 

@@ -1,5 +1,5 @@
 /*
- * The contents of this file are subject to the AOLserver Public License
+ * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://aolserver.com/.
@@ -102,9 +102,10 @@ static Page *ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr,
 static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags,
 		   char *resvar);
 static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-		   AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr);
+		   AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
+                   struct stat *stPtr);
 static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-		     Ns_Time *ttlPtr, int flags, Tcl_DString *outputPtr);
+		     Ns_Time *ttlPtr, Tcl_DString *outputPtr, int flags);
 static int AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript);
 static void DecrCache(AdpCache *cachePtr);
 static Objs *AllocObjs(int nobjs);
@@ -161,10 +162,10 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags, char *resvar)
     Tcl_DStringInit(&output);
     obj0 = Tcl_GetString(objv[0]);
     if (flags & ADP_EVAL_FILE) {
-    	result = AdpSource(itPtr, objc, objv, obj0, NULL, flags, &output);
+    	result = AdpSource(itPtr, objc, objv, obj0, NULL, &output, flags);
     } else {
     	NsAdpParse(&code, itPtr->servPtr, obj0, flags, NULL);
-    	result = AdpExec(itPtr, objc, objv, NULL, &code, NULL, &output);
+    	result = AdpExec(itPtr, objc, objv, NULL, &code, NULL, &output, NULL);
     	NsAdpFreeCode(&code);
     }
 
@@ -223,8 +224,8 @@ NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     } else {
 	outputPtr = &itPtr->adp.output;
     }
-    return AdpSource(itPtr, objc, objv, file, ttlPtr, flags | itPtr->adp.flags,
-                     outputPtr);
+    return AdpSource(itPtr, objc, objv, file, ttlPtr, outputPtr,
+                     flags | itPtr->adp.flags);
 }
 
 
@@ -318,7 +319,7 @@ NsAdpReset(NsInterp *itPtr)
 
 static int
 AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-       Ns_Time *ttlPtr, int flags, Tcl_DString *outputPtr)
+       Ns_Time *ttlPtr, Tcl_DString *outputPtr, int flags)
 {
     NsServer  *servPtr = itPtr->servPtr;
     Tcl_Interp *interp = itPtr->interp;
@@ -536,8 +537,8 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 	    	Ns_MutexUnlock(&servPtr->adp.pagelock);
 		codePtr = &pagePtr->code;
 		++itPtr->adp.refresh;
-		result = AdpExec(itPtr, objc, objv, file, codePtr,
-				 ipagePtr->objs, &tmp);
+		result = AdpExec(itPtr, objc, objv, file, codePtr, ipagePtr->objs,
+                                 &tmp, &st);
 		--itPtr->adp.refresh;
                 if (result == TCL_OK) {
 		    cachePtr = ns_malloc(sizeof(AdpCache));
@@ -548,7 +549,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                      * as result only
                      *      ns_adp_append {<% adp:filename %>}
                      *
-                     * This result will be cached as result and every time we call
+                     * The output will be cached as result and every time we call
                      * that Tcl file, cached command will be executed as long as
                      * file is unchanged, if modified then the file will be reloaded,
                      * recompiled into same Tcl proc and cached
@@ -573,7 +574,9 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 		Ns_CondBroadcast(&servPtr->adp.pagecond);
 	    }
 	    cacheGen = pagePtr->cacheGen;
-	    ++cachePtr->refcnt;
+            if (cachePtr != NULL) {
+                ++cachePtr->refcnt;
+            }
 	    Ns_MutexUnlock(&servPtr->adp.pagelock);
 	}
 	if (cachePtr == NULL) {
@@ -591,7 +594,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 	    }
 	    objsPtr = ipagePtr->cacheObjs;
 	}
-	result = AdpExec(itPtr, objc, objv, file, codePtr, objsPtr, outputPtr);
+	result = AdpExec(itPtr, objc, objv, file, codePtr, objsPtr, outputPtr, &st);
 	Ns_MutexLock(&servPtr->adp.pagelock);
 	++ipagePtr->pagePtr->evals;
 	if (cachePtr != NULL) {
@@ -940,7 +943,8 @@ NsAdpLogError(NsInterp *itPtr)
 
 static int
 AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-	AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr)
+	AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
+        struct stat *stPtr)
 {
     Tcl_Interp *interp = itPtr->interp;
     AdpFrame frame;
@@ -957,6 +961,13 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     frame.file = file;
     frame.objc = objc;
     frame.objv = objv;
+    if (stPtr != NULL) {
+        frame.size = stPtr->st_size;
+        frame.mtime = stPtr->st_mtime;
+    } else {
+        frame.size = 0;
+        frame.mtime = 0;
+    }
     frame.outputPtr = outputPtr;
     frame.ident = NULL;
     savecwd = itPtr->adp.cwd;

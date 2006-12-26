@@ -513,9 +513,9 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      */
 
     if (Ns_ConfigBool(path, "enabletclpages", NS_FALSE)) {
-        Ns_RegisterRequest(server, "GET",  "/*.tcl", NsTclProc, NULL, servPtr, 0);
-        Ns_RegisterRequest(server, "HEAD", "/*.tcl", NsTclProc, NULL, servPtr, 0);
-        Ns_RegisterRequest(server, "POST", "/*.tcl", NsTclProc, NULL, servPtr, 0);
+        Ns_RegisterRequest(server, "GET",  "/*.tcl", NsAdpTclProc, NULL, servPtr, 0);
+        Ns_RegisterRequest(server, "HEAD", "/*.tcl", NsAdpTclProc, NULL, servPtr, 0);
+        Ns_RegisterRequest(server, "POST", "/*.tcl", NsAdpTclProc, NULL, servPtr, 0);
         Ns_Log(Notice, "tcl[%s]: mapped /*.tcl", server);
     }
 
