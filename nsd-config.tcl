@@ -17,6 +17,8 @@ ns_param	pidfile			${home}/logs/nsd.pid
 ns_param        outputcharset   	iso8859-1
 ns_param        urlcharset      	iso8859-1
 ns_param	dbcloseonexit		off
+ns_param	jobsperthread		1000
+ns_param	jobtimeout		0
 
 ns_param        smtphost                "localhost"
 ns_param        smtpport                25
@@ -63,7 +65,8 @@ ns_param	urlstats        	true
 ns_param	maxurlstats     	1000
 ns_param        checkmodifiedsince      true
 ns_param	enabletclpages  	true
-ns_param        minthreads              10
+ns_param	connsperthread		1000
+ns_param        minthreads              5
 ns_param	maxthreads		100
 ns_param	maxconnections		100
 ns_param	threadtimeout		1800
@@ -87,13 +90,12 @@ ns_param	stripwww		true
 
 ns_section	"ns/server/default/adp"
 ns_param	map             	"/*.adp"
-ns_param	fancy			true
-ns_param	defaultparser		fancy
 ns_param	enableexpire    	false
 ns_param	enabledebug     	true
+ns_param	singlescript		false
+ns_param	nocache			false
 ns_param	cache			true
-ns_param	cachesize		[expr 10000*1024]
-ns_param	taglocks		false
+ns_param	cachesize		[expr 5000*1024]
 
 ns_section	"ns/server/default/adp/parsers"
 ns_param	fancy			".adp"

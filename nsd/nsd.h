@@ -317,6 +317,7 @@ typedef struct AdpFrame {
     Tcl_Obj          **objv;
     char	      *savecwd;
     char	      *file;
+    int                flags;
     Ns_DString         cwdbuf;
     Tcl_DString	      *outputPtr;
 } AdpFrame;

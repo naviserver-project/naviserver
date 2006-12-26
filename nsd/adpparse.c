@@ -232,12 +232,8 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 
     Tcl_DStringInit(&codePtr->text);
     codePtr->nscripts = codePtr->nblocks = 0;
-    parse.line = 0;
     parse.codePtr = codePtr;
-
-    Tcl_DStringInit(&parse.lens);
-    Tcl_DStringInit(&parse.lines);
-    Tcl_DStringInit(&tag);
+    parse.line = 0;
 
     /*
      * Special case when we evalutating Tcl file, we just wrap it as
@@ -246,38 +242,25 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
      */
 
     if (flags & ADP_EVAL_TCL) {
-	int size, adplen;
+	int size;
 
-        size = adplen = strlen(adp);
         if (flags & ADP_NOCACHE) {
-            Tcl_DStringAppend(&codePtr->text, adp, adplen);
+            Tcl_DStringAppend(&codePtr->text, adp, -1);
         } else {
-            Ns_DStringPrintf(&tag, "proc adp:%s {} {", file);
-            Tcl_DStringAppend(&codePtr->text, tag.string, tag.length);
-            size += tag.length;
-            Tcl_DStringAppend(&codePtr->text, adp, adplen);
-            Tcl_DStringSetLength(&tag, 0);
-            Ns_DStringPrintf(&tag, "}\nns_adp_append {<%% adp:%s %%>}", file);
-            Tcl_DStringAppend(&codePtr->text, tag.string, tag.length);
-            size += tag.length;
+            Ns_DStringPrintf(&codePtr->text, "ns_adp_append {<%% if {[info proc adp:%s] == {}} {proc adp:%s {} {",
+                             file, file);
+            Tcl_DStringAppend(&codePtr->text, adp, -1);
+            Ns_DStringPrintf(&codePtr->text, "}}\nadp:%s %%>}", file);
         }
-        ++codePtr->nblocks;
-        ++codePtr->nscripts;
-        size = -size;
-	Tcl_DStringAppend(&parse.lens, (char *) &size, LENSZ);
-	Tcl_DStringAppend(&parse.lines, (char *) &parse.line, LENSZ);
-	for (s = adp; *s != '\0'; s++) {
-	    if (*s == '\n') {
-	    	++parse.line;
-	    }
-	}
-        AppendLengths(codePtr, (int *) parse.lens.string, (int *)
-		  parse.lines.string);
-        Tcl_DStringFree(&parse.lens);
-        Tcl_DStringFree(&parse.lines);
-        Tcl_DStringFree(&tag);
+        codePtr->nblocks = codePtr->nscripts = 1;
+        size = -codePtr->text.length;
+        AppendLengths(codePtr, &size, &parse.line);
         return;
     }
+
+    Tcl_DStringInit(&tag);
+    Tcl_DStringInit(&parse.lens);
+    Tcl_DStringInit(&parse.lines);
 
     /*
      * Parse ADP one tag at a time.

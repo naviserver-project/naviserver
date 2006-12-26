@@ -1,5 +1,10 @@
 2006-12-25  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/adpparse.c: Updated cached Tcl processing, make it conditional 
+	compilation if cache is enabled
+
         * nsd/nsconf.c:
         * nsd/tcljob.c:
         * nsd/nsd.h: Made jobperthread also config parameter for easy system-wide
