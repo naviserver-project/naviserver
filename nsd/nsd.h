@@ -162,6 +162,7 @@ struct _nsconf {
     char address[16];
     int shutdowntimeout;
     int backlog;
+    int jobsperthread;
 
     /*
      * Slot IDs for socket local storage.

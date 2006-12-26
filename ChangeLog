@@ -1,3 +1,10 @@
+2006-12-25  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * nsd/nsconf.c:
+        * nsd/tcljob.c:
+        * nsd/nsd.h: Made jobperthread also config parameter for easy system-wide
+        configuration
+
 2006-12-24  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adpcmds.c:

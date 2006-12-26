@@ -196,6 +196,12 @@ NsConfUpdate(void)
     nsconf.backlog = Ns_ConfigIntRange(path, "listenbacklog", 32, 0, INT_MAX);
 
     /*
+     * tcljob.c
+     */
+
+    nsconf.jobsperthread = Ns_ConfigIntRange(path, "jobsperthread", 0, 0, INT_MAX);
+
+    /*
      * dns.c
      */
 

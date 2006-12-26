@@ -247,7 +247,7 @@ NsTclInitQueueType(void)
     tp.nidle = 0;
     tp.firstPtr = NULL;
     tp.req = THREADPOOL_REQ_NONE;
-    tp.jobsPerThread = 0;
+    tp.jobsPerThread = nsconf.jobsperthread;
 }
 
 
