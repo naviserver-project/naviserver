@@ -162,7 +162,6 @@ struct _nsconf {
     char address[16];
     int shutdowntimeout;
     int backlog;
-    int jobsperthread;
 
     /*
      * Slot IDs for socket local storage.
@@ -221,6 +220,10 @@ struct _nsconf {
         Tcl_Encoding urlEncoding;
     } encoding;
 
+    struct {
+        int jobsperthread;
+        int timeout;
+    } job;
 };
 
 extern struct _nsconf nsconf;

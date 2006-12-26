@@ -168,6 +168,7 @@ typedef struct ThreadPool {
     int                nidle;
     Job               *firstPtr;
     int                jobsPerThread;
+    int                timeout;
 } ThreadPool;
 
 
@@ -247,7 +248,8 @@ NsTclInitQueueType(void)
     tp.nidle = 0;
     tp.firstPtr = NULL;
     tp.req = THREADPOOL_REQ_NONE;
-    tp.jobsPerThread = nsconf.jobsperthread;
+    tp.jobsPerThread = nsconf.job.jobsperthread;
+    tp.timeout = nsconf.job.timeout;
 }
 
 
@@ -381,10 +383,11 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * Configure jobs subsystem
              */
 
-            int jpt = -1;
+            int jpt = -1, timeout = -1;
 
             Ns_ObjvSpec opts[] = {
-                {"-jobsperthread",  Ns_ObjvInt,  &jpt,    NULL},
+                {"-jobsperthread",  Ns_ObjvInt,  &jpt,     NULL},
+                {"-timeout",        Ns_ObjvInt,  &timeout, NULL},
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec args[] = {
@@ -398,7 +401,11 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             if (jpt >= 0) {
                 tp.jobsPerThread = jpt;
             }
-            snprintf(buf, sizeof(buf), "jobsperthread %d", tp.jobsPerThread);
+            if (timeout >= 0) {
+                tp.timeout = timeout;
+            }
+            snprintf(buf, sizeof(buf), "jobsperthread %d timeout %d",
+                     tp.jobsPerThread, tp.timeout);
             Ns_MutexUnlock(&tp.queuelock);
             Tcl_AppendResult(interp, buf, NULL);
         }
@@ -1113,7 +1120,8 @@ JobThread(void *arg)
     CONST char    *err;
     Queue         *queuePtr;
     Tcl_HashEntry *jPtr;
-    int            jpt, njobs;
+    Ns_Time       *timePtr, wait;
+    int            jpt, njobs, status;
 
     Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
@@ -1132,12 +1140,21 @@ JobThread(void *arg)
 
     while (jpt == 0 || njobs > 0) {
         ++tp.nidle;
-        while (((jobPtr = GetNextJob()) == NULL) &&
-               !(tp.req == THREADPOOL_REQ_STOP)) {
-            Ns_CondWait(&tp.cond, &tp.queuelock);
+        status = NS_OK;
+        if (tp.timeout > 0) {
+            Ns_GetTime(&wait);
+            Ns_IncrTime(&wait, tp.timeout, 0);
+            timePtr = &wait;
+        } else {
+            timePtr = NULL;
+        }
+        while (status == NS_OK &&
+               !(tp.req == THREADPOOL_REQ_STOP) &&
+               ((jobPtr = GetNextJob()) == NULL)) {
+            status = Ns_CondTimedWait(&tp.cond, &tp.queuelock, timePtr);
         }
         --tp.nidle;
-        if (tp.req == THREADPOOL_REQ_STOP) {
+        if (tp.req == THREADPOOL_REQ_STOP || jobPtr == NULL) {
             break;
         }
 
