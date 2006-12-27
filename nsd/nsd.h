@@ -365,9 +365,10 @@ typedef struct AdpCode {
 #define ADP_FLUSHED	0x1000	/* Some output has been sent. */
 #define ADP_ERRLOGGED	0x2000	/* Error message has already been logged. */
 #define ADP_AUTOABORT	0x4000	/* Raise abort on flush error. */
-#define ADP_EVAL_FILE	0x8000	/* Object to evaluate is a file. */
-#define ADP_EVAL_TCL	0x10000	/* Object to evaluate is a Tcl file. */
-#define ADP_STREAM	0x20000	/* Enable ADP streaming. */
+#define ADP_ADPFILE	0x8000	/* Object to evaluate is a file. */
+#define ADP_STREAM	0x10000	/* Enable ADP streaming. */
+#define ADP_TCLFILE	0x20000	/* Object to evaluate is a Tcl file. */
+
 
 /*
  * The following structure defines the entire request

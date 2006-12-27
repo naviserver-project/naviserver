@@ -141,7 +141,7 @@ NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags, char *resvar)
 int
 NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags, char *resvar)
 {
-    return AdpEval(itPtr, objc, objv, (flags | ADP_EVAL_FILE), resvar);
+    return AdpEval(itPtr, objc, objv, (flags | ADP_ADPFILE), resvar);
 }
 
 static int
@@ -161,7 +161,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags, char *resvar)
 
     Tcl_DStringInit(&output);
     obj0 = Tcl_GetString(objv[0]);
-    if (flags & ADP_EVAL_FILE) {
+    if (flags & ADP_ADPFILE) {
     	result = AdpSource(itPtr, objc, objv, obj0, NULL, &output, flags);
     } else {
     	NsAdpParse(&code, itPtr->servPtr, obj0, flags, NULL);
@@ -556,7 +556,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                      */
 
 		    NsAdpParse(&cachePtr->code, itPtr->servPtr, tmp.string,
-			       flags & ~ADP_EVAL_TCL, file);
+			       flags & ~ADP_TCLFILE, file);
 		    Ns_GetTime(&cachePtr->expires);
 		    Ns_IncrTime(&cachePtr->expires, ttlPtr->sec, ttlPtr->usec);
 	    	    cachePtr->refcnt = 1;

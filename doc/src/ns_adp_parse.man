@@ -63,7 +63,7 @@ ns_adp_bind_args commands.
 [list_begin definitions]
 
 
-[call [cmd ns_adp_parse] [arg -file file] [arg -string string] [opt [arg -savedresult varName]] [opt [arg -cwd path]] [opt args ...]]
+[call [cmd ns_adp_parse] [arg {-file file}] [arg {-string string}] [opt [arg {-savedresult varName}]] [opt [arg {-cwd path}]] [opt {args ...}]]
 
 [list_end]
 

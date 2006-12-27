@@ -5,10 +5,6 @@
 
 [section {What is a Database?}]
 
-
-[para]
-
-
 A database is a collection of data stored in a computer. A Database
 Management System (DBMS) is a software package that efficiently
 manages databases and lets one or more people use or modify the
@@ -36,13 +32,7 @@ values in the rows of the table are DML commands.
 
 [para]
 
-
-
 [section {Databases and NaviServer}]
-
-
-[para]
-
 
 NaviServer can be configured to have access to multiple databases
 through NaviServer's database drivers. NaviServer creates a database
@@ -62,10 +52,6 @@ Developer's Guide for more information.
 
 
 [section {Internal vs. External Drivers}]
-
-
-[para]
-
 
 NaviServer provides a tightly-coupled solution to
 database driver integration, with database client libraries linked
@@ -87,9 +73,6 @@ internal database driver to NaviServer.
 [section {Available Database Drivers}]
 
 
-[para]
-
-
 NaviServer provides internal database drivers for Postgres and
 Sybase/MS SQLServer. Third-party database drivers are provided
 for Oracle, Informix, and InterBase, Mysql.
@@ -97,13 +80,7 @@ for Oracle, Informix, and InterBase, Mysql.
 [section {Internal Database Drivers}]
 
 
-[para]
-
-
  [subsection {Configuration}]
-
-
-[para]
 
 
 Configuration for an internal database driver consists of setting
@@ -124,10 +101,6 @@ Postgres or Solid driver.
 
 
   [subsection {Configure an Internal Database Driver}]
-
-
-[para]
-
 
 
 [list_begin enum]
@@ -226,10 +199,6 @@ Postgres or Solid driver.
 
 [section {External Database Drivers}]
 
-
-[para]
-
-
 The external driver sends messages to the external database proxy
 daemon instead of calling database client libraries directly. This
 database proxy daemon can be a local or remote process. The reason for
@@ -274,9 +243,6 @@ locks.
  [subsection {Configuration}]
 
 
-[para]
-
-
 Configuration for an external database driver consists of setting
 parameters for the external driver and creating a database pool that
 uses that driver. An external driver is configured to spawn and
@@ -295,10 +261,6 @@ external driver to interface with the Sybase proxy daemon.
 
 
   [subsection {Configure an External Database Driver}]
-
-
-[para]
-
 
 
 [list_begin enum]
@@ -419,9 +381,6 @@ external driver to interface with the Sybase proxy daemon.
  [subsection {Remote Database Proxy Daemons}]
 
 
-[para]
-
-
 The previous example showed configuration of a local proxy daemon. One
 of the advantages of the external driver interface is that you are
 free to run database proxy daemons on any other host, perhaps one on
@@ -440,9 +399,6 @@ daemon on a remote machine.
 
 
   [subsection {Configure a Remote External Database Driver}]
-
-
-[para]
 
 
 
@@ -529,9 +485,6 @@ daemon on a remote machine.
  [subsection {Tcl Interface}]
 
 
-[para]
-
-
 In addition to the built-in, database-driver independent ns_db Tcl
 functions, the ns_ext function is available for special functions that
 relate to the external driver mechanism. In general, you will not need
@@ -544,9 +497,6 @@ event that you need to call it directly.
 
 
 [section {Developing Database Drivers for NaviServer}]
-
-
-[para]
 
 
 For information on developing your own database drivers, see the

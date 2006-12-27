@@ -5,41 +5,28 @@
 
 [description]
 file.tcl is responsible for setting up all that's necessary for
- allowing you to use TCL files in your webserver directories.
+allowing you to use TCL files in your webserver directories.
 
 [para]
 
 Notice the entries in your sample-config.tcl configuration file:
 
 [example_begin]
+
 ns_section "ns/server/${servername}"
-ns_param   directoryfile   $directoryfile
-ns_param   pageroot        $serverdir/$pageroot
-ns_param   enabletclpages  false     ;# Parse *.tcl files in pageroot.
-ns_param   filecachesize   5000000   
+ns_param   enabletclpages  false         ;# Parse *.tcl files in pageroot.
+
 [example_end]
 
 The default is to not enable TCL pages.
 
 [para]
 
-If you set this to true this is what happens at server startup when file.tcl is sourced:
+If you set first option to true this is what happens at server startup when file.tcl is sourced:
 
 [list_begin enum]
 
 [enum] The procedure ns_sourceproc is registered for the HTTP methods GET, POST and HEAD via ns_register_proc.
-
-[enum] Caching TCL-bytecode is supported:
-
-  [list_begin enum]
-
-  [enum] It looks for a configuration parameter filecachesize for the size of the cache.(You can add this to the config lines above)
-
-  [enum] If not found the Cache Size defaults to nearly 5 MB
-
-  [enum] A procedure ns_sourcefile is created with special code to handle caching and flushing. 
-
-  [list_end]
 
 [enum] The procedure ns_sourceproc works as follows:
 
@@ -49,7 +36,8 @@ If you set this to true this is what happens at server startup when file.tcl is 
 
   [enum] An existing TCL file is sourced via ns_sourcefile (see above)
 
-  [enum] If a custom error page exists it is sourced. That error page is responsible for handling the error, e.g. communication with a user. 
+  [enum] If a custom error page exists it is sourced. That error page is responsible for 
+         handling the error, e.g. communication with a user. 
 
   [list_end]
 
@@ -60,9 +48,27 @@ If you set this to true this is what happens at server startup when file.tcl is 
 Similar to the ADP error page example in your sample-config.tcl file you could setup a TCL error page:
 
 [example_begin]
+
 ns_section "ns/server/${servername}/tcl"
-ns_param   errorPage   ${serverdir}/${pageroot}/errorpage.tcl ;# TCL error page
+ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.tcl  ;# TCL error page
+
 [example_end]
+
+[section {Support for .tcl-style dynamic pages via ADP engine}]
+
+Another way to support .tcl pages to use ADP engine to process .tcl file as
+ADP pages. the engine will source Tcl file and wrap it as <% ns_adp_include filename %>,
+then compiled it as regular ADP page. If caching enabled, the tcl file will be compiled as
+Tcl proc into bytecode. Using ADP engine is faster than using file.tcl based approach.
+
+[example_begin]
+
+ns_section "ns/server/${servername}/adp"
+ns_param   enabletclpages  false                               ;# Parse *.tcl files in pageroot.
+ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.adp  ;# ADP error page
+
+[example_end]
+
 
 [see_also nsd]
 [keywords NaviServer]

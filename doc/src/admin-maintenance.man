@@ -6,8 +6,6 @@
 
 [section {Running NaviServer}]
 
-[para]
-
 bin/nsd [lb]-h|V[rb] [lb]-c|f|i|w[rb] [lb]-u <user>[rb] [lb]-g <group>[rb] [lb]-r <path>[rb] [lb]-b <address:port>|-B <file>[rb] [lb]-s <server>[rb] -t <file>
 
 [para]
@@ -107,8 +105,6 @@ codes and signals caught during the watch and correspondingly restarts the secon
 
 [emph {Restarting the Server}]
 
-[para]
-
 To restart the server from within your TCL code:
 
 [example_begin]
@@ -142,8 +138,6 @@ To restart the server from the shell you can send the server the SIGINT.
 [para]
 
 [subsection {Other approaches}]
-
-[para]
 
 There are several ways to keep your server running. Depending on your particular
 requirements the watchdog may not be the right thing for you. Common approaches are listed below.
@@ -184,8 +178,6 @@ and init does the job of restarting the server if it crashes.
 
 [subsection {Using cron}]
 
-[para]
-
 As you already have (or may have) a rc-script for starting your server during boot
 time you simply could run a cronjob that checks the status of something like
 
@@ -224,8 +216,6 @@ as part of a script every 5 minutes by adding a crontab line (crontab -e) like
 
 
 [subsection {Using daemontools}]
-
-[para]
 
 Daemontools is a collection of software to controll other processes.
 
@@ -421,8 +411,6 @@ currently-running server will be killed.
 
 [section {Maintenance Tasks}]
 
-[para]
-
 An NaviServer installation requires regular maintenance as follows:
 
 [para]
@@ -455,10 +443,6 @@ Each of these maintenance tasks is described in the following sections.
 
 [section {Maintain the Directories}]
 
-
-[para]
-
-
 The NaviServer directories described below should be backed up
 regularly to ensure against file system failure.
 
@@ -467,9 +451,6 @@ regularly to ensure against file system failure.
 
 
 [subsection {Back Up the Pages Directory}]
-
-
-[para]
 
 
 The location of the pages directory for each virtual server is
@@ -489,10 +470,6 @@ site. To schedule nightly backups, use the Unix cron facility.
 
 
 [subsection {Back Up the Access Log}]
-
-
-[para]
-
 
 The access log file needs to be backed up regularly. By default, the
 access log for each virtual server is in the
@@ -518,10 +495,6 @@ opened, the oldest log is removed.
 
 [subsection {Back Up the Server Log}]
 
-
-[para]
-
-
 Ordinarily, the server log file grows at a slow rate and does not need
 regular truncation. However, while debugging new applications, you
 should set the Verbose parameter in the ns/module/nsdb/pool/pool-name
@@ -535,10 +508,6 @@ you may want to back up the error log.
 
 
 [subsection {Back Up the Tcl Scripts Directory}]
-
-
-[para]
-
 
 The Tcl scripts directory contains the source to the Tcl scripts that
 provide the server with much of its advanced functionality. Tcl
@@ -561,10 +530,6 @@ too, including files outside the NaviServer home directory.
 
 [subsection {Back Up the bin Directory}]
 
-
-[para]
-
-
 The /bin subdirectory of the NaviServer home is the location of the
 NaviServer binary and the default location of any dynamically loadable
 C modules. If your site maintains several interesting loadable
@@ -578,10 +543,6 @@ sure to back up your module source code.
 
 
 [section {Directory Map}]
-
-
-[para]
-
 
 This table describes all of the directories that are created under the
 NaviServer installation directory when you install NaviServer. It lists
@@ -954,9 +915,6 @@ section.
 [section {Recommended Security Modifications}]
 
 
-[para]
-
-
 The actions described in this section are recommended, but not
 required, to ensure the security of systems running NaviServer.
 
@@ -965,10 +923,6 @@ required, to ensure the security of systems running NaviServer.
 
 
 [subsection {NaviServer Version}]
-
-
-[para]
-
 
 In general, NaviServer versions 4.99 and higher should be used whenever
 possible, because they are more secure than earlier versions of
@@ -1008,10 +962,6 @@ NaviServer.
 
 
 [subsection {Secure chroot Environment}]
-
-
-[para]
-
 
 NaviServer should be run in a secure chroot() environment whenever
 possible.
@@ -1100,9 +1050,6 @@ Command Line" section.
 [subsection {Restricted Content}]
 
 
-[para]
-
-
 Determine whether any of the content available to an NaviServer in a
 chroot() environment would be restricted. In general, NaviServer should
 be read-only and everything it can read should be world-readable. This
@@ -1131,10 +1078,6 @@ restricted accessible through NaviServer.
 
 
 [subsection {Tcl Library}]
-
-
-[para]
-
 
 Limit the available Tcl functions to just those functions that are
 necessary by that particular NaviServer installation. Purge the Tcl
@@ -1198,7 +1141,6 @@ BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
 
 [subsection {Stacksize}]
 
-[para]
 Apart from the specific details of integration of your favoured language you may have to take a look at
 the stacksize parameter of your config file.
 
@@ -1230,10 +1172,6 @@ If the size of the stack is not enough you may encounter crashes without real ex
 
 [subsection {Database Access}]
 
-
-[para]
-
-
 Database access should be restricted with read-only logins to the
 server and queries through stored procedures.
 
@@ -1252,10 +1190,6 @@ Guide.
 
 
 [subsection {Control Port Interface}]
-
-
-[para]
-
 
 The control port interface should not be used unless absolutely
 necessary. Although it is more secure than the /NS/Admin interface

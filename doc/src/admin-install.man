@@ -4,17 +4,9 @@
 
 [description]
 
-
-
-[para]
-
 NaviServer is distributed in source form.
 
 [section {Getting Started}]
-
-
-[para]
-
 
 NaviServer is reasonably portable and known to compile and run on the following platforms:
 
@@ -73,9 +65,6 @@ entirely in ANSI standard C.
 [section {Building}]
 
 
-[para]
-
-
 We've tried to make building NaviServer as simple as possible.  On the supported
 platforms, simply type:
 
@@ -102,11 +91,21 @@ settings throughout the NaviServer environment.
 
 [para]
 
+Two options to configure.sh script worth noting:
+
+[list_begin enum]
+
+[enum] --enable-symbols to enable debugging information to be compied in for
+       easy debugging, otherwise it will be compiled with optimization enabled and
+       that will prevent from effective troubleshooting in case of server crash
+
+[enum] --disable-tclvfs to disable using Tcl VFS subsystem, which is rich and featured
+       layer that can access different types of files, like zip archives. This option will
+       speed up the server if the speed is essential and server will serve ordinary files only
+
+[list_end]
 
 [section {Installing}]
-
-
-[para]
 
 
 Type "[emph {make install}]" to make a production server.  This
@@ -137,9 +136,6 @@ Not all modules will be compiled by default due to external dependencies, so
 please look into module's README file for any additional information.
 
 [section {Configuring}]
-
-[para]
-
 
 The installation directory contains several config files under /usr/local/ns/conf installation directory.
 This configuration will:

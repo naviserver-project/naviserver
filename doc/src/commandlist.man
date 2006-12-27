@@ -14,6 +14,8 @@ Commands marked with (T) are TCL commands.
 
 [section {ADP commands}]
 [list_begin definitions]
+[call [cmd ns_adp_ctl]]
+[call [cmd ns_adp_info]]
 [call [cmd ns_adp_abort]]
 [call [cmd ns_adp_append]]
 [call [cmd ns_adp_argc]]
@@ -116,6 +118,7 @@ removed; size now reported along with other statistics; 2005-12-30
 [call [cmd ns_rollfile]]
 [call [cmd ns_rwlock]]
 [call [cmd ns_tmpnam]]
+[call [cmd ns_filestat]]
 [list_end]
 
 [section {Hashing and Encryption commands}]
@@ -260,9 +263,6 @@ removed; size now reported along with other statistics; 2005-12-30
 [call [cmd ns_eval ] [arg T]]
 [call [cmd ns_ictl]]
 [call [cmd ns_init]]
-[call [cmd ns_markfordelete]]
-[nl]
-removed; now ns_ictl markfordelete; 2005-07-29
 [call [cmd ns_reinit ] [arg T]]
 [list_end]
 

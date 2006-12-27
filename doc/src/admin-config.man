@@ -5,9 +5,6 @@
 
 [section {NaviServer Configuration}]
 
-[para]
-
-
 NaviServer has many configurable parameters, all of which are set in
 the NaviServer configuration file. This chapter provides a reference of
 the configuration file structure and parameters so that you can edit
@@ -15,8 +12,6 @@ the configuration file directly.
 
 
 [para]
-
-
 By modifying and/or adding NaviServer configuration parameters, you
 can:
 
@@ -47,10 +42,6 @@ can:
 
 
  [subsection {What is a database pool?}]
-
-
-[para]
-
 
 A database pool is a set of connections to a database. NaviServer
 currently supports direct connections to the Sybase/MS SQL Server and
@@ -108,10 +99,6 @@ can be configured by manually editing the configuration file.
 
 
  [subsection {What is an NaviServer module?}]
-
-
-[para]
-
 
 NaviServer modules are shared libraries or dynamically-linked libraries
 that provide specific sets of capabilities that you can load in your
@@ -171,10 +158,6 @@ servers. The following standard modules are provided:
 
 [section {Configuration File Structure}]
 
-
-[para]
-
-
 This section describes the format of the configuration file and
 provides detailed information on individual NaviServer parameters.
 
@@ -226,10 +209,6 @@ The general format of the configuration file is as follows:
 
 [section {Configuration File Hierarchy}]
 
-
-[para]
-
-
 Although there are a large number of configurable parameters for
 NaviServer, most of them are not required. Also, the parameters are
 organized into a hierarchy branching off of the following main
@@ -271,8 +250,6 @@ pages will be stored and which databases will be accessible.
  [bullet] ns/server/servername configures an individual server.
 
  [bullet] ns/server/servername/adp configures NaviServer Dynamic Pages (ADPs) for the server.
-
- [bullet] ns/server/servername/adp/parsers configures ADP parsers.
 
  [bullet] ns/server/servername/db configures database connections used by the server.
 
@@ -348,22 +325,14 @@ pages will be stored and which databases will be accessible.
 
  [bullet] ns/environment/environment-name defines an environment section for CGI modules.
 
-
 [list_end]
 
-
-
 [list_end]
-
-
 
 [para]
 
 
  [subsection {Note on Boolean Parameter Values}]
-
-
-[para]
 
 
 There are several ways to specify a boolean parameter value. The
@@ -373,31 +342,21 @@ any of the following values are valid:
 
 [para]
 
-
 For [emph {True}] : on, y, yes, t, true, 1 (one)
 
-
 [para]
-
 
 For [emph {False}] : off, n, no, f, false, 0 (zero)
 
-
 [para]
-
-
 
 [section {Example Configuration Files}]
 
-
 [para]
-
 
  Default Configuration File
 
-
 [para]
-
 
 The default sample-config.tcl comes with NaviServer. There is one server defined,
 server1, which contains the nscp, nslog, and nssock modules. You can
@@ -427,7 +386,7 @@ this configuration file are:
 [para]
 
 
-SOLID and Postgres database pools: The defdb database pool is
+Database pools: The defdb database pool is
 associated with an MS SQLServer database, and the otherdb database pool is
 associated with a PostgreSQL database. (See the driver parameters in the
 ns/db/pool/pool-name sections.)
@@ -450,7 +409,6 @@ both the otherdb and the defdb database pools.
 
 
 [para]
-
 
 
 [example_begin]

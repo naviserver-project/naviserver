@@ -241,16 +241,18 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
      * just execute the Tcl code in case of cache disabled
      */
 
-    if (flags & ADP_EVAL_TCL) {
+    if (flags & ADP_TCLFILE) {
 	int size;
 
         if (flags & ADP_NOCACHE) {
             Tcl_DStringAppend(&codePtr->text, adp, -1);
         } else {
-            Ns_DStringPrintf(&codePtr->text, "ns_adp_append {<%% if {[info proc adp:%s] == {}} {proc adp:%s {} {",
-                             file, file);
+            Ns_DStringPrintf(&codePtr->text,
+                      "ns_adp_append {<%%"
+                      "if {[info proc adp:%s] == {}} {"
+                      "  proc adp:%s {} { uplevel [for {", file, file);
             Tcl_DStringAppend(&codePtr->text, adp, -1);
-            Ns_DStringPrintf(&codePtr->text, "}}\nadp:%s %%>}", file);
+            Ns_DStringPrintf(&codePtr->text, "} {0} {} {}]}}\nadp:%s %%>}", file);
         }
         codePtr->nblocks = codePtr->nscripts = 1;
         size = -codePtr->text.length;

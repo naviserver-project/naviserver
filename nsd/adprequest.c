@@ -99,7 +99,7 @@ NsAdpTclProc(void *arg, Ns_Conn *conn)
 
     Ns_DStringInit(&file);
     Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
-    status = Ns_AdpRequestEx(conn, file.string, ttlPtr, ADP_EVAL_TCL);
+    status = Ns_AdpRequestEx(conn, file.string, ttlPtr, ADP_TCLFILE);
     Ns_DStringFree(&file);
     return status;
 }

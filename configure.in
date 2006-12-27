@@ -258,7 +258,7 @@ fi
 
 AC_MSG_CHECKING([whether to include zlib compression support])
 AC_ARG_WITH(zlib,
-  [  --with-zlib[=DIR]       build and link with Zlib [--with-zlib]],
+  AC_HELP_STRING([--with-zlib=[DIR]],[build and link with Zlib --with-zlib]),
   [ 
     ac_zlib=$withval
     if test "${ac_zlib}" != "no" ; then
@@ -304,7 +304,8 @@ else
     AC_MSG_RESULT(no)
 fi
 
-AC_ARG_ENABLE(tclvfs, [--disable-tclvfs  Disable Tcl VFS], , AC_DEFINE(USE_TCLVFS,1,[use TCL VFS]))
+AC_ARG_ENABLE(tclvfs, 
+   AC_HELP_STRING([--disable-tclvfs], [Disable Tcl VFS]), , AC_DEFINE(USE_TCLVFS,1,[use TCL VFS]))
 
 # Use native crypt if possible
 case "`uname`" in

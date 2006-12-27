@@ -37,7 +37,7 @@ from outside the context of an ADP.
 
 [list_begin definitions]
 
-[call [cmd ns_adp_include] [ [arg -tcl]] [opt [arg -cache seconds]] [opt [arg -nocache]] [arg file] [opt arg ...]]
+[call [cmd ns_adp_include] [opt [arg -tcl]] [opt [arg {-cache seconds}]] [opt [arg -nocache]] [arg file] [opt {arg ...}]]
 
 [arg -tcl]
 Given file is .tcl file and should be wrapped into ADP page
@@ -45,7 +45,7 @@ Given file is .tcl file and should be wrapped into ADP page
 [arg -nocache]
 Do not cache ADP page results
 
-[arg -cache seconds]
+[arg {-cache seconds}]
 Cache results for this amount of time
 
 [list_end]

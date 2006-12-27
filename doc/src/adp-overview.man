@@ -6,8 +6,6 @@
 
 [section {What Are ADPs?}]
 
-
-[para]
 Probably the easiest way to make NaviServer output dynamic content is
 to embed a Tcl script in an HTML page with NaviServer Dynamic Pages
 (ADPs). ADPs are HTML pages that are parsed and run on the server when
@@ -19,8 +17,6 @@ code.
 
 [section {When to Use ADPs}]
 
-
-[para]
 ADPs are ideal in situations where you want to generate all or part of
 a specific page dynamically. You can re-use code by storing Tcl
 scripts in Tcl libraries and invoking them from within multiple ADPs.
@@ -45,8 +41,6 @@ Here are some examples of applications you can use ADPs for:
 
 [section {When to Use Tcl Libraries}]
 
-
-[para]
 The alternative to embedding Tcl scripts in HTML pages using ADPs, is
 to store Tcl scripts in Tcl libraries and register them to handle
 specific URLs or URL hierarchies. There are some situations, such as
@@ -90,8 +84,6 @@ approach.
 
 [section {Configuring ADP Processing}]
 
-
-[para]
 Since you will be creating HTML pages that contain Tcl scripts, you
 will need to specify which pages the server will need to parse for Tcl
 commands and process.
@@ -169,12 +161,6 @@ with the extensions .adp or .asp will be parsed, and all files in the
      usually include the requested ADP by calling:
      ns_adp_include [lb]ns_adp_argv 0[rb]
 
-
-[bullet] [emph {TagLocks}] - If set to on, ADP tags may be registered after server
-     startup. Pages will be served less quickly when this is turned on.
-     If set to off, ADP tags can only be registered before the first ADP is served,
-     Default: off
-
 [list_end]
 
 [section {Building ADPs}]
@@ -190,7 +176,6 @@ with the extensions .adp or .asp will be parsed, and all files in the
 
 
 [nl]
-
 
   If you plan to use the Tcl script to return part or all of the
  page's content, just omit that part of the page, but you
@@ -216,15 +201,7 @@ with the extensions .adp or .asp will be parsed, and all files in the
 
 [section {Debugging ADPs with TclPro}]
 
-
-[para]
-
-
 To debug your ADPs with TclPro, follow these steps:
-
-
-[para]
-
 
 [list_begin bullet]
 
@@ -255,10 +232,6 @@ To debug your ADPs with TclPro, follow these steps:
  time or with the "dproc=<pattern>" query argument.
 
 [section {ADP Syntax}]
-
-
-[para]
-
 
 There are three different syntaxes you can use to embed a Tcl script
 into an HTML page. Not all syntaxes are available with all ADP
@@ -348,21 +321,8 @@ can be used inside HTML tags.
 
 [section {Registered ADP Tags}]
 
-
-[para]
-
-
 You can define your own ADP tags with the ns_adp_registertag or the
 ns_register_adptag Tcl functions.
-
-
-[para]
-
-
-You can also set the Taglocks parameter to prevent new
-registered tags from being created after the first ADP has been
-served.
-
 
 [section {Example ADPs}]
 

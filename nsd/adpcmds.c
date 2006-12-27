@@ -388,7 +388,7 @@ badargs:
         if (objc < skip + 1) {
 	    goto badargs;
 	}
-        flags |= ADP_EVAL_FILE;
+        flags |= ADP_ADPFILE;
     }
     file = Tcl_GetString(objv[skip]);
     objc -= skip;
@@ -404,7 +404,7 @@ badargs:
 	    return TCL_ERROR;
 	}
     	Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
-        if (flags & ADP_EVAL_FILE) {
+        if (flags & ADP_ADPFILE) {
             Tcl_DStringAppendElement(dsPtr, "-tcl");
         }
     	for (i = 0; i < objc; ++i) {
@@ -463,7 +463,7 @@ badargs:
         } else
         if (STREQ(opt, "-tcl")) {
 	    isfile = 1;
-            flags |= ADP_EVAL_TCL;
+            flags |= ADP_TCLFILE;
         } else
         if (STREQ(opt, "-nocache")) {
             flags |= ADP_NOCACHE;
