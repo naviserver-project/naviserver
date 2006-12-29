@@ -1065,8 +1065,8 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_SetVar2Ex(interp, name, "gid", Tcl_NewIntObj(st.st_gid), 0);
         Tcl_SetVar2Ex(interp, name, "size", Tcl_NewWideIntObj(st.st_size), 0);
         Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewLongObj(st.st_atime), 0);
-        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewLongObj(st.st_atime), 0);
-        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewLongObj(st.st_atime), 0);
+        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewLongObj(st.st_ctime), 0);
+        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewLongObj(st.st_mtime), 0);
         Tcl_SetVar2Ex(interp, name, "mode", Tcl_NewIntObj(st.st_mode), 0);
         Tcl_SetVar2Ex(interp, name, "type", Tcl_NewStringObj(
                   (S_ISREG(st.st_mode) ? "file" :

@@ -1,3 +1,7 @@
+2006-12-29  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclmisc.c: fixed bug in ns_filestat whihc returned wrong ctime/mtime
+
 2006-12-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adpcmds.c:
