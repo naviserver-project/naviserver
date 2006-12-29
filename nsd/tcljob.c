@@ -1148,6 +1148,7 @@ JobThread(void *arg)
         } else {
             timePtr = NULL;
         }
+        jobPtr = NULL;
         while (status == NS_OK &&
                !(tp.req == THREADPOOL_REQ_STOP) &&
                ((jobPtr = GetNextJob()) == NULL)) {
