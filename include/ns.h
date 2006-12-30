@@ -1843,6 +1843,10 @@ NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,
                           Ns_Time *timeoutPtr);
+NS_EXTERN int Ns_SockWrite(SOCKET sock, void *vbuf, size_t towrite,
+                           Ns_Time *timePtr);
+NS_EXTERN int Ns_SockWriteV(SOCKET sock, struct iovec *bufs, int nbufs,
+                            Ns_Time *timePtr);
 NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend,
                           Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,

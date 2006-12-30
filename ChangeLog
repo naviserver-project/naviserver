@@ -17,6 +17,10 @@
 	can be disabled also inside the script, AdpEval check for flags during
 	page evaluation.
 
+	* include.ns.h:
+	* nsd/sock.h: Added 2 new public functions Ns_SockWrite and
+	Ns_SockWriteV which will try to send all data provided
+
 2006-12-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adpcmds.c:
