@@ -243,8 +243,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 
     if (flags & ADP_TCLFILE) {
 	int size;
-
-        if (flags & ADP_NOCACHE) {
+        if (!(flags & ADP_CACHE)) {
             Tcl_DStringAppend(&codePtr->text, adp, -1);
         } else {
             Ns_DStringPrintf(&codePtr->text,

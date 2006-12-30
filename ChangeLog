@@ -3,6 +3,20 @@
 	* nsd/tcljob.c: Possible uninitilized usage of pointer
 	* nsd/tclmisc.c: Fixed bug in ns_filestat which returned wrong ctime/mtime
 
+	* nsd/nsd.h:
+	* nsd/server.c:
+	* nsd/adprequest.c:
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/adpparse.c: Changed default mode of ADP to no cache, cache
+	if endbled breaks all existing dynamic applications, with cache enabled
+	special care must be taken in producing correct result and also
+	cache does not account for query parameters, so dynamic ADP page
+	cannot be cached if it depends on different query parameters. Setting
+	it to no cache by default sets behaviour to 4.0 ADP processing. Caching 
+	can be disabled also inside the script, AdpEval check for flags during
+	page evaluation.
+
 2006-12-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adpcmds.c:

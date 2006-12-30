@@ -355,7 +355,7 @@ typedef struct AdpCode {
 #define ADP_SINGLE	0x02	/* Combine blocks into a single script. */
 #define ADP_DEBUG	0x04	/* Enable debugging. */
 #define ADP_EXPIRE	0x08	/* Send Expires: now header on output. */
-#define ADP_NOCACHE	0x10	/* Disable caching. */
+#define ADP_CACHE	0x10	/* Enable output caching. */
 #define ADP_TRACE	0x20	/* Trace execution. */
 #define ADP_GZIP	0x80	/* Enable gzip compression. */
 #define ADP_DETAIL	0x100	/* Log connection details on error. */
@@ -1153,12 +1153,10 @@ extern int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
 extern int NsAdpAppend(NsInterp *itPtr, char *buf, int len);
 extern int NsAdpFlush(NsInterp *itPtr, int stream);
 extern int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
-extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], int flags,
-                     char *resvar);
-extern int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
-                       int flags, char *resvar);
+extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
+extern int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
 extern int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
-			char *file, Ns_Time *ttlPtr, int flags);
+			char *file, Ns_Time *ttlPtr);
 extern void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
 		       int flags, CONST char* file);
 extern void NsAdpFreeCode(AdpCode *codePtr);

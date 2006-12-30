@@ -439,8 +439,8 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     servPtr->adp.bufsize = Ns_ConfigInt(path, "bufsize", 1 * 1024 * 1000);
 
     servPtr->adp.flags = 0;
-    if (Ns_ConfigGetBool(path, "nocache", &i) && i) {
-    	servPtr->adp.flags |= ADP_NOCACHE;
+    if (Ns_ConfigGetBool(path, "cache", &i) && i) {
+    	servPtr->adp.flags |= ADP_CACHE;
     }
     if (Ns_ConfigGetBool(path, "stream", &i) && i) {
     	servPtr->adp.flags |= ADP_STREAM;

@@ -93,12 +93,8 @@ ns_param	map             	"/*.adp"
 ns_param	enableexpire    	false
 ns_param	enabledebug     	true
 ns_param	singlescript		false
-ns_param	nocache			false
-ns_param	cache			true
+ns_param	cache			false
 ns_param	cachesize		[expr 5000*1024]
-
-ns_section	"ns/server/default/adp/parsers"
-ns_param	fancy			".adp"
 
 ns_section	"ns/server/default/tcl"
 ns_param	nsvbuckets		16

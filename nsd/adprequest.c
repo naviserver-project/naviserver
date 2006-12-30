@@ -182,7 +182,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
     objv[1] = Tcl_NewStringObj(file, -1);
     Tcl_IncrRefCount(objv[0]);
     Tcl_IncrRefCount(objv[1]);
-    result = NsAdpInclude(itPtr, 2, objv, start, ttlPtr, flags);
+    result = NsAdpInclude(itPtr, 2, objv, start, ttlPtr);
     Tcl_DecrRefCount(objv[0]);
     Tcl_DecrRefCount(objv[1]);
     if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
