@@ -388,7 +388,7 @@ badargs:
         if (objc < skip + 1) {
 	    goto badargs;
 	}
-        itPtr->adp.flags |= ADP_ADPFILE;
+        itPtr->adp.flags |= ADP_TCLFILE;
     }
     file = Tcl_GetString(objv[skip]);
     objc -= skip;
@@ -404,7 +404,7 @@ badargs:
 	    return TCL_ERROR;
 	}
     	Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
-        if (itPtr->adp.flags & ADP_ADPFILE) {
+        if (itPtr->adp.flags & ADP_TCLFILE) {
             Tcl_DStringAppendElement(dsPtr, "-tcl");
         }
     	for (i = 0; i < objc; ++i) {
@@ -447,7 +447,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (objc < 2) {
 badargs:
 	Tcl_WrongNumArgs(interp, 1, objv,
-                         "?-file|-tcl|-string? ?-savedresult varname? ?-cwd path? ?-cache?"
+                         "?-file|-tcl|-string? ?-savedresult varname? ?-cwd path? ?-cache|-nocache?"
 			 "arg ?arg ...?");
         return TCL_ERROR;
     }
@@ -467,6 +467,9 @@ badargs:
         } else
         if (STREQ(opt, "-cache")) {
             itPtr->adp.flags |= ADP_CACHE;
+        } else
+        if (STREQ(opt, "-nocache")) {
+            itPtr->adp.flags &= ~ADP_CACHE;
         } else
         if (STREQ(opt, "-savedresult")) {
 	    if (++i < objc) {

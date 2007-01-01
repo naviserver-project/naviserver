@@ -400,9 +400,11 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     if (stat(file, &st) != 0) {
 	Tcl_AppendResult(interp, "could not stat \"",
 	    file, "\": ", Tcl_PosixError(interp), NULL);
-    } else if (S_ISREG(st.st_mode) == 0) {
+    } else
+    if (S_ISREG(st.st_mode) == 0) {
     	Tcl_AppendResult(interp, "not an ordinary file: ", file, NULL);
     } else {
+
 	/*
 	 * Check for valid code in interp page cache.
 	 */
@@ -424,6 +426,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 	    }
 	}
 	if (ipagePtr == NULL) {
+
 	    /*
 	     * Find or create valid page in server table.
 	     */
@@ -502,7 +505,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     if (ipagePtr != NULL) {
 	pagePtr = ipagePtr->pagePtr;
 	if (ttlPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {
-	   cachePtr = NULL;
+	    cachePtr = NULL;
 	} else {
 	    Ns_MutexLock(&servPtr->adp.pagelock);
 
