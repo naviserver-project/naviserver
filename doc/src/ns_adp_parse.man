@@ -13,8 +13,7 @@ ns_adp_parse will ignore any directives to turn on streaming.
 Tcl_Eval is used to evaluate the Tcl commands in the ADP.
 
 [para]
-The -string adp option can be used to parse a string of ADP
-text.  Although the <% ... %> syntax is allowed in the string,
+Although the <% ... %> syntax is allowed in the string,
 if you have this embedded in an ADP, you have to be careful in
 constructing the string that you do not prematurely terminate an
 enclosing script.
@@ -26,9 +25,12 @@ except the result is returned by the command instead of automatically
 being appended to the output stream.
 
 [para]
-The -global and -local options are deprecated. All calls
-are now local to the current ADP call frame such that the -local
-option is ignored and the -global option generates an error.
+-tcl flags can be passed to tell that given file is .tcl file which should 
+be appropriately wrapped and parsed.
+
+[para]
+The -global and -local options are deprecated and ignored. All calls
+are now local to the current ADP call frame.
 
 [para]
 Additional arguments are passed to the ADP execution and can be
@@ -43,17 +45,12 @@ ADP using the ns_adp_argc, ns_adp_argv and ns_adp_bind_args commands.
 If this call is a nested ADP evaluation (where one ADP calls another), an error will
 be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations.
 
-[para]
--cache|-nocache parameters are just convenient options to enable/disable ADP
-caching. Note that enabled or disabled caching flags will remain after execution
-of ns_adp_parse, those settings are equal to manually issuing ns_adp_ctl -cache 1|0.
-
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
-[call [cmd ns_adp_parse] [arg {-file file}] [arg {-string string}] [opt [arg {-savedresult varName}]] [opt [arg {-cwd path}]] [opt [arg -cache]] [opt [arg -nocache]] [opt {args ...}]]
+[call [cmd ns_adp_parse] [opt [arg {-file file}]] [opt [arg -tcl]] [opt [arg -safe]] [opt [arg {-savedresult varName}]] [opt [arg {-cwd path}]] [opt {args ...}]]
 
 [list_end]
 
@@ -61,7 +58,7 @@ of ns_adp_parse, those settings are equal to manually issuing ns_adp_ctl -cache 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_adp_parse -string {<% return [lb][lb]expr 2 + 2[rb][rb] %>}
+   % ns_adp_parse {<% return [lb][lb]expr 2 + 2[rb][rb] %>}
    4
 [example_end]
 

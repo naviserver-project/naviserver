@@ -1,5 +1,13 @@
 2006-12-29  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/adpcmds.c:
+	* doc/src/ns_adp_parse.man:
+	* doc/src/ns_adp_include.man: Updated so flags can be set/unset using
+	ns_adp_ctl command only. ADP flags are saved before executing include or
+	parse command and then restored.
+
+2006-12-29  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* nsd/tcljob.c: Possible uninitilized usage of pointer
 	* nsd/tclmisc.c: Fixed bug in ns_filestat which returned wrong ctime/mtime
 
