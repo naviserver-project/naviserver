@@ -178,6 +178,11 @@ static int SSLInterpInit(Tcl_Interp *interp, void *arg)
     return NS_OK;
 }
 
+static int SSLCmd(ClientData arg, Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[])
+{
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
