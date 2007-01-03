@@ -495,7 +495,13 @@ badargs:
 	} else
         if (STREQ(opt, "-safe")) {
 	    itPtr->adp.flags |= ADP_SAFE;
-	}
+	} else
+        if (STREQ(opt, "-string") ||
+            STREQ(opt, "-local") ||
+            STREQ(opt, "-global")) {
+        } else {
+            break;
+        }
     }
     if (objc == i) {
 	goto badargs;
