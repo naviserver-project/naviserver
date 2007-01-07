@@ -92,6 +92,7 @@ static void SysLog(int priority, char *fmt, ...);
 static void WatchdogSIGTERMHandler(int sig);
 static void WatchdogSIGALRMHandler(int sig);
 static int  WaitForServer();
+static char *MakePath(char *file);
 
 static void UsageError(char *msg, ...);
 static void StatusMsg(runState state);
@@ -300,9 +301,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         printf("   Tcl version:     %s\n", nsconf.tcl.version);
         printf("   Platform:        %s\n", Ns_InfoPlatform());
         return 0;
-    } else if (nsconf.config == NULL) {
-        UsageError("required -t <config> option not specified");
     }
+
     if (mode == 'c') {
         cmd.argv = ns_calloc((size_t) argc - optind + 2, sizeof(char *));
         cmd.argc = 0;
@@ -495,7 +495,17 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     /*
      * Locate and read the configuration file for later evaluation.
+     * If none was gibe in the command line, try to use nsd.conf
+     * in the conf/ directory by resolving base dir from executable path
      */
+
+    if (nsconf.config == NULL) {
+        nsconf.config = MakePath("/conf/nsd.tcl");
+    }
+
+    if (nsconf.config == NULL) {
+        UsageError("required -t <config> option not specified");
+    }
 
     nsconf.config = FindConfig(nsconf.config);
     config = NsConfigRead(nsconf.config);
@@ -631,13 +641,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          *  TODO: Make this compatible for all platforms, this is initial proof of concept
          */
 
-        if (Ns_PathIsAbsolute(nsconf.nsd)) {
-            char *ptr = strstr(nsconf.nsd, "/bin/");
-            if (ptr != NULL) {
-                nsconf.home = ns_calloc(1, ptr - nsconf.nsd + 1);
-                strncpy(nsconf.home, nsconf.nsd, ptr - nsconf.nsd);
-            }
-        }
+        nsconf.home = MakePath("");
         if (nsconf.home == NULL) {
             Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
         }
@@ -1079,7 +1083,7 @@ UsageError(char *msg, ...)
         "Usage: %s [-h|V] [-c|f|i|w] "
         "[-u <user>] [-g <group>] [-r <path>] [-b <address:port>|-B <file>] "
 #endif
-        "[-s <server>] -t <file>\n"
+        "[-s <server>] [-t <file>]\n"
         "\n"
         "  -h  help (this message)\n"
         "  -V  version and release information\n"
@@ -1100,7 +1104,7 @@ UsageError(char *msg, ...)
         "  -B  bind address:port list from <file>\n"
 #endif
         "  -s  use server named <server> in config file\n"
-        "  -t  read config from <file> (REQUIRED)\n"
+        "  -t  read config from <file>\n"
         "\n", nsconf.argv0);
     exit(msg ? 1 : 0);
 }
@@ -1209,6 +1213,40 @@ SysLog(int priority, char *fmt, ...)
     va_end(ap);
     closelog();
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakePath --
+ *
+ *      Returns full path to the file relative to the base dir
+ *
+ * Results:
+ *      Allocated full path or NULL
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+MakePath(char *file)
+{
+    char *ptr, *path;
+
+    if (Ns_PathIsAbsolute(nsconf.nsd)) {
+        ptr = strstr(nsconf.nsd, "/bin/");
+        if (ptr != NULL) {
+            path = ns_calloc(1, ptr - nsconf.nsd + 1 + strlen(file));
+            strncpy(path, nsconf.nsd, ptr - nsconf.nsd);
+            strcat(path, file);
+            return path;
+        }
+    }
+    return NULL;
+}
+
 
 /*
  *----------------------------------------------------------------------

@@ -200,7 +200,7 @@ NsConfUpdate(void)
      */
 
     nsconf.job.jobsperthread = Ns_ConfigIntRange(path, "jobsperthread", 0, 0, INT_MAX);
-    nsconf.job.timeout = Ns_ConfigIntRange(path, "jobtimeout", 0, 0, INT_MAX);
+    nsconf.job.timeout = Ns_ConfigIntRange(path, "jobtimeout", 300, 0, INT_MAX);
 
     /*
      * dns.c
