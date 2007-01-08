@@ -21,7 +21,7 @@
 [list_end]
 
 [see_also nsd]
-[keywords ns_chan ns_cleanup ns_getchannels {Tcl [lb]file channels[rb]}]
+[keywords ns_chan ns_cleanup ns_getchannels {Tcl file channels}]
 
 [manpage_end]
 

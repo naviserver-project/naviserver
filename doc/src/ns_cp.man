@@ -17,7 +17,7 @@ owner, and mode of the original file, just like the Unix "cp -p" command.
 
 [list_end]
 
-[keywords nsd {Tcl [lb]file copy[rb]} ns_cpfp]
+[keywords nsd {Tcl file copy} ns_cpfp]
 
 [manpage_end]
 

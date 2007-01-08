@@ -21,7 +21,7 @@ returns: /dog
 
 
 [see_also nsd]
-[keywords {Tcl [file normalize]}]
+[keywords {Tcl file normalize}]
 
 
 [manpage_end]
