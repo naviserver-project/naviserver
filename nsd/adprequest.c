@@ -176,6 +176,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
      * Include the ADP with the special start page and null args.
      */
 
+    itPtr->adp.flags |= flags;
     itPtr->adp.conn = conn;
     start = (char*)(servPtr->adp.startpage ? servPtr->adp.startpage : file);
     objv[0] = Tcl_NewStringObj(start, -1);
