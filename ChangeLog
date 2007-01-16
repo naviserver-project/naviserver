@@ -10,6 +10,11 @@
 	* doc/src/ns_limits_register.man:
 	* doc/src/ns_limits_set.man: Removed.
 
+	* doc/src/mann/ns_cookie.man: Consolidate the cookie documentation.
+	* doc/src/ns_getcookie.man:
+	* doc/src/ns_setcookie.man:
+	* doc/src/ns_deletecookie.man:
+
 2007-01-09  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adprequest.c: Fixed bug when ADP flag for processing .tcl
