@@ -1,3 +1,9 @@
+2007-01-16  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tcltime.c (NsTclInitTimeType): Remove unneeded (and wrong on
+	x86-64) int/long size test.
+	Bug #1636688. Thanks, Martin Matuska.
+
 2007-01-09  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adprequest.c: Fixed bug when ADP flag for processing .tcl

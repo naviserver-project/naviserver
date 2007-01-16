@@ -88,9 +88,6 @@ NsTclInitTimeType()
     if (sizeof(obj.internalRep) < sizeof(Ns_Time)) {
         Tcl_Panic("NsTclInitObjs: sizeof(obj.internalRep) < sizeof(Ns_Time)");
     }
-    if (sizeof(int) < sizeof(long)) {
-        Tcl_Panic("NsTclInitObjs: sizeof(int) < sizeof(long)");
-    }
     intTypePtr = Tcl_GetObjType("int");
     if (intTypePtr == NULL) {
         Tcl_Panic("NsTclInitObjs: no int type");
