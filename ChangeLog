@@ -4,6 +4,12 @@
 	x86-64) int/long size test.
 	Bug #1636688. Thanks, Martin Matuska.
 
+	* doc/src/mann/ns_limits.man: Document the ns_limits commands.
+	* doc/src/ns_limits_get.man:
+	* doc/src/ns_limits_list.man:
+	* doc/src/ns_limits_register.man:
+	* doc/src/ns_limits_set.man: Removed.
+
 2007-01-09  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/adprequest.c: Fixed bug when ADP flag for processing .tcl
