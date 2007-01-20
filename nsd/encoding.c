@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -294,7 +294,7 @@ Ns_GetEncoding(CONST char *name)
         if (encoding == NULL) {
             Ns_Log(Warning, "encoding: could not load: %s", name);
         } else {
-            Ns_Log(Notice, "encoding: loaded: %s", name);
+            Ns_Log(Debug, "encoding: loaded: %s", name);
         }
         Ns_MutexLock(&lock);
         Tcl_SetHashValue(hPtr, encoding);
@@ -314,10 +314,10 @@ Ns_GetEncoding(CONST char *name)
  *      Add compiled-in default encodings.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -359,10 +359,10 @@ NsInitEncodings(void)
  *      Add additional configured encodings.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -581,10 +581,10 @@ NsTclEncodingForCharsetCmd(ClientData dummy, Tcl_Interp *interp, int argc,
  *      Add extensiont to encoding mapping and charset aliases.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -625,7 +625,7 @@ AddCharset(CONST char *charset, CONST char *name)
  *      Tcl_Encoding or null if not known or not loaded.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -643,7 +643,7 @@ GetCharsetEncoding(CONST char *charset, int len)
      * assuming the charset and Tcl encoding names
      * match (e.g., big5).
      */
-    
+
     Ns_DStringInit(&ds);
     Ns_DStringNAppend(&ds, charset, len);
     charset = Ns_StrTrim(Ns_StrToLower(ds.string));
@@ -741,7 +741,7 @@ GetDefaultEncoding(void)
  *      the current context.
  *
  * Results:
- *      char * 
+ *      char *
  *
  * Side effects:
  *      None.
