@@ -1,6 +1,6 @@
 [manpage_begin ns_sendmail 3 1.0]
 [moddesc   {NaviServer Built-In Commands}]
-[titledesc {sending mail}]
+[titledesc {Sending mail via SMTP}]
 
 
 [description]

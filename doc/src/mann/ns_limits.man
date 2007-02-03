@@ -2,7 +2,7 @@
 
 [manpage_begin ns_limits n [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
-[titledesc {connection request resource limits}]
+[titledesc {Connection request resource limits}]
 
 [description]
 

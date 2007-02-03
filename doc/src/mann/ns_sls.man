@@ -2,7 +2,7 @@
 
 [manpage_begin ns_sls n [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
-[titledesc {socket local storage for connections}]
+[titledesc {Socket local storage for connections}]
 
 [description]
 

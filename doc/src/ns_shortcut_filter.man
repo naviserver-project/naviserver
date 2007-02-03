@@ -1,43 +1,21 @@
-
-
 [manpage_begin ns_shortcut_filter n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Stop processing url filters}]
 
 [description]
-One or more paragraphs describing the ns_shortcut_filter command in detail.
+Other filters that also match when+method+urlPattern will not run after this filter.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
-
-[nl]
-[arg 1]
-Description for arg1
+[call [cmd ns_shortcut_filter] [arg when] [arg method] [arg urlPattern]]
 
 [list_end]
 
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
-[list_end]
+[see_also nsd ns_schedule_filter]
 
-[section EXAMPLES]
-
-[example_begin]
-Put some examples here to illustrate command usage.
-[example_end]
-
-
-[see_also nsd]
 [keywords NaviServer]
 [manpage_end]
 

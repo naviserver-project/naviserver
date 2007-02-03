@@ -2,7 +2,7 @@
 
 [manpage_begin {Ns_SlsAlloc, Ns_SlsSet, Ns_SlsGet, Ns_SlsSetKeyed, Ns_SlsGetKeyed} 3 [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
-[titledesc {socket local storage}]
+[titledesc {Socket local storage}]
 
 [description]
 

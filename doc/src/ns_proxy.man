@@ -1,6 +1,6 @@
 [manpage_begin ns_proxy n 4.99]
 [moddesc   {NaviServer Modules}]
-[titledesc {execute Tcl scripts in an external process}]
+[titledesc {Execute Tcl scripts in an external process}]
 
 [description]
 
@@ -146,6 +146,10 @@ waiting for existing proxies to be available instead of creating
 new proxy processes. Setting this value to 0 disables the pool,
 causing all subsequent allocation requests to fail immediately
 (currently allocated proxies, if any, remain valid).
+
+[lst_item {-maxruns n}]
+Sets the maximum number of activation of the proxy slave process.
+When the limit it reached, the slave process is automatically restarted.
 
 [lst_item {-exec program}]
 Specifies the filename of a slave proxy program.  This defaults to

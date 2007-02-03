@@ -1,39 +1,32 @@
-
-
 [manpage_begin ns_var n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Shared variables}]
 
 [description]
-One or more paragraphs describing the ns_var command in detail.
+This command implements shared variables but deprecated for nsv_XXX
+family which provide automatic locking.
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_var] [arg command] [opt [arg args]]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg command]
+One of exists, get, list, set, or unset
 
-[list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+
+ns_var set a 1
+
+ns_var get a
+
 [example_end]
 
 

@@ -1,7 +1,7 @@
 [manpage_begin ns_respond n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {return a complete response tot he client}]
+[titledesc {Return a complete response tot he client}]
 
 [description]
 ns_respond builds a complete response for the client with all of the specified information in the header.

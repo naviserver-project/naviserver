@@ -1,7 +1,7 @@
 [manpage_begin ns_http n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc { ns_http - Simple HTTP client functionality}]
+[titledesc {Simple HTTP client functionality}]
 
 [description]
 

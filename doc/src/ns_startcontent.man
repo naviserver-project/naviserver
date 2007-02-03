@@ -1,41 +1,25 @@
-
-
 [manpage_begin ns_startcontent n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {one-line summary what the command does}]
+[titledesc {Set encoding for output}]
 
 [description]
-One or more paragraphs describing the ns_startcontent command in detail.
+Mark current connection with encoding and type to be used for the output
 
 [section {COMMANDS}]
-Optional: list and description of sub-commands.
 
 [list_begin definitions]
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_startcontent] [opt [arg {-encoding enc}]] [opt [arg {-type type}]]]
 
 [nl]
-[arg 1]
-Description for arg1
+[arg -encoding]
+Encoding name to be used for output content
+
+[arg -type]
+Encoding type fore the output
 
 [list_end]
-
-[section CONFIGURATION]
-        
-[para]
-[strong {Basic configuration options:}]
-        
-[list_begin definitions]
-[lst_item {PARAM1 = CONFIGVALUE1}] 
-[list_end]
-
-[section EXAMPLES]
-
-[example_begin]
-Put some examples here to illustrate command usage.
-[example_end]
-
 
 [see_also nsd]
 [keywords NaviServer]

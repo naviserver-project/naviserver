@@ -2,7 +2,7 @@
 
 [manpage_begin ns_memoize n [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
-[titledesc {evaluate a Tcl script and cache the result}]
+[titledesc {Evaluate a Tcl script and cache the result}]
 
 [description]
 

@@ -1,7 +1,7 @@
 [manpage_begin ns_requestauthorize n 4.99]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {perform authorization check}]
+[titledesc {Perform authorization check}]
 
 [description]
 

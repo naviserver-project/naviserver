@@ -13,6 +13,10 @@ own thread, otherwise it will run in the scheduler's thread.  If the script is
 long-running, this may interfere with the running of other scheduled scripts,
 so long-running scripts should be run in their own threads.
 
+[para]
+ns_unschedule_proc command unschedules a  previous  scheduled  script.   NOTE:
+Current  behavior  is  to silently return without error if the id
+doesn't represent a currently scheduled ID.
 
 [section {COMMANDS}]
 
@@ -21,6 +25,7 @@ so long-running scripts should be run in their own threads.
 
  [call [cmd ns_schedule_proc] [opt [arg {-once}]] [opt [arg -thread]] [arg interval] [arg script]]
 
+ [call [cmd ns_unschedule_proc] [arg id]]
 
 [list_end]
 
