@@ -166,7 +166,7 @@ AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h)
 AC_CHECK_TYPES(u_int32_t)
 AC_CHECK_TYPES(u_int16_t)
 AC_CHECK_TYPES(u_int8_t)
-AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv)
+AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop)
 AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD, 1, [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
 AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL, 1, [Define to 1 if the <dl.h> header should be used.]),)
 AC_MSG_CHECKING([need for dup high])
@@ -292,17 +292,6 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len],,,[
 #include <netinet/in.h>])
 
 AC_HAVE_CMMSG
-
-dnl ** Check for inet_ntop
-AC_MSG_CHECKING(for inet_ntop)
-AC_TRY_COMPILE([#include <sys/socket.h>
-#include <arpa/inet.h>], [inet_ntop(0, (char *)0, (char *)0, 0);], has_inet_ntop=yes, has_inet_ntop=no)
-if test "$has_inet_ntop" = yes; then
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_INET_NTOP,,[we can use inet_ntop()])
-else
-    AC_MSG_RESULT(no)
-fi
 
 AC_ARG_ENABLE(tclvfs, 
    AC_HELP_STRING([--disable-tclvfs], [Disable Tcl VFS]), , AC_DEFINE(USE_TCLVFS,1,[use TCL VFS]))
