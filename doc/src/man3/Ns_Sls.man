@@ -1,6 +1,5 @@
 [include version_include]
-
-[manpage_begin {Ns_SlsAlloc, Ns_SlsSet, Ns_SlsGet, Ns_SlsSetKeyed, Ns_SlsGetKeyed} 3 [vset version]]
+[manpage_begin Ns_Sls} 3 [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
 [titledesc {Socket local storage}]
 
@@ -154,6 +153,6 @@ Log the number of connections handled by a single TCP socket:
 
 
 [see_also ns_sls Ns_Cls Ns_Tls]
-[keywords sls storage data]
+[keywords sls storage data Ns_SlsAlloc Ns_SlsSet Ns_SlsGet Ns_SlsSetKeyed Ns_SlsGetKeyed]
 
 [manpage_end]

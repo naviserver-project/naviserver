@@ -33,10 +33,7 @@ NaviServer is reasonably portable and known to compile and run on the following 
 
 [list_end]
 
-
-
 [para]
-
 
 It's likely NaviServer can compile on other systems and/or higher or  lower
 numbered versions but this has not been extensively tested.  The primary
@@ -52,18 +49,31 @@ You will need a [emph {C compiler}].  The best one to use is GNU GCC from
 we use are 2.95.2.  NaviServer (and the  included Tcl libraries) are written
 entirely in ANSI standard C.
 
-
 [para]
-
 
 [emph {GNU make}] is also required.  It is also available from the GNU web site.
 
+[para]
+
+[section {Downloading}]
+
+Released versions are available from 
+[uri http://sourceforge.net/project/showfiles.php?group_id=130646 {SourceForge Download area}]
 
 [para]
 
+Latest development version is available from CVS
+
+[example_begin]
+
+cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P naviserver
+cd naviserver
+./autogen.sh
+make install
+
+[example_end]
 
 [section {Building}]
-
 
 We've tried to make building NaviServer as simple as possible.  On the supported
 platforms, simply type:
@@ -125,7 +135,6 @@ To download and install additional modules:
 
 [example_begin]
 
-cvs -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver login
 cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P modules
 cd modules
 make install
@@ -143,7 +152,7 @@ This configuration will:
 
 [list_begin enum]
 
-  [enum]Listen for http connections on your computer's  primary interface at port 8000.  To use another port  and/or
+  [enum]Listen for http connections on your computer's  primary interface at port 8080.  To use another port  and/or
         select interfaces, you can set the "post" and "address" parameters.
 
   [enum]Check security settings for nscp (Control Port module) and listen on localhost:2080 if they are set.
@@ -164,16 +173,19 @@ documentation.
 
 [para]
 
-Although  you must be root to start NaviServer,  the server itself must
+Although  you must be root to start NaviServer on port 80,  the server itself must
 change to a  regular user shortly after initialization.   You either
 need to start the  server as a non-root user (in which case you  will
 not be able to listen  for connections on privileged ports such as port
 80)  or you must include  a -u user command line flag to which the
 server will  setuid(2) after startup.
 
-
 [para]
 
+If Naviserver was installed with default nsd.tcl config file, just type /usr/local/ns/bin/nsd
+and it will be started in the background listening on port 8080.
+
+[para]
 
 You may either specify a Unix username or numeric uid, e.g.: 
 [emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
@@ -183,42 +195,31 @@ You may either specify a Unix username or numeric uid, e.g.:
 For the mode  of operation, there are three choices: 
 [emph {Foreground, Background,}] and [emph {Inittab.}]
 
-[para]
+[list_begin bullet]
 
+[bullet]
+[emph {bin/nsd  -ft conf/nsd-config.tcl -u user -g group}]
 
+[nl]
 In [emph {Foreground }]mode , the server starts  and emits diagnostic log messages
 directly to the  terminal window.   This is useful for testing, configuration
 or debugging  a server.  To start the server in foreground mode use:
 
-
-[para]
-
-[emph {bin/nsd  -ft conf/nsd-config.tcl -u user -g group}]
-
-[para]
-
-
+[nl]
 To stop a server running the foreground simply press  interrupt on your keyboard
 (e.g., ctrl-c or the DEL key) which will send a SIGINT to the server and
 initiate shutdown.
 
 
-[para]
+[bullet]
+[emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
 
-
+[nl]
 In [emph {Background }]mode, the server  forks and disassociates from the terminal.
 Diagnostic messages  are  appended to log/server.log.  This  is a  typical
 daemon-style mode of operation.  To start the server in  background  mode use:
 
-
-[para]
-
-
-[emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
-
-
-[para]
-
+[nl]
 
 To stop a server running  the background  you may either use the kill(2) command
 to send a SIGTERM to the background  process id(*) or the special -K flag of the
@@ -226,22 +227,18 @@ nsd binary.  This flag  will determine the process id from a special marker
 file, send the signal and wait for shutdown, e.g.:
 
 
-[para]
-
-
+[bullet]
 [emph {bin/nsd -Kt conf/nsd-config.tcl -u user -g group}]
 
-
-[para]
-
+[nl]
 
 You may also use the -k flag to kill and restart a  background server.
 
 
-[para]
+[bullet]
+[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd-config.tcl -u user -g group}]
 
-
-
+[nl]
 In [emph {Inittab}] mode, the server runs in the foreground  but opens the
 log file as with background mode.  This mode is used  when the server is
 started from an entry in the /etc/inittab file.   The benefit of this mode
@@ -250,15 +247,7 @@ servers at AOL normally run in this mode.   To run the server  from /etc/inittab
 add an entry similar to the following, substituting the proper id, run levels,
 and full pathnames:
 
-
-[para]
-
-
-[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd-config.tcl -u user -g group}]
-
-
-[para]
-
+[nl]
 
 To restart a server you can simply kill the current server with the -K flag
 as with the background  mode; init will then restart the server for you.
@@ -267,22 +256,13 @@ the  entry from the /etc/inittab file  and signal the init process to re-read
 inittab with the "[emph {init q}]" command.
 
 
-[para]
+[list_end]
 
-
-Note:  While running NaviServer on some Unix platforms (e.g., Linux,  SGI),
+[emph Note]:  While running NaviServer on some Unix platforms (e.g., Linux,  SGI),
 you'll notice multiple nsd  processes.  This is normal and represents the
 individual threads.  The main  process id can be determined  by checking
 the log/nsd.pid file or looking  at the last few entries  of the server
 log, each of which will include the process  id and thread  id in the form
 [lb]pid.tid[rb].  You can also telnet to the control port and type "ns_info pid".
-
-
-[para]
-
-
-For more detailed configuration  information  refer to the online documentation
-at [uri http://sourceforge.net/projects/naviserver/].
-
 
 [manpage_end]

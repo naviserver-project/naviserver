@@ -114,7 +114,7 @@ install-examples:
 	done
 
 build-doc:
-	@cd doc/src && $(MKDIR) ../html && dtplite -o ../html/ html .
+	@cd doc/src && $(MKDIR) ../html && dtplite -o ../html/ -style nsd.css html .
 	@cd doc/src && $(MKDIR) ../man && \
 	for f in *.man; do \
 		dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
