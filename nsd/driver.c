@@ -64,6 +64,7 @@ NS_RCSID("@(#) $Header$");
 /*
  * LoggingFlag mask values
  */
+
 #define LOGGING_READTIMEOUT      (1<<0)
 #define LOGGING_SERVERREJECT     (1<<1)
 #define LOGGING_SOCKERROR        (1<<2)
@@ -1048,296 +1049,6 @@ NsDriverClose(Sock *sockPtr)
  *----------------------------------------------------------------------
  */
 
-#include <sys/epoll.h>
-
-#define MAX_POLL                  4096
-
-#define POLL_TRIGGER              1
-#define POLL_DRIVER               2
-#define POLL_SOCK                 3
-#define POLL_CLOSE                4
-
-#define EPOLL_ADD(sock, dtype, dptr)     ev.events = EPOLLIN | EPOLLERR| EPOLLHUP;\
-                                          ev.data.ptr = &pollType[sock]; \
-                                          pollType[sock].fd = sock; \
-                                          pollType[sock].type = dtype; \
-                                          pollType[sock].ptr = dptr; \
-                                          rc = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, &ev); \
-                                          //Ns_Log(Notice, "epoll_add:%d %d %p = %d %d", sock, dtype, dptr, rc, errno);
-
-#define EPOLL_DEL(sock, msg)             pollType[sock].type = 0; \
-                                          rc = epoll_ctl(epoll_fd,EPOLL_CTL_DEL, sock, NULL); \
-                                          //Ns_Log(Notice, "epoll_del:%s %d = %d %d", msg, sock, rc, errno);
-typedef struct {
-     int fd;
-     int type;
-     void *ptr;
-} PollType;
-
-static void
-DriverThread(void *ignored)
-{
-     PollType       pollType[MAX_POLL], *poll;
-     struct         epoll_event ev, pollEvent[MAX_POLL];
-     char          *errstr, c, drain[1024];
-     int            rc, n, i, nfds, stopping, accepted, epoll_fd;
-     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
-     Ns_Time        now, diff;
-     Driver        *drvPtr;
-
-     Ns_ThreadSetName("-driver-");
-
-     /*
-      * Loop forever until signalled to shutdown and all
-      * connections are complete and gracefully closed.
-      */
-
-     Ns_Log(Notice, "driver: accepting connections");
-     closePtr = waitPtr = readPtr = NULL;
-     Ns_GetTime(&now);
-     stopping = 0;
-
-     epoll_fd = epoll_create(MAX_POLL);
-     EPOLL_ADD(drvPipe[0], POLL_TRIGGER, NULL);
-
-     drvPtr = firstDrvPtr;
-     while (drvPtr != NULL) {
-         if (drvPtr->sock != INVALID_SOCKET) {
-             EPOLL_ADD(drvPtr->sock, POLL_DRIVER, drvPtr);
-             drvPtr = drvPtr->nextPtr;
-         }
-     }
-
-     while (!stopping) {
-
-         /*
-          * Set the bits for all active drivers if a connection
-          * isn't already pending.
-          */
-
-         nfds = epoll_wait(epoll_fd, pollEvent, MAX_POLL, 1000);
-
-         Ns_GetTime(&now);
-
-         for (i = 0; i < nfds; i++) {
-
-             poll = (PollType*)pollEvent[i].data.ptr;
-
-             switch (poll->type) {
-              case POLL_TRIGGER:
-
-                 if ((pollEvent[i].events & EPOLLIN)
-                      && recv(drvPipe[0], &c, 1, 0) != 1) {
-                      errstr = ns_sockstrerror(ns_sockerrno);
-                      Ns_Fatal("driver: trigger recv() failed: %s", errstr);
-                 }
-                 break;
-
-              case POLL_CLOSE:
-
-                 /*
-                  * Update the current time and drain and/or release any
-                  * closing sockets.
-                  */
-
-                 sockPtr = (Sock*)poll->ptr;
-
-                 if (pollEvent[i].events & EPOLLIN) {
-                     n = recv(sockPtr->sock, drain, sizeof(drain), 0);
-                     if (n <= 0) {
-                         sockPtr->timeout = now;
-                     }
-                 }
-                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                     EPOLL_DEL(sockPtr->sock, "close: timeout");
-                     SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
-                 }
-                 break;
-
-              case POLL_SOCK:
-
-                 /*
-                  * Attempt read-ahead of any new connections.
-                  */
-
-                 sockPtr = (Sock*)poll->ptr;
-
-                 if (!(pollEvent[i].events & EPOLLIN)) {
-                     if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                         EPOLL_DEL(sockPtr->sock, "sock: timeout");
-                         SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
-                     }
-
-                 } else {
-
-                     /*
-                      * If enabled, perform read-ahead now.
-                      */
-
-                     sockPtr->keep = 0;
-                     if (sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) {
-                         n = SockRead(sockPtr, 0);
-                     } else {
-                         n = SOCK_READY;
-                     }
-
-                     /*
-                      * Queue for connection processing if ready.
-                      */
-
-                     switch (n) {
-                     case SOCK_MORE:
-                         SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                         break;
-
-                     case SOCK_SPOOL:
-                         EPOLL_DEL(sockPtr->sock, "sock: spool");
-                         SockSpoolerQueue(sockPtr->drvPtr, sockPtr);
-                         break;
-
-                     case SOCK_READY:
-                         EPOLL_DEL(sockPtr->sock, "sock: ready");
-                         if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                             Push(sockPtr, waitPtr);
-                         }
-                         break;
-
-                     default:
-                         EPOLL_DEL(sockPtr->sock, "sock: unknown");
-                         SockRelease(sockPtr, n, errno);
-                         break;
-                     }
-                 }
-                 break;
-
-              case POLL_DRIVER:
-
-                 /*
-                  * If configured, try to accept more than one request,under heavy load
-                  * this helps to process more requests
-                  */
-
-                 accepted = 0;
-                 drvPtr = (Driver*)poll->ptr;
-
-                 while (accepted < drvPtr->acceptsize &&
-                        drvPtr->queuesize < drvPtr->maxqueuesize
-                        && (pollEvent[i].events & EPOLLIN)
-                        && (sockPtr = SockAccept(drvPtr)) != NULL) {
-
-                     /*
-                      * Queue the socket immediately if request is provided
-                      */
-
-                     if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONACCEPT) {
-
-                         if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                             Push(sockPtr, waitPtr);
-                         }
-
-                     } else {
-
-                        /*
-                         * Put the socket on the read-ahead list.
-                         */
-
-                         EPOLL_ADD(sockPtr->sock, POLL_SOCK, sockPtr);
-                         SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                     }
-                     accepted++;
-                 }
-                 break;
-
-               default:
-
-                 /*
-                  * Unknown socket ended up in the queue
-                  */
-
-                 EPOLL_DEL(poll->fd, "unknown");
-                 Ns_Log(Notice, "driver: %d: wrong type for %d", n, poll->fd);
-             }
-         }
-
-         /*
-          * Attempt to queue any pending connection
-          * after reversing the list to ensure oldest
-          * connections are tried first.
-          */
-
-         if (waitPtr != NULL) {
-             sockPtr = NULL;
-             while ((nextPtr = waitPtr) != NULL) {
-                 waitPtr = nextPtr->nextPtr;
-                 Push(nextPtr, sockPtr);
-             }
-
-             while (sockPtr != NULL) {
-                 nextPtr = sockPtr->nextPtr;
-                 if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                     Push(sockPtr, waitPtr);
-                 }
-                 sockPtr = nextPtr;
-             }
-         }
-
-         /*
-          * Check for shutdown and get the list of any closing
-          * or keepalive sockets.
-          */
-
-         Ns_MutexLock(&drvLock);
-         sockPtr       = firstClosePtr;
-         firstClosePtr = NULL;
-         stopping      = driverShutdown;
-         Ns_MutexUnlock(&drvLock);
-
-         /*
-          * Update the timeout for each closing socket and add to the
-          * close list if some data has been read from the socket
-          * (i.e., it's not a closing keep-alive connection).
-          */
-
-         while (sockPtr != NULL) {
-             nextPtr = sockPtr->nextPtr;
-             if (sockPtr->keep) {
-                 EPOLL_ADD(sockPtr->sock, POLL_SOCK, sockPtr);
-                 SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
-             } else {
-                 if (shutdown(sockPtr->sock, 1) != 0) {
-                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
-                 } else {
-                     EPOLL_ADD(sockPtr->sock, POLL_CLOSE, sockPtr);
-                     SockTimeout(sockPtr, &now, sockPtr->drvPtr->closewait);
-                 }
-             }
-             sockPtr = nextPtr;
-         }
-
-         /*
-          * Close the active drivers if shutdown is pending.
-          */
-
-         if (stopping) {
-             drvPtr = firstDrvPtr;
-             while (drvPtr != NULL) {
-                 if (drvPtr->sock != INVALID_SOCKET) {
-                     ns_sockclose(drvPtr->sock);
-                     drvPtr->sock = INVALID_SOCKET;
-                 }
-                 drvPtr = drvPtr->nextPtr;
-             }
-         }
-     }
-
-     Ns_Log(Notice, "exiting");
-     Ns_MutexLock(&drvLock);
-     drvStopped = 1;
-     Ns_CondBroadcast(&drvCond);
-     Ns_MutexUnlock(&drvLock);
-}
-
-#if 0
 static void
 DriverThread(void *ignored)
 {
@@ -1349,8 +1060,6 @@ DriverThread(void *ignored)
     unsigned int   nfds;   /* Number of Sock to poll(). */
     unsigned int   maxfds; /* Max pollfd's in pfds. */
     struct pollfd *pfds;   /* Array of pollfds to poll(). */
-
-    int cmax = 0, rmax = 0, wmax = 0, csocks, rsocks, wsocks;
 
     Ns_ThreadSetName("-driver-");
 
@@ -1399,22 +1108,15 @@ DriverThread(void *ignored)
             timeout.sec = INT_MAX;
             timeout.usec = LONG_MAX;
             sockPtr = readPtr;
-            rsocks = 0;
             while (sockPtr != NULL) {
                 SockPoll(sockPtr, POLLIN, &pfds, &nfds, &maxfds, &timeout);
                 sockPtr = sockPtr->nextPtr;
-                rsocks++;
             }
-            rmax = MAX(rmax, rsocks);
-            csocks = 0;
-
             sockPtr = closePtr;
             while (sockPtr != NULL) {
                 SockPoll(sockPtr, POLLIN, &pfds, &nfds, &maxfds, &timeout);
                 sockPtr = sockPtr->nextPtr;
-                csocks++;
             }
-            cmax = MAX(cmax, csocks);
             if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
                 pollto = diff.sec * 1000 + diff.usec / 1000;
             } else {
@@ -1536,26 +1238,19 @@ DriverThread(void *ignored)
          */
 
         if (waitPtr != NULL) {
-#if 0
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
                 waitPtr = nextPtr->nextPtr;
                 Push(nextPtr, sockPtr);
-
             }
-#endif
-            sockPtr = waitPtr;
-            waitPtr = NULL;
-            wsocks = 0;
+
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
                 if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                     Push(sockPtr, waitPtr);
                 }
                 sockPtr = nextPtr;
-                wsocks++;
             }
-            wmax = MAX(wmax, wsocks);
         }
 
         /*
@@ -1597,7 +1292,6 @@ DriverThread(void *ignored)
                         Push(sockPtr, readPtr);
                     }
                     accepted++;
-                    rmax = MAX(rmax, drvPtr->queuesize);
                 }
 
                 drvPtr = drvPtr->nextPtr;
@@ -1653,13 +1347,12 @@ DriverThread(void *ignored)
         }
     }
 
-    Ns_Log(Notice, "exiting, cmax = %d, rmax = %d, wmax = %d", cmax, rmax, wmax);
+    Ns_Log(Notice, "exiting");
     Ns_MutexLock(&drvLock);
     drvStopped = 1;
     Ns_CondBroadcast(&drvCond);
     Ns_MutexUnlock(&drvLock);
 }
-#endif
 
 
 /*
