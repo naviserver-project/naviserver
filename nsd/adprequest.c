@@ -321,7 +321,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                      * streaming is enabled.
                      */
 
-                    if (stream && itPtr->conn->request->version == 1.1) {
+                    if (stream && itPtr->conn->request->version > 1.0) {
                         Ns_ConnSetChunkedFlag(itPtr->conn, 1);
                     }
                     Ns_ConnSetRequiredHeaders(conn, NULL, stream ? -1 : len);

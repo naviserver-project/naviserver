@@ -14,8 +14,6 @@ ns_param	logroll			true
 ns_param	tcllibrary		${home}/tcl
 ns_param	serverlog		${home}/logs/nsd.log
 ns_param	pidfile			${home}/logs/nsd.pid
-ns_param        outputcharset   	iso8859-1
-ns_param        urlcharset      	iso8859-1
 ns_param	dbcloseonexit		off
 ns_param	jobsperthread		1000
 ns_param	jobtimeout		0

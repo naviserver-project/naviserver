@@ -566,9 +566,11 @@ void
 Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
 {
     Conn *connPtr = (Conn *) conn;
+    char strlength[16];
 
+    sprintf(strlength, "%llu", length);
     connPtr->responseLength = length;
-    Ns_ConnPrintfHeaders(conn, "Content-Length", "%llu", length);
+    Ns_ConnUpdateHeaders(conn, "Content-Length", strlength);
 }
 
 
@@ -814,7 +816,7 @@ ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
                CONST char *type, int sendRaw)
 {
     Conn        *connPtr = (Conn *) conn;
-    int          result;
+    int          hlen, result;
     Tcl_Encoding enc;
     Tcl_DString  type_ds;
     int          new_type = NS_FALSE;
@@ -826,6 +828,8 @@ ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
     if (len < 0) {
         len = data ? strlen(data) : 0;
     }
+
+    hlen = len;
     if (len > 0 && !sendRaw) {
         /*
          * Make sure we know what output encoding (if any) to use.
@@ -836,12 +840,16 @@ ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
         }
         if (enc != NULL) {
             connPtr->encoding = enc;
-            connPtr->flags |= NS_CONN_WRITE_CHUNKED;
+            if (connPtr->request->version > 1.0) {
+                connPtr->flags |= NS_CONN_WRITE_CHUNKED;
+            } else {
+                hlen = -1;
+            }
         } else if (connPtr->encoding == NULL) {
             sendRaw = NS_TRUE;
         }
     }
-    Ns_ConnSetRequiredHeaders(conn, type, len);
+    Ns_ConnSetRequiredHeaders(conn, type, hlen);
     Ns_ConnQueueHeaders(conn, status);
     if (sendRaw) {
         result = Ns_WriteConn(conn, data, len);
