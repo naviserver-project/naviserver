@@ -56,6 +56,11 @@
   #include <pthread.h>
   #include <sys/mman.h>
   #include <poll.h>
+  #if defined(HAVE_SYS_UIO_H)
+    # include <sys/uio.h>
+  #elif defined(HAVE_UIO_H)
+  # include <uio.h>
+  #endif
 #endif  /* WIN32 */
 
 #ifdef __linux
@@ -110,6 +115,27 @@
   #define NsFastClose(chan)            close(chan)
   #define NsFastSeek(chan,offset,mode) lseek(chan,offset,mode)
   #define NsFastTell(chan)             lseek(chan,0,SEEK_CUR)
+#endif
+
+/*
+ * This baroque pre-processor fiddling should be eventually
+ * replaced with a decent configure option and/or logic.
+ */
+
+#ifndef UIO_MAXIOV
+  #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
+    #define UIO_MAXIOV 1024
+  #elif defined(__sun)
+    #ifndef IOV_MAX
+      #define UIO_MAXIOV 16
+    #else
+      #define UIO_MAXIOV IOV_MAX
+    #endif
+  #elif defined(IOV_MAX)
+      #define UIO_MAXIOV IOV_MAX
+  #else
+    #define UIO_MAXIOV 16
+  #endif
 #endif
 
 /*

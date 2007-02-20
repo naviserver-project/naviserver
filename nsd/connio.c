@@ -40,26 +40,6 @@ NS_RCSID("@(#) $Header$");
 
 
 /*
- * UIO_MAXIOV defines the maximum number of buffers the OS
- * will accept at one time to calls such as writev().
- */
-
-#if defined(HAVE_SYS_UIO_H)
-# include <sys/uio.h>
-#elif defined(HAVE_UIO_H)
-# include <uio.h>
-#endif
-
-#ifndef UIO_MAXIOV
-# ifdef IOV_MAX
-#  define UIO_MAXIOV IOV_MAX
-# else
-#  define UIO_MAXIOV 16 /* posix minimum */
-# endif
-#endif
-
-
-/*
  * The following is used to allocate a buffer on the stack for
  * encoding character data and stransfering data from disk to
  * the network, and so defines the chunk size of writes to the
