@@ -4,7 +4,10 @@
 	* configure.in: Simplified calculation of TCL_LIB
 	* nsd/connio.c: Removed definition of UIO_MAXIOV
 	* nsd/nsd.h: Added platform-specific def of UIO_MAXIOV.
-	If not defined, assume 16.
+	  If not defined, assume 16.
+	* tcl/nstrace.tcl: Allows nstrace::excludensp to string-match
+	  registered namespaces against the current one. This way we can
+	  exclude the whole namespace hierarchy if needed.
 
 2007-02-19  Vlad Seryakov  <seryakov@users.sf.net>
 

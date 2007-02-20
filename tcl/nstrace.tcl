@@ -599,8 +599,10 @@ ns_runonce {
 
         proc _serializensp {nsp} {
             variable exclnsp
-            if {[lsearch $exclnsp $nsp] >= 0} {
-                return
+            foreach nn $exclnsp {
+                if {[string match $nn $nsp]} {
+                    return
+                }
             }
             set script {}
             set import {}
