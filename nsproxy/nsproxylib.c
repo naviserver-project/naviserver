@@ -1243,7 +1243,7 @@ WaitFd(int fd, int event, int ms)
     pfd.events = event | POLLPRI | POLLERR;
     pfd.revents = pfd.events;
     do {
-        n = poll(&pfd, 1, ms);
+        n = ns_poll(&pfd, 1, ms);
     } while (n == -1 && errno == EINTR);
     if (n == -1) {
         n = 0;
