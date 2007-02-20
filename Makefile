@@ -91,7 +91,7 @@ install-tests:
 
 install-doc: build-doc
 	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
-	echo Installing html files in $(NAVISERVER)/pages/doc...
+	@echo Installing html files in $(NAVISERVER)/pages/doc...
 	@for i in doc/html/*.html; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
 	done
@@ -128,12 +128,12 @@ runtest: all
 
 gdbtest: all
 	@echo "set args -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)" > gdb.run
-	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" gdb -x gdb.run ./nsd/nsd
+	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb"; gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 gdbruntest: all
 	@echo "set args -c -d -t tests/test.nscfg" > gdb.run
-	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" gdb -x gdb.run ./nsd/nsd
+	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb"; gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 checkexports: all
