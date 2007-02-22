@@ -1,3 +1,9 @@
+2007-02-22  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tcl/sendmail.tcl: In case of pretty big email it sometimes stuck
+	because socket cannot accept data anymore and we do not check
+	if it is ready
+
 2007-02-20  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsproxy/nsproxylib.c: Uses ns_poll instead of poll.

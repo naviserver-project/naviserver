@@ -504,11 +504,10 @@ proc _ns_smtp_send {mode sock string} {
 
     set tout [ns_config ns/parameters smtptimeout 60]
 
-    if {[lindex [ns_sockselect -timeout $tout {} $sock {}] 1] eq {}} {
-        return -code error "$mode: Timeout writing to SMTP host"
-    }
-
     foreach line [split $string "\n"] {
+      if {[lindex [ns_sockselect -timeout $tout {} $sock {}] 1] eq {}} {
+          return -code error "$mode: Timeout writing to SMTP host"
+      }
       puts $sock $line
     }
     flush $sock
