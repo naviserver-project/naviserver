@@ -1,3 +1,9 @@
+2007-02-23  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tcljob.c: Fixed bug in initialization of
+	job queue parameters, now jobsperthread and jobtimeout
+	are set correctly
+
 2007-02-22  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tcl/sendmail.tcl: In case of pretty big email it sometimes stuck

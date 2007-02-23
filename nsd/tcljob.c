@@ -191,6 +191,7 @@ static int    LookupQueue(Tcl_Interp *interp, CONST char *queue_name,
                           Queue **queuePtr, int locked);
 static int    ReleaseQueue(Queue *queuePtr, int locked);
 static int    AnyDone(Queue *queue);
+static void   SetupJobDefaults(void);
 
 static CONST char* GetJobCodeStr(int code);
 static CONST char* GetJobStateStr(JobStates state);
@@ -248,8 +249,8 @@ NsTclInitQueueType(void)
     tp.nidle = 0;
     tp.firstPtr = NULL;
     tp.req = THREADPOOL_REQ_NONE;
-    tp.jobsPerThread = nsconf.job.jobsperthread;
-    tp.timeout = nsconf.job.timeout;
+    tp.jobsPerThread = 0;
+    tp.timeout = 0;
 }
 
 
@@ -398,6 +399,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 return TCL_ERROR;
             }
             Ns_MutexLock(&tp.queuelock);
+            SetupJobDefaults();
+
             if (jpt >= 0) {
                 tp.jobsPerThread = jpt;
             }
@@ -1136,6 +1139,7 @@ JobThread(void *arg)
      * garbage collection.
      */
 
+    SetupJobDefaults();
     jpt = njobs = tp.jobsPerThread;
 
     while (jpt == 0 || njobs > 0) {
@@ -1988,4 +1992,30 @@ ComputeDelta(Ns_Time *start, Ns_Time *end)
     Ns_DiffTime(end, start, &diff);
 
     return ((double)diff.sec * 1000.0) + ((double)diff.usec / 1000.0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetupJobDefaults --
+ *
+ *      Assigns default configuration parameters if not set yet
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      jobsperthread and jobtimeout may be changed
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SetupJobDefaults(void)
+{
+    if(tp.jobsPerThread == 0) {
+       tp.jobsPerThread = nsconf.job.jobsperthread;
+    }
+    if (tp.timeout == 0) {
+        tp.timeout = nsconf.job.timeout;
+    }
 }
