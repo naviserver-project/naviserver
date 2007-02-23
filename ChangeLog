@@ -18,12 +18,16 @@
 	* doc/src/ns_cache_flush.man:
 	* doc/src/ns_cache_incr.man:
 	* doc/src/ns_cache_keys.man:
-	* docs/src/ns_cache_lappend.man:
+	* doc/src/ns_cache_lappend.man:
 	* doc/src/ns_cache_names.man:
 	* doc/src/ns_cache_stats.man:
 	* doc/src/commands.man
 	* doc/src/mann/ns_cache.man: Consolidate the Tcl cache commands
 	documentations into one man page.
+
+	* doc/src/ns_memoize.man:
+	* doc/src/mann/ns_memoize.man: Move the memoize command
+	documentation into the mann directory.
 
 2007-02-23  Vlad Seryakov  <seryakov@users.sf.net>
 
