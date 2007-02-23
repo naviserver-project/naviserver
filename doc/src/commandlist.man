@@ -67,9 +67,6 @@ Commands marked with (T) are TCL commands.
 [call [cmd ns_cache_eval]]
 [call [cmd ns_cache_incr]]
 [call [cmd ns_cache_lappend]]
-[call [cmd ns_cache_size]]
-[nl]
-removed; size now reported along with other statistics; 2005-12-30
 [call [cmd ns_memoize ] [arg T]]
 [call [cmd ns_memoize_flush ] [arg T]]
 [call [cmd ns_memoize_stats ] [arg T]]
