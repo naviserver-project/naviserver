@@ -29,6 +29,14 @@
 	* doc/src/mann/ns_memoize.man: Move the memoize command
 	documentation into the mann directory.
 
+	* doc/src/ns_atexit.man:
+	* doc/src/ns_atprestartup.man:
+	* doc/src/ns_atshutdown.man:
+	* doc/src/ns_atsignal.man:
+	* doc/src/ns_atstartup.man:
+	* doc/src/mann/ns_atsignal.man: Consolidate the server callbacks
+	into a single man page.
+
 2007-02-23  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c: Fixed bug in initialization of

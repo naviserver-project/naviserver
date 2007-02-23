@@ -1,0 +1,98 @@
+[include version_include]
+
+[manpage_begin ns_atsignal n [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {Server callbacks}]
+
+
+[description]
+
+These commands provide hooks for you to register your own procedures to
+be called during the different stages of the server processes lifetime.
+
+[para]
+You can find out which callbacks are already registered with the
+[cmd "ns_info callbacks"] command.
+
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_atprestartup] \
+ [arg script] \
+ [opt [arg args]]  ]
+
+Pre-startup procs are called in FIFO order after the configuration file has been
+parsed and all modules loaded, but before the driver starts listening for and
+processing connections.
+
+
+
+[call [cmd ns_atstartup] \
+ [arg script] \
+ [opt [arg args]]  ]
+
+Startup procs are called in FIFO order just after the server is fully
+initialised and is listening for and processing connections.
+
+
+
+[call [cmd ns_atsignal] \
+ [arg script] \
+ [opt [arg args]]  ]
+
+Signal procs are called in FIFO order whenever a [term HUP] signal is received
+by the server process.
+
+
+
+[call [cmd ns_atshutdown] \
+ [arg script] \
+ [opt [arg args]]  ]
+
+At-shutdown procs are called in LIFO order when the server performs a controlled
+shutdown after all other subsystem have been stopped.
+
+[nl]
+Orderly shutdown is attempted within [term shutdowntimeout] seconds, as
+specified in the configuration file. Tcl shutdown procs are called before C
+shutdown tasks are waited on, so should be well behaved.
+
+[nl]
+Do not attempt to use other sub-systems, such as the [cmd ns_job] command.
+
+
+
+[call [cmd ns_atexit] \
+ [arg script] \
+ [opt [arg args]]  ]
+
+At-exit procs are called in LIFO order after all [term shutdown] procs have been
+called and the server process is ready to exit.  The [term atexit] procs are
+basically the last code to run.
+
+
+
+[list_end]
+
+
+
+[section EXAMPLES]
+
+Log the accumulated cache statistics and reset whenever the server is signalled:
+
+[example_begin]
+[cmd ns_atsignal] {
+    foreach cache [lb]ns_cache_names[rb] {
+        ns_log notice "cache\[lb]$cache\[rb]: [lb]ns_cache_stats -reset -- $cache[rb]"
+    }
+}
+[example_end]
+
+
+[see_also ns_info ns_atclose]
+[keywords signal callback]
+
+[manpage_end]
