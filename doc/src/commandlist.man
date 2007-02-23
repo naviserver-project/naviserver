@@ -102,16 +102,9 @@ removed; size now reported along with other statistics; 2005-12-30
 
 [section {Files and File system commands}]
 [list_begin definitions]
-[call [cmd ns_cp ] [arg T]]
-[call [cmd ns_cpfp ] [arg T]]
-[call [cmd ns_chmod ] [arg T]]
-[call [cmd ns_mkdir ] [arg T]]
 [call [cmd ns_mktemp]]
 [call [cmd ns_ftruncate]]
-[call [cmd ns_link ] [arg T]]
 [call [cmd ns_normalizepath]]
-[call [cmd ns_rename ] [arg T]]
-[call [cmd ns_rmdir ] [arg T]]
 [call [cmd ns_symlink]]
 [call [cmd ns_truncate]]
 [call [cmd ns_unlink ] [arg T]]
@@ -235,7 +228,6 @@ removed; size now reported along with other statistics; 2005-12-30
 [list_begin definitions]
 [call [cmd ns_chan]]
 [call [cmd ns_cleanupchans]]
-[call [cmd ns_getchannels ] [arg T]]
 [list_end]
 
 [section {Time commands}]
@@ -329,8 +321,6 @@ removed; size now reported along with other statistics; 2005-12-30
 [list_begin definitions]
 [call [cmd ns_set]]
 [call [cmd ns_findset ] [arg T]]
-[call [cmd ns_share]]
-[call [cmd ns_var]]
 [list_end]
 
 [section {Healthiness related commands :*)}]

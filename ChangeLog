@@ -1,3 +1,17 @@
+2007-02-23  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* doc/src/ns_share.man:
+	* doc/src/ns_getchannels.man:
+	* doc/src/ns_var.man:
+	* doc/src/ns_cp.man:
+	* doc/src/ns_mkdir.man:
+	* doc/src/ns_rmdir.man:
+	* doc/src/ns_link.man:
+	* doc/src/ns_rename.man:
+	* doc/src/ns_chmod.man: Remove the documentation for old
+	depreciated commands.
+	* doc/src/man/commands.man: Update the index to remove old commands.
+
 2007-02-23  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c: Fixed bug in initialization of
