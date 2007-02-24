@@ -62,7 +62,9 @@
 	* doc/src/ns_writefp.man:
 	* doc/src/mann/ns_return.man: Consolidate response construction
 	commands into one man page.
-	
+
+	* doc/src/ns_stats.man: Removed. This command is long dead...
+
 2007-02-23  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c: Fixed bug in initialization of
