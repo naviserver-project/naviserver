@@ -1,0 +1,216 @@
+[include version_include]
+
+[manpage_begin ns_return n [vset version]]
+[moddesc   {NaviServer Built-in Commands}]
+[titledesc {Construct and send a response}]
+
+[description]
+
+These commands are used to construct a response and send it to the requesting
+client.
+
+[para]
+[cmd ns_return], [cmd ns_respond], [cmd ns_returnfile] and
+[cmd ns_returnfp] return complete responses with body content, while
+[cmd ns_headers], [cmd nw_write] and [cmd ns_connsendfp] are used to build
+up a response in stages.
+
+[para]
+Unless otherwise noted, these commands return [term true] if the command
+failed and [term false] otherwise. All of them can raise an error if their
+arguments are incorrect.
+
+
+
+[section {COMMANDS}]
+[list_begin definitions]
+
+
+[call [cmd  ns_return] \
+     [opt [option -binary]] \
+     [arg status] \
+     [arg mimetype] \
+     [arg body] ]
+
+Return a complete response to the client consisting of the given [arg body]
+and a set of automatically constructed headers. [arg status] is an integer
+HTTP status code. [arg mimetype] is the mime-type of the body.
+
+[nl]
+If the [option -binary] option is given then the Tcl [arg body] object
+will be converted to a byte-array and no [term encoding] conversion will take
+place. Otherwise, the [term encoding] in effect for the current connection
+will be used to encode the [arg body]
+
+[nl]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execure code.
+
+
+
+[call [cmd ns_respond] \
+     [opt [option "-status status"]] \
+     [opt [option "-type mimetype"]] \
+     [opt [option "-length length"]] \
+     [opt [option "-headers setid"]] \
+     [opt [option "-string body"]] \
+     [opt [option "-binary body"]] \
+     [opt [option "-file filepath"]] \
+     [opt [option "-fileid channel"]] ]
+
+Return a complete response to the client using exactly one of [option -string],
+[option -binary], [option -file] or [option -fileid] as the body.
+
+[nl]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execure code.
+
+[list_begin opt]
+
+[opt_def -status [arg status]]
+The HTTP status code. Default [term 200].
+
+[opt_def -type [arg mimetype]]
+The mime-type of the response body. Default [term */*].
+
+[opt_def -headers [arg setid]]
+A set of headers which will replace any pending headers for the response.
+
+[opt_def -string [arg body]]
+The Tcl string to send as the response body. The body may be encoded into
+an apprpriate character set if required by the client and server settings.
+
+[opt_def -binary [arg body]]
+The byte-array representation of the given Tcl object will be used as the
+reponse body. No character set conversion will be done.
+
+[opt_def -file [arg filepath]]
+The file identified by the given [arg pathname] will be sent as the response
+body. No character set conversion will be done.
+
+[opt_def -fileid [arg channel]]
+[arg length] bytes of the given channel will be used as the response body.
+No character set conversion will be done.
+
+[opt_def -length [arg length]]
+Specifies the number of bytes to send from the channel.
+
+[list_end]
+
+
+
+[call [cmd  ns_returnfile] \
+     [arg status] \
+     [arg mimetype] \
+     [arg filepath] ]
+
+Return the given file as the response body. Headers are automatically
+constructed using [arg status], [arg mimetype] and any pending headers.
+
+[nl]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execure code.
+
+
+
+[call [cmd  ns_returnfp] \
+     [arg status] \
+     [arg mimetype] \
+     [arg channel] \
+     [arg length] ]
+
+Return [arg length] bytes from [arg channel] as the response body. The current
+offset of the channel is the beginning of the body, and the offset will be left
+at [arg length] bytes.
+
+[nl]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execure code.
+
+
+
+[call [cmd ns_headers] \
+     [arg status] \
+     [opt [arg mimetype]] \
+     [opt [arg length]] ]
+
+Construct a set of response headers using the given [arg status], [arg mimetype],
+[arg length], and any pending headers set by e.g. [cmd ns_setcookie] or manually
+via [cmd "ns_conn outputheaders"].
+
+[nl]
+The headers are queued but not sent. No further headers may be set. The
+headers will be written to the client when data is written, e.g. by
+[cmd ns_write] or [cmd ns_connsendfp]. If no data is written, the headers
+will be flushed to the client when the connection is closed.
+
+[nl]
+[cmd ns_headers] returns 0 (zero).
+
+
+
+[call [cmd  ns_write] \
+     [arg data] \
+     [opt [arg "data ..."]] ]
+
+Write [arg data] directly to the client. No headers are sent.
+
+[nl]
+The data may be encoded according to the client and server settings. It is safe
+to pass binary data to this command if encoding has been dissabled using
+the [cmd "ns_conn write_encoded"] command.
+
+[nl]
+[cmd ns_write] will send data more efficiently if you pass it multiple arguments
+rather than concatenating them yourself.
+
+[nl]
+[cmd ns_write] returns [term true] if all the data was written successfully and
+[term false] otherwise.
+
+[nl]
+After the command completes the connection remains open and available in
+the calling connection thread.
+
+
+
+[call [cmd ns_connsendfp] \
+     [arg channel] \
+     [arg length] ]
+
+Send [arg length] bytes from [arg channel] directly to the client. No headers
+are sent, no character encoding is done.
+
+[nl]
+An error is raised if [arg length] bytes could not be sent or if the
+[arg channel] is invalid.
+
+[nl]
+After the command completes the connection remains open and available in
+the calling connection thread.
+
+[list_end]
+
+
+
+[section EXAMPLES]
+
+A traditional greeting:
+
+[example_begin]
+ns_register_proc GET /hello {
+    ns_return 200 text/plain "Hello World!"
+}
+[example_end]
+
+
+
+
+[see_also ns_returnerror ns_guesstype ns_register_fastpath ns_adp_puts]
+[keywords return response status charset]
+
+[manpage_end]
