@@ -146,6 +146,9 @@ clean:
 		(cd $$i && $(MAKE) clean) || exit 1; \
 	done
 
+clean-bak: clean
+	@find . -name '*~' -exec rm "{}" ";"
+
 distclean: clean
 	$(RM) config.status config.log config.cache autom4te.cache aclocal.m4 configure \
 	include/{Makefile.global,Makefile.module,config.h,config.h.in,stamp-h1} \
