@@ -36,7 +36,7 @@ many software applications that supported GNN, PrimeHost, and AOL.
 
 Finally, in 1999, the entire AOLServer code base was overhauled and
 [uri http://news.com.com/2100-1023-228252.html] released to the Open
-Source community as NaviServer 3.0 under the Mozilla Public License,
+Source community as AOLserver 3.0 under the AOLserver Public License,
 an application of the Mozilla Public License.
 
 [para]
