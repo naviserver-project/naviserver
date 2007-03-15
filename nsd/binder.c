@@ -50,7 +50,7 @@
  */
 
 typedef struct CMsg {
-    unsigned int len;
+    size_t	 len;
     int          level;
     int          type;
     int          fds[1];
