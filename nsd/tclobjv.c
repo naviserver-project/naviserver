@@ -430,7 +430,38 @@ Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
     if (*objcPtr > 0
         && Ns_TclGetTimePtrFromObj(interp, objv[0], dest) == TCL_OK) {
+        *objcPtr -= 1;
+        return TCL_OK;
+    }
+    return TCL_ERROR;
+}
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ObjvSet --
+ *
+ *      Consume exactly one argument, returning a pointer to the
+ *      Ns_Time into *spec->dest.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+            Tcl_Obj *CONST objv[])
+{
+    Ns_Set **dest = spec->dest;
+
+    if (*objcPtr > 0
+        && Ns_TclGetSet2(interp, Tcl_GetString(objv[0]), dest) == TCL_OK) {
         *objcPtr -= 1;
         return TCL_OK;
     }

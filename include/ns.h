@@ -1239,6 +1239,10 @@ Ns_TaskDone(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
+Ns_TaskCompleted(Ns_Task *task)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
 Ns_TaskCancel(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
@@ -1304,6 +1308,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
+NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 
 
 /*

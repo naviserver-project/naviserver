@@ -2,10 +2,18 @@
 
 	* Makefile: make build-doc detect existance of dtplite
 	when building documentation
+        * include/ns.h:
+        * nsd/tclobjv.c: Added new public function Ns_ObjvSet that retrieves
+        ns_Set given as a parameter
+        nsd/tclhttp.c: Ported task-based http retrieval facility from AS 4.5
+        tree, changed to use Ns_ParseArgs. Added new subcommand list which shows
+        currerntly running tasks with url and completion status
+        * nsd/task.c: Added Ns_TaskCompleted function which just returns
+        0 or 1 for any given task
 
 2007-03-14  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/binder.c: Changed type to size_t to be compatible 
+	* nsd/binder.c: Changed type to size_t to be compatible
 	with 64 bits systems compiled on CentOS for example.
 
 2007-02-23  Stephen Deasey  <sdeasey@users.sf.net>
@@ -111,8 +119,8 @@
 
 2007-01-20  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/encoding.c: Change message about encoding loaded 
-	from Notice to Debug level. This message is printed on server 
+	* nsd/encoding.c: Change message about encoding loaded
+	from Notice to Debug level. This message is printed on server
 	start before even log file is opened.
 
 2007-01-16  Stephen Deasey  <sdeasey@users.sf.net>
@@ -141,9 +149,9 @@
 
 	* nsd/nsconf.c: Made jobtimeout having default value of 300
 	seconds to exit unnecassary job threads
-	
-	* nsd/nsmain.c: Changed config file processing logic, if none is 
-	given the server will try to find nsd.tcl in the conf/ subdir 
+
+	* nsd/nsmain.c: Changed config file processing logic, if none is
+	given the server will try to find nsd.tcl in the conf/ subdir
 	taking the base path from executable. This requirements looks very
 	non-modern nowadays, Apache uses default but can take full path, for
 	example.
@@ -171,7 +179,7 @@
 	special care must be taken in producing correct result and also
 	cache does not account for query parameters, so dynamic ADP page
 	cannot be cached if it depends on different query parameters. Setting
-	it to no cache by default sets behaviour to 4.0 ADP processing. Caching 
+	it to no cache by default sets behaviour to 4.0 ADP processing. Caching
 	can be disabled also inside the script, AdpEval check for flags during
 	page evaluation.
 
@@ -196,7 +204,7 @@
 
 	* nsd/adpcmds.c:
 	* nsd/adpeval.c:
-	* nsd/adpparse.c: Updated cached Tcl processing, make it conditional 
+	* nsd/adpparse.c: Updated cached Tcl processing, make it conditional
 	compilation if cache is enabled
 
         * nsd/nsconf.c:

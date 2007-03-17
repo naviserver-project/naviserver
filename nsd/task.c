@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -165,7 +165,7 @@ Ns_CreateTaskQueue(char *name)
  *      Stop and join a task queue.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      Pending tasks callbacks, if any, are cancelled.
@@ -376,6 +376,40 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TaskCompleted --
+ *
+ *      Checks if given task is completed
+ *
+ * Results:
+ *      0 if task did not complete yet or timed out
+ *      1 otherwise.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_TaskCompleted(Ns_Task *task)
+{
+    Task      *taskPtr = (Task *) task;
+    TaskQueue *queuePtr = taskPtr->queuePtr;
+    int        status;
+
+    if (queuePtr == NULL) {
+        status = (taskPtr->signal & TASK_DONE);
+    } else {
+        Ns_MutexLock(&queuePtr->lock);
+        status = (taskPtr->signal & TASK_DONE);
+        Ns_MutexUnlock(&queuePtr->lock);
+    }
+    return status;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -388,7 +422,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
  *  from within the NS_SOCK_INIT callback.
  *
  * Results:
- *  None. 
+ *  None.
  *
  * Side effects:
  *  Task callback will be invoked when ready or on timeout.
@@ -487,7 +521,7 @@ Ns_TaskFree(Ns_Task *task)
 {
     Task   *taskPtr = (Task *) task;
     SOCKET  sock    = taskPtr->sock;
-    
+
     ns_free(taskPtr);
     return sock;
 }
@@ -549,7 +583,7 @@ NsWaitTaskQueueShutdown(Ns_Time *toPtr)
 {
     TaskQueue *queuePtr, *nextPtr;
     int        status;
-    
+
     /*
      * Clear out list of any remaining task queues.
      */
@@ -591,7 +625,7 @@ NsWaitTaskQueueShutdown(Ns_Time *toPtr)
  *      Ns_TaskRun.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      Depends on callbacks of given task.
@@ -633,7 +667,7 @@ RunTask(Task *taskPtr, int revents, Ns_Time *nowPtr)
  *      Send a signal for a task to a task queue.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      Task queue will process signal on next spin.
@@ -709,7 +743,7 @@ TriggerQueue(TaskQueue *queuePtr)
  *      Signal a task queue to shutdown.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      Queue will exit on next spin and call remaining tasks
@@ -736,7 +770,7 @@ StopQueue(TaskQueue *queuePtr)
  *      Cleanup resources of a task queue.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      None.
