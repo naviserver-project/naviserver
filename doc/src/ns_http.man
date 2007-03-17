@@ -11,36 +11,64 @@ This command provides a simple HTTP client mechanism.
 
 [list_begin definitions]
 
-[call [cmd  ns_http] [arg cancel] [arg id]]
+[call [cmd ns_http] [arg cancel] [arg id]]
 
-[lst_item] ns_http cleanup
-[lst_item] ns_http queue method url&nbsp;?body?&nbsp;?headers?
+Cancel quueued http request by id
 
-body is the value which will be sent as the HTTP request body.  headers is the ns_set
-ID containing the additional headers to include in the HTTP request.
+[call [cmd ns_http] [arg cleanup]]
 
-[list_end]
+Cancel all pending http requests
 
-[list_begin definitions]
- [call [cmd ns_http] [arg option] [opt [arg {arg arg ...}]]]
-[list_end]
+[call [cmd ns_http] [arg list]]
 
-[list_begin definitions]
+Return the list of currently running or pending requests in format:
+id url done|running ....
 
-[call [cmd ns_http] [arg wait] [arg id] [arg resultsVar] [opt [arg timeout]] [opt [arg headers]] [opt [arg {-servicetime svcTime}]]]
+[call [cmd ns_http] [arg queue] [opt [arg {-method M}]] [opt [arg {-body B}]] [opt [arg {-headers S}]] [opt [arg {-timeout T}]]]
 
-resultsVar is the name of a variable that should be used to store the HTTP response body. 
-Default timeout is "2:0" (2s, 0usec).  headers is the ns_set ID which will receive the 
-headers from the HTTP response.
+[arg -timeout]
+Timeout for how long to wait reply back from the web server
+
+[arg -method]
+GET or POST or HEAD
+
+[arg -body]
+body is the value which will be sent as the HTTP request body.
+
+[nl]
+[arg -headers]
+headers is the ns_set ID containing the additional headers to include in the HTTP request.
+
+[call [cmd ns_http] [arg wait] [opt [arg {-result var}]] [opt [arg {-status var}]] [opt [arg {-timeout t}]] [opt [arg {-headers H}]] [opt [arg {-elapsed var}]]]
+
+[arg -elapsed]
+var is the name of a variable that should be used to store the elapsed time for the request from beginning to finish
+
+[nl]
+[arg -result]
+var is the name of a variable that should be used to store the HTTP response body.
+
+[nl]
+[arg -status]
+var is the name of a variable that should be used to store the HTTP response status
+
+[nl]
+[arg -timeout]
+Default timeout is "2:0" (2s, 0usec).
+
+[nl]
+[arg -headers]
+headers is the ns_set ID which will receive the headers from the HTTP response.
 
 [list_end]
 
 [section EXAMPLES]
 
-Valid HTTP GET:
-
 [example_begin]
- % set id 
+ % ns_http queue http://www.google.com
+ % http0
+ % ns_http wait -status status -result result http0
+ % 1
 [example_end]
 
 
