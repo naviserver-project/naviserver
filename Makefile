@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -25,7 +25,7 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 #
 # $Header$
 #
@@ -39,7 +39,7 @@ distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
 	Makefile install-sh missing README ChangeLog NEWS \
         sample-config.tcl.in license.terms naviserver.rdf
 
-all: 
+all:
 	@for i in $(dirs); do \
 		( cd $$i && $(MAKE) all ) || exit 1; \
 	done
@@ -114,11 +114,12 @@ install-examples:
 	done
 
 build-doc:
-	@cd doc/src && $(MKDIR) ../html && dtplite -o ../html/ -style nsd.css html .
-	@cd doc/src && $(MKDIR) ../man && \
-	for f in *.man; do \
-		dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
-	done
+	@if [ "`which dtplite`" != "" ]; then \
+	   cd doc/src && $(MKDIR) ../html ../man && dtplite -o ../html/ -style nsd.css html .; \
+	   for f in *.man; do \
+	      dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
+	   done; \
+        fi
 
 test: all
 	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)

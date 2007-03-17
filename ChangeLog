@@ -1,3 +1,8 @@
+2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* Makefile: make build-doc detect existance of dtplite
+	when building documentation
+
 2007-03-14  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/binder.c: Changed type to size_t to be compatible 
