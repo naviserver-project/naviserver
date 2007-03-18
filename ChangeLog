@@ -1,5 +1,15 @@
 2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
+        * include/nsthread.h:
+        * include/ns.h:
+        * nsd/nsd.h:
+        * nsd/log/c:
+        * nslog/nslog.c: Added O_LARGEFILE flag to open calls in
+        logging modules, that will allow to support files > 2Gb. If that
+        is not supported, fake O_LARGEFILE is defined.
+
+2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* Makefile: make build-doc detect existance of dtplite
 	when building documentation
         * include/ns.h:

@@ -101,7 +101,7 @@ typedef struct LogCache {
 
 static int   LogOpen(void);
 static void  LogAdd(Ns_LogSeverity sev, CONST char *fmt, va_list ap);
-static void  LogFlush(LogCache *cachePtr, LogClbk *list, int cnt, 
+static void  LogFlush(LogCache *cachePtr, LogClbk *list, int cnt,
                       int trunc, int lock);
 static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 
@@ -949,7 +949,7 @@ LogOpen(void)
 {
     int fd, status = NS_OK;
 
-    fd = open(file, O_WRONLY|O_APPEND|O_CREAT, 0644);
+    fd = open(file, O_WRONLY|O_APPEND|O_CREAT|O_LARGEFILE, 0644);
     if (fd == -1) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
@@ -1114,7 +1114,7 @@ FreeCache(void *arg)
     Ns_DStringFree(&cachePtr->buffer);
     ns_free(cachePtr);
 }
- 
+
 
 /*
  *----------------------------------------------------------------------

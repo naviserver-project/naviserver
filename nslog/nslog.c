@@ -747,7 +747,7 @@ LogOpen(Log *logPtr)
 {
     int fd;
 
-    fd = open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
+    fd = open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT|O_LARGEFILE, 0644);
     if (fd == -1) {
         Ns_Log(Error,"nslog: error '%s' opening '%s'",
                strerror(errno), logPtr->file);

@@ -38,6 +38,10 @@
 #ifndef NSTHREAD_H
 #define NSTHREAD_H
 
+#ifndef _GNU_SOURCE
+ #define _GNU_SOURCE
+#endif
+
 #include <nscheck.h>
 
 #ifdef _WIN32
@@ -137,14 +141,21 @@ NS_EXTERN int closedir(DIR *dp);
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
+
 #ifndef PATH_MAX
 #define PATH_MAX 1024
 #endif
+
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
+
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
+
+#ifndef O_LARGEFILE
+  #define O_LARGEFILE 0
 #endif
 
 /*
