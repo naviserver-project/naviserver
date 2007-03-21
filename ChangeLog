@@ -395,6 +395,23 @@
 	bigger than 2Gb in size. Finally made it work with huge files.
 	CORRECTION: Now ns_respond or fastpath can return files bigger than 2GB as well.
 
+        IMPORTANT API changes: (length, nsend) parameters are now Tcl_WideInt, so it requires
+        to recompile all modules that use those functions:
+
+        int Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
+        int Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
+        int Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
+
+        void Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
+        void Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
+        int Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
+                         Tcl_Channel chan, Tcl_WideInt length)
+        int Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
+                      FILE *fp, Tcl_WideInt length)
+        int Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
+                    int fd, Tcl_WideInt length)
+
+
 2006-11-27  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c:
