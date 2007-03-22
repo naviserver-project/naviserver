@@ -1,5 +1,10 @@
 2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* Makefile: make sure to copy .css files as well when
+	installing .html docs
+
+2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
+
         * include/nsthread.h:
         * include/ns.h:
         * nsd/nsd.h:

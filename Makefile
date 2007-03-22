@@ -92,7 +92,7 @@ install-tests:
 install-doc: build-doc
 	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
 	@echo Installing html files in $(NAVISERVER)/pages/doc...
-	@for i in doc/html/*.html; do \
+	@for i in doc/html/*.html doc/html/*.css; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
 	done
 	@for i in doc/html/files/*.html; do \
