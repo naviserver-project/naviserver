@@ -1,3 +1,8 @@
+2007-03-23  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nsthread/winthread.c: Removed home-brewn mutex code
+	in favour of Windows CriticalSection.
+
 2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* Makefile: make sure to copy .css files as well when

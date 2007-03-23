@@ -30,7 +30,7 @@
 /* 
  * win32.c --
  *
- *	Interface routines for nsthreads using WIN32 functions.
+ *  Interface routines for nsthreads using WIN32 functions.
  *
  */
 
@@ -40,46 +40,32 @@
 NS_RCSID("@(#) $Header$");
 
 /*
- * The following structure maintains the Win32-specific state of a
- * process thread and mutex and condition waits pointers.
+ * The following structure maintains the Win32-specific state
+ * of a thread and mutex and condition waits pointers.
  */
 
 typedef struct WinThread {
     struct WinThread *nextPtr;
     struct WinThread *wakeupPtr;
-    HANDLE	      self;
-    HANDLE	      event;
-    int		      condwait;
-    void	     *slots[NS_THREAD_MAXTLS];
+    HANDLE self;
+    HANDLE event;
+    int    condwait;
+    void  *slots[NS_THREAD_MAXTLS];
 } WinThread;
 
 typedef struct ThreadArg {
     HANDLE  self;
     void   *arg;
 } ThreadArg;
-    
+
 /*
- * The following structure defines a mutex as a spinlock and
- * wait queue.  The custom lock code provides the speed of
- * a Win32 CriticalSection with the TryLock of a Mutex handle
- * (TryEnterCriticalSection is not yet available on all Win32
- * platforms).
+ * The following structure defines a condition variable
+ * as a set of a critical section and a thread wait queue.
  */
 
 typedef struct {
-    int		locked;
-    LONG	spinlock;
-    WinThread  *waitPtr;
-} Lock;
-  
-/*
- * The following structure defines a condition variable as
- * a spinlock and wait queue.
- */
-
-typedef struct {
-    LONG	  spinlock;
-    WinThread	 *waitPtr;
+    CRITICAL_SECTION critsec;
+    WinThread *waitPtr;
 } Cond;
 
 /*
@@ -88,32 +74,29 @@ typedef struct {
  */
 
 typedef struct Search {
-    long handle;
+    long               handle;
     struct _finddata_t fdata;
-    struct dirent ent;
+    struct dirent      ent;
 } Search;
 
 /*
  * Static functions defined in this file.
  */
 
-static void	Wakeup(WinThread *wPtr, char *func);
-static void	Queue(WinThread **waitPtrPtr, WinThread *wPtr);
-static Cond    *GetCond(Ns_Cond *cond);
-static unsigned __stdcall ThreadMain(void *arg);
+static void   Wakeup(WinThread *wPtr, char *func);
+static void   Queue(WinThread **waitPtrPtr, WinThread *wPtr);
+static Cond  *GetCond(Ns_Cond *cond);
 
-#define SPINLOCK(lPtr) \
-    while(InterlockedExchange((lPtr), 1)) Sleep(0)
-#define SPINUNLOCK(lPtr) \
-    InterlockedExchange((lPtr), 0)
-#define GETWINTHREAD()	TlsGetValue(tlskey)
+static unsigned __stdcall ThreadMain(void *arg);
 
 /*
  * The following single Tls key is used to store the nsthread
  * structure.  It's initialized in DllMain.
  */
 
-static DWORD		tlskey;
+static DWORD tlskey;
+
+#define GETWINTHREAD()  TlsGetValue(tlskey)
 
 
 /*
@@ -121,14 +104,14 @@ static DWORD		tlskey;
  *
  * DllMain --
  *
- *	Thread library DLL main, managing each thread's WinThread
- *	structure and the master critical section lock.
+ *      Thread library DLL main, managing each thread's WinThread
+ *      structure and the master critical section lock.
  *
  * Results:
- *	TRUE.
+ *      TRUE.
  *
  * Side effects:
- *	On error will abort process.
+ *      On error will abort process.
  *
  *----------------------------------------------------------------------
  */
@@ -140,50 +123,51 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
 
     switch (why) {
     case DLL_PROCESS_ATTACH:
-	tlskey = TlsAlloc();
-	if (tlskey == 0xFFFFFFFF) {
-	    return FALSE;
-	}
-	NsInitThreads();
-	/* FALLTHROUGH */
+        tlskey = TlsAlloc();
+        if (tlskey == 0xFFFFFFFF) {
+            return FALSE;
+        }
+        NsInitThreads();
+        /* FALLTHROUGH */
 
     case DLL_THREAD_ATTACH:
-	wPtr = ns_calloc(1, sizeof(WinThread));
-	wPtr->event = CreateEvent(NULL, TRUE, FALSE, NULL);
-	if (wPtr->event == NULL) {
-	    NsThreadFatal("DllMain", "CreateEvent", GetLastError());
-	}
-	if (!TlsSetValue(tlskey, wPtr)) {
-	    NsThreadFatal("DllMain", "TlsSetValue", GetLastError());
-	}
-	break;
+        wPtr = ns_calloc(1, sizeof(WinThread));
+        wPtr->event = CreateEvent(NULL, TRUE, FALSE, NULL);
+        if (wPtr->event == NULL) {
+            NsThreadFatal("DllMain", "CreateEvent", GetLastError());
+        }
+        if (!TlsSetValue(tlskey, wPtr)) {
+            NsThreadFatal("DllMain", "TlsSetValue", GetLastError());
+        }
+        break;
 
     case DLL_THREAD_DETACH:
-	/*
-	 * Note this code does not execute for the final thread on
-	 * exit because the TLS callbacks may invoke code from an
-	 * unloaded DLL, e.g., Tcl.
-	 */
+        /*
+         * Note this code does not execute for the final thread on
+         * exit because the TLS callbacks may invoke code from an
+         * unloaded DLL, e.g., Tcl.
+         */
 
-	wPtr = TlsGetValue(tlskey);
-	if (wPtr) {
-	    NsCleanupTls(wPtr->slots);
-	    if (!CloseHandle(wPtr->event)) {
-	        NsThreadFatal("DllMain", "CloseHandle", GetLastError());
-	    }
-	    if (!TlsSetValue(tlskey, NULL)) {
-	        NsThreadFatal("DllMain", "TlsSetValue", GetLastError());
-	    }
-	    ns_free(wPtr);
-	}
-	break;
+        wPtr = TlsGetValue(tlskey);
+        if (wPtr) {
+            NsCleanupTls(wPtr->slots);
+            if (!CloseHandle(wPtr->event)) {
+                NsThreadFatal("DllMain", "CloseHandle", GetLastError());
+            }
+            if (!TlsSetValue(tlskey, NULL)) {
+                NsThreadFatal("DllMain", "TlsSetValue", GetLastError());
+            }
+            ns_free(wPtr);
+        }
+        break;
 
     case DLL_PROCESS_DETACH:
-	if (!TlsFree(tlskey)) {
-	    NsThreadFatal("DllMain", "TlsFree", GetLastError());
-	}
-	break;
+        if (!TlsFree(tlskey)) {
+            NsThreadFatal("DllMain", "TlsFree", GetLastError());
+        }
+        break;
     }
+
     return TRUE;
 }
 
@@ -193,13 +177,13 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
  *
  * NsGetTls --
  *
- *	Return the TLS slots for this thread.
+ *      Return the TLS slots for this thread.
  *
  * Results:
- *	Pointer to slots array.
+ *      Pointer to slots array.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -218,13 +202,13 @@ NsGetTls(void)
  *
  * NsThreadLibName --
  *
- *	Return the string name of the thread library.
+ *      Return the string name of the thread library.
  *
  * Results:
- *	Pointer to static string.
+ *      Pointer to static string.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -241,13 +225,13 @@ NsThreadLibName(void)
  *
  * NsLockAlloc --
  *
- *	Allocate and initialize a mutex lock.
+ *      Allocate and initialize a mutex lock.
  *
  * Results:
- *	None.
+ *      Pointer to the initialzed mutex
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -255,7 +239,12 @@ NsThreadLibName(void)
 void *
 NsLockAlloc(void)
 {
-    return ns_calloc(1, sizeof(Lock));
+    CRITICAL_SECTION *csPtr;
+
+    csPtr = (CRITICAL_SECTION *)ns_calloc(1, sizeof(CRITICAL_SECTION));
+    InitializeCriticalSection(csPtr);
+
+    return (void *)csPtr;
 }
 
 
@@ -264,13 +253,13 @@ NsLockAlloc(void)
  *
  * NsLockFree --
  *
- *	Free a mutex lock.
+ *      Free a mutex lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -278,7 +267,10 @@ NsLockAlloc(void)
 void
 NsLockFree(void *lock)
 {
-    ns_free(lock);
+    CRITICAL_SECTION *csPtr = (CRITICAL_SECTION *)lock;
+
+    DeleteCriticalSection(csPtr);
+    ns_free(csPtr);
 }
 
 
@@ -287,13 +279,13 @@ NsLockFree(void *lock)
  *
  * NsLockSet --
  *
- *	Set a mutex lock.
+ *      Set a mutex lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	May wait wakeup event if lock already held.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -301,26 +293,7 @@ NsLockFree(void *lock)
 void
 NsLockSet(void *lock)
 {
-    WinThread *wPtr = NULL;
-    Lock *lockPtr = lock;
-    int locked;
-
-    do {
-	SPINLOCK(&lockPtr->spinlock);
-	locked = lockPtr->locked;
-	if (!locked) {
-	    lockPtr->locked = 1;
-	} else {
-	    if (wPtr == NULL) {
-		wPtr = GETWINTHREAD();
-	    }
-	    Queue(&lockPtr->waitPtr, wPtr);
-	}
-	SPINUNLOCK(&lockPtr->spinlock);
-	if (locked && WaitForSingleObject(wPtr->event, INFINITE) != WAIT_OBJECT_0) {
-	    NsThreadFatal("NsLockTry", "WaitForSingleObject", GetLastError());
-	}
-    } while (locked);
+    EnterCriticalSection((CRITICAL_SECTION *)lock);
 }
 
 
@@ -329,13 +302,13 @@ NsLockSet(void *lock)
  *
  * NsLockTry --
  *
- *	Try to set a mutex lock once.
+ *      Try to set a mutex lock once.
  *
  * Results:
- *	1 if lock set, 0 otherwise.
+ *      1 if lock set, 0 otherwise.
  *
  * Side effects:
- * 	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -343,19 +316,7 @@ NsLockSet(void *lock)
 int
 NsLockTry(Lock *lock)
 {
-    Lock *lockPtr = lock;
-    int busy;
-
-    SPINLOCK(&lockPtr->spinlock);
-    busy = lockPtr->locked;
-    if (!busy) {
-	lockPtr->locked = 1;
-    }
-    SPINUNLOCK(&lockPtr->spinlock);
-    if (busy) {
-	return 0;
-    }
-    return 1;
+    return TryEnterCriticalSection((CRITICAL_SECTION *)lock);
 }
 
 
@@ -364,13 +325,13 @@ NsLockTry(Lock *lock)
  *
  * NsLockUnset --
  *
- *	Unset a mutex lock.
+ *      Unset a mutex lock.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	May signal wakeup event for a waiting thread.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -378,26 +339,7 @@ NsLockTry(Lock *lock)
 void
 NsLockUnset(void *lock)
 {
-    Lock *lockPtr = lock;
-    WinThread *wPtr;
-
-    SPINLOCK(&lockPtr->spinlock);
-    lockPtr->locked = 0;
-    wPtr = lockPtr->waitPtr;
-    if (wPtr != NULL) {
-	lockPtr->waitPtr = wPtr->nextPtr;
-	wPtr->nextPtr = NULL;
-    }
-    SPINUNLOCK(&lockPtr->spinlock);
-
-    /*
-     * NB: It's safe to send the Wakeup() signal after spin unlock
-     * because the waiting thread is in an infiniate wait.
-     */
-
-    if (wPtr != NULL) {
-	Wakeup(wPtr, "NsLockUnset");
-    }
+    LeaveCriticalSection((CRITICAL_SECTION *)lock);
 }
 
 
@@ -406,15 +348,15 @@ NsLockUnset(void *lock)
  *
  * Ns_CondInit --
  *
- *	Initialize a condition variable.  Note that this function is rarely
- *	called directly as condition variables are now self initialized
- *	when first accessed.
+ *      Initialize a condition variable.  Note that this function
+ *      is rarely called directly as condition variables are now 
+ *      self initialized when first accessed.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -422,7 +364,11 @@ NsLockUnset(void *lock)
 void
 Ns_CondInit(Ns_Cond *cond)
 {
-    *cond = ns_calloc(1, sizeof(Cond));
+    Cond *condPtr;
+    
+    condPtr = ns_calloc(1, sizeof(Cond));
+    InitializeCriticalSection(&condPtr->critsec);
+    *cond = condPtr;
 }
 
 
@@ -431,15 +377,15 @@ Ns_CondInit(Ns_Cond *cond)
  *
  * Ns_CondDestroy --
  *
- *	Destroy a previously initialized condition variable.  Note this
- *	function is almost never called as condition variables
- *	normally exist until the process exits.
+ *      Destroy a previously initialized condition variable.
+ *      Note this function is almost never called as condition
+ *      variables normally exist until the process exits.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -447,9 +393,12 @@ Ns_CondInit(Ns_Cond *cond)
 void
 Ns_CondDestroy(Ns_Cond *cond)
 {
-    if (*cond != NULL) {
-    	ns_free(*cond);
-    	*cond = NULL;
+    Cond *condPtr = *cond;
+
+    if (condPtr != NULL) {
+        DeleteCriticalSection(&condPtr->critsec);
+        ns_free(condPtr);
+        *cond = NULL;
     }
 }
 
@@ -459,14 +408,14 @@ Ns_CondDestroy(Ns_Cond *cond)
  *
  * Ns_CondSignal --
  *
- *	Signal a condition variable, releasing a single thread if one
- *	is waiting.
+ *      Signal a condition variable, releasing a single thread if one
+ *      is waiting.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	A single waiting thread may be resumed.
+ *      A single waiting thread may be resumed.
  *
  *----------------------------------------------------------------------
  */
@@ -474,25 +423,25 @@ Ns_CondDestroy(Ns_Cond *cond)
 void
 Ns_CondSignal(Ns_Cond *cond)
 {
-    Cond         *condPtr = GetCond(cond);
-    WinThread	 *wPtr;
+    Cond      *condPtr = GetCond(cond);
+    WinThread *wPtr;
 
-    SPINLOCK(&condPtr->spinlock);
+    EnterCriticalSection(&condPtr->critsec);
     wPtr = condPtr->waitPtr;
     if (wPtr != NULL) {
-	condPtr->waitPtr = wPtr->nextPtr;
-	wPtr->nextPtr = NULL;
-	wPtr->condwait = 0;
-
-	/*
-	 * NB: Unlike with NsLockUnset, the Wakeup() must be done
-	 * before the spin unlock as the other thread may have 
-	 * been in a timed wait which just timed out.
-	 */
-
-	Wakeup(wPtr, "Ns_CondSignal");
+        condPtr->waitPtr = wPtr->nextPtr;
+        wPtr->nextPtr = NULL;
+        wPtr->condwait = 0;
+        
+        /*
+         * The Wakeup() must be done before the unlock
+         * as the other thread may have been in a timed
+         * wait which just timed out.
+         */
+        
+        Wakeup(wPtr, "Ns_CondSignal");
     }
-    SPINUNLOCK(&condPtr->spinlock);
+    LeaveCriticalSection(&condPtr->critsec);
 }
 
 
@@ -501,13 +450,13 @@ Ns_CondSignal(Ns_Cond *cond)
  *
  * Ns_CondBroadcast --
  *
- *	Broadcast a condition, resuming all waiting threads, if any.
+ *      Broadcast a condition, resuming all waiting threads, if any.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	First thread, if any, is awoken.
+ *      First thread, if any, is awoken.
  *
  *----------------------------------------------------------------------
  */
@@ -515,10 +464,10 @@ Ns_CondSignal(Ns_Cond *cond)
 void
 Ns_CondBroadcast(Ns_Cond *cond)
 {
-    Cond         *condPtr = GetCond(cond);
-    WinThread	 *wPtr;
+    Cond      *condPtr = GetCond(cond);
+    WinThread *wPtr;
 
-    SPINLOCK(&condPtr->spinlock);
+    EnterCriticalSection(&condPtr->critsec);
 
     /*
      * Set each thread to wake up the next thread on the
@@ -529,10 +478,10 @@ Ns_CondBroadcast(Ns_Cond *cond)
 
     wPtr = condPtr->waitPtr;
     while (wPtr != NULL) {
-	wPtr->wakeupPtr = wPtr->nextPtr;
-	wPtr->nextPtr = NULL;
-	wPtr->condwait = 0;
-	wPtr = wPtr->wakeupPtr;
+        wPtr->wakeupPtr = wPtr->nextPtr;
+        wPtr->nextPtr = NULL;
+        wPtr->condwait = 0;
+        wPtr = wPtr->wakeupPtr;
     }
 
     /*
@@ -542,12 +491,12 @@ Ns_CondBroadcast(Ns_Cond *cond)
 
     wPtr = condPtr->waitPtr;
     if (wPtr != NULL) {
-	condPtr->waitPtr = NULL;
-	/* NB: See Wakeup() comment in Ns_CondSignal(). */
-	Wakeup(wPtr, "Ns_CondBroadcast");
+        condPtr->waitPtr = NULL;
+        /* NB: See Wakeup() comment in Ns_CondSignal(). */
+        Wakeup(wPtr, "Ns_CondBroadcast");
     }
 
-    SPINUNLOCK(&condPtr->spinlock);
+    LeaveCriticalSection(&condPtr->critsec);
 }
 
 
@@ -556,13 +505,13 @@ Ns_CondBroadcast(Ns_Cond *cond)
  *
  * Ns_CondWait --
  *
- *	Wait indefinitely for a condition to be signaled.
+ *      Wait indefinitely for a condition to be signaled.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -579,18 +528,18 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
  *
  * Ns_CondTimedWait --
  *
- *	Wait for a condition to be signaled up to a given absolute time
- *	out.  This code is very tricky to avoid the race condition
- *	between locking and unlocking the coordinating mutex and catching
- *	a wakeup signal.  Be sure you understand how condition variables
- *	work before screwing around with this code.
+ *      Wait for a condition to be signaled up to a given absolute 
+ *      timeout. This code is very tricky to avoid the race condition
+ *      between locking and unlocking the coordinating mutex and catching
+ *      a wakeup signal. Be sure you understand how condition variables
+ *      work before screwing around with this code.
  *
  * Results:
- *	NS_OK on signal being received within the timeout period,
- *	otherwise NS_TIMEOUT.
+ *      NS_OK on signal being received within the timeout period,
+ *      otherwise NS_TIMEOUT.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -598,26 +547,26 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
 int
 Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
 {
-    int		    status;
-    Cond           *condPtr;
-    WinThread	   *wPtr, **waitPtrPtr;
-    Ns_Time 	    now, wait;
-    DWORD	    msec, w;
+    int         status;
+    Cond       *condPtr;
+    WinThread  *wPtr, **waitPtrPtr;
+    Ns_Time     now, wait;
+    DWORD       msec, w;
 
     /*
      * Convert to relative wait time and verify.
      */
 
     if (timePtr == NULL) {
-	msec = INFINITE;
+        msec = INFINITE;
     } else {
-	Ns_GetTime(&now);
-	Ns_DiffTime(timePtr, &now, &wait);
-	wait.usec /= 1000;
-	if (wait.sec < 0 || (wait.sec == 0 && wait.usec <= 0)) {
-	    return NS_TIMEOUT;
-	}
-	msec = wait.sec * 1000 + wait.usec;
+        Ns_GetTime(&now);
+        Ns_DiffTime(timePtr, &now, &wait);
+        wait.usec /= 1000;
+        if (wait.sec < 0 || (wait.sec == 0 && wait.usec <= 0)) {
+            return NS_TIMEOUT;
+        }
+        msec = wait.sec * 1000 + wait.usec;
     }
 
     /*
@@ -627,10 +576,11 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
 
     condPtr = GetCond(cond);
     wPtr = GETWINTHREAD();
-    SPINLOCK(&condPtr->spinlock);
+
+    EnterCriticalSection(&condPtr->critsec);
     wPtr->condwait = 1;
     Queue(&condPtr->waitPtr, wPtr);
-    SPINUNLOCK(&condPtr->spinlock);
+    LeaveCriticalSection(&condPtr->critsec);
 
     /*
      * Release the outer mutex and wait for the signal to arrive
@@ -640,47 +590,48 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
     Ns_MutexUnlock(mutex);
     w = WaitForSingleObject(wPtr->event, msec);
     if (w != WAIT_OBJECT_0 && w != WAIT_TIMEOUT) {
-	NsThreadFatal("Ns_CondTimedWait", "WaitForSingleObject", GetLastError());
+        NsThreadFatal("Ns_CondTimedWait", "WaitForSingleObject", GetLastError());
     }
 
     /*
-     * Lock the condition and check if wakeup was signalled.  Note
+     * Lock the condition and check if wakeup was signalled. Note
      * that the signal may have arrived as the event was timing
      * out so the return of WaitForSingleObject can't be relied on.
      * If there was no wakeup, remove this thread from the list.
      */
 
-    SPINLOCK(&condPtr->spinlock);
+    EnterCriticalSection(&condPtr->critsec);
     if (!wPtr->condwait) {
-	status = NS_OK;
+        status = NS_OK;
     } else {
-	status = NS_TIMEOUT;
-	waitPtrPtr = &condPtr->waitPtr;
-	while (*waitPtrPtr != wPtr) {
-	    waitPtrPtr = &(*waitPtrPtr)->nextPtr;
-	}
-	*waitPtrPtr = wPtr->nextPtr;
-	wPtr->nextPtr = NULL;
-	wPtr->condwait = 0;
+        status = NS_TIMEOUT;
+        waitPtrPtr = &condPtr->waitPtr;
+        while (*waitPtrPtr != wPtr) {
+            waitPtrPtr = &(*waitPtrPtr)->nextPtr;
+        }
+        *waitPtrPtr = wPtr->nextPtr;
+        wPtr->nextPtr = NULL;
+        wPtr->condwait = 0;
     }
 
     /*
      * Wakeup the next thread in a rolling broadcast if necessary.
      * Note, as with Ns_CondSignal, the wakeup must be sent while
-     * the spin lock is held.
+     * the lock is held.
      */
 
     if (wPtr->wakeupPtr != NULL) {
-	Wakeup(wPtr->wakeupPtr, "Ns_CondTimedWait");
-	wPtr->wakeupPtr = NULL;
+        Wakeup(wPtr->wakeupPtr, "Ns_CondTimedWait");
+        wPtr->wakeupPtr = NULL;
     }
-    SPINUNLOCK(&condPtr->spinlock);
+    LeaveCriticalSection(&condPtr->critsec);
 
     /*
      * Re-aquire the outer lock and return.
      */
 
     Ns_MutexLock(mutex);
+
     return status;
 }
 
@@ -690,16 +641,16 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
  *
  * NsCreateThread --
  *
- *	WinThread specific thread create function called by
- *	Ns_ThreadCreate.  Note the use of _beginthreadex.  CreateThread
- *	does not initialize the C runtime library fully and could
- *	lead to memory leaks on thread exit.
+ *      WinThread specific thread create function called by
+ *      Ns_ThreadCreate. Note the use of _beginthreadex. CreateThread
+ *      does not initialize the C runtime library fully and could
+ *      lead to memory leaks on thread exit.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Depends on thread startup routine.
+ *      Depends on thread startup routine.
  *
  *----------------------------------------------------------------------
  */
@@ -708,7 +659,7 @@ void
 NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
 {
     ThreadArg *argPtr;
-    unsigned hdl, tid, flags;
+    unsigned   hdl, tid, flags;
 
     flags = (resultPtr ? CREATE_SUSPENDED : 0);
     argPtr = ns_malloc(sizeof(ThreadArg));
@@ -716,14 +667,14 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
     argPtr->self = NULL;
     hdl = _beginthreadex(NULL, stacksize, ThreadMain, argPtr, flags, &tid);
     if (hdl == 0) {
-    	NsThreadFatal("NsCreateThread", "_beginthreadex", errno);
+        NsThreadFatal("NsCreateThread", "_beginthreadex", errno);
     }
     if (resultPtr == NULL) {
-	CloseHandle((HANDLE) hdl);
+        CloseHandle((HANDLE) hdl);
     } else {
-	argPtr->self = (HANDLE) hdl;
-	ResumeThread(argPtr->self);
-	*resultPtr = (Ns_Thread) hdl;
+        argPtr->self = (HANDLE) hdl;
+        ResumeThread(argPtr->self);
+        *resultPtr = (Ns_Thread) hdl;
     }
 }
 
@@ -733,14 +684,14 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
  *
  * Ns_ThreadExit --
  *
- *	Terminate a thread.  Note the use of _endthreadex instead of
- *	ExitThread which, as mentioned above, is correct.
+ *      Terminate a thread.  Note the use of _endthreadex instead
+ *      of ExitThread which, as mentioned above, is correct.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread will clean itself up via the DllMain thread detach code.
+ *      Thread will clean itself up via the DllMain thread detach code.
  *
  *----------------------------------------------------------------------
  */
@@ -757,13 +708,13 @@ Ns_ThreadExit(void *arg)
  *
  * Ns_ThreadJoin --
  *
- *	Wait for exit of a non-detached thread.
+ *      Wait for exit of a non-detached thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Requested thread is destroyed after join.
+ *      Requested thread is destroyed after join.
  *
  *----------------------------------------------------------------------
  */
@@ -775,16 +726,16 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
     LONG exitcode;
 
     if (WaitForSingleObject(hdl, INFINITE) != WAIT_OBJECT_0) {
-	NsThreadFatal("Ns_ThreadJoin", "WaitForSingleObject", GetLastError());
+        NsThreadFatal("Ns_ThreadJoin", "WaitForSingleObject", GetLastError());
     }
     if (!GetExitCodeThread(hdl, &exitcode)) {
-	NsThreadFatal("Ns_ThreadJoin", "GetExitCodeThread", GetLastError());
+        NsThreadFatal("Ns_ThreadJoin", "GetExitCodeThread", GetLastError());
     }
     if (!CloseHandle(hdl)) {
-	NsThreadFatal("Ns_ThreadJoin", "CloseHandle", GetLastError());
+        NsThreadFatal("Ns_ThreadJoin", "CloseHandle", GetLastError());
     }
     if (argPtr != NULL) {
-	*argPtr = (void *) exitcode;
+        *argPtr = (void *) exitcode;
     }
 }
 
@@ -794,13 +745,13 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
  *
  * Ns_ThreadYield --
  *
- *	Yield the cpu to another thread.
+ *      Yield the cpu to another thread.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -817,13 +768,13 @@ Ns_ThreadYield(void)
  *
  * Ns_ThreadId --
  *
- *	Return the numeric thread id.
+ *      Return the numeric thread id.
  *
  * Results:
- *	Integer thread id.
+ *      Integer thread id.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -840,13 +791,13 @@ Ns_ThreadId(void)
  *
  * Ns_ThreadSelf --
  *
- *	Return thread handle suitable for Ns_ThreadJoin.
+ *      Return thread handle suitable for Ns_ThreadJoin.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Value at threadPtr is updated with thread's handle.
+ *      Value at threadPtr is updated with thread's handle.
  *
  *----------------------------------------------------------------------
  */
@@ -865,13 +816,13 @@ Ns_ThreadSelf(Ns_Thread *threadPtr)
  *
  * ThreadMain --
  *
- *	Win32 thread startup which simply calls NsThreadMain.
+ *      Win32 thread startup which simply calls NsThreadMain.
  *
  * Results:
- *	Does not return.
+ *      Does not return.
  *
  * Side effects:
- *	NsThreadMain will call Ns_ThreadExit.
+ *      NsThreadMain will call Ns_ThreadExit.
  *
  *----------------------------------------------------------------------
  */
@@ -886,6 +837,7 @@ ThreadMain(void *arg)
     arg = argPtr->arg;
     ns_free(argPtr);
     NsThreadMain(arg);
+
     /* NOT REACHED */
     return 0;
 }
@@ -896,14 +848,14 @@ ThreadMain(void *arg)
  *
  * Queue --
  *
- *	Add a thread on a mutex or condition wait queue.
+ *      Add a thread on a condition wait queue.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread wakeup event is reset in case it's holding
- *	a lingering wakeup.
+ *      Thread wakeup event is reset in case it's holding
+ *      a lingering wakeup.
  *
  *----------------------------------------------------------------------
  */
@@ -912,12 +864,12 @@ static void
 Queue(WinThread **waitPtrPtr, WinThread *wPtr)
 {
     while (*waitPtrPtr != NULL) {
-	waitPtrPtr = &(*waitPtrPtr)->nextPtr;
+        waitPtrPtr = &(*waitPtrPtr)->nextPtr;
     }
     *waitPtrPtr = wPtr;
     wPtr->nextPtr = wPtr->wakeupPtr = NULL;
     if (!ResetEvent(wPtr->event)) {
-	NsThreadFatal("Queue", "ResetEvent", GetLastError());
+        NsThreadFatal("Queue", "ResetEvent", GetLastError());
     }
 }
 
@@ -927,13 +879,13 @@ Queue(WinThread **waitPtrPtr, WinThread *wPtr)
  *
  * Wakeup --
  *
- *	Wakeup a thread waiting on a mutex or condition queue.
+ *      Wakeup a thread waiting on a condition wait queue.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Thread wakeup event is set.
+ *      Thread wakeup event is set.
  *
  *----------------------------------------------------------------------
  */
@@ -942,7 +894,7 @@ static void
 Wakeup(WinThread *wPtr, char *func)
 {
     if (!SetEvent(wPtr->event)) {
-	NsThreadFatal(func, "SetEvent", GetLastError());
+        NsThreadFatal(func, "SetEvent", GetLastError());
     }
 }
 
@@ -952,14 +904,14 @@ Wakeup(WinThread *wPtr, char *func)
  *
  * GetCond --
  *
- *	Return the Cond struct for given Ns_Cond, initializing
- *	if necessary.
+ *      Return the Cond struct for given Ns_Cond, initializing
+ *      if necessary.
  *
  * Results:
- *	Pointer to Cond.
+ *      Pointer to Cond.
  *
  * Side effects:
- *	Ns_Cond may be updated.
+ *      Ns_Cond may be updated.
  *
  *----------------------------------------------------------------------
  */
@@ -968,11 +920,11 @@ static Cond *
 GetCond(Ns_Cond *cond)
 {
     if (*cond == NULL) {
-	Ns_MasterLock();
-	if (*cond == NULL) {
-	    Ns_CondInit(cond);
-	}
-	Ns_MasterUnlock();
+        Ns_MasterLock();
+        if (*cond == NULL) {
+            Ns_CondInit(cond);
+        }
+        Ns_MasterUnlock();
     }
     return (Cond *) *cond;
 }
@@ -983,13 +935,13 @@ GetCond(Ns_Cond *cond)
  *
  * opendir --
  *
- *	Start a directory search.
+ *      Start a directory search.
  *
  * Results:
- *	Pointer to DIR.
+ *      Pointer to DIR.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1001,17 +953,18 @@ opendir(char *pathname)
     char pattern[PATH_MAX];
 
     if (strlen(pathname) > PATH_MAX - 3) {
-	errno = EINVAL;
-	return NULL;
+        errno = EINVAL;
+        return NULL;
     }
     sprintf(pattern, "%s/*", pathname);
     sPtr = ns_malloc(sizeof(Search));
     sPtr->handle = _findfirst(pattern, &sPtr->fdata);
     if (sPtr->handle == -1) {
-	ns_free(sPtr);
-	return NULL;
+        ns_free(sPtr);
+        return NULL;
     }
     sPtr->ent.d_name = NULL;
+
     return (DIR *) sPtr;
 }
 
@@ -1021,13 +974,13 @@ opendir(char *pathname)
  *
  * closedir --
  *
- *	Closes and active directory search.
+ *      Closes and active directory search.
  *
  * Results:
- *	0.
+ *      0.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1039,6 +992,7 @@ closedir(DIR *dp)
 
     _findclose(sPtr->handle);
     ns_free(sPtr);
+
     return 0;
 }
 
@@ -1048,13 +1002,13 @@ closedir(DIR *dp)
  *
  * readdir --
  *
- *	Returns the next file in an active directory search.
+ *      Returns the next file in an active directory search.
  *
  * Results:
- *	Pointer to thread-local struct dirent.
+ *      Pointer to thread-local struct dirent.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1065,9 +1019,10 @@ readdir(DIR * dp)
     Search *sPtr = (Search *) dp;
 
     if (sPtr->ent.d_name != NULL
-	    && _findnext(sPtr->handle, &sPtr->fdata) != 0) {
-	return NULL;
+        && _findnext(sPtr->handle, &sPtr->fdata) != 0) {
+        return NULL;
     }
     sPtr->ent.d_name = sPtr->fdata.name;
+
     return &sPtr->ent;
 }
