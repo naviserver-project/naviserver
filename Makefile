@@ -47,8 +47,8 @@ all:
 install: install-dirs install-include install-tcl install-modules \
 	install-config install-doc install-examples
 	@echo ""
-	@echo "Installation complete, now you can run NaviServer by typing"
-	@echo "the command below and access the server at http://localhost:8080"
+	@echo ""
+	@echo "You can now run NaviServer by typing one of the commands below: "
 	@echo ""
 	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/nsd-config.tcl"
 	@echo " or"
@@ -89,7 +89,7 @@ install-include: all
 install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
-install-doc: build-doc
+install-doc:
 	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
 	@echo Installing html files in $(NAVISERVER)/pages/doc...
 	@for i in doc/html/*.html doc/html/*.css; do \
@@ -100,7 +100,7 @@ install-doc: build-doc
 	done
 	@for n in 1 3 n; do \
 		d=$(NAVISERVER)/man/man$$n; \
-		echo Installing $$n manpages in $$d...; \
+		echo Installing nroff files in $$d...; \
 		$(MKDIR) $$d; \
 		for i in `find doc/man/ -name *.$$n -print`; do \
 			$(INSTALL_DATA) $$i $$d; \
@@ -115,11 +115,18 @@ install-examples:
 
 build-doc:
 	@if [ "`which dtplite`" != "" ]; then \
-	   cd doc/src && $(MKDIR) ../html ../man && dtplite -o ../html/ -style nsd.css html .; \
+       d=`pwd`; \
+	   cd doc/src && $(MKDIR) ../html ../man ; \
+       echo Generating docs from .man pages in `pwd`; \
+       echo Emitting html files to $$d/html/ ...; \
+	   dtplite -o ../html/ -style nsd.css html . 1>/dev/null 2>&1; \
+       echo Emitting nroff files to $$d/man/ ...; \
 	   for f in *.man; do \
-	      dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
+	      dtplite -o ../man/`basename $$f .man`.n nroff $$f 1>/dev/null 2>&1; \
 	   done; \
-        fi
+       cd $$d ; \
+       echo Generating docs done. ; \
+    fi
 
 test: all
 	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)

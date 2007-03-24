@@ -1,3 +1,13 @@
+2007-03-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* include/Makefile.module.in:
+	* nsperm/Makefile: Silence mkdir call during installation.
+
+	* Makefile: Separated build-doc from the install target.
+	Doc building has nothing to do with the installation.
+	It must be performed as a separate step prior making
+	the distribution file.
+
 2007-03-23  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nsthread/winthread.c: Removed home-brewn mutex code
