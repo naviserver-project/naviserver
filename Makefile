@@ -92,19 +92,28 @@ install-tests:
 install-doc:
 	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
 	@echo Installing html files in $(NAVISERVER)/pages/doc...
-	@for i in doc/html/*.html doc/html/*.css; do \
+	@if test -d doc/html ; then \
+	    for i in `find doc/html -name "*.html" -print`; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
-	done
-	@for i in doc/html/files/*.html; do \
+	    done ; \
+	    for i in `find doc/html -name "*.css" -print`; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
+	    done ; \
+	fi
+	@if test -d doc/html/files ; then \
+	    for i in `find doc/html/files -name "*.html" -print`; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc/files; \
-	done
+	    done ; \
+	fi
 	@for n in 1 3 n; do \
-		d=$(NAVISERVER)/man/man$$n; \
-		echo Installing nroff files in $$d...; \
-		$(MKDIR) $$d; \
-		for i in `find doc/man/ -name *.$$n -print`; do \
-			$(INSTALL_DATA) $$i $$d; \
+	    d=$(NAVISERVER)/man/man$$n; \
+	    echo Installing nroff files in $$d...; \
+	    $(MKDIR) $$d; \
+	    if test -d doc/man ; then \
+		for i in `find doc/man -name "*.$$n" -print`; do \
+		    $(INSTALL_DATA) $$i $$d; \
 		done; \
+	    fi ; \
 	done
 
 install-examples:
