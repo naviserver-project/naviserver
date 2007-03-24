@@ -123,7 +123,7 @@ install-examples:
 	done
 
 build-doc:
-	@if [ 1 == 1 ]; then \
+	@if [ 1 = 1 ]; then \
 	    hd=`pwd`; \
 	    cd doc/src && $(MKDIR) ../html ../man ; \
 	    echo Generating docs from .man pages in `pwd`; \
