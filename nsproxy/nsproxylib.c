@@ -357,7 +357,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_Interp  *interp;
     Slave         proc;
     Req         *reqPtr;
-    int          uid = -1, gid = -1, result, len, n, max;
+    int          uid = -1, gid = -1, result, len, n, max = 0;
     Tcl_DString  in, out;
     char        *script, *active, *dots;
     char        *uarg = NULL, *user = NULL, *group = NULL;
@@ -1308,7 +1308,7 @@ static void
 Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
 {
     Res   hdr;
-    char *einfo, *ecode, *result;
+    char *einfo = NULL, *ecode = NULL, *result = NULL;
     int   clen = 0, ilen = 0, rlen = 0;
 
     if (interp != NULL) {
@@ -1413,7 +1413,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     InterpData    *idataPtr = data;
     Pool          *poolPtr, *thePoolPtr;
     Proxy         *proxyPtr;
-    int            ms, reap, result = TCL_OK;
+    int            ms, reap, opt, result = TCL_OK;
     char          *proxyId;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -1427,14 +1427,14 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
         PGetIdx, PPutIdx, PReleaseIdx, PEvalIdx, PCleanupIdx, PConfigureIdx,
         PPingIdx, PFreeIdx, PActiveIdx, PHandlesIdx, PClearIdx, PStopIdx,
         PSendIdx, PWaitIdx, PRecvIdx, PPoolsIdx
-    } opt;
+    };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?args?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            (int *) &opt) != TCL_OK) {
+                            &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -1677,7 +1677,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     Pool       *poolPtr;
     Proxy      *proxyPtr;
     char       *str;
-    int         i, incr, n, result, reap = 0;
+    int         i, flag, incr, n, result, reap = 0;
 
     static CONST char *flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec", 
@@ -1687,7 +1687,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     enum {
         CInitIdx, CReinitIdx, CMaxslaveIdx, CExecIdx, CGetIdx,
         CEvalIdx, CSendIdx, CRecvIdx, CWaitIdx, CIdleIdx, CMaxrunsIdx
-    } flag;
+    };
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "pool ?opt? ?val? ?opt val?...");
@@ -1698,13 +1698,13 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     Ns_MutexLock(&poolPtr->lock);
     if (objc == 4) {
         if (Tcl_GetIndexFromObj(interp, objv[3], flags, "flags", 0,
-                                (int *) &flag) != TCL_OK) {
+                                &flag) != TCL_OK) {
             goto err;
         }
     } else if (objc > 4) {
         for (i = 3; i < (objc - 1); ++i) {
             if (Tcl_GetIndexFromObj(interp, objv[i], flags, "flags", 0,
-                                    (int *) &flag)) {
+                                    &flag)) {
                 goto err;
             }
             ++i;
@@ -1921,7 +1921,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     InterpData    *idataPtr = data;
     Proxy         *proxyPtr, *firstPtr;
     Tcl_HashEntry *cntPtr, *idPtr;
-    int            i, new, nwant, n, ms;
+    int            i, flag, new, nwant, n, ms;
     char          *arg;
     Err            err;
     Pool          *poolPtr;
@@ -1931,7 +1931,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     };
     enum {
         FTimeoutIdx, FHandlesIdx
-    } flag;
+    };
 
     if (objc < 3 || (objc % 2) != 1) {
         Tcl_WrongNumArgs(interp, 2, objv, "pool ?-opt val -opt val ...?");
@@ -1953,7 +1953,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     for (i = 3; i < objc; ++i) {
         arg = Tcl_GetString(objv[2]);
         if (Tcl_GetIndexFromObj(interp, objv[i], flags, "flags", 0,
-                                (int *) &flag)) {
+                                &flag)) {
             return TCL_ERROR;
         }
         ++i;
@@ -2621,6 +2621,7 @@ ReaperThread(void *ignored)
             
             proxyPtr = poolPtr->firstPtr;
             prevPtr = NULL;
+            expire = 0;
             while (proxyPtr != NULL) {
                 nextPtr = proxyPtr->nextPtr;
                 slavePtr = proxyPtr->slavePtr;
@@ -3201,6 +3202,9 @@ ProxyError(Tcl_Interp *interp, Err err)
         code = "EBusy";
         msg = "currently evaluating a script"; 
         break;
+    default:
+        code = "EUnknown";
+        msg = "unknown error";
     }
 
     Tcl_SetErrorCode(interp, "NSPROXY", code, msg, sysmsg, NULL);
