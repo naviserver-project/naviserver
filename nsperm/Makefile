@@ -41,7 +41,7 @@ include ../include/Makefile.build
 moddat	 = $(INSTSRVMOD)/$(MODNAME)
 
 cpfiles:
-	$(MKDIR) $(moddat)
+	@$(MKDIR) $(moddat)
 	for f in passwd group hosts.allow hosts.deny perms; do \
 		test -f $(moddat)/$$f || $(INSTALL_DATA) $$f $(moddat)/; \
 	done

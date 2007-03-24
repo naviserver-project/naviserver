@@ -149,7 +149,7 @@ install-mod: $(MOD) $(MODINST)
 	$(INSTALL_SH) $(MOD) $(INSTBIN)/
 
 install-tcl: $(TCL)
-	$(MKDIR) $(INSTTCL)/$(MODNAME)
+	@$(MKDIR) $(INSTTCL)/$(MODNAME)
 	for t in $(TCL); do \
 		$(INSTALL_DATA) $$t $(INSTTCL)/$(MODNAME)/; \
 	done
