@@ -123,19 +123,19 @@ install-examples:
 	done
 
 build-doc:
-	@if [ "`which dtplite`" != "" ]; then \
-       d=`pwd`; \
-	   cd doc/src && $(MKDIR) ../html ../man ; \
-       echo Generating docs from .man pages in `pwd`; \
-       echo Emitting html files to $$d/html/ ...; \
-	   dtplite -o ../html/ -style nsd.css html . 1>/dev/null 2>&1; \
-       echo Emitting nroff files to $$d/man/ ...; \
-	   for f in *.man; do \
-	      dtplite -o ../man/`basename $$f .man`.n nroff $$f 1>/dev/null 2>&1; \
-	   done; \
-       cd $$d ; \
-       echo Generating docs done. ; \
-    fi
+	@if [ 1 == 1 ]; then \
+	    hd=`pwd`; \
+	    cd doc/src && $(MKDIR) ../html ../man ; \
+	    echo Generating docs from .man pages in `pwd`; \
+	    echo Emitting html files to $$hd/html/ ...; \
+	    dtplite -o ../html/ -style nsd.css html . 1>/dev/null 2>&1; \
+	    echo Emitting nroff files to $$hd/man/ ...; \
+	    for f in *.man; do \
+		dtplite -o ../man/`basename $$f .man`.n nroff $$f 1>/dev/null 2>&1; \
+	    done; \
+	    cd $$hd ; \
+	    echo Generating docs done. ; \
+	fi
 
 test: all
 	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)

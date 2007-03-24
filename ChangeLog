@@ -7,6 +7,8 @@
 	Doc building has nothing to do with the installation.
 	It must be performed as a separate step prior making
 	the distribution file.
+	Removed check for "dtplite" as this is now mandatory
+	for build-doc target.
 
 2007-03-23  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
