@@ -62,7 +62,7 @@ static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int r
 static int SetWaitVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr);
 static int HttpConnect(Tcl_Interp *interp, char *method, char *url,
 			Ns_Set *hdrs, Tcl_Obj *bodyPtr, Http **httpPtrPtr);
-static char *HttpResult(char *response, int *statusPtr, Ns_Set *hdrs);
+static Tcl_Obj *HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs);
 static void HttpClose(Http *httpPtr);
 static void HttpCancel(Http *httpPtr);
 static void HttpAbort(Http *httpPtr);
@@ -273,7 +273,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
     Tcl_Obj *resultPtr = NULL;
     Tcl_Obj *statusPtr = NULL;
     Ns_Time *timeoutPtr = NULL;
-    char *content, *id = NULL;
+    char *id = NULL;
     Ns_Set *hdrPtr = NULL;
     Http *httpPtr;
     Ns_Time diff;
@@ -317,15 +317,15 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
 	Tcl_AppendResult(interp, "http failed: ", httpPtr->error, NULL);
 	goto err;
     }
-    content = HttpResult(httpPtr->ds.string, &status, hdrPtr);
+    valPtr = HttpResult(&httpPtr->ds, &status, hdrPtr);
     if (statusPtr != NULL &&
 		!SetWaitVar(interp, statusPtr, Tcl_NewIntObj(status))) {
 	goto err;
     }
     if (resultPtr == NULL) {
-	Tcl_SetResult(interp, content, TCL_VOLATILE);
+	Tcl_SetObjResult(interp, valPtr);
     } else {
-	if (!SetWaitVar(interp, resultPtr, Tcl_NewStringObj(content, -1))) {
+	if (!SetWaitVar(interp, resultPtr, valPtr)) {
 	    goto err;
 	}
 	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
@@ -541,13 +541,14 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
  *----------------------------------------------------------------------
  */
 
-static char *
-HttpResult(char *response, int *statusPtr, Ns_Set *hdrs)
+static Tcl_Obj *
+HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
 {
+    char *eoh, *body, *p, save, *response;
     int firsthdr, major, minor, len;
-    char *eoh, *body, *p, save;
+    Tcl_Obj *result;
 
-    body = response;
+    body = response = ds->string;
     eoh = strstr(response, "\r\n\r\n");
     if (eoh != NULL) {
         body = eoh + 4;
@@ -559,6 +560,9 @@ HttpResult(char *response, int *statusPtr, Ns_Set *hdrs)
 	    eoh += 1;
         }
     }
+
+    result = Tcl_NewByteArrayObj((unsigned char*)body, ds->length-(body-response));
+
     if (eoh == NULL) {
 	*statusPtr = 0;
     } else {
@@ -589,10 +593,8 @@ HttpResult(char *response, int *statusPtr, Ns_Set *hdrs)
 	    *body = save;
         }
     }
-    return body;
+    return result;
 }
-
-
 
 static void
 HttpClose(Http *httpPtr)

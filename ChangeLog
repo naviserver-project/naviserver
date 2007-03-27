@@ -1,3 +1,8 @@
+2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tclhttp.c: Updated to properly handle binary results in
+	ns_http wait command
+
 2007-03-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* include/Makefile.module.in:
