@@ -12,10 +12,10 @@ adds new ns_ssl command.
  
    nsd.tcl
  
-   ns_section    ns/servers/server/modules
+   ns_section    ns/server/${servername}/modules
    ns_param      nsssl        		nsssl.so
  
-   ns_section    ns/servers/server/module/nsssl
+   ns_section    ns/server/${servername}/module/nsssl
    ns_param	 certificate 		/usr/local/ns/modules/nsssl/server.pem
    ns_param      address    		0.0.0.0
    ns_param      port       		443
