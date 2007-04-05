@@ -1,3 +1,9 @@
+2007-04-04  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * nsd/driver.c: Changed WriterThread to use poll
+        instead of active pushing, this made it faster and code
+        more simpler
+
 2007-03-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tclhttp.c: Updated to properly handle binary results in

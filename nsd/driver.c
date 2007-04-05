@@ -2536,15 +2536,16 @@ WriterThread(void *arg)
     Tcl_WideInt     toread, maxsize;
 
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
-    Ns_Time         now, timeout;
+    Ns_Time         now, timeout, diff;
 
     Sock           *sockPtr;
     Driver         *drvPtr;
     DrvWriter      *wrPtr;
     WriterSock     *curPtr, *nextPtr, *writePtr;
 
-    struct pollfd   pfds[1];
+    struct pollfd   *pfds;
     struct iovec    vbuf;
+    unsigned int    nfds, maxfds;
 
     Ns_ThreadSetName("-writer%d-", queuePtr->id);
 
@@ -2558,34 +2559,59 @@ WriterThread(void *arg)
     memset(&timeout, 0, sizeof(timeout));
     stopping = 0;
     writePtr = NULL;
+    maxfds = 100;
+    pfds = ns_malloc(maxfds * sizeof(struct pollfd));
     pfds[0].fd = queuePtr->pipe[0];
     pfds[0].events = POLLIN;
 
     while (!stopping) {
 
         /*
-         * Select and drain the trigger pipe if necessary.
+         * If there are any read sockets, set the bits
+         * and determine the minimum relative timeout.
          */
 
+        nfds = 1;
         if (writePtr == NULL) {
-            pfds[0].revents = 0;
-            pollto = 30 * 1000;  /* Wake up every 30 seconds just in case */
-            do {
-                n = ns_poll(pfds, 1, pollto);
-            } while (n < 0  && errno == EINTR);
-            if (n < 0) {
-                Ns_Fatal("driver: ns_poll() failed: %s",
-                         ns_sockstrerror(ns_sockerrno));
+            pollto = 30 * 1000;
+        } else {
+            timeout.sec = INT_MAX;
+            timeout.usec = LONG_MAX;
+            curPtr = writePtr;
+            while (curPtr != NULL) {
+                if (curPtr->size > 0) {
+                    SockPoll(curPtr->sockPtr, POLLOUT, &pfds, &nfds, &maxfds, &timeout);
+                }
+                curPtr = curPtr->nextPtr;
             }
-            if ((pfds[0].revents & POLLIN)
-                && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
-                Ns_Fatal("driver: trigger recv() failed: %s",
-                         ns_sockstrerror(ns_sockerrno));
+            if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
+                pollto = diff.sec * 1000 + diff.usec / 1000;
+            } else {
+                pollto = 0;
             }
         }
 
         /*
-         * Attempt write to all available sockets
+         * Select and drain the trigger pipe if necessary.
+         */
+
+        pfds[0].revents = 0;
+
+        do {
+            n = ns_poll(pfds, nfds, pollto);
+        } while (n < 0  && errno == EINTR);
+        if (n < 0) {
+            Ns_Fatal("driver: ns_poll() failed: %s",
+                     ns_sockstrerror(ns_sockerrno));
+        }
+        if ((pfds[0].revents & POLLIN)
+            && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+            Ns_Fatal("writer: trigger recv() failed: %s",
+                     ns_sockstrerror(ns_sockerrno));
+        }
+
+        /*
+         * Write to all available sockets
          */
 
         Ns_GetTime(&now);
@@ -2599,35 +2625,27 @@ WriterThread(void *arg)
             sockPtr = curPtr->sockPtr;
             drvPtr  = sockPtr->drvPtr;
             wrPtr   = &drvPtr->writer;
-
-            /*
-             * Read block from the file and send it to the socket
-             */
-
             n = err = status = NS_OK;
-            if (curPtr->size > 0) {
+
+            if ((pfds[sockPtr->pidx].revents & POLLOUT) && curPtr->size > 0 ) {
+
+                /*
+                 * Read block from the file and send it to the socket
+                 */
+
                 if (curPtr->fd > -1) {
                     maxsize = wrPtr->bufsize;
                     toread = curPtr->nread;
                     bufPtr = curPtr->buf;
 
                     /*
-                     *  Case when in previous loop socket was not ready for write and
-                     *  marked with WRITER_TIMEOUT flag means that in this iteration
-                     *  we have to skip buffer processing and reading fromthe file
-                     *
                      *  Case when bufsize > 0 means that we have leftover
                      *  from previous send, fill up the rest of the buffer
                      *  and retransmit it with new portion from the file
                      */
 
-                    if (curPtr->flags & WRITER_TIMEOUT) {
-                        curPtr->flags &= ~WRITER_TIMEOUT;
-                        toread = 0;
-                    } else
                     if (curPtr->bufsize > 0) {
-                        bufPtr = curPtr->buf + (sizeof(curPtr->buf)
-                                                - curPtr->bufsize);
+                        bufPtr = curPtr->buf + (sizeof(curPtr->buf) - curPtr->bufsize);
                         memmove(curPtr->buf, bufPtr, curPtr->bufsize);
                         bufPtr = curPtr->buf + curPtr->bufsize;
                         maxsize -= curPtr->bufsize;
@@ -2657,53 +2675,44 @@ WriterThread(void *arg)
                  */
 
                 if (status == NS_OK) {
-                    status = Ns_SockTimedWait(curPtr->sockPtr->sock, NS_SOCK_WRITE, &timeout);
-                    switch (status) {
-                    case NS_OK:
-                        vbuf.iov_len = curPtr->bufsize;
-                        vbuf.iov_base = (void *) curPtr->buf;
-                        n = NsDriverSend(curPtr->sockPtr, &vbuf, 1);
-                        if (n < 0) {
-                            err = errno;
-                            status = NS_ERROR;
-                        } else {
-                            curPtr->size -= n;
-                            curPtr->nsent += n;
-                            curPtr->bufsize -= n;
-                            curPtr->sockPtr->timeout.sec = 0;
-                            if (curPtr->data) {
-                                curPtr->buf += n;
-                            }
+                    vbuf.iov_len = curPtr->bufsize;
+                    vbuf.iov_base = (void *) curPtr->buf;
+                    n = NsDriverSend(curPtr->sockPtr, &vbuf, 1);
+                    if (n < 0) {
+                        err = errno;
+                        status = NS_ERROR;
+                    } else {
+                        curPtr->size -= n;
+                        curPtr->nsent += n;
+                        curPtr->bufsize -= n;
+                        sockPtr->timeout.sec = 0;
+                        if (curPtr->data) {
+                            curPtr->buf += n;
                         }
-                        break;
+                    }
+                }
+            } else {
 
-                    case NS_TIMEOUT:
+                /*
+                 *  Mark when first timeout occured or check if it is already
+                 *  for too long and we need to stop this socket
+                 */
 
-                        /*
-                         *  Mark timeout flag so on the next iteration we will not
-                         *  read/update buffer
-                         */
-
-                        curPtr->flags |= WRITER_TIMEOUT;
-                        status = NS_OK;
-
-                        /*
-                         *  Mark when first timeout occured or check if it is already
-                         *  for too long and we need to stop this socket
-                         */
-
-                        if (curPtr->sockPtr->timeout.sec == 0) {
-                            SockTimeout(curPtr->sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
-                        } else {
-                            if (Ns_DiffTime(&curPtr->sockPtr->timeout, &now, NULL) <= 0) {
-                                err = ETIMEDOUT;
-                                status = NS_ERROR;
-                            }
-                        }
-                        break;
+                if (sockPtr->timeout.sec == 0) {
+                    SockTimeout(sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
+                } else {
+                    if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
+                        err = ETIMEDOUT;
+                        status = NS_ERROR;
                     }
                 }
             }
+
+            /*
+             * Check result status and close the socket in case of
+             * timeout or completion
+             */
+
             if (status != NS_OK) {
                 SockWriterRelease(curPtr, SOCK_WRITEERROR, err);
             } else {
