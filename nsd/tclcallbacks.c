@@ -167,6 +167,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
         for (ii = 0; ii < cbPtr->argc; ii++) {
             Ns_DStringAppendElement(&ds, cbPtr->argv[ii]);
         }
+        Ns_Log(Debug, "Ns_TclEvalCallback: %s", ds.string);
         status = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         if (status != TCL_OK) {
             Ns_DStringSetLength(&ds, 0);

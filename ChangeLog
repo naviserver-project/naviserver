@@ -1,3 +1,11 @@
+2007-04-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* nscp/nscp.c: (GetLine) Changed size_t variable to int
+	as size_t is unsigned on Windows and this makes troubles.
+
+	* nsd/tclcallbacks.c: (Ns_TclEvalCallback) Added debug
+	logging of the callback that is about to run.
+
 2007-04-04  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsd/driver.c: Changed WriterThread to use poll
