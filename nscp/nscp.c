@@ -419,9 +419,7 @@ static int
 GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 {
     unsigned char buf[2048];
-    size_t n;
-    int result = 0;
-    int retry = 0;
+    int n, result = 0, retry = 0;
 
     /*
      * Suppress output on things like password prompts.
@@ -433,7 +431,7 @@ GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);
-    if (send(sock, prompt, n, 0) != n) {
+    if (send(sock, prompt, (size_t)n, 0) != n) {
 	result = 0;
 	goto bail;
     }
