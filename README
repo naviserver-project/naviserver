@@ -9,25 +9,28 @@ adds new ns_ssl command.
 
 
  Configuration
- 
+
    nsd.tcl
- 
+
    ns_section    ns/server/${servername}/modules
    ns_param      nsssl        		nsssl.so
- 
+
    ns_section    ns/server/${servername}/module/nsssl
    ns_param	 certificate 		/usr/local/ns/modules/nsssl/server.pem
    ns_param      address    		0.0.0.0
    ns_param      port       		443
    ns_param      ciphers                "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP"
    ns_param      protocols              "!SSLv2"
- 
+   ns_param      verify                 0
+
   certificate is required and will not run without it, it should contain cert and privkey
 
   ciphers parameter defines which ciphers will be used, by default nsssl uses all ciphers
 
   protocols parameter defines which protocols can be disabled, options are:
             !SSLv2 !SSLv3 !TLSv1, by default all protocosl are enabled
+
+  verify if set to 1 will reject any connections without valid ceritificate
 
   all other driver related parameters can be specified, see nssock for more details
 
@@ -38,7 +41,13 @@ adds new ns_ssl command.
   cat host.cert host.key > server.pem
   rm -rf host.cert host.key
 
+
+ Usage
+
+   There is Tcl command ns_ssl provided by the module, usage is the same as ns_http command,
+   it does HTTP requests over SSL
+
  Authors
- 
+
      Vlad Seryakov vlad@crystalballinc.com
 
