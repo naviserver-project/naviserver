@@ -125,7 +125,7 @@
 #define NS_SOCK_WRITE              0x02 /* Socket is writeable */
 #define NS_SOCK_EXCEPTION          0x04 /* Socket has OOB data */
 #define NS_SOCK_EXIT               0x08 /* The server is shutting down */
-#define NS_SOCK_DROP               0x10 /* Unused */
+#define NS_SOCK_DONE               0x10 /* Task processing is done */
 #define NS_SOCK_CANCEL             0x20 /* Remove event from sock callback thread */
 #define NS_SOCK_TIMEOUT            0x40 /* Timeout waiting for socket event. */
 #define NS_SOCK_INIT               0x80 /* Initialise a Task callback. */

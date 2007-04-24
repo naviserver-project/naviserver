@@ -99,14 +99,14 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     Http *httpPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int run = 0;
+    int opt, run = 0;
     static CONST char *opts[] = {
        "cancel", "cleanup", "run", "queue", "wait", "list",
        NULL
     };
     enum {
         HCancelIdx, HCleanupIdx, HRunIdx, HQueueIdx, HWaitIdx, HListIdx
-    } opt;
+    };
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?args ...?");
@@ -680,6 +680,9 @@ HttpProc(Ns_Task *task, SOCKET sock, void *arg, int why)
 	}
 	break;
 
+    case NS_SOCK_DONE:
+        return;
+
     case NS_SOCK_TIMEOUT:
 	httpPtr->error = "timeout";
 	break;
@@ -691,6 +694,7 @@ HttpProc(Ns_Task *task, SOCKET sock, void *arg, int why)
     case NS_SOCK_CANCEL:
 	httpPtr->error = "cancelled";
 	break;
+
     }
 
     /*

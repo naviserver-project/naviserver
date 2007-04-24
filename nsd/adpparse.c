@@ -369,7 +369,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 
 	case TagScript:
 	    /*
-	     * Look for cooresponding closing </script> tag, handling
+	     * Look for corresponding closing </script> tag, handling
 	     * possible nesting of other <script> tags.
 	     */
 

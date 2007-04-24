@@ -298,6 +298,7 @@ Ns_TaskRun(Ns_Task *task)
         Ns_GetTime(&now);
         RunTask(taskPtr, pfd.revents, &now);
     }
+    Call(taskPtr, NS_SOCK_DONE);
     taskPtr->signal |= TASK_DONE;
 }
 
@@ -884,6 +885,7 @@ TaskThread(void *arg)
             }
             if (taskPtr->flags & TASK_DONE) {
                 taskPtr->flags &= ~(TASK_DONE|TASK_WAIT);
+                Call(taskPtr, NS_SOCK_DONE);
                 Ns_MutexLock(&queuePtr->lock);
                 taskPtr->signal |= TASK_DONE;
                 Ns_MutexUnlock(&queuePtr->lock);

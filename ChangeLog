@@ -1,3 +1,11 @@
+2007-04-24  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * include/ns.h: Changed NS_SOCK_DROP to NS_SOCK_DONE, drop
+        flag was never used anywhere
+        * nsd/task.c: Added call when task is done with NS_SOCK_DONE for any
+        actions required for proper task completion
+        * nsd/sockcallback.c: Updated with new NS_SOCK_DONE flag
+
 2007-04-19  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* nscp/nscp.c: (GetLine) Changed size_t variable to int

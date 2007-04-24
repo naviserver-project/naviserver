@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -80,14 +80,14 @@ static Tcl_HashTable table;
  *
  * Ns_SockCallback --
  *
- *	Register a callback to be run when a socket reaches a certain 
- *	state. 
+ *	Register a callback to be run when a socket reaches a certain
+ *	state.
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *	NS_OK/NS_ERROR
  *
  * Side effects:
- *	Will wake up the callback thread. 
+ *	Will wake up the callback thread.
  *
  *----------------------------------------------------------------------
  */
@@ -117,7 +117,7 @@ Ns_SockCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeo
  *	NS_OK/NS_ERROR
  *
  * Side effects:
- *	Will wake up the callback thread. 
+ *	Will wake up the callback thread.
  *
  *----------------------------------------------------------------------
  */
@@ -166,7 +166,7 @@ void
 NsWaitSockShutdown(Ns_Time *toPtr)
 {
     int status;
-    
+
     status = NS_OK;
     Ns_MutexLock(&lock);
     while (status == NS_OK && running) {
@@ -280,7 +280,7 @@ Queue(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout)
  *	Run callbacks registered with Ns_SockCallback.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
  *	Depends on callbacks.
@@ -310,7 +310,7 @@ SockCallbackThread(void *ignored)
     events[2] = POLLPRI;
     when[0] = NS_SOCK_READ;
     when[1] = NS_SOCK_WRITE;
-    when[2] = NS_SOCK_EXCEPTION | NS_SOCK_DROP;
+    when[2] = NS_SOCK_EXCEPTION | NS_SOCK_DONE;
     max = 100;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     pfds[0].fd = trigPipe[0];
