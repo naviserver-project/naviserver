@@ -1,3 +1,8 @@
+2007-04-27  Vlad Seryakov  <seryakov@users.sf.net>
+
+        ns include/ns.h: Similar to ns_int64 defined same types
+        for 8, 16, 32 bits as well to have common basic types
+
 2007-04-24  Vlad Seryakov  <seryakov@users.sf.net>
 
         * include/ns.h: Changed NS_SOCK_DROP to NS_SOCK_DONE, drop

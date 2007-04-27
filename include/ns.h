@@ -163,6 +163,9 @@
 #define NS_CONN_MAXBUFS            16  /* Max num buffers which Ns_ConnSend will write */
 #define NS_ENCRYPT_BUFSIZE         128 /* Min size of buffer for Ns_Encrypt output */
 
+/*
+ * The following define types for common 8bits, 16bits, 32bits and 64bits
+ */
 
 #if defined(__alpha)
 typedef long			ns_int64;
@@ -180,7 +183,13 @@ typedef unsigned long long	ns_uint64;
 
 #endif
 
-typedef ns_int64 INT64;
+typedef ns_int64                INT64;
+typedef char                    ns_int8;
+typedef unsigned char           ns_uint8;
+typedef short                   ns_int16;
+typedef unsigned short          ns_uint16;
+typedef int                     ns_int32;
+typedef unsigned int            ns_uint32;
 
 /*
  * The following flags define how Ns_Set's are managed by Tcl.
