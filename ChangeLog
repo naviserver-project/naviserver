@@ -1,3 +1,10 @@
+2007-04-30  Vlad Seryakov  <seryakov@users.sf.net>
+
+        nsperm/nsperm.c:
+        nsperm/init.tcl: Updated all commands to use Tcl_Objs, added 2 missing commands
+        checkpass and setpass, added 2 new commands listusers and listgroups
+
+
 2007-04-27  Vlad Seryakov  <seryakov@users.sf.net>
 
         ns include/ns.h: Similar to ns_int64 defined same types

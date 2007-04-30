@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * nsperm --
  *
  *	Permissions
@@ -96,14 +96,17 @@ typedef struct {
  * Local functions defined in this file
  */
 
-static Tcl_CmdProc PermCmd;
 static Ns_TclTraceProc AddCmds;
-static int AddUserCmd(Server *servPtr, Tcl_Interp *interp,
-    int argc, char **argv);
-static int AddGroupCmd(Server *servPtr, Tcl_Interp *interp,
-    int argc, char **argv);
-static int AllowDenyCmd(Server *servPtr, Tcl_Interp *interp,
-    int argc, char **argv, int allow, int user);
+static Tcl_ObjCmdProc PermObjCmd;
+static Tcl_ObjCmdProc AddUserObjCmd;
+static Tcl_ObjCmdProc AddGroupObjCmd;
+static Tcl_ObjCmdProc ListUsersObjCmd;
+static Tcl_ObjCmdProc ListGroupsObjCmd;
+static Tcl_ObjCmdProc CheckPassObjCmd;
+static Tcl_ObjCmdProc SetPassObjCmd;
+
+static int AllowDenyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
+                           int allow, int user);
 
 static int ValidateUserAddr(User *userPtr, char *peer);
 static int AuthProc(char *server, char *method, char *url, char *user,
@@ -122,13 +125,13 @@ static Tcl_HashTable   serversTable;
  *
  * Ns_ModuleInit --
  *
- *	Initialize the perms module 
+ *	Initialize the perms module
  *
  * Results:
- *	NS_OK/NS_ERROR 
+ *	NS_OK/NS_ERROR
  *
  * Side effects:
- *	Init hash table, add tcl commands. 
+ *	Init hash table, add tcl commands.
  *
  *----------------------------------------------------------------------
  */
@@ -164,13 +167,13 @@ Ns_ModuleInit(char *server, char *module)
  *
  * AddCmds --
  *
- *	Add tcl commands for perms 
+ *	Add tcl commands for perms
  *
  * Results:
- *	NS_OK 
+ *	NS_OK
  *
  * Side effects:
- *	Adds tcl commands 
+ *	Adds tcl commands
  *
  *----------------------------------------------------------------------
  */
@@ -178,7 +181,7 @@ Ns_ModuleInit(char *server, char *module)
 static int
 AddCmds(Tcl_Interp *interpermPtr, void *arg)
 {
-    Tcl_CreateCommand(interpermPtr, "ns_perm", PermCmd, arg, NULL);
+    Tcl_CreateObjCommand(interpermPtr, "ns_perm", PermObjCmd, arg, NULL);
     return NS_OK;
 }
 
@@ -188,50 +191,79 @@ AddCmds(Tcl_Interp *interpermPtr, void *arg)
  *
  * PermCmd --
  *
- *	The ns_perm tcl command 
+ *	The ns_perm tcl command
  *
  * Results:
- *	Std tcl ret val 
+ *	Std tcl ret val
  *
  * Side effects:
- *	Yes. 
+ *	Yes.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-PermCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
+PermObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    Server *servPtr = arg;
-    int status;
+    Server *servPtr = data;
+    int opt, status = TCL_OK;
 
-    if (argc < 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-			 argv[0], " command ?args ...?\"", NULL);
-	return TCL_ERROR;
+    static CONST char *opts[] = {
+       "adduser", "addgroup",
+       "listusers", "listgroups",
+       "allowuser", "allowgroup",
+       "denyuser", "denygroup",
+       "checkpass", "setpass",
+       NULL
+    };
+    enum {
+        cmdAddUser, cmdAddGroup,
+        cmdListUsers, cmdListGroups,
+        cmdAllowUser, cmdAllowGroup,
+        cmdDenyUser, cmdDenyGroup,
+        cmdCheckPass, cmdSetPass
+    };
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "option ?args ...?");
+        return TCL_ERROR;
     }
-    Ns_RWLockWrLock(&servPtr->lock);
-    if (STREQ(argv[1], "adduser")) {
-	status = AddUserCmd(servPtr, interp, argc, (char**)argv);    
-    } else if (STREQ(argv[1], "addgroup")) {
-	status = AddGroupCmd(servPtr, interp, argc, (char**)argv);
-    } else if (STREQ(argv[1], "allowuser")) {
-	status = AllowDenyCmd(servPtr, interp, argc, (char**)argv, 1, 1);
-    } else if (STREQ(argv[1], "denyuser")) {
-	status = AllowDenyCmd(servPtr, interp, argc, (char**)argv, 0, 1);
-    } else if (STREQ(argv[1], "allowgroup")) {
-	status = AllowDenyCmd(servPtr, interp, argc, (char**)argv, 1, 0);
-    } else if (STREQ(argv[1], "denygroup")) {
-	status = AllowDenyCmd(servPtr, interp, argc, (char**)argv, 0, 0);
-    } else {
-	Tcl_AppendResult(interp, "unknown command \"",
-			 argv[1],
-			 "\": should be adduser, addgroup, ",
-			 "allowuser, denyuser, "
-			 "allowgroup, or denygroup", NULL);
-	status = TCL_ERROR;
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &opt) != TCL_OK) {
+        return TCL_ERROR;
     }
-    Ns_RWLockUnlock(&servPtr->lock);
+
+    switch (opt) {
+    case cmdAddUser:
+	status = AddUserObjCmd(servPtr, interp, objc, objv);
+        break;
+    case cmdAddGroup:
+	status = AddGroupObjCmd(servPtr, interp, objc, objv);
+        break;
+    case cmdListUsers:
+	status = ListUsersObjCmd(servPtr, interp, objc, objv);
+        break;
+    case cmdListGroups:
+	status = ListGroupsObjCmd(servPtr, interp, objc, objv);
+        break;
+    case cmdAllowUser:
+	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 1, 1);
+        break;
+    case cmdDenyUser:
+	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 0, 1);
+        break;
+    case cmdAllowGroup:
+	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 1, 0);
+        break;
+    case cmdDenyGroup:
+	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 0, 0);
+        break;
+    case cmdCheckPass:
+        status = CheckPassObjCmd(servPtr, interp, objc, objv);
+        break;
+    case cmdSetPass:
+        status = SetPassObjCmd(servPtr, interp, objc, objv);
+        break;
+    }
     return status;
 }
 
@@ -241,16 +273,16 @@ PermCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
  *
  * AuthProc --
  *
- *	Authorize a URL--this callback is called when a new 
- *	connection is recieved 
+ *	Authorize a URL--this callback is called when a new
+ *	connection is recieved
  *
  * Results:
  *	NS_OK: accept;
- *	NS_FORBIDDEN or NS_UNAUTHORIZED: go away; 
- *	NS_ERROR: oops 
+ *	NS_FORBIDDEN or NS_UNAUTHORIZED: go away;
+ *	NS_ERROR: oops
  *
  * Side effects:
- *	None 
+ *	None
  *
  *----------------------------------------------------------------------
  */
@@ -295,7 +327,7 @@ AuthProc(char *server, char *method, char *url, char *user, char *pass,
     /*
      * Verify user password (if any).
      */
-     
+
     hPtr = Tcl_FindHashEntry(&servPtr->users, user);
     if (hPtr == NULL) {
     	goto done;
@@ -338,7 +370,7 @@ deny:
      * Loop over all groups in this perm record, and then
      * see if the user is in any of those groups.
      */
-    
+
     hPtr = Tcl_FirstHashEntry(&permPtr->denygroup, &search);
     while (hPtr != NULL) {
 	group = Tcl_GetHashKey(&permPtr->denygroup, hPtr);
@@ -357,7 +389,7 @@ deny:
     /*
      * Check the allow lists, starting with users
      */
-    
+
     if (Tcl_FindHashEntry(&permPtr->allowuser, user) != NULL) {
 	goto done;
     }
@@ -366,7 +398,7 @@ deny:
      * Loop over all groups in this perm record, and then
      * see if the user is in any of those groups.
      */
-    
+
     hPtr = Tcl_FirstHashEntry(&permPtr->allowgroup, &search);
     while (hPtr != NULL) {
 	group = Tcl_GetHashKey(&permPtr->allowgroup, hPtr);
@@ -396,13 +428,13 @@ done:
  *
  * ValidateUserAddr --
  *
- *	Validate that the peer address is valid for this user 
+ *	Validate that the peer address is valid for this user
  *
  * Results:
- *	NS_TRUE if allowed, NS_FALSE if not 
+ *	NS_TRUE if allowed, NS_FALSE if not
  *
  * Side effects:
- *	None 
+ *	None
  *
  *----------------------------------------------------------------------
  */
@@ -418,7 +450,7 @@ ValidateUserAddr(User *userPtr, char *peer)
     if (peer == NULL) {
 	return NS_TRUE;
     }
-    
+
     peerip.s_addr = inet_addr(peer);
     if (peerip.s_addr == INADDR_NONE) {
 	return NS_FALSE;
@@ -428,12 +460,12 @@ ValidateUserAddr(User *userPtr, char *peer)
      * Loop over each netmask, AND the peer address with it,
      * then see if that address is in the list.
      */
-     
+
     hPtr = Tcl_FirstHashEntry(&userPtr->masks, &search);
     while (hPtr != NULL) {
 	mask.s_addr = (unsigned long) Tcl_GetHashKey(&userPtr->masks, hPtr);
 	ip.s_addr = peerip.s_addr & mask.s_addr;
-	
+
 	/*
 	 * There is a potential match. Now make sure it works with the
 	 * right address's mask.
@@ -479,7 +511,7 @@ ValidateUserAddr(User *userPtr, char *peer)
 	     * Break out of the loop as soon as a match is found or
 	     * all possibilities are exhausted.
 	     */
-	    
+
 	    while (start != NULL && start[0] != '\0') {
 		char *last;
 
@@ -505,7 +537,7 @@ ValidateUserAddr(User *userPtr, char *peer)
 	    }
 	}
     }
-    
+
     return retval;
 }
 
@@ -515,20 +547,21 @@ ValidateUserAddr(User *userPtr, char *peer)
  *
  * AddUserCmd --
  *
- *	Implements the Tcl command ns_perm adduser 
+ *	Implements the Tcl command ns_perm adduser
  *
  * Results:
- *	Tcl resut 
+ *	Tcl resut
  *
  * Side effects:
- *	A user may be added to the global user hash table 
+ *	A user may be added to the global user hash table
  *
  *----------------------------------------------------------------------
  */
 
 static int
-AddUserCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv)
+AddUserObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
+    Server *servPtr = data;
     User *userPtr;
     Group *groupPtr;
     Tcl_HashSearch search;
@@ -537,29 +570,29 @@ AddUserCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv)
     char    *name, *slash, *net;
     struct in_addr ip, mask;
 
-    if (argc < 5 || argc == 6) {
+    if (objc < 5 || objc == 6) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
-			 argv[0], " ", argv[1],
+			 objv[0], " ", objv[1],
 			 " name encpass userfield ?-allow|-deny host ...?\"",
 			 NULL);
 	return TCL_ERROR;
     }
 
     allow = 0;
-    if (argc > 6) {
-	if (STREQ(argv[5], "-allow")) {
+    if (objc > 6) {
+	if (STREQ(Tcl_GetString(objv[5]), "-allow")) {
 	    allow = 1;
-	} else if (!STREQ(argv[5], "-deny")) {
-	    Tcl_AppendResult(interp, "invalid switch \"", argv[5], "\". ",
+	} else if (!STREQ(Tcl_GetString(objv[5]), "-deny")) {
+	    Tcl_AppendResult(interp, "invalid switch \"", Tcl_GetString(objv[5]), "\". ",
 			     "Should be -allow or -deny",
 			     NULL);
     	    return TCL_ERROR;
 	}
     }
 
-    name = argv[2];
+    name = Tcl_GetString(objv[2]);
     userPtr = ns_malloc(sizeof(User));
-    strncpy(userPtr->pass, argv[3], sizeof(userPtr->pass) - 1);
+    strncpy(userPtr->pass, Tcl_GetString(objv[3]), sizeof(userPtr->pass) - 1);
     Tcl_InitHashTable(&userPtr->nets, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(&userPtr->masks, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(&userPtr->hosts, TCL_STRING_KEYS);
@@ -572,9 +605,9 @@ AddUserCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv)
      * 192.168.2.3/255.255.255.0, foo.bar.com, or .bar.com
      */
 
-    for (i = 6; i < argc; ++i) {
+    for (i = 6; i < objc; ++i) {
 	mask.s_addr = INADDR_NONE;
-	net = argv[i];
+	net = Tcl_GetString(objv[i]);
 	slash = strchr(net, '/');
 	if (slash == NULL) {
 	    hPtr = Tcl_CreateHashEntry(&userPtr->hosts, net, &new);
@@ -616,7 +649,7 @@ AddUserCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv)
 
 	    (void) Tcl_CreateHashEntry(&userPtr->masks,
 					(char *) mask.s_addr, &new);
-	    
+
 	    hPtr = Tcl_CreateHashEntry(&userPtr->nets, (char *) ip.s_addr, &new);
 	    Tcl_SetHashValue(hPtr, mask.s_addr);
 	}
@@ -629,14 +662,19 @@ AddUserCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv)
     /*
      * Add the user.
      */
-     
+
+    Ns_RWLockWrLock(&servPtr->lock);
     hPtr = Tcl_CreateHashEntry(&servPtr->users, name, &new);
     if (!new) {
     	Tcl_AppendResult(interp, "duplicate user: ", name, NULL);
-	goto fail;
+	goto fail0;
     }
     Tcl_SetHashValue(hPtr, userPtr);
+    Ns_RWLockUnlock(&servPtr->lock);
     return TCL_OK;
+
+fail0:
+    Ns_RWLockUnlock(&servPtr->lock);
 
 fail:
     hPtr = Tcl_FirstHashEntry(&userPtr->groups, &search);
@@ -656,26 +694,62 @@ fail:
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ListUsersCmd --
+ *
+ *	Implements the Tcl command ns_perm listusers
+ *
+ * Results:
+ *	Tcl resut
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ListUsersObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Server *servPtr = data;
+    User *userPtr;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    Ns_RWLockRdLock(&servPtr->lock);
+    hPtr = Tcl_FirstHashEntry(&servPtr->users, &search);
+    while (hPtr != NULL) {
+	userPtr = Tcl_GetHashValue(hPtr);
+        Tcl_AppendResult(interp, Tcl_GetHashKey(&servPtr->users, hPtr), " {", userPtr->pass, "} ", NULL);
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+    Ns_RWLockUnlock(&servPtr->lock);
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------
  *
  * AddGroupCmd --
  *
- *	Add a group to the global groups list 
+ *	Add a group to the global groups list
  *
  * Results:
- *	Standard tcl 
+ *	Standard tcl
  *
  * Side effects:
- *	A group will be created 
+ *	A group will be created
  *
  *----------------------------------------------------------------------
  */
 
 static int
-AddGroupCmd(Server *servPtr, Tcl_Interp *interp, int argc, char *argv[])
+AddGroupObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
+    Server *servPtr = data;
     char *name, *user;
     User *userPtr;
     Group *groupPtr;
@@ -683,9 +757,9 @@ AddGroupCmd(Server *servPtr, Tcl_Interp *interp, int argc, char *argv[])
     Tcl_HashEntry *hPtr;
     int   new, param;
 
-    if (argc < 4) {
+    if (objc < 4) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
-			 argv[0], " ", argv[1], " name user ?user ...?",
+			 Tcl_GetString(objv[0]), " ", Tcl_GetString(objv[1]), " name user ?user ...?",
 			 NULL);
 	return TCL_ERROR;
     }
@@ -694,7 +768,7 @@ AddGroupCmd(Server *servPtr, Tcl_Interp *interp, int argc, char *argv[])
      * Create & populate the structure for a new group.
      */
 
-    name = argv[2];    
+    name = Tcl_GetString(objv[2]);
     groupPtr = ns_malloc(sizeof(Group));
     Tcl_InitHashTable(&groupPtr->users, TCL_STRING_KEYS);
 
@@ -703,9 +777,9 @@ AddGroupCmd(Server *servPtr, Tcl_Interp *interp, int argc, char *argv[])
      * it's ok, and add him. Also put the group into the user's list
      * of groups he's in.
      */
-     
-    for (param = 3; param < argc; param++) {
-    	user = argv[param];
+
+    for (param = 3; param < objc; param++) {
+    	user = Tcl_GetString(objv[param]);
     	hPtr = Tcl_FindHashEntry(&servPtr->users, user);
 	if (hPtr == NULL) {
 	    Tcl_AppendResult(interp, "no such user: ", user, NULL);
@@ -729,7 +803,7 @@ dupuser:
 	/*
 	 * Add the group to the user's list of groups
 	 */
-	
+
 	hPtr = Tcl_CreateHashEntry(&userPtr->groups, name, &new);
 	if (!new) {
 	    goto dupuser;
@@ -740,14 +814,19 @@ dupuser:
     /*
      * Add the group to the global list of groups
      */
-    
+
+    Ns_RWLockWrLock(&servPtr->lock);
     hPtr = Tcl_CreateHashEntry(&servPtr->groups, name, &new);
     if (!new) {
 	Tcl_AppendResult(interp, "duplicate group: ", name, NULL);
-	goto fail;
+	goto fail0;
     }
     Tcl_SetHashValue(hPtr, groupPtr);
+    Ns_RWLockUnlock(&servPtr->lock);
     return TCL_OK;
+
+fail0:
+    Ns_RWLockUnlock(&servPtr->lock);
 
 fail:
     hPtr = Tcl_FirstHashEntry(&groupPtr->users, &search);
@@ -764,63 +843,112 @@ fail:
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ListGroupsCmd --
+ *
+ *	Implements the Tcl command ns_perm listgroups
+ *
+ * Results:
+ *	Tcl resut
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ListGroupsObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Server *servPtr = data;
+    Group *groupPtr;
+    Tcl_HashSearch search, usearch;
+    Tcl_HashEntry *hPtr, *uhPtr;
+
+    Ns_RWLockRdLock(&servPtr->lock);
+    hPtr = Tcl_FirstHashEntry(&servPtr->groups, &search);
+    while (hPtr != NULL) {
+	groupPtr = Tcl_GetHashValue(hPtr);
+        Tcl_AppendResult(interp, Tcl_GetHashKey(&servPtr->groups, hPtr), " { ", NULL);
+
+        /*
+         * All users for this group
+         */
+
+        uhPtr = Tcl_FirstHashEntry(&groupPtr->users, &usearch);
+        while (uhPtr != NULL) {
+            Tcl_AppendResult(interp, Tcl_GetHashKey(&groupPtr->users, uhPtr), " ", NULL);
+	    uhPtr = Tcl_NextHashEntry(&usearch);
+        }
+        Tcl_AppendResult(interp, "} ", NULL);
+	hPtr = Tcl_NextHashEntry(&search);
+    }
+    Ns_RWLockUnlock(&servPtr->lock);
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------
  *
  * GroupCmd --
  *
- *	Add a group to allow or deny access. 
+ *	Add a group to allow or deny access.
  *
  * Results:
- *	Std tcl 
+ *	Std tcl
  *
  * Side effects:
- *	A perm record may be created, a group will be added to its 
- *	deny list 
+ *	A perm record may be created, a group will be added to its
+ *	deny list
  *
  *----------------------------------------------------------------------
  */
 
 static int
-AllowDenyCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv, int allow, int user)
+AllowDenyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int allow, int user)
 {
+    Server *servPtr = data;
     Perm *permPtr;
     Ns_DString base;
     char *method, *url, *key;
     int flags, new;
 
-    if (argc != 5 && argc != 6) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+    if (objc != 5 && objc != 6) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"", Tcl_GetString(objv[0]),
 	    " cmd ?-noinherit? method url key", NULL);
 	return TCL_ERROR;
     }
-    if (argc != 6) {
+    if (objc != 6) {
 	flags = 0;
     } else {
-	if (!STREQ(argv[2], "-noinherit")) {
-	    Tcl_AppendResult(interp, "invalid option \"", argv[2],
+	if (!STREQ(Tcl_GetString(objv[2]), "-noinherit")) {
+	    Tcl_AppendResult(interp, "invalid option \"", Tcl_GetString(objv[2]),
 	    	"\": should be -noinherit", NULL);
 	    return TCL_ERROR;
 	}
 	flags = NS_OP_NOINHERIT;
     }
-    key = argv[argc-1];    
-    url = argv[argc-2];
-    method = argv[argc-3];
+    key = Tcl_GetString(objv[objc-1]);
+    url = Tcl_GetString(objv[objc-2]);
+    method = Tcl_GetString(objv[objc-3]);
 
     /*
      * Construct the base url.
      */
-     
+
     Ns_DStringInit(&base);
     Ns_NormalizePath(&base, url);
-    
+
     /*
      * Locate and verify the exact record.
      */
-     
+
+    Ns_RWLockWrLock(&servPtr->lock);
     permPtr = Ns_UrlSpecificGet(servPtr->server, method, url, uskey);
+
     if (permPtr != NULL && !STREQ(base.string, permPtr->baseurl)) {
     	permPtr = NULL;
     }
@@ -847,6 +975,118 @@ AllowDenyCmd(Server *servPtr, Tcl_Interp *interp, int argc, char **argv, int all
             (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &new);
 	}
     }
+    Ns_RWLockUnlock(&servPtr->lock);
     Ns_DStringFree(&base);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckPassCmd --
+ *
+ *	Checks supplied user password against internak database
+ *
+ * Results:
+ *	1 if verified, 0 if not valid
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CheckPassObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Server *servPtr = data;
+    int rc = TCL_ERROR;
+    User *userPtr;
+    char *user, *pass;
+    Tcl_HashEntry *hPtr;
+    char buf[NS_ENCRYPT_BUFSIZE];
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "user pass");
+	return TCL_ERROR;
+    }
+    user = Tcl_GetString(objv[2]);
+    pass = Tcl_GetString(objv[3]);
+
+    Ns_RWLockRdLock(&servPtr->lock);
+    hPtr = Tcl_FindHashEntry(&servPtr->users, user);
+    if (hPtr == NULL) {
+        Tcl_AppendResult(interp, "user not found", NULL);
+        goto done;
+    }
+    userPtr = Tcl_GetHashValue(hPtr);
+    if (userPtr->pass[0] != 0) {
+    	if (pass[0] == 0) {
+            Tcl_AppendResult(interp, "empty password given", NULL);
+	    goto done;
+	}
+	Ns_Encrypt(pass, userPtr->pass, buf);
+	if (!STREQ(userPtr->pass, buf)) {
+            Tcl_AppendResult(interp, "incorrect password", NULL);
+    	    goto done;
+	}
+    }
+    rc = TCL_OK;
+
+done:
+    Ns_RWLockUnlock(&servPtr->lock);
+    return rc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetPassCmd --
+ *
+ *	Assigns new password to the user
+ *
+ * Results:
+ *	1 if assigned, 0 if not found
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetPassObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Server *servPtr = data;
+    int rc = 0;
+    User *userPtr;
+    Tcl_HashEntry *hPtr;
+    char *user, *pass, *salt = NULL;
+    char buf[NS_ENCRYPT_BUFSIZE];
+
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "user pass ?salt?");
+	return TCL_ERROR;
+    }
+    user = Tcl_GetString(objv[2]);
+    pass = Tcl_GetString(objv[3]);
+    salt = objc > 4 ? Tcl_GetString(objv[4]) : NULL;
+
+    Ns_RWLockRdLock(&servPtr->lock);
+    hPtr = Tcl_FindHashEntry(&servPtr->users, user);
+    if (hPtr == NULL) {
+    	goto done;
+    }
+    userPtr = Tcl_GetHashValue(hPtr);
+    if (salt != NULL) {
+        Ns_Encrypt(pass, salt, buf);
+        pass = buf;
+    }
+    snprintf(userPtr->pass, sizeof(userPtr->pass), "%s", pass);
+    rc = 1;
+
+done:
+    Ns_RWLockUnlock(&servPtr->lock);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
     return TCL_OK;
 }

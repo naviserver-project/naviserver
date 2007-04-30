@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -37,7 +37,7 @@
 #
 
 proc init_nsperm { } {
-    set dir [file join [ns_info home] servers [ns_info server] modules nsperm]
+    set dir [file join [ns_info home] modules nsperm]
 
     #
     # Parse hosts.allow
@@ -117,7 +117,7 @@ proc init_nsperm { } {
 			    foreach a $_ns_allow($user) {
 				append cmd " [list $a]"
 			    }
-			} 
+			}
 			if {[info exists _ns_deny($user)]} {
 			    append cmd " -deny "
 			    foreach a $_ns_deny($user) {
@@ -202,7 +202,8 @@ proc init_nsperm { } {
 #
 
 proc ns_permpasswd { targetuser oldpass newpass } {
-    set dir [file join [ns_info home] servers [ns_info server] modules nsperm]
+
+    set dir [file join [ns_info home] modules nsperm]
     set filename [file join $dir passwd]
     set file [open $filename r]
     set oldfile ""
@@ -216,7 +217,7 @@ proc ns_permpasswd { targetuser oldpass newpass } {
 	    return "incorrect old password"
 	}
     }
-    
+
     while {![eof $file]} {
 	set line [gets $file]
 	set aline $line

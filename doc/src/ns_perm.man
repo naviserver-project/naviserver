@@ -8,66 +8,75 @@
 ns_perm adduser adds the user with the specified name and the encrypted password (encpass)
 and the specified user text (userfield) into the users database.
 
-If -allow and hostnames are specified, the user will be allowed on the specified hostnames.
-If -deny and hostnames are specified, the user will be denied on the specified hostnames. 
-The hostname must be specified as ipaddress/netmask or dnshostname. For example: 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_perm] [arg adduser] [arg name] [arg encpass] [arg userfield] [opt [arg {-allow|-deny host}]]]
+
+[arg -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
+
+[arg -deny] and hostnames are specified, the user will be denied on the specified hostnames.
+The hostname must be specified as ipaddress/netmask or dnshostname.
+[example_begin]
 128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
+[example_end]
+
+[call [cmd ns_perm] [arg addgroup] [arg name] [arg user] [opt [arg user...]]]
 
 ns_perm addgroup creates a new group with the specified name that includes the users listed after the name.
+
+[call [cmd ns_perm] [arg allowuser] [opt -noinherit]] [arg method] [arg url] [arg user]]]
 
 ns_perm allowuser allows the specified user access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
+[call [cmd ns_perm] [arg denyuser] [opt [arg -noinherit]] [arg method] [arg url] [arg user]]
+
 ns_perm denyuser denies the specified user access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
 URL are denied as well.
 
+[call [cmd ns_perm] [arg allowgroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group]]
+
 ns_perm allowgroup allows the specified group access to the specified method and URL combination.
-If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that 
+If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
+[call [cmd ns_perm] [arg denygroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group]]
+
 ns_perm denygroup denies the specified group access to the specified method and URL combination.
-If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that 
+If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
 URL are denied as well.
+
+[call [cmd ns_perm] [arg checkpass] [arg user] [arg passwd]]
 
 ns_perm checkpass checks that the specified plain-text password is correct for the specified user.
 A Tcl error is thrown if it does not match.
 
+[call [cmd ns_perm] [arg setpass] [arg user] [arg encpass]]
+
 ns_perm setpass updates the specified user's password to the encrypted password encpass. The password
 should be encrypted using ns_encrypt.
 
-[section {COMMANDS}]
+[call [cmd ns_perm] [arg listusers]]
 
-[list_begin definitions]
+Produce Tcl list of all current users in the format username password ....
 
-[call [cmd COMMAND_NAME] [arg 1]]
+[call [cmd ns_perm] [arg listgroups]]
 
-ns_perm adduser name encpass userfield ?-allow | -deny host ...?
-
-ns_perm addgroup name user ?user ...?
-
-ns_perm allowuser ?-noinherit? method url user
-
-ns_perm denyuser ?-noinherit? method url user
-
-ns_perm allowgroup ?-noinherit? method url group
-
-ns_perm denygroup ?-noinherit? method url group
-
-ns_perm checkpass user passwd
-
-ns_perm setpass user encpass 
+Produce Tcl list with all registered groups in the format: groupname {user ...} ...
 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-[example_end]
+ns_perm adduser test [lb]ns_crypt testpass ""[rb] TestUser
 
-Note: To use this function after server startup, the SkipLocks parameter
-(see Naviserver Administrator's Guide) must be set to On.
+ns_perm allowuser GET /Documents test
+[example_end]
 
 [see_also nsd]
 [keywords NaviServer]
