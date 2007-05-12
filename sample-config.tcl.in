@@ -180,7 +180,11 @@ ns_param   	.gb_adp         	"gb2312"
 #
 ns_section 	"ns/threads"
 
-# Per-thread stack size.
+# Global thread stacksize configuration deprecated. Server now uses OS
+# default. Only explicitly set the stacksize to some smaller than default
+# value if you need to save memory because your server has a lot of
+# threads, and you know for certain this won't cause problems with deeply
+# nested Tcl or ADP scripts.
 ns_param   	stacksize		[expr 128*1024]
 
 #
@@ -284,18 +288,6 @@ ns_param    	serverdir             ${serverdir}
 # html/adp pages are located
 ns_param    	pagedir               ${pageroot}
 
-# Enable cache for normal URLs. Optional, default is false.
-ns_param	cache			false
-
-# Size of fast path cache. Optional, default is 5120000.
-ns_param	cachemaxsize		5120000
-
-# Largest file size allowed in cache. Optional, default is cachemaxsize / 10.
-ns_param	cachemaxentry		512000
-
-# Use mmap() for cache. Optional, default is false.
-ns_param	mmap			false
-
 # Directory index/default page to look for.
 ns_param        directoryfile           "index.adp index.tcl index.html index.htm"
 
@@ -309,6 +301,26 @@ ns_param        directoryproc           _ns_dirlist
 # Name of ADP page to use to display directory listings. Optional. You can either
 # specify directoryadp or directoryproc - not both.
 #ns_param	directoryadp		""
+
+
+#
+# Global FastPath settings
+#
+
+ns_section	"ns/fastpath"
+
+# Enable cache for normal URLs. Optional, default is false.
+ns_param	cache			false
+
+# Size of fast path cache. Optional, default is 5120000.
+ns_param	cachemaxsize		5120000
+
+# Largest file size allowed in cache. Optional, default is cachemaxsize / 10.
+ns_param	cachemaxentry		512000
+
+# Use mmap() for cache. Optional, default is false.
+ns_param	mmap			false
+
 
 #
 # Socket driver module (HTTP)  -- nssock
@@ -345,6 +357,9 @@ ns_param  	spoolerthreads 		0
 
 # Number of writer threads
 ns_param  	writerthreads  		0
+
+# Read from file in bufsize chunks.
+ns_param 	writerbufsize   	8192   
 
 # Min return file size when to use writer
 ns_param  	writersize     		1048576
@@ -572,4 +587,28 @@ ns_param    recvtimeout     5000    ; # Timeout (ms) to receive results
 ns_param    waittimeout     1000    ; # Timeout (ms) to wait for slaveis to die
 ns_param    idletimeout     300000  ; # Timeout (ms) for a slave to live idle
 ns_param    maxslaves       8       ; # Max number of allowed slaves alive
+
+#
+# Limits support
+#
+# Connection limits can be bundled together into a
+# named set of limits and then applied to a subset of the URL
+# hierarchy. The max number of connection threads running and waiting to
+# run a URL, the max upload file size, and the max time a connection
+# should wait to run are all configurable.
+#
+
+ns_section "ns/limits"
+ns_param default         "Default Limits" ;# Defines a limit.
+   
+ns_section "ns/limit/default"
+ns_param maxrun          100       ;# Conn threads running for limit.
+ns_param maxwait         100       ;# Conn threads waiting for limit.
+ns_param maxupload       102400000 ;# Max size of file upload in bytes.
+ns_param timeout         60        ;# Total seconds to wait for resources.
+     
+ns_section "ns/server/server1/limits"
+ns_param default         "GET  /*" ;# Map default limit to URL.
+ns_param default         "POST /*"
+ns_param default         "HEAD /*"
 

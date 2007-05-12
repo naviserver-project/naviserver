@@ -3,6 +3,8 @@
         nsd/adpparse.c:
         nsd/tclhttp.c: Silence compiler warnings
 
+	sample-config.tcl.in: Updated with recent changes
+
 2007-04-30  Vlad Seryakov  <seryakov@users.sf.net>
 
         nsperm/nsperm.c:
