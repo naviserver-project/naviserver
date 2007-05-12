@@ -36,8 +36,9 @@ include include/Makefile.global
 dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsproxy
 
 distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
-	Makefile install-sh missing README ChangeLog NEWS \
-        sample-config.tcl.in license.terms naviserver.rdf
+	Makefile autogen.sh install-sh missing aclocal.m4 configure.in \
+	README ChangeLog NEWS sample-config.tcl.in simple-config.tcl \
+	nsd-config.tcl index.adp license.terms naviserver.rdf
 
 all:
 	@for i in $(dirs); do \

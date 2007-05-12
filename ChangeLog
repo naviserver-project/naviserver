@@ -2,8 +2,10 @@
 
         nsd/adpparse.c:
         nsd/tclhttp.c: Silence compiler warnings
-
 	sample-config.tcl.in: Updated with recent changes
+	Makefile: made make dist to include all necessary file. Also
+	add autogen.sh as well for anyone wh is willing to rebuild
+	configure script on their systems
 
 2007-04-30  Vlad Seryakov  <seryakov@users.sf.net>
 
