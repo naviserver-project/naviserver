@@ -214,9 +214,9 @@ void
 NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char* file)
 {
     int             level, stream, streamdone;
-    Tag            *tagPtr;
-    char           *script, *s, *e, *n;
-    char           *a, *as, *ae, *text;
+    Tag            *tagPtr = NULL;
+    char           *script = "", *s, *e, *n;
+    char           *a, *as = "", *ae = "", *text;
     Tcl_DString     tag;
     Tcl_HashEntry  *hPtr;
     enum {
