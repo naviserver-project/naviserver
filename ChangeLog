@@ -1,3 +1,8 @@
+2007-05-13  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* doc/src/nsv.man: Combined all nsv_ commands into one 
+	file
+
 2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* configure.in:
