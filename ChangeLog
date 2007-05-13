@@ -1,3 +1,13 @@
+2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* configure.in:
+	* m4/cmmsg.m4:
+	* m4/dns.m4:
+	* m4/zlib.m4:
+	* include/Makefile.global.in: Remove some depreciated autoconf macros
+	and move more of the dns checks out of configure.in and into
+	m4/dns.m4. Make sure only libnsd gets linked against libz and libcrypt.
+
 2007-05-12  Vlad Seryakov  <seryakov@users.sf.net>
 
         nsd/adpparse.c:

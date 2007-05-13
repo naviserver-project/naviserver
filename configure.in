@@ -36,12 +36,17 @@
 #    NaviServer configure script.
 #
 
-AC_INIT(NaviServer, 4.99.2, naviserver-devel@lists.sourceforge.net)
-AC_CONFIG_SRCDIR(include/ns.h)
-AC_CONFIG_HEADER(include/config.h)
-AC_PREREQ(2.50)
-AC_REVISION($Revision$)
-AM_INIT_AUTOMAKE([-Wall -Wno-implicit-int foreign])
+AC_PREREQ([2.59])
+
+AC_INIT([NaviServer], [4.99.2], [naviserver-devel@lists.sourceforge.net])
+AC_CONFIG_MACRO_DIR([m4])
+
+AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
+AC_CONFIG_SRCDIR([include/ns.h])
+AC_CONFIG_HEADER([include/config.h])
+
+AC_REVISION([$Revision$])
+
 
 
 #
@@ -50,19 +55,14 @@ AM_INIT_AUTOMAKE([-Wall -Wno-implicit-int foreign])
 # Don't forget to update the naviserver.rdf DOAP before making a release.
 #
 
-NS_MAJOR_VERSION=4
-NS_MINOR_VERSION=99
-NS_RELEASE_SERIAL=2
-NS_VERSION=\"4.99\"
-NS_PATCH_LEVEL=\"4.99.2\"
-NS_RELEASE_LEVEL=NS_ALPHA_RELEASE  # NS_ALPHA_RELEASE, NS_BETA_RELEASE, NS_FINAL_RELEASE
+AC_SUBST([NS_MAJOR_VERSION],  4)
+AC_SUBST([NS_MINOR_VERSION],  99)
+AC_SUBST([NS_RELEASE_SERIAL], 2)
+AC_SUBST([NS_RELEASE_LEVEL],  [NS_ALPHA_RELEASE]) # ALPHA/BETA/FINAL
 
-AC_SUBST(NS_MAJOR_VERSION)
-AC_SUBST(NS_MINOR_VERSION)
-AC_SUBST(NS_RELEASE_SERIAL)
-AC_SUBST(NS_VERSION)
-AC_SUBST(NS_PATCH_LEVEL)
-AC_SUBST(NS_RELEASE_LEVEL)
+AC_SUBST([NS_VERSION],     [\"${NS_MAJOR_VERSION}.${NS_MINOR_VERSION}\"])
+AC_SUBST([NS_PATCH_LEVEL], [\"$PACKAGE_VERSION\"])
+
 
 
 #
@@ -89,11 +89,11 @@ TEA_TIME_HANDLER
 
 TCL_LIB_PATH=`dirname $TCL_STUB_LIB_PATH`
 LDFLAGS="$LDFLAGS -L$TCL_LIB_PATH"
-AC_SUBST(TCL_LIB_PATH)
-TCL_LIB="tcl$TCL_VERSION$TCL_DBGX"
-AC_SUBST(TCL_LIB)
+AC_SUBST([TCL_LIB_PATH])
+AC_SUBST([TCL_LIB], [tcl$TCL_VERSION$TCL_DBGX])
+AC_SUBST([TCL_EXEC_PREFIX])
 
-AC_SUBST(TCL_EXEC_PREFIX)
+AC_SUBST([DISTCHECK_CONFIGURE_FLAGS], [--with-tcl="$TCL_BIN_DIR"])
 
 
 #
@@ -166,16 +166,30 @@ AC_CHECK_TYPES(u_int32_t)
 AC_CHECK_TYPES(u_int16_t)
 AC_CHECK_TYPES(u_int8_t)
 AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop)
+
+
 AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD, 1, [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
 AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL, 1, [Define to 1 if the <dl.h> header should be used.]),)
+
+
+AX_HAVE_CMMSG
+AX_HAVE_MTSAFE_DNS
+AX_CHECK_ZLIB
+
+
+AC_ARG_ENABLE(tclvfs, 
+   AC_HELP_STRING([--disable-tclvfs], [Disable Tcl VFS]), , AC_DEFINE(USE_TCLVFS,1,[use TCL VFS]))
+
+
 AC_MSG_CHECKING([need for dup high])
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
   #include <stdio.h>
   int main(int argc, char **argv) {
     return (sizeof(stdout->_file) == 1) ? 0 : 1;
   }
-], AC_DEFINE(USE_DUPHIGH, 1, [need for dup high]) as_ok=yes, as_ok=no, as_ok=no)
+]])],[AC_DEFINE(USE_DUPHIGH, 1, need for dup high) as_ok=yes],[as_ok=no],[as_ok=no])
 AC_MSG_RESULT($as_ok)
+
 
 #
 # Tcl_GetMemoryInfo() is exported depending on a complex set of compilation
@@ -231,52 +245,6 @@ if test "$ac_cv_shared_libgcc" = "yes" ; then
   LIBS="-lgcc_s $LIBS"
 fi
 
-have_mtsafe_dns=no
-AC_CHECK_LIB(socket, getaddrinfo)
-AC_CHECK_LIB(socket, getnameinfo)
-AC_CHECK_FUNCS(getaddrinfo getnameinfo)
-if test "${ac_cv_func_getaddrinfo}" = "yes" \
-     -a "${ac_cv_func_getnameinfo}" = "yes" \
-     -a "`uname -s`" != "Darwin"; then
-  have_mtsafe_dns=yes
-fi
-if test "${have_mtsafe_dns}" != "yes" \
-     -a "`uname -s`" != "Darwin"; then
-  AC_HAVE_GETHOSTBYNAME_R
-  AC_HAVE_GETHOSTBYADDR_R
-  if test "${ac_cv_func_gethostbyname_r}" = "yes" \
-       -a "${ac_cv_func_gethostbyaddr_r}" = "yes" ; then
-    have_mtsafe_dns=yes
-  fi
-fi
-if test "${have_mtsafe_dns}" != "yes" ; then
-  AC_MSG_WARN([DNS queries use MT-unsafe calls which could result in server instability])
-else
-  AC_DEFINE(HAVE_MTSAFE_DNS, 1, [Define to 1 if DNS calls are MT-safe])
-fi
-
-AC_MSG_CHECKING([whether to include zlib compression support])
-AC_ARG_WITH(zlib,
-  AC_HELP_STRING([--with-zlib=[DIR]],[build and link with Zlib --with-zlib]),
-  [ 
-    ac_zlib=$withval
-    if test "${ac_zlib}" != "no" ; then
-      ac_zlib=yes
-      if test -d "$withval" ; then
-        CPPFLAGS="$CPPFLAGS -I$withval/include"
-        LDFLAGS="$LDFLAGS -L$withval/lib"
-      fi
-    fi
-  ], [ac_zlib=yes])
-AC_MSG_RESULT($ac_zlib)
-if test "${ac_zlib}" = "yes" ; then
-  AC_CHECK_HEADERS(zlib.h)
-  AC_CHECK_LIB(z, compress2)
-  if test "${ac_cv_header_zlib_h}" != "yes" -o "${ac_cv_lib_z_compress2}" != "yes" ; then
-    AC_MSG_WARN([Zlib compression support requested but not available])
-  fi
-fi
-
 
 #
 # Darwin version of getnameinfo will not work correctly
@@ -290,22 +258,25 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len],,,[
 #include <sys/types.h>
 #include <netinet/in.h>])
 
-AC_HAVE_CMMSG
 
-AC_ARG_ENABLE(tclvfs, 
-   AC_HELP_STRING([--disable-tclvfs], [Disable Tcl VFS]), , AC_DEFINE(USE_TCLVFS,1,[use TCL VFS]))
 
-# Use native crypt if possible
-case "`uname`" in
-  Linux)
-     LIBS="-lcrypt $LIBS"
-  ;;
-esac
+AC_CHECK_LIB([crypt], [crypt],
+  [
+    AC_DEFINE(HAVE_CRYPT, [],
+              [Define to 1 if the native crypt library should be used])
+    CRYPT_LIBS="-lcrypt"
+  ],
+  CRYPT_LIBS=""
+)
+AC_SUBST(CRYPT_LIBS)
 
-AC_OUTPUT(
+
+
+AC_CONFIG_FILES([
 include/nsversion.h
 include/Makefile.global
 include/Makefile.module
 sample-config.tcl
 doc/src/version_include
-)
+])
+AC_OUTPUT

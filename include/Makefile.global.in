@@ -84,6 +84,10 @@ ifndef NSBUILD
 else
     LDFLAGS += -L../nsthread -L../nsd -L../nsdb
     INCDIR   = ../include
+	ifeq (nsd,$(LIB))
+		CFLAGS += @ZLIB_INCLUDES@
+		LDFLAGS += @ZLIB_LIBS@ @CRYPT_LIBS@
+	endif
     ifneq (nsthread,$(LIB))
         NSLIBS += -lnsthread 
         ifneq (nsd,$(LIB)) 

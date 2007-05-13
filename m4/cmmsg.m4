@@ -31,21 +31,25 @@
 #
 
 dnl
-dnl Check to see if msghdr structure can support BSD4.4 style message passing.  
+dnl Check to see if msghdr structure can support BSD4.4 style message passing.
+dnl
 dnl Defines HAVE_CMMSG.
 dnl
 
-AC_DEFUN([AC_HAVE_CMMSG],
-[
-  AC_CACHE_CHECK([for cmmsg], ac_cmmsg,
-    [AC_TRY_COMPILE(
-      [ #include <sys/types.h>
-        #include <sys/socket.h> ],
-      [ struct msghdr msg; msg.msg_control = 0; ],
-      ac_cmmsg=yes,
-      ac_cmmsg=no)])
-  if test $ac_cmmsg = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_CMMSG, 1, [Define if you have support for BSD4.4 style msg passing.])
-  fi
-])
+AC_DEFUN([AX_HAVE_CMMSG],
+[AC_CACHE_CHECK([for cmmsg],
+                [ax_cv_have_cmmsg],
+                [_AX_HAVE_CMMSG([ax_cv_have_cmmsg=yes], [ax_cv_have_cmmsg=no])] )
+if test x$ax_cv_have_cmmsg = xyes; then
+  AC_DEFINE([HAVE_CMMSG], 1,
+              [Define if you have support for BSD4.4 style msg passing.])
+fi]) # AX_HAVE_CMMSG
 
+
+# _AX_HAVE_CMMSG(HAVE, DO-NOT-HAVE)
+#----------------------------------
+AC_DEFUN([_AX_HAVE_CMMSG],
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/socket.h>
+]], [[struct msghdr msg; msg.msg_control = 0;]])], [$1],[$2])])
