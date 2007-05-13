@@ -6,6 +6,11 @@
 2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
+	* nsd/nsmain.c:
+	* nsd/watchdog.c:
+	* nsd/Makefile: Move the watchdog code into it's own file.
+
+	* nsd/nsd.h:
 	* nsd/init.c:
 	* nsd/nsmain.c:
 	* nsd/fd.c: Backport changes from AOLserver to cleanup

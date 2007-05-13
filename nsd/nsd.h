@@ -1218,6 +1218,11 @@ extern void NsRunAtExitProcs(void);
 extern void NsConfigProgress(void);
 extern void NsUpdateProgress(Ns_Sock *sock);
 
+/*
+ * watchdog.c
+ */
+
+extern int NsForkWatchedProcess(void);
 
 /*
  * Utility functions.

@@ -37,27 +37,6 @@
 
 NS_RCSID("@(#) $Header$");
 
-#ifndef _WIN32
-# ifdef LOG_DEBUG
-#  undef LOG_DEBUG /* Because this is used by the syslog facility as well */
-# endif
-# include <syslog.h>
-# include <signal.h>
-# include <stdarg.h>
-# include <unistd.h>
-# define DEVNULL "/dev/null"
-#else
-# define DEVNULL "nul:"
-#endif
-
-/*
- * The following values define the restart behaviour for watchdog mode.
- */
-
-#define MAX_RESTART_SECONDS  64 /* Max time in sec to wait between restarts */
-#define MIN_WORK_SECONDS    128 /* After being up for # secs, reset timers */
-#define MAX_NUM_RESTARTS    256 /* Quit after somany unsuccessful restarts */
-#define WAKEUP_IN_SECONDS   600 /* Wakeup watchdog after somany seconds */
 
 /*
  * The following structure is used to pass command line args to
@@ -87,11 +66,6 @@ typedef enum _runState {
 
 static Ns_ThreadProc CmdThread;
 
-static int  StartWatchedServer(void);
-static void SysLog(int priority, char *fmt, ...);
-static void WatchdogSIGTERMHandler(int sig);
-static void WatchdogSIGALRMHandler(int sig);
-static int  WaitForServer();
 static char *MakePath(char *file);
 
 static void UsageError(char *msg, ...);
@@ -105,12 +79,6 @@ static char *SetCwd(char *homedir);
 extern void NsthreadsInit();
 extern void NsdInit();
 #endif
-
-/*
- * Local variables defined in this file.
- */
-
-static int watchdogExit = 0; /* Watchdog loop toggle */
 
 
 
@@ -411,12 +379,19 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode == 'w') {
-        if (StartWatchedServer() == 0) {
+        if (NsForkWatchedProcess() == 0) {
+            /*
+             * Watchdog exiting. We're done.
+             */
             return 0;
         }
-    } else {
-        nsconf.pid = getpid();
+
+        /*
+         * Continue as watched server process.
+         */
     }
+
+    nsconf.pid = getpid();
 
     /*
      * Block all signals for the duration of startup to ensure any new
@@ -1131,34 +1106,6 @@ SetCwd(char *path)
 }
 
 #ifndef _WIN32
-
-/*
- *----------------------------------------------------------------------
- *
- * SysLog --
- *
- *      Logs a message to the system log facility
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-SysLog(int priority, char *fmt, ...)
-{
-    va_list ap;
-
-    openlog("nsd", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_DAEMON);
-    va_start(ap, fmt);
-    vsyslog(priority, fmt, ap);
-    va_end(ap);
-    closelog();
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1191,203 +1138,6 @@ MakePath(char *file)
         }
     }
     return NULL;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * WatchdogSIGTERMHandler --
- *
- *      Handle SIGTERM and pass to server process.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Watchdog will not restart the server.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-WatchdogSIGTERMHandler(int sig)
-{
-    kill((pid_t) nsconf.pid, sig);
-    watchdogExit = 1;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * WatchdogSIGALRMHandler --
- *
- *      Handle SIGALRM to check existence of the nsconf.pid server
- *      process.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Zero-out the nsconf.pid element indicating absence of the
- *      server process.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-WatchdogSIGALRMHandler(int sig)
-{
-    if (nsconf.pid && kill((pid_t) nsconf.pid, 0) && errno == ESRCH) {
-        SysLog(LOG_WARNING, "watchdog: server %d terminated?", nsconf.pid);
-        nsconf.pid = 0;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * WaitForServer --
- *
- *      Waits for the server process to exit or die due to an uncaught
- *      signal.
- *
- * Results:
- *      NS_OK if the server exited cleanly, NS_ERROR otherwise.
- *
- * Side effects:
- *      May wait forever...
- *
- *----------------------------------------------------------------------
- */
-
-static int
-WaitForServer()
-{
-    int    ret, status;
-    pid_t  pid, srvpid = nsconf.pid;
-    char  *msg;
-
-    do {
-        pid = waitpid(nsconf.pid, &status, 0);
-    } while (pid == -1 && errno == EINTR && nsconf.pid);
-
-    if (nsconf.pid == 0) {
-        msg = "terminated";
-        ret = -1; /* Alarm handler found no server present? */
-    } else if (WIFEXITED(status)) {
-        ret = WEXITSTATUS(status);
-        msg = "exited";
-    } else if (WIFSIGNALED(status)) {
-        ret = WTERMSIG(status);
-        msg = "terminated";
-    } else {
-        msg = "killed";
-        ret = -1; /* Some waitpid (or other unknown) failure? */
-    }
-
-    nsconf.pid = 0;
-    SysLog(LOG_NOTICE, "watchdog: server %d %s (%d).", srvpid, msg, ret);
-
-    return ret ? NS_ERROR : NS_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * StartWatchedServer --
- *
- *      Restart the server process until it exits 0 or we exceed the
- *      maximum number of restart attempts.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Install SIGTERM handler for watchdog process.
- *      Sets the global nsconf.pid with the process ID of the server.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-StartWatchedServer(void)
-{
-    unsigned int startTime, numRestarts = 0, restartWait = 0;
-    struct itimerval timer;
-
-    SysLog(LOG_NOTICE, "watchdog: started.");
-
-    do {
-        if (restartWait) {
-            SysLog(LOG_WARNING,
-                   "watchdog: waiting %d seconds before restart %d.",
-                   restartWait, numRestarts);
-            sleep(restartWait);
-        }
-        if (WAKEUP_IN_SECONDS) {
-            memset(&timer, 0, sizeof(struct itimerval));
-            setitimer(ITIMER_REAL, &timer, NULL);
-            ns_signal(SIGALRM, SIG_DFL);
-        }
-        ns_signal(SIGTERM, SIG_DFL);
-        nsconf.pid = ns_fork();
-        if (nsconf.pid == -1) {
-            SysLog(LOG_ERR, "watchdog: fork() failed: '%s'.", strerror(errno));
-            Ns_Fatal("watchdog: fork() failed: '%s'.", strerror(errno));
-        }
-        if (nsconf.pid == 0) {
-            /* Server process. */
-            nsconf.pid = getpid();
-            SysLog(LOG_NOTICE, "server: started.");
-            return nsconf.pid;
-        }
-
-        /* Watchdog process */
-
-        /*
-         * Register SIGTERM handler so we can gracefully stop the server.
-         * The watchdog passes the signal to the server, if possible.
-         *
-         * Register SIGALRM handler to wake up the watchdog to check if
-         * the server is still present. This tries to solve issues with
-         * signal delivery on some systems where waitpid() fails to report
-         * process exitus (i.e. just stuck, although the process is gone).
-         */
-
-        if (WAKEUP_IN_SECONDS) {
-            timer.it_interval.tv_sec = WAKEUP_IN_SECONDS;
-            timer.it_value.tv_sec  = timer.it_interval.tv_sec;
-            setitimer(ITIMER_REAL, &timer, NULL);
-            ns_signal(SIGALRM, WatchdogSIGALRMHandler);
-        }
-        ns_signal(SIGTERM, WatchdogSIGTERMHandler);
-        startTime = time(NULL);
-        if (WaitForServer() == NS_OK) {
-            break;
-        }
-        if ((time(NULL) - startTime) > MIN_WORK_SECONDS) {
-            restartWait = numRestarts = 0;
-        }
-        if (++numRestarts > MAX_NUM_RESTARTS) {
-            SysLog(LOG_WARNING, "watchdog: exceeded restart limit of %d",
-                   MAX_NUM_RESTARTS);
-            break;
-        }
-        restartWait *= 2;
-        if (restartWait > MAX_RESTART_SECONDS) {
-            restartWait = MAX_RESTART_SECONDS;
-        } else if (restartWait == 0) {
-            restartWait = 1;
-        }
-    } while (!watchdogExit);
-
-    SysLog(LOG_NOTICE, "watchdog: exited.");
-
-    return 0;
 }
 #endif /* _WIN32 */
 
