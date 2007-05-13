@@ -1006,6 +1006,7 @@ typedef struct NsInterp {
 extern void NsInitBinder(void);
 extern void NsInitConf(void);
 extern void NsInitEncodings(void);
+extern void NsInitFd(void);
 extern void NsInitListen(void);
 extern void NsInitLog(void);
 extern void NsInitInfo(void);

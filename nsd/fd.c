@@ -35,14 +35,23 @@
  */
 
 #include "nsd.h"
-#ifdef _WIN32
-#include <share.h>
-#endif
 
 NS_RCSID("@(#) $Header$");
 
+
+#ifdef _WIN32
+# define DEVNULL "nul:"
+# include <share.h>
+#else
+# define DEVNULL "/dev/null"
+# ifdef USE_DUPHIGH
+static int dupHigh;
+# endif
+#endif
+
+
 /*
- * The following structure maitains and open temp fd.
+ * The following structure maitains an open temp fd.
  */
 
 typedef struct Tmp {
@@ -52,18 +61,103 @@ typedef struct Tmp {
 
 static Tmp *firstTmpPtr;
 static Ns_Mutex lock;
+static int devNull;
 
 /*
  * The following constants are defined for this file
  */
 
 #ifndef F_CLOEXEC
-#define F_CLOEXEC 1
+# define F_CLOEXEC 1
 #endif
+
 
 
 /*
  *----------------------------------------------------------------------
+ *
+ * NsInitFd --
+ *
+ *      Initialize the fd API's.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Will open a shared fd to /dev/null and ensure stdin, stdout,
+ *      and stderr are open on something.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitFd(void)
+{
+#ifndef _WIN32
+    struct rlimit  rl;
+#endif
+    int fd;
+
+    /*
+     * Ensure fd 0, 1, and 2 are open on at least /dev/null.
+     */
+
+    fd = open(DEVNULL, O_RDONLY);
+    if (fd > 0) {
+        close(fd);
+    }
+    fd = open(DEVNULL, O_WRONLY);
+    if (fd > 0 && fd != 1) {
+        close(fd);
+    }
+    fd = open(DEVNULL, O_WRONLY);
+    if (fd > 0 && fd != 2) {
+        close(fd);
+    }
+
+#ifndef _WIN32
+    /*
+     * The server now uses poll() but Tcl and other components may
+     * still use select() which will likely break when fd's exceed
+     * FD_SETSIZE.  We now allow setting the fd limit above FD_SETSIZE,
+     * but do so at your own risk.
+     */
+
+    if (getrlimit(RLIMIT_NOFILE, &rl) != 0) {
+        Ns_Log(Warning, "fd: getrlimit(RLIMIT_NOFILE) failed: %s",
+               strerror(errno));
+    } else {
+        if (rl.rlim_cur != rl.rlim_max) {
+            rl.rlim_cur = rl.rlim_max;
+            if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
+                Ns_Log(Warning, "fd: setrlimit(RLIMIT_NOFILE, %u) failed: %s",
+                       (unsigned int) rl.rlim_max, strerror(errno));
+            }
+        }
+#ifdef USE_DUPHIGH
+        if (getrlimit(RLIMIT_NOFILE, &rl) == 0 && rl.rlim_cur > 256) {
+            dupHigh = 1;
+        }
+#endif
+    }
+#endif
+
+    /*
+     * Open a fd on /dev/null which can be later re-used.
+     */
+
+    devNull = open(DEVNULL, O_RDWR);
+    if (devNull < 0) {
+        Ns_Fatal("fd: open(%s) failed: %s", DEVNULL, strerror(errno));
+    }
+    Ns_DupHigh(&devNull);
+    Ns_CloseOnExec(devNull);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_CloseOnExec --
  *
  *      Set the close-on-exec flag for a file descriptor
@@ -90,7 +184,7 @@ Ns_CloseOnExec(int fd)
     if (i != -1) {
         i |= F_CLOEXEC;
         i = fcntl(fd, F_SETFD, i);
-	status = NS_OK;
+    status = NS_OK;
     }
     return status;
 #endif
@@ -99,15 +193,16 @@ Ns_CloseOnExec(int fd)
 
 /*
  *----------------------------------------------------------------------
+ *
  * Ns_NoCloseOnExec --
  *
- *	Clear the close-on-exec flag for a file descriptor
+ *      Clear the close-on-exec flag for a file descriptor
  *
  * Results:
- *	Return NS_OK on success or NS_ERROR on failure
+ *      Return NS_OK on success or NS_ERROR on failure
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -131,7 +226,7 @@ Ns_NoCloseOnExec(int fd)
     if (i != -1) {
         i &= ~F_CLOEXEC;
         i = fcntl(fd, F_SETFD, i);
-	status = NS_OK;
+    status = NS_OK;
     }
     return status;
 #endif
@@ -140,6 +235,7 @@ Ns_NoCloseOnExec(int fd)
 
 /*
  *----------------------------------------------------------------------
+ *
  * Ns_DupHigh --
  *
  *      Dup a file descriptor to be 256 or higher
@@ -165,20 +261,22 @@ Ns_DupHigh(int *fdPtr)
 #ifdef USE_DUPHIGH
     int             nfd, ofd, flags;
 
-    ofd = *fdPtr;
-    if ((flags = fcntl(ofd, F_GETFD)) < 0) {
-	Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_GETFD): '%s'",
-	       ofd, strerror(errno));
-    } else if ((nfd = fcntl(ofd, F_DUPFD, 256)) < 0) {
-	Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_DUPFD, 256): '%s'",
-	       ofd, strerror(errno));
-    } else if (fcntl(nfd, F_SETFD, flags) < 0) {
-	Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_SETFD, %d): '%s'",
-	       nfd, flags, strerror(errno));
-	close(nfd);
-    } else {
-	close(ofd);
-	*fdPtr = nfd;
+    if (dupHigh) {
+        ofd = *fdPtr;
+        if ((flags = fcntl(ofd, F_GETFD)) < 0) {
+            Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_GETFD): '%s'",
+                   ofd, strerror(errno));
+        } else if ((nfd = fcntl(ofd, F_DUPFD, 256)) < 0) {
+            Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_DUPFD, 256): '%s'",
+                   ofd, strerror(errno));
+        } else if (fcntl(nfd, F_SETFD, flags) < 0) {
+            Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_SETFD, %d): '%s'",
+                   nfd, flags, strerror(errno));
+            close(nfd);
+        } else {
+            close(ofd);
+            *fdPtr = nfd;
+        }
     }
 #endif
     return *fdPtr;
@@ -190,15 +288,15 @@ Ns_DupHigh(int *fdPtr)
  *
  * Ns_GetTemp --
  *
- *	Pop or allocate a temp file.  Temp files are immediately
- *	removed on Unix and marked non-shared and delete on close
- *	on NT to avoid snooping of data being sent to the CGI.
+ *      Pop or allocate a temp file.  Temp files are immediately
+ *      removed on Unix and marked non-shared and delete on close
+ *      on NT to avoid snooping of data being sent to the CGI.
  *
  * Results:
- *	Open file descriptor.
+ *      Open file descriptor.
  *
  * Side effects:
- *	File may be opened.
+ *      File may be opened.
  *
  *----------------------------------------------------------------------
  */
@@ -215,43 +313,47 @@ Ns_GetTemp(void)
     Ns_MutexLock(&lock);
     tmpPtr = firstTmpPtr;
     if (tmpPtr != NULL) {
-	firstTmpPtr = tmpPtr->nextPtr;
+        firstTmpPtr = tmpPtr->nextPtr;
     }
     Ns_MutexUnlock(&lock);
     if (tmpPtr != NULL) {
-	fd = tmpPtr->fd;
-	ns_free(tmpPtr);
-	return fd;
+        fd = tmpPtr->fd;
+        ns_free(tmpPtr);
+        return fd;
     }
+
     Ns_DStringInit(&ds);
     flags = O_RDWR|O_CREAT|O_TRUNC|O_EXCL;
+    trys = 0;
 #ifdef _WIN32
     flags |= _O_SHORT_LIVED|_O_NOINHERIT|_O_TEMPORARY|_O_BINARY;
 #endif
-    trys = 0;
+
     do {
-	Ns_GetTime(&now);
-	sprintf(buf, "nstmp.%d.%d", (int) now.sec, (int) now.usec);
-	path = Ns_MakePath(&ds, P_tmpdir, buf, NULL);
+        Ns_GetTime(&now);
+        sprintf(buf, "nstmp.%d.%d", (int) now.sec, (int) now.usec);
+        path = Ns_MakePath(&ds, P_tmpdir, buf, NULL);
 #ifdef _WIN32
-	fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
+        fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
 #else
-	fd = open(path, flags, 0600);
+        fd = open(path, flags, 0600);
 #endif
     } while (fd < 0 && trys++ < 10 && errno == EEXIST);
+
     if (fd < 0) {
-	Ns_Log(Error, "tmp: could not open temp file %s: %s",
-	       path, strerror(errno));
+        Ns_Log(Error, "tmp: could not open temp file %s: %s",
+               path, strerror(errno));
 #ifndef _WIN32
     } else {
-	Ns_DupHigh(&fd);
-	Ns_CloseOnExec(fd);
-	if (unlink(path) != 0) {
-	    Ns_Log(Warning, "tmp: unlink(%s) failed: %s", path, strerror(errno));
-	}
+        Ns_DupHigh(&fd);
+        Ns_CloseOnExec(fd);
+        if (unlink(path) != 0) {
+            Ns_Log(Warning, "tmp: unlink(%s) failed: %s", path, strerror(errno));
+        }
 #endif
     }
     Ns_DStringFree(&ds);
+
     return fd;
 }
 
@@ -261,13 +363,13 @@ Ns_GetTemp(void)
  *
  * Ns_ReleaseTemp --
  *
- *	Return a temp file to the pool.
+ *      Return a temp file to the pool.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	File may be closed on error.
+ *      File may be closed on error.
  *
  *----------------------------------------------------------------------
  */
@@ -278,13 +380,13 @@ Ns_ReleaseTemp(int fd)
     Tmp *tmpPtr;
 
     if (lseek(fd, 0, SEEK_SET) != 0 || ftruncate(fd, 0) != 0) {
-	close(fd);
+        close(fd);
     } else {
-	tmpPtr = ns_malloc(sizeof(Tmp));
-	tmpPtr->fd = fd;
-	Ns_MutexLock(&lock);
-	tmpPtr->nextPtr = firstTmpPtr;
-	firstTmpPtr = tmpPtr;
-	Ns_MutexUnlock(&lock);
+        tmpPtr = ns_malloc(sizeof(Tmp));
+        tmpPtr->fd = fd;
+        Ns_MutexLock(&lock);
+        tmpPtr->nextPtr = firstTmpPtr;
+        firstTmpPtr = tmpPtr;
+        Ns_MutexUnlock(&lock);
     }
 }

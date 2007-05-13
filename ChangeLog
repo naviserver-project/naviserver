@@ -5,6 +5,12 @@
 
 2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsd.h:
+	* nsd/init.c:
+	* nsd/nsmain.c:
+	* nsd/fd.c: Backport changes from AOLserver to cleanup
+	stdin/stdout/stderr initialisation, moving it out of the crazy nsmain.c.
+
 	* configure.in:
 	* m4/cmmsg.m4:
 	* m4/dns.m4:

@@ -136,7 +136,7 @@ int
 Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
     Args      cmd;
-    int       fd, i, sig, optind;
+    int       i, sig, optind;
     char     *config;
     Ns_Time   timeout;
 
@@ -311,36 +311,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
             cmd.argv[cmd.argc++] = argv[i];
         }
         Ns_ThreadCreate(CmdThread, &cmd, 0, NULL);
-    } else {
-
-        /*
-         * For the non-interactive operation, the server requires file
-         * descriptor 0 be open on NUL device to ensure it never blocks
-         * while reading stdin.
-         */
-
-        fd = open(DEVNULL, O_RDONLY);
-        if (fd > 0) {
-            dup2(fd, 0);
-            close(fd);
-        }
-
-        /*
-         * File descriptors 1 and 2 may not be open if the server is
-         * starting from /etc/init.  If so, open them on NUL device
-         * as well, because the server will assume they're open during
-         * initialization. In particular, the log file will be duped
-         * to fd's 1 and 2.
-         */
-
-        fd = open(DEVNULL, O_WRONLY);
-        if (fd > 0 && fd != 1) {
-            close(fd);
-        }
-        fd = open(DEVNULL, O_WRONLY);
-        if (fd > 0 && fd != 2) {
-            close(fd);
-        }
     }
 
 #ifndef _WIN32
@@ -454,30 +424,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     NsBlockSignals(debug);
-
-    /*
-     * The server now uses poll() but Tcl and other components may
-     * still use select() which will likely break when fd's exceed
-     * FD_SETSIZE.  We now allow setting the fd limit above FD_SETSIZE,
-     * but do so at your own risk.
-     *
-     * Note this limit must be set now to ensure it's inherited by
-     * all future threads on certain platforms such as Linux.
-     */
-
-    if (getrlimit(RLIMIT_NOFILE, &rl) != 0) {
-        Ns_Log(Warning, "nsmain: getrlimit(RLIMIT_NOFILE) failed: '%s'",
-               strerror(errno));
-    } else {
-        if (rl.rlim_cur != rl.rlim_max) {
-            rl.rlim_cur = rl.rlim_max;
-            if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
-                Ns_Log(Warning, "nsmain: "
-                       "setrlimit(RLIMIT_NOFILE, %u) failed: '%s'",
-                       (unsigned int)rl.rlim_max, strerror(errno));
-            }
-        }
-    }
 
     /*
      * The call to Tcl_FindExecutable() must be done before we ever

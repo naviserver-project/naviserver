@@ -69,6 +69,7 @@ NsdInit(void)
         NsInitSls();  /* Checks if server started. */
     	NsInitConf(); /* <- Server marked 'started' during library load. */
     	NsInitLog();
+        NsInitFd();
     	NsInitBinder();
     	NsInitEncodings();
     	NsInitListen();
