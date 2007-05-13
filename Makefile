@@ -46,17 +46,31 @@ all:
 	done
 
 install: install-dirs install-include install-tcl install-modules \
-	install-config install-doc install-examples
+	install-config install-doc install-examples install-notice
+
+install-notice:
 	@echo ""
 	@echo ""
 	@echo "You can now run NaviServer by typing one of the commands below: "
 	@echo ""
-	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/nsd-config.tcl"
-	@echo " or"
-	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/sample-config.tcl"
-	@echo " or"
-	@echo "$(NAVISERVER)/bin/nsd -f -t $(NAVISERVER)/conf/simple-config.tcl"
-	@echo ""
+	@if [ "`whoami`" = "root" ]; then \
+	  echo "  Because you are running as root, the server needs unprivileged user to be"; \
+	  echo "  specified and permissions on log directory to be setup first:"; \
+	  echo ""; \
+	  echo "  chown -R nobody $(NAVISERVER)/logs"; \
+	  echo ""; \
+	  echo "  If you want the server to be run as other user, replace nobody with"; \
+	  echo "  your user name and re-run command above before starting the server"; \
+	  user="-u nobody"; \
+	  chown -R nobody $(NAVISERVER)/logs; \
+	fi; \
+	echo ""; \
+	echo "$(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/nsd-config.tcl"; \
+	echo " or"; \
+	echo "$(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/sample-config.tcl"; \
+	echo " or"; \
+	echo "$(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/simple-config.tcl"; \
+	echo ""
 
 install-dirs: all
 	@for i in bin lib logs include tcl pages conf modules cgi-bin; do \
