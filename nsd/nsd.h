@@ -1026,6 +1026,7 @@ extern void NsInitUrl2File(void);
 extern void NsConfigLog(void);
 extern void NsConfigFastpath();
 extern void NsConfigMimeTypes(void);
+extern void NsConfigDNS(void);
 extern void NsUpdateEncodings(void);
 extern void NsUpdateUrlEncode(void);
 

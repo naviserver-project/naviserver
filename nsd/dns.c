@@ -88,6 +88,44 @@ static int       timeout;   /* Time in seconds to wait for concurrent update.  *
 /*
  *----------------------------------------------------------------------
  *
+ * NsConfigDNS --
+ *
+ *      Enable DNS results caching.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Futher DNS lookups will be cached using given ttl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigDNS(void)
+{
+    int         max;
+    CONST char *path = NS_CONFIG_PARAMETERS;
+
+    if (Ns_ConfigBool(path, "dnscache", NS_TRUE)
+        && (max = Ns_ConfigIntRange(path, "dnscachemaxsize",
+                                    1024*500, 0, INT_MAX)) > 0) {
+
+        timeout = Ns_ConfigIntRange(path, "dnswaittimeout",  5, 0, INT_MAX);
+        ttl = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
+        ttl *= 60; /* NB: Config specifies minutes, seconds used internally. */
+
+        hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
+                                     (size_t) max, ns_free);
+        addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
+                                     (size_t) max, ns_free);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_GetHostByAddr, Ns_GetAddrByHost --
  *
  *      Convert an IP address to a hostname or vice versa.
@@ -181,33 +219,6 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
     Ns_DStringFree(&ds);
 
     return status;
-}
-
-
-/*
- *----------------------------------------------------------------------
- * NsEnableDNSCache --
- *
- *      Enable DNS results caching.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Futher DNS lookups will be cached using given ttl.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsEnableDNSCache(int amaxsize, int attl, int atimeout)
-{
-    ttl = attl;
-    timeout = atimeout;
-    hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
-                                 (size_t) amaxsize, ns_free);
-    addrCache = Ns_CacheCreateSz("ns:dnsaddr", TCL_STRING_KEYS,
-                                 (size_t) amaxsize, ns_free);
 }
 
 

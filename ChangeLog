@@ -5,6 +5,11 @@
 
 2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsd.h:
+	* nsd/nsconf.c:
+	* nsd/dns.c: Consolidate dns configuration into single NsConfigDNS()
+	function.
+
 	* Makefile: Cleanup the various variables needed to run the tests.
 
 	* nsd/nsd.h:

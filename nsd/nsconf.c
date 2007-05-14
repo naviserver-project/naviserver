@@ -161,6 +161,7 @@ NsConfUpdate(void)
     NsConfigFastpath();
     NsConfigMimeTypes();
     NsConfigProgress();
+    NsConfigDNS();
 
     NsUpdateEncodings();
     NsUpdateUrlEncode();
@@ -201,20 +202,6 @@ NsConfUpdate(void)
 
     nsconf.job.jobsperthread = Ns_ConfigIntRange(path, "jobsperthread", 0, 0, INT_MAX);
     nsconf.job.timeout = Ns_ConfigIntRange(path, "jobtimeout", 300, 0, INT_MAX);
-
-    /*
-     * dns.c
-     */
-
-    if (Ns_ConfigBool(path, "dnscache", NS_TRUE)) {
-        int max = Ns_ConfigIntRange(path, "dnscachemaxsize", 1024*500, 0, INT_MAX);
-        int timeout = Ns_ConfigIntRange(path, "dnswaittimeout", 5, 0, INT_MAX);
-        int ttl = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
-        if (max > 0 && ttl > 0) {
-            ttl *= 60; /* NB: Config minutes, seconds internally. */
-            NsEnableDNSCache(max, ttl, timeout);
-        }
-    }
 
     /*
      * tclinit.c
