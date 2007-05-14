@@ -1,3 +1,10 @@
+2007-05-14  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* configure.in:
+	* Makefile:
+	* naviserver.rdf (removed):
+	* naviserver.rdf.in (added): Auto-generate DOAP release data.
+
 2007-05-13  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* doc/src/nsv.man: Combined all nsv_ commands into one 

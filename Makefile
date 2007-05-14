@@ -38,7 +38,7 @@ dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsproxy
 distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.in \
 	README ChangeLog NEWS sample-config.tcl.in simple-config.tcl \
-	nsd-config.tcl index.adp license.terms naviserver.rdf
+	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in
 
 all:
 	@for i in $(dirs); do \

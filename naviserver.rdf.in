@@ -7,8 +7,8 @@
 <!-- $Id$ -->
 <Project>   
 
-    <name>NaviServer</name>
-    <shortname>naviserver</shortname>
+    <name>@PACKAGE_NAME@</name>
+    <shortname>@PACKAGE_TARNAME@</shortname>
     <homepage rdf:resource="http://sourceforge.net/projects/naviserver/" />
     <wiki rdf:resource="http://naviserver.sourceforge.net" />
     <created>2005-02-05</created>
@@ -18,6 +18,7 @@
     <shortdesc xml:lang="en">
         NaviServer is a high performance web server written in C and Tcl.
     </shortdesc>
+
     <shortdesc xml:lang="de">
         NaviServer ist ein in C und TCL entwickelter hoch performanter Webserver.
     </shortdesc>
@@ -26,6 +27,7 @@
     performance web server written in C and Tcl.  
     It can be easily extended in either language to create interesting 
     web sites and services.</description>
+
     <description xml:lang="de">Projektbeschreibung: NaviServer ist ein
     in C und TCL entwickelter hoch performanter Webserver.
     Er kann mit jeder der beiden Sprachen leicht erweitert werden
@@ -42,16 +44,16 @@
 
     <release>
         <Version>
-            <branch>development</branch>
-            <revision>4.99.2</revision>
-            <created>2006-02-05</created>
+            <branch>@NS_RELEASE_LEVEL@</branch>
+            <revision>@PACKAGE_VERSION@</revision>
+            <created>@ISO_BUILD_DATE@</created>
         </Version>
     </release>
 
     <repository>
         <CVSRepository>
-            <browse rdf:resource="http://cvs.sourceforge.net/viewcvs.py/naviserver" />
-            <anon-root rdf:resource="cvs.sourceforge.net:/cvsroot/naviserver" />
+            <browse rdf:resource="http://naviserver.cvs.sourceforge.net/viewcvs.py/naviserver" />
+            <anon-root rdf:resource="naviserver.cvs.sourceforge.net:/cvsroot/naviserver" />
         </CVSRepository>
     </repository>
 

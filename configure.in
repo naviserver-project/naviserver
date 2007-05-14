@@ -63,6 +63,8 @@ AC_SUBST([NS_RELEASE_LEVEL],  [NS_ALPHA_RELEASE]) # ALPHA/BETA/FINAL
 AC_SUBST([NS_VERSION],     [\"${NS_MAJOR_VERSION}.${NS_MINOR_VERSION}\"])
 AC_SUBST([NS_PATCH_LEVEL], [\"$PACKAGE_VERSION\"])
 
+AC_SUBST([ISO_BUILD_DATE], [`date +%Y-%m-%d`])
+
 
 
 #
@@ -277,6 +279,7 @@ include/nsversion.h
 include/Makefile.global
 include/Makefile.module
 sample-config.tcl
+naviserver.rdf
 doc/src/version_include
 ])
 AC_OUTPUT
