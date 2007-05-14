@@ -48,7 +48,16 @@ New Features:
       commands.
     * New [ns_mutex eval script] to safely handle unlocking on error.
     * Thread commands now takes names as well as thread-object references.
-
+    * New options jobsperthread and jobtimeout for ns_job command to perform
+      automatic job threads exit in case of idle or max number of jobs reached
+    * Updated ns_perm module to support missing checkpass and sepass commands
+    * ns_http was ported from Aolserver 4.5 and uses new task API
+    * ADP parser was ported from AS 4.5 and also used for processing .tcl files
+    * New option acceptsize for driver to tell how many connection can be accepted at once,
+      this improves performance significantly in case of large number of incoming connections
+    * New Ns_Sls* and ns_sls commands supporting socket-local-storage (data which persists for 
+      the lifetime of an open TCP connection)
+    * ns_httpget now supports chunked encoding in results
 
 Bug Fixes:
 
@@ -69,7 +78,12 @@ Bug Fixes:
     * Fix infinite loop in spooler thread code.
     * Message line-breaking of email bodies sent with ns_sendmail now works
       correctly for non ASCII data.
-
+    * Logging facilities will now support files over 2 Gb
+    * Fixed ns_sendmail for cases when message body is large and it fails to
+      send all body because of nonblocking socket mode
+    * New command ns_mutex trylock which wroks similar to the sameC API function
+    * New command ns_filestat which is similar to file stat but uses direct system 
+      call instead of Tcl VFS
 
 Configuration Changes:
 
@@ -161,6 +175,22 @@ Code Changes:
      See: Ns_RegisterAtShutdown().
    * Dissabled: Ns_LogSetLogFlushProc(), Ns_SetNsLogProc().
      See: Ns_AddLogfilter(), Ns_RemoveLofFilter().
+
+   IMPORTANT API changes: (length, nsend) parameters are now Tcl_WideInt, so it requires
+   to recompile all modules that use those functions:
+        
+        int Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
+        int Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
+        int Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
+        
+        void Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
+        void Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
+        int Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
+                         Tcl_Channel chan, Tcl_WideInt length)
+        int Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
+                      FILE *fp, Tcl_WideInt length)
+        int Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
+                    int fd, Tcl_WideInt length)
 
 
 ======================================

@@ -107,6 +107,9 @@ ns_param        serverlog               ${homedir}/logs/nsd.log
 # Pid file of the server process
 ns_param        pidfile                 ${homedir}/logs/nsd.pid
 
+# Min size of the uploaded file to enable progress tracking
+ns_param	progressminsize		0
+
 #
 # I18N Parameters
 #
@@ -348,9 +351,6 @@ ns_param  	bufsize        		16384
 
 # Max upload size when to use spooler
 ns_param  	readahead      		16384
-
-# Max upload size when to use statistics
-ns_param  	uploadsize     		2048
 
 # Number of spooler threads
 ns_param  	spoolerthreads 		0
