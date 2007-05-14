@@ -5,6 +5,12 @@
 	* naviserver.rdf (removed):
 	* naviserver.rdf.in (added): Auto-generate DOAP release data.
 
+	* include/ns.h:
+	* nsd/Makefile:
+	* nsd/return.c:
+	* nsd/returnresp.c (added): Move functions which return standard HTTP
+	responses, and which may have the response HTML templated, together.
+
 2007-05-13  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* doc/src/nsv.man: Combined all nsv_ commands into one 

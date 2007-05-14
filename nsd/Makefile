@@ -43,7 +43,7 @@ LOBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  fastpath.o fd.o filter.o form.o httptime.o index.o info.o \
 	  init.o limits.o lisp.o listen.o log.o mimetypes.o modload.o nsconf.o \
 	  nsmain.o nsthread.o op.o pathname.o pidfile.o proc.o progress.o queue.o \
-	  quotehtml.o random.o request.o return.o rollfile.o sched.o \
+	  quotehtml.o random.o request.o return.o returnresp.o rollfile.o sched.o \
 	  server.o set.o sls.o sock.o sockcallback.o str.o \
 	  task.o tclcache.o tclcallbacks.o tclcmds.o tclconf.o tclenv.o tclfile.o \
 	  tclhttp.o tclimg.o tclinit.o tcljob.o tclmisc.o tclobj.o tclobjv.o \

@@ -1591,9 +1591,6 @@ NS_EXTERN void Ns_SetRequestUrl(Ns_Request *request, CONST char *url);
  */
 
 NS_EXTERN void
-Ns_RegisterReturn(int status, CONST char *url);
-
-NS_EXTERN void
 Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -1674,6 +1671,31 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, int len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
+Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
+                         Tcl_Channel chan, Tcl_WideInt len)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+
+NS_EXTERN int
+Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
+                      FILE *fp, Tcl_WideInt len)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+
+NS_EXTERN int
+Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type, int fd, Tcl_WideInt len)
+    NS_GNUC_NONNULL(1);
+
+/*
+ * returnresp.c:
+ */
+
+NS_EXTERN void
+Ns_RegisterReturn(int status, CONST char *url);
+
+NS_EXTERN int
+Ns_ConnReturnStatus(Ns_Conn *conn, int status)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
 Ns_ConnReturnOk(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
@@ -1715,24 +1737,6 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
 
 NS_EXTERN int
 Ns_ConnReturnUnavailable(Ns_Conn *conn)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN int
-Ns_ConnReturnStatus(Ns_Conn *conn, int status)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN int
-Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
-                         Tcl_Channel chan, Tcl_WideInt len)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
-
-NS_EXTERN int
-Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
-                      FILE *fp, Tcl_WideInt len)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
-
-NS_EXTERN int
-Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type, int fd, Tcl_WideInt len)
     NS_GNUC_NONNULL(1);
 
 /*
