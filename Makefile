@@ -152,21 +152,33 @@ build-doc:
 	    echo Generating docs done. ; \
 	fi
 
+#
+# Testing:
+#
+
+NS_TEST_CFG		= -c -d -t $(srcdir)/tests/test.nscfg
+NS_TEST_ALL		= $(srcdir)/tests/all.tcl $(TCLTESTARGS)
+LD_LIBRARY_PATH	= LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb:$$LD_LIBRARY_PATH"
+
+check: test
+
 test: all
-	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)
+	$(LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 runtest: all
-	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb" ./nsd/nsd -c -d -t tests/test.nscfg
+	$(LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
 
 gdbtest: all
-	@echo "set args -c -d -t tests/test.nscfg all.tcl $(TESTFLAGS) $(TCLTESTARGS)" > gdb.run
-	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb"; gdb -x gdb.run ./nsd/nsd
+	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
+	$(LD_LIBRARY_PATH); gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 gdbruntest: all
-	@echo "set args -c -d -t tests/test.nscfg" > gdb.run
-	LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb"; gdb -x gdb.run ./nsd/nsd
+	@echo set args $(NS_TEST_CFG) > gdb.run
+	$(LD_LIBRARY_PATH); gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
+
+
 
 checkexports: all
 	@for i in $(dirs); do \

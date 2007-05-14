@@ -5,6 +5,8 @@
 
 2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* Makefile: Cleanup the various variables needed to run the tests.
+
 	* nsd/nsd.h:
 	* nsd/nsmain.c:
 	* nsd/watchdog.c:
