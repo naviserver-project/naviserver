@@ -5,6 +5,9 @@
 
 2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>
 
+	* nsd/nsd.h: Remove duplicate definition of public functions from
+	private header.
+
 	* nsd/nsd.h:
 	* nsd/nsconf.c:
 	* nsd/dns.c: Consolidate dns configuration into single NsConfigDNS()

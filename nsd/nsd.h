@@ -1237,13 +1237,6 @@ int NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights);
 int NsFastFD(FileChannel chan);
 int NsFastStat(CONST char *file, FileStat *stPtr);
 
-#ifndef _WIN32
-extern int Ns_ConnRunRequest(Ns_Conn *conn);
-extern int Ns_GetGid(char *group);
-extern int Ns_GetUserGid(char *user);
-extern int Ns_TclGetOpenFd(Tcl_Interp *, char *, int write, int *fp);
-#endif
-
 extern void NsStopSockCallbacks(void);
 extern void NsStopScheduledProcs(void);
 extern void NsGetBuf(char **bufPtr, int *sizePtr);
