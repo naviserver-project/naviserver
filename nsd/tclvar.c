@@ -89,7 +89,7 @@ static Array *LockArray(void *arg, Tcl_Interp *interp, Tcl_Obj *array,
  */
 
 struct Bucket *
-NsTclCreateBuckets(char *server, int n)
+NsTclCreateBuckets(CONST char *server, int n)
 {
     char    buf[NS_THREAD_NAMESIZE];
     Bucket *buckets;

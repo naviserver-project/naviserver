@@ -103,6 +103,7 @@ static int RegisterAt(Ns_TclTraceProc *proc, void *arg, int when);
 static TclData *GetData(void);
 static Ns_TlsCleanup DeleteData;
 static Tcl_AsyncProc AsyncCancel;
+static Ns_ServerInitProc ConfigServerTcl;
 
 /*
  * Static variables defined in this file.
@@ -111,6 +112,31 @@ static Tcl_AsyncProc AsyncCancel;
 static Ns_Tls tls;              /* Slot for per-thread Tcl interp cache. */
 static Tcl_HashTable threads;   /* Table of threads with nsd-based interps. */
 static Ns_Mutex tlock;          /* Lock around threads table. */
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nsd_Init --
+ *
+ *      Init routine called when libnsd is loaded via the Tcl
+ *      load command.
+ *
+ * Results:
+ *      Always TCL_OK.
+ *
+ * Side effects:
+ *      See Ns_TclInit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Nsd_Init(Tcl_Interp *interp)
+{
+    return Ns_TclInit(interp);
+}
 
 
 /*
@@ -147,30 +173,81 @@ NsInitTcl(void)
 
     Tcl_InitHashTable(&threads, TCL_ONE_WORD_KEYS);
     Ns_MutexSetName(&tlock, "ns:threads");
+
+    NsRegisterServerInit(ConfigServerTcl);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Nsd_Init --
- *
- *      Init routine called when libnsd is loaded via the Tcl
- *      load command.
- *
- * Results:
- *      Always TCL_OK.
- *
- * Side effects:
- *      See Ns_TclInit.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Nsd_Init(Tcl_Interp *interp)
+static int
+ConfigServerTcl(CONST char *server)
 {
-    return Ns_TclInit(interp);
+    NsServer   *servPtr;
+    Ns_DString  ds;
+    CONST char *path, *p;
+    int         n;
+
+    servPtr = NsGetServer(server);
+    path = Ns_ConfigGetPath(server, NULL, "tcl", NULL);
+
+    Ns_DStringInit(&ds);
+
+    servPtr->tcl.library = (char *) Ns_ConfigString(path, "library", "modules/tcl");
+    if (!Ns_PathIsAbsolute(servPtr->tcl.library)) {
+        Ns_HomePath(&ds, servPtr->tcl.library, NULL);
+        servPtr->tcl.library = Ns_DStringExport(&ds);
+    }
+
+    servPtr->tcl.initfile = (char *) Ns_ConfigString(path, "initfile", "bin/init.tcl");
+    if (!Ns_PathIsAbsolute(servPtr->tcl.initfile) ) {
+        Ns_HomePath(&ds, servPtr->tcl.initfile, NULL);
+        servPtr->tcl.initfile = Ns_DStringExport(&ds);
+    }
+
+    servPtr->tcl.modules = Tcl_NewObj();
+    Tcl_IncrRefCount(servPtr->tcl.modules);
+
+    Ns_RWLockInit(&servPtr->tcl.lock);
+    Ns_MutexInit(&servPtr->tcl.cachelock);
+    Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.mutexTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.csTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.semaTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.condTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.rwTable, TCL_STRING_KEYS);
+
+    servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
+    servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
+
+    /*
+     * Legacy ns_share shared sets support.
+     */
+
+    Tcl_InitHashTable(&servPtr->share.inits, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->share.vars, TCL_STRING_KEYS);
+    Ns_MutexSetName2(&servPtr->share.lock, "nstcl:share", server);
+    Tcl_InitHashTable(&servPtr->var.table, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->sets.table, TCL_STRING_KEYS);
+    Ns_MutexSetName2(&servPtr->sets.lock, "nstcl:sets", server);
+
+    /*
+     * Initialize the list of connection headers to log for Tcl errors.
+     */
+
+    p = Ns_ConfigGetValue(path, "errorlogheaders");
+    if (p != NULL && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders)
+            != TCL_OK) {
+        Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
+    }
+
+    /*
+     * Initialize the Tcl detached channel support.
+     */
+
+    Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
+    Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
+
+
+    return NS_OK;
 }
 
 

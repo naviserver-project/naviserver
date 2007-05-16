@@ -55,6 +55,7 @@ typedef struct {
  * Static functions defined in this file.
  */
 
+static Ns_ServerInitProc ConfigServerProxy;
 static void WalkCallback(Tcl_DString *dsPtr, void *arg);
 static void FreeReq(void *arg);
 
@@ -88,6 +89,20 @@ NsInitRequests(void)
     uid = Ns_UrlSpecificAlloc();
     Ns_MutexInit(&ulock);
     Ns_MutexSetName(&ulock, "nsd:requests");
+
+    NsRegisterServerInit(ConfigServerProxy);
+}
+
+static int
+ConfigServerProxy(CONST char *server)
+{
+    NsServer *servPtr = NsGetServer(server);
+
+    Tcl_InitHashTable(&servPtr->request.proxy, TCL_STRING_KEYS);
+    Ns_MutexInit(&servPtr->request.plock);
+    Ns_MutexSetName2(&servPtr->request.plock, "nsd:proxy", server);
+
+    return NS_OK;
 }
 
 

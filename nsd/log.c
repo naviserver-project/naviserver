@@ -171,6 +171,81 @@ static struct {
     { NULL, 0 }
 };
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitLog --
+ *
+ *      Initialize the log API and TLS slot.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitLog(void)
+{
+    Ns_MutexSetName(&lock, "ns:log");
+    Ns_TlsAlloc(&tls, FreeCache);
+    Tcl_SetPanicProc(Panic);
+    AddClbk(LogToFile, (void*)STDERR_FILENO, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigLog --
+ *
+ *      Config the logging interface.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on config file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigLog(void)
+{
+    Ns_DString  ds;
+    CONST char *path = NS_CONFIG_PARAMETERS;
+
+    logConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
+    logConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
+    logConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
+
+    if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
+        flags |= LOG_ROLL;
+    }
+    if (Ns_ConfigBool(path, "logusec", NS_FALSE)) {
+        flags |= LOG_USEC;
+    }
+    if (Ns_ConfigBool(path, "logexpanded", NS_FALSE)) {
+        flags |= LOG_EXPAND;
+    }
+
+    maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
+    maxlevel = Ns_ConfigInt(path, "logmaxlevel", INT_MAX);
+
+    file = Ns_ConfigString(path, "serverlog", "logs/nsd.log");
+    if (!Ns_PathIsAbsolute(file)) {
+        Ns_DStringInit(&ds);
+        Ns_HomePath(&ds, file, NULL);
+        file = Ns_DStringExport(&ds);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -425,80 +500,6 @@ Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg)
         RemClbk(clbkPtr, 1);
     }
     Ns_MutexUnlock(&lock);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsInitLog --
- *
- *      Initialize the log API and TLS slot.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsInitLog(void)
-{
-    Ns_MutexSetName(&lock, "ns:log");
-    Ns_TlsAlloc(&tls, FreeCache);
-    Tcl_SetPanicProc(Panic);
-    AddClbk(LogToFile, (void*)STDERR_FILENO, NULL);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsConfigLog --
- *
- *      Config the logging interface.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Depends on config file.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsConfigLog(void)
-{
-    Ns_DString  ds;
-    CONST char *path = NS_CONFIG_PARAMETERS;
-
-    logConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
-    logConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
-    logConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
-
-    if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
-        flags |= LOG_ROLL;
-    }
-    if (Ns_ConfigBool(path, "logusec", NS_FALSE)) {
-        flags |= LOG_USEC;
-    }
-    if (Ns_ConfigBool(path, "logexpanded", NS_FALSE)) {
-        flags |= LOG_EXPAND;
-    }
-
-    maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
-    maxlevel = Ns_ConfigInt(path, "logmaxlevel", INT_MAX);
-
-    file = Ns_ConfigString(path, "serverlog", "logs/nsd.log");
-    if (!Ns_PathIsAbsolute(file)) {
-        Ns_DStringInit(&ds);
-        Ns_HomePath(&ds, file, NULL);
-        file = Ns_DStringExport(&ds);
-    }
 }
 
 

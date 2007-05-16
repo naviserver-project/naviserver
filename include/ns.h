@@ -344,7 +344,7 @@ typedef int   (Ns_SockProc) (SOCKET sock, void *arg, int why);
 typedef void  (Ns_TaskProc) (Ns_Task *task, SOCKET sock, void *arg, int why);
 typedef void  (Ns_EventProc) (Ns_Event *event, SOCKET sock, void *arg, Ns_Time *now, int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
-typedef int   (Ns_ServerInitProc) (char *server);
+typedef int   (Ns_ServerInitProc) (CONST char *server);
 typedef int   (Ns_ModuleInitProc) (CONST char *server, CONST char *module);
 typedef int   (Ns_RequestAuthorizeProc) (char *server, char *method,
 			char *url, char *user, char *pass, char *peer);

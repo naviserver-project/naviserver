@@ -1027,8 +1027,24 @@ extern void NsConfigLog(void);
 extern void NsConfigFastpath();
 extern void NsConfigMimeTypes(void);
 extern void NsConfigDNS(void);
+extern void NsConfigRedirects(void);
+extern void NsConfigVhost(void);
 extern void NsUpdateEncodings(void);
 extern void NsUpdateUrlEncode(void);
+
+/*
+ * Virtual server management routines.
+ */
+
+extern void NsInitServer(char *server, Ns_ServerInitProc *initProc);
+extern void NsRegisterServerInit(Ns_ServerInitProc *proc);
+extern NsServer *NsGetInitServer(void);
+extern NsServer *NsGetServer(CONST char *server);
+extern void NsStartServers(void);
+extern void NsStopServers(Ns_Time *toPtr);
+extern void NsStartServer(NsServer *servPtr);
+extern void NsStopServer(NsServer *servPtr);
+extern void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
 
 /*
  * Socket driver callbacks.
@@ -1050,9 +1066,6 @@ extern void NsFreeRequest(Request *reqPtr);
 
 extern int NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
                          FILE *fp, int fd, const char *data);
-
-extern NsServer *NsGetServer(CONST char *server);
-extern NsServer *NsGetInitServer(void);
 
 extern void NsFreeAdp(NsInterp *itPtr);
 extern void NsTclRunAtClose(NsInterp *itPtr)
@@ -1110,7 +1123,6 @@ extern void NsRemovePidFile(char *service);
 extern void NsLogOpen(void);
 extern void NsTclInitObjs(void);
 extern void NsRunPreStartupProcs(void);
-extern void NsStartServers(void);
 extern void NsBlockSignals(int debug);
 extern void NsBlockSignal(int signal);
 extern void NsUnblockSignal(int signal);
@@ -1118,15 +1130,10 @@ extern int  NsHandleSignals(void);
 extern void NsStopDrivers(void);
 extern void NsPreBind(char *bindargs, char *bindfile);
 extern void NsClosePreBound(void);
-extern void NsInitServer(char *server, Ns_ServerInitProc *initProc);
 extern char *NsConfigRead(CONST char *file);
 extern void NsConfigEval(CONST char *config, int argc, char **argv, int optind);
 extern void NsConfUpdate(void);
 extern void NsEnableDNSCache(int maxsize, int ttl, int timeout);
-extern void NsStopServers(Ns_Time *toPtr);
-extern void NsStartServer(NsServer *servPtr);
-extern void NsStopServer(NsServer *servPtr);
-extern void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
 extern void NsStartDrivers(void);
 extern void NsWaitDriversShutdown(Ns_Time *toPtr);
 extern void NsStartSchedShutdown(void);
@@ -1149,7 +1156,7 @@ extern NsInterp *NsGetInterpData(Tcl_Interp *interp)
 extern void NsFreeConnInterp(Conn *connPtr)
      NS_GNUC_NONNULL(1);
 
-extern struct Bucket *NsTclCreateBuckets(char *server, int nbuckets);
+extern struct Bucket *NsTclCreateBuckets(CONST char *server, int nbuckets);
 
 extern void NsSlsCleanup(Sock *sockPtr);
 extern void NsClsCleanup(Conn *connPtr);

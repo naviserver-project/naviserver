@@ -46,8 +46,62 @@ NS_RCSID("@(#) $Header$");
  * Local functions defined in this file
  */
 
+static Ns_ServerInitProc ConfigServerRedirects;
 static int ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr);
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigRedirects --
+ *
+ *      Associate a URL with a status. Rather than return the
+ *      default error page for this status, an internal redirect
+ *      will be issued to the url.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Previous registration is deleted if url is NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigRedirects(void)
+{
+    NsRegisterServerInit(ConfigServerRedirects);
+}
+
+static int
+ConfigServerRedirects(CONST char *server)
+{
+    NsServer   *servPtr = NsGetServer(server);
+    Ns_Set     *set;
+    CONST char *path, *key, *map;
+    int         i, status;
+
+    Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
+
+    path = Ns_ConfigGetPath(server, NULL, "redirects", NULL);
+    set = Ns_ConfigGetSection(path);
+
+    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+        key = Ns_SetKey(set, i);
+        map = Ns_SetValue(set, i);
+        status = atoi(key);
+        if (status <= 0 || *map == '\0') {
+            Ns_Log(Error, "redirects[%s]: invalid redirect '%s=%s'",
+                   server, key, map);
+        } else {
+            Ns_RegisterReturn(status, map);
+        }
+    }
+
+    return NS_OK;
+}
 
 
 /*

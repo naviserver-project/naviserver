@@ -88,6 +88,7 @@ static int  FastReturn     (NsServer *servPtr, Ns_Conn *conn, int status,
                             FileStat *stPtr);
 static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
                             CONST char *data, Tcl_WideInt len, CONST char *type);
+static Ns_ServerInitProc ConfigServerFastpath;
 
 
 /*
@@ -102,6 +103,7 @@ static int       usemmap;  /* Use the mmap() system call to read data from disk.
 
 /*
  *----------------------------------------------------------------------
+ *
  * NsConfigFastpath --
  *
  *      Initialize the global fastpath cache.
@@ -126,14 +128,61 @@ NsConfigFastpath()
 #  define CACHE_KEYS FILE_KEYS
 #endif
 
-    path = Ns_ConfigGetPath(NULL, NULL, "fastpath", NULL);
+    path    = Ns_ConfigGetPath(NULL, NULL, "fastpath", NULL);
     usemmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
+
     if (Ns_ConfigBool(path, "cache", NS_FALSE)) {
-        cache = Ns_CacheCreateSz("nsfp", CACHE_KEYS,
+        cache = Ns_CacheCreateSz("ns:fastpath", CACHE_KEYS,
                     Ns_ConfigIntRange(path, "cachemaxsize", 1024*10000, 1024, INT_MAX),
                     FreeEntry);
-        maxentry =  Ns_ConfigIntRange(path, "cachemaxentry", 8192, 8, INT_MAX);
+        maxentry = Ns_ConfigIntRange(path, "cachemaxentry", 8192, 8, INT_MAX);
     }
+    NsRegisterServerInit(ConfigServerFastpath);
+}
+
+static int
+ConfigServerFastpath(CONST char *server)
+{
+    NsServer   *servPtr = NsGetServer(server);
+    Ns_DString  ds;
+    CONST char *path, *p;
+
+    path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
+    Ns_DStringInit(&ds);
+
+    p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");
+    if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
+                                   &servPtr->fastpath.dirv) != TCL_OK) {
+        Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
+    }
+
+    servPtr->fastpath.serverdir = (char*)Ns_ConfigString(path, "serverdir", "");
+    if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
+        Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
+        servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
+    }
+
+    servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
+    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+        servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
+    } else {
+        Ns_MakePath(&ds, servPtr->fastpath.serverdir,
+                    servPtr->fastpath.pagedir, NULL);
+        servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
+    }
+
+    p = Ns_ConfigString(path, "directorylisting", "simple");
+    if (p != NULL && (STREQ(p, "simple") || STREQ(p, "fancy"))) {
+        p = "_ns_dirlist";
+    }
+    servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
+    servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
+
+    Ns_RegisterRequest(server, "GET", "/",  NsFastPathProc, NULL, servPtr, 0);
+    Ns_RegisterRequest(server, "HEAD", "/", NsFastPathProc, NULL, servPtr, 0);
+    Ns_RegisterRequest(server, "POST", "/", NsFastPathProc, NULL, servPtr, 0);
+
+    return NS_OK;
 }
 
 

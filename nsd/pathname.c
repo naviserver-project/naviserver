@@ -38,17 +38,79 @@
 
 NS_RCSID("@(#) $Header$");
 
+
 #define ISSLASH(c)	((c) == '/' || (c) == '\\')
+
 
 /*
  * Local functions defined in this file.
  */
 
+static Ns_ServerInitProc ConfigServerVhost;
 static int PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[], int cmd);
 static char *MakePath(Ns_DString *dest, va_list *pap);
 static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigVhost() --
+ *
+ *      Configure virtual hosting parameters.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigVhost(void)
+{
+    NsRegisterServerInit(ConfigServerVhost);
+}
+
+static int
+ConfigServerVhost(CONST char *server)
+{
+    NsServer   *servPtr = NsGetServer(server);
+    Ns_DString  ds;
+    CONST char *path;
+
+    path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
+
+    servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
+    if (servPtr->vhost.enabled
+            && Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+        Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
+               server, servPtr->fastpath.pagedir);
+        servPtr->vhost.enabled = NS_FALSE;
+    }
+    if (Ns_ConfigBool(path, "stripwww", NS_TRUE)) {
+        servPtr->vhost.opts |= NSD_STRIP_WWW;
+    }
+    if (Ns_ConfigBool(path, "stripport", NS_TRUE)) {
+        servPtr->vhost.opts |= NSD_STRIP_PORT;
+    }
+    servPtr->vhost.hostprefix = Ns_ConfigGetValue(path, "hostprefix");
+    servPtr->vhost.hosthashlevel =
+        Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
+
+    if (servPtr->vhost.enabled) {
+        Ns_DStringInit(&ds);
+        NsPageRoot(&ds, servPtr, "www.example.com:80");
+        Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
+        Ns_DStringFree(&ds);
+    }
+
+    return NS_OK;
+}
 
 
 /*

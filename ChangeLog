@@ -1,3 +1,33 @@
+2007-05-16  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/server.c: Add new function NsRegisterServerInit() which registers
+	an Ns_ServerInitProc callback. These are called once for each virtual
+	server, after the config file has been parsed, to allow subsystems to
+	configure themselves.
+
+	Much of the 'crazy state' of NsInitServer() has been broken out into
+	Ns_ServerInitProc callbacks within each subsystem.
+
+	* nsd/op.c (ConfigServerProxy): 
+	* nsd/fastpath.c (ConfigServerFastpath):
+	* nsd/url2file.c (ConfigServerUrl2File):
+	* nsd/pathname.c (ConfigServerVhost):
+	* nsd/returnresp.c (ConfigServerRedirects):
+	* nsd/tclinit.c (ConfigServerTcl): Add Ns_ServerInitProc configuration
+	callbacks. Code migrated from NsServerInit().
+
+	* nsd/nsconf.c (NsConfUpdate): Add new hooks NsConfigRedirects() and
+	NsConfigVhost() so that the per-server initialisation callbacks can be
+	registered.
+
+	* nsd/log.c: Move existing initialisation functions to top of source
+	file.
+
+	* include/ns.h (Ns_ServerInitProc):
+	* nsd/main.c (ServerInit):
+	* nsd/tclvar.c (NsTclCreateBuckets): Add CONST declarations.
+
 2007-05-14  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* configure.in:

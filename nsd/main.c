@@ -84,7 +84,7 @@ main(int argc, char **argv)
  */
 
 static int
-ServerInit(char *server)
+ServerInit(CONST char *server)
 {
     /*
      * Add code here to initialize your server much like an ordinary

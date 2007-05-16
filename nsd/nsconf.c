@@ -162,6 +162,8 @@ NsConfUpdate(void)
     NsConfigMimeTypes();
     NsConfigProgress();
     NsConfigDNS();
+    NsConfigRedirects();
+    NsConfigVhost();
 
     NsUpdateEncodings();
     NsUpdateUrlEncode();

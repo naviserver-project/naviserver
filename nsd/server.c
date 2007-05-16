@@ -37,17 +37,33 @@
 
 NS_RCSID("@(#) $Header$");
 
+
+/*
+ * The following structure maintains virtual server
+ * configuration callbacks.
+ */
+
+typedef struct ServerInit {
+    struct ServerInit  *nextPtr;
+    Ns_ServerInitProc  *proc;
+} ServerInit;
+
+
 /*
  * Local functions defined in this file.
  */
 
 static void CreatePool(NsServer *servPtr, char *pool);
 
+
 /*
  * Static variables defined in this file.
  */
 
-static NsServer *initServPtr; /* Holds currently initializing server. */
+static NsServer   *initServPtr;  /* Currently initializing server. */
+
+static ServerInit *firstInitPtr; /* First in list of server config callbacks. */
+static ServerInit *lastInitPtr;  /* Last in list of server config callbacks. */
 
 
 /*
@@ -192,32 +208,45 @@ NsStopServers(Ns_Time *toPtr)
  */
 
 void
-NsInitServer(char *server, Ns_ServerInitProc *initProc)
+NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
 {
-    Tcl_HashEntry *hPtr;
-    Ns_DString     ds;
-    NsServer      *servPtr;
-    CONST char    *path, *spath, *map, *key, *p;
-    Ns_Set        *set;
-    int            i, n, status;
+    Tcl_HashEntry     *hPtr;
+    Ns_DString         ds;
+    NsServer          *servPtr;
+    ServerInit        *initPtr;
+    CONST char        *path, *spath, *map, *key, *p;
+    Ns_Set            *set;
+    int                i, n;
 
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (!n) {
         Ns_Log(Error, "duplicate server: %s", server);
         return;
     }
-    Tcl_DStringAppendElement(&nsconf.servers, server);
-    servPtr = ns_calloc(1, sizeof(NsServer));
-    Tcl_SetHashValue(hPtr, servPtr);
-    initServPtr = servPtr;
 
     /*
      * Create a new NsServer.
      */
 
+    servPtr = ns_calloc(1, sizeof(NsServer));
+    servPtr->server = server;
+
+    Tcl_SetHashValue(hPtr, servPtr);
+    Tcl_DStringAppendElement(&nsconf.servers, server);
+    initServPtr = servPtr;
+
+    /*
+     * Run the library init procs in the order they were registerd.
+     */
+
+    initPtr = firstInitPtr;
+    while (initPtr != NULL) {
+        (void) (*initPtr->proc)(server);
+        initPtr = initPtr->nextPtr;
+    }
+
     Ns_DStringInit(&ds);
     spath = path = Ns_ConfigGetPath(server, NULL, NULL);
-    servPtr->server = server;
 
     /*
      * Set some server options.
@@ -272,157 +301,6 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
         servPtr->encoding.urlCharset = nsconf.encoding.urlCharset;
         servPtr->encoding.urlEncoding = nsconf.encoding.urlEncoding;
     }
-
-    /*
-     * Initialize Tcl.
-     */
-
-    path = Ns_ConfigGetPath(server, NULL, "tcl", NULL);
-    servPtr->tcl.library = (char*)Ns_ConfigString(path, "library", "modules/tcl");
-    if (!Ns_PathIsAbsolute(servPtr->tcl.library)) {
-        Ns_HomePath(&ds, servPtr->tcl.library, NULL);
-        servPtr->tcl.library = Ns_DStringExport(&ds);
-    }
-
-    servPtr->tcl.initfile = (char*)Ns_ConfigString(path, "initfile", "bin/init.tcl");
-    if (!Ns_PathIsAbsolute(servPtr->tcl.initfile) ) {
-        Ns_HomePath(&ds, servPtr->tcl.initfile, NULL);
-        servPtr->tcl.initfile = Ns_DStringExport(&ds);
-    }
-    servPtr->tcl.modules = Tcl_NewObj();
-    Tcl_IncrRefCount(servPtr->tcl.modules);
-    Ns_RWLockInit(&servPtr->tcl.lock);
-    Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
-    Ns_MutexInit(&servPtr->tcl.cachelock);
-    Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.mutexTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.csTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.semaTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.condTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.rwTable, TCL_STRING_KEYS);
-
-    servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
-    servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
-    Tcl_InitHashTable(&servPtr->share.inits, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->share.vars, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->share.lock, "nstcl:share", server);
-    Tcl_InitHashTable(&servPtr->var.table, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->sets.table, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->sets.lock, "nstcl:sets", server);
-
-    /*
-     * Initialize the list of connection headers to log for Tcl errors.
-     */
-
-    p = Ns_ConfigGetValue(path, "errorlogheaders");
-    if (p != NULL && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders)
-        != TCL_OK) {
-        Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
-    }
-
-    /*
-     * Initialize the Tcl detached channel support.
-     */
-
-    Tcl_InitHashTable(&servPtr->chans.table, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->chans.lock, "nstcl:chans", server);
-
-    /*
-     * Initialize the fastpath.
-     */
-
-    path = Ns_ConfigGetPath(server, NULL, "fastpath", NULL);
-
-    p = Ns_ConfigString(path, "directoryfile", "index.adp index.tcl index.html index.htm");
-    if (p != NULL && Tcl_SplitList(NULL, p, &servPtr->fastpath.dirc,
-                                   &servPtr->fastpath.dirv) != TCL_OK) {
-        Ns_Log(Error, "config: directoryfile is not a list: %s", p);
-    }
-
-    servPtr->fastpath.serverdir = (char*)Ns_ConfigString(path, "serverdir", "");
-    if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
-        Ns_HomePath(&ds, servPtr->fastpath.serverdir, NULL);
-        servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
-    }
-
-    servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
-    if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
-        servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
-    } else {
-        Ns_MakePath(&ds, servPtr->fastpath.serverdir,
-                    servPtr->fastpath.pagedir, NULL);
-        servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
-    }
-
-    p = Ns_ConfigString(path, "directorylisting", "simple");
-    if (p != NULL && (STREQ(p, "simple") || STREQ(p, "fancy"))) {
-        p = "_ns_dirlist";
-    }
-    servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
-    servPtr->fastpath.diradp = Ns_ConfigGetValue(path, "directoryadp");
-
-    /*
-     * Initialize virtual hosting.
-     */
-
-    path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
-    servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
-    if (servPtr->vhost.enabled
-        && Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
-        Ns_Log(Error, "virtual hosting disabled, pagedir not relative: %s",
-               servPtr->fastpath.pagedir);
-        servPtr->vhost.enabled = NS_FALSE;
-    }
-    if (Ns_ConfigBool(path, "stripwww", NS_TRUE)) {
-        servPtr->vhost.opts |= NSD_STRIP_WWW;
-    }
-    if (Ns_ConfigBool(path, "stripport", NS_TRUE)) {
-        servPtr->vhost.opts |= NSD_STRIP_PORT;
-    }
-    servPtr->vhost.hostprefix = Ns_ConfigGetValue(path, "hostprefix");
-    servPtr->vhost.hosthashlevel =
-        Ns_ConfigIntRange(path, "hosthashlevel", 0, 0, 5);
-    if (servPtr->vhost.enabled) {
-        NsPageRoot(&ds, servPtr, "www.example.com:80");
-        Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
-        Ns_DStringSetLength(&ds, 0);
-    }
-
-    /*
-     * Configure the url, proxy and redirect requests.
-     */
-
-    Tcl_InitHashTable(&servPtr->request.proxy, TCL_STRING_KEYS);
-    Ns_MutexInit(&servPtr->request.plock);
-    Ns_MutexSetName2(&servPtr->request.plock, "nsd:proxy", server);
-    path = Ns_ConfigGetPath(server, NULL, "redirects", NULL);
-    set = Ns_ConfigGetSection(path);
-    Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        key = Ns_SetKey(set, i);
-        map = Ns_SetValue(set, i);
-        status = atoi(key);
-        if (status <= 0 || *map == '\0') {
-            Ns_Log(Error, "return: invalid redirect '%s=%s'", key, map);
-        } else {
-            Ns_RegisterReturn(status, map);
-        }
-    }
-
-    /*
-     * Register the fastpath requests.
-     */
-
-    Ns_RegisterRequest(server, "GET", "/", NsFastPathProc, NULL, servPtr, 0);
-    Ns_RegisterRequest(server, "HEAD", "/", NsFastPathProc, NULL, servPtr, 0);
-    Ns_RegisterRequest(server, "POST", "/", NsFastPathProc, NULL, servPtr, 0);
-
-    /*
-     * Register the url2file procs.
-     */
-
-    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0);
-    Ns_SetUrlToFileProc(server, NsUrlToFileProc);
 
     /*
      * Initialize ADP.
@@ -544,8 +422,8 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
      * static modules.
      */
 
-    if (initProc != NULL) {
-        (*initProc)(server);
+    if (staticInitProc != NULL) {
+        (void) (*staticInitProc)(server);
     }
 
     /*
@@ -562,6 +440,41 @@ NsInitServer(char *server, Ns_ServerInitProc *initProc)
     NsTclInitServer(server);
     NsInitStaticModules(server);
     initServPtr = NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsRegisterServerInit --
+ *
+ *      Add a libnsd Ns_ServerInitProc to the end of the virtual server
+ *      initialisation list.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Proc will be called when virtual server is initialised.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsRegisterServerInit(Ns_ServerInitProc *proc)
+{
+    ServerInit *initPtr;
+
+    initPtr = ns_malloc(sizeof(ServerInit));
+    initPtr->proc = proc;
+    initPtr->nextPtr = NULL;
+
+    if (firstInitPtr == NULL) {
+        firstInitPtr = lastInitPtr = initPtr;
+    } else {
+        lastInitPtr->nextPtr = initPtr;
+        lastInitPtr = initPtr;
+    }
 }
 
 

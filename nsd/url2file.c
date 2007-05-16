@@ -68,6 +68,8 @@ typedef struct {
 static Ns_Callback FreeMount;
 static void FreeUrl2File(void *arg);
 static void WalkCallback(Ns_DString *dsPtr, void *arg);
+static Ns_ServerInitProc ConfigServerUrl2File;
+
 
 /*
  * Static variables defined in this file.
@@ -99,6 +101,20 @@ NsInitUrl2File(void)
     uid = Ns_UrlSpecificAlloc();
     Ns_MutexInit(&ulock);
     Ns_MutexSetName(&ulock, "nsd:url2file");
+
+    NsRegisterServerInit(ConfigServerUrl2File);
+}
+
+static int
+ConfigServerUrl2File(CONST char *server)
+{
+    NsServer *servPtr;
+
+    servPtr = NsGetServer(server);
+    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0);
+    Ns_SetUrlToFileProc(server, NsUrlToFileProc);
+
+    return NS_OK;
 }
 
 
