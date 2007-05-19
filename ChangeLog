@@ -6,6 +6,10 @@
 	you need to log is expensive to construct, so you'd like to construct it
 	only if it's needed.
 
+	* nslog/nslog.c:
+	* nsdb/nsdbi.c:
+	* nsproxy/nsproxymod.c: Add introspection info for callbacks.
+
 2007-05-16  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

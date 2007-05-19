@@ -61,6 +61,10 @@ Ns_ModuleInit(char *server, char *module)
     Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
     Ns_RegisterAtShutdown(Ns_ProxyShutdown, NULL);
 
+    Ns_RegisterProcInfo(InitInterp, "nsproxy:initinterp", NULL);
+    Ns_RegisterProcInfo(Ns_ProxyCleanup, "nsproxy:cleanup", NULL);
+    Ns_RegisterProcInfo(Ns_ProxyShutdown, "nsproxy:shutdown", NULL);
+
     return NS_OK;
 }
 
