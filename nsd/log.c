@@ -306,6 +306,34 @@ Ns_LogRoll(void)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_LogLevel --
+ *
+ *      Return true if the log severity level is enabled.
+ *
+ * Results:
+ *      NS_TRUE is the level is enabled, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_LogLevel(Ns_LogSeverity severity)
+{
+    if ((maxlevel && severity > maxlevel)
+            || severity > (sizeof(logConfig)/sizeof(logConfig[0]))
+            || logConfig[severity].enabled == 0) {
+        return NS_FALSE;
+    }
+    return NS_TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_Log --
  *
  *      Send a message to the server log.
@@ -793,9 +821,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
      * or if severity level out of range(s).
      */
 
-    if ((maxlevel && severity > maxlevel)
-        || severity > (sizeof(logConfig)/sizeof(logConfig[0]))
-        || logConfig[severity].enabled == 0) {
+    if (!Ns_LogLevel(severity)) {
         return;
     }
 

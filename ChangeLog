@@ -1,3 +1,11 @@
+2007-05-20  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/log.c (Ns_LogLevel): Add the Ns_LogLevel() function which returns
+	true if the given log severity level is enabled. Sometimes the message
+	you need to log is expensive to construct, so you'd like to construct it
+	only if it's needed.
+
 2007-05-16  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

@@ -1370,6 +1370,9 @@ Ns_InfoErrorLog(void);
 NS_EXTERN int
 Ns_LogRoll(void);
 
+NS_EXTERN int
+Ns_LogLevel(Ns_LogSeverity severity);
+
 NS_EXTERN void
 Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
      NS_GNUC_PRINTF(2, 3);
