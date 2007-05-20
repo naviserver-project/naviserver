@@ -10,6 +10,9 @@
 	* nsdb/nsdbi.c:
 	* nsproxy/nsproxymod.c: Add introspection info for callbacks.
 
+	* nsd/proc.c (TimeArgProc): Add introspection info for the ADP (and Tcl)
+	page callbacks, including a new arg proc for Ns_Time values.
+
 2007-05-16  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
