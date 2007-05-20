@@ -1,4 +1,4 @@
-2007-05-13  Vlad Seryakov  <seryakov@users.sf.net>
+2007-05-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/returnresp.c: In Ns_ConnReturnUnauthorized check if header
 	WWW-Authenticate already exists, this is in anticipation of new 
@@ -22,6 +22,9 @@
 	* nsd/tclcallbacks.c (Ns_TclEvalCallback): Don't log debug messages
 	unconditionally for all callbacks as this can cause infinite loops
 	e.g. with log filter callbacks.
+
+	* nsd/callbacks.c: Rearrange the code for clarity and some debug
+	logging when at-startup, at-signal etc. callbacks are run.
 
 2007-05-16  Stephen Deasey  <sdeasey@users.sf.net>
 

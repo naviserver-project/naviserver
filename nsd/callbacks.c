@@ -47,7 +47,6 @@ NS_RCSID("@(#) $Header$");
 
 typedef struct Callback {
     struct Callback *nextPtr;
-    struct Callback *prevPtr;
     void            *proc;
     void            *arg;
 } Callback;
@@ -58,8 +57,9 @@ typedef struct Callback {
 
 static Ns_ThreadProc ShutdownThread;
 
-static void  RunCallbacks(Callback *firstPtr, int reverse);
-static void *RegisterAt(Callback **firstPtrPtr, void *proc, void *arg);
+static void *RegisterAt(Callback **firstPtrPtr, void *proc, void *arg, int fifo);
+static void RunCallbacks(CONST char *list, Callback *firstPtr);
+static void AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *firstPtr);
 
 /*
  * Static variables defined in this file
@@ -71,22 +71,38 @@ static Callback *firstSignal;
 static Callback *firstShutdown;
 static Callback *firstExit;
 static Callback *firstReady;
+
 static Ns_Mutex  lock;
 static Ns_Cond   cond;
+
 static int       shutdownPending;
 static int       shutdownComplete;
 static Ns_Thread shutdownThread;
 
-void *
-Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
-{
-    return RegisterAt(&firstReady, proc, arg);
-}
 
-void
-NsRunAtReadyProcs(void)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_RegisterAtPreStartup --
+ *
+ *      Register a callback to run at the pre-startup stage, at which
+ *      point the config file has been parsed and modules loaded.
+ *      Callbacks will run in FIFO order.
+ *
+ * Results:
+ *      None 
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
 {
-    RunCallbacks(firstReady, 0);
+    return RegisterAt(&firstPreStartup, proc, arg, 1);
 }
 
 
@@ -95,13 +111,15 @@ NsRunAtReadyProcs(void)
  *
  * Ns_RegisterAtStartup --
  *
- *      Register a callback to run at server startup 
+ *      Register a callback to run at server startup, just after the
+ *      driver thread starts listening for connections.
+ *      Callbacks will run in FIFO order.
  *
  * Results:
  *      None 
  *
  * Side effects:
- *      The callback will be registered 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -109,30 +127,7 @@ NsRunAtReadyProcs(void)
 void *
 Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
 {
-    return RegisterAt(&firstStartup, proc, arg);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_RegisterAtPreStartup --
- *
- *      Register a callback to run at pre-server startup 
- *
- * Results:
- *      None 
- *
- * Side effects:
- *      The callback will be registered 
- *
- *----------------------------------------------------------------------
- */
-
-void *
-Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
-{
-    return RegisterAt(&firstPreStartup, proc, arg);
+    return RegisterAt(&firstStartup, proc, arg, 1);
 }
 
 
@@ -141,13 +136,14 @@ Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
  *
  * Ns_RegisterAtSignal --
  *
- *      Register a callback to run when a signal arrives 
+ *      Register a callback to run when the server recieves a SIGHUP.
+ *      Callbacks will run in FIFO order.
  *
  * Results:
  *      None 
  *
  * Side effects:
- *      The callback will be registered
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -155,7 +151,30 @@ Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
 void *
 Ns_RegisterAtSignal(Ns_Callback * proc, void *arg)
 {
-    return RegisterAt(&firstSignal, proc, arg);
+    return RegisterAt(&firstSignal, proc, arg, 1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_RegisterAtready --
+ *
+ *      Register a callback to run when the driver thread becomes ready?
+ *
+ * Results:
+ *      None 
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
+{
+    return RegisterAt(&firstReady, proc, arg, 0);
 }
 
 
@@ -170,7 +189,7 @@ Ns_RegisterAtSignal(Ns_Callback * proc, void *arg)
  *      None. 
  *
  * Side effects:
- *      The callback will be registered. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -178,7 +197,7 @@ Ns_RegisterAtSignal(Ns_Callback * proc, void *arg)
 void *
 Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
 {
-    return RegisterAt(&firstShutdown, proc, arg);
+    return RegisterAt(&firstShutdown, proc, arg, 0);
 }
 
 
@@ -193,7 +212,7 @@ Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
  *      None. 
  *
  * Side effects:
- *      The callback will be registered. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -201,45 +220,23 @@ Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
 void *
 Ns_RegisterAtExit(Ns_Callback * proc, void *arg)
 {
-    return RegisterAt(&firstExit, proc, arg);
+    return RegisterAt(&firstExit, proc, arg, 0);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsRunStartupProcs --
+ * NsRunPreStartupProcs, NsRunStartupProcs,
+ * NsRunSignalProcs, NsRunAtReadyProcs, NsRunAtExitProcs --
  *
- *      Run any callbacks registered for server startup. 
- *
- * Results:
- *      None. 
- *
- * Side effects:
- *      Callbacks called back. 
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsRunStartupProcs(void)
-{
-    RunCallbacks(firstStartup, 1);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsRunPreStartupProcs --
- *
- *      Run any callbacks registered for pre-server startup. 
+ *      Run all callbacks in the corresponding queue.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
- *      Callbacks called back. 
+ *      Callbacks called back.
  *
  *----------------------------------------------------------------------
  */
@@ -247,30 +244,31 @@ NsRunStartupProcs(void)
 void
 NsRunPreStartupProcs(void)
 {
-    RunCallbacks(firstPreStartup, 1);
+    RunCallbacks("prestartup", firstPreStartup);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * NsRunSignalProcs --
- *
- *      Run any callbacks registered for when a signal arrives 
- *
- * Results:
- *      None. 
- *
- * Side effects:
- *      Callbacks called back. 
- *
- *----------------------------------------------------------------------
- */
+void
+NsRunStartupProcs(void)
+{
+    RunCallbacks("startup", firstStartup);
+}
 
 void
 NsRunSignalProcs(void)
 {
-    RunCallbacks(firstSignal, 1);
+    RunCallbacks("signal", firstSignal);
+}
+
+void
+NsRunAtReadyProcs(void)
+{
+    RunCallbacks("ready", firstReady);
+}
+
+void
+NsRunAtExitProcs(void)
+{
+    RunCallbacks("exit", firstExit);
 }
 
 
@@ -388,24 +386,42 @@ NsWaitShutdownProcs(Ns_Time *toPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsRunExitProcs --
+ * NsGetCallbacks --
  *
- *      Run any callbacks registered for server startup, then 
- *      shutdown, then exit. 
+ *      Append callback info to given dstring. Called by ns_info.
  *
  * Results:
- *      None. 
+ *      None 
  *
  * Side effects:
- *      Callbacks called back. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 void
-NsRunAtExitProcs(void)
+NsGetCallbacks(Tcl_DString *dsPtr)
 {
-    RunCallbacks(firstExit, 0);
+    Ns_MutexLock(&lock);
+    AppendList(dsPtr, "prestartup", firstPreStartup);
+    AppendList(dsPtr, "startup", firstStartup);
+    AppendList(dsPtr, "signal", firstSignal);
+    AppendList(dsPtr, "shutdown", firstShutdown);
+    AppendList(dsPtr, "exit", firstExit);
+    Ns_MutexUnlock(&lock);
+}
+
+static void
+AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr)
+{
+    while (cbPtr != NULL) {
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, list);
+        Ns_GetProcInfo(dsPtr, (void *) cbPtr->proc, cbPtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+
+        cbPtr = cbPtr->nextPtr;
+    }
 }
 
 
@@ -426,18 +442,19 @@ NsRunAtExitProcs(void)
  */
 
 static void *
-RegisterAt(Callback **firstPtrPtr, void *proc, void *arg)
+RegisterAt(Callback **firstPtrPtr, void *proc, void *arg, int fifo)
 {
-    Callback   *cbPtr;
+    Callback   *cbPtr, *nextPtr;
     static int first = 1;
 
     cbPtr = ns_malloc(sizeof(Callback));
     cbPtr->proc = proc;
     cbPtr->arg = arg;
+
     Ns_MutexLock(&lock);
     if (first) {
-        Ns_MutexSetName(&lock, "ns:callbacks");
         first = 0;
+        Ns_MutexSetName(&lock, "ns:callbacks");
     }
     if (shutdownPending) {
         ns_free(cbPtr);
@@ -445,16 +462,20 @@ RegisterAt(Callback **firstPtrPtr, void *proc, void *arg)
     } else if (*firstPtrPtr == NULL) {
         *firstPtrPtr = cbPtr;
         cbPtr->nextPtr = NULL;
-        cbPtr->prevPtr = NULL;
+    } else if (fifo) {
+        nextPtr = *firstPtrPtr;
+        while (nextPtr->nextPtr != NULL) {
+            nextPtr = nextPtr->nextPtr;
+        }
+        nextPtr->nextPtr = cbPtr;
+        cbPtr->nextPtr = NULL;
     } else {
-        (*firstPtrPtr)->prevPtr = cbPtr;
         cbPtr->nextPtr = *firstPtrPtr;
-        cbPtr->prevPtr = NULL;
         *firstPtrPtr = cbPtr;
     }
     Ns_MutexUnlock(&lock);
 
-    return (void *) cbPtr;
+    return cbPtr;
 }
 
 
@@ -475,60 +496,21 @@ RegisterAt(Callback **firstPtrPtr, void *proc, void *arg)
  */
 
 static void
-RunCallbacks(Callback *cbPtr, int reverse)
+RunCallbacks(CONST char *list, Callback *cbPtr)
 {
     Ns_Callback *proc;
-
-    if (reverse) {
-        while (cbPtr != NULL && cbPtr->nextPtr != NULL) {
-            cbPtr = cbPtr->nextPtr;
-        }
-    }
+    Ns_DString   ds;
 
     while (cbPtr != NULL) {
+        if (Ns_LogLevel(Debug)) {
+            Ns_DStringInit(&ds);
+            Ns_GetProcInfo(&ds, proc, cbPtr->arg);
+            Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));
+            Ns_DStringFree(&ds);
+        }
         proc = cbPtr->proc;
         (*proc)(cbPtr->arg);
-        if (reverse) {
-            cbPtr = cbPtr->prevPtr;
-        } else {
-            cbPtr = cbPtr->nextPtr;
-        }
+
+        cbPtr = cbPtr->nextPtr;
     }
-}
-
-static void
-AppendList(Tcl_DString *dsPtr, char *list, Callback *firstPtr, int reverse)
-{
-    Callback *cbPtr = firstPtr;
-
-    if (reverse) {
-        while (cbPtr != NULL && cbPtr->nextPtr != NULL) {
-            cbPtr = cbPtr->nextPtr;
-        }
-    }
-
-    while (cbPtr != NULL) {
-        Tcl_DStringStartSublist(dsPtr);
-        Tcl_DStringAppendElement(dsPtr, list);
-        Ns_GetProcInfo(dsPtr, (void *) cbPtr->proc, cbPtr->arg);
-        Tcl_DStringEndSublist(dsPtr);
-        if (reverse) {
-            cbPtr = cbPtr->prevPtr;
-        } else {
-            cbPtr = cbPtr->nextPtr;
-        }
-    }
-}
-
-
-void
-NsGetCallbacks(Tcl_DString *dsPtr)
-{
-    Ns_MutexLock(&lock);
-    AppendList(dsPtr, "prestartup", firstPreStartup, 1);
-    AppendList(dsPtr, "startup", firstStartup, 1);
-    AppendList(dsPtr, "signal", firstSignal, 1);
-    AppendList(dsPtr, "shutdown", firstShutdown, 0);
-    AppendList(dsPtr, "exit", firstExit, 0);
-    Ns_MutexUnlock(&lock);
 }
