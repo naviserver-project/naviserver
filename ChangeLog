@@ -58,6 +58,8 @@
 	* nsd/callbacks.c: Log before running callbacks (making sure not to log
 	an uninitialised pointer this time).
 
+	* tests/ns_conn.test: Fix broken test due to signature changing.
+
 2007-05-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/returnresp.c: In Ns_ConnReturnUnauthorized check if header
