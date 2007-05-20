@@ -1,3 +1,9 @@
+2007-05-13  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/returnresp.c: In Ns_ConnReturnUnauthorized check if header
+	WWW-Authenticate already exists, this is in anticipation of new 
+	Digest auth method to be implemented soon.
+
 2007-05-20  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

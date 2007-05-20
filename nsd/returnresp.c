@@ -330,12 +330,13 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     Ns_DString  ds;
     int         result;
 
-    Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, "Basic realm=\"",
-                        connPtr->servPtr->opts.realm, "\"", NULL);
-    Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
-    Ns_DStringFree(&ds);
-
+    if (Ns_SetIGet(conn->outputheaders, "WWW-Authenticate") == NULL) {
+        Ns_DStringInit(&ds);
+        Ns_DStringVarAppend(&ds, "Basic realm=\"",
+                            connPtr->servPtr->opts.realm, "\"", NULL);
+        Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
+        Ns_DStringFree(&ds);
+    }
     if (ReturnRedirect(conn, 401, &result)) {
         return result;
     }
