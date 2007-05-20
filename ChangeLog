@@ -33,7 +33,7 @@
         * nsthread/memory.c: Added public function ns_strncopy for
         duplicating part of the string only
 
-2007-05-19  Stephen Deasey  <sdeasey@users.sf.net>
+2007-05-20  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
 	* nsd/tclinit.c:
@@ -54,6 +54,9 @@
 
 	(Much of this is inspired by, and should be similar to AOLserver,
 	although the trace implementation is a little different.)
+
+	* nsd/callbacks.c: Log before running callbacks (making sure not to log
+	an uninitialised pointer this time).
 
 2007-05-20  Vlad Seryakov  <seryakov@users.sf.net>
 

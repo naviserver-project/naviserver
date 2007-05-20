@@ -502,15 +502,14 @@ RunCallbacks(CONST char *list, Callback *cbPtr)
     Ns_DString   ds;
 
     while (cbPtr != NULL) {
-        proc = cbPtr->proc;
-        (*proc)(cbPtr->arg);
-
         if (Ns_LogLevel(Debug)) {
             Ns_DStringInit(&ds);
-            Ns_GetProcInfo(&ds, proc, cbPtr->arg);
+            Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
             Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));
             Ns_DStringFree(&ds);
         }
+        proc = cbPtr->proc;
+        (*proc)(cbPtr->arg);
 
         cbPtr = cbPtr->nextPtr;
     }
