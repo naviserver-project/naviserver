@@ -192,39 +192,53 @@ if {$use_trace_inits} {
 
 
 #
-# Initialize the interp.
+# How to initialize the interp.
 #
 
-set _allocate_callback {
-    ns_ictl update
+proc ns_init {} {
+	ns_ictl update;  # Run the initialisation script
 }
 
-ns_ictl trace allocate $_allocate_callback
+ns_ictl trace allocate ns_init
 
 #
-# Cleanup the interp, performing garbage 
+# How to cleanup the interp, performing garbage 
 # collection tasks.
 #
 
-set _deallocate_callback {
+ns_ictl trace deallocate ns_cleanup
 
-    #
-    # Close opened channels
-    #
+proc ns_cleanup {} {
+	ns_cleanupchans;  # Close files
+	ns_cleanupvars;   # Destroy global variables
+    ns_set  cleanup;  # Destroy non-shared sets
+    ns_http cleanup;  # Abort any http requests
+    ns_ictl cleanup;  # Run depreciated 1-shot Ns_TclRegisterDefer's.
+}
 
+#
+# ns_cleanupchans --
+#
+#     Close opened channels.
+#
+
+proc ns_cleanupchans {} {
     ns_chan cleanup
-    
     foreach f [file channels] {
         if {![string match std* $f]} {
-            close $f
+            catch {close $f}
         }
     }
+}
 
-    #
-    # Destroy global variables. Namespaced variables
-    # are left and could introduce unwanted state.
-    #
+#
+# ns_cleanupvars --
+#
+#     Destroy global variables. Namespaced variables
+#     are left and could introduce unwanted state.
+#
 
+proc ns_cleanupvars {} {
     foreach g [info globals] {
         switch -glob -- $g {
             auto_* -
@@ -240,16 +254,9 @@ set _deallocate_callback {
             }
         }
     }
-
     set ::errorInfo ""
     set ::errorCode ""
-
-    ns_set  cleanup;  # Destroy non-shared sets
-    ns_http cleanup;  # Abort any http requests
-    ns_ictl cleanup;  # Internal cleanup (e.g,. Ns_TclRegisterDefer's)
 }
-
-ns_ictl trace deallocate $_deallocate_callback
 
 #
 # ns_reinit --
@@ -266,10 +273,10 @@ ns_ictl trace deallocate $_deallocate_callback
 #   }
 #
 
-proc ns_reinit {} [subst {
-    $_deallocate_callback
-    $_allocate_callback
-}]
+proc ns_reinit {} {
+    ns_ictl runtraces deallocate
+    ns_ictl runtraces allocate
+}
 
 
 #
@@ -310,31 +317,7 @@ proc ns_module {key {val ""}} {
 }
 
 
-#
-# Load global binary modules for any virtual server.
-#
-# Note that global modules are loaded AFTER per-server modules.
-# The reason is the nssock module which needs to be initialized
-# first per-server and then loaded globally. We'll have to fix
-# this nonsense some time later...
-#
-
-ns_runonce -global {
-    ns_atprestartup {
-        set modules [ns_configsection ns/modules]
-        if {$modules ne {}} {
-             foreach {module file} [ns_set array $modules] {
-                 ns_moduleload -global $module $file
-             }
-        }
-    }
-}
-
-#
-# Load per-virtual-server binary modules
-#
-
-ns_runonce {
+proc _ns_load_server_modules {} {
     set modules [ns_configsection ns/server/[ns_info server]/modules]
     if {$modules ne {}} {
         foreach {module file} [ns_set array $modules] {
@@ -345,6 +328,29 @@ ns_runonce {
         }
     }
 }
+
+proc _ns_load_global_modules {} {
+	set modules [ns_configsection ns/modules]
+	if {$modules ne {}} {
+		foreach {module file} [ns_set array $modules] {
+			ns_moduleload -global $module $file
+		}
+	}
+}
+
+#
+# Load global binary modules.
+#
+# Note that global modules are loaded AFTER per-server modules.
+# The reason is the nssock module which needs to be initialized
+# first per-server and then loaded globally. We'll have to fix
+# this nonsense some time later...
+#
+
+_ns_load_server_modules
+
+ns_runonce -global {ns_atprestartup _ns_load_global_modules}
+
 
 if {$use_trace_inits} {
 
@@ -368,7 +374,7 @@ if {$use_trace_inits} {
         nstrace::disabletrace
 
         if {$code == 1} {
-            ns_markfordelete
+            ns_ictl markfordelete
         } else {
             ns_ictl save [nstrace::tracescript]
         }
@@ -523,7 +529,7 @@ if {$use_trace_inits} {
         set code [catch {uplevel 1 _ns_helper_eval $args} result]
         if {$code == 1} {
             # TCL_ERROR: Dump this interp to avoid proc pollution.
-            ns_markfordelete
+            ns_ictl markfordelete
         } else {
             # Save this interp's namespaces for others.
             ns_ictl save [nstrace::statescript]

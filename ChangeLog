@@ -1,10 +1,32 @@
+2007-05-19  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/tclinit.c:
+	* nsd/init.tcl:
+	* nsd/tclcmds.c: Run interp finalisation traces in LIFO order
+	(initialisation still FIFO) and drop the explicit calls to ns_init and
+	ns_cleanup (which haven't existed in the code for a while). Re-create
+	ns_init and ns_cleanup and register them as traces from the init.tcl
+	bootstrap script. They should fire first and last on
+	allocation/deallocation.
+
+	Add the runtraces subcommand to ns_ictl which provides the trigger
+	necessary to re-run the traces from ns_reinit for long running
+	threads. Previously, module specific cleanup was not happening.
+
+	Add the gettraces subcommand to ns_ictl for introspection of registered
+	traces, and add some extra debug level logging.
+
+	(Much of this is inspired by, and should be similar to AOLserver,
+	although the trace implementation is a little different.)
+
 2007-05-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/returnresp.c: In Ns_ConnReturnUnauthorized check if header
 	WWW-Authenticate already exists, this is in anticipation of new 
 	Digest auth method to be implemented soon.
 
-2007-05-20  Stephen Deasey  <sdeasey@users.sf.net>
+2007-05-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
 	* nsd/log.c (Ns_LogLevel): Add the Ns_LogLevel() function which returns

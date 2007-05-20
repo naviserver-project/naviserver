@@ -791,7 +791,8 @@ typedef struct NsServer {
 
     struct {
         char *library;
-        struct Trace *firstTracePtr;
+        struct TclTrace *firstTracePtr;
+        struct TclTrace *lastTracePtr;
         char *initfile;
         Ns_RWLock lock;
         char *script;
