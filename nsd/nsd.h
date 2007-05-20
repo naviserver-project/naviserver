@@ -401,6 +401,7 @@ typedef struct Request {
     struct Request *nextPtr;    /* Next on free list. */
     Ns_Request *request;        /* Parsed request line. */
     Ns_Set *headers;            /* Input headers. */
+    Ns_Set *auth;               /* Auth user/password and parameters. */
     char peer[16];              /* Client peer address. */
     int port;                   /* Client peer port. */
 
@@ -586,9 +587,7 @@ typedef struct Conn {
 
     Ns_Set *headers;
     Ns_Set *outputheaders;
-
-    char *authUser;
-    char *authPasswd;
+    Ns_Set *auth;
 
     int contentLength;
     int flags;
@@ -945,11 +944,13 @@ typedef struct NsInterp {
 #define CONN_TCLFORM    1
 #define CONN_TCLHDRS    2
 #define CONN_TCLOUTHDRS 4
+#define CONN_TCLAUTH    8
 
     Ns_Conn *conn;
 
     struct {
         int  flags;
+        char auth[16];
         char form[16];
         char hdrs[16];
         char outhdrs[16];
@@ -1254,6 +1255,8 @@ extern void NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
 
 extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
                               Tcl_DString *dsPtr);
+
+void NsParseAuth(Conn *connPtr, char *auth);
 
 /*
  * Proxy support

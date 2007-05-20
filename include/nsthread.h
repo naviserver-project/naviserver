@@ -230,6 +230,7 @@ NS_EXTERN void ns_free(void *buf);
 NS_EXTERN void *ns_realloc(void *buf, size_t size) NS_GNUC_WARN_UNUSED_RESULT;
 NS_EXTERN char *ns_strdup(const char *string) NS_GNUC_MALLOC;
 NS_EXTERN char *ns_strcopy(const char *string) NS_GNUC_MALLOC;
+NS_EXTERN char *ns_strncopy(const char *string, int size) NS_GNUC_MALLOC;
 
 /*
  * mutex.c:

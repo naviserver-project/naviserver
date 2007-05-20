@@ -12,7 +12,7 @@ and the specified user text (userfield) into the users database.
 
 [list_begin definitions]
 
-[call [cmd ns_perm] [arg adduser] [arg name] [arg encpass] [arg userfield] [opt [arg {-allow|-deny host}]]]
+[call [cmd ns_perm] [arg adduser] [opt [arg -allow]] [opt [arg -salt s]] [arg name] [arg pass] [arg userfield] [opt host...]]
 
 [arg -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
 
@@ -21,6 +21,15 @@ The hostname must be specified as ipaddress/netmask or dnshostname.
 [example_begin]
 128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
 [example_end]
+
+[arg -salt]
+By default password is assumed encrypted with ns_encrypt command something like
+[example_begin]
+ns_encrypt mypasswd CU
+[example_end]
+
+This argument tells command that password is clear text and it should be encrypted
+by the command with specified salt.
 
 [call [cmd ns_perm] [arg addgroup] [arg name] [arg user] [opt [arg user...]]]
 
@@ -67,6 +76,10 @@ Produce Tcl list of all current users in the format username password ....
 [call [cmd ns_perm] [arg listgroups]]
 
 Produce Tcl list with all registered groups in the format: groupname {user ...} ...
+
+[call [cmd ns_perm] [arg listperms]]
+
+Produce Tcl list with all registered allow/deny statements for each url
 
 [list_end]
 

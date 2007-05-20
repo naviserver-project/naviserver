@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * auth.c --
  *
  *	URL level HTTP authorization support.
@@ -42,7 +42,7 @@ NS_RCSID("@(#) $Header$");
  * could be useful for global modules (e.g., nscp).
  */
 
-static Ns_UserAuthorizeProc    *userProcPtr; 
+static Ns_UserAuthorizeProc    *userProcPtr;
 
 
 /*
@@ -66,7 +66,7 @@ static Ns_UserAuthorizeProc    *userProcPtr;
 
 int
 Ns_AuthorizeRequest(char *server, char *method, char *url,
-	char *user, char *passwd, char *peer)
+	            char *user, char *passwd, char *peer)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -109,13 +109,13 @@ Ns_SetRequestAuthorizeProc(char *server, Ns_RequestAuthorizeProc *proc)
  *
  * NsTclRequestAuthorizeObjCmd --
  *
- *	Implements ns_requestauthorize as obj command. 
+ *	Implements ns_requestauthorize as obj command.
  *
  * Results:
- *	Tcl result. 
+ *	Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *	See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -128,41 +128,41 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     int         status;
 
     if ((objc != 5) && (objc != 6)) {
-        Tcl_WrongNumArgs(interp, 1, objv, 
+        Tcl_WrongNumArgs(interp, 1, objv,
 			"method url authuser authpasswd ?ipaddr?");
         return TCL_ERROR;
     }
-    status = Ns_AuthorizeRequest(itPtr->servPtr->server, 
-	    Tcl_GetString(objv[1]), 
+    status = Ns_AuthorizeRequest(itPtr->servPtr->server,
+	    Tcl_GetString(objv[1]),
 	    Tcl_GetString(objv[2]),
-	    Tcl_GetString(objv[3]), 
-	    Tcl_GetString(objv[4]), 
+	    Tcl_GetString(objv[3]),
+	    Tcl_GetString(objv[4]),
 	    objc < 6 ? NULL : Tcl_GetString(objv[5]));
 
     switch (status) {
 	case NS_OK:
 	    Tcl_SetResult(interp, "OK", TCL_STATIC);
 	    break;
-	
+
 	case NS_ERROR:
 	    Tcl_SetResult(interp, "ERROR", TCL_STATIC);
 	    break;
-		
+
 	case NS_FORBIDDEN:
 	    Tcl_SetResult(interp, "FORBIDDEN", TCL_STATIC);
 	    break;
-	
+
 	case NS_UNAUTHORIZED:
 	    Tcl_SetResult(interp, "UNAUTHORIZED", TCL_STATIC);
 	    break;
-	
+
 	default:
-	    Tcl_AppendResult(interp, "could not authorize \"", 
+	    Tcl_AppendResult(interp, "could not authorize \"",
 			Tcl_GetString(objv[1]), " ",
 			Tcl_GetString(objv[2]), "\"", NULL);
 	    return TCL_ERROR;
     }
-    
+
     return TCL_OK;
 }
 
@@ -214,4 +214,62 @@ void
 Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
 {
     userProcPtr = procPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsParseAuth --
+ *
+ *      Parse an HTTP authorization string.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May set the auth Passwd and User connection pointers.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsParseAuth(Conn *connPtr, char *auth)
+{
+    register char *p, *q;
+    int            size;
+    char           *value, save;
+
+    if (connPtr->auth == NULL) {
+        connPtr->auth = Ns_SetCreate(NULL);
+    }
+
+    p = auth;
+    while (*p != '\0' && !isspace(UCHAR(*p))) {
+        ++p;
+    }
+    if (*p != '\0') {
+        save = *p;
+        *p = '\0';
+        if (STRIEQ(auth, "Basic")) {
+            q = p + 1;
+            while (*q != '\0' && isspace(UCHAR(*q))) {
+                ++q;
+            }
+            size = strlen(q) + 3;
+            value = ns_malloc((size_t) size);
+            size = Ns_HtuuDecode(q, (unsigned char *) value, size);
+            value[size] = '\0';
+            q = strchr(value, ':');
+            if (q != NULL) {
+                *q++ = '\0';
+                Ns_SetPut(connPtr->auth, "Password", q);
+            }
+            Ns_SetPut(connPtr->auth, "User", value);
+            ns_free(value);
+        } else
+
+        if (STRIEQ(auth, "Digest")) {
+        }
+        *p = save;
+    }
 }

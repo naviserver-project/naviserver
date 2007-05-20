@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * set.c --
  *
- *	Implements the Ns_Set data type. 
+ *	Implements the Ns_Set data type.
  */
 
 #include "nsd.h"
@@ -44,13 +44,13 @@ NS_RCSID("@(#) $Header$");
  *
  * Ns_SetUpdate --
  *
- *	Remove a tuple and re-add it. 
+ *	Remove a tuple and re-add it.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -68,13 +68,13 @@ Ns_SetUpdate(Ns_Set *set, CONST char *key, CONST char *value)
  *
  * Ns_SetCreate --
  *
- *	Initialize a new set. 
+ *	Initialize a new set.
  *
  * Results:
- *	A pointer to a new set. 
+ *	A pointer to a new set.
  *
  * Side effects:
- *	Memory is allocated; free with Ns_SetFree. 
+ *	Memory is allocated; free with Ns_SetFree.
  *
  *----------------------------------------------------------------------
  */
@@ -98,13 +98,13 @@ Ns_SetCreate(CONST char *name)
  *
  * Ns_SetFree --
  *
- *	Free a set and its associated data with ns_free. 
+ *	Free a set and its associated data with ns_free.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will free both the Ns_Set structure AND its tuples. 
+ *	Will free both the Ns_Set structure AND its tuples.
  *
  *----------------------------------------------------------------------
  */
@@ -131,19 +131,19 @@ Ns_SetFree(Ns_Set *set)
  *
  * Ns_SetPut --
  *
- *	Insert a tuple into an existing set. 
+ *	Insert a tuple into an existing set.
  *
  * Results:
- *	The index number of the new tuple. 
+ *	The index number of the new tuple.
  *
  * Side effects:
- *	The key/value will be strdup'ed. 
+ *	The key/value will be strdup'ed.
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_SetPut(Ns_Set *set, CONST char *key, CONST char *value)
+Ns_SetPutSz(Ns_Set *set, CONST char *key, CONST char *value, int size)
 {
     int index;
 
@@ -155,23 +155,28 @@ Ns_SetPut(Ns_Set *set, CONST char *key, CONST char *value)
 				 sizeof(Ns_SetField) * set->maxSize);
     }
     set->fields[index].name = ns_strcopy(key);
-    set->fields[index].value = ns_strcopy(value);
-    
+    set->fields[index].value = ns_strncopy(value, size);
+
     return index;
 }
 
+int
+Ns_SetPut(Ns_Set *set, CONST char *key, CONST char *value)
+{
+    return Ns_SetPutSz(set, key, value, -1);
+}
 
 /*
  *----------------------------------------------------------------------
  *
  * Ns_SetUniqueCmp --
  *
- *	Using the comparison function, see if multiple keys match 
- *	key. 
+ *	Using the comparison function, see if multiple keys match
+ *	key.
  *
  * Results:
- *	NS_FALSE: multiple keys match key 
- *	NS_TRUE: 0 or 1 keys match key. 
+ *	NS_FALSE: multiple keys match key
+ *	NS_TRUE: 0 or 1 keys match key.
  *
  * Side effects:
  *	None.
@@ -192,7 +197,7 @@ Ns_SetUniqueCmp(Ns_Set *set, CONST char *key,
         name = set->fields[i].name;
         if ((key == NULL && name == NULL) ||
             (key != NULL && name != NULL && ((*cmp) (key, name)) == 0)) {
-	    
+
             if (found) {
                 return NS_FALSE;
             }
@@ -208,14 +213,14 @@ Ns_SetUniqueCmp(Ns_Set *set, CONST char *key,
  *
  * Ns_SetFindCmp --
  *
- *	Returns the index of a tuple matching key, using a comparison 
- *	function callback. 
+ *	Returns the index of a tuple matching key, using a comparison
+ *	function callback.
  *
  * Results:
- *	A tuple index or -1 if no matches. 
+ *	A tuple index or -1 if no matches.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -231,11 +236,11 @@ Ns_SetFindCmp(Ns_Set *set, CONST char *key,
         name = set->fields[i].name;
         if ((key == NULL && name == NULL) ||
             (key != NULL && name != NULL && ((*cmp) (key, name)) == 0)) {
-	    
+
             return i;
         }
     }
-    
+
     return -1;
 }
 
@@ -245,14 +250,14 @@ Ns_SetFindCmp(Ns_Set *set, CONST char *key,
  *
  * Ns_SetGetCmp --
  *
- *	Returns the value of a tuple matching key, using a comparison 
- *	function callback. 
+ *	Returns the value of a tuple matching key, using a comparison
+ *	function callback.
  *
  * Results:
- *	A value or NULL if no matches. 
+ *	A value or NULL if no matches.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -279,10 +284,10 @@ Ns_SetGetCmp(Ns_Set *set, CONST char *key,
  *	Check if a key in a set is unique (case sensitive).
  *
  * Results:
- *	NS_TRUE if unique, NS_FALSE if not. 
+ *	NS_TRUE if unique, NS_FALSE if not.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -300,13 +305,13 @@ Ns_SetUnique(Ns_Set *set, CONST char *key)
  *
  * Ns_SetIUnique --
  *
- *	Check if a key in a set is unique (case insensitive). 
+ *	Check if a key in a set is unique (case insensitive).
  *
  * Results:
- *	NS_TRUE if unique, NS_FALSE if not. 
+ *	NS_TRUE if unique, NS_FALSE if not.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -324,13 +329,13 @@ Ns_SetIUnique(Ns_Set *set, CONST char *key)
  *
  * Ns_SetFind --
  *
- *	Locate the index of a field in a set (case sensitive) 
+ *	Locate the index of a field in a set (case sensitive)
  *
  * Results:
- *	A field index or -1 if not found. 
+ *	A field index or -1 if not found.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -348,13 +353,13 @@ Ns_SetFind(Ns_Set *set, CONST char *key)
  *
  * Ns_SetIFind --
  *
- *	Locate the index of a field in a set (case insensitive) 
+ *	Locate the index of a field in a set (case insensitive)
  *
  * Results:
- *	A field index or -1 if not found. 
+ *	A field index or -1 if not found.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -372,13 +377,13 @@ Ns_SetIFind(Ns_Set *set, CONST char *key)
  *
  * Ns_SetGet --
  *
- *	Return the value associated with a key, case sensitive. 
+ *	Return the value associated with a key, case sensitive.
  *
  * Results:
- *	A value or NULL if key not found. 
+ *	A value or NULL if key not found.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -396,13 +401,13 @@ Ns_SetGet(Ns_Set *set, CONST char *key)
  *
  * Ns_SetIGet --
  *
- *	Return the value associated with a key, case insensitive. 
+ *	Return the value associated with a key, case insensitive.
  *
  * Results:
- *	A value or NULL if key not found. 
+ *	A value or NULL if key not found.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -421,12 +426,12 @@ Ns_SetIGet(Ns_Set *set, CONST char *key)
  *
  *      Return the value associated with a key, case sensitive.
  *      If no value found or it is empty, return provided default value
- *  
+ *
  * Results:
  *      A value or NULL if key not found or default is NULL
  *
  * Side effects:
- *      None.   
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -468,13 +473,13 @@ char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def)
  *
  * Ns_SetTrunc --
  *
- *	Remove all tuples after 'size' 
+ *	Remove all tuples after 'size'
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will free tuple memory. 
+ *	Will free tuple memory.
  *
  *----------------------------------------------------------------------
  */
@@ -499,13 +504,13 @@ Ns_SetTrunc(Ns_Set *set, int size)
  *
  * Ns_SetDelete --
  *
- *	Delete a tuple from a set. 
+ *	Delete a tuple from a set.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will free tuple memory. 
+ *	Will free tuple memory.
  *
  *----------------------------------------------------------------------
  */
@@ -532,13 +537,13 @@ Ns_SetDelete(Ns_Set *set, int index)
  *
  * Ns_SetPutValue --
  *
- *	Set the value for a given tuple. 
+ *	Set the value for a given tuple.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will free the old value dup the new value. 
+ *	Will free the old value dup the new value.
  *
  *----------------------------------------------------------------------
  */
@@ -561,10 +566,10 @@ Ns_SetPutValue(Ns_Set *set, int index, CONST char *value)
  *	Delete a tuple from the set (case sensitive).
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will free tuple memory. 
+ *	Will free tuple memory.
  *
  *----------------------------------------------------------------------
  */
@@ -581,13 +586,13 @@ Ns_SetDeleteKey(Ns_Set *set, CONST char *key)
  *
  * Ns_SetIDeleteKey --
  *
- *	Delete a tuple from the set (case insensitive). 
+ *	Delete a tuple from the set (case insensitive).
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will free tuple memory. 
+ *	Will free tuple memory.
  *
  *----------------------------------------------------------------------
  */
@@ -604,14 +609,14 @@ Ns_SetIDeleteKey(Ns_Set *set, CONST char *key)
  *
  * Ns_SetListFind --
  *
- *	In a null-terminated array of sets, find the set with the 
- *	given name. 
+ *	In a null-terminated array of sets, find the set with the
+ *	given name.
  *
  * Results:
- *	A set, or NULL. 
+ *	A set, or NULL.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -627,7 +632,7 @@ Ns_SetListFind(Ns_Set **sets, CONST char *name)
         } else {
             if ((*sets)->name != NULL &&
 		STREQ((*sets)->name, name)) {
-		
+
                 return (*sets);
             }
         }
@@ -642,18 +647,18 @@ Ns_SetListFind(Ns_Set **sets, CONST char *name)
  *
  * Ns_SetSplit --
  *
- *	Split a set into an array of new sets. This assumes that each 
- *	key name in the fields of a set contains a separating 
- *	character. The fields of the set are partitioned into new 
- *	sets whose set names are the characters before the separator 
- *	and whose field key names are the characters after the 
- *	separator. 
+ *	Split a set into an array of new sets. This assumes that each
+ *	key name in the fields of a set contains a separating
+ *	character. The fields of the set are partitioned into new
+ *	sets whose set names are the characters before the separator
+ *	and whose field key names are the characters after the
+ *	separator.
  *
  * Results:
- *	A new set. 
+ *	A new set.
  *
  * Side effects:
- *	Will allocate a new set and tuples. 
+ *	Will allocate a new set and tuples.
  *
  *----------------------------------------------------------------------
  */
@@ -667,7 +672,7 @@ Ns_SetSplit(Ns_Set *set, char sep)
 
     Ns_DStringInit(&ds);
     Ns_DStringNAppend(&ds, (char *) &end, sizeof(Ns_Set *));
-    
+
     for (i = 0; i < set->size; ++i) {
         Ns_Set *next;
         char   *name;
@@ -704,13 +709,13 @@ Ns_SetSplit(Ns_Set *set, char sep)
  *
  * Ns_SetListFree --
  *
- *	Free a null-terminated array of sets. 
+ *	Free a null-terminated array of sets.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will free all sets in the array and their tuples. 
+ *	Will free all sets in the array and their tuples.
  *
  *----------------------------------------------------------------------
  */
@@ -734,13 +739,13 @@ Ns_SetListFree(Ns_Set **sets)
  *
  * Ns_SetMerge --
  *
- *	Combine the 'low' set into the 'high' set. 
+ *	Combine the 'low' set into the 'high' set.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will add tuples to 'high'. 
+ *	Will add tuples to 'high'.
  *
  *----------------------------------------------------------------------
  */
@@ -764,13 +769,13 @@ Ns_SetMerge(Ns_Set *high, Ns_Set *low)
  *
  * Ns_SetCopy --
  *
- *	Make a duplicate of a set. 
+ *	Make a duplicate of a set.
  *
  * Results:
- *	A new set. 
+ *	A new set.
  *
  * Side effects:
- *	Will copy tuples and alloc new memory for them, too. 
+ *	Will copy tuples and alloc new memory for them, too.
  *
  *----------------------------------------------------------------------
  */
@@ -788,7 +793,7 @@ Ns_SetCopy(Ns_Set *old)
     for (i = 0; i < old->size; ++i) {
         Ns_SetPut(new, old->fields[i].name, old->fields[i].value);
     }
-    
+
     return new;
 }
 
@@ -798,14 +803,14 @@ Ns_SetCopy(Ns_Set *old)
  *
  * Ns_SetMove --
  *
- *	Moves the data from one set to another, truncating the "from" 
- *	set. 
+ *	Moves the data from one set to another, truncating the "from"
+ *	set.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	None. 
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -827,13 +832,13 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
  *
  * Ns_SetPrint --
  *
- *	Dump the contents of a set to stderr. 
+ *	Dump the contents of a set to stderr.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
- *	Will write to stderr. 
+ *	Will write to stderr.
  *
  *----------------------------------------------------------------------
  */

@@ -54,7 +54,6 @@ typedef struct {
  */
 
 static void ConnRun(Conn *connPtr); /* Connection run routine. */
-static void ParseAuth(Conn *connPtr, char *auth);
 static void CreateConnThread(ConnPool *poolPtr);
 static void JoinConnThread(Ns_Thread *threadPtr);
 static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state);
@@ -686,6 +685,7 @@ ConnRun(Conn *connPtr)
     connPtr->responseVersion = 0;
     connPtr->responseLength = 0;
     connPtr->recursionCount = 0;
+    connPtr->auth = NULL;
     connPtr->keep = -1;          /* Default keep-alive rules apply */
     connPtr->encoding = servPtr->encoding.outputEncoding;
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
@@ -707,7 +707,7 @@ ConnRun(Conn *connPtr)
     }
     auth = Ns_SetIGet(connPtr->headers, "authorization");
     if (auth != NULL) {
-        ParseAuth(connPtr, auth);
+        NsParseAuth(connPtr, auth);
     }
     if (conn->request->method && STREQ(conn->request->method, "HEAD")) {
         conn->flags |= NS_CONN_SKIPBODY;
@@ -725,9 +725,9 @@ ConnRun(Conn *connPtr)
             status = Ns_AuthorizeRequest(servPtr->server,
                                          connPtr->request->method,
                                          connPtr->request->url,
-                                         connPtr->authUser,
-                                         connPtr->authPasswd,
-                                         connPtr->reqPtr->peer);
+                                         Ns_ConnAuthUser(conn),
+                                         Ns_ConnAuthPasswd(conn),
+                                         Ns_ConnPeer(conn));
             switch (status) {
             case NS_OK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
@@ -779,12 +779,11 @@ ConnRun(Conn *connPtr)
     NsRunCleanups(conn);
     NsClsCleanup(connPtr);
     NsFreeConnInterp(connPtr);
-    if (connPtr->authUser != NULL) {
-        ns_free(connPtr->authUser);
-        connPtr->authUser = connPtr->authPasswd = NULL;
-    }
+
     Ns_ConnClearQuery(conn);
     Tcl_DStringFree(&connPtr->queued);
+    Ns_SetFree(connPtr->auth);
+    connPtr->auth = NULL;
     Ns_SetFree(connPtr->outputheaders);
     connPtr->outputheaders = NULL;
     NsFreeRequest(connPtr->reqPtr);
@@ -792,56 +791,6 @@ ConnRun(Conn *connPtr)
     if (connPtr->responseVersion != NULL) {
         ns_free(connPtr->responseVersion);
         connPtr->responseVersion = NULL;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ParseAuth --
- *
- *      Parse an HTTP authorization string.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      May set the authPasswd and authUser connection pointers.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ParseAuth(Conn *connPtr, char *auth)
-{
-    register char *p, *q;
-    int            n;
-    char           save;
-
-    p = auth;
-    while (*p != '\0' && !isspace(UCHAR(*p))) {
-        ++p;
-    }
-    if (*p != '\0') {
-        save = *p;
-        *p = '\0';
-        if (STRIEQ(auth, "Basic")) {
-            q = p + 1;
-            while (*q != '\0' && isspace(UCHAR(*q))) {
-                ++q;
-            }
-            n = strlen(q) + 3;
-            connPtr->authUser = ns_malloc((size_t) n);
-            n = Ns_HtuuDecode(q, (unsigned char *) connPtr->authUser, n);
-            connPtr->authUser[n] = '\0';
-            q = strchr(connPtr->authUser, ':');
-            if (q != NULL) {
-                *q++ = '\0';
-                connPtr->authPasswd = q;
-            }
-        }
-        *p = save;
     }
 }
 

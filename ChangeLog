@@ -1,3 +1,38 @@
+2007-05-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * include/ns.h:
+        * include/nsthread.h:
+        * nsd/nsd.h:
+        * nsd/auth.c:
+        * nsd/queue.c:
+        * nsd/callbacks.c:
+        * nsd/op.c:
+        * nsd/conn.c:
+        * nsperm/nsperm.c: Changed the internal format of
+        authentication mechanism. Instead of keeping jusr user/passwd
+        in the Conn struct, there is Ns_Set *auth which keeps all auth related
+        data as name/value pairs. By default for Basic auth 2 entries will
+        be put there: User and Password. For Digest method there will be more.
+        All references to authUser and authPassword in the code have been replaced with
+        Ns_ConnAuthUser and Ns_ConnAuthPasswd.
+
+        Added public function Ns_ConnAuth which returns Ns_Set with all securoty tokens.
+
+        ns_info also got additional argument ns_info auth, return name os the set
+
+        * nsperm/init.tcl: Updated with new command syntax but file format is
+        kept the same
+
+        * nslog/nslog.c:
+        * nscgi/nscgi.c: Updated not to use authUser directly but use
+        Ns_ConnAuthUser function instead
+
+        * nsd/set.c: Added public function Ns_SetPutSz that take additional
+        parameter as size of the string to put into set
+
+        * nsthread/memory.c: Added public function ns_strncopy for
+        duplicating part of the string only
+
 2007-05-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:
@@ -23,7 +58,7 @@
 2007-05-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/returnresp.c: In Ns_ConnReturnUnauthorized check if header
-	WWW-Authenticate already exists, this is in anticipation of new 
+	WWW-Authenticate already exists, this is in anticipation of new
 	Digest auth method to be implemented soon.
 
 2007-05-19  Stephen Deasey  <sdeasey@users.sf.net>
@@ -59,7 +94,7 @@
 	Much of the 'crazy state' of NsInitServer() has been broken out into
 	Ns_ServerInitProc callbacks within each subsystem.
 
-	* nsd/op.c (ConfigServerProxy): 
+	* nsd/op.c (ConfigServerProxy):
 	* nsd/fastpath.c (ConfigServerFastpath):
 	* nsd/url2file.c (ConfigServerUrl2File):
 	* nsd/pathname.c (ConfigServerVhost):
@@ -93,7 +128,7 @@
 
 2007-05-13  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* doc/src/nsv.man: Combined all nsv_ commands into one 
+	* doc/src/nsv.man: Combined all nsv_ commands into one
 	file
 
 2007-05-13  Stephen Deasey  <sdeasey@users.sf.net>

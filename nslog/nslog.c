@@ -328,7 +328,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 {
     Log         *logPtr = arg;
     CONST char **h;
-    char        *p, buf[100];
+    char        *p, *user, buf[100];
     int          n, status;
     Ns_DString   ds;
     Ns_Time      now, diff;
@@ -364,17 +364,18 @@ LogTrace(void *arg, Ns_Conn *conn)
      * with embedded blanks; we must properly quote them.
      */
 
-    if (conn->authUser == NULL) {
+    user = Ns_ConnAuthUser(conn);
+    if (user == NULL) {
         Ns_DStringAppend(&ds," - - ");
     } else {
         int quote = 0;
-        for (p = conn->authUser; *p && !quote; p++) {
+        for (p = user; *p && !quote; p++) {
             quote = isspace((unsigned char)*p);
         }
         if (quote) {
-            Ns_DStringVarAppend(&ds, " - \"", conn->authUser, "\" ", NULL);
+            Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
         } else {
-            Ns_DStringVarAppend(&ds," - ", conn->authUser, " ", NULL);
+            Ns_DStringVarAppend(&ds," - ", user, " ", NULL);
         }
     }
 

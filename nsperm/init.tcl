@@ -48,8 +48,8 @@ proc init_nsperm { } {
 	    set line [gets $file]
 	    if {[string range $line 0 0] != "#"} {
 		if {$line ne ""} {
-		    set list [split $line :]
-		    if {[llength $list] != 2} {
+		    set list [split $line :,]
+		    if {[llength $list] < 2} {
 			ns_log error "init_nsperm: bad line in $filename: $line"
 		    } else {
 			set user [lindex $list 0]
@@ -74,8 +74,8 @@ proc init_nsperm { } {
 	    set line [gets $file]
 	    if {[string range $line 0 0] != "#"} {
 		if {$line ne ""} {
-		    set list [split $line :]
-		    if {[llength $list] != 2} {
+		    set list [split $line :,]
+		    if {[llength $list] < 2} {
 			ns_log error "init_nsperm: bad line in $filename: $line"
 		    } else {
 			set user [lindex $list 0]
@@ -108,23 +108,24 @@ proc init_nsperm { } {
 		    if {[llength $list] != 7} {
 			ns_log error "nsperm_init: bad line in $filename: $line"
 		    } else {
-			set user [lindex $list 0]
+                        set flag ""
+                        set user [lindex $list 0]
 			set pass [lindex $list 1]
 			set uf1 [lindex $list 4]
-			set cmd "ns_perm adduser [list $user] [list $pass] [list $uf1]"
+                        set params "[list $user] [list $pass] [list $uf1]"
 			if {[info exists _ns_allow($user)]} {
-			    append cmd " -allow "
+			    set flag "-allow"
 			    foreach a $_ns_allow($user) {
-				append cmd " [list $a]"
+				append params " [list $a]"
 			    }
 			}
 			if {[info exists _ns_deny($user)]} {
-			    append cmd " -deny "
-			    foreach a $_ns_deny($user) {
-				append cmd " [list $a]"
+                            set flag "-deny"
+                            foreach a $_ns_deny($user) {
+				append params " [list $a]"
 			    }
 			}
-			eval $cmd
+			eval ns_perm adduser $flag $params
 		    }
 		}
 	    }

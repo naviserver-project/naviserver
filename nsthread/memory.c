@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * memory.c --
  *
  *	Memory allocation routines.
@@ -92,6 +92,20 @@ char *
 ns_strcopy(const char *old)
 {
     return (old == NULL ? NULL : ns_strdup(old));
+}
+
+char *
+ns_strncopy(const char *old, int size)
+{
+    char *new = NULL;
+
+    if (old != NULL) {
+        size = size > 0 ? size : strlen(old);
+        new = ns_malloc(size + 1);
+        strncpy(new, old, size);
+        new[size] = 0;
+    }
+    return new;
 }
 
 char *

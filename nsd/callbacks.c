@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * callbacks.c --
  *
  *      Support for Callbacks
@@ -91,7 +91,7 @@ static Ns_Thread shutdownThread;
  *      Callbacks will run in FIFO order.
  *
  * Results:
- *      None 
+ *      None
  *
  * Side effects:
  *      None.
@@ -116,7 +116,7 @@ Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
  *      Callbacks will run in FIFO order.
  *
  * Results:
- *      None 
+ *      None
  *
  * Side effects:
  *      None.
@@ -140,7 +140,7 @@ Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
  *      Callbacks will run in FIFO order.
  *
  * Results:
- *      None 
+ *      None
  *
  * Side effects:
  *      None.
@@ -163,7 +163,7 @@ Ns_RegisterAtSignal(Ns_Callback * proc, void *arg)
  *      Register a callback to run when the driver thread becomes ready?
  *
  * Results:
- *      None 
+ *      None
  *
  * Side effects:
  *      None.
@@ -183,10 +183,10 @@ Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
  *
  * Ns_RegisterAtShutdown --
  *
- *      Register a callback to run at server shutdown. 
+ *      Register a callback to run at server shutdown.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      None.
@@ -206,10 +206,10 @@ Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
  *
  * Ns_RegisterAtExit --
  *
- *      Register a callback to be run at server exit. 
+ *      Register a callback to be run at server exit.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      None.
@@ -281,7 +281,7 @@ NsRunAtExitProcs(void)
  *      proc returns immediately.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
  *      Depends on registered shutdown procs.
@@ -323,7 +323,7 @@ ShutdownThread(void *arg)
     Ns_CondSignal(&cond);
     Ns_MutexUnlock(&lock);
 }
-    
+
 
 /*
  *----------------------------------------------------------------------
@@ -391,7 +391,7 @@ NsWaitShutdownProcs(Ns_Time *toPtr)
  *      Append callback info to given dstring. Called by ns_info.
  *
  * Results:
- *      None 
+ *      None
  *
  * Side effects:
  *      None.
@@ -430,13 +430,13 @@ AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr)
  *
  * RegisterAt --
  *
- *      Generic function that registers callbacks for any event 
+ *      Generic function that registers callbacks for any event
  *
  * Results:
- *      Pointer to the newly-allocated Callback structure 
+ *      Pointer to the newly-allocated Callback structure
  *
  * Side effects:
- *      Callback struct will be alloacated and put in the linked list. 
+ *      Callback struct will be alloacated and put in the linked list.
  *
  *----------------------------------------------------------------------
  */
@@ -484,13 +484,13 @@ RegisterAt(Callback **firstPtrPtr, void *proc, void *arg, int fifo)
  *
  * RunCallbacks --
  *
- *      Run all callbacks in the passed-in linked list. 
+ *      Run all callbacks in the passed-in linked list.
  *
  * Results:
- *      None 
+ *      None
  *
  * Side effects:
- *      Callbacks called back. 
+ *      Callbacks called back.
  *
  *----------------------------------------------------------------------
  */
@@ -502,14 +502,15 @@ RunCallbacks(CONST char *list, Callback *cbPtr)
     Ns_DString   ds;
 
     while (cbPtr != NULL) {
+        proc = cbPtr->proc;
+        (*proc)(cbPtr->arg);
+
         if (Ns_LogLevel(Debug)) {
             Ns_DStringInit(&ds);
             Ns_GetProcInfo(&ds, proc, cbPtr->arg);
             Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));
             Ns_DStringFree(&ds);
         }
-        proc = cbPtr->proc;
-        (*proc)(cbPtr->arg);
 
         cbPtr = cbPtr->nextPtr;
     }

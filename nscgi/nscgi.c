@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -53,7 +53,7 @@ NS_RCSID("@(#) $Header$");
  * The following structure is allocated for each instance the module is
  * loaded (normally just once).
  */
- 
+
 struct Cgi;
 
 typedef struct Mod {
@@ -78,7 +78,7 @@ typedef struct Mod {
  * this structure allows building up the state in multiple places and
  * tearing it all down in FreeCgi, thus simplifying the CgiRequest procedure.
  */
- 
+
 typedef struct Cgi {
     Mod     	   *modPtr;
     int		    flags;
@@ -104,7 +104,7 @@ typedef struct Cgi {
  * The following structure defines the context of a single CGI config
  * mapping, supporting both directory-style and pageroot-style CGI locations.
  */
- 
+
 typedef struct Map {
     Mod	     *modPtr;
     char     *url;
@@ -116,7 +116,7 @@ typedef struct Map {
  * simply for duping as stdin in the child process.  This ensures the child
  * will get a proper EOF without having to allocate an empty temp file.
  */
- 
+
 static int devNull;
 
 static Ns_OpProc CgiRequest;
@@ -134,7 +134,7 @@ static char    *NextWord(char *s);
 static void	SetAppend(Ns_Set *set, int index, char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, char *key, char *value);
 
-int Ns_ModuleVersion = 1;	
+int Ns_ModuleVersion = 1;
 
 
 /*
@@ -153,7 +153,7 @@ int Ns_ModuleVersion = 1;
  *
  *----------------------------------------------------------------------
  */
- 
+
 int
 Ns_ModuleInit(char *server, char *module)
 {
@@ -339,17 +339,17 @@ CgiRequest(void *arg, Ns_Conn *conn)
     /*
      * Execute the CGI and copy output.
      */
-    
+
     if (CgiExec(&cgi, conn) != NS_OK) {
 	status = Ns_ConnReturnInternalError(conn);
     } else {
 	status = CgiCopy(&cgi, conn);
     }
-    
+
     /*
      * Release CGI access.
      */
-     
+
     if (modPtr->maxCgi > 0) {
 	Ns_MutexLock(&modPtr->lock);
 	--modPtr->activeCgi;
@@ -390,7 +390,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
     char           *s, *e;
     char    	   *url = conn->request->url;
     char	   *server = Ns_ConnServer(conn);
-    
+
     modPtr = mapPtr->modPtr;
     memset(cgiPtr, 0, ((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);
     cgiPtr->buf[0] = '\0';
@@ -410,31 +410,31 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
     plen = strlen(mapPtr->url);
     if ((strncmp(mapPtr->url, url, (size_t)plen) == 0) &&
     	(ulen == plen || url[plen] == '/')) {
-	
+
         if (mapPtr->path == NULL) {
 
             /*
              * No path mapping, script in pages directory:
-             * 
+             *
              * 1. Path is Url2File up to the URL prefix.
 	     * 2. SCRIPT_NAME is the URL prefix.
 	     * 3. PATH_INFO is everything past SCRIPT_NAME in the URL.
              */
-	     
+
             cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, plen);
 	    dsPtr = CgiDs(cgiPtr);
             Ns_UrlToFile(dsPtr, server, cgiPtr->name);
 	    cgiPtr->path = dsPtr->string;
             cgiPtr->pathinfo = url + plen;
-	    
+
         } else if (stat(mapPtr->path, &st) != 0) {
 	    goto err;
-	
+
     	} else if (S_ISDIR(st.st_mode)) {
 
             /*
              * Path mapping is a directory:
-             * 
+             *
              * 1. The script file is the first path element in the URL past
              * the mapping prefix.
 	     * 2. SCRIPT_NAME is the URL up to and including the
@@ -467,7 +467,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
 
             /*
              * When the path mapping is (or at least could be) a file:
-             * 
+             *
              * 1. The script pathname is the mapping.
 	     * 2. SCRIPT_NAME is the url prefix.
 	     * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
@@ -487,13 +487,13 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
          * The prefix didn't match.  Assume the mapping was a wildcard
          * mapping like *.cgi which was fetched by UrlSpecificGet() but
          * skipped by strncmp() above. In this case:
-         * 
+         *
          * 1. The script pathname is the URL file in the pages directory.
 	 * 2. SCRIPT_NAME is the URL.
 	 * 3. PATH_INFO is "".
          */
-	 
-	dsPtr = CgiDs(cgiPtr);   
+
+	dsPtr = CgiDs(cgiPtr);
 	Ns_UrlToFile(dsPtr, server, url);
 	cgiPtr->path = dsPtr->string;
 	cgiPtr->name = url;
@@ -503,7 +503,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
     /*
      * Copy the script directory and see if the script is NPH.
      */
-     
+
     s = strrchr(cgiPtr->path, '/');
     if (s == NULL || access(cgiPtr->path, R_OK) != 0) {
 	goto err;
@@ -637,11 +637,11 @@ CgiFree(Cgi *cgiPtr)
     /*
      * Close the pipe.
      */
-    
+
     if (cgiPtr->ofd >= 0) {
     	close(cgiPtr->ofd);
     }
-        
+
     /*
      * Release the temp file.
      */
@@ -649,11 +649,11 @@ CgiFree(Cgi *cgiPtr)
     if (cgiPtr->ifd >= 0) {
 	Ns_ReleaseTemp(cgiPtr->ifd);
     }
-     
+
     /*
      * Free the environment.
      */
-     
+
     if (cgiPtr->env != NULL) {
 	Ns_SetFree(cgiPtr->env);
     }
@@ -661,7 +661,7 @@ CgiFree(Cgi *cgiPtr)
     /*
      * Reap the process.
      */
-     
+
     if (cgiPtr->pid != -1 && Ns_WaitProcess(cgiPtr->pid) != NS_OK) {
 	Ns_Log(Error, "nscgi: wait for %s failed: %s",
 	       cgiPtr->exec, strerror(errno));
@@ -706,7 +706,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      * Get a dstring which will be used to setup env variables
      * and the arg list.
      */
-     
+
     dsPtr = CgiDs(cgiPtr);
 
     /*
@@ -759,7 +759,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     SetUpdate(cgiPtr->env, "SCRIPT_NAME", cgiPtr->name);
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
     	Ns_DString tmp;
-	
+
         if (Ns_UrlPathDecode(dsPtr, cgiPtr->pathinfo, NULL) != NULL) {
             SetUpdate(cgiPtr->env, "PATH_INFO", dsPtr->string);
         } else {
@@ -793,7 +793,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     s = Ns_ConnLocationAppend(conn, dsPtr);
     s = strchr(s, ':');
     s += 3;               /* Get past the protocol://  */
-    p = strchr(s, ':');   /* Get to the port number    */ 
+    p = strchr(s, ':');   /* Get to the port number    */
     if (p != NULL) {
         SetUpdate(cgiPtr->env, "SERVER_PORT", p);
         for (i = 0; p != '\0'; ++p) {
@@ -810,7 +810,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
 
     SetUpdate(cgiPtr->env, "AUTH_TYPE", "Basic");
-    SetUpdate(cgiPtr->env, "REMOTE_USER", conn->authUser);
+    SetUpdate(cgiPtr->env, "REMOTE_USER", Ns_ConnAuthUser(conn));
     s = Ns_ConnPeer(conn);
     if (s != NULL) {
         SetUpdate(cgiPtr->env, "REMOTE_ADDR", s);
@@ -904,7 +904,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     /*
      * Create the output pipe.
      */
-     
+
     if (ns_pipe(opipe) != 0) {
 	Ns_Log(Error, "nscgi: pipe() failed: %s", strerror(errno));
 	return NS_ERROR;
@@ -913,7 +913,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     /*
      * Execute the CGI.
      */
-     
+
     cgiPtr->pid = Ns_ExecProcess(cgiPtr->exec, cgiPtr->dir,
 	cgiPtr->ifd < 0 ? devNull : cgiPtr->ifd,
 	opipe[1], dsPtr->string, cgiPtr->env);
@@ -948,7 +948,7 @@ static int
 CgiRead(Cgi *cgiPtr)
 {
     int n;
-    
+
     cgiPtr->ptr = cgiPtr->buf;
     do {
     	n = read(cgiPtr->ofd, cgiPtr->buf, sizeof(cgiPtr->buf));
@@ -986,7 +986,7 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
     int n;
 
     do {
-	while (cgiPtr->cnt > 0) { 
+	while (cgiPtr->cnt > 0) {
 	    c = *cgiPtr->ptr;
 	    ++cgiPtr->ptr;
 	    --cgiPtr->cnt;
@@ -1027,7 +1027,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     int             status, last, n, httpstatus;
     char           *value;
     Ns_Set         *hdrs;
-    
+
     /*
      * Skip to copy for nph CGI's.
      */
@@ -1039,7 +1039,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     /*
      * Read and parse headers up to the blank line or end of file.
      */
-     
+
     Ns_DStringInit(&ds);
     last = -1;
     httpstatus = 200;
@@ -1082,11 +1082,11 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     if (n < 0) {
 	return Ns_ConnReturnInternalError(conn);
     }
-    
+
     /*
      * Queue the headers and copy remaining content up to end of file.
      */
-     
+
     Ns_ConnSetRequiredHeaders(conn, NULL, -1);
     Ns_ConnQueueHeaders(conn, httpstatus);
 copy:
@@ -1098,11 +1098,11 @@ copy:
      * Close connection now so it will not linger on
      * waiting for process exit.
      */
-     
+
     if (status == NS_OK) {
     	status = Ns_ConnClose(conn);
     }
-    
+
     return status;
 }
 
@@ -1166,7 +1166,7 @@ CgiRegister(Mod *modPtr, char *map)
 
     Ns_DStringInit(&ds1);
     Ns_DStringInit(&ds2);
-    
+
     Ns_DStringAppend(&ds1, map);
     method = ds1.string;
     url = NextWord(method);
@@ -1174,7 +1174,7 @@ CgiRegister(Mod *modPtr, char *map)
         Ns_Log(Error, "nscgi: invalid mapping: %s", map);
 	goto done;
     }
-    
+
     path = NextWord(url);
     if (*path == '\0') {
         path = NULL;
@@ -1193,7 +1193,7 @@ CgiRegister(Mod *modPtr, char *map)
     mapPtr->path = ns_strcopy(path);
     Ns_Log(Notice, "nscgi: %s %s%s%s",
 	   method, url, path ? " -> " : "", path ? path : "");
-    Ns_RegisterRequest(modPtr->server, method, url, 
+    Ns_RegisterRequest(modPtr->server, method, url,
 		       CgiRequest, CgiFreeMap, mapPtr, 0);
 
 done:

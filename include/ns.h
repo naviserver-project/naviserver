@@ -401,8 +401,7 @@ typedef struct Ns_Conn {
     Ns_Request *request;
     Ns_Set     *headers;
     Ns_Set     *outputheaders;
-    char       *authUser;
-    char       *authPasswd;
+    Ns_Set     *auth;
     int         contentLength;
     int         flags;		/* Currently, only NS_CONN_CLOSED. */
 } Ns_Conn;
@@ -861,6 +860,7 @@ NS_EXTERN int Ns_ParseHeader(Ns_Set *set, char *header, Ns_HeaderCaseDisposition
 NS_EXTERN Ns_Set  *Ns_ConnGetQuery(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnClearQuery(Ns_Conn *conn);
 NS_EXTERN int Ns_QueryToSet(char *query, Ns_Set *qset);
+NS_EXTERN Ns_Set *Ns_ConnAuth(Ns_Conn *conn);
 NS_EXTERN Ns_Set *Ns_ConnHeaders(Ns_Conn *conn);
 NS_EXTERN Ns_Set *Ns_ConnOutputHeaders(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnAuthUser(Ns_Conn *conn);
@@ -1770,6 +1770,8 @@ NS_EXTERN void Ns_SetUpdate(Ns_Set *set, CONST char *key, CONST char *value);
 NS_EXTERN Ns_Set *Ns_SetCreate(CONST char *name);
 NS_EXTERN void Ns_SetFree(Ns_Set *set);
 NS_EXTERN int Ns_SetPut(Ns_Set *set, CONST char *key, CONST char *value);
+NS_EXTERN int Ns_SetPutSz(Ns_Set *set, CONST char *key, CONST char *value,
+                          int size);
 NS_EXTERN int Ns_SetUniqueCmp(Ns_Set *set, CONST char *key,
                               int (*cmp) (CONST char *s1, CONST char *s2));
 NS_EXTERN int Ns_SetFindCmp(Ns_Set *set, CONST char *key,

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * op.c --
  *
  *      Routines to register, unregister, and run connection request
@@ -308,7 +308,7 @@ Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
     /*
      * Update the request URL.
      */
-   
+
     Ns_SetRequestUrl(conn->request, url);
 
     /*
@@ -316,8 +316,8 @@ Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
      */
 
     status = Ns_AuthorizeRequest(Ns_ConnServer(conn), conn->request->method,
-                 conn->request->url, conn->authUser,
-                 conn->authPasswd, Ns_ConnPeer(conn));
+                 conn->request->url, Ns_ConnAuthUser(conn),
+                 Ns_ConnAuthPasswd(conn), Ns_ConnPeer(conn));
     switch (status) {
     case NS_OK:
         status = Ns_ConnRunRequest(conn);
@@ -487,7 +487,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
  *
  *      Get a description of each registered request for the given
  *      server.
- * 
+ *
  * Results:
  *      DString with info in Tcl list form.
  *
@@ -496,12 +496,12 @@ NsConnRunProxyRequest(Ns_Conn *conn)
  *
  *----------------------------------------------------------------------
  */
- 
+
 void
 NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server)
 {
     NsServer *servPtr;
- 
+
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
         return;
