@@ -12,7 +12,7 @@ and the specified user text (userfield) into the users database.
 
 [list_begin definitions]
 
-[call [cmd ns_perm] [arg adduser] [opt [arg -allow]] [opt [arg -salt s]] [arg name] [arg pass] [arg userfield] [opt host...]]
+[call [cmd ns_perm] [arg adduser] [opt [arg -allow]] [opt [arg -deny]] [opt [arg -clear]] [opt [arg -salt s]] [arg name] [arg pass] [arg userfield] [opt host...]]
 
 [arg -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
 
@@ -31,6 +31,9 @@ ns_crypt mypasswd CU
 
 This argument tells command that password is clear text and it should be encrypted
 by the ns_perm command with specified salt.
+
+[arg -clear]
+Tells that we keep password in clear text
 
 [call [cmd ns_perm] [arg addgroup] [arg name] [arg user] [opt [arg user...]]]
 

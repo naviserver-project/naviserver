@@ -42,8 +42,19 @@ NS_RCSID("@(#) $Header$");
 #endif
 
 /*
- * For AOLserver
+ * The following flags are for user record
  */
+
+#define USER_FILTER_ALLOW     1
+#define USER_CLEAR_TEXT       2
+
+/*
+ * The following flags are for permission record
+ */
+
+#define PERM_IMPLICIT_ALLOW   1
+#define PERM_AUTH_DIGEST      2
+
 
 int Ns_ModuleVersion = 1;
 
@@ -63,12 +74,12 @@ typedef struct Server {
  */
 
 typedef struct {
-    char          pwd[16];
+    int           flags;
+    char          pwd[32];
     Tcl_HashTable groups;
     Tcl_HashTable nets;
     Tcl_HashTable masks;
     Tcl_HashTable hosts;
-    int           filterallow;
 } User;
 
 /*
@@ -84,13 +95,12 @@ typedef struct {
  */
 
 typedef struct {
+    int           flags;
     char         *baseurl;
     Tcl_HashTable allowuser;
     Tcl_HashTable denyuser;
     Tcl_HashTable allowgroup;
     Tcl_HashTable denygroup;
-    int           implicit_allow;
-    int           auth_digest;
 } Perm;
 
 /*
@@ -260,33 +270,43 @@ PermObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     case cmdAddUser:
 	status = AddUserObjCmd(servPtr, interp, objc, objv);
         break;
+
     case cmdAddGroup:
 	status = AddGroupObjCmd(servPtr, interp, objc, objv);
         break;
+
     case cmdListUsers:
 	status = ListUsersObjCmd(servPtr, interp, objc, objv);
         break;
+
     case cmdListGroups:
 	status = ListGroupsObjCmd(servPtr, interp, objc, objv);
         break;
+
     case cmdListPerms:
 	status = ListPermsObjCmd(servPtr, interp, objc, objv);
         break;
+
     case cmdAllowUser:
 	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 1, 1);
         break;
+
     case cmdDenyUser:
 	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 0, 1);
         break;
+
     case cmdAllowGroup:
 	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 1, 0);
         break;
+
     case cmdDenyGroup:
 	status = AllowDenyObjCmd(servPtr, interp, objc, objv, 0, 0);
         break;
+
     case cmdCheckPass:
         status = CheckPassObjCmd(servPtr, interp, objc, objv);
         break;
+
     case cmdSetPass:
         status = SetPassObjCmd(servPtr, interp, objc, objv);
         break;
@@ -336,7 +356,7 @@ AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *pee
     int stale = NS_FALSE;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    char *group,buf[NS_ENCRYPT_BUFSIZE];
+    char *group, buf[NS_ENCRYPT_BUFSIZE];
     Ns_Conn *conn = Ns_GetConn();
 
     if (user == NULL) {
@@ -382,22 +402,30 @@ AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *pee
 
     auth = Ns_ConnAuth(conn);
 
-    if (!permPtr->auth_digest) {
+    if (!(permPtr->flags & PERM_AUTH_DIGEST)) {
 
         /*
-         * Verify user password (if any).
+         * Basic Authentiction: Verify user password (if any).
          */
 
         if (userPtr->pwd[0] != 0) {
             if (pwd[0] == 0) {
 	        goto done;
 	    }
-  	    Ns_Encrypt(pwd, userPtr->pwd, buf);
-    	    if (!STREQ(userPtr->pwd, buf)) {
+            if (!(userPtr->flags & USER_CLEAR_TEXT)) {
+     	        Ns_Encrypt(pwd, userPtr->pwd, buf);
+                pwd = buf;
+            }
+    	    if (!STREQ(userPtr->pwd, pwd)) {
     	        goto done;
 	    }
         }
     } else {
+
+        /*
+         * Digest Authentication
+         */
+
 
     }
 
@@ -471,7 +499,7 @@ deny:
      * change the status back to unauthorized.
      */
 
-    if (!permPtr->implicit_allow) {
+    if (!(permPtr->flags & PERM_IMPLICIT_ALLOW)) {
 	status = NS_UNAUTHORIZED;
     }
 
@@ -480,7 +508,7 @@ done:
      * For Digest authentication we create WWW-Authenticate header manually
      */
 
-    if (status == NS_UNAUTHORIZED && permPtr->auth_digest) {
+    if (status == NS_UNAUTHORIZED && permPtr->flags & PERM_AUTH_DIGEST) {
         CreateHeader(servPtr, conn, stale);
     }
     Ns_RWLockUnlock(&servPtr->lock);
@@ -538,7 +566,7 @@ ValidateUserAddr(User *userPtr, char *peer)
 
 	entryPtr = Tcl_FindHashEntry(&userPtr->nets, (char *) ip.s_addr);
 	if (entryPtr != NULL && mask.s_addr == (unsigned long) Tcl_GetHashValue(entryPtr)) {
-	    if (userPtr->filterallow) {
+	    if (userPtr->flags & USER_FILTER_ALLOW) {
 		return NS_TRUE;
 	    } else {
 		return NS_FALSE;
@@ -547,7 +575,7 @@ ValidateUserAddr(User *userPtr, char *peer)
 	hPtr = Tcl_NextHashEntry(&search);
     }
 
-    if (userPtr->filterallow) {
+    if (userPtr->flags & USER_FILTER_ALLOW) {
 	retval = NS_FALSE;
     } else {
 	retval = NS_TRUE;
@@ -583,7 +611,7 @@ ValidateUserAddr(User *userPtr, char *peer)
 		last = start;
 		hPtr = Tcl_FindHashEntry(&userPtr->hosts, start);
 		if (hPtr != NULL) {
-		    if (userPtr->filterallow) {
+		    if (userPtr->flags & USER_FILTER_ALLOW) {
 			retval = NS_TRUE;
 		    } else {
 			retval = NS_FALSE;
@@ -629,17 +657,18 @@ AddUserObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
     Server *servPtr = data;
     User *userPtr;
     Group *groupPtr;
-    Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    int new, i, nargs = 0, allow = 0, deny = 0;
-    char *name, *slash, *net, *pwd;
-    char *field = NULL, *salt = NULL;
+    Tcl_HashSearch search;
     struct in_addr ip, mask;
     char buf[NS_ENCRYPT_BUFSIZE];
+    char *name, *slash, *net, *pwd;
+    char *field = NULL, *salt = NULL;
+    int new, i, nargs = 0, allow = 0, deny = 0, clear = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-allow", Ns_ObjvBool,   &allow,  (void*)NS_TRUE},
         {"-deny",  Ns_ObjvBool,   &deny,   (void*)NS_TRUE},
+        {"-clear", Ns_ObjvBool,   &clear,  (void*)NS_TRUE},
         {"-salt",  Ns_ObjvString, &salt,   NULL},
         {"--",     Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
@@ -655,10 +684,14 @@ AddUserObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
         return TCL_ERROR;
     }
 
-    userPtr = ns_malloc(sizeof(User));
+    userPtr = ns_calloc(1, sizeof(User));
+    if (clear) {
+        userPtr->flags |= USER_CLEAR_TEXT;
+    }
     if (salt != NULL) {
         Ns_Encrypt(pwd, salt, buf);
         pwd = buf;
+        userPtr->flags &= ~USER_CLEAR_TEXT;
     }
     snprintf(userPtr->pwd, sizeof(userPtr->pwd), "%s", pwd);
     Tcl_InitHashTable(&userPtr->nets, TCL_ONE_WORD_KEYS);
@@ -667,9 +700,13 @@ AddUserObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
     Tcl_InitHashTable(&userPtr->groups, TCL_STRING_KEYS);
 
     /*
-     * -allow and -deny are both used for consistency, -deny has precedence
+     * Both -allow and -deny can be used for consistency, but
+     * -deny has precedence
      */
-    userPtr->filterallow = deny ? 0 : allow ? 1 : 0;
+
+    if (allow && !deny) {
+        userPtr->flags |= USER_FILTER_ALLOW;
+    }
 
     /*
      * Loop over each parameter and figure out what it is. The
@@ -800,7 +837,7 @@ ListUsersObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
         if (userPtr->hosts.numEntries > 0 ||
             userPtr->masks.numEntries > 0 ||
             userPtr->nets.numEntries > 0) {
-            Tcl_AppendResult(interp, userPtr->filterallow ? " -allow " : " -deny ", NULL);
+            Tcl_AppendResult(interp, userPtr->flags & USER_FILTER_ALLOW ? " -allow " : " -deny ", NULL);
         }
         mPtr = Tcl_FirstHashEntry(&userPtr->nets, &msearch);
         while (mPtr != NULL) {
@@ -1056,8 +1093,12 @@ AllowDenyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
 	Tcl_InitHashTable(&permPtr->denygroup, TCL_STRING_KEYS);
 	Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
     }
-    permPtr->implicit_allow = !allow;
-    permPtr->auth_digest = digest;
+    if (!allow) {
+        permPtr->flags |= PERM_IMPLICIT_ALLOW;
+    }
+    if (digest) {
+        permPtr->flags |= PERM_AUTH_DIGEST;
+    }
 
     for (i = objc - nargs; i < objc; i++) {
         key = Tcl_GetString(objv[i]);
@@ -1118,7 +1159,7 @@ WalkCallback(Tcl_DString *dsPtr, void *arg)
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
-    if (permPtr->auth_digest) {
+    if (permPtr->flags & PERM_AUTH_DIGEST) {
         Ns_DStringVarAppend(dsPtr, " -digest ", NULL);
     }
 
