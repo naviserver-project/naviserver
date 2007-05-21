@@ -572,6 +572,33 @@ typedef struct Ns_DriverInitData {
 } Ns_DriverInitData;
 
 /*
+ * MD5 digest implementation
+ */
+
+typedef struct Ns_CtxMD5 {
+    ns_uint32 buf[4];
+    ns_uint32 bits[2];
+    unsigned char in[64];
+} Ns_CtxMD5;
+
+/*
+ * SHA1 digest implementation
+ */
+
+#define SHA_HASHWORDS  5
+#define SHA_BLOCKWORDS 16
+
+typedef struct Ns_CtxSHA1 {
+    unsigned int key[SHA_BLOCKWORDS];
+    ns_uint32 iv[SHA_HASHWORDS];
+#ifdef HAVE64
+    ns_uint64 bytes;
+#else
+    ns_uint32 bytesHi, bytesLo;
+#endif
+} Ns_CtxSHA1;
+
+/*
  * More typedefs of functions
  */
 
@@ -2084,6 +2111,34 @@ Ns_TclLogError(Tcl_Interp *interp)
 NS_EXTERN CONST char *
 Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+
+NS_EXTERN void
+Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CtxSHAInit(Ns_CtxSHA1 *ctx)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CtxString(unsigned char *digest, char *buf, int size)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * tclrequest.c:

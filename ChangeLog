@@ -33,6 +33,22 @@
         * nsthread/memory.c: Added public function ns_strncopy for
         duplicating part of the string only
 
+        * include/ns.h:
+        * nsd/tclcmds.c:
+        * nsd/auth.c:
+        * nsd/conn.c:
+        * nsd/tclmisc.c: Added public domain MD5 implementation, new command ns_md5 created,
+        new C API public functions added:
+               Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
+               Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
+               Ns_CtxMD5Final(unsigned char digest[16], Ns_CtxMD5 *ctx)
+               Ns_CtxSHAInit(Ns_CtxSHA1 *ctx)
+               Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
+               Ns_CtxSHAFinal(unsigned char digest[20], Ns_CtxSHA1 *ctx)
+
+        * nsperm/nsperm.c: Added first pieces to support both Basic and Digest
+        authentications
+
 2007-05-20  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

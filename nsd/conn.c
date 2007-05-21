@@ -132,7 +132,7 @@ Ns_ConnOutputHeaders(Ns_Conn *conn)
 char *
 Ns_ConnAuthUser(Ns_Conn *conn)
 {
-    return conn->auth ? Ns_SetIGet(conn->auth, "User") : NULL;
+    return conn->auth ? Ns_SetIGet(conn->auth, "Username") : NULL;
 }
 
 

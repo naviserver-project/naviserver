@@ -601,79 +601,48 @@ WordEndsInSemi(char *ip)
 
 static char hexChars[] = "0123456789ABCDEF";
 
-#ifndef HAVE_U_INT32_T
-typedef unsigned int u_int32_t;
-#endif
-
-#ifndef HAVE_U_INT8_T
-typedef unsigned char u_int8_t;
-#endif
-
-
-/*** FROM sha.h: ***/
-
 /*
-* Define to 1 for FIPS 180.1 version (with extra rotate in prescheduling),
-* 0 for FIPS 180 version (with the mysterious "weakness" that the NSA
-* isn't talking about).
-*/
+ * Define to 1 for FIPS 180.1 version (with extra rotate in prescheduling),
+ * 0 for FIPS 180 version (with the mysterious "weakness" that the NSA
+ * isn't talking about).
+ */
+
 #define SHA_VERSION 1
 
 #define SHA_BLOCKBYTES 64
-#define SHA_BLOCKWORDS 16
-
 #define SHA_HASHBYTES 20
-#define SHA_HASHWORDS 5
-
-/* SHA context. */
-typedef struct SHAContext {
- unsigned int key[SHA_BLOCKWORDS];
- u_int32_t iv[SHA_HASHWORDS];
-#ifdef HAVE64
- u_int64_t bytes;
-#else
- u_int32_t bytesHi, bytesLo;
-#endif
-} SHA_CTX;
-
-/*** END sha.h ***/
-
-/*** FROM sha.c: ***/
 
 /*
    Shuffle the bytes into big-endian order within words, as per the
    SHA spec.
  */
 static void
-shaByteSwap (u_int32_t * dest, u_int8_t const *src, unsigned int words)
+shaByteSwap (ns_uint32 * dest, ns_uint8 const *src, unsigned int words)
 {
-  do
-    {
-      *dest++ = (u_int32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
-	((unsigned) src[2] << 8 | src[3]);
-      src += 4;
-    }
-  while (--words);
+    do {
+       *dest++ = (ns_uint32) ((unsigned) src[0] << 8 | src[1]) << 16 |
+	         ((unsigned) src[2] << 8 | src[3]);
+       src += 4;
+    } while (--words);
 }
 
 /* Initialize the SHA values */
-static void
-SHAInit (SHA_CTX * ctx)
+void Ns_CtxSHAInit (Ns_CtxSHA1 * ctx)
 {
 
-  /* Set the h-vars to their initial values */
-  ctx->iv[0] = 0x67452301;
-  ctx->iv[1] = 0xEFCDAB89;
-  ctx->iv[2] = 0x98BADCFE;
-  ctx->iv[3] = 0x10325476;
-  ctx->iv[4] = 0xC3D2E1F0;
+    /* Set the h-vars to their initial values */
+    ctx->iv[0] = 0x67452301;
+    ctx->iv[1] = 0xEFCDAB89;
+    ctx->iv[2] = 0x98BADCFE;
+    ctx->iv[3] = 0x10325476;
+    ctx->iv[4] = 0xC3D2E1F0;
 
-  /* Initialise bit count */
+    /* Initialise bit count */
 #ifdef HAVE64
-  ctx->bytes = 0;
+    ctx->bytes = 0;
 #else
-  ctx->bytesHi = 0;
-  ctx->bytesLo = 0;
+    ctx->bytesHi = 0;
+    ctx->bytesLo = 0;
 #endif
 }
 
@@ -757,160 +726,158 @@ SHAInit (SHA_CTX * ctx)
    Note that this corrupts the sha->key area.
  */
 static void
-SHATransform (struct SHAContext *sha)
+SHATransform(Ns_CtxSHA1 *sha)
 {
-  register u_int32_t A, B, C, D, E;
+    register ns_uint32 A, B, C, D, E;
 #if SHA_VERSION
-  register u_int32_t t;
+    register ns_uint32 t;
 #endif
 
-  /* Set up first buffer */
-  A = sha->iv[0];
-  B = sha->iv[1];
-  C = sha->iv[2];
-  D = sha->iv[3];
-  E = sha->iv[4];
+    /* Set up first buffer */
+    A = sha->iv[0];
+    B = sha->iv[1];
+    C = sha->iv[2];
+    D = sha->iv[3];
+    E = sha->iv[4];
 
-  /* Heavy mangling, in 4 sub-rounds of 20 interations each. */
-  subRound (A, B, C, D, E, f1, K2, sha->key[0]);
-  subRound (E, A, B, C, D, f1, K2, sha->key[1]);
-  subRound (D, E, A, B, C, f1, K2, sha->key[2]);
-  subRound (C, D, E, A, B, f1, K2, sha->key[3]);
-  subRound (B, C, D, E, A, f1, K2, sha->key[4]);
-  subRound (A, B, C, D, E, f1, K2, sha->key[5]);
-  subRound (E, A, B, C, D, f1, K2, sha->key[6]);
-  subRound (D, E, A, B, C, f1, K2, sha->key[7]);
-  subRound (C, D, E, A, B, f1, K2, sha->key[8]);
-  subRound (B, C, D, E, A, f1, K2, sha->key[9]);
-  subRound (A, B, C, D, E, f1, K2, sha->key[10]);
-  subRound (E, A, B, C, D, f1, K2, sha->key[11]);
-  subRound (D, E, A, B, C, f1, K2, sha->key[12]);
-  subRound (C, D, E, A, B, f1, K2, sha->key[13]);
-  subRound (B, C, D, E, A, f1, K2, sha->key[14]);
-  subRound (A, B, C, D, E, f1, K2, sha->key[15]);
-  subRound (E, A, B, C, D, f1, K2, expand (sha->key, 16));
-  subRound (D, E, A, B, C, f1, K2, expand (sha->key, 17));
-  subRound (C, D, E, A, B, f1, K2, expand (sha->key, 18));
-  subRound (B, C, D, E, A, f1, K2, expand (sha->key, 19));
+    /* Heavy mangling, in 4 sub-rounds of 20 interations each. */
+    subRound (A, B, C, D, E, f1, K2, sha->key[0]);
+    subRound (E, A, B, C, D, f1, K2, sha->key[1]);
+    subRound (D, E, A, B, C, f1, K2, sha->key[2]);
+    subRound (C, D, E, A, B, f1, K2, sha->key[3]);
+    subRound (B, C, D, E, A, f1, K2, sha->key[4]);
+    subRound (A, B, C, D, E, f1, K2, sha->key[5]);
+    subRound (E, A, B, C, D, f1, K2, sha->key[6]);
+    subRound (D, E, A, B, C, f1, K2, sha->key[7]);
+    subRound (C, D, E, A, B, f1, K2, sha->key[8]);
+    subRound (B, C, D, E, A, f1, K2, sha->key[9]);
+    subRound (A, B, C, D, E, f1, K2, sha->key[10]);
+    subRound (E, A, B, C, D, f1, K2, sha->key[11]);
+    subRound (D, E, A, B, C, f1, K2, sha->key[12]);
+    subRound (C, D, E, A, B, f1, K2, sha->key[13]);
+    subRound (B, C, D, E, A, f1, K2, sha->key[14]);
+    subRound (A, B, C, D, E, f1, K2, sha->key[15]);
+    subRound (E, A, B, C, D, f1, K2, expand (sha->key, 16));
+    subRound (D, E, A, B, C, f1, K2, expand (sha->key, 17));
+    subRound (C, D, E, A, B, f1, K2, expand (sha->key, 18));
+    subRound (B, C, D, E, A, f1, K2, expand (sha->key, 19));
 
-  subRound (A, B, C, D, E, f2, K3, expand (sha->key, 20));
-  subRound (E, A, B, C, D, f2, K3, expand (sha->key, 21));
-  subRound (D, E, A, B, C, f2, K3, expand (sha->key, 22));
-  subRound (C, D, E, A, B, f2, K3, expand (sha->key, 23));
-  subRound (B, C, D, E, A, f2, K3, expand (sha->key, 24));
-  subRound (A, B, C, D, E, f2, K3, expand (sha->key, 25));
-  subRound (E, A, B, C, D, f2, K3, expand (sha->key, 26));
-  subRound (D, E, A, B, C, f2, K3, expand (sha->key, 27));
-  subRound (C, D, E, A, B, f2, K3, expand (sha->key, 28));
-  subRound (B, C, D, E, A, f2, K3, expand (sha->key, 29));
-  subRound (A, B, C, D, E, f2, K3, expand (sha->key, 30));
-  subRound (E, A, B, C, D, f2, K3, expand (sha->key, 31));
-  subRound (D, E, A, B, C, f2, K3, expand (sha->key, 32));
-  subRound (C, D, E, A, B, f2, K3, expand (sha->key, 33));
-  subRound (B, C, D, E, A, f2, K3, expand (sha->key, 34));
-  subRound (A, B, C, D, E, f2, K3, expand (sha->key, 35));
-  subRound (E, A, B, C, D, f2, K3, expand (sha->key, 36));
-  subRound (D, E, A, B, C, f2, K3, expand (sha->key, 37));
-  subRound (C, D, E, A, B, f2, K3, expand (sha->key, 38));
-  subRound (B, C, D, E, A, f2, K3, expand (sha->key, 39));
+    subRound (A, B, C, D, E, f2, K3, expand (sha->key, 20));
+    subRound (E, A, B, C, D, f2, K3, expand (sha->key, 21));
+    subRound (D, E, A, B, C, f2, K3, expand (sha->key, 22));
+    subRound (C, D, E, A, B, f2, K3, expand (sha->key, 23));
+    subRound (B, C, D, E, A, f2, K3, expand (sha->key, 24));
+    subRound (A, B, C, D, E, f2, K3, expand (sha->key, 25));
+    subRound (E, A, B, C, D, f2, K3, expand (sha->key, 26));
+    subRound (D, E, A, B, C, f2, K3, expand (sha->key, 27));
+    subRound (C, D, E, A, B, f2, K3, expand (sha->key, 28));
+    subRound (B, C, D, E, A, f2, K3, expand (sha->key, 29));
+    subRound (A, B, C, D, E, f2, K3, expand (sha->key, 30));
+    subRound (E, A, B, C, D, f2, K3, expand (sha->key, 31));
+    subRound (D, E, A, B, C, f2, K3, expand (sha->key, 32));
+    subRound (C, D, E, A, B, f2, K3, expand (sha->key, 33));
+    subRound (B, C, D, E, A, f2, K3, expand (sha->key, 34));
+    subRound (A, B, C, D, E, f2, K3, expand (sha->key, 35));
+    subRound (E, A, B, C, D, f2, K3, expand (sha->key, 36));
+    subRound (D, E, A, B, C, f2, K3, expand (sha->key, 37));
+    subRound (C, D, E, A, B, f2, K3, expand (sha->key, 38));
+    subRound (B, C, D, E, A, f2, K3, expand (sha->key, 39));
 
-  subRound (A, B, C, D, E, f3, K5, expand (sha->key, 40));
-  subRound (E, A, B, C, D, f3, K5, expand (sha->key, 41));
-  subRound (D, E, A, B, C, f3, K5, expand (sha->key, 42));
-  subRound (C, D, E, A, B, f3, K5, expand (sha->key, 43));
-  subRound (B, C, D, E, A, f3, K5, expand (sha->key, 44));
-  subRound (A, B, C, D, E, f3, K5, expand (sha->key, 45));
-  subRound (E, A, B, C, D, f3, K5, expand (sha->key, 46));
-  subRound (D, E, A, B, C, f3, K5, expand (sha->key, 47));
-  subRound (C, D, E, A, B, f3, K5, expand (sha->key, 48));
-  subRound (B, C, D, E, A, f3, K5, expand (sha->key, 49));
-  subRound (A, B, C, D, E, f3, K5, expand (sha->key, 50));
-  subRound (E, A, B, C, D, f3, K5, expand (sha->key, 51));
-  subRound (D, E, A, B, C, f3, K5, expand (sha->key, 52));
-  subRound (C, D, E, A, B, f3, K5, expand (sha->key, 53));
-  subRound (B, C, D, E, A, f3, K5, expand (sha->key, 54));
-  subRound (A, B, C, D, E, f3, K5, expand (sha->key, 55));
-  subRound (E, A, B, C, D, f3, K5, expand (sha->key, 56));
-  subRound (D, E, A, B, C, f3, K5, expand (sha->key, 57));
-  subRound (C, D, E, A, B, f3, K5, expand (sha->key, 58));
-  subRound (B, C, D, E, A, f3, K5, expand (sha->key, 59));
+    subRound (A, B, C, D, E, f3, K5, expand (sha->key, 40));
+    subRound (E, A, B, C, D, f3, K5, expand (sha->key, 41));
+    subRound (D, E, A, B, C, f3, K5, expand (sha->key, 42));
+    subRound (C, D, E, A, B, f3, K5, expand (sha->key, 43));
+    subRound (B, C, D, E, A, f3, K5, expand (sha->key, 44));
+    subRound (A, B, C, D, E, f3, K5, expand (sha->key, 45));
+    subRound (E, A, B, C, D, f3, K5, expand (sha->key, 46));
+    subRound (D, E, A, B, C, f3, K5, expand (sha->key, 47));
+    subRound (C, D, E, A, B, f3, K5, expand (sha->key, 48));
+    subRound (B, C, D, E, A, f3, K5, expand (sha->key, 49));
+    subRound (A, B, C, D, E, f3, K5, expand (sha->key, 50));
+    subRound (E, A, B, C, D, f3, K5, expand (sha->key, 51));
+    subRound (D, E, A, B, C, f3, K5, expand (sha->key, 52));
+    subRound (C, D, E, A, B, f3, K5, expand (sha->key, 53));
+    subRound (B, C, D, E, A, f3, K5, expand (sha->key, 54));
+    subRound (A, B, C, D, E, f3, K5, expand (sha->key, 55));
+    subRound (E, A, B, C, D, f3, K5, expand (sha->key, 56));
+    subRound (D, E, A, B, C, f3, K5, expand (sha->key, 57));
+    subRound (C, D, E, A, B, f3, K5, expand (sha->key, 58));
+    subRound (B, C, D, E, A, f3, K5, expand (sha->key, 59));
 
-  subRound (A, B, C, D, E, f4, K10, expand (sha->key, 60));
-  subRound (E, A, B, C, D, f4, K10, expand (sha->key, 61));
-  subRound (D, E, A, B, C, f4, K10, expand (sha->key, 62));
-  subRound (C, D, E, A, B, f4, K10, expand (sha->key, 63));
-  subRound (B, C, D, E, A, f4, K10, expand (sha->key, 64));
-  subRound (A, B, C, D, E, f4, K10, expand (sha->key, 65));
-  subRound (E, A, B, C, D, f4, K10, expand (sha->key, 66));
-  subRound (D, E, A, B, C, f4, K10, expand (sha->key, 67));
-  subRound (C, D, E, A, B, f4, K10, expand (sha->key, 68));
-  subRound (B, C, D, E, A, f4, K10, expand (sha->key, 69));
-  subRound (A, B, C, D, E, f4, K10, expand (sha->key, 70));
-  subRound (E, A, B, C, D, f4, K10, expand (sha->key, 71));
-  subRound (D, E, A, B, C, f4, K10, expand (sha->key, 72));
-  subRound (C, D, E, A, B, f4, K10, expand (sha->key, 73));
-  subRound (B, C, D, E, A, f4, K10, expand (sha->key, 74));
-  subRound (A, B, C, D, E, f4, K10, expand (sha->key, 75));
-  subRound (E, A, B, C, D, f4, K10, expand (sha->key, 76));
-  subRound (D, E, A, B, C, f4, K10, expandx (sha->key, 77));
-  subRound (C, D, E, A, B, f4, K10, expandx (sha->key, 78));
-  subRound (B, C, D, E, A, f4, K10, expandx (sha->key, 79));
+    subRound (A, B, C, D, E, f4, K10, expand (sha->key, 60));
+    subRound (E, A, B, C, D, f4, K10, expand (sha->key, 61));
+    subRound (D, E, A, B, C, f4, K10, expand (sha->key, 62));
+    subRound (C, D, E, A, B, f4, K10, expand (sha->key, 63));
+    subRound (B, C, D, E, A, f4, K10, expand (sha->key, 64));
+    subRound (A, B, C, D, E, f4, K10, expand (sha->key, 65));
+    subRound (E, A, B, C, D, f4, K10, expand (sha->key, 66));
+    subRound (D, E, A, B, C, f4, K10, expand (sha->key, 67));
+    subRound (C, D, E, A, B, f4, K10, expand (sha->key, 68));
+    subRound (B, C, D, E, A, f4, K10, expand (sha->key, 69));
+    subRound (A, B, C, D, E, f4, K10, expand (sha->key, 70));
+    subRound (E, A, B, C, D, f4, K10, expand (sha->key, 71));
+    subRound (D, E, A, B, C, f4, K10, expand (sha->key, 72));
+    subRound (C, D, E, A, B, f4, K10, expand (sha->key, 73));
+    subRound (B, C, D, E, A, f4, K10, expand (sha->key, 74));
+    subRound (A, B, C, D, E, f4, K10, expand (sha->key, 75));
+    subRound (E, A, B, C, D, f4, K10, expand (sha->key, 76));
+    subRound (D, E, A, B, C, f4, K10, expandx (sha->key, 77));
+    subRound (C, D, E, A, B, f4, K10, expandx (sha->key, 78));
+    subRound (B, C, D, E, A, f4, K10, expandx (sha->key, 79));
 
-  /* Build message digest */
-  sha->iv[0] += A;
-  sha->iv[1] += B;
-  sha->iv[2] += C;
-  sha->iv[3] += D;
-  sha->iv[4] += E;
+    /* Build message digest */
+    sha->iv[0] += A;
+    sha->iv[1] += B;
+    sha->iv[2] += C;
+    sha->iv[3] += D;
+    sha->iv[4] += E;
 }
 
 /* Update SHA for a block of data. */
-static void
-SHAUpdate (SHA_CTX * ctx, const unsigned char *buf, unsigned int len)
+void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
 {
-  unsigned i;
+    unsigned i;
 
-/* Update bitcount */
+    /* Update bitcount */
 
 #ifdef HAVE64
-  i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
-  ctx->bytes += len;
+    i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
+    ctx->bytes += len;
 #else
-  u_int32_t t = ctx->bytesLo;
-  if ((ctx->bytesLo = t + len) < t)
-    ctx->bytesHi++;		/* Carry from low to high */
+    ns_uint32 t = ctx->bytesLo;
+    if ((ctx->bytesLo = t + len) < t) {
+       ctx->bytesHi++;		/* Carry from low to high */
+    }
 
-  i = (unsigned) t % SHA_BLOCKBYTES;	/* Bytes already in ctx->key */
+    i = (unsigned) t % SHA_BLOCKBYTES;	/* Bytes already in ctx->key */
 #endif
 
-  /* i is always less than SHA_BLOCKBYTES. */
-  if (SHA_BLOCKBYTES - i > len)
-    {
-      memcpy ((u_int8_t *) ctx->key + i, buf, len);
-      return;
+    /* i is always less than SHA_BLOCKBYTES. */
+    if (SHA_BLOCKBYTES - i > len) {
+        memcpy ((ns_uint8 *) ctx->key + i, buf, len);
+        return;
     }
 
-  if (i)
-    {				/* First chunk is an odd size */
-      memcpy ((u_int8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
-      shaByteSwap (ctx->key, (u_int8_t *) ctx->key, SHA_BLOCKWORDS);
-      SHATransform (ctx);
-      buf += SHA_BLOCKBYTES - i;
-      len -= SHA_BLOCKBYTES - i;
+    if (i) {				/* First chunk is an odd size */
+        memcpy ((ns_uint8 *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
+        shaByteSwap (ctx->key, (ns_uint8 *) ctx->key, SHA_BLOCKWORDS);
+        SHATransform (ctx);
+        buf += SHA_BLOCKBYTES - i;
+        len -= SHA_BLOCKBYTES - i;
     }
 
-/* Process data in 64-byte chunks */
-  while (len >= SHA_BLOCKBYTES)
-    {
-      shaByteSwap (ctx->key, buf, SHA_BLOCKWORDS);
-      SHATransform (ctx);
-      buf += SHA_BLOCKBYTES;
-      len -= SHA_BLOCKBYTES;
+    /* Process data in 64-byte chunks */
+    while (len >= SHA_BLOCKBYTES) {
+        shaByteSwap (ctx->key, buf, SHA_BLOCKWORDS);
+        SHATransform (ctx);
+        buf += SHA_BLOCKBYTES;
+        len -= SHA_BLOCKBYTES;
     }
 
-/* Handle any remaining bytes of data. */
-  if (len)
-    memcpy (ctx->key, buf, len);
+    /* Handle any remaining bytes of data. */
+    if (len) {
+       memcpy (ctx->key, buf, len);
+    }
 }
 
 /*
@@ -918,59 +885,64 @@ SHAUpdate (SHA_CTX * ctx, const unsigned char *buf, unsigned int len)
    * 1 0* (64-bit count of bits processed, MSB-first)
  */
 
-static void
-SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
+void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 {
 #if HAVE64
-  unsigned i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
+    unsigned i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
 #else
-  unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
+    unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
 #endif
-  u_int8_t *p = (u_int8_t *) ctx->key + i;	/* First unused byte */
-  u_int32_t t;
+    ns_uint8 *p = (ns_uint8 *) ctx->key + i;	/* First unused byte */
+    ns_uint32 t;
 
-  /* Set the first char of padding to 0x80. There is always room. */
-  *p++ = 0x80;
+    /* Set the first char of padding to 0x80. There is always room. */
+    *p++ = 0x80;
 
-  /* Bytes of padding needed to make 64 bytes (0..63) */
-  i = SHA_BLOCKBYTES - 1 - i;
+    /* Bytes of padding needed to make 64 bytes (0..63) */
+    i = SHA_BLOCKBYTES - 1 - i;
 
-  if (i < 8)
-    {				/* Padding forces an extra block */
-      memset (p, 0, i);
-      shaByteSwap (ctx->key, (u_int8_t *) ctx->key, 16);
-      SHATransform (ctx);
-      p = (u_int8_t *) ctx->key;
-      i = 64;
+    if (i < 8) {				/* Padding forces an extra block */
+        memset (p, 0, i);
+        shaByteSwap (ctx->key, (ns_uint8 *) ctx->key, 16);
+        SHATransform (ctx);
+        p = (ns_uint8 *) ctx->key;
+        i = 64;
     }
-  memset (p, 0, i - 8);
-  shaByteSwap (ctx->key, (u_int8_t *) ctx->key, 14);
+    memset (p, 0, i - 8);
+    shaByteSwap (ctx->key, (ns_uint8 *) ctx->key, 14);
 
-  /* Append length in bits and transform */
+    /* Append length in bits and transform */
 #if HAVE64
-  ctx->key[14] = (u_int32_t) (ctx->bytes >> 29);
-  ctx->key[15] = (u_int32_t) ctx->bytes << 3;
+    ctx->key[14] = (ns_uint32) (ctx->bytes >> 29);
+    ctx->key[15] = (ns_uint32) ctx->bytes << 3;
 #else
-  ctx->key[14] = ctx->bytesHi << 3 | ctx->bytesLo >> 29;
-  ctx->key[15] = ctx->bytesLo << 3;
+    ctx->key[14] = ctx->bytesHi << 3 | ctx->bytesLo >> 29;
+    ctx->key[15] = ctx->bytesLo << 3;
 #endif
-  SHATransform (ctx);
+    SHATransform (ctx);
 
-  memcpy (digest, ctx->iv, sizeof (digest));
-  for (i = 0; i < SHA_HASHWORDS; i++)
-    {
-      t = ctx->iv[i];
-      digest[i * 4 + 0] = (u_int8_t) (t >> 24);
-      digest[i * 4 + 1] = (u_int8_t) (t >> 16);
-      digest[i * 4 + 2] = (u_int8_t) (t >> 8);
-      digest[i * 4 + 3] = (u_int8_t) t;
+    memcpy (digest, ctx->iv, sizeof (digest));
+    for (i = 0; i < SHA_HASHWORDS; i++) {
+        t = ctx->iv[i];
+        digest[i * 4 + 0] = (ns_uint8) (t >> 24);
+        digest[i * 4 + 1] = (ns_uint8) (t >> 16);
+        digest[i * 4 + 2] = (ns_uint8) (t >> 8);
+        digest[i * 4 + 3] = (ns_uint8) t;
     }
 
- memset(ctx, 0, sizeof(ctx)); 			/* In case it's sensitive */
+    memset(ctx, 0, sizeof(ctx)); 			/* In case it's sensitive */
 }
 
-/*** END sha.c ***/
+void Ns_CtxString(unsigned char *digest, char *buf, int size)
+{
+    int i;
 
+    for (i = 0; i < size; ++i) {
+        buf[i * 2] = hexChars[digest[i] >> 4];
+        buf[i * 2 + 1] = hexChars[digest[i] & 0xF];
+    }
+    buf[size * 2] = '\0';
+}
 
 
 /*
@@ -994,10 +966,9 @@ int
 NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Tcl_Obj *CONST objv[])
 {
-    SHA_CTX        ctx;
+    Ns_CtxSHA1     ctx;
     unsigned char  digest[20];
     char           digestChars[41];
-    int            i;
     char          *str;
     int            strLen;
 
@@ -1007,16 +978,11 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     str = Tcl_GetStringFromObj(objv[1],&strLen);
-    SHAInit(&ctx);
-    SHAUpdate(&ctx, (unsigned char *) str, (unsigned int) strLen);
-    SHAFinal(digest, &ctx);
+    Ns_CtxSHAInit(&ctx);
+    Ns_CtxSHAUpdate(&ctx, (unsigned char *) str, (unsigned int) strLen);
+    Ns_CtxSHAFinal(&ctx, digest);
 
-    for (i = 0; i < 20; ++i) {
-        digestChars[i * 2] = hexChars[digest[i] >> 4];
-        digestChars[i * 2 + 1] = hexChars[digest[i] & 0xF];
-    }
-
-    digestChars[40] = '\0';
+    Ns_CtxString(digest, digestChars, 20);
     Tcl_AppendResult(interp, digestChars, NULL);
 
     return NS_OK;
@@ -1083,5 +1049,332 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    ""), -1), 0);
     }
     Tcl_SetResult(interp, "1", TCL_STATIC);
+    return NS_OK;
+}
+
+/* $Id$
+ *
+ * This code implements the MD5 message-digest algorithm.
+ * The algorithm is due to Ron Rivest.  This code was
+ * written by Colin Plumb in 1993, no copyright is claimed.
+ * This code is in the public domain; do with it what you wish.
+ *
+ * Equivalent code is available from RSA Data Security, Inc.
+ * This code has been tested against that, and is equivalent,
+ * except that you don't need to include two pages of legalese
+ * with every copy.
+ *
+ * To compute the message digest of a chunk of bytes, declare an
+ * MD5Context structure, pass it to MD5Init, call MD5Update as
+ * needed on buffers full of bytes, and then call MD5Final, which
+ * will fill a supplied 16-byte array with the digest.
+ *
+ * $Log$
+ * Revision 1.22  2007/05/21 05:28:39  seryakov
+ *         * include/ns.h:
+ *         * nsd/tclmisc.c: Added public domain MD5 implementation, new command ns_md5 created,
+ *         new C API public functions added:
+ *                Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
+ *                Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
+ *                Ns_CtxMD5Final(unsigned char digest[16], Ns_CtxMD5 *ctx)
+ *                Ns_CtxSHAInit(Ns_CtxSHA1 *ctx)
+ *                Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
+ *                Ns_CtxSHAFinal(unsigned char digest[20], Ns_CtxSHA1 *ctx)
+ *
+ *         * nsperm/nsperm.c: Added first pieces to support both Basic and Digest
+ *         authentications
+ *
+ * Revision 1.2  2000/09/11 05:13:24  vlad
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  1999/08/19 13:13:26  aland
+ * 	Start of the pam_radius module
+ *
+ * Revision 1.2  1998/04/03 20:19:21  aland
+ * now builds cleanly on Solaris 2.6
+ *
+ * Revision 1.1  1998/04/03 19:36:59  aland
+ * oh yeah, do MD5 stuff, too
+ *
+ * Revision 1.1  1996/12/01 03:06:54  morgan
+ * Initial revision
+ *
+ * Revision 1.1  1996/09/05 06:43:31  morgan
+ * Initial revision
+ *
+ */
+
+static void MD5Transform(ns_uint32 buf[4], ns_uint32 const in[16]);
+
+#ifdef sun
+#define HIGHFIRST
+#endif
+
+#ifndef HIGHFIRST
+#define byteReverse(buf, len)	/* Nothing */
+#else
+/*
+ * Note: this code is harmless on little-endian machines.
+ */
+static void byteReverse(unsigned char *buf, unsigned longs)
+{
+    uint32 t;
+    do {
+	t = (uint32) ((unsigned) buf[3] << 8 | buf[2]) << 16 |
+	    ((unsigned) buf[1] << 8 | buf[0]);
+	*(uint32 *) buf = t;
+	buf += 4;
+    } while (--longs);
+}
+#endif
+
+/*
+ * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
+ * initialization constants.
+ */
+void Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
+{
+    ctx->buf[0] = 0x67452301U;
+    ctx->buf[1] = 0xefcdab89U;
+    ctx->buf[2] = 0x98badcfeU;
+    ctx->buf[3] = 0x10325476U;
+
+    ctx->bits[0] = 0;
+    ctx->bits[1] = 0;
+}
+
+/*
+ * Update context to reflect the concatenation of another buffer full
+ * of bytes.
+ */
+void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
+{
+    ns_uint32 t;
+
+    /* Update bitcount */
+
+    t = ctx->bits[0];
+    if ((ctx->bits[0] = t + ((ns_uint32) len << 3)) < t)
+	ctx->bits[1]++;		/* Carry from low to high */
+    ctx->bits[1] += len >> 29;
+
+    t = (t >> 3) & 0x3f;	/* Bytes already in shsInfo->data */
+
+    /* Handle any leading odd-sized chunks */
+
+    if (t) {
+	unsigned char *p = (unsigned char *) ctx->in + t;
+
+	t = 64 - t;
+	if (len < t) {
+	    memcpy(p, buf, len);
+	    return;
+	}
+	memcpy(p, buf, t);
+	byteReverse(ctx->in, 16);
+	MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+	buf += t;
+	len -= t;
+    }
+    /* Process data in 64-byte chunks */
+
+    while (len >= 64) {
+	memcpy(ctx->in, buf, 64);
+	byteReverse(ctx->in, 16);
+	MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+	buf += 64;
+	len -= 64;
+    }
+
+    /* Handle any remaining bytes of data. */
+
+    memcpy(ctx->in, buf, len);
+}
+
+/*
+ * Final wrapup - pad to 64-byte boundary with the bit pattern
+ * 1 0* (64-bit count of bits processed, MSB-first)
+ */
+void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
+{
+    unsigned count;
+    unsigned char *p;
+
+    /* Compute number of bytes mod 64 */
+    count = (ctx->bits[0] >> 3) & 0x3F;
+
+    /* Set the first char of padding to 0x80.  This is safe since there is
+       always at least one byte free */
+    p = ctx->in + count;
+    *p++ = 0x80;
+
+    /* Bytes of padding needed to make 64 bytes */
+    count = 64 - 1 - count;
+
+    /* Pad out to 56 mod 64 */
+    if (count < 8) {
+	/* Two lots of padding:  Pad the first block to 64 bytes */
+	memset(p, 0, count);
+	byteReverse(ctx->in, 16);
+	MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+
+	/* Now fill the next block with 56 bytes */
+	memset(ctx->in, 0, 56);
+    } else {
+	/* Pad block to 56 bytes */
+	memset(p, 0, count - 8);
+    }
+    byteReverse(ctx->in, 14);
+
+    /* Append length in bits and transform */
+    ((ns_uint32 *) ctx->in)[14] = ctx->bits[0];
+    ((ns_uint32 *) ctx->in)[15] = ctx->bits[1];
+
+    MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+    byteReverse((unsigned char *) ctx->buf, 4);
+    memcpy(digest, ctx->buf, 16);
+    memset(ctx, 0, sizeof(ctx));	/* In case it's sensitive */
+}
+
+/* The four core functions - F1 is optimized somewhat */
+
+/* #define F1(x, y, z) (x & y | ~x & z) */
+#define F1(x, y, z) (z ^ (x & (y ^ z)))
+#define F2(x, y, z) F1(z, x, y)
+#define F3(x, y, z) (x ^ y ^ z)
+#define F4(x, y, z) (y ^ (x | ~z))
+
+/* This is the central step in the MD5 algorithm. */
+#define MD5STEP(f, w, x, y, z, data, s) \
+	( w += f(x, y, z) + data,  w = w<<s | w>>(32-s),  w += x )
+
+/*
+ * The core of the MD5 algorithm, this alters an existing MD5 hash to
+ * reflect the addition of 16 longwords of new data.  MD5Update blocks
+ * the data and converts bytes into longwords for this routine.
+ */
+static void MD5Transform(ns_uint32 buf[4], ns_uint32 const in[16])
+{
+    register ns_uint32 a, b, c, d;
+
+    a = buf[0];
+    b = buf[1];
+    c = buf[2];
+    d = buf[3];
+
+    MD5STEP(F1, a, b, c, d,  in[0] + 0xd76aa478U,  7);
+    MD5STEP(F1, d, a, b, c,  in[1] + 0xe8c7b756U, 12);
+    MD5STEP(F1, c, d, a, b,  in[2] + 0x242070dbU, 17);
+    MD5STEP(F1, b, c, d, a,  in[3] + 0xc1bdceeeU, 22);
+    MD5STEP(F1, a, b, c, d,  in[4] + 0xf57c0fafU,  7);
+    MD5STEP(F1, d, a, b, c,  in[5] + 0x4787c62aU, 12);
+    MD5STEP(F1, c, d, a, b,  in[6] + 0xa8304613U, 17);
+    MD5STEP(F1, b, c, d, a,  in[7] + 0xfd469501U, 22);
+    MD5STEP(F1, a, b, c, d,  in[8] + 0x698098d8U,  7);
+    MD5STEP(F1, d, a, b, c,  in[9] + 0x8b44f7afU, 12);
+    MD5STEP(F1, c, d, a, b, in[10] + 0xffff5bb1U, 17);
+    MD5STEP(F1, b, c, d, a, in[11] + 0x895cd7beU, 22);
+    MD5STEP(F1, a, b, c, d, in[12] + 0x6b901122U,  7);
+    MD5STEP(F1, d, a, b, c, in[13] + 0xfd987193U, 12);
+    MD5STEP(F1, c, d, a, b, in[14] + 0xa679438eU, 17);
+    MD5STEP(F1, b, c, d, a, in[15] + 0x49b40821U, 22);
+
+    MD5STEP(F2, a, b, c, d,  in[1] + 0xf61e2562U,  5);
+    MD5STEP(F2, d, a, b, c,  in[6] + 0xc040b340U,  9);
+    MD5STEP(F2, c, d, a, b, in[11] + 0x265e5a51U, 14);
+    MD5STEP(F2, b, c, d, a,  in[0] + 0xe9b6c7aaU, 20);
+    MD5STEP(F2, a, b, c, d,  in[5] + 0xd62f105dU,  5);
+    MD5STEP(F2, d, a, b, c, in[10] + 0x02441453U,  9);
+    MD5STEP(F2, c, d, a, b, in[15] + 0xd8a1e681U, 14);
+    MD5STEP(F2, b, c, d, a,  in[4] + 0xe7d3fbc8U, 20);
+    MD5STEP(F2, a, b, c, d,  in[9] + 0x21e1cde6U,  5);
+    MD5STEP(F2, d, a, b, c, in[14] + 0xc33707d6U,  9);
+    MD5STEP(F2, c, d, a, b,  in[3] + 0xf4d50d87U, 14);
+    MD5STEP(F2, b, c, d, a,  in[8] + 0x455a14edU, 20);
+    MD5STEP(F2, a, b, c, d, in[13] + 0xa9e3e905U,  5);
+    MD5STEP(F2, d, a, b, c,  in[2] + 0xfcefa3f8U,  9);
+    MD5STEP(F2, c, d, a, b,  in[7] + 0x676f02d9U, 14);
+    MD5STEP(F2, b, c, d, a, in[12] + 0x8d2a4c8aU, 20);
+
+    MD5STEP(F3, a, b, c, d,  in[5] + 0xfffa3942U,  4);
+    MD5STEP(F3, d, a, b, c,  in[8] + 0x8771f681U, 11);
+    MD5STEP(F3, c, d, a, b, in[11] + 0x6d9d6122U, 16);
+    MD5STEP(F3, b, c, d, a, in[14] + 0xfde5380cU, 23);
+    MD5STEP(F3, a, b, c, d,  in[1] + 0xa4beea44U,  4);
+    MD5STEP(F3, d, a, b, c,  in[4] + 0x4bdecfa9U, 11);
+    MD5STEP(F3, c, d, a, b,  in[7] + 0xf6bb4b60U, 16);
+    MD5STEP(F3, b, c, d, a, in[10] + 0xbebfbc70U, 23);
+    MD5STEP(F3, a, b, c, d, in[13] + 0x289b7ec6U,  4);
+    MD5STEP(F3, d, a, b, c,  in[0] + 0xeaa127faU, 11);
+    MD5STEP(F3, c, d, a, b,  in[3] + 0xd4ef3085U, 16);
+    MD5STEP(F3, b, c, d, a,  in[6] + 0x04881d05U, 23);
+    MD5STEP(F3, a, b, c, d,  in[9] + 0xd9d4d039U,  4);
+    MD5STEP(F3, d, a, b, c, in[12] + 0xe6db99e5U, 11);
+    MD5STEP(F3, c, d, a, b, in[15] + 0x1fa27cf8U, 16);
+    MD5STEP(F3, b, c, d, a,  in[2] + 0xc4ac5665U, 23);
+
+    MD5STEP(F4, a, b, c, d,  in[0] + 0xf4292244U,  6);
+    MD5STEP(F4, d, a, b, c,  in[7] + 0x432aff97U, 10);
+    MD5STEP(F4, c, d, a, b, in[14] + 0xab9423a7U, 15);
+    MD5STEP(F4, b, c, d, a,  in[5] + 0xfc93a039U, 21);
+    MD5STEP(F4, a, b, c, d, in[12] + 0x655b59c3U,  6);
+    MD5STEP(F4, d, a, b, c,  in[3] + 0x8f0ccc92U, 10);
+    MD5STEP(F4, c, d, a, b, in[10] + 0xffeff47dU, 15);
+    MD5STEP(F4, b, c, d, a,  in[1] + 0x85845dd1U, 21);
+    MD5STEP(F4, a, b, c, d,  in[8] + 0x6fa87e4fU,  6);
+    MD5STEP(F4, d, a, b, c, in[15] + 0xfe2ce6e0U, 10);
+    MD5STEP(F4, c, d, a, b,  in[6] + 0xa3014314U, 15);
+    MD5STEP(F4, b, c, d, a, in[13] + 0x4e0811a1U, 21);
+    MD5STEP(F4, a, b, c, d,  in[4] + 0xf7537e82U,  6);
+    MD5STEP(F4, d, a, b, c, in[11] + 0xbd3af235U, 10);
+    MD5STEP(F4, c, d, a, b,  in[2] + 0x2ad7d2bbU, 15);
+    MD5STEP(F4, b, c, d, a,  in[9] + 0xeb86d391U, 21);
+
+    buf[0] += a;
+    buf[1] += b;
+    buf[2] += c;
+    buf[3] += d;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MD5Cmd --
+ *
+ *      Returns a 32-character, hex-encoded string containing the MD5
+ *      hash of the first argument.
+ *
+ * Results:
+ *	NS_OK
+ *
+ * Side effects:
+ *	Tcl result is set to a string value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                Tcl_Obj *CONST objv[])
+{
+    Ns_CtxMD5      ctx;
+    unsigned char  digest[16];
+    char           digestChars[33];
+    char          *str;
+    int            strLen;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "string");
+        return TCL_ERROR;
+    }
+
+    str = Tcl_GetStringFromObj(objv[1],&strLen);
+    Ns_CtxMD5Init(&ctx);
+    Ns_CtxMD5Update(&ctx, (unsigned char *) str, (unsigned int) strLen);
+    Ns_CtxMD5Final(&ctx, digest);
+
+    Ns_CtxString(digest, digestChars, 16);
+    Tcl_AppendResult(interp, digestChars, NULL);
+
     return NS_OK;
 }

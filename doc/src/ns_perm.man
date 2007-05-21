@@ -23,37 +23,38 @@ The hostname must be specified as ipaddress/netmask or dnshostname.
 [example_end]
 
 [arg -salt]
-By default password is assumed encrypted with ns_encrypt command something like
+By default password is assumed encrypted with ns_crypt command and salt CU:
+
 [example_begin]
-ns_encrypt mypasswd CU
+ns_crypt mypasswd CU
 [example_end]
 
 This argument tells command that password is clear text and it should be encrypted
-by the command with specified salt.
+by the ns_perm command with specified salt.
 
 [call [cmd ns_perm] [arg addgroup] [arg name] [arg user] [opt [arg user...]]]
 
 ns_perm addgroup creates a new group with the specified name that includes the users listed after the name.
 
-[call [cmd ns_perm] [arg allowuser] [opt -noinherit]] [arg method] [arg url] [arg user]]]
+[call [cmd ns_perm] [arg allowuser] [opt -noinherit]] [arg method] [arg url] [arg user...]]]
 
 ns_perm allowuser allows the specified user access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
-[call [cmd ns_perm] [arg denyuser] [opt [arg -noinherit]] [arg method] [arg url] [arg user]]
+[call [cmd ns_perm] [arg denyuser] [opt [arg -noinherit]] [arg method] [arg url] [arg user...]]
 
 ns_perm denyuser denies the specified user access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
 URL are denied as well.
 
-[call [cmd ns_perm] [arg allowgroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group]]
+[call [cmd ns_perm] [arg allowgroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
 
 ns_perm allowgroup allows the specified group access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
-[call [cmd ns_perm] [arg denygroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group]]
+[call [cmd ns_perm] [arg denygroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
 
 ns_perm denygroup denies the specified group access to the specified method and URL combination.
 If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
@@ -87,8 +88,9 @@ Produce Tcl list with all registered allow/deny statements for each url
 
 [example_begin]
 ns_perm adduser test [lb]ns_crypt testpass ""[rb] TestUser
+ns_perm adduser -salt CU test2 test TestUser2
 
-ns_perm allowuser GET /Documents test
+ns_perm allowuser GET /Documents test test2
 [example_end]
 
 [see_also nsd]

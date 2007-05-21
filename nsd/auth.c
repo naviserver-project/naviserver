@@ -235,9 +235,9 @@ Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
 void
 NsParseAuth(Conn *connPtr, char *auth)
 {
-    register char *p, *q;
-    int            size;
-    char           *value, save;
+    register char *p, *q, *v;
+    char           save, save2;
+    int            size, idx;
 
     if (connPtr->auth == NULL) {
         connPtr->auth = Ns_SetCreate(NULL);
@@ -250,26 +250,81 @@ NsParseAuth(Conn *connPtr, char *auth)
     if (*p != '\0') {
         save = *p;
         *p = '\0';
+
         if (STRIEQ(auth, "Basic")) {
+            Ns_SetPut(connPtr->auth, "AuthMethod", "Basic");
+
+            /* Skip spaces */
             q = p + 1;
             while (*q != '\0' && isspace(UCHAR(*q))) {
-                ++q;
+                q++;
             }
+
             size = strlen(q) + 3;
-            value = ns_malloc((size_t) size);
-            size = Ns_HtuuDecode(q, (unsigned char *) value, size);
-            value[size] = '\0';
-            q = strchr(value, ':');
+            v = ns_malloc((size_t) size);
+            size = Ns_HtuuDecode(q, (unsigned char *) v, size);
+            v[size] = '\0';
+            q = strchr(v, ':');
             if (q != NULL) {
                 *q++ = '\0';
                 Ns_SetPut(connPtr->auth, "Password", q);
             }
-            Ns_SetPut(connPtr->auth, "User", value);
-            ns_free(value);
+            Ns_SetPut(connPtr->auth, "Username", v);
+            ns_free(v);
         } else
 
         if (STRIEQ(auth, "Digest")) {
+            Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
+
+            /* Skip spaces */
+            q = p + 1;
+            while (*q != '\0' && isspace(UCHAR(*q))) {
+                q++;
+            }
+
+            while (q != NULL && *q != '\0') {
+                p = strchr(q, '=');
+                if (p == NULL) {
+                    break;
+                }
+                v = p - 1;
+                /* Trim trailing spaces */
+                while (v > q && isspace(UCHAR(*v))) {
+                    v--;
+                }
+                /* Remember position */
+                save2 = *(++v);
+                *v = '\0';
+                idx = Ns_SetPut(connPtr->auth, q, NULL);
+                /* Restore character */
+                *v = save2;
+                /* Skip = and optional spaces */
+                p++;
+                while (*p != '\0' && isspace(UCHAR(*p))) {
+                    p++;
+                }
+                if (*p == '\0') {
+                    break;
+                }
+                /* Find end of the value, deal with quotes strings */
+                if (*p == '"') {
+                    for (q = ++p; *q != '\0' && *q != '"'; q++);
+                } else {
+                    for (q = p; *q != '\0' && *q != ',' && !isspace(UCHAR(*q)); q++);
+                }
+                save2 = *q;
+                *q = '\0';
+                /* Update with current value */
+                Ns_SetPutValue(connPtr->auth, idx, p);
+                *q = save2;
+                /* Advance to the end of the param value, can be end or next name*/
+                while (*q != '\0' && (*q == ',' || *q == '"' || isspace(UCHAR(*q)))) {
+                    q++;
+                }
+            }
+
         }
         *p = save;
     }
+    Ns_SetPrint(connPtr->auth);
 }

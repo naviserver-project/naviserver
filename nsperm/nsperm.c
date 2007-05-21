@@ -63,12 +63,12 @@ typedef struct Server {
  */
 
 typedef struct {
-    char    pwd[16];
+    char          pwd[16];
     Tcl_HashTable groups;
     Tcl_HashTable nets;
     Tcl_HashTable masks;
     Tcl_HashTable hosts;
-    int   filterallow;
+    int           filterallow;
 } User;
 
 /*
@@ -90,6 +90,7 @@ typedef struct {
     Tcl_HashTable allowgroup;
     Tcl_HashTable denygroup;
     int           implicit_allow;
+    int           auth_digest;
 } Perm;
 
 /*
@@ -113,13 +114,17 @@ static int ValidateUserAddr(User *userPtr, char *peer);
 static int AuthProc(char *server, char *method, char *url, char *user,
 		    char *pwd, char *peer);
 static void WalkCallback(Tcl_DString *dsPtr, void *arg);
+static int CreateNonce(const char *privatekey, char **nonce, char *uri);
+static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);
+static int CreateHeader(Server *servPtr, Ns_Conn *conn, int stale);
 
 /*
  * Static variables defined in this file.
  */
 
-static int             uskey = -1;
-static Tcl_HashTable   serversTable;
+static int uskey = -1;
+static char usdigest[128];
+static Tcl_HashTable serversTable;
 
 
 /*
@@ -147,8 +152,25 @@ Ns_ModuleInit(char *server, char *module)
     int new;
 
     if (uskey < 0) {
+	double d;
+        char buf[32];
+        Ns_CtxMD5 md5;
+	unsigned long result;
+	unsigned char sig[16];
+
     	uskey = Ns_UrlSpecificAlloc();
 	Tcl_InitHashTable(&serversTable, TCL_STRING_KEYS);
+
+	/* Make a really big random number */
+	d = Ns_DRand();
+	result =  (unsigned long) (d * 1024 * 1024 * 1024);
+
+	/* There is no requirement to hash it but it won't hurt */
+	Ns_CtxMD5Init(&md5);
+	snprintf(buf, 20, "%ld", result);
+	Ns_CtxMD5Update(&md5, (unsigned char*)buf, strlen(buf));
+	Ns_CtxMD5Final(&md5, sig);
+	Ns_CtxString(sig, usdigest, 16);
     }
     servPtr = ns_malloc(sizeof(Server));
     servPtr->server = server;
@@ -280,7 +302,18 @@ PermObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
  *
  *	Authorize a URL--this callback is called when a new
  *	connection is recieved
+
+ *	Digest authentication per RFC 2617 but currently
+ * 	supports qop="auth" and MD5 hashing only.
  *
+ *	The logic goes like this:
+ *	 - fetch the Authorization header
+ *	   if it exists, continue
+ *	   if it doesn't exist, return an Unauthorized header and
+ *	   WWW-Authenticate header.
+ *	 - Parse the Authorization header and perform digest authentication
+ *	   against it.
+
  * Results:
  *	NS_OK: accept;
  *	NS_FORBIDDEN or NS_UNAUTHORIZED: go away;
@@ -295,13 +328,16 @@ PermObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 static int
 AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *peer)
 {
-    Server	  *servPtr;
-    Perm          *permPtr;
-    User          *userPtr;
+    int status;
+    Ns_Set *auth;
+    Server *servPtr;
+    Perm *permPtr;
+    User *userPtr;
+    int stale = NS_FALSE;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int status;
-    char *group, buf[NS_ENCRYPT_BUFSIZE];
+    char *group,buf[NS_ENCRYPT_BUFSIZE];
+    Ns_Conn *conn = Ns_GetConn();
 
     if (user == NULL) {
 	user = "";
@@ -309,6 +345,7 @@ AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *pee
     if (pwd == NULL) {
 	pwd = "";
     }
+
     hPtr = Tcl_FindHashEntry(&serversTable, server);
     if (hPtr == NULL) {
 	return NS_FORBIDDEN;
@@ -329,22 +366,39 @@ AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *pee
     status = NS_UNAUTHORIZED;
 
     /*
-     * Verify user password (if any).
+     * Find user record, this is true for all methods
      */
 
     hPtr = Tcl_FindHashEntry(&servPtr->users, user);
     if (hPtr == NULL) {
-    	goto done;
+        goto done;
     }
     userPtr = Tcl_GetHashValue(hPtr);
-    if (userPtr->pwd[0] != 0) {
-    	if (pwd[0] == 0) {
-	    goto done;
-	}
-	Ns_Encrypt(pwd, userPtr->pwd, buf);
-	if (!STREQ(userPtr->pwd, buf)) {
-    	    goto done;
-	}
+
+    /*
+     * Check which auth method to use, permission record will
+     * define how to verify user
+     */
+
+    auth = Ns_ConnAuth(conn);
+
+    if (!permPtr->auth_digest) {
+
+        /*
+         * Verify user password (if any).
+         */
+
+        if (userPtr->pwd[0] != 0) {
+            if (pwd[0] == 0) {
+	        goto done;
+	    }
+  	    Ns_Encrypt(pwd, userPtr->pwd, buf);
+    	    if (!STREQ(userPtr->pwd, buf)) {
+    	        goto done;
+	    }
+        }
+    } else {
+
     }
 
     /*
@@ -422,6 +476,13 @@ deny:
     }
 
 done:
+    /*
+     * For Digest authentication we create WWW-Authenticate header manually
+     */
+
+    if (status == NS_UNAUTHORIZED && permPtr->auth_digest) {
+        CreateHeader(servPtr, conn, stale);
+    }
     Ns_RWLockUnlock(&servPtr->lock);
     return status;
 }
@@ -951,17 +1012,18 @@ AllowDenyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
     Perm *permPtr;
     Ns_DString base;
     char *method, *url, *key;
-    int new, flags = 0;
+    int i, new, flags = 0, digest = 0, nargs = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &flags,  (void*)NS_OP_NOINHERIT},
+        {"-digest",    Ns_ObjvBool,   &digest, (void*)NS_TRUE},
         {"--",         Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"method", Ns_ObjvString, &method, NULL},
         {"url",    Ns_ObjvString, &url,    NULL},
-        {"key",    Ns_ObjvString, &key,    NULL},
+        {"key",    Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
@@ -995,18 +1057,23 @@ AllowDenyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
 	Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
     }
     permPtr->implicit_allow = !allow;
-    if (user) {
-	if (allow) {
-            (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &new);
-	} else {
-            (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &new);
-	}
-    } else {
-	if (allow) {
-            (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &new);
-	} else {
-            (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &new);
-	}
+    permPtr->auth_digest = digest;
+
+    for (i = objc - nargs; i < objc; i++) {
+        key = Tcl_GetString(objv[i]);
+       if (user) {
+           if (allow) {
+               (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &new);
+   	   } else {
+               (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &new);
+   	   }
+       } else {
+	   if (allow) {
+               (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &new);
+	   } else {
+               (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &new);
+	   }
+       }
     }
     Ns_RWLockUnlock(&servPtr->lock);
     Ns_DStringFree(&base);
@@ -1050,6 +1117,10 @@ WalkCallback(Tcl_DString *dsPtr, void *arg)
     Perm *permPtr = arg;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
+
+    if (permPtr->auth_digest) {
+        Ns_DStringVarAppend(dsPtr, " -digest ", NULL);
+    }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->allowuser, &search);
     while (hPtr != NULL) {
@@ -1185,4 +1256,175 @@ done:
     Ns_RWLockUnlock(&servPtr->lock);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateNonce --
+ *
+ *	Create the nonce to be used by the client to hash against.
+ *	The hash is a uuencoded string that consists of:
+ *
+ *	time-stamp H(time-stamp ":" uri ":" private-key)
+ *
+ *	Note that this function is called here with uri = ""
+ *
+ * Results:
+ *	NS_OK/NS_ERROR
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+*/
+
+static int
+CreateNonce(const char *privatekey, char **nonce, char *uri)
+{
+    time_t now;
+    Ns_DString ds;
+    Ns_CtxMD5 md5;
+    unsigned char sig[16];
+    char buf[33], tbuf[20];;
+    char bufcoded[1 + (4 * 48) / 2];
+
+    if (!privatekey) {
+	return NS_ERROR;
+    }
+
+    now = time(NULL);
+
+    Ns_DStringInit(&ds);
+    snprintf(tbuf, 20, "%ld", now);
+    Ns_DStringVarAppend(&ds, tbuf, ":", uri, ":", privatekey, NULL);
+
+    Ns_CtxMD5Init(&md5);
+    Ns_CtxMD5Update(&md5, (unsigned char*)ds.string, (unsigned int)ds.length);
+    Ns_CtxMD5Final(&md5, sig);
+    Ns_CtxString(sig, buf, 16);
+
+    /* encode the current time and MD5 string into the nonce */
+    Ns_DStringTrunc(&ds, 0);
+    snprintf(tbuf, 20, "%ld", now);
+    Ns_DStringVarAppend(&ds, tbuf, " ", buf, NULL);
+    Ns_HtuuEncode((unsigned char*)ds.string, (unsigned int)ds.length, bufcoded);
+
+    *nonce = ns_strdup(bufcoded);
+
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckNonce --
+ *
+ *	Given a nonce value ensure that it hasn't been tampered with
+ *	and that it isn't stale. The hash is a uuencoded string that
+ *	consists of:
+ *
+ *	time-stamp H(time-stamp ":" uri ":" private-key)
+ *
+ * Results:
+ *	NS_OK or NS_ERROR if the nonce is stale.
+ *
+ * Side effects:
+ *	None.
+ */
+
+static int
+CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout)
+{
+    Ns_CtxMD5 md5;
+    Ns_DString ds;
+    char buf[33];
+    char *decoded;
+    char *ntime;
+    char *tnonce;
+    int	n, rv = NS_OK;
+    unsigned char sig[16];
+    time_t now, nonce_time;
+
+    if (!privatekey) {
+	return NS_ERROR;
+    }
+
+    time(&now);
+
+    /* decode the nonce */
+    n = 3 + ((strlen(nonce) * 3) / 4);
+    decoded = ns_malloc((unsigned int)n);
+    n = Ns_HtuuDecode(nonce, (unsigned char *) decoded, n);
+    decoded[n] = '\0';
+
+    ntime = ns_strtok(decoded, " ");
+    tnonce = ns_strtok(NULL, " ");
+
+    /* recreate the nonce to ensure that it isn't corrupted */
+    Ns_CtxMD5Init(&md5);
+
+    Ns_DStringInit(&ds);
+    Ns_DStringVarAppend(&ds, ntime, ":", uri, ":", privatekey, NULL);
+
+    Ns_CtxMD5Update(&md5, (unsigned char*)ds.string, (unsigned int)ds.length);
+    Ns_CtxMD5Final(&md5, sig);
+    Ns_CtxString(sig, buf, 16);
+
+    /* Check for a stale time stamp. If the time stamp is stale we still check
+     * to see if the user sent the proper digest password. The stale flag
+     * is only set if the nonce is expired AND the credentials are OK, otherwise
+     * the get a 401, but that happens elsewhere.
+     */
+
+    nonce_time = (time_t) strtol(ntime, (char **)NULL, 10);
+
+    if ((now - nonce_time) > timeout) {
+	rv = NS_ERROR;
+    }
+
+    if (!(STREQ(tnonce, buf))) {
+	rv = NS_ERROR;
+    }
+
+    return rv;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateHeader --
+ *
+ *	Assigns WWW-Authenticate headers according to Digest
+ *	authentication rules.
+ *
+ * Results:
+ *	NS_OK/NS_ERROR
+ *
+ * Side effects:
+ *	Appends HTTP headers to output headers
+ *
+ *----------------------------------------------------------------------
+*/
+
+static int
+CreateHeader(Server *servPtr, Ns_Conn *conn, int stale)
+{
+    Ns_DString  ds;
+    char *nonce = 0;
+
+    if (CreateNonce(usdigest, &nonce, "") == NS_ERROR) {
+	return NS_ERROR;
+    }
+
+    Ns_DStringInit(&ds);
+    Ns_DStringPrintf(&ds, "Digest realm=\"%s\", nonce=\"%s\", algorithm=\"MD5\", qop=\"auth\"",
+                     servPtr->server, nonce);
+
+    if (stale == NS_TRUE) {
+	Ns_DStringVarAppend(&ds, ", stale=\"true\"", NULL);
+    }
+    Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
+    return NS_OK;
 }
