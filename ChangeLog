@@ -17,6 +17,9 @@
 	fact expect a newline byte as part of the binary byte stream, not a
 	carriage return which we were accidentally converting.
 
+	* tests/encoding.test: Re-enable some tests which actually do work and
+	reformat the tests for clarity.
+
 2007-05-21  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsperm/nsperm.c: Updated to support clear text passwords
