@@ -191,7 +191,7 @@ Ns_GetFileEncoding(CONST char *file)
         hPtr = Tcl_FindHashEntry(&extensions, ext);
         if (hPtr != NULL) {
             name = Tcl_GetHashValue(hPtr);
-            return Ns_GetEncoding(name);
+            return GetCharsetEncoding(name, -1);
         }
     }
     return NULL;

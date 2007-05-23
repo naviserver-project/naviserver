@@ -20,6 +20,15 @@
 	* tests/encoding.test: Re-enable some tests which actually do work and
 	reformat the tests for clarity.
 
+	* nsd/encoding.c:
+	* tests/test.nscfg:
+	* tests/encoding.test:
+	* tests/testserver/pages/encoding.iso-8859-2_adp: Use the http charset
+	aliases to convert ADP pages as they are read from disk, and add a
+	couple of tests. This fixes the log warning "encoding: could not load:
+	iso-8859-1", and unfortunately highlights another broken
+	test: encoding-3.3 added to knownBug...
+
 2007-05-21  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsperm/nsperm.c: Updated to support clear text passwords

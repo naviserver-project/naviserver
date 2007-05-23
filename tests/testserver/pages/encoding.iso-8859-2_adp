@@ -1,0 +1,16 @@
+<% # This adp page is in iso-8859 format.
+   #
+   # If interpreted as iso-8859-1, the last character is
+   # the unicode pound sign (U00A3)
+   #
+   # If interpreted as iso-8859-2 as intended, the last character
+   # is the unicode latin capital letter L with stroke (U0141)
+   #
+   # Both unicode characters are represented by the same byte in each
+   # of the two iso-8859-x encodings mentioned.
+
+if {[ns_queryget mime NULL] eq "utf"} {
+   ns_adp_mimetype "text/plain; charset=utf-8"
+}
+
+%>הצü£
