@@ -114,7 +114,7 @@ test http-3.3 {limits: too many headers} -constraints serverListen -setup {
 
 
 
-test http-4.1 {HTTP/1.1 PUT small file} -constraints serverListen -setup {
+test http-4.1 {HTTP/1.1 PUT small file} -constraints {serverListen knownBug} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -124,7 +124,7 @@ test http-4.1 {HTTP/1.1 PUT small file} -constraints serverListen -setup {
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 128]]
 
-test http-4.2 {HTTP/1.1 PUT file > maxreadahead} -constraints serverListen -setup {
+test http-4.2 {HTTP/1.1 PUT file > maxreadahead} -constraints {serverListen knownBug} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -134,7 +134,7 @@ test http-4.2 {HTTP/1.1 PUT file > maxreadahead} -constraints serverListen -setu
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1027]]
 
-test http-4.3 {HTTP/1.1 PUT file > uploadsize} -constraints serverListen -setup {
+test http-4.3 {HTTP/1.1 PUT file > uploadsize} -constraints {serverListen knownBug} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }

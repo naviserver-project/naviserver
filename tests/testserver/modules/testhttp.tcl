@@ -1,5 +1,5 @@
 #
-# The contents of this file are subject to the Mozilla Public License
+# The contents of this file are subject to the AOLserver Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
 # http://aolserver.com/.
@@ -35,9 +35,10 @@
 #     the Tcl socket interface.
 #
 
+
 proc nstest_http {args} {
     ns_parseargs {
-        {-encoding "utf-8"} -setheaders -getheaders {-chunked 1} {-getbody 0} {-http 1.0} --
+        {-encoding "utf-8"} -setheaders -getheaders {-getbody 0} {-http 1.0} --
         method {url ""} {body ""}
     } $args
 
@@ -59,8 +60,19 @@ proc nstest_http {args} {
         return -code error $sockerr
     }
 
-    fconfigure $rfd -translation auto -encoding $encoding -blocking 0
-    fconfigure $wfd -translation crlf -encoding $encoding -blocking 1
+	#
+	# Force network line ending symantics.
+	#
+
+    fconfigure $rfd -translation crlf -blocking 0
+    fconfigure $wfd -translation crlf -blocking 1
+
+	#
+	# Force a specific encoding (utf-8 default).
+	#
+
+	fconfigure $rfd -encoding $encoding
+	fconfigure $wfd -encoding $encoding
 
     if {[catch {
 
@@ -216,40 +228,12 @@ proc nstest_http {args} {
             lappend response [ns_set iget $hdrs $h]
         }
     }
-    if {$chunked == 1 && [ns_set iget $hdrs Transfer-Encoding] != "chunked"} {
-        set chunked 0
-    }
+
     catch {close $rfd}
     catch {close $wfd}
     catch {ns_set free $hdrs}
 
     if {[string is true $getbody] && $body ne {}} {
-        
-        #
-        # Try to parse chunked encoding and concatenate all
-        # chunks into one body
-        #
-
-        if { $chunked == 1 } {
-          set text ""
-          set offset 0
-          while {1} {
-              # Parse size header
-              set end [string first "\n" $body $offset]
-              if {$end == -1} {
-                  break
-              }
-              set size [scan [string range $body $offset $end] %x]
-              if {$size == 0 || $size == ""} {
-                  break
-              }
-              set offset [incr end]
-              # Read data
-              append text [string range $body $offset [expr $offset+$size-1]]
-              incr offset [incr size]
-          }
-          set body $text
-        }
         lappend response $body
     }
 

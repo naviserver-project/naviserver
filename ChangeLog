@@ -6,6 +6,17 @@
 	* nsd/progress.c (NsTclProgressObjcmd): Make sure progress monitoring is
 	enabled before checking an uninitialised hash table.
 
+	* tests/testserver/modules/testhttp.tcl: Revert the chunk handling
+	code -- it obscures the test expectations for the chunk tests as worse:
+	it hides bugs in various parts of the server.
+	* tests/http_chunked.test: Revert to explicit chunk checking, and mark a
+	couple of tests knownBug which are being chunked but shouldn't be.
+	* tests/http.test: Mark some tests knownBug which are being sent back
+	chunk encoded, but shouldn't be.
+	* tests/ns_adp_compressed.test: Revert the sense of this test: we do in
+	fact expect a newline byte as part of the binary byte stream, not a
+	carriage return which we were accidentally converting.
+
 2007-05-21  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsperm/nsperm.c: Updated to support clear text passwords
