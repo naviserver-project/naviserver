@@ -266,43 +266,6 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     }
 
     /*
-     * Encoding defaults for the server
-     */
-
-    servPtr->encoding.outputCharset = Ns_ConfigGetValue(path, "outputCharset");
-    if (servPtr->encoding.outputCharset != NULL) {
-        servPtr->encoding.outputEncoding =
-            Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);
-        if (servPtr->encoding.outputEncoding == NULL) {
-            Ns_Fatal("could not find encoding for default output charset \"%s\"",
-                     servPtr->encoding.outputCharset);
-        }
-    } else {
-        servPtr->encoding.outputCharset = nsconf.encoding.outputCharset;
-        servPtr->encoding.outputEncoding = nsconf.encoding.outputEncoding;
-        nsconf.encoding.hackContentTypeP = nsconf.encoding.hackContentTypeP;
-    }
-    if (servPtr->encoding.outputEncoding != NULL) {
-        servPtr->encoding.hackContentTypeP = NS_TRUE;
-        Ns_ConfigGetBool(path, "HackContentType",
-                         &servPtr->encoding.hackContentTypeP);
-    } else {
-        nsconf.encoding.hackContentTypeP = NS_FALSE;
-    }
-    servPtr->encoding.urlCharset = Ns_ConfigGetValue(path, "urlCharset");
-    if (servPtr->encoding.urlCharset != NULL) {
-        servPtr->encoding.urlEncoding =
-            Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
-        if ( servPtr->encoding.urlEncoding == NULL ) {
-            Ns_Log(Warning, "no encoding found for charset \"%s\" from config",
-                   servPtr->encoding.urlCharset);
-        }
-    } else {
-        servPtr->encoding.urlCharset = nsconf.encoding.urlCharset;
-        servPtr->encoding.urlEncoding = nsconf.encoding.urlEncoding;
-    }
-
-    /*
      * Initialize ADP.
      */
 

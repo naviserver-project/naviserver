@@ -36,6 +36,15 @@
 	* nsd/encoding.c: Consolidate encoding configuration. Convert
 	ns_charsets to Obj command.
 
+	* nsd/nsd.h:
+	* nsd/nsconf.c:
+	* nsd/server.c:
+	* nsd/adpeval.c:
+	* nsd/urlencode.c:
+	* nsd/encoding.c:
+	* tests/test.nscfg: Move global file encodings to per-server. Make url
+	and content encodings per-server only.
+
 2007-05-21  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsperm/nsperm.c: Updated to support clear text passwords

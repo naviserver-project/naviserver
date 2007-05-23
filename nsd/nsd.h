@@ -235,14 +235,6 @@ struct _nsconf {
     } tcl;
 
     struct {
-        char *outputCharset;
-        Tcl_Encoding  outputEncoding;
-        bool hackContentTypeP;
-        char *urlCharset;
-        Tcl_Encoding urlEncoding;
-    } encoding;
-
-    struct {
         int jobsperthread;
         int timeout;
     } job;
@@ -729,11 +721,16 @@ typedef struct NsServer {
      */
 
     struct {
-        char *outputCharset;
-        Tcl_Encoding outputEncoding;
-        bool hackContentTypeP;
-        char *urlCharset;
-        Tcl_Encoding urlEncoding;
+        Tcl_HashTable  extensions;     /* Map file extensions to encodins. */
+
+        CONST char    *urlCharset;
+        Tcl_Encoding   urlEncoding;
+
+        CONST char    *outputCharset;
+        Tcl_Encoding   outputEncoding;
+
+        bool           hackContentTypeP;
+
     } encoding;
 
     struct {
@@ -1031,7 +1028,6 @@ extern void NsConfigDNS(void);
 extern void NsConfigRedirects(void);
 extern void NsConfigVhost(void);
 extern void NsConfigEncodings(void);
-extern void NsUpdateUrlEncode(void);
 
 /*
  * Virtual server management routines.
@@ -1251,6 +1247,7 @@ extern void NsGetBuf(char **bufPtr, int *sizePtr);
 extern Tcl_Encoding NsGetTypeEncodingWithDef(CONST char *type, int *used_default);
 extern void NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
                                       int *new_type, Tcl_DString *type_ds);
+extern Tcl_Encoding NsGetFileEncoding(NsServer *servPtr, CONST char *file);
 
 extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
                               Tcl_DString *dsPtr);

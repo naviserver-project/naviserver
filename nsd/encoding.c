@@ -45,26 +45,30 @@ NS_RCSID("@(#) $Header$");
  * Local functions defined in this file.
  */
 
-static void AddExtension(CONST char *name, CONST char *charset);
 static void AddCharset(CONST char *name, CONST char *charset);
+static void AddExtension(NsServer *servPtr, CONST char *name, CONST char *charset);
 
 static Tcl_Encoding GetCharsetEncoding(CONST char *charset, int len);
+
 static int GetDefaultHackContentTypeP(void);
-static Tcl_Encoding GetDefaultCharset(void);
+static CONST char *GetDefaultCharset(void);
 static Tcl_Encoding GetDefaultEncoding(void);
+
+static Ns_ServerInitProc ConfigServerEncodings;
 
 /*
  * Static variables defined in this file.
  */
 
 static Tcl_HashTable  charsets;     /* Maps Internet charset names to Tcl encoding names */
-static Tcl_HashTable  extensions;   /* Maps file extensions to charsets */
 
 static Tcl_HashTable  encodings;    /* Cache of loaded Tcl encodings */
 static Ns_Mutex       lock;         /* Lock around encodings. */
 static Ns_Cond        cond;
 
 #define ENC_LOCKED ((Tcl_Encoding) (-1))
+
+static Tcl_Encoding   utf8Encoding;
 
 /*
  * The default table maps file extensions to Tcl encodings.
@@ -177,68 +181,97 @@ static struct {
 void
 NsConfigEncodings(void)
 {
-    Ns_Set     *set;
-    int         i;
+    Ns_Set *set;
+    int     i;
 
     Ns_MutexSetName(&lock, "ns:encodings");
     Tcl_InitHashTable(&encodings, TCL_STRING_KEYS);
     Tcl_InitHashTable(&charsets, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&extensions, TCL_STRING_KEYS);
+    utf8Encoding = Ns_GetEncoding("utf-8");
 
     /*
-     * Add default charsets and file mappings.
+     * Add built-in and configured charset aliases.
      */
 
     for (i = 0; builtinChar[i].charset != NULL; ++i) {
         AddCharset(builtinChar[i].charset, builtinChar[i].name);
     }
-    for (i = 0; builtinExt[i].extension != NULL; ++i) {
-        AddExtension(builtinExt[i].extension, builtinExt[i].name);
-    }
-
-    /*
-     * Add configured charsets and file mappings.
-     */
-
     set = Ns_ConfigGetSection("ns/charsets");
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
         AddCharset(Ns_SetKey(set, i), Ns_SetValue(set, i));
     }
-    set = Ns_ConfigGetSection("ns/encodings");
+
+    NsRegisterServerInit(ConfigServerEncodings);
+}
+
+static int
+ConfigServerEncodings(CONST char *server)
+{
+    NsServer   *servPtr = NsGetServer(server);
+    CONST char *path;
+    Ns_Set     *set;
+    int         i;
+
+    /*
+     * Initialise the file extension to encoding mappings.
+     */
+
+    Tcl_InitHashTable(&servPtr->encoding.extensions, TCL_STRING_KEYS);
+
+    for (i = 0; builtinExt[i].extension != NULL; ++i) {
+        AddExtension(servPtr, builtinExt[i].extension, builtinExt[i].name);
+    }
+    path = Ns_ConfigGetPath(server, NULL, "encodings", NULL);
+    set = Ns_ConfigGetSection(path);
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        AddExtension(Ns_SetKey(set, i), Ns_SetValue(set, i));
+        AddExtension(servPtr, Ns_SetKey(set, i), Ns_SetValue(set, i));
     }
 
     /*
-     * Establish default output encoding, if present.  If this
-     * configuration specification is not present, the default
-     * behavior will be to do not encoding transformation.
+     * Configure the encoding used in the requet URL.
      */
 
-    nsconf.encoding.outputCharset =
-        Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "OutputCharset");
+    path = Ns_ConfigGetPath(server, NULL, NULL);
 
-    if (nsconf.encoding.outputCharset != NULL) {
+    servPtr->encoding.urlCharset =
+        Ns_ConfigString(path, "urlCharset", "utf-8");
 
-        nsconf.encoding.outputEncoding =
-            Ns_GetCharsetEncoding(nsconf.encoding.outputCharset);
-        if (nsconf.encoding.outputEncoding == NULL) {
-            Ns_Fatal("could not find encoding for default output charset \"%s\"",
-                     nsconf.encoding.outputCharset);
-        }
-        nsconf.encoding.hackContentTypeP =
-            Ns_ConfigBool(NS_CONFIG_PARAMETERS, "HackContentType", NS_TRUE);
-    } else {
-        nsconf.encoding.outputEncoding = NULL;
-        nsconf.encoding.hackContentTypeP = NS_FALSE;
+    servPtr->encoding.urlEncoding =
+        Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
+    if (servPtr->encoding.urlEncoding == NULL) {
+        Ns_Log(Warning, "no encoding found for charset \"%s\" from config",
+               servPtr->encoding.urlCharset);
     }
+
+    /*
+     * Configure the encoding used for Tcl/ADP output.
+     */
+
+    servPtr->encoding.outputCharset =
+        Ns_ConfigString(path, "outputCharset", "utf-8");
+
+    servPtr->encoding.outputEncoding =
+        Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);
+    if (servPtr->encoding.outputEncoding == NULL) {
+        Ns_Fatal("could not find encoding for default output charset \"%s\"",
+                 servPtr->encoding.outputCharset);
+    }
+
+    /*
+     * Force charset into content-type header.
+     */
+
+    servPtr->encoding.hackContentTypeP =
+        Ns_ConfigBool(path, "HackContentType", NS_TRUE);
+
+    return NS_OK;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_GetFileEncoding --
+ * NsGetFileEncoding, Ns_GetFileEncoding --
  *
  *      Return the Tcl_Encoding for the given file.  Note this may
  *      not be the same as the encoding for the charset of the
@@ -254,20 +287,36 @@ NsConfigEncodings(void)
  */
 
 Tcl_Encoding
-Ns_GetFileEncoding(CONST char *file)
+NsGetFileEncoding(NsServer *servPtr, CONST char *file)
 {
     Tcl_HashEntry *hPtr;
     CONST char    *ext, *name;
 
     ext = strrchr(file, '.');
     if (ext != NULL) {
-        hPtr = Tcl_FindHashEntry(&extensions, ext);
+        hPtr = Tcl_FindHashEntry(&servPtr->encoding.extensions, ext);
         if (hPtr != NULL) {
             name = Tcl_GetHashValue(hPtr);
             return GetCharsetEncoding(name, -1);
         }
     }
     return NULL;
+}
+
+Tcl_Encoding
+Ns_GetFileEncoding(CONST char *file)
+{
+    Conn         *connPtr = (Conn *) Ns_GetConn();
+    NsServer     *servPtr;
+    Tcl_Encoding  encoding;
+
+    if (connPtr != NULL) {
+        servPtr = connPtr->servPtr;
+        encoding = NsGetFileEncoding(servPtr, file);
+    } else {
+        encoding = GetCharsetEncoding("utf-8", -1);
+    }
+    return encoding;
 }
 
 
@@ -468,7 +517,7 @@ NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
         Tcl_DStringInit(type_ds);
         Tcl_DStringAppend(type_ds, type, -1);
         Tcl_DStringAppend(type_ds, "; charset=", -1);
-        Tcl_DStringAppend(type_ds, (char*) GetDefaultCharset(), -1);
+        Tcl_DStringAppend(type_ds, GetDefaultCharset(), -1);
         *new_type = NS_TRUE;
     } else {
         *new_type = NS_FALSE;
@@ -560,12 +609,12 @@ NsTclEncodingForCharsetCmd(ClientData dummy, Tcl_Interp *interp, int argc,
  */
 
 static void
-AddExtension(CONST char *ext, CONST char *name)
+AddExtension(NsServer *servPtr, CONST char *ext, CONST char *name)
 {
     Tcl_HashEntry  *hPtr;
     int             new;
 
-    hPtr = Tcl_CreateHashEntry(&extensions, ext, &new);
+    hPtr = Tcl_CreateHashEntry(&servPtr->encoding.extensions, ext, &new);
     Tcl_SetHashValue(hPtr, name);
 }
 
@@ -653,7 +702,7 @@ GetDefaultEncoding(void)
     if (connPtr != NULL && connPtr->servPtr != NULL) {
         return connPtr->servPtr->encoding.outputEncoding;
     }
-    return nsconf.encoding.outputEncoding;
+    return utf8Encoding;
 }
 
 /*
@@ -673,15 +722,15 @@ GetDefaultEncoding(void)
  *----------------------------------------------------------------------
  */
 
-static Tcl_Encoding
+static CONST char *
 GetDefaultCharset(void)
 {
     Conn *connPtr = (Conn *) Ns_GetConn();
 
     if (connPtr != NULL && connPtr->servPtr != NULL) {
-        return (Tcl_Encoding) connPtr->servPtr->encoding.outputCharset;
+        return connPtr->servPtr->encoding.outputCharset;
     }
-    return (Tcl_Encoding) nsconf.encoding.outputCharset;
+    return "utf-8";
 }
 
 /*
@@ -709,5 +758,5 @@ GetDefaultHackContentTypeP(void)
     if (connPtr != NULL && connPtr->servPtr != NULL) {
         return connPtr->servPtr->encoding.hackContentTypeP;
     }
-    return nsconf.encoding.hackContentTypeP;
+    return NS_TRUE;
 }

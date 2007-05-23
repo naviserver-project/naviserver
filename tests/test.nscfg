@@ -69,26 +69,12 @@ ns_param        .iso-8859-2_adp       "text/plain; charset=iso-8859-2"
 ns_param        .utf2utf_adp          "text/plain; charset=utf-8"
 ns_param        .iso2utf_adp          "text/plain; charset=utf-8"
 
-ns_section	"ns/encodings"
-ns_param        default               "utf-8"
-ns_param        .utf_adp              "utf-8"
-ns_param   	.iso_adp      	      "iso-8859-1"
-ns_param        .utf2iso_adp          "utf-8"
-ns_param        .iso2iso_adp          "iso-8859-1"
-ns_param        .iso-8859-2_adp       "iso-8859-2"
-ns_param        .utf2utf_adp          "utf-8"
-ns_param        .iso2utf_adp          "iso-8859-1"
-
 ns_section "ns/parameters"
 ns_param   home            [ns_config "test" home]
 ns_param   tcllibrary      [ns_config "test" home]/../tcl
 ns_param   pidfile         [ns_config "test" home]/testserver/nsd.pid
 ns_param   logdebug        false
 ns_param   progressminsize 1
-
-ns_param   URLCharset      iso-8859-1
-ns_param   OutputCharset   iso-8859-1
-ns_param   HackContentType true
 
 ns_section "ns/fastpath"
 ns_param   cache           true
@@ -119,6 +105,20 @@ ns_param   test            "Main Test Server"
 
 ns_section "ns/server/test"
 ns_param   enabletclpages  true
+
+ns_param   URLCharset      iso-8859-1
+ns_param   OutputCharset   iso-8859-1
+ns_param   HackContentType true
+
+ns_section "ns/server/test/encodings"
+ns_param   default         "utf-8"
+ns_param   .utf_adp        "utf-8"
+ns_param   .iso_adp        "iso-8859-1"
+ns_param   .utf2iso_adp    "utf-8"
+ns_param   .iso2iso_adp    "iso-8859-1"
+ns_param   .iso-8859-2_adp "iso-8859-2"
+ns_param   .utf2utf_adp    "utf-8"
+ns_param   .iso2utf_adp    "iso-8859-1"
 
 ns_section "ns/server/test/fastpath"
 ns_param   serverdir       testserver

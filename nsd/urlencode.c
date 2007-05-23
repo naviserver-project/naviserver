@@ -391,42 +391,6 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
 /*
  *----------------------------------------------------------------------
  *
- * NsUpdateUrlEncode
- *
- *      Initialize UrlEncode structures from config.
- *
- * Results:
- *      Tcl result. 
- *
- * Side effects:
- *      See docs. 
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsUpdateUrlEncode(void)
-{
-
-    nsconf.encoding.urlCharset = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS,
-                                                   "URLCharset");
-    if (nsconf.encoding.urlCharset != NULL) {
-        nsconf.encoding.urlEncoding =
-            Ns_GetCharsetEncoding(nsconf.encoding.urlCharset);
-        if (nsconf.encoding.urlEncoding == NULL ) {
-            Ns_Log(Warning,
-                   "no encoding found for charset \"%s\" from config",
-                   nsconf.encoding.urlCharset);
-        }
-    } else {
-        nsconf.encoding.urlEncoding = NULL;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclUrlEncodeObjCmd --
  *
  *      Encode 1 or more segments of a either a URI path or query

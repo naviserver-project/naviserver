@@ -166,8 +166,6 @@ NsConfUpdate(void)
     NsConfigVhost();
     NsConfigEncodings();
 
-    NsUpdateUrlEncode();
-
     /*
      * Set a default stacksize, if specified. Use OS default otherwise.
      */

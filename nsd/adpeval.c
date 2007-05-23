@@ -805,7 +805,7 @@ ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
     } else {
 	buf[n] = '\0';
 	Tcl_DStringInit(&utf);
-	encoding = Ns_GetFileEncoding(file);
+	encoding = NsGetFileEncoding(itPtr->servPtr, file);
 	if (encoding == NULL) {
 	    page = buf;
 	} else {
