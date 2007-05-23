@@ -71,7 +71,6 @@ NsdInit(void)
     	NsInitLog();
         NsInitFd();
     	NsInitBinder();
-    	NsInitEncodings();
     	NsInitListen();
         NsInitLimits();
     	NsInitInfo();

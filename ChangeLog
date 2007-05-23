@@ -29,6 +29,13 @@
 	iso-8859-1", and unfortunately highlights another broken
 	test: encoding-3.3 added to knownBug...
 
+	* nsd/nsd.h:
+	* nsd/init.c:
+	* nsd/nsconf.c:
+	* nsd/tclcmds.c:
+	* nsd/encoding.c: Consolidate encoding configuration. Convert
+	ns_charsets to Obj command.
+
 2007-05-21  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsperm/nsperm.c: Updated to support clear text passwords

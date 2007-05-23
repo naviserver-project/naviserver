@@ -47,8 +47,8 @@ NS_RCSID("@(#) $Header$");
 
 static void AddExtension(CONST char *name, CONST char *charset);
 static void AddCharset(CONST char *name, CONST char *charset);
+
 static Tcl_Encoding GetCharsetEncoding(CONST char *charset, int len);
-static char *RebuildCharsetList(void);
 static int GetDefaultHackContentTypeP(void);
 static Tcl_Encoding GetDefaultCharset(void);
 static Tcl_Encoding GetDefaultEncoding(void);
@@ -57,22 +57,18 @@ static Tcl_Encoding GetDefaultEncoding(void);
  * Static variables defined in this file.
  */
 
-static Tcl_HashTable    encodings;
-static Tcl_HashTable    charsets;
-static Tcl_HashTable    extensions;
-static Ns_Mutex         lock;
-static Ns_Cond          cond;
+static Tcl_HashTable  charsets;     /* Maps Internet charset names to Tcl encoding names */
+static Tcl_HashTable  extensions;   /* Maps file extensions to charsets */
+
+static Tcl_HashTable  encodings;    /* Cache of loaded Tcl encodings */
+static Ns_Mutex       lock;         /* Lock around encodings. */
+static Ns_Cond        cond;
+
 #define ENC_LOCKED ((Tcl_Encoding) (-1))
 
-static char            *charsetList = NULL;
 /*
-static Tcl_Encoding     defaultEncoding;
-static char            *defaultCharset;
-static int              hackContentTypeP;
-*/
-
-/*
- * The default table maps file extension to Tcl encodings.
+ * The default table maps file extensions to Tcl encodings.
+ * That is, the encoding used to read the files from disk (mainly ADP).
  */
 
 static struct {
@@ -87,7 +83,7 @@ static struct {
 };
 
 /*
- * The following table provides charset aliases for Tcl encodings.
+ * The following table provides HTTP charset aliases for Tcl encodings names.
  */
 
 static struct {
@@ -160,6 +156,83 @@ static struct {
     { "x-macintosh",         "macRoman" },
     { NULL, NULL }
 };
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigEncodings --
+ *
+ *      Configure charset aliases and file extension mappings.
+ *
+ * Results:
+ *      None. 
+ *
+ * Side effects:
+ *      None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigEncodings(void)
+{
+    Ns_Set     *set;
+    int         i;
+
+    Ns_MutexSetName(&lock, "ns:encodings");
+    Tcl_InitHashTable(&encodings, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&charsets, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&extensions, TCL_STRING_KEYS);
+
+    /*
+     * Add default charsets and file mappings.
+     */
+
+    for (i = 0; builtinChar[i].charset != NULL; ++i) {
+        AddCharset(builtinChar[i].charset, builtinChar[i].name);
+    }
+    for (i = 0; builtinExt[i].extension != NULL; ++i) {
+        AddExtension(builtinExt[i].extension, builtinExt[i].name);
+    }
+
+    /*
+     * Add configured charsets and file mappings.
+     */
+
+    set = Ns_ConfigGetSection("ns/charsets");
+    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+        AddCharset(Ns_SetKey(set, i), Ns_SetValue(set, i));
+    }
+    set = Ns_ConfigGetSection("ns/encodings");
+    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+        AddExtension(Ns_SetKey(set, i), Ns_SetValue(set, i));
+    }
+
+    /*
+     * Establish default output encoding, if present.  If this
+     * configuration specification is not present, the default
+     * behavior will be to do not encoding transformation.
+     */
+
+    nsconf.encoding.outputCharset =
+        Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "OutputCharset");
+
+    if (nsconf.encoding.outputCharset != NULL) {
+
+        nsconf.encoding.outputEncoding =
+            Ns_GetCharsetEncoding(nsconf.encoding.outputCharset);
+        if (nsconf.encoding.outputEncoding == NULL) {
+            Ns_Fatal("could not find encoding for default output charset \"%s\"",
+                     nsconf.encoding.outputCharset);
+        }
+        nsconf.encoding.hackContentTypeP =
+            Ns_ConfigBool(NS_CONFIG_PARAMETERS, "HackContentType", NS_TRUE);
+    } else {
+        nsconf.encoding.outputEncoding = NULL;
+        nsconf.encoding.hackContentTypeP = NS_FALSE;
+    }
+}
 
 
 /*
@@ -309,114 +382,6 @@ Ns_GetEncoding(CONST char *name)
 /*
  *----------------------------------------------------------------------
  *
- * NsInitEncodings --
- *
- *      Add compiled-in default encodings.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsInitEncodings(void)
-{
-    int i;
-
-    /*
-     * Initialize hash table of encodings and charsets.
-     */
-
-    Ns_MutexSetName(&lock, "ns:encodings");
-    Tcl_InitHashTable(&encodings, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&charsets, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&extensions, TCL_STRING_KEYS);
-
-    /*
-     * Add default charset and file mappings.
-     */
-
-    for (i = 0; builtinChar[i].charset != NULL; ++i) {
-        AddCharset(builtinChar[i].charset, builtinChar[i].name);
-    }
-    for (i = 0; builtinExt[i].extension != NULL; ++i) {
-        AddExtension(builtinExt[i].extension, builtinExt[i].name);
-    }
-
-    RebuildCharsetList();
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsUpdateEncodings --
- *
- *      Add additional configured encodings.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsUpdateEncodings(void)
-{
-    Ns_Set *set;
-    int     i;
-
-    /*
-     * Add configured charsets and file mappings.
-     */
-
-    set = Ns_ConfigGetSection("ns/charsets");
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        AddCharset(Ns_SetKey(set, i), Ns_SetValue(set, i));
-    }
-    set = Ns_ConfigGetSection("ns/encodings");
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        AddExtension(Ns_SetKey(set, i), Ns_SetValue(set, i));
-    }
-
-    RebuildCharsetList();
-
-    /*
-     * Establish default output encoding, if present.  If this
-     * configuration specification is not present, the default
-     * behavior will be to do not encoding transformation.
-     */
-
-    nsconf.encoding.outputCharset =
-        Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "OutputCharset");
-
-    if (nsconf.encoding.outputCharset != NULL) {
-
-        nsconf.encoding.outputEncoding =
-            Ns_GetCharsetEncoding(nsconf.encoding.outputCharset);
-        if (nsconf.encoding.outputEncoding == NULL) {
-            Ns_Fatal("could not find encoding for default output charset \"%s\"",
-                     nsconf.encoding.outputCharset);
-        }
-        nsconf.encoding.hackContentTypeP =
-            Ns_ConfigBool(NS_CONFIG_PARAMETERS, "HackContentType", NS_TRUE);
-    } else {
-        nsconf.encoding.outputEncoding = NULL;
-        nsconf.encoding.hackContentTypeP = NS_FALSE;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsGetTypeEncodingWithDef --
  *
  *      Return the Tcl_Encoding for the given Content-type header,
@@ -513,9 +478,9 @@ NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
 /*
  *----------------------------------------------------------------------
  *
- * NsTclCharsetsCmd --
+ * NsTclCharsetsObjCmd --
  *
- *      Tcl command to get the list of charsets for which we have encodings.
+ *      Get the list of charsets for which we have encodings.
  *
  * Results:
  *      TCL_OK
@@ -527,11 +492,16 @@ NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
  */
 
 int
-NsTclCharsetsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char *argv[])
+NsTclCharsetsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
 
-    Tcl_SetResult(interp, charsetList, TCL_VOLATILE);
-
+    hPtr = Tcl_FirstHashEntry(&charsets, &search);
+    while (hPtr != NULL) {
+        Tcl_AppendElement(interp, (char *) Tcl_GetHashKey(&charsets, hPtr));
+        hPtr = Tcl_NextHashEntry(&search);
+    }
     return TCL_OK;
 }
 
@@ -656,54 +626,8 @@ GetCharsetEncoding(CONST char *charset, int len)
 
     return encoding;
 }
+
 
-
-/*
- *----------------------------------------------------------------------
- *
- * RebuildCharsetList --
- *
- *      Construct (or reconstruct) the list of charset names
- *      which are being kept precomputed and in sync with
- *      the current charset table.
- *
- * Results:
- *      char * string containing list of charset names
- *
- * Side effects:
- *      Retains the charset list string in static storage.
- *
- *----------------------------------------------------------------------
- */
-
-static char *
-RebuildCharsetList(void)
-{
-    Tcl_HashEntry  *entry;
-    Tcl_HashSearch  search;
-    Tcl_DString     ds;
-
-    Tcl_DStringInit(&ds);
-
-    Ns_MutexLock(&lock);
-    entry = Tcl_FirstHashEntry(&charsets, &search);
-    while (entry != NULL) {
-        Tcl_DStringAppendElement(&ds,
-            (char *) Tcl_GetHashKey(&charsets, entry));
-        entry = Tcl_NextHashEntry(&search);
-    }
-    Ns_MutexUnlock(&lock);
-
-    if (charsetList != NULL ) {
-        ns_free( charsetList );
-    }
-    charsetList = ns_strdup(Tcl_DStringValue(&ds));
-    Tcl_DStringFree(&ds);
-
-    return charsetList;
-}
-
-
 /*
  *----------------------------------------------------------------------
  *

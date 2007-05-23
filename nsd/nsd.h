@@ -1007,7 +1007,6 @@ typedef struct NsInterp {
 
 extern void NsInitBinder(void);
 extern void NsInitConf(void);
-extern void NsInitEncodings(void);
 extern void NsInitFd(void);
 extern void NsInitListen(void);
 extern void NsInitLog(void);
@@ -1031,7 +1030,7 @@ extern void NsConfigMimeTypes(void);
 extern void NsConfigDNS(void);
 extern void NsConfigRedirects(void);
 extern void NsConfigVhost(void);
-extern void NsUpdateEncodings(void);
+extern void NsConfigEncodings(void);
 extern void NsUpdateUrlEncode(void);
 
 /*

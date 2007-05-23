@@ -164,8 +164,8 @@ NsConfUpdate(void)
     NsConfigDNS();
     NsConfigRedirects();
     NsConfigVhost();
+    NsConfigEncodings();
 
-    NsUpdateEncodings();
     NsUpdateUrlEncode();
 
     /*
