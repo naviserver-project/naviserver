@@ -192,24 +192,25 @@ NsTclProgressObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         Tcl_WrongNumArgs(interp, 1, objv, "url");
         return TCL_ERROR;
     }
+    if (progressMinSize > 0) {
 
-    url = Tcl_GetString(objv[1]);
+        url = Tcl_GetString(objv[1]);
 
-    Ns_MutexLock(&lock);
-    hPtr = Tcl_FindHashEntry(&urlTable, url);
-    if (hPtr != NULL) {
-        pPtr = Tcl_GetHashValue(hPtr);
-        resObj = Tcl_GetObjResult(interp);
-        if (Tcl_ListObjAppendElement(interp, resObj,
-                                    Tcl_NewLongObj(pPtr->current)) != TCL_OK
-            || Tcl_ListObjAppendElement(interp, resObj,
-                                        Tcl_NewLongObj(pPtr->size)) != TCL_OK) {
-            Ns_MutexUnlock(&lock);
-            return TCL_ERROR;
+        Ns_MutexLock(&lock);
+        hPtr = Tcl_FindHashEntry(&urlTable, url);
+        if (hPtr != NULL) {
+            pPtr = Tcl_GetHashValue(hPtr);
+            resObj = Tcl_GetObjResult(interp);
+            if (Tcl_ListObjAppendElement(interp, resObj,
+                                         Tcl_NewLongObj(pPtr->current)) != TCL_OK
+                || Tcl_ListObjAppendElement(interp, resObj,
+                                            Tcl_NewLongObj(pPtr->size)) != TCL_OK) {
+                Ns_MutexUnlock(&lock);
+                return TCL_ERROR;
+            }
         }
+        Ns_MutexUnlock(&lock);
     }
-    Ns_MutexUnlock(&lock);
-
     return TCL_OK;
 }
 
