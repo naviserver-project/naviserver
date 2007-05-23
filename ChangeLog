@@ -1,3 +1,8 @@
+2007-05-23  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/encoding.test: Uncomment tests 3.5 and 3.6 and mark as knownBug
+	so that they show up in the test summary as skipped. Untabify.
+
 2007-05-21  Vlad Seryakov  <seryakov@users.sf.net>
 
         * nsperm/nsperm.c: Updated to support clear text passwords
