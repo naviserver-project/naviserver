@@ -30,7 +30,7 @@
 /*
  * adprequest.c --
  *
- *	ADP connection request support.
+ *      ADP connection request support.
  */
 
 
@@ -38,69 +38,68 @@
 
 NS_RCSID("@(#) $Header$");
 
-/*
- * Static functions defined in this file.
- */
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsAdpProc --
+ * Ns_AdpPageProc --
  *
- *	Check for a normal file and call Ns_AdpRequest.
+ *      Check for a normal ADP file and call Ns_AdpRequest.
  *
  * Results:
- *	A standard Naviserver request result.
+ *      A standard request result.
  *
  * Side effects:
- *	Depends on code embedded within page.
+ *      Depends on code embedded within page.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsAdpProc(void *arg, Ns_Conn *conn)
+Ns_AdpPageProc(void *arg, Ns_Conn *conn)
 {
-    Ns_Time *ttlPtr = arg;
-    Ns_DString file;
-    int status;
+    Ns_Time    *ttlPtr = arg;
+    Ns_DString  file;
+    int         status;
 
     Ns_DStringInit(&file);
     Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
     status = Ns_AdpRequestEx(conn, file.string, ttlPtr, 0);
     Ns_DStringFree(&file);
+
     return status;
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
- * NsTclProc --
+ * Ns_TclPageProc --
  *
- *	Check for a normal file and call Ns_AdpRequest.
+ *      Check for a normal Tcl file and call Ns_AdpRequest in Tcl mode.
  *
  * Results:
- *	A standard Naviserver request result.
+ *      A standard request result.
  *
  * Side effects:
- *	Depends on code embedded within page.
+ *      Depends on code embedded within page.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsAdpTclProc(void *arg, Ns_Conn *conn)
+Ns_TclPageProc(void *arg, Ns_Conn *conn)
 {
-    Ns_Time *ttlPtr = arg;
-    Ns_DString file;
-    int status;
+    Ns_Time    *ttlPtr = arg;
+    Ns_DString  file;
+    int         status;
 
     Ns_DStringInit(&file);
     Ns_UrlToFile(&file, Ns_ConnServer(conn), conn->request->url);
     status = Ns_AdpRequestEx(conn, file.string, ttlPtr, ADP_TCLFILE);
     Ns_DStringFree(&file);
+
     return status;
 }
 
@@ -110,14 +109,14 @@ NsAdpTclProc(void *arg, Ns_Conn *conn)
  *
  * Ns_AdpRequest, Ns_AdpRequestEx -
  *
- *  	Invoke a file for an ADP request with an optional cache
- *	timeout.
+ *      Invoke a file for an ADP request with an optional cache
+ *      timeout.
  *
  * Results:
- *	A standard Naviserver request result.
+ *      A standard request result.
  *
  * Side effects:
- *	Depends on code embedded within page.
+ *      Depends on code embedded within page.
  *
  *----------------------------------------------------------------------
  */
@@ -131,14 +130,14 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
 int
 Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
 {
-    Conn	     *connPtr = (Conn *) conn;
-    Tcl_Interp       *interp;
-    NsInterp         *itPtr;
-    char             *start, *type;
-    Ns_Set           *query;
-    NsServer	     *servPtr;
-    Tcl_Obj	     *objv[2];
-    int		      result;
+    Conn         *connPtr = (Conn *) conn;
+    Tcl_Interp   *interp;
+    NsInterp     *itPtr;
+    char         *start, *type;
+    Ns_Set       *query;
+    NsServer     *servPtr;
+    Tcl_Obj      *objv[2];
+    int           result;
 
     interp = Ns_GetConnInterp(conn);
     itPtr = NsGetInterpData(interp);
@@ -148,7 +147,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
      */
 
     if (access(file, R_OK) != 0) {
-	return Ns_ConnReturnNotFound(conn);
+        return Ns_ConnReturnNotFound(conn);
     }
 
     /*
@@ -157,7 +156,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
 
     type = Ns_GetMimeType(file);
     if (type == NULL || STREQ(type, "*/*")) {
-	type = NSD_TEXTHTML;
+        type = NSD_TEXTHTML;
     }
     Ns_ConnSetTypeHeader(conn, type);
 
@@ -167,9 +166,9 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
 
     servPtr = connPtr->servPtr;
     if ((itPtr->servPtr->adp.flags & ADP_DEBUG) &&
-	STREQ(conn->request->method, "GET") &&
-	(query = Ns_ConnGetQuery(conn)) != NULL) {
-	itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
+        STREQ(conn->request->method, "GET") &&
+        (query = Ns_ConnGetQuery(conn)) != NULL) {
+        itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
     }
 
     /*
@@ -187,7 +186,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
     Tcl_DecrRefCount(objv[0]);
     Tcl_DecrRefCount(objv[1]);
     if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
-	return NS_ERROR;
+        return NS_ERROR;
     }
     return NS_OK;
 }
@@ -198,13 +197,13 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
  *
  * NsAdpFlush --
  *
- *	Flush output to connection response buffer.
+ *      Flush output to connection response buffer.
  *
  * Results:
- *	TCL_ERROR if flush failed, TCL_OK otherwise.
+ *      TCL_ERROR if flush failed, TCL_OK otherwise.
  *
  * Side effects:
- *  	Output buffer is truncated in all cases.
+ *      Output buffer is truncated in all cases.
  *
  *----------------------------------------------------------------------
  */
@@ -212,11 +211,11 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
 int
 NsAdpFlush(NsInterp *itPtr, int stream)
 {
-    Ns_Conn *conn;
-    Ns_DString cds;
+    Ns_Conn    *conn;
+    Ns_DString  cds;
     Tcl_Interp *interp = itPtr->interp;
-    int len, wrote, result = TCL_ERROR, flags = itPtr->adp.flags;
-    char *buf, *ahdr;
+    int         len, wrote, result = TCL_ERROR, flags = itPtr->adp.flags;
+    char       *buf, *ahdr;
 
     /*
      * Verify output context.
@@ -225,8 +224,8 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     conn = itPtr->adp.conn ? itPtr->adp.conn : itPtr->conn;
 
     if (conn == NULL && itPtr->adp.chan == NULL) {
-	Tcl_SetResult(interp, "no adp output context", TCL_STATIC);
-	return TCL_ERROR;
+        Tcl_SetResult(interp, "no adp output context", TCL_STATIC);
+        return TCL_ERROR;
     }
     buf = itPtr->adp.output.string;
     len = itPtr->adp.output.length;
@@ -236,10 +235,10 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      */
 
     if ((flags & ADP_TRIM) && !(flags & ADP_FLUSHED)) {
-	while (len > 0 && isspace(UCHAR(*buf))) {
-	    ++buf;
-	    --len;
-	}
+        while (len > 0 && isspace(UCHAR(*buf))) {
+            ++buf;
+            --len;
+        }
     }
 
     /*
@@ -252,30 +251,30 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     Tcl_ResetResult(interp);
 
     if (itPtr->adp.exception == ADP_ABORT) {
-	Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
+        Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
     } else if (len == 0 && stream) {
-	result = TCL_OK;
+        result = TCL_OK;
     } else {
-	if (itPtr->adp.chan != NULL) {
-	    while (len > 0) {
-		wrote = Tcl_Write(itPtr->adp.chan, buf, len);
-		if (wrote < 0) {
-	    	    Tcl_AppendResult(interp, "write failed: ",
-				     Tcl_PosixError(interp), NULL);
-		    break;
-		}
-		buf += wrote;
-		len -= wrote;
-	    }
-	    if (len == 0) {
-		result = TCL_OK;
-	    }
-	} else {
-	    if (conn->flags & NS_CONN_CLOSED) {
+        if (itPtr->adp.chan != NULL) {
+            while (len > 0) {
+                wrote = Tcl_Write(itPtr->adp.chan, buf, len);
+                if (wrote < 0) {
+                    Tcl_AppendResult(interp, "write failed: ",
+                                     Tcl_PosixError(interp), NULL);
+                    break;
+                }
+                buf += wrote;
+                len -= wrote;
+            }
+            if (len == 0) {
+                result = TCL_OK;
+            }
+        } else {
+            if (conn->flags & NS_CONN_CLOSED) {
                 result = TCL_OK;
                 Tcl_SetResult(interp, "adp flush failed: connection closed",
-			      TCL_STATIC);
-	    } else {
+                              TCL_STATIC);
+            } else {
 
                 if (flags & ADP_GZIP) {
 
@@ -307,8 +306,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                         buf = cds.string;
                         len = cds.length;
                     }
-
-	    	}
+                }
 
                 /*
                  * Flush out the headers now that the encoded output length
@@ -317,7 +315,8 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 
                 if (!(conn->flags & NS_CONN_SENTHDRS)) {
 
-                    /* Switch to chunked mode if browser supports chunked encoding and
+                    /*
+                     * Switch to chunked mode if browser supports chunked encoding and
                      * streaming is enabled.
                      */
 
@@ -326,37 +325,37 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                     }
                     Ns_ConnSetRequiredHeaders(conn, NULL, stream ? -1 : len);
                     Ns_ConnQueueHeaders(conn, 200);
-	    	}
+                }
 
                 if (!(flags & ADP_FLUSHED) && (flags & ADP_EXPIRE)) {
-		    Ns_ConnCondSetHeaders(conn, "Expires", "now");
-	    	}
+                    Ns_ConnCondSetHeaders(conn, "Expires", "now");
+                }
 
                 if (conn->flags & NS_CONN_SKIPBODY) {
                     buf = NULL;
                     len = 0;
                 }
 
-	    	if (Ns_WriteConn(itPtr->conn, buf, len) == NS_OK) {
-		    result = TCL_OK;
-	    	} else {
-	    	    Tcl_SetResult(interp,
-				  "adp flush failed: connection flush error",
-				  TCL_STATIC);
-	    	}
-	    }
-	}
-	itPtr->adp.flags |= ADP_FLUSHED;
+                if (Ns_WriteConn(itPtr->conn, buf, len) == NS_OK) {
+                    result = TCL_OK;
+                } else {
+                    Tcl_SetResult(interp,
+                                  "adp flush failed: connection flush error",
+                                  TCL_STATIC);
+                }
+            }
+        }
+        itPtr->adp.flags |= ADP_FLUSHED;
 
-	/*
-	 * Raise an abort exception if autoabort is enabled.
-	 */
+        /*
+         * Raise an abort exception if autoabort is enabled.
+         */
 
-    	if (result != TCL_OK && (flags & ADP_AUTOABORT)) {
-	    Tcl_AddErrorInfo(interp, "\n    abort exception raised");
-	    NsAdpLogError(itPtr);
-	    itPtr->adp.exception = ADP_ABORT;
-    	}
+        if (result != TCL_OK && (flags & ADP_AUTOABORT)) {
+            Tcl_AddErrorInfo(interp, "\n    abort exception raised");
+            NsAdpLogError(itPtr);
+            itPtr->adp.exception = ADP_ABORT;
+        }
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
     Ns_DStringFree(&cds);
@@ -367,4 +366,3 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     }
     return result;
 }
-

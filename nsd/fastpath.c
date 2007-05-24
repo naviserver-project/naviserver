@@ -178,9 +178,9 @@ ConfigServerFastpath(CONST char *server)
     servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
     servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
 
-    Ns_RegisterRequest(server, "GET", "/",  NsFastPathProc, NULL, servPtr, 0);
-    Ns_RegisterRequest(server, "HEAD", "/", NsFastPathProc, NULL, servPtr, 0);
-    Ns_RegisterRequest(server, "POST", "/", NsFastPathProc, NULL, servPtr, 0);
+    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0);
+    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0);
+    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0);
 
     return NS_OK;
 }
@@ -300,7 +300,8 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 
 /*
  *----------------------------------------------------------------------
- * Ns_FastPathProc, NsFastPathProc --
+ *
+ * Ns_FastPathProc --
  *
  *      Return the contents of a URL.
  *
@@ -316,23 +317,12 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 int
 Ns_FastPathProc(void *arg, Ns_Conn *conn)
 {
-    char     *server = arg;
-    NsServer *servPtr;
-
-    if ((servPtr = NsGetServer(server)) == NULL) {
-        return NS_ERROR;
-    }
-    return NsFastPathProc(servPtr, conn);
-}
-
-int
-NsFastPathProc(void *arg, Ns_Conn *conn)
-{
+    Conn        *connPtr = (Conn *) conn;
+    NsServer    *servPtr = connPtr->servPtr;
     Ns_DString   ds;
-    NsServer    *servPtr = arg;
     char        *url = conn->request->url;
     int          status, result, i;
-    FileStat  st;
+    FileStat     st;
 
     Ns_DStringInit(&ds);
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK ||
