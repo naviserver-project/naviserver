@@ -285,4 +285,24 @@ test encoding-5.2 {
 } -result {200 äöü}
 
 
+#
+# Test buffer handling during conversion.
+#
+
+test encoding-6.1 {
+    Return a string larger than IOBUFSZ as used in Ns_ConnWriteVChars()
+} -setup {
+    ns_register_proc GET /encoding {
+        ns_return 200 "text/plain; charset=utf-8" [string repeat x 8193]
+    }
+} -body {
+    set result [nstest_http -getbody 1 -getheaders content-type GET /encoding]
+	list [lindex $result 0] [lindex $result 1] [string length [lindex $result 2]]
+} -cleanup {
+	unset -nocomplain result
+    ns_unregister_proc GET /encoding
+} -result {200 {text/plain; charset=utf-8} 8193}
+
+
+
 cleanupTests

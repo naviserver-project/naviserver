@@ -417,7 +417,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
             break;
         }
 
-        if (encodedCount + encodedOffset == sizeof(encodedBytes)-1
+        if (status == TCL_CONVERT_NOSPACE
             || (n == nbufs-1 && utfConvertedCount == utfCount)) {
 
             status = Ns_WriteConn(conn, encodedBytes, encodedCount + encodedOffset);
