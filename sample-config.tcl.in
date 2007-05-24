@@ -213,9 +213,6 @@ ns_param	$servername     	$serverdesc
 
 ns_section 	"ns/server/${servername}"
 
-# Parse *.tcl files in pageroot.
-ns_param   	enabletclpages  	false
-
 #
 # Scaling and Tuning Options
 #
@@ -246,6 +243,9 @@ ns_param   	enableexpire    	false
 
 # Allow Tclpro debugging with "?debug".
 ns_param   	enabledebug     	false
+
+# Parse *.tcl files in pageroot.
+ns_param   	enabletclpages  	false
 
 # I18N Note: will need to define I18N specifying mappings of ADP's here as well.
 ns_param   	map             	"/*.u_adp"
@@ -359,7 +359,7 @@ ns_param  	spoolerthreads 		0
 ns_param  	writerthreads  		0
 
 # Read from file in bufsize chunks.
-ns_param 	writerbufsize   	8192   
+ns_param 	writerbufsize   	8192
 
 # Min return file size when to use writer
 ns_param  	writersize     		1048576
@@ -600,13 +600,13 @@ ns_param    maxslaves       8       ; # Max number of allowed slaves alive
 
 ns_section "ns/limits"
 ns_param default         "Default Limits" ;# Defines a limit.
-   
+
 ns_section "ns/limit/default"
 ns_param maxrun          100       ;# Conn threads running for limit.
 ns_param maxwait         100       ;# Conn threads waiting for limit.
 ns_param maxupload       102400000 ;# Max size of file upload in bytes.
 ns_param timeout         60        ;# Total seconds to wait for resources.
-     
+
 ns_section "ns/server/server1/limits"
 ns_param default         "GET  /*" ;# Map default limit to URL.
 ns_param default         "POST /*"
