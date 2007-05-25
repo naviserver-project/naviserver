@@ -158,6 +158,7 @@ NsConfUpdate(void)
     char *path = NS_CONFIG_PARAMETERS;
 
     NsConfigLog();
+    NsConfigAdp();
     NsConfigFastpath();
     NsConfigMimeTypes();
     NsConfigProgress();

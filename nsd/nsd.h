@@ -831,9 +831,6 @@ typedef struct NsServer {
         CONST char *startpage;
         CONST char *debuginit;
 
-        bool enableexpire;
-        bool enabledebug;
-
         Ns_Cond pagecond;
         Ns_Mutex pagelock;
         Tcl_HashTable pages;
@@ -1021,6 +1018,7 @@ extern void NsInitUrlSpace(void);
 extern void NsInitRequests(void);
 extern void NsInitUrl2File(void);
 
+extern void NsConfigAdp(void);
 extern void NsConfigLog(void);
 extern void NsConfigFastpath();
 extern void NsConfigMimeTypes(void);
@@ -1086,13 +1084,9 @@ extern Ns_ThreadProc NsConnThread;
 extern Ns_ArgProc NsConnArgProc;
 extern Ns_FilterProc NsTclFilterProc;
 extern Ns_FilterProc NsShortcutFilterProc;
-extern Ns_OpProc NsFastPathProc;
 extern Ns_OpProc NsTclRequestProc;
-extern Ns_OpProc NsAdpRequestProc;
-extern Ns_OpProc NsAdpProc;
-extern Ns_OpProc NsAdpTclProc;
-extern Ns_OpProc NsAdpMapProc;
-extern Ns_ArgProc NsTclRequestArgProc;
+extern Ns_OpProc NsPageMapProc;
+extern Ns_ArgProc NsPageMapArgProc;
 extern Ns_TclTraceProc NsTclTraceProc;
 extern Ns_UrlToFileProc NsUrlToFileProc;
 extern Ns_Url2FileProc NsTclUrl2FileProc;

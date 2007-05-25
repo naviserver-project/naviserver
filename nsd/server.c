@@ -214,7 +214,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     Ns_DString         ds;
     NsServer          *servPtr;
     ServerInit        *initPtr;
-    CONST char        *path, *spath, *map, *key, *p;
+    CONST char        *path, *spath, *p;
     Ns_Set            *set;
     int                i, n;
 
@@ -264,121 +264,6 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     } else if (STRIEQ(p, "toupper")) {
         servPtr->opts.hdrcase = ToUpper;
     }
-
-    /*
-     * Initialize ADP.
-     */
-
-    path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
-    servPtr->adp.errorpage = Ns_ConfigString(path, "errorpage", NULL);
-    servPtr->adp.startpage = Ns_ConfigString(path, "startpage", NULL);
-    servPtr->adp.enableexpire = Ns_ConfigBool(path, "enableexpire", NS_FALSE);
-    servPtr->adp.enabledebug = Ns_ConfigBool(path, "enabledebug", NS_FALSE);
-    servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
-    servPtr->adp.cachesize = Ns_ConfigInt(path, "cachesize", 5000*1024);
-    servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
-    servPtr->adp.bufsize = Ns_ConfigInt(path, "bufsize", 1 * 1024 * 1000);
-
-    servPtr->adp.flags = 0;
-    if (Ns_ConfigGetBool(path, "cache", &i) && i) {
-    	servPtr->adp.flags |= ADP_CACHE;
-    }
-    if (Ns_ConfigGetBool(path, "stream", &i) && i) {
-    	servPtr->adp.flags |= ADP_STREAM;
-    }
-    if (Ns_ConfigGetBool(path, "enableexpire", &i) && i) {
-    	servPtr->adp.flags |= ADP_EXPIRE;
-    }
-    if (Ns_ConfigGetBool(path, "enabledebug", &i) && i) {
-    	servPtr->adp.flags |= ADP_DEBUG;
-    }
-    if (Ns_ConfigGetBool(path, "safeeval", &i) && i) {
-    	servPtr->adp.flags |= ADP_SAFE;
-    }
-    if (Ns_ConfigGetBool(path, "singlescript", &i) && i) {
-    	servPtr->adp.flags |= ADP_SINGLE;
-    }
-    if (Ns_ConfigGetBool(path, "gzip", &i) && i) {
-    	servPtr->adp.flags |= ADP_GZIP;
-    }
-    if (Ns_ConfigGetBool(path, "trace", &i) && i) {
-    	servPtr->adp.flags |= ADP_TRACE;
-    }
-    if (!Ns_ConfigGetBool(path, "detailerror", &i) || i) {
-    	servPtr->adp.flags |= ADP_DETAIL;
-    }
-    if (Ns_ConfigGetBool(path, "stricterror", &i) && i) {
-    	servPtr->adp.flags |= ADP_STRICT;
-    }
-    if (Ns_ConfigGetBool(path, "displayerror", &i) && i) {
-    	servPtr->adp.flags |= ADP_DISPLAY;
-    }
-    if (Ns_ConfigGetBool(path, "trimspace", &i) && i) {
-    	servPtr->adp.flags |= ADP_TRIM;
-    }
-    if (!Ns_ConfigGetBool(path, "autoabort", &i) || i) {
-    	servPtr->adp.flags |= ADP_AUTOABORT;
-    }
-
-    /*
-     * Register ADP for any requested URLs.
-     */
-
-    set = Ns_ConfigGetSection(path);
-
-    /*
-     *  If ADP processing is not disabled and no map is configured
-     *  setup adp hanlders for all .adp files
-     */
-
-    key = Ns_ConfigString(path, "map", NULL);
-    if (key == NULL && set != NULL &&
-        Ns_ConfigBool(path, "disabled", NS_FALSE) == NS_FALSE) {
-        Ns_SetUpdate(set, "map", "/*.adp");
-    }
-
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        key = Ns_SetKey(set, i);
-        if (!strcasecmp(key, "map")) {
-            map = Ns_SetValue(set, i);
-            Ns_RegisterRequest(server, "GET",  map, NsAdpProc, NULL, servPtr, 0);
-            Ns_RegisterRequest(server, "HEAD", map, NsAdpProc, NULL, servPtr, 0);
-            Ns_RegisterRequest(server, "POST", map, NsAdpProc, NULL, servPtr, 0);
-            Ns_Log(Notice, "adp[%s]: mapped %s", server, map);
-        }
-    }
-
-    /*
-     * Enable processing Tcl files using ADP engine, Tcl file will be read and wrapped
-     * into Tcl proc and executed by ADP processor
-     */
-
-    if (Ns_ConfigBool(path, "enabletclpages", NS_FALSE)) {
-        Ns_RegisterRequest(server, "GET",  "/*.tcl", NsAdpTclProc, NULL, servPtr, 0);
-        Ns_RegisterRequest(server, "HEAD", "/*.tcl", NsAdpTclProc, NULL, servPtr, 0);
-        Ns_RegisterRequest(server, "POST", "/*.tcl", NsAdpTclProc, NULL, servPtr, 0);
-        Ns_Log(Notice, "tcl[%s]: mapped /*.tcl", server);
-    }
-
-    /*
-     * Initialize on-the-fly compression support for ADP.
-     */
-
-    path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
-    servPtr->adp.compress.enable = Ns_ConfigBool(path, "enable", NS_FALSE);
-    servPtr->adp.compress.level = Ns_ConfigIntRange(path, "level", 4, 1, 9);
-    servPtr->adp.compress.minsize = Ns_ConfigInt(path, "minsize", 0);
-
-    /*
-     * Initialize the page and tag tables and locks.
-     */
-
-    Tcl_InitHashTable(&servPtr->adp.pages, FILE_KEYS);
-    Ns_MutexInit(&servPtr->adp.pagelock);
-    Ns_CondInit(&servPtr->adp.pagecond);
-    Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
-    Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
-    Ns_RWLockInit(&servPtr->adp.taglock);
 
     /*
      * Call the static server init proc, if any, which may register

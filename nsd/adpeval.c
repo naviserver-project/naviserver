@@ -30,7 +30,7 @@
 /*
  * adpeval.c --
  *
- *	ADP string and file eval.
+ *      ADP string and file eval.
  */
 
 #include "nsd.h"
@@ -45,9 +45,9 @@ NS_RCSID("@(#) $Header$");
  */
 
 typedef struct AdpCache {
-    int	      	   refcnt;	/* Current interps using cached results. */
-    Ns_Time	   expires;	/* Expiration time of cached results. */
-    AdpCode	   code;	/* ADP code for cached result. */
+    int        refcnt;  /* Current interps using cached results. */
+    Ns_Time    expires; /* Expiration time of cached results. */
+    AdpCode    code;    /* ADP code for cached result. */
 } AdpCache;
 
 /*
@@ -56,18 +56,18 @@ typedef struct AdpCache {
  */
 
 typedef struct Page {
-    NsServer	  *servPtr;	/* Page server context (reg tags, etc.) */
-    Tcl_HashEntry *hPtr;	/* Entry in shared table of all pages. */
-    time_t    	   mtime;	/* Original modify time of file. */
-    off_t     	   size;	/* Original size of file. */
-    int		   flags;	/* Flags used on last compile, e.g., SAFE. */
-    int	      	   refcnt;	/* Refcnt of current interps using page. */
-    int		   evals;	/* Count of page evaluations. */
-    int		   locked;	/* Page locked for cache update. */
-    int		   cacheGen;	/* Cache generation id. */
-    AdpCache	  *cachePtr;	/* Cached output. */
-    AdpCode	   code;	/* ADP code blocks. */
-    char	   file[1];	/* First known filename for stats reporting. */
+    NsServer      *servPtr;  /* Page server context (reg tags, etc.) */
+    Tcl_HashEntry *hPtr;     /* Entry in shared table of all pages. */
+    time_t         mtime;    /* Original modify time of file. */
+    off_t          size;     /* Original size of file. */
+    int            flags;    /* Flags used on last compile, e.g., SAFE. */
+    int            refcnt;   /* Refcnt of current interps using page. */
+    int            evals;    /* Count of page evaluations. */
+    int            locked;   /* Page locked for cache update. */
+    int            cacheGen; /* Cache generation id. */
+    AdpCache      *cachePtr; /* Cached output. */
+    AdpCode        code;     /* ADP code blocks. */
+    char           file[1];  /* First known filename for stats reporting. */
 } Page;
 
 /*
@@ -76,8 +76,8 @@ typedef struct Page {
  */
 
 typedef struct Objs {
-    int nobjs;			/* Number of scripts objects. */
-    Tcl_Obj *objs[1];		/* Scripts to be compiled and reused. */
+    int      nobjs;         /* Number of scripts objects. */
+    Tcl_Obj *objs[1];       /* Scripts to be compiled and reused. */
 } Objs;
 
 /*
@@ -87,10 +87,10 @@ typedef struct Objs {
  */
 
 typedef struct InterpPage {
-    Page     *pagePtr;		/* Pointer to shared page text. */
-    Objs     *objs;		/* Non-cache ADP code script. */
-    int	      cacheGen;		/* Cache generation id. */
-    Objs     *cacheObjs;	/* Cache results ADP code scripts. */
+    Page     *pagePtr;      /* Pointer to shared page text. */
+    Objs     *objs;         /* Non-cache ADP code script. */
+    int       cacheGen;     /* Cache generation id. */
+    Objs     *cacheObjs;    /* Cache results ADP code scripts. */
 } InterpPage;
 
 /*
@@ -100,16 +100,97 @@ typedef struct InterpPage {
 static Page *ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags);
 static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
 static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-		   AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
+                   AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
                    struct stat *stPtr);
 static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-		     Ns_Time *ttlPtr, Tcl_DString *outputPtr);
+                     Ns_Time *ttlPtr, Tcl_DString *outputPtr);
 static int AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript);
 static void DecrCache(AdpCache *cachePtr);
 static Objs *AllocObjs(int nobjs);
 static void FreeObjs(Objs *objsPtr);
 static void AdpTrace(NsInterp *itPtr, char *ptr, int len);
 static Ns_Callback FreeInterpPage;
+static Ns_ServerInitProc ConfigServerAdp;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigAdp --
+ *
+ *      Initialize and configure the ADP subsystem.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigAdp(void)
+{
+    NsRegisterServerInit(ConfigServerAdp);
+}
+
+static int
+ConfigServerAdp(CONST char *server)
+{
+    NsServer   *servPtr = NsGetServer(server);
+    CONST char *path;
+
+    path = Ns_ConfigGetPath(server, NULL, "adp", NULL);
+
+    /*
+     * Initialize the page and tag tables and locks.
+     */
+
+    Tcl_InitHashTable(&servPtr->adp.pages, FILE_KEYS);
+    Ns_MutexInit(&servPtr->adp.pagelock);
+    Ns_CondInit(&servPtr->adp.pagecond);
+    Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
+    Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
+    Ns_RWLockInit(&servPtr->adp.taglock);
+
+    /*
+     * Initialise various ADP options.
+     */
+
+    servPtr->adp.errorpage = Ns_ConfigString(path, "errorpage", NULL);
+    servPtr->adp.startpage = Ns_ConfigString(path, "startpage", NULL);
+    servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
+    servPtr->adp.cachesize = Ns_ConfigInt(path, "cachesize", 5000*1024);
+    servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
+    servPtr->adp.bufsize = Ns_ConfigInt(path, "bufsize", 1 * 1024 * 1000);
+
+    servPtr->adp.flags = 0;
+    Ns_ConfigFlag(path, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "stream",       ADP_STREAM,    0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "enableexpire", ADP_EXPIRE,    0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "enabledebug",  ADP_DEBUG,     0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "safeeval",     ADP_SAFE,      0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "singlescript", ADP_SINGLE,    0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "gzip",         ADP_GZIP,      0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "trace",        ADP_TRACE,     0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "detailerror",  ADP_DETAIL,    1, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "stricterror",  ADP_STRICT,    0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "displayerror", ADP_DISPLAY,   0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "trimspace",    ADP_TRIM,      0, &servPtr->adp.flags);
+    Ns_ConfigFlag(path, "autoabort",    ADP_AUTOABORT, 1, &servPtr->adp.flags);
+
+    /*
+     * Initialize on-the-fly compression support.
+     */
+
+    path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
+    servPtr->adp.compress.enable = Ns_ConfigBool(path, "enable", NS_FALSE);
+    servPtr->adp.compress.level = Ns_ConfigIntRange(path, "level", 4, 1, 9);
+    servPtr->adp.compress.minsize = Ns_ConfigInt(path, "minsize", 0);
+
+    return NS_OK;
+}
 
 
 /*
@@ -117,15 +198,15 @@ static Ns_Callback FreeInterpPage;
  *
  * NsAdpEval, NsAdpSource --
  *
- *	Evaluate an ADP string or file and return the output
- *	as the interp result.
+ *      Evaluate an ADP string or file and return the output
+ *      as the interp result.
  *
  * Results:
- *	A standard Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
- *	Variable named by resvar, if any, is updated with results of
- *	Tcl interp before being replaced with ADP output.
+ *      Variable named by resvar, if any, is updated with results of
+ *      Tcl interp before being replaced with ADP output.
  *
  *----------------------------------------------------------------------
  */
@@ -146,12 +227,12 @@ NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
 static int
 AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
 {
-    Tcl_Interp	     *interp = itPtr->interp;
-    AdpCode	      code;
-    Tcl_DString       output;
-    Tcl_Obj	     *objPtr;
-    int               result;
-    char	     *obj0;
+    Tcl_Interp   *interp = itPtr->interp;
+    AdpCode       code;
+    Tcl_DString   output;
+    Tcl_Obj      *objPtr;
+    int           result;
+    char         *obj0;
 
     /*
      * If the ADP object is a file, simply source it. Otherwise, parse
@@ -161,11 +242,11 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
     Tcl_DStringInit(&output);
     obj0 = Tcl_GetString(objv[0]);
     if (itPtr->adp.flags & ADP_ADPFILE) {
-    	result = AdpSource(itPtr, objc, objv, obj0, NULL, &output);
+        result = AdpSource(itPtr, objc, objv, obj0, NULL, &output);
     } else {
-    	NsAdpParse(&code, itPtr->servPtr, obj0, itPtr->adp.flags, NULL);
-    	result = AdpExec(itPtr, objc, objv, NULL, &code, NULL, &output, NULL);
-    	NsAdpFreeCode(&code);
+        NsAdpParse(&code, itPtr->servPtr, obj0, itPtr->adp.flags, NULL);
+        result = AdpExec(itPtr, objc, objv, NULL, &code, NULL, &output, NULL);
+        NsAdpFreeCode(&code);
     }
 
     /*
@@ -174,19 +255,20 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
      */
 
     if (result == TCL_OK) {
-	if (resvar != NULL) {
-	    objPtr = Tcl_GetObjResult(interp);
-	    if (Tcl_SetVar2Ex(interp, resvar, NULL, objPtr, TCL_LEAVE_ERR_MSG)
-			      == NULL) {
-		result = TCL_ERROR;
-	    }
-	}
-	if (result == TCL_OK) {
-	    objPtr = Tcl_NewStringObj(output.string, output.length);
-	    Tcl_SetObjResult(interp, objPtr);
-	}
+        if (resvar != NULL) {
+            objPtr = Tcl_GetObjResult(interp);
+            if (Tcl_SetVar2Ex(interp, resvar, NULL, objPtr, TCL_LEAVE_ERR_MSG)
+                    == NULL) {
+                result = TCL_ERROR;
+            }
+        }
+        if (result == TCL_OK) {
+            objPtr = Tcl_NewStringObj(output.string, output.length);
+            Tcl_SetObjResult(interp, objPtr);
+        }
     }
     Tcl_DStringFree(&output);
+
     return result;
 }
 
@@ -196,13 +278,13 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
  *
  * NsAdpInclude --
  *
- *	Evaluate an ADP file, utilizing per-thread byte-code pages.
+ *      Evaluate an ADP file, utilizing per-thread byte-code pages.
  *
  * Results:
- *	A standard Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
- *	Output is either left in current ADP buffer.
+ *      Output is either left in current ADP buffer.
  *
  *----------------------------------------------------------------------
  */
@@ -218,9 +300,9 @@ NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file, Ns_Time *tt
      */
 
     if (itPtr->adp.framePtr != NULL) {
-	outputPtr = itPtr->adp.framePtr->outputPtr;
+        outputPtr = itPtr->adp.framePtr->outputPtr;
     } else {
-	outputPtr = &itPtr->adp.output;
+        outputPtr = &itPtr->adp.output;
     }
     return AdpSource(itPtr, objc, objv, file, ttlPtr, outputPtr);
 }
@@ -231,13 +313,13 @@ NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file, Ns_Time *tt
  *
  * NsAdpInit, NsAdpFree --
  *
- *	Initialize or free the NsInterp ADP data structures.
+ *      Initialize or free the NsInterp ADP data structures.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *  	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -253,7 +335,7 @@ void
 NsAdpFree(NsInterp *itPtr)
 {
     if (itPtr->adp.cache != NULL) {
-	Ns_CacheDestroy(itPtr->adp.cache);
+        Ns_CacheDestroy(itPtr->adp.cache);
     }
     Tcl_DStringFree(&itPtr->adp.output);
 }
@@ -264,14 +346,14 @@ NsAdpFree(NsInterp *itPtr)
  *
  * NsAdpReset --
  *
- *	Reset the NsInterp ADP data structures for the next
- *	execution request.
+ *      Reset the NsInterp ADP data structures for the next
+ *      execution request.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -300,40 +382,40 @@ NsAdpReset(NsInterp *itPtr)
  *
  * AdpSource --
  *
- *	Execute ADP code in a file with results returned in given
- *	dstring.
+ *      Execute ADP code in a file with results returned in given
+ *      dstring.
  *
  * Results:
- *	TCL_ERROR if the file could not be parsed, result of
- *	AdpExec otherwise.
+ *      TCL_ERROR if the file could not be parsed, result of
+ *      AdpExec otherwise.
  *
  * Side effects:
- *	Page text and ADP code results may be cached up to given time
- *	limit, if any.
+ *      Page text and ADP code results may be cached up to given time
+ *      limit, if any.
  *
  *----------------------------------------------------------------------
  */
 
 static int
 AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-       Ns_Time *ttlPtr, Tcl_DString *outputPtr)
+          Ns_Time *ttlPtr, Tcl_DString *outputPtr)
 {
-    NsServer  *servPtr = itPtr->servPtr;
-    Tcl_Interp *interp = itPtr->interp;
-    Tcl_HashEntry *hPtr;
-    struct stat st;
-    Ns_DString tmp, path;
-    InterpPage *ipagePtr;
-    Page *pagePtr, *oldPagePtr;
-    AdpCache *cachePtr;
-    AdpCode *codePtr;
-    Ns_Time now;
-    Ns_Entry *ePtr;
-    Objs *objsPtr;
-    int new, cacheGen;
-    char *p, *key;
-    FileKey ukey;
-    int result;
+    NsServer       *servPtr = itPtr->servPtr;
+    Tcl_Interp     *interp = itPtr->interp;
+    Tcl_HashEntry  *hPtr;
+    struct stat     st;
+    Ns_DString      tmp, path;
+    InterpPage     *ipagePtr;
+    Page           *pagePtr, *oldPagePtr;
+    AdpCache       *cachePtr;
+    AdpCode        *codePtr;
+    Ns_Time         now;
+    Ns_Entry       *ePtr;
+    Objs           *objsPtr;
+    int             new, cacheGen;
+    char           *p, *key;
+    FileKey         ukey;
+    int             result;
 
     ipagePtr = NULL;
     pagePtr = NULL;
@@ -361,36 +443,36 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
      */
 
     if (itPtr->adp.debugLevel > 0) {
-	++itPtr->adp.debugLevel;
-    } else if ((itPtr->adp.flags & ADP_DEBUG) &&
-	itPtr->adp.debugFile != NULL &&
-	(p = strrchr(file, '/')) != NULL &&
-	Tcl_StringMatch(p+1, itPtr->adp.debugFile)) {
-	Ns_Set *hdrs;
-	char *host, *port, *procs;
+        ++itPtr->adp.debugLevel;
+    } else if ((itPtr->adp.flags & ADP_DEBUG)
+                   && itPtr->adp.debugFile != NULL
+                   && (p = strrchr(file, '/')) != NULL
+                   && Tcl_StringMatch(p+1, itPtr->adp.debugFile)) {
+        Ns_Set *hdrs;
+        char *host, *port, *procs;
 
-	hdrs = Ns_ConnGetQuery(itPtr->conn);
-	host = Ns_SetIGet(hdrs, "dhost");
-	port = Ns_SetIGet(hdrs, "dport");
-	procs = Ns_SetIGet(hdrs, "dprocs");
-	if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
-	    Ns_ConnReturnNotice(itPtr->conn, 200, "Debug Init Failed",
-				(char *) Tcl_GetStringResult(interp));
-	    itPtr->adp.exception = ADP_ABORT;
-	    goto done;
-	}
+        hdrs = Ns_ConnGetQuery(itPtr->conn);
+        host = Ns_SetIGet(hdrs, "dhost");
+        port = Ns_SetIGet(hdrs, "dport");
+        procs = Ns_SetIGet(hdrs, "dprocs");
+        if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
+            Ns_ConnReturnNotice(itPtr->conn, 200, "Debug Init Failed",
+                                (char *) Tcl_GetStringResult(interp));
+            itPtr->adp.exception = ADP_ABORT;
+            goto done;
+        }
     }
 
     if (itPtr->adp.cache == NULL) {
-	Ns_DStringPrintf(&tmp, "nsadp:%p", itPtr);
+        Ns_DStringPrintf(&tmp, "nsadp:%p", itPtr);
 #ifdef _WIN32
-	itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, TCL_STRING_KEYS,
-				itPtr->servPtr->adp.cachesize, FreeInterpPage);
+        itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, TCL_STRING_KEYS,
+                               itPtr->servPtr->adp.cachesize, FreeInterpPage);
 #else
-	itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, FILE_KEYS,
-				itPtr->servPtr->adp.cachesize, FreeInterpPage);
+        itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, FILE_KEYS,
+                               itPtr->servPtr->adp.cachesize, FreeInterpPage);
 #endif
-	Ns_DStringTrunc(&tmp, 0);
+        Ns_DStringTrunc(&tmp, 0);
     }
 
     /*
@@ -398,104 +480,103 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
      */
 
     if (stat(file, &st) != 0) {
-	Tcl_AppendResult(interp, "could not stat \"",
-	    file, "\": ", Tcl_PosixError(interp), NULL);
-    } else
-    if (S_ISREG(st.st_mode) == 0) {
-    	Tcl_AppendResult(interp, "not an ordinary file: ", file, NULL);
+        Tcl_AppendResult(interp, "could not stat \"",
+                         file, "\": ", Tcl_PosixError(interp), NULL);
+    } else if (S_ISREG(st.st_mode) == 0) {
+        Tcl_AppendResult(interp, "not an ordinary file: ", file, NULL);
     } else {
 
-	/*
-	 * Check for valid code in interp page cache.
-	 */
+        /*
+         * Check for valid code in interp page cache.
+         */
 
 #ifdef _WIN32
-	key = file;
+        key = file;
 #else
-	ukey.dev = st.st_dev;
-	ukey.ino = st.st_ino;
+        ukey.dev = st.st_dev;
+        ukey.ino = st.st_ino;
 #endif
         ePtr = Ns_CacheFindEntry(itPtr->adp.cache, key);
-	if (ePtr != NULL) {
-    	    ipagePtr = Ns_CacheGetValue(ePtr);
-    	    if (ipagePtr->pagePtr->mtime != st.st_mtime
-			|| ipagePtr->pagePtr->size != st.st_size
-			|| ipagePtr->pagePtr->flags != itPtr->adp.flags) {
-		Ns_CacheFlushEntry(ePtr);
-		ipagePtr = NULL;
-	    }
-	}
-	if (ipagePtr == NULL) {
+        if (ePtr != NULL) {
+            ipagePtr = Ns_CacheGetValue(ePtr);
+            if (ipagePtr->pagePtr->mtime != st.st_mtime
+                    || ipagePtr->pagePtr->size != st.st_size
+                    || ipagePtr->pagePtr->flags != itPtr->adp.flags) {
+                Ns_CacheFlushEntry(ePtr);
+                ipagePtr = NULL;
+            }
+        }
+        if (ipagePtr == NULL) {
 
-	    /*
-	     * Find or create valid page in server table.
-	     */
+            /*
+             * Find or create valid page in server table.
+             */
 
-    	    Ns_MutexLock(&servPtr->adp.pagelock);
-	    hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key, &new);
-	    while (!new && (pagePtr = Tcl_GetHashValue(hPtr)) == NULL) {
-		/* NB: Wait for other thread to read/parse page. */
-		Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
-		hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key, &new);
-	    }
-	    if (!new && (pagePtr->mtime != st.st_mtime
-			|| pagePtr->size != st.st_size
-			|| pagePtr->flags != itPtr->adp.flags)) {
-		/* NB: Clear entry to indicate read/parse in progress. */
-		Tcl_SetHashValue(hPtr, NULL);
-		pagePtr->hPtr = NULL;
-		new = 1;
-	    }
-	    if (new) {
-		Ns_MutexUnlock(&servPtr->adp.pagelock);
-		pagePtr = ParseFile(itPtr, file, &st, itPtr->adp.flags);
-		Ns_MutexLock(&servPtr->adp.pagelock);
-		if (pagePtr == NULL) {
-		    Tcl_DeleteHashEntry(hPtr);
-		} else {
+            Ns_MutexLock(&servPtr->adp.pagelock);
+            hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key, &new);
+            while (!new && (pagePtr = Tcl_GetHashValue(hPtr)) == NULL) {
+                /* NB: Wait for other thread to read/parse page. */
+                Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
+                hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key, &new);
+            }
+            if (!new && (pagePtr->mtime != st.st_mtime
+                         || pagePtr->size != st.st_size
+                         || pagePtr->flags != itPtr->adp.flags)) {
+                /* NB: Clear entry to indicate read/parse in progress. */
+                Tcl_SetHashValue(hPtr, NULL);
+                pagePtr->hPtr = NULL;
+                new = 1;
+            }
+            if (new) {
+                Ns_MutexUnlock(&servPtr->adp.pagelock);
+                pagePtr = ParseFile(itPtr, file, &st, itPtr->adp.flags);
+                Ns_MutexLock(&servPtr->adp.pagelock);
+                if (pagePtr == NULL) {
+                    Tcl_DeleteHashEntry(hPtr);
+                } else {
 #ifdef _WIN32
-            	    if (pagePtr->mtime != st.st_mtime
-				|| pagePtr->size != st.st_size)
+                    if (pagePtr->mtime != st.st_mtime
+                        || pagePtr->size != st.st_size)
 #else
-            	    if (ukey.dev != st.st_dev || ukey.ino != st.st_ino)
+                    if (ukey.dev != st.st_dev || ukey.ino != st.st_ino)
 #endif
-		    {
-			/* NB: File changed between stat above and ParseFile. */
-		    	Tcl_DeleteHashEntry(hPtr);
+                    {
+                        /* NB: File changed between stat above and ParseFile. */
+                        Tcl_DeleteHashEntry(hPtr);
 #ifndef _WIN32
-                	ukey.dev = st.st_dev;
-		    	ukey.ino = st.st_ino;
+                        ukey.dev = st.st_dev;
+                        ukey.ino = st.st_ino;
 #endif
-		    	hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key,
-						   &new);
-		    	if (!new) {
-			    oldPagePtr = Tcl_GetHashValue(hPtr);
-			    oldPagePtr->hPtr = NULL;
-		    	}
-		    }
-		    pagePtr->hPtr = hPtr;
-		    Tcl_SetHashValue(hPtr, pagePtr);
-		}
-		Ns_CondBroadcast(&servPtr->adp.pagecond);
-	    }
-	    if (pagePtr != NULL) {
-	    	++pagePtr->refcnt;
-	    }
-	    Ns_MutexUnlock(&servPtr->adp.pagelock);
-	    if (pagePtr != NULL) {
-	    	ipagePtr = ns_malloc(sizeof(InterpPage));
-		ipagePtr->pagePtr = pagePtr;
-		ipagePtr->cacheGen = 0;
-		ipagePtr->objs = AllocObjs(pagePtr->code.nscripts);
-		ipagePtr->cacheObjs = NULL;
-        	ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, key, &new);
-		if (!new) {
-		    Ns_CacheUnsetValue(ePtr);
-		}
-        	Ns_CacheSetValueSz(ePtr, ipagePtr,
-				   (size_t) ipagePtr->pagePtr->size);
-	    }
-	}
+                        hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key,
+                                                   &new);
+                        if (!new) {
+                            oldPagePtr = Tcl_GetHashValue(hPtr);
+                            oldPagePtr->hPtr = NULL;
+                        }
+                    }
+                    pagePtr->hPtr = hPtr;
+                    Tcl_SetHashValue(hPtr, pagePtr);
+                }
+                Ns_CondBroadcast(&servPtr->adp.pagecond);
+            }
+            if (pagePtr != NULL) {
+                ++pagePtr->refcnt;
+            }
+            Ns_MutexUnlock(&servPtr->adp.pagelock);
+            if (pagePtr != NULL) {
+                ipagePtr = ns_malloc(sizeof(InterpPage));
+                ipagePtr->pagePtr = pagePtr;
+                ipagePtr->cacheGen = 0;
+                ipagePtr->objs = AllocObjs(pagePtr->code.nscripts);
+                ipagePtr->cacheObjs = NULL;
+                ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, key, &new);
+                if (!new) {
+                    Ns_CacheUnsetValue(ePtr);
+                }
+                Ns_CacheSetValueSz(ePtr, ipagePtr,
+                                   (size_t) ipagePtr->pagePtr->size);
+            }
+        }
     }
 
     /*
@@ -503,43 +584,43 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
      */
 
     if (ipagePtr != NULL) {
-	pagePtr = ipagePtr->pagePtr;
-	if (ttlPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {
-	    cachePtr = NULL;
-	} else {
-	    Ns_MutexLock(&servPtr->adp.pagelock);
+        pagePtr = ipagePtr->pagePtr;
+        if (ttlPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {
+            cachePtr = NULL;
+        } else {
+            Ns_MutexLock(&servPtr->adp.pagelock);
 
-	    /*
-	     * First, wait for an initial cache if already executing.
-	     */
+            /*
+             * First, wait for an initial cache if already executing.
+             */
 
-	    while ((cachePtr = pagePtr->cachePtr) == NULL && pagePtr->locked) {
-		Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
-	    }
+            while ((cachePtr = pagePtr->cachePtr) == NULL && pagePtr->locked) {
+                Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
+            }
 
-	    /*
-	     * Next, if a cache exists and isn't locked, check expiration.
-	     */
+            /*
+             * Next, if a cache exists and isn't locked, check expiration.
+             */
 
-	    if (cachePtr != NULL && !pagePtr->locked) {
-		Ns_GetTime(&now);
-		if (Ns_DiffTime(&cachePtr->expires, &now, NULL) < 0) {
-		    pagePtr->locked = 1;
-		    cachePtr = NULL;
-		}
-	    }
+            if (cachePtr != NULL && !pagePtr->locked) {
+                Ns_GetTime(&now);
+                if (Ns_DiffTime(&cachePtr->expires, &now, NULL) < 0) {
+                    pagePtr->locked = 1;
+                    cachePtr = NULL;
+                }
+            }
 
-	    /*
-	     * Create the cached page if necessary.
-	     */
+            /*
+             * Create the cached page if necessary.
+             */
 
-	    if (cachePtr == NULL) {
-	    	Ns_MutexUnlock(&servPtr->adp.pagelock);
-		codePtr = &pagePtr->code;
-		++itPtr->adp.refresh;
-		result = AdpExec(itPtr, objc, objv, file, codePtr, ipagePtr->objs,
+            if (cachePtr == NULL) {
+                Ns_MutexUnlock(&servPtr->adp.pagelock);
+                codePtr = &pagePtr->code;
+                ++itPtr->adp.refresh;
+                result = AdpExec(itPtr, objc, objv, file, codePtr, ipagePtr->objs,
                                  &tmp, &st);
-		--itPtr->adp.refresh;
+                --itPtr->adp.refresh;
 
                 /*
                  * Check cache flag here one more time as we might clear it
@@ -547,7 +628,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                  */
 
                 if (result == TCL_OK && (itPtr->adp.flags & ADP_CACHE)) {
-		    cachePtr = ns_malloc(sizeof(AdpCache));
+                    cachePtr = ns_malloc(sizeof(AdpCache));
 
                     /*
                      * Turn off TCL mode after cached result, in caching mode
@@ -561,60 +642,61 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                      * recompiled into same Tcl proc and cached
                      */
 
-		    NsAdpParse(&cachePtr->code, itPtr->servPtr, tmp.string,
-			       itPtr->adp.flags & ~ADP_TCLFILE, file);
-		    Ns_GetTime(&cachePtr->expires);
-		    Ns_IncrTime(&cachePtr->expires, ttlPtr->sec, ttlPtr->usec);
-	    	    cachePtr->refcnt = 1;
-		}
-		Ns_DStringTrunc(&tmp, 0);
-	    	Ns_MutexLock(&servPtr->adp.pagelock);
-		if (cachePtr != NULL) {
-		    if (pagePtr->cachePtr != NULL) {
-		    	DecrCache(pagePtr->cachePtr);
-		    }
-		    ++pagePtr->cacheGen;
-		    pagePtr->cachePtr = cachePtr;
-		}
-		pagePtr->locked = 0;
-		Ns_CondBroadcast(&servPtr->adp.pagecond);
-	    }
-	    cacheGen = pagePtr->cacheGen;
+                    NsAdpParse(&cachePtr->code, itPtr->servPtr, tmp.string,
+                               itPtr->adp.flags & ~ADP_TCLFILE, file);
+                    Ns_GetTime(&cachePtr->expires);
+                    Ns_IncrTime(&cachePtr->expires, ttlPtr->sec, ttlPtr->usec);
+                    cachePtr->refcnt = 1;
+                }
+                Ns_DStringTrunc(&tmp, 0);
+                Ns_MutexLock(&servPtr->adp.pagelock);
+                if (cachePtr != NULL) {
+                    if (pagePtr->cachePtr != NULL) {
+                        DecrCache(pagePtr->cachePtr);
+                    }
+                    ++pagePtr->cacheGen;
+                    pagePtr->cachePtr = cachePtr;
+                }
+                pagePtr->locked = 0;
+                Ns_CondBroadcast(&servPtr->adp.pagecond);
+            }
+            cacheGen = pagePtr->cacheGen;
             if (cachePtr != NULL) {
                 ++cachePtr->refcnt;
             }
-	    Ns_MutexUnlock(&servPtr->adp.pagelock);
-	}
-	if (cachePtr == NULL) {
-	   codePtr = &pagePtr->code;
-	   objsPtr = ipagePtr->objs;
-	} else {
-	    codePtr = &cachePtr->code;
-	    if (ipagePtr->cacheObjs != NULL && cacheGen != ipagePtr->cacheGen) {
-		FreeObjs(ipagePtr->cacheObjs);
-		ipagePtr->cacheObjs = NULL;
-	    }
-	    if (ipagePtr->cacheObjs == NULL) {
-		ipagePtr->cacheObjs = AllocObjs(AdpCodeScripts(codePtr));
-		ipagePtr->cacheGen = cacheGen;
-	    }
-	    objsPtr = ipagePtr->cacheObjs;
-	}
-	result = AdpExec(itPtr, objc, objv, file, codePtr, objsPtr, outputPtr, &st);
-	Ns_MutexLock(&servPtr->adp.pagelock);
-	++ipagePtr->pagePtr->evals;
-	if (cachePtr != NULL) {
-	    DecrCache(cachePtr);
-	}
-	Ns_MutexUnlock(&servPtr->adp.pagelock);
+            Ns_MutexUnlock(&servPtr->adp.pagelock);
+        }
+        if (cachePtr == NULL) {
+            codePtr = &pagePtr->code;
+            objsPtr = ipagePtr->objs;
+        } else {
+            codePtr = &cachePtr->code;
+            if (ipagePtr->cacheObjs != NULL && cacheGen != ipagePtr->cacheGen) {
+                FreeObjs(ipagePtr->cacheObjs);
+                ipagePtr->cacheObjs = NULL;
+            }
+            if (ipagePtr->cacheObjs == NULL) {
+                ipagePtr->cacheObjs = AllocObjs(AdpCodeScripts(codePtr));
+                ipagePtr->cacheGen = cacheGen;
+            }
+            objsPtr = ipagePtr->cacheObjs;
+        }
+        result = AdpExec(itPtr, objc, objv, file, codePtr, objsPtr, outputPtr, &st);
+        Ns_MutexLock(&servPtr->adp.pagelock);
+        ++ipagePtr->pagePtr->evals;
+        if (cachePtr != NULL) {
+            DecrCache(cachePtr);
+        }
+        Ns_MutexUnlock(&servPtr->adp.pagelock);
     }
     if (itPtr->adp.debugLevel > 0) {
-	--itPtr->adp.debugLevel;
+        --itPtr->adp.debugLevel;
     }
 
 done:
     Ns_DStringFree(&path);
     Ns_DStringFree(&tmp);
+
     return result;
 }
 
@@ -624,15 +706,15 @@ done:
  *
  * NsAdpDebug --
  *
- *	Initialize the debugger by calling the debug init proc with
- *	the hostname and port of the debugger and a pattern of procs
- *	to auto-instrument.
+ *      Initialize the debugger by calling the debug init proc with
+ *      the hostname and port of the debugger and a pattern of procs
+ *      to auto-instrument.
  *
  * Results:
- *	TCL_OK if debugger initialized, TCL_ERROR otherwise.
+ *      TCL_OK if debugger initialized, TCL_ERROR otherwise.
  *
  * Side effects:
- *	Interp is marked for delete on next deallocation.
+ *      Interp is marked for delete on next deallocation.
  *
  *----------------------------------------------------------------------
  */
@@ -640,38 +722,38 @@ done:
 int
 NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
 {
-    Tcl_Interp *interp = itPtr->interp;
-    Tcl_DString ds;
-    int code;
+    Tcl_Interp  *interp = itPtr->interp;
+    Tcl_DString  ds;
+    int          code;
 
     code = TCL_OK;
     if (!itPtr->adp.debugInit) {
-	itPtr->delete = 1;
-	Tcl_DStringInit(&ds);
-	Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);
-	Tcl_DStringAppendElement(&ds, procs ? procs : "");
-	Tcl_DStringAppendElement(&ds, host ? host : "");
-	Tcl_DStringAppendElement(&ds, port ? port : "");
-	code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+        itPtr->delete = 1;
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);
+        Tcl_DStringAppendElement(&ds, procs ? procs : "");
+        Tcl_DStringAppendElement(&ds, host ? host : "");
+        Tcl_DStringAppendElement(&ds, port ? port : "");
+        code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         Tcl_DStringFree(&ds);
-	if (code != TCL_OK) {
-	    NsAdpLogError(itPtr);
-	    return TCL_ERROR;
-	}
+        if (code != TCL_OK) {
+            NsAdpLogError(itPtr);
+            return TCL_ERROR;
+        }
 
-	/*
-	 * Link the ADP output buffer result to a global variable
-	 * which can be monitored with a variable watch.
-	 */
+        /*
+         * Link the ADP output buffer result to a global variable
+         * which can be monitored with a variable watch.
+         */
 
-	if (Tcl_LinkVar(interp, "ns_adp_output",
-			(char *) &itPtr->adp.output.string,
-		TCL_LINK_STRING | TCL_LINK_READ_ONLY) != TCL_OK) {
-	    NsAdpLogError(itPtr);
-	}
+        if (Tcl_LinkVar(interp, "ns_adp_output",
+                        (char *) &itPtr->adp.output.string,
+                        TCL_LINK_STRING | TCL_LINK_READ_ONLY) != TCL_OK) {
+            NsAdpLogError(itPtr);
+        }
 
-	itPtr->adp.debugInit = 1;
-	itPtr->adp.debugLevel = 1;
+        itPtr->adp.debugInit = 1;
+        itPtr->adp.debugLevel = 1;
     }
     return code;
 }
@@ -682,14 +764,14 @@ NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
  *
  * NsTclAdpStatsCmd --
  *
- *	Implement the ns_adp_stats command to return stats on cached
- *	ADP pages.
+ *      Implement the ns_adp_stats command to return stats on cached
+ *      ADP pages.
  *
  * Results:
- *	Standard Tcl result.
+ *      Standard Tcl result.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -697,29 +779,30 @@ NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
 int
 NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 {
-    NsInterp *itPtr = arg;
-    NsServer *servPtr = itPtr->servPtr;
-    FileKey *keyPtr;
-    char buf[200];
-    Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr;
-    Page *pagePtr;
+    NsInterp       *itPtr = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    FileKey        *keyPtr;
+    char            buf[200];
+    Tcl_HashSearch  search;
+    Tcl_HashEntry  *hPtr;
+    Page           *pagePtr;
 
     Ns_MutexLock(&servPtr->adp.pagelock);
     hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
     while (hPtr != NULL) {
-	pagePtr = Tcl_GetHashValue(hPtr);
-	keyPtr = (FileKey *) Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
-	Tcl_AppendElement(interp, pagePtr->file);
-	sprintf(buf, "dev %ld ino %ld mtime %ld refcnt %d evals %d "
-		     "size %ld blocks %d scripts %d",
-		(long) keyPtr->dev, (long) keyPtr->ino, (long) pagePtr->mtime,
-		pagePtr->refcnt, pagePtr->evals, (long) pagePtr->size,
-		pagePtr->code.nblocks, pagePtr->code.nscripts);
-	Tcl_AppendElement(interp, buf);
-	hPtr = Tcl_NextHashEntry(&search);
+        pagePtr = Tcl_GetHashValue(hPtr);
+        keyPtr = (FileKey *) Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
+        Tcl_AppendElement(interp, pagePtr->file);
+        sprintf(buf, "dev %ld ino %ld mtime %ld refcnt %d evals %d "
+                "size %ld blocks %d scripts %d",
+                (long) keyPtr->dev, (long) keyPtr->ino, (long) pagePtr->mtime,
+                pagePtr->refcnt, pagePtr->evals, (long) pagePtr->size,
+                pagePtr->code.nblocks, pagePtr->code.nscripts);
+        Tcl_AppendElement(interp, buf);
+        hPtr = Tcl_NextHashEntry(&search);
     }
     Ns_MutexUnlock(&servPtr->adp.pagelock);
+
     return TCL_OK;
 }
 
@@ -729,14 +812,14 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
  *
  * ParseFile --
  *
- *	Read and parse text from a file.  The code is complicated
- *	somewhat to account for changing files.
+ *      Read and parse text from a file.  The code is complicated
+ *      somewhat to account for changing files.
  *
  * Results:
- *	Pointer to new Page structure or NULL on error.
+ *      Pointer to new Page structure or NULL on error.
  *
  * Side effects:
- *	Error message will be left in interp on failure.
+ *      Error message will be left in interp on failure.
  *
  *----------------------------------------------------------------------
  */
@@ -744,92 +827,93 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 static Page *
 ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
 {
-    Tcl_Interp *interp = itPtr->interp;
-    Tcl_Encoding encoding;
-    Tcl_DString utf;
-    char *page, *buf;
-    int fd, n, trys;
-    size_t size;
-    Page *pagePtr;
+    Tcl_Interp   *interp = itPtr->interp;
+    Tcl_Encoding  encoding;
+    Tcl_DString   utf;
+    char         *page, *buf;
+    int           fd, n, trys;
+    size_t        size;
+    Page         *pagePtr;
 
     fd = open(file, O_RDONLY | O_BINARY);
     if (fd < 0) {
-	Tcl_AppendResult(interp, "could not open \"",
-	    file, "\": ", Tcl_PosixError(interp), NULL);
-	return NULL;
+        Tcl_AppendResult(interp, "could not open \"",
+                         file, "\": ", Tcl_PosixError(interp), NULL);
+        return NULL;
     }
 
     pagePtr = NULL;
     buf = NULL;
     trys = 0;
     do {
-	/*
-	 * fstat the open file to ensure it has not changed or been
-	 * replaced since the original stat.
-	 */
+        /*
+         * fstat the open file to ensure it has not changed or been
+         * replaced since the original stat.
+         */
 
-	if (fstat(fd, stPtr) != 0) {
-	    Tcl_AppendResult(interp, "could not fstat \"", file,
-	   	"\": ", Tcl_PosixError(interp), NULL);
-	    goto done;
-	}
-    	size = stPtr->st_size;
-    	buf = ns_realloc(buf, size + 1);
+        if (fstat(fd, stPtr) != 0) {
+            Tcl_AppendResult(interp, "could not fstat \"", file,
+                             "\": ", Tcl_PosixError(interp), NULL);
+            goto done;
+        }
+        size = stPtr->st_size;
+        buf = ns_realloc(buf, size + 1);
 
-	/*
-	 * Attempt to read +1 byte to catch the file growing.
-	 */
+        /*
+         * Attempt to read +1 byte to catch the file growing.
+         */
 
-    	n = read(fd, buf, size + 1);
-    	if (n < 0) {
-	    Tcl_AppendResult(interp, "could not read \"", file,
-	    	"\": ", Tcl_PosixError(interp), NULL);
-	    goto done;
-	}
-	if (n != size) {
-	    /*
-	     * File is not expected size, rewind and fstat/read again.
-	     */
+        n = read(fd, buf, size + 1);
+        if (n < 0) {
+            Tcl_AppendResult(interp, "could not read \"", file,
+                             "\": ", Tcl_PosixError(interp), NULL);
+            goto done;
+        }
+        if (n != size) {
+            /*
+             * File is not expected size, rewind and fstat/read again.
+             */
 
-	    if (lseek(fd, (off_t) 0, SEEK_SET) != 0) {
-	    	Tcl_AppendResult(interp, "could not lseek \"", file,
-	    	    "\": ", Tcl_PosixError(interp), NULL);
-	        goto done;
-	    }
-	    Ns_ThreadYield();
-	}
+            if (lseek(fd, (off_t) 0, SEEK_SET) != 0) {
+                Tcl_AppendResult(interp, "could not lseek \"", file,
+                                 "\": ", Tcl_PosixError(interp), NULL);
+                goto done;
+            }
+            Ns_ThreadYield();
+        }
     } while (n != size && ++trys < 10);
 
     if (n != size) {
-	Tcl_AppendResult(interp, "inconsistant file: ", file, NULL);
+        Tcl_AppendResult(interp, "inconsistant file: ", file, NULL);
     } else {
-	buf[n] = '\0';
-	Tcl_DStringInit(&utf);
-	encoding = NsGetFileEncoding(itPtr->servPtr, file);
-	if (encoding == NULL) {
-	    page = buf;
-	} else {
-	    Tcl_ExternalToUtfDString(encoding, buf, n, &utf);
-	    page = utf.string;
-	}
-	pagePtr = ns_malloc(sizeof(Page) + strlen(file));
-	strcpy(pagePtr->file, file);
-	pagePtr->servPtr = itPtr->servPtr;
-	pagePtr->flags = flags;
-	pagePtr->refcnt = 0;
-	pagePtr->evals = 0;
-	pagePtr->locked = 0;
-	pagePtr->cacheGen = 0;
-	pagePtr->cachePtr = NULL;
-	pagePtr->mtime = stPtr->st_mtime;
-	pagePtr->size = stPtr->st_size;
-	NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags, file);
-	Tcl_DStringFree(&utf);
+        buf[n] = '\0';
+        Tcl_DStringInit(&utf);
+        encoding = NsGetFileEncoding(itPtr->servPtr, file);
+        if (encoding == NULL) {
+            page = buf;
+        } else {
+            Tcl_ExternalToUtfDString(encoding, buf, n, &utf);
+            page = utf.string;
+        }
+        pagePtr = ns_malloc(sizeof(Page) + strlen(file));
+        strcpy(pagePtr->file, file);
+        pagePtr->servPtr = itPtr->servPtr;
+        pagePtr->flags = flags;
+        pagePtr->refcnt = 0;
+        pagePtr->evals = 0;
+        pagePtr->locked = 0;
+        pagePtr->cacheGen = 0;
+        pagePtr->cachePtr = NULL;
+        pagePtr->mtime = stPtr->st_mtime;
+        pagePtr->size = stPtr->st_size;
+        NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags, file);
+        Tcl_DStringFree(&utf);
     }
 
 done:
     ns_free(buf);
     close(fd);
+
     return pagePtr;
 }
 
@@ -839,14 +923,14 @@ done:
  *
  * NsAdpLogError --
  *
- *	Log an ADP error, possibly invoking the log handling ADP
- *	file if configured.
+ *      Log an ADP error, possibly invoking the log handling ADP
+ *      file if configured.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Depends on log handler.
+ *      Depends on log handler.
  *
  *----------------------------------------------------------------------
  */
@@ -854,78 +938,78 @@ done:
 void
 NsAdpLogError(NsInterp *itPtr)
 {
-    Tcl_Interp *interp = itPtr->interp;
-    Ns_Conn *conn = itPtr->conn;
-    Ns_DString ds;
-    Tcl_Obj *objv[2];
-    AdpFrame *framePtr;
-    char *adp, *inc, *dot, *err;
-    int i, len;
+    Tcl_Interp  *interp = itPtr->interp;
+    Ns_Conn     *conn = itPtr->conn;
+    Ns_DString   ds;
+    Tcl_Obj     *objv[2];
+    AdpFrame    *framePtr;
+    char        *adp, *inc, *dot, *err;
+    int          i, len;
 
     framePtr = itPtr->adp.framePtr;
     Ns_DStringInit(&ds);
 
     if (framePtr != NULL) {
         Ns_DStringPrintf(&ds, "\n    at line %d of ",
-                        framePtr->line + interp->errorLine);
+                         framePtr->line + interp->errorLine);
     }
     inc = "";
     while (framePtr != NULL) {
-	if (framePtr->file != NULL) {
-	    Ns_DStringPrintf(&ds, "%sadp file \"%s\"", inc, framePtr->file);
-	    if (framePtr->ident != NULL) {
-		Ns_DStringPrintf(&ds, " {%s}", Tcl_GetString(framePtr->ident));
-	    }
-	} else {
-	    adp = Tcl_GetStringFromObj(framePtr->objv[0], &len);
-	    dot = "";
-	    if (len > 150) {
-		len = 150;
-		dot = "...";
-	    }
-	    while ((adp[len] & 0xC0) == 0x80) {
-		/* NB: Avoid truncating multi-byte UTF-8 character. */
-		len--;
-		dot = "...";
-	    }
-	    Ns_DStringPrintf(&ds, "%sadp script:\n\"%.*s%s\"",
-			     inc, len, adp, dot);
-	}
-	framePtr = framePtr->prevPtr;
-	inc = "\n    included from ";
+        if (framePtr->file != NULL) {
+            Ns_DStringPrintf(&ds, "%sadp file \"%s\"", inc, framePtr->file);
+            if (framePtr->ident != NULL) {
+                Ns_DStringPrintf(&ds, " {%s}", Tcl_GetString(framePtr->ident));
+            }
+        } else {
+            adp = Tcl_GetStringFromObj(framePtr->objv[0], &len);
+            dot = "";
+            if (len > 150) {
+                len = 150;
+                dot = "...";
+            }
+            while ((adp[len] & 0xC0) == 0x80) {
+                /* NB: Avoid truncating multi-byte UTF-8 character. */
+                len--;
+                dot = "...";
+            }
+            Ns_DStringPrintf(&ds, "%sadp script:\n\"%.*s%s\"",
+                             inc, len, adp, dot);
+        }
+        framePtr = framePtr->prevPtr;
+        inc = "\n    included from ";
     }
     if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL)) {
-	Ns_DStringPrintf(&ds, "\n    while processing connection #%d:\n%8s%s",
-			 Ns_ConnId(conn), "",
-			 conn->request->line);
-	for (i = 0; i < Ns_SetSize(conn->headers); ++i) {
-	    Ns_DStringPrintf(&ds, "\n        %s: %s",
-			     Ns_SetKey(conn->headers, i),
-			     Ns_SetValue(conn->headers, i));
-	}
+        Ns_DStringPrintf(&ds, "\n    while processing connection #%d:\n%8s%s",
+                         Ns_ConnId(conn), "",
+                         conn->request->line);
+        for (i = 0; i < Ns_SetSize(conn->headers); ++i) {
+            Ns_DStringPrintf(&ds, "\n        %s: %s",
+                             Ns_SetKey(conn->headers, i),
+                             Ns_SetValue(conn->headers, i));
+        }
     }
     Tcl_AddErrorInfo(interp, ds.string);
     err = (char*)Ns_TclLogError(interp);
     if (itPtr->adp.flags & ADP_DISPLAY) {
-	Ns_DStringTrunc(&ds, 0);
-	Ns_DStringAppend(&ds, "<br><pre>\n");
-	Ns_QuoteHtml(&ds, err);
-	Ns_DStringAppend(&ds, "\n<br></pre>\n");
-	NsAdpAppend(itPtr, ds.string, ds.length);
+        Ns_DStringTrunc(&ds, 0);
+        Ns_DStringAppend(&ds, "<br><pre>\n");
+        Ns_QuoteHtml(&ds, err);
+        Ns_DStringAppend(&ds, "\n<br></pre>\n");
+        NsAdpAppend(itPtr, ds.string, ds.length);
     }
     Ns_DStringFree(&ds);
     adp = (char*)itPtr->servPtr->adp.errorpage;
     if (adp != NULL && itPtr->adp.errorLevel == 0) {
-	++itPtr->adp.errorLevel;
-	objv[0] = Tcl_NewStringObj(adp, -1);
-	Tcl_IncrRefCount(objv[0]);
-	objv[1] = Tcl_GetVar2Ex(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
-	if (objv[1] == NULL) {
-	    objv[1] = Tcl_GetObjResult(interp);
-	}
-	(void) NsAdpInclude(itPtr, 2, objv, adp, NULL);
-	Tcl_DecrRefCount(objv[0]);
-	--itPtr->adp.errorLevel;
+        ++itPtr->adp.errorLevel;
+        objv[0] = Tcl_NewStringObj(adp, -1);
+        Tcl_IncrRefCount(objv[0]);
+        objv[1] = Tcl_GetVar2Ex(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
+        if (objv[1] == NULL) {
+            objv[1] = Tcl_GetObjResult(interp);
+        }
+        (void) NsAdpInclude(itPtr, 2, objv, adp, NULL);
+        Tcl_DecrRefCount(objv[0]);
+        --itPtr->adp.errorLevel;
     }
 }
 
@@ -935,29 +1019,29 @@ NsAdpLogError(NsInterp *itPtr)
  *
  * AdpExec --
  *
- *	Execute ADP code.
+ *      Execute ADP code.
  *
  * Results:
- *	TCL_OK unless there is an ADP error exception, stack overflow,
- *	or script error when the ADP_STRICT option is set.
+ *      TCL_OK unless there is an ADP error exception, stack overflow,
+ *      or script error when the ADP_STRICT option is set.
  *
  * Side Effects:
- *	Depends on page.
+ *      Depends on page.
  *
  *----------------------------------------------------------------------
  */
 
 static int
 AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
-	AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
+        AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
         struct stat *stPtr)
 {
     Tcl_Interp *interp = itPtr->interp;
-    AdpFrame frame;
-    Ns_DString cwd;
-    Tcl_Obj *objPtr;
-    int nscript, nblocks, result, len, i;
-    char *ptr, *slash, *savecwd;
+    AdpFrame    frame;
+    Ns_DString  cwd;
+    Tcl_Obj    *objPtr;
+    int         nscript, nblocks, result, len, i;
+    char       *ptr, *slash, *savecwd;
 
     /*
      * Setup the new call frame.
@@ -978,8 +1062,8 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     frame.ident = NULL;
     savecwd = itPtr->adp.cwd;
     if (file != NULL && (slash = strrchr(file, '/')) != NULL) {
-    	Ns_DStringNAppend(&cwd, file, slash - file);
-	itPtr->adp.cwd = cwd.string;
+        Ns_DStringNAppend(&cwd, file, slash - file);
+        itPtr->adp.cwd = cwd.string;
     }
     frame.prevPtr = itPtr->adp.framePtr;
     itPtr->adp.framePtr = &frame;
@@ -995,47 +1079,47 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     nscript = 0;
     result = TCL_OK;
     for (i = 0; itPtr->adp.exception == ADP_OK && i < nblocks; ++i) {
-	frame.line = AdpCodeLine(codePtr, i);
-	len = AdpCodeLen(codePtr, i);
+        frame.line = AdpCodeLine(codePtr, i);
+        len = AdpCodeLen(codePtr, i);
         if (itPtr->adp.flags & ADP_TRACE) {
-	    AdpTrace(itPtr, ptr, len);
-	}
-	if (len > 0) {
-	    result = NsAdpAppend(itPtr, ptr, len);
-	} else {
-	    len = -len;
+            AdpTrace(itPtr, ptr, len);
+        }
+        if (len > 0) {
+            result = NsAdpAppend(itPtr, ptr, len);
+        } else {
+            len = -len;
             if (itPtr->adp.debugLevel > 0) {
-    	        result = AdpDebug(itPtr, ptr, len, nscript);
-	    } else if (objsPtr == NULL) {
-		result = Tcl_EvalEx(interp, ptr, len, 0);
-	    } else {
-		objPtr = objsPtr->objs[nscript];
-		if (objPtr == NULL) {
-		    objPtr = Tcl_NewStringObj(ptr, len);
-		    Tcl_IncrRefCount(objPtr);
-		    objsPtr->objs[nscript] = objPtr;
-		}
-    	        result = Tcl_EvalObjEx(interp, objPtr, 0);
-	    }
-	    ++nscript;
-	}
+                result = AdpDebug(itPtr, ptr, len, nscript);
+            } else if (objsPtr == NULL) {
+                result = Tcl_EvalEx(interp, ptr, len, 0);
+            } else {
+                objPtr = objsPtr->objs[nscript];
+                if (objPtr == NULL) {
+                    objPtr = Tcl_NewStringObj(ptr, len);
+                    Tcl_IncrRefCount(objPtr);
+                    objsPtr->objs[nscript] = objPtr;
+                }
+                result = Tcl_EvalObjEx(interp, objPtr, 0);
+            }
+            ++nscript;
+        }
 
-	/*
-	 * Log an error message and optionally break from this ADP
-	 * call frame unless the error was generated to signal
-	 * and ADP exception.
-	 */
+        /*
+         * Log an error message and optionally break from this ADP
+         * call frame unless the error was generated to signal
+         * and ADP exception.
+         */
 
-	if (result != TCL_OK && itPtr->adp.exception == ADP_OK) {
-	    if (!(itPtr->adp.flags & ADP_ERRLOGGED)) {
-	    	NsAdpLogError(itPtr);
-	    }
-	    if (itPtr->adp.flags & ADP_STRICT) {
-    	    	itPtr->adp.flags |= ADP_ERRLOGGED;
-		break;
-	    }
-	}
-	ptr += len;
+        if (result != TCL_OK && itPtr->adp.exception == ADP_OK) {
+            if (!(itPtr->adp.flags & ADP_ERRLOGGED)) {
+                NsAdpLogError(itPtr);
+            }
+            if (itPtr->adp.flags & ADP_STRICT) {
+                itPtr->adp.flags |= ADP_ERRLOGGED;
+                break;
+            }
+        }
+        ptr += len;
     }
 
     /*
@@ -1044,13 +1128,13 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 
     switch (itPtr->adp.exception) {
     case ADP_OK:
-	break;
+        break;
     case ADP_RETURN:
-	itPtr->adp.exception = ADP_OK;
-	/* FALLTHROUGH */
+        itPtr->adp.exception = ADP_OK;
+        /* FALLTHROUGH */
     default:
-	result = TCL_OK;
-	break;
+        result = TCL_OK;
+        break;
     }
 
     /*
@@ -1060,9 +1144,10 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     itPtr->adp.framePtr = frame.prevPtr;
     itPtr->adp.cwd = savecwd;
     if (frame.ident != NULL) {
-	Tcl_DecrRefCount(frame.ident);
+        Tcl_DecrRefCount(frame.ident);
     }
     Ns_DStringFree(&cwd);
+
     return result;
 }
 
@@ -1072,15 +1157,15 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
  *
  * AdpDebug --
  *
- *	Evaluate an ADP script block with the TclPro debugger.
+ *      Evaluate an ADP script block with the TclPro debugger.
  *
  * Results:
- *	Depends on script.
+ *      Depends on script.
  *
  * Side effects:
- *	A unique temp file with header comments and the script is
- *	created and sourced, the effect of which is TclPro will
- *	instrument the code on the fly for single-step debugging.
+ *      A unique temp file with header comments and the script is
+ *      created and sourced, the effect of which is TclPro will
+ *      instrument the code on the fly for single-step debugging.
  *
  *----------------------------------------------------------------------
  */
@@ -1088,47 +1173,48 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 static int
 AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
 {
-    int code, fd;
     Tcl_Interp *interp = itPtr->interp;
-    int level = itPtr->adp.debugLevel;
-    char *file = Tcl_GetString(itPtr->adp.framePtr->objv[0]);
-    char buf[10], debugfile[255];
-    Ns_DString ds;
+    int         level  = itPtr->adp.debugLevel;
+    char       *file   = Tcl_GetString(itPtr->adp.framePtr->objv[0]);
+    char        buf[10], debugfile[255];
+    Ns_DString  ds;
+    int         code, fd;
 
     code = TCL_ERROR;
     Ns_DStringInit(&ds);
     sprintf(buf, "%d", level);
     Ns_DStringVarAppend(&ds,
-	"#\n"
-	"# level: ", buf, "\n", NULL);
+                        "#\n"
+                        "# level: ", buf, "\n", NULL);
     sprintf(buf, "%d", nscript);
     Ns_DStringVarAppend(&ds,
-	"# chunk: ", buf, "\n"
-	"# file:  ", file, "\n"
-	"#\n\n", NULL);
+                        "# chunk: ", buf, "\n"
+                        "# file:  ", file, "\n"
+                        "#\n\n", NULL);
     Ns_DStringNAppend(&ds, ptr, len);
     sprintf(debugfile, P_tmpdir "/adp%d.%d.XXXXXX", level, nscript);
     if (mktemp(debugfile) == NULL) {
-	Tcl_SetResult(interp, "could not create adp debug file", TCL_STATIC);
+        Tcl_SetResult(interp, "could not create adp debug file", TCL_STATIC);
     } else {
-	fd = open(debugfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
-	if (fd < 0) {
-	    Tcl_AppendResult(interp, "could not create adp debug file \"",
-		debugfile, "\": ", Tcl_PosixError(interp), NULL);
-	} else {
-	    if (write(fd, ds.string, (size_t)ds.length) < 0) {
-		Tcl_AppendResult(interp, "write to \"", debugfile,
-		    "\" failed: ", Tcl_PosixError(interp), NULL);
-	    } else {
-		Ns_DStringTrunc(&ds, 0);
-		Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
-		code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
-	    }
-	    close(fd);
-	    unlink(debugfile);
-	}
+        fd = open(debugfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+        if (fd < 0) {
+            Tcl_AppendResult(interp, "could not create adp debug file \"",
+                             debugfile, "\": ", Tcl_PosixError(interp), NULL);
+    } else {
+            if (write(fd, ds.string, (size_t)ds.length) < 0) {
+                Tcl_AppendResult(interp, "write to \"", debugfile,
+                                 "\" failed: ", Tcl_PosixError(interp), NULL);
+            } else {
+                Ns_DStringTrunc(&ds, 0);
+                Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
+                code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+            }
+            close(fd);
+            unlink(debugfile);
+        }
     }
     Ns_DStringFree(&ds);
+
     return code;
 }
 
@@ -1138,13 +1224,13 @@ AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
  *
  * FreeInterpPage --
  *
- *  	Free a per-interp page cache entry.
+ *      Free a per-interp page cache entry.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side Effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1153,21 +1239,21 @@ static void
 FreeInterpPage(void *arg)
 {
     InterpPage *ipagePtr = arg;
-    Page *pagePtr = ipagePtr->pagePtr;
-    NsServer *servPtr = pagePtr->servPtr;
+    Page       *pagePtr  = ipagePtr->pagePtr;
+    NsServer   *servPtr  = pagePtr->servPtr;
 
     FreeObjs(ipagePtr->objs);
     Ns_MutexLock(&servPtr->adp.pagelock);
     if (--pagePtr->refcnt == 0) {
-	if (pagePtr->hPtr != NULL) {
-	    Tcl_DeleteHashEntry(pagePtr->hPtr);
-	}
-	if (pagePtr->cachePtr != NULL) {
-    	    FreeObjs(ipagePtr->cacheObjs);
-	    DecrCache(pagePtr->cachePtr);
-	}
-	NsAdpFreeCode(&pagePtr->code);
-	ns_free(pagePtr);
+        if (pagePtr->hPtr != NULL) {
+            Tcl_DeleteHashEntry(pagePtr->hPtr);
+        }
+        if (pagePtr->cachePtr != NULL) {
+            FreeObjs(ipagePtr->cacheObjs);
+            DecrCache(pagePtr->cachePtr);
+        }
+        NsAdpFreeCode(&pagePtr->code);
+        ns_free(pagePtr);
     }
     Ns_MutexUnlock(&servPtr->adp.pagelock);
     ns_free(ipagePtr);
@@ -1179,13 +1265,13 @@ FreeInterpPage(void *arg)
  *
  * AllocObjs --
  *
- *  	Allocate new page script objects.
+ *      Allocate new page script objects.
  *
  * Results:
- *	Pointer to new objects.
+ *      Pointer to new objects.
  *
  * Side Effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1197,6 +1283,7 @@ AllocObjs(int nobjs)
 
     objsPtr = ns_calloc(1, sizeof(Objs) + (nobjs * sizeof(Tcl_Obj *)));
     objsPtr->nobjs = nobjs;
+
     return objsPtr;
 }
 
@@ -1206,13 +1293,13 @@ AllocObjs(int nobjs)
  *
  * FreeObjs --
  *
- *  	Free page objects, decrementing ref counts as needed.
+ *      Free page objects, decrementing ref counts as needed.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side Effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1223,9 +1310,9 @@ FreeObjs(Objs *objsPtr)
     int i;
 
     for (i = 0; i < objsPtr->nobjs; ++i) {
-	if (objsPtr->objs[i] != NULL) {
-	    Tcl_DecrRefCount(objsPtr->objs[i]);
-	}
+        if (objsPtr->objs[i] != NULL) {
+            Tcl_DecrRefCount(objsPtr->objs[i]);
+        }
     }
     ns_free(objsPtr);
 }
@@ -1236,14 +1323,14 @@ FreeObjs(Objs *objsPtr)
  *
  * DecrCache --
  *
- *  	Decrement ref count of a cache entry, potentially freeing
- *	the cache.
+ *      Decrement ref count of a cache entry, potentially freeing
+ *      the cache.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side Effects:
- *	Will free cache on last reference count.
+ *      Will free cache on last reference count.
  *
  *----------------------------------------------------------------------
  */
@@ -1252,8 +1339,8 @@ static void
 DecrCache(AdpCache *cachePtr)
 {
     if (--cachePtr->refcnt == 0) {
-	NsAdpFreeCode(&cachePtr->code);
-	ns_free(cachePtr);
+        NsAdpFreeCode(&cachePtr->code);
+        ns_free(cachePtr);
     }
 }
 
@@ -1263,13 +1350,13 @@ DecrCache(AdpCache *cachePtr)
  *
  * AdpTrace --
  *
- *	Trace execution of an ADP page.
+ *      Trace execution of an ADP page.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Dumps tracing info, possibly truncated, via Ns_Log.
+ *      Dumps tracing info, possibly truncated, via Ns_Log.
  *
  *----------------------------------------------------------------------
  */
@@ -1280,13 +1367,13 @@ AdpTrace(NsInterp *itPtr, char *ptr, int len)
     char type;
 
     if (len >= 0) {
-	type = 'T';
+        type = 'T';
     } else {
-	type = 'S';
-	len = -len;
+        type = 'S';
+        len = -len;
     }
     if (len > itPtr->servPtr->adp.tracesize) {
-	len = itPtr->servPtr->adp.tracesize;
+        len = itPtr->servPtr->adp.tracesize;
     }
     Ns_Log(Notice, "adp[%d%c]: %.*s", itPtr->adp.depth, type, len, ptr);
 }
