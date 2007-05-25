@@ -78,11 +78,10 @@ static struct proc {
     {(void *) NsTclFilterProc,     "ns:tclfilter",        Ns_TclCallbackArgProc},
     {(void *) NsShortcutFilterProc, "ns:shortcutfilter",  NULL},
     {(void *) NsTclRequestProc,    "ns:tclrequest",       Ns_TclCallbackArgProc},
-    {(void *) NsAdpRequestProc,    "ns:adprequest",       ServerArgProc},
-    {(void *) NsAdpMapProc,        "ns:adpmap",           Ns_StringArgProc},
-    {(void *) NsAdpProc,           "ns:adppage",          TimeArgProc},
-    {(void *) NsAdpTclProc,        "ns:tclpage",          TimeArgProc},
-    {(void *) NsFastPathProc,      "ns:fastget",          ServerArgProc},
+    {(void *) NsPageMapProc,       "ns:onepage",          NsPageMapArgProc},
+    {(void *) Ns_AdpPageProc,      "ns:adppage",          TimeArgProc},
+    {(void *) Ns_TclPageProc,      "ns:tclpage",          TimeArgProc},
+    {(void *) Ns_FastPathProc,     "ns:fastget",          NULL},
     {(void *) NsTclTraceProc,      "ns:tcltrace",         Ns_TclCallbackArgProc},
     {(void *) NsTclUrl2FileProc,   "ns:tclurl2file",      Ns_TclCallbackArgProc},
     {(void *) NsMountUrl2FileProc, "ns:mounturl2file",    NsMountUrl2FileArgProc},
@@ -248,7 +247,7 @@ ServerArgProc(Tcl_DString *dsPtr, void *arg)
 {
     NsServer *servPtr = arg;
 
-    Tcl_DStringAppendElement(dsPtr, servPtr->server);
+    Tcl_DStringAppendElement(dsPtr, servPtr ? servPtr->server : "");
 }
 
 
@@ -273,8 +272,9 @@ TimeArgProc(Tcl_DString *dsPtr, void *arg)
 {
     Ns_Time *timePtr = arg;
 
-    Ns_DStringPrintf(dsPtr, " nstime(%lu:%lu)",
-                     (unsigned long) timePtr->sec, (unsigned long) timePtr->usec);
+    Ns_DStringPrintf(dsPtr, " %lu:%lu",
+                     timePtr ? (unsigned long) timePtr->sec : 0,
+                     timePtr ? (unsigned long) timePtr->usec : 0);
 }
 
 
