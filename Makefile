@@ -108,10 +108,10 @@ install-doc:
 	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
 	@echo Installing html files in $(NAVISERVER)/pages/doc...
 	@if test -d doc/html ; then \
-	    for i in `find doc/html -name "*.html" -print`; do \
+	    for i in `find doc/html -maxdepth 1 -name "*.html" -print`; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
 	    done ; \
-	    for i in `find doc/html -name "*.css" -print`; do \
+	    for i in `find doc/html -maxdepth 1 -name "*.css" -print`; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
 	    done ; \
 	fi
@@ -142,11 +142,11 @@ build-doc:
 	    hd=`pwd`; \
 	    cd doc/src && $(MKDIR) ../html ../man ; \
 	    echo Generating docs from .man pages in `pwd`; \
-	    echo Emitting html files to $$hd/html/ ...; \
-	    dtplite -o ../html/ -style nsd.css html . 1>/dev/null 2>&1; \
-	    echo Emitting nroff files to $$hd/man/ ...; \
+	    echo Emitting html files to $$hd/doc/html/ ...; \
+	    dtplite -o ../html/ -style nsd.css html .; \
+	    echo Emitting nroff files to $$hd/doc/man/ ...; \
 	    for f in *.man; do \
-		dtplite -o ../man/`basename $$f .man`.n nroff $$f 1>/dev/null 2>&1; \
+		dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
 	    done; \
 	    cd $$hd ; \
 	    echo Generating docs done. ; \
