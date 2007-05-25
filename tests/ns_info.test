@@ -22,7 +22,7 @@ test ns_info-2.1.1 {basic operation} -body {
 
 test ns_info-2.2.1 {basic operation} -body {
      ns_info argv0
-} -result "./nsd/nsd"
+} -match glob -result *nsd
 
 test ns_info-2.3.1 {basic operation} -body {
     string is int -strict [ns_info boottime]
@@ -77,7 +77,7 @@ test ns_info-2.13.1 {basic operation} -body {
 
 test ns_info-2.14.1 {basic operation} -body {
      file tail [ns_info nsd]
-} -result "nsd"
+} -match glob -result "*nsd"
 
 test ns_info-2.15.1 {basic operation} -body {
      expr {[llength [split [ns_info pageroot] "/"]]>1}

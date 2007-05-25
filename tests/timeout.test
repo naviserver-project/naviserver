@@ -10,7 +10,7 @@ eval ::tcltest::configure $argv
 
 
 
-test timeout-1.1 {Tcl page} -body {
+test timeout-1.1 {Tcl page} -constraints knownBug -body {
     nstest_http -getbody 1 GET /timeout.tcl
 } -match glob -result {503 *Service Unavailable*}
 
