@@ -120,6 +120,47 @@ Ns_ConfigBool(CONST char *section, CONST char *key, int def)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConfigFlag --
+ *
+ *      Look for a boolean config file value, and if present OR the
+ *      given flag value into the flagsPtr.
+ *
+ * Results:
+ *      NS_TRUE if flag was set, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConfigFlag(CONST char *section, CONST char *key, int flag, int def,
+              int *flagsPtr)
+{
+    CONST char *s;
+    int value, found = NS_FALSE;
+
+    s = ConfigGet(section, key, 0, def ? "true" : "false");
+    if (s != NULL && ToBool(s, &value)) {
+        found = NS_TRUE;
+    }
+
+    Ns_Log(Dev, "config: %s:%s value=%d default=%d (flag)",
+           section, key,
+           value ? flag : 0,
+           def ? flag : 0);
+
+    if (value) {
+        *flagsPtr |= flag;
+    }
+    return found;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConfigInt, Ns_ConfigIntRange --
  *
  *      Return an integer config file value, or the default if not

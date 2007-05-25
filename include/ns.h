@@ -657,6 +657,9 @@ NS_EXTERN int
 Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN Ns_OpProc Ns_AdpPageProc;
+NS_EXTERN Ns_OpProc Ns_TclPageProc;
+
 /*
  * auth.c:
  */
@@ -826,6 +829,11 @@ Ns_ConfigString(CONST char *section, CONST char *key, CONST char *def)
 NS_EXTERN int
 Ns_ConfigBool(CONST char *section, CONST char *key, int def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_ConfigFlag(CONST char *section, CONST char *key, int flag, int def,
+              int *flagsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 NS_EXTERN int
 Ns_ConfigInt(CONST char *section, CONST char *key, int def)
