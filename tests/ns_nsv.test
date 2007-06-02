@@ -300,7 +300,7 @@ test ns_nsv-9.3 {nsv_incr with negative count} -body {
 
 test ns_nsv-9.4 {nsv_incr with unrepresentable count} -body {
     nsv_incr a k +1000000000000
-} -returnCodes error -result {integer value too large to represent}
+} -returnCodes error -match glob -result {integer value too large to represent*}
 
 test ns_nsv-9.5 {nsv_incr from negative to positive} -body {
     nsv_set a k -1
