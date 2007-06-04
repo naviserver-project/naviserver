@@ -118,22 +118,23 @@ TlsLogArg(void *arg)
  *	Thread which recursively probes stack for max depth.
  */
 
-int
-RecursiveStackCheck(int n)
+uintptr_t
+RecursiveStackCheck(uintptr_t n)
 {
 #if 0
     if (Ns_CheckStack() == NS_OK) {
-	n = RecursiveStackCheck(n);
+        n = RecursiveStackCheck(n);
     }
 #endif
     ++n;
+
     return n;
 }
 
 void 
 CheckStackThread(void *arg)
 {
-    int n;
+    uintptr_t n;
 
     n = RecursiveStackCheck(0);
     Ns_ThreadExit((void *) n);
@@ -148,23 +149,23 @@ CheckStackThread(void *arg)
 void
 WorkThread(void *arg)
 {
-    int             i = (int) arg;
-    int            *ip;
+    intptr_t        i = (intptr_t) arg;
+    intptr_t       *ip;
     time_t          now;
     Ns_Thread       self;
     char            name[32];
 
-    sprintf(name, "-work:%d-", i);
+    sprintf(name, "-work:%" PRIdPTR "-", i);
     Ns_ThreadSetName(name);
 
     if (i == 2) {
-	Ns_RWLockWrLock(&rwlock);
-	Msg("rwlock write aquired");
-	sleep(2);
+        Ns_RWLockWrLock(&rwlock);
+        Msg("rwlock write aquired");
+        sleep(2);
     } else {
-	Ns_RWLockRdLock(&rwlock);
-	Msg("rwlock read aquired aquired");
-	sleep(1);
+        Ns_RWLockRdLock(&rwlock);
+        Msg("rwlock read aquired");
+        sleep(1);
     }
     Ns_CsEnter(&cs);
     Msg("enter critical section once");
@@ -177,32 +178,32 @@ WorkThread(void *arg)
     Ns_SemaWait(&sema);
     Msg("got semaphore posted from main");
     if (arg == NULL) {
-	arg = ns_malloc(sizeof(int));
-	Ns_TlsSet(&key, arg);
+        arg = ns_malloc(sizeof(i));
+        Ns_TlsSet(&key, arg);
     }
     ip = arg;
     *ip = i;
 
     if (i == 5) {
-	Ns_Time         to;
-	int             st;
+        Ns_Time         to;
+        int             st;
 
-	Ns_GetTime(&to);
-	Msg("time: %ld %ld", to.sec, to.usec);
-	Ns_IncrTime(&to, 5, 0);
-	Msg("time: %ld %ld", to.sec, to.usec);
-	Ns_MutexLock(&lock);
-	time(&now);
-	Msg("timed wait starts: %s", ns_ctime(&now));
-	st = Ns_CondTimedWait(&cond, &lock, &to);
-	Ns_MutexUnlock(&lock);
-	time(&now);
-	Msg("timed wait ends: %s - status: %d", ns_ctime(&now), st);
+        Ns_GetTime(&to);
+        Msg("time: %jd %ld", (intmax_t) to.sec, to.usec);
+        Ns_IncrTime(&to, 5, 0);
+        Msg("time: %jd %ld", (intmax_t) to.sec, to.usec);
+        Ns_MutexLock(&lock);
+        time(&now);
+        Msg("timed wait starts: %s", ns_ctime(&now));
+        st = Ns_CondTimedWait(&cond, &lock, &to);
+        Ns_MutexUnlock(&lock);
+        time(&now);
+        Msg("timed wait ends: %s - status: %d", ns_ctime(&now), st);
     }
     if (i == 9) {
-	Msg("sleep 4 seconds start");
-	sleep(4);
-	Msg("sleep 4 seconds done");
+        Msg("sleep 4 seconds start");
+        sleep(4);
+        Msg("sleep 4 seconds done");
     }
     time(&now);
     Ns_RWLockUnlock(&rwlock);
@@ -280,7 +281,7 @@ MemTime(int ns)
     printf("starting %d %smalloc threads...", nthreads, ns ? "ns_" : "");
     fflush(stdout);
     for (i = 0; i < nthreads; ++i) {
-	Ns_ThreadCreate(MemThread, (void *) ns, 0, &tids[i]);
+        Ns_ThreadCreate(MemThread, (void *)(intptr_t) ns, 0, &tids[i]);
     }
     Ns_MutexLock(&lock);
     while (nrunning < nthreads) {
@@ -297,7 +298,7 @@ MemTime(int ns)
     }
     Ns_GetTime(&end);
     Ns_DiffTime(&end, &start, &diff);
-    printf("done:  %d seconds, %d usec\n", (int) diff.sec, (int) diff.usec);
+    printf("done:  %jd seconds, %ld usec\n", (intmax_t) diff.sec, diff.usec);
 }
 
 
@@ -361,8 +362,8 @@ static int pgo;
 void
 PthreadTlsCleanup(void *arg)
 {
-    int i = (int) arg;
-    printf("pthread[%d]: log: %d\n", (int) pthread_self(), i);
+    intptr_t i = (intptr_t) arg;
+    printf("pthread[%" PRIxPTR "]: log: %" PRIdPTR"\n", (uintptr_t) pthread_self(), i);
 }
 
 void *
@@ -408,7 +409,7 @@ Pthread(void *arg)
 
 int main(int argc, char *argv[])
 {
-    int             i, code;
+    intptr_t        i;
     Ns_Thread       threads[10];
     Ns_Thread       self, dumper;
     void *arg;
@@ -452,8 +453,8 @@ int main(int argc, char *argv[])
     Msg("pid = %d", getpid());
     Ns_TlsAlloc(&key, TlsLogArg);
     for (i = 0; i < 10; ++i) {
-	Msg("starting work thread %d", i);
-	Ns_ThreadCreate(WorkThread, (void *) i, 0, &threads[i]);
+        Msg("starting work thread %" PRIdPTR, i);
+        Ns_ThreadCreate(WorkThread, (void *) i, 0, &threads[i]);
     }
     sleep(1);
     /* Ns_CondSignal(&cond); */
@@ -466,24 +467,23 @@ int main(int argc, char *argv[])
     Msg("rwlock write unlocked (main thread)");
     for (i = 0; i < 10; ++i) {
         void *codeArg;
-	Msg("waiting for thread %d to exit", i);
-	Ns_ThreadJoin(&threads[i], &codeArg);
-        code = (int)codeArg;
-	Msg("thread %d exited - code: %d", i, code);
+        Msg("waiting for thread %" PRIdPTR " to exit", i);
+        Ns_ThreadJoin(&threads[i], &codeArg);
+        Msg("thread %" PRIdPTR " exited - code: %" PRIuPTR, i, (uintptr_t) codeArg);
     }
 #if PTHREAD_TEST
     for (i = 0; i < 10; ++i) {
-	pthread_create(&tids[i], NULL, Pthread, (void *) i);
-	printf("pthread: create %d = %d\n", i, (int) tids[i]);
-	Ns_ThreadYield();
+        pthread_create(&tids[i], NULL, Pthread, (void *) i);
+        printf("pthread: create %" PRIdPTR " = %" PRIxPTR "\n", i, (uintptr_t) tids[i]);
+        Ns_ThreadYield();
     }
     Ns_MutexLock(&plock);
     pgo = 1;
     Ns_MutexUnlock(&plock);
     Ns_CondBroadcast(&pcond);
     for (i = 0; i < 10; ++i) {
-	pthread_join(tids[i], &arg);
-	printf("pthread: join %d = %d\n", i, (int) arg);
+        pthread_join(tids[i], &arg);
+        printf("pthread: join %" PRIdPTR " = %" PRIdPTR "\n", i, (intptr_t) arg);
     }
 #endif
     Ns_ThreadSelf(&self);
@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
     }
     for (i = 0; i < 10; ++i) {
         Ns_ThreadJoin(&threads[i], &arg);
-	printf("check stack %d = %d\n", i, (int) arg);
+        printf("check stack %" PRIdPTR " = %" PRIdPTR "\n", i, (intptr_t) arg);
     }
     /*Ns_ThreadEnum(DumpThreads, NULL);*/
     /*Ns_MutexEnum(DumpLocks, NULL);*/

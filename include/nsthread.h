@@ -318,7 +318,7 @@ NS_EXTERN void Ns_ThreadExit(void *arg);
 NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr);
 NS_EXTERN void Ns_ThreadYield(void);
 NS_EXTERN void Ns_ThreadSetName(char *name, ...);
-NS_EXTERN int Ns_ThreadId(void);
+NS_EXTERN uintptr_t Ns_ThreadId(void);
 NS_EXTERN void Ns_ThreadSelf(Ns_Thread *threadPtr);
 NS_EXTERN char *Ns_ThreadGetName(void);
 NS_EXTERN char *Ns_ThreadGetParent(void);

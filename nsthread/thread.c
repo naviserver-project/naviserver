@@ -50,7 +50,7 @@ typedef struct Thread {
     int		    flags;	/* Detached, joined, etc. */
     Ns_ThreadProc  *proc;	/* Thread startup routine. */ 
     void           *arg;	/* Argument to startup proc. */
-    int		    tid;        /* Id set by thread for logging. */
+    uintptr_t       tid;    /* Id set by thread for logging. */
     char	    name[NS_THREAD_NAMESIZE+1]; /* Thread name. */
     char	    parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
 } Thread;
@@ -206,7 +206,7 @@ NsThreadMain(void *arg)
 
     thrPtr->tid = Ns_ThreadId();
     Ns_TlsSet(&key, thrPtr);
-    sprintf(name, "-thread%d-", thrPtr->tid);
+    sprintf(name, "-thread:%" PRIxPTR "-", thrPtr->tid);
     Ns_ThreadSetName(name);
     (*thrPtr->proc) (thrPtr->arg);
 }
@@ -324,12 +324,13 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
 	Tcl_DStringStartSublist(dsPtr);
 	Tcl_DStringAppendElement(dsPtr, thrPtr->name);
 	Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
-	sprintf(buf, " %d %d %ld", thrPtr->tid, thrPtr->flags, thrPtr->ctime);
+	snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %jd",
+             thrPtr->tid, thrPtr->flags, (intmax_t) thrPtr->ctime);
 	Tcl_DStringAppend(dsPtr, buf, -1);
 	if (proc != NULL) {
 	    (*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
 	} else {
-	    sprintf(buf, " %p %p", thrPtr->proc, thrPtr->arg);
+	    snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
 	    Tcl_DStringAppend(dsPtr, buf, -1);
 	}
 	Tcl_DStringEndSublist(dsPtr);

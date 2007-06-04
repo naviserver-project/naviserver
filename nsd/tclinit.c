@@ -888,7 +888,9 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     TclData        *dataPtr;
     Ns_DString      ds;
     char           *script;
-    int             remain = 0, opt, tid, length, when = 0, result = TCL_OK;
+    uintptr_t       tid;
+    Tcl_WideInt     tidValue;
+    int             remain = 0, opt, length, when = 0, result = TCL_OK;
 
     static CONST char *opts[] = {
         "addmodule", "cancel", "cleanup", "epoch", "get", "getmodules",
@@ -1130,8 +1132,8 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         Ns_MutexLock(&tlock);
         hPtr = Tcl_FirstHashEntry(&threads, &search);
         while (hPtr != NULL) {
-            tid = (int) Tcl_GetHashKey(&threads, hPtr);
-            objPtr = Tcl_NewIntObj(tid);
+            tid = (uintptr_t) Tcl_GetHashKey(&threads, hPtr);
+            objPtr = Tcl_NewWideIntObj((Tcl_WideInt) tid);
             Tcl_ListObjAppendElement(interp, listPtr, objPtr);
             hPtr = Tcl_NextHashEntry(&search);
         }
@@ -1144,9 +1146,10 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Tcl_WrongNumArgs(interp, 2, objv, "tid");
             return TCL_ERROR;
         }
-        if (Tcl_GetIntFromObj(interp, objv[2], &tid) != TCL_OK) {
+        if (Tcl_GetWideIntFromObj(interp, objv[2], &tidValue) != TCL_OK) {
             return TCL_ERROR;
         }
+        tid = (uintptr_t) tidValue;
         Ns_MutexLock(&tlock);
         hPtr = Tcl_FindHashEntry(&threads, (char *) tid);
         if (hPtr != NULL) {
@@ -1845,7 +1848,8 @@ static TclData *
 GetData(void)
 {
     TclData *dataPtr;
-    int tid, new;
+    uintptr_t tid;
+    int new;
 
     dataPtr = Ns_TlsGet(&tls);
     if (dataPtr == NULL) {

@@ -779,10 +779,10 @@ Ns_ThreadYield(void)
  *----------------------------------------------------------------------
  */
 
-int
+uintptr_t
 Ns_ThreadId(void)
 {
-    return (int) GetCurrentThreadId();
+    return (uintptr_t) GetCurrentThreadId();
 }
 
 

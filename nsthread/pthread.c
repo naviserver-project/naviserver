@@ -460,10 +460,10 @@ Ns_ThreadYield(void)
  *----------------------------------------------------------------------
  */
 
-int
+uintptr_t
 Ns_ThreadId(void)
 {
-    return (int) pthread_self();
+    return (uintptr_t) pthread_self();
 }
 
 

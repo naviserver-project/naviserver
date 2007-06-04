@@ -1295,8 +1295,8 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%ld]", stamp->usec);
     }
-    Ns_DStringPrintf(dsPtr, "[%d.%lu][%s] %s: ", Ns_InfoPid(),
-                     (unsigned long) Ns_ThreadId(), Ns_ThreadGetName(),
+    Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ", Ns_InfoPid(),
+                     Ns_ThreadId(), Ns_ThreadGetName(),
                      SeverityName(severity, sevname));
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(dsPtr, "\n    ");
@@ -1339,7 +1339,7 @@ static int
 LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
           char *msg, int len)
 {
-    int        ret, fd = (int)arg;
+    int        ret, fd = (intptr_t) arg;
     Ns_DString ds;
 
     Ns_DStringInit(&ds);

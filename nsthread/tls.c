@@ -44,7 +44,7 @@ NS_RCSID("@(#) $Header$");
  * this value has no effect.
  */
 
-int nsThreadMaxTls = NS_THREAD_MAXTLS;
+uintptr_t nsThreadMaxTls = NS_THREAD_MAXTLS;
 
 /* 
  * Static functions defined in this file.
@@ -72,16 +72,17 @@ static Ns_TlsCleanup *cleanupProcs[NS_THREAD_MAXTLS];
 void
 Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
 {
-    static int nextkey = 1;
-    int key;
+    static uintptr_t nextkey = 1;
+    uintptr_t        key;
 
     Ns_MasterLock();
-    if (nextkey == NS_THREAD_MAXTLS) {
-	Tcl_Panic("Ns_TlsAlloc: exceded max tls: %d", NS_THREAD_MAXTLS);
+    if (nextkey == nsThreadMaxTls) {
+        Tcl_Panic("Ns_TlsAlloc: exceded max tls: %" PRIuPTR, nsThreadMaxTls);
     }
     key = nextkey++;
     cleanupProcs[key] = cleanup;
     Ns_MasterUnlock();
+
     *keyPtr = (void *) key;
 }
 
@@ -105,12 +106,13 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
 void
 Ns_TlsSet(Ns_Tls *keyPtr, void *value)
 {
-    void **slots = NsGetTls();
-    int key = (int) (*keyPtr);
+    void      **slots = NsGetTls();
+    uintptr_t   key = (uintptr_t) *keyPtr;
 
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
-	Tcl_Panic("Ns_TlsSet: invalid key: %d: should be between 1 and %d",
-		    key, NS_THREAD_MAXTLS);
+        Tcl_Panic("Ns_TlsSet: invalid key: %" PRIuPTR
+                  ": should be between 1 and %" PRIuPTR,
+                  key, nsThreadMaxTls);
     }
     slots[key] = value;
 }
@@ -135,12 +137,13 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
 void *
 Ns_TlsGet(Ns_Tls *keyPtr)
 {
-    void **slots = NsGetTls();
-    int key = (int) (*keyPtr);
+    void      **slots = NsGetTls();
+    uintptr_t   key = (uintptr_t) *keyPtr;
 
     if (key < 1 || key >= NS_THREAD_MAXTLS) {
-	Tcl_Panic("Ns_TlsGet: invalid key: %d: should be between 1 and %d",
-		    key, NS_THREAD_MAXTLS);
+        Tcl_Panic("Ns_TlsGet: invalid key: %" PRIuPTR
+                  ": should be between 1 and %" PRIuPTR,
+                  key, nsThreadMaxTls);
     }
     return slots[key];
 }

@@ -56,7 +56,7 @@ NS_RCSID("@(#) $Header$");
 typedef struct CsLock {
     Ns_Mutex        mutex;
     Ns_Cond         cond;
-    int		    tid;
+    uintptr_t       tid;
     int             count;
 } CsLock;
 
@@ -150,8 +150,8 @@ Ns_CsDestroy(Ns_Cs *csPtr)
 void
 Ns_CsEnter(Ns_Cs *csPtr)
 {
-    CsLock	*lockPtr;
-    int		 tid = Ns_ThreadId();
+    CsLock	  *lockPtr;
+    uintptr_t  tid = Ns_ThreadId();
 
     /*
      * Initialize the critical section if it has never been used before.

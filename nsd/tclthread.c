@@ -209,7 +209,7 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 
     case TIdIdx:
     case TGetIdIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ThreadId()));
+        Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
         break;
 
     case TNameIdx:
