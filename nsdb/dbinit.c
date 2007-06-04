@@ -1148,13 +1148,13 @@ IncrCount(Pool *poolPtr, int incr)
     if (new) {
 	prev = 0;
     } else {
-	prev = (int) Tcl_GetHashValue(hPtr);
+        prev = (int)(intptr_t) Tcl_GetHashValue(hPtr);
     }
     count = prev + incr;
     if (count == 0) {
 	Tcl_DeleteHashEntry(hPtr);
     } else {
-	Tcl_SetHashValue(hPtr, (ClientData) count);
+        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) count);
     }
     return prev;
 }

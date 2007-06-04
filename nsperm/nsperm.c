@@ -564,8 +564,10 @@ ValidateUserAddr(User *userPtr, char *peer)
 	 * right address's mask.
 	 */
 
-	entryPtr = Tcl_FindHashEntry(&userPtr->nets, (char *) ip.s_addr);
-	if (entryPtr != NULL && mask.s_addr == (unsigned long) Tcl_GetHashValue(entryPtr)) {
+	entryPtr = Tcl_FindHashEntry(&userPtr->nets, (char *)(intptr_t) ip.s_addr);
+	if (entryPtr != NULL
+        && mask.s_addr == (unsigned long)(intptr_t) Tcl_GetHashValue(entryPtr)) {
+
 	    if (userPtr->flags & USER_FILTER_ALLOW) {
 		return NS_TRUE;
 	    } else {
@@ -757,10 +759,11 @@ AddUserObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
 	     */
 
 	    (void) Tcl_CreateHashEntry(&userPtr->masks,
-					(char *) mask.s_addr, &new);
+                   (char *)(intptr_t) mask.s_addr, &new);
 
-	    hPtr = Tcl_CreateHashEntry(&userPtr->nets, (char *) ip.s_addr, &new);
-	    Tcl_SetHashValue(hPtr, mask.s_addr);
+	    hPtr = Tcl_CreateHashEntry(&userPtr->nets,
+                   (char *)(intptr_t) ip.s_addr, &new);
+	    Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) mask.s_addr);
 	}
 	if (!new) {
 	    Tcl_AppendResult(interp, "duplicate entry: ", net, NULL);

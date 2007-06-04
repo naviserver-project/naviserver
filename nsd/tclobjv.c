@@ -255,7 +255,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     int *dest = spec->dest;
 
     if (spec->arg) {
-        *dest = (int) spec->arg;
+        *dest = (int)(intptr_t) spec->arg;
         return TCL_OK;
     }
     if (*objcPtr > 0 && Tcl_GetBooleanFromObj(interp, objv[0], dest) == TCL_OK) {

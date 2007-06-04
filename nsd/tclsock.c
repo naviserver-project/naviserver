@@ -1027,7 +1027,7 @@ EnterSock(Tcl_Interp *interp, SOCKET sock)
 {
     Tcl_Channel chan;
 
-    chan = Tcl_MakeTcpClientChannel((ClientData) sock);
+    chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
     if (chan == NULL) {
         Tcl_AppendResult(interp, "could not open socket", NULL);
         ns_sockclose(sock);
@@ -1104,7 +1104,7 @@ NsTclSockProc(SOCKET sock, void *arg, int why)
              * register the channel.
              */
             
-            cbPtr->chan = Tcl_MakeTcpClientChannel((ClientData) sock);
+            cbPtr->chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
             if (cbPtr->chan == NULL) {
                 Ns_Log(Error, "could not make channel for sock: %d", sock);
                 why = NS_SOCK_EXIT;

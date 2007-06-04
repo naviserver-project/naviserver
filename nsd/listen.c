@@ -137,7 +137,7 @@ Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
      * we're listening on.
      */
   
-    hPtr = Tcl_CreateHashEntry(&portsTable, (char *) port, &new);
+    hPtr = Tcl_CreateHashEntry(&portsTable, (char *)(intptr_t) port, &new);
     if (new == 0) {
         tablePtr = Tcl_GetHashValue(hPtr);
     } else {
@@ -155,7 +155,7 @@ Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
         }
     }
     if (status == NS_OK) {
-        hPtr = Tcl_CreateHashEntry(tablePtr, (char *) sa.sin_addr.s_addr, &new);
+        hPtr = Tcl_CreateHashEntry(tablePtr, (char *)(intptr_t) sa.sin_addr.s_addr, &new);
         if (!new) {
             status = NS_ERROR;
         } else {
@@ -194,7 +194,7 @@ Ns_SockPortBound(int port)
     Tcl_HashEntry  *hPtr;
 
     Ns_MutexLock(&lock);
-    hPtr = Tcl_FindHashEntry(&portsTable, (char *) port);
+    hPtr = Tcl_FindHashEntry(&portsTable, (char *)(intptr_t) port);
     Ns_MutexUnlock(&lock);
     return (hPtr != NULL ? 1 : 0);
 }
@@ -239,7 +239,7 @@ ListenCallback(SOCKET sock, void *arg, int why)
         getsockname(new, (struct sockaddr *) &sa, &len);
         ldPtr = NULL;
         Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(tablePtr, (char *) sa.sin_addr.s_addr);
+        hPtr = Tcl_FindHashEntry(tablePtr, (char *)(intptr_t) sa.sin_addr.s_addr);
         if (hPtr == NULL) {
             hPtr = Tcl_FindHashEntry(tablePtr, (char *) INADDR_ANY);
         }

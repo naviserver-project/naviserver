@@ -54,7 +54,7 @@ NS_RCSID("@(#) $Header$");
 typedef struct Event {
     struct Event   *nextPtr;
     Tcl_HashEntry  *hPtr;	/* Entry in event hash or NULL if deleted. */
-    unsigned int    id;		/* Unique event id. */
+    int             id;     /* Unique event id. */
     int             qid;	/* Current priority queue id. */
     time_t          nextqueue;	/* Next time to queue for run. */
     time_t	    lastqueue;	/* Last time queued for run. */
@@ -92,8 +92,8 @@ static int      maxqueue;	/* Max queue events (dynamically re-sized). */
 static int      running;
 static int  	shutdownPending;
 static Ns_Thread schedThread;
-static int nThreads;
-static int nIdleThreads;
+static intptr_t nThreads;
+static intptr_t nIdleThreads;
 static Event *threadEventPtr;
 static Ns_Thread *eventThreads;
 
@@ -310,10 +310,11 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
 	    if (nextId < 0) {
 	    	nextId = 0;
 	    }
-	    ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, (char *) id, &new);
+	    ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable,
+                                         (char *)(intptr_t) id, &new);
 	} while (!new);
 	Tcl_SetHashValue(ePtr->hPtr, ePtr);
-	ePtr->id = (unsigned int)id;
+	ePtr->id = id;
 	QueueEvent(ePtr, &now);
     }
     Ns_MutexUnlock(&lock);
@@ -355,7 +356,7 @@ Ns_Cancel(int id)
     cancelled = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-    	hPtr = Tcl_FindHashEntry(&eventsTable, (char *) id);
+    	hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
     	if (hPtr != NULL) {
 	    ePtr = Tcl_GetHashValue(hPtr);
 	    Tcl_DeleteHashEntry(hPtr);
@@ -400,7 +401,7 @@ Ns_Pause(int id)
     paused = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-    	hPtr = Tcl_FindHashEntry(&eventsTable, (char *) id);
+    	hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
     	if (hPtr != NULL) {
 	    ePtr = Tcl_GetHashValue(hPtr);
 	    if (!(ePtr->flags & NS_SCHED_PAUSED)) {
@@ -444,7 +445,7 @@ Ns_Resume(int id)
     resumed = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-    	hPtr = Tcl_FindHashEntry(&eventsTable, (char *) id);
+    	hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
     	if (hPtr != NULL) {
 	    ePtr = Tcl_GetHashValue(hPtr);
 	    if ((ePtr->flags & NS_SCHED_PAUSED)) {
@@ -655,11 +656,12 @@ DeQueueEvent(int k)
 static void
 EventThread(void *arg)
 {
+    intptr_t    threadn = (intptr_t) arg;
     Event          *ePtr;
     char	    idle[20];
     time_t	    now;
 
-    sprintf(idle, "-sched:idle%d-", (int) arg);
+    sprintf(idle, "-sched:idle%" PRIdPTR "-", threadn);
     Ns_ThreadSetName(idle);
     Ns_Log(Notice, "starting");
     Ns_MutexLock(&lock);
@@ -677,8 +679,8 @@ EventThread(void *arg)
 	}
 	--nIdleThreads;
 	Ns_MutexUnlock(&lock);
-    	Ns_ThreadSetName("-sched:%u-", ePtr->id);
-    	(*ePtr->proc) (ePtr->arg, (int)ePtr->id);
+    	Ns_ThreadSetName("-sched:%d-", ePtr->id);
+    	(*ePtr->proc) (ePtr->arg, ePtr->id);
     	Ns_ThreadSetName(idle);
     	time(&now);
     	Ns_MutexLock(&lock);
@@ -718,7 +720,7 @@ static void
 FreeEvent(Event *ePtr)
 {
     if (ePtr->deleteProc != NULL) {
-	(*ePtr->deleteProc) (ePtr->arg, (int)ePtr->id);
+        (*ePtr->deleteProc) (ePtr->arg, ePtr->id);
     }
     ns_free(ePtr);
 }
@@ -804,7 +806,7 @@ SchedThread(void *ignored)
 	    ePtr->laststart = now;
 	    ePtr->flags |= NS_SCHED_RUNNING;
 	    Ns_MutexUnlock(&lock);
-	    (*ePtr->proc) (ePtr->arg, (int)ePtr->id);
+	    (*ePtr->proc) (ePtr->arg, ePtr->id);
 	    time(&now);
 	    elapsed = (int) difftime(now, ePtr->laststart);
 	    if (elapsed > nsconf.sched.maxelapsed) {
@@ -889,7 +891,7 @@ NsGetScheduled(Tcl_DString *dsPtr)
     while (hPtr != NULL) {
 	ePtr = Tcl_GetHashValue(hPtr);
 	Tcl_DStringStartSublist(dsPtr);
-	sprintf(buf, "%u %d %d %ld %ld %ld %ld",
+	sprintf(buf, "%d %d %d %ld %ld %ld %ld",
 		ePtr->id, ePtr->flags, ePtr->interval, ePtr->nextqueue,
 		ePtr->lastqueue, ePtr->laststart, ePtr->lastend);
 	Tcl_DStringAppend(dsPtr, buf, -1);

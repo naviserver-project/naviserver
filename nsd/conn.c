@@ -1920,7 +1920,7 @@ MakeConnChannel(Ns_Conn *conn, int spliceout)
      * Wrap a Tcl TCP channel arround the socket.
      */
 
-    chan = Tcl_MakeTcpClientChannel((ClientData)sock);
+    chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
     if (chan == NULL && spliceout) {
         connPtr->sockPtr->sock = sock;
     }

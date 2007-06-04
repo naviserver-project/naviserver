@@ -1939,7 +1939,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     }
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
     cntPtr = Tcl_CreateHashEntry(&idataPtr->cnts, (char *) poolPtr, &new);
-    if ((int)Tcl_GetHashValue(cntPtr) > 0) {
+    if ((intptr_t) Tcl_GetHashValue(cntPtr) > 0) {
         err = EDeadlock;
         goto errout;
     }
@@ -1990,7 +1990,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
      * Set total owned count and create handle ids.
      */
 
-    Tcl_SetHashValue(cntPtr, nwant);
+    Tcl_SetHashValue(cntPtr, (ClientData)(intptr_t) nwant);
     proxyPtr = firstPtr;
     while (proxyPtr != NULL) {
         idPtr = Tcl_CreateHashEntry(&idataPtr->ids, proxyPtr->id, &new);
@@ -2850,7 +2850,8 @@ FreePool(Pool *poolPtr)
 static void
 PushProxy(Proxy *proxyPtr)
 {
-    Pool  *poolPtr = proxyPtr->poolPtr;
+    Pool     *poolPtr = proxyPtr->poolPtr;
+    intptr_t  nhave;
 
     /*
      * Clears the proxy for the next use
@@ -2863,9 +2864,9 @@ PushProxy(Proxy *proxyPtr)
      */
 
     if (proxyPtr->cntPtr) {
-        int nhave = (int)Tcl_GetHashValue(proxyPtr->cntPtr);
+        nhave = (intptr_t) Tcl_GetHashValue(proxyPtr->cntPtr);
         nhave--;
-        Tcl_SetHashValue(proxyPtr->cntPtr, nhave);
+        Tcl_SetHashValue(proxyPtr->cntPtr, (ClientData) nhave);
         if (proxyPtr->idPtr) {
             Tcl_DeleteHashEntry(proxyPtr->idPtr);
             proxyPtr->idPtr = NULL;

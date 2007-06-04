@@ -1,3 +1,148 @@
+2007-06-04  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/nsthread.h:
+	* nsthread/thread.c:
+	* nsthread/pthread.c:
+	* nsthread/winthread.c:
+	* nsthread/tls.c:
+	* nsthread/cslock.c:
+	* nsthread/nsthreadtest.c:
+	* nsd/tclthread.c:
+	* nsd/log.c:
+	* nsd/tclinit.c: Convert Ns_ThreadId() to return a uintptr_t, that is,
+	an integral type which is as long as a pointer, so that it can
+	accurately hold an opaque pthread_t whether it is implemented as an
+	integer type, a pointer, and on 32/64 bit machines. This fixes many
+	pointer/integer of different size warnings.
+
+	Log messages now print the thread ID in hex, for brevity.
+
+	NB: depending on the architecture of your machine, the ABI may have
+	changed and require a recompile.
+
+	* nsthread/signal.c: Include pthread.h for definition of
+	pthread_sigmask() on FreeBSD.
+
+	* nsd/binder.c:
+	* nsd/cls.c:
+	* nsd/conn.c:
+	* nsd/limits.c:
+	* nsd/listen.c:
+	* nsd/returnresp.c:
+	* nsd/sched.c:
+	* nsd/sls.c:
+	* nsd/sockcallback.c:
+	* nsd/tclfile.c:
+	* nsd/tclobjv.c:
+	* nsd/tclsock.c:
+	* nsdb/dbinit.c:
+	* nsperm/nsperm.c:
+	* nsproxy/nsproxylib.c: Add a lot of ugly casting when passing int's
+	through void pointer storage (mainly Tcl hash tables) to prevent
+	compiler warnings when an int and a pointer are not the same size.
+
+2007-06-02  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/ns_nsv.test: Match using globbing to handle different Tcl
+	version error messages.
+
+	* nsd/adpparse.c: Remove redundant code which reads an uninitialised
+	variable.
+
+2007-05-25  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/server.c:
+	* tcl/config.tcl: Move ADP and Tcl page mapping, with existing
+	semantics, from C to Tcl.
+
+	* include/ns.h:
+	* nsd/config.c: Add Ns_ConfigFlags() to simplify setting flag options.
+
+	* nsd/nsd.h:
+	* nsd/server.c: Cleanup ADP config parsing with Ns_ConfigFlags(). Remove
+	some config variables which aren't being used any more.
+
+	* nsd/nsd.h:
+	* nsd/adpeval.c:
+	* nsd/server.c:
+	* nsd/nsconf.c: Move the ADP config into a ServerInitProc callback
+	within the ADP code.
+
+	* tests/ns_gifsize.test:
+	* tests/ns_jpegsize.test: Remove redundant checks for sample files. Be
+	more explicit about where the files live in the file system.
+	* tests/ns_info.test: Be a little less brittle when checking the binary
+	name.
+	tests/timeout.test: Temporarily mark a timeout test knownBug until I add
+	support to the ADP code.
+	* tests/test.nscfg: Add a log-level Devel placeholder (default off),
+	which is handy for checking config values etc.
+
+2007-05-24  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * sample-config.tcl.in
+        * nsd-config.tcl:
+        * doc/src/tcl-lib-file.man: Updated config parameter because of
+        dropping file.tcl. Parameters moved under ns/server/servername/adp now.
+
+        * Makefile: Updated build-doc target to show all output for testing purposes,
+        many .man files were broken but build-doc never show this.
+        * doc/src/ns_register.man: Consolidated all ns_register_xxx commans into one file
+        * doc/src/ns_schedule.man: Consolidated all ns_schedule_xxx commans into one file
+
+2007-05-24  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tcl/file.tcl:
+	* tests/test.nscfg: Remove old implementation of Tcl pages which, due to
+	initialisation order, was masking new ADP implementation.
+
+	* tests/adp.test:
+	* tests/testserver/pages/helloworld.tcl: Add basic test of Tcl page
+	processing, short and long pages.
+
+	* nsd/adpeval.c:
+	* nsd/adpparse.c:
+	* nsd/adprequest.c:
+	* nsd/adpcmds.c: Remove tabs and re-indent.
+
+	* nsd/connio.c:
+	* tests/encoding.test: Use a more robust check for buffer full condition
+	as Tcl may not fill it all the way when it complains of lack of space.
+	Fixes bug reported by Neophytos Demetriou, Thanks.
+
+	* tcl/limits.tcl: (removed)
+	* tcl/config.tcl: (new) Move the limits config code into the more
+	generic config.tcl where other code can be added.
+
+	* nsd/server.c: NsAdpProc and NsTclAdpProc expect Ns_Time pointers as
+	callback args to control output caching but were being passed NsServer
+	pointers.
+	* nsd/proc.c: Handle NULL Ns_Time args.
+
+	* incdlue/ns.h:
+	* nsd/nsd.h:
+	* nsd/server.c:
+	* nsd/adprequest.c:
+	* nsd/fastpath.c:
+	* nsd/tclrequest.c:
+	* nsd/proc.c: Make the ADP and Tcl page handlers public (Ns_AdpPageProc,
+	Ns_TclPageProc) and use them directly from ns_register_adp etc. Clean up
+	arg handling -- get the NsServer via the Conn rather then explicitly
+	passing it around.
+
+	* nsd/tclrequest.c (NsTclRegisterAdpObjCmd): Add -cache option to
+	ns_register_adp to enable output caching.
+	* tests/testserver/pages/helloworld.adp:
+	* tests/adp.test: Add simple plain ADP page test.
+
+	* nsd/nsd.h:
+	* nsd/tclrequest.c:
+	* nsd/tclcmds.c:
+	* nsd/proc.c:
+	* tests/adp.test: Add new command ns_register_tcl, analogous to
+	ns_register_adp. Make mapped pages respect the -cache option. Allow
+	relative path names for mapped pages.
+
 2007-05-23  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/encoding.test: Uncomment tests 3.5 and 3.6 and mark as knownBug

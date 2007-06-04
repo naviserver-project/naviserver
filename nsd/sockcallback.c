@@ -337,7 +337,7 @@ SockCallbackThread(void *ignored)
         while (cbPtr != NULL) {
             nextPtr = cbPtr->nextPtr;
             if (cbPtr->when & NS_SOCK_CANCEL) {
-                hPtr = Tcl_FindHashEntry(&table, (char *) cbPtr->sock);
+                hPtr = Tcl_FindHashEntry(&table, (char *)(intptr_t) cbPtr->sock);
                 if (hPtr != NULL) {
                     ns_free(Tcl_GetHashValue(hPtr));
                     Tcl_DeleteHashEntry(hPtr);
@@ -347,7 +347,7 @@ SockCallbackThread(void *ignored)
                 }
                 ns_free(cbPtr);
             } else {
-                hPtr = Tcl_CreateHashEntry(&table, (char *) cbPtr->sock, &new);
+                hPtr = Tcl_CreateHashEntry(&table, (char *)(intptr_t) cbPtr->sock, &new);
                 if (!new) {
                     ns_free(Tcl_GetHashValue(hPtr));
                 }
