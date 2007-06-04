@@ -35,6 +35,7 @@
  */
 
 #include "thread.h"
+#include <pthread.h>
 
 NS_RCSID("@(#) $Header$");
 
