@@ -96,7 +96,7 @@ ns_param	nsproxy			${homedir}/bin/nsproxy.so
 
 ns_section	"ns/parameters"
 ns_param	home			$homedir
-ns_param	debug			false
+ns_param	logdebug		false
 
 # Where all shared Tcl modules are located
 ns_param        tcllibrary              ${homedir}/tcl

@@ -1,3 +1,9 @@
+2007-06-07  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd-config.tcl:
+	* sample-config.tcl.in: Updated config parameters
+	debug into logdebug
+
 2007-06-04  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/nsthread.h:

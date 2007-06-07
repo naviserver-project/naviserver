@@ -9,7 +9,7 @@ ns_param        nsdb            	nsdb.so
 
 ns_section	"ns/parameters"
 ns_param	home			$home
-ns_param	debug			true
+ns_param	logdebug		true
 ns_param	logroll			true
 ns_param	tcllibrary		${home}/tcl
 ns_param	serverlog		${home}/logs/nsd.log
