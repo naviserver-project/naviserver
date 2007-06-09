@@ -186,10 +186,10 @@ Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
                   int min, int max)
 {
     CONST char *s;
-    char defstr[16];
+    char defstr[TCL_INTEGER_SPACE];
     int value;
 
-    sprintf(defstr, "%d", def);
+    snprintf(defstr, sizeof(defstr), "%d", def);
     s = ConfigGet(section, key, 0, defstr);
     if (s != NULL && Ns_StrToInt(s, &value) == NS_OK) {
         Ns_Log(Dev, "config: %s:%s value=%d min=%d max=%d default=%d (int)",
@@ -635,7 +635,6 @@ NsConfigRead(CONST char *file)
 void
 NsConfigEval(CONST char *config, int argc, char **argv, int optind)
 {
-    char buf[20];
     Tcl_Interp *interp;
     Ns_Set     *set;
     int i;
@@ -651,10 +650,8 @@ NsConfigEval(CONST char *config, int argc, char **argv, int optind)
     for (i = 0; argv[i] != NULL; ++i) {
         Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
-    sprintf(buf, "%d", argc);
-    Tcl_SetVar(interp, "argc", buf, TCL_GLOBAL_ONLY);
-    sprintf(buf, "%d", optind);
-    Tcl_SetVar(interp, "optind", buf, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optind), TCL_GLOBAL_ONLY);
     if (Tcl_Eval(interp, config) != TCL_OK) {
         Ns_TclLogError(interp);
         Ns_Fatal("config error");

@@ -67,7 +67,7 @@ NsCreatePidFile(char *procname)
     Tcl_Obj     *path;
     Tcl_Channel  chan;
     int          towrite;
-    char         buf[10];
+    char         buf[TCL_INTEGER_SPACE + 1];
 
     path = GetFile(procname);
     chan = Tcl_OpenFileChannel(NULL, Tcl_GetString(path), "w", 0644);
@@ -79,7 +79,7 @@ NsCreatePidFile(char *procname)
     	Ns_Log(Error, "pidfile: failed to set channel option '%s': '%s'",
                Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else {
-        sprintf(buf, "%d\n", nsconf.pid);
+        snprintf(buf, sizeof(buf), "%d\n", nsconf.pid);
         towrite = strlen(buf);
         if (Tcl_WriteChars(chan, buf, towrite) != towrite) {
             Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'",

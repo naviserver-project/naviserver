@@ -258,7 +258,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     NsInterp    *itPtr = arg;
     NsServer    *servPtr = itPtr->servPtr;
     ConnPool    *poolPtr = servPtr->pools.defaultPtr;
-    char         buf[100], *pool;
+    char        *pool;
     Tcl_DString ds;
 
     static CONST char *opts[] = {
@@ -315,16 +315,10 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case SThreadsIdx:
-        sprintf(buf, "min %d", poolPtr->threads.min);
-        Tcl_AppendElement(interp, buf);
-        sprintf(buf, "max %d", poolPtr->threads.max);
-        Tcl_AppendElement(interp, buf);
-        sprintf(buf, "current %d", poolPtr->threads.current);
-        Tcl_AppendElement(interp, buf);
-        sprintf(buf, "idle %d", poolPtr->threads.idle);
-        Tcl_AppendElement(interp, buf);
-        sprintf(buf, "stopping 0");
-        Tcl_AppendElement(interp, buf);
+        Ns_TclPrintfResult(interp,
+            "min %d max %d current %d idle %d stopping 0",
+            poolPtr->threads.min, poolPtr->threads.max,
+            poolPtr->threads.current, poolPtr->threads.idle);
         break;
 
     case SActiveIdx:
@@ -691,7 +685,7 @@ ConnRun(Conn *connPtr)
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
     Tcl_DStringInit(&connPtr->queued);
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
-    sprintf(connPtr->idstr, "cns%d", connPtr->id);
+    snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%d", connPtr->id);
     connPtr->outputheaders = Ns_SetCreate(NULL);
     if (connPtr->request->version < 1.0) {
         conn->flags |= NS_CONN_SKIPHDRS;
@@ -881,8 +875,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
      * An annoying race condition can be lethal here.
      */
     if (connPtr != NULL) {
-        sprintf(buf, "%d", connPtr->id);
-        Tcl_DStringAppendElement(dsPtr, buf);
+        Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
         Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((Ns_Conn *) connPtr));
         Tcl_DStringAppendElement(dsPtr, state);
 
@@ -901,9 +894,9 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
         Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
         Ns_GetTime(&now);
         Ns_DiffTime(&now, &connPtr->startTime, &diff);
-        sprintf(buf, "%ld.%ld", diff.sec, diff.usec);
+        snprintf(buf, sizeof(buf), "%jd.%ld", (intmax_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
-        sprintf(buf, "%d", connPtr->nContentSent);
+        snprintf(buf, sizeof(buf), "%d", connPtr->nContentSent);
         Tcl_DStringAppendElement(dsPtr, buf);
     }
     Tcl_DStringEndSublist(dsPtr);

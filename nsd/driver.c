@@ -1849,7 +1849,7 @@ SockSendResponse(Sock *sockPtr, int code, char *msg)
         }
         break;
     }
-    sprintf(header,"HTTP/1.0 %d ", code);
+    snprintf(header, sizeof(header),"HTTP/1.0 %d ", code);
     iov[0].iov_base = header;
     iov[0].iov_len = strlen(header);
     iov[1].iov_base = response;

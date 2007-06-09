@@ -1881,9 +1881,9 @@ SetOpt(char *str, char **optPtr)
 static void
 AppendInt(Tcl_Interp *interp, CONST char *flag, int i)
 {
-    char buf[20];
+    char buf[TCL_INTEGER_SPACE];
 
-    sprintf(buf, "%d", i);
+    snprintf(buf, sizeof(buf), "%d", i);
     AppendStr(interp, flag, buf);
 }
 
@@ -2138,36 +2138,21 @@ static void
 FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 {
     Tcl_DString ds;
-    Tcl_Obj *stampObj;
-    char buf[32];
 
     Tcl_DStringInit(&ds);
+
     Tcl_DStringGetResult(interp, &ds);
+
     Tcl_DStringStartSublist(&ds);
+    Ns_DStringPrintf(&ds, "handle %s slave %d start %jd:%ld script",
+                     proxyPtr->id,
+                     proxyPtr->slavePtr ? proxyPtr->slavePtr->pid : 0,
+                     (intmax_t) proxyPtr->when.sec, proxyPtr->when.usec);
 
-    Tcl_DStringAppendElement(&ds, "handle");
-    Tcl_DStringAppendElement(&ds, proxyPtr->id);
-
-    Tcl_DStringAppendElement(&ds, "slave");
-    if (proxyPtr->slavePtr != NULL) {
-        sprintf(buf, "%d", (int) proxyPtr->slavePtr->pid);
-        Tcl_DStringAppendElement(&ds, buf);
-    } else {
-        Tcl_DStringAppendElement(&ds, "0");
-    }
-
-    Tcl_DStringAppendElement(&ds, "start");
-    stampObj = Tcl_NewObj();
-    Ns_TclSetTimeObj(stampObj, &proxyPtr->when);
-    Ns_DStringAppendElement(&ds, Tcl_GetString(stampObj));
-    Tcl_DecrRefCount(stampObj);
-
-    Tcl_DStringAppendElement(&ds, "script");
-    Tcl_DStringAppendElement(&ds, Tcl_DStringValue(&proxyPtr->in)+sizeof(Req));
-
+    Tcl_DStringAppendElement(&ds, Tcl_DStringValue(&proxyPtr->in) + sizeof(Req));
     Tcl_DStringEndSublist(&ds);
+
     Tcl_DStringResult(interp, &ds);
-    Tcl_DStringFree(&ds);
 }
 
 
@@ -2264,7 +2249,8 @@ CreateProxy(Pool *poolPtr)
     Proxy *proxyPtr;
 
     proxyPtr = ns_calloc(1, sizeof(Proxy));
-    sprintf(proxyPtr->id, "%s-%d", poolPtr->name, poolPtr->nextid++);
+    snprintf(proxyPtr->id, sizeof(proxyPtr->id), "%s-%d",
+             poolPtr->name, poolPtr->nextid++);
     proxyPtr->poolPtr = poolPtr;
     Tcl_DStringInit(&proxyPtr->in);
     Tcl_DStringInit(&proxyPtr->out);

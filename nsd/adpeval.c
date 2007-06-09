@@ -782,26 +782,30 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
     FileKey        *keyPtr;
-    char            buf[200];
+    Ns_DString      ds;
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
     Page           *pagePtr;
+
+    Ns_DStringInit(&ds);
 
     Ns_MutexLock(&servPtr->adp.pagelock);
     hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
     while (hPtr != NULL) {
         pagePtr = Tcl_GetHashValue(hPtr);
         keyPtr = (FileKey *) Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
-        Tcl_AppendElement(interp, pagePtr->file);
-        sprintf(buf, "dev %ld ino %ld mtime %ld refcnt %d evals %d "
-                "size %ld blocks %d scripts %d",
-                (long) keyPtr->dev, (long) keyPtr->ino, (long) pagePtr->mtime,
-                pagePtr->refcnt, pagePtr->evals, (long) pagePtr->size,
-                pagePtr->code.nblocks, pagePtr->code.nscripts);
-        Tcl_AppendElement(interp, buf);
+        Ns_DStringPrintf(&ds, "{%s} "
+            "{dev %" PRIu64 " ino %" PRIu64 " mtime %jd "
+            "refcnt %d evals %d size %ju blocks %d scripts %d} ",
+            pagePtr->file,
+            (uint64_t) keyPtr->dev, (uint64_t) keyPtr->ino, (intmax_t) pagePtr->mtime,
+            pagePtr->refcnt, pagePtr->evals, (uintmax_t) pagePtr->size,
+            pagePtr->code.nblocks, pagePtr->code.nscripts);
         hPtr = Tcl_NextHashEntry(&search);
     }
     Ns_MutexUnlock(&servPtr->adp.pagelock);
+
+    Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;
 }
@@ -1176,23 +1180,23 @@ AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
     Tcl_Interp *interp = itPtr->interp;
     int         level  = itPtr->adp.debugLevel;
     char       *file   = Tcl_GetString(itPtr->adp.framePtr->objv[0]);
-    char        buf[10], debugfile[255];
+    char        debugfile[255];
     Ns_DString  ds;
     int         code, fd;
 
     code = TCL_ERROR;
     Ns_DStringInit(&ds);
-    sprintf(buf, "%d", level);
-    Ns_DStringVarAppend(&ds,
-                        "#\n"
-                        "# level: ", buf, "\n", NULL);
-    sprintf(buf, "%d", nscript);
-    Ns_DStringVarAppend(&ds,
-                        "# chunk: ", buf, "\n"
-                        "# file:  ", file, "\n"
-                        "#\n\n", NULL);
+
+    Ns_DStringPrintf(&ds, "#\n"
+                     "# level: %d\n"
+                     "# chunk: %d\n"
+                     "# file: %s\n"
+                     "#\n\n", level, nscript, file);
     Ns_DStringNAppend(&ds, ptr, len);
-    sprintf(debugfile, P_tmpdir "/adp%d.%d.XXXXXX", level, nscript);
+
+    snprintf(debugfile, sizeof(debugfile),
+             P_tmpdir "/adp%d.%d.XXXXXX",
+             level, nscript);
     if (mktemp(debugfile) == NULL) {
         Tcl_SetResult(interp, "could not create adp debug file", TCL_STATIC);
     } else {

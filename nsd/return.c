@@ -525,7 +525,7 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
     Conn *connPtr = (Conn *) conn;
     char strlength[TCL_INTEGER_SPACE];
 
-    sprintf(strlength, "%" TCL_LL_MODIFIER "d", length);
+    snprintf(strlength, sizeof(strlength), "%" TCL_LL_MODIFIER "d", length);
     connPtr->responseLength = length;
     Ns_ConnUpdateHeaders(conn, "Content-Length", strlength);
 }

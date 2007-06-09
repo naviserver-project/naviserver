@@ -108,7 +108,7 @@ static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 static LogClbk* AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free);
 static void     RemClbk(LogClbk *clbkPtr, int unlocked);
 
-static char* SeverityName(Ns_LogSeverity sev, char *buf);
+static void AppendSeverity(Ns_DString *dsPtr, Ns_LogSeverity sev);
 
 static LogCache* GetCache(void);
 static Ns_TlsCleanup FreeCache;
@@ -440,7 +440,7 @@ Ns_LogTime2(char *timeBuf, int gmt)
     Ns_Time now;
 
     Ns_GetTime(&now);
-    return strcpy(timeBuf, LogTime(GetCache(), &now, gmt));
+    return strncpy(timeBuf, LogTime(GetCache(), &now, gmt), 41);
 }
 
 
@@ -1284,7 +1284,6 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
             char *msg, int len)
 {
     Ns_DString *dsPtr  = (Ns_DString *)arg;
-    char       sevname[32];
 
     /*
      * Add the log stamp
@@ -1295,9 +1294,10 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%ld]", stamp->usec);
     }
-    Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ", Ns_InfoPid(),
-                     Ns_ThreadId(), Ns_ThreadGetName(),
-                     SeverityName(severity, sevname));
+    Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] ", Ns_InfoPid(),
+                     Ns_ThreadId(), Ns_ThreadGetName());
+    AppendSeverity(dsPtr, severity);
+    Ns_DStringAppend(dsPtr, ": ");
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(dsPtr, "\n    ");
     }
@@ -1381,7 +1381,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
          char *msg, int len)
 {
     int             ii, ret;
-    char            c, sevname[32];
+    char            c;
     void           *logfile = (void *)STDERR_FILENO;
     Tcl_Obj        *stamp;
     Ns_DString      ds;
@@ -1410,7 +1410,8 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
      */
 
     Ns_DStringAppend(&ds, cbPtr->script);
-    Ns_DStringAppendElement(&ds, SeverityName(severity, sevname));
+    Ns_DStringAppend(&ds, " ");
+    AppendSeverity(&ds, severity);
     Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
     Tcl_DecrRefCount(stamp);
     c = *(msg + len);
@@ -1442,12 +1443,12 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
 /*
  *----------------------------------------------------------------------
  *
- * SeverityName --
+ * AppendSeverity --
  *
- *      Returns string representation of the log severity
+ *      Append the severity name to the given dstring.
  *
  * Results:
- *      Pointer to a string with the string rep.
+ *      None.
  *
  * Side effects:
  *      None.
@@ -1455,18 +1456,13 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
  *----------------------------------------------------------------------
  */
 
-static char*
-SeverityName(Ns_LogSeverity severity, char *buf)
+static void
+AppendSeverity(Ns_DString *dsPtr, Ns_LogSeverity severity)
 {
-    char *severityStr;
-
     if (severity < (sizeof(logConfig) / sizeof(logConfig[0]))) {
-        severityStr = logConfig[severity].string;
+        Ns_DStringPrintf(dsPtr, "%s", logConfig[severity].string);
     } else {
-        severityStr = buf;
-        sprintf(buf, "Level%d", severity);
+        Ns_DStringPrintf(dsPtr, "Level%d", severity);
     }
-
-    return severityStr;
 }
 

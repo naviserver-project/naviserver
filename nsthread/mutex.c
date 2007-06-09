@@ -85,7 +85,7 @@ Ns_MutexInit(Ns_Mutex *mutex)
     mutexPtr->nextPtr = firstMutexPtr;
     firstMutexPtr = mutexPtr;
     mutexPtr->id = nextid++;
-    sprintf(mutexPtr->name, "mu%d", mutexPtr->id);
+    snprintf(mutexPtr->name, sizeof(mutexPtr->name), "mu%u", mutexPtr->id);
     Ns_MasterUnlock();
     *mutex = (Ns_Mutex) mutexPtr;
 }
@@ -288,13 +288,14 @@ Ns_MutexList(Tcl_DString *dsPtr)
     Ns_MasterLock();
     mutexPtr = firstMutexPtr;
     while (mutexPtr != NULL) {
-	Tcl_DStringStartSublist(dsPtr);
-	Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
-	Tcl_DStringAppendElement(dsPtr, "");
-	sprintf(buf, " %d %lu %lu", mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy);
-	Tcl_DStringAppend(dsPtr, buf, -1);
-	Tcl_DStringEndSublist(dsPtr);
-	mutexPtr = mutexPtr->nextPtr;
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
+        Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
+        snprintf(buf, sizeof(buf), " %u %lu %lu", mutexPtr->id,
+                 mutexPtr->nlock, mutexPtr->nbusy);
+        Tcl_DStringAppend(dsPtr, buf, -1);
+        Tcl_DStringEndSublist(dsPtr);
+        mutexPtr = mutexPtr->nextPtr;
     }
     Ns_MasterUnlock();
 }
@@ -320,13 +321,13 @@ void
 NsMutexInitNext(Ns_Mutex *mutex, char *prefix, unsigned int *nextPtr)
 {
     unsigned int id;
-    char buf[20];
+    char buf[NS_THREAD_NAMESIZE];
 
     Ns_MasterLock();
     id = *nextPtr;
     *nextPtr = id + 1;
     Ns_MasterUnlock();
-    sprintf(buf, "ns:%s:%u", prefix, id);
+    snprintf(buf, sizeof(buf), "ns:%s:%u", prefix, id);
     Ns_MutexInit(mutex);
     Ns_MutexSetName(mutex, buf);
 }

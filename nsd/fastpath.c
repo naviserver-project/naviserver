@@ -1032,7 +1032,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
 {
     struct iovec bufs[MAX_RANGES*3], *iovPtr = bufs;
     int          status, i, result = NS_ERROR;
-    char         boundary[32];
+    char         boundary[TCL_INTEGER_SPACE];
     time_t       now = time(0);
     Ns_DString   ds;
     RangeOffset *roPtr;
@@ -1092,7 +1092,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
           */
 
         Ns_DStringInit(&ds);
-        sprintf(boundary,"%lu", now);
+        snprintf(boundary, sizeof(boundary), "%jd", (intmax_t) now);
         Ns_ConnPrintfHeaders(conn, "Content-type",
                              "multipart/byteranges; boundary=%s", boundary);
         /*

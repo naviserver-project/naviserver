@@ -315,13 +315,14 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	    ns_free(handlesPtrPtr);
 	}
 	if (result != NS_TIMEOUT && result != NS_OK) {
-            sprintf(tmpbuf, "%d", nhandles);
-            Tcl_AppendResult(interp, "could not allocate ", tmpbuf,
-	    	" handle", nhandles > 1 ? "s" : "", " from pool \"",
-		pool, "\"", NULL);
-            return TCL_ERROR;
-        }
-        break;
+        Ns_TclPrintfResult(interp,
+            "could not allocate %d handle%s from pool \"%s\"",
+            nhandles,
+            nhandles > 1 ? "s" : "",
+            pool);
+        return TCL_ERROR;
+    }
+    break;
     }
 
     case EXCEPTION:
@@ -822,7 +823,7 @@ static int
 GetCsvObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     int             ncols, inquote, quoted, blank;
-    char            c, *p, buf[20], *delimiter = ",", *fileId, *varName;
+    char            c, *p, *delimiter = ",", *fileId, *varName;
     const char	   *result;
     Tcl_DString     line, cols, elem;
     Tcl_Channel	    chan;
@@ -926,8 +927,8 @@ loopstart:
     if (result == NULL) {
 	return TCL_ERROR;
     }
-    sprintf(buf, "%d", ncols);
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(ncols));
+
     return TCL_OK;
 }
 
@@ -991,7 +992,7 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle)
 
     next = idataPtr->dbs.numEntries;
     do {
-        sprintf(buf, "nsdb%x", next++);
+        snprintf(buf, sizeof(buf), "nsdb%x", next++);
         hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &new);
     } while (!new);
     Tcl_AppendElement(interp, buf);

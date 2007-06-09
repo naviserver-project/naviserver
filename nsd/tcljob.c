@@ -561,11 +561,12 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                  * Add the job to queue.
                  */
 
-                jobId = buf;
                 do {
-                    sprintf(jobId, "job%d", queuePtr->nextid++);
-                    hPtr = Tcl_CreateHashEntry(&queuePtr->jobs, jobId, &new);
+                    snprintf(buf, sizeof(buf), "job%d", queuePtr->nextid++);
+                    hPtr = Tcl_CreateHashEntry(&queuePtr->jobs, buf, &new);
                 } while (!new);
+
+                jobId = buf;
             }
 
             /*
@@ -1056,8 +1057,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             Ns_GetTime(&currentTime);
             Ns_MutexLock(&tp.queuelock);
-            snprintf(buf, 100, "queue_id_%lx_%lx",
-                     tp.nextQueueId++, (unsigned long) currentTime.sec);
+            snprintf(buf, sizeof(buf), "queue_id_%lx_%jx",
+                     tp.nextQueueId++, (intmax_t) currentTime.sec);
             Ns_MutexUnlock(&tp.queuelock);
             Tcl_SetResult(interp, buf, TCL_VOLATILE);
         }

@@ -956,7 +956,7 @@ opendir(char *pathname)
         errno = EINVAL;
         return NULL;
     }
-    sprintf(pattern, "%s/*", pathname);
+    snprintf(pattern, sizeof(pattern), "%s/*", pathname);
     sPtr = ns_malloc(sizeof(Search));
     sPtr->handle = _findfirst(pattern, &sPtr->fdata);
     if (sPtr->handle == -1) {

@@ -206,7 +206,7 @@ NsThreadMain(void *arg)
 
     thrPtr->tid = Ns_ThreadId();
     Ns_TlsSet(&key, thrPtr);
-    sprintf(name, "-thread:%" PRIxPTR "-", thrPtr->tid);
+    snprintf(name, sizeof(name), "-thread:%" PRIxPTR "-", thrPtr->tid);
     Ns_ThreadSetName(name);
     (*thrPtr->proc) (thrPtr->arg);
 }

@@ -658,10 +658,10 @@ EventThread(void *arg)
 {
     intptr_t    threadn = (intptr_t) arg;
     Event          *ePtr;
-    char	    idle[20];
+    char	    idle[32];
     time_t	    now;
 
-    sprintf(idle, "-sched:idle%" PRIdPTR "-", threadn);
+    snprintf(idle, sizeof(idle), "-sched:idle%" PRIdPTR "-", threadn);
     Ns_ThreadSetName(idle);
     Ns_Log(Notice, "starting");
     Ns_MutexLock(&lock);
@@ -882,22 +882,18 @@ NsGetScheduled(Tcl_DString *dsPtr)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Event *ePtr;
-    time_t now;
-    char buf[100];
 
-    time(&now);
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&eventsTable, &search);
     while (hPtr != NULL) {
-	ePtr = Tcl_GetHashValue(hPtr);
-	Tcl_DStringStartSublist(dsPtr);
-	sprintf(buf, "%d %d %d %ld %ld %ld %ld",
-		ePtr->id, ePtr->flags, ePtr->interval, ePtr->nextqueue,
-		ePtr->lastqueue, ePtr->laststart, ePtr->lastend);
-	Tcl_DStringAppend(dsPtr, buf, -1);
-	Ns_GetProcInfo(dsPtr, (void *) ePtr->proc, ePtr->arg);
-	Tcl_DStringEndSublist(dsPtr);
-	hPtr = Tcl_NextHashEntry(&search);
+        ePtr = Tcl_GetHashValue(hPtr);
+        Tcl_DStringStartSublist(dsPtr);
+        Ns_DStringPrintf(dsPtr, "%d %d %d %ld %ld %ld %ld",
+            ePtr->id, ePtr->flags, ePtr->interval, ePtr->nextqueue,
+            ePtr->lastqueue, ePtr->laststart, ePtr->lastend);
+        Ns_GetProcInfo(dsPtr, ePtr->proc, ePtr->arg);
+        Tcl_DStringEndSublist(dsPtr);
+        hPtr = Tcl_NextHashEntry(&search);
     }
     Ns_MutexUnlock(&lock);
 }

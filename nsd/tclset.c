@@ -661,7 +661,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
     Tcl_HashEntry  *hPtr;
     int             new, next;
     unsigned char   type;
-    char	    buf[20];
+    char            buf[TCL_INTEGER_SPACE + 1];
 
     if (flags & NS_TCL_SET_SHARED) {
 	/*
@@ -693,7 +693,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
     
     next = tablePtr->numEntries;
     do {
-        sprintf(buf, "%c%u", type, next);
+        snprintf(buf, sizeof(buf), "%c%u", type, next);
 	++next;
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &new);
     } while (!new);

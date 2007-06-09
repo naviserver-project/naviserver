@@ -328,7 +328,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 {
     Log         *logPtr = arg;
     CONST char **h;
-    char        *p, *user, buf[100];
+    char        *p, *user;
     int          n, status;
     Ns_DString   ds;
     Ns_Time      now, diff;
@@ -384,11 +384,12 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (!(logPtr->flags & LOG_FMTTIME)) {
-        sprintf(buf, "[%ld]", (long)time(NULL));
+        Ns_DStringPrintf(&ds, "[%jd]", (intmax_t) time(NULL));
     } else {
+        char buf[41]; /* Big enough for Ns_LogTime(). */
         Ns_LogTime(buf);
+        Ns_DStringAppend(&ds, buf);
     }
-    Ns_DStringAppend(&ds, buf);
 
     /*
      * Append the request line plus query data (if configured)
@@ -409,8 +410,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     n = Ns_ConnResponseStatus(conn);
-    sprintf(buf, "%d %u ", n ? n : 200, Ns_ConnContentSent(conn));
-    Ns_DStringAppend(&ds,buf);
+    Ns_DStringPrintf(&ds, "%d %d", n ? n : 200, Ns_ConnContentSent(conn));
 
     /*
      * Append the referer and user-agent headers (if any)
@@ -435,8 +435,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_REQTIME)) {
-        sprintf(buf, " %d.%06ld", (int)diff.sec, diff.usec);
-        Ns_DStringAppend(&ds, buf);
+        Ns_DStringPrintf(&ds, " %jd.%06ld", (intmax_t) diff.sec, diff.usec);
     }
 
     /*

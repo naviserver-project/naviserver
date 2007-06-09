@@ -483,39 +483,39 @@ SockCallbackThread(void *ignored)
 void
 NsGetSockCallbacks(Tcl_DString *dsPtr)
 {
-    Callback     *cbPtr;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    char buf[16];
+    Callback       *cbPtr;
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+    char            buf[TCL_INTEGER_SPACE];
 
     Ns_MutexLock(&lock);
     if (running) {
-	hPtr = Tcl_FirstHashEntry(&table, &search);
-	while (hPtr != NULL) {
-	    cbPtr = Tcl_GetHashValue(hPtr);
-	    Tcl_DStringStartSublist(dsPtr);
-	    sprintf(buf, "%d", (int) cbPtr->sock);
-	    Tcl_DStringAppendElement(dsPtr, buf);
-	    Tcl_DStringStartSublist(dsPtr);
-	    if (cbPtr->when & NS_SOCK_READ) {
-		Tcl_DStringAppendElement(dsPtr, "read");
-	    }
-	    if (cbPtr->when & NS_SOCK_WRITE) {
-		Tcl_DStringAppendElement(dsPtr, "write");
-	    }
-	    if (cbPtr->when & NS_SOCK_EXCEPTION) {
-		Tcl_DStringAppendElement(dsPtr, "exception");
-	    }
-	    if (cbPtr->when & NS_SOCK_EXIT) {
-		Tcl_DStringAppendElement(dsPtr, "exit");
-	    }
-	    Tcl_DStringEndSublist(dsPtr);
-	    Ns_GetProcInfo(dsPtr, (void *) cbPtr->proc, cbPtr->arg);
-            sprintf(buf, "%d", cbPtr->timeout);
+        hPtr = Tcl_FirstHashEntry(&table, &search);
+        while (hPtr != NULL) {
+            cbPtr = Tcl_GetHashValue(hPtr);
+            Tcl_DStringStartSublist(dsPtr);
+            snprintf(buf, sizeof(buf), "%d", (int) cbPtr->sock);
             Tcl_DStringAppendElement(dsPtr, buf);
-	    Tcl_DStringEndSublist(dsPtr);
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
+            Tcl_DStringStartSublist(dsPtr);
+            if (cbPtr->when & NS_SOCK_READ) {
+                Tcl_DStringAppendElement(dsPtr, "read");
+            }
+            if (cbPtr->when & NS_SOCK_WRITE) {
+                Tcl_DStringAppendElement(dsPtr, "write");
+            }
+            if (cbPtr->when & NS_SOCK_EXCEPTION) {
+                Tcl_DStringAppendElement(dsPtr, "exception");
+            }
+            if (cbPtr->when & NS_SOCK_EXIT) {
+                Tcl_DStringAppendElement(dsPtr, "exit");
+            }
+            Tcl_DStringEndSublist(dsPtr);
+            Ns_GetProcInfo(dsPtr, cbPtr->proc, cbPtr->arg);
+            snprintf(buf, sizeof(buf), "%d", cbPtr->timeout);
+            Tcl_DStringAppendElement(dsPtr, buf);
+            Tcl_DStringEndSublist(dsPtr);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
     }
     Ns_MutexUnlock(&lock);
 }

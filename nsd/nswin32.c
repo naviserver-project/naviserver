@@ -178,7 +178,7 @@ NsWin32ErrMsg(int err)
         msg = ns_malloc(100);
         Ns_TlsSet(&tls, msg);
     }
-    sprintf(msg, "win32 error code: %d", err);
+    snprintf(msg, 100, "win32 error code: %d", err);
 
     return msg;
 }
@@ -554,7 +554,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
         return NS_ERROR;
     }
 
-    sprintf(name, "MapObj-%s", Ns_ThreadGetName());
+    snprintf(name, sizeof(name), "MapObj-%s", Ns_ThreadGetName());
 
     mobj = CreateFileMapping(hndl,
                              NULL,

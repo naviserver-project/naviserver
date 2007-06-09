@@ -477,7 +477,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
 static void
 LogError(char *func, int h_errnop)
 {
-    char *h, *e, buf[20];
+    char *h, *e, buf[100];
 
     e = NULL;
     switch (h_errnop) {
@@ -506,7 +506,7 @@ LogError(char *func, int h_errnop)
 #endif
 
     default:
-        sprintf(buf, "unknown error #%d", h_errnop);
+        snprintf(buf, sizeof(buf), "unknown error #%d", h_errnop);
         h = buf;
     }
 

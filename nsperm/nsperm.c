@@ -163,7 +163,7 @@ Ns_ModuleInit(char *server, char *module)
 
     if (uskey < 0) {
 	double d;
-        char buf[32];
+        char buf[TCL_INTEGER_SPACE];
         Ns_CtxMD5 md5;
 	unsigned long result;
 	unsigned char sig[16];
@@ -177,7 +177,7 @@ Ns_ModuleInit(char *server, char *module)
 
 	/* There is no requirement to hash it but it won't hurt */
 	Ns_CtxMD5Init(&md5);
-	snprintf(buf, 20, "%ld", result);
+	snprintf(buf, sizeof(buf), "%lu", result);
 	Ns_CtxMD5Update(&md5, (unsigned char*)buf, strlen(buf));
 	Ns_CtxMD5Final(&md5, sig);
 	Ns_CtxString(sig, usdigest, 16);
@@ -1330,7 +1330,7 @@ CreateNonce(const char *privatekey, char **nonce, char *uri)
     Ns_DString ds;
     Ns_CtxMD5 md5;
     unsigned char sig[16];
-    char buf[33], tbuf[20];;
+    char buf[33];
     char bufcoded[1 + (4 * 48) / 2];
 
     if (!privatekey) {
@@ -1340,8 +1340,7 @@ CreateNonce(const char *privatekey, char **nonce, char *uri)
     now = time(NULL);
 
     Ns_DStringInit(&ds);
-    snprintf(tbuf, 20, "%ld", now);
-    Ns_DStringVarAppend(&ds, tbuf, ":", uri, ":", privatekey, NULL);
+    Ns_DStringPrintf(&ds, "%jd:%s:%s", (intmax_t) now, uri, privatekey);
 
     Ns_CtxMD5Init(&md5);
     Ns_CtxMD5Update(&md5, (unsigned char*)ds.string, (unsigned int)ds.length);
@@ -1350,9 +1349,9 @@ CreateNonce(const char *privatekey, char **nonce, char *uri)
 
     /* encode the current time and MD5 string into the nonce */
     Ns_DStringTrunc(&ds, 0);
-    snprintf(tbuf, 20, "%ld", now);
-    Ns_DStringVarAppend(&ds, tbuf, " ", buf, NULL);
-    Ns_HtuuEncode((unsigned char*)ds.string, (unsigned int)ds.length, bufcoded);
+    Ns_DStringPrintf(&ds, "%jd %s", (intmax_t) now, buf);
+    Ns_HtuuEncode((unsigned char*) ds.string, (unsigned int) ds.length,
+                  bufcoded);
 
     *nonce = ns_strdup(bufcoded);
 

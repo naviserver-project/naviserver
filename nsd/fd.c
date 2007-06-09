@@ -331,7 +331,7 @@ Ns_GetTemp(void)
 
     do {
         Ns_GetTime(&now);
-        sprintf(buf, "nstmp.%d.%d", (int) now.sec, (int) now.usec);
+        snprintf(buf, sizeof(buf), "nstmp.%jd.%ld", (intmax_t) now.sec, now.usec);
         path = Ns_MakePath(&ds, P_tmpdir, buf, NULL);
 #ifdef _WIN32
         fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);

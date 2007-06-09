@@ -1159,7 +1159,7 @@ NsTclAdpDebugCmd(ClientData arg, Tcl_Interp *interp, int argc,
                  char **argv)
 {
     NsInterp *itPtr = arg;
-    char     *host, *port, *procs, buf[20];
+    char     *host, *port, *procs;
 
     if (argc > 4) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -1173,8 +1173,7 @@ NsTclAdpDebugCmd(ClientData arg, Tcl_Interp *interp, int argc,
         Tcl_SetResult(interp, "could not initialize debugger", TCL_STATIC);
         return TCL_ERROR;
     }
-    sprintf(buf, "%d", itPtr->adp.debugLevel);
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(itPtr->adp.debugLevel));
 
     return TCL_OK;
 }

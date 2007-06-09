@@ -190,7 +190,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int run)
     int new, i;
     Tcl_HashEntry *hPtr;
     Http *httpPtr;
-    char buf[100], *url = NULL;
+    char buf[TCL_INTEGER_SPACE + 4], *url = NULL;
     char *method = "GET";
     Ns_Set *hdrPtr = NULL;
     Tcl_Obj *bodyPtr = NULL;
@@ -239,7 +239,7 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int run)
     }
     i = itPtr->https.numEntries;
     do {
-        sprintf(buf, "http%d", i++);
+        snprintf(buf, sizeof(buf), "http%d", i++);
         hPtr = Tcl_CreateHashEntry(&itPtr->https, buf, &new);
     } while (!new);
     Tcl_SetHashValue(hPtr, httpPtr);

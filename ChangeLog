@@ -5,6 +5,41 @@
 	* nsd/return.c: Use TCL_LL_MODIFIER to format Tcl_WideInt types to
 	prevent warnings on certain 64bit systems.
 
+	* include/nsthread.h:
+	* nscp/nscp.c:
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/config.c:
+	* nsd/dns.c:
+	* nsd/driver.c:
+	* nsd/fastpath.c:
+	* nsd/fd.c:
+	* nsd/httptime.c:
+	* nsd/log.c:
+	* nsd/nswin32.c:
+	* nsd/pidfile.c:
+	* nsd/queue.c:
+	* nsd/return.c:
+	* nsd/sched.c:
+	* nsd/sockcallback.c:
+	* nsd/tclhttp.c:
+	* nsd/tclimg.c:
+	* nsd/tcljob.c:
+	* nsd/tclset.c:
+	* nsd/tclsock.c:
+	* nsd/tcltime.c:
+	* nsdb/dbtcl.c:
+	* nslog/nslog.c:
+	* nsperm/nsperm.c:
+	* nsproxy/nsproxylib.c:
+	* nsthread/mutex.c:
+	* nsthread/reentrant.c:
+	* nsthread/thread.c:	
+	* nsthread/winthread.c: Replace various calls to sprintf() into fixed-sized
+	buffers with calls to Ns_DStringPtrintf(), direct use of Tcl objects for
+	return values, or use of bounded snprintf()calls . Make sure buffer
+	sizes are reasonable and have well defined lifetimes.
+
 2007-06-07  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd-config.tcl:

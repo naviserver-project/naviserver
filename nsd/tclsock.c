@@ -220,7 +220,6 @@ NsTclSockNReadObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     int         nread;
     Tcl_Channel chan;
     SOCKET      sock;
-    char        buf[20];
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
@@ -237,10 +236,8 @@ NsTclSockNReadObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                                Tcl_PosixError(interp), NULL);
         return TCL_ERROR;
     }
-
     nread += Tcl_InputBuffered(chan);
-    sprintf(buf, "%d", nread);
-    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(nread));
 
     return TCL_OK;
 }

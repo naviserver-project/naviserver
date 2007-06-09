@@ -231,12 +231,9 @@ static void
 ArgProc(Tcl_DString *dsPtr, void *arg)
 {
     Mod *modPtr = arg;
-    char buf[20];
 
-    sprintf(buf, "%d", modPtr->port);
     Tcl_DStringStartSublist(dsPtr);
-    Tcl_DStringAppendElement(dsPtr, modPtr->addr);
-    Tcl_DStringAppendElement(dsPtr, buf);
+    Ns_DStringPrintf(dsPtr, "%s %d", modPtr->addr, modPtr->port);
     Tcl_DStringEndSublist(dsPtr);
 }
 
@@ -321,7 +318,7 @@ EvalThread(void *arg)
     interp = NULL;
     Tcl_DStringInit(&ds);
     Tcl_DStringInit(&unameDS);
-    sprintf(buf, "-nscp:%d-", sessPtr->id);
+    snprintf(buf, sizeof(buf), "-nscp:%d-", sessPtr->id);
     Ns_ThreadSetName(buf);
     Ns_Log(Notice, "nscp: %s connected", ns_inet_ntoa(sessPtr->sa.sin_addr));
     if (!Login(sessPtr, &unameDS)) {
@@ -349,7 +346,7 @@ EvalThread(void *arg)
 	Tcl_DStringTrunc(&ds, 0);
 	++ncmd;
 retry:
-	sprintf(buf, "%s:nscp %d> ", server, ncmd);
+	snprintf(buf, sizeof(buf), "%s:nscp %d> ", server, ncmd);
 	while (1) {
 	    if (!GetLine(sessPtr->sock, buf, &ds, 1)) {
 		goto done;
@@ -357,7 +354,7 @@ retry:
 	    if (Tcl_CommandComplete(ds.string)) {
 		break;
 	    }
-	    sprintf(buf, "%s:nscp %d>>> ", server, ncmd);
+	    snprintf(buf, sizeof(buf), "%s:nscp %d>>> ", server, ncmd);
 	}
 	while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
 	    Tcl_DStringTrunc(&ds, ds.length-1);
@@ -518,8 +515,8 @@ static int
 Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 {
     Tcl_HashEntry *hPtr;
-    Tcl_DString uds, pds;
-    char *encpass, *user, *pass, msg[255], buf[NS_ENCRYPT_BUFSIZE];
+    Tcl_DString uds, pds, msgDs;
+    char *encpass, *user, *pass, buf[NS_ENCRYPT_BUFSIZE];
     int ok;
 
     user = NULL;
@@ -539,22 +536,28 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 	    }
 	}
     }
+
+    Ns_DStringInit(&msgDs);
     if (ok) {
-	Ns_Log(Notice, "nscp: %s logged in", user);
+        Ns_Log(Notice, "nscp: %s logged in", user);
         Tcl_DStringAppend(unameDSPtr, user, -1);
-	sprintf(msg, "\nWelcome to %s running at %s (pid %d)\n"
-		"%s/%s for %s built on %s\nCVS Tag: %s\n",
-		sessPtr->modPtr->server,
-		Ns_InfoNameOfExecutable(), Ns_InfoPid(),
-		Ns_InfoServerName(), Ns_InfoServerVersion(),
-		Ns_InfoPlatform(), Ns_InfoBuildDate(), Ns_InfoTag());
+        Ns_DStringPrintf(&msgDs,
+            "\nWelcome to %s running at %s (pid %d)\n"
+            "%s/%s for %s built on %s\nCVS Tag: %s\n",
+            sessPtr->modPtr->server,
+            Ns_InfoNameOfExecutable(), Ns_InfoPid(),
+            Ns_InfoServerName(), Ns_InfoServerVersion(),
+            Ns_InfoPlatform(), Ns_InfoBuildDate(), Ns_InfoTag());
     } else {
-	Ns_Log(Warning, "nscp: login failed: '%s'", user ? user : "?");
-	sprintf(msg, "Access denied!\n");
+        Ns_Log(Warning, "nscp: login failed: '%s'", user ? user : "?");
+        Ns_DStringAppend(&msgDs, "Access denied!\n");
     }
-    (void) send(sessPtr->sock, msg, strlen(msg), 0);
+    (void) send(sessPtr->sock, msgDs.string, msgDs.length, 0);
+
+    Tcl_DStringFree(&msgDs);
     Tcl_DStringFree(&uds);
     Tcl_DStringFree(&pds);
+
     return ok;
 }
 

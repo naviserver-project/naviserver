@@ -507,15 +507,16 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
 static void
 UpdateStringOfTime(Tcl_Obj *objPtr)
 {
-    Ns_Time *timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
+    Ns_Time *timePtr = (Ns_Time *) &objPtr->internalRep;
     int      len;
-    char     buf[100];
+    char     buf[(TCL_INTEGER_SPACE * 2) + 1];
 
     Ns_AdjTime(timePtr);
     if (timePtr->usec == 0) {
-        len = sprintf(buf, "%ld", timePtr->sec);
+        len = snprintf(buf, sizeof(buf), "%jd", (intmax_t) timePtr->sec);
     } else {
-        len = sprintf(buf, "%ld:%ld", timePtr->sec, timePtr->usec);
+        len = snprintf(buf, sizeof(buf), "%jd:%ld",
+                       (intmax_t) timePtr->sec, timePtr->usec);
     }
     Ns_TclSetStringRep(objPtr, buf, len);
 }

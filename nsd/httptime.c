@@ -86,7 +86,6 @@ char *
 Ns_HttpTime(Ns_DString *pds, time_t *when)
 {
     time_t     now;
-    char       buf[40];
     struct tm *tmPtr;
 
     if (when == NULL) {
@@ -104,11 +103,10 @@ Ns_HttpTime(Ns_DString *pds, time_t *when)
      * must always be used.
      */
 
-    snprintf(buf, sizeof(buf), "%s, %02d %s %d %02d:%02d:%02d GMT",
+    Ns_DStringPrintf(pds, "%s, %02d %s %d %02d:%02d:%02d GMT",
              week_names[tmPtr->tm_wday], tmPtr->tm_mday,
              month_names[tmPtr->tm_mon], tmPtr->tm_year + 1900,
              tmPtr->tm_hour, tmPtr->tm_min, tmPtr->tm_sec);
-    Ns_DStringAppend(pds, buf);
 
     return pds->string;
 }

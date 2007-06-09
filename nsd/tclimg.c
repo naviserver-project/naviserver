@@ -68,7 +68,7 @@ static int JpegNextMarker(Tcl_Channel chan);
 
 static enum imgtype GetImageType(Tcl_Channel chan);
 
-static int AppendObjDims(Tcl_Interp *interp, int w, int h);
+static void SetObjDims(Tcl_Interp *interp, int w, int h);
 
 static int ChanGetc(Tcl_Channel chan);
 static Tcl_Channel GetFileChan(Tcl_Interp *interp, char *path);
@@ -214,10 +214,13 @@ NsTclImgSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_Close(interp, chan);
 
     if (status != TCL_OK) {
-        return AppendObjDims(interp, 0, 0);
+        SetObjDims(interp, 0, 0);
+        return TCL_ERROR;
     }
 
-    return AppendObjDims(interp, w, h);
+    SetObjDims(interp, w, h);
+
+    return TCL_OK;
 }
 
 
@@ -259,10 +262,10 @@ NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_AppendResult(interp, "invalid GIF file \"", file, "\"", NULL);
         return TCL_ERROR;
     }
-
     Tcl_Close(interp, chan);
+    SetObjDims(interp, w, h);
 
-    return AppendObjDims(interp, w, h);
+    return TCL_OK;
 }
 
 
@@ -304,10 +307,10 @@ NsTclPngSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_AppendResult(interp, "invalid PNG file \"", file, "\"", NULL);
         return TCL_ERROR;
     }
-
     Tcl_Close(interp, chan);
+    SetObjDims(interp, w, h);
 
-    return AppendObjDims(interp, w, h);
+    return TCL_OK;
 }
 
 
@@ -349,10 +352,10 @@ NsTclJpegSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_AppendResult(interp, "invalid JPEG file \"", file, "\"", NULL);
         return TCL_ERROR;
     }
-
     Tcl_Close(interp, chan);
+    SetObjDims(interp, w, h);
 
-    return AppendObjDims(interp, w, h);
+    return TCL_OK;
 }
 
 
@@ -690,37 +693,27 @@ ChanGetc(Tcl_Channel chan)
 /*
  *----------------------------------------------------------------------
  *
- * AppendObjDims --
+ * SetObjDims --
  *
- *  Format and append width and height dimensions.
+ *      Set width and height dimensions as a two element list.
  *
  * Results:
- *  None.
+ *      None.
  *
  * Side effects:
- *  List elements appended to interp result.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
-static int
-AppendObjDims(Tcl_Interp *interp, int w, int h)
+static void
+SetObjDims(Tcl_Interp *interp, int w, int h)
 {
-    char buf[20];
-    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_Obj *objv[2];
 
-    sprintf(buf, "%d", w);
-    if (Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(buf, -1))) {
-        return TCL_ERROR;
-    }
-    sprintf(buf, "%d", h);
-    if (Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(buf, -1))) {
-        return TCL_ERROR;
-    }
-
-    Tcl_SetObjResult(interp, result);
-
-    return TCL_OK;
+    objv[0] = Tcl_NewIntObj(w);
+    objv[1] = Tcl_NewIntObj(h);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, objv));
 }
 
 
