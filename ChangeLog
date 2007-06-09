@@ -1,3 +1,10 @@
+2007-06-09  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd/fastpath.c:
+	* nsd/return.c: Use TCL_LL_MODIFIER to format Tcl_WideInt types to
+	prevent warnings on certain 64bit systems.
+
 2007-06-07  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd-config.tcl:

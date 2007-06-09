@@ -677,7 +677,8 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
      */
 
     if (ParseRange(conn, &range) == NS_ERROR) {
-        Ns_ConnPrintfHeaders(conn, "Content-Range", "bytes */%llu", range.size);
+        Ns_ConnPrintfHeaders(conn, "Content-Range",
+                             "bytes */%" TCL_LL_MODIFIER "d", range.size);
         return Ns_ConnReturnStatus(conn, range.status);
     }
 
@@ -1063,8 +1064,9 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
          */
 
         roPtr = &rangesPtr->offsets[0];
-        Ns_ConnPrintfHeaders(conn, "Content-range", "bytes %llu-%llu/%llu",
-                             roPtr->start, roPtr->end, len);
+        Ns_ConnPrintfHeaders(conn, "Content-range",
+            "bytes %" TCL_LL_MODIFIER "d-%" TCL_LL_MODIFIER "d/%" TCL_LL_MODIFIER "d",
+            roPtr->start, roPtr->end, len);
 
         Ns_ConnSetRequiredHeaders(conn, type, roPtr->size);
         Ns_ConnQueueHeaders(conn, rangesPtr->status);
@@ -1120,7 +1122,8 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
             iovPtr->iov_base = &ds.string[ds.length];
             Ns_DStringPrintf(&ds,"--%s\r\n",boundary);
             Ns_DStringPrintf(&ds,"Content-type: %s\r\n",type);
-            Ns_DStringPrintf(&ds,"Content-range: bytes %llu-%llu/%llu\r\n\r\n",
+            Ns_DStringPrintf(&ds,"Content-range: bytes %" TCL_LL_MODIFIER "d"
+                             "-%" TCL_LL_MODIFIER "d/%" TCL_LL_MODIFIER "d\r\n\r\n",
                              roPtr->start, roPtr->end, len);
             iovPtr->iov_len = strlen(iovPtr->iov_base);
             rangesPtr->size += iovPtr->iov_len;
