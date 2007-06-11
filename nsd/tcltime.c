@@ -507,7 +507,7 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
 static void
 UpdateStringOfTime(Tcl_Obj *objPtr)
 {
-    Ns_Time *timePtr = (Ns_Time *) &objPtr->internalRep;
+    Ns_Time *timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
     int      len;
     char     buf[(TCL_INTEGER_SPACE * 2) + 1];
 

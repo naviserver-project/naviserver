@@ -1,3 +1,9 @@
+2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/tcltime.c: Silence compier warning
+
+        make test now fails on encoding tests after last updates
+
 2007-06-09  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/driver.c:
