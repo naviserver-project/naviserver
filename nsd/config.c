@@ -139,7 +139,7 @@ Ns_ConfigFlag(CONST char *section, CONST char *key, int flag, int def,
               int *flagsPtr)
 {
     CONST char *s;
-    int value, found = NS_FALSE;
+    int value = 0, found = NS_FALSE;
 
     s = ConfigGet(section, key, 0, def ? "true" : "false");
     if (s != NULL && ToBool(s, &value)) {
