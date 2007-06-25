@@ -140,14 +140,12 @@ NS_EXTERN int closedir(DIR *dp);
 #include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <assert.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
-#endif
-
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
