@@ -143,6 +143,7 @@ ns_param   400             "/400return.adp"
 ns_section "ns/server/test/module/nslog"
 ns_param   file            [ns_config "test" home]/testserver/access.log
 ns_param   formattedtime   true
+ns_param   logreqtime      true
 ns_param   logcombined     true
 ns_param   maxbuffer       0
 ns_param   maxbackup       1

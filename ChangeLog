@@ -32,6 +32,8 @@
 	* nsd/tcltime.c: Quieten some compiler warnings when platform time_t is
 	not a long.
 
+	* tests/test.nscfg: Log the request time in the access log, for testing.
+
 2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcltime.c: Silence compier warning
