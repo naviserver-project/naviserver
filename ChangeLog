@@ -34,6 +34,9 @@
 
 	* tests/test.nscfg: Log the request time in the access log, for testing.
 
+	* configure.in: Check compiler earlier in sequence to avoid redundant
+	checks later.
+
 2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcltime.c: Silence compier warning
