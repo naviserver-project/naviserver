@@ -170,10 +170,13 @@ Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr)
 int
 Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
+    long sec;
+
     if (objPtr->typePtr == intTypePtr) {
-        if (Tcl_GetLongFromObj(interp, objPtr, &timePtr->sec) != TCL_OK) {
+        if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
         }
+        timePtr->sec = (time_t) sec;
         timePtr->usec = 0;
     } else {
         if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
@@ -236,6 +239,7 @@ int
 NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     Ns_Time result, t1, t2;
+    long sec;
     int opt;
 
     static CONST char *opts[] = {
@@ -267,9 +271,10 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Tcl_WrongNumArgs(interp, 2, objv, "sec ?usec?");
             return TCL_ERROR;
         }
-        if (Tcl_GetLongFromObj(interp, objv[2], &result.sec) != TCL_OK) {
+        if (Tcl_GetLongFromObj(interp, objv[2], &sec) != TCL_OK) {
             return TCL_ERROR;
         }
+        result.sec = (time_t) sec;
         if (objc == 3) {
             result.usec = 0;
         } else if (Tcl_GetLongFromObj(interp, objv[3], &result.usec) != TCL_OK) {
@@ -282,10 +287,11 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Tcl_WrongNumArgs(interp, 2, objv, "time sec ?usec?");
             return TCL_ERROR;
         }
-        if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK ||
-            Tcl_GetLongFromObj(interp, objv[3], &t2.sec) != TCL_OK) {
+        if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK
+                || Tcl_GetLongFromObj(interp, objv[3], &sec) != TCL_OK) {
             return TCL_ERROR;
         }
+        t2.sec = (time_t) sec;
         if (objc == 4) {
             t2.usec = 0;
         } else if (Tcl_GetLongFromObj(interp, objv[4], &t2.usec) != TCL_OK) {
@@ -461,14 +467,17 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
 {
     char   *fmt, buf[200];
     time_t  time;
+    long    sec;
 
     if (objc != 2 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "time ?fmt?");
         return TCL_ERROR;
     }
-    if (Tcl_GetLongFromObj(interp, objv[1], &time) != TCL_OK) {
+    if (Tcl_GetLongFromObj(interp, objv[1], &sec) != TCL_OK) {
         return TCL_ERROR;
     }
+    time = sec;
+
     if (objc > 2) {
         fmt = Tcl_GetString(objv[2]);
     } else {
@@ -546,14 +555,16 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
     char    *str, *sep;
     Ns_Time  time;
+    long     sec;
     int      value, result;
 
     str = Tcl_GetString(objPtr);
     sep = strchr(str, ':');
     if (objPtr->typePtr == intTypePtr || sep == NULL) {
-        if (Tcl_GetLongFromObj(interp, objPtr, &time.sec) != TCL_OK) {
+        if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
         }
+        time.sec = (time_t) sec;
         time.usec = 0;
     } else {
         *sep = '\0';

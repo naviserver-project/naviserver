@@ -888,9 +888,10 @@ NsGetScheduled(Tcl_DString *dsPtr)
     while (hPtr != NULL) {
         ePtr = Tcl_GetHashValue(hPtr);
         Tcl_DStringStartSublist(dsPtr);
-        Ns_DStringPrintf(dsPtr, "%d %d %d %ld %ld %ld %ld",
-            ePtr->id, ePtr->flags, ePtr->interval, ePtr->nextqueue,
-            ePtr->lastqueue, ePtr->laststart, ePtr->lastend);
+        Ns_DStringPrintf(dsPtr, "%d %d %d %jd %jd %jd %jd",
+            ePtr->id, ePtr->flags, ePtr->interval,
+            (intmax_t) ePtr->nextqueue, (intmax_t) ePtr->lastqueue,
+            (intmax_t) ePtr->laststart, (intmax_t) ePtr->lastend);
         Ns_GetProcInfo(dsPtr, ePtr->proc, ePtr->arg);
         Tcl_DStringEndSublist(dsPtr);
         hPtr = Tcl_NextHashEntry(&search);

@@ -8,6 +8,30 @@
 	config.h. Explicitly include stdint.h which doesn't get dragged in by
 	other means on freebsd.
 
+	* include/ns.h:
+	* nsd/Makefile:
+	* nsd/dsprintf.c (removed):
+	* nsd/dstring.c: Implement Ns_DStringVPrintf() using OS vsnprintf() to
+	pick up modern format specifiers and bug fixes (dsprintf.c was 7 year
+	old NetBSD code).
+
+	This is similar to the old AOLserver 3.x implementation except that
+	instead of printing into a large stack buffer and ignoring overflows,
+	taking the hit of always copying the result into the dstring, we
+	manipulate the dstring buffer and print directly into it. (There are
+	only 2 instances in the current test suite where we overflow static
+	space and need to grow.)
+
+	NB: Win32 is handled, but untested. I don't think we care about Irix any
+	more, which seems to have been a concern of the old code.
+	
+	* nsd/sched.c:
+	* nsd/tclcache.c: Treat time_t and size_t values as long long when using
+	Ns_DStringPrintf() as it does not support %j or %z. (should fix this
+	some day).
+	* nsd/tcltime.c: Quieten some compiler warnings when platform time_t is
+	not a long.
+
 2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcltime.c: Silence compier warning

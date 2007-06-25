@@ -1064,14 +1064,6 @@ NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 NS_EXTERN int Ns_DriverSetRequest(Ns_Sock *sock, char *reqline);
 
 /*
- * dsprintf.c:
- */
-
-NS_EXTERN char *
-Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list ap)
-     NS_GNUC_NONNULL(2);
-
-/*
  * dstring.c:
  */
 
@@ -1090,6 +1082,10 @@ Ns_DStringAppendArg(Ns_DString *dsPtr, CONST char *string)
 NS_EXTERN char *
 Ns_DStringPrintf(Ns_DString *dsPtr, CONST char *fmt, ...)
      NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(2,3);
+
+NS_EXTERN char *
+Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list ap)
+     NS_GNUC_NONNULL(2);
 
 NS_EXTERN char **
 Ns_DStringAppendArgv(Ns_DString *dsPtr)

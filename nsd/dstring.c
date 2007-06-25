@@ -161,6 +161,98 @@ Ns_DStringPrintf(Ns_DString *dsPtr, CONST char *fmt, ...)
 
 /*
  *----------------------------------------------------------------------
+ *
+ * Ns_DStringVPrintf --
+ *
+ *      Append a sequence of values using a format string.
+ *
+ * Results:
+ *      Pointer to the current string value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list ap)
+{
+    char *buf;
+    int   origLength, newLength, bufLength, result;
+
+    origLength = dsPtr->length;
+
+    /*
+     * Extend the dstring, trying first to firt everything in the
+     * static space (unless it is unreasonably small), or if
+     * we already have an allocated buffer just bump it up by 1k.
+     */
+
+    if (dsPtr->spaceAvl < TCL_INTEGER_SPACE) {
+        newLength = dsPtr->length + 1024;
+    } else {
+        newLength = dsPtr->spaceAvl -1; /* leave space for dstring NIL */
+    }
+    Ns_DStringSetLength(dsPtr, newLength);
+
+    /*
+     * Now that any dstring buffer relocation has taken place it's
+     * safe to point into the middle of it at the end of the
+     * existing data.
+     */
+
+    buf = dsPtr->string + origLength;
+    bufLength = newLength - origLength;
+
+#ifdef __WIN32
+    result = _vsnprintf_s(buf, bufLength, fmt, ap);
+#else
+    result = vsnprintf(buf, bufLength, fmt, ap);
+#endif
+
+    /*
+     * Check for overflow and retry. For win32 just double the buffer size
+     * and iterate, otherwise we should get this correct first time.
+     */
+
+#ifdef __WIN32
+    while (result == -1 && errno == ERANGE) {
+        newLength = dsPtr->spaceAvl * 2;
+#else
+    if (result >= bufLength) {
+        newLength = dsPtr->spaceAvl + (result - bufLength);
+#endif
+
+        Ns_DStringSetLength(dsPtr, newLength);
+
+        buf = dsPtr->string + origLength;
+        bufLength = newLength - origLength;
+
+#ifdef __WIN32
+        result = _vsnprintf_s(buf, bufLength, fmt, ap);
+#else
+        result = vsnprintf(buf, bufLength, fmt, ap);
+#endif
+    }
+
+    /*
+     * Set the dstring buffer to the actual length.
+     * NB: Eat any errors.
+     */
+
+    if (result > 0) {
+        Ns_DStringSetLength(dsPtr, origLength + result);
+    } else {
+        Ns_DStringSetLength(dsPtr, origLength);
+    }
+
+    return Ns_DStringValue(dsPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
  * Ns_DStringAppendArgv --
  *
  *      Append an argv vector pointing to the null terminated

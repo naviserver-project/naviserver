@@ -567,11 +567,11 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             size = Ns_CacheGetSize(entry);
             timePtr = Ns_CacheGetExpirey(entry);
             if (timePtr->usec == 0) {
-                Ns_DStringPrintf(&ds, "%lu %ld ",
-                                 (unsigned long) size, timePtr->sec);
+                Ns_DStringPrintf(&ds, "%zd %jd ",
+                                 size, (intmax_t) timePtr->sec);
             } else {
-                Ns_DStringPrintf(&ds, "%lu %ld:%ld ",
-                                 (unsigned long) size, timePtr->sec, timePtr->usec);
+                Ns_DStringPrintf(&ds, "%zd %jd:%ld ",
+                                 size, (intmax_t) timePtr->sec, timePtr->usec);
             }
             entry = Ns_CacheNextEntry(&search);
         }
