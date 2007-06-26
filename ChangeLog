@@ -37,6 +37,11 @@
 	* configure.in: Check compiler earlier in sequence to avoid redundant
 	checks later.
 
+	* configure.in: Use modern autoconf macros to check for various integer
+	types and define them if not provided by the host OS. This should be
+	enough to kill off ns_int8/16/32 etc. in ns.h Add checks for intptr_t
+	and intmax_t which we now use.
+
 2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcltime.c: Silence compier warning
