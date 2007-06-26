@@ -1,3 +1,7 @@
+2007-06-26  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nslog/nslog.c: Add missing space before appending 'referer' log entry.
+
 2007-06-25  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/config.c: An uninitialised variable was being read in a

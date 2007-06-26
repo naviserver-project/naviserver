@@ -417,7 +417,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_COMBINED)) {
-        Ns_DStringAppend(&ds, "\"");
+        Ns_DStringAppend(&ds, " \"");
         p = Ns_SetIGet(conn->headers, "referer");
         if (p) {
             Ns_DStringAppend(&ds, p);
