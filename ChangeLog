@@ -1,3 +1,14 @@
+2007-06-27  Stephen Deasey  <sdeasey@gmail.com>
+
+	* doc/src/ns_ictl.man: (deleted)
+	* doc/src/ns_cleanup.man: (deleted)
+	* doc/src/ns_cleanupchans.man: (deleted)
+	* doc/src/ns_eval.man: (deleted)
+	* doc/src/ns_init.man: (deleted)
+	* doc/src/ns_reinit.man: (deleted)
+	* doc/src/ns_markfordelete.man: (deleted)
+	* doc/src/mann/ns_ictl.man: Update interp documentation.
+
 2007-06-26  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nslog/nslog.c: Add missing space before appending 'referer' log entry.
