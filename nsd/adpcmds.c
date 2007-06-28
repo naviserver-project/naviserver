@@ -72,7 +72,7 @@ NsTclAdpIdentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     AdpFrame *framePtr;
 
     if (objc != 1 && objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "ident");
+        Tcl_WrongNumArgs(interp, 1, objv, "?ident?");
         return TCL_ERROR;
     }
     if (GetFrame(arg, &framePtr) != TCL_OK) {
@@ -115,43 +115,49 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     NsInterp    *itPtr = arg;
     Tcl_Channel  chan;
     char        *id;
-    static CONST char *opts[] = {
-        "bufsize", "channel", "flags",
-        "autoabort", "detailerror", "displayerror", "expire", "gzip",
-        "cache", "safe", "singlescript", "stricterror", "trace",
-        "trimspace", "stream",
-        NULL
-    };
+    int          opt, flag, old, new;
+
     enum {
-        CBufSizeIdx, CChanIdx, CFlagsIdx,
-        CAbortIdx, CDetailIdx, CDispIdx, CExpireIdx, CGzipIdx,
-        CCacheIdx, CSafeIdx, CSingleIdx, CStrictIdx, CTraceIdx,
-        CTrimIdx, CStreamIdx
+        CBufSizeIdx = -1,
+        CChanIdx = -2
     };
-    int opt, flag, old, new;
+
+    static struct {
+        char   *option;
+        int     flag;
+    } adpCtlOpts[] = {
+
+        { "bufsize",      CBufSizeIdx },
+        { "channel",      CChanIdx },
+
+        { "autoabort",    ADP_AUTOABORT },
+        { "detailerror",  ADP_DETAIL },
+        { "displayerror", ADP_DISPLAY },
+        { "expire",       ADP_EXPIRE },
+        { "gzip",         ADP_GZIP },
+        { "cache",        ADP_CACHE },
+        { "safe",         ADP_SAFE },
+        { "singlescript", ADP_SINGLE },
+        { "stricterror",  ADP_STRICT },
+        { "trace",        ADP_TRACE },
+        { "trimspace",    ADP_TRIM },
+        { "stream",       ADP_STREAM },
+        { NULL, 0}
+    };
+
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
+                                  sizeof(adpCtlOpts[0]), "option",
+                                  TCL_EXACT, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
-    switch (opt) {
-    case CFlagsIdx:
-        if (objc != 2 && objc !=3 ) {
-            Tcl_WrongNumArgs(interp, 2, objv, "?flags?");
-            return TCL_ERROR;
-        }
-        if (objc == 3) {
-            if (Tcl_GetIntFromObj(interp, objv[2], &new) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            itPtr->adp.flags = new;
-        }
-        Tcl_SetIntObj(Tcl_GetObjResult(interp), itPtr->adp.flags);
-        break;
+    flag = adpCtlOpts[opt].flag;
+
+    switch (flag) {
 
     case CBufSizeIdx:
         if (objc != 2 && objc !=3 ) {
@@ -168,7 +174,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             }
             itPtr->adp.bufsize = new;
         }
-        Tcl_SetIntObj(Tcl_GetObjResult(interp), old);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(old));
         break;
 
     case CChanIdx:
@@ -201,45 +207,6 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "?bool?");
             return TCL_ERROR;
         }
-        flag = 0;
-        switch (opt) {
-        case CAbortIdx:
-            flag = ADP_AUTOABORT;
-            break;
-        case CDetailIdx:
-            flag = ADP_DETAIL;
-            break;
-        case CDispIdx:
-            flag = ADP_DISPLAY;
-            break;
-        case CExpireIdx:
-            flag = ADP_EXPIRE;
-            break;
-        case CGzipIdx:
-            flag = ADP_GZIP;
-            break;
-        case CCacheIdx:
-            flag = ADP_CACHE;
-            break;
-        case CSafeIdx:
-            flag = ADP_SAFE;
-            break;
-        case CSingleIdx:
-            flag = ADP_SINGLE;
-            break;
-        case CStrictIdx:
-            flag = ADP_STRICT;
-            break;
-        case CTraceIdx:
-            flag = ADP_TRACE;
-            break;
-        case CTrimIdx:
-            flag = ADP_TRIM;
-            break;
-        case CStreamIdx:
-            flag = ADP_STREAM;
-            break;
-        }
         old = (itPtr->adp.flags & flag);
         if (objc == 3) {
             if (Tcl_GetBooleanFromObj(interp, objv[2], &new) != TCL_OK) {
@@ -251,50 +218,10 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 itPtr->adp.flags &= ~flag;
             }
         }
-        Tcl_SetBooleanObj(Tcl_GetObjResult(interp), old);
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(old));
         break;
     }
-    return TCL_OK;
-}
 
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclAdpCompressObjCmd --
- *
- *      Process the Tcl ns_adp_compress command to enable on-the-fly
- *      gzip compression of ADP response.
- *
- * Results:
- *      A standard Tcl result.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclAdpCompressObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                       Tcl_Obj **objv)
-{
-    NsInterp *itPtr = arg;
-    int       compress = 1;
-
-    if (objc != 1 && objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?boolean?");
-        return TCL_ERROR;
-    }
-    if (objc >= 2
-            && Tcl_GetBooleanFromObj(interp, objv[1], &compress) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (compress) {
-        itPtr->adp.flags |= ADP_GZIP;
-    } else {
-        itPtr->adp.flags &= ~ADP_GZIP;
-    }
     return TCL_OK;
 }
 
@@ -366,61 +293,43 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp    *itPtr = arg;
     Tcl_DString *dsPtr;
-    int          i, result, skip, cache, old;
-    Ns_Time     *ttlPtr, ttl;
+    int          i, result, flags;
     char        *file;
+    int          tcl = 0, nocache = 0, nargs = 0;
+    Ns_Time     *ttlPtr = NULL;
 
-    if (objc < 2) {
-    badargs:
-        Tcl_WrongNumArgs(interp, 1, objv, "?-cache ttl | -nocache? ?-tcl? "
-                         "file ?args ...?");
+    Ns_ObjvSpec opts[] = {
+        {"-cache",       Ns_ObjvTime,   &ttlPtr,  NULL},
+        {"-nocache",     Ns_ObjvBool,   &nocache, (void *) NS_TRUE},
+        {"-tcl",         Ns_ObjvBool,   &tcl,     (void *) NS_TRUE},
+        {"--",           Ns_ObjvBreak,  NULL,     NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"file",  Ns_ObjvString, &file,  NULL},
+        {"?args", Ns_ObjvArgs,   &nargs, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    ttlPtr = NULL;
-    skip = cache = 1;
-    old = itPtr->adp.flags;
-    file = Tcl_GetString(objv[1]);
-    if (STREQ(file, "-nocache")) {
-        if (objc < 3) {
-            goto badargs;
-        }
+    objv = objv + (objc - nargs);
+    objc = nargs;
+
+    flags = itPtr->adp.flags;
+    if (nocache) {
         itPtr->adp.flags &= ~ADP_CACHE;
-        cache = 0;
-        skip = 2;
-    } else
-        if (STREQ(file, "-cache")) {
-            if (objc < 4) {
-                goto badargs;
-            }
-            if (Ns_TclGetTimeFromObj(interp, objv[2], &ttl) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            Ns_AdjTime(&ttl);
-            if (ttl.sec < 0) {
-                Tcl_AppendResult(interp, "invalid ttl: ", Tcl_GetString(objv[2]),
-                                 NULL);
-                return TCL_ERROR;
-            }
-            ttlPtr = &ttl;
-            skip = 3;
-        }
-    if (STREQ(file, "-tcl")) {
-        skip++;
-        if (objc < skip + 1) {
-            goto badargs;
-        }
+    }
+    if (tcl) {
         itPtr->adp.flags |= ADP_TCLFILE;
     }
-    file = Tcl_GetString(objv[skip]);
-    objc -= skip;
-    objv += skip;
-
+    
     /*
      * In cache refresh mode, append include command to the output
      * buffer. It will be compiled into the cached result.
      */
 
-    if (!cache && itPtr->adp.refresh > 0) {
+    if (nocache && itPtr->adp.refresh > 0) {
         if (GetOutput(arg, &dsPtr) != TCL_OK) {
             return TCL_ERROR;
         }
@@ -435,7 +344,8 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_OK;
     }
     result = NsAdpInclude(arg, objc, objv, file, ttlPtr);
-    itPtr->adp.flags = old;
+
+    itPtr->adp.flags = flags;
 
     return result;
 }
@@ -463,59 +373,39 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                     Tcl_Obj **objv)
 {
     NsInterp   *itPtr = arg;
-    int         isfile, i, result, old;
-    char       *opt, *resvar = NULL;
+    int         result, flags, nargs;
+    char       *resvar = NULL;
+    int         string = 1, file = 0, tcl = 0, safe = 0;
     char       *cwd = NULL, *savecwd = NULL;
 
-    if (objc < 2) {
-    badargs:
-    Tcl_WrongNumArgs(interp, 1, objv,
-                     "?-file? ?-tcl? ?-safe? ?-savedresult varname? "
-                     "?-cwd path? arg ?arg ...?");
-    return TCL_ERROR;
+    Ns_ObjvSpec opts[] = {
+        {"-string",      Ns_ObjvBool,   &string, (void *) NS_TRUE},
+        {"-file",        Ns_ObjvBool,   &file,   (void *) NS_TRUE},
+        {"-tcl",         Ns_ObjvBool,   &tcl,    (void *) NS_TRUE},
+        {"-safe",        Ns_ObjvBool,   &safe,   (void *) NS_TRUE},
+        {"-savedresult", Ns_ObjvString, &resvar, NULL},
+        {"-cwd",         Ns_ObjvString, &cwd,    NULL},
+        {"--",           Ns_ObjvBreak,  NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"args", Ns_ObjvArgs, &nargs, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
     }
+    objv = objv + (objc - nargs);
+    objc = nargs;
 
-    isfile = 0;
-    old = itPtr->adp.flags;
-
-    for (i = 1; i < objc; ++i) {
-        opt = Tcl_GetString(objv[i]);
-        if (STREQ(opt, "-file")) {
-            isfile = 1;
-        } else
-            if (STREQ(opt, "-tcl")) {
-                isfile = 1;
-                itPtr->adp.flags |= ADP_TCLFILE;
-            } else
-                if (STREQ(opt, "-savedresult")) {
-                    if (++i < objc) {
-                        resvar = Tcl_GetString(objv[i]);
-                    } else {
-                        goto badargs;
-                    }
-                } else
-        if (STREQ(opt, "-cwd")) {
-            if (++i < objc) {
-                cwd = Tcl_GetString(objv[i]);
-            } else {
-                goto badargs;
-            }
-        } else
-            if (STREQ(opt, "-safe")) {
-                itPtr->adp.flags |= ADP_SAFE;
-            } else
-                if (STREQ(opt, "-string") ||
-                    STREQ(opt, "-local") ||
-                    STREQ(opt, "-global")) {
-                } else {
-                    break;
-                }
+    flags = itPtr->adp.flags;
+    if (tcl) {
+        file = 1;
+        itPtr->adp.flags |= ADP_TCLFILE;
     }
-    if (objc == i) {
-        goto badargs;
+    if (safe) {
+        itPtr->adp.flags |= ADP_SAFE;
     }
-    objc -= i;
-    objv += i;
 
     /*
      * Check the adp field in the nsInterp, and construct any support
@@ -526,7 +416,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         savecwd = itPtr->adp.cwd;
         itPtr->adp.cwd = cwd;
     }
-    if (isfile) {
+    if (file) {
         result = NsAdpSource(arg, objc, objv, resvar);
     } else {
         result = NsAdpEval(arg, objc, objv, resvar);
@@ -534,7 +424,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (cwd != NULL) {
         itPtr->adp.cwd = savecwd;
     }
-    itPtr->adp.flags = old;
+    itPtr->adp.flags = flags;
 
     return result;
 }
@@ -584,26 +474,26 @@ NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj **objv)
 {
     NsInterp *itPtr = arg;
-    char     *s;
-    int       len;
+    char     *string;
+    int       length, nonewline = 0;
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? string");
+    Ns_ObjvSpec opts[] = {
+        {"-nonewline", Ns_ObjvBool,  &nonewline, (void *) NS_TRUE},
+        {"--",         Ns_ObjvBreak, NULL,       NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"string",  Ns_ObjvString, &string, &length},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (objc == 3) {
-        s = Tcl_GetString(objv[1]);
-        if (!STREQ(s, "-nonewline")) {
-            Tcl_AppendResult(interp, "invalid flag \"",
-                             s, "\": expected -nonewline", NULL);
-            return TCL_ERROR;
-        }
-    }
-    s = Tcl_GetStringFromObj(objv[objc-1], &len);
-    if (NsAdpAppend(itPtr, s, len) != TCL_OK) {
+
+    if (NsAdpAppend(itPtr, string, length) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (objc == 2 && NsAdpAppend(itPtr, "\n", 1) != TCL_OK) {
+    if (!nonewline && NsAdpAppend(itPtr, "\n", 1) != TCL_OK) {
         return TCL_ERROR;
     }
     return TCL_OK;
@@ -788,7 +678,7 @@ NsTclAdpTruncObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclAdpDumpObjCmd --
  *
- *      Process the Tcl ns_adp_dump commands to return the entire text
+ *      Process the Tcl ns_adp_dump command to return the entire text
  *      of the output buffer.
  *
  * Results:
@@ -813,7 +703,7 @@ NsTclAdpDumpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (GetOutput(arg, &dsPtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
 
     return TCL_OK;
 }
@@ -850,7 +740,7 @@ NsTclAdpInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (GetFrame(arg, &framePtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    result = Tcl_NewListObj(0,0);
+    result = Tcl_NewListObj(0, NULL);
     Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(framePtr->file, -1));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(framePtr->size));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewLongObj(framePtr->mtime));
@@ -900,7 +790,7 @@ NsTclAdpArgcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclAdpArgvObjCmd --
  *
- *      Process the Tcl ns_adp_args commands to return an argument (or
+ *      Process the Tcl ns_adp_argv command to return an argument (or
  *      the entire list of arguments) within the current ADP frame.
  *
  * Results:
@@ -1024,7 +914,8 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     } else {
         bool = 1;
     }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), bool);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(bool));
+
     if (objc == 2) {
         switch (itPtr->adp.exception) {
         case ADP_OK:
@@ -1099,48 +990,7 @@ NsTclAdpCloseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAdpStreamObjCmd --
- *
- *      Set ADP buffer size to 0, forcing all content to be sent to the
- *      client immediately on each append.
- *
- * Results:
- *      A standard Tcl result.
- *
- * Side effects:
- *      See NsTclAdpFlushObjCmd.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclAdpStreamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                     Tcl_Obj **objv)
-{
-    NsInterp *itPtr = arg;
-    int       stream = 1;
-
-    if (objc != 1 && objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?boolean?");
-        return TCL_ERROR;
-    }
-    if (objc >= 2
-            && Tcl_GetBooleanFromObj(interp, objv[1], &stream) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    if (stream) {
-        itPtr->adp.flags |= ADP_STREAM;
-    } else {
-        itPtr->adp.flags &= ~ADP_STREAM;
-    }
-    return NsTclAdpFlushObjCmd(arg, interp, objc, objv);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclAdpDebugCmd --
+ * NsTclAdpDebugObjCmd --
  *
  *      Process the Tcl ns_adp_debug command to connect to the TclPro
  *      debugger if not already connected.
@@ -1155,20 +1005,28 @@ NsTclAdpStreamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclAdpDebugCmd(ClientData arg, Tcl_Interp *interp, int argc,
-                 char **argv)
+NsTclAdpDebugObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
-    char     *host, *port, *procs;
+    char     *host = NULL, *port = NULL, *procs = NULL;
 
-    if (argc > 4) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-                         argv[0], " ?procs? ?host? ?port?\"", NULL);
+    Ns_ObjvSpec opts[] = {
+        {"-host",  Ns_ObjvString, &host,  NULL},
+        {"-port",  Ns_ObjvString, &port,  NULL},
+        {"-procs", Ns_ObjvString, &procs, NULL},
+        {"--",     Ns_ObjvBreak,  NULL,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"?host",  Ns_ObjvString, &host,  NULL},
+        {"?port",  Ns_ObjvString, &port,  NULL},
+        {"?procs", Ns_ObjvString, &procs, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    procs = (argc > 1) ? argv[1] : NULL;
-    host = (argc > 2) ? argv[2] : NULL;
-    port = (argc > 3) ? argv[3] : NULL;
+
     if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
         Tcl_SetResult(interp, "could not initialize debugger", TCL_STATIC);
         return TCL_ERROR;

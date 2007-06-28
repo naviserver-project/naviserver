@@ -313,5 +313,28 @@ proc ns_chmod {file mode} {
 #   absolute path to the linked file; nsd/tclfile.c:NsTclSymlinkObjCmd()
 #
 
+#
+# ns_adp_compress --
+#
+#   See: ns_adp_ctl.
+#
+
+proc ns_adp_compress {{bool 1}} {
+	ns_adp_ctl gzip $bool
+	return ""
+}
+
+#
+# ns_adp_stream --
+#
+#   See: ns_adp_ctl, ns_adp_flush.
+#
+
+proc ns_adp_stream {{bool 1}} {
+	ns_adp_ctl stream $bool
+	ns_adp_flush
+}
+
+
 # EOF $RCSfile$
 

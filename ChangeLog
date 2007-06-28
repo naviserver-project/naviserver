@@ -2,6 +2,13 @@
 
 	* nsd/adprequest.c: Don't try to close a NULL conn.
 
+	* nsd/adpcmds.c:
+	* nsd/tclcmds.c:
+	* tcl/compat.tcl: Add a couple of missing ADP commands (ns_adp_close,
+	ns_adp_flush) to the list. Remove a couple of deprecated commands
+	(ns_adp_stream, ns_adp_compress) and add Tcl implementations to
+	compat.tcl. Clean up the arg parsing of the ADP commands in adpcmds.c.
+
 2007-06-27  Stephen Deasey  <sdeasey@gmail.com>
 
 	* doc/src/ns_ictl.man: (deleted)
