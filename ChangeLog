@@ -9,6 +9,9 @@
 	(ns_adp_stream, ns_adp_compress) and add Tcl implementations to
 	compat.tcl. Clean up the arg parsing of the ADP commands in adpcmds.c.
 
+	* doc/src/ns_adp_compress.man: (deleted)
+	* doc/src/ns_adp_stream.man: (deleted)
+
 2007-06-27  Stephen Deasey  <sdeasey@gmail.com>
 
 	* doc/src/ns_ictl.man: (deleted)
