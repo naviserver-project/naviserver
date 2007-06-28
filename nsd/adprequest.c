@@ -362,7 +362,9 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 
     if (!stream) {
         NsAdpReset(itPtr);
-        result = Ns_ConnClose(conn);
+        if (conn != NULL) {
+            result = Ns_ConnClose(conn);
+        }
     }
     return result;
 }

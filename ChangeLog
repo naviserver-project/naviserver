@@ -1,3 +1,7 @@
+2007-06-28  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/adprequest.c: Don't try to close a NULL conn.
+
 2007-06-27  Stephen Deasey  <sdeasey@gmail.com>
 
 	* doc/src/ns_ictl.man: (deleted)
