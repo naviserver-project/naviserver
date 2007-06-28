@@ -36,6 +36,14 @@ namespace import -force ::tcltest::*
 eval ::tcltest::configure $argv
 
 
+#
+# The following allows us to use ADP without a connection.
+#
+
+ns_adp_ctl channel stdout
+
+
+
 
 test adp-1.1 {Simple Tcl page} -body {
     nstest_http -getbody 1 GET /helloworld.tcl
@@ -79,6 +87,38 @@ test adp-2.2 {Tcl page map} -setup {
 } -cleanup {
 	ns_unregister_tcl GET /dejavu
 } -result {200 {Hello World!}}
+
+
+
+test adp-3.1 {ns_adp_ctl} -body {
+	# (enabled by default)
+	list [ns_adp_ctl autoabort 0] [ns_adp_ctl autoabort]
+} -result {1 0}
+
+test adp-3.2 {ns_adp_ctl bufsize} -body {
+	set orig [ns_adp_ctl bufsize 666]
+	ns_adp_ctl bufsize $orig
+} -cleanup {
+	unset -nocomplain orig
+} -result {666}
+
+
+
+test adp-4.1 {ns_adp_append} -body {
+	ns_adp_eval {<% ns_adp_append adp-4.1 %>}
+} -result {adp-4.1}
+
+test adp-4.2 {ns_adp_puts} -body {
+	ns_adp_eval {<% ns_adp_puts adp-4.2 %>}
+} -result "adp-4.2\n"
+
+test adp-4.3 {ns_adp_puts} -body {
+	ns_adp_eval {<% ns_adp_puts -nonewline adp-4.3 %>}
+} -result {adp-4.3}
+
+test adp-4.4 {ns_adp_dir (unset)} -body {
+	ns_adp_dir
+} -result {}
 
 
 

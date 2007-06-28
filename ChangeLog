@@ -12,6 +12,9 @@
 	* doc/src/ns_adp_compress.man: (deleted)
 	* doc/src/ns_adp_stream.man: (deleted)
 
+	* tests/adp.test: Add a couple of more ADP tests (ns_adp_ctl,
+	ns_adp_append, ns_adp_puts, ns_adp_eval, ...).
+
 2007-06-27  Stephen Deasey  <sdeasey@gmail.com>
 
 	* doc/src/ns_ictl.man: (deleted)
