@@ -1,3 +1,8 @@
+2007-06-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/urlencode.c: Removed URLDECODE_RELAXED ifdef as not needed
+	  any more. Plus, it made ns_urldecode/ns_urlencode unsymetric.
+
 2007-06-28  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/adprequest.c: Don't try to close a NULL conn.
