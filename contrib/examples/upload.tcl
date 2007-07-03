@@ -8,10 +8,13 @@ switch -- [ns_queryget cmd] {
      # Discover absolute path to the script
      set url [ns_normalizepath [file dirname [ns_conn url]]/upload.tcl]
      set stats [ns_upload_stats $url]
+     ns_log Notice upload.tcl: $url: $stats
      # Calculate percentage
      if { $stats != "" } {
        foreach { len size } $stats {}
-       set stats [expr round($size.0*100/$len.0)]
+       set stats [expr round($len.0*100/$size.0)]
+     } else {
+       set stats -1
      }
      ns_return 200 text/html $stats
   }
@@ -28,7 +31,7 @@ switch -- [ns_queryget cmd] {
 
      File: <INPUT TYPE=FILE NAME=file>
 
-     <INPUT TYPE=BUTTON VALUE=Submit onClick="parent.setTimeout('progress()',1000);this.form.submit();">
+     <INPUT TYPE=BUTTON VALUE=Submit onClick="parent.setTimeout('progress()',2000);this.form.submit();">
      </FORM>
      }
   }
@@ -46,15 +49,13 @@ switch -- [ns_queryget cmd] {
               if(typeof XMLHttpRequest != 'undefined') req = new XMLHttpRequest();
            }
         }
-        req.open('GET','upload.tcl?cmd=stats&t=now.getTime()',false);
+        req.open('GET','upload.tcl?cmd=stats&t='+now.getTime(),false);
         req.send(null);
         var rc = parseInt(req.responseText);
         var obj = document.getElementById('Progress');
-        if(!isNaN(rc)) {
+        if(!isNaN(rc) && rc >= 0) {
           obj.innerHTML = 'Progress: ' + rc + '%';
           setTimeout('progress()',1000);
-        } else {
-          if(obj.innerHTML == '') setTimeout('progress()',1000);
         }
      }
      </SCRIPT>
@@ -70,9 +71,15 @@ switch -- [ns_queryget cmd] {
          dd if=/dev/zero of=test.dat count=500000<P>
 
      <LI>In nsd.tcl adjust parameters to enable statistics and big uploads<P>
+
+         ns_section ns/parameters<BR>
+         ns_param progressminsize   [expr 1024*1024]<P>
+
+         ns_section ns/server/servername/adp<BR>
+         ns_param enabletclpages  true
+
          ns_section ns/server/default/module/nssock<BR>
          ns_param maxinput        [expr 1024*1024*500]<BR>
-         ns_param uploadsize      [expr 1024*1024]<BR>
          ns_param spoolerthreads  1<BR>
      </UL>
      <P>

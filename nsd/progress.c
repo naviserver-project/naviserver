@@ -95,6 +95,7 @@ NsConfigProgress(void)
         Ns_SlsAlloc(&slot, ResetProgress);
         Tcl_InitHashTable(&urlTable, TCL_STRING_KEYS);
         Ns_MutexSetName(&lock, "ns:progress");
+        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %d bytes", progressMinSize);
     }
 }
 
@@ -146,6 +147,8 @@ NsUpdateProgress(Ns_Sock *sock)
                 Ns_DStringAppend(&ds, "?");
                 Ns_DStringAppend(&ds, request->query);
             }
+
+            Ns_Log(Debug, "NsUpdateProgress: creating stats for %s, size=%u", ds.string, reqPtr->length);
 
             Ns_MutexLock(&lock);
             pPtr->hPtr = Tcl_CreateHashEntry(&urlTable, Ns_DStringValue(&ds), &new);

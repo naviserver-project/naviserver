@@ -17,6 +17,7 @@ ns_param	pidfile			${home}/logs/nsd.pid
 ns_param	dbcloseonexit		off
 ns_param	jobsperthread		1000
 ns_param	jobtimeout		0
+ns_param	progressminsize		[expr 1024*1024*1]
 
 ns_param        smtphost                "localhost"
 ns_param        smtpport                25
@@ -117,7 +118,6 @@ ns_param        hostname                [ns_info hostname]
 ns_param	maxinput		[expr 1024*1024*10]
 ns_param	readahead		[expr 1024*1024*1]
 ns_param	spoolerthreads		1
-ns_param	uploadsize		[expr 1024*1024*1]
 ns_param	writerthreads		0
 ns_param	writersize		[expr 1024*1024*5]
 ns_param        backlog                 1024

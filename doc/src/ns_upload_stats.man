@@ -23,8 +23,8 @@ This is the url where the file is being uploaded
 
 [section CONFIGURATION]
 
-ns_section ns/server/default/nssock
-ns_param        uploadsize              2048
+ns_section ns/parameters
+ns_param        progressminsize           2048
 
 [section EXAMPLES]
 

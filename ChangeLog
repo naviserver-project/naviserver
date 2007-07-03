@@ -1,3 +1,11 @@
+2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/progress.c:
+	* contrib/example/upload.tcl:
+	* doc/src/ns_upload_stats.man:
+	* sample-config.tcl.in: Updated to new parameter for progress reporting, examplepage
+	fixed, it works now
+
 2007-06-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/urlencode.c: Removed URLDECODE_RELAXED ifdef as not needed
