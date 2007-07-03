@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * str.c --
  *
- *      Functions that deal with strings. 
+ *      Functions that deal with strings.
  */
 
 #include "nsd.h"
@@ -44,14 +44,14 @@ NS_RCSID("@(#) $Header$");
  *
  * Ns_StrTrim --
  *
- *      Trim leading and trailing white space from a string. 
+ *      Trim leading and trailing white space from a string.
  *
  * Results:
- *      A pointer to the trimmed string, which will be in the original 
- *      string. 
+ *      A pointer to the trimmed string, which will be in the original
+ *      string.
  *
  * Side effects:
- *      May modify passed-in string. 
+ *      May modify passed-in string.
  *
  *----------------------------------------------------------------------
  */
@@ -69,14 +69,14 @@ Ns_StrTrim(char *string)
  *
  * Ns_StrTrimLeft --
  *
- *      Trim leading white space from a string. 
+ *      Trim leading white space from a string.
  *
  * Results:
- *      A pointer to the trimmed string, which will be in the 
- *      original string. 
+ *      A pointer to the trimmed string, which will be in the
+ *      original string.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -99,14 +99,14 @@ Ns_StrTrimLeft(char *string)
  *
  * Ns_StrTrimRight --
  *
- *      Trim trailing white space from a string. 
+ *      Trim trailing white space from a string.
  *
  * Results:
- *      A pointer to the trimmed string, which will be in the 
- *      original string. 
+ *      A pointer to the trimmed string, which will be in the
+ *      original string.
  *
  * Side effects:
- *      The string will be modified. 
+ *      The string will be modified.
  *
  *----------------------------------------------------------------------
  */
@@ -133,13 +133,13 @@ Ns_StrTrimRight(char *string)
  *
  * Ns_StrToLower --
  *
- *      All alph. chars in a string will be made to be lowercase. 
+ *      All alph. chars in a string will be made to be lowercase.
  *
  * Results:
- *      Same string as passed in. 
+ *      Same string as passed in.
  *
  * Side effects:
- *      Will modify string. 
+ *      Will modify string.
  *
  *----------------------------------------------------------------------
  */
@@ -165,13 +165,13 @@ Ns_StrToLower(char *string)
  *
  * Ns_StrToUpper --
  *
- *      All alph. chars in a string will be made to be uppercase. 
+ *      All alph. chars in a string will be made to be uppercase.
  *
  * Results:
- *      Same string as pssed in. 
+ *      Same string as pssed in.
  *
  * Side effects:
- *      Will modify string. 
+ *      Will modify string.
  *
  *----------------------------------------------------------------------
  */
@@ -204,7 +204,9 @@ Ns_StrToUpper(char *string)
  *      parsed or overflows.
  *
  * Side effects:
- *      None.
+ *      The string may begin with an arbitrary amount of white space (as determined by
+ *      isspace(3)) followed by a  single  optional `+' or `-' sign.  If string starts with `0x' prefix,
+ *      the number will be read in base 16, otherwise the number will be treated as decimal
  *
  *----------------------------------------------------------------------
  */
@@ -216,7 +218,7 @@ Ns_StrToInt(CONST char *string, int *intPtr)
     char *ep;
 
     errno = 0;
-    lval = strtol(string, &ep, 10);
+    lval = strtol(string, &ep, string[0] == '0' && string[1] == 'x' ? 16 : 10);
     if (string[0] == '\0' || *ep != '\0') {
         return NS_ERROR;
     }
@@ -273,14 +275,14 @@ Ns_Match(CONST char *a, CONST char *b)
  *
  * Ns_NextWord --
  *
- *        Return a pointer to first character of the next word in a 
- *        string; words are separated by white space. 
+ *        Return a pointer to first character of the next word in a
+ *        string; words are separated by white space.
  *
  * Results:
- *        A string pointer in the original string. 
+ *        A string pointer in the original string.
  *
  * Side effects:
- *        None. 
+ *        None.
  *
  *----------------------------------------------------------------------
  */
@@ -303,13 +305,13 @@ Ns_NextWord(CONST char *line)
  *
  * Ns_StrCaseFind --
  *
- *      Search for first substring within string, case insensitive. 
+ *      Search for first substring within string, case insensitive.
  *
  * Results:
  *      A pointer to where substring starts or NULL.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -348,7 +350,7 @@ Ns_StrCaseFind(CONST char *string, CONST char *substring)
  *      NS_TRUE or NS_FALSE.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */

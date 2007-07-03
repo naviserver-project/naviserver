@@ -6,6 +6,8 @@
 	* sample-config.tcl.in: Updated to new parameter for progress reporting, examplepage
 	fixed, it works now
 
+	* nsd/stc.c: Make Ns_StrToInt to convert hex and decimal numbers
+
 2007-06-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/urlencode.c: Removed URLDECODE_RELAXED ifdef as not needed
