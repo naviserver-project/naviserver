@@ -639,13 +639,6 @@ typedef char *(Ns_LocationProc)        /* Deprecated */
     (Ns_Conn *conn);
 
 /*
- * adpparse.c:
- */
-
-NS_EXTERN int
-Ns_AdpRegisterParser(char *extension, Ns_AdpParserProc *proc);
-
-/*
  * adprequest.c:
  */
 
@@ -654,11 +647,8 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, int flags)
-   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN Ns_OpProc Ns_AdpPageProc;
-NS_EXTERN Ns_OpProc Ns_TclPageProc;
+Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * auth.c:

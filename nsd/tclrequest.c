@@ -40,25 +40,6 @@ NS_RCSID("@(#) $Header$");
 
 
 /*
- * The following structure allows a single ADP or Tcl page to
- * be requested via multiple URLs.
- */
-
-typedef struct PageMap {
-    Ns_Time  ttl;         /* Time to live for cached output. */
-    int      tcl;         /* This is a Tcl page, not ADP */
-    char     file[1];     /* Path in file system to page. */
-} PageMap;
-
-
-/*
- * Static functions defined in this file.
- */
-
-static int RegisterPage(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[], Ns_OpProc *proc);
-
-/*
  * Static variables defined in this file.
  */
 
@@ -250,106 +231,6 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
- * NsTclRegisterAdpObjCmd --
- *
- *      Implements ns_register_adp as obj command.
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    return RegisterPage(arg, interp, objc, objv, Ns_AdpPageProc);
-}
-
-int
-NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-    return RegisterPage(arg, interp, objc, objv, Ns_TclPageProc);
-}
-
-int
-RegisterPage(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
-             Ns_OpProc *proc)
-{
-    NsInterp   *itPtr = arg;
-    PageMap    *page;
-    Ns_DString  ds;
-    char       *method, *url, *file = NULL;
-    int         flags = 0;
-    Ns_Time    *ttlArgPtr = NULL, *ttlPtr = NULL;
-
-    Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &flags,  (void *) NS_OP_NOINHERIT},
-        {"-cache",     Ns_ObjvTime,  &ttlPtr, NULL},
-        {"--",         Ns_ObjvBreak, NULL,    NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    Ns_ObjvSpec args[] = {
-        {"method",   Ns_ObjvString, &method,   NULL},
-        {"url",      Ns_ObjvString, &url,      NULL},
-        {"?file",    Ns_ObjvString, &file,     NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-
-    if (file != NULL) {
-
-        /*
-         * Map the request to some specific file in the file
-         * system, bypassing url2file lookup at runtime.
-         */
-
-        Ns_DStringInit(&ds);
-
-        if (!Ns_PathIsAbsolute(file)) {
-            file = Ns_PagePath(&ds, itPtr->servPtr->server, file, NULL);
-            if (file == NULL) {
-                Tcl_AppendResult(interp, "path construction failed for: ", file, NULL);
-                return TCL_ERROR;
-            }
-        }
-
-        page = ns_calloc(1, sizeof(PageMap) + strlen(file));
-        strcpy(page->file, file);
-        page->tcl = (proc == Ns_TclPageProc) ? 1 : 0;
-        if (ttlPtr != NULL) {
-            page->ttl = *ttlPtr;
-        }
-
-        Ns_RegisterRequest(itPtr->servPtr->server, method, url,
-                           NsPageMapProc, ns_free, page, flags);
-
-        Ns_DStringFree(&ds);
-
-    } else {
-
-        if (ttlPtr != NULL) {
-            ttlArgPtr = ns_malloc(sizeof(Ns_Time));
-            *ttlArgPtr = *ttlPtr;
-        }
-        Ns_RegisterRequest(itPtr->servPtr->server, method, url,
-                           proc,
-                           ttlArgPtr ? ns_free : NULL, ttlArgPtr,
-                           flags);
-    }
-
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclUnRegisterObjCmd --
  *
  *      Implements the ns_unregister_* commands.
@@ -524,62 +405,6 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
                       NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr);
 
     return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsPageMapProc --
- *
- *      Ns_OpProc which evaluates a specifically registered ADP or
- *      Tcl file.
- *
- * Results:
- *      See Ns_AdpRequestEx.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsPageMapProc(void *arg, Ns_Conn *conn)
-{
-    PageMap *map = arg;
-
-    return Ns_AdpRequestEx(conn, map->file, &map->ttl,
-                           map->tcl ? ADP_TCLFILE : 0);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsPageMapArgProc --
- *
- *      Proc info callback for page maps.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsPageMapArgProc(Tcl_DString *dsPtr, void *arg)
-{
-    PageMap *page = arg;
-
-    Tcl_DStringAppendElement(dsPtr, page->tcl ? "tcl" : "adp");
-    Tcl_DStringAppendElement(dsPtr, page->file);
-    Ns_DStringPrintf(dsPtr, " %lu:%lu",
-                     (unsigned long) page->ttl.sec,
-                     (unsigned long) page->ttl.usec);
 }
 
 

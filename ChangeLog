@@ -1,3 +1,26 @@
+2007-07-05  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/adprequest.c:
+	* nsd/tclrequest.c:
+	* nsd/adpeval.c:
+	* nsd/proc.c: Public function Ns_AdpRequestEx() was defined to take a
+	flags argument, but all the flags are private. Dropped the flags
+	argument and added a private version for the benefit of ns_register_tcl,
+	which was the only user of this.
+
+	Add an -options switch to ns_register_adp which takes all the same
+	options as ns_adp_ctl.
+
+	Renamed -cache -expires.
+
+	Dropped the public Ns_AdpRequestProc and Ns_TclRequestProc -- it doesn't
+	make as much sense as exposing  Ns_FatPathProc.
+
+	Shuffled some code around: ns_register_adp etc. moved from tclrequest.c
+	to adprequest.c.
+
 2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/progress.c:

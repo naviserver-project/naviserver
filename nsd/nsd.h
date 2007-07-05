@@ -1085,8 +1085,8 @@ extern Ns_ArgProc NsConnArgProc;
 extern Ns_FilterProc NsTclFilterProc;
 extern Ns_FilterProc NsShortcutFilterProc;
 extern Ns_OpProc NsTclRequestProc;
-extern Ns_OpProc NsPageMapProc;
-extern Ns_ArgProc NsPageMapArgProc;
+extern Ns_OpProc NsAdpPageProc;
+extern Ns_ArgProc NsAdpPageArgProc;
 extern Ns_TclTraceProc NsTclTraceProc;
 extern Ns_UrlToFileProc NsUrlToFileProc;
 extern Ns_Url2FileProc NsTclUrl2FileProc;
@@ -1168,7 +1168,6 @@ extern NsLimits *NsGetRequestLimits(char *server, char *method, char *url);
  * ADP routines.
  */
 
-extern Ns_Cache *NsAdpCache(char *server, int size);
 extern void NsAdpSetMimeType(NsInterp *itPtr, char *type);
 extern void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
 extern int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);

@@ -54,7 +54,6 @@ typedef struct Info {
  */
 
 static Ns_ArgProc ServerArgProc;
-static Ns_ArgProc TimeArgProc;
 static void AppendAddr(Tcl_DString *dsPtr, char *prefix, void *addr);
 
 /*
@@ -78,9 +77,7 @@ static struct proc {
     {(void *) NsTclFilterProc,     "ns:tclfilter",        Ns_TclCallbackArgProc},
     {(void *) NsShortcutFilterProc, "ns:shortcutfilter",  NULL},
     {(void *) NsTclRequestProc,    "ns:tclrequest",       Ns_TclCallbackArgProc},
-    {(void *) NsPageMapProc,       "ns:onepage",          NsPageMapArgProc},
-    {(void *) Ns_AdpPageProc,      "ns:adppage",          TimeArgProc},
-    {(void *) Ns_TclPageProc,      "ns:tclpage",          TimeArgProc},
+    {(void *) NsAdpPageProc,       "ns:adppage",          NsAdpPageArgProc},
     {(void *) Ns_FastPathProc,     "ns:fastget",          NULL},
     {(void *) NsTclTraceProc,      "ns:tcltrace",         Ns_TclCallbackArgProc},
     {(void *) NsTclUrl2FileProc,   "ns:tclurl2file",      Ns_TclCallbackArgProc},
@@ -248,33 +245,6 @@ ServerArgProc(Tcl_DString *dsPtr, void *arg)
     NsServer *servPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, servPtr ? servPtr->server : "");
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * TimeArgProc --
- *
- *      Info callback for procs which take an Ns_Time arg.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TimeArgProc(Tcl_DString *dsPtr, void *arg)
-{
-    Ns_Time *timePtr = arg;
-
-    Ns_DStringPrintf(dsPtr, " %lu:%lu",
-                     timePtr ? (unsigned long) timePtr->sec : 0,
-                     timePtr ? (unsigned long) timePtr->usec : 0);
 }
 
 

@@ -290,7 +290,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
  */
 
 int
-NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file, Ns_Time *ttlPtr)
+NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file, Ns_Time *expiresPtr)
 {
     Ns_DString *outputPtr;
 
@@ -304,7 +304,7 @@ NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file, Ns_Time *tt
     } else {
         outputPtr = &itPtr->adp.output;
     }
-    return AdpSource(itPtr, objc, objv, file, ttlPtr, outputPtr);
+    return AdpSource(itPtr, objc, objv, file, expiresPtr, outputPtr);
 }
 
 
