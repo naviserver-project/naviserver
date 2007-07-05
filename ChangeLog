@@ -21,6 +21,10 @@
 	Shuffled some code around: ns_register_adp etc. moved from tclrequest.c
 	to adprequest.c.
 
+	* doc/src/mann/ns_register_adp.man:
+	* doc/src/ns_register.man: Break out ns_register_adp etc. into own man
+	page.
+
 2007-06-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/progress.c:

@@ -1,0 +1,210 @@
+[include version_include]
+
+[manpage_begin ns_register_adp n [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {Respond to URLs with ADP or Tcl pages}]
+
+[description]
+
+...
+
+[para]
+...
+
+
+[section COMMANDS]
+[list_begin definitions]
+
+
+[call [cmd ns_register_adp] \
+     [opt [option -noinherit]] \
+     [opt [option "-expires [arg t]"]] \
+     [opt [option "-options [arg options]"]] \
+     [opt --] \
+     [arg method] \
+     [arg url] \
+     [opt [arg file]] ]
+
+Requests to the server which match the [arg method] and [arg url]
+pattern will trigger the [term ADP] page request handler. If [arg file] is
+given then it is the specific [term ADP] page which should respond to all
+matching requests. Otherwise, the [term ADP] page will be located at request
+time using [cmd ns_url2file].
+
+
+
+[call [cmd ns_register_tcl] \
+     [opt [option -noinherit]] \
+     [opt --] \
+     [arg method] \
+     [arg url] \
+     [opt [arg file]] ]
+
+Works the same as [cmd ns_register_adp] except the file to evaluate
+should be a Tcl file which uses [cmd ns_return], [cmd ns_write]
+etc. to respond to the request.
+
+
+
+[call [cmd ns_unregister_adp] \
+     [opt [option -noinherit]] \
+     [opt [option -recurse]] \
+     [opt --] \
+	 [arg method] \
+	 [arg url] ]
+
+Unregister a previously registered [term ADP] handler. The [arg method] and
+[arg url] must exactly match those given to [cmd ns_register_adp].
+
+
+
+[call [cmd ns_unregister_tcl] \
+     [opt [option -noinherit]] \
+     [opt [option -recurse]] \
+     [opt --] \
+	 [arg method] \
+	 [arg url] ]
+
+Unregister a previously registered Tcl page handler. The [arg method]
+and [arg url] must exactly match those given to [cmd ns_register_tcl].
+
+
+[list_end]
+
+
+
+[section OPTIONS]
+[list_begin opt]
+
+[opt_def -noinherit]
+Specifies that the directory portion of the request URL should match
+exactly and not also apply to a URL lower in the hierarchy, which is
+the default. Different [term ADP] page handlers can be registered for the
+same [arg method] and [arg url] if one uses the [opt -noinherit]
+option and the other does not.
+
+[example_begin]
+[cmd ns_register_adp]            GET /a a.adp
+[cmd ns_register_adp] -noinherit GET /b b.adp
+[example_end]
+
+In the previous example, a.adp will run for the requests /a, /a/b,
+/a/b/c and so on. But b.adp will only run when the requested URL is
+exactly /b.
+
+[example_begin]
+[cmd ns_register_adp] -noinherit GET /a x.adp
+[cmd ns_register_adp]            GET /a y.adp
+[example_end]
+
+In the previous example, a request for the exact URL /a will run the
+x.adp page, while /a/b, /a/b/c etc. will will run the y.adp page. If
+the first call to [cmd ns_register_adp] was not made with the
+[opt -noinherit] option, y.adp would also be called for the URL /a.
+
+
+
+[opt_def -expires [arg t]]
+Specifies that the result of evaluating the [term ADP] page should be cached
+for [arg t] seconds, or until [arg t] time in the future (seconds
+after 1970) if [arg t] is large.
+
+
+
+[opt_def -options [arg options]]
+A list of one or more [term ADP] options that should be added to the default
+set which are in effect while the [term ADP] page runs. Options can only be
+enabled, not dissabled. Valid options are those that [cmd ns_adp_ctl]
+accepts, which can be used by [term ADP] code to fine tune the options.
+
+
+
+[opt_def -recurse]
+Causes the delete opperation to match the [arg url] against all
+registered URLs lower in the hierarchy rather than the default which
+is to perform an exact match. Use this option to delete all handlers
+from a sub-hierarchy.
+
+[example_begin]
+[cmd ns_register_adp]            GET /a     a.adp
+[cmd ns_register_adp]            GET /a/b   b.adp
+[cmd ns_register_adp]            GET /a/b/c c.adp
+[cmd ns_unregister_adp] -recurse GET /a/b
+[example_end]
+
+In the previous example, the handlers for b.adp and c.adp will be
+unregistered. However, requests to /a/b/c will still be served by
+a.adp as the [opt -noinherit] option was not given.
+
+
+[list_end]
+
+
+
+[section ARGUMENTS]
+[list_begin arg]
+
+[arg_def string method]
+The HTTP [arg method], such as [term GET], [term HEAD] or [term POST],
+which will be compared using exact string equality to the HTTP request.
+
+
+
+[arg_def string url]
+The [arg url] which will be compared against URL in each HTTP request.
+
+
+
+[arg_def string [opt file]]
+The optional [opt [arg [file file]]] is either the absolute path to a file in
+the file system, or a path relative to the page root directory.
+
+[example_begin]
+[cmd ns_register_adp] GET /a a.adp
+[cmd ns_register_adp] GET /b b/b.adp
+[cmd ns_register_adp] GET /c /c.adp
+[example_end]
+
+The first and second example specify a file relative to the page
+root directory. The full path is constructed each time the [term ADP] page is
+requested using [cmd ns_pagepath], so [cmd ns_serverroot] callbacks
+will be taken into account.
+
+[nl]
+In the third example, a specific [term ADP] file in the server's file system
+is registered for a simillarly named URL (and all URLs bellow
+it). There are no calls to [cmd ns_pagepath] or [cmd ns_url2file]
+during the request.
+
+
+[list_end]
+
+
+
+
+
+[section CONFIGURATION]
+
+ADP pages can be enabled in the configuration file...
+
+
+
+
+
+[section EXAMPLES]
+
+All files with the .adp extension in and below the /big URL should be
+served by the [term ADP] handler with the gzip and stream options
+enabled:
+
+[example_begin]
+foreach method {GET HEAD POST} {
+    [cmd ns_register_adp] -options {gzip stream} -- $method /big/*.adp
+}
+[example_end]
+
+
+
+[see_also ns_register_fastpath ns_register_proc ns_register_filter ns_register_url2file]
+[keywords ADP request]
+[manpage_end]

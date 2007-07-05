@@ -1,0 +1,398 @@
+[manpage_begin ns_register n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Register Tcl/ADP handlers}]
+
+[description]
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd ns_register_adptag] [arg command] [opt [arg endcommand]] [arg proc]]
+
+ns_register_adptag registers a procedure to be called when the specified beginning and
+ending tags are used in an ADP. The command is the beginning tag to look for, and the
+endcommand is the ending tag to look for. The proc is the procedure that will be called
+when Naviserver encounters those tags when processing an ADP.
+
+[nl]
+There are two ways to use ns_register_adptag, with and without the endcommand parameter:
+
+[list_begin bullet]
+
+[bullet] If the endcommand parameter is specified, the procedure you specify with proc must be of the form:
+
+         [nl]
+         proc myadpproc { string tagset }
+
+         [nl]
+         The string is the string of characters between the beginning tag and the ending tag.
+         The tagset is an ns_set of parameters that were specified with the beginning tag.
+         The return value of the procedure will be sent to the browser in place of the string
+         of text that was specified between the beginning and ending tags.
+         [nl]
+         The string is not parsed, which means that you cannot include ADP tags in the string unless
+         you execute ns_adp_parse on the string inside the procedure that processes the registered ADP tag.
+
+[bullet] If endcommand is not specified, then no closing tag is required. The procedure (proc)
+         will be called every time the specified command is encountered. The procedure should
+         take one parameter, an ns_set containing the parameters to the tag:
+         [nl]
+         proc myadpproc { tagset }
+
+[list_end]
+
+Note: This function cannot be called after the server has started. It must be called in a
+Tcl script in a virtual server's Tcl directory so that it can be initialized at server startup time.
+
+[nl]
+
+For example, suppose you want to register a tag that displays the enclosed text only if it is Christmas.
+You could register the tag as follows:
+
+[example_begin]
+
+  ns_register_adptag "christmas" "/christmas" xmas
+
+  proc xmas {string tagset} {
+    if { [lb]ns_fmttime [lb]ns_time[rb] "%m/%d"[rb] == "12/25" } {
+    return $string
+  }
+}
+
+[example_end]
+
+Then, in an ADP, you could use these tags:
+
+[example_begin]
+
+<christmas>Merry Christmas to all, and to all a good night!</christmas>
+
+[example_end]
+
+This example shows the use a registered tag without an endcommand. The tag is registered as follows:
+
+[example_begin]
+
+ns_register_adptag hello helloproc
+
+proc helloproc { tags } {
+   return "Hello, [lb]ns_set get $tags name[rb]."
+}
+
+[example_end]
+
+In an ADP, you could then use this tag:
+
+[example_begin]
+
+<hello name=Bob>
+
+[example_end]
+
+[call [cmd ns_register_fastpath] [opt [arg -noinherit]] [arg method] [arg url]]
+
+This command register given url pattern to be processed by fast path subsystem, i.e.
+all requestes that match will be served by corresponding .adp files if resolved. This
+can be used when there is no global fast path handler installed.
+
+[nl]
+[arg method]
+GET, POST OR HEAD
+
+[arg url]
+url pattern
+
+[call [cmd ns_register_filter] [arg when] [arg method] [arg URLpattern] [arg script] [opt [arg args]]]
+
+ns_register_filter registers a Tcl filter script for the specified method/URL combination
+on a virtual server. The script can be called at one or more of three given times:
+pre-authorization, post-authorization before page data has been returned to the user,
+and after the connection has been processed and closed.
+
+[nl]
+This function will be called at the specified stage of a connection, if the method/URL
+combination for the filter matches the method/URL combination for the connection using glob style matching.
+
+[nl]
+The URLpattern can contain standard string-matching characters. For example, these are valid URLpatterns:
+
+[example_begin]
+/employees/*.tcl
+/accounts/*/out
+[example_end]
+
+[nl]
+Valid values for the when argument are: preauth, postauth, and trace.
+
+[nl]
+Using pre-authorization, the procedure will be called (assuming that the method/URL
+combination matches) just before authorization. If the procedure returns with a code of:
+
+[list_begin bullet]
+
+[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next pre-authorization
+         filter for this connection, or, if there are no more pre-authorization filters, it will
+          continue on with authorization.
+
+[bullet] TCL_BREAK (using: return "filter_break"): The server will not process any more pre-authorization
+         filters for this connection, and it will continue on with authorization.
+
+[bullet] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+         not run any more pre-authorization filters. It will not authorize the request, and it will
+         not run the function registered for this METHOD/URL. It WILL run any trace functions
+         registered for this METHOD/URL, usually including logging. It is assumed that the filter
+         has sent a proper response (e.g., using ns_return) to the client before returning TCL_RETURN.
+[list_end]
+
+Using post-authorization, the procedure will be called (assuming that the method/URL combination matches)
+just after successful authorization. If the procedure returns:
+
+[list_begin bullet]
+
+[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next post-authorization
+         filter for this connection, or, if there are no more post-authorization filters, it will run
+         the function registered to handle this request.
+
+[bullet] TCL_BREAK (using: return "filter_break"): The server will not process any more post-authorization
+         filters for this connection, and it will run the function registered to handle this request.
+
+[bullet] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+         not run any more post-authorization filters and it will not run the function registered for
+         this METHOD/URL. It WILL run any trace functions registered for this METHOD/URL, usually
+         including logging. It is assumed that the filter has returned a proper response (e.g.,
+          using ns_return) to the client before returning TCL_RETURN.
+
+[list_end]
+
+Using trace, the procedure will be called (assuming that the method/URL combination match) after
+the connection has been totally processed and closed. If the procedure returns:
+
+[list_begin bullet]
+
+[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next trace filter.
+
+[bullet] TCL_BREAK, TCL_RETURN (using: return "filter_break" or return "filter_return"): The rest
+         of the trace filters are ignored.
+
+[list_end]
+
+ns_register_filter and ns_register_proc are similar, but significantly different.
+With ns_register_proc, the specified URL is used to match that URL and any URL below
+it in the hierarchy. Wildcards such as "*" are meaningful only for the final part of
+the URL, such as /scripts/*.tcl. With ns_register_filter, the URLpattern is used to
+match URLs as a string with standard string-matching characters. ns_register_proc
+results in a single match, whereas multiple ns_register_filters can be matched and
+will be called.
+
+Be aware that executing the same ns_register_filter statement more than once (as
+you might do when re-initializing Tcl) will add the filter more than once! You
+may want to have a shared variable set so that you don't do this.
+
+This example expires all HTML files after an hour.
+
+[example_begin]
+
+ns_share -init {set filters_installed 0} filters_installed
+
+if {!$filters_installed} {
+  set filters_installed 1
+  ns_register_filter postauth GET /*.html ExpireSoon 3600
+}
+proc ExpireSoon {seconds why} {
+  ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr $seconds + [lb]ns_time[rb][rb][rb]
+}
+[example_end]
+
+[call [cmd ns_register_proc] [opt [arg -noinherit]] [arg method] [arg URL] [arg myproc] [opt [arg args]]]
+[call [cmd ns_unregister_proc] [opt [arg -noinherit]] [arg method] [arg URL]]
+
+ns_register_proc registers the procname to handle the specified method/URL combination.
+When the server gets a matching request, it calls procname with the connection id and
+any arguments specified here.
+
+[nl]
+If -noinherit is specified, the requested URL must match the specified URL exactly.
+For example, if the URL specified with ns_register_proc is /foo/bar, procname will
+not be called unless the requested URL is exactly /foo/bar.
+
+[nl]
+If -noinherit is not specified, the requested URL can match the specified URL or any
+URL below it.  For example, if the URL specified with ns_register_proc is /foo/bar,
+procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar,
+provided there is not already another procedure registered for that exact URL or for
+an URL with a closer match.
+
+Note that you must use a glob-style matching character if you want inheritance
+for file names.  For example, if you want /foo/bar to match /foo/bar.html, you must use:
+
+[example_begin]
+   ns_register_proc /foo/bar*
+[example_end]
+
+ You can register two procedures for any given method/URL combination by calling ns_register_proc once with the -noinherit flag set and once without it.  Only one of the procedures will be called for any given request, depending on whether the URL was an exact match or not.  For example:
+
+[example_begin]
+   ns_register_proc -noinherit GET /foo/bar Aproc
+   ns_register_proc GET /foo/bar Bproc
+   ns_register_proc GET /foo/bar/hmm Cproc
+[example_end]
+
+ Aproc will be called when the requested URL is exactly /foo/bar.  Bproc will be called when
+ the requested URL is below /foo/bar, provided there is not already another procedure registered
+ to be called for that exact URL or for an URL with a closer match.  Cproc (not Bproc) will be
+ called when the requested URL is equal to or below /foo/bar/hmm.  Syntax for the registered
+ procedure The conn (connection) argument is optional for procedures registered by ns_register_proc
+ if the procedure has 0 or 1 arguments
+ (not including conn).  The following examples show the variations that can be used in this case:
+
+[example_begin]
+   ns_register_proc GET /noargs noargs
+   ns_register_proc GET /context context fnord
+   ns_register_proc GET /conncontext conncontext greeblev
+
+   proc noargs { } {
+       ns_returnnotice 200 "noargs"
+   };# noargs
+
+   proc context { context } {
+       ns_returnnotice 200 "context is $context"
+   };# context
+
+   proc conncontext { conn context } {
+       ns_returnnotice 200 "conncontext is $context"
+   };# conncontext
+[example_end]
+
+The conn (connection) argument is required for procedures registered by ns_register_proc if the
+procedure has 2 or more arguments (not including conn).  The conn argument will be filled
+automatically with the connection information.  The first argument following conn will always
+take the value supplied by ns_register_proc, if there is one, or an empty value.  All other
+arguments must supply a default value.  The following examples show the variations that can
+be used in this case:
+
+[example_begin]
+   ns_register_proc GET /twoargs twoargs fnord
+   ns_register_proc GET /threeargs threeargs fnord fjord
+
+   proc twoargs { conn context { greeble bork } } {
+       # Do stuff...
+   }
+
+   proc threeargs { conn context {greeble bork } { hoover quark } {
+       # Do stuff...
+   }
+[example_end]
+
+When a GET of /twoargs is requested, the conn argument will be filled automatically,
+the context argument will be assigned "fnord" and the greeble argument will be assigned
+the default value "bork".
+
+When a GET of /threeargs is requested, the conn argument will be filled automatically,
+the context argument will be assigned "fnord" and the greeble argument will be assigned "fjord",
+and the hoover argument will be assigned the default value "quark".
+
+[nl]
+ns_unregister_proc  unregisters the procname to handle the speci-
+fied method/URL combination.
+
+This command unregisters any Tcl or C functions previously regis-
+tered  for  this method/URL combination and with the same inheri-
+tance setting.  That is, if the -noinherit flag is specified with
+ns_unregister_proc,  the  function previously registered with the
+-noinherit flag using ns_register_proc  (or  the  NS_OP_NOINHERIT
+flag  in ns_RegisterRequest) will be unregistered.  If -noinherit
+is omitted, the function previously registered without the -noin-
+herit flag (or the NS_OP_NOINHERIT flag) will be unregistered.
+
+[call [cmd ns_register_proxy] [arg method] [arg protocol] [arg script] [opt [arg args]]]
+
+ns_register_proxy registers a Tcl script as a handler for the specified method/protocol
+combination.
+
+[nl]
+Example of HTTP proxy server:
+
+[example_begin]
+
+ns_register_proxy GET http http_proxy_handler
+
+proc http_proxy_handler { args } {
+
+    set port [lb]ns_conn port[rb]
+    if {$port == 0} {
+        set port 80
+    }
+    set url http://[lb]ns_conn host[rb]:$port[lb]ns_conn url[rb]?[lb]ns_conn query[rb]
+    ns_return 200 text/html [lb]ns_httpget $url[rb]]
+}
+
+[example_end]
+
+
+[call [cmd ns_register_trace] [arg method] [arg URLpattern] [arg script] [opt [arg args]]]
+
+ns_register_trace registers a Tcl script as a trace for the specified method/URL
+combination. After the server handles the request for the specified method on an
+URL that matches the URLpattern, it calls the trace script with the connection id
+and any arguments (args) specified.
+
+[nl]
+
+The URLpattern can contain standard string-matching characters. For example, these are valid URLpatterns:
+
+[example_begin]
+/employees/*.tcl
+/accounts/*/out
+[example_end]
+
+[nl]
+ns_register_trace is similar to ns_register_proc except that the
+pattern-matching for the URL is performed differently. With ns_register_proc,
+the specified URL is used to match that URL and any URL below it in the hierarchy.
+Wildcards such as "*" are meaningful only for the final part of the URL, such as
+/scripts/*.tcl. With ns_register_trace, the URLpattern is used to match URLs as
+a string with standard string-matching characters.
+
+[nl]
+ns_register_proc results in a single match, whereas multiple ns_register_trace's
+can be matched and will be called.
+
+
+[call [cmd ns_unregister_url2file] [opt [arg -noinherit]] [opt [arg -recurse]] [arg url]]
+[call [cmd ns_register_url2file] [opt [arg -noinherit]] [arg url] [arg script] [opt [arg args]]]
+[call [cmd ns_register_fasturl2file] [opt [arg -noinherit]] [arg url] [opt [arg basepath]]]
+
+These commands are used to perform runtime resolving of the requested urls into
+corresponding files that will be served to the client. They use ns_url2file
+interface which resolves file for current url.
+
+[nl]
+[arg url]
+Register or unregister callback for given url pattern
+
+[arg script]
+Tcl script to be called to return full path to the requested url
+
+[call [cmd ns_register_tcl] [opt [arg -noinherit]] [opt [arg {-cache cache}]] [arg method] [arg url] [opt [arg file]]]
+
+Register Tcl file to be called when request matches method/url combination. This is to enable extention-less urls or
+for mapping actual files into virtual urls.
+
+[arg -cache]
+Specifies for how long to keep result int he cache, in seconds or absolute time
+
+[arg file]
+If this argument is omitted, it will register standard C-based callback which will resolve url into absolute
+.tcl file and execute it.
+
+[list_end]
+
+Both registered ADP pages, and registered procedures will be called
+irregardless of to original requested target existing or not.
+
+[see_also ns_register_adp]
+[keywords ADP request]
+[manpage_end]
+
