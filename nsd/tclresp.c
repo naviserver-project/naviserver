@@ -102,6 +102,69 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclStartContentObjCmd --
+ *
+ *      Implements ns_startcontent. Set the connection ready to send
+ *      body data in an appropriate encoding.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      The connections current encoding may be changed.
+ *      See Ns_ConnSetEncoding() for details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                        Tcl_Obj **objv)
+{
+    Ns_Conn      *conn;
+    Tcl_Encoding  encoding = NULL;
+    char         *charset = NULL, *type = NULL;
+
+    Ns_ObjvSpec opts[] = {
+        {"-charset", Ns_ObjvString, &charset, NULL},
+        {"-type",    Ns_ObjvString, &type, NULL},
+        {"--",       Ns_ObjvBreak,  NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (GetConn(arg, interp, &conn) != TCL_OK
+        || Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    if (charset != NULL && type != NULL) {
+        Tcl_SetResult(interp, "only one of -charset or -type may be specified",
+                      TCL_STATIC);
+        return TCL_ERROR;
+    }
+
+    if (charset != NULL) {
+        encoding = Ns_GetCharsetEncoding(charset);
+        if (encoding == NULL) {
+            Tcl_AppendResult(interp, "no encoding for charset: ", charset, NULL);
+            return TCL_ERROR;
+        }
+    }
+    if (type != NULL) {
+        encoding = Ns_GetTypeEncoding(type);
+    }
+
+    if (encoding != NULL) {    
+        Ns_ConnSetEncoding(conn, encoding);
+    }
+    conn->flags |= NS_CONN_SENTHDRS;
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclWriteObjCmd --
  *
  *      Implements ns_write. Send data directly to client without

@@ -12,6 +12,11 @@
 	write_encoded and automatically detect binary data in the ns_write and
 	ns_return commands.
 
+	* nsd/conn.c:
+	* nsd/tclresp.c: Move ns_startcontent to tclresp.c. Command isn't
+	documented in ns_return.man -- doesn't this overlap with ns_headers and
+	ns_conn encoding?
+
 2007-07-05  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
