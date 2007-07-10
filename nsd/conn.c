@@ -847,10 +847,12 @@ Ns_ConnDriverContext(Ns_Conn *conn)
  *
  * Ns_ConnStartTime --
  *
- *      Return the Start Time
+ *      Return the connection start time, which is the time the
+ *      connection was queued from the driver thread, not the time
+ *      the underlying socket was opened to the server.
  *
  * Results:
- *      Ns_Time value
+ *      Ns_Time pointer.
  *
  * Side effects:
  *      None
@@ -864,6 +866,32 @@ Ns_ConnStartTime(Ns_Conn *conn)
     Conn *connPtr = (Conn *) conn;
 
     return &connPtr->startTime;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnTimeout --
+ *
+ *      Absolute time value beyond which conn should not wait on
+ *      resources, such as condition variables.
+ *
+ * Results:
+ *      Ns_Time pointer.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Time *
+Ns_ConnTimeout(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->timeout;
 }
 
 
@@ -999,58 +1027,9 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnGetWriteEncodedFlag --
+ * Ns_ConnGetChunkedFlag, Ns_ConnSetChunkedFlag --
  *
- *      Is the given connection set for encoded writes.
- *
- * Results:
- *      Boolean
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnGetWriteEncodedFlag(Ns_Conn *conn)
-{
-    return (conn->flags & NS_CONN_WRITE_ENCODED) ? NS_TRUE : NS_FALSE;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnSetWriteEncodedFlag --
- *
- *      Set the given connection encoded writes flag per parameter.
- *
- * Results:
- *      None
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag)
-{
-    if (flag) {
-        conn->flags |= NS_CONN_WRITE_ENCODED;
-    } else {
-        conn->flags &= ~NS_CONN_WRITE_ENCODED;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnGetChunkedFlag --
- *
- *      Is the given connection set for chunked encoded writes.
+ *      Get (set) the chunked-encoding flag.
  *
  * Results:
  *      Boolean
@@ -1067,23 +1046,6 @@ Ns_ConnGetChunkedFlag(Ns_Conn *conn)
     return (conn->flags & NS_CONN_WRITE_CHUNKED) ? NS_TRUE : NS_FALSE;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnSetChunkedFlag --
- *
- *      Set the given connection chunked encoding flag per parameter.
- *
- * Results:
- *      None
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
 void
 Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag)
 {
@@ -1092,32 +1054,6 @@ Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag)
     } else {
         conn->flags &= ~NS_CONN_WRITE_CHUNKED;
     }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnTimeout --
- *
- *      Absolute time value beyond which conn should not wait for
- *      resources.
- *
- * Results:
- *      Pointer to Ns_Time value.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-Ns_Time *
-Ns_ConnTimeout(Ns_Conn *conn)
-{
-    Conn *connPtr = (Conn *) conn;
-
-    return &connPtr->timeout;
 }
 
 
@@ -1161,7 +1097,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "host", "id", "isconnected", "location", "method",
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status", "timeout",
-        "url", "urlc", "urlencoding", "urlv", "version", "write_encoded",
+        "url", "urlc", "urlencoding", "urlv", "version",
         "chunked", "responseversion", "versionstring", "keepalive",
         NULL
     };
@@ -1174,7 +1110,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CTimeoutIdx, CUrlIdx,
-        CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx, CWriteEncodedIdx,
+        CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx,
         CChunkedIdx, CResponseVersionIdx, CVersionStringIdx, CKeepAliveIdx
     };
 
@@ -1407,19 +1343,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                              Tcl_PosixError(interp), NULL);
             return TCL_ERROR;
         }
-        break;
-
-    case CWriteEncodedIdx:
-        if (objc > 2) {
-            int write_encoded_flag;
-            if (Tcl_GetBooleanFromObj(interp, objv[2], &write_encoded_flag)
-                != TCL_OK) {
-                return TCL_ERROR;
-            }
-            Ns_ConnSetWriteEncodedFlag(conn, write_encoded_flag);
-        }
-        Tcl_SetObjResult(interp,
-                         Tcl_NewBooleanObj(Ns_ConnGetWriteEncodedFlag(conn)));
         break;
 
     case CChunkedIdx:
@@ -1747,7 +1670,6 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     if (status == TCL_OK) {
-        Ns_ConnSetWriteEncodedFlag(itPtr->conn, NS_TRUE);
         Ns_ConnSetEncoding(itPtr->conn, encoding);
     }
 

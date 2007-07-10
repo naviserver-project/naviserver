@@ -374,7 +374,6 @@ test tclresp-12.1 {ns_write} -constraints serverListen -setup {
 
 test tclresp-12.2 {ns_write multiple buffers, encoded} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
-        ns_conn write_encoded 1
         ns_headers 200
         ns_write x x x
     }
@@ -386,9 +385,8 @@ test tclresp-12.2 {ns_write multiple buffers, encoded} -constraints serverListen
 
 test tclresp-12.3 {ns_write multiple buffers, binary} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
-        ns_conn write_encoded 0
         ns_headers 200
-        ns_write x x x
+        ns_write [binary format a x] [binary format a x] [binary format a x]
     }
 } -body {
     nstest_http -getbody 1 GET /tclresp

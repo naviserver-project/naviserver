@@ -82,33 +82,14 @@ test http_chunked-2.1 {
     ns_unregister_proc GET /tclchunked
 } -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
 
-test http_chunked-2.1.1 {Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client} \
-    -constraints serverListen -setup {
-
-    ns_register_proc GET /tclchunked {
-        ns_conn chunked 1
-        ns_conn write_encoded 0
-        ns_headers 200 text/plain
-        ns_write 01234 56789
-        ns_write 01234
-    }
-} -body {
-    nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
-        GET /tclchunked
-} -cleanup {
-    ns_unregister_proc GET /tclchunked
-} -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
-
-test http_chunked-2.1.2 {
+test http_chunked-2.1.1 {
     Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client
 } -constraints serverListen -setup {
-
     ns_register_proc GET /tclchunked {
         ns_conn chunked 1
-        ns_conn write_encoded 1
         ns_headers 200 text/plain
-        ns_write 01234 56789
-        ns_write 01234
+        ns_write [binary format a5 01234] [binary format a5 56789]
+        ns_write [binary format a5 01234]
     }
 } -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \

@@ -912,8 +912,6 @@ NS_EXTERN Ns_Sock *Ns_ConnSockPtr(Ns_Conn *conn);
 NS_EXTERN Ns_DString *Ns_ConnSockContent(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnDriverName(Ns_Conn *conn);
 NS_EXTERN void *Ns_ConnDriverContext(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnGetWriteEncodedFlag(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetWriteEncodedFlag(Ns_Conn *conn, int flag);
 NS_EXTERN int Ns_ConnGetChunkedFlag(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);

@@ -37,10 +37,10 @@ and a set of automatically constructed headers. [arg status] is an integer
 HTTP status code. [arg mimetype] is the mime-type of the body.
 
 [nl]
-If the [option -binary] option is given then the Tcl [arg body] object
-will be converted to a byte-array and no [term encoding] conversion will take
-place. Otherwise, the [term encoding] in effect for the current connection
-will be used to encode the [arg body]
+If [arg body] is a binary object or the [option -binary] option is given then
+the Tcl [arg body] object will be converted to a byte-array and no
+[term encoding] conversion will take place. Otherwise, the [term encoding] in
+effect for the current connection will be used to encode the [arg body]
 
 [nl]
 After the command completes the connection is returned to the driver thread
@@ -160,9 +160,8 @@ will be flushed to the client when the connection is closed.
 Write [arg data] directly to the client. No headers are sent.
 
 [nl]
-The data may be encoded according to the client and server settings. It is safe
-to pass binary data to this command if encoding has been dissabled using
-the [cmd "ns_conn write_encoded"] command.
+Binary data will be written directly to the connection. Text data may be encoded
+according to the client and server settings.
 
 [nl]
 [cmd ns_write] will send data more efficiently if you pass it multiple arguments

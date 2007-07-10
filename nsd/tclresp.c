@@ -43,8 +43,6 @@ NS_RCSID("@(#) $Header$");
  * Static functions defined in this file.
  */
 
-static int WritevObjs(Tcl_Interp *interp, Ns_Conn *conn, int objc,
-                      Tcl_Obj *CONST objv[]);
 static int Result(Tcl_Interp *interp, int result);
 static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
 
@@ -124,6 +122,10 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                  Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
+    int           length, towrite, nwrote, i, n;
+    int           binary = 0;
+    struct iovec  iov[32];
+    struct iovec *sbufs = iov;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "data ?data ...?");
@@ -132,8 +134,49 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
+    objv++;
+    objc--;
 
-    return WritevObjs(interp, conn, objc - 1, objv + 1);
+    /*
+     * Allocate space for large numbers of buffers.
+     */
+
+    if (objc > sizeof(iov) / sizeof(struct iovec)) {
+        sbufs = ns_calloc(objc, sizeof(struct iovec));
+    }
+
+    /*
+     * If any of the objects are binary, send them all as data without
+     * encoding.
+     *
+     * NB: It's probably a mistake to pass in a mixture of binary and
+     * text objects.
+     */
+
+    towrite = 0;
+    n = 0;
+    for (i = 0; i < objc; i++) {
+        if (binary || (binary = NsTclObjIsByteArray(objv[i]))) {
+            sbufs[n].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
+        } else {
+            sbufs[n].iov_base = Tcl_GetStringFromObj(objv[i], &length);
+        }
+        if (length > 0) {
+            sbufs[n].iov_len = length;
+            towrite += length;
+            n++;
+        }
+    }
+    if (binary) {
+        nwrote = Ns_ConnWriteV(conn, sbufs, n);
+    } else {
+        nwrote = Ns_ConnWriteVChars(conn, sbufs, n);
+    }
+    if (sbufs != iov) {
+        ns_free(sbufs);
+    }
+
+    return Result(interp, (nwrote < towrite) ? NS_ERROR : NS_OK);
 }
 
 
@@ -181,7 +224,7 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (binary) {
+    if (binary || NsTclObjIsByteArray(dataObj)) {
         data = (char *) Tcl_GetByteArrayFromObj(dataObj, &len);
         result = Ns_ConnReturnData(conn, status, data, len, type);
     } else {
@@ -663,69 +706,6 @@ NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     result = Ns_ConnReturnRedirect(conn, Tcl_GetString(objv[1]));
 
     return Result(interp, result);
-}
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- * WritevObjs --
- *
- *      Write the given Tcl objects directly to the client using
- *      vectored IO.
- *
- * Results:
- *      Standard Tcl result.
- *      Interpreter result set to 0 on success or 1 on failure.
- *
- * Side effects:
- *      String may be encoded if the WriteEncoded flag of the conn
- *      is set.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-WritevObjs(Tcl_Interp *interp, Ns_Conn *conn, int objc, Tcl_Obj *CONST objv[])
-{
-    int           length, towrite, nwrote, i;
-    int           binary = 0;
-    struct iovec  iov[32];
-    struct iovec *sbufs = iov;
-
-    /*
-     * Treat string as binary unless the WriteEncodedFlag is set
-     * on the current conn.  This flag is manipulated via
-     * ns_startcontent or ns_conn write_encoded.
-     */
-
-    if (!Ns_ConnGetWriteEncodedFlag(conn)) {
-        binary = 1;
-    }
-    if (objc > sizeof(iov) / sizeof(struct iovec)) {
-        sbufs = ns_calloc(objc, sizeof(struct iovec));
-    }
-    towrite = 0;
-    for (i = 0; i < objc; i++) {
-        if (binary) {
-            sbufs[i].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
-        } else {
-            sbufs[i].iov_base = Tcl_GetStringFromObj(objv[i], &length);
-        }
-        sbufs[i].iov_len = length;
-        towrite += length;
-    };
-    if (binary) {
-        nwrote = Ns_ConnWriteV(conn, sbufs, objc);
-    } else {
-        nwrote = Ns_ConnWriteVChars(conn, sbufs, objc);
-    }
-    if (sbufs != iov) {
-        ns_free(sbufs);
-    }
-
-    return Result(interp, (nwrote < towrite) ? NS_ERROR : NS_OK);
 }
 
 static int

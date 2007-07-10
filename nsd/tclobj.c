@@ -58,13 +58,16 @@ static Tcl_ObjType addrType = {
     SetAddrFromAny
 };
 
+static Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
+
 
 /*
  *----------------------------------------------------------------------
  *
  * NsTclInitAddrType --
  *
- *      Initialize the Tcl address object type.
+ *      Initialize the Tcl address object type and cache the bytearray
+ *      Tcl built-in type.
  *
  * Results:
  *      None.
@@ -79,6 +82,7 @@ void
 NsTclInitAddrType(void)
 {
     Tcl_RegisterObjType(&addrType);
+    byteArrayTypePtr = Tcl_GetObjType("bytearray");
 }
 
 
@@ -333,6 +337,30 @@ void
 Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
 {
     Ns_TclSetTwoPtrValue(objPtr, &addrType, (void *) type, addr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclObjIsByteArray --
+ *
+ *      Does the given Tcl object have a byte array internal rep?
+ *      Don't convert it.
+ *
+ * Results:
+ *      Boolean.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclObjIsByteArray(Tcl_Obj *objPtr)
+{
+    return (objPtr->typePtr == byteArrayTypePtr);
 }
 
 

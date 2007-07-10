@@ -1247,6 +1247,8 @@ extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
 
 void NsParseAuth(Conn *connPtr, char *auth);
 
+extern int NsTclObjIsByteArray(Tcl_Obj *objPtr);
+
 /*
  * Proxy support
  */
