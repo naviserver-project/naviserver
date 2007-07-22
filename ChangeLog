@@ -1,3 +1,28 @@
+2007-07-22  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/all.tcl: Log a messages (Devel) as each test begins to help
+	correlate other log messages to tests, when debugging.
+
+	* tests/testserver/pages/hello.html:
+	* tests/testserver/pages/hello.xhtml: Static pages to check mime-type
+	header w/hackcontenttype enabled. (test encoding-7.1, currently failing).
+
+	* tests/testserver/modules/testhttp.tcl: Handle case where content is
+	returned chunked and keep-alive is enabled. i.e. connection-close can
+	not be used as an end-of-message marker.
+
+	* tests/testserver/pages/http_chunked.adp: Manipulate ADP buffer size if
+	requested to force streaming with test-sized ADP pages.
+
+	* tests/test.nscfg:
+	* tests/http.test: Distinguish between writersize and uploadsize and add
+	another test. (Two bugs here: long standing read-buffer misshandling
+	causing endless loops, and new progress crash caused by multiple
+	SockClose() from different threads (?) )
+
+	* tests/http_keep.test: New tests for keep-alive logic for HTTP 1.0 and
+	1.1 clients. (1 POST bug: is the test or the code broken?).
+	
 2007-07-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

@@ -44,4 +44,17 @@ namespace import tcltest::*
 eval configure $argv -singleproc true -testdir [file dirname [info script]]
 
 
+
+rename tcltest::test tcltest::__test
+
+proc tcltest::test args {
+
+    ns_log devel >->-> \
+        [format "%-16s" "[lindex $args 0]:"] ([string trim [lindex $args 1]])
+
+    uplevel 1 tcltest::__test $args
+}
+
+
+
 runAllTests

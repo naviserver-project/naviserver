@@ -114,7 +114,7 @@ test http-3.3 {limits: too many headers} -constraints serverListen -setup {
 
 
 
-test http-4.1 {HTTP/1.1 PUT small file} -constraints {serverListen knownBug} -setup {
+test http-4.1 {HTTP/1.1 PUT small file} -constraints serverListen -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -124,7 +124,37 @@ test http-4.1 {HTTP/1.1 PUT small file} -constraints {serverListen knownBug} -se
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 128]]
 
-test http-4.2 {HTTP/1.1 PUT file > maxreadahead} -constraints {serverListen knownBug} -setup {
+test http-4.2 {HTTP/1.1 PUT file == bufsize} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        ns_return 200 text/plain [ns_conn content]
+    }
+} -body {
+    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 1024]
+} -cleanup {
+    ns_unregister_proc PUT /put
+} -result [list 200 [string repeat x 1024]]
+
+test http-4.3 {HTTP/1.1 PUT file == maxreadahead} -constraints {serverListen knownBug} -setup {
+    ns_register_proc PUT /put {
+        ns_return 200 text/plain [ns_conn content]
+    }
+} -body {
+    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 1025]
+} -cleanup {
+    ns_unregister_proc PUT /put
+} -result [list 200 [string repeat x 1025]]
+
+test http-4.4 {HTTP/1.1 PUT file == writersize} -constraints {serverListen knownBug} -setup {
+    ns_register_proc PUT /put {
+        ns_return 200 text/plain [ns_conn content]
+    }
+} -body {
+    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 1026]
+} -cleanup {
+    ns_unregister_proc PUT /put
+} -result [list 200 [string repeat x 1026]]
+
+test http-4.5 {HTTP/1.1 PUT file == uploadsize} -constraints {serverListen knownBug} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -134,17 +164,7 @@ test http-4.2 {HTTP/1.1 PUT file > maxreadahead} -constraints {serverListen know
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1027]]
 
-test http-4.3 {HTTP/1.1 PUT file > uploadsize} -constraints {serverListen knownBug} -setup {
-    ns_register_proc PUT /put {
-        ns_return 200 text/plain [ns_conn content]
-    }
-} -body {
-    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 1027]
-} -cleanup {
-    ns_unregister_proc PUT /put
-} -result [list 200 [string repeat x 1027]]
-
-test http-4.4 {HTTP/1.1 PUT very large file} -constraints knownBug -setup {
+test http-4.6 {HTTP/1.1 PUT very large file} -constraints knownBug -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -154,7 +174,7 @@ test http-4.4 {HTTP/1.1 PUT very large file} -constraints knownBug -setup {
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1000000]]
 
-test http-4.5 {HTTP/1.1 PUT one more large file} -constraints knownBug -setup {
+test http-4.7 {HTTP/1.1 PUT one more large file} -constraints knownBug -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -164,7 +184,7 @@ test http-4.5 {HTTP/1.1 PUT one more large file} -constraints knownBug -setup {
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1000000]]
 
-test http-4.6 {HTTP/1.1 PUT file larger than maxinput} -constraints knownBug -setup {
+test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }

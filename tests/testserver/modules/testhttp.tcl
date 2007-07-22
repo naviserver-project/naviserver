@@ -44,7 +44,7 @@ proc nstest_http {args} {
 
     set host localhost
     set port [ns_config "ns/module/nssock" port]
-    set timeout 10
+    set timeout 3
     set state send
 
     #
@@ -92,8 +92,11 @@ proc nstest_http {args} {
         #
 
         ns_set icput $hdrs Accept */*
-        ns_set icput $hdrs Connection close
         ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
+
+		if {[string equal $http 1.0]} {
+			ns_set icput $hdrs Connection close
+		}
 
         if {[string equal $port 80]} {
             ns_set icput $hdrs Host $host
@@ -165,13 +168,22 @@ proc nstest_http {args} {
             if {$length eq {}} {
                 set length -1
             }
+			set tencoding [ns_set iget $hdrs transfer-encoding]
+
             while {1} {
                 set buf [nstest_http_read $timeout $rfd $length]
                 set len [string length $buf]
-                if {$len == 0} {
-                    break
-                }
+
+				if {$len == 0} {
+					break
+				}
+
                 append body $buf
+
+				if {[string equal $buf "0\n\n"] && [string equal $tencoding chunked]} {
+					break
+				}
+
                 if {$length > 0} {
                     set length [expr {$length - $len}]
                     if {$length <= 0} {
@@ -201,21 +213,21 @@ proc nstest_http {args} {
             || ($state eq {send}
                 && [catch {set line [nstest_http_gets $timeout $rfd]}] == 0
                 && [regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response])} {
-            catch {close $rfd}
-            catch {close $wfd}
-            catch {ns_set free $hdrs}
-            return $response
-        }
 
-        #
-        # Something went wrong during the request, so return an error.
-        #
+			# OK
 
-        catch {close $rfd}
-        catch {close $wfd}
-        catch {ns_set free $hdrs}
+        } else {
 
-        return -code error -errorinfo $errMsg
+			#
+			# Something went wrong during the request, so return an error.
+			#
+
+			catch {close $rfd}
+			catch {close $wfd}
+			catch {ns_set free $hdrs}
+
+			return -code error -errorinfo $errMsg
+		}
 
     }
 
@@ -277,13 +289,21 @@ proc nstest_http_readable {timeout sock} {
 }
 
 proc nstest_http_read {timeout sock length} {
+	
+	set nread [nstest_http_readable $timeout $sock]
+	if {$nread == 0} {
+		return ""
+	}
 
-    set nread [nstest_http_readable $timeout $sock]
-    if {$length > 0 && $length < $nread} {
-        set nread $length
-    }
+	if {$length > 0 && $length < $nread} {
+		set nread $length
+	}
 
-    return [read $sock $nread]
+	if {$length > -1} {
+		return [read $sock $nread]
+	} else {
+		return [read $sock]
+	}
 }
 
 proc nstest_http_write {timeout sock string {length -1}} {
