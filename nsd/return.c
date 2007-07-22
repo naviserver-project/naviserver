@@ -39,10 +39,6 @@
 NS_RCSID("@(#) $Header$");
 
 
-#define HTTP11_HDR_TE     "Transfer-Encoding"
-#define HTTP11_TE_CHUNKED "chunked"
-
-
 /*
  * Local functions defined in this file
  */
@@ -115,193 +111,6 @@ static struct {
 
 static int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnConstructHeaders --
- *
- *      Put the header of an HTTP response into the dstring.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Content length and connection-keepalive headers will be added
- *      if possible.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
-{
-    Conn       *connPtr = (Conn *) conn;
-    Driver     *drvPtr  = (Driver *) connPtr->drvPtr;
-    int         i, length;
-    CONST char *reason, *value, *keep, *key, *lengthHdr;
-
-    /*
-     * Construct the HTTP response status line.
-     */
-
-    reason = "Unknown Reason";
-    for (i = 0; i < nreasons; i++) {
-        if (reasons[i].status == connPtr->responseStatus) {
-            reason = reasons[i].reason;
-            break;
-        }
-    }
-
-    /*
-     * Perform some checks to ensure proper use of chunked
-     * encoding
-     */
-
-    if ((connPtr->responseStatus == 204
-         || connPtr->responseStatus == 206
-         || connPtr->responseStatus == 304)) {
-        conn->flags &= ~NS_CONN_WRITE_CHUNKED;
-        Ns_SetIDeleteKey(conn->outputheaders, HTTP11_HDR_TE);
-    }
-
-    /*
-     * This connection has been marked to return in chunked encoding
-     */
-
-    if (conn->flags & NS_CONN_WRITE_CHUNKED) {
-        Ns_ConnCondSetHeaders(conn, HTTP11_HDR_TE, HTTP11_TE_CHUNKED);
-        Ns_SetIDeleteKey(conn->outputheaders, "Content-length");
-        connPtr->responseLength = 0;
-    }
-
-    Ns_DStringPrintf(dsPtr, "%s %d %s\r\n",
-                     (connPtr->responseVersion != NULL) ? connPtr->responseVersion :
-                     (conn->flags & NS_CONN_WRITE_CHUNKED) ? "HTTP/1.1" : "HTTP/1.0",
-                     connPtr->responseStatus,
-                     reason);
-
-    /*
-     * Output any headers.
-     */
-
-    if (conn->outputheaders != NULL) {
-
-        /*
-         * Update the response length value directly from the
-         * header to be sent, i.e., don't trust programmers
-         * correctly called Ns_ConnSetLengthHeader().
-         */
-
-        length = connPtr->responseLength;
-        lengthHdr = Ns_SetIGet(conn->outputheaders, "content-length");
-        if (lengthHdr != NULL) {
-            connPtr->responseLength = atoi(lengthHdr);
-        }
-
-        /*
-         * Output a connection keep-alive header only on
-         * any HTTP status 200 response which included
-         * a valid and correctly set content-length header.
-         */
-
-        if (connPtr->keep > 0 ||
-            (connPtr->keep < 0
-             && drvPtr->keepwait > 0
-             && connPtr->headers != NULL
-             && connPtr->request != NULL
-             && (((connPtr->responseStatus >= 200 && connPtr->responseStatus < 300)
-                 && ((lengthHdr != NULL && connPtr->responseLength == length)
-                     || (conn->flags & NS_CONN_WRITE_CHUNKED)) )
-                || (connPtr->responseStatus == 304
-                    || connPtr->responseStatus == 201
-                    || connPtr->responseStatus == 207) )
-             && (drvPtr->keepallmethods == NS_TRUE
-                 || STREQ(connPtr->request->method, "GET"))
-             && (key = Ns_SetIGet(conn->headers, "connection")) != NULL
-                 && STRIEQ(key, "keep-alive"))) {
-
-            connPtr->keep = 1;
-            keep = "keep-alive";
-        } else {
-            keep = "close";
-        }
-
-        Ns_ConnCondSetHeaders(conn, "Connection", keep);
-
-        for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
-            key = Ns_SetKey(conn->outputheaders, i);
-            value = Ns_SetValue(conn->outputheaders, i);
-            if (key != NULL && value != NULL) {
-                Ns_DStringAppend(dsPtr, key);
-                Ns_DStringNAppend(dsPtr, ": ", 2);
-                Ns_DStringAppend(dsPtr, value);
-                Ns_DStringNAppend(dsPtr, "\r\n", 2);
-            }
-        }
-    }
-    Ns_DStringNAppend(dsPtr, "\r\n", 2);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnQueueHeaders --
- *
- *      Format basic headers to be sent on the connection.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      See Ns_ConnConstructHeaders.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
-{
-    Conn *connPtr = (Conn *) conn;
-
-    if (!(conn->flags & NS_CONN_SENTHDRS)) {
-        /* 200 is default, don't stomp custom redirects. */
-        if (status != 200) {
-            connPtr->responseStatus = status;
-        }
-        if (!(conn->flags & NS_CONN_SKIPHDRS)) {
-            Ns_ConnConstructHeaders(conn, &connPtr->queued);
-            connPtr->nContentSent -= connPtr->queued.length;
-        }
-        conn->flags |= NS_CONN_SENTHDRS;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnFlushHeaders --
- *
- *      Send out a well-formed set of HTTP headers with the given
- *      status.
- *
- * Results:
- *      Number of bytes written.
- *
- * Side effects:
- *      See Ns_ConnQueueHeaders.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
-{
-    Ns_ConnQueueHeaders(conn, status);
-    return Ns_ConnSend(conn, NULL, 0);
-}
 
 
 /*
@@ -432,57 +241,6 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnSetRequiredHeaders --
- *
- *      Set a sane set of minimal headers for any response:
- *      MIME-Version, Date, Server, Content-Type, Content-Length
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
-{
-    Ns_DString ds;
-
-    /*
-     * Set the standard mime and date headers.
-     */
-
-    Ns_DStringInit(&ds);
-    Ns_ConnCondSetHeaders(conn, "MIME-Version", "1.0");
-    Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
-    Ns_ConnCondSetHeaders(conn, "Date", Ns_HttpTime(&ds, NULL));
-    Ns_DStringSetLength(&ds, 0);
-
-    Ns_DStringVarAppend(&ds, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NULL);
-    Ns_ConnCondSetHeaders(conn, "Server", ds.string);
-
-    /*
-     * Set the type and/or length headers if provided.  Note
-     * that a valid length is required for connection keep-alive.
-     */
-
-    if (type != NULL) {
-        Ns_ConnSetTypeHeader(conn, type);
-    }
-    if (length >= 0) {
-        Ns_ConnSetLengthHeader(conn, length);
-    }
-
-    Ns_DStringFree(&ds);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_ConnSetTypeHeader --
  *
  *      Sets the Content-Type HTTP output header
@@ -499,7 +257,22 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
 void
 Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
 {
+    Conn        *connPtr = (Conn *) conn;
+    Tcl_Encoding enc;
+    Tcl_DString  type_ds;
+    int          new_type = NS_FALSE;
+
+    NsComputeEncodingFromType(type, &enc, &new_type, &type_ds);
+    if (new_type) {
+        type = Tcl_DStringValue(&type_ds);
+    }
     Ns_ConnUpdateHeaders(conn, "Content-Type", type);
+    if (new_type) {
+        Ns_DStringFree(&type_ds);
+    }
+    if (enc != NULL) {
+        connPtr->encoding = enc;
+    }
 }
 
 
@@ -523,11 +296,15 @@ void
 Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
 {
     Conn *connPtr = (Conn *) conn;
-    char strlength[TCL_INTEGER_SPACE];
+    char  strlength[TCL_INTEGER_SPACE];
 
-    snprintf(strlength, sizeof(strlength), "%" TCL_LL_MODIFIER "d", length);
+    if (length >= 0) {
+        snprintf(strlength, sizeof(strlength), "%" TCL_LL_MODIFIER "d", length);
+        Ns_ConnUpdateHeaders(conn, "Content-Length", strlength);
+    } else {
+        Ns_SetIDeleteKey(conn->outputheaders, "Content-Length");
+    }
     connPtr->responseLength = length;
-    Ns_ConnUpdateHeaders(conn, "Content-Length", strlength);
 }
 
 
@@ -578,6 +355,170 @@ void
 Ns_ConnSetExpiresHeader(Ns_Conn *conn, CONST char *expires)
 {
     Ns_ConnSetHeaders(conn, "Expires", expires);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSetRequiredHeaders --
+ *
+ *      Set a sane set of minimal headers for any response:
+ *      MIME-Version, Date, Server, Content-Type, Content-Length
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
+{
+    Ns_DString ds;
+
+    Ns_DStringInit(&ds);
+
+    /*
+     * Set the standard mime and date headers.
+     */
+
+    Ns_ConnCondSetHeaders(conn, "MIME-Version", "1.0");
+    Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
+    Ns_ConnCondSetHeaders(conn, "Date", Ns_HttpTime(&ds, NULL));
+    Ns_DStringSetLength(&ds, 0);
+
+    Ns_DStringVarAppend(&ds, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NULL);
+    Ns_ConnCondSetHeaders(conn, "Server", ds.string);
+
+    /*
+     * Set the type and/or length headers if provided.  Note
+     * that a valid length is required for connection keep-alive.
+     */
+
+    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetLengthHeader(conn, length);
+
+    Ns_DStringFree(&ds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnConstructHeaders --
+ *
+ *      Put the header of an HTTP response into the dstring.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Content length and connection-keepalive headers will be added
+ *      if possible.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
+{
+    Conn       *connPtr = (Conn *) conn;
+    int         i;
+    CONST char *reason, *proto, *value, *key;
+
+    /*
+     * Construct the HTTP response status line.
+     */
+
+    reason = "Unknown Reason";
+    for (i = 0; i < nreasons; i++) {
+        if (reasons[i].status == connPtr->responseStatus) {
+            reason = reasons[i].reason;
+            break;
+        }
+    }
+
+    if (connPtr->responseVersion != NULL) {
+        proto = connPtr->responseVersion;
+    } else if (connPtr->request->version > 1.0) {
+        proto = "HTTP/1.1";
+    } else {
+        proto = "HTTP/1.0";
+    }
+    Ns_DStringPrintf(dsPtr, "%s %d %s\r\n",
+                     proto, connPtr->responseStatus, reason);
+
+    /*
+     * Add the basic required headers.
+     */
+
+    Ns_DStringVarAppend(dsPtr,
+        "MIME-Version: 1.0\r\n"
+        "Accept-Ranges: bytes\r\n"
+        "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
+        "Date: ",
+        NULL);
+    Ns_HttpTime(dsPtr, NULL);
+    Ns_DStringNAppend(dsPtr, "\r\n", 2);
+
+    /*
+     * Output any extra headers.
+     */
+
+    if (conn->outputheaders != NULL) {
+
+        for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
+            key = Ns_SetKey(conn->outputheaders, i);
+            value = Ns_SetValue(conn->outputheaders, i);
+            if (key != NULL && value != NULL) {
+                Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
+            }
+        }
+    }
+
+    /*
+     * End of headers.
+     */
+
+    Ns_DStringNAppend(dsPtr, "\r\n", 2);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnQueueHeaders, Ns_ConnFlushHeaders --
+ *
+ *      Deperecated.
+ *
+ * Results:
+ *      None / Number of bytes written.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
+{
+    Ns_ConnSetResponseStatus(conn, status);
+}
+
+int
+Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    Ns_ConnSetResponseStatus(conn, status);
+    Ns_ConnWriteData(conn, NULL, 0, 0);
+
+    return connPtr->nContentSent;
 }
 
 
@@ -724,7 +665,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
     return ReturnCharData(conn, status, data, len, type, NS_TRUE);
 }
 
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -772,55 +713,19 @@ static int
 ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
                CONST char *type, int sendRaw)
 {
-    Conn        *connPtr = (Conn *) conn;
-    int          hlen, result;
-    Tcl_Encoding enc;
-    Tcl_DString  type_ds;
-    int          new_type = NS_FALSE;
-
-    if (conn->flags & NS_CONN_SKIPBODY) {
-        data = NULL;
-        len = 0;
+    Ns_ConnSetResponseStatus(conn, status);
+    if (type != NULL) {
+        Ns_ConnSetTypeHeader(conn, type);
     }
     if (len < 0) {
         len = data ? strlen(data) : 0;
     }
-
-    hlen = len;
-    if (len > 0 && !sendRaw) {
-        /*
-         * Make sure we know what output encoding (if any) to use.
-         */
-        NsComputeEncodingFromType(type, &enc, &new_type, &type_ds);
-        if (new_type) {
-            type = Tcl_DStringValue(&type_ds);
-        }
-        if (enc != NULL) {
-            connPtr->encoding = enc;
-            if (connPtr->request->version > 1.0) {
-                connPtr->flags |= NS_CONN_WRITE_CHUNKED;
-            } else {
-                hlen = -1;
-            }
-        } else if (connPtr->encoding == NULL) {
-            sendRaw = NS_TRUE;
-        }
-    }
-    Ns_ConnSetRequiredHeaders(conn, type, hlen);
-    Ns_ConnQueueHeaders(conn, status);
     if (sendRaw) {
-        result = Ns_WriteConn(conn, data, len);
+        Ns_ConnWriteData(conn, data, len, 0);
     } else {
-        result = Ns_WriteCharConn(conn, data, len);
+        Ns_ConnWriteChars(conn, data, len, 0);
     }
-    if (result == NS_OK) {
-        result = Ns_ConnClose(conn);
-    }
-    if (new_type) {
-        Tcl_DStringFree(&type_ds);
-    }
-
-    return result;
+    return Ns_ConnClose(conn);
 }
 
 
@@ -941,8 +846,9 @@ ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
 {
     int result;
 
-    Ns_ConnSetRequiredHeaders(conn, type, len);
-    Ns_ConnQueueHeaders(conn, status);
+    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetResponseStatus(conn, status);
+
     if (chan != NULL) {
         result = Ns_ConnSendChannel(conn, chan, len);
     } else if (fp != NULL) {

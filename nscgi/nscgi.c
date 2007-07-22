@@ -1087,11 +1087,11 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
      * Queue the headers and copy remaining content up to end of file.
      */
 
-    Ns_ConnSetRequiredHeaders(conn, NULL, -1);
-    Ns_ConnQueueHeaders(conn, httpstatus);
+    Ns_ConnSetResponseStatus(conn, httpstatus);
 copy:
     do {
-    	status = Ns_WriteConn(conn, cgiPtr->ptr, cgiPtr->cnt);
+    	status = Ns_ConnWriteData(conn, cgiPtr->ptr, cgiPtr->cnt,
+                                  NS_CONN_STREAM);
     } while (status == NS_OK && CgiRead(cgiPtr) > 0);
 
     /*

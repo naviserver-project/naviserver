@@ -625,7 +625,6 @@ typedef struct Conn {
 
     Ns_Set *query;
     Tcl_HashTable files;
-    Tcl_DString queued;
     void *cls[NS_CONN_MAXCLS];
 
 } Conn;
@@ -1241,6 +1240,7 @@ extern Tcl_Encoding NsGetTypeEncodingWithDef(CONST char *type, int *used_default
 extern void NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
                                       int *new_type, Tcl_DString *type_ds);
 extern Tcl_Encoding NsGetFileEncoding(NsServer *servPtr, CONST char *file);
+extern int NsEncodingIsUtf8(Tcl_Encoding encoding);
 
 extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
                               Tcl_DString *dsPtr);

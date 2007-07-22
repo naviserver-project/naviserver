@@ -320,8 +320,8 @@ proc ns_chmod {file mode} {
 #
 
 proc ns_adp_compress {{bool 1}} {
-	ns_adp_ctl gzip $bool
-	return ""
+    ns_adp_ctl gzip $bool
+    return ""
 }
 
 #
@@ -331,8 +331,8 @@ proc ns_adp_compress {{bool 1}} {
 #
 
 proc ns_adp_stream {{bool 1}} {
-	ns_adp_ctl stream $bool
-	ns_adp_flush
+    ns_adp_ctl stream $bool
+    ns_adp_flush
 }
 
 

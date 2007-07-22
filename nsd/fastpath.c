@@ -667,8 +667,7 @@ FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
      */
 
     if (conn->flags & NS_CONN_SKIPBODY) {
-        Ns_ConnSetRequiredHeaders(conn, type, stPtr->st_size);
-        return Ns_ConnFlushHeaders(conn, status);
+        return Ns_ConnReturnData(conn, status, "", 0, type);
     }
 
     /*
@@ -1064,12 +1063,14 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
          */
 
         roPtr = &rangesPtr->offsets[0];
+        Ns_ConnSetLengthHeader(conn, roPtr->size);
+        Ns_ConnSetTypeHeader(conn, type);
+
         Ns_ConnPrintfHeaders(conn, "Content-range",
             "bytes %" TCL_LL_MODIFIER "d-%" TCL_LL_MODIFIER "d/%" TCL_LL_MODIFIER "d",
             roPtr->start, roPtr->end, len);
 
-        Ns_ConnSetRequiredHeaders(conn, type, roPtr->size);
-        Ns_ConnQueueHeaders(conn, rangesPtr->status);
+        Ns_ConnSetResponseStatus(conn, rangesPtr->status);
 
         if (chan) {
             NsFastSeek(chan, roPtr->start, SEEK_SET);
@@ -1081,7 +1082,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
         } else {
             iovPtr->iov_base = (char *) data + roPtr->start;
             iovPtr->iov_len  = roPtr->size;
-            result = Ns_ConnSend(conn, iovPtr, 1);
+            result = Ns_ConnWriteVData(conn, iovPtr, 1, 0);
         }
         break;
 
@@ -1162,15 +1163,16 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
          * Second pass, send http headers and data
          */
 
-        Ns_ConnSetRequiredHeaders(conn, type, rangesPtr->size);
-        Ns_ConnQueueHeaders(conn, rangesPtr->status);
+        Ns_ConnSetResponseStatus(conn, rangesPtr->status);
+        Ns_ConnSetLengthHeader(conn, rangesPtr->size);
+        Ns_ConnSetTypeHeader(conn, type);
 
         if (!chan) {
             /*
              * In mmap mode, send all iov buffers at once
              */
 
-            result = Ns_ConnSend(conn, bufs, rangesPtr->count * 3);
+            result = Ns_ConnWriteVData(conn, bufs, rangesPtr->count * 3, 0);
 
         } else {
 
@@ -1186,7 +1188,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
                  */
 
                 iovPtr = &bufs[i*3];
-                result = Ns_ConnSend(conn, iovPtr, 1);
+                result = Ns_ConnWriteVData(conn, iovPtr, 1, 0);
                 if (result == NS_ERROR) {
                     break;
                 }
@@ -1212,7 +1214,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
                  */
 
                 iovPtr += 2;
-                result = Ns_ConnSend(conn, iovPtr, 1);
+                result = Ns_ConnWriteVData(conn, iovPtr, 1, 0);
                 if (result == NS_ERROR) {
                     break;
                 }

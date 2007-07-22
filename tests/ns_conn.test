@@ -13,7 +13,7 @@ test ns_conn-1.1 {basic syntax: plain call} -body {
 
 test ns_conn-1.2 {basic syntax: wrong argument} -body {
      ns_conn 123
-} -returnCodes error -result {bad option "123": must be authpassword, authuser, auth, close, content, contentlength, contentsentlength, copy, channel, driver, encoding, files, fileoffset, filelength, fileheaders, flags, form, headers, host, id, isconnected, location, method, outputheaders, peeraddr, peerport, port, protocol, query, request, server, sock, start, status, timeout, url, urlc, urlencoding, urlv, version, chunked, responseversion, versionstring, or keepalive}
+} -returnCodes error -result {bad option "123": must be authpassword, authuser, auth, close, content, contentlength, contentsentlength, copy, channel, driver, encoding, files, fileoffset, filelength, fileheaders, flags, form, headers, host, id, isconnected, location, method, outputheaders, peeraddr, peerport, port, protocol, query, request, server, sock, start, status, timeout, url, urlc, urlencoding, urlv, version, responseversion, versionstring, or keepalive}
 
 test ns_conn-2.1 {basic operation} -body {
      ns_conn close

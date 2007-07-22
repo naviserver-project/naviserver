@@ -22,7 +22,48 @@
 
 	* tests/http_keep.test: New tests for keep-alive logic for HTTP 1.0 and
 	1.1 clients. (1 POST bug: is the test or the code broken?).
-	
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/return.c:
+	* nsd/connio.c: Depreciated: Ns_ConnSetRequiredHeaders(),
+	Ns_ConnQueueHeaders(), Ns_ConnFlushHeaders(). Default headers and
+	flushing are now handled at last moment by Ns_ConnWriteVData() which
+	knows exactly how many bytes are to be sent. The Ns_ConnWrite* routines
+	now take a flags argument and an NS_CONN_STREAM flag which enables
+	chunking if possible.
+
+	This fixes streaming and chunking and enables it in more situations. We
+	were also needlessly flushing headers early causing an extra TCP packet
+	and corresponding RTT. 
+
+	Ns_ConnSend() no longer flushes headers. Don't call this directly unless
+	you really need to skip all HTTP specific logic (and don't call it in a
+	loop).
+
+	* nsd/conn.c: ns_conn chunked*, Ns_Conn*Chunk* etc. removed.
+
+	* nsd/encoding.c: New NsEncodingIsUtf8() to allow null utf8-to-utf8
+	transformation to be skipped on write.
+
+	* nsd/queue.c: No more write-behind buffer, which was header specific
+	anyway.
+
+	* nsd/adprequest.c:
+	* nsd/driver.c:
+	* nsd/fastpath.c:
+	* nsd/returnresp.c:
+	* nsd/tclresp.c:
+	* nscgi/nscgi.c:
+	* tcl/compat.tcl: Various old to new API updates, removing direct calls
+	to flush headers etc.
+
+	* tests/encoding.test:
+	* tests/http_chunked.test:
+	* tests/ns_conn.test:
+	* tests/tclresp.test: Various extra tests for corner cases and removing
+	knownBug constraints.
+
 2007-07-10  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

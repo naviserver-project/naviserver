@@ -45,23 +45,33 @@ if {[ns_config test listenport]} {
 test http_chunked-1.1 {
     ADP streaming w/chunks to HTTP/1.1 client
 } -constraints serverListen -body {
-    nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody t \
+    nstest_http -http 1.1 -setheaders {Connection keep-alive} \
+		-getbody 1 -getheaders {Transfer-Encoding Connection Content-Length} \
         GET /http_chunked.adp?stream=1
-} -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
+} -result "200 chunked keep-alive {} {a\n0123456789\n5\n01234\n0\n\n}"
 
 test http_chunked-1.2 {
     ADP with short buffered response
 } -constraints serverListen -body {
-    nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody t \
+    nstest_http -http 1.1 -setheaders {Connection keep-alive} \
+		-getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
         GET /http_chunked.adp?stream=0
-} -result "200 {} 15 012345678901234"
+} -result "200 {} keep-alive 15 012345678901234"
 
 test http_chunked-1.3 {
-    adp streaming to HTTP/1.0 client
+    ADP with longer partly-buffered response and auto-streaming
+} -constraints serverListen -body {
+    nstest_http -http 1.1 -setheaders {Connection keep-alive} \
+		-getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
+        GET /http_chunked.adp?stream=0&bufsize=8
+} -result "200 chunked keep-alive {} {a\n0123456789\n5\n01234\n0\n\n}"
+
+test http_chunked-1.4 {
+    ADP auto-streaming to HTTP/1.0 client
 } -constraints serverListen -body {
     nstest_http -http 1.0 -setheaders {Connection keep-alive} \
         -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
-        GET /http_chunked.adp?stream=1
+        GET /http_chunked.adp?stream=1&bufsize=8
 } -result {200 {} close {} 012345678901234}
 
 
@@ -70,7 +80,6 @@ test http_chunked-2.1 {
     Tcl streaming w/chunks to HTTP/1.1 client
 } -constraints serverListen -setup {
     ns_register_proc GET /tclchunked {
-        ns_conn chunked 1 ;# remove this explicit call
         ns_headers 200 text/plain
         ns_write 0123456789
         ns_write 01234
@@ -86,7 +95,6 @@ test http_chunked-2.1.1 {
     Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client
 } -constraints serverListen -setup {
     ns_register_proc GET /tclchunked {
-        ns_conn chunked 1
         ns_headers 200 text/plain
         ns_write [binary format a5 01234] [binary format a5 56789]
         ns_write [binary format a5 01234]
@@ -105,7 +113,7 @@ test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverList
         ns_write 01234
     }
 } -body {
-    nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+    nstest_http -http 1.0 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
     ns_unregister_proc GET /tclchunked
@@ -113,7 +121,7 @@ test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverList
 
 test http_chunked-2.3 {
     Tcl response of known size to HTTP/1.1 client
-} -constraints {serverListen knownBug} -setup {
+} -constraints serverListen -setup {
     ns_register_proc GET /tclchunked {ns_return 200 text/plain 01234}
 } -body {
     nstest_http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \

@@ -58,20 +58,27 @@ static int ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
 static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
                     FILE *fp, int fd);
 
+static int ConstructHeaders(Ns_Conn *conn, size_t length, int flags,
+                            Ns_DString *dsPtr);
+static int CheckKeep(Conn *connPtr);
+static int HdrEq(Ns_Set *set, char *name, char *value);
+
+
 
 /*
  *-----------------------------------------------------------------
  *
  * Ns_ConnClose --
  *
- *      Close a connection.
+ *      Return a connection to the driver thread for close or
+ *      keep-alive.
  *
  * Results:
  *      Always NS_OK.
  *
  * Side effects:
- *      The underlying socket in the connection is closed or moved
- *      to the waiting keep-alive list.
+ *      May trigger writing http-chunked trailer.
+ *      Tcl at-close callbacks may run.
  *
  *-----------------------------------------------------------------
  */
@@ -84,30 +91,27 @@ Ns_ConnClose(Ns_Conn *conn)
 
     if (connPtr->sockPtr != NULL) {
 
-        keep = connPtr->keep > 0 ? 1 : 0;
+        if ((connPtr->flags & NS_CONN_STREAM)
+            && (connPtr->flags & NS_CONN_CHUNK)) {
 
-        /*
-         * In chunked mode we must signify the last chunk with a
-         * chunk of zero size. Send any queued but unsent headers.
-         */
+            /*
+             * Streaming in chunked mode: write the end-of-content trailer.
+             */
 
-        if (((conn->flags & NS_CONN_WRITE_CHUNKED)
-             && !(conn->flags & NS_CONN_SENT_LAST_CHUNK))
-            || connPtr->queued.length > 0) {
-
-            if (Ns_WriteConn(conn, NULL, 0) != NS_OK) {
-                keep = 0;
-            }
+            (void) Ns_ConnWriteData(conn, NULL, 0, 0);
         }
 
+        keep = connPtr->keep > 0 ? 1 : 0;
         NsSockClose(connPtr->sockPtr, keep);
+
         connPtr->sockPtr = NULL;
         connPtr->flags |= NS_CONN_CLOSED;
+
+        if (connPtr->itPtr != NULL) {
+            NsTclRunAtClose(connPtr->itPtr);
+        }
     }
 
-    if (connPtr->itPtr != NULL) {
-        NsTclRunAtClose(connPtr->itPtr);
-    }
     return NS_OK;
 }
 
@@ -117,16 +121,17 @@ Ns_ConnClose(Ns_Conn *conn)
  *
  * Ns_ConnSend --
  *
- *      Send buffers to client, including any queued
- *      write-behind data if necessary.
+ *      Send buffers to client efficiently.
+ *      It promises to send all of it.
  *
  * Results:
- *      Number of bytes of given buffers written, -1 for
- *      error on first send.
+ *      Number of bytes of given buffers written, otherwise
+ *      -1 on error from first send.
  *
  * Side effects:
- *      Will truncate any queued data after send.  May send data
- *      in multiple packets if nbufs is large.
+ *      - Will update connPtr->nContentSent.
+ *      - May send data in multiple packets if nbufs is large.
+ *      - Also depends on configured comm driver, i.e. nssock, nsssl.
  *
  *----------------------------------------------------------------------
  */
@@ -137,27 +142,16 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     Conn         *connPtr = (Conn *) conn;
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
     int           nwrote = 0, towrite = 0;
-    int           n, sent = -1;
+    int           sent = -1;
+    int           status = NS_OK;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
 
     if (connPtr->sockPtr == NULL) {
-        return -1;
+        return NS_ERROR;
     }
 
     sbufPtr = sbufs;
     sbufLen = UIO_MAXIOV;
-
-    /*
-     * Send any queued write-behind data.
-     */
-
-    if (connPtr->queued.length > 0) {
-        sbufPtr[sbufIdx].iov_base = connPtr->queued.string;
-        sbufPtr[sbufIdx].iov_len = connPtr->queued.length;
-        towrite += sbufPtr[sbufIdx].iov_len;
-        sbufIdx++;
-        nsbufs++;
-    }
 
     /*
      * Send up to UIO_MAXIOV buffers of data at a time and strip out
@@ -179,6 +173,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 
         sent = NsDriverSend(connPtr->sockPtr, sbufPtr, nsbufs);
         if (sent < 0) {
+            status = NS_ERROR;
             break;
         }
         towrite -= sent;
@@ -220,30 +215,9 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         sbufIdx = 0;
     }
 
-    /*
-     * Truncate the queued data buffer.
-     */
-
     if (nwrote > 0) {
         connPtr->nContentSent += nwrote;
-        if (connPtr->queued.length > 0) {
-            n = connPtr->queued.length - nwrote;
-            if (n <= 0) {
-                nwrote -= connPtr->queued.length;
-                Tcl_DStringSetLength(&connPtr->queued, 0);
-            } else {
-                memmove(connPtr->queued.string,
-                        connPtr->queued.string + nwrote, (size_t) n);
-                Tcl_DStringSetLength(&connPtr->queued, n);
-                nwrote = 0;
-            }
-        }
     } else {
-
-        /*
-         * Return error on first send, if any, from NsDriverSend above.
-         */
-
         nwrote = sent;
     }
 
@@ -254,74 +228,152 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnWrite, Ns_ConnWriteV --
+ * Ns_ConnWriteData, Ns_ConnWriteVData --
  *
  *      Send one or more buffers of raw bytes to the client, possibly
- *      using the HTTP chunked encoding.
+ *      using the HTTP chunked encoding if flags includes NS_CONN_STREAM.
  *
  * Results:
- *      # of bytes written from buffer or -1 on error.
+ *      NS_OK if all data written, NS_ERROR otherwise.
  *
  * Side effects:
- *      In chunked mode, writing 0 bytes means terminating chunked
- *      stream with the zero chunk and trailing \r\n.
+ *      HTTP headers are constructed and sent on first call.
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, int towrite)
+Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, int towrite, int flags)
 {
     struct iovec vbuf;
 
     vbuf.iov_base = (void *) buf;
     vbuf.iov_len = towrite;
-    return Ns_ConnWriteV(conn, &vbuf, 1);
+
+    return Ns_ConnWriteVData(conn, &vbuf, 1, flags);
 }
 
 int
-Ns_ConnWriteV(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 {
-    int           i, towrite, nwrote;
+    Conn         *connPtr = (Conn *) conn;
+    Ns_DString    ds;
+    int           i, nsbufs, sbufIdx, bodyLength, towrite, nwrote;
     char          hdr[32];
-    struct iovec  iov[32];
-    struct iovec *sbufs = iov;
+    struct iovec  sbufs[32], *sbufPtr = sbufs;
 
-    if (!(conn->flags & NS_CONN_WRITE_CHUNKED)) {
-        nwrote = Ns_ConnSend(conn, bufs, nbufs);
-    } else {
+    Ns_DStringInit(&ds);
 
-        /*
-         * Send data with HTTP chunked encoding.
-         */
+    /*
+     * Make sure there's enough send buffers to contain the given
+     * buffers, a set of optional HTTP headers, and an optional
+     * HTTP chunked header/footer pair. Use the stack if possible.
+     */
 
-        if (nbufs + 2 > (sizeof(iov) / sizeof(struct iovec))) {
-            sbufs = ns_calloc(nbufs + 2, sizeof(struct iovec));
+    if (nbufs + 2 + 1 > (sizeof(sbufs) / sizeof(struct iovec))) {
+        sbufPtr = ns_calloc(nbufs + 2 + 1, sizeof(struct iovec));
+    }
+    nsbufs = 0;
+    sbufIdx = 0;
+
+    /*
+     * Work out the body length for non-chunking case.
+     */
+
+    for (i = 0, bodyLength = 0; i < nbufs; i++) {
+        bodyLength += bufs[i].iov_len;
+    }
+
+    towrite = 0;
+
+    /*
+     * Send headers if not already sent.
+     */
+
+    if (!(conn->flags & NS_CONN_SENTHDRS)) {
+        if (ConstructHeaders(conn, bodyLength, flags, &ds)) {
+            sbufPtr[sbufIdx].iov_base = Ns_DStringValue(&ds);
+            sbufPtr[sbufIdx++].iov_len = Ns_DStringLength(&ds);
+            nsbufs++;
+
+            towrite += Ns_DStringLength(&ds);
         }
-        for (i = 0, towrite = 0; i < nbufs; i++) {
-            towrite += bufs[i].iov_len;
-        }
-        sbufs[0].iov_base = hdr;
-        sbufs[0].iov_len = sprintf(hdr, "%x\r\n", towrite);
-        (void) memcpy(sbufs+1, bufs, nbufs * sizeof(struct iovec));
-        sbufs[nbufs+1].iov_base = "\r\n";
-        sbufs[nbufs+1].iov_len = 2;
-        nwrote = Ns_ConnSend(conn, sbufs, nbufs+2);
-        if (sbufs != iov) {
-            ns_free(sbufs);
-        }
+        conn->flags |= NS_CONN_SENTHDRS;
+    }
 
-        /*
-         * Zero bytes signals the the last chunked buffer
-         * has been sent.
-         */
+    /*
+     * Send body.
+     */
 
-        if (bufs[nbufs-1].iov_len == 0) {
-            conn->flags |= NS_CONN_SENT_LAST_CHUNK;
+    if (!(conn->flags & NS_CONN_SKIPBODY)) {
+
+    	if (!(conn->flags & NS_CONN_CHUNK)) {
+            /*
+             * Output content without chunking header/trailers.
+             */
+
+            if (sbufIdx == 0) {
+                sbufPtr = bufs;
+                nsbufs = nbufs;
+            } else {
+                (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
+                nsbufs += nbufs;
+            }
+            towrite += bodyLength;
+
+        } else {
+
+            if (bodyLength > 0) {
+                /*
+                 * Output length header followed by content and trailer.
+                 */
+
+    	        sbufPtr[sbufIdx].iov_base = hdr;
+                sbufPtr[sbufIdx].iov_len = sprintf(hdr, "%x\r\n", bodyLength);
+
+                towrite += sbufPtr[sbufIdx++].iov_len;
+
+                (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
+                sbufIdx += nbufs;
+
+                towrite += bodyLength;
+
+                sbufPtr[sbufIdx].iov_base = "\r\n";
+                sbufPtr[sbufIdx++].iov_len = 2;
+
+                towrite += 2;
+
+                nsbufs += nbufs + 2;
+            }
+
+            if (!(flags & NS_CONN_STREAM)) {
+                /*
+                 * Output end-of-content trailer.
+                 */
+
+    	        sbufPtr[sbufIdx].iov_base = "0\r\n\r\n";
+                sbufPtr[sbufIdx].iov_len = 5;
+
+                towrite += 5;
+
+                nsbufs += 1;
+                connPtr->flags &= ~NS_CONN_STREAM;
+            }
         }
     }
 
-    return nwrote;
+    /*
+     * Write the output buffer.
+     */
+
+    nwrote = Ns_ConnSend(conn, sbufPtr, nsbufs);
+
+    Ns_DStringFree(&ds);
+    if (sbufPtr != sbufs && sbufPtr != bufs) {
+        ns_free(sbufPtr);
+    }
+
+    return (nwrote < towrite) ? NS_ERROR : NS_OK;
 }
 
 
@@ -335,39 +387,27 @@ Ns_ConnWriteV(Ns_Conn *conn, struct iovec *bufs, int nbufs)
  *      and will be put out in an 'encoding-aware' manner.
  *      It promises to write all of it.
  *
- *      If we think we are writing the headers (which is the default),
- *      then we send the data exactly as it is given to us.  If we are
- *      truly in the headers, then they are supposed to be US-ASCII,
- *      which is a subset of UTF-8, so no translation should be needed
- *      if the user has been good and not put any 8-bit characters
- *      into it.
- *
- *      If we have been told that we are sending the content, and we
- *      have been given an encoding to translate the content to, then
- *      we assume that the caller is handing us UTF-8 bytes and we
- *      translate them to the preset encoding.
- *
  * Results:
- *      NS_OK/NS_ERROR
+ *      NS_OK if all data written, NS_ERROR otherwise.
  *
  * Side effects:
- *      Stuff may be written
+ *      See Ns_ConnWriteData().
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, int towrite)
+Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, int towrite, int flags)
 {
     struct iovec sbuf;
 
     sbuf.iov_base = (void *) buf;
     sbuf.iov_len = towrite;
-    return Ns_ConnWriteVChars(conn, &sbuf, 1);
+    return Ns_ConnWriteVChars(conn, &sbuf, 1, flags);
 }
 
 int
-Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 {
     Conn           *connPtr = (Conn *)conn;
     int             n, status;
@@ -378,11 +418,16 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     int             encodedCount;      /* # of bytes converted in encodedBytes */
     int             encodedOffset;
 
-    if (connPtr->encoding == NULL
-        || nbufs == 0
-        || (nbufs == 1 && bufs[nbufs-1].iov_len == 0)) {
+    /*
+     * Check if character conversion is needed.
+     */
 
-        return Ns_ConnWriteV(conn, bufs, nbufs);
+    if (connPtr->encoding == NULL
+        || NsEncodingIsUtf8(connPtr->encoding)
+        || nbufs == 0
+        || (nbufs == 1 && bufs[0].iov_len == 0)) {
+
+        return Ns_ConnWriteVData(conn, bufs, nbufs, flags);
     }
 
     /*
@@ -417,14 +462,27 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
             break;
         }
 
-        if (status == TCL_CONVERT_NOSPACE
-            || (n == nbufs-1 && utfConvertedCount == utfCount)) {
-
-            status = Ns_WriteConn(conn, encodedBytes, encodedCount + encodedOffset);
+        if (status == TCL_CONVERT_NOSPACE) {
+            /*
+             * Stream full buffer of converted bytes to client then refill buffer.
+             */
+            status = Ns_ConnWriteData(conn, encodedBytes, encodedCount + encodedOffset,
+                                      flags | NS_CONN_STREAM);
             utfCount -= utfConvertedCount;
             utfBytes += utfConvertedCount;
             continue;
-         }
+        } else if (n == nbufs-1 && utfConvertedCount == utfCount) {
+            /*
+             * Write complete/whole buffer of converted bytes.
+             */
+            status = Ns_ConnWriteData(conn, encodedBytes,
+                                      encodedCount + encodedOffset, flags);
+            break;
+        }
+
+        /*
+         * Move on to next iovec.
+         */
 
         n++;
         utfBytes = bufs[n].iov_base;
@@ -439,36 +497,43 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_WriteConn, Ns_WriteCharConn --
+ * Ns_ConnWrite, Ns_WriteConn, Ns_WriteCharConn --
  *
- *      Write a single buffer of bytes or characters to the conn. It
- *      promises to write all of it.
+ *      Deprecated.
  *
  * Results:
- *      NS_OK/NS_ERROR
+ *      #bytes / NS_OK / NS_ERROR
  *
  * Side effects:
- *      See Ns_ConnWrite(), Ns_ConnWriteChars().
+ *      See Ns_ConnWrite*
  *
  *----------------------------------------------------------------------
  */
 
 int
+Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, int towrite)
+{
+    Conn *connPtr = (Conn *) conn;
+    int   n, status;
+
+    n = connPtr->nContentSent;
+    status = Ns_ConnWriteData(conn, buf, towrite, 0);
+    if (status == NS_OK) {
+        return connPtr->nContentSent - n;
+    }
+    return -1;
+}
+
+int
 Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int towrite)
 {
-    if (Ns_ConnWrite(conn, buf, towrite) < towrite) {
-        return NS_ERROR;
-    }
-    return NS_OK;
+    return Ns_ConnWriteData(conn, buf, towrite, NS_CONN_STREAM);
 }
 
 int
 Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
 {
-    if (Ns_ConnWriteChars(conn, buf, towrite) < towrite) {
-        return NS_ERROR;
-    }
-    return NS_OK;
+    return Ns_ConnWriteChars(conn, buf, towrite, NS_CONN_STREAM);
 }
 
 
@@ -484,7 +549,7 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
  *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      See Ns_WriteConn().
+ *      See Ns_ConnWriteData().
  *
  *----------------------------------------------------------------------
  */
@@ -492,7 +557,7 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
 int
 Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
 {
-    return Ns_WriteConn(conn, string, (int) strlen(string));
+    return Ns_ConnWriteData(conn, string, (int) strlen(string), NS_CONN_STREAM);
 }
 
 
@@ -507,7 +572,7 @@ Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
  *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      See Ns_WriteConn().
+ *      See Ns_ConnWriteData().
  *
  *----------------------------------------------------------------------
  */
@@ -515,7 +580,7 @@ Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
 int
 Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
 {
-    return Ns_WriteConn(conn, dsPtr->string, dsPtr->length);
+    return Ns_ConnWriteData(conn, dsPtr->string, dsPtr->length, NS_CONN_STREAM);
 }
 
 
@@ -905,7 +970,7 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
      */
 
     if (nsend == 0) {
-        Ns_WriteConn(conn, NULL, 0);
+        return Ns_ConnWriteData(conn, NULL, 0, 0);
     }
 
     /*
@@ -936,10 +1001,187 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
             status = NS_ERROR;
         } else if (nread == 0) {
             nsend = 0;  /* NB: Silently ignore a truncated file. */
-        } else if ((status = Ns_WriteConn(conn, buf, nread)) == NS_OK) {
+        } else if ((status = Ns_ConnWriteData(conn, buf, nread, 0)) == NS_OK) {
             nsend -= nread;
         }
     }
 
     return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConstructHeaders --
+ *
+ *      Construct a set of headers including length, connection and
+ *      transfer-encoding and then dump them to the dstring.
+ *
+ * Results:
+ *      1 if headers were dumped to dstring, 0 otherwise.
+ *
+ * Side effects:
+ *      The connections STREAM and/or CHUNK flags may be set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConstructHeaders(Ns_Conn *conn, size_t dataLength, int flags,
+                 Ns_DString *dsPtr)
+{
+    Conn       *connPtr = (Conn *) conn;
+    int         headerLength;
+    CONST char *keep;
+
+    if (!(conn->flags & NS_CONN_SKIPHDRS)) {
+
+        if (!(flags & NS_CONN_STREAM)) {
+            /*
+             * Trust a manually set responseLength.
+             */
+
+            headerLength = connPtr->responseLength
+                ? connPtr->responseLength : dataLength;
+        } else {
+            /*
+             * Sending the first stream of data.
+             */
+
+            headerLength = -1;
+            conn->flags |= NS_CONN_STREAM;
+
+            if (conn->request->version > 1.0) {
+                conn->flags |= NS_CONN_CHUNK;
+            }
+        }
+
+        Ns_ConnSetLengthHeader(conn, headerLength);
+
+        if (conn->flags & NS_CONN_CHUNK) {
+            Ns_ConnSetHeaders(conn, "Transfer-Encoding", "chunked");
+        }
+
+        if (CheckKeep(connPtr)) {
+            keep = "keep-alive";
+            connPtr->keep = 1;
+        } else {
+            keep = "close";
+        }
+        Ns_ConnSetHeaders(conn, "Connection", keep);
+
+        Ns_ConnConstructHeaders(conn, dsPtr);
+
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckKeep --
+ *
+ *      Should the Connection header be set to keep-alive or close.
+ *
+ * Results:
+ *      1 if keep-alive enabled, 0 otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CheckKeep(Conn *connPtr)
+{
+    if (connPtr->drvPtr->keepwait > 0) {
+
+        /*
+         * Check for manual keep-alive override.
+         */
+
+        if (connPtr->keep > 0) {
+            return 1;
+        }
+
+        /*
+         * Apply default rules.
+         *                 && STREQ(connPtr->request->method, "GET")
+         */
+
+        if (connPtr->keep == -1
+            && connPtr->request != NULL) {
+
+            /*
+             * HTTP 1.0/1.1 keep-alive header checks.
+             */
+
+            if ((connPtr->request->version == 1.0
+                 && HdrEq(connPtr->headers, "connection", "keep-alive"))
+
+                || (connPtr->request->version > 1.0
+                    && !HdrEq(connPtr->headers, "connection", "close"))) {
+
+                /*
+                 * POST, PUT etc. require a content-length header.
+                 */
+
+                if (connPtr->contentLength > 0
+                        && !Ns_SetIGet(connPtr->headers, "Content-Length")) {
+                    return 0;
+                }
+
+                /*
+                 * We require either chunked encoding or a valid
+                 * content-length header.
+                 */
+
+                if ((connPtr->flags & NS_CONN_CHUNK)
+                        || Ns_SetIGet(connPtr->outputheaders, "Content-Length")) {
+                    return 1;
+                }
+            }
+        }
+    }
+
+    /*
+     * Test for keep-alive failed.
+     */
+
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HdrEq --
+ *
+ *      Test if given set contains a key which matches given value.
+ *
+ * Results:
+ *      1 if there is a match, 0 otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HdrEq(Ns_Set *set, char *name, char *value)
+{
+    char *hdrvalue;
+
+    if (set != NULL
+        && (hdrvalue = Ns_SetIGet(set, name)) != NULL
+        && STRIEQ(hdrvalue, value)) {
+        return 1;
+    }
+    return 0;
 }

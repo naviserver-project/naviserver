@@ -389,7 +389,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     Ns_Conn    *conn;
     Ns_DString  cds;
     Tcl_Interp *interp = itPtr->interp;
-    int         len, wrote, result = TCL_ERROR, flags = itPtr->adp.flags;
+    int         len, wrote, gzip = 0, result = TCL_ERROR, flags = itPtr->adp.flags;
     char       *buf, *ahdr;
 
     /*
@@ -480,26 +480,9 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                         Ns_ConnCondSetHeaders(conn, "Content-Encoding", "gzip");
                         buf = cds.string;
                         len = cds.length;
+
+                        gzip = 1;
                     }
-                }
-
-                /*
-                 * Flush out the headers now that the encoded output length
-                 * is known for non-streaming output.
-                 */
-
-                if (!(conn->flags & NS_CONN_SENTHDRS)) {
-
-                    /*
-                     * Switch to chunked mode if browser supports chunked encoding and
-                     * streaming is enabled.
-                     */
-
-                    if (stream && itPtr->conn->request->version > 1.0) {
-                        Ns_ConnSetChunkedFlag(itPtr->conn, 1);
-                    }
-                    Ns_ConnSetRequiredHeaders(conn, NULL, stream ? -1 : len);
-                    Ns_ConnQueueHeaders(conn, 200);
                 }
 
                 if (!(flags & ADP_FLUSHED) && (flags & ADP_EXPIRE)) {
@@ -511,9 +494,18 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                     len = 0;
                 }
 
-                if (Ns_WriteConn(itPtr->conn, buf, len) == NS_OK) {
-                    result = TCL_OK;
+                if (gzip) {
+                    if (Ns_ConnWriteData(itPtr->conn, buf, len,
+                                         stream ? NS_CONN_STREAM : 0) == NS_OK) {
+                        result = TCL_OK;
+                    }
                 } else {
+                    if (Ns_ConnWriteChars(itPtr->conn, buf, len,
+                                          stream ? NS_CONN_STREAM : 0) == NS_OK) {
+                        result = TCL_OK;
+                    }
+                }
+                if (result != TCL_OK) {
                     Tcl_SetResult(interp,
                                   "adp flush failed: connection flush error",
                                   TCL_STATIC);
@@ -537,9 +529,6 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 
     if (!stream) {
         NsAdpReset(itPtr);
-        if (conn != NULL) {
-            result = Ns_ConnClose(conn);
-        }
     }
     return result;
 }

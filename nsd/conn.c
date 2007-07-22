@@ -235,15 +235,15 @@ Ns_ConnServer(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnResponseStatus --
+ * Ns_ConnResponseStatus, Ns_ConnSetResponseStatus --
  *
- *      Get the HTTP reponse code that will be sent
+ *      Get (set) the HTTP reponse code that will be sent.
  *
  * Results:
- *      An integer response code (e.g., 200 for OK)
+ *      An integer response code (e.g., 200 for OK).
  *
  * Side effects:
- *      None
+ *      NB: Status 200 is the default and can not be set manualy.
  *
  *----------------------------------------------------------------------
  */
@@ -257,29 +257,14 @@ Ns_ConnResponseStatus(Ns_Conn *conn)
 
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnSetResponseStatus --
- *
- *      Set the HTTP reponse code that will be sent
- *
- * Results:
- *      None
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
 void
 Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status)
 {
     Conn *connPtr = (Conn *) conn;
 
-    connPtr->responseStatus = new_status;
+    if (new_status != 200) {
+        connPtr->responseStatus = new_status;
+    }
 }
 
 
@@ -1027,39 +1012,6 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnGetChunkedFlag, Ns_ConnSetChunkedFlag --
- *
- *      Get (set) the chunked-encoding flag.
- *
- * Results:
- *      Boolean
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnGetChunkedFlag(Ns_Conn *conn)
-{
-    return (conn->flags & NS_CONN_WRITE_CHUNKED) ? NS_TRUE : NS_FALSE;
-}
-
-void
-Ns_ConnSetChunkedFlag(Ns_Conn *conn, int flag)
-{
-    if (flag) {
-        conn->flags |= NS_CONN_WRITE_CHUNKED;
-    } else {
-        conn->flags &= ~NS_CONN_WRITE_CHUNKED;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsTclConnObjCmd --
  *
  *      Implements ns_conn as an obj command.
@@ -1098,7 +1050,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status", "timeout",
         "url", "urlc", "urlencoding", "urlv", "version",
-        "chunked", "responseversion", "versionstring", "keepalive",
+        "responseversion", "versionstring", "keepalive",
         NULL
     };
     enum ISubCmdIdx {
@@ -1111,7 +1063,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CTimeoutIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx,
-        CChunkedIdx, CResponseVersionIdx, CVersionStringIdx, CKeepAliveIdx
+        CResponseVersionIdx, CVersionStringIdx, CKeepAliveIdx
     };
 
     if (objc < 2) {
@@ -1343,19 +1295,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                              Tcl_PosixError(interp), NULL);
             return TCL_ERROR;
         }
-        break;
-
-    case CChunkedIdx:
-        if (objc > 2) {
-            int chunked_flag;
-            if (Tcl_GetBooleanFromObj(interp, objv[2], &chunked_flag)
-                != TCL_OK) {
-                return TCL_ERROR;
-            }
-            Ns_ConnSetChunkedFlag(conn, chunked_flag);
-        }
-        Tcl_SetObjResult(interp,
-                         Tcl_NewBooleanObj(Ns_ConnGetChunkedFlag(conn)));
         break;
 
     case CResponseVersionIdx:
@@ -1735,7 +1674,7 @@ MakeConnChannel(Ns_Conn *conn, int spliceout)
      * Assures the socket is flushed
      */
 
-    Ns_WriteConn(conn, NULL, 0);
+    Ns_ConnWriteData(conn, NULL, 0, 0);
 
     if (spliceout) {
         sock = connPtr->sockPtr->sock;

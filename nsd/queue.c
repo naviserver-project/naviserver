@@ -683,7 +683,6 @@ ConnRun(Conn *connPtr)
     connPtr->keep = -1;          /* Default keep-alive rules apply */
     connPtr->encoding = servPtr->encoding.outputEncoding;
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
-    Tcl_DStringInit(&connPtr->queued);
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
     snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%d", connPtr->id);
     connPtr->outputheaders = Ns_SetCreate(NULL);
@@ -775,7 +774,6 @@ ConnRun(Conn *connPtr)
     NsFreeConnInterp(connPtr);
 
     Ns_ConnClearQuery(conn);
-    Tcl_DStringFree(&connPtr->queued);
     Ns_SetFree(connPtr->auth);
     connPtr->auth = NULL;
     Ns_SetFree(connPtr->outputheaders);

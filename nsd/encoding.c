@@ -595,6 +595,29 @@ NsTclEncodingForCharsetCmd(ClientData dummy, Tcl_Interp *interp, int argc,
 /*
  *----------------------------------------------------------------------
  *
+ * NsEncodingIsUtf8 --
+ *
+ *      Is the given encoding the utf-8 encoding?
+ *
+ * Results:
+ *      Boolean.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsEncodingIsUtf8(Tcl_Encoding encoding)
+{
+    return (encoding == utf8Encoding);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AddCharset, AddExtension --
  *
  *      Add extensiont to encoding mapping and charset aliases.

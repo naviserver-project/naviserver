@@ -169,10 +169,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
     if (ReturnRedirect(conn, status, &result)) {
         return result;
     }
-    Ns_ConnSetRequiredHeaders(conn, NULL, 0);
-    Ns_ConnFlushHeaders(conn, status);
-
-    return Ns_ConnClose(conn);
+    return Ns_ConnReturnData(conn, status, "", 0, NULL);
 }
 
 
@@ -197,7 +194,6 @@ Ns_ConnReturnOk(Ns_Conn *conn)
 {
     return Ns_ConnReturnStatus(conn, 200);
 }
-
 
 
 /*

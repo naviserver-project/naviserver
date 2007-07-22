@@ -72,7 +72,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
-    int      status, len = -1;
+    int      status, len = -1, result = TCL_OK;
     char    *type = NULL;
 
     if (objc < 2 || objc > 4) {
@@ -82,20 +82,34 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
+
     if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
         return TCL_ERROR;
     }
+    Ns_ConnSetResponseStatus(conn, status);
+
     if (objc > 2) {
         type = Tcl_GetString(objv[2]);
-    }
-    if (objc > 3 && Tcl_GetIntFromObj(interp, objv[3], &len) != TCL_OK) {
-        return TCL_ERROR;
+        Ns_ConnSetTypeHeader(conn, type);
     }
 
-    Ns_ConnSetRequiredHeaders(conn, type, len);
-    Ns_ConnQueueHeaders(conn, status);
+    if (objc > 3) {
+        if (Tcl_GetIntFromObj(interp, objv[3], &len) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        Ns_ConnSetLengthHeader(conn, len);
 
-    return Result(interp, NS_OK);
+        /*
+         * Flush the headers if an explicit length was given to dissable
+         * chunking. We assume the length is right...
+         */
+
+        if (Ns_ConnWriteData(conn, NULL, 0, 0) != NS_OK) {
+            result = TCL_ERROR;
+        }
+    }
+
+    return Result(interp, result);
 }
 
 
@@ -231,9 +245,9 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
     }
     if (binary) {
-        nwrote = Ns_ConnWriteV(conn, sbufs, n);
+        nwrote = Ns_ConnWriteVData(conn, sbufs, n, NS_CONN_STREAM);
     } else {
-        nwrote = Ns_ConnWriteVChars(conn, sbufs, n);
+        nwrote = Ns_ConnWriteVChars(conn, sbufs, n, NS_CONN_STREAM);
     }
     if (sbufs != iov) {
         ns_free(sbufs);
@@ -539,6 +553,8 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (Tcl_GetIntFromObj(interp, objv[2], &len) != TCL_OK) {
         return TCL_ERROR;
     }
+
+    conn->flags |= NS_CONN_SKIPHDRS;
     if (Ns_ConnSendChannel(conn, chan, len) != NS_OK) {
         Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
                            len, Tcl_GetString(objv[1]));

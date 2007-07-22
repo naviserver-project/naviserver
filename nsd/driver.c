@@ -2792,8 +2792,7 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     drvPtr = connPtr->sockPtr->drvPtr;
     wrPtr  = &drvPtr->writer;
 
-    if (wrPtr->threads == 0 || nsend < wrPtr->maxsize
-        || (conn->flags & NS_CONN_WRITE_CHUNKED)) {
+    if (wrPtr->threads == 0 || nsend < wrPtr->maxsize) {
         return NS_ERROR;
     }
 
@@ -2833,7 +2832,7 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
      * Flush the headers
      */
 
-    Ns_WriteConn(conn, NULL, 0);
+    Ns_ConnWriteData(conn, NULL, 0, 0);
 
     wrSockPtr->size = nsend;
     wrSockPtr->nread = nsend;
@@ -2937,7 +2936,6 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         char *name;
         struct stat st;
         Tcl_Obj *file = NULL;
-        Conn *connPtr = (Conn *) conn;
         Tcl_WideInt headers = 0, offset = 0, size = 0;
 
         Ns_ObjvSpec opts[] = {
@@ -2985,20 +2983,10 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
          */
 
         if (headers) {
-            Ns_ConnSetRequiredHeaders(conn, Ns_GetMimeType(name), size);
-            Ns_ConnQueueHeaders(conn, 200);
+            Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(name));
         }
 
         rc = NsWriterQueue(conn, size, NULL, NULL, fd, NULL);
-
-        /*
-         *  If failed, we need to cleanup queued headers so we exit with clean
-         *  state and the caller can return appropriate return code
-         */
-
-        if (rc != NS_OK && headers) {
-            Ns_DStringSetLength(&connPtr->queued, 0);
-        }
 
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         close(fd);

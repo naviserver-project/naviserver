@@ -16,7 +16,7 @@ eval ::tcltest::configure $argv
 
 test encoding-1.1 {
     Send body with ns_return and charset utf-8
-} -constraints knownBug -setup {
+} -setup {
     ns_register_proc GET /encoding {
         ns_return 200 "text/plain; charset=utf-8" "äöü"
     }
@@ -29,7 +29,7 @@ test encoding-1.1 {
 
 test encoding-1.2 {
     send body with ns_return and charset iso-8859-1
-} -constraints knownBug -setup {
+} -setup {
     ns_register_proc GET /encoding {
         ns_return 200 "text/plain; charset=iso-8859-1" "äöü"
     }
@@ -135,7 +135,7 @@ test encoding-2.5 {
 
 test encoding-3.1 {
     File in iso-8859-1 encoding should produce utf-8 output
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding utf-8 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.iso2utf_adp"
@@ -157,7 +157,7 @@ test encoding-3.2 {
 
 test encoding-3.3 {
     File in iso-8859-1 encoding should produce iso-8859-1 output
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding iso8859-1 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.iso2iso_adp"
@@ -168,7 +168,7 @@ test encoding-3.3 {
 
 test encoding-3.3.1 {
     File in iso-8859-2 encoding should produce iso-8859-2 output
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding iso8859-2 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.iso-8859-2_adp"
@@ -186,7 +186,7 @@ test encoding-3.3.2 {
 
 test encoding-3.4 {
     File in utf-8 encoding should produce iso-8859-1 output
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding iso8859-1 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.utf2iso_adp"
@@ -195,14 +195,10 @@ test encoding-3.4 {
 } -result {200 {text/plain; charset=iso-8859-1} 3 äöü}
 
 
-#
-# These tests will not work at the moment, because HackContentType has no effect on adp-pages.
-#
-
 test encoding-3.5 {
     File in iso-8859-1 encoding should produce output with default OutputCharset; 
     Content-Type-Header will be changed
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding iso8859-1 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.iso_adp"
@@ -214,7 +210,7 @@ test encoding-3.5 {
 test encoding-3.6 {
     File in utf-8 encoding should produce output with default OutputCharset; 
     Content-Type-Header will be changed
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding iso8859-1 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.utf_adp"
@@ -229,7 +225,7 @@ test encoding-3.6 {
 
 test encoding-4.0 {
     Output charset changed to iso-8859-1 with ns_adp_mimetype
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding iso8859-1 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.utf2utf_adp?mime=iso"
@@ -240,7 +236,7 @@ test encoding-4.0 {
 
 test encoding-4.1 {
     Output charset changed to utf-8 with ns_adp_mimetype
-} -constraints knownBug -body {
+} -body {
     nstest_http -encoding utf-8 -getbody 1 \
         -getheaders {Content-Type Content-Length} \
         GET "/encoding.iso2iso_adp?mime=utf"
@@ -302,6 +298,25 @@ test encoding-6.1 {
 	unset -nocomplain result
     ns_unregister_proc GET /encoding
 } -result {200 {text/plain; charset=utf-8} 8193}
+
+
+#
+# Make sure static files served directly from disk don't have their
+# mime-types charset munged.
+#
+
+test encoding-7.1 {
+    A text/* mime-type.
+} -constraints knownBug -body {
+    nstest_http -getbody 1 -getheaders content-type GET /hello.html
+} -result {200 {text/html} {Hello World!}}
+
+test encoding-7.2 {
+    An application/* mime-type for a text document.
+} -body {
+    nstest_http -getbody 1 -getheaders content-type GET /hello.xhtml
+} -result {200 application/xhtml+xml {Hello World!}}
+
 
 
 

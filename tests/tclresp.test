@@ -129,49 +129,98 @@ test tclresp-1.14.2 {basic syntax} -body {
 
 
 
-test tclresp-2.1 {ns_headers} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_headers 200 ;#}
+test tclresp-2.1 {ns_headers, status, http/1.0} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+		ns_headers 999
+		ns_write x
+	}
 } -body {
-    nstest_http -getheaders {content-type content-length} GET /tclresp
+    nstest_http -http 1.0 -setheaders {Connection keep-alive} \
+		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+		GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 {} {}}
+} -result {999 {} close {} {} x}
 
-test tclresp-2.2 {ns_headers} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_headers 200 text/plain ;#}
+test tclresp-2.2 {ns_headers, status, type, http/1.0} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+		ns_headers 200 text/plain
+		ns_write x
+	}
 } -body {
-    nstest_http -getheaders {content-type content-length} GET /tclresp
+    nstest_http -http 1.0 -setheaders {Connection keep-alive} \
+		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+		GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain {}}
+} -result {200 {text/plain; charset=iso-8859-1} close {} {} x}
 
-test tclresp-2.3 {ns_headers} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_headers 200 text/plain 99 ;#}
+test tclresp-2.3 {ns_headers, status, type, length, http/1.0} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+		ns_headers 200 text/plain 9
+		ns_write abcdefghi
+	}
 } -body {
-    nstest_http -getheaders {content-type content-length} GET /tclresp
+    nstest_http -http 1.0 -setheaders {Connection keep-alive} \
+		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+		GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain 99}
+} -result {200 {text/plain; charset=iso-8859-1} keep-alive {} 9 abcdefghi}
+
+test tclresp-2.4 {ns_headers, status, type, length, http/1.1} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+		ns_headers 200 text/plain 9
+		ns_write abcde
+		ns_write fghi
+	}
+} -body {
+    nstest_http -http 1.1 -setheaders {Connection keep-alive} \
+		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+		GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -result {200 {text/plain; charset=iso-8859-1} keep-alive {} 9 abcdefghi}
+
+test tclresp-2.5 {ns_headers, status, type, http/1.1} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+		ns_headers 200 text/plain
+		ns_write abcde
+		ns_write fghi
+	}
+} -body {
+    nstest_http -http 1.1 -setheaders {Connection keep-alive} \
+		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+		GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -result {200 {text/plain; charset=iso-8859-1} keep-alive chunked {} {5
+abcde
+4
+fghi
+0
+
+}}
 
 
 
 test tclresp-3.1 {ns_return} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_return 200 text/plain x ;#}
+    ns_register_proc GET /tclresp {ns_return 200 text/plain x}
 } -body {
     nstest_http -getbody 1 -getheaders {content-length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 {} x}
+} -result {200 1 x}
 
 test tclresp-3.2 {ns_return via spooler thread} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
         ns_return 200 text/plain [string repeat x 1027]
     }
 } -body {
-    nstest_http -getbody 1 GET /tclresp
+    nstest_http -getbody 1 -getheaders {content-length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result [list 200 [string repeat x 1027]]
+} -result [list 200 1027 [string repeat x 1027]]
 
 test tclresp-3.3 {ns_return large string} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
@@ -206,12 +255,12 @@ test tclresp-4.1 {ns_respond} -constraints serverListen -setup {
 } -result {200 */* 1 x}
 
 test tclresp-4.2 {ns_respond} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_respond -type text/plain -string x ;#}
+    ns_register_proc GET /tclresp {ns_respond -type text/plain -string x}
 } -body {
-    nstest_http -getbody 1 -getheaders {content-length} GET /tclresp
+    nstest_http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 {} x}
+} -result {200 {text/plain; charset=iso-8859-1} 1 x}
 
 test tclresp-4.3 {ns_respond} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {ns_respond -status 200 -string x ;#}
@@ -273,7 +322,7 @@ test tclresp-5.1 {ns_returnfile} -constraints serverListen -setup {
     nstest_http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain 10 0123456789}
+} -result {200 {text/plain; charset=iso-8859-1} 10 0123456789}
 
 test tclresp-5.2 {ns_returnfile} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {ns_returnfile 200 text/plain noexist ;#}
@@ -291,7 +340,7 @@ test tclresp-6.1 {ns_returnfp} -constraints serverListen -setup {
     nstest_http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain 5 01234}
+} -result {200 {text/plain; charset=iso-8859-1} 5 01234}
 
 
 
