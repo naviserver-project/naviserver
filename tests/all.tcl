@@ -49,7 +49,7 @@ rename tcltest::test tcltest::__test
 
 proc tcltest::test args {
 
-    ns_log devel >->-> \
+    ns_log dev >->-> \
         [format "%-16s" "[lindex $args 0]:"] ([string trim [lindex $args 1]])
 
     uplevel 1 tcltest::__test $args

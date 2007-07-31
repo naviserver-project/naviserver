@@ -1,3 +1,15 @@
+2007-07-31  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/all.tcl: Typo: s/Devel/Dev/
+
+	* nsd/driver.c:
+	* nsd/progress.c:
+	* tests/http.tcl: Make sure progress for duplicate URLs don't clobber
+	each other. Cleanup the reset handling. Make sure SLS callbacks run only
+	when a socket actually closes, not when set aside for keepalive.
+
+	(Fixes bug #1724222)
+
 2007-07-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/all.tcl: Log a messages (Devel) as each test begins to help
@@ -35,7 +47,9 @@
 
 	This fixes streaming and chunking and enables it in more situations. We
 	were also needlessly flushing headers early causing an extra TCP packet
-	and corresponding RTT. 
+	and corresponding RTT.
+
+	(Fixes bug #1663763)
 
 	Ns_ConnSend() no longer flushes headers. Don't call this directly unless
 	you really need to skip all HTTP specific logic (and don't call it in a

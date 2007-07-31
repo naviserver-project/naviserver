@@ -95,75 +95,11 @@ NsConfigProgress(void)
         Ns_SlsAlloc(&slot, ResetProgress);
         Tcl_InitHashTable(&urlTable, TCL_STRING_KEYS);
         Ns_MutexSetName(&lock, "ns:progress");
-        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %d bytes", progressMinSize);
+        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %d bytes",
+               progressMinSize);
     }
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * NsUpdateProgress --
- *
- *      Note the current progress of a large upload. Called repeatedly
- *      untill all bytes have been read.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      A Progress structure is allocated the first time a sock's
- *      progress is updated.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsUpdateProgress(Ns_Sock *sock)
-{
-    Sock       *sockPtr = (Sock *) sock;
-    Request    *reqPtr  = sockPtr->reqPtr;
-    Ns_Request *request = reqPtr->request;
-    Progress   *pPtr;
-    Ns_DString  ds;
-    int         new;
-
-    if (progressMinSize > 0 && reqPtr->length > progressMinSize) {
-
-        pPtr = Ns_SlsGet(&slot, sock);
-
-        if (pPtr == NULL) {
-            pPtr = ns_calloc(1, sizeof(Progress));
-            Ns_SlsSet(&slot, sock, pPtr);
-        }
-
-        if (pPtr->hPtr == NULL) {
-            pPtr->size = reqPtr->length;
-            pPtr->current = reqPtr->avail;
-
-            Ns_DStringInit(&ds);
-            Ns_DStringAppend(&ds, request->url);
-            if (request->query != NULL) {
-                Ns_DStringAppend(&ds, "?");
-                Ns_DStringAppend(&ds, request->query);
-            }
-
-            Ns_Log(Debug, "NsUpdateProgress: creating stats for %s, size=%u", ds.string, reqPtr->length);
-
-            Ns_MutexLock(&lock);
-            pPtr->hPtr = Tcl_CreateHashEntry(&urlTable, Ns_DStringValue(&ds), &new);
-            Tcl_SetHashValue(pPtr->hPtr, pPtr);
-            Ns_MutexUnlock(&lock);
-
-            Ns_DStringFree(&ds);
-
-        } else {
-            Ns_MutexLock(&lock);
-            pPtr->current = reqPtr->avail;
-            Ns_MutexUnlock(&lock);
-        }
-    }
-}
 
 
 /*
@@ -215,6 +151,95 @@ NsTclProgressObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         Ns_MutexUnlock(&lock);
     }
     return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsUpdateProgress --
+ *
+ *      Note the current progress of a large upload. Called repeatedly
+ *      untill all bytes have been read.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      A Progress structure is allocated the first time a sock's
+ *      progress is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsUpdateProgress(Ns_Sock *sock)
+{
+    Sock          *sockPtr = (Sock *) sock;
+    Request       *reqPtr  = sockPtr->reqPtr;
+    Ns_Request    *request = reqPtr->request;
+    Progress      *pPtr;
+    Tcl_HashEntry *hPtr;
+    Ns_DString     ds;
+    int            new;
+
+    if (progressMinSize > 0
+        && sockPtr->reqPtr->length > progressMinSize) {
+
+        pPtr = Ns_SlsGet(&slot, sock);
+
+        if (pPtr == NULL) {
+            pPtr = ns_calloc(1, sizeof(Progress));
+            Ns_SlsSet(&slot, sock, pPtr);
+        }
+
+        if (pPtr->hPtr == NULL) {
+
+            pPtr->size = reqPtr->length;
+            pPtr->current = reqPtr->avail;
+
+            Ns_DStringInit(&ds);
+            Ns_DStringAppend(&ds, request->url);
+            if (request->query != NULL) {
+                Ns_DStringAppend(&ds, "?");
+                Ns_DStringAppend(&ds, request->query);
+            }
+
+            /*
+             * Guard against concurrent requests to identical URLs tracking
+             * each others progress. URLs must be unique, and it's your
+             * responsibility. Yes, this is ugly.
+             */
+
+            Ns_MutexLock(&lock);
+            hPtr = Tcl_CreateHashEntry(&urlTable, Ns_DStringValue(&ds), &new);
+            if (new) {
+                pPtr->hPtr = hPtr;
+                Tcl_SetHashValue(pPtr->hPtr, pPtr);
+            }
+            Ns_MutexUnlock(&lock);
+
+            if (!new) {
+                Ns_Log(Warning, "ns:progress(%d/%d): ignoring duplicate URL: %s",
+                       reqPtr->avail, reqPtr->length, ds.string);
+            }
+            Ns_DStringFree(&ds);
+
+        } else {
+
+            /*
+             * Update intermediate progress or reset when done.
+             */
+
+            if (reqPtr->avail < reqPtr->length) {
+                Ns_MutexLock(&lock);
+                pPtr->current = reqPtr->avail;
+                Ns_MutexUnlock(&lock);
+            } else {
+                ResetProgress(pPtr);
+            }
+        }
+    }
 }
 
 

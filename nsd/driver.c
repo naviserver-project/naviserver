@@ -1788,6 +1788,7 @@ SockRelease(Sock *sockPtr, int reason, int err)
     }
 
     SockClose(sockPtr, 0);
+    NsSlsCleanup(sockPtr);
 
     sockPtr->drvPtr->queuesize--;
     if (sockPtr->sock != INVALID_SOCKET) {
@@ -1910,8 +1911,6 @@ SockClose(Sock *sockPtr, int keep)
     if (keep == 0) {
         NsDriverClose(sockPtr);
     }
-
-    NsSlsCleanup(sockPtr);
 
 #ifndef _WIN32
 
@@ -2109,6 +2108,8 @@ SockParse(Sock *sockPtr, int spooler)
     int           cnt;
     Driver       *drvPtr = sockPtr->drvPtr;
 
+    NsUpdateProgress((Ns_Sock *) sockPtr);
+
     reqPtr = sockPtr->reqPtr;
     bufPtr = &reqPtr->buffer;
 
@@ -2274,8 +2275,6 @@ SockParse(Sock *sockPtr, int spooler)
         }
         return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
     }
-
-    NsUpdateProgress((Ns_Sock *) sockPtr);
 
     /*
      * Wait for more input.

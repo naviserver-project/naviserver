@@ -134,7 +134,7 @@ test http-4.2 {HTTP/1.1 PUT file == bufsize} -constraints {serverListen} -setup 
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1024]]
 
-test http-4.3 {HTTP/1.1 PUT file == maxreadahead} -constraints {serverListen knownBug} -setup {
+test http-4.3 {HTTP/1.1 PUT file == maxreadahead} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -144,7 +144,7 @@ test http-4.3 {HTTP/1.1 PUT file == maxreadahead} -constraints {serverListen kno
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1025]]
 
-test http-4.4 {HTTP/1.1 PUT file == writersize} -constraints {serverListen knownBug} -setup {
+test http-4.4 {HTTP/1.1 PUT file == writersize} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -154,7 +154,7 @@ test http-4.4 {HTTP/1.1 PUT file == writersize} -constraints {serverListen known
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1026]]
 
-test http-4.5 {HTTP/1.1 PUT file == uploadsize} -constraints {serverListen knownBug} -setup {
+test http-4.5 {HTTP/1.1 PUT file == uploadsize} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
     }
@@ -164,25 +164,29 @@ test http-4.5 {HTTP/1.1 PUT file == uploadsize} -constraints {serverListen known
     ns_unregister_proc PUT /put
 } -result [list 200 [string repeat x 1027]]
 
-test http-4.6 {HTTP/1.1 PUT very large file} -constraints knownBug -setup {
-    ns_register_proc PUT /put {
-        ns_return 200 text/plain [ns_conn content]
-    }
-} -body {
-    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 1000000]
-} -cleanup {
-    ns_unregister_proc PUT /put
-} -result [list 200 [string repeat x 1000000]]
+# NB: use -binary here to force no-charset conversion and hence chunking due
+#     to large size of buffer. This is correct behaviour, but the result is
+#     tricky to match for these tests.
 
-test http-4.7 {HTTP/1.1 PUT one more large file} -constraints knownBug -setup {
+test http-4.6 {HTTP/1.1 PUT very large file} -setup {
     ns_register_proc PUT /put {
-        ns_return 200 text/plain [ns_conn content]
+        ns_return -binary 200 text/plain [ns_conn content]
     }
 } -body {
-    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 1000000]
+    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 100000]
 } -cleanup {
     ns_unregister_proc PUT /put
-} -result [list 200 [string repeat x 1000000]]
+} -result [list 200 [string repeat x 100000]]
+
+test http-4.7 {HTTP/1.1 PUT one more large file} -setup {
+    ns_register_proc PUT /put {
+        ns_return -binary 200 text/plain [ns_conn content]
+    }
+} -body {
+    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 100000]
+} -cleanup {
+    ns_unregister_proc PUT /put
+} -result [list 200 [string repeat x 100000]]
 
 test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     ns_register_proc PUT /put {
