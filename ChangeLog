@@ -10,6 +10,8 @@
 
 	(Fixes bug #1724222)
 
+	* tests/ns_log.test: Make tests robust to unrelated logging activity.
+
 2007-07-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/all.tcl: Log a messages (Devel) as each test begins to help

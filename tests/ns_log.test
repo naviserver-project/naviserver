@@ -91,6 +91,7 @@ test ns_log-5.1 {buffering} -body {
 } -match glob -result "* Notice: one\n* Notice: two\n"
 
 test ns_log-5.2 {count buffered log entries} -body {
+	ns_logctl flush
     ns_log notice one
     ns_log notice two
     set n [ns_logctl count]
@@ -126,6 +127,7 @@ test ns_log-5.6 {get} -body {
 } -result {}
 
 test ns_log-5.7 {get} -body {
+	ns_logctl flush
     ns_log notice test
     set n [ns_logctl count]
     ns_logctl get
@@ -139,6 +141,7 @@ test ns_log-5.8 {flush} -body {
 } -result {}
 
 test ns_log-5.9 {flush} -body {
+	ns_logctl flush
     ns_log notice test
     set n [ns_logctl count]
     ns_logctl flush
@@ -176,6 +179,7 @@ test ns_log-7.0 {two callbacks test} -body {
     proc logclbk2 args {
         incr ::glob 
     }
+    ns_logctl flush
     set handle1 [ns_logctl register logclbk1]
     set handle2 [ns_logctl register logclbk2]
     ns_log notice "Log callback test 7.0"
