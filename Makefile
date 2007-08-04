@@ -158,7 +158,7 @@ build-doc:
 
 NS_TEST_CFG		= -c -d -t $(srcdir)/tests/test.nscfg
 NS_TEST_ALL		= $(srcdir)/tests/all.tcl $(TCLTESTARGS)
-LD_LIBRARY_PATH	= LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb:$$LD_LIBRARY_PATH"
+LD_LIBRARY_PATH	= LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb:../nsproxy:$$LD_LIBRARY_PATH"
 
 check: test
 
@@ -177,6 +177,9 @@ gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
 	$(LD_LIBRARY_PATH); gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
+
+memcheck: all
+	$(LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 
 
