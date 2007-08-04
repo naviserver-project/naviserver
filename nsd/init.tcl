@@ -34,12 +34,29 @@
 #
 # init.tcl --
 #
+#   ns/server/$server/tcl:initfile
+#
 #   Core script to initialize a virtual server at startup.
+#   It runs once for each server.
+#   
 #
 
-ns_log notice "nsd/init.tcl: booting virtual server: [ns_info server]..."
+
+#
+# The Tcl system encoding determines what character set *.tcl module files
+# etc. are expected to be in.
+#
+# Don't leave this to chance: either it's utf-8 or some one set it specifically.
+#
+
+encoding system [ns_config "ns/server/[ns_info server]" systemencoding utf-8]
+
+ns_log notice "nsd/init.tcl\[[ns_info server]\]: booting virtual server: " \
+    "tcl system encoding: \"[encoding system]\""
+
 
 package require Tcl 8.4
+
 
 #
 # __ns_sourcefile --

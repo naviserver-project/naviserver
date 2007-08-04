@@ -1,3 +1,9 @@
+2007-08-04  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/init.tcl: Don't leave the Tcl system encoding to chance: either
+	it's utf-8 or some one set it specifically in the config file using the
+	new ns/server/$server:systemencoding parameter.
+
 2007-07-31  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/all.tcl: Typo: s/Devel/Dev/
