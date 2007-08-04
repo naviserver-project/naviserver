@@ -137,8 +137,8 @@ proc _ns_config_server_adp_pages {server} {
 		if {$key eq "map"} {
 			foreach {method} {GET HEAD POST} {
 				ns_register_adp $method $url
-				ns_log notice adp\[$server\]: mapped $url
 			}
+			ns_log notice "adp\[$server\]: mapped {GET HEAD POST} $url"
 		}
 	}
 }
@@ -153,8 +153,8 @@ proc _ns_config_server_tcl_pages {server} {
 	if {[ns_config -bool "ns/server/$server/adp" enabletclpages false]} {
 		foreach {method} {GET HEAD POST} {
 			ns_register_tcl $method /*.tcl
-			ns_log notice tcl\[$server\]: mapped /*.tcl
 		}
+		ns_log notice "tcl\[$server\]: mapped {GET HEAD POST} *.tcl"
 	}
 }
 
