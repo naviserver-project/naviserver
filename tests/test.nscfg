@@ -164,7 +164,7 @@ ns_param   pools           a,b
 ns_param   defaultpool     a
 
 ns_section "ns/server/test/module/nsproxy"
-ns_param   exec            [ns_config "test" home]/../nsproxy/nsproxy
+ns_param   exec            [ns_config "test" home]/../nsproxy/test-nsproxy.sh
 
 ns_section "ns/server/test/modules"
 ns_param   nslog           [ns_config "test" home]/../nslog/nslog.so

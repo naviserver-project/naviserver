@@ -14,6 +14,10 @@
 	* tests/testserver/modules/init-test.tcl: Add a couple of tests of the
 	interp cloning code.
 
+	* Makefile:
+	* nsproxy/test-nsproxy.sh:
+	* tests/test.nscfg: Really fix the nsproxy tests. For sure.
+
 2007-07-31  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/all.tcl: Typo: s/Devel/Dev/
