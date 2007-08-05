@@ -33,7 +33,7 @@
 
 #
 # modules/nsperm/init.tcl -
-#	Initialization for nsperm module
+#   Initialization for nsperm module
 #
 
 proc init_nsperm { } {
@@ -44,25 +44,25 @@ proc init_nsperm { } {
     #
     set filename [file join $dir hosts.allow]
     if {[catch {set file [open $filename r]} ignore] == 0} {
-	while {![eof $file]} {
-	    set line [gets $file]
-	    if {[string range $line 0 0] != "#"} {
-		if {$line ne ""} {
-		    set list [split $line :,]
-		    if {[llength $list] < 2} {
-			ns_log error "init_nsperm: bad line in $filename: $line"
-		    } else {
-			set user [lindex $list 0]
-			set addrs [lindex $list 1]
-			foreach addr $addrs {
-			    set addr [string trim $addr]
-			    lappend _ns_allow($user) $addr
-			}
-		    }
-		}
-	    }
-	}
-	close $file
+        while {![eof $file]} {
+            set line [gets $file]
+            if {[string range $line 0 0] != "#"} {
+                if {$line ne ""} {
+                    set list [split $line :,]
+                    if {[llength $list] < 2} {
+                        ns_log error "init_nsperm: bad line in $filename: $line"
+                    } else {
+                        set user [lindex $list 0]
+                        set addrs [lindex $list 1]
+                        foreach addr $addrs {
+                            set addr [string trim $addr]
+                            lappend _ns_allow($user) $addr
+                        }
+                    }
+                }
+            }
+        }
+        close $file
     }
 
     #
@@ -70,29 +70,29 @@ proc init_nsperm { } {
     #
     set filename [file join $dir hosts.deny]
     if {[catch {set file [open $filename r]} ignore] == 0} {
-	while {![eof $file]} {
-	    set line [gets $file]
-	    if {[string range $line 0 0] != "#"} {
-		if {$line ne ""} {
-		    set list [split $line :,]
-		    if {[llength $list] < 2} {
-			ns_log error "init_nsperm: bad line in $filename: $line"
-		    } else {
-			set user [lindex $list 0]
-			set addrs [lindex $list 1]
-			foreach addr $addrs {
-			    set addr [string trim $addr]
-			    if {[info exists _ns_allow($user)]} {
-				ns_log error "init_nsperm: both allow and deny entries exist for user \"$user\""
-			    } else {
-				lappend _ns_deny($user) $addr
-			    }
-			}
-		    }
-		}
-	    }
-	}
-	close $file
+        while {![eof $file]} {
+            set line [gets $file]
+            if {[string range $line 0 0] != "#"} {
+                if {$line ne ""} {
+                    set list [split $line :,]
+                    if {[llength $list] < 2} {
+                        ns_log error "init_nsperm: bad line in $filename: $line"
+                    } else {
+                        set user [lindex $list 0]
+                        set addrs [lindex $list 1]
+                        foreach addr $addrs {
+                            set addr [string trim $addr]
+                            if {[info exists _ns_allow($user)]} {
+                                ns_log error "init_nsperm: both allow and deny entries exist for user \"$user\""
+                            } else {
+                                lappend _ns_deny($user) $addr
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        close $file
     }
 
     #
@@ -100,37 +100,40 @@ proc init_nsperm { } {
     #
     set filename [file join $dir passwd]
     if {[catch {set file [open $filename r]} ignore] == 0} {
-	while {![eof $file]} {
-	    set line [gets $file]
-	    if {[string range $line 0 0] != "#"} {
-		if {$line ne ""} {
-		    set list [split $line :]
-		    if {[llength $list] != 7} {
-			ns_log error "nsperm_init: bad line in $filename: $line"
-		    } else {
-                        set flag ""
-                        set user [lindex $list 0]
-			set pass [lindex $list 1]
-			set uf1 [lindex $list 4]
-                        set params "[list $user] [list $pass] [list $uf1]"
-			if {[info exists _ns_allow($user)]} {
-			    set flag "-allow"
-			    foreach a $_ns_allow($user) {
-				append params " [list $a]"
-			    }
-			}
-			if {[info exists _ns_deny($user)]} {
-                            set flag "-deny"
-                            foreach a $_ns_deny($user) {
-				append params " [list $a]"
-			    }
-			}
-			eval ns_perm adduser $flag $params
-		    }
-		}
-	    }
-	}
-	close $file
+        while {![eof $file]} {
+            set line [gets $file]
+            if {[string range $line 0 0] != "#"} {
+            if {$line ne ""} {
+                set list [split $line :]
+                if {[llength $list] != 7} {
+                    ns_log error "nsperm_init: bad line in $filename: $line"
+                } else {
+                    set flag ""
+                    # Treat "" as empty string
+                    set user [string trim [lindex $list 0] {""}]
+                    set pass [lindex $list 1]
+                    set uf1 [lindex $list 4]
+                    set params "[list $user] [list $pass] [list $uf1]"
+                    if {[info exists _ns_allow($user)]} {
+                        set flag "-allow"
+                        foreach a $_ns_allow($user) {
+                          append params " [list $a]"
+                        }
+                    }
+                    if {[info exists _ns_deny($user)]} {
+                        set flag "-deny"
+                        foreach a $_ns_deny($user) {
+                          append params " [list $a]"
+                        }
+                    }
+                    if {[catch { eval ns_perm adduser $flag $params } errmsg]} {
+                        ns_log Error init_nsperm: $errmsg
+                    }
+                }
+            }
+            }
+        }
+        close $file
     }
 
     #
@@ -138,27 +141,30 @@ proc init_nsperm { } {
     #
     set filename [file join $dir group]
     if {[catch {set file [open $filename r]} ignore] == 0} {
-	while {![eof $file]} {
-	    set line [gets $file]
-	    if {[string range $line 0 0] != "#"} {
-		if {$line ne ""} {
-		    set list [split $line :]
-		    if {[llength $list] != 4} {
-			ns_log error "nsperm_init: bad line in $filename: $line"
-		    } else {
-			set group [lindex $list 0]
-			set users [split [lindex $list 3] ,]
-			set cmd "ns_perm addgroup [list $group]"
-			foreach user $users {
-			    set user [string trim $user]
-			    append cmd " [list $user]"
-			}
-			eval $cmd
-		    }
-		}
-	    }
-	}
-	close $file
+        while {![eof $file]} {
+            set line [gets $file]
+            if {[string range $line 0 0] != "#"} {
+                if {$line ne ""} {
+                    set list [split $line :]
+                    if {[llength $list] != 4} {
+                        ns_log error "nsperm_init: bad line in $filename: $line"
+                    } else {
+                        # Treat "" as empty name
+                        set group [string trim [lindex $list 0] {""}]
+                        set users [split [lindex $list 3] ,]
+                        set cmd "ns_perm addgroup [list $group]"
+                        foreach user $users {
+                            set user [string trim [string trim $user] {""}]
+                            append cmd " [list $user]"
+                        }
+                        if {[catch { eval $cmd } errmsg]} {
+                            ns_log Error init_nsperm: $errmsg
+                        }
+                    }
+                }
+            }
+        }
+        close $file
     }
 
     #
@@ -166,29 +172,31 @@ proc init_nsperm { } {
     #
     set filename [file join $dir perms]
     if {[catch {set file [open $filename r]} ignore] == 0} {
-	while {![eof $file]} {
-	    set line [gets $file]
-	    if {[string range $line 0 0] != "#"} {
-		if {$line ne ""} {
-		    if {[llength $line] != 5} {
-			ns_log error "nsperm_init: bad line in $filename: $line"
-		    } else {
-			set action [lindex $line 0]
-			set inherit [lindex $line 1]
-			set method [lindex $line 2]
-			set url [lindex $line 3]
-			set entity [lindex $line 4]
-			set cmd "ns_perm [list $action]"
-			if {$inherit eq "noinherit"} {
-			    append cmd " -noinherit"
-			}
-			append cmd " [list $method] [list $url] [list $entity]"
-			eval $cmd
-		    }
-		}
-	    }
-	}
-	close $file
+        while {![eof $file]} {
+            set line [gets $file]
+            if {[string range $line 0 0] != "#"} {
+                if {$line ne ""} {
+                    if {[llength $line] != 5} {
+                        ns_log error "nsperm_init: bad line in $filename: $line"
+                    } else {
+                        set action [lindex $line 0]
+                        set inherit [lindex $line 1]
+                        set method [lindex $line 2]
+                        set url [lindex $line 3]
+                        set entity [lindex $line 4]
+                        set cmd "ns_perm [list $action]"
+                        if {$inherit eq "noinherit"} {
+                            append cmd " -noinherit"
+                        }
+                        append cmd " [list $method] [list $url] [list $entity]"
+                        if {[catch { eval $cmd } errmsg]} {
+                            ns_log Error init_nsperm: $errmsg
+                        }
+                    }
+                }
+            }
+        }
+        close $file
     }
 }
 
@@ -214,34 +222,34 @@ proc ns_permpasswd { targetuser oldpass newpass } {
     #
 
     if {[catch {ns_perm checkpass $targetuser $oldpass} ignore] != 0} {
-	if {[catch {ns_perm checkpass nsadmin $oldpass} ignore] != 0} {
-	    return "incorrect old password"
-	}
+        if {[catch {ns_perm checkpass nsadmin $oldpass} ignore] != 0} {
+            return "incorrect old password"
+        }
     }
 
     while {![eof $file]} {
-	set line [gets $file]
-	set aline $line
-	if {[string range $line 0 0] != "#"} {
-	    if {$line ne ""} {
-		set list [split $line :]
-		if {[llength $list] != 7} {
-		    ns_log error "ns_permpassword: bad line in $filename: $line"
-		} else {
-		    set user [lindex $list 0]
-		    if {$user == $targetuser} {
-			set aline "[lindex $list 0]:[ns_crypt $newpass CU]:[lindex $list 2]:[lindex $list 3]:[lindex $list 4]:[lindex $list 5]:[lindex $list 6]"
-		    }
-		}
-	    }
-	}
-	lappend oldfile $aline
+        set line [gets $file]
+        set aline $line
+        if {[string range $line 0 0] != "#"} {
+            if {$line ne ""} {
+                set list [split $line :]
+                if {[llength $list] != 7} {
+                    ns_log error "ns_permpassword: bad line in $filename: $line"
+                } else {
+                    set user [lindex $list 0]
+                    if {$user == $targetuser} {
+                        set aline "[lindex $list 0]:[ns_crypt $newpass CU]:[lindex $list 2]:[lindex $list 3]:[lindex $list 4]:[lindex $list 5]:[lindex $list 6]"
+                    }
+                }
+            }
+        }
+        lappend oldfile $aline
     }
     close $file
 
     set file [open $filename w]
     foreach l $oldfile {
-	puts $file $l
+      puts $file $l
     }
     close $file
 
@@ -249,6 +257,19 @@ proc ns_permpasswd { targetuser oldpass newpass } {
     return ""
 }
 
+proc ns_permreload {} {
+
+    foreach { group u } [ns_perm listgroup] {
+      ns_perm delgroup $group
+    }
+    foreach { user p d } [ns_perm listuser] {
+      ns_perm deluser $user
+    }
+    foreach perm [ns_perm listperm] {
+      ns_perm delperm [lindex $perm 0] [lindex $perm 1]
+    }
+    init_nsperm
+}
 
 #
 # Initialize the module

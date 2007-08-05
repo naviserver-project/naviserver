@@ -12,7 +12,7 @@ and the specified user text (userfield) into the users database.
 
 [list_begin definitions]
 
-[call [cmd ns_perm] [arg adduser] [opt [arg -allow]] [opt [arg -deny]] [opt [arg -clear]] [opt [arg -salt s]] [arg name] [arg pass] [arg userfield] [opt host...]]
+[call [cmd ns_perm] [arg adduser] [opt [arg -allow]] [opt [arg -deny]] [opt [arg -clear]] [opt [arg {-salt s}]] [arg name] [arg pass] [arg userfield] [opt host...]]
 
 [arg -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
 
@@ -35,9 +35,17 @@ by the ns_perm command with specified salt.
 [arg -clear]
 Tells that we keep password in clear text
 
+[call [cmd ns_perm] [arg deluser] [arg name]]
+
+ns_perm deluser deletes user from the memory
+
 [call [cmd ns_perm] [arg addgroup] [arg name] [arg user] [opt [arg user...]]]
 
 ns_perm addgroup creates a new group with the specified name that includes the users listed after the name.
+
+[call [cmd ns_perm] [arg delgroup] [arg name]]
+
+ns_perm delgroup deletes group from the memory
 
 [call [cmd ns_perm] [arg allowuser] [opt -noinherit]] [arg method] [arg url] [arg user...]]]
 
@@ -84,6 +92,11 @@ Produce Tcl list with all registered groups in the format: groupname {user ...} 
 [call [cmd ns_perm] [arg listperms]]
 
 Produce Tcl list with all registered allow/deny statements for each url
+
+[call [cmd ns_permreload]]
+
+Reloads all ns_perm files, on very busy sites there could happen authentication denies because
+this command clears the memory first and then loads files from the disk
 
 [list_end]
 
