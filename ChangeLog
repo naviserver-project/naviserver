@@ -1,3 +1,9 @@
+2007-08-06  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* tests/init.test:
+	* tests/testserver/modules/init-test.tcl: Test for namespace variables:
+	should get duplicated or not?
+
 2007-08-05  Vlad Seryakov  <seryakov@users.sf.net>
 
     	* doc/src/ns_perm.man:

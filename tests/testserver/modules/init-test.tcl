@@ -58,3 +58,9 @@ proc testnamespace::testproc2 {} {
 #
 
 set testglobalvariable 1
+
+#
+# Variables in namespaces should not get replicated?
+#
+
+set testnamespace::testvariable2 1
