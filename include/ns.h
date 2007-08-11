@@ -919,8 +919,6 @@ NS_EXTERN int Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
 NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
 NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
 NS_EXTERN Ns_Time *Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
-NS_EXTERN char *Ns_ConnGetType(Ns_Conn *conn) NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_ConnSetType(Ns_Conn *conn, char *type) NS_GNUC_NONNULL(1);
 
 /*
  * connio.c:
@@ -1486,20 +1484,30 @@ Ns_GetMimeType(CONST char *file)
  */
 
 NS_EXTERN Tcl_Encoding
-Ns_GetEncoding(CONST char *name)
+Ns_GetCharsetEncoding(CONST char *charset)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Tcl_Encoding
+Ns_GetCharsetEncodingEx(CONST char *charset, int len)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN CONST char *
+Ns_GetEncodingCharset(Tcl_Encoding encoding)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Tcl_Encoding
+Ns_GetTypeEncoding(CONST char *mimetype)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Tcl_Encoding
 Ns_GetFileEncoding(CONST char *file)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN Tcl_Encoding
-Ns_GetTypeEncoding(CONST char *type)
-    NS_GNUC_NONNULL(1);
 
 NS_EXTERN Tcl_Encoding
-Ns_GetCharsetEncoding(CONST char *charset)
-    NS_GNUC_NONNULL(1);
+Ns_GetEncoding(CONST char *name)
+    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+
 
 /*
  * modload.c:
@@ -1640,6 +1648,10 @@ Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt, ...)
 
 NS_EXTERN void
 Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *mtype)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void

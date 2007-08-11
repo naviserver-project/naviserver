@@ -963,7 +963,7 @@ Ns_ConnGetEncoding(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return connPtr->encoding;
+    return connPtr->outputEncoding;
 }
 
 void
@@ -971,7 +971,7 @@ Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
 {
     Conn *connPtr = (Conn *) conn;
 
-    connPtr->encoding = encoding;
+    connPtr->outputEncoding = encoding;
 }
 
 
@@ -1161,23 +1161,23 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     case CEncodingIdx:
         if (objc > 2) {
-            encoding = Ns_GetEncoding(Tcl_GetString(objv[2]));
+            encoding = Ns_GetCharsetEncoding(Tcl_GetString(objv[2]));
             if (encoding == NULL) {
                 Tcl_AppendResult(interp, "no such encoding: ",
                                  Tcl_GetString(objv[2]), NULL);
                 return TCL_ERROR;
             }
-            connPtr->encoding = encoding;
+            connPtr->outputEncoding = encoding;
         }
-        if (connPtr->encoding != NULL) {
-            CONST char *encname = Tcl_GetEncodingName(connPtr->encoding);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(encname, -1));
+        if (connPtr->outputEncoding != NULL) {
+            CONST char *charset = Ns_GetEncodingCharset(connPtr->outputEncoding);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
         }
         break;
 
     case CUrlEncodingIdx:
         if (objc > 2) {
-            encoding = Ns_GetEncoding(Tcl_GetString(objv[2]));
+            encoding = Ns_GetCharsetEncoding(Tcl_GetString(objv[2]));
             if (encoding == NULL) {
                 Tcl_AppendResult(interp, "no such encoding: ",
                                  Tcl_GetString(objv[2]), NULL);
@@ -1188,16 +1188,17 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * If so, and the urlEncoding is changing, then clear
              * the previous form data.
              */
-            if ((connPtr->urlEncoding != encoding) &&
-                (itPtr->nsconn.flags & CONN_TCLFORM)) {
+            if ((connPtr->urlEncoding != encoding)
+                && (itPtr->nsconn.flags & CONN_TCLFORM)) {
+
                 Ns_ConnClearQuery(conn);
                 itPtr->nsconn.flags ^= CONN_TCLFORM;
             }
             connPtr->urlEncoding = encoding;
         }
         if (connPtr->urlEncoding != NULL) {
-            CONST char *encname = Tcl_GetEncodingName(connPtr->urlEncoding);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(encname, -1));
+            CONST char *charset = Ns_GetEncodingCharset(connPtr->urlEncoding);
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
         }
         break;
 

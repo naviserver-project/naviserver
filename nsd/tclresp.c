@@ -72,32 +72,37 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
-    int      status, len = -1, result = TCL_OK;
+    int      status, length = -1, binary = 0, result = TCL_OK;
     char    *type = NULL;
 
-    if (objc < 2 || objc > 4) {
-        Tcl_WrongNumArgs(interp, 1, objv, "status ?type? ?len?");
-        return TCL_ERROR;
-    }
-    if (GetConn(arg, interp, &conn) != TCL_OK) {
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &binary, (void *) NS_TRUE},
+        {"--",      Ns_ObjvBreak,  NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"status",  Ns_ObjvInt,    &status, NULL},
+        {"?type",   Ns_ObjvString, &type, NULL},
+        {"?length", Ns_ObjvInt,    &length, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
+            || GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
 
-    if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
-        return TCL_ERROR;
-    }
     Ns_ConnSetResponseStatus(conn, status);
 
-    if (objc > 2) {
-        type = Tcl_GetString(objv[2]);
-        Ns_ConnSetTypeHeader(conn, type);
+    if (type != NULL) {
+        if (binary) {
+            Ns_ConnSetTypeHeader(conn, type);
+        } else {
+            Ns_ConnSetEncodedTypeHeader(conn, type);
+        }
     }
 
-    if (objc > 3) {
-        if (Tcl_GetIntFromObj(interp, objv[3], &len) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        Ns_ConnSetLengthHeader(conn, len);
+    if (length > -1) {
+        Ns_ConnSetLengthHeader(conn, length);
 
         /*
          * Flush the headers if an explicit length was given to dissable

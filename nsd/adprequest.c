@@ -142,7 +142,7 @@ PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, int aflags)
     if (type == NULL || STREQ(type, "*/*")) {
         type = NSD_TEXTHTML;
     }
-    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetEncodedTypeHeader(conn, type);
 
     /*
      * Enable TclPro debugging if requested.

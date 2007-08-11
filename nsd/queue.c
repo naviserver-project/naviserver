@@ -681,7 +681,7 @@ ConnRun(Conn *connPtr)
     connPtr->recursionCount = 0;
     connPtr->auth = NULL;
     connPtr->keep = -1;          /* Default keep-alive rules apply */
-    connPtr->encoding = servPtr->encoding.outputEncoding;
+    connPtr->outputEncoding = servPtr->encoding.outputEncoding;
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
     snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%d", connPtr->id);

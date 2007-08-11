@@ -155,11 +155,10 @@
 
 /*
  * The following is the default text/html content type
- * sent to the browsers.  The charset is also used for
- * both input (url query) and output encodings.
+ * sent to the browser for html/adp etc. requests.
  */
 
-#define NSD_TEXTHTML "text/html; charset=iso-8859-1"
+#define NSD_TEXTHTML "text/html"
 
 /*
  * Types definitions.
@@ -613,7 +612,7 @@ typedef struct Conn {
     Ns_Time startTime;
     struct NsInterp *itPtr;
 
-    Tcl_Encoding encoding;
+    Tcl_Encoding outputEncoding;
     Tcl_Encoding urlEncoding;
 
     int nContentSent;
@@ -720,7 +719,6 @@ typedef struct NsServer {
      */
 
     struct {
-        Tcl_HashTable  extensions;     /* Map file extensions to encodins. */
 
         CONST char    *urlCharset;
         Tcl_Encoding   urlEncoding;
@@ -1236,10 +1234,8 @@ int NsFastStat(CONST char *file, FileStat *stPtr);
 extern void NsStopSockCallbacks(void);
 extern void NsStopScheduledProcs(void);
 extern void NsGetBuf(char **bufPtr, int *sizePtr);
-extern Tcl_Encoding NsGetTypeEncodingWithDef(CONST char *type, int *used_default);
-extern void NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
-                                      int *new_type, Tcl_DString *type_ds);
-extern Tcl_Encoding NsGetFileEncoding(NsServer *servPtr, CONST char *file);
+
+extern char *NsFindCharset(CONST char *mimetype, int *lenPtr);
 extern int NsEncodingIsUtf8(Tcl_Encoding encoding);
 
 extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,

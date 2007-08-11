@@ -1049,7 +1049,7 @@ NsTclAdpDebugObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *      A standard Tcl result.
  *
  * Side effects:
- *      Potentially updates the mime type for this adp page.
+ *      See: Ns_ConnSetEncodedTypeHeader().
  *
  *----------------------------------------------------------------------
  */
@@ -1060,6 +1060,7 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp *itPtr = arg;
     Ns_Conn  *conn  = itPtr->conn;
+    char     *type;
 
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?mimetype?");
@@ -1067,9 +1068,10 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
     if (conn != NULL) {
         if (objc == 2) {
-            Ns_ConnSetTypeHeader(conn, Tcl_GetString(objv[1]));
+            Ns_ConnSetEncodedTypeHeader(conn, Tcl_GetString(objv[1]));
         }
-        Tcl_SetResult(interp, Ns_SetIGet(conn->outputheaders, "Content-Type"), TCL_VOLATILE);
+        type = Ns_SetIGet(conn->outputheaders, "Content-Type");
+        Tcl_SetResult(interp, type, TCL_VOLATILE);
     }
     return TCL_OK;
 }

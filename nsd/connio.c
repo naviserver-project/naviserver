@@ -422,8 +422,8 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
      * Check if character conversion is needed.
      */
 
-    if (connPtr->encoding == NULL
-        || NsEncodingIsUtf8(connPtr->encoding)
+    if (connPtr->outputEncoding == NULL
+        || NsEncodingIsUtf8(connPtr->outputEncoding)
         || nbufs == 0
         || (nbufs == 1 && bufs[0].iov_len == 0)) {
 
@@ -449,7 +449,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
          */
 
         status = Tcl_UtfToExternal(NULL,
-                     connPtr->encoding,
+                     connPtr->outputEncoding,
                      utfBytes, utfCount,
                      0, NULL,              /* flags, encoding state */
                      encodedBytes + encodedOffset, sizeof(encodedBytes) - encodedOffset,

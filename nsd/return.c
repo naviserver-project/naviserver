@@ -45,8 +45,6 @@ NS_RCSID("@(#) $Header$");
 
 static int ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
                       FILE *fp, int fd, Tcl_WideInt len);
-static int ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
-                          CONST char *type, int sendRaw);
 
 /*
  * This structure connections HTTP response codes to their descriptions.
@@ -257,22 +255,52 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
 void
 Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
 {
-    Conn        *connPtr = (Conn *) conn;
-    Tcl_Encoding enc;
-    Tcl_DString  type_ds;
-    int          new_type = NS_FALSE;
-
-    NsComputeEncodingFromType(type, &enc, &new_type, &type_ds);
-    if (new_type) {
-        type = Tcl_DStringValue(&type_ds);
-    }
     Ns_ConnUpdateHeaders(conn, "Content-Type", type);
-    if (new_type) {
-        Ns_DStringFree(&type_ds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSetEncodedTypeHeader --
+ *
+ *      Sets the Content-Type HTTP output header and charset for
+ *      text and other types which may need to be transcoded.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      My change the output encoding if charset specified or add a
+ *      charset to the mime-type otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *type)
+{
+    Tcl_Encoding  encoding;
+    CONST char   *charset;
+    Ns_DString    ds;
+    int           len;
+
+    Ns_DStringInit(&ds);
+    charset = NsFindCharset(type, &len);
+
+    if (charset != NULL) {
+        encoding = Ns_GetCharsetEncodingEx(charset, len);
+        Ns_ConnSetEncoding(conn, encoding);
+    } else {
+        encoding = Ns_ConnGetEncoding(conn);
+        charset = Ns_GetEncodingCharset(encoding);
+        Ns_DStringVarAppend(&ds, type, "; charset=", charset, NULL);
+        type = ds.string;
     }
-    if (enc != NULL) {
-        connPtr->encoding = enc;
-    }
+
+    Ns_ConnSetTypeHeader(conn, type);
+
+    Ns_DStringFree(&ds);
 }
 
 
@@ -395,8 +423,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
     Ns_ConnCondSetHeaders(conn, "Server", ds.string);
 
     /*
-     * Set the type and/or length headers if provided.  Note
-     * that a valid length is required for connection keep-alive.
+     * Set the type and/or length headers if provided.
      */
 
     Ns_ConnSetTypeHeader(conn, type);
@@ -662,7 +689,16 @@ int
 Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
                   CONST char *type)
 {
-    return ReturnCharData(conn, status, data, len, type, NS_TRUE);
+    if (type != NULL) {
+        Ns_ConnSetTypeHeader(conn, type);
+    }
+    if (len < 0) {
+        len = data ? strlen(data) : 0;
+    }
+    Ns_ConnSetResponseStatus(conn, status);
+    Ns_ConnWriteData(conn, data, len, 0);
+
+    return Ns_ConnClose(conn);
 }
 
 
@@ -687,44 +723,15 @@ int
 Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
                       CONST char *type)
 {
-    return ReturnCharData(conn, status, data, len, type, NS_FALSE);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ReturnCharData --
- *
- *      Sets required headers, dumps them, and then writes your data.
- *      If sendRaw is false, then translate the data from utf-8 to the
- *      correct character encoding if appropriate.
- *
- * Results:
- *      NS_OK/NS_ERROR
- *
- * Side effects:
- *      May set numerous headers, will close connection.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
-               CONST char *type, int sendRaw)
-{
-    Ns_ConnSetResponseStatus(conn, status);
     if (type != NULL) {
-        Ns_ConnSetTypeHeader(conn, type);
+        Ns_ConnSetEncodedTypeHeader(conn, type);
     }
     if (len < 0) {
         len = data ? strlen(data) : 0;
     }
-    if (sendRaw) {
-        Ns_ConnWriteData(conn, data, len, 0);
-    } else {
-        Ns_ConnWriteChars(conn, data, len, 0);
-    }
+    Ns_ConnSetResponseStatus(conn, status);
+    Ns_ConnWriteChars(conn, data, len, 0);
+
     return Ns_ConnClose(conn);
 }
 
@@ -734,13 +741,13 @@ ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
  *
  * Ns_ConnReturnHtml --
  *
- *      Return data of type text/html to client.
+ *      Return utf-8 character data as mime-type text/html to client.
  *
  * Results:
  *      NS_OK/NS_ERROR
  *
  * Side effects:
- *      See Ns_ConnReturnData
+ *      See Ns_ConnReturnCharData
  *
  *----------------------------------------------------------------------
  */
@@ -748,7 +755,7 @@ ReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
 int
 Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, int len)
 {
-    return Ns_ConnReturnData(conn, status, html, len, "text/html");
+    return Ns_ConnReturnCharData(conn, status, html, len, "text/html");
 }
 
 

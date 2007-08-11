@@ -307,9 +307,9 @@ test encoding-6.1 {
 
 test encoding-7.1 {
     A text/* mime-type.
-} -constraints knownBug -body {
+} -body {
     nstest_http -getbody 1 -getheaders content-type GET /hello.html
-} -result {200 {text/html} {Hello World!}}
+} -result {200 text/html {Hello World!}}
 
 test encoding-7.2 {
     An application/* mime-type for a text document.

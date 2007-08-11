@@ -38,37 +38,30 @@
 NS_RCSID("@(#) $Header$");
 
 
-#define DEFAULT_CHARSET_CONFIG    "OutputCharset"
-#define HACK_CONTENT_TYPE_CONFIG  "HackContentType"
-
 /*
  * Local functions defined in this file.
  */
 
 static void AddCharset(CONST char *name, CONST char *charset);
-static void AddExtension(NsServer *servPtr, CONST char *name, CONST char *charset);
-
-static Tcl_Encoding GetCharsetEncoding(CONST char *charset, int len);
-
-static int GetDefaultHackContentTypeP(void);
-static CONST char *GetDefaultCharset(void);
-static Tcl_Encoding GetDefaultEncoding(void);
-
+static void AddExtension(CONST char *name, CONST char *charset);
+static Tcl_Encoding LoadEncoding(CONST char *name);
 static Ns_ServerInitProc ConfigServerEncodings;
 
 /*
- * Static variables defined in this file.
+ * Local variables defined in this file.
  */
 
+static Tcl_HashTable  extensions;   /* Maps file extensions to charsets. */
 static Tcl_HashTable  charsets;     /* Maps Internet charset names to Tcl encoding names */
-
+static Tcl_HashTable  encnames;     /* Maps Tcl encoding names to Internet charset names. */
 static Tcl_HashTable  encodings;    /* Cache of loaded Tcl encodings */
+
 static Ns_Mutex       lock;         /* Lock around encodings. */
 static Ns_Cond        cond;
 
-#define ENC_LOCKED ((Tcl_Encoding) (-1))
+static Tcl_Encoding   utf8Encoding; /* Cached pointer to utf-8 encoding. */
 
-static Tcl_Encoding   utf8Encoding;
+#define ENC_LOCKED ((Tcl_Encoding) (-1))
 
 /*
  * The default table maps file extensions to Tcl encodings.
@@ -185,20 +178,34 @@ NsConfigEncodings(void)
     int     i;
 
     Ns_MutexSetName(&lock, "ns:encodings");
-    Tcl_InitHashTable(&encodings, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&extensions, TCL_STRING_KEYS);
     Tcl_InitHashTable(&charsets, TCL_STRING_KEYS);
-    utf8Encoding = Ns_GetEncoding("utf-8");
+    Tcl_InitHashTable(&encnames, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&encodings, TCL_STRING_KEYS);
+    utf8Encoding = Ns_GetCharsetEncoding("utf-8");
 
     /*
-     * Add built-in and configured charset aliases.
+     * Add default charsets and file mappings.
      */
 
     for (i = 0; builtinChar[i].charset != NULL; ++i) {
         AddCharset(builtinChar[i].charset, builtinChar[i].name);
     }
+    for (i = 0; builtinExt[i].extension != NULL; ++i) {
+        AddExtension(builtinExt[i].extension, builtinExt[i].name);
+    }
+
+    /*
+     * Add configured charsets and file mappings.
+     */
+
     set = Ns_ConfigGetSection("ns/charsets");
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
         AddCharset(Ns_SetKey(set, i), Ns_SetValue(set, i));
+    }
+    set = Ns_ConfigGetSection("ns/encodings");
+    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
+        AddExtension(Ns_SetKey(set, i), Ns_SetValue(set, i));
     }
 
     NsRegisterServerInit(ConfigServerEncodings);
@@ -209,23 +216,6 @@ ConfigServerEncodings(CONST char *server)
 {
     NsServer   *servPtr = NsGetServer(server);
     CONST char *path;
-    Ns_Set     *set;
-    int         i;
-
-    /*
-     * Initialise the file extension to encoding mappings.
-     */
-
-    Tcl_InitHashTable(&servPtr->encoding.extensions, TCL_STRING_KEYS);
-
-    for (i = 0; builtinExt[i].extension != NULL; ++i) {
-        AddExtension(servPtr, builtinExt[i].extension, builtinExt[i].name);
-    }
-    path = Ns_ConfigGetPath(server, NULL, "encodings", NULL);
-    set = Ns_ConfigGetSection(path);
-    for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        AddExtension(servPtr, Ns_SetKey(set, i), Ns_SetValue(set, i));
-    }
 
     /*
      * Configure the encoding used in the requet URL.
@@ -258,7 +248,7 @@ ConfigServerEncodings(CONST char *server)
     }
 
     /*
-     * Force charset into content-type header.
+     * Force charset into content-type header for dynamic responses.
      */
 
     servPtr->encoding.hackContentTypeP =
@@ -271,50 +261,37 @@ ConfigServerEncodings(CONST char *server)
 /*
  *----------------------------------------------------------------------
  *
- * NsGetFileEncoding, Ns_GetFileEncoding --
+ * Ns_GetFileEncoding --
  *
- *      Return the Tcl_Encoding for the given file.  Note this may
- *      not be the same as the encoding for the charset of the
+ *      Return the Tcl_Encoding that should be used to read a file from disk
+ *      according to it's extension.
+ *
+ *      Note this may not be the same as the encoding for the charset of the
  *      file's mimetype.
  *
  * Results:
  *      Tcl_Encoding or NULL if not found.
  *
  * Side effects:
- *      See LoadEncoding().
+ *      See Ns_GetCharsetEncoding().
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_Encoding
-NsGetFileEncoding(NsServer *servPtr, CONST char *file)
+Ns_GetFileEncoding(CONST char *file)
 {
     Tcl_HashEntry *hPtr;
     CONST char    *ext, *name;
+    Tcl_Encoding   encoding = NULL;
 
     ext = strrchr(file, '.');
     if (ext != NULL) {
-        hPtr = Tcl_FindHashEntry(&servPtr->encoding.extensions, ext);
+        hPtr = Tcl_FindHashEntry(&extensions, ext);
         if (hPtr != NULL) {
             name = Tcl_GetHashValue(hPtr);
-            return GetCharsetEncoding(name, -1);
+            encoding = Ns_GetCharsetEncoding(name);
         }
-    }
-    return NULL;
-}
-
-Tcl_Encoding
-Ns_GetFileEncoding(CONST char *file)
-{
-    Conn         *connPtr = (Conn *) Ns_GetConn();
-    NsServer     *servPtr;
-    Tcl_Encoding  encoding;
-
-    if (connPtr != NULL) {
-        servPtr = connPtr->servPtr;
-        encoding = NsGetFileEncoding(servPtr, file);
-    } else {
-        encoding = GetCharsetEncoding("utf-8", -1);
     }
     return encoding;
 }
@@ -348,16 +325,18 @@ Ns_GetFileEncoding(CONST char *file)
 Tcl_Encoding
 Ns_GetTypeEncoding(CONST char *type)
 {
-    int used_default;
+    char *charset;
+    int   len;
 
-    return NsGetTypeEncodingWithDef(type, &used_default);
+    charset = NsFindCharset(type, &len);
+    return (charset ? Ns_GetCharsetEncodingEx(charset, len) : NULL);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_GetCharsetEncoding --
+ * Ns_GetCharsetEncoding, Ns_GetCharsetEncodingEx --
  *
  *      Return the Tcl_Encoding for the given charset, e.g.,
  *      "iso-8859-1" returns Tcl_Encoding for iso8859-1.
@@ -371,158 +350,116 @@ Ns_GetTypeEncoding(CONST char *type)
  *----------------------------------------------------------------------
  */
 
-
-
 Tcl_Encoding
 Ns_GetCharsetEncoding(CONST char *charset)
 {
-    return GetCharsetEncoding(charset, -1);
+    return Ns_GetCharsetEncodingEx(charset, -1);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_GetEncoding --
- *
- *      Return the Tcl_Encoding for the given charset.
- *
- * Results:
- *      Tcl_Encoding or NULL if not found.
- *
- * Side effects:
- *      See GetEncoding().
- *
- *----------------------------------------------------------------------
- */
-
 Tcl_Encoding
-Ns_GetEncoding(CONST char *name)
+Ns_GetCharsetEncodingEx(CONST char *charset, int len)
 {
     Tcl_HashEntry *hPtr;
     Tcl_Encoding   encoding;
-    int            new;
+    Ns_DString     ds;
 
-    Ns_MutexLock(&lock);
-    hPtr = Tcl_CreateHashEntry(&encodings, name, &new);
-    if (!new) {
-        while ((encoding = Tcl_GetHashValue(hPtr)) == ENC_LOCKED) {
-            Ns_CondWait(&cond, &lock);
-        }
-    } else {
-        Tcl_SetHashValue(hPtr, ENC_LOCKED);
-        Ns_MutexUnlock(&lock);
-        encoding = Tcl_GetEncoding(NULL, name);
-        if (encoding == NULL) {
-            Ns_Log(Warning, "encoding: could not load: %s", name);
-        } else {
-            Ns_Log(Debug, "encoding: loaded: %s", name);
-        }
-        Ns_MutexLock(&lock);
-        Tcl_SetHashValue(hPtr, encoding);
-        Ns_CondBroadcast(&cond);
+    /*
+     * Cleanup the charset name and check for an
+     * alias (e.g., iso-8859-1 = iso8859-1) before
+     * assuming the charset and Tcl encoding names
+     * match (e.g., big5).
+     */
+
+    Ns_DStringInit(&ds);
+    Ns_DStringNAppend(&ds, charset, len);
+    charset = Ns_StrTrim(Ns_StrToLower(ds.string));
+    hPtr = Tcl_FindHashEntry(&charsets, charset);
+    if (hPtr != NULL) {
+        charset = Tcl_GetHashValue(hPtr);
     }
-    Ns_MutexUnlock(&lock);
+    encoding = LoadEncoding(charset);
+    Ns_DStringFree(&ds);
 
     return encoding;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * NsGetTypeEncodingWithDef --
- *
- *      Return the Tcl_Encoding for the given Content-type header,
- *      e.g., "text/html; charset=iso-8859-1" returns Tcl_Encoding
- *      for iso8859-1.
- *      This function will utilize the ns/parameters/OutputCharset
- *      config parameter if given a content-type "text/<anything>" with
- *      no charset.
- *      When no OutputCharset defined, the fall-back behavior is to
- *      return NULL.
- *      The used_default output parameter will be set to NS_TRUE when
- *      OutputCharset was used to determine the encoding.
- *
- * Results:
- *      Tcl_Encoding or NULL if not found.
- *
- * Side effects:
- *      See LoadEncoding().
- *
- *----------------------------------------------------------------------
- */
-
 Tcl_Encoding
-NsGetTypeEncodingWithDef(CONST char *type, int *used_default)
+Ns_GetEncoding(CONST char *name)
 {
-    char *s, *e;
-    Tcl_Encoding ret_enc = NULL;
-
-    s = (char *) Ns_StrCaseFind(type, "charset");
-    if (s != NULL) {
-        s += 7;
-        s += strspn(s, " ");
-        *used_default = NS_FALSE;
-        if (*s++ == '=') {
-            s += strspn(s, " ");
-            e = s;
-            while (*e && !isspace(UCHAR(*e))) {
-                ++e;
-            }
-            ret_enc = GetCharsetEncoding(s, e-s);
-        }
-    } else if (strncasecmp(type, "text/", 5) == 0) {
-        *used_default = NS_TRUE;
-        ret_enc = GetDefaultEncoding();
-    } else {
-        *used_default = NS_FALSE;
-    }
-
-    return ret_enc;
+    /* Deprecated, use Ns_GetCharsetEncodingEx(). */
+    return LoadEncoding(name);
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
- * NsComputeEncodingFromType --
+ * Ns_GetEncodingCharset --
  *
- *      Return the Tcl_Encoding for the given Content-type header,
- *      e.g., "text/html; charset=iso-8859-1" returns Tcl_Encoding
- *      for iso8859-1.  If the HackContentType configuration parameter
- *      is set to TRUE, the given content-type string will be updated
- *      with charset specification if it was not present.
+ *      Return the charset name for the given Tcl_Encoding.
  *
  * Results:
- *      Tcl_Encoding or NULL if not found.  If a new type header is
- *      implied, then new_type is set to NS_TRUE, and the new header
- *      string is stored into type_ds.  When new_type is returned as
- *      NS_TRUE, it is the caller's responsibility to free the
- *      string in type_ds via Tcl_DStringFree.
+ *      Charset name, or encoding name if no alias.
  *
  * Side effects:
- *      See LoadEncoding().
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
-void
-NsComputeEncodingFromType(CONST char *type, Tcl_Encoding *enc,
-                          int *new_type, Tcl_DString *type_ds)
+CONST char *
+Ns_GetEncodingCharset(Tcl_Encoding encoding)
 {
-    int used_default;
+    CONST char    *encname, *charset = NULL;
+    Tcl_HashEntry *hPtr;
 
-    *enc = NsGetTypeEncodingWithDef(type, &used_default);
-    if (used_default && GetDefaultHackContentTypeP()) {
-        Tcl_DStringInit(type_ds);
-        Tcl_DStringAppend(type_ds, type, -1);
-        Tcl_DStringAppend(type_ds, "; charset=", -1);
-        Tcl_DStringAppend(type_ds, GetDefaultCharset(), -1);
-        *new_type = NS_TRUE;
-    } else {
-        *new_type = NS_FALSE;
+    encname = Tcl_GetEncodingName(encoding);
+    hPtr = Tcl_FindHashEntry(&encnames, encname);
+    if (hPtr != NULL) {
+        charset = Tcl_GetHashValue(hPtr);
     }
+    return charset ? charset : encname;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsFindCharset --
+ *
+ *      Find start of charset within a mime-type string.
+ *
+ * Results:
+ *      Pointer to start of charset or NULL on no charset.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+NsFindCharset(CONST char *mimetype, int *lenPtr)
+{
+    CONST char *start, *end;
+
+    start = Ns_StrCaseFind(mimetype, "charset");
+    if (start != NULL) {
+        start += 7;
+        start += strspn(start, " ");
+        if (*start++ == '=') {
+            start += strspn(start, " ");
+            end = start;
+            while (*end && !isspace(UCHAR(*end))) {
+                ++end;
+            }
+            *lenPtr = end - start;
+            return (char *) start;
+        }
+    }
+    return NULL;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -559,7 +496,7 @@ NsTclCharsetsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 /*
  *----------------------------------------------------------------------
  *
- * NsTclEncodingForCharsetCmd --
+ * NsTclEncodingForCharsetObjCmd --
  *
  *      Return the name of the encoding for the specified charset.
  *
@@ -573,20 +510,20 @@ NsTclCharsetsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclEncodingForCharsetCmd(ClientData dummy, Tcl_Interp *interp, int argc,
-                           char **argv)
+NsTclEncodingForCharsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                              Tcl_Obj *CONST objv[])
 {
     Tcl_Encoding encoding;
 
-    if (argc != 2) {
-        Tcl_AppendResult(interp, "usage: ", argv[0], " charset", NULL);
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "charset");
         return TCL_ERROR;
     }
-    encoding = Ns_GetCharsetEncoding(argv[1]);
+    encoding = Ns_GetCharsetEncoding(Tcl_GetString(objv[1]));
     if (encoding == NULL) {
         return TCL_OK;
     }
-    Tcl_SetResult(interp, (char*)Tcl_GetEncodingName(encoding), TCL_VOLATILE);
+    Tcl_SetResult(interp, (char*) Tcl_GetEncodingName(encoding), TCL_VOLATILE);
 
     return TCL_OK;
 }
@@ -618,6 +555,55 @@ NsEncodingIsUtf8(Tcl_Encoding encoding)
 /*
  *----------------------------------------------------------------------
  *
+ * LoadEncoding --
+ *
+ *      Return the Tcl_Encoding for the given charset.
+ *
+ * Results:
+ *      Tcl_Encoding or NULL if not found.
+ *
+ * Side effects:
+ *      Will load encoding from disk on first access.
+ *      May wait for other thread to load encoding from disk.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Encoding
+LoadEncoding(CONST char *name)
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_Encoding   encoding;
+    int            new;
+
+    Ns_MutexLock(&lock);
+    hPtr = Tcl_CreateHashEntry(&encodings, name, &new);
+    if (!new) {
+        while ((encoding = Tcl_GetHashValue(hPtr)) == ENC_LOCKED) {
+            Ns_CondWait(&cond, &lock);
+        }
+    } else {
+        Tcl_SetHashValue(hPtr, ENC_LOCKED);
+        Ns_MutexUnlock(&lock);
+        encoding = Tcl_GetEncoding(NULL, name);
+        if (encoding == NULL) {
+            Ns_Log(Warning, "encoding: could not load: %s", name);
+        } else {
+            Ns_Log(Debug, "encoding: loaded: %s", name);
+        }
+        Ns_MutexLock(&lock);
+        Tcl_SetHashValue(hPtr, encoding);
+        Ns_CondBroadcast(&cond);
+    }
+    Ns_MutexUnlock(&lock);
+
+    return encoding;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AddCharset, AddExtension --
  *
  *      Add extensiont to encoding mapping and charset aliases.
@@ -632,12 +618,12 @@ NsEncodingIsUtf8(Tcl_Encoding encoding)
  */
 
 static void
-AddExtension(NsServer *servPtr, CONST char *ext, CONST char *name)
+AddExtension(CONST char *ext, CONST char *name)
 {
     Tcl_HashEntry  *hPtr;
     int             new;
 
-    hPtr = Tcl_CreateHashEntry(&servPtr->encoding.extensions, ext, &new);
+    hPtr = Tcl_CreateHashEntry(&extensions, ext, &new);
     Tcl_SetHashValue(hPtr, name);
 }
 
@@ -650,136 +636,23 @@ AddCharset(CONST char *charset, CONST char *name)
 
     Ns_DStringInit(&ds);
     charset = Ns_StrToLower(Ns_DStringAppend(&ds, charset));
-    hPtr = Tcl_CreateHashEntry(&charsets, charset, &new);
-    Tcl_SetHashValue(hPtr, name);
-    Ns_DStringFree(&ds);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetCharsetEncoding --
- *
- *      Cleanup charset name and return encoding, if any.
- *
- * Results:
- *      Tcl_Encoding or null if not known or not loaded.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_Encoding
-GetCharsetEncoding(CONST char *charset, int len)
-{
-    Tcl_HashEntry *hPtr;
-    Tcl_Encoding   encoding;
-    Ns_DString     ds;
 
     /*
-     * Cleanup the charset name and check for an
-     * alias (e.g., iso-8859-1 = iso8859-1) before
-     * assuming the charset and Tcl encoding names
-     * match (e.g., big5).
+     * Map in the forward direction: charsets to encodings.
      */
 
-    Ns_DStringInit(&ds);
-    Ns_DStringNAppend(&ds, charset, len);
-    charset = Ns_StrTrim(Ns_StrToLower(ds.string));
-    hPtr = Tcl_FindHashEntry(&charsets, charset);
-    if (hPtr != NULL) {
-        charset = Tcl_GetHashValue(hPtr);
+    hPtr = Tcl_CreateHashEntry(&charsets, charset, &new);
+    Tcl_SetHashValue(hPtr, name);
+
+    /*
+     * Map in the reverse direction: encodings to charsets.
+     * Nb: Ignore duplicate mappings.
+     */
+
+    hPtr = Tcl_CreateHashEntry(&encnames, name, &new);
+    if (new) {
+        Tcl_SetHashValue(hPtr, ns_strdup(charset));
     }
-    encoding = Ns_GetEncoding(charset);
+
     Ns_DStringFree(&ds);
-
-    return encoding;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetDefaultEncoding --
- *
- *      Locate the appropriate default encoding value from within
- *      the current context.
- *
- * Results:
- *      Tcl_Encoding encoding reference
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_Encoding
-GetDefaultEncoding(void)
-{
-    Conn *connPtr = (Conn *) Ns_GetConn();
-
-    if (connPtr != NULL && connPtr->servPtr != NULL) {
-        return connPtr->servPtr->encoding.outputEncoding;
-    }
-    return utf8Encoding;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * GetDefaultCharset --
- *
- *      Locate the appropriate default output charset value from within
- *      the current context.
- *
- * Results:
- *      char *
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static CONST char *
-GetDefaultCharset(void)
-{
-    Conn *connPtr = (Conn *) Ns_GetConn();
-
-    if (connPtr != NULL && connPtr->servPtr != NULL) {
-        return connPtr->servPtr->encoding.outputCharset;
-    }
-    return "utf-8";
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * GetDefaultHackContentTypeP --
- *
- *      Locate the appropriate default encoding value from within
- *      the current context.
- *
- * Results:
- *      Default HackContentTypeP flag.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-GetDefaultHackContentTypeP(void)
-{
-    Conn *connPtr = (Conn *) Ns_GetConn();
-
-    if (connPtr != NULL && connPtr->servPtr != NULL) {
-        return connPtr->servPtr->encoding.hackContentTypeP;
-    }
-    return NS_TRUE;
 }

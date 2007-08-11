@@ -1,3 +1,52 @@
+2007-08-11  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/return.c: Add new Ns_ConnSetEncodedTypeHeader. The distinction
+	between this and Ns_ConnSetTypeHeader is that the mime-type header is
+	set in an encoding aware manner with a charset declaration. Either it is
+	provided as part of the mime-type and the connection encoding is set
+	accordingly, or a charset name is constructed according to current
+	connection encoding (see Ns_ConnSetEncoding).
+
+	This is a change from the old way of doing it in which whether to add a
+	charset declaration depended on the mime-type being of type
+	text/*. Unfortunately, this doesn't work with modern XML types which are
+	often declared as application/xml+whatever.
+
+	You usually know whether you're sending binary or character data anyway
+	because you have to choose between Ns_ConnReturnData() and Ns_ConnReturnCharData().
+
+	* nsd/tclresp.c: Add the -binary switch to ns_headers to signify that you
+	intend sending binary data (probably with ns_write) and that the
+	mime-type header should not have a charset declaration appended.
+
+	* nsd/encoding.c: Depreciate Ns_GetEncoding(). There's never a situation
+	in which you want can't use Ns_GetCharsetEncoding() which handles
+	naviserver charset aliases as well as Tcl encoding names.
+
+	Add Ns_GetEncodingCharset() which prefers to return a naviserver charset
+	alias given a Tcl encoding, falling back to the Tcl encoding name.
+
+	* nsd/conn.c: ns_conn encoding and urlencoding now correctly return a
+	charset name, not Tcl encoding name.
+
+	* nsd/nsd.h: Don't force iso-8859-1 encoding for the default text/html
+	types via NSD_TEXTHTML.
+
+	* nsd/tclcmds.c: ns_encodingforcharset is now an obj command.
+
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/adprequest.c:
+	* nsd/connio.c:
+	* nsd/queue.c: Various updates to use Ns_ConnSetEncodedTypeHeader() etc.
+
+	* tests/encoding.test:
+	* tests/tclresp.test:
+	* tests/test.nscfg: encoding-7.1 knownBug: not a bug any more. This was
+	serving a static html file and adding an unneeded charset to the
+	mime-type.  Add some more tests, and some fix-ups.
+
 2007-08-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/init.test:
