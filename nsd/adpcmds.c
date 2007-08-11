@@ -930,6 +930,9 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         case ADP_RETURN:
             exception = "return";
             break;
+        case ADP_TIMEOUT:
+            exception = "timeout";
+            break;
         default:
             exception = "unknown";
             break;

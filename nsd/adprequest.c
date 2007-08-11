@@ -169,9 +169,16 @@ PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, int aflags)
     result = NsAdpInclude(itPtr, 2, objv, start, expiresPtr);
     Tcl_DecrRefCount(objv[0]);
     Tcl_DecrRefCount(objv[1]);
+
+    if (itPtr->adp.exception == ADP_TIMEOUT) {
+        Ns_ConnReturnUnavailable(conn);
+        return NS_OK;
+    }
+
     if (NsAdpFlush(itPtr, 0) != TCL_OK || result != TCL_OK) {
         return NS_ERROR;
     }
+
     return NS_OK;
 }
 

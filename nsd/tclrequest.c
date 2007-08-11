@@ -435,7 +435,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
 
     interp = Ns_GetConnInterp(conn);
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, NULL) != TCL_OK) {
-        if (STREQ(Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY), "NS_TIMEOUT")) {
+        if (NsTclTimeoutException(interp)) {
             Ns_DStringInit(&ds);
             Ns_GetProcInfo(&ds, NsTclRequestProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
@@ -527,7 +527,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
          * Handle Tcl errors and timeouts.
          */
 
-        if (STREQ(Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY), "NS_TIMEOUT")) {
+        if (NsTclTimeoutException(interp)) {
             Ns_GetProcInfo(&ds, NsTclFilterProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, result);
             Ns_ConnReturnUnavailable(conn);
@@ -582,4 +582,33 @@ int
 NsShortcutFilterProc(void *arg, Ns_Conn *conn, int why)
 {
     return NS_FILTER_BREAK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclTimeoutException --
+ *
+ *      Check for a NS_TIMEOUT exception in the Tcl errorCode variable.
+ *
+ * Results:
+ *      1 if there is an exception, 0 otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclTimeoutException(Tcl_Interp *interp)
+{
+    CONST char *errorCode;
+
+    errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
+    if (strncmp(errorCode, "NS_TIMEOUT", 10) == 0) {
+        return 1;
+    }
+    return 0;
 }

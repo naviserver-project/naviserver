@@ -10,7 +10,7 @@ eval ::tcltest::configure $argv
 
 
 
-test timeout-1.1 {Tcl page} -constraints knownBug -body {
+test timeout-1.1 {Tcl page} -body {
     nstest_http -getbody 1 GET /timeout.tcl
 } -match glob -result {503 *Service Unavailable*}
 
@@ -30,7 +30,22 @@ test timeout-1.3 {registered proc} -setup {
     ns_unregister_proc GET /timeout-1.3
 } -match glob -result {503 *Service Unavailable*}
 
-# NB: ADP pages run all script chunks, catching and logging any errors.
+test timeout-1.4 {extra error info} -setup {
+    ns_register_proc GET /timeout-1.4 \
+        error "timeout waiting for x" "" "NS_TIMEOUT YoHoHo"
+} -body {
+    nstest_http -getbody 1 GET /timeout-1.4
+} -cleanup {
+    ns_unregister_proc GET /timeout-1.4
+} -match glob -result {503 *Service Unavailable*}
+
+test timeout-1.5 {ADP page} -body {
+    nstest_http -getbody 1 GET /timeout.adp
+} -match glob -result {503 *Service Unavailable*}
+
+test timeout-1.6 {ADP page w/include} -body {
+    nstest_http -getbody 1 GET /timeout-inc.adp
+} -match glob -result {503 *Service Unavailable*}
 
 
 

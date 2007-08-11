@@ -1106,6 +1106,16 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                 result = Tcl_EvalObjEx(interp, objPtr, 0);
             }
             ++nscript;
+
+            /*
+             * Propagate NS_TIMEOUT errors from Tcl code.
+             */
+
+            if (result == TCL_ERROR) {
+                if (NsTclTimeoutException(interp)) {
+                    itPtr->adp.exception = ADP_TIMEOUT;
+                }
+            }
         }
 
         /*

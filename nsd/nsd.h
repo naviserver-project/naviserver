@@ -148,7 +148,8 @@
 #define ADP_OK         0
 #define ADP_BREAK      1
 #define ADP_ABORT      2
-#define ADP_RETURN     4
+#define ADP_RETURN     3
+#define ADP_TIMEOUT    4
 
 #define NSD_STRIP_WWW  1
 #define NSD_STRIP_PORT 2
@@ -1244,6 +1245,8 @@ extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
 void NsParseAuth(Conn *connPtr, char *auth);
 
 extern int NsTclObjIsByteArray(Tcl_Obj *objPtr);
+
+extern int NsTclTimeoutException(Tcl_Interp *interp);
 
 /*
  * Proxy support

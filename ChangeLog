@@ -47,6 +47,19 @@
 	serving a static html file and adding an unneeded charset to the
 	mime-type.  Add some more tests, and some fix-ups.
 
+	* nsd/nsd.h:
+	* nsd/adpcmds.c:
+	* nsd/adpeval.c:
+	* nsd/adprequest.c:
+	* tests/timeout.test:
+	* tests/testserver/pages/timeout.adp:
+	* tests/testserver/pages/timeout-inc.adp: Catch NS_TIMEOUT errors for
+	Tcl and ADP pages. Fixes failing test timeout-1.1.
+
+	* nsd/tclrequest.c: The timeout error code can now be a list, with
+	NS_TIMEOUT as the first element and whatever else as the remaining
+	elements.
+
 2007-08-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* tests/init.test:
