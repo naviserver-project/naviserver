@@ -350,21 +350,16 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     drvPtr->loggingFlags = 0;
 
-    if (Ns_ConfigBool(path, "readtimeoutlogging", NS_FALSE)) {
-        drvPtr->loggingFlags |= LOGGING_READTIMEOUT;
-    }
-    if (Ns_ConfigBool(path, "serverrejectlogging", NS_FALSE)) {
-        drvPtr->loggingFlags |= LOGGING_SERVERREJECT;
-    }
-    if (Ns_ConfigBool(path, "sockerrorlogging", NS_FALSE)) {
-        drvPtr->loggingFlags |= LOGGING_SOCKERROR;
-    }
-    if (Ns_ConfigBool(path, "sockshuterrorlogging", NS_FALSE)) {
-        drvPtr->loggingFlags |= LOGGING_SOCKSHUTERROR;
-    }
-    if (Ns_ConfigBool(path, "badrequestlogging", NS_FALSE)) {
-        drvPtr->loggingFlags |= LOGGING_BADREQUEST;
-    }
+    Ns_ConfigFlag(path, "readtimeoutlogging", LOGGING_READTIMEOUT, 0,
+                  &drvPtr->loggingFlags);
+    Ns_ConfigFlag(path, "serverrejectlogging", LOGGING_SERVERREJECT, 0,
+                  &drvPtr->loggingFlags);
+    Ns_ConfigFlag(path, "sockerrorlogging", LOGGING_SOCKERROR, 0,
+                  &drvPtr->loggingFlags);
+    Ns_ConfigFlag(path, "sockshuterrorlogging", LOGGING_SOCKSHUTERROR, 0,
+                  &drvPtr->loggingFlags);
+    Ns_ConfigFlag(path, "badrequestlogging", LOGGING_BADREQUEST, 0,
+                  &drvPtr->loggingFlags);
 
     /*
      * Check if bind address represent valid pathname and if so

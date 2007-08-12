@@ -23,6 +23,9 @@
 	NS_COOKIE_SCRIPTABLE, which replace the old 1/0 flag to
 	Ns_ConnSetCookieEx().
 
+	* nsd/nsd.h:
+	* nsd/driver.c: Use Ns_ConfigFlag() for flags.
+
 2007-08-11  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

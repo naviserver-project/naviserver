@@ -483,7 +483,7 @@ typedef struct Driver {
     int queuesize;              /* Current number of sockets in the queue */
     int maxqueuesize;           /* Maximum number of sockets in the queue */
     int acceptsize;             /* Number requests to accept at once */
-    unsigned int loggingFlags;  /* Logging control flags */
+    int loggingFlags;           /* Logging control flags */
 
     DrvSpooler spooler;         /* Tracks upload spooler threads */
     DrvWriter  writer;          /* Tracks writer threads */
