@@ -9,6 +9,20 @@
 	-expires to match common usage throughout rest of API. Now handles
 	absolute and relative time values.
 
+	* include/ns.h:
+	* nsd/cookies.c:
+	* tests/cookies.test:
+	* NEWS:
+	* doc/src/mann/ns_cookie.man: Cookies are now set with the HttpOnly
+	option by default which makes the cookie data unavailable to client
+	javascript engines (on those browsers which support it). A new
+	-scriptable option is available to ns_setcookie to get the old
+	behaviour. HttpOnly cookies are not as susceptible to XSS attacks:
+	secure by default.
+	The C API has a couple of new flags: NS_COOKIE_SECURE and
+	NS_COOKIE_SCRIPTABLE, which replace the old 1/0 flag to
+	Ns_ConnSetCookieEx().
+
 2007-08-11  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

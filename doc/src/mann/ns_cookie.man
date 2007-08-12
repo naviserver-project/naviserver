@@ -26,6 +26,7 @@ is widely supported by user agents.
 
 [call [cmd ns_setcookie] \
  [opt [option "-secure [arg bool]"]] \
+ [opt [option "-scriptable [arg bool]"]] \
  [opt [option "-domain [arg d]"]] \
  [opt [option "-path [arg p]"]] \
  [opt [option "-expires [arg t]"]] \
@@ -89,6 +90,12 @@ for the cookie to be deleted.
 [opt_def -secure [arg boolean]]
 If the secure option is true then the the cookie will only be sent back to the
 server when the client uses a secure ([term TLS]/[term SSL]) connection.
+
+[opt_def -scriptable [arg boolean]]
+If the scriptable option is false or not given the cookie is unavailable to
+javascript on the client. This can prevent cross site scripting attacks (XSS) on
+clients which support the [term HttpOnly] option. Set [arg -scriptable] to true
+if you need to access the cookie via javascript.
 
 [opt_def -domain [arg domain]]
 Restrict the cookie to a domain name, such as [term example.com]. The

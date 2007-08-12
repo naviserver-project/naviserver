@@ -33,7 +33,7 @@ test cookie-2.1 {set plain cookie} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.1
 } -cleanup {
     ns_unregister_proc GET /cookie-2.1
-} -result {200 x=\"y\"}
+} -result {200 {x="y"; HttpOnly}}
 
 test cookie-2.2 {set cookie w/wierd chars} -setup {
     ns_register_proc GET /cookie-2.2 {
@@ -44,7 +44,7 @@ test cookie-2.2 {set cookie w/wierd chars} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.2
 } -cleanup {
     ns_unregister_proc GET /cookie-2.2
-} -result {200 x=\"+%25%2f%26\"}
+} -result {200 {x="+%25%2f%26"; HttpOnly}}
 
 test cookie-2.3 {secure cookie} -setup {
     ns_register_proc GET /cookie-2.3 {
@@ -55,7 +55,7 @@ test cookie-2.3 {secure cookie} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.3
 } -cleanup {
     ns_unregister_proc GET /cookie-2.3
-} -result {200 {x="y"; Secure}}
+} -result {200 {x="y"; Secure; HttpOnly}}
 
 test cookie-2.4 {set cookie w/ domain} -setup {
     ns_register_proc GET /cookie-2.4 {
@@ -66,7 +66,7 @@ test cookie-2.4 {set cookie w/ domain} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.4
 } -cleanup {
     ns_unregister_proc GET /cookie-2.4
-} -result {200 {x="y"; Domain=example.com}}
+} -result {200 {x="y"; Domain=example.com; HttpOnly}}
 
 test cookie-2.5 {set cookie w/ path} -setup {
     ns_register_proc GET /cookie-2.5 {
@@ -77,7 +77,7 @@ test cookie-2.5 {set cookie w/ path} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.5
 } -cleanup {
     ns_unregister_proc GET /cookie-2.5
-} -result {200 {x="y"; Path=/foo/bar}}
+} -result {200 {x="y"; Path=/foo/bar; HttpOnly}}
 
 test cookie-2.6 {set cookie w/ max age} -setup {
     ns_register_proc GET /cookie-2.6 {
@@ -88,7 +88,7 @@ test cookie-2.6 {set cookie w/ max age} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.6
 } -cleanup {
     ns_unregister_proc GET /cookie-2.6
-} -result {200 {x="y"; Max-Age=99}}
+} -result {200 {x="y"; Max-Age=99; HttpOnly}}
 
 test cookie-2.7 {set cookie w/ infinite lifetime} -setup {
     ns_register_proc GET /cookie-2.7 {
@@ -99,7 +99,7 @@ test cookie-2.7 {set cookie w/ infinite lifetime} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.7
 } -cleanup {
     ns_unregister_proc GET /cookie-2.7
-} -result {200 {x="y"; Expires=Fri, 01-Jan-2035 01:00:00 GMT}}
+} -result {200 {x="y"; Expires=Fri, 01-Jan-2035 01:00:00 GMT; HttpOnly}}
 
 test cookie-2.8 {set cookie w/ absolute expiry} -setup {
     ns_register_proc GET /cookie-2.8 {
@@ -111,7 +111,18 @@ test cookie-2.8 {set cookie w/ absolute expiry} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-2.8
 } -cleanup {
     ns_unregister_proc GET /cookie-2.8
-} -result {200 {x="y"; Max-Age=10}}
+} -result {200 {x="y"; Max-Age=10; HttpOnly}}
+
+test cookie-2.9 {set scriptable cookie} -setup {
+    ns_register_proc GET /cookie-2.9 {
+        ns_setcookie -scriptable t -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.9
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.9
+} -result {200 x=\"y\"}
 
 
 
@@ -135,7 +146,7 @@ test cookie-3.2 {delete cookie w/ all options} -setup {
     nstest_http -getheaders {Set-Cookie} GET /cookie-3.2
 } -cleanup {
     ns_unregister_proc GET /cookie-3.2
-} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure}}
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure; HttpOnly}}
 
 
 

@@ -87,6 +87,11 @@ Incompatible API Changes:
 
     * ns_setcookie -maxage renamed -expires to match common usage throughout
       code.
+    * All cookies are now set HttpOnly by default. The -scriptable option must
+      be true for the client javascript engine to have access to the cookies.
+	* The 'secure' flag of Ns_ConnSetCookieEx() is now a flags option which
+      takes NS_COOKIE_SECURE and NS_COOKIE_SCRIPTABLE. Non-scriptable is the
+      default as for the Tcl API.
 
 
 Configuration Changes:

@@ -1026,10 +1026,13 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
  * cookies.c:
  */
 
+#define NS_COOKIE_SECURE      1  /* The cookie should only be sent using HTTPS */
+#define NS_COOKIE_SCRIPTABLE  2  /* Available to javascript on the client. */
+
 NS_EXTERN void Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
 NS_EXTERN void Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
 NS_EXTERN void Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
-                                  char *domain, char *path, int secure);
+                                  char *domain, char *path, int flags);
 NS_EXTERN void Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path);
 NS_EXTERN void Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path);
 NS_EXTERN char *Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name);

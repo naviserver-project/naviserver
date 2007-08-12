@@ -66,10 +66,9 @@ static Ns_Conn *GetConn(Tcl_Interp *interp);
 
 void
 Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
-                   char *domain, char *path, int secure)
+                   char *domain, char *path, int flags)
 {
     Ns_DString  cookie;
-    Ns_Set     *headers;
 
     Ns_DStringInit(&cookie);
     Ns_DStringVarAppend(&cookie, name, "=\"", NULL);
@@ -90,24 +89,26 @@ Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
     if (path != NULL) {
         Ns_DStringVarAppend(&cookie, "; Path=", path, NULL);
     }
-    if (secure == NS_TRUE) {
+    if (flags & NS_COOKIE_SECURE) {
         Ns_DStringAppend(&cookie, "; Secure");
     }
-    headers = Ns_ConnOutputHeaders(conn);
-    Ns_SetPut(headers, "Set-Cookie", cookie.string);
+    if (!(flags & NS_COOKIE_SCRIPTABLE)) {
+        Ns_DStringAppend(&cookie, "; HttpOnly");
+    }
+    Ns_ConnSetHeaders(conn, "Set-Cookie", cookie.string);
     Ns_DStringFree(&cookie);
 }
 
 void
 Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, int maxage)
 {
-    Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, NS_FALSE);
+    Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, 0);
 }
 
 void
 Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage)
 {
-    Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, NS_TRUE);
+    Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, NS_COOKIE_SECURE);
 }
 
 
@@ -130,13 +131,13 @@ Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage)
 void
 Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path)
 {
-    Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path, NS_FALSE);
+    Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path, 0);
 }
 
 void
 Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path)
 {
-    Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path, NS_TRUE);
+    Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path, NS_COOKIE_SECURE);
 }
 
 
@@ -214,15 +215,16 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
-    int       maxage, secure = NS_FALSE;
+    int       maxage, flags = 0, secure = 0, scriptable = 0;
     Ns_Time  *nowPtr, *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-secure",  Ns_ObjvBool,   &secure,     NULL},
-        {"-domain",  Ns_ObjvString, &domain,     NULL},
-        {"-path",    Ns_ObjvString, &path,       NULL},
-        {"-expires", Ns_ObjvTime,   &expiresPtr, NULL},
-        {"--",       Ns_ObjvBreak,  NULL,        NULL},
+        {"-secure",     Ns_ObjvBool,   &secure,     NULL},
+        {"-scriptable", Ns_ObjvBool,   &scriptable, NULL},
+        {"-domain",     Ns_ObjvString, &domain,     NULL},
+        {"-path",       Ns_ObjvString, &path,       NULL},
+        {"-expires",    Ns_ObjvTime,   &expiresPtr, NULL},
+        {"--",          Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -232,6 +234,13 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     };
     if (conn == NULL || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
+    }
+
+    if (secure) {
+        flags |= NS_COOKIE_SECURE;
+    }
+    if (scriptable) {
+        flags |= NS_COOKIE_SCRIPTABLE;
     }
 
     /*
@@ -253,7 +262,7 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         maxage = 0;
     }
 
-    Ns_ConnSetCookieEx(conn, name, data, maxage, domain, path, secure);
+    Ns_ConnSetCookieEx(conn, name, data, maxage, domain, path, flags);
 
     return TCL_OK;
 }
@@ -326,7 +335,7 @@ NsTclDeleteCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *domain = NULL, *path = NULL;
-    int       secure = NS_FALSE;
+    int       secure = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-secure", Ns_ObjvBool,   &secure, NULL},
@@ -343,7 +352,8 @@ NsTclDeleteCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
         return TCL_ERROR;
     }
 
-    Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path, secure);
+    Ns_ConnSetCookieEx(conn, name, NULL, -1, domain, path,
+                       secure ? NS_COOKIE_SECURE : 0 | NS_COOKIE_SCRIPTABLE);
 
     return TCL_OK;
 }
