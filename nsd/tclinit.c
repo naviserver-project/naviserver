@@ -39,18 +39,6 @@ NS_RCSID("@(#) $Header$");
 
 
 /*
- * The following structure maintains per-thread context to support Tcl
- * including a table of cached interps by server and a shared async
- * cancel object.
- */
-
-typedef struct TclData {
-    Tcl_AsyncHandler cancel;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashTable interps;
-} TclData;
-
-/*
  * The following structure maintains interp trace callbacks.
  */
 
@@ -102,18 +90,14 @@ static Tcl_InterpDeleteProc FreeInterpData;
 static void RunTraces(NsInterp *itPtr, int why);
 static void LogTrace(NsInterp *itPtr, TclTrace *tracePtr, int why);
 static int RegisterAt(Ns_TclTraceProc *proc, void *arg, int when);
-static TclData *GetData(void);
-static Ns_TlsCleanup DeleteData;
-static Tcl_AsyncProc AsyncCancel;
+static Ns_TlsCleanup DeleteInterps;
 static Ns_ServerInitProc ConfigServerTcl;
 
 /*
  * Static variables defined in this file.
  */
 
-static Ns_Tls tls;              /* Slot for per-thread Tcl interp cache. */
-static Tcl_HashTable threads;   /* Table of threads with nsd-based interps. */
-static Ns_Mutex tlock;          /* Lock around threads table. */
+static Ns_Tls tls;  /* Slot for per-thread Tcl interp cache. */
 
 
 
@@ -166,15 +150,7 @@ NsInitTcl(void)
      * to free any interps remaining on the thread cache.
      */
 
-    Ns_TlsAlloc(&tls, DeleteData);
-
-    /*
-     * Initialize the table of all threads with active TclData
-     * and the one-time init table.
-     */
-
-    Tcl_InitHashTable(&threads, TCL_ONE_WORD_KEYS);
-    Ns_MutexSetName(&tlock, "ns:threads");
+    Ns_TlsAlloc(&tls, DeleteInterps);
 
     NsRegisterServerInit(ConfigServerTcl);
 }
@@ -858,6 +834,7 @@ Ns_TclInitModule(CONST char *server, CONST char *module)
  *      virtual server interps.  This command provide internal control
  *      functions required by the init.tcl script and is not intended
  *      to be called by a user directly.  It supports four activities:
+ *
  *      1. Managing the list of "modules" to initialize.
  *      2. Saving the init script for evaluation with new interps.
  *      3. Checking for change of the init script.
@@ -882,26 +859,21 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     TclTrace       *tracePtr;
     Defer          *deferPtr;
     Ns_TclCallback *cbPtr;
-    Tcl_Obj        *scriptObj, *objPtr, *listPtr;
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
-    TclData        *dataPtr;
+    Tcl_Obj        *scriptObj;
     Ns_DString      ds;
     char           *script;
-    uintptr_t       tid;
-    Tcl_WideInt     tidValue;
     int             remain = 0, opt, length, when = 0, result = TCL_OK;
 
     static CONST char *opts[] = {
-        "addmodule", "cancel", "cleanup", "epoch", "get", "getmodules",
+        "addmodule", "cleanup", "epoch", "get", "getmodules",
         "gettraces", "markfordelete", "oncreate", "oncleanup", "ondelete",
-        "oninit", "runtraces", "save", "trace", "threads", "update",
+        "oninit", "runtraces", "save", "trace", "update",
         NULL
     };
     enum {
-        IAddModuleIdx, ICancelIdx, ICleanupIdx, IEpochIdx, IGetIdx, IGetModulesIdx,
+        IAddModuleIdx, ICleanupIdx, IEpochIdx, IGetIdx, IGetModulesIdx,
         IGetTracesIdx, IMarkForDeleteIdx, IOnCreateIdx, IOnCleanupIdx, IOnDeleteIdx,
-        IOnInitIdx, IRunTracesIdx, ISaveIdx, ITraceIdx, IThreadsIdx, IUpdateIdx
+        IOnInitIdx, IRunTracesIdx, ISaveIdx, ITraceIdx, IUpdateIdx
     };
     Ns_ObjvTable traceWhen[] = {
         {"create",     NS_TCL_TRACE_CREATE},
@@ -1120,47 +1092,6 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 tracePtr = tracePtr->nextPtr;
             }
             Tcl_DStringResult(interp, &ds);
-        }
-        break;
-
-    case IThreadsIdx:
-        if (objc > 2) {
-            Tcl_WrongNumArgs(interp, 2, objv, NULL);
-            return TCL_ERROR;
-        }
-        listPtr = Tcl_NewObj();
-        Ns_MutexLock(&tlock);
-        hPtr = Tcl_FirstHashEntry(&threads, &search);
-        while (hPtr != NULL) {
-            tid = (uintptr_t) Tcl_GetHashKey(&threads, hPtr);
-            objPtr = Tcl_NewWideIntObj((Tcl_WideInt) tid);
-            Tcl_ListObjAppendElement(interp, listPtr, objPtr);
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        Ns_MutexUnlock(&tlock);
-        Tcl_SetObjResult(interp, listPtr);
-        break;
-
-    case ICancelIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "tid");
-            return TCL_ERROR;
-        }
-        if (Tcl_GetWideIntFromObj(interp, objv[2], &tidValue) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        tid = (uintptr_t) tidValue;
-        Ns_MutexLock(&tlock);
-        hPtr = Tcl_FindHashEntry(&threads, (char *) tid);
-        if (hPtr != NULL) {
-            dataPtr = Tcl_GetHashValue(hPtr);
-            Tcl_AsyncMark(dataPtr->cancel);
-        }
-        Ns_MutexUnlock(&tlock);
-        if (hPtr == NULL) {
-            Tcl_AppendResult(interp, "no such active thread: ",
-                             Tcl_GetString(objv[2]), NULL);
-            return TCL_ERROR;
         }
         break;
 
@@ -1538,10 +1469,16 @@ PushInterp(NsInterp *itPtr)
 static Tcl_HashEntry *
 GetCacheEntry(NsServer *servPtr)
 {
-    TclData *dataPtr = GetData();
+    Tcl_HashTable *tablePtr;
     int ignored;
 
-    return Tcl_CreateHashEntry(&dataPtr->interps, (char *) servPtr, &ignored);
+    tablePtr = Ns_TlsGet(&tls);
+    if (tablePtr == NULL) {
+        tablePtr = ns_malloc(sizeof(Tcl_HashTable));
+        Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
+        Ns_TlsSet(&tls, tablePtr);
+    }
+    return Tcl_CreateHashEntry(tablePtr, (char *) servPtr, &ignored);
 }
 
 
@@ -1708,37 +1645,7 @@ UpdateInterp(NsInterp *itPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FreeInterpData --
- *
- *      Tcl assoc data callback to destroy the per-interp NsInterp
- *      structure at interp delete time.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FreeInterpData(ClientData arg, Tcl_Interp *interp)
-{
-    NsInterp *itPtr = arg;
-
-    NsAdpFree(itPtr);
-    Tcl_DeleteHashTable(&itPtr->sets);
-    Tcl_DeleteHashTable(&itPtr->chans);
-    Tcl_DeleteHashTable(&itPtr->https);
-    ns_free(itPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RunTraces --
+ * RunTraces, LogTrace --
  *
  *      Execute interp trace callbacks.
  *
@@ -1746,7 +1653,7 @@ FreeInterpData(ClientData arg, Tcl_Interp *interp)
  *      None.
  *
  * Side effects:
- *      Depeneds on callbacks.
+ *      Depeneds on callbacks. Event may be logged.
  *
  *----------------------------------------------------------------------
  */
@@ -1831,47 +1738,10 @@ LogTrace(NsInterp *itPtr, TclTrace *tracePtr, int why)
 /*
  *----------------------------------------------------------------------
  *
- * GetData --
+ * FreeInterpData --
  *
- *      Return the per-thread Tcl data structure for current thread.
- *
- * Results:
- *      Pointer to TclData structure.
- *
- * Side effects:
- *      Will allocate and initialize TclData struct if necessary.
- *
- *----------------------------------------------------------------------
- */
-
-static TclData *
-GetData(void)
-{
-    TclData *dataPtr;
-    uintptr_t tid;
-    int new;
-
-    dataPtr = Ns_TlsGet(&tls);
-    if (dataPtr == NULL) {
-        dataPtr = ns_malloc(sizeof(TclData));
-        dataPtr->cancel = Tcl_AsyncCreate(AsyncCancel, NULL);
-        Tcl_InitHashTable(&dataPtr->interps, TCL_ONE_WORD_KEYS);
-        tid = Ns_ThreadId();
-        Ns_MutexLock(&tlock);
-        dataPtr->hPtr = Tcl_CreateHashEntry(&threads, (char *) tid, &new);
-        Tcl_SetHashValue(dataPtr->hPtr, dataPtr);
-        Ns_MutexUnlock(&tlock);
-        Ns_TlsSet(&tls, dataPtr);
-    }
-    return dataPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DeleteData --
- *
- *      Delete all per-thread data at thread exit time.
+ *      Tcl assoc data callback to destroy the per-interp NsInterp
+ *      structure at interp delete time.
  *
  * Results:
  *      None.
@@ -1883,43 +1753,28 @@ GetData(void)
  */
 
 static void
-DeleteData(void *arg)
+FreeInterpData(ClientData arg, Tcl_Interp *interp)
 {
-    TclData *dataPtr = arg;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    NsInterp *itPtr;
+    NsInterp *itPtr = arg;
 
-    Ns_MutexLock(&tlock);
-    Tcl_DeleteHashEntry(dataPtr->hPtr);
-    Ns_MutexUnlock(&tlock);
-    hPtr = Tcl_FirstHashEntry(&dataPtr->interps, &search);
-    while (hPtr != NULL) {
-        while ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
-            Tcl_SetHashValue(hPtr, NULL);
-            Ns_TclDestroyInterp(itPtr->interp);
-        }
-        hPtr = Tcl_NextHashEntry(&search);
-    }
-    Tcl_DeleteHashTable(&dataPtr->interps);
-
-    /*
-     * FIXME: This might core under circumstances
-     */
-    Tcl_AsyncDelete(dataPtr->cancel);
-
-    ns_free(dataPtr);
+    NsAdpFree(itPtr);
+    Tcl_DeleteHashTable(&itPtr->sets);
+    Tcl_DeleteHashTable(&itPtr->chans);
+    Tcl_DeleteHashTable(&itPtr->https);
+    ns_free(itPtr);
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
- * AsyncCancel --
+ * DeleteInterps --
  *
- *      Callback which cancels Tcl execution in the given thread.
+ *      Tls callback to delete all cache virtual-server interps at
+ *      thread exit time.
  *
  * Results:
- *      TCL_ERROR.
+ *      None.
  *
  * Side effects:
  *      None.
@@ -1927,10 +1782,21 @@ DeleteData(void *arg)
  *----------------------------------------------------------------------
  */
 
-static int
-AsyncCancel(ClientData ignored, Tcl_Interp *interp, int code)
+static void
+DeleteInterps(void *arg)
 {
-    Tcl_ResetResult(interp);
-    Tcl_SetResult(interp, "async cancel", TCL_STATIC);
-    return TCL_ERROR;
+    Tcl_HashTable  *tablePtr = arg;
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+    NsInterp       *itPtr;
+ 
+    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+    while (hPtr != NULL) {
+        if ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
+            Ns_TclDestroyInterp(itPtr->interp);
+        }
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+    Tcl_DeleteHashTable(tablePtr);
+    ns_free(tablePtr);
 }
