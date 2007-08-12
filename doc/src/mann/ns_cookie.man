@@ -28,7 +28,7 @@ is widely supported by user agents.
  [opt [option "-secure [arg bool]"]] \
  [opt [option "-domain [arg d]"]] \
  [opt [option "-path [arg p]"]] \
- [opt [option "-maxage [arg t]"]] \
+ [opt [option "-expires [arg t]"]] \
  [opt [arg --]] \
  [arg name] \
  [arg data]  ]
@@ -46,7 +46,7 @@ request for the URL [term /x/y/z] both cookies named [term foo] are sent.
 
 [nl]
 The [arg data] will be URL-encoded to escape special characters.
-[cmd ns_getcookie] correctly reverses this encoding.
+[cmd ns_getcookie] correctly reverses the encoding.
 
 
 
@@ -100,13 +100,14 @@ specified then the cookie will be back sent to the server for all requests.
 If a path is specified the cookie will only be sent back for requests which
 match the specified path, or a sub-path.
 
-[opt_def -maxage [arg seconds]]
-The cookie will expire in maxage [arg seconds], after which the client will no
-longer send the cookie back to the server. The special value [emph -1] may be
-used to indicate that the cookie should never expire.
+[opt_def -expires [arg time]]
+The cookie will expire in [arg time] seconds, after which the client will no
+longer send the cookie back to the server. If [arg time] is large it is treated
+as the absolute time in the future when the cookie should expire. The special
+value [emph -1] may be used to indicate that the cookie should never expire.
 
 [nl]
-The expirey time is valid accross browser sessions.  If no expirey is
+The expiry time is valid across browser sessions.  If no expiry is
 specified then the cookie will expire when the browser session ends,
 which is ususally when the user closes their browser.
 
@@ -121,7 +122,7 @@ Track all user agents which ever vist out site:
 [example_begin]
     proc browser_tracking_filter {} {
         if {![lb][cmd ns_getcookie] first_visit 0[rb]} {
-            [cmd ns_setcookie] -maxage -1 -- first_visit [lb]clock seconds[rb]
+            [cmd ns_setcookie] -expires -1 -- first_visit [lb]clock seconds[rb]
         }
     }
     ns_register_filter preauth GET /* browser_tracking_filter

@@ -36,10 +36,6 @@ New Features:
     * The new [ns_conn keepalive ?bool?] sub-command dissables or requests
       keepalive behaviour for the current connection.
     * ns_getcsv now takes a -delimiter switch.
-    * New [ns_ictl threads] and [ns_ictl cancel tid] commands to list
-      and cancle threads with active Tcl interps using the Tcl asynchronous
-      notification mechanism.
-      Warning: Tcl releases before 2006-07-11 are buggy and may crash(?).
     * ns_parseargs: default values can now be specified with a leading '='
       which signifies the value should be eval'ed to generate the default.
     * Commands which timeout now set a NS_TIMEOUT Tcl error code, which if not
@@ -58,6 +54,7 @@ New Features:
     * New Ns_Sls* and ns_sls commands supporting socket-local-storage (data which persists for 
       the lifetime of an open TCP connection)
     * ns_httpget now supports chunked encoding in results
+
 
 Bug Fixes:
 
@@ -84,6 +81,13 @@ Bug Fixes:
     * New command ns_mutex trylock which wroks similar to the sameC API function
     * New command ns_filestat which is similar to file stat but uses direct system 
       call instead of Tcl VFS
+
+
+Incompatible API Changes:
+
+    * ns_setcookie -maxage renamed -expires to match common usage throughout
+      code.
+
 
 Configuration Changes:
 

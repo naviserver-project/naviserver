@@ -214,14 +214,15 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
-    int       maxage = 0, secure = NS_FALSE;
+    int       maxage, secure = NS_FALSE;
+    Ns_Time  *nowPtr, *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-secure", Ns_ObjvBool,   &secure, NULL},
-        {"-domain", Ns_ObjvString, &domain, NULL},
-        {"-path",   Ns_ObjvString, &path,   NULL},
-        {"-maxage", Ns_ObjvInt,    &maxage, NULL},
-        {"--",      Ns_ObjvBreak,  NULL,    NULL},
+        {"-secure",  Ns_ObjvBool,   &secure,     NULL},
+        {"-domain",  Ns_ObjvString, &domain,     NULL},
+        {"-path",    Ns_ObjvString, &path,       NULL},
+        {"-expires", Ns_ObjvTime,   &expiresPtr, NULL},
+        {"--",       Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -232,8 +233,24 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     if (conn == NULL || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (maxage < 0) {
-        maxage = INT_MAX; /* "Infinite" lifetime. */
+
+    /*
+     * Accept expiry time as relative or absolute and adjust to the relative
+     * time Ns_ConnSetCookieEx expects, taking account of the special value
+     * -1 which is short hand for infinite.
+     */
+
+    if (expiresPtr != NULL) {
+        nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
+        if (expiresPtr->sec < 0) {
+            maxage = INT_MAX;
+        } else if (expiresPtr->sec > nowPtr->sec) {
+            maxage = expiresPtr->sec - nowPtr->sec;
+        } else {
+            maxage = expiresPtr->sec;
+        }
+    } else {
+        maxage = 0;
     }
 
     Ns_ConnSetCookieEx(conn, name, data, maxage, domain, path, secure);

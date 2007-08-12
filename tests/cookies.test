@@ -81,7 +81,7 @@ test cookie-2.5 {set cookie w/ path} -setup {
 
 test cookie-2.6 {set cookie w/ max age} -setup {
     ns_register_proc GET /cookie-2.6 {
-        ns_setcookie -maxage 99 -- x y
+        ns_setcookie -expires 99 -- x y
         ns_return 200 text/plain ok
     }
 } -body {
@@ -92,7 +92,7 @@ test cookie-2.6 {set cookie w/ max age} -setup {
 
 test cookie-2.7 {set cookie w/ infinite lifetime} -setup {
     ns_register_proc GET /cookie-2.7 {
-        ns_setcookie -maxage -1 -- x y
+        ns_setcookie -expires -1 -- x y
         ns_return 200 text/plain ok
     }
 } -body {
@@ -100,6 +100,18 @@ test cookie-2.7 {set cookie w/ infinite lifetime} -setup {
 } -cleanup {
     ns_unregister_proc GET /cookie-2.7
 } -result {200 {x="y"; Expires=Fri, 01-Jan-2035 01:00:00 GMT}}
+
+test cookie-2.8 {set cookie w/ absolute expiry} -setup {
+    ns_register_proc GET /cookie-2.8 {
+        ns_setcookie -expires [ns_time incr [ns_time] 10] -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    # NB: This test is racy...
+    nstest_http -getheaders {Set-Cookie} GET /cookie-2.8
+} -cleanup {
+    ns_unregister_proc GET /cookie-2.8
+} -result {200 {x="y"; Max-Age=10}}
 
 
 

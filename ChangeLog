@@ -2,6 +2,13 @@
 
 	* nsd/tclinit.c: Remove the async cancel stuff. See module: nsloopctl.
 
+	* nsd/cookies.c:
+	* tests/cookies.test:
+	* NEWS:
+	* doc/src/mann/ns_cookie.man: Rename -maxage option to ns_setcookie
+	-expires to match common usage throughout rest of API. Now handles
+	absolute and relative time values.
+
 2007-08-11  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
