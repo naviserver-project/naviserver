@@ -1,3 +1,8 @@
+2007-08-14  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/tclmisc.c: Replaced uint32 with ns_uint32 so this 
+	gets compiled on platforms not supporting autoconf 2.60
+
 2007-08-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclinit.c: Remove the async cancel stuff. See module: nsloopctl.

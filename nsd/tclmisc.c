@@ -1070,6 +1070,9 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.23  2007/08/14 08:49:10  vasiljevic
+ * Replaced uint32 with ns_uint32.
+ *
  * Revision 1.22  2007/05/21 05:28:39  seryakov
  *         * include/ns.h:
  *         * nsd/tclmisc.c: Added public domain MD5 implementation, new command ns_md5 created,
@@ -1118,11 +1121,11 @@ static void MD5Transform(ns_uint32 buf[4], ns_uint32 const in[16]);
  */
 static void byteReverse(unsigned char *buf, unsigned longs)
 {
-    uint32 t;
+    ns_uint32 t;
     do {
-	t = (uint32) ((unsigned) buf[3] << 8 | buf[2]) << 16 |
+	t = (ns_uint32) ((unsigned) buf[3] << 8 | buf[2]) << 16 |
 	    ((unsigned) buf[1] << 8 | buf[0]);
-	*(uint32 *) buf = t;
+	*(ns_uint32 *) buf = t;
 	buf += 4;
     } while (--longs);
 }
