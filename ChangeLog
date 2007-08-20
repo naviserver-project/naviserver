@@ -1,3 +1,8 @@
+2007-08-20  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/nsproxylib.c: Proxy ID is now allocated dynamically
+	instead of having limited/fixed length of 16 characters.
+
 2007-08-14  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/tclmisc.c: Replaced uint32 with ns_uint32 so this 

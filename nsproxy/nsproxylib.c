@@ -127,7 +127,7 @@ typedef struct Proxy {
     struct Proxy  *nextPtr;  /* Next in list of proxies */
     struct Proxy  *runPtr;   /* Next in list of running proxies */
     struct Pool   *poolPtr;  /* Pointer to proxy's pool */
-    char           id[16];   /* Proxy unique string id */
+    char          *id;       /* Proxy unique string id */
     int            numruns;  /* Number of runs of this proxy */
     ProxyState     state;    /* Current proxy state (idle, busy etc) */
     ProxyConf      conf;     /* Copy from the pool configuration */
@@ -2247,11 +2247,18 @@ static Proxy*
 CreateProxy(Pool *poolPtr)
 {
     Proxy *proxyPtr;
+    char buf[32];
+
+    sprintf(buf, "%d", poolPtr->nextid++);
 
     proxyPtr = ns_calloc(1, sizeof(Proxy));
-    snprintf(proxyPtr->id, sizeof(proxyPtr->id), "%s-%d",
-             poolPtr->name, poolPtr->nextid++);
+    proxyPtr->id = ns_calloc(1, strlen(buf) + strlen(poolPtr->name) + 2);
+
+    strcpy(proxyPtr->id, poolPtr->name);
+    strcat(proxyPtr->id, "-");
+    strcat(proxyPtr->id, buf);
     proxyPtr->poolPtr = poolPtr;
+
     Tcl_DStringInit(&proxyPtr->in);
     Tcl_DStringInit(&proxyPtr->out);
 
@@ -2777,6 +2784,7 @@ FreeProxy(Proxy *proxyPtr)
 {
     Ns_DStringFree(&proxyPtr->in);
     Ns_DStringFree(&proxyPtr->out);
+    ns_free(proxyPtr->id);
     ns_free(proxyPtr);
 }
 
