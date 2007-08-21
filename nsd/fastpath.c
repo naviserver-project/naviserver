@@ -557,7 +557,11 @@ NsFastStat(CONST char *file, FileStat *stPtr)
     err = Tcl_GetErrno();
     Tcl_DecrRefCount(path);
 #else
+#ifdef HAVE_STRUCT_STAT64
+    status = stat64(file, stPtr);
+#else
     status = stat(file, stPtr);
+#endif
     err = errno;
 #endif
 

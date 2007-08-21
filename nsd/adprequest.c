@@ -297,7 +297,7 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
     AdpRequest *adp = arg;
     Ns_Time    *expiresPtr;
     Ns_DString  ds;
-    char       *file;
+    char       *file = NULL;
     int         status;
 
     Ns_DStringInit(&ds);

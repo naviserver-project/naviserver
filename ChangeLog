@@ -1,3 +1,9 @@
+2007-08-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/fastpath.c:
+	* nsd/nsd.h: Added suppoirt for stat64 in FastStat. It uses TCL
+	defined HAVE_STRUCT_STAT64
+
 2007-08-20  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/nsproxylib.c: Proxy ID is now allocated dynamically
