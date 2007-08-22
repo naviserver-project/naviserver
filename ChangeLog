@@ -1,3 +1,13 @@
+2007-08-22  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/connio.c (ConnSend):
+	* tests/http.test:
+	* tests/testserver/pages/16480bytes: Add a call to
+	Ns_ConnSetLengthHeader() at the start of ConnSend() with the total
+	length of the file to send, otherwise Content-Length gets reported as
+	8192 which is the size of the buffer (IOBUFSZ) used to read the file off
+	disk.
+
 2007-08-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/fastpath.c:

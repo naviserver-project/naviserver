@@ -961,17 +961,23 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
 static int
 ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
-    Tcl_WideInt toread, nread, status;
-    char  buf[IOBUFSZ];
+    Tcl_WideInt  toread, nread, status;
+    char         buf[IOBUFSZ];
 
     /*
-     * Even if nsend is 0, ensure all queued data (like HTTP response
-     * headers) get flushed.
+     * Even if nsend is 0 ensure HTTP response headers get written.
      */
 
     if (nsend == 0) {
         return Ns_ConnWriteData(conn, NULL, 0, 0);
     }
+
+    /*
+     * Set the length header to nsend, which is the total number
+     * of bytes to write.
+     */
+
+    Ns_ConnSetLengthHeader(conn, nsend);
 
     /*
      * Check for submision into writer queue
@@ -980,6 +986,10 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
     if (NsWriterQueue(conn, nsend, chan, fp, fd, 0) == NS_OK) {
         return NS_OK;
     }
+
+    /*
+     * Read from disk and send in IOBUFSZ chunks until done.
+     */
 
     status = NS_OK;
     while (status == NS_OK && nsend > 0) {
