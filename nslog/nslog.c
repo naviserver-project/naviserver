@@ -368,11 +368,12 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
                 ns_free(logPtr->rollfmt);
             }
             logPtr->rollfmt = strarg;
-        } else {
-            strarg = logPtr->rollfmt ? logPtr->rollfmt : "";
         }
+        strarg = logPtr->rollfmt;
         Ns_MutexUnlock(&logPtr->lock);
-        Tcl_SetResult(interp, strarg, TCL_STATIC);
+        if (strarg != NULL) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
+        }
         break;
 
     case MAXBACKUP:
