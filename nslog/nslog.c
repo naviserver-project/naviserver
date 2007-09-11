@@ -31,72 +31,7 @@
 /*
  * nslog.c --
  *
- * This file implements the access log using NCSA Common Log format.
- *
- * The nslog module implements Common Log Format access logging. This
- * format can be used by any web analyzer tool. It optionally supports
- * NCSA Combined Log Format and supports log file rolling. The log files
- * are stored in the server/server1/modules/nslog directory or can be
- * specified in the config file.
- *
- *
- * Known Issues
- * ------------
- *
- * When supressquery is true, the side-effect is that the real URI is
- * returned, so places where trailing slash returns "index.html" logs
- * as "index.html".
- *
- *
- * Sample Configuration
- * --------------------
- *
- * ns_section "ns/server/${servername}/module/nslog"
- * ns_param   file            access.log ;# Name to the log file
- * ns_param   formattedtime   true  ;# true==common log format
- * ns_param   logcombined     false ;# true==NCSA combined format
- * ns_param   maxbuffer       0     ;# Max # of lines in the buffer
- * ns_param   maxbackup       5     ;# Max # of files to keep when rolling
- * ns_param   rollhour        0     ;# Time to roll log
- * ns_param   rolllog         true  ;# true==roll the log
- * ns_param   rollonsignal    true  ;# true==roll the log on SIGHUP
- * ns_param   suppressquery   false ;# true==Don't show query string in the log
- * ns_param   checkforproxy   false ;# true==check for X-Forwarded-For header
- * ns_param   extendedheaders "Referer X-Forwarded-For" ;# List of add. headers
- *
- *
- * The "ns_accesslog" command options
- * ----------------------------------
- *
- * Once loaded, this module introduces "ns_accesslog" Tcl command
- * with the following options:
- *
- * roll            - perform access.log rolling now
- * file            - set/return access log file
- * rollfmt         - set/return folling format
- * flags           - set/return current flags such as
- *                   logcombined/formattedtime/suppressquery/checkforproxy
- * maxbuffer       - set/return max number of lines in the buffer
- * maxbackup       - set/return max number of backup files
- * extendedheaders - set/return extended headers to be logged
- *
- *
- * Examples:
- * ---------
- *
- * nscp:1> ns_accesslog file
- * /usr/local/ns/logs/access.log
- *
- * nscp:2> ns_accesslog flags
- * logCombined formattedTime
- *
- * nscp:3> ns_accesslog flags [list logCombined formattedTime checkForProxy]
- * logCombined formattedTime checkForProxy
- *
- * nscp:4> ns_accesslog extendedheaders
- *
- * nscp:5> ns_accesslog extendedheaders [list X-Forwarded-For Accepted]
- * X-Forwarded-For Accepted
+ *    Implements access logging in the NCSA Common Log format.
  *
  */
 

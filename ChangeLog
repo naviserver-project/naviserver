@@ -26,6 +26,8 @@
 	* nslog/nslog.c: Fix mix-up with static/dynamic memory and the result
 	from the [ns_accesslog file] command.
 
+	* nslog/nslog.c: Remove redundant embedded documentation.
+
 2007-08-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/connio.c (ConnSend):
