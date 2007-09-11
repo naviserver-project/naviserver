@@ -28,6 +28,9 @@
 
 	* nslog/nslog.c: Remove redundant embedded documentation.
 
+	* nslog/nslog.c (LogObjCmd): Fix inconsistent use of CamelCase in return
+	value of [ns_accesslog flags] command.
+
 2007-08-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/connio.c (ConnSend):

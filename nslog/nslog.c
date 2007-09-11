@@ -400,19 +400,19 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             Ns_MutexUnlock(&logPtr->lock);
         }
         if ((status & LOG_COMBINED)) {
-            Ns_DStringAppend(&ds, "logCombined ");
+            Ns_DStringAppend(&ds, "logcombined ");
         }
         if ((status & LOG_FMTTIME)) {
-            Ns_DStringAppend(&ds, "formattedTime ");
+            Ns_DStringAppend(&ds, "formattedtime ");
         }
         if ((status & LOG_REQTIME)) {
-            Ns_DStringAppend(&ds, "logReqTime ");
+            Ns_DStringAppend(&ds, "logreqtime ");
         }
         if ((status & LOG_CHECKFORPROXY)) {
-            Ns_DStringAppend(&ds, "checkForProxy ");
+            Ns_DStringAppend(&ds, "checkforproxy ");
         }
         if ((status & LOG_SUPPRESSQUERY)) {
-            Ns_DStringAppend(&ds, "suppressQuery ");
+            Ns_DStringAppend(&ds, "suppressquery ");
         }
         Tcl_AppendResult(interp, ds.string, NULL);
         Ns_DStringFree(&ds);
