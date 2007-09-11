@@ -20,6 +20,9 @@
 	the file. Shuffle some code around to put public API at the top of the
 	file.
 
+	* doc/src/ns_accesslog.man:
+	* doc/src/mann/ns_accesslog.man: Update and move.
+
 2007-08-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/connio.c (ConnSend):
