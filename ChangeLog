@@ -1,3 +1,20 @@
+2007-09-11  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/tclresp.c: Re-enable the ability to use ns_write to manually
+	construct headers or some other non-HTTP response. It does not now
+	auto-generate a set of headers on first write -- ns_headers must be
+	called first.
+
+	* doc/src/mann/ns_return.man:
+	* doc/src/mann/ns_write.man: Split ns_write, ns_headers and
+	ns_connsendfp into their own man page, the distinction being that the
+	all construct responses incrementally whereas ns_return, ns_respond,
+	ns_returnfile and ns_returnfp return a fully formed HTTP response.
+
+	* tests/tclresp.test: Test the headers/no-headers case for ns_write and
+	ns_startcontent.
+
 2007-08-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/connio.c (ConnSend):

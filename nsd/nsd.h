@@ -937,10 +937,11 @@ typedef struct NsInterp {
      * command.
      */
 
-#define CONN_TCLFORM    1
-#define CONN_TCLHDRS    2
-#define CONN_TCLOUTHDRS 4
-#define CONN_TCLAUTH    8
+#define CONN_TCLFORM    1  /* Query form set is registered for interp. */
+#define CONN_TCLHDRS    2  /* Input headers set is registered for interp. */
+#define CONN_TCLOUTHDRS 4  /* Output headers set is registered for interp. */
+#define CONN_TCLAUTH    8  /* 'auth' headers set is registered for interp. */
+#define CONN_TCLHTTP   16  /* HTTP headers requested by ns_headers. */
 
     Ns_Conn *conn;
 

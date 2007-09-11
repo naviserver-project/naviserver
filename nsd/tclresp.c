@@ -53,16 +53,14 @@ static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
  *
  * NsTclHeadersObjCmd --
  *
- *      Implements ns_headers. Queue default response headers, which
- *      will be sent on the first IO (e.g. ns_write) or otherwise when
- *      the connection is closed.
+ *      Implements ns_headers. Queue default and pending response headers.
  *
  * Results:
  *      Standard Tcl result.
  *      Interpreter result set to 0 (success) always.
  *
  * Side effects:
- *      None.
+ *      See comments for details.
  *
  *----------------------------------------------------------------------
  */
@@ -71,47 +69,45 @@ int
 NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
-    int      status, length = -1, binary = 0, result = TCL_OK;
-    char    *type = NULL;
+    NsInterp *itPtr = arg;
+    Ns_Conn  *conn;
+    int       status, length = -1, result = TCL_OK;
+    char     *type = NULL;
 
-    Ns_ObjvSpec opts[] = {
-        {"-binary", Ns_ObjvBool, &binary, (void *) NS_TRUE},
-        {"--",      Ns_ObjvBreak,  NULL,    NULL},
-        {NULL, NULL, NULL, NULL}
-    };
     Ns_ObjvSpec args[] = {
         {"status",  Ns_ObjvInt,    &status, NULL},
         {"?type",   Ns_ObjvString, &type, NULL},
         {"?length", Ns_ObjvInt,    &length, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
             || GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
 
+    itPtr->nsconn.flags |= CONN_TCLHTTP;
     Ns_ConnSetResponseStatus(conn, status);
 
-    if (type != NULL) {
-        if (binary) {
-            Ns_ConnSetTypeHeader(conn, type);
-        } else {
-            Ns_ConnSetEncodedTypeHeader(conn, type);
-        }
-    }
-
     if (length > -1) {
-        Ns_ConnSetLengthHeader(conn, length);
 
         /*
-         * Flush the headers if an explicit length was given to dissable
-         * chunking. We assume the length is right...
+         * If a length is specified then we expect the user to send binary
+         * data. The type header should not specify a charset, and we flush
+         * the headers now to dissable chunking later in Ns_ConnWriteVData()
+         * which would otherwise alter the length.
          */
+
+        if (type != NULL) {
+            Ns_ConnSetTypeHeader(conn, type);
+        }
+        Ns_ConnSetLengthHeader(conn, length);
 
         if (Ns_ConnWriteData(conn, NULL, 0, 0) != NS_OK) {
             result = TCL_ERROR;
         }
+
+    } else if (type != NULL) {
+        Ns_ConnSetEncodedTypeHeader(conn, type);
     }
 
     return Result(interp, result);
@@ -140,6 +136,7 @@ int
 NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj **objv)
 {
+    NsInterp     *itPtr = arg;
     Ns_Conn      *conn;
     Tcl_Encoding  encoding = NULL;
     char         *charset = NULL, *type = NULL;
@@ -154,6 +151,8 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         || Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+
+    itPtr->nsconn.flags |= CONN_TCLHTTP;
 
     if (charset != NULL && type != NULL) {
         Tcl_SetResult(interp, "only one of -charset or -type may be specified",
@@ -203,7 +202,8 @@ int
 NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                  Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    NsInterp     *itPtr = arg;
+    Ns_Conn      *conn;
     int           length, towrite, nwrote, i, n;
     int           binary = 0;
     struct iovec  iov[32];
@@ -218,6 +218,17 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
     objv++;
     objc--;
+
+    /*
+     * On first write, check to see if headers were requested by ns_headers.
+     * Otherwise, supress them. User will ns_write the headers themselves
+     * or this is some other protocol.
+     */
+
+    if (!(conn->flags & NS_CONN_SENTHDRS)
+            && !(itPtr->nsconn.flags & CONN_TCLHTTP)) {
+        conn->flags |= NS_CONN_SKIPHDRS;
+    }
 
     /*
      * Allocate space for large numbers of buffers.
