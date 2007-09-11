@@ -15,6 +15,11 @@
 	* tests/tclresp.test: Test the headers/no-headers case for ns_write and
 	ns_startcontent.
 
+	* nslog/nslog.c (LogFlush): Remove redundant and annoying error logging
+	when a log-flush fails due to a previous error rolling and re-opening
+	the file. Shuffle some code around to put public API at the top of the
+	file.
+
 2007-08-22  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/connio.c (ConnSend):

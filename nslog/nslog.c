@@ -305,176 +305,13 @@ Ns_ModuleInit(char *server, char *module)
     return NS_OK;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * LogTrace --
- *
- *      Trace routine for appending the log with the current
- *      connection results.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Entry is appended to the open log.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-LogTrace(void *arg, Ns_Conn *conn)
+static int
+AddCmds(Tcl_Interp *interp, void *arg)
 {
-    Log         *logPtr = arg;
-    CONST char **h;
-    char        *p, *user;
-    int          n, status;
-    Ns_DString   ds;
-    Ns_Time      now, diff;
+    Log *logPtr = arg;
 
-    Ns_DStringInit(&ds);
-    Ns_MutexLock(&logPtr->lock);
-
-    /*
-     * Compute the request's elapsed time
-     */
-
-    if ((logPtr->flags & LOG_REQTIME)) {
-        Ns_GetTime(&now);
-        Ns_DiffTime(&now, Ns_ConnStartTime(conn), &diff);
-    }
-
-    /*
-     * Append the peer address. Watch for users coming
-     * from proxy servers (if configured).
-     */
-
-    p = NULL;
-    if ((logPtr->flags & LOG_CHECKFORPROXY)) {
-        p = Ns_SetIGet(conn->headers, "X-Forwarded-For");
-        if (p != NULL && !strcasecmp(p, "unknown")) {
-            p = NULL;
-        }
-    }
-    Ns_DStringAppend(&ds, p && *p ? p : Ns_ConnPeer(conn));
-
-    /*
-     * Append the authorized user, if any. Watch usernames
-     * with embedded blanks; we must properly quote them.
-     */
-
-    user = Ns_ConnAuthUser(conn);
-    if (user == NULL) {
-        Ns_DStringAppend(&ds," - - ");
-    } else {
-        int quote = 0;
-        for (p = user; *p && !quote; p++) {
-            quote = isspace((unsigned char)*p);
-        }
-        if (quote) {
-            Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
-        } else {
-            Ns_DStringVarAppend(&ds," - ", user, " ", NULL);
-        }
-    }
-
-    /*
-     * Append a common log format time stamp including GMT offset
-     */
-
-    if (!(logPtr->flags & LOG_FMTTIME)) {
-        Ns_DStringPrintf(&ds, "[%jd]", (intmax_t) time(NULL));
-    } else {
-        char buf[41]; /* Big enough for Ns_LogTime(). */
-        Ns_LogTime(buf);
-        Ns_DStringAppend(&ds, buf);
-    }
-
-    /*
-     * Append the request line plus query data (if configured)
-     */
-
-    if (conn->request && conn->request->line) {
-        if ((logPtr->flags & LOG_SUPPRESSQUERY)) {
-            Ns_DStringVarAppend(&ds, " \"", conn->request->url, "\" ", NULL);
-        } else {
-            Ns_DStringVarAppend(&ds, " \"", conn->request->line, "\" ", NULL);
-        }
-    } else {
-        Ns_DStringAppend(&ds," \"\" ");
-    }
-
-    /*
-     * Construct and append the HTTP status code and bytes sent
-     */
-
-    n = Ns_ConnResponseStatus(conn);
-    Ns_DStringPrintf(&ds, "%d %d", n ? n : 200, Ns_ConnContentSent(conn));
-
-    /*
-     * Append the referer and user-agent headers (if any)
-     */
-
-    if ((logPtr->flags & LOG_COMBINED)) {
-        Ns_DStringAppend(&ds, " \"");
-        p = Ns_SetIGet(conn->headers, "referer");
-        if (p) {
-            Ns_DStringAppend(&ds, p);
-        }
-        Ns_DStringAppend(&ds, "\" \"");
-        p = Ns_SetIGet(conn->headers, "user-agent");
-        if (p) {
-            Ns_DStringAppend(&ds, p);
-        }
-        Ns_DStringAppend(&ds, "\"");
-    }
-
-    /*
-     * Append the request's elapsed time (if enabled)
-     */
-
-    if ((logPtr->flags & LOG_REQTIME)) {
-        Ns_DStringPrintf(&ds, " %jd.%06ld", (intmax_t) diff.sec, diff.usec);
-    }
-
-    /*
-     * Append the extended headers (if any)
-     */
-
-    for (h = logPtr->extheaders; *h != NULL; h++) {
-        p = Ns_SetIGet(conn->headers, *h);
-        if (p == NULL) {
-            p = "";
-        }
-        Ns_DStringVarAppend(&ds, " \"", p, "\"", NULL);
-    }
-
-    /*
-     * Append the trailing newline and optionally
-     * flush the buffer
-     */
-
-    Ns_DStringAppend(&ds, "\n");
-
-    if (logPtr->maxlines == 0) {
-        status = LogFlush(logPtr, &ds);
-    } else {
-        Ns_DStringNAppend(&logPtr->buffer, ds.string, ds.length);
-        if (++logPtr->curlines > logPtr->maxlines) {
-            status = LogFlush(logPtr, &logPtr->buffer);
-            logPtr->curlines = 0;
-        } else {
-            status = NS_OK;
-        }
-    }
-
-    Ns_MutexUnlock(&logPtr->lock);
-    Ns_DStringFree(&ds);
-
-    if (status != NS_OK) {
-        Ns_Log(Error, "nslog: flush failed: '%s'", strerror(errno));
-    }
+    Tcl_CreateObjCommand(interp, "ns_accesslog", LogObjCmd, logPtr, NULL);
+    return NS_OK;
 }
 
 
@@ -705,25 +542,168 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 /*
  *----------------------------------------------------------------------
  *
- * LogArg --
+ * LogTrace --
  *
- *      Copy log file as argument for callback query.
+ *      Trace routine for appending the log with the current
+ *      connection results.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      Entry is appended to the open log.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-LogArg(Tcl_DString *dsPtr, void *arg)
+LogTrace(void *arg, Ns_Conn *conn)
 {
-    Log *logPtr = arg;
+    Log         *logPtr = arg;
+    CONST char **h;
+    char        *p, *user;
+    int          n, status;
+    Ns_DString   ds;
+    Ns_Time      now, diff;
 
-    Tcl_DStringAppendElement(dsPtr, logPtr->file);
+    Ns_DStringInit(&ds);
+    Ns_MutexLock(&logPtr->lock);
+
+    /*
+     * Compute the request's elapsed time
+     */
+
+    if ((logPtr->flags & LOG_REQTIME)) {
+        Ns_GetTime(&now);
+        Ns_DiffTime(&now, Ns_ConnStartTime(conn), &diff);
+    }
+
+    /*
+     * Append the peer address. Watch for users coming
+     * from proxy servers (if configured).
+     */
+
+    p = NULL;
+    if ((logPtr->flags & LOG_CHECKFORPROXY)) {
+        p = Ns_SetIGet(conn->headers, "X-Forwarded-For");
+        if (p != NULL && !strcasecmp(p, "unknown")) {
+            p = NULL;
+        }
+    }
+    Ns_DStringAppend(&ds, p && *p ? p : Ns_ConnPeer(conn));
+
+    /*
+     * Append the authorized user, if any. Watch usernames
+     * with embedded blanks; we must properly quote them.
+     */
+
+    user = Ns_ConnAuthUser(conn);
+    if (user == NULL) {
+        Ns_DStringAppend(&ds," - - ");
+    } else {
+        int quote = 0;
+        for (p = user; *p && !quote; p++) {
+            quote = isspace((unsigned char)*p);
+        }
+        if (quote) {
+            Ns_DStringVarAppend(&ds, " - \"", user, "\" ", NULL);
+        } else {
+            Ns_DStringVarAppend(&ds," - ", user, " ", NULL);
+        }
+    }
+
+    /*
+     * Append a common log format time stamp including GMT offset
+     */
+
+    if (!(logPtr->flags & LOG_FMTTIME)) {
+        Ns_DStringPrintf(&ds, "[%jd]", (intmax_t) time(NULL));
+    } else {
+        char buf[41]; /* Big enough for Ns_LogTime(). */
+        Ns_LogTime(buf);
+        Ns_DStringAppend(&ds, buf);
+    }
+
+    /*
+     * Append the request line plus query data (if configured)
+     */
+
+    if (conn->request && conn->request->line) {
+        if ((logPtr->flags & LOG_SUPPRESSQUERY)) {
+            Ns_DStringVarAppend(&ds, " \"", conn->request->url, "\" ", NULL);
+        } else {
+            Ns_DStringVarAppend(&ds, " \"", conn->request->line, "\" ", NULL);
+        }
+    } else {
+        Ns_DStringAppend(&ds," \"\" ");
+    }
+
+    /*
+     * Construct and append the HTTP status code and bytes sent
+     */
+
+    n = Ns_ConnResponseStatus(conn);
+    Ns_DStringPrintf(&ds, "%d %d", n ? n : 200, Ns_ConnContentSent(conn));
+
+    /*
+     * Append the referer and user-agent headers (if any)
+     */
+
+    if ((logPtr->flags & LOG_COMBINED)) {
+        Ns_DStringAppend(&ds, " \"");
+        p = Ns_SetIGet(conn->headers, "referer");
+        if (p) {
+            Ns_DStringAppend(&ds, p);
+        }
+        Ns_DStringAppend(&ds, "\" \"");
+        p = Ns_SetIGet(conn->headers, "user-agent");
+        if (p) {
+            Ns_DStringAppend(&ds, p);
+        }
+        Ns_DStringAppend(&ds, "\"");
+    }
+
+    /*
+     * Append the request's elapsed time (if enabled)
+     */
+
+    if ((logPtr->flags & LOG_REQTIME)) {
+        Ns_DStringPrintf(&ds, " %jd.%06ld", (intmax_t) diff.sec, diff.usec);
+    }
+
+    /*
+     * Append the extended headers (if any)
+     */
+
+    for (h = logPtr->extheaders; *h != NULL; h++) {
+        p = Ns_SetIGet(conn->headers, *h);
+        if (p == NULL) {
+            p = "";
+        }
+        Ns_DStringVarAppend(&ds, " \"", p, "\"", NULL);
+    }
+
+    /*
+     * Append the trailing newline and optionally
+     * flush the buffer
+     */
+
+    Ns_DStringAppend(&ds, "\n");
+
+    if (logPtr->maxlines == 0) {
+        status = LogFlush(logPtr, &ds);
+    } else {
+        Ns_DStringNAppend(&logPtr->buffer, ds.string, ds.length);
+        if (++logPtr->curlines > logPtr->maxlines) {
+            status = LogFlush(logPtr, &logPtr->buffer);
+            logPtr->curlines = 0;
+        } else {
+            status = NS_OK;
+        }
+    }
+
+    Ns_MutexUnlock(&logPtr->lock);
+    Ns_DStringFree(&ds);
 }
 
 
@@ -960,12 +940,27 @@ LogRollCallback(void *arg)
     LogCallback(LogRoll, arg, "roll");
 }
 
-static int
-AddCmds(Tcl_Interp *interp, void *arg)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogArg --
+ *
+ *      Copy log file as argument for callback introspection queries.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+LogArg(Tcl_DString *dsPtr, void *arg)
 {
-    Tcl_Command cmd;
+    Log *logPtr = arg;
 
-    cmd = Tcl_CreateObjCommand(interp, "ns_accesslog", LogObjCmd, arg, NULL);
-
-    return (cmd != NULL) ? TCL_OK : TCL_ERROR;
+    Tcl_DStringAppendElement(dsPtr, logPtr->file);
 }
