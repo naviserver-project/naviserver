@@ -6,6 +6,9 @@
 	* doc/src/ns_logroll.man: Combine the error logging commands and move
 	into place. Update.
 
+	* nsd/nsmain.c (CmdThread): Set the thread name for the command shell
+	thread so that log messages are less ugly.
+
 2007-09-11  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

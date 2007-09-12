@@ -1163,6 +1163,8 @@ CmdThread(void *arg)
 {
     Args *cmd = arg;
 
+    Ns_ThreadSetName("-command-");
+
     Ns_WaitForStartup();
 
     NsRestoreSignals();
