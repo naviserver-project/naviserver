@@ -502,7 +502,7 @@ RunCallbacks(CONST char *list, Callback *cbPtr)
     Ns_DString   ds;
 
     while (cbPtr != NULL) {
-        if (Ns_LogLevel(Debug)) {
+        if (Ns_LogSeverityEnabled(Debug)) {
             Ns_DStringInit(&ds);
             Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
             Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));

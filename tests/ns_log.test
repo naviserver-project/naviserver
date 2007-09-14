@@ -16,7 +16,7 @@ test ns_log-1.1 {basic syntax} -body {
 
 test ns_log-1.2 {basic syntax} -body {
     ns_log ? ?
-} -returnCodes error -result {unknown severity: "?": should be notice, warning, error, fatal, bug, debug, dev or integer value}
+} -returnCodes error -match glob -result {unknown severity: "?": should be one of: Notice Warning Error Fatal Bug Debug Dev*}
 
 
 
@@ -26,14 +26,14 @@ test ns_log-2.1 {basic syntax} -body {
 
 test ns_log-2.2 {basic syntax} -body {
     ns_logctl ?
-} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, truncate, severity, register, or unregister}
+} -returnCodes error -result {bad option "?": must be hold, count, get, peek, flush, release, truncate, severity, severities, register, or unregister}
 
 
 
 ns_logctl hold
 ns_logctl trunc
-ns_logctl severity debug on
-ns_logctl severity dev on
+set logdebug [ns_logctl severity debug on]
+set logdev [ns_logctl severity dev on]
 
 test ns_log-3.1 {severity} -body {
     ns_log notice test
@@ -156,19 +156,36 @@ test ns_log-6.1 {configuration} -body {
 
 test ns_log-6.2 {configuration} -body {
     ns_logctl severity ?
-} -returnCodes error -result {bad severity "?": must be notice, Notice, warning, Warning, error, Error, fatal, Fatal, bug, Bug, debug, Debug, dev, or Dev}
+} -returnCodes error -match glob -result {unknown severity: "?": should be one of: Notice Warning Error Fatal Bug Debug Dev*}
 
-test ns_log-6.3 {configuration} -body {
-    ns_logctl severity debug
+test ns_log-6.3 {enable/disable} -body {
+	set orig [ns_logctl severity debug]
+	set old  [ns_logctl severity debug [expr {$orig ? 0 : 1}]]
+	set new  [ns_logctl severity debug $orig]
+	expr {"$orig $old $new" eq "1 1 0" || "$orig $old $new" eq "0 0 1"}
+} -cleanup {
+	unset -nocomplain orig old new
 } -result 1
 
-test ns_log-6.4 {configuration} -body {
-    ns_logctl severity debug 0
-} -result 0
+test ns_log-6.4 {list severities} -body {
+	ns_logctl severities
+} -match glob -result {Notice Warning Error Fatal Bug Debug Dev*}
 
-test ns_log-6.5 {configuration} -body {
-    ns_logctl severity debug
-} -result 0
+test ns_log-6.5 {bounds check} -body {
+	ns_logctl flush
+	ns_logctl hold
+	ns_log 639 test
+	set n [ns_logctl count]
+	ns_logctl release
+} -result {}
+
+test ns_log-6.6 {bounds check} -body {
+	ns_log 640 test
+} -returnCodes error -match glob -result {unknown severity: "640": should be one of: Notice Warning Error Fatal Bug Debug Dev*}
+
+
+
+
 
 test ns_log-7.0 {two callbacks test} -body {
     unset -nocomplain glob
@@ -193,8 +210,10 @@ test ns_log-7.0 {two callbacks test} -body {
 
 ns_logctl trunc
 ns_logctl release
-ns_logctl severity debug off
-ns_logctl severity dev off
+ns_logctl severity debug $logdebug
+ns_logctl severity dev $logdev
+
+unset logdebug logdev
 
 
 cleanupTests

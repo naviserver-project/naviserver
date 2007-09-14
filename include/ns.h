@@ -1396,9 +1396,6 @@ Ns_InfoErrorLog(void);
 NS_EXTERN int
 Ns_LogRoll(void);
 
-NS_EXTERN int
-Ns_LogLevel(Ns_LogSeverity severity);
-
 NS_EXTERN void
 Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
      NS_GNUC_PRINTF(2, 3);
@@ -1429,6 +1426,17 @@ Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freePtr);
 
 NS_EXTERN void
 Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg);
+
+NS_EXTERN Ns_LogSeverity
+Ns_CreateLogSeverity(CONST char *name)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN CONST char *
+Ns_LogSeverityName(Ns_LogSeverity severity);
+
+NS_EXTERN int
+Ns_LogSeverityEnabled(Ns_LogSeverity severity);
+
 
 /*
  * rollfile.c

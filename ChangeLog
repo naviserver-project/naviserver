@@ -1,3 +1,25 @@
+2007-09-14  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/log.c: Drop the idea of maxloglevel auxiliary logging levels and
+	instead add a new Ns_CreateLogSeverity() which creates a named severity
+	level. C code still passes round an integer severity level, the severity
+	name appears in the log file.
+
+	ns_logctl severity can create new severity levels on the Tcl side and
+	enable/disable them individually, unlike the old scheme in which to
+	enable level 100 levels 0-99 also had to be enabled. A reasonable number
+	of integer levels are still supported for backwards compatibility.
+
+	ns_logctl severities lists all created severites.
+
+	* nsd/callbacks.c:
+	* nsd/tclinit.c: Update after renaming Ns_LogLevel() to
+	Ns_LogSeverityEnabled().
+
+	* doc/src/mann/ns_log.man:
+	* tests/ns_log.test: Updated.
+
 2007-09-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* doc/src/mann/ns_log.man:

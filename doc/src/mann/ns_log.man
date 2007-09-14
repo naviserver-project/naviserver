@@ -7,13 +7,13 @@
 [description]
 
 The running NaviServer process opens a single log file into which all
-[emph notice], [emph error] etc. messages, originating from the server itself or
-form Tcl scripts and ADP pages, are logged.
+[emph Notice], [emph Error] etc. messages are logged, whether originating
+from the server itself or form Tcl scripts and ADP pages.
 
 [para]
 The built-in set of severity levels can be extended. Logging can be
-enabled/disabled at run-time. Custom filter scripts can be added to handle
-custom logging.
+enabled/disabled at run-time per-severity level. Custom filters can be added to
+process log messages.
 
 
 
@@ -36,32 +36,29 @@ The following are the predefined values of [arg severity-level].
 
 [list_begin definitions]
 
-[lst_item notice]
+[lst_item Notice]
 Something interesting occurred.
 
-[lst_item warning]
+[lst_item Warning]
 Something that could mean something bad occurred.
 
-[lst_item error]
+[lst_item Error]
 Something bad occurred.
 
-[lst_item fatal]
+[lst_item Fatal]
 Something extremely bad occurred. The server will shut down after
 logging this message.
 
-[lst_item bug]
+[lst_item Bug]
 Something occurred that implies that there is a bug in the code.
 
-[lst_item debug]
+[lst_item Debug]
 If debug level logging is enabled the the message is logged.
 
-[lst_item dev]
+[lst_item Dev]
 If dev level logging is enabled the message is logged.
 
 [list_end]
-
-Alternatively, [arg severity-level] may be an arbitrary integer greater than 10
-which you can apply your own meaning to.
 
 
 
@@ -73,6 +70,18 @@ which you can apply your own meaning to.
 Return true if the given [arg severity-level] is enabled, false if it is
 disabled. If [arg bool] is given it enables/disables the given
 [arg severity-level] for all future log messages, server-wide.
+
+[nl]
+If [arg severity-level] does not already exist and [arg bool] is given, then the
+new severity is created, enabled or disabled according to [arg bool]. Future
+calls to [cmd ns_log] may use new [arg severity-level].
+
+
+
+[call [cmd ns_logctl] [arg severities] ]
+
+Return a list of available severity-levels. This includes the 7 predefined
+levels and those created with [cmd ns_logctl] or via C code.
 
 
 
@@ -176,20 +185,16 @@ opened.
 Default: logs/nsd.log
 
 [lst_item lognotice]
-If true, messages of severity-level [emph notice] are enabled.
+If true, messages of severity-level [emph Notice] are enabled.
 Default: true.
 
 [lst_item logdev]
-If true, messages of severity-level [emph dev] are enabled.
+If true, messages of severity-level [emph Dev] are enabled.
 Default: false.
 
 [lst_item logdebug]
-If true messages of severity-level [emph debug] are enabled.
+If true messages of severity-level [emph Debug] are enabled.
 Default: false.
-
-[lst_item logmaxlevel]
-Determines which user-defined integer severity-levels are enabled.
-Default: 0 (all disabled).
 
 [lst_item logusec]
 If true, log entries will have timestamps with microsecond resolution.
@@ -263,6 +268,28 @@ log file.
 %>
 [example_end]
 
+
+
+Create a new severity-level.
+
+[example_begin]
+nscp:1> [cmd ns_logctl] severities
+Notice Warning Error Fatal Bug Debug Dev
+
+nscp:2> [cmd ns_log] my:debug "a debug message"
+unknown severity: "my:debug": should be one of: Notice Warning Error Fatal Bug Debug Dev
+
+nscp:3> [cmd ns_logctl] severity my:debug off
+0
+
+nscp:4> [cmd ns_log] my:debug "a debug message"
+
+nscp:5> [cmd ns_logctl] severity my:debug on
+0
+
+nscp:6> [cmd ns_log] my:debug "a debug message"
+[lb]22/Nov/1963:13:25:00[rb][lb]1899.40349b90[rb][lb]-nscp:1-[rb] my:debug: a debug message
+[example_end]
 
 
 

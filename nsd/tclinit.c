@@ -1705,7 +1705,7 @@ LogTrace(NsInterp *itPtr, TclTrace *tracePtr, int why)
 {
     Ns_DString  ds;
 
-    if (Ns_LogLevel(Debug)) {
+    if (Ns_LogSeverityEnabled(Debug)) {
         Ns_DStringInit(&ds);
         switch (why) {
         case NS_TCL_TRACE_CREATE:

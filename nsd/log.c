@@ -108,7 +108,8 @@ static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 static LogClbk* AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free);
 static void     RemClbk(LogClbk *clbkPtr, int unlocked);
 
-static void AppendSeverity(Ns_DString *dsPtr, Ns_LogSeverity sev);
+static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+                              Ns_LogSeverity *severityPtr);
 
 static LogCache* GetCache(void);
 static Ns_TlsCleanup FreeCache;
@@ -125,24 +126,27 @@ static Ns_LogFilter LogToDString;
 static Ns_Tls       tls;
 static Ns_Mutex     lock;
 static Ns_Cond      cond;
+
 static CONST char  *file;
 static int          flags;
 static int          maxback;
-static int          maxlevel;
+
 static LogClbk     *callbacks;
-static CONST char  *logClbkAddr = "ns:logcallback";
+static CONST char  *filterType = "ns:logfilter";
+static CONST char  *severityType = "ns:logseverity";
 
 /*
  * The following table defines which severity levels
- * are currently active.
+ * are currently active. The order is important: keep
+ * it in sync with the Ns_LogSeverity enum.
  *
- * Be sure to keep the order in sync with the Ns_LogSeverity enum.
+ * "640 (slots) should be enough for enyone..."
  */
 
 static struct {
     char   *string;
     int     enabled;
-} logConfig[] = {
+} severityConfig[640] = {
     { "Notice",  NS_TRUE  },
     { "Warning", NS_TRUE  },
     { "Error",   NS_TRUE  },
@@ -152,24 +156,10 @@ static struct {
     { "Dev",     NS_FALSE }
 };
 
-/*
- * The following table converts from severity string names to
- * an Ns_LogSeverity enum value.
- */
+static int severityCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
+static int severityIdx = 0;
 
-static struct {
-    char           *string;
-    Ns_LogSeverity  severity;
-} severityTable[] = {
-    { "notice",  Notice  }, { "Notice",  Notice  },
-    { "warning", Warning }, { "Warning", Warning },
-    { "error",   Error   }, { "Error",   Error   },
-    { "fatal",   Fatal   }, { "Fatal",   Fatal   },
-    { "bug",     Bug     }, { "Bug",     Bug     },
-    { "debug",   Debug   }, { "Debug",   Debug   },
-    { "dev",     Dev     }, { "Dev",     Dev     },
-    { NULL, 0 }
-};
+static Tcl_HashTable severityTable; /* Map severity names to indexes for Tcl. */
 
 
 
@@ -192,10 +182,40 @@ static struct {
 void
 NsInitLog(void)
 {
+    Tcl_HashEntry *hPtr;
+    char           buf[20];
+    int            i, new;
+
     Ns_MutexSetName(&lock, "ns:log");
     Ns_TlsAlloc(&tls, FreeCache);
+    Tcl_InitHashTable(&severityTable, TCL_STRING_KEYS);
+
     Tcl_SetPanicProc(Panic);
     AddClbk(LogToFile, (void*)STDERR_FILENO, NULL);
+
+    /*
+     * Initialise the entire space with backwards-compatible integer keys.
+     */
+
+    for (i = Dev +1; i < severityCount; i++) {
+        snprintf(buf, sizeof(buf), "%d", i);
+        hPtr = Tcl_CreateHashEntry(&severityTable, buf, &new);
+        Tcl_SetHashValue(hPtr, i);
+        severityConfig[i].string = Tcl_GetHashKey(&severityTable, hPtr);
+        severityConfig[i].enabled = 0;
+    }
+
+    /*
+     * Initialise the built-in severities and lower-case aliases.
+     */
+
+    for (i = 0; i < Dev +1; i++) {
+        (void) Ns_CreateLogSeverity(severityConfig[i].string);
+
+        strcpy(buf, severityConfig[i].string);
+        hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &new);
+        Tcl_SetHashValue(hPtr, i);
+    }
 }
 
 
@@ -221,9 +241,9 @@ NsConfigLog(void)
     Ns_DString  ds;
     CONST char *path = NS_CONFIG_PARAMETERS;
 
-    logConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
-    logConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
-    logConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
+    severityConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
+    severityConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
+    severityConfig[Notice].enabled = Ns_ConfigBool(path, "lognotice", NS_TRUE);
 
     if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
         flags |= LOG_ROLL;
@@ -236,7 +256,6 @@ NsConfigLog(void)
     }
 
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
-    maxlevel = Ns_ConfigInt(path, "logmaxlevel", INT_MAX);
 
     file = Ns_ConfigString(path, "serverlog", "logs/nsd.log");
     if (!Ns_PathIsAbsolute(file)) {
@@ -306,12 +325,80 @@ Ns_LogRoll(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_LogLevel --
+ * Ns_CreateLogSeverity --
  *
- *      Return true if the log severity level is enabled.
+ *      Create and return a new log severity with the given name, which
+ *      will initially be dissabled (except for the built-ins).
  *
  * Results:
- *      NS_TRUE is the level is enabled, NS_FALSE otherwise.
+ *      The severity.
+ *
+ * Side effects:
+ *      Sever will exit if max severities exceeded.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_LogSeverity
+Ns_CreateLogSeverity(CONST char *name)
+{
+    Ns_LogSeverity  severity;
+    Tcl_HashEntry  *hPtr;
+    int             new;
+
+    if (severityIdx >= severityCount) {
+        Ns_Fatal("max log severities exceeded");
+    }
+    Ns_MutexLock(&lock);
+    hPtr = Tcl_CreateHashEntry(&severityTable, name, &new);
+    if (new) {
+        severity = severityIdx++;
+        Tcl_SetHashValue(hPtr, severity);
+        severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
+    } else {
+        severity = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+    }
+    Ns_MutexUnlock(&lock);
+
+    return severity;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_LogSeverityName --
+ *
+ *      Given a log severity, return a pointer to it's name.
+ *
+ * Results:
+ *      The severity name.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+Ns_LogSeverityName(Ns_LogSeverity severity)
+{
+    if (severity < severityCount) {
+        return severityConfig[severity].string;
+    }
+    return "Unknown";
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_LogSeverityEnabled --
+ *
+ *      Return true if the given severity level is enabled.
+ *
+ * Results:
+ *      NS_TRUE / NS_FALSE.
  *
  * Side effects:
  *      None.
@@ -320,14 +407,9 @@ Ns_LogRoll(void)
  */
 
 int
-Ns_LogLevel(Ns_LogSeverity severity)
+Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 {
-    if ((maxlevel && severity > maxlevel)
-            || severity > (sizeof(logConfig)/sizeof(logConfig[0]))
-            || logConfig[severity].enabled == 0) {
-        return NS_FALSE;
-    }
-    return NS_TRUE;
+    return severityConfig[severity].enabled;
 }
 
 
@@ -614,19 +696,22 @@ int
 NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
-    int             count, opt, i, bool;
+    int             count, opt, enabled, bool, i;
     Ns_DString      ds;
+    Tcl_Obj        *objPtr;
     Ns_LogSeverity  severity;
     LogCache       *cachePtr = GetCache();
     LogClbk         clbk, *clbkPtr = &clbk;
 
     static CONST char *opts[] = {
         "hold", "count", "get", "peek", "flush", "release",
-        "truncate", "severity", "register", "unregister", NULL
+        "truncate", "severity", "severities",
+        "register", "unregister", NULL
     };
     enum {
         CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx,
-        CTruncIdx, CSeverityIdx, CRegisterIdx, CUnregisterIdx
+        CTruncIdx, CSeverityIdx, CSeveritiesIdx,
+        CRegisterIdx, CUnregisterIdx
     };
 
     if (objc < 2) {
@@ -648,7 +733,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Ns_TclNewCallback(interp, Ns_TclCallbackProc,
                                             objv[2], objc - 3, objv + 3),
                           Ns_TclFreeCallback);
-        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), logClbkAddr,(void*)clbkPtr);
+        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, (void*) clbkPtr);
         break;
 
     case CUnregisterIdx:
@@ -656,8 +741,8 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
             return TCL_ERROR;
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], logClbkAddr,
-                                 (void *)&clbkPtr) != TCL_OK) {
+        if (Ns_TclGetAddrFromObj(interp, objv[2], filterType,
+                                 (void *) &clbkPtr) != TCL_OK) {
             return TCL_ERROR;
         }
         RemClbk(clbkPtr, 0);
@@ -713,21 +798,35 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
             return TCL_ERROR;
         }
-        if (Tcl_GetIndexFromObjStruct(interp, objv[2], severityTable,
-                                      sizeof(severityTable[0]), "severity",
-                                      TCL_EXACT, &i) != TCL_OK) {
-            return TCL_ERROR;
+        if (GetSeverityFromObj(interp, objv[2], &severity) != TCL_OK) {
+            if (objc == 3) {
+                return TCL_ERROR;
+            }
+            if (severityIdx >= severityCount) {
+                Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
+                return TCL_ERROR;
+            }
+            Tcl_ResetResult(interp);
+            severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
         }
-        severity = severityTable[i].severity;
+        enabled = Ns_LogSeverityEnabled(severity);
         if (objc == 4) {
             if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
                 return TCL_ERROR;
             }
-            logConfig[severity].enabled = bool;
-        } else {
-            bool = logConfig[severity].enabled;
+            severityConfig[severity].enabled = bool;
         }
-        Tcl_SetObjResult(interp,Tcl_NewBooleanObj(bool));
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
+        break;
+
+    case CSeveritiesIdx:
+        objPtr = Tcl_GetObjResult(interp);
+        for (i = 0; i < severityIdx; i++) {
+            if (Tcl_ListObjAppendElement(interp, objPtr,
+                    Tcl_NewStringObj(severityConfig[i].string, -1)) != TCL_OK) {
+                return TCL_ERROR;
+            }
+        }
         break;
     }
 
@@ -763,20 +862,9 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(NULL, objv[1], severityTable,
-                                  sizeof(severityTable[0]), "severity",
-                                  TCL_EXACT, &i) == TCL_OK) {
-        severity = severityTable[i].severity;
-    } else if (Tcl_GetIntFromObj(NULL, objv[1], &i) == TCL_OK) {
-        severity = i;
-    } else {
-        Tcl_AppendResult(interp, "unknown severity: \"",
-                         Tcl_GetString(objv[1]),
-                         "\": should be notice, warning, error, "
-                         "fatal, bug, debug, dev or integer value", NULL);
+    if (GetSeverityFromObj(interp, objv[1], &severity) != TCL_OK) {
         return TCL_ERROR;
     }
-
     if (objc == 3) {
         Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
     } else {
@@ -787,6 +875,64 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         Ns_Log(severity, "%s", Ns_DStringValue(&ds));
         Ns_DStringFree(&ds);
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSeverityFromObj --
+ *
+ *      Get the severity level from the Tcl object, possibly setting
+ *      it's internal rep.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      Error message left in Tcl interp on error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_LogSeverity *severityPtr)
+{
+    Tcl_HashEntry *hPtr;
+    int            i;
+
+    if (Ns_TclGetOpaqueFromObj(objPtr, severityType,
+                               (void **) severityPtr) != TCL_OK) {
+        Ns_MutexLock(&lock);
+        hPtr = Tcl_FindHashEntry(&severityTable, Tcl_GetString(objPtr));
+        Ns_MutexUnlock(&lock);
+
+        if (hPtr != NULL) {
+            *severityPtr = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+        } else {
+            /*
+             * Check for a legacy integer severity.
+             */
+            if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
+                    && i < severityCount) {
+                *severityPtr = i;
+            } else {
+                Tcl_AppendResult(interp, "unknown severity: \"",
+                                 Tcl_GetString(objPtr),
+                                 "\": should be one of: ", NULL);
+                for (i = 0; i < severityIdx; i++) {
+                    Tcl_AppendResult(interp, severityConfig[i].string, " ", NULL);
+                }
+                return TCL_ERROR;
+            }
+        }
+        /*
+         * Stash the severity for future speedy lookup.
+         */
+        Ns_TclSetOpaqueObj(objPtr, severityType, (void *)(intptr_t) *severityPtr);
     }
 
     return TCL_OK;
@@ -821,7 +967,7 @@ LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
      * or if severity level out of range(s).
      */
 
-    if (!Ns_LogLevel(severity)) {
+    if (!Ns_LogSeverityEnabled(severity)) {
         return;
     }
 
@@ -1294,10 +1440,9 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%ld]", stamp->usec);
     }
-    Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] ", Ns_InfoPid(),
-                     Ns_ThreadId(), Ns_ThreadGetName());
-    AppendSeverity(dsPtr, severity);
-    Ns_DStringAppend(dsPtr, ": ");
+    Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
+                     Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+                     Ns_LogSeverityName(severity));
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(dsPtr, "\n    ");
     }
@@ -1409,9 +1554,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
      * Other arguments are appended to it as elements.
      */
 
-    Ns_DStringAppend(&ds, cbPtr->script);
-    Ns_DStringAppend(&ds, " ");
-    AppendSeverity(&ds, severity);
+    Ns_DStringVarAppend(&ds, cbPtr->script, " ", Ns_LogSeverityName(severity), NULL);
     Ns_DStringAppendElement(&ds, Tcl_GetString(stamp));
     Tcl_DecrRefCount(stamp);
     c = *(msg + len);
@@ -1439,30 +1582,3 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
 
     return (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * AppendSeverity --
- *
- *      Append the severity name to the given dstring.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-AppendSeverity(Ns_DString *dsPtr, Ns_LogSeverity severity)
-{
-    if (severity < (sizeof(logConfig) / sizeof(logConfig[0]))) {
-        Ns_DStringPrintf(dsPtr, "%s", logConfig[severity].string);
-    } else {
-        Ns_DStringPrintf(dsPtr, "Level%d", severity);
-    }
-}
-
