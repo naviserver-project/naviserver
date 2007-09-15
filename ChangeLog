@@ -23,6 +23,11 @@
 	* nsd/log.c: Call filters 'filters' instead of callbacks. Remove some
 	redundant wrapper routines. Shuffle the code around.
 
+	* nsd/log.c:
+	* tests/ns_log.test: Guard against disabling the Fatal log
+	severity. Make sure that Fatal log messages are always flushed, even
+	when 'hold' is active.
+
 2007-09-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* doc/src/mann/ns_log.man:

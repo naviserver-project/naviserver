@@ -474,7 +474,7 @@ Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
      * Flush it out if not held
      */
 
-    if (!cachePtr->hold) {
+    if (!cachePtr->hold || severity == Fatal) {
         LogFlush(cachePtr, filters, -1, 1, 1);
     }
 }
@@ -881,7 +881,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
         }
         enabled = Ns_LogSeverityEnabled(severity);
-        if (objc == 4) {
+        if (objc == 4 && severity != Fatal) {
             if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
                 return TCL_ERROR;
             }
