@@ -63,19 +63,19 @@ typedef struct LogEntry {
 
 /*
  * The following struct represents one registered log callback.
- * Log callbacks are used to produce log lines into the log sinks
+ * Log filters are used to produce log lines into the log sinks
  * and are invoked one by one for every log entry in the cache.
- * Each callback (usually) maintain its own log sink.
+ * Each filter (usually) maintain its own log sink.
  */
 
-typedef struct LogClbk {
-    Ns_LogFilter    *proc;    /* User-given function for generating logs */
-    Ns_Callback     *free;    /* User-given function to free passed arg */
-    void            *arg;     /* Argument passed to proc and free */
-    int              refcnt;  /* Number of current consumers */
-    struct LogClbk  *nextPtr; /* Maintains double linked list */
-    struct LogClbk  *prevPtr;
-} LogClbk;
+typedef struct LogFilter {
+    Ns_LogFilter      *proc;    /* User-given function for generating logs */
+    Ns_Callback       *free;    /* User-given function to free passed arg */
+    void              *arg;     /* Argument passed to proc and free */
+    int                refcnt;  /* Number of current consumers */
+    struct LogFilter  *nextPtr; /* Maintains double linked list */
+    struct LogFilter  *prevPtr;
+} LogFilter;
 
 /*
  * The following struct maintains per-thread cached log entries.
@@ -100,13 +100,9 @@ typedef struct LogCache {
  */
 
 static int   LogOpen(void);
-static void  LogAdd(Ns_LogSeverity sev, CONST char *fmt, va_list ap);
-static void  LogFlush(LogCache *cachePtr, LogClbk *list, int cnt,
+static void  LogFlush(LogCache *cachePtr, LogFilter *list, int cnt,
                       int trunc, int lock);
 static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
-
-static LogClbk* AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free);
-static void     RemClbk(LogClbk *clbkPtr, int unlocked);
 
 static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
                               Ns_LogSeverity *severityPtr);
@@ -131,7 +127,7 @@ static CONST char  *file;
 static int          flags;
 static int          maxback;
 
-static LogClbk     *callbacks;
+static LogFilter   *filters;
 static CONST char  *filterType = "ns:logfilter";
 static CONST char  *severityType = "ns:logseverity";
 
@@ -191,7 +187,7 @@ NsInitLog(void)
     Tcl_InitHashTable(&severityTable, TCL_STRING_KEYS);
 
     Tcl_SetPanicProc(Panic);
-    AddClbk(LogToFile, (void*)STDERR_FILENO, NULL);
+    Ns_AddLogFilter(LogToFile, (void *) STDERR_FILENO, NULL);
 
     /*
      * Initialise the entire space with backwards-compatible integer keys.
@@ -292,39 +288,6 @@ Ns_InfoErrorLog(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_LogRoll --
- *
- *      Signal handler for SIG_HUP which will roll the files.
- *
- * Results:
- *      NS_OK/NS_ERROR.
- *
- * Side effects:
- *      Will rename the log file and reopen it.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_LogRoll(void)
-{
-    if (file != NULL) {
-        if (access(file, F_OK) == 0) {
-            Ns_RollFile(file, maxback);
-        }
-        Ns_Log(Notice, "log: re-opening log file '%s'", file);
-        if (LogOpen() != NS_OK) {
-            return NS_ERROR;
-        }
-    }
-
-    return NS_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_CreateLogSeverity --
  *
  *      Create and return a new log severity with the given name, which
@@ -409,7 +372,10 @@ Ns_LogSeverityName(Ns_LogSeverity severity)
 int
 Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 {
-    return severityConfig[severity].enabled;
+    if (severity < severityCount) {
+        return severityConfig[severity].enabled;
+    }
+    return NS_TRUE;
 }
 
 
@@ -435,7 +401,7 @@ Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
     va_list ap;
 
     va_start(ap, fmt);
-    LogAdd(severity, fmt, ap);
+    Ns_VALog(severity, fmt, &ap);
     va_end(ap);
 }
 
@@ -444,7 +410,7 @@ Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
  *
  * Ns_VALog --
  *
- *      Send a message to the server log (varargs interface)
+ *      Add an entry to the log cache if the severity is not surpressed.
  *
  * Results:
  *      None.
@@ -458,23 +424,166 @@ Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
 void
 Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
 {
-    LogAdd(severity, fmt, *vaPtr);
+    int       length, offset;
+    LogCache *cachePtr;
+    LogEntry *entryPtr = NULL;
+
+    /*
+     * Skip if logging for selected severity is disabled
+     * or if severity level out of range(s).
+     */
+
+    if (!Ns_LogSeverityEnabled(severity)) {
+        return;
+    }
+
+    cachePtr = GetCache();
+
+    /*
+     * Append new or reuse log entry record.
+     */
+
+    if (cachePtr->currEntry != NULL) {
+        entryPtr = cachePtr->currEntry->nextPtr;
+    } else {
+        entryPtr = cachePtr->firstEntry;
+    }
+    if (entryPtr == NULL) {
+        entryPtr = ns_malloc(sizeof(LogEntry));
+        entryPtr->nextPtr = NULL;
+        if (cachePtr->currEntry != NULL) {
+            cachePtr->currEntry->nextPtr = entryPtr;
+        } else {
+            cachePtr->firstEntry = entryPtr;
+        }
+    }
+
+    cachePtr->currEntry = entryPtr;
+    cachePtr->count++;
+
+    offset = Ns_DStringLength(&cachePtr->buffer);
+    Ns_DStringVPrintf(&cachePtr->buffer, fmt, *vaPtr);
+    length = Ns_DStringLength(&cachePtr->buffer) - offset;
+
+    entryPtr->severity = severity;
+    entryPtr->offset   = offset;
+    entryPtr->length   = length;
+    Ns_GetTime(&entryPtr->stamp);
+
+    /*
+     * Flush it out if not held
+     */
+
+    if (!cachePtr->hold) {
+        LogFlush(cachePtr, filters, -1, 1, 1);
+    }
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_Fatal --
+ * Ns_AddLogFilter --
  *
- *      Send a message to the server log with severity level Fatal,
- *      and then exit the nsd process cleanly.
+ *      Adds one user-given log filter.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      The process will exit.
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *free)
+{
+    LogFilter *filterPtr = ns_calloc(1, sizeof *filterPtr);
+
+    Ns_MutexLock(&lock);
+
+    if (filters != NULL) {
+        filters->nextPtr = filterPtr;
+        filterPtr->prevPtr = filters;
+    } else {
+        filterPtr->prevPtr = NULL;
+    }
+
+    filterPtr->nextPtr = NULL;
+    filters = filterPtr;
+
+    filterPtr->proc = proc;
+    filterPtr->arg  = arg;
+    filterPtr->free = free;
+
+    Ns_MutexUnlock(&lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_RemoveLogFilter --
+ *
+ *      Removes user-given log filter.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg)
+{
+    LogFilter *filterPtr;
+
+    Ns_MutexLock(&lock);
+    filterPtr = filters;
+    while(filterPtr != NULL) {
+        if (filterPtr->proc == procPtr && filterPtr->arg == arg) {
+            break;
+        }
+        filterPtr = filterPtr->prevPtr;
+    }
+    if (filterPtr != NULL) {
+        while (filterPtr->refcnt > 0) {
+            Ns_CondWait(&cond, &lock);
+        }
+        if (filterPtr->prevPtr != NULL) {
+            filterPtr->prevPtr->nextPtr = filterPtr->nextPtr;
+        }
+        if (filterPtr->nextPtr != NULL) {
+            filterPtr->nextPtr->prevPtr = filterPtr->prevPtr;
+        } else {
+            filters = filterPtr->prevPtr;
+        }
+        if (filterPtr->free != NULL && filterPtr->arg != NULL) {
+            (*filterPtr->free)(filterPtr->arg);
+        }
+        ns_free(filterPtr);
+    }
+    Ns_MutexUnlock(&lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_Fatal, Panic --
+ *
+ *      Send a message to the server log with severity level Fatal,
+ *      and then exit the nsd process cleanly or abort.
+ *
+ * Results:
+ *      None; does not return.
+ *
+ * Side effects:
+ *      The process will exit or enter the debugger.
  *
  *----------------------------------------------------------------------
  */
@@ -485,11 +594,24 @@ Ns_Fatal(CONST char *fmt, ...)
     va_list ap;
 
     va_start(ap, fmt);
-    LogAdd(Fatal, fmt, ap);
+    Ns_VALog(Fatal, fmt, &ap);
     va_end(ap);
 
     _exit(1);
 }
+
+static void
+Panic(CONST char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    Ns_VALog(Fatal, fmt, &ap);
+    va_end(ap);
+
+    abort();
+}
+
 
 
 /*
@@ -529,308 +651,61 @@ Ns_LogTime2(char *timeBuf, int gmt)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SetLogFlushProc, Ns_SetNsLogProc --
+ * LogTime --
  *
- *      Deprecated (and disabled) calls.
+ *      Returns formatted local or gmt time from per-thread cache
  *
  * Results:
- *      None.
+ *      Pointer to per-thread buffer.
  *
  * Side effects:
- *      Will exit the server.
+ *      The per-thread cache is updated with second resolution.
  *
  *----------------------------------------------------------------------
  */
 
-void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
+static char *
+LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
 {
-    Ns_Fatal("Ns_SetLogFlushProc: deprecated, use Ns_AddLogFilter() instead");
-}
+    time_t    *tp;
+    struct tm *ptm;
+    int        gmtoff, n, sign;
+    char      *bp;
 
-void
-Ns_SetNsLogProc(Ns_LogProc *procPtr)
-{
-    Ns_Fatal("Ns_SetNsLogProc: deprecated, use Ns_AddLogFilter() instead");
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_AddLogFilter --
- *
- *      Adds one user-given log filter.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freePtr)
-{
-    AddClbk(procPtr, arg, freePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_RemoveLogFilter --
- *
- *      Removes user-given log filter.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_RemoveLogFilter(Ns_LogFilter *procPtr, void *arg)
-{
-    LogClbk *clbkPtr;
-
-    Ns_MutexLock(&lock);
-    clbkPtr = callbacks;
-    while(clbkPtr != NULL) {
-        if (clbkPtr->proc == procPtr && clbkPtr->arg == arg) {
-            break;
-        }
-        clbkPtr = clbkPtr->prevPtr;
+    if (gmt) {
+        tp = &cachePtr->gtime;
+        bp = cachePtr->gbuf;
+    } else {
+        tp = &cachePtr->ltime;
+        bp = cachePtr->lbuf;
     }
-    if (clbkPtr != NULL) {
-        RemClbk(clbkPtr, 1);
-    }
-    Ns_MutexUnlock(&lock);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsLogOpen --
- *
- *      Open the log file. Adjust configurable parameters, too.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Configures this module to use the newly opened log file.
- *      If LogRoll is turned on in the config file, then it registers
- *      a signal callback.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsLogOpen(void)
-{
-    /*
-     * Open the log and schedule the signal roll.
-     */
-
-    if (LogOpen() != NS_OK) {
-        Ns_Fatal("log: failed to open server log '%s': '%s'",
-                 file, strerror(errno));
-    }
-    if (flags & LOG_ROLL) {
-        Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclLogRollObjCmd --
- *
- *      Implements ns_logroll command.
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
-{
-    if (Ns_LogRoll() != NS_OK) {
-        Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
-    }
-
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclLogCtlObjCmd --
- *
- *      Implements ns_logctl command to manage per-thread log caching.
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                  Tcl_Obj *CONST objv[])
-{
-    int             count, opt, enabled, bool, i;
-    Ns_DString      ds;
-    Tcl_Obj        *objPtr;
-    Ns_LogSeverity  severity;
-    LogCache       *cachePtr = GetCache();
-    LogClbk         clbk, *clbkPtr = &clbk;
-
-    static CONST char *opts[] = {
-        "hold", "count", "get", "peek", "flush", "release",
-        "truncate", "severity", "severities",
-        "register", "unregister", NULL
-    };
-    enum {
-        CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx,
-        CTruncIdx, CSeverityIdx, CSeveritiesIdx,
-        CRegisterIdx, CUnregisterIdx
-    };
-
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
-
-    switch (opt) {
-    case CRegisterIdx:
-        if (objc < 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "script ?arg?");
-            return TCL_ERROR;
-        }
-        clbkPtr = AddClbk(LogToTcl,
-                          Ns_TclNewCallback(interp, Ns_TclCallbackProc,
-                                            objv[2], objc - 3, objv + 3),
-                          Ns_TclFreeCallback);
-        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, (void*) clbkPtr);
-        break;
-
-    case CUnregisterIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle");
-            return TCL_ERROR;
-        }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], filterType,
-                                 (void *) &clbkPtr) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        RemClbk(clbkPtr, 0);
-        break;
-
-    case CHoldIdx:
-        cachePtr->hold = 1;
-        break;
-
-    case CPeekIdx:
-        memset(clbkPtr, 0, sizeof(LogClbk));
-        clbkPtr->proc = LogToDString;
-        clbkPtr->arg  = (void*)&ds;
-        Ns_DStringInit(&ds);
-        LogFlush(cachePtr, clbkPtr, -1, 0, 0);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds),-1));
-        Ns_DStringFree(&ds);
-        break;
-
-    case CGetIdx:
-        memset(clbkPtr, 0, sizeof(LogClbk));
-        clbkPtr->proc = LogToDString;
-        clbkPtr->arg  = (void*)&ds;
-        Ns_DStringInit(&ds);
-        LogFlush(cachePtr, clbkPtr, -1, 1, 0);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds),-1));
-        Ns_DStringFree(&ds);
-        break;
-
-    case CReleaseIdx:
-        cachePtr->hold = 0;
-        /* FALLTHROUGH */
-
-    case CFlushIdx:
-        LogFlush(cachePtr, callbacks, -1, 1, 1);
-        break;
-
-    case CCountIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(cachePtr->count));
-        break;
-
-    case CTruncIdx:
-        count = 0;
-        if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2], &count) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        memset(clbkPtr, 0, sizeof(LogClbk));
-        LogFlush(cachePtr, clbkPtr, count, 1, 0);
-        break;
-
-    case CSeverityIdx:
-        if (objc != 3 && objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
-            return TCL_ERROR;
-        }
-        if (GetSeverityFromObj(interp, objv[2], &severity) != TCL_OK) {
-            if (objc == 3) {
-                return TCL_ERROR;
+    if (*tp != timePtr->sec) {
+        *tp = timePtr->sec;
+        ptm = ns_localtime(&timePtr->sec);
+        n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
+        if (!gmt) {
+            bp[n++] = ']';
+            bp[n] = '\0';
+        } else {
+#ifdef HAVE_TM_GMTOFF
+            gmtoff = ptm->tm_gmtoff / 60;
+#else
+            gmtoff = -timezone / 60;
+            if (daylight && ptm->tm_isdst) {
+                gmtoff += 60;
             }
-            if (severityIdx >= severityCount) {
-                Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
-                return TCL_ERROR;
+#endif
+            if (gmtoff < 0) {
+                sign = '-';
+                gmtoff *= -1;
+            } else {
+                sign = '+';
             }
-            Tcl_ResetResult(interp);
-            severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
+            sprintf(bp + n, " %c%02d%02d]", sign, gmtoff/60, gmtoff%60);
         }
-        enabled = Ns_LogSeverityEnabled(severity);
-        if (objc == 4) {
-            if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
-                return TCL_ERROR;
-            }
-            severityConfig[severity].enabled = bool;
-        }
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
-        break;
-
-    case CSeveritiesIdx:
-        objPtr = Tcl_GetObjResult(interp);
-        for (i = 0; i < severityIdx; i++) {
-            if (Tcl_ListObjAppendElement(interp, objPtr,
-                    Tcl_NewStringObj(severityConfig[i].string, -1)) != TCL_OK) {
-                return TCL_ERROR;
-            }
-        }
-        break;
     }
 
-    return TCL_OK;
+    return bp;
 }
 
 
@@ -884,55 +759,146 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
- * GetSeverityFromObj --
+ * NsTclLogCtlObjCmd --
  *
- *      Get the severity level from the Tcl object, possibly setting
- *      it's internal rep.
+ *      Implements ns_logctl command to manage per-thread log caching.
  *
  * Results:
- *      TCL_OK or TCL_ERROR.
+ *      Tcl result.
  *
  * Side effects:
- *      Error message left in Tcl interp on error.
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
 
-static int
-GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_LogSeverity *severityPtr)
+int
+NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                  Tcl_Obj *CONST objv[])
 {
-    Tcl_HashEntry *hPtr;
-    int            i;
+    int             count, opt, enabled, bool, i;
+    Ns_DString      ds;
+    Tcl_Obj        *objPtr;
+    Ns_LogSeverity  severity;
+    LogCache       *cachePtr = GetCache();
+    LogFilter       filter, *filterPtr = &filter;
+    Ns_TclCallback *cbPtr;
 
-    if (Ns_TclGetOpaqueFromObj(objPtr, severityType,
-                               (void **) severityPtr) != TCL_OK) {
-        Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(&severityTable, Tcl_GetString(objPtr));
-        Ns_MutexUnlock(&lock);
+    static CONST char *opts[] = {
+        "hold", "count", "get", "peek", "flush", "release",
+        "truncate", "severity", "severities",
+        "register", "unregister", NULL
+    };
+    enum {
+        CHoldIdx, CCountIdx, CGetIdx, CPeekIdx, CFlushIdx, CReleaseIdx,
+        CTruncIdx, CSeverityIdx, CSeveritiesIdx,
+        CRegisterIdx, CUnregisterIdx
+    };
 
-        if (hPtr != NULL) {
-            *severityPtr = (int)(intptr_t) Tcl_GetHashValue(hPtr);
-        } else {
-            /*
-             * Check for a legacy integer severity.
-             */
-            if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
-                    && i < severityCount) {
-                *severityPtr = i;
-            } else {
-                Tcl_AppendResult(interp, "unknown severity: \"",
-                                 Tcl_GetString(objPtr),
-                                 "\": should be one of: ", NULL);
-                for (i = 0; i < severityIdx; i++) {
-                    Tcl_AppendResult(interp, severityConfig[i].string, " ", NULL);
-                }
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+                            &opt) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    switch (opt) {
+    case CRegisterIdx:
+        if (objc < 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "script ?arg?");
+            return TCL_ERROR;
+        }
+        cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc,
+                                  objv[2], objc - 3, objv + 3);
+        Ns_AddLogFilter(LogToTcl, cbPtr, Ns_TclFreeCallback);
+        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, cbPtr);
+        break;
+
+    case CUnregisterIdx:
+        if (objc != 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "handle");
+            return TCL_ERROR;
+        }
+        if (Ns_TclGetAddrFromObj(interp, objv[2], filterType,
+                                 (void **) &cbPtr) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        Ns_RemoveLogFilter(LogToTcl, cbPtr);
+        break;
+
+    case CHoldIdx:
+        cachePtr->hold = 1;
+        break;
+
+    case CPeekIdx:
+    case CGetIdx:
+        memset(filterPtr, 0, sizeof *filterPtr);
+        filterPtr->proc = LogToDString;
+        filterPtr->arg  = &ds;
+        Ns_DStringInit(&ds);
+        LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), 0);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DStringValue(&ds), -1));
+        Ns_DStringFree(&ds);
+        break;
+
+    case CReleaseIdx:
+        cachePtr->hold = 0;
+        /* FALLTHROUGH */
+
+    case CFlushIdx:
+        LogFlush(cachePtr, filters, -1, 1, 1);
+        break;
+
+    case CCountIdx:
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(cachePtr->count));
+        break;
+
+    case CTruncIdx:
+        count = 0;
+        if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2], &count) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        memset(filterPtr, 0, sizeof *filterPtr);
+        LogFlush(cachePtr, filterPtr, count, 1, 0);
+        break;
+
+    case CSeverityIdx:
+        if (objc != 3 && objc != 4) {
+            Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
+            return TCL_ERROR;
+        }
+        if (GetSeverityFromObj(interp, objv[2], &severity) != TCL_OK) {
+            if (objc == 3) {
+                return TCL_ERROR;
+            }
+            if (severityIdx >= severityCount) {
+                Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
+                return TCL_ERROR;
+            }
+            Tcl_ResetResult(interp);
+            severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
+        }
+        enabled = Ns_LogSeverityEnabled(severity);
+        if (objc == 4) {
+            if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            severityConfig[severity].enabled = bool;
+        }
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
+        break;
+
+    case CSeveritiesIdx:
+        objPtr = Tcl_GetObjResult(interp);
+        for (i = 0; i < severityIdx; i++) {
+            if (Tcl_ListObjAppendElement(interp, objPtr,
+                    Tcl_NewStringObj(severityConfig[i].string, -1)) != TCL_OK) {
                 return TCL_ERROR;
             }
         }
-        /*
-         * Stash the severity for future speedy lookup.
-         */
-        Ns_TclSetOpaqueObj(objPtr, severityType, (void *)(intptr_t) *severityPtr);
+        break;
     }
 
     return TCL_OK;
@@ -942,159 +908,95 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_LogSeverity *severity
 /*
  *----------------------------------------------------------------------
  *
- * LogAdd --
+ * NsTclLogRollObjCmd --
  *
- *      Add an entry to the log cache if the severity is not surpressed.
+ *      Implements ns_logroll command.
  *
  * Results:
- *      None.
+ *      Tcl result.
  *
  * Side effects:
- *      May write immediately or later through cache.
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-LogAdd(Ns_LogSeverity severity, CONST char *fmt, va_list ap)
+int
+NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                   Tcl_Obj *CONST objv[])
 {
-    int       length, offset;
-    LogCache *cachePtr;
-    LogEntry *entryPtr = NULL;
-
-    /*
-     * Skip if logging for selected severity is disabled
-     * or if severity level out of range(s).
-     */
-
-    if (!Ns_LogSeverityEnabled(severity)) {
-        return;
+    if (Ns_LogRoll() != NS_OK) {
+        Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
     }
 
-    cachePtr = GetCache();
-
-    /*
-     * Append new or reuse log entry record.
-     */
-
-    if (cachePtr->currEntry != NULL) {
-        entryPtr = cachePtr->currEntry->nextPtr;
-    } else {
-        entryPtr = cachePtr->firstEntry;
-    }
-    if (entryPtr == NULL) {
-        entryPtr = ns_malloc(sizeof(LogEntry));
-        entryPtr->nextPtr = NULL;
-        if (cachePtr->currEntry != NULL) {
-            cachePtr->currEntry->nextPtr = entryPtr;
-        } else {
-            cachePtr->firstEntry = entryPtr;
-        }
-    }
-
-    cachePtr->currEntry = entryPtr;
-    cachePtr->count++;
-
-    offset = Ns_DStringLength(&cachePtr->buffer);
-    Ns_DStringVPrintf(&cachePtr->buffer, fmt, ap);
-    length = Ns_DStringLength(&cachePtr->buffer) - offset;
-
-    entryPtr->severity = severity;
-    entryPtr->offset   = offset;
-    entryPtr->length   = length;
-    Ns_GetTime(&entryPtr->stamp);
-
-    /*
-     * Flush it out if not held
-     */
-
-    if (!cachePtr->hold) {
-        LogFlush(cachePtr, callbacks, -1, 1, 1);
-    }
+    return TCL_OK;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * LogFlush --
+ * Ns_LogRoll --
  *
- *      Flush per-thread log cache, optionally truncating the
- *      cache to some given count of log entries.
+ *      Signal handler for SIG_HUP which will roll the files.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR.
+ *
+ * Side effects:
+ *      Will rename the log file and reopen it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_LogRoll(void)
+{
+    if (file != NULL) {
+        if (access(file, F_OK) == 0) {
+            Ns_RollFile(file, maxback);
+        }
+        Ns_Log(Notice, "log: re-opening log file '%s'", file);
+        if (LogOpen() != NS_OK) {
+            return NS_ERROR;
+        }
+    }
+
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsLogOpen --
+ *
+ *      Open the log file. Adjust configurable parameters, too.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      None.
+ *      Configures this module to use the newly opened log file.
+ *      If LogRoll is turned on in the config file, then it registers
+ *      a signal callback.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-LogFlush(LogCache *cachePtr, LogClbk *listPtr, int count, int trunc, int locked)
+void
+NsLogOpen(void)
 {
-    int       status, nentry = 0;
-    char     *log;
-    LogEntry *ePtr;
-    LogClbk  *cPtr;
+    /*
+     * Open the log and schedule the signal roll.
+     */
 
-    ePtr = cachePtr->firstEntry;
-    while (ePtr != NULL && cachePtr->currEntry) {
-        log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
-        if (locked) {
-            Ns_MutexLock(&lock);
-        }
-        cPtr = listPtr;
-        while (cPtr != NULL) {
-            if (cPtr->proc != NULL) {
-                if (locked) {
-                    cPtr->refcnt++;
-                    Ns_MutexUnlock(&lock);
-                }
-                status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
-                                       &ePtr->stamp, log, ePtr->length);
-                if (locked) {
-                    Ns_MutexLock(&lock);
-                    cPtr->refcnt--;
-                    Ns_CondBroadcast(&cond);
-                }
-                if (status == NS_ERROR) {
-                    /*
-                     * Callback signalized error. Per definition we will
-                     * skip invoking other registered callbacks. In such
-                     * case we must assure that the current log entry
-                     * eventually gets written into some log sink, so we
-                     * use the default logfile sink.
-                     */
-                    LogToFile((void*)STDERR_FILENO, ePtr->severity,
-                              &ePtr->stamp, log, ePtr->length);
-                    break;
-                }
-            }
-            cPtr = cPtr->prevPtr;
-        }
-        if (locked) {
-            Ns_MutexUnlock(&lock);
-        }
-        nentry++;
-        if ((count > 0 && nentry >= count) || ePtr == cachePtr->currEntry) {
-            break;
-        }
-        ePtr = ePtr->nextPtr;
+    if (LogOpen() != NS_OK) {
+        Ns_Fatal("log: failed to open server log '%s': '%s'",
+                 file, strerror(errno));
     }
-
-    if (trunc) {
-        if (count > 0) {
-            int length = ePtr ? ePtr->offset + ePtr->length : 0;
-            cachePtr->count = length ? nentry : 0;
-            cachePtr->currEntry = ePtr;
-            Ns_DStringSetLength(&cachePtr->buffer, length);
-        } else {
-            cachePtr->count = 0;
-            cachePtr->currEntry = NULL;
-            Ns_DStringSetLength(&cachePtr->buffer, 0);
-        }
+    if (flags & LOG_ROLL) {
+        Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
     }
 }
 
@@ -1165,246 +1067,84 @@ LogOpen(void)
 /*
  *----------------------------------------------------------------------
  *
- * LogTime --
+ * LogFlush --
  *
- *      Returns formatted local or gmt time from per-thread cache
+ *      Flush per-thread log cache, optionally truncating the
+ *      cache to some given count of log entries.
  *
  * Results:
- *      Pointer to per-thread buffer.
+ *      None.
  *
  * Side effects:
- *      The per-thread cache is updated with second resolution.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
-static char *
-LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
+static void
+LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locked)
 {
-    time_t    *tp;
-    struct tm *ptm;
-    int        gmtoff, n, sign;
-    char      *bp;
+    int       status, nentry = 0;
+    char     *log;
+    LogEntry *ePtr;
+    LogFilter  *cPtr;
 
-    if (gmt) {
-        tp = &cachePtr->gtime;
-        bp = cachePtr->gbuf;
-    } else {
-        tp = &cachePtr->ltime;
-        bp = cachePtr->lbuf;
-    }
-    if (*tp != timePtr->sec) {
-        *tp = timePtr->sec;
-        ptm = ns_localtime(&timePtr->sec);
-        n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
-        if (!gmt) {
-            bp[n++] = ']';
-            bp[n] = '\0';
-        } else {
-#ifdef HAVE_TM_GMTOFF
-            gmtoff = ptm->tm_gmtoff / 60;
-#else
-            gmtoff = -timezone / 60;
-            if (daylight && ptm->tm_isdst) {
-                gmtoff += 60;
-            }
-#endif
-            if (gmtoff < 0) {
-                sign = '-';
-                gmtoff *= -1;
-            } else {
-                sign = '+';
-            }
-            sprintf(bp + n, " %c%02d%02d]", sign, gmtoff/60, gmtoff%60);
+    ePtr = cachePtr->firstEntry;
+    while (ePtr != NULL && cachePtr->currEntry) {
+        log = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
+        if (locked) {
+            Ns_MutexLock(&lock);
         }
+        cPtr = listPtr;
+        while (cPtr != NULL) {
+            if (cPtr->proc != NULL) {
+                if (locked) {
+                    cPtr->refcnt++;
+                    Ns_MutexUnlock(&lock);
+                }
+                status = (*cPtr->proc)(cPtr->arg, ePtr->severity,
+                                       &ePtr->stamp, log, ePtr->length);
+                if (locked) {
+                    Ns_MutexLock(&lock);
+                    cPtr->refcnt--;
+                    Ns_CondBroadcast(&cond);
+                }
+                if (status == NS_ERROR) {
+                    /*
+                     * Callback signalized error. Per definition we will
+                     * skip invoking other registered filters. In such
+                     * case we must assure that the current log entry
+                     * eventually gets written into some log sink, so we
+                     * use the default logfile sink.
+                     */
+                    LogToFile((void*)STDERR_FILENO, ePtr->severity,
+                              &ePtr->stamp, log, ePtr->length);
+                    break;
+                }
+            }
+            cPtr = cPtr->prevPtr;
+        }
+        if (locked) {
+            Ns_MutexUnlock(&lock);
+        }
+        nentry++;
+        if ((count > 0 && nentry >= count) || ePtr == cachePtr->currEntry) {
+            break;
+        }
+        ePtr = ePtr->nextPtr;
     }
 
-    return bp;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetCache --
- *
- *      Get the per-thread LogCache struct.
- *
- * Results:
- *      Pointer to per-thread struct.
- *
- * Side effects:
- *      Memory for struct is allocated on first call.
- *
- *----------------------------------------------------------------------
- */
-
-static LogCache *
-GetCache(void)
-{
-    LogCache *cachePtr;
-
-    cachePtr = Ns_TlsGet(&tls);
-    if (cachePtr == NULL) {
-        cachePtr = ns_calloc(1, sizeof(LogCache));
-        Ns_DStringInit(&cachePtr->buffer);
-        Ns_TlsSet(&tls, cachePtr);
-    }
-
-    return cachePtr;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FreeCache --
- *
- *      TLS cleanup callback to destory per-thread Cache struct.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FreeCache(void *arg)
-{
-    LogCache *cachePtr = (LogCache *)arg;
-    LogEntry *entryPtr, *tmpPtr;
-
-    LogFlush(cachePtr, callbacks, -1, 1, 1);
-    entryPtr = cachePtr->firstEntry;
-    while (entryPtr != NULL) {
-        tmpPtr = entryPtr->nextPtr;
-        ns_free(entryPtr);
-        entryPtr = tmpPtr;
-    }
-    Ns_DStringFree(&cachePtr->buffer);
-    ns_free(cachePtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Panic --
- *
- *      Tcl_PanicProc callback which sends a message to the server log
- *      with severity level Fatal, and then kills the process immediately.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      The process dies, possibly entering the debugger.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-Panic(CONST char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    LogAdd(Fatal, fmt, ap);
-    va_end(ap);
-
-    abort();
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * AddClbk --
- *
- *      Adds one user-given callback to list of registered callbacks.
- *      The callback is placed at the tail of the linked list.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static LogClbk *
-AddClbk(Ns_LogFilter *proc, void *arg, Ns_Callback *free)
-{
-    LogClbk *clbkPtr = (LogClbk *)ns_calloc(1, sizeof(LogClbk));
-
-    Ns_MutexLock(&lock);
-
-    if (callbacks != NULL) {
-        callbacks->nextPtr = clbkPtr;
-        clbkPtr->prevPtr = callbacks;
-    } else {
-        clbkPtr->prevPtr = NULL;
-    }
-
-    clbkPtr->nextPtr = NULL;
-    callbacks = clbkPtr;
-
-    clbkPtr->proc = proc;
-    clbkPtr->arg  = arg;
-    clbkPtr->free = free;
-
-    Ns_MutexUnlock(&lock);
-
-    return clbkPtr;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RemClbk --
- *
- *      Removes one user-given callback from the list of registered
- *      callbacks.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-RemClbk(LogClbk *clbkPtr, int unlocked)
-{
-    if (!unlocked) {
-        Ns_MutexLock(&lock);
-    }
-    while (clbkPtr->refcnt > 0) {
-        Ns_CondWait(&cond, &lock);
-    }
-    if (clbkPtr->prevPtr != NULL) {
-        clbkPtr->prevPtr->nextPtr = clbkPtr->nextPtr;
-    }
-    if (clbkPtr->nextPtr != NULL) {
-        clbkPtr->nextPtr->prevPtr = clbkPtr->prevPtr;
-    } else {
-        callbacks = clbkPtr->prevPtr;
-    }
-    if (clbkPtr->free != NULL && clbkPtr->arg != NULL) {
-        (*clbkPtr->free)(clbkPtr->arg);
-    }
-
-    ns_free(clbkPtr);
-
-    if (!unlocked) {
-        Ns_MutexUnlock(&lock);
+    if (trunc) {
+        if (count > 0) {
+            int length = ePtr ? ePtr->offset + ePtr->length : 0;
+            cachePtr->count = length ? nentry : 0;
+            cachePtr->currEntry = ePtr;
+            Ns_DStringSetLength(&cachePtr->buffer, length);
+        } else {
+            cachePtr->count = 0;
+            cachePtr->currEntry = NULL;
+            Ns_DStringSetLength(&cachePtr->buffer, 0);
+        }
     }
 }
 
@@ -1504,7 +1244,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  *      Callback to pass the log information to Tcl.
  *
  *      This function may return NS_ERROR in which case the
- *      caller should skip invoking other registered callbacks.
+ *      caller should skip invoking other filters.
  *      In such case, a log-entry with the error message is
  *      produced in the default log sink (log file).
  *      For all other cases, caller should continue with the
@@ -1581,4 +1321,157 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
     Ns_TclDeAllocateInterp(interp);
 
     return (ret == TCL_ERROR) ? NS_ERROR: NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetCache --
+ *
+ *      Get the per-thread LogCache struct.
+ *
+ * Results:
+ *      Pointer to per-thread struct.
+ *
+ * Side effects:
+ *      Memory for struct is allocated on first call.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static LogCache *
+GetCache(void)
+{
+    LogCache *cachePtr;
+
+    cachePtr = Ns_TlsGet(&tls);
+    if (cachePtr == NULL) {
+        cachePtr = ns_calloc(1, sizeof(LogCache));
+        Ns_DStringInit(&cachePtr->buffer);
+        Ns_TlsSet(&tls, cachePtr);
+    }
+
+    return cachePtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeCache --
+ *
+ *      TLS cleanup callback to destory per-thread Cache struct.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeCache(void *arg)
+{
+    LogCache *cachePtr = (LogCache *)arg;
+    LogEntry *entryPtr, *tmpPtr;
+
+    LogFlush(cachePtr, filters, -1, 1, 1);
+    entryPtr = cachePtr->firstEntry;
+    while (entryPtr != NULL) {
+        tmpPtr = entryPtr->nextPtr;
+        ns_free(entryPtr);
+        entryPtr = tmpPtr;
+    }
+    Ns_DStringFree(&cachePtr->buffer);
+    ns_free(cachePtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSeverityFromObj --
+ *
+ *      Get the severity level from the Tcl object, possibly setting
+ *      it's internal rep.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      Error message left in Tcl interp on error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_LogSeverity *severityPtr)
+{
+    Tcl_HashEntry *hPtr;
+    int            i;
+
+    if (Ns_TclGetOpaqueFromObj(objPtr, severityType,
+                               (void **) severityPtr) != TCL_OK) {
+        Ns_MutexLock(&lock);
+        hPtr = Tcl_FindHashEntry(&severityTable, Tcl_GetString(objPtr));
+        Ns_MutexUnlock(&lock);
+
+        if (hPtr != NULL) {
+            *severityPtr = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+        } else {
+            /*
+             * Check for a legacy integer severity.
+             */
+            if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
+                    && i < severityCount) {
+                *severityPtr = i;
+            } else {
+                Tcl_AppendResult(interp, "unknown severity: \"",
+                                 Tcl_GetString(objPtr),
+                                 "\": should be one of: ", NULL);
+                for (i = 0; i < severityIdx; i++) {
+                    Tcl_AppendResult(interp, severityConfig[i].string, " ", NULL);
+                }
+                return TCL_ERROR;
+            }
+        }
+        /*
+         * Stash the severity for future speedy lookup.
+         */
+        Ns_TclSetOpaqueObj(objPtr, severityType, (void *)(intptr_t) *severityPtr);
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetLogFlushProc, Ns_SetNsLogProc --
+ *
+ *      Deprecated (and disabled) calls.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Will exit the server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
+{
+    Ns_Fatal("Ns_SetLogFlushProc: deprecated, use Ns_AddLogFilter() instead");
+}
+
+void
+Ns_SetNsLogProc(Ns_LogProc *procPtr)
+{
+    Ns_Fatal("Ns_SetNsLogProc: deprecated, use Ns_AddLogFilter() instead");
 }

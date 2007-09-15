@@ -20,6 +20,9 @@
 	* doc/src/mann/ns_log.man:
 	* tests/ns_log.test: Updated.
 
+	* nsd/log.c: Call filters 'filters' instead of callbacks. Remove some
+	redundant wrapper routines. Shuffle the code around.
+
 2007-09-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* doc/src/mann/ns_log.man:
