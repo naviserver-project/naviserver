@@ -1,3 +1,8 @@
+2007-09-20  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* doc/src/man3/Ns_Sls.man: Fix stray curly-bracket and add extra markup
+	around types, args etc.
+
 2007-09-14  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
