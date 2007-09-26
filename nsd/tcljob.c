@@ -546,7 +546,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * if yes, return error, it should be unique
              */
 
-            if (jobId != NULL) {
+            if (jobId != NULL && *jobId != '\0') {
                 hPtr = Tcl_CreateHashEntry(&queuePtr->jobs, jobId, &new);
                 if (!new) {
                     FreeJob(jobPtr);
@@ -1174,6 +1174,15 @@ JobThread(void *arg)
         Ns_GetTime(&jobPtr->endTime);
         Ns_GetTime(&jobPtr->startTime);
         jobPtr->code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
+
+        /*
+         * Make sure we show error message for detached job, otherwise it will 
+         * silently disappear
+         */
+
+        if (jobPtr->code != TCL_OK && jobPtr->type == JOB_DETACHED) {
+            Ns_TclLogError(interp);
+        }
 
         /*
          * Save the results.
