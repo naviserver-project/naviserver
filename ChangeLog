@@ -1,7 +1,15 @@
+2007-09-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/tclresp.c: [ns_headers] last optional length argument
+	now allows for "-1" in which case it removes optional
+	Content-Length from output headers, thus allowing us to send
+	binary streams of initially unknown size.
+
 2007-09-25  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* nsd/tcljob.c: Make sure -jobid parameters ignored if empty string is given. also
-	add error message to the log for detached and failed jobs                
+	* nsd/tcljob.c: Make sure -jobid parameters ignored if empty
+	string is given. also add error message to the log for detached
+	and failed jobs                
 
 2007-09-20  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -95,7 +103,7 @@
 2007-08-20  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/fastpath.c:
-	* nsd/nsd.h: Added suppoirt for stat64 in FastStat. It uses TCL
+	* nsd/nsd.h: Added support for stat64 in FastStat. It uses TCL
 	defined HAVE_STRUCT_STAT64
 
 2007-08-20  Zoran Vasiljevic <vasiljevic@users.sf.net>

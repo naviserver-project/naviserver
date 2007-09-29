@@ -71,7 +71,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp *itPtr = arg;
     Ns_Conn  *conn;
-    int       status, length = -1, result = TCL_OK;
+    int       status, length = -2;
     char     *type = NULL;
 
     Ns_ObjvSpec args[] = {
@@ -88,29 +88,34 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     itPtr->nsconn.flags |= CONN_TCLHTTP;
     Ns_ConnSetResponseStatus(conn, status);
 
-    if (length > -1) {
+    if (length > -2) {
 
         /*
          * If a length is specified then we expect the user to send binary
          * data. The type header should not specify a charset, and we flush
-         * the headers now to dissable chunking later in Ns_ConnWriteVData()
+         * the headers now to disable chunking later in Ns_ConnWriteVData()
          * which would otherwise alter the length.
+         *
+         * Length of -1 effectively removes the Content-Length header from
+         * output headers set allowing us to serve binary contents of
+         * initially unlnown sizes.
          */
 
         if (type != NULL) {
             Ns_ConnSetTypeHeader(conn, type);
         }
+
         Ns_ConnSetLengthHeader(conn, length);
 
         if (Ns_ConnWriteData(conn, NULL, 0, 0) != NS_OK) {
-            result = TCL_ERROR;
+            return TCL_ERROR;
         }
 
     } else if (type != NULL) {
         Ns_ConnSetEncodedTypeHeader(conn, type);
     }
 
-    return Result(interp, result);
+    return Result(interp, NS_OK);
 }
 
 
