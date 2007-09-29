@@ -5,6 +5,12 @@
 	Content-Length from output headers, thus allowing us to send
 	binary streams of initially unknown size.
 
+	* nsthread/time.c: Ns_GetTime now relies on Tcl_GetTime to
+	be platform-independent. Also, untabified and formatted.
+
+	* nsproxy/nsproxylib.c: send/receive timers now operate on
+	absolute instead of relative time quantums.
+
 2007-09-25  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c: Make sure -jobid parameters ignored if empty

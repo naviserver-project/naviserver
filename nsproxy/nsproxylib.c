@@ -245,6 +245,7 @@ static void   ReaperThread(void *ignored);
 static void   CloseSlave(Slave *slavePtr, int ms);
 static void   ReapProxies(void);
 static void   Kill(int pid, int sig);
+static int    GetTimeDiff(Ns_Time *tsPtr);
 
 static void   AppendStr(Tcl_Interp *interp, CONST char *flag, char *val);
 static void   AppendInt(Tcl_Interp *interp, CONST char *flag, int i);
@@ -1042,9 +1043,9 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms)
             ms = proxyPtr->conf.teval;
         }
         if (ms <= 0) {
-                ms = -1;
+            ms = -1;
         }
-        if (!WaitFd(proxyPtr->slavePtr->rfd, POLLIN, ms)) {
+        if (WaitFd(proxyPtr->slavePtr->rfd, POLLIN, ms) == 0) {
             err = EEvalTimeout;
         } else {
             proxyPtr->state = Done;
@@ -1124,11 +1125,17 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static int
-SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
+SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
 {
-    int          n;
+    int          n, ms;
     uint32       ulen;
     struct iovec iov[2];
+    Ns_Time      end;
+
+    if (msec > 0) {
+        Ns_GetTime(&end);
+        Ns_IncrTime(&end, msec/1000, (msec % 1000) * 1000);
+    }
 
     ulen = htonl(dsPtr->length);
     iov[0].iov_base = (caddr_t) &ulen;
@@ -1139,13 +1146,24 @@ SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
         do {
             n = writev(slavePtr->wfd, iov, 2);
         } while (n == -1 && errno == EINTR);
-        if (n == -1 && errno == EAGAIN && WaitFd(slavePtr->wfd, POLLOUT, ms)) {
-            n = writev(slavePtr->wfd, iov, 2);
-        }
         if (n == -1) {
-            return 0;
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                return 0;
+            }
+            if (msec > 0) {
+                ms = GetTimeDiff(&end);
+                if (ms < 0) {
+                    return 0;
+                }
+            } else {
+                ms = msec;
+            }
+            if (WaitFd(slavePtr->wfd, POLLOUT, ms) == 0) { 
+                return 0;
+            }
+        } else if (n > 0) {
+            UpdateIov(iov, n);
         }
-        UpdateIov(iov, n);
     }
 
     return 1;
@@ -1169,12 +1187,18 @@ SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
  */
 
 static int
-RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
+RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
 {
     uint32       ulen;
     char        *ptr;
-    int          n, len, avail;
+    int          n, len, avail, ms;
     struct iovec iov[2];
+    Ns_Time      end;
+
+    if (msec > 0) {
+        Ns_GetTime(&end);
+        Ns_IncrTime(&end, msec/1000, (msec % 1000) * 1000);
+    }
 
     avail = dsPtr->spaceAvl - 1;
     iov[0].iov_base = (caddr_t) &ulen;
@@ -1185,13 +1209,26 @@ RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
         do {
             n = readv(slavePtr->rfd, iov, 2);
         } while (n == -1 && errno == EINTR);
-        if (n < 0 && errno == EAGAIN && WaitFd(slavePtr->rfd, POLLIN, ms)) {
-            n = readv(slavePtr->rfd, iov, 2);
+        if (n == 0) {
+            return 0; /* EOF */
+        } else if (n < 0) {
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                return 0;
+            }
+            if (msec > 0) {
+                ms = GetTimeDiff(&end);
+                if (ms < 0) {
+                    return 0;
+                }
+            } else {
+                ms = msec;
+            }
+            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) { 
+                return 0;
+            }
+        } else if (n > 0) {
+            UpdateIov(iov, n);
         }
-        if (n <= 0) {
-            return 0;
-        }
-        UpdateIov(iov, n);
     }
     n = avail - iov[1].iov_len;
     Tcl_DStringSetLength(dsPtr, n);
@@ -1203,14 +1240,27 @@ RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
         do {
             n = read(slavePtr->rfd, ptr, len);
         } while (n == -1 && errno == EINTR);
-        if (n < 0 && errno == EAGAIN && WaitFd(slavePtr->rfd, POLLIN, ms)) {
-            n = read(slavePtr->rfd, ptr, len);
+        if (n == 0) {
+            return 0; /* EOF */
+        } else if (n < 0) {
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                return 0;
+            }
+            if (msec > 0) {
+                ms = GetTimeDiff(&end);
+                if (ms < 0) {
+                    return 0;
+                }
+            } else {
+                ms = msec;
+            }
+            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) { 
+                return 0;
+            }
+        } else if (n > 0) {
+            len -= n;
+            ptr += n;
         }
-        if (n <= 0) {
-            return 0;
-        }
-        len -= n;
-        ptr += n;
     }
 
     return 1;
@@ -1237,7 +1287,7 @@ static int
 WaitFd(int fd, int event, int ms)
 {
     struct pollfd pfd;
-    int           n;
+    int n;
 
     pfd.fd = fd;
     pfd.events = event | POLLPRI | POLLERR;
@@ -2198,14 +2248,16 @@ GetPool(char *poolName, InterpData *idataPtr)
             SetOpt(Ns_DStringValue(&defexec), &poolPtr->exec);
         }
         if (path == NULL) {
+            poolPtr->conf.tget  = 0;
+            poolPtr->conf.teval = 0;
             poolPtr->conf.tsend = 5000;
             poolPtr->conf.trecv = 5000;
             poolPtr->conf.twait = 1000;
             poolPtr->conf.tidle = 5*60*1000;
             poolPtr->maxslaves = 8;
         } else {
-            poolPtr->conf.teval = Ns_ConfigInt(path, "evaltimeout", 0);
             poolPtr->conf.tget  = Ns_ConfigInt(path, "gettimeout",  0);
+            poolPtr->conf.teval = Ns_ConfigInt(path, "evaltimeout", 0);
             poolPtr->conf.tsend = Ns_ConfigInt(path, "sendtimeout", 5000);
             poolPtr->conf.trecv = Ns_ConfigInt(path, "recvtimeout", 5000);
             poolPtr->conf.twait = Ns_ConfigInt(path, "waittimeout", 1000);
@@ -2462,20 +2514,25 @@ static void
 CloseSlave(Slave *slavePtr, int ms)
 {
     /*
-     * Set the time to kill the process. This time us used
-     * for loop calculations in the reaper thread.
-     * Note that we use the expire timer for this purpose.
+     * Set the time to kill the slave. Reaper thread will 
+     * use passed time to wait for the slave to exit gracefully.
+     * Otherwise, it will start attempts to stop the slave 
+     * by sending singnals to it (polite and unpolite).
      */
 
-    Ns_GetTime(&slavePtr->expire);
-    Ns_IncrTime(&slavePtr->expire, ms/1000, (ms%1000) * 1000);
+    SetExpire(slavePtr, ms);
+
+    /*
+     * Closing the write pipe should normally make proxy exit.
+     */
 
     close(slavePtr->wfd);
     slavePtr->signal  = 0;
     slavePtr->sigsent = 0;
 
     /*
-     * Put on the head of the close list
+     * Put on the head of the close list so it's handled by
+     * the reaper thread.
      */
 
     slavePtr->nextPtr = firstClosePtr;
@@ -3114,6 +3171,34 @@ ReapProxies()
     }
     Ns_MutexUnlock(&plock);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetTimeDiff --
+ *
+ *      Returns time difference in miliseconds between current time
+ *      and time given in passed structure. If the current time is
+ *      later then the passed time, the result is negative.
+ *
+ * Results:
+ *      Number of milliseconds (may be negative!)
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetTimeDiff(Ns_Time *timePtr)
+{
+    Ns_Time now, diff;
+
+    Ns_GetTime(&now);
+    return Ns_DiffTime(timePtr, &now, &diff)*(diff.sec/1000+diff.usec*1000);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3203,5 +3288,6 @@ ProxyError(Tcl_Interp *interp, Err err)
     }
 
     Tcl_SetErrorCode(interp, "NSPROXY", code, msg, sysmsg, NULL);
+
     return msg;
 }

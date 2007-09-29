@@ -31,7 +31,7 @@
 /* 
  * time.c --
  *
- *	Ns_Time support routines.
+ *      Ns_Time support routines.
  */
 
 #include "thread.h"
@@ -44,14 +44,13 @@ NS_RCSID("@(#) $Header$");
  *
  * Ns_GetTime --
  *
- *	Get the current time value.
+ *      Get the current time value.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Ns_Time structure pointed to by timePtr is updated with currnet
- *	time.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -59,26 +58,12 @@ NS_RCSID("@(#) $Header$");
 void
 Ns_GetTime(Ns_Time *timePtr)
 {
-#ifdef _WIN32
-/*
- * Number of 100 nanosecond units from 1/1/1601 to 1/1/1970
- */
-#define EPOCH_BIAS  116444736000000000i64
-    union {
-	unsigned __int64    i;
-	FILETIME	    s;
-    } ft;
+    Tcl_Time tbuf;
 
-    GetSystemTimeAsFileTime(&ft.s);
-    timePtr->sec = (time_t)((ft.i - EPOCH_BIAS) / 10000000i64);
-    timePtr->usec =(long)((ft.i / 10i64) % 1000000i64);
-#else
-    struct timeval tv;
+    Tcl_GetTime(&tbuf);
 
-    gettimeofday(&tv, NULL);
-    timePtr->sec = tv.tv_sec;
-    timePtr->usec = tv.tv_usec;
-#endif
+    timePtr->sec = tbuf.sec;
+    timePtr->usec = tbuf.usec;
 }
 
 
@@ -87,13 +72,13 @@ Ns_GetTime(Ns_Time *timePtr)
  *
  * Ns_AdjTime --
  *
- *	Adjust an Ns_Time so the values are in range.
+ *      Adjust an Ns_Time so the values are in range.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Ns_Time structure pointed to by timePtr is adjusted as needed.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -102,11 +87,11 @@ void
 Ns_AdjTime(Ns_Time *timePtr)
 {
     if (timePtr->usec < 0) {
-	timePtr->sec += (timePtr->usec / 1000000L) - 1;
-	timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
+        timePtr->sec += (timePtr->usec / 1000000L) - 1;
+        timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
     } else if (timePtr->usec > 1000000L) {
-	timePtr->sec += timePtr->usec / 1000000L;
-	timePtr->usec = timePtr->usec % 1000000L;
+        timePtr->sec += timePtr->usec / 1000000L;
+        timePtr->usec = timePtr->usec % 1000000L;
     }
 }
 
@@ -116,14 +101,14 @@ Ns_AdjTime(Ns_Time *timePtr)
  *
  * Ns_DiffTime --
  *
- *	Determine the difference between two Ns_Time structures.
+ *      Determine the difference between values passed in t1 and t0
+ *      Ns_Time structures.
  *
  * Results:
- *	-1, 0, or 1 if t1 is before, same, or after t0.
+ *      -1, 0, or 1 if t1 is before, same, or after t0.
  *
  * Side effects:
- *	Ns_Time structure pointed to by timePtr is set with difference
- *	between the two given times.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -132,25 +117,26 @@ int
 Ns_DiffTime(Ns_Time *t1, Ns_Time *t0, Ns_Time *diffPtr)
 {
     Ns_Time diff;
-
+    
     if (diffPtr == NULL) {
-	diffPtr = &diff;
+        diffPtr = &diff;
     }
     if (t1->usec >= t0->usec) {
-	diffPtr->sec = t1->sec - t0->sec;
-	diffPtr->usec = t1->usec - t0->usec;
+        diffPtr->sec = t1->sec - t0->sec;
+        diffPtr->usec = t1->usec - t0->usec;
     } else {
-	diffPtr->sec = t1->sec - t0->sec - 1;
-	diffPtr->usec = 1000000L + t1->usec - t0->usec;
+        diffPtr->sec = t1->sec - t0->sec - 1;
+        diffPtr->usec = 1000000L + t1->usec - t0->usec;
     }
     Ns_AdjTime(diffPtr);
     if (diffPtr->sec < 0) {
-	return -1;
-    } else if (diffPtr->sec == 0 && diffPtr->usec == 0) {
-	return 0;
-    } else {
-	return 1;
+        return -1;
     }
+    if (diffPtr->sec == 0 && diffPtr->usec == 0) {
+        return 0;
+    }
+
+    return 1;
 }
 
 
@@ -159,14 +145,14 @@ Ns_DiffTime(Ns_Time *t1, Ns_Time *t0, Ns_Time *diffPtr)
  *
  * Ns_IncrTime --
  *
- *	Increment the given Ns_Time structure with the given number of
- *	seconds and microseconds.
+ *      Increment the given Ns_Time structure with the given number
+ *      of seconds and microseconds.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Ns_Time structure pointed to by timePtr is incremented as needed.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -201,13 +187,13 @@ Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec)
 Ns_Time *
 Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
 {
-    if (adjPtr == NULL) {
-        return NULL;
+    if (adjPtr != NULL) {
+        if (adjPtr->sec < 1000000000) {
+            Ns_GetTime(absPtr);
+            Ns_IncrTime(absPtr, adjPtr->sec, adjPtr->usec);
+            return absPtr;
+        }
     }
-    if (adjPtr->sec < 1000000000) {
-        Ns_GetTime(absPtr);
-        Ns_IncrTime(absPtr, adjPtr->sec, adjPtr->usec);
-        return absPtr;
-    }
+
     return adjPtr;
 }
