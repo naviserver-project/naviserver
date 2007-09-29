@@ -38,7 +38,7 @@
  *
  *        o. Array of limits as with get/setrlimit
  *        o. Chroot of the slave
- *        o. Duration of the execution
+ *        o. Limit duration of the execution in the slave
  *        o. ...
  *
  *      Add -onexit for slave to run on teardown
@@ -170,7 +170,7 @@ typedef struct Pool {
     Ns_Cond        cond;     /* Cond for use while allocating handles */
 } Pool;
 
-#define MIN_IDLE_TIMEOUT 10000 /* == 1 second */
+#define MIN_IDLE_TIMEOUT 10000 /* == 10 seconds */
 
 /*
  * The following enum lists all possible error conditions.
@@ -215,9 +215,10 @@ static void   PushProxy(Proxy *proxyPtr);
 static Proxy* GetProxy(Tcl_Interp *interp, char *proxyId, InterpData *idataPtr);
 
 static int    Eval(Tcl_Interp *interp, Proxy *proxyPtr, char *script, int ms);
-static int    Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script);
-static int    Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms);
-static int    Recv(Tcl_Interp *interp, Proxy *proxyPtr);
+
+static Err    Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script);
+static Err    Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms);
+static Err    Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr);
 
 static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr);
 static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr);
@@ -923,17 +924,18 @@ SetExpire(Slave *slavePtr, int ms)
 static int
 Eval(Tcl_Interp *interp, Proxy *proxyPtr, char *script, int ms)
 {
-    int result;
+    int result = TCL_OK;
+    Err err = ENone;
 
-    result = Send(interp, proxyPtr, script);
-    if (result == TCL_OK) {
-        result = Wait(interp, proxyPtr, ms);
-        if (result == TCL_OK) {
-            result = Recv(interp, proxyPtr);
+    err = Send(interp, proxyPtr, script);
+    if (err == ENone) {
+        err = Wait(interp, proxyPtr, ms);
+        if (err == ENone) {
+            err = Recv(interp, proxyPtr, &result);
         }
     }
-    
-    return result;
+
+    return (err == ENone) ? result : TCL_ERROR;
 }
 
 
@@ -953,7 +955,7 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, char *script, int ms)
  *----------------------------------------------------------------------
  */
 
-static int
+static Err
 Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
 {
     Err err = ENone;
@@ -1001,15 +1003,15 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
             }
         }
     }
+
     if (err != ENone) {
         Tcl_AppendResult(interp, "could not send script \"", 
                          script ? script : "<empty>",
                          "\" to proxy \"", proxyPtr->id, "\": ",
                          ProxyError(interp, err), NULL);
-        return TCL_ERROR;
     }
 
-    return TCL_OK;
+    return err;
 }
 
 
@@ -1029,7 +1031,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
  *----------------------------------------------------------------------
  */
 
-static int
+static Err
 Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms)
 {
     Err err = ENone;
@@ -1051,13 +1053,15 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms)
             proxyPtr->state = Done;
         }
     }
+
     if (err != ENone) {
-        Tcl_AppendResult(interp, "could not wait for proxy \"", proxyPtr->id,
-                         "\": ", ProxyError(interp, err), NULL);
+        Tcl_AppendResult(interp, "could not wait for proxy \"",
+                         proxyPtr->id, "\": ",
+                         ProxyError(interp, err), NULL);
         return TCL_ERROR;
     }
 
-    return TCL_OK;
+    return err;
 }
 
 
@@ -1077,12 +1081,11 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms)
  *----------------------------------------------------------------------
  */
 
-static int
-Recv(Tcl_Interp *interp, Proxy *proxyPtr)
+static Err
+Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
 {
-    int result;
     Err err = ENone;
-
+    
     if (proxyPtr->state == Idle) {
         err = EIdle;
     } else if (proxyPtr->state == Busy) {
@@ -1092,20 +1095,21 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr)
         if (!RecvBuf(proxyPtr->slavePtr, proxyPtr->conf.trecv,
                      &proxyPtr->out)) {
             err = ERecv;
-        } else if (Import(interp, &proxyPtr->out, &result) != TCL_OK) {
+        } else if (Import(interp, &proxyPtr->out, resultPtr) != TCL_OK) {
             err = EImport;
         } else {
             proxyPtr->state = Idle;
         }
         ResetProxy(proxyPtr);
     }
+
     if (err != ENone) {
         Tcl_AppendResult(interp, "could not receive from proxy \"",
-                         proxyPtr->id, "\": ", ProxyError(interp, err), NULL);
-        return TCL_ERROR;
+                         proxyPtr->id, "\": ",
+                         ProxyError(interp, err), NULL);
     }
-    
-    return result;
+
+    return err;
 }
 
 /*
@@ -1463,6 +1467,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     InterpData    *idataPtr = data;
     Pool          *poolPtr, *thePoolPtr;
     Proxy         *proxyPtr;
+    Err            err;
     int            ms, reap, opt, result = TCL_OK;
     char          *proxyId;
     Tcl_HashEntry *hPtr;
@@ -1536,7 +1541,8 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
             Tcl_AppendResult(interp, "no such handle: ", proxyId, NULL);
             return TCL_ERROR;
         }
-        result = Send(interp, proxyPtr, Tcl_GetString(objv[3]));
+        err = Send(interp, proxyPtr, Tcl_GetString(objv[3]));
+        result = (err == ENone) ? TCL_OK : TCL_ERROR;
         break;
 
     case PWaitIdx:
@@ -1555,7 +1561,8 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
         } else if (Tcl_GetIntFromObj(interp, objv[3], &ms) != TCL_OK) {
             return TCL_ERROR;
         }
-        result = Wait(interp, proxyPtr, ms);
+        err = Wait(interp, proxyPtr, ms);
+        result = (err == ENone) ? TCL_OK : TCL_ERROR;
         break;
         
     case PRecvIdx:
@@ -1569,9 +1576,10 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
             Tcl_AppendResult(interp, "no such handle: ", proxyId, NULL);
             return TCL_ERROR;
         }
-        result = Recv(interp, proxyPtr);
+        err = Recv(interp, proxyPtr, &result);
+        result = (err == ENone) ? result : TCL_ERROR;
         break;
-        
+
     case PEvalIdx:
         if (objc != 4 && objc != 5) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle script");
