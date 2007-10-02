@@ -17,6 +17,21 @@
 
 	* doc/src/mann/ns_write.man: Explain the -binary switch.
 
+	* doc/src/man3/Ns_Sls.man:
+	* doc/src/mann/ns_accesslog.man:
+	* doc/src/mann/ns_atsignal.man:
+	* doc/src/mann/ns_cache.man:
+	* doc/src/mann/ns_cookie.man:
+	* doc/src/mann/ns_ictl.man:
+	* doc/src/mann/ns_limits.man:
+	* doc/src/mann/ns_log.man:
+	* doc/src/mann/ns_memoize.man:
+	* doc/src/mann/ns_register_adp.man:
+	* doc/src/mann/ns_return.man:
+	* doc/src/mann/ns_returnerror.man: Update to new tclllib-1.10
+	syntax. Unfortunately, new tcllib complains voluminously about the old
+	syntax, and old tcllib dies on the new. We love the bleeding edge...
+
 2007-09-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/tclresp.c: [ns_headers] last optional length argument

@@ -74,7 +74,7 @@ and [arg url] must exactly match those given to [cmd ns_register_tcl].
 
 
 [section OPTIONS]
-[list_begin opt]
+[list_begin options]
 
 [opt_def -noinherit]
 Specifies that the directory portion of the request URL should match
@@ -142,7 +142,7 @@ a.adp as the [opt -noinherit] option was not given.
 
 
 [section ARGUMENTS]
-[list_begin arg]
+[list_begin arguments]
 
 [arg_def string method]
 The HTTP [arg method], such as [term GET], [term HEAD] or [term POST],
@@ -170,7 +170,7 @@ root directory. The full path is constructed each time the [term ADP] page is
 requested using [cmd ns_pagepath], so [cmd ns_serverroot] callbacks
 will be taken into account.
 
-[nl]
+[para]
 In the third example, a specific [term ADP] file in the server's file system
 is registered for a simillarly named URL (and all URLs bellow
 it). There are no calls to [cmd ns_pagepath] or [cmd ns_url2file]
@@ -207,4 +207,5 @@ foreach method {GET HEAD POST} {
 
 [see_also ns_register_fastpath ns_register_proc ns_register_filter ns_register_url2file]
 [keywords ADP request]
+
 [manpage_end]

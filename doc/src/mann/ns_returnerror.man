@@ -48,7 +48,7 @@ sent.
 Return a response with status code [term 301], [term Moved]. A [term Location]
 header will be set with the given [arg url].
 
-[nl]
+[para]
 Use this response to signal that the resource identified by the requested URL
 has permanently moved to a new location. The client should request the new URL
 instead of the old one in the future.
@@ -61,7 +61,7 @@ instead of the old one in the future.
 Return a response with status code [term 302], [term Found]. The [term Location]
 header will be set to the [arg url] if given.
 
-[nl]
+[para]
 Use this response to signal that the resource identified by the requested URL has
 temporarily moved to a new location. The client should continue to request the
 old URL.
@@ -74,7 +74,7 @@ old URL.
 Return a response with status code [term 400], [term "Bad Request"] using the
 given [arg reason] in the HTML message.
 
-[nl]
+[para]
 Use this response to signal that the client sent a malformed request and should
 not try again without modifications.
 
@@ -86,12 +86,12 @@ Return a response with status code [term 401], [term "Access Denied"]. A
 [term WWW-Authenticate] header will be set using the [term realm] specified
 in the configuration file option [term ns/server:realm].
 
-[nl]
+[para]
 Use this response to signal that the user is not authorized to access the URL,
 and to trigger [term "HTTP basic"] authorization. The client may present
 a pop-up window for the user to enter their [term username] and [term password].
 
-[nl]
+[para]
 NB: The username and password will be sent in plain text.
 
 
@@ -100,7 +100,7 @@ NB: The username and password will be sent in plain text.
 
 Return a response with status code [term 403], [term Forbidden].
 
-[nl]
+[para]
 Use this response to signal that the authentication information the client
 supplied are insufficient to grant them access to the requested URL.
 
@@ -110,7 +110,7 @@ supplied are insufficient to grant them access to the requested URL.
 
 Return a response with status code [term 404], [term "Not Found"].
 
-[nl]
+[para]
 Use this response to signal that the content the client requested could not be
 located given the URL that was requested.
 
@@ -120,7 +120,7 @@ located given the URL that was requested.
 
 Return a response with status code [term 503], [term "Unavailable"].
 
-[nl]
+[para]
 Use this response to signal that the server is too busy to deliver the requested
 resource or is undergoing maintenance.
 
@@ -133,7 +133,7 @@ resource or is undergoing maintenance.
 Return a response with the given [arg status] code and the error [arg message]
 wrapped in HTML.
 
-[nl]
+[para]
 Use this command to return a HTTP status response to the client which is not
 covered by the above commands, or to customize the HTML message.
 
@@ -147,11 +147,11 @@ covered by the above commands, or to customize the HTML message.
 Return a response with the given [arg status] code and an HTML message with the
 given [arg title] and [arg message].
 
-[nl]
+[para]
 Use this command to return an arbitrary response to the client. Some HTTP
 responses are expected not to return body content. Check RFC 2616 for details.
 
-[nl]
+[para]
 NB: You should be careful what you put in the [arg title] and [arg message].
 It may be tempting to use data which the client has sent you such as a form
 variable, but it may not be what you expect.

@@ -31,31 +31,31 @@ Queue a message for the error log file if the given [arg severity-level] is
 enabled. The [arg message] arguments are concatenated with connecting spaces.
 The message will reach the log file when the per-thread cache is flushed.
 
-[nl]
+[para]
 The following are the predefined values of [arg severity-level].
 
 [list_begin definitions]
 
-[lst_item Notice]
+[def Notice]
 Something interesting occurred.
 
-[lst_item Warning]
+[def Warning]
 Something that could mean something bad occurred.
 
-[lst_item Error]
+[def Error]
 Something bad occurred.
 
-[lst_item Fatal]
+[def Fatal]
 Something extremely bad occurred. The server will shut down after
 logging this message.
 
-[lst_item Bug]
+[def Bug]
 Something occurred that implies that there is a bug in the code.
 
-[lst_item Debug]
+[def Debug]
 If debug level logging is enabled the the message is logged.
 
-[lst_item Dev]
+[def Dev]
 If dev level logging is enabled the message is logged.
 
 [list_end]
@@ -63,7 +63,7 @@ If dev level logging is enabled the message is logged.
 
 
 [call [cmd ns_logctl] \
-      [arg severity] \
+      [method severity] \
       [arg severity-level] \
       [opt [arg bool]] ]
 
@@ -71,68 +71,77 @@ Return true if the given [arg severity-level] is enabled, false if it is
 disabled. If [arg bool] is given it enables/disables the given
 [arg severity-level] for all future log messages, server-wide.
 
-[nl]
+[para]
 If [arg severity-level] does not already exist and [arg bool] is given, then the
 new severity is created, enabled or disabled according to [arg bool]. Future
 calls to [cmd ns_log] may use new [arg severity-level].
 
 
 
-[call [cmd ns_logctl] [arg severities] ]
+[call [cmd ns_logctl] \
+	  [method severities] ]
 
 Return a list of available severity-levels. This includes the 7 predefined
 levels and those created with [cmd ns_logctl] or via C code.
 
 
 
-[call [cmd ns_logctl] [arg hold]]
+[call [cmd ns_logctl] \
+	  [method hold] ]
 
 Buffer log messages originating in the current thread indefinitely. Log messages
 are no longer written directly to the server log.
 
 
 
-[call [cmd ns_logctl] [arg flush]]
+[call [cmd ns_logctl] \
+	  [method flush] ]
 
 Write buffered log messages from the current thread to the log file. Do not
 disable buffering enabled by [arg hold].
 
 
 
-[call [cmd ns_logctl] [arg release]]
+[call [cmd ns_logctl] \
+	  [method release] ]
 
 Write buffered log messages from the current thread to the log file and disable
 buffering. Future log messages will not be buffered.
 
 
 
-[call [cmd ns_logctl] [arg peek]]
+[call [cmd ns_logctl] \
+	  [method peek] ]
 
 Return a copy of any buffered log messages for the current thread.
 
 
 
-[call [cmd  ns_logctl] [arg get]]
+[call [cmd ns_logctl] \
+	  [method get] ]
 
 Return all buffered log messages, removing them from the buffer without writing them
 to the log file.
 
 
 
-[call [cmd ns_logctl] [arg count]]
+[call [cmd ns_logctl] \
+	  [method count] ]
 
 Returns a count of buffered messages for the current thread.
 
 
 
-[call [cmd ns_logctl] [arg truncate] [arg count]]
+[call [cmd ns_logctl] \
+	  [method truncate] \
+	  [arg count] ]
 
 Discard this threads buffered messages, leaving [arg count] untouched.
 
 
 
 [call [cmd ns_logctl] \
-      [arg register] \
+      [method register] \
       [arg script] \
       [opt [arg "script-args ..."]] ]
 
@@ -144,7 +153,7 @@ A [arg handle] will be returned which can be used to unregister the filter scrip
 
 
 [call [cmd ns_logctl] \
-      [arg unregister] \
+      [method unregister] \
       [arg handle] ]
 
 Unregister the previously registered log filter script identified by
@@ -177,38 +186,38 @@ The following are valid configuration parameters:
 
 [list_begin definitions]
 
-[lst_item serverlog]
+[def serverlog]
 Path to error log file. If the path is not fully qualified it is assumed to be
 relative to the server home directory ([lb][cmd ns_info] home[rb]). All the components of
 the path must exist. The server will fail to start if the log file cannot be
 opened.
 Default: logs/nsd.log
 
-[lst_item lognotice]
+[def lognotice]
 If true, messages of severity-level [emph Notice] are enabled.
 Default: true.
 
-[lst_item logdev]
+[def logdev]
 If true, messages of severity-level [emph Dev] are enabled.
 Default: false.
 
-[lst_item logdebug]
+[def logdebug]
 If true messages of severity-level [emph Debug] are enabled.
 Default: false.
 
-[lst_item logusec]
+[def logusec]
 If true, log entries will have timestamps with microsecond resolution.
 Default: false.
 
-[lst_item logexpanded]
+[def logexpanded]
 If true, an extra newline is added to each log entry.
 Default: false.
 
-[lst_item logroll]
+[def logroll]
 If true, the log file will be rolled when the server receives a SIGHUP signal.
 Default: true.
 
-[lst_item logmaxbackup]
+[def logmaxbackup]
 The number of old error log files to keep around if log rolling is enabled.
 Default: 10.
 

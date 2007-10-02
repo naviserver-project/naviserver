@@ -19,7 +19,7 @@ settings at run-time.
 
 Returns the path of the access log for the current virtual server.
 
-[nl]
+[para]
 If [opt [arg new-path]] is given then the old log is closed and the log
 re-opened at the new location. All the components of [opt [arg new-path]] must
 exist. If an error occurs logging will be disabled.
@@ -93,48 +93,48 @@ The following are valid configuration parameters:
 
 [list_begin definitions]
 
-[lst_item file]
+[def file]
 String: path to the log file.
 
-[lst_item formattedtime]
+[def formattedtime]
 If true, log the time in common-log-format. Otherwise log seconds since the
 epoch. Default: true.
 
-[lst_item logcombined]
+[def logcombined]
 If true, log the referer and user-agent HTTP headers (NCSA combined
 format). Default: true.
 
-[lst_item maxbuffer]
+[def maxbuffer]
 The number of log entries to buffer before flushing to the log file. Default: 0.
 
-[lst_item rolllog]
+[def rolllog]
 If true then the log file will be rolled. Default: true.
 
-[lst_item rollhour]
+[def rollhour]
 The hour of the day (0-23) to roll the log file if log rolling is enabled.
 Default: 0 (midnight).
 
-[lst_item maxbackup]
+[def maxbackup]
 Number of old log files to keep when log rolling is enabled. Default: 100.
 
-[lst_item rollonsignal]
+[def rollonsignal]
 If true then the log file will be rolled when the serve receives a SIGHUP
 signal. Default: false.
 
-[lst_item suppressquery]
+[def suppressquery]
 If true then the query (everything after the ? in the URL) is not logged.
 Default: false.
 
-[lst_item checkforproxy]
+[def checkforproxy]
 If true then the value of the X-Forwarded-For HTTP header is logged as the IP
 address of the client. Otherwise, the TCP peer address is logged. Only enable
 this if you run your own, trusted proxy server. Default: false.
 
-[lst_item logreqtime]
+[def logreqtime]
 If true then log the total amount of time the request took to run in seconds and
 milliseconds.
 
-[lst_item extendedheaders]
+[def extendedheaders]
 A space separated list of additional HTTP headers whos value should be logged.
 Default: no extra headers are logged.
 

@@ -31,13 +31,13 @@ Evaluate [arg script] and [arg args] and return the result. The result is
 cached so that future evaluations of the same [arg script] and [arg args] will
 return the cached result without first evaluating the script.
 
-[nl]
+[para]
 The script result remains valid until the supplied expirey time passes, or
 forever if not specified. The expirey time can be expressed either as an
 absolute time in the future (seconds since the Unix epoch), or as an offset
 from the current time.
 
-[nl]
+[para]
 If two threads execute the same [arg script] and [arg args], one will wait for
 the other to compute the result and store it in the cache. The [option -timeout] 
 option specifies how long to wait.
@@ -50,7 +50,7 @@ results are discarded. If a [arg pattern] is given it is treated as a
 [term globbing] pattern and matched against each script for which there is
 a cached result in turn, and those that match are discarded.
 
-[nl]
+[para]
 Note: this may be an expensive operation. First the cache lock is accquired,
 then all entries in the cache are iterated over in turn matching the script
 against the globbing pattern.  During this period all access to the memoize
@@ -74,17 +74,18 @@ For the next three quarters of an hour, the answer to the "meaning of life"
 will take no time at all to decide:
 
 [example_begin]
-    set answer [lb][cmd ns_memoize] -expires 2520 deep_thought "meaning of life"[rb]
+set answer [lb][cmd ns_memoize] -expires 2520 deep_thought "meaning of life"[rb]
 [example_end]
 
 
 Flush the cache of all thoughts which are deep:
 
 [example_begin]
-    [cmd ns_memoize_flush] deep_*
+[cmd ns_memoize_flush] deep_*
 [example_end]
 
 
 [see_also ns_cache]
 [keywords cache]
+
 [manpage_end]

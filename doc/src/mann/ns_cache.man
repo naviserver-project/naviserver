@@ -69,10 +69,10 @@ Return the data identified by [arg key] from the named cache. If the key does
 not exist then [arg script] is executed, its value is returned and inserted
 into the cache.
 
-[nl]
+[para]
 The [arg script] is also executed if a cached value exists but has expired.
 
-[nl]
+[para]
 If the [opt [option -force]] option is set then any existing cached value is removed
 whether it has expired or not, and the [arg script] is run to regenerate it.
 
@@ -102,7 +102,7 @@ and return it.
 Append the given [arg args] to the value in the cache and return the new
 value. The [arg args] and the cache value are treated as simple strings.
 
-[nl]
+[para]
 If the cache value does not already exist it is created.
 
 
@@ -119,7 +119,7 @@ Append the given [arg args] to the value in the cache and return the new
 value. The cache value is as a Tcl list and the [arg args] are appended to
 maintain it's well-formed-list format.
 
-[nl]
+[para]
 If the cache value does not already exist it is created.
 
 
@@ -132,7 +132,7 @@ If the cache value does not already exist it is created.
 
 Flush the entries in a cache. If 
 
-[nl]
+[para]
 The number of entries flushed are returned. If [opt [arg args]] are given then
 they are the keys in the cache to be flushed. If the [opt [option -glob]] option
 is given then the keys are treated as globbing patterns and only the keys which
@@ -149,11 +149,11 @@ match are flushed.
 Return the accumulated statistics for the given cache [arg name] in array-get
 format since the cache was created or was last reset.
 
-[nl]
+[para]
 If the [opt [option -reset]] option is given then the statistics will be reset
 to zero after the command returns.
 
-[nl]
+[para]
 If the [opt [option -contents]] option is given then the first element of the
 returned list contains the size and expirey time for each entry in the
 cache. The time is in [cmd ns_time] timespec format.
@@ -162,34 +162,34 @@ The cache statistics track the following items:
 
 [list_begin definitions]
 
-[lst_item maxsize]
+[def maxsize]
 The maximum size in bytes this cache can grow to, as specified by the
 [opt [option -size]] option to [cmd ns_cache_create].
 
-[lst_item size]
+[def size]
 The current size of the cache, in bytes.
 
-[lst_item entries]
+[def entries]
 The current number of entries the cache contains.
 
-[lst_item flushed]
+[def flushed]
 Number of entries which were explicitly flushed by the [cmd ns_cache_flush]
 command.
 
-[lst_item hits]
+[def hits]
 Number of times cache was queried and entry was present and valid.
 
-[lst_item missed]
+[def missed]
 Number of times cache was queried and entry was not present or valid.
 
-[lst_item hitrate]
+[def hitrate]
 The successful hit rate expressed as a percentage of total hits. Higher is better.
 
-[lst_item expired]
+[def expired]
 Number of times an entry was found to be present but expired when requested and
 so not returned.
 
-[lst_item pruned]
+[def pruned]
 Number of time an entry reached the end of the LRU list and was removed to make
 way for a new entry.
 
@@ -201,7 +201,7 @@ way for a new entry.
 
 [section {OPTIONS}]
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def -timeout [arg t]]
 The time in seconds to wait for some other thread to compute the cache value.
@@ -210,7 +210,7 @@ The time in seconds to wait for some other thread to compute the cache value.
 A time in the future when the cache value expires. The expired value will be
 deleted only when retrieved, e.g. via [cmd ns_cache_eval].
 
-[nl]
+[para]
 The [opt [option -expires]] time can be expressed either as an absolute time in
 the futre (the number of seconds since 190), or as an offset from the current
 time. Small values are treated as offsets, large values as absolute time. It is

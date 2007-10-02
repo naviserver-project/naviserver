@@ -42,19 +42,19 @@ Evaluate the given script and args and arrange for it's side effects to
 propagate to all interpreters in all threads for the current virtual server. Use
 this to define new procs once the server has started.
 
-[nl]
+[para]
 If the script evaluates without error then it is appended to the interpreter
 intialisation script. Other threads will begin to pick up the changes when
 they next run their [term delete] traces and notice that the [term epoch] has
 changed.
 
-[nl]
+[para]
 If the [option -sync] option is given then [cmd ns_eval] will return only
 after the interpreter initialisation script has been updated. Otherwise, there
 might be a small delay before the initialisation script receives the update
 due to [cmd ns_eval] [arg script]'s being evaluated in series.
 
-[nl]
+[para]
 If the [option -pending] option is given a list of all scripts which are queued
 to be folded into the inerpreter initialisation script are returned.
 
@@ -64,16 +64,16 @@ to be folded into the inerpreter initialisation script are returned.
 
 Register an interpreter [term trace] [arg script].
 
-[nl]
+[para]
 [option create], [option allocate] and [option getconn] traces are called in FIFO (first
 in, first out) order; [option freeconn], [option deallocate] and [option delete] traces
 are called in LIFO (last in, first out) order.
 
-[nl]
+[para]
 All traces must be registered before server start up completes.  Valid
 [option tracewhen] options are:
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def create]
 Create traces fires when a new interpreter is first created. They are the first
@@ -88,7 +88,7 @@ queue processing, or for a scheduled procedure.
 Getconn interpreter traces fire after all allocate traces have run, before
 connection processing for a URL begins.
 
-[nl]
+[para]
 Note: a [option getconn] interpreter trace fires only once per connection, so if a
 Tcl proc is registered as a connection filter, that will trigger the
 [option getconn] interpreter trace, otherwise it will fire later in the process
@@ -102,7 +102,7 @@ any deallocate interpreter traces.
 Deallocate interpreter traces fire at the end of a transaction, after any
 [term getconn] traces if running in a connection thread.
 
-[nl]
+[para]
 A deallocate trace is a good place for general resource cleanup.
 
 [opt_def delete]
@@ -180,18 +180,20 @@ interpreter was last initialised.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_ictl epoch
-   1
+% ns_ictl epoch
+1
 [example_end]
 
+
+
 [example_begin]
-   % ns_ictl getmodules
-   nsdb nslog nscp
+% ns_ictl getmodules
+nsdb nslog nscp
 [example_end]
+
 
 
 [see_also ns_atclose ns_cleanup]
 [keywords interpreter trace module]
 
 [manpage_end]
-

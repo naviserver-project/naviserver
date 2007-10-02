@@ -36,13 +36,13 @@ limits created at run-time.
 Set the configuration options for a named limits bundle. If the limit does not
 exist it will be created. Default values are used for unspecified options.
 
-[nl]
+[para]
 Limits bundles exist in a process-wide namespace. The single limit [term X] may
 be registered for more than one virtual server. This makes sense, as the
 resources being controlled are a limit of the machine the NaviServer is running
 on (or some subset of) and affects all virtual servers.
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def -maxrun [arg n]]
 The maximum number of connections which can be running simultaneously for all
@@ -71,36 +71,36 @@ can be used, for example, to initialise a hash table.
 
 [list_begin definitions]
 
-[lst_item nrunning]
+[def nrunning]
 The number of connections currently running with a URL which is mapped to
 this limit bundle.
 
-[lst_item nwaiting]
+[def nwaiting]
 The number of active connections waiting to run because either there is no
 connection thread available or the [opt maxrun] limit has been reached.
 
-[lst_item ntimeout]
+[def ntimeout]
 Number of connections closed due to timeout.
 
-[lst_item ndropped]
+[def ndropped]
 Number of connections dropped due to...
 
-[lst_item noverflow]
+[def noverflow]
 Number of connections dropped due to ...
 
-[lst_item maxrun]
+[def maxrun]
 The current [option maxrun] configuration option, which may be adjusted by a call
 to [cmd ns_limits_set] with the [option -maxrun] option.
 
-[lst_item maxwait]
+[def maxwait]
 The current [option maxwait] configuration option, which may be adjusted by a call
 to [cmd ns_limits_set] with the [option -maxwait] option.
 
-[lst_item maxupload]
+[def maxupload]
 The current [option maxupload] configuration option, which may be adjusted by a call
 to [cmd ns_limits_set] with the [option -maxupload] option.
 
-[lst_item timeout]
+[def timeout]
 The current [option timout] configuration option, which may be adjusted by a call
 to [cmd ns_limits_set] with the [option -timeout] option.
 
@@ -118,7 +118,7 @@ to [cmd ns_limits_set] with the [option -timeout] option.
 
 Register the named limits for the given URL.
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def -noinherit [arg boolean]]
 If specified, a request URL such as /foo/bar will not match a limit registered
@@ -153,7 +153,7 @@ server has started:
 
 [list_begin definitions]
 
-[lst_item ns/limits]
+[def ns/limits]
 Global limit names and descriptions:
 
 [example_begin]
@@ -162,7 +162,7 @@ ns_param   default   "Default connections"
 ns_param   slow      "Slow connections"
 [example_end]
 
-[lst_item "ns/limit/\$limitname"]
+[def "ns/limit/\$limitname"]
 Global limit configurations:
 
 [example_begin]
@@ -177,7 +177,7 @@ ns_param   maxrun    10
 ns_param   maxwait   0
 [example_end]
 
-[lst_item "ns/server/server1/limits"]
+[def "ns/server/server1/limits"]
 Mapping virtual server URLs to global limits:
 
 [example_begin]
@@ -208,9 +208,9 @@ files or files in the [term /download] directory, in total, at any one time.
 Reuquests for other URLs will have the [term default] limit applied.
 
 [example_begin]
-    [cmd ns_limits_set] -maxrun 10 -maxwait 0 -- slow
-    [cmd ns_limits_register] slow GET /download
-    [cmd ns_limits_register] slow GET /*.pdf
+[cmd ns_limits_set] -maxrun 10 -maxwait 0 -- slow
+[cmd ns_limits_register] slow GET /download
+[cmd ns_limits_register] slow GET /*.pdf
 [example_end]
 
 
@@ -218,15 +218,15 @@ The following example proc can be used to log statistics on failed requests
 peridoically:
 
 [example_begin]
-    proc log_limits {} {
-        foreach limit [lb][cmd ns_limits_list][rb] {
-            array set l [lb][cmd ns_limits_get] $limit[rb]
-            ns_log notice "limit[lb]$limit[rb]: " \
-                "timeouts: $l(ntimeout) drops: $l(ndropped) overflows: $l(noverflow)"
-        }
+proc log_limits {} {
+    foreach limit [lb][cmd ns_limits_list][rb] {
+        array set l [lb][cmd ns_limits_get] $limit[rb]
+        ns_log notice "limit[lb]$limit[rb]: " \
+            "timeouts: $l(ntimeout) drops: $l(ndropped) overflows: $l(noverflow)"
     }
+}
 
-    ns_schedule_proc 3600 log_limits
+ns_schedule_proc 3600 log_limits
 [example_end]
 
 

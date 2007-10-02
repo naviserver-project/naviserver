@@ -39,13 +39,13 @@ identifier. The user agent will send the cookie data back to the server
 during subsequent requests for which the [arg domain] and [arg path] match,
 if it has not expired.
 
-[nl]
+[para]
 A cookie is identified by a signature which is made up of it's name, domain,
 path and secure flag. A cookie named [term foo] with path [term /x/y] is a
 different cookie than one named [term foo] with path [term /x/y/z]. During a
 request for the URL [term /x/y/z] both cookies named [term foo] are sent.
 
-[nl]
+[para]
 The [arg data] will be URL-encoded to escape special characters.
 [cmd ns_getcookie] correctly reverses the encoding.
 
@@ -57,12 +57,12 @@ Get the cookie data identified by [arg name]. If no such cookie exists then
 [arg default] is returned. If [arg default] is not given and no such cookie
 exists, an error is raised.
 
-[nl]
+[para]
 Only the first cookie identified by [arg name] is returned. If two cookies
 with the same name are sent by the user agent, each with a different [arg domain]
 and/or [arg path], which cookie data is returned depends on the user agent.
 
-[nl]
+[para]
 When using [arg domain] or [arg path] to restrict cookies, use a unique name for
 each restricted cookie.
 
@@ -85,7 +85,7 @@ for the cookie to be deleted.
 
 [section {OPTIONS}]
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def -secure [arg boolean]]
 If the secure option is true then the the cookie will only be sent back to the
@@ -113,7 +113,7 @@ longer send the cookie back to the server. If [arg time] is large it is treated
 as the absolute time in the future when the cookie should expire. The special
 value [emph -1] may be used to indicate that the cookie should never expire.
 
-[nl]
+[para]
 The expiry time is valid across browser sessions.  If no expiry is
 specified then the cookie will expire when the browser session ends,
 which is ususally when the user closes their browser.
@@ -127,12 +127,12 @@ which is ususally when the user closes their browser.
 Track all user agents which ever vist out site:
 
 [example_begin]
-    proc browser_tracking_filter {} {
-        if {![lb][cmd ns_getcookie] first_visit 0[rb]} {
-            [cmd ns_setcookie] -expires -1 -- first_visit [lb]clock seconds[rb]
-        }
+proc browser_tracking_filter {} {
+    if {![lb][cmd ns_getcookie] first_visit 0[rb]} {
+        [cmd ns_setcookie] -expires -1 -- first_visit [lb]clock seconds[rb]
     }
-    ns_register_filter preauth GET /* browser_tracking_filter
+}
+ns_register_filter preauth GET /* browser_tracking_filter
 [example_end]
 
 

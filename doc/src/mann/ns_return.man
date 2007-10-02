@@ -31,18 +31,18 @@ Return a complete response to the client consisting of the given [arg body]
 and a set of HTTP headers. [arg status] is an integer HTTP status code such as
 200 (OK) or 404 (Not Found).
 
-[nl]
+[para]
 [arg mime-type] is the mime-type of the body. If a [term charset] attribute
 is included in the mime-type it will be used to set the encoding of the
 connection. Otherwise, the connection encoding will be used to
 construct a charset attribute for the mime-type.
 
-[nl]
+[para]
 If [arg body] is Tcl byte-array object then no transcoding will take place.
 Otherwise, the [term encoding] in effect for the current connection will be
 used to encode the [arg body].
 
-[nl]
+[para]
 After the command completes the connection is returned to the driver thread
 to be closed or monitored for keep-alive and the calling connection thread
 continues to execute code.
@@ -59,7 +59,7 @@ using [arg status], [arg mime-type] and any pending headers set using
 [cmd "ns_conn outputheaders"]. The bytes of the file are not transformed in any
 way. 
 
-[nl]
+[para]
 After the command completes the connection is returned to the driver thread
 to be closed or monitored for keep-alive and the calling connection thread
 continues to execure code.
@@ -76,7 +76,7 @@ Return [arg length] bytes from [arg channel] as the response body. The current
 offset of the channel is the beginning of the body -- the offset will be left
 at [arg length] bytes. The bytes of the file are not transformed in any way.
 
-[nl]
+[para]
 After the command completes the connection is returned to the driver thread
 to be closed or monitored for keep-alive and the calling connection thread
 continues to execure code.
@@ -96,12 +96,12 @@ continues to execure code.
 Return a complete response to the client using exactly one of [option -string],
 [option -binary], [option -file] or [option -fileid] as the body.
 
-[nl]
+[para]
 After the command completes the connection is returned to the driver thread
 to be closed or monitored for keep-alive and the calling connection thread
 continues to execure code.
 
-[list_begin opt]
+[list_begin options]
 
 [opt_def -status [arg status]]
 The HTTP status code. Default [term 200].
