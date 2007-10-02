@@ -53,14 +53,17 @@ static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
  *
  * NsTclHeadersObjCmd --
  *
- *      Implements ns_headers. Queue default and pending response headers.
+ *      Implements ns_headers. Set the response status code, mime-type
+ *      header and optionaly the content-length. The headers will be
+ *      be written on the first write to the connection (if not suppressed).
  *
  * Results:
  *      Standard Tcl result.
  *      Interpreter result set to 0 (success) always.
  *
  * Side effects:
- *      See comments for details.
+ *      May change the connections output encoding/append charset to
+ *      given mime-type.
  *
  *----------------------------------------------------------------------
  */
@@ -71,49 +74,45 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp *itPtr = arg;
     Ns_Conn  *conn;
-    int       status, length = -2;
+    int       status, length = -1, binary = 0;
     char     *type = NULL;
 
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool,  &binary, (void *) NS_TRUE},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec args[] = {
         {"status",  Ns_ObjvInt,    &status, NULL},
         {"?type",   Ns_ObjvString, &type, NULL},
         {"?length", Ns_ObjvInt,    &length, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
             || GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
 
-    itPtr->nsconn.flags |= CONN_TCLHTTP;
     Ns_ConnSetResponseStatus(conn, status);
 
-    if (length > -2) {
-
-        /*
-         * If a length is specified then we expect the user to send binary
-         * data. The type header should not specify a charset, and we flush
-         * the headers now to disable chunking later in Ns_ConnWriteVData()
-         * which would otherwise alter the length.
-         *
-         * Length of -1 effectively removes the Content-Length header from
-         * output headers set allowing us to serve binary contents of
-         * initially unlnown sizes.
-         */
-
-        if (type != NULL) {
+    if (type != NULL) {
+        if (binary) {
             Ns_ConnSetTypeHeader(conn, type);
+        } else {
+            Ns_ConnSetEncodedTypeHeader(conn, type);
         }
-
-        Ns_ConnSetLengthHeader(conn, length);
-
-        if (Ns_ConnWriteData(conn, NULL, 0, 0) != NS_OK) {
-            return TCL_ERROR;
-        }
-
-    } else if (type != NULL) {
-        Ns_ConnSetEncodedTypeHeader(conn, type);
+    } else if (binary) {
+        conn->flags |= NS_CONN_WRITE_ENCODED;
     }
+
+    if (length > -1) {
+        Ns_ConnSetLengthHeader(conn, length);
+    }
+
+    /*
+     * Request HTTP headers from ns_write etc.
+     */
+    itPtr->nsconn.flags |= CONN_TCLHTTP;
 
     return Result(interp, NS_OK);
 }
@@ -126,6 +125,8 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  *      Implements ns_startcontent. Set the connection ready to send
  *      body data in an appropriate encoding.
+ *
+ *      Deprecated.
  *
  * Results:
  *      Standard Tcl result.
@@ -209,8 +210,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp     *itPtr = arg;
     Ns_Conn      *conn;
-    int           length, towrite, nwrote, i, n;
-    int           binary = 0;
+    int           length, i, n, flags, binary, status;
     struct iovec  iov[32];
     struct iovec *sbufs = iov;
 
@@ -226,7 +226,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     /*
      * On first write, check to see if headers were requested by ns_headers.
-     * Otherwise, supress them. User will ns_write the headers themselves
+     * Otherwise, supress them -- caller will ns_write the headers
      * or this is some other protocol.
      */
 
@@ -244,16 +244,19 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     /*
+     * If the -binary switch was given to ns_headers, treat all
+     * objects as binary data.
+     *
      * If any of the objects are binary, send them all as data without
      * encoding.
      *
      * NB: It's probably a mistake to pass in a mixture of binary and
-     * text objects.
+     * text objects...
      */
 
-    towrite = 0;
-    n = 0;
-    for (i = 0; i < objc; i++) {
+    binary = (conn->flags & NS_CONN_WRITE_ENCODED) ? 0 : 1;
+
+    for (i = 0, n = 0; i < objc; i++) {
         if (binary || (binary = NsTclObjIsByteArray(objv[i]))) {
             sbufs[n].iov_base = Tcl_GetByteArrayFromObj(objv[i], &length);
         } else {
@@ -261,20 +264,30 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         if (length > 0) {
             sbufs[n].iov_len = length;
-            towrite += length;
             n++;
         }
     }
+
+    /*
+     * Don't stream if the user has explicitly set the content-length,
+     * as chunking would alter this.
+     */
+
+    flags = 0;
+    if (Ns_ConnResponseLength(conn) < 0) {
+        flags |= NS_CONN_STREAM;
+    }
+
     if (binary) {
-        nwrote = Ns_ConnWriteVData(conn, sbufs, n, NS_CONN_STREAM);
+        status = Ns_ConnWriteVData(conn, sbufs, n, flags);
     } else {
-        nwrote = Ns_ConnWriteVChars(conn, sbufs, n, NS_CONN_STREAM);
+        status = Ns_ConnWriteVChars(conn, sbufs, n, flags);
     }
     if (sbufs != iov) {
         ns_free(sbufs);
     }
 
-    return Result(interp, (nwrote < towrite) ? NS_ERROR : NS_OK);
+    return Result(interp, status);
 }
 
 

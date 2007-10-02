@@ -1,3 +1,22 @@
+2007-10-02  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/connio.c:
+	* nsd/queue.c:
+	* nsd/return.c: Make sure we can tell the difference between an
+	unspecified content-length and an explicit zero length body, such as a
+	header flush. Shuffle the code around to try and make the relationship
+	between length, streaming, chunking, keep-alive etc. clearer.
+
+	* nsd/conn.c:
+	* nsd/tclresp.c: Re-add the -binary switch to ns_headers. Binary
+	streaming now possible.
+
+	* tests/tclresp.test: Updates for mime-type/charset issues.
+	* tests/tclconnio.test: Add tests for 'ns_conn chanel'.
+
+	* doc/src/mann/ns_write.man: Explain the -binary switch.
+
 2007-09-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/tclresp.c: [ns_headers] last optional length argument

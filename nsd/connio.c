@@ -291,6 +291,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
      */
 
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
+        conn->flags |= NS_CONN_SENTHDRS;
         if (ConstructHeaders(conn, bodyLength, flags, &ds)) {
             sbufPtr[sbufIdx].iov_base = Ns_DStringValue(&ds);
             sbufPtr[sbufIdx++].iov_len = Ns_DStringLength(&ds);
@@ -298,7 +299,6 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 
             towrite += Ns_DStringLength(&ds);
         }
-        conn->flags |= NS_CONN_SENTHDRS;
     }
 
     /*
@@ -1045,48 +1045,50 @@ ConstructHeaders(Ns_Conn *conn, size_t dataLength, int flags,
     int         headerLength;
     CONST char *keep;
 
-    if (!(conn->flags & NS_CONN_SKIPHDRS)) {
-
-        if (!(flags & NS_CONN_STREAM)) {
-            /*
-             * Trust a manually set responseLength.
-             */
-
-            headerLength = connPtr->responseLength
-                ? connPtr->responseLength : dataLength;
-        } else {
-            /*
-             * Sending the first stream of data.
-             */
-
-            headerLength = -1;
-            conn->flags |= NS_CONN_STREAM;
-
-            if (conn->request->version > 1.0) {
-                conn->flags |= NS_CONN_CHUNK;
-            }
-        }
-
-        Ns_ConnSetLengthHeader(conn, headerLength);
-
-        if (conn->flags & NS_CONN_CHUNK) {
-            Ns_ConnSetHeaders(conn, "Transfer-Encoding", "chunked");
-        }
-
-        if (CheckKeep(connPtr)) {
-            keep = "keep-alive";
-            connPtr->keep = 1;
-        } else {
-            keep = "close";
-        }
-        Ns_ConnSetHeaders(conn, "Connection", keep);
-
-        Ns_ConnConstructHeaders(conn, dsPtr);
-
-        return 1;
+    if (conn->flags & NS_CONN_SKIPHDRS) {
+        return 0;
     }
 
-    return 0;
+    /*
+     * Check for streaming vs. non-streaming.
+     */
+
+    headerLength = -1;
+
+    if (flags & NS_CONN_STREAM) {
+        if (conn->request->version > 1.0 && connPtr->keep != 0) {
+            conn->flags |= NS_CONN_CHUNK;
+        }
+        conn->flags |= NS_CONN_STREAM;
+    } else {
+        if (connPtr->responseLength > -1) {
+            headerLength = connPtr->responseLength;
+        } else if (dataLength > 0) {
+            headerLength = dataLength;
+        }
+    }
+
+    /*
+     * Set and construct the headers.
+     */
+
+    Ns_ConnSetLengthHeader(conn, headerLength);
+
+    if (conn->flags & NS_CONN_CHUNK) {
+        Ns_ConnSetHeaders(conn, "Transfer-Encoding", "chunked");
+    }
+
+    if (CheckKeep(connPtr)) {
+        keep = "keep-alive";
+        connPtr->keep = 1;
+    } else {
+        keep = "close";
+    }
+    Ns_ConnSetHeaders(conn, "Connection", keep);
+
+    Ns_ConnConstructHeaders(conn, dsPtr);
+
+    return 1;
 }
 
 

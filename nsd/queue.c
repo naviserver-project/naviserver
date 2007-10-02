@@ -677,7 +677,7 @@ ConnRun(Conn *connPtr)
     connPtr->nContentSent = 0;
     connPtr->responseStatus = 200;
     connPtr->responseVersion = 0;
-    connPtr->responseLength = 0;
+    connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
     connPtr->recursionCount = 0;
     connPtr->auth = NULL;
     connPtr->keep = -1;          /* Default keep-alive rules apply */

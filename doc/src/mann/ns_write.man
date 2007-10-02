@@ -7,8 +7,8 @@
 
 [description]
 
-These commands are used to manually construct a complete HTTP response, or some
-other non-HTTP response type, to the client.
+These commands are used to manually construct and send a complete HTTP
+response, or some other non-HTTP response type, to the client.
 
 
 
@@ -18,16 +18,24 @@ other non-HTTP response type, to the client.
 
 
 [call [cmd ns_headers] \
+     [opt [option -binary]] \
+     [opt --] \
      [arg status] \
      [opt [arg mime-type]] ]
 
 Set the HTTP response [arg status] code and [arg mime-type] header for the data
-which is to be sent. The headers, including any extra headers set using the 
-[cmd "ns_conn outputheaders"] command, may not be flushed to the client until the
+which is to be sent. The headers, including any extra headers set via the 
+[cmd "ns_conn"] outputheaders command, may not be flushed to the client until the
 first body data is written.
 
-[nl]
-Returns 1 if a header flush failed, 0 otherwise.
+[para]
+The [option -binary] switch indicates that binary data is to be written, in
+which case the [arg mime-type] will be sent as given. Without this switch the
+[arg mime-type] will have the [term charset] for the current connection's
+encoding appended.
+
+[para]
+Returns 0.
 
 
 
@@ -38,23 +46,24 @@ Returns 1 if a header flush failed, 0 otherwise.
 Write all [arg data] directly to the client. No HTTP headers are sent unless
 [cmd ns_headers] has been called.
 
-[nl]
-If [arg data] is Tcl byte-array object then no transcoding will take place.
-Otherwise, the [term encoding] in effect for the current connection will be
-used to encode the [arg data].
+[para]
+If [arg data] is a Tcl byte-array object or the [option -binary] option was
+given to [cmd ns_headers] then no transcoding will take place. Otherwise, the
+[term encoding] in effect for the current connection will be used to encode
+[arg data].
 
-[nl]
+[para]
 If an HTTP response is being constructed ([cmd ns_headers] has been called) and
 the client supports it, HTTP chunking will be used to stream [arg data] on each
-call to [cmd ns_write]. If the client does not support HTTP chunking connection
+call to [cmd ns_write]. If the client does not support HTTP chunking, connection
 keep-alive is disabled. Prefer to send a complete response using e.g.
 [cmd ns_return] if possible.
 
-[nl]
+[para]
 [cmd ns_write] returns [term true] if all the data was written successfully and
-[term false] otherwise. On failure, no more data should be written.
+[term false] otherwise. On failure, no more writes should be attempted.
 
-[nl]
+[para]
 After the command completes the connection remains open and available in
 the calling connection thread.
 
@@ -67,11 +76,11 @@ the calling connection thread.
 Send [arg length] bytes from [arg channel] directly to the client. No headers
 are sent unless [cmd ns_headers] has been called. No character encoding is done.
 
-[nl]
+[para]
 An error is raised if all of [arg length] bytes could not be sent or if the
 [arg channel] is invalid.
 
-[nl]
+[para]
 After the command completes the connection remains open and available in
 the calling connection thread.
 
@@ -99,7 +108,21 @@ ns_register_proc GET /long-running-process {
 
 
 
-[see_also ns_return]
-[keywords return response status charset encoding ns_conn]
+Sending binary data.
+
+[example_begin]
+ns_register_proc GET /blobs {
+    ...
+    [cmd ns_headers] -binary -- 200 application/x-whateva
+    [cmd ns_write] $blob1 $blob2
+    ...
+    [cmd ns_write] $blob3
+}
+[example_end]
+
+
+
+[see_also ns_return ns_conn]
+[keywords return response status charset encoding]
 
 [manpage_end]

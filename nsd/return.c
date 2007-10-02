@@ -299,6 +299,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *type)
     }
 
     Ns_ConnSetTypeHeader(conn, type);
+    conn->flags |= NS_CONN_WRITE_ENCODED;
 
     Ns_DStringFree(&ds);
 }

@@ -17,7 +17,7 @@ if {[ns_config test listenport]} {
 
 test tclresp-1.1.1 {basic syntax} -body {
     ns_headers
-} -returnCodes error -result {wrong # args: should be "ns_headers status ?type? ?length?"}
+} -returnCodes error -result {wrong # args: should be "ns_headers ?-binary? ?--? status ?type? ?length?"}
 
 test tclresp-1.1.2 {basic syntax} -body {
     ns_headers 200
@@ -129,72 +129,98 @@ test tclresp-1.14.2 {basic syntax} -body {
 
 
 
+#
+# The following tests various combinations of
+# ns_headers and ns_write for:
+#
+#   HTTP / raw
+#   HTTP 1.0 / 1.1
+#   keep-alive / close
+#   length / no-length
+#   text / binary
+#
+# etc...
+#
+
 test tclresp-2.1 {ns_headers, status, http/1.0} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
-		ns_headers 999
-		ns_write x
-	}
+        ns_headers 999
+        ns_write x
+    }
 } -body {
     nstest_http -http 1.0 -setheaders {Connection keep-alive} \
-		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
-		GET /tclresp
+        -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+        GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
 } -result {999 {} close {} {} x}
 
 test tclresp-2.2 {ns_headers, status, type, http/1.0} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
-		ns_headers 200 text/plain
-		ns_write x
-	}
+        ns_headers 200 text/plain
+        ns_write x
+    }
 } -body {
     nstest_http -http 1.0 -setheaders {Connection keep-alive} \
-		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
-		GET /tclresp
+        -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+        GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 {text/plain; charset=iso-8859-1} close {} {} x}
+} -match glob -result {200 {text/plain; charset=*} close {} {} x}
 
-test tclresp-2.3 {ns_headers, status, type, length, http/1.0} -constraints serverListen -setup {
+test tclresp-2.3 {ns_headers, status, type, length, http/1.0 keep-alive} -setup {
     ns_register_proc GET /tclresp {
-		ns_headers 200 text/plain 9
-		ns_write abcdefghi
-	}
+        ns_headers 200 text/plain 9
+        ns_write abcdefghi
+    }
 } -body {
     nstest_http -http 1.0 -setheaders {Connection keep-alive} \
-		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
-		GET /tclresp
+        -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+        GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain keep-alive {} 9 abcdefghi}
+} -match glob -result {200 {text/plain; charset=*} keep-alive {} 9 abcdefghi}
 
-test tclresp-2.4 {ns_headers, status, type, length, http/1.1} -constraints serverListen -setup {
+test tclresp-2.3.1 {ns_headers, status, type, length, http/1.0 close} -setup {
     ns_register_proc GET /tclresp {
-		ns_headers 200 text/plain 9
-		ns_write abcde
-		ns_write fghi
-	}
+        ns_headers 200 text/plain 9
+        ns_write abcdefghi
+    }
+} -body {
+    nstest_http -http 1.0 -getbody 1 \
+        -getheaders {content-type connection transfer-encoding content-length} \
+        GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -match glob -result {200 {text/plain; charset=*} close {} 9 abcdefghi}
+
+test tclresp-2.4 {ns_headers, status, type, length, http/1.1} -setup {
+    ns_register_proc GET /tclresp {
+        ns_headers 200 text/plain 9
+        ns_write abcde
+        ns_write fghi
+    }
 } -body {
     nstest_http -http 1.1 -setheaders {Connection keep-alive} \
-		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
-		GET /tclresp
+        -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+        GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 text/plain keep-alive {} 9 abcdefghi}
+} -match glob -result {200 {text/plain; charset=*} keep-alive {} 9 abcdefghi}
 
 test tclresp-2.5 {ns_headers, status, type, http/1.1} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
-		ns_headers 200 text/plain
-		ns_write abcde
-		ns_write fghi
-	}
+        ns_headers 200 text/plain
+        ns_write abcde
+        ns_write fghi
+    }
 } -body {
     nstest_http -http 1.1 -setheaders {Connection keep-alive} \
-		-getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
-		GET /tclresp
+        -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
+        GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
-} -result {200 {text/plain; charset=iso-8859-1} keep-alive chunked {} {5
+} -match glob -result {200 {text/plain; charset=*} keep-alive chunked {} {5
 abcde
 4
 fghi
@@ -411,7 +437,7 @@ test tclresp-11.1 {ns_returnredirect} -constraints serverListen -setup {
 
 
 
-test tclresp-12.1 {ns_write} -constraints serverListen -setup {
+test tclresp-12.1 {ns_write} -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200
         ns_write x
@@ -422,7 +448,7 @@ test tclresp-12.1 {ns_write} -constraints serverListen -setup {
     ns_unregister_proc GET /tclresp
 } -result {200 x}
 
-test tclresp-12.2 {ns_write multiple buffers, encoded} -constraints serverListen -setup {
+test tclresp-12.2 {ns_write multiple buffers, encoded} -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200
         ns_write x x x
@@ -433,7 +459,7 @@ test tclresp-12.2 {ns_write multiple buffers, encoded} -constraints serverListen
     ns_unregister_proc GET /tclresp
 } -result {200 xxx}
 
-test tclresp-12.3 {ns_write multiple buffers, binary} -constraints serverListen -setup {
+test tclresp-12.3 {ns_write multiple binary buffers} -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200
         ns_write [binary format a x] [binary format a x] [binary format a x]
@@ -443,6 +469,22 @@ test tclresp-12.3 {ns_write multiple buffers, binary} -constraints serverListen 
 } -cleanup {
     ns_unregister_proc GET /tclresp
 } -result {200 xxx}
+
+test tclresp-12.3.1 {
+    ns_write stream binary buffers, supress chunking w/specific length
+} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+        ns_headers -binary 200 foo/bar 3
+        ns_write [binary format a x]
+        ns_write [binary format a x]
+        ns_write [binary format a x]
+    }
+} -body {
+    nstest_http -http 1.1 -getbody 1 -getheaders {Content-Length Content-Type} \
+        GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -result {200 3 foo/bar xxx}
 
 test tclresp-12.4 {
     ns_write many buffers (more than OS limit of UIO_MAXIOV)
@@ -484,9 +526,9 @@ test tclresp-13.1 {ns_write without headers} -setup {
 
 test tclresp-13.2 {ns_write w/ manual headers} -setup {
     ns_register_proc GET /tclresp {
-		ns_write "HTTP/1.0 200 OK\r\nContent-Length: 1\r\n\r\n"
-		ns_write x
-	}
+        ns_write "HTTP/1.0 200 OK\r\nContent-Length: 1\r\n\r\n"
+        ns_write x
+    }
 } -body {
     nstest_http -getbody 1 -getheaders {Content-Length} GET /tclresp
 } -cleanup {
@@ -495,26 +537,16 @@ test tclresp-13.2 {ns_write w/ manual headers} -setup {
 
 test tclresp-13.3 {ns_startcontent w/ manual headers} -setup {
     ns_register_proc GET /tclresp {
-		ns_write "HTTP/1.0 200 OK\r\nContent-Length: 1\r\n\r\n"
-		ns_startcontent
-		ns_write x
-	}
+        ns_write "HTTP/1.0 200 OK\r\nContent-Length: 1\r\n\r\n"
+        ns_startcontent
+        ns_write x
+    }
 } -body {
     nstest_http -getbody 1 -getheaders {Content-Length} GET /tclresp
 } -cleanup {
     ns_unregister_proc GET /tclresp
 } -result {200 1 x}
 
-
-
-
-test tclresp-14.1 {ns_connsendfp} -constraints serverListen -setup {
-    ns_register_proc GET /tclresp {ns_connsendfp [open [ns_pagepath 10bytes]] 5 ;#}
-} -body {
-    nstest_http -getbody 1 GET /tclresp
-} -cleanup {
-    ns_unregister_proc GET /tclresp
-} -result 01234
 
 
 

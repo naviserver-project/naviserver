@@ -66,7 +66,7 @@
 #define NS_CONN_SKIPBODY           0x004 /* HTTP HEAD request, do not send body */
 #define NS_CONN_READHDRS           0x008 /* Unused */
 #define NS_CONN_SENTHDRS           0x010 /* Response headers have been sent to client */
-#define NS_CONN_WRITE_ENCODED      0x020 /* Unused */
+#define NS_CONN_WRITE_ENCODED      0x020 /* Character data mode requested mime-type header. */
 #define NS_CONN_STREAM             0x040 /* Data is to be streamed when ready.  */
 #define NS_CONN_CHUNK              0x080 /* Streamed data is to be chunked. */
 

@@ -41,7 +41,7 @@ NS_RCSID("@(#) $Header$");
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
 static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv,
                       int *offPtr, int *lenPtr);
-static Tcl_Channel MakeConnChannel(Ns_Conn *conn, int spliceout);
+static Tcl_Channel MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn);
 
 /*
  *----------------------------------------------------------------------
@@ -1403,7 +1403,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CChannelIdx:
-        chan = MakeConnChannel(conn, 1);
+        chan = MakeConnChannel(itPtr, conn);
         if (chan == NULL) {
             Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
             return TCL_ERROR;
@@ -1648,8 +1648,10 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr,
 
     return TCL_OK;
 }
+
 
 /*----------------------------------------------------------------------------
+ *
  * MakeConnChannel --
  *
  *      Wraps a Tcl channel arround the current connection socket
@@ -1664,44 +1666,48 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr,
  *
  *----------------------------------------------------------------------------
  */
+
 static Tcl_Channel
-MakeConnChannel(Ns_Conn *conn, int spliceout)
+MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
 {
+    Conn       *connPtr = (Conn *) conn;
     Tcl_Channel chan;
     int         sock;
-    Conn       *connPtr = (Conn *) conn;
 
-    /*
-     * Assures the socket is flushed
-     */
-
-    Ns_ConnWriteData(conn, NULL, 0, 0);
-
-    if (spliceout) {
-        sock = connPtr->sockPtr->sock;
-        connPtr->sockPtr->sock = INVALID_SOCKET;
-    } else {
-        sock = ns_sockdup(connPtr->sockPtr->sock);
-    }
-
-    if (sock == INVALID_SOCKET) {
+    if (connPtr->flags & NS_CONN_CLOSED) {
+        Tcl_SetResult(itPtr->interp, "connection closed", TCL_STATIC);
         return NULL;
     }
 
     /*
-     * At this point we may also set some other
-     * chan config options (binary,encoding, etc)
+     * Dissable keep-alive and chunking headers.
      */
 
-    Ns_SockSetBlocking(sock);
+    if (connPtr->responseLength < 0) {
+        connPtr->keep = 0;
+    }
 
     /*
-     * Wrap a Tcl TCP channel arround the socket.
+     * Check to see if HTTP headers are required and flush
+     * them now before the conn socket is dissociated.
      */
 
+    if (!(conn->flags & NS_CONN_SENTHDRS)) {
+        if (!(itPtr->nsconn.flags & CONN_TCLHTTP)) {
+            conn->flags |= NS_CONN_SKIPHDRS;
+        } else {
+            Ns_ConnWriteData(conn, NULL, 0, 0);
+        }
+    }
+
+    sock = connPtr->sockPtr->sock;
+    connPtr->sockPtr->sock = INVALID_SOCKET;
+
     chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
-    if (chan == NULL && spliceout) {
+    if (chan == NULL) {
         connPtr->sockPtr->sock = sock;
+    } else {
+        Ns_SockSetBlocking(sock);
     }
 
     return chan;
