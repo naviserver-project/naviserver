@@ -1,3 +1,13 @@
+2007-10-04  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/ns.h:
+	* nsd/conn.c:
+	* nsd/connio.c:
+	* nsd/nsd.h:
+	* nsd/queue.c:
+	* nsd/return.c: Make file support over 2Gb working again, convert all response and content 
+	length variables into Tcl_WideInt
+
 2007-10-02  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

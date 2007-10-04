@@ -58,7 +58,7 @@ static int ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
 static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
                     FILE *fp, int fd);
 
-static int ConstructHeaders(Ns_Conn *conn, size_t length, int flags,
+static int ConstructHeaders(Ns_Conn *conn, Tcl_WideInt length, int flags,
                             Ns_DString *dsPtr);
 static int CheckKeep(Conn *connPtr);
 static int HdrEq(Ns_Set *set, char *name, char *value);
@@ -514,7 +514,8 @@ int
 Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, int towrite)
 {
     Conn *connPtr = (Conn *) conn;
-    int   n, status;
+    Tcl_WideInt n;
+    int   status;
 
     n = connPtr->nContentSent;
     status = Ns_ConnWriteData(conn, buf, towrite, 0);
@@ -1038,11 +1039,11 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
  */
 
 static int
-ConstructHeaders(Ns_Conn *conn, size_t dataLength, int flags,
+ConstructHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
                  Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
-    int         headerLength;
+    Tcl_WideInt headerLength;
     CONST char *keep;
 
     if (conn->flags & NS_CONN_SKIPHDRS) {
@@ -1084,8 +1085,8 @@ ConstructHeaders(Ns_Conn *conn, size_t dataLength, int flags,
     } else {
         keep = "close";
     }
-    Ns_ConnSetHeaders(conn, "Connection", keep);
 
+    Ns_ConnSetHeaders(conn, "Connection", keep);
     Ns_ConnConstructHeaders(conn, dsPtr);
 
     return 1;

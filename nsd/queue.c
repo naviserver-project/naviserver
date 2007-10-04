@@ -894,7 +894,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
         Ns_DiffTime(&now, &connPtr->startTime, &diff);
         snprintf(buf, sizeof(buf), "%jd.%ld", (intmax_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
-        snprintf(buf, sizeof(buf), "%d", connPtr->nContentSent);
+        snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", connPtr->nContentSent);
         Tcl_DStringAppendElement(dsPtr, buf);
     }
     Tcl_DStringEndSublist(dsPtr);

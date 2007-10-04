@@ -338,7 +338,7 @@ Ns_ConnSetResponseVersion(Ns_Conn *conn, char *new_version)
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 Ns_ConnContentSent(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -363,7 +363,7 @@ Ns_ConnContentSent(Ns_Conn *conn)
  */
 
 void
-Ns_ConnSetContentSent(Ns_Conn *conn, int length)
+Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length)
 {
     Conn *connPtr = (Conn *) conn;
 
@@ -1414,9 +1414,9 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     case CContentSentLenIdx:
         if (objc == 2) {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->nContentSent));
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(connPtr->nContentSent));
         } else if (objc == 3) {
-            if (Tcl_GetIntFromObj(interp, objv[2], &connPtr->nContentSent)
+            if (Tcl_GetWideIntFromObj(interp, objv[2], &connPtr->nContentSent)
                 != TCL_OK) {
                 return TCL_ERROR;
             }

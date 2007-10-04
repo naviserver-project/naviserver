@@ -899,8 +899,8 @@ NS_EXTERN int Ns_ConnResponseStatus(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status);
 NS_EXTERN char *Ns_ConnResponseVersion(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetResponseVersion(Ns_Conn *conn, char *new_version);
-NS_EXTERN int Ns_ConnContentSent(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetContentSent(Ns_Conn *conn, int length);
+NS_EXTERN Tcl_WideInt Ns_ConnContentSent(Ns_Conn *conn);
+NS_EXTERN void Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length);
 NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr);
@@ -1728,7 +1728,7 @@ NS_EXTERN void
 Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
-NS_EXTERN int
+NS_EXTERN Tcl_WideInt
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 

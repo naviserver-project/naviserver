@@ -538,7 +538,7 @@ Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
     Ns_ConnSetResponseStatus(conn, status);
 }
 
-int
+Tcl_WideInt
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
     Conn *connPtr = (Conn *) conn;
