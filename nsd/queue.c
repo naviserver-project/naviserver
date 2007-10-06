@@ -180,9 +180,10 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
      */
 
     if (sockPtr->reqPtr != NULL) {
-        poolPtr = Ns_UrlSpecificGet(servPtr->server,
-                                    sockPtr->reqPtr->request->method,
-                                    sockPtr->reqPtr->request->url, poolid);
+        poolPtr = NsUrlSpecificGet(servPtr,
+                                   sockPtr->reqPtr->request->method,
+                                   sockPtr->reqPtr->request->url,
+                                   poolid, 0);
     }
     if (poolPtr == NULL) {
         poolPtr = servPtr->pools.defaultPtr;

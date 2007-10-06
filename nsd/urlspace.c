@@ -28,14 +28,104 @@
  */
 
 
-/* 
+/*
  * urlspace.c --
  *
  *      This file implements a Trie data structure. It is used
  *      for "UrlSpecificData"; for example, when one registers
  *      a handler for all GET /foo/bar/ *.html requests, the data
  *      structure that holds that information is implemented herein.
- *      For full details see the file doc/urlspace.txt.
+ *
+ */
+
+/*
+ * There are four basic data structures used in maintaining the urlspace
+ * trie. They are:
+ *
+ * 1. Junction
+ *    A junction is nothing more than a list of channels.
+ * 2. Channel
+ *    A channel points to a branch which ultimately leads to nodes
+ *    that match a particular "filter", such as "*.html". The filter
+ *    is the last section of a URL mask, and is the only part of
+ *    the mask that may contain wildcards.
+ * 3. Branch
+ *    A branch represents one part of a URL, such as a method or directory
+ *    component. It has a list of branches representing sub-URLs and a
+ *    pointer to a Node, if data was registered for this specific branch.
+ * 4. Node
+ *    A node stores URL-specific data, as well as a pointer to the
+ *    cleanup function. 
+ *
+ * Another data structure, called an Index, which is manipulated by the
+ * Ns_Index API calls, is used by the urlspace code. An Index is an
+ * ordered list of pointers. The order is determined by callback
+ * functions. See index.c for the scoop on that.
+ *
+ * Here is what the urlspace data structure would look like after
+ * calling:
+ *
+ *
+ * myId = Ns_UrlSpecificAlloc();
+ *
+ * Ns_UrlSpecificSet("server1", "GET", "/foo/bar/\*.html", myID, myData,
+ *                   0, MyDeleteProc);
+ *
+ *
+ *
+ *  NsServer->urlspace: Junction[] [*][ ][ ][ ][ ]
+ *                                  |
+ *    +-----------------------------+
+ *    |
+ *    V
+ *  Junction
+ *    byname: Ns_Index [*][ ][ ][ ][ ]
+ *                      |
+ *    +-----------------+
+ *    |
+ *    V
+ *  Channel
+ *    filter: char* "*.html"
+ *    trie:   Trie
+ *              node:      Node*     (NULL)
+ *              branches:  Ns_Index  [*][ ][ ][ ][ ]
+ *                                    |
+ *    +-------------------------------+
+ *    |
+ *    V
+ *  Branch
+ *    word: char* "GET"
+ *    trie: Trie
+ *            node:      Node*       (NULL)
+ *            branches:  Ns_Index    [*][ ][ ][ ][ ]
+ *                                    |
+ *    +-------------------------------+
+ *    |
+ *    V
+ *  Branch
+ *    word: char* "foo"
+ *    trie: Trie
+ *            node:      Node*       (NULL)
+ *            branches:  Ns_Index    [*][ ][ ][ ][ ]
+ *                                    |
+ *    +-------------------------------+
+ *    |
+ *    V
+ *  Branch
+ *    word: char* "bar"
+ *    trie: Trie
+ *            node:      Node*       -----------------+
+ *            branches:  Ns_Index    [ ][ ][ ][ ][ ]  |
+ *                                                    |
+ *    +-----------------------------------------------+
+ *    |
+ *    V
+ *  Node
+ *    dataInherit:         void*             myData
+ *    dataNoInherit:       void*             (NULL)
+ *    deletefuncInherit:   void (*)(void*)   MyDeleteProc
+ *    deletefuncNoInherit: void (*)(void*)   (NULL)
+ *
  */
 
 #include "nsd.h"
@@ -44,7 +134,7 @@ NS_RCSID("@(#) $Header$");
 
 
 #define STACK_SIZE      512 /* Max depth of URL hierarchy. */
-#define MAX_URLSPACES   16
+
 
 /*
  * This optimization, when turned on, prevents the server from doing a
@@ -90,7 +180,7 @@ typedef struct {
 
 typedef struct {
     char  *word;
-    Trie   node;
+    Trie   trie;
 } Branch;
 
 /*
@@ -113,7 +203,7 @@ typedef struct {
  * There is one junction for each urlspecific ID.
  */
 
-typedef struct {
+typedef struct Junction {
     Ns_Index byname;
     /* 
      * We've experimented with getting rid of this index because
@@ -139,9 +229,8 @@ static int   CmpKeyWithBranch(CONST char *key, Branch **branchPtrPtr);
  * Utility functions
  */
 
-static void MkSeq(Ns_DString *dsPtr, CONST char *server, CONST char *method,
-                  CONST char *url);
-static void WalkTrie(Trie *triePtr, CONST char *server, Ns_ArgProc func,
+static void MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url);
+static void WalkTrie(Trie *triePtr, Ns_ArgProc func,
                      Ns_DString *dsPtr, char **stack, CONST char *filter);
 #ifdef DEBUG
 static void PrintSeq(CONST char *seq);
@@ -177,7 +266,7 @@ static int CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr);
  * Juntion functions
  */
 
-static void JunctionInit(Junction *juncPtr);
+static Junction *JunctionGet(NsServer *servPtr, int id);
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
                         int flags, void (*deletefunc)(void *));
 static void *JunctionFind(Junction *juncPtr, char *seq, int fast);
@@ -190,7 +279,7 @@ static void JunctionTruncBranch(Junction *juncPtr, char *seq);
  * Static variables defined in this file
  */
 
-static Junction urlspace[MAX_URLSPACES]; /* Junctions keyed by ID. */
+/* static Junction urlspace[MAX_URLSPACES]; /\* Junctions keyed by ID. *\/ */
 
 
 /*
@@ -215,8 +304,10 @@ Ns_UrlSpecificAlloc(void)
     static int nextid = 0;
     int        id;
 
-    id = nextid++;
-    JunctionInit(&urlspace[id]);
+    if ((id = nextid++) >= MAX_URLSPACES) {
+        Ns_Fatal("Ns_UrlSpecificAlloc: NS_MAXURLSPACE exceeded: %d",
+                 MAX_URLSPACES);
+    }
 
     return id;
 }
@@ -245,11 +336,14 @@ void
 Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
                   void *data, int flags, void (*deletefunc) (void *))
 {
-    Ns_DString ds;
+    NsServer   *servPtr = NsGetServer(server);
+    Ns_DString  ds;
+
+    assert(servPtr != NULL);
 
     Ns_DStringInit(&ds);
-    MkSeq(&ds, server, method, url);
-    JunctionAdd(&urlspace[id], ds.string, data, flags, deletefunc);
+    MkSeq(&ds, method, url);
+    JunctionAdd(JunctionGet(servPtr, id), ds.string, data, flags, deletefunc);
     Ns_DStringFree(&ds);
 }
 
@@ -257,10 +351,12 @@ Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int i
 /*
  *----------------------------------------------------------------------
  *
- * Ns_UrlSpecificGet --
+ * Ns_UrlSpecificGet, Ns_UrlSpecificGetFast --
  *
  *      Find URL-specific data in the subspace identified by id that
  *      the passed-in URL matches.
+ *
+ *      Ns_UrlSpecificGetFast does not support wild cards.
  *
  * Results:
  *      A pointer to user data, set with Ns_UrlSpecificSet.
@@ -272,50 +368,29 @@ Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int i
  */
 
 void *
-Ns_UrlSpecificGet(CONST char *server, CONST char *method, CONST char *url,
-                  int id)
+Ns_UrlSpecificGet(CONST char *server, CONST char *method, CONST char *url, int id)
 {
-    Ns_DString  ds;
-    void       *data;
-
-    Ns_DStringInit(&ds);
-    MkSeq(&ds, server, method, url);
-    data = JunctionFind(&urlspace[id], ds.string, 0);
-    Ns_DStringFree(&ds);
-
-    return data;
+    return NsUrlSpecificGet(NsGetServer(server), method, url, id, 0);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_UrlSpecificGetFast --
- *
- *      Similar to Ns_UrlSpecificGet, but doesn't support wildcards; 
- *      on the other hand, it's a lot faster. 
- *
- * Results:
- *      See Ns_UrlSpecificGet 
- *
- * Side effects:
- *      None 
- *
- *----------------------------------------------------------------------
- */
+void *
+Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url, int id)
+{
+    return NsUrlSpecificGet(NsGetServer(server), method, url, id, 1);
+}
 
 void *
-Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url,
-                      int id)
+NsUrlSpecificGet(NsServer *servPtr, CONST char *method, CONST char *url, int id,
+                 int fast)
 {
     Ns_DString  ds;
     void       *data;
 
     Ns_DStringInit(&ds);
-    MkSeq(&ds, server, method, url);
-    data = JunctionFind(&urlspace[id], ds.string, 1);
+    MkSeq(&ds, method, url);
+    data = JunctionFind(JunctionGet(servPtr, id), ds.string, fast);
     Ns_DStringFree(&ds);
-    
+
     return data;
 }
 
@@ -341,14 +416,15 @@ void *
 Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
                        int id, int flags)
 {
+    NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
     void       *data;
 
     Ns_DStringInit(&ds);
-    MkSeq(&ds, server, method, url);
-    data = JunctionFindExact(&urlspace[id], ds.string, flags, 0);
+    MkSeq(&ds, method, url);
+    data = JunctionFindExact(JunctionGet(servPtr, id), ds.string, flags, 0);
     Ns_DStringFree(&ds);
-    
+
     return data;
 }
 
@@ -374,22 +450,22 @@ void *
 Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
                       int id, int flags)
 {
+    NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
     void       *data = NULL;
 
     Ns_DStringInit(&ds);
-    MkSeq(&ds, server, method, url);
+    MkSeq(&ds, method, url);
     if (flags & NS_OP_RECURSE) {
-        JunctionTruncBranch(&urlspace[id], ds.string);
+        JunctionTruncBranch(JunctionGet(servPtr, id), ds.string);
         data = NULL;
     } else {
-        data = JunctionDeleteNode(&urlspace[id], ds.string, flags);
+        data = JunctionDeleteNode(JunctionGet(servPtr, id), ds.string, flags);
     }
     Ns_DStringFree(&ds);
 
     return data;
 }
-
 
 
 /*
@@ -411,12 +487,14 @@ Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
 void
 NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
 {
-    Junction *juncPtr = &urlspace[id];
+    Junction *juncPtr;
     Channel  *channelPtr;
     int       n, i;
     char     *stack[STACK_SIZE];
 
+    juncPtr = JunctionGet(NsGetServer(server), id);
     memset(stack, 0, sizeof(stack));
+
 #ifndef __URLSPACE_OPTIMIZE__
     n = Ns_IndexCount(&juncPtr->byuse);
     for (i = 0; i < n; i++) {
@@ -426,12 +504,12 @@ NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPt
     for (i = (n - 1); i >= 0; i--) {
         channelPtr = Ns_IndexEl(&juncPtr->byname, i);
 #endif
-        WalkTrie(&channelPtr->trie, server, func, dsPtr, stack, channelPtr->filter);
+        WalkTrie(&channelPtr->trie, func, dsPtr, stack, channelPtr->filter);
     }
 }
     
 static void
-WalkTrie(Trie *triePtr, CONST char *server, Ns_ArgProc func,
+WalkTrie(Trie *triePtr, Ns_ArgProc func,
          Ns_DString *dsPtr, char **stack, CONST char *filter)
 {
     Branch      *branchPtr;
@@ -451,7 +529,7 @@ WalkTrie(Trie *triePtr, CONST char *server, Ns_ArgProc func,
             depth++;
         }
         stack[depth] = branchPtr->word;
-        WalkTrie(&branchPtr->node, server, func, dsPtr, stack, filter);
+        WalkTrie(&branchPtr->trie, func, dsPtr, stack, filter);
 
         /*
          * Restore stack position
@@ -461,16 +539,16 @@ WalkTrie(Trie *triePtr, CONST char *server, Ns_ArgProc func,
     }
 
     nodePtr = triePtr->node;
-    if (nodePtr != NULL && STREQ(server, stack[0])) {
+    if (nodePtr != NULL) {
 
         Tcl_DStringInit(&subDs);
 
         /*
          * Put stack contents into the sublist.
-         * Element 0 is server, 1 is method, the rest is url
+         * Element 0 is method, the rest is url
          */
 
-        depth = 1;
+        depth = 0;
         Tcl_DStringAppendElement(&subDs, stack[depth++]);
         Tcl_DStringAppend(&subDs, " ", 1);
         if (stack[depth] == NULL) {
@@ -604,7 +682,7 @@ static void
 BranchDestroy(Branch *branchPtr)
 {
     ns_free(branchPtr->word);
-    TrieDestroy(&branchPtr->node);
+    TrieDestroy(&branchPtr->trie);
     ns_free(branchPtr);
 }
 
@@ -680,11 +758,11 @@ TrieAdd(Trie *triePtr, char *seq, void *data, int flags,
         if (branchPtr == NULL) {
             branchPtr = ns_malloc(sizeof(Branch));
             branchPtr->word = ns_strdup(seq);
-            TrieInit(&branchPtr->node);
+            TrieInit(&branchPtr->trie);
 
             Ns_IndexAdd(&triePtr->branches, branchPtr);
         }
-        TrieAdd(&branchPtr->node, seq + strlen(seq) + 1, data, flags,
+        TrieAdd(&branchPtr->trie, seq + strlen(seq) + 1, data, flags,
                 deletefunc);
 
     } else {
@@ -763,7 +841,7 @@ TrieTrunc(Trie *triePtr)
 
         for (i = 0; i < n; i++) {
             branchPtr = Ns_IndexEl(&triePtr->branches, i);
-            TrieTrunc(&branchPtr->node);
+            TrieTrunc(&branchPtr->trie);
         }
     }
     if (triePtr->node != NULL) {
@@ -803,7 +881,7 @@ TrieTruncBranch(Trie *triePtr, char *seq)
          */
 
         if (branchPtr != NULL) {
-            return TrieTruncBranch(&branchPtr->node, seq + strlen(seq) + 1);
+            return TrieTruncBranch(&branchPtr->trie, seq + strlen(seq) + 1);
         } else {
             return -1;
         }
@@ -905,7 +983,7 @@ TrieFind(Trie *triePtr, char *seq, int *depthPtr)
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         ldepth += 1;
         if (branchPtr != NULL) {
-            void *p = TrieFind(&branchPtr->node, seq + strlen(seq) + 1, &ldepth);
+            void *p = TrieFind(&branchPtr->trie, seq + strlen(seq) + 1, &ldepth);
             if (p != NULL) {
                 data = p;
                 *depthPtr = ldepth;
@@ -952,7 +1030,7 @@ TrieFindExact(Trie *triePtr, char *seq, int flags)
 
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieFindExact(&branchPtr->node, seq + strlen(seq) + 1, flags);
+            data = TrieFindExact(&branchPtr->trie, seq + strlen(seq) + 1, flags);
         }
     } else if (nodePtr != NULL) {
 
@@ -1010,7 +1088,7 @@ TrieDelete(Trie *triePtr, char *seq, int flags)
 
         branchPtr = Ns_IndexFind(&triePtr->branches, seq);
         if (branchPtr != NULL) {
-            data = TrieDelete(&branchPtr->node, seq + strlen(seq) + 1, flags);
+            data = TrieDelete(&branchPtr->trie, seq + strlen(seq) + 1, flags);
         }
     } else if (nodePtr != NULL) {
 
@@ -1172,30 +1250,39 @@ CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * JunctionInit --
+ * GetJunction --
  *
- *      Initialize a junction.
+ *      Get the junction corresponding to the given server and id.
+ *      Ns_UrlSpecificAlloc() must have already been called.
  *
  * Results:
- *      None.
+ *      Pointer to junction.
  *
  * Side effects:
- *      Will set up the index in a junction.
+ *      Will initialise the junction on first access.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-JunctionInit(Junction *juncPtr)
+Junction *
+JunctionGet(NsServer *servPtr, int id)
 {
+    Junction *juncPtr;
+
+    juncPtr = servPtr->urlspace[id];
+    if (juncPtr == NULL) {
+        juncPtr = ns_malloc(sizeof *juncPtr);
 #ifndef __URLSPACE_OPTIMIZE__
-    Ns_IndexInit(&juncPtr->byuse, 5,
-        (int (*) (const void *, const void *)) CmpChannels,
-        (int (*) (const void *, const void *)) CmpKeyWithChannel);
+        Ns_IndexInit(&juncPtr->byuse, 5,
+                     (int (*) (const void *, const void *)) CmpChannels,
+                     (int (*) (const void *, const void *)) CmpKeyWithChannel);
 #endif
-    Ns_IndexInit(&juncPtr->byname, 5,
-        (int (*) (const void *, const void *)) CmpChannelsAsStrings,
-        (int (*) (const void *, const void *)) CmpKeyWithChannelAsStrings);
+        Ns_IndexInit(&juncPtr->byname, 5,
+                     (int (*) (const void *, const void *)) CmpChannelsAsStrings,
+                     (int (*) (const void *, const void *)) CmpKeyWithChannelAsStrings);
+        servPtr->urlspace[id] = juncPtr;
+    }
+    return juncPtr;
 }
 
 
@@ -1301,7 +1388,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, int flags,
      * dsWord will eventually be used to set or find&reuse a channel filter.
      */
     
-    if ((p != NULL) && (depth > 1) && (strchr(p, '*') || strchr(p, '?'))) {
+    if ((p != NULL) && (depth > 0) && (strchr(p, '*') || strchr(p, '?'))) {
         Ns_DStringAppend(&dsFilter, p);
         *p = '\0';
     } else {
@@ -1341,7 +1428,6 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, int flags,
     TrieAdd(&channelPtr->trie, seq, data, flags, deletefunc);
 }
 
-
 
 /*
  *----------------------------------------------------------------------
@@ -1349,7 +1435,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, int flags,
  * JunctionFind --
  *
  *      Locate a node for a given sequence in a junction.
- *      As usual sequence is "handle\0method\0urltoken\0...\0\0".
+ *      As usual sequence is "method\0urltoken\0...\0\0".
  *
  *      The "fast" boolean switch makes it do strcmp instead of
  *      Tcl string matches on the filters. Not useful for wildcard
@@ -1386,14 +1472,6 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
         n++;
     }
 
-    if (n < 2) {
-        /*
-         * If there are fewer than 2 elements then advance p to the
-         * end of the string.
-         */
-        p += strlen(p) + 1;
-    }
-
     /*
      * Check filters from most restrictive to least restrictive
      */
@@ -1406,7 +1484,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
 #endif
 
 #ifdef DEBUG
-    if (n >= 2) {
+    if (depth > 0) {
         fprintf(stderr, "Checking Seq=");
         PrintSeq(seq);
         fputs("\n", stderr);
@@ -1469,7 +1547,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
         }
 
 #ifdef DEBUG
-        if (n >= 2) {
+        if (depth > 0) {
             if (data == NULL) {
                 fprintf(stderr, "Channel %s: No match\n", channelPtr->filter);
             } else {
@@ -1481,9 +1559,9 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
    }
 
 #ifdef DEBUG
-   if (n >= 2) {
-       fprintf(stderr, "Done.\n");
-   }
+    if (depth > 0) {
+        fprintf(stderr, "Done.\n");
+    }
 #endif
 
    return data;
@@ -1659,8 +1737,8 @@ JunctionDeleteNode(Junction *juncPtr, char *seq, int flags)
  *
  * MkSeq --
  *
- *      Build a "sequence" out of a server/method/url; turns it into
- *      "server\0method\0urltoken\0...\0\0".
+ *      Build a "sequence" out of a method/url; turns it into
+ *      "method\0urltoken\0...\0\0".
  *
  * Results:
  *      None.
@@ -1672,12 +1750,11 @@ JunctionDeleteNode(Junction *juncPtr, char *seq, int flags)
  */
 
 static void
-MkSeq(Ns_DString *dsPtr, CONST char *server, CONST char *method, CONST char *url)
+MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url)
 {
     CONST char *p;
     int         done, l;
 
-    Ns_DStringNAppend(dsPtr, server, (int)(strlen(server) + 1));
     Ns_DStringNAppend(dsPtr, method, (int)(strlen(method) + 1));
 
     /*

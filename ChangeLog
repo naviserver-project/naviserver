@@ -1,3 +1,15 @@
+2007-10-06  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/urlspace.c: Partition per-server urlspaces using an arrat of
+	junctions rather than index nodes in the tree.  Add programmer notes
+	about this tricky data structure.
+
+	* nsd/limits.c:
+	* nsd/queue.c:
+	* nsd/url2file.c: Update to use internal convenience function
+	NsUrlSpecificGet().
+
 2007-10-04  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:

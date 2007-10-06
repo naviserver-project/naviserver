@@ -784,6 +784,13 @@ typedef struct NsServer {
     } filter;
 
     /*
+     * The following array maintains url-specific data.
+     */
+
+#define MAX_URLSPACES 16
+    struct Junction *urlspace[MAX_URLSPACES];
+
+    /*
      * The following struct maintains the core Tcl config.
      */
 
@@ -1017,7 +1024,6 @@ extern void NsInitServers(void);
 extern void NsInitSched(void);
 extern void NsInitSls(void);
 extern void NsInitTcl(void);
-extern void NsInitUrlSpace(void);
 extern void NsInitRequests(void);
 extern void NsInitUrl2File(void);
 
@@ -1043,6 +1049,13 @@ extern void NsStopServers(Ns_Time *toPtr);
 extern void NsStartServer(NsServer *servPtr);
 extern void NsStopServer(NsServer *servPtr);
 extern void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
+
+/*
+ * Url-specific data routines.
+ */
+
+extern void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
+                              CONST char *url, int id, int fast);
 
 /*
  * Socket driver callbacks.
@@ -1164,7 +1177,7 @@ extern void NsSendSignal(int sig);
  * Conn routines.
  */
 
-extern NsLimits *NsGetRequestLimits(char *server, char *method, char *url);
+extern NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *url);
 
 
 /*

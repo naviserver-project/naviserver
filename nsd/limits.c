@@ -107,12 +107,12 @@ NsInitLimits(void)
  */
 
 NsLimits *
-NsGetRequestLimits(char *server, char *method, char *url)
+NsGetRequestLimits(NsServer *servPtr, char *method, char *url)
 {
     NsLimits *limitsPtr;
 
     Ns_MutexLock(&lock);
-    limitsPtr = Ns_UrlSpecificGet(server, method, url, limid);
+    limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0);
     Ns_MutexUnlock(&lock);
 
     return (limitsPtr ? limitsPtr : defLimitsPtr);

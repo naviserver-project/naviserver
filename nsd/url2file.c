@@ -246,7 +246,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
         status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
     } else {
         Ns_MutexLock(&ulock);
-        u2fPtr = Ns_UrlSpecificGet(servPtr->server, "x", url, uid);
+        u2fPtr = NsUrlSpecificGet(servPtr, "x", url, uid, 0);
         if (u2fPtr == NULL) {
             Ns_MutexUnlock(&ulock);
             Ns_Log(Error, "url2file: no proc found for url: %s", url);
