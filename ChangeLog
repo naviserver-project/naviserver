@@ -10,6 +10,8 @@
 	* nsd/url2file.c: Update to use internal convenience function
 	NsUrlSpecificGet().
 
+	* nslog/nslog.c: Use TCL_LL_MODIFIER for content-sent length.
+
 2007-10-04  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:

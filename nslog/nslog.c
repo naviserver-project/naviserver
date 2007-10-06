@@ -579,7 +579,8 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     n = Ns_ConnResponseStatus(conn);
-    Ns_DStringPrintf(&ds, "%d %d", n ? n : 200, Ns_ConnContentSent(conn));
+    Ns_DStringPrintf(&ds, "%d %" TCL_LL_MODIFIER "d",
+                     n ? n : 200,Ns_ConnContentSent(conn));
 
     /*
      * Append the referer and user-agent headers (if any)
