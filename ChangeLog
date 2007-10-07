@@ -12,6 +12,20 @@
 
 	* nslog/nslog.c: Use TCL_LL_MODIFIER for content-sent length.
 
+	* nsd/tclrequest.c:
+	* nsd/tclcmds.c:
+	* tcl/compat.tcl: Rename ns_unregister_proc ns_unregister_op and let it
+	serve to unregister any kind of Ns_OpProc. Remove the aliases
+	ns_unregister_adp and ns_unregister_tcl.
+
+	* nsd/adprequest.c: Fix missing white space in ADP arg proc.
+
+	* tests/adp.test:
+	* test/ns_register_proc.test: Use ns_unregister_op.
+
+	* doc/src/mann/ns_register_adp.man: Update. Mention configuration
+	options.
+
 2007-10-04  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:

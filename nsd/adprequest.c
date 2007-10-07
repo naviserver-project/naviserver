@@ -354,7 +354,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
     AdpRequest *adp = arg;
     int         i;
 
-    Ns_DStringPrintf(dsPtr, "%jd:%ld",
+    Ns_DStringPrintf(dsPtr, " %jd:%ld",
                      (intmax_t) adp->expires.sec,
                      adp->expires.usec);
 

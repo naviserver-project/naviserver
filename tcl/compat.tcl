@@ -335,6 +335,16 @@ proc ns_adp_stream {{bool 1}} {
     ns_adp_flush
 }
 
+#
+# ns_unregister_proc --
+#
+#   ns_unregister_op unregisters any kind of registered
+#   request, including C, Tcl, ADP etc.
+#
+
+proc ns_unregister_proc {args} {
+    eval ns_unregister_op $args
+}
 
 # EOF $RCSfile$
 

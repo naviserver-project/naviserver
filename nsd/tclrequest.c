@@ -233,19 +233,19 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclUnRegisterObjCmd --
  *
- *      Implements the ns_unregister_* commands.
+ *      Implement the ns_unregister_op command.
  *
  * Results:
  *      Tcl result.
  *
  * Side effects:
- *      See docs.
+ *      Depends on any delete callbacks.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclUnRegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
     char     *method, *url;
@@ -265,7 +265,8 @@ NsTclUnRegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    Ns_UnRegisterRequestEx(itPtr->servPtr->server, method, url, noinherit | recurse);
+    Ns_UnRegisterRequestEx(itPtr->servPtr->server, method, url,
+                           (noinherit | recurse));
 
     return TCL_OK;
 }

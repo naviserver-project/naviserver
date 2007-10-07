@@ -76,7 +76,7 @@ test adp-2.1 {ADP page map} -setup {
 } -body {
 	nstest_http -getbody 1 GET /dejavu
 } -cleanup {
-	ns_unregister_adp GET /dejavu
+	ns_unregister_op GET /dejavu
 } -result {200 {Hello World!}}
 
 
@@ -85,7 +85,7 @@ test adp-2.2 {Tcl page map} -setup {
 } -body {
 	nstest_http -getbody 1 GET /dejavu
 } -cleanup {
-	ns_unregister_tcl GET /dejavu
+	ns_unregister_op GET /dejavu
 } -result {200 {Hello World!}}
 
 
