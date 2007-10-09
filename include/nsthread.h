@@ -169,24 +169,49 @@ NS_EXTERN int closedir(DIR *dp);
 #endif
 
 /*
- * Older Solaris version (2.8-)  lack formatted IO
- * macros in inttypes.h. Declare some of those here,
- * assuming a 32-bit system. This is not a complete
- * list, it only reflects what's used in the code.
+ * Older Solaris version (2.8-) have older definitions
+ * of pointer formatting macros.
  */
 
+#ifndef PRIdPTR
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIdPTR "ld"
+# else
+#  define PRIdPTR "d"
+# endif
+#endif
+
+#ifndef PRIoPTR
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIoPTR "lo"
+# else
+#  define PRIoPTR "o"
+# endif
+#endif
+
+#ifndef PRIiPTR
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIiPTR "li"
+# else
+#  define PRIiPTR "i"
+# endif
+#endif
+
 #ifndef PRIuPTR
-#define PRIuPTR "u"
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIuPTR "lu"
+# else
+#  define PRIuPTR "u"
+# endif
 #endif
 
 #ifndef PRIxPTR
-#define PRIxPTR "x"
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIxPTR "lx"
+# else
+#  define PRIxPTR "x"
+# endif
 #endif
-
-#ifndef PRIdPTR
-#define PRIdPTR "d"
-#endif
-
 
 /*
  * Various constants.
