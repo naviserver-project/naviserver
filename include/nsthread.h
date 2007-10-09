@@ -30,23 +30,23 @@
 /*
  * nsthread.h --
  *
- *	Core threading and system headers.
+ *  Core threading and system headers.
  *
- *	$Header$
+ *  $Header$
  */
 
 #ifndef NSTHREAD_H
 #define NSTHREAD_H
 
 #ifndef _GNU_SOURCE
- #define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
 #include <nscheck.h>
 
 #ifdef _WIN32
-#define NS_EXPORT		__declspec(dllexport)
-#define NS_IMPORT		__declspec(dllimport)
+#define NS_EXPORT       __declspec(dllexport)
+#define NS_IMPORT       __declspec(dllimport)
 #else
 #define NS_EXPORT
 #define NS_IMPORT
@@ -62,15 +62,15 @@
 #endif
 
 #ifdef NSTHREAD_EXPORTS
-#define NS_STORAGE_CLASS	NS_EXPORT
+#define NS_STORAGE_CLASS    NS_EXPORT
 #else
-#define NS_STORAGE_CLASS	NS_IMPORT
+#define NS_STORAGE_CLASS    NS_IMPORT
 #endif
 
 #ifdef __cplusplus
-#define NS_EXTERN		extern "C" NS_STORAGE_CLASS
+#define NS_EXTERN       extern "C" NS_STORAGE_CLASS
 #else
-#define NS_EXTERN		extern NS_STORAGE_CLASS
+#define NS_EXTERN       extern NS_STORAGE_CLASS
 #endif
 
 #ifndef __linux
@@ -121,7 +121,7 @@ struct dirent {
 NS_EXTERN DIR *opendir(char *pathname);
 NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
-#define sleep(n)	(Sleep((n)*1000))
+#define sleep(n) (Sleep((n)*1000))
 
 #define HAVE_GETADDRINFO
 #define HAVE_GETNAMEINFO
@@ -140,7 +140,6 @@ NS_EXTERN int closedir(DIR *dp);
 #include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdint.h>
 #include <inttypes.h>
 #include <assert.h>
 
@@ -153,34 +152,56 @@ NS_EXTERN int closedir(DIR *dp);
 #endif
 
 #ifndef O_LARGEFILE
-  #define O_LARGEFILE 0
+#define O_LARGEFILE 0
 #endif
 
 /*
  * Some systems (Solaris) lack useful MIN/MAX macros
- * normally defined in sys/param.h so do them here.
+ * normally defined in sys/param.h so define them here.
  */
 
 #ifndef MIN
-#  define MIN(a,b) (((a)<(b))?(a):(b))
+#define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
+
 #ifndef MAX
-#  define MAX(a,b) (((a)>(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
+
+/*
+ * Older Solaris version (2.8-)  lack formatted IO
+ * macros in inttypes.h. Declare some of those here,
+ * assuming a 32-bit system. This is not a complete
+ * list, it only reflects what's used in the code.
+ */
+
+#ifndef PRIuPTR
+#define PRIuPTR "u"
+#endif
+
+#ifndef PRIxPTR
+#define PRIxPTR "x"
+#endif
+
+#ifndef PRIdPTR
+#define PRIdPTR "d"
+#endif
+
 
 /*
  * Various constants.
  */
 
-#define NS_OK              	0
-#define NS_ERROR         	(-1)
-#define NS_TIMEOUT       	(-2)
-#define NS_FATAL               	(-3)
-#define NS_THREAD_DETACHED	1
-#define NS_THREAD_JOINED	2
-#define NS_THREAD_EXITED	4
-#define NS_THREAD_NAMESIZE	64
-#define NS_THREAD_MAXTLS	100
+#define NS_OK               0
+#define NS_ERROR            (-1)
+#define NS_TIMEOUT          (-2)
+#define NS_FATAL            (-3)
+
+#define NS_THREAD_DETACHED  1
+#define NS_THREAD_JOINED    2
+#define NS_THREAD_EXITED    4
+#define NS_THREAD_NAMESIZE  64
+#define NS_THREAD_MAXTLS    100
 
 /*
  * The following objects are defined as pointers to dummy structures
@@ -188,17 +209,17 @@ NS_EXTERN int closedir(DIR *dp);
  * objects are platform specific.
  */
 
-typedef struct Ns_Thread_	*Ns_Thread;
-typedef struct Ns_Tls_		*Ns_Tls;
-typedef struct Ns_Mutex_	*Ns_Mutex;
-typedef struct Ns_Cond_		*Ns_Cond;
-typedef struct Ns_Cs_		*Ns_Cs;
-typedef struct Ns_Sema_		*Ns_Sema;
-typedef struct Ns_RWLock_	*Ns_RWLock;
+typedef struct Ns_Thread_   *Ns_Thread;
+typedef struct Ns_Tls_      *Ns_Tls;
+typedef struct Ns_Mutex_    *Ns_Mutex;
+typedef struct Ns_Cond_     *Ns_Cond;
+typedef struct Ns_Cs_       *Ns_Cs;
+typedef struct Ns_Sema_     *Ns_Sema;
+typedef struct Ns_RWLock_   *Ns_RWLock;
 
 typedef struct Ns_Time {
-    time_t	sec;
-    long	usec;
+    time_t  sec;
+    long    usec;
 } Ns_Time;
 
 typedef void (Ns_ThreadProc) (void *arg);
@@ -273,7 +294,7 @@ NS_EXTERN void Ns_CondSignal(Ns_Cond *condPtr);
 NS_EXTERN void Ns_CondBroadcast(Ns_Cond *condPtr);
 NS_EXTERN void Ns_CondWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr);
 NS_EXTERN int Ns_CondTimedWait(Ns_Cond *condPtr, Ns_Mutex *lockPtr,
-			    Ns_Time *timePtr);
+                Ns_Time *timePtr);
 
 /*
  * reentrant.c:
@@ -311,7 +332,7 @@ NS_EXTERN int ns_signal(int sig, void (*proc)(int));
  */
 
 NS_EXTERN void Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, long stackSize,
-			    Ns_Thread *resultPtr);
+                Ns_Thread *resultPtr);
 NS_EXTERN void Ns_ThreadExit(void *arg);
 NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr);
 NS_EXTERN void Ns_ThreadYield(void);

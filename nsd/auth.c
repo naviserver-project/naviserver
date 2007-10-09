@@ -326,5 +326,4 @@ NsParseAuth(Conn *connPtr, char *auth)
         }
         *p = save;
     }
-    Ns_SetPrint(connPtr->auth);
 }
