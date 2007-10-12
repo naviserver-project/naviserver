@@ -31,7 +31,7 @@
 /*
  * tclconf.c --
  *
- *	Tcl commands for reading config file info. 
+ *      Tcl commands for reading and setting config file info. 
  */
 
 #include "nsd.h"
@@ -42,128 +42,133 @@ NS_RCSID("@(#) $Header$");
 /*
  *----------------------------------------------------------------------
  *
- * NsTclConfigCmd --
+ * NsTclConfigObjCmd --
  *
- *	Implements ns_config. 
+ *      Implements ns_config. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result. 
  *
  * Side effects:
- *	See docs. 
+ *      See docs. 
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclConfigCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    char *value;
-    int   i;
-    int   fHasDefault = NS_FALSE;
-    int	  defaultIndex = 0;
+    char       *section, *key;
+    CONST char *value;
+    Tcl_Obj    *defObj = NULL;
+    int         status, i, isbool = 0, isint = 0, exact = 0;
+    int         min = INT_MIN, max = INT_MAX;
 
-    if (argc < 3 || argc > 5) {
-        Tcl_AppendResult(interp, "wrong # args:  should be \"",
-            argv[0], " ?-exact | -bool | -int? section key ?default?\"", NULL);
+    Ns_ObjvSpec opts[] = {
+        {"-bool",  Ns_ObjvBool,  &isbool, (void *) NS_TRUE},
+        {"-int",   Ns_ObjvBool,  &isint,  (void *) NS_TRUE},
+        {"-min",   Ns_ObjvInt,   &min,    NULL},
+        {"-max",   Ns_ObjvInt,   &max,    NULL},
+        {"-exact", Ns_ObjvBool,  &exact,  (void *) NS_TRUE},
+        {"--",     Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"section",  Ns_ObjvString, &section, NULL},
+        {"key",      Ns_ObjvString, &key,     NULL},
+        {"?default", Ns_ObjvObj,    &defObj,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-
-    if (argv[1][0] == '-') {
-	if (argc == 5) {
-	    fHasDefault = NS_TRUE;
-	    defaultIndex = 4;
-	}
-    } else if (argc == 4) {
-	fHasDefault = NS_TRUE;
-	defaultIndex = 3;
+    if (min > INT_MIN || max < INT_MAX) {
+        isint = 1;
     }
-   
-    if (STREQ(argv[1], "-exact")) {
-        value = Ns_ConfigGetValueExact(argv[2], argv[3]);
 
-	if (value == NULL && fHasDefault) {
-	    value = argv[defaultIndex];
-	}
-    } else if (STREQ(argv[1], "-int")) {
-        if (Ns_ConfigGetInt(argv[2], argv[3], &i)) {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+    value = exact ?
+        Ns_ConfigGetValueExact(section, key) :
+        Ns_ConfigGetValue(section, key);
+
+    /*
+     * Handle type checking of config value.
+     */
+
+    status = TCL_OK;
+
+    if (isbool) {
+        if (value && ((status = Tcl_GetBoolean(interp, value, &i)) == TCL_OK)) {
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(i));
             return TCL_OK;
-        } else if (fHasDefault) {
-	    if (Tcl_GetInt(interp, argv[defaultIndex], &i) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
-	    return TCL_OK;
-	}
-        value = NULL;
-    } else if (STREQ(argv[1], "-bool")) {
-        int             iValue;
-
-        if (Ns_ConfigGetBool(argv[2], argv[3], &iValue) == NS_FALSE) {
-	    if (fHasDefault) {
-		if (   Tcl_GetBoolean(interp, argv[defaultIndex], &iValue)
-		    != TCL_OK) {
-		    return TCL_ERROR;
-		}
-
-		value = (iValue) ? "1" : "0";
-		
-	    } else {
-		value = NULL;
-	    }
-        } else {
-	    value = (iValue) ? "1" : "0";
         }
-    } else if (argc == 3 || argc == 4) {
-        value = Ns_ConfigGetValue(argv[1], argv[2]);
+    } else if (isint) {
+        if (value && ((status = Tcl_GetInt(interp, value, &i)) == TCL_OK)) {
+            if (i >= min && i <= max) {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+                return TCL_OK;
+            } else {
+                Tcl_SetResult(interp, "value out of range", TCL_STATIC);
+                status = TCL_ERROR;
+            }
+        }
+    } else if (value != NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
+        return TCL_OK;
+    }
 
-	if (value == NULL && fHasDefault) {
-	    value = argv[defaultIndex];
-	}
-    } else {
-        Tcl_AppendResult(interp, "wrong # args:  should be \"",
-            argv[0], " ?-exact | -bool | -int? section key ?default?\"", NULL);
-        return TCL_ERROR;
+    /*
+     * Handle default value.
+     */
+
+    if (defObj != NULL) {
+        if ((isbool && Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)
+                || (isint && Tcl_GetIntFromObj(interp, defObj, &i) != TCL_OK)) {
+            return TCL_ERROR;
+        }
+        if (isint && (i < min || i > max)) {
+            Tcl_SetResult(interp, "value out of range", TCL_STATIC);
+            return TCL_ERROR;
+        }
+        Tcl_SetObjResult(interp, defObj);
+        return TCL_OK;
     }
-    if (value != NULL) {
-	Tcl_SetResult(interp, value, TCL_STATIC);
-    }
-    return TCL_OK;
+
+    /*
+     * Either TCL_OK and "" result because matching config not found,
+     * or TCL_ERROR from type conversion error above.
+     */
+
+    return status;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsTclConfigSectionCmd --
+ * NsTclConfigSectionObjCmd --
  *
- *	Implements ns_configsection. 
+ *      Implements ns_configsection.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclConfigSectionCmd(ClientData dummy, Tcl_Interp *interp, int argc,
-		      char **argv)
+NsTclConfigSectionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Set *set;
 
-    if (argc != 2) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-            argv[0], " key\"", NULL);
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "section");
         return TCL_ERROR;
     }
-    set = Ns_ConfigGetSection(argv[1]);
-    if (set == NULL) {
-        Tcl_SetResult(interp, "", TCL_STATIC);
-    } else {
+    set = Ns_ConfigGetSection(Tcl_GetString(objv[1]));
+    if (set != NULL) {
         Ns_TclEnterSet(interp, set, NS_TCL_SET_STATIC);
     }
     return TCL_OK;
@@ -173,29 +178,27 @@ NsTclConfigSectionCmd(ClientData dummy, Tcl_Interp *interp, int argc,
 /*
  *----------------------------------------------------------------------
  *
- * NsTclConfigSectionsCmd --
+ * NsTclConfigSectionsObjCmd --
  *
- *	Implements ns_configsections. 
+ *      Implements ns_configsections. 
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsTclConfigSectionsCmd(ClientData dummy, Tcl_Interp *interp, int argc,
-		       char **argv)
+NsTclConfigSectionsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Set **sets;
     int      i;
 
-    if (argc != 1) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"",
-            argv[0], " key\"", NULL);
+    if (objc != 1) {
+        Tcl_WrongNumArgs(interp, 1, objv, NULL);
         return TCL_ERROR;
     }
     sets = Ns_ConfigGetSections();
@@ -203,5 +206,6 @@ NsTclConfigSectionsCmd(ClientData dummy, Tcl_Interp *interp, int argc,
         Ns_TclEnterSet(interp, sets[i], NS_TCL_SET_STATIC);
     }
     ns_free(sets);
+
     return TCL_OK;
 }

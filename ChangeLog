@@ -1,3 +1,21 @@
+2007-10-12  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/tclcmds.c:
+	* nsd/tclconf.c: Convert to Tcl obj based commands. Clean up option
+	parsing. Catch type errors from config values. Add -min and -max options
+	for int types.
+
+	* tests/test.nscfg:
+	* tests/ns_config.man: Add new config tests.
+
+	* doc/src/ns_config.man:
+	* doc/src/ns_configsection.man:
+	* doc/src/ns_configsections.man:
+	* doc/src/ns_section.man:
+	* doc/src/ns_param.man:
+	* doc/src/admin-config.man: Deleted.
+	* doc/src/mann/ns_config.man: Add new consolidated config man page.
+
 2007-10-06  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

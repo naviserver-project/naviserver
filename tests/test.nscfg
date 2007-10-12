@@ -24,6 +24,19 @@ ns_param   listenport      [expr $port < 8100 ? $port : 0]
 
 
 #
+# The following are for the tests in tests/ns_config.test.
+#
+
+ns_section "ns/testconfig"
+ns_param   trueval    yes
+ns_param   intval     42
+ns_param   notbool    this-is-not-a-bool
+ns_param   notint     this-is-not-an-int
+ns_param   CamelCase  ok
+
+
+
+#
 # Global config.
 #
 
