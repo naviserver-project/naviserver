@@ -196,7 +196,7 @@ NsInitLog(void)
     for (i = Dev +1; i < severityCount; i++) {
         snprintf(buf, sizeof(buf), "%d", i);
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &new);
-        Tcl_SetHashValue(hPtr, i);
+        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) i);
         severityConfig[i].string = Tcl_GetHashKey(&severityTable, hPtr);
         severityConfig[i].enabled = 0;
     }
@@ -210,7 +210,7 @@ NsInitLog(void)
 
         strcpy(buf, severityConfig[i].string);
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &new);
-        Tcl_SetHashValue(hPtr, i);
+        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) i);
     }
 }
 
@@ -316,7 +316,7 @@ Ns_CreateLogSeverity(CONST char *name)
     hPtr = Tcl_CreateHashEntry(&severityTable, name, &new);
     if (new) {
         severity = severityIdx++;
-        Tcl_SetHashValue(hPtr, severity);
+        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) severity);
         severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
     } else {
         severity = (int)(intptr_t) Tcl_GetHashValue(hPtr);
@@ -404,6 +404,7 @@ Ns_Log(Ns_LogSeverity severity, CONST char *fmt, ...)
     Ns_VALog(severity, fmt, &ap);
     va_end(ap);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -782,6 +783,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Ns_LogSeverity  severity;
     LogCache       *cachePtr = GetCache();
     LogFilter       filter, *filterPtr = &filter;
+    void           *addr;
     Ns_TclCallback *cbPtr;
 
     static CONST char *opts[] = {
@@ -821,10 +823,10 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
             return TCL_ERROR;
         }
-        if (Ns_TclGetAddrFromObj(interp, objv[2], filterType,
-                                 (void **) &cbPtr) != TCL_OK) {
+        if (Ns_TclGetAddrFromObj(interp, objv[2], filterType, &addr) != TCL_OK) {
             return TCL_ERROR;
         }
+        cbPtr = addr;
         Ns_RemoveLogFilter(LogToTcl, cbPtr);
         break;
 

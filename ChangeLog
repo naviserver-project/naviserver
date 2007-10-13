@@ -29,6 +29,9 @@
 	* configure.in:
 	* m4/tcl.m4: Update to latest (3.6) tcl.m4.
 
+	* nsd/log.c:
+	* nsd/tclfile.c: Quieten some compiler warnings.
+
 2007-10-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclcmds.c:

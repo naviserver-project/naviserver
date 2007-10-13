@@ -350,6 +350,8 @@ int
 NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
+    int err;
+
     if ((objc != 3) && (objc != 4)) {
     badargs:
         Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? file1 file2");
@@ -368,7 +370,7 @@ NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         if (strcmp(Tcl_GetString(objv[1]), "-nocomplain") != 0) {
             goto badargs;
         }
-        symlink(Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
+        err = symlink(Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
     }
     
     return TCL_OK;
