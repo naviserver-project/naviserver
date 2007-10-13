@@ -1,3 +1,8 @@
+2007-10-13  Stephen Deasey  <sdeasey@deasey>
+
+	* nsd/dstring.c: Use va_copy() before calling vsnprintf() so that it
+	doesn't clobber our original va_list.
+
 2007-10-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclcmds.c:

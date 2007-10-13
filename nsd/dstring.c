@@ -176,10 +176,11 @@ Ns_DStringPrintf(Ns_DString *dsPtr, CONST char *fmt, ...)
  */
 
 char *
-Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list ap)
+Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
 {
-    char *buf;
-    int   origLength, newLength, bufLength, result;
+    char    *buf;
+    int      origLength, newLength, bufLength, result;
+    va_list  ap;
 
     origLength = dsPtr->length;
 
@@ -205,11 +206,13 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list ap)
     buf = dsPtr->string + origLength;
     bufLength = newLength - origLength;
 
+    va_copy(ap, apSrc);
 #ifdef __WIN32
     result = _vsnprintf_s(buf, bufLength, fmt, ap);
 #else
     result = vsnprintf(buf, bufLength, fmt, ap);
 #endif
+    va_end(ap);
 
     /*
      * Check for overflow and retry. For win32 just double the buffer size
@@ -229,11 +232,13 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list ap)
         buf = dsPtr->string + origLength;
         bufLength = newLength - origLength;
 
+    va_copy(ap, apSrc);
 #ifdef __WIN32
         result = _vsnprintf_s(buf, bufLength, fmt, ap);
 #else
         result = vsnprintf(buf, bufLength, fmt, ap);
 #endif
+        va_end(ap);
     }
 
     /*
