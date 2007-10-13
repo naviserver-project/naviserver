@@ -26,6 +26,9 @@
 	programs and other libraries which depend on it call it during their own
 	initialisation.
 
+	* configure.in:
+	* m4/tcl.m4: Update to latest (3.6) tcl.m4.
+
 2007-10-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclcmds.c:

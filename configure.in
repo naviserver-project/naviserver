@@ -71,7 +71,7 @@ AC_SUBST([ISO_BUILD_DATE], [`date +%Y-%m-%d`])
 # Include and verify Tcl config located by --with-tcl=
 #
 
-TEA_INIT([3.5])
+TEA_INIT([3.6])
 TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
 TEA_SETUP_COMPILER
