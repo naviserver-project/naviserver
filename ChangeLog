@@ -3,6 +3,29 @@
 	* nsd/dstring.c: Use va_copy() before calling vsnprintf() so that it
 	doesn't clobber our original va_list.
 
+	* include/ns.h:
+	* include/nsthread.h:
+	* include/Makefile.global.in:
+	* include/Makefile.module.in:
+	* nsd/Makefile:
+	* nsd/init.c:
+	* nsd/nsmain.c:
+	* nsd/nswin32.c:
+	* nsproxy/nsproxy.h:
+	* nsproxy/nsproxylib.c:
+	* nsproxy/nsproxymod.c:
+	* nsthread/Makefile:
+	* nsthread/nsthreadtest.c:
+	* nsthread/pthread.c: Abandon the old module LIBINIT system of
+	redefining the initialisation function to _init(). The loadable module
+	_init scheme was only supported by gcc, and support was dropped a long
+	time ago. Unfortunately, the _init() functions were clashing with other
+	libraries, such as libgcc_s.
+
+	New scheme: shared libraries explicitly export a Nswhateva_LibInit(), and
+	programs and other libraries which depend on it call it during their own
+	initialisation.
+
 2007-10-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/tclcmds.c:

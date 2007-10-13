@@ -127,14 +127,6 @@ ifneq (,$(findstring SunOS,$(uname)))
     endif
 endif
 
-# Add dynamic library entry point flags.
-ifdef LIBINIT
-    ifneq (,$(findstring Darwin,$(uname)))
-        LDLIB += -init _$(LIBINIT)
-    else
-        CFLAGS += -D$(LIBINIT)=_init
-    endif
-endif
  
 #
 # For static linking on Darwin, link modules 

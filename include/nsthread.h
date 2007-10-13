@@ -252,6 +252,12 @@ typedef void (Ns_TlsCleanup) (void *arg);
 typedef void (Ns_ThreadArgProc) (Tcl_DString *, void *proc, void *arg);
 
 /*
+ * pthread.c
+ */
+
+NS_EXTERN void Nsthreads_LibInit(void);
+
+/*
  * fork.c:
  */
 

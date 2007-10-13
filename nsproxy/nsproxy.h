@@ -60,11 +60,13 @@ typedef struct InterpData {
 
 #define ASSOC_DATA "nsproxy:data"
 
+
+NS_EXTERN void Nsproxy_LibInit (void);
+
 NS_EXTERN int Ns_ProxyMain (int argc, char **argv, Tcl_AppInitProc *proc);
-NS_EXTERN int Nsproxy_Init (Tcl_Interp *interp);
-NS_EXTERN int Ns_ProxyInit (Tcl_Interp *interp);
+NS_EXTERN int Ns_ProxyTclInit (Tcl_Interp *interp);
+
 NS_EXTERN Ns_TclTraceProc  Ns_ProxyCleanup;
-NS_EXTERN Ns_ShutdownProc  Ns_ProxyShutdown;
 
 /*
  * Small proxy API so C-level code can also

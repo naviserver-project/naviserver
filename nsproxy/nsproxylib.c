@@ -206,6 +206,8 @@ static Tcl_ObjCmdProc GetObjCmd;
 static Tcl_CmdDeleteProc DelProxyCmd;
 static Tcl_InterpDeleteProc DeleteData;
 
+static Ns_ShutdownProc Shutdown;
+
 static Pool*  GetPool(char *poolName, InterpData *idataPtr);
 static void   FreePool(Pool *poolPtr);
 
@@ -271,43 +273,41 @@ static Ns_DString defexec;      /* Stores full path of the proxy executable */
  *
  * Nsproxy_Init --
  *
- *      Tcl load entry point.
+ *      libnsproxy initialisation.
  *
  * Results:
- *      See Ns_ProxyInit.
+ *      None.
  *
  * Side effects:
- *      See Ns_ProxyInit.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
-int
-Nsproxy_Init(Tcl_Interp *interp)
+void
+Nsproxy_LibInit(void)
 {
     static int once = 0;
 
-    Ns_MutexLock(&plock);
     if (!once) {
         once = 1;
+
+        Nsd_LibInit();
+
         Ns_DStringInit(&defexec);
         Ns_BinPath(&defexec, "nsproxy", NULL);
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
-    }
-    Ns_MutexUnlock(&plock);
 
-    if (interp != NULL) {
-        return Ns_ProxyInit(interp);
+        Ns_RegisterAtShutdown(Shutdown, NULL);
+        Ns_RegisterProcInfo(Shutdown, "nsproxy:shutdown", NULL);
     }
-
-    return TCL_OK;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ProxyInit --
+ * Ns_ProxyTclInit --
  *
  *      Initialize the Tcl interface.
  *
@@ -321,7 +321,7 @@ Nsproxy_Init(Tcl_Interp *interp)
  */
 
 int
-Ns_ProxyInit(Tcl_Interp *interp)
+Ns_ProxyTclInit(Tcl_Interp *interp)
 {
     InterpData *idataPtr;
 
@@ -364,6 +364,8 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     char        *script, *active, *dots;
     char        *uarg = NULL, *user = NULL, *group = NULL;
     uint16       major, minor;
+
+    Nsproxy_LibInit();
 
     if (argc > 4 || argc < 3) {
         char *pgm = strrchr(argv[0], '/');
@@ -610,7 +612,7 @@ Ns_ProxyCleanup(Tcl_Interp *interp, void *ignored)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ProxyShutdown --
+ * Shutdown --
  *
  *      Server trace to timely shutdown proxy system
  *      including stopping the reaper thread.
@@ -625,7 +627,7 @@ Ns_ProxyCleanup(Tcl_Interp *interp, void *ignored)
  */
 
 void
-Ns_ProxyShutdown(Ns_Time *toutPtr, void *arg)
+Shutdown(Ns_Time *toutPtr, void *arg)
 {
     Pool           *poolPtr;
     Proxy          *proxyPtr, *tmpPtr;

@@ -41,7 +41,7 @@ NS_RCSID("@(#) $Header$");
 /*
  *----------------------------------------------------------------------
  *
- * NsdInit --
+ * Nsd_LibInit --
  *
  *	    Library entry point for libnsd. This routine calls various
  *	    data structure initialization functions throughout the core.
@@ -60,12 +60,13 @@ NS_RCSID("@(#) $Header$");
  */
 
 void
-NsdInit(void)
+Nsd_LibInit(void)
 {
     static int once = 0;
 
     if (!once) {
         once = 1;
+        Nsthreads_LibInit();
         NsInitSls();  /* Checks if server started. */
     	NsInitConf(); /* <- Server marked 'started' during library load. */
     	NsInitLog();

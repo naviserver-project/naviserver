@@ -418,10 +418,7 @@ int main(int argc, char *argv[])
     pthread_t tids[10];
 #endif
 
-#if (STATIC_BUILD == 1)
-    extern void NsthreadsInit();
-    NsthreadsInit();
-#endif
+    Nsthreads_LibInit();
 
     Ns_ThreadSetName("-main-");
 

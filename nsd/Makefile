@@ -34,7 +34,6 @@ INSTALL	= install-init
 LIB	= nsd
 PGM	= nsd
 PGMOBJS	= main.o
-LIBINIT	= NsdInit
 HDRS	= nsd.h
 
 LOBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \

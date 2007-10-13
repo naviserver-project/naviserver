@@ -67,7 +67,6 @@ ifdef NSBUILD
     ifeq ($(STATIC_BUILD), 1)
         ALIB    := $(LIB)
         LIB     :=
-        LIBINIT := 
     endif
 endif
 

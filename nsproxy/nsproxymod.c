@@ -38,7 +38,7 @@
 
 NS_RCSID("@(#) $Header$");
 
-static Ns_TclTraceProc InitInterp;
+
 
 int Ns_ModuleVersion = 1;
 
@@ -47,23 +47,73 @@ typedef struct {
     char *module;
 } SrvMod;
 
-int
-Ns_ModuleInit(char *server, char *module)
-{
-    SrvMod *smPtr = ns_malloc(sizeof(SrvMod));
+/*
+ * Static functions defined in this file.
+ */
 
+static Ns_TclTraceProc InitInterp;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nsproxy_Init --
+ *
+ *      Tcl load entry point.
+ *
+ * Results:
+ *      See Ns_ProxyTclInit.
+ *
+ * Side effects:
+ *      See Ns_ProxyTclInit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Nsproxy_Init(Tcl_Interp *interp)
+{
+    Nsproxy_LibInit();
+    return Ns_ProxyTclInit(interp);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ModuleInit --
+ *
+ *      NaviServer module initialisation routine.
+ *
+ * Results:
+ *      NS_OK.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ModuleInit(CONST char *server, CONST char *module)
+{
+    SrvMod *smPtr;
+    static  int once = 0;
+
+    if (!once) {
+        once = 1;
+        Nsproxy_LibInit();
+        Ns_RegisterProcInfo(InitInterp, "nsproxy:initinterp", NULL);
+        Ns_RegisterProcInfo(Ns_ProxyCleanup, "nsproxy:cleanup", NULL);
+    }
+
+    smPtr = ns_malloc(sizeof(SrvMod));
     smPtr->server = ns_strdup(server);
     smPtr->module = ns_strdup(module);
 
-    Nsproxy_Init(NULL);
-
-    Ns_TclRegisterTrace(server, InitInterp, (void*)smPtr, NS_TCL_TRACE_CREATE);
+    Ns_TclRegisterTrace(server, InitInterp, smPtr, NS_TCL_TRACE_CREATE);
     Ns_TclRegisterTrace(server, Ns_ProxyCleanup, NULL, NS_TCL_TRACE_DEALLOCATE);
-    Ns_RegisterAtShutdown(Ns_ProxyShutdown, NULL);
-
-    Ns_RegisterProcInfo(InitInterp, "nsproxy:initinterp", NULL);
-    Ns_RegisterProcInfo(Ns_ProxyCleanup, "nsproxy:cleanup", NULL);
-    Ns_RegisterProcInfo(Ns_ProxyShutdown, "nsproxy:shutdown", NULL);
 
     return NS_OK;
 }
@@ -71,10 +121,11 @@ Ns_ModuleInit(char *server, char *module)
 static int
 InitInterp(Tcl_Interp *interp, void *arg)
 {
-    int status;
-    SrvMod *smPtr = (SrvMod *)arg;
+    SrvMod *smPtr = arg;
+    int     status;
 
-    status = Ns_ProxyInit(interp);
+    status = Ns_ProxyTclInit(interp);
+
     if (status == TCL_OK) {
         InterpData *idataPtr = Tcl_GetAssocData(interp, ASSOC_DATA, NULL);
         idataPtr->server = smPtr->server;

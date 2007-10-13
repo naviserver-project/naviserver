@@ -127,14 +127,10 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * For static builds only, we have to initialize
-     * otherwise dynamically loaded shared libraries.
+     * Initialise the Nsd library.
      */
 
-#if (STATIC_BUILD == 1)
-    NsthreadsInit();
-    NsdInit();
-#endif
+    Nsd_LibInit();
 
     /*
      * Mark the server stopped until initialization is complete.

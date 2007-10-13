@@ -68,29 +68,33 @@ static pthread_key_t	key;
 /*
  *----------------------------------------------------------------------
  *
- * NsthreadsInit --
+ * Nsthreads_LibInit --
  *
- *	Pthread library load time init routine.
+ *      Pthread library initialisation routine.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Creates pthread key.
+ *      Creates pthread key.
  *
  *----------------------------------------------------------------------
  */
 
 void
-NsthreadsInit(void)
+Nsthreads_LibInit(void)
 {
     int err;
+    static int once = 0;
 
-    err = pthread_key_create(&key, CleanupTls);
-    if (err != 0) {
-	NsThreadFatal("NsthreadsInit", "pthread_key_create", err);
+    if (!once) {
+        once = 1;
+        err = pthread_key_create(&key, CleanupTls);
+        if (err != 0) {
+            NsThreadFatal("Nsthreads_LibInit", "pthread_key_create", err);
+        }
+        NsInitThreads();
     }
-    NsInitThreads();
 }
 
 

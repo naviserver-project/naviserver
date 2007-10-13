@@ -142,7 +142,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
             return FALSE;
         }
         DisableThreadLibraryCalls(hModule);
-        NsdInit();
+        Nsd_LibInit();
     } else if (why == DLL_PROCESS_DETACH) {
         WSACleanup();
     }

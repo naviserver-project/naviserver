@@ -32,7 +32,6 @@
 
 LIB     = nsthread
 HDRS	= thread.h
-LIBINIT	= NsthreadsInit
 PGM	= nsthreadtest
 PGMOBJS	= nsthreadtest.o
 LIBOBJS = \
