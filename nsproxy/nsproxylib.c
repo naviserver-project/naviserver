@@ -914,11 +914,11 @@ SetExpire(Slave *slavePtr, int ms)
  *      Send a script and wait for and receive a response.
  *
  * Results:
- *      Depends on script.
+ *      Tcl result code from evaluating script, or TCL_ERROR if
+ *      any communication errors or timeouts.
  *
  * Side effects:
- *  Will return proxy response or format error message in given
- *  interp.
+ *      Will leave proxy response or error message in interp.
  *
  *----------------------------------------------------------------------
  */
@@ -926,18 +926,18 @@ SetExpire(Slave *slavePtr, int ms)
 static int
 Eval(Tcl_Interp *interp, Proxy *proxyPtr, char *script, int ms)
 {
-    int result = TCL_OK;
-    Err err = ENone;
+    Err err;
+    int status = TCL_ERROR;
 
     err = Send(interp, proxyPtr, script);
     if (err == ENone) {
         err = Wait(interp, proxyPtr, ms);
         if (err == ENone) {
-            err = Recv(interp, proxyPtr, &result);
+            (void) Recv(interp, proxyPtr, &status);
         }
     }
 
-    return (err == ENone) ? result : TCL_ERROR;
+    return status;
 }
 
 
@@ -949,7 +949,7 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, char *script, int ms)
  *      Send a script to a proxy.
  *
  * Results:
- *      TCL_OK if script sent, TCL_ERROR otherwise.
+ *      Proxy Err code.
  *
  * Side effects:
  *      Will format error message in given interp on failure.
@@ -1025,7 +1025,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
  *      Wait for response from proxy process.
  *
  * Results:
- *      TCL_OK if wait ok, TCL_ERROR otherwise.
+ *      Proxy Err code.
  *
  * Side effects:
  *      Will format error message in given interp on failure.
@@ -1060,7 +1060,6 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms)
         Tcl_AppendResult(interp, "could not wait for proxy \"",
                          proxyPtr->id, "\": ",
                          ProxyError(interp, err), NULL);
-        return TCL_ERROR;
     }
 
     return err;
@@ -1075,7 +1074,7 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, int ms)
  *      Receive proxy results.
  *
  * Results:
- *      Standard Tcl result.
+ *      Proxy Err code.
  *
  * Side effects:
  *      Will append proxy results or error message to given interp.
@@ -1737,7 +1736,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     Pool       *poolPtr;
     Proxy      *proxyPtr;
     char       *str;
-    int         i, flag, incr, n, result, reap = 0;
+    int         i, flag, n, result, reap = 0;
 
     static CONST char *flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec", 
@@ -1768,7 +1767,6 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
                 goto err;
             }
             ++i;
-            incr = 0;
             str = Tcl_GetString(objv[i]);
             switch (flag) {
             case CGetIdx:

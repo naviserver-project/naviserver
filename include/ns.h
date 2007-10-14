@@ -1461,6 +1461,7 @@ Ns_RollFileByDate(CONST char *file, int max)
 NS_EXTERN void Nsd_LibInit(void);
 NS_EXTERN int Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc);
 NS_EXTERN int Ns_WaitForStartup(void);
+NS_EXTERN void Ns_StopServer(char *server);
 
 /*
  * info.c:

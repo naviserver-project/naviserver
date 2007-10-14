@@ -83,9 +83,8 @@ static void DecrEntry      (File *filePtr);
 static int  UrlIs          (CONST char *server, CONST char *url, int dir);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  ParseRange     (Ns_Conn *conn, Range *rangesPtr);
-static int  FastReturn     (NsServer *servPtr, Ns_Conn *conn, int status,
-                            CONST char *type, CONST char *file,
-                            FileStat *stPtr);
+static int  FastReturn     (Ns_Conn *conn, int status, CONST char *type,
+                            CONST char *file, FileStat *stPtr);
 static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
                             CONST char *data, Tcl_WideInt len, CONST char *type);
 static Ns_ServerInitProc ConfigServerFastpath;
@@ -216,7 +215,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     server  = Ns_ConnServer(conn);
     servPtr = NsGetServer(server);
 
-    return FastReturn(servPtr, conn, status, type, file, &st);
+    return FastReturn(conn, status, type, file, &st);
 }
 
 
@@ -335,7 +334,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
          * Return ordinary files as with Ns_ConnReturnFile.
          */
 
-        result = FastReturn(servPtr, conn, 200, NULL, ds.string, &st);
+        result = FastReturn(conn, 200, NULL, ds.string, &st);
 
     } else if (S_ISDIR(st.st_mode)) {
 
@@ -624,8 +623,8 @@ NsFastFD(FileChannel chan)
  */
 
 static int
-FastReturn(NsServer *servPtr, Ns_Conn *conn, int status, CONST char *type,
-           CONST char *file, FileStat *stPtr)
+FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
+           FileStat *stPtr)
 {
     int         new, nread, result = NS_ERROR;
     Range       range;

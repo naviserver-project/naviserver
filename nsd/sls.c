@@ -470,7 +470,7 @@ GetSlot(Ns_Sls *slsPtr, Ns_Sock *sock)
     Sock      *sockPtr = (Sock *) sock;
     uintptr_t  id      = (uintptr_t) *slsPtr;
 
-    if (id < 0 || id >= nsconf.nextSlsId) {
+    if (id >= nsconf.nextSlsId) {
         Ns_Fatal("Ns_Sls: invalid key: %" PRIuPTR ": must be between 0 and %d",
                  id, nsconf.nextSlsId -1);
     }

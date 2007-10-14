@@ -214,7 +214,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     Ns_DString         ds;
     NsServer          *servPtr;
     ServerInit        *initPtr;
-    CONST char        *path, *spath, *p;
+    CONST char        *path, *p;
     Ns_Set            *set;
     int                i, n;
 
@@ -246,7 +246,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     }
 
     Ns_DStringInit(&ds);
-    spath = path = Ns_ConfigGetPath(server, NULL, NULL);
+    path = Ns_ConfigGetPath(server, NULL, NULL);
 
     /*
      * Set some server options.

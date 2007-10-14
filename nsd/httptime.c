@@ -205,7 +205,7 @@ Ns_ParseHttpTime(char *str)
 
             tm.tm_mday = MakeNum(s);
             tm.tm_mon = MakeMonth(s + 3);
-            tm.tm_year = (100 * MakeNum(s + 7) - 1900) + MakeNum(s + 9);
+            tm.tm_year = ((100 * MakeNum(s + 7)) - 1900) + MakeNum(s + 9);
             tm.tm_hour = MakeNum(s + 12);
             tm.tm_min = MakeNum(s + 15);
             tm.tm_sec = MakeNum(s + 18);
@@ -391,9 +391,9 @@ MakeMonth(char *s)
      * "Jan"
      */
 
-    *s = toupper(*s);
-    *(s + 1) = tolower(*(s + 1));
-    *(s + 2) = tolower(*(s + 2));
+    *s = toupper(UCHAR(*s));
+    *(s + 1) = tolower(UCHAR(*(s + 1)));
+    *(s + 2) = tolower(UCHAR(*(s + 2)));
 
     for (i = 0; i < 12; i++) {
         if (!strncmp(month_names[i], s, 3)) {

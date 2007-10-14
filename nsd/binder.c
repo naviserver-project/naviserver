@@ -728,6 +728,7 @@ PreBind(char *line)
 
         if (Ns_PathIsAbsolute(line)) {
             /* Parse mode */
+            mode = 0;
             str = strchr(str,'|');
             if (str) {
                 *(str++) = '\0';
@@ -738,7 +739,7 @@ PreBind(char *line)
                 Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
                 continue;
             }
-            sock = Ns_SockBindUnix(line, SOCK_STREAM, 0);
+            sock = Ns_SockBindUnix(line, SOCK_STREAM, mode);
             if (sock == -1) {
                 Ns_Log(Error, "prebind: unix: %s: %s", proto, strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);

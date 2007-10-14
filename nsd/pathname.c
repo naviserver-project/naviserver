@@ -703,7 +703,7 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
     NsInterp    *itPtr = arg;
     NsServer    *servPtr;
     Ns_DString   ds;
-    char        *path, *host = NULL;
+    char        *host = NULL;
     int          i, npaths = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -728,9 +728,9 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
 
     Ns_DStringInit(&ds);
     if (cmd == 'p') {
-        path = NsPageRoot(&ds, itPtr->servPtr, host);
+        (void) NsPageRoot(&ds, servPtr, host);
     } else {
-        path = ServerRoot(&ds, itPtr->servPtr, host);
+        (void) ServerRoot(&ds, servPtr, host);
     }
     for (i = objc - npaths; i < objc; ++i) {
         Ns_MakePath(&ds, Tcl_GetString(objv[i]), NULL);

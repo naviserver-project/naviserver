@@ -143,7 +143,6 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
     int           nwrote = 0, towrite = 0;
     int           sent = -1;
-    int           status = NS_OK;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
 
     if (connPtr->sockPtr == NULL) {
@@ -173,7 +172,6 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 
         sent = NsDriverSend(connPtr->sockPtr, sbufPtr, nsbufs);
         if (sent < 0) {
-            status = NS_ERROR;
             break;
         }
         towrite -= sent;

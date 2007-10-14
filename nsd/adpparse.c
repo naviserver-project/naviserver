@@ -509,7 +509,8 @@ static void
 AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
 {
     AdpCode *codePtr = parsePtr->codePtr;
-    int      save, len;
+    char     save;
+    int      len;
 
     if (s >= e) {
         return;

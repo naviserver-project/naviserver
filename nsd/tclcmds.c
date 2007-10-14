@@ -357,7 +357,7 @@ static Cmd basicCmds[] = {
      * Add more basic Tcl commands here.
      */
 
-    {NULL, NULL}
+    {NULL, NULL, NULL}
 };
 
 /*
@@ -482,7 +482,7 @@ static Cmd servCmds[] = {
      * Add more server Tcl commands here.
      */
 
-    {NULL, NULL}
+    {NULL, NULL, NULL}
 };
 
 

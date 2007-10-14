@@ -1029,7 +1029,7 @@ extern void NsInitUrl2File(void);
 
 extern void NsConfigAdp(void);
 extern void NsConfigLog(void);
-extern void NsConfigFastpath();
+extern void NsConfigFastpath(void);
 extern void NsConfigMimeTypes(void);
 extern void NsConfigDNS(void);
 extern void NsConfigRedirects(void);

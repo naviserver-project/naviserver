@@ -1,3 +1,24 @@
+2007-10-14  Stephen Deasey  <sdeasey@gmail.com>
+
+	* include/ns.h: Add missing declaration for Ns_StopServer().
+	* nsd/nsd.h: Add missing 'void' to function declaration.
+	* nsd/adpparse.c: Quieten a compiler warning about int/char truncation.
+	* nsd/binder.c: The file mode for unix domain sockets was being parsed
+	but not used -- pass it on to Ns_SockBindUnix().
+	* nsd/connio.c (Ns_ConnSend): Remove unused variable 'status'.
+	* nsd/fastpath.c: Remove unused parameter servPtr.
+	* nsd/httptime.c: Make sure UCHAR() macro is used consistently for all
+	char checks. Add parentheses to disambiguate order of evaluation.
+	* nsd/pathname.c: Remove unused 'path' variable. Make sure to use
+	correct servPtr variable.
+	* nsd/server.c: Remove unused 'spath' variable.
+	* nsd/sls.c: Remove redundant comparison for < 0 on unsigned variable.
+	* nsd/tclcmds.c: Add missing struct initialisers.
+	* nsproxy/nsproxylib.c: Fix confusion about return values from Eval(),
+	Wait() and Send(). Eval() always returns a Tcl error code, the others
+	always return proxy Err codes. Remove unused variable 'incr' from
+	Wait().
+
 2007-10-13  Stephen Deasey  <sdeasey@deasey>
 
 	* nsd/dstring.c: Use va_copy() before calling vsnprintf() so that it
