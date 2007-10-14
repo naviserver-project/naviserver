@@ -85,6 +85,7 @@ void
 Nsthreads_LibInit(void)
 {
     int err;
+    size_t n;
     static int once = 0;
 
     if (!once) {
@@ -95,6 +96,17 @@ Nsthreads_LibInit(void)
         }
         NsInitThreads();
     }
+
+#ifdef __linux
+    n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
+    if (n > 0) {
+        char *buf = alloca(n);
+        confstr(_CS_GNU_LIBPTHREAD_VERSION, buf, n);
+        if (!strstr (buf, "NPTL")) {
+            Tcl_Panic("Linux \"NPTL\" thread library required. Found: \"%s\"", buf);
+        }
+    }
+#endif
 }
 
 

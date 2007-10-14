@@ -19,6 +19,9 @@
 	always return proxy Err codes. Remove unused variable 'incr' from
 	Wait().
 
+	* nsthread/pthread.c (Nsthreads_LibInit): Check for NPTL thread library
+	on Linux and abort if not found.
+
 2007-10-13  Stephen Deasey  <sdeasey@deasey>
 
 	* nsd/dstring.c: Use va_copy() before calling vsnprintf() so that it
