@@ -709,15 +709,16 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             ReleaseQueue(queuePtr, 0);
 
             Tcl_DStringResult(interp, &jobPtr->results);
-            if (jobPtr->errorCode != NULL) {
-                Tcl_SetVar(interp, "errorCode", jobPtr->errorCode,
-                           TCL_GLOBAL_ONLY);
-            }
-            if (jobPtr->errorInfo != NULL) {
-                Tcl_SetVar(interp, "errorInfo", jobPtr->errorInfo,
-                           TCL_GLOBAL_ONLY);
-            }
             code = jobPtr->code;
+            if (code == TCL_ERROR) {
+                if (jobPtr->errorCode != NULL) {
+                    Tcl_SetErrorCode(interp, jobPtr->errorCode, NULL);
+                }
+                if (jobPtr->errorInfo != NULL) {
+                     Tcl_AddObjErrorInfo(interp, "\n", 1);
+                     Tcl_AddObjErrorInfo(interp, jobPtr->errorInfo, -1); 
+                }
+            }
             FreeJob(jobPtr);
         }
         break;
@@ -1189,13 +1190,15 @@ JobThread(void *arg)
          */
 
         Tcl_DStringAppend(&jobPtr->results, Tcl_GetStringResult(interp), -1);
-        err = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
-        if (err != NULL) {
-            jobPtr->errorCode = ns_strdup(err);
-        }
-        err = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
-        if (err != NULL) {
-            jobPtr->errorInfo = ns_strdup(err);
+        if (jobPtr->code == TCL_ERROR) {
+            err = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
+            if (err != NULL) {
+                jobPtr->errorCode = ns_strdup(err);
+            }
+            err = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+            if (err != NULL) {
+                jobPtr->errorInfo = ns_strdup(err);
+            }
         }
         Ns_GetTime(&jobPtr->endTime);
         Ns_TclDeAllocateInterp(interp);

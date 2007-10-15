@@ -1,3 +1,9 @@
+2007-10-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/tcljob.c: Fixed returning error-related information to the
+	user of [ns_job wait] command. Internally, the errorCode/errorInfo
+	are processed only of the passed script returned with TCL_ERROR code.
+
 2007-10-14  Stephen Deasey  <sdeasey@gmail.com>
 
 	* include/ns.h: Add missing declaration for Ns_StopServer().
