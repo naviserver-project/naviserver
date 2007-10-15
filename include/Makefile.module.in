@@ -164,7 +164,9 @@ install-pgm: $(PGM)
 	$(INSTALL_SH) $(PGM) $(INSTBIN)/
 
 install-hdrs: $(LIBHDRS)
-	$(INSTALL_DATA) $(LIBHDRS) $(INSTHDR)/
+	for h in $(LIBHDRS); do \
+		$(INSTALL_DATA) $$h $(INSTHDR)/; \
+	done
 
 clean-mod:
 	$(RM) $(MOD) $(MODOBJS)

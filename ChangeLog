@@ -22,6 +22,9 @@
 	* nsthread/pthread.c (Nsthreads_LibInit): Check for NPTL thread library
 	on Linux and abort if not found.
 
+	* include/Makefile.module.in: Enable modules to install more than one
+	library header.
+
 2007-10-13  Stephen Deasey  <sdeasey@deasey>
 
 	* nsd/dstring.c: Use va_copy() before calling vsnprintf() so that it
