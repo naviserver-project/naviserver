@@ -1,3 +1,7 @@
+2007-10-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+    * nsd/mimetypes.c: Added mime type for .pac files as  application/x-ns-proxy-autoconfig
+
 2007-10-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/tcljob.c: Fixed returning error-related information to the
@@ -118,7 +122,7 @@
 	* nsd/connio.c:
 	* nsd/nsd.h:
 	* nsd/queue.c:
-	* nsd/return.c: Make file support over 2Gb working again, convert all response and content 
+	* nsd/return.c: Make file support over 2Gb working again, convert all response and content
 	length variables into Tcl_WideInt
 
 2007-10-02  Stephen Deasey  <sdeasey@users.sf.net>
@@ -172,7 +176,7 @@
 
 	* nsd/tcljob.c: Make sure -jobid parameters ignored if empty
 	string is given. also add error message to the log for detached
-	and failed jobs                
+	and failed jobs
 
 2007-09-20  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -276,7 +280,7 @@
 
 2007-08-14  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
-	* nsd/tclmisc.c: Replaced uint32 with ns_uint32 so this 
+	* nsd/tclmisc.c: Replaced uint32 with ns_uint32 so this
 	gets compiled on platforms not supporting autoconf 2.60
 
 2007-08-12  Stephen Deasey  <sdeasey@users.sf.net>
@@ -382,7 +386,7 @@
     	* nsperm/nsperm.c: Added new commands deluser, delgroup, delperm and
     	ns_permreload
 
-    	* modules/nsconf/nsconf.tcl: Supports ns_perm info, can be used for 
+    	* modules/nsconf/nsconf.tcl: Supports ns_perm info, can be used for
 	reloading ns_perm files
 
 2007-08-04  Stephen Deasey  <sdeasey@users.sf.net>

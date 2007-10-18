@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * mimetypes.c --
  *
- *      Defines standard default mime types. 
+ *      Defines standard default mime types.
  */
 
 #include "nsd.h"
@@ -192,7 +192,7 @@ static struct exttype {
     { ".funk",  "audio/make" },
     { ".g",     "text/plain" },
     { ".g3",    "image/g3fax" },
-    { ".gbt",   "text/plain" },    
+    { ".gbt",   "text/plain" },
     { ".gif",   "image/gif" },
     { ".gl",    "video/gl" },
     { ".gsd",   "audio/x-gsm" },
@@ -353,6 +353,7 @@ static struct exttype {
     { ".omc",   "application/x-omc" },
     { ".omcd",  "application/x-omcdatamaker" },
     { ".omcr",  "application/x-omcregerator" },
+    { ".pac",   "application/x-ns-proxy-autoconfig" },
     { ".p10",   "application/pkcs10" },
     { ".p12",   "application/pkcs-12" },
     { ".p7a",   "application/x-pkcs7-signature" },
@@ -621,13 +622,13 @@ static struct exttype {
  *
  * NsConfigMimeTypes --
  *
- *      Add compiled-in and configured mime types. 
+ *      Add compiled-in and configured mime types.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -683,14 +684,14 @@ NsConfigMimeTypes(void)
  *
  * Ns_GetMimeType --
  *
- *      Guess the mime type based on filename extension. Case is 
- *      ignored. 
+ *      Guess the mime type based on filename extension. Case is
+ *      ignored.
  *
  * Results:
- *      A mime type. 
+ *      A mime type.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -727,13 +728,13 @@ Ns_GetMimeType(CONST char *file)
  *
  * NsTclGuessTypeObjCmd --
  *
- *      Implements ns_guesstype. 
+ *      Implements ns_guesstype.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -766,7 +767,7 @@ NsTclGuessTypeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -791,13 +792,13 @@ NsGetMimeTypes(Ns_DString *dest)
  *
  * AddType --
  *
- *      Add a mime type to the global hash table. 
+ *      Add a mime type to the global hash table.
  *
  * Results:
- *      None. 
+ *      None.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -825,11 +826,11 @@ AddType(CONST char *ext, CONST char *type)
  *
  * LowerDString --
  *
- *      Append a string to the dstring, converting all alphabetic 
- *      characeters to lowercase. 
+ *      Append a string to the dstring, converting all alphabetic
+ *      characeters to lowercase.
  *
  * Results:
- *      dsPtr->string 
+ *      dsPtr->string
  *
  * Side effects:
  *      Appends to dstring.
