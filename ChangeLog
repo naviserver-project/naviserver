@@ -1,11 +1,11 @@
 2007-10-19  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/fastpath.c: Added flag O_LARGEFILE to NsFastOpen to support very big files
-    * include/ns.h:
-    * nsd/config.c: Aded new public function for supporting Tcl_WideInt values:
-      Ns_ConfigWideInt, Ns_ConfigWideIntRange. This is only for C API currently,
-      for Tcl it needs to be evaluated how to do it
-    * nsd/str.c: New public function Ns_StrToWideInt
+	* include/ns.h:
+	* nsd/config.c: Aded new public function for supporting Tcl_WideInt values:
+	Ns_ConfigWideInt, Ns_ConfigWideIntRange. This is only for C API currently,
+	for Tcl it needs to be evaluated how to do it
+	* nsd/str.c: New public function Ns_StrToWideInt
 
 2007-10-19  Stephen Deasey  <sdeasey@users.sf.net>
 
@@ -13,9 +13,13 @@
 	by default for make benefit glorious naive static file benchmark
 	performance.
 
+	* nsd/driver.c: Mark driver shut down if none configured. Fixes unclean
+	shutdown in non-server situations when no drivers are configured
+	listening.
+
 2007-10-18  Vlad Seryakov  <seryakov@users.sf.net>
 
-    * nsd/mimetypes.c: Added mime type for .pac files as  application/x-ns-proxy-autoconfig
+	* nsd/mimetypes.c: Added mime type for .pac files as  application/x-ns-proxy-autoconfig
 
 2007-10-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
 

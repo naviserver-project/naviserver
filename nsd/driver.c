@@ -622,6 +622,7 @@ NsStartDrivers(void)
         }
         Ns_ThreadCreate(DriverThread, NULL, 0, &driverThread);
     } else {
+        drvStopped = 1;
         Ns_Log(Warning, "no communication drivers configured");
     }
 }
