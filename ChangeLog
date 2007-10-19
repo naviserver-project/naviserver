@@ -1,3 +1,9 @@
+2007-10-19  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* configure.in: Disable file access through the Tcl VFS for the fastpath
+	by default for make benefit glorious naive static file benchmark
+	performance.
+
 2007-10-18  Vlad Seryakov  <seryakov@users.sf.net>
 
     * nsd/mimetypes.c: Added mime type for .pac files as  application/x-ns-proxy-autoconfig
