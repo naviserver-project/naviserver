@@ -231,6 +231,44 @@ Ns_StrToInt(CONST char *string, int *intPtr)
     return NS_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_StrToWideInt --
+ *
+ *      Attempt to convert the string value to an wide integer.
+ *
+ * Results:
+ *      NS_OK and *intPtr updated, NS_ERROR if the number cannot be
+ *      parsed or overflows.
+ *
+ * Side effects:
+ *      The string may begin with an arbitrary amount of white space (as determined by
+ *      isspace(3)) followed by a  single  optional `+' or `-' sign.  If string starts with `0x' prefix,
+ *      the number will be read in base 16, otherwise the number will be treated as decimal
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
+{
+    Tcl_WideInt  lval;
+    char *ep;
+
+    errno = 0;
+    lval = strtoll(string, &ep, string[0] == '0' && string[1] == 'x' ? 16 : 10);
+    if (string[0] == '\0' || *ep != '\0') {
+        return NS_ERROR;
+    }
+    if ((errno == ERANGE && (lval == LLONG_MAX || lval == LLONG_MIN))) {
+        return NS_ERROR;
+    }
+    *intPtr = (int) lval;
+
+    return NS_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------

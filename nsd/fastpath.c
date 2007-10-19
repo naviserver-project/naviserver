@@ -495,6 +495,10 @@ NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights)
 #else
     int fd, flags = 0;
 
+#ifdef O_LARGEFILE
+    flags = O_LARGEFILE;
+#endif
+
     while (*mode) {
         switch (*mode) {
          case 'r':

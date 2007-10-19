@@ -1,3 +1,12 @@
+2007-10-19  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/fastpath.c: Added flag O_LARGEFILE to NsFastOpen to support very big files
+    * include/ns.h:
+    * nsd/config.c: Aded new public function for supporting Tcl_WideInt values:
+      Ns_ConfigWideInt, Ns_ConfigWideIntRange. This is only for C API currently,
+      for Tcl it needs to be evaluated how to do it
+    * nsd/str.c: New public function Ns_StrToWideInt
+
 2007-10-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* configure.in: Disable file access through the Tcl VFS for the fastpath

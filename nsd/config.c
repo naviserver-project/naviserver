@@ -212,6 +212,60 @@ Ns_ConfigIntRange(CONST char *section, CONST char *key, int def,
     return value;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_Configwide, Ns_ConfigWideRange --
+ *
+ *      Return an wide integer config file value, or the default if not
+ *      found. The returned value will be between the given min and max.
+ *
+ * Results:
+ *      An Tcl_WideInt integer.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+Ns_ConfigWideInt(CONST char *section, CONST char *key, Tcl_WideInt def)
+{
+    return Ns_ConfigWideIntRange(section, key, def, INT_MIN, INT_MAX);
+}
+
+Tcl_WideInt
+Ns_ConfigWideIntRange(CONST char *section, CONST char *key, Tcl_WideInt def,
+                  Tcl_WideInt min, Tcl_WideInt max)
+{
+    CONST char *s;
+    char defstr[TCL_INTEGER_SPACE];
+    Tcl_WideInt value;
+
+    snprintf(defstr, sizeof(defstr), "%" TCL_LL_MODIFIER "d", def);
+    s = ConfigGet(section, key, 0, defstr);
+    if (s != NULL && Ns_StrToWideInt(s, &value) == NS_OK) {
+        Ns_Log(Dev, "config: %s:%s value=%" TCL_LL_MODIFIER "d min=%" TCL_LL_MODIFIER "d max=%" TCL_LL_MODIFIER "d default=%" TCL_LL_MODIFIER "d (wide int)",
+               section, key, value, min, max, def);
+    } else {
+        Ns_Log(Dev, "config: %s:%s value=(null) min=%" TCL_LL_MODIFIER "d max=%" TCL_LL_MODIFIER "d default=%" TCL_LL_MODIFIER "d (wide int)",
+               section, key, min, max, def);
+        value = def;
+    }
+    if (value < min) {
+        Ns_Log(Warning, "config: %s:%s value=%" TCL_LL_MODIFIER "d, rounded up to %" TCL_LL_MODIFIER "d",
+               section, key, value, min);
+        value = min;
+    }
+    if (value > max) {
+        Ns_Log(Warning, "config: %s:%s value=%" TCL_LL_MODIFIER "d, rounded down to %" TCL_LL_MODIFIER "d",
+               section, key, value, max);
+        value = max;
+    }
+    return value;
+}
+
 
 /*
  *----------------------------------------------------------------------
