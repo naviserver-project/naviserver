@@ -2325,6 +2325,8 @@ NS_EXTERN int Ns_GetUserHome(Ns_DString *dsPtr, char *user);
 NS_EXTERN int Ns_GetUserGid(char *user);
 NS_EXTERN int Ns_GetUid(char *user);
 NS_EXTERN int Ns_GetGid(char *group);
+NS_EXTERN int Ns_SetPrivileges(int uid, int gid);
+NS_EXTERN int Ns_GetPrivileges(char *user, char *group, int *uidPtr, int *gidPtr);
 
 /*
  * form.c:

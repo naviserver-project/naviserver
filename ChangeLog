@@ -1,3 +1,17 @@
+2007-10-20  Vlad Seryakov  <seryakov@users.sf.net>
+
+    	* include/ns.h:
+	* nsd/nswin32.c:
+    	* nsd/unix.c: Added 2 new public API functions Ns_SetPriveleges and Ns_GetPriveleges
+      	which are resolve and assign user uid/gid
+
+    	* nsproxy/nsproxylib.c:
+    	* nsd/nsmain.c: Switched to use new function that assign user real uid/gid
+
+    	* nsd/tclmisc.c: New Tcl command ns_setpriveleges that sets real uid and gid
+
+	* doc/src/ns_setpriveleges.man: Added documentation file
+
 2007-10-19  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/fastpath.c: Added flag O_LARGEFILE to NsFastOpen to support very big files

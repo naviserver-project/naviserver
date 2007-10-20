@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -135,7 +135,7 @@ typedef struct Proxy {
     Ns_Time        when;     /* Absolute time when the proxy is used */
     Tcl_HashEntry *idPtr;    /* Pointer to proxy table entry */
     Tcl_HashEntry *cntPtr;   /* Pointer to count of proxies allocated */
-    Tcl_DString    in;       /* Request dstring */ 
+    Tcl_DString    in;       /* Request dstring */
     Tcl_DString    out;      /* Response dstring */
     Tcl_Command    cmdToken; /* Proxy Tcl command */
     Tcl_Interp    *interp;   /* Interp holding the proxy's Tcl command */
@@ -144,7 +144,7 @@ typedef struct Proxy {
 /*
  * The following structure defines a proxy pool.
  */
- 
+
 typedef enum {
     Stopped,   /* Initial (startup) state */
     Running,   /* Operating on pools and tearing down slaves */
@@ -341,7 +341,7 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
  * Ns_ProxyMain --
  *
  *      Main loop for nsproxy slave processes. Initialize Tcl interp
- *      and loop processing requests. On communication errors or 
+ *      and loop processing requests. On communication errors or
  *      when the peer closes it's write-pipe, slave exits gracefully.
  *
  * Results:
@@ -359,7 +359,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_Interp  *interp;
     Slave         proc;
     Req         *reqPtr;
-    int          uid = -1, gid = -1, result, len, n, max = 0;
+    int          result, len, n, max = 0, uid, gid;
     Tcl_DString  in, out;
     char        *script, *active, *dots;
     char        *uarg = NULL, *user = NULL, *group = NULL;
@@ -407,10 +407,10 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     if (dup(2) != 1) {
         Ns_Fatal("nsproxy: dup: %s", strerror(errno));
     }
-    
+
     /*
      * Make sure possible child processes do not inherit this one.
-     * As, when the user evalutes the "exec" command, the child 
+     * As, when the user evalutes the "exec" command, the child
      * process(es) will otherwise inherit the descriptor and keep
      * it open even if the proxy process is killed in the meantime.
      * This will of course block the caller, possibly forever.
@@ -431,7 +431,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     }
 
     /*
-     * Parse encoded user/group information. Those are 
+     * Parse encoded user/group information. Those are
      * optionally encoded in the passed pool name:
      *
      *    pool?:username_or_uid?:groupname_or_gid??
@@ -458,70 +458,9 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         }
     }
 
-    if (user != NULL) {
-        uid = Ns_GetUid(user);
-        if (uid == -1) {
-            int nc;
-            /*
-             * Hm, try see if given as numeric uid...
-             */
-            if (sscanf(user, "%d%n", &uid, &nc) != 1
-                || nc != strlen(user)
-                || Ns_GetNameForUid(NULL, (uid_t)uid) == NS_FALSE) {
-                Ns_Fatal("nsproxy: unknown user '%s'", user);
-            }
-            /*
-             * Set user-passed value to NULL, causing supplementary 
-             * groups to be ignored later.
-             */
-            user = NULL;
-        }
-        if (user != NULL) {
-             gid = Ns_GetUserGid(user);
-        } else {
-            Ns_DString ds;
-            Ns_DStringInit(&ds);
-            if (Ns_GetNameForUid(&ds, (uid_t)uid) == NS_TRUE) {
-                gid = Ns_GetUserGid(Ns_DStringValue(&ds));
-            }
-            Ns_DStringFree(&ds);
-        }
-    }
-
-    if (group != NULL) {
-        gid = Ns_GetGid(group);
-        if (gid == -1) {
-            int nc;
-            if (sscanf(group, "%d%n", (int*)&gid, &nc) != 1
-                || nc != strlen(group)
-                || Ns_GetNameForGid(NULL, (gid_t)gid) == NS_FALSE) {
-                Ns_Fatal("nsproxy: unknown group '%s'", group);
-            }
-        }
-    }
-
-    /*
-     * Switch the process uid/gid accordingly
-     */
-
-    if (uid > -1 || gid > -1) {
-        if (user != NULL) {
-            if (initgroups(user, gid) != 0) {
-                Ns_Fatal("nsproxy: initgroups(%s, %d) failed: %s", user,
-                         gid, strerror(errno));
-            }
-        } else {
-            if (setgroups(0, NULL) != 0) {
-                Ns_Fatal("nsproxy: setgroups(0, NULL) failed: %s",
-                         strerror(errno));
-            }
-        }
-        if (gid != (int)getgid() && setgid((gid_t)gid) != 0) {
-            Ns_Fatal("nsproxy: setgid(%d) failed: %s", gid, strerror(errno));
-        }
-        if (uid != (int)getuid() && setuid((uid_t)uid) != 0) {
-            Ns_Fatal("nsproxy: setuid(%d) failed: %s", uid, strerror(errno));
-        }
+    if (Ns_GetPrivileges(user, group, &uid, &gid) == -1 ||
+        Ns_SetPrivileges(uid, gid) == -1) {
+        Ns_Fatal("nsproxy: unable to switch to user '%s', group '%s'", user, group);
     }
 
     /*
@@ -541,7 +480,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         }
         len = ntohl(reqPtr->len);
         if (len == 0) {
-            Export(NULL, TCL_OK, &out); 
+            Export(NULL, TCL_OK, &out);
         } else if (len > 0) {
             script = Tcl_DStringValue(&in) + sizeof(Req);
             if (active != NULL) {
@@ -555,7 +494,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
                 sprintf(active, "{%.*s%s}", n, script, dots);
             }
             result = Tcl_EvalEx(interp, script, len, 0);
-            Export(interp, result, &out); 
+            Export(interp, result, &out);
             if (active != NULL) {
                 memset(active, ' ', max);
             }
@@ -584,7 +523,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
  *
  * Ns_ProxyCleanup --
  *
- *      Tcl trace to release any proxy handles 
+ *      Tcl trace to release any proxy handles
  *      held in the current interp
  *
  * Results:
@@ -638,7 +577,7 @@ Shutdown(Ns_Time *toutPtr, void *arg)
     /*
      * Cleanup all known pools. This will put all idle
      * proxies on the close list. At this point, there
-     * should be no running nor detached proxies. 
+     * should be no running nor detached proxies.
      * If yes, we will leak memory on exit (proxies and
      * the whole pool will be left un-freed).
      */
@@ -664,7 +603,7 @@ Shutdown(Ns_Time *toutPtr, void *arg)
             if (poolPtr->nused == 0) {
                 FreePool(poolPtr);
             } else {
-                Ns_Log(Warning, "nsproxy: [%s]: has %d used proxies", 
+                Ns_Log(Warning, "nsproxy: [%s]: has %d used proxies",
                        poolPtr->name, poolPtr->nused);
             }
             hPtr = Tcl_NextHashEntry(&search);
@@ -721,7 +660,7 @@ Shutdown(Ns_Time *toutPtr, void *arg)
  *
  *----------------------------------------------------------------------
  */
-int 
+int
 Ns_ProxyGet(Tcl_Interp *interp, char *poolName, PROXY* handlePtr, int ms)
 {
     Pool  *poolPtr;
@@ -893,8 +832,8 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
  *----------------------------------------------------------------------
  */
 
-static void 
-SetExpire(Slave *slavePtr, int ms) 
+static void
+SetExpire(Slave *slavePtr, int ms)
 {
     if (ms > 0) {
         Ns_GetTime(&slavePtr->expire);
@@ -986,20 +925,20 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
                 Tcl_DStringAppend(&proxyPtr->in, script, len);
             }
             proxyPtr->state = Busy;
-        
+
             /*
              * Proxy is active, put it on the
              * head of the run queue,
              */
-            
+
             Ns_GetTime(&proxyPtr->when);
-            
+
             Ns_MutexLock(&proxyPtr->poolPtr->lock);
             proxyPtr->runPtr = proxyPtr->poolPtr->runPtr;
             proxyPtr->poolPtr->runPtr = proxyPtr;
             Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
-            
-            if (!SendBuf(proxyPtr->slavePtr, proxyPtr->conf.tsend, 
+
+            if (!SendBuf(proxyPtr->slavePtr, proxyPtr->conf.tsend,
                          &proxyPtr->in)) {
                 err = ESend;
             }
@@ -1007,7 +946,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
     }
 
     if (err != ENone) {
-        Tcl_AppendResult(interp, "could not send script \"", 
+        Tcl_AppendResult(interp, "could not send script \"",
                          script ? script : "<empty>",
                          "\" to proxy \"", proxyPtr->id, "\": ",
                          ProxyError(interp, err), NULL);
@@ -1086,7 +1025,7 @@ static Err
 Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
 {
     Err err = ENone;
-    
+
     if (proxyPtr->state == Idle) {
         err = EIdle;
     } else if (proxyPtr->state == Busy) {
@@ -1163,7 +1102,7 @@ SendBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
             } else {
                 ms = msec;
             }
-            if (WaitFd(slavePtr->wfd, POLLOUT, ms) == 0) { 
+            if (WaitFd(slavePtr->wfd, POLLOUT, ms) == 0) {
                 return 0;
             }
         } else if (n > 0) {
@@ -1228,7 +1167,7 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
             } else {
                 ms = msec;
             }
-            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) { 
+            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
                 return 0;
             }
         } else if (n > 0) {
@@ -1259,7 +1198,7 @@ RecvBuf(Slave *slavePtr, int msec, Tcl_DString *dsPtr)
             } else {
                 ms = msec;
             }
-            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) { 
+            if (WaitFd(slavePtr->rfd, POLLIN, ms) == 0) {
                 return 0;
             }
         } else if (n > 0) {
@@ -1462,7 +1401,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
  */
 
 static int
-ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, 
+ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
             Tcl_Obj *CONST objv[])
 {
     InterpData    *idataPtr = data;
@@ -1475,7 +1414,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     Tcl_HashSearch search;
 
     static CONST char *opts[] = {
-        "get", "put", "release", "eval", "cleanup", "configure", 
+        "get", "put", "release", "eval", "cleanup", "configure",
         "ping", "free", "active", "handles", "clear", "stop",
         "send", "wait", "recv", "pools", NULL
     };
@@ -1565,7 +1504,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
         err = Wait(interp, proxyPtr, ms);
         result = (err == ENone) ? TCL_OK : TCL_ERROR;
         break;
-        
+
     case PRecvIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
@@ -1729,7 +1668,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
  */
 
 static int
-ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, 
+ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
              Tcl_Obj *CONST objv[])
 {
     InterpData *idataPtr = data;
@@ -1739,7 +1678,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     int         i, flag, n, result, reap = 0;
 
     static CONST char *flags[] = {
-        "-init", "-reinit", "-maxslaves", "-exec", 
+        "-init", "-reinit", "-maxslaves", "-exec",
         "-gettimeout", "-evaltimeout", "-sendtimeout", "-recvtimeout",
         "-waittimeout", "-idletimeout", "-maxruns", NULL
     };
@@ -1835,12 +1774,12 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
                 break;
             }
         }
-        
+
         /*
          * Assure number of idle and used proxies always
          * match the maximum number of configured ones.
          */
-        
+
         while ((poolPtr->nfree + poolPtr->nused) < poolPtr->maxslaves) {
             proxyPtr = CreateProxy(poolPtr);
             proxyPtr->nextPtr = poolPtr->firstPtr;
@@ -2142,7 +2081,7 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
         err = EGetTimeout;
     } else {
         poolPtr->waiting = 1;
-        while (status == NS_OK 
+        while (status == NS_OK
                && poolPtr->nfree < nwant && poolPtr->maxslaves >= nwant) {
             if (ms > 0) {
                 status = Ns_CondTimedWait(&poolPtr->cond, &poolPtr->lock,
@@ -2401,7 +2340,7 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  *      ENone if proxy OK, other error if slave couldn't be created.
  *
  * Side effects:
- *      
+ *
  *
  *----------------------------------------------------------------------
  */
@@ -2424,7 +2363,7 @@ CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     proxyPtr->slavePtr = ExecSlave(interp, proxyPtr);
     if (proxyPtr->slavePtr == NULL) {
         err = EExec;
-    } else if (init && Eval(interp, proxyPtr, 
+    } else if (init && Eval(interp, proxyPtr,
                             Tcl_DStringValue(&ds), -1) != TCL_OK) {
         CloseProxy(proxyPtr);
         err = EInit;
@@ -2522,9 +2461,9 @@ static void
 CloseSlave(Slave *slavePtr, int ms)
 {
     /*
-     * Set the time to kill the slave. Reaper thread will 
+     * Set the time to kill the slave. Reaper thread will
      * use passed time to wait for the slave to exit gracefully.
-     * Otherwise, it will start attempts to stop the slave 
+     * Otherwise, it will start attempts to stop the slave
      * by sending singnals to it (polite and unpolite).
      */
 
@@ -2648,19 +2587,19 @@ ReaperThread(void *ignored)
         tout.usec = LONG_MAX;
 
         /*
-         * Check all proxy pools and see if there are 
-         * idle processes we can get rid off. Also 
+         * Check all proxy pools and see if there are
+         * idle processes we can get rid off. Also
          * adjust the time to wait until the next
-         * run of the loop. 
+         * run of the loop.
          */
 
         hPtr = Tcl_FirstHashEntry(&pools, &search);
         while (hPtr != NULL) {
-            
+
             /*
              * Get max time to wait for the whole pool
              */
-            
+
             poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
             Ns_MutexLock(&poolPtr->lock);
             if (poolPtr->conf.tidle) {
@@ -2671,12 +2610,12 @@ ReaperThread(void *ignored)
                     tout = diff;
                 }
             }
-            
+
             /*
              * Get max time to wait for one of the slaves.
              * This is less then time for the whole pool.
-             */                
-            
+             */
+
             proxyPtr = poolPtr->firstPtr;
             prevPtr = NULL;
             expire = 0;
@@ -2726,7 +2665,7 @@ ReaperThread(void *ignored)
 
         /*
          * Check any closing procs. Also adjust the time
-         * to wait until the next run of the loop. 
+         * to wait until the next run of the loop.
          */
 
         slavePtr = firstClosePtr;
@@ -2734,10 +2673,10 @@ ReaperThread(void *ignored)
 
         while (slavePtr != NULL) {
             if (Ns_DiffTime(&now, &slavePtr->expire, NULL) > 0) {
-                
+
                 /*
                  * Stop time expired, add new quantum and signal
-                 * the process to exit. After first quantum has 
+                 * the process to exit. After first quantum has
                  * expired, be polite and try the TERM signal.
                  * If this does not get the process down within
                  * the second quantum, try the KILL signal.
@@ -2759,7 +2698,7 @@ ReaperThread(void *ignored)
                  * We either have a zombie or the process has exited ok
                  * so splice it out the list.
                  */
-                
+
                 if (slavePtr->signal >= 0) {
                     Ns_WaitProcess(slavePtr->pid); /* Should not really wait */
                 } else {
@@ -2780,7 +2719,7 @@ ReaperThread(void *ignored)
 
                 /*
                  * Process is still arround, try killing it but leave it
-                 * in the list. Calculate the latest time we'll visit 
+                 * in the list. Calculate the latest time we'll visit
                  * this one again.
                  */
 
@@ -2952,7 +2891,7 @@ PushProxy(Proxy *proxyPtr)
         Ns_CondBroadcast(&poolPtr->cond);
     }
     Ns_MutexUnlock(&poolPtr->lock);
-    
+
     /*
      * Check for an excessive proxy
      */
@@ -3051,7 +2990,7 @@ RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc,
     } else if (Tcl_GetIntFromObj(interp, objv[2], &ms) != TCL_OK) {
         return TCL_ERROR;
     }
-    
+
     return Eval(interp, proxyPtr, Tcl_GetString(objv[1]), ms);
 }
 
@@ -3276,7 +3215,7 @@ ProxyError(Tcl_Interp *interp, Err err)
         break;
     case EInit:
         code = "EInit";
-        msg = "init script failed"; 
+        msg = "init script failed";
         break;
     case EDead:
         code = "EDead";
@@ -3288,7 +3227,7 @@ ProxyError(Tcl_Interp *interp, Err err)
         break;
     case EBusy:
         code = "EBusy";
-        msg = "currently evaluating a script"; 
+        msg = "currently evaluating a script";
         break;
     default:
         code = "EUnknown";

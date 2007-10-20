@@ -224,7 +224,8 @@ extern Tcl_ObjCmdProc
     NsTclWriteFpObjCmd,
     NsTclWriteObjCmd,
     NsTclWriterObjCmd,
-    NsTclFileStatObjCmd;
+    NsTclFileStatObjCmd,
+    NsTclSetPrivilegesObjCmd;
 
 extern Tcl_CmdProc
     NsTclAdpStatsCmd,
@@ -477,6 +478,8 @@ static Cmd servCmds[] = {
 
     {"ns_upload_stats", NULL, NsTclProgressObjCmd},
     {"ns_writer", NULL, NsTclWriterObjCmd},
+
+    {"ns_setprivileges", NULL, NsTclSetPrivilegesObjCmd},
 
     /*
      * Add more server Tcl commands here.

@@ -283,45 +283,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Verify the uid/gid args.
      */
 
-    if (uarg != NULL) {
-        uid = Ns_GetUid(uarg);
-        if (uid == -1) {
-            int nc;
-            /*
-             * Hm, try see if given as numeric uid...
-             */
-            if (sscanf(uarg, "%d%n", &uid, &nc) != 1
-                || nc != strlen(uarg)
-                || Ns_GetNameForUid(NULL, uid) == NS_FALSE) {
-                Ns_Fatal("nsmain: unknown user '%s'", uarg);
-            }
-            /*
-             * Set user-passed value to NULL, causing supplementary
-             * groups to be ignored later.
-             */
-            uarg = NULL;
-        }
-        if (uarg != NULL) {
-             gid = Ns_GetUserGid(uarg);
-        } else {
-            Ns_DString ds;
-            Ns_DStringInit(&ds);
-            if (Ns_GetNameForUid(&ds, uid) == NS_TRUE) {
-                gid = Ns_GetUserGid(Ns_DStringValue(&ds));
-            }
-            Ns_DStringFree(&ds);
-        }
-    }
-    if (garg != NULL) {
-        gid = Ns_GetGid(garg);
-        if (gid == -1) {
-            int nc;
-            if (sscanf(garg, "%d%n", (int*)&gid, &nc) != 1
-                || nc != strlen(garg)
-                || Ns_GetNameForGid(NULL, gid) == NS_FALSE) {
-                Ns_Fatal("nsmain: unknown group '%s'", garg);
-            }
-        }
+    if (Ns_GetPrivileges(uarg, garg, &uid, &gid) == -1) {
+        Ns_Fatal("nsmain: invalid user=<%s> or group <%s> given at command line",
+                 uarg ? uarg : NULL, garg ? garg : NULL);
     }
 
     /*
@@ -457,20 +421,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          * Set or clear supplementary groups.
          */
 
-        if (uarg != NULL) {
-            if (initgroups(uarg, (gid_t)gid) != 0) {
-                Ns_Fatal("nsmain: initgroups(%s, %d) failed: '%s'",
-                         uarg, gid, strerror(errno));
-            }
-        } else {
-            if (setgroups(0, NULL) != 0) {
-                Ns_Fatal("nsmain: setgroups(0, NULL) failed: '%s'",
-                         strerror(errno));
-            }
-        }
-
-        if (gid != getgid() && setgid((gid_t)gid) != 0) {
-            Ns_Fatal("nsmain: setgid(%d) failed: '%s'", gid, strerror(errno));
+        if (Ns_SetPrivileges(-1, gid) == -1) {
+            Ns_Fatal("nsmain: failed to switch to group %d", gid);
         }
 
         /*
@@ -480,8 +432,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
         NsForkBinder();
 
-        if (setuid((uid_t)uid) != 0) {
-            Ns_Fatal("nsmain: setuid(%d) failed: '%s'", uid, strerror(errno));
+        if (Ns_SetPrivileges(uid, -1) == -1) {
+            Ns_Fatal("nsmain: failed to switch to user %d", uid);
         }
     }
 

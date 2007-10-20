@@ -1070,6 +1070,16 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.24  2007/10/20 17:20:32  seryakov
+ *     * include/ns.h:
+ *     * nsd/unix.c: Added 2 new public API functions Ns_SetPriveleges and Ns_GetPriveleges
+ *       which are resolve and assign user uid/gid
+ *
+ *     * nsproxy/nsproxylib.c:
+ *     * nsd/nsmain.c: Switched to use new function that assign user real uid/gid
+ *
+ *     * nsd/tclmisc.c: New Tcl command ns_setpriveleges that sets real uid and gid
+ *
  * Revision 1.23  2007/08/14 08:49:10  vasiljevic
  * Replaced uint32 with ns_uint32.
  *
@@ -1380,4 +1390,46 @@ NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_AppendResult(interp, digestChars, NULL);
 
     return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclSetPrivilegesObjCmd --
+ *
+ *      Implements ns_setprivileges as ObjCommand.
+ *
+ * Results:
+ *      Tcl result, 1 if sucessful, -1 on error
+ *
+ * Side effects:
+ *      Error message will be output in the log file, not returned as Tcl result
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclSetPrivilegesObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                 Tcl_Obj *CONST objv[])
+{
+    int uid, gid;
+    char *user, *group = NULL;
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "user ?group?");
+        return TCL_ERROR;
+    }
+
+    user = Tcl_GetString(objv[1]);
+    if (objc > 2) {
+        group = Tcl_GetString(objv[2]);
+    }
+
+    if (Ns_GetPrivileges(user, group, &uid, &gid) == -1) {
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+        return TCL_OK;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_SetPrivileges(uid, gid)));
+    return TCL_OK;
 }
