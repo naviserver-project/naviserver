@@ -250,7 +250,7 @@ Ns_StrToInt(CONST char *string, int *intPtr)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+int
 Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
 {
     Tcl_WideInt  lval;

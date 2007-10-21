@@ -1996,7 +1996,7 @@ NS_EXTERN int
 Ns_StrToInt(CONST char *string, int *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN Tcl_WideInt
+NS_EXTERN int
 Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

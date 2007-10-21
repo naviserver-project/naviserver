@@ -1,5 +1,7 @@
 2007-10-21  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/tclconf.c: ns_config -int now can handle wide integers
+
     	* include/ns.h:
     	* nsproxy/nsproxylib.c:
 	* nsd/nsmain.c:
