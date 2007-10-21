@@ -109,7 +109,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     Ns_Time   timeout;
 
 #ifndef _WIN32
-    int       uid = -1, gid = -1, debug = 0, mode = 0;
+    int       debug = 0, mode = 0;
     char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
     char     *bindargs = NULL, *bindfile = NULL, *procname = NULL;
     Ns_Set   *servers;
@@ -280,15 +280,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #ifndef _WIN32
 
     /*
-     * Verify the uid/gid args.
-     */
-
-    if (Ns_GetPrivileges(uarg, garg, &uid, &gid) == -1) {
-        Ns_Fatal("nsmain: invalid user=<%s> or group <%s> given at command line",
-                 uarg ? uarg : NULL, garg ? garg : NULL);
-    }
-
-    /*
      * If running as privileged user (root) check given user/group
      * information and bail-out if any of them not really known.
      */
@@ -302,13 +293,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          * to set the process group.
          */
 
-        if (uid == -1) {
+        if (uarg == NULL) {
             Ns_Fatal("nsmain: will not run without valid user; "
                      "must specify '-u username' parameter");
-        }
-        if (gid == -1) {
-            Ns_Fatal("nsmain: will not run for unknown group; "
-                     "must specify '-g group' parameter");
         }
     }
 
@@ -421,8 +408,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
          * Set or clear supplementary groups.
          */
 
-        if (Ns_SetPrivileges(-1, gid) == -1) {
-            Ns_Fatal("nsmain: failed to switch to group %d", gid);
+        if (Ns_SetGroup(garg) == NS_ERROR) {
+            Ns_Fatal("nsmain: failed to switch to group %s", garg);
         }
 
         /*
@@ -432,8 +419,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
         NsForkBinder();
 
-        if (Ns_SetPrivileges(uid, -1) == -1) {
-            Ns_Fatal("nsmain: failed to switch to user %d", uid);
+        if (Ns_SetUser(uarg) == NS_ERROR) {
+            Ns_Fatal("nsmain: failed to switch to user %s", uarg);
         }
     }
 

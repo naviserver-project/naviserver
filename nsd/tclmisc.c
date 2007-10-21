@@ -1070,6 +1070,15 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.25  2007/10/21 15:44:39  seryakov
+ *         * nsd/nswin32.c: No need for extra stubs
+ *         * include/ns.h:
+ *         * nsproxy/nsproxylib.c:
+ *         * nsd/nsmain.c:
+ *         * nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of
+ *         deleted Ns_SetPriveleges. New Tcl commands ns_setuser/ns_setgroup instead of
+ *         ns_setpriveleges
+ *
  * Revision 1.24  2007/10/20 17:20:32  seryakov
  *     * include/ns.h:
  *     * nsd/unix.c: Added 2 new public API functions Ns_SetPriveleges and Ns_GetPriveleges
@@ -1397,7 +1406,7 @@ NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  * NsTclSetPrivilegesObjCmd --
  *
- *      Implements ns_setprivileges as ObjCommand.
+ *      Implements ns_setuser and ns_setgroup as ObjCommand.
  *
  * Results:
  *      Tcl result, 1 if sucessful, -1 on error
@@ -1409,27 +1418,26 @@ NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclSetPrivilegesObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                 Tcl_Obj *CONST objv[])
+NsTclSetUserObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    int uid, gid;
-    char *user, *group = NULL;
-
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "user ?group?");
+        Tcl_WrongNumArgs(interp, 1, objv, "user");
         return TCL_ERROR;
     }
 
-    user = Tcl_GetString(objv[1]);
-    if (objc > 2) {
-        group = Tcl_GetString(objv[2]);
-    }
-
-    if (Ns_GetPrivileges(user, group, &uid, &gid) == -1) {
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-        return TCL_OK;
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_SetPrivileges(uid, gid)));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_SetUser(Tcl_GetString(objv[1]))));
     return TCL_OK;
 }
+
+int
+NsTclSetGroupObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "group");
+        return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_SetGroup(Tcl_GetString(objv[1]))));
+    return TCL_OK;
+}
+

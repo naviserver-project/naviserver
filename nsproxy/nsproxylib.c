@@ -359,7 +359,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_Interp  *interp;
     Slave         proc;
     Req         *reqPtr;
-    int          result, len, n, max = 0, uid, gid;
+    int          result, len, n, max = 0;
     Tcl_DString  in, out;
     char        *script, *active, *dots;
     char        *uarg = NULL, *user = NULL, *group = NULL;
@@ -458,8 +458,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
         }
     }
 
-    if (Ns_GetPrivileges(user, group, &uid, &gid) == -1 ||
-        Ns_SetPrivileges(uid, gid) == -1) {
+    if (Ns_SetGroup(group) == NS_ERROR || Ns_SetUser(user) == NS_ERROR) {
         Ns_Fatal("nsproxy: unable to switch to user '%s', group '%s'", user, group);
     }
 

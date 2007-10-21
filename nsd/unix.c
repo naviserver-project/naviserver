@@ -600,115 +600,23 @@ Ns_GetGid(char *group)
 
 /*
  *----------------------------------------------------------------------
- * Ns_SetPrivileges --
+ * Ns_SetGroup --
  *
- *      Set the effective user ID/group ID of the current process, uid as -1 or
- *      gid as -1 will be ignored
+ *      Set the effective group ID of the current process
  *
  * Results:
- *      -1 on error
+ *      NS_ERROR on error or NS_OK
  *
  * Side effects:
- *      Process privileges will be different after success
- *      If uid is not -1 all suplementary groups will be added as well
- *      If gid is not -1 all suplementry groups will be reset
+ *      All suplementry groups will be reset
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_SetPrivileges(int uid, int gid)
+Ns_SetGroup(char *group)
 {
-
-    if (gid > -1) {
-        if (setgroups(0, NULL) != 0) {
-            Ns_Log(Error, "Ns_SetPrivileges: setgroups(0, NULL) failed: %s",
-                     strerror(errno));
-            return -1;
-        }
-
-        if (gid != (int)getgid() && setgid((gid_t)gid) != 0) {
-            Ns_Log(Error, "Ns_SetPrivileges: setgid(%d) failed: %s", gid, strerror(errno));
-            return -1;
-        }
-        Ns_Log(Debug, "Ns_SetPrivileges: set group id to %d", gid);
-    }
-
-    if (uid > -1) {
-        Ns_DString ds;
-
-        Ns_DStringInit(&ds);
-        if (Ns_GetNameForUid(&ds, (uid_t)uid) != NS_TRUE) {
-            Ns_Log(Error, "Ns_SetPrivileges: no user name for uid %d", uid);
-            Ns_DStringFree(&ds);
-            return -1;
-        }
-
-        if (initgroups(Ns_DStringValue(&ds), gid) != 0) {
-            Ns_Log(Error, "Ns_SetPrivileges: initgroups(%s, %d) failed: %s", Ns_DStringValue(&ds),
-                   gid, strerror(errno));
-            Ns_DStringFree(&ds);
-            return -1;
-        }
-        Ns_DStringFree(&ds);
-
-        if (uid != (int)getuid() && setuid((uid_t)uid) != 0) {
-            Ns_Log(Error, "Ns_SetPrivileges: setuid(%d) failed: %s", uid, strerror(errno));
-            return -1;
-        }
-        Ns_Log(Debug, "Ns_SetPrivileges: set user id to %d", uid);
-    }
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- * Ns_GetPrivileges --
- *
- *      Resolves uid and gid for given user/group name
- *
- * Results:
- *      -1 on error
- *
- * Side effects:
- *      uidPtr or gidPtr will be set to -1 in case of empty user or group
- *
- *----------------------------------------------------------------------
- */
-
-int Ns_GetPrivileges(char *user, char *group, int *uidPtr, int *gidPtr)
-{
-    int nc, uid = -1, gid = -1;
-
-    if (user != NULL) {
-        uid = Ns_GetUid(user);
-        if (uid == -1) {
-            /*
-             * Hm, try see if given as numeric uid...
-             */
-            if (sscanf(user, "%d%n", &uid, &nc) != 1
-                || nc != strlen(user)
-                || Ns_GetNameForUid(NULL, (uid_t)uid) == NS_FALSE) {
-                Ns_Log(Error, "Ns_GetPrivileges: unknown user '%s'", user);
-                return -1;
-            }
-            /*
-             * Set user-passed value to NULL, causing supplementary
-             * groups to be ignored later.
-             */
-            user = NULL;
-        }
-        if (user != NULL) {
-             gid = Ns_GetUserGid(user);
-        } else {
-            Ns_DString ds;
-            Ns_DStringInit(&ds);
-            if (Ns_GetNameForUid(&ds, (uid_t)uid) == NS_TRUE) {
-                gid = Ns_GetUserGid(Ns_DStringValue(&ds));
-            }
-            Ns_DStringFree(&ds);
-        }
-    }
+    int nc, gid;
 
     if (group != NULL) {
         gid = Ns_GetGid(group);
@@ -716,20 +624,86 @@ int Ns_GetPrivileges(char *user, char *group, int *uidPtr, int *gidPtr)
             if (sscanf(group, "%d%n", (int*)&gid, &nc) != 1
                 || nc != strlen(group)
                 || Ns_GetNameForGid(NULL, (gid_t)gid) == NS_FALSE) {
-                Ns_Log(Error, "Ns_GetPrivileges: unknown group '%s'", group);
-                return -1;
+                Ns_Log(Error, "Ns_GetGroup: unknown group '%s'", group);
+                return NS_ERROR;
             }
         }
-    }
 
-    if (uidPtr != NULL) {
-        *uidPtr = uid;
-    }
+        if (setgroups(0, NULL) != 0) {
+            Ns_Log(Error, "Ns_SetGroup: setgroups(0, NULL) failed: %s",
+                     strerror(errno));
+            return NS_ERROR;
+        }
 
-    if (gidPtr != NULL) {
-        *gidPtr = gid;
+        if (gid != (int)getgid() && setgid((gid_t)gid) != 0) {
+            Ns_Log(Error, "Ns_SetGroup: setgid(%d) failed: %s", gid, strerror(errno));
+            return NS_ERROR;
+        }
+        Ns_Log(Debug, "Ns_SetGroup: set group id to %d", gid);
     }
-    return 0;
+    return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * Ns_SetUser --
+ *
+ *      Set the effective user ID of the current process
+ *
+ * Results:
+ *      NS_ERROR on error or NS_OK
+ *
+ * Side effects:
+ *      All suplementry groups will be assigned as well
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_SetUser(char *user)
+{
+    int nc, uid, gid = -1;
+    Ns_DString ds;
+
+    if (user != NULL) {
+        uid = Ns_GetUid(user);
+        if (uid == -1) {
+
+            /*
+             * Hm, try see if given as numeric uid...
+             */
+
+            Ns_DStringInit(&ds);
+            if (sscanf(user, "%d%n", &uid, &nc) != 1
+                || nc != strlen(user)
+                || Ns_GetNameForUid(&ds, (uid_t)uid) == NS_FALSE) {
+                Ns_Log(Error, "Ns_SetUser: unknown user '%s'", user);
+                Ns_DStringFree(&ds);
+                return NS_ERROR;
+            }
+            user = Ns_DStringValue(&ds);
+            Ns_DStringFree(&ds);
+        }
+
+        gid = Ns_GetUserGid(user);
+
+        if (initgroups(user, gid) != 0) {
+            Ns_Log(Error, "Ns_SetUser: initgroups(%s, %d) failed: %s", user,
+                   gid, strerror(errno));
+            return NS_ERROR;
+        }
+
+        if (gid > -1 && gid != (int)getgid() && setgid((gid_t)gid) != 0) {
+            Ns_Log(Error, "Ns_SetUser: setgid(%d) failed: %s", gid, strerror(errno));
+            return NS_ERROR;
+        }
+        if (uid != (int)getuid() && setuid((uid_t)uid) != 0) {
+            Ns_Log(Error, "Ns_SetUser: setuid(%d) failed: %s", uid, strerror(errno));
+            return NS_ERROR;
+        }
+        Ns_Log(Debug, "Ns_SetUser: set user id to %d", uid);
+    }
+    return NS_OK;
 }
 
 #ifdef HAVE_POLL

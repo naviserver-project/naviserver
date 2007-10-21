@@ -190,8 +190,10 @@ extern Tcl_ObjCmdProc
     NsTclServerPathObjCmd,
     NsTclServerRootProcObjCmd,
     NsTclSetCookieObjCmd,
+    NsTclSetGroupObjCmd,
     NsTclSetLimitsObjCmd,
     NsTclSetObjCmd,
+    NsTclSetUserObjCmd,
     NsTclShortcutFilterObjCmd,
     NsTclShutdownObjCmd,
     NsTclSleepObjCmd,
@@ -224,8 +226,7 @@ extern Tcl_ObjCmdProc
     NsTclWriteFpObjCmd,
     NsTclWriteObjCmd,
     NsTclWriterObjCmd,
-    NsTclFileStatObjCmd,
-    NsTclSetPrivilegesObjCmd;
+    NsTclFileStatObjCmd;
 
 extern Tcl_CmdProc
     NsTclAdpStatsCmd,
@@ -479,7 +480,8 @@ static Cmd servCmds[] = {
     {"ns_upload_stats", NULL, NsTclProgressObjCmd},
     {"ns_writer", NULL, NsTclWriterObjCmd},
 
-    {"ns_setprivileges", NULL, NsTclSetPrivilegesObjCmd},
+    {"ns_setuser", NULL, NsTclSetUserObjCmd},
+    {"ns_setgroup", NULL, NsTclSetGroupObjCmd},
 
     /*
      * Add more server Tcl commands here.

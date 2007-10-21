@@ -828,31 +828,6 @@ kill(int pid, int sig)
     return -1;
 }
 
-/*
- *----------------------------------------------------------------------
- * Ns_SetPrivileges, Ns_GetPriveleges --
- *
- *      Stubs for not implemented functions
- *
- * Results:
- *      -1 
- *
- * Side effects:
- *      
- *----------------------------------------------------------------------
- */
-
-int
-Ns_SetPrivileges(int uid, int gid)
-{
-   return -1;
-}
-
-int Ns_GetPrivileges(char *user, char *group, int *uidPtr, int *gidPtr)
-{
-   return -1;
-}
-
 
 /*
  *----------------------------------------------------------------------

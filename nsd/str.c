@@ -264,7 +264,7 @@ Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
     if ((errno == ERANGE && (lval == LLONG_MAX || lval == LLONG_MIN))) {
         return NS_ERROR;
     }
-    *intPtr = (int) lval;
+    *intPtr = (Tcl_WideInt) lval;
 
     return NS_OK;
 }
