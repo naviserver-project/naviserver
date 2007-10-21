@@ -666,6 +666,7 @@ Ns_SetUser(char *user)
     Ns_DString ds;
 
     if (user != NULL) {
+        Ns_DStringInit(&ds);
         uid = Ns_GetUid(user);
         if (uid == -1) {
 
@@ -673,7 +674,6 @@ Ns_SetUser(char *user)
              * Hm, try see if given as numeric uid...
              */
 
-            Ns_DStringInit(&ds);
             if (sscanf(user, "%d%n", &uid, &nc) != 1
                 || nc != strlen(user)
                 || Ns_GetNameForUid(&ds, (uid_t)uid) == NS_FALSE) {
@@ -682,7 +682,6 @@ Ns_SetUser(char *user)
                 return NS_ERROR;
             }
             user = Ns_DStringValue(&ds);
-            Ns_DStringFree(&ds);
         }
 
         gid = Ns_GetUserGid(user);
@@ -690,8 +689,10 @@ Ns_SetUser(char *user)
         if (initgroups(user, gid) != 0) {
             Ns_Log(Error, "Ns_SetUser: initgroups(%s, %d) failed: %s", user,
                    gid, strerror(errno));
+            Ns_DStringFree(&ds);
             return NS_ERROR;
         }
+        Ns_DStringFree(&ds);
 
         if (gid > -1 && gid != (int)getgid() && setgid((gid_t)gid) != 0) {
             Ns_Log(Error, "Ns_SetUser: setgid(%d) failed: %s", gid, strerror(errno));
