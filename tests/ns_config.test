@@ -70,6 +70,10 @@ test ns_config-3.5 {not an int} -body {
     ns_config -int ns/testconfig notint
 } -returnCodes error -result {expected integer but got "this-is-not-an-int"}
 
+test ns_config-3.6 {wide int} -body {
+    ns_config -int ns/testconfig wideint
+} -result {12345678900}
+
 
 
 test ns_config-4.1 {int min} -body {

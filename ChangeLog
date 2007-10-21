@@ -1,5 +1,8 @@
 2007-10-21  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* tests/test.nscfg:
+	* tests/ns_config.test: Added test for wide int
+
 	* nsd/tclconf.c: ns_config -int now can handle wide integers
 
     	* include/ns.h:
