@@ -408,8 +408,8 @@ typedef struct Request {
 
     char *next;                 /* Next read offset. */
     char *content;              /* Start of content. */
-    int length;                 /* Length of content. */
-    int avail;                  /* Bytes avail in buffer. */
+    Tcl_WideInt length;         /* Length of content. */
+    Tcl_WideInt avail;          /* Bytes avail in buffer. */
     int leadblanks;             /* Number of leading blank lines read */
 
     /*
@@ -480,7 +480,7 @@ typedef struct Driver {
     char *bindaddr;             /* Numerical listen address. */
     int port;                   /* Port in location. */
     int backlog;                /* listen() backlog. */
-    int maxinput;               /* Maximum request bytes to read. */
+    Tcl_WideInt maxinput;       /* Maximum request bytes to read. */
     int maxline;                /* Maximum request line size. */
     int maxheaders;             /* Maximum number of request headers. */
     int readahead;              /* Maximum request size in memory. */

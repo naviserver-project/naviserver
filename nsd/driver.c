@@ -298,8 +298,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->opts         = init->opts;
     drvPtr->servPtr      = servPtr;
 
-    drvPtr->maxinput     = Ns_ConfigIntRange(path, "maxinput",
-                                             1024*1024, 1024, INT_MAX);
+    drvPtr->maxinput     = Ns_ConfigWideIntRange(path, "maxinput",
+                                             1024*1024, 1024, LLONG_MAX);
 
     drvPtr->maxline      = Ns_ConfigIntRange(path, "maxline",
                                              4096,       256, INT_MAX);
@@ -1964,7 +1964,7 @@ SockRead(Sock *sockPtr, int spooler)
 
     struct iovec  buf;
     char         tbuf[4096];
-    int          len, nread, n;
+    Tcl_WideInt  len, nread, n;
 
     /*
      * Initialize Request structure
@@ -2061,7 +2061,8 @@ SockRead(Sock *sockPtr, int spooler)
      * Check the hard limit for max uploaded content size
      */
 
-    if (reqPtr->avail > sockPtr->drvPtr->maxinput) {
+    if (reqPtr->avail > drvPtr->maxinput) {
+        Ns_Log(Debug, "request too large, read=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->avail, drvPtr->maxinput);
         return SOCK_ENTITYTOOLARGE;
     }
 
@@ -2175,17 +2176,17 @@ SockParse(Sock *sockPtr, int spooler)
             reqPtr->coff = reqPtr->roff;
             s = Ns_SetIGet(reqPtr->headers, "content-length");
             if (s != NULL) {
-                int length;
+                Tcl_WideInt length;
 
                 /*
                  * Honour meaningfull remote
                  * content-length hints only.
                  */
 
-                length = atoi(s);
-                if (length >= 0) {
+                if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
                     reqPtr->length = length;
                     if (reqPtr->length > drvPtr->maxinput) {
+                        Ns_Log(Debug, "request too large, length=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->length, drvPtr->maxinput);
                         return SOCK_ENTITYTOOLARGE;
                     }
                 }
@@ -2484,7 +2485,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     drvPtr->spooler.curPtr = drvPtr->spooler.curPtr->nextPtr;
     Ns_MutexUnlock(&drvPtr->spooler.lock);
 
-    Ns_Log(Notice, "Spooler: %d: started fd=%d: %u bytes",
+    Ns_Log(Notice, "Spooler: %d: started fd=%d: %" TCL_LL_MODIFIER "d bytes",
            queuePtr->id, sockPtr->sock, sockPtr->reqPtr->length);
 
     Ns_MutexLock(&queuePtr->lock);

@@ -220,7 +220,7 @@ NsUpdateProgress(Ns_Sock *sock)
             Ns_MutexUnlock(&lock);
 
             if (!new) {
-                Ns_Log(Warning, "ns:progress(%d/%d): ignoring duplicate URL: %s",
+                Ns_Log(Warning, "ns:progress(%" TCL_LL_MODIFIER "d/%" TCL_LL_MODIFIER "d): ignoring duplicate URL: %s",
                        reqPtr->avail, reqPtr->length, ds.string);
             }
             Ns_DStringFree(&ds);

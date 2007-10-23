@@ -1,7 +1,14 @@
+2007-10-23  Vlad Seryakov  <seryakov@users.sf.net>
+
+    * nsd/driver.c:
+    * nsd/progress.c:
+    * nsd/nsd.h: Added support for uploads larger than 2GB, length fields are
+    Tcl_WideInt now, printf output modifiers updated
+
 2006-03-30  Ibrahim Tannir <itannir@users.sf.net>
 
 	* nsd/win32.c: Corrected NsMemMap() to facilitate faspath on Windows.
-	
+
 2007-10-21  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/test.nscfg:
@@ -12,7 +19,7 @@
     	* include/ns.h:
     	* nsproxy/nsproxylib.c:
 	* nsd/nsmain.c:
-    	* nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of 
+    	* nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of
 	deleted Ns_SetPriveleges. New Tcl commands ns_setuser/ns_setgroup instead of
 	ns_setpriveleges
 
