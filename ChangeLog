@@ -1,3 +1,7 @@
+2006-03-30  Ibrahim Tannir <itannir@users.sf.net>
+
+	* nsd/win32.c: Corrected NsMemMap() to facilitate faspath on Windows.
+	
 2007-10-21  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* tests/test.nscfg:
@@ -2783,7 +2787,7 @@
 	* nsd/tclcmds.c: Added 2 new cache commands ns_cache_get and
 	ns_cache_set for easier cache manipulation
 
-2006-03-30  Ibrahim Tannir <itannir@users.sf.net>
+2007-10-23  Ibrahim Tannir <itannir@users.sf.net>
 
 	* nsd/adpeval.c:  added translation binary in ParseFile,
 	otherwise reading Windows files may break (size != n).

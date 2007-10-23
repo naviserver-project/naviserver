@@ -447,7 +447,7 @@ NsHandleSignals(void)
             * to restart the service.
             */
 
-            servicefailed = 1; 
+            servicefailed = 1;
         }
         Ns_MutexUnlock(&lock);
         if ((sig & NS_SIGHUP)) {
@@ -558,7 +558,8 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
 
     mobj = CreateFileMapping(hndl,
                              NULL,
-                             PAGE_READWRITE|SEC_NOCACHE,
+                             mode == NS_MMAP_WRITE ?
+                             PAGE_READWRITE : PAGE_READONLY,
                              0,
                              0,
                              name);
@@ -570,7 +571,8 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
     }
 
     addr = MapViewOfFile(mobj, 
-                         FILE_MAP_ALL_ACCESS,
+                         mode == NS_MMAP_WRITE ?
+                         FILE_MAP_WRITE : FILE_MAP_READ,
                          0, 
                          0, 
                          size);
@@ -1022,6 +1024,7 @@ ServiceMain(DWORD argc, LPTSTR *argv)
     StopTicker();
     ReportStatus(SERVICE_STOP_PENDING, NO_ERROR, 100);
     if (!servicefailed) {
+        Ns_Log(Notice, "nswin32: noitifying SCM about exit");
         ReportStatus(SERVICE_STOPPED, 0, 0);
     }
     Ns_Log(Notice, "nswin32: service exiting");
