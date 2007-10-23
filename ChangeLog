@@ -16,10 +16,10 @@
 
 	* nsd/tclconf.c: ns_config -int now can handle wide integers
 
-    	* include/ns.h:
-    	* nsproxy/nsproxylib.c:
+    * include/ns.h:
+    * nsproxy/nsproxylib.c:
 	* nsd/nsmain.c:
-    	* nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of
+    * nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of
 	deleted Ns_SetPriveleges. New Tcl commands ns_setuser/ns_setgroup instead of
 	ns_setpriveleges
 
@@ -2793,6 +2793,20 @@
 	* nsd/tclcache.c:
 	* nsd/tclcmds.c: Added 2 new cache commands ns_cache_get and
 	ns_cache_set for easier cache manipulation
+
+    * nsd/driver.c:
+    * nsd/nsd.h:
+    * nsd/conn.c:
+    * docs/src/ns_conn.man:
+    * include/ns.h: Added new parameter maxupload to the driver which if > 0 enables
+    spooling of the whole request contents into regular temp file. After the content is
+    put into the file, connection thread can access it using ns_conn contentfile command
+    which will return name of temp file. Public function Ns_ConnContentFile and
+    Ns_ConnContentFd added to access temprorary file.
+    * tcl/form.tcl: added ns_parseformfile proc which will parse raw content file into
+    query parameters and uploaded files if content was in multipart/form-data format
+
+    * contrib/examples:upload.tcl: Updated to support new maxupload option
 
 2007-10-23  Ibrahim Tannir <itannir@users.sf.net>
 

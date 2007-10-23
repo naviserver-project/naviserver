@@ -3,7 +3,23 @@
 # Vlad Seryakov vlad@crystalballinc.com
 #
 
-switch -- [ns_queryget cmd] {
+# Command to perform
+set cmd [ns_queryget cmd]
+
+# In case of very large files and if server set maxupload limit, this
+# will return temporary file name where all content is spooled
+set file [ns_conn contentfile]
+
+# No query and not empty file means we need to deal with situation when
+# all content is in the temp file
+if { $cmd == "" && $file != "" } {
+  ns_log notice uploaded into $file, content type = [ns_set iget [ns_conn headers] content-type]
+  file rename -force -- $file /tmp/test
+  set cmd upload
+}
+
+
+switch -- $cmd {
   stats {
      # Discover absolute path to the script
      set url [ns_normalizepath [file dirname [ns_conn url]]/upload.tcl]
@@ -37,6 +53,7 @@ switch -- [ns_queryget cmd] {
   }
 
   default {
+
      ns_return 200 text/html {
 
      <SCRIPT>
@@ -79,7 +96,8 @@ switch -- [ns_queryget cmd] {
          ns_param enabletclpages  true
 
          ns_section ns/server/default/module/nssock<BR>
-         ns_param maxinput        [expr 1024*1024*500]<BR>
+         ns_param maxinput       3000000000<BR>
+         ns_param maxupload       700000000<BR>
          ns_param spoolerthreads  1<BR>
      </UL>
      <P>

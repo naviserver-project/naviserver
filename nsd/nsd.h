@@ -481,6 +481,8 @@ typedef struct Driver {
     int port;                   /* Port in location. */
     int backlog;                /* listen() backlog. */
     Tcl_WideInt maxinput;       /* Maximum request bytes to read. */
+    Tcl_WideInt maxupload;      /* Uploads that exceed will go into temp file without parsing. */
+    char *uploadpath;           /* Path where uploaded files will be spooled */
     int maxline;                /* Maximum request line size. */
     int maxheaders;             /* Maximum number of request headers. */
     int readahead;              /* Maximum request size in memory. */
@@ -523,9 +525,11 @@ typedef struct Sock {
     int pidx;                   /* poll() index. */
     Ns_Time timeout;
     Request *reqPtr;
-    int tfd;
-    char *taddr;
-    size_t tsize;
+
+    int tfd;                    /* file descriptor with request contents */
+    char *taddr;                /* mmap-ed temporary file */
+    size_t tsize;               /* size of mmap region */
+    char *tfile;                /* name of regular temporary file */
 
     void *sls[1];               /* Slots for sls storage. */
 
@@ -550,7 +554,7 @@ typedef struct NsLimits {
     char            *name;
     unsigned int     maxrun;    /* Max conns to run at once. */
     unsigned int     maxwait;   /* Max conns waiting to run before being dropped. */
-    size_t	     maxupload; /* Max data accepted. */
+    size_t	         maxupload; /* Max data accepted. */
     int              timeout;   /* Seconds allowed for conn to complete. */
 
     Ns_Mutex         lock;      /* Lock for state and stats. */

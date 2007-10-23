@@ -324,5 +324,134 @@ proc ns_isformcached {} {
     return [info exists _ns_form]
 }
 
+
+#
+# ns_parseformfile --
+#
+#   Parse a multi-part form data file, this proc does the same
+#   thing what internal server does for request content. Primary 
+#   purpose of this proc to be used with spooled content, when
+#   server puts the whole request into temporary file, if request
+#   was in format multipart/form-data, this proc can be used to split
+#   multiple parts
+#
+# Result: 
+#   Parses query parameters and uploaded files, puts name/value
+#   pairs into provided ns_set, all files are copied into seperate temp 
+#   files and stored as name.tmpfile in the ns_set
+#
+
+proc ns_parseformfile { file form contentType } {
+
+    if { [catch { set fp [open $file r] } errmsg] } {
+        return
+    }
+
+    if { ![regexp -nocase {boundary=(.*)$} $contentType 1 b] } {
+        return
+    }
+
+    fconfigure $fp -encoding binary -translation binary
+    set boundary "--$b"
+
+    while { ![eof $fp] } {
+	# skip past the next boundary line
+	if { ![string match $boundary* [string trim [gets $fp]]] } {
+	    continue
+	}
+
+	# fetch the disposition line and field name
+	set disposition [string trim [gets $fp]]
+	if { ![string length $disposition] } {
+	    break
+	}
+
+	set disposition [split $disposition \;]
+	set name [string trim [lindex [split [lindex $disposition 1] =] 1] \"]
+
+	# fetch and save any field headers (usually just content-type for files)
+	
+	while { ![eof $fp] } {
+	    set line [string trim [gets $fp]]
+	    if { ![string length $line] } {
+		break
+	    }
+	    set header [split $line :]
+	    set key [string tolower [string trim [lindex $header 0]]]
+	    set value [string trim [lindex $header 1]]
+	    
+	    ns_set put $form $name.$key $value
+	}
+
+	if { [llength $disposition] == 3 } {
+	    # uploaded file -- save the original filename as the value
+	    set filename [string trim [lindex [split [lindex $disposition 2] =] 1] \"]
+	    ns_set put $form $name $filename
+
+	    # read lines of data until another boundary is found
+	    set start [tell $fp]
+	    set end $start
+	    
+	    while { ![eof $fp] } {
+		if { [string match $boundary* [string trim [gets $fp]]] } {
+		    break
+		}
+		set end [tell $fp]
+	    }
+	    set length [expr $end - $start - 2]
+
+	    # create a temp file for the content, which will be deleted
+	    # when the connection close.  ns_openexcl can fail, hence why 
+	    # we keep spinning
+
+	    set tmp ""
+	    while { $tmp == "" } {
+		set tmpfile [ns_tmpnam]
+		set tmp [ns_openexcl $tmpfile]
+	    }
+
+	    catch {fconfigure $tmp -encoding binary -translation binary}
+
+	    if { $length > 0 } {
+		seek $fp $start
+		ns_cpfp $fp $tmp $length
+	    }
+
+	    close $tmp
+	    seek $fp $end
+	    ns_set put $form $name.tmpfile $tmpfile
+
+            if { [ns_conn isconnected] } {
+  	        ns_atclose "ns_unlink -nocomplain $tmpfile"
+            }
+
+	} else {
+	    # ordinary field - read lines until next boundary
+	    set first 1
+	    set value ""
+	    set start [tell $fp]
+
+	    while { [gets $fp line] >= 0 } {
+		set line [string trimright $line \r]
+		if { [string match $boundary* $line] } {
+		    break
+		}
+		if { $first } {
+		    set first 0
+		} else {
+		    append value \n
+		}
+		append value $line
+		set start [tell $fp]
+	    }
+	    seek $fp $start
+	    ns_set put $form $name $value
+	}
+    }
+    close $fp
+}
+
 # EOF $RCSfile$
+
+
 

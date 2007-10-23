@@ -887,6 +887,7 @@ Ns_GetVersion(int *major, int *minor, int *patch, int *type);
 
 NS_EXTERN int Ns_ConnId(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnContentFd(Ns_Conn *conn);
+NS_EXTERN char *Ns_ConnContentFile(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN Tcl_Encoding Ns_ConnGetEncoding(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);

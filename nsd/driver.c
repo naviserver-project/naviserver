@@ -301,6 +301,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->maxinput     = Ns_ConfigWideIntRange(path, "maxinput",
                                              1024*1024, 1024, LLONG_MAX);
 
+    drvPtr->maxupload     = Ns_ConfigWideIntRange(path, "maxupload",
+                                             0,            0, drvPtr->maxinput);
+
     drvPtr->maxline      = Ns_ConfigIntRange(path, "maxline",
                                              4096,       256, INT_MAX);
 
@@ -342,6 +345,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                                              drvPtr->backlog, 1, INT_MAX);
 
     drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
+
+    drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", P_tmpdir));
 
     /*
      * Allow specification of logging or not of various deep
@@ -1908,7 +1913,20 @@ SockClose(Sock *sockPtr, int keep)
         NsDriverClose(sockPtr);
     }
 
+    /*
+     * Unconditionally remove temporaty file, connecttion thread
+     * should take care about very large uploads
+     */
+
+    if (sockPtr->tfile != NULL) {
 #ifndef _WIN32
+        unlink(sockPtr->tfile);
+#else
+        DeleteFile(sockPtr->tfile);
+#endif
+        ns_free(sockPtr->tfile);
+        sockPtr->tfile = NULL;
+    }
 
     /*
      * Close and unmmap temp file used for large content
@@ -1918,12 +1936,15 @@ SockClose(Sock *sockPtr, int keep)
         close(sockPtr->tfd);
     }
     sockPtr->tfd = 0;
+
+#ifndef _WIN32
     if (sockPtr->taddr != NULL) {
         munmap(sockPtr->taddr, (size_t)sockPtr->tsize);
     }
     sockPtr->taddr = 0;
-    sockPtr->keep  = keep;
 #endif
+
+    sockPtr->keep  = keep;
 }
 
 
@@ -2018,10 +2039,20 @@ SockRead(Sock *sockPtr, int spooler)
         }
 
         /*
-         * In spooler mode dump data into temp file
+         * In spooler mode dump data into temp file, if maxupload is specified
+         * we will spool raw uploads into normal temp file (no deleted) in case
+         * content size exceeds the configured value.
          */
 
-        sockPtr->tfd = Ns_GetTemp();
+        if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
+            sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16);
+            sprintf(sockPtr->tfile, "%s%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
+            mktemp(sockPtr->tfile);
+            sockPtr->tfd = open(sockPtr->tfile, O_RDWR|O_CREAT|O_TRUNC|O_EXCL, 0600);
+        } else {
+            sockPtr->tfd = Ns_GetTemp();
+        }
+
         if (sockPtr->tfd < 0) {
             return SOCK_ERROR;
         }
@@ -2240,6 +2271,22 @@ SockParse(Sock *sockPtr, int spooler)
      */
 
     if (reqPtr->coff > 0 && reqPtr->length <= reqPtr->avail) {
+
+        /*
+         * With very large uploads we have to put them into regular temporary file
+         * and make it available to the connection thread. No parsing of the request
+         * will be performed by the server.
+         */
+
+        if (sockPtr->tfile != NULL) {
+            reqPtr->content = NULL;
+            reqPtr->next = NULL;
+            reqPtr->avail = 0;
+            Ns_Log(Debug, "spooling content to file: size=%" TCL_LL_MODIFIER "d, file=%s",
+                   reqPtr->length, sockPtr->tfile);
+            return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
+        }
+
         if (sockPtr->tfd > 0) {
 #ifndef _WIN32
             int prot = PROT_READ | PROT_WRITE;

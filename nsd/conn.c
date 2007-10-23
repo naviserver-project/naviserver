@@ -206,6 +206,53 @@ Ns_ConnContent(Ns_Conn *conn)
     return connPtr->reqPtr->content;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnContentFile --
+ *
+ *      Return pointer of the file name with spooled content.
+ *
+ * Results:
+ *      Pointer to string
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_ConnContentFile(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return connPtr->sockPtr != NULL ? connPtr->sockPtr->tfile : NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnContentFd --
+ *
+ *      Return opene file descriptor of the file with spooled content.
+ *
+ * Results:
+ *      File descriptor or 0 if not used
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int Ns_ConnContentFd(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return connPtr->sockPtr != NULL ? connPtr->sockPtr->tfd : 0;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1044,6 +1091,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     static CONST char *opts[] = {
         "authpassword", "authuser", "auth",
         "close", "content", "contentlength", "contentsentlength",
+        "contentfile",
         "copy", "channel", "driver", "encoding", "files", "fileoffset",
         "filelength", "fileheaders", "flags", "form", "headers",
         "host", "id", "isconnected", "location", "method",
@@ -1056,6 +1104,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     enum ISubCmdIdx {
         CAuthPasswordIdx, CAuthUserIdx, CAuthIdx,
         CCloseIdx, CContentIdx, CContentLengthIdx, CContentSentLenIdx,
+        CContentFileIdx,
         CCopyIdx, CChannelIdx, CDriverIdx, CEncodingIdx,
         CFilesIdx, CFileOffIdx, CFileLenIdx, CFileHdrIdx, CFlagsIdx,
         CFormIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
@@ -1157,6 +1206,10 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     case CContentLengthIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(conn->contentLength));
+        break;
+
+    case CContentFileIdx:
+        Tcl_AppendResult(interp, Ns_ConnContentFile(conn), NULL);
         break;
 
     case CEncodingIdx:
