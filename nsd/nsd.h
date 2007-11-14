@@ -30,7 +30,10 @@
 #ifndef NSD_H
 #define NSD_H
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
 #include "ns.h"
 #include <assert.h>
 #include <sys/stat.h>

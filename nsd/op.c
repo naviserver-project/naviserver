@@ -507,7 +507,7 @@ NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server)
         return;
     }
     Ns_MutexLock(&ulock);
-    NsUrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
+    Ns_UrlSpecificWalk(uid, servPtr->server, WalkCallback, dsPtr);
     Ns_MutexUnlock(&ulock);
 }
 

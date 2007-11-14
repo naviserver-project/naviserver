@@ -485,7 +485,7 @@ Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
  */
 
 void
-NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
 {
     Junction *juncPtr;
     Channel  *channelPtr;

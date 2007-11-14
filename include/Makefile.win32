@@ -62,7 +62,7 @@
 
 
 !ifndef NAVISERVER
-NAVISERVER = c:\naviserver
+NAVISERVER = C:\Naviserver
 !endif
 
 #
@@ -72,6 +72,15 @@ NAVISERVER = c:\naviserver
 INSTBIN	= "$(NAVISERVER)\bin\"
 INSTLIB	= "$(NAVISERVER)\lib\"
 INSTINC	= "$(NAVISERVER)\include\"
+INSTTCL	= "$(NAVISERVER)\tcl\"
+
+#
+# Install utilities
+#
+
+INSTALL_DATA	= xcopy /y /i
+INSTALL_SH	= xcopy /y /i
+RM		= del /q /f
 
 #
 # Tcl directories
@@ -201,19 +210,29 @@ $(OBJS): $(HDRS)
 	$(CC) $(CFLAGS) /c /Fo$*.o $*.c
 
 install-dll: $(DLLBIN) $(DLLLIB)
-	xcopy $(DLLBIN) $(INSTBIN) /y /i
-	xcopy $(DLLLIB) $(INSTLIB) /y /i
+	$(INSTALL_SH) $(DLLBIN) $(INSTBIN)
+	$(INSTALL_SH) $(DLLLIB) $(INSTLIB)
 
 install-pgm: $(PGMBIN)
-	xcopy $(PGMBIN) $(INSTBIN) /y /i
+	$(INSTALL_SH) $(PGMBIN) $(INSTBIN)
+
+install-tcl:
+	$(INSTALL_DATA) *.tcl $(INSTTCL)
+
+install-include:
+	$(INSTALL_DATA) *.h $(INSTINC)
+	$(INSTALL_DATA) Makefile.win32 $(INSTINC)
+
+install-lib:
+	$(INSTALL_DATA) *.lib $(INSTLIB)
 
 clean-extra:
-	del /q /f *.exp *.ilk *.pdb *.manifest
+	$(RM) *.exp *.ilk *.pdb *.manifest
 
 clean-dll: clean-extra
-	del /q /f $(OBJS) $(DLLBIN) $(DLLLIB)
+	$(RM) $(OBJS) $(DLLBIN) $(DLLLIB)
 
 clean-pgm:
-	del /q /f $(PGMBIN) $(PGMOBJS)
+	$(RM) $(PGMBIN) $(PGMOBJS)
 
 .PHONY: clean-dll clean-pgm install-dll install-pgm

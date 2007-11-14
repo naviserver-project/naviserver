@@ -142,20 +142,22 @@ typedef long int intmax_t;
 
 #define PRIu64 TCL_LL_MODIFIER
 #define USE_THREAD_ALLOC 1
+#define USE_TCLVFS 1
 #define VERSION "4.99.2"
 #define _LARGEFILE64_SOURCE 1
 #define _REENTRANT 1
 #define _THREAD_SAFE 1
 #define TCL_THREADS 1
 #define TCL_WIDE_INT_TYPE long long
-#define PACKAGE "naviserver"
-#define PACKAGE_BUGREPORT "naviserver-devel@lists.sourceforge.net"
-#define PACKAGE_NAME "NaviServer"
-#define PACKAGE_STRING "NaviServer 4.99.2"
-#define PACKAGE_TARNAME "naviserver"
-#define PACKAGE_VERSION "4.99.2"
 #define HAVE_GETADDRINFO
 #define HAVE_GETNAMEINFO
+
+#define PACKAGE "naviserver"
+#define PACKAGE_NAME "NaviServer"
+#define PACKAGE_STRING "NaviServer " NS_PATCH_LEVEL
+#define PACKAGE_TARNAME "naviserver"
+#define PACKAGE_VERSION NS_VERSION
+#define PACKAGE_BUGREPORT "naviserver-devel@lists.sourceforge.net"
 
 #include <ws2tcpip.h>
 

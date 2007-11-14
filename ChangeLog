@@ -1,5 +1,17 @@
 2007-11-13  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* include/ns.h:
+	* nsd/urlspace.c: Make Ns_UrlSpecificWalk public function because it
+	is used in many places already and thus shoul dbe public
+
+	* include/nsthread.h:
+	* nsd/nsd.h: check HAVE_CONFIG_H before including config.h
+
+	* Makefile.win32: Updated build process, put help instructions, removed
+	automatic config/makefile generations
+
+2007-11-13  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* Makefile.win32
 	* include/nsthread.h:
 	* include/Makefile.module

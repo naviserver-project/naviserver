@@ -35,7 +35,10 @@
  *	thread local storage, and creating/joining threads.
  */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
 #include "nsthread.h"
 
 NS_RCSID("@(#) $Header$");

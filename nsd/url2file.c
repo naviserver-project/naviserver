@@ -617,7 +617,7 @@ void
 NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server)
 {
     Ns_MutexLock(&ulock);
-    NsUrlSpecificWalk(uid, server, WalkCallback, dsPtr);
+    Ns_UrlSpecificWalk(uid, server, WalkCallback, dsPtr);
     Ns_MutexUnlock(&ulock);
 }
 

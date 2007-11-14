@@ -2280,6 +2280,10 @@ NS_EXTERN int Ns_FetchURL(Ns_DString *pds, char *url, Ns_Set *headers);
 
 NS_EXTERN int Ns_UrlSpecificAlloc(void);
 
+NS_EXTERN void 
+Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 NS_EXTERN void
 Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
                   void *data, int flags, void (*deletefunc)(void *))

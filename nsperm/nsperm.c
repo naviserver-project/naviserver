@@ -1324,7 +1324,7 @@ static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
 
     Ns_DStringInit(&ds);
     Ns_RWLockRdLock(&servPtr->lock);
-    NsUrlSpecificWalk(uskey, servPtr->server, WalkCallback, &ds);
+    Ns_UrlSpecificWalk(uskey, servPtr->server, WalkCallback, &ds);
     Ns_RWLockUnlock(&servPtr->lock);
     Tcl_AppendResult(interp, ds.string, NULL);
     Ns_DStringFree(&ds);
