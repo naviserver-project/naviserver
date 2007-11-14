@@ -38,4 +38,7 @@ OBJS    = nsdb.o
 HDRS    = db.h
 TCL     = util.tcl
 
+DLL	= nsdb
+DLLOBJS = $(LIBOBJS)
+
 include ../include/Makefile.build

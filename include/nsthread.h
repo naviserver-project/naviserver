@@ -101,12 +101,18 @@
 #include <netdb.h>
 #include <sys/uio.h>
 #include <poll.h>
+#include <inttypes.h>
 
 #else
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0400
+#endif _WIN32_WINNT
+
 #include <windows.h>
 #include <winsock2.h>
 #include <sys/timeb.h>
@@ -114,17 +120,43 @@
 #include <io.h>
 #include <process.h>
 #include <direct.h>
+
 typedef struct DIR_ *DIR;
 struct dirent {
     char *d_name;
 };
+
 NS_EXTERN DIR *opendir(char *pathname);
 NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
-#define sleep(n) (Sleep((n)*1000))
 
+#define atoll _atoi64
+#define snprintf _snprintf
+#define sleep(n) (Sleep((n)*1000))
+#define va_copy(dst,src) ((void)((dst) = (src)))
+
+typedef unsigned long long int uint64_t;
+typedef unsigned long long int uintmax_t;
+typedef long long int uintmax_t;
+typedef long int intmax_t;
+
+#define PRIu64 TCL_LL_MODIFIER
+#define USE_THREAD_ALLOC 1
+#define VERSION "4.99.2"
+#define _LARGEFILE64_SOURCE 1
+#define _REENTRANT 1
+#define _THREAD_SAFE 1
+#define TCL_THREADS 1
+#define TCL_WIDE_INT_TYPE long long
+#define PACKAGE "naviserver"
+#define PACKAGE_BUGREPORT "naviserver-devel@lists.sourceforge.net"
+#define PACKAGE_NAME "NaviServer"
+#define PACKAGE_STRING "NaviServer 4.99.2"
+#define PACKAGE_TARNAME "naviserver"
+#define PACKAGE_VERSION "4.99.2"
 #define HAVE_GETADDRINFO
 #define HAVE_GETNAMEINFO
+
 #include <ws2tcpip.h>
 
 #endif
@@ -140,7 +172,6 @@ NS_EXTERN int closedir(DIR *dp);
 #include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <inttypes.h>
 #include <assert.h>
 
 #ifndef PATH_MAX

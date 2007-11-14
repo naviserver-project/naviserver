@@ -98,6 +98,40 @@ static DWORD tlskey;
 
 #define GETWINTHREAD()  TlsGetValue(tlskey)
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nsthreads_LibInit --
+ *
+ *      Pthread library initialisation routine.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Creates pthread key.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+void 
+Nsthreads_LibInit(void)
+{
+    static int once = 0;
+
+    if (!once) {
+        once = 1;
+        tlskey = TlsAlloc();
+        if (tlskey == 0xFFFFFFFF) {
+            return FALSE;
+        }
+        NsInitThreads();
+    }
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -123,11 +157,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
 
     switch (why) {
     case DLL_PROCESS_ATTACH:
-        tlskey = TlsAlloc();
-        if (tlskey == 0xFFFFFFFF) {
-            return FALSE;
-        }
-        NsInitThreads();
+        Nsthreads_LibInit();
         /* FALLTHROUGH */
 
     case DLL_THREAD_ATTACH:
@@ -314,7 +344,7 @@ NsLockSet(void *lock)
  */
 
 int
-NsLockTry(Lock *lock)
+NsLockTry(void *lock)
 {
     return TryEnterCriticalSection((CRITICAL_SECTION *)lock);
 }

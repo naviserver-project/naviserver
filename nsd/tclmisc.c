@@ -1037,9 +1037,15 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_SetVar2Ex(interp, name, "type", Tcl_NewStringObj(
                   (S_ISREG(st.st_mode) ? "file" :
                         S_ISDIR(st.st_mode) ? "directory" :
+#ifdef S_ISCHR
                           S_ISCHR(st.st_mode) ? "characterSpecial" :
+#endif
+#ifdef S_ISBLK
                             S_ISBLK(st.st_mode) ? "blockSpecial" :
+#endif
+#ifdef S_ISFIFO
                               S_ISFIFO(st.st_mode) ? "fifo" :
+#endif
 #ifdef S_ISLNK
                                 S_ISLNK(st.st_mode) ? "link" :
 #endif
@@ -1070,6 +1076,26 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.26  2007/11/14 00:50:33  seryakov
+ *         * include/nsthread.h:
+ *         * include/Makefile.module
+ *         * include/Makefile.win32
+ *         * nsthread/winthread.c:
+ *         * nsthread/Makefile:
+ *         * nsd/Makefile:
+ *         * nscp/Makefile:
+ *         * nssock/Makefile:
+ *         * nsdb/Makefile:
+ *         * nscgi/Makefile:
+ *         * nslog/Makefile:
+ *         * nsd/nsmain.c:
+ *         * nsd/tcltime.c:
+ *         * nsd/tclmisc.c: Initial Windows port, still work in progress.
+ *         New makefile added to perform compiling fromcommand line using the same top
+ *         level makefile. To compile for windows, copy include/Makefile.win32
+ *         into include/Makefile.module, the rest stays the same, only every module
+ *         needs to be compiled separately, root Makefile is still unix specific.
+ *
  * Revision 1.25  2007/10/21 15:44:39  seryakov
  *         * nsd/nswin32.c: No need for extra stubs
  *         * include/ns.h:

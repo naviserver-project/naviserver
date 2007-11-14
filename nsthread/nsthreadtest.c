@@ -253,7 +253,7 @@ MemThread(void *arg)
 
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
-	n = random() % BS;
+	n = rand() % BS;
 	if (arg) {
 	    if (ptr)
 		ns_free(ptr);

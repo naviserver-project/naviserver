@@ -66,12 +66,10 @@ typedef enum _runState {
 
 static Ns_ThreadProc CmdThread;
 
-static char *MakePath(char *file);
-
 static void UsageError(char *msg, ...);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
-
+static char *MakePath(char *file);
 static char *FindConfig(char *config);
 static char *SetCwd(char *homedir);
 
@@ -347,6 +345,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsBlockSignals(debug);
 
+#endif /* ! _WIN32 */
+
     /*
      * The call to Tcl_FindExecutable() must be done before we ever
      * attempt any file-related operation, because it is initializing
@@ -377,6 +377,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     nsconf.config = FindConfig(nsconf.config);
     config = NsConfigRead(nsconf.config);
+
+#ifndef _WIN32
 
     /*
      * Pre-bind any sockets now, before a possible setuid from root
@@ -1040,8 +1042,6 @@ SetCwd(char *path)
     return (char *) Tcl_FSGetTranslatedStringPath(NULL, pathObj);
 }
 
-#ifndef _WIN32
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1069,12 +1069,18 @@ MakePath(char *file)
             path = ns_calloc(1, ptr - nsconf.nsd + 1 + strlen(file));
             strncpy(path, nsconf.nsd, ptr - nsconf.nsd);
             strcat(path, file);
+#ifdef _WIN32
+            for (ptr = path; *ptr; ptr++) {
+                if (*ptr == '/') {
+                    *ptr = '\\';
+                }
+            }
+#endif
             return path;
         }
     }
     return NULL;
 }
-#endif /* _WIN32 */
 
 
 /*

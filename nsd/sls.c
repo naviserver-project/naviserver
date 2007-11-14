@@ -337,19 +337,19 @@ NsTclSlsObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     char       *data;
     int         cmd;
 
-    if ((conn = Ns_TclGetConn(interp)) == NULL
-        || (sock = Ns_ConnSockPtr(conn)) == NULL) {
-
-        Tcl_SetResult(interp, "No connection available.", NULL);
-        return TCL_ERROR;
-    }
-
     static CONST char *cmds[] = {
         "array", "get", "set", "unset", NULL
     };
     enum ISubCmdIdx {
         CArrayIdx, CGetIdx, CSetIdx, CUnsetIdx
     };
+
+    if ((conn = Ns_TclGetConn(interp)) == NULL
+        || (sock = Ns_ConnSockPtr(conn)) == NULL) {
+
+        Tcl_SetResult(interp, "No connection available.", NULL);
+        return TCL_ERROR;
+    }
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "command");

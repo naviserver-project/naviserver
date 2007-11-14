@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * win32.c --
  *
  *  Win32 specific routines.
@@ -111,6 +111,18 @@ void
 NsUnblockSignal(int signal)
 {
     return;
+}
+
+int
+Ns_SetGroup(char *group)
+{
+    return -1;
+}
+
+int
+Ns_SetUser(char *user)
+{
+    return -1;
 }
 
 
@@ -217,7 +229,7 @@ NsConnectService(void)
 
     /*
      * Re-route std streams to null because they will be
-     * handled separately, i.e. re-routed to log file in 
+     * handled separately, i.e. re-routed to log file in
      * the LogReOpen() function. The stdin remains bound
      * to nul: device forever.
      */
@@ -226,7 +238,7 @@ NsConnectService(void)
     freopen(nul, "wt", stdout);
     freopen(nul, "wt", stderr);
 
-    /* 
+    /*
      * Ensure that stdio handles are correctly set.
      * Fail to do this will result in Tcl library
      * thinking that no stdio handles are defined.
@@ -425,7 +437,7 @@ NsHandleSignals(void)
      * startup complete. Otherwise, register a handler which will
      * initiate an orderly shutdown on Ctrl-C.
      */
-     
+
     if (!service) {
         SetConsoleCtrlHandler(ConsoleHandler, TRUE);
     } else {
@@ -459,11 +471,11 @@ NsHandleSignals(void)
      * If running as a service, startup the ticker thread again
      * to keep updating status until shutdown is complete.
      */
-     
+
     if (service) {
         StartTicker(SERVICE_STOP_PENDING);
     }
-   
+
     return sig;
 }
 
@@ -528,7 +540,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
 
     switch (mode) {
     case NS_MMAP_WRITE:
-        hndl = CreateFile(path, 
+        hndl = CreateFile(path,
                           GENERIC_READ|GENERIC_WRITE,
                           FILE_SHARE_READ|FILE_SHARE_WRITE,
                           NULL,
@@ -537,7 +549,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
                           NULL);
         break;
     case NS_MMAP_READ:
-        hndl = CreateFile(path, 
+        hndl = CreateFile(path,
                           GENERIC_READ,
                           FILE_SHARE_READ,
                           NULL,
@@ -570,11 +582,11 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
         return NS_ERROR;
     }
 
-    addr = MapViewOfFile(mobj, 
+    addr = MapViewOfFile(mobj,
                          mode == NS_MMAP_WRITE ?
                          FILE_MAP_WRITE : FILE_MAP_READ,
-                         0, 
-                         0, 
+                         0,
+                         0,
                          size);
 
     if (addr == NULL) {
@@ -667,15 +679,15 @@ SOCKET
 ns_sockdup(SOCKET sock)
 {
     HANDLE hp, src, dup;
-    
+
     src = (HANDLE) sock;
-    hp = GetCurrentProcess();    
+    hp = GetCurrentProcess();
     if (!DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
         return INVALID_SOCKET;
     }
 
     return (SOCKET) dup;
-}   
+}
 
 
 /*
@@ -761,7 +773,7 @@ ns_sockpair(SOCKET socks[2])
  *
  * Ns_SockListen --
  *
- *      Simple socket listen implementation for Win32 without 
+ *      Simple socket listen implementation for Win32 without
  *      privileged port issues.
  *
  * Results:
@@ -1087,7 +1099,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
     if (state == SERVICE_START_PENDING) {
         curStatus.dwControlsAccepted = 0;
     } else {
-        curStatus.dwControlsAccepted = 
+        curStatus.dwControlsAccepted =
             SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
     }
     curStatus.dwCurrentState = state;
@@ -1102,7 +1114,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
         curStatus.dwCheckPoint = check++;
     }
     if (hStatus != 0 && SetServiceStatus(hStatus, &curStatus) != TRUE) {
-        Ns_Fatal("nswin32: SetServiceStatus(%d) failed: '%s'", state, 
+        Ns_Fatal("nswin32: SetServiceStatus(%d) failed: '%s'", state,
                  SysErrMsg());
     }
 }
@@ -1116,7 +1128,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
  *  that this software is suitable for any purpose and will not
  *  be held liable for any damage it may cause.
  * -----------------------------------------------------------------
- * 
+ *
  *  Modified to work properly on Darwin 10.2 or less.
  *  Also, heavily reformatted to be more readable.
  */

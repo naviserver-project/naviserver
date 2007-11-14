@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -25,18 +25,18 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 #
 # $Header$
 #
 
 INSTALL	= install-init
-LIB	= nsd
-PGM	= nsd
+LIB		= nsd
+PGM		= nsd
 PGMOBJS	= main.o
 HDRS	= nsd.h
 
-LOBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
+OBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  cache.o callbacks.o cls.o compress.o config.o conn.o connio.o cookies.o \
 	  crypt.o dns.o driver.o dstring.o encoding.o event.o exec.o \
 	  fastpath.o fd.o filter.o form.o httptime.o index.o info.o \
@@ -47,16 +47,17 @@ LOBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  task.o tclcache.o tclcallbacks.o tclcmds.o tclconf.o tclenv.o tclfile.o \
 	  tclhttp.o tclimg.o tclinit.o tcljob.o tclmisc.o tclobj.o tclobjv.o \
 	  tclrequest.o tclresp.o tclsched.o tclset.o tclshare.o tclsock.o \
-	  tclthread.o tcltime.o tclvar.o tclxkeylist.o \
-	  unix.o url.o url2file.o urlencode.o urlopen.o urlspace.o uuencode.o \
-	  watchdog.o
+	  tclthread.o tcltime.o tclvar.o tclxkeylist.o stamp.o \
+	  url.o url2file.o urlencode.o urlopen.o urlspace.o uuencode.o
 
-LIBOBJS	= $(LOBJS) stamp.o
+UNIXOBJS = unix.o watchdog.o
+LIBOBJS	 = $(OBJS)
+
+DLL     = nsd
+DLLINIT	= Nsd_LibInit
+WINOBJS = nswin32.o
 
 include ../include/Makefile.build
-
-stamp.o: $(LOBJS)
-	$(CC) -c -o stamp.o stamp.c
 
 install-init:
 	$(INSTALL_DATA) init.tcl $(INSTBIN)/

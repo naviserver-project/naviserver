@@ -1,0 +1,76 @@
+
+#
+# Set path where Tcl is installed
+#
+
+TCL	= c:\tcl
+
+
+#
+# Set path to the Visual Studio compiler
+#
+
+VC	= "c:\program files\vc"
+LIB	= %VC%\lib;%VC%\platformsdk\lib;%TCL%\lib;
+INCLUDE	= %VC%\ATLMFC\INCLUDE;%VC%\INCLUDE;%VC%\PlatformSDK\include;
+
+
+#
+# nmake command to exec for each module
+#
+
+NMAKE	= nmake /nologo /e TCL=$(TCL) LIB=$(LIB)
+
+
+#
+# Build all core modules
+#
+all: 	prepare
+	cd nsthread
+	$(NMAKE)
+	cd ..\nsd
+	$(NMAKE)
+	cd ..\nscgi
+	$(NMAKE)
+	cd ..\nscp
+	$(NMAKE)
+	cd ..\nsdb
+	$(NMAKE)
+	cd ..\nssock
+	$(NMAKE)
+	cd ..\nslog
+	$(NMAKE)
+	cd ..
+
+#
+# Install to NAVISERVER directory
+#
+install:
+	cd nsthread
+	$(NMAKE) install
+	cd ../nsd
+	$(NMAKE) install
+	cd ../nscgi
+	$(NMAKE) install
+	cd ../nscp
+	$(NMAKE) install
+	cd ../nsdb
+	$(NMAKE) install
+	cd ../nssock
+	$(NMAKE) install
+	cd ../nslog
+	$(NMAKE) install
+
+#
+# Create empty config.h, not used currently but included
+#
+prepare:
+	cd include
+	del /q /f config.h
+	echo // > config.h
+
+	echo NSBUILD=1 > Makefile.build
+	echo include ../include/Makefile.win32 >> Makefile.build
+	cd ..
+
+	

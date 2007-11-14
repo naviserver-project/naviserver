@@ -1,9 +1,52 @@
+2007-11-13  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* Makefile.win32
+	* include/nsthread.h:
+	* include/Makefile.module
+	* include/Makefile.win32
+	* nsthread/winthread.c:
+	* nsthread/Makefile:
+	* nsd/Makefile:
+	* nscp/Makefile:
+	* nssock/Makefile:
+	* nsdb/Makefile:
+	* nscgi/Makefile:
+	* nslog/Makefile:
+	* nsd/nsmain.c:
+	* nsd/tcltime.c:
+	* nsd/tclmisc.c: Initial Windows port, still work in progress. 
+        New makefile added to perform compiling fromcommand line using the same top
+	level makefile. To compile for windows, edit include/Makefile.build and
+	replace include/Makefile.module with include/Makefile.win32. 
+
+	Windows port does not use config.h, all platform specific defines are in nsthread.h
+	for now. Once build is polished it can be moved to more appropriate place.
+
+	Current Win32 build process is:
+	edit top Makefile.win32 for paths to Tcl and Visual C++
+	nmake -f Makefile.win32
+	nmake -f Makefile.win32 install
+	
 2007-10-23  Vlad Seryakov  <seryakov@users.sf.net>
 
-    * nsd/driver.c:
-    * nsd/progress.c:
-    * nsd/nsd.h: Added support for uploads larger than 2GB, length fields are
-    Tcl_WideInt now, printf output modifiers updated
+    	* nsd/driver.c:
+    	* nsd/progress.c:
+    	* nsd/nsd.h: Added support for uploads larger than 2GB, length fields are
+    	Tcl_WideInt now, printf output modifiers updated
+
+    	* nsd/driver.c:
+    	* nsd/nsd.h:
+    	* nsd/conn.c:
+    	* docs/src/ns_conn.man:
+    	* include/ns.h: Added new parameter maxupload to the driver which if > 0 enables
+    	spooling of the whole request contents into regular temp file. After the content is
+ 	put into the file, connection thread can access it using ns_conn contentfile command
+    	which will return name of temp file. Public function Ns_ConnContentFile and
+    	Ns_ConnContentFd added to access temprorary file.
+    	* tcl/form.tcl: added ns_parseformfile proc which will parse raw content file into
+    	query parameters and uploaded files if content was in multipart/form-data format
+
+    	* contrib/examples:upload.tcl: Updated to support new maxupload option
 
 2006-03-30  Ibrahim Tannir <itannir@users.sf.net>
 
@@ -16,10 +59,10 @@
 
 	* nsd/tclconf.c: ns_config -int now can handle wide integers
 
-    * include/ns.h:
-    * nsproxy/nsproxylib.c:
+    	* include/ns.h:
+    	* nsproxy/nsproxylib.c:
 	* nsd/nsmain.c:
-    * nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of
+    	* nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of
 	deleted Ns_SetPriveleges. New Tcl commands ns_setuser/ns_setgroup instead of
 	ns_setpriveleges
 

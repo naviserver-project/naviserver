@@ -102,11 +102,11 @@ NS_RCSID("@(#) $Header$");
  *----------------------------------------------------------------------
  */
 
+#ifndef _WIN32
 SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
     int                sock = -1;
-#ifndef _WIN32
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -140,10 +140,9 @@ Ns_SockListenEx(char *address, int port, int backlog)
     if (sock == -1 && binderRunning) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
-#endif /* _WIN32 */
     return (SOCKET)sock;
 }
-
+#endif /* _WIN32 */
 
 /*
  *----------------------------------------------------------------------

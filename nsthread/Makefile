@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -25,7 +25,7 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 #
 # $Header$
 #
@@ -34,9 +34,14 @@ LIB     = nsthread
 HDRS	= thread.h
 PGM	= nsthreadtest
 PGMOBJS	= nsthreadtest.o
-LIBOBJS = \
-	error.o master.o memory.o mutex.o cslock.o	\
-	rwlock.o reentrant.o sema.o thread.o tls.o signal.o	\
-	time.o fork.o pthread.o
+LIBOBJS = error.o master.o memory.o mutex.o cslock.o \
+	  rwlock.o reentrant.o sema.o thread.o tls.o \
+	  time.o
+UNIXOBJS = pthread.o fork.o signal.o
+
+DLL     = nsthread
+DLLINIT = Nsthreads_LibInit
+WINOBJS = winthread.o
+DLLOBJS = $(LIBOBJS)
 
 include ../include/Makefile.build

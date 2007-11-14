@@ -77,6 +77,7 @@ ifdef MOD
     ifeq ($(origin MODOBJS), undefined)
         MODOBJS	= $(OBJS)
     endif
+    MODOBJS   += $(UNIXOBJS)
 endif
 
 ifdef TCL
@@ -93,6 +94,7 @@ ifdef LIB
     CLEAN   += clean-lib
     MODLIBS += $(LIBFILE)
     PGMLIBS += $(LIBFILE)
+    LIBOBJS += $(UNIXOBJS)
 endif
 
 ifdef ALIB
@@ -102,12 +104,14 @@ ifdef ALIB
     CLEAN    += clean-alib
     MODLIBS  += $(ALIBFILE)
     PGMLIBS  += $(ALIBFILE)
+    LIBOBJS  += $(UNIXOBJS)
 endif
 
 ifdef PGM
     BUILD   += $(PGM)
     INSTALL += install-pgm
     CLEAN   += clean-pgm
+    PGMOBJS += $(UNIXOBJS)
 endif
 
 ifdef LIBHDRS

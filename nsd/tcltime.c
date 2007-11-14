@@ -85,9 +85,11 @@ NsTclInitTimeType()
 {
     Tcl_Obj obj;
 
+#ifndef _WIN32
     if (sizeof(obj.internalRep) < sizeof(Ns_Time)) {
         Tcl_Panic("NsTclInitObjs: sizeof(obj.internalRep) < sizeof(Ns_Time)");
     }
+#endif
     intTypePtr = Tcl_GetObjType("int");
     if (intTypePtr == NULL) {
         Tcl_Panic("NsTclInitObjs: no int type");

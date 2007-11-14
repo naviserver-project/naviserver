@@ -30,6 +30,7 @@
 # $Header$
 #
 
+DLL	 =  nslog
 MOD      =  nslog.so
 OBJS     =  nslog.o
 include  ../include/Makefile.build
