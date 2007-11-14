@@ -84,8 +84,6 @@ install:
 	$(NMAKE) install
 	cd ../tcl
 	nmake -f ../include/Makefile.win32 install-tcl 
-	cd ../lib
-	nmake -f ../include/Makefile.win32 install-lib
 	cd ../include
 	nmake -f Makefile.win32 install-include
 	cd ..

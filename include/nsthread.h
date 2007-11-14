@@ -136,14 +136,13 @@ NS_EXTERN int closedir(DIR *dp);
 #define va_copy(dst,src) ((void)((dst) = (src)))
 
 typedef unsigned long long int uint64_t;
-typedef unsigned long long int uintmax_t;
-typedef long long int uintmax_t;
+typedef unsigned long int uintmax_t;
 typedef long int intmax_t;
 
 #define PRIu64 TCL_LL_MODIFIER
 #define USE_THREAD_ALLOC 1
 #define USE_TCLVFS 1
-#define VERSION "4.99.2"
+#define VERSION NS_PATCH_LEVEL
 #define _LARGEFILE64_SOURCE 1
 #define _REENTRANT 1
 #define _THREAD_SAFE 1
