@@ -212,6 +212,9 @@ $(OBJS): $(HDRS)
 install-dll: $(DLLBIN) $(DLLLIB)
 	$(INSTALL_SH) $(DLLBIN) $(INSTBIN)
 	$(INSTALL_SH) $(DLLLIB) $(INSTLIB)
+!ifdef DLLHDRS
+	$(INSTALL_DATA) $(DLLHDRS) $(INSTINC)
+!endif
 
 install-pgm: $(PGMBIN)
 	$(INSTALL_SH) $(PGMBIN) $(INSTBIN)
