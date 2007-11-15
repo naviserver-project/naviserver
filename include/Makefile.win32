@@ -51,8 +51,9 @@
 #
 #	In addition, you can also define:
 #
-#	NAVISERVER  Installation directory (default "c:\NAVISERVER").
-#	TCL	    Path to Tcl installation.
+#	NAVISERVER  Installation directory (default "c:\Naviserver").
+#	TCLPATH	    Path to Tcl installation
+#	TCLLIB	    Tcl .lib file to use for linking
 #	DEBUG	    If defined build debug version.
 #	DEFS	    Additional CFLAGS, e.g., "/D MYDLL_EXPORTS.".
 #	LIBS	    Additional libraries, e.g., "/LIBPATH:c:\fun fun.lib"
@@ -86,16 +87,21 @@ RM		= del /q /f
 # Tcl directories
 #
 
-!ifdef TCL
-DEFS	= $(DEFS) /I "$(TCL)\include"
-LIBS	= $(LIBS) /LIBPATH:"$(TCL)\lib" /LIBPATH:"$(TCL)\bin" tcl84t.lib
+!ifdef TCLPATH
+DEFS	= $(DEFS) /I "$(TCLPATH)/include"
+LIBS	= $(LIBS) /LIBPATH:"$(TCLPATH)/lib"
+!endif
+!ifdef TCLLIB
+LIBS	= $(LIBS) $(TCLLIB)
+!else
+LIBS	= $(LIBS) tcl84t.lib
 !endif
 
 #
 # Common compiler and linker options.
 #
 
-COPTS	= /EHsc /W3 /nologo /c
+COPTS	= /W1 /nologo /c
 
 DEFS	= $(DEFS) /D "_WINDOWS" /D "TCL_THREADS=1" \
 		  /D "WIN32" /D "FD_SETSIZE=128" \
@@ -168,7 +174,7 @@ LIBS = $(LIBS) /LIBPATH:"..\nsd" nsd.lib
 COPTS	= $(COPTS) /MT /O2
 DEFS	= $(DEFS) /D "NDEBUG"
 !else
-COPTS	= $(COPTS) /MDd /Od /Zi /RTCcsu
+COPTS	= $(COPTS) /MTd /Od /Zi /RTC1
 DEFS	= $(DEFS) /D "_DEBUG"
 LOPTS	= $(LOPTS) /DEBUG
 !endif
@@ -214,6 +220,9 @@ install-dll: $(DLLBIN) $(DLLLIB)
 	$(INSTALL_SH) $(DLLLIB) $(INSTLIB)
 !ifdef DLLHDRS
 	$(INSTALL_DATA) $(DLLHDRS) $(INSTINC)
+!endif
+!ifdef DLLTCL
+	$(INSTALL_DATA) $(DLLTCL) $(INSTTCL)
 !endif
 
 install-pgm: $(PGMBIN)

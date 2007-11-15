@@ -131,7 +131,6 @@ NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
 
 #define atoll _atoi64
-#define snprintf _snprintf
 #define sleep(n) (Sleep((n)*1000))
 #define va_copy(dst,src) ((void)((dst) = (src)))
 

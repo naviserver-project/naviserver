@@ -3,14 +3,14 @@
 # 1. Edit include/Makefile.build and replace Makefile.module with
 #    Makefile.win32
 # 
-# 2. Update TCL and VC varibales below to reflect actual path to
+# 2. Update TCLPATH and VC varibales below to reflect actual path to
 #    Tcl and VicualC++ installations
 #   
 # 3. nmake -f Makefile.win32
 #
 #    or
 #
-#    nmake -f Makefile.win32 TCL=c:\tcl VC=c:\vc
+#    nmake -f Makefile.win32 TCLPATH=c:\tcl VC=c:\vc
 #
 #
 
@@ -20,8 +20,8 @@
 # Set path where Tcl is installed
 #
 
-TCL	= C:\Program Files\Tcl
-
+TCLPATH	= C:\Naviserver
+TCLLIB  = tcl84t.lib
 
 #
 # Set path to the Visual Studio compiler
@@ -29,15 +29,15 @@ TCL	= C:\Program Files\Tcl
 
 VC	= C:\Program Files\Microsoft Visual Studio 8\VC
 
-LIB	= $(VC)\Lib;$(VC)\PlatformSDK\Lib;$(TCL)\Lib
-INCLUDE	= $(VC)\ATLMFC\Include;$(VC)\Include;$(VC)\PlatformSDK\Include;$(TCL)\Include
+LIB	= $(VC)\Lib;$(VC)\PlatformSDK\Lib;$(TCLPATH)\Lib
+INCLUDE	= $(VC)\ATLMFC\Include;$(VC)\Include;$(VC)\PlatformSDK\Include;$(TCLPATH)\Include
 
 
 #
 # nmake command to exec for each module
 #
 
-NMAKE	= nmake /nologo /e TCL="$(TCL)" LIB="$(LIB)" BUILDTYPE=win32
+NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
 
 
 #

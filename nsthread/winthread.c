@@ -1056,3 +1056,41 @@ readdir(DIR * dp)
 
     return &sPtr->ent;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * snprintf --
+ *
+ *      Produce output according to a format always terminated with NULL
+ *
+ * Results:
+ *      Return the number of characters printed (not  including  the  trailing
+ *     '\0' used to end output to strings)
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int snprintf(char *buffer, size_t count, const char *format, ...) 
+{
+   int n = 0;
+   va_list args;
+
+   if (count > 0 && format != NULL) {
+       char *fmt = ns_strcopy(format);
+       for (n = 0; n < strlen(fmt); n++) {
+           if (fmt[n] == '%' && fmt[n+1] == 'j') {
+               fmt[n+1] = 'l';
+           }
+       }
+       va_start(args, format);
+       n = _vsnprintf(buffer, count, fmt, args);
+       buffer[count - 1] = 0;
+       va_end(args);
+       ns_free(fmt);
+   }
+   return n;
+}

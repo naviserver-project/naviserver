@@ -40,5 +40,6 @@ TCL     = util.tcl
 
 DLL	= nsdb
 DLLOBJS = $(LIBOBJS)
+DLLHDRS = $(LIBHDRS)
 
 include ../include/Makefile.build
