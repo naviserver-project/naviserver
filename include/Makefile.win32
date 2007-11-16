@@ -54,7 +54,7 @@
 #	NAVISERVER  Installation directory (default "c:\Naviserver").
 #	TCLPATH	    Path to Tcl installation
 #	TCLLIB	    Tcl .lib file to use for linking
-#	DEBUG	    If defined build debug version.
+#	DEBUG	    If == 1 build debug version.
 #	DEFS	    Additional CFLAGS, e.g., "/D MYDLL_EXPORTS.".
 #	LIBS	    Additional libraries, e.g., "/LIBPATH:c:\fun fun.lib"
 #	INSTALL	    Additional install directives, e.g., "install-config".
@@ -170,13 +170,13 @@ LIBS = $(LIBS) /LIBPATH:"..\nsd" nsd.lib
 # Update options for release or debug build.
 #
 
-!ifndef DEBUG
-COPTS	= $(COPTS) /MT /O2
-DEFS	= $(DEFS) /D "NDEBUG"
-!else
+!if "$(DEBUG)" == "1"
 COPTS	= $(COPTS) /MTd /Od /Zi /RTC1
 DEFS	= $(DEFS) /D "_DEBUG"
 LOPTS	= $(LOPTS) /DEBUG
+!else
+COPTS	= $(COPTS) /MT /O2
+DEFS	= $(DEFS) /D "NDEBUG"
 !endif
 
 

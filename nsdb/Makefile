@@ -39,6 +39,7 @@ HDRS    = db.h
 TCL     = util.tcl
 
 DLL	= nsdb
+DLLHDRS = nsdb.h
 DLLOBJS = $(LIBOBJS)
 DLLHDRS = $(LIBHDRS)
 
