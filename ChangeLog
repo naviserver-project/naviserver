@@ -1,5 +1,8 @@
 2007-11-17  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* configure.in: Fixed absence of semicolon between paths for 
+	linker in -rpath
+
 	* include/Makefile.win32:
 	Make sure src incude goes first	
 

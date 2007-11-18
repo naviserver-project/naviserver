@@ -121,15 +121,15 @@ case "$system" in
         LDLIB="$LDLIB -nostartfiles"
       ;;
     esac
-    CCRPATH="\$(CCRFLAG)\$(INSTLIB)"
-    LDRPATH="\$(LDRFLAG)\$(INSTLIB)"
+    CCRPATH="\$(CCRFLAG):\$(INSTLIB)"
+    LDRPATH="\$(LDRFLAG):\$(INSTLIB)"
     if test "$TCL_EXEC_PREFIX" != "$prefix"; then
-      CCRPATH="$CCRPATH \$(CCRFLAG)\$(TCL_EXEC_PREFIX)/lib"
-      LDRPATH="$LDRPATH \$(LDRFLAG)\$(TCL_EXEC_PREFIX)/lib"
+      CCRPATH="$CCRPATH \$(CCRFLAG):\$(TCL_EXEC_PREFIX)/lib"
+      LDRPATH="$LDRPATH \$(LDRFLAG):\$(TCL_EXEC_PREFIX)/lib"
     fi
     if test -d /usr/lib/lwp; then
-      CCRPATH="$CCRPATH \$(CCRFLAG)/usr/lib/lwp"
-      LDRPATH="$LDRPATH \$(LDRFLAG)/usr/lib/lwp"
+      CCRPATH="$CCRPATH \$(CCRFLAG):/usr/lib/lwp"
+      LDRPATH="$LDRPATH \$(LDRFLAG):/usr/lib/lwp"
     fi
     LDSO="\$(LDLIB)"
     CCRPATHS="\$(CCRPATH)"
