@@ -99,8 +99,8 @@ INSTTCL	= "$(NAVISERVER)\tcl\"
 # Install utilities
 #
 
-INSTALL_DATA	= xcopy /y /i
-INSTALL_SH	= xcopy /y /i
+INSTALL_DATA	= copy /y
+INSTALL_SH	= copy /y
 RM		= del /q /f
 
 #
