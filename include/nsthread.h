@@ -146,9 +146,9 @@ typedef long int intmax_t;
 #define _REENTRANT 1
 #define _THREAD_SAFE 1
 #define TCL_THREADS 1
-#define TCL_WIDE_INT_TYPE long long
-#define HAVE_GETADDRINFO
-#define HAVE_GETNAMEINFO
+#define HAVE_GETADDRINFO 1
+#define HAVE_GETNAMEINFO 1
+#define HAVE_STRUCT_STAT64 1
 
 #define PACKAGE "naviserver"
 #define PACKAGE_NAME "NaviServer"
