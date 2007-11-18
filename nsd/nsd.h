@@ -1256,6 +1256,7 @@ extern void NsMemUmap(FileMap *mapPtr);
 int NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights);
 int NsFastFD(FileChannel chan);
 int NsFastStat(CONST char *file, FileStat *stPtr);
+FileStat *NsFastAllocStatBuf(void);
 
 extern void NsStopSockCallbacks(void);
 extern void NsStopScheduledProcs(void);

@@ -1018,10 +1018,10 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_WrongNumArgs(interp, 1, objv, "file ?varname?");
         return TCL_ERROR;
     }
-    st = Tcl_AllocStatBuf();
+    st = NsFastAllocStatBuf();
     if (NsFastStat(Tcl_GetString(objv[1]), st) != NS_OK) {
         Tcl_SetResult(interp, "0", TCL_STATIC);
-        Tcl_Free((void*)st);
+        ns_free(st);
         return NS_OK;
     }
     if (objc > 2) {
@@ -1057,7 +1057,7 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    ""), -1), 0);
     }
     Tcl_SetResult(interp, "1", TCL_STATIC);
-    Tcl_Free((void*)st);
+    ns_free(st);
     return NS_OK;
 }
 
@@ -1079,6 +1079,11 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.28  2007/11/18 04:23:36  seryakov
+ *         * nsd/nsd.h:
+ *         * nsd/fastpath.c: Added private function NsFastAllocStatBuf
+ *         to follow Tcl VFS API
+ *
  * Revision 1.27  2007/11/18 00:24:13  seryakov
  *         * include/Makefile.win32:
  *         Make sure src incude goes first

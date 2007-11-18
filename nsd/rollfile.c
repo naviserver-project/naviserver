@@ -291,7 +291,7 @@ MatchFiles(CONST char *filename, File **files)
         Tcl_ListObjGetElements(NULL, matched, &numElems, &matchElems);
 
         if (numElems > 0) {
-            st = Tcl_AllocStatBuf();
+            st = NsFastAllocStatBuf();
             *files = ns_malloc(sizeof(File) * numElems);
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {
                 if (NsFastStat(Tcl_GetString(matchElems[ii]), st) != NS_OK) {
@@ -306,7 +306,7 @@ MatchFiles(CONST char *filename, File **files)
                 fiPtr->path  = matchElems[ii];
                 Tcl_IncrRefCount(fiPtr->path);
             }
-            Tcl_Free((void*)st);
+            ns_free((void*)st);
         }
     }
 

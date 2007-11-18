@@ -209,9 +209,9 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     char        *server;
     NsServer    *servPtr;
 
-    st = Tcl_AllocStatBuf();
+    st = NsFastAllocStatBuf();
     if (NsFastStat(file, st) != NS_OK) {
-        Tcl_Free((void*)st);
+        ns_free(st);
         return Ns_ConnReturnNotFound(conn);
     }
 
@@ -219,7 +219,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     servPtr = NsGetServer(server);
 
     rc = FastReturn(conn, status, type, file, st);
-    Tcl_Free((void*)st);
+    ns_free(st);
     return rc;
 }
 
@@ -289,14 +289,14 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 
     Ns_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK) {
-        st = Tcl_AllocStatBuf();
+        st = NsFastAllocStatBuf();
         status = NsFastStat(ds.string, st);
         if (status == NS_OK
             && ((dir && S_ISDIR(st->st_mode))
                 || (dir == NS_FALSE && S_ISREG(st->st_mode)))) {
             is = NS_TRUE;
         }
-        Tcl_Free((void*)st);
+        ns_free(st);
     }
     Ns_DStringFree(&ds);
 
@@ -331,7 +331,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
     FileStat    *st;
 
     Ns_DStringInit(&ds);
-    st = Tcl_AllocStatBuf();
+    st = NsFastAllocStatBuf();
 
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK ||
         NsFastStat(ds.string, st) != NS_OK) {
@@ -390,7 +390,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
 
  done:
     Ns_DStringFree(&ds);
-    Tcl_Free((void*)st);
+    ns_free(st);
 
     return result;
 }
@@ -587,6 +587,32 @@ NsFastStat(CONST char *file, FileStat *stPtr)
     }
 
     return NS_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsFastAllocStatBuf --
+ *
+ *      Allocates FileStat structure
+ *
+ * Results:
+ *      Pointer to allocated memory buffer
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+FileStat *
+NsFastAllocStatBuf(void)
+{
+#ifdef USE_TCLVFS
+    return Tcl_AllocStatBuf();
+#else
+    return ns_malloc(sizeof(FileStat));
+#endif
 }
 
 /*
