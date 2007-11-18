@@ -66,6 +66,26 @@
 NAVISERVER = C:\Naviserver
 !endif
 
+
+#
+# Update options when building from sources or installed location.
+#
+
+!ifndef NSBUILD
+INCDIR = $(NAVISERVER)\include
+LIBS = $(LIBS) /LIBPATH:"$(NAVISERVER)\lib" nsd.lib nsthread.lib
+!else
+INCDIR = ..\include
+!if "$(DLL)" != "nsthread"
+LIBS = $(LIBS) /LIBPATH:"..\nsthread" nsthread.lib
+!if "$(DLL)" != "nsd"
+LIBS = $(LIBS) /LIBPATH:"..\nsd" nsd.lib
+!endif
+!endif
+!endif
+
+
+
 #
 # Install directories.
 #
@@ -149,24 +169,6 @@ PGMLIBS  = $(PGMLIBS) $(DLLLIB)
 
 
 #
-# Update options when building from sources or installed location.
-#
-
-!ifndef NSBUILD
-INCDIR = $(NAVISERVER)\include
-LIBS = $(LIBS) /LIBPATH:"$(NAVISERVER)\lib" nsd.lib nsthread.lib
-!else
-INCDIR = ..\include
-!if "$(DLL)" != "nsthread"
-LIBS = $(LIBS) /LIBPATH:"..\nsthread" nsthread.lib
-!if "$(DLL)" != "nsd"
-LIBS = $(LIBS) /LIBPATH:"..\nsd" nsd.lib
-!endif
-!endif
-!endif
-
-
-#
 # Update options for release or debug build.
 #
 
@@ -184,7 +186,7 @@ DEFS	= $(DEFS) /D "NDEBUG"
 # Final flags for compiler and linker
 #
 
-CFLAGS  = $(COPTS) $(DEFS) /I "$(INCDIR)"
+CFLAGS  = $(COPTS) /I "$(INCDIR)" $(DEFS)
 LIBS	= $(LIBS) $(TCLLIB) kernel32.lib advapi32.lib ws2_32.lib user32.lib
 
 

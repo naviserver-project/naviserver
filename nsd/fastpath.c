@@ -204,18 +204,23 @@ ConfigServerFastpath(CONST char *server)
 int
 Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
-    FileStat  st;
+    int         rc;
+    FileStat    *st;
     char        *server;
     NsServer    *servPtr;
 
-    if (NsFastStat(file, &st) != NS_OK) {
+    st = Tcl_AllocStatBuf();
+    if (NsFastStat(file, st) != NS_OK) {
+        Tcl_Free((void*)st);
         return Ns_ConnReturnNotFound(conn);
     }
 
     server  = Ns_ConnServer(conn);
     servPtr = NsGetServer(server);
 
-    return FastReturn(conn, status, type, file, &st);
+    rc = FastReturn(conn, status, type, file, st);
+    Tcl_Free((void*)st);
+    return rc;
 }
 
 
@@ -280,16 +285,18 @@ UrlIs(CONST char *server, CONST char *url, int dir)
 {
     Ns_DString   ds;
     int          status, is = NS_FALSE;
-    FileStat  st;
+    FileStat    *st;
 
     Ns_DStringInit(&ds);
     if (Ns_UrlToFile(&ds, server, url) == NS_OK) {
-        status = NsFastStat(ds.string, &st);
+        st = Tcl_AllocStatBuf();
+        status = NsFastStat(ds.string, st);
         if (status == NS_OK
-            && ((dir && S_ISDIR(st.st_mode))
-                || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
+            && ((dir && S_ISDIR(st->st_mode))
+                || (dir == NS_FALSE && S_ISREG(st->st_mode)))) {
             is = NS_TRUE;
         }
+        Tcl_Free((void*)st);
     }
     Ns_DStringFree(&ds);
 
@@ -321,22 +328,24 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
     Ns_DString   ds;
     char        *url = conn->request->url;
     int          status, result, i;
-    FileStat     st;
+    FileStat    *st;
 
     Ns_DStringInit(&ds);
+    st = Tcl_AllocStatBuf();
+
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK ||
-        NsFastStat(ds.string, &st) != NS_OK) {
+        NsFastStat(ds.string, st) != NS_OK) {
         goto notfound;
     }
-    if (S_ISREG(st.st_mode)) {
+    if (S_ISREG(st->st_mode)) {
 
         /*
          * Return ordinary files as with Ns_ConnReturnFile.
          */
 
-        result = FastReturn(conn, 200, NULL, ds.string, &st);
+        result = FastReturn(conn, 200, NULL, ds.string, st);
 
-    } else if (S_ISDIR(st.st_mode)) {
+    } else if (S_ISDIR(st->st_mode)) {
 
         /*
          * For directories, search for a matching directory file and
@@ -349,8 +358,8 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
-            status = NsFastStat(ds.string, &st);
-            if (status == NS_OK && S_ISREG(st.st_mode)) {
+            status = NsFastStat(ds.string, st);
+            if (status == NS_OK && S_ISREG(st->st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
                     Ns_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
@@ -381,6 +390,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
 
  done:
     Ns_DStringFree(&ds);
+    Tcl_Free((void*)st);
 
     return result;
 }

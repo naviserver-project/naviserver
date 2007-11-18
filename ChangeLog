@@ -1,3 +1,15 @@
+2007-11-17  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* include/Makefile.win32:
+	Make sure src incude goes first	
+
+	* nsd/tclmisc.c:
+	* nsd/rollfile.c:
+	* nsd/fastpath.c: Use Tcl_allocStatBuf for Tcl_FSStat to be
+	portable. On Windows using static struct corrupts stack.
+
+        Windows port looks stable now
+
 2007-11-13  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* include/ns.h:

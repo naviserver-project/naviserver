@@ -1011,50 +1011,53 @@ int
 NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Tcl_Obj *CONST objv[])
 {
-    FileStat st;
+    FileStat *st;
     char *name;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "file ?varname?");
         return TCL_ERROR;
     }
-    if (NsFastStat(Tcl_GetString(objv[1]), &st) != NS_OK) {
+    st = Tcl_AllocStatBuf();
+    if (NsFastStat(Tcl_GetString(objv[1]), st) != NS_OK) {
         Tcl_SetResult(interp, "0", TCL_STATIC);
+        Tcl_Free((void*)st);
         return NS_OK;
     }
     if (objc > 2) {
         name = Tcl_GetString(objv[2]);
-        Tcl_SetVar2Ex(interp, name, "dev", Tcl_NewIntObj(st.st_ino), 0);
-        Tcl_SetVar2Ex(interp, name, "ino", Tcl_NewWideIntObj(st.st_ino), 0);
-        Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewLongObj(st.st_nlink), 0);
-        Tcl_SetVar2Ex(interp, name, "uid", Tcl_NewIntObj(st.st_uid), 0);
-        Tcl_SetVar2Ex(interp, name, "gid", Tcl_NewIntObj(st.st_gid), 0);
-        Tcl_SetVar2Ex(interp, name, "size", Tcl_NewWideIntObj(st.st_size), 0);
-        Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewLongObj(st.st_atime), 0);
-        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewLongObj(st.st_ctime), 0);
-        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewLongObj(st.st_mtime), 0);
-        Tcl_SetVar2Ex(interp, name, "mode", Tcl_NewIntObj(st.st_mode), 0);
+        Tcl_SetVar2Ex(interp, name, "dev", Tcl_NewIntObj(st->st_ino), 0);
+        Tcl_SetVar2Ex(interp, name, "ino", Tcl_NewWideIntObj(st->st_ino), 0);
+        Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewLongObj(st->st_nlink), 0);
+        Tcl_SetVar2Ex(interp, name, "uid", Tcl_NewIntObj(st->st_uid), 0);
+        Tcl_SetVar2Ex(interp, name, "gid", Tcl_NewIntObj(st->st_gid), 0);
+        Tcl_SetVar2Ex(interp, name, "size", Tcl_NewWideIntObj(st->st_size), 0);
+        Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewLongObj(st->st_atime), 0);
+        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewLongObj(st->st_ctime), 0);
+        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewLongObj(st->st_mtime), 0);
+        Tcl_SetVar2Ex(interp, name, "mode", Tcl_NewIntObj(st->st_mode), 0);
         Tcl_SetVar2Ex(interp, name, "type", Tcl_NewStringObj(
-                  (S_ISREG(st.st_mode) ? "file" :
-                        S_ISDIR(st.st_mode) ? "directory" :
+                  (S_ISREG(st->st_mode) ? "file" :
+                        S_ISDIR(st->st_mode) ? "directory" :
 #ifdef S_ISCHR
-                          S_ISCHR(st.st_mode) ? "characterSpecial" :
+                          S_ISCHR(st->st_mode) ? "characterSpecial" :
 #endif
 #ifdef S_ISBLK
-                            S_ISBLK(st.st_mode) ? "blockSpecial" :
+                            S_ISBLK(st->st_mode) ? "blockSpecial" :
 #endif
 #ifdef S_ISFIFO
-                              S_ISFIFO(st.st_mode) ? "fifo" :
+                              S_ISFIFO(st->st_mode) ? "fifo" :
 #endif
 #ifdef S_ISLNK
-                                S_ISLNK(st.st_mode) ? "link" :
+                                S_ISLNK(st->st_mode) ? "link" :
 #endif
 #ifdef S_ISSOCK
-                                  S_ISSOCK(st.st_mode) ? "socket" :
+                                  S_ISSOCK(st->st_mode) ? "socket" :
 #endif
                    ""), -1), 0);
     }
     Tcl_SetResult(interp, "1", TCL_STATIC);
+    Tcl_Free((void*)st);
     return NS_OK;
 }
 
@@ -1076,6 +1079,15 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.27  2007/11/18 00:24:13  seryakov
+ *         * include/Makefile.win32:
+ *         Make sure src incude goes first
+ *
+ *         * nsd/tclmisc.c:
+ *         * nsd/rollfile.c:
+ *         * nsd/fastpath.c: Use Tcl_allocStatBuf for Tcl_FSStat to be
+ *         portable. On Windows using static struct corrupts stack.
+ *
  * Revision 1.26  2007/11/14 00:50:33  seryakov
  *         * include/nsthread.h:
  *         * include/Makefile.module
