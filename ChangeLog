@@ -1,3 +1,8 @@
+1007-10-18  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	nsd/fd.c: Do not attempt to setup unlimited number of open files
+	per process, as this usually never suceeds.
+
 2007-11-17  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* configure.in: Fixed absence of semicolon between paths for 

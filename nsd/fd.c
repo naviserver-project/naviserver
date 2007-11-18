@@ -127,7 +127,7 @@ NsInitFd(void)
         Ns_Log(Warning, "fd: getrlimit(RLIMIT_NOFILE) failed: %s",
                strerror(errno));
     } else {
-        if (rl.rlim_cur != rl.rlim_max) {
+        if (rl.rlim_cur != rl.rlim_max && rl.rlim_max < RLIM_INFINITY) {
             rl.rlim_cur = rl.rlim_max;
             if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
                 Ns_Log(Warning, "fd: setrlimit(RLIMIT_NOFILE, %u) failed: %s",
