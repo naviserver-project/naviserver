@@ -337,7 +337,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->backlog      = Ns_ConfigIntRange(path, "backlog",
                                              256,          1, INT_MAX);
 
-    drvPtr->readahead    = Ns_ConfigIntRange(path, "readahead",
+    drvPtr->readahead    = Ns_ConfigWideIntRange(path, "readahead",
                                              drvPtr->bufsize,
                                              drvPtr->bufsize, drvPtr->maxinput);
 

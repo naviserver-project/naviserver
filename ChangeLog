@@ -1,3 +1,8 @@
+2007-11-21  Vlad Seryakov  <seryakov@users.sf.net>
+	
+	* nsd/driver.c: Use WideInt version of config function when reading
+	readahead value because it uses maxinput which is WideInt
+
 1007-10-18  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	nsd/fd.c: Do not attempt to setup unlimited number of open files
