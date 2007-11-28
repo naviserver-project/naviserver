@@ -1,3 +1,10 @@
+1007-10-18  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/tclconf.c: Fixed NsTclConfigObjCmd() to correctly set the
+	returned value of an default boolean param to 0/1 and not just
+	blindly parrot what user has given (true/false for example) as
+	this could (and it does!) break Tcl expressions.
+
 2007-11-21  Vlad Seryakov  <seryakov@users.sf.net>
 	
 	* nsd/driver.c: Use WideInt version of config function when reading
