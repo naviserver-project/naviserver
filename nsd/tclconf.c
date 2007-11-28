@@ -135,6 +135,9 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
             }
             defObj = Tcl_NewIntObj(i);
         } else if (isint) {
+            if (Tcl_GetWideIntFromObj(interp, defObj, &v) != TCL_OK) {
+                return TCL_ERROR;
+            }
             if (v < min || v > max) {
                 Tcl_SetResult(interp, "value out of range", TCL_STATIC);
                 return TCL_ERROR;
