@@ -1126,12 +1126,13 @@ JobThread(void *arg)
     Queue         *queuePtr;
     Tcl_HashEntry *jPtr;
     Ns_Time       *timePtr, wait;
-    int            jpt, njobs, status;
+    int            jpt, njobs, status, tid;
 
     Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
-    Ns_ThreadSetName("-ns_job_%x-", tp.nextThreadId++);
-    Ns_Log(Notice, "Starting thread: -ns_job_%x-", tp.nextThreadId);
+    tid = tp.nextThreadId++;
+    Ns_ThreadSetName("-ns_job_%x-", tid);
+    Ns_Log(Notice, "Starting thread: -ns_job_%x-", tid);
 
     /*
      * See how many jobs this thread should run.
@@ -1171,6 +1172,8 @@ JobThread(void *arg)
 
         Ns_MutexUnlock(&tp.queuelock);
 
+        Ns_ThreadSetName("-%s:%x", jobPtr->queueId, tid);
+
         interp = Ns_TclAllocateInterp(jobPtr->server);
         Ns_GetTime(&jobPtr->endTime);
         Ns_GetTime(&jobPtr->startTime);
@@ -1202,6 +1205,8 @@ JobThread(void *arg)
         }
         Ns_GetTime(&jobPtr->endTime);
         Ns_TclDeAllocateInterp(interp);
+
+        Ns_ThreadSetName("-ns_job_%x-", tid);
 
         Ns_MutexLock(&tp.queuelock);
 
