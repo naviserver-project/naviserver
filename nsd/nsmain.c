@@ -653,13 +653,15 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * the nsconf.stopping flag for any threads calling
      * Ns_InfoShutdownPending(), and set the absolute
      * timeout for all systems to complete shutown.
+     * If SIGQUIT signal was sent, make immediate shutdown 
+     * without waiting for all subsystems to exit gracefully
      */
 
     StatusMsg(stopping);
 
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.stopping = 1;
-    if (nsconf.shutdowntimeout < 0) {
+    if (sig == NS_SIGQUIT || nsconf.shutdowntimeout < 0) {
         nsconf.shutdowntimeout = 0;
     }
     Ns_GetTime(&timeout);

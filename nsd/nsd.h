@@ -87,11 +87,13 @@
 #ifdef _WIN32
   #define NS_SIGHUP   1
   #define NS_SIGINT   2
+  #define NS_SIGQUIT  3
   #define NS_SIGPIPE 13
   #define NS_SIGTERM 15
 #else
   #define NS_SIGHUP  SIGHUP
   #define NS_SIGINT  SIGINT
+  #define NS_SIGQUIT SIGQUIT
   #define NS_SIGPIPE SIGPIPE
   #define NS_SIGTERM SIGTERM
 #endif

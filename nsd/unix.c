@@ -131,7 +131,7 @@ NsBlockSignals(int debug)
     sigset_t set;
 
     /*
-     * Block SIGHUP, SIGPIPE, SIGTERM, and SIGINT. This mask is
+     * Block SIGHUP, SIGPIPE, SIGTERM, SIGQUIT and SIGINT. This mask is
      * inherited by all subsequent threads so that only this
      * thread will catch the signals in the sigwait() loop below.
      * Unfortunately this makes it impossible to kill the
@@ -144,6 +144,7 @@ NsBlockSignals(int debug)
     sigaddset(&set, SIGPIPE);
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGHUP);
+    sigaddset(&set, SIGQUIT);
     if (!debugMode) {
         /* NB: Don't block SIGINT in debug mode for Solaris dbx. */
         sigaddset(&set, SIGINT);
@@ -223,6 +224,7 @@ NsHandleSignals(void)
     sigemptyset(&set);
     sigaddset(&set, SIGTERM);
     sigaddset(&set, SIGHUP);
+    sigaddset(&set, SIGQUIT);
     if (!debugMode) {
         sigaddset(&set, SIGINT);
     }

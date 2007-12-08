@@ -1,5 +1,12 @@
 2007-12-02  Vlad Seryakov  <seryakov@users.sf.net>
 
+	* nsd/nsd.h:
+	* nsd/unix.c:
+	* nsd/nsmain.c: When SIGQUIT signal is received make immediate
+	shutdown by setting shutdowntimeout to 0. 
+
+2007-12-02  Vlad Seryakov  <seryakov@users.sf.net>
+
 	* nsd/tcljob.c: Temporary change thread name to the queueId:id during
 	callback execution for easier logging. Thread name will clearly indicate which 
 	job is being executed
