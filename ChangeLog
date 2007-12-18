@@ -1,3 +1,10 @@
+2007-12-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/driver.c: Fixed UDP drivers, async reads do not work
+	with UDP packets, driver need to read packets as soon as possible and
+	queue them instead of putting Sock into read/wait/close cycle like for TCP
+	connections.
+
 2007-12-02  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/nsd.h:

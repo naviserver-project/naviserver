@@ -671,6 +671,7 @@ ConnRun(Conn *connPtr)
         Ns_ConnClose(conn);
         return;
     }
+
     connPtr->contentLength = connPtr->reqPtr->length;
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->request = connPtr->reqPtr->request;

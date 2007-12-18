@@ -1274,10 +1274,11 @@ DriverThread(void *ignored)
                        && (sockPtr = SockAccept(drvPtr)) != NULL) {
 
                     /*
-                     * Queue the socket immediately if request is provided
+                     * Queue the socket immediately if request is provided.
+                     * This is true by default for UDP drivers
                      */
 
-                    if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONACCEPT) {
+                    if (sockPtr->drvPtr->opts & (NS_DRIVER_QUEUE_ONACCEPT|NS_DRIVER_UDP)) {
 
                         if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                             Push(sockPtr, waitPtr);
@@ -1422,7 +1423,7 @@ SetServer(Sock *sockPtr)
  * SockPrepare
  *
  *      Prepares for reading from the socket, allocates new request struct
- *      for the given socket, copies remote ip address and port
+ *      for the given socket
  *
  * Results:
  *      None
@@ -1462,8 +1463,6 @@ SockPrepare(Sock *sockPtr)
         reqPtr->roff       = 0;
         reqPtr->leadblanks = 0;
     }
-    reqPtr->port = ntohs(sockPtr->sa.sin_port);
-    strcpy(reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
     sockPtr->reqPtr = reqPtr;
 }
 
@@ -1516,12 +1515,20 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
     }
 
     /*
+     * Make sure we update peer address with actual remote IP address
+     */
+
+    sockPtr->reqPtr->port = ntohs(sockPtr->sa.sin_port);
+    strcpy(sockPtr->reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
+
+    /*
      *  Actual queueing, if not ready spool to the waiting list
      */
 
     if (!NsQueueConn(sockPtr, timePtr)) {
         return NS_TIMEOUT;
     }
+
     return NS_OK;
 }
 
@@ -1603,7 +1610,7 @@ static Sock *
 SockAccept(Driver *drvPtr)
 {
     Sock        *sockPtr;
-    int          slen;
+    int          n;
 
     /*
      * Allocate and/or initialize a Sock structure.
@@ -1623,7 +1630,7 @@ SockAccept(Driver *drvPtr)
      * Accept the new connection.
      */
 
-    slen = sizeof(struct sockaddr_in);
+    n = sizeof(struct sockaddr_in);
 
     sockPtr->drvPtr  = drvPtr;
     sockPtr->tfd     = 0;
@@ -1631,18 +1638,32 @@ SockAccept(Driver *drvPtr)
     sockPtr->keep    = 0;
     sockPtr->arg     = NULL;
 
+
+    /*
+     * In UDP mode we read packet right away and queue it immediately
+     * to allow driver continue processing other packets. Packet should
+     * contain the whole request.
+     */
+
     if (drvPtr->opts & NS_DRIVER_UDP) {
         sockPtr->sock = drvPtr->sock;
-    } else {
-        sockPtr->sock = Ns_SockAccept(drvPtr->sock,
-                                      (struct sockaddr *) &sockPtr->sa, &slen);
+
+        if (SockRead(sockPtr, 0) != SOCK_READY) {
+            SockRelease(sockPtr, 0, 0);
+            return NULL;
+        }
+
+        drvPtr->queuesize++;
+        return sockPtr;
     }
+
+    /*
+     * In TCP mode proceed with accepting socket the normal way, if accept failed
+     * return the Sock to the free list.
+     */
+
+    sockPtr->sock = Ns_SockAccept(drvPtr->sock, (struct sockaddr *)&sockPtr->sa, &n);
     if (sockPtr->sock == INVALID_SOCKET) {
-
-        /*
-         * Accept failed - return the Sock to the free list.
-         */
-
         sockPtr->nextPtr = firstSockPtr;
         firstSockPtr = sockPtr;
         return NULL;
@@ -2098,7 +2119,8 @@ SockRead(Sock *sockPtr, int spooler)
     }
 
     /*
-     *  Queue the socket after first network read
+     *  Queue the socket after first network read, do not parse incoming
+     *  data for HTTP-like headers
      */
 
     if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONREAD) {
