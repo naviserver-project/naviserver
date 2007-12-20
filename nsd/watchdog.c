@@ -76,7 +76,7 @@ static void SysLog(int priority, char *fmt, ...);
 static pid_t watchedPid   = 0; /* PID of the server to watch. */
 
 static int   watchdogExit = 0; /* Watchdog process should exit. */
-static int   processDied  = 0; /* Watched process died unexpectedly. */
+static int   processDied  = 0; /* 1 if watched process died unexpectedly. */
 
 
 
@@ -121,7 +121,7 @@ NsForkWatchedProcess()
         }
 
         /*
-         * Do what..?
+         * Reset the interval timer  (see below)
          */
 
         if (WAKEUP_IN_SECONDS) {
@@ -235,7 +235,7 @@ WaitForServer()
         pid = waitpid(watchedPid, &status, 0);
     } while (pid == -1 && errno == EINTR && watchedPid);
 
-    if (processDied == 0) {
+    if (processDied) {
         msg = "terminated";
         ret = -1; /* Alarm handler found no server present? */
     } else if (WIFEXITED(status)) {
