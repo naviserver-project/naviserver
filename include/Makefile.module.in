@@ -111,7 +111,6 @@ ifdef PGM
     BUILD   += $(PGM)
     INSTALL += install-pgm
     CLEAN   += clean-pgm
-    PGMOBJS += $(UNIXOBJS)
 endif
 
 ifdef LIBHDRS

@@ -1,4 +1,12 @@
-1007-12-20  Zoran Vasiljevic <vasiljevic@users.sf.net>
+2007-12-26  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* include/Makefile.module.in: Removed adding $(UNIXOBJS) 
+	to PGM target as this results in double inclusion of
+	Unix object files, once in the libnsd and once on the
+	command line during the program linking. Some platforms
+	(Darwin) complain about duplicate symbols in such cases.
+
+2007-12-20  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/watchdog.c: Fixed wrong test of alarm signal trigger
 	that caused the watchdog to restart the worker even when 
