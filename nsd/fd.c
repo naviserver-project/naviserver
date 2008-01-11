@@ -143,8 +143,10 @@ NsInitFd(void)
                     } else {
                         rl.rlim_cur = rl.rlim_max = OPEN_MAX;
                     }
-#else
+#elif defined(OPEN_MAX)
                     rl.rlim_cur = rl.rlim_max = OPEN_MAX;
+#else
+                    rl.rlim_cur = rl.rlim_max = 256;
 #endif /* __APPLE__ */
                     if (setrlimit(RLIMIT_NOFILE, &rl)) {
                         Ns_Log(Warning,"fd: setrlimit(RLIMIT_NOFILE, %u) failed: %s",
