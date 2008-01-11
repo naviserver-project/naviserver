@@ -1,3 +1,11 @@
+2008-1-11  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* fd.c: NsInitFd: do not trust getrlimit on Darwin as it
+	returns bogus values (RLIM_INFINITY) for the query of
+	RLIMIT_NOFILE. Instead, assume OPEN_MAX and obtain the
+	value of the kernel parameter kern.maxfiles and use 
+	setrlimit to set that value. This usually works good.
+
 2007-12-26  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* include/Makefile.module.in: Removed adding $(UNIXOBJS) 

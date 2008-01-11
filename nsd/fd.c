@@ -123,24 +123,43 @@ NsInitFd(void)
      * but do so at your own risk.
      */
 
-    if (getrlimit(RLIMIT_NOFILE, &rl) != 0) {
+    if (getrlimit(RLIMIT_NOFILE, &rl)) {
         Ns_Log(Warning, "fd: getrlimit(RLIMIT_NOFILE) failed: %s",
                strerror(errno));
     } else {
-        if (rl.rlim_cur != rl.rlim_max && rl.rlim_max < RLIM_INFINITY) {
+        if (rl.rlim_cur < rl.rlim_max) {
             rl.rlim_cur = rl.rlim_max;
-            if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
-                Ns_Log(Warning, "fd: setrlimit(RLIMIT_NOFILE, %u) failed: %s",
-                       (unsigned int) rl.rlim_max, strerror(errno));
+            if (setrlimit(RLIMIT_NOFILE, &rl)) {
+                if (rl.rlim_max != RLIM_INFINITY) {
+                    Ns_Log(Warning, "fd: setrlimit(RLIMIT_NOFILE, %u) failed: %s",
+                           (unsigned int) rl.rlim_max, strerror(errno));
+                } else {
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+                    size_t len = sizeof(int);
+                    int maxf;
+                    if (!sysctlbyname("kern.maxfiles", &maxf, &len, NULL, 0)) {
+                        rl.rlim_cur = rl.rlim_max = maxf;
+                    } else {
+                        rl.rlim_cur = rl.rlim_max = OPEN_MAX;
+                    }
+#else
+                    rl.rlim_cur = rl.rlim_max = OPEN_MAX;
+#endif /* __APPLE__ */
+                    if (setrlimit(RLIMIT_NOFILE, &rl)) {
+                        Ns_Log(Warning,"fd: setrlimit(RLIMIT_NOFILE, %u) failed: %s",
+                               (unsigned int) rl.rlim_max, strerror(errno));
+                    }
+                }
             }
         }
 #ifdef USE_DUPHIGH
-        if (getrlimit(RLIMIT_NOFILE, &rl) == 0 && rl.rlim_cur > 256) {
+        if (!getrlimit(RLIMIT_NOFILE, &rl) && rl.rlim_cur > 256) {
             dupHigh = 1;
         }
-#endif
+#endif /* USE_DUPHIGH */
     }
-#endif
+#endif /* _WIN32 */
 
     /*
      * Open a fd on /dev/null which can be later re-used.
@@ -331,7 +350,7 @@ Ns_GetTemp(void)
 
     do {
         Ns_GetTime(&now);
-        snprintf(buf, sizeof(buf), "nstmp.%jd.%ld", (intmax_t) now.sec, now.usec);
+        snprintf(buf, sizeof(buf), "nstmp.%d.%ld", now.sec, now.usec);
         path = Ns_MakePath(&ds, P_tmpdir, buf, NULL);
 #ifdef _WIN32
         fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);
