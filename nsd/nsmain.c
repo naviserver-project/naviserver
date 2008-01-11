@@ -565,15 +565,21 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Log the current open file limit.
      */
 
-    if (getrlimit(RLIMIT_NOFILE, &rl) != 0) {
+    if (getrlimit(RLIMIT_NOFILE, &rl)) {
         Ns_Log(Warning, "nsmain: "
                "getrlimit(RLIMIT_NOFILE) failed: '%s'", strerror(errno));
     } else {
-        Ns_Log(Notice, "nsmain: "
-               "max files: FD_SETSIZE = %u, rl_cur = %u, rl_max = %u",
-               FD_SETSIZE, (unsigned int)rl.rlim_cur, (unsigned int)rl.rlim_max);
-        if (rl.rlim_max > FD_SETSIZE) {
-            Ns_Log(Warning, "nsmain: rl_max > FD_SETSIZE");
+        if (rl.rlim_max == RLIM_INFINITY) {
+            Ns_Log(Notice, "nsmain: "
+                   "max files: FD_SETSIZE = %u, rl_cur = %u, rl_max = %s",
+                   FD_SETSIZE, (unsigned int)rl.rlim_cur, "infinity");
+        } else {
+            Ns_Log(Notice, "nsmain: "
+                   "max files: FD_SETSIZE = %u, rl_cur = %u, rl_max = %u",
+                   FD_SETSIZE, (unsigned int)rl.rlim_cur, (unsigned int)rl.rlim_max);
+        }
+        if (rl.rlim_cur > FD_SETSIZE) {
+            Ns_Log(Warning, "nsmain: rl_cur > FD_SETSIZE");
         }
     }
 
