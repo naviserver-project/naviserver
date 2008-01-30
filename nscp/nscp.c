@@ -371,7 +371,7 @@ retry:
 	    Ns_TclLogError(interp);
 	}
 	Tcl_AppendResult(interp, "\r\n", NULL);
-	res = interp->result;
+	res = Tcl_GetStringResult(interp);;
 	len = strlen(res);
 	while (len > 0) {
 	    if ((n = send(sessPtr->sock, res, len, 0)) <= 0) goto done;
