@@ -1,9 +1,14 @@
+2008-02-19  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/dstring.c: Ns_DStringVPrintf: Fixed Windows usage
+	of vsnprintf().
+
 2007-01-29  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nscp/nscp.c: Use Tcl_GetStringResult to retrieve result, in Tcl 8.5
 	accessing directly does not work anymore
 
-2008-1-11  Zoran Vasiljevic <vasiljevic@users.sf.net>
+2008-01-11  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/fd.c: NsInitFd: do not trust getrlimit on Darwin as it
 	returns bogus values (RLIM_INFINITY) for the query of

@@ -207,11 +207,7 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
     bufLength = newLength - origLength;
 
     va_copy(ap, apSrc);
-#ifdef __WIN32
-    result = _vsnprintf_s(buf, bufLength, fmt, ap);
-#else
     result = vsnprintf(buf, bufLength, fmt, ap);
-#endif
     va_end(ap);
 
     /*
@@ -219,7 +215,7 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
      * and iterate, otherwise we should get this correct first time.
      */
 
-#ifdef __WIN32
+#ifdef _WIN32
     while (result == -1 && errno == ERANGE) {
         newLength = dsPtr->spaceAvl * 2;
 #else
@@ -232,12 +228,8 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, CONST char *fmt, va_list apSrc)
         buf = dsPtr->string + origLength;
         bufLength = newLength - origLength;
 
-    va_copy(ap, apSrc);
-#ifdef __WIN32
-        result = _vsnprintf_s(buf, bufLength, fmt, ap);
-#else
+        va_copy(ap, apSrc);
         result = vsnprintf(buf, bufLength, fmt, ap);
-#endif
         va_end(ap);
     }
 
