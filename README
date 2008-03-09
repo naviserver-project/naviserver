@@ -45,9 +45,8 @@ format (suitable for viewing with any HTML-compatible browser).
 3. Compiling and installing
 ---------------------------
 
-The server is known to compile and run on FreeBSD, Linux, Solaris, and
-Mac OS/X 10.2+.  Ports to other modern platforms such as HP/UX should
-be easy.  To compile and install:
+The server is known to compile and run on FreeBSD, Linux, Solaris, 
+Mac OS/X 10.2+ and Windows. To compile and install:
 
 3a.     Download, configure, build and install Tcl 8.4 or better
 	with threads and shared libraries enabled.  To do so,
@@ -130,6 +129,33 @@ be easy.  To compile and install:
 	Not all modules will be compiled by default due to external dependencies, so
 	please look into module's README file for any additional information.
 
+3g.	To compiling for Windows you need Msys + Mingw [http://www.mingw.org/download.shtml]
+
+        http://prdownloads.sourceforge.net/tcl/msys_mingw8.zip
+
+        This Msys + Mingw download above is the minimal environment needed
+        to build Naviserver under Windows. It includes a shell environment and
+        gcc. To install, you just download the zip file and extract the
+        files into a directory. The README.TXT file describes how to launch
+        the msys shell, you then run the configure script in the naviserver
+        directory. The Msys based configure/build process works just like the 
+	UNIX one. 
+
+	Example of building naviserver.exe:
+
+	Run dos prompt or cmd.exe, assuming msys_mingw8.zip is unpacked in the root of drive c:
+
+	c:>cd msys
+	c:\msys> msys.bat
+
+	$ cd /c/naviserver-4.99.2-src
+	$ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
+	$ make install
+
+
+	Example above assumes Tcl is built using mingw with prefix c:/naviserver
+
+	
 
 4. Mailing lists
 ----------------
