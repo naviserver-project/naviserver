@@ -1,3 +1,12 @@
+2008-03-09  Vlad Seryakov  <seryakov@users.sf.net>
+
+    * include/ns.h:
+    * nsd/nsmain.c:
+    * nsd/log.c:
+    * nslog/nslog.c: Added new public function Ns_HomePathExists, server now can be run from the
+    current directlry if all required files are located in one place, this is for very small/embedded or test
+    environments. Previous functionality works as usual.
+
 2008-03-08  Vlad Seryakov  <seryakov@users.sf.net>
 	* Makefile configure.in include/Makefile.global.in
 	include/Makefile.module.in include/ns.h include/nsthread.h
@@ -8,8 +17,8 @@
 	nsd/unix.c nsd/watchdog.c nsdb/db.h nslog/nslog.c
 	nsperm/nsperm.c nsproxy/nsproxylib.c nsthread/Makefile
 	nsthread/fork.c nsthread/nsthreadtest.c nsthread/pthread.c
-	nsthread/signal.c nsthread/thread.c nsthread/winthread.c: Port to Win32 
-	platform using Mingw32/Msys environment. Msys is what Tcl project using, same 
+	nsthread/signal.c nsthread/thread.c nsthread/winthread.c: Port to Win32
+	platform using Mingw32/Msys environment. Msys is what Tcl project using, same
 	basic archive is what needed to conpile navoiserber for win32. Works stable as oppose to
 	MSVC compiled code which used to crash for unknown reasons. Same configure script is used
 	and config.h.
@@ -30,7 +39,7 @@
 	* nsd/fd.c: NsInitFd: do not trust getrlimit on Darwin as it
 	returns bogus values (RLIM_INFINITY) for the query of
 	RLIMIT_NOFILE. Instead, assume OPEN_MAX and obtain the
-	value of the kernel parameter kern.maxfiles and use 
+	value of the kernel parameter kern.maxfiles and use
 	setrlimit to set that value. This usually works good.
 
 	* nsd/nsmain.c: Fix log message stating max number of
@@ -38,7 +47,7 @@
 
 2007-12-26  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
-	* include/Makefile.module.in: Removed adding $(UNIXOBJS) 
+	* include/Makefile.module.in: Removed adding $(UNIXOBJS)
 	to PGM target as this results in double inclusion of
 	Unix object files, once in the libnsd and once on the
 	command line during the program linking. Some platforms
@@ -47,7 +56,7 @@
 2007-12-20  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/watchdog.c: Fixed wrong test of alarm signal trigger
-	that caused the watchdog to restart the worker even when 
+	that caused the watchdog to restart the worker even when
 	the worker exited regularily.
 
 2007-12-18  Vlad Seryakov  <seryakov@users.sf.net>
@@ -62,12 +71,12 @@
 	* nsd/nsd.h:
 	* nsd/unix.c:
 	* nsd/nsmain.c: When SIGQUIT signal is received make immediate
-	shutdown by setting shutdowntimeout to 0. 
+	shutdown by setting shutdowntimeout to 0.
 
 2007-12-02  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/tcljob.c: Temporary change thread name to the queueId:id during
-	callback execution for easier logging. Thread name will clearly indicate which 
+	callback execution for easier logging. Thread name will clearly indicate which
 	job is being executed
 
 1007-10-18  Zoran Vasiljevic <vasiljevic@users.sf.net>
@@ -78,7 +87,7 @@
 	this could (and it does!) break Tcl expressions.
 
 2007-11-21  Vlad Seryakov  <seryakov@users.sf.net>
-	
+
 	* nsd/driver.c: Use WideInt version of config function when reading
 	readahead value because it uses maxinput which is WideInt
 
@@ -89,11 +98,11 @@
 
 2007-11-17  Vlad Seryakov  <seryakov@users.sf.net>
 
-	* configure.in: Fixed absence of semicolon between paths for 
+	* configure.in: Fixed absence of semicolon between paths for
 	linker in -rpath
 
 	* include/Makefile.win32:
-	Make sure src incude goes first	
+	Make sure src incude goes first
 
 2007-11-13  Vlad Seryakov  <seryakov@users.sf.net>
 
@@ -123,10 +132,10 @@
 	* nslog/Makefile:
 	* nsd/nsmain.c:
 	* nsd/tcltime.c:
-	* nsd/tclmisc.c: Initial Windows port, still work in progress. 
+	* nsd/tclmisc.c: Initial Windows port, still work in progress.
         New makefile added to perform compiling fromcommand line using the same top
 	level makefile. To compile for windows, edit include/Makefile.build and
-	replace include/Makefile.module with include/Makefile.win32. 
+	replace include/Makefile.module with include/Makefile.win32.
 
 	Windows port does not use config.h, all platform specific defines are in nsthread.h
 	for now. Once build is polished it can be moved to more appropriate place.
@@ -135,7 +144,7 @@
 	edit top Makefile.win32 for paths to Tcl and Visual C++
 	nmake -f Makefile.win32
 	nmake -f Makefile.win32 install
-	
+
 2007-10-23  Vlad Seryakov  <seryakov@users.sf.net>
 
     	* nsd/driver.c:

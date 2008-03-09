@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * pathname.c --
  *
- *	Functions that manipulate or return paths. 
+ *  Functions that manipulate or return paths.
  */
 
 #include "nsd.h"
@@ -39,7 +39,7 @@
 NS_RCSID("@(#) $Header$");
 
 
-#define ISSLASH(c)	((c) == '/' || (c) == '\\')
+#define ISSLASH(c)  ((c) == '/' || (c) == '\\')
 
 
 /*
@@ -118,13 +118,13 @@ ConfigServerVhost(CONST char *server)
  *
  * Ns_PathIsAbsolute --
  *
- *	Boolean: is the path absolute? 
+ *  Boolean: is the path absolute?
  *
  * Results:
- *	NS_TRUE if it is, NS_FALSE if not. 
+ *  NS_TRUE if it is, NS_FALSE if not.
  *
  * Side effects:
- *	None. 
+ *  None.
  *
  *----------------------------------------------------------------------
  */
@@ -134,11 +134,11 @@ Ns_PathIsAbsolute(CONST char *path)
 {
 #ifdef _WIN32
     if (isalpha(UCHAR(*path)) && path[1] == ':') {
-	path += 2;
+        path += 2;
     }
 #endif
     if (ISSLASH(*path)) {
-	return NS_TRUE;
+        return NS_TRUE;
     }
     return NS_FALSE;
 }
@@ -149,13 +149,13 @@ Ns_PathIsAbsolute(CONST char *path)
  *
  * Ns_NormalizePath --
  *
- *	Remove "..", "." from paths. 
+ *  Remove "..", "." from paths.
  *
  * Results:
- *	dsPtr->string 
+ *  dsPtr->string
  *
  * Side effects:
- *	Will append to dsPtr. Assumes an absolute path.
+ *  Will append to dsPtr. Assumes an absolute path.
  *
  *----------------------------------------------------------------------
  */
@@ -171,54 +171,54 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
     src = Ns_DStringAppend(&tmp, path);
 #ifdef _WIN32
     if (isalpha(UCHAR(*src)) && src[1] == ':') {
-	if (isupper(UCHAR(*src))) {
-	    *src = tolower(*src);
-	}
-	Ns_DStringNAppend(dsPtr, src, 2);
-	src += 2;
+        if (isupper(UCHAR(*src))) {
+            *src = tolower(*src);
+        }
+        Ns_DStringNAppend(dsPtr, src, 2);
+        src += 2;
     }
 #endif
 
     /*
      * Move past leading slash(es)
      */
-    
+
     while (ISSLASH(*src)) {
-	++src;
+        ++src;
     }
     do {
-	part = src;
+        part = src;
 
-	/*
-	 * Move to next slash
-	 */
-	
-	while (*src && !ISSLASH(*src)) {
-	    ++src;
-	}
-	end = *src;
-	*src++ = '\0';
+        /*
+         * Move to next slash
+         */
 
-	if (part[0] == '.' && part[1] == '.' && part[2] == '\0') {
+        while (*src && !ISSLASH(*src)) {
+            ++src;
+        }
+        end = *src;
+        *src++ = '\0';
 
-	    /*
-	     * There's a "..", so wipe out one path backwards.
-	     */
-	    
-	    slash = strrchr(dsPtr->string, '/');
-	    if (slash != NULL) {
-		Ns_DStringSetLength(dsPtr, slash - dsPtr->string);
-	    }
-	} else if (part[0] != '\0' &&
-		   (part[0] != '.' || part[1] != '\0')) {
+        if (part[0] == '.' && part[1] == '.' && part[2] == '\0') {
 
-	    /*
-	     * There's something non-null and not ".".
-	     */
+            /*
+             * There's a "..", so wipe out one path backwards.
+             */
 
-	    Ns_DStringNAppend(dsPtr, "/", 1);
-	    Ns_DStringAppend(dsPtr, part);
-	}
+            slash = strrchr(dsPtr->string, '/');
+            if (slash != NULL) {
+                Ns_DStringSetLength(dsPtr, slash - dsPtr->string);
+            }
+        } else if (part[0] != '\0' &&
+               (part[0] != '.' || part[1] != '\0')) {
+
+            /*
+             * There's something non-null and not ".".
+             */
+
+            Ns_DStringNAppend(dsPtr, "/", 1);
+            Ns_DStringAppend(dsPtr, part);
+        }
     } while (end != '\0');
 
     /*
@@ -226,7 +226,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
      */
 
     if (dsPtr->string[0] == '\0') {
-	Ns_DStringNAppend(dsPtr, "/", 1);
+        Ns_DStringNAppend(dsPtr, "/", 1);
     }
     Ns_DStringFree(&tmp);
 
@@ -239,14 +239,14 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
  *
  * Ns_MakePath --
  *
- *	Append all the elements together with slashes between them. 
- *	Stop at NULL. 
+ *  Append all the elements together with slashes between them.
+ *  Stop at NULL.
  *
  * Results:
- *	dest->string 
+ *  dest->string
  *
  * Side effects:
- *	Will append to dest. 
+ *  Will append to dest.
  *
  *----------------------------------------------------------------------
  */
@@ -280,7 +280,7 @@ Ns_MakePath(Ns_DString *dest, ...)
  *          foo, 4 -> /f/o/o/_
  *
  * Results:
- *      dest->string 
+ *      dest->string
  *
  * Side effects:
  *      Will append to dest.
@@ -318,15 +318,15 @@ Ns_HashPath(Ns_DString *dest, CONST char *string, int levels)
  *
  * Ns_LibPath --
  *
- *	Returns the path where server libraries exist, with 
- *	varargs appended to it with slashes between each,
- *  stopping at null arg. 
+ *  Returns the path where server libraries exist, with
+ *  varargs appended to it with slashes between each,
+ *  stopping at null arg.
  *
  * Results:
- *	dest->string
+ *  dest->string
  *
  * Side effects:
- *	Appends to dest. 
+ *  Appends to dest.
  *
  *----------------------------------------------------------------------
  */
@@ -351,15 +351,15 @@ Ns_LibPath(Ns_DString *dest, ...)
  *
  * Ns_BinPath --
  *
- *	Returns the path where server binaries exist, with 
- *	varargs appended to it with slashes between each,
- *  stopping at null arg. 
+ *  Returns the path where server binaries exist, with
+ *  varargs appended to it with slashes between each,
+ *  stopping at null arg.
  *
  * Results:
- *	dest->string
+ *  dest->string
  *
  * Side effects:
- *	Appends to dest. 
+ *  Appends to dest.
  *
  *----------------------------------------------------------------------
  */
@@ -384,13 +384,13 @@ Ns_BinPath(Ns_DString *dest, ...)
  *
  * Ns_HomePath --
  *
- *	Build a path relative to AOLserver's home dir. 
+ *  Build a path relative to Naviserver's home dir.
  *
  * Results:
- *	dest->string 
+ *  dest->string
  *
  * Side effects:
- *	Appends to dest. 
+ *  Appends to dest.
  *
  *----------------------------------------------------------------------
  */
@@ -407,6 +407,49 @@ Ns_HomePath(Ns_DString *dest, ...)
     va_end(ap);
 
     return path;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_HomePathExists --
+ *
+ *  Check that a path exists relative to Naviserver's home dir.
+ *
+ * Results:
+ *  1 if exists
+ *
+ * Side effects:
+ *  None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_HomePathExists(char *path, ...)
+{
+    va_list ap;
+    int status;
+    Tcl_Obj *obj;
+    Ns_DString ds;
+    Tcl_StatBuf *stPtr;
+
+    Ns_DStringInit(&ds);
+    Ns_MakePath(&ds, Ns_InfoHomePath(), path, NULL);
+
+    va_start(ap, path);
+    MakePath(&ds, &ap);
+    va_end(ap);
+
+    obj = Tcl_NewStringObj(ds.string, -1);
+    Tcl_IncrRefCount(obj);
+    stPtr = Tcl_AllocStatBuf();
+    status = Tcl_FSStat(obj, stPtr);
+    Tcl_Free((char*)stPtr);
+    Tcl_DecrRefCount(obj);
+    Ns_DStringFree(&ds);
+
+    return status == 0 ? 1 : 0;
 }
 
 
@@ -487,15 +530,15 @@ Ns_PagePath(Ns_DString *dest, CONST char *server, ...)
  *
  * Ns_ModulePath --
  *
- *	Append a path to dest:
- *	server-home/?servers/hserver?/?modules/hmodule?/...
- *	server and module may both be null.
+ *  Append a path to dest:
+ *  server-home/?servers/hserver?/?modules/hmodule?/...
+ *  server and module may both be null.
  *
  * Results:
- *	dest->string 
+ *  dest->string
  *
  * Side effects:
- *	Appends to dest. 
+ *  Appends to dest.
  *
  *----------------------------------------------------------------------
  */
@@ -593,7 +636,7 @@ NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
  *      Implements ns_hashpath obj command; a wrapper for Ns_HashPath.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -632,25 +675,25 @@ NsTclHashPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  *
  * NsTclModulePathObjCmd --
  *
- *	Implements ns_modulepath command; basically a wrapper around 
- *	Ns_ModulePath. 
+ *  Implements ns_modulepath command; basically a wrapper around
+ *  Ns_ModulePath.
  *
  * Results:
- *	Tcl result. 
+ *  Tcl result.
  *
  * Side effects:
- *	None (deprecated) 
+ *  None (deprecated)
  *
  *----------------------------------------------------------------------
  */
 
 int
 NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-		      Tcl_Obj *CONST objv[])
+              Tcl_Obj *CONST objv[])
 {
     Ns_DString      ds;
-    int		    i;
-    char	   *module;
+    int         i;
+    char       *module;
 
     Ns_DStringInit(&ds);
     if (objc < 2) {
@@ -660,7 +703,7 @@ NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     module = objc > 2 ? Tcl_GetString(objv[2]) : NULL;
     Ns_ModulePath(&ds, Tcl_GetString(objv[1]), module, NULL);
     for (i = 3; i < objc; ++i) {
-	Ns_MakePath(&ds, Tcl_GetString(objv[i]), NULL);
+        Ns_MakePath(&ds, Tcl_GetString(objv[i]), NULL);
     }
     Tcl_DStringResult(interp, &ds);
     Ns_DStringFree(&ds);
@@ -676,7 +719,7 @@ NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *      Implements ns_serverpath, ns_pagepath commands.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -749,7 +792,7 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
  *      Implements the ns_serverrootproc command.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      None.
@@ -758,7 +801,7 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
  */
 
 int
-NsTclServerRootProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclServerRootProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[])
 {
     NsServer       *servPtr = NsGetInitServer();
@@ -813,13 +856,13 @@ NsTclServerRoot(Ns_DString *dest, CONST char *host, void *arg)
  *
  * MakePath --
  *
- *	Append the args with slashes between them to dest. 
+ *  Append the args with slashes between them to dest.
  *
  * Results:
- *	dest->string 
+ *  dest->string
  *
  * Side effects:
- *	None. 
+ *  None.
  *
  *----------------------------------------------------------------------
  */
@@ -838,20 +881,20 @@ MakePath(Ns_DString *dest, va_list *pap)
             *(s + 2) = temp;
             s += 2;
         }
-	while (*s) {
-	    while (ISSLASH(*s)) {
-	        ++s;
-	    }
-	    if (*s) {
-	    	Ns_DStringNAppend(dest, "/", 1);
-		len = 0;
-		while (s[len] != '\0' && !ISSLASH(s[len])) {
-		    ++len;
-		}
-	    	Ns_DStringNAppend(dest, s, len);
-	    	s += len;
-	    }
-	}
+        while (*s) {
+            while (ISSLASH(*s)) {
+                ++s;
+            }
+            if (*s) {
+                Ns_DStringNAppend(dest, "/", 1);
+                len = 0;
+                while (s[len] != '\0' && !ISSLASH(s[len])) {
+                    ++len;
+                }
+                Ns_DStringNAppend(dest, s, len);
+                s += len;
+            }
+        }
     }
     return dest->string;
 }

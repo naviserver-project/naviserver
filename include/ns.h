@@ -1564,6 +1564,7 @@ NS_EXTERN char *Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels);
 NS_EXTERN char *Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
 NS_EXTERN char *Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
 NS_EXTERN char *Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+NS_EXTERN int Ns_HomePathExists(char *path, ...) NS_GNUC_SENTINEL;
 NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, CONST char *server,
                               CONST char *module, ...) NS_GNUC_SENTINEL;
 NS_EXTERN char *Ns_ServerPath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;

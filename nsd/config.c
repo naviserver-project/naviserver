@@ -624,8 +624,12 @@ NsConfigRead(CONST char *file)
 {
     Tcl_Channel  chan = NULL;
     Tcl_Obj     *buf = NULL;
-    char        *call, *data, *conf = NULL;
+    char        *call = "open", *data, *conf = NULL;
     int          length;
+
+    if (file == NULL || *file == 0) {
+        goto err;
+    }
 
     /*
      * Open the channel for reading the config file
@@ -633,7 +637,6 @@ NsConfigRead(CONST char *file)
 
     chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
     if (chan == NULL) {
-        call = "open";
         goto err;
     }
 
@@ -662,8 +665,11 @@ NsConfigRead(CONST char *file)
     if (buf) {
         Tcl_DecrRefCount(buf);
     }
-    Ns_Fatal("config: can't %s file '%s': '%s'", call, file,
-             strerror(Tcl_GetErrno()));
+    Ns_Fatal("config: can't %s config file '%s': '%s' %s",
+             call,
+             file,
+             strerror(Tcl_GetErrno()),
+             file ? "" : "(Did you pass -t option to nsd?)");
 
     return NULL; /* Keep the compiler happy */
 }

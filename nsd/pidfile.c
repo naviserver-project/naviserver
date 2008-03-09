@@ -130,7 +130,11 @@ GetFile(char *procname)
     if (file == NULL) {
         Ns_DString ds;
         Ns_DStringInit(&ds);
-        Ns_HomePath(&ds, "logs/nsd.pid", NULL);
+        if (Ns_HomePathExists("logs", NULL)) {
+            Ns_HomePath(&ds, "logs/nsd.pid", NULL);
+        } else {
+            Ns_HomePath(&ds, "nsd.pid", NULL);
+        }
         path = Tcl_NewStringObj(ds.string, -1);
         Ns_DStringFree(&ds);
     } else {

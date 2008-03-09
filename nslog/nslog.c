@@ -139,25 +139,17 @@ Ns_ModuleInit(char *server, char *module)
     if (Ns_PathIsAbsolute(file)) {
         logPtr->file = ns_strdup(file);
     } else {
-        Tcl_Obj *dirpath;
-        Tcl_StatBuf *stPtr;
-
         /*
          * If log file is not given in absolute format, it's expected to
          * exist in the global logs directory if such exists or module
          * specific directory, which is created if necessary.
          */
 
-        Ns_HomePath(&ds, "logs", NULL);
-        dirpath = Tcl_NewStringObj(ds.string, -1);
-        Tcl_IncrRefCount(dirpath);
-        stPtr = Tcl_AllocStatBuf();
-        status = Tcl_FSStat(dirpath, stPtr);
-        Tcl_Free((char*)stPtr);
-        Tcl_DecrRefCount(dirpath);
-        Ns_DStringVarAppend(&ds, "/", file, NULL);
+        if (Ns_HomePathExists("logs", NULL)) {
+            Ns_HomePath(&ds, "logs", "/", file, NULL);
+        } else {
+            Tcl_Obj *dirpath;
 
-        if (status) {
             Ns_DStringTrunc(&ds, 0);
             Ns_ModulePath(&ds, server, module, NULL, NULL);
             dirpath = Tcl_NewStringObj(ds.string, -1);

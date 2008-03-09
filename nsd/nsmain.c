@@ -70,7 +70,6 @@ static void UsageError(char *msg, ...);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
 static char *MakePath(char *file);
-static char *FindConfig(char *config);
 static char *SetCwd(char *homedir);
 
 #if (STATIC_BUILD == 1)
@@ -362,20 +361,18 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     /*
-     * Locate and read the configuration file for later evaluation.
-     * If none was gibe in the command line, try to use nsd.conf
-     * in the conf/ directory by resolving base dir from executable path
+     * Find and read config file, if given at the command line, just use it,
+     * if not specified, try to figure out by looking in the current dir for
+     * nsd.tcl and for ../conf/nsd.tcl
      */
 
     if (nsconf.config == NULL) {
-        nsconf.config = MakePath("/conf/nsd.tcl");
+        nsconf.config = MakePath("nsd.tcl");
+        if (nsconf.config == NULL) {
+            nsconf.config = MakePath("conf/nsd.tcl");
+        }
     }
 
-    if (nsconf.config == NULL) {
-        UsageError("required -t <config> option not specified");
-    }
-
-    nsconf.config = FindConfig(nsconf.config);
     config = NsConfigRead(nsconf.config);
 
 #ifndef _WIN32
@@ -491,12 +488,12 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
         /*
          *  We will try to figure out our installation directory from
-         *  executable binary, will not be too smart, just check for simple
-         *  case when nsd is in bin/ subdirectory according to our make install
+         *  executable binary.
+         *  Check if nsd is in bin/ subdirectory according to our make install,
+         *  if true make our home one level up, otherwise make home directory
+         *  where executable binary resides.
          *  All custom installation will require "home" config parameter to be
          *  specified in the nsd.tcl
-         *
-         *  TODO: Make this compatible for all platforms, this is initial proof of concept
          */
 
         nsconf.home = MakePath("");
@@ -659,7 +656,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * the nsconf.stopping flag for any threads calling
      * Ns_InfoShutdownPending(), and set the absolute
      * timeout for all systems to complete shutown.
-     * If SIGQUIT signal was sent, make immediate shutdown 
+     * If SIGQUIT signal was sent, make immediate shutdown
      * without waiting for all subsystems to exit gracefully
      */
 
@@ -975,41 +972,63 @@ UsageError(char *msg, ...)
     exit(msg ? 1 : 0);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * FindConfig --
+ * MakePath --
  *
- *      Construct the absolute pathname to the configuration file.
+ *      Returns full path to the file relative to the base dir
  *
  * Results:
- *      Tcl_Alloc'ated string with the normalized path.
+ *      Allocated full path or NULL
  *
  * Side effects:
- *      Kills the server if unable to obtain normalized path
- *      of the configuration file.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
-char *
-FindConfig(char *filename)
+static char *
+MakePath(char *file)
 {
-    Tcl_Obj *conf;
-    char    *result = NULL;
+    Tcl_Obj *obj;
+    char *str, *path = NULL;
 
-    conf = Tcl_NewStringObj(filename, -1);
-    Tcl_IncrRefCount(conf);
-    if (Tcl_FSGetNormalizedPath(NULL, conf)) {
-        result = (char *) Tcl_FSGetTranslatedStringPath(NULL, conf);
-    } else {
-        Ns_Fatal("can't resolve configuration file path");
+    if (Ns_PathIsAbsolute(nsconf.nsd)) {
+        str = strstr(nsconf.nsd, "/bin/");
+        if (str == NULL) {
+            str = strrchr(nsconf.nsd, '/');
+        }
+        if (str == NULL) {
+            return NULL;
+        }
+
+        /*
+         * Make sure we have valid path on all platforms
+         */
+
+        obj = Tcl_NewStringObj(nsconf.nsd, str - nsconf.nsd);
+        Tcl_AppendStringsToObj(obj, "/", file, NULL);
+
+        Tcl_IncrRefCount(obj);
+        if (Tcl_FSGetNormalizedPath(NULL, obj)) {
+            path = (char *)Tcl_FSGetTranslatedStringPath(NULL, obj);
+        }
+        Tcl_DecrRefCount(obj);
+
+        /*
+         * If file name was given, check if the file exists
+         */
+
+        if (path != NULL && *file != 0 && access(path, F_OK) != 0) {
+            ns_free(path);
+            return NULL;
+        }
+        return path;
     }
-    Tcl_DecrRefCount(conf);
-
-    return result;
+    return NULL;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -1038,8 +1057,7 @@ SetCwd(char *path)
     pathObj = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(pathObj);
     if (Tcl_FSChdir(pathObj) == -1) {
-        Ns_Fatal("nsmain: chdir(%s) failed: '%s'", path,
-                 strerror(Tcl_GetErrno()));
+        Ns_Fatal("nsmain: chdir(%s) failed: '%s'", path, strerror(Tcl_GetErrno()));
     }
     Tcl_DecrRefCount(pathObj);
     pathObj = Tcl_FSGetCwd(NULL);
@@ -1047,47 +1065,7 @@ SetCwd(char *path)
         Ns_Fatal("nsmain: can't resolve home directory path");
     }
 
-    return (char *) Tcl_FSGetTranslatedStringPath(NULL, pathObj);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * MakePath --
- *
- *      Returns full path to the file relative to the base dir
- *
- * Results:
- *      Allocated full path or NULL
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static char *
-MakePath(char *file)
-{
-    char *ptr, *path;
-
-    if (Ns_PathIsAbsolute(nsconf.nsd)) {
-        ptr = strstr(nsconf.nsd, "/bin/");
-        if (ptr != NULL) {
-            path = ns_calloc(1, ptr - nsconf.nsd + 1 + strlen(file));
-            strncpy(path, nsconf.nsd, ptr - nsconf.nsd);
-            strcat(path, file);
-#ifdef _WIN32
-            for (ptr = path; *ptr; ptr++) {
-                if (*ptr == '/') {
-                    *ptr = '\\';
-                }
-            }
-#endif
-            return path;
-        }
-    }
-    return NULL;
+    return (char *)Tcl_FSGetTranslatedStringPath(NULL, pathObj);
 }
 
 

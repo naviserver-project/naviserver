@@ -201,7 +201,7 @@ Ns_ThreadStackSize(long size)
 void
 NsThreadMain(void *arg)
 {
-    Thread      *thrPtr = (Thread *) arg;
+    Thread  *thrPtr = (Thread *) arg;
     char	 name[NS_THREAD_NAMESIZE];
 
     thrPtr->tid = Ns_ThreadId();
@@ -261,11 +261,7 @@ Ns_ThreadSetName(char *name,...)
 
     Ns_MasterLock();
     va_start(ap, name);
-#ifndef _WIN32
     vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
-#else
-    _vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
-#endif
     va_end(ap);
     Ns_MasterUnlock();
 }
@@ -321,20 +317,20 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     Ns_MasterLock();
     thrPtr = firstThreadPtr;
     while (thrPtr != NULL) {
-	Tcl_DStringStartSublist(dsPtr);
-	Tcl_DStringAppendElement(dsPtr, thrPtr->name);
-	Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
-	snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRIu64,
-             thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
-	Tcl_DStringAppend(dsPtr, buf, -1);
-	if (proc != NULL) {
-	    (*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
-	} else {
-	    snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
-	    Tcl_DStringAppend(dsPtr, buf, -1);
-	}
-	Tcl_DStringEndSublist(dsPtr);
-	thrPtr = thrPtr->nextPtr;
+        Tcl_DStringStartSublist(dsPtr);
+        Tcl_DStringAppendElement(dsPtr, thrPtr->name);
+        Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
+        snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRIu64,
+                 thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
+        Tcl_DStringAppend(dsPtr, buf, -1);
+        if (proc != NULL) {
+            (*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
+        } else {
+            snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
+            Tcl_DStringAppend(dsPtr, buf, -1);
+        }
+        Tcl_DStringEndSublist(dsPtr);
+        thrPtr = thrPtr->nextPtr;
     }
     Ns_MasterUnlock();
 }
@@ -399,10 +395,10 @@ GetThread(void)
 
     thisPtr = Ns_TlsGet(&key);
     if (thisPtr == NULL) {
-	thisPtr = NewThread();
-    	thisPtr->flags = NS_THREAD_DETACHED;
-	thisPtr->tid = Ns_ThreadId();
-	Ns_TlsSet(&key, thisPtr);
+        thisPtr = NewThread();
+        thisPtr->flags = NS_THREAD_DETACHED;
+        thisPtr->tid = Ns_ThreadId();
+        Ns_TlsSet(&key, thisPtr);
     }
     return thisPtr;
 }
@@ -413,13 +409,13 @@ GetThread(void)
  *
  * CleanupThread --
  *
- *	TLS cleanup for the nsthread context.
+ *  TLS cleanup for the nsthread context.
  *
  * Results:
- *	None.
+ *  None.
  *
  * Side effects:
- *	None.
+ *  None.
  *
  *----------------------------------------------------------------------
  */
@@ -433,7 +429,7 @@ CleanupThread(void *arg)
     Ns_MasterLock();
     thrPtrPtr = &firstThreadPtr;
     while (*thrPtrPtr != thrPtr) {
-	thrPtrPtr = &(*thrPtrPtr)->nextPtr;
+        thrPtrPtr = &(*thrPtrPtr)->nextPtr;
     }
     *thrPtrPtr = thrPtr->nextPtr;
     thrPtr->nextPtr = NULL;

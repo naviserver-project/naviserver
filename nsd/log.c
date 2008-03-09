@@ -253,10 +253,14 @@ NsConfigLog(void)
 
     maxback  = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
-    file = Ns_ConfigString(path, "serverlog", "logs/nsd.log");
+    file = Ns_ConfigString(path, "serverlog", "nsd.log");
     if (!Ns_PathIsAbsolute(file)) {
         Ns_DStringInit(&ds);
-        Ns_HomePath(&ds, file, NULL);
+        if (Ns_HomePathExists("logs", NULL)) {
+            Ns_HomePath(&ds, "logs", file, NULL);
+        } else {
+            Ns_HomePath(&ds, file, NULL);
+        }
         file = Ns_DStringExport(&ds);
     }
 }
