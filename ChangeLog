@@ -1,18 +1,22 @@
 2008-03-09  Vlad Seryakov  <seryakov@users.sf.net>
 
-    * include/ns.h:
-    * nsd/nsmain.c:
-    * nsd/log.c:
-    * nslog/nslog.c: Added new public function Ns_HomePathExists, server now can be run from the
-    current directlry if all required files are located in one place, this is for very small/embedded or test
-    environments. Previous functionality works as usual.
+    	* include/ns.h:
+    	* nsd/nsmain.c:
+    	* nsd/log.c:
+    	* nslog/nslog.c: Added new public function Ns_HomePathExists, server now can be run from the
+    	current directlry if all required files are located in one place, this is for very small/embedded or test
+    	environments. Previous functionality works as usual.
 
-    * include/nsthread.h:
-    * include/ns.h
-    * nsd/nsd.h:
-    * nsd/nswin32.c: Moved all platform specific definition into nsthread.h, fixed Win32 specific
-    errors regarding int64 and printf.
+    	* include/nsthread.h:
+    	* include/ns.h
+    	* nsd/nsd.h:
+    	* nsd/nswin32.c: Moved all platform specific definition into nsthread.h, fixed Win32 specific
+    	errors regarding int64 and printf.
 
+	* include/nsconfig.h.in: use nsconfig.h if HAVE_CONFIG_H is defined, this way
+	config file can be distributed and will not be reason for config.h collisions
+
+    
 2008-03-08  Vlad Seryakov  <seryakov@users.sf.net>
 	* Makefile configure.in include/Makefile.global.in
 	include/Makefile.module.in include/ns.h include/nsthread.h

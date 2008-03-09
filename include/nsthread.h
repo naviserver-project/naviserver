@@ -39,7 +39,7 @@
 #define NSTHREAD_H
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "nsconfig.h"
 #endif
 
 #include <nscheck.h>
@@ -593,6 +593,7 @@ NS_EXTERN void *Ns_TlsGet(Ns_Tls *tlsPtr);
  * winthread.c:
  */
 
+#ifdef _WIN32
 NS_EXTERN DIR *opendir(char *pathname);
 NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
@@ -600,6 +601,6 @@ NS_EXTERN int truncate(char *file, off_t size);
 NS_EXTERN int link(char *from, char *to);
 NS_EXTERN int symlink(char *from, char *to);
 NS_EXTERN int kill(int pid, int sig);
-
+#endif
 
 #endif /* NSTHREAD_H */
