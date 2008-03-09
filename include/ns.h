@@ -42,12 +42,12 @@
 #include "nsthread.h"
 
 #ifdef NSD_EXPORTS
-# undef NS_EXTERN
-# ifdef __cplusplus
-#  define NS_EXTERN extern "C" NS_EXPORT
-# else
-#  define NS_EXTERN extern NS_EXPORT
-# endif
+#undef NS_EXTERN
+#ifdef __cplusplus
+#define NS_EXTERN                  extern "C" NS_EXPORT
+#else
+#define NS_EXTERN                  extern NS_EXPORT
+#endif
 #endif
 
 /*
@@ -76,10 +76,10 @@
  * The following are valid return codes from an Ns_UserAuthorizeProc.
  */
 
-/* NS_OK                                       The user's access is authorized */
-#define NS_UNAUTHORIZED            (-2)     /* Bad user/passwd or unauthorized */
-#define NS_FORBIDDEN               (-3)     /* Authorization is not possible */
-/* NS_ERROR                                    The authorization function failed */
+                                        /* NS_OK The user's access is authorized */
+#define NS_UNAUTHORIZED            (-2) /* Bad user/passwd or unauthorized */
+#define NS_FORBIDDEN               (-3) /* Authorization is not possible */
+                                        /* NS_ERROR The authorization function failed */
 
 /*
  * The following are valid options when manipulating
@@ -104,9 +104,9 @@
  * The following are valid return codes from an Ns_FilterProc.
  */
 
-/* NS_OK                                    Run next filter */
-#define NS_FILTER_BREAK            (-4)  /* Run next stage of connection */
-#define NS_FILTER_RETURN           (-5)  /* Close connection */
+                                        /* NS_OK Run next filter */
+#define NS_FILTER_BREAK            (-4) /* Run next stage of connection */
+#define NS_FILTER_RETURN           (-5) /* Close connection */
 
 /*
  * The following are the valid attributes of a scheduled event.
@@ -165,33 +165,6 @@
 #define NS_CONN_MAXBUFS            16  /* Max num buffers which Ns_ConnSend will write */
 #define NS_ENCRYPT_BUFSIZE         128 /* Min size of buffer for Ns_Encrypt output */
 
-/*
- * The following define types for common 8bits, 16bits, 32bits and 64bits
- */
-
-#if defined(__alpha)
-typedef long			ns_int64;
-typedef unsigned long		ns_uint64;
-#define NS_INT_64_FORMAT_STRING "%ld"
-#elif defined(_WIN32)
-typedef int			mode_t;  /* Bug: #703061 */
-typedef __int64			ns_int64;
-typedef unsigned __int64	ns_uint64;
-#define NS_INT_64_FORMAT_STRING "%I64d"
-#else
-typedef long long 		ns_int64;
-typedef unsigned long long	ns_uint64;
-#define NS_INT_64_FORMAT_STRING "%lld"
-
-#endif
-
-typedef ns_int64                INT64;
-typedef char                    ns_int8;
-typedef unsigned char           ns_uint8;
-typedef short                   ns_int16;
-typedef unsigned short          ns_uint16;
-typedef int                     ns_int32;
-typedef unsigned int            ns_uint32;
 
 /*
  * The following flags define how Ns_Set's are managed by Tcl.
@@ -207,83 +180,64 @@ typedef unsigned int            ns_uint32;
 
 #define NS_TCL_SET_PERSISTENT      NS_TCL_SET_SHARED
 #define NS_TCL_SET_TEMPORARY       NS_TCL_SET_STATIC
-
-#define NS_CACHE_FREE ns_free
+#define NS_CACHE_FREE              ns_free
 
 #ifdef _WIN32
-NS_EXTERN char *        NsWin32ErrMsg(int err);
-NS_EXTERN SOCKET        ns_sockdup(SOCKET sock);
-NS_EXTERN int           ns_socknbclose(SOCKET sock);
-NS_EXTERN int           truncate(char *file, off_t size);
-NS_EXTERN int           link(char *from, char *to);
-NS_EXTERN int           symlink(char *from, char *to);
-NS_EXTERN int           kill(int pid, int sig);
-#define ns_sockclose    closesocket
-#define ns_sockioctl    ioctlsocket
-#define ns_sockerrno    GetLastError()
-#define ns_sockstrerror NsWin32ErrMsg
-#define strcasecmp      _stricmp
-#define strncasecmp     _strnicmp
-#define vsnprintf       _vsnprintf
-#define snprintf        _snprintf
-#define mkdir(d,m)      _mkdir((d))
-#define ftruncate(f,s)  chsize((f),(s))
-#define EINPROGRESS     WSAEINPROGRESS
-#define EWOULDBLOCK     WSAEWOULDBLOCK
-#define F_OK            0
-#define W_OK            2
-#define R_OK            4
-#define X_OK            R_OK
-
+NS_EXTERN char *NsWin32ErrMsg(int err);
+NS_EXTERN SOCKET ns_sockdup(SOCKET sock);
+NS_EXTERN int ns_socknbclose(SOCKET sock);
+#define ns_sockclose               closesocket
+#define ns_sockioctl               ioctlsocket
+#define ns_sockerrno               GetLastError()
+#define ns_sockstrerror            NsWin32ErrMsg
 #else
-
-#define O_TEXT          0
-#define O_BINARY        0
-#define SOCKET          int
-#define INVALID_SOCKET  (-1)
-#define SOCKET_ERROR    (-1)
+#define O_TEXT                     0
+#define O_BINARY                   0
+#define SOCKET                     int
+#define INVALID_SOCKET             (-1)
+#define SOCKET_ERROR               (-1)
 #define NS_EXPORT
-#define ns_sockclose    close
-#define ns_socknbclose  close
-#define ns_sockioctl    ioctl
-#define ns_sockerrno    errno
-#define ns_sockstrerror strerror
-#define ns_sockdup      dup
+#define ns_sockclose               close
+#define ns_socknbclose             close
+#define ns_sockioctl               ioctl
+#define ns_sockerrno               errno
+#define ns_sockstrerror            strerror
+#define ns_sockdup                 dup
 #endif
 
 /*
  * C API macros.
  */
 
-#define UCHAR(c)                ((unsigned char)(c))
-#define STREQ(a,b)              (((*a) == (*b)) && (strcmp((a),(b)) == 0))
-#define STRIEQ(a,b)             (strcasecmp((a),(b)) == 0)
-#define Ns_IndexCount(X)        ((X)->n)
-#define Ns_ListPush(elem,list)  ((list)=Ns_ListCons((elem),(list)))
-#define Ns_ListFirst(list)      ((list)->first)
-#define Ns_ListRest(list)       ((list)->rest)
-#define Ns_SetSize(s)           ((s)->size)
-#define Ns_SetName(s)           ((s)->name)
-#define Ns_SetKey(s,i)          ((s)->fields[(i)].name)
-#define Ns_SetValue(s,i)        ((s)->fields[(i)].value)
-#define Ns_SetLast(s)           (((s)->size)-1)
+#define UCHAR(c)                   ((unsigned char)(c))
+#define STREQ(a,b)                 (((*a) == (*b)) && (strcmp((a),(b)) == 0))
+#define STRIEQ(a,b)                (strcasecmp((a),(b)) == 0)
+#define Ns_IndexCount(X)           ((X)->n)
+#define Ns_ListPush(elem,list)     ((list)=Ns_ListCons((elem),(list)))
+#define Ns_ListFirst(list)         ((list)->first)
+#define Ns_ListRest(list)          ((list)->rest)
+#define Ns_SetSize(s)              ((s)->size)
+#define Ns_SetName(s)              ((s)->name)
+#define Ns_SetKey(s,i)             ((s)->fields[(i)].name)
+#define Ns_SetValue(s,i)           ((s)->fields[(i)].value)
+#define Ns_SetLast(s)              (((s)->size)-1)
 
 /*
  * Ns_DString's are now equivalent to Tcl_DString's starting in 4.0.
  */
 
-#define Ns_DString              Tcl_DString
-#define Ns_DStringLength        Tcl_DStringLength
-#define Ns_DStringValue         Tcl_DStringValue
-#define Ns_DStringNAppend       Tcl_DStringAppend
-#define Ns_DStringAppend(d,s)   Tcl_DStringAppend((d), (s), -1)
-#define Ns_DStringAppendElement Tcl_DStringAppendElement
-#define Ns_DStringInit          Tcl_DStringInit
-#define Ns_DStringFree          Tcl_DStringFree
-#define Ns_DStringTrunc         Tcl_DStringTrunc
-#define Ns_DStringSetLength     Tcl_DStringSetLength
-#define NS_DSTRING_STATIC_SIZE  TCL_DSTRING_STATIC_SIZE
-#define NS_DSTRING_PRINTF_MAX   2048
+#define Ns_DString                 Tcl_DString
+#define Ns_DStringLength           Tcl_DStringLength
+#define Ns_DStringValue            Tcl_DStringValue
+#define Ns_DStringNAppend          Tcl_DStringAppend
+#define Ns_DStringAppend(d,s)      Tcl_DStringAppend((d), (s), -1)
+#define Ns_DStringAppendElement    Tcl_DStringAppendElement
+#define Ns_DStringInit             Tcl_DStringInit
+#define Ns_DStringFree             Tcl_DStringFree
+#define Ns_DStringTrunc            Tcl_DStringTrunc
+#define Ns_DStringSetLength        Tcl_DStringSetLength
+#define NS_DSTRING_STATIC_SIZE     TCL_DSTRING_STATIC_SIZE
+#define NS_DSTRING_PRINTF_MAX      2048
 
 /*
  * Typedefs of variables
@@ -578,8 +532,8 @@ typedef struct Ns_DriverInitData {
  */
 
 typedef struct Ns_CtxMD5 {
-    ns_uint32 buf[4];
-    ns_uint32 bits[2];
+    uint32_t buf[4];
+    uint32_t bits[2];
     unsigned char in[64];
 } Ns_CtxMD5;
 
@@ -592,11 +546,11 @@ typedef struct Ns_CtxMD5 {
 
 typedef struct Ns_CtxSHA1 {
     unsigned int key[SHA_BLOCKWORDS];
-    ns_uint32 iv[SHA_HASHWORDS];
+    uint32_t iv[SHA_HASHWORDS];
 #ifdef HAVE64
-    ns_uint64 bytes;
+    uint64_t bytes;
 #else
-    ns_uint32 bytesHi, bytesLo;
+    uint32_t bytesHi, bytesLo;
 #endif
 } Ns_CtxSHA1;
 
@@ -858,7 +812,7 @@ Ns_ConfigGetInt(CONST char *section, CONST char *key, int *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
-Ns_ConfigGetInt64(CONST char *section, CONST char *key, ns_int64 *valuePtr)
+Ns_ConfigGetInt64(CONST char *section, CONST char *key, int64_t *valuePtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
@@ -2280,7 +2234,7 @@ NS_EXTERN int Ns_FetchURL(Ns_DString *pds, char *url, Ns_Set *headers);
 
 NS_EXTERN int Ns_UrlSpecificAlloc(void);
 
-NS_EXTERN void 
+NS_EXTERN void
 Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 

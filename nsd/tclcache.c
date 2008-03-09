@@ -567,11 +567,11 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
             size = Ns_CacheGetSize(entry);
             timePtr = Ns_CacheGetExpirey(entry);
             if (timePtr->usec == 0) {
-                Ns_DStringPrintf(&ds, "%zd %jd ",
-                                 size, (intmax_t) timePtr->sec);
+                Ns_DStringPrintf(&ds, "%zd %" PRIu64 " ",
+                                 size, (int64_t) timePtr->sec);
             } else {
-                Ns_DStringPrintf(&ds, "%zd %jd:%ld ",
-                                 size, (intmax_t) timePtr->sec, timePtr->usec);
+                Ns_DStringPrintf(&ds, "%zd %" PRIu64 ":%ld ",
+                                 size, (int64_t) timePtr->sec, timePtr->usec);
             }
             entry = Ns_CacheNextEntry(&search);
         }
@@ -669,7 +669,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr)
             expPtr = Ns_AbsoluteTime(&time, &cPtr->expires);
         } else {
             expPtr = Ns_AbsoluteTime(&time, expPtr);
-        }     
+        }
         Ns_CacheSetValueExpires(entry, value, len, expPtr);
     }
 }

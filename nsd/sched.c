@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -50,7 +50,7 @@ NS_RCSID("@(#) $Header$");
 /*
  * The following structure defines a scheduled event.
  */
- 
+
 typedef struct Event {
     struct Event   *nextPtr;
     Tcl_HashEntry  *hPtr;	/* Entry in event hash or NULL if deleted. */
@@ -108,12 +108,12 @@ static Ns_Thread *eventThreads;
 	queue[(i)] = queue[(j)], queue[(j)] = tmp;\
 	queue[(i)]->qid = (i), queue[(j)]->qid = (j);\
     }
-    
+
 
 /*
  *----------------------------------------------------------------------
  *
- * NsInitSched -- 
+ * NsInitSched --
  *
  *	Initialize scheduler API.
  *
@@ -138,7 +138,7 @@ NsInitSched(void)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_After -- 
+ * Ns_After --
  *
  *	Schedule a one-shot event.
  *
@@ -167,7 +167,7 @@ Ns_After(int delay, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc)
  *
  * Ns_ScheduleProc --
  *
- *	Schedule a proc to run at a given interval. 
+ *	Schedule a proc to run at a given interval.
  *
  * Results:
  *	Event id or NS_ERROR if interval is invalid.
@@ -194,13 +194,13 @@ Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
  *
  * Ns_ScheduleDaily --
  *
- *	Schedule a proc to run once a day. 
+ *	Schedule a proc to run once a day.
  *
  * Results:
  *	Event id or NS_ERROR if hour and/or minute is out of range.
  *
  * Side effects:
- *	See Ns_ScheduleProcEx 
+ *	See Ns_ScheduleProcEx
  *
  *----------------------------------------------------------------------
  */
@@ -228,13 +228,13 @@ Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, int flags,
  *
  * Ns_ScheduleWeekly --
  *
- *	Schedule a proc to run once a week. 
+ *	Schedule a proc to run once a week.
  *
  * Results:
  *	Event id or NS_ERROR if day, hour, and/or minute is out of range.
  *
  * Side effects:
- *	See Ns_ScheduleProcEx 
+ *	See Ns_ScheduleProcEx
  *
  *----------------------------------------------------------------------
  */
@@ -326,7 +326,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_Cancel, Ns_UnscheduleProc -- 
+ * Ns_Cancel, Ns_UnscheduleProc --
  *
  *	Cancel a previously scheduled event.
  *
@@ -378,7 +378,7 @@ Ns_Cancel(int id)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_Pause -- 
+ * Ns_Pause --
  *
  *	Pause a schedule procedure.
  *
@@ -421,7 +421,7 @@ Ns_Pause(int id)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_Resume -- 
+ * Ns_Resume --
  *
  *	Resume a scheduled proc.
  *
@@ -493,7 +493,7 @@ void
 NsWaitSchedShutdown(Ns_Time *toPtr)
 {
     int status;
-    
+
     Ns_MutexLock(&lock);
     status = NS_OK;
     while (status == NS_OK && running) {
@@ -536,7 +536,7 @@ QueueEvent(Event *ePtr, time_t *nowPtr)
     /*
      * Calculate the time from now in seconds this event should run.
      */
-     
+
     if (ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) {
 	tp = ns_localtime(nowPtr);
 	tp->tm_sec = ePtr->interval;
@@ -577,11 +577,11 @@ QueueEvent(Event *ePtr, time_t *nowPtr)
 	    j = k / 2;
 	}
     }
-    
+
     /*
      * Signal or create the SchedThread if necessary.
      */
-     
+
     if (running) {
         Ns_CondSignal(&schedcond);
     } else {
@@ -617,7 +617,7 @@ DeQueueEvent(int k)
      * Swap out the event to be removed and heap down to restore the
      * order of events to be fired.
      */
-     
+
     EXCH(k, nqueue);
     ePtr = queue[nqueue--];
     ePtr->qid = 0;
@@ -758,12 +758,12 @@ SchedThread(void *ignored)
     readyPtr = NULL;
     Ns_MutexLock(&lock);
     while (!shutdownPending) {
-    
+
     	/*
 	 * For events ready to run, either create a thread for
 	 * detached events or add to a list of synchronous events.
 	 */
-	 
+
 	time(&now);
 	while (nqueue > 0 && queue[1]->nextqueue <= now) {
 	    ePtr = DeQueueEvent(1);
@@ -796,11 +796,11 @@ SchedThread(void *ignored)
 	    }
 	    Ns_CondSignal(&eventcond);
 	}
-	
+
 	/*
-	 * Run and re-queue or free synchronous events. 
+	 * Run and re-queue or free synchronous events.
 	 */
-	 
+
 	while ((ePtr = readyPtr) != NULL) {
 	    readyPtr = ePtr->nextPtr;
 	    ePtr->laststart = now;
@@ -838,13 +838,13 @@ SchedThread(void *ignored)
 	    (void) Ns_CondTimedWait(&schedcond, &lock, &timeout);
 	}
     }
-    
+
     /*
      * Wait for any detached event threads to exit
      * and then cleanup the scheduler and signal
      * shutdown complete.
      */
-     
+
     Ns_Log(Notice, "sched: shutdown started");
     if (nThreads > 0) {
     	Ns_Log(Notice, "sched: waiting for event threads...");
@@ -888,10 +888,10 @@ NsGetScheduled(Tcl_DString *dsPtr)
     while (hPtr != NULL) {
         ePtr = Tcl_GetHashValue(hPtr);
         Tcl_DStringStartSublist(dsPtr);
-        Ns_DStringPrintf(dsPtr, "%d %d %d %jd %jd %jd %jd",
+        Ns_DStringPrintf(dsPtr, "%d %d %d %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64,
             ePtr->id, ePtr->flags, ePtr->interval,
-            (intmax_t) ePtr->nextqueue, (intmax_t) ePtr->lastqueue,
-            (intmax_t) ePtr->laststart, (intmax_t) ePtr->lastend);
+            (int64_t) ePtr->nextqueue, (int64_t) ePtr->lastqueue,
+            (int64_t) ePtr->laststart, (int64_t) ePtr->lastend);
         Ns_GetProcInfo(dsPtr, ePtr->proc, ePtr->arg);
         Tcl_DStringEndSublist(dsPtr);
         hPtr = Tcl_NextHashEntry(&search);

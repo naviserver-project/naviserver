@@ -3,19 +3,19 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.mozilla.org/.
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
- * 
+ *
  * The Original Code is AOLserver Code and related documentation distributed by
  * AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online, Inc. Portions
  * created by AOL are Copyright (C) 1999 America Online, Inc. All Rights
  * Reserved.
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of the
  * GNU General Public License (the "GPL"), in which case the provisions of
  * GPL are applicable instead of those above.  If you wish to allow use of
@@ -104,7 +104,7 @@ Msg(char *fmt,...)
  * TlsLogArg -
  *
  *	Log and then free TLS slot data at thread exit.
- */ 
+ */
 
 void
 TlsLogArg(void *arg)
@@ -134,7 +134,7 @@ RecursiveStackCheck(uintptr_t n)
     return n;
 }
 
-void 
+void
 CheckStackThread(void *arg)
 {
     uintptr_t n;
@@ -192,9 +192,9 @@ WorkThread(void *arg)
         int             st;
 
         Ns_GetTime(&to);
-        Msg("time: %jd %ld", (intmax_t) to.sec, to.usec);
+        Msg("time: %" PRIu64 " %ld", (int64_t) to.sec, to.usec);
         Ns_IncrTime(&to, 5, 0);
-        Msg("time: %jd %ld", (intmax_t) to.sec, to.usec);
+        Msg("time: %" PRIu64 " %ld", (int64_t) to.sec, to.usec);
         Ns_MutexLock(&lock);
         time(&now);
         Msg("timed wait starts: %s", ns_ctime(&now));
@@ -301,7 +301,7 @@ MemTime(int ns)
     }
     Ns_GetTime(&end);
     Ns_DiffTime(&end, &start, &diff);
-    printf("done:  %jd seconds, %ld usec\n", (intmax_t) diff.sec, diff.usec);
+    printf("done:  %" PRIu64 " seconds, %ld usec\n", (int64_t) diff.sec, diff.usec);
 }
 
 
@@ -374,7 +374,7 @@ Pthread(void *arg)
 {
     static Ns_Tls tls;
 
-    /* 
+    /*
      * Allocate TLS first time (this is recommended TLS
      * self-initialization style.
      */
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
     Ns_ThreadSetName("-main-");
 
     /*
-     * Jump directly to memory test if requested. 
+     * Jump directly to memory test if requested.
      */
 
     for (i = 1; i < argc; ++i) {

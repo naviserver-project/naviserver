@@ -27,6 +27,8 @@
  * version of this file under either the License or the GPL.
  */
 
+#ifndef _WIN32
+
 /*
  * watchdog.c --
  *
@@ -132,7 +134,7 @@ NsForkWatchedProcess()
         ns_signal(SIGTERM, SIG_DFL);
 
         /*
-         * fork() a new process: 
+         * fork() a new process:
          */
 
         watchedPid = ns_fork();
@@ -336,3 +338,5 @@ SysLog(int priority, char *fmt, ...)
     va_end(ap);
     closelog();
 }
+
+#endif

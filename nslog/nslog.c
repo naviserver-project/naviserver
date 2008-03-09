@@ -553,7 +553,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if (!(logPtr->flags & LOG_FMTTIME)) {
-        Ns_DStringPrintf(&ds, "[%jd]", (intmax_t) time(NULL));
+        Ns_DStringPrintf(&ds, "[%" PRIu64 "]", (int64_t) time(NULL));
     } else {
         char buf[41]; /* Big enough for Ns_LogTime(). */
         Ns_LogTime(buf);
@@ -605,7 +605,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_REQTIME)) {
-        Ns_DStringPrintf(&ds, " %jd.%06ld", (intmax_t) diff.sec, diff.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) diff.sec, diff.usec);
     }
 
     /*

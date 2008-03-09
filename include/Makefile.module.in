@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -25,7 +25,7 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 #
 # $Header$
 
@@ -59,7 +59,9 @@
 #     replaced with ALIB which triggers the linking of the static library.
 #
 #     See nsd/Makefile and nsdb/Makefile for examples.
-#   
+#
+
+uname = $(shell uname -a)
 
 STATIC_BUILD = @STATIC_BUILD@
 
@@ -68,9 +70,15 @@ ifdef NSBUILD
         ALIB    := $(LIB)
         LIB     :=
     endif
+    include ../include/Makefile.global
+else
+    include $(NAVISERVER)/include/Makefile.global
 endif
 
 ifdef MOD
+    ifneq (,$(findstring MINGW,$(uname)))
+        MOD := $(shell basename $(MOD) .so)$(LIBEXT)
+    endif
     BUILD     += $(MOD)
     INSTALL   += install-mod
     CLEAN     += clean-mod
@@ -108,6 +116,9 @@ ifdef ALIB
 endif
 
 ifdef PGM
+    ifneq (,$(findstring MINGW,$(uname)))
+        PGM := $(PGM).exe
+    endif
     BUILD   += $(PGM)
     INSTALL += install-pgm
     CLEAN   += clean-pgm
@@ -115,12 +126,6 @@ endif
 
 ifdef LIBHDRS
     INSTALL += install-hdrs
-endif
-
-ifdef NSBUILD
-    include ../include/Makefile.global
-else
-    include $(NAVISERVER)/include/Makefile.global
 endif
 
 all build: $(BUILD)
@@ -158,6 +163,9 @@ install-tcl: $(TCL)
 
 install-lib: $(LIBFILE)
 	$(INSTALL_SH) $(LIBFILE) $(INSTLIB)/
+    ifneq (,$(findstring MINGW,$(uname)))
+		$(INSTALL_SH) $(LIBFILE) $(INSTBIN)/
+    endif
 
 install-alib: $(ALIBFILE)
 	$(INSTALL_SH) $(ALIBFILE) $(INSTLIB)/

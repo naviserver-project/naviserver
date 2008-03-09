@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -121,7 +121,7 @@ Ns_TclNewTimeObj(Ns_Time *timePtr)
 
     Tcl_InvalidateStringRep(objPtr);
     SetTimeInternalRep(objPtr, timePtr);
-    
+
     return objPtr;
 }
 
@@ -226,13 +226,13 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
  *
  * NsTclTimeObjCmd --
  *
- *      Implements ns_time. 
+ *      Implements ns_time.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -334,7 +334,7 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK) {
             return TCL_ERROR;
         }
-        Tcl_SetObjResult(interp, Tcl_NewLongObj(opt == TSecondsIdx ? 
+        Tcl_SetObjResult(interp, Tcl_NewLongObj(opt == TSecondsIdx ?
                                                 result.sec : result.usec));
         return TCL_OK;
         break;
@@ -437,7 +437,7 @@ NsTclSleepObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     }
     Ns_AdjTime(&time);
     if (time.sec < 0 || (time.sec == 0 && time.usec < 0)) {
-        Tcl_AppendResult(interp, "invalid timespec: ", 
+        Tcl_AppendResult(interp, "invalid timespec: ",
                          Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
@@ -453,10 +453,10 @@ NsTclSleepObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
  *
  * NsTclStrftimeObjCmd --
  *
- *      Implements ns_fmttime. 
+ *      Implements ns_fmttime.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
  *      Depends on the time zone of the server process.
@@ -486,7 +486,7 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
         fmt = "%c";
     }
     if (strftime(buf, sizeof(buf), fmt, ns_localtime(&time)) == 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ", 
+        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
                                Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
@@ -503,7 +503,7 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **ob
  *
  *      Update the string representation for an Ns_Time object.
  *      Note: This procedure does not free an existing old string rep
- *      so storage will be lost if this has not already been done. 
+ *      so storage will be lost if this has not already been done.
  *
  * Results:
  *      None.
@@ -524,10 +524,10 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
 
     Ns_AdjTime(timePtr);
     if (timePtr->usec == 0) {
-        len = snprintf(buf, sizeof(buf), "%jd", (intmax_t) timePtr->sec);
+        len = snprintf(buf, sizeof(buf), "%" PRIu64, (int64_t) timePtr->sec);
     } else {
-        len = snprintf(buf, sizeof(buf), "%jd:%ld",
-                       (intmax_t) timePtr->sec, timePtr->usec);
+        len = snprintf(buf, sizeof(buf), "%" PRIu64 ":%ld",
+                       (int64_t) timePtr->sec, timePtr->usec);
     }
     Ns_TclSetStringRep(objPtr, buf, len);
 }
@@ -547,7 +547,7 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
  *
  * Side effects:
  *      If no error occurs, an int is stored as "objPtr"s internal
- *      representation. 
+ *      representation.
  *
  *----------------------------------------------------------------------
  */

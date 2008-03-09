@@ -27,6 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
+#ifdef _WIN32
 
 /*
  * win32.c --
@@ -807,80 +808,6 @@ Ns_SockListenEx(char *address, int port, int backlog)
 /*
  *----------------------------------------------------------------------
  *
- * link, symlink, kill --
- *
- *      Stubs for missing Unix routines. This is done simply to avoid
- *      more ifdef's in the code.
- *
- * Results:
- *      -1.
- *
- * Side effects:
- *      Sets errno to EINVAL.
- *
- *----------------------------------------------------------------------
- */
-
-int
-link(char *from, char *to)
-{
-    errno = EINVAL;
-    return -1;
-}
-
-int
-symlink(char *from, char *to)
-{
-    errno = EINVAL;
-    return -1;
-}
-
-int
-kill(int pid, int sig)
-{
-    errno = EINVAL;
-    return -1;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * truncate --
- *
- *      Implement Unix truncate.
- *
- * Results:
- *      0 if ok or -1 on error.
- *
- * Side effects:
- *      File is opened, truncated, and closed.
- *
- *----------------------------------------------------------------------
- */
-
-int
-truncate(char *file, off_t size)
-{
-    int fd;
-
-    fd = open(file, O_WRONLY|O_BINARY);
-    if (fd < 0) {
-        return -1;
-    }
-    size = _chsize(fd, size);
-    close(fd);
-    if (size != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * ConsoleHandler --
  *
  *      Callback when the Ctrl-C is pressed.
@@ -1190,3 +1117,6 @@ ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
 
     return rc;
 }
+
+#endif
+

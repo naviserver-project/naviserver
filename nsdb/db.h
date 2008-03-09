@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -32,15 +32,15 @@
 
 #include "nsdb.h"
 
-extern void NsDbInitPools(void);
-extern void NsDbInitServer(char *server);
-extern Ns_TclTraceProc NsDbAddCmds, NsDbReleaseHandles;
-extern void 		NsDbClose(Ns_DbHandle *);
-extern void 		NsDbDisconnect(Ns_DbHandle *);
-extern struct DbDriver *NsDbGetDriver(Ns_DbHandle *);
-extern struct DbDriver *NsDbLoadDriver(char *driver);
-extern void 		NsDbLogSql(Ns_DbHandle *, char *sql);
-extern int 		NsDbOpen(Ns_DbHandle *);
-extern void 		NsDbDriverInit(char *server, struct DbDriver *);
+NS_EXTERN void NsDbInitPools(void);
+NS_EXTERN void NsDbInitServer(char *server);
+NS_EXTERN Ns_TclTraceProc NsDbAddCmds, NsDbReleaseHandles;
+NS_EXTERN void 		NsDbClose(Ns_DbHandle *);
+NS_EXTERN void 		NsDbDisconnect(Ns_DbHandle *);
+NS_EXTERN struct DbDriver *NsDbGetDriver(Ns_DbHandle *);
+NS_EXTERN struct DbDriver *NsDbLoadDriver(char *driver);
+NS_EXTERN void 		NsDbLogSql(Ns_DbHandle *, char *sql);
+NS_EXTERN int 		NsDbOpen(Ns_DbHandle *);
+NS_EXTERN void 		NsDbDriverInit(char *server, struct DbDriver *);
 
 #endif

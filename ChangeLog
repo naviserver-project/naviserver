@@ -1,9 +1,26 @@
+2008-03-08  Vlad Seryakov  <seryakov@users.sf.net>
+	* Makefile configure.in include/Makefile.global.in
+	include/Makefile.module.in include/ns.h include/nsthread.h
+	modules/nsloopctl/nsloopctl.c nsd/Makefile nsd/adpeval.c
+	nsd/adprequest.c nsd/config.c nsd/dns.c nsd/fastpath.c
+	nsd/fd.c nsd/nsd.h nsd/nswin32.c nsd/queue.c nsd/sched.c
+	nsd/tclcache.c nsd/tcljob.c nsd/tclmisc.c nsd/tcltime.c
+	nsd/unix.c nsd/watchdog.c nsdb/db.h nslog/nslog.c
+	nsperm/nsperm.c nsproxy/nsproxylib.c nsthread/Makefile
+	nsthread/fork.c nsthread/nsthreadtest.c nsthread/pthread.c
+	nsthread/signal.c nsthread/thread.c nsthread/winthread.c: Port to Win32 
+	platform using Mingw32/Msys environment. Msys is what Tcl project using, same 
+	basic archive is what needed to conpile navoiserber for win32. Works stable as oppose to
+	MSVC compiled code which used to crash for unknown reasons. Same configure script is used
+	and config.h.
+
+
 2008-02-19  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/dstring.c: Ns_DStringVPrintf: Fixed Windows usage
 	of vsnprintf().
 
-2007-01-29  Vlad Seryakov  <seryakov@users.sf.net>
+2008-01-29  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nscp/nscp.c: Use Tcl_GetStringResult to retrieve result, in Tcl 8.5
 	accessing directly does not work anymore

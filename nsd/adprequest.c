@@ -354,8 +354,8 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
     AdpRequest *adp = arg;
     int         i;
 
-    Ns_DStringPrintf(dsPtr, " %jd:%ld",
-                     (intmax_t) adp->expires.sec,
+    Ns_DStringPrintf(dsPtr, " %" PRIu64 ":%ld",
+                     (int64_t) adp->expires.sec,
                      adp->expires.usec);
 
     Tcl_DStringAppendElement(dsPtr, adp->file);

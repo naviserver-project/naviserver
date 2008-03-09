@@ -31,8 +31,8 @@
 #
 
 INSTALL	= install-init
-LIB		= nsd
-PGM		= nsd
+LIB	= nsd
+PGM	= nsd
 PGMOBJS	= main.o
 HDRS	= nsd.h
 
@@ -48,14 +48,10 @@ OBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  tclhttp.o tclimg.o tclinit.o tcljob.o tclmisc.o tclobj.o tclobjv.o \
 	  tclrequest.o tclresp.o tclsched.o tclset.o tclshare.o tclsock.o \
 	  tclthread.o tcltime.o tclvar.o tclxkeylist.o stamp.o \
-	  url.o url2file.o urlencode.o urlopen.o urlspace.o uuencode.o
+	  url.o url2file.o urlencode.o urlopen.o urlspace.o uuencode.o \
+	  unix.o watchdog.o nswin32.o
 
-UNIXOBJS = unix.o watchdog.o
 LIBOBJS	 = $(OBJS)
-
-DLL     = nsd
-DLLINIT	= Nsd_LibInit
-WINOBJS = nswin32.o
 
 include ../include/Makefile.build
 

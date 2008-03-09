@@ -35,13 +35,7 @@ HDRS	= thread.h
 PGM	= nsthreadtest
 PGMOBJS	= nsthreadtest.o
 LIBOBJS = error.o master.o memory.o mutex.o cslock.o \
-	  rwlock.o reentrant.o sema.o thread.o tls.o \
-	  time.o
-UNIXOBJS = pthread.o fork.o signal.o
-
-DLL     = nsthread
-DLLINIT = Nsthreads_LibInit
-WINOBJS = winthread.o
-DLLOBJS = $(LIBOBJS)
+	  rwlock.o reentrant.o sema.o thread.o tls.o time.o \
+	  pthread.o fork.o signal.o winthread.o
 
 include ../include/Makefile.build

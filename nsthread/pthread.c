@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,9 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+#ifndef _WIN32
+
+/*
  * pthread.c --
  *
  *	Interface routines for nsthreads using pthreads.
@@ -48,7 +50,7 @@ static void CleanupTls(void *arg);
 static void *ThreadMain(void *arg);
 
 /*
- * Solaris has weird way to declare this one so 
+ * Solaris has weird way to declare this one so
  * we just make a shortcut because this is what
  * the (solaris) definition really does.
  */
@@ -316,7 +318,7 @@ NsLockUnset(void *lock)
  * NsCreateThread --
  *
  *	Pthread specific thread create function called by
- *	Ns_ThreadCreate.  
+ *	Ns_ThreadCreate.
  *
  * Results:
  *	None.
@@ -350,7 +352,7 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
         if (stacksize < PTHREAD_STACK_MIN) {
             stacksize = PTHREAD_STACK_MIN;
         }
-        err = pthread_attr_setstacksize(&attr, (size_t) stacksize); 
+        err = pthread_attr_setstacksize(&attr, (size_t) stacksize);
         if (err != 0) {
             NsThreadFatal(func, "pthread_attr_setstacksize", err);
         }
@@ -512,7 +514,7 @@ Ns_ThreadSelf(Ns_Thread *threadPtr)
  * Ns_CondInit --
  *
  *	Pthread condition variable initialization.  Note this routine
- *	isn't used directly very often as static condition variables 
+ *	isn't used directly very often as static condition variables
  *	are now self initialized when first used.
  *
  * Results:
@@ -695,7 +697,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
 
     /*
      * As documented on Linux, pthread_cond_timedwait may return
-     * EINTR if a signal arrives.  We have noticed that 
+     * EINTR if a signal arrives.  We have noticed that
      * EINTR can be returned on Solaris as well although this
      * is not documented.  We assume the wakeup is truely
      * spurious and simply restart the wait knowing that the
@@ -803,3 +805,5 @@ CleanupTls(void *arg)
     pthread_setspecific(key, NULL);
     ns_free(slots);
 }
+
+#endif

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,8 +27,9 @@
  * version of this file under either the License or the GPL.
  */
 
+#ifndef _WIN32
 
-/* 
+/*
  * fork.c --
  *
  *	Implement ns_fork.
@@ -74,3 +75,5 @@ Ns_Fork(void)
 {
     return ns_fork();
 }
+
+#endif

@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,7 @@
  */
 
 
-/* 
+/*
  * thread.c --
  *
  *	Routines for creating, exiting, and joining threads.
@@ -48,7 +48,7 @@ typedef struct Thread {
     struct Thread  *nextPtr;	/* Next in list of all threads. */
     time_t	    ctime;	/* Thread structure create time. */
     int		    flags;	/* Detached, joined, etc. */
-    Ns_ThreadProc  *proc;	/* Thread startup routine. */ 
+    Ns_ThreadProc  *proc;	/* Thread startup routine. */
     void           *arg;	/* Argument to startup proc. */
     uintptr_t       tid;    /* Id set by thread for logging. */
     char	    name[NS_THREAD_NAMESIZE+1]; /* Thread name. */
@@ -324,8 +324,8 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
 	Tcl_DStringStartSublist(dsPtr);
 	Tcl_DStringAppendElement(dsPtr, thrPtr->name);
 	Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
-	snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %jd",
-             thrPtr->tid, thrPtr->flags, (intmax_t) thrPtr->ctime);
+	snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRIu64,
+             thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
 	Tcl_DStringAppend(dsPtr, buf, -1);
 	if (proc != NULL) {
 	    (*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
@@ -413,7 +413,7 @@ GetThread(void)
  *
  * CleanupThread --
  *
- *	TLS cleanup for the nsthread context. 
+ *	TLS cleanup for the nsthread context.
  *
  * Results:
  *	None.

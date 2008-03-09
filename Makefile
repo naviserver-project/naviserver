@@ -33,7 +33,12 @@
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsproxy
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest
+
+# Unix only modules
+ifeq (,$(findstring MINGW,$(uname)))
+   dirs += nsproxy
+endif
 
 distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.in \

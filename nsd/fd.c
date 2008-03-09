@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -330,7 +330,7 @@ Ns_GetTemp(void)
     Ns_DString ds;
     char *path, buf[64];
     int fd, flags, trys;
-    
+
     Ns_MutexLock(&lock);
     tmpPtr = firstTmpPtr;
     if (tmpPtr != NULL) {
@@ -352,7 +352,7 @@ Ns_GetTemp(void)
 
     do {
         Ns_GetTime(&now);
-        snprintf(buf, sizeof(buf), "nstmp.%d.%ld", now.sec, now.usec);
+        snprintf(buf, sizeof(buf), "nstmp.%" PRIu64 ".%ld", (int64_t)now.sec, now.usec);
         path = Ns_MakePath(&ds, P_tmpdir, buf, NULL);
 #ifdef _WIN32
         fd = _sopen(path, flags, _SH_DENYRW, _S_IREAD|_S_IWRITE);

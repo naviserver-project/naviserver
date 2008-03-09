@@ -716,7 +716,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 }
                 if (jobPtr->errorInfo != NULL) {
                      Tcl_AddObjErrorInfo(interp, "\n", 1);
-                     Tcl_AddObjErrorInfo(interp, jobPtr->errorInfo, -1); 
+                     Tcl_AddObjErrorInfo(interp, jobPtr->errorInfo, -1);
                 }
             }
             FreeJob(jobPtr);
@@ -1058,8 +1058,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             Ns_GetTime(&currentTime);
             Ns_MutexLock(&tp.queuelock);
-            snprintf(buf, sizeof(buf), "queue_id_%lx_%jx",
-                     tp.nextQueueId++, (intmax_t) currentTime.sec);
+            snprintf(buf, sizeof(buf), "queue_id_%lx_%" TCL_LL_MODIFIER "x",
+                     tp.nextQueueId++, (Tcl_WideInt) currentTime.sec);
             Ns_MutexUnlock(&tp.queuelock);
             Tcl_SetResult(interp, buf, TCL_VOLATILE);
         }
@@ -1180,7 +1180,7 @@ JobThread(void *arg)
         jobPtr->code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
 
         /*
-         * Make sure we show error message for detached job, otherwise it will 
+         * Make sure we show error message for detached job, otherwise it will
          * silently disappear
          */
 

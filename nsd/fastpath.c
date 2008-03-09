@@ -496,10 +496,10 @@ NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights)
     memcpy(chan, &channel, sizeof(channel));
     return NS_OK;
 #else
-    int fd, flags = 0;
+    int fd, flags = O_BINARY;
 
 #ifdef O_LARGEFILE
-    flags = O_LARGEFILE;
+    flags |= O_LARGEFILE;
 #endif
 
     while (*mode) {
@@ -580,36 +580,6 @@ NsFastStat(CONST char *file, FileStat *stPtr)
     }
 
     return NS_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsFastTell --
- *
- *      Returns current position in the file
- *
- * Results:
- *      Returns current position, -1 on error
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsFastFD(FileChannel chan)
-{
-#ifdef USE_TCLVFS
-    int fd;
-    if (Tcl_GetChannelHandle(chan, TCL_READABLE, (ClientData)&fd) != TCL_OK) {
-        return -1;
-    }
-    return fd;
-#else
-    return chan;
-#endif
 }
 
 
@@ -1103,7 +1073,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
           */
 
         Ns_DStringInit(&ds);
-        snprintf(boundary, sizeof(boundary), "%jd", (intmax_t) now);
+        snprintf(boundary, sizeof(boundary), "%" PRIu64, (int64_t) now);
         Ns_ConnPrintfHeaders(conn, "Content-type",
                              "multipart/byteranges; boundary=%s", boundary);
         /*
@@ -1131,7 +1101,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
              */
 
             iovPtr->iov_base = &ds.string[ds.length];
-            Ns_DStringPrintf(&ds,"--%s\r\n",boundary);
+            Ns_DStringPrintf(&ds,"--%s\r\n", boundary);
             Ns_DStringPrintf(&ds,"Content-type: %s\r\n",type);
             Ns_DStringPrintf(&ds,"Content-range: bytes %" TCL_LL_MODIFIER "d"
                              "-%" TCL_LL_MODIFIER "d/%" TCL_LL_MODIFIER "d\r\n\r\n",

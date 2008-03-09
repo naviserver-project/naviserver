@@ -28,6 +28,8 @@
  */
 
 
+#ifndef _WIN32
+
 /*
  * unix.c --
  *
@@ -814,3 +816,5 @@ Abort(int signal)
 {
     Tcl_Panic("received fatal signal %d", signal);
 }
+
+#endif

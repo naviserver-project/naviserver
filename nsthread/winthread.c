@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,9 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+#ifdef _WIN32
+
+/*
  * win32.c --
  *
  *  Interface routines for nsthreads using WIN32 functions.
@@ -116,7 +118,7 @@ static DWORD tlskey;
  */
 
 
-void 
+void
 Nsthreads_LibInit(void)
 {
     static int once = 0;
@@ -125,7 +127,7 @@ Nsthreads_LibInit(void)
         once = 1;
         tlskey = TlsAlloc();
         if (tlskey == 0xFFFFFFFF) {
-            return FALSE;
+            return;
         }
         NsInitThreads();
     }
@@ -379,7 +381,7 @@ NsLockUnset(void *lock)
  * Ns_CondInit --
  *
  *      Initialize a condition variable.  Note that this function
- *      is rarely called directly as condition variables are now 
+ *      is rarely called directly as condition variables are now
  *      self initialized when first accessed.
  *
  * Results:
@@ -395,10 +397,10 @@ void
 Ns_CondInit(Ns_Cond *cond)
 {
     Cond *condPtr;
-    
+
     condPtr = ns_calloc(1, sizeof(Cond));
     InitializeCriticalSection(&condPtr->critsec);
-    *cond = condPtr;
+    *cond = (Ns_Cond)condPtr;
 }
 
 
@@ -423,7 +425,7 @@ Ns_CondInit(Ns_Cond *cond)
 void
 Ns_CondDestroy(Ns_Cond *cond)
 {
-    Cond *condPtr = *cond;
+    Cond *condPtr = GetCond(cond);
 
     if (condPtr != NULL) {
         DeleteCriticalSection(&condPtr->critsec);
@@ -462,13 +464,13 @@ Ns_CondSignal(Ns_Cond *cond)
         condPtr->waitPtr = wPtr->nextPtr;
         wPtr->nextPtr = NULL;
         wPtr->condwait = 0;
-        
+
         /*
          * The Wakeup() must be done before the unlock
          * as the other thread may have been in a timed
          * wait which just timed out.
          */
-        
+
         Wakeup(wPtr, "Ns_CondSignal");
     }
     LeaveCriticalSection(&condPtr->critsec);
@@ -515,7 +517,7 @@ Ns_CondBroadcast(Ns_Cond *cond)
     }
 
     /*
-     * Wake up the first thread to start the rolling 
+     * Wake up the first thread to start the rolling
      * wakeup.
      */
 
@@ -558,7 +560,7 @@ Ns_CondWait(Ns_Cond *cond, Ns_Mutex *mutex)
  *
  * Ns_CondTimedWait --
  *
- *      Wait for a condition to be signaled up to a given absolute 
+ *      Wait for a condition to be signaled up to a given absolute
  *      timeout. This code is very tricky to avoid the race condition
  *      between locking and unlocking the coordinating mutex and catching
  *      a wakeup signal. Be sure you understand how condition variables
@@ -1060,37 +1062,74 @@ readdir(DIR * dp)
 /*
  *----------------------------------------------------------------------
  *
- * snprintf --
+ * link, symlink, kill --
  *
- *      Produce output according to a format always terminated with NULL
+ *      Stubs for missing Unix routines. This is done simply to avoid
+ *      more ifdef's in the code.
  *
  * Results:
- *      Return the number of characters printed (not  including  the  trailing
- *     '\0' used to end output to strings)
+ *      -1.
  *
  * Side effects:
- *      None.
+ *      Sets errno to EINVAL.
  *
  *----------------------------------------------------------------------
  */
 
-int snprintf(char *buffer, size_t count, const char *format, ...) 
+int
+link(char *from, char *to)
 {
-   int n = 0;
-   va_list args;
-
-   if (count > 0 && format != NULL) {
-       char *fmt = ns_strcopy(format);
-       for (n = 0; n < strlen(fmt); n++) {
-           if (fmt[n] == '%' && fmt[n+1] == 'j') {
-               fmt[n+1] = 'l';
-           }
-       }
-       va_start(args, format);
-       n = _vsnprintf(buffer, count, fmt, args);
-       buffer[count - 1] = 0;
-       va_end(args);
-       ns_free(fmt);
-   }
-   return n;
+    errno = EINVAL;
+    return -1;
 }
+
+int
+symlink(char *from, char *to)
+{
+    errno = EINVAL;
+    return -1;
+}
+
+int
+kill(int pid, int sig)
+{
+    errno = EINVAL;
+    return -1;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * truncate --
+ *
+ *      Implement Unix truncate.
+ *
+ * Results:
+ *      0 if ok or -1 on error.
+ *
+ * Side effects:
+ *      File is opened, truncated, and closed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+truncate(char *file, off_t size)
+{
+    int fd;
+
+    fd = open(file, O_WRONLY|O_BINARY);
+    if (fd < 0) {
+        return -1;
+    }
+    size = _chsize(fd, size);
+    close(fd);
+    if (size != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+#endif

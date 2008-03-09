@@ -617,10 +617,10 @@ static char hexChars[] = "0123456789ABCDEF";
    SHA spec.
  */
 static void
-shaByteSwap (ns_uint32 * dest, ns_uint8 const *src, unsigned int words)
+shaByteSwap (uint32_t * dest, uint8_t const *src, unsigned int words)
 {
     do {
-       *dest++ = (ns_uint32) ((unsigned) src[0] << 8 | src[1]) << 16 |
+       *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
 	         ((unsigned) src[2] << 8 | src[3]);
        src += 4;
     } while (--words);
@@ -728,9 +728,9 @@ void Ns_CtxSHAInit (Ns_CtxSHA1 * ctx)
 static void
 SHATransform(Ns_CtxSHA1 *sha)
 {
-    register ns_uint32 A, B, C, D, E;
+    register uint32_t A, B, C, D, E;
 #if SHA_VERSION
-    register ns_uint32 t;
+    register uint32_t t;
 #endif
 
     /* Set up first buffer */
@@ -844,7 +844,7 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
     i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
     ctx->bytes += len;
 #else
-    ns_uint32 t = ctx->bytesLo;
+    uint32_t t = ctx->bytesLo;
     if ((ctx->bytesLo = t + len) < t) {
        ctx->bytesHi++;		/* Carry from low to high */
     }
@@ -854,13 +854,13 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
 
     /* i is always less than SHA_BLOCKBYTES. */
     if (SHA_BLOCKBYTES - i > len) {
-        memcpy ((ns_uint8 *) ctx->key + i, buf, len);
+        memcpy ((uint8_t *) ctx->key + i, buf, len);
         return;
     }
 
     if (i) {				/* First chunk is an odd size */
-        memcpy ((ns_uint8 *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
-        shaByteSwap (ctx->key, (ns_uint8 *) ctx->key, SHA_BLOCKWORDS);
+        memcpy ((uint8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
+        shaByteSwap (ctx->key, (uint8_t *) ctx->key, SHA_BLOCKWORDS);
         SHATransform (ctx);
         buf += SHA_BLOCKBYTES - i;
         len -= SHA_BLOCKBYTES - i;
@@ -892,8 +892,8 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 #else
     unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
 #endif
-    ns_uint8 *p = (ns_uint8 *) ctx->key + i;	/* First unused byte */
-    ns_uint32 t;
+    uint8_t *p = (uint8_t *) ctx->key + i;	/* First unused byte */
+    uint32_t t;
 
     /* Set the first char of padding to 0x80. There is always room. */
     *p++ = 0x80;
@@ -903,18 +903,18 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 
     if (i < 8) {				/* Padding forces an extra block */
         memset (p, 0, i);
-        shaByteSwap (ctx->key, (ns_uint8 *) ctx->key, 16);
+        shaByteSwap (ctx->key, (uint8_t *) ctx->key, 16);
         SHATransform (ctx);
-        p = (ns_uint8 *) ctx->key;
+        p = (uint8_t *) ctx->key;
         i = 64;
     }
     memset (p, 0, i - 8);
-    shaByteSwap (ctx->key, (ns_uint8 *) ctx->key, 14);
+    shaByteSwap (ctx->key, (uint8_t *) ctx->key, 14);
 
     /* Append length in bits and transform */
 #if HAVE64
-    ctx->key[14] = (ns_uint32) (ctx->bytes >> 29);
-    ctx->key[15] = (ns_uint32) ctx->bytes << 3;
+    ctx->key[14] = (uint32_t) (ctx->bytes >> 29);
+    ctx->key[15] = (uint32_t) ctx->bytes << 3;
 #else
     ctx->key[14] = ctx->bytesHi << 3 | ctx->bytesLo >> 29;
     ctx->key[15] = ctx->bytesLo << 3;
@@ -924,10 +924,10 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     memcpy (digest, ctx->iv, sizeof (digest));
     for (i = 0; i < SHA_HASHWORDS; i++) {
         t = ctx->iv[i];
-        digest[i * 4 + 0] = (ns_uint8) (t >> 24);
-        digest[i * 4 + 1] = (ns_uint8) (t >> 16);
-        digest[i * 4 + 2] = (ns_uint8) (t >> 8);
-        digest[i * 4 + 3] = (ns_uint8) t;
+        digest[i * 4 + 0] = (uint8_t) (t >> 24);
+        digest[i * 4 + 1] = (uint8_t) (t >> 16);
+        digest[i * 4 + 2] = (uint8_t) (t >> 8);
+        digest[i * 4 + 3] = (uint8_t) t;
     }
 
     memset(ctx, 0, sizeof(ctx)); 			/* In case it's sensitive */
@@ -1076,6 +1076,12 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.30  2008/03/09 07:34:48  seryakov
+ *         Port to Win32 platform using Mingw32/Msys environment. Msys is what Tcl project using, same
+ *         basic archive is what needed to conpile navoiserber for win32. Works stable as oppose to
+ *         MSVC compiled code which used to crash for unknown reasons. Same configure script is used
+ *         and config.h.
+ *
  * Revision 1.29  2007/11/18 04:58:20  seryakov
  * Bad move, revert NsFastStat changes back, windwos port just needs proper
  * flags setup to work with the same stat or stat64 structures
@@ -1134,7 +1140,7 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *     * nsd/tclmisc.c: New Tcl command ns_setpriveleges that sets real uid and gid
  *
  * Revision 1.23  2007/08/14 08:49:10  vasiljevic
- * Replaced uint32 with ns_uint32.
+ * Replaced uint32 with uint32_t.
  *
  * Revision 1.22  2007/05/21 05:28:39  seryakov
  *         * include/ns.h:
@@ -1170,7 +1176,7 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  *
  */
 
-static void MD5Transform(ns_uint32 buf[4], ns_uint32 const in[16]);
+static void MD5Transform(uint32_t buf[4], uint32_t const in[16]);
 
 #ifdef sun
 #define HIGHFIRST
@@ -1184,11 +1190,11 @@ static void MD5Transform(ns_uint32 buf[4], ns_uint32 const in[16]);
  */
 static void byteReverse(unsigned char *buf, unsigned longs)
 {
-    ns_uint32 t;
+    uint32_t t;
     do {
-	t = (ns_uint32) ((unsigned) buf[3] << 8 | buf[2]) << 16 |
+	t = (uint32_t) ((unsigned) buf[3] << 8 | buf[2]) << 16 |
 	    ((unsigned) buf[1] << 8 | buf[0]);
-	*(ns_uint32 *) buf = t;
+	*(uint32_t *) buf = t;
 	buf += 4;
     } while (--longs);
 }
@@ -1215,12 +1221,12 @@ void Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
  */
 void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
 {
-    ns_uint32 t;
+    uint32_t t;
 
     /* Update bitcount */
 
     t = ctx->bits[0];
-    if ((ctx->bits[0] = t + ((ns_uint32) len << 3)) < t)
+    if ((ctx->bits[0] = t + ((uint32_t) len << 3)) < t)
 	ctx->bits[1]++;		/* Carry from low to high */
     ctx->bits[1] += len >> 29;
 
@@ -1238,7 +1244,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
 	}
 	memcpy(p, buf, t);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
 	buf += t;
 	len -= t;
     }
@@ -1247,7 +1253,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
     while (len >= 64) {
 	memcpy(ctx->in, buf, 64);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
 	buf += 64;
 	len -= 64;
     }
@@ -1282,7 +1288,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 	/* Two lots of padding:  Pad the first block to 64 bytes */
 	memset(p, 0, count);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
 
 	/* Now fill the next block with 56 bytes */
 	memset(ctx->in, 0, 56);
@@ -1293,10 +1299,10 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     byteReverse(ctx->in, 14);
 
     /* Append length in bits and transform */
-    ((ns_uint32 *) ctx->in)[14] = ctx->bits[0];
-    ((ns_uint32 *) ctx->in)[15] = ctx->bits[1];
+    ((uint32_t *) ctx->in)[14] = ctx->bits[0];
+    ((uint32_t *) ctx->in)[15] = ctx->bits[1];
 
-    MD5Transform(ctx->buf, (ns_uint32 *) ctx->in);
+    MD5Transform(ctx->buf, (uint32_t *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16);
     memset(ctx, 0, sizeof(ctx));	/* In case it's sensitive */
@@ -1319,9 +1325,9 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
  * reflect the addition of 16 longwords of new data.  MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
-static void MD5Transform(ns_uint32 buf[4], ns_uint32 const in[16])
+static void MD5Transform(uint32_t buf[4], uint32_t const in[16])
 {
-    register ns_uint32 a, b, c, d;
+    register uint32_t a, b, c, d;
 
     a = buf[0];
     b = buf[1];

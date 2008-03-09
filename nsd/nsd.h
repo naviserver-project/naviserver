@@ -43,8 +43,12 @@
   #include <io.h>
   #define STDOUT_FILENO 1
   #define STDERR_FILENO 2
+  #ifndef S_ISREG
   #define S_ISREG(m) ((m)&_S_IFREG)
+  #endif
+  #ifndef S_ISDIR
   #define S_ISDIR(m) ((m)&_S_IFDIR)
+  #endif
   #include <sys/stat.h>
 #else
   #include <sys/resource.h>
@@ -1256,7 +1260,6 @@ extern int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
 extern void NsMemUmap(FileMap *mapPtr);
 
 int NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights);
-int NsFastFD(FileChannel chan);
 int NsFastStat(CONST char *file, FileStat *stPtr);
 
 extern void NsStopSockCallbacks(void);

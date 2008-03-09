@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,7 +28,9 @@
  */
 
 
-/* 
+#ifndef _WIN32
+
+/*
  * signal.c --
  *
  *	Routines for signal handling.
@@ -115,3 +117,5 @@ ns_sigwait(sigset_t * set, int *sig)
 {
     return sigwait(set, sig);
 }
+
+#endif

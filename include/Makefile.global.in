@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -25,7 +25,7 @@
 # replace them with the notice and other provisions required by the GPL.
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
-# 
+#
 #
 # $Header$
 #
@@ -72,9 +72,9 @@ CFLAGS_INCLUDE   = -I$(INCDIR) @TCL_INCLUDES@
 CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@
 DEFS             = @DEFS@
 CFLAGS          += @CFLAGS_DEFAULT@ $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) @CPPFLAGS@ $(DEFS)
-LIBS		 = @LIBS@
-DL_LIBS		 = @DL_LIBS@
-MATH_LIBS	 = @MATH_LIBS@
+LIBS		     = @LIBS@
+DL_LIBS		     = @DL_LIBS@
+MATH_LIBS	     = @MATH_LIBS@
 
 
 ifndef NSBUILD
@@ -86,15 +86,15 @@ else
     INCDIR   = ../include
 	ifeq (nsd,$(LIB))
 		CFLAGS += @ZLIB_INCLUDES@
-		LDFLAGS += @ZLIB_LIBS@ @CRYPT_LIBS@
+		NSLIBS += @ZLIB_LIBS@ @CRYPT_LIBS@
 	endif
     ifneq (nsthread,$(LIB))
-        NSLIBS += -lnsthread 
-        ifneq (nsd,$(LIB)) 
+        NSLIBS += -lnsthread
+        ifneq (nsd,$(LIB))
             ifneq (nsthreadtest,$(PGM))
                 ifeq (nsdbtest,$(MODNAME))
                     NSLIBS += -lnsd -lnsdb
-                else 
+                else
                     NSLIBS += -lnsd
                 endif
             endif
@@ -127,9 +127,9 @@ ifneq (,$(findstring SunOS,$(uname)))
     endif
 endif
 
- 
+
 #
-# For static linking on Darwin, link modules 
+# For static linking on Darwin, link modules
 # against server image.
 #
 

@@ -45,39 +45,47 @@
 #include <nscheck.h>
 
 #ifdef _WIN32
-#define NS_EXPORT       __declspec(dllexport)
-#define NS_IMPORT       __declspec(dllimport)
+#define NS_EXPORT                   __declspec(dllexport)
+#define NS_IMPORT                   __declspec(dllimport)
+
+#if defined(__GNUC__) || defined(__MINGW32__)
+#define NSTHREAD_EXPORTS
+#endif
+
 #else
 #define NS_EXPORT
 #define NS_IMPORT
 #ifndef _REENTRANT
 #define _REENTRANT
 #endif
+
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #define _SGI_MP_SOURCE
 #endif
+
 #if defined(__sun) && !defined(_POSIX_PTHREAD_SEMANTICS)
 #define _POSIX_PTHREAD_SEMANTICS
 #endif
+
 #endif
 
-#ifdef NSTHREAD_EXPORTS
-#define NS_STORAGE_CLASS    NS_EXPORT
+#if defined(NSTHREAD_EXPORTS)
+#define NS_STORAGE_CLASS            NS_EXPORT
 #else
-#define NS_STORAGE_CLASS    NS_IMPORT
+#define NS_STORAGE_CLASS            NS_IMPORT
 #endif
 
 #ifdef __cplusplus
-#define NS_EXTERN       extern "C" NS_STORAGE_CLASS
+#define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
 #else
-#define NS_EXTERN       extern NS_STORAGE_CLASS
+#define NS_EXTERN                   extern NS_STORAGE_CLASS
 #endif
 
 #ifndef __linux
 #ifdef FD_SETSIZE
 #undef FD_SETSIZE
 #endif
-#define FD_SETSIZE 1024
+#define FD_SETSIZE                  1024
 #endif
 
 #ifdef __OpenBSD__
@@ -85,11 +93,87 @@
 /*
  * Workaround until we have ENOTSUP in errno.h
  */
-#define ENOTSUP         EOPNOTSUPP
+#define ENOTSUP                     EOPNOTSUPP
 #endif
 #endif
 
-#ifndef _WIN32
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT                0x0400
+#endif
+
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <sys/timeb.h>
+#include <sys/types.h>
+#include <io.h>
+#include <process.h>
+#include <direct.h>
+
+#define EINPROGRESS                 WSAEINPROGRESS
+#define EWOULDBLOCK                 WSAEWOULDBLOCK
+
+#define strcasecmp                  _stricmp
+#define strncasecmp                 _strnicmp
+#define vsnprintf                   _vsnprintf
+#define snprintf                    _snprintf
+#define mkdir(d,m)                  _mkdir((d))
+#define sleep(n)                    (Sleep((n)*1000))
+#define ftruncate(f,s)              chsize((f),(s))
+
+/*
+ * Under MinGW we use config.h, for MSVC we pre-define environment here
+ */
+
+#ifndef HAVE_CONFIG_H
+#define F_OK                        0
+#define W_OK                        2
+#define R_OK                        4
+#define X_OK                        R_OK
+#define atoll                       _atoi64
+#define va_copy(dst,src)            ((void)((dst) = (src)))
+#define USE_TCLVFS                  1
+#define USE_THREAD_ALLOC            1
+#define VERSION                     NS_PATCH_LEVEL
+#define _LARGEFILE64_SOURCE         1
+#define _REENTRANT                  1
+#define _THREAD_SAFE                1
+#define TCL_THREADS                 1
+#define HAVE_GETADDRINFO            1
+#define HAVE_GETNAMEINFO            1
+#define HAVE_STRUCT_STAT64          1
+#define PACKAGE                     "naviserver"
+#define PACKAGE_NAME                "NaviServer"
+#define PACKAGE_STRING              PACKAGE_NAME " " NS_PATCH_LEVEL
+#define PACKAGE_TARNAME             PACKAGE
+#define PACKAGE_VERSION             NS_VERSION
+#define PACKAGE_BUGREPORT           "naviserver-devel@lists.sourceforge.net"
+
+typedef unsigned long long int uint64_t;
+typedef unsigned long int uintmax_t;
+typedef long int intmax_t;
+#endif
+
+typedef struct DIR_ *DIR;
+struct dirent {
+    char *d_name;
+};
+
+NS_EXTERN DIR *opendir(char *pathname);
+NS_EXTERN struct dirent *readdir(DIR *dp);
+NS_EXTERN int closedir(DIR *dp);
+NS_EXTERN int truncate(char *file, off_t size);
+NS_EXTERN int link(char *from, char *to);
+NS_EXTERN int symlink(char *from, char *to);
+NS_EXTERN int kill(int pid, int sig);
+
+#else
+
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/time.h>
@@ -103,63 +187,7 @@
 #include <poll.h>
 #include <inttypes.h>
 
-#else
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0400
-#endif _WIN32_WINNT
-
-#include <windows.h>
-#include <winsock2.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <io.h>
-#include <process.h>
-#include <direct.h>
-
-typedef struct DIR_ *DIR;
-struct dirent {
-    char *d_name;
-};
-
-NS_EXTERN DIR *opendir(char *pathname);
-NS_EXTERN struct dirent *readdir(DIR *dp);
-NS_EXTERN int closedir(DIR *dp);
-
-#define atoll _atoi64
-#define sleep(n) (Sleep((n)*1000))
-#define va_copy(dst,src) ((void)((dst) = (src)))
-
-typedef unsigned long long int uint64_t;
-typedef unsigned long int uintmax_t;
-typedef long int intmax_t;
-
-#define PRIu64 TCL_LL_MODIFIER
-#define USE_THREAD_ALLOC 1
-#define USE_TCLVFS 1
-#define VERSION NS_PATCH_LEVEL
-#define _LARGEFILE64_SOURCE 1
-#define _REENTRANT 1
-#define _THREAD_SAFE 1
-#define TCL_THREADS 1
-#define HAVE_GETADDRINFO 1
-#define HAVE_GETNAMEINFO 1
-#define HAVE_STRUCT_STAT64 1
-
-#define PACKAGE "naviserver"
-#define PACKAGE_NAME "NaviServer"
-#define PACKAGE_STRING "NaviServer " NS_PATCH_LEVEL
-#define PACKAGE_TARNAME "naviserver"
-#define PACKAGE_VERSION NS_VERSION
-#define PACKAGE_BUGREPORT "naviserver-devel@lists.sourceforge.net"
-
-#include <ws2tcpip.h>
-
-#endif
+#endif /* _WIN32 */
 
 #include "tcl.h"
 #include <limits.h>
@@ -183,7 +211,7 @@ typedef long int intmax_t;
 #endif
 
 #ifndef O_LARGEFILE
-#define O_LARGEFILE 0
+#define O_LARGEFILE                 0
 #endif
 
 /*
@@ -192,11 +220,11 @@ typedef long int intmax_t;
  */
 
 #ifndef MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MIN(a,b)                    (((a)<(b))?(a):(b))
 #endif
 
 #ifndef MAX
-#define MAX(a,b) (((a)>(b))?(a):(b))
+#define MAX(a,b)                    (((a)>(b))?(a):(b))
 #endif
 
 /*
@@ -204,60 +232,64 @@ typedef long int intmax_t;
  * of pointer formatting macros.
  */
 
+#ifndef PRIu64
+#define PRIu64                      TCL_LL_MODIFIER
+#endif
+
 #ifndef PRIdPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIdPTR "ld"
-# else
-#  define PRIdPTR "d"
-# endif
+#if defined(_LP64) || defined(_I32LPx)
+#define PRIdPTR                     "ld"
+#else
+#define PRIdPTR                     "d"
+#endif
 #endif
 
 #ifndef PRIoPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIoPTR "lo"
-# else
-#  define PRIoPTR "o"
-# endif
+#if defined(_LP64) || defined(_I32LPx)
+#define PRIoPTR                     "lo"
+#else
+#define PRIoPTR                     "o"
+#endif
 #endif
 
 #ifndef PRIiPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIiPTR "li"
-# else
-#  define PRIiPTR "i"
-# endif
+#if defined(_LP64) || defined(_I32LPx)
+#define PRIiPTR                     "li"
+#else
+#define PRIiPTR                     "i"
+#endif
 #endif
 
 #ifndef PRIuPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIuPTR "lu"
-# else
-#  define PRIuPTR "u"
-# endif
+#if defined(_LP64) || defined(_I32LPx)
+#define PRIuPTR                     "lu"
+#else
+#define PRIuPTR                     "u"
+#endif
 #endif
 
 #ifndef PRIxPTR
-# if defined(_LP64) || defined(_I32LPx)
-#  define PRIxPTR "lx"
-# else
-#  define PRIxPTR "x"
-# endif
+#if defined(_LP64) || defined(_I32LPx)
+#define PRIxPTR                     "lx"
+#else
+#define PRIxPTR                     "x"
+#endif
 #endif
 
 /*
  * Various constants.
  */
 
-#define NS_OK               0
-#define NS_ERROR            (-1)
-#define NS_TIMEOUT          (-2)
-#define NS_FATAL            (-3)
+#define NS_OK                       0
+#define NS_ERROR                    (-1)
+#define NS_TIMEOUT                  (-2)
+#define NS_FATAL                    (-3)
 
-#define NS_THREAD_DETACHED  1
-#define NS_THREAD_JOINED    2
-#define NS_THREAD_EXITED    4
-#define NS_THREAD_NAMESIZE  64
-#define NS_THREAD_MAXTLS    100
+#define NS_THREAD_DETACHED          1
+#define NS_THREAD_JOINED            2
+#define NS_THREAD_EXITED            4
+#define NS_THREAD_NAMESIZE          64
+#define NS_THREAD_MAXTLS            100
 
 /*
  * The following objects are defined as pointers to dummy structures

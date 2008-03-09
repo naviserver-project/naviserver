@@ -795,11 +795,11 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
         pagePtr = Tcl_GetHashValue(hPtr);
         keyPtr = (FileKey *) Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
         Ns_DStringPrintf(&ds, "{%s} "
-            "{dev %" PRIu64 " ino %" PRIu64 " mtime %jd "
-            "refcnt %d evals %d size %ju blocks %d scripts %d} ",
+            "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
+            "refcnt %d evals %d size %" PRIu64 " blocks %d scripts %d} ",
             pagePtr->file,
-            (uint64_t) keyPtr->dev, (uint64_t) keyPtr->ino, (intmax_t) pagePtr->mtime,
-            pagePtr->refcnt, pagePtr->evals, (uintmax_t) pagePtr->size,
+            (uint64_t) keyPtr->dev, (uint64_t) keyPtr->ino, (uint64_t) pagePtr->mtime,
+            pagePtr->refcnt, pagePtr->evals, (uint64_t) pagePtr->size,
             pagePtr->code.nblocks, pagePtr->code.nscripts);
         hPtr = Tcl_NextHashEntry(&search);
     }
