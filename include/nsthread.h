@@ -38,11 +38,19 @@
 #ifndef NSTHREAD_H
 #define NSTHREAD_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <nscheck.h>
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 
-#include <nscheck.h>
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
 
 #ifdef _WIN32
 #define NS_EXPORT                   __declspec(dllexport)
@@ -52,52 +60,12 @@
 #define NSTHREAD_EXPORTS
 #endif
 
-#else
-#define NS_EXPORT
-#define NS_IMPORT
-#ifndef _REENTRANT
-#define _REENTRANT
-#endif
-
-#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#define _SGI_MP_SOURCE
-#endif
-
-#if defined(__sun) && !defined(_POSIX_PTHREAD_SEMANTICS)
-#define _POSIX_PTHREAD_SEMANTICS
-#endif
-
-#endif
-
 #if defined(NSTHREAD_EXPORTS)
 #define NS_STORAGE_CLASS            NS_EXPORT
 #else
 #define NS_STORAGE_CLASS            NS_IMPORT
 #endif
 
-#ifdef __cplusplus
-#define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
-#else
-#define NS_EXTERN                   extern NS_STORAGE_CLASS
-#endif
-
-#ifndef __linux
-#ifdef FD_SETSIZE
-#undef FD_SETSIZE
-#endif
-#define FD_SETSIZE                  1024
-#endif
-
-#ifdef __OpenBSD__
-#ifndef ENOTSUP
-/*
- * Workaround until we have ENOTSUP in errno.h
- */
-#define ENOTSUP                     EOPNOTSUPP
-#endif
-#endif
-
-#ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -114,9 +82,30 @@
 #include <io.h>
 #include <process.h>
 #include <direct.h>
+#include <fcntl.h>
+
+#define STDOUT_FILENO               1
+#define STDERR_FILENO               2
 
 #define EINPROGRESS                 WSAEINPROGRESS
 #define EWOULDBLOCK                 WSAEWOULDBLOCK
+
+/*
+ * Windows does not have this declared. The defined value has no meaning.
+ * It just have to exist and it needs to be accepted by any strerror() call.
+ */
+
+#ifndef ETIMEDOUT
+#define ETIMEDOUT                   1
+#endif
+
+#define NS_SIGHUP                   1
+#define NS_SIGINT                   2
+#define NS_SIGQUIT                  3
+#define NS_SIGPIPE                  13
+#define NS_SIGTERM                  15
+
+#define DEVNULL	                    "nul:"
 
 #define strcasecmp                  _stricmp
 #define strncasecmp                 _strnicmp
@@ -141,7 +130,6 @@
 #define USE_THREAD_ALLOC            1
 #define VERSION                     NS_PATCH_LEVEL
 #define _LARGEFILE64_SOURCE         1
-#define _REENTRANT                  1
 #define _THREAD_SAFE                1
 #define TCL_THREADS                 1
 #define HAVE_GETADDRINFO            1
@@ -159,18 +147,40 @@ typedef unsigned long int uintmax_t;
 typedef long int intmax_t;
 #endif
 
-typedef struct DIR_ *DIR;
+/*
+ * The following structure defines an I/O scatter/gather buffer for WIN32.
+ */
+
+struct iovec {
+    u_long      iov_len;     /* the length of the buffer */
+    char FAR *  iov_base;    /* the pointer to the buffer */
+};
+
+/*
+ * The following is for supporting our own poll() emulation.
+ */
+
+#define POLLIN                      0x0001
+#define POLLPRI                     0x0002
+#define POLLOUT                     0x0004
+#define POLLERR                     0x0008
+#define POLLHUP                     0x0010
+
+struct pollfd {
+    int            fd;
+    unsigned short events;
+    unsigned short revents;
+};
+
+/*
+ * The following is for supporting opendir/readdir functionality
+ */
+
 struct dirent {
     char *d_name;
 };
 
-NS_EXTERN DIR *opendir(char *pathname);
-NS_EXTERN struct dirent *readdir(DIR *dp);
-NS_EXTERN int closedir(DIR *dp);
-NS_EXTERN int truncate(char *file, off_t size);
-NS_EXTERN int link(char *from, char *to);
-NS_EXTERN int symlink(char *from, char *to);
-NS_EXTERN int kill(int pid, int sig);
+typedef struct DIR_ *DIR;
 
 #else
 
@@ -181,11 +191,78 @@ NS_EXTERN int kill(int pid, int sig);
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <sys/uio.h>
 #include <poll.h>
-#include <inttypes.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <ctype.h>
+#include <grp.h>
+#include <pthread.h>
+#include <sys/mman.h>
+#include <poll.h>
+
+#if defined(HAVE_SYS_UIO_H)
+#include <sys/uio.h>
+#elif defined(HAVE_UIO_H)
+#include <uio.h>
+#endif
+
+#ifdef __linux
+#include <sys/prctl.h>
+#endif
+
+#ifdef __hp
+#define seteuid(i) setresuid((-1),(i),(-1))
+#endif
+
+#ifdef __sun
+#include <sys/filio.h>
+#include <sys/systeminfo.h>
+#define gethostname(b,s) (!(sysinfo(SI_HOSTNAME, b, s) > 0))
+#endif
+
+#ifdef __unixware
+#include <sys/filio.h>
+#endif
+
+#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
+#define _SGI_MP_SOURCE
+#endif
+
+#if defined(__sun) && !defined(_POSIX_PTHREAD_SEMANTICS)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+
+#ifdef __OpenBSD__
+#ifndef ENOTSUP
+/*
+ * Workaround until we have ENOTSUP in errno.h
+ */
+#define ENOTSUP                     EOPNOTSUPP
+#endif
+#endif
+
+#define O_TEXT                      0
+#define O_BINARY                    0
+#define SOCKET                      int
+#define INVALID_SOCKET              (-1)
+#define SOCKET_ERROR                (-1)
+
+#define NS_SIGHUP                   SIGHUP
+#define NS_SIGINT                   SIGINT
+#define NS_SIGQUIT                  SIGQUIT
+#define NS_SIGPIPE                  SIGPIPE
+#define NS_SIGTERM                  SIGTERM
+
+#define DEVNULL	                    "/dev/null"
+
+#define NS_EXPORT
+#define NS_IMPORT
+#define NS_STORAGE_CLASS
 
 #endif /* _WIN32 */
 
@@ -201,17 +278,62 @@ NS_EXTERN int kill(int pid, int sig);
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <sys/stat.h>
 
-#ifndef PATH_MAX
-#define PATH_MAX 1024
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 
+#ifndef S_ISREG
+#define S_ISREG(m)                  ((m)&_S_IFREG)
+#endif
+
+#ifndef S_ISDIR
+#define S_ISDIR(m)                  ((m)&_S_IFDIR)
+#endif
+
 #ifndef O_LARGEFILE
 #define O_LARGEFILE                 0
+#endif
+
+#ifndef F_CLOEXEC
+#define F_CLOEXEC                   1
+#endif
+
+#ifndef __linux
+#ifdef FD_SETSIZE
+#undef FD_SETSIZE
+#endif
+#define FD_SETSIZE                  1024
+#endif
+
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
+
+/*
+ * This baroque pre-processor fiddling should be eventually
+ * replaced with a decent configure option and/or logic.
+ */
+
+#ifndef UIO_MAXIOV
+  #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
+    #define UIO_MAXIOV 1024
+  #elif defined(__sun)
+    #ifndef IOV_MAX
+      #define UIO_MAXIOV 16
+    #else
+      #define UIO_MAXIOV IOV_MAX
+    #endif
+  #elif defined(IOV_MAX)
+      #define UIO_MAXIOV IOV_MAX
+  #else
+    #define UIO_MAXIOV 16
+  #endif
 #endif
 
 /*
@@ -228,13 +350,18 @@ NS_EXTERN int kill(int pid, int sig);
 #endif
 
 /*
+ * This macro is required for proper formatting
+ */
+
+#ifndef PRIu64
+#define PRIu64                      TCL_LL_MODIFIER "d"
+#endif
+
+/*
  * Older Solaris version (2.8-) have older definitions
  * of pointer formatting macros.
  */
 
-#ifndef PRIu64
-#define PRIu64                      TCL_LL_MODIFIER
-#endif
 
 #ifndef PRIdPTR
 #if defined(_LP64) || defined(_I32LPx)
@@ -274,6 +401,12 @@ NS_EXTERN int kill(int pid, int sig);
 #else
 #define PRIxPTR                     "x"
 #endif
+#endif
+
+#ifdef __cplusplus
+#define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
+#else
+#define NS_EXTERN                   extern NS_STORAGE_CLASS
 #endif
 
 /*
@@ -455,6 +588,18 @@ NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr);
 NS_EXTERN void Ns_TlsAlloc(Ns_Tls *tlsPtr, Ns_TlsCleanup *cleanup);
 NS_EXTERN void Ns_TlsSet(Ns_Tls *tlsPtr, void *value);
 NS_EXTERN void *Ns_TlsGet(Ns_Tls *tlsPtr);
+
+/*
+ * winthread.c:
+ */
+
+NS_EXTERN DIR *opendir(char *pathname);
+NS_EXTERN struct dirent *readdir(DIR *dp);
+NS_EXTERN int closedir(DIR *dp);
+NS_EXTERN int truncate(char *file, off_t size);
+NS_EXTERN int link(char *from, char *to);
+NS_EXTERN int symlink(char *from, char *to);
+NS_EXTERN int kill(int pid, int sig);
 
 
 #endif /* NSTHREAD_H */

@@ -30,77 +30,8 @@
 #ifndef NSD_H
 #define NSD_H
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "ns.h"
 #include <assert.h>
-#include <sys/stat.h>
-
-#ifdef _WIN32
-  #include <fcntl.h>
-  #include <io.h>
-  #define STDOUT_FILENO 1
-  #define STDERR_FILENO 2
-  #ifndef S_ISREG
-  #define S_ISREG(m) ((m)&_S_IFREG)
-  #endif
-  #ifndef S_ISDIR
-  #define S_ISDIR(m) ((m)&_S_IFDIR)
-  #endif
-  #include <sys/stat.h>
-#else
-  #include <sys/resource.h>
-  #include <sys/wait.h>
-  #include <sys/ioctl.h>
-  #include <ctype.h>
-  #include <grp.h>
-  #include <pthread.h>
-  #include <sys/mman.h>
-  #include <poll.h>
-  #if defined(HAVE_SYS_UIO_H)
-    # include <sys/uio.h>
-  #elif defined(HAVE_UIO_H)
-  # include <uio.h>
-  #endif
-#endif  /* WIN32 */
-
-#ifdef __linux
-  #include <sys/prctl.h>
-#endif
-
-#ifdef __hp
-  #define seteuid(i) setresuid((-1),(i),(-1))
-#endif
-
-#ifdef __sun
-  #include <sys/filio.h>
-  #include <sys/systeminfo.h>
-  #define gethostname(b,s) (!(sysinfo(SI_HOSTNAME, b, s) > 0))
-#endif
-
-#ifdef __unixware
-  #include <sys/filio.h>
-#endif
-
-#ifndef F_CLOEXEC
-  #define F_CLOEXEC 1
-#endif
-
-#ifdef _WIN32
-  #define NS_SIGHUP   1
-  #define NS_SIGINT   2
-  #define NS_SIGQUIT  3
-  #define NS_SIGPIPE 13
-  #define NS_SIGTERM 15
-#else
-  #define NS_SIGHUP  SIGHUP
-  #define NS_SIGINT  SIGINT
-  #define NS_SIGQUIT SIGQUIT
-  #define NS_SIGPIPE SIGPIPE
-  #define NS_SIGTERM SIGTERM
-#endif
 
 #ifdef USE_TCLVFS
   #define FileChannel                  Tcl_Channel
@@ -124,27 +55,6 @@
   #define NsFastClose(chan)            close(chan)
   #define NsFastSeek(chan,offset,mode) lseek(chan,offset,mode)
   #define NsFastTell(chan)             lseek(chan,0,SEEK_CUR)
-#endif
-
-/*
- * This baroque pre-processor fiddling should be eventually
- * replaced with a decent configure option and/or logic.
- */
-
-#ifndef UIO_MAXIOV
-  #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
-    #define UIO_MAXIOV 1024
-  #elif defined(__sun)
-    #ifndef IOV_MAX
-      #define UIO_MAXIOV 16
-    #else
-      #define UIO_MAXIOV IOV_MAX
-    #endif
-  #elif defined(IOV_MAX)
-      #define UIO_MAXIOV IOV_MAX
-  #else
-    #define UIO_MAXIOV 16
-  #endif
 #endif
 
 /*

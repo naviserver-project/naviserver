@@ -218,7 +218,6 @@ int
 NsConnectService(void)
 {
     SERVICE_TABLE_ENTRY table[2];
-    char  *nul = "nul:", buf[PATH_MAX];
     BOOL   ok;
     HANDLE fi;
 
@@ -235,9 +234,9 @@ NsConnectService(void)
      * to nul: device forever.
      */
 
-    freopen(nul, "rt", stdin);
-    freopen(nul, "wt", stdout);
-    freopen(nul, "wt", stderr);
+    freopen(DEVNULL, "rt", stdin);
+    freopen(DEVNULL, "wt", stdout);
+    freopen(DEVNULL, "wt", stderr);
 
     /*
      * Ensure that stdio handles are correctly set.

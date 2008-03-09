@@ -182,21 +182,15 @@
 #define NS_TCL_SET_TEMPORARY       NS_TCL_SET_STATIC
 #define NS_CACHE_FREE              ns_free
 
+#define NS_COOKIE_SECURE           1  /* The cookie should only be sent using HTTPS */
+#define NS_COOKIE_SCRIPTABLE       2  /* Available to javascript on the client. */
+
 #ifdef _WIN32
-NS_EXTERN char *NsWin32ErrMsg(int err);
-NS_EXTERN SOCKET ns_sockdup(SOCKET sock);
-NS_EXTERN int ns_socknbclose(SOCKET sock);
 #define ns_sockclose               closesocket
 #define ns_sockioctl               ioctlsocket
 #define ns_sockerrno               GetLastError()
 #define ns_sockstrerror            NsWin32ErrMsg
 #else
-#define O_TEXT                     0
-#define O_BINARY                   0
-#define SOCKET                     int
-#define INVALID_SOCKET             (-1)
-#define SOCKET_ERROR               (-1)
-#define NS_EXPORT
 #define ns_sockclose               close
 #define ns_socknbclose             close
 #define ns_sockioctl               ioctl
@@ -419,47 +413,6 @@ typedef struct Ns_TclCallback {
     int             argc;
     char          **argv;
 } Ns_TclCallback;
-
-#ifdef _WIN32
-
-/*
- * Windows does not have this declared.
- * The defined value has no meaning.
- * It just have to exist and it needs
- * to be accepted by any strerror() call.
- */
-
-#ifndef ETIMEDOUT
-#define ETIMEDOUT 1
-#endif
-
-/*
- * The following structure defines an I/O
- * scatter/gather buffer for WIN32.
- */
-
-struct iovec {
-    u_long      iov_len;     /* the length of the buffer */
-    char FAR *  iov_base;    /* the pointer to the buffer */
-};
-
-/*
- * The following is for supporting
- * our own poll() emulation.
- */
-
-#define POLLIN  0x0001
-#define POLLPRI 0x0002
-#define POLLOUT 0x0004
-#define POLLERR 0x0008
-#define POLLHUP 0x0010
-struct pollfd {
-    int            fd;
-    unsigned short events;
-    unsigned short revents;
-};
-
-#endif /* _WIN32 */
 
 /*
  * The following structure defines a driver.
@@ -989,9 +942,6 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
 /*
  * cookies.c:
  */
-
-#define NS_COOKIE_SECURE      1  /* The cookie should only be sent using HTTPS */
-#define NS_COOKIE_SCRIPTABLE  2  /* Available to javascript on the client. */
 
 NS_EXTERN void Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
 NS_EXTERN void Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
@@ -1917,6 +1867,12 @@ NS_EXTERN void Ns_ClearSockErrno(void);
 NS_EXTERN int Ns_GetSockErrno(void);
 NS_EXTERN void Ns_SetSockErrno(int err);
 NS_EXTERN char *Ns_SockStrError(int err);
+
+#ifdef _WIN32
+NS_EXTERN char *NsWin32ErrMsg(int err);
+NS_EXTERN SOCKET ns_sockdup(SOCKET sock);
+NS_EXTERN int ns_socknbclose(SOCKET sock);
+#endif
 
 /*
  * sockcallback.c:

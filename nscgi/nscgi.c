@@ -41,14 +41,6 @@ NS_RCSID("@(#) $Header$");
 #define CGI_ECONTENT	4
 #define CGI_SYSENV	8
 
-#ifdef _WIN32
-#define S_ISREG(m)	((m)&_S_IFREG)
-#define S_ISDIR(m)	((m)&_S_IFDIR)
-#define DEVNULL	    "nul:"
-#else
-#define DEVNULL	    "/dev/null"
-#endif
-
 /*
  * The following structure is allocated for each instance the module is
  * loaded (normally just once).

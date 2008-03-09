@@ -61,7 +61,7 @@ extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 static Ns_Mutex block;
-static Ns_Mutex mlock;
+static Ns_Mutex slock;
 static Ns_Mutex lock;
 static Ns_Cond  cond;
 static Ns_Tls   key;
@@ -92,11 +92,11 @@ Msg(char *fmt,...)
 	*r = '\0';
     }
     va_start(ap, fmt);
-    Ns_MutexLock(&mlock);
+    Ns_MutexLock(&slock);
     printf("[%s][%s]: ", Ns_ThreadGetName(), s);
     vfprintf(stdout, fmt, ap);
     printf("\n");
-    Ns_MutexUnlock(&mlock);
+    Ns_MutexUnlock(&slock);
     va_end(ap);
 }
 
@@ -335,7 +335,7 @@ DumperThread(void *arg)
 	Ns_GetTime(&to);
 	Ns_IncrTime(&to, 1, 0);
 	Ns_CondTimedWait(&dcond, &dlock, &to);
-	Ns_MutexLock(&mlock);
+	Ns_MutexLock(&slock);
 	Ns_ThreadList(&ds, NULL);
 	DumpString(&ds);
 	Ns_MutexList(&ds);
@@ -344,7 +344,7 @@ DumperThread(void *arg)
 	Tcl_GetMemoryInfo(&ds);
 #endif
 	DumpString(&ds);
-	Ns_MutexUnlock(&mlock);
+	Ns_MutexUnlock(&slock);
     }
     Ns_MutexUnlock(&dlock);
     Ns_MutexUnlock(&block);
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
     Ns_ThreadCreate(DumperThread, NULL, 0, &dumper);
     Ns_MutexSetName(&lock, "startlock");
     Ns_MutexSetName(&dlock, "dumplock");
-    Ns_MutexSetName(&mlock, "msglock");
+    Ns_MutexSetName(&slock, "msglock");
     Ns_MutexSetName(&block, "busylock");
     Ns_ThreadStackSize(81920);
     Ns_SemaInit(&sema, 3);
