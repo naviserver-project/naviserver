@@ -11,9 +11,9 @@ ns_section	"ns/parameters"
 ns_param	home			$home
 ns_param	logdebug		true
 ns_param	logroll			true
-ns_param	tcllibrary		${home}/tcl
-ns_param	serverlog		${home}/logs/nsd.log
-ns_param	pidfile			${home}/logs/nsd.pid
+ns_param	tcllibrary		tcl
+ns_param	serverlog		nsd.log
+ns_param	pidfile			nsd.pid
 ns_param	dbcloseonexit		off
 ns_param	jobsperthread		1000
 ns_param	jobtimeout		0
@@ -63,7 +63,6 @@ ns_param	globalstats     	true
 ns_param	urlstats        	true
 ns_param	maxurlstats     	1000
 ns_param        checkmodifiedsince      true
-ns_param	enabletclpages  	true
 ns_param	connsperthread		1000
 ns_param        minthreads              5
 ns_param	maxthreads		100
@@ -74,7 +73,6 @@ ns_section	"ns/server/default/db"
 ns_param	pools			*
 
 ns_section	"ns/server/default/fastpath"
-ns_param	serverdir		${home}
 ns_param	pagedir        		pages
 ns_param	directoryfile		"index.adp index.tcl index.html index.htm"
 ns_param	directoryproc   	_ns_dirlist
@@ -91,21 +89,22 @@ ns_section	"ns/server/default/adp"
 ns_param	map             	"/*.adp"
 ns_param	enableexpire    	false
 ns_param	enabledebug     	true
+ns_param	enabletclpages  	true
 ns_param	singlescript		false
 ns_param	cache			false
 ns_param	cachesize		[expr 5000*1024]
 
 ns_section	"ns/server/default/tcl"
 ns_param	nsvbuckets		16
-ns_param	library			${home}/modules/tcl
+ns_param	library			modules/tcl
 
 ns_section      "ns/server/default/module/nscgi"
-ns_param        map                     "GET  /cgi-bin ${home}/cgi-bin"
-ns_param        map                     "POST /cgi-bin ${home}/cgi-bin"
+ns_param        map                     "GET  /cgi-bin [ns_info home]/cgi-bin"
+ns_param        map                     "POST /cgi-bin [ns_info home]/cgi-bin"
 ns_param        interps                 interps
 
 ns_section	"ns/server/default/module/nslog"
-ns_param	file			${home}/logs/access.log
+ns_param	file			access.log
 ns_param	rolllog         	true
 ns_param	rollonsignal    	false
 ns_param	rollhour        	0
