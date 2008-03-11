@@ -30,7 +30,6 @@
 # $Header$
 #
 
-DLL	 =  nscgi
 MOD      =  nscgi.so
 OBJS     =  nscgi.o
 include  ../include/Makefile.build

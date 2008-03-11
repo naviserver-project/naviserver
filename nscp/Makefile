@@ -30,7 +30,6 @@
 # $Header$
 #
 
-DLL	 =  nscp
 MOD      =  nscp.so
 OBJS     =  nscp.o
 include  ../include/Makefile.build

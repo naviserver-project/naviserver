@@ -35,7 +35,6 @@ MOD      =  nsperm.so
 OBJS     =  nsperm.o
 TCL      =  init.tcl compat.tcl
 MODINST	 =  cpfiles
-DLL	 = nsperm
 
 include ../include/Makefile.build
 

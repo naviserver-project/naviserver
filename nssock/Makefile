@@ -30,7 +30,6 @@
 # $Header$
 #
 
-DLL      =  nssock
 MOD      =  nssock.so
 OBJS     =  nssock.o
 include  ../include/Makefile.build
