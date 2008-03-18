@@ -31,7 +31,6 @@
 #define NSD_H
 
 #include "ns.h"
-#include <assert.h>
 
 #ifdef USE_TCLVFS
   #define FileChannel                  Tcl_Channel
@@ -61,28 +60,71 @@
  * Constants
  */
 
-#define NSD_NAME    "NaviServer"
-#define NSD_TAG     "$Name$"
-#define NSD_VERSION NS_PATCH_LEVEL
+#define NS_CONFIG_PARAMETERS           "ns/parameters"
+#define NS_CONFIG_THREADS              "ns/threads"
 
-#define NS_CONFIG_PARAMETERS "ns/parameters"
-#define NS_CONFIG_THREADS    "ns/threads"
+/*
+ * Various ADP option bits.
+ */
 
-#define ADP_OK         0
-#define ADP_BREAK      1
-#define ADP_ABORT      2
-#define ADP_RETURN     3
-#define ADP_TIMEOUT    4
+#define ADP_SAFE                       0x01    /* Use Tcl_SafeEval for ADP */
+#define ADP_SINGLE                     0x02    /* Combine blocks into a single script */
+#define ADP_DEBUG                      0x04    /* Enable debugging */
+#define ADP_EXPIRE                     0x08    /* Send Expires: now header on output */
+#define ADP_CACHE                      0x10    /* Enable output caching */
+#define ADP_TRACE                      0x20    /* Trace execution */
+#define ADP_GZIP                       0x80    /* Enable gzip compression */
+#define ADP_DETAIL                     0x100   /* Log connection details on error */
+#define ADP_STRICT                     0x200   /* Strict error handling */
+#define ADP_DISPLAY                    0x400   /* Display error messages in output stream */
+#define ADP_TRIM                       0x800   /* Display error messages in output stream */
+#define ADP_FLUSHED                    0x1000  /* Some output has been sent */
+#define ADP_ERRLOGGED                  0x2000    /* Error message has already been logged */
+#define ADP_AUTOABORT                  0x4000    /* Raise abort on flush error */
+#define ADP_ADPFILE                    0x8000  /* Object to evaluate is a file */
+#define ADP_STREAM                     0x10000 /* Enable ADP streaming */
+#define ADP_TCLFILE                    0x20000 /* Object to evaluate is a Tcl file */
 
-#define NSD_STRIP_WWW  1
-#define NSD_STRIP_PORT 2
+#define ADP_OK                         0
+#define ADP_BREAK                      1
+#define ADP_ABORT                      2
+#define ADP_RETURN                     3
+#define ADP_TIMEOUT                    4
+
+#define NSD_STRIP_WWW                  1
+#define NSD_STRIP_PORT                 2
+
+#define MAX_URLSPACES                  16
+
+#define CONN_TCLFORM                   1  /* Query form set is registered for interp */
+#define CONN_TCLHDRS                   2  /* Input headers set is registered for interp */
+#define CONN_TCLOUTHDRS                4  /* Output headers set is registered for interp */
+#define CONN_TCLAUTH                   8  /* 'auth' headers set is registered for interp */
+#define CONN_TCLHTTP                   16  /* HTTP headers requested by ns_headers */
+
+
+/*
+ * For the time being, don't try to be very clever
+ * and define (platform-neutral) just those two modes
+ * for mapping the files.
+ * Although the underlying implementation(s) can do
+ * much more, we really need only one (read-maps) now.
+ */
+
+#ifdef _WIN32
+  #define NS_MMAP_READ                 FILE_MAP_READ
+  #define NS_MMAP_WRITE                FILE_MAP_WRITE
+#else
+  #define NS_MMAP_READ                 PROT_READ
+  #define NS_MMAP_WRITE                PROT_WRITE
+#endif
 
 /*
  * The following is the default text/html content type
  * sent to the browser for html/adp etc. requests.
  */
 
-#define NSD_TEXTHTML "text/html"
+#define NSD_TEXTHTML                   "text/html"
 
 /*
  * Types definitions.
@@ -213,32 +255,16 @@ typedef struct WriterSock {
 
 typedef struct SpoolerQueue {
     struct SpoolerQueue *nextPtr;
-    void                *sockPtr;     /* List of submitted socket structures. */
-    void                *curPtr;      /* List of processed socket structures. */
-    SOCKET               pipe[2];     /* Trigger to wakeup WriterThread/SpoolerThread. */
-    Ns_Mutex             lock;        /* Lock around spooled list. */
-    Ns_Cond              cond;        /* Cond for stopped flag. */
-    Ns_Thread            thread;      /* Running WriterThread/Spoolerthread. */
-    int                  stopped;     /* Flag to indicate thread stopped. */
-    int                  shutdown;    /* Flag to indicate shutdown. */
+    void                *sockPtr;     /* List of submitted socket structures */
+    void                *curPtr;      /* List of processed socket structures */
+    SOCKET               pipe[2];     /* Trigger to wakeup WriterThread/SpoolerThread */
+    Ns_Mutex             lock;        /* Lock around spooled list */
+    Ns_Cond              cond;        /* Cond for stopped flag */
+    Ns_Thread            thread;      /* Running WriterThread/Spoolerthread */
+    int                  stopped;     /* Flag to indicate thread stopped */
+    int                  shutdown;    /* Flag to indicate shutdown */
     int                  id;
 } SpoolerQueue;
-
-/*
- * For the time being, don't try to be very clever
- * and define (platform-neutral) just those two modes
- * for mapping the files.
- * Although the underlying implementation(s) can do
- * much more, we really need only one (read-maps) now.
- */
-
-#ifdef _WIN32
-  #define NS_MMAP_READ   FILE_MAP_READ
-  #define NS_MMAP_WRITE  FILE_MAP_WRITE
-#else
-  #define NS_MMAP_READ   PROT_READ
-  #define NS_MMAP_WRITE  PROT_WRITE
-#endif
 
 /*
  * The following structure maintains an ADP call frame.
@@ -284,28 +310,6 @@ typedef struct AdpCode {
 #define AdpCodeBlocks(cp)	((cp)->nblocks)
 #define AdpCodeScripts(cp)	((cp)->nscripts)
 
-/*
- * Various ADP option bits.
- */
-
-#define ADP_SAFE	0x01	/* Use Tcl_SafeEval for ADP. */
-#define ADP_SINGLE	0x02	/* Combine blocks into a single script. */
-#define ADP_DEBUG	0x04	/* Enable debugging. */
-#define ADP_EXPIRE	0x08	/* Send Expires: now header on output. */
-#define ADP_CACHE	0x10	/* Enable output caching. */
-#define ADP_TRACE	0x20	/* Trace execution. */
-#define ADP_GZIP	0x80	/* Enable gzip compression. */
-#define ADP_DETAIL	0x100	/* Log connection details on error. */
-#define ADP_STRICT	0x200	/* Strict error handling. */
-#define ADP_DISPLAY	0x400	/* Display error messages in output stream. */
-#define ADP_TRIM	0x800	/* Display error messages in output stream. */
-#define ADP_FLUSHED	0x1000	/* Some output has been sent. */
-#define ADP_ERRLOGGED	0x2000	/* Error message has already been logged. */
-#define ADP_AUTOABORT	0x4000	/* Raise abort on flush error. */
-#define ADP_ADPFILE	0x8000	/* Object to evaluate is a file. */
-#define ADP_STREAM	0x10000	/* Enable ADP streaming. */
-#define ADP_TCLFILE	0x20000	/* Object to evaluate is a Tcl file. */
-
 
 /*
  * The following structure defines the entire request
@@ -313,22 +317,22 @@ typedef struct AdpCode {
  */
 
 typedef struct Request {
-    struct Request *nextPtr;    /* Next on free list. */
-    Ns_Request *request;        /* Parsed request line. */
-    Ns_Set *headers;            /* Input headers. */
-    Ns_Set *auth;               /* Auth user/password and parameters. */
-    char peer[16];              /* Client peer address. */
-    int port;                   /* Client peer port. */
+    struct Request *nextPtr;    /* Next on free list */
+    Ns_Request *request;        /* Parsed request line */
+    Ns_Set *headers;            /* Input headers */
+    Ns_Set *auth;               /* Auth user/password and parameters */
+    char peer[16];              /* Client peer address */
+    int port;                   /* Client peer port */
 
     /*
      * The following pointers are used to access the
      * buffer contents after the read-ahead is complete.
      */
 
-    char *next;                 /* Next read offset. */
-    char *content;              /* Start of content. */
-    Tcl_WideInt length;         /* Length of content. */
-    Tcl_WideInt avail;          /* Bytes avail in buffer. */
+    char *next;                 /* Next read offset */
+    char *content;              /* Start of content */
+    Tcl_WideInt length;         /* Length of content */
+    Tcl_WideInt avail;          /* Bytes avail in buffer */
     int leadblanks;             /* Number of leading blank lines read */
 
     /*
@@ -336,10 +340,10 @@ typedef struct Request {
      * the buffer read-ahead process.
      */
 
-    int woff;                   /* Next write buffer offset. */
-    int roff;                   /* Next read buffer offset. */
-    int coff;                   /* Content buffer offset. */
-    Tcl_DString buffer;         /* Request and content buffer. */
+    int woff;                   /* Next write buffer offset */
+    int roff;                   /* Next read buffer offset */
+    int coff;                   /* Content buffer offset */
+    Tcl_DString buffer;         /* Request and content buffer */
 
 } Request;
 
@@ -349,18 +353,18 @@ typedef struct Request {
  */
 
 typedef struct _DrvSpooler {
-    int threads;               /* Number of spooler threads to run. */
-    Ns_Mutex lock;             /* Lock around spooler queue. */
-    SpoolerQueue *firstPtr;    /* Spooler thread queue. */
+    int threads;               /* Number of spooler threads to run */
+    Ns_Mutex lock;             /* Lock around spooler queue */
+    SpoolerQueue *firstPtr;    /* Spooler thread queue */
     SpoolerQueue *curPtr;      /* Current spooler thread */
 } DrvSpooler;
 
 typedef struct _DrvWriter {
-    int threads;               /* Number of writer threads to run. */
-    int maxsize;               /* Max content size to use writer thread. */
-    int bufsize;               /* Size of the output buffer. */
-    Ns_Mutex lock;             /* Lock around writer queues. */
-    SpoolerQueue *firstPtr;    /* List of writer threads. */
+    int threads;               /* Number of writer threads to run */
+    int maxsize;               /* Max content size to use writer thread */
+    int bufsize;               /* Size of the output buffer */
+    Ns_Mutex lock;             /* Lock around writer queues */
+    SpoolerQueue *firstPtr;    /* List of writer threads */
     SpoolerQueue *curPtr;      /* Current writer thread */
 } DrvWriter;
 
@@ -370,41 +374,41 @@ typedef struct Driver {
      * Visible in Ns_Driver.
      */
 
-    void *arg;                  /* Driver callback data. */
-    char *server;               /* Virtual server name. */
-    char *module;               /* Driver module. */
-    char *name;                 /* Driver name. */
+    void *arg;                  /* Driver callback data */
+    char *server;               /* Virtual server name */
+    char *module;               /* Driver module */
+    char *name;                 /* Driver name */
     char *location;             /* Location, e.g, "http://foo:9090" */
     char *address;              /* Address in location, e.g. "foo" */
     char *protocol;             /* Protocol in location, e.g, "http" */
-    int   sendwait;             /* send() I/O timeout. */
-    int   recvwait;             /* recv() I/O timeout. */
+    int   sendwait;             /* send() I/O timeout */
+    int   recvwait;             /* recv() I/O timeout */
     int   bufsize;              /* Conn bufsize (0 for SSL) */
-    int   sndbuf;               /* setsockopt() SNDBUF option. */
-    int   rcvbuf;               /* setsockopt() RCVBUF option. */
+    int   sndbuf;               /* setsockopt() SNDBUF option */
+    int   rcvbuf;               /* setsockopt() RCVBUF option */
 
     /*
      * Private to Driver.
      */
 
-    struct Driver *nextPtr;     /* Next in list of drivers. */
-    struct NsServer *servPtr;   /* Driver virtual server. */
-    Ns_DriverProc *proc;        /* Driver callback. */
-    int opts;                   /* Driver options. */
-    int closewait;              /* Graceful close timeout. */
-    int keepwait;               /* Keepalive timeout. */
+    struct Driver *nextPtr;     /* Next in list of drivers */
+    struct NsServer *servPtr;   /* Driver virtual server */
+    Ns_DriverProc *proc;        /* Driver callback */
+    int opts;                   /* Driver options */
+    int closewait;              /* Graceful close timeout */
+    int keepwait;               /* Keepalive timeout */
     int keepallmethods;         /* Keepalive all methods or just GET? */
-    SOCKET sock;                /* Listening socket. */
-    int pidx;                   /* poll() index. */
-    char *bindaddr;             /* Numerical listen address. */
-    int port;                   /* Port in location. */
-    int backlog;                /* listen() backlog. */
-    Tcl_WideInt maxinput;       /* Maximum request bytes to read. */
-    Tcl_WideInt maxupload;      /* Uploads that exceed will go into temp file without parsing. */
+    SOCKET sock;                /* Listening socket */
+    int pidx;                   /* poll() index */
+    char *bindaddr;             /* Numerical listen address */
+    int port;                   /* Port in location */
+    int backlog;                /* listen() backlog */
+    Tcl_WideInt maxinput;       /* Maximum request bytes to read */
+    Tcl_WideInt maxupload;      /* Uploads that exceed will go into temp file without parsing */
     char *uploadpath;           /* Path where uploaded files will be spooled */
-    int maxline;                /* Maximum request line size. */
-    int maxheaders;             /* Maximum number of request headers. */
-    int readahead;              /* Maximum request size in memory. */
+    int maxline;                /* Maximum request line size */
+    int maxheaders;             /* Maximum number of request headers */
+    int readahead;              /* Maximum request size in memory */
     int queuesize;              /* Current number of sockets in the queue */
     int maxqueuesize;           /* Maximum number of sockets in the queue */
     int acceptsize;             /* Number requests to accept at once */
@@ -441,7 +445,7 @@ typedef struct Sock {
     struct NsServer *servPtr;
     char *location;
     int keep;
-    int pidx;                   /* poll() index. */
+    int pidx;                   /* poll() index */
     Ns_Time timeout;
     Request *reqPtr;
 
@@ -450,7 +454,7 @@ typedef struct Sock {
     size_t tsize;               /* size of mmap region */
     char *tfile;                /* name of regular temporary file */
 
-    void *sls[1];               /* Slots for sls storage. */
+    void *sls[1];               /* Slots for sls storage */
 
 } Sock;
 
@@ -471,22 +475,22 @@ typedef struct FormFile {
 
 typedef struct NsLimits {
     char            *name;
-    unsigned int     maxrun;    /* Max conns to run at once. */
-    unsigned int     maxwait;   /* Max conns waiting to run before being dropped. */
-    size_t	         maxupload; /* Max data accepted. */
-    int              timeout;   /* Seconds allowed for conn to complete. */
+    unsigned int     maxrun;    /* Max conns to run at once */
+    unsigned int     maxwait;   /* Max conns waiting to run before being dropped */
+    size_t	         maxupload; /* Max data accepted */
+    int              timeout;   /* Seconds allowed for conn to complete */
 
-    Ns_Mutex         lock;      /* Lock for state and stats. */
+    Ns_Mutex         lock;      /* Lock for state and stats */
 
     struct {
-        unsigned int nrunning;  /* Conns currently running. */
-        unsigned int nwaiting;  /* Conns waiting to run. */
+        unsigned int nrunning;  /* Conns currently running */
+        unsigned int nwaiting;  /* Conns waiting to run */
     } state;
 
     struct {
-        unsigned int ndropped;  /* Drops due to ... */
-        unsigned int noverflow; /* Max upload exceeded. */
-        unsigned int ntimeout;  /* Timeout exceeded. */
+        unsigned int ndropped;  /* Drops due to .. */
+        unsigned int noverflow; /* Max upload exceeded */
+        unsigned int ntimeout;  /* Timeout exceeded */
     } stats;
 
 } NsLimits;
@@ -520,7 +524,7 @@ typedef struct Conn {
     struct Sock *sockPtr;
 
     NsLimits *limitsPtr; /* Per-connection limits */
-    Ns_Time   timeout;   /* Absolute timeout (startTime + limit). */
+    Ns_Time   timeout;   /* Absolute timeout (startTime + limit) */
 
     /*
      * The following are copied from sockPtr so they're valid
@@ -710,7 +714,6 @@ typedef struct NsServer {
      * The following array maintains url-specific data.
      */
 
-#define MAX_URLSPACES 16
     struct Junction *urlspace[MAX_URLSPACES];
 
     /*
@@ -866,12 +869,6 @@ typedef struct NsInterp {
      * the active connection, if any, and support the ns_conn
      * command.
      */
-
-#define CONN_TCLFORM    1  /* Query form set is registered for interp. */
-#define CONN_TCLHDRS    2  /* Input headers set is registered for interp. */
-#define CONN_TCLOUTHDRS 4  /* Output headers set is registered for interp. */
-#define CONN_TCLAUTH    8  /* 'auth' headers set is registered for interp. */
-#define CONN_TCLHTTP   16  /* HTTP headers requested by ns_headers. */
 
     Ns_Conn *conn;
 

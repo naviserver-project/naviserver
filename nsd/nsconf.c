@@ -75,10 +75,10 @@ NsInitConf(void)
     Ns_MutexInit(&nsconf.state.lock);
     Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
 
-    nsconf.build	 = nsBuildDate;
-    nsconf.name          = NSD_NAME;
-    nsconf.version       = NSD_VERSION;
-    nsconf.tcl.version	 = TCL_VERSION;
+    nsconf.build = nsBuildDate;
+    nsconf.name = PACKAGE_NAME;
+    nsconf.version = PACKAGE_VERSION;
+    nsconf.tcl.version = TCL_VERSION;
 
     time(&nsconf.boot_t);
     nsconf.pid = getpid();

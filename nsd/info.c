@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * info.c --
  *
  *  Ns_Info* API and ns_info command support.
@@ -53,13 +53,13 @@ static Ns_ThreadArgProc ThreadArgProc;
  *
  * Ns_InfoHomePath --
  *
- *      Return the home dir. 
+ *      Return the home dir.
  *
  * Results:
- *      Home dir. 
+ *      Home dir.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -76,13 +76,13 @@ Ns_InfoHomePath(void)
  *
  * Ns_InfoServerName --
  *
- *      Return the server name. 
+ *      Return the server name.
  *
  * Results:
- *      Server name 
+ *      Server name
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -99,13 +99,13 @@ Ns_InfoServerName(void)
  *
  * Ns_InfoServerVersion --
  *
- *      Returns the server version 
+ *      Returns the server version
  *
  * Results:
- *      String server version. 
+ *      String server version.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -122,13 +122,13 @@ Ns_InfoServerVersion(void)
  *
  * Ns_InfoConfigFile --
  *
- *      Returns path to config file. 
+ *      Returns path to config file.
  *
  * Results:
- *      Path to config file. 
+ *      Path to config file.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -145,13 +145,13 @@ Ns_InfoConfigFile(void)
  *
  * Ns_InfoPid --
  *
- *      Returns server's PID 
+ *      Returns server's PID
  *
  * Results:
- *      PID (tread like pid_t) 
+ *      PID (tread like pid_t)
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -174,7 +174,7 @@ Ns_InfoPid(void)
  *      Name of executable, string.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -191,13 +191,13 @@ Ns_InfoNameOfExecutable(void)
  *
  * Ns_InfoPlatform --
  *
- *      Return platform name 
+ *      Return platform name
  *
  * Results:
- *      Platform name, string. 
+ *      Platform name, string.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -245,13 +245,13 @@ Ns_InfoPlatform(void)
  *
  * Ns_InfoUptime --
  *
- *      Returns time server has been up. 
+ *      Returns time server has been up.
  *
  * Results:
  *      Seconds server has been running.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -268,13 +268,13 @@ Ns_InfoUptime(void)
  *
  * Ns_InfoBootTime --
  *
- *      Returns time server started. 
+ *      Returns time server started.
  *
  * Results:
- *      Treat as time_t. 
+ *      Treat as time_t.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -291,13 +291,13 @@ Ns_InfoBootTime(void)
  *
  * Ns_InfoHostname --
  *
- *      Return server hostname 
+ *      Return server hostname
  *
  * Results:
- *      Hostname 
+ *      Hostname
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -321,7 +321,7 @@ Ns_InfoHostname(void)
  *      Primary (first) IP address of this machine.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -338,13 +338,13 @@ Ns_InfoAddress(void)
  *
  * Ns_InfoBuildDate --
  *
- *      Returns time server was compiled. 
+ *      Returns time server was compiled.
  *
  * Results:
- *      String build date and time. 
+ *      String build date and time.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -361,13 +361,13 @@ Ns_InfoBuildDate(void)
  *
  * Ns_InfoShutdownPending --
  *
- *      Boolean: is a shutdown pending? 
+ *      Boolean: is a shutdown pending?
  *
  * Results:
- *      NS_TRUE: yes, NS_FALSE: no 
+ *      NS_TRUE: yes, NS_FALSE: no
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -390,13 +390,13 @@ Ns_InfoShutdownPending(void)
  *
  * Ns_InfoStarted --
  *
- *      Boolean: has the server started up all the way yet? 
+ *      Boolean: has the server started up all the way yet?
  *
  * Results:
- *      NS_TRUE: yes, NS_FALSE: no 
+ *      NS_TRUE: yes, NS_FALSE: no
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -419,10 +419,10 @@ Ns_InfoStarted(void)
  *
  * Ns_InfoServersStarted --
  *
- *      Compatability function, same as Ns_InfoStarted 
+ *      Compatability function, same as Ns_InfoStarted
  *
  * Results:
- *      See Ns_InfoStarted 
+ *      See Ns_InfoStarted
  *
  * Side effects:
  *      None.
@@ -445,10 +445,10 @@ Ns_InfoServersStarted(void)
  *      Returns CVS tag of this build (meaningless without "cvs export").
  *
  * Results:
- *      A string version name. 
+ *      A string version name.
  *
  * Side effects:
- *      None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -456,7 +456,7 @@ Ns_InfoServersStarted(void)
 char *
 Ns_InfoTag(void)
 {
-    return NSD_TAG;
+    return "$Name$";
 }
 
 
@@ -465,13 +465,13 @@ Ns_InfoTag(void)
  *
  * NsTclInfoObjCmd --
  *
- *      Implements ns_info. 
+ *      Implements ns_info.
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -513,9 +513,9 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                             &opt) != TCL_OK) {
         return TCL_ERROR;
     }
-    
+
     Tcl_DStringInit(&ds);
-    
+
     switch (opt) {
     case IArgv0Idx:
         Tcl_SetResult(interp, nsconf.argv0, TCL_STATIC);
@@ -532,80 +532,80 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case INsdIdx:
         Tcl_SetResult(interp, nsconf.nsd, TCL_STATIC);
         return TCL_OK;
-        
+
     case INameIdx:
         Tcl_SetResult(interp, Ns_InfoServerName(), TCL_STATIC);
         return TCL_OK;
-        
+
     case IConfigIdx:
         Tcl_SetResult(interp, Ns_InfoConfigFile(), TCL_STATIC);
         return TCL_OK;
-        
+
     case ICallbacksIdx:
         NsGetCallbacks(&ds);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
-        
+
     case ISockCallbacksIdx:
         NsGetSockCallbacks(&ds);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
-        
+
     case IScheduledIdx:
         NsGetScheduled(&ds);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
-        
+
     case ILocksIdx:
         Ns_MutexList(&ds);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
-        
+
     case IThreadsIdx:
         Ns_ThreadList(&ds, ThreadArgProc);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
-        
+
     case IPoolsIdx:
 #ifdef HAVE_TCL_GETMEMORYINFO
         Tcl_GetMemoryInfo(&ds);
         Tcl_DStringResult(interp, &ds);
 #endif
         return TCL_OK;
-        
+
     case ILogIdx:
         elog = Ns_InfoErrorLog();
         Tcl_SetResult(interp, elog == NULL ? "STDOUT" : elog, TCL_STATIC);
         return TCL_OK;
-        
+
     case IPlatformIdx:
         Tcl_SetResult(interp, Ns_InfoPlatform(), TCL_STATIC);
         return TCL_OK;
-        
+
     case IHostNameIdx:
         Tcl_SetResult(interp, Ns_InfoHostname(), TCL_STATIC);
         return TCL_OK;
-        
+
     case IAddressIdx:
         Tcl_SetResult(interp, Ns_InfoAddress(), TCL_STATIC);
         return TCL_OK;
-        
+
     case IUptimeIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoUptime()));
         return TCL_OK;
-        
+
     case IBoottimeIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoBootTime()));
         return TCL_OK;
-        
+
     case IPidIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoPid()));
         return TCL_OK;
-        
+
     case IMajorIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MAJOR_VERSION));
         return TCL_OK;
-        
+
     case IMinorIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj(NS_MINOR_VERSION));
         return TCL_OK;
@@ -614,19 +614,19 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         NsGetMimeTypes(&ds);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
-        
+
     case IVersionIdx:
         Tcl_SetResult(interp, NS_VERSION, TCL_STATIC);
         return TCL_OK;
-        
+
     case IPatchLevelIdx:
         Tcl_SetResult(interp, NS_PATCH_LEVEL, TCL_STATIC);
         return TCL_OK;
-        
+
     case IHomeIdx:
         Tcl_SetResult(interp, Ns_InfoHomePath(), TCL_STATIC);
         return TCL_OK;
-        
+
     case IWinntIdx:
 #ifdef _WIN32
         Tcl_SetResult(interp, "1", TCL_STATIC);
@@ -634,20 +634,20 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         Tcl_SetResult(interp, "0", TCL_STATIC);
 #endif
         return TCL_OK;
-        
+
     case IBuilddateIdx:
         Tcl_SetResult(interp, Ns_InfoBuildDate(), TCL_STATIC);
         return TCL_OK;
-        
+
     case ITagIdx:
         Tcl_SetResult(interp, Ns_InfoTag(), TCL_STATIC);
         return TCL_OK;
-        
+
     case IServersIdx:
         Tcl_SetResult(interp, nsconf.servers.string, TCL_STATIC);
         return TCL_OK;
     }
-    
+
     /*
      * The following subcommands require a virtual server.
      */
@@ -705,13 +705,13 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
  *
  * NsTclLibraryCmd --
  *
- *  Implements ns_library. 
+ *  Implements ns_library.
  *
  * Results:
- *  Tcl result. 
+ *  Tcl result.
  *
  * Side effects:
- *  See docs. 
+ *  See docs.
  *
  *----------------------------------------------------------------------
  */

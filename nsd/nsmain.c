@@ -256,7 +256,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
     }
     if (mode == 'V') {
-        printf("NaviServer/%s\n", NSD_VERSION);
+        printf("%s/%s\n", PACKAGE_NAME, PACKAGE_VERSION);
         printf("   CVS Tag:         %s\n", Ns_InfoTag());
         printf("   Built:           %s\n", Ns_InfoBuildDate());
         printf("   Tcl version:     %s\n", nsconf.tcl.version);

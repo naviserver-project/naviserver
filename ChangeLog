@@ -1,3 +1,8 @@
+2008-03-18  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsd/nsmain.c:
+	* nsd/nsd.h: Use PACKAGE_XXXX macros for consistency
+
 2008-03-11  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* Remove Makefile.win32 everywhere, this build model is not supported and
