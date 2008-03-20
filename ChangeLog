@@ -1,3 +1,10 @@
+2008-03-20  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/nswin32.c: Use PACKAGE_NAME
+	* nsd/tclresp.c:
+	* nsd/tclcmds.c: Added ns_internalredirect command and 
+	NsTclInternalRedirectObjCmd
+
 2008-03-18  Vlad Seryakov  <seryakov@users.sf.net>
 
 	* nsd/nsmain.c:

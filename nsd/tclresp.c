@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -31,7 +31,7 @@
 /*
  * tclresp.c --
  *
- *      Tcl commands for returning data to the user agent. 
+ *      Tcl commands for returning data to the user agent.
  */
 
 #include "nsd.h"
@@ -177,7 +177,7 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         encoding = Ns_GetTypeEncoding(type);
     }
 
-    if (encoding != NULL) {    
+    if (encoding != NULL) {
         Ns_ConnSetEncoding(conn, encoding);
     }
     conn->flags |= NS_CONN_SENTHDRS;
@@ -393,7 +393,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     if (chanid != NULL && length < 0) {
-        Tcl_SetResult(interp, "length required when -fileid is used", 
+        Tcl_SetResult(interp, "length required when -fileid is used",
                       TCL_STATIC);
         return TCL_ERROR;
     }
@@ -473,7 +473,7 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
@@ -489,8 +489,8 @@ NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (Tcl_GetIntFromObj(interp, objv[1], &status) != TCL_OK) {
         return TCL_ERROR;
     }
-    
-    result = Ns_ConnReturnFile(conn, status, Tcl_GetString(objv[2]), 
+
+    result = Ns_ConnReturnFile(conn, status, Tcl_GetString(objv[2]),
                                Tcl_GetString(objv[3]));
 
     return Result(interp, result);
@@ -580,7 +580,7 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) 
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan)
         != TCL_OK) {
         return TCL_ERROR;
     }
@@ -618,7 +618,7 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                             Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
@@ -657,7 +657,7 @@ NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 static int
-ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_Obj *CONST objv[], int (*proc) (Ns_Conn *))
 {
     Ns_Conn *conn;
@@ -670,7 +670,7 @@ ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 }
 
 int
-NsTclReturnNotFoundObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclReturnNotFoundObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[])
 {
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnNotFound);
@@ -760,7 +760,7 @@ NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
@@ -802,7 +802,7 @@ NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
+NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn;
@@ -817,6 +817,42 @@ NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     result = Ns_ConnReturnRedirect(conn, Tcl_GetString(objv[1]));
+
+    return Result(interp, result);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclInternalRedirectObjCmd --
+ *
+ *	Implements ns_internalredirect as obj command.
+ *
+ * Results:
+ *	Tcl result.
+ *
+ * Side effects:
+ *	See docs.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclInternalRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+			  Tcl_Obj *CONST objv[])
+{
+    Ns_Conn *conn;
+    int      result;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "location");
+        return TCL_ERROR;
+    }
+    if (GetConn(arg, interp, &conn) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    result = Ns_ConnRedirect(conn, Tcl_GetString(objv[1]));
 
     return Result(interp, result);
 }

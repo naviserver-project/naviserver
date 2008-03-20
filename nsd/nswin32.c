@@ -261,7 +261,7 @@ NsConnectService(void)
 
     service = 1;
 
-    table[0].lpServiceName = NSD_NAME;
+    table[0].lpServiceName = PACKAGE_NAME;
     table[0].lpServiceProc = ServiceMain;
     table[1].lpServiceName = NULL;
     table[1].lpServiceProc = NULL;
@@ -849,7 +849,7 @@ ConsoleHandler(DWORD ignored)
 static char *
 GetServiceName(Ns_DString *dsPtr, char *server)
 {
-    Ns_DStringVarAppend(dsPtr, NSD_NAME, "-", server, NULL);
+    Ns_DStringVarAppend(dsPtr, PACKAGE_NAME, "-", server, NULL);
     return dsPtr->string;
 }
 
