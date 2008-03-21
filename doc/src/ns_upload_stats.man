@@ -15,7 +15,7 @@ file is uploaded completely this statistics is removed from the local cache.
 
 [call [cmd ns_upload_stats] [arg url]]
 
-[nl]
+[para]
 [arg url]
 This is the url where the file is being uploaded
 

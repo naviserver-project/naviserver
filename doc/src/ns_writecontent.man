@@ -12,7 +12,7 @@ This function writes all the content (including any embedded null characters) to
 
 [call [cmd ns_writecontent] [arg fileid]]
 
-[nl]
+[para]
 [arg fileid]
 Opened Tcl stream
 

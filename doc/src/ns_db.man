@@ -81,7 +81,7 @@ more. If you request multiple handles from the database, this function returns a
 handles (space delimited). In this case, each handle must be released with a separate call to ns_db
 releasehandle.
 
-[nl]
+[para]
 If a timeout is not specified or timeout is zero, ns_db gethandle will wait indefinitely
 (perhaps forever) for the requested number of handles to become available. If timeout is
 greater than zero, ns_db gethandle will either return with the handles within that time

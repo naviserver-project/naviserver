@@ -13,10 +13,10 @@ interpreted as literal characters to be displayed.  Specifically:
 ns_quotehtml > becomes &amp;
 
 [list_begin definitions]
-[lst_item] > becomes &amp;gt;
-[lst_item] " becomes &amp;amp;
-[lst_item] ' becomes &amp;#39;
-[lst_item] " becomes &amp;#34;
+[def] > becomes &amp;gt;
+[def] " becomes &amp;amp;
+[def] ' becomes &amp;#39;
+[def] " becomes &amp;#34;
 [list_end]
 
  All other characters are unmodified in the output.

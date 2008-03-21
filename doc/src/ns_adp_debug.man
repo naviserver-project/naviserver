@@ -12,15 +12,15 @@ to auto-instrument
 
 [call [cmd ns_adp_debug] [arg procs] [arg host] [arg port]]]
 
-[nl]
+[para]
 [arg procs]
 Pattern of procs to be debugged
 
-[nl]
+[para]
 [arg host]
 Host where TclProc is running
 
-[nl]
+[para]
 [arg port]
 Port TcPro is listening
 

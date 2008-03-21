@@ -13,7 +13,7 @@ SHA1 generates an almost-unique 160-bit signature for a text.
 
 [call [cmd ns_sha1] [arg string]]
 
-[nl]
+[para]
 [arg string]
 String from which hash should be produced
 

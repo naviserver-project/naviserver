@@ -1,0 +1,98 @@
+[manpage_begin ns_schedule n 4.99]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Scheduling Tcl scripts}]
+
+[description]
+
+These commands perform scheduling of Tcl scripts at various intervals. Script will run in
+separate thread as background procedures. This functionality is similar to Unix cron.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_schedule_weekly] [opt [arg -once]] [opt [arg -thread]] [arg day] [arg hour] [arg minute] [arg script]]
+
+
+This command schedules a script to be run on a certain day of the week at a
+certain hour and minute of that day.  Returns the ID of the newly scheduled script.
+The week starts on Sunday as day zero and runs to Saturday as day six.  If -once is
+specified, then the script is run once and then unscheduled, otherwise it will continue
+to run every week on that day at that time.  If -thread is specified, then the script
+will be run in its own thread, otherwise it will run in the scheduler's thread.  If
+the script is long-running, this may interfere with the running of other scheduled
+scripts, so long-running scripts should be run in their own threads.
+
+NOTE: day, hour and minute are specified in local time.  Beware of Daylight Savings Time
+shifts affecting the time of day when the script will execute.
+
+[example_begin]
+   % set id [lb][lb]ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }[rb][rb]
+   123
+[example_end]
+
+[example_begin]
+   % ns_unschedule_proc $id
+[example_end]
+
+
+[call [cmd ns_schedule_daily] [opt [arg -once]] [opt [arg -thread]] [arg hour] [arg minute] [arg script]]
+
+This command schedules a script to be run at a certain hour and minute of the day.
+Returns the ID of the newly scheduled script.  If -once is specified, then the script
+is run once and then unscheduled, otherwise it will continue to run every day at that
+time.  If -thread is specified, then the script will be run in its own thread,
+otherwise it will run in the scheduler's thread.  If the script is long-running,
+this may interfere with the running of other scheduled scripts, so long-running scripts should
+be run in their own threads.
+
+NOTE: hour and minute are specified in local time.  Beware of Daylight Savings Time
+shifts affecting the time of day when the script will execute.
+
+[example_begin]
+   % set id [lb][lb]ns_schedule_daily -once 5 35 { ns_log notice "It is now 5:35 AM." }[rb][rb]
+   123
+[example_end]
+
+[example_begin]
+   % ns_unschedule_proc $id
+[example_end]
+
+
+[call [cmd ns_schedule_proc] [opt [arg {-once}]] [opt [arg -thread]] [arg interval] [arg script]]
+
+This command schedules a script to be run after a certain number of seconds.
+Returns the ID of the newly scheduled script.  If -once is specified, then the
+script is run once and then unscheduled, otherwise it will continue to run every
+interval seconds.  If -thread is specified, then the script will be run in its
+own thread, otherwise it will run in the scheduler's thread.  If the script is
+long-running, this may interfere with the running of other scheduled scripts,
+so long-running scripts should be run in their own threads.
+
+[example_begin]
+   % set id [lb][lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb][rb]
+   123
+[example_end]
+
+
+[call [cmd ns_unschedule_proc] [arg id]]
+
+ns_unschedule_proc command unschedules a  previous  scheduled  script.
+
+[para]
+NOTE: Current  behavior  is  to silently return without error if the id
+doesn't represent a currently scheduled ID.
+
+[example_begin]
+   % ns_unschedule_proc $id
+[example_end]
+
+
+[list_end]
+
+[see_also nsd]
+[keywords ns_after ns_info scheduled ns_pause ns_resume ns_schedule_proc ns_schedule_daily ns_unschedule_proc]
+
+[manpage_end]
+

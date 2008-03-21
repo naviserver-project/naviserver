@@ -13,7 +13,7 @@ The usual way to specify them in the config file.
 
 [call [cmd ns_moduleload] [opt [arg -global]] [opt [arg {-init init}]] [arg module] [arg file]]
 
-[nl]
+[para]
 [arg -global]
 Load globally, not into virtual server
 

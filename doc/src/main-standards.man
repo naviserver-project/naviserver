@@ -33,9 +33,9 @@ Each module will be named ns[emph {xxx}], where [emph {xxx}] is a short
 name that describes the module. Each module will have its own
 directory, and contain at least the following files:
 
-[list_begin bullet]
-[bullet] ns[emph {xxx}].c
-[bullet] Makefile
+[list_begin itemized]
+[item] ns[emph {xxx}].c
+[item] Makefile
 
 [list_end]
 
@@ -438,7 +438,7 @@ type names always start with an uppercase letter.
 [enum]In multi-word names, the first letter of each word after the first
 is in uppercase. For example,
 
-[nl]
+[para]
 
 
 [emph {int nsThreadTimeout;}]
@@ -452,7 +452,7 @@ variables that refer to null-terminated strings. Also, static buffers
 should not have the Ptr suffix, as in this case:
 
 
-[nl]
+[para]
 
 
 [emph {char buf[32];}]
@@ -461,7 +461,7 @@ should not have the Ptr suffix, as in this case:
 
 [enum]Variables that hold address of procedures should have names ending
 in Proc, as should typedefs for such variables.
-[nl]
+[para]
  [emph {typedef int
 (ns_OpProc) (void *argPtr, ns_Conn *connPtr) ns_OpProc
 *opProc;}]
@@ -531,12 +531,12 @@ spaces):
 [example_end]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Indents are four spaces
+[item] Indents are four spaces
 
 
-[bullet] Code comments occupy full lines, with empty lines before and
+[item] Code comments occupy full lines, with empty lines before and
 after, as such:
 
 
@@ -554,7 +554,7 @@ bar();
 
 
 
-[bullet] Opening curly braces go at the end of a line, except for the
+[item] Opening curly braces go at the end of a line, except for the
 beginnings of functions, as such:
 
 
@@ -580,7 +580,7 @@ and
 [example_end]
 
 
-[bullet] Always put a blank line after variable definitions:
+[item] Always put a blank line after variable definitions:
 
 
 [example_begin]
@@ -601,7 +601,7 @@ FooBar(void)
 [example_end]
 
 
-[bullet] Use curly braces even if you don't have to, such as in if
+[item] Use curly braces even if you don't have to, such as in if
 statements that have only statement in the block. There is an
 exception to this, which is else if clauses which may look like
 this:
@@ -623,14 +623,14 @@ if (!strcmp(cmd, &quot;put&quot;)) {
 [example_end]
 
 
-[bullet] No line should exceed 79 characters. The only exception to this is CVS
+[item] No line should exceed 79 characters. The only exception to this is CVS
 headers because they have an external dependency.
 
-[bullet] Labels are indented four spaces fewer than statements, except when
+[item] Labels are indented four spaces fewer than statements, except when
 they would touch the left margin, in which case they are indented one
 space in from the left margin.
 
-[bullet] Switch statements should look like this:
+[item] Switch statements should look like this:
 
 
 [example_begin]
@@ -649,7 +649,7 @@ case ADP_BREAK:
 [example_end]
 
 
-[bullet] Avoid macros except for extremely simple operations. Enclose
+[item] Avoid macros except for extremely simple operations. Enclose
 arguments in parentheses, as well as the entire macro
 expression:
 
@@ -661,17 +661,17 @@ expression:
 [example_end]
 
 
-[bullet] Do not use bit fields
+[item] Do not use bit fields
 
-[bullet] Goto statements may be used as long as they jump to the end of a
+[item] Goto statements may be used as long as they jump to the end of a
 function that then performs cleanup and returns. They are an excellent
 way of ensuring that functions have only one exit point. Most other
 uses of goto are, as usual, looked on with disdain.
 
-[bullet] Common sense applies when using obscure or confusing parts of the
+[item] Common sense applies when using obscure or confusing parts of the
 C language. For example, don't do this:
 
-[nl]
+[para]
 
 
 
@@ -684,9 +684,9 @@ if (++c != NULL) {
 [example_end]
 
 
-[bullet] Where it is sensible, have only one return statement in each function.
+[item] Where it is sensible, have only one return statement in each function.
 
-[bullet] Complex if statements (such as those with three or more expressions)
+[item] Complex if statements (such as those with three or more expressions)
 should have newline breaks after the operator separating each expression.
 In this case, put two newlines after the open brace to separate the
 conditions from the code that follows.
@@ -705,13 +705,13 @@ if (foo == bar &&
 [example_end]
 
 
-[bullet] When there are multiple variables defined in a block, the first letter
+[item] When there are multiple variables defined in a block, the first letter
 of each variable name should line up, with asterisks running to the left.
 There should not be multiple variables defined on the same line unless the
 relationship between them is obvious. Non-obvious variables may be
 commented to the right.
 
-[nl]
+[para]
 The leftmost asterisk should begin on the column that is one space
 after the rightmost character of the longest type name. If there are no
 pointers, then every variable name should begin on the column that is one space
@@ -752,7 +752,7 @@ function calls and complicated expressions deserve their own lines of code.
 
 
 
-[bullet] In pointer definitions, be they local variables,
+[item] In pointer definitions, be they local variables,
 global variables, parameters, or static functions prototypes,
 the asterisk should always make
 contact with the first character of the symbol. In typecasts, there should
@@ -766,7 +766,7 @@ int *fooPtr = (int *) barPtr;
 
 [example_end]
 
-[bullet] If a function ends with a return statement which is neither the only
+[item] If a function ends with a return statement which is neither the only
 statement in the function body and is not preceeded by a label, an empty
 line should appear before it:
 
@@ -794,8 +794,8 @@ Foo(void)
 
 The following conventions are frequently used in NaviServer. They
 are the recommended way of implementing a behavior.
-[list_begin bullet]
-[bullet] Configuration parameters should be defined at the top of source files, as
+[list_begin itemized]
+[item] Configuration parameters should be defined at the top of source files, as
 such:
 
 
@@ -811,7 +811,7 @@ such:
 
 
 
-[bullet] C is not PL/I. Write this:
+[item] C is not PL/I. Write this:
 
 
 [example_begin]
@@ -841,7 +841,7 @@ return (sqrt(variance) + foo() / bar() - (MAGIC + getch()) % 99);
 [example_end]
 
 
-[bullet] Booleans can only have two values: NS_TRUE and NS_FALSE.
+[item] Booleans can only have two values: NS_TRUE and NS_FALSE.
 Using 0 and 1 as boolean values is discouraged. Also avoid using the
 conventions of <code>if (foo)</code> and <code>if (!foo)</code>; rather, say:
 
@@ -873,9 +873,9 @@ be compared with NS_TRUE or NS_FALSE, nor should NS_TRUE or NS_FALSE values
 ever be passed to outside code.
 
 
-[bullet] Explicit checks for 0 values are usually preferred over implicit checks.
+[item] Explicit checks for 0 values are usually preferred over implicit checks.
 
-[nl]
+[para]
 
 For pointers, use <code>NULL</code>:
 

@@ -30,13 +30,13 @@ given value and the previous value is returned.
 [call [cmd ns_adp_ctl] [arg trimspace] [opt [arg bool]]]
 
 
-[nl]
+[para]
 [arg bufsize]
 This command returns the currently
 ADP output buffer size, setting it to a new value if the
 optionial size argument is specified.
 
-[nl] [arg chan]
+[para] [arg chan]
 This command is used to specify an
 open file channel to receive output when the buffer is
 flushed. If channel is the null string, the output
@@ -44,14 +44,14 @@ channel is cleared. This capability can be useful for
 specialized uses of ADP outside the context of an HTTP
 connection, e.g., for debugging or testing.
 
-[nl]
+[para]
 [arg autoabort]
 Query or set the autoabort option. When enabled, failure to flush a
 buffer (normally the result of a closed HTTP connection)
 generates an ADP exception, unwinding the ADP call
 stack.
 
-[nl]
+[para]
 [arg detailerror]
 Query or set the detailerror option. When enabled, errors in ADP pages
 are formatted with information about the context of the HTTP
@@ -61,7 +61,7 @@ cookie headers) contains personal or sensitive data. Errors
 are logged to the server log and, if <i>displayerror</i> is
 enabled, appened to the output buffer.
 
-[nl]
+[para]
 [arg displayerror]
 Query or set the displayerror option. When enabled, errors in ADP
 pages are formatted and appended to the output stream,
@@ -69,7 +69,7 @@ normally visiable to a user&rsquo;s browser. This option
 should generally be enabled in development and disabled in
 production.
 
-[nl]
+[para]
 [arg expire]
 Query or set the expire option. When enabled, the ADP request
 processing code adds an "Expires: now" header in the response buffer to
@@ -77,7 +77,7 @@ disable any caching. In practice, more thoughtful cache
 control mechanisms should be used based on the HTTP/1.1
 spec.
 
-[nl]
+[para]
 [arg gzip]
 Query or set the gzip option.
 When enabled, the output buffer is compressed before being
@@ -85,20 +85,20 @@ returned in the response. As ADP&rsquo;s are generally used
 to generate text data such as HTML or XML, compression is
 normally quite successful at reducing the response size.
 
-[nl]
+[para]
 [arg cache]
 Query or set the cache option. When disabled, all requests
 to cache executed ADP blocks via the ns_adp_include -cache directive are
 ignored, resulting in normal execution of all code.
 
-[nl]
+[para]
 [arg safe]
 Query or set the safe option.
 When enabled, all code is executed in &quot;safe&quot; mode,
 disabling and ignoring any code within &lt;% registered
 tags.
 
-[nl]
+[para]
 [arg singlescript]
 Query or set the singlescript option. When enabled, ADP pages are
 converted from independent text-script blocks into a single
@@ -112,18 +112,18 @@ in production leaving it disabled provides a more defensive
 execution environment where minor errors in one ADP do not
 inhibit execution of the overall page.
 
-[nl]
+[para]
 [arg stricterror]
 Query or set the stricterror option. When enabled, the result is
 similar to that of singlescript in that an error in a
 particular block will return the entire page instead of
 continuing to the next text or script block.
 
-[nl]
+[para]
 [arg trace]
 Query or set the <i>trace</i> option which currently does nothing.
 
-[nl]
+[para]
 [arg trimspace]
 Query or set the trimspace option. When enabled, any white space at
 the start of the output buffer is eliminated. White space

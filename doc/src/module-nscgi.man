@@ -88,7 +88,7 @@ automatically generate a page and send it back to your reader.
 
 
 
-[nl]
+[para]
 
 
 The METHOD controls how the information typed into the form is
@@ -96,7 +96,7 @@ passed to your program. It can be "GET" or "POST". The ACTION
 determines which program should be run.
 
 
-[nl]
+[para]
 
 
 Other ways for a reader to run a program are by providing a direct
@@ -117,7 +117,7 @@ variables through a form, or by using the ISINDEX tag.
      scripts, or Fortran.
 
 
-[nl]
+[para]
 
 
      In this example, the program takes the comments from the form as
@@ -211,9 +211,9 @@ To enable and configure CGI:
     Perl or a shell script, you will need to define an Interpreter in
     the Interps section. Follow these steps:
 
-    [list_begin bullet]
+    [list_begin itemized]
 
-    [bullet] Add a definition for the Interps parameter to your CGI
+    [item] Add a definition for the Interps parameter to your CGI
         configuration section. For example:
 
 
@@ -227,7 +227,7 @@ To enable and configure CGI:
 [example_end]
 
 
-    [bullet] Then add an interpreter section containing interpreter
+    [item] Then add an interpreter section containing interpreter
         definitions. For example:
 
 
@@ -243,15 +243,15 @@ To enable and configure CGI:
 
 [list_end]
 
-[nl]
+[para]
 
 
 [enum]If the interpreter requires environment variables, you will need
     to define an Environment section. Follow these steps:
 
-    [list_begin bullet]
+    [list_begin itemized]
 
-    [bullet] Add a definition for the Environment parameter to your CGI
+    [item] Add a definition for the Environment parameter to your CGI
         configuration section. For example:
 
 
@@ -267,7 +267,7 @@ To enable and configure CGI:
 
 
 
-   [bullet] Then add an environment section containing variable
+   [item] Then add an environment section containing variable
        definitions. For example:
 
 
@@ -288,18 +288,18 @@ To enable and configure CGI:
 
 There are several ways a Web page can run a CGI program:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Direct Link: A link in your page can reference a CGI program
+[item] Direct Link: A link in your page can reference a CGI program
     directly. Normally, such links are used when you do not need to
     send any variables to the program.
 
-[bullet] ISINDEX Tag: This tag can be included in the <HEAD> section of
+[item] ISINDEX Tag: This tag can be included in the <HEAD> section of
     the page. For example, you could add this tag:
     <ISINDEX HREF="/cgi-bin/search.pl" PROMPT="Search for:">
 
 
-[nl]
+[para]
 
 
     Normally, the ISINDEX tag is used to run search programs, but
@@ -308,7 +308,7 @@ There are several ways a Web page can run a CGI program:
     program accepts a single variable.
 
 
-[nl]
+[para]
 
 
    When you use this tag, the browser adds a field to the Web page.
@@ -317,18 +317,18 @@ There are several ways a Web page can run a CGI program:
    CGI program as separate command-line arguments. The
    advantage is you don't need to decode the input.
 
-[bullet] Form: You can create a form with multiple fields. Use forms to run
+[item] Form: You can create a form with multiple fields. Use forms to run
     CGI programs when your readers can choose or type values for one
     or more variables.The METHOD attribute of the FORM can be either
     "GET" or "POST".
 
-    [list_begin bullet]
+    [list_begin itemized]
 
-    [bullet] The "GET" method causes the field names and values to be
+    [item] The "GET" method causes the field names and values to be
         passed to the program in the QUERY_STRING environment
         variable.
 
-    [bullet] The "POST" method causes the field names and values to be
+    [item] The "POST" method causes the field names and values to be
         passed to the program through standard input. If the input
         from your form may be long, it is best to use the POST method
         because long strings can be truncated when they are assigned
@@ -361,19 +361,19 @@ Generally the URL to run a CGI program can have these parts:
 
 CGI path[lb]/extra path information [rb][lb]?query string[rb]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] The CGI path is the location of the CGI program to run. The path
+[item] The CGI path is the location of the CGI program to run. The path
     can be a relative or absolute reference to the program file.
 
-[bullet] The optional extra path information can be included in the URL to
+[item] The optional extra path information can be included in the URL to
     provide either a directory location the CGI program should use or
     some extra information for the CGI program. The path is relative
     to the root directory for Web pages. The extra path information is
     available to the CGI program in the PATH_INFO environment
     variable.
 
-[bullet] The optional query string is preceded by a question mark (?) and
+[item] The optional query string is preceded by a question mark (?) and
     contains either a single variable or a set of field names and
     variables for the CGI program to use. The query string is
     available to the CGI program in either the QUERY_STRING
@@ -410,41 +410,41 @@ xx is the hexadecimal value for that character.
 
 Here are some examples of URLs that could run a CGI program:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] http://www.mysite.com/cgi-bin/gettime
+[item] http://www.mysite.com/cgi-bin/gettime
 
 
-[nl]
+[para]
 
 
    This URL runs the gettime program, which could return a page with
    the current time. There are no variables, so you might
    use this as a direct link.
 
-[bullet] http://www.mysite.com/cgi-bin/listdir/misc/mydir
+[item] http://www.mysite.com/cgi-bin/listdir/misc/mydir
 
 
-[nl]
+[para]
 
 
    This URL runs the listdir program and passes it /misc/mydir as
    extra path information. This might be a direct link in a page.
 
-[bullet] http://www.mysite.com/cgi-bin/search?navigate
+[item] http://www.mysite.com/cgi-bin/search?navigate
 
 
-[nl]
+[para]
 
 
    This URL runs the search program and passes it the word
    "navigate" as input. This URL doesn't include any field
    names, so it might be passed by pages with an ISINDEX tag.
 
-[bullet] http://www.webcrawler.com/cgi-bin/WebQuery?searchText=word
+[item] http://www.webcrawler.com/cgi-bin/WebQuery?searchText=word
 
 
-[nl]
+[para]
 
 
    This is a real URL that runs the WebCrawler search program and
@@ -473,21 +473,21 @@ If your programs are not executed, make sure the program file allows
 
 CGI programs can get input from these sources:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Command line: The only type of input that go to the command line
+[item] Command line: The only type of input that go to the command line
     of a CGI program are values typed into an ISINDEX field and
     query strings that do not contain an "=" sign (from a direct
     link). Forms cannot send variables to the command line.
 
-[bullet] Environment variables: A number of standard environment variables
+[item] Environment variables: A number of standard environment variables
     are always available to the CGI program. You can
     specify additional environment variables in the NaviServer
     configuration file. And, if the METHOD for a form
     is GET, the field names and values are stored in the QUERY_STRING
     environment variable.
 
-[bullet] Standard input: If the METHOD for a form is POST, the field names
+[item] Standard input: If the METHOD for a form is POST, the field names
     and values are sent to standard input.
 
 
@@ -829,16 +829,16 @@ This variable contains information passed by a form or link to the
 program. The QUERY_STRING contains information in the following
 situations:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet]  The reader submitted a form that uses the GET method.
+[item]  The reader submitted a form that uses the GET method.
 
-[bullet]  The reader submitted a query in a page with the ISINDEX tag.
+[item]  The reader submitted a query in a page with the ISINDEX tag.
      (The text the user types is also decoded and sent to the program's
      command line in this situation. The QUERY_STRING provides the
      non-decoded information.)
 
-[bullet]  A direct link included information after a "?" in the URL.
+[item]  A direct link included information after a "?" in the URL.
 
 
 [list_end]
@@ -864,11 +864,11 @@ Your CGI program should decode the QUERY_STRING. Functions that decode
 this string are publicly available functions for most languages. The
 string encoding follows these rules:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Field name/value pairs are separated by an "&" sign.
+[item] Field name/value pairs are separated by an "&" sign.
 
-[bullet] A field's name and its value are separated by an "=" sign. Field
+[item] A field's name and its value are separated by an "=" sign. Field
     names are specified by the NAME attribute. Field values depend on
     the type of field:
 
@@ -954,11 +954,11 @@ Named Submit Buttons: You can place multiple Submit buttons in a form.
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet]  Spaces are replaced by "+" signs.
+[item]  Spaces are replaced by "+" signs.
 
-[bullet]  Special characters are replaced by a "%" sign followed by the
+[item]  Special characters are replaced by a "%" sign followed by the
  hexadecimal value of the character. Here are some common
  characters and their hex values:
 
@@ -1559,9 +1559,9 @@ from the CGI program.
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet]  Which language should I use? You can use any language you feel
+[item]  Which language should I use? You can use any language you feel
  comfortable programming in. Of course, programs usually run faster
  in compiled language, so if your program is computationally
  intensive, you might want to use C or another compiled language.
@@ -1569,34 +1569,34 @@ from the CGI program.
  are written in C or Perl.
 
 
-[bullet]  How can I prevent CGI programs from causing security problems? A
+[item]  How can I prevent CGI programs from causing security problems? A
  CGI program is basically a program that you let anyone else in the
  world run on your system. Someone with bad intentions could cause
  you some problems if you don't follow these rules:
 
- [list_begin bullet]
+ [list_begin itemized]
 
- [bullet]  Keep your CGI programs in a separate CGI directory or give
+ [item]  Keep your CGI programs in a separate CGI directory or give
       them the file extension you specify in the configuration
       file. Don't give outsiders write access to these files and
       directories This should prevent casual users from reading,
       modifying, or adding CGI programs.
 
- [bullet]  Don't allow server-parsed HTML to run on your CGI directory
+ [item]  Don't allow server-parsed HTML to run on your CGI directory
       or on files with extensions mapped as CGI programs.
 
- [bullet]  Don't trust the data the browser sends to your program. Parse
+ [item]  Don't trust the data the browser sends to your program. Parse
       the QUERY_STRING or standard input. If your program is a
       non-compiled script, characters with special meanings in that
       language can cause problems if the browser fails to encode
       them as hexadecimal values.
 
- [bullet]  Check for odd file names and directory paths in the input.
+ [item]  Check for odd file names and directory paths in the input.
       For example, you should be careful about allow paths
       containing: ., ../, //, or the name of the directory that
       contains your CGI programs.
 
- [bullet]  Be careful with statements that construct and execute a
+ [item]  Be careful with statements that construct and execute a
       command line or system call using input from the reader. For
       example, be careful using the eval statement in Perl and the
       Bourne shell. If the reader sends input that begins with a
@@ -1608,11 +1608,11 @@ from the CGI program.
 [list_end]
 
 
-[bullet]  How can I debug my CGI programs? Errors that go to the stderr
+[item]  How can I debug my CGI programs? Errors that go to the stderr
      location will be available in the NaviServer's server.log file.
 
 
-[nl]
+[para]
 
 
   One simple way to debug CGI programs is to temporarily include
@@ -1624,7 +1624,7 @@ from the CGI program.
  program with the debugger while the program is sleeping.
 
 
-[nl]
+[para]
 
 
   If your programs are not executed, make sure the program file
@@ -1647,29 +1647,29 @@ from the CGI program.
 
 You can download lots of examples and working CGI programs from the Web. Here are some places to look:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Yahoo's page of links to CGI information:
+[item] Yahoo's page of links to CGI information:
     http://www.yahoo.com/Computers_and_Internet/Internet/World_Wide_Web/CGI___Common_Gateway_Interface/
 
-[bullet] NCSA's ftp site:
+[item] NCSA's ftp site:
     ftp://ftp.ncsa.uiuc.edu/Web/httpd/Unix/ncsa_httpd/cgi/
 
 
-[nl]
+[para]
 
 
     This site includes set of functions for decoding the QUERY_STRING
     environment variable or standard input to your program in C
     (ncsa-default.tar.Z), (cgi-lib.pl.Z), and Bourne shell scripts (AA-1.2.tar.Z).
 
-[bullet] List of Perl archives:
+[item] List of Perl archives:
     http://www.seas.upenn.edu/~mengwong/perlhtml.html
 
-[bullet] Virtual Library list of CGI resources:
+[item] Virtual Library list of CGI resources:
     http://www.charm.net/~web/Vlib/Providers/CGI.html
 
-[bullet] Various script examples at MIT:
+[item] Various script examples at MIT:
     http://www-genome.wi.mit.edu/WWW/tools/scripting/
 
 [list_end]

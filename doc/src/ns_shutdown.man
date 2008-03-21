@@ -16,7 +16,7 @@ time limit is exceeded then existing connections are immediately stopped.
 
 [call [cmd ns_shutdown] [arg ?timeout?]]
 
-[nl]
+[para]
 [arg timeout]
 How long to wait before shuting down the server
 

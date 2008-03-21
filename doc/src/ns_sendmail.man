@@ -37,24 +37,24 @@ In case of an error the error code and message are returned.
 	give the name and place the latter between "<" and ">" like "John Foo <j.foo@example.com>".
 	This also applies to [emph from], [emph cc] and [emph bcc].
 	Can be a comma-separated string with multiple recipients.
-[nl]
+[para]
 [arg from]
 	Email address of sender.
-[nl]
+[para]
 [arg subject]
 	Subject of the mail.
-[nl]
+[para]
 [arg body]
 	Body of the mail.
-[nl]
+[para]
 [arg ?headers?]
 	An ns_set of key-value pairs. The set will become part of the email header.
 	May be left empty.
-[nl]
+[para]
 [arg ?bcc?]
 	Email address of undisclosed recipient.
 	Can be a comma-separated string with multiple undisclosed recipients.
-[nl]
+[para]
 [arg ?cc?]
 	Email address of additional recipient.
 	Can be a comma-separated string with multiple recipients.
@@ -72,55 +72,55 @@ array usable by "array get" or logs to the server logfile.
 [section CONFIGURATION]
 
 [para]
-[strong {Basic configuration options:}]
+[emph {Basic configuration options:}]
 
 [list_begin definitions]
-[lst_item "smtphost = mail.domain.tld"]
+[def "smtphost = mail.domain.tld"]
 	The hostname or IP of the mail server. Default is localhost.
 	Full qualified hostname is a good choice (mail.example.com).
-[lst_item "smtpport = 25"]
+[def "smtpport = 25"]
 	The port for the connection. Default is 25.
-[lst_item "smtptimeout = 60"]
+[def "smtptimeout = 60"]
 	After smtptimeout seconds of inactivity (no answer from server) connection is closed.
 [list_end]
 
 [para]
-[strong {Extended configuration options:}]
+[emph {Extended configuration options:}]
 [para]
 Note: "boolean" in NaviServer configuration means value can be one of "true", "false", "on", "off", "0" or "1".
 [list_begin definitions]
-[lst_item "smtplogmode = false (boolean)"]
+[def "smtplogmode = false (boolean)"]
 	If true no attempt to set up a connection to smtphost:smtpport is made,
 	every part of the connection process is just logged to the server logfile.
 	Default is false.
-[lst_item "smtpmsgid = on (boolean)"]
+[def "smtpmsgid = on (boolean)"]
 	If true ns_sendmail creates a message_id. If a key "message_id" is user
 	defined in the optional "headers"-set the latter is used.
 	Default is false.
-[lst_item "smtpmsgidhostname = host.domain.tld"]
+[def "smtpmsgidhostname = host.domain.tld"]
 	This string is used when ns_sendmail tells the server that it wants to use
 	SMTP (HELO host.domain.tld) or ESMTP (EHLO host.domain.tld) communication.
 	Some servers have restrictive rules and expect fully qualified domain names here.
 	It is further used as right part of the message-id. 
-[lst_item "smtpencodingmode = on (boolean)"]
+[def "smtpencodingmode = on (boolean)"]
 	Message subject and body are by default sent in the default server encoding.
 	If this is set true 
 	(a) the encoding defined in smtpencoding will be used and
 	(b) Subject and body will be transformed to QUOTED PRINTABLE format.
 	Default is false. 
-[lst_item "smtpencoding = utf-8"]
+[def "smtpencoding = utf-8"]
 	If smtpencodingmode is set true subject and body will be encoded with
 	the encoding defined in smtpencoding, e.g. "iso8859-15".
-[lst_item "smtpauthmode = mode"]
+[def "smtpauthmode = mode"]
         Where mode is either PLAIN or LOGIN. If left empty but smtpauthuser and smtpauthpassword defined, PLAIN is assumed as default.
-[lst_item "smtpauthuser = account--0123"]
+[def "smtpauthuser = account--0123"]
 	ns_sendmail supports now the simple PLAIN AUTH and LOGIN mechanisms to authenticate
 	against a SMTP server. It should be sufficient to provide
 	a mailbox account or email address ("smtpauthuser") and a password (see "smtpauthpassword").
 	It is possible to give a different authorization identifier (userid) and
 	authentication identifier (authid/realm) by separating them with a nullbyte ("userid\0realm").
 	Default is empty string to not use SMTP authentication.
-[lst_item "smtpauthpassword = mysecret"]
+[def "smtpauthpassword = mysecret"]
 	The password to use for PLAIN AUTHentication or LOGIN if smtpauthuser is set.
 [list_end]
 

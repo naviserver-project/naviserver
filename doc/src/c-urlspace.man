@@ -21,7 +21,7 @@ trie. They are:
 [enum] Junction
    A junction is nothing more than a list of channels.
 
-[nl]
+[para]
 
 
 [enum] Channel
@@ -31,7 +31,7 @@ trie. They are:
    the mask that may contain wildcards.
 
 
-[nl]
+[para]
 
 
 [enum] Branch
@@ -40,7 +40,7 @@ trie. They are:
    representing sub-URLs as well as a pointer to a list of Nodes.
 
 
-[nl]
+[para]
 
 
 [enum] Node

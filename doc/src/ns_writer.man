@@ -14,28 +14,28 @@ operations which consumes less resources than returning multiple files to the sl
 
 [call [cmd ns_writer] [arg list]]
 
-[nl]
+[para]
 Returns list of all currently submitted files
 
 [call [cmd ns_writer] [arg submit] [arg data]]
 
-[nl]
+[para]
 Submit arbitrary data to be returned via writer, data can be binary
 
 [call [cmd ns_writer] [arg submitfile] [opt [arg -headers]] [opt [arg {-offset offset}]] [opt [arg {-size size}]] [arg file]]
 
-[nl]
+[para]
 Submits file to be returned, optionally the following arguments can be used:
 
-[nl]
+[para]
 [arg -headers]
 Tells the writer to provide required HTTP headers, like content size, type and status.
 
-[nl]
+[para]
 [arg -offset]
 If specified, file will be returned starting with this offset
 
-[nl]
+[para]
 [arg -size]
 If not specified, the whole file will be retuned, otherwise only given part. Can be combined with -offset
 to return chunks of file
@@ -45,12 +45,12 @@ to return chunks of file
 [section CONFIGURATION]
         
 [para]
-[strong {Basic configuration options:}]
+[emph {Basic configuration options:}]
         
 [list_begin definitions]
-[lst_item {ns_section "ns/server/default/module/nssock"}]
-[lst_item {ns_param writerthreads 1}]
-[lst_item {ns_param writersize [expr 1024*1024]}] 
+[def {ns_section "ns/server/default/module/nssock"}]
+[def {ns_param writerthreads 1}]
+[def {ns_param writersize [expr 1024*1024]}] 
 [list_end]
 
 [para]

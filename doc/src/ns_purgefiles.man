@@ -12,7 +12,7 @@ Purge files by date, keeping max files.
 
 [call [cmd ns_purgefiles] [arg file] [arg backupMax]]
 
-[nl]
+[para]
 [arg file]
 The file parameter is used as a basename to select files to purge.
 

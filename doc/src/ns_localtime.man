@@ -10,14 +10,14 @@ system's current timezone.  The structure of the list corresponds to the Unix st
 
 [list_begin definitions]
 [call [cmd  ns_localtime] [arg seconds]]
-[lst_item] minutes (0-59)
-[lst_item] hours (0-23)
-[lst_item] dayofmonth (1-31)
-[lst_item] monthofyear (0-11)
-[lst_item] year (year-1900)
-[lst_item] dayofweek (0-6, Sunday=0)
-[lst_item] dayofyear (0-365)
-[lst_item] isdst (>0 if Daylight Savings Time is in effect)
+[def] minutes (0-59)
+[def] hours (0-23)
+[def] dayofmonth (1-31)
+[def] monthofyear (0-11)
+[def] year (year-1900)
+[def] dayofweek (0-6, Sunday=0)
+[def] dayofyear (0-365)
+[def] isdst (>0 if Daylight Savings Time is in effect)
 
 [list_end]
 

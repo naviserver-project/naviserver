@@ -33,7 +33,7 @@ Configures jobs system, parameters are:
 works the same way as connsperthread config parameter for connection threads to help reduce memory
 consumption and cleanup Tcl resources.
 
-[nl]
+[para]
 Without any arguments, the command just returns current settings values
 
 [call [cmd  ns_job] [arg create] [opt [arg {-desc description}]] [arg queueId] [opt [arg maxthreads]]]
@@ -45,18 +45,18 @@ Create a new job queue called queueId. If maxthreads is not specified, then the 
 Add a new job to the queue. If there are less than maxthreads current running then the job will
 be started. If there are maxthreads currently running then this new job will be queued.
 
-[nl]
+[para]
 If -detached, then the job will be claned up when it completes; no wait will be necessary.
 
-[nl]
+[para]
 if -jobid is specified, it will be used as new job id instead of auto-genereated one. If 
 such job already exists, erro will be fired.
 
-[nl]
+[para]
 if -head is specified, then new job will be inserted in the beginning of the joblist,otherwise
 and by default every new job is added to the end of the job list.
 
-[nl]
+[para]
 The new job's ID is returned.
 
 [call [cmd  ns_job] [arg wait] [opt [arg {-timeout seconds:microseconds}]] [arg queueId] [arg jobId]]
@@ -98,68 +98,68 @@ Returns a list of the queue IDs.
 
 Returns a list of the thread pool's fields.
 
-[nl]
+[para]
 maxthreads - Max number of threads for all the queues in the thread pool.
 
-[nl]
+[para]
 numthreads - Number of allocated threads.
 
-[nl]
+[para]
 numidle - Number of currently idle threads.
 
-[nl]
+[para]
 req stop - The thread pools is being stopped. This probably means that the server is shutting down.
 
 [call [cmd  ns_job] [arg queuelist]]
 
 Returns a list of the queues. A queue has the following fields:
 
-[nl]
+[para]
 name - Name of the queue.
 
-[nl]
+[para]
 desc - Description of the queue.
 
-[nl]
+[para]
 maxthreads - Max number of threads to run for this queue.
 
-[nl]
+[para]
 numrunning - Number of currently running jobs in this queue.
 
-[nl]
+[para]
 REQ delete - Someone requested this queue be deleted. Queue will not be deleted until all the jobs on the queue are removed.
 
 [call [cmd  ns_job] [arg joblist] [arg queueId]]
 
 Returns a list the jobs in the specified queue. A job has the following fields:
 
-[nl]
+[para]
 id - Job's ID
 
-[nl]
+[para]
 state - The state of the job.  The return values are as follows:
 
-[nl]
+[para]
 scheduled - The job is scheduled to run.
 
-[nl]
+[para]
 running - The job is currently running.
 
-[nl]
+[para]
 done - The job has completed.
 
-[nl]
+[para]
 results - If the job has completed, then this field will contain the results. If the job is running 
 or scheduled to run, then this will contain the script.
 
-[nl]
+[para]
 code - When the job is done, this will contain the return code. Return codes are 
 TCL_OK, TCL_ERROR, TCL_RETURN, TCL_BREAK, TCL_CONTINUE.
 
-[nl]
+[para]
 type - The type of job.  A job's return value is nondetached or detached.
 
-[nl]
+[para]
 req - The job is required.   Return values are none, wait, cancel.
 
 [call [cmd  ns_job] [arg genid]]

@@ -11,11 +11,11 @@
 
 [call [cmd ns_adp_safeeval] [arg page] [arg {?args ...?}]]
 
-[nl]
+[para]
 [arg page]
 Page to be evaluated
 
-[nl]
+[para]
 [arg args]
 Additional arguments
 

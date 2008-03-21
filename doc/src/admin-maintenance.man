@@ -15,71 +15,71 @@ Options:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] [emph {-i}]
+[item] [emph {-i}]
 
 
-[nl]
+[para]
 
      Run NaviServer from /etc/inittab. This option is similar to -f except
      that stdout goes to the server.log file.
 
-[bullet] [emph {-f}]
+[item] [emph {-f}]
 
 
-[nl]
+[para]
 
      Run NaviServer in the foreground.
 
-[bullet] [emph {-s servername}]
+[item] [emph {-s servername}]
 
 
-[nl]
+[para]
 
      Specify the server to run, if the configuration file defines multiple
      servers. The Server1 server will be run by default.
 
-[bullet] [emph {-d}]
+[item] [emph {-d}]
 
 
-[nl]
+[para]
 
      Run NaviServer in the debugger (ignore SIGINT).
 
-[bullet] [emph {-V}]
+[item] [emph {-V}]
 
 
-[nl]
+[para]
 
      Print the version number of NaviServer.
 
-[bullet] [emph {-r root}]
+[item] [emph {-r root}]
 
 
-[nl]
+[para]
 
      Perform chroot to a new root directory.
 
-[bullet] [emph {-w}]
+[item] [emph {-w}]
 
 
-[nl]
+[para]
 
      Run under watchdog
 
 
-[bullet] [emph {-t config}]
+[item] [emph {-t config}]
 
 
-[nl]
+[para]
 
      Required. Specify the path to the configuration file.
 
-[bullet] [emph {-c}]
+[item] [emph {-c}]
 
 
-[nl]
+[para]
 
      Run in command (interactive) mode, when started Tcl shell will be provided 
      same way as tclsh
@@ -119,18 +119,18 @@ To restart the server from the shell you can send the server the SIGINT.
 
 [emph Pro:]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Builtin feature. No need to setup something else.
-[bullet] Ability to restart from within your application. 
+[item] Builtin feature. No need to setup something else.
+[item] Ability to restart from within your application. 
 
 [list_end]
 
 [emph Con:]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] First step of implementation. You may need more options for the watchdog as
+[item] First step of implementation. You may need more options for the watchdog as
          it offers you now.
 
 [list_end]
@@ -159,20 +159,20 @@ and init does the job of restarting the server if it crashes.
 
 [emph {Pro:}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Very easy to configure.
-[bullet] Some kind of built in feature of your OS. 
+[item] Very easy to configure.
+[item] Some kind of built in feature of your OS. 
 
 [list_end]
 
 [emph {Con:}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] You need to be root to edit /etc/inittab and make changes.
-[bullet] If there's an error during startup init tries to restart the server and then waits for some time. Repeats endlessly.
-[bullet] There's no simple way to just stop the server if you want to as init tries to keep it up. 
+[item] You need to be root to edit /etc/inittab and make changes.
+[item] If there's an error during startup init tries to restart the server and then waits for some time. Repeats endlessly.
+[item] There's no simple way to just stop the server if you want to as init tries to keep it up. 
 
 [list_end]
 
@@ -198,19 +198,19 @@ as part of a script every 5 minutes by adding a crontab line (crontab -e) like
 
 [emph {Pro:}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] If you wrap the status check in your own script you are more flexible in choosing the right action for the job, e.g. E-Mail notifications.
-[bullet] Works fine if you don't have a requirement of virtually no downtime. 
+[item] If you wrap the status check in your own script you are more flexible in choosing the right action for the job, e.g. E-Mail notifications.
+[item] Works fine if you don't have a requirement of virtually no downtime. 
 
 [list_end]
 
 [emph {Con:}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Slightly more work if you have the situation to just stop the server for maintenance etc. (E.g. just restart if a certain status file does not exist)
-[bullet] You have to touch at least three files: the rc-script, crontab list and restart script. 
+[item] Slightly more work if you have the situation to just stop the server for maintenance etc. (E.g. just restart if a certain status file does not exist)
+[item] You have to touch at least three files: the rc-script, crontab list and restart script. 
 
 [list_end]
 
@@ -223,18 +223,18 @@ Daemontools is a collection of software to controll other processes.
 
 [emph {Pro:}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Allows more users to control the process, e.g. users of a specific group. 
+[item] Allows more users to control the process, e.g. users of a specific group. 
 
 [list_end]
 
 [emph {Con:}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Extra package, you need to compile it.
-[bullet] You need to be root. 
+[item] Extra package, you need to compile it.
+[item] You need to be root. 
 
 [list_end]
 
@@ -289,23 +289,23 @@ to simplify and speed up the task of creating a chroot environment.
 
 [emph {Benefits}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Usually strong barrier for attackers
-[bullet] Access to the filesystem is limited
-[bullet] Hopefully limits the damage of previously unknown, new security holes 
+[item] Usually strong barrier for attackers
+[item] Access to the filesystem is limited
+[item] Hopefully limits the damage of previously unknown, new security holes 
 
 [list_end]
 
 
 [emph {Disadvantages}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] The setup of a chroot cage is a cumbersome task, you have to find out every library used, absolute paths might be compiled into the code, strace will become your friend...
-[bullet] Every other application used (e.g. ImageMagick) must be chrooted
-[bullet] When using a database network support must be enabled or the socket placed into the chroot environment (?)
-[bullet] Updates and patches for Naviserver or any other chrooted tool becomes more difficult 
+[item] The setup of a chroot cage is a cumbersome task, you have to find out every library used, absolute paths might be compiled into the code, strace will become your friend...
+[item] Every other application used (e.g. ImageMagick) must be chrooted
+[item] When using a database network support must be enabled or the socket placed into the chroot environment (?)
+[item] Updates and patches for Naviserver or any other chrooted tool becomes more difficult 
 
 [list_end]
 
@@ -932,23 +932,23 @@ NaviServer.
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] NaviServer can be run in a chroot environment.
+[item] NaviServer can be run in a chroot environment.
 
-[bullet] The configuration file, which has a new Tcl format, is executed in
+[item] The configuration file, which has a new Tcl format, is executed in
      a separate, temporary interpreter that is destroyed before startup
      begins. The configuration file memory buffer is then zeroed after
      parsing.
 
-[bullet] The nsd binary can be stored outside the root directory because
+[item] The nsd binary can be stored outside the root directory because
      NaviServer no longer locates and re-executes itself.
 
-[bullet] The configuration file can be stored outside the root directory,
+[item] The configuration file can be stored outside the root directory,
      because NaviServer opens and reads the configuration file before
      running chroot().
 
-[bullet] The nscp module, which allows connections only from localhost,
+[item] The nscp module, which allows connections only from localhost,
      provides a secure control port interface that allows ad hoc Tcl
      evaluation and other server administration features. For more
      information about the control port interface, see the "NaviServer's
@@ -978,16 +978,16 @@ benefits:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] The chroot() system call updates the process such that all
+[item] The chroot() system call updates the process such that all
      absolute filenames are relative to a new root directory instead of
      the actual mounted file system.
 
-[bullet] The chroot() call is irrevocable. Once chroot() returns, the
+[item] The chroot() call is irrevocable. Once chroot() returns, the
      server cannot access any file above the new root directory.
 
-[bullet] Although it does not actually protect any of the underlying
+[item] Although it does not actually protect any of the underlying
      content, scripts, or protected databases, chroot() is the single
      most effective tool for protecting the server machine and
      sensitive information, such as user passwords and configuration
@@ -1095,19 +1095,19 @@ are:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] File system related functions, such as open, read, and puts
+[item] File system related functions, such as open, read, and puts
 
-[bullet] The NaviServer ns_sock* Tcl functions
+[item] The NaviServer ns_sock* Tcl functions
 
-[bullet] The Tcl socket routines
+[item] The Tcl socket routines
 
-[bullet] The exec command
+[item] The exec command
 
-[bullet] The file command, or at least the delete and rename features
+[item] The file command, or at least the delete and rename features
 
-[bullet] The exit command
+[item] The exit command
 
 [list_end]
 

@@ -83,9 +83,9 @@ listed below are well-suited to the Tcl libraries approach.
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Inheritance: If you want one Tcl script to handle an URL and all
+[item] Inheritance: If you want one Tcl script to handle an URL and all
  of its sub-URLs, it's better to store the script in a Tcl library
  and register it using ns_register_proc to handle an URL hierarchy.
  For example, you may want to manage a server domain name change by
@@ -93,37 +93,37 @@ listed below are well-suited to the Tcl libraries approach.
  another server.
 
 
-[nl]
+[para]
 
 
-[bullet] Special Extensions: If you want one Tcl script to handle all files
+[item] Special Extensions: If you want one Tcl script to handle all files
  with a specific extension, like /*.csv, you would register the
  script with ns_register_proc to handle those files.
 
 
-[nl]
+[para]
 
 
-[bullet] Scheduled Procedures: If you want a Tcl script to be run at
+[item] Scheduled Procedures: If you want a Tcl script to be run at
  specific intervals, you can use the ns_schedule_* functions to run
  a script from the Tcl library at scheduled intervals. These
  procedures do not normally involve returning HTML pages and so are
  not well suited to ADPs.
 
 
-[nl]
+[para]
 
 
-[bullet] Filters: If you want a Tcl script to be called at
+[item] Filters: If you want a Tcl script to be called at
  pre-authorization, post-authorization, or trace time for a group
  of URLs, you would register a filter using the ns_register_filter
  function.
 
 
-[nl]
+[para]
 
 
-[bullet] Re-using Tcl Scripts: If there are Tcl scripts that you want to
+[item] Re-using Tcl Scripts: If there are Tcl scripts that you want to
  use in multiple situations, you can store them in a Tcl library
  and invoke them from within any ADP or Tcl script.
 
@@ -192,7 +192,7 @@ following steps for the server:
  remaining .tcl files are sourced alphabetically.
 
 
-[nl]
+[para]
 
 
 [enum] For each module (including any Tcl-only modules as described on
@@ -392,15 +392,15 @@ NaviServer Administrator's Guide. Some parameters to note are:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Debug, which prints the names of files sourced at server startup to the log file
-
-
-[nl]
+[item] Debug, which prints the names of files sourced at server startup to the log file
 
 
-[bullet] Library, which defines the Tcl library for the server
+[para]
+
+
+[item] Library, which defines the Tcl library for the server
 
 
 [list_end]
@@ -438,7 +438,7 @@ Follow these steps to build and debug your Tcl scripts:
  URL or URL hierarchy.
 
 
-[nl]
+[para]
 
 
 [enum] Test your script by accessing an URL that it is registered for.
@@ -446,25 +446,25 @@ Follow these steps to build and debug your Tcl scripts:
  /example/hello URL as follows:
 
 
-[nl]
+[para]
 
 
  ns_register_proc GET /example/hello hello
 
 
-[nl]
+[para]
 
 
   Then you would test the script by visiting the URL
 
 
-[nl]
+[para]
 
 
  http://yourserver/example/hello.
 
 
-[nl]
+[para]
 
 
 [enum] After testing your script, you may want to make changes to it.

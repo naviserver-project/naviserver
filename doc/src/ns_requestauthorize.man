@@ -9,12 +9,12 @@ This function does the same permission check that the NaviServer does before ser
 a URL. If the nsperm module is loaded, the algorithm is as follows. See Chapter 6 in
 the Naviserver Administrator's Guide for information on access control, including permissions.
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] If the authuser is "nsadmin", the password is correct, and the IP
+[item] If the authuser is "nsadmin", the password is correct, and the IP
           address of the client is allowed nsadmin access, then access is authorized.
 
-[bullet] Find the relevant permission record. If an exact match for the method and URL
+[item] Find the relevant permission record. If an exact match for the method and URL
          combination is not found, the end of the URL is pared down until a match is found.
          For example, if there is no match for `/products/cereals/raisin_bran.html,' then
          the server looks for a permission record for the URL `/products/cereals.' If that
@@ -28,21 +28,21 @@ By default, the server comes with a row that says GET on `/' is open to the worl
 [para]
 If no relevant permission record is found, access is denied (forbidden).
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] If the authuser is in the "Allow Users" list, access is permitted. If the authuser
+[item] If the authuser is in the "Allow Users" list, access is permitted. If the authuser
          is a member of a group in the "Allow Groups" list and not in the "Deny Users' list,
           access is permitted.
 
-[bullet] If the host is in the "Hosts to allow" list, access is permitted. If the host
+[item] If the host is in the "Hosts to allow" list, access is permitted. If the host
          is in the "Hosts to deny" list, access is denied.
 
-[bullet] If the request does not come in with authorization data, access is denied.
+[item] If the request does not come in with authorization data, access is denied.
 
-[bullet] The user and password are verified. If there is no password specified in the database,
+[item] The user and password are verified. If there is no password specified in the database,
          any password is accepted.
 
-[bullet]  Otherwise, access is denied.
+[item]  Otherwise, access is denied.
 
 [list_end]
 
@@ -50,12 +50,12 @@ If no relevant permission record is found, access is denied (forbidden).
 
 The following values can be returned by ns_requestauthorize.
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] OK The user has permission to execute this URL and method.
-[bullet] DENIED The user does not have permission to execute this URL and method.
-[bullet] FORBIDDEN There is no possible user/password/IP Address combination that would give authorization.
-[bullet] ERROR There was an error.
+[item] OK The user has permission to execute this URL and method.
+[item] DENIED The user does not have permission to execute this URL and method.
+[item] FORBIDDEN There is no possible user/password/IP Address combination that would give authorization.
+[item] ERROR There was an error.
 
 [list_end]
 

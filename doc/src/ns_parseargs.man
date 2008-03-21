@@ -11,7 +11,7 @@
 
 [call [cmd ns_parseargs] [arg args]]
 
-[nl]
+[para]
 [arg args]
 List of arguments, can be flags or parameters
 

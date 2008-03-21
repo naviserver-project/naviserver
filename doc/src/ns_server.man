@@ -21,12 +21,12 @@ connection pools and queues.  The legal options (which may be abbreviated) are:
 [list_begin definitions]
 
 [call [cmd  ns_server] [arg active] [opt [arg pool]]]
-[lst_item] ns_server all ?pool?
-[lst_item] ns_server connections ?pool?
-[lst_item] ns_server keepalive ?pool?
-[lst_item] ns_server pools ?pool?
-[lst_item] ns_server queued ?pool?
-[lst_item] ns_server threads ?pool?
+[def] ns_server all ?pool?
+[def] ns_server connections ?pool?
+[def] ns_server keepalive ?pool?
+[def] ns_server pools ?pool?
+[def] ns_server queued ?pool?
+[def] ns_server threads ?pool?
 
 Returns a list of key-value pairs identifying the number
 of connection threads and what state they are currently in.

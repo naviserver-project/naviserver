@@ -18,11 +18,11 @@ This command returns the value associated with key from the keyed list in the va
 If retvar is not specified, then the value will be returned as the result of the command.  In this
 case, if key is not found in the list, an error will result.
 
-[nl]
+[para]
 If retvar is specified and key is in the list, then the value is returned in the variable retvar
 and the command returns 1.  Otherwise, the command will return 0, and retvar will be left unchanged.
 
-[nl]
+[para]
 If retvar is an empty string, the value is not returned, allowing the Tcl programmer to determine
 if a key is present in a keyed list without setting a variable as a side-effect.
 If key is omitted, then a list of all the keys in the keyed list is returned similar to
@@ -32,11 +32,11 @@ If key is omitted, then a list of all the keys in the keyed list is returned sim
 
 Delete key and value from keyed list
 
-[nl]
+[para]
 This command deletes the key specified by key from the keyed list in listvar.  This removes 
 both the key and the value from the keyed list.
 
-[nl]
+[para]
 Keyed lists are an extension of Tcl provided by the TclX package.  They are an alternative to 
 using ns_set, but we highly recommend using ns_set instead of keyed lists.  The commands provided
 by NaviServer were taken directly from a 1995 version of the TclX package.
@@ -44,14 +44,14 @@ by NaviServer were taken directly from a 1995 version of the TclX package.
 [call [cmd keylset] [arg listvar] [arg key] [arg value] [opt [arg {key value...}]]]
 Set a key-value pair in a keyed list
 
-[nl]
+[para]
 This command sets one or more key-value pairs in the keyed list listvar.
 
 [call [cmd keylkeys] [arg listvar] [opt [arg key]]]
 
 Return the keys for a keyed list.
 
-[nl]
+[para]
 This command returns a list of keys for the keyed list listvar.  If key is specified, 
 the values for that key are returned instead.
 

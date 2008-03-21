@@ -81,18 +81,18 @@ Some things to notice about the configuration are:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet]  The port parameter defines the port that the interface will listen
+[item]  The port parameter defines the port that the interface will listen
      on. The default is 9999.
 
 
-[bullet]  The address parameter defines the hostname to bind to. The default
+[item]  The address parameter defines the hostname to bind to. The default
      is 127.0.0.1 so that you can only connect to the control port if
      you are already logged on to the computer where the server is
      running.
 
-[bullet]  The user parameter defines users who can log into the control
+[item]  The user parameter defines users who can log into the control
      port. There are three semicolon-separated fields. The first is
      username (nsadmin); the second is a Unix-like password hash.  You
      can create a password by typing "ns_crypt mypasswd salt".  As with
@@ -132,13 +132,13 @@ To use the control port interface, follow these steps:
      section for the server. For example:
 
 
-[nl]
+[para]
 
 
      telnet localhost 9999
 
 
-[nl]
+[para]
 
 
      The session responds with:
@@ -155,7 +155,7 @@ To use the control port interface, follow these steps:
 
 
 
-[nl]
+[para]
 
 
 [enum] At the login prompt, type a valid username. The username must be
@@ -163,7 +163,7 @@ To use the control port interface, follow these steps:
      the configuration file. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -185,14 +185,14 @@ To use the control port interface, follow these steps:
 
 
 
-[nl]
+[para]
 
 
 [enum] At the password prompt, type the password associated with the
      username you specified.  The default is "x".
 
 
-[nl]
+[para]
 
 
      The session responds with:
@@ -210,14 +210,14 @@ To use the control port interface, follow these steps:
 
 
 
-[nl]
+[para]
 
 
 [enum] At the prompt you can type nearly any Tcl command
      available to NaviServer Tcl libraries and ADPs.
 
 
-[nl]
+[para]
 
 
 [enum] When you're done, just type "exit" and you will be logged off.
@@ -248,15 +248,15 @@ Useful commands:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] ns_shutdown  -- Shuts down the server.
+[item] ns_shutdown  -- Shuts down the server.
 
-[bullet] ns_info uptime  -- How long the server has been running.
+[item] ns_info uptime  -- How long the server has been running.
 
-[bullet] ns_info threads  -- How many threads are running
+[item] ns_info threads  -- How many threads are running
 
-[bullet] exit -- Exit the control port.
+[item] exit -- Exit the control port.
 
 
 [list_end]

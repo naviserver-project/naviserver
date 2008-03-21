@@ -9,12 +9,12 @@ the arguments sockid and when. The script will be called according to the value
 of the when argument as follows:
 
 Value of, when Condition under which the script will be called:
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] r - the socket is readable
-[bullet] w - the socket is writeable
-[bullet] e - the socket has an exceptional condition
-[bullet] x - the server is shutting down
+[item] r - the socket is readable
+[item] w - the socket is writeable
+[item] e - the socket has an exceptional condition
+[item] x - the server is shutting down
 [list_end]
 
 [section {COMMANDS}]

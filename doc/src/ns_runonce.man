@@ -13,12 +13,12 @@ file will be loaded several times
 
 [call [cmd ns_runonce] [arg ?-global?] [arg ?--?] [arg script]]
 
-[nl]
+[para]
 [arg -global]
 If specified run the command in global context
 otherwise in current virtual server
 
-[nl]
+[para]
 [arg script]
 Tcl script to run
 [list_end]

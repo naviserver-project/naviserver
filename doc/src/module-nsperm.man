@@ -280,37 +280,37 @@ specified in either of these forms:
 
 [para]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] ipaddress/netmask
+[item] ipaddress/netmask
 
 
-[nl]
+[para]
 
 
   For example, a host specified as 10.0.0.0/255.0.0.0 matches any
  IP address that begins with 10.
 
 
-[nl]
+[para]
 
 
-[bullet] a fully-qualified host name
+[item] a fully-qualified host name
 
 
-[nl]
+[para]
 
 
   For example, foo.bar.com.
 
 
-[nl]
+[para]
 
 
-[bullet] part of a host name
+[item] part of a host name
 
 
-[nl]
+[para]
 
 
   For example, .bar.com, which would match anything ending in
@@ -383,37 +383,37 @@ specified in either of these forms:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] ipaddress/netmask
+[item] ipaddress/netmask
 
 
-[nl]
+[para]
 
 
   For example, a host specified as 10.0.0.0/255.0.0.0 matches any
  IP address that begins with 10.
 
 
-[nl]
+[para]
 
 
-[bullet] a fully-qualified host name
+[item] a fully-qualified host name
 
 
-[nl]
+[para]
 
 
   For example, foo.bar.com.
 
 
-[nl]
+[para]
 
 
-[bullet] part of a host name
+[item] part of a host name
 
 
-[nl]
+[para]
 
 
   For example, .bar.com, which would match anything ending in

@@ -10,25 +10,25 @@ NaviServer is distributed in source form.
 
 NaviServer is reasonably portable and known to compile and run on the following platforms:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet]Linux 2.2 and better (x86 and others)
+[item]Linux 2.2 and better (x86 and others)
 
-[bullet]FreeBSD 3.4 and better (x86 and others)
+[item]FreeBSD 3.4 and better (x86 and others)
 
-[bullet]OpenBSD 2.5 and better (x86 and others)
+[item]OpenBSD 2.5 and better (x86 and others)
 
-[bullet]Solaris 2.x and better (SPARC and x86)
+[item]Solaris 2.x and better (SPARC and x86)
 
-[bullet]IRIX 6.x (mips)
+[item]IRIX 6.x (mips)
 
-[bullet]HP/UX 10 and 11 (hppa)
+[item]HP/UX 10 and 11 (hppa)
 
-[bullet]DEC Tru64 &amp;OSF/1 4.0 and better (alpha)
+[item]DEC Tru64 &amp;OSF/1 4.0 and better (alpha)
 
-[bullet]UnixWare 7.x and better (x86)
+[item]UnixWare 7.x and better (x86)
 
-[bullet]Apple OS/X "Darwin"
+[item]Apple OS/X "Darwin"
 
 
 [list_end]
@@ -195,31 +195,31 @@ You may either specify a Unix username or numeric uid, e.g.:
 For the mode  of operation, there are three choices: 
 [emph {Foreground, Background,}] and [emph {Inittab.}]
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet]
+[item]
 [emph {bin/nsd  -ft conf/nsd-config.tcl -u user -g group}]
 
-[nl]
+[para]
 In [emph {Foreground }]mode , the server starts  and emits diagnostic log messages
 directly to the  terminal window.   This is useful for testing, configuration
 or debugging  a server.  To start the server in foreground mode use:
 
-[nl]
+[para]
 To stop a server running the foreground simply press  interrupt on your keyboard
 (e.g., ctrl-c or the DEL key) which will send a SIGINT to the server and
 initiate shutdown.
 
 
-[bullet]
+[item]
 [emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
 
-[nl]
+[para]
 In [emph {Background }]mode, the server  forks and disassociates from the terminal.
 Diagnostic messages  are  appended to log/server.log.  This  is a  typical
 daemon-style mode of operation.  To start the server in  background  mode use:
 
-[nl]
+[para]
 
 To stop a server running  the background  you may either use the kill(2) command
 to send a SIGTERM to the background  process id(*) or the special -K flag of the
@@ -227,18 +227,18 @@ nsd binary.  This flag  will determine the process id from a special marker
 file, send the signal and wait for shutdown, e.g.:
 
 
-[bullet]
+[item]
 [emph {bin/nsd -Kt conf/nsd-config.tcl -u user -g group}]
 
-[nl]
+[para]
 
 You may also use the -k flag to kill and restart a  background server.
 
 
-[bullet]
+[item]
 [emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd-config.tcl -u user -g group}]
 
-[nl]
+[para]
 In [emph {Inittab}] mode, the server runs in the foreground  but opens the
 log file as with background mode.  This mode is used  when the server is
 started from an entry in the /etc/inittab file.   The benefit of this mode
@@ -247,7 +247,7 @@ servers at AOL normally run in this mode.   To run the server  from /etc/inittab
 add an entry similar to the following, substituting the proper id, run levels,
 and full pathnames:
 
-[nl]
+[para]
 
 To restart a server you can simply kill the current server with the -K flag
 as with the background  mode; init will then restart the server for you.

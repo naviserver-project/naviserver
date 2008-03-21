@@ -13,7 +13,7 @@
 
 [call [cmd ns_addrbyhost] [arg hostname]]
 
-[nl]
+[para]
 [arg hostname]
 Name of the hostname to be resolved into IP address
 

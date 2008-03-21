@@ -20,7 +20,7 @@ This command provides a mechanism to manipulate threads.  The legal options (whi
 [list_begin definitions]
 
 [call [cmd  ns_thread] [arg begin] [arg script]]
-[lst_item] ns_thread create script
+[def] ns_thread create script
 
 Initializes a new thread and starts it executing script.  Threads created this way
 are joinable and must be ns_thread joined, otherwise the resources held by the thread

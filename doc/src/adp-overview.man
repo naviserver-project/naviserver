@@ -27,13 +27,13 @@ You can also include files and parse other ADPs from within your ADPs.
 Here are some examples of applications you can use ADPs for:
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Returning HTML conditionally
+[item] Returning HTML conditionally
 
-[bullet] Retrieving information from a database to use in a page
+[item] Retrieving information from a database to use in a page
 
-[bullet] Inserting information from a form into a database
+[item] Inserting information from a form into a database
 
 [list_end]
 
@@ -48,9 +48,9 @@ those listed below, that are better suited to the Tcl libraries
 approach.
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Inheritance: If you want one Tcl script to handle an URL and all
+[item] Inheritance: If you want one Tcl script to handle an URL and all
  of its sub-URLs, it's better to store the script in a Tcl library
  and register it using ns_register_proc to handle an URL hierarchy.
  For example, you may want to manage a server domain name change by
@@ -58,22 +58,22 @@ approach.
  another server.
 
 
-[bullet] Special Extenstions: If you want one Tcl script to handle all
+[item] Special Extenstions: If you want one Tcl script to handle all
  files with a specific extension, like /*.csv, you would register
  the script with ns_register_proc to handle those files.
 
-[bullet] Scheduled Procedures: If you want a Tcl script to be run at
+[item] Scheduled Procedures: If you want a Tcl script to be run at
  specific intervals, you can use the ns_schedule_* functions to run
  a script from the Tcl library at scheduled intervals. These
  procedures do not normally involve returning HTML pages and so are
  not well suited to ADPs.
 
-[bullet] Filters: If you want a Tcl script to be called at
+[item] Filters: If you want a Tcl script to be called at
  pre-authorization, post-authorization, or trace time for a group
  of URLs, you would register a filter using the ns_register_filter
  function.
 
-[bullet] Re-using Tcl Scripts: If there are Tcl scripts that you want to
+[item] Re-using Tcl Scripts: If there are Tcl scripts that you want to
  use in multiple situations, you can store them in a Tcl library
  and invoke them from within any ADP or Tcl script.
 
@@ -92,10 +92,10 @@ commands and process.
  [subsection {Required Configuration Parameters}]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
 
-[bullet] Use the Map configuration parameter to determine
+[item] Use the Map configuration parameter to determine
  which files are to be processed. For example, you can specify that
  all files with the .adp extension are to be processed by the
  server. Or, you can specify that all files that reside in a
@@ -118,29 +118,29 @@ within the ADP section of the configuration file:
 Section [emph {ns/server/servername/adp}]:
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] [emph {Cache}] - If set to on, ADP caching is enabled, Default: on
+[item] [emph {Cache}] - If set to on, ADP caching is enabled, Default: on
 
 
-[bullet] [emph {DebugInit}] - The procedure to run when debugging begins,
+[item] [emph {DebugInit}] - The procedure to run when debugging begins,
          Deafult: ns_adp_debuginit
 
-[bullet] [emph {EnableExpire}] - If set to on, the "Expires: now" header is set on all
+[item] [emph {EnableExpire}] - If set to on, the "Expires: now" header is set on all
          outgoing ADPs, Default: off
 
-[bullet] [emph {EnableCompress}] - If set to on, extraneous spaces within an HTML page are removed,
+[item] [emph {EnableCompress}] - If set to on, extraneous spaces within an HTML page are removed,
          Default: off
 
-[bullet] [emph {EnableDebug}] - If set to on, appending "?debug" to a URL will enable TclPro debugging,
+[item] [emph {EnableDebug}] - If set to on, appending "?debug" to a URL will enable TclPro debugging,
          Default: off
 
-[bullet] [emph {Map}] - The Map parameter specifies which pages the server will parse. You can
+[item] [emph {Map}] - The Map parameter specifies which pages the server will parse. You can
          specify a file extension (such as /*.adp) or a directory (such as
          /usr/pages/adp). If no directory is specified, the pages directory is
          assumed. The wildcards * ? and [] can be included in the Map
          specification. You can specify multiple Map settings.
-[nl]
+[para]
 
 
 The following example specifies that all files in the pages directory
@@ -156,7 +156,7 @@ with the extensions .adp or .asp will be parsed, and all files in the
 [example_end]
 
 
-[bullet] [emph {StartPage}]  - The file to be run on every connection instead of the requested ADP.
+[item] [emph {StartPage}]  - The file to be run on every connection instead of the requested ADP.
      It can be used to perform routine initialization. It would then
      usually include the requested ADP by calling:
      ns_adp_include [lb]ns_adp_argv 0[rb]
@@ -175,7 +175,7 @@ with the extensions .adp or .asp will be parsed, and all files in the
  specified by the Map parameter setting.
 
 
-[nl]
+[para]
 
   If you plan to use the Tcl script to return part or all of the
  page's content, just omit that part of the page, but you
@@ -203,21 +203,21 @@ with the extensions .adp or .asp will be parsed, and all files in the
 
 To debug your ADPs with TclPro, follow these steps:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] Download and install TclPro from http://www.scriptics.com/tclpro/.
+[item] Download and install TclPro from http://www.scriptics.com/tclpro/.
  Temporary licenses are available.
 
-[bullet] Copy the prodebug.tcl file from the TclPro distribution to the
+[item] Copy the prodebug.tcl file from the TclPro distribution to the
  modules/tcl directory.
 
-[bullet] Set the EnableDebug parameter in the ns/server/servername/adp
+[item] Set the EnableDebug parameter in the ns/server/servername/adp
  section of the configuration file to On.
 
-[bullet] Run TclPro and start a "remote project", which puts TclPro into a
+[item] Run TclPro and start a "remote project", which puts TclPro into a
  mode waiting for NaviServer to connect.
 
-[bullet] Open an ADP file with the ?debug=<pattern> query string in
+[item] Open an ADP file with the ?debug=<pattern> query string in
  addition to any other query data you may send. NaviServer will then
  trap on ADP files matching the pattern. For example, you can just
  use debug=*.adp to trap all files, or you can use
@@ -248,9 +248,9 @@ Insert Tcl commands between any of the following sets of HTML tags:
 [para]
 
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] <script language=tcl runat=server stream=on>
+[item] <script language=tcl runat=server stream=on>
 
 [example_begin]
   <script language=tcl runat=server stream=on>
@@ -263,7 +263,7 @@ interpreter. The result is not inserted into the page, however. You
 can use the ns_puts Tcl function to put content into the page.
 
 
-[nl]
+[para]
 
 
 The language=tcl attribute is optional. Future enhancements to ADPs
@@ -273,7 +273,7 @@ the language attribute is set to anything except tcl, the script will
 not be processed, and a warning will be written to the log file.
 
 
-[nl]
+[para]
 
 
 The runat=server attribute is required. If this attribute is missing,
@@ -281,7 +281,7 @@ the script will not be processed. The runat=server attribute is
 necessary so that client-side scripts are not executed accidentally.
 
 
-[nl]
+[para]
 
 The stream=on attribute is optional. If it is included, all output for
 the rest of the page is streamed out to the browser as soon as it's
@@ -292,10 +292,10 @@ is that the server cannot return a Content-length header with the
 response. Content-length can speed up the connection, especially if
 the connection is going through a proxy server.
 
-[bullet] <% ... %>
+[item] <% ... %>
 
 
-[nl]
+[para]
 
 
 This syntax is evaluated exactly the same as the first syntax, above,
@@ -306,10 +306,10 @@ streaming was turned on in a previous script. This syntax can be used
 inside HTML tags.
 
 
-[bullet] <%= ... %>
+[item] <%= ... %>
 
 
-[nl]
+[para]
 
 
 The Tcl commands within these tags are evaluated as the argument to an

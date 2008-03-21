@@ -12,25 +12,25 @@ ns_httppost is a wrapper around ns_httpopen to send data using HTTP POST method.
 
 [call [cmd ns_httppost] [arg url] [opt [arg ?rqset?]] [opt [arg qsset]] [opt [arg type]] [opt [arg timeout]]]
 
-[nl]
+[para]
 [arg url]
 Url where to send data
 
-[nl]
+[para]
 [arg rqset]
 This is ns_set with headers, if none specified, default minimum number of HTTP
 headers will be provided
 
-[nl]
+[para]
 [arg qsset]
 This is ns_set with form data, key values pair which will be formatted into
 query format as if browser sends it
 
-[nl]
+[para]
 [arg type]
 Content type, default is application/x-www-form-urlencoded which submitted form format
 
-[nl]
+[para]
 [arg timeout]
 Timeout for opening the connection (the default is 30 seconds) or retrieving data.
 

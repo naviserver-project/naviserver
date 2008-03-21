@@ -35,7 +35,7 @@ GET or POST or HEAD
 [arg -body]
 body is the value which will be sent as the HTTP request body.
 
-[nl]
+[para]
 [arg -headers]
 headers is the ns_set ID containing the additional headers to include in the HTTP request.
 
@@ -44,19 +44,19 @@ headers is the ns_set ID containing the additional headers to include in the HTT
 [arg -elapsed]
 var is the name of a variable that should be used to store the elapsed time for the request from beginning to finish
 
-[nl]
+[para]
 [arg -result]
 var is the name of a variable that should be used to store the HTTP response body.
 
-[nl]
+[para]
 [arg -status]
 var is the name of a variable that should be used to store the HTTP response status
 
-[nl]
+[para]
 [arg -timeout]
 Default timeout is "2:0" (2s, 0usec).
 
-[nl]
+[para]
 [arg -headers]
 headers is the ns_set ID which will receive the headers from the HTTP response.
 

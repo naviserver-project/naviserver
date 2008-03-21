@@ -16,29 +16,29 @@ ending tags are used in an ADP. The command is the beginning tag to look for, an
 endcommand is the ending tag to look for. The proc is the procedure that will be called
 when Naviserver encounters those tags when processing an ADP.
 
-[nl]
+[para]
 There are two ways to use ns_register_adptag, with and without the endcommand parameter:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] If the endcommand parameter is specified, the procedure you specify with proc must be of the form:
+[item] If the endcommand parameter is specified, the procedure you specify with proc must be of the form:
 
-         [nl]
+         [para]
          proc myadpproc { string tagset }
 
-         [nl]
+         [para]
          The string is the string of characters between the beginning tag and the ending tag.
          The tagset is an ns_set of parameters that were specified with the beginning tag.
          The return value of the procedure will be sent to the browser in place of the string
          of text that was specified between the beginning and ending tags.
-         [nl]
+         [para]
          The string is not parsed, which means that you cannot include ADP tags in the string unless
          you execute ns_adp_parse on the string inside the procedure that processes the registered ADP tag.
 
-[bullet] If endcommand is not specified, then no closing tag is required. The procedure (proc)
+[item] If endcommand is not specified, then no closing tag is required. The procedure (proc)
          will be called every time the specified command is encountered. The procedure should
          take one parameter, an ns_set containing the parameters to the tag:
-         [nl]
+         [para]
          proc myadpproc { tagset }
 
 [list_end]
@@ -46,7 +46,7 @@ There are two ways to use ns_register_adptag, with and without the endcommand pa
 Note: This function cannot be called after the server has started. It must be called in a
 Tcl script in a virtual server's Tcl directory so that it can be initialized at server startup time.
 
-[nl]
+[para]
 
 For example, suppose you want to register a tag that displays the enclosed text only if it is Christmas.
 You could register the tag as follows:
@@ -97,7 +97,7 @@ This command register given url pattern to be processed by fast path subsystem, 
 all requestes that match will be served by corresponding .adp files if resolved. This
 can be used when there is no global fast path handler installed.
 
-[nl]
+[para]
 [arg method]
 GET, POST OR HEAD
 
@@ -111,11 +111,11 @@ on a virtual server. The script can be called at one or more of three given time
 pre-authorization, post-authorization before page data has been returned to the user,
 and after the connection has been processed and closed.
 
-[nl]
+[para]
 This function will be called at the specified stage of a connection, if the method/URL
 combination for the filter matches the method/URL combination for the connection using glob style matching.
 
-[nl]
+[para]
 The URLpattern can contain standard string-matching characters. For example, these are valid URLpatterns:
 
 [example_begin]
@@ -123,23 +123,23 @@ The URLpattern can contain standard string-matching characters. For example, the
 /accounts/*/out
 [example_end]
 
-[nl]
+[para]
 Valid values for the when argument are: preauth, postauth, and trace.
 
-[nl]
+[para]
 Using pre-authorization, the procedure will be called (assuming that the method/URL
 combination matches) just before authorization. If the procedure returns with a code of:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next pre-authorization
+[item] TCL_OK (using: return "filter_ok"): The server will continue to the next pre-authorization
          filter for this connection, or, if there are no more pre-authorization filters, it will
           continue on with authorization.
 
-[bullet] TCL_BREAK (using: return "filter_break"): The server will not process any more pre-authorization
+[item] TCL_BREAK (using: return "filter_break"): The server will not process any more pre-authorization
          filters for this connection, and it will continue on with authorization.
 
-[bullet] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+[item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
          not run any more pre-authorization filters. It will not authorize the request, and it will
          not run the function registered for this METHOD/URL. It WILL run any trace functions
          registered for this METHOD/URL, usually including logging. It is assumed that the filter
@@ -149,16 +149,16 @@ combination matches) just before authorization. If the procedure returns with a 
 Using post-authorization, the procedure will be called (assuming that the method/URL combination matches)
 just after successful authorization. If the procedure returns:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next post-authorization
+[item] TCL_OK (using: return "filter_ok"): The server will continue to the next post-authorization
          filter for this connection, or, if there are no more post-authorization filters, it will run
          the function registered to handle this request.
 
-[bullet] TCL_BREAK (using: return "filter_break"): The server will not process any more post-authorization
+[item] TCL_BREAK (using: return "filter_break"): The server will not process any more post-authorization
          filters for this connection, and it will run the function registered to handle this request.
 
-[bullet] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+[item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
          not run any more post-authorization filters and it will not run the function registered for
          this METHOD/URL. It WILL run any trace functions registered for this METHOD/URL, usually
          including logging. It is assumed that the filter has returned a proper response (e.g.,
@@ -169,11 +169,11 @@ just after successful authorization. If the procedure returns:
 Using trace, the procedure will be called (assuming that the method/URL combination match) after
 the connection has been totally processed and closed. If the procedure returns:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next trace filter.
+[item] TCL_OK (using: return "filter_ok"): The server will continue to the next trace filter.
 
-[bullet] TCL_BREAK, TCL_RETURN (using: return "filter_break" or return "filter_return"): The rest
+[item] TCL_BREAK, TCL_RETURN (using: return "filter_break" or return "filter_return"): The rest
          of the trace filters are ignored.
 
 [list_end]
@@ -212,12 +212,12 @@ ns_register_proc registers the procname to handle the specified method/URL combi
 When the server gets a matching request, it calls procname with the connection id and
 any arguments specified here.
 
-[nl]
+[para]
 If -noinherit is specified, the requested URL must match the specified URL exactly.
 For example, if the URL specified with ns_register_proc is /foo/bar, procname will
 not be called unless the requested URL is exactly /foo/bar.
 
-[nl]
+[para]
 If -noinherit is not specified, the requested URL can match the specified URL or any
 URL below it.  For example, if the URL specified with ns_register_proc is /foo/bar,
 procname will be called for /foo/bar, /foo/bar/hmm, and any other URL below /foo/bar,
@@ -293,7 +293,7 @@ When a GET of /threeargs is requested, the conn argument will be filled automati
 the context argument will be assigned "fnord" and the greeble argument will be assigned "fjord",
 and the hoover argument will be assigned the default value "quark".
 
-[nl]
+[para]
 ns_unregister_proc  unregisters the procname to handle the speci-
 fied method/URL combination.
 
@@ -311,7 +311,7 @@ herit flag (or the NS_OP_NOINHERIT flag) will be unregistered.
 ns_register_proxy registers a Tcl script as a handler for the specified method/protocol
 combination.
 
-[nl]
+[para]
 Example of HTTP proxy server:
 
 [example_begin]
@@ -338,7 +338,7 @@ combination. After the server handles the request for the specified method on an
 URL that matches the URLpattern, it calls the trace script with the connection id
 and any arguments (args) specified.
 
-[nl]
+[para]
 
 The URLpattern can contain standard string-matching characters. For example, these are valid URLpatterns:
 
@@ -347,7 +347,7 @@ The URLpattern can contain standard string-matching characters. For example, the
 /accounts/*/out
 [example_end]
 
-[nl]
+[para]
 ns_register_trace is similar to ns_register_proc except that the
 pattern-matching for the URL is performed differently. With ns_register_proc,
 the specified URL is used to match that URL and any URL below it in the hierarchy.
@@ -355,7 +355,7 @@ Wildcards such as "*" are meaningful only for the final part of the URL, such as
 /scripts/*.tcl. With ns_register_trace, the URLpattern is used to match URLs as
 a string with standard string-matching characters.
 
-[nl]
+[para]
 ns_register_proc results in a single match, whereas multiple ns_register_trace's
 can be matched and will be called.
 
@@ -368,7 +368,7 @@ These commands are used to perform runtime resolving of the requested urls into
 corresponding files that will be served to the client. They use ns_url2file
 interface which resolves file for current url.
 
-[nl]
+[para]
 [arg url]
 Register or unregister callback for given url pattern
 

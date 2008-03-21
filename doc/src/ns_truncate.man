@@ -12,11 +12,11 @@ This commans will truncate given file to the given length
 
 [call [cmd ns_truncate] [arg file] [arg ?length?]]
 
-[nl]
+[para]
 [arg file]
 File to be truncated
 
-[nl]
+[para]
 [arg length]
 If specified, truncate up to this length otherwise make file 0 size
 

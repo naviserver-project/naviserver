@@ -80,7 +80,7 @@ for Oracle, Informix, and InterBase, Mysql.
 [section {Internal Database Drivers}]
 
 
- [subsection {Configuration}]
+ [subsection {Configure an Internal Database Driver}]
 
 
 Configuration for an internal database driver consists of setting
@@ -97,25 +97,19 @@ steps involved in configuring an internal driver to interface with the
 Postgres or Solid driver.
 
 
-[para]
-
-
-  [subsection {Configure an Internal Database Driver}]
-
-
 [list_begin enum]
 
 
  [enum] Edit your NaviServer configuration file, usually named nsd.tcl.
 
 
-[nl]
+[para]
 
 
  [enum] Add a configuration file section called ns/db/drivers:
 
 
-[nl]
+[para]
 
 
       ns_section "ns/db/drivers"
@@ -123,7 +117,7 @@ Postgres or Solid driver.
  [enum] List the database drivers you will be using. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -139,7 +133,7 @@ Postgres or Solid driver.
  [enum] Add a configuration file section to list your database pools. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -155,7 +149,7 @@ Postgres or Solid driver.
       have named. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -174,7 +168,7 @@ Postgres or Solid driver.
       section to define which database pools it can access. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -268,20 +262,20 @@ external driver to interface with the Sybase proxy daemon.
  [enum] Edit your NaviServer configuration file, usually named nsd.tcl.
 
 
-[nl]
+[para]
 
 
  [enum] Add a configuration file section called ns/db/drivers:
 
 
-[nl]
+[para]
 
       ns_section "ns/db/drivers"
 
  [enum] List the Sybase database driver. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -296,7 +290,7 @@ external driver to interface with the Sybase proxy daemon.
  [enum] Configure the Sybase driver. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -310,7 +304,7 @@ external driver to interface with the Sybase proxy daemon.
 
 
 
-[nl]
+[para]
 
 
       The Param parameter should be set to the value of the SYBASE
@@ -319,7 +313,7 @@ external driver to interface with the Sybase proxy daemon.
  [enum] Add a configuration file section to list your database pools. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -335,7 +329,7 @@ external driver to interface with the Sybase proxy daemon.
       have named. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -352,7 +346,7 @@ external driver to interface with the Sybase proxy daemon.
       section to define which database pools it can access. For example:
 
 
-[nl]
+[para]
 
 
 
@@ -365,7 +359,7 @@ external driver to interface with the Sybase proxy daemon.
 
 
 
-[nl]
+[para]
 
 
       The "*" designation means that this server can access any of the
@@ -416,7 +410,7 @@ daemon on a remote machine.
       example:
 
 
-[nl]
+[para]
 
 
 
@@ -433,12 +427,12 @@ daemon on a remote machine.
  [enum] Run nssybpd, or configure inetd as shown in the next step instead.
 
 
-[nl]
+[para]
 
      For example:
 
 
-[nl]
+[para]
 
      nssybpd 8199
 
@@ -447,7 +441,7 @@ daemon on a remote machine.
       follows.
 
 
-[nl]
+[para]
 
 
 
@@ -457,14 +451,14 @@ daemon on a remote machine.
       [enum] Add the following line to /etc/inet/services:
 
 
-[nl]
+[para]
 
            nssybpd 8199/tcp
 
       [enum] Add the following line to /etc/inet/inetd.conf:
 
 
-[nl]
+[para]
 
 
           nssybpd stream tcp nowait sa /serverhome/bin/nssybpd nssybpd

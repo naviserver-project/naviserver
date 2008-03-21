@@ -12,7 +12,7 @@ This command resolves an IP address to its hostname.  If the IP address cannot b
 
 [call [cmd ns_hostbyaddr] [arg address]]
 
-[nl]
+[para]
 [arg address]
 IP Address to be resolved into hostname
 

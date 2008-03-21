@@ -13,14 +13,14 @@ Time (GMT).  The structure of the list corresponds to the Unix struct tm time st
 
 
 [call [cmd  ns_gmtime] [arg seconds]]
-[nl] minutes (0-59)
-[nl] hours (0-23)
-[nl] dayofmonth (1-31)
-[nl] monthofyear (0-11)
-[nl] year (year-1900)
-[nl] dayofweek (0-6, Sunday=0)
-[nl] dayofyear (0-365)
-[nl] isdst (>0 if Daylight Savings Time is in effect)
+[para] minutes (0-59)
+[para] hours (0-23)
+[para] dayofmonth (1-31)
+[para] monthofyear (0-11)
+[para] year (year-1900)
+[para] dayofweek (0-6, Sunday=0)
+[para] dayofyear (0-365)
+[para] isdst (>0 if Daylight Savings Time is in effect)
 
 
 [list_end]

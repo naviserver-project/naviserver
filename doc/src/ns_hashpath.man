@@ -16,11 +16,11 @@ For example, given the string 'foo' and the levels 2, 3:
 
 [call [cmd ns_hashpath] [arg string] [arg levels]]
 
-[nl]
+[para]
 [arg string]
 Path to be broken
 
-[nl]
+[para]
 [arg levels]
 How many subdirecotries to make
 

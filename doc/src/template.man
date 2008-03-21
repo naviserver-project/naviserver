@@ -13,7 +13,7 @@ Optional: list and description of sub-commands.
 
 [call [cmd COMMAND] [arg 1]]
 
-[nl]
+[para]
 [arg 1]
 Description for arg1
 
@@ -22,10 +22,10 @@ Description for arg1
 [section CONFIGURATION]
 
 [para]
-[strong {Basic configuration options:}]
+[emph {Basic configuration options:}]
 
 [list_begin definitions]
-[lst_item {{PARAM1 = CONFIGVALUE1}}]
+[def {{PARAM1 = CONFIGVALUE1}}]
 [list_end]
 
 [section EXAMPLES]

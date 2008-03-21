@@ -14,7 +14,7 @@ looks like http://localhost/url
 
 [call [cmd ns_location_proc] [arg script]]
 
-[nl]
+[para]
 [arg script]
 Tcl script which result will be used as location string
 
