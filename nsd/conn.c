@@ -1458,7 +1458,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case CChannelIdx:
         chan = MakeConnChannel(itPtr, conn);
         if (chan == NULL) {
-            Tcl_AppendResult(interp, Tcl_PosixError(interp), NULL);
             return TCL_ERROR;
         }
         Tcl_RegisterChannel(interp, chan);
@@ -1714,8 +1713,7 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr,
  *      Tcl_Channel handle or NULL.
  *
  * Side Effects:
- *      Flushes the connection socket before dup'ing.
- *      The resulting Tcl channel is set to blocking mode.
+ *      Removes the socket from the connection structure.
  *
  *----------------------------------------------------------------------------
  */
@@ -1725,15 +1723,29 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
 {
     Conn       *connPtr = (Conn *) conn;
     Tcl_Channel chan;
-    int         sock;
 
-    if (connPtr->flags & NS_CONN_CLOSED) {
-        Tcl_SetResult(itPtr->interp, "connection closed", TCL_STATIC);
+    if ((connPtr->flags & NS_CONN_CLOSED)) {
+        Tcl_AppendResult(itPtr->interp, "connection closed", NULL);
+        return NULL;
+    }
+
+    if (connPtr->sockPtr->sock == INVALID_SOCKET) {
+        Tcl_AppendResult(itPtr->interp, "no socket for connection", NULL);
         return NULL;
     }
 
     /*
-     * Dissable keep-alive and chunking headers.
+     * Create Tcl channel arround the connection socket
+     */
+
+    chan = Tcl_MakeTcpClientChannel((ClientData)connPtr->sockPtr->sock);
+    if (chan == NULL) {
+        Tcl_AppendResult(itPtr->interp, Tcl_PosixError(itPtr->interp), NULL);
+        return NULL;
+    }
+
+    /*
+     * Disable keep-alive and chunking headers.
      */
 
     if (connPtr->responseLength < 0) {
@@ -1753,15 +1765,8 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
         }
     }
 
-    sock = connPtr->sockPtr->sock;
+    Ns_SockSetBlocking(connPtr->sockPtr->sock);
     connPtr->sockPtr->sock = INVALID_SOCKET;
-
-    chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
-    if (chan == NULL) {
-        connPtr->sockPtr->sock = sock;
-    } else {
-        Ns_SockSetBlocking(sock);
-    }
 
     return chan;
 }

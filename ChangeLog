@@ -1,3 +1,9 @@
+2008-03-24  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/conn.c: Rewriten MakeConnChannel to better handle cases when
+	Tcl_MakeTcpClientChannel fail to wrap the channel arround the
+	connection socket.
+
 2008-03-20  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/nswin32.c: Use PACKAGE_NAME
