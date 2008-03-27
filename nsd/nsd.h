@@ -184,6 +184,7 @@ struct _nsconf {
     } state;
 
     struct {
+        int jobsperthread;
         int maxelapsed;
     } sched;
 

@@ -49,29 +49,29 @@
 #
 
 # Absolute path to the installation directory
-set homedir	@NAVISERVER@
+set 	homedir			@NAVISERVER@
 
 # Name/description of the virtual server
-set servername	"server1"
-set serverdesc	"Server Name"
+set	servername		"server1"
+set	serverdesc		"Server Name"
 
 # The hostname, address and port for nssock should be set to actual values.
-set hostname	[ns_info hostname]
-set address	[ns_info address]
-set port	8080
+set	hostname		[ns_info hostname]
+set	address			[ns_info address]
+set	port			8080
 
 # Root directory for each virtual server
-set serverdir	${homedir}
+set	serverdir		${homedir}
 
 # Alternatively in case when multiple server share the same
 # installation, server can be put into seperate directories
-#set serverdir	${homedir}/servers/${servername}
+#set	serverdir		${homedir}/servers/${servername}
 
 # Relative directory under serverdir for html/adp files
-set pageroot	pages
+set	pageroot		pages
 
 # Absolute path to pages directory
-set pagedir	$serverdir/$pageroot
+set	pagedir			$serverdir/$pageroot
 
 
 #
@@ -90,25 +90,37 @@ ns_param	nsproxy			${homedir}/bin/nsproxy.so
 # under tcl/ in separate directory each
 #ns_param	nstk			Tcl
 
+
 #
 # Global server parameters
 #
 
 ns_section	"ns/parameters"
+
+# Home directory for the server, it will be resolved automaticlaly if not specified
 ns_param	home			$homedir
+
+# Output debug log messages in the log
 ns_param	logdebug		false
 
 # Where all shared Tcl modules are located
-ns_param        tcllibrary              ${homedir}/tcl
+ns_param        tcllibrary      	${homedir}/tcl
 
 # Main server log file
-ns_param        serverlog               ${homedir}/logs/nsd.log
+ns_param        serverlog       	${homedir}/logs/nsd.log
 
 # Pid file of the server process
-ns_param        pidfile                 ${homedir}/logs/nsd.pid
+ns_param        pidfile         	${homedir}/logs/nsd.pid
 
 # Min size of the uploaded file to enable progress tracking
 ns_param	progressminsize		0
+
+# How many Tcl jobs to run in any job thread before thread exit, this will alow
+# to reclaim thread memory back to the system if memory allocator supports it
+ns_param	jobsperthread		0
+
+# How many Tcl tasks to run in any schedule thread before thread exit
+ns_param	schedsperthread		0
 
 #
 # I18N Parameters
@@ -127,7 +139,7 @@ ns_param	outputcharset		iso8859-1
 ns_param	urlcharset		iso8859-1
 
 # This parameter supports output encoding arbitration.
-ns_param  preferredcharsets		{ utf-8 iso8859-1 }
+ns_param	preferredcharsets	{ utf-8 iso8859-1 }
 
 #
 # MIME types.
@@ -219,16 +231,23 @@ ns_section 	"ns/server/${servername}"
 
 # Normally there's one conn per thread
 ns_param   	connsperthread  	0
+
 # Flush all data before returning
 ns_param   	flushcontent    	false
+
 # Max connections to put on queue
 ns_param   	maxconnections  	100
+
 # Tune this to scale your server
 ns_param   	maxthreads      	10
+
 # Tune this to scale your server
 ns_param   	minthreads      	0
+
 # Idle threads die at this rate
 ns_param   	threadtimeout   	120
+
+
 
 #
 # ADP (AOLserver Dynamic Page) configuration
@@ -377,7 +396,7 @@ ns_param   	sockerrorlogging      	false
 ns_param   	sockshuterrorlogging  	false
 
 # Number of requests to accept at once
-ns_param        acceptsize              1
+ns_param        acceptsize		1
 
 # Max numbrer of sockets in the driver queue
 ns_param        maxqueuesize            256
@@ -474,8 +493,8 @@ ns_param   	map 			"POST /cgi-bin /usr/local/cgi"
 ns_section 	"ns/server/${servername}/module/nscp"
 ns_param 	address 		127.0.0.1
 ns_param 	port 			9999
-ns_param 	echopassword    true
-ns_param 	cpcmdlogging    false
+ns_param 	echopassword    	true
+ns_param 	cpcmdlogging    	false
 
 ns_section 	"ns/server/${servername}/module/nscp/users"
 ns_param 	user 			"nsadmin:t2GqvvaiIUbF2:"
@@ -556,7 +575,7 @@ ns_param        hosthashlevel           0
 #
 
 ns_section 	"ns/server/server1/pools"
-ns_param 	slow 			"Slow requests here."
+ns_param 	slow			"Slow requests here."
 ns_param 	fast 			"Fast requests here."
 
 ns_section 	"ns/server/server1/pool/slow"
@@ -579,14 +598,29 @@ ns_param 	maxthreads 		10
 
 ns_section  "ns/server/${servername}/module/nsproxy"
 
-ns_param    exec            ${homedir}/bin/nsproxy ; # Proxy program to start
-ns_param    evaltimeout     0       ; # Timeout (ms) when evaluating scripts
-ns_param    gettimeout      0       ; # Timeout (ms) when getting proxy handles
-ns_param    sendtimeout     5000    ; # Timeout (ms) to send data
-ns_param    recvtimeout     5000    ; # Timeout (ms) to receive results
-ns_param    waittimeout     1000    ; # Timeout (ms) to wait for slaveis to die
-ns_param    idletimeout     300000  ; # Timeout (ms) for a slave to live idle
-ns_param    maxslaves       8       ; # Max number of allowed slaves alive
+# Proxy program to start
+ns_param	exec            	${homedir}/bin/nsproxy
+
+# Timeout (ms) when evaluating scripts
+ns_param    	evaltimeout     	0       
+
+# Timeout (ms) when getting proxy handles
+ns_param    	gettimeout      	0       
+
+# Timeout (ms) to send data
+ns_param    	sendtimeout     	5000    
+
+# Timeout (ms) to receive results
+ns_param    	recvtimeout     	5000    
+
+# Timeout (ms) to wait for slaveis to die
+ns_param    	waittimeout     	1000    
+
+# Timeout (ms) for a slave to live idle
+ns_param    	idletimeout     	300000  
+
+# Max number of allowed slaves alive
+ns_param    	maxslaves       	8       
 
 #
 # Limits support
@@ -599,16 +633,27 @@ ns_param    maxslaves       8       ; # Max number of allowed slaves alive
 #
 
 ns_section "ns/limits"
-ns_param default         "Default Limits" ;# Defines a limit.
+ns_param 	default         	"Default Limits"
 
 ns_section "ns/limit/default"
-ns_param maxrun          100       ;# Conn threads running for limit.
-ns_param maxwait         100       ;# Conn threads waiting for limit.
-ns_param maxupload       102400000 ;# Max size of file upload in bytes.
-ns_param timeout         60        ;# Total seconds to wait for resources.
+
+# Conn threads running for limit.
+ns_param 	maxrun          	100      
+
+# Conn threads waiting for limit.
+ns_param 	maxwait         	100      
+
+# Max size of file upload in bytes.
+ns_param 	maxupload       	102400000
+
+# Total seconds to wait for resources.
+ns_param 	timeout         	60       
+
 
 ns_section "ns/server/server1/limits"
-ns_param default         "GET  /*" ;# Map default limit to URL.
-ns_param default         "POST /*"
-ns_param default         "HEAD /*"
+
+# Map default limit to URL.
+ns_param 	default         	"GET  /*"
+ns_param 	default         	"POST /*"
+ns_param 	default         	"HEAD /*"
 

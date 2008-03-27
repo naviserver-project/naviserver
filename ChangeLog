@@ -1,3 +1,14 @@
+2008-03-26  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/nsconf.c:
+	* nsd/sched.c: Added new config parameter schedsperthread which makes 
+	schedule threads exit after specified number of jobs processed. This is for schedule taks with
+	-thread flags only, schedule tasks which are executed inside the main sched thread still
+	work as usuall. This new config parameter similar to jobsperthread will allow to control
+	threads allocation and memory usage by exiting thread and reclaiming memory back to the system 
+	in case of such memory allocator.
+
 2008-03-24  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/conn.c: Rewriten MakeConnChannel to better handle cases when
