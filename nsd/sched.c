@@ -744,7 +744,6 @@ SchedThread(void *ignored)
     time_t          now;
     Ns_Time         timeout;
     int             elapsed;
-    Ns_Thread       threadId;
     Event          *ePtr, *readyPtr = NULL;
 
     Ns_WaitForStartup();
@@ -785,7 +784,7 @@ SchedThread(void *ignored)
 
         if (firstEventPtr != NULL) {
             if (nIdleThreads == 0) {
-                Ns_ThreadCreate(EventThread, (void *)nThreads, 0, &threadId);
+                Ns_ThreadCreate(EventThread, (void *)nThreads, 0, NULL);
                 ++nIdleThreads;
                 ++nThreads;
             }
