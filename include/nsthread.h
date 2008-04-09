@@ -315,6 +315,15 @@ typedef struct DIR_ *DIR;
 #define PATH_MAX 1024
 #endif
 
+/* Some very old gcc versions do not have it defined, instead of messing with confiture here it
+ * is a simple define for such cases
+ */
+
+#ifndef LLONG_MAX
+#define LLONG_HALF                  (1LL << (sizeof (long long int) * CHAR_BIT - 2))
+#define LLONG_MAX                   (LLONG_HALF - 1 + LLONG_HALF)
+#endif
+
 /*
  * This baroque pre-processor fiddling should be eventually
  * replaced with a decent configure option and/or logic.

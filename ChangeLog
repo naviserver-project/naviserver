@@ -1,12 +1,16 @@
+2008-04-09  Vlad Seryakov <seryakov@users.sf.net>
+
+    * include/nsthread.h: Added definition of LLONG_MAX for old gcc versions
+
 2008-03-26  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/nsd.h:
 	* nsd/nsconf.c:
-	* nsd/sched.c: Added new config parameter schedsperthread which makes 
+	* nsd/sched.c: Added new config parameter schedsperthread which makes
 	schedule threads exit after specified number of jobs processed. This is for schedule taks with
 	-thread flags only, schedule tasks which are executed inside the main sched thread still
 	work as usuall. This new config parameter similar to jobsperthread will allow to control
-	threads allocation and memory usage by exiting thread and reclaiming memory back to the system 
+	threads allocation and memory usage by exiting thread and reclaiming memory back to the system
 	in case of such memory allocator.
 
 2008-03-24  Zoran Vasiljevic <vasiljevic@users.sf.net>
@@ -19,7 +23,7 @@
 
 	* nsd/nswin32.c: Use PACKAGE_NAME
 	* nsd/tclresp.c:
-	* nsd/tclcmds.c: Added ns_internalredirect command and 
+	* nsd/tclcmds.c: Added ns_internalredirect command and
 	NsTclInternalRedirectObjCmd
 
 2008-03-18  Vlad Seryakov  <seryakov@users.sf.net>
@@ -50,7 +54,7 @@
 	* include/nsconfig.h.in: use nsconfig.h if HAVE_CONFIG_H is defined, this way
 	config file can be distributed and will not be reason for config.h collisions
 
-    
+
 2008-03-08  Vlad Seryakov  <seryakov@users.sf.net>
 	* Makefile configure.in include/Makefile.global.in
 	include/Makefile.module.in include/ns.h include/nsthread.h
