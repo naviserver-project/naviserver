@@ -322,6 +322,7 @@ typedef struct DIR_ *DIR;
 #ifndef LLONG_MAX
 #define LLONG_HALF                  (1LL << (sizeof (long long int) * CHAR_BIT - 2))
 #define LLONG_MAX                   (LLONG_HALF - 1 + LLONG_HALF)
+#define LLONG_MIN                   (-LLONG_MAX-1)
 #endif
 
 /*
