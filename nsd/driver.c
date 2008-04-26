@@ -550,79 +550,100 @@ Ns_DriverSetRequest(Ns_Sock *sock, char *reqline)
 void
 NsStartDrivers(void)
 {
-    Driver *drvPtr;
-    SpoolerQueue *queuePtr;
+    int          i, bl, ncommd;
+    Driver       *drvPtr;
+    SpoolerQueue *qPtr;
+
+    struct {
+        Ns_ThreadProc *tproc;
+        SpoolerQueue  *queue;
+    } thr[] = {{SpoolerThread, NULL}, {WriterThread,  NULL}};
 
     /*
-     * Listen on all drivers.
+     * Listen on all communication drivers.
      */
 
     drvPtr = firstDrvPtr;
+    ncommd = 0;
 
     while (drvPtr != NULL) {
+
+        bl = (drvPtr->opts & NS_DRIVER_UDP) ? 0 : drvPtr->backlog;
+
         if (drvPtr->opts & NS_DRIVER_UNIX) {
-            drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr,
-                                             drvPtr->opts & NS_DRIVER_UDP ? 0 :
-                                                            drvPtr->backlog, 0);
-
+            drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr, bl, 0);
         } else if (drvPtr->opts & NS_DRIVER_UDP) {
-            drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr,
-                                            drvPtr->port);
-
+            drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr, drvPtr->port);
         } else {
-            drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr,
-                                           drvPtr->port, drvPtr->backlog);
+            drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port, bl);
         }
         if (drvPtr->sock == INVALID_SOCKET) {
-            Ns_Log(Error, "%s: failed to listen on %s:%d: %s",
-                   drvPtr->name, drvPtr->address, drvPtr->port,
-                   ns_sockstrerror(ns_sockerrno));
+            Ns_Log(Error, "%s: failed to listen on %s:%d: %s", drvPtr->name,
+                   drvPtr->address, drvPtr->port, ns_sockstrerror(ns_sockerrno));
         } else {
 
             Ns_SockSetNonBlocking(drvPtr->sock);
-            Ns_Log(Notice, "%s: listening on %s:%d",
-                   drvPtr->name, drvPtr->address, drvPtr->port);
 
             /*
-             * Create the spooler thread(s).
+             * Set the send/recv socket bufsizes if required.
+             * Note: it's too late to set them here, as TCP manual says:
+             *
+             *     On individual connections, the socket buffer size 
+             *     must be set prior to the listen() or connect() calls
+             *     in order to have it take effect.
+             *
+             * So now what? The binder process already did all of that for
+             * us early on startup! So whatever we do here below does not
+             * really matter.  We must move this early in the binding process
+             * somehow, but that requires significant API plumbing... Phew.
+             *
              */
 
-            queuePtr = drvPtr->spooler.firstPtr;
-            while (queuePtr) {
-                if (ns_sockpair(queuePtr->pipe) != 0) {
-                    Ns_Fatal("driver: ns_sockpair() failed: %s",
-                             ns_sockstrerror(ns_sockerrno));
-                }
-                Ns_ThreadCreate(SpoolerThread, queuePtr, 0,
-                                &queuePtr->thread);
-                queuePtr = queuePtr->nextPtr;
+            if (drvPtr->sndbuf > 0) {
+                setsockopt(drvPtr->sock, SOL_SOCKET, SO_SNDBUF,
+                           (char *) &drvPtr->sndbuf, sizeof(drvPtr->sndbuf));
+            }
+            if (drvPtr->rcvbuf > 0) {
+                setsockopt(drvPtr->sock, SOL_SOCKET, SO_RCVBUF,
+                           (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
             }
 
+            Ns_Log(Notice, "%s: listening on %s:%d", drvPtr->name,
+                   drvPtr->address, drvPtr->port);
+
+            ncommd++; /* Yet another successfuly started comm driver */
+
             /*
-             * Create the writer thread(s)
+             * Create the spooler/writer thread(s).
              */
 
-            queuePtr = drvPtr->writer.firstPtr;
-            while (queuePtr) {
-                if (ns_sockpair(queuePtr->pipe) != 0) {
-                    Ns_Fatal("driver: ns_sockpair() failed: %s",
-                             ns_sockstrerror(ns_sockerrno));
+            thr[0].queue = drvPtr->spooler.firstPtr;
+            thr[1].queue = drvPtr->writer.firstPtr;
+
+            for (i = 0; i < 2; i++) {
+                qPtr = thr[i].queue;
+                while (qPtr != NULL) {
+                    if (ns_sockpair(qPtr->pipe)) {
+                        Ns_Fatal("ns_sockpair() failed: %s",
+                                 ns_sockstrerror(ns_sockerrno));
+                    }
+                    Ns_ThreadCreate(thr[i].tproc, qPtr, 0, &qPtr->thread);
+                    qPtr = qPtr->nextPtr;
                 }
-                Ns_ThreadCreate(WriterThread, queuePtr, 0,
-                                &queuePtr->thread);
-                queuePtr = queuePtr->nextPtr;
             }
         }
+
         drvPtr = drvPtr->nextPtr;
     }
 
     /*
-     * Create the driver thread.
+     * Create the driver thread itself if we managed to
+     * get at least one of the communication drivers.
      */
 
-    if (firstDrvPtr != NULL) {
-        if (ns_sockpair(drvPipe) != 0) {
-            Ns_Fatal("driver: ns_sockpair() failed: %s",
+    if (ncommd > 0) {
+        if (ns_sockpair(drvPipe)) {
+            Ns_Fatal("ns_sockpair() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
         Ns_ThreadCreate(DriverThread, NULL, 0, &driverThread);
@@ -1676,19 +1697,6 @@ SockAccept(Driver *drvPtr)
      */
 
     Ns_SockSetNonBlocking(sockPtr->sock);
-
-    /*
-     * Set the send/recv socket bufsizes if required.
-     */
-
-    if (drvPtr->sndbuf > 0) {
-        setsockopt(sockPtr->sock, SOL_SOCKET, SO_SNDBUF,
-                   (char *) &drvPtr->sndbuf, sizeof(drvPtr->sndbuf));
-    }
-    if (drvPtr->rcvbuf > 0) {
-        setsockopt(sockPtr->sock, SOL_SOCKET, SO_RCVBUF,
-                   (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
-    }
 
     drvPtr->queuesize++;
 
