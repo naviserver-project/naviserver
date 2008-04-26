@@ -162,7 +162,6 @@ typedef struct ThreadPool {
     Ns_Cond            cond;
     Ns_Mutex           queuelock;
     Tcl_HashTable      queues;
-    Tcl_HashTable      threads;
     ThreadPoolRequests req;
     int                nextThreadId;
     unsigned long      nextQueueId;

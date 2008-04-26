@@ -390,7 +390,7 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
     char    buf[128];
     size_t  len;
 
-    len = snprintf(buf, sizeof(buf), "t%p a%p %s",
+    len = snprintf(buf, sizeof(buf), "t%p-a%p-%s",
                    type, addr, (char *) type);
     Ns_TclSetStringRep(objPtr, buf, len);
 }
@@ -421,7 +421,7 @@ SetAddrFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     char *string;
 
     string = Tcl_GetString(objPtr);
-    if (sscanf(string, "t%p a%p", &type, &addr) != 2
+    if (sscanf(string, "t%p-a%p", &type, &addr) != 2
         || type == NULL || addr == NULL) {
         Tcl_AppendResult(interp, "invalid address \"", string, "\"", NULL);
         return TCL_ERROR;
