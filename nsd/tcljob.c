@@ -128,6 +128,8 @@ typedef struct Job {
     char             *errorCode;
     char             *errorInfo;
     char             *queueId;
+    uintptr_t         tid;
+    Tcl_AsyncHandler  cancel;
     Tcl_DString       id;
     Tcl_DString       script;
     Tcl_DString       results;
@@ -160,6 +162,7 @@ typedef struct ThreadPool {
     Ns_Cond            cond;
     Ns_Mutex           queuelock;
     Tcl_HashTable      queues;
+    Tcl_HashTable      threads;
     ThreadPoolRequests req;
     int                nextThreadId;
     unsigned long      nextQueueId;
@@ -186,6 +189,7 @@ static void   FreeQueue(Queue *queuePtr);
 static Job*   NewJob(CONST char* server, CONST char* queueName,
                      int type, char *script);
 static void   FreeJob(Job *jobPtr);
+static int    JobAbort(ClientData cd, Tcl_Interp *interp, int code);
 
 static int    LookupQueue(Tcl_Interp *interp, CONST char *queue_name,
                           Queue **queuePtr, int locked);
@@ -552,7 +556,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                     FreeJob(jobPtr);
                     ReleaseQueue(queuePtr, 1);
                     Ns_MutexUnlock(&tp.queuelock);
-                    Tcl_AppendResult(interp, "Job ", jobId, " already exists", NULL);
+                    Tcl_AppendResult(interp, "Job ", jobId,
+                                     " already exists", NULL);
                     return TCL_ERROR;
                 }
             } else {
@@ -756,8 +761,10 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 ReleaseQueue(queuePtr, 0);
                 return TCL_ERROR;
             }
-
             jobPtr->req = JOB_CANCEL;
+            if (jobPtr->cancel != NULL) {
+                Tcl_AsyncMark(jobPtr->cancel);
+            }
             if (jobPtr->state == JOB_DONE) {
                 Tcl_DeleteHashEntry(jPtr);
                 FreeJob(jobPtr);
@@ -920,7 +927,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             Tcl_Obj    *jobList, *jobFieldList;
             CONST char *jobId, *jobState, *jobCode, *jobType, *jobReq;
-            char       *jobResults, *jobScript;
+            char       *jobResults, *jobScript, thrId[32];
             double      delta;
 
             if (objc != 3) {
@@ -934,27 +941,27 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             /* Create a Tcl List to hold the list of jobs. */
             jobList = Tcl_NewListObj(0, NULL);
-
             hPtr = Tcl_FirstHashEntry(&queuePtr->jobs, &search);
             while (hPtr != NULL) {
-                jobPtr = Tcl_GetHashValue(hPtr);
-                jobId = Tcl_GetHashKey(&queuePtr->jobs, hPtr);
-                jobCode = GetJobCodeStr(jobPtr->code);
-                jobState = GetJobStateStr(jobPtr->state);
-                jobType = GetJobTypeStr(jobPtr->type);
-                jobReq = GetJobReqStr(jobPtr->req);
+                jobPtr = (Job *)Tcl_GetHashValue(hPtr);
+                jobId      = Tcl_GetHashKey(&queuePtr->jobs, hPtr);
+                jobCode    = GetJobCodeStr(jobPtr->code);
+                jobState   = GetJobStateStr(jobPtr->state);
+                jobType    = GetJobTypeStr(jobPtr->type);
+                jobReq     = GetJobReqStr(jobPtr->req);
                 jobResults = Tcl_DStringValue(&jobPtr->results);
-                jobScript = Tcl_DStringValue(&jobPtr->script);
-                if (jobPtr->state == JOB_SCHEDULED
+                jobScript  = Tcl_DStringValue(&jobPtr->script);
+                if (   jobPtr->state == JOB_SCHEDULED
                     || jobPtr->state == JOB_RUNNING) {
                     Ns_GetTime(&jobPtr->endTime);
                 }
                 delta = ComputeDelta(&jobPtr->startTime, &jobPtr->endTime);
+                snprintf(thrId, sizeof(thrId), "%" PRIxPTR, jobPtr->tid);
 
                 /* Create a Tcl List to hold the list of job fields. */
                 jobFieldList = Tcl_NewListObj(0, NULL);
-                if (AppendField(interp, jobFieldList, "id",
-                                jobId) != TCL_OK
+                if (   AppendField(interp, jobFieldList, "id",
+                                   jobId) != TCL_OK
                     || AppendField(interp, jobFieldList, "state",
                                    jobState) != TCL_OK
                     || AppendField(interp, jobFieldList, "results",
@@ -967,6 +974,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                                    jobType) != TCL_OK
                     || AppendField(interp, jobFieldList, "req",
                                    jobReq) != TCL_OK
+                    || AppendField(interp, jobFieldList, "thread",
+                                   thrId) != TCL_OK
                     || AppendFieldDouble(interp, jobFieldList, "time",
                                          delta) != TCL_OK
                     || AppendFieldLong(interp, jobFieldList, "starttime",
@@ -1120,13 +1129,14 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 static void
 JobThread(void *arg)
 {
-    Tcl_Interp    *interp;
-    Job           *jobPtr;
-    CONST char    *err;
-    Queue         *queuePtr;
-    Tcl_HashEntry *jPtr;
-    Ns_Time       *timePtr, wait;
-    int            jpt, njobs, status, tid;
+    Tcl_Interp        *interp;
+    Job               *jobPtr;
+    CONST char        *err;
+    Queue             *queuePtr;
+    Tcl_HashEntry     *jPtr;
+    Tcl_AsyncHandler  cancel;
+    Ns_Time           *timePtr, wait;
+    int               jpt, njobs, status, tid;
 
     Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
@@ -1134,15 +1144,16 @@ JobThread(void *arg)
     Ns_ThreadSetName("-ns_job_%x-", tid);
     Ns_Log(Notice, "Starting thread: -ns_job_%x-", tid);
 
-    /*
-     * See how many jobs this thread should run.
-     * Setting this parameter to > 0 will cause the
-     * thread to graceously exit, after processing that
-     * many job requests, thus initiating kind-of Tcl-level
-     * garbage collection.
-     */
+    cancel = Tcl_AsyncCreate(JobAbort, NULL);
 
     SetupJobDefaults();
+
+    /*
+     * Setting this parameter to > 0 will cause the thread to
+     * graceously exit after processing that many job requests,
+     * thus initiating kind-of Tcl-level garbage collection.
+     */
+
     jpt = njobs = tp.jobsPerThread;
 
     while (jpt == 0 || njobs > 0) {
@@ -1177,11 +1188,16 @@ JobThread(void *arg)
         interp = Ns_TclAllocateInterp(jobPtr->server);
         Ns_GetTime(&jobPtr->endTime);
         Ns_GetTime(&jobPtr->startTime);
-        jobPtr->code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
+
+        jobPtr->cancel = cancel;
+        jobPtr->tid    = Ns_ThreadId();
+        jobPtr->code   = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
+        jobPtr->tid    = 0;
+        jobPtr->cancel = NULL;
 
         /*
-         * Make sure we show error message for detached job, otherwise it will
-         * silently disappear
+         * Make sure we show error message for detached job, otherwise 
+         * it will silently disappear
          */
 
         if (jobPtr->code != TCL_OK && jobPtr->type == JOB_DETACHED) {
@@ -1218,6 +1234,7 @@ JobThread(void *arg)
         /*
          * Clean any cancelled or detached jobs.
          */
+
         if (jobPtr->req == JOB_CANCEL || jobPtr->type == JOB_DETACHED) {
             jPtr = Tcl_FindHashEntry(&queuePtr->jobs,
                                      Tcl_DStringValue(&jobPtr->id));
@@ -1235,17 +1252,48 @@ JobThread(void *arg)
 
     --tp.nthreads;
 
+    Tcl_AsyncDelete(cancel);
     Ns_CondBroadcast(&tp.cond);
     Ns_MutexUnlock(&tp.queuelock);
 
     Ns_Log(Notice, "exiting");
 }
-
 
 /*
  *----------------------------------------------------------------------
- * Get the "next" job.
+ +
+ * JobAbort --
  *
+ *      Called by Tcl async handling when somebody cancels the job.
+ *
+ * Results:
+ *      Always TCL_ERROR.
+ *
+ * Side effects:
+ *      Causes currently executing Tcl command to return TCL_ERROR.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+JobAbort(ClientData cd, Tcl_Interp *interp, int code)
+{
+    if (interp != NULL) {
+        Ns_Log(Warning, "ns_job: job cancelled");
+        Tcl_SetResult(interp, "ns_job: job cancelled", TCL_STATIC);
+    } else {
+        Ns_Log(Warning, "ns_job: no interp active");
+    }
+
+    return TCL_ERROR; /* Forces current command error */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetNextJob --
+ *
+ *      Get the next job from the queue.
  *      Queues have a "maxThreads" so if the queue is already
  *      at "maxThreads" jobs of that queue will be skipped.
  *
@@ -1432,6 +1480,7 @@ NewJob(CONST char* server, CONST char* queueId, int type, char *script)
     jobPtr->code = TCL_OK;
     jobPtr->type = type;
     jobPtr->req = JOB_NONE;
+    jobPtr->cancel = NULL;
     jobPtr->errorCode = jobPtr->errorInfo = NULL;
 
     jobPtr->queueId = ns_calloc(1, strlen(queueId) + 1);
