@@ -1176,6 +1176,9 @@ JobThread(void *arg)
             break;
         }
 
+        jobPtr->cancel = cancel;
+        jobPtr->tid = Ns_ThreadId();
+
         /*
          * Run the job.
          */
@@ -1187,12 +1190,7 @@ JobThread(void *arg)
         interp = Ns_TclAllocateInterp(jobPtr->server);
         Ns_GetTime(&jobPtr->endTime);
         Ns_GetTime(&jobPtr->startTime);
-
-        jobPtr->cancel = cancel;
-        jobPtr->tid    = Ns_ThreadId();
-        jobPtr->code   = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
-        jobPtr->tid    = 0;
-        jobPtr->cancel = NULL;
+        jobPtr->code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
 
         /*
          * Make sure we show error message for detached job, otherwise 
@@ -1224,6 +1222,9 @@ JobThread(void *arg)
         Ns_ThreadSetName("-ns_job_%x-", tid);
 
         Ns_MutexLock(&tp.queuelock);
+
+        jobPtr->tid = 0;
+        jobPtr->cancel = NULL;
 
         LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1);
 
