@@ -1135,7 +1135,7 @@ JobThread(void *arg)
     Tcl_HashEntry     *jPtr;
     Tcl_AsyncHandler  cancel;
     Ns_Time           *timePtr, wait;
-    int               jpt, njobs, status, tid;
+    int               jpt, njobs, status, tid, code;
 
     Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
@@ -1176,28 +1176,39 @@ JobThread(void *arg)
             break;
         }
 
+        interp = Ns_TclAllocateInterp(jobPtr->server);
+
+        /*
+         * Run the job (jobPtr->script.string is accessed unprotected!)
+         */
+
+        Ns_GetTime(&jobPtr->endTime);
+        Ns_GetTime(&jobPtr->startTime);
+
         jobPtr->cancel = cancel;
         jobPtr->tid = Ns_ThreadId();
 
-        /*
-         * Run the job.
-         */
-
-        Ns_MutexUnlock(&tp.queuelock);
-
         Ns_ThreadSetName("-%s:%x", jobPtr->queueId, tid);
 
-        interp = Ns_TclAllocateInterp(jobPtr->server);
+        Ns_MutexUnlock(&tp.queuelock);
+        code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
+        Ns_MutexLock(&tp.queuelock);
+
+        Ns_ThreadSetName("-ns_job_%x-", tid);
+
+        jobPtr->code   = code;
+        jobPtr->state  = JOB_DONE;
+        jobPtr->tid    = 0;
+        jobPtr->cancel = NULL;
+
         Ns_GetTime(&jobPtr->endTime);
-        Ns_GetTime(&jobPtr->startTime);
-        jobPtr->code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
 
         /*
          * Make sure we show error message for detached job, otherwise 
          * it will silently disappear
          */
 
-        if (jobPtr->code != TCL_OK && jobPtr->type == JOB_DETACHED) {
+        if (jobPtr->type == JOB_DETACHED && jobPtr->code != TCL_OK) {
             Ns_TclLogError(interp);
         }
 
@@ -1216,20 +1227,11 @@ JobThread(void *arg)
                 jobPtr->errorInfo = ns_strdup(err);
             }
         }
-        Ns_GetTime(&jobPtr->endTime);
+
         Ns_TclDeAllocateInterp(interp);
 
-        Ns_ThreadSetName("-ns_job_%x-", tid);
-
-        Ns_MutexLock(&tp.queuelock);
-
-        jobPtr->tid = 0;
-        jobPtr->cancel = NULL;
-
         LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1);
-
         --(queuePtr->nRunning);
-        jobPtr->state = JOB_DONE;
 
         /*
          * Clean any cancelled or detached jobs.
