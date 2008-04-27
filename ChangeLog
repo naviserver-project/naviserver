@@ -1,3 +1,8 @@
+2008-04-27  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/driver.c: back-off send/recv buffer change as it aparently
+	works at least on one platform (Linux)
+
 2008-04-26  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/tcljob.c: Cancelled jobs are now cancelled _properly_ by means

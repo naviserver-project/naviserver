@@ -582,36 +582,15 @@ NsStartDrivers(void)
                    drvPtr->address, drvPtr->port, ns_sockstrerror(ns_sockerrno));
         } else {
 
-            Ns_SockSetNonBlocking(drvPtr->sock);
-
-            /*
-             * Set the send/recv socket bufsizes if required.
-             * Note: it's too late to set them here, as TCP manual says:
-             *
-             *     On individual connections, the socket buffer size 
-             *     must be set prior to the listen() or connect() calls
-             *     in order to have it take effect.
-             *
-             * So now what? The binder process already did all of that for
-             * us early on startup! So whatever we do here below does not
-             * really matter.  We must move this early in the binding process
-             * somehow, but that requires significant API plumbing... Phew.
-             *
-             */
-
-            if (drvPtr->sndbuf > 0) {
-                setsockopt(drvPtr->sock, SOL_SOCKET, SO_SNDBUF,
-                           (char *) &drvPtr->sndbuf, sizeof(drvPtr->sndbuf));
-            }
-            if (drvPtr->rcvbuf > 0) {
-                setsockopt(drvPtr->sock, SOL_SOCKET, SO_RCVBUF,
-                           (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
-            }
-
             Ns_Log(Notice, "%s: listening on %s:%d", drvPtr->name,
                    drvPtr->address, drvPtr->port);
 
-            ncommd++; /* Yet another successfuly started comm driver */
+            /*
+             * All accepted sockets should initially
+             * inherit the non-blocking state as well.
+             */
+
+            Ns_SockSetNonBlocking(drvPtr->sock);
 
             /*
              * Create the spooler/writer thread(s).
@@ -631,6 +610,8 @@ NsStartDrivers(void)
                     qPtr = qPtr->nextPtr;
                 }
             }
+
+            ncommd++; /* Yet another successfuly started comm driver */
         }
 
         drvPtr = drvPtr->nextPtr;
@@ -638,7 +619,7 @@ NsStartDrivers(void)
 
     /*
      * Create the driver thread itself if we managed to
-     * get at least one of the communication drivers.
+     * start at least one of the communication drivers.
      */
 
     if (ncommd > 0) {
@@ -1697,6 +1678,19 @@ SockAccept(Driver *drvPtr)
      */
 
     Ns_SockSetNonBlocking(sockPtr->sock);
+
+    /*
+     * Set the send/recv socket bufsizes.
+     */
+
+    if (drvPtr->sndbuf > 0) {
+        setsockopt(sockPtr->sock, SOL_SOCKET, SO_SNDBUF,
+                   (char *) &drvPtr->sndbuf, sizeof(drvPtr->sndbuf));
+    }
+    if (drvPtr->rcvbuf > 0) {
+        setsockopt(sockPtr->sock, SOL_SOCKET, SO_RCVBUF,
+                   (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
+    }
 
     drvPtr->queuesize++;
 
