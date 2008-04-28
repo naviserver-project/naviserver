@@ -191,7 +191,6 @@ typedef struct DIR_ *DIR;
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdint.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <sys/uio.h>
@@ -282,6 +281,10 @@ typedef struct DIR_ *DIR;
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
+#endif
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
