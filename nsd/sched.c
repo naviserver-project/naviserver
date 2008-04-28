@@ -689,7 +689,8 @@ EventThread(void *arg)
     }
     --nThreads;
     --nIdleThreads;
-    Ns_Log(Notice, "exiting, %d threads, %d idle", nThreads, nIdleThreads);
+    Ns_Log(Notice, "exiting, %" PRIdPTR " threads, %" PRIdPTR " idle",
+           nThreads, nIdleThreads);
 
     Ns_CondSignal(&schedcond);
     Ns_MutexUnlock(&lock);
@@ -842,7 +843,8 @@ SchedThread(void *ignored)
 
     Ns_Log(Notice, "sched: shutdown started");
     if (nThreads > 0) {
-        Ns_Log(Notice, "sched: waiting for %d/%d event threads...", nThreads, nIdleThreads);
+        Ns_Log(Notice, "sched: waiting for %" PRIdPTR "/%" PRIdPTR " event threads...",
+               nThreads, nIdleThreads);
         Ns_CondBroadcast(&eventcond);
         while (nThreads > 0) {
             Ns_CondTimedWait(&schedcond, &lock, &timeout);
