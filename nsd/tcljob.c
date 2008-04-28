@@ -1186,7 +1186,11 @@ JobThread(void *arg)
         Ns_GetTime(&jobPtr->startTime);
 
         jobPtr->cancel = cancel;
-        jobPtr->tid = Ns_ThreadId();
+        jobPtr->tid    = Ns_ThreadId();
+        jobPtr->code   = TCL_OK;
+        jobPtr->state  = JOB_RUNNING;
+
+        ++(queuePtr->nRunning);
 
         Ns_ThreadSetName("-%s:%x", jobPtr->queueId, tid);
 
@@ -1196,8 +1200,8 @@ JobThread(void *arg)
 
         Ns_ThreadSetName("-ns_job_%x-", tid);
 
-        jobPtr->code   = code;
         jobPtr->state  = JOB_DONE;
+        jobPtr->code   = code;
         jobPtr->tid    = 0;
         jobPtr->cancel = NULL;
 
@@ -1280,11 +1284,13 @@ JobThread(void *arg)
 static int
 JobAbort(ClientData cd, Tcl_Interp *interp, int code)
 {
+    char *emsg = "job cancelled";
+
     if (interp != NULL) {
-        Ns_Log(Warning, "ns_job: job cancelled");
-        Tcl_SetResult(interp, "ns_job: job cancelled", TCL_STATIC);
+        Tcl_AppendResult(interp, "ns_job: ", emsg, NULL);
+        Tcl_SetErrorCode(interp, "ECANCEL", emsg, NULL);
     } else {
-        Ns_Log(Warning, "ns_job: no interp active");
+        Ns_Log(Warning, "ns_job: %s", emsg);
     }
 
     return TCL_ERROR; /* Forces current command error */
@@ -1365,8 +1371,6 @@ GetNextJob(void)
             }
 
             done = 1;
-            jobPtr->state = JOB_RUNNING;
-            ++(queuePtr->nRunning);
 
         } else {
 
