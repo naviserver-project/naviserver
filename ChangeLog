@@ -1,3 +1,8 @@
+2008-04-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/log.c: LogToTcl: short-circuit for Fatal severity
+	otherwise we may get stucked in the depths of the memalloc.
+
 2008-04-27  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/driver.c: back-off send/recv buffer change as it aparently

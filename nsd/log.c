@@ -1279,6 +1279,10 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
     Tcl_Interp     *interp;
     Ns_TclCallback *cbPtr = (Ns_TclCallback *)arg;
 
+    if (severity == Fatal) {
+        return NS_OK;
+    }
+
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
         char *err = "LogToTcl: can't get interpreter";
