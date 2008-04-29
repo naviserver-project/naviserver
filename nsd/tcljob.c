@@ -481,8 +481,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 Tcl_WrongNumArgs(interp, 2, objv, "queueId");
                 return TCL_ERROR;
             }
-            if (LookupQueue(interp, Tcl_GetString(objv[2]), &queuePtr, 0)
-                != TCL_OK) {
+            if (LookupQueue(interp, Tcl_GetString(objv[2]),
+                            &queuePtr, 0) != TCL_OK) {
                 return TCL_ERROR;
             }
             queuePtr->req = QUEUE_REQ_DELETE;
@@ -739,8 +739,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 Tcl_WrongNumArgs(interp, 2, objv, "queueId jobId");
                 return TCL_ERROR;
             }
-            if (LookupQueue(interp, Tcl_GetString(objv[2]), &queuePtr, 0)
-                != TCL_OK) {
+            if (LookupQueue(interp, Tcl_GetString(objv[2]), 
+                            &queuePtr, 0) != TCL_OK) {
                 return TCL_ERROR;
             }
             jobId = Tcl_GetString(objv[3]);
@@ -788,8 +788,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 Tcl_WrongNumArgs(interp, 2, objv, "queueId jobId");
                 return TCL_ERROR;
             }
-            if (LookupQueue(interp, Tcl_GetString(objv[2]), &queuePtr, 0)
-                != TCL_OK) {
+            if (LookupQueue(interp, Tcl_GetString(objv[2]), 
+                            &queuePtr, 0) != TCL_OK) {
                 return TCL_ERROR;
             }
             jobId = Tcl_GetString(objv[3]);
@@ -1176,6 +1176,10 @@ JobThread(void *arg)
             break;
         }
 
+        if (LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1) != TCL_OK) {
+            Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
+        }
+
         interp = Ns_TclAllocateInterp(jobPtr->server);
 
         /*
@@ -1190,14 +1194,14 @@ JobThread(void *arg)
         jobPtr->code   = TCL_OK;
         jobPtr->state  = JOB_RUNNING;
 
-        ++(queuePtr->nRunning);
-
         Ns_ThreadSetName("-%s:%x", jobPtr->queueId, tid);
+        ++queuePtr->nRunning;
 
         Ns_MutexUnlock(&tp.queuelock);
         code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
         Ns_MutexLock(&tp.queuelock);
 
+        --queuePtr->nRunning;
         Ns_ThreadSetName("-ns_job_%x-", tid);
 
         jobPtr->state  = JOB_DONE;
@@ -1233,9 +1237,6 @@ JobThread(void *arg)
         }
 
         Ns_TclDeAllocateInterp(interp);
-
-        LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1);
-        --(queuePtr->nRunning);
 
         /*
          * Clean any cancelled or detached jobs.
@@ -1329,7 +1330,9 @@ GetNextJob(void)
 
     while (!done && jobPtr != NULL) {
 
-        LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1);
+        if (LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1) != TCL_OK) {
+            Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
+        }
 
         /*
          * Check if the job is not cancel and
@@ -1572,7 +1575,7 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
     if (hPtr != NULL) {
         *queuePtr = Tcl_GetHashValue(hPtr);
         Ns_MutexLock(&(*queuePtr)->lock);
-        ++((*queuePtr)->refCount);
+        ++(*queuePtr)->refCount;
     }
 
     if (!locked) {
@@ -1611,11 +1614,11 @@ ReleaseQueue(Queue *queuePtr, int locked)
     Tcl_HashSearch  search;
     int             deleted = 0;
 
-    --(queuePtr->refCount);
+    --queuePtr->refCount;
 
     /*
      * If user requested that the queue be deleted and
-     * no other thread is referencing the queueu and
+     * no other thread is referencing the queue and
      * the queue is emtpy, then delete it.
      *
      */
