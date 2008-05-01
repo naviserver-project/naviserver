@@ -1,3 +1,13 @@
+2008-05-01  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/tcljob.c: Fixed deadlock in job thread caused
+	by obscure locking strategy of the existing code.
+	Also, did some cosmetic changes on variables.
+
+	* nsd/log.c: Fixed tramping over freed memory in
+	LogFlush() when last cache entry has been processed
+	and the server is shutting down, tearing the cache down.
+
 2008-04-29  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/log.c: LogToTcl: short-circuit for Fatal severity

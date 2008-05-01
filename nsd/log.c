@@ -1149,6 +1149,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
         } else {
             cachePtr->count = 0;
             cachePtr->currEntry = NULL;
+            cachePtr->firstEntry = NULL;
             Ns_DStringSetLength(&cachePtr->buffer, 0);
         }
     }
