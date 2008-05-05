@@ -1,3 +1,11 @@
+2008-05-05  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/driver.c:
+	* nsd/queue.c: Minor change to allow queueing socktes with empty
+	Request structure. This is the case for drivers without DRIVER_ASYNC flag.
+	Moved assigning IP/port into queue.c:ConnRun where Request should be properly 
+	initialized already.
+
 2008-05-01  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/tcljob.c: Fixed deadlock in job thread caused

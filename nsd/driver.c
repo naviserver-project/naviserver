@@ -1478,9 +1478,7 @@ SockPrepare(Sock *sockPtr)
  *      Call driver's queue handler for the last checks before actual
  *      connection enqueue. NS_ERROR is valid here because that means
  *      driver does not implement this call, we care about NS_FATAL status
- *      only which means we cannot queue this socket. It is driver's responsibility
- *      to allocate Request structure via Ns_DriverSetRequest call, otherwise
- *      for all non-HTTP or not-parsed sockets this call will fail
+ *      only which means we cannot queue this socket.
  *
  * Results:
  *      NS_OK if queued,
@@ -1488,7 +1486,8 @@ SockPrepare(Sock *sockPtr)
  *      NS_TIMEOUT if queue is full
  *
  * Side effects:
- *      None
+ *      Non-HTTP drivers are responsible for allocating Request structure
+ *      via Ns_DriverSetRequest call, otherwise the socket will be closed
  *
  *----------------------------------------------------------------------
  */
@@ -1509,19 +1508,10 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
      */
 
     if (status == NS_FATAL ||
-        (sockPtr->drvPtr->opts & NS_DRIVER_ASYNC &&
-         sockPtr->reqPtr == NULL) ||
         !SetServer(sockPtr)) {
         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
         return NS_ERROR;
     }
-
-    /*
-     * Make sure we update peer address with actual remote IP address
-     */
-
-    sockPtr->reqPtr->port = ntohs(sockPtr->sa.sin_port);
-    strcpy(sockPtr->reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
 
     /*
      *  Actual queueing, if not ready spool to the waiting list
@@ -2102,7 +2092,7 @@ SockRead(Sock *sockPtr, int spooler)
     }
     if (sockPtr->tfd > 0) {
         if (write(sockPtr->tfd, tbuf, n) != n) {
-     	    return SOCK_WRITEERROR;
+            return SOCK_WRITEERROR;
         }
     } else {
         Tcl_DStringSetLength(bufPtr, len + n);

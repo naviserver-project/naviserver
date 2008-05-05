@@ -672,6 +672,13 @@ ConnRun(Conn *connPtr)
         return;
     }
 
+    /*
+     * Make sure we update peer address with actual remote IP address
+     */
+
+    connPtr->reqPtr->port = ntohs(connPtr->sockPtr->sa.sin_port);
+    strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(connPtr->sockPtr->sa.sin_addr));
+
     connPtr->contentLength = connPtr->reqPtr->length;
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->request = connPtr->reqPtr->request;
