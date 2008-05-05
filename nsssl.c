@@ -108,7 +108,7 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
     init.version = NS_DRIVER_VERSION_1;
     init.name = "nsssl";
     init.proc = SSLProc;
-    init.opts = NS_DRIVER_SSL|NS_DRIVER_QUEUE_ONACCEPT;
+    init.opts = NS_DRIVER_SSL;
     init.arg = drvPtr;
     init.path = NULL;
 
@@ -124,9 +124,9 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
     num = CRYPTO_num_locks();
     driver_locks = ns_calloc(num, sizeof(*driver_locks));
     for (n = 0; n < num; n++) {
-	Ns_DStringPrintf(&ds, "nsssl:%d", n);
+        Ns_DStringPrintf(&ds, "nsssl:%d", n);
         Ns_MutexSetName(driver_locks + n, ds.string);
-	Ns_DStringTrunc(&ds, 0);
+        Ns_DStringTrunc(&ds, 0);
     }
     CRYPTO_set_locking_callback(SSLLock);
     CRYPTO_set_id_callback(SSLThreadId);
@@ -139,7 +139,7 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
     drvPtr->ctx = SSL_CTX_new(SSLv23_server_method());
     if (drvPtr->ctx == NULL) {
         Ns_Log(Error, "nsssl: init error [%s]",strerror(errno));
-	return NS_ERROR;
+        return NS_ERROR;
     }
 
     // Load certificate and private key
@@ -149,12 +149,12 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
         return NS_ERROR;
     }
     if (SSL_CTX_use_certificate_chain_file(drvPtr->ctx, value) != 1) {
-	Ns_Log(Error, "nsssl: certificate load error [%s]", ERR_error_string(ERR_get_error(), NULL));
+        Ns_Log(Error, "nsssl: certificate load error [%s]", ERR_error_string(ERR_get_error(), NULL));
         return NS_ERROR;
     }
     if (SSL_CTX_use_PrivateKey_file(drvPtr->ctx, value, SSL_FILETYPE_PEM) != 1) {
-	Ns_Log(Error, "nsssl: private key load error [%s]", ERR_error_string(ERR_get_error(), NULL));
-	return NS_ERROR;
+        Ns_Log(Error, "nsssl: private key load error [%s]", ERR_error_string(ERR_get_error(), NULL));
+        return NS_ERROR;
     }
 
     // Session cache support
@@ -227,13 +227,13 @@ static int SSLInterpInit(Tcl_Interp *interp, void *arg)
  *
  * SSLProc --
  *
- *	Driver proc for SSL requests
+ *  Driver proc for SSL requests
  *
  * Results:
- *	NS_OK or NS_ERROR
+ *  NS_OK or NS_ERROR
  *
  * Side effects:
- *  	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -244,6 +244,8 @@ static int SSLProc(Ns_DriverCmd cmd, Ns_Sock *sock, struct iovec *bufs, int nbuf
     SSL *sslPtr = sock->arg;
     int rc, size;
     X509 *peer;
+
+    Ns_Log(Notice, "ssl: %d", cmd);
 
     switch(cmd) {
      case DriverQueue:
@@ -359,13 +361,13 @@ static unsigned long SSLThreadId(void)
  *
  * SSLObjCmd --
  *
- *	Implements the new ns_ssl to handle HTTP requests.
+ *  Implements the new ns_ssl to handle HTTP requests.
  *
  * Results:
- *	Standard Tcl result.
+ *  Standard Tcl result.
  *
  * Side effects:
- *	May queue an HTTP request.
+ *  May queue an HTTP request.
  *
  *----------------------------------------------------------------------
  */
@@ -398,7 +400,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 
     switch (opt) {
     case HRunIdx:
-	run = 1;
+    run = 1;
 
     case HQueueIdx: {
         int sock, len, uaFlag = -1, verify = 0;
@@ -495,7 +497,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
                 return NS_ERROR;
             }
             if (SSL_CTX_use_PrivateKey_file(sesPtr->ctx, cert, SSL_FILETYPE_PEM) != 1) {
-	        Tcl_AppendResult(interp, "private key load error: ", ERR_error_string(ERR_get_error(), NULL), NULL);
+                Tcl_AppendResult(interp, "private key load error: ", ERR_error_string(ERR_get_error(), NULL), NULL);
                 SessionClose(sesPtr);
                 return NS_ERROR;
             }
@@ -558,7 +560,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         if (bodyPtr != NULL) {
             body = Tcl_GetStringFromObj(bodyPtr, &len);
             if (len == 0) {
-        	    body = NULL;
+                body = NULL;
             }
         }
         if (body != NULL) {
@@ -585,7 +587,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             if (session_queue == NULL) {
                 Ns_MasterLock();
                 if (session_queue == NULL) {
-            	    session_queue = Ns_CreateTaskQueue("tclssl");
+                    session_queue = Ns_CreateTaskQueue("tclssl");
                 }
                 Ns_MasterUnlock();
             }
@@ -605,7 +607,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         Ns_MutexUnlock(&session_lock);
 
         Tcl_SetResult(interp, buf, TCL_VOLATILE);
-	break;
+        break;
     }
 
     case HWaitIdx: {
@@ -646,30 +648,30 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             Ns_TclSetTimeObj(valPtr, &diff);
             if (!SessionSetVar(interp, elapsedPtr, valPtr)) {
                 SessionClose(sesPtr);
-       	        return TCL_ERROR;
+                return TCL_ERROR;
             }
         }
         if (sesPtr->error) {
             Tcl_AppendResult(interp, "ssl failed: ", sesPtr->error, NULL);
             SessionClose(sesPtr);
-       	    return TCL_ERROR;
+            return TCL_ERROR;
         }
         valPtr = SessionResult(&sesPtr->ds, &flag, hdrPtr);
         if (statusPtr != NULL && !SessionSetVar(interp, statusPtr, Tcl_NewIntObj(flag))) {
             SessionClose(sesPtr);
-       	    return TCL_ERROR;
+            return TCL_ERROR;
         }
         if (resultPtr == NULL) {
             Tcl_SetObjResult(interp, valPtr);
         } else {
             if (!SessionSetVar(interp, resultPtr, valPtr)) {
                 SessionClose(sesPtr);
-       	        return TCL_ERROR;
+                return TCL_ERROR;
             }
             Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
         }
         SessionClose(sesPtr);
-	break;
+        break;
     }
 
     case HCancelIdx:
@@ -677,9 +679,9 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             Tcl_WrongNumArgs(interp, 2, objv, "id");
             return TCL_ERROR;
         }
-	if (!(sesPtr = SessionGet(interp, Tcl_GetString(objv[2])))) {
-	    return TCL_ERROR;
-	}
+        if (!(sesPtr = SessionGet(interp, Tcl_GetString(objv[2])))) {
+            return TCL_ERROR;
+        }
         SessionAbort(sesPtr);
         break;
 
@@ -719,13 +721,13 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
  *
  * SessionGet --
  *
- *	Locate and remove the Session struct for a given id.
+ *  Locate and remove the Session struct for a given id.
  *
  * Results:
- *	pointer on success, NULL otherwise.
+ *  pointer on success, NULL otherwise.
  *
  * Side effects:
- *	None
+ *  None
  *
  *----------------------------------------------------------------------
  */
@@ -754,13 +756,13 @@ SessionGet(Tcl_Interp *interp, char *id)
  *
  * SessionSetVar --
  *
- *	Set a variable by name.  Convience routine for for SessionWaitCmd.
+ *  Set a variable by name.  Convience routine for for SessionWaitCmd.
  *
  * Results:
- *	1 on success, 0 otherwise.
+ *  1 on success, 0 otherwise.
  *
  * Side effects:
- *	None.
+ *  None.
  *
  *----------------------------------------------------------------------
  */
@@ -805,45 +807,46 @@ SessionResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
     eoh = strstr(response, "\r\n\r\n");
     if (eoh != NULL) {
         body = eoh + 4;
-	eoh += 2;
+        eoh += 2;
     } else {
         eoh = strstr(response, "\n\n");
         if (eoh != NULL) {
             body = eoh + 2;
-	    eoh += 1;
+            eoh += 1;
         }
     }
 
     result = Tcl_NewByteArrayObj((unsigned char*)body, ds->length-(body-response));
 
     if (eoh == NULL) {
-	*statusPtr = 0;
+        *statusPtr = 0;
     } else {
-	*eoh = '\0';
-	sscanf(response, "HTTP/%d.%d %d", &major, &minor, statusPtr);
-    	if (hdrs != NULL) {
-	    save = *body;
-	    *body = '\0';
+        *eoh = '\0';
+        sscanf(response, "HTTP/%d.%d %d", &major, &minor, statusPtr);
+        if (hdrs != NULL) {
+            save = *body;
+            *body = '\0';
             firsthdr = 1;
             p = response;
             while ((eoh = strchr(p, '\n')) != NULL) {
-            	*eoh++ = '\0';
-            	len = strlen(p);
-            	if (len > 0 && p[len-1] == '\r') {
+                *eoh++ = '\0';
+                len = strlen(p);
+                if (len > 0 && p[len-1] == '\r') {
                     p[len-1] = '\0';
-            	}
-            	if (firsthdr) {
+                }
+                if (firsthdr) {
                     if (hdrs->name != NULL) {
-                    	ns_free(hdrs->name);
+                        ns_free(hdrs->name);
                     }
                     hdrs->name = ns_strdup(p);
                     firsthdr = 0;
-            	} else if (Ns_ParseHeader(hdrs, p, ToLower) != NS_OK) {
+                } else
+                if (Ns_ParseHeader(hdrs, p, ToLower) != NS_OK) {
                     break;
-            	}
-            	p = eoh;
-	    }
-	    *body = save;
+                }
+                p = eoh;
+            }
+            *body = save;
         }
     }
     return result;
@@ -913,57 +916,56 @@ SessionProc(Ns_Task *task, SOCKET sock, void *arg, int why)
 
     switch (why) {
     case NS_SOCK_INIT:
-	Ns_TaskCallback(task, NS_SOCK_WRITE, &sesPtr->timeout);
-	return;
+    Ns_TaskCallback(task, NS_SOCK_WRITE, &sesPtr->timeout);
+    return;
 
     case NS_SOCK_WRITE:
         do {
            n = SSL_write(sesPtr->ssl, sesPtr->next, sesPtr->len);
         } while (n == -1 && SSL_get_error(sesPtr->ssl, n) == SSL_ERROR_SYSCALL && errno == EINTR);
 
-    	if (n < 0) {
-	    sesPtr->error = "send failed";
-	} else {
-    	    sesPtr->next += n;
-    	    sesPtr->len -= n;
-    	    if (sesPtr->len == 0) {
-            	shutdown(sock, 1);
-            	Tcl_DStringTrunc(&sesPtr->ds, 0);
-	    	Ns_TaskCallback(task, NS_SOCK_READ, &sesPtr->timeout);
-	    }
-	    return;
-	}
-	break;
+        if (n < 0) {
+            sesPtr->error = "send failed";
+        } else {
+            sesPtr->next += n;
+            sesPtr->len -= n;
+            if (sesPtr->len == 0) {
+                shutdown(sock, 1);
+                Tcl_DStringTrunc(&sesPtr->ds, 0);
+                Ns_TaskCallback(task, NS_SOCK_READ, &sesPtr->timeout);
+            }
+            return;
+        }
+        break;
 
     case NS_SOCK_READ:
         do {
            n = SSL_read(sesPtr->ssl, buf, sizeof(buf));
         } while (n == -1 && SSL_get_error(sesPtr->ssl, n) == SSL_ERROR_SYSCALL && errno == EINTR);
 
-    	if (n > 0) {
+        if (n > 0) {
             Tcl_DStringAppend(&sesPtr->ds, buf, n);
-	    return;
-	}
-	if (n < 0) {
-	    sesPtr->error = "recv failed";
-	}
-	break;
+            return;
+        }
+        if (n < 0) {
+            sesPtr->error = "recv failed";
+        }
+        break;
 
     case NS_SOCK_DONE:
         return;
 
     case NS_SOCK_TIMEOUT:
-	sesPtr->error = "timeout";
-	break;
+        sesPtr->error = "timeout";
+        break;
 
     case NS_SOCK_EXIT:
-	sesPtr->error = "shutdown";
-	break;
+        sesPtr->error = "shutdown";
+        break;
 
     case NS_SOCK_CANCEL:
-	sesPtr->error = "cancelled";
-	break;
-
+        sesPtr->error = "cancelled";
+        break;
     }
 
     /*
