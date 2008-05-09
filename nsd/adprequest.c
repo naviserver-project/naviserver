@@ -297,22 +297,26 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
     AdpRequest *adp = arg;
     Ns_Time    *expiresPtr;
     Ns_DString  ds;
-    char       *file = NULL;
+    char       *file = NULL, *server = Ns_ConnServer(conn);
     int         status;
 
     Ns_DStringInit(&ds);
 
     if (adp->file[0] == '\0') {
-        if (Ns_UrlToFile(&ds, Ns_ConnServer(conn), conn->request->url)
-            != NS_OK) {
+        if (Ns_UrlToFile(&ds, server, conn->request->url) != NS_OK) {
             file = NULL;
         } else {
             file = ds.string;
         }
     } else if (!Ns_PathIsAbsolute(adp->file)) {
-        file = Ns_PagePath(&ds, Ns_ConnServer(conn), adp->file, NULL);
+        file = Ns_PagePath(&ds, server, adp->file, NULL);
+    } else {
+        file = adp->file;
     }
+
     if (file == NULL) {
+        Ns_Log(Error, "adp file not found for %s %s, file=%s, flags=0x%x",
+               conn->request->method, conn->request->url, adp->file, adp->flags);
         status = Ns_ConnReturnInternalError(conn);
         goto done;
     }

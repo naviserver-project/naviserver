@@ -1,3 +1,11 @@
+2008-05-09  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/adprequest.c: Fixed situation when adp registered absolute path
+	outside of the page root.
+
+	Output error message when registered adp callback could not resolve 
+	actual adp file.
+
 2008-05-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/driver.c:
