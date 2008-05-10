@@ -737,10 +737,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
              */
 
             *slash = '\0';
-            ip.s_addr = inet_addr(net);
-            mask.s_addr = inet_addr(slash + 1);
-            *slash = '\0';
-            if (ip.s_addr == INADDR_NONE || mask.s_addr == INADDR_NONE) {
+            if (inet_aton(net, &ip) == 0 || inet_aton(slash+1, &mask) == 0) {
                 Tcl_AppendResult(interp, "invalid address or hostname \"",
                                  net, "\". " "should be ipaddr/netmask or hostname", NULL);
                 goto fail;
