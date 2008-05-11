@@ -1,3 +1,8 @@
+2008-05-11  Vlad Seryakov <seryakov@users.sf.net>
+
+	nsd/adprequest.c: Server will return 404 status if ADP file is not 
+	found or cannot be accessed. No error log reporting about this anymore.
+
 2008-05-10  Vlad Seryakov <seryakov@users.sf.net>
 
 	nsperm/nsperm.c: Fixed bug with netmask parsing, submitted by 

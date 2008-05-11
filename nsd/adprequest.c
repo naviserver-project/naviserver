@@ -123,16 +123,17 @@ PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, int aflags)
     Tcl_Obj      *objv[2];
     int           result;
 
-    interp = Ns_GetConnInterp(conn);
-    itPtr = NsGetInterpData(interp);
-
     /*
      * Verify the file exists.
      */
 
-    if (access(file, R_OK) != 0) {
+    if (file == NULL || access(file, R_OK) != 0) {
         return Ns_ConnReturnNotFound(conn);
     }
+
+    interp = Ns_GetConnInterp(conn);
+    itPtr = NsGetInterpData(interp);
+
 
     /*
      * Set the output type based on the file type.
@@ -314,13 +315,6 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
         file = adp->file;
     }
 
-    if (file == NULL) {
-        Ns_Log(Error, "adp file not found for %s %s, file=%s, flags=0x%x",
-               conn->request->method, conn->request->url, adp->file, adp->flags);
-        status = Ns_ConnReturnInternalError(conn);
-        goto done;
-    }
-
     if (adp->expires.sec > 0 || adp->expires.usec > 0) {
         expiresPtr = &adp->expires;
     } else {
@@ -329,7 +323,6 @@ NsAdpPageProc(void *arg, Ns_Conn *conn)
 
     status = PageRequest(conn, file, expiresPtr, adp->flags);
 
- done:
     Ns_DStringFree(&ds);
 
     return status;
