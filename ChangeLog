@@ -3,6 +3,10 @@
 	* nsd/driver.c: Initializes memory priour usage to avoid
 	UMR-kind of warnings in Purify.
 
+	* tests/ns_thread.test: Fixed regexps testing returned handles
+	to match recent changes in handle format (using hyphens
+	instead of blanks)
+
 2008-05-11  Vlad Seryakov <seryakov@users.sf.net>
 
 	nsd/adprequest.c: Server will return 404 status if ADP file is not 

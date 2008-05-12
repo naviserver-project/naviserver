@@ -46,7 +46,7 @@ test ns_thread-2.2 {wait for thread thread} -body {
      list $tid $result
 } -cleanup {
     unset -nocomplain -- tid result
-} -match regexp -result {{t(0x)?[a-z0-9]+ a(0x)?[a-z0-9]+ ns:thread} ok}
+} -match regexp -result {t(0x)?[a-z0-9]+-a(0x)?[a-z0-9]+-ns:thread ok}
 
 test ns_thread-2.3 {get thread id of self} -body {
     ns_thread id
@@ -77,7 +77,7 @@ test ns_thread-3.1 {create and destroy a mutex} -body {
     set mutex
 }  -cleanup {
     unset -nocomplain -- mutex
-} -match regexp -result {t(0x)?[a-z0-9]+ a(0x)?[a-z0-9]+ ns:mutex}
+} -match regexp -result {t(0x)?[a-z0-9]+-a(0x)?[a-z0-9]+-ns:mutex}
 
 test ns_thread-3.2 {mutex locking} -body {
     set mutex [ns_mutex create]
@@ -118,7 +118,7 @@ test ns_thread-4.1 {create and destroy a critical section} -body {
     set cs
 }  -cleanup {
     unset -nocomplain -- cs
-} -match regexp -result {t(0x)?[a-z0-9]+ a(0x)?[a-z0-9]+ ns:critsec}
+} -match regexp -result {t(0x)?[a-z0-9]+-a(0x)?[a-z0-9]+-ns:critsec}
 
 test ns_thread-4.2 {enter and then leave a critical section} -body {
     set cs [ns_critsec create]
@@ -155,7 +155,7 @@ test ns_thread-5.1 {create and destroy a semaphore} -body {
     set sema
 }  -cleanup {
     unset -nocomplain -- sema
-} -match regexp -result {t(0x)?[a-z0-9]+ a(0x)?[a-z0-9]+ ns:sema}
+} -match regexp -result {t(0x)?[a-z0-9]+-a(0x)?[a-z0-9]+-ns:sema}
 
 
 
@@ -165,7 +165,7 @@ test ns_thread-6.1 {create and destroy a read-write lock} -body {
     set rw
 }  -cleanup {
     unset -nocomplain -- rw
-} -match regexp -result {t(0x)?[a-z0-9]+ a(0x)?[a-z0-9]+ ns:rwlock}
+} -match regexp -result {t(0x)?[a-z0-9]+-a(0x)?[a-z0-9]+-ns:rwlock}
 
 test ns_thread-6.2 {read lock} -body {
     set rw [ns_rwlock create]
