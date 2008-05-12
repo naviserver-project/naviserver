@@ -47,6 +47,94 @@ static int ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj **objv,
 static int EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj **objv);
 static int GetFrame(ClientData arg, AdpFrame **framePtrPtr);
 static int GetOutput(ClientData arg, Tcl_DString **dsPtrPtr);
+static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr);
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AdpAppend, NsAdpAppend --
+ *
+ *      Append content to the ADP output buffer, flushing the content
+ *      if necessary.
+ *
+ * Results:
+ *      TCL_ERROR if append and/or flush failed, TCL_OK otherwise.
+ *
+ * Side effects:
+ *      Will set ADP error flag and leave an error message in
+ *      the interp on flush failure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_AdpAppend(Tcl_Interp *interp, CONST char *buf, int len)
+{
+    NsInterp *itPtr;
+
+    if (GetInterp(interp, &itPtr) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    return NsAdpAppend(itPtr, buf, len);
+}
+
+int
+NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len)
+{
+    Tcl_DString *bufPtr;
+
+    if (GetOutput(itPtr, &bufPtr) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    Ns_DStringNAppend(bufPtr, buf, len);
+    if (((itPtr->adp.flags & ADP_STREAM) || bufPtr->length > itPtr->adp.bufsize)
+            && NsAdpFlush(itPtr, 1) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_AdpGetOutput --
+ *
+ *      Get the dstring used to buffer ADP content.
+ *
+ * Results:
+ *      TCL_ERROR if no active ADP, TCL_OK otherwise.
+ *      streamPtr set to 1 if steaming mode active.
+ *      maxBufferPtr set to length of buffer before Flush
+ *      should be called.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
+                int *streamPtr, int *maxBufferPtr)
+{
+    NsInterp *itPtr;
+
+    if (GetInterp(interp, &itPtr) != TCL_OK
+            || GetOutput(itPtr, dsPtrPtr) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (streamPtr != NULL) {
+        *streamPtr = (itPtr->adp.flags & ADP_STREAM) ? 1 : 0;
+    }
+    if (maxBufferPtr != NULL) {
+        *maxBufferPtr = itPtr->adp.bufsize;
+    }
+
+    return TCL_OK;
+}
 
 
 /*
@@ -1083,41 +1171,6 @@ NsTclAdpMimeTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 /*
  *----------------------------------------------------------------------
  *
- * NsAdpAppend --
- *
- *      Append content to the ADP output buffer, flushing the content
- *      if necessary.
- *
- * Results:
- *      TCL_ERROR if append and/or flush failed, TCL_OK otherwise.
- *
- * Side effects:
- *      Will set ADP error flag and leave an error message in
- *      the interp on flush failure.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsAdpAppend(NsInterp *itPtr, char *buf, int len)
-{
-    Tcl_DString *bufPtr;
-
-    if (GetOutput(itPtr, &bufPtr) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    Ns_DStringNAppend(bufPtr, buf, len);
-    if (((itPtr->adp.flags & ADP_STREAM) || bufPtr->length > itPtr->adp.bufsize)
-            && NsAdpFlush(itPtr, 1) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * GetFrame --
  *
  *      Validate and return the current execution frame.
@@ -1171,6 +1224,38 @@ GetOutput(ClientData arg, Tcl_DString **dsPtrPtr)
         return TCL_ERROR;
     }
     *dsPtrPtr = framePtr->outputPtr;
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetInterp --
+ *
+ *      Get the NsInterp structure..
+ *
+ * Results:
+ *      TCL_ERROR if not a naviserver interp, TCL_OK otherwise.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr)
+{
+    NsInterp *itPtr;
+
+    itPtr = NsGetInterpData(interp);
+    if (itPtr == NULL) {
+        Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
+        return TCL_ERROR;
+    }
+    *itPtrPtr = itPtr;
 
     return TCL_OK;
 }

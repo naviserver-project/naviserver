@@ -1108,7 +1108,7 @@ extern NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *url);
 extern void NsAdpSetMimeType(NsInterp *itPtr, char *type);
 extern void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
 extern int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
-extern int NsAdpAppend(NsInterp *itPtr, char *buf, int len);
+extern int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
 extern int NsAdpFlush(NsInterp *itPtr, int stream);
 extern int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
 extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);

@@ -1,3 +1,12 @@
+2008-05-12  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/adpcmds.c:
+	* nsd/adprequest.c: Expose Ns_AdpAppend, Ns_AdpFlush, and add new
+	Ns_AdpGetOutput for the benefit of adp commands written in
+	external modules.
+
 2008-05-12  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd/driver.c: Initializes memory priour usage to avoid

@@ -374,7 +374,7 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * NsAdpFlush --
+ * Ns_AdpFlush, NsAdpFlush --
  *
  *      Flush output to connection response buffer.
  *
@@ -386,6 +386,19 @@ NsAdpPageArgProc(Tcl_DString *dsPtr, void *arg)
  *
  *----------------------------------------------------------------------
  */
+
+int
+Ns_AdpFlush(Tcl_Interp *interp, int stream)
+{
+    NsInterp *itPtr;
+
+    itPtr = NsGetInterpData(interp);
+    if (itPtr == NULL) {
+        Tcl_SetResult(interp, "not a server interp", TCL_STATIC);
+        return TCL_ERROR;
+    }
+    return NsAdpFlush(itPtr, stream);
+}
 
 int
 NsAdpFlush(NsInterp *itPtr, int stream)

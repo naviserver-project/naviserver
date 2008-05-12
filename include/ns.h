@@ -548,6 +548,19 @@ typedef char *(Ns_LocationProc)        /* Deprecated */
     (Ns_Conn *conn);
 
 /*
+ * adpcmds.c:
+ */
+
+NS_EXTERN int
+Ns_AdpAppend(Tcl_Interp *interp, CONST char *buf, int len)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
+                int *streamPtr, int *maxBufferPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+/*
  * adprequest.c:
  */
 
@@ -558,6 +571,10 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
 NS_EXTERN int
 Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_AdpFlush(Tcl_Interp *interp, int stream)
+    NS_GNUC_NONNULL(1);
 
 /*
  * auth.c:
