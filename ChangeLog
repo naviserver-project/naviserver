@@ -1,3 +1,8 @@
+2008-05-12  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd/driver.c: Initializes memory priour usage to avoid
+	UMR-kind of warnings in Purify.
+
 2008-05-11  Vlad Seryakov <seryakov@users.sf.net>
 
 	nsd/adprequest.c: Server will return 404 status if ADP file is not 

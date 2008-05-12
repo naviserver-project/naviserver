@@ -1076,7 +1076,7 @@ DriverThread(void *ignored)
     Ns_GetTime(&now);
     stopping = 0;
     maxfds = 100;
-    pfds = ns_malloc(sizeof(struct pollfd) * maxfds);
+    pfds = ns_calloc(maxfds, sizeof(struct pollfd));
     pfds[0].fd = drvPipe[0];
     pfds[0].events = POLLIN;
 
