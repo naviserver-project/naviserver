@@ -313,14 +313,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->bufsize      = Ns_ConfigIntRange(path, "bufsize",
                                              16384,     1024, INT_MAX);
 
-    drvPtr->sndbuf       = Ns_ConfigIntRange(path, "sndbuf",
-                                             0,            0, INT_MAX);
-
     drvPtr->maxqueuesize = Ns_ConfigIntRange(path, "maxqueuesize",
                                              256,          1, INT_MAX);
-
-    drvPtr->rcvbuf       = Ns_ConfigIntRange(path, "rcvbuf",
-                                             0,            0, INT_MAX);
 
     drvPtr->sendwait     = Ns_ConfigIntRange(path, "sendwait",
                                              30,           1, INT_MAX);
@@ -1668,19 +1662,6 @@ SockAccept(Driver *drvPtr)
      */
 
     Ns_SockSetNonBlocking(sockPtr->sock);
-
-    /*
-     * Set the send/recv socket bufsizes.
-     */
-
-    if (drvPtr->sndbuf > 0) {
-        setsockopt(sockPtr->sock, SOL_SOCKET, SO_SNDBUF,
-                   (char *) &drvPtr->sndbuf, sizeof(drvPtr->sndbuf));
-    }
-    if (drvPtr->rcvbuf > 0) {
-        setsockopt(sockPtr->sock, SOL_SOCKET, SO_RCVBUF,
-                   (char *) &drvPtr->rcvbuf, sizeof(drvPtr->rcvbuf));
-    }
 
     drvPtr->queuesize++;
 

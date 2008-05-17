@@ -1,3 +1,11 @@
+2008-05-17  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsd-config.tcl:    Removed sndbuf/rcvbuf
+	* include/ns.h:      parameters for setsockopt
+	* nsd/nsd.h:         as this is increasingly
+	* nsd/driver.c:      getting auto-tuned by
+	* tests/test.nscfg:  modern OS'es
+
 2008-05-12  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

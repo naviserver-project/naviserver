@@ -123,8 +123,6 @@ ns_param        writersize          [expr 1024*1024*5]
 ns_param        backlog             1024
 ns_param        acceptsize          10
 ns_param        closewait           0
-ns_param        rcvbuf              512000
-ns_param        sndbuf              512000
 ns_param        maxqueuesize        1024
 
 ns_section     "ns/server/default/module/nscp"

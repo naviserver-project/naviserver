@@ -385,8 +385,6 @@ typedef struct Driver {
     int   sendwait;             /* send() I/O timeout */
     int   recvwait;             /* recv() I/O timeout */
     int   bufsize;              /* Conn bufsize (0 for SSL) */
-    int   sndbuf;               /* setsockopt() SNDBUF option */
-    int   rcvbuf;               /* setsockopt() RCVBUF option */
 
     /*
      * Private to Driver.

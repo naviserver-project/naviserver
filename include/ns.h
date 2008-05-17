@@ -429,8 +429,6 @@ typedef struct Ns_Driver {
     int      sendwait;      /* send() I/O timeout in seconds */
     int      recvwait;      /* recv() I/O timeout in seconds */
     int      bufsize;       /* Conn bufsize (0 for SSL) */
-    int      sndbuf;        /* setsockopt() SNDBUF option. */
-    int      rcvbuf;        /* setsockopt() RCVBUF option. */
 } Ns_Driver;
 
 /*
