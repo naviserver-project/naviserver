@@ -1,3 +1,7 @@
+2008-05-21  Daniel P. Stasinski <daniel@avenues.org>
+
+	* nsd/compress.c:    gzip compression fixes
+
 2008-05-17  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsd-config.tcl:    Removed sndbuf/rcvbuf
