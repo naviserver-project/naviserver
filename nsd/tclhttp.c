@@ -317,6 +317,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
 	Tcl_AppendResult(interp, "http failed: ", httpPtr->error, NULL);
 	goto err;
     }
+
     valPtr = HttpResult(&httpPtr->ds, &status, hdrPtr);
     if (statusPtr != NULL &&
 		!SetWaitVar(interp, statusPtr, Tcl_NewIntObj(status))) {
@@ -644,14 +645,13 @@ static void
 HttpProc(Ns_Task *task, SOCKET sock, void *arg, int why)
 {
     Http *httpPtr = arg;
-    char buf[1024];
+    char buf[4096];
     int n;
 
     switch (why) {
     case NS_SOCK_INIT:
 	Ns_TaskCallback(task, NS_SOCK_WRITE, &httpPtr->timeout);
 	return;
-	break;
 
     case NS_SOCK_WRITE:
     	n = send(sock, httpPtr->next, httpPtr->len, 0);
@@ -661,7 +661,6 @@ HttpProc(Ns_Task *task, SOCKET sock, void *arg, int why)
     	    httpPtr->next += n;
     	    httpPtr->len -= n;
     	    if (httpPtr->len == 0) {
-            	shutdown(sock, 1);
             	Tcl_DStringTrunc(&httpPtr->ds, 0);
 	    	Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
 	    }

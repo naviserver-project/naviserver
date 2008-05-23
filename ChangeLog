@@ -1,3 +1,12 @@
+2008-05-23  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/task.c:
+	* nsd/tclhttp.c: Not sure i can explain it but on Linux with fast Internet 
+	connection ns_http does not work when after write shutdown(sock, 1) is called.
+	All downloads are short, after a while recv returns 0. Without shutdown() it works
+	fine.
+	Also, fixed timeout bug in Ns_TaskWait, timeout was not adjusted to absolute value.
+
 2008-05-21  Daniel P. Stasinski <daniel@avenues.org>
 
 	* nsd/compress.c:    gzip compression fixes

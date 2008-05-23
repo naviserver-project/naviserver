@@ -358,12 +358,16 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     Task      *taskPtr = (Task *) task;
     TaskQueue *queuePtr = taskPtr->queuePtr;
     int        status = NS_OK;
+    Ns_Time    atime;
 
     if (queuePtr == NULL) {
         if (!(taskPtr->signal & TASK_DONE)) {
             status = NS_TIMEOUT;
         }
     } else {
+        if (timeoutPtr != NULL) {
+            timeoutPtr = Ns_AbsoluteTime(&atime, timeoutPtr);
+        }
         Ns_MutexLock(&queuePtr->lock);
         while (status == NS_OK && !(taskPtr->signal & TASK_DONE)) {
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock,
