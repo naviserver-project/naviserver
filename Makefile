@@ -161,7 +161,7 @@ build-doc:
 # Testing:
 #
 
-NS_TEST_CFG		= -c -d -t $(srcdir)/tests/test.nscfg
+NS_TEST_CFG		= -u root -c -d -t $(srcdir)/tests/test.nscfg
 NS_TEST_ALL		= $(srcdir)/tests/all.tcl $(TCLTESTARGS)
 LD_LIBRARY_PATH	= LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb:../nsproxy:$$LD_LIBRARY_PATH"
 
