@@ -1055,6 +1055,173 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
     connPtr->urlEncoding = encoding;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnNsvGet
+ *
+ *      Returns newly allocated variable value or NULL if not found or array does not exists
+ *
+ * Results:
+ *      Allocated string
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Ns_ConnNsvGet(char *aname, char *key)
+{
+    Conn *connPtr = (Conn*)Ns_GetConn();
+
+    if (connPtr != NULL) {
+        return NsNsvGet(connPtr->servPtr, aname, key);
+    }
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnNsvExists
+ *
+ * Results:
+ *      Returns 1 if key exists in the given array, otherwise 0
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnNsvExists(char *aname, char *key)
+{
+    Conn *connPtr = (Conn*)Ns_GetConn();
+
+    if (connPtr != NULL) {
+        return NsNsvExists(connPtr->servPtr, aname, key);
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnNsvSet
+ *
+ *      Assign new value to the key in the given array
+ *
+ * Results:
+ *      Returns NS_OK if set, NS_ERROR if array does not exists
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnNsvSet(char *aname, char *key, char *value)
+{
+    Conn *connPtr = (Conn*)Ns_GetConn();
+
+    if (connPtr != NULL) {
+        return NsNsvSet(connPtr->servPtr, aname, key, value);
+    }
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnNsvIncr
+ *
+ *      Increases value of the counter in the given array, if
+ *      key does not exists, it is created and set to 1
+ *
+ * Results:
+ *      Returns new value of the counter
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnNsvIncr(char *aname, char *key, int count)
+{
+    Conn *connPtr = (Conn*)Ns_GetConn();
+
+    if (connPtr != NULL) {
+        return NsNsvIncr(connPtr->servPtr, aname, key, count);
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnNsvAppend
+ *
+ *      Append list of strings to the key, creates new if does not exists,
+ *      last value must be NULL
+ *
+ * Results:
+ *      Returns NS_OK if assigned, NS_ERROR if array is not found
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnNsvAppend(char *aname, char *key, ...)
+{
+    Conn *connPtr = (Conn*)Ns_GetConn();
+    int rc = NS_ERROR;
+    va_list ap;
+
+    if (connPtr != NULL) {
+        va_start(ap, key);
+        rc = NsNsvAppendVA(connPtr->servPtr, aname, key, ap);
+        va_end(ap);
+    }
+    return rc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnNsvUnset
+ *
+ *      Resets given key inthe array, if key is NULL, flushes the whole array
+ *
+ * Results:
+ *      Returns NS_OK if flushed, NS_ERROR if array not found
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnNsvUnset(char *aname, char *key)
+{
+    Conn *connPtr = (Conn*)Ns_GetConn();
+
+    if (connPtr != NULL) {
+        return NsNsvUnset(connPtr->servPtr, aname, key);
+    }
+    return NS_ERROR;
+
+}
+
 
 /*
  *----------------------------------------------------------------------

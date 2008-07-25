@@ -1724,6 +1724,31 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 /*
+ * tclvar.c
+ */
+
+NS_EXTERN char *
+Ns_ConnNsvGet(char *aname, char *key);
+
+NS_EXTERN int
+Ns_ConnNsvExists(char *aname, char *key);
+
+NS_EXTERN int
+Ns_ConnNsvSet(char *aname, char *key, char *value);
+
+NS_EXTERN int
+Ns_ConnNsvUnset(char *aname, char *key);
+
+NS_EXTERN int
+Ns_ConnNsvIncr(char *aname, char *key, int count);
+
+NS_EXTERN int
+Ns_ConnNsvAppend(char *aname, char *key, ...);
+
+NS_EXTERN int
+Ns_ConnNsvAppendVA(char *aname, char *key, va_list);
+
+/*
  * sched.c:
  */
 

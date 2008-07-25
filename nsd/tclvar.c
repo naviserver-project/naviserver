@@ -37,41 +37,16 @@
 
 NS_RCSID("@(#) $Header$");
 
-/*
- * The following structure defines a collection of arrays.
- * Only the arrays within a given bucket share a lock,
- * allowing for more concurency in nsv.
- */
-
-typedef struct Bucket {
-    Ns_Mutex      lock;
-    Tcl_HashTable arrays;   
-} Bucket;
-
-/*
- * The following structure maintains the context for each variable
- * array.
- */
-
-typedef struct Array {
-    Bucket        *bucketPtr; /* Array bucket. */
-    Tcl_HashEntry *entryPtr;  /* Entry in bucket array table. */
-    Tcl_HashTable  vars;      /* Table of variables. */
-} Array;
 
 /*
  * Local functions defined in this file.
  */
 
-static void SetVar(Array *, Tcl_Obj *key, Tcl_Obj *value);
+static void SetVar(NsArray *, Tcl_Obj *key, Tcl_Obj *value);
 static void UpdateVar(Tcl_HashEntry *hPtr, Tcl_Obj *obj);
-static void FlushArray(Array *arrayPtr);
-static Array *LockArray(void *arg, Tcl_Interp *interp, Tcl_Obj *array,
+static NsArray *LockArray(void *arg, Tcl_Interp *interp, Tcl_Obj *array,
                         int create);
-#define UnlockArray(arrayPtr)                       \
-    Ns_MutexUnlock(&((arrayPtr)->bucketPtr->lock));
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -88,13 +63,13 @@ static Array *LockArray(void *arg, Tcl_Interp *interp, Tcl_Obj *array,
  *----------------------------------------------------------------------
  */
 
-struct Bucket *
+struct NsBucket *
 NsTclCreateBuckets(CONST char *server, int n)
 {
     char    buf[NS_THREAD_NAMESIZE];
-    Bucket *buckets;
+    NsBucket *buckets;
 
-    buckets = ns_malloc(sizeof(Bucket) * n);
+    buckets = ns_malloc(sizeof(NsBucket) * n);
     while (--n >= 0) {
         snprintf(buf, sizeof(buf), "nsv:%d", n);
         Tcl_InitHashTable(&buckets[n].arrays, TCL_STRING_KEYS);
@@ -126,7 +101,7 @@ int
 NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     Tcl_HashEntry *hPtr;
-    Array         *arrayPtr;
+    NsArray         *arrayPtr;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "array key");
@@ -140,7 +115,7 @@ NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     if (hPtr != NULL) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
     }
-    UnlockArray(arrayPtr);
+    NsNsvUnlockArray(arrayPtr);
     if (hPtr == NULL) {
         Tcl_AppendResult(interp, "no such key: ", Tcl_GetString(objv[2]), NULL);
         return TCL_ERROR;
@@ -169,7 +144,7 @@ NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 int
 NsTclNsvExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Array *arrayPtr;
+    NsArray *arrayPtr;
     int    exists;
 
     if (objc != 3) {
@@ -182,7 +157,7 @@ NsTclNsvExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
         if (Tcl_FindHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2])) != NULL) {
             exists = 1;
         }
-        UnlockArray(arrayPtr);
+        NsNsvUnlockArray(arrayPtr);
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(exists));
 
@@ -209,7 +184,7 @@ NsTclNsvExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
 int
 NsTclNsvSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Array *arrayPtr;
+    NsArray *arrayPtr;
 
     if (objc == 3) {
         return NsTclNsvGetObjCmd(arg, interp, objc, objv);
@@ -219,7 +194,7 @@ NsTclNsvSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     }
     arrayPtr = LockArray(arg, interp, objv[1], 1);
     SetVar(arrayPtr, objv[2], objv[3]);
-    UnlockArray(arrayPtr);
+    NsNsvUnlockArray(arrayPtr);
     Tcl_SetObjResult(interp, objv[3]);
 
     return TCL_OK;
@@ -245,7 +220,7 @@ NsTclNsvSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 int
 NsTclNsvIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Array         *arrayPtr;
+    NsArray         *arrayPtr;
     int            count, current, result, new;
     char          *value;
     Tcl_HashEntry *hPtr;
@@ -273,7 +248,7 @@ NsTclNsvIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         UpdateVar(hPtr, obj);
         Tcl_SetObjResult(interp, obj);
     }
-    UnlockArray(arrayPtr);
+    NsNsvUnlockArray(arrayPtr);
 
     return result;
 }
@@ -298,7 +273,7 @@ NsTclNsvIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 int
 NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Array         *arrayPtr;
+    NsArray         *arrayPtr;
     int            i, new;
     Tcl_HashEntry *hPtr;
 
@@ -317,7 +292,7 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **ob
         }
     }
     UpdateVar(hPtr, Tcl_GetObjResult(interp));
-    UnlockArray(arrayPtr);
+    NsNsvUnlockArray(arrayPtr);
 
     return TCL_OK;
 }
@@ -342,7 +317,7 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **ob
 int
 NsTclNsvAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Array         *arrayPtr;
+    NsArray         *arrayPtr;
     int            i, new;
     Tcl_HashEntry *hPtr;
 
@@ -359,7 +334,7 @@ NsTclNsvAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
         Tcl_AppendResult(interp, Tcl_GetString(objv[i]), NULL);
     }
     UpdateVar(hPtr, Tcl_GetObjResult(interp));
-    UnlockArray(arrayPtr);
+    NsNsvUnlockArray(arrayPtr);
 
     return TCL_OK;
 }
@@ -384,7 +359,7 @@ NsTclNsvAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
 int
 NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Array          *arrayPtr;
+    NsArray          *arrayPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     char           *pattern, *key;
@@ -424,12 +399,12 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
         }
         arrayPtr = LockArray(arg, interp, objv[2], 1);
         if (opt == CResetIdx) {
-            FlushArray(arrayPtr);
+            NsNsvFlushArray(arrayPtr);
         }
         for (i = 0; i < lobjc; i += 2) {
             SetVar(arrayPtr, lobjv[i], lobjv[i+1]);
         }
-        UnlockArray(arrayPtr);
+        NsNsvUnlockArray(arrayPtr);
         break;
 
     case CSizeIdx:
@@ -443,7 +418,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
             size = 0;
         } else {
             size = (opt == CSizeIdx) ? arrayPtr->vars.numEntries : 1;
-            UnlockArray(arrayPtr);
+            NsNsvUnlockArray(arrayPtr);
         }
         if (opt == CExistsIdx) {
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(size));
@@ -472,7 +447,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
                 }
                 hPtr = Tcl_NextHashEntry(&search);
             }
-            UnlockArray(arrayPtr);
+            NsNsvUnlockArray(arrayPtr);
         }
         break;
     }
@@ -500,7 +475,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
 int
 NsTclNsvUnsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Array         *arrayPtr = NULL;
+    NsArray         *arrayPtr = NULL;
     Tcl_Obj       *arrayObj;
     Tcl_HashEntry *hPtr = NULL;
     char          *key = NULL;
@@ -537,9 +512,9 @@ NsTclNsvUnsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
             Tcl_DeleteHashEntry(hPtr);
         }
     }
-    UnlockArray(arrayPtr);
+    NsNsvUnlockArray(arrayPtr);
     if (key == NULL) {
-        FlushArray(arrayPtr);
+        NsNsvFlushArray(arrayPtr);
         Tcl_DeleteHashTable(&arrayPtr->vars);
         ns_free(arrayPtr);
     } else if (hPtr == NULL && !nocomplain) {
@@ -575,7 +550,7 @@ NsTclNsvNamesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
     Tcl_Obj        *result;
-    Bucket         *bucketPtr;
+    NsBucket       *bucketPtr;
     char           *pattern, *key;
     int             i;
     
@@ -609,76 +584,16 @@ NsTclNsvNamesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv
 }
 
 
-/*
- *----------------------------------------------------------------
- *
- * LockArray --
- *
- *      Find (or create) the Array structure for an array and
- *      lock it.  Array structure must be later unlocked with
- *      UnlockArray.
- *
- * Results:
- *      TCL_OK or TCL_ERROR if no such array.
- *
- * Side effects;
- *      Sets *arrayPtrPtr with Array pointer or leave error in
- *      given Tcl_Interp.
- *
- *----------------------------------------------------------------
- */
-
-static Array *
+static NsArray *
 LockArray(void *arg, Tcl_Interp *interp, Tcl_Obj *arrayObj, int create)
 {
-    NsInterp      *itPtr = arg;
-    Bucket        *bucketPtr;
-    Tcl_HashEntry *hPtr;
-    Array         *arrayPtr;
-    char          *array;
-    register char *p;
-    register unsigned int result;
-    register int i;
-    int new;
-   
-    array = Tcl_GetString(arrayObj);
-    p = array;
-    result = 0;
-    while (1) {
-        i = *p;
-        p++;
-        if (i == 0) {
-            break;
-        }
-        result += (result<<3) + i;
-    }
-    i = result % itPtr->servPtr->nsv.nbuckets;
-    bucketPtr = &itPtr->servPtr->nsv.buckets[i];
+    NsInterp *itPtr = arg;
+    NsArray    *arrayPtr;
 
-    Ns_MutexLock(&bucketPtr->lock);
-    if (create) {
-        hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, array, &new);
-        if (!new) {
-            arrayPtr = Tcl_GetHashValue(hPtr);
-        } else {
-            arrayPtr = ns_malloc(sizeof(Array));
-            arrayPtr->bucketPtr = bucketPtr;
-            arrayPtr->entryPtr = hPtr;
-            Tcl_InitHashTable(&arrayPtr->vars, TCL_STRING_KEYS);
-            Tcl_SetHashValue(hPtr, arrayPtr);
-        }
-    } else {
-        hPtr = Tcl_FindHashEntry(&bucketPtr->arrays, array);
-        if (hPtr == NULL) {
-            Ns_MutexUnlock(&bucketPtr->lock);
-            if (interp != NULL) {
-                Tcl_AppendResult(interp, "no such array: ", array, NULL);
-            }
-            return NULL;
-        }
-        arrayPtr = Tcl_GetHashValue(hPtr);
+    arrayPtr = NsNsvLockArray(itPtr->servPtr, Tcl_GetString(arrayObj), create);
+    if (arrayPtr == NULL && interp != NULL) {
+        Tcl_AppendResult(interp, "no such array: ", Tcl_GetString(arrayObj), NULL);
     }
-
     return arrayPtr;
 }
 
@@ -730,44 +645,13 @@ UpdateVar(Tcl_HashEntry *hPtr, Tcl_Obj *obj)
  */
 
 static void
-SetVar(Array *arrayPtr, Tcl_Obj *key, Tcl_Obj *value)
+SetVar(NsArray *arrayPtr, Tcl_Obj *key, Tcl_Obj *value)
 {
     Tcl_HashEntry *hPtr;
     int            new;
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(key), &new);
     UpdateVar(hPtr, value);
-}
-
-
-/*
- *----------------------------------------------------------------
- *
- * FlushArray --
- *
- *      Unset all keys in an array.
- *
- * Results:
- *      None.
- *
- * Side effects;
- *      New entry is created and updated.
- *
- *----------------------------------------------------------------
- */
-
-static void
-FlushArray(Array *arrayPtr)
-{
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
-
-    hPtr = Tcl_FirstHashEntry(&arrayPtr->vars, &search);
-    while (hPtr != NULL) {
-        ns_free(Tcl_GetHashValue(hPtr));
-        Tcl_DeleteHashEntry(hPtr);
-        hPtr = Tcl_NextHashEntry(&search);
-    }
 }
 
 
@@ -872,4 +756,376 @@ NsTclVarObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Ns_MutexUnlock(&servPtr->var.lock);
 
     return code;
+}
+
+/*
+ *----------------------------------------------------------------
+ *
+ * LockArray --
+ *
+ *      Find (or create) the Array structure for an array and
+ *      lock it.  Array structure must be later unlocked with
+ *      NsNsvUnlockArray.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR if no such array.
+ *
+ * Side effects;
+ *      Sets *arrayPtrPtr with Array pointer or leave error in
+ *      given Tcl_Interp.
+ *
+ *----------------------------------------------------------------
+ */
+
+NsArray *
+NsNsvLockArray(NsServer *servPtr, char *aname, int create)
+{
+    NsBucket       *bucketPtr;
+    Tcl_HashEntry *hPtr;
+    NsArray         *arrayPtr;
+    register char *p;
+    register unsigned int result;
+    register int i;
+    int new;
+   
+    p = aname;
+    result = 0;
+    while (1) {
+        i = *p;
+        p++;
+        if (i == 0) {
+            break;
+        }
+        result += (result<<3) + i;
+    }
+    i = result % servPtr->nsv.nbuckets;
+    bucketPtr = &servPtr->nsv.buckets[i];
+
+    Ns_MutexLock(&bucketPtr->lock);
+    if (create) {
+        hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, aname, &new);
+        if (!new) {
+            arrayPtr = Tcl_GetHashValue(hPtr);
+        } else {
+            arrayPtr = ns_malloc(sizeof(NsArray));
+            arrayPtr->bucketPtr = bucketPtr;
+            arrayPtr->entryPtr = hPtr;
+            Tcl_InitHashTable(&arrayPtr->vars, TCL_STRING_KEYS);
+            Tcl_SetHashValue(hPtr, arrayPtr);
+        }
+    } else {
+        hPtr = Tcl_FindHashEntry(&bucketPtr->arrays, aname);
+        if (hPtr == NULL) {
+            Ns_MutexUnlock(&bucketPtr->lock);
+            return NULL;
+        }
+        arrayPtr = Tcl_GetHashValue(hPtr);
+    }
+
+    return arrayPtr;
+}
+
+void
+NsNsvUnlockArray(NsArray *arrayPtr)
+{
+    if (arrayPtr != NULL) {
+        Ns_MutexUnlock(&((arrayPtr)->bucketPtr->lock));
+    }
+}
+
+/*
+ *----------------------------------------------------------------
+ *
+ * NsNsvFlushArray --
+ *
+ *      Unset all keys in an array.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects;
+ *      New entry is created and updated.
+ *
+ *----------------------------------------------------------------
+ */
+
+void
+NsNsvFlushArray(NsArray *arrayPtr)
+{
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+
+    hPtr = Tcl_FirstHashEntry(&arrayPtr->vars, &search);
+    while (hPtr != NULL) {
+        ns_free(Tcl_GetHashValue(hPtr));
+        Tcl_DeleteHashEntry(hPtr);
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsNsvGet
+ *
+ *      Returns newly allocated variable value or NULL if not found or array does not exists
+ *
+ * Results:
+ *      Allocated string
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+NsNsvGet(NsServer *servPtr, char *aname, char *key)
+{
+    NsArray *arrayPtr;
+    char *value = NULL;
+    Tcl_HashEntry *hPtr;
+
+    if (servPtr == NULL || aname == NULL || key == NULL) {
+        return NULL;
+    }
+    arrayPtr = NsNsvLockArray(servPtr, aname, 0);
+    if (arrayPtr == NULL) {
+        return NULL;
+    }
+    hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
+    if (hPtr != NULL) {
+        value = ns_strcopy(Tcl_GetHashValue(hPtr));
+    }
+    NsNsvUnlockArray(arrayPtr);
+    return value;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsNsvExists
+ *
+ * Results:
+ *      Returns 1 if key exists in the given array, otherwise 0
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsNsvExists(NsServer *servPtr, char *aname, char *key)
+{
+    int    exists;
+    NsArray *arrayPtr;
+
+    if (servPtr == NULL || aname == NULL || key == NULL) {
+        return 0;
+    }
+    arrayPtr = NsNsvLockArray(servPtr, aname, 0);
+    if (arrayPtr != NULL) {
+        if (Tcl_FindHashEntry(&arrayPtr->vars, key) != NULL) {
+            exists = 1;
+        }
+        NsNsvUnlockArray(arrayPtr);
+    }
+    return exists;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsNsvSet
+ *
+ *      Assign new value to the key in the given array
+ *
+ * Results:
+ *      Returns NS_OK if set, NS_ERROR if array does not exists
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsNsvSet(NsServer *servPtr, char *aname, char *key, char *value)
+{
+    int new, len;
+    NsArray *arrayPtr;
+    char *ostr, *nstr;
+    Tcl_HashEntry *hPtr;
+
+    if (servPtr == NULL || aname == NULL || key == NULL || value == NULL) {
+        return NS_ERROR;
+    }
+    arrayPtr = NsNsvLockArray(servPtr, aname, 0);
+    if (arrayPtr != NULL) {
+        len = strlen(value);
+        hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &new);
+        ostr = Tcl_GetHashValue(hPtr);
+        nstr = ns_realloc(ostr, len + 1);
+        memcpy(nstr, value, len + 1);
+        Tcl_SetHashValue(hPtr, nstr);
+        NsNsvUnlockArray(arrayPtr);
+        return NS_OK;
+    }
+    return NS_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsNsvIncr
+ *
+ *      Increases value of the counter in the given array, if
+ *      key does not exists, it is created and set to 1
+ *
+ * Results:
+ *      Returns new value of the counter
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsNsvIncr(NsServer *servPtr, char *aname, char *key, int count)
+{
+    NsArray *arrayPtr;
+    Tcl_HashEntry *hPtr;
+    int new, value = 0;
+    char num[32], *ostr, *nstr;
+
+    if (servPtr == NULL || aname == NULL || key == NULL) {
+        return NS_ERROR;
+    }
+    arrayPtr = NsNsvLockArray(servPtr, aname, 0);
+    if (arrayPtr != NULL) {
+        hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &new);
+        ostr = Tcl_GetHashValue(hPtr);
+        if (new == 0) {
+            value = atoi(ostr);
+        }
+        sprintf(num, "%d", value + count);
+        nstr = ns_realloc(ostr, strlen(num) + 1);
+        memcpy(nstr, num, strlen(num) + 1);
+        Tcl_SetHashValue(hPtr, nstr);
+        NsNsvUnlockArray(arrayPtr);
+    }
+    return value;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsNsvAppend
+ *
+ *      Append list of strings to the key, creates new if does not exists,
+ *      last value must be NULL
+ *
+ * Results:
+ *      Returns NS_OK if assigned, NS_ERROR if array is not found
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsNsvAppendVA(NsServer *servPtr, char *aname, char *key, va_list ap)
+{
+    int new, len;
+    NsArray *arrayPtr;
+    Tcl_HashEntry *hPtr;
+    char *ostr, *nstr, *value;
+
+    if (servPtr == NULL || aname == NULL || key == NULL) {
+        return NS_ERROR;
+    }
+    arrayPtr = NsNsvLockArray(servPtr, aname, 0);
+    if (arrayPtr != NULL) {
+        hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &new);
+        ostr = nstr = Tcl_GetHashValue(hPtr);
+
+        while (1) {
+            value = va_arg(ap, char*);
+            if (value == NULL) {
+                break;
+            }
+            len = strlen(value);
+            nstr = ns_realloc(ostr, len + 1);
+            memcpy(nstr, value, len + 1);
+            ostr = nstr;
+        }
+
+        Tcl_SetHashValue(hPtr, nstr);
+        NsNsvUnlockArray(arrayPtr);
+        return NS_OK;
+    }
+    return NS_ERROR;
+}
+
+int NsNsvAppend(NsServer *servPtr, char *aname, char *key, ...)
+{
+    int rc;
+    va_list ap;
+
+    va_start(ap, key);
+    rc = NsNsvAppendVA(servPtr, aname, key, ap);
+    va_end(ap);
+    return rc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsNsvUnset
+ *
+ *      Resets given key inthe array, if key is NULL, flushes the whole array
+ *
+ * Results:
+ *      Returns NS_OK if flushed, NS_ERROR if array not found
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsNsvUnset(NsServer *servPtr, char *aname, char *key)
+{
+    NsArray *arrayPtr;
+    Tcl_HashEntry *hPtr;
+
+    if (servPtr == NULL || aname == NULL) {
+        return NS_ERROR;
+    }
+    arrayPtr = NsNsvLockArray(servPtr, aname, 0);
+    if (arrayPtr != NULL) {
+        if (key == NULL) {
+            Tcl_DeleteHashEntry(arrayPtr->entryPtr);
+        } else {
+            hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
+            if (hPtr != NULL) {
+                ns_free(Tcl_GetHashValue(hPtr));
+                Tcl_DeleteHashEntry(hPtr);
+            }
+        }
+        NsNsvUnlockArray(arrayPtr);
+
+        if (key == NULL) {
+            NsNsvFlushArray(arrayPtr);
+            Tcl_DeleteHashTable(&arrayPtr->vars);
+            ns_free(arrayPtr);
+        }
+        return NS_OK;
+    }
+    return NS_ERROR;
 }
