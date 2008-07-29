@@ -17,7 +17,6 @@ This command is used to retrieve various pieces of information about a connectio
 
 [list_begin definitions]
 
-
 [call [cmd  ns_conn] [arg authpassword]]
 
 Returns the decoded user password from the authorization data.
@@ -25,6 +24,12 @@ Returns the decoded user password from the authorization data.
 [call [cmd  ns_conn] [arg authuser]]
 
 Returns the decoded user name from the authorization data.
+
+[call [cmd  ns_conn] [arg auth]]
+
+Returns all authorization headers as a ns_set. For Basic authentication
+there are reserved keys: Username and Password, these are the keys returned by ns_conn authuser and
+ns_conn authpassword. This ns_set can be updated.
 
 [call [cmd  ns_conn] [arg close]]
 
