@@ -1342,6 +1342,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             strcpy(itPtr->nsconn.auth, Tcl_GetStringResult(interp));
             itPtr->nsconn.flags |= CONN_TCLAUTH;
         }
+        break;
 
     case CAuthUserIdx:
         if (connPtr->auth != NULL) {
