@@ -52,35 +52,7 @@ typedef struct Module {
  * Static variables defined in this file.
  */
 
-static Tcl_HashTable modulesTable; /* Table of loaded, loadable modules. */
 static Module *firstPtr;           /* List of static modules to be inited. */
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsInitModLoad --
- *
- *      Initialize module table.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None. 
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsInitModLoad(void)
-{
-#ifdef _WIN32
-    Tcl_InitHashTable(&modulesTable, TCL_STRING_KEYS);
-#else
-    Tcl_InitHashTable(&modulesTable, FILE_KEYS);
-#endif
-}
 
 
 /*

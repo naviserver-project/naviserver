@@ -209,18 +209,6 @@ struct _nsconf {
 extern struct _nsconf nsconf;
 
 /*
- * The following structure defines a key for hashing
- * a file by device/inode.
- */
-
-typedef struct FileKey {
-    dev_t dev;
-    ino_t ino;
-} FileKey;
-
-#define FILE_KEYS (sizeof(FileKey)/sizeof(int))
-
-/*
  * The following structure tracks a memory-mapped file
  * in a platform-neutral way.
  */

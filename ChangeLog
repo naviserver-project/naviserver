@@ -1,3 +1,18 @@
+2008-08-19  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/adpeval.c:
+	* nsd/fastpath.c: Fix bug with file name -> stat -> cache lookup.
+	The intermediate stage of using the inode as the cache key is not
+	reliable, as when the file is replaced within the granularity of
+	the mtime an inode may be assigned which has already been seen and
+	is still in the cache. The result is an information leak:
+	the old contents of file a.html may appear when file b.html
+	is requested. Reported by John Caruso on the AOLserver
+	mailing list.
+	* nsd/init.c:
+	* nsd/modload.c: Remove dead code.
+
 2008-06-29  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/conn.c: Fixed bug in switch statement after Auth index,

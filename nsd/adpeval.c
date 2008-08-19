@@ -60,6 +60,8 @@ typedef struct Page {
     Tcl_HashEntry *hPtr;     /* Entry in shared table of all pages. */
     time_t         mtime;    /* Original modify time of file. */
     off_t          size;     /* Original size of file. */
+    dev_t          dev;      /* Device and inode to try to catch modifications ... */
+    ino_t          ino;      /* ...below the mtime granularity. */
     int            flags;    /* Flags used on last compile, e.g., SAFE. */
     int            refcnt;   /* Refcnt of current interps using page. */
     int            evals;    /* Count of page evaluations. */
@@ -67,7 +69,6 @@ typedef struct Page {
     int            cacheGen; /* Cache generation id. */
     AdpCache      *cachePtr; /* Cached output. */
     AdpCode        code;     /* ADP code blocks. */
-    char           file[1];  /* First known filename for stats reporting. */
 } Page;
 
 /*
@@ -147,7 +148,7 @@ ConfigServerAdp(CONST char *server)
      * Initialize the page and tag tables and locks.
      */
 
-    Tcl_InitHashTable(&servPtr->adp.pages, FILE_KEYS);
+    Tcl_InitHashTable(&servPtr->adp.pages, TCL_STRING_KEYS);
     Ns_MutexInit(&servPtr->adp.pagelock);
     Ns_CondInit(&servPtr->adp.pagecond);
     Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
@@ -406,15 +407,14 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     struct stat     st;
     Ns_DString      tmp, path;
     InterpPage     *ipagePtr;
-    Page           *pagePtr, *oldPagePtr;
+    Page           *pagePtr;
     AdpCache       *cachePtr;
     AdpCode        *codePtr;
     Ns_Time         now;
     Ns_Entry       *ePtr;
     Objs           *objsPtr;
     int             new, cacheGen;
-    char           *p, *key;
-    FileKey         ukey;
+    char           *p;
     int             result;
 
     ipagePtr = NULL;
@@ -422,7 +422,6 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     result = TCL_ERROR;   /* assume error until accomplished success */
     Ns_DStringInit(&tmp);
     Ns_DStringInit(&path);
-    key = (char *) &ukey;
 
     /*
      * Construct the full, normalized path to the ADP file.
@@ -465,13 +464,8 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
 
     if (itPtr->adp.cache == NULL) {
         Ns_DStringPrintf(&tmp, "nsadp:%p", itPtr);
-#ifdef _WIN32
         itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, TCL_STRING_KEYS,
                                itPtr->servPtr->adp.cachesize, FreeInterpPage);
-#else
-        itPtr->adp.cache = Ns_CacheCreateSz(tmp.string, FILE_KEYS,
-                               itPtr->servPtr->adp.cachesize, FreeInterpPage);
-#endif
         Ns_DStringTrunc(&tmp, 0);
     }
 
@@ -490,17 +484,13 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
          * Check for valid code in interp page cache.
          */
 
-#ifdef _WIN32
-        key = file;
-#else
-        ukey.dev = st.st_dev;
-        ukey.ino = st.st_ino;
-#endif
-        ePtr = Ns_CacheFindEntry(itPtr->adp.cache, key);
+        ePtr = Ns_CacheFindEntry(itPtr->adp.cache, file);
         if (ePtr != NULL) {
             ipagePtr = Ns_CacheGetValue(ePtr);
             if (ipagePtr->pagePtr->mtime != st.st_mtime
                     || ipagePtr->pagePtr->size != st.st_size
+                    || ipagePtr->pagePtr->dev != st.st_dev
+                    || ipagePtr->pagePtr->ino != st.st_ino
                     || ipagePtr->pagePtr->flags != itPtr->adp.flags) {
                 Ns_CacheFlushEntry(ePtr);
                 ipagePtr = NULL;
@@ -513,14 +503,16 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
              */
 
             Ns_MutexLock(&servPtr->adp.pagelock);
-            hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key, &new);
+            hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, file, &new);
             while (!new && (pagePtr = Tcl_GetHashValue(hPtr)) == NULL) {
                 /* NB: Wait for other thread to read/parse page. */
                 Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
-                hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key, &new);
+                hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, file, &new);
             }
             if (!new && (pagePtr->mtime != st.st_mtime
                          || pagePtr->size != st.st_size
+                         || pagePtr->dev != st.st_dev
+                         || pagePtr->ino != st.st_ino
                          || pagePtr->flags != itPtr->adp.flags)) {
                 /* NB: Clear entry to indicate read/parse in progress. */
                 Tcl_SetHashValue(hPtr, NULL);
@@ -534,26 +526,6 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                 if (pagePtr == NULL) {
                     Tcl_DeleteHashEntry(hPtr);
                 } else {
-#ifdef _WIN32
-                    if (pagePtr->mtime != st.st_mtime
-                        || pagePtr->size != st.st_size)
-#else
-                    if (ukey.dev != st.st_dev || ukey.ino != st.st_ino)
-#endif
-                    {
-                        /* NB: File changed between stat above and ParseFile. */
-                        Tcl_DeleteHashEntry(hPtr);
-#ifndef _WIN32
-                        ukey.dev = st.st_dev;
-                        ukey.ino = st.st_ino;
-#endif
-                        hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, key,
-                                                   &new);
-                        if (!new) {
-                            oldPagePtr = Tcl_GetHashValue(hPtr);
-                            oldPagePtr->hPtr = NULL;
-                        }
-                    }
                     pagePtr->hPtr = hPtr;
                     Tcl_SetHashValue(hPtr, pagePtr);
                 }
@@ -569,7 +541,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                 ipagePtr->cacheGen = 0;
                 ipagePtr->objs = AllocObjs(pagePtr->code.nscripts);
                 ipagePtr->cacheObjs = NULL;
-                ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, key, &new);
+                ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, file, &new);
                 if (!new) {
                     Ns_CacheUnsetValue(ePtr);
                 }
@@ -781,7 +753,7 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
-    FileKey        *keyPtr;
+    char           *file;
     Ns_DString      ds;
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
@@ -793,12 +765,12 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
     hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
     while (hPtr != NULL) {
         pagePtr = Tcl_GetHashValue(hPtr);
-        keyPtr = (FileKey *) Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
+        file = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
         Ns_DStringPrintf(&ds, "{%s} "
             "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
             "refcnt %d evals %d size %" PRIu64 " blocks %d scripts %d} ",
-            pagePtr->file,
-            (uint64_t) keyPtr->dev, (uint64_t) keyPtr->ino, (uint64_t) pagePtr->mtime,
+            file,
+            (uint64_t) pagePtr->dev, (uint64_t) pagePtr->ino, (uint64_t) pagePtr->mtime,
             pagePtr->refcnt, pagePtr->evals, (uint64_t) pagePtr->size,
             pagePtr->code.nblocks, pagePtr->code.nscripts);
         hPtr = Tcl_NextHashEntry(&search);
@@ -899,8 +871,7 @@ ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
             Tcl_ExternalToUtfDString(encoding, buf, n, &utf);
             page = utf.string;
         }
-        pagePtr = ns_malloc(sizeof(Page) + strlen(file));
-        strcpy(pagePtr->file, file);
+        pagePtr = ns_malloc(sizeof(Page));
         pagePtr->servPtr = itPtr->servPtr;
         pagePtr->flags = flags;
         pagePtr->refcnt = 0;
@@ -910,6 +881,8 @@ ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
         pagePtr->cachePtr = NULL;
         pagePtr->mtime = stPtr->st_mtime;
         pagePtr->size = stPtr->st_size;
+        pagePtr->dev = stPtr->st_dev;
+        pagePtr->ino = stPtr->st_ino;
         NsAdpParse(&pagePtr->code, itPtr->servPtr, page, flags, file);
         Tcl_DStringFree(&utf);
     }

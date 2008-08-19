@@ -68,6 +68,8 @@ typedef struct {
 typedef struct {
     time_t mtime;
     int    size;
+    dev_t  dev;
+    ino_t  ino;
     int    refcnt;
     char   bytes[1];  /* Grown to actual file size. */
 } File;
@@ -121,17 +123,11 @@ NsConfigFastpath()
 {
     char  *path;
 
-#ifdef _WIN32
-#  define CACHE_KEYS TCL_STRING_KEYS
-#else
-#  define CACHE_KEYS FILE_KEYS
-#endif
-
     path    = Ns_ConfigGetPath(NULL, NULL, "fastpath", NULL);
     usemmap = Ns_ConfigBool(path, "mmap", NS_FALSE);
 
     if (Ns_ConfigBool(path, "cache", NS_FALSE)) {
-        cache = Ns_CacheCreateSz("ns:fastpath", CACHE_KEYS,
+        cache = Ns_CacheCreateSz("ns:fastpath", TCL_STRING_KEYS,
                     Ns_ConfigIntRange(path, "cachemaxsize", 1024*10000, 1024, INT_MAX),
                     FreeEntry);
         maxentry = Ns_ConfigIntRange(path, "cachemaxentry", 8192, 8, INT_MAX);
@@ -605,15 +601,10 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
 {
     int         new, nread, result = NS_ERROR;
     Range       range;
-    char       *key;
     Ns_Entry   *entry;
     File       *filePtr;
     FileMap     fmap;
     FileChannel chan = 0;
-
-#ifndef _WIN32
-    FileKey     ukey;
-#endif
 
     /*
      *  Initialize the structure for possible Range: requests
@@ -693,19 +684,12 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
 
         /*
          * Search for an existing cache entry for this file, validating
-         * the contents against the current file mtime and size.
+         * the contents against the current file mtime, size and inode.
          */
 
-#ifdef _WIN32
-        key = file;
-#else
-        ukey.dev = stPtr->st_dev;
-        ukey.ino = stPtr->st_ino;
-        key = (char *) &ukey;
-#endif
         filePtr = NULL;
         Ns_CacheLock(cache);
-        entry = Ns_CacheWaitCreateEntry(cache, key, &new, NULL);
+        entry = Ns_CacheWaitCreateEntry(cache, file, &new, NULL);
 
         /*
          * Validate entry.
@@ -714,7 +698,9 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
         if (!new
             && (filePtr = Ns_CacheGetValue(entry)) != NULL
             && (filePtr->mtime != stPtr->st_mtime
-                || filePtr->size != stPtr->st_size)) {
+                || filePtr->size != stPtr->st_size
+                || filePtr->dev != stPtr->st_dev
+                || filePtr->ino != stPtr->st_ino)) {
             Ns_CacheUnsetValue(entry);
             new = 1;
         }
@@ -737,6 +723,8 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
                 filePtr->refcnt = 1;
                 filePtr->size   = stPtr->st_size;
                 filePtr->mtime  = stPtr->st_mtime;
+                filePtr->dev    = stPtr->st_dev;
+                filePtr->ino    = stPtr->st_ino;
                 nread = NsFastRead(chan, filePtr->bytes, filePtr->size);
                 NsFastClose(chan);
                 if (nread != filePtr->size) {
@@ -747,7 +735,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
                 }
             }
             Ns_CacheLock(cache);
-            entry = Ns_CacheCreateEntry(cache, key, &new);
+            entry = Ns_CacheCreateEntry(cache, file, &new);
             if (filePtr != NULL) {
                 Ns_CacheSetValueSz(entry, filePtr, (size_t) (filePtr->size + sizeof(File)));
             } else {

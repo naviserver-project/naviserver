@@ -75,7 +75,6 @@ Nsd_LibInit(void)
     	NsInitListen();
         NsInitLimits();
     	NsInitInfo();
-    	NsInitModLoad();
     	NsInitProcInfo();
     	NsInitDrivers();
     	NsInitQueue();
