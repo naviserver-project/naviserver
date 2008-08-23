@@ -1,3 +1,11 @@
+2008-08-23  Stephen  <sdeasey@users.sf.net>
+
+	* doc/*:
+	* nsdb/doc/*:
+	* nsproxy/doc/*:
+	* nslog/doc/*: Convert some more documentation to new doctools
+	syntax; fix cross-references; make module docs per-module.
+
 2008-08-19  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* nsd/nsd.h:

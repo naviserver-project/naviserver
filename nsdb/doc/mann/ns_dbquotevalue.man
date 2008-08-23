@@ -1,0 +1,83 @@
+[include version_include]
+
+[manpage_begin ns_dbquotevalue n [vset version]]
+[moddesc {NaviServer Module Commands}]
+[titledesc {Quote database names and values}]
+
+[description]
+
+These commands are used to construct SQL statements, making sure that Tcl values
+are properly quoted depending on position: names or values.
+
+
+
+[section {COMMANDS}]
+
+
+[list_begin definitions]
+
+[call [cmd ns_dbquotevalue] [arg value] [opt [arg type]]]
+
+Prepare the string [arg value] for inclusion in an SQL statement. If [arg value]
+is "", ns_dbquotevalue will return the string "NULL". If [arg value] is not "",
+the returned value depends on [arg type].
+
+[para]
+If type is one of: bigint, bit, decimal, double, float, int, integer, numeric,
+real, smallint, or tinyint, then value will be returned without modification.
+When type is any other string, or if type is omitted, value will be surrounded
+by single quotes, and any single quotes that it contains will be escaped by
+translation into two single quotes.
+
+
+
+[call [cmd ns_dbquotename] [arg name]]
+
+Surround [arg name] with double quotes if it contains a space. The resulting
+name can then be used in SQL statements for names of database objects such as
+tables or columns.
+
+
+[list_end]
+
+
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_dbquotevalue ""
+   NULL
+[example_end]
+
+[example_begin]
+   % ns_dbquotevalue 45.3 float
+   45.3
+[example_end]
+
+[example_begin]
+   % ns_dbquotevalue "John's Car"
+   'Johns Car'
+[example_end]
+
+[example_begin]
+   % set company "John's Cheese Factory"
+   % ns_db dml $db "INSERT INTO companies (name) VALUES ([lb]ns_dbquotevalue $company[rb])"
+[example_end]
+
+[example_begin]
+   % ns_dbquotevalue ColumnName
+   ColumnName
+[example_end]
+
+[example_begin]
+   % ns_dbquotevalue "Column Name"
+   "Column Name"
+[example_end]
+
+
+[see_also ns_db]
+[keywords database sql quote escape]
+
+[manpage_end]
+

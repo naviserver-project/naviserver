@@ -110,52 +110,21 @@ install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
-	@$(MKDIR) $(NAVISERVER)/pages/doc $(NAVISERVER)/pages/doc/files
-	@echo Installing html files in $(NAVISERVER)/pages/doc...
-	@if test -d doc/html ; then \
-	    for i in `find doc/html -maxdepth 1 -name "*.html" -print`; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
-	    done ; \
-	    for i in `find doc/html -maxdepth 1 -name "*.css" -print`; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc; \
-	    done ; \
-	fi
-	@if test -d doc/html/files ; then \
-	    for i in `find doc/html/files -name "*.html" -print`; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/doc/files; \
-	    done ; \
-	fi
-	@for n in 1 3 n; do \
-	    d=$(NAVISERVER)/man/man$$n; \
-	    echo Installing nroff files in $$d...; \
-	    $(MKDIR) $$d; \
-	    if test -d doc/man ; then \
-		for i in `find doc/man -name "*.$$n" -print`; do \
-		    $(INSTALL_DATA) $$i $$d; \
-		done; \
-	    fi ; \
-	done
+	@$(MKDIR) $(NAVISERVER)/pages/doc
+	$(CP) doc/html/* $(NAVISERVER)/pages/doc
 
-install-examples:
-	@$(MKDIR) $(NAVISERVER)/pages/examples
-	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/examples/; \
-	done
+
+DTPLITE=dtplite
 
 build-doc:
-	@if [ 1 = 1 ]; then \
-	    hd=`pwd`; \
-	    cd doc/src && $(MKDIR) ../html ../man ; \
-	    echo Generating docs from .man pages in `pwd`; \
-	    echo Emitting html files to $$hd/doc/html/ ...; \
-	    dtplite -o ../html/ -style nsd.css html .; \
-	    echo Emitting nroff files to $$hd/doc/man/ ...; \
-	    for f in *.man; do \
-		dtplite -o ../man/`basename $$f .man`.n nroff $$f; \
-	    done; \
-	    cd $$hd ; \
-	    echo Generating docs done. ; \
-	fi
+	$(MKDIR) doc/html doc/man
+	for srcdir in nscgi nslog nsdb nsproxy doc/src/mann; do \
+		$(DTPLITE) -merge \
+			-style doc/src/man.css -header doc/src/header.inc -footer doc/src/footer.inc \
+			-o doc/html/ html $$srcdir; \
+		$(DTPLITE) -merge -o doc/man/ nroff $$srcdir; \
+	done
+
 
 #
 # Testing:

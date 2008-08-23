@@ -298,6 +298,6 @@ include/Makefile.global
 include/Makefile.module
 sample-config.tcl
 naviserver.rdf
-doc/src/version_include
+version_include
 ])
 AC_OUTPUT
