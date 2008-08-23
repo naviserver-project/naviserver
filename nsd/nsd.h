@@ -229,6 +229,7 @@ typedef struct WriterSock {
     struct Sock       *sockPtr;
     char              *data;
     int                fd;
+    int                keep;
     Tcl_WideInt        nread;
     Tcl_WideInt        nsent;
     Tcl_WideInt        size;

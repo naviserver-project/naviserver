@@ -184,7 +184,7 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
         if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
             return TCL_ERROR;
         }
-        *timePtr = *((Ns_Time *) (void *) &objPtr->internalRep);
+        memcpy(timePtr, &objPtr->internalRep, sizeof(Ns_Time));
     }
     return TCL_OK;
 }
@@ -609,5 +609,5 @@ static void
 SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
     Ns_TclResetObjType(objPtr, &timeType);
-    *((Ns_Time *) (void *) &objPtr->internalRep) = *timePtr;
+    memcpy(timePtr, &objPtr->internalRep, sizeof(Ns_Time));
 }

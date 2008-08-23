@@ -1903,12 +1903,13 @@ SockClose(Sock *sockPtr, int keep)
     if (keep && NsDriverKeep(sockPtr) != 0) {
         keep = 0;
     }
+
     if (keep == 0) {
         NsDriverClose(sockPtr);
     }
 
     /*
-     * Unconditionally remove temporaty file, connecttion thread
+     * Unconditionally remove temporaty file, connection thread
      * should take care about very large uploads
      */
 
@@ -2803,7 +2804,13 @@ SockWriterRelease(WriterSock *wrSockPtr, int reason, int err)
            "sent=%" TCL_LL_MODIFIER "d, flags=%X",
            wrSockPtr->sockPtr->sock, wrSockPtr->fd, reason, err,
            wrSockPtr->nsent, wrSockPtr->flags);
-    SockRelease(wrSockPtr->sockPtr, reason, err);
+
+    if (err || reason) {
+        SockRelease(wrSockPtr->sockPtr, reason, err);
+    } else {
+        NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
+    }
+
     if (wrSockPtr->fd > -1) {
         close(wrSockPtr->fd);
         ns_free(wrSockPtr->buf);
@@ -2872,6 +2879,7 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
 
     Ns_ConnWriteData(conn, NULL, 0, 0);
 
+    wrSockPtr->keep = connPtr->keep > 0 ? 1 : 0;
     wrSockPtr->size = nsend;
     wrSockPtr->nread = nsend;
     connPtr->sockPtr = NULL;

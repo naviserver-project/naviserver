@@ -1,3 +1,11 @@
+2008-06-29  Vlad Seryakov <seryakov@users.sf.net>
+
+        * nsd/nsd.h:
+        * nsd/driver.c: Make sure WriterThread honors keep-alive flag when
+        finished with sending data
+
+        * nsd/tcltime.c: Silence strict-alis rules related warnings
+
 2008-08-23  Stephen  <sdeasey@users.sf.net>
 
 	* doc/*:
