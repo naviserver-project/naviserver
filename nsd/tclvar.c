@@ -919,7 +919,7 @@ NsNsvGet(NsServer *servPtr, char *aname, char *key)
 int
 NsNsvExists(NsServer *servPtr, char *aname, char *key)
 {
-    int    exists;
+    int    exists = 0;
     NsArray *arrayPtr;
 
     if (servPtr == NULL || aname == NULL || key == NULL) {

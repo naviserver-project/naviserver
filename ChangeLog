@@ -1,10 +1,18 @@
-2008-06-29  Vlad Seryakov <seryakov@users.sf.net>
+2008-08-24  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsd/nsd.h:
         * nsd/driver.c: Make sure WriterThread honors keep-alive flag when
         finished with sending data
 
         * nsd/tcltime.c: Silence strict-alis rules related warnings
+	* include/ns.h:
+	* nsd/driver.c:
+	* nsd/adprequest.c:
+	* nsd/connio.c: Mark the connection which sent data via writer 
+	thread with specal flag which wil be honored by NsAdpFlush
+
+	* contrib/examples: Updated exampls with better description and fixed
+	writer example
 
 2008-08-23  Stephen  <sdeasey@users.sf.net>
 

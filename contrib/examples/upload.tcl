@@ -95,7 +95,7 @@ switch -- $cmd {
          ns_section ns/server/servername/adp<BR>
          ns_param enabletclpages  true
 
-         ns_section ns/server/default/module/nssock<BR>
+         ns_section ns/server/servername/module/nssock<BR>
          ns_param maxinput       3000000000<BR>
          ns_param maxupload       700000000<BR>
          ns_param spoolerthreads  1<BR>

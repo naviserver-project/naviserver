@@ -69,8 +69,8 @@
 #define NS_CONN_WRITE_ENCODED      0x020 /* Character data mode requested mime-type header. */
 #define NS_CONN_STREAM             0x040 /* Data is to be streamed when ready.  */
 #define NS_CONN_CHUNK              0x080 /* Streamed data is to be chunked. */
-
 #define NS_CONN_SENT_LAST_CHUNK    0x100 /* Marks that the last chunk was sent in chunked mode */
+#define NS_CONN_SENT_VIA_WRITER    0x200 /* Response data has been sent via writer thread */
 
 /*
  * The following are valid return codes from an Ns_UserAuthorizeProc.

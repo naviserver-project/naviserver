@@ -2837,9 +2837,16 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     drvPtr = connPtr->sockPtr->drvPtr;
     wrPtr  = &drvPtr->writer;
 
-    if (wrPtr->threads == 0 || nsend < wrPtr->maxsize) {
+    if (wrPtr->threads == 0) {
+        Ns_Log(Error, "NsWriterQueue: no writer threads configured");
         return NS_ERROR;
     }
+
+    if (nsend < wrPtr->maxsize) {
+        Ns_Log(Error, "NsWriterQueue: file is too small(%" TCL_LL_MODIFIER "d < %d)", nsend, wrPtr->maxsize);
+        return NS_ERROR;
+    }
+
 
     wrSockPtr = (WriterSock*)ns_calloc(1, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
@@ -2874,6 +2881,12 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     }
 
     /*
+     * Make sure we have proper content length header for keep-alives
+     */
+
+    connPtr->responseLength = nsend;
+
+    /*
      * Flush the headers
      */
 
@@ -2884,8 +2897,9 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     wrSockPtr->nread = nsend;
     connPtr->sockPtr = NULL;
 
-    /* To keep nslog happy about content size returned */
+    /* To keep ns_log happy about content size returned */
     connPtr->nContentSent = nsend;
+    connPtr->flags |= NS_CONN_SENT_VIA_WRITER;
 
     /*
      * Get the next writer thread from the list, all writer requests are
@@ -2901,9 +2915,9 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     Ns_MutexUnlock(&wrPtr->lock);
 
     Ns_Log(Notice, "Writer: %d: started sock=%d, fd=%d: "
-           "size=%" TCL_LL_MODIFIER "d, flags=%X: %s",
+           "size=%" TCL_LL_MODIFIER "d, flags=%X: keep=%d, %s",
            queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd,
-           nsend, wrSockPtr->flags, connPtr->reqPtr->request->url);
+           nsend, wrSockPtr->flags, wrSockPtr->keep, connPtr->reqPtr->request->url);
 
     /*
      * Now add new writer socket to the writer thread's queue

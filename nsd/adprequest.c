@@ -437,6 +437,9 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      * Leave error messages if output is disabled or failed. Otherwise,
      * send data if there's any to send or stream is 0, indicating this
      * is the final flush call.
+     *
+     * Special case when has been sent via Writer thread, we just need to
+     * reset adp output and do not send anything
      */
 
     Ns_DStringInit(&cds);
@@ -444,7 +447,8 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 
     if (itPtr->adp.exception == ADP_ABORT) {
         Tcl_SetResult(interp, "adp flush disabled: adp aborted", TCL_STATIC);
-    } else if (len == 0 && stream) {
+    } else
+    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) || (len == 0 && stream)) {
         result = TCL_OK;
     } else {
         if (itPtr->adp.chan != NULL) {

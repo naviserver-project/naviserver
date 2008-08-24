@@ -1122,7 +1122,6 @@ CheckKeep(Conn *connPtr)
 
         /*
          * Apply default rules.
-         *                 && STREQ(connPtr->request->method, "GET")
          */
 
         if (connPtr->keep == -1
@@ -1134,7 +1133,6 @@ CheckKeep(Conn *connPtr)
 
             if ((connPtr->request->version == 1.0
                  && HdrEq(connPtr->headers, "connection", "keep-alive"))
-
                 || (connPtr->request->version > 1.0
                     && !HdrEq(connPtr->headers, "connection", "close"))) {
 
