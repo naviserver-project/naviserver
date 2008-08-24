@@ -113,6 +113,11 @@ install-doc:
 	@$(MKDIR) $(NAVISERVER)/pages/doc
 	$(CP) doc/html/* $(NAVISERVER)/pages/doc
 
+install-examples:
+	@$(MKDIR) $(NAVISERVER)/pages/examples
+	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
+		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/examples/; \
+	done
 
 DTPLITE=dtplite
 
