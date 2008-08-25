@@ -70,6 +70,7 @@ NS_RCSID("@(#) $Header$");
 #define LOGGING_SOCKERROR        (1<<2)
 #define LOGGING_SOCKSHUTERROR    (1<<3)
 #define LOGGING_BADREQUEST       (1<<4)
+#define LOGGING_SERVERCONFIG     (1<<5)
 
 /* WriterSock flags, keep it in upper range not to conflict with Conn flags */
 
@@ -358,6 +359,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     Ns_ConfigFlag(path, "sockshuterrorlogging", LOGGING_SOCKSHUTERROR, 0,
                   &drvPtr->loggingFlags);
     Ns_ConfigFlag(path, "badrequestlogging", LOGGING_BADREQUEST, 0,
+                  &drvPtr->loggingFlags);
+    Ns_ConfigFlag(path, "serverconfiglogging", LOGGING_SERVERCONFIG, 0,
                   &drvPtr->loggingFlags);
 
     /*
@@ -2012,6 +2015,9 @@ SockRead(Sock *sockPtr, int spooler)
         n = drvPtr->maxinput;
         nread = n - len;
         if (nread == 0) {
+            if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
+                Ns_Log(Error, "SockRead: maxinput reached of %" TCL_LL_MODIFIER "d bytes", drvPtr->maxinput);
+            }
             return SOCK_ERROR;
         }
     }
@@ -2088,7 +2094,9 @@ SockRead(Sock *sockPtr, int spooler)
      */
 
     if (reqPtr->avail > drvPtr->maxinput) {
-        Ns_Log(Debug, "request too large, read=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->avail, drvPtr->maxinput);
+        if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
+            Ns_Log(Error, "SockRead: request too large, read=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->avail, drvPtr->maxinput);
+        }
         return SOCK_ENTITYTOOLARGE;
     }
 
@@ -2164,6 +2172,9 @@ SockParse(Sock *sockPtr, int spooler)
 
         if ((e - s) > drvPtr->maxline) {
             if (reqPtr->request == NULL) {
+                if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
+                    Ns_Log(Error, "SockParse: maxline reached of %d bytes", drvPtr->maxline);
+                }
                 return SOCK_REQUESTURITOOLONG;
             }
             return SOCK_LINETOOLONG;
@@ -2213,7 +2224,9 @@ SockParse(Sock *sockPtr, int spooler)
                 if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
                     reqPtr->length = length;
                     if (reqPtr->length > drvPtr->maxinput) {
-                        Ns_Log(Debug, "request too large, length=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->length, drvPtr->maxinput);
+                        if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
+                            Ns_Log(Error, "SockParse: request too large, length=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->length, drvPtr->maxinput);
+                        }
                         return SOCK_ENTITYTOOLARGE;
                     }
                 }
@@ -2247,6 +2260,9 @@ SockParse(Sock *sockPtr, int spooler)
              */
 
             if (Ns_SetSize(reqPtr->headers) > drvPtr->maxheaders) {
+                if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
+                    Ns_Log(Error, "SockParse: maxheaders reached of %d bytes", drvPtr->maxheaders);
+                }
                 return SOCK_TOOMANYHEADERS;
             }
 
@@ -2838,12 +2854,16 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     wrPtr  = &drvPtr->writer;
 
     if (wrPtr->threads == 0) {
-        Ns_Log(Error, "NsWriterQueue: no writer threads configured");
+        if (drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
+            Ns_Log(Error, "NsWriterQueue: no writer threads configured");
+        }
         return NS_ERROR;
     }
 
     if (nsend < wrPtr->maxsize) {
-        Ns_Log(Error, "NsWriterQueue: file is too small(%" TCL_LL_MODIFIER "d < %d)", nsend, wrPtr->maxsize);
+        if (drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
+            Ns_Log(Error, "NsWriterQueue: file is too small(%" TCL_LL_MODIFIER "d < %d)", nsend, wrPtr->maxsize);
+        }
         return NS_ERROR;
     }
 

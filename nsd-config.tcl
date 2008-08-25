@@ -73,6 +73,12 @@ ns_param        threadtimeout       1800
 ns_section     "ns/server/default/db"
 ns_param        pools               *
 
+ns_section      "ns/fastpath"
+ns_param        cache               false
+ns_param        cachemaxsize        10240000
+ns_param        cachemaxentry       8192
+ns_param        mmap                false
+
 ns_section     "ns/server/default/fastpath"
 ns_param        pagedir             pages
 ns_param        directoryfile       "index.adp index.tcl index.html index.htm"
