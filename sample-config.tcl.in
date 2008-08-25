@@ -334,11 +334,11 @@ ns_section	"ns/fastpath"
 # Enable cache for normal URLs. Optional, default is false.
 ns_param	cache			false
 
-# Size of fast path cache. Optional, default is 5120000.
-ns_param	cachemaxsize		5120000
+# Size of fast path cache. Optional, default is ~10M.
+ns_param	cachemaxsize		[expr 1024*10000]
 
-# Largest file size allowed in cache. Optional, default is cachemaxsize / 10.
-ns_param	cachemaxentry		512000
+# Largest file size allowed in cache. Optional, default is 8K
+ns_param	cachemaxentry		8192
 
 # Use mmap() for cache. Optional, default is false.
 ns_param	mmap			false
