@@ -402,6 +402,16 @@ typedef struct Driver {
     int acceptsize;             /* Number requests to accept at once */
     int loggingFlags;           /* Logging control flags */
 
+    int stateFlags;             /* Driver state flags. */
+    Ns_Thread thread;           /* Thread id to join on shutdown. */
+    Ns_Mutex lock;              /* Lock to protect lists below. */
+    Ns_Cond cond;               /* Cond to signal reader threads,
+                                 * driver query, startup, and shutdown. */
+    int trigger[2];             /* Wakeup trigger pipe. */
+
+    struct Sock *sockPtr;       /* Free list of Sock structures */
+    struct Sock *closePtr;      /* First conn ready for graceful close */
+
     DrvSpooler spooler;         /* Tracks upload spooler threads */
     DrvWriter  writer;          /* Tracks writer threads */
 

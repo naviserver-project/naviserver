@@ -1,3 +1,21 @@
+2008-08-26  Vlad Seryakov <seryakov@users.sf.net>
+
+        * nsd/nsd.h:
+        * nsd/driver.c: Port some driver code from Aolserver 4.5 into our
+        driver structure such as:
+         - create separate thread for each driver
+         - have driver thread to create and shutdown its sockets and
+           writer/spooler threads
+
+        I made many tests comparing AS 4.5 driver and our based on 4.0.11 driver
+        and every time is see old code is more stable and fatser. New AS 4.5 driver
+        logic seems very complicated and with pretty heavy tests it even fails to sustain
+        the load. My latest test with LiteSpeed Web server which claims to be even faster
+        than lighttpd shows that for simple small files with fastpath enabled we perform almost
+        the same as LiteSpeed, a little bit slower but not much. Having separate threads for
+        each driver made it a tiny little bit faster which just proves that it is not bad to
+        have each driver in different threads.
+
 2008-08-24  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsd/nsd.h:
