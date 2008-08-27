@@ -16,6 +16,9 @@
         each driver made it a tiny little bit faster which just proves that it is not bad to
         have each driver in different threads.
 
+        * nsd/tcltime.c: Fixed the bug introduced earlier by using memcpy for silencing
+        compiler warnings
+
 2008-08-24  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsd/nsd.h:

@@ -609,5 +609,5 @@ static void
 SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr)
 {
     Ns_TclResetObjType(objPtr, &timeType);
-    memcpy(timePtr, &objPtr->internalRep, sizeof(Ns_Time));
+    memcpy(&objPtr->internalRep, timePtr, sizeof(Ns_Time));
 }
