@@ -1,3 +1,9 @@
+2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
+
+        * nsd/driver.c:
+        * nsd/nsd.h: Restructured driver polling code, use PollData structure to keep all
+        poll-related fields together.
+
 2008-08-26  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsd/nsd.h:

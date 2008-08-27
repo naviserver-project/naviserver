@@ -106,10 +106,12 @@ typedef struct PollData {
     int nfds;                   /* Number of fd's being monitored. */
     int maxfds;                 /* Max fd's (will grow as needed). */
     struct pollfd *pfds;        /* Dynamic array of poll struct's. */
-    Ns_Time *timeoutPtr;        /* Min timeout, if any, for next spin. */
+    Ns_Time timeout;            /* Min timeout, if any, for next spin. */
 } PollData;
 
 #define PollIn(ppd,i)           ((ppd)->pfds[(i)].revents & POLLIN)
+#define PollOut(ppd,i)          ((ppd)->pfds[(i)].revents & POLLOUT)
+
 
 /*
  * Static functions defined in this file.
@@ -119,7 +121,7 @@ static Ns_ThreadProc DriverThread;
 static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 
-static int   SetServer(Sock *sockPtr);
+static int   SockSetServer(Sock *sockPtr);
 static Sock *SockAccept(Driver *drvPtr);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
 static void  SockPrepare(Sock *sockPtr);
@@ -130,12 +132,16 @@ static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
 static void  SockClose(Sock *sockPtr, int keep);
 static int   SockRead(Sock *sockPtr, int spooler);
 static int   SockParse(Sock *sockPtr, int spooler);
-static void  SockPoll(Sock *sockPtr, int type, struct pollfd **pfds,
-                      unsigned int *nfds, unsigned int *maxfds,
-                      Ns_Time *timeoutPtr);
-
+static void  SockPoll(Sock *sockPtr, int type, PollData *pdata);
 static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr);
 static void  SockWriterRelease(WriterSock *sockPtr, int reason, int err);
+static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc);
+static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr);
+static void  PollCreate(PollData *pdata);
+static void  PollFree(PollData *pdata);
+static void  PollReset(PollData *pdata);
+static int   PollSet(PollData *pdata, SOCKET sock, int type, Ns_Time *timeoutPtr);
+static int   PollWait(PollData *pdata, int waittime);
 
 /*
  * Static variables defined in this file.
@@ -580,10 +586,10 @@ NsStartDrivers(void)
         Ns_Log(Notice, "driver: starting: %s", drvPtr->name);
         Ns_ThreadCreate(DriverThread, drvPtr, 0, &drvPtr->thread);
         Ns_MutexLock(&drvPtr->lock);
-        while (!(drvPtr->stateFlags & DRIVER_STARTED)) {
+        while (!(drvPtr->flags & DRIVER_STARTED)) {
             Ns_CondWait(&drvPtr->cond, &drvPtr->lock);
         }
-        if ((drvPtr->stateFlags & DRIVER_FAILED)) {
+        if ((drvPtr->flags & DRIVER_FAILED)) {
             status = NS_ERROR;
         }
         Ns_MutexUnlock(&drvPtr->lock);
@@ -619,7 +625,7 @@ NsStopDrivers(void)
     while (drvPtr != NULL) {
         Ns_MutexLock(&drvPtr->lock);
         Ns_Log(Notice, "driver: stopping: %s", drvPtr->name);
-        drvPtr->stateFlags |= DRIVER_SHUTDOWN;
+        drvPtr->flags |= DRIVER_SHUTDOWN;
         Ns_CondBroadcast(&drvPtr->cond);
         Ns_MutexUnlock(&drvPtr->lock);
         SockTrigger(drvPtr->trigger[1]);
@@ -659,7 +665,7 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
 
     while (drvPtr != NULL) {
         Ns_MutexLock(&drvPtr->lock);
-        while (!(drvPtr->stateFlags & DRIVER_STOPPED) && status == NS_OK) {
+        while (!(drvPtr->flags & DRIVER_STOPPED) && status == NS_OK) {
             status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
         }
         Ns_MutexUnlock(&drvPtr->lock);
@@ -804,7 +810,7 @@ NsSockClose(Sock *sockPtr, int keep)
     }
     sockPtr->keep    = keep;
     sockPtr->nextPtr = drvPtr->closePtr;
-    drvPtr->closePtr    = sockPtr;
+    drvPtr->closePtr = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
 
     if (trigger) {
@@ -956,18 +962,9 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        timeout, now, diff;
     char          *errstr, c, drain[1024];
-    int            i, n, flags, stopping, pollto, accepted;
+    int            n, flags, stopping, pollto, accepted;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
-    SpoolerQueue  *queuePtr, *queueList[2];
-
-    unsigned int   nfds;   /* Number of Sock to poll(). */
-    unsigned int   maxfds; /* Max pollfd's in pfds. */
-    struct pollfd *pfds;   /* Array of pollfds to poll(). */
-
-    struct {
-        Ns_ThreadProc *tproc;
-        SpoolerQueue  *queue;
-    } queueThreads[] = {{SpoolerThread, NULL}, {WriterThread,  NULL}};
+    PollData       pdata;
 
     Ns_ThreadSetName("-driver:%s-", drvPtr->name);
 
@@ -1002,22 +999,11 @@ DriverThread(void *arg)
         Ns_SockSetNonBlocking(drvPtr->sock);
 
         /*
-         * Create the spooler/writer thread(s).
+         * Create the spooler thread(s).
          */
 
-        queueThreads[0].queue = drvPtr->spooler.firstPtr;
-        queueThreads[1].queue = drvPtr->writer.firstPtr;
-
-        for (i = 0; i < 2; i++) {
-            queuePtr = queueThreads[i].queue;
-            while (queuePtr != NULL) {
-                if (ns_sockpair(queuePtr->pipe)) {
-                    Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
-                }
-                Ns_ThreadCreate(queueThreads[i].tproc, queuePtr, 0, &queuePtr->thread);
-                queuePtr = queuePtr->nextPtr;
-            }
-        }
+        SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
+        SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
     }
 
     /*
@@ -1025,7 +1011,7 @@ DriverThread(void *arg)
      */
 
     Ns_MutexLock(&drvPtr->lock);
-    drvPtr->stateFlags |= flags;
+    drvPtr->flags |= flags;
     Ns_CondBroadcast(&drvPtr->cond);
     Ns_MutexUnlock(&drvPtr->lock);
 
@@ -1035,12 +1021,10 @@ DriverThread(void *arg)
      */
 
     Ns_Log(Notice, "driver: accepting connections");
-    closePtr = waitPtr = readPtr = NULL;
+
+    PollCreate(&pdata);
     Ns_GetTime(&now);
-    maxfds = 100;
-    pfds = ns_calloc(maxfds, sizeof(struct pollfd));
-    pfds[0].fd = drvPtr->trigger[0];
-    pfds[0].events = POLLIN;
+    closePtr = waitPtr = readPtr = NULL;
     stopping = (flags & DRIVER_SHUTDOWN);
 
     while (!stopping) {
@@ -1050,11 +1034,11 @@ DriverThread(void *arg)
          * isn't already pending.
          */
 
-        nfds = 1;
+        PollReset(&pdata);
+        PollSet(&pdata, drvPtr->trigger[0], POLLIN, NULL);
+
         if (waitPtr == NULL) {
-            pfds[nfds].fd = drvPtr->sock;
-            pfds[nfds].events = POLLIN;
-            drvPtr->pidx = nfds++;
+            drvPtr->pidx = PollSet(&pdata, drvPtr->sock, POLLIN, NULL);
         }
 
         /*
@@ -1065,41 +1049,26 @@ DriverThread(void *arg)
         if (readPtr == NULL && closePtr == NULL) {
             pollto = 60 * 1000;
         } else {
-            timeout.sec = INT_MAX;
-            timeout.usec = LONG_MAX;
             sockPtr = readPtr;
             while (sockPtr != NULL) {
-                SockPoll(sockPtr, POLLIN, &pfds, &nfds, &maxfds, &timeout);
+                SockPoll(sockPtr, POLLIN, &pdata);
                 sockPtr = sockPtr->nextPtr;
             }
             sockPtr = closePtr;
             while (sockPtr != NULL) {
-                SockPoll(sockPtr, POLLIN, &pfds, &nfds, &maxfds, &timeout);
+                SockPoll(sockPtr, POLLIN, &pdata);
                 sockPtr = sockPtr->nextPtr;
             }
-            if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
+            if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
                 pollto = diff.sec * 1000 + diff.usec / 1000;
             } else {
                 pollto = 0;
             }
         }
 
-        /*
-         * Select and drain the trigger pipe if necessary.
-         */
+        n = PollWait(&pdata, pollto);
 
-        pfds[0].revents = 0;
-
-        do {
-            n = ns_poll(pfds, nfds, pollto);
-        } while (n < 0  && errno == EINTR);
-
-        if (n < 0) {
-            errstr = ns_sockstrerror(ns_sockerrno);
-            Ns_Fatal("driver: ns_poll() failed: %s", errstr);
-        }
-
-        if ((pfds[0].revents & POLLIN) && recv(drvPtr->trigger[0], &c, 1, 0) != 1) {
+        if (PollIn(&pdata, 0) && recv(drvPtr->trigger[0], &c, 1, 0) != 1) {
             errstr = ns_sockstrerror(ns_sockerrno);
             Ns_Fatal("driver: trigger recv() failed: %s", errstr);
         }
@@ -1116,7 +1085,7 @@ DriverThread(void *arg)
             closePtr = NULL;
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (pfds[sockPtr->pidx].revents & POLLIN) {
+                if (PollIn(&pdata, sockPtr->pidx)) {
                     n = recv(sockPtr->sock, drain, sizeof(drain), 0);
                     if (n <= 0) {
                         sockPtr->timeout = now;
@@ -1140,7 +1109,7 @@ DriverThread(void *arg)
 
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
-            if (!(pfds[sockPtr->pidx].revents & POLLIN)) {
+            if (!(PollIn(&pdata, sockPtr->pidx))) {
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
@@ -1225,7 +1194,7 @@ DriverThread(void *arg)
             accepted = 0;
             while (accepted < drvPtr->acceptsize &&
                    drvPtr->queuesize < drvPtr->maxqueuesize
-                   && (pfds[drvPtr->pidx].revents & POLLIN)
+                   && PollIn(&pdata, drvPtr->pidx)
                    && (sockPtr = SockAccept(drvPtr)) != NULL) {
 
                 /*
@@ -1260,7 +1229,7 @@ DriverThread(void *arg)
         Ns_MutexLock(&drvPtr->lock);
         sockPtr          = drvPtr->closePtr;
         drvPtr->closePtr = NULL;
-        flags            = drvPtr->stateFlags;
+        flags            = drvPtr->flags;
         Ns_MutexUnlock(&drvPtr->lock);
 
         stopping = (flags & DRIVER_SHUTDOWN);
@@ -1297,9 +1266,11 @@ DriverThread(void *arg)
         }
     }
 
+    PollFree(&pdata);
+
     Ns_Log(Notice, "exiting");
     Ns_MutexLock(&drvPtr->lock);
-    drvPtr->stateFlags |= DRIVER_STOPPED;
+    drvPtr->flags |= DRIVER_STOPPED;
     Ns_CondBroadcast(&drvPtr->cond);
     Ns_MutexUnlock(&drvPtr->lock);
 
@@ -1310,95 +1281,75 @@ DriverThread(void *arg)
     Ns_GetTime(&timeout);
     Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
 
-    queueList[0] = drvPtr->writer.firstPtr;
-    queueList[1] = drvPtr->spooler.firstPtr;
-    for (i = 0; i < 2; i++) {
-        queuePtr = queueList[i];
-        while (queuePtr != NULL) {
-            Ns_MutexLock(&queuePtr->lock);
-            if (!queuePtr->stopped && !queuePtr->shutdown) {
-                Ns_Log(Notice, "%s%d: triggering shutdown", (i ? "spooler" : "writer"), queuePtr->id);
-                queuePtr->shutdown = 1;
-                SockTrigger(queuePtr->pipe[1]);
-            }
-            n = NS_OK;
-            while (!queuePtr->stopped && n == NS_OK) {
-                n = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, &timeout);
-            }
-            if (n != NS_OK) {
-                Ns_Log(Warning, "%s%d: timeout waiting for shutdown", (i ? "spooler" : "writer"), queuePtr->id);
-            } else {
-                Ns_Log(Notice, "%s%d: shutdown complete", (i ? "spooler" : "writer"), queuePtr->id);
-                Ns_ThreadJoin(&queuePtr->thread, NULL);
-                queuePtr->thread = NULL;
-                ns_sockclose(queuePtr->pipe[0]);
-                ns_sockclose(queuePtr->pipe[1]);
-            }
-            Ns_MutexUnlock(&queuePtr->lock);
-            queuePtr = queuePtr->nextPtr;
-        }
-    }
+    SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout);
+    SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * SetServer --
- *
- *      Set virtual server from driver context or Host header.
- *
- * Results:
- *      1 if valid server set, 0 otherwise.
- *
- * Side effects:
- *      Will update sockPtr->servPtr.
- *
- *----------------------------------------------------------------------
- */
+static void
+PollCreate(PollData *pdata)
+{
+    memset((pdata), 0, sizeof(PollData));
+}
+
+static void
+PollFree(PollData *pdata)
+{
+    ns_free(pdata->pfds);
+    memset((pdata), 0, sizeof(PollData));
+}
+
+static void
+PollReset(PollData *pdata)
+{
+    pdata->nfds = 0;
+    pdata->timeout.sec = INT_MAX;
+    pdata->timeout.usec = LONG_MAX;
+}
 
 static int
-SetServer(Sock *sockPtr)
+PollSet(PollData *pdata, SOCKET sock, int type, Ns_Time *timeoutPtr)
 {
-    ServerMap     *mapPtr = NULL;
-    Tcl_HashEntry *hPtr;
-    char          *host = NULL;
-    int            status = 1;
+    /*
+     * Grow the pfds array if necessary.
+     */
 
-    sockPtr->servPtr  = sockPtr->drvPtr->servPtr;
-    sockPtr->location = sockPtr->drvPtr->location;
-
-    if (sockPtr->reqPtr != NULL) {
-        host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
-        if (!host && sockPtr->reqPtr->request->version >= 1.1) {
-            status = 0;
-        }
-    }
-    if (sockPtr->servPtr == NULL) {
-        if (host) {
-            hPtr = Tcl_FindHashEntry(&hosts, host);
-            if (hPtr != NULL) {
-                mapPtr = Tcl_GetHashValue(hPtr);
-            }
-        }
-        if (!mapPtr) {
-            mapPtr = defMapPtr;
-        }
-        if (mapPtr) {
-            sockPtr->servPtr  = mapPtr->servPtr;
-            sockPtr->location = mapPtr->location;
-        }
-        if (sockPtr->servPtr == NULL) {
-            status = 0;
-        }
+    if (pdata->nfds >= pdata->maxfds) {
+        pdata->maxfds += 100;
+        pdata->pfds = ns_realloc(pdata->pfds, pdata->maxfds * sizeof(struct pollfd));
     }
 
-    if (!status && sockPtr->reqPtr) {
-        ns_free(sockPtr->reqPtr->request->method);
-        sockPtr->reqPtr->request->method = ns_strdup("BAD");
+    /*
+     * Set the next pollfd struct with this socket.
+     */
+
+    pdata->pfds[pdata->nfds].fd = sock;
+    pdata->pfds[pdata->nfds].events = type;
+    pdata->pfds[pdata->nfds].revents = 0;
+
+    /*
+     * Check for new minimum timeout.
+     */
+
+    if (timeoutPtr != NULL && Ns_DiffTime(timeoutPtr, &pdata->timeout, NULL) < 0) {
+        pdata->timeout = *timeoutPtr;
     }
 
-    return 1;
+    return pdata->nfds++;
+}
+
+static int
+PollWait(PollData *pdata, int waittime)
+{
+    int n;
+
+    do {
+        n = ns_poll(pdata->pfds, pdata->nfds, waittime);
+    } while (n < 0  && errno == EINTR);
+
+    if (n < 0) {
+        Ns_Fatal("PollWait: ns_poll() failed: %s", ns_sockstrerror(ns_sockerrno));
+    }
+    return n;
 }
 
 /*
@@ -1489,8 +1440,7 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
      *  Verify the conditions, Request struct should exists already
      */
 
-    if (status == NS_FATAL ||
-        !SetServer(sockPtr)) {
+    if (status == NS_FATAL || SockSetServer(sockPtr) == 0) {
         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
         return NS_ERROR;
     }
@@ -1499,7 +1449,7 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
      *  Actual queueing, if not ready spool to the waiting list
      */
 
-    if (!NsQueueConn(sockPtr, timePtr)) {
+    if (NsQueueConn(sockPtr, timePtr) == 0) {
         return NS_TIMEOUT;
     }
 
@@ -1525,36 +1475,26 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
  */
 
 static void
-SockPoll(Sock *sockPtr, int type, struct pollfd **pfds, unsigned int *nfds,
-         unsigned int *maxfds, Ns_Time *timeoutPtr)
+SockPoll(Sock *sockPtr, int type, PollData *pdata)
 {
-    /*
-     * Grow the pfds array if necessary.
-     */
-
-    if (*nfds >= *maxfds) {
-        *maxfds += 100;
-        *pfds = ns_realloc(*pfds, *maxfds * sizeof(struct pollfd));
-    }
-
-    /*
-     * Set the next pollfd struct with this socket.
-     */
-
-    (*pfds)[*nfds].fd      = sockPtr->sock;
-    (*pfds)[*nfds].events  = type;
-    (*pfds)[*nfds].revents = 0;
-
-    sockPtr->pidx = (*nfds)++;
-
-    /*
-     * Check for new minimum timeout.
-     */
-
-    if (Ns_DiffTime(&sockPtr->timeout, timeoutPtr, NULL) < 0) {
-        *timeoutPtr = sockPtr->timeout;
-    }
+    sockPtr->pidx = PollSet(pdata, sockPtr->sock, type, &sockPtr->timeout);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockTimeout --
+ *
+ *      Update socket with timeout
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Socket timeout will have nowPtr + timeout value
+ *
+ *----------------------------------------------------------------------
+ */
 
 static void
 SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
@@ -2332,6 +2272,66 @@ SockParse(Sock *sockPtr, int spooler)
 /*
  *----------------------------------------------------------------------
  *
+ * SockSetServer --
+ *
+ *      Set virtual server from driver context or Host header.
+ *
+ * Results:
+ *      1 if valid server set, 0 otherwise.
+ *
+ * Side effects:
+ *      Will update sockPtr->servPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SockSetServer(Sock *sockPtr)
+{
+    ServerMap     *mapPtr = NULL;
+    Tcl_HashEntry *hPtr;
+    char          *host = NULL;
+    int            status = 1;
+
+    sockPtr->servPtr  = sockPtr->drvPtr->servPtr;
+    sockPtr->location = sockPtr->drvPtr->location;
+
+    if (sockPtr->reqPtr != NULL) {
+        host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
+        if (!host && sockPtr->reqPtr->request->version >= 1.1) {
+            status = 0;
+        }
+    }
+    if (sockPtr->servPtr == NULL) {
+        if (host) {
+            hPtr = Tcl_FindHashEntry(&hosts, host);
+            if (hPtr != NULL) {
+                mapPtr = Tcl_GetHashValue(hPtr);
+            }
+        }
+        if (!mapPtr) {
+            mapPtr = defMapPtr;
+        }
+        if (mapPtr) {
+            sockPtr->servPtr  = mapPtr->servPtr;
+            sockPtr->location = mapPtr->location;
+        }
+        if (sockPtr->servPtr == NULL) {
+            status = 0;
+        }
+    }
+
+    if (!status && sockPtr->reqPtr) {
+        ns_free(sockPtr->reqPtr->request->method);
+        sockPtr->reqPtr->request->method = ns_strdup("BAD");
+    }
+
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SpoolerThread --
  *
  *      Spooling socket driver thread.
@@ -2357,8 +2357,7 @@ SpoolerThread(void *arg)
     Sock          *sockPtr, *nextPtr, *waitPtr, *readPtr;
     Ns_Time        timeout, now, diff;
     Driver        *drvPtr;
-    unsigned int   nfds, maxfds;
-    struct pollfd *pfds;
+    PollData       pdata;
 
     Ns_ThreadSetName("-spooler%d-", queuePtr->id);
 
@@ -2368,13 +2367,11 @@ SpoolerThread(void *arg)
      */
 
     Ns_Log(Notice, "spooler%d: accepting connections", queuePtr->id);
-    waitPtr = readPtr = NULL;
+
+    PollCreate(&pdata);
     Ns_GetTime(&now);
+    waitPtr = readPtr = NULL;
     stopping = 0;
-    maxfds = 100;
-    pfds = ns_malloc(maxfds * sizeof(struct pollfd));
-    pfds[0].fd = queuePtr->pipe[0];
-    pfds[0].events = POLLIN;
 
     while (!stopping) {
 
@@ -2383,7 +2380,9 @@ SpoolerThread(void *arg)
          * and determine the minimum relative timeout.
          */
 
-        nfds = 1;
+        PollReset(&pdata);
+        PollSet(&pdata, queuePtr->pipe[0], POLLIN, NULL);
+
         if (readPtr == NULL) {
             pollto = 30 * 1000;
         } else {
@@ -2391,7 +2390,7 @@ SpoolerThread(void *arg)
             timeout.usec = LONG_MAX;
             sockPtr = readPtr;
             while (sockPtr != NULL) {
-                SockPoll(sockPtr, POLLIN, &pfds, &nfds, &maxfds, &timeout);
+                SockPoll(sockPtr, POLLIN, &pdata);
                 sockPtr = sockPtr->nextPtr;
             }
             if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
@@ -2405,17 +2404,9 @@ SpoolerThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
 
-        pfds[0].revents = 0;
+        n = PollWait(&pdata, pollto);
 
-        do {
-            n = ns_poll(pfds, nfds, pollto);
-        } while (n < 0  && errno == EINTR);
-        if (n < 0) {
-            Ns_Fatal("driver: ns_poll() failed: %s",
-                     ns_sockstrerror(ns_sockerrno));
-        }
-        if ((pfds[0].revents & POLLIN)
-            && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+        if (PollIn(&pdata, 0) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
             Ns_Fatal("spooler: trigger recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -2431,9 +2422,10 @@ SpoolerThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             drvPtr  = sockPtr->drvPtr;
-            if (!(pfds[sockPtr->pidx].revents & POLLIN)) {
+            if (PollIn(&pdata, sockPtr->pidx) == 0) {
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
+                    queuePtr->queuesize--;
                 } else {
                     Push(sockPtr, readPtr);
                 }
@@ -2446,8 +2438,9 @@ SpoolerThread(void *arg)
                     break;
 
                 case SOCK_READY:
-                    if (!SetServer(sockPtr)) {
+                    if (SockSetServer(sockPtr) == 0) {
                         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
+                        queuePtr->queuesize--;
                     } else {
                         Push(sockPtr, waitPtr);
                     }
@@ -2455,6 +2448,7 @@ SpoolerThread(void *arg)
 
                 default:
                     SockRelease(sockPtr, n, errno);
+                    queuePtr->queuesize--;
                     break;
                 }
             }
@@ -2475,8 +2469,10 @@ SpoolerThread(void *arg)
             }
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (!NsQueueConn(sockPtr, &now)) {
+                if (NsQueueConn(sockPtr, &now) == 0) {
                     Push(sockPtr, waitPtr);
+                } else {
+                    queuePtr->queuesize--;
                 }
                 sockPtr = nextPtr;
             }
@@ -2495,6 +2491,7 @@ SpoolerThread(void *arg)
                 drvPtr  = sockPtr->drvPtr;
                 SockTimeout(sockPtr, &now, drvPtr->recvwait);
                 Push(sockPtr, readPtr);
+                queuePtr->queuesize++;
                 sockPtr = nextPtr;
             }
         }
@@ -2506,6 +2503,7 @@ SpoolerThread(void *arg)
         stopping = queuePtr->shutdown;
         Ns_MutexUnlock(&queuePtr->lock);
     }
+    PollFree(&pdata);
 
     Ns_Log(Notice, "exiting");
 
@@ -2513,6 +2511,48 @@ SpoolerThread(void *arg)
     queuePtr->stopped = 1;
     Ns_CondBroadcast(&queuePtr->cond);
     Ns_MutexUnlock(&queuePtr->lock);
+}
+
+static void
+SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
+{
+    while (queuePtr != NULL) {
+        if (ns_sockpair(queuePtr->pipe)) {
+            Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
+        }
+        Ns_ThreadCreate(proc, queuePtr, 0, &queuePtr->thread);
+        queuePtr = queuePtr->nextPtr;
+    }
+}
+
+static void
+SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr)
+{
+    int status;
+
+    while (queuePtr != NULL) {
+        Ns_MutexLock(&queuePtr->lock);
+        if (!queuePtr->stopped && !queuePtr->shutdown) {
+            Ns_Log(Notice, "%d: triggering shutdown", queuePtr->id);
+            queuePtr->shutdown = 1;
+            SockTrigger(queuePtr->pipe[1]);
+        }
+        status = NS_OK;
+        while (!queuePtr->stopped && status == NS_OK) {
+            status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, timeoutPtr);
+        }
+        if (status != NS_OK) {
+            Ns_Log(Warning, "%d: timeout waiting for shutdown", queuePtr->id);
+        } else {
+            Ns_Log(Notice, "%d: shutdown complete", queuePtr->id);
+            Ns_ThreadJoin(&queuePtr->thread, NULL);
+            queuePtr->thread = NULL;
+            ns_sockclose(queuePtr->pipe[0]);
+            ns_sockclose(queuePtr->pipe[1]);
+        }
+        Ns_MutexUnlock(&queuePtr->lock);
+        queuePtr = queuePtr->nextPtr;
+    }
 }
 
 static int
@@ -2534,7 +2574,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     drvPtr->spooler.curPtr = drvPtr->spooler.curPtr->nextPtr;
     Ns_MutexUnlock(&drvPtr->spooler.lock);
 
-    Ns_Log(Notice, "Spooler: %d: started fd=%d: %" TCL_LL_MODIFIER "d bytes",
+    Ns_Log(Debug, "Spooler: %d: started fd=%d: %" TCL_LL_MODIFIER "d bytes",
            queuePtr->id, sockPtr->sock, sockPtr->reqPtr->length);
 
     Ns_MutexLock(&queuePtr->lock);
@@ -2575,22 +2615,18 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
 static void
 WriterThread(void *arg)
 {
-
+    SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     unsigned char   c, *bufPtr;
     int             n, err, stopping, pollto, status;
     Tcl_WideInt     toread, maxsize;
-
-    SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     Ns_Time         now, timeout, diff;
-
     Sock           *sockPtr;
     Driver         *drvPtr;
     DrvWriter      *wrPtr;
     WriterSock     *curPtr, *nextPtr, *writePtr;
-
-    struct pollfd   *pfds;
+    PollData        pdata;
     struct iovec    vbuf;
-    unsigned int    nfds, maxfds;
+
 
     Ns_ThreadSetName("-writer%d-", queuePtr->id);
 
@@ -2600,14 +2636,12 @@ WriterThread(void *arg)
      */
 
     Ns_Log(Notice, "writer%d: accepting connections", queuePtr->id);
+
+    PollCreate(&pdata);
     Ns_GetTime(&now);
     memset(&timeout, 0, sizeof(timeout));
-    stopping = 0;
     writePtr = NULL;
-    maxfds = 100;
-    pfds = ns_malloc(maxfds * sizeof(struct pollfd));
-    pfds[0].fd = queuePtr->pipe[0];
-    pfds[0].events = POLLIN;
+    stopping = 0;
 
     while (!stopping) {
 
@@ -2616,7 +2650,9 @@ WriterThread(void *arg)
          * and determine the minimum relative timeout.
          */
 
-        nfds = 1;
+        PollReset(&pdata);
+        PollSet(&pdata, queuePtr->pipe[0], POLLIN, NULL);
+
         if (writePtr == NULL) {
             pollto = 30 * 1000;
         } else {
@@ -2625,7 +2661,7 @@ WriterThread(void *arg)
             curPtr = writePtr;
             while (curPtr != NULL) {
                 if (curPtr->size > 0) {
-                    SockPoll(curPtr->sockPtr, POLLOUT, &pfds, &nfds, &maxfds, &timeout);
+                    SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
                 }
                 curPtr = curPtr->nextPtr;
             }
@@ -2640,17 +2676,9 @@ WriterThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
 
-        pfds[0].revents = 0;
+        n = PollWait(&pdata, pollto);
 
-        do {
-            n = ns_poll(pfds, nfds, pollto);
-        } while (n < 0  && errno == EINTR);
-        if (n < 0) {
-            Ns_Fatal("driver: ns_poll() failed: %s",
-                     ns_sockstrerror(ns_sockerrno));
-        }
-        if ((pfds[0].revents & POLLIN)
-            && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+        if (PollIn(&pdata, 0) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
             Ns_Fatal("writer: trigger recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -2672,7 +2700,7 @@ WriterThread(void *arg)
             wrPtr   = &drvPtr->writer;
             n = err = status = NS_OK;
 
-            if ((pfds[sockPtr->pidx].revents & POLLOUT) && curPtr->size > 0 ) {
+            if (PollOut(&pdata, sockPtr->pidx) && curPtr->size > 0 ) {
 
                 /*
                  * Read block from the file and send it to the socket
@@ -2760,11 +2788,13 @@ WriterThread(void *arg)
 
             if (status != NS_OK) {
                 SockWriterRelease(curPtr, SOCK_WRITEERROR, err);
+                queuePtr->queuesize--;
             } else {
                 if (curPtr->size > 0) {
                     Push(curPtr, writePtr);
                 } else {
                     SockWriterRelease(curPtr, 0, 0);
+                    queuePtr->queuesize--;
                 }
             }
             curPtr = nextPtr;
@@ -2783,6 +2813,7 @@ WriterThread(void *arg)
             drvPtr  = sockPtr->drvPtr;
             SockTimeout(sockPtr, &now, drvPtr->sendwait);
             Push(curPtr, writePtr);
+            queuePtr->queuesize++;
             curPtr = nextPtr;
         }
         queuePtr->curPtr = writePtr;
@@ -2794,6 +2825,7 @@ WriterThread(void *arg)
         stopping = queuePtr->shutdown;
         Ns_MutexUnlock(&queuePtr->lock);
     }
+    PollFree(&pdata);
 
     Ns_Log(Notice, "exiting");
 
@@ -2806,7 +2838,7 @@ WriterThread(void *arg)
 static void
 SockWriterRelease(WriterSock *wrSockPtr, int reason, int err)
 {
-    Ns_Log(Notice, "Writer: closed sock=%d, fd=%d, error=%d/%d, "
+    Ns_Log(Debug, "Writer: closed sock=%d, fd=%d, error=%d/%d, "
            "sent=%" TCL_LL_MODIFIER "d, flags=%X",
            wrSockPtr->sockPtr->sock, wrSockPtr->fd, reason, err,
            wrSockPtr->nsent, wrSockPtr->flags);
@@ -2924,7 +2956,7 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     wrPtr->curPtr = wrPtr->curPtr->nextPtr;
     Ns_MutexUnlock(&wrPtr->lock);
 
-    Ns_Log(Notice, "Writer: %d: started sock=%d, fd=%d: "
+    Ns_Log(Debug, "Writer: %d: started sock=%d, fd=%d: "
            "size=%" TCL_LL_MODIFIER "d, flags=%X: keep=%d, %s",
            queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd,
            nsend, wrSockPtr->flags, wrSockPtr->keep, connPtr->reqPtr->request->url);

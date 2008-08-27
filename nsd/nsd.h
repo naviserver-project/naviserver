@@ -253,7 +253,8 @@ typedef struct SpoolerQueue {
     Ns_Thread            thread;      /* Running WriterThread/Spoolerthread */
     int                  stopped;     /* Flag to indicate thread stopped */
     int                  shutdown;    /* Flag to indicate shutdown */
-    int                  id;
+    int                  id;          /* Queue id */
+    int                  queuesize;   /* Number of active sockets in the queue */
 } SpoolerQueue;
 
 /*
@@ -402,7 +403,7 @@ typedef struct Driver {
     int acceptsize;             /* Number requests to accept at once */
     int loggingFlags;           /* Logging control flags */
 
-    int stateFlags;             /* Driver state flags. */
+    int flags;                  /* Driver state flags. */
     Ns_Thread thread;           /* Thread id to join on shutdown. */
     Ns_Mutex lock;              /* Lock to protect lists below. */
     Ns_Cond cond;               /* Cond to signal reader threads,
@@ -444,6 +445,7 @@ typedef struct Sock {
     char *location;
     int keep;
     int pidx;                   /* poll() index */
+    int flags;                  /* state flags used by driver */
     Ns_Time timeout;
     Request *reqPtr;
 
