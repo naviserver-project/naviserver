@@ -38,19 +38,15 @@
 #ifndef NSTHREAD_H
 #define NSTHREAD_H
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "nsconfig.h"
 #endif
 
 #include <nscheck.h>
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#ifndef _REENTRANT
-#define _REENTRANT
-#endif
 
 #ifdef _WIN32
 #define NS_EXPORT                   __declspec(dllexport)
@@ -297,10 +293,6 @@ typedef struct DIR_ *DIR;
 
 #ifndef S_ISDIR
 #define S_ISDIR(m)                  ((m)&_S_IFDIR)
-#endif
-
-#ifndef O_LARGEFILE
-#define O_LARGEFILE                 0
 #endif
 
 #ifndef F_CLOEXEC

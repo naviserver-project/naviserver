@@ -4,6 +4,16 @@
 
 	* nsd/tcltime.c: Use simple pointer copying inplace of memcpy.
 
+	* configure.in:
+	* include/nsthread.h: Use autoconf's AC_SYS_LARGEFILE macro to provide
+	large file support. With this system, the off_t and size_t
+	types etc. are defined to be 64bit wide on 32bit machines, so the
+	normal calls such as stat() work for large files, resulting in
+	cleaner code.
+	* nsd/nsd.h:
+	* nsd/log.c:
+	* nsd/fastpath.c: Remove various #ifdef'ery.
+
 2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsdb/nsdb.h:

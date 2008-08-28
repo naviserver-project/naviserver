@@ -43,11 +43,7 @@
   #define NsFastTell(chan)             Tcl_Tell(chan)
 #else
   #define FileChannel                  int
-  #ifdef HAVE_STRUCT_STAT64
-    #define FileStat                   struct stat64
-  #else
-    #define FileStat                   struct stat
-  #endif
+  #define FileStat                     struct stat
   #define NsFastErrno                  errno
   #define NsFastRead(chan,buf,size)    read(chan,buf,size);
   #define NsFastWrite(chan,buf,size)   write(chan,buf,size);

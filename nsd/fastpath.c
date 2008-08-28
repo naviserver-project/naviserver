@@ -494,10 +494,6 @@ NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights)
 #else
     int fd, flags = O_BINARY;
 
-#ifdef O_LARGEFILE
-    flags |= O_LARGEFILE;
-#endif
-
     while (*mode) {
         switch (*mode) {
          case 'r':
@@ -559,11 +555,7 @@ NsFastStat(CONST char *file, FileStat *stPtr)
     err = Tcl_GetErrno();
     Tcl_DecrRefCount(path);
 #else
-#ifdef HAVE_STRUCT_STAT64
-    status = stat64(file, stPtr);
-#else
     status = stat(file, stPtr);
-#endif
     err = errno;
 #endif
 

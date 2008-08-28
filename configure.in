@@ -175,6 +175,8 @@ AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL, 1, [Define to 1 if the <dl.h> header 
 
 AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop)
 
+AC_SYS_LARGEFILE
+
 AC_TYPE_INT8_T
 AC_TYPE_INT16_T
 AC_TYPE_INT32_T
