@@ -75,6 +75,7 @@ typedef enum {
     DbFn_SpExec,
     DbFn_SpReturnCode,
     DbFn_SpGetParams,
+    DbFn_GetRowCount,
     DbFn_End
 } Ns_DbProcId;
 
@@ -134,6 +135,7 @@ NS_EXTERN Ns_Set *Ns_DbSelect(Ns_DbHandle *handle, char *sql);
 NS_EXTERN int Ns_DbExec(Ns_DbHandle *handle, char *sql);
 NS_EXTERN Ns_Set *Ns_DbBindRow(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row);
+NS_EXTERN int Ns_DbGetRowCount(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbFlush(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbCancel(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbResetHandle(Ns_DbHandle *handle);

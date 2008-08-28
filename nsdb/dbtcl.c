@@ -205,14 +205,14 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 
     enum {
         POOLS, BOUNCEPOOL, GETHANDLE, EXCEPTION, POOLNAME,
-	PASSWORD, USER, DATASOURCE, DISCONNECT, DBTYPE, DRIVER, CANCEL,
+	PASSWORD, USER, DATASOURCE, DISCONNECT, DBTYPE, DRIVER, CANCEL, ROWCOUNT,
 	BINDROW, FLUSH, RELEASEHANDLE, RESETHANDLE, CONNECTED, SP_EXEC,
 	SP_GETPARAMS, SP_RETURNCODE, GETROW, DML, ONE_ROW, ZERO_OR_ONE_ROW, EXEC,
 	SELECT, SP_START, INTERPRETSQLFILE, VERBOSE, SETEXCEPTION, SP_SETPARAM
     };
     static CONST char *subcmd[] = {
         "pools", "bouncepool", "gethandle", "exception", "poolname",
-	"password", "user", "datasource", "disconnect", "dbtype", "driver", "cancel",
+	"password", "user", "datasource", "disconnect", "dbtype", "driver", "cancel", "rowcount",
 	"bindrow", "flush", "releasehandle", "resethandle", "connected", "sp_exec",
 	"sp_getparams", "sp_returncode", "getrow", "dml", "1row", "0or1row", "exec",
 	"select", "sp_start", "interpretsqlfile", "verbose", "setexception", "sp_setparam",
@@ -409,6 +409,10 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
             }
             Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC);
+            break;
+
+        case ROWCOUNT:
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_DbGetRowCount(handlePtr)));
             break;
 
         case FLUSH:

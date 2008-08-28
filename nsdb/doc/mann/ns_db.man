@@ -55,6 +55,12 @@ ns_db connected returns a boolean value indicating whether the connection to the
 Returns the datasource for the database pool.
 
 
+[call [cmd "ns_db rowcount"] [arg handle]]
+
+Returns number of processed records by the last SQL stetements, this is useful with INSERT/UPDATE/DELETE
+statements to know how many records updated.
+
+
 
 [call [cmd "ns_db dbtype"] [arg handle]]
 

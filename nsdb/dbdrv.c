@@ -55,6 +55,7 @@ typedef Ns_Set *(BindProc) (Ns_DbHandle *);
 typedef int (GetProc) (Ns_DbHandle *, Ns_Set *);
 typedef int (FlushProc) (Ns_DbHandle *);
 typedef int (CancelProc) (Ns_DbHandle *);
+typedef int (CountProc) (Ns_DbHandle *);
 typedef int (ResetProc) (Ns_DbHandle *);
 typedef int (SpStartProc) (Ns_DbHandle *handle, char *procname);
 typedef int (SpSetParamProc) (Ns_DbHandle *handle, char *args);
@@ -81,6 +82,7 @@ typedef struct DbDriver {
     ExecProc	*execProc;
     BindProc	*bindProc;
     GetProc 	*getProc;
+    CountProc   *countProc;
     FlushProc	*flushProc;
     CancelProc	*cancelProc;
     ResetProc	*resetProc;
@@ -146,39 +148,55 @@ Ns_DbRegisterDriver(char *driver, Ns_DbProc *procs)
 	    case DbFn_ServerInit:
 		driverPtr->initProc = (InitProc *) procs->func;
 		break;
+
 	    case DbFn_Name:
 		driverPtr->nameProc = (NameProc *) procs->func;
 		break;
+
 	    case DbFn_DbType:
 		driverPtr->typeProc = (TypeProc *) procs->func;
 		break;
+
 	    case DbFn_OpenDb:
 		driverPtr->openProc = (OpenProc *) procs->func;
 		break;
+
 	    case DbFn_CloseDb:
 		driverPtr->closeProc = (CloseProc *) procs->func;
 		break;
+
 	    case DbFn_DML:
 		driverPtr->dmlProc = (DMLProc *) procs->func;
 		break;
+
 	    case DbFn_Select:
 		driverPtr->selectProc = (SelectProc *) procs->func;
 		break;
+
 	    case DbFn_GetRow:
 		driverPtr->getProc = (GetProc *) procs->func;
 		break;
+
+	    case DbFn_GetRowCount:
+		driverPtr->countProc = (CountProc *) procs->func;
+		break;
+
 	    case DbFn_Flush:
 		driverPtr->flushProc = (FlushProc *) procs->func;
 		break;
+
 	    case DbFn_Cancel:
 		driverPtr->cancelProc = (CancelProc *) procs->func;
 		break;
+
 	    case DbFn_Exec:
 		driverPtr->execProc = (ExecProc *) procs->func;
 		break;
+
 	    case DbFn_BindRow:
 		driverPtr->bindProc = (BindProc *) procs->func;
 		break;
+
 	    case DbFn_ResetHandle:
 		driverPtr->resetProc = (ResetProc *) procs->func;
 		break;
@@ -487,6 +505,38 @@ Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row)
 	driverPtr->getProc != NULL) {
 
     	status = (*driverPtr->getProc)(handle, row);
+    }
+    
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DbGetRowCount --
+ *
+ *	Returns number of rows processed in the last SQL operation, normally
+ *      used after INSERT/UPDATE/DELETE statements
+ *
+ * Results:
+ *	Number of rows or NS_ERROR
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_DbGetRowCount(Ns_DbHandle *handle)
+{
+    DbDriver *driverPtr = NsDbGetDriver(handle);
+    int status = NS_ERROR;
+
+    if (handle->connected &&
+	driverPtr != NULL &&
+	driverPtr->countProc != NULL) {
+
+    	status = (*driverPtr->countProc)(handle);
     }
     
     return status;

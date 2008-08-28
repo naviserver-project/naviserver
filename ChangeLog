@@ -1,5 +1,12 @@
 2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
 
+        * nsdb/nsdb.h:
+        * nsdb/dbdrv.c: Added new API call rowcount and function Ns_DbGetRowCount to return
+        number of affected rows by last SQL statement. All driver have this call implemented
+        differently and it will not break old application but new code can use it
+
+2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
+
         * nsd/driver.c:
         * nsd/nsd.h: Restructured driver polling code, use PollData structure to keep all
         poll-related fields together.
