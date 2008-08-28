@@ -237,7 +237,7 @@ MatchFiles(CONST char *filename, File **files)
     Tcl_Obj          *path, *pathElems, *parent, *patternObj;
     Tcl_Obj          *matched, **matchElems;
     Tcl_GlobTypeData  types;
-    FileStat          st;
+    Tcl_StatBuf       st;
     File             *fiPtr;
     int               numElems, code, ii, jj;
     char             *pattern;
@@ -293,7 +293,7 @@ MatchFiles(CONST char *filename, File **files)
         if (numElems > 0) {
             *files = ns_malloc(sizeof(File) * numElems);
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {
-                if (NsFastStat(Tcl_GetString(matchElems[ii]), &st) != NS_OK) {
+                if (Tcl_FSStat(matchElems[ii], &st) != 0) {
                     for (jj = 0, fiPtr = *files; jj < ii; jj++, fiPtr++) {
                         Tcl_DecrRefCount(fiPtr->path);
                     }

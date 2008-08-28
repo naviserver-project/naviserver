@@ -198,11 +198,6 @@ AX_HAVE_MTSAFE_DNS
 AX_CHECK_ZLIB
 
 
-AC_ARG_ENABLE(tclvfs,
-   AC_HELP_STRING([--enable-tclvfs], [Enable Tcl VFS for static file serving]),
-       AC_DEFINE(USE_TCLVFS,1,[Use TCL VFS]))
-
-
 AC_MSG_CHECKING([need for dup high])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
   #include <stdio.h>

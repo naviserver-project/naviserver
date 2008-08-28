@@ -1011,16 +1011,16 @@ int
 NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Tcl_Obj *CONST objv[])
 {
-    FileStat st;
+    Tcl_StatBuf st;
     char *name;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "file ?varname?");
         return TCL_ERROR;
     }
-    if (NsFastStat(Tcl_GetString(objv[1]), &st) != NS_OK) {
-        Tcl_SetResult(interp, "0", TCL_STATIC);
-        return NS_OK;
+    if (Tcl_FSStat(objv[1], &st) != 0) {
+        Tcl_SetResult(interp, (char *) Tcl_PosixError(interp), TCL_STATIC);
+        return TCL_ERROR;
     }
     if (objc > 2) {
         name = Tcl_GetString(objv[2]);
@@ -1076,6 +1076,20 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.31  2008/08/28 22:28:51  sdeasey
+ * 	* configure.in:
+ * 	* nsd/nsd.h:
+ * 	* nsd/fastpath.c: Remove calls to Tcl's VFS routines within the
+ * 	fastpath, as it adds a lot of noise. For starkit users there is
+ * 	a new nsvfs module which provides pure Tcl VFS access to the file
+ * 	system for the fastpath, and wrappers for ns_return and
+ * 	ns_respond. This is actually more flexible: you can wrapped access
+ * 	to /admin*, for bundled starkit files, and native access to
+ * 	/fast*, for user added content.
+ * 	* nsd/rollfile.c:
+ * 	* nsd/tclmisc.c: Replace calls to the NsFast* wrappers with
+ * 	straight Tcl_* calls.
+ *
  * Revision 1.30  2008/03/09 07:34:48  seryakov
  *         Port to Win32 platform using Mingw32/Msys environment. Msys is what Tcl project using, same
  *         basic archive is what needed to conpile navoiserber for win32. Works stable as oppose to

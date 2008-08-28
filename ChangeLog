@@ -14,6 +14,19 @@
 	* nsd/log.c:
 	* nsd/fastpath.c: Remove various #ifdef'ery.
 
+	* configure.in:
+	* nsd/nsd.h:
+	* nsd/fastpath.c: Remove calls to Tcl's VFS routines within the
+	fastpath, as it adds a lot of noise. For starkit users there is
+	a new nsvfs module which provides pure Tcl VFS access to the file
+	system for the fastpath, and wrappers for ns_return and
+	ns_respond. This is actually more flexible: you can wrapped access
+	to /admin*, for bundled starkit files, and native access to
+	/fast*, for user added content.
+	* nsd/rollfile.c:
+	* nsd/tclmisc.c: Replace calls to the NsFast* wrappers with
+	straight Tcl_* calls.
+
 2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsdb/nsdb.h:

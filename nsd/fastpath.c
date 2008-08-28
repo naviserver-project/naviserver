@@ -83,11 +83,12 @@ static Ns_Callback FreeEntry;
 
 static void DecrEntry      (File *filePtr);
 static int  UrlIs          (CONST char *server, CONST char *url, int dir);
+static int  FastStat       (CONST char *path, struct stat *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  ParseRange     (Ns_Conn *conn, Range *rangesPtr);
 static int  FastReturn     (Ns_Conn *conn, int status, CONST char *type,
-                            CONST char *file, FileStat *stPtr);
-static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
+                            CONST char *file, struct stat *stPtr);
+static int  ReturnRange    (Ns_Conn *conn, Range *rangesPtr, int fd,
                             CONST char *data, Tcl_WideInt len, CONST char *type);
 static Ns_ServerInitProc ConfigServerFastpath;
 
@@ -200,12 +201,12 @@ ConfigServerFastpath(CONST char *server)
 int
 Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
-    int         rc;
-    FileStat    st;
-    char        *server;
-    NsServer    *servPtr;
+    int          rc;
+    struct stat  st;
+    char         *server;
+    NsServer     *servPtr;
 
-    if (NsFastStat(file, &st) != NS_OK) {
+    if (!FastStat(file, &st)) {
         return Ns_ConnReturnNotFound(conn);
     }
 
@@ -277,17 +278,15 @@ static int
 UrlIs(CONST char *server, CONST char *url, int dir)
 {
     Ns_DString   ds;
-    int          status, is = NS_FALSE;
-    FileStat     st;
+    struct stat  st;
+    int          is = NS_FALSE;
 
     Ns_DStringInit(&ds);
-    if (Ns_UrlToFile(&ds, server, url) == NS_OK) {
-        status = NsFastStat(ds.string, &st);
-        if (status == NS_OK
-            && ((dir && S_ISDIR(st.st_mode))
-                || (dir == NS_FALSE && S_ISREG(st.st_mode)))) {
-            is = NS_TRUE;
-        }
+    if (Ns_UrlToFile(&ds, server, url) == NS_OK
+        && !stat(ds.string, &st)
+        && ((dir && S_ISDIR(st.st_mode))
+            || (!dir && S_ISREG(st.st_mode)))) {
+        is = NS_TRUE;
     }
     Ns_DStringFree(&ds);
 
@@ -316,15 +315,15 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
 {
     Conn        *connPtr = (Conn *) conn;
     NsServer    *servPtr = connPtr->servPtr;
-    Ns_DString   ds;
     char        *url = conn->request->url;
-    int          status, result, i;
-    FileStat     st;
+    Ns_DString   ds;
+    struct stat  st;
+    int          result, i;
 
     Ns_DStringInit(&ds);
 
-    if (NsUrlToFile(&ds, servPtr, url) != NS_OK ||
-        NsFastStat(ds.string, &st) != NS_OK) {
+    if (NsUrlToFile(&ds, servPtr, url) != NS_OK
+        || !FastStat(ds.string, &st)) {
         goto notfound;
     }
     if (S_ISREG(st.st_mode)) {
@@ -348,8 +347,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
-            status = NsFastStat(ds.string, &st);
-            if (status == NS_OK && S_ISREG(st.st_mode)) {
+            if ((stat(ds.string, &st) == 0) && S_ISREG(st.st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
                     Ns_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
@@ -462,78 +460,16 @@ DecrEntry(File *filePtr)
     }
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
- * NsFastOpen --
- *
- *      Open a file
- *
- * Results:
- *      Returns NS_OK on success, NS_ERROR on error
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights)
-{
-#ifdef USE_TCLVFS
-    Tcl_Channel channel;
-
-    channel = Tcl_OpenFileChannel(NULL, file, "r", rights);
-    if (channel == NULL) {
-        return NS_ERROR;
-    }
-    Tcl_SetChannelOption(NULL, channel, "-translation", "binary");
-    memcpy(chan, &channel, sizeof(channel));
-    return NS_OK;
-#else
-    int fd, flags = O_BINARY;
-
-    while (*mode) {
-        switch (*mode) {
-         case 'r':
-             flags |= O_RDONLY;
-             break;
-         case 'w':
-             flags |= O_CREAT|O_TRUNC;
-             break;
-         case 'a':
-             flags |= O_APPEND;
-             break;
-         case 'b':
-             flags |= O_BINARY;
-             break;
-         case '+':
-             flags |= O_RDWR;
-             flags &= ~O_RDONLY;
-             flags &= ~O_WRONLY;
-             break;
-        }
-        mode++;
-    }
-    fd = open(file, flags, rights);
-    if (fd == -1) {
-        return NS_ERROR;
-    }
-    memcpy(chan, &fd, sizeof(fd));
-    return NS_OK;
-#endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NsFastStat --
+ * FastStat --
  *
  *      Stat a file, logging an error on unexpected results.
  *
  * Results:
- *      NS_OK if stat ok, NS_ERROR otherwise.
+ *      1 if stat OK, 0 otherwise.
  *
  * Side effects:
  *      None.
@@ -541,33 +477,17 @@ NsFastOpen(FileChannel *chan, CONST char *file, char *mode, int rights)
  *----------------------------------------------------------------------
  */
 
-int
-NsFastStat(CONST char *file, FileStat *stPtr)
+static int
+FastStat(CONST char *path, struct stat *stPtr)
 {
-    int      status, err;
-
-#ifdef USE_TCLVFS
-    Tcl_Obj *path;
-
-    path = Tcl_NewStringObj(file, -1);
-    Tcl_IncrRefCount(path);
-    status = Tcl_FSStat(path, stPtr);
-    err = Tcl_GetErrno();
-    Tcl_DecrRefCount(path);
-#else
-    status = stat(file, stPtr);
-    err = errno;
-#endif
-
-    if (status != 0) {
-        if (err != ENOENT && err != EACCES) {
+    if (stat(path, stPtr) != 0) {
+        if (errno != ENOENT && errno != EACCES) {
             Ns_Log(Error, "fastpath: stat(%s) failed: %s",
-                   file, strerror(err));
+                   path, strerror(errno));
         }
-        return NS_ERROR;
+        return 0;
     }
-
-    return NS_OK;
+    return 1;
 }
 
 
@@ -589,14 +509,13 @@ NsFastStat(CONST char *file, FileStat *stPtr)
 
 static int
 FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
-           FileStat *stPtr)
+           struct stat *stPtr)
 {
-    int         new, nread, result = NS_ERROR;
+    int         new, fd, nread, result = NS_ERROR;
     Range       range;
     Ns_Entry   *entry;
     File       *filePtr;
     FileMap     fmap;
-    FileChannel chan = 0;
 
     /*
      *  Initialize the structure for possible Range: requests
@@ -659,17 +578,17 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
 
         if (usemmap
             && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            result = ReturnRange(conn, &range, 0, fmap.addr, fmap.size, type);
+            result = ReturnRange(conn, &range, -1, fmap.addr, fmap.size, type);
             NsMemUmap(&fmap);
         } else {
-            result = NsFastOpen(&chan, file, "r", 0644);
-            if (result == NS_ERROR) {
-                Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
-                       file, strerror(NsFastErrno));
+            fd = open(file, O_RDONLY | O_BINARY);
+            if (fd < 0) {
+                Ns_Log(Warning, "fastpath: open(%s) failed: '%s'",
+                       file, strerror(errno));
                 goto notfound;
             }
-            result = ReturnRange(conn, &range, chan, 0, stPtr->st_size, type);
-            NsFastClose(chan);
+            result = ReturnRange(conn, &range, fd, NULL, stPtr->st_size, type);
+            close(fd);
         }
 
     } else {
@@ -704,24 +623,23 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
              */
 
             Ns_CacheUnlock(cache);
-            result = NsFastOpen(&chan, file, "r", 0644);
-            if (result == NS_ERROR) {
+            fd = open(file, O_RDONLY | O_BINARY);
+            if (fd < 0) {
                 filePtr = NULL;
-                Ns_Log(Warning, "fastpath: failed to open '%s': '%s'",
-                       file, strerror(NsFastErrno));
-            }
-            if (chan) {
+                Ns_Log(Warning, "fastpath: open(%s') failed '%s'",
+                       file, strerror(errno));
+            } else {
                 filePtr = ns_malloc(sizeof(File) + stPtr->st_size);
                 filePtr->refcnt = 1;
                 filePtr->size   = stPtr->st_size;
                 filePtr->mtime  = stPtr->st_mtime;
                 filePtr->dev    = stPtr->st_dev;
                 filePtr->ino    = stPtr->st_ino;
-                nread = NsFastRead(chan, filePtr->bytes, filePtr->size);
-                NsFastClose(chan);
+                nread = read(fd, filePtr->bytes, filePtr->size);
+                close(fd);
                 if (nread != filePtr->size) {
                     Ns_Log(Warning, "fastpath: failed to read '%s': '%s'",
-                           file, strerror(NsFastErrno));
+                           file, strerror(errno));
                     ns_free(filePtr);
                     filePtr = NULL;
                 }
@@ -738,7 +656,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
         if (filePtr != NULL) {
             ++filePtr->refcnt;
             Ns_CacheUnlock(cache);
-            result = ReturnRange(conn, &range, 0, filePtr->bytes,
+            result = ReturnRange(conn, &range, -1, filePtr->bytes,
                                  filePtr->size, type);
             Ns_CacheLock(cache);
             DecrEntry(filePtr);
@@ -986,7 +904,7 @@ ParseRange(Ns_Conn *conn, Range *rangesPtr)
  */
 
 static int
-ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
+ReturnRange(Ns_Conn *conn, Range *rangesPtr, int fd,
             CONST char *data, Tcl_WideInt len, CONST char *type)
 {
     struct iovec bufs[MAX_RANGES*3], *iovPtr = bufs;
@@ -1005,12 +923,8 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
 
         status = rangesPtr->status;
 
-        if (chan) {
-#ifdef USE_TCLVFS
-            return Ns_ConnReturnOpenChannel(conn, status, type, chan, len);
-#else
-            return Ns_ConnReturnOpenFd(conn, status, type, chan, len);
-#endif
+        if (fd > -1) {
+            return Ns_ConnReturnOpenFd(conn, status, type, fd, len);
         } else {
             return Ns_ConnReturnData(conn, status, data, len, type);
         }
@@ -1032,13 +946,14 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
 
         Ns_ConnSetResponseStatus(conn, rangesPtr->status);
 
-        if (chan) {
-            NsFastSeek(chan, roPtr->start, SEEK_SET);
-#ifdef USE_TCLVFS
-            result = Ns_ConnSendChannel(conn, chan, roPtr->size);
-#else
-            result = Ns_ConnSendFd(conn, chan, roPtr->size);
-#endif
+        if (fd > -1) {
+            if (lseek(fd, roPtr->start, SEEK_SET) == -1) {
+                Ns_Log(Error, "ReturnRange: lseek: %s", strerror(errno));
+                result = NS_ERROR;
+                break;
+            } else {
+                result = Ns_ConnSendFd(conn, fd, roPtr->size);
+            }
         } else {
             iovPtr->iov_base = (char *) data + roPtr->start;
             iovPtr->iov_len  = roPtr->size;
@@ -1127,7 +1042,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
         Ns_ConnSetLengthHeader(conn, rangesPtr->size);
         Ns_ConnSetTypeHeader(conn, type);
 
-        if (!chan) {
+        if (fd <= -1) {
             /*
              * In mmap mode, send all iov buffers at once
              */
@@ -1137,7 +1052,7 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
         } else {
 
             /*
-             * In chan mode, send headers and contents in separate calls
+             * In file mode, send headers and contents in separate calls
              */
 
             for (i = 0; i < rangesPtr->count; i++) {
@@ -1157,14 +1072,12 @@ ReturnRange(Ns_Conn *conn, Range *rangesPtr, FileChannel chan,
                  * Send file content directly from open chan
                  */
 
-                NsFastSeek(chan, roPtr->start, SEEK_SET);
-#ifdef USE_TCLVFS
-
-                result = Ns_ConnSendChannel(conn, chan, roPtr->size);
-#else
-                result = Ns_ConnSendFd(conn, chan, roPtr->size);
-#endif
-                if (result == NS_ERROR) {
+                if (lseek(fd, roPtr->start, SEEK_SET) == -1) {
+                    Ns_Log(Error, "ReturnRange: lseek: %s", strerror(errno));
+                    result = NS_ERROR;
+                    break;
+                }
+                if ((result = Ns_ConnSendFd(conn, fd, roPtr->size)) == NS_ERROR) {
                     break;
                 }
 
