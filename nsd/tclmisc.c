@@ -1011,16 +1011,16 @@ int
 NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Tcl_Obj *CONST objv[])
 {
-    Tcl_StatBuf st;
+    struct stat st;
     char *name;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "file ?varname?");
         return TCL_ERROR;
     }
-    if (Tcl_FSStat(objv[1], &st) != 0) {
-        Tcl_SetResult(interp, (char *) Tcl_PosixError(interp), TCL_STATIC);
-        return TCL_ERROR;
+    if (stat(Tcl_GetString(objv[1]), &st) != 0) {
+        Tcl_SetResult(interp, "0", TCL_STATIC);
+        return NS_OK;
     }
     if (objc > 2) {
         name = Tcl_GetString(objv[2]);
@@ -1076,6 +1076,9 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.32  2008/08/29 20:43:07  seryakov
+ * Revert ns_filestat to not raise exception and use native system call
+ *
  * Revision 1.31  2008/08/28 22:28:51  sdeasey
  * 	* configure.in:
  * 	* nsd/nsd.h:
