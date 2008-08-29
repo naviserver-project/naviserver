@@ -27,6 +27,37 @@
 	* nsd/tclmisc.c: Replace calls to the NsFast* wrappers with
 	straight Tcl_* calls.
 
+	* nsd/nsd.h:
+	* nsd/Makefile:
+	* nsd/fastpath.c:
+	* nsd/range.c: Cleanup and move byte-range code to own file.
+	Fix bug where numerous ranges in a request caused a dstring to be
+	reallocated, invalidating the pointers we had into it.
+	* nsd/connio.c: The ConnSend routines now no longer responsible
+	for setting the length header. The old way meant that the passed
+	length dictated the length of the whole file you were to send, but
+	that's exactly what the Ns_ConnReturnF* routines do. Now we can
+	send pieces of files in multiple goes. Also, remove the call to
+	the writer thread from this low-level routine.
+	Don't switch to chunking mode when streaming is requested and the
+	mime-type is multipart/byteranges: they are self delimited and we
+	may need to send them in muliple chunks.
+	* nsd/driver.c: Need to set the length in the writer explicitly
+	now that the low-level Ns_ConnSendFile does not.
+	* include/ns.h:
+	* nsd/conn.c: Add Ns_ConnUnmodifiedSince().
+	* nsd/return.c: No longer send the 'accept-ranges' header with
+	all responses. Generate it only from the range faspath.
+	Range support now availble to more public Ns_ConnReturn* routines.
+	* nsd/returnresp.c: Had to remove a call to Ns_ConnReturnData here
+	from Ns_ConnReturnStatus, as this is called in the error handling
+	path of RangeReturn and would result in an infinite loop.
+	* tests/http_byteranges.test: Add a couple of tests for ranges on
+	larger files to exercise the file descriptor path rather than the
+	in memory mmap or cache path. Unfortunately, this actually
+	triggers the writer thread and this has no support of ranges,
+	which I guess is where it's actually most needed. TODO...
+
 2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsdb/nsdb.h:

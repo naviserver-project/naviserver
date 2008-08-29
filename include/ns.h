@@ -815,6 +815,7 @@ NS_EXTERN Tcl_Encoding Ns_ConnGetEncoding(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN Tcl_Encoding Ns_ConnGetUrlEncoding(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnModifiedSince(Ns_Conn *conn, time_t inTime);
+NS_EXTERN int Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since);
 NS_EXTERN int Ns_ParseHeader(Ns_Set *set, char *header, Ns_HeaderCaseDisposition disp);
 NS_EXTERN Ns_Set  *Ns_ConnGetQuery(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnClearQuery(Ns_Conn *conn);

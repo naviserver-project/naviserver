@@ -2932,6 +2932,7 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
      * Flush the headers
      */
 
+    Ns_ConnSetLengthHeader(conn, nsend);
     Ns_ConnWriteData(conn, NULL, 0, 0);
 
     wrSockPtr->keep = connPtr->keep > 0 ? 1 : 0;

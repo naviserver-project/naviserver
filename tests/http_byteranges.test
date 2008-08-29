@@ -120,36 +120,36 @@ test byteranges-2.3 {Multiple non-contiguous ranges} -constraints serverListen -
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
-} -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} 154 \
-        {--[^ ]+
-Content-type: \*/\*
+} -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
+        {--NaviServerNaviServerNaviServer
+Content-type: */*
 Content-range: bytes 0-2/10
 
 012
---[^ ]+
-Content-type: \*/\*
+--NaviServerNaviServerNaviServer
+Content-type: */*
 Content-range: bytes 7-9/10
 
 789
---[^ ]+--
+--NaviServerNaviServerNaviServer--
 }]
 
 test byteranges-2.4 {Multiple ranges, out of order} -constraints serverListen -body {
     nstest_http -getbody 1 -setheaders {Range bytes=7-9,0-2} \
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
-} -match regexp -result [list 206 {multipart/byteranges; boundary=[^ ]+} {} 154 \
-        {--[^ ]+
-Content-type: \*/\*
+} -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
+        {--NaviServerNaviServerNaviServer
+Content-type: */*
 Content-range: bytes 7-9/10
 
 789
---[^ ]+
-Content-type: \*/\*
+--NaviServerNaviServerNaviServer
+Content-type: */*
 Content-range: bytes 0-2/10
 
 012
---[^ ]+--
+--NaviServerNaviServerNaviServer--
 }]
 
 test byteranges-2.5 {Multiple overlapping ranges} -constraints serverListen -body {
@@ -163,6 +163,36 @@ test byteranges-2.6 {Multiple overlapping ranges} -constraints serverListen -bod
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 9 {bytes 1-9/10} 123456789}
+
+
+
+test byteranges-2.8.1 {Multiple non-contiguous ranges, fd} \
+    -constraints {knownBug serverListen} -body {
+    nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
+        -getheaders {Content-type Content-range Content-length} \
+        GET /16480bytes
+} -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} {} \
+        {--NaviServerNaviServerNaviServer
+Content-type: */*
+Content-range: bytes 0-2/16480
+
+012
+--NaviServerNaviServerNaviServer
+Content-type: */*
+Content-range: bytes 7-9/16480
+
+789
+--NaviServerNaviServerNaviServer--
+}]
+
+test byteranges-2.8.2 {Simple range, beginning, fd} \
+    -constraints {knownBug serverListen} -body {
+    nstest_http -getbody 1 -setheaders {Range bytes=0-4} \
+        -getheaders {Content-length Content-range} \
+        GET /16480bytes
+} -result {206 5 {bytes 0-4/16480} 01234}
+
+
 
 
 test byteranges-3.1 {syntactically invalid} -constraints serverListen -body {

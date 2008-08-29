@@ -617,6 +617,52 @@ Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
     return ConnSend(conn, nsend, NULL, NULL, fd);
 }
 
+static int
+ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
+{
+    Tcl_WideInt  toread, nread, status;
+    char         buf[IOBUFSZ];
+
+    /*
+     * Even if nsend is 0 ensure HTTP response headers get written.
+     */
+
+    if (nsend == 0) {
+        return Ns_ConnWriteData(conn, NULL, 0, 0);
+    }
+
+    /*
+     * Read from disk and send in IOBUFSZ chunks until done.
+     */
+
+    status = NS_OK;
+    while (status == NS_OK && nsend > 0) {
+        toread = nsend;
+        if (toread > sizeof(buf)) {
+            toread = sizeof(buf);
+        }
+        if (chan != NULL) {
+            nread = Tcl_Read(chan, buf, toread);
+        } else if (fp != NULL) {
+            nread = fread(buf, 1, (size_t)toread, fp);
+            if (ferror(fp)) {
+                nread = -1;
+            }
+        } else {
+            nread = read(fd, buf, (size_t)toread);
+        }
+
+        if (nread == -1
+                || nread == 0 /* NB: truncated file */) {
+            status = NS_ERROR;
+        } else if ((status = Ns_ConnWriteData(conn, buf, nread, 0)) == NS_OK) {
+            nsend -= nread;
+        }
+    }
+
+    return status;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -944,84 +990,6 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
 /*
  *----------------------------------------------------------------------
  *
- * ConnSend --
- *
- *      Send content from a channel, FILE, or fd.
- *
- * Results:
- *      NS_OK or NS_ERROR if a write failed.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
-{
-    Tcl_WideInt  toread, nread, status;
-    char         buf[IOBUFSZ];
-
-    /*
-     * Even if nsend is 0 ensure HTTP response headers get written.
-     */
-
-    if (nsend == 0) {
-        return Ns_ConnWriteData(conn, NULL, 0, 0);
-    }
-
-    /*
-     * Set the length header to nsend, which is the total number
-     * of bytes to write.
-     */
-
-    Ns_ConnSetLengthHeader(conn, nsend);
-
-    /*
-     * Check for submision into writer queue
-     */
-
-    if (NsWriterQueue(conn, nsend, chan, fp, fd, 0) == NS_OK) {
-        return NS_OK;
-    }
-
-    /*
-     * Read from disk and send in IOBUFSZ chunks until done.
-     */
-
-    status = NS_OK;
-    while (status == NS_OK && nsend > 0) {
-        toread = nsend;
-        if (toread > sizeof(buf)) {
-            toread = sizeof(buf);
-        }
-        if (chan != NULL) {
-            nread = Tcl_Read(chan, buf, toread);
-        } else if (fp != NULL) {
-            nread = fread(buf, 1, (size_t)toread, fp);
-            if (ferror(fp)) {
-                nread = -1;
-            }
-        } else {
-            nread = read(fd, buf, (size_t)toread);
-        }
-        if (nread == -1) {
-            status = NS_ERROR;
-        } else if (nread == 0) {
-            nsend = 0;  /* NB: Silently ignore a truncated file. */
-        } else if ((status = Ns_ConnWriteData(conn, buf, nread, 0)) == NS_OK) {
-            nsend -= nread;
-        }
-    }
-
-    return status;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * ConstructHeaders --
  *
  *      Construct a set of headers including length, connection and
@@ -1055,10 +1023,15 @@ ConstructHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
     headerLength = -1;
 
     if (flags & NS_CONN_STREAM) {
-        if (conn->request->version > 1.0 && connPtr->keep != 0) {
+
+        conn->flags |= NS_CONN_STREAM;
+
+        if (conn->request->version > 1.0
+            && connPtr->keep != 0
+            && !HdrEq(connPtr->outputheaders, "Content-Type",
+                                              "multipart/byteranges")) {
             conn->flags |= NS_CONN_CHUNK;
         }
-        conn->flags |= NS_CONN_STREAM;
     } else {
         if (connPtr->responseLength > -1) {
             headerLength = connPtr->responseLength;
@@ -1073,18 +1046,16 @@ ConstructHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
 
     Ns_ConnSetLengthHeader(conn, headerLength);
 
-    if (conn->flags & NS_CONN_CHUNK) {
-        Ns_ConnSetHeaders(conn, "Transfer-Encoding", "chunked");
-    }
-
-    if (CheckKeep(connPtr)) {
+    if ((connPtr->keep = CheckKeep(connPtr))) {
         keep = "keep-alive";
-        connPtr->keep = 1;
     } else {
         keep = "close";
     }
-
     Ns_ConnSetHeaders(conn, "Connection", keep);
+
+    if (conn->flags & NS_CONN_CHUNK) {
+        Ns_ConnSetHeaders(conn, "Transfer-Encoding", "chunked");
+    }
     Ns_ConnConstructHeaders(conn, dsPtr);
 
     return 1;
@@ -1151,7 +1122,9 @@ CheckKeep(Conn *connPtr)
                  */
 
                 if ((connPtr->flags & NS_CONN_CHUNK)
-                        || Ns_SetIGet(connPtr->outputheaders, "Content-Length")) {
+                        || Ns_SetIGet(connPtr->outputheaders, "Content-Length")
+                        || HdrEq(connPtr->outputheaders, "Content-Type",
+                                 "multipart/byteranges")) {
                     return 1;
                 }
             }
@@ -1172,6 +1145,7 @@ CheckKeep(Conn *connPtr)
  * HdrEq --
  *
  *      Test if given set contains a key which matches given value.
+ *      Value is matched at the beginning of the header value only.
  *
  * Results:
  *      1 if there is a match, 0 otherwise.
@@ -1189,7 +1163,7 @@ HdrEq(Ns_Set *set, char *name, char *value)
 
     if (set != NULL
         && (hdrvalue = Ns_SetIGet(set, name)) != NULL
-        && STRIEQ(hdrvalue, value)) {
+        && strncasecmp(hdrvalue, value, strlen(value)) == 0) {
         return 1;
     }
     return 0;

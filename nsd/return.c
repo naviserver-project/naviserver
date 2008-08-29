@@ -416,7 +416,6 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
      */
 
     Ns_ConnCondSetHeaders(conn, "MIME-Version", "1.0");
-    Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
     Ns_ConnCondSetHeaders(conn, "Date", Ns_HttpTime(&ds, NULL));
     Ns_DStringSetLength(&ds, 0);
 
@@ -486,7 +485,6 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 
     Ns_DStringVarAppend(dsPtr,
         "MIME-Version: 1.0\r\n"
-        "Accept-Ranges: bytes\r\n"
         "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
         "Date: ",
         NULL);
@@ -697,7 +695,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
         len = data ? strlen(data) : 0;
     }
     Ns_ConnSetResponseStatus(conn, status);
-    Ns_ConnWriteData(conn, data, len, 0);
+    NsConnWriteDataRanges(conn, type, data, len);
 
     return Ns_ConnClose(conn);
 }
@@ -763,15 +761,23 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, int len)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnReturnOpenChannel --
+ * Ns_ConnReturnOpenChannel, FILE, fd --
  *
- *      Send an open channel out the conn.
+ *      Return an open channel, FILE, or fd out the conn.
  *
  * Results:
- *      See ReturnOpen.
+ *      NS_OK / NS_ERROR.
  *
  * Side effects:
- *      See ReturnOpen.
+ *      Will set a length header, so 'len' must describe the complete
+ *      length of the entitiy.
+ *
+ *      May send various HTTP error responses.
+ *
+ *      May return before the content has been sent if the writer-queue
+ *      is enabled.
+ *
+ *      Will close the connection on success.
  *
  *----------------------------------------------------------------------
  */
@@ -783,23 +789,6 @@ Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
     return ReturnOpen(conn, status, type, chan, NULL, -1, len);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnReturnOpenFile --
- *
- *      Send an open file out the conn.
- *
- * Results:
- *      See ReturnOpen.
- *
- * Side effects:
- *      See ReturnOpen.
- *
- *----------------------------------------------------------------------
- */
-
 int
 Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
                       FILE *fp, Tcl_WideInt len)
@@ -807,46 +796,12 @@ Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
     return ReturnOpen(conn, status, type, NULL, fp, -1, len);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnReturnOpenFd --
- *
- *      Send an open fd out the conn.
- *
- * Results:
- *      See ReturnOpen.
- *
- * Side effects:
- *      See ReturnOpen.
- *
- *----------------------------------------------------------------------
- */
-
 int
 Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
                     int fd, Tcl_WideInt len)
 {
     return ReturnOpen(conn, status, type, NULL, NULL, fd, len);
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ReturnOpen --
- *
- *      Dump an open 'something' to the conn.
- *
- * Results:
- *      NS_OK/NS_ERROR.
- *
- * Side effects:
- *      Will close the connection on success.
- *
- *----------------------------------------------------------------------
- */
 
 static int
 ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
@@ -857,12 +812,18 @@ ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
     Ns_ConnSetTypeHeader(conn, type);
     Ns_ConnSetResponseStatus(conn, status);
 
+    if (NsWriterQueue(conn, len, chan, fp, fd, NULL) == NS_OK) {
+        return NS_OK;
+    }
+
     if (chan != NULL) {
+        Ns_ConnSetLengthHeader(conn, len);
         result = Ns_ConnSendChannel(conn, chan, len);
     } else if (fp != NULL) {
+        Ns_ConnSetLengthHeader(conn, len);
         result = Ns_ConnSendFp(conn, fp, len);
     } else {
-        result = Ns_ConnSendFd(conn, fd, len);
+        result = NsConnWriteFdRanges(conn, type, fd, len);
     }
     if (result == NS_OK) {
         result = Ns_ConnClose(conn);

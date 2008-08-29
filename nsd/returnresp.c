@@ -169,7 +169,8 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int status)
     if (ReturnRedirect(conn, status, &result)) {
         return result;
     }
-    return Ns_ConnReturnData(conn, status, "", 0, NULL);
+    Ns_ConnSetResponseStatus(conn, status);
+    return Ns_ConnWriteData(conn, "", 0, 0);
 }
 
 

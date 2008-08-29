@@ -976,14 +976,43 @@ int
 Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
 {
     Conn *connPtr = (Conn *) conn;
+    char *hdr;
 
     if (connPtr->servPtr->opts.modsince) {
-        char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
-        if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {
+        if ((hdr = Ns_SetIGet(conn->headers, "If-Modified-Since")) != NULL
+                && Ns_ParseHttpTime(hdr) >= since) {
             return NS_FALSE;
         }
     }
+    return NS_TRUE;
+}
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnUnmodifiedSince --
+ *
+ *      Has the data the url points to changed since a given time?
+ *
+ * Results:
+ *      NS_TRUE if data unmodified or header not present, NS_FALSE otherwise.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since)
+{
+    char *hdr;
+
+    if ((hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since")) != NULL
+            && Ns_ParseHttpTime(hdr) < since) {
+        return NS_FALSE;
+    }
     return NS_TRUE;
 }
 
