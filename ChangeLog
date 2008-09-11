@@ -1,3 +1,9 @@
+2008-09-11  Stephen  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/sock.c: Add handy Ns_SetVec routine for manipulating
+	struct iovec.
+
 2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/tclmisc.c: Revert to native system call. This is fast version of

@@ -1869,6 +1869,10 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
  * sock.c:
  */
 
+NS_EXTERN size_t
+Ns_SetVec(struct iovec *iov, int i, void *data, size_t len)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,

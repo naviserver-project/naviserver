@@ -59,6 +59,32 @@ static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs);
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_SetVec --
+ *
+ *      Set the fields of the given iovec.
+ *
+ * Results:
+ *      The given length.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+size_t
+Ns_SetVec(struct iovec *iov, int i, void *data, size_t len)
+{
+    iov[i].iov_base = data;
+    iov[i].iov_len = len;
+
+    return len;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SockRecvBufs --
  *
  *      Read data from a non-blocking socket into a vector of buffers.
