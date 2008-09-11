@@ -4,6 +4,32 @@
 	* nsd/sock.c: Add handy Ns_SetVec routine for manipulating
 	struct iovec.
 
+	* include/ns.h:
+	* nsd/Makefile:
+	* nsd/sockfile.c: Add a sendfile() workalike.
+	Ns_SockSendFileBufs() is a library routine for nssock (or other
+	interested driver) to call which sends the given file out the
+	sock. It follows the Solaris style of sendfilev() and so takes an
+	arbitrary mixture of memory/file offset/length pairs. Behind the
+	scenes platform specific versions will use the native sendfile()
+	implementation, although atm. there is only a fallback:
+
+	Ns_SockSendFileBufsIndirect() is called if there is no
+	native sendfile() implementation. It uses pread() and sendmsg().
+	The reason it is public is that drivers which do some
+	transformation on the stream before sending, such as nsssl, can
+	call this directly passing their SockSend callback.
+
+	Ns_SetFileVec() is a handy utility analagous to Ns_SetVec() and
+	Ns_ResetFileVec() is used to update the current position after
+	a partial send.
+
+	What's required now is a change in Ns_RegisterDriver etc. to add
+	a new SendFile callback, all the drivers need updating to that new
+	API, and native versions and related autoconf checks for Linux,
+	BSD/OSX, Solaris, Windows (TransmitFile?) added. Then the conn
+	routines can call NsDriverSendFile()...
+
 2008-08-27  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/tclmisc.c: Revert to native system call. This is fast version of

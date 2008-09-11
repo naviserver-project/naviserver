@@ -444,6 +444,18 @@ typedef struct Ns_Sock {
 } Ns_Sock;
 
 /*
+ * The following structure defines a range of bytes to send from a
+ * file or memory location. The descriptior fd must be a normal file
+ * in the filesystem, not a socket.
+ */
+
+typedef struct Ns_FileVec {
+    int        fd;      /* File descriptor of file to send, or < 0 for memory. */
+    off_t      offset;  /* Offset into file to begin sending, or void *. */
+    size_t     length;  /* Number of bytes to send from offset. */
+} Ns_FileVec;
+
+/*
  * The following enum defines the commands which
  * the socket driver proc must handle.
  */
@@ -1864,6 +1876,34 @@ Ns_SlsAppendKeyed(Ns_DString *dest, Ns_Sock *sock)
 NS_EXTERN void
 Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+/*
+ * sockfile.c:
+ */
+
+NS_EXTERN size_t
+Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, void *data,
+              off_t offset, size_t length)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN ssize_t
+Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
+                    Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(2);
+
+
+typedef ssize_t
+Ns_SockSendBufsCallback(SOCKET sock, struct iovec *bufs, int nbufs,
+                        Ns_Time *timeoutPtr);
+
+NS_EXTERN ssize_t
+Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
+                            Ns_Time *timeoutPtr, Ns_SockSendBufsCallback *sendProc)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 /*
  * sock.c:
