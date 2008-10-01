@@ -358,8 +358,12 @@ typedef struct Driver {
 
     struct Driver *nextPtr;     /* Next in list of drivers */
     struct NsServer *servPtr;   /* Driver virtual server */
-    Ns_DriverProc *proc;        /* Driver callback */
-    int opts;                   /* Driver options */
+    Ns_DriverRecvProc     *recvProc;
+    Ns_DriverSendProc     *sendProc;
+    Ns_DriverSendFileProc *sendFileProc;
+    Ns_DriverKeepProc     *keepProc;
+    Ns_DriverCloseProc    *closeProc;
+    int opts;                   /* NS_DRIVER_* options */
     int closewait;              /* Graceful close timeout */
     int keepwait;               /* Keepalive timeout */
     int keepallmethods;         /* Keepalive all methods or just GET? */
@@ -979,11 +983,8 @@ extern void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
  * Socket driver callbacks.
  */
 
-extern int NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
 extern int NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs);
-extern int NsDriverQueue(Sock *sockPtr);
-extern int NsDriverKeep(Sock *sockPtr);
-extern void NsDriverClose(Sock *sockPtr);
+extern int NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs);
 
 extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);

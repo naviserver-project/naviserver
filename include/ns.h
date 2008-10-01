@@ -139,12 +139,14 @@
 
 #define NS_DRIVER_ASYNC            0x01 /* Use async read-ahead. */
 #define NS_DRIVER_SSL              0x02 /* Use SSL port, protocol defaults. */
+
 #define NS_DRIVER_UDP              0x04 /* Listening on a UDP socket */
 #define NS_DRIVER_UNIX             0x08 /* Listening on a Unix domain socket */
 #define NS_DRIVER_QUEUE_ONACCEPT   0x10 /* Queue socket on accept */
 #define NS_DRIVER_QUEUE_ONREAD     0x20 /* Queue socket on first network read */
 
-#define NS_DRIVER_VERSION_1        1
+#define NS_DRIVER_VERSION_1        1    /* Obsolete. */
+#define NS_DRIVER_VERSION_2        2    /* Current version. */
 
 /*
  * The following are valid Tcl interp traces.
@@ -456,25 +458,28 @@ typedef struct Ns_FileVec {
 } Ns_FileVec;
 
 /*
- * The following enum defines the commands which
- * the socket driver proc must handle.
+ * The following typedefs define socket driver callbacks.
  */
 
-typedef enum {
-    DriverRecv,
-    DriverSend,
-    DriverKeep,
-    DriverClose,
-    DriverQueue
-} Ns_DriverCmd;
+typedef ssize_t
+(Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-/*
- * The following typedef defines a socket driver
- * callback.
- */
+typedef ssize_t
+(Ns_DriverSendProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-typedef int (Ns_DriverProc)(Ns_DriverCmd cmd, Ns_Sock *sock,
-			    struct iovec *bufs, int nbufs);
+typedef ssize_t
+(Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+typedef int
+(Ns_DriverKeepProc)(Ns_Sock *sock)
+     NS_GNUC_NONNULL(1);
+
+typedef void
+(Ns_DriverCloseProc)(Ns_Sock *sock)
+     NS_GNUC_NONNULL(1);
 
 /*
  * The following structure defines the values to initialize the driver. This is
@@ -482,12 +487,16 @@ typedef int (Ns_DriverProc)(Ns_DriverCmd cmd, Ns_Sock *sock,
  */
 
 typedef struct Ns_DriverInitData {
-    int            version;      /* Currently only version 1 exists */
-    char          *name;         /* This will show up in log file entries */
-    Ns_DriverProc *proc;
-    int            opts;
-    void          *arg;          /* Module's driver callback data */
-    char          *path;         /* Path to find port, address, etc. */
+    int                   version;       /* Version 2. */
+    char                  *name;         /* This will show up in log file entries */
+    Ns_DriverRecvProc     *recvProc;     /* Read bytes from conn into iovec. */
+    Ns_DriverSendProc     *sendProc;     /* Write bytes to conn from iovec. */
+    Ns_DriverSendFileProc *sendFileProc; /* Write bytes to conn from files/buffers. */
+    Ns_DriverKeepProc     *keepProc;     /* Keep a socket open after conn done? */
+    Ns_DriverCloseProc    *closeProc;    /* Close a connection socket. */
+    int                    opts;         /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
+    void                  *arg;          /* Module's driver callback data */
+    char                  *path;         /* Path to find port, address, etc. */
 } Ns_DriverInitData;
 
 /*

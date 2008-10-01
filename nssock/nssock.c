@@ -30,7 +30,7 @@
 /* 
  * nssock.c --
  *
- *	Call internal Ns_DriverInit.
+ *      Call internal Ns_DriverInit.
  *
  */
 
@@ -40,11 +40,16 @@ NS_RCSID("@(#) $Header$");
 
 int Ns_ModuleVersion = 1;
 
+
 /*
  * Local functions defined in this file.
  */
 
-static Ns_DriverProc SockProc;
+static Ns_DriverRecvProc Recv;
+static Ns_DriverSendProc Send;
+static Ns_DriverSendFileProc SendFile;
+static Ns_DriverKeepProc Keep;
+static Ns_DriverCloseProc Close;
 
 
 /*
@@ -52,13 +57,13 @@ static Ns_DriverProc SockProc;
  *
  * Ns_ModuleInit --
  *
- *	Sock module init routine.
+ *      Sock module init routine.
  *
  * Results:
- *	See Ns_DriverInit.
+ *      See Ns_DriverInit.
  *
  * Side effects:
- *	See Ns_DriverInit.
+ *      See Ns_DriverInit.
  *
  *----------------------------------------------------------------------
  */
@@ -74,9 +79,13 @@ Ns_ModuleInit(char *server, char *module)
      * passing to the connection for processing.
      */
 
-    init.version = NS_DRIVER_VERSION_1;
+    init.version = NS_DRIVER_VERSION_2;
     init.name = "nssock";
-    init.proc = SockProc;
+    init.recvProc = Recv;
+    init.sendProc = Send;
+    init.sendFileProc = SendFile;
+    init.keepProc = Keep;
+    init.closeProc = Close;
     init.opts = NS_DRIVER_ASYNC;
     init.arg = NULL;
     init.path = NULL;
@@ -84,55 +93,47 @@ Ns_ModuleInit(char *server, char *module)
     return Ns_DriverInit(server, module, &init);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * SockProc --
- *
- *	Socket driver callback proc.  This driver attempts efficient
- *	scatter/gatter I/O if requested and only blocks for the
- *	driver configured time once if no bytes are available.
- *
- * Results:
- *	For close and keep, always 0.  For send and recv, # of bytes
- *	processed or -1 on error or timeout.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SockProc(Ns_DriverCmd cmd, Ns_Sock *sock, struct iovec *bufs, int nbufs)
+static ssize_t
+Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs)
 {
-    int n;
-    Ns_Time timeout = {0,0};
+    Ns_Time timeout;
 
-    switch (cmd) {
-    case DriverRecv:
-        timeout.sec = sock->driver->recvwait;
-        n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, &timeout);
-        break;
-    case DriverSend:
-        timeout.sec = sock->driver->sendwait;
-        n = Ns_SockSendBufs(sock->sock, bufs, nbufs, &timeout);
-        break;
-        
-    case DriverKeep:
-    case DriverClose:
-        /* NB: Nothing to do. */
-        n = 0;
-        break;
-        
-    default:
-        /* Unsupported command. */
-        n = -1;
-        break;
-    }
-
-    return n;
+    timeout.sec = sock->driver->recvwait;
+    timeout.usec = 0;
+    return Ns_SockRecvBufs(sock->sock, bufs, nbufs, &timeout);
 }
 
+static ssize_t
+Send(Ns_Sock *sock, struct iovec *bufs, int nbufs)
+{
+    Ns_Time timeout;
 
+    timeout.sec = sock->driver->sendwait;
+    timeout.usec = 0;
+    return Ns_SockSendBufs(sock->sock, bufs, nbufs, &timeout);
+}
+
+static ssize_t
+SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs)
+{
+    Ns_Time timeout;
+
+    timeout.sec = sock->driver->sendwait;
+    timeout.usec = 0;
+    return Ns_SockSendFileBufs(sock->sock, bufs, nbufs, &timeout);
+}
+
+static int
+Keep(Ns_Sock *sock)
+{
+    return 1; /* Always willing to try keepalive. */
+}
+
+static void
+Close(Ns_Sock *sock)
+{
+    if (sock->sock > -1) {
+        ns_sockclose(sock->sock);
+        sock->sock = -1;
+    }
+}

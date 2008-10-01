@@ -121,6 +121,10 @@ static Ns_ThreadProc DriverThread;
 static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 
+static int DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
+static int DriverKeep(Sock *sockPtr);
+static void DriverClose(Sock *sockPtr);
+
 static int   SockSetServer(Sock *sockPtr);
 static Sock *SockAccept(Driver *drvPtr);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
@@ -217,7 +221,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         return NS_ERROR;
     }
 
-    if (init->version != NS_DRIVER_VERSION_1) {
+    if (init->version != NS_DRIVER_VERSION_2) {
         Ns_Log(Error, "%s: version field of init argument is invalid: %d",
                module, init->version);
         return NS_ERROR;
@@ -321,7 +325,11 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->server       = server;
     drvPtr->name         = init->name;
     drvPtr->module       = module;
-    drvPtr->proc         = init->proc;
+    drvPtr->recvProc     = init->recvProc;
+    drvPtr->sendProc     = init->sendProc;
+    drvPtr->sendFileProc = init->sendFileProc;
+    drvPtr->keepProc     = init->keepProc;
+    drvPtr->closeProc    = init->closeProc;
     drvPtr->arg          = init->arg;
     drvPtr->opts         = init->opts;
     drvPtr->servPtr      = servPtr;
@@ -808,7 +816,6 @@ NsSockClose(Sock *sockPtr, int keep)
     if (drvPtr->closePtr == NULL) {
         trigger = 1;
     }
-    sockPtr->keep    = keep;
     sockPtr->nextPtr = drvPtr->closePtr;
     drvPtr->closePtr = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
@@ -822,7 +829,7 @@ NsSockClose(Sock *sockPtr, int keep)
 /*
  *----------------------------------------------------------------------
  *
- * NsDriverRecv --
+ * DriverRecv --
  *
  *      Read data from the socket into the given vector of buffers.
  *
@@ -835,10 +842,10 @@ NsSockClose(Sock *sockPtr, int keep)
  *----------------------------------------------------------------------
  */
 
-int
-NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
+static int
+DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
-    return (*sockPtr->drvPtr->proc)(DriverRecv, (Ns_Sock *) sockPtr, bufs, nbufs);
+    return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs);
 }
 
 
@@ -861,21 +868,19 @@ NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 int
 NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
-    return (*sockPtr->drvPtr->proc)(DriverSend, (Ns_Sock *) sockPtr, bufs, nbufs);
+    return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsDriverQueue --
+ * NsDriverSendFile --
  *
- *      Can the given socket be queued for connection processing?
+ *      Write a vector of buffers to the socket via the driver callback.
  *
  * Results:
- *      NS_OK:    socket can be queued.
- *      NS_ERROR: driver does not implement this callback.
- *      NS_FATAL: socket should not be queued. Close socket?
+ *      Number of bytes written, or -1 on error.
  *
  * Side effects:
  *      Depends on driver.
@@ -884,22 +889,22 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
  */
 
 int
-NsDriverQueue(Sock *sockPtr)
+NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs)
 {
-    return (*sockPtr->drvPtr->proc)(DriverQueue, (Ns_Sock *) sockPtr, NULL, 0);
+    return (*sockPtr->drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsDriverKeep --
+ * DriverKeep --
  *
  *      Can the given socket be kept open in the hopes that another
  *      request will arrive before the keepwait timeout expires?
  *
  * Results:
- *      0 if the socket is OK for keepalive, 1 if this is not possible.
+ *      1 if the socket is OK for keepalive, 0 if this is not possible.
  *
  * Side effects:
  *      Depends on driver.
@@ -907,19 +912,19 @@ NsDriverQueue(Sock *sockPtr)
  *----------------------------------------------------------------------
  */
 
-int
-NsDriverKeep(Sock *sockPtr)
+static int
+DriverKeep(Sock *sockPtr)
 {
-    return (*sockPtr->drvPtr->proc)(DriverKeep, (Ns_Sock *) sockPtr, NULL, 0);
+    return (*sockPtr->drvPtr->keepProc)((Ns_Sock *) sockPtr);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsDriverClose --
+ * DriverClose --
  *
- *      Notify the driver that the socket is about to be closed.
+ *      Close the given socket.
  *
  * Results:
  *      None.
@@ -930,10 +935,10 @@ NsDriverKeep(Sock *sockPtr)
  *----------------------------------------------------------------------
  */
 
-void
-NsDriverClose(Sock *sockPtr)
+static void
+DriverClose(Sock *sockPtr)
 {
-    (void) (*sockPtr->drvPtr->proc)(DriverClose, (Ns_Sock *) sockPtr, NULL, 0);
+    (*sockPtr->drvPtr->closeProc)((Ns_Sock *) sockPtr);
 }
 
 
@@ -1408,11 +1413,6 @@ SockPrepare(Sock *sockPtr)
  *
  *      Puts socket into connection queue
  *
- *      Call driver's queue handler for the last checks before actual
- *      connection enqueue. NS_ERROR is valid here because that means
- *      driver does not implement this call, we care about NS_FATAL status
- *      only which means we cannot queue this socket.
- *
  * Results:
  *      NS_OK if queued,
  *      NS_ERROR if socket closed because of error
@@ -1428,19 +1428,11 @@ SockPrepare(Sock *sockPtr)
 static int
 SockQueue(Sock *sockPtr, Ns_Time *timePtr)
 {
-    int status;
-
-    /*
-     *  Ask driver if we are allowed and ready to queue this socket
-     */
-
-    status = NsDriverQueue(sockPtr);
-
     /*
      *  Verify the conditions, Request struct should exists already
      */
 
-    if (status == NS_FATAL || SockSetServer(sockPtr) == 0) {
+    if (!SockSetServer(sockPtr)) {
         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
         return NS_ERROR;
     }
@@ -1449,7 +1441,7 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
      *  Actual queueing, if not ready spool to the waiting list
      */
 
-    if (NsQueueConn(sockPtr, timePtr) == 0) {
+    if (!NsQueueConn(sockPtr, timePtr)) {
         return NS_TIMEOUT;
     }
 
@@ -1719,12 +1711,7 @@ SockRelease(Sock *sockPtr, int reason, int err)
     NsSlsCleanup(sockPtr);
 
     drvPtr->queuesize--;
-    if (sockPtr->sock != INVALID_SOCKET) {
-        if (!(drvPtr->opts & NS_DRIVER_UDP)) {
-            ns_sockclose(sockPtr->sock);
-        }
-        sockPtr->sock = INVALID_SOCKET;
-    }
+
     if (sockPtr->reqPtr != NULL) {
         NsFreeRequest(sockPtr->reqPtr);
         sockPtr->reqPtr = NULL;
@@ -1833,13 +1820,13 @@ SockTrigger(SOCKET fd)
 static void
 SockClose(Sock *sockPtr, int keep)
 {
-    if (keep && NsDriverKeep(sockPtr) != 0) {
-        keep = 0;
+    if (keep) {
+        keep = DriverKeep(sockPtr);
     }
-
-    if (keep == 0) {
-        NsDriverClose(sockPtr);
+    if (!keep) {
+        DriverClose(sockPtr);
     }
+    sockPtr->keep = keep;
 
     /*
      * Unconditionally remove temporaty file, connection thread
@@ -1871,8 +1858,6 @@ SockClose(Sock *sockPtr, int keep)
     }
     sockPtr->taddr = 0;
 #endif
-
-    sockPtr->keep  = keep;
 }
 
 
@@ -2003,7 +1988,7 @@ SockRead(Sock *sockPtr, int spooler)
         buf.iov_len = nread;
     }
 
-    n = NsDriverRecv(sockPtr, &buf, 1);
+    n = DriverRecv(sockPtr, &buf, 1);
 
     if (n <= 0) {
         return SOCK_READERROR;

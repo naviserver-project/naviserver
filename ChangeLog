@@ -1,4 +1,13 @@
-2008-09-11  Stephen  <sdeasey@users.sf.net>
+2008-10-01  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/driver.c:
+	* nssock/nssock.c: Convert the Ns_DriverProc callback into
+	5 individual callbacks: Ns_DriverRecvProc, Ns_DriverSendProc,
+	Ns_DriverSendFileProc, Ns_DriverKeepProc, and Ns_DriverCloseProc.
+
+2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 
 	* include/ns.h:
 	* nsd/sock.c: Add handy Ns_SetVec routine for manipulating
