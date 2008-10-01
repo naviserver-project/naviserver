@@ -458,12 +458,27 @@ typedef struct Ns_FileVec {
 } Ns_FileVec;
 
 /*
+ * The following are the valid return values of an Ns_DriverAcceptProc.
+ */
+
+typedef enum {
+    NS_DRIVER_ACCEPT,
+    NS_DRIVER_ACCEPT_DATA,
+    NS_DRIVER_ACCEPT_ERROR
+} NS_DRIVER_ACCEPT_STATUS;
+
+/*
  * The following typedefs define socket driver callbacks.
  */
 
 typedef SOCKET
 (Ns_DriverListenProc)(Ns_Driver *driver, CONST char *address, int port, int backlog)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+typedef NS_DRIVER_ACCEPT_STATUS
+(Ns_DriverAcceptProc)(Ns_Sock *sock, SOCKET listensock,
+                      struct sockaddr *sockaddr, int *socklen)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 typedef ssize_t
 (Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs)
@@ -494,6 +509,7 @@ typedef struct Ns_DriverInitData {
     int                   version;       /* Version 2. */
     char                  *name;         /* This will show up in log file entries */
     Ns_DriverListenProc   *listenProc;   /* Open listening socket for conns. */
+    Ns_DriverAcceptProc   *acceptProc;   /* Accept a new non-blocking socket. */
     Ns_DriverRecvProc     *recvProc;     /* Read bytes from conn into iovec. */
     Ns_DriverSendProc     *sendProc;     /* Write bytes to conn from iovec. */
     Ns_DriverSendFileProc *sendFileProc; /* Write bytes to conn from files/buffers. */

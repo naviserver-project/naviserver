@@ -11,7 +11,25 @@
 	* nsd/nsd.h:
 	* nsd/driver.c:
 	* nssock/nssock.c: Add new Ns_DriverListenProc callback which is
-	reponsible for opening the listening driver socket at server startup.
+	reponsible for opening the listening driver socket at
+	server startup.
+
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/driver.c:
+	* nssock/nssock.c: Add new Ns_DriverAcceptProc callback which is
+	responsible for accepting incoming socket connections from the
+	driver listen socket.
+
+	It can opperate in two modes: in the first it accepts and returns
+	the new socket (same as before), in the second it tells the driver
+	thread it believes data is ready to be read from the socket.
+	In this case the driver thread will skip pushing the socket onto
+	the read queue and attempt the read immediately. This saves a trip
+	throught the poll loop.
+
+	The second mode could be used by UDP sockets where there is no
+	accept phase.
 
 2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 

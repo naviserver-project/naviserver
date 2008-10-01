@@ -359,6 +359,7 @@ typedef struct Driver {
     struct Driver *nextPtr;     /* Next in list of drivers */
     struct NsServer *servPtr;   /* Driver virtual server */
     Ns_DriverListenProc   *listenProc;
+    Ns_DriverAcceptProc   *acceptProc;
     Ns_DriverRecvProc     *recvProc;
     Ns_DriverSendProc     *sendProc;
     Ns_DriverSendFileProc *sendFileProc;

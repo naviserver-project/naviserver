@@ -122,13 +122,13 @@ static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 
 static SOCKET DriverListen(Driver *drvPtr);
-
+static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr);
 static int DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
 static int DriverKeep(Sock *sockPtr);
 static void DriverClose(Sock *sockPtr);
 
 static int   SockSetServer(Sock *sockPtr);
-static Sock *SockAccept(Driver *drvPtr);
+static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
 static void  SockPrepare(Sock *sockPtr);
 static void  SockRelease(Sock *sockPtr, int reason, int err);
@@ -328,6 +328,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->name         = init->name;
     drvPtr->module       = module;
     drvPtr->listenProc   = init->listenProc;
+    drvPtr->acceptProc   = init->acceptProc;
     drvPtr->recvProc     = init->recvProc;
     drvPtr->sendProc     = init->sendProc;
     drvPtr->sendFileProc = init->sendFileProc;
@@ -869,6 +870,35 @@ DriverListen(Driver *drvPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * DriverAccept --
+ *
+ *      Accept a new socket. It will be in non-blocking mode.
+ *
+ * Results:
+ *      _ACCEPT:       a socket was accepted, poll for data
+ *      _ACCEPT_DATA:  a socket was accepted, data present
+ *      _ACCEPT_ERROR: no socket was accepted
+ *
+ * Side effects:
+ *      Depends on driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static NS_DRIVER_ACCEPT_STATUS
+DriverAccept(Sock *sockPtr)
+{
+    int n = sizeof(struct sockaddr_in);
+
+    return (*sockPtr->drvPtr->acceptProc)((Ns_Sock *) sockPtr,
+                                          sockPtr->drvPtr->sock,
+                                          (struct sockaddr *) &sockPtr->sa, &n);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DriverRecv --
  *
  *      Read data from the socket into the given vector of buffers.
@@ -1205,30 +1235,31 @@ DriverThread(void *arg)
              */
 
             accepted = 0;
-            while (accepted < drvPtr->acceptsize &&
-                   drvPtr->queuesize < drvPtr->maxqueuesize
+            while (accepted < drvPtr->acceptsize
+                   && drvPtr->queuesize < drvPtr->maxqueuesize
                    && PollIn(&pdata, drvPtr->pidx)
-                   && (sockPtr = SockAccept(drvPtr)) != NULL) {
+                   && (n = SockAccept(drvPtr, &sockPtr)) != SOCK_ERROR) {
 
-                /*
-                 * Queue the socket immediately if request is provided.
-                 * This is true by default for UDP drivers
-                 */
+                switch (n) {
+                case SOCK_SPOOL:
+                    if (!SockSpoolerQueue(sockPtr->drvPtr, sockPtr)) {
+                        Push(sockPtr, readPtr);
+                    }
+                    break;
 
-                if (sockPtr->drvPtr->opts & (NS_DRIVER_QUEUE_ONACCEPT|NS_DRIVER_UDP)) {
+                case SOCK_MORE:
+                    SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                    Push(sockPtr, readPtr);
+                    break;
 
+                case SOCK_READY:
                     if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                         Push(sockPtr, waitPtr);
                     }
+                    break;
 
-                } else {
-
-                   /*
-                    * Put the socket on the read-ahead list.
-                    */
-
-                    SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                    Push(sockPtr, readPtr);
+                default:
+                    Ns_Fatal("driver: SockAccept returned: %d", n);
                 }
                 accepted++;
             }
@@ -1509,26 +1540,26 @@ SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
  *
  * SockAccept --
  *
- *      Accept and initialize a new Sock.
+ *      Accept and initialize a new Sock in sockPtrPtr.
  *
  * Results:
- *      Pointer to Sock or NULL on error.
+ *      SOCK_READY, SOCK_MORE, SOCK_SPOOL,
+ *      SOCK_ERROR + NULL sockPtr.
  *
  * Side effects:
- *      Socket buffer sizes are set as configured.
+ *      Read-ahead may be attempted on new socket.
  *
  *----------------------------------------------------------------------
  */
 
-static Sock *
-SockAccept(Driver *drvPtr)
+static int
+SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
 {
-    Sock        *sockPtr;
-    int          n;
+    Sock    *sockPtr;
+    int      sockSize, status;
 
     /*
      * Allocate and/or initialize a Sock structure.
-     * Size the sock according to allocated sls slots.
      */
 
     Ns_MutexLock(&drvPtr->lock);
@@ -1539,66 +1570,83 @@ SockAccept(Driver *drvPtr)
     Ns_MutexUnlock(&drvPtr->lock);
 
     if (sockPtr == NULL) {
-        sockPtr = ns_calloc(1, sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *)));
-        sockPtr->reqPtr = NULL;
+        sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
+        sockPtr = ns_calloc(1, sockSize);
+        sockPtr->drvPtr = drvPtr;
+    } else {
+        sockPtr->tfd    = 0;
+        sockPtr->taddr  = 0;
+        sockPtr->keep   = 0;
+        sockPtr->arg    = NULL;
     }
 
     /*
      * Accept the new connection.
      */
 
-    n = sizeof(struct sockaddr_in);
-
-    sockPtr->drvPtr  = drvPtr;
-    sockPtr->tfd     = 0;
-    sockPtr->taddr   = 0;
-    sockPtr->keep    = 0;
-    sockPtr->arg     = NULL;
-
-
-    /*
-     * In UDP mode we read packet right away and queue it immediately
-     * to allow driver continue processing other packets. Packet should
-     * contain the whole request.
-     */
-
     if (drvPtr->opts & NS_DRIVER_UDP) {
+
+        /*
+         * In UDP mode we read packet right away and queue it immediately
+         * to allow driver continue processing other packets. Packet should
+         * contain the whole request.
+         */
+
         sockPtr->sock = drvPtr->sock;
+        drvPtr->queuesize++;
+        status = SOCK_READY;
 
         if (SockRead(sockPtr, 0) != SOCK_READY) {
             SockRelease(sockPtr, 0, 0);
-            return NULL;
+            sockPtr = NULL;
+            status = SOCK_ERROR;
         }
 
-        drvPtr->queuesize++;
-        return sockPtr;
+    } else {
+
+        /*
+         * In TCP mode proceed with accepting socket the normal way.
+         */
+
+        status = DriverAccept(sockPtr);
     }
 
-    /*
-     * In TCP mode proceed with accepting socket the normal way, if accept failed
-     * return the Sock to the free list.
-     */
+    if (status == NS_DRIVER_ACCEPT_ERROR) {
+        status = SOCK_ERROR;
 
-    sockPtr->sock = Ns_SockAccept(drvPtr->sock, (struct sockaddr *)&sockPtr->sa, &n);
-    if (sockPtr->sock == INVALID_SOCKET) {
         Ns_MutexLock(&drvPtr->lock);
         sockPtr->nextPtr = drvPtr->sockPtr;
         drvPtr->sockPtr = sockPtr;
         Ns_MutexUnlock(&drvPtr->lock);
-        return NULL;
+        sockPtr = NULL;
+
+    } else {
+        drvPtr->queuesize++;
+
+        /*
+         * If there is already data present then read it without
+         * polling if we're in async mode.
+         */
+
+        if (status == NS_DRIVER_ACCEPT_DATA) {
+            if (drvPtr->opts & NS_DRIVER_ASYNC) {
+                status = SockRead(sockPtr, 0);
+                if (status < 0) {
+                    SockRelease(sockPtr, status, errno);
+                    status = SOCK_ERROR;
+                    sockPtr = NULL;
+                }
+            } else {
+                status = SOCK_READY;
+            }
+        } else {
+            status = SOCK_MORE;
+        }
     }
 
-    /*
-     * Even though the socket should have inherited
-     * non-blocking from the accept socket, set again
-     * just to be sure.
-     */
+    *sockPtrPtr = sockPtr;
 
-    Ns_SockSetNonBlocking(sockPtr->sock);
-
-    drvPtr->queuesize++;
-
-    return sockPtr;
+    return status;
 }
 
 

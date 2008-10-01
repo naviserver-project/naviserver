@@ -46,6 +46,7 @@ int Ns_ModuleVersion = 1;
  */
 
 static Ns_DriverListenProc Listen;
+static Ns_DriverAcceptProc Accept;
 static Ns_DriverRecvProc Recv;
 static Ns_DriverSendProc Send;
 static Ns_DriverSendFileProc SendFile;
@@ -83,6 +84,7 @@ Ns_ModuleInit(char *server, char *module)
     init.version = NS_DRIVER_VERSION_2;
     init.name = "nssock";
     init.listenProc = Listen;
+    init.acceptProc = Accept;
     init.recvProc = Recv;
     init.sendProc = Send;
     init.sendFileProc = SendFile;
@@ -105,6 +107,20 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
         Ns_SockSetNonBlocking(sock);
     }
     return sock;
+}
+
+static NS_DRIVER_ACCEPT_STATUS
+Accept(Ns_Sock *sock, SOCKET listensock,
+       struct sockaddr *sockaddrPtr, int *socklenPtr)
+{
+    int status = NS_DRIVER_ACCEPT_ERROR;
+
+    sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
+    if (sock->sock != INVALID_SOCKET) {
+        Ns_SockSetNonBlocking(sock->sock);
+        status = NS_DRIVER_ACCEPT;
+    }
+    return status;
 }
 
 static ssize_t
