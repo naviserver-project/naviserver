@@ -461,6 +461,10 @@ typedef struct Ns_FileVec {
  * The following typedefs define socket driver callbacks.
  */
 
+typedef SOCKET
+(Ns_DriverListenProc)(Ns_Driver *driver, CONST char *address, int port, int backlog)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 typedef ssize_t
 (Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -489,6 +493,7 @@ typedef void
 typedef struct Ns_DriverInitData {
     int                   version;       /* Version 2. */
     char                  *name;         /* This will show up in log file entries */
+    Ns_DriverListenProc   *listenProc;   /* Open listening socket for conns. */
     Ns_DriverRecvProc     *recvProc;     /* Read bytes from conn into iovec. */
     Ns_DriverSendProc     *sendProc;     /* Write bytes to conn from iovec. */
     Ns_DriverSendFileProc *sendFileProc; /* Write bytes to conn from files/buffers. */

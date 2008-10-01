@@ -121,6 +121,8 @@ static Ns_ThreadProc DriverThread;
 static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 
+static SOCKET DriverListen(Driver *drvPtr);
+
 static int DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
 static int DriverKeep(Sock *sockPtr);
 static void DriverClose(Sock *sockPtr);
@@ -325,6 +327,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->server       = server;
     drvPtr->name         = init->name;
     drvPtr->module       = module;
+    drvPtr->listenProc   = init->listenProc;
     drvPtr->recvProc     = init->recvProc;
     drvPtr->sendProc     = init->sendProc;
     drvPtr->sendFileProc = init->sendFileProc;
@@ -829,6 +832,43 @@ NsSockClose(Sock *sockPtr, int keep)
 /*
  *----------------------------------------------------------------------
  *
+ * DriverListen --
+ *
+ *      Open a listening socket for accepting connections.
+ *
+ * Results:
+ *      File description of socket, or INVALID_SOCKET on error.
+ *
+ * Side effects:
+ *      Depends on driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static SOCKET
+DriverListen(Driver *drvPtr)
+{
+    SOCKET sock;
+
+    sock = (*drvPtr->listenProc)((Ns_Driver *) drvPtr,
+                                 drvPtr->bindaddr,
+                                 drvPtr->port,
+                                 drvPtr->backlog);
+    if (sock == INVALID_SOCKET) {
+        Ns_Log(Error, "%s: failed to listen on %s:%d: %s",
+               drvPtr->name, drvPtr->address, drvPtr->port,
+               ns_sockstrerror(ns_sockerrno));
+    } else {
+        Ns_Log(Notice, "%s: listening on %s:%d",
+               drvPtr->name, drvPtr->address, drvPtr->port);
+    }
+    return sock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DriverRecv --
  *
  *      Read data from the socket into the given vector of buffers.
@@ -974,46 +1014,14 @@ DriverThread(void *arg)
     Ns_ThreadSetName("-driver:%s-", drvPtr->name);
 
     flags = DRIVER_STARTED;
-
-    /*
-     * Allocate driver socket
-     */
-
-    if (drvPtr->opts & NS_DRIVER_UNIX) {
-        drvPtr->sock = Ns_SockListenUnix(drvPtr->bindaddr, drvPtr->backlog, 0);
-    } else
-    if (drvPtr->opts & NS_DRIVER_UDP) {
-        drvPtr->sock = Ns_SockListenUdp(drvPtr->bindaddr, drvPtr->port);
-    } else {
-        drvPtr->sock = Ns_SockListenEx(drvPtr->bindaddr, drvPtr->port, drvPtr->backlog);
-    }
+    drvPtr->sock = DriverListen(drvPtr);
 
     if (drvPtr->sock == INVALID_SOCKET) {
-        Ns_Log(Error, "%s: failed to listen on %s:%d: %s", drvPtr->name,
-               drvPtr->address, drvPtr->port, ns_sockstrerror(ns_sockerrno));
         flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
     } else {
-
-        Ns_Log(Notice, "%s: listening on %s:%d", drvPtr->name, drvPtr->address, drvPtr->port);
-
-        /*
-         * All accepted sockets should initially
-         * inherit the non-blocking state as well.
-         */
-
-        Ns_SockSetNonBlocking(drvPtr->sock);
-
-        /*
-         * Create the spooler thread(s).
-         */
-
         SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
         SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
     }
-
-    /*
-     * Update and signal state of driver.
-     */
 
     Ns_MutexLock(&drvPtr->lock);
     drvPtr->flags |= flags;

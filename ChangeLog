@@ -7,6 +7,12 @@
 	5 individual callbacks: Ns_DriverRecvProc, Ns_DriverSendProc,
 	Ns_DriverSendFileProc, Ns_DriverKeepProc, and Ns_DriverCloseProc.
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/driver.c:
+	* nssock/nssock.c: Add new Ns_DriverListenProc callback which is
+	reponsible for opening the listening driver socket at server startup.
+
 2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 
 	* include/ns.h:

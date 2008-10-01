@@ -45,6 +45,7 @@ int Ns_ModuleVersion = 1;
  * Local functions defined in this file.
  */
 
+static Ns_DriverListenProc Listen;
 static Ns_DriverRecvProc Recv;
 static Ns_DriverSendProc Send;
 static Ns_DriverSendFileProc SendFile;
@@ -81,6 +82,7 @@ Ns_ModuleInit(char *server, char *module)
 
     init.version = NS_DRIVER_VERSION_2;
     init.name = "nssock";
+    init.listenProc = Listen;
     init.recvProc = Recv;
     init.sendProc = Send;
     init.sendFileProc = SendFile;
@@ -91,6 +93,18 @@ Ns_ModuleInit(char *server, char *module)
     init.path = NULL;
 
     return Ns_DriverInit(server, module, &init);
+}
+
+static SOCKET
+Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
+{
+    SOCKET sock;
+
+    sock = Ns_SockListenEx(address, port, backlog);
+    if (sock != INVALID_SOCKET) {
+        Ns_SockSetNonBlocking(sock);
+    }
+    return sock;
 }
 
 static ssize_t
