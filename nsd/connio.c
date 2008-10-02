@@ -66,89 +66,119 @@ static int HdrEq(Ns_Set *set, char *name, char *value);
 
 
 /*
- *-----------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
- * Ns_ConnClose --
+ * Ns_ConnWriteChars, Ns_ConnWriteVChars --
  *
- *      Return a connection to the driver thread for close or
- *      keep-alive.
+ *      This will write a string buffer to the conn.  The distinction
+ *      being that the given data is explicitly a UTF8 character string,
+ *      and will be put out in an 'encoding-aware' manner.
+ *      It promises to write all of it.
  *
  * Results:
- *      Always NS_OK.
+ *      NS_OK if all data written, NS_ERROR otherwise.
  *
  * Side effects:
- *      May trigger writing http-chunked trailer.
- *      Tcl at-close callbacks may run.
+ *      See Ns_ConnWriteData().
  *
- *-----------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 int
-Ns_ConnClose(Ns_Conn *conn)
+Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, int towrite, int flags)
 {
-    Conn *connPtr = (Conn *) conn;
-    int   keep;
+    struct iovec sbuf;
 
-    if (connPtr->sockPtr != NULL) {
-
-        if ((connPtr->flags & NS_CONN_STREAM)
-            && (connPtr->flags & NS_CONN_CHUNK)) {
-
-            /*
-             * Streaming in chunked mode: write the end-of-content trailer.
-             */
-
-            (void) Ns_ConnWriteData(conn, NULL, 0, 0);
-        }
-
-        keep = connPtr->keep > 0 ? 1 : 0;
-        NsSockClose(connPtr->sockPtr, keep);
-
-        connPtr->sockPtr = NULL;
-        connPtr->flags |= NS_CONN_CLOSED;
-
-        if (connPtr->itPtr != NULL) {
-            NsTclRunAtClose(connPtr->itPtr);
-        }
-    }
-
-    return NS_OK;
+    sbuf.iov_base = (void *) buf;
+    sbuf.iov_len = towrite;
+    return Ns_ConnWriteVChars(conn, &sbuf, 1, flags);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnSend --
- *
- *      Send buffers to client efficiently.
- *      It promises to send all of it.
- *
- * Results:
- *      Number of bytes of given buffers written, otherwise
- *      -1 on error from first send.
- *
- * Side effects:
- *      - Will update connPtr->nContentSent.
- *      - May send data using multiple OS calls if nbufs is large.
- *      - Also depends on configured comm driver, i.e. nssock, nsssl.
- *
- *----------------------------------------------------------------------
- */
-
 int
-Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 {
-    Conn  *connPtr = (Conn *) conn;
-    int    sent    = 1;
+    Conn           *connPtr = (Conn *)conn;
+    int             n, status;
+    CONST char     *utfBytes;
+    int             utfCount;          /* # of bytes in utfBytes */
+    int             utfConvertedCount; /* # of bytes of utfBytes converted */
+    char            encodedBytes[IOBUFSZ];
+    int             encodedCount;      /* # of bytes converted in encodedBytes */
+    int             encodedOffset;
 
-    if (connPtr->sockPtr != NULL) {
-        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs);
-        if (sent > 0) {
-            connPtr->nContentSent += sent;
-        }
+    /*
+     * Check if character conversion is needed.
+     */
+
+    if (connPtr->outputEncoding == NULL
+        || NsEncodingIsUtf8(connPtr->outputEncoding)
+        || nbufs == 0
+        || (nbufs == 1 && bufs[0].iov_len == 0)) {
+
+        return Ns_ConnWriteVData(conn, bufs, nbufs, flags);
     }
-    return sent;
+
+    /*
+     * Coalesce buffers into single encodedBytes buffer as they are
+     * encoded.  Send to client each time encodedBytes fills.
+     */
+
+    status   = NS_OK;
+    n        = 0;
+    utfBytes = bufs[n].iov_base;
+    utfCount = bufs[n].iov_len;
+    encodedOffset = 0;
+
+    while (utfCount > 0 && status == NS_OK) {
+
+        /*
+         * Encode as much of this buffer as will fit into
+         * encodedBytes in the desired encoding.
+         */
+
+        status = Tcl_UtfToExternal(NULL,
+                     connPtr->outputEncoding,
+                     utfBytes, utfCount,
+                     0, NULL,              /* flags, encoding state */
+                     encodedBytes + encodedOffset, sizeof(encodedBytes) - encodedOffset,
+                     &utfConvertedCount,
+                     &encodedCount,
+                     NULL);                /* # of chars encoded */
+
+        if (status != TCL_OK && status != TCL_CONVERT_NOSPACE) {
+            status = NS_ERROR;
+            break;
+        }
+
+        if (status == TCL_CONVERT_NOSPACE) {
+            /*
+             * Stream full buffer of converted bytes to client then refill buffer.
+             */
+            status = Ns_ConnWriteData(conn, encodedBytes, encodedCount + encodedOffset,
+                                      flags | NS_CONN_STREAM);
+            utfCount -= utfConvertedCount;
+            utfBytes += utfConvertedCount;
+            continue;
+        } else if (n == nbufs-1 && utfConvertedCount == utfCount) {
+            /*
+             * Write complete/whole buffer of converted bytes.
+             */
+            status = Ns_ConnWriteData(conn, encodedBytes,
+                                      encodedCount + encodedOffset, flags);
+            break;
+        }
+
+        /*
+         * Move on to next iovec.
+         */
+
+        n++;
+        utfBytes = bufs[n].iov_base;
+        utfCount = bufs[n].iov_len;
+        encodedOffset += encodedCount;
+    }
+
+    return status;
 }
 
 
@@ -296,214 +326,6 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnWriteChars, Ns_ConnWriteVChars --
- *
- *      This will write a string buffer to the conn.  The distinction
- *      being that the given data is explicitly a UTF8 character string,
- *      and will be put out in an 'encoding-aware' manner.
- *      It promises to write all of it.
- *
- * Results:
- *      NS_OK if all data written, NS_ERROR otherwise.
- *
- * Side effects:
- *      See Ns_ConnWriteData().
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, int towrite, int flags)
-{
-    struct iovec sbuf;
-
-    sbuf.iov_base = (void *) buf;
-    sbuf.iov_len = towrite;
-    return Ns_ConnWriteVChars(conn, &sbuf, 1, flags);
-}
-
-int
-Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
-{
-    Conn           *connPtr = (Conn *)conn;
-    int             n, status;
-    CONST char     *utfBytes;
-    int             utfCount;          /* # of bytes in utfBytes */
-    int             utfConvertedCount; /* # of bytes of utfBytes converted */
-    char            encodedBytes[IOBUFSZ];
-    int             encodedCount;      /* # of bytes converted in encodedBytes */
-    int             encodedOffset;
-
-    /*
-     * Check if character conversion is needed.
-     */
-
-    if (connPtr->outputEncoding == NULL
-        || NsEncodingIsUtf8(connPtr->outputEncoding)
-        || nbufs == 0
-        || (nbufs == 1 && bufs[0].iov_len == 0)) {
-
-        return Ns_ConnWriteVData(conn, bufs, nbufs, flags);
-    }
-
-    /*
-     * Coalesce buffers into single encodedBytes buffer as they are
-     * encoded.  Send to client each time encodedBytes fills.
-     */
-
-    status   = NS_OK;
-    n        = 0;
-    utfBytes = bufs[n].iov_base;
-    utfCount = bufs[n].iov_len;
-    encodedOffset = 0;
-
-    while (utfCount > 0 && status == NS_OK) {
-
-        /*
-         * Encode as much of this buffer as will fit into
-         * encodedBytes in the desired encoding.
-         */
-
-        status = Tcl_UtfToExternal(NULL,
-                     connPtr->outputEncoding,
-                     utfBytes, utfCount,
-                     0, NULL,              /* flags, encoding state */
-                     encodedBytes + encodedOffset, sizeof(encodedBytes) - encodedOffset,
-                     &utfConvertedCount,
-                     &encodedCount,
-                     NULL);                /* # of chars encoded */
-
-        if (status != TCL_OK && status != TCL_CONVERT_NOSPACE) {
-            status = NS_ERROR;
-            break;
-        }
-
-        if (status == TCL_CONVERT_NOSPACE) {
-            /*
-             * Stream full buffer of converted bytes to client then refill buffer.
-             */
-            status = Ns_ConnWriteData(conn, encodedBytes, encodedCount + encodedOffset,
-                                      flags | NS_CONN_STREAM);
-            utfCount -= utfConvertedCount;
-            utfBytes += utfConvertedCount;
-            continue;
-        } else if (n == nbufs-1 && utfConvertedCount == utfCount) {
-            /*
-             * Write complete/whole buffer of converted bytes.
-             */
-            status = Ns_ConnWriteData(conn, encodedBytes,
-                                      encodedCount + encodedOffset, flags);
-            break;
-        }
-
-        /*
-         * Move on to next iovec.
-         */
-
-        n++;
-        utfBytes = bufs[n].iov_base;
-        utfCount = bufs[n].iov_len;
-        encodedOffset += encodedCount;
-    }
-
-    return status;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnWrite, Ns_WriteConn, Ns_WriteCharConn --
- *
- *      Deprecated.
- *
- * Results:
- *      #bytes / NS_OK / NS_ERROR
- *
- * Side effects:
- *      See Ns_ConnWrite*
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, int towrite)
-{
-    Conn *connPtr = (Conn *) conn;
-    Tcl_WideInt n;
-    int   status;
-
-    n = connPtr->nContentSent;
-    status = Ns_ConnWriteData(conn, buf, towrite, 0);
-    if (status == NS_OK) {
-        return connPtr->nContentSent - n;
-    }
-    return -1;
-}
-
-int
-Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int towrite)
-{
-    return Ns_ConnWriteData(conn, buf, towrite, NS_CONN_STREAM);
-}
-
-int
-Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
-{
-    return Ns_ConnWriteChars(conn, buf, towrite, NS_CONN_STREAM);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnPuts --
- *
- *      Write a null-terminated string directly to the conn; no
- *      trailing newline will be appended despite the name.
- *
- * Results:
- *      NS_OK or NS_ERROR.
- *
- * Side effects:
- *      See Ns_ConnWriteData().
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
-{
-    return Ns_ConnWriteData(conn, string, (int) strlen(string), NS_CONN_STREAM);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_ConnSendDString --
- *
- *      Write contents of a DString directly to the conn.
- *
- * Results:
- *      NS_OK or NS_ERROR.
- *
- * Side effects:
- *      See Ns_ConnWriteData().
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
-{
-    return Ns_ConnWriteData(conn, dsPtr->string, dsPtr->length, NS_CONN_STREAM);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_ConnSendChannel, Fp, Fd --
  *
  *      Send an open channel, FILE or fd.
@@ -632,6 +454,90 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     return nwrote < towrite ? NS_ERROR : NS_OK;
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnPuts --
+ *
+ *      Write a null-terminated string directly to the conn; no
+ *      trailing newline will be appended despite the name.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR.
+ *
+ * Side effects:
+ *      See Ns_ConnWriteData().
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
+{
+    return Ns_ConnWriteData(conn, string, (int) strlen(string), NS_CONN_STREAM);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSendDString --
+ *
+ *      Write contents of a DString directly to the conn.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR.
+ *
+ * Side effects:
+ *      See Ns_ConnWriteData().
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
+{
+    return Ns_ConnWriteData(conn, dsPtr->string, dsPtr->length, NS_CONN_STREAM);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSend --
+ *
+ *      Send buffers to client efficiently.
+ *      It promises to send all of it.
+ *
+ * Results:
+ *      Number of bytes of given buffers written, otherwise
+ *      -1 on error from first send.
+ *
+ * Side effects:
+ *      - Will update connPtr->nContentSent.
+ *      - May send data using multiple OS calls if nbufs is large.
+ *      - Also depends on configured comm driver, i.e. nssock, nsssl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
+{
+    Conn  *connPtr = (Conn *) conn;
+    int    sent    = 1;
+
+    if (connPtr->sockPtr != NULL) {
+        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs);
+        if (sent > 0) {
+            connPtr->nContentSent += sent;
+        }
+    }
+    return sent;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -662,6 +568,101 @@ Ns_ConnFlushContent(Ns_Conn *conn)
     reqPtr->avail  = 0;
 
     return NS_OK;
+}
+
+
+/*
+ *-----------------------------------------------------------------
+ *
+ * Ns_ConnClose --
+ *
+ *      Return a connection to the driver thread for close or
+ *      keep-alive.
+ *
+ * Results:
+ *      Always NS_OK.
+ *
+ * Side effects:
+ *      May trigger writing http-chunked trailer.
+ *      Tcl at-close callbacks may run.
+ *
+ *-----------------------------------------------------------------
+ */
+
+int
+Ns_ConnClose(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+    int   keep;
+
+    if (connPtr->sockPtr != NULL) {
+
+        if ((connPtr->flags & NS_CONN_STREAM)
+            && (connPtr->flags & NS_CONN_CHUNK)) {
+
+            /*
+             * Streaming in chunked mode: write the end-of-content trailer.
+             */
+
+            (void) Ns_ConnWriteData(conn, NULL, 0, 0);
+        }
+
+        keep = connPtr->keep > 0 ? 1 : 0;
+        NsSockClose(connPtr->sockPtr, keep);
+
+        connPtr->sockPtr = NULL;
+        connPtr->flags |= NS_CONN_CLOSED;
+
+        if (connPtr->itPtr != NULL) {
+            NsTclRunAtClose(connPtr->itPtr);
+        }
+    }
+
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnWrite, Ns_WriteConn, Ns_WriteCharConn --
+ *
+ *      Deprecated.
+ *
+ * Results:
+ *      #bytes / NS_OK / NS_ERROR
+ *
+ * Side effects:
+ *      See Ns_ConnWrite*
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, int towrite)
+{
+    Conn *connPtr = (Conn *) conn;
+    Tcl_WideInt n;
+    int   status;
+
+    n = connPtr->nContentSent;
+    status = Ns_ConnWriteData(conn, buf, towrite, 0);
+    if (status == NS_OK) {
+        return connPtr->nContentSent - n;
+    }
+    return -1;
+}
+
+int
+Ns_WriteConn(Ns_Conn *conn, CONST char *buf, int towrite)
+{
+    return Ns_ConnWriteData(conn, buf, towrite, NS_CONN_STREAM);
+}
+
+int
+Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
+{
+    return Ns_ConnWriteChars(conn, buf, towrite, NS_CONN_STREAM);
 }
 
 
@@ -905,23 +906,6 @@ Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
 {
     return ConnCopy(conn, ncopy, NULL, NULL, fd);
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ConnCopy --
- *
- *      Copy connection content to a channel, FILE, or fd.
- *
- * Results:
- *      NS_OK or NS_ERROR if not all content could be read.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
 
 static int
 ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
