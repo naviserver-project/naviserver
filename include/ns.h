@@ -474,15 +474,18 @@ typedef NS_DRIVER_ACCEPT_STATUS
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 typedef ssize_t
-(Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs)
+(Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+                    Ns_Time *timeoutPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
-(Ns_DriverSendProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs)
+(Ns_DriverSendProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+                    Ns_Time *timeoutPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
-(Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs)
+(Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
+                        Ns_Time *timeoutPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef int

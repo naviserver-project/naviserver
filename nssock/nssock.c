@@ -187,13 +187,9 @@ Accept(Ns_Sock *sock, SOCKET listensock,
  */
 
 static ssize_t
-Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs)
+Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 {
-    Ns_Time timeout;
-
-    timeout.sec = sock->driver->recvwait;
-    timeout.usec = 0;
-    return Ns_SockRecvBufs(sock->sock, bufs, nbufs, &timeout);
+    return Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr);
 }
 
 
@@ -215,13 +211,9 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs)
  */
 
 static ssize_t
-Send(Ns_Sock *sock, struct iovec *bufs, int nbufs)
+Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 {
-    Ns_Time timeout;
-
-    timeout.sec = sock->driver->sendwait;
-    timeout.usec = 0;
-    return Ns_SockSendBufs(sock->sock, bufs, nbufs, &timeout);
+    return Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr);
 }
 
 
@@ -244,13 +236,9 @@ Send(Ns_Sock *sock, struct iovec *bufs, int nbufs)
  */
 
 static ssize_t
-SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs)
+SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, Ns_Time *timeoutPtr)
 {
-    Ns_Time timeout;
-
-    timeout.sec = sock->driver->sendwait;
-    timeout.usec = 0;
-    return Ns_SockSendFileBufs(sock->sock, bufs, nbufs, &timeout);
+    return Ns_SockSendFileBufs(sock->sock, bufs, nbufs, timeoutPtr);
 }
 
 

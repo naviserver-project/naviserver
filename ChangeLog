@@ -6,6 +6,12 @@
 	UIO_MAXIOV. Ns_ConnSend now much simpler. Use Ns_SetVec and new
 	Ns_ResetVec for clarity.
 
+	* include/ns.h:
+	* nsd/driver.c:
+	* nssock/nssock.c: Pass timeouts to driver callbacks explicitly so
+	that in the future non-blocking writes may be made if no timeout
+	is given.
+
 2008-10-01  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:

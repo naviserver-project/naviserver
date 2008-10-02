@@ -823,7 +823,12 @@ DriverAccept(Sock *sockPtr)
 static int
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
-    return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs);
+    Ns_Time timeout;
+
+    timeout.sec = sockPtr->drvPtr->recvwait;
+    timeout.usec = 0;
+
+    return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout);
 }
 
 
@@ -846,7 +851,12 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 int
 NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
-    return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs);
+    Ns_Time timeout;
+
+    timeout.sec = sockPtr->drvPtr->sendwait;
+    timeout.usec = 0;
+
+    return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout);
 }
 
 
@@ -869,7 +879,12 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
 int
 NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs)
 {
-    return (*sockPtr->drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs);
+    Ns_Time timeout;
+
+    timeout.sec = sockPtr->drvPtr->sendwait;
+    timeout.usec = 0;
+
+    return (*sockPtr->drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout);
 }
 
 
