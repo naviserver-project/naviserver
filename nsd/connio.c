@@ -130,7 +130,7 @@ Ns_ConnClose(Ns_Conn *conn)
  *
  * Side effects:
  *      - Will update connPtr->nContentSent.
- *      - May send data in multiple packets if nbufs is large.
+ *      - May send data using multiple OS calls if nbufs is large.
  *      - Also depends on configured comm driver, i.e. nssock, nsssl.
  *
  *----------------------------------------------------------------------
@@ -139,87 +139,16 @@ Ns_ConnClose(Ns_Conn *conn)
 int
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
-    Conn         *connPtr = (Conn *) conn;
-    int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
-    int           nwrote = 0, towrite = 0;
-    int           sent = -1;
-    struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
+    Conn  *connPtr = (Conn *) conn;
+    int    sent    = 1;
 
-    if (connPtr->sockPtr == NULL) {
-        return NS_ERROR;
-    }
-
-    sbufPtr = sbufs;
-    sbufLen = UIO_MAXIOV;
-
-    /*
-     * Send up to UIO_MAXIOV buffers of data at a time and strip out
-     * empty buffers.
-     */
-
-    while (bufIdx < nbufs || towrite > 0) {
-
-        while (bufIdx < nbufs && sbufIdx < sbufLen) {
-            if (bufs[bufIdx].iov_len > 0 && bufs[bufIdx].iov_base != NULL) {
-                sbufPtr[sbufIdx].iov_base = bufs[bufIdx].iov_base;
-                sbufPtr[sbufIdx].iov_len = bufs[bufIdx].iov_len;
-                towrite += sbufPtr[sbufIdx].iov_len;
-                sbufIdx++;
-                nsbufs++;
-            }
-            bufIdx++;
+    if (connPtr->sockPtr != NULL) {
+        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs);
+        if (sent > 0) {
+            connPtr->nContentSent += sent;
         }
-
-        sent = NsDriverSend(connPtr->sockPtr, sbufPtr, nsbufs);
-        if (sent < 0) {
-            break;
-        }
-        towrite -= sent;
-        nwrote  += sent;
-
-        if (towrite > 0) {
-
-            /*
-             * Move the send buffer index to the first buffer which has bytes
-             * which remain unsent.
-             */
-
-            for (sbufIdx = 0; sbufIdx < nsbufs && sent > 0; sbufIdx++) {
-                if (sent >= (int) sbufPtr[sbufIdx].iov_len) {
-                    sent -= sbufPtr[sbufIdx].iov_len;
-                } else {
-                    sbufPtr[sbufIdx].iov_base = (char *) sbufPtr[sbufIdx].iov_base + sent;
-                    sbufPtr[sbufIdx].iov_len -= sent;
-                    break;
-                }
-            }
-
-            /*
-             * If there are more whole buffers to send, move the remaining unsent
-             * buffers to the beginning of the iovec array so that we always send
-             * the maximum number of buffers the OS can handle.
-             */
-
-            if (bufIdx < nbufs - 1) {
-                memmove(sbufPtr, sbufPtr + sbufIdx, (size_t) sizeof(struct iovec) * nsbufs);
-            } else {
-                sbufPtr = sbufPtr + sbufIdx;
-                sbufLen = nsbufs - sbufIdx;
-            }
-            nsbufs -= sbufIdx;
-        } else {
-            nsbufs = 0;
-        }
-        sbufIdx = 0;
     }
-
-    if (nwrote > 0) {
-        connPtr->nContentSent += nwrote;
-    } else {
-        nwrote = sent;
-    }
-
-    return nwrote;
+    return sent;
 }
 
 

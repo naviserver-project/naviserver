@@ -1,3 +1,11 @@
+2008-10-02  Stephen Deasey <sdeasey@users.sf.net>
+
+	* include/ns.h:
+	* nsd/connio.c:
+	* nsd/sock.c: Ns_SockSendBufs now handles buffer shuffling for
+	UIO_MAXIOV. Ns_ConnSend now much simpler. Use Ns_SetVec and new
+	Ns_ResetVec for clarity.
+
 2008-10-01  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
