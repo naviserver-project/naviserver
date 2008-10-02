@@ -1893,7 +1893,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
         if (!(itPtr->nsconn.flags & CONN_TCLHTTP)) {
             conn->flags |= NS_CONN_SKIPHDRS;
         } else {
-            Ns_ConnWriteData(conn, NULL, 0, 0);
+            Ns_ConnWriteData(conn, NULL, 0, NS_CONN_STREAM);
         }
     }
 

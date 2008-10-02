@@ -54,6 +54,11 @@
 	replace numerous driver debugging toggles. Limit logged content to
 	100 bytes. Turn it on by default when running tests.
 
+	* nsd/conn.c:
+	* nsd/connio.c: Only set byterange headers if the programmer has
+	not explicitly specified a length (they are writing the data in
+	pieces, but they are not 'streaming').
+
 2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 
 	* include/ns.h:

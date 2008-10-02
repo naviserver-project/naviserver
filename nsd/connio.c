@@ -1009,7 +1009,6 @@ ConstructHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
                  Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
-    Tcl_WideInt headerLength;
     CONST char *keep;
 
     if (conn->flags & NS_CONN_SKIPHDRS) {
@@ -1020,31 +1019,24 @@ ConstructHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
      * Check for streaming vs. non-streaming.
      */
 
-    headerLength = -1;
-
     if (flags & NS_CONN_STREAM) {
 
         conn->flags |= NS_CONN_STREAM;
 
-        if (conn->request->version > 1.0
+        if (connPtr->responseLength < 0
+            && conn->request->version > 1.0
             && connPtr->keep != 0
             && !HdrEq(connPtr->outputheaders, "Content-Type",
                                               "multipart/byteranges")) {
             conn->flags |= NS_CONN_CHUNK;
         }
-    } else {
-        if (connPtr->responseLength > -1) {
-            headerLength = connPtr->responseLength;
-        } else if (dataLength > 0) {
-            headerLength = dataLength;
-        }
+    } else if (connPtr->responseLength < 0) {
+        Ns_ConnSetLengthHeader(conn, dataLength);
     }
 
     /*
      * Set and construct the headers.
      */
-
-    Ns_ConnSetLengthHeader(conn, headerLength);
 
     if ((connPtr->keep = CheckKeep(connPtr))) {
         keep = "keep-alive";
