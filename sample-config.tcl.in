@@ -389,6 +389,9 @@ ns_param        acceptsize		1
 # Max numbrer of sockets in the driver queue
 ns_param        maxqueuesize            256
 
+# Performance optimization, may cause recvwait to be ignored if no data sent.
+ns_param        deferaccept             false
+
 #
 # Access log -- nslog
 #

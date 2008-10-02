@@ -169,7 +169,7 @@ AC_SUBST(NAVISERVER)
 # Additional checks.
 #
 
-AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h)
+AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h netinet/tcp.h)
 AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD, 1, [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
 AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL, 1, [Define to 1 if the <dl.h> header should be used.]),)
 

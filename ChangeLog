@@ -59,6 +59,24 @@
 	not explicitly specified a length (they are writing the data in
 	pieces, but they are not 'streaming').
 
+	* configure.in:
+	* include/nsthread.h:
+	* nssock/nssock.c:
+	* sample-config.tcl.in:
+	* tests/test.nscfg: Support the TCP_DEFER_ACCEPT option on the
+	listen socket for Linux. This causes the listen socket to return
+	a newly connected socket only when data has also arrived, not when
+	the initial TCP hanshake is complete. The kernel can also save one
+	packet round trip time. The first effect saves a trip through the
+	poll loop and seems faster.
+
+	This also uses the second mode of the accept callback which is
+	essential for UDP sockets. So it seems generally useful.
+
+	Unfortunately the Linux implementation is currently broken in that it
+	doesn't handle timeouts correctly so this is turned off by
+	default :-(
+
 2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 
 	* include/ns.h:

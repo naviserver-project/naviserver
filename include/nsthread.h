@@ -206,6 +206,10 @@ typedef struct DIR_ *DIR;
 #include <uio.h>
 #endif
 
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#endif
+
 #ifdef __linux
 #include <sys/prctl.h>
 #endif

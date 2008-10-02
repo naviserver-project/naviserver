@@ -61,6 +61,7 @@ ns_param   uploadsize      1027
 ns_param   writerthreads   3
 ns_param   writersize      1026
 ns_param   writerbufsize   512
+ns_param   deferaccept     0
 
 
 ns_section "ns/module/nssock/servers"
