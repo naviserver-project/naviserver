@@ -31,6 +31,22 @@
 	The second mode could be used by UDP sockets where there is no
 	accept phase.
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/driver.c: Remove the NS_DRIVER_* options and the code that
+	handles them. Should be possible to achieve the same effect with
+	the new driver callbacks.
+
+	* nsd/conn.c:
+	* nsd/queue.c:
+	* nsd/return.c:
+	* tests/ns_conn.test: Remove the weird responseVersion string.
+	Although it's called 'version' it actually includes the "HTTP/"
+	string, which is surprising when it is being nulled with a literal 0...
+
+	* nsd/request.c: Remove the weird protocol-agnostic
+	versionstring and it's parsing. The confusion doesn't seem worth it.
+
 2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 
 	* include/ns.h:

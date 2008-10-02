@@ -403,21 +403,12 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                   &drvPtr->loggingFlags);
 
     /*
-     * Check if bind address represent valid pathname and if so
-     * switch driver to Unix domain sockets mode
-     */
-
-    drvPtr->bindaddr = bindaddr;
-    if (drvPtr->bindaddr && Ns_PathIsAbsolute(drvPtr->bindaddr)) {
-        drvPtr->opts |= NS_DRIVER_UNIX;
-    }
-
-    /*
      * Determine the port and then set the HTTP location string either
      * as specified in the config file or constructed from the
      * protocol, hostname and port.
      */
 
+    drvPtr->bindaddr = bindaddr;
     drvPtr->protocol = ns_strdup(defproto);
     drvPtr->address  = ns_strdup(address);
     drvPtr->port     = Ns_ConfigIntRange(path, "port", defport, 0, 65535);
@@ -519,51 +510,6 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
 
     return NS_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_DriverSetRequest --
- *
- *      Parses request line and sets as current Request struct, should be
- *      in the form: METHOD URL ?PROTO?
- *
- * Results:
- *      NS_ERROR in case of empty line
- *      NS_FATAL if request cannot be parsed.
- *      NS_OK if parsed sucessfully
- *
- * Side effects:
- *      This is supposed to be called from drivers before the
- *      socket is queued, usually from DriverQueue command.
- *      Primary purpose is to allow non-HTTP drivers to setup
- *      request line so registered callback proc will be called
- *      during connection processing
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_DriverSetRequest(Ns_Sock *sock, char *reqline)
-{
-    Request *reqPtr;
-    Sock     *sockPtr = (Sock*)sock;
-
-    SockPrepare(sockPtr);
-
-    if (reqline) {
-        reqPtr = sockPtr->reqPtr;
-        reqPtr->request = Ns_ParseRequest(reqline);
-        if (reqPtr->request == NULL) {
-            NsFreeRequest(reqPtr);
-            sockPtr->reqPtr = NULL;
-            return NS_FATAL;
-        }
-        return NS_OK;
-    }
-
-    return NS_ERROR;
 }
 
 
@@ -802,17 +748,8 @@ NsFreeRequest(Request *reqPtr)
 void
 NsSockClose(Sock *sockPtr, int keep)
 {
-    int trigger = 0;
     Driver *drvPtr = sockPtr->drvPtr;
-
-    /*
-     * Shortcut for UDP sockets, no need for close lingering process
-     */
-
-    if (drvPtr->opts & NS_DRIVER_UDP) {
-        SockRelease(sockPtr, 0, 0);
-        return;
-    }
+    int     trigger = 0;
 
     SockClose(sockPtr, keep);
 
@@ -1458,8 +1395,7 @@ SockPrepare(Sock *sockPtr)
  *      NS_TIMEOUT if queue is full
  *
  * Side effects:
- *      Non-HTTP drivers are responsible for allocating Request structure
- *      via Ns_DriverSetRequest call, otherwise the socket will be closed
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1584,32 +1520,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
      * Accept the new connection.
      */
 
-    if (drvPtr->opts & NS_DRIVER_UDP) {
-
-        /*
-         * In UDP mode we read packet right away and queue it immediately
-         * to allow driver continue processing other packets. Packet should
-         * contain the whole request.
-         */
-
-        sockPtr->sock = drvPtr->sock;
-        drvPtr->queuesize++;
-        status = SOCK_READY;
-
-        if (SockRead(sockPtr, 0) != SOCK_READY) {
-            SockRelease(sockPtr, 0, 0);
-            sockPtr = NULL;
-            status = SOCK_ERROR;
-        }
-
-    } else {
-
-        /*
-         * In TCP mode proceed with accepting socket the normal way.
-         */
-
-        status = DriverAccept(sockPtr);
-    }
+    status = DriverAccept(sockPtr);
 
     if (status == NS_DRIVER_ACCEPT_ERROR) {
         status = SOCK_ERROR;
@@ -2069,15 +1980,6 @@ SockRead(Sock *sockPtr, int spooler)
             Ns_Log(Error, "SockRead: request too large, read=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->avail, drvPtr->maxinput);
         }
         return SOCK_ENTITYTOOLARGE;
-    }
-
-    /*
-     *  Queue the socket after first network read, do not parse incoming
-     *  data for HTTP-like headers
-     */
-
-    if (sockPtr->drvPtr->opts & NS_DRIVER_QUEUE_ONREAD) {
-        return SOCK_READY;
     }
 
     return SockParse(sockPtr, spooler);

@@ -414,9 +414,8 @@ typedef struct Sock {
      */
 
     struct Driver *drvPtr;
-    struct sockaddr_in sa;
-    SOCKET sock;
-    void *arg;
+    SOCKET         sock;
+    void          *arg;         /* Driver context. */
 
     /*
      * Private to Sock.
@@ -424,6 +423,7 @@ typedef struct Sock {
 
     struct Sock *nextPtr;
     struct NsServer *servPtr;
+    struct sockaddr_in sa;
     char *location;
     int keep;
     int pidx;                   /* poll() index */
@@ -554,7 +554,6 @@ typedef struct Conn {
     Tcl_WideInt nContentSent;
     Tcl_WideInt responseLength;
     int responseStatus;
-    char *responseVersion;
     int recursionCount;
     int keep;
 

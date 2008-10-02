@@ -140,11 +140,6 @@
 #define NS_DRIVER_ASYNC            0x01 /* Use async read-ahead. */
 #define NS_DRIVER_SSL              0x02 /* Use SSL port, protocol defaults. */
 
-#define NS_DRIVER_UDP              0x04 /* Listening on a UDP socket */
-#define NS_DRIVER_UNIX             0x08 /* Listening on a Unix domain socket */
-#define NS_DRIVER_QUEUE_ONACCEPT   0x10 /* Queue socket on accept */
-#define NS_DRIVER_QUEUE_ONREAD     0x20 /* Queue socket on first network read */
-
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* Current version. */
 
@@ -342,7 +337,6 @@ typedef struct Ns_Request {
     int             urlc;
     char          **urlv;
     double          version;
-    char           *versionstring;
 } Ns_Request;
 
 /*
@@ -440,9 +434,8 @@ typedef struct Ns_Driver {
 
 typedef struct Ns_Sock {
     Ns_Driver *driver;
-    struct sockaddr_in sa;
-    SOCKET sock;
-    void  *arg;             /* DEPRECATED: See Ns_Sls */
+    SOCKET     sock;
+    void      *arg;       /* See: Ns_Sls */
 } Ns_Sock;
 
 /*
@@ -872,8 +865,6 @@ NS_EXTERN char *Ns_ConnContent(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnServer(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnResponseStatus(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status);
-NS_EXTERN char *Ns_ConnResponseVersion(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetResponseVersion(Ns_Conn *conn, char *new_version);
 NS_EXTERN Tcl_WideInt Ns_ConnContentSent(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length);
 NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
@@ -1028,7 +1019,6 @@ NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
  */
 
 NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
-NS_EXTERN int Ns_DriverSetRequest(Ns_Sock *sock, char *reqline);
 
 /*
  * dstring.c:

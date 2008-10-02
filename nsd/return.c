@@ -455,7 +455,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
     int         i;
-    CONST char *reason, *proto, *value, *key;
+    CONST char *reason, *value, *key;
 
     /*
      * Construct the HTTP response status line.
@@ -469,15 +469,10 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
         }
     }
 
-    if (connPtr->responseVersion != NULL) {
-        proto = connPtr->responseVersion;
-    } else if (connPtr->request->version > 1.0) {
-        proto = "HTTP/1.1";
-    } else {
-        proto = "HTTP/1.0";
-    }
-    Ns_DStringPrintf(dsPtr, "%s %d %s\r\n",
-                     proto, connPtr->responseStatus, reason);
+    Ns_DStringPrintf(dsPtr, "HTTP/%.1f %d %s\r\n",
+                     MIN(connPtr->request->version, 1.1),
+                     connPtr->responseStatus,
+                     reason);
 
     /*
      * Add the basic required headers.
