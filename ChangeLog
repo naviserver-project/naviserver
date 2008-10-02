@@ -77,6 +77,16 @@
 	doesn't handle timeouts correctly so this is turned off by
 	default :-(
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/connio.c:
+	* nsd/range.c:
+	* nsd/return.c:
+	* nsd/sockfile.c:
+	* tests/http.test:
+	* tests/http_byteranges.test: Expose the SendFile capability via
+	new Ns_ConnSendFileVec(). Use it for range requests.
+
 2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 
 	* include/ns.h:

@@ -178,20 +178,25 @@ test http-4.6 {HTTP/1.1 PUT very large file} -setup {
         ns_return -binary 200 text/plain [ns_conn content]
     }
 } -body {
-    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 100000]
+    set l [nstest_http -http 1.1 -getbody 1 -getheaders content-length \
+               PUT /put [string repeat x 100000]]
+    list [lindex $l 0] [lindex $l 1] [string length [lindex $l 2]]
 } -cleanup {
     ns_unregister_proc PUT /put
-} -result [list 200 [string repeat x 100000]]
+    unset -nocomplain l
+} -result [list 200 100000 100000]
 
 test http-4.7 {HTTP/1.1 PUT one more large file} -setup {
     ns_register_proc PUT /put {
         ns_return -binary 200 text/plain [ns_conn content]
     }
 } -body {
-    nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 100000]
+    set l [nstest_http -http 1.1 -getbody 1 PUT /put [string repeat x 100000]]
+    list [lindex $l 0] [string length [lindex $l 1]]
 } -cleanup {
     ns_unregister_proc PUT /put
-} -result [list 200 [string repeat x 100000]]
+    unset -nocomplain l
+} -result [list 200 100000]
 
 test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     ns_register_proc PUT /put {

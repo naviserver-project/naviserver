@@ -171,7 +171,7 @@ test byteranges-2.8.1 {Multiple non-contiguous ranges, fd} \
     nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range Content-length} \
         GET /16480bytes
-} -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} {} \
+} -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 220 \
         {--NaviServerNaviServerNaviServer
 Content-type: */*
 Content-range: bytes 0-2/16480

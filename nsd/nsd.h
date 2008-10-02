@@ -1099,10 +1099,11 @@ extern void NsSendSignal(int sig);
 
 extern NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *url);
 
-extern int NsConnWriteFdRanges(Ns_Conn *conn, CONST char *type,
-                               int fd, size_t length);
-extern int NsConnWriteDataRanges(Ns_Conn *conn, CONST char *type,
-                                 CONST void *data, size_t length);
+extern int NsMatchRange(Ns_Conn *conn, time_t mtime);
+
+extern int NsConnParseRange(Ns_Conn *conn, CONST char *type,
+                            int fd, CONST void *data, size_t length,
+                            Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
 
 /*
  * ADP routines.

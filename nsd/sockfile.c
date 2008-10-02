@@ -88,14 +88,14 @@ Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, void *data,
  *
  * Ns_ResetFileVec --
  *
- *      Find the vector which corresponds to the given length and
- *      adjust it's length field to match the remaining bytes.
+ *      Zero the bufs which have had their data sent and adjust
+ *      the remainder.
  *
  * Results:
- *      Index of first vector to send.
+ *      Index of first buf to send.
  *
  * Side effects:
- *      A vector may have it's length updated.
+ *      Updates offset and length members.
  *
  *----------------------------------------------------------------------
  */
@@ -103,9 +103,9 @@ Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, void *data,
 int
 Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 {
-    off_t  offset;
-    size_t length;
-    int    i, fd;
+    int          i, fd;
+    off_t        offset;
+    size_t       length;
 
     for (i = 0; i < nbufs && sent > 0; i++) {
 
@@ -113,11 +113,14 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
         offset = bufs[i].offset;
         length = bufs[i].length;
 
-        if (sent >= length) {
-            sent -= length;
-        } else {
-            Ns_SetFileVec(bufs, i, fd, NULL, offset + sent, length - sent);
-            break;
+        if (length > 0) {
+            if (sent >= length) {
+                sent -= length;
+                Ns_SetFileVec(bufs, i, fd, NULL, 0, 0);
+            } else {
+                Ns_SetFileVec(bufs, i, fd, NULL, offset + sent, length - sent);
+                break;
+            }
         }
     }
 
@@ -193,6 +196,7 @@ Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
     int           i, fd;
 
     nwrote = 0;
+    sent = -1;
 
     for (i = 0; i < nbufs; i++) {
 
@@ -200,23 +204,24 @@ Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
         tosend = bufs[i].length;
         fd     = bufs[i].fd;
 
-        if (fd < 0) {
-            Ns_SetVec(&iov, 0, (void *) (intptr_t) offset, tosend);
-            sent = (*sendProc)(sock, &iov, 1, timeoutPtr);
-        } else {
-            sent = SendFd(sock, bufs[i].fd, bufs[i].offset, tosend,
-                          timeoutPtr, sendProc);
-        }
-
-        if (sent > 0) {
-            nwrote += sent;
-        }
-        if (sent != tosend) {
-            break;
+        if (tosend > 0) {
+            if (fd < 0) {
+                Ns_SetVec(&iov, 0, (void *) (intptr_t) offset, tosend);
+                sent = (*sendProc)(sock, &iov, 1, timeoutPtr);
+            } else {
+                sent = SendFd(sock, fd, offset, tosend,
+                              timeoutPtr, sendProc);
+            }
+            if (sent > 0) {
+                nwrote += sent;
+            }
+            if (sent != tosend) {
+                break;
+            }
         }
     }
 
-    return nwrote;
+    return nwrote ? nwrote : sent;
 }
 
 
@@ -250,7 +255,7 @@ SendFd(SOCKET sock, int fd, off_t offset, size_t length,
     size_t        toread;
 
     toread = length;
-    nwrote = -1;
+    nwrote = 0;
 
     while (toread > 0) {
 
@@ -266,10 +271,15 @@ SendFd(SOCKET sock, int fd, off_t offset, size_t length,
         if (sent > 0) {
             nwrote += sent;
         }
+
         if (sent != nread) {
             break;
         }
     }
 
-    return nwrote;
+    if (nwrote > 0) {
+        return nwrote;
+    } else {
+        return -1;
+    }
 }

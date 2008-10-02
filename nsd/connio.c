@@ -667,6 +667,57 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConnSendFileVec --
+ *
+ *      Send a vector of file ranges/buffers. It promises to send
+ *      all of it.
+ *
+ * Results:
+ *      NS_OK if all data sent, NS_ERROR otherwise.
+ *
+ * Side effects:
+ *      Will update connPtr->nContentSent.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
+{
+    Conn        *connPtr = (Conn *) conn;
+    int          i;
+    size_t       towrite;
+    ssize_t      nwrote, sent;
+
+    nwrote = 0;
+    towrite = 0;
+
+    for (i = 0; i < nbufs; i++) {
+        towrite += bufs[i].length;
+    }
+
+    while (towrite > 0) {
+        sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs);
+        if (sent < 1) {
+            break;
+        }
+        if (sent < towrite) {
+            Ns_ResetFileVec(bufs, nbufs, sent);
+        }
+        nwrote += sent;
+        towrite -= sent;
+    }
+    if (nwrote > 0) {
+        connPtr->nContentSent += nwrote;
+    }
+
+    return nwrote < towrite ? NS_ERROR : NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConnFlushContent --
  *
  *      Finish reading waiting content.

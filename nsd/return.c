@@ -45,6 +45,8 @@ NS_RCSID("@(#) $Header$");
 
 static int ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
                       FILE *fp, int fd, Tcl_WideInt len);
+static int ReturnRange(Ns_Conn *conn, CONST char *type,
+                       int fd, CONST void *data, size_t len);
 
 /*
  * This structure connections HTTP response codes to their descriptions.
@@ -683,6 +685,8 @@ int
 Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
                   CONST char *type)
 {
+    int result;
+
     if (type != NULL) {
         Ns_ConnSetTypeHeader(conn, type);
     }
@@ -690,9 +694,10 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
         len = data ? strlen(data) : 0;
     }
     Ns_ConnSetResponseStatus(conn, status);
-    NsConnWriteDataRanges(conn, type, data, len);
+    result = ReturnRange(conn, type, -1, data, len);
+    Ns_ConnClose(conn);
 
-    return Ns_ConnClose(conn);
+    return result;
 }
 
 
@@ -772,7 +777,7 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, int len)
  *      May return before the content has been sent if the writer-queue
  *      is enabled.
  *
- *      Will close the connection on success.
+ *      Will close the connection.
  *
  *----------------------------------------------------------------------
  */
@@ -818,10 +823,57 @@ ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
         Ns_ConnSetLengthHeader(conn, len);
         result = Ns_ConnSendFp(conn, fp, len);
     } else {
-        result = NsConnWriteFdRanges(conn, type, fd, len);
+        result = ReturnRange(conn, type, fd, NULL, len);
     }
-    if (result == NS_OK) {
-        result = Ns_ConnClose(conn);
+
+    Ns_ConnClose(conn);
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReturnRange --
+ *
+ *      Return ranges from an open fd or buffer if specified by
+ *      client, otherwise return the entire range.
+ *
+ * Results:
+ *      NS_OK if all data sent, NS_ERROR otherwise
+ *
+ * Side effects:
+ *      May send various HTTP error responses.
+ *
+ *      Will close the connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ReturnRange(Ns_Conn *conn, CONST char *type,
+            int fd, CONST void *data, size_t len)
+{
+    Ns_DString  ds;
+    Ns_FileVec  bufs[32];
+    int         nbufs = sizeof(bufs) / sizeof(bufs[0]);
+    int         rangeCount, result = NS_ERROR;
+
+    Ns_DStringInit(&ds);
+    rangeCount = NsConnParseRange(conn, type, fd, data, len,
+                                  bufs, &nbufs, &ds);
+    if (rangeCount >= 0) {
+        if (rangeCount == 0) {
+            Ns_ConnSetLengthHeader(conn, len);
+            Ns_SetFileVec(bufs, 0, fd, data, 0, len);
+            nbufs = 1;
+        }
+        if ((result = Ns_ConnWriteData(conn, NULL, 0, NS_CONN_STREAM)) == NS_OK) {
+            result = Ns_ConnSendFileVec(conn, bufs, nbufs);
+        }
     }
+    Ns_DStringFree(&ds);
+
     return result;
 }

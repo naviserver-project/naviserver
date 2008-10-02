@@ -31,7 +31,7 @@
 /*
  * range.c --
  *
- *      Parse and send HTTP range requests.
+ *      Parse HTTP range requests.
  */
 
 #include "nsd.h"
@@ -39,282 +39,195 @@
 NS_RCSID("@(#) $Header$");
 
 
-/*
- * An arbitrary limit to the number of ranges we're willing to serve
- * in one request.
- */
-
-#define MAX_RANGES 32
-
-
-/*
- * The following structure records the validated offsets requested by
- * an HTTP user-agent.
- */
-
 typedef struct Range {
-
-    struct offset {
-        off_t   start;    /* Offset of first byte, zero based. */
-        off_t   end;      /* Offset of last byte, zero based. */
-    } ranges[MAX_RANGES];
-
-    int count;            /* Number of ranges to send. */
-
+    off_t   start;
+    off_t   end;
 } Range;
 
 
 /*
  * Local functions defined in this file
  */
+static int ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
+                             Range *ranges, int maxRanges);
 
-static int ParseRange(Ns_Conn *conn, Range *range, size_t length);
-static int MatchRange(Ns_Conn *conn, time_t mtime);
-static time_t LastModified(Ns_Conn *conn);
-
-static void SetRangeHeader(Ns_Conn *conn, off_t offset, off_t end, size_t len);
+static void SetRangeHeader(Ns_Conn *conn, off_t offset, off_t end, size_t objLength);
 static void SetMultipartRangeHeader(Ns_Conn *conn);
 static int AppendMultipartRangeHeader(Ns_DString *ds, CONST char *type,
-                                      off_t start, off_t end, size_t len);
+                                      off_t start, off_t end, size_t objLength);
 static int AppendMultipartRangeTrailer(Ns_DString *ds);
-
-static void SetVec(struct iovec *buf, int i, void *data, size_t len);
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsConnWriteFdRanges --
+ * NsMatchRange --
  *
- *    Write the contents of the open file descriptor to the connection.
- *    If an HTTP range header is present, send only the corresponding
- *    portions.
+ *      Check an If-Range header against the data's mtime.
  *
  * Results:
- *    NS_OK if all data written, NS_ERROR otherwise.
+ *      NS_TRUE if partial content may be returned, NS_FALSE otherwise.
  *
  * Side effects:
- *    Will write an appropriate error response to the client.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsConnWriteFdRanges(Ns_Conn *conn, CONST char *type, int fd, size_t length)
+NsMatchRange(Ns_Conn *conn, time_t mtime)
 {
-    Conn        *connPtr = (Conn *) conn;
-    Range        range;
-    off_t        start, end;
-    size_t       count;
-    Ns_DString   ds;
-    int          i, result;
+    char *hdr;
 
-    if (ParseRange(conn, &range, length) != NS_OK) {
-        return NS_ERROR;
+    if ((hdr = Ns_SetIGet(conn->headers, "If-Range")) != NULL
+            && Ns_ParseHttpTime(hdr) != mtime) {
+        return NS_FALSE;
     }
-
-    if (range.count == 0) {
-        Ns_ConnSetLengthHeader(conn, length);
-        return Ns_ConnSendFd(conn, fd, length);
-    }
-
-    if (range.count == 1) {
-
-        start = range.ranges[0].start;
-        end   = range.ranges[0].end;
-        count = end - start + 1;
-
-        /* NB: silently ignore seek errors and return whole file. */
-        if (lseek(fd, start, SEEK_SET) == -1) {
-            Ns_ConnSetLengthHeader(conn, length);
-            return Ns_ConnSendFd(conn, fd, length);
-        }
-
-        SetRangeHeader(conn, start, end, length);
-        Ns_ConnSetLengthHeader(conn, count);
-        Ns_ConnSetResponseStatus(conn, 206);
-
-        return Ns_ConnSendFd(conn, fd, count);
-    }
-
-    SetMultipartRangeHeader(conn);
-    Ns_ConnSetResponseStatus(conn, 206);
-
-    Ns_DStringInit(&ds);
-
-    for (i = 0; i < range.count; i++) {
-
-        start = range.ranges[i].start;
-        end   = range.ranges[i].end;
-        count = end - start + 1;
-
-        AppendMultipartRangeHeader(&ds, type, start, end, length);
-        result = Ns_ConnWriteData(conn, ds.string, ds.length, NS_CONN_STREAM);
-        if (result != NS_OK) {
-            goto done;
-        }
-
-        Ns_DStringSetLength(&ds, 0);
-
-        /* NB: seek errors are fatal. no keep-alive. */
-        if (lseek(fd, start, SEEK_SET) == -1) {
-            result = NS_ERROR;
-            goto done;
-        }
-
-        result = Ns_ConnSendFd(conn, fd, count);
-        if (result != NS_OK) {
-            goto done;
-        }
-
-        Ns_DStringAppend(&ds, "\r\n");
-    }
-
-    AppendMultipartRangeTrailer(&ds);
-    result = Ns_ConnWriteData(conn, ds.string, ds.length, 0);
-
- done:
-    Ns_DStringFree(&ds);
-
-    if (result != NS_OK) {
-        connPtr->keep = 0;
-        Ns_ConnClose(conn);
-    }
-
-    return result;
+    return NS_TRUE;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * NsConnWriteDataRanges --
+ * NsConnParseRange --
  *
- *    Write the given data to the connection. If an HTTP range header
- *    is present, send only the corresponding portions.
+ *      Checks for presence of "Range:" header, parses it and fills-in
+ *      bufs with byte-range headers and file/data offsets, as needed.
  *
  * Results:
- *    NS_OK if all data written, NS_ERROR otherwise.
+ *      -1 on error, otherwise number of valid ranges parsed.
+ *      If at least 1 range is found, nbufsPtr is updated with number
+ *      of FileVec bufs to be sent.
  *
  * Side effects:
- *    Will write an appropriate error response to the client.
+ *      The number of possible ranges parsed depends on the number
+ *      of Ns_FileVec bufs passed (bufs/2 -1).
+ *      May send error response if invalid range-spec..
  *
  *----------------------------------------------------------------------
  */
 
 int
-NsConnWriteDataRanges(Ns_Conn *conn, CONST char *type,
-                      CONST void *data, size_t length)
+NsConnParseRange(Ns_Conn *conn, CONST char *type,
+                 int fd, CONST void *data, size_t objLength,
+                 Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
 {
-    Range         range;
-    struct iovec  iov[MAX_RANGES * 2 + 1];
-    off_t         start, end;
-    size_t        count;
-    Ns_DString    ds;
-    int           i, v, dsbase, hdrlen;
+    Range  *ranges;
+    int     maxranges, rangeCount, i, v;
+    off_t   start, end, dsbase;
+    size_t  len, responseLength;
 
-    if (ParseRange(conn, &range, length) != NS_OK) {
-        return NS_ERROR;
-    }
+    Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
 
-    if (range.count == 0) {
-        return Ns_ConnWriteData(conn, data, length, 0);
+    maxranges = (*nbufsPtr / 2) - 1;
+    ranges = alloca(maxranges);
+
+    rangeCount = ParseRangeOffsets(conn, objLength, ranges, maxranges);
+    if (rangeCount < 1) {
+        *nbufsPtr = 0;
+        return rangeCount;
     }
 
     Ns_ConnSetResponseStatus(conn, 206);
 
-    if (range.count == 1) {
-
-        start = range.ranges[0].start;
-        end   = range.ranges[0].end;
-        count = end - start + 1;
-
-        SetRangeHeader(conn, start, end, length);
-        Ns_ConnSetLengthHeader(conn, count);
-
-        return Ns_ConnWriteData(conn, data + start, count, 0);
-    }
-
-    Ns_DStringInit(&ds);
-
     /*
-     * Construct the MIME headers against a 0 base and rebase after we've
-     * finnished resizing the string.
+     * Single Range.
      */
 
-    dsbase = hdrlen = 0;
+    if (rangeCount == 1) {
 
-    for (i = 0, v = 0; i < range.count; i++, v += 2) {
+        start = ranges[0].start;
+        end   = ranges[0].end;
+        len   = (end - start) + 1;
 
-        start = range.ranges[i].start;
-        end   = range.ranges[i].end;
+        responseLength = Ns_SetFileVec(bufs, 0, fd, data, start, len);
+        *nbufsPtr = 1;
 
-        hdrlen += AppendMultipartRangeHeader(&ds, type, start, end, length);
-        SetVec(iov, v, (void *) dsbase, hdrlen);
-        dsbase += hdrlen;
+        SetRangeHeader(conn, start, end, objLength);
+        Ns_ConnSetLengthHeader(conn, responseLength);
 
-        Ns_DStringAppend(&ds, "\r\n");
-        hdrlen = 2;
+        return rangeCount;
     }
-    hdrlen += AppendMultipartRangeTrailer(&ds);
-    SetVec(iov, v, (void *) dsbase, hdrlen);
+
+    /*
+     * Construct the MIME headers for a multipart range against a 0 base
+     * and rebase after we've finnished resizing the string.
+     */
+
+    dsbase = len = 0;
+
+    for (i = 0, v = 0; i < rangeCount; i++, v += 2) {
+
+        start = ranges[i].start;
+        end   = ranges[i].end;
+
+        len += AppendMultipartRangeHeader(dsPtr, type, start, end, objLength);
+        dsbase += Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
+
+        /* Combine the footer with the next header. */
+        Ns_DStringAppend(dsPtr, "\r\n");
+        len = 2;
+    }
+    len += AppendMultipartRangeTrailer(dsPtr);
+    Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
 
     /*
      * Rebase the header, add the data range, and finnish off with
-     * a trailer.
+     * the rebased trailer.
      */
 
-    for (i = 0, v = 0; i < range.count; i++, v += 2) {
+    responseLength = 0;
 
-        start = range.ranges[i].start;
-        end   = range.ranges[i].end;
-        count = end - start + 1;
+    for (i = 0, v = 0; i < rangeCount; i++, v += 2) {
 
-        SetVec(iov, v, ds.string + (ptrdiff_t) iov[v].iov_base, iov[v].iov_len);
-        SetVec(iov, v + 1, (void *) data + start, count);
+        /* Rebase the header. */
+        responseLength += Ns_SetFileVec(bufs, v, -1, dsPtr->string,
+                                        bufs[v].offset, bufs[v].length);
+
+        start = ranges[i].start;
+        len   = (ranges[i].end - start) + 1;
+
+        responseLength += Ns_SetFileVec(bufs, v + 1, fd, data, start, len);
     }
-    SetVec(iov, v, ds.string + (ptrdiff_t) iov[v].iov_base, iov[v].iov_len);
+
+    /* Rebase the trailer. */
+    responseLength += Ns_SetFileVec(bufs, v, -1, dsPtr->string,
+                                    bufs[v].offset, bufs[v].length);
+    *nbufsPtr = (rangeCount * 2) + 1;
 
     SetMultipartRangeHeader(conn);
-    return Ns_ConnWriteVData(conn, iov, range.count * 2 + 1, 0);
-}
+    Ns_ConnSetLengthHeader(conn, responseLength);
 
-static void
-SetVec(struct iovec *iov, int i, void *data, size_t len)
-{
-    iov[i].iov_base = data;
-    iov[i].iov_len = len;
+    return rangeCount;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * ParseRange --
+ * ParseRangeOffsets --
  *
  *      Checks for presence of "Range:" header, parses it and fills-in
  *      the parsed range offsets.
  *
  * Results:
- *      NS_ERROR: byte-range is syntactically correct but unsatisfiable
- *      NS_OK: parsed ok; rnPtr->count has the number of ranges parsed
+ *      -1 on error, otherwise number of valid ranges parsed.
  *
  * Side effects:
- *      All byte-range-sets beyond MAX_RANGES will be ignored
+ *      May send error response if invalid range-spec.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-ParseRange(Ns_Conn *conn, Range *range, size_t length)
+ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
+                  Range *ranges, int maxRanges)
 {
-    char          *rangestr;
-    off_t          start, end;
-    time_t         mtime;
-    struct offset *thisPtr = NULL, *prevPtr = NULL;
-
-    range->count = 0;
-    Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
+    char   *rangestr;
+    off_t   start, end;
+    Range  *thisPtr = NULL, *prevPtr = NULL;
+    int     rangeCount = 0;
 
     /*
      * Check for valid "Range:" header
@@ -322,7 +235,7 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
 
     rangestr = Ns_SetIGet(conn->headers, "Range");
     if (rangestr == NULL) {
-        return NS_OK;
+        return 0;
     }
 
     /*
@@ -332,15 +245,13 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
 
     rangestr = strstr(rangestr, "bytes=");
     if (rangestr == NULL) {
-        return NS_OK;
+        return 0;
     }
     rangestr += 6; /* Skip "bytes=" */
 
-    range->count = 0;
+    while (*rangestr && rangeCount < maxRanges) {
 
-    while (*rangestr && range->count < sizeof(range->ranges) - 1) {
-
-        thisPtr = &range->ranges[range->count];
+        thisPtr = &ranges[rangeCount];
         start = end = 0;
 
         if (isdigit(UCHAR(*rangestr))) {
@@ -355,7 +266,7 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
             }
 
             if (*rangestr != '-') {
-                return NS_OK; /* Invalid syntax? */
+                return 0; /* Invalid syntax? */
             }
             rangestr++; /* Skip '-' */
 
@@ -364,11 +275,11 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
                 while (isdigit(UCHAR(*rangestr))) {
                     rangestr++;
                 }
-                if (end >= length) {
-                    end = length - 1;
+                if (end >= objLength) {
+                    end = objLength - 1;
                 }
             } else {
-                end = length - 1;
+                end = objLength - 1;
             }
 
         } else if (*rangestr == '-') {
@@ -379,7 +290,7 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
 
             rangestr++; /* Skip '-' */
             if (!isdigit(UCHAR(*rangestr))) {
-                return NS_OK; /* Invalid syntax? */
+                return 0; /* Invalid syntax? */
             }
 
             end = atoll(rangestr);
@@ -387,24 +298,24 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
                 rangestr++;
             }
 
-            if (end >= length) {
-                end = length;
+            if (end >= objLength) {
+                end = objLength;
             }
 
             /*
-             * Size from the end; convert into count
+             * Size from the end; convert into offset.
              */
 
-            start = length - end;
+            start = objLength - end;
             end = start + end - 1;
 
         } else {
 
             /*
-             * Invalid syntax?
+             * Not a digit and not a '-': invalid syntax.
              */
 
-            return NS_OK;
+            return 0;
         }
 
         /*
@@ -418,7 +329,7 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
         case '\0':
             break;
         default:
-            return NS_OK; /* Invalid syntax? */
+            return 0; /* Invalid syntax? */
         }
 
         /*
@@ -441,11 +352,11 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
          * We opt to implement "any of the..." rather ...
          */
 
-        if (start >= length) {
+        if (start >= objLength) {
             Ns_ConnPrintfHeaders(conn, "Content-Range",
-                                 "bytes */%" PRIuMAX, (intmax_t) length);
+                                 "bytes */%" PRIuMAX, (uintmax_t) objLength);
             Ns_ConnReturnStatus(conn, 416);
-            return NS_ERROR;
+            return -1;
         }
 
         /*
@@ -458,7 +369,7 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
          */
 
         if (end < start) {
-            return NS_OK;
+            return 0;
         }
 
         /*
@@ -475,7 +386,7 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
             || (prevPtr->start && thisPtr->end < (prevPtr->start - 1))) {
             /* a. */
             prevPtr = thisPtr;
-            range->count++; /* One more valid range */
+            rangeCount++; /* One more valid range */
         } else {
             /* b. */
             prevPtr->start = MIN(prevPtr->start, thisPtr->start);
@@ -483,56 +394,7 @@ ParseRange(Ns_Conn *conn, Range *range, size_t length)
         }
     }
 
-    /*
-     * If the data has changed, send the whole content (no ranges).
-     */
-
-    mtime = LastModified(conn);
-    if (mtime && !MatchRange(conn, mtime)) {
-        range->count = 0;
-    }
-
-    return NS_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * MatchRange --
- *
- *      Check an If-Range header against the data's mtime.
- *
- * Results:
- *      NS_TRUE if partial content may be returned, NS_FALSE otherwise.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-MatchRange(Ns_Conn *conn, time_t mtime)
-{
-    char *hdr;
-
-    if ((hdr = Ns_SetIGet(conn->headers, "If-Range")) != NULL
-            && Ns_ParseHttpTime(hdr) != mtime) {
-        return NS_FALSE;
-    }
-    return NS_TRUE;
-}
-
-static time_t
-LastModified(Ns_Conn *conn)
-{
-    char *hdr;
-
-    if ((hdr = Ns_SetIGet(conn->outputheaders, "Last-Modified")) != NULL) {
-        return Ns_ParseHttpTime(hdr);
-    }
-    return 0;
+    return rangeCount;
 }
 
 
@@ -553,11 +415,11 @@ LastModified(Ns_Conn *conn)
  */
 
 static void
-SetRangeHeader(Ns_Conn *conn, off_t start, off_t end, size_t len)
+SetRangeHeader(Ns_Conn *conn, off_t start, off_t end, size_t objLength)
 {
     Ns_ConnPrintfHeaders(conn, "Content-range",
-        "bytes %" PRIdMAX "-%" PRIdMAX "/%" PRIdMAX,
-        (intmax_t) start, (intmax_t) end, (intmax_t) len);
+        "bytes %" PRIuMAX "-%" PRIuMAX "/%" PRIuMAX,
+        (uintmax_t) start, (uintmax_t) end, (uintmax_t) objLength);
 }
 
 static void
@@ -573,7 +435,7 @@ SetMultipartRangeHeader(Ns_Conn *conn)
  *
  * AppendMultipartRangerHeader, AppendMultipartRangeTraler --
  *
- *      Append a MIME header for multipart ranges to the dstring.
+ *      Append a MIME header/trailer for multipart ranges to the dstring.
  *
  * Results:
  *      Number of bytes appended.
@@ -585,25 +447,26 @@ SetMultipartRangeHeader(Ns_Conn *conn)
  */
 
 static int
-AppendMultipartRangeHeader(Ns_DString *ds, CONST char *type,
-                           off_t start, off_t end, size_t total)
+AppendMultipartRangeHeader(Ns_DString *dsPtr, CONST char *type,
+                           off_t start, off_t end, size_t objLength)
 {
-    int origlen = ds->length;
+    int origlen = dsPtr->length;
 
-    Ns_DStringPrintf(ds, "--NaviServerNaviServerNaviServer\r\n"
+    Ns_DStringPrintf(dsPtr, "--NaviServerNaviServerNaviServer\r\n"
         "Content-type: %s\r\n"
         "Content-range: bytes %" PRIuMAX "-%" PRIuMAX "/%" PRIuMAX "\r\n\r\n",
         type,
-        (uintmax_t) start, (uintmax_t) end, (uintmax_t) total);
+        (uintmax_t) start, (uintmax_t) end, (uintmax_t) objLength);
 
-    return ds->length - origlen;
+    return dsPtr->length - origlen;
 }
 
 static int
-AppendMultipartRangeTrailer(Ns_DString *ds)
+AppendMultipartRangeTrailer(Ns_DString *dsPtr)
 {
-    int origlen = ds->length;
+    int origlen = dsPtr->length;
 
-    Ns_DStringAppend(ds, "--NaviServerNaviServerNaviServer--\r\n");
-    return ds->length - origlen;
+    Ns_DStringAppend(dsPtr, "--NaviServerNaviServerNaviServer--\r\n");
+
+    return dsPtr->length - origlen;
 }
