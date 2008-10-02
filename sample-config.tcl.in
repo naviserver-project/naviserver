@@ -383,18 +383,6 @@ ns_param 	writerbufsize   	8192
 # Min return file size when to use writer
 ns_param  	writersize     		1048576
 
-# Timed-out waiting for complete request.
-ns_param   	readtimeoutlogging    	false
-
-# Unable to match request to a virtual server.
-ns_param   	serverrejectlogging   	false
-
-# Malformed request, or would exceed request limits.
-ns_param   	sockerrorlogging      	false
-
-# Error while attempting to shutdown a socket during connection close.
-ns_param   	sockshuterrorlogging  	false
-
 # Number of requests to accept at once
 ns_param        acceptsize		1
 

@@ -45,7 +45,14 @@
 	string, which is surprising when it is being nulled with a literal 0...
 
 	* nsd/request.c: Remove the weird protocol-agnostic
-	versionstring and it's parsing. The confusion doesn't seem worth it.
+	versionstring and it's parsing. The confusion doesn't seem
+	worth it.
+
+	* nsd/driver.c:
+	* tests/all.tcl:
+	* sample-config.tcl.in: Create new 'DriverDebug' logging level to
+	replace numerous driver debugging toggles. Limit logged content to
+	100 bytes. Turn it on by default when running tests.
 
 2008-09-11  Stephen Deasey <sdeasey@users.sf.net>
 

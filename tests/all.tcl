@@ -56,5 +56,6 @@ proc tcltest::test args {
 }
 
 
+ns_logctl severity DriverDebug true
 
 runAllTests

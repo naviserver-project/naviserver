@@ -61,17 +61,6 @@ NS_RCSID("@(#) $Header$");
 #define SOCK_TOOMANYHEADERS      (-14)
 #define SOCK_LINETOOLONG         (-15)
 
-/*
- * LoggingFlag mask values
- */
-
-#define LOGGING_READTIMEOUT      (1<<0)
-#define LOGGING_SERVERREJECT     (1<<1)
-#define LOGGING_SOCKERROR        (1<<2)
-#define LOGGING_SOCKSHUTERROR    (1<<3)
-#define LOGGING_BADREQUEST       (1<<4)
-#define LOGGING_SERVERCONFIG     (1<<5)
-
 /* WriterSock flags, keep it in upper range not to conflict with Conn flags */
 
 #define WRITER_TIMEOUT           0x10000
@@ -153,6 +142,7 @@ static int   PollWait(PollData *pdata, int waittime);
  * Static variables defined in this file.
  */
 
+static Ns_LogSeverity DriverDebug;    /* Severity at which to log verbose debugging. */
 static Tcl_HashTable hosts;           /* Host header to server table */
 
 static ServerMap *defMapPtr = NULL;   /* Default srv when not found in table */
@@ -184,6 +174,7 @@ void
 NsInitDrivers(void)
 {
     Tcl_InitHashTable(&hosts, TCL_STRING_KEYS);
+    DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
 }
 
 
@@ -381,26 +372,6 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
 
     drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", P_tmpdir));
-
-    /*
-     * Allow specification of logging or not of various deep
-     * socket handling errors.  These all default to Off.
-     */
-
-    drvPtr->loggingFlags = 0;
-
-    Ns_ConfigFlag(path, "readtimeoutlogging", LOGGING_READTIMEOUT, 0,
-                  &drvPtr->loggingFlags);
-    Ns_ConfigFlag(path, "serverrejectlogging", LOGGING_SERVERREJECT, 0,
-                  &drvPtr->loggingFlags);
-    Ns_ConfigFlag(path, "sockerrorlogging", LOGGING_SOCKERROR, 0,
-                  &drvPtr->loggingFlags);
-    Ns_ConfigFlag(path, "sockshuterrorlogging", LOGGING_SOCKSHUTERROR, 0,
-                  &drvPtr->loggingFlags);
-    Ns_ConfigFlag(path, "badrequestlogging", LOGGING_BADREQUEST, 0,
-                  &drvPtr->loggingFlags);
-    Ns_ConfigFlag(path, "serverconfiglogging", LOGGING_SERVERCONFIG, 0,
-                  &drvPtr->loggingFlags);
 
     /*
      * Determine the port and then set the HTTP location string either
@@ -1581,8 +1552,8 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
 static void
 SockRelease(Sock *sockPtr, int reason, int err)
 {
-    char *errMsg = NULL;
     Driver *drvPtr = sockPtr->drvPtr;
+    char   *errMsg = NULL;
 
     switch (reason) {
     case SOCK_CLOSE:
@@ -1597,33 +1568,25 @@ SockRelease(Sock *sockPtr, int reason, int err)
          * depends upon whether this sock was a keep-alive
          * that we were allowing to 'linger'.
          */
-        if (!sockPtr->keep && (drvPtr->loggingFlags & LOGGING_READTIMEOUT) ) {
+        if (!sockPtr->keep) {
             errMsg = "Timeout during read";
         }
         break;
 
     case SOCK_SERVERREJECT:
-        if (drvPtr->loggingFlags & LOGGING_SERVERREJECT) {
-            errMsg = "No Server found for request";
-        }
+        errMsg = "No Server found for request";
         break;
 
     case SOCK_READERROR:
-        if (drvPtr->loggingFlags & LOGGING_SOCKERROR) {
-            errMsg = "Unable to read request";
-        }
+        errMsg = "Unable to read request";
         break;
 
     case SOCK_WRITEERROR:
-        if (drvPtr->loggingFlags & LOGGING_SOCKERROR) {
-            errMsg = "Unable to write request";
-        }
+        errMsg = "Unable to write request";
         break;
 
     case SOCK_SHUTERROR:
-        if (drvPtr->loggingFlags & LOGGING_SOCKSHUTERROR) {
-            errMsg = "Unable to shutdown socket";
-        }
+        errMsg = "Unable to shutdown socket";
         break;
 
     case SOCK_BADREQUEST:
@@ -1632,45 +1595,38 @@ SockRelease(Sock *sockPtr, int reason, int err)
         break;
 
     case SOCK_REQUESTURITOOLONG:
-        if (drvPtr->loggingFlags & LOGGING_BADREQUEST) {
-            errMsg = "Request-URI Too Long";
-        }
+        errMsg = "Request-URI Too Long";
         SockSendResponse(sockPtr, 414, errMsg);
         break;
 
-
     case SOCK_LINETOOLONG:
-        if (drvPtr->loggingFlags & LOGGING_BADREQUEST) {
-            errMsg = "Request Line Too Long";
-        }
+        errMsg = "Request Line Too Long";
         SockSendResponse(sockPtr, 400, errMsg);
         break;
 
     case SOCK_TOOMANYHEADERS:
-        if (drvPtr->loggingFlags & LOGGING_BADREQUEST) {
-            errMsg = "Too Many Request Headers";
-        }
+        errMsg = "Too Many Request Headers";
         SockSendResponse(sockPtr, 414, errMsg);
         break;
 
     case SOCK_BADHEADER:
-        if (drvPtr->loggingFlags & LOGGING_BADREQUEST) {
-            errMsg = "Invalid Request Header";
-        }
+        errMsg = "Invalid Request Header";
         SockSendResponse(sockPtr, 400, errMsg);
         break;
 
     case SOCK_ENTITYTOOLARGE:
-        if (drvPtr->loggingFlags & LOGGING_BADREQUEST) {
-            errMsg = "Request Entity Too Large";
-        }
+        errMsg = "Request Entity Too Large";
         SockSendResponse(sockPtr, 413, errMsg);
         break;
     }
     if (errMsg != NULL) {
-        Ns_Log(Error, "Releasing Socket; %s %s(%d/%d), FD = %d, Peer = %s:%d %s",
-               errMsg, (err ? strerror(err) : ""), reason, err, sockPtr->sock,
-               ns_inet_ntoa(sockPtr->sa.sin_addr), ntohs(sockPtr->sa.sin_port),
+        Ns_Log(DriverDebug, "SockRelease: %s (%d: %s), sock: %d, peer: %s:%d, request: %.99s",
+               errMsg,
+               err,
+               err ? strerror(err) : "",
+               sockPtr->sock,
+               ns_inet_ntoa(sockPtr->sa.sin_addr),
+               ntohs(sockPtr->sa.sin_port),
                sockPtr->reqPtr ? sockPtr->reqPtr->buffer.string : "");
     }
 
@@ -1897,9 +1853,8 @@ SockRead(Sock *sockPtr, int spooler)
         n = drvPtr->maxinput;
         nread = n - len;
         if (nread == 0) {
-            if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
-                Ns_Log(Error, "SockRead: maxinput reached of %" TCL_LL_MODIFIER "d bytes", drvPtr->maxinput);
-            }
+            Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
+                   drvPtr->maxinput);
             return SOCK_ERROR;
         }
     }
@@ -1976,9 +1931,9 @@ SockRead(Sock *sockPtr, int spooler)
      */
 
     if (reqPtr->avail > drvPtr->maxinput) {
-        if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
-            Ns_Log(Error, "SockRead: request too large, read=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->avail, drvPtr->maxinput);
-        }
+        Ns_Log(DriverDebug, "SockRead: request too large, read=%"
+                            TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d",
+               reqPtr->avail, drvPtr->maxinput);
         return SOCK_ENTITYTOOLARGE;
     }
 
@@ -2045,9 +2000,8 @@ SockParse(Sock *sockPtr, int spooler)
 
         if ((e - s) > drvPtr->maxline) {
             if (reqPtr->request == NULL) {
-                if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
-                    Ns_Log(Error, "SockParse: maxline reached of %d bytes", drvPtr->maxline);
-                }
+                Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
+                       drvPtr->maxline);
                 return SOCK_REQUESTURITOOLONG;
             }
             return SOCK_LINETOOLONG;
@@ -2097,9 +2051,9 @@ SockParse(Sock *sockPtr, int spooler)
                 if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
                     reqPtr->length = length;
                     if (reqPtr->length > drvPtr->maxinput) {
-                        if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
-                            Ns_Log(Error, "SockParse: request too large, length=%" TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d", reqPtr->length, drvPtr->maxinput);
-                        }
+                        Ns_Log(DriverDebug, "SockParse: request too large, length=%"
+                                            TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d",
+                               reqPtr->length, drvPtr->maxinput);
                         return SOCK_ENTITYTOOLARGE;
                     }
                 }
@@ -2133,9 +2087,8 @@ SockParse(Sock *sockPtr, int spooler)
              */
 
             if (Ns_SetSize(reqPtr->headers) > drvPtr->maxheaders) {
-                if (sockPtr->drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
-                    Ns_Log(Error, "SockParse: maxheaders reached of %d bytes", drvPtr->maxheaders);
-                }
+                Ns_Log(DriverDebug, "SockParse: maxheaders reached of %d bytes",
+                       drvPtr->maxheaders);
                 return SOCK_TOOMANYHEADERS;
             }
 
@@ -2819,16 +2772,14 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     wrPtr  = &drvPtr->writer;
 
     if (wrPtr->threads == 0) {
-        if (drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
-            Ns_Log(Error, "NsWriterQueue: no writer threads configured");
-        }
+        Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");
         return NS_ERROR;
     }
 
     if (nsend < wrPtr->maxsize) {
-        if (drvPtr->loggingFlags & LOGGING_SERVERCONFIG) {
-            Ns_Log(Error, "NsWriterQueue: file is too small(%" TCL_LL_MODIFIER "d < %d)", nsend, wrPtr->maxsize);
-        }
+        Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%"
+                            TCL_LL_MODIFIER "d < %d)",
+               nsend, wrPtr->maxsize);
         return NS_ERROR;
     }
 
