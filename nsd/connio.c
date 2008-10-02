@@ -220,11 +220,9 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
         conn->flags |= NS_CONN_SENTHDRS;
         if (ConstructHeaders(conn, bodyLength, flags, &ds)) {
-            sbufPtr[sbufIdx].iov_base = Ns_DStringValue(&ds);
-            sbufPtr[sbufIdx++].iov_len = Ns_DStringLength(&ds);
+            towrite += Ns_SetVec(sbufPtr, sbufIdx++,
+                                 Ns_DStringValue(&ds), Ns_DStringLength(&ds));
             nsbufs++;
-
-            towrite += Ns_DStringLength(&ds);
         }
     }
 
@@ -234,7 +232,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 
     if (!(conn->flags & NS_CONN_SKIPBODY)) {
 
-    	if (!(conn->flags & NS_CONN_CHUNK)) {
+        if (!(conn->flags & NS_CONN_CHUNK)) {
             /*
              * Output content without chunking header/trailers.
              */
@@ -252,23 +250,17 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 
             if (bodyLength > 0) {
                 /*
-                 * Output length header followed by content and trailer.
+                 * Output length header followed by content and then trailer.
                  */
 
-    	        sbufPtr[sbufIdx].iov_base = hdr;
-                sbufPtr[sbufIdx].iov_len = sprintf(hdr, "%x\r\n", bodyLength);
-
-                towrite += sbufPtr[sbufIdx++].iov_len;
+                towrite += Ns_SetVec(sbufPtr, sbufIdx++,
+                                     hdr, sprintf(hdr, "%x\r\n", bodyLength));
 
                 (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
                 sbufIdx += nbufs;
-
                 towrite += bodyLength;
 
-                sbufPtr[sbufIdx].iov_base = "\r\n";
-                sbufPtr[sbufIdx++].iov_len = 2;
-
-                towrite += 2;
+                towrite += Ns_SetVec(sbufPtr, sbufIdx++, "\r\n", 2);
 
                 nsbufs += nbufs + 2;
             }
@@ -278,10 +270,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
                  * Output end-of-content trailer.
                  */
 
-    	        sbufPtr[sbufIdx].iov_base = "0\r\n\r\n";
-                sbufPtr[sbufIdx].iov_len = 5;
-
-                towrite += 5;
+                towrite += Ns_SetVec(sbufPtr, sbufIdx, "0\r\n\r\n", 5);
 
                 nsbufs += 1;
                 connPtr->flags &= ~NS_CONN_STREAM;

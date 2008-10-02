@@ -12,6 +12,8 @@
 	that in the future non-blocking writes may be made if no timeout
 	is given.
 
+	* nsd/connio.c: Clarify Ns_ConnWriteVData with Ns_SetVec.
+
 2008-10-01  Stephen Deasey  <sdeasey@users.sf.net>
 
 	* include/ns.h:
