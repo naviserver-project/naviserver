@@ -148,11 +148,109 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
  *----------------------------------------------------------------------
  */
 
-#if 0
+#ifdef HAVE_SYS_SENDFILE_H  /* Linux */
 
-    /* Native implementations go here. */
+#include <sys/sendfile.h>
 
-#else
+static ssize_t
+Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr);
+
+ssize_t
+Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
+                    Ns_Time *timeoutPtr)
+{
+    off_t         offset;
+    size_t        length;
+    ssize_t       sent, towrite, nwrote;
+    struct iovec  sbufs[UIO_MAXIOV];
+    int           nsbufs = 0, i, fd;
+
+    towrite = nwrote = 0;
+    sent = -1;
+
+    for (i = 0; i < nbufs; i++) {
+
+        offset = bufs[i].offset;
+        length = bufs[i].length;
+        fd     = bufs[i].fd;
+
+        if (length <= 0) {
+            continue;
+        }
+
+        towrite += length;
+
+        if (fd < 0) {
+            /*
+             * Coalesce runs of memory bufs into fixed-sized iovec.
+             */
+            Ns_SetVec(sbufs, nsbufs++, (void *) (intptr_t) offset, length);
+        }
+
+        /* Flush pending memory bufs. */
+
+        if ((fd < 0
+             && (nsbufs == UIO_MAXIOV || i == nbufs -1))
+            || (fd >= 0
+                && nsbufs > 0)) {
+
+            sent = Ns_SockSendBufs(sock, sbufs, nsbufs, timeoutPtr);
+
+            nsbufs = 0;
+            if (sent > 0) {
+                nwrote += sent;
+            }
+            if (sent < towrite) {
+                break;
+            }
+        }
+
+        /* Send a single file range. */
+
+        if (fd >= 0) {
+            sent = Sendfile(sock, fd, offset, length, timeoutPtr);
+            if (sent > 0) {
+                nwrote += sent;
+            }
+            if (sent < towrite) {
+                break;
+            }
+            towrite = 0;
+        }
+    }
+
+    return nwrote ? nwrote : sent;
+}
+
+static ssize_t
+Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr)
+{
+    ssize_t sent;
+
+    sent = sendfile(sock, fd, &offset, tosend);
+
+    if (sent == -1) {
+        switch (errno) {
+
+        case EAGAIN:
+            if (Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                sent = sendfile(sock, fd, &offset, tosend);
+            }
+            break;
+
+        case EINVAL:
+        case ENOSYS:
+            /* File system does not support sendfile? */
+            sent = SendFd(sock, fd, offset, tosend, timeoutPtr,
+                          Ns_SockSendBufs);
+            break;
+        }
+    }
+
+    return sent;
+}
+
+#else /* Default implementation */
 
 ssize_t
 Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,

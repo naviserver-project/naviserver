@@ -1,5 +1,10 @@
 2008-10-02  Stephen Deasey <sdeasey@users.sf.net>
 
+	* configure.in:
+	* nsd/sockfile.c: Add Linux native sendfie implementation.
+
+2008-10-02  Stephen Deasey <sdeasey@users.sf.net>
+
 	* include/ns.h:
 	* nsd/connio.c:
 	* nsd/sock.c: Ns_SockSendBufs now handles buffer shuffling for
