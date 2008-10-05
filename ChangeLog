@@ -1,6 +1,8 @@
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
-	include/nsthread.h: OS X does not have O_LARGEFILE
+	include/nsthread.h: 
+	nslog/nslog.c: Do not use O_LARGEFILE explicitly because 
+	_FILE_OFFSET_BITS will be set by configure
 
 2008-10-02  Stephen Deasey <sdeasey@users.sf.net>
 
