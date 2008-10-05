@@ -1,3 +1,7 @@
+2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
+
+	include/nsthread.h: OS X does not have O_LARGEFILE
+
 2008-10-02  Stephen Deasey <sdeasey@users.sf.net>
 
 	* configure.in:

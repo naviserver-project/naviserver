@@ -245,6 +245,10 @@ typedef struct DIR_ *DIR;
 #endif
 #endif
 
+#ifdef __APPLE__
+#define O_LARGEFILE                 0
+#endif
+
 #define O_TEXT                      0
 #define O_BINARY                    0
 #define SOCKET                      int
