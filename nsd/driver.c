@@ -828,7 +828,8 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
     timeout.sec = sockPtr->drvPtr->recvwait;
     timeout.usec = 0;
 
-    return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout);
+    return (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                        &timeout, 0);
 }
 
 
@@ -849,14 +850,15 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
  */
 
 int
-NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
+NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
 {
     Ns_Time timeout;
 
     timeout.sec = sockPtr->drvPtr->sendwait;
     timeout.usec = 0;
 
-    return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout);
+    return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                        &timeout, flags);
 }
 
 
@@ -877,14 +879,15 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs)
  */
 
 int
-NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs)
+NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags)
 {
     Ns_Time timeout;
 
     timeout.sec = sockPtr->drvPtr->sendwait;
     timeout.usec = 0;
 
-    return (*sockPtr->drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout);
+    return (*sockPtr->drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                            &timeout, flags);
 }
 
 
@@ -1710,7 +1713,7 @@ SockSendResponse(Sock *sockPtr, int code, char *msg)
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len = 4;
-    NsDriverSend(sockPtr, iov, 3);
+    NsDriverSend(sockPtr, iov, 3, 0);
 }
 
 
@@ -2661,7 +2664,7 @@ WriterThread(void *arg)
                 if (status == NS_OK) {
                     vbuf.iov_len = curPtr->bufsize;
                     vbuf.iov_base = (void *) curPtr->buf;
-                    n = NsDriverSend(curPtr->sockPtr, &vbuf, 1);
+                    n = NsDriverSend(curPtr->sockPtr, &vbuf, 1, 0);
                     if (n < 0) {
                         err = errno;
                         status = NS_ERROR;

@@ -475,17 +475,17 @@ typedef NS_DRIVER_ACCEPT_STATUS
 
 typedef ssize_t
 (Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr)
+                    Ns_Time *timeoutPtr, int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
 (Ns_DriverSendProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr)
+                    Ns_Time *timeoutPtr, int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
 (Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
-                        Ns_Time *timeoutPtr)
+                        Ns_Time *timeoutPtr, int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef int
@@ -1947,18 +1947,19 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 
 NS_EXTERN ssize_t
 Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr)
+                    Ns_Time *timeoutPtr, int flags)
     NS_GNUC_NONNULL(2);
 
 
 typedef ssize_t
 Ns_SockSendBufsCallback(SOCKET sock, struct iovec *bufs, int nbufs,
-                        Ns_Time *timeoutPtr);
+                        Ns_Time *timeoutPtr, int flags);
 
 NS_EXTERN ssize_t
 Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
-                            Ns_Time *timeoutPtr, Ns_SockSendBufsCallback *sendProc)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+                            Ns_Time *timeoutPtr, int flags,
+                            Ns_SockSendBufsCallback *sendProc)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 /*
  * sock.c:
@@ -1983,9 +1984,9 @@ NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,
 NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend,
                           Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
-                              Ns_Time *timeoutPtr);
+                              Ns_Time *timeoutPtr, int flags);
 NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
-                              Ns_Time *timeoutPtr);
+                              Ns_Time *timeoutPtr, int flags);
 
 NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
 NS_EXTERN SOCKET Ns_SockBind(struct sockaddr_in *psa);

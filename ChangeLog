@@ -46,6 +46,16 @@
 	* nsd/sock.c:
 	* nsd/sockfile.c: Cast away some CONSTness in Ns_SetVec.
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/connio.c:
+	* nsd/driver.c:
+	* nsd/sock.c:
+	* nsd/sockfile.c:
+	* nssock/nssock.c: Add 'flags' arguments to the Send and Recv
+	driver callbacks. These are passed directly to the underlying
+	recv() etc. system call.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 

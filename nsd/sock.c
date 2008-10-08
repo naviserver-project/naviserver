@@ -51,8 +51,8 @@ NS_RCSID("@(#) $Header$");
 static SOCKET SockConnect(char *host, int port, char *lhost, int lport,
                           int async);
 static SOCKET SockSetup(SOCKET sock);
-static int SockRecv(SOCKET sock, struct iovec *bufs, int nbufs);
-static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs);
+static int SockRecv(SOCKET sock, struct iovec *bufs, int nbufs, int flags);
+static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs, int flags);
 
 
 
@@ -174,15 +174,15 @@ Ns_SumVec(struct iovec *bufs, int nbufs)
 
 int
 Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
-                Ns_Time *timeoutPtr)
+                Ns_Time *timeoutPtr, int flags)
 {
     int n;
 
-    n = SockRecv(sock, bufs, nbufs);
+    n = SockRecv(sock, bufs, nbufs, flags);
     if (n < 0
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_READ, timeoutPtr) == NS_OK) {
-        n = SockRecv(sock, bufs, nbufs);
+        n = SockRecv(sock, bufs, nbufs, flags);
     }
 
     return n;
@@ -207,7 +207,7 @@ Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
 
 int
 Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
-                Ns_Time *timeoutPtr)
+                Ns_Time *timeoutPtr, int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
     int           nwrote = 0, towrite = 0, sent = -1;
@@ -241,11 +241,11 @@ Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
          * Timeout once if first attempt would block.
          */
 
-        sent = SockSend(sock, sbufPtr, nsbufs);
+        sent = SockSend(sock, sbufPtr, nsbufs, flags);
         if (sent < 0
             && ns_sockerrno == EWOULDBLOCK
             && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-            sent = SockSend(sock, sbufPtr, nsbufs);
+            sent = SockSend(sock, sbufPtr, nsbufs, flags);
         }
         if (sent < 0) {
             break;
@@ -1032,14 +1032,11 @@ SockSetup(SOCKET sock)
  */
 
 static int
-SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
+SockRecv(SOCKET sock, struct iovec *bufs, int nbufs, int flags)
 {
     int n;
 
 #ifdef _WIN32
-    int flags;
-
-    flags = 0;
     if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags,
                 NULL, NULL) != 0) {
         n = -1;
@@ -1053,7 +1050,7 @@ SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
     msg.msg_iov = bufs;
     msg.msg_iovlen = nbufs;
 
-    n = recvmsg(sock, &msg, 0);
+    n = recvmsg(sock, &msg, flags);
 
     if (n < 0) {
         Ns_Log(Debug, "SockRecv: %s",
@@ -1082,12 +1079,12 @@ SockRecv(SOCKET sock, struct iovec *bufs, int nbufs)
  */
 
 static int
-SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
+SockSend(SOCKET sock, struct iovec *bufs, int nbufs, int flags)
 {
     int n;
 
 #ifdef _WIN32
-    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, 0,
+    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, &flags,
                 NULL, NULL) != 0) {
         n = -1;
     }
@@ -1100,7 +1097,7 @@ SockSend(SOCKET sock, struct iovec *bufs, int nbufs)
     msg.msg_iov = bufs;
     msg.msg_iovlen = nbufs;
 
-    n = sendmsg(sock, &msg, 0);
+    n = sendmsg(sock, &msg, flags);
 
     if (n < 0) {
         Ns_Log(Debug, "SockSend: %s",

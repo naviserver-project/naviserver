@@ -987,8 +987,8 @@ extern void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
  * Socket driver callbacks.
  */
 
-extern int NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs);
-extern int NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs);
+extern int NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags);
+extern int NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags);
 
 extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);

@@ -475,7 +475,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     }
 
     while (towrite > 0) {
-        sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs);
+        sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs, 0);
         if (sent < 1) {
             break;
         }
@@ -578,7 +578,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         towrite += bufs[i].iov_len;
     }
     while (towrite > 0) {
-        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs);
+        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs, 0);
         if (sent < 0) {
             break;
         }

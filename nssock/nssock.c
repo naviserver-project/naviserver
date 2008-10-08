@@ -187,9 +187,10 @@ Accept(Ns_Sock *sock, SOCKET listensock,
  */
 
 static ssize_t
-Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
+Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+     Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr);
+    return Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
 }
 
 
@@ -211,9 +212,10 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
  */
 
 static ssize_t
-Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
+Send(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+     Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr);
+    return Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
 }
 
 
@@ -236,9 +238,10 @@ Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
  */
 
 static ssize_t
-SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, Ns_Time *timeoutPtr)
+SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
+         Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockSendFileBufs(sock->sock, bufs, nbufs, timeoutPtr);
+    return Ns_SockSendFileBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
 }
 
 

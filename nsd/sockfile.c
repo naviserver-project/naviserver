@@ -46,7 +46,8 @@ NS_RCSID("@(#) $Header$");
  */
 
 static ssize_t SendFd(SOCKET sock, int fd, off_t offset, size_t length,
-                      Ns_Time *timeoutPtr, Ns_SockSendBufsCallback *sendProc);
+                      Ns_Time *timeoutPtr, int flags,
+                      Ns_SockSendBufsCallback *sendProc);
 
 
 
@@ -157,7 +158,7 @@ Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr);
 
 ssize_t
 Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr)
+                    Ns_Time *timeoutPtr, int flags)
 {
     off_t         offset;
     size_t        length;
@@ -194,7 +195,7 @@ Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
             || (fd >= 0
                 && nsbufs > 0)) {
 
-            sent = Ns_SockSendBufs(sock, sbufs, nsbufs, timeoutPtr);
+            sent = Ns_SockSendBufs(sock, sbufs, nsbufs, timeoutPtr, 0);
 
             nsbufs = 0;
             if (sent > 0) {
@@ -241,7 +242,7 @@ Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr)
         case EINVAL:
         case ENOSYS:
             /* File system does not support sendfile? */
-            sent = SendFd(sock, fd, offset, tosend, timeoutPtr,
+            sent = SendFd(sock, fd, offset, tosend, timeoutPtr, 0,
                           Ns_SockSendBufs);
             break;
         }
@@ -254,9 +255,9 @@ Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr)
 
 ssize_t
 Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr)
+                    Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr,
+    return Ns_SockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
                                        Ns_SockSendBufs);
 }
 
@@ -285,7 +286,8 @@ Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
 
 ssize_t
 Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
-                            Ns_Time *timeoutPtr, Ns_SockSendBufsCallback *sendProc)
+                            Ns_Time *timeoutPtr, int flags,
+                            Ns_SockSendBufsCallback *sendProc)
 {
     off_t         offset;
     size_t        tosend;
@@ -305,10 +307,10 @@ Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
         if (tosend > 0) {
             if (fd < 0) {
                 Ns_SetVec(&iov, 0, (void *) (intptr_t) offset, tosend);
-                sent = (*sendProc)(sock, &iov, 1, timeoutPtr);
+                sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
             } else {
                 sent = SendFd(sock, fd, offset, tosend,
-                              timeoutPtr, sendProc);
+                              timeoutPtr, flags, sendProc);
             }
             if (sent > 0) {
                 nwrote += sent;
@@ -345,7 +347,8 @@ Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
 
 static ssize_t
 SendFd(SOCKET sock, int fd, off_t offset, size_t length,
-       Ns_Time *timeoutPtr, Ns_SockSendBufsCallback *sendPtr)
+       Ns_Time *timeoutPtr, int flags,
+       Ns_SockSendBufsCallback *sendPtr)
 {
     char          buf[4096];
     struct iovec  iov;
@@ -365,7 +368,7 @@ SendFd(SOCKET sock, int fd, off_t offset, size_t length,
         offset += nread;
 
         Ns_SetVec(&iov, 0, buf, nread);
-        sent = (*sendPtr)(sock, &iov, 1, timeoutPtr);
+        sent = (*sendPtr)(sock, &iov, 1, timeoutPtr, flags);
         if (sent > 0) {
             nwrote += sent;
         }
