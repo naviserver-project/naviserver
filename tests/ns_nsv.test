@@ -19,11 +19,11 @@ test ns_nsv-1.3 {basic syntax nsv_exists} -body {
 
 test ns_nsv-1.4 {basic syntax nsv_append} -body {
     nsv_append
-} -returnCodes error -result {wrong # args: should be "nsv_append array key string ?string ...?"}
+} -returnCodes error -result {wrong # args: should be "nsv_append array key value ?value ...?"}
 
 test ns_nsv-1.5 {basic syntax nsv_lappend} -body {
     nsv_lappend
-} -returnCodes error -result {wrong # args: should be "nsv_lappend array key string ?string ...?"}
+} -returnCodes error -result {wrong # args: should be "nsv_lappend array key value ?value ...?"}
 
 test ns_nsv-1.6 {basic syntax nsv_incr} -body {
     nsv_incr

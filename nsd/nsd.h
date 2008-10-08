@@ -477,28 +477,6 @@ typedef struct NsLimits {
 } NsLimits;
 
 /*
- * The following structure defines a collection of arrays.
- * Only the arrays within a given bucket share a lock,
- * allowing for more concurency in nsv.
- */
-
-typedef struct NsBucket {
-    Ns_Mutex      lock;
-    Tcl_HashTable arrays;   
-} NsBucket;
-
-/*
- * The following structure maintains the context for each variable
- * array.
- */
-
-typedef struct NsArray {
-    NsBucket      *bucketPtr; /* Array bucket. */
-    Tcl_HashEntry *entryPtr;  /* Entry in bucket array table. */
-    Tcl_HashTable  vars;      /* Table of variables. */
-} NsArray;
-
-/*
  * The following structure maintains state for a connection
  * being processed.
  */
@@ -792,7 +770,7 @@ typedef struct NsServer {
      */
 
     struct {
-        struct NsBucket *buckets;
+        struct Bucket *buckets;
         int nbuckets;
     } nsv;
 
@@ -1052,7 +1030,7 @@ extern NsInterp *NsGetInterpData(Tcl_Interp *interp)
 extern void NsFreeConnInterp(Conn *connPtr)
      NS_GNUC_NONNULL(1);
 
-extern struct NsBucket *NsTclCreateBuckets(CONST char *server, int nbuckets);
+extern struct Bucket *NsTclCreateBuckets(CONST char *server, int nbuckets);
 
 extern void NsSlsCleanup(Sock *sockPtr);
 extern void NsClsCleanup(Conn *connPtr);
@@ -1155,30 +1133,6 @@ void NsParseAuth(Conn *connPtr, char *auth);
 extern int NsTclObjIsByteArray(Tcl_Obj *objPtr);
 
 extern int NsTclTimeoutException(Tcl_Interp *interp);
-
-/*
- * Server API for NSV arrays
- */
-
-extern NsArray *NsNsvLockArray(NsServer *srvPtr, char *aname, int create);
-
-extern void NsNsvFlushArray(NsArray *arrayPtr);
-
-extern void NsNsvUnlockArray(NsArray *arrayPtr);
-
-extern char *NsNsvGet(NsServer *servPtr, char *aname, char *key);
-
-extern int NsNsvExists(NsServer *servPtr, char *aname, char *key);
-
-extern int NsNsvSet(NsServer *servPtr, char *aname, char *key, char *value);
-
-extern int NsNsvIncr(NsServer *servPtr, char *aname, char *key, int count);
-
-extern int NsNsvAppend(NsServer *servPtr, char *aname, char *key, ...);
-
-extern int NsNsvAppendVA(NsServer *servPtr, char *aname, char *key, va_list ap);
-
-extern int NsNsvUnset(NsServer *servPtr, char *aname, char *key);
 
 
 /*

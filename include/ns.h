@@ -1788,26 +1788,26 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  * tclvar.c
  */
 
-NS_EXTERN char *
-Ns_ConnNsvGet(char *aname, char *key);
+NS_EXTERN int
+Ns_VarGet(CONST char *server, CONST char *array, CONST char *key,
+          Ns_DString *dsPtr);
 
 NS_EXTERN int
-Ns_ConnNsvExists(char *aname, char *key);
+Ns_VarExists(CONST char *server, CONST char *array, CONST char *key);
 
 NS_EXTERN int
-Ns_ConnNsvSet(char *aname, char *key, char *value);
+Ns_VarSet(CONST char *server, CONST char *array, CONST char *key,
+          CONST char *value, int len);
 
 NS_EXTERN int
-Ns_ConnNsvUnset(char *aname, char *key);
+Ns_VarUnset(CONST char *server, CONST char *array, CONST char *key);
+
+NS_EXTERN Tcl_WideInt
+Ns_VarIncr(CONST char *server, CONST char *array, CONST char *key, int count);
 
 NS_EXTERN int
-Ns_ConnNsvIncr(char *aname, char *key, int count);
-
-NS_EXTERN int
-Ns_ConnNsvAppend(char *aname, char *key, ...);
-
-NS_EXTERN int
-Ns_ConnNsvAppendVA(char *aname, char *key, va_list);
+Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
+             CONST char *value, int len);
 
 /*
  * sched.c:

@@ -77,6 +77,18 @@
 
 	* nsd/tclset.c: Untabify and reformat.
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/conn.c:
+	* nsd/tclvar.c:
+	* tests/ns_nsv.test: Fixup the new nav C api to not require
+	a conn. So, Ns_ConnNsvSet(char *array, char *key, char *value)
+	becomes Ns_VarSet(char *server, char *array, char *key, char *value)
+	etc. Looks like this was just an accident of the way the nsphp
+	module was implemented which only support an
+	ns_register_proc-like api. Also, optimise the array lookup for
+	Tcl commands.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 
