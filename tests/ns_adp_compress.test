@@ -1,32 +1,4 @@
 #
-# The contents of this file are subject to the Mozilla Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://aolserver.com/.
-#
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
-# the License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is AOLserver Code and related documentation
-# distributed by AOL.
-# 
-# The Initial Developer of the Original Code is America Online,
-# Inc. Portions created by AOL are Copyright (C) 1999 America Online,
-# Inc. All Rights Reserved.
-#
-# Alternatively, the contents of this file may be used under the terms
-# of the GNU General Public License (the "GPL"), in which case the
-# provisions of GPL are applicable instead of those above.  If you wish
-# to allow use of your version of this file only under the terms of the
-# GPL and not to allow others to use your version of this file under the
-# License, indicate your decision by deleting the provisions above and
-# replace them with the notice and other provisions required by the GPL.
-# If you do not delete the provisions above, a recipient may use your
-# version of this file under either the License or the GPL.
-# 
-#
 # $Header$
 #
 
@@ -36,23 +8,214 @@ namespace import -force ::tcltest::*
 eval ::tcltest::configure $argv
 
 
-if {[ns_config test listenport]} {
-    testConstraint serverListen true
-}
+# "this is a test\n"
+
+set this_is_a_test      "74 68 69 73 20 69 73 20 61 20 74 65 73 74 0a"
+set this_is_a_test_gzip "1f 8b 08 00 00 00 00 00 04 03 2b c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 2e 00 12 13 05 72 0f 00 00 00"
+
+# The streaming case is different as it has synchronization markers after "this is".
+set this_is_a_test_gzip_stream "1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff 03 00 12 13 05 72 0f 00 00 00"
 
 
 
-test ns_adp_conpress-1.1 {no Accept-Encoding} -constraints serverListen -body {
-    nstest_http -getbody 1 GET /ns_adp_compress.adp
-} -result {200 {this is a test}}
+test compress-1.1 {HTTP 1.0: no Accept-Encoding} -body {
+    nstest_http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
 
-test ns_adp_conpress-1.2 {Accept-Encoding gzip} -constraints serverListen -body {
-    set response [nstest_http -encoding binary -setheaders {accept-encoding gzip} \
-                      -getheaders {content-encoding} -getbody 1 GET /ns_adp_compress.adp]
-    binary scan [lindex $response 2] "H*" values
-    list [lindex $response 0] [lindex $response 1] [regexp -all -inline {..} $values]
-} -result "200 gzip \{1f 8b 08 00 00 00 00 00 00 03 2b c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 00 ea e7 1e 0d 0e 00 00 00\}"
+test compress-1.2 {HTTP 1.0: Accept-Encoding gzip} -body {
+    nstest_http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
 
+test compress-1.3 {HTTP 1.0: Accept-Encoding gzip (again, checking reset)} -body {
+    nstest_http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-1.4 {HTTP 1.0: Accept-Encoding *} -constraints knownBug -body {
+    nstest_http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding *} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-1.5 {HTTP 1.0: Accept-Encoding qvalue=0} -constraints knownBug -body {
+    nstest_http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip;q=0} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
+
+
+
+test compress-2.1 {HTTP 1.1: no Accept-Encoding} -body {
+    nstest_http \
+        -http 1.1 \
+        -getbinary 1 \
+        -encoding binary \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-2.2 {HTTP 1.1: Accept-Encoding *} -constraints knownBug -body {
+    nstest_http \
+        -http 1.1 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding *} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-2.3 {HTTP 1.1: Accept-Encoding qvalue=0} -constraints knownBug -body {
+    nstest_http \
+        -http 1.1 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip;q=0} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
+
+
+
+
+test compress-3.1 {ns_return, compressed} -setup {
+    ns_register_proc GET /compress {
+        ns_conn compress 1
+        ns_return 200 text/plain "this is a test\n"
+    }
+}  -body {
+    nstest_http \
+        -http 1.1 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip} \
+        -getheaders {Content-Encoding Vary} \
+        GET /compress
+} -cleanup {
+    ns_unregister_op GET /compress
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-3.2 {ns_return, too small to compress} -setup {
+    ns_register_proc GET /compress {
+        ns_conn compress 1
+        ns_return 200 text/plain "ab"
+    }
+}  -body {
+    nstest_http \
+        -http 1.1 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip} \
+        -getheaders {Content-Encoding Vary} \
+        GET /compress
+} -cleanup {
+    ns_unregister_op GET /compress
+} -result "200 {} {} {61 62}"
+
+test compress-3.3 {ns_write streaming, compressed} -setup {
+    ns_register_proc GET /compress {
+        ns_conn compress 1
+        ns_headers 200 text/plain
+        ns_write "this is"
+        ns_write " a test\n"
+    }
+}  -body {
+    nstest_http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip} \
+        -getheaders {Content-Encoding Vary} \
+        GET /compress
+} -cleanup {
+    ns_unregister_op GET /compress
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip_stream}"
+
+#
+# The output of the following test is slightly surprising because it
+# is in streaming mode with only one chunk. Therefore only the gzip
+# trailer appears in the second segment.
+#
+
+test compress-3.4 {streaming adp, compressed} -body {
+    nstest_http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp?stream=1
+} -result "200 gzip Accept-Encoding {1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 00 a2 44 85 92 d4 e2 12 2e 00 00 00 00 ff ff 03 00 12 13 05 72 0f 00 00 00}"
+
+#
+# The output of the following test is tricky to match because it is:
+#
+#   1) streamed in two parts
+#   2) each part is compressed
+#   3) the parts are wrapped in HTTP chunked header/footer/separators.
+#   4) as we are streaming with ns_write and do not notify the IO subsys
+#      which is the last write, there are actually 3 chunks:
+#       - the gzip header and first part of the data
+#       - the second part of the data
+#       - the gzip footer, which is flushed with the chunk trailer
+#
+#      31 37 0a
+#      1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff
+#      0a 65 0a
+#      52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff
+#      0a 61 0a
+#      03 00 12 13 05 72 0f 00 00 00
+#      0a 30 0a 0a
+#
+
+test compress-3.5 {ns_write streaming + HTTP 1.1 chunking, compressed} -setup {
+    ns_register_proc GET /compress {
+        ns_conn compress 1
+        ns_headers 200 text/plain
+        ns_write "this is"
+        ns_write " a test\n"
+    }
+}  -body {
+    nstest_http \
+        -http 1.1 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding gzip} \
+        -getheaders {Content-Encoding Vary Transfer-Encoding Content-Length} \
+        GET /compress
+} -cleanup {
+    ns_unregister_op GET /compress
+} -result "200 gzip Accept-Encoding chunked {} {31 37 0a 1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 0a 65 0a 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff 0a 61 0a 03 00 12 13 05 72 0f 00 00 00 0a 30 0a 0a}"
+
+
+
+# 1f 8b 08 00 00 00 00 00 04 03
+# 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff
+# 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff
+# 03 00 12 13 05 72 0f 00 00 00
 
 
 cleanupTests

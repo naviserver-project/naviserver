@@ -766,9 +766,35 @@ NS_EXTERN void Ns_ClsSet(Ns_Cls *clsPtr, Ns_Conn *conn, void *data);
  * compress.c:
  */
 
-NS_EXTERN int Ns_Compress(const char *buf, int len, Tcl_DString *outPtr, int level)
-     NS_GNUC_DEPRECATED;
-NS_EXTERN int Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level);
+#ifdef HAVE_ZLIB_H
+# include <zlib.h>
+#endif
+
+typedef struct Ns_CompressStream {
+
+#ifdef HAVE_ZLIB_H
+    z_stream   z;
+#endif
+    int        flags;
+
+} Ns_CompressStream;
+
+
+NS_EXTERN void
+Ns_CompressInit(Ns_CompressStream *)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_CompressFree(Ns_CompressStream *)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_CompressBufsGzip(Ns_CompressStream *, struct iovec *bufs, int nbufs, Ns_DString *,
+                    int level, int flush)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
+NS_EXTERN int
+Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level);
 
 /*
  * config.c:
@@ -852,6 +878,8 @@ NS_EXTERN void Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN Tcl_Encoding Ns_ConnGetEncoding(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN Tcl_Encoding Ns_ConnGetUrlEncoding(Ns_Conn *conn);
+NS_EXTERN int Ns_ConnGetCompression(Ns_Conn *conn);
+NS_EXTERN void Ns_ConnSetCompression(Ns_Conn *conn, int flag);
 NS_EXTERN int Ns_ConnModifiedSince(Ns_Conn *conn, time_t inTime);
 NS_EXTERN int Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since);
 NS_EXTERN int Ns_ParseHeader(Ns_Set *set, char *header, Ns_HeaderCaseDisposition disp);

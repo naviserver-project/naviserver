@@ -247,6 +247,10 @@ ns_param   	minthreads      	0
 # Idle threads die at this rate
 ns_param   	threadtimeout   	120
 
+# Compress response character data: ns_return, ADP etc.
+ns_param    compressenable      off     ;# Default; use ns_conn compress to overide
+ns_param    compresslevel       4       ;# 1-9 where 9 is high compression, high overhead
+ns_param    compressminsize     512     ;# Compress responses larger than this
 
 
 #

@@ -7,6 +7,41 @@
 	* nsd/connio.c:
 	* nsd/sock.c: Add Ns_SumVec utility routine and use it.
 
+	* include/ns.h:
+	* nsd/compress.c: Add new Ns_CompressBufsGzip routine which
+	can compress a stream, handling multiple buffers with each write.
+
+	* nsd/queue.c:
+	* nsd/conn.c: ns_conn compress is now available to
+	request/dissable compression for each request. Use this in
+	preference to ns_adp_ctl gzip.
+
+	* nsd/nsd.h:
+	* nsd/server.c:
+	* nsd/connio.c: Move the ADP compression code into
+	Ns_ConnWriteVChars so that it is available for ns_return etc.
+	Upgrade it to handle streaming and chunking.
+
+	* nsd/tclcompat.tcl:
+	* doc/src/man/mann/ns_register_adp.man
+	* nsd/adpcmds.c: Remove the gzip option from some of the
+	ADP commands. (these were a recent naviserver only thing).
+
+	* nsd/adpeval.c:
+	* nsd/adprequest.c: ADP pages are now also compressed
+	when streaming.
+
+	* sample-config.tcl.in: Add the compression params to config.
+
+	* tests/testserver/modules/testhttp.tcl: Add new -getbinary option
+	to nstest_http which returns the body as a list of hex characters.
+
+	* tests/test.nscfg:
+	* tests/ns_adp_compress.test:
+	* tests/ns_conn.test:
+	* tests/testserver/pages/ns_adp_compress.adp: Add extra tests for
+	compressed streaming/chunking etc. and ns_return/ns_write.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 

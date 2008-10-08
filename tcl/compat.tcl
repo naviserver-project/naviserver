@@ -316,11 +316,11 @@ proc ns_chmod {file mode} {
 #
 # ns_adp_compress --
 #
-#   See: ns_adp_ctl.
+#   See: ns_conn
 #
 
 proc ns_adp_compress {{bool 1}} {
-    ns_adp_ctl gzip $bool
+    ns_conn compress $bool
     return ""
 }
 

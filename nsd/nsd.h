@@ -49,17 +49,16 @@
 #define ADP_EXPIRE                     0x08    /* Send Expires: now header on output */
 #define ADP_CACHE                      0x10    /* Enable output caching */
 #define ADP_TRACE                      0x20    /* Trace execution */
-#define ADP_GZIP                       0x80    /* Enable gzip compression */
-#define ADP_DETAIL                     0x100   /* Log connection details on error */
-#define ADP_STRICT                     0x200   /* Strict error handling */
-#define ADP_DISPLAY                    0x400   /* Display error messages in output stream */
-#define ADP_TRIM                       0x800   /* Display error messages in output stream */
-#define ADP_FLUSHED                    0x1000  /* Some output has been sent */
-#define ADP_ERRLOGGED                  0x2000    /* Error message has already been logged */
-#define ADP_AUTOABORT                  0x4000    /* Raise abort on flush error */
-#define ADP_ADPFILE                    0x8000  /* Object to evaluate is a file */
-#define ADP_STREAM                     0x10000 /* Enable ADP streaming */
-#define ADP_TCLFILE                    0x20000 /* Object to evaluate is a Tcl file */
+#define ADP_DETAIL                     0x80    /* Log connection details on error */
+#define ADP_STRICT                     0x100   /* Strict error handling */
+#define ADP_DISPLAY                    0x200   /* Display error messages in output stream */
+#define ADP_TRIM                       0x400   /* Display error messages in output stream */
+#define ADP_FLUSHED                    0x800   /* Some output has been sent */
+#define ADP_ERRLOGGED                  0x1000  /* Error message has already been logged */
+#define ADP_AUTOABORT                  0x2000  /* Raise abort on flush error */
+#define ADP_ADPFILE                    0x4000  /* Object to evaluate is a file */
+#define ADP_STREAM                     0x8000  /* Enable ADP streaming */
+#define ADP_TCLFILE                    0x10000 /* Object to evaluate is a Tcl file */
 
 #define ADP_OK                         0
 #define ADP_BREAK                      1
@@ -557,6 +556,10 @@ typedef struct Conn {
     int recursionCount;
     int keep;
 
+    Ns_CompressStream  stream;
+    int requestCompress;
+    int compress;
+
     Ns_Set *query;
     Tcl_HashTable files;
     void *cls[NS_CONN_MAXCLS];
@@ -775,13 +778,13 @@ typedef struct NsServer {
         Ns_RWLock taglock;
         Tcl_HashTable tags;
 
-        struct {
-            bool enable;
-            int level;
-            int minsize;
-        } compress;
-
     } adp;
+
+    struct {
+        bool enable;    /* on/off */
+        int  level;     /* 1-9 */
+        int  minsize;   /* min size of response to compress, in bytes */
+    } compress;
 
     /*
      * The following struct maintains the Ns_Set's

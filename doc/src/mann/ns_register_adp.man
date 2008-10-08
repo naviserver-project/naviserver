@@ -6,10 +6,17 @@
 
 [description]
 
-...
+[term ADP] pages are [term HTML] or other text for output into which you can
+embed [term Tcl] code. The code is evaluated when the page is served.
+The output of the code and text is combined and returned to the client.
 
 [para]
-...
+The server will translate the result into the correct character encoding for the
+client and compress if enabled (see [cmd ns_conn]). The result can be
+cached to speed up future requests.
+
+[para]
+There are several ways of embedding [term Tcl] code within [term ADP] pages...
 
 [example_begin]
 <h1>Hello World</h1>
@@ -239,6 +246,10 @@ The following parameters set the default options for the ADP engine. They can be
 customised per-URL using the [option -options] flag of the [cmd ns_register_adp]
 command, or at run-time for each page using the [cmd ns_adp_ctl] command.
 
+[para]
+See [cmd ns_adp_ctl] for details on each option.
+
+
 [list_begin definitions]
 
 [def cache]
@@ -257,9 +268,6 @@ Default: off.
 Default: off.
 
 [def singlescript]
-Default: off.
-
-[def gzip]
 Default: off.
 
 [def trace]
@@ -286,33 +294,6 @@ Default: enabled.
 
 
 
-
-[para]
-The following parameters enable and control result compression.
-
-[example_begin]
-[cmd ns_section] "ns/server/server1/adp/compress"
-...
-[example_end]
-
-
-[list_begin definitions]
-
-[def enabled]
-Compression is enabled. Default: false.
-
-[def level]
-Compression level, 1-9. Higher numbers give better compression, but at the
-expense of memory and CPU. Default: 4.
-
-[def minsize]
-Page results below [term minsize] bytes will not be compressed.
-Default: 0.
-
-[list_end]
-
-
-
 [para]
 The following parameter...
 
@@ -332,19 +313,19 @@ Default: [cmd ns_adp_debuginit].
 [section EXAMPLES]
 
 In the following example, all files with the .adp extension in and below the
-/big URL should be served by the [term ADP] handler, with the options gzip and
-stream enabled:
+/big URL should be served by the [term ADP] handler, with the options
+[term stricterror] and [term stream] enabled:
 
 [example_begin]
 foreach method {GET HEAD POST} {
-    [cmd ns_register_adp] -options {gzip stream} -- $method /big/*.adp
+    [cmd ns_register_adp] -options {stream stricterror} -- $method /big/*.adp
 }
 [example_end]
 
 
 
 [see_also ns_register_fastpath ns_register_proc ns_unregister_op \
-          ns_register_filter ns_register_url2file ns_info]
+          ns_register_filter ns_register_url2file ns_conn ns_info]
 [keywords ADP request]
 
 [manpage_end]

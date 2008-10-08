@@ -173,22 +173,12 @@ ConfigServerAdp(CONST char *server)
     Ns_ConfigFlag(path, "enabledebug",  ADP_DEBUG,     0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "safeeval",     ADP_SAFE,      0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "singlescript", ADP_SINGLE,    0, &servPtr->adp.flags);
-    Ns_ConfigFlag(path, "gzip",         ADP_GZIP,      0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "trace",        ADP_TRACE,     0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "detailerror",  ADP_DETAIL,    1, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "stricterror",  ADP_STRICT,    0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "displayerror", ADP_DISPLAY,   0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "trimspace",    ADP_TRIM,      0, &servPtr->adp.flags);
     Ns_ConfigFlag(path, "autoabort",    ADP_AUTOABORT, 1, &servPtr->adp.flags);
-
-    /*
-     * Initialize on-the-fly compression support.
-     */
-
-    path = Ns_ConfigGetPath(server, NULL, "adp", "compress", NULL);
-    servPtr->adp.compress.enable = Ns_ConfigBool(path, "enable", NS_FALSE);
-    servPtr->adp.compress.level = Ns_ConfigIntRange(path, "level", 4, 1, 9);
-    servPtr->adp.compress.minsize = Ns_ConfigInt(path, "minsize", 0);
 
     return NS_OK;
 }

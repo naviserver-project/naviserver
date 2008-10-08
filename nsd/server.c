@@ -266,6 +266,14 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     }
 
     /*
+     * Initialize on-the-fly compression support.
+     */
+
+    servPtr->compress.enable = Ns_ConfigBool(path, "compressenable", NS_FALSE);
+    servPtr->compress.level = Ns_ConfigIntRange(path, "compresslevel", 4, 1, 9);
+    servPtr->compress.minsize = Ns_ConfigIntRange(path, "compressminsize", 512, 0, INT_MAX);
+
+    /*
      * Call the static server init proc, if any, which may register
      * static modules.
      */
@@ -388,6 +396,7 @@ CreatePool(NsServer *servPtr, char *pool)
     for (n = 0; n < maxconns - 1; ++n) {
         connPtr = &connBufPtr[n];
         connPtr->nextPtr = &connBufPtr[n+1];
+        Ns_CompressInit(&connPtr->stream);
     }
     connBufPtr[n].nextPtr = NULL;
     poolPtr->queue.freePtr = &connBufPtr[0];

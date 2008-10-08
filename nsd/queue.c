@@ -682,15 +682,23 @@ ConnRun(Conn *connPtr)
     connPtr->contentLength = connPtr->reqPtr->length;
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->request = connPtr->reqPtr->request;
-    connPtr->flags = 0;
     connPtr->nContentSent = 0;
     connPtr->responseStatus = 200;
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
     connPtr->recursionCount = 0;
     connPtr->auth = NULL;
-    connPtr->keep = -1;          /* Default keep-alive rules apply */
+
+    connPtr->flags = 0;
+
+    connPtr->keep = -1;                   /* Default keep-alive rules apply */
+
+    Ns_ConnSetCompression(conn,
+        servPtr->compress.enable ? servPtr->compress.level : 0);
+    connPtr->compress = -1;
+
     connPtr->outputEncoding = servPtr->encoding.outputEncoding;
     connPtr->urlEncoding = servPtr->encoding.urlEncoding;
+
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
     snprintf(connPtr->idstr, sizeof(connPtr->idstr), "cns%d", connPtr->id);
     connPtr->outputheaders = Ns_SetCreate(NULL);

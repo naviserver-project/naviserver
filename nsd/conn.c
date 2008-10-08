@@ -1030,6 +1030,46 @@ Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding)
     connPtr->urlEncoding = encoding;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnGetCompression, Ns_ConnSetCompression
+ *
+ *      Enable/dissable compression wth the specified level.
+ *      Output will be compressed if client advertises support.
+ *
+ *      Level 1 is 'on' i.e. default compression from config.
+ *
+ * Results:
+ *      Compression level, 0-9.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnGetCompression(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return connPtr->requestCompress;
+}
+
+void
+Ns_ConnSetCompression(Ns_Conn *conn, int level)
+{
+    Conn *connPtr = (Conn *) conn;
+
+#ifdef HAVE_ZLIB_H
+    connPtr->requestCompress = MIN(MAX(level, 0), 9);
+#else
+    connPtr->requestCompress = 0;
+#endif
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1228,7 +1268,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     Tcl_HashSearch search;
     FormFile *filePtr;
     Ns_DString ds;
-    int idx, off, len, opt;
+    int idx, off, len, opt, n;
 
     static CONST char *opts[] = {
         "authpassword", "authuser", "auth",
@@ -1240,7 +1280,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status", "timeout",
         "url", "urlc", "urlencoding", "urlv", "version",
-        "keepalive",
+        "keepalive", "compress",
         NULL
     };
     enum ISubCmdIdx {
@@ -1254,7 +1294,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CTimeoutIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx,
-        CKeepAliveIdx
+        CKeepAliveIdx, CCompressIdx
     };
 
     if (objc < 2) {
@@ -1292,6 +1332,18 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return NS_ERROR;
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
+        break;
+
+    case CCompressIdx:
+        if (objc > 2) {
+            if (Tcl_GetIntFromObj(interp, objv[2], &n) != TCL_OK
+                    && Tcl_GetBooleanFromObj(interp, objv[2], &n) != TCL_OK) {
+                return NS_ERROR;
+            }
+            Ns_ConnSetCompression(conn, n);
+        }
+        Tcl_SetObjResult(interp,
+                         Tcl_NewIntObj(Ns_ConnGetCompression(conn)));
         break;
 
     case CUrlvIdx:

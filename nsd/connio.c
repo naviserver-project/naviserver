@@ -61,6 +61,7 @@ static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
 static int ConstructHeaders(Ns_Conn *conn, Tcl_WideInt length, int flags,
                             Ns_DString *dsPtr);
 static int CheckKeep(Conn *connPtr);
+static int CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags);
 static int HdrEq(Ns_Set *set, char *name, char *value);
 
 
@@ -97,88 +98,128 @@ Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, int towrite, int flags)
 int
 Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 {
-    Conn           *connPtr = (Conn *)conn;
-    int             n, status;
-    CONST char     *utfBytes;
-    int             utfCount;          /* # of bytes in utfBytes */
-    int             utfConvertedCount; /* # of bytes of utfBytes converted */
-    char            encodedBytes[IOBUFSZ];
-    int             encodedCount;      /* # of bytes converted in encodedBytes */
-    int             encodedOffset;
+    Conn              *connPtr   = (Conn *) conn;
+    Ns_CompressStream *streamPtr = &connPtr->stream;
+    Ns_DString         encDs, gzDs;
+    struct iovec       iov;
+    CONST char        *utfBytes;
+    int                utfLen, i, status, flush;
+
+    Ns_DStringInit(&encDs);
+    Ns_DStringInit(&gzDs);
 
     /*
-     * Check if character conversion is needed.
+     * Transcode from utf8 if neccessary.
      */
 
-    if (connPtr->outputEncoding == NULL
-        || NsEncodingIsUtf8(connPtr->outputEncoding)
-        || nbufs == 0
-        || (nbufs == 1 && bufs[0].iov_len == 0)) {
+    if (connPtr->outputEncoding != NULL
+        && !NsEncodingIsUtf8(connPtr->outputEncoding)
+        && nbufs > 0
+        && bufs[0].iov_len > 0) {
 
-        return Ns_ConnWriteVData(conn, bufs, nbufs, flags);
+        for (i = 0; i < nbufs; i++) {
+
+            utfBytes = bufs[i].iov_base;
+            utfLen   = bufs[i].iov_len;
+
+            if (utfLen > 0) {
+                (void) Tcl_UtfToExternalDString(connPtr->outputEncoding,
+                                                utfBytes, utfLen, &encDs);
+            }
+        }
+        Ns_SetVec(&iov, 0, encDs.string, encDs.length);
+        bufs = &iov;
+        nbufs = 1;
     }
 
     /*
-     * Coalesce buffers into single encodedBytes buffer as they are
-     * encoded.  Send to client each time encodedBytes fills.
+     * Compress if possible.
      */
 
-    status   = NS_OK;
-    n        = 0;
-    utfBytes = bufs[n].iov_base;
-    utfCount = bufs[n].iov_len;
-    encodedOffset = 0;
-
-    while (utfCount > 0 && status == NS_OK) {
-
-        /*
-         * Encode as much of this buffer as will fit into
-         * encodedBytes in the desired encoding.
-         */
-
-        status = Tcl_UtfToExternal(NULL,
-                     connPtr->outputEncoding,
-                     utfBytes, utfCount,
-                     0, NULL,              /* flags, encoding state */
-                     encodedBytes + encodedOffset, sizeof(encodedBytes) - encodedOffset,
-                     &utfConvertedCount,
-                     &encodedCount,
-                     NULL);                /* # of chars encoded */
-
-        if (status != TCL_OK && status != TCL_CONVERT_NOSPACE) {
-            status = NS_ERROR;
-            break;
-        }
-
-        if (status == TCL_CONVERT_NOSPACE) {
-            /*
-             * Stream full buffer of converted bytes to client then refill buffer.
-             */
-            status = Ns_ConnWriteData(conn, encodedBytes, encodedCount + encodedOffset,
-                                      flags | NS_CONN_STREAM);
-            utfCount -= utfConvertedCount;
-            utfBytes += utfConvertedCount;
-            continue;
-        } else if (n == nbufs-1 && utfConvertedCount == utfCount) {
-            /*
-             * Write complete/whole buffer of converted bytes.
-             */
-            status = Ns_ConnWriteData(conn, encodedBytes,
-                                      encodedCount + encodedOffset, flags);
-            break;
-        }
-
-        /*
-         * Move on to next iovec.
-         */
-
-        n++;
-        utfBytes = bufs[n].iov_base;
-        utfCount = bufs[n].iov_len;
-        encodedOffset += encodedCount;
+    if (connPtr->compress < 0) {
+        connPtr->compress = CheckCompress(connPtr, bufs, nbufs, flags);
     }
+    if (connPtr->compress > 0) {
+
+        flush = (flags & NS_CONN_STREAM) ? 0 : 1;
+
+        if (Ns_CompressBufsGzip(streamPtr, bufs, nbufs, &gzDs,
+                                connPtr->compress, flush) == NS_OK) {
+            /* NB: Compression will always succeed. */
+            Ns_SetVec(&iov, 0, gzDs.string, gzDs.length);
+            bufs = &iov;
+            nbufs = 1;
+        }
+    }
+
+    status = Ns_ConnWriteVData(conn, bufs, nbufs, flags);
+
+    Ns_DStringFree(&encDs);
+    Ns_DStringFree(&gzDs);
 
     return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckCompress --
+ *
+ *      Is compression enabled, and at what level.
+ *
+ * Results:
+ *      0-9. Will return 0 if gzip support compiled out.
+ *
+ * Side effects:
+ *      May set the Content-Encoding and Vary headers.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
+{
+    Ns_Conn  *conn    = (Ns_Conn *) connPtr;
+    NsServer *servPtr = connPtr->servPtr;
+    char     *hdr;
+    int       level, gzip = 0, compress = 0;
+
+    /* Check the default setting and explicit overide. */
+
+    if ((level = Ns_ConnGetCompression(conn)) > 0) {
+
+        /*
+         * Make sure the length is above the minimum threshold, or
+         * we're streaming (assume length is long enough for streams).
+         */
+
+        if ((ioflags & NS_CONN_STREAM)
+            || Ns_SumVec(bufs, nbufs) >= servPtr->compress.minsize
+            || connPtr->responseLength >= servPtr->compress.minsize) {
+
+            /* We won't be compressing if there are no headers or body. */
+
+            if (!(connPtr->flags & NS_CONN_SENTHDRS)
+                && !(connPtr->flags & NS_CONN_SKIPBODY)) {
+
+                /* Check that the client supports compression. */
+
+                if ((hdr = Ns_SetIGet(Ns_ConnHeaders(conn),
+                                      "Accept-Encoding")) != NULL
+                    && strstr(hdr, "gzip") != NULL) {
+                    gzip = 1;
+                }
+                Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
+
+                if (gzip || connPtr->request->version >= 1.1) {
+                    Ns_ConnSetHeaders(conn, "Content-Encoding", "gzip");
+                    compress = level;
+                }
+            }
+        }
+    }
+    return compress;
 }
 
 
@@ -610,14 +651,17 @@ Ns_ConnClose(Ns_Conn *conn)
 
     if (connPtr->sockPtr != NULL) {
 
-        if ((connPtr->flags & NS_CONN_STREAM)
-            && (connPtr->flags & NS_CONN_CHUNK)) {
+        if (connPtr->flags & NS_CONN_STREAM
+            && (connPtr->flags & NS_CONN_CHUNK
+                || connPtr->compress > 0)) {
 
             /*
-             * Streaming in chunked mode: write the end-of-content trailer.
+             * Streaming:
+             *   In chunked mode, write the end-of-content trailer.
+             *   If compressing, write the gzip footer.
              */
 
-            (void) Ns_ConnWriteData(conn, NULL, 0, 0);
+            (void) Ns_ConnWriteChars(conn, NULL, 0, 0);
         }
 
         keep = connPtr->keep > 0 ? 1 : 0;

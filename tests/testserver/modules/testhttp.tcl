@@ -38,7 +38,7 @@
 
 proc nstest_http {args} {
     ns_parseargs {
-        {-encoding "utf-8"} -setheaders -getheaders {-getbody 0} {-http 1.0} --
+        {-encoding "utf-8"} -setheaders -getheaders {-getbody 0} {-getbinary 0} {-http 1.0} --
         method {url ""} {body ""}
     } $args
 
@@ -247,6 +247,11 @@ proc nstest_http {args} {
 
     if {[string is true $getbody] && $body ne {}} {
         lappend response $body
+    }
+
+    if {[string is true $getbinary] && $body ne {}} {
+        binary scan $body "H*" binary
+        lappend response [regexp -all -inline {..} $binary]
     }
 
     return $response

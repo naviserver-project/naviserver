@@ -30,23 +30,163 @@
 /*
  * compress.c --
  *
- * Support for simple gzip compression using Zlib.
+ *      Support for gzip compression using Zlib.
  */
 
 #include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
 
-#ifdef HAVE_ZLIB_H
-#include <zlib.h>
 
-static char header[] = {
-    037, 0213,  /* GZIP magic number. */
-    010,        /* Z_DEFLATED */
-    0,          /* flags */
-    0,0,0,0,    /* timestamp */
-    0,          /* xflags */
-    03};        /* Unix OS_CODE */
+#define COMPRESS_SENT_HEADER 0x01
+#define COMPRESS_FLUSHED     0x02
+
+
+#ifdef HAVE_ZLIB_H
+
+/*
+ * Static functions defined in this file.
+ */
+
+static void DeflateOrAbort(z_stream *z, int flushFlags);
+static voidpf ZAlloc(voidpf arg, uInt items, uInt size);
+static void ZFree(voidpf arg, voidpf address);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CompressInit, Ns_CompressFree --
+ *
+ *      Initialize a copression stream buffer. Do this once.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_CompressInit(Ns_CompressStream *stream)
+{
+    z_stream *z = &stream->z;
+    int       status;
+
+    stream->flags = 0;
+    z->zalloc = ZAlloc;
+    z->zfree = ZFree;
+    z->opaque = Z_NULL;
+
+    status = deflateInit2(z,
+                          Z_BEST_COMPRESSION, /* to size memory, will be reset later */
+                          Z_DEFLATED, /* method. */
+                          15 + 16,    /* windowBits: 15 (max), +16 (Gzip header/footer). */
+                          9,          /* memlevel: 1-9 (min-max), default: 8.*/
+                          Z_DEFAULT_STRATEGY);
+    if (status != Z_OK) {
+        Ns_Fatal("Ns_CompressInit: zlib error: %d (%s): %s",
+                 status, zError(status), z->msg ? z->msg : "(none)");
+    }
+}
+
+void
+Ns_CompressFree(Ns_CompressStream *stream)
+{
+    z_stream *z = &stream->z;
+    int       status;
+
+    status = deflateEnd(z);
+    if (status != Z_OK && status != Z_DATA_ERROR) {
+        Ns_Log(Bug, "Ns_CompressFree: deflateEnd: %d (%s): %s",
+               status, zError(status), z->msg ? z->msg : "(unknown)");
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CompressBufsGzip --
+ *
+ *      Compress a vector of bufs and append to dstring.
+ *
+ *      Flags must contain NS_COMPRESS_BEGIN on first call and
+ *      NS_COMPRESS_END on the last, to add correct gzip
+ *      header/footer. Function may be called any number of times inbetween.
+ *
+ * Results:
+ *      NS_OK.
+ *
+ * Side effects:
+ *      Aborts on error (which should not happen).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
+                    Ns_DString *dsPtr, int level, int flush)
+{
+    z_stream   *z = &stream->z;
+    size_t      toCompress, nCompressed, compressLen;
+    ptrdiff_t   offset;
+    int         flushFlags, i;
+
+    offset = (ptrdiff_t) Ns_DStringLength(dsPtr);
+    toCompress = Ns_SumVec(bufs, nbufs);
+
+    compressLen = compressBound(toCompress) + 12;
+
+    if (!(stream->flags & COMPRESS_SENT_HEADER)) {
+        stream->flags |= COMPRESS_SENT_HEADER;
+        compressLen += 10; /* Gzip header length. */
+        (void) deflateParams(z,
+                             MIN(MAX(level, 1), 9),
+                             Z_DEFAULT_STRATEGY);
+    }
+    if (flush) {
+        compressLen += 4; /* Gzip footer. */
+    }
+    Ns_DStringSetLength(dsPtr, compressLen);
+
+    z->next_out  = (Bytef *) (dsPtr->string + offset);
+    z->avail_out = compressLen;
+
+    /*
+     * Compress all buffers.
+     */
+
+    nCompressed = 0;
+
+    for (i = 0; i < nbufs; i++) {
+
+        z->next_in  = bufs[i].iov_base;
+        z->avail_in = bufs[i].iov_len;
+        nCompressed += z->avail_in;;
+
+        if (z->avail_in == 0 && i < nbufs -1) {
+            continue;
+        }
+        if (nCompressed == toCompress) {
+            flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
+        } else {
+            flushFlags = Z_NO_FLUSH;
+        }
+
+        DeflateOrAbort(z, flushFlags);
+    }
+    Ns_DStringSetLength(dsPtr, dsPtr->length - z->avail_out);
+
+    if (flush) {
+        (void) deflateReset(z);
+        stream->flags = 0;
+    }
+
+    return NS_OK;
+}
 
 
 /*
@@ -54,61 +194,117 @@ static char header[] = {
  *
  * Ns_CompressGzip --
  *
- *      Compress a string using gzip with RFC 1952 header/footer.
+ *      Compress a buffer with RFC 1952 gzip header/footer.
  *
  * Results:
- *      NS_OK if compression worked, NS_ERROR otherwise.
+ *      NS_OK.
  *
  * Side effects:
- *      Will write compressed content to given Tcl_DString.
+ *      Aborts on error (which should not happen).
  *
  *----------------------------------------------------------------------
  */
 
 int
-Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
+Ns_CompressGzip(const char *buf, int len, Ns_DString *dsPtr, int level)
 {
-    uLongf glen;
-    char *gbuf;
-    uLong crc;
-    int skip;
-    uint32_t footer[2];
+    Ns_CompressStream  stream;
+    struct iovec       iov;
+    int                status;
 
-    /*
-     * Grow buffer for header, footer, and maximum compressed size.
-     */
+    Ns_CompressInit(&stream);
+    Ns_SetVec(&iov, 0, buf, len);
+    status = Ns_CompressBufsGzip(&stream, &iov, 1, dsPtr, level, 1);
+    Ns_CompressFree(&stream);
 
-    glen = compressBound(len) + sizeof(header) + sizeof(footer);
-    Tcl_DStringSetLength(outPtr, glen);
-
-    /*
-     * Compress output starting 2-bytes from the end of the header. 
-     */
-
-    gbuf = outPtr->string;
-    skip = sizeof(header) - 2;
-    glen -= skip;
-    if (compress2((Bytef *) gbuf + skip, &glen, (Bytef *) buf, (uLong) len, level) != Z_OK) {
-        return NS_ERROR;
-    }
-    glen -= 4;
-    memcpy(gbuf, header, sizeof(header));
-    Tcl_DStringSetLength(outPtr, glen + skip);
-
-    /*
-     * Append footer of CRC and uncompressed length.
-     */
-
-    crc = crc32(0, Z_NULL, 0);
-    crc = crc32(crc, (Bytef *) buf, len);
-    footer[0] = crc;
-    footer[1] = len;
-    Tcl_DStringAppend(outPtr, (char *) footer, sizeof(footer));
-
-    return NS_OK;
+    return status;
 }
 
-#else
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeflateOrAbort --
+ *
+ *      Call deflate and abort on error.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DeflateOrAbort(z_stream *z, int flushFlags)
+{
+    int status;
+
+    status = deflate(z, flushFlags);
+
+    if ((status != Z_OK && status != Z_STREAM_END)
+        || z->avail_in != 0
+        || z->avail_out == 0) {
+
+        Ns_Fatal("Ns_CompressBufsGzip: zlib error: %d (%s): %s:"
+                 " avail_in: %d, avail_out: %d",
+                 status, zError(status), z->msg ? z->msg : "(unknown)",
+                 z->avail_in, z->avail_out);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZAlloc, ZFree --
+ *
+ *      Memory callbacks for the zlib library.
+ *
+ * Results:
+ *      Memory/None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static voidpf
+ZAlloc(voidpf arg, uInt items, uInt size)
+{
+    return ns_calloc(items, size);
+}
+
+static void
+ZFree(voidpf arg, voidpf address)
+{
+    ns_free(address);
+}
+
+#else /* ! HAVE_ZLIB_H */
+
+void
+Ns_CompressInit(Ns_CompressStream *stream)
+{
+    return;
+}
+
+void
+Ns_CompressFree(Ns_CompressStream *stream)
+{
+    return;
+}
+
+char *
+Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs, int flags,
+                    Ns_DString *dsPtr)
+{
+    return NS_ERROR;
+}
 
 int
 Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
@@ -117,27 +313,3 @@ Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
 }
 
 #endif
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_Compress --
- *
- *      Deprecated:  Used by nsjk2 module.  Remove this once nsjk2 has
- *      been updated to use Ns_CompressGzip directly.
- *
- * Results:
- *      NS_OK if compression worked, NS_ERROR otherwise.
- *
- * Side effects:
- *      Will write compressed content to given Tcl_DString.
- *
- *----------------------------------------------------------------------
- */
-int
-Ns_Compress(const char *buf, int len, Tcl_DString *outPtr, int level)
-{
-    return Ns_CompressGzip(buf, len, outPtr, level);
-}
-

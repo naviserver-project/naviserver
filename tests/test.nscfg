@@ -132,6 +132,11 @@ ns_param   URLCharset      iso-8859-1
 ns_param   OutputCharset   iso-8859-1
 ns_param   HackContentType true
 
+ns_param   compressenable  false ;# turned on as needed for tests
+ns_param   compresslevel   4     ;# default
+ns_param   compressminsize 3     ;# for testing, compress almost everything
+
+
 ns_section "ns/server/test/pool/default"
 ns_param   minthreads 2
 ns_param   maxthreads 10
@@ -170,11 +175,6 @@ ns_param   rollonsignal    false
 ns_param   suppressquery   false
 ns_param   checkforproxy   true
 ns_param   extendedheaders "X-Test"
-
-ns_section "ns/server/test/adp/compress"
-ns_param   enable          yes
-ns_param   level           4
-ns_param   minsize         0
 
 ns_section "ns/server/test/db"
 ns_param   pools           a,b

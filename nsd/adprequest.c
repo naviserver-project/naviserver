@@ -69,7 +69,6 @@ static Ns_ObjvTable adpOpts[] = {
     {"detailerror",  ADP_DETAIL},
     {"displayerror", ADP_DISPLAY},
     {"expire",       ADP_EXPIRE},
-    {"gzip",         ADP_GZIP},
     {"cache",        ADP_CACHE},
     {"safe",         ADP_SAFE},
     {"singlescript", ADP_SINGLE},
@@ -404,10 +403,9 @@ int
 NsAdpFlush(NsInterp *itPtr, int stream)
 {
     Ns_Conn    *conn;
-    Ns_DString  cds;
     Tcl_Interp *interp = itPtr->interp;
-    int         len, wrote, gzip = 0, result = TCL_ERROR, flags = itPtr->adp.flags;
-    char       *buf, *ahdr;
+    int         len, wrote, result = TCL_ERROR, flags = itPtr->adp.flags;
+    char       *buf;
 
     /*
      * Verify output context.
@@ -421,6 +419,18 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     }
     buf = itPtr->adp.output.string;
     len = itPtr->adp.output.length;
+
+    /*
+     * Nothing to do for zero length buffer except reset
+     * if this is the last flush.
+     */
+
+    if (len < 1 && (flags & ADP_FLUSHED)) {
+        if (!stream) {
+            NsAdpReset(itPtr);
+        }
+        return NS_OK;
+    }
 
     /*
      * If enabled, trim leading whitespace if no content has been sent yet.
@@ -442,7 +452,6 @@ NsAdpFlush(NsInterp *itPtr, int stream)
      * reset adp output and do not send anything
      */
 
-    Ns_DStringInit(&cds);
     Tcl_ResetResult(interp);
 
     if (itPtr->adp.exception == ADP_ABORT) {
@@ -472,40 +481,6 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                               TCL_STATIC);
             } else {
 
-                if (flags & ADP_GZIP) {
-
-                    /*
-                     * Should we compress the response?  If the ADP requested it with
-                     * ns_adp_compress, it's enabled in the server config, if headers
-                     * haven't been sent yet, if this isn't a HEAD request, if streaming
-                     * isn't turned on, if the response meets the minimum size per the
-                     * config, if the browser indicates it can accept it, only THEN do
-                     * we compress the response.
-                     */
-
-                    if (!(conn->flags & NS_CONN_SENTHDRS)
-                        && !(conn->flags & NS_CONN_SKIPBODY)
-                        && !stream
-                        && len >= itPtr->servPtr->adp.compress.minsize
-                        && (ahdr = Ns_SetIGet(Ns_ConnHeaders(conn),
-                                              "Accept-Encoding")) != NULL
-                        && strstr(ahdr, "gzip") != NULL
-                        && Ns_CompressGzip(buf, len, &cds,
-                                           itPtr->servPtr->adp.compress.level) == NS_OK) {
-
-                        /*
-                         * We may want to check if Content-Encoding was already
-                         * set, and if so, don't gzip.
-                         */
-
-                        Ns_ConnCondSetHeaders(conn, "Content-Encoding", "gzip");
-                        buf = cds.string;
-                        len = cds.length;
-
-                        gzip = 1;
-                    }
-                }
-
                 if (!(flags & ADP_FLUSHED) && (flags & ADP_EXPIRE)) {
                     Ns_ConnCondSetHeaders(conn, "Expires", "now");
                 }
@@ -515,16 +490,9 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                     len = 0;
                 }
 
-                if (gzip) {
-                    if (Ns_ConnWriteData(itPtr->conn, buf, len,
-                                         stream ? NS_CONN_STREAM : 0) == NS_OK) {
-                        result = TCL_OK;
-                    }
-                } else {
-                    if (Ns_ConnWriteChars(itPtr->conn, buf, len,
-                                          stream ? NS_CONN_STREAM : 0) == NS_OK) {
-                        result = TCL_OK;
-                    }
+                if (Ns_ConnWriteChars(itPtr->conn, buf, len,
+                                      stream ? NS_CONN_STREAM : 0) == NS_OK) {
+                    result = TCL_OK;
                 }
                 if (result != TCL_OK) {
                     Tcl_SetResult(interp,
@@ -546,7 +514,6 @@ NsAdpFlush(NsInterp *itPtr, int stream)
         }
     }
     Tcl_DStringTrunc(&itPtr->adp.output, 0);
-    Ns_DStringFree(&cds);
 
     if (!stream) {
         NsAdpReset(itPtr);
