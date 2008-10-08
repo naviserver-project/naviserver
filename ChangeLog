@@ -75,6 +75,8 @@
 	* nsd/tclset.c:
 	* tests/ns_set.test: Remove the -share option from ns_set.
 
+	* nsd/tclset.c: Untabify and reformat.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 

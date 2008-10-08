@@ -30,20 +30,21 @@
 /*
  * tclset.c --
  *
- *	Implements the tcl ns_set commands 
+ *      Implements the tcl ns_set commands 
  */
 
 #include "nsd.h"
 
 NS_RCSID("@(#) $Header$");
 
+
 /*
  * The following represent the valid combinations of
  * NS_TCL_SET flags
  */
- 
-#define SET_DYNAMIC 		'd'
-#define SET_STATIC    		't'
+
+#define SET_DYNAMIC   'd'
+#define SET_STATIC    't'
 
 #define IS_DYNAMIC(id) (*(id) == SET_DYNAMIC)
 
@@ -53,9 +54,9 @@ NS_RCSID("@(#) $Header$");
 
 static int LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr);
 static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int delete,
-			Ns_Set **setPtr);
+                        Ns_Set **setPtr);
 static int LookupInterpSet(Tcl_Interp *interp, char *id, int delete,
-			   Ns_Set **setPtr);
+                           Ns_Set **setPtr);
 static int EnterSet(NsInterp *itPtr, Ns_Set *set, int flags);
 
 
@@ -64,14 +65,14 @@ static int EnterSet(NsInterp *itPtr, Ns_Set *set, int flags);
  *
  * Ns_TclEnterSet --
  *
- *	Give this Tcl interpreter access to an existing Ns_Set.
+ *      Give this Tcl interpreter access to an existing Ns_Set.
  *
  * Results:
- *	TCL_OK or TCL_ERROR.
+ *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *	A pointer to the Ns_Set is added to the interpreter's list of 
- *	sets; a new handle is generated and appended to interp result.
+ *      A pointer to the Ns_Set is added to the interpreter's list of 
+ *      sets; a new handle is generated and appended to interp result.
  *
  *----------------------------------------------------------------------
  */
@@ -82,8 +83,8 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, int flags)
     NsInterp *itPtr = NsGetInterpData(interp);
 
     if (itPtr == NULL) {
-	Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
-	return TCL_ERROR;
+        Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
+        return TCL_ERROR;
     }
     return EnterSet(itPtr, set, flags);
 }
@@ -94,13 +95,13 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, int flags)
  *
  * Ns_TclGetSet --
  *
- *	Given a Tcl ns_set handle, return a pointer to the Ns_Set. 
+ *      Given a Tcl ns_set handle, return a pointer to the Ns_Set.
  *
  * Results:
- *	An Ns_Set pointer, or NULL if error. 
+ *      An Ns_Set pointer, or NULL if error. 
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -111,7 +112,7 @@ Ns_TclGetSet(Tcl_Interp *interp, char *id)
     Ns_Set *set;
 
     if (LookupInterpSet(interp, id, 0, &set) != TCL_OK) {
-	return NULL;
+        set = NULL;
     }
     return set;
 }
@@ -122,13 +123,13 @@ Ns_TclGetSet(Tcl_Interp *interp, char *id)
  *
  * Ns_TclGetSet2 --
  *
- *	Like Ns_TclGetSet, but sends errors to the tcl interp. 
+ *      Like Ns_TclGetSet, but sends errors to the tcl interp. 
  *
  * Results:
- *	TCL result. 
+ *      TCL result.
  *
  * Side effects:
- *	None. 
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -145,14 +146,14 @@ Ns_TclGetSet2(Tcl_Interp *interp, char *id, Ns_Set **setPtr)
  *
  * Ns_TclFreeSet --
  *
- *	Free a set id, and if own by Tcl, the underlying Ns_Set.
+ *      Free a set id, and if own by Tcl, the underlying Ns_Set.
  *
  * Results:
- *	NS_OK/NS_ERROR. 
+ *      NS_OK/NS_ERROR.
  *
  * Side effects:
- *	Will free the set matching the passed-in set id, and all of 
- *	its associated data. 
+ *      Will free the set matching the passed-in set id, and all of 
+ *      its associated data.
  *
  *----------------------------------------------------------------------
  */
@@ -163,10 +164,10 @@ Ns_TclFreeSet(Tcl_Interp *interp, char *id)
     Ns_Set  *set;
 
     if (LookupInterpSet(interp, id, 1, &set) != TCL_OK) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     if (IS_DYNAMIC(id)) {
-    	Ns_SetFree(set);
+        Ns_SetFree(set);
     }
     return TCL_OK;
 }
@@ -177,13 +178,13 @@ Ns_TclFreeSet(Tcl_Interp *interp, char *id)
  *
  * NsTclSetObjCmd --
  *
- *	Implelments ns_set. 
+ *      Implelments ns_set.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -191,61 +192,61 @@ Ns_TclFreeSet(Tcl_Interp *interp, char *id)
 int
 NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Ns_Set       *set, *set2Ptr, **sets;
-    int           i, flags;
-    char         *key, *val, *def, *name, *split;
-    Tcl_DString	  ds;
-    Tcl_HashTable *tablePtr;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    NsInterp	  *itPtr = arg;
-    Tcl_Obj	  *objPtr;
+    NsInterp        *itPtr = arg;
+    Ns_Set          *set, *set2Ptr, **sets;
+    int              i, flags, opt;
+    char            *key, *val, *def, *name, *split;
+    Tcl_DString      ds;
+    Tcl_HashTable   *tablePtr;
+    Tcl_HashEntry   *hPtr;
+    Tcl_HashSearch   search;
+    Tcl_Obj         *objPtr;
+
     static CONST char *opts[] = {
-	 "array", "cleanup", "copy", "cput", "create", "delete",
-	 "delkey", "find", "free", "get", "icput", "idelete",
-	 "idelkey", "ifind", "iget", "isnull", "iunique", "key",
-	 "list", "merge", "move", "name", "new", "print", "purge",
-	 "put", "size", "split", "truncate", "unique", "update",
-	 "value", NULL,
+        "array", "cleanup", "copy", "cput", "create", "delete",
+        "delkey", "find", "free", "get", "icput", "idelete",
+        "idelkey", "ifind", "iget", "isnull", "iunique", "key",
+        "list", "merge", "move", "name", "new", "print", "purge",
+        "put", "size", "split", "truncate", "unique", "update",
+        "value", NULL,
     };
     enum {
-	 SArrayIdx, SCleanupIdx, SCopyIdx, SCPutIdx, SCreateidx,
-	 SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
-	 SICPutIdx, SIDeleteIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx,
-	 SIsNullIdx, SIUniqueIdx, SKeyIdx, SListIdx, SMergeIdx,
-	 SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, spurgeidx, SPutIdx,
-	 SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
-	 SValueIdx
+        SArrayIdx, SCleanupIdx, SCopyIdx, SCPutIdx, SCreateidx,
+        SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
+        SICPutIdx, SIDeleteIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx,
+        SIsNullIdx, SIUniqueIdx, SKeyIdx, SListIdx, SMergeIdx,
+        SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, spurgeidx, SPutIdx,
+        SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
+        SValueIdx
     };
-    int opt;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-			    &opt) != TCL_OK) {
-	return TCL_ERROR;
+                            &opt) != TCL_OK) {
+        return TCL_ERROR;
     }
     if (opt == SCreateidx) {
-	opt = SNewIdx;
+        opt = SNewIdx;
     }
 
     switch (opt) {
     case SCleanupIdx:
-    	tablePtr = &itPtr->sets;
-    	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-    	while (hPtr != NULL) {
-    	    key = Tcl_GetHashKey(tablePtr, hPtr);
-	    if (IS_DYNAMIC(key)) {
-    	       	set = Tcl_GetHashValue(hPtr);
-	       	Ns_SetFree(set);
-	    }
-	    hPtr = Tcl_NextHashEntry(&search);
-	}
-    	Tcl_DeleteHashTable(tablePtr);
-    	Tcl_InitHashTable(tablePtr, TCL_STRING_KEYS);
-	break;
+        tablePtr = &itPtr->sets;
+        hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+        while (hPtr != NULL) {
+            key = Tcl_GetHashKey(tablePtr, hPtr);
+            if (IS_DYNAMIC(key)) {
+                set = Tcl_GetHashValue(hPtr);
+                Ns_SetFree(set);
+            }
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Tcl_DeleteHashTable(tablePtr);
+        Tcl_InitHashTable(tablePtr, TCL_STRING_KEYS);
+        break;
 
     case SListIdx:
         tablePtr = &itPtr->sets;
@@ -256,7 +257,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 hPtr = Tcl_NextHashEntry(&search);
             }
         }
-	break;
+        break;
 
     case SNewIdx:
     case SCopyIdx:
@@ -269,37 +270,37 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         i = 2;
 
         switch (opt) {
-	case SNewIdx:
-	    name = (i < objc) ? Tcl_GetString(objv[i++]) : NULL;
-	    set = Ns_SetCreate(name);
-	    while (i < objc) {
-		key = Tcl_GetString(objv[i++]);
-		val = (i < objc) ? Tcl_GetString(objv[i++]) : NULL;
-		Ns_SetPut(set, key, val);
-	    }
+        case SNewIdx:
+            name = (i < objc) ? Tcl_GetString(objv[i++]) : NULL;
+            set = Ns_SetCreate(name);
+            while (i < objc) {
+                key = Tcl_GetString(objv[i++]);
+                val = (i < objc) ? Tcl_GetString(objv[i++]) : NULL;
+                Ns_SetPut(set, key, val);
+            }
             EnterSet(itPtr, set, flags);
             break;
 
         case SCopyIdx:
             if (i >= objc) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId");
-		return TCL_ERROR;
+                Tcl_WrongNumArgs(interp, 2, objv, "setId");
+                return TCL_ERROR;
             }
-	    if (LookupObjSet(itPtr, objv[i], 0, &set) != TCL_OK) {
+            if (LookupObjSet(itPtr, objv[i], 0, &set) != TCL_OK) {
                 return TCL_ERROR;
             }
             EnterSet(itPtr, Ns_SetCopy(set), flags);
             break;
-	
+
         case SSplitIdx:
-	    if ((objc - i) < 1) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
-		return TCL_ERROR;
-            }
-	    if (LookupObjSet(itPtr, objv[i++], 0, &set) != TCL_OK) {
+            if ((objc - i) < 1) {
+                Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
                 return TCL_ERROR;
             }
-	    split = (i < objc) ? Tcl_GetString(objv[i]) : ".";
+            if (LookupObjSet(itPtr, objv[i++], 0, &set) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            split = (i < objc) ? Tcl_GetString(objv[i]) : ".";
             sets = Ns_SetSplit(set, *split);
             for (i = 0; sets[i] != NULL; i++) {
                 EnterSet(itPtr, sets[i], flags);
@@ -307,253 +308,254 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             ns_free(sets);
             break;
         }
-	break;
+        break;
 
     default:
         /*
          * All futher commands require a valid set.
          */
-	
+
         if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "setId ?args?");
-	    return TCL_ERROR;
+            Tcl_WrongNumArgs(interp, 2, objv, "setId ?args?");
+            return TCL_ERROR;
         }
-	if (LookupObjSet(itPtr, objv[2], 0, &set) != TCL_OK) {
+        if (LookupObjSet(itPtr, objv[2], 0, &set) != TCL_OK) {
             return TCL_ERROR;
         }
 
-	switch (opt) {
-	case SArrayIdx:
-	case SSizeIdx:
-	case sINameIdx:
-	case SPrintIdx:
-	case SFreeIdx:
-	    /*
-	     * These commands require only the set.
-	     */
+        switch (opt) {
+        case SArrayIdx:
+        case SSizeIdx:
+        case sINameIdx:
+        case SPrintIdx:
+        case SFreeIdx:
+            /*
+             * These commands require only the set.
+             */
 
-	    if (objc != 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId");
-		return TCL_ERROR;
+            if (objc != 3) {
+                Tcl_WrongNumArgs(interp, 2, objv, "setId");
+                return TCL_ERROR;
             }
-	    switch (opt) {
-	    case SArrayIdx:
-		Tcl_DStringInit(&ds);
-		for (i = 0; i < Ns_SetSize(set); ++i) {
-		    Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
-		    Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
-		}
-		Tcl_DStringResult(interp, &ds);
-		break;
+            switch (opt) {
+            case SArrayIdx:
+                Tcl_DStringInit(&ds);
+                for (i = 0; i < Ns_SetSize(set); ++i) {
+                    Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
+                    Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
+                }
+                Tcl_DStringResult(interp, &ds);
+                break;
 
             case SSizeIdx:
-		objPtr = Tcl_NewIntObj(Ns_SetSize(set));
-		Tcl_SetObjResult(interp, objPtr);
+                objPtr = Tcl_NewIntObj(Ns_SetSize(set));
+                Tcl_SetObjResult(interp, objPtr);
                 break;
-		
+
             case sINameIdx:
                 Tcl_SetResult(interp, set->name, TCL_VOLATILE);
                 break;
-		
-	    case SPrintIdx:
+
+            case SPrintIdx:
                 Ns_SetPrint(set);
                 break;
-		
-	    case SFreeIdx:
+
+            case SFreeIdx:
                 Ns_TclFreeSet(interp, Tcl_GetString(objv[2]));
                 break;
             }
-	    break;
+            break;
 
-	case SGetIdx:
-	case SIGetIdx:
+        case SGetIdx:
+        case SIGetIdx:
             if (objc < 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId key ?dflt?");
-		return TCL_ERROR;
+                Tcl_WrongNumArgs(interp, 2, objv, "setId key ?dflt?");
+                return TCL_ERROR;
             }
-	    key = Tcl_GetString(objv[3]);
+            key = Tcl_GetString(objv[3]);
             def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
-	    switch (opt) {
+            switch (opt) {
             case SGetIdx:
                 Tcl_SetResult(interp, Ns_SetGetValue(set, key, def), TCL_VOLATILE);
                 break;
-		
-	    case SIGetIdx:
+
+            case SIGetIdx:
                 Tcl_SetResult(interp, Ns_SetIGetValue(set, key, def), TCL_VOLATILE);
                 break;
-            }		    
+            }
             break;
 
-	case SFindIdx:
-	case SIFindIdx:
-	case SDelkeyIdx:
-	case SIDelkeyIdx:
-	case SUniqueIdx:
-	case SIUniqueIdx:
-	    /*
-	     * These commands require a set and string key.
-	     */
+        case SFindIdx:
+        case SIFindIdx:
+        case SDelkeyIdx:
+        case SIDelkeyIdx:
+        case SUniqueIdx:
+        case SIUniqueIdx:
+            /*
+             * These commands require a set and string key.
+             */
 
             if (objc != 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId key");
-		return TCL_ERROR;
+                Tcl_WrongNumArgs(interp, 2, objv, "setId key");
+                return TCL_ERROR;
             }
-	    key = Tcl_GetString(objv[3]);
-	    switch (opt) {
-	    case SIFindIdx:
-		objPtr = Tcl_NewIntObj(Ns_SetIFind(set, key));
-		Tcl_SetObjResult(interp, objPtr);
+            key = Tcl_GetString(objv[3]);
+
+            switch (opt) {
+            case SIFindIdx:
+                objPtr = Tcl_NewIntObj(Ns_SetIFind(set, key));
+                Tcl_SetObjResult(interp, objPtr);
                 break;
 
-	    case SFindIdx:
-		objPtr = Tcl_NewIntObj(Ns_SetFind(set, key));
-		Tcl_SetObjResult(interp, objPtr);
+            case SFindIdx:
+                objPtr = Tcl_NewIntObj(Ns_SetFind(set, key));
+                Tcl_SetObjResult(interp, objPtr);
                 break;
-		
-	    case SIDeleteIdx:
+
+            case SIDeleteIdx:
             case SIDelkeyIdx:
                 Ns_SetIDeleteKey(set, key);
                 break;
-		    
+
             case SDeleteIdx:
             case SDelkeyIdx:
                 Ns_SetDeleteKey(set, key);
                 break;
-		
+
             case SUniqueIdx:
-		objPtr = Tcl_NewIntObj(Ns_SetUnique(set, key));
-		Tcl_SetObjResult(interp, objPtr);
+                objPtr = Tcl_NewIntObj(Ns_SetUnique(set, key));
+                Tcl_SetObjResult(interp, objPtr);
                 break;
-		
+
             case SIUniqueIdx:
-		objPtr = Tcl_NewIntObj(Ns_SetIUnique(set, key));
-		Tcl_SetObjResult(interp, objPtr);
+                objPtr = Tcl_NewIntObj(Ns_SetIUnique(set, key));
+                Tcl_SetObjResult(interp, objPtr);
                 break;
             }
-	    break;
+            break;
 
-	case SValueIdx:
-	case SIsNullIdx:
-	case SKeyIdx:
-	case SDeleteIdx:
-	case STruncateIdx:
-	    /*
-	     * These commands require a set and key/value index.
-	     */
+        case SValueIdx:
+        case SIsNullIdx:
+        case SKeyIdx:
+        case SDeleteIdx:
+        case STruncateIdx:
+            /*
+             * These commands require a set and key/value index.
+             */
 
             if (objc != 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId index");
-		return TCL_ERROR;
+                Tcl_WrongNumArgs(interp, 2, objv, "setId index");
+                return TCL_ERROR;
             }
             if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
                 return TCL_ERROR;
             }
-	    if (i < 0) {
-		Tcl_AppendResult(interp, "invalid index \"",
-		    Tcl_GetString(objv[3]), "\": must be >= 0", NULL);
+            if (i < 0) {
+                Tcl_AppendResult(interp, "invalid index \"",
+                                 Tcl_GetString(objv[3]), "\": must be >= 0", NULL);
                 return TCL_ERROR;
             }
             if (i >= Ns_SetSize(set)) {
-		Tcl_AppendResult(interp, "invalid index \"",
-		    Tcl_GetString(objv[3]),
-		    "\": beyond range of set fields", NULL);
+                Tcl_AppendResult(interp, "invalid index \"",
+                                 Tcl_GetString(objv[3]),
+                                 "\": beyond range of set fields", NULL);
                 return TCL_ERROR;
             }
             switch (opt) {
-	    case SValueIdx:
-		val = Ns_SetValue(set, i);
+            case SValueIdx:
+                val = Ns_SetValue(set, i);
                 Tcl_SetResult(interp, val, TCL_VOLATILE);
                 break;
-		
+
             case SIsNullIdx:
-		val = Ns_SetValue(set, i);
-		objPtr = Tcl_NewBooleanObj(val ? 0 : 1);
+                val = Ns_SetValue(set, i);
+                objPtr = Tcl_NewBooleanObj(val ? 0 : 1);
                 Tcl_SetObjResult(interp, objPtr);
                 break;
-		
-	    case SKeyIdx:
-		key = Ns_SetKey(set, i);
+
+            case SKeyIdx:
+                key = Ns_SetKey(set, i);
                 Tcl_SetResult(interp, key, TCL_VOLATILE);
                 break;
-		
-	    case SDeleteIdx:
+
+            case SDeleteIdx:
                 Ns_SetDelete(set, i);
                 break;
-		
+
             case STruncateIdx:
                 Ns_SetTrunc(set, i);
                 break;
             }
-	    break;
+            break;
 
-	case SPutIdx:
-	case SUpdateIdx:
-	case SCPutIdx:
-	case SICPutIdx:
-	    /*
-	     * These commands require a set, key, and value.
-	     */
+        case SPutIdx:
+        case SUpdateIdx:
+        case SCPutIdx:
+        case SICPutIdx:
+            /*
+             * These commands require a set, key, and value.
+             */
 
             if (objc != 5) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setId key value");
-		return TCL_ERROR;
+                Tcl_WrongNumArgs(interp, 2, objv, "setId key value");
+                return TCL_ERROR;
             }
-	    key = Tcl_GetString(objv[3]);
-	    val = Tcl_GetString(objv[4]);
-	    switch (opt) {
-	    case SUpdateIdx:
+            key = Tcl_GetString(objv[3]);
+            val = Tcl_GetString(objv[4]);
+
+            switch (opt) {
+            case SUpdateIdx:
                 Ns_SetDeleteKey(set, key);
                 i = Ns_SetPut(set, key, val);
-		break;
-		
-	    case SICPutIdx:
-                i = Ns_SetIFind(set, key);
-		if (i < 0) {
-		    i = Ns_SetPut(set, key, val);
-		}
-		break;
-		
-	    case SCPutIdx:
-                i = Ns_SetFind(set, key);
-		if (i < 0) {
-		    i = Ns_SetPut(set, key, val);
-		}
-		break;
-		
-	    case SPutIdx:
-		i = Ns_SetPut(set, key, val);
-		break;
-            }
-	    objPtr = Tcl_NewIntObj(i);
-	    Tcl_SetObjResult(interp, objPtr);
-	    break;
+                break;
 
-	case SMergeIdx:
-	case SMoveIdx:
-	    /*
-	     * These commands require two sets.
-	     */
+            case SICPutIdx:
+                i = Ns_SetIFind(set, key);
+                if (i < 0) {
+                    i = Ns_SetPut(set, key, val);
+                }
+                break;
+
+            case SCPutIdx:
+                i = Ns_SetFind(set, key);
+                if (i < 0) {
+                    i = Ns_SetPut(set, key, val);
+                }
+                break;
+
+            case SPutIdx:
+                i = Ns_SetPut(set, key, val);
+                break;
+            }
+            objPtr = Tcl_NewIntObj(i);
+            Tcl_SetObjResult(interp, objPtr);
+            break;
+
+        case SMergeIdx:
+        case SMoveIdx:
+            /*
+             * These commands require two sets.
+             */
 
             if (objc != 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "setTo setFrom");
-		return TCL_ERROR;
+                Tcl_WrongNumArgs(interp, 2, objv, "setTo setFrom");
+                return TCL_ERROR;
             }
             if (LookupObjSet(itPtr, objv[3], 0, &set2Ptr) != TCL_OK) {
                 return TCL_ERROR;
             }
-	    if (opt == SMergeIdx) {
+            if (opt == SMergeIdx) {
                 Ns_SetMerge(set, set2Ptr);
-	    } else {
+            } else {
                 Ns_SetMove(set, set2Ptr);
-	    }
-	    Tcl_SetObjResult(interp, objv[2]);
-	    break;
-	}
+            }
+            Tcl_SetObjResult(interp, objv[2]);
+            break;
+        }
     }
 
     return TCL_OK;
 }
-
 
 
 /*
@@ -561,14 +563,14 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
  *
  * NsTclParseHeaderCmd --
  *
- *	This wraps Ns_ParseHeader. 
+ *      This wraps Ns_ParseHeader.
  *
  * Results:
- *	Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *	Parse an HTTP header and add it to an existing set; see 
- *	Ns_ParseHeader. 
+ *      Parse an HTTP header and add it to an existing set; see
+ *      Ns_ParseHeader.
  *
  *----------------------------------------------------------------------
  */
@@ -589,7 +591,7 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
         return TCL_ERROR;
     }
     if (argc < 4) {
-	disp = ToLower;
+        disp = ToLower;
     } else if (STREQ(argv[3], "toupper")) {
         disp = ToUpper;
     } else if (STREQ(argv[3], "tolower")) {
@@ -614,10 +616,10 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
  *
  * EnterSet --
  *
- *	Add an Ns_Set to an interp, creating a new unique id.
+ *      Add an Ns_Set to an interp, creating a new unique id.
  *
  * Results:
- *	TCL_OK or TCL_ERROR.
+ *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
  *      None.
@@ -635,22 +637,19 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
     char            buf[TCL_INTEGER_SPACE + 1];
 
     tablePtr = &itPtr->sets;
-    if (flags & NS_TCL_SET_DYNAMIC) {
-        type = SET_DYNAMIC;
-    } else {
-        type = SET_STATIC;
-    }
+    type = (flags & NS_TCL_SET_DYNAMIC) ? SET_DYNAMIC : SET_STATIC;
 
     /*
      * Allocate a new set IDs until we find an unused one.
      */
-    
+
     next = tablePtr->numEntries;
     do {
         snprintf(buf, sizeof(buf), "%c%u", type, next);
-	++next;
+        ++next;
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &new);
     } while (!new);
+
     Tcl_SetHashValue(hPtr, set);
     Tcl_AppendElement(itPtr->interp, buf);
 
@@ -663,14 +662,14 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
  *
  * LookupSet --
  *
- *	Take a tcl set handle and return a matching Set.
+ *      Take a tcl set handle and return a matching Set.
  *
  * Results:
- *	TCL_OK or TCL_ERROR.
+ *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
  *      If delete is set, then the hash entry will be removed.
- *  	Set will be returned in given setPtr.
+ *      Set will be returned in given setPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -688,8 +687,8 @@ LookupInterpSet(Tcl_Interp *interp, char *id, int delete, Ns_Set **setPtr)
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
-	Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
-	return TCL_ERROR;
+        Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
+        return TCL_ERROR;
     }
     return LookupSet(itPtr, id, delete, setPtr);
 }
@@ -707,11 +706,11 @@ LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr)
             Tcl_DeleteHashEntry(hPtr);
         }
     }
-
     if (set == NULL) {
-	Tcl_AppendResult(itPtr->interp, "no such set: ", id, NULL);
-	return TCL_ERROR;
+        Tcl_AppendResult(itPtr->interp, "no such set: ", id, NULL);
+        return TCL_ERROR;
     }
     *setPtr = set;
+
     return TCL_OK;
 }
