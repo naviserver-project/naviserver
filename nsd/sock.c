@@ -128,6 +128,37 @@ Ns_ResetVec(struct iovec *iov, int nbufs, size_t sent)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_SumVec --
+ *
+ *      Count the bytes in all buffers.
+ *
+ * Results:
+ *      Total length of all buffers.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+size_t
+Ns_SumVec(struct iovec *bufs, int nbufs)
+{
+    int     i;
+    size_t  sum = 0;
+
+    for (i = 0; i < nbufs; i++) {
+        if (bufs[i].iov_len > 0) {
+            sum += bufs[i].iov_len;
+        }
+    }
+    return sum;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SockRecvBufs --
  *
  *      Read data from a non-blocking socket into a vector of buffers.

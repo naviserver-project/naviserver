@@ -1944,6 +1944,10 @@ NS_EXTERN int
 Ns_ResetVec(struct iovec *iov, int nbufs, size_t sent)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN size_t
+Ns_SumVec(struct iovec *iov, int nbufs)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
 NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
 NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,

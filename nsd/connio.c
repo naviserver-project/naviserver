@@ -215,7 +215,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 {
     Conn         *connPtr = (Conn *) conn;
     Ns_DString    ds;
-    int           i, nsbufs, sbufIdx, bodyLength, towrite, nwrote;
+    int           nsbufs, sbufIdx, bodyLength, towrite, nwrote;
     char          hdr[32];
     struct iovec  sbufs[32], *sbufPtr = sbufs;
 
@@ -237,10 +237,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
      * Work out the body length for non-chunking case.
      */
 
-    for (i = 0, bodyLength = 0; i < nbufs; i++) {
-        bodyLength += bufs[i].iov_len;
-    }
-
+    bodyLength = Ns_SumVec(bufs, nbufs);
     towrite = 0;
 
     /*

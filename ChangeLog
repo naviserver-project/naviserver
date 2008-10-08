@@ -3,6 +3,10 @@
 	* nsd/connio.c: Re-add some missing code to Ns_ConnSend which
 	caused it broke it's promise to send everything.
 
+	* include/ns.h:
+	* nsd/connio.c:
+	* nsd/sock.c: Add Ns_SumVec utility routine and use it.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 
