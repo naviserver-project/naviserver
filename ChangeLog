@@ -63,6 +63,12 @@
 	* tcl/compat.tcl: Remove the old ns_var command. Add a simple
 	compatibilty wrapper in Tcl which uses nsv.
 
+	* nsd/Makefile:
+	* nsd/nsd.h:
+	* nsd/tclcmds.c:
+	* nsd/tclinit.c:
+	* nsd/tclshare.c: Remove the old ns_share command.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 

@@ -459,7 +459,6 @@ static Cmd servCmds[] = {
     {"ns_sema", NULL, NsTclSemaObjCmd},
     {"ns_server", NULL, NsTclServerObjCmd},
     {"ns_setcookie", NULL, NsTclSetCookieObjCmd},
-    {"ns_share", NsTclShareCmd, NULL},
     {"ns_shutdown", NULL, NsTclShutdownObjCmd},
     {"ns_startcontent", NULL, NsTclStartContentObjCmd},
     {"ns_unregister_op", NULL, NsTclUnRegisterOpObjCmd},

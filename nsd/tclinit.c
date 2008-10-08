@@ -197,12 +197,9 @@ ConfigServerTcl(CONST char *server)
     servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
 
     /*
-     * Legacy ns_share shared sets support.
+     * Legacy shared sets support.
      */
 
-    Tcl_InitHashTable(&servPtr->share.inits, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->share.vars, TCL_STRING_KEYS);
-    Ns_MutexSetName2(&servPtr->share.lock, "nstcl:share", server);
     Tcl_InitHashTable(&servPtr->sets.table, TCL_STRING_KEYS);
     Ns_MutexSetName2(&servPtr->sets.lock, "nstcl:sets", server);
 
