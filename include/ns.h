@@ -1937,7 +1937,7 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
  */
 
 NS_EXTERN size_t
-Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, void *data,
+Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, CONST void *data,
               off_t offset, size_t length)
     NS_GNUC_NONNULL(1);
 
@@ -1965,7 +1965,7 @@ Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
  */
 
 NS_EXTERN size_t
-Ns_SetVec(struct iovec *iov, int i, void *data, size_t len)
+Ns_SetVec(struct iovec *iov, int i, CONST void *data, size_t len)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int

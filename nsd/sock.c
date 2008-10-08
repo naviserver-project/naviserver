@@ -73,9 +73,9 @@ static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs);
  */
 
 size_t
-Ns_SetVec(struct iovec *iov, int i, void *data, size_t len)
+Ns_SetVec(struct iovec *iov, int i, CONST void *data, size_t len)
 {
-    iov[i].iov_base = data;
+    iov[i].iov_base = (void *) data;
     iov[i].iov_len = len;
 
     return len;

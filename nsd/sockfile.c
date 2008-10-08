@@ -68,7 +68,7 @@ static ssize_t SendFd(SOCKET sock, int fd, off_t offset, size_t length,
  */
 
 size_t
-Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, void *data,
+Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, CONST void *data,
               off_t offset, size_t length)
 {
     bufs[i].fd = fd;

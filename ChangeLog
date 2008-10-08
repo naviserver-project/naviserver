@@ -42,6 +42,10 @@
 	* tests/testserver/pages/ns_adp_compress.adp: Add extra tests for
 	compressed streaming/chunking etc. and ns_return/ns_write.
 
+	* include/ns.h:
+	* nsd/sock.c:
+	* nsd/sockfile.c: Cast away some CONSTness in Ns_SetVec.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 
