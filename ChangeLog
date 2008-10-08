@@ -1,3 +1,8 @@
+2008-10-07  Stephen Deasey <sdeasey@users.sf.net>
+
+	* nsd/connio.c: Re-add some missing code to Ns_ConnSend which
+	caused it broke it's promise to send everything.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 

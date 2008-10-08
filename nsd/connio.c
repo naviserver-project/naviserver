@@ -517,7 +517,6 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
  *
  * Side effects:
  *      - Will update connPtr->nContentSent.
- *      - May send data using multiple OS calls if nbufs is large.
  *      - Also depends on configured comm driver, i.e. nssock, nsssl.
  *
  *----------------------------------------------------------------------
@@ -526,16 +525,33 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
 int
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
-    Conn  *connPtr = (Conn *) conn;
-    int    sent    = 1;
+    Conn    *connPtr = (Conn *) conn;
+    int      i;
+    size_t   towrite;
+    ssize_t  nwrote, sent;
 
-    if (connPtr->sockPtr != NULL) {
-        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs);
-        if (sent > 0) {
-            connPtr->nContentSent += sent;
-        }
+    if (connPtr->sockPtr == NULL) {
+        return -1;
     }
-    return sent;
+
+    towrite = nwrote = sent = 0;
+
+    for (i = 0; i < nbufs; i++) {
+        towrite += bufs[i].iov_len;
+    }
+    while (towrite > 0) {
+        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs);
+        if (sent < 0) {
+            break;
+        }
+        towrite -= sent;
+        nwrote += sent;
+    }
+    if (nwrote > 0) {
+        connPtr->nContentSent += nwrote;
+    }
+
+    return (int) (nwrote ? nwrote : sent);
 }
 
 
