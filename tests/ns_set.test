@@ -23,7 +23,7 @@ test ns_set-1.7 {basic syntax ns_set cleanup} -body {
 
 test ns_set-1.8 {basic syntax ns_set copy} -body {
     ns_set copy
-} -returnCodes error -result {wrong # args: should be "ns_set copy ?-shared? setId"}
+} -returnCodes error -result {wrong # args: should be "ns_set copy setId"}
 
 test ns_set-1.9 {basic syntax ns_set cput} -body {
     ns_set cput
@@ -127,7 +127,7 @@ test ns_set-1.32 {basic syntax ns_set size} -body {
 
 test ns_set-1.33 {basic syntax ns_set split} -body {
     ns_set split
-} -returnCodes error -result {wrong # args: should be "ns_set split ?-shared? setId ?splitChar"}
+} -returnCodes error -result {wrong # args: should be "ns_set split setId ?splitChar"}
 
 test ns_set-1.34 {basic syntax ns_set truncate} -body {
     ns_set truncate

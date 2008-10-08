@@ -44,19 +44,13 @@ NS_RCSID("@(#) $Header$");
  
 #define SET_DYNAMIC 		'd'
 #define SET_STATIC    		't'
-#define SET_SHARED_DYNAMIC	's'
-#define SET_SHARED_STATIC  	'p'
 
-#define IS_DYNAMIC(id)    \
-	(*(id) == SET_DYNAMIC || *(id) == SET_SHARED_DYNAMIC)
-#define IS_SHARED(id)     \
-	(*(id) == SET_SHARED_DYNAMIC || *(id) == SET_SHARED_STATIC)
+#define IS_DYNAMIC(id) (*(id) == SET_DYNAMIC)
 
 /*
  * Local functions defined in this file
  */
 
-static int NoServer(Tcl_Interp *interp);
 static int LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr);
 static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int delete,
 			Ns_Set **setPtr);
@@ -198,7 +192,7 @@ int
 NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     Ns_Set       *set, *set2Ptr, **sets;
-    int           locked, i, flags;
+    int           i, flags;
     char         *key, *val, *def, *name, *split;
     Tcl_DString	  ds;
     Tcl_HashTable *tablePtr;
@@ -254,49 +248,26 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	break;
 
     case SListIdx:
-	if (objc == 2) {
-	    tablePtr = &itPtr->sets;
-    	    locked = 0;
-	} else if (STREQ(Tcl_GetString(objv[2]), "-shared")) {
-	    if (itPtr->servPtr == NULL) {
-		return NoServer(interp);
-	    }
-	    tablePtr = &itPtr->servPtr->sets.table;
-	    locked = 1;
-	    Ns_MutexLock(&itPtr->servPtr->sets.lock);
-	} else {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-shared?");
-	    return TCL_ERROR;
-	}
-	if (tablePtr != NULL) {
-	    hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-	    while (hPtr != NULL) {
-		Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
-		hPtr = Tcl_NextHashEntry(&search);
-	    }
-	}
-	if (locked) {
-	    Ns_MutexUnlock(&itPtr->servPtr->sets.lock);
-	}
+        tablePtr = &itPtr->sets;
+        if (tablePtr != NULL) {
+            hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+            while (hPtr != NULL) {
+                Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
+                hPtr = Tcl_NextHashEntry(&search);
+            }
+        }
 	break;
 
     case SNewIdx:
     case SCopyIdx:
     case SSplitIdx:
-	/*
-	 * The following commands create new sets.
-	 */
-	
+        /*
+         * The following commands create new sets.
+         */
+
         flags = NS_TCL_SET_DYNAMIC;
         i = 2;
-        if (objc > 2) {
-	    char *oflag = Tcl_GetString(objv[2]);
-	    if (STREQ(oflag, "-shared") || STREQ(oflag, "-persist")) {
-            	flags |= NS_TCL_SET_SHARED;
-            	++i;
-	    }
-        }
-	
+
         switch (opt) {
 	case SNewIdx:
 	    name = (i < objc) ? Tcl_GetString(objv[i++]) : NULL;
@@ -311,7 +282,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
         case SCopyIdx:
             if (i >= objc) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?-shared? setId");
+		Tcl_WrongNumArgs(interp, 2, objv, "setId");
 		return TCL_ERROR;
             }
 	    if (LookupObjSet(itPtr, objv[i], 0, &set) != TCL_OK) {
@@ -322,7 +293,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	
         case SSplitIdx:
 	    if ((objc - i) < 1) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?-shared? setId ?splitChar");
+		Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
 		return TCL_ERROR;
             }
 	    if (LookupObjSet(itPtr, objv[i++], 0, &set) != TCL_OK) {
@@ -649,7 +620,7 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
  *	TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *      Set will be entered in the shared or private table.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -663,28 +634,11 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
     unsigned char   type;
     char            buf[TCL_INTEGER_SPACE + 1];
 
-    if (flags & NS_TCL_SET_SHARED) {
-	/*
-	 * Lock the global mutex and use the shared sets.
-	 */
-	
-	if (itPtr->servPtr == NULL) {
-	    return NoServer(itPtr->interp);
-	}
-	if (flags & NS_TCL_SET_DYNAMIC) {
-	    type = SET_SHARED_DYNAMIC;
-	} else {
-	    type = SET_SHARED_STATIC;
-	}
-	tablePtr = &itPtr->servPtr->sets.table;
-        Ns_MutexLock(&itPtr->servPtr->sets.lock);
+    tablePtr = &itPtr->sets;
+    if (flags & NS_TCL_SET_DYNAMIC) {
+        type = SET_DYNAMIC;
     } else {
-	tablePtr = &itPtr->sets;
-	if (flags & NS_TCL_SET_DYNAMIC) {
-	    type = SET_DYNAMIC;
-	} else {
-            type = SET_STATIC;
-	}
+        type = SET_STATIC;
     }
 
     /*
@@ -700,12 +654,6 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
     Tcl_SetHashValue(hPtr, set);
     Tcl_AppendElement(itPtr->interp, buf);
 
-    /*
-     * Unlock the global mutex (locked above) if it's a persistent set.
-     */
-    if (flags & NS_TCL_SET_SHARED) {
-        Ns_MutexUnlock(&itPtr->servPtr->sets.lock);
-    }
     return TCL_OK;
 }
 
@@ -715,8 +663,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
  *
  * LookupSet --
  *
- *	Take a tcl set handle and return a matching Set. This 
- *	takes both persistent and dynamic set handles. 
+ *	Take a tcl set handle and return a matching Set.
  *
  * Results:
  *	TCL_OK or TCL_ERROR.
@@ -750,46 +697,21 @@ LookupInterpSet(Tcl_Interp *interp, char *id, int delete, Ns_Set **setPtr)
 static int
 LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr)
 {
-    Tcl_HashTable *tablePtr;
     Tcl_HashEntry *hPtr;
-    Ns_Set        *set;
+    Ns_Set        *set = NULL;
 
-    /*
-     * If it's a persistent set, use the shared table, otherwise
-     * use the private table.
-     */
-    
-    set = NULL;
-    if (IS_SHARED(id)) {
-	if (itPtr->servPtr == NULL) {
-	    return NoServer(itPtr->interp);
-	}
-    	tablePtr = &itPtr->servPtr->sets.table;
-        Ns_MutexLock(&itPtr->servPtr->sets.lock);
-    } else {
-	tablePtr = &itPtr->sets;
-    }
-    hPtr = Tcl_FindHashEntry(tablePtr, id);
+    hPtr = Tcl_FindHashEntry(&itPtr->sets, id);
     if (hPtr != NULL) {
         set = (Ns_Set *) Tcl_GetHashValue(hPtr);
         if (delete) {
             Tcl_DeleteHashEntry(hPtr);
         }
     }
-    if (IS_SHARED(id)) {
-        Ns_MutexUnlock(&itPtr->servPtr->sets.lock);
-    }
+
     if (set == NULL) {
 	Tcl_AppendResult(itPtr->interp, "no such set: ", id, NULL);
 	return TCL_ERROR;
     }
     *setPtr = set;
     return TCL_OK;
-}
-
-static int
-NoServer(Tcl_Interp *interp)
-{
-    Tcl_SetResult(interp, "no server for shared sets", TCL_STATIC);
-    return TCL_ERROR;
 }

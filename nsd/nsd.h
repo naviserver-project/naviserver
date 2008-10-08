@@ -787,16 +787,6 @@ typedef struct NsServer {
     } compress;
 
     /*
-     * The following struct maintains the Ns_Set's
-     * entered into Tcl with NS_TCL_SET_SHARED.
-     */
-
-    struct {
-        Ns_Mutex lock;
-        Tcl_HashTable table;
-    } sets;
-
-    /*
      * The following struct maintains the arrays
      * for the nsv commands.
      */

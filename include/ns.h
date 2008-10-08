@@ -169,15 +169,6 @@
 
 #define NS_TCL_SET_STATIC          0 /* Ns_Set managed elsewhere, maintain a Tcl reference */
 #define NS_TCL_SET_DYNAMIC         1 /* Tcl owns the Ns_Set and will free when finnished */
-#define NS_TCL_SET_SHARED          2 /* Ns_Set will be shared with all interps (deprecated, see: nsv) */
-
-/*
- * Backwards compatible (and confusing) names.
- */
-
-#define NS_TCL_SET_PERSISTENT      NS_TCL_SET_SHARED
-#define NS_TCL_SET_TEMPORARY       NS_TCL_SET_STATIC
-#define NS_CACHE_FREE              ns_free
 
 #define NS_COOKIE_SECURE           1  /* The cookie should only be sent using HTTPS */
 #define NS_COOKIE_SCRIPTABLE       2  /* Available to javascript on the client. */
@@ -626,6 +617,8 @@ NS_EXTERN int  Ns_AuthorizeUser(char *user, char *passwd);
 /*
  * cache.c:
  */
+
+#define NS_CACHE_FREE ns_free
 
 NS_EXTERN Ns_Cache *
 Ns_CacheCreate(CONST char *name, int keys, time_t ttl, Ns_Callback *freeProc)

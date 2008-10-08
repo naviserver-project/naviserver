@@ -69,6 +69,12 @@
 	* nsd/tclinit.c:
 	* nsd/tclshare.c: Remove the old ns_share command.
 
+	* include/ns.h:
+	* nsd/nsd.h:
+	* nsd/tclinit.c:
+	* nsd/tclset.c:
+	* tests/ns_set.test: Remove the -share option from ns_set.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 
