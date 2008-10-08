@@ -30,7 +30,7 @@
 /*
  * tclvar.c --
  *
- *      Support for the old ns_var and new nsv_* commands.
+ *      Tcl shared variables.
  */
 
 #include "nsd.h"
@@ -655,109 +655,6 @@ SetVar(NsArray *arrayPtr, Tcl_Obj *key, Tcl_Obj *value)
 }
 
 
-/*
- *----------------------------------------------------------------------
- *
- * NsTclVarObjCmd --
- *
- *      Implements ns_var (deprecated).
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclVarObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-               Tcl_Obj **objv)
-{
-    NsInterp         *itPtr = arg;
-    NsServer         *servPtr;
-    Tcl_HashTable    *tablePtr;
-    Tcl_HashEntry    *hPtr;
-    Tcl_HashSearch    search;
-    int               new, code, opt;
-    char             *var = NULL, *val = NULL;
-
-    static CONST char *opts[] = {
-        "exists", "get", "list", "set", "unset", NULL
-    };
-    enum {
-        VExistsIdx, VGetIdx, VListIdx, VSetIdx, VUnsetIdx
-    };
-
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?args?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
-    servPtr = itPtr->servPtr;
-    tablePtr = &servPtr->var.table;
-    code = TCL_OK;
-    if (objc > 2) {
-        var = Tcl_GetString(objv[2]);
-    }
-
-    Ns_MutexLock(&servPtr->var.lock);
-    switch (opt) {
-    case VExistsIdx:
-    case VGetIdx:
-    case VUnsetIdx:
-        if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "var");
-            code = TCL_ERROR;
-        } else {
-            hPtr = Tcl_FindHashEntry(tablePtr, var);
-            if (opt == VExistsIdx) {
-                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(hPtr ? 1 : 0));
-            } else if (hPtr == NULL) {
-                Tcl_AppendResult(interp, "no such variable \"", var, 
-                                 "\"", NULL);
-                code = TCL_ERROR;
-            } else if (opt == VGetIdx) {
-                Tcl_SetResult(interp, Tcl_GetHashValue(hPtr), TCL_VOLATILE);
-            } else {
-                ns_free(Tcl_GetHashValue(hPtr));
-                Tcl_DeleteHashEntry(hPtr);
-            }
-        }
-        break;
-
-    case VSetIdx:
-        if (objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "var value");
-            code = TCL_ERROR;
-        } else {
-            hPtr = Tcl_CreateHashEntry(tablePtr, var, &new);
-            if (!new) {
-                ns_free(Tcl_GetHashValue(hPtr));
-            }
-            val = Tcl_GetString(objv[3]);
-            Tcl_SetHashValue(hPtr, ns_strdup(val));
-            Tcl_SetResult(interp, val, TCL_VOLATILE);
-        }
-        break;
-
-    case VListIdx:
-        hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-        while (hPtr != NULL) {
-            Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-        break;
-    }
-    Ns_MutexUnlock(&servPtr->var.lock);
-
-    return code;
-}
-
 /*
  *----------------------------------------------------------------
  *

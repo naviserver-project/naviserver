@@ -56,6 +56,13 @@
 	driver callbacks. These are passed directly to the underlying
 	recv() etc. system call.
 
+	* nsd/nsd.h:
+	* nsd/tclcmds.c:
+	* nsd/tclinit.c:
+	* nsd/tclvar.c:
+	* tcl/compat.tcl: Remove the old ns_var command. Add a simple
+	compatibilty wrapper in Tcl which uses nsv.
+
 2008-10-05  Vlad Seryakov <seryakov@users.sf.net>
 
 	include/nsthread.h: 

@@ -807,16 +807,6 @@ typedef struct NsServer {
     } nsv;
 
     /*
-     * The following struct maintains the vars and
-     * lock for the old ns_var command.
-     */
-
-    struct {
-        Ns_Mutex lock;
-        Tcl_HashTable table;
-    } var;
-
-    /*
      * The following struct maintains the init state
      * of ns_share variables, updated with the
      * ns_share -init command.

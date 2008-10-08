@@ -346,5 +346,27 @@ proc ns_unregister_proc {args} {
     eval ns_unregister_op $args
 }
 
+#
+# ns_var --
+#
+#   Tcl shared variables. Use nsv_* instead.
+#
+
+proc ns_var {cmd {key ""} {value ""}} {
+
+    switch $cmd {
+
+        exists { return [nsv_exists ns:var $key] }
+        list   { return [nsv_list   ns:var] }
+        get    { return [nsv_get    ns:var $key] }
+        set    { return [nsv_set    ns:var $key $value] }
+        unset  { return [nsv_unset  ns:var $key] }
+
+        default {
+            error "unknown command \"$cmd\", should be exists, list, get, set, or unset"
+        }
+    }
+}
+
 # EOF $RCSfile$
 
