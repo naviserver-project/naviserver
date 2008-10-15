@@ -181,8 +181,8 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 
     if (sockPtr->reqPtr != NULL) {
         poolPtr = NsUrlSpecificGet(servPtr,
-                                   sockPtr->reqPtr->request->method,
-                                   sockPtr->reqPtr->request->url,
+                                   sockPtr->reqPtr->request.method,
+                                   sockPtr->reqPtr->request.url,
                                    poolid, 0);
     }
     if (poolPtr == NULL) {
@@ -663,7 +663,8 @@ ConnRun(Conn *connPtr)
     char     *auth;
 
     /*
-     * Re-initialize and run the connection.
+     * Re-initialize and run the connection. Also it will make sure the
+     * request is valid and not empty
      */
 
     connPtr->reqPtr = NsGetRequest(connPtr->sockPtr);
@@ -681,7 +682,7 @@ ConnRun(Conn *connPtr)
 
     connPtr->contentLength = connPtr->reqPtr->length;
     connPtr->headers = connPtr->reqPtr->headers;
-    connPtr->request = connPtr->reqPtr->request;
+    connPtr->request = &connPtr->reqPtr->request;
     connPtr->nContentSent = 0;
     connPtr->responseStatus = 200;
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
@@ -896,11 +897,9 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
          * admin command.
          */
 
-        p = (connPtr->request && connPtr->request->method) ?
-            connPtr->request->method : "?";
+        p = (connPtr->request && connPtr->request->method) ? connPtr->request->method : "?";
         Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
-        p = (connPtr->request && connPtr->request->url) ?
-            connPtr->request->url : "?";
+        p = (connPtr->request && connPtr->request->url) ? connPtr->request->url : "?";
         Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
         Ns_GetTime(&now);
         Ns_DiffTime(&now, &connPtr->startTime, &diff);

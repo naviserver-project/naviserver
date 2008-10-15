@@ -556,7 +556,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Append the request line plus query data (if configured)
      */
 
-    if (conn->request && conn->request->line) {
+    if (conn->request != NULL) {
         if ((logPtr->flags & LOG_SUPPRESSQUERY)) {
             Ns_DStringVarAppend(&ds, " \"", conn->request->url, "\" ", NULL);
         } else {

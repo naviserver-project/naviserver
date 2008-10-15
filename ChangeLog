@@ -6,6 +6,24 @@
         Updated Ns_Sock/Sock structures to expose sockaddr_in sa, so drivers can
         update it. This is the case for UDP drivers.
 
+        # include/ns.h:
+        * nsd/driver.c: Reintroduced Ns_DriverSetRequest as the way to set request by the
+        non-HTTP driver. This is questionable but at this moment i do not have other solution.
+        Also added new NS_DRIVER_NOPARSE flag to tell the driver no to parse incoming data. This way
+        driver thread still read data from the socket into its own buffers instead of a driver to allocate
+        extra memory to keep data.
+
+        * include/nsd.h:
+        * nsd/urlopen.c:
+        * nsd/progress.c:
+        * nsd/queue.c:
+        * nsd/request.c: Changes public function Ns_ParseRequest, now it
+        accepts pointer to Ns_Request and fills it with values, retuens NS_OK or NS_ERROR
+        Changed Request structure to include Ns_Reqeust instead of pointer:
+        this saves extra Alloc/Free and because this is required structure we avoid
+        possible access to its fields if it is NULL.
+
+
 2008-10-07  Stephen Deasey <sdeasey@users.sf.net>
 
 	* nsd/connio.c: Re-add some missing code to Ns_ConnSend which

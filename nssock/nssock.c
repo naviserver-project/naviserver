@@ -98,7 +98,7 @@ Ns_ModuleInit(char *server, char *module)
     init.closeProc = Close;
     init.opts = NS_DRIVER_ASYNC;
     init.arg = cfg;
-    init.path = path;
+    init.path = (char*)path;
 
     return Ns_DriverInit(server, module, &init);
 }
@@ -125,7 +125,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
 {
     SOCKET sock;
 
-    sock = Ns_SockListenEx(address, port, backlog);
+    sock = Ns_SockListenEx((char*)address, port, backlog);
     if (sock != INVALID_SOCKET) {
         (void) Ns_SockSetNonBlocking(sock);
         SetDeferAccept(driver, sock);

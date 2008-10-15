@@ -139,6 +139,7 @@
 
 #define NS_DRIVER_ASYNC            0x01 /* Use async read-ahead. */
 #define NS_DRIVER_SSL              0x02 /* Use SSL port, protocol defaults. */
+#define NS_DRIVER_NOPARSE          0x04 /* Do not parse request */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* Current version. */
@@ -1048,6 +1049,7 @@ NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
  */
 
 NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
+NS_EXTERN int Ns_DriverSetRequest(Ns_Sock *sock, char *reqline);
 
 /*
  * dstring.c:
@@ -1623,7 +1625,8 @@ NS_EXTERN void Ns_QuoteHtml(Ns_DString *pds, char *string);
  */
 
 NS_EXTERN void Ns_FreeRequest(Ns_Request *request);
-NS_EXTERN Ns_Request *Ns_ParseRequest(CONST char *line);
+NS_EXTERN void Ns_ResetRequest(Ns_Request *request);
+NS_EXTERN int Ns_ParseRequest(Ns_Request *request, CONST char *line);
 NS_EXTERN char *Ns_SkipUrl(Ns_Request *request, int n);
 NS_EXTERN void Ns_SetRequestUrl(Ns_Request *request, CONST char *url);
 

@@ -52,6 +52,36 @@ static void FreeUrl(Ns_Request * request);
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ResetRequest --
+ *
+ *	Free an Ns_Request members.
+ *
+ * Results:
+ *	None. 
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ResetRequest(Ns_Request * request)
+{
+    if (request != NULL) {
+        ns_free(request->line);
+        ns_free(request->method);
+        ns_free(request->protocol);
+        ns_free(request->host);
+        ns_free(request->query);
+        FreeUrl(request);
+        memset(request, 0, sizeof(Ns_Request));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_FreeRequest --
  *
  *	Free an Ns_Request structure and all its members. 
@@ -96,14 +126,17 @@ Ns_FreeRequest(Ns_Request * request)
  *----------------------------------------------------------------------
  */
 
-Ns_Request *
-Ns_ParseRequest(CONST char *line)
+int
+Ns_ParseRequest(Ns_Request *request, CONST char *line)
 {
     char       *url, *l, *p;
     Ns_DString  ds;
-    Ns_Request *request;
 
-    request = ns_calloc(1, sizeof(Ns_Request));
+    if (request == NULL) {
+        return NS_ERROR;
+    }
+
+    memset(request, 0, sizeof(Ns_Request));
     Ns_DStringInit(&ds);
 
     /*
@@ -220,14 +253,13 @@ Ns_ParseRequest(CONST char *line)
         }
     }
     SetUrl(request, url);
+    Ns_DStringFree(&ds);
+    return NS_OK;
 
 done:
-    if (request->url == NULL) {
-        Ns_FreeRequest(request);
-        request = NULL;
-    }
+    Ns_ResetRequest(request);
     Ns_DStringFree(&ds);
-    return request;
+    return NS_ERROR;
 }
 
 

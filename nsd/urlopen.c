@@ -123,7 +123,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     char           *p;
     Ns_DString      ds;
     Stream          stream;
-    Ns_Request     *request;
+    Ns_Request      request;
     int             status, n;
     unsigned int    tosend;
 
@@ -136,16 +136,18 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
      */
 
     Ns_DStringVarAppend(&ds, "GET ", url, " HTTP/1.0", NULL);
-    request = Ns_ParseRequest(ds.string);
-    if (request == NULL || request->protocol == NULL ||
-        !STREQ(request->protocol, "http") || request->host == NULL) {
+    status = Ns_ParseRequest(&request, ds.string);
+    if (status == NS_ERROR ||
+        request.protocol == NULL ||
+        !STREQ(request.protocol, "http") ||
+        request.host == NULL) {
         Ns_Log(Notice, "urlopen: invalid url '%s'", url);
         goto done;
     }
-    if (request->port == 0) {
-        request->port = 80;
+    if (request.port == 0) {
+        request.port = 80;
     }
-    sock = Ns_SockConnect(request->host, request->port);    
+    sock = Ns_SockConnect(request.host, request.port);
     if (sock == INVALID_SOCKET) {
         Ns_Log(Error, "urlopen: failed to connect to '%s': '%s'",
                url, ns_sockstrerror(ns_sockerrno));
@@ -157,9 +159,9 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
      */
      
     Ns_DStringSetLength(&ds, 0);
-    Ns_DStringVarAppend(&ds, "GET ", request->url, NULL);
-    if (request->query != NULL) {
-        Ns_DStringVarAppend(&ds, "?", request->query, NULL);
+    Ns_DStringVarAppend(&ds, "GET ", request.url, NULL);
+    if (request.query != NULL) {
+        Ns_DStringVarAppend(&ds, "?", request.query, NULL);
     }
     Ns_DStringAppend(&ds, " HTTP/1.0\r\nAccept: */*\r\n\r\n");
     p = ds.string;
@@ -217,9 +219,8 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     }
 
  done:
-    if (request != NULL) {
-        Ns_FreeRequest(request);
-    }
+    Ns_ResetRequest(&request);
+
     if (sock != INVALID_SOCKET) {
         ns_sockclose(sock);
     }

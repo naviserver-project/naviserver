@@ -177,7 +177,7 @@ NsUpdateProgress(Ns_Sock *sock)
 {
     Sock          *sockPtr = (Sock *) sock;
     Request       *reqPtr  = sockPtr->reqPtr;
-    Ns_Request    *request = reqPtr->request;
+    Ns_Request    *request = &reqPtr->request;
     Progress      *pPtr;
     Tcl_HashEntry *hPtr;
     Ns_DString     ds;

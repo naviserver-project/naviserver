@@ -284,7 +284,7 @@ typedef struct AdpCode {
 
 typedef struct Request {
     struct Request *nextPtr;    /* Next on free list */
-    Ns_Request *request;        /* Parsed request line */
+    Ns_Request request;         /* Parsed request line */
     Ns_Set *headers;            /* Input headers */
     Ns_Set *auth;               /* Auth user/password and parameters */
     char peer[16];              /* Client peer address */
@@ -340,23 +340,23 @@ typedef struct Driver {
      * Visible in Ns_Driver.
      */
 
-    void *arg;                  /* Driver callback data */
-    char *server;               /* Virtual server name */
-    char *module;               /* Driver module */
-    char *name;                 /* Driver name */
-    char *location;             /* Location, e.g, "http://foo:9090" */
-    char *address;              /* Address in location, e.g. "foo" */
-    char *protocol;             /* Protocol in location, e.g, "http" */
-    int   sendwait;             /* send() I/O timeout */
-    int   recvwait;             /* recv() I/O timeout */
-    int   bufsize;              /* Conn bufsize (0 for SSL) */
+    void *arg;                          /* Driver callback data */
+    char *server;                       /* Virtual server name */
+    char *module;                       /* Driver module */
+    char *name;                         /* Driver name */
+    char *location;                     /* Location, e.g, "http://foo:9090" */
+    char *address;                      /* Address in location, e.g. "foo" */
+    char *protocol;                     /* Protocol in location, e.g, "http" */
+    int   sendwait;                     /* send() I/O timeout */
+    int   recvwait;                     /* recv() I/O timeout */
+    int   bufsize;                      /* Conn bufsize (0 for SSL) */
 
     /*
      * Private to Driver.
      */
 
-    struct Driver *nextPtr;     /* Next in list of drivers */
-    struct NsServer *servPtr;   /* Driver virtual server */
+    struct Driver         *nextPtr;     /* Next in list of drivers */
+    struct NsServer       *servPtr;     /* Driver virtual server */
     Ns_DriverListenProc   *listenProc;
     Ns_DriverAcceptProc   *acceptProc;
     Ns_DriverRecvProc     *recvProc;
@@ -364,38 +364,38 @@ typedef struct Driver {
     Ns_DriverSendFileProc *sendFileProc;
     Ns_DriverKeepProc     *keepProc;
     Ns_DriverCloseProc    *closeProc;
-    int opts;                   /* NS_DRIVER_* options */
-    int closewait;              /* Graceful close timeout */
-    int keepwait;               /* Keepalive timeout */
-    int keepallmethods;         /* Keepalive all methods or just GET? */
-    SOCKET sock;                /* Listening socket */
-    int pidx;                   /* poll() index */
-    char *bindaddr;             /* Numerical listen address */
-    int port;                   /* Port in location */
-    int backlog;                /* listen() backlog */
-    Tcl_WideInt maxinput;       /* Maximum request bytes to read */
-    Tcl_WideInt maxupload;      /* Uploads that exceed will go into temp file without parsing */
-    char *uploadpath;           /* Path where uploaded files will be spooled */
-    int maxline;                /* Maximum request line size */
-    int maxheaders;             /* Maximum number of request headers */
-    int readahead;              /* Maximum request size in memory */
-    int queuesize;              /* Current number of sockets in the queue */
-    int maxqueuesize;           /* Maximum number of sockets in the queue */
-    int acceptsize;             /* Number requests to accept at once */
-    int loggingFlags;           /* Logging control flags */
+    int opts;                           /* NS_DRIVER_* options */
+    int closewait;                      /* Graceful close timeout */
+    int keepwait;                       /* Keepalive timeout */
+    int keepallmethods;                 /* Keepalive all methods or just GET? */
+    SOCKET sock;                        /* Listening socket */
+    int pidx;                           /* poll() index */
+    char *bindaddr;                     /* Numerical listen address */
+    int port;                           /* Port in location */
+    int backlog;                        /* listen() backlog */
+    Tcl_WideInt maxinput;               /* Maximum request bytes to read */
+    Tcl_WideInt maxupload;              /* Uploads that exceed will go into temp file without parsing */
+    char *uploadpath;                   /* Path where uploaded files will be spooled */
+    int maxline;                        /* Maximum request line size */
+    int maxheaders;                     /* Maximum number of request headers */
+    int readahead;                      /* Maximum request size in memory */
+    int queuesize;                      /* Current number of sockets in the queue */
+    int maxqueuesize;                   /* Maximum number of sockets in the queue */
+    int acceptsize;                     /* Number requests to accept at once */
+    int loggingFlags;                   /* Logging control flags */
 
-    int flags;                  /* Driver state flags. */
-    Ns_Thread thread;           /* Thread id to join on shutdown. */
-    Ns_Mutex lock;              /* Lock to protect lists below. */
-    Ns_Cond cond;               /* Cond to signal reader threads,
-                                 * driver query, startup, and shutdown. */
-    int trigger[2];             /* Wakeup trigger pipe. */
+    int flags;                          /* Driver state flags. */
+    Ns_Thread thread;                   /* Thread id to join on shutdown. */
+    Ns_Mutex lock;                      /* Lock to protect lists below. */
+    Ns_Cond cond;                       /* Cond to signal reader threads,
+                                         * driver query, startup, and shutdown. */
+    int trigger[2];                     /* Wakeup trigger pipe. */
 
-    struct Sock *sockPtr;       /* Free list of Sock structures */
-    struct Sock *closePtr;      /* First conn ready for graceful close */
+    struct Sock *sockPtr;               /* Free list of Sock structures */
+    struct Sock *closePtr;              /* First conn ready for graceful close */
 
-    DrvSpooler spooler;         /* Tracks upload spooler threads */
-    DrvWriter  writer;          /* Tracks writer threads */
+    DrvSpooler spooler;                 /* Tracks upload spooler threads */
+    DrvWriter  writer;                  /* Tracks writer threads */
 
 } Driver;
 
@@ -412,31 +412,31 @@ typedef struct Sock {
      * Visible in Ns_Sock.
      */
 
-    struct Driver *drvPtr;
-    SOCKET         sock;
-    struct sockaddr_in sa;      /* Actual peer address */
-    void          *arg;         /* Driver context. */
+    struct Driver      *drvPtr;
+    SOCKET              sock;
+    struct sockaddr_in  sa;              /* Actual peer address */
+    void               *arg;             /* Driver context. */
 
     /*
      * Private to Sock.
      */
 
-    struct Sock *nextPtr;
-    struct NsServer *servPtr;
+    struct Sock        *nextPtr;
+    struct NsServer    *servPtr;
 
-    char *location;
-    int keep;
-    int pidx;                   /* poll() index */
-    int flags;                  /* state flags used by driver */
-    Ns_Time timeout;
-    Request *reqPtr;
+    char               *location;
+    int                 keep;
+    int                 pidx;            /* poll() index */
+    int                 flags;           /* state flags used by driver */
+    Ns_Time             timeout;
+    Request            *reqPtr;
 
-    int tfd;                    /* file descriptor with request contents */
-    char *taddr;                /* mmap-ed temporary file */
-    size_t tsize;               /* size of mmap region */
-    char *tfile;                /* name of regular temporary file */
+    int                 tfd;             /* file descriptor with request contents */
+    char               *taddr;           /* mmap-ed temporary file */
+    size_t              tsize;           /* size of mmap region */
+    char               *tfile;           /* name of regular temporary file */
 
-    void *sls[1];               /* Slots for sls storage */
+    void               *sls[1];          /* Slots for sls storage */
 
 } Sock;
 
@@ -459,7 +459,7 @@ typedef struct NsLimits {
     char            *name;
     unsigned int     maxrun;    /* Max conns to run at once */
     unsigned int     maxwait;   /* Max conns waiting to run before being dropped */
-    size_t	         maxupload; /* Max data accepted */
+    size_t	     maxupload; /* Max data accepted */
     int              timeout;   /* Seconds allowed for conn to complete */
 
     Ns_Mutex         lock;      /* Lock for state and stats */

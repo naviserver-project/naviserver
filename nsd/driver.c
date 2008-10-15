@@ -121,6 +121,7 @@ static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
 static void  SockPrepare(Sock *sockPtr);
 static void  SockRelease(Sock *sockPtr, int reason, int err);
+static void  SockError(Sock *sockPtr, int reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code, char *msg);
 static void  SockTrigger(SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
@@ -483,6 +484,49 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     return NS_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DriverSetRequest --
+ *
+ *      Parses request line and sets as current Request struct, should be
+ *      in the form: METHOD URL ?PROTO?
+ *
+ * Results:
+ *      NS_ERROR in case of empty line
+ *      NS_FATAL if request cannot be parsed.
+ *      NS_OK if parsed sucessfully
+ *
+ * Side effects:
+ *      This is supposed to be called from drivers before the
+ *      socket is queued, usually in Accept callback
+ *      Primary purpose is to allow non-HTTP drivers to setup
+ *      request line so registered callback proc will be called
+ *      during connection processing
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_DriverSetRequest(Ns_Sock *sock, char *reqline)
+{
+    Sock    *sockPtr = (Sock*)sock;
+
+    SockPrepare(sockPtr);
+
+    if (reqline != NULL) {
+        Ns_ResetRequest(&sockPtr->reqPtr->request);
+        if (Ns_ParseRequest(&sockPtr->reqPtr->request, reqline) == NS_ERROR) {
+            NsFreeRequest(sockPtr->reqPtr);
+            sockPtr->reqPtr = NULL;
+            return NS_FATAL;
+        }
+        return NS_OK;
+    }
+
+    return NS_ERROR;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -646,9 +690,19 @@ NsGetRequest(Sock *sockPtr)
         }
     }
     reqPtr = sockPtr->reqPtr;
+
     /* NB: Sock is no longer responsible for freeing request. */
     sockPtr->reqPtr = NULL;
 
+    /* Sanity check against bad drivers */
+    if (reqPtr->request.line == NULL ||
+        reqPtr->request.method == NULL ||
+        reqPtr->request.url == NULL) {
+
+        NsFreeRequest(reqPtr);
+        SockError(sockPtr, SOCK_BADREQUEST, 0);
+        return NULL;
+    }
     return reqPtr;
 }
 
@@ -689,8 +743,7 @@ NsFreeRequest(Request *reqPtr)
 
         Ns_SetTrunc(reqPtr->headers, 0);
 
-        Ns_FreeRequest(reqPtr->request);
-        reqPtr->request = NULL;
+        Ns_ResetRequest(&reqPtr->request);
 
         Ns_MutexLock(&reqLock);
         reqPtr->nextPtr = firstReqPtr;
@@ -1355,10 +1408,9 @@ SockPrepare(Sock *sockPtr)
     }
     Ns_MutexUnlock(&reqLock);
     if (reqPtr == NULL) {
-        reqPtr = ns_malloc(sizeof(Request));
+        reqPtr = ns_calloc(1, sizeof(Request));
         Tcl_DStringInit(&reqPtr->buffer);
         reqPtr->headers    = Ns_SetCreate(NULL);
-        reqPtr->request    = NULL;
         reqPtr->next       = NULL;
         reqPtr->content    = NULL;
         reqPtr->length     = 0;
@@ -1571,6 +1623,45 @@ static void
 SockRelease(Sock *sockPtr, int reason, int err)
 {
     Driver *drvPtr = sockPtr->drvPtr;
+
+    SockError(sockPtr, reason, err);
+    SockClose(sockPtr, 0);
+    NsSlsCleanup(sockPtr);
+
+    drvPtr->queuesize--;
+
+    if (sockPtr->reqPtr != NULL) {
+        NsFreeRequest(sockPtr->reqPtr);
+        sockPtr->reqPtr = NULL;
+    }
+
+    Ns_MutexLock(&drvPtr->lock);
+    sockPtr->nextPtr = drvPtr->sockPtr;
+    drvPtr->sockPtr  = sockPtr;
+    Ns_MutexUnlock(&drvPtr->lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockError --
+ *
+ *      Log error message for given socket
+ *      re-use.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SockError(Sock *sockPtr, int reason, int err)
+{
     char   *errMsg = NULL;
 
     switch (reason) {
@@ -1647,23 +1738,7 @@ SockRelease(Sock *sockPtr, int reason, int err)
                ntohs(sockPtr->sa.sin_port),
                sockPtr->reqPtr ? sockPtr->reqPtr->buffer.string : "");
     }
-
-    SockClose(sockPtr, 0);
-    NsSlsCleanup(sockPtr);
-
-    drvPtr->queuesize--;
-
-    if (sockPtr->reqPtr != NULL) {
-        NsFreeRequest(sockPtr->reqPtr);
-        sockPtr->reqPtr = NULL;
-    }
-
-    Ns_MutexLock(&drvPtr->lock);
-    sockPtr->nextPtr = drvPtr->sockPtr;
-    drvPtr->sockPtr  = sockPtr;
-    Ns_MutexUnlock(&drvPtr->lock);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1955,6 +2030,14 @@ SockRead(Sock *sockPtr, int spooler)
         return SOCK_ENTITYTOOLARGE;
     }
 
+    /*
+     * This driver needs raw buffer, it is binary or non-HTTP request
+     */
+
+    if (drvPtr->opts & NS_DRIVER_NOPARSE) {
+        return SOCK_READY;
+    }
+
     return SockParse(sockPtr, spooler);
 }
 
@@ -2017,7 +2100,7 @@ SockParse(Sock *sockPtr, int spooler)
          */
 
         if ((e - s) > drvPtr->maxline) {
-            if (reqPtr->request == NULL) {
+            if (reqPtr->request.line == NULL) {
                 Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
                        drvPtr->maxline);
                 return SOCK_REQUESTURITOOLONG;
@@ -2080,9 +2163,8 @@ SockParse(Sock *sockPtr, int spooler)
         } else {
             save = *e;
             *e = '\0';
-            if (reqPtr->request == NULL) {
-                reqPtr->request = Ns_ParseRequest(s);
-                if (reqPtr->request == NULL) {
+            if (reqPtr->request.line == NULL) {
+                if (Ns_ParseRequest(&reqPtr->request, s) == NS_ERROR) {
 
                     /*
                      * Invalid request.
@@ -2111,7 +2193,7 @@ SockParse(Sock *sockPtr, int spooler)
             }
 
             *e = save;
-            if (reqPtr->request->version <= 0.0) {
+            if (reqPtr->request.version <= 0.0) {
 
                 /*
                  * Pre-HTTP/1.0 request.
@@ -2140,7 +2222,7 @@ SockParse(Sock *sockPtr, int spooler)
             reqPtr->avail = 0;
             Ns_Log(Debug, "spooling content to file: size=%" TCL_LL_MODIFIER "d, file=%s",
                    reqPtr->length, sockPtr->tfile);
-            return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
+            return (reqPtr->request.line != NULL ? SOCK_READY : SOCK_ERROR);
         }
 
         if (sockPtr->tfd > 0) {
@@ -2173,7 +2255,7 @@ SockParse(Sock *sockPtr, int spooler)
             reqPtr->content[reqPtr->length] = '\0';
 
         }
-        return (reqPtr->request ? SOCK_READY : SOCK_ERROR);
+        return (reqPtr->request.line != NULL ? SOCK_READY : SOCK_ERROR);
     }
 
     /*
@@ -2212,7 +2294,7 @@ SockSetServer(Sock *sockPtr)
 
     if (sockPtr->reqPtr != NULL) {
         host = Ns_SetIGet(sockPtr->reqPtr->headers, "Host");
-        if (!host && sockPtr->reqPtr->request->version >= 1.1) {
+        if (!host && sockPtr->reqPtr->request.version >= 1.1) {
             status = 0;
         }
     }
@@ -2236,8 +2318,8 @@ SockSetServer(Sock *sockPtr)
     }
 
     if (!status && sockPtr->reqPtr) {
-        ns_free(sockPtr->reqPtr->request->method);
-        sockPtr->reqPtr->request->method = ns_strdup("BAD");
+        ns_free(sockPtr->reqPtr->request.method);
+        sockPtr->reqPtr->request.method = ns_strdup("BAD");
     }
 
     return 1;
@@ -2872,7 +2954,7 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
     Ns_Log(Debug, "Writer: %d: started sock=%d, fd=%d: "
            "size=%" TCL_LL_MODIFIER "d, flags=%X: keep=%d, %s",
            queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd,
-           nsend, wrSockPtr->flags, wrSockPtr->keep, connPtr->reqPtr->request->url);
+           nsend, wrSockPtr->flags, wrSockPtr->keep, connPtr->reqPtr->request.url);
 
     /*
      * Now add new writer socket to the writer thread's queue
