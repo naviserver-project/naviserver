@@ -424,9 +424,10 @@ typedef struct Ns_Driver {
  */
 
 typedef struct Ns_Sock {
-    Ns_Driver *driver;
-    SOCKET     sock;
-    void      *arg;       /* See: Ns_Sls */
+    Ns_Driver          *driver;
+    SOCKET              sock;           /* Connection socket */
+    struct sockaddr_in  sa;             /* Actual peer address */
+    void               *arg;            /* Driver context. */
 } Ns_Sock;
 
 /*

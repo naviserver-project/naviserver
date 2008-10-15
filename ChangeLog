@@ -1,3 +1,11 @@
+2008-10-14  Vlad Seryakov <seryakov@users.sf.net>
+
+        * include/ns.h:
+        * nsd/nsd.h:
+        * modules/nsudp/nsudp.c: Ported UDP socket module to new API.
+        Updated Ns_Sock/Sock structures to expose sockaddr_in sa, so drivers can
+        update it. This is the case for UDP drivers.
+
 2008-10-07  Stephen Deasey <sdeasey@users.sf.net>
 
 	* nsd/connio.c: Re-add some missing code to Ns_ConnSend which

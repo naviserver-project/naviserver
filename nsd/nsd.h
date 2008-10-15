@@ -414,6 +414,7 @@ typedef struct Sock {
 
     struct Driver *drvPtr;
     SOCKET         sock;
+    struct sockaddr_in sa;      /* Actual peer address */
     void          *arg;         /* Driver context. */
 
     /*
@@ -422,7 +423,7 @@ typedef struct Sock {
 
     struct Sock *nextPtr;
     struct NsServer *servPtr;
-    struct sockaddr_in sa;
+
     char *location;
     int keep;
     int pidx;                   /* poll() index */
