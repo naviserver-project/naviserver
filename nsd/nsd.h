@@ -363,6 +363,7 @@ typedef struct Driver {
     Ns_DriverSendProc     *sendProc;
     Ns_DriverSendFileProc *sendFileProc;
     Ns_DriverKeepProc     *keepProc;
+    Ns_DriverRequestProc  *requestProc;
     Ns_DriverCloseProc    *closeProc;
     int opts;                           /* NS_DRIVER_* options */
     int closewait;                      /* Graceful close timeout */

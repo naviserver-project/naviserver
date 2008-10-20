@@ -482,6 +482,10 @@ typedef ssize_t
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef int
+(Ns_DriverRequestProc)(void *arg, Ns_Conn *conn)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+typedef int
 (Ns_DriverKeepProc)(Ns_Sock *sock)
      NS_GNUC_NONNULL(1);
 
@@ -503,6 +507,7 @@ typedef struct Ns_DriverInitData {
     Ns_DriverSendProc     *sendProc;     /* Write bytes to conn from iovec. */
     Ns_DriverSendFileProc *sendFileProc; /* Write bytes to conn from files/buffers. */
     Ns_DriverKeepProc     *keepProc;     /* Keep a socket open after conn done? */
+    Ns_DriverRequestProc  *requestProc;  /* First proc to be called by a connection thread. */
     Ns_DriverCloseProc    *closeProc;    /* Close a connection socket. */
     int                    opts;         /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                  *arg;          /* Module's driver callback data */
@@ -1049,7 +1054,6 @@ NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
  */
 
 NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
-NS_EXTERN int Ns_DriverSetRequest(Ns_Sock *sock, char *reqline);
 
 /*
  * dstring.c:

@@ -59,7 +59,8 @@ static Ns_UserAuthorizeProc    *userProcPtr;
  *	allow access, or NS_ERROR on error.
  *
  * Side effects:
- *	Depends on user supplied routine.
+ *	Depends on user supplied routine. method and url could be NULL in case
+ *      of non HTTP request
  *
  *----------------------------------------------------------------------
  */

@@ -254,28 +254,28 @@ Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
 int
 Ns_ConnRunRequest(Ns_Conn *conn)
 {
-    Req *reqPtr;
-    int  status;
+    Req  *reqPtr;
+    int   status = NS_OK;
     char *server = Ns_ConnServer(conn);
 
-    Ns_MutexLock(&ulock);
-    reqPtr = Ns_UrlSpecificGet(server, conn->request->method,
-                               conn->request->url, uid);
-    if (reqPtr == NULL) {
-        Ns_MutexUnlock(&ulock);
-        if (STREQ(conn->request->method, "BAD")) {
-            return Ns_ConnReturnBadRequest(conn, NULL);
-        } else {
-            return Ns_ConnReturnNotFound(conn);
+    if (conn->request->method != NULL && conn->request->url != NULL) {
+        Ns_MutexLock(&ulock);
+        reqPtr = Ns_UrlSpecificGet(server, conn->request->method, conn->request->url, uid);
+        if (reqPtr == NULL) {
+            Ns_MutexUnlock(&ulock);
+            if (STREQ(conn->request->method, "BAD")) {
+                return Ns_ConnReturnBadRequest(conn, NULL);
+            } else {
+                return Ns_ConnReturnNotFound(conn);
+            }
         }
+        ++reqPtr->refcnt;
+        Ns_MutexUnlock(&ulock);
+        status = (*reqPtr->proc) (reqPtr->arg, conn);
+        Ns_MutexLock(&ulock);
+        FreeReq(reqPtr);
+        Ns_MutexUnlock(&ulock);
     }
-    ++reqPtr->refcnt;
-    Ns_MutexUnlock(&ulock);
-    status = (*reqPtr->proc) (reqPtr->arg, conn);
-    Ns_MutexLock(&ulock);
-    FreeReq(reqPtr);
-    Ns_MutexUnlock(&ulock);
-
     return status;
 }
 
@@ -315,9 +315,12 @@ Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
      * Re-authorize and run the request.
      */
 
-    status = Ns_AuthorizeRequest(Ns_ConnServer(conn), conn->request->method,
-                 conn->request->url, Ns_ConnAuthUser(conn),
-                 Ns_ConnAuthPasswd(conn), Ns_ConnPeer(conn));
+    status = Ns_AuthorizeRequest(Ns_ConnServer(conn),
+                                 conn->request->method,
+                                 conn->request->url,
+                                 Ns_ConnAuthUser(conn),
+                                 Ns_ConnAuthPasswd(conn),
+                                 Ns_ConnPeer(conn));
     switch (status) {
     case NS_OK:
         status = Ns_ConnRunRequest(conn);

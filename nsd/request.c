@@ -118,10 +118,10 @@ Ns_FreeRequest(Ns_Request * request)
  *	Parse a request from a browser into an Ns_Request structure. 
  *
  * Results:
- *	A new Ns_Request. 
+ *	NS_OK on success, NS_ERROR on error
  *
  * Side effects:
- *	The result is newly-allocated. 
+ *	The request if not NULL is always zero-ed before filled with values
  *
  *----------------------------------------------------------------------
  */

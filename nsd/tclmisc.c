@@ -167,8 +167,13 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
     if (itPtr != NULL && itPtr->conn != NULL) {
         conn = itPtr->conn;
         Ns_DStringInit(&ds);
-        Ns_DStringVarAppend(&ds, conn->request->method, " ", conn->request->url,
-                            ", PeerAddress: ", Ns_ConnPeer(conn), NULL);
+        if (conn->request->method != NULL) {
+            Ns_DStringVarAppend(&ds, conn->request->method, " ", NULL);
+        }
+        if (conn->request->url != NULL) {
+            Ns_DStringVarAppend(&ds, conn->request->url, ", ", NULL);
+        }
+        Ns_DStringVarAppend(&ds, "PeerAddress: ", Ns_ConnPeer(conn), NULL);
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
@@ -1076,6 +1081,9 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * will fill a supplied 16-byte array with the digest.
  *
  * $Log$
+ * Revision 1.33  2008/10/20 00:06:54  seryakov
+ * Driver changed, no request hacks, request can be empty, ns_conn content returns binary now
+ *
  * Revision 1.32  2008/08/29 20:43:07  seryakov
  * Revert ns_filestat to not raise exception and use native system call
  *

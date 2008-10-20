@@ -325,6 +325,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->sendProc     = init->sendProc;
     drvPtr->sendFileProc = init->sendFileProc;
     drvPtr->keepProc     = init->keepProc;
+    drvPtr->requestProc  = init->requestProc;
     drvPtr->closeProc    = init->closeProc;
     drvPtr->arg          = init->arg;
     drvPtr->opts         = init->opts;
@@ -482,49 +483,6 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
 
     return NS_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_DriverSetRequest --
- *
- *      Parses request line and sets as current Request struct, should be
- *      in the form: METHOD URL ?PROTO?
- *
- * Results:
- *      NS_ERROR in case of empty line
- *      NS_FATAL if request cannot be parsed.
- *      NS_OK if parsed sucessfully
- *
- * Side effects:
- *      This is supposed to be called from drivers before the
- *      socket is queued, usually in Accept callback
- *      Primary purpose is to allow non-HTTP drivers to setup
- *      request line so registered callback proc will be called
- *      during connection processing
- *
- *----------------------------------------------------------------------
- */
-
-int
-Ns_DriverSetRequest(Ns_Sock *sock, char *reqline)
-{
-    Sock    *sockPtr = (Sock*)sock;
-
-    SockPrepare(sockPtr);
-
-    if (reqline != NULL) {
-        Ns_ResetRequest(&sockPtr->reqPtr->request);
-        if (Ns_ParseRequest(&sockPtr->reqPtr->request, reqline) == NS_ERROR) {
-            NsFreeRequest(sockPtr->reqPtr);
-            sockPtr->reqPtr = NULL;
-            return NS_FATAL;
-        }
-        return NS_OK;
-    }
-
-    return NS_ERROR;
 }
 
 
@@ -694,15 +652,6 @@ NsGetRequest(Sock *sockPtr)
     /* NB: Sock is no longer responsible for freeing request. */
     sockPtr->reqPtr = NULL;
 
-    /* Sanity check against bad drivers */
-    if (reqPtr->request.line == NULL ||
-        reqPtr->request.method == NULL ||
-        reqPtr->request.url == NULL) {
-
-        NsFreeRequest(reqPtr);
-        SockError(sockPtr, SOCK_BADREQUEST, 0);
-        return NULL;
-    }
     return reqPtr;
 }
 
@@ -1589,6 +1538,13 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
                     sockPtr = NULL;
                 }
             } else {
+
+                /*
+                 *  We need to call this to make sure socket has request structure allocated,
+                 *  otherwise NsGetRequest will call SockRead which is not what this driver wants
+                 */
+
+                SockPrepare(sockPtr);
                 status = SOCK_READY;
             }
         } else {

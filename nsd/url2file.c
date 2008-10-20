@@ -240,8 +240,11 @@ int
 NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
 {
     Url2File *u2fPtr;
-    int       status;
+    int       status = NS_ERROR;
 
+    if (url == NULL) {
+        return status;
+    }
     if (servPtr->fastpath.url2file != NULL) {
         status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
     } else {

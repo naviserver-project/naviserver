@@ -1,3 +1,23 @@
+2008-10-19  Vlad Seryakov <seryakov@users.sf.net>
+
+	nsd/conn.c: Fixed bug in ns_conn content, it returned as string and did not
+	handle binary content, now result is byte array
+
+	include/ns.h:
+	nsd/nsd.h:
+	nsd/queue.c:
+	nsd/driver.c:
+	nsd/op.c:
+	nsd/filter.c:
+	nsd/urlspace.c: Changed to handle non HTTP drivers differently, driver now has
+	special requestProc field to be called very early in the connection thread. The result
+	is the same as for regular filters but this is optional. No need to hack request
+	anymore, it seemed very weird. All the code that handles request is now checking for
+	not NULL values before using, mostly url space routines. Now, it is valid to have request
+	structure NULL values, nothing will be called, not handlers will be invoked. 
+	Non HTTP drivers will have to provide requestProc, otherwise nothing will happen and 
+	nobody will notice this driver.
+
 2008-10-14  Vlad Seryakov <seryakov@users.sf.net>
 
         * include/ns.h:

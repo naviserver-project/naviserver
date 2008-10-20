@@ -339,7 +339,9 @@ Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int i
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
 
-    assert(servPtr != NULL);
+    if (method == NULL || url == NULL) {
+        return;
+    }
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
@@ -386,6 +388,10 @@ NsUrlSpecificGet(NsServer *servPtr, CONST char *method, CONST char *url, int id,
     Ns_DString  ds;
     void       *data;
 
+    if (method == NULL || url == NULL) {
+        return NULL;
+    }
+
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
     data = JunctionFind(JunctionGet(servPtr, id), ds.string, fast);
@@ -420,6 +426,10 @@ Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
     Ns_DString  ds;
     void       *data;
 
+    if (method == NULL || url == NULL) {
+        return NULL;
+    }
+
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
     data = JunctionFindExact(JunctionGet(servPtr, id), ds.string, flags, 0);
@@ -453,6 +463,10 @@ Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
     void       *data = NULL;
+
+    if (method == NULL || url == NULL) {
+        return NULL;
+    }
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);

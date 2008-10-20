@@ -1222,13 +1222,14 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return TCL_ERROR;
         }
         if (objc == 2) {
-            Tcl_SetResult(interp, Ns_ConnContent(conn), TCL_STATIC);
+            if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length) {
+                Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, connPtr->reqPtr->length));
+            }
         } else {
             if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK) {
                 return TCL_ERROR;
             }
-            Tcl_SetObjResult(interp,
-                             Tcl_NewStringObj(Ns_ConnContent(conn)+off, len));
+            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)Ns_ConnContent(conn) + off, len));
         }
         break;
 

@@ -184,6 +184,7 @@ NsUpdateProgress(Ns_Sock *sock)
     int            new;
 
     if (progressMinSize > 0
+        && request->url != NULL
         && sockPtr->reqPtr->length > progressMinSize) {
 
         pPtr = Ns_SlsGet(&slot, sock);

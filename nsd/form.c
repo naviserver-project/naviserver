@@ -76,7 +76,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
-        if (!STREQ(connPtr->request->method, "POST")) {
+        if (connPtr->request->method != NULL && !STREQ(connPtr->request->method, "POST")) {
             form = connPtr->request->query;
             if (form != NULL) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);

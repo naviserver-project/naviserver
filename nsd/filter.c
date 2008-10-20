@@ -130,18 +130,15 @@ NsRunFilters(Ns_Conn *conn, int why)
 {
     Conn *connPtr = (Conn *) conn;
     Filter *fPtr;
-    char *method, *url;
     int status;
 
     status = NS_OK;
-    if (conn->request != NULL) {
-	method = conn->request->method;
-	url = conn->request->url;
+    if (conn->request->method != NULL && conn->request->url != NULL) {
 	fPtr = connPtr->servPtr->filter.firstFilterPtr;
 	while (fPtr != NULL && status == NS_OK) {
 	    if ((fPtr->when & why)
-		&& Tcl_StringMatch(method, fPtr->method)
-		&& Tcl_StringMatch(url, fPtr->url)) {
+		&& Tcl_StringMatch(conn->request->method, fPtr->method)
+		&& Tcl_StringMatch(conn->request->url, fPtr->url)) {
 		status = (*fPtr->proc)(fPtr->arg, conn, why);
 	    }
 	    fPtr = fPtr->nextPtr;

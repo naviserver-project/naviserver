@@ -659,12 +659,11 @@ ConnRun(Conn *connPtr)
 {
     Ns_Conn  *conn = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->servPtr;
-    int       i, status;
+    int       i, status = NS_OK;
     char     *auth;
 
     /*
-     * Re-initialize and run the connection. Also it will make sure the
-     * request is valid and not empty
+     * Re-initialize and run the connection. 
      */
 
     connPtr->reqPtr = NsGetRequest(connPtr->sockPtr);
@@ -680,9 +679,9 @@ ConnRun(Conn *connPtr)
     connPtr->reqPtr->port = ntohs(connPtr->sockPtr->sa.sin_port);
     strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(connPtr->sockPtr->sa.sin_addr));
 
-    connPtr->contentLength = connPtr->reqPtr->length;
-    connPtr->headers = connPtr->reqPtr->headers;
     connPtr->request = &connPtr->reqPtr->request;
+    connPtr->headers = connPtr->reqPtr->headers;
+    connPtr->contentLength = connPtr->reqPtr->length;
     connPtr->nContentSent = 0;
     connPtr->responseStatus = 200;
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
@@ -693,8 +692,7 @@ ConnRun(Conn *connPtr)
 
     connPtr->keep = -1;                   /* Default keep-alive rules apply */
 
-    Ns_ConnSetCompression(conn,
-        servPtr->compress.enable ? servPtr->compress.level : 0);
+    Ns_ConnSetCompression(conn, servPtr->compress.enable ? servPtr->compress.level : 0);
     connPtr->compress = -1;
 
     connPtr->outputEncoding = servPtr->encoding.outputEncoding;
@@ -719,18 +717,28 @@ ConnRun(Conn *connPtr)
     if (auth != NULL) {
         NsParseAuth(connPtr, auth);
     }
-    if (conn->request->method && STREQ(conn->request->method, "HEAD")) {
+    if (conn->request->method != NULL && STREQ(conn->request->method, "HEAD")) {
         conn->flags |= NS_CONN_SKIPBODY;
     }
 
     /*
-     * Run the request.
+     * Run the driver's private handler
+     */
+
+    if (connPtr->sockPtr->drvPtr->requestProc != NULL) {
+        status = (*connPtr->sockPtr->drvPtr->requestProc)(connPtr->sockPtr->drvPtr->arg, conn);
+    }
+
+    /*
+     * Run the rest of the request.
      */
 
     if (connPtr->request->protocol != NULL && connPtr->request->host != NULL) {
         status = NsConnRunProxyRequest((Ns_Conn *) connPtr);
     } else {
-        status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
+        if (status == NS_OK) {
+            status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
+        }
         if (status == NS_OK) {
             status = Ns_AuthorizeRequest(servPtr->server,
                                          connPtr->request->method,
@@ -897,9 +905,9 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
          * admin command.
          */
 
-        p = (connPtr->request && connPtr->request->method) ? connPtr->request->method : "?";
+        p = connPtr->request->method ? connPtr->request->method : "?";
         Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
-        p = (connPtr->request && connPtr->request->url) ? connPtr->request->url : "?";
+        p = connPtr->request->url ? connPtr->request->url : "?";
         Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
         Ns_GetTime(&now);
         Ns_DiffTime(&now, &connPtr->startTime, &diff);

@@ -150,6 +150,7 @@ PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, int aflags)
 
     servPtr = connPtr->servPtr;
     if ((itPtr->servPtr->adp.flags & ADP_DEBUG) &&
+        conn->request->method != NULL &&
         STREQ(conn->request->method, "GET") &&
         (query = Ns_ConnGetQuery(conn)) != NULL) {
         itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
