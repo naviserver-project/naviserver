@@ -614,12 +614,16 @@ Ns_AdpFlush(Tcl_Interp *interp, int stream)
  * auth.c:
  */
 
-NS_EXTERN int Ns_AuthorizeRequest(char *server, char *method, char *url,
+NS_EXTERN int
+Ns_AuthorizeRequest(char *server, char *method, char *url,
 			       char *user, char *passwd, char *peer);
-NS_EXTERN void Ns_SetRequestAuthorizeProc(char *server,
-    				       Ns_RequestAuthorizeProc *procPtr);
-NS_EXTERN void Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr);
-NS_EXTERN int  Ns_AuthorizeUser(char *user, char *passwd);
+NS_EXTERN void
+Ns_SetRequestAuthorizeProc(char *server, Ns_RequestAuthorizeProc *procPtr);
+NS_EXTERN void
+Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr);
+
+NS_EXTERN int
+Ns_AuthorizeUser(char *user, char *passwd);
 
 /*
  * cache.c:
@@ -873,6 +877,7 @@ Ns_GetVersion(int *major, int *minor, int *patch, int *type);
 
 NS_EXTERN int Ns_ConnId(Ns_Conn *conn);
 NS_EXTERN int Ns_ConnContentFd(Ns_Conn *conn);
+NS_EXTERN int Ns_ConnContentSize(Ns_Conn *conn);
 NS_EXTERN char *Ns_ConnContentFile(Ns_Conn *conn);
 NS_EXTERN void Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
 NS_EXTERN Tcl_Encoding Ns_ConnGetEncoding(Ns_Conn *conn);
@@ -1027,27 +1032,43 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, int towrite)
  * cookies.c:
  */
 
-NS_EXTERN void Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
-NS_EXTERN void Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
-NS_EXTERN void Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
+NS_EXTERN void
+Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
+
+NS_EXTERN void
+Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage);
+
+NS_EXTERN void
+Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
                                   char *domain, char *path, int flags);
-NS_EXTERN void Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path);
-NS_EXTERN void Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path);
-NS_EXTERN char *Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name);
+NS_EXTERN void
+Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path);
+
+NS_EXTERN void
+Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path);
+
+NS_EXTERN char *
+Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name);
 
 /*
  * crypt.c:
  */
 
-NS_EXTERN char *Ns_Encrypt(char *pw, char *salt, char iobuf[ ]);
+NS_EXTERN char *
+Ns_Encrypt(char *pw, char *salt, char iobuf[ ]);
 
 /*
  * dns.c:
  */
 
-NS_EXTERN int Ns_GetHostByAddr(Ns_DString *dsPtr, char *addr);
-NS_EXTERN int Ns_GetAddrByHost(Ns_DString *dsPtr, char *host);
-NS_EXTERN int Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
+NS_EXTERN int
+Ns_GetHostByAddr(Ns_DString *dsPtr, char *addr);
+
+NS_EXTERN int
+Ns_GetAddrByHost(Ns_DString *dsPtr, char *host);
+
+NS_EXTERN int
+Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
 
 /*
  * driver.c:
@@ -1123,15 +1144,25 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
  * exec.c:
  */
 
-NS_EXTERN int Ns_ExecProcess(char *exec, char *dir, int fdin, int fdout,
+NS_EXTERN int
+Ns_ExecProcess(char *exec, char *dir, int fdin, int fdout,
 			  char *args, Ns_Set *env);
-NS_EXTERN int Ns_ExecProc(char *exec, char **argv);
-NS_EXTERN int Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
+
+NS_EXTERN int
+Ns_ExecProc(char *exec, char **argv);
+
+NS_EXTERN int
+Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
 			 char *args, Ns_Set *env);
-NS_EXTERN int Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout, char **argv,
-		       Ns_Set *env);
-NS_EXTERN int Ns_WaitProcess(int pid);
-NS_EXTERN int Ns_WaitForProcess(int pid, int *statusPtr);
+
+NS_EXTERN int
+Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout, char **argv, Ns_Set *env);
+
+NS_EXTERN int
+Ns_WaitProcess(int pid);
+
+NS_EXTERN int
+Ns_WaitForProcess(int pid, int *statusPtr);
 
 /*
  * fastpath.c:
@@ -1157,42 +1188,82 @@ NS_EXTERN Ns_OpProc Ns_FastPathProc;
  * filter.c:
  */
 
-NS_EXTERN void *Ns_RegisterFilter(char *server, char *method, char *URL,
+NS_EXTERN void *
+Ns_RegisterFilter(char *server, char *method, char *URL,
 			       Ns_FilterProc *proc, int when, void *args);
-NS_EXTERN void *Ns_RegisterServerTrace(char *server, Ns_TraceProc *proc, void *arg);
-NS_EXTERN void *Ns_RegisterConnCleanup(char *server, Ns_TraceProc *proc, void *arg);
-NS_EXTERN void *Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg);
+
+NS_EXTERN void *
+Ns_RegisterServerTrace(char *server, Ns_TraceProc *proc, void *arg);
+
+NS_EXTERN void *
+Ns_RegisterConnCleanup(char *server, Ns_TraceProc *proc, void *arg);
+
+NS_EXTERN void *
+Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg);
 
 /*
  * htuu.c
  */
 
-NS_EXTERN int Ns_HtuuEncode(unsigned char *string, unsigned int bufsize,
-			 char *buf);
-NS_EXTERN int Ns_HtuuDecode(char *string, unsigned char *buf, int bufsize);
+NS_EXTERN int
+Ns_HtuuEncode(unsigned char *string, unsigned int bufsize, char *buf);
+
+NS_EXTERN int
+Ns_HtuuDecode(char *string, unsigned char *buf, int bufsize);
 
 /*
  * index.c:
  */
 
-NS_EXTERN void Ns_IndexInit(Ns_Index *indexPtr, int inc,
-			 int (*CmpEls) (const void *, const void *),
-			 int (*CmpKeyWithEl) (const void *, const void *));
-NS_EXTERN void Ns_IndexTrunc(Ns_Index*indexPtr);
-NS_EXTERN void Ns_IndexDestroy(Ns_Index *indexPtr);
-NS_EXTERN Ns_Index *Ns_IndexDup(Ns_Index *indexPtr);
-NS_EXTERN void *Ns_IndexFind(Ns_Index *indexPtr, void *key);
-NS_EXTERN void *Ns_IndexFindInf(Ns_Index *indexPtr, void *key);
-NS_EXTERN void **Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key);
-NS_EXTERN void Ns_IndexAdd(Ns_Index *indexPtr, void *el);
-NS_EXTERN void Ns_IndexDel(Ns_Index *indexPtr, void *el);
-NS_EXTERN void *Ns_IndexEl(Ns_Index *indexPtr, int i);
-NS_EXTERN void Ns_IndexStringInit(Ns_Index *indexPtr, int inc);
-NS_EXTERN Ns_Index *Ns_IndexStringDup(Ns_Index *indexPtr);
-NS_EXTERN void Ns_IndexStringAppend(Ns_Index *addtoPtr, Ns_Index *addfromPtr);
-NS_EXTERN void Ns_IndexStringDestroy(Ns_Index *indexPtr);
-NS_EXTERN void Ns_IndexStringTrunc(Ns_Index *indexPtr);
-NS_EXTERN void Ns_IndexIntInit(Ns_Index *indexPtr, int inc);
+NS_EXTERN void
+Ns_IndexInit(Ns_Index *indexPtr, int inc, int (*CmpEls) (const void *, const void *),
+     			         int (*CmpKeyWithEl) (const void *, const void *));
+
+NS_EXTERN void
+Ns_IndexTrunc(Ns_Index*indexPtr);
+
+NS_EXTERN void
+Ns_IndexDestroy(Ns_Index *indexPtr);
+
+NS_EXTERN Ns_Index *
+Ns_IndexDup(Ns_Index *indexPtr);
+
+NS_EXTERN void *
+Ns_IndexFind(Ns_Index *indexPtr, void *key);
+
+NS_EXTERN void *
+Ns_IndexFindInf(Ns_Index *indexPtr, void *key);
+
+NS_EXTERN void **
+Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key);
+
+NS_EXTERN void
+Ns_IndexAdd(Ns_Index *indexPtr, void *el);
+
+NS_EXTERN void
+Ns_IndexDel(Ns_Index *indexPtr, void *el);
+
+NS_EXTERN void *
+Ns_IndexEl(Ns_Index *indexPtr, int i);
+
+NS_EXTERN void
+Ns_IndexStringInit(Ns_Index *indexPtr, int inc);
+
+NS_EXTERN Ns_Index *
+Ns_IndexStringDup(Ns_Index *indexPtr);
+
+NS_EXTERN void
+Ns_IndexStringAppend(Ns_Index *addtoPtr, Ns_Index *addfromPtr);
+
+NS_EXTERN void
+Ns_IndexStringDestroy(Ns_Index *indexPtr);
+
+NS_EXTERN void
+Ns_IndexStringTrunc(Ns_Index *indexPtr);
+
+NS_EXTERN void
+Ns_IndexIntInit(Ns_Index *indexPtr, int inc);
+
 /*
  * see macros above for:
  *
@@ -1203,26 +1274,61 @@ NS_EXTERN void Ns_IndexIntInit(Ns_Index *indexPtr, int inc);
  * lisp.c:
  */
 
-NS_EXTERN Ns_List *Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr);
-NS_EXTERN Ns_List *Ns_ListCons(void *elem, Ns_List *lPtr);
-NS_EXTERN Ns_List *Ns_ListNreverse(Ns_List *lPtr);
-NS_EXTERN Ns_List *Ns_ListLast(Ns_List *lPtr);
-NS_EXTERN void Ns_ListFree(Ns_List *lPtr, Ns_ElemVoidProc *freeProc);
-NS_EXTERN void Ns_IntPrint(int d);
-NS_EXTERN void Ns_StringPrint(char *s);
-NS_EXTERN void Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc);
-NS_EXTERN Ns_List *Ns_ListCopy(Ns_List *lPtr);
-NS_EXTERN int Ns_ListLength(Ns_List *lPtr);
-NS_EXTERN Ns_List *Ns_ListWeightSort(Ns_List *wPtr);
-NS_EXTERN Ns_List *Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc);
-NS_EXTERN Ns_List *Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight);
-NS_EXTERN Ns_List *Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr,
+NS_EXTERN Ns_List *
+Ns_ListNconc(Ns_List *l1Ptr, Ns_List *l2Ptr);
+
+NS_EXTERN Ns_List *
+Ns_ListCons(void *elem, Ns_List *lPtr);
+
+NS_EXTERN Ns_List *
+Ns_ListNreverse(Ns_List *lPtr);
+
+NS_EXTERN Ns_List *
+Ns_ListLast(Ns_List *lPtr);
+
+NS_EXTERN void
+Ns_ListFree(Ns_List *lPtr, Ns_ElemVoidProc *freeProc);
+
+NS_EXTERN void
+Ns_IntPrint(int d);
+
+NS_EXTERN void
+Ns_StringPrint(char *s);
+
+NS_EXTERN void
+Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc);
+
+NS_EXTERN Ns_List *
+Ns_ListCopy(Ns_List *lPtr);
+
+NS_EXTERN int
+Ns_ListLength(Ns_List *lPtr);
+
+NS_EXTERN Ns_List *
+Ns_ListWeightSort(Ns_List *wPtr);
+
+NS_EXTERN Ns_List *
+Ns_ListSort(Ns_List *wPtr, Ns_SortProc *sortProc);
+
+NS_EXTERN Ns_List *
+Ns_ListDeleteLowElements(Ns_List *mPtr, float minweight);
+
+NS_EXTERN Ns_List *
+Ns_ListDeleteWithTest(void *elem, Ns_List *lPtr,
 				      Ns_EqualProc *equalProc);
-NS_EXTERN Ns_List *Ns_ListDeleteIf(Ns_List *lPtr, Ns_ElemTestProc *testProc);
-NS_EXTERN Ns_List *Ns_ListDeleteDuplicates(Ns_List *lPtr,
+
+NS_EXTERN Ns_List *
+Ns_ListDeleteIf(Ns_List *lPtr, Ns_ElemTestProc *testProc);
+
+NS_EXTERN Ns_List *
+Ns_ListDeleteDuplicates(Ns_List *lPtr,
 				        Ns_EqualProc *equalProc);
-NS_EXTERN Ns_List *Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
-NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
+
+NS_EXTERN Ns_List *
+Ns_ListNmapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
+
+NS_EXTERN Ns_List *
+Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
 /*
  * see macros above for:
  *
@@ -1235,8 +1341,11 @@ NS_EXTERN Ns_List *Ns_ListMapcar(Ns_List *lPtr, Ns_ElemValProc *valProc);
  * rand.c:
  */
 
-NS_EXTERN void Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
-NS_EXTERN double Ns_DRand(void);
+NS_EXTERN void
+Ns_GenSeeds(unsigned long *seedsPtr, int nseeds);
+
+NS_EXTERN double
+Ns_DRand(void);
 
 /*
  * task.c:
@@ -1325,8 +1434,10 @@ NS_EXTERN Tcl_SetFromAnyProc Ns_TclSetFromAnyError;
  * tclobjv.c
  */
 
-NS_EXTERN int Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+NS_EXTERN int
+Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
                            Tcl_Interp *interp, int offset, int objc, Tcl_Obj *CONST objv[]);
+
 NS_EXTERN Ns_ObjvProc Ns_ObjvBool;
 NS_EXTERN Ns_ObjvProc Ns_ObjvInt;
 NS_EXTERN Ns_ObjvProc Ns_ObjvLong;
@@ -1347,41 +1458,58 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
  * tclthread.c:
  */
 
-NS_EXTERN int Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
+NS_EXTERN int
+Ns_TclThread(Tcl_Interp *interp, char *script, Ns_Thread *thrPtr)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN int Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
+
+NS_EXTERN int
+Ns_TclDetachedThread(Tcl_Interp *interp, char *script);
 
 /*
  * tcltime.c
  */
 
-NS_EXTERN Tcl_Obj* Ns_TclNewTimeObj(Ns_Time *timePtr);
-NS_EXTERN void Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
-NS_EXTERN int Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-                                   Ns_Time *timePtr);
-NS_EXTERN int Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-                                      Ns_Time **timePtrPtr);
+NS_EXTERN Tcl_Obj*
+Ns_TclNewTimeObj(Ns_Time *timePtr);
+
+NS_EXTERN void
+Ns_TclSetTimeObj(Tcl_Obj *objPtr, Ns_Time *timePtr);
+
+NS_EXTERN int
+Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr);
+
+NS_EXTERN int
+Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPtr);
 
 /*
  * tclxkeylist.c:
  */
 
-NS_EXTERN char *Tcl_DeleteKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
+NS_EXTERN char *
+Tcl_DeleteKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
         CONST char *keyedList);
-NS_EXTERN int Tcl_GetKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
+
+NS_EXTERN int
+Tcl_GetKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
         CONST char *keyedList, char **fieldValuePtr);
-NS_EXTERN int Tcl_GetKeyedListKeys (Tcl_Interp  *interp, char CONST *subFieldName,
+
+NS_EXTERN int
+Tcl_GetKeyedListKeys (Tcl_Interp  *interp, char CONST *subFieldName,
         CONST char *keyedList, int *keysArgcPtr, char ***keysArgvPtr);
-NS_EXTERN char *Tcl_SetKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
+
+NS_EXTERN char *
+Tcl_SetKeyedListField (Tcl_Interp  *interp, CONST char *fieldName,
         CONST char *fieldvalue, CONST char *keyedList);
 
 /*
  * listen.c:
  */
 
-NS_EXTERN int Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc,
-				 void *arg);
-NS_EXTERN int Ns_SockPortBound(int port);
+NS_EXTERN int
+Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg);
+
+NS_EXTERN int
+Ns_SockPortBound(int port);
 
 /*
  * log.c:
@@ -1455,31 +1583,69 @@ Ns_RollFileByDate(CONST char *file, int max)
  * nsmain.c:
  */
 
-NS_EXTERN void Nsd_LibInit(void);
-NS_EXTERN int Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc);
-NS_EXTERN int Ns_WaitForStartup(void);
-NS_EXTERN void Ns_StopServer(char *server);
+NS_EXTERN void
+Nsd_LibInit(void);
+
+NS_EXTERN int
+Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc);
+
+NS_EXTERN int
+Ns_WaitForStartup(void);
+
+NS_EXTERN void
+Ns_StopServer(char *server);
 
 /*
  * info.c:
  */
 
-NS_EXTERN char *Ns_InfoHomePath(void);
-NS_EXTERN char *Ns_InfoServerName(void);
-NS_EXTERN char *Ns_InfoServerVersion(void);
-NS_EXTERN char *Ns_InfoConfigFile(void);
-NS_EXTERN int Ns_InfoPid(void);
-NS_EXTERN char *Ns_InfoNameOfExecutable(void);
-NS_EXTERN char *Ns_InfoPlatform(void);
-NS_EXTERN int Ns_InfoUptime(void);
-NS_EXTERN int Ns_InfoBootTime(void);
-NS_EXTERN char *Ns_InfoHostname(void);
-NS_EXTERN char *Ns_InfoAddress(void);
-NS_EXTERN char *Ns_InfoBuildDate(void);
-NS_EXTERN int Ns_InfoShutdownPending(void);
-NS_EXTERN int Ns_InfoStarted(void);
-NS_EXTERN int Ns_InfoServersStarted(void);
-NS_EXTERN char *Ns_InfoTag(void);
+NS_EXTERN char *
+Ns_InfoHomePath(void);
+
+NS_EXTERN char *
+Ns_InfoServerName(void);
+
+NS_EXTERN char *
+Ns_InfoServerVersion(void);
+
+NS_EXTERN char *
+Ns_InfoConfigFile(void);
+
+NS_EXTERN int
+Ns_InfoPid(void);
+
+NS_EXTERN char *
+Ns_InfoNameOfExecutable(void);
+
+NS_EXTERN char *
+Ns_InfoPlatform(void);
+
+NS_EXTERN int
+Ns_InfoUptime(void);
+
+NS_EXTERN int
+Ns_InfoBootTime(void);
+
+NS_EXTERN char *
+Ns_InfoHostname(void);
+
+NS_EXTERN char *
+Ns_InfoAddress(void);
+
+NS_EXTERN char *
+Ns_InfoBuildDate(void);
+
+NS_EXTERN int
+Ns_InfoShutdownPending(void);
+
+NS_EXTERN int
+Ns_InfoStarted(void);
+
+NS_EXTERN int
+Ns_InfoServersStarted(void);
+
+NS_EXTERN char *
+Ns_InfoTag(void);
 
 /*
  * mimetypes.c:
@@ -1536,8 +1702,11 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
  * nsthread.c:
  */
 
-NS_EXTERN void Ns_SetThreadServer(char *server);
-NS_EXTERN char *Ns_GetThreadServer(void);
+NS_EXTERN void
+Ns_SetThreadServer(char *server);
+
+NS_EXTERN char *
+Ns_GetThreadServer(void);
 
 /*
  * op.c:
@@ -1590,49 +1759,87 @@ Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
  * pathname.c:
  */
 
-NS_EXTERN int Ns_PathIsAbsolute(CONST char *path);
-NS_EXTERN char *Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path);
-NS_EXTERN char *Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
-NS_EXTERN char *Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels);
-NS_EXTERN char *Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
-NS_EXTERN char *Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
-NS_EXTERN char *Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
-NS_EXTERN int Ns_HomePathExists(char *path, ...) NS_GNUC_SENTINEL;
-NS_EXTERN char *Ns_ModulePath(Ns_DString *dsPtr, CONST char *server,
-                              CONST char *module, ...) NS_GNUC_SENTINEL;
-NS_EXTERN char *Ns_ServerPath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
-NS_EXTERN char *Ns_PagePath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
-NS_EXTERN int Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
+NS_EXTERN int
+Ns_PathIsAbsolute(CONST char *path);
+
+NS_EXTERN char *
+Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path);
+
+NS_EXTERN char *
+Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN char *
+Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels);
+
+NS_EXTERN char *
+Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN char *
+Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN char *
+Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN int
+Ns_HomePathExists(char *path, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN char *
+Ns_ModulePath(Ns_DString *dsPtr, CONST char *server, CONST char *module, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN char *
+Ns_ServerPath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN char *
+Ns_PagePath(Ns_DString *dest, CONST char *server, ...) NS_GNUC_SENTINEL;
+
+NS_EXTERN int
+Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
 
 /*
  * proc.c:
  */
 
-NS_EXTERN void Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc);
-NS_EXTERN void Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg);
-NS_EXTERN void Ns_StringArgProc(Tcl_DString *dsPtr, void *arg);
+NS_EXTERN void
+Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc);
+
+NS_EXTERN void
+Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg);
+
+NS_EXTERN void
+Ns_StringArgProc(Tcl_DString *dsPtr, void *arg);
 
 /*
  * queue.c:
  */
 
-NS_EXTERN Ns_Conn *Ns_GetConn(void);
+NS_EXTERN Ns_Conn *
+Ns_GetConn(void);
 
 /*
  * quotehtml.c:
  */
 
-NS_EXTERN void Ns_QuoteHtml(Ns_DString *pds, char *string);
+NS_EXTERN void
+Ns_QuoteHtml(Ns_DString *pds, char *string);
 
 /*
  * request.c:
  */
 
-NS_EXTERN void Ns_FreeRequest(Ns_Request *request);
-NS_EXTERN void Ns_ResetRequest(Ns_Request *request);
-NS_EXTERN int Ns_ParseRequest(Ns_Request *request, CONST char *line);
-NS_EXTERN char *Ns_SkipUrl(Ns_Request *request, int n);
-NS_EXTERN void Ns_SetRequestUrl(Ns_Request *request, CONST char *url);
+NS_EXTERN void
+Ns_FreeRequest(Ns_Request *request);
+
+NS_EXTERN void
+Ns_ResetRequest(Ns_Request *request);
+
+NS_EXTERN int
+Ns_ParseRequest(Ns_Request *request, CONST char *line);
+
+NS_EXTERN char *
+Ns_SkipUrl(Ns_Request *request, int n);
+
+NS_EXTERN void
+Ns_SetRequestUrl(Ns_Request *request, CONST char *url);
 
 /*
  * return.c:
@@ -1821,58 +2028,128 @@ Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
  * sched.c:
  */
 
-NS_EXTERN int Ns_After(int seconds, Ns_Callback *proc, void *arg,
-		    Ns_Callback *deleteProc);
-NS_EXTERN int Ns_Cancel(int id);
-NS_EXTERN int Ns_Pause(int id);
-NS_EXTERN int Ns_Resume(int id);
-NS_EXTERN int Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread,
-			   int interval);
-NS_EXTERN int Ns_ScheduleDaily(Ns_SchedProc *proc, void *arg, int flags,
+NS_EXTERN int
+Ns_After(int seconds, Ns_Callback *proc, void *arg, Ns_Callback *deleteProc);
+
+NS_EXTERN int
+Ns_Cancel(int id);
+
+NS_EXTERN int
+Ns_Pause(int id);
+
+NS_EXTERN int
+Ns_Resume(int id);
+
+NS_EXTERN int
+Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval);
+
+NS_EXTERN int
+Ns_ScheduleDaily(Ns_SchedProc *proc, void *arg, int flags,
 			    int hour, int minute, Ns_SchedProc *cleanupProc);
-NS_EXTERN int Ns_ScheduleWeekly(Ns_SchedProc *proc, void *arg, int flags,
+
+NS_EXTERN int
+Ns_ScheduleWeekly(Ns_SchedProc *proc, void *arg, int flags,
 			     int day, int hour, int minute,
 			     Ns_SchedProc *cleanupProc);
-NS_EXTERN int Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
+
+NS_EXTERN int
+Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
 			     int interval, Ns_SchedProc *cleanupProc);
-NS_EXTERN void Ns_UnscheduleProc(int id);
+
+NS_EXTERN void
+Ns_UnscheduleProc(int id);
 
 /*
  * set.c:
  */
 
-NS_EXTERN void Ns_SetUpdate(Ns_Set *set, CONST char *key, CONST char *value);
-NS_EXTERN Ns_Set *Ns_SetCreate(CONST char *name);
-NS_EXTERN void Ns_SetFree(Ns_Set *set);
-NS_EXTERN int Ns_SetPut(Ns_Set *set, CONST char *key, CONST char *value);
-NS_EXTERN int Ns_SetPutSz(Ns_Set *set, CONST char *key, CONST char *value,
-                          int size);
-NS_EXTERN int Ns_SetUniqueCmp(Ns_Set *set, CONST char *key,
+NS_EXTERN void
+Ns_SetUpdate(Ns_Set *set, CONST char *key, CONST char *value);
+
+NS_EXTERN Ns_Set *
+Ns_SetCreate(CONST char *name);
+
+NS_EXTERN void
+Ns_SetFree(Ns_Set *set);
+
+NS_EXTERN int
+Ns_SetPut(Ns_Set *set, CONST char *key, CONST char *value);
+
+NS_EXTERN int
+Ns_SetPutSz(Ns_Set *set, CONST char *key, CONST char *value, int size);
+
+NS_EXTERN int
+Ns_SetUniqueCmp(Ns_Set *set, CONST char *key,
                               int (*cmp) (CONST char *s1, CONST char *s2));
-NS_EXTERN int Ns_SetFindCmp(Ns_Set *set, CONST char *key,
+
+NS_EXTERN int
+Ns_SetFindCmp(Ns_Set *set, CONST char *key,
                             int (*cmp) (CONST char *s1, CONST char *s2));
-NS_EXTERN char *Ns_SetGetCmp(Ns_Set *set, CONST char *key,
+
+NS_EXTERN char *
+Ns_SetGetCmp(Ns_Set *set, CONST char *key,
                              int (*cmp) (CONST char *s1, CONST char *s2));
-NS_EXTERN int Ns_SetUnique(Ns_Set *set, CONST char *key);
-NS_EXTERN int Ns_SetIUnique(Ns_Set *set, CONST char *key);
-NS_EXTERN int Ns_SetFind(Ns_Set *set, CONST char *key);
-NS_EXTERN int Ns_SetIFind(Ns_Set *set, CONST char *key);
-NS_EXTERN char *Ns_SetGet(Ns_Set *set, CONST char *key);
-NS_EXTERN char *Ns_SetIGet(Ns_Set *set, CONST char *key);
-NS_EXTERN void Ns_SetTrunc(Ns_Set *set, int size);
-NS_EXTERN void Ns_SetDelete(Ns_Set *set, int index);
-NS_EXTERN void Ns_SetPutValue(Ns_Set *set, int index, CONST char *value);
-NS_EXTERN void Ns_SetDeleteKey(Ns_Set *set, CONST char *key);
-NS_EXTERN void Ns_SetIDeleteKey(Ns_Set *set, CONST char *key);
-NS_EXTERN Ns_Set *Ns_SetListFind(Ns_Set **sets, CONST char *name);
-NS_EXTERN Ns_Set **Ns_SetSplit(Ns_Set *set, char sep);
-NS_EXTERN void Ns_SetListFree(Ns_Set **sets);
-NS_EXTERN void Ns_SetMerge(Ns_Set *high, Ns_Set *low);
-NS_EXTERN Ns_Set *Ns_SetCopy(Ns_Set *old);
-NS_EXTERN void Ns_SetMove(Ns_Set *to, Ns_Set *from);
-NS_EXTERN void Ns_SetPrint(Ns_Set *set);
-NS_EXTERN char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def);
-NS_EXTERN char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def);
+
+NS_EXTERN int
+Ns_SetUnique(Ns_Set *set, CONST char *key);
+
+NS_EXTERN int
+Ns_SetIUnique(Ns_Set *set, CONST char *key);
+
+NS_EXTERN int
+Ns_SetFind(Ns_Set *set, CONST char *key);
+
+NS_EXTERN int
+Ns_SetIFind(Ns_Set *set, CONST char *key);
+
+NS_EXTERN char *
+Ns_SetGet(Ns_Set *set, CONST char *key);
+
+NS_EXTERN char *
+Ns_SetIGet(Ns_Set *set, CONST char *key);
+
+NS_EXTERN void
+Ns_SetTrunc(Ns_Set *set, int size);
+
+NS_EXTERN void
+Ns_SetDelete(Ns_Set *set, int index);
+
+NS_EXTERN void
+Ns_SetPutValue(Ns_Set *set, int index, CONST char *value);
+
+NS_EXTERN void
+Ns_SetDeleteKey(Ns_Set *set, CONST char *key);
+
+NS_EXTERN void
+Ns_SetIDeleteKey(Ns_Set *set, CONST char *key);
+
+NS_EXTERN Ns_Set *
+Ns_SetListFind(Ns_Set **sets, CONST char *name);
+
+NS_EXTERN Ns_Set **
+Ns_SetSplit(Ns_Set *set, char sep);
+
+NS_EXTERN void
+Ns_SetListFree(Ns_Set **sets);
+
+NS_EXTERN void
+Ns_SetMerge(Ns_Set *high, Ns_Set *low);
+
+NS_EXTERN Ns_Set *
+Ns_SetCopy(Ns_Set *old);
+
+NS_EXTERN void
+Ns_SetMove(Ns_Set *to, Ns_Set *from);
+
+NS_EXTERN void
+Ns_SetPrint(Ns_Set *set);
+
+NS_EXTERN char *
+Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def);
+
+NS_EXTERN char *
+Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def);
+
 
 /*
  * see macros above for:
@@ -1888,18 +2165,35 @@ NS_EXTERN char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def);
  * binder.c:
  */
 
-NS_EXTERN SOCKET Ns_SockListenEx(char *address, int port, int backlog);
-NS_EXTERN SOCKET Ns_SockListenUdp(char *address, int port);
-NS_EXTERN SOCKET Ns_SockListenRaw(int proto);
-NS_EXTERN SOCKET Ns_SockListenUnix(char *path, int backlog, int mode);
+NS_EXTERN SOCKET
+Ns_SockListenEx(char *address, int port, int backlog);
 
-NS_EXTERN SOCKET Ns_SockBindUdp(struct sockaddr_in *saPtr);
-NS_EXTERN SOCKET Ns_SockBindRaw(int proto);
-NS_EXTERN SOCKET Ns_SockBindUnix(char *path, int socktype, int mode);
+NS_EXTERN SOCKET
+Ns_SockListenUdp(char *address, int port);
 
-NS_EXTERN void NsForkBinder(void);
-NS_EXTERN void NsStopBinder(void);
-NS_EXTERN SOCKET Ns_SockBinderListen(int type, char *address, int port, int options);
+NS_EXTERN SOCKET
+Ns_SockListenRaw(int proto);
+
+NS_EXTERN SOCKET
+Ns_SockListenUnix(char *path, int backlog, int mode);
+
+NS_EXTERN SOCKET
+Ns_SockBindUdp(struct sockaddr_in *saPtr);
+
+NS_EXTERN SOCKET
+Ns_SockBindRaw(int proto);
+
+NS_EXTERN SOCKET
+Ns_SockBindUnix(char *path, int socktype, int mode);
+
+NS_EXTERN void
+NsForkBinder(void);
+
+NS_EXTERN void
+NsStopBinder(void);
+
+NS_EXTERN SOCKET
+Ns_SockBinderListen(int type, char *address, int port, int options);
 
 /*
  * sls.s
@@ -1978,56 +2272,110 @@ NS_EXTERN size_t
 Ns_SumVec(struct iovec *iov, int nbufs)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int Ns_SockWait(SOCKET sock, int what, int timeout);
-NS_EXTERN int Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,
+NS_EXTERN int
+Ns_SockWait(SOCKET sock, int what, int timeout);
+NS_EXTERN int
+Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr);
+NS_EXTERN int
+Ns_SockRecv(SOCKET sock, void *vbuf, size_t nrecv,
                           Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend,
+NS_EXTERN int
+Ns_SockSend(SOCKET sock, void *vbuf, size_t nsend,
                           Ns_Time *timeoutPtr);
-NS_EXTERN int Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
+NS_EXTERN int
+Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                               Ns_Time *timeoutPtr, int flags);
-NS_EXTERN int Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
+NS_EXTERN int
+Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
                               Ns_Time *timeoutPtr, int flags);
 
-NS_EXTERN SOCKET Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
-NS_EXTERN SOCKET Ns_SockBind(struct sockaddr_in *psa);
-NS_EXTERN SOCKET Ns_SockListen(char *address, int port);
-NS_EXTERN SOCKET Ns_SockAccept(SOCKET sock, struct sockaddr *psa, int *lenPtr);
+NS_EXTERN SOCKET
+Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
 
-NS_EXTERN SOCKET Ns_SockConnect(char *host, int port);
-NS_EXTERN SOCKET Ns_SockConnect2(char *host, int port, char *lhost, int lport);
-NS_EXTERN SOCKET Ns_SockAsyncConnect(char *host, int port);
-NS_EXTERN SOCKET Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport);
-NS_EXTERN SOCKET Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr);
-NS_EXTERN SOCKET Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
+NS_EXTERN SOCKET
+Ns_SockBind(struct sockaddr_in *psa);
+
+NS_EXTERN SOCKET
+Ns_SockListen(char *address, int port);
+
+NS_EXTERN SOCKET
+Ns_SockAccept(SOCKET sock, struct sockaddr *psa, int *lenPtr);
+
+NS_EXTERN SOCKET
+Ns_SockConnect(char *host, int port);
+
+NS_EXTERN SOCKET
+Ns_SockConnect2(char *host, int port, char *lhost, int lport);
+
+NS_EXTERN SOCKET
+Ns_SockAsyncConnect(char *host, int port);
+
+NS_EXTERN SOCKET
+Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport);
+
+NS_EXTERN SOCKET
+Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr);
+
+NS_EXTERN SOCKET
+Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
                                       Ns_Time *timeoutPtr);
 
-NS_EXTERN int Ns_SockSetNonBlocking(SOCKET sock);
-NS_EXTERN int Ns_SockSetBlocking(SOCKET sock);
-NS_EXTERN int Ns_GetSockAddr(struct sockaddr_in *psa, char *host, int port);
-NS_EXTERN int Ns_SockCloseLater(SOCKET sock);
+NS_EXTERN int
+Ns_SockSetNonBlocking(SOCKET sock);
 
-NS_EXTERN char *Ns_SockError(void);
-NS_EXTERN int   Ns_SockErrno(void);
-NS_EXTERN void Ns_ClearSockErrno(void);
-NS_EXTERN int Ns_GetSockErrno(void);
-NS_EXTERN void Ns_SetSockErrno(int err);
-NS_EXTERN char *Ns_SockStrError(int err);
+NS_EXTERN int
+Ns_SockSetBlocking(SOCKET sock);
+
+NS_EXTERN int
+Ns_GetSockAddr(struct sockaddr_in *psa, char *host, int port);
+
+NS_EXTERN int
+Ns_SockCloseLater(SOCKET sock);
+
+NS_EXTERN char *
+Ns_SockError(void);
+
+NS_EXTERN int
+Ns_SockErrno(void);
+
+NS_EXTERN void
+Ns_ClearSockErrno(void);
+
+NS_EXTERN int
+Ns_GetSockErrno(void);
+
+NS_EXTERN void
+Ns_SetSockErrno(int err);
+
+NS_EXTERN char *
+Ns_SockStrError(int err);
 
 #ifdef _WIN32
-NS_EXTERN char *NsWin32ErrMsg(int err);
-NS_EXTERN SOCKET ns_sockdup(SOCKET sock);
-NS_EXTERN int ns_socknbclose(SOCKET sock);
+NS_EXTERN char *
+NsWin32ErrMsg(int err);
+
+NS_EXTERN SOCKET
+ns_sockdup(SOCKET sock);
+
+NS_EXTERN int
+ns_socknbclose(SOCKET sock);
 #endif
 
 /*
  * sockcallback.c:
  */
 
-NS_EXTERN int Ns_SockCallback(SOCKET sock, Ns_SockProc *proc, void *arg, int when);
-NS_EXTERN int Ns_SockCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout);
-NS_EXTERN void Ns_SockCancelCallback(SOCKET sock);
-NS_EXTERN int Ns_SockCancelCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg);
+NS_EXTERN int
+Ns_SockCallback(SOCKET sock, Ns_SockProc *proc, void *arg, int when);
+
+NS_EXTERN int
+Ns_SockCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout);
+
+NS_EXTERN void
+Ns_SockCancelCallback(SOCKET sock);
+
+NS_EXTERN int
+Ns_SockCancelCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg);
 
 /*
  * str.c:
@@ -2081,11 +2429,12 @@ Ns_StrIsHost(CONST char *string)
  * tclcallbacks.c:
  */
 
-NS_EXTERN Ns_TclCallback *Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc,
-                                            Tcl_Obj *scriptObjPtr, int objc,
+NS_EXTERN Ns_TclCallback *
+Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc, Tcl_Obj *scriptObjPtr, int objc,
                                             Tcl_Obj *CONST objv[]);
 
-NS_EXTERN int Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
+NS_EXTERN int
+Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
                                  Ns_DString *result, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN Ns_Callback Ns_TclCallbackProc;
@@ -2096,17 +2445,22 @@ NS_EXTERN Ns_ArgProc  Ns_TclCallbackArgProc;
  * tclenv.c:
  */
 
-NS_EXTERN char **Ns_CopyEnviron(Ns_DString *dsPtr);
-NS_EXTERN char **Ns_GetEnviron(void);
+NS_EXTERN char **
+Ns_CopyEnviron(Ns_DString *dsPtr);
+
+NS_EXTERN char **
+Ns_GetEnviron(void);
 
 /*
  * tclfile.c:
  */
 
-NS_EXTERN int Ns_TclGetOpenChannel(Tcl_Interp *interp, char *chanId, int write,
+NS_EXTERN int
+Ns_TclGetOpenChannel(Tcl_Interp *interp, char *chanId, int write,
 				int check, Tcl_Channel *chanPtr);
-NS_EXTERN int Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write,
-			   int *fdPtr);
+
+NS_EXTERN int
+Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write, int *fdPtr);
 
 /*
  * tclinit.c:
@@ -2260,8 +2614,11 @@ NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, char *setId)
  * time.c:
  */
 
-NS_EXTERN char *Ns_HttpTime(Ns_DString *pds, time_t *when);
-NS_EXTERN time_t Ns_ParseHttpTime(char *str);
+NS_EXTERN char *
+Ns_HttpTime(Ns_DString *pds, time_t *when);
+
+NS_EXTERN time_t
+Ns_ParseHttpTime(char *str);
 
 /*
  * url.c:
@@ -2310,32 +2667,53 @@ NS_EXTERN Ns_Url2FileProc Ns_FastUrl2FileProc;
  * urlencode.c:
  */
 
-NS_EXTERN Tcl_Encoding Ns_GetUrlEncoding(char *charset);
-NS_EXTERN char *Ns_UrlPathEncode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
-NS_EXTERN char *Ns_UrlPathDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
-NS_EXTERN char *Ns_UrlQueryEncode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
-NS_EXTERN char *Ns_UrlQueryDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
-NS_EXTERN char *Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
+NS_EXTERN Tcl_Encoding
+Ns_GetUrlEncoding(char *charset);
+
+NS_EXTERN char *
+Ns_UrlPathEncode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+
+NS_EXTERN char *
+Ns_UrlPathDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+
+NS_EXTERN char *
+Ns_UrlQueryEncode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+
+NS_EXTERN char *
+Ns_UrlQueryDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
+
+NS_EXTERN char *
+Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
                                          Tcl_Encoding encoding) NS_GNUC_DEPRECATED;
-NS_EXTERN char *Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
+
+NS_EXTERN char *
+Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
                                          Tcl_Encoding encoding) NS_GNUC_DEPRECATED;
-NS_EXTERN char *Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string,
+
+NS_EXTERN char *
+Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string,
                                     char *charset) NS_GNUC_DEPRECATED;
-NS_EXTERN char *Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string,
+
+NS_EXTERN char *
+Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string,
                                     char *charset) NS_GNUC_DEPRECATED;
 
 /*
  * urlopen.c:
  */
 
-NS_EXTERN int Ns_FetchPage(Ns_DString *pds, char *url, char *server);
-NS_EXTERN int Ns_FetchURL(Ns_DString *pds, char *url, Ns_Set *headers);
+NS_EXTERN int
+Ns_FetchPage(Ns_DString *pds, char *url, char *server);
+
+NS_EXTERN int
+Ns_FetchURL(Ns_DString *pds, char *url, Ns_Set *headers);
 
 /*
  * urlspace.c:
  */
 
-NS_EXTERN int Ns_UrlSpecificAlloc(void);
+NS_EXTERN int
+Ns_UrlSpecificAlloc(void);
 
 NS_EXTERN void
 Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
@@ -2368,27 +2746,57 @@ Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
  * fd.c:
  */
 
-NS_EXTERN int Ns_CloseOnExec(int fd);
-NS_EXTERN int Ns_NoCloseOnExec(int fd);
-NS_EXTERN int Ns_DupHigh(int *fdPtr);
-NS_EXTERN int Ns_GetTemp(void);
-NS_EXTERN void Ns_ReleaseTemp(int fd);
+NS_EXTERN int
+Ns_CloseOnExec(int fd);
+
+NS_EXTERN int
+Ns_NoCloseOnExec(int fd);
+
+NS_EXTERN int
+Ns_DupHigh(int *fdPtr);
+
+NS_EXTERN int
+Ns_GetTemp(void);
+
+NS_EXTERN void
+Ns_ReleaseTemp(int fd);
 
 /*
  * unix.c, win32.c:
  */
 
-NS_EXTERN int ns_sockpair(SOCKET *socks);
-NS_EXTERN int ns_pipe(int *fds);
-NS_EXTERN int ns_poll(struct pollfd *fds, unsigned long int nfds, int timo);
-NS_EXTERN int Ns_GetNameForUid(Ns_DString *dsPtr, int uid);
-NS_EXTERN int Ns_GetNameForGid(Ns_DString *dsPtr, int gid);
-NS_EXTERN int Ns_GetUserHome(Ns_DString *dsPtr, char *user);
-NS_EXTERN int Ns_GetUserGid(char *user);
-NS_EXTERN int Ns_GetUid(char *user);
-NS_EXTERN int Ns_GetGid(char *group);
-NS_EXTERN int Ns_SetUser(char *user);
-NS_EXTERN int Ns_SetGroup(char *group);
+NS_EXTERN int
+ns_sockpair(SOCKET *socks);
+
+NS_EXTERN int
+ns_pipe(int *fds);
+
+NS_EXTERN int
+ns_poll(struct pollfd *fds, unsigned long int nfds, int timo);
+
+NS_EXTERN int
+Ns_GetNameForUid(Ns_DString *dsPtr, int uid);
+
+NS_EXTERN int
+Ns_GetNameForGid(Ns_DString *dsPtr, int gid);
+
+NS_EXTERN int
+Ns_GetUserHome(Ns_DString *dsPtr, char *user);
+
+NS_EXTERN int
+Ns_GetUserGid(char *user);
+
+NS_EXTERN int
+Ns_GetUid(char *user);
+
+NS_EXTERN int
+Ns_GetGid(char *group);
+
+NS_EXTERN int
+Ns_SetUser(char *user);
+
+NS_EXTERN int
+Ns_SetGroup(char *group);
 
 /*
  * form.c:

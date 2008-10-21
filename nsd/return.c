@@ -392,52 +392,6 @@ Ns_ConnSetExpiresHeader(Ns_Conn *conn, CONST char *expires)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnSetRequiredHeaders --
- *
- *      Set a sane set of minimal headers for any response:
- *      MIME-Version, Date, Server, Content-Type, Content-Length
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
-{
-    Ns_DString ds;
-
-    Ns_DStringInit(&ds);
-
-    /*
-     * Set the standard mime and date headers.
-     */
-
-    Ns_ConnCondSetHeaders(conn, "MIME-Version", "1.0");
-    Ns_ConnCondSetHeaders(conn, "Date", Ns_HttpTime(&ds, NULL));
-    Ns_DStringSetLength(&ds, 0);
-
-    Ns_DStringVarAppend(&ds, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), NULL);
-    Ns_ConnCondSetHeaders(conn, "Server", ds.string);
-
-    /*
-     * Set the type and/or length headers if provided.
-     */
-
-    Ns_ConnSetTypeHeader(conn, type);
-    Ns_ConnSetLengthHeader(conn, length);
-
-    Ns_DStringFree(&ds);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_ConnConstructHeaders --
  *
  *      Put the header of an HTTP response into the dstring.
@@ -477,7 +431,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
                      reason);
 
     /*
-     * Add the basic required headers.
+     * Add the basic required headers if they.
      */
 
     Ns_DStringVarAppend(dsPtr,
@@ -514,7 +468,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnQueueHeaders, Ns_ConnFlushHeaders --
+ * Ns_ConnQueueHeaders, Ns_ConnFlushHeaders, Ns_ConnSetRequiredHeaders --
  *
  *      Deperecated.
  *
@@ -542,6 +496,13 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
     Ns_ConnWriteData(conn, NULL, 0, 0);
 
     return connPtr->nContentSent;
+}
+
+void
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
+{
+    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetLengthHeader(conn, length);
 }
 
 

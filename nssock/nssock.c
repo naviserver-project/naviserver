@@ -95,6 +95,7 @@ Ns_ModuleInit(char *server, char *module)
     init.sendProc = Send;
     init.sendFileProc = SendFile;
     init.keepProc = Keep;
+    init.requestProc = NULL;
     init.closeProc = Close;
     init.opts = NS_DRIVER_ASYNC;
     init.arg = cfg;

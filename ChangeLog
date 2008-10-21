@@ -1,3 +1,17 @@
+2008-10-21  Vlad Seryakov <seryakov@users.sf.net>
+
+        include/ns: Made all definitions using the same format
+
+        nsd/return.c: Ns_ConnSetRequiredHeaders is broken, moved to Deperecated status
+
+        nsd/conn.c: Added new public function Ns_ConnContentSize for cases when
+        Ns_ConnContent returns binary data
+
+        modules/nsphp: Updated to latest API, supports streaming and does not use
+        deperecated functions anymore
+
+        modules/nstftpd: ported to new driver API
+
 2008-10-19  Vlad Seryakov <seryakov@users.sf.net>
 
 	nsd/conn.c: Fixed bug in ns_conn content, it returned as string and did not

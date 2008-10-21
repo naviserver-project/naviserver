@@ -209,6 +209,30 @@ Ns_ConnContent(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConnContentSize --
+ *
+ *      Return size of the posted content.
+ *
+ * Results:
+ *      Size of the content buffer
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnContentSize(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return connPtr->reqPtr->length;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConnContentFile --
  *
  *      Return pointer of the file name with spooled content.
@@ -235,7 +259,7 @@ Ns_ConnContentFile(Ns_Conn *conn)
  *
  * Ns_ConnContentFd --
  *
- *      Return opene file descriptor of the file with spooled content.
+ *      Return opened file descriptor of the file with spooled content.
  *
  * Results:
  *      File descriptor or 0 if not used
@@ -246,7 +270,8 @@ Ns_ConnContentFile(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int Ns_ConnContentFd(Ns_Conn *conn)
+int
+Ns_ConnContentFd(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
