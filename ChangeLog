@@ -1,3 +1,14 @@
+2008-10-22  Vlad Seryakov <seryakov@users.sf.net>
+
+	include/ns.h:
+	nsd/conn.c: Removed public functions Ns_connSockContext and Ns_ConnDriverContext.
+        Ns_Sock already has all pointers.
+
+	nsd/driver.c: Fixed bug with status code in SockAccept where it's been set 
+        and then compared for other values
+
+	modules/nsssl.c: Fixed bug with checking not-NULL pointer for NULL
+
 2008-10-21  Vlad Seryakov <seryakov@users.sf.net>
 
         include/ns: Made all definitions using the same format

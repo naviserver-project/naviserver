@@ -990,17 +990,11 @@ Ns_ConnSock(Ns_Conn *conn);
 NS_EXTERN Ns_Sock *
 Ns_ConnSockPtr(Ns_Conn *conn);
 
-NS_EXTERN void *
-Ns_ConnSockContext(Ns_Conn *conn);
-
 NS_EXTERN Ns_DString *
 Ns_ConnSockContent(Ns_Conn *conn);
 
 NS_EXTERN char *
 Ns_ConnDriverName(Ns_Conn *conn);
-
-NS_EXTERN void *
-Ns_ConnDriverContext(Ns_Conn *conn);
 
 NS_EXTERN void
 Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);

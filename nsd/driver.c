@@ -1524,7 +1524,6 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
         sockPtr = NULL;
 
     } else {
-        status = SOCK_MORE;
         drvPtr->queuesize++;
 
         if (status == NS_DRIVER_ACCEPT_DATA) {
@@ -1560,6 +1559,8 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
 
             SockPrepare(sockPtr);
             status = SOCK_READY;
+        } else {
+            status = SOCK_MORE;
         }
     }
 
