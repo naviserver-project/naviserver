@@ -12,6 +12,14 @@
 
         modules/nstftpd: ported to new driver API
 
+        modules/nsssl: Ported to new API
+
+        nsd/conn.c: Added new Ns_ConnSockContext function which returns sock->arg,
+        socket-wide context
+
+        Ns_ConnDriverContext will now return connPtr->drvPtr->arg, this is driver-wide
+        context.
+
 2008-10-19  Vlad Seryakov <seryakov@users.sf.net>
 
 	nsd/conn.c: Fixed bug in ns_conn content, it returned as string and did not

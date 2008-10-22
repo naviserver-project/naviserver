@@ -875,52 +875,147 @@ Ns_GetVersion(int *major, int *minor, int *patch, int *type);
  * conn.c:
  */
 
-NS_EXTERN int Ns_ConnId(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnContentFd(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnContentSize(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnContentFile(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
-NS_EXTERN Tcl_Encoding Ns_ConnGetEncoding(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
-NS_EXTERN Tcl_Encoding Ns_ConnGetUrlEncoding(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnGetCompression(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetCompression(Ns_Conn *conn, int flag);
-NS_EXTERN int Ns_ConnModifiedSince(Ns_Conn *conn, time_t inTime);
-NS_EXTERN int Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since);
-NS_EXTERN int Ns_ParseHeader(Ns_Set *set, char *header, Ns_HeaderCaseDisposition disp);
-NS_EXTERN Ns_Set  *Ns_ConnGetQuery(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnClearQuery(Ns_Conn *conn);
-NS_EXTERN int Ns_QueryToSet(char *query, Ns_Set *qset);
-NS_EXTERN Ns_Set *Ns_ConnAuth(Ns_Conn *conn);
-NS_EXTERN Ns_Set *Ns_ConnHeaders(Ns_Conn *conn);
-NS_EXTERN Ns_Set *Ns_ConnOutputHeaders(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnAuthUser(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnAuthPasswd(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnContentLength(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnContent(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnServer(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnResponseStatus(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status);
-NS_EXTERN Tcl_WideInt Ns_ConnContentSent(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length);
-NS_EXTERN int Ns_ConnResponseLength(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnPeer(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr);
-NS_EXTERN int Ns_ConnPeerPort(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED;
-NS_EXTERN char *Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);
-NS_EXTERN char *Ns_ConnHost(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnPort(Ns_Conn *conn);
-NS_EXTERN int Ns_ConnSock(Ns_Conn *conn);
-NS_EXTERN Ns_Sock *Ns_ConnSockPtr(Ns_Conn *conn);
-NS_EXTERN Ns_DString *Ns_ConnSockContent(Ns_Conn *conn);
-NS_EXTERN char *Ns_ConnDriverName(Ns_Conn *conn);
-NS_EXTERN void *Ns_ConnDriverContext(Ns_Conn *conn);
-NS_EXTERN void Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
-NS_EXTERN int Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
-NS_EXTERN void Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
-NS_EXTERN Ns_Time *Ns_ConnStartTime(Ns_Conn *conn);
-NS_EXTERN Ns_Time *Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+NS_EXTERN int
+Ns_ConnId(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnContentFd(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnContentSize(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnContentFile(Ns_Conn *conn);
+
+NS_EXTERN void
+Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
+
+NS_EXTERN Tcl_Encoding
+Ns_ConnGetEncoding(Ns_Conn *conn);
+
+NS_EXTERN void
+Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
+
+NS_EXTERN Tcl_Encoding
+Ns_ConnGetUrlEncoding(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnGetCompression(Ns_Conn *conn);
+
+NS_EXTERN void
+Ns_ConnSetCompression(Ns_Conn *conn, int flag);
+
+NS_EXTERN int
+Ns_ConnModifiedSince(Ns_Conn *conn, time_t inTime);
+
+NS_EXTERN int
+Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since);
+
+NS_EXTERN int
+Ns_ParseHeader(Ns_Set *set, char *header, Ns_HeaderCaseDisposition disp);
+
+NS_EXTERN Ns_Set  *
+Ns_ConnGetQuery(Ns_Conn *conn);
+
+NS_EXTERN void
+Ns_ConnClearQuery(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_QueryToSet(char *query, Ns_Set *qset);
+
+NS_EXTERN Ns_Set *
+Ns_ConnAuth(Ns_Conn *conn);
+
+NS_EXTERN Ns_Set *
+Ns_ConnHeaders(Ns_Conn *conn);
+
+NS_EXTERN Ns_Set *
+Ns_ConnOutputHeaders(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnAuthUser(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnAuthPasswd(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnContentLength(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnContent(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnServer(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnResponseStatus(Ns_Conn *conn);
+
+NS_EXTERN void
+Ns_ConnSetResponseStatus(Ns_Conn *conn, int new_status);
+
+NS_EXTERN Tcl_WideInt
+Ns_ConnContentSent(Ns_Conn *conn);
+
+NS_EXTERN void
+Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length);
+
+NS_EXTERN int
+Ns_ConnResponseLength(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnPeer(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr);
+
+NS_EXTERN int
+Ns_ConnPeerPort(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED;
+
+NS_EXTERN char *
+Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);
+
+NS_EXTERN char *
+Ns_ConnHost(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnPort(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnSock(Ns_Conn *conn);
+
+NS_EXTERN Ns_Sock *
+Ns_ConnSockPtr(Ns_Conn *conn);
+
+NS_EXTERN void *
+Ns_ConnSockContext(Ns_Conn *conn);
+
+NS_EXTERN Ns_DString *
+Ns_ConnSockContent(Ns_Conn *conn);
+
+NS_EXTERN char *
+Ns_ConnDriverName(Ns_Conn *conn);
+
+NS_EXTERN void *
+Ns_ConnDriverContext(Ns_Conn *conn);
+
+NS_EXTERN void
+Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding);
+
+NS_EXTERN int
+Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
+
+NS_EXTERN void
+Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
+
+NS_EXTERN Ns_Time *
+Ns_ConnStartTime(Ns_Conn *conn);
+
+NS_EXTERN Ns_Time *
+Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+
 
 /*
  * connio.c:

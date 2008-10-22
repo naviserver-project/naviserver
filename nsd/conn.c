@@ -794,6 +794,30 @@ Ns_ConnSockContent(Ns_Conn *conn)
     return NULL;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnSockContext --
+ *
+ *      Get the conn-wide context for this sock
+ *
+ * Results:
+ *      The socket-supplied context
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void *
+Ns_ConnSockContext(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return (void *)(connPtr->sockPtr ? connPtr->sockPtr->arg : NULL);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -825,7 +849,7 @@ Ns_ConnDriverName(Ns_Conn *conn)
  *
  * Ns_ConnDriverContext --
  *
- *      Get the conn-wide context for this driver
+ *      Get the context for this driver
  *
  * Results:
  *      The driver-supplied context
@@ -841,7 +865,7 @@ Ns_ConnDriverContext(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return (void *)(connPtr->sockPtr ? connPtr->sockPtr->arg : NULL);
+    return (void *)(connPtr->drvPtr ? connPtr->drvPtr->arg : NULL);
 }
 
 
