@@ -66,7 +66,15 @@ typedef struct {
  * Local functions defined in this file
  */
 
-static Ns_DriverProc SSLProc;
+static Ns_DriverListenProc Listen;
+static Ns_DriverAcceptProc Accept;
+static Ns_DriverRecvProc Recv;
+static Ns_DriverSendProc Send;
+static Ns_DriverSendFileProc SendFile;
+static Ns_DriverKeepProc Keep;
+static Ns_DriverCloseProc Close;
+static Ns_DriverRequestProc Request;
+
 static int SSLInterpInit(Tcl_Interp *interp, void *arg);
 static int SSLObjCmd(ClientData arg, Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
@@ -103,23 +111,30 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
 
     Ns_DStringInit(&ds);
 
-    drvPtr = ns_calloc(1, sizeof(SSLDriver));
+    path = Ns_ConfigGetPath(server, module, NULL);
 
-    init.version = NS_DRIVER_VERSION_1;
+    drvPtr = ns_calloc(1, sizeof(SSLDriver));
+    drvPtr->verify = Ns_ConfigBool(path, "verify", 0);
+
+    init.version = NS_DRIVER_VERSION_2;
     init.name = "nsssl";
-    init.proc = SSLProc;
+    init.listenProc = Listen;
+    init.acceptProc = Accept;
+    init.recvProc = Recv;
+    init.sendProc = Send;
+    init.sendFileProc = SendFile;
+    init.keepProc = Keep;
+    init.requestProc = Request;
+    init.closeProc = Close;
     init.opts = NS_DRIVER_SSL;
     init.arg = drvPtr;
-    init.path = NULL;
+    init.path = (char*)path;
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
         ns_free(drvPtr);
         return NS_ERROR;
     }
-    path = Ns_ConfigGetPath(server, module, NULL);
-
-    drvPtr->verify = Ns_ConfigBool(path, "verify", 0);
 
     num = CRYPTO_num_locks();
     driver_locks = ns_calloc(num, sizeof(*driver_locks));
@@ -216,21 +231,15 @@ NS_EXPORT int Ns_ModuleInit(char *server, char *module)
     return NS_OK;
 }
 
-static int SSLInterpInit(Tcl_Interp *interp, void *arg)
-{
-    Tcl_CreateObjCommand(interp, "ns_ssl", SSLObjCmd, arg, NULL);
-    return NS_OK;
-}
-
 /*
  *----------------------------------------------------------------------
  *
- * SSLProc --
+ * Listen --
  *
- *  Driver proc for SSL requests
+ *      Open a listening socket in non-blocking mode.
  *
  * Results:
- *  NS_OK or NS_ERROR
+ *      The open socket or INVALID_SOCKET on error.
  *
  * Side effects:
  *      None
@@ -238,100 +247,287 @@ static int SSLInterpInit(Tcl_Interp *interp, void *arg)
  *----------------------------------------------------------------------
  */
 
-static int SSLProc(Ns_DriverCmd cmd, Ns_Sock *sock, struct iovec *bufs, int nbufs)
+static SOCKET Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
+{
+    SOCKET sock;
+
+    sock = Ns_SockListenEx((char*)address, port, backlog);
+    if (sock != INVALID_SOCKET) {
+        (void) Ns_SockSetNonBlocking(sock);
+    }
+    return sock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Accept --
+ *
+ *      Accept a new socket in non-blocking mode.
+ *
+ * Results:
+ *      NS_DRIVER_ACCEPT_DATA  - socket accepted, data present
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+ 
+static NS_DRIVER_ACCEPT_STATUS Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *socklenPtr)
 {
     SSLDriver *drvPtr = sock->driver->arg;
     SSL *sslPtr = sock->arg;
+
+    sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
+    if (sock->sock != INVALID_SOCKET) {
+        Ns_SockSetNonBlocking(sock->sock);
+
+        if (sslPtr == NULL) {
+            sslPtr = SSL_new(drvPtr->ctx);
+            if (sslPtr == NULL) {
+                Ns_Log(Error, "%d: SSL session init error for %s: [%s]", sock->sock, ns_inet_ntoa(sock->sa.sin_addr), strerror(errno));
+                return NS_DRIVER_ACCEPT_ERROR;
+            }
+            sock->arg = sslPtr;
+            SSL_set_fd(sslPtr, sock->sock);
+            SSL_set_accept_state(sslPtr);
+
+        }
+        return NS_DRIVER_ACCEPT_DATA;
+    }
+    return NS_DRIVER_ACCEPT_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recv --
+ *
+ *      Receive data into given buffers.
+ *
+ * Results:
+ *      Total number of bytes received or -1 on error or timeout.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ssize_t Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flags)
+{
+    SSL *sslPtr = sock->arg;
+    int rc;
+
+    while (1) {
+        ERR_clear_error();
+        rc = SSL_read(sslPtr, bufs->iov_base, bufs->iov_len);
+        if (rc < 0 && SSL_get_error(sslPtr, rc) == SSL_ERROR_WANT_READ) {
+            Ns_Time timeout = { sock->driver->recvwait, 0 };
+            if (Ns_SockTimedWait(sock->sock, NS_SOCK_READ, &timeout) == NS_OK) {
+                continue;
+            }
+            SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
+        }
+        break;
+    }
+    return rc;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Send --
+ *
+ *      Send data from given buffers.
+ *
+ * Results:
+ *      Total number of bytes sent or -1 on error or timeout.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ssize_t Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flags)
+{
+    SSL *sslPtr = sock->arg;
     int rc, size;
+
+    size = 0;
+    while (nbufs > 0) {
+        ERR_clear_error();
+        rc = SSL_write(sslPtr, bufs->iov_base, bufs->iov_len);
+        if (rc < 0) {
+            if (SSL_get_error(sslPtr, rc) == SSL_ERROR_WANT_WRITE) {
+                Ns_Time timeout = { sock->driver->sendwait, 0 };
+                if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, &timeout) == NS_OK) {
+                    continue;
+                }
+            }
+            SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
+            return -1;
+        }
+        nbufs--;
+        bufs++;
+        size += rc;
+    }
+    return size;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendFile --
+ *
+ *      Send given file buffers directly to socket.
+ *
+ * Results:
+ *      Total number of bytes sent or -1 on error or timeout.
+ *
+ * Side effects:
+ *      May block once for driver sendwait timeout seconds if first
+ *      attempt would block.
+ *      May block 1 or more times due to disk IO.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ssize_t SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, Ns_Time *timeoutPtr, int flags)
+{
+    return Ns_SockSendFileBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Keep --
+ *
+ *      Mo keepalives
+ *
+ * Results:
+ *      0, always.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int Keep(Ns_Sock *sock)
+{
+    SSL *sslPtr = sock->arg;
+
+    if (SSL_get_shutdown(sslPtr) == 0) {
+        BIO *bio = SSL_get_wbio(sslPtr);
+        if (bio != NULL && BIO_flush(bio) == 1) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Request --
+ *
+ *	Request callback for processing connections
+ *
+ * Results:
+ *	NS_TRUE
+ *
+ * Side effects:
+ *  	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int Request(void *arg, Ns_Conn *conn)
+{
+    SSLDriver *drvPtr = Ns_ConnDriverContext(conn);
+    SSL *sslPtr = Ns_ConnSockContext(conn);
     X509 *peer;
 
-    Ns_Log(Notice, "ssl: %d", cmd);
+    /*
+     * Verify client certificate, driver may require valid cert
+     */
 
-    switch(cmd) {
-     case DriverQueue:
-         if (sslPtr == NULL) {
-             sslPtr = SSL_new(drvPtr->ctx);
-             if (sslPtr == NULL) {
-                 Ns_Log(Error, "%d: SSL session init error for %s: [%s]", sock->sock, ns_inet_ntoa(sock->sa.sin_addr), strerror(errno));
-                 return NS_FATAL;
+    if (drvPtr->verify) {
+        if ((peer = SSL_get_peer_certificate(sslPtr))) {
+             X509_free(peer);
+             if (SSL_get_verify_result(sslPtr) != X509_V_OK) {
+                 Ns_Log(Error, "nsssl: client certificate not valid by %s", Ns_ConnPeer(conn));
+                 return NS_ERROR;
              }
-             sock->arg = sslPtr;
-             SSL_set_fd(sslPtr, sock->sock);
-             SSL_set_accept_state(sslPtr);
-
-             /*
-              * Verify client certificate, driver may require valid cert
-              */
-
-             if (drvPtr->verify) {
-                 if ((peer = SSL_get_peer_certificate(sslPtr))) {
-                      X509_free(peer);
-                      if (SSL_get_verify_result(sslPtr) != X509_V_OK) {
-                          Ns_Log(Error, "nsssl: client certificate not valid by %s", ns_inet_ntoa(sock->sa.sin_addr));
-                          return NS_FATAL;
-                      }
-                 } else {
-                     Ns_Log(Error, "nsssl: no client certificate provided by %s", ns_inet_ntoa(sock->sa.sin_addr));
-                     return NS_FATAL;
-                 }
-             }
-         }
-         return NS_OK;
-
-     case DriverRecv:
-         while (1) {
-             ERR_clear_error();
-             rc = SSL_read(sslPtr, bufs->iov_base, bufs->iov_len);
-             if (rc < 0 && SSL_get_error(sslPtr, rc) == SSL_ERROR_WANT_READ) {
-                 Ns_Time timeout = { sock->driver->recvwait, 0 };
-                 if (Ns_SockTimedWait(sock->sock, NS_SOCK_READ, &timeout) == NS_OK) {
-                     continue;
-                 }
-                 SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
-             }
-             break;
-         }
-         return rc;
-
-     case DriverSend:
-         size = 0;
-         while (nbufs > 0) {
-             ERR_clear_error();
-             rc = SSL_write(sslPtr, bufs->iov_base, bufs->iov_len);
-             if (rc < 0) {
-                 if (SSL_get_error(sslPtr, rc) == SSL_ERROR_WANT_WRITE) {
-                     Ns_Time timeout = { sock->driver->sendwait, 0 };
-                     if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, &timeout) == NS_OK) {
-                         continue;
-                     }
-                 }
-                 SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
-                 return -1;
-             }
-             nbufs--;
-             bufs++;
-             size += rc;
-         }
-         return size;
-
-     case DriverKeep:
-         if (SSL_get_shutdown(sslPtr) == 0) {
-             BIO *bio = SSL_get_wbio(sslPtr);
-             if (bio != NULL && BIO_flush(bio) == 1) {
-                 return NS_OK;
-             }
-         }
-         break;
-
-     case DriverClose:
-         if (sslPtr != NULL) {
-             for (rc = 0; rc < 4 && !SSL_shutdown(sslPtr); rc++);
-             SSL_free(sslPtr);
-         }
-         sock->arg = NULL;
-         return NS_OK;
+        } else {
+            Ns_Log(Error, "nsssl: no client certificate provided by %s", Ns_ConnPeer(conn));
+            return NS_ERROR;
+        }
     }
-    return NS_ERROR;
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Close --
+ *
+ *      Close the connection socket.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Does not close UDP socket
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void Close(Ns_Sock *sock)
+{
+    SSL *sslPtr = sock->arg;
+    int i;
+
+    if (sslPtr != NULL) {
+        for (i = 0; i < 4 && !SSL_shutdown(sslPtr); i++);
+        SSL_free(sslPtr);
+    }
+    if (sock->sock > -1) {
+        ns_sockclose(sock->sock);
+        sock->sock = -1;
+    }
+    sock->arg = NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SSLInterpInit --
+ *
+ *      Add ns_ssl commands to interp.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int SSLInterpInit(Tcl_Interp *interp, void *arg)
+{
+    Tcl_CreateObjCommand(interp, "ns_ssl", SSLObjCmd, arg, NULL);
+    return NS_OK;
 }
 
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata)
