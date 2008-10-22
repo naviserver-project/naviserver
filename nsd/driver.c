@@ -786,7 +786,9 @@ DriverListen(Driver *drvPtr)
  *
  * Results:
  *      _ACCEPT:       a socket was accepted, poll for data
- *      _ACCEPT_DATA:  a socket was accepted, data present
+ *      _ACCEPT_DATA:  a socket was accepted, data present, read immediately
+ *                     if in async mode, defer reading to connection thread
+ *      _ACCEPT_QUEUE: a socket was accepted, queue immediately
  *      _ACCEPT_ERROR: no socket was accepted
  *
  * Side effects:
@@ -1522,14 +1524,16 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
         sockPtr = NULL;
 
     } else {
+        status = SOCK_MORE;
         drvPtr->queuesize++;
 
-        /*
-         * If there is already data present then read it without
-         * polling if we're in async mode.
-         */
-
         if (status == NS_DRIVER_ACCEPT_DATA) {
+
+            /*
+             * If there is already data present then read it without
+             * polling if we're in async mode.
+             */
+
             if (drvPtr->opts & NS_DRIVER_ASYNC) {
                 status = SockRead(sockPtr, 0);
                 if (status < 0) {
@@ -1540,15 +1544,22 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
             } else {
 
                 /*
-                 *  We need to call this to make sure socket has request structure allocated,
-                 *  otherwise NsGetRequest will call SockRead which is not what this driver wants
+                 * Queue this socket without reading, NsGetRequest in
+                 * the connection thread will perform actual reading of the request
                  */
 
-                SockPrepare(sockPtr);
                 status = SOCK_READY;
             }
-        } else {
-            status = SOCK_MORE;
+        } else
+        if (status == NS_DRIVER_ACCEPT_QUEUE) {
+
+            /*
+             *  We need to call SockPrepare to make sure socket has request structure allocated,
+             *  otherwise NsGetRequest will call SockRead which is not what this driver wants
+             */
+
+            SockPrepare(sockPtr);
+            status = SOCK_READY;
         }
     }
 

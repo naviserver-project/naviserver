@@ -20,6 +20,10 @@
         Ns_ConnDriverContext will now return connPtr->drvPtr->arg, this is driver-wide
         context.
 
+        include/ns.h: Added one more accpetd status NS_DRIVER_ACCPET_QUEUE which tells to
+        queue accepted socket without any condition. Empty request struct is allocated to
+        keep server from crashing.
+
 2008-10-19  Vlad Seryakov <seryakov@users.sf.net>
 
 	nsd/conn.c: Fixed bug in ns_conn content, it returned as string and did not
