@@ -294,7 +294,7 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *sock
         if (sslPtr == NULL) {
             sslPtr = ns_calloc(1, sizeof(SSLContext));
             sslPtr->ssl = SSL_new(drvPtr->ctx);
-            if (sslPtr == NULL) {
+            if (sslPtr->ssl == NULL) {
                 Ns_Log(Error, "%d: SSL session init error for %s: [%s]", sock->sock, ns_inet_ntoa(sock->sa.sin_addr), strerror(errno));
                 ns_free(sslPtr);
                 return NS_DRIVER_ACCEPT_ERROR;
