@@ -1,3 +1,8 @@
+2008-11-06  Vlad Seryakov <seryakov@users.sf.net>
+
+	tcl/fastpath.tcl: Check for 0.0.0.0 address in nssock and
+        generate urls using Host: header instead
+
 2008-10-29  Vlad Seryakov <seryakov@users.sf.net>
 
 	configure.in: Change version to 4.99.3 to distinguish between incompatible versions
