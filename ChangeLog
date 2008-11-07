@@ -1,3 +1,7 @@
+2008-11-07  Vlad Seryakov <seryakov@users.sf.net>
+
+	tcl/fastpath.tcl: Revert back because it is bad and a security hole
+
 2008-11-06  Vlad Seryakov <seryakov@users.sf.net>
 
 	tcl/fastpath.tcl: Check for 0.0.0.0 address in nssock and

@@ -89,19 +89,6 @@ proc _ns_dirlist {} {
     set loc [ns_conn location]
 
     #
-    # If address set to 0.0.0.0 in nssock to listen on 
-    # all interfaces we may try to use Host: header to 
-    # return proper urls
-    # 
-
-    if { $loc == "http://0.0.0.0" } {
-      set host [ns_set iget [ns_conn headers] Host]
-      if { $host != "" } {
-        set loc http://$host
-      }
-    }
-
-    #
     # Enforce being called with trailing "/"
     #
 
