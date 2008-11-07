@@ -1,3 +1,21 @@
+2008-11-07  Stephen Deasey <sdeasey@users.sf.net>
+
+	* include/ns.:
+	* nsd/driver.c:
+	* nsd/sockfile.c:
+	* nssock/nssock.c: Drivers can now leave Ns_Driver.sendFileProc
+	unimplemented - it is an optimisation only. The sendProc will be
+	called as necessary to send files.
+
+	Ns_SockSendFileBufsIndirect not exported.
+
+	Ns_SockSendFile etc. now take an Ns_Sock rather than a plain
+	file descriptor. This is kind of dissapointing because it breaks
+	the symetry with Ns_SockSendBufs etc., so this call can only be
+	used with connection sockets, not sockets in general. However, the
+	Ns_Sock context is needed in the fallback case to pass on to the
+	drivers Ns_DriverSend proc, and there looks like no otrher option.
+
 2008-11-07  Vlad Seryakov <seryakov@users.sf.net>
 
 	tcl/fastpath.tcl: Revert back because it is bad and a security hole

@@ -31,8 +31,8 @@
 /*
  * sockfile.c --
  *
- *      Use the native OS sendfile() implementation to send a file
- *      to a socket, if possible. Otherwise just use read() and write() etc.
+ *      Use the native OS sendfile-like implementation to send a file
+ *      to an Ns_Sock if possible. Otherwise just use read/write etc.
  */
 
 #include "nsd.h"
@@ -45,9 +45,11 @@ NS_RCSID("@(#) $Header$");
  * Local functions defined in this file
  */
 
-static ssize_t SendFd(SOCKET sock, int fd, off_t offset, size_t length,
+static ssize_t SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
                       Ns_Time *timeoutPtr, int flags,
-                      Ns_SockSendBufsCallback *sendProc);
+                      Ns_DriverSendProc *sendProc);
+
+static Ns_DriverSendProc SendBufs;
 
 
 
@@ -154,10 +156,10 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 #include <sys/sendfile.h>
 
 static ssize_t
-Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr);
+Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr);
 
 ssize_t
-Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
+Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, int flags)
 {
     off_t         offset;
@@ -195,7 +197,7 @@ Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
             || (fd >= 0
                 && nsbufs > 0)) {
 
-            sent = Ns_SockSendBufs(sock, sbufs, nsbufs, timeoutPtr, 0);
+            sent = Ns_SockSendBufs(sock->sock, sbufs, nsbufs, timeoutPtr, 0);
 
             nsbufs = 0;
             if (sent > 0) {
@@ -224,18 +226,18 @@ Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
 }
 
 static ssize_t
-Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr)
+Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr)
 {
     ssize_t sent;
 
-    sent = sendfile(sock, fd, &offset, tosend);
+    sent = sendfile(sock->sock, fd, &offset, tosend);
 
     if (sent == -1) {
         switch (errno) {
 
         case EAGAIN:
-            if (Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                sent = sendfile(sock, fd, &offset, tosend);
+            if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                sent = sendfile(sock->sock, fd, &offset, tosend);
             }
             break;
 
@@ -243,7 +245,7 @@ Sendfile(SOCKET sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr)
         case ENOSYS:
             /* File system does not support sendfile? */
             sent = SendFd(sock, fd, offset, tosend, timeoutPtr, 0,
-                          Ns_SockSendBufs);
+                          SendBufs);
             break;
         }
     }
@@ -257,8 +259,8 @@ ssize_t
 Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
-                                       Ns_SockSendBufs);
+    return NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
+                                      SendBufs);
 }
 
 #endif
@@ -267,7 +269,7 @@ Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockSendFileBufsIndirect --
+ * NsSockSendFileBufsIndirect --
  *
  *      Send a vector of buffers/files on a non-blocking socket using
  *      the given callback for socekt IO.  Not all data may be sent.
@@ -285,9 +287,9 @@ Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
  */
 
 ssize_t
-Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
-                            Ns_Time *timeoutPtr, int flags,
-                            Ns_SockSendBufsCallback *sendProc)
+NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
+                           Ns_Time *timeoutPtr, int flags,
+                           Ns_DriverSendProc *sendProc)
 {
     off_t         offset;
     size_t        tosend;
@@ -346,9 +348,9 @@ Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
  */
 
 static ssize_t
-SendFd(SOCKET sock, int fd, off_t offset, size_t length,
+SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
        Ns_Time *timeoutPtr, int flags,
-       Ns_SockSendBufsCallback *sendPtr)
+       Ns_DriverSendProc *sendPtr)
 {
     char          buf[4096];
     struct iovec  iov;
@@ -383,4 +385,29 @@ SendFd(SOCKET sock, int fd, off_t offset, size_t length,
     } else {
         return -1;
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendBufs --
+ *
+ *      Implements the driver send interface to send bufs directly
+ *      to a OS socket.
+ *
+ * Results:
+ *      Number of bytes sent, -1 on error or timeout.
+ *
+ * Side effects:
+ *      See Ns_SockSendBufs.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ssize_t
+SendBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+         Ns_Time *timeoutPtr, int flags)
+{
+    return Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
 }

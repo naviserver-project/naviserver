@@ -506,7 +506,7 @@ typedef struct Ns_DriverInitData {
     Ns_DriverAcceptProc   *acceptProc;   /* Accept a new non-blocking socket. */
     Ns_DriverRecvProc     *recvProc;     /* Read bytes from conn into iovec. */
     Ns_DriverSendProc     *sendProc;     /* Write bytes to conn from iovec. */
-    Ns_DriverSendFileProc *sendFileProc; /* Write bytes to conn from files/buffers. */
+    Ns_DriverSendFileProc *sendFileProc; /* Optional: write bytes from files/buffers. */
     Ns_DriverKeepProc     *keepProc;     /* Keep a socket open after conn done? */
     Ns_DriverRequestProc  *requestProc;  /* First proc to be called by a connection thread. */
     Ns_DriverCloseProc    *closeProc;    /* Close a connection socket. */
@@ -2331,20 +2331,9 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t
-Ns_SockSendFileBufs(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
+Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, int flags)
-    NS_GNUC_NONNULL(2);
-
-
-typedef ssize_t
-Ns_SockSendBufsCallback(SOCKET sock, struct iovec *bufs, int nbufs,
-                        Ns_Time *timeoutPtr, int flags);
-
-NS_EXTERN ssize_t
-Ns_SockSendFileBufsIndirect(SOCKET sock, CONST Ns_FileVec *bufs, int nbufs,
-                            Ns_Time *timeoutPtr, int flags,
-                            Ns_SockSendBufsCallback *sendProc)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * sock.c:

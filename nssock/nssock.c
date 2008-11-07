@@ -242,7 +242,7 @@ static ssize_t
 SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
          Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockSendFileBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    return Ns_SockSendFileBufs(sock, bufs, nbufs, timeoutPtr, flags);
 }
 
 

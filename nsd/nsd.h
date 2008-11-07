@@ -361,7 +361,7 @@ typedef struct Driver {
     Ns_DriverAcceptProc   *acceptProc;
     Ns_DriverRecvProc     *recvProc;
     Ns_DriverSendProc     *sendProc;
-    Ns_DriverSendFileProc *sendFileProc;
+    Ns_DriverSendFileProc *sendFileProc; /* Optional - optimize direct file send. */
     Ns_DriverKeepProc     *keepProc;
     Ns_DriverRequestProc  *requestProc;
     Ns_DriverCloseProc    *closeProc;
@@ -935,6 +935,14 @@ extern void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
 
 extern int NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags);
 extern int NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags);
+
+extern ssize_t
+NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
+                           Ns_Time *timeoutPtr, int flags,
+                           Ns_DriverSendProc *sendProc)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
+
+
 
 extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);

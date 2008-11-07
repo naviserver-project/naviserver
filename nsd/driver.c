@@ -871,13 +871,15 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
  *
  * NsDriverSendFile --
  *
- *      Write a vector of buffers to the socket via the driver callback.
+ *      Write a vector of file buffers to the socket via the driver
+ *      callback. Fallback to default implementation if driver does
+ *      not supply one.
  *
  * Results:
  *      Number of bytes written, or -1 on error.
  *
  * Side effects:
- *      Depends on driver.
+ *      May block on disk I/O.
  *
  *----------------------------------------------------------------------
  */
@@ -885,13 +887,22 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
 int
 NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags)
 {
-    Ns_Time timeout;
+    Driver  *drvPtr = sockPtr->drvPtr;
+    ssize_t  n;
+    Ns_Time  timeout;
 
-    timeout.sec = sockPtr->drvPtr->sendwait;
+    timeout.sec = drvPtr->sendwait;
     timeout.usec = 0;
 
-    return (*sockPtr->drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                            &timeout, flags);
+    if (drvPtr->sendFileProc != NULL) {
+        n = (*drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                    &timeout, flags);
+    } else {
+        n = NsSockSendFileBufsIndirect((Ns_Sock *) sockPtr, bufs, nbufs,
+                                       &timeout, flags,
+                                       drvPtr->sendProc);
+    }
+    return n;
 }
 
 
