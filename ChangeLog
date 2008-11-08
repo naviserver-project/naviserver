@@ -1,3 +1,8 @@
+2008-11-08  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/connio.c: Mark connection flags with NS_CONN_SENT_LAST_CHUNK
+	when last chunk is actuall sent.
+
 2008-11-07  Stephen Deasey <sdeasey@users.sf.net>
 
 	* include/ns.:

@@ -342,6 +342,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 
                 nsbufs += 1;
                 connPtr->flags &= ~NS_CONN_STREAM;
+                connPtr->flags |= NS_CONN_SENT_LAST_CHUNK;
             }
         }
     }
@@ -577,6 +578,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].iov_len;
     }
+
     while (towrite > 0) {
         sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs, 0);
         if (sent < 0) {
@@ -652,8 +654,8 @@ Ns_ConnClose(Ns_Conn *conn)
     if (connPtr->sockPtr != NULL) {
 
         if (connPtr->flags & NS_CONN_STREAM
-            && (connPtr->flags & NS_CONN_CHUNK
-                || connPtr->compress > 0)) {
+             && (connPtr->flags & NS_CONN_CHUNK
+                 || connPtr->compress > 0)) {
 
             /*
              * Streaming:
