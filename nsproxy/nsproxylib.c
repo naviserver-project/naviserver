@@ -147,6 +147,7 @@ typedef struct Proxy {
 
 typedef enum {
     Stopped,   /* Initial (startup) state */
+    Starting,  /* It is in the process of startup */
     Running,   /* Operating on pools and tearing down slaves */
     Sleeping,  /* Sleeping on cond var and waiting for work */
     Awaken,    /* Help state to distinguish from running */
@@ -3107,6 +3108,7 @@ ReapProxies()
 {
     Ns_MutexLock(&plock);
     if (reaperState == Stopped) {
+        reaperState = Starting;
         Ns_ThreadCreate(ReaperThread, NULL, 0, NULL);
     } else {
         reaperState = Awaken;

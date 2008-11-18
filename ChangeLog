@@ -1,3 +1,8 @@
+2008-11-18  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* nsproxy/nsproylib.c: Fixed race-condition that could lead to
+	starting more than one reaper thread.
+
 2008-11-08  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/connio.c: Mark connection flags with NS_CONN_SENT_LAST_CHUNK
