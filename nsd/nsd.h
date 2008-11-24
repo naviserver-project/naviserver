@@ -722,15 +722,16 @@ typedef struct NsServer {
         Ns_Mutex cachelock;
 
         /*
-         * The following track synchronization
+         * The following tracks synchronization
          * objects which are looked up by name.
          */
 
-        Tcl_HashTable mutexTable;
-        Tcl_HashTable csTable;
-        Tcl_HashTable semaTable;
-        Tcl_HashTable condTable;
-        Tcl_HashTable rwTable;
+        struct {
+            Tcl_HashTable mutexTable, csTable, semaTable, condTable, rwTable;
+            unsigned int  mutexId, csId, semaId, condId, rwId;
+            Ns_Mutex      lock;
+        } synch;
+
     } tcl;
 
     /*

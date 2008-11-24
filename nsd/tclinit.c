@@ -187,11 +187,11 @@ ConfigServerTcl(CONST char *server)
     Ns_MutexInit(&servPtr->tcl.cachelock);
     Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.mutexTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.csTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.semaTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.condTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&servPtr->tcl.rwTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.synch.mutexTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.synch.csTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.synch.semaTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
 
     servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
     servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
