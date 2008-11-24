@@ -427,7 +427,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     interp = Ns_TclCreateInterp();
     if (init != NULL) {
         if ((*init)(interp) != TCL_OK) {
-            Ns_Fatal("nsproxy: init: %s", interp->result);
+            Ns_Fatal("nsproxy: init: %s", Tcl_GetStringResult(interp));
         }
     }
 
