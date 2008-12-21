@@ -184,6 +184,7 @@ static struct exttype {
     { ".fdf",   "application/vnd.fdf" },
     { ".fli",   "video/x-fli" },
     { ".flo",   "image/florian" },
+    { ".flv",   "video/x-flv" },
     { ".flx",   "text/vnd.fmi.flexstor" },
     { ".fmf",   "video/x-atomic3d-feature" },
     { ".for",   "text/plain" },

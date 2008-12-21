@@ -1,3 +1,7 @@
+2008-12-21  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/mime.c: Added .flv extension into default MIME types
+
 2008-11-18  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* nsproxy/nsproylib.c: Fixed race-condition that could lead to
