@@ -7,57 +7,107 @@ New Features:
     * New lazy Tcl interpreter initialization option. Saves memory and speeds
       intialisation of interp on first use by defining procs on-demand.
       See: tcl/lazyloader parameter below.
+
     * New module nsproxy executes Tcl scripts via pool of external
       processes. Useful to keep buggy/non-thread-safe code issolated from
       main server process. See also: ns_job.
+
     * Log filter callbacks (Tcl and C) may be added to the error log stream
       to handle particular kinds of log messages by e.g. logging to a seperate
       file.
+
+    * Error logging may now be dissabled/enabled at runtime with the
+      ns_logctl command.
+
+    * User-defined named log severities may be created using the ns_logctl
+      command. These may be enabled/dissabled individually, at runtime, unlike
+      the old numeric user-levels.
+
     * New limits feature. Connection limits can be bundled together into a
       named set of limits and then applied to a subset of the URL
       hierarchy. The max number of connection threads running and waiting to
       run a URL, the max upload file size, and the max time a connection
       should wait to run are all configurable.
       See ns/limits parameters below.
+
     * ns_cache_create now takes a -maxentry switch limits the max size of an
       entry allowed into the cache to prevent wasteful cache flushes.
+
     * ns_cache_create now takes a -timeout switch which is the default timeout
       for one thread to wait for another to complete an ns_cache_eval command,
       if the -timeout switch is not given to the ns_cache_eval command itself.
+
     * Time values passed to commands such as the -timeout switch of
       ns_cache_eval now distinguish between an absolute time in the future and
       an offset from the current time. A heuristic is used: large values are
       absolute times in the future.
+
     * A new [ns_cache_eval -force ...] switch replaces any existing cached value
       whether it is up to date or not.
+
     * A new ns_cache_stats -contents switch dumps the expirey and size of each
       entry in the cache cache. Useful when developing / testing to check
       utilisation.
+
     * The new [ns_conn keepalive ?bool?] sub-command dissables or requests
       keepalive behaviour for the current connection.
+
     * ns_getcsv now takes a -delimiter switch.
+
     * ns_parseargs: default values can now be specified with a leading '='
       which signifies the value should be eval'ed to generate the default.
+
     * Commands which timeout now set a NS_TIMEOUT Tcl error code, which if not
       caught is reported as an HTTP 503 Unavailable response.
+
     * Handle png images, as well as existing gif and jpg with new ns_img*
       commands.
+
     * New [ns_mutex eval script] to safely handle unlocking on error.
+
     * Thread commands now takes names as well as thread-object references.
+
     * New options jobsperthread and jobtimeout for ns_job command to perform
       automatic job threads exit in case of idle or max number of jobs reached
+
     * Updated ns_perm module to support missing checkpass and sepass commands
+
     * ns_http was ported from Aolserver 4.5 and uses new task API
+
     * ADP parser was ported from AS 4.5 and also used for processing .tcl files
+
     * New option acceptsize for driver to tell how many connection can be accepted at once,
       this improves performance significantly in case of large number of incoming connections
+
     * New Ns_Sls* and ns_sls commands supporting socket-local-storage (data which persists for 
       the lifetime of an open TCP connection)
+
     * ns_httpget now supports chunked encoding in results
+
+    * ns_return etc. will now gzip the body content, if that option is enabled.
+
+    * Static files can now be sent using the OS native sendfile() on
+      supported platforms (currently Linux).
+
+    * ns_unregister_op is now the correct way to unregister procs, adp, and tcl
+      pages. (The older names are kept around for backwards compat.)
+
+    * NaviServer now builds on Win32 using the standard configure scripts and
+      the MingWin32 compiler.
+
+    * New command ns_mutex trylock which wroks similar to the same C API function
+
+    * New command ns_filestat which is similar to file stat but uses direct system 
+      call instead of Tcl VFS
+
+    * New command ns_db rowcount, which return the number of affected rows after a
+      DML opperation.
+
 
 
 Bug Fixes:
 
+    * Various 64bit fixes.
     * Fix path attribute of HTP Cookie string.
     * Make sure upload stats lock is unloacked after use.
     * Fix crash in writer thread logging already freed data.
@@ -75,23 +125,27 @@ Bug Fixes:
     * Fix infinite loop in spooler thread code.
     * Message line-breaking of email bodies sent with ns_sendmail now works
       correctly for non ASCII data.
-    * Logging facilities will now support files over 2 Gb
+    * Files over 2 Gb are supported for logging, serving, uploads, etc.
     * Fixed ns_sendmail for cases when message body is large and it fails to
       send all body because of nonblocking socket mode
-    * New command ns_mutex trylock which wroks similar to the sameC API function
-    * New command ns_filestat which is similar to file stat but uses direct system 
-      call instead of Tcl VFS
+    * Fix a race condition in the fastpath code which could allow random files
+      anywhere on the same filesystem to be served by the server.
 
 
 Incompatible API Changes:
 
     * ns_setcookie -maxage renamed -expires to match common usage throughout
       code.
+
     * All cookies are now set HttpOnly by default. The -scriptable option must
       be true for the client javascript engine to have access to the cookies.
-	* The 'secure' flag of Ns_ConnSetCookieEx() is now a flags option which
+
+    * The 'secure' flag of Ns_ConnSetCookieEx() is now a flags option which
       takes NS_COOKIE_SECURE and NS_COOKIE_SCRIPTABLE. Non-scriptable is the
       default as for the Tcl API.
+
+    * ns_var, ns_share and the -share option to ns_set have been removed.
+      Please use the nsv_* commands instead.
 
 
 Configuration Changes:
@@ -157,10 +211,15 @@ Configuration Changes:
 
 Code Changes:
 
+   * Nsv shared variables now have a C API.
+
    * Experimental event driven IO API, Ns_Event*().
+
    * New Ns_RegisterAtShutdown() proc handles notification of shutdown and
      wait for completion with timeout.
+
    * Make Ns_RegisterProxy() public, add ns_register_proxy command.
+
    * Vectored IO support:
 
        Ns_ConnSend() now sends all given buffers. Used to send 16 and silently
@@ -174,8 +233,16 @@ Code Changes:
 
        ns_write now takes a vector of buffers.
 
+   * New driver callback API. This affects modules such as nssock and any SSL
+     modules. This provides more flexibility to write unusual protocol modules.
+     Also added is the ability to provide platform-specific sendfile() support.
+
+   * Each loaded driver module now runs in it's own thread (port from
+     AOLserver 4.5).
+
    * Use *DStingSetLength() rather than *DStringTrunc() throughout code to try
      and prevent excess malloc/free activity.
+
 
    The following routines have been removed, deprecated or dissabled.
 
@@ -184,6 +251,7 @@ Code Changes:
      See: Ns_RegisterAtShutdown().
    * Dissabled: Ns_LogSetLogFlushProc(), Ns_SetNsLogProc().
      See: Ns_AddLogfilter(), Ns_RemoveLofFilter().
+
 
    IMPORTANT API changes: (length, nsend) parameters are now Tcl_WideInt, so it requires
    to recompile all modules that use those functions:
