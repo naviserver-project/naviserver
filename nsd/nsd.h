@@ -526,6 +526,7 @@ typedef struct Conn {
 
     Ns_Time startTime;
     struct NsInterp *itPtr;
+    struct stat fileInfo;
 
     Tcl_Encoding outputEncoding;
     Tcl_Encoding urlEncoding;

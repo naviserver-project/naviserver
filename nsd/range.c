@@ -113,6 +113,7 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
                  int fd, CONST void *data, size_t objLength,
                  Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
 {
+    Conn *connPtr = (Conn *) conn;
     Range  *ranges;
     int     maxranges, rangeCount, i, v;
     off_t   start, end, dsbase;
@@ -127,6 +128,11 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
     if (rangeCount < 1) {
         *nbufsPtr = 0;
         return rangeCount;
+    }
+
+    if (NsMatchRange(conn, connPtr->fileInfo.st_mtime) == 0) {
+        *nbufsPtr = 0;
+        return 0;
     }
 
     Ns_ConnSetResponseStatus(conn, 206);

@@ -1,3 +1,13 @@
+2009-02-04  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/nsd.h:
+	* nsd/fastpath.c: Added struct stat in the Conn struct to be reused by
+	everyone. This will save extra stat call and i used in range.c to check
+	last modified time
+
+	* nsd/range.c: Check for If-Range: header and return the whole
+	file if it was changed
+
 2008-12-21  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/mime.c: Added .flv extension into default MIME types

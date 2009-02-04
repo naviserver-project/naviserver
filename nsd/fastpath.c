@@ -66,7 +66,7 @@ static int  UrlIs          (CONST char *server, CONST char *url, int dir);
 static int  FastStat       (CONST char *path, struct stat *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  FastReturn     (Ns_Conn *conn, int status, CONST char *type,
-                            CONST char *file, struct stat *stPtr);
+                            CONST char *file);
 static Ns_ServerInitProc ConfigServerFastpath;
 
 
@@ -178,19 +178,19 @@ ConfigServerFastpath(CONST char *server)
 int
 Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
+    Conn        *connPtr = (Conn *) conn;
     int          rc;
-    struct stat  st;
     char         *server;
     NsServer     *servPtr;
 
-    if (!FastStat(file, &st)) {
+    if (!FastStat(file, &connPtr->fileInfo)) {
         return Ns_ConnReturnNotFound(conn);
     }
 
     server  = Ns_ConnServer(conn);
     servPtr = NsGetServer(server);
 
-    rc = FastReturn(conn, status, type, file, &st);
+    rc = FastReturn(conn, status, type, file);
     return rc;
 }
 
@@ -218,24 +218,23 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
     NsServer    *servPtr = connPtr->servPtr;
     char        *url = conn->request->url;
     Ns_DString   ds;
-    struct stat  st;
     int          result, i;
 
     Ns_DStringInit(&ds);
 
     if (NsUrlToFile(&ds, servPtr, url) != NS_OK
-        || !FastStat(ds.string, &st)) {
+        || !FastStat(ds.string, &connPtr->fileInfo)) {
         goto notfound;
     }
-    if (S_ISREG(st.st_mode)) {
+    if (S_ISREG(connPtr->fileInfo.st_mode)) {
 
         /*
          * Return ordinary files as with Ns_ConnReturnFile.
          */
 
-        result = FastReturn(conn, 200, NULL, ds.string, &st);
+        result = FastReturn(conn, 200, NULL, ds.string);
 
-    } else if (S_ISDIR(st.st_mode)) {
+    } else if (S_ISDIR(connPtr->fileInfo.st_mode)) {
 
         /*
          * For directories, search for a matching directory file and
@@ -248,7 +247,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], NULL);
-            if ((stat(ds.string, &st) == 0) && S_ISREG(st.st_mode)) {
+            if ((stat(ds.string, &connPtr->fileInfo) == 0) && S_ISREG(connPtr->fileInfo.st_mode)) {
                 if (url[strlen(url) - 1] != '/') {
                     Ns_DStringSetLength(&ds, 0);
                     Ns_DStringVarAppend(&ds, url, "/", NULL);
@@ -380,9 +379,9 @@ Ns_PageRoot(CONST char *server)
  */
 
 static int
-FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
-           struct stat *stPtr)
+FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
+    Conn        *connPtr = (Conn *) conn;
     int         new, fd, nread, result = NS_ERROR;
     Ns_Entry   *entry;
     File       *filePtr;
@@ -401,12 +400,12 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
      * If not modified since last request, return now.
      */
 
-    Ns_ConnSetLastModifiedHeader(conn, &stPtr->st_mtime);
+    Ns_ConnSetLastModifiedHeader(conn, &connPtr->fileInfo.st_mtime);
 
-    if (!Ns_ConnModifiedSince(conn, stPtr->st_mtime)) {
+    if (!Ns_ConnModifiedSince(conn, connPtr->fileInfo.st_mtime)) {
         return Ns_ConnReturnNotModified(conn);
     }
-    if (!Ns_ConnUnmodifiedSince(conn, stPtr->st_mtime)) {
+    if (!Ns_ConnUnmodifiedSince(conn, connPtr->fileInfo.st_mtime)) {
         return Ns_ConnReturnStatus(conn, 412); /* Precondition Failed. */
     }
 
@@ -426,7 +425,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
      * cached copy.
      */
 
-    if (cache == NULL || stPtr->st_size > maxentry) {
+    if (cache == NULL || connPtr->fileInfo.st_size > maxentry) {
 
         /*
          * Caching is disabled or the entry is too large for the cache
@@ -434,7 +433,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
          */
 
         if (usemmap
-                && NsMemMap(file, stPtr->st_size, NS_MMAP_READ, &fmap) == NS_OK) {
+                && NsMemMap(file, connPtr->fileInfo.st_size, NS_MMAP_READ, &fmap) == NS_OK) {
             result = Ns_ConnReturnData(conn, status, fmap.addr, fmap.size, type);
             NsMemUmap(&fmap);
         } else {
@@ -444,7 +443,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
                        file, strerror(errno));
                 goto notfound;
             }
-            result = Ns_ConnReturnOpenFd(conn, status, type, fd, stPtr->st_size);
+            result = Ns_ConnReturnOpenFd(conn, status, type, fd, connPtr->fileInfo.st_size);
             close(fd);
         }
 
@@ -465,10 +464,10 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
 
         if (!new
             && (filePtr = Ns_CacheGetValue(entry)) != NULL
-            && (filePtr->mtime != stPtr->st_mtime
-                || filePtr->size != stPtr->st_size
-                || filePtr->dev != stPtr->st_dev
-                || filePtr->ino != stPtr->st_ino)) {
+            && (filePtr->mtime != connPtr->fileInfo.st_mtime
+                || filePtr->size != connPtr->fileInfo.st_size
+                || filePtr->dev != connPtr->fileInfo.st_dev
+                || filePtr->ino != connPtr->fileInfo.st_ino)) {
             Ns_CacheUnsetValue(entry);
             new = 1;
         }
@@ -486,12 +485,12 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file,
                 Ns_Log(Warning, "fastpath: open(%s') failed '%s'",
                        file, strerror(errno));
             } else {
-                filePtr = ns_malloc(sizeof(File) + stPtr->st_size);
+                filePtr = ns_malloc(sizeof(File) + connPtr->fileInfo.st_size);
                 filePtr->refcnt = 1;
-                filePtr->size   = stPtr->st_size;
-                filePtr->mtime  = stPtr->st_mtime;
-                filePtr->dev    = stPtr->st_dev;
-                filePtr->ino    = stPtr->st_ino;
+                filePtr->size   = connPtr->fileInfo.st_size;
+                filePtr->mtime  = connPtr->fileInfo.st_mtime;
+                filePtr->dev    = connPtr->fileInfo.st_dev;
+                filePtr->ino    = connPtr->fileInfo.st_ino;
                 nread = read(fd, filePtr->bytes, filePtr->size);
                 close(fd);
                 if (nread != filePtr->size) {
