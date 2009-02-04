@@ -19,14 +19,18 @@ Contents
 ---------------
 
 NaviServer is maintained, enhanced, and distributed freely by the
-open source community.  The home for NaviServer sources and bug/patch
-database is located on SourceForge site:
+open source community.  The home for NaviServer downloads and bug/patch
+database is located on the SourceForge site:
 
-   http://sourceforge.net/projects/naviserver
+    http://sourceforge.net/projects/naviserver
 
-Another resource is the NaviServer wiki:
+Source code is available from the BitBucket site:
 
-   http://naviserver.sourceforge.net
+    http://bitbucket.org/naviserver/
+
+Another resource is the Tcl wiki:
+
+    http://wiki.tcl.tck/naviserver
 
 NaviServer is a freely available open source package.  See the file
 "license.terms" for complete information.
@@ -35,11 +39,15 @@ NaviServer is a freely available open source package.  See the file
 2. Documentation
 ----------------
 
-Documentation will be available in the "doc" subdirectory. At this
-point the documentation is incomplete and is considered to be the
-work in progress. Once done, it will be distributed in Unix nroff
-format (suitable for viewing with Unix "man" command) and HTML 
-format (suitable for viewing with any HTML-compatible browser).
+Documentation is available in the "doc" subdirectory. At this
+point it is incomplete and is considered to be a work in progress.
+Once done, it will be distributed in Unix nroff format (suitable
+for viewing with Unix "man" command) and HTML format (suitable
+for viewing with any HTML-compatible browser).
+
+The latest development version is available online:
+
+    http://naviserver.sourceforge.net/n/toc.html
 
 
 3. Compiling and installing
@@ -48,52 +56,75 @@ format (suitable for viewing with any HTML-compatible browser).
 The server is known to compile and run on FreeBSD, Linux, Solaris, 
 Mac OS/X 10.2+ and Windows. To compile and install:
 
-3a.     Download, configure, build and install Tcl 8.4 or better
-	with threads and shared libraries enabled.  To do so,
-	download the latest release from http://tcl.tk and following
-	the instructions in the included README.  You may install
-	Tcl within the directory you intend to install the server 
-	(e.g., /usr/local/ns) or in some other location.
-	The following should work:
 
-	% gunzip < tcl8.4.12-src.tar.gz | tar xvf -
-	% cd tcl8.4.12/unix
-	% ./configure --prefix=/usr/local/ns --enable-threads
-	% make install
-	
-3b.     If you don't have GNU make (Linux make is GNU make), install
-	it as server's makefiles require it.  If you're not sure
-	if you have GNU make, try "make -v" to check.  You can get
-	GNU make at http://www.gnu.org.
+3a. Download, configure, build and install Tcl 8.4 or better
 
-3c.     Download, configure, build, and install.
-	The following should work:
+    You may use the version of Tcl already installed on your machine
+    if it was built with threads enabled. The configure step below
+    will complain if this is not the case.
 
-	% gunzip < naviserver-4.99.1.tar.gz | tar xvf -
-	% cd naviserver-4.99.1
-	% ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib
-	% make install
+    You can download the latest Tcl release from http://tcl.tk and follow
+    the instructions in the included README. You may install Tcl within the
+    directory you intend to install the server (e.g., /usr/local/ns) or
+    in some other location. The following should work:
 
-	The server's configure script takes the following options:
+    $ gunzip < tcl8.4.12-src.tar.gz | tar xvf -
+    $ cd tcl8.4.12/unix
+    $ ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
+    $ make install
 
-	--with-tcl=/usr/local/ns/lib
 
-		Path to library installation directory of Tcl where
-		configure can find the tclConfig.sh script.  Without
-		this option, configure will search around for
-		tclConfig.sh, perhaps finding it in ../tcl8.4.12/unix.
+3b. If you don't have GNU make (Linux make is GNU make), install
+    it, as the server's makefiles require it.  If you're not sure
+    if you have GNU make, try "make -v" to check.  You can get
+    GNU make at http://www.gnu.org.
 
-	--enable-symbols
 
-		Compile with debug symbols enabled.  The default
-		is to compile optimized.
+3c. Download, configure, build, and install NaviServer.
 
-	--prefix=/usr/local/ns
+    Oficial releases:
 
-		Set the installation directory for the server.  All
-		program, man page, and runtime files (e.g., log
-		files) will be install or updated within this
-		directory.
+        http://sourceforge.net/project/showfiles.php?group_id=130646
+
+    Latest development source code:
+
+        http://bitbucket.org/naviserver/naviserver/
+
+    The following should work for official releases:
+
+        $ gunzip < naviserver-4.99.2.tar.gz | tar xvf -
+        $ cd naviserver-4.99.2
+        $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
+        $ make
+        $ su -c 'make install'
+
+    The server's configure script takes the following options:
+
+    --with-tcl=/usr/local/ns/lib
+
+        Path to library installation directory of Tcl where
+        configure can find the tclConfig.sh script.  Without
+        this option, configure will search around for
+        tclConfig.sh, perhaps finding it in ../tcl8.4.12/unix.
+
+    --with-zlib=/usr
+
+        You will need the zlib compression library headers available.
+        e.g. $ yum install zlib-devel, for Fedora Linux. If the headers
+        are not located in the usual places where the compiler looks,
+        you can tell configure where to find them with the --with-zlib
+        option.
+
+    --enable-symbols
+
+        Compile with debug symbols enabled. Recommended.
+
+    --prefix=/usr/local/ns
+
+        Set the installation directory for the server.  All
+        program, man page, and runtime files (e.g., log
+        files) will be install or updated within this
+        directory.
 
 
         To compile with Purify tool, set the variable $PURIFY to 
@@ -102,60 +133,81 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
 
 
-        If you checked out the source directly from CVS on SourceForge
-        replace "./configure" in the example above with "./autogen.sh"
-        to get initial makefiles created.
+    If you checked out the source directly replace "./configure"
+    in the example above with "./autogen.sh" to get the initial
+    makefiles created.
 
-3d.     Create and edit a config file, nsd.tcl by convention.
-	A sample is provided to get started:
-
-	% cd /usr/local/ns
-	% cp sample-config.tcl nsd.tcl
-	% vi nsd.tcl
+    You will need recent versions of autoconf and automake installed.
+    You will need 'dtplite' which is part of 'tcllib' installed if you
+    want to build the documentation.
 
 
-3e.	Try running the server in a shell window:
+3d. Create and edit a config file (nsd.tcl, by convention)
 
-	% cd /usr/local/ns
-	% bin/nsd -f -t conf/nsd.tcl
+    A couple of samples are provided to get you started:
 
-3f.	To download and install additional modules:
+    $ cd /usr/local/ns
+    $ cp sample-config.tcl nsd.tcl
+    $ vi nsd.tcl
 
-	% cvs -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver login
- 	% cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P modules
-	% cd modules
-	% make install
+    sample-config.tcl contains every possible configuration option and
+    it's default value. Remove the ones you don't need.
 
-	Not all modules will be compiled by default due to external dependencies, so
-	please look into module's README file for any additional information.
-
-3g.	To compiling for Windows you need Msys + Mingw [http://www.mingw.org/download.shtml]
-
-        http://prdownloads.sourceforge.net/tcl/msys_mingw8.zip
-
-        This Msys + Mingw download above is the minimal environment needed
-        to build Naviserver under Windows. It includes a shell environment and
-        gcc. To install, you just download the zip file and extract the
-        files into a directory. The README.TXT file describes how to launch
-        the msys shell, you then run the configure script in the naviserver
-        directory. The Msys based configure/build process works just like the 
-	UNIX one. 
-
-	Example of building naviserver.exe:
-
-	Run dos prompt or cmd.exe, assuming msys_mingw8.zip is unpacked in the root of drive c:
-
-	c:>cd msys
-	c:\msys> msys.bat
-
-	$ cd /c/naviserver-4.99.2-src
-	$ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
-	$ make install
+    simple-config.tcl contains a basic set of the important configuration
+    options you are likely to need. Add to it as neccessary. 
 
 
-	Example above assumes Tcl is built using mingw with prefix c:/naviserver
+3e. Try running the server in a shell window:
 
-	
+    $ cd /usr/local/ns
+    $ ./bin/nsd -f -t conf/nsd.tcl
+
+    The '-f' option runs the server in the foreground with important
+    log messages directed to your terminal.
+
+
+3f. To download and install additional modules:
+
+    You will need the Mercurial version control system installed. It is
+    included in most Linux distributions: e.g. yum install mercurial. For
+    Windows and Mac OSX see: http://www.selenic.com/mercurial
+
+        $ hg clone http://bitbucket.org/naviserver/nsfoo/
+        $ cd nsfoo
+        $ make install NAVISERVER=/usr/local/ns
+
+    See: http://bitbucket.org/naviserver/ for a full list of modules.
+
+
+3g. To compile for Windows, you need Msys + Mingw
+
+    Info:     http://www.mingw.org/download.shtml
+    Download: http://prdownloads.sourceforge.net/tcl/msys_mingw8.zip
+
+    The Msys + Mingw download above is the minimal environment needed
+    to build Naviserver under Windows. It includes a shell environment and
+    gcc.
+
+    To install, you just download the zip file and extract the
+    files into a directory. The README.TXT file describes how to launch
+    the msys shell.
+
+    You then run the configure script in the naviserver directory. The
+    Msys based configure/build process works just like the UNIX one. 
+
+    Example of building naviserver.exe:
+
+    Run dos prompt or cmd.exe, assuming msys_mingw8.zip is unpacked in the root of drive c:
+
+        c:>cd msys
+        c:\msys> msys.bat
+
+        $ cd /c/naviserver-4.99.2
+        $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
+        $ make install
+
+    Example above assumes Tcl is also built using mingw with prefix c:/naviserver
+
 
 4. Mailing lists
 ----------------
@@ -163,7 +215,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
 There are mailing lists for NaviServer to discuss anything from
 configuration, development, and future direction. To join visit:
 
-  http://sourceforge.net/projects/naviserver
+    http://sourceforge.net/projects/naviserver
 
 Thank you for your interest in NaviServer.  We hope you find it
 useful and look forward to hearing from you on our mailing list.
