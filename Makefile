@@ -30,6 +30,26 @@
 # $Header$
 #
 
+help:
+	@echo 'Commonly used make targets:'
+	@echo '  all          - build program and documentation'
+	@echo '  install      - install program and man pages to PREFIX ($(PREFIX))'
+	@echo '  test         - run all tests in the automatic test suite'
+	@echo '  gdbtest      - run all tests, under the control of the debugger'
+	@echo '  runtest      - start the server in interactive command mode'
+	@echo '  gdbruntest   - start the server in command mode, under the debugger'
+	@echo '  memcheck     - run all tests, under the valgrind memory checker'
+	@echo '  build-doc    - build the html and nroff documentation'
+	@echo '  dist         - create a source tarball naviserver-'$(NS_PATCH_LEVEL)'.tar.gz'
+	@echo '  clean        - remove files created by other targets'
+	@echo
+	@echo 'Example for a system-wide installation under /usr/local/ns:'
+	@echo '  make all && su -c "make install"'
+	@echo
+	@echo 'Example for running a single test in the test suite, under the debugger:'
+	@echo '  make gdbtest TCLTESTARGS="-file tclconnio.test -match tclconnio-1.1"'
+	@echo
+
 NSBUILD=1
 include include/Makefile.global
 
