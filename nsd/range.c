@@ -79,8 +79,9 @@ NsMatchRange(Ns_Conn *conn, time_t mtime)
 {
     char *hdr;
 
-    if ((hdr = Ns_SetIGet(conn->headers, "If-Range")) != NULL
-            && Ns_ParseHttpTime(hdr) != mtime) {
+    if (Ns_SetIGet(conn->headers, "Range") != NULL
+        && (hdr = Ns_SetIGet(conn->headers, "If-Range")) != NULL
+        && Ns_ParseHttpTime(hdr) != mtime) {
         return NS_FALSE;
     }
     return NS_TRUE;
@@ -121,6 +122,11 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
 
     Ns_ConnCondSetHeaders(conn, "Accept-Ranges", "bytes");
 
+    if (NsMatchRange(conn, connPtr->fileInfo.st_mtime) == 0) {
+        *nbufsPtr = 0;
+        return 0;
+    }
+
     maxranges = (*nbufsPtr / 2) - 1;
     ranges = alloca(maxranges);
 
@@ -128,11 +134,6 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
     if (rangeCount < 1) {
         *nbufsPtr = 0;
         return rangeCount;
-    }
-
-    if (NsMatchRange(conn, connPtr->fileInfo.st_mtime) == 0) {
-        *nbufsPtr = 0;
-        return 0;
     }
 
     Ns_ConnSetResponseStatus(conn, 206);

@@ -1,3 +1,8 @@
+2009-02-05  Vlad Seryakov <seryakov@users.sf.net>
+
+	* nsd/range.c: Check If-Range: header first and return the whole content if
+	it was changed before checking ranges
+
 2009-02-04  Vlad Seryakov <seryakov@users.sf.net>
 
 	* nsd/nsd.h:
