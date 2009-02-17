@@ -1,5 +1,9 @@
 2009-02-05  Vlad Seryakov <seryakov@users.sf.net>
 
+        * nsd/range.c: Be more RFC compliant regarding HTTP date in If-Range header
+
+2009-02-05  Vlad Seryakov <seryakov@users.sf.net>
+
 	* nsd/range.c: Check If-Range: header first and return the whole content if
 	it was changed before checking ranges
 

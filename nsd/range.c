@@ -69,7 +69,7 @@ static int AppendMultipartRangeTrailer(Ns_DString *ds);
  *      NS_TRUE if partial content may be returned, NS_FALSE otherwise.
  *
  * Side effects:
- *      None.
+ *      Only HTTP date is supportd in the If-Range: header
  *
  *----------------------------------------------------------------------
  */
@@ -78,10 +78,17 @@ int
 NsMatchRange(Ns_Conn *conn, time_t mtime)
 {
     char *hdr;
+        
+    /*
+     * From RFC 2068
+     * If the client has no entity tag for an entity, but does have a Last-Modified date,
+     * it may use that date in a If-Range header. (The server can distinguish between a
+     * valid HTTP-date and any form of entity-tag by examining no more than two characters.)
+     */
 
     if (Ns_SetIGet(conn->headers, "Range") != NULL
         && (hdr = Ns_SetIGet(conn->headers, "If-Range")) != NULL
-        && Ns_ParseHttpTime(hdr) != mtime) {
+        && mtime > Ns_ParseHttpTime(hdr)) {
         return NS_FALSE;
     }
     return NS_TRUE;
