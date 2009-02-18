@@ -422,4 +422,29 @@ specified in either of these forms:
 
 [list_end]
 
+[section {.htaccess Mode}]
+
+This mode is similar to Apache but more simpler and limited in functionality. It supports only
+allowing and denying access to particualr directory.
+
+[para]
+
+To enable this
+
+[example_begin]
+ns_section "ns/server/servername/module/nsperm"
+ns_param   htaccess   true
+ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
+[example_end]
+
+passwdfile can point to any file, by default it set to default nsperm module password file.
+
+Now, in the directory where access is wanted, create .htaccess file and add lines like these:
+
+[example_begin]
+allow vlad john
+deny steve
+[example_end]
+
+
 [manpage_end]

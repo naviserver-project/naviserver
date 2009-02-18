@@ -518,7 +518,9 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
 
     /*
      * Checks above failed.  If implicit allow is not set,
-     * change the status back to unauthorized.
+     * change the status back to unauthorized. This flag will be set only when
+     * at least one deny user was added to the the permission record, otherwise
+     * it will allow user with name "" to pass. What a nonsense!
      */
 
     if (!(permPtr->flags & PERM_IMPLICIT_ALLOW)) {
@@ -1343,27 +1345,31 @@ static void WalkCallback(Tcl_DString * dsPtr, void *arg)
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
 
+    if (permPtr->flags & PERM_IMPLICIT_ALLOW) {
+        Ns_DStringAppend(dsPtr, " -implicitallow ");
+    }
+
     hPtr = Tcl_FirstHashEntry(&permPtr->allowuser, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -allowuser ", Tcl_GetHashKey(&permPtr->allowuser, hPtr), NULL);
+        Ns_DStringVarAppend(dsPtr, " -allowuser {", Tcl_GetHashKey(&permPtr->allowuser, hPtr), "}", NULL);
         hPtr = Tcl_NextHashEntry(&search);
     }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->denyuser, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -denyuser ", Tcl_GetHashKey(&permPtr->denyuser, hPtr), NULL);
+        Ns_DStringVarAppend(dsPtr, " -denyuser {", Tcl_GetHashKey(&permPtr->denyuser, hPtr), "}", NULL);
         hPtr = Tcl_NextHashEntry(&search);
     }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->allowgroup, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -allowgroup ", Tcl_GetHashKey(&permPtr->allowgroup, hPtr), NULL);
+        Ns_DStringVarAppend(dsPtr, " -allowgroup {", Tcl_GetHashKey(&permPtr->allowgroup, hPtr), "}", NULL);
         hPtr = Tcl_NextHashEntry(&search);
     }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->denygroup, &search);
     while (hPtr != NULL) {
-        Ns_DStringVarAppend(dsPtr, " -denygroup ", Tcl_GetHashKey(&permPtr->denygroup, hPtr), NULL);
+        Ns_DStringVarAppend(dsPtr, " -denygroup {", Tcl_GetHashKey(&permPtr->denygroup, hPtr), "}", NULL);
         hPtr = Tcl_NextHashEntry(&search);
     }
 }

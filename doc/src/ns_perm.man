@@ -18,6 +18,7 @@ and the specified user text (userfield) into the users database.
 
 [arg -deny] and hostnames are specified, the user will be denied on the specified hostnames.
 The hostname must be specified as ipaddress/netmask or dnshostname.
+
 [example_begin]
 128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
 [example_end]
@@ -99,6 +100,40 @@ Reloads all ns_perm files, on very busy sites there could happen authentication 
 this command clears the memory first and then loads files from the disk
 
 [list_end]
+
+[section CONFIGURATION]
+
+The following configuration options are available to control permission module
+
+[list_begin definitions]
+
+[def htaccess]
+
+This parameter if set to true, enables .htaccess mode, similar to what the Apache web server
+has but very simple and limited in functionality.
+
+[para]
+On every request the server looks for .htaccess file in the current request directory and loads it if
+modified since the last read. The structure of the file is simple:
+
+[example_begin]
+allow user ...
+deny user ...
+[example_end]
+
+[def passwdfile]
+
+This parameter determines which file with users and passwords needs to be checked for modification
+and reloaded automatically.
+
+[list_end]
+
+[example_begin]
+ns_section "ns/server/servername/module/nsperm"
+ns_param   htaccess   false
+ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
+[example_end]
+
 
 [section EXAMPLES]
 

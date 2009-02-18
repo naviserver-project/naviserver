@@ -33,7 +33,7 @@
 MODNAME  =  nsperm
 MOD      =  nsperm.so
 OBJS     =  nsperm.o
-TCL      =  init.tcl compat.tcl
+TCL      =  init.tcl compat.tcl htaccess.tcl
 MODINST	 =  cpfiles
 
 include ../include/Makefile.build
