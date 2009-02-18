@@ -103,7 +103,9 @@ New Features:
     * New command ns_db rowcount, which return the number of affected rows after a
       DML opperation.
 
-
+    * Support for If-Range: header in conditional range requests, this makes the server
+      more RFC compliant and allows file retrievals, regets and file mirroring without 
+      additional coding, it is all done by the server and HTTP
 
 Bug Fixes:
 
@@ -243,6 +245,8 @@ Code Changes:
    * Use *DStingSetLength() rather than *DStringTrunc() throughout code to try
      and prevent excess malloc/free activity.
 
+   * Conn structure now contains stat with the file currently being served, stat is
+     called at the beginning of the request
 
    The following routines have been removed, deprecated or dissabled.
 
