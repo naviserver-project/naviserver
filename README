@@ -141,6 +141,8 @@ Mac OS/X 10.2+ and Windows. To compile and install:
     You will need 'dtplite' which is part of 'tcllib' installed if you
     want to build the documentation.
 
+    See: 'make help' for more.
+
 
 3d. Create and edit a config file (nsd.tcl, by convention)
 
