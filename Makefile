@@ -30,6 +30,26 @@
 # $Header$
 #
 
+NSBUILD=1
+include include/Makefile.global
+
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest
+
+# Unix only modules
+ifeq (,$(findstring MINGW,$(uname)))
+   dirs += nsproxy
+endif
+
+distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
+	Makefile autogen.sh install-sh missing aclocal.m4 configure.in \
+	README NEWS sample-config.tcl.in simple-config.tcl \
+	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in
+
+all:
+	@for i in $(dirs); do \
+		( cd $$i && $(MAKE) all ) || exit 1; \
+	done
+
 help:
 	@echo 'Commonly used make targets:'
 	@echo '  all          - build program and documentation'
@@ -49,26 +69,6 @@ help:
 	@echo 'Example for running a single test in the test suite, under the debugger:'
 	@echo '  make gdbtest TCLTESTARGS="-file tclconnio.test -match tclconnio-1.1"'
 	@echo
-
-NSBUILD=1
-include include/Makefile.global
-
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest
-
-# Unix only modules
-ifeq (,$(findstring MINGW,$(uname)))
-   dirs += nsproxy
-endif
-
-distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
-	Makefile autogen.sh install-sh missing aclocal.m4 configure.in \
-	README ChangeLog NEWS sample-config.tcl.in simple-config.tcl \
-	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in
-
-all:
-	@for i in $(dirs); do \
-		( cd $$i && $(MAKE) all ) || exit 1; \
-	done
 
 install: install-dirs install-include install-tcl install-modules \
 	install-config install-doc install-examples install-notice
@@ -205,6 +205,7 @@ dist: clean
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,nsversion.h,Makefile.global,Makefile.module,stamp-h1}
+	hg log --style=changelog > naviserver-$(NS_PATCH_LEVEL)/ChangeLog
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
