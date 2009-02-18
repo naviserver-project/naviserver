@@ -1,4 +1,9 @@
-2009-02-05  Vlad Seryakov <seryakov@users.sf.net>
+2009-02-18  Vlad Seryakov <seryakov@users.sf.net>
+
+        nsperm/nsperm.c: Fixed broken module, removed -digest flag, detect auth
+        method from the header
+
+2009-02-17  Vlad Seryakov <seryakov@users.sf.net>
 
         * nsd/range.c: Be more RFC compliant regarding HTTP date in If-Range header
 

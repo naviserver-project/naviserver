@@ -53,7 +53,6 @@ NS_RCSID("@(#) $Header$");
  */
 
 #define PERM_IMPLICIT_ALLOW   1
-#define PERM_AUTH_DIGEST      2
 
 
 int Ns_ModuleVersion = 1;
@@ -360,14 +359,14 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj * 
 static int AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *peer)
 {
     int status;
-    Ns_Set *auth;
+    Ns_Set *set;
     Server *servPtr;
     Perm *permPtr;
     User *userPtr;
     int stale = NS_FALSE;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    char *group, buf[NS_ENCRYPT_BUFSIZE];
+    char buf[NS_ENCRYPT_BUFSIZE], *group, *auth = NULL;
     Ns_Conn *conn = Ns_GetConn();
 
     if (user == NULL) {
@@ -391,6 +390,19 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
     }
 
     /*
+     * Make sure we have parsed Authentication header properly,
+     * otherwise fallback to Basic method
+     */
+
+    set = Ns_ConnAuth(conn);
+    if (set != NULL) {
+        auth = Ns_SetIGet(set, "AuthMethod");
+    }
+    if (auth == NULL) {
+        auth = "Basic";
+    }
+
+    /*
      * The first checks below deny access.
      */
 
@@ -411,9 +423,7 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
      * define how to verify user
      */
 
-    auth = Ns_ConnAuth(conn);
-
-    if (!(permPtr->flags & PERM_AUTH_DIGEST)) {
+    if (!strcmp(auth, "Basic")) {
 
         /*
          * Basic Authentiction: Verify user password (if any).
@@ -431,12 +441,13 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
                 goto done;
             }
         }
-    } else {
+    } else
 
         /*
          * Digest Authentication
          */
 
+    if (!strcmp(auth, "Digest")) {
 
     }
 
@@ -515,13 +526,15 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
     }
 
   done:
+
     /*
      * For Digest authentication we create WWW-Authenticate header manually
      */
 
-    if (status == NS_UNAUTHORIZED && permPtr->flags & PERM_AUTH_DIGEST) {
+    if (status == NS_UNAUTHORIZED && !strcmp(auth, "Digest")) {
         CreateHeader(servPtr, conn, stale);
     }
+
     Ns_RWLockUnlock(&servPtr->lock);
     return status;
 }
@@ -1160,18 +1173,17 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     Perm *permPtr;
     Ns_DString base;
     char *method, *url, *key;
-    int i, new, flags = 0, digest = 0, nargs = 0;
+    int i, new, flags = 0, nargs = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &flags,  (void *) NS_OP_NOINHERIT},
-        {"-digest",    Ns_ObjvBool,   &digest, (void *) NS_TRUE},
         {"--",         Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"method", Ns_ObjvString, &method, NULL},
         {"url", Ns_ObjvString, &url, NULL},
-        {"key", Ns_ObjvArgs, &nargs, NULL},
+        {"users", Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
@@ -1206,9 +1218,6 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     }
     if (!allow) {
         permPtr->flags |= PERM_IMPLICIT_ALLOW;
-    }
-    if (digest) {
-        permPtr->flags |= PERM_AUTH_DIGEST;
     }
 
     for (i = objc - nargs; i < objc; i++) {
@@ -1333,10 +1342,6 @@ static void WalkCallback(Tcl_DString * dsPtr, void *arg)
     Perm *permPtr = arg;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-
-    if (permPtr->flags & PERM_AUTH_DIGEST) {
-        Ns_DStringVarAppend(dsPtr, " -digest ", NULL);
-    }
 
     hPtr = Tcl_FirstHashEntry(&permPtr->allowuser, &search);
     while (hPtr != NULL) {
