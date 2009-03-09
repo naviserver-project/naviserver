@@ -1,0 +1,26 @@
+[include version_include]
+[manpage_begin ns_adp_safeeval n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Evaluate in safe Tcl interp}]
+
+[description]
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_safeeval] [arg page] [arg {?args ...?}]]
+
+[para]
+[arg page]
+Page to be evaluated
+
+[para]
+[arg args]
+Additional arguments
+
+[list_end]
+
+[manpage_end]
+

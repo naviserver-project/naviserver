@@ -1,0 +1,29 @@
+[include version_include]
+[manpage_begin ns_socketpair n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Create a pair of connected sockets}]
+
+[description]
+ns_socketpair creates a pair of connected sockets and returns a list
+of file ids: the first one for reads and the second one for writes.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_socketpair]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

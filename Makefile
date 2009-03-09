@@ -143,13 +143,27 @@ DTPLITE=dtplite
 
 build-doc:
 	$(MKDIR) doc/html doc/man
-	for srcdir in nscgi nslog nsdb nsproxy doc/src/mann; do \
-		$(DTPLITE) -merge \
-			-style doc/src/man.css -header doc/src/header.inc -footer doc/src/footer.inc \
-			-o doc/html/ html $$srcdir; \
-		$(DTPLITE) -merge -o doc/man/ nroff $$srcdir; \
+	$(RM) doc/html/* doc/man/*
+	@for srcdir in nscgi \
+		       nslog \
+		       nsdb \
+		       nsproxy \
+		       doc/src/naviserver \
+		       doc/src/docs \
+                       modules/nsconfigrw \
+                       modules/nsdbi \
+                       modules/nsloopctl \
+                       modules/nsvfs; do \
+		if [ -d $$srcdir ]; then \
+		   echo $$srcdir; \
+		   $(DTPLITE) -merge \
+			      -style doc/src/man.css \
+			      -header doc/src/header.inc \
+			      -footer doc/src/footer.inc \
+   			      -o doc/html/ html $$srcdir; \
+		   $(DTPLITE) -merge -o doc/man/ nroff $$srcdir; \
+		fi; \
 	done
-
 
 #
 # Testing:

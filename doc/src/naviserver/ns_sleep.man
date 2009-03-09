@@ -1,0 +1,38 @@
+[include version_include]
+[manpage_begin ns_sleep n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Sleep for a specified number of seconds}]
+
+[description]
+
+Sleeps for the number of seconds specified in seconds.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_sleep] [arg seconds]]
+
+[arg seconds]
+The value of seconds should be a positive integer (or  zero,  in  which
+case  the  function returns immediately).  An error will result if seconds
+is not specified, if a negative integer is specified, or if a 
+non-integer is specified.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_sleep 2
+[example_end]
+
+
+[see_also nsd]
+
+
+[manpage_end]
+

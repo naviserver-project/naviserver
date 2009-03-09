@@ -1,0 +1,180 @@
+[include version_include]
+[manpage_begin   ns_adp_registertag n [vset version]] 
+[moddesc  {NaviServer Built-in Commands}]
+
+[titledesc {Creating custom ADP tags}]
+
+[description]
+
+These commands enable definition of HTML tags within an ADP file
+which are expanded and evaluated by the server before returning output
+to the client. Tags are defined as eitehr a single tag with
+options, e.g.,  <mytag a=b c=d>  or as an
+opening/closing tag pair, e.g.,  <mytag> text
+</mytag> . This approach is an alternative to
+direct calls via the  <% script %>  syntax as
+described in the  ns_adp  man page.
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_registeradp] [arg tag]  [opt [arg endtag]] [arg adp]]
+[call [cmd ns_adp_registertag] [arg tag]  [opt [arg endtag]] [arg adp]]
+
+These commands are identical and register an ADP
+code fragment to be invoked when the specified tag is
+encountered while parsing an ADP. The  tag  argument
+specifies the tag that will trigger invocation of the ADP
+fragment, which is specified by the  adp  argument.
+
+[nl]
+If the  endtag  argument is specified, then the ADP fragment
+will be invoked with two arguments: The first will be the
+enclosed content, and the second will be the name of an
+ns_set with any attributes specified in the tag. If no
+endtag  argument is specified, the ADP fragment will
+only be passed the name of the ns_set. The arguments may be
+retrieved using  ns_adp_bindargs  or  ns_adp_argc 
+and  ns_adp_argv .
+
+[nl]
+When the ADP fragment is invoked, its result is inserted in the output
+instead of the tag (or, if the  endtag  was specified,
+in place of the tag, end tag, and the enclosed content).
+
+[nl]
+Note: Care must be taken when using this function from inside an ADP, because
+the  adpstring  is likely to contain script delimiters
+( <% ... %> ) which will prematurely terminate
+script fragments. It is probably easier to restrict use of
+this function to .tcl files.
+
+[call [cmd ns_adp_registerproc] [arg tag] [opt [arg endtag]] [arg proc]]
+
+This commands register a Tcl procedure to be evaluated when the given 
+tag is encountered. The  tag  argument specifies the tag
+that will trigger a call to the procedure specified by the
+proc  argument.
+
+[nl]
+The procedure will be called with a variable number of arguments, 
+one for each of the attributes provided in the tag. If the  endtag 
+argument is specified, the procedure will also receive a
+final argument with the contents of the text enclosed
+between the tags. No evaluation of the content will be
+performed, it will be passed as a single text block.
+
+[nl]
+When the procedure is invoked, its result is inserted in the 
+output instead of the tag (or, if the  endtag  was specified, in place of
+the tag, end tag, and the enclosed content).
+
+[call [cmd ns_adp_registerscript] [arg tag] [opt [arg endtag]] [arg script]]
+[call [cmd ns_register_adptag] [arg tag] [opt [arg endtag]] [arg script]]
+
+These commands are identical and register a Tcl script to be evaluated when the 
+given tag is encountered. The  tag  argument specifies the tag that
+will trigger evaluation of the script specified by the
+script  argument.
+
+[nl]
+If the  endtag  argument is specified, then the script will be
+modified with two arguments appended: The first will be the
+enclosed content, and the second will be the name of an
+ns_set with any attributes specified in the tag. If no
+ endtag  argument is specified, the script will be
+modified with just the name of the ns_set appended.
+
+[nl]
+When the script is evaluated, its result is inserted in the output 
+instead of the tag (or, if the  endtag  was specified, in place of
+the tag, end tag, and the enclosed content).
+
+[nl]
+The following is a simple way of handling conditional content in ADPs:
+
+[example_begin]
+
+proc remember {input tagset} {
+
+   global _adp_memory
+   set tagname [lb]ns_set iget $tagset name[rb]
+   if {[lb]string match "" $tagname[rb]} {
+     set _adp_memory($tagname) $input
+     return ""
+   } else {
+     return $input
+   } 
+} 
+proc recall {name} {
+
+   global _adp_memory
+   if {[lb]info exists _adp_memory($name)[rb]} {
+     set parsecommand [lb]list ns_adp_parse -string[rb]
+     lappend parsecommand $_adp_memory($name)
+     ns_puts -nonewline [lb]uplevel $parsecommand[rb]
+   } else {
+     ns_log Error "[lb]ns_adp_argv 0[rb]: Unable to recall
+   }
+}
+
+[example_end]
+
+If the preceding Tcl has been executed (perhaps during server startup),
+then the following ADP fragment displays the results of a
+database query in a table, or shows "No rows in
+result." if there are no rows:
+
+[example_begin]
+
+<%
+  set rows {}
+  set db [lb]ns_db gethandle[rb]
+  ns_db exec "select somecolumn from sometable"
+  set row [lb]ns_db bindargs $db[rb]
+  while {[lb]ns_db getrow $db $row[rb]}  {
+      lappend rows [lb]ns_set get $row "somecolumn"[rb]
+  }
+  ns_db releasehandle $db 
+%>
+
+<remember name="has-rows_header"> <table> </remember>
+<remember name="hasrows_rows"> <tr><td><%=$column%></td></tr> </remember>
+<remember name="hasrows_footer"> </table> </remember>
+No rows in result.
+<remember name="norows"> 
+
+<% 
+if {[lb]llength $rows[rb]  >  0}  {
+  recall  "hasrows_header"                  
+  foreach row $rows {
+    set column $row
+    recall "hasrows_rows"
+  }
+  recall "hasrows_footer"
+} else {
+  recall "norows"         
+} 
+%>
+
+[example_end]
+
+The following example demonstrates the use of  ns_adp_registertag :
+
+[example_begin]
+
+ns_adp_registertag printdate {
+  The current date is: <%=[lb]ns_httptime [lb]ns_time[rb][rb]%>
+}
+
+[example_end]
+
+[list_end]
+
+Once defined, typically in a startup script, you could simple include the
+"<printdate>" tag to append the text with current date into the output buffer.
+
+[see_also ns_adp ns_adp_eval ns_adp_safeeval ns_adp_include]
+
+[manpage_end]

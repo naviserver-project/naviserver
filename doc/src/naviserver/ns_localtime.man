@@ -1,0 +1,49 @@
+[include version_include]
+[manpage_begin ns_localtime n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return current time in local timezone}]
+
+[description]
+
+This command returns a nine-element Tcl list representing the current time in the
+system's current timezone.  The structure of the list corresponds to the Unix struct tm time structure:
+
+[list_begin definitions]
+[call [cmd  ns_localtime] [arg seconds]]
+[def] minutes (0-59)
+[def] hours (0-23)
+[def] dayofmonth (1-31)
+[def] monthofyear (0-11)
+[def] year (year-1900)
+[def] dayofweek (0-6, Sunday=0)
+[def] dayofyear (0-365)
+[def] isdst (>0 if Daylight Savings Time is in effect)
+
+[list_end]
+
+[section {COMMANDS}]
+
+
+[list_begin definitions]
+
+
+[call [cmd ns_localtime]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_localtime
+   33 33 22 11 5 104 5 162 1
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_fmttime ns_gmtime ns_httptime ns_parsehttptime ns_parsetime ns_time]
+
+[manpage_end]
+

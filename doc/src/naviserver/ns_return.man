@@ -1,0 +1,168 @@
+[include version_include]
+[include version_include]
+
+[manpage_begin ns_return n [vset version]]
+[moddesc   {NaviServer Built-in Commands}]
+[titledesc {Return a complete HTTP response}]
+
+[description]
+
+These commands are used to construct a complete HTTP response and return
+it to the requesting client. The response may be transcoded into a different
+encoding, compressed and/or sent in chunks as automatically negotiated by
+the client and server settings.
+
+[para]
+Unless otherwise noted, these commands return [term true] if the command
+failed and [term false] otherwise. All of them can raise an error if their
+arguments are incorrect.
+
+
+
+[section {COMMANDS}]
+[list_begin definitions]
+
+
+[call [cmd  ns_return] \
+     [arg status] \
+     [arg mime-type] \
+     [arg body] ]
+
+Return a complete response to the client consisting of the given [arg body]
+and a set of HTTP headers. [arg status] is an integer HTTP status code such as
+200 (OK) or 404 (Not Found).
+
+[para]
+[arg mime-type] is the mime-type of the body. If a [term charset] attribute
+is included in the mime-type it will be used to set the encoding of the
+connection. Otherwise, the connection encoding will be used to
+construct a charset attribute for the mime-type.
+
+[para]
+If [arg body] is Tcl byte-array object then no transcoding will take place.
+Otherwise, the [term encoding] in effect for the current connection will be
+used to encode the [arg body].
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execute code.
+
+
+
+[call [cmd  ns_returnfile] \
+     [arg status] \
+     [arg mime-type] \
+     [arg filepath] ]
+
+Return the given file as the complete response body. Headers are constructed
+using [arg status], [arg mime-type] and any pending headers set using
+[cmd "ns_conn outputheaders"]. The bytes of the file are not transformed in any
+way. 
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execure code.
+
+
+
+[call [cmd  ns_returnfp] \
+     [arg status] \
+     [arg mime-type] \
+     [arg channel] \
+     [arg length] ]
+
+Return [arg length] bytes from [arg channel] as the response body. The current
+offset of the channel is the beginning of the body -- the offset will be left
+at [arg length] bytes. The bytes of the file are not transformed in any way.
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execure code.
+
+
+
+[call [cmd ns_respond] \
+     [opt [option "-status status"]] \
+     [opt [option "-type mime-type"]] \
+     [opt [option "-length length"]] \
+     [opt [option "-headers setid"]] \
+     [opt [option "-string body"]] \
+     [opt [option "-binary body"]] \
+     [opt [option "-file filepath"]] \
+     [opt [option "-fileid channel"]] ]
+
+Return a complete response to the client using exactly one of [option -string],
+[option -binary], [option -file] or [option -fileid] as the body.
+
+[para]
+After the command completes the connection is returned to the driver thread
+to be closed or monitored for keep-alive and the calling connection thread
+continues to execure code.
+
+[list_begin options]
+
+[opt_def -status [arg status]]
+The HTTP status code. Default [term 200].
+
+[opt_def -type [arg mime-type]]
+The mime-type of the response body. Default [term */*].
+
+[opt_def -headers [arg setid]]
+A set of headers which will replace any pending headers for the response.
+
+[opt_def -string [arg body]]
+The Tcl string to send as the response body. The body may be encoded into
+an apprpriate character set if required by the client and server settings.
+
+[opt_def -binary [arg body]]
+The byte-array representation of the given Tcl object will be used as the
+reponse body. No character set conversion will be done.
+
+[opt_def -file [arg filepath]]
+The file identified by the given [arg pathname] will be sent as the response
+body. The bytes of the file will not be transformed in any way.
+
+[opt_def -fileid [arg channel]]
+[arg length] bytes of the given channel will be used as the response body.
+The bytes of the file will not be transformed in any way.
+
+[opt_def -length [arg length]]
+Specifies the number of bytes to send from the channel.
+
+[list_end]
+
+[list_end]
+
+
+
+
+[section EXAMPLES]
+
+A traditional geek greeting:
+
+[example_begin]
+ns_register_proc GET /hello {
+    ns_return 200 text/plain "Hello World!"
+}
+[example_end]
+
+
+
+A traditional Albanian greeting, using an explicit charset:
+
+[example_begin]
+ns_register_proc GET /hello {
+    ns_return 200 "text/plain; charset=iso-8859-2" "Përshëndetje të gjithëve!"
+}
+[example_end]
+
+
+
+
+[see_also ns_write ns_returnerror ns_guesstype ns_register_fastpath ns_adp_puts ns_conn]
+[keywords return response status charset encoding]
+
+[manpage_end]

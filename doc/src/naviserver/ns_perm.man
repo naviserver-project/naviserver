@@ -1,0 +1,152 @@
+[include version_include]
+[manpage_begin ns_perm n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Add users, groups, and permissions}]
+
+[description]
+
+ns_perm adduser adds the user with the specified name and the encrypted password (encpass)
+and the specified user text (userfield) into the users database.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_perm] [arg adduser] [opt [arg -allow]] [opt [arg -deny]] [opt [arg -clear]] [opt [arg {-salt s}]] [arg name] [arg pass] [arg userfield] [opt host...]]
+
+[arg -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
+
+[arg -deny] and hostnames are specified, the user will be denied on the specified hostnames.
+The hostname must be specified as ipaddress/netmask or dnshostname.
+
+[example_begin]
+128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
+[example_end]
+
+[arg -salt]
+By default password is assumed encrypted with ns_crypt command and salt CU:
+
+[example_begin]
+ns_crypt mypasswd CU
+[example_end]
+
+This argument tells command that password is clear text and it should be encrypted
+by the ns_perm command with specified salt.
+
+[arg -clear]
+Tells that we keep password in clear text
+
+[call [cmd ns_perm] [arg deluser] [arg name]]
+
+ns_perm deluser deletes user from the memory
+
+[call [cmd ns_perm] [arg addgroup] [arg name] [arg user] [opt [arg user...]]]
+
+ns_perm addgroup creates a new group with the specified name that includes the users listed after the name.
+
+[call [cmd ns_perm] [arg delgroup] [arg name]]
+
+ns_perm delgroup deletes group from the memory
+
+[call [cmd ns_perm] [arg allowuser] [opt -noinherit]] [arg method] [arg url] [arg user...]]]
+
+ns_perm allowuser allows the specified user access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
+URL are allowed as well.
+
+[call [cmd ns_perm] [arg denyuser] [opt [arg -noinherit]] [arg method] [arg url] [arg user...]]
+
+ns_perm denyuser denies the specified user access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
+URL are denied as well.
+
+[call [cmd ns_perm] [arg allowgroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
+
+ns_perm allowgroup allows the specified group access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
+URL are allowed as well.
+
+[call [cmd ns_perm] [arg denygroup] [opt [arg -noinherit]] [arg method] [arg url] [arg group...]]
+
+ns_perm denygroup denies the specified group access to the specified method and URL combination.
+If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
+URL are denied as well.
+
+[call [cmd ns_perm] [arg checkpass] [arg user] [arg passwd]]
+
+ns_perm checkpass checks that the specified plain-text password is correct for the specified user.
+A Tcl error is thrown if it does not match.
+
+[call [cmd ns_perm] [arg setpass] [arg user] [arg encpass]]
+
+ns_perm setpass updates the specified user's password to the encrypted password encpass. The password
+should be encrypted using ns_encrypt.
+
+[call [cmd ns_perm] [arg listusers]]
+
+Produce Tcl list of all current users in the format username password ....
+
+[call [cmd ns_perm] [arg listgroups]]
+
+Produce Tcl list with all registered groups in the format: groupname {user ...} ...
+
+[call [cmd ns_perm] [arg listperms]]
+
+Produce Tcl list with all registered allow/deny statements for each url
+
+[call [cmd ns_permreload]]
+
+Reloads all ns_perm files, on very busy sites there could happen authentication denies because
+this command clears the memory first and then loads files from the disk
+
+[list_end]
+
+[section CONFIGURATION]
+
+The following configuration options are available to control permission module
+
+[list_begin definitions]
+
+[def htaccess]
+
+This parameter if set to true, enables .htaccess mode, similar to what the Apache web server
+has but very simple and limited in functionality.
+
+[para]
+On every request the server looks for .htaccess file in the current request directory and loads it if
+modified since the last read. The structure of the file is simple:
+
+[example_begin]
+allow user ...
+deny user ...
+[example_end]
+
+[def passwdfile]
+
+This parameter determines which file with users and passwords needs to be checked for modification
+and reloaded automatically.
+
+[list_end]
+
+[example_begin]
+ns_section "ns/server/servername/module/nsperm"
+ns_param   htaccess   false
+ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
+[example_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+ns_perm adduser test [lb]ns_crypt testpass ""[rb] TestUser
+ns_perm adduser -salt CU test2 test TestUser2
+
+ns_perm allowuser GET /Documents test test2
+[example_end]
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

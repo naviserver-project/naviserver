@@ -1,0 +1,92 @@
+[include version_include]
+[include version_include]
+
+[manpage_begin ns_memoize n [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {Evaluate a Tcl script and cache the result}]
+
+[description]
+
+A simple wrapper around [cmd ns_cache_eval] which uses the script to be
+evaluated as the key to the cached result of evaluating the script. Use this
+when evaluating the script could take some time.
+
+[para]
+If the script is not pure, i.e. if it depends on something other than it's
+arguments to compute the result, then you will need to supply an expirey
+time or explicitly flush the result when the dependency changes.
+
+
+[section COMMANDS]
+[list_begin definitions]
+
+
+[call [cmd ns_memoize] \
+     [opt [option "-timeout [arg t]"]] \
+     [opt [option "-expires [arg t]"]] \
+     [opt    --] \
+     [arg script] \
+     [opt "args ..."] ]
+
+Evaluate [arg script] and [arg args] and return the result. The result is
+cached so that future evaluations of the same [arg script] and [arg args] will
+return the cached result without first evaluating the script.
+
+[para]
+The script result remains valid until the supplied expirey time passes, or
+forever if not specified. The expirey time can be expressed either as an
+absolute time in the future (seconds since the Unix epoch), or as an offset
+from the current time.
+
+[para]
+If two threads execute the same [arg script] and [arg args], one will wait for
+the other to compute the result and store it in the cache. The [option -timeout] 
+option specifies how long to wait.
+
+
+[call [cmd ns_memoize_flush] [opt [arg pattern]]]
+
+Flush results from the memoize cache. If a [arg pattern] is not given, all
+results are discarded. If a [arg pattern] is given it is treated as a
+[term globbing] pattern and matched against each script for which there is
+a cached result in turn, and those that match are discarded.
+
+[para]
+Note: this may be an expensive operation. First the cache lock is accquired,
+then all entries in the cache are iterated over in turn matching the script
+against the globbing pattern.  During this period all access to the memoize
+cache will be blocked.
+
+
+[call [cmd ns_memoize_stats]]
+
+Return a list of statistics about the effectiveness of the memoize cache. Use
+this information to help you tune the cache size. See [cmd ns_cache_stats]
+for details of the format of this list.
+
+
+[list_end]
+
+
+
+[section EXAMPLES]
+
+For the next three quarters of an hour, the answer to the "meaning of life"
+will take no time at all to decide:
+
+[example_begin]
+set answer [lb][cmd ns_memoize] -expires 2520 deep_thought "meaning of life"[rb]
+[example_end]
+
+
+Flush the cache of all thoughts which are deep:
+
+[example_begin]
+[cmd ns_memoize_flush] deep_*
+[example_end]
+
+
+[see_also ns_cache]
+[keywords cache]
+
+[manpage_end]

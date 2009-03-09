@@ -1,0 +1,32 @@
+[include version_include]
+[manpage_begin ns_choosecharset n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return the name of the most appropriate charset for the request}]
+
+[description]
+
+ Performs an analysis of the request's accepted charsets, against either the given charset
+ list, or the configured default preferred character set list (ns/parameters/PreferredCharsets).
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_choosecharset] [opt [arg {-preference charset-list}]]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_choosecharset
+   iso-8859-1
+[example_end]
+
+[example_begin]
+   % ns_choosecharset -preference
+[example_end]
+
+[manpage_end]
+

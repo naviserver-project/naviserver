@@ -1,0 +1,32 @@
+[include version_include]
+[manpage_begin ns_querygetall n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get multiple query values from the HTTP request}]
+
+[description]
+
+This command returns all values whose key is key.  If there are none, the 
+default result def_result is returned, or an empty string is returned if 
+def_result is not specified.  This function is useful for checkboxes.
+
+[para]
+NOTES
+
+Note that despite it's name, ns_querygetall works on POST form data as well as query string data.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+ [call [cmd ns_querygetall] [arg key] [opt [arg def_result]]]
+
+[list_end]
+
+
+
+[see_also nsd]
+[keywords ns_queryexists ns_queryget]
+
+[manpage_end]
+

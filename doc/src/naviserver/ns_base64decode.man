@@ -1,0 +1,29 @@
+[include version_include]
+[manpage_begin ns_base64decode n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Binary-to-text decoding using "base64" encoding}]
+
+[description]
+
+ This command performs a binary-to-text decoding on string.
+
+[list_begin definitions]
+
+ [call [cmd ns_base64decode] [arg string]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+oss2:nscp 7> ns_base64encode test
+dGVzdA==
+
+oss2:nscp 6> ns_base64decode dGVzdA==
+test
+
+[example_end]
+
+[manpage_end]

@@ -1,0 +1,40 @@
+[include version_include]
+[manpage_begin ns_server n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get state of the server's connection pools and queues}]
+
+[description]
+
+This command provides a way to examine the current server's
+connection pools and queues.  The legal options (which may be abbreviated) are:
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_server] [opt [arg pool]]]
+
+
+[list_end]
+
+[list_begin definitions]
+
+[call [cmd  ns_server] [arg active] [opt [arg pool]]]
+[def] ns_server all ?pool?
+[def] ns_server connections ?pool?
+[def] ns_server keepalive ?pool?
+[def] ns_server pools ?pool?
+[def] ns_server queued ?pool?
+[def] ns_server threads ?pool?
+
+Returns a list of key-value pairs identifying the number
+of connection threads and what state they are currently in.
+
+[call [cmd  ns_server] [arg waiting] [opt [arg pool]]]
+
+[list_end]
+
+[manpage_end]
+

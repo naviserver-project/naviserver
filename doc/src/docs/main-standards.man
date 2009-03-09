@@ -1,0 +1,934 @@
+[include version_include]
+[manpage_begin {Engineering Standards Manual} n [vset version]]
+
+[titledesc {Engineering Standards Manual}]
+[description]
+
+
+Contributed by George Nachman.
+
+[para]
+
+Based on the Tcl/Tk Engineering Manual by John K. Ousterhout
+
+[para]
+
+
+[section {Introduction}]
+
+This manual is based on the [emph {Tcl/Tk Engineering Manual}] by John
+K. Ousterhout that is available at [uri http://www.activestate.com/ ActiveState].
+Most of this document is a subset of what his manual specifies, with the goal of
+being more practical and up-to-date than the original. For example, it is assumed
+that only an ANSI compiler will be used, whereas the Ousterhout's manual
+describes conventions that will also work with non-ANSI compilers. The
+[emph {Tcl/Tk Engineering Manual}] is still recommended reading,
+particularly with respect to the section on code documentation, which
+is not reproduced here.
+
+[para]
+
+[section {Overall Structure}]
+
+Each module will be named ns[emph {xxx}], where [emph {xxx}] is a short
+name that describes the module. Each module will have its own
+directory, and contain at least the following files:
+
+[list_begin itemized]
+[item] ns[emph {xxx}].c
+[item] Makefile
+
+[list_end]
+
+
+
+[para]
+ If a module exports symbols, then a header file by the name of
+ns[emph {xxx}].h should also be in that directory.
+
+[para]
+
+
+[section {Makefile Structure}]
+
+Use this as a template for module makefiles:
+
+
+[example_begin]
+
+#
+# (dollar-sign)Header: (dollar-sign)
+#
+# nsexample --
+#
+#      Example NaviServer module Makefile.
+#
+
+#
+# NaviServer's location
+#
+#  Since your module probably doesn't live inside the "naviserver"
+#  directory, you can tell make where to find naviserver.
+#
+#NAVISERVER   =  /usr/local/ns
+NAVISERVER    =  ../naviserver
+
+#
+# Module name
+#
+MOD      =  nsexample.so
+
+#
+# Objects to build
+#
+OBJS     =  nsexample.o
+
+#
+# Header files in THIS directory (included with your module)
+#
+HDRS     =
+
+#
+# Extra libraries required by your module (-L and -l go here)
+#
+MODLIBS  =
+
+#
+# Compiler flags required by your module (-I for external headers goes here)
+#
+CFLAGS   =
+
+
+include  $(NSHOME)/include/Makefile.module
+
+
+[example_end]
+
+
+[section {Header file structure}]
+
+Use this as a template for all header files:
+
+
+[example_begin]
+
+/*
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://mozilla.org.
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms
+ * of the GNU General Public License (the "GPL"), in which case the
+ * provisions of GPL are applicable instead of those above.  If you wish
+ * to allow use of your version of this file only under the terms of the
+ * GPL and not to allow others to use your version of this file under the
+ * License, indicate your decision by deleting the provisions above and
+ * replace them with the notice and other provisions required by the GPL.
+ * If you do not delete the provisions above, a recipient may use your
+ * version of this file under either the License or the GPL.
+ */
+
+/*
+ * file.h --
+ *
+ * 	Description of file.
+ *
+ */
+
+#ifndef FILE_H
+#define FILE_H
+
+static const char
+*RCSID_FILE_H = "(dollar-sign)Header: (dollar-sign), compiled: " __DATE__;
+
+/*
+ * The following constants...
+ */
+
+#define ...
+
+/*
+ * The following structure defines...
+ */
+
+typedef struct ...
+
+/*
+ * Exported functions
+ */
+
+extern ...
+
+#endif /* FILE_H */
+
+[example_end]
+
+
+
+[para]
+
+
+Header files never contain static symbols.
+
+
+[section {Code File Structure}]
+
+Each source code file should contain a related set of procedures. The
+most manageable size for files is usually in the range of 500-2000
+lines. Closely related functions should be placed as close together as
+possible.
+
+
+[para]
+
+
+API functions (ns_*) come first; exported functions that are not API
+calls (Ns*) come after those; static functions come last. Logical
+groups of functions can be separated like this:
+
+
+[para]
+
+
+
+[example_begin]
+
+/*
+ *==========================================================================
+ * This is where we torque the wingnut on the widget.
+ *==========================================================================
+ */
+
+[example_end]
+
+
+
+[para]
+
+
+Use this as a template for all code files:
+
+
+[example_begin]
+
+/*
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://mozilla.org/.
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms
+ * of the GNU General Public License (the "GPL"), in which case the
+ * provisions of GPL are applicable instead of those above.  If you wish
+ * to allow use of your version of this file only under the terms of the
+ * GPL and not to allow others to use your version of this file under the
+ * License, indicate your decision by deleting the provisions above and
+ * replace them with the notice and other provisions required by the GPL.
+ * If you do not delete the provisions above, a recipient may use your
+ * version of this file under either the License or the GPL.
+ */
+
+/*
+ * file.c --
+ *
+ * 	Description of file.
+ */
+
+static const char
+*RCSID = "(dollar-sign)Header: (dollar-sign), compiled: " __DATE__ " " __TIME__;
+
+#include "file.h"
+
+/*
+ * The following constants...
+ */
+
+#define ...
+
+/*
+ * The following structure defines...
+ */
+
+typedef struct ...
+
+/*
+ * Local functions defined in this file
+ */
+
+static int FunctionName(int x);
+
+/*
+ * Static variables defined in this file
+ */
+
+static int nsNumFooBar;     /* Number of foobars allocated */
+...
+
+/*
+ *==========================================================================
+ * API functions
+ *==========================================================================
+ */
+
+ (API function definitions go here)
+
+/*
+ *==========================================================================
+ * Exported functions
+ *==========================================================================
+ */
+
+ (Exported, non-api functions go here)
+
+/*
+ *==========================================================================
+ * Static functions
+ *==========================================================================
+ */
+
+(Static functions go here)
+
+[example_end]
+
+
+
+[para]
+
+
+Source files should never contain extern statements; those belong in
+header files (called file.h in the above template).
+
+[section {Function definitions}]
+
+Function definitions should follow this template:
+
+
+[example_begin]
+
+/*
+ *----------------------------------------------------------------------
+ * FunctionName -
+ *
+ * 	Description of function.
+ *
+ * Results:
+ *	This function returns ...
+ *
+ * Side effects:
+ *	A new thread will be created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FunctionName(int x)
+{
+	...
+}
+
+[example_end]
+
+
+[para]
+
+All functions definitions begin on a new page (which is to say they
+should be preceeded by a control-L character). All functions must be
+typed: use void if the function returns no result. The second line
+gives the function's name and argument list. If there are many
+arguments, they should spill onto additional lines as such:
+
+
+[example_begin]
+
+static int
+FunctionThatTakesLotsOfParameters(int a, int b, int c, int d, int e,
+                                  int f, int g)
+{
+	...
+}
+
+[example_end]
+
+
+
+[para]
+
+The same rule applies to prototypes.
+
+[section {Parameter order}]
+
+Function parameters may be divided into three categories. [emph {In}]
+parameters only pass information into the function (either directly or
+by pointing to information that the function reads). [emph {Out}]
+parameters point to things in the caller's memory that the function
+modifies. [emph {In-out}] parameters do both. Below is a set of rules
+for deciding on the order of parameters to a function:
+
+
+[list_begin enum]
+
+
+[enum]Parameters should normally appear in the order in, in/out, out,
+except where overridden by the rules below.
+
+[enum]If there is a group of functions, all of which operate on
+structures of a particular type--such as a hash table--the token for
+the structure should be the first argument to each of the functions.
+
+
+[enum]When two parameters are the address of a callback function and a
+context value (or ClientData value) to pass to that function, the
+function address should appear in the argument list immediately before
+the context/ClientData.
+
+[enum]If a callback function takes a context/ClientData argument (and
+all callbacks should), the context/ClientData argument should be the
+first argument to the procedure. Typically the context/ClientData is a
+pointer to the structure managed by the callback, so this is really
+the same as rule 2.
+
+[enum]In/out parameters should not be used without a [emph {very }]good
+reason.
+
+
+[list_end]
+
+
+[section {Naming Conventions}]
+
+
+[list_begin enum]
+
+
+[enum]Be consistent. Use the same name to refer to the same thing
+everywhere. For example, in the Tcl implementation the name
+[emph {interp}] is used consistently for pointers to the user-visible
+Tcl_Interp structure.
+
+[enum]Make sure a function name describes what the function actually
+does. Will the name make sense out of context?
+
+[enum]Sometimes it is appropriate to use one-letter variables, such as a
+for-loop control variable called [emph {i}]. For anything more complex,
+a short descriptive name should be used.
+
+
+[list_end]
+
+
+[section {Basic Syntax Rules}]
+
+
+[list_begin enum]
+
+
+[enum]Variable names always start with a lowercase letter. Function and
+type names always start with an uppercase letter.
+
+[enum]In multi-word names, the first letter of each word after the first
+is in uppercase. For example,
+
+[para]
+
+
+[emph {int nsThreadTimeout;}]
+
+
+
+[enum]Any name that refers to a pointer ends in Ptr. If it is a pointer
+to a pointer, then it ends in PtrPtr. Exceptions to this rule include
+opaque handles for structures (such as ns_ModLogHandle) and char *
+variables that refer to null-terminated strings. Also, static buffers
+should not have the Ptr suffix, as in this case:
+
+
+[para]
+
+
+[emph {char buf[32];}]
+
+
+
+[enum]Variables that hold address of procedures should have names ending
+in Proc, as should typedefs for such variables.
+[para]
+ [emph {typedef int
+(ns_OpProc) (void *argPtr, ns_Conn *connPtr) ns_OpProc
+*opProc;}]
+
+
+[enum][emph {#define}] macros and constants should be in all
+uppercase. Underscores separate multiple words (as in NS_TRUE).
+
+[enum]Tcl commands are always in all-lowercase.
+
+
+[list_end]
+
+
+[section {Function names contain meaning}]
+
+Public exported functions that are part of the API should begin with
+ns_, as in:
+
+[example_begin]
+extern int ns_ConnPort(ns_Conn *conn);
+[example_end]
+
+
+[para]
+Functions that are to be used by other files in a module, but are
+not meant to be called from outside the module, should begin with Ns,
+as in:
+
+[example_begin]
+extern void NsDbInit(void);
+[example_end]
+
+
+[para]
+Global variables that do [emph {not}] have static scope begin with ns, as in:
+
+[example_begin]
+ns_Cache *nsAdpCachePtr = NULL;
+[example_end]
+
+
+[para]
+C implementations of Tcl commands should be static functions ending
+with Cmd, as in:
+
+[example_begin]
+static int RegisterTagCmd(ClientData ignored, Tcl_Interp *interp,
+                          int argc, char **argv);
+
+[example_end]
+
+
+[section {Low-level coding conventions}]
+
+If you use Emacs, the following lisp (which you can put in your
+.emacs file) will make C-mode do much of the formatting for you (its
+default behavior is almost correct--this just makes indents be four
+spaces):
+
+[example_begin]
+(add-hook 'c-mode-hook
+	(function (lambda ()
+		(setq c-basic-offset 4)
+		(setq c-indent-level 4))))
+
+[example_end]
+
+
+[list_begin itemized]
+
+[item] Indents are four spaces
+
+
+[item] Code comments occupy full lines, with empty lines before and
+after, as such:
+
+
+
+[example_begin]
+foo();
+
+/*
+ * This is a comment.
+ */
+
+bar();
+
+[example_end]
+
+
+
+[item] Opening curly braces go at the end of a line, except for the
+beginnings of functions, as such:
+
+
+
+[example_begin]
+
+
+   if (x == y) {
+       FooBar();
+   }
+
+
+
+and
+
+   static void
+   FooBar(void)
+   {
+      Foo();
+   }
+
+
+[example_end]
+
+
+[item] Always put a blank line after variable definitions:
+
+
+[example_begin]
+
+static void
+FooBar(void)
+{
+    int blah;
+
+    ...
+    if (blah != 0) {
+        char *string;
+
+	...
+    }
+}
+
+[example_end]
+
+
+[item] Use curly braces even if you don't have to, such as in if
+statements that have only statement in the block. There is an
+exception to this, which is else if clauses which may look like
+this:
+
+
+[example_begin]
+
+
+if (!strcmp(cmd, &quot;put&quot;)) {
+    ...
+} else if (!strcmp(cmd, &quot;get&quot;)) {
+    ...
+} else if (!strcmp(cmd, &quot;reset&quot;)) {
+    ...
+} else {
+    ...
+}
+
+[example_end]
+
+
+[item] No line should exceed 79 characters. The only exception to this is CVS
+headers because they have an external dependency.
+
+[item] Labels are indented four spaces fewer than statements, except when
+they would touch the left margin, in which case they are indented one
+space in from the left margin.
+
+[item] Switch statements should look like this:
+
+
+[example_begin]
+
+
+switch (adPtr-&gt;exception) {
+case ADP_OK:
+    exception = &quot;ok&quot;;
+    break;
+case ADP_BREAK:
+    exception = &quot;break&quot;;
+    break;
+....
+}
+
+[example_end]
+
+
+[item] Avoid macros except for extremely simple operations. Enclose
+arguments in parentheses, as well as the entire macro
+expression:
+
+
+[example_begin]
+
+#define MIN(a,b) (((a) &lt; (b)) ? (a) : (b))
+
+[example_end]
+
+
+[item] Do not use bit fields
+
+[item] Goto statements may be used as long as they jump to the end of a
+function that then performs cleanup and returns. They are an excellent
+way of ensuring that functions have only one exit point. Most other
+uses of goto are, as usual, looked on with disdain.
+
+[item] Common sense applies when using obscure or confusing parts of the
+C language. For example, don't do this:
+
+[para]
+
+
+
+[example_begin]
+
+if (++c != NULL) {
+    foo();
+}
+
+[example_end]
+
+
+[item] Where it is sensible, have only one return statement in each function.
+
+[item] Complex if statements (such as those with three or more expressions)
+should have newline breaks after the operator separating each expression.
+In this case, put two newlines after the open brace to separate the
+conditions from the code that follows.
+
+
+
+[example_begin]
+
+if (foo == bar &&
+    baz == spoo &&
+    ns_FooBarBaz() == NS_TRUE) {
+
+    ...
+}
+
+[example_end]
+
+
+[item] When there are multiple variables defined in a block, the first letter
+of each variable name should line up, with asterisks running to the left.
+There should not be multiple variables defined on the same line unless the
+relationship between them is obvious. Non-obvious variables may be
+commented to the right.
+
+[para]
+The leftmost asterisk should begin on the column that is one space
+after the rightmost character of the longest type name. If there are no
+pointers, then every variable name should begin on the column that is one space
+after the rightmost character of the longest type name.
+
+
+[example_begin]
+
+void
+Foo(void)
+{
+    int              bar;
+    unsigned int    *fooPtr;
+    int          ****extremePtrPtrPtrPtr;  /* Just an example! */
+
+    ...
+
+[example_end]
+
+or
+
+[example_begin]
+
+void
+Foo(void)
+{
+    int          bar;
+    unsigned int foo;
+    char         baz;
+
+    ...
+
+[example_end]
+
+
+Variable initializers should not be anything more complex than a constant;
+function calls and complicated expressions deserve their own lines of code.
+
+
+
+[item] In pointer definitions, be they local variables,
+global variables, parameters, or static functions prototypes,
+the asterisk should always make
+contact with the first character of the symbol. In typecasts, there should
+be one space between the type name and the asterik, and parentheses should
+make contact with both:
+
+[example_begin]
+
+static void *Foo(int *fooPtr);
+int *fooPtr = (int *) barPtr;
+
+[example_end]
+
+[item] If a function ends with a return statement which is neither the only
+statement in the function body and is not preceeded by a label, an empty
+line should appear before it:
+
+[example_begin]
+
+static int
+Foo(void)
+{
+    ...
+    FooBar();
+
+    return code;
+}
+
+[example_end]
+
+
+[list_end]
+
+
+
+[para]
+
+[section {Idioms, Canonical Forms, and Recommended Practices}]
+
+The following conventions are frequently used in NaviServer. They
+are the recommended way of implementing a behavior.
+[list_begin itemized]
+[item] Configuration parameters should be defined at the top of source files, as
+such:
+
+
+[example_begin]
+
+#define CONFIG_CACHE "Cache"     /* Enable caching in this module? */
+#define CONFIG_FOO   "Foo"       /* What is foo? */
+
+#define DEFAULT_CACHE NS_TRUE    /* Caching is on */
+#define DEFAULT_FOO   "Bar"      /* Foo is bar */
+
+[example_end]
+
+
+
+[item] C is not PL/I. Write this:
+
+
+[example_begin]
+
+return foo;
+
+[example_end]
+
+
+not
+
+
+[example_begin]
+
+return (foo);
+
+[example_end]
+
+
+With very complicated expressions, parentheses are acceptable:
+
+
+[example_begin]
+
+return (sqrt(variance) + foo() / bar() - (MAGIC + getch()) % 99);
+
+[example_end]
+
+
+[item] Booleans can only have two values: NS_TRUE and NS_FALSE.
+Using 0 and 1 as boolean values is discouraged. Also avoid using the
+conventions of <code>if (foo)</code> and <code>if (!foo)</code>; rather, say:
+
+
+[example_begin]
+
+if (foo == NS_TRUE) {
+    ...
+}
+
+[example_end]
+
+
+or
+
+
+[example_begin]
+
+if (foo == NS_FALSE) {
+    ...
+}
+
+[example_end]
+
+
+Of course, this only applies to NaviServer APIs and internal boolean values.
+Respect the wishes of library calls; values from outside code should never
+be compared with NS_TRUE or NS_FALSE, nor should NS_TRUE or NS_FALSE values
+ever be passed to outside code.
+
+
+[item] Explicit checks for 0 values are usually preferred over implicit checks.
+
+[para]
+
+For pointers, use <code>NULL</code>:
+
+
+[example_begin]
+
+if (fooPtr == NULL) {
+    ...
+}
+
+[example_end]
+
+
+or
+
+
+[example_begin]
+
+if (fooPtr != NULL) {
+    ...
+}
+
+[example_end]
+
+
+For characters, use <code>'\0'</code> when checking for equality to zero:
+
+
+[example_begin]
+
+if (*ch == '\0') {
+    ...
+}
+
+[example_end]
+
+
+For integers, explicitly use 0 when checking for equality to zero:
+
+
+[example_begin]
+
+if (foo == 0) {
+    ...
+}
+
+[example_end]
+
+
+
+
+[list_end]
+
+
+[manpage_end]

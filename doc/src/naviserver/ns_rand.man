@@ -1,0 +1,47 @@
+[include version_include]
+[manpage_begin ns_rand n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Generate a random number}]
+
+[description]
+
+This command generates a cryptographically secure random number. 
+If maximum is not specified, the random number returned is a 
+floating-point value n such that 0.0 &lt;= n &lt; 1.0.  If maximum
+is specified, it must be a positive integer between 1 and 2147483647,
+in which case ns_rand will return an integer value n such that 0 <= n <= max - 1.
+
+Internally ns_rand is implemented with the drand48() and lrand48() standard
+library functions.  An internal random seed is generated the first time 
+ns_rand is called after the server starts.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_rand] [opt [arg maximum]]]
+
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_rand
+   0.39938485692
+[example_end]
+
+[example_begin]
+   % ns_rand 10
+   7
+[example_end]
+
+[para]CAVEAT
+
+ [lb]ns_rand 1[rb] will always produce the result 0. [lb]ns_rand 2[rb] will produce the desired "coin flip" outcome of 0 or 1. This is standard with 
+
+
+[manpage_end]
+

@@ -1,0 +1,36 @@
+[include version_include]
+[manpage_begin ns_moduleload n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Load binary module and initialize it}]
+
+[description]
+This command to be used during server initialization to load binary modules.
+The usual way to specify them in the config file.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_moduleload] [opt [arg -global]] [opt [arg {-init init}]] [arg module] [arg file]]
+
+[para]
+[arg -global]
+Load globally, not into virtual server
+
+[arg {-init init}]
+Specify alternative initialization function, by default it is Ns_ModuleInit
+
+[arg module]
+module name
+
+[arg file]
+Full path to the module binary file
+
+[list_end]
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

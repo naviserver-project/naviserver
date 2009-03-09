@@ -1,0 +1,29 @@
+[include version_include]
+[manpage_begin ns_socklistencallback n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Run script on connection}]
+
+[description]
+This function listens on the specified address and port and runs
+the specified script when new connections are received.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_socklistencallback] [arg address] [arg port] [arg script]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

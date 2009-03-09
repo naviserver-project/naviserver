@@ -1,0 +1,34 @@
+[include version_include]
+[manpage_begin ns_jpegsize n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Determine the width and height of a JPEG image}]
+
+[description]
+Returns a list of two elements, the width and height of the JPEG file specified by filename.
+An error is generated if the file does not exist or if it is not a JPEG file.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_jpegsize] [arg filename]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_jpegsize screenshot.jpg
+   1024 768
+[example_end]
+
+[example_begin]
+   % ns_jpegsize test.html
+   invalid JPEG file: "test.html"
+[example_end]
+
+[see_also nsd]
+[keywords ns_gifsize ns_pngsize ns_imgsize ns_imgmime ns_imgtype]
+
+[manpage_end]

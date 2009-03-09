@@ -1,0 +1,50 @@
+[include version_include]
+[manpage_begin ns_adp_bind_args n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Bind ADP arguments to variables}]
+
+[description]
+
+ This command assigns the ADP arguments from the current ADP frame to variables
+ specified in one or more varName parameters.  There must be an equal number
+ of varName arguments as there are ADP arguments, otherwise an error will
+ be thrown.
+
+ Note that the first varName is not assigned the name of the ADP.  In other
+ words, varName starts from index 1 in the ns_adp_argv list.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_bind_args] [arg varName] [opt [arg {varName ...}]]]
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   # In a.adp:
+   &lt;% ns_adp_include b.adp 1 2 3 %&gt;
+[example_end]
+
+[example_begin]
+   # In b.adp:
+   &lt;%
+     ns_adp_bind_args x y z
+     list $x $y $z    &nbsp;;# =&gt; {1 2 3}
+   %&gt;
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_adp_abort ns_adp_append ns_adp_argc ns_adp_argv ns_adp_break \
+ns_adp_debug ns_adp_debuginit ns_adp_dir ns_adp_dump ns_adp_eval \
+ns_adp_exception ns_adp_include ns_adp_mime ns_adp_mimetype ns_adp_parse \
+ns_adp_puts ns_adp_registeradp ns_adp_registerproc ns_adp_registertag \
+ns_adp_return ns_adp_safeeval ns_adp_stats ns_adp_stream ns_adp_tell ns_adp_trunc]
+
+[manpage_end]
+

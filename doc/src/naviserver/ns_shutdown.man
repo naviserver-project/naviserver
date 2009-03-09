@@ -1,0 +1,38 @@
+[include version_include]
+[manpage_begin ns_shutdown n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Shut down NaviServer}]
+
+[description]
+This command shuts down the server.  If [emph timeout] is not specified
+a default value (normally 20) is used; if it is specified, it should be
+an integer >= 0.  The server will wait for up to the specified (or default)
+number of seconds for existing connections to finish processing.  If this
+time limit is exceeded then existing connections are immediately stopped.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_shutdown] [arg ?timeout?]]
+
+[para]
+[arg timeout]
+How long to wait before shuting down the server
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   ns_shutdown
+   ns_shutdown 30
+[example_end]
+
+
+[see_also nsd]
+[keywords none]
+
+[manpage_end]
+

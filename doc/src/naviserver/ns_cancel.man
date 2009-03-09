@@ -1,0 +1,28 @@
+[include version_include]
+[manpage_begin ns_cancel n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Cancel scheduled proc}]
+
+[description]
+Cancel previously scheduled Tcl command
+
+[section EXAMPLES]
+
+[example_begin]
+
+oss2:nscp 18> ns_schedule_proc 3600 TestCmd
+25
+
+oss2:nscp 21> ns_info scheduled
+{26 0 3600 1159374920 -1 -1 -1 ns:tclschedproc TestCmd}
+
+oss2:nscp 20> ns_cancel 25
+1
+
+[example_end]
+
+[keywords ns_unschedule_proc]
+
+[manpage_end]
+

@@ -1,0 +1,212 @@
+[include version_include]
+[include version_include]
+
+[manpage_begin ns_returnerror n [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {Return a complete HTTP status message}]
+
+[description]
+
+These commands return a complete response to the client using a variety of
+different HTTP status codes. Any queued headers, such as those set by
+[cmd ns_setcookie] or manually using [cmd "ns_conn outputheaders"] and
+[cmd "ns_set put"], are added to the default headers and sent in the response.
+
+[para]
+These commands return 0 (zero) if the response was successfully
+sent to the client and 1 if the write to the connection failed.
+They will raise an error if no connection is available, e.g. they are called from
+a non-connection thread or the response has already been sent and the connection
+closed.
+
+[para]
+After the command returns the connection is returned to the driver thread to be
+closed or monitored for keep-alive. The calling connection thread can then
+continue to execute code, e.g. to cleanup resources or for logging.
+
+[para]
+Custom error pages may be specified in the server configuration file to
+override the default HTML message which is returned, for those commands which
+return one.
+
+
+
+
+[section COMMANDS]
+[list_begin definitions]
+
+
+[call [cmd ns_returnok] ]
+
+Return a response with status code [term 200], [term OK]. No body content is
+sent.
+
+
+
+[call [cmd ns_returnmoved] \
+        [arg url] ]
+
+Return a response with status code [term 301], [term Moved]. A [term Location]
+header will be set with the given [arg url].
+
+[para]
+Use this response to signal that the resource identified by the requested URL
+has permanently moved to a new location. The client should request the new URL
+instead of the old one in the future.
+
+
+
+[call [cmd ns_returnredirect] \
+        [arg url] ]
+
+Return a response with status code [term 302], [term Found]. The [term Location]
+header will be set to the [arg url] if given.
+
+[para]
+Use this response to signal that the resource identified by the requested URL has
+temporarily moved to a new location. The client should continue to request the
+old URL.
+
+
+
+[call [cmd ns_returnbadrequest] \
+        [arg reason] ]
+
+Return a response with status code [term 400], [term "Bad Request"] using the
+given [arg reason] in the HTML message.
+
+[para]
+Use this response to signal that the client sent a malformed request and should
+not try again without modifications.
+
+
+
+[call [cmd ns_returnunauthorized] ]
+
+Return a response with status code [term 401], [term "Access Denied"]. A
+[term WWW-Authenticate] header will be set using the [term realm] specified
+in the configuration file option [term ns/server:realm].
+
+[para]
+Use this response to signal that the user is not authorized to access the URL,
+and to trigger [term "HTTP basic"] authorization. The client may present
+a pop-up window for the user to enter their [term username] and [term password].
+
+[para]
+NB: The username and password will be sent in plain text.
+
+
+
+[call [cmd ns_returforbidden] ]
+
+Return a response with status code [term 403], [term Forbidden].
+
+[para]
+Use this response to signal that the authentication information the client
+supplied are insufficient to grant them access to the requested URL.
+
+
+
+[call [cmd ns_returnnotfound] ]
+
+Return a response with status code [term 404], [term "Not Found"].
+
+[para]
+Use this response to signal that the content the client requested could not be
+located given the URL that was requested.
+
+
+
+[call [cmd ns_returnunavailable] ]
+
+Return a response with status code [term 503], [term "Unavailable"].
+
+[para]
+Use this response to signal that the server is too busy to deliver the requested
+resource or is undergoing maintenance.
+
+
+
+[call [cmd ns_returnerror] \
+        [arg status] \
+        [arg message] ]
+
+Return a response with the given [arg status] code and the error [arg message]
+wrapped in HTML.
+
+[para]
+Use this command to return a HTTP status response to the client which is not
+covered by the above commands, or to customize the HTML message.
+
+
+
+[call [cmd ns_returnnotice] \
+        [arg status] \
+        [arg title] \
+        [arg message] ]
+
+Return a response with the given [arg status] code and an HTML message with the
+given [arg title] and [arg message].
+
+[para]
+Use this command to return an arbitrary response to the client. Some HTTP
+responses are expected not to return body content. Check RFC 2616 for details.
+
+[para]
+NB: You should be careful what you put in the [arg title] and [arg message].
+It may be tempting to use data which the client has sent you such as a form
+variable, but it may not be what you expect.
+
+[list_end]
+
+
+
+
+[section CONFIGURATION]
+
+The body of the response which is returned for a variety of status codes can be
+customized by registering a new resource which should be returned in it's place.
+The new resource may be a static, Tcl or ADP page, or a registered procedure
+or ADP.
+
+[example_begin]
+[cmd ns_section] "ns/server/server1/redirects"
+[cmd ns_param]   404    /notfound.adp
+[cmd ns_param]   503    /busy.html
+[example_end]
+
+[para]
+The realm used for HTTP Basic authentication is set server-wide:
+
+[example_begin]
+[cmd ns_section] "ns/server"
+[cmd ns_param]   realm  "Example"
+[example_end]
+
+
+
+[section EXAMPLES]
+
+Use a custom error message to notify users when the hamsters which turn the
+wheels that run the server are on lunch break:
+
+[example_begin]
+ns_register_proc GET /service {
+
+    set hour [lb]clock format [lb]clock seconds[rb] -format %H[rb]
+
+    if {$hour >= 12 && $hour <= 13} {
+        [cmd ns_returnerror] 503 "Gone for lunch. Back at 2pm."
+        return
+    }
+
+    [cmd ns_returnok]
+}
+[example_end]
+
+
+
+[see_also ns_return]
+[keywords return response status]
+
+[manpage_end]

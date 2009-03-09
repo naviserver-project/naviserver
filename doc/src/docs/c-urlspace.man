@@ -1,0 +1,140 @@
+[include version_include]
+[manpage_begin {NaviServer urlspace Data Structure} n [vset version]]
+
+[titledesc {NaviServer urlspace Data Structure}]
+
+[description]
+
+
+[section {The urlspace Trie}]
+
+There are four basic data structures used in maintaining the urlspace
+trie. They are:
+
+
+[para]
+
+
+
+[list_begin enum]
+
+
+[enum] Junction
+   A junction is nothing more than a list of channels.
+
+[para]
+
+
+[enum] Channel
+   A channel points to a branch which ultimately leads to nodes
+   that match a particular "filter", such as "*.html". The filter
+   is the last section of a URL mask, and is the only part of
+   the mask that may contain wildcards.
+
+
+[para]
+
+
+[enum] Branch
+   A branch represents one part of a URL, such as a server, method,
+   directory, or wildcard filename. It has a list of branches
+   representing sub-URLs as well as a pointer to a list of Nodes.
+
+
+[para]
+
+
+[enum] Node
+   A node stores URL-specific data, as well as a pointer to the
+   cleanup function.
+
+
+[list_end]
+
+
+Another data structure, called an Index, which is manipulated by the
+ns_Index API calls, is used by the urlspace code. An Index is an
+ordered list of pointers. The order is determined by callback
+functions. See index.c for the scoop on that.
+
+Here is what the urlspace data structure would look like after
+calling
+
+
+[para]
+
+
+ns_UrlSpecificSet("server1", "GET", "/foo/bar/*.html", myID, myData,
+                  0, MyDeleteProc);
+
+[para]
+
+
+
+[example_begin]
+
+
+------------------------------------------------------------------------------
+
+urlspace: JUNCTION
+  byname: INDEX [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+                 |
+  +--------------+
+  |
+  V
+CHANNEL
+  filter:  CHAR*   "*.html"
+  trie:    TRIE
+             indexnode: INDEX* (NULL)
+	     branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+	                        |
+  +-----------------------------+
+  |
+  V
+BRANCH
+  word: CHAR* "server1"
+  node: TRIE
+          indexnode: INDEX* (NULL)
+	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+	                     |
+  +--------------------------+
+  |
+  V
+BRANCH
+  word: CHAR* "GET"
+  node: TRIE
+          indexnode: INDEX* (NULL)
+	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+	                     |
+  +--------------------------+
+  |
+  V
+BRANCH
+  word: CHAR* "foo"
+  node: TRIE
+          indexnode: INDEX* (NULL)
+	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+	                     |
+  +--------------------------+
+  |
+  V
+BRANCH
+  word: CHAR* "*.html"
+  node: TRIE
+          indexnode: INDEX* -----------------> [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+	  branches:  INDEX  [lb] [rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]     |
+	                                        |
+  +---------------------------------------------+
+  |
+  V
+NODE
+  id:                  INT               myID
+  dataInherit:         VOID*             myData
+  dataNoInherit:       VOID*             0
+  deleteFuncInherit:   VOID(*)(VOID*)    MyDeleteProc
+  deleteFuncNoInherit: VOID(*)(VOID*)    0
+
+[example_end]
+
+
+[manpage_end]

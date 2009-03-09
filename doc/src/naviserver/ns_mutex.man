@@ -1,0 +1,95 @@
+[include version_include]
+[manpage_begin ns_mutex n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Operate on mutexes}]
+
+[description]
+
+This command provides a mechanism to manipulate mutexes.
+
+[section {COMMANDS}]
+
+
+[list_begin definitions]
+
+
+ [call [cmd ns_mutex] [arg option] [opt [arg {arg arg ...}]]]
+
+
+[list_end]
+
+[list_begin definitions]
+
+
+[call [cmd  ns_mutex] [arg create] [opt [arg name]]]
+
+Initializes a new mutual exclusion (mutex) lock and returns a handle to it. 
+If name is provided the mutex name will be set to this value.
+
+[call [cmd  ns_mutex] [arg destroy] [arg object]]
+
+Destroys the mutex and frees any resources it was using.
+
+NOTE: The mutex must be unlocked, or else the behavior is undefined and will likely 
+crash the server.  Before using this, you should probably look at 
+
+[call [cmd  ns_mutex] [arg lock] [arg object]]
+
+ns_mutex lock acquires the specified mutual exclusion lock. The mutexid argument is
+the mutex ID returned by ns_mutex create when the mutex was created.
+
+[call [cmd  ns_mutex] [arg trylock] [arg object]]
+
+ns_mutex trylock tries to acquire the specified mutual exclusion lock. The mutexid argument is
+the mutex ID returned by ns_mutex create when the mutex was created. If the mutex is locked
+successfully, return value of 0 is returned. non-zero return value indicates that the mutex is
+already locked by someone else
+
+[call [cmd  ns_mutex] [arg unlock] [arg object]]
+
+ns_mutex unlock unlocks the specified mutual exclusion lock. The mutexid argument is
+the mutex ID returned by ns_mutex create when the mutex was created.
+
+[list_end]
+
+[section EXAMPLES]
+At startup (for example, in your init.tcl procedure), open a shared file and create a lock for it:
+
+[example_begin]
+
+ns_share Shared
+set Shared(file) [lb]open myfile.data[rb]
+set Shared(lock) [lb]ns_mutex create[rb]
+detach $Shared(file)
+
+[example_end]
+
+Later (for example, in a request procedure), access the data file:
+
+[example_begin]
+
+ns_share Shared
+ns_mutex lock $Shared(lock)
+catch {
+... access $Shared(file) ...
+}
+ns_mutex unlock $Shared(lock)
+
+[example_end]
+
+Note: The "catch" is important so the lock isn't held if Tcl unwinds due to an error accessing the file.
+
+At shutdown (for example, in your shutdown procedure registered with ns_atshutdown),
+close the file and destroy the lock:
+
+[example_begin]
+
+ns_share Shared
+close $Shared(file)
+ns_mutex destroy $Shared(lock)
+
+[example_end]
+
+[manpage_end]
+

@@ -1,0 +1,33 @@
+[include version_include]
+[manpage_begin ns_uudecode n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Binary-to-text decoding using "htuu" encoding}]
+
+[description]
+
+ This command performs a binary-to-text decoding on string.
+
+ NOTE: This is HTTP-style uuencoding/uudecoding which is sometimes called "htuu" (see
+
+[list_begin definitions]
+
+ [call [cmd ns_uudecode] [arg string]]
+
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+oss2:nscp 7> ns_uuencode test
+dGVzdA==
+
+oss2:nscp 6> ns_uudecode dGVzdA==
+test
+
+[example_end]
+
+[manpage_end]
+

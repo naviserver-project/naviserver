@@ -1,0 +1,36 @@
+[include version_include]
+[manpage_begin ns_pngsize n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Determine the width and height of a PNG image}]
+
+[description]
+[para]Returns a list of two elements, the width and height of the PNG file specified by filename. An error is generated if the file does not exist or if it is not a PNG file.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_pngsize] [arg filename]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_pngsize screenshot.png
+   1024 768
+[example_end]
+
+[example_begin]
+   % ns_pngsize test.html
+   invalid PNG file: "test.html"
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_gifsize ns_jpegsize ns_imgsize ns_imgtype ns_imgmime]
+
+
+[manpage_end]
+

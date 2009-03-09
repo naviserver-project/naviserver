@@ -1,0 +1,76 @@
+[include version_include]
+[manpage_begin {Support for .tcl-style dynamic pages} n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Support for .tcl-style dynamic pages}]
+
+[description]
+file.tcl is responsible for setting up all that's necessary for
+allowing you to use TCL files in your webserver directories.
+
+[para]
+
+Notice the entries in your sample-config.tcl configuration file:
+
+[example_begin]
+
+ns_section "ns/server/${servername}"
+ns_param   enabletclpages  false         ;# Parse *.tcl files in pageroot.
+
+[example_end]
+
+The default is to not enable TCL pages.
+
+[para]
+
+If you set first option to true this is what happens at server startup when file.tcl is sourced:
+
+[list_begin enum]
+
+[enum] The procedure ns_sourceproc is registered for the HTTP methods GET, POST and HEAD via ns_register_proc.
+
+[enum] The procedure ns_sourceproc works as follows:
+
+  [list_begin enum]
+
+  [enum] If a requested file does not exist on the filesystem it returns via ns_returnnotfound
+
+  [enum] An existing TCL file is sourced via ns_sourcefile (see above)
+
+  [enum] If a custom error page exists it is sourced. That error page is responsible for 
+         handling the error, e.g. communication with a user. 
+
+  [list_end]
+
+[list_end]
+
+[section {Setting up a TCL error page}]
+
+Similar to the ADP error page example in your sample-config.tcl file you could setup a TCL error page:
+
+[example_begin]
+
+ns_section "ns/server/${servername}/tcl"
+ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.tcl  ;# TCL error page
+
+[example_end]
+
+[section {Support for .tcl-style dynamic pages via ADP engine}]
+
+Another way to support .tcl pages to use ADP engine to process .tcl file as
+ADP pages. the engine will source Tcl file and wrap it as <% ns_adp_include filename %>,
+then compiled it as regular ADP page. If caching enabled, the tcl file will be compiled as
+Tcl proc into bytecode. Using ADP engine is faster than using file.tcl based approach.
+
+[example_begin]
+
+ns_section "ns/server/${servername}/adp"
+ns_param   enabletclpages  false                               ;# Parse *.tcl files in pageroot.
+ns_param   errorpage   ${serverdir}/${pageroot}/errorpage.adp  ;# ADP error page
+
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]

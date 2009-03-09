@@ -1,0 +1,56 @@
+[include version_include]
+[manpage_begin ns_sockcallback n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Register a socket callback script}]
+
+[description]
+ns_sockcallback registers a socket callback script. The script should accept
+the arguments sockid and when. The script will be called according to the value
+of the when argument as follows:
+
+Value of, when Condition under which the script will be called:
+[list_begin itemized]
+
+[item] r - the socket is readable
+[item] w - the socket is writeable
+[item] e - the socket has an exceptional condition
+[item] x - the server is shutting down
+[list_end]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_sockcallback] [arg sockid] [arg script] [arg when]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+set sock [lb]ns_socklisten * 9000[rb]
+ns_sockcallback $sock newconn r
+
+# Keep $sock from closing after connection ends
+detach $sock
+
+# When a connection arrives, newconn will be called as:
+# newconn $sock r
+proc newconn {sock when} {
+  set fds [lb]ns_sockaccept $sock[rb]
+  set rfd [lb]lindex $fds 0[rb]
+  set wfd [lb]lindex $fds 1[rb]
+  puts $wfd "Hello!"
+  close $rfd
+  close $wfd
+}
+
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

@@ -1,0 +1,33 @@
+[include version_include]
+[manpage_begin ns_serverpath n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Returns absolute path to current virtual server home}]
+
+[description]
+This is virtual hosting aware command that returns absolute path to the server home
+for current virtual server context
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_serverpath]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+oss2:nscp 6> ns_serverpath
+/usr/local/ns
+
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

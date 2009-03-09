@@ -1,0 +1,31 @@
+[include version_include]
+[manpage_begin ns_register_fastpath n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Register url to be handled by FastPath}]
+
+[description]
+This command register given url pattern to be processed by fast path subsystem, i.e.
+all requestes that match will be served by corresponding .adp files if resolved. This 
+can be used when there is no global fast path handler installed.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_register_fastpath] [opt [arg -noinherit]] [arg method] [arg url]]
+
+[nl]
+[arg method]
+GET, POST OR HEAD
+
+[arg url]
+url pattern
+
+[list_end]
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

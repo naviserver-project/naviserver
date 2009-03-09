@@ -1,0 +1,25 @@
+[include version_include]
+[manpage_begin ns_puts n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Output string to the connection}]
+
+[description]
+In the Tcl script this command can be used to output lines
+in case when the whole response is built manually, not via ns_returnXXXX
+commands.
+
+[example_begin]
+
+ns_puts "HTTP/1.0 200 OK"
+ns_puts "Content-Type: text/plain"
+ns_puts ""
+
+ns_puts "Response body"
+ns_conn close
+
+[example_end]
+
+
+[manpage_end]
+

@@ -1,0 +1,45 @@
+[include version_include]
+[manpage_begin ns_urlencode n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+
+
+[titledesc {Encode a string to its URL-encoded representation}]
+
+[description]
+
+ This command encodes a string according to the rules for URL encoding defined in
+ RFC #1738, Uniform Resource Locators.
+
+ ns_urlencode codes  all  non-alphanumeric  characters  in  data.  The
+ encoding  for  a character is a "%" followed by the two-character hexa-
+ decimal representation for the character.
+
+ urlencoding the string:
+   http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3
+ yields the string:
+   http%3a%2f%2fwww%2eaolserver%2ecom%2fredirect%2eadp%3furl%3dhttp%3a%2f%2fwww%2eaol%2ecom%26t%3d1%2c2%2c3
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_urlencode] [arg {-charset charset}] [arg data]]
+
+
+[list_end]
+
+
+[section {EXAMPLES}]
+
+[example_begin]
+  set link [lb]ns_urlencode http://www.aolserver.com/redirect.adp?url=http://www.aol.com&t=1,2,3[rb]
+  ns_adp_puts "<a href=[lb]ns_urlencode [lb]set link[rb][rb]>click</a>"
+[example_end]
+
+[see_also nsd]
+[keywords ns_urldecode]
+
+[manpage_end]
+

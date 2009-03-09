@@ -1,0 +1,86 @@
+[include version_include]
+[manpage_begin ns_time n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Perform various time-related functions}]
+
+[description]
+
+This command provides various time-related functions.  The legal options (which may be abbreviated) are:
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_time] [opt [arg {arg arg ...}]]]
+
+
+[list_end]
+
+[list_begin definitions]
+
+
+[call [cmd  ns_time] [arg adjust] [arg time]]
+
+Adjusts time so that it is within the valid range of values for a time.
+(TODO:  Figure out how this is actually useful.)
+
+[call [cmd  ns_time] [arg diff] [arg time1] [arg time2]]
+
+Computes the time difference between time1 to time2.  It does this
+by subtracting time1 from time2 and returns a string in "sec:usec" format.
+
+[call [cmd  ns_time] [arg get]]
+
+Returns the current time in "sec:usec" format.
+
+[call [cmd  ns_time] [arg incr] [arg time] [arg sec] [opt [arg usec]]]
+
+Increments time by sec seconds and optionally usec microseconds.
+Returns a string in "sec:usec" format.
+
+[call [cmd  ns_time] [arg make] [arg sec] [opt [arg usec]]]
+
+Returns a string in the form "sec:usec".  usec defaults to zero. 
+If usec is zero, the colon and usec are not returned.  If sec is zero,
+however, it is returned as part of the time string.
+
+[call [cmd  ns_time] [arg seconds] [arg time]]
+
+Parses a time in "sec:usec" format and returns the seconds portion.
+
+[call [cmd  ns_time] [arg microseconds] [arg time]]
+
+Parses a time in "sec:usec" format and returns the microseconds portion.
+It assumes zero microseconds if time only contains seconds.
+
+All times are relative to 00:00:00 UTC, January 1, 1970 aka the Unix epoch. 
+ns_time called with no option returns the current time in seconds.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_time
+   1087006685
+[example_end]
+
+[example_begin]
+   % set time 
+   1087013247:598897
+[example_end]
+
+[example_begin]
+   % ns_time diff $time $time3
+   0
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_fmttime ns_gmtime ns_httptime ns_localtime ns_parsehttptime ns_parsetime]
+
+[manpage_end]
+

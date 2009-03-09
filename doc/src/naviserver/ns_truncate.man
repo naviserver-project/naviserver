@@ -1,0 +1,29 @@
+[include version_include]
+[manpage_begin ns_truncate n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Truncate file in size}]
+
+[description]
+This commans will truncate given file to the given length
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_truncate] [arg file] [arg ?length?]]
+
+[para]
+[arg file]
+File to be truncated
+
+[para]
+[arg length]
+If specified, truncate up to this length otherwise make file 0 size
+
+[list_end]
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+

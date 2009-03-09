@@ -1,0 +1,29 @@
+[include version_include]
+[manpage_begin ns_normalizepath n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Normalize a path}]
+
+[description]
+ns_normalizepath removes any extraneous slashes from the
+path and resolves "." and ".." references. 
+
+[para]
+For example: [lb]ns_normalizepath /dog/cat/../.. /rat/../../dog//mouse/..[rb]
+returns: /dog 
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_normalizepath] [arg path]]
+
+[list_end]
+
+
+[see_also nsd]
+[keywords {Tcl file normalize}]
+
+
+[manpage_end]
+

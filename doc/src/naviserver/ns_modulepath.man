@@ -1,0 +1,38 @@
+[include version_include]
+[manpage_begin ns_modulepath n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Get the paths to a server's modules}]
+
+[description]
+
+This command returns the path to a server's directory and optionally to its modules. 
+The command does no validation on the server to see if it is actually defined.
+
+The server directory is a subdirectory of "servers" under the path returned from ns_info home.
+ Modules are relative to that directory in the subdirectory "modules".
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+ [call [cmd ns_modulepath] [arg server] [opt [arg {module ...}]]]
+
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_modulepath exampleServer
+   /home/ns/servers/exampleServer
+[example_end]
+
+[example_begin]
+   % file join 
+[example_end]
+
+[manpage_end]
+

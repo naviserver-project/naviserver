@@ -1,0 +1,33 @@
+[include version_include]
+[manpage_begin ns_register_url2file n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Register Tcl script that will be called for the url pattern}]
+
+[description]
+
+[section {COMMANDS}]
+These commands are used to perform runtime resolving of the requested urls into
+corresponding files that will be served to the client. They use ns_url2file
+interface which resolves file for current url.
+
+[list_begin definitions]
+
+[call [cmd ns_unregister_url2file] [opt [arg -noinherit]] [opt [arg -recurse]] [arg url]]
+[call [cmd ns_register_url2file] [opt [arg -noinherit]] [arg url] [arg script] [opt [arg args]]]
+[call [cmd ns_register_fasturl2file] [opt [arg -noinherit]] [arg url] [opt [arg basepath]]]
+
+[nl]
+[arg url]
+Register or unregister callback for given url pattern
+
+[arg script]
+Tcl script to be called to return full path to the requested url
+
+[list_end]
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

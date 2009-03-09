@@ -1,0 +1,43 @@
+[include version_include]
+[manpage_begin ns_serverrootproc n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {one-line summary what the command does}]
+
+[description]
+One or more paragraphs describing the ns_serverrootproc command in detail.
+
+[section {COMMANDS}]
+Optional: list and description of sub-commands.
+
+[list_begin definitions]
+
+[call [cmd COMMAND_NAME] [arg 1]]
+
+[para]
+[arg 1]
+Description for arg1
+
+[list_end]
+
+[section CONFIGURATION]
+        
+[para]
+[emph {Basic configuration options:}]
+        
+[list_begin definitions]
+[def {PARAM1 = CONFIGVALUE1}] 
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+Put some examples here to illustrate command usage.
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+

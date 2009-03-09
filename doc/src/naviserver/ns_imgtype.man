@@ -1,0 +1,56 @@
+[include version_include]
+[manpage_begin ns_imgtype n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Return the type of an image}]
+
+[description]
+Returns the type of an image if it can be identified by the particular
+image header. Currently JPEG, GIF and PNG files are supported. The result is one of
+"jpeg", "gif" or "png". If the filetype is not recognized
+the type "unknown" is returned. An error is generated if the file does
+not exist.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_imgtype] [arg filename]]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+% ns_imgtype screenshot.jpg
+jpeg
+[example_end]
+
+[example_begin]
+% ns_imgtype test.html
+unknown
+[example_end]
+
+[example_begin]
+% foreach f [lb]glob -nocomplain -types f /tmp/images/*[rb] {
+    if {[lb]lsearch [lb]list jpeg png gif[rb] [lb]ns_imgtype $f[rb][rb]} {
+        puts -nonewline "supported image:  "
+    } else {
+        puts -nonewline "unsupported file: "
+    }
+    foreach {width height} [lb]ns_imgsize $f[rb] { break }
+    set mimetype [lb]ns_imgmime $f[rb]
+    set f [lb]file tail $f[rb]
+    puts [lb]format "%30s width: %5i height: %5i MIME: %15s" \
+        $f $width $height $mimetype[rb]
+}
+unsupported file:   support.pdf width:     0 height:     0 MIME:   image/unknown
+supported image:  MARADONNA.jpg width:   294 height:   420 MIME:      image/jpeg
+
+[example_end]
+
+[see_also nsd]
+[keywords ns_gifsize ns_pngsize ns_imgsize ns_imgmime]
+
+[manpage_end]
+

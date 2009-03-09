@@ -1,0 +1,34 @@
+[include version_include]
+[manpage_begin ns_charsets n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Determine the charsets for which we have encodings}]
+
+[description]
+
+ Returns a list of charsets for which we have encodings.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+
+[call [cmd ns_charsets]]
+
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+   % ns_charsets
+   windows-1258 iso-2022-kr macromania...
+[example_end]
+
+
+[see_also nsd]
+[keywords ns_encodingforcharset]
+
+[manpage_end]
+

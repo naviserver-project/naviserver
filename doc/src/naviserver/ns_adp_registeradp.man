@@ -1,0 +1,42 @@
+[include version_include]
+[manpage_begin ns_adp_registeradp n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Registers ADP page to be called on custom tag}]
+
+[description]
+This command creates a callback that will be called when
+ADP parses sees given tag in the .adp file.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_registeradp] [arg tag] [arg ?endtag?] [arg adp]]
+
+[nl]
+[arg tag]
+tag that will be used, every time parses sees <tag it will call given adp file
+
+[arg endtag]
+if tag needs to be closed, specify end tag sequence, usually it is </tag>
+
+[arg adp]
+this is adp file to be called when this tag is parsed
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+
+ns_adp_registertag example example.adp
+
+[example_end]
+
+
+[see_also nsd]
+[keywords NaviServer]
+[manpage_end]
+
+
