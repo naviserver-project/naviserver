@@ -29,4 +29,7 @@ configure
 tests/testserver/access.log
 tests/testserver/nsd.pid
 
+doc/html
+doc/man
+
 naviserver-*.tar.gz
