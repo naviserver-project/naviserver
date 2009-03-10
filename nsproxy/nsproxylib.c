@@ -383,12 +383,6 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     }
 
     /*
-     * This needs to be called early to keep Tcl 8.5 from crashing
-     */ 
-
-    Tcl_FindExecutable(argv[0]);
-
-    /*
      * Move the proxy input and output fd's from 0 and 1 to avoid
      * protocal errors with scripts accessing stdin and stdout.
      * Stdin is open on /dev/null and stdout is dup'ed to stderr.
