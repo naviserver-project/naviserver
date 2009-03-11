@@ -143,27 +143,35 @@ DTPLITE=dtplite
 
 build-doc:
 	$(MKDIR) doc/html doc/man
-	$(RM) doc/html/* doc/man/*
+	$(RM) doc/html/* doc/man/* doc/tmp
+	$(MKDIR) doc/tmp
 	@for srcdir in nscgi \
 		       nslog \
 		       nsdb \
 		       nsproxy \
-		       doc/src/naviserver \
-		       doc/src/docs \
+                       doc/src/docs \
+                       doc/src/naviserver \
+                       modules/nsexpat \
                        modules/nsconfigrw \
                        modules/nsdbi \
                        modules/nsloopctl \
                        modules/nsvfs; do \
 		if [ -d $$srcdir ]; then \
 		   echo $$srcdir; \
-		   $(DTPLITE) -merge \
-			      -style doc/src/man.css \
-			      -header doc/src/header.inc \
-			      -footer doc/src/footer.inc \
-   			      -o doc/html/ html $$srcdir; \
-		   $(DTPLITE) -merge -o doc/man/ nroff $$srcdir; \
+                   $(MKDIR) doc/tmp/`basename $$srcdir`; \
+	           find $$srcdir -name *.man -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
 		fi; \
 	done
+	@for srcdir in `ls doc/tmp`; do \
+	    echo $$srcdir; \
+            if [ -f doc/tmp/$$srcdir/version_include.man ]; then \
+               $(CP) doc/tmp/$$srcdir/version_include.man .; \
+            fi; \
+	    $(DTPLITE) -merge -style doc/src/man.css -header doc/src/header.inc -footer doc/src/footer.inc \
+                       -o doc/html/ html doc/tmp/$$srcdir; \
+	    $(DTPLITE) -merge -o doc/man/ nroff doc/tmp/$$srcdir; \
+	done
+	$(RM) version_include.man doc/tmp
 
 #
 # Testing:
