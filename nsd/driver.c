@@ -2201,6 +2201,22 @@ SockParse(Sock *sockPtr, int spooler)
             reqPtr->avail = 0;
             Ns_Log(Debug, "spooling content to file: size=%" TCL_LL_MODIFIER "d, file=%s",
                    reqPtr->length, sockPtr->tfile);
+
+            /*
+             * To make huge uploads easy to handle, we put query into content so
+             * Ns_connGetQuery will parse it and returns as query parameters. If later page decides to
+             * parse multipart/data file manually it may replace it but in case of batch processing
+             * with external tools it is good to know additional info about the uploaded content beforehand.
+             */
+
+            if (reqPtr->request.query != NULL) {
+                Tcl_DStringSetLength(bufPtr, 0);
+                Tcl_DStringAppend(bufPtr, reqPtr->request.query, -1);
+                ns_free(reqPtr->request.method);
+                reqPtr->request.method = ns_strdup("GET");
+                reqPtr->content = bufPtr->string;
+            }
+
             return (reqPtr->request.line != NULL ? SOCK_READY : SOCK_ERROR);
         }
 
