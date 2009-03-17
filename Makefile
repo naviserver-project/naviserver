@@ -149,7 +149,9 @@ build-doc:
 		       nslog \
 		       nsdb \
 		       nsproxy \
-                       doc/src/docs \
+		       nscp \
+		       nsperm \
+                       doc/src/manual \
                        doc/src/naviserver \
                        modules/nsexpat \
                        modules/nsconfigrw \
@@ -159,19 +161,24 @@ build-doc:
 		if [ -d $$srcdir ]; then \
 		   echo $$srcdir; \
                    $(MKDIR) doc/tmp/`basename $$srcdir`; \
-	           find $$srcdir -name *.man -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
+	           find $$srcdir -name '*.man' -print -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
 		fi; \
 	done
-	@for srcdir in `ls doc/tmp`; do \
+	@cd doc/tmp; \
+	for srcdir in `ls`; do \
 	    echo $$srcdir; \
-            if [ -f doc/tmp/$$srcdir/version_include.man ]; then \
-               $(CP) doc/tmp/$$srcdir/version_include.man .; \
+            if [ -f $$srcdir/version_include.man ]; then \
+               $(CP) $$srcdir/version_include.man .; \
+	    else \
+               $(CP) ../../version_include.man .; \
             fi; \
-	    $(DTPLITE) -merge -style doc/src/man.css -header doc/src/header.inc -footer doc/src/footer.inc \
-                       -o doc/html/ html doc/tmp/$$srcdir; \
-	    $(DTPLITE) -merge -o doc/man/ nroff doc/tmp/$$srcdir; \
+	    $(DTPLITE) -merge -style ../src/man.css \
+                       -header ../src/header.inc \
+                       -footer ../src/footer.inc \
+                       -o ../html/ html $$srcdir; \
+	    $(DTPLITE) -merge -o ../man/ nroff $$srcdir; \
 	done
-	$(RM) version_include.man doc/tmp
+	$(RM) doc/tmp
 
 #
 # Testing:

@@ -1,4 +1,4 @@
-[include version_include]
+[include version_include.man]
 [manpage_begin ns_env n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 

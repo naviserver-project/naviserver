@@ -1,4 +1,4 @@
-[include version_include]
+[include version_include.man]
 [manpage_begin {NaviServer Maintenance Guide} n [vset version]]
 
 [titledesc {NaviServer Maintenance Guide}]
@@ -555,6 +555,18 @@ the associated NaviServer features.
 
 [para]
 
+[emph {/conf}]
+
+[para]
+Directory containing the NaviServer configuration files. This is convention and convenience, the config files can be located anywhere as nsd process requires path to config file.
+
+[para]
+Files:
+
+[para]
+.tcl files nsd.tcl sample-config.tcl simple-config.tcl
+
+[para]
 
 [emph {/bin}]
 

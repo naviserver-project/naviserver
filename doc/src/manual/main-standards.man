@@ -1,4 +1,4 @@
-[include version_include]
+[include version_include.man]
 [manpage_begin {Engineering Standards Manual} n [vset version]]
 
 [titledesc {Engineering Standards Manual}]

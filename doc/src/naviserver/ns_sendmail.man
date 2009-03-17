@@ -1,4 +1,4 @@
-[include version_include]
+[include version_include.man]
 [manpage_begin ns_sendmail 3 1.0]
 [moddesc   {NaviServer Built-In Commands}]
 [titledesc {Sending mail via SMTP}]

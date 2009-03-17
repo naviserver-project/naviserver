@@ -1,4 +1,4 @@
-[include version_include]
+[include version_include.man]
 [manpage_begin {NaviServer Installation Guide} n [vset version]]
 
 [titledesc {NaviServer Installation Guide}]
@@ -63,11 +63,10 @@ Released versions are available from
 
 [para]
 
-Latest development version is available from CVS
+Latest development version is available from Mercurial repository
 
 [example_begin]
-
-cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P naviserver
+hg clone http://bitbucket.org/naviserver/naviserver
 cd naviserver
 ./autogen.sh
 make install
@@ -110,10 +109,6 @@ Two options to configure.sh script worth noting:
        easy debugging, otherwise it will be compiled with optimization enabled and
        that will prevent from effective troubleshooting in case of server crash
 
-[enum] --disable-tclvfs to disable using Tcl VFS subsystem, which is rich and featured
-       layer that can access different types of files, like zip archives. This option will
-       speed up the server if the speed is essential and server will serve ordinary files only
-
 [list_end]
 
 [section {Installing}]
@@ -135,12 +130,19 @@ can be overridden by typing "[emph {gmake install PREFIX=/your/directory/}]".
 To download and install additional modules:
 
 [example_begin]
-
-cvs -z3 -d:pserver:anonymous@naviserver.cvs.sourceforge.net:/cvsroot/naviserver co -P modules
-cd modules
+hg clone http://bitbucket.org/naviserver/modulename
+cd modulename
 make install
-
 [example_end]
+
+At this moment the following modules are available:
+[para]
+
+[emph {nsaccess nsclamav nsdbi nsdbmysql nsdhcpd nsicmp nsmemcache nssip nsstats nsvfs nsaspell nsconf nsdbilite nsdbpg nsdns nsimap nsphp nssmtpd nssyslogd nszlib nsauthpam nsconfigrw nsdbimy nsdbsqlite nsexpat nsldapd nsradiusd nssnmp nstftpd nschartdir nsdbbdb nsdbipg nsdbtds nsgdchart nsloopctl nsrtsp nsssl nsudp}]
+
+To check what modules ara available go to http://bitbucket.org/naviserver/.
+
+[para]
 
 Not all modules will be compiled by default due to external dependencies, so
 please look into module's README file for any additional information.
@@ -189,7 +191,7 @@ and it will be started in the background listening on port 8080.
 [para]
 
 You may either specify a Unix username or numeric uid, e.g.: 
-[emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
+[emph {bin/nsd -t conf/nsd-config.tcl -u user}]
 
 [para]
 
@@ -199,7 +201,7 @@ For the mode  of operation, there are three choices:
 [list_begin itemized]
 
 [item]
-[emph {bin/nsd  -ft conf/nsd-config.tcl -u user -g group}]
+[emph {bin/nsd  -ft conf/nsd-config.tcl -u user}]
 
 [para]
 In [emph {Foreground }]mode , the server starts  and emits diagnostic log messages
@@ -229,7 +231,7 @@ file, send the signal and wait for shutdown, e.g.:
 
 
 [item]
-[emph {bin/nsd -Kt conf/nsd-config.tcl -u user -g group}]
+[emph {bin/nsd -Kt conf/nsd-config.tcl -u user}]
 
 [para]
 
@@ -237,7 +239,7 @@ You may also use the -k flag to kill and restart a  background server.
 
 
 [item]
-[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd-config.tcl -u user -g group}]
+[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd-config.tcl -u user}]
 
 [para]
 In [emph {Inittab}] mode, the server runs in the foreground  but opens the
