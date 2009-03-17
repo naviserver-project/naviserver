@@ -2203,10 +2203,11 @@ SockParse(Sock *sockPtr, int spooler)
                    reqPtr->length, sockPtr->tfile);
 
             /*
-             * To make huge uploads easy to handle, we put query into content so
-             * Ns_connGetQuery will parse it and returns as query parameters. If later page decides to
-             * parse multipart/data file manually it may replace it but in case of batch processing
-             * with external tools it is good to know additional info about the uploaded content beforehand.
+             * To make huge uploads easy to handle, we put query into content and change method to GET so
+             * Ns_ConnGetQuery will parse it and return as query parameters. If later the conn Tcl page
+             * will decide to parse multipart/data file manually it may replace query with new parsed data
+             * but in case of batch processing with external tools it is good to know additional info
+             * about the uploaded content beforehand.
              */
 
             if (reqPtr->request.query != NULL) {

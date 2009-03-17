@@ -1044,7 +1044,7 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST 
  *
  *      Strip any leading "-" or "?" from the key and set a variable
  *      with the resulting name.
- *      If value starts with =$ then evaluate Tcl script and assign result
+ *      If value starts with [ and ends with ] then evaluate Tcl script and assign result
  *      to the variable
  *
  * Results:
@@ -1059,15 +1059,19 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST 
 static int
 SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj)
 {
+    int len;
     char *name = key, *value = Tcl_GetString(valueObj);
 
     if (name[0] == '-' || name[0] == '?') {
         name++;
     }
 
-    if (value[0] == '=' && value[1] == '$') {
-        value += 2;
-        if (Tcl_EvalEx(interp, value, -1, 0) == TCL_ERROR) {
+    len = strlen(value);
+    if (value[0] == '[' && value[len - 1] == ']') {
+        value++;
+        len -=2;
+
+        if (Tcl_EvalEx(interp, value, len, 0) == TCL_ERROR) {
             return TCL_ERROR;
         }
         valueObj = Tcl_GetObjResult(interp);
