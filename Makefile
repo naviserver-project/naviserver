@@ -161,7 +161,7 @@ build-doc:
 		if [ -d $$srcdir ]; then \
 		   echo $$srcdir; \
                    $(MKDIR) doc/tmp/`basename $$srcdir`; \
-	           find $$srcdir -name '*.man' -print -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
+	           find $$srcdir -name '*.man' -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
 		fi; \
 	done
 	@cd doc/tmp; \
