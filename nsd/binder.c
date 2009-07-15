@@ -41,23 +41,6 @@
 #include <sys/uio.h>
 #endif
 
-#ifdef HAVE_CMMSG
-
-/*
- * Some platforms use BSD4.4 style message passing.  This structure is used
- * to pass the file descriptor between parent and slave.  Note that
- * the first 3 elements must match those of the struct cmsghdr.
- */
-
-typedef struct CMsg {
-    size_t	 len;
-    int          level;
-    int          type;
-    int          fds[1];
-} CMsg;
-
-#endif
-
 #define REQUEST_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + 64)
 #define RESPONSE_SIZE (sizeof(int))
 
@@ -780,14 +763,10 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
 {
     SOCKET        sock = -1;
 #ifndef WIN32
-    int           err;
+    int           n, err;
     char          data[64];
     struct msghdr msg;
     struct iovec  iov[4];
-
-#ifdef HAVE_CMMSG
-    CMsg cm;
-#endif
 
     if (address == NULL) {
         address = "0.0.0.0";
@@ -805,9 +784,10 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
     msg.msg_iovlen = 4;
-    if (sendmsg(binderRequest[1], (struct msghdr *) &msg, 0) != REQUEST_SIZE) {
-        Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: '%s'",
-               strerror(errno));
+    n = sendmsg(binderRequest[1], (struct msghdr *) &msg, 0);
+    if (n != REQUEST_SIZE) {
+        Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: sent %d bytes, '%s'",
+               n, strerror(errno));
         return -1;
     }
 
@@ -817,24 +797,29 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
     msg.msg_iov = iov;
     msg.msg_iovlen = 1;
 #ifdef HAVE_CMMSG
-    cm.len = sizeof(cm);
-    cm.type = SCM_RIGHTS;
-    cm.level = SOL_SOCKET;
-    msg.msg_control = (void *) &cm;
-    msg.msg_controllen = cm.len;
+    msg.msg_control = (void *) data;
+    msg.msg_controllen = sizeof(data);
     msg.msg_flags = 0;
 #else
     msg.msg_accrights = (caddr_t) &sock;
     msg.msg_accrightslen = sizeof(sock);
 #endif
-    if (recvmsg(binderResponse[0], (struct msghdr *) &msg, 0) != RESPONSE_SIZE) {
-        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: '%s'",
-               strerror(errno));
+    n = recvmsg(binderResponse[0], (struct msghdr *) &msg, 0);
+    if (n != RESPONSE_SIZE) {
+        Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: recv %d bytes, '%s'",
+               n, strerror(errno));
         return -1;
     }
 
 #ifdef HAVE_CMMSG
-    sock = cm.fds[0];
+    {
+      int *ptr;
+      struct cmsghdr *c = CMSG_FIRSTHDR(&msg);
+      if (c->cmsg_type == SCM_RIGHTS) { 
+          ptr = (int*)CMSG_DATA(c);
+          sock = *ptr;
+      }
+    }
 #endif
 
     /*
@@ -983,12 +968,14 @@ Binder(void)
     char          address[64];
     struct msghdr msg;
     struct iovec  iov[4];
+    int          *pfd;
 
 #ifdef HAVE_CMMSG
-    CMsg cm;
+    struct cmsghdr *c;
 #endif
 
     Ns_Log(Notice, "binder: started");
+    Ns_ThreadSetName("binder");
 
     /*
      * Endlessly listen for socket bind requests.
@@ -1015,7 +1002,7 @@ Binder(void)
             break;
         }
         if (n != REQUEST_SIZE) {
-            Ns_Fatal("binder: recvmsg() failed: '%s'", strerror(errno));
+            Ns_Fatal("binder: recvmsg() failed: recv %d bytes, '%s'", n, strerror(errno));
         }
 
         /*
@@ -1049,15 +1036,18 @@ Binder(void)
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 1;
+        msg.msg_control = address;
+        msg.msg_controllen = sizeof(address); 
+
         if (fd != -1) {
 #ifdef HAVE_CMMSG
-            cm.len = sizeof(cm);
-            cm.level = SOL_SOCKET;
-            cm.type = SCM_RIGHTS;
-            cm.fds[0] = fd;
-            msg.msg_control = (void *) &cm;
-            msg.msg_controllen = cm.len;
-            msg.msg_flags = 0;
+            c = CMSG_FIRSTHDR(&msg);
+            c->cmsg_level = SOL_SOCKET;
+            c->cmsg_type  = SCM_RIGHTS;
+            pfd = (int*)CMSG_DATA(c); 
+            *pfd = fd;
+            c->cmsg_len = CMSG_LEN(sizeof(int));
+            msg.msg_controllen = c->cmsg_len; 
 #else
             msg.msg_accrights = (caddr_t) &fd;
             msg.msg_accrightslen = sizeof(fd);
@@ -1067,7 +1057,7 @@ Binder(void)
             n = sendmsg(binderResponse[1], (struct msghdr *) &msg, 0);
         } while (n == -1 && errno == EINTR);
         if (n != RESPONSE_SIZE) {
-            Ns_Fatal("binder: sendmsg() failed: '%s'", strerror(errno));
+            Ns_Fatal("binder: sendmsg() failed: sent %d bytes, '%s'", n, strerror(errno));
         }
         if (fd != -1) {
 
