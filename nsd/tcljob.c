@@ -99,8 +99,7 @@ typedef enum JobTypes {
 
 typedef enum JobRequests {
     JOB_NONE = 0,
-    JOB_WAIT,
-    JOB_CANCEL
+    JOB_WAIT
 } JobRequests;
 
 typedef enum QueueRequests {
@@ -123,13 +122,14 @@ typedef struct Job {
     CONST char       *server;
     JobStates         state;
     int               code;
+    int               cancel;
     JobTypes          type;
     JobRequests       req;
     char             *errorCode;
     char             *errorInfo;
     char             *queueId;
     uintptr_t         tid;
-    Tcl_AsyncHandler  cancel;
+    Tcl_AsyncHandler  async;
     Tcl_DString       id;
     Tcl_DString       script;
     Tcl_DString       results;
@@ -268,7 +268,7 @@ NsTclInitQueueType(void)
  *	    None.
  *
  * Side effects:
- *	    All pending jobs are cancelled and waiting threads interrupted.
+ *	    All pending jobs are removed and waiting threads interrupted.
  *
  *----------------------------------------------------------------------
  */
@@ -662,12 +662,16 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             jobPtr = Tcl_GetHashValue(hPtr);
 
-            if (jobPtr->type == JOB_DETACHED
-                || jobPtr->req == JOB_CANCEL || jobPtr->req == JOB_WAIT) {
-                Tcl_AppendResult(interp,
-                                 "Cannot wait on job. Job ID : Job Req: %s",
-                                 Tcl_DStringValue(&jobPtr->id),
-                                 GetJobReqStr(jobPtr->req), NULL);
+            if (jobPtr->type == JOB_DETACHED) {
+                Tcl_AppendResult(interp, "can't wait on detached job: ",
+                                 jobId, NULL);
+                ReleaseQueue(queuePtr, 0);
+                return TCL_ERROR;
+            }
+
+            if (jobPtr->req == JOB_WAIT) {
+                Tcl_AppendResult(interp, "can't wait on waited job: ",
+                                 jobId, NULL);
                 ReleaseQueue(queuePtr, 0);
                 return TCL_ERROR;
             }
@@ -760,13 +764,9 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 ReleaseQueue(queuePtr, 0);
                 return TCL_ERROR;
             }
-            jobPtr->req = JOB_CANCEL;
-            if (jobPtr->cancel != NULL) {
-                Tcl_AsyncMark(jobPtr->cancel);
-            }
-            if (jobPtr->state == JOB_DONE) {
-                Tcl_DeleteHashEntry(hPtr);
-                FreeJob(jobPtr);
+            jobPtr->cancel = 1;
+            if (jobPtr->async != NULL) {
+                Tcl_AsyncMark(jobPtr->async);
             }
             Ns_CondBroadcast(&queuePtr->cond);
             Ns_CondBroadcast(&tp.cond);
@@ -1132,7 +1132,7 @@ JobThread(void *arg)
     CONST char        *err;
     Queue             *queuePtr;
     Tcl_HashEntry     *hPtr;
-    Tcl_AsyncHandler  cancel;
+    Tcl_AsyncHandler  async;
     Ns_Time           *timePtr, wait;
     int               jpt, njobs, status, tid, code;
 
@@ -1142,7 +1142,7 @@ JobThread(void *arg)
     Ns_ThreadSetName("-ns_job_%x-", tid);
     Ns_Log(Notice, "Starting thread: -ns_job_%x-", tid);
 
-    cancel = Tcl_AsyncCreate(JobAbort, NULL);
+    async = Tcl_AsyncCreate(JobAbort, NULL);
 
     SetupJobDefaults();
 
@@ -1184,10 +1184,14 @@ JobThread(void *arg)
         Ns_GetTime(&jobPtr->endTime);
         Ns_GetTime(&jobPtr->startTime);
 
-        jobPtr->cancel = cancel;
-        jobPtr->tid    = Ns_ThreadId();
-        jobPtr->code   = TCL_OK;
-        jobPtr->state  = JOB_RUNNING;
+        jobPtr->tid   = Ns_ThreadId();
+        jobPtr->code  = TCL_OK;
+        jobPtr->state = JOB_RUNNING;
+        jobPtr->async = async;
+
+        if (jobPtr->cancel) {
+            Tcl_AsyncMark(jobPtr->async);
+        }
 
         Ns_ThreadSetName("-%s:%x", jobPtr->queueId, tid);
         ++queuePtr->nRunning;
@@ -1206,7 +1210,7 @@ JobThread(void *arg)
         jobPtr->state  = JOB_DONE;
         jobPtr->code   = code;
         jobPtr->tid    = 0;
-        jobPtr->cancel = NULL;
+        jobPtr->async  = NULL;
 
         Ns_GetTime(&jobPtr->endTime);
 
@@ -1238,10 +1242,10 @@ JobThread(void *arg)
         Ns_TclDeAllocateInterp(interp);
 
         /*
-         * Clean any cancelled or detached jobs.
+         * Clean any detached jobs.
          */
 
-        if (jobPtr->req == JOB_CANCEL || jobPtr->type == JOB_DETACHED) {
+        if (jobPtr->type == JOB_DETACHED) {
             hPtr = Tcl_FindHashEntry(&queuePtr->jobs,
                                      Tcl_DStringValue(&jobPtr->id));
             if (hPtr != NULL) {
@@ -1260,7 +1264,7 @@ JobThread(void *arg)
 
     --tp.nthreads;
 
-    Tcl_AsyncDelete(cancel);
+    Tcl_AsyncDelete(async);
     Ns_CondBroadcast(&tp.cond);
     Ns_MutexUnlock(&tp.queuelock);
 
@@ -1286,14 +1290,11 @@ JobThread(void *arg)
 static int
 JobAbort(ClientData cd, Tcl_Interp *interp, int code)
 {
-    char *emsg = "job cancelled";
-
     if (interp != NULL) {
-        Ns_Log(Warning, "ns_job: %s", emsg);
-        Tcl_AppendResult(interp, "ns_job: ", emsg, NULL);
-        Tcl_SetErrorCode(interp, "ECANCEL", emsg, NULL);
+        Tcl_SetErrorCode(interp, "ECANCEL", NULL);
+        Tcl_SetResult(interp, "Job cancelled.", TCL_STATIC);
     } else {
-        Ns_Log(Warning, "ns_job: %s", emsg);
+        Ns_Log(Warning, "ns_job: job cancelled");
     }
 
     return TCL_ERROR; /* Forces current command error */
@@ -1321,8 +1322,7 @@ static Job*
 GetNextJob(void)
 {
     Queue         *queuePtr;
-    Tcl_HashEntry *hPtr;
-    Job           *prevPtr, *tmpPtr, *jobPtr;
+    Job           *prevPtr, *jobPtr;
     int            done = 0;
 
     jobPtr = prevPtr = tp.firstPtr;
@@ -1333,41 +1333,18 @@ GetNextJob(void)
             Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
         }
 
-        if (jobPtr->req == JOB_CANCEL) {
-
-            /*
-             * Remove cancelled job from the pending list
-             * and from the queue jobs table
-             */
-
-            tmpPtr = jobPtr;
-            if (jobPtr == tp.firstPtr) {
-                tp.firstPtr = jobPtr->nextPtr;
-            } else {
-                prevPtr->nextPtr = jobPtr->nextPtr;
-            }
-            jobPtr = jobPtr->nextPtr;
-
-            hPtr = Tcl_FindHashEntry(&queuePtr->jobs,
-                                     Tcl_DStringValue(&tmpPtr->id));
-            if (hPtr != NULL) {
-                Tcl_DeleteHashEntry(hPtr);
-            }
-
-            FreeJob(tmpPtr);
-
-        } else if (queuePtr->nRunning < queuePtr->maxThreads) {
-
+        if (queuePtr->nRunning < queuePtr->maxThreads) {
+            
             /*
              * Job can be serviced; remove from the pending list
              */
-
+            
             if (jobPtr == tp.firstPtr) {
                 tp.firstPtr = jobPtr->nextPtr;
             } else {
                 prevPtr->nextPtr = jobPtr->nextPtr;
             }
-
+            
             done = 1;
 
         } else {
@@ -1809,12 +1786,11 @@ GetJobTypeStr(JobTypes type)
 static CONST char*
 GetJobReqStr(JobRequests req)
 {
-    static int req_max_index = 3;
+    static int req_max_index = 2;
     static CONST char *reqArr[] = {
         "none",     /* 0 */
         "wait",     /* 1 */
-        "cancel",   /* 2 */
-        "unknown"   /* 3 */
+        "unknown"   /* 2 */
     };
 
     if (req > (req_max_index)) {
