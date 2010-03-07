@@ -195,7 +195,28 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         }
         Ns_CacheLock(cPtr->cache);
         if (status != TCL_OK && status != TCL_RETURN) {
-            status = TCL_ERROR;
+            /* 
+	       Don't cache anything, if the status code is not
+	       TCL_OK or TCL_RETURN.
+             
+	       The remaining defined status codes are TCL_BREAK,
+	       TCL_CONTINUE and TCL_ERROR. The classical idiom for
+	       telling nscache from Tcl *not* to cache an entry is to
+	       return from the passed script with TCL_BREAK or
+	       TCL_CONTINUE. See:
+
+	       http://panoptic.com/wiki/aolserver/Nscache 
+
+	       This idiom used e.g. in OpenACS. Thereforewe want to
+	       return TCL_BREAK or TCL_CONTINUE as well.  To protect
+	       against erronous returns, map unknown error codes to
+	       TCL_ERROR.
+	    */
+
+	    if (status != TCL_BREAK && status != TCL_CONTINUE) {
+	      status = TCL_ERROR;
+	    }
+
             Ns_CacheDeleteEntry(entry);
         } else {
             status = TCL_OK;
