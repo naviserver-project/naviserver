@@ -1062,7 +1062,7 @@ readdir(DIR * dp)
 /*
  *----------------------------------------------------------------------
  *
- * link, symlink, kill --
+ * link, symlink --
  *
  *      Stubs for missing Unix routines. This is done simply to avoid
  *      more ifdef's in the code.
@@ -1090,13 +1090,62 @@ symlink(char *from, char *to)
     return -1;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * kill --
+ *
+ *      Sends signal to Win process.
+ *
+ * Results:
+ *      Pointer to thread-local struct dirent.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef SIGKILL
+#define SIGKILL 9
+#endif
+
 int
 kill(int pid, int sig)
 {
-    errno = EINVAL;
-    return -1;
-}
+    HANDLE handle;
+    BOOL rv;
 
+    switch (sig) {
+    case 0:
+        handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_TERMINATE,
+                             FALSE, pid);
+        if (handle == NULL) {
+            goto bad;
+        }
+        CloseHandle(handle);
+        break;
+    case SIGTERM:
+    case SIGABRT:
+    case SIGKILL:
+        handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_TERMINATE,
+                             FALSE, pid);
+        if (handle) {
+            rv = TerminateProcess(handle, 0);
+            CloseHandle(handle);
+            if (rv) {
+                break;
+            }
+        }
+    default:
+    bad:
+        errno = EINVAL;
+        return -1;
+    }
+
+    return 0;
+}
 
 /*
  *----------------------------------------------------------------------
