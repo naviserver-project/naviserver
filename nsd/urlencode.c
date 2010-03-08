@@ -270,8 +270,43 @@ Ns_GetUrlEncoding(char *charset)
         Conn *connPtr = (Conn *) Ns_GetConn();
         if (connPtr != NULL) {
             encoding = connPtr->urlEncoding;
-        }
-    }
+        } else {
+            /* In the current code, the URL is decoded via
+               UrlPathDecode() *before* the NsConnThread() is started, so
+               connPtr will be normally NULL. 
+               
+               We need here an appropriate encoding to decode the
+               URL. It would be nice to do here:
+           
+                 NsServer   *servPtr = NsGetServer(server);
+                 return servPtr->encoding.urlEncoding;
+           
+               However, "server" is not available here.  Reading
+               values from the config file would require "server" as
+               well.
+           
+               Unfortunately, the general default for encoding opens a
+               door for a path traversal attack with (invalid)
+               UTF-8 characters.  For example, ".." can be encoded via
+               UTF-8 in an URL as "%c0%ae%c0%ae" or
+               "%e0%80%ae%e0%80%ae" and many more forms, so the
+               literal checks against path traversal based on
+               character data (here in Ns_NormalizePath()) fail. As a
+               consequence, it would be possible to retrieve
+               e.g. /etc/passwd from naviserver. For more details,
+               see Section "Canonicalization" in
+
+               http://www.cgisecurity.com/owasp/html/ch11s03.html 
+
+               A simple approach to handle this attack is to fall back
+               to utf-8 encodings and let Tcl do the UTF-8
+               canonicalization.
+
+               -gustaf neumann
+            */
+            encoding = Ns_GetCharsetEncoding("utf-8");
+      }
+   } 
 
     return encoding;
 }
