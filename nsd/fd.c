@@ -139,7 +139,7 @@ NsInitFd(void)
                     size_t len = sizeof(int);
                     int maxf;
                     if (!sysctlbyname("kern.maxfiles", &maxf, &len, NULL, 0)) {
-                        rl.rlim_cur = rl.rlim_max = maxf;
+                        rl.rlim_cur = rl.rlim_max = maxf > OPEN_MAX ? OPEN_MAX : maxf;
                     } else {
                         rl.rlim_cur = rl.rlim_max = OPEN_MAX;
                     }
