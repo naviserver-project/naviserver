@@ -688,6 +688,9 @@ NsFreeRequest(Request *reqPtr)
         reqPtr->roff       = 0;
         reqPtr->leadblanks = 0;
 
+        reqPtr->expectedLength = 0;
+        reqPtr->contentLength  = 0;
+
         Tcl_DStringFree(&reqPtr->buffer);
 
         Ns_SetTrunc(reqPtr->headers, 0);
@@ -1999,7 +2002,7 @@ SockRead(Sock *sockPtr, int spooler)
 
     n = DriverRecv(sockPtr, &buf, 1);
 
-    if (n <= 0) {
+    if (n < 0) {
         return SOCK_READERROR;
     }
     if (sockPtr->tfd > 0) {
@@ -2135,6 +2138,25 @@ SockParse(Sock *sockPtr, int spooler)
             }
             reqPtr->coff = reqPtr->roff;
             s = Ns_SetIGet(reqPtr->headers, "content-length");
+
+            if (s == NULL) {
+                s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
+
+                if (s != NULL) {
+                    /* lower case is in the standard,, capitalized by Mac OS X */
+                    if (strcmp(s,"chunked") == 0 || strcmp(s,"Chunked") == 0 ) {
+                        Tcl_WideInt expected;
+                        s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
+
+                        if (s && Ns_StrToWideInt(s, &expected) == NS_OK && expected > 0) {
+                            reqPtr->expectedLength = expected;
+                        }
+                        s = NULL;
+                    } 
+                }
+            }
+
+
             if (s != NULL) {
                 Tcl_WideInt length;
 
@@ -2151,6 +2173,7 @@ SockParse(Sock *sockPtr, int spooler)
                                reqPtr->length, drvPtr->maxinput);
                         return SOCK_ENTITYTOOLARGE;
                     }
+                    reqPtr->contentLength = length;
                 }
 
             }
@@ -2195,6 +2218,33 @@ SockParse(Sock *sockPtr, int spooler)
 
                 reqPtr->coff = reqPtr->roff;
             }
+        }
+    }
+
+    /*
+     * Set up request length for spooling and further read operations
+     */
+    if (reqPtr->contentLength) {
+        /* 
+         * Content-Length was provided, use it 
+         */
+        reqPtr->length = reqPtr->contentLength;
+    } else if (reqPtr->expectedLength) {
+        /*
+         * Chunked encoding, exepected length was provided 
+         */
+        if (reqPtr->avail > reqPtr->expectedLength) {
+            /* 
+             * Chunk encoded data is always larger than the expected
+             * length; we hope that we have sufficient data collected
+             */
+            reqPtr->length = reqPtr->avail;
+        } else {
+            /* 
+             * Need more data than available; make sure to trigger
+             * further reads
+             */
+            reqPtr->length = reqPtr->avail + 1024;
         }
     }
 

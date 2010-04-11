@@ -299,6 +299,8 @@ typedef struct Request {
     char *content;              /* Start of content */
     Tcl_WideInt length;         /* Length of content */
     Tcl_WideInt avail;          /* Bytes avail in buffer */
+    Tcl_WideInt contentLength;  /* Provided content length */
+    Tcl_WideInt expectedLength; /* Provided expected length */
     int leadblanks;             /* Number of leading blank lines read */
 
     /*
