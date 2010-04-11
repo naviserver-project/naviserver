@@ -1523,7 +1523,22 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
      * Accept the new connection.
      */
 
-    status = DriverAccept(sockPtr);
+    /*
+     * Hmmm: the original implementation was written in style that
+     * DriverAccept was called twice, one to return for e.g. a simple,
+     * new HTTP request NS_DRIVER_ACCEPT (staying in the SOCK_MORE
+     * status), and then calling ACCEPT again, but which causes on our
+     * RHEL 4 system (POWER6, 64bit) a hang: the second accept blocks,
+     * while it returns under (most?) other system a
+     * NS_DRIVER_ACCEPT_ERROR. It seems that the original code rely on
+     * this ERROR handling. It is not clear to me, why the second call
+     * to ACCEPT is necessary, when the socket is already available.
+     */
+    if (*sockPtrPtr) {
+       status = NS_DRIVER_ACCEPT_ERROR;
+    } else {
+       status = DriverAccept(sockPtr);
+    }
 
     if (status == NS_DRIVER_ACCEPT_ERROR) {
         status = SOCK_ERROR;
