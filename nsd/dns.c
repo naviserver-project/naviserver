@@ -36,6 +36,15 @@
 
 #include "nsd.h"
 
+/*
+ * W2000 has no getaddrinfo, reuquires special headers for inline functions
+ */
+
+#ifdef WIN32
+#  include <Ws2tcpip.h>
+#  include <Wspiapi.h>
+#endif
+
 NS_RCSID("@(#) $Header$");
 
 #ifndef INADDR_NONE

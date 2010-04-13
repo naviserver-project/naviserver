@@ -745,3 +745,48 @@ Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
     Ns_IndexInit(indexPtr, inc, (int (*) (const void *, const void *)) CmpInts,
         (int (*) (const void *, const void *)) CmpKeyWithInt);
 }
+
+#ifdef WIN32
+#define bsearch(a,b,c,d,e) NsBsearch(a,b,c,d,e)
+^L
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsBsearch --
+ *
+ *      Binary search.
+ *
+ *  Due to Windows hanging in its own bsearch() routine, this was added
+ *  to alleviate the problem.
+ *
+ * Results:
+ *      A pointer to the element, or NULL if none found.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void * 
+NsBsearch (register const void *key, register const void *base,
+           register size_t nmemb, register size_t size,
+           int (*compar)(const void *, const void *))
+{
+    register const void *mid_point;
+    register int  cmp;
+
+    while (nmemb > 0) {
+        mid_point = (char *)base + size * (nmemb >> 1);
+        if ((cmp = (*compar)(key, mid_point)) == 0)
+            return (void *)mid_point;
+        if (cmp >= 0) {
+            base  = (char *)mid_point + size;
+            nmemb = (nmemb - 1) >> 1;
+        } else
+            nmemb >>= 1;
+    }
+    return (void *)NULL;
+}
+#endif
+
