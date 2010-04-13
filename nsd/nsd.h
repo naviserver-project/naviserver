@@ -298,10 +298,16 @@ typedef struct Request {
     char *next;                 /* Next read offset */
     char *content;              /* Start of content */
     Tcl_WideInt length;         /* Length of content */
-    Tcl_WideInt avail;          /* Bytes avail in buffer */
     Tcl_WideInt contentLength;  /* Provided content length */
-    Tcl_WideInt expectedLength; /* Provided expected length */
+    Tcl_WideInt avail;          /* Bytes avail in buffer */
     int leadblanks;             /* Number of leading blank lines read */
+
+   /*
+    * The following block is for chunked encodings
+    */
+    Tcl_WideInt expectedLength; /* Provided expected length */
+    Tcl_WideInt chunkStartOff;  /* Offset pointing to start of chunk to be parsed */
+    Tcl_WideInt chunkWriteOff;  /* Offset pointing to position were to write chunk */
 
     /*
      * The following offsets are used to manage

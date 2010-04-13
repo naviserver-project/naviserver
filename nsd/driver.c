@@ -1862,6 +1862,65 @@ SockClose(Sock *sockPtr, int keep)
 /*
  *----------------------------------------------------------------------
  *
+ * ChunkedDecode --
+ *
+ *      Reads the content form the incoming request buffer and tries
+ *      to decode chunked encoding parts. The function can be called
+ *      repeatetly and with incomplete input and overwrites the buffer
+ *      with the decoded data optionally. The decoded data is always
+ *      shorter then the encoded one.
+ *
+ * Results:
+ *      1 on success, -1 on incomplete data
+ *
+ * Side effects:
+ *      updates the buffer if update == 1 (and adjusts reqPtr->chunkWriteOff)
+ *      updates always reqPtr->chunkStartOff to allow incremental operations
+ *
+ *----------------------------------------------------------------------
+ */
+static int 
+ChunkedDecode(Request *reqPtr, int update)
+{
+    Tcl_DString *bufPtr = &reqPtr->buffer;
+    long chunk_length;
+    char 
+      *end = bufPtr->string + bufPtr->length, 
+      *chunkStart = bufPtr->string + reqPtr->chunkStartOff;
+
+    while (reqPtr->chunkStartOff <  bufPtr->length) {
+      char *p = strstr(chunkStart, "\r\n");
+      if (!p) {
+        Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
+        return -1;
+      }
+
+      *p = '\0';
+      chunk_length = strtol(chunkStart, NULL, 16);
+      *p = '\r';
+
+      if (p + 2 + chunk_length > end) {
+        Ns_Log(DriverDebug,"ChunkedDecode: chunk length past end of buffer");
+        return -1;
+      }
+      if (update) {
+        char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
+        memcpy(writeBuffer, p + 2, chunk_length);
+        reqPtr->chunkWriteOff += chunk_length;
+        *(writeBuffer + chunk_length) = '\0';
+      }
+      reqPtr->chunkStartOff += (p - chunkStart) + 4 + chunk_length ;
+      chunkStart = bufPtr->string + reqPtr->chunkStartOff;
+    }
+
+    return 1;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockRead --
  *
  *      Read content from the given Sock, processing the input as
@@ -1874,6 +1933,7 @@ SockClose(Sock *sockPtr, int keep)
  *      SOCK_READY: Request is ready for processing.
  *      SOCK_MORE:  More input is required.
  *      SOCK_ERROR: Client drop or timeout.
+ *      SOCK_SPOOL: Pass input handling to spooler
  *
  * Side effects:
  *      The Request structure will be built up for use by the
@@ -1940,6 +2000,7 @@ SockRead(Sock *sockPtr, int spooler)
 
 #ifndef _WIN32
     if (reqPtr->coff > 0 &&
+        !reqPtr->chunkStartOff /* never spool chunked encoded data since we decode in memory */ &&
         reqPtr->length > drvPtr->readahead && sockPtr->tfd <= 0) {
 
         /*
@@ -1990,6 +2051,7 @@ SockRead(Sock *sockPtr, int spooler)
     if (n < 0) {
         return SOCK_READERROR;
     }
+    
     if (sockPtr->tfd > 0) {
         if (write(sockPtr->tfd, tbuf, n) != n) {
             return SOCK_WRITEERROR;
@@ -2121,18 +2183,25 @@ SockParse(Sock *sockPtr, int spooler)
                 Tcl_DStringSetLength(bufPtr, 0);
                 return SOCK_MORE;
             }
-            reqPtr->coff = reqPtr->roff;
-            s = Ns_SetIGet(reqPtr->headers, "content-length");
 
+            reqPtr->coff = reqPtr->roff;
+            reqPtr->chunkStartOff = 0;
+
+            s = Ns_SetIGet(reqPtr->headers, "content-length");
             if (s == NULL) {
                 s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
-
                 if (s != NULL) {
-                    /* lower case is in the standard,, capitalized by Mac OS X */
+                    /* Lower case is in the standard, capitalized by Mac OS X */
                     if (strcmp(s,"chunked") == 0 || strcmp(s,"Chunked") == 0 ) {
                         Tcl_WideInt expected;
-                        s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
+                        
+                        reqPtr->chunkStartOff = reqPtr->coff;
+                        reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
+                        reqPtr->contentLength = 0;
 
+                        /* todo remove expectedLen */
+
+                        s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
                         if (s && Ns_StrToWideInt(s, &expected) == NS_OK && expected > 0) {
                             reqPtr->expectedLength = expected;
                         }
@@ -2141,12 +2210,11 @@ SockParse(Sock *sockPtr, int spooler)
                 }
             }
 
-
             if (s != NULL) {
                 Tcl_WideInt length;
 
                 /*
-                 * Honour meaningfull remote
+                 * Honour meaningful remote
                  * content-length hints only.
                  */
 
@@ -2165,6 +2233,7 @@ SockParse(Sock *sockPtr, int spooler)
         } else {
             save = *e;
             *e = '\0';
+
             if (reqPtr->request.line == NULL) {
                 if (Ns_ParseRequest(&reqPtr->request, s) == NS_ERROR) {
 
@@ -2210,32 +2279,39 @@ SockParse(Sock *sockPtr, int spooler)
      * Set up request length for spooling and further read operations
      */
     if (reqPtr->contentLength) {
-        /* 
-         * Content-Length was provided, use it 
-         */
-        reqPtr->length = reqPtr->contentLength;
-    } else if (reqPtr->expectedLength) {
-        /*
-         * Chunked encoding, exepected length was provided 
-         */
-        if (reqPtr->avail > reqPtr->expectedLength) {
-            /* 
-             * Chunk encoded data is always larger than the expected
-             * length; we hope that we have sufficient data collected
-             */
-            reqPtr->length = reqPtr->avail;
-        } else {
-            /* 
-             * Need more data than available; make sure to trigger
-             * further reads
-             */
-            reqPtr->length = reqPtr->avail + 1024;
-        }
+      /* 
+       * Content-Length was provided, use it 
+       */
+      reqPtr->length = reqPtr->contentLength;
     }
 
     /*
      * Check if all content has arrived.
      */
+
+    if (reqPtr->chunkStartOff) {
+        /* Chunked encoding was provided */
+        int complete;
+        Tcl_WideInt currentContentLength;
+
+        complete = ChunkedDecode(reqPtr, 1);
+        currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
+
+        /* 
+         * A chunk might be complete, but it might not be the last
+         * chunk from the client. The best thing would be to be able
+         * to read until eof here. In cases, where the (optional)
+         * expectedLength was provided by the client, we terminate
+         * depending on that information
+         */
+        if (!complete 
+            || (reqPtr->expectedLength && currentContentLength < reqPtr->expectedLength)) {
+            /* ChunkedDecode wants more data */
+            return SOCK_MORE;
+        }
+        /* ChunkedDecode has enough data */
+        reqPtr->length = currentContentLength;
+    }
 
     if (reqPtr->coff > 0 && reqPtr->length <= reqPtr->avail) {
 
@@ -2299,8 +2375,8 @@ SockParse(Sock *sockPtr, int spooler)
 
         if (reqPtr->length > 0) {
             reqPtr->content[reqPtr->length] = '\0';
-
         }
+
         return (reqPtr->request.line != NULL ? SOCK_READY : SOCK_ERROR);
     }
 
