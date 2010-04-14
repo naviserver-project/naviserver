@@ -2048,7 +2048,7 @@ SockRead(Sock *sockPtr, int spooler)
 
     n = DriverRecv(sockPtr, &buf, 1);
 
-    if (n < 0) {
+    if (n < 0 || (n == 0 && !reqPtr->request.line)) {
         return SOCK_READERROR;
     }
     
@@ -2199,7 +2199,7 @@ SockParse(Sock *sockPtr, int spooler)
                         reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
                         reqPtr->contentLength = 0;
 
-                        /* todo remove expectedLen */
+                        /* We need expectedLength for safely terminating read loop */
 
                         s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
                         if (s && Ns_StrToWideInt(s, &expected) == NS_OK && expected > 0) {
