@@ -877,7 +877,7 @@ NsGetScheduled(Tcl_DString *dsPtr)
     while (hPtr != NULL) {
         ePtr = Tcl_GetHashValue(hPtr);
         Tcl_DStringStartSublist(dsPtr);
-        Ns_DStringPrintf(dsPtr, "%d %d %d %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64,
+        Ns_DStringPrintf(dsPtr, "%d %d %d %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64,
             ePtr->id, ePtr->flags, ePtr->interval,
             (int64_t) ePtr->nextqueue, (int64_t) ePtr->lastqueue,
             (int64_t) ePtr->laststart, (int64_t) ePtr->lastend);
