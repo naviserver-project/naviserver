@@ -332,6 +332,7 @@ FindLimits(char *limits, int create)
             limitsPtr = ns_calloc(1, sizeof(NsLimits));
             limitsPtr->name = Tcl_GetHashKey(&limtable, hPtr);
             Ns_MutexInit(&limitsPtr->lock);
+            Ns_MutexSetName2(&limitsPtr->lock, "ns:limits", limits);
             limitsPtr->maxrun = limitsPtr->maxwait = 100;
             limitsPtr->maxupload = 10 * 1024 * 1000; /* NB: 10meg limit. */
             limitsPtr->timeout = 60;
