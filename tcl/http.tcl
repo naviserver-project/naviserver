@@ -471,7 +471,7 @@ proc _ns_http_gets {timeout sock} {
 
     while {[gets $sock line] == -1} {
         if {[eof $sock]} {
-            return -code error "_hs_http_gets: premature end of data"
+            return -code error "_ns_http_gets: premature end of data"
         }
         _ns_http_readable $timeout $sock
     }
