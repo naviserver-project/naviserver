@@ -422,6 +422,20 @@ NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *
  *----------------------------------------------------------------------
  */
+static int
+noGlobChars(CONST char *pattern) 
+{
+    register char c;
+    CONST char *p = pattern;
+
+    for (c=*p; c; c = *++p) {
+        if (c == '*' || c == '?' || c == '[') {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 
 int
 NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
@@ -441,19 +455,39 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         return TCL_ERROR;
     }
 
-    Ns_DStringInit(&ds);
-    Ns_CacheLock(cPtr->cache);
-    entry = Ns_CacheFirstEntry(cPtr->cache, &search);
-    while (entry != NULL) {
-        key = Ns_CacheKey(entry);
-        if (pattern == NULL || Tcl_StringMatch(key, pattern)) {
-            Tcl_AppendElement(interp, key);
-        }
-        entry = Ns_CacheNextEntry(&search);
-    }
-    Ns_CacheUnlock(cPtr->cache);
-    Ns_DStringFree(&ds);
+    /*
+     * If the key contains no glob characters, there will be zero or one
+     * entry for the given key. In such cases a single hash lookup is
+     * sufficient. 
+     */
 
+    if (pattern && noGlobChars(pattern)) {
+        Ns_CacheLock(cPtr->cache);
+        entry = Ns_CacheFindEntry(cPtr->cache, pattern);
+        if (entry != NULL && Ns_CacheGetValue(entry) != NULL) {
+            Tcl_AppendElement(interp, pattern);
+        }
+        Ns_CacheUnlock(cPtr->cache);
+    } else {
+        /*
+         * We have either no pattern or the pattern contains meta
+         * characters. We need to iterate over all entries, which can
+         * take a while for large caches.
+         */
+
+        Ns_DStringInit(&ds);
+        Ns_CacheLock(cPtr->cache);
+        entry = Ns_CacheFirstEntry(cPtr->cache, &search);
+        while (entry != NULL) {
+            key = Ns_CacheKey(entry);
+            if (pattern == NULL || Tcl_StringMatch(key, pattern)) {
+                Tcl_AppendElement(interp, key);
+            }
+            entry = Ns_CacheNextEntry(&search);
+        }
+        Ns_CacheUnlock(cPtr->cache);
+        Ns_DStringFree(&ds);
+    }
     return TCL_OK;
 }
 
