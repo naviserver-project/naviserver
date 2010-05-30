@@ -445,23 +445,28 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     Ns_CacheSearch  search;
     char           *key, *pattern = NULL;
     Ns_DString      ds;
+    int             exact = NS_FALSE;
 
+    Ns_ObjvSpec opts[] = {
+        {"-exact",   Ns_ObjvBool,  &exact,     (void *) NS_TRUE},
+        {"--",       Ns_ObjvBreak, NULL,       NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec args[] = {
         {"cache",    ObjvCache,     &cPtr,    arg},
         {"?pattern", Ns_ObjvString, &pattern, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
 
     /*
-     * If the key contains no glob characters, there will be zero or one
-     * entry for the given key. In such cases a single hash lookup is
-     * sufficient. 
+     * If the key contains no glob characters, there will be zero or
+     * one entry for the given key. In such cases, ow when the option
+     * "-exact" is specified a single hash lookup is sufficient.
      */
-
-    if (pattern && noGlobChars(pattern)) {
+    if (pattern && (exact || noGlobChars(pattern))) {
         Ns_CacheLock(cPtr->cache);
         entry = Ns_CacheFindEntry(cPtr->cache, pattern);
         if (entry != NULL && Ns_CacheGetValue(entry) != NULL) {

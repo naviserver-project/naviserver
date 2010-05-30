@@ -47,12 +47,17 @@ Create a new Tcl cache identified by [arg name] with maximum size [arg size].
 Return the list of all caches for the current virtual server.
 
 
+[call [cmd ns_cache_keys] \
+        [opt [option "-exact"]] \
+        [opt [arg --]] \
+        [arg name] \
+        [opt [arg pattern]] ]
 
-[call [cmd ns_cache_keys] [arg name] [opt [arg pattern]] ]
-
-Return a list of all keys in the named cache. If [arg pattern] is given then
-each key is matched against the globbing pattern, and only those which match
-are included in the list.
+Return a list of all keys in the named cache. If [arg pattern] is
+given then each key is matched against the globbing pattern, and only
+those which match are included in the list. When the option [option
+"-exact"] is used, [arg pattern] is interpreted literally, either a key with
+a literally exact match or empty is returned.
 
 
 
