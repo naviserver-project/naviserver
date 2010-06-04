@@ -105,7 +105,7 @@ static void  LogFlush(LogCache *cachePtr, LogFilter *list, int cnt,
 static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 
 static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-                              Ns_LogSeverity *severityPtr);
+                              void **addrPtr);
 
 static LogCache* GetCache(void);
 static Ns_TlsCleanup FreeCache;
@@ -737,14 +737,17 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Ns_LogSeverity severity;
     Ns_DString     ds;
     int            i;
+    void 	  *addrPtr;
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
         return TCL_ERROR;
     }
-    if (GetSeverityFromObj(interp, objv[1], &severity) != TCL_OK) {
+    if (GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK) {
         return TCL_ERROR;
     }
+    severity = (Ns_LogSeverity)addrPtr;
+
     if (objc == 3) {
         Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
     } else {
@@ -875,11 +878,13 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
             return TCL_ERROR;
         }
-        if (GetSeverityFromObj(interp, objv[2], &severity) != TCL_OK) {
+        void *addrPtr;
+        if (GetSeverityFromObj(interp, objv[2], &addrPtr) != TCL_OK) {
             if (objc == 3) {
                 return TCL_ERROR;
             }
-            if (severityIdx >= severityCount) {
+            severity = (Ns_LogSeverity)addrPtr;
+            if (severity >= severityCount) {
                 Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
                 return TCL_ERROR;
             }
@@ -1425,26 +1430,25 @@ FreeCache(void *arg)
  */
 
 static int
-GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_LogSeverity *severityPtr)
+GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
 {
     Tcl_HashEntry *hPtr;
     int            i;
-
-    if (Ns_TclGetOpaqueFromObj(objPtr, severityType,
-                               (void **) severityPtr) != TCL_OK) {
+    
+    if (Ns_TclGetOpaqueFromObj(objPtr, severityType, addrPtrPtr) != TCL_OK) {
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&severityTable, Tcl_GetString(objPtr));
         Ns_MutexUnlock(&lock);
 
         if (hPtr != NULL) {
-            *severityPtr = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+            *addrPtrPtr = Tcl_GetHashValue(hPtr);
         } else {
             /*
              * Check for a legacy integer severity.
              */
             if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
                     && i < severityCount) {
-                *severityPtr = i;
+              *addrPtrPtr = (void*)(intptr_t)i;
             } else {
                 Tcl_AppendResult(interp, "unknown severity: \"",
                                  Tcl_GetString(objPtr),
@@ -1458,7 +1462,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_LogSeverity *severity
         /*
          * Stash the severity for future speedy lookup.
          */
-        Ns_TclSetOpaqueObj(objPtr, severityType, (void *)(intptr_t) *severityPtr);
+        Ns_TclSetOpaqueObj(objPtr, severityType, *addrPtrPtr);
     }
 
     return TCL_OK;
