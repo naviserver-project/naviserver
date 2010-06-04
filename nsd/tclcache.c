@@ -462,9 +462,10 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     }
 
     /*
-     * If the key contains no glob characters, there will be zero or
-     * one entry for the given key. In such cases, ow when the option
-     * "-exact" is specified a single hash lookup is sufficient.
+     * If the provided pattern (key) contains no glob characters,
+     * there will be zero or one entry for the given key. In such
+     * cases, or when the option "-exact" is specified, a single hash
+     * lookup is sufficient.
      */
     if (pattern && (exact || noGlobChars(pattern))) {
         Ns_CacheLock(cPtr->cache);
