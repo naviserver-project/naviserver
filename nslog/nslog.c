@@ -490,7 +490,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Log         *logPtr = arg;
     CONST char **h;
     char        *p, *user;
-    int          n, status;
+    int          n, status, i;
     Ns_DString   ds;
     Ns_Time      now, diff;
 
@@ -610,6 +610,16 @@ LogTrace(void *arg, Ns_Conn *conn)
             p = "";
         }
         Ns_DStringVarAppend(&ds, " \"", p, "\"", NULL);
+    }
+
+    for (i=0; i<ds.length; i++) {
+      /* 
+       * Quick fix to disallow terminal escape characters in the log
+       * file. See e.g. http://www.securityfocus.com/bid/37712/info
+       */
+      if (ds.string[i] == 0x1b) {
+	ds.string[i] = 7; /* bell */
+      }
     }
 
     /*

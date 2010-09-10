@@ -154,11 +154,6 @@ void
 Ns_CacheDestroy(Ns_Cache *cache)
 {
     Cache      *cachePtr = (Cache *) cache;
-    Ns_DString  ds;
-
-    Ns_DStringInit(&ds);
-    Ns_Log(Notice, "cache[%s]: %s", cachePtr->name, Ns_CacheStats(cache, &ds));
-    Ns_DStringFree(&ds);
 
     Ns_CacheFlush(cache);
     Ns_MutexDestroy(&cachePtr->lock);
