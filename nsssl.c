@@ -844,7 +844,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     }
 
     case HCancelIdx:
-        if (objc != 2) {
+        if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "id");
             return TCL_ERROR;
         }
