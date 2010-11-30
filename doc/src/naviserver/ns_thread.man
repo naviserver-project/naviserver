@@ -51,7 +51,14 @@ Attempts to join the thread specified by thread handle tid.  If the thread is st
 the caller will block until the thread being joined completes.  Returns the return value of
 the script that the thread being joined was executing.
 
-NOTE: Attempting to join a thread that has already been joined will currently crash the server.
+NOTE: Attempting to join a thread that has already been joined will
+currently crash the server.
+
+[call [cmd  ns_thread] [arg stackinfo]]
+
+Returns the maximum available size of the C stack and the currently free size of the
+C stack from the current thread in a form usable to "array set".  For
+example the command might return"max 2048000 free 2024408"
 
 [call [cmd  ns_thread] [arg yield]]
 

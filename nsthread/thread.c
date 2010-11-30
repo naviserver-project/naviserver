@@ -50,7 +50,8 @@ typedef struct Thread {
     int		    flags;	/* Detached, joined, etc. */
     Ns_ThreadProc  *proc;	/* Thread startup routine. */
     void           *arg;	/* Argument to startup proc. */
-    uintptr_t       tid;    /* Id set by thread for logging. */
+    uintptr_t       tid;        /* Id set by thread for logging. */
+    unsigned char  *bottomOfStack; /* for estimating currentStackSize */
     char	    name[NS_THREAD_NAMESIZE+1]; /* Thread name. */
     char	    parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
 } Thread;
@@ -58,6 +59,7 @@ typedef struct Thread {
 static Thread *NewThread(void);
 static Thread *GetThread(void);
 static void CleanupThread(void *arg);
+static void SetBottomOfStack(unsigned char *ptr);
 
 /*
  * The following pointer maintains a linked list of all threads.
@@ -208,6 +210,7 @@ NsThreadMain(void *arg)
     Ns_TlsSet(&key, thrPtr);
     snprintf(name, sizeof(name), "-thread:%" PRIxPTR "-", thrPtr->tid);
     Ns_ThreadSetName(name);
+    SetBottomOfStack(&thrPtr);
     (*thrPtr->proc) (thrPtr->arg);
 }
 
@@ -435,4 +438,56 @@ CleanupThread(void *arg)
     thrPtr->nextPtr = NULL;
     Ns_MasterUnlock();
     ns_free(thrPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetBottomOfStack --
+ *
+ *	Sets the bottom of the thread stack for estimating available
+ *	stack size.
+ *
+ * Results:
+ *	None,
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SetBottomOfStack(unsigned char *ptr) {
+    Thread *thisPtr = GetThread();
+
+    thisPtr->bottomOfStack = ptr;
+    fprintf(stderr, "SetBottomOfStack %p %s bot %p\n", thisPtr, thisPtr->name, ptr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ThreadGetThreadInfo --
+ *
+ *	Obtains various size information about the current C stack.
+ *
+ * Results:
+ *	returns maxStackSize and estimatedSize into passed integers
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_ThreadGetThreadInfo(unsigned int *maxStackSize, unsigned int *estimatedSize) {
+  Thread *thisPtr = GetThread();
+
+  Ns_MasterLock();
+  *maxStackSize = defstacksize;
+  *estimatedSize = abs(thisPtr->bottomOfStack - (unsigned char *)&thisPtr);
+  Ns_MasterUnlock();  
 }

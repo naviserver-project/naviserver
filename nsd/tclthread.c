@@ -154,11 +154,11 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 
     static CONST char *opts[] = {
         "begin", "begindetached", "create", "wait", "join",
-        "name", "get", "getid", "id", "yield", NULL
+        "name", "get", "getid", "id", "yield", "stackinfo", NULL
     };
     enum {
         TBeginIdx, TBeginDetachedIdx, TCreateIdx, TWaitIdx, TJoinIdx,
-        TNameIdx, TGetIdx, TGetIdIdx, TIdIdx, TYieldIdx
+        TNameIdx, TGetIdx, TGetIdIdx, TIdIdx, TYieldIdx, TStackinfoIdx
     };
 
     if (objc < 2) {
@@ -218,6 +218,13 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         }
         Tcl_SetResult(interp, Ns_ThreadGetName(), TCL_VOLATILE);
         break;
+
+    case TStackinfoIdx: {
+         unsigned int maxStackSize, estimatedSize;
+         Ns_ThreadGetThreadInfo(&maxStackSize, &estimatedSize);
+	 Ns_TclPrintfResult(interp, "max %d free %d", maxStackSize, maxStackSize - estimatedSize);
+         break;
+    }
 
     case TYieldIdx:
         Ns_ThreadYield();
