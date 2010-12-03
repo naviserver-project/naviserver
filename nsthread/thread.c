@@ -59,7 +59,7 @@ typedef struct Thread {
 static Thread *NewThread(void);
 static Thread *GetThread(void);
 static void CleanupThread(void *arg);
-static void SetBottomOfStack(unsigned char *ptr);
+static void SetBottomOfStack(void *ptr);
 
 /*
  * The following pointer maintains a linked list of all threads.
@@ -459,7 +459,7 @@ CleanupThread(void *arg)
  */
 
 static void
-SetBottomOfStack(unsigned char *ptr) {
+SetBottomOfStack(void *ptr) {
     Thread *thisPtr = GetThread();
 
     thisPtr->bottomOfStack = ptr;
