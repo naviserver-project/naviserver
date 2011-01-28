@@ -414,8 +414,16 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
     }
     cachePtr->currentSize += size;
     if (ePtr->cachePtr->maxSize > 0) {
+        /* 
+	 * Make space for the new entry, but don't delete the current
+	 * entry, and don't delete other newborn entries (with a value
+	 * of NULL) of some other threads which are concurrently
+	 * created.  There might be concurrent updates, since
+	 * e.g. nscache_eval releases its mutex.
+	 */
         while (cachePtr->currentSize > cachePtr->maxSize &&
-               cachePtr->lastEntryPtr != ePtr) {
+               cachePtr->lastEntryPtr != ePtr &&
+               cachePtr->lastEntryPtr->value != NULL) {
             Ns_CacheDeleteEntry((Ns_Entry *) cachePtr->lastEntryPtr);
             ++cachePtr->stats.npruned;
         }
