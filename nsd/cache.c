@@ -73,11 +73,11 @@ typedef struct Cache {
     Tcl_HashTable  entriesTable;
 
     struct {
-        unsigned int   nhit;      /* Successful gets. */
-        unsigned int   nmiss;     /* Unsuccessful gets. */
-        unsigned int   nexpired;  /* Unsuccessful gets due to entry expiry. */
-        unsigned int   nflushed;  /* Explicit flushes by user code. */
-        unsigned int   npruned;   /* Evictions due to size constraint. */
+        unsigned long   nhit;      /* Successful gets. */
+        unsigned long   nmiss;     /* Unsuccessful gets. */
+        unsigned long   nexpired;  /* Unsuccessful gets due to entry expiry. */
+        unsigned long   nflushed;  /* Explicit flushes by user code. */
+        unsigned long   npruned;   /* Evictions due to size constraint. */
     } stats;
 
     char name[1];
@@ -804,14 +804,14 @@ char *
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 {
     Cache        *cachePtr = (Cache *) cache;
-    unsigned int  total, hitrate;
+    unsigned long total, hitrate;
 
     total = cachePtr->stats.nhit + cachePtr->stats.nmiss;
     hitrate = (total ? (cachePtr->stats.nhit * 100) / total : 0);
 
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
-               "flushed %u hits %u missed %u hitrate %u "
-               "expired %u pruned %u",
+               "flushed %lu hits %lu missed %lu hitrate %lu "
+               "expired %lu pruned %lu",
                (unsigned long) cachePtr->maxSize,
                (unsigned long) cachePtr->currentSize,
                cachePtr->entriesTable.numEntries, cachePtr->stats.nflushed,
