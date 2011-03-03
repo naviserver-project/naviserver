@@ -81,8 +81,15 @@ Ns_ConnGetQuery(Ns_Conn *conn)
             if (form != NULL) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
             }
-        } else if ((form = connPtr->reqPtr->content) != NULL) {
-            Tcl_DStringInit(&bound);
+        } else if (/* 
+		    * It is unsafe to access the content when the
+		    * connection is already closed due to potentially
+		    * unmmapped memory.
+		    */
+		   (connPtr->flags & NS_CONN_CLOSED ) == 0  
+		   && (form = connPtr->reqPtr->content) != NULL
+		   ) {
+  	    Tcl_DStringInit(&bound);
             if (!GetBoundary(&bound, conn)) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
             } else {

@@ -1221,6 +1221,21 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Tcl_WrongNumArgs(interp, 2, objv, "?off len?");
             return TCL_ERROR;
         }
+
+        if ((connPtr->flags & NS_CONN_CLOSED)) {
+	  /* 
+	   * In cases, the content is allocated via mmap, the content
+	   * is unmapped when the socket is closed. Accessing the
+	   * content will crash the server. Although we might not have
+	   * the same problem when the content is allocated
+	   * differently, we use here the restrictive strategy to
+	   * provide consistant behavior independent of the allocation
+	   * strategy.
+	   */
+	  Tcl_AppendResult(interp, "connection already closed, can't get content", NULL);
+	  return TCL_ERROR;
+	}
+
         if (objc == 2) {
             if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length) {
                 Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, connPtr->reqPtr->length));
