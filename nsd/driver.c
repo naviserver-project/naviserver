@@ -2350,6 +2350,12 @@ SockParse(Sock *sockPtr, int spooler)
         if (sockPtr->tfd > 0) {
 #ifndef _WIN32
             int prot = PROT_READ | PROT_WRITE;
+	    /* 
+	     * Add a byte to make sure, the \0 assignment below falls
+	     * always into the mmapped area. Might lead to crashes
+	     * when we hitting page boundaries.
+	     */
+	    write(sockPtr->tfd, "\0", 1); 
             sockPtr->tsize = reqPtr->length + 1;
             sockPtr->taddr = mmap(0, sockPtr->tsize, prot, MAP_PRIVATE,
                                   sockPtr->tfd, 0);
