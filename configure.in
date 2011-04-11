@@ -218,14 +218,13 @@ AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
                        [Define to 1 if Tcl exports the Tcl_GetMemoryInfo function.]))
 
 #
-# Darwin's port of poll() is broken as it may return
-# socket as writable although it ain't. We provide
-# our own alternative implementation which is known
-# to be working. For other platforms, use if there.
-#
-if test "`uname -s`" != "Darwin"; then
-    AC_CHECK_FUNCS(poll)
-fi
+# Darwin's port of poll() is broken per default as it may return
+# socket as writable although it ain't. However, setting SO_SNDLOWAT
+# seems to help for Darwin. For platforms without working poll(), we
+# still provide our own alternative implementation which is known to
+# be working (but does not report POLLHUP).
+
+AC_CHECK_FUNCS(poll)
 
 #
 # Normally, we'd link the resulting server image

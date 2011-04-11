@@ -162,6 +162,16 @@ Accept(Ns_Sock *sock, SOCKET listensock,
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
     if (sock->sock != INVALID_SOCKET) {
+
+#ifdef __APPLE__
+      /* 
+       * Darwin's poll returns per default writable in situations,
+       * where nothing can be written.  Setting the socket option for
+       * the send low watermark to 1 fixes this problem.
+       */
+        int value = 1;
+	setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
+#endif
         Ns_SockSetNonBlocking(sock->sock);
         status = cfg->deferaccept
             ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
@@ -320,10 +330,11 @@ static void
 SetDeferAccept(Ns_Driver *driver, SOCKET sock)
 {
     Config *cfg = driver->arg;
-    int     sec;
 
     if (cfg->deferaccept) {
 #ifdef TCP_DEFER_ACCEPT
+        int sec;
+
         sec = driver->recvwait;
         if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
                        &sec, sizeof(sec)) == -1) {
