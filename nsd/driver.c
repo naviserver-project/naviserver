@@ -100,6 +100,7 @@ typedef struct PollData {
 
 #define PollIn(ppd,i)           ((ppd)->pfds[(i)].revents & POLLIN)
 #define PollOut(ppd,i)          ((ppd)->pfds[(i)].revents & POLLOUT)
+#define PollHup(ppd,i)          ((ppd)->pfds[(i)].revents & POLLHUP)
 
 
 /*
@@ -1072,17 +1073,26 @@ DriverThread(void *arg)
             closePtr = NULL;
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (PollIn(&pdata, sockPtr->pidx)) {
+		if (PollHup(&pdata, sockPtr->pidx)) {
+		  /*
+		   * Peer has closed the connection
+		   */
+		  sockPtr->timeout = now;
+
+		} else if (PollIn(&pdata, sockPtr->pidx)) {
+		  /* 
+		   * Got some data
+		   */
                     n = recv(sockPtr->sock, drain, sizeof(drain), 0);
                     if (n <= 0) {
                         sockPtr->timeout = now;
                     }
-                }
-                if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                    SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
-                } else {
-                    Push(sockPtr, closePtr);
-                }
+		}
+		if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
+		    SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
+		} else {
+		  Push(sockPtr, closePtr);
+		}
                 sockPtr = nextPtr;
             }
         }
@@ -1095,8 +1105,18 @@ DriverThread(void *arg)
         readPtr = NULL;
 
         while (sockPtr != NULL) {
-            nextPtr = sockPtr->nextPtr;
-            if (!(PollIn(&pdata, sockPtr->pidx))) {
+	    nextPtr = sockPtr->nextPtr;
+
+	    if (PollHup(&pdata, sockPtr->pidx)) {
+	      /*
+	       * Peer has closed the connection
+	       */
+	      SockRelease(sockPtr, SOCK_CLOSE, 0);
+
+	    } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
+	      /*
+	       * Got no data
+	       */
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
@@ -1106,6 +1126,7 @@ DriverThread(void *arg)
             } else {
 
                 /*
+		 * Got some data.
                  * If enabled, perform read-ahead now.
                  */
 
@@ -2546,7 +2567,16 @@ SpoolerThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             drvPtr  = sockPtr->drvPtr;
-            if (PollIn(&pdata, sockPtr->pidx) == 0) {
+            if (PollHup(&pdata, sockPtr->pidx)) {
+		/*
+		 * Peer has closed the connection
+		 */
+		SockRelease(sockPtr, SOCK_CLOSE, 0);
+
+            } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
+	        /*
+	         * Got no data
+	         */
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                     queuePtr->queuesize--;
@@ -2554,6 +2584,9 @@ SpoolerThread(void *arg)
                     Push(sockPtr, readPtr);
                 }
             } else {
+	        /*
+		 * Got some data
+		 */
                 n = SockRead(sockPtr, 1);
                 switch (n) {
                 case SOCK_MORE:
