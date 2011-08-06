@@ -391,9 +391,8 @@ GetAddr(Ns_DString *dsPtr, char *host)
     struct hostent_data data;
 #endif
     char buf[2048];
-    int result;
-    int i = 0;
-    int h_errnop;
+    int result = 0;
+    int h_errnop = 0;
     int status = NS_FALSE;
 
     memset(buf, 0, sizeof(buf));
@@ -401,7 +400,6 @@ GetAddr(Ns_DString *dsPtr, char *host)
 #if defined(HAVE_GETHOSTBYNAME_R_6)
     result = gethostbyname_r(host, &he, buf, sizeof(buf), &res, &h_errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5)
-    result = 0;
     res = gethostbyname_r(host, &he, buf, sizeof(buf), &h_errnop);
     if (res == NULL) {
         result = -1;
@@ -414,6 +412,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
     if (result != 0) {
         LogError("gethostbyname_r", h_errnop);
     } else {
+        int i = 0;
         while ((ptr = (struct in_addr *) he.h_addr_list[i++]) != NULL) {
             ia.s_addr = ptr->s_addr;
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));
@@ -439,7 +438,6 @@ GetAddr(Ns_DString *dsPtr, char *host)
     struct hostent *he;
     struct in_addr ia, *ptr;
     static Ns_Cs cs;
-    int i = 0;
     int status = NS_FALSE;
 
     Ns_CsEnter(&cs);
@@ -447,6 +445,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
     if (he == NULL) {
         LogError("gethostbyname", h_errno);
     } else {
+        int i = 0;
         while ((ptr = (struct in_addr *) he->h_addr_list[i++]) != NULL) {
             ia.s_addr = ptr->s_addr;
             Tcl_DStringAppendElement(dsPtr, ns_inet_ntoa(ia));

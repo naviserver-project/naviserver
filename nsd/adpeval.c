@@ -1155,7 +1155,7 @@ AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
     char       *file   = Tcl_GetString(itPtr->adp.framePtr->objv[0]);
     char        debugfile[255];
     Ns_DString  ds;
-    int         code, fd;
+    int         code;
 
     code = TCL_ERROR;
     Ns_DStringInit(&ds);
@@ -1173,11 +1173,11 @@ AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
     if (mktemp(debugfile) == NULL) {
         Tcl_SetResult(interp, "could not create adp debug file", TCL_STATIC);
     } else {
-        fd = open(debugfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+        int fd = open(debugfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
         if (fd < 0) {
             Tcl_AppendResult(interp, "could not create adp debug file \"",
                              debugfile, "\": ", Tcl_PosixError(interp), NULL);
-    } else {
+	} else {
             if (write(fd, ds.string, (size_t)ds.length) < 0) {
                 Tcl_AppendResult(interp, "write to \"", debugfile,
                                  "\" failed: ", Tcl_PosixError(interp), NULL);

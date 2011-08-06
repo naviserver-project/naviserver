@@ -78,7 +78,6 @@ Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
 {
     Ns_DString  ds;
     Tcl_Channel chan = NULL;
-    int         nread;
     char        buf[1024];
 
     Ns_DStringInit(&ds);
@@ -86,6 +85,8 @@ Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
     chan = Tcl_OpenFileChannel(NULL, ds.string, "r", 0);
     Ns_DStringFree(&ds);
     if (chan) {
+        int nread;
+
         while ((nread = Tcl_Read(chan, buf, sizeof(buf))) > 0) {
             Ns_DStringNAppend(dsPtr, buf, nread);
         }

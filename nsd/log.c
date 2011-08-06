@@ -674,7 +674,6 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
 {
     time_t    *tp;
     struct tm *ptm;
-    int        gmtoff, n, sign;
     char      *bp;
 
     if (gmt) {
@@ -685,6 +684,8 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
         bp = cachePtr->lbuf;
     }
     if (*tp != timePtr->sec) {
+        int n;
+
         *tp = timePtr->sec;
         ptm = ns_localtime(&timePtr->sec);
         n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
@@ -692,6 +693,7 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
             bp[n++] = ']';
             bp[n] = '\0';
         } else {
+ 	    int gmtoff, sign;
 #ifdef HAVE_TM_GMTOFF
             gmtoff = ptm->tm_gmtoff / 60;
 #else
@@ -736,7 +738,6 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     Ns_LogSeverity severity;
     Ns_DString     ds;
-    int            i;
     void 	  *addrPtr;
 
     if (objc < 3) {
@@ -751,6 +752,8 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (objc == 3) {
         Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
     } else {
+        int i;
+
         Ns_DStringInit(&ds);
         for (i = 2; i < objc; ++i) {
             Ns_DStringVarAppend(&ds, Tcl_GetString(objv[i]),
@@ -874,11 +877,12 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         break;
 
     case CSeverityIdx:
+      {
+        void *addrPtr;
         if (objc != 3 && objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
             return TCL_ERROR;
         }
-        void *addrPtr;
         if (GetSeverityFromObj(interp, objv[2], &addrPtr) != TCL_OK) {
             if (objc == 3) {
                 return TCL_ERROR;
@@ -900,7 +904,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
         break;
-
+      }
     case CSeveritiesIdx:
         objPtr = Tcl_GetObjResult(interp);
         for (i = 0; i < severityIdx; i++) {

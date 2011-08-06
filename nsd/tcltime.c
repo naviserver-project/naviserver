@@ -559,7 +559,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     char    *str, *sep;
     Ns_Time  time;
     long     sec;
-    int      value, result;
+    int      value;
 
     str = Tcl_GetString(objPtr);
     sep = strchr(str, ':');
@@ -570,6 +570,8 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
         time.sec = (time_t) sec;
         time.usec = 0;
     } else {
+        int result;
+
         *sep = '\0';
         result = Tcl_GetInt(interp, str, &value);
         time.sec = value;

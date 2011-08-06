@@ -815,13 +815,13 @@ static char *
 ConfigGet(CONST char *section, CONST char *key, int exact, CONST char *defstr)
 {
     Ns_Set         *set;
-    int             i;
     char           *s;
 
     s = NULL;
     if (section != NULL && key != NULL) {
         set = Ns_ConfigCreateSection(section);
         if (set != NULL) {
+            int  i;
             if (exact) {
                 i = Ns_SetFind(set, key);
             } else {

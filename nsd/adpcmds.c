@@ -380,7 +380,7 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp    *itPtr = arg;
     Tcl_DString *dsPtr;
-    int          i, result, flags;
+    int          result, flags;
     char        *file;
     int          tcl = 0, nocache = 0, nargs = 0;
     Ns_Time     *ttlPtr = NULL;
@@ -417,6 +417,7 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
      */
 
     if (nocache && itPtr->adp.refresh > 0) {
+        int i;
         if (GetOutput(arg, &dsPtr) != TCL_OK) {
             return TCL_ERROR;
         }
@@ -460,7 +461,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                     Tcl_Obj **objv)
 {
     NsInterp   *itPtr = arg;
-    int         result, flags, nargs;
+    int         result, flags, nargs = 0;
     char       *resvar = NULL;
     int         string = 1, file = 0, tcl = 0, safe = 0;
     char       *cwd = NULL, *savecwd = NULL;

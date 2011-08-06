@@ -492,16 +492,18 @@ PngSize(Tcl_Channel chan, int *wPtr, int *hPtr)
 static int
 JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr)
 {
-    unsigned int i, w, h;
     Tcl_WideInt  numbytes;
 
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         while (1) {
+	    unsigned int i;
+
             i = JpegNextMarker(chan);
             if (i == EOF || i == M_SOS || i == M_EOI) {
                 break;
             }
             if (0xC0 <= i && i <= 0xC3) {
+	        unsigned int w, h;
                 if (JpegRead2Bytes(chan) != EOF && ChanGetc(chan) != EOF
                     && (h = JpegRead2Bytes(chan)) != EOF
                     && (w = JpegRead2Bytes(chan)) != EOF) {

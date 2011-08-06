@@ -112,7 +112,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     Ns_Set   *servers;
     struct rlimit  rl;
 #else
-    char *cwd;
     /*
      * The following variables are declared static so they
      * preserve their values when Ns_Main is re-entered by

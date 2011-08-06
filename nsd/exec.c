@@ -168,7 +168,7 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
     
 #else
     char *coredump;
-    int exitcode, status;
+    int status;
     pid_t p;
     
     do {
@@ -190,7 +190,7 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
     } else if (!WIFEXITED(status)) {
     	Ns_Log(Error, "waitpid(%d): invalid status: %d", pid, status);
     } else {
-    	exitcode = WEXITSTATUS(status);
+    	int exitcode = WEXITSTATUS(status);
     	if (exitcode != 0) {
             Ns_Log(Warning, "process %d exited with non-zero exit code: %d",
                    pid, exitcode);
@@ -380,12 +380,12 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     int             pid;     
     Ns_DString      ads;
     char	   *args;
-    int		    i;
 
     Ns_DStringInit(&ads);
     if (argv == NULL) {
         args = NULL;
     } else {
+        int  i;
         for (i = 0; argv[i] != NULL; ++i) {
             Ns_DStringNAppend(&ads, argv[i], strlen(argv[i]) + 1);
         }
@@ -397,7 +397,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
 #else
     Ns_DString eds;
     char *argvSh[4], **envp;
-    int i, pid;
+    int pid;
     
     if (exec == NULL) {
         return -1;
@@ -414,6 +414,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     if (env == NULL) {
 	envp = Ns_CopyEnviron(&eds);
     } else {
+        int i;
 	for (i = 0; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
 		Ns_SetKey(env, i), "=", Ns_SetValue(env, i), NULL);
@@ -457,7 +458,7 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
     	 char **envp)
 {
     struct iovec iov[2];
-    int    pid, nread, errpipe[2], errnum, result;
+    int    pid, errpipe[2], errnum, result;
 
     /*
      * Create a pipe for child error message.
@@ -517,7 +518,7 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
 	_exit(1);
 	
     } else {
-    
+        int nread;
 	/*
 	 * Read result and errno from the child if any.
 	 */

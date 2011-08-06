@@ -80,7 +80,7 @@ int
 Ns_RollFile(CONST char *file, int max)
 {
     char *first, *next, *dot;
-    int   num, err;
+    int   err;
 
     if (max < 0 || max > 999) {
         Ns_Log(Error, "rollfile: invalid max parameter '%d'; "
@@ -93,8 +93,9 @@ Ns_RollFile(CONST char *file, int max)
     err = Exists(first);
 
     if (err > 0) {
+        int num = 0;
+
         next = ns_strdup(first);
-        num = 0;
 
         /*
          * Find the highest version
@@ -171,7 +172,7 @@ int
 Ns_PurgeFiles(CONST char *file, int max)
 {
     File *fiPtr, *files = NULL;
-    int   ii, nfiles, status = NS_ERROR;
+    int   nfiles, status = NS_ERROR;
 
     /*
      * Get all files matching "file*" pattern.
@@ -190,6 +191,8 @@ Ns_PurgeFiles(CONST char *file, int max)
      */
 
     if (nfiles >= max) {
+        int ii;
+
         qsort(files, (size_t)nfiles, sizeof(File), CmpFile);
         for (ii = max, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
             if (Unlink(Tcl_GetString(fiPtr->path)) != 0) {
@@ -202,6 +205,8 @@ Ns_PurgeFiles(CONST char *file, int max)
 
  err:
     if (nfiles > 0) {
+        int ii;
+
         for (ii = 0, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
             Tcl_DecrRefCount(fiPtr->path);
         }
@@ -239,7 +244,7 @@ MatchFiles(CONST char *filename, File **files)
     Tcl_GlobTypeData  types;
     Tcl_StatBuf       st;
     File             *fiPtr;
-    int               numElems, code, ii, jj;
+    int               numElems, code;
     char             *pattern;
 
     /*
@@ -291,9 +296,13 @@ MatchFiles(CONST char *filename, File **files)
         Tcl_ListObjGetElements(NULL, matched, &numElems, &matchElems);
 
         if (numElems > 0) {
+	    int ii;
+
             *files = ns_malloc(sizeof(File) * numElems);
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {
                 if (Tcl_FSStat(matchElems[ii], &st) != 0) {
+		    int jj;
+
                     for (jj = 0, fiPtr = *files; jj < ii; jj++, fiPtr++) {
                         Tcl_DecrRefCount(fiPtr->path);
                     }

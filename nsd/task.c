@@ -641,7 +641,6 @@ NsWaitTaskQueueShutdown(Ns_Time *toPtr)
 static void
 RunTask(Task *taskPtr, int revents, Ns_Time *nowPtr)
 {
-    int i;
 
     /*
      * NB: Treat POLLHUP as POLLIN on systems which return it.
@@ -651,6 +650,8 @@ RunTask(Task *taskPtr, int revents, Ns_Time *nowPtr)
         revents |= POLLIN;
     }
     if (revents) {
+        int i;
+
         for (i = 0; i < 3; ++i) {
             if (revents & map[i].event) {
                 Call(taskPtr, map[i].when);
@@ -815,7 +816,7 @@ TaskThread(void *arg)
 {
     TaskQueue     *queuePtr = arg;
     char           c;
-    int            n, broadcast, max, nfds, shutdown;
+    int            broadcast, max, nfds, shutdown;
     Task          *taskPtr, *nextPtr, *firstWaitPtr;
     struct pollfd *pfds;
     Ns_Time        now, *timeoutPtr;
@@ -828,6 +829,7 @@ TaskThread(void *arg)
     firstWaitPtr = NULL;
 
     while (1) {
+        int n;
 
         /*
          * Get the shutdown flag and process any incoming signals.
@@ -938,6 +940,10 @@ TaskThread(void *arg)
          */
 
         n = NsPoll(pfds, nfds, timeoutPtr);
+	/* 
+	 * n is currently not used; n is either number of ready
+	 * descriptors, or 0 on timeout, or -1 on error
+	 */
         if ((pfds[0].revents & POLLIN) && recv(pfds[0].fd, &c, 1, 0) != 1) {
             Ns_Fatal("queue: trigger read() failed: %s",
                      ns_sockstrerror(ns_sockerrno));

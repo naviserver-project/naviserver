@@ -622,7 +622,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * Wait for the specified job.
              */
 
-            int     timeoutFlag = 0, timedOut = 0;
+            int     timeoutFlag = 0;
             Ns_Time timeout, delta_timeout;
 
             argIndex = 2;
@@ -680,8 +680,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             if (timeoutFlag) {
                 while (jobPtr->state != JOB_DONE) {
-                    timedOut = Ns_CondTimedWait(&queuePtr->cond,
-                                                &queuePtr->lock, &timeout);
+                    int timedOut = Ns_CondTimedWait(&queuePtr->cond,
+						    &queuePtr->lock, &timeout);
                     if (timedOut == NS_TIMEOUT) {
                         Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
                         Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);
@@ -807,7 +807,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * Wait for any job on the queue complete.
              */
 
-            int     timeoutFlag = 0,timedOut = 0;
+            int     timeoutFlag = 0;
             Ns_Time timeout, delta_timeout;
 
             argIndex = 2;
@@ -845,8 +845,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             if (timeoutFlag) {
                 while ((Tcl_FirstHashEntry(&queuePtr->jobs, &search) != NULL)
                        && !AnyDone(queuePtr)) {
-                    timedOut = Ns_CondTimedWait(&queuePtr->cond,
-                                                &queuePtr->lock, &timeout);
+                    int timedOut = Ns_CondTimedWait(&queuePtr->cond,
+						    &queuePtr->lock, &timeout);
                     if (timedOut == NS_TIMEOUT) {
                         Tcl_SetResult(interp, "Wait timed out.", TCL_STATIC);
                         Tcl_SetErrorCode(interp, "NS_TIMEOUT", NULL);

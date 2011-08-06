@@ -519,7 +519,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 int
 NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    TclCache       *cPtr;
+    TclCache       *cPtr = NULL;
     Ns_Cache       *cache;
     Ns_Entry       *entry;
     Ns_CacheSearch  search;
@@ -595,12 +595,11 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    TclCache       *cPtr;
+    TclCache       *cPtr = NULL;
     Ns_Cache       *cache;
     Ns_CacheSearch  search;
     Ns_Entry       *entry;
     Ns_DString      ds;
-    size_t          size;
     Ns_Time        *timePtr;
     int             contents = NS_FALSE, reset = NS_FALSE;
 
@@ -625,7 +624,7 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         Tcl_DStringStartSublist(&ds);
         entry = Ns_CacheFirstEntry(cache, &search);
         while (entry != NULL) {
-            size = Ns_CacheGetSize(entry);
+	    size_t size = Ns_CacheGetSize(entry);
             timePtr = Ns_CacheGetExpirey(entry);
             if (timePtr->usec == 0) {
                 Ns_DStringPrintf(&ds, "%zd %" PRIu64 " ",

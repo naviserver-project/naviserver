@@ -843,11 +843,12 @@ static void
 TrieTrunc(Trie *triePtr)
 {
     Branch *branchPtr;
-    int     n, i;
+    int     n;
 
     n = Ns_IndexCount(&triePtr->branches);
 
     if (n > 0) {
+        int i;
 
         /*
          * Loop over each branch and recurse.
@@ -932,11 +933,12 @@ static void
 TrieDestroy(Trie *triePtr)
 {
     Branch *branchPtr;
-    int     n, i;
+    int     n;
 
     n = Ns_IndexCount(&triePtr->branches);
 
     if (n > 0) {
+        int i;
 
         /*
          * Loop over each branch and delete it

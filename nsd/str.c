@@ -114,10 +114,9 @@ Ns_StrTrimLeft(char *string)
 char *
 Ns_StrTrimRight(char *string)
 {
-    int len;
-
     if (string != NULL) {
-        len = strlen(string);
+        int len = strlen(string);
+
         while ((--len >= 0)
                && (isspace(UCHAR(string[len]))
                    || string[len] == '\n')) {
@@ -291,12 +290,10 @@ Ns_StrToWideInt(CONST char *string, Tcl_WideInt *intPtr)
 CONST char *
 Ns_Match(CONST char *a, CONST char *b)
 {
-    char c1, c2;
-
     if (a != NULL && b != NULL) {
         while (*a != '\0' && *b != '\0') {
-            c1 = islower(UCHAR(*a)) ? *a : tolower(UCHAR(*a));
-            c2 = islower(UCHAR(*b)) ? *b : tolower(UCHAR(*b));
+            char c1 = islower(UCHAR(*a)) ? *a : tolower(UCHAR(*a));
+            char c2 = islower(UCHAR(*b)) ? *b : tolower(UCHAR(*b));
             if (c1 != c2) {
                 return NULL;
             }

@@ -405,7 +405,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 {
     Ns_Conn    *conn;
     Tcl_Interp *interp = itPtr->interp;
-    int         len, wrote, result = TCL_ERROR, flags = itPtr->adp.flags;
+    int         len, result = TCL_ERROR, flags = itPtr->adp.flags;
     char       *buf;
 
     /*
@@ -463,7 +463,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
     } else {
         if (itPtr->adp.chan != NULL) {
             while (len > 0) {
-                wrote = Tcl_Write(itPtr->adp.chan, buf, len);
+                int wrote = Tcl_Write(itPtr->adp.chan, buf, len);
                 if (wrote < 0) {
                     Tcl_AppendResult(interp, "write failed: ",
                                      Tcl_PosixError(interp), NULL);

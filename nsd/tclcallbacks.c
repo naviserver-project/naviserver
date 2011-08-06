@@ -73,7 +73,6 @@ Ns_TclCallback*
 Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc, Tcl_Obj *scriptObjPtr,
                   int objc, Tcl_Obj *CONST objv[])
 {
-    int             ii;
     Ns_TclCallback *cbPtr;
     
     cbPtr = ns_malloc(sizeof(Ns_TclCallback) + objc * sizeof(char *));
@@ -84,6 +83,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc, Tcl_Obj *scriptObjPtr,
     cbPtr->argv   = (char **)((char *)cbPtr + sizeof(Ns_TclCallback));
 
     if (objc) {
+        int ii;
         for (ii = 0; ii < objc; ii++) {
             cbPtr->argv[ii] = ns_strdup(Tcl_GetString(objv[ii]));
         }
@@ -150,13 +150,15 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
     Ns_DString   ds;
     char        *arg;
     int          deallocInterp = 0;
-    int          ii, status = TCL_ERROR;
+    int          status = TCL_ERROR;
 
     if (interp == NULL) {
         interp = Ns_TclAllocateInterp(cbPtr->server);
         deallocInterp = 1;
     }
     if (interp != NULL) {
+        int ii;
+
         Ns_DStringInit(&ds);
         Ns_DStringAppend(&ds, cbPtr->script);
         va_start(ap, result);

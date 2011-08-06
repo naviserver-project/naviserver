@@ -316,7 +316,7 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **ob
     Array         *arrayPtr;
     Tcl_HashEntry *hPtr;
     char          *value;
-    int            i, new, len;
+    int            new, len;
 
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 1, objv, "array key value ?value ...?");
@@ -328,6 +328,8 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **ob
     if (new) {
         Tcl_SetListObj(Tcl_GetObjResult(interp), objc-3, objv+3);
     } else {
+        int i;
+
         Tcl_SetResult(interp, Tcl_GetHashValue(hPtr), TCL_VOLATILE);
         for (i = 3; i < objc; ++i) {
             Tcl_AppendElement(interp, Tcl_GetString(objv[i]));
@@ -784,10 +786,11 @@ Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
     Array         *arrayPtr;
     Tcl_HashEntry *hPtr;
     char          *oldString, *newString;
-    int            oldLen, newLen, new, status = NS_ERROR;
+    int            new, status = NS_ERROR;
 
     if ((servPtr = NsGetServer(server)) != NULL
         && (arrayPtr = LockArray(servPtr, array, 1)) != NULL) {
+        int oldLen, newLen;
 
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &new);
 

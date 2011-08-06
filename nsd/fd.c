@@ -280,9 +280,9 @@ int
 Ns_DupHigh(int *fdPtr)
 {
 #ifdef USE_DUPHIGH
-    int             nfd, ofd, flags;
-
     if (dupHigh) {
+        int  nfd, ofd, flags;
+
         ofd = *fdPtr;
         if ((flags = fcntl(ofd, F_GETFD)) < 0) {
             Ns_Log(Warning, "fd: duphigh failed: fcntl(%d, F_GETFD): '%s'",

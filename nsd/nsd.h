@@ -398,7 +398,7 @@ typedef struct Driver {
     Ns_Mutex lock;                      /* Lock to protect lists below. */
     Ns_Cond cond;                       /* Cond to signal reader threads,
                                          * driver query, startup, and shutdown. */
-    int trigger[2];                     /* Wakeup trigger pipe. */
+    SOCKET trigger[2];                  /* Wakeup trigger pipe. */
 
     struct Sock *sockPtr;               /* Free list of Sock structures */
     struct Sock *closePtr;              /* First conn ready for graceful close */

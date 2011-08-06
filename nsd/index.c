@@ -252,7 +252,6 @@ Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key)
 {
     void **firstPtrPtr;
     void **retPtrPtr;
-    int    i;
     int    n;
 
     /*
@@ -265,6 +264,8 @@ Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key)
     if (firstPtrPtr == NULL) {
         return NULL;
     } else {
+        int    i;
+
         /*
 	 * Search linearly back to make sure we've got the first one
 	 */
@@ -391,7 +392,6 @@ void
 Ns_IndexAdd(Ns_Index *indexPtr, void *el)
 {
     int i;
-    int j;
 
     if (indexPtr->n == indexPtr->max) {
         indexPtr->max += indexPtr->inc;
@@ -408,6 +408,7 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
     }
 
     if (i < indexPtr->n) {
+        int j;
         for (j = indexPtr->n; j > i; j--) {
             indexPtr->el[j] = indexPtr->el[j - 1];
         }

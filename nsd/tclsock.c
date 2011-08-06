@@ -1086,10 +1086,12 @@ NsTclSockProc(SOCKET sock, void *arg, int why)
     Tcl_DString  script;
     Tcl_Obj     *objPtr;
     char        *w;
-    int          result, ok;
+    int          ok;
     Callback    *cbPtr = arg;
 
     if (why != NS_SOCK_EXIT || (cbPtr->when & NS_SOCK_EXIT)) {
+        int result;
+
         Tcl_DStringInit(&script);
         interp = Ns_TclAllocateInterp(cbPtr->server);
         if (cbPtr->chan == NULL) {

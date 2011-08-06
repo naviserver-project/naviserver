@@ -735,7 +735,7 @@ Ns_ConnPort(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+SOCKET
 Ns_ConnSock(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -1771,7 +1771,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
      * Create Tcl channel arround the connection socket
      */
 
-    chan = Tcl_MakeTcpClientChannel((ClientData)connPtr->sockPtr->sock);
+    chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t)connPtr->sockPtr->sock);
     if (chan == NULL) {
         Tcl_AppendResult(itPtr->interp, Tcl_PosixError(itPtr->interp), NULL);
         return NULL;

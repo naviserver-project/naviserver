@@ -659,7 +659,7 @@ ConnRun(Conn *connPtr)
 {
     Ns_Conn  *conn = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->servPtr;
-    int       i, status = NS_OK;
+    int       status = NS_OK;
     char     *auth;
 
     /*
@@ -705,6 +705,8 @@ ConnRun(Conn *connPtr)
         conn->flags |= NS_CONN_SKIPHDRS;
     }
     if (servPtr->opts.hdrcase != Preserve) {
+        int i;
+
         for (i = 0; i < Ns_SetSize(connPtr->headers); ++i) {
             if (servPtr->opts.hdrcase == ToLower) {
                 Ns_StrToLower(Ns_SetKey(connPtr->headers, i));

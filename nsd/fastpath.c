@@ -180,15 +180,15 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
     Conn        *connPtr = (Conn *) conn;
     int          rc;
-    char         *server;
-    NsServer     *servPtr;
+    /*char         *server;
+      NsServer     *servPtr;*/
 
     if (!FastStat(file, &connPtr->fileInfo)) {
         return Ns_ConnReturnNotFound(conn);
     }
 
-    server  = Ns_ConnServer(conn);
-    servPtr = NsGetServer(server);
+    /*server  = Ns_ConnServer(conn);
+      servPtr = NsGetServer(server);*/
 
     rc = FastReturn(conn, status, type, file);
     return rc;
@@ -218,7 +218,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
     NsServer    *servPtr = connPtr->servPtr;
     char        *url = conn->request->url;
     Ns_DString   ds;
-    int          result, i;
+    int          result;
 
     Ns_DStringInit(&ds);
 
@@ -235,6 +235,7 @@ Ns_FastPathProc(void *arg, Ns_Conn *conn)
         result = FastReturn(conn, 200, NULL, ds.string);
 
     } else if (S_ISDIR(connPtr->fileInfo.st_mode)) {
+        int i;
 
         /*
          * For directories, search for a matching directory file and
@@ -382,7 +383,7 @@ static int
 FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
     Conn        *connPtr = (Conn *) conn;
-    int         new, fd, nread, result = NS_ERROR;
+    int         new, fd, result = NS_ERROR;
     Ns_Entry   *entry;
     File       *filePtr;
     FileMap     fmap;
@@ -485,6 +486,8 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
                 Ns_Log(Warning, "fastpath: open(%s') failed '%s'",
                        file, strerror(errno));
             } else {
+ 	        int nread;
+
                 filePtr = ns_malloc(sizeof(File) + connPtr->fileInfo.st_size);
                 filePtr->refcnt = 1;
                 filePtr->size   = connPtr->fileInfo.st_size;

@@ -112,9 +112,9 @@ Ns_SetCreate(CONST char *name)
 void
 Ns_SetFree(Ns_Set *set)
 {
-    int i;
-
     if (set != NULL) {
+        int i;
+
         for (i = 0; i < set->size; ++i) {
             ns_free(set->fields[i].name);
             ns_free(set->fields[i].value);

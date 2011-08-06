@@ -784,7 +784,6 @@ static void
 AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, int flags)
 {
     Tcl_DString script;
-    char        save;
 
     Tcl_DStringInit(&script);
     Tcl_DStringAppend(&script, "ns_adp_append [", -1);
@@ -799,7 +798,7 @@ AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, int flags)
     }
     if (se > ae) {
         /* NB: Append enclosing text as argument to eval or proc. */
-        save = *se;
+        char save = *se;
         *se = '\0';
         Tcl_DStringAppendElement(&script, ae + 1);
         *se = save;

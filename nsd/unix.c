@@ -620,10 +620,11 @@ Ns_GetGid(char *group)
 int
 Ns_SetGroup(char *group)
 {
-    int nc, gid;
+    int nc;
 
     if (group != NULL) {
-        gid = Ns_GetGid(group);
+        int gid = Ns_GetGid(group);
+
         if (gid == -1) {
             if (sscanf(group, "%d%n", (int*)&gid, &nc) != 1
                 || nc != strlen(group)

@@ -953,7 +953,6 @@ SockConnect(char *host, int port, char *lhost, int lport, int async)
     SOCKET             sock;
     struct sockaddr_in lsa;
     struct sockaddr_in sa;
-    int                err;
 
     if (Ns_GetSockAddr(&sa, host, port) != NS_OK ||
         Ns_GetSockAddr(&lsa, lhost, lport) != NS_OK) {
@@ -965,7 +964,7 @@ SockConnect(char *host, int port, char *lhost, int lport, int async)
             Ns_SockSetNonBlocking(sock);
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
-            err = ns_sockerrno;
+            int err = ns_sockerrno;
             if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
                 sock = INVALID_SOCKET;

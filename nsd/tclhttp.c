@@ -425,7 +425,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
 {
     SOCKET sock;
     Http *httpPtr = NULL;
-    int i, len, uaFlag = -1;
+    int i, len;
     char *key, *body, *host, *file, *port;
 
     if (strncmp(url, "http://", 7) != 0 || url[7] == '\0') {
@@ -449,6 +449,8 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
         *port = ':';
     }
     if (sock != INVALID_SOCKET) {
+        int uaFlag = -1;
+
         httpPtr = ns_malloc(sizeof(Http));
         httpPtr->sock = sock;
 	httpPtr->error = NULL;
@@ -545,8 +547,8 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
 static Tcl_Obj *
 HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
 {
-    char *eoh, *body, *p, save, *response;
-    int firsthdr, major, minor, len;
+    char *eoh, *body, *p, *response;
+    int major, minor;
     Tcl_Obj *result;
 
     body = response = ds->string;
@@ -570,11 +572,14 @@ HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
 	*eoh = '\0';
 	sscanf(response, "HTTP/%d.%d %d", &major, &minor, statusPtr);
     	if (hdrs != NULL) {
-	    save = *body;
+            int firsthdr = 1;
+	    char save = *body;
+
 	    *body = '\0';
-            firsthdr = 1;
             p = response;
             while ((eoh = strchr(p, '\n')) != NULL) {
+	        int len;
+
             	*eoh++ = '\0';
             	len = strlen(p);
             	if (len > 0 && p[len-1] == '\r') {

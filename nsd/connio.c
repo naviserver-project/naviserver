@@ -103,7 +103,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     Ns_DString         encDs, gzDs;
     struct iovec       iov;
     CONST char        *utfBytes;
-    int                utfLen, i, status, flush;
+    int                status;
 
     Ns_DStringInit(&encDs);
     Ns_DStringInit(&gzDs);
@@ -116,8 +116,10 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
         && !NsEncodingIsUtf8(connPtr->outputEncoding)
         && nbufs > 0
         && bufs[0].iov_len > 0) {
+        int i;
 
         for (i = 0; i < nbufs; i++) {
+	    int utfLen;
 
             utfBytes = bufs[i].iov_base;
             utfLen   = bufs[i].iov_len;
@@ -141,7 +143,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     }
     if (connPtr->compress > 0) {
 
-        flush = (flags & NS_CONN_STREAM) ? 0 : 1;
+        int flush = (flags & NS_CONN_STREAM) ? 0 : 1;
 
         if (Ns_CompressBufsGzip(streamPtr, bufs, nbufs, &gzDs,
                                 connPtr->compress, flush) == NS_OK) {
@@ -183,7 +185,7 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
     Ns_Conn  *conn    = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->servPtr;
     char     *hdr;
-    int       level, gzip = 0, compress = 0;
+    int       level, compress = 0;
 
     /* Check the default setting and explicit overide. */
 
@@ -202,6 +204,7 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 
             if (!(connPtr->flags & NS_CONN_SENTHDRS)
                 && !(connPtr->flags & NS_CONN_SKIPBODY)) {
+	        int gzip = 0;
 
                 /* Check that the client supports compression. */
 
@@ -649,9 +652,9 @@ int
 Ns_ConnClose(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
-    int   keep;
 
     if (connPtr->sockPtr != NULL) {
+        int keep;
 
         if (connPtr->flags & NS_CONN_STREAM
              && (connPtr->flags & NS_CONN_CHUNK

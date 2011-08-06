@@ -984,7 +984,7 @@ Ns_ConnHost(Ns_Conn *conn);
 NS_EXTERN int
 Ns_ConnPort(Ns_Conn *conn);
 
-NS_EXTERN int
+NS_EXTERN SOCKET
 Ns_ConnSock(Ns_Conn *conn);
 
 NS_EXTERN Ns_Sock *
@@ -1628,7 +1628,7 @@ Ns_LogTime(char *timeBuf)
 
 NS_EXTERN char *
 Ns_LogTime2(char *timeBuf, int gmt)
-    NS_GNUC_NONNULL(1);;
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr) NS_GNUC_DEPRECATED;

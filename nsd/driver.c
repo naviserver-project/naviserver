@@ -507,7 +507,7 @@ void
 NsStartDrivers(void)
 {
     Driver *drvPtr;
-    int status = NS_OK;
+    /* int status = NS_OK;*/
 
     /*
      * Signal and wait for each driver to start.
@@ -521,9 +521,9 @@ NsStartDrivers(void)
         while (!(drvPtr->flags & DRIVER_STARTED)) {
             Ns_CondWait(&drvPtr->cond, &drvPtr->lock);
         }
-        if ((drvPtr->flags & DRIVER_FAILED)) {
+        /*if ((drvPtr->flags & DRIVER_FAILED)) {
             status = NS_ERROR;
-        }
+	    }*/
         Ns_MutexUnlock(&drvPtr->lock);
         drvPtr = drvPtr->nextPtr;
     }
@@ -635,9 +635,9 @@ Request *
 NsGetRequest(Sock *sockPtr)
 {
     Request *reqPtr;
-    int status;
 
     if (sockPtr->reqPtr == NULL) {
+        int status;
         do {
             status = SockRead(sockPtr, 0);
         } while (status == SOCK_MORE);
@@ -1519,7 +1519,7 @@ static int
 SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
 {
     Sock    *sockPtr;
-    int      sockSize, status;
+    int      status;
 
     /*
      * Allocate and/or initialize a Sock structure.
@@ -1533,7 +1533,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
     Ns_MutexUnlock(&drvPtr->lock);
 
     if (sockPtr == NULL) {
-        sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
+        int sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
         sockPtr = ns_calloc(1, sockSize);
         sockPtr->drvPtr = drvPtr;
     } else {
