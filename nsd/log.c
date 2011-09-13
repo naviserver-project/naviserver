@@ -1241,6 +1241,11 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
  *
  *----------------------------------------------------------------------
  */
+//#define SYSLOG 1
+
+#ifdef SYSLOG
+#include <syslog.h>
+#endif
 
 static int
 LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
@@ -1251,7 +1256,24 @@ LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
 
     Ns_DStringInit(&ds);
     LogToDString((void*)&ds, severity, stamp, msg, len);
+#if defined(SYSLOG)
+    {int level;
+      switch (severity) {
+      case Notice:  level = LOG_NOTICE; break;
+      case Warning: level = LOG_WARNING; break;
+      case Error:   level = LOG_ERR; break;
+      case Fatal:   level = LOG_CRIT; break;
+      case Bug:     level = LOG_DEBUG; break;
+      case Debug:   level = LOG_DEBUG; break;
+      case Dev:     level = LOG_INFO; break;
+      }
+      syslog(level, Ns_DStringValue(&ds));
+      ret = 1;
+    }
+#else
     ret = write(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
+#endif
+
     Ns_DStringFree(&ds);
 
     return ret < 0 ? NS_ERROR : NS_OK;
