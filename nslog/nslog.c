@@ -489,8 +489,9 @@ LogTrace(void *arg, Ns_Conn *conn)
 {
     Log         *logPtr = arg;
     CONST char **h;
-    char        *p, *user;
-    int          n, status, i;
+    char        *p, *user, buffer[PIPE_BUF], *bufferPtr = NULL;
+    int          n, status, i, fd;
+    size_t	 bufferSize;
     Ns_DString   ds;
     Ns_Time      now, diff;
 
@@ -630,18 +631,42 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_DStringAppend(&ds, "\n");
 
     if (logPtr->maxlines == 0) {
-        status = LogFlush(logPtr, &ds);
+        bufferSize = ds.length ;
+	if (bufferSize < PIPE_BUF) {
+	  /* only those write() operations are guaranteed to be atomic */
+	    bufferPtr = ds.string;
+            status = NS_OK;
+	} else {
+	    status = LogFlush(logPtr, &ds);
+	}
     } else {
         Ns_DStringNAppend(&logPtr->buffer, ds.string, ds.length);
         if (++logPtr->curlines > logPtr->maxlines) {
-            status = LogFlush(logPtr, &logPtr->buffer);
+	    bufferSize = logPtr->buffer.length;
+            if (bufferSize < PIPE_BUF) {
+              /* only those write() are guaranteed to be atomic */
+              /* in most cases, we will fall into the other branch */
+	      memcpy(buffer, logPtr->buffer.string, bufferSize);  
+	      bufferPtr = buffer;
+	      Ns_DStringTrunc(&logPtr->buffer, 0);
+              status = NS_OK;
+	    } else {
+	      status = LogFlush(logPtr, &logPtr->buffer);
+	    }
             logPtr->curlines = 0;
         } else {
             status = NS_OK;
         }
     }
 
+    fd = logPtr->fd;
     Ns_MutexUnlock(&logPtr->lock);
+
+    if (bufferPtr) {
+        if (fd >= 0 && write(fd, bufferPtr, bufferSize) != bufferSize) {
+	    Ns_Log(Error, "nslog: write() failed: '%s'", strerror(errno));
+	}
+    }
     Ns_DStringFree(&ds);
 }
 
@@ -737,7 +762,7 @@ LogClose(Log *logPtr)
  */
 
 static int
-LogFlush(Log *logPtr,Ns_DString *dsPtr)
+LogFlush(Log *logPtr, Ns_DString *dsPtr)
 {
     int   len = dsPtr->length;
     char *buf = dsPtr->string;

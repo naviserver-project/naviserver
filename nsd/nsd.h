@@ -87,11 +87,11 @@
  */
 
 #ifdef _WIN32
-  #define NS_MMAP_READ                 FILE_MAP_READ
-  #define NS_MMAP_WRITE                FILE_MAP_WRITE
+#  define NS_MMAP_READ                 FILE_MAP_READ
+#  define NS_MMAP_WRITE                FILE_MAP_WRITE
 #else
-  #define NS_MMAP_READ                 PROT_READ
-  #define NS_MMAP_WRITE                PROT_WRITE
+#  define NS_MMAP_READ                 PROT_READ
+#  define NS_MMAP_WRITE                PROT_WRITE
 #endif
 
 /*
