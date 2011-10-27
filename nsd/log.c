@@ -187,7 +187,6 @@ NsInitLog(void)
     Tcl_InitHashTable(&severityTable, TCL_STRING_KEYS);
 
     Tcl_SetPanicProc(Panic);
-    setlinebuf(stderr);
     Ns_AddLogFilter(LogToFile, (void *) STDERR_FILENO, NULL);
 
     /*
