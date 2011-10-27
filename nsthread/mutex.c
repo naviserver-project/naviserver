@@ -48,6 +48,8 @@ typedef struct Mutex {
     unsigned int     id;
     unsigned long    nlock;
     unsigned long    nbusy;
+    Ns_Time          total_waiting_time;
+    Ns_Time          max_waiting_time;
     char	     name[NS_THREAD_NAMESIZE+1];
 } Mutex;
 
@@ -200,12 +202,32 @@ void
 Ns_MutexLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr = GETMUTEX(mutex);
-    
+    Ns_Time start, end, diff;
+
+    Ns_GetTime(&start);
     if (!NsLockTry(mutexPtr->lock)) {
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
+        /*
+         * Measure total and max waiting time for busy mutex locks.
+         */
+        Ns_GetTime(&end);
+        Ns_DiffTime(&end, &start, &diff);
+        Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
+        /* 
+         * Keep max waiting time since server start. It might be a
+	 * good idea to either provide a call to reset the max-time,
+	 * or to report wait times above a certain threshold (as an
+	 * extra value in the statistics, or in the log file).
+         */
+        if (Ns_DiffTime(&mutexPtr->max_waiting_time, &diff, NULL) < 0) {
+            mutexPtr->max_waiting_time = diff;
+            /*fprintf(stderr, "Mutex %s max time %" PRIu64 ".%.6ld\n", 
+	      mutexPtr->name, (int64_t)diff.sec, diff.usec);*/
+        }
     }
     ++mutexPtr->nlock;
+
 }
 
 
@@ -283,7 +305,7 @@ void
 Ns_MutexList(Tcl_DString *dsPtr)
 {
     Mutex *mutexPtr;
-    char buf[100];
+    char buf[200];
 
     Ns_MasterLock();
     mutexPtr = firstMutexPtr;
@@ -291,8 +313,10 @@ Ns_MutexList(Tcl_DString *dsPtr)
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
-        snprintf(buf, sizeof(buf), " %u %lu %lu", mutexPtr->id,
-                 mutexPtr->nlock, mutexPtr->nbusy);
+        snprintf(buf, sizeof(buf), " %u %lu %lu %" PRIu64 ".%.6ld %" PRIu64 ".%.6ld", 
+                 mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy, 
+                 (int64_t)mutexPtr->total_waiting_time.sec, mutexPtr->total_waiting_time.usec,
+                 (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec);
         Tcl_DStringAppend(dsPtr, buf, -1);
         Tcl_DStringEndSublist(dsPtr);
         mutexPtr = mutexPtr->nextPtr;
@@ -383,4 +407,27 @@ GetMutex(Ns_Mutex *mutex)
     }
     Ns_MasterUnlock();
     return (Mutex *) *mutex;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_MutexGetName --
+ *
+ *	Obtain the name of a mutex.
+ *
+ * Results:
+ *	String name of the mutex.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Ns_MutexGetName(Ns_Mutex *mutex)
+{
+    Mutex *mutexPtr = GETMUTEX(mutex);
+
+    return mutexPtr->name;
 }
