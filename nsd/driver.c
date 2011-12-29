@@ -372,7 +372,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->acceptsize   = Ns_ConfigIntRange(path, "acceptsize",
                                              drvPtr->backlog, 1, INT_MAX);
 
+    /* Apparently not used; should be removed or filled with life
     drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
+    */
 
     drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", P_tmpdir));
 
