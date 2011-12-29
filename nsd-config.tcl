@@ -60,7 +60,6 @@ ns_section     "ns/servers"
 ns_param        default             "Naviserver"
 
 ns_section     "ns/server/default"
-ns_param        globalstats         true
 ns_param        urlstats            true
 ns_param        maxurlstats         1000
 ns_param        checkmodifiedsince  true
