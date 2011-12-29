@@ -60,8 +60,6 @@ ns_section     "ns/servers"
 ns_param        default             "Naviserver"
 
 ns_section     "ns/server/default"
-ns_param        urlstats            true
-ns_param        maxurlstats         1000
 ns_param        checkmodifiedsince  true
 ns_param        connsperthread      1000
 ns_param        minthreads          5
