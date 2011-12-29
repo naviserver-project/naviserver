@@ -183,7 +183,6 @@ ns_param   enabletclpages  false     ;# Parse *.tcl files in pageroot.
 #ns_param   connsperthread  0         ;# Normally there's one conn per thread
 #ns_param   flushcontent    false     ;# Flush all data before returning
 #ns_param   maxconnections  100       ;# Max connections to put on queue
-#ns_param   maxdropped      0         ;# Shut down if dropping too many conns
 #ns_param   maxthreads      20        ;# Tune this to scale your server
 #ns_param   minthreads      0         ;# Tune this to scale your server
 #ns_param   threadtimeout   120       ;# Idle threads die at this rate
@@ -400,7 +399,6 @@ ns_section "ns/server/${servername}/modules"
 #ns_section ns/server/server1/pool/slow
 #ns_param map {POST /slowupload.adp}
 #ns_param maxconnections  100       ;# Max connections to put on queue
-#ns_param maxdropped      0         ;# Shut down if dropping too many conns
 #ns_param maxthreads      20        ;# Tune this to scale your server
 #ns_param minthreads      0         ;# Tune this to scale your server
 #ns_param threadtimeout   120       ;# Idle threads die at this rate
