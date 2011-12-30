@@ -492,11 +492,10 @@ PngSize(Tcl_Channel chan, int *wPtr, int *hPtr)
 static int
 JpegSize(Tcl_Channel chan, int *wPtr, int *hPtr)
 {
-    Tcl_WideInt  numbytes;
-
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         while (1) {
 	    unsigned int i;
+	    Tcl_WideInt  numbytes;
 
             i = JpegNextMarker(chan);
             if (i == EOF || i == M_SOS || i == M_EOI) {
