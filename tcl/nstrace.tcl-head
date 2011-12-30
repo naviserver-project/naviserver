@@ -21,6 +21,10 @@
 #
 
 #
+# $Header$
+#
+
+#
 # This file implements set of commands and utilities to manage
 # Tcl interpreter initialization for NaviServer.
 #
@@ -370,36 +374,7 @@ ns_runonce {
             # some of the existing namespaces.
             #
 
-            # Filter nsf namespaces from the list of all namespaces,
-            # except the one from XOTcl or from the next Scripting
-            # Framework. The filter clauses are designed to work with
-            # XOTcl 1.* and the Next Scripting Framework (i.e. XOTcl
-            # 2.0 and NX).
-            #
-	    set nsps [list]
-	    if {[info command ::nsf::object::exists] ne ""} {
-	      # NX, XOTcl 2
-	      foreach n [namespaces] {
-		if {$n eq "::nsf" 
-		    || [string match "::nsf::*" $n]
-		    || [::nsf::object::exists $n]} { continue }
-		lappend nsps $n
-	      }
-	    } elseif {[info command ::xotcl::Objects] ne ""} {
-	      # XOTcl 1
-	      foreach n [namespaces] {
-		if {[string match "::xotcl*" $n]
-		    || [::xotcl::Object isobject $n]} { continue} 
-		lappend nsps $n
-	      }
-	    } else {
-	      set nsps [namespaces]
-	    }
-	  
-            #puts stderr "remaining namespaces [join [lsort $nsps] \n]"
-
-            # Serialize the remaining namespaces
-            foreach n $nsps {
+            foreach n [namespaces] {
                 foreach {s i} [_serializensp $n] {
                     if {[string length $s]} {
                         append script "namespace eval [list $n] {" \n
@@ -415,27 +390,6 @@ ns_runonce {
             }
 
             #
-            # Invoke [rename] script generators before XOTcl to allow
-            # it to overload content...
-            #
-            foreach cmd $scripts {
-                if {$cmd eq {rename}} {
-                  append script [script::_$cmd] \n
-                }
-            }
-
-            #
-            # Serialize XOTcl/NX content
-            # 
-            if {[catch {::Serializer all} objects]} {
-              ns_log notice "NX/XOTcl extension not loaded; will not copy objects\
-              (error: $objects; $::errorInfo)."
-              set objects ""
-            } else {
-              append script \n "namespace import -force ::xotcl::*" \n $objects \n
-            }
-
-            #
             # Import commands from other namespaces
             #
 
@@ -445,20 +399,18 @@ ns_runonce {
 
             #
             # Invoke [rename] script generators last
-            # ... deactivated by GN
+            #
 
-            #foreach cmd $scripts {
-            #    if {$cmd eq {rename}} {
-            #      append script [script::_$cmd] \n
-            #    }
-            #}
+            foreach cmd $scripts {
+                if {$cmd eq {rename}} {
+                    append script [script::_$cmd] \n
+                }
+            }
 
             #
             # Script is output to file mainly for
             # interactive debugging purposes.
             #
-
-	    #if {1} {_savescript /tmp/__ns_blueprint.tcl $script}
 
             if {$file ne ""} {
                 _savescript $file $script
@@ -654,14 +606,6 @@ ns_runonce {
             }
             set script {}
             set import {}
-
-            # If $nsp is empty (no vars, no procs), we create at 
-            # least a 
-            #    namespace eval $nsp {}
-            # entry by adding the space.
-            append script " "
-
-
             foreach vn [info vars ${nsp}::*] {
                 append script [_varscript $vn]
             }
@@ -716,13 +660,11 @@ ns_runonce {
 
         proc _varscript {var} {
             set vname [namespace tail $var]
-            if {[array exists $var]} {
-                append script "variable [list $vname]" \n
-                append script "array set [list $vname] [list [array get $var]]" \n
-            } elseif {[info exists $var]} {
+            if {[array exists $var] == 0} {
                 append script "variable [list $vname] [list [set $var]]" \n
             } else {
-               # maybe a variable without a value; no need to preserve it
+                append script "variable [list $vname]" \n
+                append script "array set [list $vname] [list [array get $var]]" \n
             }
         }
 
@@ -1107,15 +1049,7 @@ ns_runonce {
         append script \n
         foreach old [nstrace::getentries rename] {
             set new [nstrace::getentry rename $old]
-            #
-            # $old and $new might be procs or commands.
-            # Handle only handle those cases, where neither
-            # $old or $new is a proc, since the procs are already
-            # parts of the serialized blueprint.
-            #
-            if {"[info proc $old][info proc $new]" eq ""} {
-              append script "rename [list $old] [list $new]" \n
-            }
+            append script "rename [list $old] [list $new]" \n
         }
         return $script
     }
