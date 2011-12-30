@@ -218,7 +218,7 @@ ConfigServerEncodings(CONST char *server)
     CONST char *path;
 
     /*
-     * Configure the encoding used in the requet URL.
+     * Configure the encoding used in the request URL.
      */
 
     path = Ns_ConfigGetPath(server, NULL, NULL);
