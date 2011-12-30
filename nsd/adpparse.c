@@ -509,7 +509,6 @@ static void
 AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
 {
     AdpCode *codePtr = parsePtr->codePtr;
-    char     save;
     int      len;
 
     if (s >= e) {
@@ -517,6 +516,8 @@ AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
     }
 
     if (flags & ADP_SINGLE) {
+        char     save;
+
         switch (type) {
         case 'S':
             Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
