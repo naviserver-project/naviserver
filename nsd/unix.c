@@ -667,10 +667,12 @@ Ns_SetGroup(char *group)
 int
 Ns_SetUser(char *user)
 {
-    int nc, uid, gid = -1;
+    int nc, uid;
     Ns_DString ds;
 
     if (user != NULL) {
+        int gid = -1;
+
         Ns_DStringInit(&ds);
         uid = Ns_GetUid(user);
         if (uid == -1) {
