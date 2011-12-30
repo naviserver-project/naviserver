@@ -431,7 +431,7 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                               Tcl_Obj *CONST objv[])
 {
     NsInterp   *itPtr = arg;
-    CONST char *url;
+    CONST char *url = NULL;
     int         noinherit = 0, recurse = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -476,7 +476,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp   *itPtr = arg;
     Mount      *mPtr;
-    CONST char *url, *basepath = NULL;
+    CONST char *url = NULL, *basepath = NULL;
     int         flags = 0;
 
     Ns_ObjvSpec opts[] = {
