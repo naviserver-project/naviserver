@@ -37,7 +37,7 @@
 #include "nsd.h"
 
 /*
- * W2000 has no getaddrinfo, reuquires special headers for inline functions
+ * W2000 has no getaddrinfo, requires special headers for inline functions
  */
 
 #ifdef WIN32
@@ -385,7 +385,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
 static int
 GetAddr(Ns_DString *dsPtr, char *host)
 {
-    struct hostent he, *res;
+    struct hostent he;
     struct in_addr ia, *ptr;
 #ifdef HAVE_GETHOSTBYNAME_R_3
     struct hostent_data data;
@@ -400,9 +400,13 @@ GetAddr(Ns_DString *dsPtr, char *host)
 #if defined(HAVE_GETHOSTBYNAME_R_6)
     result = gethostbyname_r(host, &he, buf, sizeof(buf), &res, &h_errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5)
-    res = gethostbyname_r(host, &he, buf, sizeof(buf), &h_errnop);
-    if (res == NULL) {
+    {
+      struct hostent *res;
+
+      res = gethostbyname_r(host, &he, buf, sizeof(buf), &h_errnop);
+      if (res == NULL) {
         result = -1;
+      }
     }
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
     result = gethostbyname_r(host, &he, &data);
