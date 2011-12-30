@@ -968,7 +968,6 @@ Binder(void)
     char          address[64];
     struct msghdr msg;
     struct iovec  iov[4];
-    int          *pfd;
 
 #ifdef HAVE_CMMSG
     struct cmsghdr *c;
@@ -1041,6 +1040,8 @@ Binder(void)
 
         if (fd != -1) {
 #ifdef HAVE_CMMSG
+	    int *pfd;
+
             c = CMSG_FIRSTHDR(&msg);
             c->cmsg_level = SOL_SOCKET;
             c->cmsg_type  = SCM_RIGHTS;
