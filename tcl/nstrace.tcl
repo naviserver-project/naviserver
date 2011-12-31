@@ -379,6 +379,7 @@ ns_runonce {
 	    set nsps [list]
 	    if {[info command ::nsf::object::exists] ne ""} {
 	      # NX, XOTcl 2
+	      set xotcl 2
 	      foreach n [namespaces] {
 		if {$n eq "::nsf" 
 		    || [string match "::nsf::*" $n]
@@ -387,12 +388,14 @@ ns_runonce {
 	      }
 	    } elseif {[info command ::xotcl::Objects] ne ""} {
 	      # XOTcl 1
+	      set xotcl 1
 	      foreach n [namespaces] {
 		if {[string match "::xotcl*" $n]
 		    || [::xotcl::Object isobject $n]} { continue} 
 		lappend nsps $n
 	      }
 	    } else {
+	      set xotcl 0
 	      set nsps [namespaces]
 	    }
 	  
@@ -424,16 +427,18 @@ ns_runonce {
                 }
             }
 
-            #
-            # Serialize XOTcl/NX content
-            # 
-            if {[catch {::Serializer all} objects]} {
-              ns_log notice "NX/XOTcl extension not loaded; will not copy objects\
-              (error: $objects; $::errorInfo)."
-              set objects ""
-            } else {
-              append script \n "namespace import -force ::xotcl::*" \n $objects \n
-            }
+	    if {$xotcl > 0} {
+	      #
+	      # Serialize XOTcl/NX content
+	      # 
+	      if {[catch {::Serializer all} objects]} {
+		ns_log notice "NX/XOTcl extension not loaded; will not copy objects\
+              		(error: $objects; $::errorInfo)."
+		set objects ""
+	      } else {
+		append script \n "namespace import -force ::xotcl::*" \n $objects \n
+	      }
+	    }
 
             #
             # Import commands from other namespaces
