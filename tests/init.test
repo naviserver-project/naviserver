@@ -64,7 +64,7 @@ test init-1.3 {global variables do not get cloned} -body {
 
 test init-1.4 {namespace variables do not get cloned} -body {
     ns_job wait $qid [ns_job queue $qid { info exists testnamespace::testvariable2 }]
-} -result 1
+} -result 0
 
 
 
