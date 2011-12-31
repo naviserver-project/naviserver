@@ -71,6 +71,7 @@
 #define NS_CONN_CHUNK              0x080 /* Streamed data is to be chunked. */
 #define NS_CONN_SENT_LAST_CHUNK    0x100 /* Marks that the last chunk was sent in chunked mode */
 #define NS_CONN_SENT_VIA_WRITER    0x200 /* Response data has been sent via writer thread */
+#define NS_CONN_ENTITYTOOLARGE    0x2000 /* the sent Entity was too large */
 
 /*
  * The following are valid return codes from an Ns_UserAuthorizeProc.
@@ -2075,6 +2076,10 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 
 NS_EXTERN int
 Ns_ConnReturnNotModified(Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int

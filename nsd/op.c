@@ -256,7 +256,16 @@ Ns_ConnRunRequest(Ns_Conn *conn)
 {
     Req  *reqPtr;
     int   status = NS_OK;
+    Conn *connPtr = (Conn *) conn;
     char *server = Ns_ConnServer(conn);
+
+    /*
+     * Return entity too large error message
+     */
+    if (connPtr->flags & NS_CONN_ENTITYTOOLARGE) {
+        connPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
+        return Ns_ConnReturnEntityTooLarge(conn);
+    }
 
     if (conn->request->method != NULL && conn->request->url != NULL) {
         Ns_MutexLock(&ulock);
