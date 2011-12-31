@@ -32,7 +32,14 @@ proc ns_share args {
 catch {package require nx}
 
 if {[info command ::nx::Object] ne ""} {
-  ns_log notice "ns_cache based on NX"
+  ns_log notice "Using ns_cache based on NX [package require nx]"
+  #
+  # Requiring the serializer here is not necessary for the ns-cache
+  # emulation, but since the tcl files are sourced quite early we make
+  # sure that during a "make test" everything is available, even if we
+  # have not an installed NX into the source directory tree.
+  #
+  package req nx::serializer
   #
   # Minimal ns_cache implementation based on NX
   #
@@ -104,7 +111,7 @@ if {[info command ::nx::Object] ne ""} {
   }
   
 } else {
-  ns_log notice "ns_cache implemented as a Tcl proc"
+  ns_log notice "Using ns_cache implemented as a Tcl proc"
   #
   # Minimal ns_cache implementation implemented as a Tcl proc
   #
