@@ -895,6 +895,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_ResetResult(interp);
             severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
         }
+	severity = (Ns_LogSeverity)addrPtr;
         enabled = Ns_LogSeverityEnabled(severity);
         if (objc == 4 && severity != Fatal) {
             if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
