@@ -636,20 +636,34 @@ NsTclParseArgsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
                      Tcl_Obj *CONST objv[])
 {
     Ns_ObjvSpec   *opts, *args, *specPtr;
-    Tcl_Obj      **argv;
+    Tcl_Obj      **argv, *argsObj;
     int            argc, doneOpts = 0, status = TCL_OK;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "specification args");
         return TCL_ERROR;
     }
-    if (Tcl_ListObjGetElements(interp, objv[2], &argc, &argv) != TCL_OK
+    /*
+     * In case both arguments are shared (objv[1] == objv[2]), make
+     * sure to decouple these, since Tcl_ListObjGetElements() and
+     * Tcl_ConvertToType() would shimmer on the shared object.
+     */
+    if (objv[2] == objv[1]) {
+        argsObj = Tcl_DuplicateObj(objv[2]);
+        Tcl_IncrRefCount(argsObj);
+    } else {
+        argsObj = objv[2];
+    }
+
+    if (Tcl_ListObjGetElements(interp, argsObj, &argc, &argv) != TCL_OK
         || Tcl_ConvertToType(interp, objv[1], &specType) != TCL_OK) {
+        if (argsObj != objv[2]) {Tcl_DecrRefCount(argsObj);}
         return TCL_ERROR;
     }
     opts = objv[1]->internalRep.twoPtrValue.ptr1;
     args = objv[1]->internalRep.twoPtrValue.ptr2;
     if (Ns_ParseObjv(opts, args, interp, 0, argc, argv) != NS_OK) {
+        if (argsObj != objv[2]) {Tcl_DecrRefCount(argsObj);}
         return TCL_ERROR;
     }
 
@@ -675,6 +689,7 @@ NsTclParseArgsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         specPtr++;
     }
 
+    if (argsObj != objv[2]) {Tcl_DecrRefCount(argsObj);}
     return status;
 }
 
