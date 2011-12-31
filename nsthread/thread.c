@@ -463,7 +463,7 @@ SetBottomOfStack(void *ptr) {
     Thread *thisPtr = GetThread();
 
     thisPtr->bottomOfStack = ptr;
-    fprintf(stderr, "SetBottomOfStack %p %s bot %p\n", thisPtr, thisPtr->name, ptr);
+    /*fprintf(stderr, "SetBottomOfStack %p %s bot %p\n", thisPtr, thisPtr->name, ptr);*/
 }
 
 
