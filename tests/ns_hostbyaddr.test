@@ -36,7 +36,7 @@ namespace import -force ::tcltest::*
 
 tcltest::testConstraint notDarwin [expr {$::tcl_platform(os) != "Darwin"}]
 
-test ns_hostbyaddr-1.1 {good address} -body {
+test ns_hostbyaddr-1.1 {good address} -constraints {notDarwin} -body {
     ns_hostbyaddr 127.0.0.1
 } -match glob -result localhost*
 
