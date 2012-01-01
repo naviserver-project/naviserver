@@ -1254,8 +1254,22 @@ DriverThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             if (sockPtr->keep) {
-                SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
-                Push(sockPtr, readPtr);
+	        /*
+		 * When keep-alive is set and more requests are
+		 * already in the request queue, don't timeout but
+		 * process the requests immediately.
+	         */
+	        if (drvPtr->queuesize > 1 || PollIn(&pdata, sockPtr->pidx)) {
+		    /*fprintf(stderr, "FIX timeout keepwait %d drvPtr->queuesize %d flags %d %.6x pollin %d\n", 
+		      sockPtr->drvPtr->keepwait, drvPtr->queuesize, sockPtr->flags, sockPtr->flags,
+		      PollIn(&pdata, sockPtr->pidx)); */
+		    sockPtr->timeout = now;
+		} else {
+		    /*fprintf(stderr, "Update the timeout for each closing socket %d with keepwait %d drvPtr->queuesize %d\n", 
+		      PollIn(&pdata, drvPtr->pidx), sockPtr->drvPtr->keepwait, drvPtr->queuesize);*/
+		  SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
+		}
+		Push(sockPtr, readPtr);
             } else {
                 if (shutdown(sockPtr->sock, 1) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
