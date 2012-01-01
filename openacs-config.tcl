@@ -145,27 +145,40 @@ ns_section ns/server/${server}
 	#
 	# Scaling and Tuning Options
 	#
-	ns_param   keepwait		0    ;# 30, keepalive period
-	#ns_param   maxconnections	100  ;# number of allocated connection stuctures
-	#ns_param   maxthreads		10   ;# max number of connection threads
-	#ns_param   minthreads          0    ;# min number of connection threads
-	#ns_param   connsperthread	0    ;# number of connections handled per thread
-	#ns_param   threadtimeout	120  ;# timeout for idle theads
+	#ns_param   maxconnections	100	;# 100, number of allocated connection stuctures
+	#ns_param   maxthreads		10	;# 10, max number of connection threads
+	#ns_param   minthreads          0	;# 0, min number of connection threads
+	#ns_param   connsperthread	0	;# 0, number of connections (requests) handled per thread
+	#ns_param   threadtimeout	120	;# 120, timeout for idle theads
 	#
 	# Directory listing options
 	#
 	#ns_param   directoryadp	$pageroot/dirlist.adp ;# Choose one or the other
 	#ns_param   directoryproc	_ns_dirlist           ;#  ...but not both!
 	#ns_param   directorylisting	fancy                 ;# Can be simple or fancy
+	#
+	# Compress response character data: ns_return, ADP etc.
+	#
+	#ns_param    compressenable      off	;# false, use "ns_conn compress" to override
+	#ns_param    compresslevel       4	;# 4, 1-9 where 9 is high compression, high overhead
+	#ns_param    compressminsize     512	;# Compress responses larger than this
+	#
+	# Configuration of replies
+	#
+	#ns_param    realm     		yourrealm	;# Default realm for Basic authentication
+	#ns_param    noticedetail	false	;# true, return detail information in server reply
+	#ns_param    errorminsize	0	;# 514, fillup reply to at least specified bytes (for ?early? MSIE)
+	#ns_param    headercase		preserve;# preserve, might be "tolower" or "toupper"
+	#ns_param    checkmodifiedsince	false	;# true, check modified-since before returning files from cache. Disable for speedup
 
 #
 # Special HTTP pages
 #
 ns_section ns/server/${server}/redirects
-    ns_param   404 "/global/file-not-found.html"
-    ns_param   403 "/global/forbidden.html"
-    ns_param   503 "/global/busy.html"
-    ns_param   500 "/global/error.html"
+	ns_param   404 "/global/file-not-found.html"
+	ns_param   403 "/global/forbidden.html"
+	ns_param   503 "/global/busy.html"
+	ns_param   500 "/global/error.html"
 
 #---------------------------------------------------------------------
 # 
@@ -173,10 +186,32 @@ ns_section ns/server/${server}/redirects
 # 
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/adp 
-	ns_param   map                /*.adp    ;# Extensions to parse as ADP's 
-	#ns_param   map			"/*.html" ;# Any extension can be mapped 
-	#ns_param   enableexpire	false     ;# Set "Expires: now" on all ADP's 
-	ns_param   enabledebug		$debug    ;# Allow Tclpro debugging with "?debug"
+	ns_param   enabledebug		$debug
+	ns_param   map			/*.adp		;# Extensions to parse as ADP's 
+	#ns_param   map			"/*.html"	;# Any extension can be mapped 
+	#
+	#ns_param   cache		true		;# false, enable ADP caching
+	#ns_param   cachesize		10000*1025	;# 5000*1024, size of cache
+	#
+	#ns_param   trace		true		;# false, trace execution of adp scripts
+	#ns_param   tracesize		100		;# 40, max number of entries in trace
+	#
+	#ns_param   bufsize		5*1024*1000	;# 1*1024*1000, size of ADP buffer
+	#
+	#ns_param   stream		true	;# false, enable ADP streaming
+	#ns_param   enableexpire	true	;# false, set "Expires: now" on all ADP's 
+	#ns_param   safeeval		true	;# false, disable inline scripts
+	#ns_param   singlescript	true	;# false, collapse Tcl blocks to a single Tcl script
+	#ns_param   detailerror		false	;# true,  include connection info in error backtrace
+	#ns_param   stricterror		true	;# false, interrupt execution on any error
+	#ns_param   displayerror	true	;# false, include error message in output
+	#ns_param   trimspace		true	;# false, trim whitespace from output buffer
+	#ns_param   autoabort		false	;# true,  failure to flush a buffer (e.g. closed HTTP connection) generates an ADP exception
+	#
+	#ns_param   errorpage		/.../errorpage.adp	;# page for returning errors
+	#ns_param   startpage		/.../startpage.adp	;# file to be run for every adp request; should include "ns_adp_include [ns_adp_argv 0]"
+	#ns_param   debuginit		some-proc		;# ns_adp_debuginit, proc to be executed on debug init
+	# 
 
 ns_section ns/server/${server}/adp/parsers
 	ns_param   fancy ".adp"
@@ -224,38 +259,30 @@ ns_section ns/server/${server}/tdav/share/share1
 # 
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/module/nssock
-    ns_param   timeout            120
-    ns_param   address            $address
-    ns_param   hostname           $hostname
-    ns_param   port               $httpport
-# setting maxinput higher than practical may leave the server vulnerable to resource DoS attacks
-# see http://www.panoptic.com/wiki/aolserver/166
-    ns_param   maxinput           [expr {$max_file_upload_mb * 1024 * 1024}] ;# Maximum File Size for uploads in bytes
-    ns_param   maxpost            [expr {$max_file_upload_mb * 1024 * 1024}] ;# Maximum File Size for uploads in bytes
-    ns_param   recvwait           [expr {$max_file_upload_min * 60}] ;# Maximum request time in minutes
+	ns_param   address		$address
+	ns_param   hostname		$hostname
+	ns_param   port			$httpport	;# 80 or 443
+	ns_param   maxinput		[expr {$max_file_upload_mb * 1024 * 1024}] ;# 1024*1024, maximum size for inputs
+	ns_param   recvwait		[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
+	#ns_param   maxline		4096	;# 4096, max size of a header line
+	#ns_param   maxheaders		128	;# 128, max number of header lines
+	#ns_param   uploadpath		/tmp	;# directory for uploads
+	#ns_param   backlog		256	;# 256, backlog for listen operations
+	#ns_param   acceptsize		10	;# value of "backlog", max number of acceptd (but unqueued) requests)
+	#ns_param   bufsize		16384	;# 16384, buffersize
+	#ns_param   readahead		16384	;# value of bufsize, size of readahead for requests
+	#ns_param   sendwait		30	;# 30, timeout in seconds for send operations
+	#ns_param   closewait		2	;# 2, timeout in seconds for close on socket
+	#ns_param   keepwait		2	;# 2, timeout in seconds for keep-alive
+	#
+	# Spooling Threads
+	#
+	#ns_param   spoolerthreads	1	;# 0, number of upload spooler threads
+	#ns_param   maxupload		0	;# 0, when specified, spool uploads larger than this value to a temp file
+	#ns_param   writerthreads	1	;# 0, number of writer threads
+	#ns_param   writersize		1048576	;# 1024*1024, use writer threads for files larger than this value
+	#ns_param   writerbufsize	8192	;# 8192, buffer size for writer threads
 
-# maxsock will limit the number of simultanously returned pages,
-# regardless of what maxthreads is saying
-    ns_param   maxsock               100 ;# 100 = default
-
-# On Windows you need to set this parameter to define the number of
-# connections as well (it seems).
-    ns_param   backlog               5  ;# if < 1 == 5 
-
-# Optional params with defaults:
-    ns_param   acceptsize            10; #1
-    ns_param   bufsize               16000
-    ns_param   rcvbuf                0
-    ns_param   sndbuf                0
-    ns_param   socktimeout           30 ;# if < 1 == 30
-    ns_param   sendwait              30 ;# if < 1 == socktimeout
-    ns_param   recvwait              30 ;# if < 1 == socktimeout
-    ns_param   closewait             2  ;# if < 0 == 2
-    ns_param   keepwait              30 ;# if < 0 == 30
-    ns_param   readtimeoutlogging    false
-    ns_param   serverrejectlogging   false
-    ns_param   sockerrorlogging      false
-    ns_param   sockshuterrorlogging  false
 
 #---------------------------------------------------------------------
 # 
@@ -263,36 +290,30 @@ ns_section ns/server/${server}/module/nssock
 # 
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/module/nslog 
-    ns_param   debug              false
-    ns_param   dev                false
-    ns_param   enablehostnamelookup false
-    ns_param   file               ${serverroot}/log/${server}.log
-    ns_param   logcombined        true
-    ns_param   extendedheaders    COOKIE
-#    ns_param   logrefer           false
-#    ns_param   loguseragent       false
-    ns_param   logreqtime         true
-    ns_param   maxbackup          1000
-    ns_param   rollday            *
-    ns_param   rollfmt            %Y-%m-%d-%H:%M
-    ns_param   rollhour           0
-    ns_param   rollonsignal       true
-    ns_param   rolllog            true
+	#
+	# General parameters
+	#
+	ns_param   file			${serverroot}/log/${server}.log
+	#ns_param   maxbuffer		100	;# 0, number of logfile entries to keep in memory before flushing to disk
+	#
+	# Control what to log
+	#
+	#ns_param   suppressquery	true	;# false, suppress query portion in log entry
+	#ns_param   logreqtime		true	;# false, include time to service the request
+	#ns_param   formattedtime	true	;# true, timestamps formatted or in secs (unix time)
+	#ns_param   logcombined		true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
+	#ns_param   extendedheaders	COOKIE	;# comma delimited list of HTTP heads to log per entry
+	#ns_param   checkforproxy	true	;# false, check for proxy header (X-Forwarded-For)
+	#
+	#
+	# Control log file rolling
+	#
+	#ns_param   maxbackup		100	;# 100, max number of backup log files
+	#ns_param   rolllog		true	;# true, should server log files automatically
+	#ns_param   rollhour		0	;# 0, specify at which hour to roll
+	#ns_param   rollonsignal	true	;# false, perform roll on a sighup
+	ns_param   rollfmt		%Y-%m-%d-%H:%M	;# format appendend to log file name
 
-#---------------------------------------------------------------------
-#
-# nsjava - aolserver module that embeds a java virtual machine.  Needed to 
-#          support webmail.  See http://nsjava.sourceforge.net for further 
-#          details. This may need to be updated for OpenACS4 webmail
-#
-#---------------------------------------------------------------------
-ns_section ns/server/${server}/module/nsjava
-    ns_param   enablejava         off  ;# Set to on to enable nsjava.
-    ns_param   verbosejvm         off  ;# Same as command line -debug.
-    ns_param   loglevel           Notice
-    ns_param   destroyjvm         off  ;# Destroy jvm on shutdown.
-    ns_param   disablejitcompiler off  
-    ns_param   classpath          /usr/local/jdk/jdk118_v1/lib/classes.zip:${bindir}/nsjava.jar:${pageroot}/webmail/java/activation.jar:${pageroot}/webmail/java/mail.jar:${pageroot}/webmail/java 
 
 #---------------------------------------------------------------------
 # 
