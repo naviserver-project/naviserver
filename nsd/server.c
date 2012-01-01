@@ -254,9 +254,11 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
 
     servPtr->opts.realm = Ns_ConfigString(path, "realm", server);
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
-    servPtr->opts.flushcontent = Ns_ConfigBool(path, "flushcontent", NS_FALSE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
     servPtr->opts.errorminsize = Ns_ConfigInt(path, "errorminsize", 514);
+    /* Does not seem to be used
+    servPtr->opts.flushcontent = Ns_ConfigBool(path, "flushcontent", NS_FALSE);
+    */
     servPtr->opts.hdrcase = Preserve;
     p = Ns_ConfigString(path, "headercase", "preserve");
     if (STRIEQ(p, "tolower")) {
