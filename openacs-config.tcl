@@ -10,24 +10,28 @@ ns_log notice "nsd.tcl: starting to read config file..."
 
 #---------------------------------------------------------------------
 # change to 80 and 443 for production use
-set httpport                  8000
-set httpsport                 8443 
+set httpport		8000
+set httpsport		8443 
 # If setting port below 1024 with NaviServer, read comments in file:
 #  /usr/local/ns/service0/packages/etc/daemontools/run
 
 # The hostname and address should be set to actual values.
 # setting the address to 0.0.0.0 means aolserver listens on all interfaces
-set hostname                  localhost
-set address                   127.0.0.1
+set hostname		localhost
+set address		127.0.0.1
 
 # Note: If port is privileged (usually < 1024), OpenACS must be
 # started by root, and, in NaviServer, the run script have a 
 # '-b address' flag which matches the address according to settings (above)
 
-set server                    "service0" 
-set servername                "New OpenACS Installation - Development"
+set server		"service0" 
+set servername		"New OpenACS Installation - Development"
 
-set serverroot                "/var/www/${server}"
+set serverroot		"/var/www/${server}"
+set logroot		${serverroot}/log/
+
+set homedir		/usr/local/ns
+set bindir		${homedir}/bin
 
 #---------------------------------------------------------------------
 # which database do you want? postgres or oracle
@@ -47,9 +51,6 @@ if { $database eq "oracle" } {
 # if debug is false, all debugging will be turned off
 set debug false
 set dev   false
-
-set homedir                   /usr/local/ns
-set bindir                    ${homedir}/bin
 
 set max_file_upload_mb        20
 set max_file_upload_min        5
@@ -72,13 +73,12 @@ set max_file_upload_min        5
 set pageroot                  ${serverroot}/www 
 set directoryfile             index.tcl,index.adp,index.html,index.htm
 
-
 #---------------------------------------------------------------------
 # Global server parameters 
 #---------------------------------------------------------------------
 ns_section ns/parameters 
-    ns_param   serverlog	${serverroot}/log/error.log 
-    ns_param   pidfile		${serverroot}/log/nsd.pid
+    ns_param   serverlog	${logroot}/error-${server}.log 
+    ns_param   pidfile		${logroot}/nsd-${server}.pid
     ns_param   home		$homedir 
     ns_param   debug		$debug
     #
@@ -293,7 +293,7 @@ ns_section ns/server/${server}/module/nslog
 	#
 	# General parameters
 	#
-	ns_param   file			${serverroot}/log/${server}.log
+	ns_param   file			${logroot}/access-${server}.log
 	#ns_param   maxbuffer		100	;# 0, number of logfile entries to keep in memory before flushing to disk
 	#
 	# Control what to log
