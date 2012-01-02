@@ -29,10 +29,15 @@ proc ns_share args {
 	by nsv."
 }
 
-catch {package require nx}
+if {[ns_config "ns/testconfig" isTestServer] eq ""} {
+  # Try to load NX only if not in the regression test server. The exit
+  # from the test server calls the global exit handler in XOTcl/NX
+  # (not the thread exit handler) and throws ugly error messages.
+  catch {package require nx}
+}
 
 if {[info command ::nx::Object] ne ""} {
-  ns_log notice "Using ns_cache based on NX [package require nx]"
+    ns_log notice "Using ns_cache based on NX [package require nx]"
   #
   # Requiring the serializer here is not necessary for the ns-cache
   # emulation, but since the tcl files are sourced quite early we make
