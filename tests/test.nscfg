@@ -32,7 +32,7 @@ ns_param   notbool    this-is-not-a-bool
 ns_param   notint     this-is-not-an-int
 ns_param   CamelCase  ok
 ns_param   wideint    12345678900
-
+ns_param   isTestServer true
 
 #
 # Global config.
