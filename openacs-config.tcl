@@ -601,6 +601,7 @@ ns_section ns/server/${server}/modules
     ns_param   nssock             ${bindir}/nssock.so 
     ns_param   nslog              ${bindir}/nslog.so 
     ns_param   nsdb               ${bindir}/nsdb.so
+    ns_param   nsproxy		  ${bindir}/nsproxy.so
     ns_param   libthread          [lindex [glob ${homedir}/lib/thread*/libthread*[info sharedlibextension]] 0]
 
     # openacs versions earlier than 5.x requires nsxml
