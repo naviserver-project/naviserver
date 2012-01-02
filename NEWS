@@ -5,22 +5,22 @@ NaviServer 4.99.3, released XXXX-XX-XX
 New Features:
 
     * New lazy Tcl interpreter initialization option. Saves memory and speeds
-      intialisation of interp on first use by defining procs on-demand.
+      initialization of interp on first use by defining procs on-demand.
       See: tcl/lazyloader parameter below.
 
     * New module nsproxy executes Tcl scripts via pool of external
-      processes. Useful to keep buggy/non-thread-safe code issolated from
+      processes. Useful to keep buggy/non-thread-safe code isolated from
       main server process. See also: ns_job.
 
     * Log filter callbacks (Tcl and C) may be added to the error log stream
-      to handle particular kinds of log messages by e.g. logging to a seperate
+      to handle particular kinds of log messages by e.g. logging to a separate
       file.
 
-    * Error logging may now be dissabled/enabled at runtime with the
+    * Error logging may now be disabled/enabled at runtime with the
       ns_logctl command.
 
     * User-defined named log severities may be created using the ns_logctl
-      command. These may be enabled/dissabled individually, at runtime, unlike
+      command. These may be enabled/disabled individually, at runtime, unlike
       the old numeric user-levels.
 
     * New limits feature. Connection limits can be bundled together into a
@@ -45,12 +45,12 @@ New Features:
     * A new [ns_cache_eval -force ...] switch replaces any existing cached value
       whether it is up to date or not.
 
-    * A new ns_cache_stats -contents switch dumps the expirey and size of each
+    * A new ns_cache_stats -contents switch dumps the expire and size of each
       entry in the cache cache. Useful when developing / testing to check
       utilisation.
 
-    * The new [ns_conn keepalive ?bool?] sub-command dissables or requests
-      keepalive behaviour for the current connection.
+    * The new [ns_conn keepalive ?bool?] sub-command disables or requests
+      keepalive behavior for the current connection.
 
     * ns_getcsv now takes a -delimiter switch.
 
@@ -95,23 +95,23 @@ New Features:
     * NaviServer now builds on Win32 using the standard configure scripts and
       the MingWin32 compiler.
 
-    * New command ns_mutex trylock which wroks similar to the same C API function
+    * New command ns_mutex trylock which works similar to the same C API function
 
     * New command ns_filestat which is similar to file stat but uses direct system 
       call instead of Tcl VFS
 
     * New command ns_db rowcount, which return the number of affected rows after a
-      DML opperation.
+      DML operation.
 
     * Support for If-Range: header in conditional range requests, this makes the server
-      more RFC compliant and allows file retrievals, regets and file mirroring without 
+      more RFC compliant and allows file retrievals, re-gets and file mirroring without 
       additional coding, it is all done by the server and HTTP
 
 Bug Fixes:
 
     * Various 64bit fixes.
     * Fix path attribute of HTP Cookie string.
-    * Make sure upload stats lock is unloacked after use.
+    * Make sure upload stats lock is unlocked after use.
     * Fix crash in writer thread logging already freed data.
     * Fix crashes in cache code due to incorrect expired entry flushing fixed.
     * Only add cache commands to virtual server interps.
@@ -123,7 +123,7 @@ Bug Fixes:
     * Don't delete bound Unix domain sockets.
     * Fix typo in ns_setexpires command.
     * Windows: block SIGPIPE.
-    * Windows: fix stdin, stdout, stderr channel initialisation.
+    * Windows: fix stdin, stdout, stderr channel initialization.
     * Fix infinite loop in spooler thread code.
     * Message line-breaking of email bodies sent with ns_sendmail now works
       correctly for non ASCII data.
@@ -248,12 +248,12 @@ Code Changes:
    * Conn structure now contains stat with the file currently being served, stat is
      called at the beginning of the request
 
-   The following routines have been removed, deprecated or dissabled.
+   The following routines have been removed, deprecated or disabled.
 
    * Removed: Ns_RegisterServerShutdown(), Ns_RegisterAtServerShutdown(),
      Ns_RegisterShutdown().
      See: Ns_RegisterAtShutdown().
-   * Dissabled: Ns_LogSetLogFlushProc(), Ns_SetNsLogProc().
+   * Disabled: Ns_LogSetLogFlushProc(), Ns_SetNsLogProc().
      See: Ns_AddLogfilter(), Ns_RemoveLofFilter().
 
 
@@ -314,7 +314,7 @@ Code Changes:
       printf style
     * Allocate interps efficiently, max 1 per-thread per-server
     * Add Ns_TclLogErrorInfo and allow admin to configure which 
-      conenction headers to log for Tcl errors
+      connection headers to log for Tcl errors
     * Remove [ns_markfordelete] command and roll into ns_ictl as
       [ns_ictl markfordelete]
     * Make Tcl send panic messages to the server log.

@@ -295,7 +295,7 @@ Ns_InfoErrorLog(void)
  * Ns_CreateLogSeverity --
  *
  *      Create and return a new log severity with the given name, which
- *      will initially be dissabled (except for the built-ins).
+ *      will initially be disabled (except for the built-ins).
  *
  * Results:
  *      The severity.
