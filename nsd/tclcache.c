@@ -87,8 +87,8 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     NsServer      *servPtr = itPtr->servPtr;
     Tcl_HashEntry *hPtr;
     TclCache      *cPtr;
-    char          *name;
-    int            new, maxSize, maxEntry = 0;
+    char          *name = NULL;
+    int            new, maxSize = 0, maxEntry = 0;
     Ns_Time       *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {

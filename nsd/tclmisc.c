@@ -622,7 +622,7 @@ static char hexChars[] = "0123456789ABCDEF";
    SHA spec.
  */
 static void
-shaByteSwap (uint32_t * dest, uint8_t const *src, unsigned int words)
+shaByteSwap(uint32_t * dest, uint8_t const *src, unsigned int words)
 {
     do {
        *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
@@ -632,7 +632,7 @@ shaByteSwap (uint32_t * dest, uint8_t const *src, unsigned int words)
 }
 
 /* Initialize the SHA values */
-void Ns_CtxSHAInit (Ns_CtxSHA1 * ctx)
+void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 {
 
     /* Set the h-vars to their initial values */
@@ -859,29 +859,29 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
 
     /* i is always less than SHA_BLOCKBYTES. */
     if (SHA_BLOCKBYTES - i > len) {
-        memcpy ((uint8_t *) ctx->key + i, buf, len);
+        memcpy((uint8_t *) ctx->key + i, buf, len);
         return;
     }
 
     if (i) {				/* First chunk is an odd size */
-        memcpy ((uint8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
-        shaByteSwap (ctx->key, (uint8_t *) ctx->key, SHA_BLOCKWORDS);
-        SHATransform (ctx);
+        memcpy((uint8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
+        shaByteSwap(ctx->key, (uint8_t *) ctx->key, SHA_BLOCKWORDS);
+        SHATransform(ctx);
         buf += SHA_BLOCKBYTES - i;
         len -= SHA_BLOCKBYTES - i;
     }
 
     /* Process data in 64-byte chunks */
     while (len >= SHA_BLOCKBYTES) {
-        shaByteSwap (ctx->key, buf, SHA_BLOCKWORDS);
-        SHATransform (ctx);
+        shaByteSwap(ctx->key, buf, SHA_BLOCKWORDS);
+        SHATransform(ctx);
         buf += SHA_BLOCKBYTES;
         len -= SHA_BLOCKBYTES;
     }
 
     /* Handle any remaining bytes of data. */
     if (len) {
-       memcpy (ctx->key, buf, len);
+       memcpy(ctx->key, buf, len);
     }
 }
 
@@ -907,14 +907,14 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     i = SHA_BLOCKBYTES - 1 - i;
 
     if (i < 8) {				/* Padding forces an extra block */
-        memset (p, 0, i);
-        shaByteSwap (ctx->key, (uint8_t *) ctx->key, 16);
-        SHATransform (ctx);
+        memset(p, 0, i);
+        shaByteSwap(ctx->key, (uint8_t *) ctx->key, 16);
+        SHATransform(ctx);
         p = (uint8_t *) ctx->key;
         i = 64;
     }
-    memset (p, 0, i - 8);
-    shaByteSwap (ctx->key, (uint8_t *) ctx->key, 14);
+    memset(p, 0, i - 8);
+    shaByteSwap(ctx->key, (uint8_t *) ctx->key, 14);
 
     /* Append length in bits and transform */
 #if HAVE64
@@ -926,7 +926,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 #endif
     SHATransform (ctx);
 
-    memcpy (digest, ctx->iv, sizeof (digest));
+    memcpy(digest, ctx->iv, sizeof(digest));
     for (i = 0; i < SHA_HASHWORDS; i++) {
         t = ctx->iv[i];
         digest[i * 4 + 0] = (uint8_t) (t >> 24);

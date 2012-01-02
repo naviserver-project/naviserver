@@ -248,7 +248,7 @@ int
 NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
-    char     *method, *url;
+    char     *method = NULL, *url = NULL;
     int       noinherit = 0, recurse = 0;
 
     Ns_ObjvSpec opts[] = {

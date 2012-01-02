@@ -38,7 +38,7 @@
 
 proc nstest_http {args} {
     ns_parseargs {
-        {-encoding "utf-8"} -setheaders -getheaders {-getbody 0} {-getbinary 0} {-http 1.0} --
+        {-encoding "utf-8"} -setheaders -getheaders {-getbody 0} {-getbinary 0} {-omitcontentlength 0} {-http 1.0} --
         method {url ""} {body ""}
     } $args
 
@@ -106,7 +106,9 @@ proc nstest_http {args} {
 
         if {$body ne {}} {
             set blen [string length $body]
-            ns_set icput $hdrs Content-Length $blen
+	    if {$omitcontentlength == 0} {
+		ns_set icput $hdrs Content-Length $blen
+	    }
         }
 
         #

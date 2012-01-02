@@ -5,6 +5,7 @@ syntax: glob
 
 *.o
 *.so
+*.dylib
 nsd/nsd
 nsproxy/nsproxy
 nsthread/nsthreadtest

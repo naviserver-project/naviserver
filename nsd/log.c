@@ -883,18 +883,20 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
             return TCL_ERROR;
         }
-        if (GetSeverityFromObj(interp, objv[2], &addrPtr) != TCL_OK) {
+        if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
+	    severity = (Ns_LogSeverity)addrPtr;
+	} else {
             if (objc == 3) {
                 return TCL_ERROR;
             }
-            severity = (Ns_LogSeverity)addrPtr;
-            if (severity >= severityCount) {
-                Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
-                return TCL_ERROR;
-            }
-            Tcl_ResetResult(interp);
             severity = Ns_CreateLogSeverity(Tcl_GetString(objv[2]));
-        }
+	}
+
+	if (severity >= severityCount) {
+	    Tcl_SetResult(interp, "max log severities exceeded", TCL_STATIC);
+	    return TCL_ERROR;
+	}
+
         enabled = Ns_LogSeverityEnabled(severity);
         if (objc == 4 && severity != Fatal) {
             if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
@@ -905,6 +907,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
         break;
       }
+
     case CSeveritiesIdx:
         objPtr = Tcl_GetObjResult(interp);
         for (i = 0; i < severityIdx; i++) {

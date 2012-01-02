@@ -205,6 +205,13 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             connPtr->servPtr = servPtr;
             connPtr->server = servPtr->server;
             connPtr->location = sockPtr->location;
+
+	    connPtr->flags = 0;
+	    if (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) {
+	        connPtr->flags |= NS_CONN_ENTITYTOOLARGE;
+		sockPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
+	    }
+
             if (poolPtr->queue.wait.firstPtr == NULL) {
                 poolPtr->queue.wait.firstPtr = connPtr;
             } else {
@@ -687,8 +694,6 @@ ConnRun(Conn *connPtr)
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */
     connPtr->recursionCount = 0;
     connPtr->auth = NULL;
-
-    connPtr->flags = 0;
 
     connPtr->keep = -1;                   /* Default keep-alive rules apply */
 

@@ -372,7 +372,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->acceptsize   = Ns_ConfigIntRange(path, "acceptsize",
                                              drvPtr->backlog, 1, INT_MAX);
 
+    /* Apparently not used; should be removed or filled with life
     drvPtr->keepallmethods = Ns_ConfigBool(path, "keepallmethods", NS_FALSE);
+    */
 
     drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", P_tmpdir));
 
@@ -1252,8 +1254,22 @@ DriverThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             if (sockPtr->keep) {
-                SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
-                Push(sockPtr, readPtr);
+	        /*
+		 * When keep-alive is set and more requests are
+		 * already in the request queue, don't timeout but
+		 * process the requests immediately.
+	         */
+	        if (drvPtr->queuesize > 1 || PollIn(&pdata, sockPtr->pidx)) {
+		    /*fprintf(stderr, "FIX timeout keepwait %d drvPtr->queuesize %d flags %d %.6x pollin %d\n", 
+		      sockPtr->drvPtr->keepwait, drvPtr->queuesize, sockPtr->flags, sockPtr->flags,
+		      PollIn(&pdata, sockPtr->pidx)); */
+		    sockPtr->timeout = now;
+		} else {
+		    /*fprintf(stderr, "Update the timeout for each closing socket %d with keepwait %d drvPtr->queuesize %d\n", 
+		      PollIn(&pdata, drvPtr->pidx), sockPtr->drvPtr->keepwait, drvPtr->queuesize);*/
+		  SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
+		}
+		Push(sockPtr, readPtr);
             } else {
                 if (shutdown(sockPtr->sock, 1) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
@@ -1955,6 +1971,11 @@ ChunkedDecode(Request *reqPtr, int update)
  *      SOCK_MORE:  More input is required.
  *      SOCK_ERROR: Client drop or timeout.
  *      SOCK_SPOOL: Pass input handling to spooler
+ *      SOCK_BADREQUEST
+ *      SOCK_REQUESTURITOOLONG
+ *      SOCK_LINETOOLONG
+ *      SOCK_BADHEADER
+ *      SOCK_TOOMANYHEADERS
  *
  * Side effects:
  *      The Request structure will be built up for use by the
@@ -2103,7 +2124,19 @@ SockRead(Sock *sockPtr, int spooler)
         return SOCK_READY;
     }
 
-    return SockParse(sockPtr, spooler);
+    n = SockParse(sockPtr, spooler);
+
+    /*
+     * Map status-codes which are handled via connection threads
+     * (passed via connPtr->flags) to SOCK_READY.
+     */
+    switch (n) {
+    case SOCK_ENTITYTOOLARGE: 
+      sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
+      n = SOCK_READY;
+    }
+
+    return n;
 }
 
 /*----------------------------------------------------------------------
@@ -2114,9 +2147,15 @@ SockRead(Sock *sockPtr, int spooler)
  *      headers.  Return NS_SOCK_READY when finnished parsing.
  *
  * Results:
- *      NS_SOCK_READY:  Conn is ready for processing.
- *      NS_SOCK_MORE:   More input is required.
- *      NS_SOCK_ERROR:  Malformed request.
+ *      SOCK_READY:  Conn is ready for processing.
+ *      SOCK_MORE:   More input is required.
+ *      SOCK_ERROR:  Malformed request.
+ *      SOCK_ENTITYTOOLARGE
+ *      SOCK_BADREQUEST
+ *      SOCK_REQUESTURITOOLONG
+ *      SOCK_LINETOOLONG
+ *      SOCK_BADHEADER
+ *      SOCK_TOOMANYHEADERS
  *
  * Side effects:
  *      An Ns_Request and/or Ns_Set may be allocated.
@@ -2235,12 +2274,14 @@ SockParse(Sock *sockPtr, int spooler)
                 Tcl_WideInt length;
 
                 /*
-                 * Honour meaningful remote
-                 * content-length hints only.
+                 * Honour meaningful remote content-length hints only.
                  */
 
                 if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
                     reqPtr->length = length;
+		    /*
+		     * Handle too large input requests
+		     */
                     if (reqPtr->length > drvPtr->maxinput) {
                         Ns_Log(DriverDebug, "SockParse: request too large, length=%"
                                             TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d",

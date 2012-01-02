@@ -1095,6 +1095,7 @@ CheckKeep(Conn *connPtr)
          */
 
         if (connPtr->keep > 0) {
+	  fprintf(stderr, "CheckKeep returns 1 (manual override)\n");
             return 1;
         }
 
@@ -1115,33 +1116,30 @@ CheckKeep(Conn *connPtr)
                     && !HdrEq(connPtr->headers, "connection", "close"))) {
 
                 /*
-                 * POST, PUT etc. require a content-length header.
+                 * POST, PUT etc. require a content-length header to allow keep-alive
                  */
-
                 if (connPtr->contentLength > 0
-                        && !Ns_SetIGet(connPtr->headers, "Content-Length")) {
+		    && !Ns_SetIGet(connPtr->headers, "Content-Length")) {
                     return 0;
                 }
 
                 /*
-                 * We require either chunked encoding or a valid
+                 * We allow keep-alive for chunked encoding variants or a valid
                  * content-length header.
                  */
-
-                if ((connPtr->flags & NS_CONN_CHUNK)
+		if ((connPtr->flags & NS_CONN_CHUNK)
                         || Ns_SetIGet(connPtr->outputheaders, "Content-Length")
                         || HdrEq(connPtr->outputheaders, "Content-Type",
                                  "multipart/byteranges")) {
-                    return 1;
+		    return 1;
                 }
             }
         }
     }
 
     /*
-     * Test for keep-alive failed.
+     * Don't allow keep-alive.
      */
-
     return 0;
 }
 

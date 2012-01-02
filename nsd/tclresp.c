@@ -346,6 +346,7 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     return Result(interp, result);
 }
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -695,6 +696,13 @@ NsTclReturnUnavailableObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                              Tcl_Obj *CONST objv[])
 {
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnUnavailable);
+}
+
+int
+NsTclReturnTooLargeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                          Tcl_Obj *CONST objv[])
+{
+    return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnEntityTooLarge);
 }
 
 
