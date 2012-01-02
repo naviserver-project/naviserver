@@ -2106,17 +2106,6 @@ SockRead(Sock *sockPtr, int spooler)
     reqPtr->avail += n;
 
     /*
-     * Check the hard limit for max uploaded content size
-     */
-
-    if (reqPtr->avail > drvPtr->maxinput) {
-        Ns_Log(DriverDebug, "SockRead: request too large, read=%"
-                            TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d",
-               reqPtr->avail, drvPtr->maxinput);
-        return SOCK_ENTITYTOOLARGE;
-    }
-
-    /*
      * This driver needs raw buffer, it is binary or non-HTTP request
      */
 
@@ -2125,16 +2114,6 @@ SockRead(Sock *sockPtr, int spooler)
     }
 
     n = SockParse(sockPtr, spooler);
-
-    /*
-     * Map status-codes which are handled via connection threads
-     * (passed via connPtr->flags) to SOCK_READY.
-     */
-    switch (n) {
-    case SOCK_ENTITYTOOLARGE: 
-      sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
-      n = SOCK_READY;
-    }
 
     return n;
 }
@@ -2150,7 +2129,6 @@ SockRead(Sock *sockPtr, int spooler)
  *      SOCK_READY:  Conn is ready for processing.
  *      SOCK_MORE:   More input is required.
  *      SOCK_ERROR:  Malformed request.
- *      SOCK_ENTITYTOOLARGE
  *      SOCK_BADREQUEST
  *      SOCK_REQUESTURITOOLONG
  *      SOCK_LINETOOLONG
@@ -2274,7 +2252,7 @@ SockParse(Sock *sockPtr, int spooler)
                 Tcl_WideInt length;
 
                 /*
-                 * Honour meaningful remote content-length hints only.
+                 * Honor meaningful remote content-length hints only.
                  */
 
                 if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
@@ -2286,7 +2264,29 @@ SockParse(Sock *sockPtr, int spooler)
                         Ns_Log(DriverDebug, "SockParse: request too large, length=%"
                                             TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d",
                                reqPtr->length, drvPtr->maxinput);
-                        return SOCK_ENTITYTOOLARGE;
+			/* 
+			 * We have to read the full request (although
+			 * it is too large) to drain the
+			 * channel. Otherwise, the server might close
+			 * the connection *before* it has recevied
+			 * full request with its body. Such a
+			 * premature close leads to an error message
+			 * in clients like firefox. Therefore we do
+			 * not return SOCK_ENTITYTOOLARGE here, but
+			 * just flag the condition. ...
+			 *
+			 * Possible future improvements: Currently,
+			 * the content is really received and kept. We
+			 * might simply drain the input and ignore the
+			 * read content, but this requires handling
+			 * for the various input modes (spooling,
+			 * chunked content, etc.). We should make the
+			 * same for the other reply-codes in
+			 * SockError().
+			 */
+			sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
+			sockPtr->keep = 0;
+			
                     }
                     reqPtr->contentLength = length;
                 }
