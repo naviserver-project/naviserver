@@ -1,3 +1,4 @@
+# -*- Tcl -*-
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -26,9 +27,6 @@
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
 # 
-#
-# $Header$
-#
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
@@ -210,6 +208,17 @@ test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     unset -nocomplain r
 } -result {413 0}
 
+test http-4.9 {HTTP/1.1 PUT file much larger than maxinput} -constraints {} -setup {
+    ns_register_proc PUT /put {
+        ns_return 200 text/plain [ns_conn content]
+    }
+} -body {
+    set r [nstest_http -http 1.1 PUT /put [string repeat x 1000002]]
+    list [lindex $r 0] [string length [lindex $r 1]]
+} -cleanup {
+    ns_unregister_proc PUT /put
+    unset -nocomplain r
+} -result {413 0}
 
 
 
