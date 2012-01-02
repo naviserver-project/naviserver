@@ -1,3 +1,5 @@
+# -*- Tcl -*-
+
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 

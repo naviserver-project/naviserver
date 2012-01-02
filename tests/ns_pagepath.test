@@ -1,7 +1,6 @@
+# -*- Tcl -*-
 #
 # See: ns_serverpath.test for tests which thoroughly exercise the -host switch.
-#
-# $Header$
 #
 
 

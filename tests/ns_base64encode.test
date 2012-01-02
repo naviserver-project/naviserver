@@ -1,6 +1,4 @@
-#
-# $Id$
-#
+# -*- Tcl -*-
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.2
