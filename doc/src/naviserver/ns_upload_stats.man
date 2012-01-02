@@ -14,11 +14,14 @@ file is uploaded completely this statistics is removed from the local cache.
 
 [list_begin definitions]
 
-[call [cmd ns_upload_stats] [arg url]]
+[call [cmd ns_upload_stats] [arg key]]
 
 [para]
-[arg url]
-This is the url where the file is being uploaded
+[arg key]
+The key is either the value provided via the query parameter
+"X-Progress-ID" (if provided) or the url with the query
+parameters. The convention with the query parameter "X-Progress-ID" is
+supported by nginx, lighttpd and by apache (mod_passenger).
 
 [list_end]
 
@@ -35,5 +38,5 @@ Put some examples here to illustrate command usage.
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer upload progress]
 [manpage_end]
