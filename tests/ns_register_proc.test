@@ -24,13 +24,13 @@ test proc-1.3 {basic syntax} -body {
 test proc-2.1 {register/unregister} -body {
     ns_register_proc GET /proc-2.1 {ns_return 200 text/plain proc-2.1 ;#}
     ns_unregister_op GET /proc-2.1
-    nstest_http GET /proc-2.1
+    nstest::http GET /proc-2.1
 } -result 404
 
 test proc-2.2 {register/unregister noinherit} -body {
     ns_register_proc -noinherit GET /proc-2.2 {ns_return 200 text/plain proc-2.2 ;#}
     ns_unregister_op -noinherit GET /proc-2.2
-    nstest_http GET /proc-2.2
+    nstest::http GET /proc-2.2
 } -result 404
 
 test proc-2.3 {register/unregister recurse} -body {
@@ -38,7 +38,7 @@ test proc-2.3 {register/unregister recurse} -body {
     ns_register_proc GET /proc-2.1/x   {ns_return 200 text/plain proc-2.1/x   ;#}
     ns_register_proc GET /proc-2.1/x/y {ns_return 200 text/plain proc-2.1/x/y ;#}
     ns_unregister_op -recurse GET /proc-2.1
-    nstest_http GET /proc-2.1/x/y
+    nstest::http GET /proc-2.1/x/y
 } -result 404
 
 
@@ -46,8 +46,8 @@ test proc-2.3 {register/unregister recurse} -body {
 test proc-3.1 {inherit} -setup {
     ns_register_proc GET /proc-3.1 {ns_return 200 text/plain proc-3.1 ;#}
 } -body {
-    list [nstest_http -getbody 1 GET /proc-3.1] \
-        [nstest_http -getbody 1 GET /proc-3.1/inherit]
+    list [nstest::http -getbody 1 GET /proc-3.1] \
+        [nstest::http -getbody 1 GET /proc-3.1/inherit]
 } -cleanup {
     ns_unregister_op GET /proc-3.1
 } -result {{200 proc-3.1} {200 proc-3.1}}
@@ -55,8 +55,8 @@ test proc-3.1 {inherit} -setup {
 test proc-3.2 {noinherit} -setup {
     ns_register_proc -noinherit GET /proc-3.2 {ns_return 200 text/plain proc-3.2 ;#}
 } -body {
-    list [nstest_http -getbody 1 GET /proc-3.2] \
-        [nstest_http GET /proc-3.2/inherit]
+    list [nstest::http -getbody 1 GET /proc-3.2] \
+        [nstest::http GET /proc-3.2/inherit]
 } -cleanup {
     ns_unregister_op -noinherit GET /proc-3.2
 } -result {{200 proc-3.2} 404}
@@ -65,8 +65,8 @@ test proc-3.3 {inherit + noinherit} -setup {
     ns_register_proc GET /proc-3.3 {ns_return 200 text/plain inherit ;#}
     ns_register_proc -noinherit GET /proc-3.3 {ns_return 200 text/plain noinherit ;#}
 } -body {
-    list [nstest_http -getbody 1 GET /proc-3.3/inherit] \
-        [nstest_http -getbody 1 GET /proc-3.3]
+    list [nstest::http -getbody 1 GET /proc-3.3/inherit] \
+        [nstest::http -getbody 1 GET /proc-3.3]
 } -cleanup {
     ns_unregister_op GET /proc-3.3
     ns_unregister_op -noinherit GET /proc-3.3
@@ -76,7 +76,7 @@ test proc-3.4 {override} -setup {
     ns_register_proc GET /proc-3.4 {ns_return 200 text/plain x ;#}
     ns_register_proc GET /proc-3.4 {ns_return 200 text/plain y ;#}
 } -body {
-    nstest_http -getbody 1 GET /proc-3.4/inherit
+    nstest::http -getbody 1 GET /proc-3.4/inherit
 } -cleanup {
     ns_unregister_op GET /proc-3.4
 } -result {200 y}
@@ -85,7 +85,7 @@ test proc-3.5 {override noinherit} -setup {
     ns_register_proc -noinherit GET /proc-3.5 {ns_return 200 text/plain x ;#}
     ns_register_proc -noinherit GET /proc-3.5 {ns_return 200 text/plain y ;#}
 } -body {
-    nstest_http -getbody 1 GET /proc-3.5
+    nstest::http -getbody 1 GET /proc-3.5
 } -cleanup {
     ns_unregister_op -noinherit GET /proc-3.5
 } -result {200 y}
@@ -95,7 +95,7 @@ test proc-3.5 {override noinherit} -setup {
 test proc-4.1 {glob} -setup {
     ns_register_proc GET /proc-4.1* {ns_return 200 text/plain proc-4.1 ;#}
 } -body {
-    nstest_http -getbody 1 GET /proc-4.1TEST
+    nstest::http -getbody 1 GET /proc-4.1TEST
 } -cleanup {
     ns_unregister_op GET /proc-4.1*
 } -result {200 proc-4.1}
@@ -106,7 +106,7 @@ test proc-5.1 {fastpath} -setup {
     ns_register_proc GET /10bytes {ns_return 200 text/plain error ;#}
     ns_register_fastpath GET /10bytes
 } -body {
-    nstest_http -getbody 1 GET /10bytes
+    nstest::http -getbody 1 GET /10bytes
 } -cleanup {
     ns_unregister_op GET /10bytes
 } -result {200 0123456789}

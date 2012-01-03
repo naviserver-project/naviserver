@@ -47,55 +47,55 @@ if {[ns_config test listenport]} {
 
 
 test byteranges-1.1 {Simple range, beginning} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-4} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-4} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 5 {bytes 0-4/10} 01234}
 
 test byteranges-1.2 {Simple range, end} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=5-9} \
+    nstest::http -getbody 1 -setheaders {Range bytes=5-9} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 5 {bytes 5-9/10} 56789}
 
 test byteranges-1.3 {Relative range} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=5-} \
+    nstest::http -getbody 1 -setheaders {Range bytes=5-} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 5 {bytes 5-9/10} 56789}
 
 test byteranges-1.4 {Relative range} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=-5} \
+    nstest::http -getbody 1 -setheaders {Range bytes=-5} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 5 {bytes 5-9/10} 56789}
 
 test byteranges-1.5 {Single byte (1st)} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-0} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-0} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 1 {bytes 0-0/10} 0}
 
 test byteranges-1.6 {Single byte (2nd)} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=1-1} \
+    nstest::http -getbody 1 -setheaders {Range bytes=1-1} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 1 {bytes 1-1/10} 1}
 
 test byteranges-1.7 {Single byte (last)} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=9-9} \
+    nstest::http -getbody 1 -setheaders {Range bytes=9-9} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 1 {bytes 9-9/10} 9}
 
 test byteranges-1.8 {Request more than exists} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-10} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-10} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 10 {bytes 0-9/10} 0123456789}
 
 test byteranges-1.9 {Request more than exists} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=-10} \
+    nstest::http -getbody 1 -setheaders {Range bytes=-10} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 10 {bytes 0-9/10} 0123456789}
@@ -103,19 +103,19 @@ test byteranges-1.9 {Request more than exists} -constraints serverListen -body {
 
 
 test byteranges-2.1 {Multiple contiguous ranges} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-6} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-2,3-6} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 7 {bytes 0-6/10} 0123456}
 
 test byteranges-2.2 {Multiple contiguous ranges} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-2,3-5,6-8} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-2,3-5,6-8} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 9 {bytes 0-8/10} 012345678}
 
 test byteranges-2.3 {Multiple non-contiguous ranges} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
 } -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
@@ -133,7 +133,7 @@ Content-range: bytes 7-9/10
 }]
 
 test byteranges-2.4 {Multiple ranges, out of order} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=7-9,0-2} \
+    nstest::http -getbody 1 -setheaders {Range bytes=7-9,0-2} \
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
 } -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
@@ -151,13 +151,13 @@ Content-range: bytes 0-2/10
 }]
 
 test byteranges-2.5 {Multiple overlapping ranges} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=2-8,3-6,4-7} \
+    nstest::http -getbody 1 -setheaders {Range bytes=2-8,3-6,4-7} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 7 {bytes 2-8/10} 2345678}
 
 test byteranges-2.6 {Multiple overlapping ranges} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=2-8,1-6,4-9} \
+    nstest::http -getbody 1 -setheaders {Range bytes=2-8,1-6,4-9} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 9 {bytes 1-9/10} 123456789}
@@ -166,7 +166,7 @@ test byteranges-2.6 {Multiple overlapping ranges} -constraints serverListen -bod
 
 test byteranges-2.8.1 {Multiple non-contiguous ranges, fd} \
     -constraints {knownBug serverListen} -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range Content-length} \
         GET /16480bytes
 } -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 220 \
@@ -185,7 +185,7 @@ Content-range: bytes 7-9/16480
 
 test byteranges-2.8.2 {Simple range, beginning, fd} \
     -constraints {knownBug serverListen} -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=0-4} \
+    nstest::http -getbody 1 -setheaders {Range bytes=0-4} \
         -getheaders {Content-length Content-range} \
         GET /16480bytes
 } -result {206 5 {bytes 0-4/16480} 01234}
@@ -194,72 +194,72 @@ test byteranges-2.8.2 {Simple range, beginning, fd} \
 
 
 test byteranges-3.1 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=3-2} \
+    nstest::http -getbody 1 -setheaders {Range bytes=3-2} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.2 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=} \
+    nstest::http -getbody 1 -setheaders {Range bytes=} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.3 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes 0-1} \
+    nstest::http -getbody 1 -setheaders {Range bytes 0-1} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.4 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range 0-1} \
+    nstest::http -getbody 1 -setheaders {Range 0-1} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.5 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range =} \
+    nstest::http -getbody 1 -setheaders {Range =} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.6 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range =-} \
+    nstest::http -getbody 1 -setheaders {Range =-} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.7 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=--6-9} \
+    nstest::http -getbody 1 -setheaders {Range bytes=--6-9} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.8 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=1--6} \
+    nstest::http -getbody 1 -setheaders {Range bytes=1--6} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 test byteranges-3.9 {syntactically invalid} -constraints serverListen -body {
-    nstest_http -getbody 1 -setheaders {Range bytes=1} \
+    nstest::http -getbody 1 -setheaders {Range bytes=1} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {200 10 {} 0123456789}
 
 
 test byteranges-4.1 {unsatisfiable} -constraints serverListen -body {
-    nstest_http -setheaders {Range bytes=10-10} -getheaders {Content-range} \
+    nstest::http -setheaders {Range bytes=10-10} -getheaders {Content-range} \
         GET /10bytes
 } -result {416 {bytes */10}}
 
 test byteranges-4.2 {unsatisfiable} -constraints serverListen -body {
-    nstest_http -setheaders {Range bytes=10-} -getheaders {Content-range} \
+    nstest::http -setheaders {Range bytes=10-} -getheaders {Content-range} \
         GET /10bytes
 } -result {416 {bytes */10}}
 
 test byteranges-4.3 {unsatisfiable} -constraints serverListen -body {
-    nstest_http -setheaders {Range bytes=11-10} -getheaders {Content-range} \
+    nstest::http -setheaders {Range bytes=11-10} -getheaders {Content-range} \
         GET /10bytes
 } -result {416 {bytes */10}}
 

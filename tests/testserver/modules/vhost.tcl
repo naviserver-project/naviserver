@@ -62,10 +62,10 @@ if {![string equal testvhost2 [ns_info server]]} {
     return
 }
 
-ns_serverrootproc nstest_serverroot arg
-ns_locationproc   nstest_location arg
+ns_serverrootproc nstest::serverroot arg
+ns_locationproc   nstest::location arg
 
-proc nstest_serverroot {{host ""} args} {
+proc nstest::serverroot {{host ""} args} {
     if {![string equal $host ""]} {
         set path [eval file join testserverroot $host $args]
     } else {
@@ -74,6 +74,6 @@ proc nstest_serverroot {{host ""} args} {
     return $path
 }
 
-proc nstest_location {args} {
+proc nstest::location {args} {
     return "testlocation.$args"
 }

@@ -28,42 +28,52 @@
 # version of this file under either the License or the GPL.
 #
 
-# http.tcl -
+# ::nstest::http -
 #     Routines for opening HTTP connections through
 #     the Tcl socket interface.
 #
 
+namespace eval ::nstest {
 
-proc nstest_http {args} {
-    ns_parseargs {
-        {-encoding "utf-8"} -setheaders -getheaders {-getbody 0} {-getbinary 0} {-omitcontentlength 0} {-http 1.0} --
-        method {url ""} {body ""}
-    } $args
+    proc http {args} {
+	ns_parseargs {
+	    {-encoding "utf-8"} 
+	    {-http 1.0} 
+	    -setheaders 
+	    -getheaders 
+	    {-getbody 0} 
+	    {-getbinary 0} 
+	    {-omitcontentlength 0} 
+	    {-verbose 0} 
+	    --
+	    method {url ""} {body ""}
+	} $args
 
-    set host localhost
-    set port [ns_config "ns/module/nssock" port]
-    set timeout 3
-    set state send
+	set host localhost
+	set port [ns_config "ns/module/nssock" port]
+	set timeout 3
+	set state send
+	set ::nstest::verbose $verbose
 
-    #
-    # Open a TCP connection to the host:port
-    #
-    
-    set fds [ns_sockopen -nonblock $host $port]
-    set rfd [lindex $fds 0]
-    set wfd [lindex $fds 1]
+	#
+	# Open a TCP connection to the host:port
+	#
+	
+	set fds [ns_sockopen -nonblock $host $port]
+	set rfd [lindex $fds 0]
+	set wfd [lindex $fds 1]
 
-    set sockerr [fconfigure $rfd -error]
-    if {$sockerr ne {}} {
-        return -code error $sockerr
-    }
+	set sockerr [fconfigure $rfd -error]
+	if {$sockerr ne {}} {
+	    return -code error $sockerr
+	}
 
 	#
 	# Force network line ending symantics.
 	#
 
-    fconfigure $rfd -translation crlf -blocking 0
-    fconfigure $wfd -translation crlf -blocking 1
+	fconfigure $rfd -translation crlf -blocking 0
+	fconfigure $wfd -translation crlf -blocking 1
 
 	#
 	# Force a specific encoding (utf-8 default).
@@ -72,280 +82,297 @@ proc nstest_http {args} {
 	fconfigure $rfd -encoding $encoding
 	fconfigure $wfd -encoding $encoding
 
-    if {[catch {
+	if {[catch {
 
-        #
-        # User supplied headers.
-        #
+	    #
+	    # User supplied headers.
+	    #
 
-        set hdrs [ns_set create]
-        if {[info exists setheaders]} {
-            foreach {k v} $setheaders {
-                ns_set put $hdrs $k $v
-            }
-        }
-
-        #
-        # Default Headers.
-        #
-
-        ns_set icput $hdrs Accept */*
-        ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
-
-		if {[string equal $http 1.0]} {
-			ns_set icput $hdrs Connection close
+	    set hdrs [ns_set create]
+	    if {[info exists setheaders]} {
+		foreach {k v} $setheaders {
+		    ns_set put $hdrs $k $v
 		}
-
-        if {[string equal $port 80]} {
-            ns_set icput $hdrs Host $host
-        } else {
-            ns_set icput $hdrs Host $host:$port
-        }
-
-        if {$body ne {}} {
-            set blen [string length $body]
-	    if {$omitcontentlength == 0} {
-		ns_set icput $hdrs Content-Length $blen
 	    }
-        }
 
-        #
-        # Send the request.
-        #
+	    #
+	    # Default Headers.
+	    #
 
-        if {[string equal $http ""]} {
-            set request "$method $url"
-        } else {
-            set request "$method $url HTTP/$http"
-        }
+	    ns_set icput $hdrs Accept */*
+	    ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
 
-        nstest_http_puts $timeout $wfd $request
+	    if {[string equal $http 1.0]} {
+		ns_set icput $hdrs Connection close
+	    }
 
-        for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
-            set key [ns_set key $hdrs $i]
-            set val [ns_set value $hdrs $i]
-            nstest_http_puts $timeout $wfd "$key: $val"
-        }
+	    if {[string equal $port 80]} {
+		ns_set icput $hdrs Host $host
+	    } else {
+		ns_set icput $hdrs Host $host:$port
+	    }
 
-        nstest_http_puts $timeout $wfd ""
-        flush $wfd
+	    if {$body ne {}} {
+		set blen [string length $body]
+		if {$omitcontentlength == 0} {
+		    ns_set icput $hdrs Content-Length $blen
+		}
+	    }
 
-        if {$body ne {}} {
-            fconfigure $wfd -translation binary -blocking 1
-            nstest_http_write $timeout $wfd $body $blen
-        }
+	    #
+	    # Send the request.
+	    #
 
-        ns_set free $hdrs
+	    if {[string equal $http ""]} {
+		set request "$method $url"
+	    } else {
+		set request "$method $url HTTP/$http"
+	    }
 
-        #
-        # Read the response.
-        #
+	    http_puts $timeout $wfd $request
 
-        set state read
-        set hdrs [ns_set create]
-        set line [nstest_http_gets $timeout $rfd]
+	    for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
+		set key [ns_set key $hdrs $i]
+		set val [ns_set value $hdrs $i]
+		http_puts $timeout $wfd "$key: $val"
+	    }
 
-        if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
+	    http_puts $timeout $wfd ""
+	    flush $wfd
+	    log "flush header"
 
-            #
-            # A fully formed HTTP response.
-            #
+	    if {$body ne {}} {
+		fconfigure $wfd -translation binary -blocking 1
+		http_write $timeout $wfd $body $blen
+	    }
 
-            while {1} {
-                set line [nstest_http_gets $timeout $rfd]
-                if {![string length $line]} {
-                    break
-                }
-                ns_parseheader $hdrs $line
-            }
+	    ns_set free $hdrs
 
-            #
-            # Read any body content.
-            #
+	    #
+	    # Read the response.
+	    #
 
-            set body ""
-            set length [ns_set iget $hdrs content-length]
-            if {$length eq {}} {
-                set length -1
-            }
-			set tencoding [ns_set iget $hdrs transfer-encoding]
+	    set state read
+	    set hdrs [ns_set create]
+	    set line [http_gets $timeout $rfd]
 
-            while {1} {
-                set buf [nstest_http_read $timeout $rfd $length]
-                set len [string length $buf]
+	    if {[regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response]} {
 
-				if {$len == 0} {
-					break
-				}
+		#
+		# A fully formed HTTP response.
+		#
 
-                append body $buf
-
-				if {[string equal $buf "0\n\n"] && [string equal $tencoding chunked]} {
-					break
-				}
-
-                if {$length > 0} {
-                    set length [expr {$length - $len}]
-                    if {$length <= 0} {
-                        break
-                    }
-                }
-            }
-
-        } else {
-
-            #
-            # Raw data.
-            #
-
-            set response ""
-            set body $line
-            append body [nstest_http_read $timeout $rfd -1]
-        }
-
-    } errMsg]} {
-
-        #
-        # For Bad requests we can still read the response
-        #
-
-        if {$state eq {read} && [info exists response]
-            || ($state eq {send}
-                && [catch {set line [nstest_http_gets $timeout $rfd]}] == 0
-                && [regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response])} {
-
-			# OK
-
-        } else {
-
-			#
-			# Something went wrong during the request, so return an error.
-			#
-
-			catch {close $rfd}
-			catch {close $wfd}
-			catch {ns_set free $hdrs}
-
-			return -code error -errorinfo $errMsg
+		while {1} {
+		    set line [http_gets $timeout $rfd]
+		    if {![string length $line]} {
+			break
+		    }
+		    ns_parseheader $hdrs $line
 		}
 
-    }
+		#
+		# Read any body content.
+		#
 
-    #
-    # Return the requested parts of the response.
-    #
+		set body ""
+		set length [ns_set iget $hdrs content-length]
+		if {$length eq {}} {
+		    set length -1
+		}
+		set tencoding [ns_set iget $hdrs transfer-encoding]
 
-    if {[info exists getheaders]} {
-        foreach h $getheaders {
-            lappend response [ns_set iget $hdrs $h]
-        }
-    }
+		while {1} {
+		    set buf [http_read $timeout $rfd $length]
+		    set len [string length $buf]
 
-    catch {close $rfd}
-    catch {close $wfd}
-    catch {ns_set free $hdrs}
+		    if {$len == 0} {
+			break
+		    }
 
-    if {[string is true $getbody] && $body ne {}} {
-        lappend response $body
-    }
+		    append body $buf
 
-    if {[string is true $getbinary] && $body ne {}} {
-        binary scan $body "H*" binary
-        lappend response [regexp -all -inline {..} $binary]
-    }
+		    if {[string equal $buf "0\n\n"] && [string equal $tencoding chunked]} {
+			break
+		    }
 
-    return $response
-}
+		    if {$length > 0} {
+			set length [expr {$length - $len}]
+			if {$length <= 0} {
+			    break
+			}
+		    }
+		}
 
-proc nstest_http_gets {timeout sock} {
+	    } else {
 
-    while {[gets $sock line] == -1} {
-        if {[eof $sock]} {
-            return -code error "nstest_http_gets: premature end of data"
-        }
-        nstest_http_readable $timeout $sock
-    }
+		#
+		# Raw data.
+		#
 
-    return $line
-}
+		set response ""
+		set body $line
+		append body [http_read $timeout $rfd -1]
+	    }
 
-proc nstest_http_puts {timeout sock string} {
+	} errMsg]} {
 
-    set ready [ns_sockselect -timeout $timeout {} $sock {}]
-    if {[lindex $ready 1] eq {}} {
-        return -code error "nstest_http_puts: write timed out"
-    }
+	    #
+	    # For Bad requests we can still read the response
+	    #
 
-    puts $sock $string
-}
+	    if {$state eq {read} && [info exists response]
+		|| ($state eq {send}
+		    && [catch {set line [http_gets $timeout $rfd]}] == 0
+		    && [regexp {^HTTP.*([0-9][0-9][0-9]) .*$} $line -> response])} {
 
-proc nstest_http_readable {timeout sock} {
+		# OK
 
-    set nread [ns_socknread $sock]
-    if {$nread == 0} {
-        set ready [ns_sockselect -timeout $timeout $sock {} {}]
-        if {[lindex $ready 0] eq {}} {
-            return -code error "nstest_http_readable: read timed out"
-        }
-        set nread [ns_socknread $sock]
-    }
+	    } else {
 
-    return $nread
-}
+		#
+		# Something went wrong during the request, so return an error.
+		#
 
-proc nstest_http_read {timeout sock length} {
-	
-	set nread [nstest_http_readable $timeout $sock]
-	if {$nread == 0} {
-		return ""
+		catch {close $rfd}
+		catch {close $wfd}
+		catch {ns_set free $hdrs}
+
+		return -code error -errorinfo $errMsg
+	    }
+
 	}
 
+	#
+	# Return the requested parts of the response.
+	#
+
+	if {[info exists getheaders]} {
+	    foreach h $getheaders {
+		lappend response [ns_set iget $hdrs $h]
+	    }
+	}
+
+	catch {close $rfd}
+	catch {close $wfd}
+	catch {ns_set free $hdrs}
+
+	if {[string is true $getbody] && $body ne {}} {
+	    lappend response $body
+	}
+
+	if {[string is true $getbinary] && $body ne {}} {
+	    binary scan $body "H*" binary
+	    lappend response [regexp -all -inline {..} $binary]
+	}
+
+	return $response
+    }
+
+    proc http_gets {timeout sock} {
+	while {[gets $sock line] == -1} {
+	    if {[eof $sock]} {
+		return -code error "http_gets: premature end of data"
+	    }
+	    http_readable $timeout $sock
+	}
+	log http_gets $line
+	return $line
+    }
+
+    proc http_puts {timeout sock string} {
+	log "http_puts" $string
+	set ready [ns_sockselect -timeout $timeout {} $sock {}]
+	if {[lindex $ready 1] eq {}} {
+	    return -code error "http_puts: write timed out"
+	}
+
+	puts $sock $string
+    }
+
+    proc http_readable {timeout sock} {
+	set nread [ns_socknread $sock]
+	if {$nread == 0} {
+	    set ready [ns_sockselect -timeout $timeout $sock {} {}]
+	    if {[lindex $ready 0] eq {}} {
+		return -code error "http_readable: read timed out"
+	    }
+	    set nread [ns_socknread $sock]
+	}
+	log http_readable $nread
+	return $nread
+    }
+
+    proc http_read {timeout sock length} {
+
+	set nread [http_readable $timeout $sock]
+	if {$nread == 0} {
+	    return ""
+	}
+	log "http_read <$nread> $length"
+
 	if {$length > 0 && $length < $nread} {
-		set nread $length
+	    set nread $length
 	}
 
 	if {$length > -1} {
-		return [read $sock $nread]
+	    log "http_read start-read $nread bytes"
+	    set result [read $sock $nread]
 	} else {
-		return [read $sock]
+	    log "http_read start-read without length"
+	    set result [read $sock]
 	}
-}
+	log "http_read returns" $result
+	return $result
+    }
 
-proc nstest_http_write {timeout sock string {length -1}} {
+    proc http_write {timeout sock string {length -1}} {
 
-     set ready [ns_sockselect -timeout $timeout {} $sock {}]
-     if {[lindex $ready 1] eq {}} {
-         return -code error "nstest_http_puts: write timed out"
-     }
- 
-     puts -nonewline $sock $string; flush $sock
+	set ready [ns_sockselect -timeout $timeout {} $sock {}]
+	if {[lindex $ready 1] eq {}} {
+	    return -code error "http_puts: write timed out"
+	}
+	
+	puts -nonewline $sock $string; flush $sock
+	log "http_write" $string
 
-     return
+	return
+	
+	#
+	# Experimental/debugging block-wise write
+	# 
+
+	if {$length == -1} {
+	    set length [string length $string]
+	}
+
+	set len [fconfigure $sock -buffersize]
+	set beg 0
+	set end [expr {$len - 1}]
+
+	while {$beg < $length} {
+	    if {$end >= $length} {
+		set end [expr {$length - 1}]
+	    }
+	    set ready [ns_sockselect -timeout $timeout {} $sock {}]
+	    if {[lindex $ready 1] eq {}} {
+		return -code error "http_puts: write timed out"
+	    }
+	    puts -nonewline $sock [string range $string $beg $end]
+	    incr beg $len
+	    incr end $len
+	}
+
+	flush $sock
+    }
     
-    #
-    # Experimental/debugging block-wise write
-    # 
+    proc log {what {msg ""}} {
+	if {!$::nstest::verbose} {return}
 
-    if {$length == -1} {
-        set length [string length $string]
+	set length [string length $msg]
+	if {$length > 40} {
+	    puts stderr "... $what: <[string range $msg 0 40]...> ($length bytes)"
+	} else {
+	    puts stderr "... $what: <$msg>"
+	}
     }
-
-    set len [fconfigure $sock -buffersize]
-    set beg 0
-    set end [expr {$len - 1}]
-
-    while {$beg < $length} {
-        if {$end >= $length} {
-            set end [expr {$length - 1}]
-        }
-        set ready [ns_sockselect -timeout $timeout {} $sock {}]
-        if {[lindex $ready 1] eq {}} {
-            return -code error "nstest_http_puts: write timed out"
-        }
-        puts -nonewline $sock [string range $string $beg $end]
-        incr beg $len
-        incr end $len
-    }
-
-    flush $sock
 }

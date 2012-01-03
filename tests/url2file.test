@@ -28,7 +28,7 @@ test url2file-1.4 {basic syntax} -body {
 test url2file-2.1 {ns_url2file} -setup {
     ns_register_proc GET /url2file {ns_return 200 text/plain [ns_url2file /foo] ;#}
 } -body {
-    nstest_http -getbody 1 GET /url2file
+    nstest::http -getbody 1 GET /url2file
 } -cleanup {
     ns_unregister_proc GET /url2file
 } -result [list 200 [ns_pagepath foo]]

@@ -43,7 +43,7 @@ if {[ns_config test listenport]} {
 test keep-1 {keep-alive: 1.0} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
-    nstest_http -http 1.0 -setheaders {connection ""} \
+    nstest::http -http 1.0 -setheaders {connection ""} \
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
@@ -53,7 +53,7 @@ test keep-1 {keep-alive: 1.0} -constraints serverListen -setup {
 test keep-2 {keep-alive: 1.0} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
-    nstest_http -http 1.0 -setheaders {connection close} \
+    nstest::http -http 1.0 -setheaders {connection close} \
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
@@ -63,7 +63,7 @@ test keep-2 {keep-alive: 1.0} -constraints serverListen -setup {
 test keep-3 {keep-alive: 1.0} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
-    nstest_http -http 1.0 -setheaders {connection keep-alive} \
+    nstest::http -http 1.0 -setheaders {connection keep-alive} \
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
@@ -75,7 +75,7 @@ test keep-4 {keep-alive: 1.0: POST} -constraints serverListen -setup {
 		ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
 	}
 } -body {
-    nstest_http -http 1.0 -setheaders {connection keep-alive} \
+    nstest::http -http 1.0 -setheaders {connection keep-alive} \
 		-getbody 1 -getheaders {connection} \
 		POST /keep body
 } -cleanup {
@@ -87,7 +87,7 @@ test keep-5 {keep-alive: 1.0: POST} -constraints {serverListen knownBug} -setup 
 		ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
 	}
 } -body {
-    nstest_http -http 1.0 -setheaders {connection keep-alive content-length -1} \
+    nstest::http -http 1.0 -setheaders {connection keep-alive content-length -1} \
 		-getbody 1 -getheaders {connection} \
 		POST /keep body
 } -cleanup {
@@ -99,7 +99,7 @@ test keep-5 {keep-alive: 1.0: POST} -constraints {serverListen knownBug} -setup 
 test keep-6 {keep-alive: 1.1} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
-    nstest_http -http 1.1 -setheaders {connection ""} \
+    nstest::http -http 1.1 -setheaders {connection ""} \
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
@@ -109,7 +109,7 @@ test keep-6 {keep-alive: 1.1} -constraints serverListen -setup {
 test keep-7 {keep-alive: 1.1} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
-    nstest_http -http 1.1 -setheaders {connection keep-alive} \
+    nstest::http -http 1.1 -setheaders {connection keep-alive} \
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
@@ -119,7 +119,7 @@ test keep-7 {keep-alive: 1.1} -constraints serverListen -setup {
 test keep-8 {keep-alive: 1.1} -constraints serverListen -setup {
     ns_register_proc GET /keep {ns_return 200 text/plain x}
 } -body {
-    nstest_http -http 1.1 -setheaders {connection close} \
+    nstest::http -http 1.1 -setheaders {connection close} \
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
@@ -131,7 +131,7 @@ test keep-9 {keep-alive: 1.1: POST} -constraints serverListen -setup {
 		ns_return 200 text/plain [list [ns_conn content] [ns_conn contentlength]]
 	}
 } -body {
-    nstest_http -http 1.1 -setheaders {connection ""} \
+    nstest::http -http 1.1 -setheaders {connection ""} \
 		-getbody 1 -getheaders {connection} \
 		POST /keep body
 } -cleanup {

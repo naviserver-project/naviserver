@@ -10,7 +10,7 @@ eval ::tcltest::configure $argv
 test errordoc-1.1 {adp template} -setup {
     ns_register_proc GET /400error { ns_returnbadrequest "uh-oh" ;#}
 } -body {
-    nstest_http -getbody 1 GET /400error
+    nstest::http -getbody 1 GET /400error
 } -cleanup {
     ns_unregister_proc GET /400error
 } -match glob -result {400 *oops*}

@@ -40,7 +40,7 @@ test filter-2.1 {correct order} -setup {
         ;# }
     ns_register_proc GET /filter-2.1 {ns_return 200 text/plain ok ;#}
 } -body {
-    set result [nstest_http -getbody 1 GET /filter-2.1]
+    set result [nstest::http -getbody 1 GET /filter-2.1]
     after 2000
     list $result [nsv_get . .]
 } -cleanup {
@@ -59,7 +59,7 @@ test filter-2.2 {stacked filters} -setup {
         ;# }
     ns_register_proc GET /filter-2.2 {ns_return 200 text/plain ok ;#}
 } -body {
-    list [nstest_http -getbody 1 GET /filter-2.2] [nsv_get . .]
+    list [nstest::http -getbody 1 GET /filter-2.2] [nsv_get . .]
 } -cleanup {
     nsv_unset -nocomplain . .
 } -result {{200 ok} {preauth-2.2-1 preauth-2.2-2}}
@@ -73,7 +73,7 @@ test filter-2.3 {void trace always runs} -setup {
     ns_register_proc GET /filter-2.3 {error filter-2.3 ;# }
 } -body {
     ns_logctl severity Error off
-    set result [nstest_http GET /filter-2.3]
+    set result [nstest::http GET /filter-2.3]
     ns_logctl severity Error on
     after 2000 ;# wait for conn thread to run trace code
     list $result [nsv_get . .]
@@ -97,7 +97,7 @@ test filter-3.1 {return filter_break} -setup {
         ns_return 200 text/plain ok
         ;# }
 } -body {
-    list [nstest_http -getbody 1 GET /filter-3.1] [nsv_get . .]
+    list [nstest::http -getbody 1 GET /filter-3.1] [nsv_get . .]
 } -cleanup {
     nsv_unset -nocomplain . .
     ns_unregister_proc GET /filter-3.1
@@ -118,7 +118,7 @@ test filter-3.2 {return filter_return} -setup {
         ns_return 200 text/plain ok
         ;# }
 } -body {
-    list [nstest_http -getbody 1 GET /filter-3.2] [nsv_get . .]
+    list [nstest::http -getbody 1 GET /filter-3.2] [nsv_get . .]
 } -cleanup {
     nsv_unset -nocomplain . .
     ns_unregister_proc GET /filter-3.2
@@ -135,7 +135,7 @@ test filter-4.1 {glob} -setup {
         ns_return 200 text/plain [nsv_get . .]
         ;# }
 } -body {
-    nstest_http -getbody 1 GET /filter-4.1/X/literal/Y]
+    nstest::http -getbody 1 GET /filter-4.1/X/literal/Y]
 } -cleanup {
     nsv_unset -nocomplain . .
     ns_unregister_proc GET /filter-4.1
@@ -156,7 +156,7 @@ test filter-5.1 {filter -first} -setup {
         ns_return 200 text/plain [nsv_get . .]
         ;# }
 } -body {
-    nstest_http -getbody 1 GET /filter-5.1
+    nstest::http -getbody 1 GET /filter-5.1
 } -cleanup {
     nsv_unset -nocomplain . .
     ns_unregister_proc GET /filter-5.1
@@ -169,7 +169,7 @@ test filter-6.1 {no filter scriptarg} -setup {
         nsv_lappend . . }
 } -body {
     ns_logctl severity Error off
-    nstest_http -getbody 1 GET /filter-6.1
+    nstest::http -getbody 1 GET /filter-6.1
     ns_logctl severity Error on
     nsv_get . .
 } -cleanup {
@@ -181,7 +181,7 @@ test filter-6.2 {filter scriptargs} -setup {
         nsv_lappend . . } x y z
 } -body {
     ns_logctl severity Error off
-    nstest_http -getbody 1 GET /filter-6.2
+    nstest::http -getbody 1 GET /filter-6.2
     ns_logctl severity Error on
     nsv_get . .
 } -cleanup {
@@ -193,7 +193,7 @@ test filter-6.3 {no trace scriptargs} -setup {
         nsv_lappend . . ignore }
 } -body {
     ns_logctl severity Error on
-    nstest_http -getbody 1 GET /trace-6.3
+    nstest::http -getbody 1 GET /trace-6.3
     ns_logctl severity Error on
     after 2500
     nsv_get . .
@@ -206,7 +206,7 @@ test filter-6.4 {trace scriptargs} -setup {
         nsv_lappend . . ignore } x y z
 } -body {
     ns_logctl severity Error on
-    nstest_http -getbody 1 GET /trace-6.4
+    nstest::http -getbody 1 GET /trace-6.4
     ns_logctl severity Error on
     after 2500
     nsv_get . .
