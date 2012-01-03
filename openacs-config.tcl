@@ -274,7 +274,7 @@ ns_section ns/server/${server}/module/nssock
 	#ns_param   readahead		16384	;# value of bufsize, size of readahead for requests
 	#ns_param   sendwait		30	;# 30, timeout in seconds for send operations
 	#ns_param   closewait		2	;# 2, timeout in seconds for close on socket
-	#ns_param   keepwait		2	;# 2, timeout in seconds for keep-alive
+	#ns_param   keepwait		2	;# 5, timeout in seconds for keep-alive
 	#
 	# Spooling Threads
 	#
