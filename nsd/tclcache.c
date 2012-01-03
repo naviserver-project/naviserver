@@ -59,7 +59,7 @@ static int CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                              Tcl_Obj *CONST objv[], int append);
 static Ns_Entry *CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key,
                              int *newPtr, Ns_Time *timeoutPtr);
-static void SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr);
+static void SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost);
 static Ns_ObjvProc ObjvCache;
 
 
@@ -187,40 +187,44 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_CacheGetValue(entry),
                                                   Ns_CacheGetSize(entry)));
     } else {
+        Ns_Time start, end, diff;
+
         Ns_CacheUnlock(cPtr->cache);
+        Ns_GetTime(&start);
+
         if (nargs == 1) {
             status = Tcl_EvalObjEx(interp, objv[objc-1], 0);
         } else {
             status = Tcl_EvalObjv(interp, nargs, objv + (objc-nargs), 0);
         }
+        Ns_GetTime(&end);
+        Ns_DiffTime(&end, &start, &diff);
+
         Ns_CacheLock(cPtr->cache);
         if (status != TCL_OK && status != TCL_RETURN) {
-            /* 
-	       Don't cache anything, if the status code is not
-	       TCL_OK or TCL_RETURN.
-             
-	       The remaining defined status codes are TCL_BREAK,
-	       TCL_CONTINUE and TCL_ERROR. The classical idiom for
-	       telling nscache from Tcl *not* to cache an entry is to
-	       return from the passed script with TCL_BREAK or
-	       TCL_CONTINUE. See:
 
-	       http://panoptic.com/wiki/aolserver/Nscache 
-
-	       This idiom used e.g. in OpenACS. Thereforewe want to
-	       return TCL_BREAK or TCL_CONTINUE as well.  To protect
-	       against erronous returns, map unknown error codes to
-	       TCL_ERROR.
+           /* 
+	    * Don't cache anything, if the status code is not TCL_OK
+	    * or TCL_RETURN.
+	    * 
+	    * The remaining status codes are TCL_BREAK, TCL_CONTINUE
+	    * and TCL_ERROR. Regarding TCL_BREAK and TCL_CONTINUE as
+	    * signals for not cacheing is used e.g. in
+	    * OpenACS. Therefore we want to return TCL_BREAK or
+	    * TCL_CONTINUE as well.
+	    *
+	    * Certainly, we could map unknown error codes to TCL_ERROR
+	    * as it was done in earlier versions of NaviServer.
+	    *
+	    * if (status != TCL_BREAK && status != TCL_CONTINUE) {
+	    *     status = TCL_ERROR;
+	    * }
 	    */
 
-	    if (status != TCL_BREAK && status != TCL_CONTINUE) {
-	      status = TCL_ERROR;
-	    }
-
-            Ns_CacheDeleteEntry(entry);
+	    Ns_CacheDeleteEntry(entry);
         } else {
             status = TCL_OK;
-            SetEntry(cPtr, entry, Tcl_GetObjResult(interp), expPtr);
+            SetEntry(cPtr, entry, Tcl_GetObjResult(interp), expPtr, diff.sec * 1000000 + diff.usec);
         }
         Ns_CacheBroadcast(cPtr->cache);
     }
@@ -283,7 +287,7 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         return TCL_ERROR;
     }
     valObj = Tcl_NewIntObj(cur += incr);
-    SetEntry(cPtr, entry, valObj, expPtr);
+    SetEntry(cPtr, entry, valObj, expPtr, 0);
     Tcl_SetObjResult(interp, valObj);
     Ns_CacheUnlock(cPtr->cache);
 
@@ -362,7 +366,7 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             return TCL_ERROR;
         }
     }
-    SetEntry(cPtr, entry, valObj, expPtr);
+    SetEntry(cPtr, entry, valObj, expPtr, 0);
     Tcl_SetObjResult(interp, valObj);
     Ns_CacheUnlock(cPtr->cache);
 
@@ -711,7 +715,7 @@ CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key, int *newPtr,
  */
 
 static void
-SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr)
+SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost)
 {
     char    *string, *value;
     int      len;
@@ -730,7 +734,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr)
         } else {
             expPtr = Ns_AbsoluteTime(&time, expPtr);
         }
-        Ns_CacheSetValueExpires(entry, value, len, expPtr);
+        Ns_CacheSetValueExpires(entry, value, len, expPtr, cost);
     }
 }
 

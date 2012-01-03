@@ -688,7 +688,7 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 
 NS_EXTERN void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        Ns_Time *timeoutPtr) NS_GNUC_NONNULL(1);
+                        Ns_Time *timeoutPtr, int cost) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_CacheUnsetValue(Ns_Entry *entry)

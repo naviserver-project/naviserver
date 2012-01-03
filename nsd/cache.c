@@ -53,6 +53,8 @@ typedef struct Entry {
     Tcl_HashEntry  *hPtr;
     Ns_Time         expires;  /* Absolute ttl timeout. */
     size_t          size;
+    int		    cost;     /* cost to compute a single entry */
+    int		    count;    /* reuse of this entry */
     void           *value;    /* Will appear NULL for concurrent updates. */
 } Entry;
 
@@ -213,6 +215,7 @@ Ns_CacheFindEntry(Ns_Cache *cache, CONST char *key)
     }
     ++cachePtr->stats.nhit;
     Delink(ePtr);
+    ePtr->count ++;
     Push(ePtr);
 
     return (Ns_Entry *) ePtr;
@@ -258,6 +261,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
             Ns_CacheUnsetValue((Ns_Entry *) ePtr);
             new = 1;
         } else {
+	    ePtr->count ++;
             ++cachePtr->stats.nhit;
         }
         Delink(ePtr);
@@ -396,12 +400,12 @@ Ns_CacheSetValue(Ns_Entry *entry, void *value)
 void
 Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 {
-    Ns_CacheSetValueExpires(entry, value, size, NULL);
+  Ns_CacheSetValueExpires(entry, value, size, NULL, 0);
 }
 
 void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        Ns_Time *timeoutPtr)
+                        Ns_Time *timeoutPtr, int cost)
 {
     Entry *ePtr = (Entry *) entry;
     Cache *cachePtr = ePtr->cachePtr;
@@ -409,6 +413,9 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
     Ns_CacheUnsetValue(entry);
     ePtr->value = value;
     ePtr->size = size;
+    ePtr->cost = cost;
+    ePtr->count = 1;
+
     if (timeoutPtr != NULL) {
         ePtr->expires = *timeoutPtr;
     }
@@ -803,20 +810,30 @@ Ns_CacheBroadcast(Ns_Cache *cache)
 char *
 Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
 {
-    Cache        *cachePtr = (Cache *) cache;
-    unsigned long total, hitrate;
+    Cache          *cachePtr = (Cache *)cache;
+    unsigned long   total, hitrate;
+    Entry          *ePtr;
+    Ns_CacheSearch  search;
+    double          savedCost = 0.0;
 
     total = cachePtr->stats.nhit + cachePtr->stats.nmiss;
     hitrate = (total ? (cachePtr->stats.nhit * 100) / total : 0);
 
+    ePtr = (Entry *)Ns_CacheFirstEntry(cache, &search);
+    while (ePtr != NULL) {
+      savedCost += ((int64_t) ePtr->count * ePtr->cost) / 1000000.0;
+      ePtr = (Entry *)Ns_CacheNextEntry(&search);
+    }
+
     return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
                "flushed %lu hits %lu missed %lu hitrate %lu "
-               "expired %lu pruned %lu",
+               "expired %lu pruned %lu saved %.6f",
                (unsigned long) cachePtr->maxSize,
                (unsigned long) cachePtr->currentSize,
                cachePtr->entriesTable.numEntries, cachePtr->stats.nflushed,
                cachePtr->stats.nhit, cachePtr->stats.nmiss, hitrate,
-               cachePtr->stats.nexpired, cachePtr->stats.npruned);
+			    cachePtr->stats.nexpired, cachePtr->stats.npruned,
+			    savedCost);
 }
 
 

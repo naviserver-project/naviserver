@@ -197,10 +197,13 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
             if (status != NS_TRUE) {
                 Ns_CacheDeleteEntry(entry);
             } else {
-                Ns_GetTime(&time);
-                Ns_IncrTime(&time, ttl, 0);
+	        Ns_Time endTime, diffTime;
+
+                Ns_GetTime(&endTime);
+		Ns_DiffTime(&endTime, &time, &diffTime);
+                Ns_IncrTime(&endTime, ttl, 0);
                 Ns_CacheSetValueExpires(entry, ns_strdup(ds.string), ds.length,
-                                        &time);
+                                        &endTime, diffTime.sec * 1000000 + diffTime.usec);
             }
             Ns_CacheBroadcast(cache);
         } else {
