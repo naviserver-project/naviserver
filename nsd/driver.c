@@ -360,7 +360,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                                              2,            0, INT_MAX);
 
     drvPtr->keepwait     = Ns_ConfigIntRange(path, "keepwait",
-                                             2,            0, INT_MAX);
+                                             5,            0, INT_MAX);
 
     drvPtr->backlog      = Ns_ConfigIntRange(path, "backlog",
                                              256,          1, INT_MAX);
