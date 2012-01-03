@@ -148,8 +148,9 @@ ns_section ns/server/${server}
 	#ns_param   maxconnections	100	;# 100, number of allocated connection stuctures
 	#ns_param   maxthreads		10	;# 10, max number of connection threads
 	#ns_param   minthreads          0	;# 0, min number of connection threads
-	#ns_param   connsperthread	0	;# 0, number of connections (requests) handled per thread
+	ns_param   connsperthread	100	;# 0, number of connections (requests) handled per thread
 	#ns_param   threadtimeout	120	;# 120, timeout for idle theads
+	#ns_param   spread		0	;# 20, spread factor in percent for varying connsperthread and threadtimeout
 	#
 	# Directory listing options
 	#

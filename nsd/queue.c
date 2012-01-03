@@ -35,6 +35,7 @@
  */
 
 #include "nsd.h"
+#include <math.h>
 
 NS_RCSID("@(#) $Header$");
 
@@ -503,8 +504,9 @@ NsConnThread(void *arg)
     Conn         *connPtr;
     Ns_Time       wait, *timePtr;
     unsigned int  id;
-    int           status, cpt, ncons;
-    char         *p, *path;
+    int           status, cpt, ncons, spread, maxcpt;
+    double        spreadFactor;
+    char         *p, *path, *exitMsg;
     Ns_Thread     joinThread;
 
     /*
@@ -520,16 +522,28 @@ NsConnThread(void *arg)
     Ns_ThreadSetName("-conn:%s%s%s:%d", servPtr->server, p ? ":" : "", p ? p : "", id);
 
     /*
-     * See how many connections this thread should run.
-     * Setting this parameter to > 0 will cause the
-     * thread to graceously exit, after processing that
-     * many requests, thus initiating kind-of Tcl-level
-     * garbage collection.
+     * See how many connections this thread should run.  Setting
+     * connsperthread to > 0 will cause the thread to graceously exit,
+     * after processing that many requests, thus initiating kind-of
+     * Tcl-level garbage collection. The factor is varied pre the
+     * spread.
      */
 
-    path = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
-    cpt = Ns_ConfigIntRange(path, "connsperthread", 0, 0, INT_MAX);
+    path   = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
+    cpt    = Ns_ConfigIntRange(path, "connsperthread", 0, 0, INT_MAX);
+    spread = Ns_ConfigIntRange(path, "spread", 20, 0, 100);
+
+   /* 
+    * spreadFactor is a value of 1.0 +/- configured spread percentage.
+    * when the conigured spread is 0, spreadFactor will be 1.0, 
+    * when it is 100, the spreadFactor will be between 0.0 and 2.0.
+    */
+    spreadFactor = 1.0 + (2 * spread * Ns_DRand() - spread) / 100.0;
+    
+    maxcpt = round(cpt * (1.0 + spread / 100.0)) ; /* allow max cpt requests + spread requests */
+    cpt = round(cpt * spreadFactor);
     ncons = cpt;
+    maxcpt = cpt - maxcpt;
 
     /*
      * Start handling connections.
@@ -547,7 +561,7 @@ NsConnThread(void *arg)
             timePtr = NULL;
         } else {
             Ns_GetTime(&wait);
-            Ns_IncrTime(&wait, poolPtr->threads.timeout, 0);
+            Ns_IncrTime(&wait, round(poolPtr->threads.timeout * spreadFactor), 0);
             timePtr = &wait;
         }
 
@@ -558,7 +572,12 @@ NsConnThread(void *arg)
             status = Ns_CondTimedWait(&poolPtr->queue.cond,
                                       &servPtr->pools.lock, timePtr);
         }
-        if (poolPtr->queue.wait.firstPtr == NULL) {
+
+        if (servPtr->pools.shutdown) {
+            exitMsg = "shutdown pending";
+            break;
+        } else if (poolPtr->queue.wait.firstPtr == NULL) {
+	    exitMsg = "idle thread terminates";
             break;
         }
 
@@ -620,8 +639,32 @@ NsConnThread(void *arg)
             NsRunAtReadyProcs();
             Ns_MutexLock(&servPtr->pools.lock);
         }
-        if (cpt && --ncons <= 0) {
-            break; /* Served given # of connections in this thread */
+	if (cpt) {
+	    --ncons;
+
+	    if (poolPtr->threads.idle < poolPtr->threads.min 
+		|| poolPtr->queue.wait.num > 0
+		) {
+		/* 
+		 * The server is quite busy. In this situation we do not
+		 * want to terminate a thread on the weak condition that
+		 * it has processed the configured number of connections
+		 * (which is varied by a random factor). We allow
+		 * connection threads to perform in stress situations as
+		 * many requests as the upper bound of the spread allows.
+		 */
+		if (ncons <= maxcpt) {
+		    exitMsg = "exceeded max connections per thread + overtime";
+		    break;
+		} else if (ncons <= 0) {
+		    fprintf(stderr, "%s #### doing overtime due to stress %d, waiting %d\n",
+			    Ns_ThreadGetName(), ncons, poolPtr->queue.wait.num);
+		}
+	    } else if (ncons <= 0) {
+		/* Served given # of connections in this thread */
+		exitMsg = "exceeded max connections per thread";
+		break;
+	    }
         }
     }
     poolPtr->threads.idle--;
@@ -629,17 +672,14 @@ NsConnThread(void *arg)
     if (poolPtr->threads.current == 0) {
         Ns_CondBroadcast(&poolPtr->queue.cond);
     }
-    if (servPtr->pools.shutdown) {
-        p = "shutdown pending";
-    } else {
-        p = "no waiting connections";
-    }
+
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);
     Ns_MutexUnlock(&servPtr->pools.lock);
     if (joinThread != NULL) {
         JoinConnThread(&joinThread);
     }
+    Ns_Log(Notice, "exiting: %s", exitMsg);
     Ns_ThreadExit(argPtr);
 }
 
