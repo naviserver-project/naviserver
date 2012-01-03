@@ -299,7 +299,7 @@ test cache-7.1 {cache stats entries} -body {
     lsort [array names stats]
 } -cleanup {
     unset -nocomplain stats
-} -result {entries expired flushed hitrate hits maxsize missed pruned size}
+} -result {entries expired flushed hitrate hits maxsize missed pruned saved size}
 
 test cache-7.2 {cache stats contents} -body {
     ns_cache_eval c1 k1 {return a}
