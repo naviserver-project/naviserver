@@ -406,7 +406,7 @@ CreatePool(NsServer *servPtr, char *pool)
     poolPtr->threads.max =
         Ns_ConfigIntRange(path, "maxthreads", 10, 0, maxconns);
     poolPtr->threads.min =
-        Ns_ConfigIntRange(path, "minthreads", 0, 0, poolPtr->threads.max);
+        Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
     poolPtr->threads.timeout =
         Ns_ConfigIntRange(path, "threadtimeout", 120, 0, INT_MAX);
 }

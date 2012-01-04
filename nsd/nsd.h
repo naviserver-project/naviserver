@@ -603,6 +603,7 @@ typedef struct ConnPool {
         int current;
         int idle;
         int timeout;
+        int creating;
     } threads;
 
 } ConnPool;

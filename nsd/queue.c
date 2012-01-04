@@ -144,8 +144,8 @@ NsMapPool(ConnPool *poolPtr, char *map)
     if (Tcl_SplitList(NULL, map, &mc, (CONST char***)&mv) == TCL_OK) {
         if (mc == 2) {
             Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0, NULL);
-            Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", server,
-                   mv[0], mv[1], poolPtr->pool);
+            Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", 
+		   server, mv[0], mv[1], poolPtr->pool);
         }
         ckfree((char *) mv);
     }
@@ -174,7 +174,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
     NsServer *servPtr = sockPtr->servPtr;
     ConnPool *poolPtr = NULL;
     Conn     *connPtr = NULL;
-    int       create = 0;
+    int       create = 0, idle;
 
     /*
      * Select server connection pool.
@@ -220,22 +220,38 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             }
             poolPtr->queue.wait.lastPtr = connPtr;
             connPtr->nextPtr = NULL;
-            if (poolPtr->threads.idle == 0
+            idle = poolPtr->threads.idle;
+            if (poolPtr->threads.creating == 0 
+                && idle < poolPtr->threads.min
                 && poolPtr->threads.current < poolPtr->threads.max) {
-                ++poolPtr->threads.idle;
-                ++poolPtr->threads.current;
+                int wantCreate = poolPtr->threads.min - poolPtr->threads.idle;
+
                 create = 1;
+                Ns_Log(Notice, "[%s] wantCreate %d (current %d idle %d waiting %d)",
+		       poolPtr->servPtr->server, 
+		       wantCreate, 
+		       poolPtr->threads.current, 
+		       poolPtr->threads.idle,
+		       poolPtr->queue.wait.num + 1);
+                poolPtr->threads.idle ++;
+                poolPtr->threads.current ++;
+                poolPtr->threads.creating = 1;
             }
             ++poolPtr->queue.wait.num;
         }
     }
     Ns_MutexUnlock(&servPtr->pools.lock);
     if (connPtr == NULL) {
+	Ns_Log(Notice, "[%s] QUEUE return 0 wait first %p %d idle %d current %d",
+	       poolPtr->servPtr->server, 
+	       poolPtr->queue.wait.firstPtr, poolPtr->queue.wait.num, 
+	       poolPtr->threads.idle, poolPtr->threads.current);
         return 0;
     }
     if (create) {
         CreateConnThread(poolPtr);
-    } else {
+    } 
+    if (idle > 0) {
         Ns_CondSignal(&poolPtr->queue.cond);
     }
 
@@ -373,6 +389,7 @@ NsStartServer(NsServer *servPtr)
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
         poolPtr->threads.current = poolPtr->threads.idle = poolPtr->threads.min;
+	poolPtr->threads.creating = poolPtr->threads.min;
         for (n = 0; n < poolPtr->threads.min; ++n) {
             CreateConnThread(poolPtr);
         }
@@ -543,14 +560,41 @@ NsConnThread(void *arg)
     maxcpt = round(cpt * (1.0 + spread / 100.0)) ; /* allow max cpt requests + spread requests */
     cpt = round(cpt * spreadFactor);
     ncons = cpt;
-    maxcpt = cpt - maxcpt;
+    maxcpt = cpt - maxcpt;   /* negative number, expressing maximum overtime count */
+
+    /*
+     * Initialize the connection thread with the blueprint to avoid
+     * the initialization delay when the first connection comes in.
+     */
+    {
+	Tcl_Interp *interp;
+	Ns_Time     start, end, diff;
+
+        Ns_GetTime(&start);
+	Ns_Log(Notice, "thread initialize cpt %d maxcpt %d wait %d %p current %d idle %d",
+	       cpt, maxcpt, 
+	       poolPtr->queue.wait.num, 
+	       poolPtr->queue.wait.firstPtr,
+	       poolPtr->threads.current, 
+	       poolPtr->threads.idle );
+	interp = Ns_TclAllocateInterp(servPtr->server);
+        Ns_GetTime(&end);
+        Ns_DiffTime(&end, &start, &diff);
+	Ns_Log(Notice, "thread initialized (%.3f ms)", ((double)diff.sec * 1000.0) + ((double)diff.usec / 1000.0));
+	Ns_TclDeAllocateInterp(interp);
+    }
 
     /*
      * Start handling connections.
      */
 
     Ns_MutexLock(&servPtr->pools.lock);
-    while (cpt == 0 || ncons > 0) {
+
+    if (poolPtr->threads.creating > 0) {
+	poolPtr->threads.creating--;
+    }
+
+    while (1) {
 
         /*
          * Wait for a connection to arrive, exiting if one doesn't
@@ -657,8 +701,8 @@ NsConnThread(void *arg)
 		    exitMsg = "exceeded max connections per thread + overtime";
 		    break;
 		} else if (ncons <= 0) {
-		    fprintf(stderr, "%s #### doing overtime due to stress %d, waiting %d\n",
-			    Ns_ThreadGetName(), ncons, poolPtr->queue.wait.num);
+		    Ns_Log(Notice, "thread is working overtime due to stress %d, waiting %d",
+			   ncons, poolPtr->queue.wait.num);
 		}
 	    } else if (ncons <= 0) {
 		/* Served given # of connections in this thread */
