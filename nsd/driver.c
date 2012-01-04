@@ -362,6 +362,12 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->keepwait     = Ns_ConfigIntRange(path, "keepwait",
                                              5,            0, INT_MAX);
 
+    drvPtr->keepmaxuploadsize = Ns_ConfigIntRange(path, "keepalivemaxuploadsize",
+                                             0,            0, INT_MAX);
+
+    drvPtr->keepmaxdownloadsize = Ns_ConfigIntRange(path, "keepalivemaxdownloadsize",
+                                             0,            0, INT_MAX);
+
     drvPtr->backlog      = Ns_ConfigIntRange(path, "backlog",
                                              256,          1, INT_MAX);
 

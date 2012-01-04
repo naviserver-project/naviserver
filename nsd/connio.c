@@ -1109,7 +1109,6 @@ CheckKeep(Conn *connPtr)
             /*
              * HTTP 1.0/1.1 keep-alive header checks.
              */
-
             if ((connPtr->request->version == 1.0
                  && HdrEq(connPtr->headers, "connection", "keep-alive"))
                 || (connPtr->request->version > 1.0
@@ -1123,6 +1122,21 @@ CheckKeep(Conn *connPtr)
                     return 0;
                 }
 
+		if (connPtr->drvPtr->keepmaxuploadsize 
+		    && connPtr->contentLength > connPtr->drvPtr->keepmaxuploadsize) {
+		    Ns_Log(Notice, "Disallow keep-alive, content-Length %d larger keepmaxuploadsize %d: %s", 
+			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
+			   connPtr->request->line);
+		    return 0;
+		} else if (connPtr->drvPtr->keepmaxdownloadsize 
+			   && connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) {
+		    Ns_Log(Notice, "Disallow keep-alive response length %" TCL_LL_MODIFIER 
+			   "d larger keepmaxdownloadsize %d: %s", 
+			   connPtr->responseLength, connPtr->drvPtr->keepmaxdownloadsize,
+			   connPtr->request->line);
+		    return 0;
+		}
+		
                 /*
                  * We allow keep-alive for chunked encoding variants or a valid
                  * content-length header.

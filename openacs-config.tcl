@@ -269,12 +269,15 @@ ns_section ns/server/${server}/module/nssock
 	#ns_param   maxheaders		128	;# 128, max number of header lines
 	#ns_param   uploadpath		/tmp	;# directory for uploads
 	#ns_param   backlog		256	;# 256, backlog for listen operations
-	#ns_param   acceptsize		10	;# value of "backlog", max number of acceptd (but unqueued) requests)
+	#ns_param   maxqueuesize	256	;# 1024, maximum size of the queue
+	#ns_param   acceptsize		10	;# value of "backlog", max number of accepted (but unqueued) requests
 	#ns_param   bufsize		16384	;# 16384, buffersize
 	#ns_param   readahead		16384	;# value of bufsize, size of readahead for requests
 	#ns_param   sendwait		30	;# 30, timeout in seconds for send operations
 	#ns_param   closewait		2	;# 2, timeout in seconds for close on socket
 	#ns_param   keepwait		2	;# 5, timeout in seconds for keep-alive
+	#ns_param   keepalivemaxuploadsize	500000	;# 0, don't allow keep-alive for upload content larger than this
+	#ns_param   keepalivemaxdownloadsize	1000000 ;# 0, don't allow keep-alive for download content larger than this
 	#
 	# Spooling Threads
 	#

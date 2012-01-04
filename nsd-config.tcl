@@ -127,6 +127,10 @@ ns_param        backlog             1024
 ns_param        acceptsize          10
 ns_param        closewait           0
 ns_param        maxqueuesize        1024
+ns_param        keepwait		 5	 ;# 5, timeout in seconds for keep-alive
+ns_param        keepalivemaxuploadsize	 500000	 ;# 0, don't allow keep-alive for upload content larger than this
+ns_param        keepalivemaxdownloadsize 1000000 ;# 0, don't allow keep-alive for download content larger than this
+
 
 ns_section     "ns/server/default/module/nscp"
 ns_param        port                4080

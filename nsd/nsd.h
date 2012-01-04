@@ -376,7 +376,8 @@ typedef struct Driver {
     int opts;                           /* NS_DRIVER_* options */
     int closewait;                      /* Graceful close timeout */
     int keepwait;                       /* Keepalive timeout */
-    int keepallmethods;                 /* Keepalive all methods or just GET? */
+    int keepmaxdownloadsize;            /* When set, allow keepalive only for download requests up to this size */
+    int keepmaxuploadsize;              /* When set, allow keepalive only for upload requests up to this size */
     SOCKET sock;                        /* Listening socket */
     int pidx;                           /* poll() index */
     char *bindaddr;                     /* Numerical listen address */
