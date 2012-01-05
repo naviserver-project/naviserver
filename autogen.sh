@@ -59,7 +59,8 @@ if test -z "$*"; then
   echo
 fi
 
-conf_flags="--enable-maintainer-mode"
+#conf_flags="--enable-maintainer-mode"
+conf_flags=""
 
 if test x$NOCONFIGURE = x; then
   echo Running $srcdir/configure $conf_flags "$@" ...
