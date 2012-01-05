@@ -220,6 +220,23 @@ test http-4.9 {HTTP/1.1 PUT file much larger than maxinput} -constraints {} -set
     unset -nocomplain r
 } -result {413 0}
 
-
+#
+# Test earlier crash condition, where "ns_conn content" caused a crash
+# when it happend after a connection close operation
+#
+test http-5.0 {HTTP/1.1 GET with "ns_conn content" after return} -constraints {} -setup {
+    ns_register_proc GET /get {
+      catch {
+	ns_returnunauthorized
+        ns_conn content
+      }
+    }
+} -body {
+    set r [nstest::http -http 1.1 GET /get]
+    list [lindex $r 0] [string length [lindex $r 1]]
+} -cleanup {
+    ns_unregister_proc GET /get
+    unset -nocomplain r
+} -result {401 0}
 
 cleanupTests
