@@ -261,7 +261,7 @@ Configuration Changes:
       per-server:
 
       ns_section "ns/fastpath"
-      ns_param mmap          flase    ;# Use mmap(2) to read files from disk.
+      ns_param mmap          false    ;# Use mmap(2) to read files from disk.
       ns_param cache         false    ;# Cache file contents in memory.
       ns_param cachemaxsize  10240000 ;# Size of file cache, if enabled.
       ns_param cachemaxentry 8192     ;# Don't cache files larger than this.
