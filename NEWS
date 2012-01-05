@@ -315,7 +315,11 @@ Configuration Changes:
 
 Code Changes:
 
-   * Make compilation clean under clang
+   * Fixed test to use preferred getaddrinfo()/getnameinfo() for Mac
+     OS X instead of gethostbyaddr()/gethostbyname() when working
+     under the OS release.
+
+   * Make compilation clean under clang.
 
    * Provide names for Ns_Mutex to report meaningful output in
      naviserver statistics.
