@@ -1,8 +1,57 @@
 ======================================
-NaviServer 4.99.3, released XXXX-XX-XX
+NaviServer 4.99.4, released XXXX-XX-XX
 ======================================
 
 New Features:
+
+    * Less eager thread creation short request peaks. Naviserver tended
+      to create too many threads in situation of short bottlenecks (e.g.
+      file system latencies). This can reduce resource consumption on
+      larges sites significantly.
+
+    * New threads are added to the waiting queue in an already warm
+      state.  Previously, threads we created in one step and the
+      initialization of thread blocked the first request added to the
+      thread. "minthreads" controls the number of warm threads kept
+      around.
+
+    * Improved cache statistics: added "saved", expressing cumulative
+      saved time from "ns_cache_eval". The reporting of theses
+      statistics as updated as well in the add-on package nsstats.
+
+    * Improved locking statistics: added "total_waiting_time" and
+      "max_waiting_time" to the mutex monitoring statistics. The
+      reporting of theses statistics as updated as well in the add-on
+      package nsstats.
+
+    * Made upload progress management compatible with usual 
+      tracking conventions by using the query parameter "X-Progress-ID"
+      if present (as used in nginx, lighttpd and by apache (mod_passenger)).
+
+    * Added support for chunked encoding for uploads (as used e.g. in WEBDAV
+      PUT requests from Mac OS X Finder).
+
+    * Added small compatibility layer for providing Aolserver compatibility
+      (e.g. support "ns_cache eval" as well as "ns_cache_eval"); the layer
+      is designed to be sufficient for OpenACS.
+
+    * Improve concurrency on writing on access logs. File system latencies
+      can block the full server, the change improves the situation.
+
+    * Added [ns_thread stackinfo] to obtain stack size and usage from the 
+      current thread.
+
+    * Add option "-exact" to "ns_cache_keys" to enable exact lookups (also 
+      when glob characters are used in keys)
+
+    * Provided constat time lookup for [ns_cache_keys /cache/
+      /pattern/], when "pattern" contains no glob characters
+
+    * Added .htaccess mode for nsperm module. Similar to Apache but
+      only to allow access. This is disabled by default, can be
+      enabled in the ns/server/servername/module/nsperm section. Doc
+      is updated. In this version only current directory is checked
+      for .htaccess file.
 
     * New lazy Tcl interpreter initialization option. Saves memory and speeds
       initialization of interp on first use by defining procs on-demand.
@@ -27,8 +76,7 @@ New Features:
       named set of limits and then applied to a subset of the URL
       hierarchy. The max number of connection threads running and waiting to
       run a URL, the max upload file size, and the max time a connection
-      should wait to run are all configurable.
-      See ns/limits parameters below.
+      should wait to run are all configurable. See ns/limits parameters below.
 
     * ns_cache_create now takes a -maxentry switch limits the max size of an
       entry allowed into the cache to prevent wasteful cache flushes.
@@ -54,8 +102,8 @@ New Features:
 
     * ns_getcsv now takes a -delimiter switch.
 
-    * ns_parseargs: default values can now be specified with a leading '='
-      which signifies the value should be eval'ed to generate the default.
+    * ns_parseargs: default values can now be specified with in the form 
+      {[..]} to cause evaluation, like ns_parseargs {-flag {[script]}} $args ...
 
     * Commands which timeout now set a NS_TIMEOUT Tcl error code, which if not
       caught is reported as an HTTP 503 Unavailable response.
@@ -107,8 +155,50 @@ New Features:
       more RFC compliant and allows file retrievals, re-gets and file mirroring without 
       additional coding, it is all done by the server and HTTP
 
-Bug Fixes:
+Security Improvements:
+    * Disallow terminal escape characters in the log file (potential attack)
+    * Protection against path traversal attack
 
+Bug Fixes:
+    * Fixed timeout keep-alive management: When many requests were
+      posted into a persistent connection, it happend frequently that
+      a few of these requests were processed after the keep-alive
+      timeout (keepwait) was firing.
+
+    * Fixed various potential crashes (range requests, severity
+      management, 64 bit, NsTclParseArgsObjCmd with Tcl 8.5, POST with
+      sizes ending exactly at page boundary, accessing "nsconn
+      content" after connection close, purges on new-created entries
+      in the cache).
+
+    * Improved test environment: 
+      - placed nstest into a namespace
+      - added parameter "-verbose" to nstest::http to trace communication 
+      - added parameter -omitcontentlength to to nstest::http to test
+        requests without content length
+
+    * Fixed early closes from the server on too-large content (looked like
+      a server crash to clients like firefox, google chrome, etc.). This
+      has the disadvantage that now the full request has to be transferred.
+
+    * Naviserver could loop under linux in some situations where a
+      client connection was closed unexpectedly (observed under vmware
+      under intel 64bit).
+
+    * Improved Code quality (reduced scope of variables, unused variables, 
+      changed types of file descriptors for socket from "int" to "SOCKET"
+      etc.).
+
+    * removed unused config parameter "urlstats", "maxurlstats",
+      "globalstats", "maxdropped", "keepallmethods"
+
+    * Fix to prevent multiple DriverAccepts on the same socket. The
+      original coded relied on the fact that later accepts lead to an
+      ERROR_STATE. Under RHEL 4 (Power, 64bit) the second accept
+      blocks.
+
+    * Fix Ns_Time for platforms, where time_t is long.
+    * Updated documentation
     * Various 64bit fixes.
     * Fix path attribute of HTP Cookie string.
     * Make sure upload stats lock is unlocked after use.
@@ -154,6 +244,18 @@ Configuration Changes:
 
     Please update your server configuration files to take account of the
     following new features and changes.
+
+    * Randomizing the connection life-time controlling parameters
+      "connsperthread" and "threadtimeout" by a new config parameter
+      "spread". The spread is a number between 0 and 100, expressing
+      the percentage of randomization. The randomization provides
+      better resource distributions and prohibits mass thread
+      extinction and recreations.
+
+    * New config parameters "keepalivemaxuploadsize" and
+      "keepalivemaxdownloadsize" for controlling keep-alives for largish
+      content. Use separate request instead of waiting until the large
+      content transfer has finished.
 
     * Fastpath static page configuration is now a global setting rather then
       per-server:
@@ -212,6 +314,27 @@ Configuration Changes:
 
 
 Code Changes:
+
+   * Provide names for Ns_Mutex to report meaningful output in
+     naviserver statistics.
+
+   * Use poll() as well under Darwin. Per default, poll() returns
+     writeable even when the socket is not. However, setting
+     SO_SNDLOWAT fixes this (added by this patch). The change makes it
+     possible to quer POLLHUP for all platforms.
+
+   * Use "long" instead of "int" for statistics to avoid quick overruns.
+
+   * Added private version of NsBsearch and re-define the "bsearch" to
+     point to it for Windows builds. The Windows implementation of
+     bsearch appears to be buggy.
+
+    * Rewritten cancellation logic. Cancelled jobs stay in the queue
+      and get run on the thread as any other jobs. The differnce is
+      only that we mark the cancellation state early (even before
+      running the script) so the very first Tcl command in the script
+      will be cancelled thus resulting in whole job cancellation. This
+      fixes some weird races.
 
    * Nsv shared variables now have a C API.
 
