@@ -26,9 +26,6 @@
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
 #
-#
-# $Header$
-#
 
 #
 # configure.in --
@@ -38,7 +35,7 @@
 
 AC_PREREQ([2.59])
 
-AC_INIT([NaviServer], [4.99.3], [naviserver-devel@lists.sourceforge.net])
+AC_INIT([NaviServer], [4.99.4], [naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
@@ -57,7 +54,7 @@ AC_REVISION([$Revision$])
 
 AC_SUBST([NS_MAJOR_VERSION],  4)
 AC_SUBST([NS_MINOR_VERSION],  99)
-AC_SUBST([NS_RELEASE_SERIAL], 3)
+AC_SUBST([NS_RELEASE_SERIAL], 4)
 AC_SUBST([NS_RELEASE_LEVEL],  [NS_ALPHA_RELEASE]) # ALPHA/BETA/FINAL
 
 AC_SUBST([NS_VERSION],     [\"${NS_MAJOR_VERSION}.${NS_MINOR_VERSION}\"])
@@ -225,6 +222,17 @@ AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
 # be working (but does not report POLLHUP).
 
 AC_CHECK_FUNCS(poll)
+
+AC_CHECK_SIZEOF([time_t]) 
+if test "x$ac_cv_sizeof_time_t" = "x4"; then 
+  AC_MSG_RESULT([time_t is 32 bit]) 
+  AC_DEFINE([TIME_T_MAX], INT_MAX, [Maximum value for time_t]) 
+elif test "x$ac_cv_sizeof_time_t" = "x8"; then 
+  AC_MSG_RESULT([time_t is 64 bit]) 
+  AC_DEFINE([TIME_T_MAX], LONG_MAX, [Maximum value for time_t]) 
+else 
+  AC_MSG_ERROR([can not figure type of time_t]) 
+fi 
 
 #
 # Normally, we'd link the resulting server image

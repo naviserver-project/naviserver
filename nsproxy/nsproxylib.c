@@ -839,8 +839,8 @@ SetExpire(Slave *slavePtr, int ms)
         Ns_GetTime(&slavePtr->expire);
         Ns_IncrTime(&slavePtr->expire, ms/1000, (ms%1000) * 1000);
     } else {
-        slavePtr->expire.sec  = INT_MAX;
-        slavePtr->expire.usec = LONG_MAX;
+        slavePtr->expire.sec  = TIME_T_MAX;
+        slavePtr->expire.usec = 0;
     }
 }
 
@@ -2583,8 +2583,8 @@ ReaperThread(void *ignored)
 
         Ns_GetTime(&now);
 
-        tout.sec  = INT_MAX;
-        tout.usec = LONG_MAX;
+        tout.sec  = TIME_T_MAX;
+        tout.usec = 0;
 
         /*
          * Check all proxy pools and see if there are
@@ -2747,7 +2747,7 @@ ReaperThread(void *ignored)
         if (Ns_DiffTime(&tout, &now, &diff) > 0) {
             reaperState = Sleeping;
             Ns_CondBroadcast(&pcond);
-            if (tout.sec == INT_MAX && tout.usec == LONG_MAX) {
+            if (tout.sec == TIME_T_MAX && tout.usec == LONG_MAX) {
                 Ns_CondWait(&pcond, &plock);
             } else {
                 Ns_CondTimedWait(&pcond, &plock, &tout);

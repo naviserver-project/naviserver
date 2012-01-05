@@ -1333,8 +1333,8 @@ static void
 PollReset(PollData *pdata)
 {
     pdata->nfds = 0;
-    pdata->timeout.sec = INT_MAX;
-    pdata->timeout.usec = LONG_MAX;
+    pdata->timeout.sec = TIME_T_MAX;
+    pdata->timeout.usec = 0;
 }
 
 static int
@@ -2578,8 +2578,8 @@ SpoolerThread(void *arg)
         if (readPtr == NULL) {
             pollto = 30 * 1000;
         } else {
-            timeout.sec = INT_MAX;
-            timeout.usec = LONG_MAX;
+	    timeout.sec = TIME_T_MAX;
+            timeout.usec = 0;
             sockPtr = readPtr;
             while (sockPtr != NULL) {
                 SockPoll(sockPtr, POLLIN, &pdata);
@@ -2860,8 +2860,8 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollto = 30 * 1000;
         } else {
-            timeout.sec = INT_MAX;
-            timeout.usec = LONG_MAX;
+	    timeout.sec = TIME_T_MAX;
+            timeout.usec = 0;
             curPtr = writePtr;
             while (curPtr != NULL) {
                 if (curPtr->size > 0) {
