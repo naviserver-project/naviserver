@@ -55,9 +55,9 @@ Return the list of all caches for the current virtual server.
 
 Return a list of all keys in the named cache. If [arg pattern] is
 given then each key is matched against the globbing pattern, and only
-those which match are included in the list. When the option [option
-"-exact"] is used, [arg pattern] is interpreted literally, either a key with
-a literally exact match or empty is returned.
+those which match are included in the list. When the option 
+[opt [option "-exact"]] is used, [arg pattern] is interpreted
+literally,  either a key with a literally exact match or empty is returned.
 
 
 
