@@ -43,7 +43,8 @@ endif
 distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.in \
 	README NEWS sample-config.tcl.in simple-config.tcl \
-	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in
+	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
+	version_include.man.in
 
 all:
 	@for i in $(dirs); do \
