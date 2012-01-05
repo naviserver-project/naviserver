@@ -86,10 +86,10 @@ static pthread_key_t	key;
 void
 Nsthreads_LibInit(void)
 {
-    int err;
     static int once = 0;
 
     if (!once) {
+        int err;
         once = 1;
         err = pthread_key_create(&key, CleanupTls);
         if (err != 0) {
@@ -565,9 +565,10 @@ void
 Ns_CondDestroy(Ns_Cond *cond)
 {
     pthread_cond_t *condPtr = (pthread_cond_t *) *cond;
-    int             err;
 
     if (condPtr != NULL) {
+        int err;
+
     	err = pthread_cond_destroy(condPtr);
     	if (err != 0) {
     	    NsThreadFatal("Ns_CondDestroy", "pthread_cond_destroy", err);

@@ -125,8 +125,8 @@ static int ValidateUserAddr(User * userPtr, char *peer);
 static int AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *peer);
 static void WalkCallback(Tcl_DString * dsPtr, void *arg);
 static int CreateNonce(const char *privatekey, char **nonce, char *uri);
-static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);
 static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale);
+/*static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
 /*
  * Static variables defined in this file.
@@ -156,7 +156,7 @@ static Tcl_HashTable serversTable;
 int Ns_ModuleInit(char *server, char *module)
 {
     Server *servPtr;
-    char *path;
+    /*char *path;*/
     Tcl_HashEntry *hPtr;
     int new;
 
@@ -183,7 +183,7 @@ int Ns_ModuleInit(char *server, char *module)
     }
     servPtr = ns_malloc(sizeof(Server));
     servPtr->server = server;
-    path = Ns_ConfigGetPath(server, module, NULL);
+    /*path = Ns_ConfigGetPath(server, module, NULL);*/
     Tcl_InitHashTable(&servPtr->users, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->lock);
@@ -363,7 +363,6 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
     Server *servPtr;
     Perm *permPtr;
     User *userPtr;
-    int stale = NS_FALSE;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     char buf[NS_ENCRYPT_BUFSIZE], *group, *auth = NULL;
@@ -534,6 +533,7 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
      */
 
     if (status == NS_UNAUTHORIZED && !strcmp(auth, "Digest")) {
+        int stale = NS_FALSE;
         CreateHeader(servPtr, conn, stale);
     }
 
@@ -1538,6 +1538,10 @@ static int CreateNonce(const char *privatekey, char **nonce, char *uri)
 }
 
 
+#if 0
+/*
+ * unused
+ */
 /*
  *----------------------------------------------------------------------
  *
@@ -1611,6 +1615,7 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
 
     return rv;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

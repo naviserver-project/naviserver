@@ -199,7 +199,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     InterpData	   *idataPtr = data;
     char            tmpbuf[32], *pool = NULL;
     int             cmd, nrows;
-    Ns_DbHandle    *handlePtr;
+    Ns_DbHandle    *handlePtr = NULL;
     Ns_Set         *rowPtr;
     Tcl_HashEntry  *hPtr;
 
@@ -254,7 +254,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         break;
 
     case GETHANDLE: {
-	int i, timeout = -1, nhandles = 1, result;
+	int timeout = -1, nhandles = 1, result;
 	Ns_DbHandle **handlesPtrPtr;
 
         Ns_ObjvSpec opts[] = {
@@ -307,6 +307,8 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	result = Ns_DbPoolTimedGetMultipleHandles(handlesPtrPtr, pool,
     	    	                                  nhandles, timeout);
     	if (result == NS_OK) {
+  	    int i;
+
 	    for (i = 0; i < nhandles; ++i) {
                 EnterDbHandle(idataPtr, interp, handlesPtrPtr[i]);
             }

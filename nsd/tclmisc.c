@@ -926,7 +926,12 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 #endif
     SHATransform (ctx);
 
-    memcpy(digest, ctx->iv, sizeof(digest));
+    /* 
+     * The following memcpy() does not seem to be correct and is most likely
+     * not needed, since the loop sets all elements of "digetst".
+     */
+    /*memcpy(digest, ctx->iv, sizeof(digest));*/
+
     for (i = 0; i < SHA_HASHWORDS; i++) {
         t = ctx->iv[i];
         digest[i * 4 + 0] = (uint8_t) (t >> 24);
@@ -935,7 +940,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
         digest[i * 4 + 3] = (uint8_t) t;
     }
 
-    memset(ctx, 0, sizeof(ctx)); 			/* In case it's sensitive */
+    memset(ctx, 0, sizeof(Ns_CtxSHA1)); 			/* In case it's sensitive */
 }
 
 void Ns_CtxString(unsigned char *digest, char *buf, int size)
@@ -1330,7 +1335,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     MD5Transform(ctx->buf, (uint32_t *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16);
-    memset(ctx, 0, sizeof(ctx));	/* In case it's sensitive */
+    memset(ctx, 0, sizeof(Ns_CtxSHA1));	/* In case it's sensitive */
 }
 
 /* The four core functions - F1 is optimized somewhat */

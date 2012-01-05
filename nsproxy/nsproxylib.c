@@ -900,7 +900,6 @@ static Err
 Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
 {
     Err err = ENone;
-    int len;
     Req req;
 
     if (proxyPtr->slavePtr == NULL) {
@@ -915,7 +914,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, char *script)
             err = CreateSlave(interp, proxyPtr);
         }
         if (err == ENone) {
-            len = script ? strlen(script) : 0;
+            int len = script ? strlen(script) : 0;
             req.len   = htonl(len);
             req.major = htons(MAJOR_VERSION);
             req.minor = htons(MINOR_VERSION);
@@ -1675,7 +1674,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
     Pool       *poolPtr;
     Proxy      *proxyPtr;
     char       *str;
-    int         i, flag, n, result, reap = 0;
+    int         flag, n, result, reap = 0;
 
     static CONST char *flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec",
@@ -1700,6 +1699,8 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
             goto err;
         }
     } else if (objc > 4) {
+        int i;
+
         for (i = 3; i < (objc - 1); ++i) {
             if (Tcl_GetIndexFromObj(interp, objv[i], flags, "flags", 0,
                                     &flag)) {
@@ -2175,7 +2176,7 @@ GetPool(char *poolName, InterpData *idataPtr)
     Tcl_HashEntry *hPtr;
     Pool          *poolPtr;
     Proxy         *proxyPtr;
-    int            new, i;
+    int            new;
     char          *path = NULL, *exec = NULL;
 
     Ns_MutexLock(&plock);
@@ -2183,6 +2184,8 @@ GetPool(char *poolName, InterpData *idataPtr)
     if (!new) {
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
     } else {
+        int i;
+
         poolPtr = ns_calloc(1, sizeof(Pool));
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);

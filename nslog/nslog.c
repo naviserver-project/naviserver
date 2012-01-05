@@ -103,7 +103,6 @@ Ns_ModuleInit(char *server, char *module)
 {
     CONST char *path, *file;
     Log        *logPtr;
-    int         hour, status;
     Ns_DString  ds;
     static int  first = 1;
 
@@ -149,6 +148,7 @@ Ns_ModuleInit(char *server, char *module)
             Ns_HomePath(&ds, "logs", "/", file, NULL);
         } else {
             Tcl_Obj *dirpath;
+	    int status;
 
             Ns_DStringTrunc(&ds, 0);
             Ns_ModulePath(&ds, server, module, NULL, NULL);
@@ -196,7 +196,7 @@ Ns_ModuleInit(char *server, char *module)
      */
 
     if (Ns_ConfigBool(path, "rolllog", NS_TRUE)) {
-        hour = Ns_ConfigIntRange(path, "rollhour", 0, 0, 23);
+        int hour = Ns_ConfigIntRange(path, "rollhour", 0, 0, 23);
         Ns_ScheduleDaily((Ns_SchedProc *) LogRollCallback, logPtr,
                          0, hour, 0, NULL);
     }
