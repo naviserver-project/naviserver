@@ -133,6 +133,7 @@ install-tests:
 install-doc:
 	@$(MKDIR) $(NAVISERVER)/pages/doc
 	$(CP) doc/html/* $(NAVISERVER)/pages/doc
+	$(CP) contrib/banners/*.png $(NAVISERVER)/pages/doc
 
 install-examples:
 	@$(MKDIR) $(NAVISERVER)/pages/examples
