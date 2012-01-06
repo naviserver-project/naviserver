@@ -1,57 +1,72 @@
-<HTML>
- <HEAD>
-  <TITLE>Default Page for Naviserver Installation</TITLE>
- </HEAD>
- <BODY
-  BGCOLOR="#FFFFFF"
-  TEXT="#000000"
-  LINK="#0000FF"
-  VLINK="#000080"
-  ALINK="#FF0000"
+<html>
+ <head>
+  <title>Default Page for Naviserver Installation</title>
+ </head>
+
+ <body
+  bgcolor="#FFFFFF"
+  text="#000000"
+  link="#0000FF"
+  vlink="#000080"
+  alink="#FF0000"
  >
-  <H1 ALIGN="CENTER">
-   Welcome to <A HREF="http://naviserver.sourceforge.net/">Naviserver</A> on
-   <%=[string totitle [ns_info platform]]%>
-  </H1>
-  <P>
-  If you can see this page, then the people who own this host have just
-  activated the <A HREF="http://naviserver.sourceforge.net/">Naviserver Web server</A>
-  software.  They now have to add content to this directory
-  and replace this placeholder page, or else point the server at their real
-  content.
-  </P>
-  <HR>
-  <P>
-  <UL>
+<div style='float: right'>
+  <a href="http://naviserver.sourceforge.net/"><img src="/doc/ns_logosmall.png"></a>
+</div>
+<div style='clear: both'></div>
 
-  <LI>The Naviserver <A HREF=doc/toc.html>Documentation<A> has been included with this distribution.<P>
+  <h1 align="CENTER">
+   Welcome to <a href="http://naviserver.sourceforge.net/">Naviserver
+   <%=[ns_info patchlevel]%>
+   </a> under
+   <%=[set . "$::tcl_platform(os) $::tcl_platform(osVersion)"]%>
+  </h1>
+  <p>
+  If you can see this page, then the <a
+ href="http://naviserver.sourceforge.net/">Naviserver</a> web server
+ was activated on this machine.
+  The server installation contains currently just the default content provided by
+  the standard Naviserver distribution. In a next step, this placeholder page should be
+  replaced, or the configuration should point to a directory with real
+ content. The current configuration file is <i><%=[ns_info config]%></i>.
+  </p>
+  <hr>
+  <p>
+  <ul>
 
-  <LI>The Naviserver <A HREF=examples/>Examples<A> include useful scripts and tricks.<P>
+  <li>The Naviserver <A href=doc/toc.html>Documentation<A> has been included with this distribution.<p>
+
+  <li>The Naviserver <A href=examples/>Examples<A> include a few useful scripts and tricks.<p>
 
   <%
-   ns_adp_puts {<LI>The Naviserver <A HREF="nsstats.tcl">Statistics page</A> can be
-                    useful in resolving performance issues.<P>}
+   ns_adp_puts {<li>The Naviserver <a href="nsstats.tcl">Statistics page</a> can be
+                    useful in resolving performance issues.<p>}
 
    if { ![file exists [ns_info pageroot]/nsstats.tcl] } {
-     ns_adp_puts {<I>Currently it is not installed, to install you need to
-                     download modules and do make install in nsstats directory
-                  </I>}
+     ns_adp_puts [subst {<i>Currently nsstats is not installed as
+                     [ns_info pageroot]/nsstats.tcl, to install you need to
+                     download modules and do make install in nsstats
+                     directory. <a href = 'bitbucket-install?file=nsstats.tcl'>Install now</a>.
+                     </i>}]
    }
   %>
 
+  <li>The Naviserver runtime <a href="nsconf.tcl">Config page</a> can be
+    useful in reviewing server's setup.<br>
   <%
-   ns_adp_puts {<LI>The Naviserver runtime <A HREF="nsconf.tcl">Config page</A> can be
-                    useful in reviewing server's setup.<P>}
-
    if { ![file exists [ns_info pageroot]/nsconf.tcl] } {
-     ns_adp_puts {<I>Currently it is not installed, to install you need to
-                     download modules and do make install in nsconf directory
-                  </I>}
-   }
-  %>
-  </UL>
- </BODY>
-</HTML>
+     ns_adp_puts [subst {<i>Currently nsconf is not installed yet.
+	<a href = 'bitbucket-install.tcl?file=nsconf.tcl'>Install now</a>.</i><br>
+    }]
+   } else {
+    ns_adp_puts [subst {The nsconf module has to be enabled and protected by a password in
+    <b>[ns_info pageroot]/nsconf.tcl</b>}]
+    }
+    %>
+  </ul>
+  <hr>
+ </body>
+</html>
 
 
 
