@@ -44,7 +44,7 @@ distfiles = $(dirs) doc tcl contrib include tests win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.in \
 	README NEWS sample-config.tcl.in simple-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
-	version_include.man.in
+	version_include.man.in bitbucket-install.tcl
 
 all:
 	@for i in $(dirs); do \
@@ -104,10 +104,10 @@ install-dirs: all
 	done
 
 install-config: all
-	@for i in nsd-config.tcl sample-config.tcl simple-config.tcl; do \
+	@for i in nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
 	done
-	@for i in index.adp; do \
+	@for i in index.adp bitbucket-install.tcl; do \
 		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/; \
 	done
 	$(INSTALL_SH) install-sh $(INSTBIN)/
