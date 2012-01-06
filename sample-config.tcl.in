@@ -26,9 +26,6 @@
 # If you do not delete the provisions above, a recipient may use your
 # version of this file under either the License or the GPL.
 #
-#
-# $Header$
-#
 
 #
 # sample-config.tcl --  Example config script.
@@ -50,6 +47,10 @@
 
 # Absolute path to the installation directory
 set 	homedir			@NAVISERVER@
+
+# Log directories (access log, error log, pidfile)
+#set     logdir 			${homedir}/log
+set     logdir 			${homedir}/../var/log/ns
 
 # Name/description of the virtual server
 set	servername		"server1"
@@ -107,10 +108,10 @@ ns_param	logdebug		false
 ns_param        tcllibrary      	${homedir}/tcl
 
 # Main server log file
-ns_param        serverlog       	${homedir}/logs/nsd.log
+ns_param        serverlog       	${logdir}/nsd-${servername}.log
 
 # Pid file of the server process
-ns_param        pidfile         	${homedir}/logs/nsd.pid
+ns_param        pidfile         	${logdir}/nsd-${servername}.pid
 
 # Min size of the uploaded file to enable progress tracking
 ns_param	progressminsize		0
@@ -229,23 +230,22 @@ ns_section 	"ns/server/${servername}"
 # Scaling and Tuning Options
 #
 
-# Normally there's one conn per thread
-ns_param   	connsperthread  	0
+# Maximum number of connection structures
+ns_param   	maxconnections  	1000
 
 # Flush all data before returning
 ns_param   	flushcontent    	false
-
-# Max connections to put on queue
-ns_param   	maxconnections  	100
 
 # Tune this to scale your server
 ns_param   	maxthreads      	10
 
 # Tune this to scale your server
-ns_param   	minthreads      	0
+ns_param   	minthreads      	1
 
-# Idle threads die at this rate
-ns_param   	threadtimeout   	120
+# Connection thread lifetime management
+ns_param   connsperthread  	10000 ;# Number of connections (requests) handled per thread
+ns_param   threadtimeout   	120   ;# Timeout for idle theads
+ns_param   spread		20    ;# randomization factor in percent for varying connsperthread and threadtimeout
 
 # Compress response character data: ns_return, ADP etc.
 ns_param    compressenable      off     ;# Default; use ns_conn compress to overide
@@ -268,7 +268,7 @@ ns_param   	enableexpire    	false
 ns_param   	enabledebug     	false
 
 # Parse *.tcl files in pageroot.
-ns_param   	enabletclpages  	false
+ns_param   	enabletclpages  	true
 
 # I18N Note: will need to define I18N specifying mappings of ADP's here as well.
 ns_param   	map             	"/*.u_adp"
@@ -375,26 +375,27 @@ ns_param  	bufsize        		16384
 # Max upload size when to use spooler
 ns_param  	readahead      		16384
 
-# Number of spooler threads
-ns_param  	spoolerthreads 		0
-
-# Number of writer threads
-ns_param  	writerthreads  		0
-
-# Read from file in bufsize chunks.
-ns_param 	writerbufsize   	8192
-
-# Min return file size when to use writer
-ns_param  	writersize     		1048576
-
 # Number of requests to accept at once
 ns_param        acceptsize		1
 
 # Max numbrer of sockets in the driver queue
 ns_param        maxqueuesize            256
 
-# Performance optimization, may cause recvwait to be ignored if no data sent.
+# Performance optimization, may cause recvwait to be ignored if no data sent (default false)
 ns_param        deferaccept             false
+
+# Spooling Threads
+#ns_param   spoolerthreads	1	;# 0, number of upload spooler threads
+#ns_param   maxupload		0	;# 0, when specified, spool uploads larger than this value to a temp file
+#ns_param   writerthreads	1	;# 0, number of writer threads
+#ns_param   writersize		1048576	;# 1024*1024, use writer threads for files larger than this value
+#ns_param   writerbufsize	8192	;# 8192, buffer (chunk) size for writer threads
+
+# Tuning of keep-alives
+ns_param        keepwait		 5	 ;# timeout in seconds for keep-alive
+ns_param        keepalivemaxuploadsize	 500000	 ;# don't allow keep-alive for upload content larger than this
+ns_param        keepalivemaxdownloadsize 1000000 ;# don't allow keep-alive for download content larger than this
+
 
 #
 # Access log -- nslog
@@ -402,7 +403,7 @@ ns_param        deferaccept             false
 
 ns_section 	"ns/server/${servername}/module/nslog"
 # Name to the log file
-ns_param   	file            	$homedir/logs/access.log
+ns_param   	file            	${logdir}/access-${servername}.log
 
 # If true then use common log format
 ns_param   	formattedtime   	true
@@ -576,7 +577,7 @@ ns_param 	fast 			"Fast requests here."
 ns_section 	"ns/server/server1/pool/slow"
 ns_param 	map 			"POST /slowupload.adp"
 ns_param 	maxthreads      	20
-ns_param 	minthreads      	0
+ns_param 	minthreads      	1
 
 ns_section 	"ns/server/server1/pool/fast"
 ns_param 	map 			"GET /faststuff.adp"
@@ -637,9 +638,6 @@ ns_param 	maxrun          	100
 
 # Conn threads waiting for limit.
 ns_param 	maxwait         	100      
-
-# Max size of file upload in bytes.
-ns_param 	maxupload       	102400000
 
 # Total seconds to wait for resources.
 ns_param 	timeout         	60       

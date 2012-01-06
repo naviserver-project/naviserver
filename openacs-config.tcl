@@ -271,6 +271,7 @@ ns_section ns/server/${server}/module/nssock
 	#ns_param   backlog		256	;# 256, backlog for listen operations
 	#ns_param   maxqueuesize	256	;# 1024, maximum size of the queue
 	#ns_param   acceptsize		10	;# value of "backlog", max number of accepted (but unqueued) requests
+        #ns_param   deferaccept         true    ;# false, Performance optimization, may cause recvwait to be ignored
 	#ns_param   bufsize		16384	;# 16384, buffersize
 	#ns_param   readahead		16384	;# value of bufsize, size of readahead for requests
 	#ns_param   sendwait		30	;# 30, timeout in seconds for send operations
