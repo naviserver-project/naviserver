@@ -30,16 +30,16 @@ Valid values for the when argument are: preauth, postauth, and trace.
 Using pre-authorization, the procedure will be called (assuming that the method/URL
 combination matches) just before authorization. If the procedure returns with a code of:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next pre-authorization
+[item] TCL_OK (using: return "filter_ok"): The server will continue to the next pre-authorization
          filter for this connection, or, if there are no more pre-authorization filters, it will
           continue on with authorization.
 
-[bullet] TCL_BREAK (using: return "filter_break"): The server will not process any more pre-authorization
+[item] TCL_BREAK (using: return "filter_break"): The server will not process any more pre-authorization
          filters for this connection, and it will continue on with authorization.
 
-[bullet] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+[item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
          not run any more pre-authorization filters. It will not authorize the request, and it will
          not run the function registered for this METHOD/URL. It WILL run any trace functions
          registered for this METHOD/URL, usually including logging. It is assumed that the filter
@@ -49,16 +49,16 @@ combination matches) just before authorization. If the procedure returns with a 
 Using post-authorization, the procedure will be called (assuming that the method/URL combination matches)
 just after successful authorization. If the procedure returns:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next post-authorization 
+[item] TCL_OK (using: return "filter_ok"): The server will continue to the next post-authorization 
          filter for this connection, or, if there are no more post-authorization filters, it will run
          the function registered to handle this request.
 
-[bullet] TCL_BREAK (using: return "filter_break"): The server will not process any more post-authorization
+[item] TCL_BREAK (using: return "filter_break"): The server will not process any more post-authorization
          filters for this connection, and it will run the function registered to handle this request.
 
-[bullet] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+[item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
          not run any more post-authorization filters and it will not run the function registered for
          this METHOD/URL. It WILL run any trace functions registered for this METHOD/URL, usually
          including logging. It is assumed that the filter has returned a proper response (e.g.,
@@ -69,11 +69,11 @@ just after successful authorization. If the procedure returns:
 Using trace, the procedure will be called (assuming that the method/URL combination match) after
 the connection has been totally processed and closed. If the procedure returns:
 
-[list_begin bullet]
+[list_begin itemized]
 
-[bullet] TCL_OK (using: return "filter_ok"): The server will continue to the next trace filter.
+[item] TCL_OK (using: return "filter_ok"): The server will continue to the next trace filter.
 
-[bullet] TCL_BREAK, TCL_RETURN (using: return "filter_break" or return "filter_return"): The rest
+[item] TCL_BREAK, TCL_RETURN (using: return "filter_break" or return "filter_return"): The rest
          of the trace filters are ignored.
 
 [list_end]

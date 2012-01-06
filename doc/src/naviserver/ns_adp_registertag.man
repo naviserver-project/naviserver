@@ -28,7 +28,7 @@ encountered while parsing an ADP. The  tag  argument
 specifies the tag that will trigger invocation of the ADP
 fragment, which is specified by the  adp  argument.
 
-[nl]
+[para]
 If the  endtag  argument is specified, then the ADP fragment
 will be invoked with two arguments: The first will be the
 enclosed content, and the second will be the name of an
@@ -38,12 +38,12 @@ only be passed the name of the ns_set. The arguments may be
 retrieved using  ns_adp_bindargs  or  ns_adp_argc 
 and  ns_adp_argv .
 
-[nl]
+[para]
 When the ADP fragment is invoked, its result is inserted in the output
 instead of the tag (or, if the  endtag  was specified,
 in place of the tag, end tag, and the enclosed content).
 
-[nl]
+[para]
 Note: Care must be taken when using this function from inside an ADP, because
 the  adpstring  is likely to contain script delimiters
 ( <% ... %> ) which will prematurely terminate
@@ -57,7 +57,7 @@ tag is encountered. The  tag  argument specifies the tag
 that will trigger a call to the procedure specified by the
 proc  argument.
 
-[nl]
+[para]
 The procedure will be called with a variable number of arguments, 
 one for each of the attributes provided in the tag. If the  endtag 
 argument is specified, the procedure will also receive a
@@ -65,7 +65,7 @@ final argument with the contents of the text enclosed
 between the tags. No evaluation of the content will be
 performed, it will be passed as a single text block.
 
-[nl]
+[para]
 When the procedure is invoked, its result is inserted in the 
 output instead of the tag (or, if the  endtag  was specified, in place of
 the tag, end tag, and the enclosed content).
@@ -78,7 +78,7 @@ given tag is encountered. The  tag  argument specifies the tag that
 will trigger evaluation of the script specified by the
 script  argument.
 
-[nl]
+[para]
 If the  endtag  argument is specified, then the script will be
 modified with two arguments appended: The first will be the
 enclosed content, and the second will be the name of an
@@ -86,12 +86,12 @@ ns_set with any attributes specified in the tag. If no
  endtag  argument is specified, the script will be
 modified with just the name of the ns_set appended.
 
-[nl]
+[para]
 When the script is evaluated, its result is inserted in the output 
 instead of the tag (or, if the  endtag  was specified, in place of
 the tag, end tag, and the enclosed content).
 
-[nl]
+[para]
 The following is a simple way of handling conditional content in ADPs:
 
 [example_begin]

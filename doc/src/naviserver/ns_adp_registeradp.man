@@ -14,7 +14,7 @@ ADP parses sees given tag in the .adp file.
 
 [call [cmd ns_adp_registeradp] [arg tag] [arg ?endtag?] [arg adp]]
 
-[nl]
+[para]
 [arg tag]
 tag that will be used, every time parses sees <tag it will call given adp file
 

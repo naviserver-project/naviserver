@@ -17,7 +17,7 @@ interface which resolves file for current url.
 [call [cmd ns_register_url2file] [opt [arg -noinherit]] [arg url] [arg script] [opt [arg args]]]
 [call [cmd ns_register_fasturl2file] [opt [arg -noinherit]] [arg url] [opt [arg basepath]]]
 
-[nl]
+[para]
 [arg url]
 Register or unregister callback for given url pattern
 

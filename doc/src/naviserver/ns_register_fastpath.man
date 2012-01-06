@@ -15,7 +15,7 @@ can be used when there is no global fast path handler installed.
 
 [call [cmd ns_register_fastpath] [opt [arg -noinherit]] [arg method] [arg url]]
 
-[nl]
+[para]
 [arg method]
 GET, POST OR HEAD
 
