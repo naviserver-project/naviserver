@@ -1,8 +1,10 @@
 <html>
  <head>
   <title>Default Page for Naviserver Installation</title>
- </head>
-
+  <style>
+ strong {color: #000080;}
+  </style>
+</head>
  <body
   bgcolor="#FFFFFF"
   text="#000000"
@@ -34,35 +36,37 @@
   <p>
   <ul>
 
-  <li>The Naviserver <A href=doc/toc.html>Documentation<A> has been included with this distribution.<p>
+  <li>The Naviserver <a "href=doc/toc.html">Documentation<a> has been included with this distribution.<p>
 
-  <li>The Naviserver <A href=examples/>Examples<A> include a few useful scripts and tricks.<p>
+  <li>The Naviserver <a "href=examples/">Examples<a> include a few useful scripts and tricks.<p>
 
   <%
    ns_adp_puts {<li>The Naviserver <a href="nsstats.tcl">Statistics page</a> can be
-                    useful in resolving performance issues.<p>}
+                    useful in resolving performance issues.}
 
    if { ![file exists [ns_info pageroot]/nsstats.tcl] } {
-     ns_adp_puts [subst {<i>Currently nsstats is not installed as
+     ns_adp_puts [subst {<br><i>Currently nsstats is not installed as
                      [ns_info pageroot]/nsstats.tcl, to install you need to
                      download modules and do make install in nsstats
-                     directory. <a href = 'bitbucket-install?file=nsstats.tcl'>Install now</a>.
+                     directory. <a href = 'bitbucket-install.tcl?file=nsstats.tcl'>Install now</a>.
                      </i>}]
    }
   %>
+    <p>
 
   <li>The Naviserver runtime <a href="nsconf.tcl">Config page</a> can be
     useful in reviewing server's setup.<br>
   <%
    if { ![file exists [ns_info pageroot]/nsconf.tcl] } {
      ns_adp_puts [subst {<i>Currently nsconf is not installed yet.
-	<a href = 'bitbucket-install.tcl?file=nsconf.tcl'>Install now</a>.</i><br>
+	<a href = 'bitbucket-install.tcl?file=nsconf.tcl'>Install now</a>.</i>
     }]
    } else {
     ns_adp_puts [subst {The nsconf module has to be enabled and protected by a password in
-    <b>[ns_info pageroot]/nsconf.tcl</b>}]
+    <strong>[ns_info pageroot]/nsconf.tcl</strong>.}]
     }
     %>
+    <p>
   </ul>
   <hr>
  </body>

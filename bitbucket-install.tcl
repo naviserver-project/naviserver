@@ -7,8 +7,8 @@ switch -exact $pageName {
     if {![file readable $page]} {
       exec wget --quiet --no-check-certificate -O /tmp/nsstats.tar.gz $source
       if {[catch {exec tar Ozxvf /tmp/nsstats.tar.gz *$pageName > $page} errorMsg]} {
-	ns_log notice "error: $errorMsg"
 	if {[lindex $errorMsg 0] ne "x"} {
+	  ns_log notice "error: $errorMsg"
 	  ns_return 200 text/html \
 	      "<html><body>error while downloading $pageName: <b>$errorMsg</b>. <a href='/'>return</a>" 
 	}
