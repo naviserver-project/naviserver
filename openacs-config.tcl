@@ -24,7 +24,7 @@ set address		127.0.0.1
 # started by root, and, in NaviServer, the run script have a 
 # '-b address' flag which matches the address according to settings (above)
 
-set server		"service0" 
+set server		"openacs" 
 set servername		"New OpenACS Installation - Development"
 
 set serverroot		"/var/www/${server}"
@@ -34,7 +34,7 @@ set homedir		/usr/local/ns
 set bindir		${homedir}/bin
 
 #---------------------------------------------------------------------
-# which database do you want? postgres or oracle
+# Which database do you want? postgres or oracle
 set database              postgres 
 
 set db_name               $server
@@ -354,11 +354,11 @@ ns_section ns/server/${server}/module/nspam
 ns_section "ns/server/${server}/module/nsopenssl"
 
     # this is used by acs-tcl/tcl/security-procs.tcl to get the https port.
-    ns_param ServerPort                $httpsport
+    ns_param ServerPort      $httpsport
     # setting maxinput higher than practical may leave the server vulnerable to resource DoS attacks
     # see http://www.panoptic.com/wiki/aolserver/166
     # must set maxinput for nsopenssl as well as nssock
-    ns_param   maxinput           [expr {$max_file_upload_mb * 1024 * 1024}] ;# Maximum File Size for uploads in bytes
+    ns_param   maxinput      [expr {$max_file_upload_mb * 1024 * 1024}] ;# Maximum File Size for uploads in bytes
 
     # We explicitly tell the server which SSL contexts to use as defaults when an
     # SSL context is not specified for a particular client or server SSL
@@ -558,30 +558,6 @@ ns_section ns/db/pool/pool3
         ns_param   password           ""
     } 
 
-# ns_section ns/db/pool/pool4
-#    ns_param   maxidle            0
-#    ns_param   maxopen            0
-#    ns_param   connections        5
-#    ns_param   verbose            $debug
-#    ns_param   extendedtableinfo  true
-#    ns_param   logsqlerrors       $debug
-#    if { $database eq "oracle" } {
-#        ns_param   driver             ora8
-#        ns_param   datasource         {}
-#        ns_param   user               $db_name
-#        ns_param   password           $db_password
-#    } else {
-#        ns_param   driver             postgres 
-#        ns_param   datasource         ${db_host}:${db_port}:${other1_db_name}
-#        ns_param   user               $db_user
-#        ns_param   password           ""
-#    } 
-
-# ns_section ns/db/pool/pool5
-# ...
-# ns_section ns/db/pool/pool6
-# ...
-
 
 ns_section ns/server/${server}/db
     ns_param   pools              pool1,pool2,pool3
@@ -600,8 +576,9 @@ ns_section ns/server/${server}/db
 
 
 #---------------------------------------------------------------------
-# which modules should be loaded?  Missing modules break the server, so
+# Which modules should be loaded?  Missing modules break the server, so
 # don't uncomment modules unless they have been installed.
+
 ns_section ns/server/${server}/modules 
     ns_param   nssock             ${bindir}/nssock.so 
     ns_param   nslog              ${bindir}/nslog.so 
@@ -621,9 +598,6 @@ if {[llength $libthread] == 0} {
   ns_log notice "Use Tcl thread library [lindex $libthread end]"
 }
 
-    # openacs versions earlier than 5.x requires nsxml
-#    ns_param nsxml              ${bindir}/nsxml.so
-
     #---------------------------------------------------------------------
     # nsopenssl will fail unless the cert files are present as specified
     # later in this file, so it's disabled by default
@@ -632,8 +606,6 @@ if {[llength $libthread] == 0} {
     # authorize-gateway package requires dqd_utils
     # ns_param   dqd_utils dqd_utils[expr {int($tcl_version)}].so
 
-    # Full Text Search
-#    ns_param   nsfts              ${bindir}/nsfts.so
 
     # PAM authentication
 #    ns_param   nspam              ${bindir}/nspam.so
