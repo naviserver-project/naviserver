@@ -502,8 +502,8 @@ ns_section ns/db/pools
 #    ns_param   pool6              "Pool6 Other1"
 
 ns_section ns/db/pool/pool1
-    ns_param   maxidle            0
-    ns_param   maxopen            0
+    #ns_param   maxidle            0
+    #ns_param   maxopen            0
     ns_param   connections        15
     ns_param   verbose            $debug
     ns_param   extendedtableinfo  true
@@ -521,8 +521,8 @@ ns_section ns/db/pool/pool1
     } 
 
 ns_section ns/db/pool/pool2
-    ns_param   maxidle            0
-    ns_param   maxopen            0
+    #ns_param   maxidle            0
+    #ns_param   maxopen            0
     ns_param   connections        5
     ns_param   verbose            $debug
     ns_param   extendedtableinfo  true
@@ -540,8 +540,8 @@ ns_section ns/db/pool/pool2
     } 
 
 ns_section ns/db/pool/pool3
-    ns_param   maxidle            0
-    ns_param   maxopen            0
+    #ns_param   maxidle            0
+    #ns_param   maxopen            0
     ns_param   connections        5
     ns_param   verbose            $debug
     ns_param   extendedtableinfo  true
@@ -607,7 +607,19 @@ ns_section ns/server/${server}/modules
     ns_param   nslog              ${bindir}/nslog.so 
     ns_param   nsdb               ${bindir}/nsdb.so
     ns_param   nsproxy		  ${bindir}/nsproxy.so
-    ns_param   libthread          [lindex [glob ${homedir}/lib/thread*/libthread*[info sharedlibextension]] 0]
+#
+# Determine, if libthread is installed
+#
+set libthread [glob -nocomplain ${bindir}/../lib/thread*/libthread*[info sharedlibextension]]
+if {[llength $libthread] == 0} {
+  ns_log notice "No Tcl thread library installed in ${bindir}/../lib/"
+} else {
+  if {[llength $libthread] > 1} {
+    ns_log notice "Multiple Tcl thread libraries installed: $libthread"
+  }
+  ns_param libthread [lindex $libthread end]
+  ns_log notice "Use Tcl thread library [lindex $libthread end]"
+}
 
     # openacs versions earlier than 5.x requires nsxml
 #    ns_param nsxml              ${bindir}/nsxml.so
