@@ -56,4 +56,4 @@ LIBOBJS	 = $(OBJS)
 include ../include/Makefile.build
 
 install-init:
-	$(INSTALL_DATA) init.tcl $(INSTBIN)
+	$(INSTALL_DATA) init.tcl $(DESTDIR)$(INSTBIN)

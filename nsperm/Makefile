@@ -38,7 +38,7 @@ MODINST	 =  cpfiles
 
 include ../include/Makefile.build
 
-moddat	 = $(INSTSRVMOD)/$(MODNAME)
+moddat	 = $(DESTDIR)$(INSTSRVMOD)/$(MODNAME)
 
 cpfiles:
 	@$(MKDIR) $(moddat)

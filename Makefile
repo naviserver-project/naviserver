@@ -77,40 +77,38 @@ install: install-dirs install-include install-tcl install-modules \
 install-notice:
 	@echo ""
 	@echo ""
-	@echo "You can now run NaviServer by typing one of the commands below: "
+	@echo "Congratulations, you have installed NaviServer."
 	@echo ""
 	@if [ "`whoami`" = "root" ]; then \
-	  echo "  Because you are running as root, the server needs unprivileged user to be"; \
-	  echo "  specified and permissions on log directory to be setup first:"; \
+	  echo "  Because you are running as root, the server needs an unprivileged user to be"; \
+	  echo "  specified (e.g. nsadmin). The permissions for log directory have to be set up:"; \
 	  echo ""; \
-	  echo "  chown -R nobody $(NAVISERVER)/logs"; \
+	  echo "  chown -R nsadmin $(NAVISERVER)/logs"; \
 	  echo ""; \
-	  echo "  If you want the server to be run as other user, replace nobody with"; \
-	  echo "  your user name and re-run command above before starting the server"; \
-	  user="-u nobody"; \
+	  user="-u nsadmin"; \
 	  chown -R nobody $(NAVISERVER)/logs; \
 	fi; \
+	echo "You can now run NaviServer by typing the following command: "; \
 	echo ""; \
-	echo "$(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/nsd-config.tcl"; \
-	echo " or"; \
-	echo "$(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/sample-config.tcl"; \
-	echo " or"; \
-	echo "$(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/simple-config.tcl"; \
+	echo "  $(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/nsd-config.tcl"; \
+	echo ""; \
+	echo "As a next step, you need to configure the server accroding to your needs."; \
+	echo "Consult as a reference the alternate configuration files in $(NAVISERVER)/conf/"; \
 	echo ""
 
 install-dirs: all
 	@for i in bin lib logs include tcl pages conf modules cgi-bin; do \
-		$(MKDIR) $(NAVISERVER)/$$i; \
+		$(MKDIR) $(DESTDIR)$(NAVISERVER)/$$i; \
 	done
 
 install-config: all
 	@for i in nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/conf/; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
 	@for i in index.adp bitbucket-install.tcl; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/; \
 	done
-	$(INSTALL_SH) install-sh $(INSTBIN)/
+	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
 install-modules: all
 	@for i in $(dirs); do \
@@ -119,26 +117,26 @@ install-modules: all
 
 install-tcl: all
 	@for i in tcl/*.tcl; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/tcl/; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/tcl/; \
 	done
 
 install-include: all
 	@for i in include/*.h include/Makefile.global include/Makefile.module; do \
-		$(INSTALL_DATA) $$i $(INSTHDR)/; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(INSTHDR)/; \
 	done
 
 install-tests:
 	$(CP) -r tests $(INSTSRVPAG)
 
 install-doc:
-	@$(MKDIR) $(NAVISERVER)/pages/doc
-	$(CP) doc/html/* $(NAVISERVER)/pages/doc
-	$(CP) contrib/banners/*.png $(NAVISERVER)/pages/doc
+	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc
+	$(CP) doc/html/* $(DESTDIR)$(NAVISERVER)/pages/doc
+	$(CP) contrib/banners/*.png $(DESTDIR)$(NAVISERVER)/pages/doc
 
 install-examples:
-	@$(MKDIR) $(NAVISERVER)/pages/examples
+	@$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/examples
 	@for i in contrib/examples/*.adp contrib/examples/*.tcl; do \
-		$(INSTALL_DATA) $$i $(NAVISERVER)/pages/examples/; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/examples/; \
 	done
 
 DTPLITE=dtplite

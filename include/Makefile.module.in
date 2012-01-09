@@ -51,6 +51,7 @@
 #     PGMLIBS     Extra program link libraries
 #     INSTALL     Extra install directive(s)
 #     CLEAN       Extra clean directive(s)
+#     DESTDIR     Root directory for install
 #
 #     At least one of PGM, MOD, or LIB must be defined.  For backwards compatibility,
 #     MODOBJS will default to OBJS and MODINST can be used for module install.
@@ -153,30 +154,30 @@ $(PGM): $(PGMOBJS) $(LIBFILE) $(ALIBFILE)
 $(MODOBJS) $(LIBOBJS) $(PGMOBJS): $(HDRS) $(INCDIR)/ns.h $(INCDIR)/nsthread.h
 
 install-mod: $(MOD) $(MODINST)
-	$(INSTALL_SH) $(MOD) $(INSTBIN)/
+	$(INSTALL_SH) $(MOD) $(DESTDIR)$(INSTBIN)/
 
 install-tcl: $(TCL)
-	@$(MKDIR) $(INSTTCL)/$(MODNAME)
+	@$(MKDIR) $(DESTDIR)$(INSTTCL)/$(MODNAME)
 	for t in $(TCL); do \
-		$(INSTALL_DATA) $$t $(INSTTCL)/$(MODNAME)/; \
+		$(INSTALL_DATA) $$t $(DESTDIR)$(INSTTCL)/$(MODNAME)/; \
 	done
 
 install-lib: $(LIBFILE)
-	$(INSTALL_SH) $(LIBFILE) $(INSTLIB)/
+	$(INSTALL_SH) $(LIBFILE) $(DESTDIR)$(INSTLIB)/
     ifneq (,$(findstring MINGW,$(uname)))
-		$(INSTALL_SH) $(LIBFILE) $(INSTBIN)/
+		$(INSTALL_SH) $(LIBFILE) $(DESTDIR)$(INSTBIN)/
     endif
 
 install-alib: $(ALIBFILE)
-	$(INSTALL_SH) $(ALIBFILE) $(INSTLIB)/
+	$(INSTALL_SH) $(ALIBFILE) $(DESTDIR)$(INSTLIB)/
 	$(RANLIB) $(ALIBFILE)
 
 install-pgm: $(PGM)
-	$(INSTALL_SH) $(PGM) $(INSTBIN)/
+	$(INSTALL_SH) $(PGM) $(DESTDIR)$(INSTBIN)/
 
 install-hdrs: $(LIBHDRS)
 	for h in $(LIBHDRS); do \
-		$(INSTALL_DATA) $$h $(INSTHDR)/; \
+		$(INSTALL_DATA) $$h $(DESTDIR)$(INSTHDR)/; \
 	done
 
 clean-mod:
