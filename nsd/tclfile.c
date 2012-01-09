@@ -372,7 +372,7 @@ NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             goto badargs;
         }
         err = symlink(Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
-	/* ignore err */
+	((void)(err)); /* ignore err */
     }
     
     return TCL_OK;

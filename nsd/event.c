@@ -313,6 +313,8 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
      * n is currently not used; n is either number of ready descriptors, or 0
      * on timeout, or -1 on error 
      */
+    ((void)(n)); /* ignore n */
+
     if (queuePtr->pfds[0].revents & POLLIN
         && recv(queuePtr->pfds[0].fd, &c, 1, 0) != 1) {
         Ns_Fatal("event queue: trigger read() failed: %s",

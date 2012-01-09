@@ -944,6 +944,8 @@ TaskThread(void *arg)
 	 * n is currently not used; n is either number of ready
 	 * descriptors, or 0 on timeout, or -1 on error
 	 */
+	((void)(n)); /* ignore n */
+
         if ((pfds[0].revents & POLLIN) && recv(pfds[0].fd, &c, 1, 0) != 1) {
             Ns_Fatal("queue: trigger read() failed: %s",
                      ns_sockstrerror(ns_sockerrno));

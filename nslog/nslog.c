@@ -658,6 +658,7 @@ LogTrace(void *arg, Ns_Conn *conn)
             status = NS_OK;
         }
     }
+    ((void)(status)); /* ignore status */
 
     fd = logPtr->fd;
     Ns_MutexUnlock(&logPtr->lock);
