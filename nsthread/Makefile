@@ -37,5 +37,6 @@ PGMOBJS	= nsthreadtest.o
 LIBOBJS = error.o master.o memory.o mutex.o cslock.o \
 	  rwlock.o reentrant.o sema.o thread.o tls.o time.o \
 	  pthread.o fork.o signal.o winthread.o
+PGMLIBS = -lpthread 
 
 include ../include/Makefile.build
