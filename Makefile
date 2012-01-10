@@ -184,9 +184,11 @@ build-doc:
 # Testing:
 #
 
-NS_TEST_CFG		= -u root -c -d -t $(srcdir)/tests/test.nscfg
-NS_TEST_ALL		= $(srcdir)/tests/all.tcl $(TCLTESTARGS)
-LD_LIBRARY_PATH	= LD_LIBRARY_PATH="./nsd:./nsthread:../nsdb:../nsproxy:$$LD_LIBRARY_PATH"
+NS_TEST_CFG	= -u root -c -d -t $(srcdir)/tests/test.nscfg
+NS_TEST_ALL	= $(srcdir)/tests/all.tcl $(TCLTESTARGS)
+LD_LIBRARY_PATH	= \
+   LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
+   DYLD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$DYLD_LIBRARY_PATH"
 
 check: test
 
