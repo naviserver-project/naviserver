@@ -386,7 +386,7 @@ ns_runonce {
 		    || [::nsf::object::exists $n]} { continue }
 		lappend nsps $n
 	      }
-	    } elseif {[info command ::xotcl::Objects] ne ""} {
+	    } elseif {[info command ::xotcl::Object] ne ""} {
 	      # XOTcl 1
 	      set xotcl 1
 	      foreach n [namespaces] {
