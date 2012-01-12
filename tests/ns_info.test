@@ -115,8 +115,8 @@ test ns_info-2.23.1 {basic operation} -body {
 } -result ""
 
 test ns_info-2.24.1 {basic operation} -body {
-     ns_info tag
-} -match "glob" -result "*Name*"
+    expr {[ns_info tag] ne ""}
+} -result 1
 
 test ns_info-2.25.1 {basic operation} -body {
      ns_info tcllib

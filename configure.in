@@ -42,10 +42,6 @@ AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
 AC_CONFIG_SRCDIR([include/ns.h])
 AC_CONFIG_HEADER([include/nsconfig.h])
 
-AC_REVISION([$Revision$])
-
-
-
 #
 # Version info for include/nsversion.h
 #
@@ -223,6 +219,11 @@ AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
 
 AC_CHECK_FUNCS(poll)
 
+#
+# Detemine the maximum value of time_t depending on the size of the
+# time_t structure.
+#
+
 AC_CHECK_SIZEOF([time_t]) 
 if test "x$ac_cv_sizeof_time_t" = "x4"; then 
   AC_MSG_RESULT([time_t is 32 bit]) 
@@ -233,6 +234,22 @@ elif test "x$ac_cv_sizeof_time_t" = "x8"; then
 else 
   AC_MSG_ERROR([can not figure type of time_t]) 
 fi 
+
+#
+# Determine detailed revision info (package tag) either
+# - from mercurial (when there is a .hg directory), or
+# - assume an installation from a release tar ball
+#
+
+AC_MSG_CHECKING([package tag number from source control])
+if test -d ".hg" ; then
+   ns_package_tag=`hg id -ibt`
+else
+   ns_package_tag="tar-$PACKAGE_VERSION"
+fi
+AC_DEFINE_UNQUOTED([PACKAGE_TAG], "$ns_package_tag", 
+       	     [Revision number form souce code management system, or a constant from tar distribution])
+
 
 #
 # Normally, we'd link the resulting server image

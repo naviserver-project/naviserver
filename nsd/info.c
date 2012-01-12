@@ -442,7 +442,7 @@ Ns_InfoServersStarted(void)
  *
  * Ns_InfoTag --
  *
- *      Returns CVS tag of this build (meaningless without "cvs export").
+ *      Returns revision tag of this build
  *
  * Results:
  *      A string version name.
@@ -456,7 +456,7 @@ Ns_InfoServersStarted(void)
 char *
 Ns_InfoTag(void)
 {
-    return "$Name$";
+    return PACKAGE_TAG;
 }
 
 
