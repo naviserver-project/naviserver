@@ -543,7 +543,7 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
         Tcl_DStringAppend(unameDSPtr, user, -1);
         Ns_DStringPrintf(&msgDs,
             "\nWelcome to %s running at %s (pid %d)\n"
-            "%s/%s for %s built on %s\nCVS Tag: %s\n",
+            "%s/%s for %s built on %s\nTag: %s\n",
             sessPtr->modPtr->server,
             Ns_InfoNameOfExecutable(), Ns_InfoPid(),
             Ns_InfoServerName(), Ns_InfoServerVersion(),

@@ -142,7 +142,7 @@ Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
  *
  * NsTclAdpIdentObjCmd --
  *
- *      Set RCS/CVS ident string for current file.
+ *      Set ident string for current file.
  *
  * Results:
  *      A standard Tcl result.
