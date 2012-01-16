@@ -18,6 +18,47 @@
 #
 # Gustaf Neumann fecit June, 2009
 
+
+if {[ns_config "ns/testconfig" isTestServer] eq ""} {
+  # Try to load NX/XOTcl only if not in the regression test
+  # server. The exit from the test server calls the global "exit"
+  # handler in XOTcl/NX (not the thread exit handler) and throws ugly
+  # error messages.
+
+  # Requiring the XOTcl/NX and the serializer here is not necessary
+  # for the ns-cache emulation, but since the tcl files are sourced in
+  # alphabetical order, we make sure that we can use nx here (if
+  # installed).
+
+  #
+  # What XOTcl should be loaded? If XOTcl 2 is chosen, but not
+  # installed, it falls back and tries to load XOTcl 1.
+  #
+
+  set xotcl 2 ;# 1 or 2
+
+  if {$xotcl == 2} {
+    if {[catch {
+      package require XOTcl 2
+      package require nx::serializer
+      namespace import -force ::xotcl::*
+      ns_log notice "XOTcl [package require XOTcl 2] loaded"
+    }]} {
+      # We could not load XOTcl 2; fall back and try to load XOTcl 1
+      set xotcl 1
+    }
+  }
+  
+  if {$xotcl == 1} {
+    catch {
+      package require XOTcl 1
+      package require -exact xotcl::serializer 1.0
+      namespace import -force ::xotcl::*
+      ns_log notice "XOTcl [package require XOTcl 1] loaded"
+    }
+  }
+}
+
 #
 # ns_share is used in OpenACS for backward compatibility with ACS 2.*
 # No active code uses code any more.
@@ -29,22 +70,9 @@ proc ns_share args {
 	by nsv."
 }
 
-if {[ns_config "ns/testconfig" isTestServer] eq ""} {
-  # Try to load NX only if not in the regression test server. The exit
-  # from the test server calls the global exit handler in XOTcl/NX
-  # (not the thread exit handler) and throws ugly error messages.
-  catch {package require nx}
-}
-
 if {[info command ::nx::Object] ne ""} {
-    ns_log notice "Using ns_cache based on NX [package require nx]"
-  #
-  # Requiring the serializer here is not necessary for the ns-cache
-  # emulation, but since the tcl files are sourced quite early we make
-  # sure that during a "make test" everything is available, even if we
-  # have not an installed NX into the source directory tree.
-  #
-  package req nx::serializer
+  ns_log notice "Using ns_cache based on NX [package require nx]"
+
   #
   # Minimal ns_cache implementation based on NX
   #
