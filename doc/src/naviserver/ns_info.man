@@ -46,6 +46,10 @@ Returns all registered startup/exit/shutdown callbacks
 
 Returns the absolute path to the config file used to start the server
 
+[call [cmd  ns_info] [arg filters]]
+
+Returns a list of the currently defined filters.
+
 [call [cmd  ns_info] [arg home]]
 
 Returns the current working directory of the server
@@ -54,13 +58,192 @@ Returns the current working directory of the server
 
 Returns the value of gethostname(), or "localhost" if that fails
 
-[call [cmd  ns_info] [arg label]]
-
-Returns the value of NSD_LABEL from nsd.h, e.g. "NaviServer4_99"
-
 [call [cmd  ns_info] [arg locks]]
 
-Lists the mutexes that currently exist.  A 5-element list is returned for each mutex: 
+Lists the mutexes that currently exist.  A 5-element list is returned
+for each mutex: : mutex name, {}, unique id, lock counter, busy counter.
+
+[call [cmd  ns_info] [arg log]]
+
+Returns the name of the error log file. The name is specified by the
+"serverlog" parameter in the "ns/parameters" section.
+
+[call [cmd  ns_info] [arg major]]
+
+Returns the major version number.
+
+[call [cmd  ns_info] [arg minor]]
+
+Returns the minor version number.
+
+[call [cmd  ns_info] [arg mimetypes]]
+
+Returns the current mime-type mappings.
+
+[call [cmd  ns_info] [arg name]]
+
+Returns the name of the server implementaiton, i.e. "NaviServer".
+
+[call [cmd  ns_info] [arg nsd]]
+
+Returns absolute  path and name of the nsd binary, which is currently
+executed.
+
+[call [cmd  ns_info] [arg pageroot]]
+
+Returns the absolute path to the page root.
+
+[call [cmd  ns_info] [arg patchlevel]]
+
+Returns the full version number of the server (including patch level).
+
+[call [cmd  ns_info] [arg pid]]
+
+Returns the process id of the running nsd process.
+
+
+[call [cmd  ns_info] [arg platform]]
+
+Returns the platform on which the server was built.
+
+
+[call [cmd  ns_info] [arg pools]]
+
+Returns usage info from the memory pools (returned by
+Tcl_GetMemoryInfo() if configured).
+
+
+[call [cmd  ns_info] [arg requestprocs]]
+
+Returns a list of the currently defined requestprocs  (the registered
+procs for certain request patterns)
+
+
+[call [cmd  ns_info] [arg scheduled]]
+
+Returns the list of the scheduled procedures in the current process
+(all virtual servers). Each list element is itself a 9-element list of
+{id, flags, interval, nextqueue, lastqueue, laststart, lastend,
+procname, arg}:
+
+[list_begin itemized]
+
+    [item]  id - unique id returned by the scheduling command
+    [item]  flags  -  Bitmap of one or more of:
+	[list_begin itemized]
+
+        [item] 1 -- NS_SCHED_THREAD
+        [item] 2 -- NS_SCHED_ONCE
+        [item] 4 -- NS_SCHED_DAILY
+        [item] 8 -- NS_SCHED_WEEKLY
+        [item] 16 - NS_SCHED_PAUSED
+        [item] 32 - NS_SCHED_RUNNING 
+    [list_end]
+
+    [item] interval - interval specification (i.e. seconds from
+    midnight for daily schedule)
+
+    [item] nextqueue - Next time to queue for run
+
+    [item] lastqueue - Last time queued for run
+
+    [item] laststart - Last time run started
+
+    [item] lastend - Last time run finished
+
+    [item] procname - for tasks scheduled with ns_schedule_proc this
+    will be ns:tclschedproc and arg will be the actual scheduled tcl
+    script.
+
+    [item] arg - client data 
+
+[list_end]
+
+
+[call [cmd  ns_info] [arg server]]
+
+Returns the name of the current virtual server.
+
+
+[call [cmd  ns_info] [arg servers]]
+
+Returns the names of all virtual servers in the current nsd process.
+
+
+[call [cmd  ns_info] [arg shutdownpending]]
+
+Returns 1 if shutdown is pending, 0 otherwise.
+
+
+[call [cmd  ns_info] [arg sockcallbacks]]
+
+Returns returns a list of all socket callbacks such as the socket
+listening callback for the nscp module. Each list element is itself a
+4-element list like this: 
+
+ {11 {read exit} nscp {127.0.0.1 9999} 0}
+
+
+[call [cmd  ns_info] [arg started]]
+
+Returns 1 if the server is fully started, 0 otherwise.
+
+
+[call [cmd  ns_info] [arg tag]]
+
+Returns the most detailed revision info, which might be shipped with
+the tar file or obtained from mercurial. 
+
+
+[call [cmd  ns_info] [arg tcllib]]
+
+Returns the path the virtual server's private Tcl library.
+
+
+[call [cmd  ns_info] [arg threads]]
+
+Returns a list of all threads in the current process (all virtual
+servers). Each list element is itself a 7-element list of {name,
+parent, id, flag, ctime, procname, arg}:
+
+[list_begin itemized]
+
+    [item]   name - current name of the thread
+    [item]  parent - parent thread name
+    [item]  id - id of the thread
+    [item]  flag - 1 if this is a detached thread, 0 otherwise
+    [item]  ctime - Thread creation time
+    [item]  procname - for conn threads this will be ns:connthread
+    [item]  arg - client data - for a running conn thread arg will be a 7-element list in the format returned by ns_server all - {conn id, peeraddr, state, method, url, running time, bytes sent}, where state is either "running" or "queued": {cns25 127.0.0.1 running POST /ds/shell 0.5158 0}
+
+[list_end]
+
+
+[call [cmd  ns_info] [arg traces]]
+
+Returns a list of the currently defined traces.
+
+
+[call [cmd  ns_info] [arg uptime]]
+
+Returns the number of seconds since the nsd process started.
+
+
+[call [cmd  ns_info] [arg url2file]]
+
+Returns a list of the mappings from urls to files.
+
+
+[call [cmd  ns_info] [arg version]]
+
+Returns the version number of the server (major and minor version
+number combined with a dot).
+
+
+[call [cmd  ns_info] [arg winnt]]
+
+Returns boolean whether running under windows NT.
+
 
 [list_end]
 
