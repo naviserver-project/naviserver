@@ -58,7 +58,8 @@ set	serverdesc		"Server Name"
 
 # The hostname, address and port for nssock should be set to actual values.
 set	hostname		[ns_info hostname]
-set	address			[ns_info address]
+#set	address			[ns_info address]
+set	address			localhost
 set	port			8080
 
 # Root directory for each virtual server
