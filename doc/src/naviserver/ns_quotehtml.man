@@ -11,13 +11,12 @@ replaced with an escape code.  This allows text displayed in a webpage that
 might otherwise be interpreted as containing HTML markup instructions to be
 interpreted as literal characters to be displayed.  Specifically:
 
-ns_quotehtml > becomes &amp;
-
 [list_begin definitions]
-[def] > becomes &amp;gt;
-[def] " becomes &amp;amp;
-[def] ' becomes &amp;#39;
-[def] " becomes &amp;#34;
+[def] & becomes &amp;
+[def] < becomes &lt;
+[def] > becomes &gt;
+[def] ' becomes &#39;
+[def] " becomes &#34;
 [list_end]
 
  All other characters are unmodified in the output.
@@ -26,9 +25,7 @@ ns_quotehtml > becomes &amp;
 
 [list_begin definitions]
 
-
- [call [cmd ns_quotehtml] [arg html]]5B
-
+ [call [cmd ns_quotehtml] [arg html]]
 
 [list_end]
 
