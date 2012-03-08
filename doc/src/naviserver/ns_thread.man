@@ -57,8 +57,8 @@ currently crash the server.
 [call [cmd  ns_thread] [arg stackinfo]]
 
 Returns the maximum available size of the C stack and the currently free size of the
-C stack from the current thread in a form usable to "array set".  For
-example the command might return"max 2048000 free 2024408"
+C stack from the current thread in a form usable for "array set".  For
+example the command might return "max 2048000 free 2024408"
 
 [call [cmd  ns_thread] [arg yield]]
 
