@@ -1948,7 +1948,7 @@ ChunkedDecode(Request *reqPtr, int update)
       }
       if (update) {
         char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
-        memcpy(writeBuffer, p + 2, chunk_length);
+        memmove(writeBuffer, p + 2, chunk_length);
         reqPtr->chunkWriteOff += chunk_length;
         *(writeBuffer + chunk_length) = '\0';
       }
