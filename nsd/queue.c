@@ -484,12 +484,13 @@ NsConnArgProc(Tcl_DString *dsPtr, void *arg)
 {
     Arg *argPtr = arg;
 
-    /*
-     * A race condition here causes problems occasionally.
-     */
-
     if (arg != NULL) {
+        ConnPool     *poolPtr = argPtr->poolPtr;
+        NsServer     *servPtr = poolPtr->servPtr;
+
+        Ns_MutexLock(&servPtr->pools.lock);
         AppendConn(dsPtr, argPtr->connPtr, "running");
+        Ns_MutexUnlock(&servPtr->pools.lock);
     } else {
         Tcl_DStringAppendElement(dsPtr, "");
     }
