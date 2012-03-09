@@ -570,14 +570,25 @@ NsConnThread(void *arg)
     {
 	Tcl_Interp *interp;
 	Ns_Time     start, end, diff;
+        int	    waitnum, current, idle;
+        void       *firstPtr;
 
-        Ns_GetTime(&start);
+        /* To ensure a short lock, copy the variables from poolPtr */
+        Ns_MutexLock(&servPtr->pools.lock);
+        waitnum  = poolPtr->queue.wait.num;
+        firstPtr = poolPtr->queue.wait.firstPtr;
+        current  = poolPtr->threads.current;
+        idle     = poolPtr->threads.idle; 
+        Ns_MutexUnlock(&servPtr->pools.lock);
+
 	Ns_Log(Notice, "thread initialize cpt %d maxcpt %d wait %d %p current %d idle %d",
 	       cpt, maxcpt, 
 	       poolPtr->queue.wait.num, 
 	       poolPtr->queue.wait.firstPtr,
 	       poolPtr->threads.current, 
 	       poolPtr->threads.idle );
+
+        Ns_GetTime(&start);
 	interp = Ns_TclAllocateInterp(servPtr->server);
         Ns_GetTime(&end);
         Ns_DiffTime(&end, &start, &diff);
