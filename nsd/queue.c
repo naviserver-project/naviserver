@@ -582,11 +582,7 @@ NsConnThread(void *arg)
         Ns_MutexUnlock(&servPtr->pools.lock);
 
 	Ns_Log(Notice, "thread initialize cpt %d maxcpt %d wait %d %p current %d idle %d",
-	       cpt, maxcpt, 
-	       poolPtr->queue.wait.num, 
-	       poolPtr->queue.wait.firstPtr,
-	       poolPtr->threads.current, 
-	       poolPtr->threads.idle );
+	       cpt, maxcpt, waitnum, firstPtr, current, idle );
 
         Ns_GetTime(&start);
 	interp = Ns_TclAllocateInterp(servPtr->server);
