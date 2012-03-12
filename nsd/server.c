@@ -288,7 +288,11 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
      * Load modules and initialize Tcl.  The order is significant.
      */
 
+    Ns_MutexInit(&servPtr->pools.lock);
     Ns_MutexSetName2(&servPtr->pools.lock, "nsd:queue:", server);
+    Ns_MutexInit(&servPtr->filter.lock);
+    Ns_MutexSetName2(&servPtr->filter.lock, "nsd:filter:", server);
+
     CreatePool(servPtr, "");
     path = Ns_ConfigGetPath(server, NULL, "pools", NULL);
     set = Ns_ConfigGetSection(path);
