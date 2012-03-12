@@ -2578,18 +2578,12 @@ SpoolerThread(void *arg)
         if (readPtr == NULL) {
             pollto = 30 * 1000;
         } else {
-	    timeout.sec = TIME_T_MAX;
-            timeout.usec = 0;
             sockPtr = readPtr;
             while (sockPtr != NULL) {
                 SockPoll(sockPtr, POLLIN, &pdata);
                 sockPtr = sockPtr->nextPtr;
             }
-            if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
-                pollto = diff.sec * 1000 + diff.usec / 1000;
-            } else {
-                pollto = 0;
-            }
+	    pollto = -1;
         }
 
         /*
@@ -2860,8 +2854,6 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollto = 30 * 1000;
         } else {
-	    timeout.sec = TIME_T_MAX;
-            timeout.usec = 0;
             curPtr = writePtr;
             while (curPtr != NULL) {
                 if (curPtr->size > 0) {
@@ -2869,17 +2861,12 @@ WriterThread(void *arg)
                 }
                 curPtr = curPtr->nextPtr;
             }
-            if (Ns_DiffTime(&timeout, &now, &diff) > 0)  {
-                pollto = diff.sec * 1000 + diff.usec / 1000;
-            } else {
-                pollto = 0;
-            }
+	    pollto = -1;
         }
 
         /*
          * Select and drain the trigger pipe if necessary.
          */
-
         n = PollWait(&pdata, pollto);
 
         if (PollIn(&pdata, 0) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
