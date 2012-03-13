@@ -2547,7 +2547,7 @@ SpoolerThread(void *arg)
     char           c;
     int            n, stopping, pollto;
     Sock          *sockPtr, *nextPtr, *waitPtr, *readPtr;
-    Ns_Time        timeout, now, diff;
+    Ns_Time        now, diff;
     Driver        *drvPtr;
     PollData       pdata;
 
@@ -2817,7 +2817,7 @@ WriterThread(void *arg)
     unsigned char   c, *bufPtr;
     int             n, err, stopping, pollto, status;
     Tcl_WideInt     toread, maxsize;
-    Ns_Time         now, timeout, diff;
+    Ns_Time         now;
     Sock           *sockPtr;
     Driver         *drvPtr;
     DrvWriter      *wrPtr;
@@ -2837,7 +2837,6 @@ WriterThread(void *arg)
 
     PollCreate(&pdata);
     Ns_GetTime(&now);
-    memset(&timeout, 0, sizeof(timeout));
     writePtr = NULL;
     stopping = 0;
 

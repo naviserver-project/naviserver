@@ -210,6 +210,8 @@ gdbruntest: all
 
 memcheck: all
 	$(LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+helgrind: all
+	$(LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 
 
