@@ -503,6 +503,12 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
         hPtr = GetCacheEntry(itPtr->servPtr);
         Tcl_SetHashValue(hPtr, NULL);
     }
+    
+    /*
+     * Mark the interp as already deleted to avoid
+     * double frees in DeleteInterps()
+     */
+    itPtr->interp = NULL;
 
     /*
      * All other cleanup, including the NsInterp data, if any, will
@@ -1782,7 +1788,9 @@ DeleteInterps(void *arg)
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
     while (hPtr != NULL) {
         if ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
-            Ns_TclDestroyInterp(itPtr->interp);
+	    if (itPtr->interp) {
+	        Ns_TclDestroyInterp(itPtr->interp);
+	    }
 	    ns_free(itPtr);
         }
         hPtr = Tcl_NextHashEntry(&search);
