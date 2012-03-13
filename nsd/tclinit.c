@@ -1751,7 +1751,6 @@ FreeInterpData(ClientData arg, Tcl_Interp *interp)
     Tcl_DeleteHashTable(&itPtr->sets);
     Tcl_DeleteHashTable(&itPtr->chans);
     Tcl_DeleteHashTable(&itPtr->https);
-    ns_free(itPtr);
 }
 
 
@@ -1784,6 +1783,7 @@ DeleteInterps(void *arg)
     while (hPtr != NULL) {
         if ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
             Ns_TclDestroyInterp(itPtr->interp);
+	    ns_free(itPtr);
         }
         hPtr = Tcl_NextHashEntry(&search);
     }
