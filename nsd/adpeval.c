@@ -327,6 +327,7 @@ NsAdpFree(NsInterp *itPtr)
 {
     if (itPtr->adp.cache != NULL) {
         Ns_CacheDestroy(itPtr->adp.cache);
+	itPtr->adp.cache = NULL;
     }
     Tcl_DStringFree(&itPtr->adp.output);
 }
