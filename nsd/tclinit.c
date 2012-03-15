@@ -490,26 +490,40 @@ Ns_TclGetConn(Tcl_Interp *interp)
 void
 Ns_TclDestroyInterp(Tcl_Interp *interp)
 {
-    NsInterp      *itPtr = NsGetInterpData(interp);
-    Tcl_HashEntry *hPtr;
+    NsInterp      *itPtr;
 
+    itPtr = NsGetInterpData(interp);
     /*
-     * If this is a server interp, invoke the delete traces
-     * and remove from thread cache.
+     * If this naviserver interp, clean it up
      */
 
-    if (itPtr != NULL && itPtr->servPtr != NULL) {
-        RunTraces(itPtr, NS_TCL_TRACE_DELETE);
-        hPtr = GetCacheEntry(itPtr->servPtr);
+    if (itPtr != NULL) {
+      Tcl_HashTable *tablePtr = Ns_TlsGet(&tls);
+      Tcl_HashEntry *hPtr;
+
+      /*
+       * Run traces (behaves gracefully, if there is no server
+       * associated.
+       */
+      RunTraces(itPtr, NS_TCL_TRACE_DELETE);
+
+      /*
+       * During shutdown, don't fetch entries via GetCacheEntry(),
+       * since this function might create new cache entries. Note,
+       * that the thread local cache table might contain as well
+       * entries with itPtr->servPtr == NULL.
+       */
+      hPtr = tablePtr ? Tcl_CreateHashEntry(tablePtr, (char *)itPtr->servPtr, NULL) : NULL;
+      
+      /*
+       * Make sure to delete the entry in the thread local cache to
+       * avoid double frees in DeleteInterps()
+       */
+      if (hPtr != NULL) {
         Tcl_SetHashValue(hPtr, NULL);
+      }
     }
     
-    /*
-     * Mark the interp as already deleted to avoid
-     * double frees in DeleteInterps()
-     */
-    itPtr->interp = NULL;
-
     /*
      * All other cleanup, including the NsInterp data, if any, will
      * be handled by Tcl's normal delete mechanisms.
@@ -1362,7 +1376,6 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
      * on this thread.  If it doesn't yet exist, create and
      * initialize one.
      */
-
     hPtr = GetCacheEntry(servPtr);
     itPtr = Tcl_GetHashValue(hPtr);
     if (itPtr == NULL) {
@@ -1757,6 +1770,8 @@ FreeInterpData(ClientData arg, Tcl_Interp *interp)
     Tcl_DeleteHashTable(&itPtr->sets);
     Tcl_DeleteHashTable(&itPtr->chans);
     Tcl_DeleteHashTable(&itPtr->https);
+
+    ns_free(itPtr);
 }
 
 
@@ -1791,7 +1806,6 @@ DeleteInterps(void *arg)
 	    if (itPtr->interp) {
 	        Ns_TclDestroyInterp(itPtr->interp);
 	    }
-	    ns_free(itPtr);
         }
         hPtr = Tcl_NextHashEntry(&search);
     }
