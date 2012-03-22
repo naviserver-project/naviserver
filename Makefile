@@ -200,12 +200,12 @@ runtest: all
 
 gdbtest: all
 	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
-	$(LD_LIBRARY_PATH); gdb -x gdb.run ./nsd/nsd
+	$(LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
-	$(LD_LIBRARY_PATH); gdb -x gdb.run ./nsd/nsd
+	$(LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
 	rm gdb.run
 
 memcheck: all

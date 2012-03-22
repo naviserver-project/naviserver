@@ -53,7 +53,16 @@ proc tcltest::test args {
     uplevel 1 tcltest::__test $args
 }
 
-
 ns_logctl severity DriverDebug true
 
 runAllTests
+
+#
+# Shutdown the server to let the cleanup handlers run
+#
+ns_shutdown
+
+#
+# Wait until these are finised, ns_shutdown will terminate this script
+#
+vwait forever
