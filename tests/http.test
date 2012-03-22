@@ -239,4 +239,224 @@ test http-5.0 {HTTP/1.1 GET with "ns_conn content" after return} -constraints {}
     unset -nocomplain r
 } -result {401 0}
 
+
+#
+# Test content-disposition for file uploads
+#
+test http-6.0 {
+    content disposition with 1 plain field and one file
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+	     -getbody t \
+	     POST /form {--AA
+content-disposition: form-data; name="field1"
+
+f1
+--AA
+content-disposition: form-data; name="file"; filename=error.log
+Content-Type: text/plain
+
+content of file
+--AA--}]
+} -cleanup {
+    ns_unregister_proc POST /form
+    unset -nocomplain r
+} -result {200 {4 field1 f1 file error.log file.content-type text/plain}}
+
+#
+# Test content-disposition for file uploads with quoted file name
+#
+test http-6.1 {
+  Content disposition with one file with quoted file name
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+	     -getbody t \
+	     POST /form {--AA
+content-disposition: form-data; name="file"; filename="error.log"
+Content-Type: text/plain
+
+content of file
+--AA--}]
+} -cleanup {
+    ns_unregister_proc POST /form
+    unset -nocomplain r
+} -result {200 {3 file error.log file.content-type text/plain}}
+
+#
+# Test content-disposition for file uploads with quoted file name containing escaped quote
+#
+test http-6.2a {
+  Content disposition with one file with quoted file name containing escaped quote
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+	     -getbody t \
+	     POST /form {--AA
+content-disposition: form-data; name="file"; filename="error \"test\".log"
+Content-Type: text/plain
+
+content of file
+--AA--}]
+} -cleanup {
+    ns_unregister_proc POST /form
+    unset -nocomplain r
+} -result {200 {3 file {error "test".log} file.content-type text/plain}}
+
+test http-6.2b {
+  Content disposition with one file with quoted file name containing escaped single quote
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+	     -getbody t \
+	     POST /form {--AA
+content-disposition: form-data; name="file"; filename='error \'test\'.log'
+Content-Type: text/plain
+
+content of file
+--AA--}]
+} -cleanup {
+    ns_unregister_proc POST /form
+    unset -nocomplain r
+} -result {200 {3 file {error 'test'.log} file.content-type text/plain}}
+
+test http-6.2c {
+  Content disposition with one file with single quoted file name containing double quote
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+      -getbody t \
+      POST /form {--AA
+content-disposition: form-data; name="file"; filename='error "test.log'
+Content-Type: text/plain
+
+content of file
+--AA--}
+} -cleanup {
+    ns_unregister_proc POST /form
+} -result {200 {3 file {error "test.log} file.content-type text/plain}}
+
+test http-6.2d {
+  Content disposition with one file with double quoted file name containing single quote
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+      -getbody t \
+      POST /form {--AA
+content-disposition: form-data; name="file"; filename="error 'test.log"
+Content-Type: text/plain
+
+content of file
+--AA--}
+} -cleanup {
+    ns_unregister_proc POST /form
+} -result {200 {3 file {error 'test.log} file.content-type text/plain}}
+
+
+#
+# Test content-disposition for file uploads with quoted file name containing space
+#
+test http-6.3 {
+  Content disposition with one file with quoted file name containing space
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+	     -getbody t \
+	     POST /form {--AA
+content-disposition: form-data; name="file"; filename="error test.log"
+Content-Type: text/plain
+
+content of file
+--AA--}]
+} -cleanup {
+    ns_unregister_proc POST /form
+    unset -nocomplain r
+} -result {200 {3 file {error test.log} file.content-type text/plain}}
+
+#
+# Test content-disposition for file uploads with unquoted file name containing space
+#
+test http-6.4 {
+  Content disposition with one file and unquoted file name containing space
+} -constraints serverListen -setup {
+    ns_register_proc POST /form {
+      set s [ns_getform] 
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+	lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+	     -getbody t \
+	     POST /form {--AA
+content-disposition: form-data; name="file"; filename=error test.log
+Content-Type: text/plain
+
+content of file
+--AA--}]
+} -cleanup {
+    ns_unregister_proc POST /form
+    unset -nocomplain r
+} -result {200 {3 file error file.content-type text/plain}}
+
+
 cleanupTests

@@ -35,19 +35,16 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * Local functions defined in this file.
  */
 
 static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding);
 static void ParseMultiInput(Conn *connPtr, char *start, char *end);
-static char *Ext2Utf(Tcl_DString *dsPtr, char *s, int len, Tcl_Encoding encoding);
+static char *Ext2Utf(Tcl_DString *dsPtr, char *s, int len, Tcl_Encoding encoding, char unescape);
 static int GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn);
 static char *NextBoundry(Tcl_DString *dsPtr, char *s, char *e);
-static int GetValue(char *hdr, char *att, char **vsPtr, char **vePtr);
+static int GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *unescape);
 
 
 /*
@@ -298,7 +295,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
     Tcl_HashEntry *hPtr;
     FormFile      *filePtr;
     char *s, *e, *ks, *ke, *fs, *fe, save, saveend;
-    char *key, *value, *disp;
+    char *key, *value, *disp, unescape;
     Ns_Set *set;
     int new;
 
@@ -340,12 +337,12 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
      */
 
     disp = Ns_SetGet(set, "content-disposition");
-    if (disp != NULL && GetValue(disp, "name=", &ks, &ke)) {
-        key = Ext2Utf(&kds, ks, ke-ks, encoding);
-        if (!GetValue(disp, "filename=", &fs, &fe)) {
-            value = Ext2Utf(&vds, start, end-start, encoding);
+    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unsscape)) {
+        key = Ext2Utf(&kds, ks, ke-ks, encoding, unsscape);
+        if (!GetValue(disp, "filename=", &fs, &fe, &unsscape)) {
+	    value = Ext2Utf(&vds, start, end-start, encoding, unescape);
         } else {
-            value = Ext2Utf(&vds, fs, fe-fs, encoding);
+            value = Ext2Utf(&vds, fs, fe-fs, encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &new);
             if (new) {
                 filePtr = ns_malloc(sizeof(FormFile));
@@ -461,13 +458,14 @@ NextBoundry(Tcl_DString *dsPtr, char *s, char *e)
  *      1 if attribute found and value parsed, 0 otherwise.
  *
  * Side effects:
- *      Start and end are stored in given pointers.
+ *      Start and end are stored in given pointers, quoted character, 
+ *      when it was preceded by a backslash.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-GetValue(char *hdr, char *att, char **vsPtr, char **vePtr)
+GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
 {
     CONST char *s, *e;
 
@@ -482,10 +480,25 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr)
         while (*e && !isspace(UCHAR(*e))) {
             ++e;
         }
+	*uPtr = 0;
     } else {
-        /* NB: End of quoted att="value" is next quote. */
+        int escaped = 0;
+
+	*uPtr = 0;
+        /* 
+	 * End of quoted att="value" is next quote.  A quote within
+	 * the quoted string could be escaped with a backslash. In
+	 * case, an escaped quote was detected, report the quote
+	 * character as result.
+	 */
         ++e;
-        while (*e && *e != *s) {
+        while (*e && (escaped || *e != *s)) {
+	    if (escaped) {
+	        escaped = 0;
+	    } else if (*e == '\\') {
+	        *uPtr = *s;
+	        escaped = 1;
+	    }
             ++e;
         }
         ++s;
@@ -515,8 +528,9 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr)
  */
 
 static char *
-Ext2Utf(Tcl_DString *dsPtr, char *start, int len, Tcl_Encoding encoding)
+Ext2Utf(Tcl_DString *dsPtr, char *start, int len, Tcl_Encoding encoding, char unescape)
 {
+
     if (encoding == NULL) {
         Tcl_DStringSetLength(dsPtr, 0);
         Tcl_DStringAppend(dsPtr, start, len);
@@ -524,6 +538,26 @@ Ext2Utf(Tcl_DString *dsPtr, char *start, int len, Tcl_Encoding encoding)
         /* NB: ExternalToUtfDString will re-init dstring. */
         Tcl_DStringFree(dsPtr);
         Tcl_ExternalToUtfDString(encoding, start, len, dsPtr);
+    }
+
+    /*
+     * In case the string contains backslash escaped characters, the
+     * backslashes have to be removed. This will shorten the resulting
+     * string.
+     */
+    if (unescape) {
+      int i, j;
+      char *buffer = dsPtr->string;
+
+      for (i = 0; i<len; i++) {
+	if (buffer[i] == '\\' && buffer[i+1] == unescape) {
+	  for (j = i; j < len; j++) {
+	    buffer[j] = buffer[j+1];
+	  }
+	  len --;
+	}
+      }
+      Tcl_DStringSetLength(dsPtr, len);
     }
     return dsPtr->string;
 }
