@@ -337,9 +337,9 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
      */
 
     disp = Ns_SetGet(set, "content-disposition");
-    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unsscape)) {
-        key = Ext2Utf(&kds, ks, ke-ks, encoding, unsscape);
-        if (!GetValue(disp, "filename=", &fs, &fe, &unsscape)) {
+    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape)) {
+        key = Ext2Utf(&kds, ks, ke-ks, encoding, unescape);
+        if (!GetValue(disp, "filename=", &fs, &fe, &unescape)) {
 	    value = Ext2Utf(&vds, start, end-start, encoding, unescape);
         } else {
             value = Ext2Utf(&vds, fs, fe-fs, encoding, unescape);
