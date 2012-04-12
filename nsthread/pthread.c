@@ -39,8 +39,6 @@
 #include "thread.h"
 #include <pthread.h>
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * Local functions defined in this file.
  */
@@ -346,14 +344,25 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
 
     /*
      * Set the stack size if specified explicitly.  It is smarter
-     * to leave the default  on platforms which map large stacks
+     * to leave the default on platforms which map large stacks
      * with guard zones (e.g., Solaris and Linux).
      */
 
     if (stacksize > 0) {
         if (stacksize < PTHREAD_STACK_MIN) {
             stacksize = PTHREAD_STACK_MIN;
-        }
+        } else {
+	  /*
+	   * The stack-size has to be a multiple of the page-size,
+	   * otherwise pthread_attr_setstacksize fails. When we have
+	   * _SC_PAGESIZE defined, try to be friendly and round the
+	   * stack-size to the next multiple of the page-size.
+	   */
+#if defined(_SC_PAGESIZE)
+	    int pageSize = sysconf(_SC_PAGESIZE);
+	    stacksize = (((stacksize-1) / pageSize) + 1) * pageSize;
+#endif
+	}
         err = pthread_attr_setstacksize(&attr, (size_t) stacksize);
         if (err != 0) {
             NsThreadFatal(func, "pthread_attr_setstacksize", err);
