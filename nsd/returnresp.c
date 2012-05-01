@@ -449,7 +449,63 @@ Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
         return result;
     }
     return Ns_ConnReturnNotice(conn, 413, "Request Entity Too Large",
-        "The request entity (e.g. file to be uploaded) is too large.");
+	"The request entity (e.g. file to be uploaded) is too large.");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnReturnRequestURITooLong --
+ *
+ *      Return a 414 Request URI to long.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR 
+ *
+ * Side effects:
+ *      Will close the connection. 
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
+{
+    int result;
+
+    if (ReturnRedirect(conn, 414, &result)) {
+        return result;
+    }
+    return Ns_ConnReturnNotice(conn, 414, "Request-URI Too Long",
+        "The request URI is too long. "
+	"You might to consider to provide a larger value for maxline in your NaviServer config file.");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnReturnHeaderLineTooLong --
+ *
+ *      Return a 431 Request Header Line to long.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR 
+ *
+ * Side effects:
+ *      Will close the connection. 
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
+{
+    int result;
+
+    if (ReturnRedirect(conn, 431, &result)) {
+        return result;
+    }
+    return Ns_ConnReturnNotice(conn, 431, "Request Header Fields Too Large",
+        "A provided request header line is too long. "
+	"You might to consider to provide a larger value for maxline in your NaviServer config file");
 }
 
 /*

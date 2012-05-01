@@ -76,9 +76,7 @@ test http-2.3 {HTTP/1.1 GET file larger than IOBUFSZ (connio.c)} -body {
 
 
 
-test http-3.1 {limits: request line length} -constraints {
-    serverListen
-} -setup {
+test http-3.1 {limits: request line length} -constraints {serverListen} -setup {
     ns_register_proc GET /limits {
         ns_return 200 text/plain [string length [ns_conn request]]
     }
@@ -86,11 +84,9 @@ test http-3.1 {limits: request line length} -constraints {
     nstest::http -http 1.1 -getbody 1 GET /limits?[string repeat x 1050]
 } -cleanup {
     ns_unregister_proc GET /limits
-} -result 414
+} -match glob -result "414 *Request-URI Too Long*"
 
-test http-3.2 {limits: header line length} -constraints {
-    serverListen
-} -setup {
+test http-3.2a {limits: header line length} -constraints {serverListen} -setup {
     ns_register_proc GET /limits {
         ns_return 200 text/plain bad
     }
@@ -100,7 +96,22 @@ test http-3.2 {limits: header line length} -constraints {
         GET /limits
 } -cleanup {
     ns_unregister_proc GET /limits
-} -result 400
+} -match glob -result "431 *Request Header Fields Too Large*"
+
+test http-3.2b {long header line and long body} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        ns_return 200 text/plain [ns_conn content]
+    }
+} -body {
+    set r [nstest::http -http 1.1 \
+	       -setheaders [list x [string repeat x 1050]] \
+	       PUT /put [string repeat x 1000002]]
+    list [lindex $r 0] [string length [lindex $r 1]]
+} -cleanup {
+    ns_unregister_proc PUT /put
+    unset -nocomplain r
+} -result {413 0}
+
 
 test http-3.3 {limits: too many headers} -constraints serverListen -setup {
     ns_register_proc GET /limits {
@@ -110,7 +121,8 @@ test http-3.3 {limits: too many headers} -constraints serverListen -setup {
     }
 } -body {
     nstest::http -http 1.1 -getbody 1 \
-        -setheaders [split [string repeat xy 1024] ""] GET /limits
+        -setheaders [split [string repeat xy 1024] ""] \
+	GET /limits
 } -cleanup {
     ns_unregister_proc GET /limits
 } -result 414
@@ -196,6 +208,7 @@ test http-4.7 {HTTP/1.1 PUT one more large file} -setup {
     unset -nocomplain l
 } -result [list 200 100000]
 
+# size is larger than maxinput
 test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
@@ -208,6 +221,7 @@ test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     unset -nocomplain r
 } -result {413 0}
 
+# another test, file is 10 times larger
 test http-4.9 {HTTP/1.1 PUT file much larger than maxinput} -constraints {} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]

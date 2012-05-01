@@ -54,12 +54,10 @@ NS_RCSID("@(#) $Header$");
 #define SOCK_READERROR            (-7)
 #define SOCK_WRITEERROR           (-8)
 #define SOCK_SHUTERROR            (-9)
-#define SOCK_REQUESTURITOOLONG   (-10)
 #define SOCK_BADREQUEST          (-11)
 #define SOCK_ENTITYTOOLARGE      (-12)
 #define SOCK_BADHEADER           (-13)
 #define SOCK_TOOMANYHEADERS      (-14)
-#define SOCK_LINETOOLONG         (-15)
 
 /* WriterSock flags, keep it in upper range not to conflict with Conn flags */
 
@@ -1728,16 +1726,6 @@ SockError(Sock *sockPtr, int reason, int err)
         SockSendResponse(sockPtr, 400, errMsg);
         break;
 
-    case SOCK_REQUESTURITOOLONG:
-        errMsg = "Request-URI Too Long";
-        SockSendResponse(sockPtr, 414, errMsg);
-        break;
-
-    case SOCK_LINETOOLONG:
-        errMsg = "Request Line Too Long";
-        SockSendResponse(sockPtr, 400, errMsg);
-        break;
-
     case SOCK_TOOMANYHEADERS:
         errMsg = "Too Many Request Headers";
         SockSendResponse(sockPtr, 414, errMsg);
@@ -1978,8 +1966,6 @@ ChunkedDecode(Request *reqPtr, int update)
  *      SOCK_ERROR: Client drop or timeout.
  *      SOCK_SPOOL: Pass input handling to spooler
  *      SOCK_BADREQUEST
- *      SOCK_REQUESTURITOOLONG
- *      SOCK_LINETOOLONG
  *      SOCK_BADHEADER
  *      SOCK_TOOMANYHEADERS
  *
@@ -2136,8 +2122,6 @@ SockRead(Sock *sockPtr, int spooler)
  *      SOCK_MORE:   More input is required.
  *      SOCK_ERROR:  Malformed request.
  *      SOCK_BADREQUEST
- *      SOCK_REQUESTURITOOLONG
- *      SOCK_LINETOOLONG
  *      SOCK_BADHEADER
  *      SOCK_TOOMANYHEADERS
  *
@@ -2184,16 +2168,28 @@ SockParse(Sock *sockPtr, int spooler)
         }
 
         /*
-         * Check for max single line overflow.
+         * Check for max single line overflows. 
+	 *
+	 * Previous versions if the driver returned here directly an
+         * error code, which was handled via http error message
+         * provided via SockError(). However, the SockError() handling
+         * closes the connection immediately. This has the
+         * consequence, that the http client might never see the error
+         * message, since the request was not yet fully transmitted,
+         * but it will see a "broken pipe: 13" message instead. We
+         * read now the full request and return the message via
+         * ConnRunRequest().
          */
 
         if ((e - s) > drvPtr->maxline) {
+	    sockPtr->keep = 0;
             if (reqPtr->request.line == NULL) {
                 Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
                        drvPtr->maxline);
-                return SOCK_REQUESTURITOOLONG;
-            }
-            return SOCK_LINETOOLONG;
+		sockPtr->flags = NS_CONN_REQUESTURITOOLONG;
+            } else {
+	      sockPtr->flags = NS_CONN_LINETOOLONG;
+	    }
         }
 
         /*

@@ -260,12 +260,22 @@ Ns_ConnRunRequest(Ns_Conn *conn)
     char *server = Ns_ConnServer(conn);
 
     /*
-     * Return entity too large error message
+     * Return error messages for invalid headers and 
+     * the entity too large.
      */
     if (connPtr->flags & NS_CONN_ENTITYTOOLARGE) {
         connPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
         return Ns_ConnReturnEntityTooLarge(conn);
+    } else if (connPtr->flags & NS_CONN_REQUESTURITOOLONG) {
+        connPtr->flags &= ~NS_CONN_REQUESTURITOOLONG;
+        return Ns_ConnReturnRequestURITooLong(conn);
+    } else if (connPtr->flags & NS_CONN_LINETOOLONG) {
+        connPtr->flags &= ~NS_CONN_LINETOOLONG;
+        return Ns_ConnReturnHeaderLineTooLong(conn);
     }
+    /*
+     * true requests.
+     */
 
     if (conn->request->method != NULL && conn->request->url != NULL) {
         Ns_MutexLock(&ulock);

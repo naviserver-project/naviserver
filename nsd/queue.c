@@ -211,6 +211,12 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 	    if (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) {
 	        connPtr->flags |= NS_CONN_ENTITYTOOLARGE;
 		sockPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
+	    } else if (sockPtr->flags & NS_CONN_REQUESTURITOOLONG) {
+	        connPtr->flags |= NS_CONN_REQUESTURITOOLONG;
+		sockPtr->flags &= ~NS_CONN_REQUESTURITOOLONG;
+	    } else if (sockPtr->flags & NS_CONN_LINETOOLONG) {
+	        connPtr->flags |= NS_CONN_LINETOOLONG;
+		sockPtr->flags &= ~NS_CONN_LINETOOLONG;
 	    }
 
             if (poolPtr->queue.wait.firstPtr == NULL) {
