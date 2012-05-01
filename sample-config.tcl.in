@@ -368,7 +368,7 @@ ns_param   	hostname       		$hostname
 ns_param  	maxinput	  	1024000
 
 # Max line size
-ns_param  	maxline	  		4096
+ns_param  	maxline	  		8192
 
 # Read-ahead buffer size
 ns_param  	bufsize        		16384

@@ -265,7 +265,7 @@ ns_section ns/server/${server}/module/nssock
 	ns_param   port			$httpport	;# 80 or 443
 	ns_param   maxinput		[expr {$max_file_upload_mb * 1024 * 1024}] ;# 1024*1024, maximum size for inputs
 	ns_param   recvwait		[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
-	#ns_param   maxline		4096	;# 4096, max size of a header line
+	#ns_param   maxline		8192	;# 8192, max size of a header line
 	#ns_param   maxheaders		128	;# 128, max number of header lines
 	#ns_param   uploadpath		/tmp	;# directory for uploads
 	#ns_param   backlog		256	;# 256, backlog for listen operations

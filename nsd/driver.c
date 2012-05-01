@@ -337,7 +337,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                                              0,            0, drvPtr->maxinput);
 
     drvPtr->maxline      = Ns_ConfigIntRange(path, "maxline",
-                                             4096,         256, INT_MAX);
+                                             8192,         256, INT_MAX);
 
     drvPtr->maxheaders   = Ns_ConfigIntRange(path, "maxheaders",
                                              128,          8, INT_MAX);
