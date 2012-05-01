@@ -65,4 +65,4 @@ ns_shutdown
 #
 # Wait until these are finised, ns_shutdown will terminate this script
 #
-vwait forever
+after 2000 return
