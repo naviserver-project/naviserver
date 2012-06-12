@@ -1127,3 +1127,75 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, int create)
     }
     return arrayPtr;
 }
+
+
+
+/*
+ *----------------------------------------------------------------
+ *
+ * NsTclNsvBucketObjCmd --
+ *
+ *      TclObjCommand to return the names of the arrays kept in
+ *      various buckets of the current interp.  If called a bucket
+ *      number it returns a list array kept in that bucket. If called
+ *      with no arguments, it returns a list of every bucket (list of
+ *      lists).
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects;
+ *      None.
+ *
+ *----------------------------------------------------------------
+ */
+
+int
+NsTclNsvBucketObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+{
+    NsInterp       *itPtr = arg;
+    NsServer       *servPtr = itPtr->servPtr;
+    int		    bucketNr = -1, i;
+    Bucket         *bucketPtr;
+    Tcl_Obj        *resultObj, *listObj;
+
+    if (objc > 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "?bucket-number?");
+	return TCL_ERROR;
+    }
+    if (objc == 2 && 
+	(Tcl_GetIntFromObj(interp, objv[1], &bucketNr) != TCL_OK 
+	 || bucketNr < 0 
+	 || bucketNr >= servPtr->nsv.nbuckets
+	 )) {
+        Tcl_ResetResult(interp);
+        Tcl_AppendResult(interp, "bucket number is not a valid integer", NULL);
+        return TCL_ERROR;
+    }
+
+    /* LOCK for servPtr->nsv ? */
+    resultObj = Tcl_GetObjResult(interp);
+    for (i = 0; i < servPtr->nsv.nbuckets; i++) {
+        Tcl_HashEntry  *hPtr;
+	Tcl_HashSearch  search;
+
+        if (bucketNr > -1 && i != bucketNr) {
+	    continue;
+        }
+	listObj = Tcl_NewListObj(0, NULL);
+        bucketPtr = &servPtr->nsv.buckets[i];
+        Ns_MutexLock(&bucketPtr->lock);
+        hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
+        while (hPtr != NULL) {
+	    CONST char *key = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
+	    Tcl_ListObjAppendElement(NULL, listObj,
+				     Tcl_NewStringObj(key, -1));
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Ns_MutexUnlock(&bucketPtr->lock);
+	Tcl_ListObjAppendElement(interp, resultObj, listObj);
+    }
+
+    return TCL_OK;
+}
+

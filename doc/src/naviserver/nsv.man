@@ -52,6 +52,22 @@ ordinary variables.
 [example_end]
 
 
+[call [cmd nsv_bucket] [opt [arg bucket-nr]]]
+
+Return a list of all the array names of the specified bucket. If no
+bucket-nr is specified, return a list of all arrays from all buckets.
+This command is mainly for performance tuning. When e.g.
+the number of locks for a certain bucket is high one can
+use this command  to determine the arrays kept in this bucket.
+
+[example_begin]
+   % nsv_bucket 1
+   {test foo bar}
+[example_end]
+
+
+
+
 [call [cmd nsv_exists] [arg array] [arg key]]
 
 Test whether a key exists in the nsv array.
