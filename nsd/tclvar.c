@@ -55,6 +55,7 @@ typedef struct Array {
     Bucket        *bucketPtr; /* Array bucket. */
     Tcl_HashEntry *entryPtr;  /* Entry in bucket array table. */
     Tcl_HashTable  vars;      /* Table of variables. */
+    long           locks;     /* Number of array locks */
 } Array;
 
 /*
@@ -889,6 +890,7 @@ LockArray(NsServer *servPtr, CONST char *array, int create)
             arrayPtr = Tcl_GetHashValue(hPtr);
         } else {
             arrayPtr = ns_malloc(sizeof(Array));
+	    arrayPtr->locks = 0;
             arrayPtr->bucketPtr = bucketPtr;
             arrayPtr->entryPtr = hPtr;
             Tcl_InitHashTable(&arrayPtr->vars, TCL_STRING_KEYS);
@@ -902,6 +904,7 @@ LockArray(NsServer *servPtr, CONST char *array, int create)
         }
         arrayPtr = Tcl_GetHashValue(hPtr);
     }
+    arrayPtr->locks++;
 
     return arrayPtr;
 }
@@ -1187,9 +1190,14 @@ NsTclNsvBucketObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
         Ns_MutexLock(&bucketPtr->lock);
         hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
         while (hPtr != NULL) {
-	    CONST char *key = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
-	    Tcl_ListObjAppendElement(NULL, listObj,
-				     Tcl_NewStringObj(key, -1));
+	    CONST char *key  = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
+	    Array *arrayPtr  = Tcl_GetHashValue(hPtr);
+	    Tcl_Obj *elemObj = Tcl_NewListObj(0, NULL);
+
+	    Tcl_ListObjAppendElement(NULL, elemObj, Tcl_NewStringObj(key, -1));
+	    Tcl_ListObjAppendElement(NULL, elemObj, Tcl_NewIntObj(arrayPtr->locks));
+	    Tcl_ListObjAppendElement(NULL, listObj, elemObj);
+
             hPtr = Tcl_NextHashEntry(&search);
         }
         Ns_MutexUnlock(&bucketPtr->lock);

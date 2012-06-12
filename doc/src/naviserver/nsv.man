@@ -54,15 +54,19 @@ ordinary variables.
 
 [call [cmd nsv_bucket] [opt [arg bucket-nr]]]
 
-Return a list of all the array names of the specified bucket. If no
-bucket-nr is specified, return a list of all arrays from all buckets.
-This command is mainly for performance tuning. When e.g.
-the number of locks for a certain bucket is high one can
-use this command  to determine the arrays kept in this bucket.
+Return a list of all the array names with lock counts from the specified
+bucket. If no bucket-nr is specified, return a list of all arrays from
+all buckets.  This command is mainly for performance tuning. When e.g.
+the number of locks for a certain bucket is high one can use this
+command to determine the arrays with their usages from this bucket.
 
 [example_begin]
-   % nsv_bucket 1
-   {test foo bar}
+   set buckets ""
+   set count -1
+   foreach b [lb]nsv_bucket[rb] {
+      append buckets [lb]incr "count[rb]: " [lb]lsort -integer -index 1 -decreasing $b[rb] \n
+   }
+   ns_log notice $buckets
 [example_end]
 
 
