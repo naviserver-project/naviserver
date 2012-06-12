@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 extern char *nsBuildDate;
 

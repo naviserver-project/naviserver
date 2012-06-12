@@ -36,8 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * Local functions defined in this file.
  */

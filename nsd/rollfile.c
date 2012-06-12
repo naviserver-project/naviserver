@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 typedef struct File {
     time_t   mtime;
     Tcl_Obj *path;

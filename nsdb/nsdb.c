@@ -35,8 +35,6 @@
 
 #include "db.h"
 
-NS_RCSID("@(#) $Header$");
-
 int Ns_ModuleVersion = 1;
 
 

@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 #define SERV_STREAM 1
 #define SERV_RUNAT  2
 #define SERV_NOTTCL 4

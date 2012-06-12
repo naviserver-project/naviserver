@@ -38,8 +38,6 @@
 #include "ns.h"
 #include <ctype.h>  /* isspace */
 
-NS_RCSID("@(#) $Header$");
-
 #define LOG_COMBINED      (1<<0)
 #define LOG_FMTTIME       (1<<1)
 #define LOG_REQTIME       (1<<2)

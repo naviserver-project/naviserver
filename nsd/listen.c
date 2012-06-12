@@ -37,8 +37,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * This the context used by the socket callback.
  */

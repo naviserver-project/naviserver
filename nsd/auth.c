@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following proc is used for simple user authorization.  It
  * could be useful for global modules (e.g., nscp).

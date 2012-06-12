@@ -46,8 +46,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure defines a critcal section including a mutex,
  * thread id of the owner, and a condition variable for waiting threads.

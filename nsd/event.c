@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following structure manages an I/O event callback
  * and it's state.

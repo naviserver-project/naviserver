@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure defines a cached ADP page result.  A cached
  * object is created by executing the non-cached code and saving the

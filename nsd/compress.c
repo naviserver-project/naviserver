@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #define COMPRESS_SENT_HEADER 0x01
 #define COMPRESS_FLUSHED     0x02
 

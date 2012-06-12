@@ -38,9 +38,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * This structure is used as nodes in a linked list of callbacks.
  */

@@ -37,8 +37,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure maintains state for the
  * reentrant wrappers.

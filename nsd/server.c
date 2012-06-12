@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following structure maintains virtual server
  * configuration callbacks.

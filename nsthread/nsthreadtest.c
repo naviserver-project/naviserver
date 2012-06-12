@@ -37,8 +37,6 @@
 
 #include "nsthread.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * Special direct include of pthread.h for compatibility tests.
  */

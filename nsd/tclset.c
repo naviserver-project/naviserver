@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following represent the valid combinations of
  * NS_TCL_SET flags

@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * Image types recognized and processed here
  */

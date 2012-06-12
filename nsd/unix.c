@@ -39,9 +39,6 @@
 #include "nsd.h"
 #include <pwd.h>
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * Static functions defined in this file.
  */

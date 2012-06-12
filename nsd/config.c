@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #define ISSLASH(c) ((c) == '/' || (c) == '\\')
 
 /*

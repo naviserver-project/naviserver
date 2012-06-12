@@ -31,9 +31,6 @@
 
 #include "../nsdb/nsdb.h"
 
-NS_RCSID("$Header$");
-
-
 NS_EXPORT int Ns_ModuleVersion = 1;
 
 

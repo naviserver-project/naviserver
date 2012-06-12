@@ -37,8 +37,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 static Ns_ThreadProc ServiceTicker;
 static void StopTicker(void);
 static void StartTicker(DWORD pending);

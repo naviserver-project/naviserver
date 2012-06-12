@@ -47,8 +47,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure defines a read/write lock including a mutex
  * to protect access to the structure and condition variables for waiting

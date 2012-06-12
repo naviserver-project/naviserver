@@ -37,8 +37,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following global variable specifies the maximum TLS id.  Modifying
  * this value has no effect.

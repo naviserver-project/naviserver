@@ -39,8 +39,6 @@
 #include "thread.h"
 #include <io.h>
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure maintains the Win32-specific state
  * of a thread and mutex and condition waits pointers.

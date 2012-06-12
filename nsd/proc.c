@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following struct maintains callback and description for
  * Ns_GetProcInfo.

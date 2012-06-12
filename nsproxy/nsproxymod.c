@@ -36,10 +36,6 @@
 
 #include "nsproxy.h"
 
-NS_RCSID("@(#) $Header$");
-
-
-
 int Ns_ModuleVersion = 1;
 
 typedef struct {

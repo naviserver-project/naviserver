@@ -114,12 +114,4 @@
 # define NS_GNUC_CONST
 #endif
 
-/*
- * Ensure static RCSID strings aren't optimised away.
- */
-
-#define NS_RCSID(string) static const char *RCSID NS_GNUC_USED = string \
-    ", compiled: " __DATE__ " " __TIME__
-
-
 #endif /* NSCHECK_H */

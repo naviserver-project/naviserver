@@ -37,9 +37,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 typedef void *(AtProc)(Ns_Callback *, void *);
 
 

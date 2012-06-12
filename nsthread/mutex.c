@@ -35,8 +35,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure defines a mutex with
  * string name and lock and busy counters.

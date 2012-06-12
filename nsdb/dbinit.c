@@ -37,8 +37,6 @@
 
 #include "db.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure defines a database pool.
  */

@@ -130,9 +130,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #define STACK_SIZE      512 /* Max depth of URL hierarchy. */
 
 

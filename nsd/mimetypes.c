@@ -36,8 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 #define TYPE_DEFAULT "*/*"
 
 /*

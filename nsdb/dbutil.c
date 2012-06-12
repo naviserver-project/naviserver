@@ -36,8 +36,6 @@
 
 #include "db.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following constants are defined for this file.
  */

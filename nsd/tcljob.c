@@ -77,8 +77,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * If a user does not specify the a max number of threads for a queue,
  * then the following default is used.

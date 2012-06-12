@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #ifdef _WIN32
 # define DEVNULL "nul:"
 # include <share.h>

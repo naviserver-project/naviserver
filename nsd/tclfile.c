@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * Structure handling one registered channel for the [ns_chan] command
  */

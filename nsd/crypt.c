@@ -29,8 +29,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 #ifdef __linux
 
 char           *

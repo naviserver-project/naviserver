@@ -32,8 +32,6 @@
 #include <ctype.h>
 #include <stdlib.h>	/* environ */
 
-NS_RCSID("@(#) $Header$");
-
 #define BUFSIZE	    4096
 #define NDSTRINGS   5
 #define CGI_NPH	    	1

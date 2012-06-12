@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #define BUFSIZE 2048
 
 typedef struct Stream {

@@ -39,8 +39,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure defines a counting semaphore using a lock
  * and condition.

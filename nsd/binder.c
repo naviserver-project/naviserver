@@ -65,8 +65,6 @@ static int binderResponse[2] = { -1, -1 };
 static void PreBind(char *line);
 static void Binder(void);
 
-NS_RCSID("@(#) $Header$");
-
 
 /*
  *----------------------------------------------------------------------

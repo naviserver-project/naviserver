@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #ifdef HAVE__NSGETENVIRON
 #include <crt_externs.h>
 #elif !defined(_WIN32)

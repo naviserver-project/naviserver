@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 extern Tcl_ObjCmdProc NsTclHttpObjCmd;
 
 typedef struct {

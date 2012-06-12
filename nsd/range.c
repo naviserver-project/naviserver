@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 typedef struct Range {
     off_t   start;
     off_t   end;

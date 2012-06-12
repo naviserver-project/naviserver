@@ -35,9 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following structure defines a collection of arrays.
  * Only the arrays within a given bucket share a lock,

@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 #ifdef _WIN32
 #include <process.h>
 static char   **Set2Argv(Ns_DString *dsPtr, Ns_Set *set);

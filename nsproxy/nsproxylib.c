@@ -47,8 +47,6 @@
 
 #include "nsproxy.h"
 
-NS_RCSID("@(#) $Header$");
-
 #include <grp.h>
 #include <poll.h>
 

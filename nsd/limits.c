@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #define CREATE   NS_TRUE
 #define NOCREATE NS_FALSE
 

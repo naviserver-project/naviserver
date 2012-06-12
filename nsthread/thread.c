@@ -36,9 +36,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following structure maintains all state for a thread
  * including thread local storage slots.

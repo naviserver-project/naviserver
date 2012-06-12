@@ -36,8 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
 static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv,
                       int *offPtr, int *lenPtr);

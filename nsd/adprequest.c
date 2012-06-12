@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following structure allows a single ADP or Tcl page to
  * be requested via multiple URLs.

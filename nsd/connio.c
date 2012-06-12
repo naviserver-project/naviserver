@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 /*
  * The following is used to allocate a buffer on the stack for
  * encoding character data and stransfering data from disk to

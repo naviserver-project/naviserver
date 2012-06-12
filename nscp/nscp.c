@@ -37,8 +37,6 @@
 
 #include "ns.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure is allocated each instance of
  * the loaded module.

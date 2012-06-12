@@ -36,9 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #define MAX_RECURSION 3 /* Max redirect recursion limit. */
 
 

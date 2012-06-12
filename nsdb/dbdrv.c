@@ -36,8 +36,6 @@
 
 #include "db.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following typedefs define the functions provided by
  * loadable drivers.

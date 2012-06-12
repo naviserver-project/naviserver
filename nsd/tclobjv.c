@@ -30,9 +30,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #define VALUE_SUPPLIED ((void *) NS_TRUE)
 
 

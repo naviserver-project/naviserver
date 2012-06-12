@@ -37,8 +37,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following array specify the output ascii character for each
  * of the 64 6-bit characters.

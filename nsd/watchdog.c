@@ -38,9 +38,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
 #ifdef LOG_DEBUG
 # undef LOG_DEBUG /* Because this is used by the syslog facility as well */
 #endif

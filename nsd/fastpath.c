@@ -36,10 +36,6 @@
 
 #include "nsd.h"
 
-NS_RCSID("@(#) $Header$");
-
-
-
 /*
  * The following structure defines the contents of a file
  * stored in the file cache.

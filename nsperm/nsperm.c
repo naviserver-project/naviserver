@@ -35,8 +35,6 @@
 
 #include "ns.h"
 
-NS_RCSID("@(#) $Header$");
-
 #ifndef INADDR_NONE
 #define INADDR_NONE (-1)
 #endif

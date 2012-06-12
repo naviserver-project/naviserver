@@ -35,8 +35,6 @@
 
 #include "thread.h"
 
-NS_RCSID("@(#) $Header$");
-
 static Ns_Cs master;
 static int initialized;
 

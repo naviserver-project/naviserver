@@ -36,8 +36,6 @@
 
 #include "db.h"
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure maintains per-interp data.
  */

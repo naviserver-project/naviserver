@@ -37,8 +37,6 @@
 #include "nsd.h"
 #include <math.h>
 
-NS_RCSID("@(#) $Header$");
-
 /*
  * The following structure is allocated for each new thread.  The
  * connPtr arg is used for the proc arg callback to list conn

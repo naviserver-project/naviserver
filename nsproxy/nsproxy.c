@@ -35,8 +35,6 @@
 
 #include "nsproxy.h"
 
-NS_RCSID("@(#) $Header$");
-
 static int
 MyInit(Tcl_Interp *interp)
 {
