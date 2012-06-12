@@ -52,7 +52,7 @@
  *
  *----------------------------------------------------------------------
  */
-#define SYSTEM_MALLOC 0
+/* #define SYSTEM_MALLOC 1 */
 
 #if defined(SYSTEM_MALLOC)
 void *ns_realloc(void *ptr, size_t size)  { return realloc(ptr, size); }
