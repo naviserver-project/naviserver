@@ -2020,6 +2020,11 @@ NS_EXTERN int
 Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type, int fd, Tcl_WideInt len)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN int
+Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn);
+
+NS_EXTERN int
+Ns_ConnReturnRequestURITooLong(Ns_Conn *conn);
 
 NS_EXTERN void
 Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
