@@ -1162,9 +1162,20 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
             cachePtr->currEntry = ePtr;
             Ns_DStringSetLength(&cachePtr->buffer, length);
         } else {
+	    LogEntry *entryPtr, *tmpPtr;
+
+	    /*
+	     * The cache is reset (count <= 0). If there are log
+	     * entries in the cache, flush these before setting the
+	     * pointers to zero.
+	     */
+	    for (entryPtr = cachePtr->firstEntry; entryPtr != NULL; entryPtr = tmpPtr) {
+	        tmpPtr = entryPtr->nextPtr;
+	        ns_free(entryPtr);
+	    }
             cachePtr->count = 0;
             cachePtr->currEntry = NULL;
-            cachePtr->firstEntry = NULL;
+	    cachePtr->firstEntry = NULL;
             Ns_DStringSetLength(&cachePtr->buffer, 0);
         }
     }
