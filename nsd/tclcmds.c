@@ -220,7 +220,7 @@ extern Tcl_ObjCmdProc
     NsTclUnscheduleObjCmd,
     NsTclUrl2FileObjCmd,
     NsTclUrlDecodeObjCmd,
-/*NsTclUrlEncodeObjCmd,*/
+    NsTclUrlEncodeObjCmd,
     NsTclWriteContentObjCmd,
     NsTclWriteFpObjCmd,
     NsTclWriteObjCmd,
@@ -348,7 +348,7 @@ static Cmd basicCmds[] = {
     {"ns_truncate", NULL, NsTclTruncateObjCmd},
     {"ns_unschedule_proc", NULL, NsTclUnscheduleObjCmd},
     {"ns_urldecode", NULL, NsTclUrlDecodeObjCmd},
-    /*{"ns_urlencode", NULL, NsTclUrlEncodeObjCmd},*/
+    {"ns_urlencode", NULL, NsTclUrlEncodeObjCmd},
     {"ns_uudecode", NULL, NsTclHTUUDecodeObjCmd},
     {"ns_uuencode", NULL, NsTclHTUUEncodeObjCmd},
     {"ns_writefp", NULL, NsTclWriteFpObjCmd},
@@ -489,8 +489,6 @@ static Cmd servCmds[] = {
     {NULL, NULL, NULL}
 };
 
-#include "gentcl.h"
-
 
 /*
  *----------------------------------------------------------------------
@@ -526,14 +524,7 @@ AddCmds(Cmd *cmdPtr, NsInterp *itPtr)
 void
 NsTclAddBasicCmds(NsInterp *itPtr)
 {
-    int i;
-    Tcl_Interp *interp = itPtr->interp;
-
     AddCmds(basicCmds, itPtr);
-    for (i=0; i < nr_elements(method_definitions)-1; i++) {
-        Tcl_CreateObjCommand(interp, method_definitions[i].methodName, method_definitions[i].proc, itPtr, 0);
-    }
-
 }
 
 void

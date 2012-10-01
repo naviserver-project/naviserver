@@ -441,25 +441,24 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
  *
  *----------------------------------------------------------------------
  */
-//#define THREAD_LOCAL static __thread
-#define THREAD_LOCAL 
+
 int
 NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_DString  ds;
     int         i, nargs, part = 'q';
 
-    static Ns_ObjvTable parts[] = {
+    Ns_ObjvTable parts[] = {
         {"query",    'q'},
         {"path",     'p'},
         {NULL,       0}
     };
-    THREAD_LOCAL Ns_ObjvSpec opts[] = {
+    Ns_ObjvSpec opts[] = {
         {"-part",    Ns_ObjvIndex,  &part,   &parts},
         {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
-    THREAD_LOCAL Ns_ObjvSpec args[] = {
+    Ns_ObjvSpec args[] = {
         {"component", Ns_ObjvArgs,  &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
