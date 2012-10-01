@@ -66,7 +66,7 @@ static void ZFree(voidpf arg, voidpf address);
  *----------------------------------------------------------------------
  */
 
-void
+int
 Ns_CompressInit(Ns_CompressStream *stream)
 {
     z_stream *z = &stream->z;
@@ -84,9 +84,23 @@ Ns_CompressInit(Ns_CompressStream *stream)
                           9,          /* memlevel: 1-9 (min-max), default: 8.*/
                           Z_DEFAULT_STRATEGY);
     if (status != Z_OK) {
+      /*
+       * When the stream is already closed from the client side, don't
+       * kill the server via Fatal(). The stream might be already
+       * closed, when a huge number of requests was queued and the
+       * client gives up quickly.
+       */
+      if (status == Z_STREAM_ERROR) {
+        Ns_Log(Notice, "Ns_CompressInit: zlib error: %d (%s): %s",
+                 status, zError(status), z->msg ? z->msg : "(none)");
+	return NS_ERROR;
+      } else {
         Ns_Fatal("Ns_CompressInit: zlib error: %d (%s): %s",
                  status, zError(status), z->msg ? z->msg : "(none)");
+      }
     }
+
+    return NS_OK;
 }
 
 void
@@ -209,10 +223,12 @@ Ns_CompressGzip(const char *buf, int len, Ns_DString *dsPtr, int level)
     struct iovec       iov;
     int                status;
 
-    Ns_CompressInit(&stream);
-    Ns_SetVec(&iov, 0, buf, len);
-    status = Ns_CompressBufsGzip(&stream, &iov, 1, dsPtr, level, 1);
-    Ns_CompressFree(&stream);
+    status = Ns_CompressInit(&stream);
+    if (status == NS_OK) {
+      Ns_SetVec(&iov, 0, buf, len);
+      status = Ns_CompressBufsGzip(&stream, &iov, 1, dsPtr, level, 1);
+      Ns_CompressFree(&stream);
+    }
 
     return status;
 }
@@ -284,10 +300,10 @@ ZFree(voidpf arg, voidpf address)
 
 #else /* ! HAVE_ZLIB_H */
 
-void
+int
 Ns_CompressInit(Ns_CompressStream *stream)
 {
-    return;
+    return NS_ERROR;
 }
 
 void

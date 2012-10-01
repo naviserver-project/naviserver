@@ -788,7 +788,7 @@ typedef struct Ns_CompressStream {
 } Ns_CompressStream;
 
 
-NS_EXTERN void
+NS_EXTERN int
 Ns_CompressInit(Ns_CompressStream *)
     NS_GNUC_NONNULL(1);
 
