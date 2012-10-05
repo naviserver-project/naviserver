@@ -90,6 +90,7 @@ ns_section ns/parameters
 
     #ns_param   mailhost	localhost 
     #ns_param   jobsperthread	0
+    #ns_param   jobtimeout	300
     #ns_param   schedsperthread	0
 
     #
@@ -146,8 +147,8 @@ ns_section ns/server/${server}
 	# Scaling and Tuning Options
 	#
 	#ns_param   maxconnections	100	;# 100, number of allocated connection stuctures
-	#ns_param   maxthreads		10	;# 10, max number of connection threads
-	#ns_param   minthreads          1	;# 1, min number of connection threads
+	#ns_param   maxthreads		10	;# 10, maximal number of connection threads
+	#ns_param   minthreads          1	;# 1, minimal number of connection threads
 	ns_param   connsperthread	100	;# 0, number of connections (requests) handled per thread
 	#ns_param   threadtimeout	120	;# 120, timeout for idle theads
 	#ns_param   spread		0	;# 20, spread factor in percent for varying connsperthread and threadtimeout
@@ -224,6 +225,8 @@ ns_section ns/server/${server}/tcl
     ns_param   library            ${serverroot}/tcl
     ns_param   autoclose          on 
     ns_param   debug              $debug
+    #ns_param   nsvbuckets         16       ;# default: 8
+
  
 ns_section "ns/server/${server}/fastpath"
 	ns_param        serverdir             ${homedir}
@@ -313,7 +316,7 @@ ns_section ns/server/${server}/module/nslog
 	#
 	# Control log file rolling
 	#
-	#ns_param   maxbackup		100	;# 100, max number of backup log files
+	#ns_param   maxbackup		100	;# 10, max number of backup log files
 	#ns_param   rolllog		true	;# true, should server log files automatically
 	#ns_param   rollhour		0	;# 0, specify at which hour to roll
 	#ns_param   rollonsignal	true	;# false, perform roll on a sighup
