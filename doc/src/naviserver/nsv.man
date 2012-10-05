@@ -64,7 +64,7 @@ command to determine the arrays with their usages from this bucket.
    set buckets ""
    set count -1
    foreach b [lb]nsv_bucket[rb] {
-      append buckets [lb]incr "count[rb]: " [lb]lsort -integer -index 1 -decreasing $b[rb] \n
+      append buckets "[lb]incr count[rb]: " [lb]lsort -integer -index 1 -decreasing $b[rb] \n
    }
    ns_log notice $buckets
 [example_end]
@@ -157,13 +157,15 @@ Set the value for a key in an nsv array. Returns the value the key is set to.
 [example_end]
 
 
-[call [cmd nsv_unset] [arg array] [opt [arg key]]]
+[call [cmd nsv_unset] [opt [arg -nocomplain]] [opt --] [arg array] [opt [arg key]]]
 
-Unset an array or a single key from an array. If successful returns an empty string.
+Unset an array or a single key from an array. If successful returns an
+empty string. If -nocomplain is specified as the first argument, the
+command does not complain when the specified variable does not exist.
 
 [example_begin]
    % nsv_unset shared_array key1
-   %nsv_unset shared_array
+   % nsv_unset shared_array
 [example_end]
 
 
