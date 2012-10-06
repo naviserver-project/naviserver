@@ -312,9 +312,9 @@ Ns_CompressFree(Ns_CompressStream *stream)
     return;
 }
 
-char *
-Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs, int flags,
-                    Ns_DString *dsPtr)
+int
+Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
+                    Ns_DString *dsPtr, int level, int flush)
 {
     return NS_ERROR;
 }
