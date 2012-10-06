@@ -92,7 +92,7 @@ install-notice:
 	echo ""; \
 	echo "  $(NAVISERVER)/bin/nsd -f $$user -t $(NAVISERVER)/conf/nsd-config.tcl"; \
 	echo ""; \
-	echo "As a next step, you need to configure the server accroding to your needs."; \
+	echo "As a next step, you need to configure the server according to your needs."; \
 	echo "Consult as a reference the alternate configuration files in $(NAVISERVER)/conf/"; \
 	echo ""
 
