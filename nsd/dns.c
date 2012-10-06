@@ -42,7 +42,7 @@
 
 #ifdef WIN32
 #  include <Ws2tcpip.h>
-#  include <Wspiapi.h>
+/*#  include <Wspiapi.h>*/
 #endif
 
 #ifndef INADDR_NONE

@@ -661,6 +661,30 @@ static int ValidateUserAddr(User * userPtr, char *peer)
 /*
  *----------------------------------------------------------------------
  *
+ * inet_aton --
+ *
+ *	inet_aton for windows. 
+ *
+ * Results:
+ *	0/1
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef WIN32
+#include <winsock.h>
+
+int inet_aton(const char *addrString, struct in_addr *addr) {
+  addr->s_addr = inet_addr(addrString);
+  return (addr->s_addr == INADDR_NONE) ? 0 : 1;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AddUserCmd --
  *
  *	Implements the Tcl command ns_perm adduser

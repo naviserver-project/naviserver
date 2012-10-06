@@ -44,6 +44,10 @@
 #define LOG_CHECKFORPROXY (1<<3)
 #define LOG_SUPPRESSQUERY (1<<4)
 
+#if !defined(PIPE_BUF)
+# define PIPE_BUF 512
+#endif
+
 int Ns_ModuleVersion = 1;
 
 typedef struct {

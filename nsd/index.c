@@ -747,7 +747,7 @@ Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
 
 #ifdef WIN32
 #define bsearch(a,b,c,d,e) NsBsearch(a,b,c,d,e)
-^L
+
 /*
  *----------------------------------------------------------------------
  *
