@@ -673,7 +673,7 @@ static int ValidateUserAddr(User * userPtr, char *peer)
  *
  *----------------------------------------------------------------------
  */
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock.h>
 
 int inet_aton(const char *addrString, struct in_addr *addr) {

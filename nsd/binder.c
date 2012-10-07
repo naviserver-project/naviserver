@@ -760,7 +760,7 @@ SOCKET
 Ns_SockBinderListen(int type, char *address, int port, int options)
 {
     SOCKET        sock = -1;
-#ifndef WIN32
+#ifndef _WIN32
     int           n, err;
     char          data[64];
     struct msghdr msg;

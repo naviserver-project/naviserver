@@ -340,10 +340,10 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
  *
  *----------------------------------------------------------------------
  */
-#ifdef WIN32
+#ifdef _WIN32
 #include <io.h>
 #include <stdio.h>
-	 
+
 int pread(unsigned int fd, char *buf, size_t count, off_t offset)
 {
     OVERLAPPED overlapped = { 0 };
