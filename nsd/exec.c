@@ -139,7 +139,7 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
 #ifdef _WIN32
     HANDLE process = (HANDLE) pid;
     int status = NS_OK;
-    int exitcode;
+    DWORD exitcode;
 
     if ((WaitForSingleObject(process, INFINITE) == WAIT_FAILED) ||
         (GetExitCodeProcess(process, &exitcode) != TRUE)) {

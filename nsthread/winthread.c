@@ -753,7 +753,7 @@ void
 Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
 {
     HANDLE hdl = (HANDLE) *thread;
-    LONG exitcode;
+    DWORD exitcode;
 
     if (WaitForSingleObject(hdl, INFINITE) != WAIT_OBJECT_0) {
         NsThreadFatal("Ns_ThreadJoin", "WaitForSingleObject", GetLastError());

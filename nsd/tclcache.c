@@ -593,6 +593,16 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  *----------------------------------------------------------------------
  */
 
+/* todo: there must be a better way/name instead of PRZd; then move it to a more
+ * general space
+ */
+#ifdef _WIN32
+# define PRZd "Id"
+#else
+# define PRZd "zd"
+#endif
+
+
 int
 NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
@@ -628,10 +638,10 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 	    size_t size = Ns_CacheGetSize(entry);
             timePtr = Ns_CacheGetExpirey(entry);
             if (timePtr->usec == 0) {
-                Ns_DStringPrintf(&ds, "%zd %" PRIu64 " ",
+                Ns_DStringPrintf(&ds, "%" PRZd " %" PRIu64 " ",
                                  size, (int64_t) timePtr->sec);
             } else {
-                Ns_DStringPrintf(&ds, "%zd %" PRIu64 ":%ld ",
+                Ns_DStringPrintf(&ds, "%" PRZd " %" PRIu64 ":%ld ",
                                  size, (int64_t) timePtr->sec, timePtr->usec);
             }
             entry = Ns_CacheNextEntry(&search);

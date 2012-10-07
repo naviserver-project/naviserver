@@ -215,7 +215,7 @@ int
 NsTclSockNReadObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                      Tcl_Obj *CONST objv[])
 {
-    int         nread;
+    unsigned long nread;
     Tcl_Channel chan;
     SOCKET      sock;
 

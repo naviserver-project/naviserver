@@ -560,7 +560,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
     }
 
     if (hndl == NULL || hndl == INVALID_HANDLE_VALUE) {
-        Ns_Log(Error, "CreateFile(%s): %d", path, GetLastError());
+        Ns_Log(Error, "CreateFile(%s): %ld", path, GetLastError());
         return NS_ERROR;
     }
 
@@ -575,7 +575,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
                              name);
 
     if (mobj == NULL || mobj == INVALID_HANDLE_VALUE) {
-        Ns_Log(Error, "CreateFileMapping(%s): %d", path, GetLastError());
+        Ns_Log(Error, "CreateFileMapping(%s): %ld", path, GetLastError());
         CloseHandle(hndl);
         return NS_ERROR;
     }
@@ -588,7 +588,7 @@ NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr)
                          size);
 
     if (addr == NULL) {
-        Ns_Log(Warning, "MapViewOfFile(%s): %d", path, GetLastError());
+        Ns_Log(Warning, "MapViewOfFile(%s): %ld", path, GetLastError());
         CloseHandle(mobj);
         CloseHandle(hndl);
         return NS_ERROR;
@@ -1038,7 +1038,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
         curStatus.dwCheckPoint = check++;
     }
     if (hStatus != 0 && SetServiceStatus(hStatus, &curStatus) != TRUE) {
-        Ns_Fatal("nswin32: SetServiceStatus(%d) failed: '%s'", state,
+        Ns_Fatal("nswin32: SetServiceStatus(%ld) failed: '%s'", state,
                  SysErrMsg());
     }
 }
