@@ -330,9 +330,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
  *
  *      The pread() function is used in SendFd to read N bytes from a
  *      stream/file from a given offset point. It is natively present
- *      on linux/unix but not on windows. However its easy to
- *      implement it on windows using the lseek and read functions.
- *      see: http://www.binarytides.com/function-pread-for-windows/
+ *      on linux/unix but not on windows. 
  *
  * Results:
  *      On success, number of bytes read, -1 on error
@@ -346,12 +344,25 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 #include <io.h>
 #include <stdio.h>
 	 
-int pread(unsigned int fd, char *buf, size_t count, int offset)
+int pread(unsigned int fd, char *buf, size_t count, off_t offset)
 {
-    if (_lseek(fd, offset, SEEK_SET) != offset) {
+    OVERLAPPED overlapped = { 0 };
+    HANDLE fh = (HANDLE)_get_osfhandle(fd);
+    DWORD ret;
+
+    if (fh == INVALID_HANDLE_VALUE) {
+        errno = EBADF;
+	return -1;
+    }
+
+    overlapped.Offset = (DWORD)offset;
+    overlapped.OffsetHigh = (DWORD)(offset >> 32);
+
+    if (!ReadFile(fh, buf, count, &ret, &overlapped)) {
         return -1;
     }
-    return read(fd, buf, count);
+
+    return ret;
 }
 #endif
 
