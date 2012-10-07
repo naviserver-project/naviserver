@@ -658,6 +658,7 @@ static int ValidateUserAddr(User * userPtr, char *peer)
 }
 
 
+#if !defined(HAVE_INET_PTON)
 /*
  *----------------------------------------------------------------------
  *
@@ -673,13 +674,14 @@ static int ValidateUserAddr(User * userPtr, char *peer)
  *
  *----------------------------------------------------------------------
  */
-#ifdef _WIN32
-#include <winsock.h>
+# ifdef _WIN32
+# include <winsock.h>
 
 int inet_aton(const char *addrString, struct in_addr *addr) {
   addr->s_addr = inet_addr(addrString);
   return (addr->s_addr == INADDR_NONE) ? 0 : 1;
 }
+# endif
 #endif
 
 /*
@@ -774,7 +776,12 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
              */
 
             *slash = '\0';
-            if (inet_aton(net, &ip) == 0 || inet_aton(slash+1, &mask) == 0) {
+#if defined(HAVE_INET_PTON)
+            if (inet_pton(AF_INET, net, &ip) == 0 || inet_pton(AF_INET, slash+1, &mask) == 0) 
+#else
+            if (inet_aton(net, &ip) == 0 || inet_aton(slash+1, &mask) == 0) 
+#endif
+	    {
                 Tcl_AppendResult(interp, "invalid address or hostname \"",
                                  net, "\". " "should be ipaddr/netmask or hostname", NULL);
                 goto fail;
