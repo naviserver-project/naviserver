@@ -48,13 +48,13 @@
 
 #include <nscheck.h>
 
-#ifdef _WIN32
-#define NS_EXPORT                   __declspec(dllexport)
-#define NS_IMPORT                   __declspec(dllimport)
-
 #if defined(__GNUC__) || defined(__MINGW32__)
 #define NSTHREAD_EXPORTS
 #endif
+
+#ifdef _WIN32
+#define NS_EXPORT                   __declspec(dllexport)
+#define NS_IMPORT                   __declspec(dllimport)
 
 #if defined(NSTHREAD_EXPORTS)
 #define NS_STORAGE_CLASS            NS_EXPORT
@@ -259,9 +259,17 @@ typedef struct DIR_ *DIR;
 
 #define DEVNULL	                    "/dev/null"
 
-#define NS_EXPORT
+# if __GNUC__ >= 4
+#  define NS_EXPORT                 __attribute__ ((visibility ("default")))
+# else
+#  define NS_EXPORT
+# endif /* __GNUC__ >= 4 */
 #define NS_IMPORT
-#define NS_STORAGE_CLASS
+#if defined(NSTHREAD_EXPORTS)
+#define NS_STORAGE_CLASS            NS_EXPORT
+#else
+#define NS_STORAGE_CLASS            NS_IMPORT
+#endif
 
 #endif /* _WIN32 */
 
@@ -613,6 +621,14 @@ NS_EXTERN int truncate(char *file, off_t size);
 NS_EXTERN int link(char *from, char *to);
 NS_EXTERN int symlink(char *from, char *to);
 NS_EXTERN int kill(int pid, int sig);
+#endif
+
+/*
+ * tcl 8.6 and TIP 330/336 compatability
+ */
+
+#if (TCL_MAJOR_VERSION < 8) || (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6)
+#define Tcl_GetErrorLine(interp) (interp->errorLine)
 #endif
 
 #endif /* NSTHREAD_H */

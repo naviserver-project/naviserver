@@ -917,7 +917,7 @@ NsAdpLogError(NsInterp *itPtr)
 
     if (framePtr != NULL) {
         Ns_DStringPrintf(&ds, "\n    at line %d of ",
-                         framePtr->line + interp->errorLine);
+                         framePtr->line + Tcl_GetErrorLine(interp));
     }
     inc = "";
     while (framePtr != NULL) {
