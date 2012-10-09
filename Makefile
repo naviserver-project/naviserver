@@ -33,7 +33,7 @@
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nstclsh
 
 # Unix only modules
 ifeq (,$(findstring MINGW,$(uname)))
