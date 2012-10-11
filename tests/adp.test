@@ -119,5 +119,15 @@ test adp-4.4 {ns_adp_dir (unset)} -body {
 } -result {}
 
 
+test adp-5.1 {Nested ADP tags} -body {
+    nstest::http -getbody 1 GET /nested.adp
+} -result {200 {anything
+}}
+
+test adp-5.2 {Deeply nested ADP tags} -body {
+    nstest::http -getbody 1 GET /deepnest.adp
+} -result {200 {deep
+}}
+
 
 cleanupTests
