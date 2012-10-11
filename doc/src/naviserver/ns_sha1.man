@@ -29,7 +29,7 @@ A94A8FE5CCB19BA61C4C0873D391E987982FBBD3
 
 
 [see_also nsd]
-[keywords ns_uuencode, ns_uudecode, ns_crypt, ns_rand]
+[keywords ns_uuencode ns_uudecode ns_crypt ns_rand]
 
 [manpage_end]
 

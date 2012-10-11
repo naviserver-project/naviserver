@@ -93,7 +93,7 @@ Log the accumulated cache statistics and reset whenever the server is signalled:
 [example_end]
 
 
-[see_also ns_info ns_atclose]
+[see_also ns_info ns_atclose ns_atexit ns_atshutdown]
 [keywords signal callback]
 
 [manpage_end]

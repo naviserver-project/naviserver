@@ -18,9 +18,9 @@ The scripts are executed in the global scope in LIFO (last in, first out) order.
 
 [list_end]
 
-[see_also nsd]
-[keywords ns_atexit ns_atshutdown ns_atsignal]
+[see_also ns_atexit ns_atclose ns_atshutdown ns_atsignal]
 
+[keywords callback] 
 
 [manpage_end]
 

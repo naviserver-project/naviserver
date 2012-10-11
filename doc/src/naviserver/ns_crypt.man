@@ -38,7 +38,7 @@ which is reasonably attacked with modern computers with ordinary brute-force att
 [example_end]
 
 
-[keywords nsd ns_uuencode, ns_uudecode, ns_sha1]
+[keywords nsd ns_uuencode ns_uudecode ns_sha1]
 
 [manpage_end]
 

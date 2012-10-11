@@ -32,7 +32,7 @@
 
 
 [see_also nsd]
-[keywords ns_adp_mime (duplicate command)]
+[keywords ns_adp_mime]
 
 
 [manpage_end]

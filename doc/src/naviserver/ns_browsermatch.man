@@ -28,7 +28,7 @@
 
 
 [see_also nsd]
-[keywords ns_browsertype {ns_conn headers} Tcl [lb]string match[rb]]
+[keywords ns_browsertype {ns_conn headers}]
 
 [manpage_end]
 
