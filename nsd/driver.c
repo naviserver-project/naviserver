@@ -1035,10 +1035,12 @@ DriverThread(void *arg)
         /*
          * If there are any closing or read-ahead sockets, set the bits
          * and determine the minimum relative timeout.
+	 *
+	 * TODO: the various poll time outs should probably be configurable.
          */
 
         if (readPtr == NULL && closePtr == NULL) {
-            pollto = 60 * 1000;
+            pollto = 1 * 1000;
         } else {
             sockPtr = readPtr;
             while (sockPtr != NULL) {
@@ -1231,6 +1233,27 @@ DriverThread(void *arg)
                 }
                 accepted++;
             }
+
+	    /*
+	     * Check whether we should reanimate some connection
+	     * threads. Under normal conditions, requests are dropping
+	     * in on a regular basis, and the liveliness of the
+	     * connection threads is checked when requests are
+	     * queued. However, on bursty loads that suddenly stop, it
+	     * is possible that the total number of requests allowed
+	     * to be processed by the existing connection threads is
+	     * less than the number of queued requests. Therefore,
+	     * when the last connection thread terminates, queued
+	     * remaining requests might be waiting.  Since the logic
+	     * for creating connection threads in on the driver side,
+	     * we care here about the already queued requests. The
+	     * check is performed only in the timeout case (when n ==
+	     * 0)
+	     */
+	    if (n == 0) {
+	      NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
+	  }
+
         }
 
         /*

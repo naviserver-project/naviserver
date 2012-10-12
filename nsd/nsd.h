@@ -958,6 +958,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 
 
 extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
+extern void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr);
 extern void NsMapPool(ConnPool *poolPtr, char *map);
 extern void NsSockClose(Sock *sockPtr, int keep);
 extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);

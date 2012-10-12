@@ -153,6 +153,110 @@ NsMapPool(ConnPool *poolPtr, char *map)
 /*
  *----------------------------------------------------------------------
  *
+ * wantCreate --
+ *
+ *      Compute the number additional connection threads we should
+ *      create. This function has to be called under a lock for the
+ *      provided poolPtr (such as &servPtr->pools.lock).
+ *
+ * Results:
+ *      Number of needed additional connection threads.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static int 
+neededAdditionalConnectionThreads(ConnPool *poolPtr) {
+    int wantCreate;
+
+    /* 
+     * The constant 10 should go into a config variable named
+     *      parallel_thread_creation_backlog
+     * with hopefully a better name.
+     */
+    if ( (poolPtr->threads.creating == 0 || poolPtr->queue.wait.num > 10)
+	 && poolPtr->threads.idle < poolPtr->threads.min
+	 && poolPtr->threads.current < poolPtr->threads.max) {
+      wantCreate = poolPtr->threads.min - poolPtr->threads.idle;
+      
+      Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d)",
+	     poolPtr->servPtr->server, 
+	     wantCreate, 
+	     poolPtr->threads.creating,
+	     poolPtr->threads.current, 
+	     poolPtr->threads.idle,
+	     poolPtr->queue.wait.num);
+    } else {
+        wantCreate = 0;
+	/*
+        Ns_Log(Notice, "[%s] do not wantCreate creating %d, idle %d < min %d, current %d < max %d, waiting %d)",
+	       poolPtr->servPtr->server, 
+	       poolPtr->threads.creating, 
+	       poolPtr->threads.idle,
+	       poolPtr->threads.min,
+	       poolPtr->threads.current, 
+	       poolPtr->threads.max,
+	       poolPtr->queue.wait.num + 1
+	       );
+	*/
+    }
+
+    return wantCreate;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsEnsureRunningConnectionThreads --
+ *
+ *      Ensure that there are the right number if connection threads
+ *      running. The function computes for the provided pool or for
+ *      the default pool of the server the number of missing threads
+ *      and creates a single connection thread when needed. This
+ *      function is typically called from the driver.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Potentially, a created connection thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr) {
+    int create;
+
+    Ns_MutexLock(&servPtr->pools.lock);
+
+    if (poolPtr == NULL) {
+        /* 
+	 * Use just the default pool, if no pool was provided
+	 */
+        poolPtr = servPtr->pools.defaultPtr;
+    }
+
+    create = neededAdditionalConnectionThreads(poolPtr);
+    if (create) {
+	poolPtr->threads.current ++;
+	poolPtr->threads.creating ++;
+    }
+
+    Ns_MutexUnlock(&servPtr->pools.lock);
+
+    if (create) {
+        CreateConnThread(poolPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsQueueConn --
  *
  *      Append a connection to the run queue.
@@ -225,38 +329,9 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             poolPtr->queue.wait.lastPtr = connPtr;
             connPtr->nextPtr = NULL;
             idle = poolPtr->threads.idle;
-	    /* 
-	     * The constant 10 should go into a config variable named
-	     *      parallel_thread_creation_backlog
-	     * with hopefully a better name.
-	     */
-            if ( (poolPtr->threads.creating == 0 || poolPtr->queue.wait.num > 10)
-                && idle < poolPtr->threads.min
-                && poolPtr->threads.current < poolPtr->threads.max) {
-                int wantCreate = poolPtr->threads.min - poolPtr->threads.idle;
 
-                create = 1;
-                Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d)",
-		       poolPtr->servPtr->server, 
-		       wantCreate, 
-		       poolPtr->threads.creating,
-		       poolPtr->threads.current, 
-		       poolPtr->threads.idle,
-		       poolPtr->queue.wait.num + 1);
-                poolPtr->threads.idle ++;
-                poolPtr->threads.current ++;
-                poolPtr->threads.creating ++;
-            } else {
-	      /*
-                Ns_Log(Notice, "[%s] do not wantCreate creating %d, idle %d < min %d, current %d < max %d)",
-		       poolPtr->servPtr->server, 
-		       poolPtr->threads.creating, 
-		       poolPtr->threads.idle,
-		       poolPtr->threads.min,
-		       poolPtr->threads.current, 
-		       poolPtr->threads.max);
-	      */
-	    }
+	    create = neededAdditionalConnectionThreads(poolPtr);
+
             ++poolPtr->queue.wait.num;
         }
     }
@@ -409,7 +484,8 @@ NsStartServer(NsServer *servPtr)
 
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
-        poolPtr->threads.current = poolPtr->threads.idle = poolPtr->threads.min;
+      poolPtr->threads.idle = 0;
+        poolPtr->threads.current = poolPtr->threads.min;
 	poolPtr->threads.creating = poolPtr->threads.min;
         for (n = 0; n < poolPtr->threads.min; ++n) {
             CreateConnThread(poolPtr);
@@ -622,6 +698,7 @@ NsConnThread(void *arg)
 
     if (poolPtr->threads.creating > 0) {
 	poolPtr->threads.creating--;
+	poolPtr->threads.idle ++;
     }
 
     while (1) {
