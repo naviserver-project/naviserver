@@ -293,16 +293,11 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
                  * nested <% ... %> sequences.
                  */
 
-                level = 0;
                 e = strstr(e - 1, "%>");
                 n = s + 2;
                 while (e != NULL && (n = strstr(n, "<%")) != NULL && n < e) {
-                    ++level;
                     n = n + 2;
-                }
-                while (e != NULL && level > 0) {
                     e = strstr(e + 2, "%>");
-                    --level;
                 }
                 if (e == NULL) {
                     /*
