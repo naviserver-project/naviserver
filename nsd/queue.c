@@ -225,32 +225,49 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             poolPtr->queue.wait.lastPtr = connPtr;
             connPtr->nextPtr = NULL;
             idle = poolPtr->threads.idle;
-            if (poolPtr->threads.creating == 0 
+	    /* 
+	     * The constant 10 should go into a config variable named
+	     *      parallel_thread_creation_backlog
+	     * with hopefully a better name.
+	     */
+            if ( (poolPtr->threads.creating == 0 || poolPtr->queue.wait.num > 10)
                 && idle < poolPtr->threads.min
                 && poolPtr->threads.current < poolPtr->threads.max) {
                 int wantCreate = poolPtr->threads.min - poolPtr->threads.idle;
 
                 create = 1;
-                Ns_Log(Notice, "[%s] wantCreate %d (current %d idle %d waiting %d)",
+                Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d)",
 		       poolPtr->servPtr->server, 
 		       wantCreate, 
+		       poolPtr->threads.creating,
 		       poolPtr->threads.current, 
 		       poolPtr->threads.idle,
 		       poolPtr->queue.wait.num + 1);
                 poolPtr->threads.idle ++;
                 poolPtr->threads.current ++;
-                poolPtr->threads.creating = 1;
-            }
+                poolPtr->threads.creating ++;
+            } else {
+	      /*
+                Ns_Log(Notice, "[%s] do not wantCreate creating %d, idle %d < min %d, current %d < max %d)",
+		       poolPtr->servPtr->server, 
+		       poolPtr->threads.creating, 
+		       poolPtr->threads.idle,
+		       poolPtr->threads.min,
+		       poolPtr->threads.current, 
+		       poolPtr->threads.max);
+	      */
+	    }
             ++poolPtr->queue.wait.num;
         }
     }
     Ns_MutexUnlock(&servPtr->pools.lock);
     if (connPtr == NULL) {
-	Ns_Log(Notice, "[%s] QUEUE return 0 wait first %p %d idle %d current %d",
+	Ns_Log(Notice, "[%s] All avaliable connections are used, waiting %d idle %d current %d ",
 	       poolPtr->servPtr->server, 
-	       poolPtr->queue.wait.firstPtr, poolPtr->queue.wait.num, 
-	       poolPtr->threads.idle, poolPtr->threads.current);
-        return 0;
+	       poolPtr->queue.wait.num,
+	       poolPtr->threads.idle, 
+	       poolPtr->threads.current);
+	return 0;
     }
     if (create) {
         CreateConnThread(poolPtr);
@@ -592,7 +609,8 @@ NsConnThread(void *arg)
 	interp = Ns_TclAllocateInterp(servPtr->server);
         Ns_GetTime(&end);
         Ns_DiffTime(&end, &start, &diff);
-	Ns_Log(Notice, "thread initialized (%.3f ms)", ((double)diff.sec * 1000.0) + ((double)diff.usec / 1000.0));
+	Ns_Log(Notice, "thread initialized (%.3f ms)", 
+	       ((double)diff.sec * 1000.0) + ((double)diff.usec / 1000.0));
 	Ns_TclDeAllocateInterp(interp);
     }
 
@@ -725,13 +743,14 @@ NsConnThread(void *arg)
     }
     poolPtr->threads.idle--;
     poolPtr->threads.current--;
-    if (poolPtr->threads.current == 0) {
+    if (poolPtr->queue.wait.num > 0) {
         Ns_CondBroadcast(&poolPtr->queue.cond);
     }
 
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);
     Ns_MutexUnlock(&servPtr->pools.lock);
+
     if (joinThread != NULL) {
         JoinConnThread(&joinThread);
     }
