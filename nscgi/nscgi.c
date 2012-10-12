@@ -124,7 +124,7 @@ static char    *NextWord(char *s);
 static void	SetAppend(Ns_Set *set, int index, char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, char *key, char *value);
 
-int Ns_ModuleVersion = 1;
+NS_EXPORT int Ns_ModuleVersion = 1;
 
 
 /*
@@ -144,7 +144,7 @@ int Ns_ModuleVersion = 1;
  *----------------------------------------------------------------------
  */
 
-int
+NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     char           *path, *key, *value, *section;

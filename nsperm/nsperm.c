@@ -53,7 +53,7 @@
 #define PERM_IMPLICIT_ALLOW   1
 
 
-int Ns_ModuleVersion = 1;
+NS_EXPORT int Ns_ModuleVersion = 1;
 
 /*
  * The following structure is allocated for each instance of the module.
@@ -151,7 +151,8 @@ static Tcl_HashTable serversTable;
  *----------------------------------------------------------------------
  */
 
-int Ns_ModuleInit(char *server, char *module)
+NS_EXPORT int
+Ns_ModuleInit(char *server, char *module)
 {
     Server *servPtr;
     /*char *path;*/

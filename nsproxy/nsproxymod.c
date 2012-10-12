@@ -36,7 +36,7 @@
 
 #include "nsproxy.h"
 
-int Ns_ModuleVersion = 1;
+NS_EXPORT int Ns_ModuleVersion = 1;
 
 typedef struct {
     char *server;
@@ -91,7 +91,7 @@ Nsproxy_Init(Tcl_Interp *interp)
  *----------------------------------------------------------------------
  */
 
-int
+NS_EXPORT int
 Ns_ModuleInit(CONST char *server, CONST char *module)
 {
     SrvMod *smPtr;

@@ -35,7 +35,7 @@
 
 #include "db.h"
 
-int Ns_ModuleVersion = 1;
+NS_EXPORT int Ns_ModuleVersion = 1;
 
 
 /*
@@ -54,7 +54,7 @@ int Ns_ModuleVersion = 1;
  *----------------------------------------------------------------------
  */
 
-int
+NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     static int once;

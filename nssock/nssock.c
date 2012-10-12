@@ -36,7 +36,7 @@
 
 #include "ns.h"
 
-int Ns_ModuleVersion = 1;
+NS_EXPORT int Ns_ModuleVersion = 1;
 
 
 typedef struct Config {
@@ -74,7 +74,7 @@ static void SetDeferAccept(Ns_Driver *driver, SOCKET sock);
  *----------------------------------------------------------------------
  */
 
-int
+NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     Ns_DriverInitData  init;

@@ -48,7 +48,7 @@
 # define PIPE_BUF 512
 #endif
 
-int Ns_ModuleVersion = 1;
+NS_EXPORT int Ns_ModuleVersion = 1;
 
 typedef struct {
     Ns_Mutex     lock;
@@ -100,7 +100,7 @@ static int LogClose(Log *logPtr);
  *----------------------------------------------------------------------
  */
 
-int
+NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     CONST char *path, *file;
