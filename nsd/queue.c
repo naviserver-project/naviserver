@@ -153,7 +153,7 @@ NsMapPool(ConnPool *poolPtr, char *map)
 /*
  *----------------------------------------------------------------------
  *
- * wantCreate --
+ * neededAdditionalConnectionThreads --
  *
  *      Compute the number additional connection threads we should
  *      create. This function has to be called under a lock for the
