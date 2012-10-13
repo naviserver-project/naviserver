@@ -331,6 +331,10 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             idle = poolPtr->threads.idle;
 
 	    create = neededAdditionalConnectionThreads(poolPtr);
+	    if (create) {
+	      poolPtr->threads.current ++;
+	      poolPtr->threads.creating ++;
+	    }
 
             ++poolPtr->queue.wait.num;
         }
@@ -790,10 +794,11 @@ NsConnThread(void *arg)
             NsRunAtReadyProcs();
             Ns_MutexLock(&servPtr->pools.lock);
         }
+
 	if (cpt) {
 	    --ncons;
 
-	    if (poolPtr->threads.idle < poolPtr->threads.min 
+	    if (poolPtr->threads.idle <= poolPtr->threads.min 
 		|| poolPtr->queue.wait.num > 0
 		) {
 		/* 
@@ -804,6 +809,22 @@ NsConnThread(void *arg)
 		 * connection threads to perform in stress situations as
 		 * many requests as the upper bound of the spread allows.
 		 */
+
+	        /* 
+		 * The following clause lets essentially process and arbitrary
+		 * number of additional requests when the number of idle threads
+		 * drops under thread min and we have still things to do.
+		 */ 
+	        if (poolPtr->threads.idle <= poolPtr->threads.min &&
+		    poolPtr->queue.wait.num > 0) {
+		  /*
+		  Ns_Log(Notice, "threads are running out, current %d, waiting %d idle %d min %d",
+			 poolPtr->threads.current, poolPtr->queue.wait.num, 
+			 poolPtr->threads.idle, poolPtr->threads.min);
+		  */
+		  continue;
+		}
+
 		if (ncons <= maxcpt) {
 		    exitMsg = "exceeded max connections per thread + overtime";
 		    break;
