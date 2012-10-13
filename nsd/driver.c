@@ -1249,8 +1249,8 @@ DriverThread(void *arg)
 	     * we care here about the already queued requests. The
 	     * check is performed only in the timeout case (when n ==
 	     * 0)
-	     */
-	    if (n == 0) {
+ 	     */
+	    if (n == 0 && drvPtr->servPtr) {
 	      NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
 	  }
 
