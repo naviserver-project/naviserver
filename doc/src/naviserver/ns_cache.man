@@ -251,14 +251,14 @@ first completes.
 set timeout [lb]ns_time incr [lb]ns_time get[rb] 5[rb]
 
 if {[lb]catch {
-    set user [lb][cmd ns_cache_eval] [opt [option -timeout]] $timeout -- users $userid {
+    set user [lb][cmd ns_cache_eval] [option -timeout] $timeout -- users $userid {
         db_query {
             select name, email
             from users
             where userid = :userid
         }
     }[rb]
-    set ad [lb][cmd ns_cache_eval] [opt [option -timeout]] $timeout [opt [option -expires]] 120 -- ads $userid {
+    set ad [lb][cmd ns_cache_eval] [option -timeout] $timeout [option -expires] 120 -- ads $userid {
         db_query {
             select advert from
             personalised_adverts

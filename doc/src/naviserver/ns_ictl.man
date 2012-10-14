@@ -15,6 +15,13 @@ cleanup, lifetime, synchronization etc.
 [section {COMMANDS}]
 [list_begin definitions]
 
+[call [cmd ns_cleanup] ]
+
+Cleanup the interpreter. this function is used to close all currently
+open files, to destroy the global variables, destroy the (volatile)
+ns_sets, to abort http requests and to call other cleanup callbacks.
+The function is called typically internally, eg. at the end of a
+connection thread.
 
 
 [call [cmd ns_reinit] ]
@@ -61,7 +68,7 @@ to be folded into the inerpreter initialisation script are returned.
 
 
 
-[call [cmd "ns_ictl trace"] [option tracewhen] [arg script] [opt [arg args]] ]
+[call [cmd "ns_ictl trace"] [arg tracewhen] [arg script] [opt [arg args]] ]
 
 Register an interpreter [term trace] [arg script].
 
@@ -194,7 +201,7 @@ nsdb nslog nscp
 
 
 
-[see_also ns_atclose ns_cleanup]
-[keywords interpreter trace module]
+[see_also ns_atclose]
+[keywords interpreter trace module ns_eval ns_reinit ns_cleanup callback]
 
 [manpage_end]
