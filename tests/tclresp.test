@@ -356,6 +356,41 @@ test tclresp-5.2 {ns_returnfile} -constraints serverListen -setup {
     ns_unregister_proc GET /tclresp
 } -result 404
 
+test tclresp-5.3 {ns_returnfile fastpath cache collision} -constraints serverListen -setup {
+    nsv_set fast_coll count 0
+    # this mutex isn't necessary; it only serves as an assurance that
+    # the problem is in fact a cache collision and not a race condition
+    nsv_set fast_coll lock [ns_mutex create]
+    ns_eval -synch [list {
+	proc fast_coll {} {
+	   set filename "/tmp/fast_coll"
+	   ns_mutex lock [nsv_get fast_coll lock]
+	   set fd [open $filename w]
+	   puts -nonewline $fd [nsv_incr fast_coll count]
+	   close $fd
+	   ns_returnfile 200 text/plain $filename
+	   file delete $filename
+	   ns_mutex unlock [nsv_get fast_coll lock]
+	}
+    }]
+    ns_register_proc GET /fastresp fast_coll
+} -cleanup {
+    ns_unregister_proc GET /fastresp
+    set mutex [nsv_get fast_coll lock]
+    ns_mutex lock $mutex
+    nsv_unset fast_coll
+    ns_mutex unlock $mutex
+    ns_mutex destroy $mutex
+    ns_eval [list {
+        rename fast_coll {}
+    }]
+} -body {
+    set actual {}
+    for {set c 1} {$c <= 5} {incr c} {
+    	lappend actual [nstest::http -getbody 1 GET /fastresp]
+    }
+    return $actual
+} -result {{200 1} {200 2} {200 3} {200 4} {200 5}}
 
 
 test tclresp-6.1 {ns_returnfp} -constraints serverListen -setup {
