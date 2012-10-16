@@ -152,6 +152,8 @@ ns_section ns/server/${server}
 	ns_param   connsperthread	100	;# 0, number of connections (requests) handled per thread
 	#ns_param   threadtimeout	120	;# 120, timeout for idle theads
 	#ns_param   spread		0	;# 20, spread factor in percent for varying connsperthread and threadtimeout
+        ns_param concurrentcreatethreshold 100  ;# 80; allow concrruent creates when queue is fully beyond this percentage
+                                                ;# 100 is a concervative value, disabling concurrent creates
 	#
 	# Directory listing options
 	#

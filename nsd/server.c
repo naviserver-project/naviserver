@@ -358,7 +358,7 @@ CreatePool(NsServer *servPtr, char *pool)
 {
     ConnPool *poolPtr;
     Conn     *connBufPtr, *connPtr;
-    int       i, n, maxconns;
+    int       i, n, maxconns, threshold;
     char     *path;
     Ns_Set   *set;
 
@@ -410,4 +410,32 @@ CreatePool(NsServer *servPtr, char *pool)
         Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
     poolPtr->threads.timeout =
         Ns_ConfigIntRange(path, "threadtimeout", 120, 0, INT_MAX);
+    threshold =
+      Ns_ConfigIntRange(path, "concurrentcreatethreshold", 80, 0, 100);
+
+    if (threshold == 0) {
+        /* 
+	 * Eager parallel thread creation: allow parallel
+	 * connectionthread creation whenever requests are queued.
+	 */
+        poolPtr->queue.highwatermark = 0;
+    } else if (threshold == 100) {
+        /* 
+	 * No parallel thread creation 
+	 */
+        poolPtr->queue.highwatermark = INT_MAX;
+    } else {
+        /* 
+	 * Parallel threads are allowed, when the number of queued
+	 * requests is higher than the configured value. The value is
+	 * specified as the percentage of the queue size.
+	 *
+	 * Since every connection thread requires a connection, the
+	 * actual number of slots for queued requests is (maxconns -
+	 * maxthreads).
+	 */
+        int queueDepth = maxconns - poolPtr->threads.max;
+
+        poolPtr->queue.highwatermark = (queueDepth * threshold) / 100;
+    }
 }

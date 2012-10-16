@@ -172,11 +172,21 @@ neededAdditionalConnectionThreads(ConnPool *poolPtr) {
     int wantCreate;
 
     /* 
-     * The constant 10 should go into a config variable named
-     *      parallel_thread_creation_backlog
-     * with hopefully a better name.
+     * Create new connection threads, if
+     * 
+     * - there is currntly no conneciton thread being created, or
+     *   parallel creates are allowed and there are more than
+     *   highwatermark requests queued,
+     *
+     * - AND there are less idle-threads than min threads (the server
+     *   tries to keep min-threads idle to be ready for short peaks),
+     *
+     * - AND there are not yet max-threads running.
+     *
      */
-    if ( (poolPtr->threads.creating == 0 || poolPtr->queue.wait.num > 10)
+    if ( (poolPtr->threads.creating == 0 
+	  || poolPtr->queue.wait.num > poolPtr->queue.highwatermark
+	  )
 	 && poolPtr->threads.idle < poolPtr->threads.min
 	 && poolPtr->threads.current < poolPtr->threads.max) {
       wantCreate = poolPtr->threads.min - poolPtr->threads.idle;

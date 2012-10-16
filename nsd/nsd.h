@@ -584,7 +584,9 @@ typedef struct ConnPool {
             Conn *firstPtr;
             Conn *lastPtr;
         } active;
+
         Ns_Cond  cond;
+        int      highwatermark;
 
     } queue;
 

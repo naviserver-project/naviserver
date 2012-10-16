@@ -64,9 +64,11 @@ ns_section     "ns/server/default"
 ns_param        checkmodifiedsince  false ;# default: true, check modified-since before returning files from cache. Disable for speedup
 ns_param        connsperthread      1000  ;# default: 0; number of connections (requests) handled per thread
 ns_param        minthreads          5     ;# default: 1; minimal number of connection threads
-ns_param        maxthreads          100   ;# default: 10: maximal number of connection threads
-ns_param        maxconnections      100   ;# default: 100, number of allocated connection stuctures
-ns_param        threadtimeout       120   ;# 120, timeout for idle theads
+ns_param        maxthreads          100   ;# default: 10; maximal number of connection threads
+ns_param        maxconnections      100   ;# default: 100; number of allocated connection stuctures
+ns_param        threadtimeout       120   ;# default: 120; timeout for idle theads
+#ns_param concurrentcreatethreshold 100   ;# default: 80; allow concrruent creates when queue is fully beyond this percentage
+                                          ;# 100 is a concervative value, disabling concurrent creates
 
 ns_section     "ns/server/default/db"
 ns_param        pools               *
