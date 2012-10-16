@@ -22,33 +22,39 @@ This command provides a mechanism to manipulate mutexes.
 [list_begin definitions]
 
 
-[call [cmd  ns_mutex] [arg create] [opt [arg name]]]
+[call [cmd  ns_mutex] [cmd create] [opt [arg name]]]
 
 Initializes a new mutual exclusion (mutex) lock and returns a handle to it. 
 If name is provided the mutex name will be set to this value. The
 command returns a mutex ID which used as argument for the commands operating
 on this mutex.
 
-[call [cmd  ns_mutex] [arg destroy] [arg mutexid]]
+[call [cmd  ns_mutex] [cmd destroy] [arg mutexid]]
 
 Destroys the mutex and frees any resources it was using. 
 
 NOTE: The mutex must be unlocked, or else the behavior is undefined and will likely 
 crash the server.  Before using this, you should probably look at 
 
-[call [cmd  ns_mutex] [arg lock] [arg mutexid]]
+[call [cmd  ns_mutex] [cmd lock] [arg mutexid]]
 
 ns_mutex lock acquires the specified mutual exclusion lock. 
 
-[call [cmd  ns_mutex] [arg trylock] [arg mutexid]]
+[call [cmd  ns_mutex] [cmd eval] [arg mutexid] [arg script]]
+
+A conveniance function to lock the specified mutex, run the 
+[arg script] and unlock the mutex finally. The result and error condition of
+the [arg script] are returned by the command.
+
+[call [cmd  ns_mutex] [cmd trylock] [arg mutexid]]
 
 ns_mutex trylock tries to acquire the specified mutual exclusion lock. If the mutex is locked
 successfully, return value of 0 is returned. non-zero return value indicates that the mutex is
 already locked by someone else.
 
-[call [cmd  ns_mutex] [arg unlock] [arg mutexid]]
+[call [cmd  ns_mutex] [cmd unlock] [arg mutexid]]
 
-ns_mutex unlock unlocks the specified mutual exclusion lock. 
+   ns_mutex unlock unlocks the specified mutual exclusion lock. 
 
 [list_end]
 
@@ -58,7 +64,7 @@ named "foo" and remember it in a shared variable.
 
 [example_begin]
 
-nsv_set mutex foo [lb]ns_mutex create[rb]
+   nsv_set mutex foo [lb][cmd "ns_mutex create"][rb]
 
 [example_end]
 
@@ -67,24 +73,37 @@ to lock the access to the file:
 
 [example_begin]
 
-set mutex [lb]nsv_get mutex foo[rb]
-ns_mutex lock $mutex
-catch {
-... access file foo ...
-}
-ns_mutex unlock $mutex
+   set mutex [lb]nsv_get mutex foo[rb]
+   ...
+   [cmd "ns_mutex lock"] $mutex
+   catch {
+   ... access file foo ...
+   }
+   [cmd "ns_mutex unlock"] $mutex
 
 [example_end]
 
-Note: The "catch" is important so the lock isn't held if Tcl unwinds due to an error accessing the file.
+Note: The [cmd catch] in the snipped above is important so the lock
+isn't held if Tcl unwinds due to an error accessing the file.
+Alternatively, one can use the following shorter version, where the
+[cmd eval] subcommand takes care of locking/unlocking of the mutex
+without the need for the [cmd catch] operation.
+
+[example_begin]
+
+   [cmd "ns_mutex eval"] $mutex {
+      ... access file foo ...
+   }
+
+[example_end]
 
 At shutdown (for example, in your shutdown procedure registered with ns_atshutdown),
 one can destroy the mutex (not strictly necessary).
 
 [example_begin]
 
-ns_mutex destroy [lb]nsv_get mutex foo[rb]
-nsv_unset mutex foo
+   [cmd "ns_mutex destroy"] [lb]nsv_get mutex foo[rb]
+   nsv_unset mutex foo
 
 [example_end]
 
