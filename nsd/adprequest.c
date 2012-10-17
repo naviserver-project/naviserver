@@ -415,6 +415,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
         Tcl_SetResult(interp, "no adp output context", TCL_STATIC);
         return TCL_ERROR;
     }
+    assert(conn);
     buf = itPtr->adp.output.string;
     len = itPtr->adp.output.length;
 

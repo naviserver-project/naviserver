@@ -195,14 +195,13 @@ Ns_CloseOnExec(int fd)
 #ifdef _WIN32
     return NS_OK;
 #else
-    int             i;
-    int status = NS_ERROR;
+    int i, status = NS_ERROR;
 
     i = fcntl(fd, F_GETFD);
     if (i != -1) {
         i |= F_CLOEXEC;
-        i = fcntl(fd, F_SETFD, i);
-    status = NS_OK;
+        (void) fcntl(fd, F_SETFD, i);
+        status = NS_OK;
     }
     return status;
 #endif
@@ -237,14 +236,13 @@ Ns_NoCloseOnExec(int fd)
 #ifdef _WIN32
     return NS_OK;
 #else
-    int             i;
-    int status = NS_ERROR;
+    int i, status = NS_ERROR;
 
     i = fcntl(fd, F_GETFD);
     if (i != -1) {
         i &= ~F_CLOEXEC;
-        i = fcntl(fd, F_SETFD, i);
-    status = NS_OK;
+        (void) fcntl(fd, F_SETFD, i);
+        status = NS_OK;
     }
     return status;
 #endif
