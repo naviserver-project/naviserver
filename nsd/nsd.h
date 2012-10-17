@@ -102,6 +102,20 @@
 #define NSD_TEXTHTML                   "text/html"
 
 /*
+ * Define a few macros from inttypes.h which are 
+ * apparently missing under Visual Studio
+ */
+#ifdef _MSC_VER
+# if !defined(PRId64)
+#  define PRId64      "I64d"
+# endif
+# if !defined(PRIuMAX)
+#  define PRIuMAX     "I64u"
+# endif
+#endif
+
+
+/*
  * Types definitions.
  */
 
