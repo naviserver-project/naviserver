@@ -2903,7 +2903,7 @@ WriterThread(void *arg)
             sockPtr = curPtr->sockPtr;
             drvPtr  = sockPtr->drvPtr;
             wrPtr   = &drvPtr->writer;
-            n = err = status = NS_OK;
+            err = status = NS_OK;
 
             if (PollOut(&pdata, sockPtr->pidx) && curPtr->size > 0 ) {
 

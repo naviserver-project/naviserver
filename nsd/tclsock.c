@@ -1104,7 +1104,6 @@ NsTclSockProc(SOCKET sock, void *arg, int why)
             cbPtr->chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
             if (cbPtr->chan == NULL) {
                 Ns_Log(Error, "could not make channel for sock: %d", sock);
-                why = NS_SOCK_EXIT;
                 goto fail;
             }
             Tcl_RegisterChannel(NULL, cbPtr->chan);

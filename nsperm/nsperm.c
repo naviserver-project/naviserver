@@ -768,7 +768,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
         net = Tcl_GetString(objv[i]);
         slash = strchr(net, '/');
         if (slash == NULL) {
-            hPtr = Tcl_CreateHashEntry(&userPtr->hosts, net, &isNew);
+	  (void *)Tcl_CreateHashEntry(&userPtr->hosts, net, &isNew);
         } else {
 
             /*

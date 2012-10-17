@@ -392,7 +392,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     int          opt;
     NsInterp    *itPtr = arg;
     NsServer    *servPtr = itPtr->servPtr;
-    ConnPool    *poolPtr = servPtr->pools.defaultPtr;
+    ConnPool    *poolPtr;
     char        *pool;
     Tcl_DString ds;
 

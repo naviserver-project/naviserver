@@ -229,7 +229,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
                 return TCL_ERROR;
             }
             for (ii = 0; ii < keyCount; ii++) {
-                keyPtr = Tcl_GetStringFromObj(objValues[ii], (int*)&keySize);
+	      (void *) Tcl_GetStringFromObj(objValues[ii], (int*)&keySize);
                 totalKeySize += keySize + 1;
             }
             keyArgv = (char **)ckalloc(((keyCount+1)*sizeof(char *))+totalKeySize);
