@@ -76,8 +76,8 @@ NsTclAfterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (Tcl_GetIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
         return TCL_ERROR;
     }
-    cbPtr = Ns_TclNewCallback(interp, NsTclSchedProc, objv[2], 
-                              objc - 3, objv + 3);
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
+			      objv[2], objc - 3, objv + 3);
     id = Ns_After(seconds, (Ns_Callback *) NsTclSchedProc, cbPtr,
                   Ns_TclFreeCallback);
 
@@ -216,8 +216,8 @@ NsTclSchedDailyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclSchedProc, scriptObj,
-                              remain, objv + (objc - remain));
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
+			      scriptObj, remain, objv + (objc - remain));
     id = Ns_ScheduleDaily(NsTclSchedProc, cbPtr, flags, hour, minute,
                           FreeSched);
 
@@ -287,8 +287,8 @@ NsTclSchedWeeklyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclSchedProc, scriptObj,
-                              remain, objv + (objc - remain));
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
+			      scriptObj, remain, objv + (objc - remain));
     id = Ns_ScheduleWeekly(NsTclSchedProc, cbPtr, flags, day, hour, minute,
                            FreeSched);
 
@@ -348,8 +348,8 @@ NsTclSchedObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclSchedProc, scriptObj,
-                              remain, objv + (objc - remain));
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc, 
+			      scriptObj, remain, objv + (objc - remain));
     id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, interval, FreeSched);
 
     return ReturnValidId(interp, id, cbPtr);

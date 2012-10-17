@@ -69,7 +69,7 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *name)
 {
     Ns_TclCallback cb;
 
-    cb.cbProc = &NsTclRequestProc;
+    cb.cbProc = (Ns_Callback *) &NsTclRequestProc;
     cb.server = Ns_ConnServer(conn);
     cb.script = (char *) name;
     cb.argc   = 0;
@@ -121,7 +121,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclRequestProc, scriptObj,
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclRequestProc, scriptObj,
                               remain, objv + (objc - remain));
     Ns_RegisterRequest(itPtr->servPtr->server, method, url,
                        NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags);
@@ -171,8 +171,8 @@ NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclRequestProc, scriptObj,
-                              remain, objv + (objc - remain));
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclRequestProc, 
+			      scriptObj, remain, objv + (objc - remain));
     Ns_RegisterProxyRequest(itPtr->servPtr->server, method, protocol,
                        NsTclRequestProc, Ns_TclFreeCallback, cbPtr);
 
@@ -311,8 +311,8 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj,
-                              remain, objv + (objc - remain));
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc, 
+			      scriptObj, remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                       NsTclFilterProc, when, cbPtr);
 
@@ -397,8 +397,8 @@ NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
         return TCL_ERROR;
     }
 
-    cbPtr = Ns_TclNewCallback(interp, NsTclFilterProc, scriptObj,
-                              remain, objv + (objc - remain));
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc, 
+			      scriptObj, remain, objv + (objc - remain));
     Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                       NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr);
 
@@ -435,7 +435,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, NULL) != TCL_OK) {
         if (NsTclTimeoutException(interp)) {
             Ns_DStringInit(&ds);
-            Ns_GetProcInfo(&ds, NsTclRequestProc, arg);
+            Ns_GetProcInfo(&ds, (void *)NsTclRequestProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
             Ns_DStringFree(&ds);
             status = Ns_ConnReturnUnavailable(conn);
@@ -526,7 +526,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
          */
 
         if (NsTclTimeoutException(interp)) {
-            Ns_GetProcInfo(&ds, NsTclFilterProc, arg);
+	  Ns_GetProcInfo(&ds, (void *)NsTclFilterProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, result);
             Ns_ConnReturnUnavailable(conn);
             status = NS_FILTER_RETURN;

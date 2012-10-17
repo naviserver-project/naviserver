@@ -52,16 +52,16 @@ static int     ResetHandle(Ns_DbHandle *handle);
  */
 
 static Ns_DbProc procs[] = {
-    {DbFn_DbType,       DbType},
-    {DbFn_Name,         DbType},
-    {DbFn_OpenDb,       OpenDb},
-    {DbFn_CloseDb,      CloseDb},
-    {DbFn_BindRow,      BindRow},
-    {DbFn_Exec,         Exec},
-    {DbFn_GetRow,       GetRow},
-    {DbFn_Flush,        Flush},
-    {DbFn_Cancel,       Flush},
-    {DbFn_ResetHandle,  ResetHandle},
+    {DbFn_DbType,       (Ns_Callback *)DbType},
+    {DbFn_Name,         (Ns_Callback *)DbType},
+    {DbFn_OpenDb,       (Ns_Callback *)OpenDb},
+    {DbFn_CloseDb,      (Ns_Callback *)CloseDb},
+    {DbFn_BindRow,      (Ns_Callback *)BindRow},
+    {DbFn_Exec,         (Ns_Callback *)Exec},
+    {DbFn_GetRow,       (Ns_Callback *)GetRow},
+    {DbFn_Flush,        (Ns_Callback *)Flush},
+    {DbFn_Cancel,       (Ns_Callback *)Flush},
+    {DbFn_ResetHandle,  (Ns_Callback *)ResetHandle},
     {0, NULL}
 };
 

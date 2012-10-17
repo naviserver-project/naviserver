@@ -100,7 +100,7 @@ int
 Ns_ResetVec(struct iovec *iov, int nbufs, size_t sent)
 {
     int     i;
-    void   *data;
+    char   *data;
     size_t  len;
 
     for (i = 0; i < nbufs && sent > 0; i++) {

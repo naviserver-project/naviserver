@@ -398,7 +398,7 @@ typedef struct Ns_ObjvTable {
  */
 
 typedef struct Ns_TclCallback {
-    void           *cbProc;
+    Ns_Callback    *cbProc;
     CONST char     *server;
     char           *script;
     int             argc;
@@ -1896,7 +1896,7 @@ NS_EXTERN void
 Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc);
 
 NS_EXTERN void
-Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg);
+Ns_GetProcInfo(Tcl_DString *dsPtr, void *procPtr, void *arg);
 
 NS_EXTERN void
 Ns_StringArgProc(Tcl_DString *dsPtr, void *arg);
@@ -2521,12 +2521,12 @@ Ns_StrIsHost(CONST char *string)
  */
 
 NS_EXTERN Ns_TclCallback *
-Ns_TclNewCallback(Tcl_Interp *interp, void *cbProc, Tcl_Obj *scriptObjPtr, int objc,
-                                            Tcl_Obj *CONST objv[]);
+Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbPtr, Tcl_Obj *scriptObjPtr, int objc,
+		  Tcl_Obj *CONST objv[]);
 
 NS_EXTERN int
 Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
-                                 Ns_DString *result, ...) NS_GNUC_SENTINEL;
+		   Ns_DString *result, ...) NS_GNUC_SENTINEL;
 
 NS_EXTERN Ns_Callback Ns_TclCallbackProc;
 NS_EXTERN Ns_Callback Ns_TclFreeCallback;

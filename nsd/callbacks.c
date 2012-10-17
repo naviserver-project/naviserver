@@ -44,7 +44,7 @@
 
 typedef struct Callback {
     struct Callback *nextPtr;
-    void            *proc;
+    Ns_Callback     *proc;
     void            *arg;
 } Callback;
 
@@ -54,7 +54,7 @@ typedef struct Callback {
 
 static Ns_ThreadProc ShutdownThread;
 
-static void *RegisterAt(Callback **firstPtrPtr, void *proc, void *arg, int fifo);
+static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo);
 static void RunCallbacks(CONST char *list, Callback *firstPtr);
 static void AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *firstPtr);
 
@@ -146,7 +146,7 @@ Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
  */
 
 void *
-Ns_RegisterAtSignal(Ns_Callback * proc, void *arg)
+Ns_RegisterAtSignal(Ns_Callback *proc, void *arg)
 {
     return RegisterAt(&firstSignal, proc, arg, 1);
 }
@@ -194,7 +194,7 @@ Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
 void *
 Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
 {
-    return RegisterAt(&firstShutdown, proc, arg, 0);
+    return RegisterAt(&firstShutdown, (Ns_Callback *)proc, arg, 0);
 }
 
 
@@ -215,7 +215,7 @@ Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
  */
 
 void *
-Ns_RegisterAtExit(Ns_Callback * proc, void *arg)
+Ns_RegisterAtExit(Ns_Callback *proc, void *arg)
 {
     return RegisterAt(&firstExit, proc, arg, 0);
 }
@@ -311,7 +311,7 @@ ShutdownThread(void *arg)
      */
 
     for (cbPtr = arg; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
-        proc = cbPtr->proc;
+        proc = (Ns_ShutdownProc *)cbPtr->proc;
         (*proc)(NULL, cbPtr->arg);
     }
 
@@ -371,7 +371,7 @@ NsWaitShutdownProcs(Ns_Time *toPtr)
          */
 
         for (cbPtr = firstShutdown; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
-            proc = cbPtr->proc;
+	    proc = (Ns_ShutdownProc *)cbPtr->proc;
             (*proc)(toPtr, cbPtr->arg);
         }
 
@@ -414,7 +414,7 @@ AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr)
     while (cbPtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, list);
-        Ns_GetProcInfo(dsPtr, (void *) cbPtr->proc, cbPtr->arg);
+        Ns_GetProcInfo(dsPtr, (void *)cbPtr->proc, cbPtr->arg);
         Tcl_DStringEndSublist(dsPtr);
 
         cbPtr = cbPtr->nextPtr;
@@ -439,7 +439,7 @@ AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr)
  */
 
 static void *
-RegisterAt(Callback **firstPtrPtr, void *proc, void *arg, int fifo)
+RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
 {
     Callback   *cbPtr, *nextPtr;
     static int first = 1;
@@ -501,7 +501,7 @@ RunCallbacks(CONST char *list, Callback *cbPtr)
     while (cbPtr != NULL) {
         if (Ns_LogSeverityEnabled(Debug)) {
             Ns_DStringInit(&ds);
-            Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
+            Ns_GetProcInfo(&ds, (void *)cbPtr->proc, cbPtr->arg);
             Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));
             Ns_DStringFree(&ds);
         }

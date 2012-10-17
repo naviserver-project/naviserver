@@ -185,7 +185,7 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, void *procAddr, void *arg)
     if (iPtr->desc != NULL) {
         Tcl_DStringAppendElement(dsPtr, iPtr->desc);
     } else {
-        AppendAddr(dsPtr, "p", procAddr);
+      AppendAddr(dsPtr, "p", (void *)procAddr);
     }
     if (iPtr->proc != NULL) {
         (*iPtr->proc)(dsPtr, arg);

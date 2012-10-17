@@ -879,7 +879,7 @@ NsGetScheduled(Tcl_DString *dsPtr)
             ePtr->id, ePtr->flags, ePtr->interval,
             (int64_t) ePtr->nextqueue, (int64_t) ePtr->lastqueue,
             (int64_t) ePtr->laststart, (int64_t) ePtr->lastend);
-        Ns_GetProcInfo(dsPtr, ePtr->proc, ePtr->arg);
+        Ns_GetProcInfo(dsPtr, (void *)ePtr->proc, ePtr->arg);
         Tcl_DStringEndSublist(dsPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }

@@ -1545,8 +1545,8 @@ NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_AppendResult(interp, "no initializing server", TCL_STATIC);
         return TCL_ERROR;
     }
-    cbPtr = Ns_TclNewCallback(interp, NsTclConnLocation, objv[1],
-                              objc - 2, objv + 2);
+    cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation, 
+			      objv[1], objc - 2, objv + 2);
     Ns_SetConnLocationProc(NsTclConnLocation, cbPtr);
 
     return TCL_OK;

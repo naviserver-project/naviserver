@@ -298,7 +298,7 @@ Nsproxy_LibInit(void)
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
 
         Ns_RegisterAtShutdown(Shutdown, NULL);
-        Ns_RegisterProcInfo(Shutdown, "nsproxy:shutdown", NULL);
+        Ns_RegisterProcInfo((void *)Shutdown, "nsproxy:shutdown", NULL);
     }
 }
 
@@ -1271,11 +1271,11 @@ UpdateIov(struct iovec *iov, int n)
         iov[0].iov_len = 0;
     } else {
         iov[0].iov_len  -= n;
-        iov[0].iov_base += n;
+        iov[0].iov_base = (char *)(iov[0].iov_base) + n;
         n = 0;
     }
     iov[1].iov_len  -= n;
-    iov[1].iov_base += n;
+    iov[1].iov_base = (char *)(iov[1].iov_base) + n;
 }
 
 
