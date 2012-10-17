@@ -367,18 +367,41 @@ typedef struct DIR_ *DIR;
 #endif
 
 /*
- * This macro is required for proper formatting
+ * Define a few macros from inttypes.h which are 
+ * missing one some platforms.
  */
+#if !defined(PRId64)
+# define PRId64      "I64d"
+#endif
+#if !defined(PRId32)
+# define PRId32      "I32d"
+#endif
+# if !defined(PRIuMAX)
+# define PRIuMAX     "I64u"
+#endif
+#if !defined(PRIu64)
+# define PRIu64      "I64u"
+#endif
 
-#ifndef PRIu64
-#define PRIu64                      TCL_LL_MODIFIER "d"
+/*
+ * There is apparently no platform independent print format for items
+ * of size_t. Therefore, we invent here our own variant, trying to
+ * stick to the naming conventions.
+ */
+#if !defined(PRIdz) && defined(_WIN64)
+# define PRIdz PRId64
+#endif
+#if !defined(PRIdz) && defined(_WIN32)
+# define PRIdz PRId32
+#endif
+#if !defined(PRIdz)
+# define PRIdz "zd"
 #endif
 
 /*
  * Older Solaris version (2.8-) have older definitions
  * of pointer formatting macros.
  */
-
 
 #ifndef PRIdPTR
 #if defined(_LP64) || defined(_I32LPx)
