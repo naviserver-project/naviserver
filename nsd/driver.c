@@ -1426,7 +1426,6 @@ SockPrepare(Sock *sockPtr)
     if (sockPtr->reqPtr != NULL) {
         return;
     }
-    reqPtr = sockPtr->reqPtr;
     Ns_MutexLock(&reqLock);
     reqPtr = firstReqPtr;
     if (reqPtr != NULL) {
