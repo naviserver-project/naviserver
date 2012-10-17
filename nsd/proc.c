@@ -138,10 +138,10 @@ Ns_RegisterProcInfo(void *procAddr, char *desc, Ns_ArgProc *argProc)
 {
     Tcl_HashEntry *hPtr;
     Info          *iPtr;
-    int            new;
+    int            isNew;
 
-    hPtr = Tcl_CreateHashEntry(&info, (char *) procAddr, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&info, (char *) procAddr, &isNew);
+    if (!isNew) {
         iPtr = Tcl_GetHashValue(hPtr);
     } else {
         iPtr = ns_malloc(sizeof(Info));

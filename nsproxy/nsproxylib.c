@@ -1917,7 +1917,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     InterpData    *idataPtr = data;
     Proxy         *proxyPtr, *firstPtr;
     Tcl_HashEntry *cntPtr, *idPtr;
-    int            i, flag, new, nwant, n, ms;
+    int            i, flag, isNew, nwant, n, ms;
     char          *arg;
     Err            err;
     Pool          *poolPtr;
@@ -1934,7 +1934,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         return TCL_ERROR;
     }
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
-    cntPtr = Tcl_CreateHashEntry(&idataPtr->cnts, (char *) poolPtr, &new);
+    cntPtr = Tcl_CreateHashEntry(&idataPtr->cnts, (char *) poolPtr, &isNew);
     if ((intptr_t) Tcl_GetHashValue(cntPtr) > 0) {
         err = EDeadlock;
         goto errout;
@@ -1989,8 +1989,8 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     Tcl_SetHashValue(cntPtr, (ClientData)(intptr_t) nwant);
     proxyPtr = firstPtr;
     while (proxyPtr != NULL) {
-        idPtr = Tcl_CreateHashEntry(&idataPtr->ids, proxyPtr->id, &new);
-        if (!new) {
+        idPtr = Tcl_CreateHashEntry(&idataPtr->ids, proxyPtr->id, &isNew);
+        if (!isNew) {
             Ns_Fatal("nsproxy: duplicate proxy entry");
         }
         Tcl_SetHashValue(idPtr, proxyPtr);
@@ -2174,12 +2174,12 @@ GetPool(char *poolName, InterpData *idataPtr)
     Tcl_HashEntry *hPtr;
     Pool          *poolPtr;
     Proxy         *proxyPtr;
-    int            new;
+    int            isNew;
     char          *path = NULL, *exec = NULL;
 
     Ns_MutexLock(&plock);
-    hPtr = Tcl_CreateHashEntry(&pools, poolName, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&pools, poolName, &isNew);
+    if (!isNew) {
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
     } else {
         int i;

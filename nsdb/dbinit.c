@@ -572,7 +572,7 @@ NsDbInitPools(void)
     Pool           *poolPtr;
     Ns_Set         *pools;
     char           *path, *pool, *driver;
-    int		    new, i;
+    int		    isNew, i;
 
     Ns_TlsAlloc(&tls, FreeTable);
 
@@ -585,8 +585,8 @@ NsDbInitPools(void)
     pools = Ns_ConfigGetSection("ns/db/pools");
     for (i = 0; pools != NULL && i < Ns_SetSize(pools); ++i) {
 	pool = Ns_SetKey(pools, i);
-	hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &new);
-	if (!new) {
+	hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
+	if (!isNew) {
 	    Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
 	    continue;	
 	}
@@ -628,7 +628,7 @@ NsDbInitServer(char *server)
     Tcl_HashSearch  search;
     char           *path, *pool, *p;
     Ns_DString	    ds;
-    int		    new;
+    int		    isNew;
 
     path = Ns_ConfigGetPath(server, NULL, "db", NULL);
 
@@ -637,7 +637,7 @@ NsDbInitServer(char *server)
      */
 
     sdataPtr = ns_malloc(sizeof(ServData));
-    hPtr = Tcl_CreateHashEntry(&serversTable, server, &new);
+    hPtr = Tcl_CreateHashEntry(&serversTable, server, &isNew);
     Tcl_SetHashValue(hPtr, sdataPtr);
     sdataPtr->defpool = Ns_ConfigGetValue(path, "defaultpool");
     if (sdataPtr->defpool != NULL &&
@@ -1134,7 +1134,7 @@ IncrCount(Pool *poolPtr, int incr)
 {
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry *hPtr;
-    int prev, count, new;
+    int prev, count, isNew;
 
     tablePtr = Ns_TlsGet(&tls);
     if (tablePtr == NULL) {
@@ -1142,8 +1142,8 @@ IncrCount(Pool *poolPtr, int incr)
 	Tcl_InitHashTable(tablePtr, TCL_ONE_WORD_KEYS);
 	Ns_TlsSet(&tls, tablePtr);
     }
-    hPtr = Tcl_CreateHashEntry(tablePtr, (char *) poolPtr, &new);
-    if (new) {
+    hPtr = Tcl_CreateHashEntry(tablePtr, (char *) poolPtr, &isNew);
+    if (isNew) {
 	prev = 0;
     } else {
         prev = (int)(intptr_t) Tcl_GetHashValue(hPtr);

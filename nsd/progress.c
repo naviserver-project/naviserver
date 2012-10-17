@@ -187,7 +187,7 @@ NsUpdateProgress(Ns_Sock *sock)
     Progress      *pPtr;
     Tcl_HashEntry *hPtr;
     Ns_DString     ds;
-    int            new;
+    int            isNew;
 
     if (progressMinSize > 0
         && request->url != NULL
@@ -235,14 +235,14 @@ NsUpdateProgress(Ns_Sock *sock)
              */
 
             Ns_MutexLock(&lock);
-            hPtr = Tcl_CreateHashEntry(&urlTable, key, &new);
-            if (new) {
+            hPtr = Tcl_CreateHashEntry(&urlTable, key, &isNew);
+            if (isNew) {
                 pPtr->hPtr = hPtr;
                 Tcl_SetHashValue(pPtr->hPtr, pPtr);
             }
             Ns_MutexUnlock(&lock);
 
-            if (!new) {
+            if (!isNew) {
                 Ns_Log(Warning, "ns:progress(%" TCL_LL_MODIFIER "d/%" TCL_LL_MODIFIER "d): ignoring duplicate URL: %s",
                        reqPtr->avail, reqPtr->length, key);
             }

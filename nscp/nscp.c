@@ -116,7 +116,7 @@ Ns_ModuleInit(char *server, char *module)
 {
     Mod *modPtr;
     char *path, *addr, *pass, *user, *key, *end;
-    int i, new, port;
+    int i, isNew, port;
     SOCKET lsock;
     Ns_Set *set;
     Tcl_HashEntry *hPtr;
@@ -182,8 +182,8 @@ Ns_ModuleInit(char *server, char *module)
 	    continue;
 	}
 	*pass = '\0';
-	hPtr = Tcl_CreateHashEntry(&modPtr->users, user, &new);
-	if (new) {
+	hPtr = Tcl_CreateHashEntry(&modPtr->users, user, &isNew);
+	if (isNew) {
 	    Ns_Log(Notice, "nscp: added user: %s", user);
 	} else {
 	    Ns_Log(Warning, "nscp: duplicate user: %s", user);

@@ -318,14 +318,14 @@ FindLimits(char *limits, int create)
 {
     NsLimits      *limitsPtr;
     Tcl_HashEntry *hPtr;
-    int            new;
+    int            isNew;
 
     Ns_MutexLock(&lock);
     if (!create) {
         hPtr = Tcl_FindHashEntry(&limtable, limits);
     } else {
-        hPtr = Tcl_CreateHashEntry(&limtable, limits, &new);
-        if (new) {
+        hPtr = Tcl_CreateHashEntry(&limtable, limits, &isNew);
+        if (isNew) {
             limitsPtr = ns_calloc(1, sizeof(NsLimits));
             limitsPtr->name = Tcl_GetHashKey(&limtable, hPtr);
             Ns_MutexInit(&limitsPtr->lock);

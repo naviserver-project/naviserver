@@ -49,10 +49,10 @@
  * Local functions defined in this file
  */
 
-static int LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr);
-static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int delete,
+static int LookupSet(NsInterp *itPtr, char *id, int deleteEntry, Ns_Set **setPtr);
+static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry,
                         Ns_Set **setPtr);
-static int LookupInterpSet(Tcl_Interp *interp, char *id, int delete,
+static int LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry,
                            Ns_Set **setPtr);
 static int EnterSet(NsInterp *itPtr, Ns_Set *set, int flags);
 
@@ -629,7 +629,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
 {
     Tcl_HashTable  *tablePtr;
     Tcl_HashEntry  *hPtr;
-    int             new, next;
+    int             isNew, next;
     unsigned char   type;
     char            buf[TCL_INTEGER_SPACE + 1];
 
@@ -644,8 +644,8 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
     do {
         snprintf(buf, sizeof(buf), "%c%u", type, next);
         ++next;
-        hPtr = Tcl_CreateHashEntry(tablePtr, buf, &new);
-    } while (!new);
+        hPtr = Tcl_CreateHashEntry(tablePtr, buf, &isNew);
+    } while (!isNew);
 
     Tcl_SetHashValue(hPtr, set);
     Tcl_AppendElement(itPtr->interp, buf);
@@ -665,20 +665,20 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *      If delete is set, then the hash entry will be removed.
+ *      If deleteEntry is set, then the hash entry will be removed.
  *      Set will be returned in given setPtr.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int delete, Ns_Set **setPtr)
+LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry, Ns_Set **setPtr)
 {
-    return LookupSet(itPtr, Tcl_GetString(idPtr), delete, setPtr);
+    return LookupSet(itPtr, Tcl_GetString(idPtr), deleteEntry, setPtr);
 }
 
 static int
-LookupInterpSet(Tcl_Interp *interp, char *id, int delete, Ns_Set **setPtr)
+LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry, Ns_Set **setPtr)
 {
     NsInterp *itPtr;
 
@@ -687,11 +687,11 @@ LookupInterpSet(Tcl_Interp *interp, char *id, int delete, Ns_Set **setPtr)
         Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
         return TCL_ERROR;
     }
-    return LookupSet(itPtr, id, delete, setPtr);
+    return LookupSet(itPtr, id, deleteEntry, setPtr);
 }
 
 static int
-LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr)
+LookupSet(NsInterp *itPtr, char *id, int deleteEntry, Ns_Set **setPtr)
 {
     Tcl_HashEntry *hPtr;
     Ns_Set        *set = NULL;
@@ -699,7 +699,7 @@ LookupSet(NsInterp *itPtr, char *id, int delete, Ns_Set **setPtr)
     hPtr = Tcl_FindHashEntry(&itPtr->sets, id);
     if (hPtr != NULL) {
         set = (Ns_Set *) Tcl_GetHashValue(hPtr);
-        if (delete) {
+        if (deleteEntry) {
             Tcl_DeleteHashEntry(hPtr);
         }
     }

@@ -291,7 +291,7 @@ SockCallbackThread(void *ignored)
 {
     char           c;
     int            when[3], events[3];
-    int            n, i, new, stop;
+    int            n, i, isNew, stop;
     int		   max, nfds, pollto;
     Callback      *cbPtr, *nextPtr;
     Tcl_HashEntry *hPtr;
@@ -345,8 +345,8 @@ SockCallbackThread(void *ignored)
                 }
                 ns_free(cbPtr);
             } else {
-                hPtr = Tcl_CreateHashEntry(&table, (char *)(intptr_t) cbPtr->sock, &new);
-                if (!new) {
+                hPtr = Tcl_CreateHashEntry(&table, (char *)(intptr_t) cbPtr->sock, &isNew);
+                if (!isNew) {
                     ns_free(Tcl_GetHashValue(hPtr));
                 }
                 Tcl_SetHashValue(hPtr, cbPtr);

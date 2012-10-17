@@ -816,12 +816,12 @@ AddType(CONST char *ext, CONST char *type)
 {
     Ns_DString      ds;
     Tcl_HashEntry  *he;
-    int             new;
+    int             isNew;
 
     Ns_DStringInit(&ds);
     ext = LowerDString(&ds, ext);
-    he = Tcl_CreateHashEntry(&types, ext, &new);
-    if (new == 0) {
+    he = Tcl_CreateHashEntry(&types, ext, &isNew);
+    if (isNew == 0) {
         ns_free(Tcl_GetHashValue(he));
     }
     Tcl_SetHashValue(he, ns_strdup(type));

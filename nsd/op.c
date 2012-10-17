@@ -44,7 +44,7 @@
 typedef struct {
     int             refcnt;
     Ns_OpProc      *proc;
-    Ns_Callback    *delete;
+    Ns_Callback    *deleteCallback;
     void           *arg;
     unsigned int    flags;
 } Req;
@@ -124,13 +124,13 @@ ConfigServerProxy(CONST char *server)
 
 void
 Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
-                   Ns_OpProc *proc, Ns_Callback *delete, void *arg, int flags)
+                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg, int flags)
 {
     Req *reqPtr;
 
     reqPtr = ns_malloc(sizeof(Req));
     reqPtr->proc = proc;
-    reqPtr->delete = delete;
+    reqPtr->deleteCallback = deleteCallback;
     reqPtr->arg = arg;
     reqPtr->flags = flags;
     reqPtr->refcnt = 1;
@@ -167,7 +167,7 @@ Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
     reqPtr = Ns_UrlSpecificGet(server, method, url, uid);
     if (reqPtr != NULL) {
         *procPtr = reqPtr->proc;
-        *deletePtr = reqPtr->delete;
+        *deletePtr = reqPtr->deleteCallback;
         *argPtr = reqPtr->arg;
         *flagsPtr = reqPtr->flags;
     } else {
@@ -377,12 +377,12 @@ Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
 
 void
 Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *protocol,
-                        Ns_OpProc *proc, Ns_Callback *delete, void *arg)
+                        Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg)
 {
     NsServer      *servPtr;
     Req           *reqPtr;
     Ns_DString     ds;
-    int            new;
+    int            isNew;
     Tcl_HashEntry *hPtr;
 
     servPtr = NsGetServer(server);
@@ -395,12 +395,12 @@ Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *prot
     reqPtr = ns_malloc(sizeof(Req));
     reqPtr->refcnt = 1;
     reqPtr->proc = proc;
-    reqPtr->delete = delete;
+    reqPtr->deleteCallback = deleteCallback;
     reqPtr->arg = arg;
     reqPtr->flags = 0;
     Ns_MutexLock(&servPtr->request.plock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &isNew);
+    if (!isNew) {
         FreeReq(Tcl_GetHashValue(hPtr));
     }
     Tcl_SetHashValue(hPtr, reqPtr);
@@ -562,8 +562,8 @@ FreeReq(void *arg)
     Req *reqPtr = (Req *) arg;
 
     if (--reqPtr->refcnt == 0) {
-        if (reqPtr->delete != NULL) {
-            (*reqPtr->delete) (reqPtr->arg);
+        if (reqPtr->deleteCallback != NULL) {
+            (*reqPtr->deleteCallback) (reqPtr->arg);
         }
         ns_free(reqPtr);
     }

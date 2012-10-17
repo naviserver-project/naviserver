@@ -266,7 +266,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
     int interval, Ns_SchedProc *deleteProc)
 {
     Event          *ePtr;
-    int             id, new;
+    int             id, isNew;
     static int      nextId;
     time_t          now;
 
@@ -294,8 +294,8 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
             if (nextId < 0) {
                 nextId = 0;
             }
-            ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, (char *)(intptr_t)id, &new);
-        } while (!new);
+            ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, (char *)(intptr_t)id, &isNew);
+        } while (!isNew);
         Tcl_SetHashValue(ePtr->hPtr, ePtr);
         ePtr->id = id;
         QueueEvent(ePtr, &now);

@@ -297,7 +297,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
     char *s, *e, *ks, *ke, *fs, *fe, save, saveend;
     char *key, *value, *disp, unescape;
     Ns_Set *set;
-    int new;
+    int isNew;
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
@@ -343,8 +343,8 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 	    value = Ext2Utf(&vds, start, end-start, encoding, unescape);
         } else {
             value = Ext2Utf(&vds, fs, fe-fs, encoding, unescape);
-            hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &new);
-            if (new) {
+            hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
+            if (isNew) {
                 filePtr = ns_malloc(sizeof(FormFile));
                 filePtr->hdrs = set;
                 filePtr->off = start - connPtr->reqPtr->content;

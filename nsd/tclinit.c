@@ -554,7 +554,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
     NsInterp *itPtr = NsGetInterpData(interp);
 
     if (itPtr != NULL) {
-        itPtr->delete = 1;
+        itPtr->deleteInterp = 1;
     }
 }
 
@@ -979,7 +979,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
          * The interp will be deleted on next deallocation.
          */
 
-        itPtr->delete = 1;
+        itPtr->deleteInterp = 1;
         break;
 
     case ISaveIdx:
@@ -1442,7 +1442,7 @@ PushInterp(NsInterp *itPtr)
 
     if (itPtr->refcnt == 1) {
         RunTraces(itPtr, NS_TCL_TRACE_DEALLOCATE);
-        if (itPtr->delete) {
+        if (itPtr->deleteInterp) {
             Ns_Log(Debug, "ns:markfordelete: true");
             Ns_TclDestroyInterp(interp);
             return;

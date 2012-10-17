@@ -124,13 +124,13 @@ Ns_RegisterReturn(int status, CONST char *url)
 {
     NsServer      *servPtr;
     Tcl_HashEntry *hPtr;
-    int            new;
+    int            isNew;
 
     servPtr = NsGetInitServer();
     if (servPtr != NULL) {
         hPtr = Tcl_CreateHashEntry(&servPtr->request.redirect,
-                                   (char *)(intptr_t) status, &new);
-        if (!new) {
+                                   (char *)(intptr_t) status, &isNew);
+        if (!isNew) {
             ns_free(Tcl_GetHashValue(hPtr));
         }
         if (url == NULL) {

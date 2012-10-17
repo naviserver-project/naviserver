@@ -571,11 +571,11 @@ LoadEncoding(CONST char *name)
 {
     Tcl_HashEntry *hPtr;
     Tcl_Encoding   encoding;
-    int            new;
+    int            isNew;
 
     Ns_MutexLock(&lock);
-    hPtr = Tcl_CreateHashEntry(&encodings, name, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&encodings, name, &isNew);
+    if (!isNew) {
         while ((encoding = Tcl_GetHashValue(hPtr)) == ENC_LOCKED) {
             Ns_CondWait(&cond, &lock);
         }
@@ -618,9 +618,9 @@ static void
 AddExtension(CONST char *ext, CONST char *name)
 {
     Tcl_HashEntry  *hPtr;
-    int             new;
+    int             isNew;
 
-    hPtr = Tcl_CreateHashEntry(&extensions, ext, &new);
+    hPtr = Tcl_CreateHashEntry(&extensions, ext, &isNew);
     Tcl_SetHashValue(hPtr, name);
 }
 
@@ -629,7 +629,7 @@ AddCharset(CONST char *charset, CONST char *name)
 {
     Tcl_HashEntry  *hPtr;
     Ns_DString      ds;
-    int             new;
+    int             isNew;
 
     Ns_DStringInit(&ds);
     charset = Ns_StrToLower(Ns_DStringAppend(&ds, charset));
@@ -638,7 +638,7 @@ AddCharset(CONST char *charset, CONST char *name)
      * Map in the forward direction: charsets to encodings.
      */
 
-    hPtr = Tcl_CreateHashEntry(&charsets, charset, &new);
+    hPtr = Tcl_CreateHashEntry(&charsets, charset, &isNew);
     Tcl_SetHashValue(hPtr, name);
 
     /*
@@ -646,8 +646,8 @@ AddCharset(CONST char *charset, CONST char *name)
      * Nb: Ignore duplicate mappings.
      */
 
-    hPtr = Tcl_CreateHashEntry(&encnames, name, &new);
-    if (new) {
+    hPtr = Tcl_CreateHashEntry(&encnames, name, &isNew);
+    if (isNew) {
         Tcl_SetHashValue(hPtr, ns_strdup(charset));
     }
 

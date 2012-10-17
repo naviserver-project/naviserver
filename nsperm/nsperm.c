@@ -157,7 +157,7 @@ Ns_ModuleInit(char *server, char *module)
     Server *servPtr;
     /*char *path;*/
     Tcl_HashEntry *hPtr;
-    int new;
+    int isNew;
 
     if (uskey < 0) {
         double d;
@@ -188,7 +188,7 @@ Ns_ModuleInit(char *server, char *module)
     Ns_RWLockInit(&servPtr->lock);
     Ns_SetRequestAuthorizeProc(server, AuthProc);
     Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);
-    hPtr = Tcl_CreateHashEntry(&serversTable, server, &new);
+    hPtr = Tcl_CreateHashEntry(&serversTable, server, &isNew);
     Tcl_SetHashValue(hPtr, servPtr);
     return NS_OK;
 }
@@ -712,7 +712,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     char buf[NS_ENCRYPT_BUFSIZE];
     char *name, *slash, *net, *pwd;
     char *field = NULL, *salt = NULL;
-    int new, i, nargs = 0, allow = 0, deny = 0, clear = 0;
+    int isNew, i, nargs = 0, allow = 0, deny = 0, clear = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-allow", Ns_ObjvBool, &allow, (void *) NS_TRUE},
@@ -768,7 +768,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
         net = Tcl_GetString(objv[i]);
         slash = strchr(net, '/');
         if (slash == NULL) {
-            hPtr = Tcl_CreateHashEntry(&userPtr->hosts, net, &new);
+            hPtr = Tcl_CreateHashEntry(&userPtr->hosts, net, &isNew);
         } else {
 
             /*
@@ -805,12 +805,12 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
              * on the hash table of networks.
              */
 
-            (void) Tcl_CreateHashEntry(&userPtr->masks, (char *) (intptr_t) mask.s_addr, &new);
+            (void) Tcl_CreateHashEntry(&userPtr->masks, (char *) (intptr_t) mask.s_addr, &isNew);
 
-            hPtr = Tcl_CreateHashEntry(&userPtr->nets, (char *) (intptr_t) ip.s_addr, &new);
+            hPtr = Tcl_CreateHashEntry(&userPtr->nets, (char *) (intptr_t) ip.s_addr, &isNew);
             Tcl_SetHashValue(hPtr, (ClientData) (intptr_t) mask.s_addr);
         }
-        if (!new) {
+        if (!isNew) {
             Tcl_AppendResult(interp, "duplicate entry: ", net, NULL);
             goto fail;
         }
@@ -821,8 +821,8 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
      */
 
     Ns_RWLockWrLock(&servPtr->lock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->users, name, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&servPtr->users, name, &isNew);
+    if (!isNew) {
         Tcl_AppendResult(interp, "duplicate user: ", name, NULL);
         goto fail0;
     }
@@ -995,7 +995,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
     Group *groupPtr;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    int new, param;
+    int isNew, param;
 
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 2, objv, "name user ?user ...?");
@@ -1029,8 +1029,8 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
          * Add the user to the group's list of users
          */
 
-        hPtr = Tcl_CreateHashEntry(&groupPtr->users, user, &new);
-        if (!new) {
+        hPtr = Tcl_CreateHashEntry(&groupPtr->users, user, &isNew);
+        if (!isNew) {
           dupuser:
             Tcl_AppendResult(interp, "user \"", user, "\" already in group \"", name, "\"", NULL);
             goto fail;
@@ -1041,8 +1041,8 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
          * Add the group to the user's list of groups
          */
 
-        hPtr = Tcl_CreateHashEntry(&userPtr->groups, name, &new);
-        if (!new) {
+        hPtr = Tcl_CreateHashEntry(&userPtr->groups, name, &isNew);
+        if (!isNew) {
             goto dupuser;
         }
         Tcl_SetHashValue(hPtr, groupPtr);
@@ -1053,8 +1053,8 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
      */
 
     Ns_RWLockWrLock(&servPtr->lock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->groups, name, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&servPtr->groups, name, &isNew);
+    if (!isNew) {
         Tcl_AppendResult(interp, "duplicate group: ", name, NULL);
         goto fail0;
     }
@@ -1205,7 +1205,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     Perm *permPtr;
     Ns_DString base;
     char *method, *url, *key;
-    int i, new, flags = 0, nargs = 0;
+    int i, isNew, flags = 0, nargs = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &flags,  (void *) NS_OP_NOINHERIT},
@@ -1256,15 +1256,15 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
         key = Tcl_GetString(objv[i]);
         if (user) {
             if (allow) {
-                (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &new);
+                (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &isNew);
             } else {
-                (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &new);
+                (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &isNew);
             }
         } else {
             if (allow) {
-                (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &new);
+                (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &isNew);
             } else {
-                (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &new);
+                (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &isNew);
             }
         }
     }

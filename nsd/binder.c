@@ -608,7 +608,7 @@ PreBind(char *line)
 {
 #ifndef _WIN32
     Tcl_HashEntry      *hPtr;
-    int                new, sock, port, mode;
+    int                isNew, sock, port, mode;
     char               *next, *str, *addr, *proto;
     struct sockaddr_in sa;
 
@@ -641,8 +641,8 @@ PreBind(char *line)
                        addr, port);
                 continue;
             }
-            hPtr = Tcl_CreateHashEntry(&preboundTcp, (char *) &sa, &new);
-            if (!new) {
+            hPtr = Tcl_CreateHashEntry(&preboundTcp, (char *) &sa, &isNew);
+            if (!isNew) {
                 Ns_Log(Error, "prebind: tcp: duplicate entry: %s:%d",
                        addr, port);
                 continue;
@@ -664,8 +664,8 @@ PreBind(char *line)
                        addr, port);
                 continue;
             }
-            hPtr = Tcl_CreateHashEntry(&preboundUdp, (char *) &sa, &new);
-            if (!new) {
+            hPtr = Tcl_CreateHashEntry(&preboundUdp, (char *) &sa, &isNew);
+            if (!isNew) {
                 Ns_Log(Error, "prebind: udp: duplicate entry: %s:%d",
                        addr, port);
                 continue;
@@ -695,8 +695,8 @@ PreBind(char *line)
                     Ns_Log(Error, "prebind: icmp: %s",strerror(errno));
                     continue;
                 }
-                hPtr = Tcl_CreateHashEntry(&preboundRaw, (char *)(intptr_t) sock, &new);
-                if (!new) {
+                hPtr = Tcl_CreateHashEntry(&preboundRaw, (char *)(intptr_t) sock, &isNew);
+                if (!isNew) {
                     Ns_Log(Error, "prebind: icmp: duplicate entry");
                     close(sock);
                     continue;
@@ -714,8 +714,8 @@ PreBind(char *line)
                 *(str++) = '\0';
                 mode = atoi(str);
             }
-            hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &new);
-            if (!new) {
+            hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
+            if (!isNew) {
                 Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
                 continue;
             }

@@ -167,7 +167,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
     Ns_Entry   *entry;
     Ns_DString  ds;
     Ns_Time     time;
-    int         new, status;
+    int         isNew, status;
 
     /*
      * Call getProc directly or through cache.
@@ -182,13 +182,13 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
         Ns_IncrTime(&time, timeout, 0);
 
         Ns_CacheLock(cache);
-        entry = Ns_CacheWaitCreateEntry(cache, key, &new, &time);
+        entry = Ns_CacheWaitCreateEntry(cache, key, &isNew, &time);
         if (entry == NULL) {
             Ns_CacheUnlock(cache);
             Ns_Log(Notice, "dns: timeout waiting for concurrent update");
             return NS_FALSE;
         }
-        if (new) {
+        if (isNew) {
             Ns_CacheUnlock(cache);
             status = (*getProc)(&ds, key);
             Ns_CacheLock(cache);

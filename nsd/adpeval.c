@@ -402,7 +402,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     Ns_Time         now;
     Ns_Entry       *ePtr;
     Objs           *objsPtr;
-    int             new, cacheGen;
+    int             isNew, cacheGen;
     char           *p;
     int             result;
 
@@ -492,13 +492,13 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
              */
 
             Ns_MutexLock(&servPtr->adp.pagelock);
-            hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, file, &new);
-            while (!new && (pagePtr = Tcl_GetHashValue(hPtr)) == NULL) {
+            hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, file, &isNew);
+            while (!isNew && (pagePtr = Tcl_GetHashValue(hPtr)) == NULL) {
                 /* NB: Wait for other thread to read/parse page. */
                 Ns_CondWait(&servPtr->adp.pagecond, &servPtr->adp.pagelock);
-                hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, file, &new);
+                hPtr = Tcl_CreateHashEntry(&servPtr->adp.pages, file, &isNew);
             }
-            if (!new && (pagePtr->mtime != st.st_mtime
+            if (!isNew && (pagePtr->mtime != st.st_mtime
                          || pagePtr->size != st.st_size
                          || pagePtr->dev != st.st_dev
                          || pagePtr->ino != st.st_ino
@@ -506,9 +506,9 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                 /* NB: Clear entry to indicate read/parse in progress. */
                 Tcl_SetHashValue(hPtr, NULL);
                 pagePtr->hPtr = NULL;
-                new = 1;
+                isNew = 1;
             }
-            if (new) {
+            if (isNew) {
                 Ns_MutexUnlock(&servPtr->adp.pagelock);
                 pagePtr = ParseFile(itPtr, file, &st, itPtr->adp.flags);
                 Ns_MutexLock(&servPtr->adp.pagelock);
@@ -530,8 +530,8 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
                 ipagePtr->cacheGen = 0;
                 ipagePtr->objs = AllocObjs(pagePtr->code.nscripts);
                 ipagePtr->cacheObjs = NULL;
-                ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, file, &new);
-                if (!new) {
+                ePtr = Ns_CacheCreateEntry(itPtr->adp.cache, file, &isNew);
+                if (!isNew) {
                     Ns_CacheUnsetValue(ePtr);
                 }
                 Ns_CacheSetValueSz(ePtr, ipagePtr,
@@ -689,7 +689,7 @@ NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
 
     code = TCL_OK;
     if (!itPtr->adp.debugInit) {
-        itPtr->delete = 1;
+        itPtr->deleteInterp = 1;
         Tcl_DStringInit(&ds);
         Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);
         Tcl_DStringAppendElement(&ds, procs ? procs : "");

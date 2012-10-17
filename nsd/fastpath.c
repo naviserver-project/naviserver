@@ -379,7 +379,7 @@ static int
 FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
     Conn        *connPtr = (Conn *) conn;
-    int         new, fd, result = NS_ERROR;
+    int         isNew, fd, result = NS_ERROR;
     Ns_Entry   *entry;
     File       *filePtr;
     FileMap     fmap;
@@ -453,23 +453,23 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 
         filePtr = NULL;
         Ns_CacheLock(cache);
-        entry = Ns_CacheWaitCreateEntry(cache, file, &new, NULL);
+        entry = Ns_CacheWaitCreateEntry(cache, file, &isNew, NULL);
 
         /*
          * Validate entry.
          */
 
-        if (!new
+        if (!isNew
             && (filePtr = Ns_CacheGetValue(entry)) != NULL
             && (filePtr->mtime != connPtr->fileInfo.st_mtime
                 || filePtr->size != connPtr->fileInfo.st_size
                 || filePtr->dev != connPtr->fileInfo.st_dev
                 || filePtr->ino != connPtr->fileInfo.st_ino)) {
             Ns_CacheUnsetValue(entry);
-            new = 1;
+            isNew = 1;
         }
 
-        if (new) {
+        if (isNew) {
 
             /*
              * Read and cache new or invalidated entries in one big chunk.
@@ -500,7 +500,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
                 }
             }
             Ns_CacheLock(cache);
-            entry = Ns_CacheCreateEntry(cache, file, &new);
+            entry = Ns_CacheCreateEntry(cache, file, &isNew);
             if (filePtr != NULL) {
                 Ns_CacheSetValueSz(entry, filePtr,
                                    (size_t) (filePtr->size + sizeof(File)));

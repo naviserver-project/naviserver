@@ -243,10 +243,10 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
     Cache         *cachePtr = (Cache *) cache;
     Tcl_HashEntry *hPtr;
     Entry         *ePtr;
-    int            new;
+    int            isNew;
 
-    hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, &new);
-    if (new) {
+    hPtr = Tcl_CreateHashEntry(&cachePtr->entriesTable, key, &isNew);
+    if (isNew) {
         ePtr = ns_calloc(1, sizeof(Entry));
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;
@@ -257,7 +257,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
         if (Expired(ePtr, NULL)) {
             ++cachePtr->stats.nexpired;
             Ns_CacheUnsetValue((Ns_Entry *) ePtr);
-            new = 1;
+            isNew = 1;
         } else {
 	    ePtr->count ++;
             ++cachePtr->stats.nhit;
@@ -265,7 +265,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr)
         Delink(ePtr);
     }
     Push(ePtr);
-    *newPtr = new;
+    *newPtr = isNew;
 
     return (Ns_Entry *) ePtr;
 }
@@ -294,18 +294,18 @@ Ns_CacheWaitCreateEntry(Ns_Cache *cache, CONST char *key, int *newPtr,
                         Ns_Time *timeoutPtr)
 {
     Ns_Entry      *entry;
-    int            new, status = NS_OK;
+    int            isNew, status = NS_OK;
 
-    entry = Ns_CacheCreateEntry(cache, key, &new);
-    if (!new && Ns_CacheGetValue(entry) == NULL) {
+    entry = Ns_CacheCreateEntry(cache, key, &isNew);
+    if (!isNew && Ns_CacheGetValue(entry) == NULL) {
         do {
             status = Ns_CacheTimedWait(cache, timeoutPtr);
-            entry = Ns_CacheCreateEntry(cache, key, &new);
+            entry = Ns_CacheCreateEntry(cache, key, &isNew);
         } while (status == NS_OK
-                 && !new
+                 && !isNew
                  && Ns_CacheGetValue(entry) == NULL);
     }
-    *newPtr = new;
+    *newPtr = isNew;
 
     return status == NS_OK ? entry : NULL;
 }

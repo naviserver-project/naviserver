@@ -811,9 +811,9 @@ typedef struct NsInterp {
 
     Tcl_Interp *interp;
     NsServer   *servPtr;
-    int         delete;  /* Interp should be deleted on next deallocation */
-    int         epoch;   /* Run the update script if != to server epoch */
-    int         refcnt;  /* Counts recursive allocations of cached interp */
+    int         deleteInterp;  /* Interp should be deleted on next deallocation */
+    int         epoch;         /* Run the update script if != to server epoch */
+    int         refcnt;        /* Counts recursive allocations of cached interp */
 
     /*
      * The following pointer maintains the first in

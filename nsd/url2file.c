@@ -43,7 +43,7 @@
 typedef struct {
     int                    refcnt;
     Ns_Url2FileProc       *proc;
-    Ns_Callback           *delete;
+    Ns_Callback           *deleteCallback;
     void                  *arg;
     unsigned int           flags;
 } Url2File;
@@ -137,7 +137,7 @@ ConfigServerUrl2File(CONST char *server)
 
 void
 Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
-                        Ns_Url2FileProc *proc, Ns_Callback *delete, void *arg,
+                        Ns_Url2FileProc *proc, Ns_Callback *deleteCallback, void *arg,
                         int flags)
 {
     NsServer *servPtr = NsGetServer(server);
@@ -146,7 +146,7 @@ Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
     servPtr->fastpath.url2file = NULL;
     u2fPtr = ns_malloc(sizeof(Url2File));
     u2fPtr->proc = proc;
-    u2fPtr->delete = delete;
+    u2fPtr->deleteCallback = deleteCallback;
     u2fPtr->arg = arg;
     u2fPtr->flags = flags;
     u2fPtr->refcnt = 1;
@@ -680,8 +680,8 @@ FreeUrl2File(void *arg)
     Url2File *u2fPtr = (Url2File *) arg;
 
     if (--u2fPtr->refcnt == 0) {
-        if (u2fPtr->delete != NULL) {
-            (*u2fPtr->delete)(u2fPtr->arg);
+        if (u2fPtr->deleteCallback != NULL) {
+            (*u2fPtr->deleteCallback)(u2fPtr->arg);
         }
         ns_free(u2fPtr);
     }

@@ -860,7 +860,7 @@ GetSection(CONST char *section, int create)
     Ns_Set        *set;
     Tcl_HashEntry *hPtr;
     Ns_DString     ds;
-    int            new;
+    int            isNew;
     CONST char    *p;
     char          *s;
 
@@ -897,8 +897,8 @@ GetSection(CONST char *section, int create)
     if (!create) {
         hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
     } else {
-        hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &new);
-        if (new) {
+        hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &isNew);
+        if (isNew) {
             set = Ns_SetCreate(section);
         Tcl_SetHashValue(hPtr, set);
         }
@@ -932,7 +932,7 @@ GetSection(CONST char *section, int create)
 int
 ToBool(CONST char *value, int *valuePtr)
 {
-    int bool;
+    int boolValue;
 
     if (STREQ(value, "1")
         || STRIEQ(value, "y")
@@ -941,7 +941,7 @@ ToBool(CONST char *value, int *valuePtr)
         || STRIEQ(value, "t")
         || STRIEQ(value, "true")) {
 
-        bool = NS_TRUE;
+        boolValue = NS_TRUE;
     } else if (STREQ(value, "0")
                || STRIEQ(value, "n")
                || STRIEQ(value, "no")
@@ -949,11 +949,11 @@ ToBool(CONST char *value, int *valuePtr)
                || STRIEQ(value, "f")
                || STRIEQ(value, "false")) {
 
-        bool = NS_FALSE;
-    } else if (Ns_StrToInt(value, &bool) != NS_OK) {
+        boolValue = NS_FALSE;
+    } else if (Ns_StrToInt(value, &boolValue) != NS_OK) {
         return NS_FALSE;
     }
-    *valuePtr = bool ? NS_TRUE : NS_FALSE;
+    *valuePtr = boolValue ? NS_TRUE : NS_FALSE;
 
     return NS_TRUE;
 }

@@ -991,14 +991,14 @@ static void
 EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle)
 {
     Tcl_HashEntry *hPtr;
-    int            new, next;
+    int            isNew, next;
     char	   buf[100];
 
     next = idataPtr->dbs.numEntries;
     do {
         snprintf(buf, sizeof(buf), "nsdb%x", next++);
-        hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &new);
-    } while (!new);
+        hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &isNew);
+    } while (!isNew);
     Tcl_AppendElement(interp, buf);
     Tcl_SetHashValue(hPtr, handle);
 }

@@ -577,7 +577,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     NsRegChan      *regChan = NULL;
 
     char           *name = NULL, *chanName = NULL;
-    int             new, shared, opt;
+    int             isNew, shared, opt;
     Tcl_Channel     chan = NULL;
 
     Tcl_HashTable  *tabPtr;
@@ -618,8 +618,8 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         name = Tcl_GetString(objv[3]);
         Ns_MutexLock(&servPtr->chans.lock);
-        hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &new);
-        if (new) {
+        hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &isNew);
+        if (isNew) {
             regChan = ns_malloc(sizeof(NsRegChan));
             regChan->name = ns_malloc(strlen(chanName)+1);
             regChan->chan = chan;
@@ -627,7 +627,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_SetHashValue(hPtr, regChan);
         }
         Ns_MutexUnlock(&servPtr->chans.lock);
-        if (!new) {
+        if (!isNew) {
             Tcl_AppendResult(interp, "channel \"", Tcl_GetString(objv[3]), 
                              "\" already exists", NULL);
             return TCL_ERROR;
@@ -654,7 +654,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         SpliceChannel(interp, regChan->chan);
         Tcl_SetResult(interp, regChan->name, TCL_VOLATILE);
-        hPtr = Tcl_CreateHashEntry(&itPtr->chans, name, &new);
+        hPtr = Tcl_CreateHashEntry(&itPtr->chans, name, &isNew);
         Tcl_SetHashValue(hPtr, regChan);
         break;
         
@@ -681,7 +681,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         UnspliceChannel(interp, regChan->chan);
         Tcl_DeleteHashEntry(hPtr);
         Ns_MutexLock(&servPtr->chans.lock);
-        hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &new);
+        hPtr = Tcl_CreateHashEntry(&servPtr->chans.table, name, &isNew);
         Tcl_SetHashValue(hPtr, regChan);
         Ns_MutexUnlock(&servPtr->chans.lock);
         break;

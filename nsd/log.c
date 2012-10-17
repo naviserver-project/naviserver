@@ -177,7 +177,7 @@ NsInitLog(void)
 {
     Tcl_HashEntry *hPtr;
     char           buf[20];
-    int            i, new;
+    int            i, isNew;
 
     Ns_MutexSetName(&lock, "ns:log");
     Ns_TlsAlloc(&tls, FreeCache);
@@ -192,7 +192,7 @@ NsInitLog(void)
 
     for (i = Dev +1; i < severityCount; i++) {
         snprintf(buf, sizeof(buf), "%d", i);
-        hPtr = Tcl_CreateHashEntry(&severityTable, buf, &new);
+        hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
         Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) i);
         severityConfig[i].string = Tcl_GetHashKey(&severityTable, hPtr);
         severityConfig[i].enabled = 0;
@@ -206,7 +206,7 @@ NsInitLog(void)
         (void) Ns_CreateLogSeverity(severityConfig[i].string);
 
         strcpy(buf, severityConfig[i].string);
-        hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &new);
+        hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
         Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) i);
     }
 }
@@ -308,14 +308,14 @@ Ns_CreateLogSeverity(CONST char *name)
 {
     Ns_LogSeverity  severity;
     Tcl_HashEntry  *hPtr;
-    int             new;
+    int             isNew;
 
     if (severityIdx >= severityCount) {
         Ns_Fatal("max log severities exceeded");
     }
     Ns_MutexLock(&lock);
-    hPtr = Tcl_CreateHashEntry(&severityTable, name, &new);
-    if (new) {
+    hPtr = Tcl_CreateHashEntry(&severityTable, name, &isNew);
+    if (isNew) {
         severity = severityIdx++;
         Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) severity);
         severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
@@ -784,7 +784,7 @@ int
 NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
-    int             count, opt, enabled, bool, i;
+    int             count, opt, enabled, i;
     Ns_DString      ds;
     Tcl_Obj        *objPtr;
     Ns_LogSeverity  severity;
@@ -896,10 +896,11 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
         enabled = Ns_LogSeverityEnabled(severity);
         if (objc == 4 && severity != Fatal) {
-            if (Tcl_GetBooleanFromObj(interp, objv[3], &bool) != TCL_OK) {
+	    int boolValue;
+            if (Tcl_GetBooleanFromObj(interp, objv[3], &boolValue) != TCL_OK) {
                 return TCL_ERROR;
             }
-            severityConfig[severity].enabled = bool;
+            severityConfig[severity].enabled = boolValue;
         }
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(enabled));
         break;

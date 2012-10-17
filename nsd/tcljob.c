@@ -348,7 +348,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     NsInterp       *itPtr = arg;
     Queue          *queuePtr = NULL;
     Job            *jobPtr = NULL, **nextPtrPtr;
-    int             code, new, create = 0, max, opt, argIndex;
+    int             code, isNew, create = 0, max, opt, argIndex;
     char           *jobId = NULL, buf[100], *queueId = NULL;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
@@ -451,14 +451,14 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
             Ns_MutexLock(&tp.queuelock);
             hPtr = Tcl_CreateHashEntry(&tp.queues, Tcl_GetString(queueIdObj),
-                                       &new);
-            if (new) {
+                                       &isNew);
+            if (isNew) {
                 queuePtr = NewQueue(Tcl_GetHashKey(&tp.queues, hPtr),
                                     queueDesc, max);
                 Tcl_SetHashValue(hPtr, queuePtr);
             }
             Ns_MutexUnlock(&tp.queuelock);
-            if (!new) {
+            if (!isNew) {
                 Tcl_AppendResult(interp, "queue already exists: ", queueId, NULL);
                 return TCL_ERROR;
             }
@@ -547,8 +547,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              */
 
             if (jobId != NULL && *jobId != '\0') {
-                hPtr = Tcl_CreateHashEntry(&queuePtr->jobs, jobId, &new);
-                if (!new) {
+                hPtr = Tcl_CreateHashEntry(&queuePtr->jobs, jobId, &isNew);
+                if (!isNew) {
                     FreeJob(jobPtr);
                     ReleaseQueue(queuePtr, 1);
                     Ns_MutexUnlock(&tp.queuelock);
@@ -564,8 +564,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
                 do {
                     snprintf(buf, sizeof(buf), "job%d", queuePtr->nextid++);
-                    hPtr = Tcl_CreateHashEntry(&queuePtr->jobs, buf, &new);
-                } while (!new);
+                    hPtr = Tcl_CreateHashEntry(&queuePtr->jobs, buf, &isNew);
+                } while (!isNew);
 
                 jobId = buf;
             }

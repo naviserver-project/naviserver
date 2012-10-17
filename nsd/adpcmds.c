@@ -200,7 +200,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     NsInterp    *itPtr = arg;
     Tcl_Channel  chan;
     char        *id;
-    int          opt, flag, old, new;
+    int          opt, flag, old;
 
     enum {
         CBufSizeIdx = -1,
@@ -250,13 +250,15 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         old = itPtr->adp.bufsize;
         if (objc == 3) {
-            if (Tcl_GetIntFromObj(interp, objv[2], &new) != TCL_OK) {
+ 	    int intVal;
+
+            if (Tcl_GetIntFromObj(interp, objv[2], &intVal) != TCL_OK) {
                 return TCL_ERROR;
             }
-            if (new < 0) {
-                new = 0;
+            if (intVal < 0) {
+                intVal = 0;
             }
-            itPtr->adp.bufsize = new;
+            itPtr->adp.bufsize = intVal;
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(old));
         break;
@@ -293,10 +295,12 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         old = (itPtr->adp.flags & flag);
         if (objc == 3) {
-            if (Tcl_GetBooleanFromObj(interp, objv[2], &new) != TCL_OK) {
+  	    int boolVal;
+
+            if (Tcl_GetBooleanFromObj(interp, objv[2], &boolVal) != TCL_OK) {
                 return TCL_ERROR;
             }
-            if (new) {
+            if (boolVal) {
                 itPtr->adp.flags |= flag;
             } else {
                 itPtr->adp.flags &= ~flag;
@@ -988,18 +992,18 @@ NsTclAdpExceptionObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp *itPtr = arg;
     char     *exception;
-    int       bool;
+    int       boolValue;
 
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?varName?");
         return TCL_ERROR;
     }
     if (itPtr->adp.exception == ADP_OK) {
-        bool = 0;
+        boolValue = 0;
     } else {
-        bool = 1;
+        boolValue = 1;
     }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(bool));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(boolValue));
 
     if (objc == 2) {
         switch (itPtr->adp.exception) {

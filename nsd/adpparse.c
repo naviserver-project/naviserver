@@ -135,7 +135,7 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     NsServer       *servPtr = itPtr->servPtr;
     char           *string, *end, *tag;
     Tcl_HashEntry  *hPtr;
-    int             new, slen, elen, tlen;
+    int             isNew, slen, elen, tlen;
     Tcl_DString     tbuf;
     Tag            *tagPtr;
 
@@ -171,8 +171,8 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     tag = Tcl_GetStringFromObj(objv[1], &tlen);
     Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
     Ns_RWLockWrLock(&servPtr->adp.taglock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
+    if (!isNew) {
         ns_free(Tcl_GetHashValue(hPtr));
     }
     Tcl_SetHashValue(hPtr, tagPtr);

@@ -663,7 +663,7 @@ NsDbLoadDriver(char *driver)
 {
     Tcl_HashEntry  *hPtr;
     char           *module, *path;
-    int             new;
+    int             isNew;
     DbDriver	   *driverPtr;
     static int 	    initialized = NS_FALSE;
 
@@ -672,8 +672,8 @@ NsDbLoadDriver(char *driver)
 	initialized = NS_TRUE;
     }
 
-    hPtr = Tcl_CreateHashEntry(&driversTable, driver, &new);
-    if (new == 0) {
+    hPtr = Tcl_CreateHashEntry(&driversTable, driver, &isNew);
+    if (isNew == 0) {
 	driverPtr = (DbDriver *) Tcl_GetHashValue(hPtr);
     } else {
 	driverPtr = ns_malloc(sizeof(DbDriver));
