@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\tcl8.4\generic,..\..\include"
-				PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;URLDECODE_RELAXED=1"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;URLDECODE_RELAXED=1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -167,7 +167,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -188,7 +188,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -209,7 +209,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -230,7 +230,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -251,7 +251,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -272,7 +272,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -293,7 +293,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -314,7 +314,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -335,7 +335,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -356,7 +356,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -377,7 +377,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -398,7 +398,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -419,7 +419,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -440,7 +440,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -461,7 +461,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -482,7 +482,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -503,7 +503,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -524,7 +524,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -545,7 +545,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -566,7 +566,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -587,7 +587,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -608,7 +608,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -629,7 +629,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -650,7 +650,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -671,7 +671,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -692,7 +692,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -713,7 +713,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -734,7 +734,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -755,7 +755,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -776,7 +776,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -797,7 +797,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -818,7 +818,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -839,7 +839,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -860,7 +860,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -881,7 +881,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -902,7 +902,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -923,7 +923,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -944,7 +944,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -965,7 +965,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -986,7 +986,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1007,7 +1007,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1028,7 +1028,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1049,7 +1049,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1070,7 +1070,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1091,7 +1091,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1112,7 +1112,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1133,7 +1133,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1154,7 +1154,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1175,7 +1175,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1196,7 +1196,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1217,7 +1217,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1238,7 +1238,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1259,7 +1259,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1280,7 +1280,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1301,7 +1301,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1322,7 +1322,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1343,7 +1343,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1364,7 +1364,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1385,7 +1385,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1406,7 +1406,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1427,7 +1427,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1448,7 +1448,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1469,7 +1469,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1490,7 +1490,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1511,7 +1511,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1532,7 +1532,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1553,7 +1553,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1574,7 +1574,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1595,7 +1595,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1616,7 +1616,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1637,7 +1637,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1658,7 +1658,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1679,7 +1679,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1700,7 +1700,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1721,7 +1721,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1742,7 +1742,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1763,7 +1763,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1784,7 +1784,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1805,7 +1805,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1826,7 +1826,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1847,7 +1847,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -1868,7 +1868,7 @@ copy ..\..\nsd\init.tcl ..\release\init.tcl
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;NS_NOCOMPAT;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
+						PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;NSD_EXPORTS;WIN32;_MBCS;FD_SETSIZE=128;TCL_THREADS=1;NO_CONST=1;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>

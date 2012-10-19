@@ -2897,12 +2897,4 @@ NS_EXTERN void
 Ns_ConnClearQuery(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-/*
- * Compatibility macros.
- */
-
-#ifdef NS_NOCOMPAT
-#  error "No compatibility macros at present"
-#endif
-
 #endif /* NS_H */
