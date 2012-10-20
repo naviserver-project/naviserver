@@ -79,12 +79,28 @@
 #include <process.h>
 #include <direct.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #define STDOUT_FILENO               1
 #define STDERR_FILENO               2
 
-#define EINPROGRESS                 WSAEINPROGRESS
-#define EWOULDBLOCK                 WSAEWOULDBLOCK
+#ifndef EINPROGRESS
+# define EINPROGRESS                 WSAEINPROGRESS
+#endif
+#ifndef EWOULDBLOCK
+# define EWOULDBLOCK                 WSAEWOULDBLOCK
+#endif
+
+typedef unsigned __int32 int32_t;
+typedef          __int32 uint32_t;
+typedef unsigned __int64 int64_t;
+typedef          __int64 uint64_t;
+
+#ifdef _WIN64
+typedef int64_t ssize_t;
+#else
+typedef int32_t ssize_t;
+#endif
 
 /*
  * Windows does not have this declared. The defined value has no meaning.
@@ -137,6 +153,7 @@
 #define PACKAGE_TARNAME             PACKAGE
 #define PACKAGE_VERSION             NS_VERSION
 #define PACKAGE_BUGREPORT           "naviserver-devel@lists.sourceforge.net"
+#define TIME_T_MAX                  LONG_MAX
 
 typedef unsigned long long int uint64_t;
 typedef unsigned long int uintmax_t;

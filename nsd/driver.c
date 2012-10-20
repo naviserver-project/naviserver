@@ -108,7 +108,7 @@ static Ns_ThreadProc WriterThread;
 
 static SOCKET DriverListen(Driver *drvPtr);
 static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr);
-static int DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
+static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
 static int DriverKeep(Sock *sockPtr);
 static void DriverClose(Sock *sockPtr);
 
@@ -831,7 +831,7 @@ DriverAccept(Sock *sockPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
     Ns_Time timeout;
@@ -860,7 +860,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
  *----------------------------------------------------------------------
  */
 
-int
+ssize_t
 NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
 {
     Ns_Time timeout;
@@ -891,7 +891,7 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
  *----------------------------------------------------------------------
  */
 
-int
+ssize_t
 NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags)
 {
     Driver  *drvPtr = sockPtr->drvPtr;

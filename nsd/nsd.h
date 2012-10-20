@@ -948,8 +948,8 @@ extern void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
  * Socket driver callbacks.
  */
 
-extern int NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags);
-extern int NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags);
+extern ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags);
+extern ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags);
 
 extern ssize_t
 NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,

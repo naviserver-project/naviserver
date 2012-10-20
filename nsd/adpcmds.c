@@ -115,7 +115,7 @@ NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len)
 
 int
 Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
-                int *streamPtr, int *maxBufferPtr)
+                int *streamPtr, size_t *maxBufferPtr)
 {
     NsInterp *itPtr;
 
@@ -200,6 +200,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     NsInterp    *itPtr = arg;
     Tcl_Channel  chan;
     char        *id;
+    size_t       size;
     int          opt, flag, old;
 
     enum {
@@ -248,7 +249,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "?size?");
             return TCL_ERROR;
         }
-        old = itPtr->adp.bufsize;
+        size = itPtr->adp.bufsize;
         if (objc == 3) {
  	    int intVal;
 
@@ -260,7 +261,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             }
             itPtr->adp.bufsize = intVal;
         }
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(old));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
         break;
 
     case CChanIdx:

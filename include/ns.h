@@ -595,7 +595,7 @@ Ns_AdpAppend(Tcl_Interp *interp, CONST char *buf, int len)
 
 NS_EXTERN int
 Ns_AdpGetOutput(Tcl_Interp *interp, Tcl_DString **dsPtrPtr,
-                int *streamPtr, int *maxBufferPtr)
+                int *streamPtr, size_t *maxBufferPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
