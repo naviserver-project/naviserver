@@ -422,11 +422,14 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
      * cached copy.
      */
 
-    if (cache == NULL || connPtr->fileInfo.st_size > maxentry) {
+    if (cache == NULL || connPtr->fileInfo.st_size > maxentry
+        || connPtr->fileInfo.st_ctime >= (connPtr->startTime.sec-1) ) {
 
         /*
-         * Caching is disabled or the entry is too large for the cache
-         * so send the content directly.
+         * Caching is disabled, the entry is too large for the cache,
+	 * or the inode has been changed too recently (within 1 second
+	 * of the start of this connection) so send the content 
+	 * directly.
          */
 
         if (usemmap
