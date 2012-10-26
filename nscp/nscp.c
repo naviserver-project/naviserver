@@ -61,14 +61,14 @@ typedef struct Sess {
     Mod *modPtr;
     char *user;
     int id;
-    SOCKET sock;
+    NS_SOCKET sock;
     struct sockaddr_in sa;
 } Sess;
 
 static Ns_SockProc AcceptProc;
 static Tcl_CmdProc ExitCmd;
 static int Login(Sess *sessPtr, Tcl_DString *unameDS);
-static int GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo);
+static int GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo);
 static Ns_ArgProc ArgProc;
 
 /*
@@ -114,12 +114,12 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
-    Mod *modPtr;
-    char *path, *addr, *pass, *user, *key, *end;
-    int i, isNew, port;
-    SOCKET lsock;
-    Ns_Set *set;
+    Mod           *modPtr;
+    char          *path, *addr, *pass, *user, *key, *end;
+    int            i, isNew, port;
+    NS_SOCKET      lsock;
     Tcl_HashEntry *hPtr;
+    Ns_Set        *set;
 
     /*
      * Create the listening socket and callback.
@@ -253,7 +253,7 @@ ArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static int
-AcceptProc(SOCKET lsock, void *arg, int why)
+AcceptProc(NS_SOCKET lsock, void *arg, int why)
 {
     Mod *modPtr = arg;
     Sess *sessPtr;
@@ -411,7 +411,7 @@ done:
  */
 
 static int
-GetLine(SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
+GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 {
     unsigned char buf[2048];
     int n, result = 0, retry = 0;

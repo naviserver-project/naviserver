@@ -42,7 +42,7 @@
 
 typedef struct Event {
     struct Event      *nextPtr;       /* Next in list of events. */
-    SOCKET             sock;          /* Underlying socket. */
+    NS_SOCKET          sock;          /* Underlying socket. */
     Ns_EventProc      *proc;          /* Event callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
@@ -64,7 +64,7 @@ typedef struct EventQueue {
     Event             *firstWaitPtr;  /* Sockets waiting for events or timeout. */
     Event             *firstFreePtr;  /* Free, unused Event structs. */
     struct pollfd     *pfds;          /* Array of pollfd structs. */
-    SOCKET             trigger[2];    /* Trigger pipe to wake a polling queue. */
+    NS_SOCKET          trigger[2];    /* Trigger pipe to wake a polling queue. */
     Event              events[1];     /* Array of maxevents Event structs. */
 } EventQueue;
 
@@ -159,7 +159,7 @@ Ns_CreateEventQueue(int maxevents)
  */
 
 int
-Ns_EventEnqueue(Ns_EventQueue *queue, SOCKET sock, Ns_EventProc *proc, void *arg)
+Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *arg)
 {
     EventQueue *queuePtr = (EventQueue *) queue;
     Event      *evPtr;

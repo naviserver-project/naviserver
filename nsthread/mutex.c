@@ -117,7 +117,7 @@ void
 Ns_MutexSetName2(Ns_Mutex *mutex, CONST char *prefix, CONST char *name)
 {
     Mutex *mutexPtr = GETMUTEX(mutex);
-    int plen, nlen;
+    size_t plen, nlen;
     char *p;
 
     plen = strlen(prefix);

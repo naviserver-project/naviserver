@@ -108,7 +108,7 @@ Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
     Tcl_HashTable      *tablePtr = NULL;
     Tcl_HashEntry      *hPtr;
     ListenData         *ldPtr;
-    SOCKET              sock;
+    NS_SOCKET           sock;
     int                 isNew, status;
     struct sockaddr_in  sa;
 
@@ -216,14 +216,14 @@ Ns_SockPortBound(int port)
  */
 
 static int
-ListenCallback(SOCKET sock, void *arg, int why)
+ListenCallback(NS_SOCKET sock, void *arg, int why)
 {
     struct sockaddr_in  sa;
     socklen_t           len;
     Tcl_HashTable      *tablePtr;
     Tcl_HashEntry      *hPtr;
-    SOCKET              newSock;
-    ListenData          *ldPtr;
+    NS_SOCKET           newSock;
+    ListenData         *ldPtr;
 
     tablePtr = arg;
     if (why == NS_SOCK_EXIT) {

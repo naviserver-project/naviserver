@@ -1,0 +1,86 @@
+﻿Build started 20.10.2012 22:50:49.
+Project "Z:\Downloads\naviserver-4.99.4\win\nsd\nsd.vcxproj" on node 2 (Rebuild target(s)).
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /IC:\tcl8.5.12\generic /I..\..\include /Zi /nologo /W3 /WX- /O2 /Ob1 /GL /D NDEBUG /D _WINDOWS /D _USRDLL /D NSD_EXPORTS /D WIN32 /D _MBCS /D FD_SETSIZE=128 /D TCL_THREADS=1 /D NO_CONST=1 /GF /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo".\Release/" /Fd".\Release/vc110.pdb" /Gd /TC /errorReport:prompt ..\..\nsd\adpcmds.c ..\..\nsd\adpeval.c ..\..\nsd\adpparse.c ..\..\nsd\adprequest.c ..\..\nsd\auth.c ..\..\nsd\binder.c ..\..\nsd\cache.c ..\..\nsd\callbacks.c ..\..\nsd\cls.c ..\..\nsd\compress.c ..\..\nsd\config.c ..\..\nsd\conn.c ..\..\nsd\connio.c ..\..\nsd\cookies.c ..\..\nsd\crypt.c ..\..\nsd\dns.c ..\..\nsd\driver.c ..\..\nsd\dstring.c ..\..\nsd\encoding.c ..\..\nsd\exec.c ..\..\nsd\fastpath.c ..\..\nsd\fd.c ..\..\nsd\filter.c ..\..\nsd\form.c ..\..\nsd\httptime.c ..\..\nsd\index.c ..\..\nsd\info.c ..\..\nsd\init.c ..\..\nsd\lisp.c ..\..\nsd\listen.c ..\..\nsd\log.c ..\..\nsd\mimetypes.c ..\..\nsd\modload.c ..\..\nsd\nsconf.c ..\..\nsd\nsmain.c ..\..\nsd\nsthread.c ..\..\nsd\nswin32.c ..\..\nsd\op.c ..\..\nsd\pathname.c ..\..\nsd\pidfile.c ..\..\nsd\proc.c ..\..\nsd\queue.c ..\..\nsd\quotehtml.c ..\..\nsd\random.c ..\..\nsd\request.c ..\..\nsd\return.c ..\..\nsd\rollfile.c ..\..\nsd\sched.c ..\..\nsd\server.c ..\..\nsd\set.c ..\..\nsd\sock.c ..\..\nsd\sockcallback.c ..\..\nsd\stamp.c ..\..\nsd\str.c ..\..\nsd\tclcallbacks.c ..\..\nsd\tclcmds.c ..\..\nsd\tclconf.c ..\..\nsd\tclenv.c ..\..\nsd\tclfile.c ..\..\nsd\tclhttp.c ..\..\nsd\tclimg.c ..\..\nsd\tclinit.c ..\..\nsd\tcljob.c ..\..\nsd\tclmisc.c ..\..\nsd\tclobj.c ..\..\nsd\tclobjv.c ..\..\nsd\tclrequest.c ..\..\nsd\tclresp.c ..\..\nsd\tclsched.c ..\..\nsd\tclset.c ..\..\nsd\tclsock.c ..\..\nsd\tclthread.c ..\..\nsd\tclvar.c ..\..\nsd\tclxkeylist.c ..\..\nsd\url.c ..\..\nsd\urlencode.c ..\..\nsd\urlopen.c ..\..\nsd\urlspace.c ..\..\nsd\uuencode.c
+  adpcmds.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  adpeval.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  adpparse.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  adprequest.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  auth.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  binder.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  cache.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  callbacks.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  cls.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  compress.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  config.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  conn.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  connio.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  cookies.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  crypt.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  dns.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  driver.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  dstring.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  encoding.c
+z:\downloads\naviserver-4.99.4\include\nsthread.h(116): warning C4005: 'ftruncate' : macro redefinition
+          z:\downloads\naviserver-4.99.4\include\ws64ustd.h(32) : see previous definition of 'ftruncate'
+z:\downloads\naviserver-4.99.4\include\nsthread.h(272): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  exec.c
+Done Building Project "Z:\Downloads\naviserver-4.99.4\win\nsd\nsd.vcxproj" (Rebuild target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:19.93

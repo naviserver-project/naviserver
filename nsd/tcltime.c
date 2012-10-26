@@ -80,9 +80,8 @@ static Tcl_ObjType *intTypePtr;
 void
 NsTclInitTimeType()
 {
-    Tcl_Obj obj;
-
 #ifndef _WIN32
+    Tcl_Obj obj;
     if (sizeof(obj.internalRep) < sizeof(Ns_Time)) {
         Tcl_Panic("NsTclInitObjs: sizeof(obj.internalRep) < sizeof(Ns_Time)");
     }
@@ -175,13 +174,13 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
         }
-        timePtr->sec = (time_t) sec;
+        timePtr->sec = sec;
         timePtr->usec = 0;
     } else {
         if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
             return TCL_ERROR;
         }
-        timePtr->sec = (time_t) objPtr->internalRep.twoPtrValue.ptr1;
+        timePtr->sec =  (long) objPtr->internalRep.twoPtrValue.ptr1;
         timePtr->usec = (long) objPtr->internalRep.twoPtrValue.ptr2;
     }
     return TCL_OK;
@@ -252,7 +251,7 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
 
     if (objc < 2) {
-        Tcl_SetObjResult(interp, Tcl_NewLongObj(time(NULL)));
+      Tcl_SetObjResult(interp, Tcl_NewLongObj((long)time(NULL)));
         return TCL_OK;
     }
 
@@ -332,8 +331,8 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK) {
             return TCL_ERROR;
         }
-        Tcl_SetObjResult(interp, Tcl_NewLongObj(opt == TSecondsIdx ?
-                                                result.sec : result.usec));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)(opt == TSecondsIdx ?
+						       result.sec : result.usec)));
         return TCL_OK;
         break;
     }
@@ -439,7 +438,7 @@ NsTclSleepObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                          Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    ms = time.sec * 1000 + time.usec / 1000;
+    ms = (int)(time.sec * 1000 + time.usec / 1000);
     Tcl_Sleep(ms);
 
     return TCL_OK;

@@ -66,9 +66,9 @@ static int GetSet(Tcl_Interp *interp, char *flist, int write,
 static void AppendReadyFiles(Tcl_Interp *interp, fd_set * pset, 
                              int write, char *flist, Tcl_DString *pds);
 
-static int EnterSock(Tcl_Interp *interp, SOCKET sock);
-static int EnterDup(Tcl_Interp *interp, SOCKET sock);
-static int EnterDupedSocks(Tcl_Interp *interp, SOCKET sock);
+static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock);
+static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock);
+static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock);
 
 static int SockSetBlocking(char *value, Tcl_Interp *interp, int objc, 
                            Tcl_Obj *CONST objv[]);
@@ -216,8 +216,8 @@ NsTclSockNReadObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                      Tcl_Obj *CONST objv[])
 {
     unsigned long nread;
-    Tcl_Channel chan;
-    SOCKET      sock;
+    Tcl_Channel   chan;
+    NS_SOCKET     sock;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
@@ -261,9 +261,9 @@ int
 NsTclSockListenObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[])
 {
-    SOCKET  sock;
-    char   *addr;
-    int     port;
+    NS_SOCKET sock;
+    char     *addr;
+    int       port;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "address port");
@@ -309,7 +309,7 @@ int
 NsTclSockAcceptObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[])
 {
-    SOCKET sock;
+    NS_SOCKET sock;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
@@ -351,8 +351,8 @@ int
 NsTclSockCheckObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                      Tcl_Obj *CONST objv[])
 {
-    Tcl_Obj *objPtr;
-    SOCKET   sock;
+    Tcl_Obj   *objPtr;
+    NS_SOCKET  sock;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
@@ -394,10 +394,10 @@ int
 NsTclSockOpenObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
                     Tcl_Obj *CONST objv[])
 {
-    char   *host, *lhost = NULL, *opt, *val;
-    int     lport = 0, port, first, async = 0, msec = -1;
-    SOCKET  sock;
-    Ns_Time timeout;
+    char     *host, *lhost = NULL, *opt, *val;
+    int       lport = 0, port, first, async = 0, msec = -1;
+    NS_SOCKET sock;
+    Ns_Time   timeout;
 
     if (objc < 3 || objc > 9) {
     syntax:
@@ -442,7 +442,7 @@ NsTclSockOpenObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             if (Ns_TclGetTimeFromObj(interp, objv[first], &timeout) != TCL_OK) {
                 return TCL_ERROR;
             }
-            msec = timeout.sec * 1000 + timeout.usec / 1000;
+            msec = (int)(timeout.sec * 1000 + timeout.usec / 1000);
         } else if (STREQ(opt, "-localport")) {
             if (++first >= objc) {
                 goto syntax;
@@ -689,7 +689,7 @@ int
 NsTclSocketPairObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[])
 {
-    SOCKET socks[2];
+    NS_SOCKET socks[2];
     
     if (ns_sockpair(socks) != 0) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -728,7 +728,7 @@ NsTclSockCallbackObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Tcl_Obj *CONST objv[])
 {
     char     *s;
-    SOCKET    sock;
+    NS_SOCKET sock;
     int       when, timeout = 0;
     Callback *cbPtr;
     NsInterp *itPtr = arg;
@@ -911,7 +911,7 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
 {
     int           fargc;
     char        **fargv;
-    SOCKET        sock;
+    NS_SOCKET     sock;
     Tcl_DString   ds;
 
     Tcl_DStringInit(&ds);
@@ -958,10 +958,9 @@ static int
 GetSet(Tcl_Interp *interp, char *flist, int write, fd_set **setPtrPtr,
        fd_set *setPtr, int *maxPtr)
 {
-    SOCKET sock;
-    int    fargc;
-    char **fargv;
-    int    status;
+    int       fargc, status;
+    NS_SOCKET sock;
+    char    **fargv;
     
     if (Tcl_SplitList(interp, flist, &fargc,
                       (CONST char***)&fargv) != TCL_OK) {
@@ -989,9 +988,12 @@ GetSet(Tcl_Interp *interp, char *flist, int write, fd_set **setPtrPtr,
             status = TCL_ERROR;
             break;
         }
+#ifndef _MSC_VER
+	/* winsock ignores first argument of select */
         if (sock > *maxPtr) {
             *maxPtr = sock;
         }
+#endif
         FD_SET(sock, setPtr);
     }
     ckfree((char *) fargv);
@@ -1018,7 +1020,7 @@ GetSet(Tcl_Interp *interp, char *flist, int write, fd_set **setPtrPtr,
  */
 
 static int
-EnterSock(Tcl_Interp *interp, SOCKET sock)
+EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
 {
     Tcl_Channel chan;
 
@@ -1036,7 +1038,7 @@ EnterSock(Tcl_Interp *interp, SOCKET sock)
 }
 
 static int
-EnterDup(Tcl_Interp *interp, SOCKET sock)
+EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 {
     sock = ns_sockdup(sock);
     if (sock == INVALID_SOCKET) {
@@ -1049,7 +1051,7 @@ EnterDup(Tcl_Interp *interp, SOCKET sock)
 }
 
 static int
-EnterDupedSocks(Tcl_Interp *interp, SOCKET sock)
+EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
 {
     if (EnterSock(interp, sock) != TCL_OK ||
         EnterDup(interp, sock) != TCL_OK) {
@@ -1078,7 +1080,7 @@ EnterDupedSocks(Tcl_Interp *interp, SOCKET sock)
  */
 
 int
-NsTclSockProc(SOCKET sock, void *arg, int why)
+NsTclSockProc(NS_SOCKET sock, void *arg, int why)
 {
     Tcl_Interp  *interp;
     Tcl_DString  script;
@@ -1170,7 +1172,7 @@ NsTclSockProc(SOCKET sock, void *arg, int why)
  */
 
 static int
-SockListenCallback(SOCKET sock, void *arg, int why)
+SockListenCallback(NS_SOCKET sock, void *arg, int why)
 {
     ListenCallback *lcbPtr = arg;
     Tcl_Interp     *interp;

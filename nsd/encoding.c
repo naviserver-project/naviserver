@@ -322,8 +322,8 @@ Ns_GetFileEncoding(CONST char *file)
 Tcl_Encoding
 Ns_GetTypeEncoding(CONST char *type)
 {
-    char *charset;
-    int   len;
+    char    *charset;
+    size_t   len;
 
     charset = NsFindCharset(type, &len);
     return (charset ? Ns_GetCharsetEncodingEx(charset, len) : NULL);
@@ -354,7 +354,7 @@ Ns_GetCharsetEncoding(CONST char *charset)
 }
 
 Tcl_Encoding
-Ns_GetCharsetEncodingEx(CONST char *charset, int len)
+Ns_GetCharsetEncodingEx(CONST char *charset, size_t len)
 {
     Tcl_HashEntry *hPtr;
     Tcl_Encoding   encoding;
@@ -368,7 +368,7 @@ Ns_GetCharsetEncodingEx(CONST char *charset, int len)
      */
 
     Ns_DStringInit(&ds);
-    Ns_DStringNAppend(&ds, charset, len);
+    Ns_DStringNAppend(&ds, charset, (int)len);
     charset = Ns_StrTrim(Ns_StrToLower(ds.string));
     hPtr = Tcl_FindHashEntry(&charsets, charset);
     if (hPtr != NULL) {
@@ -436,7 +436,7 @@ Ns_GetEncodingCharset(Tcl_Encoding encoding)
  */
 
 char *
-NsFindCharset(CONST char *mimetype, int *lenPtr)
+NsFindCharset(CONST char *mimetype, size_t *lenPtr)
 {
     CONST char *start, *end;
 

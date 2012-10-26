@@ -96,11 +96,12 @@ static int pr2six[256] = {
  *----------------------------------------------------------------------
  */
 
-int
-Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
+size_t
+Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
 {
     register unsigned char  *p, *q;
-    register int n, line = 0;
+    register int line = 0;
+    register size_t n = 0;
 
     /*
      * Convert every three input bytes into four output
@@ -166,8 +167,8 @@ Ns_HtuuEncode(unsigned char *input, unsigned int len, char *output)
  *----------------------------------------------------------------------
  */
 
-int
-Ns_HtuuDecode(char *input, unsigned char *output, int outputlen)
+size_t
+Ns_HtuuDecode(char *input, unsigned char *output, size_t outputlen)
 {
     register int n;
     unsigned char buf[4];
@@ -212,7 +213,7 @@ Ns_HtuuDecode(char *input, unsigned char *output, int outputlen)
     if (n > 2) {
 	*q++ = DEC(buf[1]) << 4 | DEC(buf[2]) >> 2;
     }
-    if ((q - output) < outputlen) {
+    if ((size_t)(q - output) < outputlen) {
 	*q = '\0';
     }
     return (q - output);

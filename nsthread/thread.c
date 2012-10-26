@@ -480,11 +480,11 @@ SetBottomOfStack(void *ptr) {
  *----------------------------------------------------------------------
  */
 void
-Ns_ThreadGetThreadInfo(unsigned int *maxStackSize, unsigned int *estimatedSize) {
+Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize) {
   Thread *thisPtr = GetThread();
 
   Ns_MasterLock();
   *maxStackSize = defstacksize;
-  *estimatedSize = abs(thisPtr->bottomOfStack - (unsigned char *)&thisPtr);
+  *estimatedSize = abs((int)(thisPtr->bottomOfStack - (unsigned char *)&thisPtr));
   Ns_MasterUnlock();  
 }

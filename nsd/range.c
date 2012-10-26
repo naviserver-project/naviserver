@@ -118,7 +118,7 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
                  int fd, CONST void *data, size_t objLength,
                  Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr)
 {
-    Conn *connPtr = (Conn *) conn;
+    Conn   *connPtr = (Conn *) conn;
     Range  *ranges;
     int     maxranges, rangeCount, i, v;
     off_t   start, end, dsbase;
@@ -166,7 +166,8 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
      * and rebase after we've finnished resizing the string.
      */
 
-    dsbase = len = 0;
+    dsbase = 0;
+    len = 0;
 
     for (i = 0, v = 0; i < rangeCount; i++, v += 2) {
 
@@ -174,7 +175,7 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
         end   = ranges[i].end;
 
         len += AppendMultipartRangeHeader(dsPtr, type, start, end, objLength);
-        dsbase += Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
+        dsbase += (off_t)Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
 
         /* Combine the footer with the next header. */
         Ns_DStringAppend(dsPtr, "\r\n");
@@ -269,7 +270,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
              * Parse: first-byte-pos "-" last-byte-pos
              */
 
-            start = atoll(rangestr);
+	    start = (off_t)atoll(rangestr);
             while (isdigit(UCHAR(*rangestr))) {
                 rangestr++;
             }
@@ -280,15 +281,15 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
             rangestr++; /* Skip '-' */
 
             if (isdigit(UCHAR(*rangestr))) {
-                end = atoll(rangestr);
+	        end = (off_t)atoll(rangestr);
                 while (isdigit(UCHAR(*rangestr))) {
                     rangestr++;
                 }
                 if (end >= objLength) {
-                    end = objLength - 1;
+		  end = (off_t)objLength - 1;
                 }
             } else {
-                end = objLength - 1;
+	      end = (off_t)objLength - 1;
             }
 
         } else if (*rangestr == '-') {
@@ -302,20 +303,20 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                 return 0; /* Invalid syntax? */
             }
 
-            end = atoll(rangestr);
+            end = (off_t)atoll(rangestr);
             while (isdigit(UCHAR(*rangestr))) {
                 rangestr++;
             }
 
             if (end >= objLength) {
-                end = objLength;
+	      end = (off_t)objLength;
             }
 
             /*
              * Size from the end; convert into offset.
              */
 
-            start = objLength - end;
+            start = (off_t)(objLength - end);
             end = start + end - 1;
 
         } else {

@@ -317,6 +317,7 @@ void
 NsAdpInit(NsInterp *itPtr)
 {
     Tcl_DStringInit(&itPtr->adp.output);
+
     NsAdpReset(itPtr);
 }
 
@@ -1028,7 +1029,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     frame.ident = NULL;
     savecwd = itPtr->adp.cwd;
     if (file != NULL && (slash = strrchr(file, '/')) != NULL) {
-        Ns_DStringNAppend(&cwd, file, slash - file);
+      Ns_DStringNAppend(&cwd, file, (int)(slash - file));
         itPtr->adp.cwd = cwd.string;
     }
     frame.prevPtr = itPtr->adp.framePtr;

@@ -826,7 +826,7 @@ SchedThread(void *ignored)
         if (nqueue == 0) {
             Ns_CondWait(&schedcond, &lock);
         } else if (!shutdownPending) {
-            timeout.sec = queue[1]->nextqueue;
+	    timeout.sec  = (long)queue[1]->nextqueue;
             timeout.usec = 0;
             Ns_CondTimedWait(&schedcond, &lock, &timeout);
         }

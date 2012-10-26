@@ -55,7 +55,7 @@ static Ns_DriverSendFileProc SendFile;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 
-static void SetDeferAccept(Ns_Driver *driver, SOCKET sock);
+static void SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock);
 
 
 /*
@@ -119,10 +119,10 @@ Ns_ModuleInit(char *server, char *module)
  *----------------------------------------------------------------------
  */
 
-static SOCKET
+static NS_SOCKET
 Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
 {
-    SOCKET sock;
+    NS_SOCKET sock;
 
     sock = Ns_SockListenEx((char*)address, port, backlog);
     if (sock != INVALID_SOCKET) {
@@ -152,7 +152,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
  */
  
 static NS_DRIVER_ACCEPT_STATUS
-Accept(Ns_Sock *sock, SOCKET listensock,
+Accept(Ns_Sock *sock, NS_SOCKET listensock,
        struct sockaddr *sockaddrPtr, int *socklenPtr)
 {
     Config *cfg    = sock->driver->arg;
@@ -325,7 +325,7 @@ Close(Ns_Sock *sock)
  */
 
 static void
-SetDeferAccept(Ns_Driver *driver, SOCKET sock)
+SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock)
 {
     Config *cfg = driver->arg;
 

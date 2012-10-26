@@ -446,7 +446,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case SConnectionsIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj((int) servPtr->pools.nextconnid));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj(servPtr->pools.nextconnid));
         break;
 
     case SThreadsIdx:
@@ -669,8 +669,8 @@ NsConnThread(void *arg)
     */
     spreadFactor = 1.0 + (2 * spread * Ns_DRand() - spread) / 100.0;
     
-    maxcpt = round(cpt * (1.0 + spread / 100.0)) ; /* allow max cpt requests + spread requests */
-    cpt = round(cpt * spreadFactor);
+    maxcpt = (int)floor(cpt * (1.0 + spread / 100.0)) ; /* allow max cpt requests + spread requests */
+    cpt    = (int)floor(cpt * spreadFactor);
     ncons = cpt;
     maxcpt = cpt - maxcpt;   /* negative number, expressing maximum overtime count */
 
@@ -726,7 +726,7 @@ NsConnThread(void *arg)
             timePtr = NULL;
         } else {
             Ns_GetTime(&wait);
-            Ns_IncrTime(&wait, round(poolPtr->threads.timeout * spreadFactor), 0);
+            Ns_IncrTime(&wait, (int)floor(poolPtr->threads.timeout * spreadFactor), 0);
             timePtr = &wait;
         }
 
@@ -912,6 +912,7 @@ ConnRun(Conn *connPtr)
     connPtr->request = &connPtr->reqPtr->request;
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->contentLength = connPtr->reqPtr->length;
+
     connPtr->nContentSent = 0;
     connPtr->responseStatus = 200;
     connPtr->responseLength = -1;  /* -1 == unknown (stream), 0 == zero bytes. */

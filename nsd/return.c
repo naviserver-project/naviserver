@@ -41,7 +41,7 @@
  */
 
 static int ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
-                      FILE *fp, int fd, Tcl_WideInt len);
+                      FILE *fp, int fd, size_t len);
 static int ReturnRange(Ns_Conn *conn, CONST char *type,
                        int fd, CONST void *data, size_t len);
 
@@ -282,7 +282,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *type)
     Tcl_Encoding  encoding;
     CONST char   *charset;
     Ns_DString    ds;
-    int           len;
+    size_t        len;
 
     Ns_DStringInit(&ds);
     charset = NsFindCharset(type, &len);
@@ -496,7 +496,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 }
 
 void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
+Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, size_t length)
 {
     Ns_ConnSetTypeHeader(conn, type);
     Ns_ConnSetLengthHeader(conn, length);
@@ -640,8 +640,8 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
  */
 
 int
-Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
-                  CONST char *type)
+Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, 
+		  ssize_t len, CONST char *type)
 {
     int result;
 
@@ -677,8 +677,8 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data, int len,
  */
 
 int
-Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
-                      CONST char *type)
+Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data, 
+		      ssize_t len, CONST char *type)
 {
     if (type != NULL) {
         Ns_ConnSetEncodedTypeHeader(conn, type);
@@ -710,7 +710,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data, int len,
  */
 
 int
-Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, int len)
+Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, ssize_t len)
 {
     return Ns_ConnReturnCharData(conn, status, html, len, "text/html");
 }
@@ -742,28 +742,28 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, CONST char *html, int len)
 
 int
 Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
-                         Tcl_Channel chan, Tcl_WideInt len)
+                         Tcl_Channel chan, size_t len)
 {
     return ReturnOpen(conn, status, type, chan, NULL, -1, len);
 }
 
 int
 Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
-                      FILE *fp, Tcl_WideInt len)
+                      FILE *fp, size_t len)
 {
     return ReturnOpen(conn, status, type, NULL, fp, -1, len);
 }
 
 int
 Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
-                    int fd, Tcl_WideInt len)
+                    int fd, size_t len)
 {
     return ReturnOpen(conn, status, type, NULL, NULL, fd, len);
 }
 
 static int
 ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
-           FILE *fp, int fd, Tcl_WideInt len)
+           FILE *fp, int fd, size_t len)
 {
     int result;
 

@@ -49,7 +49,7 @@ typedef struct TaskQueue {
     Ns_Cond            cond;              /* Task and queue signal condition. */
     int                shutdown;          /* Shutdown flag. */
     int                stopped;           /* Stop flag. */
-    SOCKET             trigger[2];        /* Trigger pipe. */
+    NS_SOCKET          trigger[2];        /* Trigger pipe. */
     char               name[NAME_SIZE+1]; /* String name. */
 } TaskQueue;
 
@@ -73,7 +73,7 @@ typedef struct Task {
     struct TaskQueue  *queuePtr;      /* Monitoring queue. */
     struct Task       *nextWaitPtr;   /* Next on wait queue. */
     struct Task       *nextSignalPtr; /* Next on signal queue. */
-    SOCKET             sock;          /* Underlying socket. */
+    NS_SOCKET          sock;          /* Underlying socket. */
     Ns_TaskProc       *proc;          /* Queue callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
@@ -215,7 +215,7 @@ Ns_DestroyTaskQueue(Ns_TaskQueue *queue)
  */
 
 Ns_Task *
-Ns_TaskCreate(SOCKET sock, Ns_TaskProc *proc, void *arg)
+Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
 {
     Task *taskPtr;
 
@@ -510,7 +510,7 @@ Ns_TaskDone(Ns_Task *event)
  *      a task queue.
  *
  * Results:
- *      The task SOCKET which the caller is responsible for closing
+ *      The task NS_SOCKET which the caller is responsible for closing
  *      or reusing.
  *
  * Side effects:
@@ -519,11 +519,11 @@ Ns_TaskDone(Ns_Task *event)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_TaskFree(Ns_Task *task)
 {
-    Task   *taskPtr = (Task *) task;
-    SOCKET  sock    = taskPtr->sock;
+    Task      *taskPtr = (Task *) task;
+    NS_SOCKET  sock    = taskPtr->sock;
 
     ns_free(taskPtr);
     return sock;

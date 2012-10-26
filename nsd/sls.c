@@ -98,7 +98,7 @@ NsInitSls(void)
 void
 Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
 {
-    uintptr_t id;
+    int id;
 
     if (Ns_InfoStarted()) {
         Ns_Log(Bug, "Ns_SlsAlloc: server already started");
@@ -190,7 +190,8 @@ Ns_SlsSetKeyed(Ns_Sock *sock, CONST char *key, CONST char *value)
     Tcl_HashTable *tblPtr;
     Tcl_HashEntry *hPtr;
     char          *old, *new;
-    int            len, created;
+    size_t        len;
+    int           created;
 
     if ((tblPtr = Ns_SlsGet(&kslot, sock)) == NULL) {
         tblPtr = ns_malloc(sizeof(Tcl_HashTable));
@@ -465,10 +466,10 @@ static void **
 GetSlot(Ns_Sls *slsPtr, Ns_Sock *sock)
 {
     Sock      *sockPtr = (Sock *) sock;
-    uintptr_t  id      = (uintptr_t) *slsPtr;
+    int        id      = (int)(intptr_t) *slsPtr;
 
     if (id >= nsconf.nextSlsId) {
-        Ns_Fatal("Ns_Sls: invalid key: %" PRIuPTR ": must be between 0 and %d",
+        Ns_Fatal("Ns_Sls: invalid key: %d: must be between 0 and %d",
                  id, nsconf.nextSlsId -1);
     }
     return &sockPtr->sls[id];

@@ -165,7 +165,7 @@ Ns_ConnAuthPasswd(Ns_Conn *conn)
  *      Get the content length from the client
  *
  * Results:
- *      An integer content length, or 0 if none sent
+ *      An size_t content length, or 0 if none sent
  *
  * Side effects:
  *      None
@@ -173,7 +173,7 @@ Ns_ConnAuthPasswd(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Ns_ConnContentLength(Ns_Conn *conn)
 {
     return conn->contentLength;
@@ -220,7 +220,7 @@ Ns_ConnContent(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Ns_ConnContentSize(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -403,7 +403,7 @@ Ns_ConnSetContentSent(Ns_Conn *conn, Tcl_WideInt length)
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 Ns_ConnResponseLength(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -733,7 +733,7 @@ Ns_ConnPort(Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_ConnSock(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
@@ -1236,18 +1236,20 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
         if (objc == 2) {
             if (connPtr->reqPtr->content != NULL && connPtr->reqPtr->length) {
-                Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, connPtr->reqPtr->length));
+                Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content, 
+							     (int)connPtr->reqPtr->length));
             }
         } else {
             if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK) {
                 return TCL_ERROR;
             }
-            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)Ns_ConnContent(conn) + off, len));
+            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)Ns_ConnContent(conn) + off, 
+							 (int)len));
         }
         break;
 
     case CContentLengthIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(conn->contentLength));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(conn->contentLength));
         break;
 
     case CContentFileIdx:
@@ -1367,9 +1369,9 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         }
         filePtr = Tcl_GetHashValue(hPtr);
         if (opt == CFileOffIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewLongObj((long) filePtr->off));
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->off));
         } else if (opt == CFileLenIdx) {
-            Tcl_SetObjResult(interp, Tcl_NewLongObj((long) filePtr->len));
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(filePtr->len));
         } else {
             Ns_TclEnterSet(interp, filePtr->hdrs, NS_TCL_SET_STATIC);
         }
@@ -1464,7 +1466,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CSockIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnSock(conn)));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj((int)Ns_ConnSock(conn)));
         break;
 
     case CIdIdx:
@@ -1573,11 +1575,11 @@ int
 NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj **objv)
 {
-    NsInterp *itPtr = arg;
-    int toCopy = 0;
-    char *chanName;
-    Request *reqPtr;
-    Tcl_Channel chan;
+    NsInterp    *itPtr = arg;
+    size_t       toCopy = 0;
+    char        *chanName;
+    Request     *reqPtr;
+    Tcl_Channel  chan;
 
     /*
      * Syntax: ns_conncptofp ?-bytes tocopy? channel
@@ -1715,12 +1717,12 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr,
         Tcl_GetIntFromObj(interp, objv[1], &len) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (off < 0 || off > connPtr->reqPtr->length) {
+    if (off < 0 || (size_t)off > connPtr->reqPtr->length) {
         Tcl_AppendResult(interp, "invalid offset: ", Tcl_GetString(objv[0]),
                          NULL);
         return TCL_ERROR;
     }
-    if (len < 0 || len > (connPtr->reqPtr->length - off)) {
+    if (len < 0 || (size_t)len > (connPtr->reqPtr->length - off)) {
         Tcl_AppendResult(interp, "invalid length: ", Tcl_GetString(objv[1]),
                          NULL);
         return TCL_ERROR;

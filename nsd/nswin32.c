@@ -647,7 +647,7 @@ NsMemUmap(FileMap *mapPtr)
  */
 
 int
-ns_socknbclose(SOCKET sock)
+ns_socknbclose(NS_SOCKET sock)
 {
     if (Ns_SockCloseLater(sock) != NS_OK) {
         return SOCKET_ERROR;
@@ -673,8 +673,8 @@ ns_socknbclose(SOCKET sock)
  *----------------------------------------------------------------------
  */
 
-SOCKET
-ns_sockdup(SOCKET sock)
+NS_SOCKET
+ns_sockdup(NS_SOCKET sock)
 {
     HANDLE hp, src, dup;
 
@@ -684,7 +684,7 @@ ns_sockdup(SOCKET sock)
         return INVALID_SOCKET;
     }
 
-    return (SOCKET) dup;
+    return (NS_SOCKET) dup;
 }
 
 
@@ -729,9 +729,9 @@ ns_pipe(int *fds)
  */
 
 int
-ns_sockpair(SOCKET socks[2])
+ns_sockpair(NS_SOCKET socks[2])
 {
-    SOCKET sock;
+    NS_SOCKET sock;
     struct sockaddr_in ia[2];
     int size;
 
@@ -783,10 +783,10 @@ ns_sockpair(SOCKET socks[2])
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
-    SOCKET sock;
+    NS_SOCKET sock;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) != NS_OK) {
@@ -1062,7 +1062,9 @@ ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
 {
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;
-    int i, rc, n = -1;
+    unsigned long int i;
+    NS_SOCKET n = -1;
+    int rc;
 
     FD_ZERO(&ifds);
     FD_ZERO(&ofds);
@@ -1072,9 +1074,12 @@ ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
         if (fds[i].fd == -1) {
             continue;
         }
+#ifndef _MSC_VER
+	/* winsock ignores the first argument of select() */
         if (fds[i].fd > n) {
             n = fds[i].fd;
         }
+#endif
         if ((fds[i].events & POLLIN)) {
             FD_SET(fds[i].fd, &ifds);
         }

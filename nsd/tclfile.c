@@ -134,7 +134,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write, int *fdPtr)
         return TCL_ERROR;
     }
 
-    *fdPtr = (intptr_t) data;
+    *fdPtr = (int)(intptr_t) data;
 
     return TCL_OK;
 }

@@ -45,11 +45,11 @@
  * Local functions defined in this file
  */
 
-static SOCKET SockConnect(char *host, int port, char *lhost, int lport,
-                          int async);
-static SOCKET SockSetup(SOCKET sock);
-static int SockRecv(SOCKET sock, struct iovec *bufs, int nbufs, int flags);
-static int SockSend(SOCKET sock, struct iovec *bufs, int nbufs, int flags);
+static NS_SOCKET SockConnect(char *host, int port, char *lhost, int lport,
+			     int async);
+static NS_SOCKET SockSetup(NS_SOCKET sock);
+static int SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags);
+static int SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags);
 
 
 
@@ -170,7 +170,7 @@ Ns_SumVec(struct iovec *bufs, int nbufs)
  */
 
 int
-Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
+Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
                 Ns_Time *timeoutPtr, int flags)
 {
     int n;
@@ -203,13 +203,13 @@ Ns_SockRecvBufs(SOCKET sock, struct iovec *bufs, int nbufs,
  */
 
 int
-Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
+Ns_SockSendBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
                 Ns_Time *timeoutPtr, int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
-    int           nwrote = 0, towrite = 0, sent = -1;
+    int           nwrote = 0, sent = -1;
     void         *data;
-    int           len;
+    size_t        len, towrite = 0;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
 
     sbufPtr = sbufs;
@@ -295,7 +295,7 @@ Ns_SockSendBufs(SOCKET sock, struct iovec *bufs, int nbufs,
  */
 
 int
-Ns_SockRecv(SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
+Ns_SockRecv(NS_SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
 {
     int nread;
 
@@ -329,7 +329,7 @@ Ns_SockRecv(SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
  */
 
 int
-Ns_SockSend(SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
+Ns_SockSend(NS_SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
 {
     int nwrote;
 
@@ -362,7 +362,7 @@ Ns_SockSend(SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr)
+Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr)
 {
     int           n, msec = -1;
     struct pollfd pfd;
@@ -414,7 +414,7 @@ Ns_SockTimedWait(SOCKET sock, int what, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockWait(SOCKET sock, int what, int timeout)
+Ns_SockWait(NS_SOCKET sock, int what, int timeout)
 {
     Ns_Time tm = { timeout, 0 };
     return Ns_SockTimedWait(sock, what, &tm);
@@ -436,7 +436,7 @@ Ns_SockWait(SOCKET sock, int what, int timeout)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockListen(char *address, int port)
 {
     return Ns_SockListenEx(address, port, nsconf.backlog);
@@ -459,10 +459,10 @@ Ns_SockListen(char *address, int port)
  *----------------------------------------------------------------------
  */
 
-SOCKET
-Ns_SockAccept(SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
+NS_SOCKET
+Ns_SockAccept(NS_SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
 {
-    SOCKET sock;
+    NS_SOCKET sock;
 
     sock = accept(lsock, saPtr, (socklen_t *) lenPtr);
 
@@ -490,17 +490,17 @@ Ns_SockAccept(SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_BindSock(struct sockaddr_in *saPtr)
 {
     return Ns_SockBind(saPtr);
 }
 
-SOCKET
+NS_SOCKET
 Ns_SockBind(struct sockaddr_in *saPtr)
 {
-    SOCKET sock;
-    int    n;
+    NS_SOCKET sock;
+    int       n;
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -540,13 +540,13 @@ Ns_SockBind(struct sockaddr_in *saPtr)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockConnect(char *host, int port)
 {
     return SockConnect(host, port, NULL, 0, 0);
 }
 
-SOCKET
+NS_SOCKET
 Ns_SockConnect2(char *host, int port, char *lhost, int lport)
 {
     return SockConnect(host, port, lhost, lport, 0);
@@ -569,13 +569,13 @@ Ns_SockConnect2(char *host, int port, char *lhost, int lport)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockAsyncConnect(char *host, int port)
 {
     return SockConnect(host, port, NULL, 0, 1);
 }
 
-SOCKET
+NS_SOCKET
 Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
 {
     return SockConnect(host, port, lhost, lport, 1);
@@ -598,17 +598,17 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockTimedConnect(char *host, int port, Ns_Time *timePtr)
 {
     return Ns_SockTimedConnect2(host, port, NULL, 0, timePtr);
 }
 
-SOCKET
+NS_SOCKET
 Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
                      Ns_Time *timePtr)
 {
-    SOCKET    sock;
+    NS_SOCKET sock;
     int       err;
     socklen_t len;
 
@@ -660,7 +660,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
  */
 
 int
-Ns_SockSetNonBlocking(SOCKET sock)
+Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
     int nb = 1;
 
@@ -689,7 +689,7 @@ Ns_SockSetNonBlocking(SOCKET sock)
  */
 
 int
-Ns_SockSetBlocking(SOCKET sock)
+Ns_SockSetBlocking(NS_SOCKET sock)
 {
     int nb = 0;
 
@@ -766,7 +766,7 @@ Ns_GetSockAddr(struct sockaddr_in *saPtr, char *host, int port)
  */
 
 int
-Ns_SockPipe(SOCKET socks[2])
+Ns_SockPipe(NS_SOCKET socks[2])
 {
     if (ns_sockpair(socks) != 0) {
         return NS_ERROR;
@@ -794,14 +794,14 @@ Ns_SockPipe(SOCKET socks[2])
  */
 
 static int
-CloseLater(SOCKET sock, void *arg, int why)
+CloseLater(NS_SOCKET sock, void *arg, int why)
 {
     ns_sockclose(sock);
     return NS_FALSE;
 }
 
 int
-Ns_SockCloseLater(SOCKET sock)
+Ns_SockCloseLater(NS_SOCKET sock)
 {
     return Ns_SockCallback(sock, CloseLater, NULL, NS_SOCK_WRITE);
 }
@@ -944,10 +944,10 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
  *----------------------------------------------------------------------
  */
 
-static SOCKET
+static NS_SOCKET
 SockConnect(char *host, int port, char *lhost, int lport, int async)
 {
-    SOCKET             sock;
+    NS_SOCKET          sock;
     struct sockaddr_in lsa;
     struct sockaddr_in sa;
 
@@ -992,8 +992,8 @@ SockConnect(char *host, int port, char *lhost, int lport, int async)
  *----------------------------------------------------------------------
  */
 
-static SOCKET
-SockSetup(SOCKET sock)
+static NS_SOCKET
+SockSetup(NS_SOCKET sock)
 {
 #ifdef USE_DUPHIGH
     int nsock;
@@ -1028,7 +1028,7 @@ SockSetup(SOCKET sock)
  */
 
 static int
-SockRecv(SOCKET sock, struct iovec *bufs, int nbufs, int flags)
+SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags)
 {
     int n;
 
@@ -1075,18 +1075,18 @@ SockRecv(SOCKET sock, struct iovec *bufs, int nbufs, int flags)
  */
 
 static int
-SockSend(SOCKET sock, struct iovec *bufs, int nbufs, int flags)
+SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags)
 {
-    int n;
-
 #ifdef _WIN32
-    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, &flags,
+    DWORD n;
+    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, flags,
                 NULL, NULL) != 0) {
         n = -1;
     }
 
     return n;
 #else
+    int n;
     struct msghdr msg;
 
     memset(&msg, 0, sizeof(msg));

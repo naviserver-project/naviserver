@@ -39,7 +39,7 @@ extern Tcl_ObjCmdProc NsTclHttpObjCmd;
 
 typedef struct {
     Ns_Task *task;
-    SOCKET sock;
+    NS_SOCKET sock;
     char *url;
     char *error;
     char *next;
@@ -421,7 +421,7 @@ int
 HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
 	    Tcl_Obj *bodyPtr, Http **httpPtrPtr)
 {
-    SOCKET sock;
+    NS_SOCKET sock;
     Http *httpPtr = NULL;
     int i, len;
     char *key, *body, *host, *file, *port;
@@ -562,7 +562,8 @@ HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
         }
     }
 
-    result = Tcl_NewByteArrayObj((unsigned char*)body, ds->length-(body-response));
+    result = Tcl_NewByteArrayObj((unsigned char*)body, 
+				 (int)(ds->length-(body-response)));
 
     if (eoh == NULL) {
 	*statusPtr = 0;
@@ -576,7 +577,7 @@ HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
 	    *body = '\0';
             p = response;
             while ((eoh = strchr(p, '\n')) != NULL) {
-	        int len;
+	        size_t len;
 
             	*eoh++ = '\0';
             	len = strlen(p);
@@ -645,7 +646,7 @@ HttpAbort(Http *httpPtr)
  */
 
 static void
-HttpProc(Ns_Task *task, SOCKET sock, void *arg, int why)
+HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, int why)
 {
     Http *httpPtr = arg;
     char buf[4096];
@@ -657,7 +658,7 @@ HttpProc(Ns_Task *task, SOCKET sock, void *arg, int why)
 	return;
 
     case NS_SOCK_WRITE:
-    	n = send(sock, httpPtr->next, httpPtr->len, 0);
+        n = send(sock, httpPtr->next, (int)httpPtr->len, 0);
     	if (n < 0) {
 	    httpPtr->error = "send failed";
 	} else {

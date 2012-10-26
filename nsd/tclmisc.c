@@ -503,7 +503,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
     string = Tcl_GetStringFromObj(objv[1], &size);
     size += 3;
     decoded = ns_malloc(size);
-    size = Ns_HtuuDecode(string, decoded, size);
+    size = (int)Ns_HtuuDecode(string, decoded, size);
     decoded[size] = '\0';
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, size));
     ns_free(decoded);
@@ -1038,9 +1038,9 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_SetVar2Ex(interp, name, "uid", Tcl_NewIntObj(st.st_uid), 0);
         Tcl_SetVar2Ex(interp, name, "gid", Tcl_NewIntObj(st.st_gid), 0);
         Tcl_SetVar2Ex(interp, name, "size", Tcl_NewWideIntObj(st.st_size), 0);
-        Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewLongObj(st.st_atime), 0);
-        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewLongObj(st.st_ctime), 0);
-        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewLongObj(st.st_mtime), 0);
+        Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewWideIntObj(st.st_atime), 0);
+        Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewWideIntObj(st.st_ctime), 0);
+        Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewWideIntObj(st.st_mtime), 0);
         Tcl_SetVar2Ex(interp, name, "mode", Tcl_NewIntObj(st.st_mode), 0);
         Tcl_SetVar2Ex(interp, name, "type", Tcl_NewStringObj(
                   (S_ISREG(st.st_mode) ? "file" :

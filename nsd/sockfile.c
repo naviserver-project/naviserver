@@ -76,7 +76,7 @@ Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, CONST void *data,
     if (fd > -1) {
         bufs[i].offset = offset;
     } else {
-        bufs[i].offset = ((intptr_t) data) + offset;
+        bufs[i].offset = ((off_t)(intptr_t) data) + offset;
     }
     return length;
 }
@@ -117,7 +117,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
                 sent -= length;
                 Ns_SetFileVec(bufs, i, fd, NULL, 0, 0);
             } else {
-                Ns_SetFileVec(bufs, i, fd, NULL, offset + sent, length - sent);
+	        Ns_SetFileVec(bufs, i, fd, NULL, (off_t)(offset + sent), length - sent);
                 break;
             }
         }
@@ -348,7 +348,7 @@ int pread(unsigned int fd, char *buf, size_t count, off_t offset)
 {
     OVERLAPPED overlapped = { 0 };
     HANDLE fh = (HANDLE)_get_osfhandle(fd);
-    DWORD ret;
+    DWORD ret, c = (DWORD)count;
 
     if (fh == INVALID_HANDLE_VALUE) {
         errno = EBADF;
@@ -407,7 +407,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
             break;
         }
         toread -= nread;
-        offset += nread;
+        offset += (off_t)nread;
 
         Ns_SetVec(&iov, 0, buf, nread);
         sent = (*sendPtr)(sock, &iov, 1, timeoutPtr, flags);

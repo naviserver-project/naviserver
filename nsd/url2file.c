@@ -265,6 +265,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
             Ns_DStringSetLength(dsPtr, dsPtr->length -1);
         }
     }
+
     return status;
 }
 

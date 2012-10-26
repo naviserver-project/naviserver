@@ -38,11 +38,11 @@
 #define BUFSIZE 2048
 
 typedef struct Stream {
-    SOCKET  sock;
-    int     error;
-    int     cnt;
-    char       *ptr;
-    char    buf[BUFSIZE+1];
+    NS_SOCKET sock;
+    int       error;
+    size_t    cnt;
+    char     *ptr;
+    char      buf[BUFSIZE+1];
 } Stream;
 
 /*
@@ -117,7 +117,7 @@ Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
 int
 Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
 {
-    SOCKET          sock;
+    NS_SOCKET       sock;
     char           *p;
     Ns_DString      ds;
     Stream          stream;
@@ -209,7 +209,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
      */
     
     do {
-        Ns_DStringNAppend(dsPtr, stream.ptr, stream.cnt);
+      Ns_DStringNAppend(dsPtr, stream.ptr, (int)stream.cnt);
     } while (FillBuf(&stream));
     if (!stream.error) {
         status = NS_OK;
@@ -355,8 +355,8 @@ FillBuf(Stream *sPtr)
 static int
 GetLine(Stream *sPtr, Ns_DString *dsPtr)
 {
-    char *eol;
-    int n;
+    char   *eol;
+    size_t  n;
 
     Ns_DStringSetLength(dsPtr, 0);
     do {
@@ -368,13 +368,13 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
                 *eol++ = '\0';
                 n = eol - sPtr->ptr;
             }
-            Ns_DStringNAppend(dsPtr, sPtr->ptr, n - 1);
+            Ns_DStringNAppend(dsPtr, sPtr->ptr, (int)(n - 1));
             sPtr->ptr += n;
             sPtr->cnt -= n;
             if (eol != NULL) {
                 n = dsPtr->length;
                 if (n > 0 && dsPtr->string[n-1] == '\r') {
-                    Ns_DStringSetLength(dsPtr, n-1);
+		  Ns_DStringSetLength(dsPtr, (int)(n - 1));
                 }
                 return 1;
             }

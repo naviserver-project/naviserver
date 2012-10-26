@@ -84,10 +84,10 @@ static void Binder(void);
  */
 
 #ifndef _WIN32
-SOCKET
+NS_SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
-    int                sock = -1;
+    NS_SOCKET          sock = -1;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -121,7 +121,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
     if (sock == -1 && binderRunning) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
-    return (SOCKET)sock;
+    return sock;
 }
 #endif /* _WIN32 */
 
@@ -141,10 +141,10 @@ Ns_SockListenEx(char *address, int port, int backlog)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockListenUdp(char *address, int port)
 {
-    int                sock = -1;
+    NS_SOCKET          sock = -1;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -171,7 +171,7 @@ Ns_SockListenUdp(char *address, int port)
         sock = Ns_SockBinderListen('U', address, port, 0);
     }
 
-    return (SOCKET)sock;
+    return sock;
 }
 
 
@@ -191,10 +191,10 @@ Ns_SockListenUdp(char *address, int port)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockListenRaw(int proto)
 {
-    int            sock = -1;
+    NS_SOCKET       sock = -1;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
@@ -223,7 +223,7 @@ Ns_SockListenRaw(int proto)
         sock = Ns_SockBinderListen('R', 0, proto, proto);
     }
 
-    return (SOCKET)sock;
+    return sock;
 }
 
 
@@ -244,7 +244,7 @@ Ns_SockListenRaw(int proto)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockListenUnix(char *path, int backlog, int  mode)
 {
     int            sock = -1;
@@ -270,6 +270,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
     if (sock >= 0 && backlog > 0 && listen(sock, backlog) == -1) {
         /* Can't listen; close the opened socket */
         int err = errno;
+
         close(sock);
         errno = err;
         sock = -1;
@@ -285,7 +286,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
         sock = Ns_SockBinderListen('D', path, mode, backlog);
     }
 #endif /* _WIN32 */
-    return (SOCKET) sock;
+    return sock;
 }
 
 
@@ -305,10 +306,11 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockBindUdp(struct sockaddr_in *saPtr)
 {
-    int sock = -1, n = 1;
+    NS_SOCKET sock;
+    int       n = 1;
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -322,7 +324,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
         Ns_SetSockErrno(err);
     }
 
-    return (SOCKET)sock;
+    return sock;
 }
 
 
@@ -343,7 +345,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockBindUnix(char *path, int socktype, int mode)
 {
     int                sock = -1;
@@ -366,7 +368,7 @@ Ns_SockBindUnix(char *path, int socktype, int mode)
         Ns_SetSockErrno(err);
     }
 #endif /* _WIN32 */
-    return (SOCKET) sock;
+    return sock;
 }
 
 
@@ -388,10 +390,10 @@ Ns_SockBindUnix(char *path, int socktype, int mode)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockBindRaw(int proto)
 {
-    int sock = -1;
+    NS_SOCKET sock = -1;
 
     sock = socket(AF_INET, SOCK_RAW, proto);
 
@@ -401,7 +403,7 @@ Ns_SockBindRaw(int proto)
         Ns_SetSockErrno(err);
     }
 
-    return (SOCKET)sock;
+    return sock;
 }
 
 
@@ -756,10 +758,10 @@ PreBind(char *line)
  *----------------------------------------------------------------------
  */
 
-SOCKET
+NS_SOCKET
 Ns_SockBinderListen(int type, char *address, int port, int options)
 {
-    SOCKET        sock = -1;
+    NS_SOCKET     sock = -1;
 #ifndef _WIN32
     int           n, err;
     char          data[64];

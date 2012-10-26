@@ -289,7 +289,7 @@ NsTclParseHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
                          Tcl_GetString(objv[1]), NULL);
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(time));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(time));
 
     return TCL_OK;
 }

@@ -113,7 +113,7 @@ char *
 Ns_StrTrimRight(char *string)
 {
     if (string != NULL) {
-        int len = strlen(string);
+        int len = (int)strlen(string);
 
         while ((--len >= 0)
                && (isspace(UCHAR(string[len]))

@@ -62,7 +62,7 @@ static Ns_Conn *GetConn(Tcl_Interp *interp);
  */
 
 void
-Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
+Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
                    char *domain, char *path, int flags)
 {
     Ns_DString  cookie;
@@ -73,10 +73,10 @@ Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
         Ns_UrlQueryEncode(&cookie, value, NULL);
     }
     Ns_DStringAppend(&cookie, "\"");
-    if (maxage == INT_MAX) {
+    if (maxage == TIME_T_MAX) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-2035 01:00:00 GMT");
     } else if (maxage > 0) {
-        Ns_DStringPrintf(&cookie, "; Max-Age=%d", maxage);
+        Ns_DStringPrintf(&cookie, "; Max-Age=%ld", maxage);
     } else if (maxage < 0) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-1980 01:00:00 GMT");
     }
@@ -97,13 +97,13 @@ Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, int maxage,
 }
 
 void
-Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, int maxage)
+Ns_ConnSetCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage)
 {
     Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, 0);
 }
 
 void
-Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, int maxage)
+Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage)
 {
     Ns_ConnSetCookieEx(conn, name, value, maxage, NULL, NULL, NS_COOKIE_SECURE);
 }
@@ -160,7 +160,8 @@ Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
     Ns_Set  *hdrs = Ns_ConnHeaders(conn);
     char    *p, *q, *value = NULL;
     char     save;
-    int      nameLen, i;
+    int      i;
+    size_t   nameLen;
 
     nameLen = strlen(name);
 
@@ -212,7 +213,8 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
-    int       maxage, flags = 0, secure = 0, scriptable = 0;
+    int       flags = 0, secure = 0, scriptable = 0;
+    time_t    maxage;
     Ns_Time  *nowPtr, *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -249,11 +251,11 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     if (expiresPtr != NULL) {
         nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
         if (expiresPtr->sec < 0) {
-            maxage = INT_MAX;
+	  maxage = TIME_T_MAX;
         } else if (expiresPtr->sec > nowPtr->sec) {
-            maxage = expiresPtr->sec - nowPtr->sec;
+	  maxage = (time_t)(expiresPtr->sec - nowPtr->sec);
         } else {
-            maxage = expiresPtr->sec;
+	  maxage = expiresPtr->sec;
         }
     } else {
         maxage = 0;

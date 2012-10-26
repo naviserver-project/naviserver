@@ -32,7 +32,6 @@
  *
  *  Core threading and system headers.
  *
- *  $Header$
  */
 
 #ifndef NSTHREAD_H
@@ -52,23 +51,31 @@
 #define NSTHREAD_EXPORTS
 #endif
 
+/*
+ *
+ * Main Windows defines, including 
+ *  - mingw 
+ *  - Visual Studio
+ *  - WIN32
+ *  - WIN64
+ */ 
 #ifdef _WIN32
-#define NS_EXPORT                   __declspec(dllexport)
-#define NS_IMPORT                   __declspec(dllimport)
+# define NS_EXPORT                   __declspec(dllexport)
+# define NS_IMPORT                   __declspec(dllimport)
 
-#if defined(NSTHREAD_EXPORTS)
-#define NS_STORAGE_CLASS            NS_EXPORT
-#else
-#define NS_STORAGE_CLASS            NS_IMPORT
-#endif
+# if defined(NSTHREAD_EXPORTS)
+#  define NS_STORAGE_CLASS            NS_EXPORT
+# else
+#  define NS_STORAGE_CLASS            NS_IMPORT
+# endif
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
 
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT                0x0400
-#endif
+# ifndef _WIN32_WINNT
+#  define _WIN32_WINNT                0x0400
+# endif
 
 #include <windows.h>
 #include <winsock2.h>
@@ -78,94 +85,95 @@
 #include <io.h>
 #include <process.h>
 #include <direct.h>
-#include <fcntl.h>
-#include <errno.h>
 
-#define STDOUT_FILENO               1
-#define STDERR_FILENO               2
+#define NS_SOCKET	SOCKET
 
-#ifndef EINPROGRESS
-# define EINPROGRESS                 WSAEINPROGRESS
-#endif
-#ifndef EWOULDBLOCK
-# define EWOULDBLOCK                 WSAEWOULDBLOCK
-#endif
+# define STDOUT_FILENO               1
+# define STDERR_FILENO               2
 
-typedef unsigned __int32 int32_t;
-typedef          __int32 uint32_t;
-typedef unsigned __int64 int64_t;
-typedef          __int64 uint64_t;
-
-#ifdef _WIN64
-typedef int64_t ssize_t;
-#else
-typedef int32_t ssize_t;
-#endif
-
+# if defined(_MSC_VER)
 /*
- * Windows does not have this declared. The defined value has no meaning.
- * It just have to exist and it needs to be accepted by any strerror() call.
+ * Visual Studio defines
  */
+typedef          __int8 int8_t;
+typedef unsigned __int8 uint8_t;
 
-#ifndef ETIMEDOUT
-#define ETIMEDOUT                   1
-#endif
+typedef          __int16 int16_t;
+typedef unsigned __int16 uint16_t;
 
-#define NS_SIGHUP                   1
-#define NS_SIGINT                   2
-#define NS_SIGQUIT                  3
-#define NS_SIGPIPE                  13
-#define NS_SIGTERM                  15
+typedef          __int32 int32_t;
+typedef unsigned __int32 uint32_t;
 
-#define DEVNULL	                    "nul:"
+typedef          __int64 int64_t;
+typedef unsigned __int64 uint64_t;
 
-#define strcasecmp                  _stricmp
-#define strncasecmp                 _strnicmp
-#define vsnprintf                   _vsnprintf
-#define snprintf                    _snprintf
-#define mkdir(d,m)                  _mkdir((d))
-#define sleep(n)                    (Sleep((n)*1000))
-#define ftruncate(f,s)              chsize((f),(s))
+typedef          long int intmax_t;
+typedef unsigned long int uintmax_t;
+
+#  ifdef _WIN64
+typedef int64_t ssize_t;
+#  else
+typedef int32_t ssize_t;
+#  endif
+
+#  define atoll                       _atoi64
+#  define strtoll                     _strtoi64
+# endif
+
+#include <sys/stat.h> /* for __stat64 */
+#include <malloc.h>   /* for alloca   */
+
+# define NS_SIGHUP                  1
+# define NS_SIGINT                  2
+# define NS_SIGQUIT                 3
+# define NS_SIGPIPE                13
+# define NS_SIGTERM                15
+
+# define DEVNULL	             "nul:"
+
+# define ftruncate(f,s)              chsize((f),(s))
+# define mkdir(d,m)                  _mkdir((d))
+# define sleep(n)                    (Sleep((n)*1000))
+# define snprintf                    _snprintf
+# define strcasecmp                  _stricmp
+# define strncasecmp                 _strnicmp
+# define vsnprintf                   _vsnprintf
 
 /*
  * Under MinGW we use config.h, for MSVC we pre-define environment here
  */
 
-#ifndef HAVE_CONFIG_H
-#define F_OK                        0
-#define W_OK                        2
-#define R_OK                        4
-#define X_OK                        R_OK
-#define atoll                       _atoi64
-#define va_copy(dst,src)            ((void)((dst) = (src)))
-#define USE_TCLVFS                  1
-#define USE_THREAD_ALLOC            1
-#define VERSION                     NS_PATCH_LEVEL
-#define _LARGEFILE64_SOURCE         1
-#define _THREAD_SAFE                1
-#define TCL_THREADS                 1
-#define HAVE_GETADDRINFO            1
-#define HAVE_GETNAMEINFO            1
-#define HAVE_STRUCT_STAT64          1
-#define PACKAGE                     "naviserver"
-#define PACKAGE_NAME                "NaviServer"
-#define PACKAGE_STRING              PACKAGE_NAME " " NS_PATCH_LEVEL
-#define PACKAGE_TARNAME             PACKAGE
-#define PACKAGE_VERSION             NS_VERSION
-#define PACKAGE_BUGREPORT           "naviserver-devel@lists.sourceforge.net"
-#define TIME_T_MAX                  LONG_MAX
-
-typedef unsigned long long int uint64_t;
-typedef unsigned long int uintmax_t;
-typedef long int intmax_t;
-#endif
+# ifndef HAVE_CONFIG_H
+#  define F_OK                        0
+#  define W_OK                        2
+#  define R_OK                        4
+#  define X_OK                        R_OK
+#  define va_copy(dst,src)            ((void)((dst) = (src)))
+#  define USE_TCLVFS                  1
+#  define USE_THREAD_ALLOC            1
+#  define VERSION                     NS_PATCH_LEVEL
+#  define _LARGEFILE64_SOURCE         1
+#  define _THREAD_SAFE                1
+#  define TCL_THREADS                 1
+#  define HAVE_GETADDRINFO            1
+#  define HAVE_GETNAMEINFO            1
+#  define HAVE_STRUCT_STAT64          1
+#  define PACKAGE                     "naviserver"
+#  define PACKAGE_NAME                "NaviServer"
+#  define PACKAGE_STRING              PACKAGE_NAME " " NS_PATCH_LEVEL
+#  define PACKAGE_TAG                 PACKAGE_STRING
+#  define PACKAGE_TARNAME             PACKAGE
+#  define PACKAGE_VERSION             NS_VERSION
+#  define PACKAGE_BUGREPORT           "naviserver-devel@lists.sourceforge.net"
+#  define TIME_T_MAX                  LONG_MAX
+# endif
 
 /*
  * The following structure defines an I/O scatter/gather buffer for WIN32.
  */
 
 struct iovec {
-    u_long      iov_len;     /* the length of the buffer */
+    size_t      iov_len;     /* the length of the buffer */
     char FAR *  iov_base;    /* the pointer to the buffer */
 };
 
@@ -173,14 +181,14 @@ struct iovec {
  * The following is for supporting our own poll() emulation.
  */
 
-#define POLLIN                      0x0001
-#define POLLPRI                     0x0002
-#define POLLOUT                     0x0004
-#define POLLERR                     0x0008
-#define POLLHUP                     0x0010
+# define POLLIN                      0x0001
+# define POLLPRI                     0x0002
+# define POLLOUT                     0x0004
+# define POLLERR                     0x0008
+# define POLLHUP                     0x0010
 
 struct pollfd {
-    int            fd;
+    NS_SOCKET      fd;
     unsigned short events;
     unsigned short revents;
 };
@@ -195,8 +203,10 @@ struct dirent {
 
 typedef struct DIR_ *DIR;
 
-#else
-
+# else
+/*
+ * Not windows
+ */
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/time.h>
@@ -217,78 +227,83 @@ typedef struct DIR_ *DIR;
 #include <sys/mman.h>
 #include <poll.h>
 
-#if defined(HAVE_SYS_UIO_H)
-#include <sys/uio.h>
-#elif defined(HAVE_UIO_H)
-#include <uio.h>
-#endif
+#define NS_SOCKET	int
 
-#ifdef HAVE_NETINET_TCP_H
-#include <netinet/tcp.h>
-#endif
+# if defined(HAVE_SYS_UIO_H)
+#  include <sys/uio.h>
+# elif defined(HAVE_UIO_H)
+#  include <uio.h>
+# endif
 
-#ifdef __linux
-#include <sys/prctl.h>
-#endif
+# ifdef HAVE_NETINET_TCP_H
+#  include <netinet/tcp.h>
+# endif
 
-#ifdef __hp
-#define seteuid(i) setresuid((-1),(i),(-1))
-#endif
+# ifdef __linux
+#  include <sys/prctl.h>
+# endif
 
-#ifdef __sun
-#include <sys/filio.h>
-#include <sys/systeminfo.h>
-#define gethostname(b,s) (!(sysinfo(SI_HOSTNAME, b, s) > 0))
-#endif
+# ifdef __hp
+#  define seteuid(i) setresuid((-1),(i),(-1))
+# endif
 
-#ifdef __unixware
-#include <sys/filio.h>
-#endif
+# ifdef __sun
+#  include <sys/filio.h>
+#  include <sys/systeminfo.h>
+#  define gethostname(b,s) (!(sysinfo(SI_HOSTNAME, b, s) > 0))
+# endif
 
-#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#define _SGI_MP_SOURCE
-#endif
+# ifdef __unixware
+#  include <sys/filio.h>
+# endif
 
-#if defined(__sun) && !defined(_POSIX_PTHREAD_SEMANTICS)
-#define _POSIX_PTHREAD_SEMANTICS
-#endif
+# if defined(__sgi) && !defined(_SGI_MP_SOURCE)
+#  define _SGI_MP_SOURCE
+# endif
 
-#ifdef __OpenBSD__
-#ifndef ENOTSUP
+# if defined(__sun) && !defined(_POSIX_PTHREAD_SEMANTICS)
+#  define _POSIX_PTHREAD_SEMANTICS
+# endif
+
+# ifdef __OpenBSD__
+#  ifndef ENOTSUP
 /*
  * Workaround until we have ENOTSUP in errno.h
  */
-#define ENOTSUP                     EOPNOTSUPP
-#endif
-#endif
+#   define ENOTSUP                     EOPNOTSUPP
+#  endif
+# endif
 
-#define O_TEXT                      0
-#define O_BINARY                    0
-#define SOCKET                      int
-#define INVALID_SOCKET              (-1)
-#define SOCKET_ERROR                (-1)
+# define O_TEXT                      0
+# define O_BINARY                    0
 
-#define NS_SIGHUP                   SIGHUP
-#define NS_SIGINT                   SIGINT
-#define NS_SIGQUIT                  SIGQUIT
-#define NS_SIGPIPE                  SIGPIPE
-#define NS_SIGTERM                  SIGTERM
+# define INVALID_SOCKET              (-1)
+# define SOCKET_ERROR                (-1)
 
-#define DEVNULL	                    "/dev/null"
+# define NS_SIGHUP                   SIGHUP
+# define NS_SIGINT                   SIGINT
+# define NS_SIGQUIT                  SIGQUIT
+# define NS_SIGPIPE                  SIGPIPE
+# define NS_SIGTERM                  SIGTERM
+
+# define DEVNULL	                    "/dev/null"
 
 # if __GNUC__ >= 4
 #  define NS_EXPORT                 __attribute__ ((visibility ("default")))
 # else
 #  define NS_EXPORT
 # endif /* __GNUC__ >= 4 */
-#define NS_IMPORT
-#if defined(NSTHREAD_EXPORTS)
-#define NS_STORAGE_CLASS            NS_EXPORT
-#else
-#define NS_STORAGE_CLASS            NS_IMPORT
-#endif
-
+# define NS_IMPORT
+# if defined(NSTHREAD_EXPORTS)
+#  define NS_STORAGE_CLASS            NS_EXPORT
+# else
+#  define NS_STORAGE_CLASS            NS_IMPORT
+# endif
 #endif /* _WIN32 */
+
+/*
+ * Common part, Unix and Windows
+ */
 
 #include "tcl.h"
 #include <limits.h>
@@ -314,6 +329,18 @@ typedef struct DIR_ *DIR;
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
+
+#ifdef _WIN32
+# ifndef EINPROGRESS
+#  define EINPROGRESS                WSAEINPROGRESS
+# endif
+# ifndef EWOULDBLOCK
+#  define EWOULDBLOCK                WSAEWOULDBLOCK
+# endif
+# ifndef ETIMEDOUT
+#  define ETIMEDOUT                 1
+# endif
 #endif
 
 #ifndef S_ISREG
@@ -355,19 +382,19 @@ typedef struct DIR_ *DIR;
  */
 
 #ifndef UIO_MAXIOV
-  #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
-    #define UIO_MAXIOV 1024
-  #elif defined(__sun)
-    #ifndef IOV_MAX
-      #define UIO_MAXIOV 16
-    #else
-      #define UIO_MAXIOV IOV_MAX
-    #endif
-  #elif defined(IOV_MAX)
-      #define UIO_MAXIOV IOV_MAX
-  #else
-    #define UIO_MAXIOV 16
-  #endif
+# if defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
+#  define UIO_MAXIOV 1024
+# elif defined(__sun)
+#  ifndef IOV_MAX
+#   define UIO_MAXIOV 16
+#  else
+#   define UIO_MAXIOV IOV_MAX
+#  endif
+# elif defined(IOV_MAX)
+#  define UIO_MAXIOV IOV_MAX
+# else
+#  define UIO_MAXIOV 16
+# endif
 #endif
 
 /*
@@ -376,11 +403,11 @@ typedef struct DIR_ *DIR;
  */
 
 #ifndef MIN
-#define MIN(a,b)                    (((a)<(b))?(a):(b))
+# define MIN(a,b)                    (((a)<(b))?(a):(b))
 #endif
 
 #ifndef MAX
-#define MAX(a,b)                    (((a)>(b))?(a):(b))
+# define MAX(a,b)                    (((a)>(b))?(a):(b))
 #endif
 
 /*
@@ -421,49 +448,49 @@ typedef struct DIR_ *DIR;
  */
 
 #ifndef PRIdPTR
-#if defined(_LP64) || defined(_I32LPx)
-#define PRIdPTR                     "ld"
-#else
-#define PRIdPTR                     "d"
-#endif
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIdPTR                     "ld"
+# else
+#  define PRIdPTR                     "d"
+# endif
 #endif
 
 #ifndef PRIoPTR
-#if defined(_LP64) || defined(_I32LPx)
-#define PRIoPTR                     "lo"
-#else
-#define PRIoPTR                     "o"
-#endif
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIoPTR                     "lo"
+# else
+#  define PRIoPTR                     "o"
+# endif
 #endif
 
 #ifndef PRIiPTR
-#if defined(_LP64) || defined(_I32LPx)
-#define PRIiPTR                     "li"
-#else
-#define PRIiPTR                     "i"
-#endif
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIiPTR                     "li"
+# else
+#  define PRIiPTR                     "i"
+# endif
 #endif
 
 #ifndef PRIuPTR
-#if defined(_LP64) || defined(_I32LPx)
-#define PRIuPTR                     "lu"
-#else
-#define PRIuPTR                     "u"
-#endif
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIuPTR                     "lu"
+# else
+#  define PRIuPTR                     "u"
+# endif
 #endif
 
 #ifndef PRIxPTR
-#if defined(_LP64) || defined(_I32LPx)
-#define PRIxPTR                     "lx"
-#else
-#define PRIxPTR                     "x"
-#endif
+# if defined(_LP64) || defined(_I32LPx)
+#  define PRIxPTR                     "lx"
+# else
+#  define PRIxPTR                     "x"
+# endif
 #endif
 
 #ifdef __cplusplus
-#define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
+# define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
 #else
-#define NS_EXTERN                   extern NS_STORAGE_CLASS
+# define NS_EXTERN                   extern NS_STORAGE_CLASS
 #endif
 
 /*
@@ -496,7 +523,7 @@ typedef struct Ns_Sema_     *Ns_Sema;
 typedef struct Ns_RWLock_   *Ns_RWLock;
 
 typedef struct Ns_Time {
-    time_t  sec;
+    long    sec;
     long    usec;
 } Ns_Time;
 
@@ -533,7 +560,7 @@ NS_EXTERN void ns_free(void *buf);
 NS_EXTERN void *ns_realloc(void *buf, size_t size) NS_GNUC_WARN_UNUSED_RESULT;
 NS_EXTERN char *ns_strdup(const char *string) NS_GNUC_MALLOC;
 NS_EXTERN char *ns_strcopy(const char *string) NS_GNUC_MALLOC;
-NS_EXTERN char *ns_strncopy(const char *string, int size) NS_GNUC_MALLOC;
+NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
 
 /*
  * mutex.c:
@@ -628,7 +655,7 @@ NS_EXTERN char *Ns_ThreadGetName(void);
 NS_EXTERN char *Ns_ThreadGetParent(void);
 NS_EXTERN long Ns_ThreadStackSize(long size);
 NS_EXTERN void Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc);
-NS_EXTERN void Ns_ThreadGetThreadInfo(unsigned int *maxStackSize, unsigned int *estimatedSize);
+NS_EXTERN void Ns_ThreadGetThreadInfo(size_t *maxStackSize, size_t *estimatedSize);
 
 
 /*
@@ -638,7 +665,7 @@ NS_EXTERN void Ns_ThreadGetThreadInfo(unsigned int *maxStackSize, unsigned int *
 NS_EXTERN void Ns_GetTime(Ns_Time *timePtr);
 NS_EXTERN void Ns_AdjTime(Ns_Time *timePtr);
 NS_EXTERN int  Ns_DiffTime(Ns_Time *t1, Ns_Time *t0, Ns_Time *resultPtr);
-NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec);
+NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, long sec, long usec);
 NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr);
 
 /*

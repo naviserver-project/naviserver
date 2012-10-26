@@ -236,7 +236,8 @@ NsParseAuth(Conn *connPtr, char *auth)
 {
     register char *p, *q, *v;
     char           save, save2;
-    int            size, idx;
+    int            idx;
+    size_t         size;
 
     if (connPtr->auth == NULL) {
         connPtr->auth = Ns_SetCreate(NULL);
@@ -260,7 +261,7 @@ NsParseAuth(Conn *connPtr, char *auth)
             }
 
             size = strlen(q) + 3;
-            v = ns_malloc((size_t) size);
+            v = ns_malloc(size);
             size = Ns_HtuuDecode(q, (unsigned char *) v, size);
             v[size] = '\0';
             q = strchr(v, ':');

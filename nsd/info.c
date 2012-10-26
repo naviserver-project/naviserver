@@ -35,8 +35,8 @@
 
 #include "nsd.h"
 
-extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-extern char *nsBuildDate;
+EXTERN void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+NS_EXTERN char *nsBuildDate;
 
 /*
  * Static variables defined in this file.
@@ -276,7 +276,7 @@ Ns_InfoUptime(void)
  *----------------------------------------------------------------------
  */
 
-int
+time_t
 Ns_InfoBootTime(void)
 {
     return nsconf.boot_t;
@@ -592,7 +592,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         return TCL_OK;
 
     case IBoottimeIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoBootTime()));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Ns_InfoBootTime()));
         return TCL_OK;
 
     case IPidIdx:

@@ -1071,8 +1071,8 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST 
 static int
 SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj)
 {
-    int len;
-    char *name = key, *value = Tcl_GetString(valueObj);
+    size_t  len;
+    char   *name = key, *value = Tcl_GetString(valueObj);
 
     if (name[0] == '-' || name[0] == '?') {
         name++;
@@ -1083,7 +1083,7 @@ SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj)
         value++;
         len -=2;
 
-        if (Tcl_EvalEx(interp, value, len, 0) == TCL_ERROR) {
+        if (Tcl_EvalEx(interp, value, (int)len, 0) == TCL_ERROR) {
             return TCL_ERROR;
         }
         valueObj = Tcl_GetObjResult(interp);

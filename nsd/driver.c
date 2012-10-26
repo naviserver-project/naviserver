@@ -106,7 +106,7 @@ static Ns_ThreadProc DriverThread;
 static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 
-static SOCKET DriverListen(Driver *drvPtr);
+static NS_SOCKET DriverListen(Driver *drvPtr);
 static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr);
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
 static int DriverKeep(Sock *sockPtr);
@@ -119,7 +119,7 @@ static void  SockPrepare(Sock *sockPtr);
 static void  SockRelease(Sock *sockPtr, int reason, int err);
 static void  SockError(Sock *sockPtr, int reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code, char *msg);
-static void  SockTrigger(SOCKET sock);
+static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
 static void  SockClose(Sock *sockPtr, int keep);
 static int   SockRead(Sock *sockPtr, int spooler);
@@ -132,7 +132,7 @@ static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr);
 static void  PollCreate(PollData *pdata);
 static void  PollFree(PollData *pdata);
 static void  PollReset(PollData *pdata);
-static int   PollSet(PollData *pdata, SOCKET sock, int type, Ns_Time *timeoutPtr);
+static int   PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr);
 static int   PollWait(PollData *pdata, int waittime);
 
 /*
@@ -414,7 +414,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     if (spPtr->threads > 0) {
         Ns_Log(Notice, "%s: enable %d spooler thread(s) "
-               "for uploads >= %d bytes", module,
+               "for uploads >= %ld bytes", module,
                spPtr->threads, drvPtr->readahead);
         for (i = 0; i < spPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
@@ -763,10 +763,10 @@ NsSockClose(Sock *sockPtr, int keep)
  *----------------------------------------------------------------------
  */
 
-static SOCKET
+static NS_SOCKET
 DriverListen(Driver *drvPtr)
 {
-    SOCKET sock;
+    NS_SOCKET sock;
 
     sock = (*drvPtr->listenProc)((Ns_Driver *) drvPtr,
                                  drvPtr->bindaddr,
@@ -1053,7 +1053,7 @@ DriverThread(void *arg)
                 sockPtr = sockPtr->nextPtr;
             }
             if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
-                pollto = diff.sec * 1000 + diff.usec / 1000;
+	        pollto = (int)(diff.sec * 1000 + diff.usec / 1000);
             } else {
                 pollto = 0;
             }
@@ -1356,7 +1356,7 @@ PollReset(PollData *pdata)
 }
 
 static int
-PollSet(PollData *pdata, SOCKET sock, int type, Ns_Time *timeoutPtr)
+PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
 {
     /*
      * Grow the pfds array if necessary.
@@ -1841,7 +1841,7 @@ SockSendResponse(Sock *sockPtr, int code, char *msg)
  */
 
 static void
-SockTrigger(SOCKET fd)
+SockTrigger(NS_SOCKET fd)
 {
     if (send(fd, "", 1, 0) != 1) {
         char * errstr = ns_sockstrerror(ns_sockerrno);
@@ -2009,7 +2009,8 @@ SockRead(Sock *sockPtr, int spooler)
 
     struct iovec  buf;
     char         tbuf[4096];
-    Tcl_WideInt  len, nread, n;
+    size_t       len, nread;
+    ssize_t      n;
 
     /*
      * Initialize Request structure
@@ -2038,7 +2039,7 @@ SockRead(Sock *sockPtr, int spooler)
     len = bufPtr->length;
     n = len + nread;
     if (n > drvPtr->maxinput) {
-        n = drvPtr->maxinput;
+      n = (size_t)drvPtr->maxinput;
         nread = n - len;
         if (nread == 0) {
             Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
@@ -2094,7 +2095,7 @@ SockRead(Sock *sockPtr, int spooler)
         buf.iov_base = tbuf;
         buf.iov_len = MIN(nread, sizeof(tbuf));
     } else {
-        Tcl_DStringSetLength(bufPtr, len + nread);
+        Tcl_DStringSetLength(bufPtr, (int)(len + nread));
         buf.iov_base = bufPtr->string + reqPtr->woff;
         buf.iov_len = nread;
     }
@@ -2110,10 +2111,10 @@ SockRead(Sock *sockPtr, int spooler)
             return SOCK_WRITEERROR;
         }
     } else {
-        Tcl_DStringSetLength(bufPtr, len + n);
+      Tcl_DStringSetLength(bufPtr, (int)(len + n));
     }
 
-    reqPtr->woff  += n;
+    reqPtr->woff  += (off_t)n;
     reqPtr->avail += n;
 
     /*
@@ -2126,7 +2127,7 @@ SockRead(Sock *sockPtr, int spooler)
 
     n = SockParse(sockPtr, spooler);
 
-    return n;
+    return (int)n;
 }
 
 /*----------------------------------------------------------------------
@@ -2215,7 +2216,7 @@ SockParse(Sock *sockPtr, int spooler)
          * Update next read pointer to end of this line.
          */
 
-        cnt = e - s + 1;
+        cnt = (int)(e - s) + 1;
         reqPtr->roff  += cnt;
         reqPtr->avail -= cnt;
         if (e > s && e[-1] == '\r') {
@@ -2249,6 +2250,7 @@ SockParse(Sock *sockPtr, int spooler)
             s = Ns_SetIGet(reqPtr->headers, "content-length");
             if (s == NULL) {
                 s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
+
                 if (s != NULL) {
                     /* Lower case is in the standard, capitalized by Mac OS X */
                     if (strcmp(s,"chunked") == 0 || strcmp(s,"Chunked") == 0 ) {
@@ -2261,6 +2263,7 @@ SockParse(Sock *sockPtr, int spooler)
                         /* We need expectedLength for safely terminating read loop */
 
                         s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
+
                         if (s && Ns_StrToWideInt(s, &expected) == NS_OK && expected > 0) {
                             reqPtr->expectedLength = expected;
                         }
@@ -2277,11 +2280,11 @@ SockParse(Sock *sockPtr, int spooler)
                  */
 
                 if (Ns_StrToWideInt(s, &length) == NS_OK && length > 0) {
-                    reqPtr->length = length;
+		    reqPtr->length = (size_t)length;
 		    /*
 		     * Handle too large input requests
 		     */
-                    if (reqPtr->length > drvPtr->maxinput) {
+                    if (reqPtr->length > (size_t)drvPtr->maxinput) {
                         Ns_Log(DriverDebug, "SockParse: request too large, length=%"
                                             TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d",
                                reqPtr->length, drvPtr->maxinput);
@@ -2309,7 +2312,7 @@ SockParse(Sock *sockPtr, int spooler)
 			sockPtr->keep = 0;
 			
                     }
-                    reqPtr->contentLength = length;
+                    reqPtr->contentLength = (size_t)length;
                 }
 
             }
@@ -2393,7 +2396,7 @@ SockParse(Sock *sockPtr, int spooler)
             return SOCK_MORE;
         }
         /* ChunkedDecode has enough data */
-        reqPtr->length = currentContentLength;
+        reqPtr->length = (size_t)currentContentLength;
     }
 
     if (reqPtr->coff > 0 && reqPtr->length <= reqPtr->avail) {
@@ -2447,7 +2450,7 @@ SockParse(Sock *sockPtr, int spooler)
                 return SOCK_ERROR;
             }
             reqPtr->content = sockPtr->taddr;
-            Ns_Log(Debug, "spooling content to file: readahead=%d, filesize=%i",
+            Ns_Log(Debug, "spooling content to file: readahead=%ld, filesize=%i",
                    drvPtr->readahead, (int)sockPtr->tsize);
 #endif
         } else {
@@ -2955,7 +2958,7 @@ WriterThread(void *arg)
                 if (status == NS_OK) {
                     vbuf.iov_len = curPtr->bufsize;
                     vbuf.iov_base = (void *) curPtr->buf;
-                    n = NsDriverSend(curPtr->sockPtr, &vbuf, 1, 0);
+                    n = (int)NsDriverSend(curPtr->sockPtr, &vbuf, 1, 0);
                     if (n < 0) {
                         err = errno;
                         status = NS_ERROR;
@@ -3063,7 +3066,7 @@ SockWriterRelease(WriterSock *wrSockPtr, int reason, int err)
 }
 
 int
-NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd,
+NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
               const char *data)
 {
     Conn          *connPtr = (Conn*)conn;
@@ -3085,7 +3088,7 @@ NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int 
         return NS_ERROR;
     }
 
-    if (nsend < wrPtr->maxsize) {
+    if (nsend < (size_t)wrPtr->maxsize) {
         Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%"
                             TCL_LL_MODIFIER "d < %d)",
                nsend, wrPtr->maxsize);
@@ -3281,7 +3284,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
 
         if (offset > 0) {
-            lseek(fd, offset, SEEK_SET);
+	  lseek(fd, (off_t)offset, SEEK_SET);
         }
 
         /*
@@ -3292,7 +3295,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(name));
         }
 
-        rc = NsWriterQueue(conn, size, NULL, NULL, fd, NULL);
+        rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, fd, NULL);
 
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         close(fd);

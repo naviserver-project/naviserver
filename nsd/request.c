@@ -280,7 +280,7 @@ done:
 char *
 Ns_SkipUrl(Ns_Request *request, int n)
 {
-    int skip;
+    size_t skip;
 
     if (n > request->urlc) {
         return NULL;

@@ -1003,7 +1003,7 @@ MakePath(char *file)
          * Make sure we have valid path on all platforms
          */
 
-        obj = Tcl_NewStringObj(nsconf.nsd, str - nsconf.nsd);
+        obj = Tcl_NewStringObj(nsconf.nsd, (int)(str - nsconf.nsd));
         Tcl_AppendStringsToObj(obj, "/", file, NULL);
 
         Tcl_IncrRefCount(obj);

@@ -203,12 +203,12 @@ typedef struct WriterSock {
     struct WriterSock *nextPtr;
     struct Sock       *sockPtr;
     char              *data;
-    int                fd;
+    NS_SOCKET          fd;
     int                keep;
     Tcl_WideInt        nread;
     Tcl_WideInt        nsent;
-    Tcl_WideInt        size;
-    Tcl_WideInt        bufsize;
+    size_t             size;
+    size_t             bufsize;
     unsigned int       flags;
     unsigned char      *buf;
 } WriterSock;
@@ -222,7 +222,7 @@ typedef struct SpoolerQueue {
     struct SpoolerQueue *nextPtr;
     void                *sockPtr;     /* List of submitted socket structures */
     void                *curPtr;      /* List of processed socket structures */
-    SOCKET               pipe[2];     /* Trigger to wakeup WriterThread/SpoolerThread */
+    NS_SOCKET            pipe[2];     /* Trigger to wakeup WriterThread/SpoolerThread */
     Ns_Mutex             lock;        /* Lock around spooled list */
     Ns_Cond              cond;        /* Cond for stopped flag */
     Ns_Thread            thread;      /* Running WriterThread/Spoolerthread */
@@ -297,9 +297,9 @@ typedef struct Request {
 
     char *next;                 /* Next read offset */
     char *content;              /* Start of content */
-    Tcl_WideInt length;         /* Length of content */
-    Tcl_WideInt contentLength;  /* Provided content length */
-    Tcl_WideInt avail;          /* Bytes avail in buffer */
+    size_t length;              /* Length of content */
+    size_t contentLength;       /* Provided content length */
+    size_t avail;                /* Bytes avail in buffer */
     int leadblanks;             /* Number of leading blank lines read */
 
    /*
@@ -314,9 +314,9 @@ typedef struct Request {
      * the buffer read-ahead process.
      */
 
-    int woff;                   /* Next write buffer offset */
-    int roff;                   /* Next read buffer offset */
-    int coff;                   /* Content buffer offset */
+    off_t woff;                   /* Next write buffer offset */
+    off_t roff;                   /* Next read buffer offset */
+    off_t coff;                   /* Content buffer offset */
     Tcl_DString buffer;         /* Request and content buffer */
 
 } Request;
@@ -378,7 +378,7 @@ typedef struct Driver {
     int keepwait;                       /* Keepalive timeout */
     int keepmaxdownloadsize;            /* When set, allow keepalive only for download requests up to this size */
     int keepmaxuploadsize;              /* When set, allow keepalive only for upload requests up to this size */
-    SOCKET sock;                        /* Listening socket */
+    NS_SOCKET sock;                     /* Listening socket */
     int pidx;                           /* poll() index */
     char *bindaddr;                     /* Numerical listen address */
     int port;                           /* Port in location */
@@ -388,7 +388,7 @@ typedef struct Driver {
     char *uploadpath;                   /* Path where uploaded files will be spooled */
     int maxline;                        /* Maximum request line size */
     int maxheaders;                     /* Maximum number of request headers */
-    int readahead;                      /* Maximum request size in memory */
+    Tcl_WideInt readahead;              /* Maximum request size in memory */
     int queuesize;                      /* Current number of sockets in the queue */
     int maxqueuesize;                   /* Maximum number of sockets in the queue */
     int acceptsize;                     /* Number requests to accept at once */
@@ -399,7 +399,7 @@ typedef struct Driver {
     Ns_Mutex lock;                      /* Lock to protect lists below. */
     Ns_Cond cond;                       /* Cond to signal reader threads,
                                          * driver query, startup, and shutdown. */
-    SOCKET trigger[2];                  /* Wakeup trigger pipe. */
+    NS_SOCKET trigger[2];               /* Wakeup trigger pipe. */
 
     struct Sock *sockPtr;               /* Free list of Sock structures */
     struct Sock *closePtr;              /* First conn ready for graceful close */
@@ -423,7 +423,7 @@ typedef struct Sock {
      */
 
     struct Driver      *drvPtr;
-    SOCKET              sock;
+    NS_SOCKET           sock;
     struct sockaddr_in  sa;              /* Actual peer address */
     void               *arg;             /* Driver context. */
 
@@ -458,7 +458,7 @@ typedef struct Sock {
 typedef struct FormFile {
     Ns_Set *hdrs;
     off_t   off;
-    off_t   len;
+    size_t  len;
 } FormFile;
 
 /*
@@ -504,7 +504,7 @@ typedef struct Conn {
     Ns_Set *outputheaders;
     Ns_Set *auth;
 
-    int contentLength;
+    size_t contentLength;
     int flags;
 
     /*
@@ -968,7 +968,7 @@ extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
-extern int NsWriterQueue(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
+extern int NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
                          FILE *fp, int fd, const char *data);
 
 extern void NsFreeAdp(NsInterp *itPtr);
@@ -1148,7 +1148,7 @@ extern void NsStopSockCallbacks(void);
 extern void NsStopScheduledProcs(void);
 extern void NsGetBuf(char **bufPtr, int *sizePtr);
 
-extern char *NsFindCharset(CONST char *mimetype, int *lenPtr);
+extern char *NsFindCharset(CONST char *mimetype, size_t *lenPtr);
 extern int NsEncodingIsUtf8(Tcl_Encoding encoding);
 
 extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,

@@ -502,7 +502,7 @@ static void
 AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
 {
     AdpCode *codePtr = parsePtr->codePtr;
-    int      len;
+    ssize_t   len;
 
     if (s >= e) {
         return;
@@ -514,7 +514,7 @@ AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
         switch (type) {
         case 'S':
             Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
-            Tcl_DStringAppend(&codePtr->text, s, e - s);
+            Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
             break;
 
         case 't':
@@ -526,7 +526,7 @@ AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
             break;
 
         default:
-            Tcl_DStringAppend(&codePtr->text, s, e - s);
+	  Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
         }
         Tcl_DStringAppend(&codePtr->text, "\n", 1);
 
@@ -538,7 +538,7 @@ AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
             len += APPEND_LEN;
             Tcl_DStringAppend(&codePtr->text, APPEND, APPEND_LEN);
         }
-        Tcl_DStringAppend(&codePtr->text, s, e - s);
+        Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
         if (type != 't') {
             ++codePtr->nscripts;
             len = -len;
@@ -584,7 +584,7 @@ GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr)
         ++s;
     }
     Tcl_DStringTrunc(dsPtr, 0);
-    Tcl_DStringAppend(dsPtr, t, s - t);
+    Tcl_DStringAppend(dsPtr, t, (int)(s - t));
     if (aPtr != NULL) {
     while (s < e && isspace(UCHAR(*s))) {
         ++s;

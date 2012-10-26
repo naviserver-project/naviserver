@@ -40,8 +40,8 @@
  */
 
 typedef struct Progress {
-    unsigned long  current;   /* Uploaded so far. */
-    unsigned long  size;      /* Total bytes to upload. */
+    size_t  current;          /* Uploaded so far. */
+    size_t  size;             /* Total bytes to upload. */
     Tcl_HashEntry *hPtr;      /* Our entry in the url table. */
 } Progress;
 
@@ -57,7 +57,7 @@ static Ns_Callback ResetProgress;
  * Static variables defined in this file.
  */
 
-static int           progressMinSize; /* Config: progress enabled? */
+static size_t        progressMinSize; /* Config: progress enabled? */
 
 static Ns_Sls        slot;            /* Per-socket progress slot. */
 
@@ -92,7 +92,7 @@ NsConfigProgress(void)
         Ns_SlsAlloc(&slot, ResetProgress);
         Tcl_InitHashTable(&urlTable, TCL_STRING_KEYS);
         Ns_MutexSetName(&lock, "ns:progress");
-        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %d bytes",
+        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %ld bytes",
                progressMinSize);
     }
 }
@@ -139,9 +139,9 @@ NsTclProgressObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
             resObj = Tcl_GetObjResult(interp);
 
             if (Tcl_ListObjAppendElement(interp, resObj,
-                                         Tcl_NewLongObj(pPtr->current)) != TCL_OK
+                                         Tcl_NewWideIntObj(pPtr->current)) != TCL_OK
                 || Tcl_ListObjAppendElement(interp, resObj,
-                                            Tcl_NewLongObj(pPtr->size)) != TCL_OK) {
+                                            Tcl_NewWideIntObj(pPtr->size)) != TCL_OK) {
                 Ns_MutexUnlock(&lock);
                 return TCL_ERROR;
             }

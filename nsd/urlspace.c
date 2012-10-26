@@ -1377,7 +1377,8 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, int flags,
     Channel    *channelPtr;
     Ns_DString  dsFilter;
     char       *p;
-    int         l, depth;
+    int         depth;
+    size_t      l;
 
     depth = 0;
     Ns_DStringInit(&dsFilter);
@@ -1467,14 +1468,10 @@ static void *
 JunctionFind(Junction *juncPtr, char *seq, int fast)
 {
     Channel *channelPtr;
-    char *p;
-    int   l;
-    int   i, n;
-    void *data;
-    int   depth;
-    int   doit;
-
-    n = 0;
+    char    *p;
+    size_t   l, i;
+    int      depth, doit, n = 0;
+    void    *data;
 
     /*
      * After this loop, p will point at the last element in the sequence.
@@ -1515,10 +1512,10 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0; i < l; i++) {
-        channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
+      channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     for (i = (l - 1); i >= 0; i--) {
-        channelPtr = Ns_IndexEl(&juncPtr->byname, i);
+      channelPtr = Ns_IndexEl(&juncPtr->byname, (int)i);
 #endif
         if (fast) {
             doit = STREQ(p, channelPtr->filter);
@@ -1601,11 +1598,10 @@ static void *
 JunctionFindExact(Junction *juncPtr, char *seq, int flags, int fast)
 {
     Channel *channelPtr;
-    char *p;
-    int   l;
-    int   i;
-    int   depth = 0;
-    void *data = NULL;
+    char    *p;
+    size_t  l, i;
+    int     depth = 0;
+    void   *data = NULL;
 
     /*
      * Set p to the last element of the sequence, and
@@ -1625,12 +1621,12 @@ JunctionFindExact(Junction *juncPtr, char *seq, int flags, int fast)
     l = Ns_IndexCount(&juncPtr->byuse);
 
     for (i = 0; i < l; i++) {
-        channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
+        channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     l = Ns_IndexCount(&juncPtr->byname);
 
     for (i = (l - 1); i >= 0; i--) {
-        channelPtr = Ns_IndexEl(&juncPtr->byname, i);
+        channelPtr = Ns_IndexEl(&juncPtr->byname, (int)i);
 #endif
         if (STREQ(p, channelPtr->filter)) {
 
@@ -1653,10 +1649,10 @@ JunctionFindExact(Junction *juncPtr, char *seq, int flags, int fast)
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0; i < l; i++) {
-        channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
+      channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     for (i = (l - 1); i >= 0; i--) {
-        channelPtr = Ns_IndexEl(&juncPtr->byname, i);
+      channelPtr = Ns_IndexEl(&juncPtr->byname, (int)i);
 #endif
         if (STREQ("*", channelPtr->filter)) {
             data = TrieFindExact(&channelPtr->trie, seq, flags);
@@ -1691,11 +1687,10 @@ static void *
 JunctionDeleteNode(Junction *juncPtr, char *seq, int flags)
 {
     Channel *channelPtr;
-    char *p;
-    int   l;
-    int   i;
-    int   depth = 0;
-    void *data = NULL;
+    char    *p;
+    size_t   l, i;
+    int      depth = 0;
+    void    *data = NULL;
 
     /*
      * Set p to the last element of the sequence, and
@@ -1709,11 +1704,11 @@ JunctionDeleteNode(Junction *juncPtr, char *seq, int flags)
 #ifndef __URLSPACE_OPTIMIZE__
     l = Ns_IndexCount(&juncPtr->byuse);
     for (i = 0; (i < l) && (data == NULL); i++) {
-        channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
+      channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     l = Ns_IndexCount(&juncPtr->byname);
     for (i = (l - 1); (i >= 0) && (data == NULL); i--) {
-        channelPtr = Ns_IndexEl(&juncPtr->byname, i);
+      channelPtr = Ns_IndexEl(&juncPtr->byname, (int)i);
 #endif
         if (depth == 2 && STREQ(p, channelPtr->filter)) {
 
@@ -1766,7 +1761,8 @@ static void
 MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url)
 {
     CONST char *p;
-    int         done, l;
+    int         done;
+    size_t      l;
 
     Ns_DStringNAppend(dsPtr, method, (int)(strlen(method) + 1));
 
@@ -1786,7 +1782,7 @@ MkSeq(Ns_DString *dsPtr, CONST char *method, CONST char *url)
                 done = 1;
             }
 
-            Ns_DStringNAppend(dsPtr, url, l++);
+            Ns_DStringNAppend(dsPtr, url, (int)l++);
             Ns_DStringNAppend(dsPtr, "\0", 1);
             url += l;
         } else {

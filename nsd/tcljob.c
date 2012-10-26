@@ -975,9 +975,9 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                     || AppendFieldDouble(interp, jobFieldList, "time",
                                          delta) != TCL_OK
                     || AppendFieldLong(interp, jobFieldList, "starttime",
-                                       jobPtr->startTime.sec) != TCL_OK
+                                       (long)jobPtr->startTime.sec) != TCL_OK
                     || AppendFieldLong(interp, jobFieldList, "endtime",
-                                       jobPtr->endTime.sec) != TCL_OK) {
+                                       (long)jobPtr->endTime.sec) != TCL_OK) {
                     Tcl_DecrRefCount(jobList);
                     Tcl_DecrRefCount(jobFieldList);
                     ReleaseQueue(queuePtr, 0);

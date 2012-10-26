@@ -261,7 +261,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             }
             itPtr->adp.bufsize = intVal;
         }
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(size));
         break;
 
     case CChanIdx:
@@ -833,7 +833,7 @@ NsTclAdpInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     result = Tcl_NewListObj(0, NULL);
     Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(framePtr->file, -1));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(framePtr->size));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewLongObj(framePtr->mtime));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(framePtr->mtime));
     Tcl_SetObjResult(interp, result);
 
     return TCL_OK;

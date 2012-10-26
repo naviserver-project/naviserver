@@ -156,7 +156,7 @@ Ns_DiffTime(Ns_Time *t1, Ns_Time *t0, Ns_Time *diffPtr)
  */
 
 void
-Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec)
+Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)
 {
     timePtr->usec += usec;
     timePtr->sec += sec;

@@ -74,7 +74,7 @@ typedef struct {
  */
 
 typedef struct Search {
-    long               handle;
+    intptr_t           handle;
     struct _finddata_t fdata;
     struct dirent      ent;
 } Search;
@@ -689,7 +689,8 @@ void
 NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
 {
     ThreadArg *argPtr;
-    unsigned   hdl, tid, flags;
+    unsigned   tid, flags;
+    uintptr_t  hdl;
 
     flags = (resultPtr ? CREATE_SUSPENDED : 0);
     argPtr = ns_malloc(sizeof(ThreadArg));

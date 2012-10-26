@@ -182,7 +182,7 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     }
     if (!isNew && !force) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_CacheGetValue(entry),
-                                                  Ns_CacheGetSize(entry)));
+                                                  (int)Ns_CacheGetSize(entry)));
     } else {
         Ns_Time start, end, diff;
 
@@ -221,7 +221,8 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 	    Ns_CacheDeleteEntry(entry);
         } else {
             status = TCL_OK;
-            SetEntry(cPtr, entry, Tcl_GetObjResult(interp), expPtr, diff.sec * 1000000 + diff.usec);
+            SetEntry(cPtr, entry, Tcl_GetObjResult(interp), expPtr, 
+		     (int)(diff.sec * 1000000 + diff.usec));
         }
         Ns_CacheBroadcast(cPtr->cache);
     }
@@ -352,7 +353,8 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
     valObj = Tcl_NewObj();
     if (!isNew) {
-        Tcl_SetStringObj(valObj, Ns_CacheGetValue(entry), Ns_CacheGetSize(entry));
+        Tcl_SetStringObj(valObj, Ns_CacheGetValue(entry), 
+			 (int)Ns_CacheGetSize(entry));
     }
     for (i = objc - nelements; i < objc; i++) {
         if (append) {
@@ -719,7 +721,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
     Ns_Time  time;
 
     string = Tcl_GetStringFromObj(valObj, &len);
-    if (cPtr->maxEntry > 0 && len > cPtr->maxEntry) {
+    if (cPtr->maxEntry > 0 && (size_t)len > cPtr->maxEntry) {
         Ns_CacheDeleteEntry(entry);
     } else {
         value = ns_malloc(len+1);

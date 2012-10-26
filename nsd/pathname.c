@@ -204,7 +204,7 @@ Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path)
 
             slash = strrchr(dsPtr->string, '/');
             if (slash != NULL) {
-                Ns_DStringSetLength(dsPtr, slash - dsPtr->string);
+	      Ns_DStringSetLength(dsPtr, (int)(slash - dsPtr->string));
             }
         } else if (part[0] != '\0' &&
                (part[0] != '.' || part[1] != '\0')) {

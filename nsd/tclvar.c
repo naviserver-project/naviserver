@@ -62,8 +62,8 @@ typedef struct Array {
  * Local functions defined in this file.
  */
 
-static void SetVar(Array *, CONST char *key, CONST char *value, int len);
-static void UpdateVar(Tcl_HashEntry *hPtr, CONST char *value, int len);
+static void SetVar(Array *, CONST char *key, CONST char *value, size_t len);
+static void UpdateVar(Tcl_HashEntry *hPtr, CONST char *value, size_t len);
 static int IncrVar(Array *arrayPtr, CONST char *key, int incr,
                    Tcl_WideInt *valuePtr);
 
@@ -710,7 +710,7 @@ Ns_VarExists(CONST char *server, CONST char *array, CONST char *key)
 
 int
 Ns_VarSet(CONST char *server, CONST char *array, CONST char *key,
-          CONST char *value, int len)
+          CONST char *value, size_t len)
 {
     NsServer      *servPtr;
     Array         *arrayPtr;
@@ -778,7 +778,7 @@ Ns_VarIncr(CONST char *server, CONST char *array, CONST char *key, int incr)
 
 int
 Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
-             CONST char *value, int len)
+             CONST char *value, size_t len)
 {
     NsServer      *servPtr;
     Array         *arrayPtr;
@@ -788,7 +788,7 @@ Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
 
     if ((servPtr = NsGetServer(server)) != NULL
         && (arrayPtr = LockArray(servPtr, array, 1)) != NULL) {
-        int oldLen, newLen;
+        size_t oldLen, newLen;
 
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
 
@@ -935,7 +935,7 @@ UnlockArray(Array *arrayPtr)
  */
 
 static void
-UpdateVar(Tcl_HashEntry *hPtr, CONST char *value, int len)
+UpdateVar(Tcl_HashEntry *hPtr, CONST char *value, size_t len)
 {
     char *oldString, *newString;
 
@@ -963,7 +963,7 @@ UpdateVar(Tcl_HashEntry *hPtr, CONST char *value, int len)
  */
 
 static void
-SetVar(Array *arrayPtr, CONST char *key, CONST char *value, int len)
+SetVar(Array *arrayPtr, CONST char *key, CONST char *value, size_t len)
 {
     Tcl_HashEntry *hPtr;
     int            isNew;

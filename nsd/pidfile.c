@@ -76,11 +76,11 @@ NsCreatePidFile(char *procname)
     	Ns_Log(Error, "pidfile: failed to set channel option '%s': '%s'",
                Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else {
-        int towrite;
+        size_t towrite;
 
         snprintf(buf, sizeof(buf), "%d\n", nsconf.pid);
         towrite = strlen(buf);
-        if (Tcl_WriteChars(chan, buf, towrite) != towrite) {
+        if ((size_t)Tcl_WriteChars(chan, buf, (int)towrite) != towrite) {
             Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'",
                    Tcl_GetString(path), strerror(Tcl_GetErrno()));
         }

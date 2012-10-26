@@ -626,7 +626,7 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
     register int   i, j, n;
     register char *p, *q;
     char          *copy = NULL;
-    int            length;
+    size_t         length;
     Tcl_DString    ds;
     ByteKey       *enc;
 
@@ -636,7 +636,7 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
      */
     length = strlen(string);
     if (encoding != NULL) {
-        copy = ns_malloc((size_t)(length+1));
+        copy = ns_malloc(length + 1);
         q = copy;
     } else {
         /*
@@ -644,7 +644,7 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
          * string which will be the largest size required.
          */
         i = dsPtr->length;
-        Ns_DStringSetLength(dsPtr, i + length);
+        Ns_DStringSetLength(dsPtr, (int)(i + length));
         q = dsPtr->string + i;
     }
 

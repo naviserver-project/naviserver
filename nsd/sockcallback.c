@@ -42,7 +42,7 @@
 
 typedef struct Callback {
     struct Callback     *nextPtr;
-    SOCKET               sock;
+    NS_SOCKET            sock;
     int			 idx;
     int                  when;
     int                  timeout;
@@ -56,7 +56,7 @@ typedef struct Callback {
  */
 
 static Ns_ThreadProc SockCallbackThread;
-static int Queue(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout);
+static int Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout);
 static void CallbackTrigger(void);
 
 /*
@@ -69,7 +69,7 @@ static int	     running;
 static Ns_Thread     sockThread;
 static Ns_Mutex      lock;
 static Ns_Cond	     cond;
-static SOCKET	     trigPipe[2];
+static NS_SOCKET     trigPipe[2];
 static Tcl_HashTable table;
 
 
@@ -91,13 +91,13 @@ static Tcl_HashTable table;
  */
 
 int
-Ns_SockCallback(SOCKET sock, Ns_SockProc *proc, void *arg, int when)
+Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when)
 {
     return Queue(sock, proc, arg, when, 0);
 }
 
 int
-Ns_SockCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout)
+Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout)
 {
     return Queue(sock, proc, arg, when, timeout);
 }
@@ -121,13 +121,13 @@ Ns_SockCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeo
  */
 
 void
-Ns_SockCancelCallback(SOCKET sock)
+Ns_SockCancelCallback(NS_SOCKET sock)
 {
     (void) Ns_SockCancelCallbackEx(sock, NULL, NULL);
 }
 
 int
-Ns_SockCancelCallbackEx(SOCKET sock, Ns_SockProc *proc, void *arg)
+Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg)
 {
     return Queue(sock, proc, arg, NS_SOCK_CANCEL, 0);
 }
@@ -223,7 +223,7 @@ CallbackTrigger(void)
  */
 
 static int
-Queue(SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout)
+Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout)
 {
     Callback   *cbPtr;
     int         status, trigger, create;

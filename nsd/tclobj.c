@@ -170,7 +170,8 @@ Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
  * Ns_TclSetStringRep --
  *
  *      Copy length bytes and set objects string rep.  The objects
- *      existing string rep *must* have already been freed.
+ *      existing string rep *must* have already been freed. Tcl uses
+ *      as well "int" and not "size" (internally and via interface)
  *
  * Results:
  *      None.
@@ -185,7 +186,7 @@ void
 Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length)
 {
     if (length < 1) {
-        length = strlen(bytes);
+      length = (int)strlen(bytes);
     }
     objPtr->length = length;
     objPtr->bytes = ckalloc((size_t) length + 1);
@@ -389,7 +390,7 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
 
     len = snprintf(buf, sizeof(buf), "t%p-a%p-%s",
                    type, addr, (char *) type);
-    Ns_TclSetStringRep(objPtr, buf, len);
+    Ns_TclSetStringRep(objPtr, buf, (int)len);
 }
 
 

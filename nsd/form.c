@@ -41,7 +41,7 @@
 
 static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding);
 static void ParseMultiInput(Conn *connPtr, char *start, char *end);
-static char *Ext2Utf(Tcl_DString *dsPtr, char *s, int len, Tcl_Encoding encoding, char unescape);
+static char *Ext2Utf(Tcl_DString *dsPtr, char *s, size_t len, Tcl_Encoding encoding, char unescape);
 static int GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn);
 static char *NextBoundry(Tcl_DString *dsPtr, char *s, char *e);
 static int GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *unescape);
@@ -347,7 +347,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
             if (isNew) {
                 filePtr = ns_malloc(sizeof(FormFile));
                 filePtr->hdrs = set;
-                filePtr->off = start - connPtr->reqPtr->content;
+                filePtr->off = (off_t)(start - connPtr->reqPtr->content);
                 filePtr->len = end - start;
                 Tcl_SetHashValue(hPtr, filePtr);
                 set = NULL;
@@ -400,7 +400,7 @@ GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
             ++be;
         }
         Tcl_DStringAppend(dsPtr, "--", 2);
-        Tcl_DStringAppend(dsPtr, bs, be-bs);
+        Tcl_DStringAppend(dsPtr, bs, (int)(be - bs));
         return 1;
     }
     return 0;
@@ -528,16 +528,16 @@ GetValue(char *hdr, char *att, char **vsPtr, char **vePtr, char *uPtr)
  */
 
 static char *
-Ext2Utf(Tcl_DString *dsPtr, char *start, int len, Tcl_Encoding encoding, char unescape)
+Ext2Utf(Tcl_DString *dsPtr, char *start, size_t len, Tcl_Encoding encoding, char unescape)
 {
 
     if (encoding == NULL) {
         Tcl_DStringSetLength(dsPtr, 0);
-        Tcl_DStringAppend(dsPtr, start, len);
+        Tcl_DStringAppend(dsPtr, start, (int)len);
     } else {
         /* NB: ExternalToUtfDString will re-init dstring. */
         Tcl_DStringFree(dsPtr);
-        Tcl_ExternalToUtfDString(encoding, start, len, dsPtr);
+        Tcl_ExternalToUtfDString(encoding, start, (int)len, dsPtr);
     }
 
     /*
@@ -546,18 +546,18 @@ Ext2Utf(Tcl_DString *dsPtr, char *start, int len, Tcl_Encoding encoding, char un
      * string.
      */
     if (unescape) {
-      int i, j;
+      int i, j, l = (int)len;
       char *buffer = dsPtr->string;
 
-      for (i = 0; i<len; i++) {
+      for (i = 0; i<l; i++) {
 	if (buffer[i] == '\\' && buffer[i+1] == unescape) {
-	  for (j = i; j < len; j++) {
+	  for (j = i; j < l; j++) {
 	    buffer[j] = buffer[j+1];
 	  }
-	  len --;
+	  l --;
 	}
       }
-      Tcl_DStringSetLength(dsPtr, len);
+      Tcl_DStringSetLength(dsPtr, l);
     }
     return dsPtr->string;
 }

@@ -681,7 +681,7 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
         bp = cachePtr->lbuf;
     }
     if (*tp != timePtr->sec) {
-        int n;
+        size_t n;
 
         *tp = timePtr->sec;
         ptm = ns_localtime(&timePtr->sec);
@@ -1201,7 +1201,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
 
 static int
 LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
-            char *msg, int len)
+            char *msg, size_t len)
 {
     Ns_DString *dsPtr  = (Ns_DString *)arg;
 
@@ -1228,7 +1228,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
     if (len == -1) {
         len = strlen(msg);
     }
-    Ns_DStringNAppend(dsPtr, msg, len);
+    Ns_DStringNAppend(dsPtr, msg, (int)len);
     Ns_DStringNAppend(dsPtr, "\n", 1);
     if (flags & LOG_EXPAND) {
         Ns_DStringNAppend(dsPtr, "\n", 1);
@@ -1256,9 +1256,9 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
 
 static int
 LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
-          char *msg, int len)
+          char *msg, size_t len)
 {
-    int        ret, fd = (intptr_t) arg;
+    int        ret, fd = (int)(intptr_t) arg;
     Ns_DString ds;
 
     Ns_DStringInit(&ds);
@@ -1297,7 +1297,7 @@ LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
 
 static int
 LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
-         char *msg, int len)
+         char *msg, size_t len)
 {
     int             ii, ret;
     char            c;

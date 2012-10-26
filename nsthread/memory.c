@@ -63,13 +63,13 @@ void *ns_calloc(size_t num, size_t esize) { return calloc(num, esize); }
 void *
 ns_realloc(void *ptr, size_t size)
 {
-    return (ptr ? ckrealloc(ptr, size) : ckalloc(size));
+  return (ptr ? ckrealloc(ptr, (int)size) : ckalloc((int)size));
 }
 
 void *
 ns_malloc(size_t size)
 {
-    return ckalloc(size);
+    return ckalloc((int)size);
 }
 
 void
@@ -101,7 +101,7 @@ ns_strcopy(const char *old)
 }
 
 char *
-ns_strncopy(const char *old, int size)
+ns_strncopy(const char *old, ssize_t size)
 {
     char *new = NULL;
 
