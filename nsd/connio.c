@@ -195,7 +195,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
     for (str ++; *str == ' '; str++);
     if (*str != '=') {
         return NULL;
-    }  
+    }
     for (str ++; *str == ' '; str++);
     if (!isdigit(*str)) {
         return NULL;
@@ -204,7 +204,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
     resultString = str;
     str++;
     if (*str == '.') {
-        /* 
+        /*
 	 * Looks like a floating point number; RFC2612 allows up to
 	 * three digits after the comma.
 	 */
@@ -245,7 +245,7 @@ GetQvalue(CONST char *str, int *lenPtr) {
  *
  *----------------------------------------------------------------------
  */
-static char * 
+static char *
 GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double *qValue) {
   char *encodingStr = strstr(encodingString, encodingFormat);
 
@@ -315,7 +315,7 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 		
                 if (hdr != NULL) {
 		    double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
-		  
+		
 		    if (GetEncodingFormat(hdr, "gzip", &gzipQvalue)) {
 		        /* we have gzip specified in accept-encoding */
 		        if (gzipQvalue > 0.999) {
@@ -357,7 +357,7 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 
                 Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
 
-                if (gzip /*|| connPtr->request->version >= 1.1*/) {
+                if (gzip) {
                     Ns_ConnSetHeaders(conn, "Content-Encoding", "gzip");
                     compress = level;
                 }
@@ -1263,16 +1263,16 @@ CheckKeep(Conn *connPtr)
                     return 0;
                 }
 
-		if (connPtr->drvPtr->keepmaxuploadsize 
+		if (connPtr->drvPtr->keepmaxuploadsize
 		    && connPtr->contentLength > (size_t)connPtr->drvPtr->keepmaxuploadsize) {
-		    Ns_Log(Notice, "Disallow keep-alive, content-Length %ld larger keepmaxuploadsize %d: %s", 
+		    Ns_Log(Notice, "Disallow keep-alive, content-Length %ld larger keepmaxuploadsize %d: %s",
 			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
 			   connPtr->request->line);
 		    return 0;
-		} else if (connPtr->drvPtr->keepmaxdownloadsize 
+		} else if (connPtr->drvPtr->keepmaxdownloadsize
 			   && connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) {
-		    Ns_Log(Notice, "Disallow keep-alive response length %" TCL_LL_MODIFIER 
-			   "d larger keepmaxdownloadsize %d: %s", 
+		    Ns_Log(Notice, "Disallow keep-alive response length %" TCL_LL_MODIFIER
+			   "d larger keepmaxdownloadsize %d: %s",
 			   connPtr->responseLength, connPtr->drvPtr->keepmaxdownloadsize,
 			   connPtr->request->line);
 		    return 0;
