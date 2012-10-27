@@ -231,6 +231,44 @@ GetQvalue(CONST char *str, int *lenPtr) {
 /*
  *----------------------------------------------------------------------
  *
+ * GetEncodingFormat --
+ *
+ *      Search on encodingString (header field accept-encodings) for
+ *      encodingFormat (e.g. "gzip", "identy") and return its q value.
+ *
+ * Results:
+ *      On success non-NULL value and he parsed qValue;
+ *      On failare NULL value qValue set to -1;
+ *
+ * Side effects:
+ *      Nones.
+ *
+ *----------------------------------------------------------------------
+ */
+static char * 
+GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double *qValue) {
+  char *encodingStr = strstr(encodingString, encodingFormat);
+
+  if (encodingStr) {
+      int len = 0;
+      CONST char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+
+      if (qValueString) {
+	*qValue = strtod(qValueString, NULL);
+      } else {
+	*qValue = 1.0;
+      }
+      return encodingStr;
+  }
+
+  *qValue = -1.0;
+  return NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CheckCompress --
  *
  *      Is compression enabled, and at what level.
@@ -273,24 +311,54 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 
                 /* Check that the client supports compression. */
 		hdr = Ns_SetIGet(Ns_ConnHeaders(conn), "Accept-Encoding");
-		fprintf(stderr, "hdr '%s'\n", hdr);
 		
                 if (hdr != NULL) {
-		  char *gzipStr = strstr(hdr, "gzip");
-		  if (gzipStr) {
-		    int len = 0;
-		    CONST char *qValueString = GetQvalue(gzipStr + 4, &len);
-
-		    fprintf(stderr, "hdr '%s' gzipStr '%s' qValue '%s' l %d\n", hdr, gzipStr, qValueString, len);
-
-		    if (!(qValueString && strncmp("0.000", qValueString, len) == 0)) {
-		      gzip = 1;
+		    double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
+		  
+		    if (GetEncodingFormat(hdr, "gzip", &gzipQvalue)) {
+		        /* we have gzip specified in accept-encoding */
+		        if (gzipQvalue > 0.999) {
+			    /* gzip qvalue 1, use it, nothing else can be higher */
+			    gzip = 1;
+			} else if (gzipQvalue < 0.0009) {
+			    /* gzip qvalue 0, forbid gzip */
+			    gzip = 0;
+			} else {
+			    /* a middle gzip qvalue, compare it with identity and default */
+		      
+			    if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
+			        if (gzipQvalue >= identityQvalue) {
+				    /* gzip qvalue larger than identity */
+				    gzip = 1;
+				}
+			    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
+			        if (gzipQvalue >= starQvalue) {
+				    /* gzip qvalue larger than default */
+				    gzip = 1;
+				}
+			    } else {
+			        /* just the low qvalue was specified */
+			        gzip = 1;
+			    }
+			}
+		    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
+		        /* star matches everything, so as well gzip */
+		        if (starQvalue < 0.0009) {
+			    /* star qvalue forbids gzip */
+			    gzip = 0;
+			} else if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
+			    if (starQvalue >= identityQvalue) {
+			        gzip = 1;
+			    }
+			} else {
+			    /* no identity specified, assume gzip is matched with * */
+			    gzip = 1;
+			}
 		    }
-		  }
-                }
+		}
                 Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
 
-                if (gzip || connPtr->request->version >= 1.1) {
+                if (gzip /*|| connPtr->request->version >= 1.1*/) {
                     Ns_ConnSetHeaders(conn, "Content-Encoding", "gzip");
                     compress = level;
                 }
