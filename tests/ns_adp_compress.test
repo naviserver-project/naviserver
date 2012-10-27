@@ -14,8 +14,6 @@ set this_is_a_test_gzip "1f 8b 08 00 00 00 00 00 04 03 2b c9 c8 2c 56 00 a2 44 8
 # The streaming case is different as it has synchronization markers after "this is".
 set this_is_a_test_gzip_stream "1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff 03 00 12 13 05 72 0f 00 00 00"
 
-
-
 test compress-1.1 {HTTP 1.0: no Accept-Encoding} -body {
     nstest::http \
         -http 1.0 \
@@ -34,6 +32,98 @@ test compress-1.2 {HTTP 1.0: Accept-Encoding gzip} -body {
         -getheaders {Content-Encoding Vary} \
         GET /ns_adp_compress.adp
 } -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-1.2.1 {HTTP 1.0: Accept-Encoding "gzip ; q = 1"} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip ; q = 1"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-1.2.2 {HTTP 1.0: Accept-Encoding "gzip;q=1,"} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=1,"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-1.2.3 {HTTP 1.0: Accept-Encoding "gzip;q=1a" - ignore invalud qvalue} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=1a"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+test compress-1.2.4 {HTTP 1.0: Accept-Encoding "gzip;q=0"} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=0"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
+
+test compress-1.2.5 {HTTP 1.0: Accept-Encoding "gzip;q=0."} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=0."} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
+
+test compress-1.2.6 {HTTP 1.0: Accept-Encoding "gzip;q=0.0"} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=0.0"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
+
+test compress-1.2.7 {HTTP 1.0: Accept-Encoding "gzip;q=0.00"} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=0.00"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
+
+test compress-1.2.8 {HTTP 1.0: Accept-Encoding "gzip;q=0.000"} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=0.000"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
+
+test compress-1.2.9 {HTTP 1.0: Accept-Encoding "gzip;q=0.001"} -body {
+    nstest::http \
+        -http 1.0 \
+        -getbinary 1 \
+        -encoding binary \
+        -setheaders {Accept-Encoding "gzip;q=0.001"} \
+        -getheaders {Content-Encoding Vary} \
+        GET /ns_adp_compress.adp
+} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+
+
 
 test compress-1.3 {HTTP 1.0: Accept-Encoding gzip (again, checking reset)} -body {
     nstest::http \
@@ -55,7 +145,7 @@ test compress-1.4 {HTTP 1.0: Accept-Encoding *} -constraints knownBug -body {
         GET /ns_adp_compress.adp
 } -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
 
-test compress-1.5 {HTTP 1.0: Accept-Encoding qvalue=0} -constraints knownBug -body {
+test compress-1.5 {HTTP 1.0: Accept-Encoding qvalue=0} -body {
     nstest::http \
         -http 1.0 \
         -getbinary 1 \
@@ -86,17 +176,15 @@ test compress-2.2 {HTTP 1.1: Accept-Encoding *} -constraints knownBug -body {
         GET /ns_adp_compress.adp
 } -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
 
-test compress-2.3 {HTTP 1.1: Accept-Encoding qvalue=0} -constraints knownBug -body {
+test compress-2.3 {HTTP 1.1: Accept-Encoding *, qvalue 0} -constraints knownBug -body {
     nstest::http \
         -http 1.1 \
         -getbinary 1 \
         -encoding binary \
-        -setheaders {Accept-Encoding gzip;q=0} \
+        -setheaders {Accept-Encoding "identity; *;q=0"} \
         -getheaders {Content-Encoding Vary} \
         GET /ns_adp_compress.adp
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
-
-
 
 
 test compress-3.1 {ns_return, compressed} -setup {

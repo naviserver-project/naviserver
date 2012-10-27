@@ -163,6 +163,74 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 /*
  *----------------------------------------------------------------------
  *
+ * GetQvalue --
+ *
+ *      Return the next qvalue string from accept encodings
+ *
+ * Results:
+ *      string, setting lenghtPtr; or NULL, if no or invalie
+ *      qvalue provided
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static CONST char *
+GetQvalue(CONST char *str, int *lenPtr) {
+    CONST char *resultString;
+
+    assert(str);
+    assert(lenPtr);
+
+    for (; *str == ' '; str++);
+    if (*str != ';') {
+        return NULL;
+    }
+    for (str ++; *str == ' '; str++);
+
+    if (*str != 'q') {
+        return NULL;
+    }
+    for (str ++; *str == ' '; str++);
+    if (*str != '=') {
+        return NULL;
+    }  
+    for (str ++; *str == ' '; str++);
+    if (!isdigit(*str)) {
+        return NULL;
+    }
+
+    resultString = str;
+    str++;
+    if (*str == '.') {
+        /* 
+	 * Looks like a floating point number; RFC2612 allows up to
+	 * three digits after the comma.
+	 */
+      str ++;
+      if (isdigit(*str)) {
+	  str++;
+	  if (isdigit(*str)) {
+	      str++;
+	      if (isdigit(*str)) {
+		  str++;
+	      }
+	  }
+      }
+    }
+    /* str should point to a valid terminator of the number */
+    if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
+        *lenPtr = (int)(str - resultString);
+	return resultString;
+    }
+    return NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CheckCompress --
  *
  *      Is compression enabled, and at what level.
@@ -204,11 +272,21 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 	        int gzip = 0;
 
                 /* Check that the client supports compression. */
+		hdr = Ns_SetIGet(Ns_ConnHeaders(conn), "Accept-Encoding");
+		fprintf(stderr, "hdr '%s'\n", hdr);
+		
+                if (hdr != NULL) {
+		  char *gzipStr = strstr(hdr, "gzip");
+		  if (gzipStr) {
+		    int len = 0;
+		    CONST char *qValueString = GetQvalue(gzipStr + 4, &len);
 
-                if ((hdr = Ns_SetIGet(Ns_ConnHeaders(conn),
-                                      "Accept-Encoding")) != NULL
-                    && strstr(hdr, "gzip") != NULL) {
-                    gzip = 1;
+		    fprintf(stderr, "hdr '%s' gzipStr '%s' qValue '%s' l %d\n", hdr, gzipStr, qValueString, len);
+
+		    if (!(qValueString && strncmp("0.000", qValueString, len) == 0)) {
+		      gzip = 1;
+		    }
+		  }
                 }
                 Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
 
