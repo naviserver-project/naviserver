@@ -307,7 +307,8 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 
             if (!(connPtr->flags & NS_CONN_SENTHDRS)
                 && !(connPtr->flags & NS_CONN_SKIPBODY)) {
-	        int gzip = 0;
+	        /* make gzip default in http 1.1 */
+  	        int gzip = (connPtr->request->version >= 1.1);
 
                 /* Check that the client supports compression. */
 		hdr = Ns_SetIGet(Ns_ConnHeaders(conn), "Accept-Encoding");
@@ -325,17 +326,12 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 			    gzip = 0;
 			} else {
 			    /* a middle gzip qvalue, compare it with identity and default */
-		      
 			    if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
-			        if (gzipQvalue >= identityQvalue) {
-				    /* gzip qvalue larger than identity */
-				    gzip = 1;
-				}
+			        /* gzip qvalue larger than identity */
+			        gzip = (gzipQvalue >= identityQvalue);
 			    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
-			        if (gzipQvalue >= starQvalue) {
-				    /* gzip qvalue larger than default */
-				    gzip = 1;
-				}
+			        /* gzip qvalue larger than default */
+			        gzip = (gzipQvalue >= starQvalue);
 			    } else {
 			        /* just the low qvalue was specified */
 			        gzip = 1;
@@ -347,15 +343,18 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 			    /* star qvalue forbids gzip */
 			    gzip = 0;
 			} else if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
-			    if (starQvalue >= identityQvalue) {
-			        gzip = 1;
-			    }
+			    /* star qvalue allows gzip in HTTP/1.1 */
+			    gzip = (starQvalue >= identityQvalue) && (connPtr->request->version >= 1.1);
 			} else {
-			    /* no identity specified, assume gzip is matched with * */
-			    gzip = 1;
+			    /* no identity specified, assume gzip is matched with * in HTTP/1.1 */
+			    gzip = (connPtr->request->version >= 1.1);
 			}
 		    }
+		} else {
+		    /* no accept-encoding header; make gzip default in HTTP/1.1 */
+		    gzip = (connPtr->request->version >= 1.1);
 		}
+
                 Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
 
                 if (gzip /*|| connPtr->request->version >= 1.1*/) {
