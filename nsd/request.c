@@ -155,6 +155,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
      */
     
     request->line = ns_strdup(l);
+    Ns_Log(Debug, "Ns_ParseRequest %p %s", request, request->line);
 
     /*
      * Look for the minimum of method and url.

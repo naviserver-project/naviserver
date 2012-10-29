@@ -438,4 +438,10 @@ CreatePool(NsServer *servPtr, char *pool)
 
         poolPtr->queue.highwatermark = (queueDepth * threshold) / 100;
     }
+
+    poolPtr->threadQueue.args = ns_calloc((size_t) poolPtr->threads.max, sizeof(ConnThreadArg));
+    /*
+     * The Pools are never freed before exit, so there is apparently no
+     * need to free connBufPtr or threadQueue.args explicitely.
+     */
 }

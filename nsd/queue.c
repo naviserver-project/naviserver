@@ -38,17 +38,6 @@
 #include <math.h>
 
 /*
- * The following structure is allocated for each new thread.  The
- * connPtr arg is used for the proc arg callback to list conn
- * info for running threads.
- */
-
-typedef struct {
-    ConnPool *poolPtr;
-    Conn     *connPtr;
-} Arg;
-
-/*
  * Local functions defined in this file
  */
 
@@ -64,6 +53,21 @@ static void AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state);
 
 static Ns_Tls argtls;
 static int    poolid;
+
+/*
+ * Debugging stuff
+ */
+#define ThreadNr(argPtr) (int)(argPtr ? (argPtr - poolPtr->threadQueue.args) : -1)
+
+void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {
+  ConnThreadArg *aPtr;
+  
+  fprintf(stderr, "%s: thread queue (idle %d): ", key, poolPtr->threads.idle);
+  for (aPtr = poolPtr->threadQueue.nextPtr; aPtr; aPtr = aPtr->nextPtr) {
+    fprintf(stderr, "[%d] state %d, ", ThreadNr(aPtr), aPtr->state);
+  }
+  fprintf(stderr, "\n");
+}
 
 
 /*
@@ -109,7 +113,7 @@ NsInitQueue(void)
 Ns_Conn *
 Ns_GetConn(void)
 {
-    Arg *argPtr;
+    ConnThreadArg *argPtr;
 
     argPtr = Ns_TlsGet(&argtls);
     return (argPtr ? ((Ns_Conn *) argPtr->connPtr) : NULL);
@@ -191,24 +195,27 @@ neededAdditionalConnectionThreads(ConnPool *poolPtr) {
 	 && poolPtr->threads.current < poolPtr->threads.max) {
       wantCreate = poolPtr->threads.min - poolPtr->threads.idle;
       
-      Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d)",
+      Ns_Log(Notice, "[%s] wantCreate %d (creating %d current %d idle %d waiting %d first %p)",
 	     poolPtr->servPtr->server, 
 	     wantCreate, 
 	     poolPtr->threads.creating,
 	     poolPtr->threads.current, 
 	     poolPtr->threads.idle,
-	     poolPtr->queue.wait.num);
+	     poolPtr->queue.wait.num,
+	     poolPtr->queue.wait.firstPtr
+	     );
     } else {
         wantCreate = 0;
-	/*
-        Ns_Log(Notice, "[%s] do not wantCreate creating %d, idle %d < min %d, current %d < max %d, waiting %d)",
+	/*	
+        Ns_Log(Notice, "[%s] do not wantCreate creating %d, idle %d < min %d, current %d < max %d, waiting %d first %p)",
 	       poolPtr->servPtr->server, 
 	       poolPtr->threads.creating, 
 	       poolPtr->threads.idle,
 	       poolPtr->threads.min,
 	       poolPtr->threads.current, 
 	       poolPtr->threads.max,
-	       poolPtr->queue.wait.num + 1
+	       poolPtr->queue.wait.num,
+	       poolPtr->queue.wait.firstPtr
 	       );
 	*/
     }
@@ -287,6 +294,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
     ConnPool *poolPtr = NULL;
     Conn     *connPtr = NULL;
     int       create = 0, idle;
+    ConnThreadArg *argPtr = NULL;
 
     /*
      * Select server connection pool.
@@ -307,9 +315,16 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
     */
 
     Ns_MutexLock(&servPtr->pools.lock);
+    /*fprintf(stderr, "NsQueueConn sock %p reqPtr %p request %p argPtr %p\n",  
+      sockPtr, sockPtr->reqPtr, &sockPtr->reqPtr->request, poolPtr->threadQueue.nextPtr);*/
+
     if (!servPtr->pools.shutdown) {
+
         connPtr = poolPtr->queue.freePtr;
         if (connPtr != NULL) {
+	  
+	    ConnThreadQueuePrint(poolPtr, "driver");
+
             poolPtr->queue.freePtr = connPtr->nextPtr;
             connPtr->startTime = *nowPtr;
             connPtr->id = servPtr->pools.nextconnid++;
@@ -331,25 +346,50 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 		sockPtr->flags &= ~NS_CONN_LINETOOLONG;
 	    }
 
-            if (poolPtr->queue.wait.firstPtr == NULL) {
-                poolPtr->queue.wait.firstPtr = connPtr;
-            } else {
-                poolPtr->queue.wait.lastPtr->nextPtr = connPtr;
-            }
-            poolPtr->queue.wait.lastPtr = connPtr;
-            connPtr->nextPtr = NULL;
-            idle = poolPtr->threads.idle;
+	    /*
+	     * We have got a free connPtr from the pool. Get an entry
+	     * from the connection thread queue (which might be emtpy).
+	     */
+	    argPtr = poolPtr->threadQueue.nextPtr;
+	    /*fprintf(stderr, "NsQueueConn idle %d argPtr %p\n",  poolPtr->threads.idle, argPtr);*/
 
-	    create = neededAdditionalConnectionThreads(poolPtr);
-	    if (create) {
-	      poolPtr->threads.current ++;
-	      poolPtr->threads.creating ++;
+	    if (argPtr) {
+		/* 
+		 * We could obtain an idle thread. Dequeue the entry,
+		 * such that noone else might grab it, and fill in the
+		 * connPtr.
+		 */
+	        poolPtr->threadQueue.nextPtr = argPtr->nextPtr;
+		assert(argPtr->state == connThread_idle);
+		argPtr->connPtr = connPtr;
+
+		//Ns_Log(Notice, "[%d] dequeue thread idle %d state %d", ThreadNr(argPtr), poolPtr->threads.idle, argPtr->state );
+
+	    } else {
+	      /* 
+	       * There is no connection thread ready, so we add the
+	       * connection to the waiting queue.
+	       */
+	        if (poolPtr->queue.wait.firstPtr == NULL) {
+		    poolPtr->queue.wait.firstPtr = connPtr;
+		} else {
+		    poolPtr->queue.wait.lastPtr->nextPtr = connPtr;
+		}
+		poolPtr->queue.wait.lastPtr = connPtr;
+		++poolPtr->queue.wait.num;
 	    }
 
-            ++poolPtr->queue.wait.num;
+            connPtr->nextPtr = NULL;
+            idle = poolPtr->threads.idle;
+	    create = neededAdditionalConnectionThreads(poolPtr);
         }
     }
+
+    /* Ns_Log(Notice, "driver: NsQueueConn connPtr %p sock %p reqPtr %p request %p create %d argPtr %p thread [%d]", 
+       connPtr, sockPtr, sockPtr->reqPtr, &sockPtr->reqPtr->request, create, argPtr, ThreadNr(argPtr));*/
+    
     Ns_MutexUnlock(&servPtr->pools.lock);
+
     if (connPtr == NULL) {
 	Ns_Log(Notice, "[%s] All avaliable connections are used, waiting %d idle %d current %d ",
 	       poolPtr->servPtr->server, 
@@ -359,10 +399,15 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 	return 0;
     }
     if (create) {
+        Ns_MutexUnlock(&servPtr->pools.lock);
+	poolPtr->threads.current ++;
+	poolPtr->threads.creating ++;
+        Ns_MutexUnlock(&servPtr->pools.lock);
         CreateConnThread(poolPtr);
     } 
-    if (idle > 0) {
-        Ns_CondSignal(&poolPtr->queue.cond);
+    if (idle > 0 && argPtr) {
+      //Ns_Log(Notice, "driver: signal single thread [%d]", ThreadNr(argPtr));
+        Ns_CondSignal(&argPtr->cond);
     }
 
     return 1;
@@ -461,7 +506,13 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case SAllIdx:
         Tcl_DStringInit(&ds);
         if (opt != SQueuedIdx) {
-            AppendConnList(&ds, poolPtr->queue.active.firstPtr, "running");
+	    int i;
+	    for (i=0; i < poolPtr->threads.max; i++) {
+	        ConnThreadArg *argPtr = &poolPtr->threadQueue.args[i];
+		if (argPtr->connPtr) {
+		    AppendConnList(&ds, argPtr->connPtr, "running");
+		}
+	    }
         }
         if (opt != SActiveIdx) {
             AppendConnList(&ds, poolPtr->queue.wait.firstPtr, "queued");
@@ -498,7 +549,7 @@ NsStartServer(NsServer *servPtr)
 
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
-      poolPtr->threads.idle = 0;
+        poolPtr->threads.idle = 0;
         poolPtr->threads.current = poolPtr->threads.min;
 	poolPtr->threads.creating = poolPtr->threads.min;
         for (n = 0; n < poolPtr->threads.min; ++n) {
@@ -593,7 +644,7 @@ NsWaitServer(NsServer *servPtr, Ns_Time *toPtr)
 void
 NsConnArgProc(Tcl_DString *dsPtr, void *arg)
 {
-    Arg *argPtr = arg;
+    ConnThreadArg *argPtr = arg;
 
     if (arg != NULL) {
         ConnPool     *poolPtr = argPtr->poolPtr;
@@ -627,25 +678,32 @@ NsConnArgProc(Tcl_DString *dsPtr, void *arg)
 void
 NsConnThread(void *arg)
 {
-    Arg          *argPtr = arg;
+    ConnThreadArg *argPtr = arg;
     ConnPool     *poolPtr = argPtr->poolPtr;
     NsServer     *servPtr = poolPtr->servPtr;
     Conn         *connPtr;
-    Ns_Time       wait, *timePtr;
+    Ns_Time       wait, *timePtr = &wait;
     unsigned int  id;
-    int           status, cpt, ncons, spread, maxcpt;
+    int           status, cpt, ncons, spread, maxcpt, timeout;
     double        spreadFactor;
     char         *p, *path, *exitMsg;
+    Ns_Mutex     *poolsLockPtr = &servPtr->pools.lock;
     Ns_Thread     joinThread;
+
 
     /*
      * Set the conn thread name.
      */
 
     Ns_TlsSet(&argtls, argPtr);
-    Ns_MutexLock(&servPtr->pools.lock);
+    argPtr->tid = Ns_ThreadId();  // unused
+    argPtr->state = connThread_warmup;
+
+    Ns_Log(Notice, "[%d] NsConnThread state %d", ThreadNr(argPtr), argPtr->state);
+
+    Ns_MutexLock(poolsLockPtr);
     id = poolPtr->threads.nextid++;
-    Ns_MutexUnlock(&servPtr->pools.lock);
+    Ns_MutexUnlock(poolsLockPtr);
 
     p = (poolPtr->pool != NULL && *poolPtr->pool ? poolPtr->pool : 0);
     Ns_ThreadSetName("-conn:%s%s%s:%d", servPtr->server, p ? ":" : "", p ? p : "", id);
@@ -669,10 +727,11 @@ NsConnThread(void *arg)
     */
     spreadFactor = 1.0 + (2 * spread * Ns_DRand() - spread) / 100.0;
     
-    maxcpt = (int)floor(cpt * (1.0 + spread / 100.0)) ; /* allow max cpt requests + spread requests */
-    cpt    = (int)floor(cpt * spreadFactor);
-    ncons = cpt;
-    maxcpt = cpt - maxcpt;   /* negative number, expressing maximum overtime count */
+    maxcpt  = (int)floor(cpt * (1.0 + spread / 100.0)) ; /* allow max cpt requests + spread requests */
+    cpt     = (int)floor(cpt * spreadFactor);
+    ncons   = cpt;
+    maxcpt  = cpt - maxcpt;   /* negative number, expressing maximum overtime count */
+    timeout = (int)floor(poolPtr->threads.timeout * spreadFactor);
 
     /*
      * Initialize the connection thread with the blueprint to avoid
@@ -685,12 +744,12 @@ NsConnThread(void *arg)
         void       *firstPtr;
 
         /* To ensure a short lock, copy the variables from poolPtr */
-        Ns_MutexLock(&servPtr->pools.lock);
+        Ns_MutexLock(poolsLockPtr);
         waitnum  = poolPtr->queue.wait.num;
         firstPtr = poolPtr->queue.wait.firstPtr;
         current  = poolPtr->threads.current;
         idle     = poolPtr->threads.idle; 
-        Ns_MutexUnlock(&servPtr->pools.lock);
+        Ns_MutexUnlock(poolsLockPtr);
 
 	Ns_Log(Notice, "thread initialize cpt %d maxcpt %d wait %d %p current %d idle %d",
 	       cpt, maxcpt, waitnum, firstPtr, current, idle );
@@ -702,96 +761,135 @@ NsConnThread(void *arg)
 	Ns_Log(Notice, "thread initialized (%.3f ms)", 
 	       ((double)diff.sec * 1000.0) + ((double)diff.usec / 1000.0));
 	Ns_TclDeAllocateInterp(interp);
+	argPtr->state = connThread_ready;
     }
 
     /*
      * Start handling connections.
      */
 
-    Ns_MutexLock(&servPtr->pools.lock);
+    Ns_MutexLock(poolsLockPtr);
 
     if (poolPtr->threads.creating > 0) {
 	poolPtr->threads.creating--;
-	poolPtr->threads.idle ++;
     }
 
     while (1) {
+        int shutdown;
+	
+	/*
+	 * we are ready to process requests. Pick it either a request
+	 * from the waiting queue, or go to a waiting state and add
+	 * jourself to the conn thread queue.
+	 */
 
-        /*
-         * Wait for a connection to arrive, exiting if one doesn't
-         * arrive in the configured timeout period.
-         */
+	assert(argPtr->connPtr == NULL);
+	assert(argPtr->state == connThread_ready);
 
-        if (poolPtr->threads.current <= poolPtr->threads.min) {
-            timePtr = NULL;
-        } else {
-            Ns_GetTime(&wait);
-            Ns_IncrTime(&wait, (int)floor(poolPtr->threads.timeout * spreadFactor), 0);
-            timePtr = &wait;
-        }
+	if (poolPtr->queue.wait.num > 0) {
+	  /* 
+	   * There are waiting requests.  Pull the first connection of
+	   * the waiting list.
+	   */
+	  connPtr = poolPtr->queue.wait.firstPtr;
+	  poolPtr->queue.wait.firstPtr = connPtr->nextPtr;
+	  if (poolPtr->queue.wait.lastPtr == connPtr) {
+	    poolPtr->queue.wait.lastPtr = NULL;
+	  }
+	  connPtr->nextPtr = NULL;
+	  poolPtr->queue.wait.num--;
+	  argPtr->connPtr = connPtr;
+	  Ns_Log(Notice, "**** take conn ptr from the queue %p", argPtr->connPtr);
+	}
+      
+	if (argPtr->connPtr == NULL) {
+	  /*
+	   * There is nothing urgent to do. We can add ourself to the
+	   * conn thread queue.
+	   */
 
-        status = NS_OK;
-        while (!servPtr->pools.shutdown
-               && status == NS_OK
-               && poolPtr->queue.wait.firstPtr == NULL) {
-            status = Ns_CondTimedWait(&poolPtr->queue.cond,
-                                      &servPtr->pools.lock, timePtr);
-        }
+	  //Ns_MutexLock(poolsLockPtr);
+	  poolPtr->threads.idle ++;
+	  argPtr->state = connThread_idle;
+	  argPtr->nextPtr = poolPtr->threadQueue.nextPtr; 
+	  poolPtr->threadQueue.nextPtr = argPtr;
+	  //Ns_Log(Notice, "[%d] enqueue thread idle %d", ThreadNr(argPtr), poolPtr->threads.idle);
 
-        if (servPtr->pools.shutdown) {
+	  /*
+	   * Wait until someone wakes us up, or a timeout occurs.
+	   */
+	  while (1) {
+	    if ((shutdown = servPtr->pools.shutdown)) break;
+
+	    Ns_GetTime(timePtr);
+	    Ns_IncrTime(timePtr, timeout, 0);
+
+	    // we should not have to lock the full pool;
+	    // Ns_Log(Notice, "[%d] wait thread state %d", ThreadNr(argPtr), argPtr->state);
+            status = Ns_CondTimedWait(&argPtr->cond, poolsLockPtr, timePtr);
+	    // Ns_Log(Notice, "[%d] woke up thread state %d", ThreadNr(argPtr), argPtr->state);
+	    if (argPtr->connPtr) break;
+	    if (status == NS_TIMEOUT) {
+	      fprintf(stderr, "timeout current %d min %d\n", poolPtr->threads.current, poolPtr->threads.min);
+	      if (poolPtr->threads.current <= poolPtr->threads.min) continue;
+	      fprintf(stderr, "timeout can die\n");
+	      break;
+	    }
+	    Ns_Log(Notice, "CondTimedWait returned an unexpected result, maybe shutdown?");
+	  }
+
+	  if (argPtr->connPtr == NULL) {
+	    /* 
+	     * We were not signaled on purpose, so we have to dequeue
+	     * the current thread.
+	     */ 
+	    ConnThreadArg *aPtr, **prevPtr;
+	    for (aPtr = poolPtr->threadQueue.nextPtr, prevPtr = &poolPtr->threadQueue.nextPtr;
+		 aPtr; 
+		 prevPtr = &aPtr->nextPtr, aPtr = aPtr->nextPtr) {
+	      if (aPtr == argPtr) {
+		*prevPtr = aPtr->nextPtr;
+		argPtr->nextPtr = NULL;
+		break;
+	      }
+	    }
+	    // ConnThreadQueuePrint(poolPtr, "wakeup");
+	    // we could check the poolPtr->queue.wait.num above
+	  }
+	  	      
+	  poolPtr->threads.idle --;
+	  argPtr->state = connThread_busy;
+
+	  if (shutdown) {
             exitMsg = "shutdown pending";
             break;
-        } else if (poolPtr->queue.wait.firstPtr == NULL) {
+	  } else if (status == NS_TIMEOUT) {
 	    exitMsg = "idle thread terminates";
             break;
-        }
+	  }
+	}
 
-        /*
-         * Pull the first connection of the waiting list.
-         */
+	connPtr = argPtr->connPtr;
+	assert(connPtr);
 
-        connPtr = poolPtr->queue.wait.firstPtr;
-        poolPtr->queue.wait.firstPtr = connPtr->nextPtr;
-        if (poolPtr->queue.wait.lastPtr == connPtr) {
-            poolPtr->queue.wait.lastPtr = NULL;
-        }
-        connPtr->nextPtr = NULL;
-        connPtr->prevPtr = poolPtr->queue.active.lastPtr;
-        if (poolPtr->queue.active.lastPtr != NULL) {
-            poolPtr->queue.active.lastPtr->nextPtr = connPtr;
-        }
-        poolPtr->queue.active.lastPtr = connPtr;
-        if (poolPtr->queue.active.firstPtr == NULL) {
-            poolPtr->queue.active.firstPtr = connPtr;
-        }
-        poolPtr->threads.idle--;
-        poolPtr->queue.wait.num--;
-        argPtr->connPtr = connPtr;
-        Ns_MutexUnlock(&servPtr->pools.lock);
+        Ns_MutexUnlock(poolsLockPtr);
 
         /*
          * Run the connection.
          */
-
         ConnRun(connPtr);
 
         /*
-         * Remove from the active list and push on the free list.
+         * push connection to the free list.
          */
-
-        Ns_MutexLock(&servPtr->pools.lock);
+        Ns_MutexLock(poolsLockPtr);
         argPtr->connPtr = NULL;
         if (connPtr->prevPtr != NULL) {
             connPtr->prevPtr->nextPtr = connPtr->nextPtr;
-        } else {
-            poolPtr->queue.active.firstPtr = connPtr->nextPtr;
         }
         if (connPtr->nextPtr != NULL) {
             connPtr->nextPtr->prevPtr = connPtr->prevPtr;
-        } else {
-            poolPtr->queue.active.lastPtr = connPtr->prevPtr;
         }
-        poolPtr->threads.idle++;
         connPtr->prevPtr = NULL;
         connPtr->nextPtr = poolPtr->queue.freePtr;
         poolPtr->queue.freePtr = connPtr;
@@ -800,69 +898,62 @@ NsConnThread(void *arg)
              * If this thread just free'd up the busy server,
              * run the ready procs to signal other subsystems.
              */
-            Ns_MutexUnlock(&servPtr->pools.lock);
+            Ns_MutexUnlock(poolsLockPtr);
             NsRunAtReadyProcs();
-            Ns_MutexLock(&servPtr->pools.lock);
+            Ns_MutexLock(poolsLockPtr);
         }
+
+	argPtr->state = connThread_ready;
 
 	if (cpt) {
 	    --ncons;
 
-	    if (poolPtr->threads.idle <= poolPtr->threads.min 
-		|| poolPtr->queue.wait.num > 0
-		) {
-		/* 
-		 * The server is quite busy. In this situation we do not
-		 * want to terminate a thread on the weak condition that
-		 * it has processed the configured number of connections
-		 * (which is varied by a random factor). We allow
-		 * connection threads to perform in stress situations as
-		 * many requests as the upper bound of the spread allows.
-		 */
-
-	        /* 
-		 * The following clause lets essentially process and arbitrary
-		 * number of additional requests when the number of idle threads
-		 * drops under thread min and we have still things to do.
-		 */ 
-	        if (poolPtr->threads.idle <= poolPtr->threads.min &&
-		    poolPtr->queue.wait.num > 0) {
-		  /*
-		  Ns_Log(Notice, "threads are running out, current %d, waiting %d idle %d min %d",
-			 poolPtr->threads.current, poolPtr->queue.wait.num, 
-			 poolPtr->threads.idle, poolPtr->threads.min);
-		  */
-		  continue;
-		}
-
-		if (ncons <= maxcpt) {
-		    exitMsg = "exceeded max connections per thread + overtime";
-		    break;
-		} else if (ncons <= 0) {
-		    Ns_Log(Notice, "thread is working overtime due to stress %d, waiting %d",
-			   ncons, poolPtr->queue.wait.num);
-		}
-	    } else if (ncons <= 0) {
-		/* Served given # of connections in this thread */
-		exitMsg = "exceeded max connections per thread";
-		break;
+	    /*Ns_Log(Notice, "end of job, waiting %d current %d idle %d",
+		   poolPtr->queue.wait.num,
+		   poolPtr->threads.current,
+		   poolPtr->threads.idle);*/
+	    
+	    if (poolPtr->queue.wait.num > 0) {
+	      /* 
+	       * There are waiting requests. Work on those unless we
+	       * are expiring or we are already under the lowwater
+	       * mark of connection threads.
+	       */
+	      if (ncons > 0
+		  || poolPtr->threads.idle <= poolPtr->threads.min
+		  ) {
+		Ns_Log(Notice, "*** work on waiting request");
+		continue;
+	      }
+	      Ns_Log(Notice, "??? dont'w work on waiting requests");
 	    }
+	    
+	    if (ncons <= maxcpt) {
+	        exitMsg = "exceeded max connections per thread + overtime";
+		break;
+	    } else if (ncons <= 0) {
+	        Ns_Log(Notice, "thread is working overtime due to stress %d, waiting %d",
+		       ncons, poolPtr->queue.wait.num);
+		}
+	} else if (ncons <= 0) {
+	  /* Served given # of connections in this thread */
+	  exitMsg = "exceeded max connections per thread";
+	  break;
         }
     }
-    poolPtr->threads.idle--;
+    argPtr->state = connThread_dead;
+
     poolPtr->threads.current--;
-    if (poolPtr->queue.wait.num > 0) {
-        Ns_CondBroadcast(&poolPtr->queue.cond);
-    }
 
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);
-    Ns_MutexUnlock(&servPtr->pools.lock);
+    Ns_MutexUnlock(poolsLockPtr);
 
     if (joinThread != NULL) {
         JoinConnThread(&joinThread);
     }
     Ns_Log(Notice, "exiting: %s", exitMsg);
+    argPtr->state = connThread_free; 
     Ns_ThreadExit(argPtr);
 }
 
@@ -897,6 +988,7 @@ ConnRun(Conn *connPtr)
      */
 
     connPtr->reqPtr = NsGetRequest(connPtr->sockPtr);
+    
     if (connPtr->reqPtr == NULL) {
         Ns_ConnClose(conn);
         return;
@@ -910,6 +1002,8 @@ ConnRun(Conn *connPtr)
     strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(connPtr->sockPtr->sa.sin_addr));
 
     connPtr->request = &connPtr->reqPtr->request;
+    Ns_Log(Notice,"ConnRun connPtr %p req %p %s",connPtr, connPtr->request, connPtr->request->line);
+    
     connPtr->headers = connPtr->reqPtr->headers;
     connPtr->contentLength = connPtr->reqPtr->length;
 
@@ -1058,12 +1152,44 @@ ConnRun(Conn *connPtr)
 static void
 CreateConnThread(ConnPool *poolPtr)
 {
-    Ns_Thread  thread;
-    Arg       *argPtr;
+    Ns_Thread      thread;
+    ConnThreadArg *argPtr;
+    int i;
+    
+    /*
+     * Get first free connection thread slot; selecting a slot and
+     * occupying it has to be done under a mutex lock, since we do not
+     * want someone else to pick the same. We are competing
+     * potentially against driver/spooler threads and the main thread.
+     */
+    { char *threadName = Ns_ThreadGetName();
+      //fprintf(stderr, "NAME <%s>\n", threadName);
+      assert(strncmp("-driver:", threadName, 8) == 0 
+	     || strncmp("-main-", threadName, 6) == 0
+	     || strncmp("-spooler", threadName, 8) == 0
+	     );
+    }
 
-    argPtr = ns_malloc(sizeof(Arg));
+    /*
+     * TODO: we could do better than the linear search, but the queue
+     * is short...
+     */
+    Ns_MutexLock(&poolPtr->servPtr->pools.lock);
+    for (i = 0; i < poolPtr->threads.max; i++) {
+      if (poolPtr->threadQueue.args[i].state == connThread_free) {
+	argPtr = &(poolPtr->threadQueue.args[i]);
+	break;
+      }
+    }
+    argPtr->state = connThread_initial;
+    Ns_MutexUnlock(&poolPtr->servPtr->pools.lock);
+
+    Ns_Log(Notice, "CreateConnThread use thread [%d]", i);
+
     argPtr->poolPtr = poolPtr;
     argPtr->connPtr = NULL;
+    argPtr->nextPtr = NULL;
+    argPtr->cond = NULL;
     Ns_ThreadCreate(NsConnThread, argPtr, 0, &thread);
 }
 
@@ -1088,11 +1214,12 @@ static void
 JoinConnThread(Ns_Thread *threadPtr)
 {
     void *argArg;
-    Arg  *argPtr;
 
     Ns_ThreadJoin(threadPtr, &argArg);
-    argPtr = (Arg*)argArg;
-    ns_free(argPtr);
+    /*
+     * There is no need to free ConnThreadArg here, since it is
+     * allocated in the driver
+     */
 }
 
 

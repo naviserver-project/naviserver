@@ -556,6 +556,31 @@ typedef struct Conn {
 
 } Conn;
 
+
+/*
+ * The following structure is allocated for each connection thread.
+ * The connPtr member is used for connecting threads with the request
+ * info. The states if a conn thread are defined via enumeration.
+ */
+typedef enum {
+  connThread_free,
+  connThread_initial,
+  connThread_warmup,
+  connThread_ready,
+  connThread_idle,
+  connThread_busy,
+  connThread_dead
+} ConnThreadState;
+
+typedef struct ConnThreadArg {
+    struct ConnPool      *poolPtr;
+    struct Conn          *connPtr;
+    ConnThreadState       state;
+    uintptr_t             tid;         // not needed
+    Ns_Cond               cond;        /* Cond for signaling this conn thread */
+  struct ConnThreadArg *nextPtr;       /* used for the conn thread queue */
+} ConnThreadArg;
+
 /*
  * The following structure maintains a connection thread pool.
  */
@@ -579,11 +604,6 @@ typedef struct ConnPool {
             Conn *firstPtr;
             Conn *lastPtr;
         } wait;
-
-        struct {
-            Conn *firstPtr;
-            Conn *lastPtr;
-        } active;
 
         Ns_Cond  cond;
         int      highwatermark;
@@ -609,6 +629,10 @@ typedef struct ConnPool {
         int creating;
     } threads;
 
+   struct {
+     ConnThreadArg *nextPtr;
+     ConnThreadArg *args;
+   } threadQueue;
 } ConnPool;
 
 /*
