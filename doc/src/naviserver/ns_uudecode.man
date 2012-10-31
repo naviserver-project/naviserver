@@ -6,14 +6,19 @@
 
 [description]
 
- This command performs a binary-to-text decoding on string.
+ This command performs a text to potentially binary conversion,
 
- NOTE: This is HTTP-style uuencoding/uudecoding which is sometimes called "htuu" (see
+ NOTE: This stype of encoding is sometimes called "htuu". This command
+ converts the specified argument from RFC 1113 printable encoding
+ format to its native representation. This technique is similar to the
+ familiar Unix uuencode format in that it maps 6 binary bits to one
+ ASCII character (or more aptly, 3 binary bytes to 4 ASCII
+ characters). However, RFC 1113 does not use the same mapping to
+ printable characters as uuencode.
 
 [list_begin definitions]
 
  [call [cmd ns_uudecode] [arg string]]
-
 
 [list_end]
 
@@ -29,5 +34,7 @@ test
 
 [example_end]
 
+[see_also ns_uuencode]
+[keywords encoding]
 [manpage_end]
 
