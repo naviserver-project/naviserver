@@ -13,7 +13,7 @@ set unreservedChars "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO
 
 test ns_urlencode-1.1.1 {basic syntax} -body {
     ns_urlencode
-} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-part part? ?--? component"}
+} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset charset? ?-part part? ?--? component"}
 
 test ns_urlencode-1.1.2 {basic syntax} -body {
     ns_urlencode -part x y
@@ -21,7 +21,7 @@ test ns_urlencode-1.1.2 {basic syntax} -body {
 
 test ns_urlencode-1.2.1 {basic syntax} -body {
     ns_urldecode
-} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-part part? ?--? component"}
+} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-part part? ?--? component"}
 
 test ns_urlencode-1.2.2 {basic syntax} -body {
     ns_urldecode -part x y
@@ -187,6 +187,12 @@ test ns_urlencode-2.9.1 {rfc2396 section 3.4 URI query component reserved charac
     ns_urlencode -part query {;/?:@&=+,$}
 } -result {%3b%2f%3f%3a%40%26%3d%2b%2c%24}
 
+test ns_urlencode-2.10.1 {charset decode} -body {
+    ns_urldecode -charset iso8859-1 "%FA"
+} -result {ú}
+test ns_urlencode-2.10.2 {charset encode} -body {
+    ns_urlencode -charset iso8859-1 "ú"
+} -result {%fa}
 
 
 unset unreservedChars
