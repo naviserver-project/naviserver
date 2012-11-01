@@ -447,7 +447,7 @@ NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 {
     Ns_DString   ds;
     int          i, nargs, part = 'q';
-    char        *charset;
+    char        *charset  = NULL;
     Tcl_Encoding encoding = NULL;
 
     Ns_ObjvTable parts[] = {
