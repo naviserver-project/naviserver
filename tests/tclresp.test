@@ -467,7 +467,13 @@ test tclresp-11.1 {ns_returnredirect} -constraints serverListen -setup {
     ns_unregister_proc GET /tclresp
 } -match glob -result {302 http://example.com/x *Redirection*http://example.com/x*}
 
-
+test tclresp-11.2 {ns_returnmoved} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {ns_returnmoved http://example.com/x ;#}
+} -body {
+    nstest::http -getbody 1 -getheaders location GET /tclresp
+} -cleanup {
+    ns_unregister_proc GET /tclresp
+} -match glob -result {301 http://example.com/x *Redirection*http://example.com/x*}
 
 test tclresp-12.1 {ns_write} -setup {
     ns_register_proc GET /tclresp {

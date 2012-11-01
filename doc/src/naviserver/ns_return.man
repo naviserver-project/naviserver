@@ -162,7 +162,7 @@ ns_register_proc GET /hello {
 
 
 
-[see_also ns_write ns_returnerror ns_guesstype ns_register_fastpath ns_adp_puts ns_conn]
+[see_also returnstatus-cmds ns_write ns_guesstype ns_register_fastpath ns_adp_puts ns_conn]
 [keywords return response status charset encoding]
 
 [manpage_end]

@@ -35,7 +35,7 @@ the existing connection and using the same Tcl interp.
 [example_end]
 
 [see_also nsd ns_returnredirect]
-[keywords ns_returnredirect]
+[keywords redirect]
 
 [manpage_end]
 

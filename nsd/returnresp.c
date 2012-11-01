@@ -197,6 +197,49 @@ Ns_ConnReturnOk(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ConnReturnMoved --
+ *
+ *      Return a 301 Redirection to the client, or 204 No Content if
+ *      url is null.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR
+ *
+ * Side effects:
+ *      Will close connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ConnReturnMoved(Ns_Conn *conn, CONST char *url)
+{
+    Ns_DString ds, msg;
+    int        result;
+
+    Ns_DStringInit(&ds);
+    Ns_DStringInit(&msg);
+    if (url != NULL) {
+        if (*url == '/') {
+            Ns_ConnLocationAppend(conn, &ds);
+        }
+        Ns_DStringAppend(&ds, url);
+        Ns_ConnSetHeaders(conn, "Location", ds.string);
+        Ns_DStringVarAppend(&msg, "<A HREF=\"", ds.string,
+                            "\">The requested URL has moved permanently here.</A>", NULL);
+        result = Ns_ConnReturnNotice(conn, 301, "Redirection", msg.string);
+    } else {
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", msg.string);
+    }
+    Ns_DStringFree(&msg);
+    Ns_DStringFree(&ds);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ConnReturnNoResponse --
  *
  *      Return a status message to the client.

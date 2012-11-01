@@ -10,7 +10,6 @@ eval ::tcltest::configure $argv
 # special treatment by the HTTP URL scheme.
 set unreservedChars "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-
 test ns_urlencode-1.1.1 {basic syntax} -body {
     ns_urlencode
 } -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset charset? ?-part part? ?--? component"}
@@ -63,6 +62,7 @@ test ns_urlencode-2.2.5 {basic operation} -body {
 test ns_urlencode-2.2.6 {basic operation} -body {
     ns_urldecode -part query "1"
 } -result {1}
+
 
 
 test ns_urlencode-2.3.1 {unreserved characters} -body {
