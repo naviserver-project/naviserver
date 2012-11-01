@@ -142,7 +142,6 @@ ns_section ns/servers
 # 
 ns_section ns/server/${server} 
 	ns_param   directoryfile	$directoryfile
-	ns_param   pageroot		$pageroot
 	#
 	# Scaling and Tuning Options
 	#

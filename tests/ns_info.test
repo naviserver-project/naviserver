@@ -11,7 +11,7 @@ test ns_info-1.1 {basic syntax: plain call} -body {
 
 test ns_info-1.2 {basic syntax: wrong argument} -body {
      ns_info ?
-} -returnCodes error -result {bad option "?": must be address, argv0, boottime, builddate, callbacks, config, home, hostname, locks, log, major, minor, mimetypes, name, nsd, pageroot, patchlevel, pid, platform, pools, scheduled, server, servers, sockcallbacks, tag, tcllib, threads, uptime, version, winnt, filters, traces, requestprocs, url2file, shutdownpending, or started}
+} -returnCodes error -result {bad option "?": must be address, argv0, boottime, builddate, callbacks, config, home, hostname, locks, log, major, minor, mimetypes, name, nsd, pagedir, pageroot, patchlevel, pid, platform, pools, scheduled, server, servers, sockcallbacks, tag, tcllib, threads, uptime, version, winnt, filters, traces, requestprocs, url2file, shutdownpending, or started}
 
 test ns_info-2.1.1 {basic operation} -body {
      ns_info address

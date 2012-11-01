@@ -485,8 +485,9 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     static CONST char *opts[] = {
         "address", "argv0", "boottime", "builddate", "callbacks",
         "config", "home", "hostname", "locks", "log",
-        "major", "minor", "mimetypes", "name", "nsd", "pageroot", "patchlevel",
-        "pid", "platform", "pools", "scheduled", "server", "servers",
+        "major", "minor", "mimetypes", "name", "nsd", "pagedir", 
+	"pageroot", "patchlevel", "pid", "platform", "pools", 
+	"scheduled", "server", "servers",
         "sockcallbacks", "tag", "tcllib", "threads", "uptime",
         "version", "winnt", "filters", "traces", "requestprocs",
         "url2file", "shutdownpending", "started", NULL
@@ -495,7 +496,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     enum {
         IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
         IConfigIdx, IHomeIdx, IHostNameIdx, ILocksIdx, ILogIdx,
-        IMajorIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx, IPageRootIdx, IPatchLevelIdx,
+        IMajorIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx, 
+	IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
         IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
         ISockCallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
@@ -657,6 +659,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     server = itPtr->servPtr->server;
 
     switch (opt) {
+    case IPageDirIdx:
     case IPageRootIdx:
         NsPageRoot(&ds, itPtr->servPtr, NULL);
         Tcl_DStringResult(interp, &ds);

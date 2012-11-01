@@ -162,7 +162,7 @@ ns_param   $servername     $serverdesc
 #
 ns_section "ns/server/${servername}"
 ns_param   directoryfile   $directoryfile
-ns_param   pageroot        $pageroot
+ns_param   pagedir         $pageroot
 ns_param   enabletclpages  false     ;# Parse *.tcl files in pageroot.
 #
 #         Server-level I18N Parameters can be specified here, to override

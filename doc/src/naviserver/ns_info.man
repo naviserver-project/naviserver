@@ -89,9 +89,9 @@ Returns the name of the server implementaiton, i.e. "NaviServer".
 Returns absolute  path and name of the nsd binary, which is currently
 executed.
 
-[call [cmd  ns_info] [arg pageroot]]
+[call [cmd  ns_info] [arg pagedir]]
 
-Returns the absolute path to the page root.
+Returns the absolute path to the page directory root.
 
 [call [cmd  ns_info] [arg patchlevel]]
 
