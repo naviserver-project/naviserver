@@ -728,8 +728,7 @@ NsConnThread(void *arg)
     Conn         *connPtr;
     Ns_Time       wait, *timePtr = &wait;
     unsigned int  id;
-    int           status, cpt, ncons, spread, maxcpt, timeout;
-    double        spreadFactor;
+    int           status, cpt, ncons, timeout;
     char         *p, *path, *exitMsg;
     Ns_Mutex     *poolsLockPtr = &servPtr->pools.lock;
     Ns_Mutex     *tqueueLockPtr = &poolPtr->tqueue.lock;
@@ -763,20 +762,9 @@ NsConnThread(void *arg)
 
     path   = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
     cpt    = Ns_ConfigIntRange(path, "connsperthread", 0, 0, INT_MAX);
-    spread = Ns_ConfigIntRange(path, "spread", 20, 0, 100);
-
-   /* 
-    * spreadFactor is a value of 1.0 +/- configured spread percentage.
-    * when the conigured spread is 0, spreadFactor will be 1.0, 
-    * when it is 100, the spreadFactor will be between 0.0 and 2.0.
-    */
-    spreadFactor = 1.0 + (2 * spread * Ns_DRand() - spread) / 100.0;
     
-    maxcpt  = (int)floor(cpt * (1.0 + spread / 100.0)) ; /* allow max cpt requests + spread requests */
-    cpt     = (int)floor(cpt * spreadFactor);
     ncons   = cpt;
-    maxcpt  = cpt - maxcpt;   /* negative number, expressing maximum overtime count */
-    timeout = (int)floor(poolPtr->threads.timeout * spreadFactor);
+    timeout = poolPtr->threads.timeout;
 
     /*
      * Initialize the connection thread with the blueprint to avoid
@@ -799,8 +787,8 @@ NsConnThread(void *arg)
         idle     = poolPtr->threads.idle; 
         Ns_MutexUnlock(poolsLockPtr);
 
-	/*Ns_Log(Notice, "thread initialize cpt %d maxcpt %d wait %d %p current %d idle %d",
-	  cpt, maxcpt, waitnum, firstPtr, current, idle );*/
+	/*Ns_Log(Notice, "thread initialize cpt %d wait %d %p current %d idle %d",
+	  cpt, waitnum, firstPtr, current, idle );*/
 
         Ns_GetTime(&start);
 	interp = Ns_TclAllocateInterp(servPtr->server);
@@ -1008,27 +996,24 @@ NsConnThread(void *arg)
 	    min     = poolPtr->threads.min;
             Ns_MutexUnlock(poolsLockPtr);
 
-	    /*Ns_Log(Notice, "[%d] end of job, waiting %d current %d idle %d",
+	    Ns_Log(Notice, "[%d] end of job, waiting %d current %d idle %d ncons %d",
 		   ThreadNr(poolPtr, argPtr),
-		   waiting, poolPtr->threads.current, idle);*/
+		   waiting, poolPtr->threads.current, idle, ncons);
 	    
 	    if (waiting > 0) {
-	      /* 
-	       * There are waiting requests. Work on those unless we
-	       * are expiring or we are already under the lowwater
-	       * mark of connection threads.
-	       */
-	      if (ncons > 0 || idle <= min) {
-		  //Ns_Log(Notice, "*** work on waiting request (waiting %d)", waiting);
-		  continue;
-	      }
-	      Ns_Log(Notice, "??? don't work on waiting requests");
+		/* 
+		 * There are waiting requests. Work on those unless we
+		 * are expiring or we are already under the lowwater
+		 * mark of connection threads.
+		 */
+		if (ncons > 0 || idle <= min) {
+		    //Ns_Log(Notice, "*** work on waiting request (waiting %d)", waiting);
+		    continue;
+		}
+		Ns_Log(Notice, "??? don't work on waiting requests");
 	    }
-
-	    if (ncons <= maxcpt) {
-	        exitMsg = "exceeded max connections per thread + overtime";
-		break;
-	    } else if (ncons <= 0) {
+	    
+	    if (ncons <= 0) {
 	        Ns_Log(Notice, "thread is working overtime due to stress %d, waiting %d",
 		       ncons, waiting);
 	    }
@@ -1083,8 +1068,11 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     /*
      * Re-initialize and run the connection. 
      */
-
-    connPtr->reqPtr = NsGetRequest(connPtr->sockPtr);
+    if (connPtr->sockPtr) {
+	connPtr->reqPtr = NsGetRequest(connPtr->sockPtr);
+    } else {
+	connPtr->reqPtr = NULL;
+    }
     
     if (connPtr->reqPtr == NULL) {
         Ns_ConnClose(conn);
