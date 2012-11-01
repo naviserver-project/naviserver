@@ -402,7 +402,7 @@ CreatePool(NsServer *servPtr, char *pool)
         Ns_CompressInit(&connPtr->stream);
     }
     connBufPtr[n].nextPtr = NULL;
-    poolPtr->queue.freePtr = &connBufPtr[0];
+    poolPtr->wqueue.freePtr = &connBufPtr[0];
 
     poolPtr->threads.max =
         Ns_ConfigIntRange(path, "maxthreads", 10, 0, maxconns);
@@ -418,12 +418,12 @@ CreatePool(NsServer *servPtr, char *pool)
 	 * Eager parallel thread creation: allow parallel
 	 * connectionthread creation whenever requests are queued.
 	 */
-        poolPtr->queue.highwatermark = 0;
+        poolPtr->wqueue.highwatermark = 0;
     } else if (threshold == 100) {
         /* 
 	 * No parallel thread creation 
 	 */
-        poolPtr->queue.highwatermark = INT_MAX;
+        poolPtr->wqueue.highwatermark = INT_MAX;
     } else {
         /* 
 	 * Parallel threads are allowed, when the number of queued
@@ -436,12 +436,33 @@ CreatePool(NsServer *servPtr, char *pool)
 	 */
         int queueDepth = maxconns - poolPtr->threads.max;
 
-        poolPtr->queue.highwatermark = (queueDepth * threshold) / 100;
+        poolPtr->wqueue.highwatermark = (queueDepth * threshold) / 100;
     }
 
-    poolPtr->threadQueue.args = ns_calloc((size_t) poolPtr->threads.max, sizeof(ConnThreadArg));
+    poolPtr->tqueue.args = ns_calloc((size_t) poolPtr->threads.max, sizeof(ConnThreadArg));
     /*
      * The Pools are never freed before exit, so there is apparently no
      * need to free connBufPtr or threadQueue.args explicitely.
      */
+
+    {
+	char name[128] = "nsd:";
+	
+	if (*pool == 0) {
+	    pool = "default";
+	}
+	strncat(name, pool, 120);
+	
+	for (i = 0; i < poolPtr->threads.max; i++) {
+	    char buffer[64];
+	    sprintf(buffer, "connthread:%d", i);
+	    Ns_MutexInit(&poolPtr->tqueue.args[i].lock);
+	    Ns_MutexSetName2(&poolPtr->tqueue.args[i].lock, name, buffer);
+	}
+	Ns_MutexInit(&poolPtr->tqueue.lock);
+	Ns_MutexSetName2(&poolPtr->tqueue.lock, name, "tqueue");
+	
+	Ns_MutexInit(&poolPtr->wqueue.lock);
+	Ns_MutexSetName2(&poolPtr->wqueue.lock, name, "wqueue");
+    }
 }
