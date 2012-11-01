@@ -172,6 +172,8 @@ NsInitDrivers(void)
 {
     Tcl_InitHashTable(&hosts, TCL_STRING_KEYS);
     DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
+    Ns_MutexInit(&reqLock);
+    Ns_MutexSetName2(&reqLock, "ns:driver","freelist");
 }
 
 
