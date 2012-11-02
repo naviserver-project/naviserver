@@ -2078,6 +2078,10 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
+Ns_ConnReturnMoved(Ns_Conn *conn, CONST char *url)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
 Ns_ConnReturnNotFound(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 

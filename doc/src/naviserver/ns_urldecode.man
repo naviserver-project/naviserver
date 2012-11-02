@@ -8,19 +8,27 @@
 
 [description]
 
- This command decodes a string according to the rules for URL encoding defined in 
+ This command decodes a string according to the rules for URL encoding
+ defined in RFC #1738, Uniform Resource Locators.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
- [call [cmd ns_urldecode] [opt [arg {-charset charset}]] [arg data]]
-
+ [call [cmd ns_urldecode] \
+     [opt [option "-charset [arg charset]"]] \
+     [opt [option "-part [arg part]"]] \
+     [arg string]]
 
 [list_end]
 
+The option [arg charset] can be used to specify the character set of
+the decode operation. Option [arg part] is used to specify the 
+[arg query] (default) or [arg path] encoding.
 
+[see_also nsd ns_urlencode ns_charsets ns_urlcharset]
+[keywords encoding charset url]
 
 [manpage_end]
 

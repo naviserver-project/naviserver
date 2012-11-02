@@ -142,9 +142,8 @@ install-examples:
 DTPLITE=dtplite
 
 build-doc:
-	$(MKDIR) doc/html doc/man
-	$(RM) doc/html/* doc/man/* doc/tmp
-	$(MKDIR) doc/tmp
+	$(RM) doc/html doc/man doc/tmp
+	$(MKDIR) doc/html doc/man doc/tmp
 	@for srcdir in nscgi \
 		       nslog \
 		       nsdb \

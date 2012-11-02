@@ -78,8 +78,8 @@ Is this the right way to use this command? The example is contrived, but I wante
    }
 [example_end]
 
+[see_also ns_cond ns_event ns_mutex ns_thread]
 
-[keywords nsd ns_cond ns_event ns_mutex ns_thread]
 
 [manpage_end]
 

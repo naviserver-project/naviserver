@@ -229,6 +229,14 @@ typedef struct DIR_ *DIR;
 
 #define NS_SOCKET	int
 
+/* 
+ * Many modules use SOCKET and not NS_SOCKET; don't force updates for
+ * the time being, allthough the use of SOCKET should be deprecated.
+ */
+#ifndef SOCKET
+# define SOCKET NS_SOCKET
+#endif
+
 # if defined(HAVE_SYS_UIO_H)
 #  include <sys/uio.h>
 # elif defined(HAVE_UIO_H)

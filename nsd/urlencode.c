@@ -445,8 +445,10 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
 int
 NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    Ns_DString  ds;
-    int         i, nargs, part = 'q';
+    Ns_DString   ds;
+    int          i, nargs, part = 'q';
+    char        *charset  = NULL;
+    Tcl_Encoding encoding = NULL;
 
     Ns_ObjvTable parts[] = {
         {"query",    'q'},
@@ -454,6 +456,7 @@ NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         {NULL,       0}
     };
     Ns_ObjvSpec opts[] = {
+        {"-charset", Ns_ObjvString, &charset, NULL},
         {"-part",    Ns_ObjvIndex,  &part,   &parts},
         {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
@@ -466,9 +469,12 @@ NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         return TCL_ERROR;
     }
 
+    if (charset) {
+        encoding = Ns_GetCharsetEncoding(charset);
+    }
     Ns_DStringInit(&ds);
     for (i = objc - nargs; i < objc; ++i) {
-        UrlEncode(&ds, Tcl_GetString(objv[i]), NULL, part);
+        UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part);
         if (i + 1 < objc) {
             if (part == 'q') {
                 Ns_DStringNAppend(&ds, "&", 1);
@@ -504,8 +510,9 @@ int
 NsTclUrlDecodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_DString   ds;
-    char        *string;
+    char        *string, *charset = NULL;
     int          part = 'q';
+    Tcl_Encoding encoding = NULL;
 
     Ns_ObjvTable parts[] = {
         {"query",    'q'},
@@ -513,8 +520,9 @@ NsTclUrlDecodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         {NULL,       0}
     };
     Ns_ObjvSpec opts[] = {
+        {"-charset", Ns_ObjvString,  &charset, NULL},
         {"-part",    Ns_ObjvIndex,   &part,   &parts},
-        {"--",       Ns_ObjvBreak,    NULL,    NULL},
+        {"--",       Ns_ObjvBreak,   NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -526,7 +534,11 @@ NsTclUrlDecodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     }
 
     Ns_DStringInit(&ds);
-    UrlDecode(&ds, string, NULL, part);
+    if (charset) {
+        encoding = Ns_GetCharsetEncoding(charset);
+    }
+
+    UrlDecode(&ds, string, encoding, part);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;

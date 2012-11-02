@@ -30,7 +30,7 @@
 
 
 [see_also nsd]
-[keywords ns_charsets]
+[keywords charset url]
 
 [manpage_end]
 

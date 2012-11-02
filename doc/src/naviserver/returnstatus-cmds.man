@@ -1,7 +1,6 @@
 [include version_include.man]
-[include version_include.man]
 
-[manpage_begin ns_returnerror n [vset version]]
+[manpage_begin returnstatus-cmds n [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
 [titledesc {Return a complete HTTP status message}]
 
@@ -53,7 +52,6 @@ header will be set with the given [arg url].
 Use this response to signal that the resource identified by the requested URL
 has permanently moved to a new location. The client should request the new URL
 instead of the old one in the future.
-
 
 
 [call [cmd ns_returnredirect] \
@@ -196,7 +194,7 @@ ns_register_proc GET /service {
     set hour [lb]clock format [lb]clock seconds[rb] -format %H[rb]
 
     if {$hour >= 12 && $hour <= 13} {
-        [cmd ns_returnerror] 503 "Gone for lunch. Back at 2pm."
+        ns_returnerror 503 "Gone for lunch. Back at 2pm."
         return
     }
 
@@ -205,8 +203,7 @@ ns_register_proc GET /service {
 [example_end]
 
 
-
-[see_also ns_return]
-[keywords return response status]
+[see_also ns_return ns_internalredirect]
+[keywords return redirect response status]
 
 [manpage_end]

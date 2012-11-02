@@ -744,7 +744,43 @@ NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     return Result(interp, result);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclReturnMovedObjCmd --
+ *
+ *      Implements ns_returnmoved.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *      Interpreter result set to 0 on success or 1 on failure.
+ *
+ * Side effects:
+ *      See Ns_ConnReturnMoved().
+ *
+ *----------------------------------------------------------------------
+ */
 
+int
+NsTclReturnMovedObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+                          Tcl_Obj *CONST objv[])
+{
+    Ns_Conn *conn;
+    int      result;
+
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "location");
+        return TCL_ERROR;
+    }
+    if (GetConn(arg, interp, &conn) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    result = Ns_ConnReturnMoved(conn, Tcl_GetString(objv[1]));
+
+    return Result(interp, result);
+}
 
 /*
  *----------------------------------------------------------------------

@@ -28,7 +28,7 @@
 
 
 [see_also nsd]
-[keywords ns_encodingforcharset]
+[keywords encoding charset]
 
 [manpage_end]
 
