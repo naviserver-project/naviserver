@@ -56,12 +56,19 @@
 void
 Ns_GetTime(Ns_Time *timePtr)
 {
-    Tcl_Time tbuf;
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval tbuf;
 
+    gettimeofday(&tbuf, NULL);
+    timePtr->sec = tbuf.tv_sec;
+    timePtr->usec = tbuf.tv_usec;
+#else
+    Tcl_Time tbuf;
     Tcl_GetTime(&tbuf);
 
     timePtr->sec = tbuf.sec;
     timePtr->usec = tbuf.usec;
+#endif
 }
 
 

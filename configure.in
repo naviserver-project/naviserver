@@ -218,6 +218,7 @@ AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
 # be working (but does not report POLLHUP).
 
 AC_CHECK_FUNCS(poll)
+AC_CHECK_FUNCS(gettimeofday)
 
 #
 # Detemine the maximum value of time_t depending on the size of the
