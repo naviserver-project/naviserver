@@ -199,9 +199,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     char           *path,*address, *host, *bindaddr, *defproto, *defserver;
     int             i, n, defport;
     ServerMap      *mapPtr;
-    Tcl_HashEntry  *hPtr;
     Ns_DString      ds;
-    Ns_Set         *set;
     struct in_addr  ia;
     struct hostent *he;
     Driver         *drvPtr;
@@ -416,7 +414,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     if (spPtr->threads > 0) {
         Ns_Log(Notice, "%s: enable %d spooler thread(s) "
-               "for uploads >= %ld bytes", module,
+               "for uploads >= %" TCL_LL_MODIFIER "d bytes", module,
                spPtr->threads, drvPtr->readahead);
         for (i = 0; i < spPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
@@ -452,6 +450,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     if (server == NULL) {
+	Ns_Set *set;
+
         if (defserver == NULL) {
             Ns_Fatal("%s: virtual servers configured,"
                      " but %s has no defaultserver defined", module, path);
@@ -466,7 +466,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", module, server);
             } else {
-                hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
+		Tcl_HashEntry  *hPtr = Tcl_CreateHashEntry(&hosts, host, &n);
                 if (!n) {
                     Ns_Log(Error, "%s: duplicate host map: %s", module, host);
                 } else {
@@ -2288,7 +2288,7 @@ SockParse(Sock *sockPtr, int spooler)
 		     */
                     if (reqPtr->length > (size_t)drvPtr->maxinput) {
                         Ns_Log(DriverDebug, "SockParse: request too large, length=%"
-                                            TCL_LL_MODIFIER "d, maxinput=%" TCL_LL_MODIFIER "d",
+                                            PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
                                reqPtr->length, drvPtr->maxinput);
 			/* 
 			 * We have to read the full request (although
@@ -2413,7 +2413,7 @@ SockParse(Sock *sockPtr, int spooler)
             reqPtr->content = NULL;
             reqPtr->next = NULL;
             reqPtr->avail = 0;
-            Ns_Log(Debug, "spooling content to file: size=%" TCL_LL_MODIFIER "d, file=%s",
+            Ns_Log(Debug, "spooling content to file: size=%" PRIdz ", file=%s",
                    reqPtr->length, sockPtr->tfile);
 
             /*
@@ -2452,7 +2452,7 @@ SockParse(Sock *sockPtr, int spooler)
                 return SOCK_ERROR;
             }
             reqPtr->content = sockPtr->taddr;
-            Ns_Log(Debug, "spooling content to file: readahead=%ld, filesize=%i",
+            Ns_Log(Debug, "spooling content to file: readahead=%" PRIdz ", filesize=%i",
                    drvPtr->readahead, (int)sockPtr->tsize);
 #endif
         } else {
@@ -2501,7 +2501,6 @@ static int
 SockSetServer(Sock *sockPtr)
 {
     ServerMap     *mapPtr = NULL;
-    Tcl_HashEntry *hPtr;
     char          *host = NULL;
     int            status = 1;
 
@@ -2516,7 +2515,7 @@ SockSetServer(Sock *sockPtr)
     }
     if (sockPtr->servPtr == NULL) {
         if (host) {
-            hPtr = Tcl_FindHashEntry(&hosts, host);
+            Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&hosts, host);
             if (hPtr != NULL) {
                 mapPtr = Tcl_GetHashValue(hPtr);
             }
@@ -2792,7 +2791,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     drvPtr->spooler.curPtr = drvPtr->spooler.curPtr->nextPtr;
     Ns_MutexUnlock(&drvPtr->spooler.lock);
 
-    Ns_Log(Debug, "Spooler: %d: started fd=%d: %" TCL_LL_MODIFIER "d bytes",
+    Ns_Log(Debug, "Spooler: %d: started fd=%d: %" PRIdz " bytes",
            queuePtr->id, sockPtr->sock, sockPtr->reqPtr->length);
 
     Ns_MutexLock(&queuePtr->lock);
@@ -3092,7 +3091,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     if (nsend < (size_t)wrPtr->maxsize) {
         Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%"
-                            TCL_LL_MODIFIER "d < %d)",
+                            PRIdz " < %d)",
                nsend, wrPtr->maxsize);
         return NS_ERROR;
     }
@@ -3166,7 +3165,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     Ns_MutexUnlock(&wrPtr->lock);
 
     Ns_Log(Debug, "Writer: %d: started sock=%d, fd=%d: "
-           "size=%" TCL_LL_MODIFIER "d, flags=%X: keep=%d, %s",
+           "size=%" PRIdz ", flags=%X: keep=%d, %s",
            queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd,
            nsend, wrSockPtr->flags, wrSockPtr->keep, connPtr->reqPtr->request.url);
 

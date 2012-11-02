@@ -728,7 +728,7 @@ NsConnThread(void *arg)
     Conn         *connPtr;
     Ns_Time       wait, *timePtr = &wait;
     unsigned int  id;
-    int           status, cpt, ncons, timeout;
+    int           status = NS_OK, cpt, ncons, timeout;
     char         *p, *path, *exitMsg;
     Ns_Mutex     *poolsLockPtr = &servPtr->pools.lock;
     Ns_Mutex     *tqueueLockPtr = &poolPtr->tqueue.lock;
@@ -773,22 +773,6 @@ NsConnThread(void *arg)
     {
 	Tcl_Interp *interp;
 	Ns_Time     start, end, diff;
-        int	    waitnum, current, idle;
-        void       *firstPtr;
-
-        /* To ensure a short lock, copy the variables from poolPtr */
-	Ns_MutexLock(wqueueLockPtr);
-        waitnum  = poolPtr->wqueue.wait.num;
-        firstPtr = poolPtr->wqueue.wait.firstPtr;
-	Ns_MutexUnlock(wqueueLockPtr);
-
-        Ns_MutexLock(poolsLockPtr);
-        current  = poolPtr->threads.current;
-        idle     = poolPtr->threads.idle; 
-        Ns_MutexUnlock(poolsLockPtr);
-
-	/*Ns_Log(Notice, "thread initialize cpt %d wait %d %p current %d idle %d",
-	  cpt, waitnum, firstPtr, current, idle );*/
 
         Ns_GetTime(&start);
 	interp = Ns_TclAllocateInterp(servPtr->server);
@@ -812,18 +796,17 @@ NsConnThread(void *arg)
 
 
     while (1) {
-        int shutdown;
-	
+
 	/*
 	 * We are ready to process requests. Pick it either a request
 	 * from the waiting queue, or go to a waiting state and add
 	 * jourself to the conn thread queue.
 	 */
-
 	assert(argPtr->connPtr == NULL);
 	assert(argPtr->state == connThread_ready);
 
 	if (poolPtr->wqueue.wait.firstPtr) {
+	    connPtr = NULL;	
 	    Ns_MutexLock(wqueueLockPtr);
 	    if (poolPtr->wqueue.wait.firstPtr) {
 		/* 
@@ -875,7 +858,7 @@ NsConnThread(void *arg)
 	     */
 	    while (1) {
 
-		if ((shutdown = servPtr->pools.shutdown)) break;
+		if (servPtr->pools.shutdown) break;
 		
 		Ns_GetTime(timePtr);
 		Ns_IncrTime(timePtr, timeout, 0);
@@ -892,7 +875,7 @@ NsConnThread(void *arg)
 		    if (argPtr->connPtr) {
 			/* this should not happen; probably a signal was lost */
 			Ns_Log(Warning, "signal lost, resuming after timeout");
-			status = TCL_OK;
+			status = NS_OK;
 		    }
 		    if (poolPtr->threads.current <= poolPtr->threads.min) continue;
 		    //fprintf(stderr, "timeout can die\n");
@@ -936,7 +919,7 @@ NsConnThread(void *arg)
 	    
 	    argPtr->state = connThread_busy;
 	    
-	    if (shutdown) {
+	    if (servPtr->pools.shutdown) {
 		exitMsg = "shutdown pending";
 		break;
 	    } else if (status == NS_TIMEOUT) {
@@ -1241,7 +1224,7 @@ static void
 CreateConnThread(ConnPool *poolPtr)
 {
     Ns_Thread      thread;
-    ConnThreadArg *argPtr;
+    ConnThreadArg *argPtr = NULL;
     int i;
     
     /*
@@ -1330,8 +1313,6 @@ JoinConnThread(Ns_Thread *threadPtr)
 static void
 AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
 {
-    char    buf[100];
-    char   *p;
     Ns_Time now, diff;
 
     Tcl_DStringStartSublist(dsPtr);
@@ -1340,16 +1321,18 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
      * An annoying race condition can be lethal here.
      */
     if (connPtr != NULL) {
+	char  buf[100];
+
         Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
 	if (connPtr->reqPtr != NULL) {
-	  Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((Ns_Conn *) connPtr));
+	    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeer((Ns_Conn *) connPtr));
 	} else {
-	  /* Actually, this should not happen, but it does, maybe due
-	   * to the above mentioned race condition; we notice in the
-	   * errlog the fact and return a placeholder value
-	   */
-	  Ns_Log(Notice, "AppendConn: no reqPtr in state %s; ignore conn in output", state);
-	  Tcl_DStringAppendElement(dsPtr, "unknown");
+	    /* Actually, this should not happen, but it does, maybe due
+	     * to the above mentioned race condition; we notice in the
+	     * errlog the fact and return a placeholder value
+	     */
+	    Ns_Log(Notice, "AppendConn: no reqPtr in state %s; ignore conn in output", state);
+	    Tcl_DStringAppendElement(dsPtr, "unknown");
 	}
         Tcl_DStringAppendElement(dsPtr, state);
 
@@ -1360,14 +1343,15 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
          * admin command.
          */
         if (connPtr->request) {
-	  p = connPtr->request->method ? connPtr->request->method : "?";
-	  Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
-	  p = connPtr->request->url ? connPtr->request->url : "?";
-	  Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
+	    char *p;
+	    p = connPtr->request->method ? connPtr->request->method : "?";
+	    Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
+	    p = connPtr->request->url ? connPtr->request->url : "?";
+	    Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
 	} else {
-	  Ns_Log(Notice, "AppendConn: no request in state %s; ignore conn in output", state);
-	  Tcl_DStringAppendElement(dsPtr, "unknown");
-	  Tcl_DStringAppendElement(dsPtr, "unknown");
+	    Ns_Log(Notice, "AppendConn: no request in state %s; ignore conn in output", state);
+	    Tcl_DStringAppendElement(dsPtr, "unknown");
+	    Tcl_DStringAppendElement(dsPtr, "unknown");
 	}
 	Ns_GetTime(&now);
         Ns_DiffTime(&now, &connPtr->startTime, &diff);

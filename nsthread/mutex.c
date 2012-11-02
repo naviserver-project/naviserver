@@ -51,7 +51,7 @@ typedef struct Mutex {
     char	     name[NS_THREAD_NAMESIZE+1];
 } Mutex;
 
-#define GETMUTEX(mutex) (*(mutex)?((Mutex *)*(mutex)):GetMutex((mutex)))
+#define GETMUTEX(mutex) (*(mutex) ? ((Mutex *)*(mutex)) : GetMutex((mutex)))
 static Mutex *GetMutex(Ns_Mutex *mutex);
 static Mutex *firstMutexPtr;
 
