@@ -404,6 +404,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 		}
 		poolPtr->wqueue.wait.lastPtr = connPtr;
 		poolPtr->wqueue.wait.num ++;
+		poolPtr->servPtr->stats.queued++;
 		create = neededAdditionalConnectionThreads(poolPtr);
 		Ns_MutexUnlock(&poolPtr->wqueue.lock);
 	    }
@@ -472,17 +473,17 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     NsInterp    *itPtr = arg;
     NsServer    *servPtr = itPtr->servPtr;
     ConnPool    *poolPtr;
-    char        *pool;
-    Tcl_DString ds;
+    char        *pool, buf[100];
+    Tcl_DString ds, *dsPtr = &ds;
 
     static CONST char *opts[] = {
         "active", "all", "connections", "keepalive", "pools", "queued",
-        "threads", "waiting", NULL,
+        "threads", "stats", "waiting", NULL,
     };
 
     enum {
         SActiveIdx, SAllIdx, SConnectionsIdx, SKeepaliveIdx, SPoolsIdx,
-        SQueuedIdx, SThreadsIdx, SWaitingIdx,
+        SQueuedIdx, SThreadsIdx, SStatsIdx, SWaitingIdx,
     };
 
     if (objc != 2 && objc != 3) {
@@ -528,6 +529,24 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         Tcl_SetObjResult(interp, Tcl_NewLongObj(servPtr->pools.nextconnid));
         break;
 
+    case SStatsIdx:
+        Tcl_DStringInit(dsPtr);
+
+        Tcl_DStringAppendElement(dsPtr, "requests");
+        snprintf(buf, sizeof(buf), "%lu", servPtr->pools.nextconnid);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringAppendElement(dsPtr, "spools");
+        snprintf(buf, sizeof(buf), "%lu", servPtr->stats.spool);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringAppendElement(dsPtr, "queued");
+        snprintf(buf, sizeof(buf), "%lu", servPtr->stats.queued);
+        Tcl_DStringAppendElement(dsPtr, buf);
+
+        Tcl_DStringResult(interp, dsPtr);
+        break;
+
     case SThreadsIdx:
         Ns_TclPrintfResult(interp,
             "min %d max %d current %d idle %d stopping 0",
@@ -538,24 +557,24 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case SActiveIdx:
     case SQueuedIdx:
     case SAllIdx:
-        Tcl_DStringInit(&ds);
+        Tcl_DStringInit(dsPtr);
         if (opt != SQueuedIdx) {
 	    int i;
 	    Ns_MutexLock(&poolPtr->tqueue.lock);
 	    for (i=0; i < poolPtr->threads.max; i++) {
 	        ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
 		if (argPtr->connPtr) {
-		    AppendConnList(&ds, argPtr->connPtr, "running");
+		    AppendConnList(dsPtr, argPtr->connPtr, "running");
 		}
 	    }
 	    Ns_MutexUnlock(&poolPtr->tqueue.lock);
         }
         if (opt != SActiveIdx) {
 	    Ns_MutexLock(&poolPtr->wqueue.lock);
-            AppendConnList(&ds, poolPtr->wqueue.wait.firstPtr, "queued");
+            AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, "queued");
 	    Ns_MutexUnlock(&poolPtr->wqueue.lock);
         }
-        Tcl_DStringResult(interp, &ds);
+        Tcl_DStringResult(interp, dsPtr);
     }
 
     return TCL_OK;

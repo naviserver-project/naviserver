@@ -3084,6 +3084,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     drvPtr = connPtr->sockPtr->drvPtr;
     wrPtr  = &drvPtr->writer;
 
+    Ns_Log(Notice, "NsWriterQueue: writer threads %d nsend %ld maxsize %d", wrPtr->threads, nsend, wrPtr->maxsize);
+
     if (wrPtr->threads == 0) {
         Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");
         return NS_ERROR;
@@ -3096,6 +3098,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
+    //Ns_MutexLock(&drvPtr->servPtr->pools.lock);
+    drvPtr->servPtr->stats.spool++;
+    //Ns_MutexUnlock(&drvPtr->servPtr->pools.lock);
 
     wrSockPtr = (WriterSock*)ns_calloc(1, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
@@ -3285,7 +3290,8 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
 
         if (offset > 0) {
-	  lseek(fd, (off_t)offset, SEEK_SET);
+	    lseek(fd, (off_t)offset, SEEK_SET);
+            size -= offset;
         }
 
         /*

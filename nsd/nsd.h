@@ -652,12 +652,17 @@ typedef struct NsServer {
 
     struct {
         Ns_Mutex lock;
-        int nextconnid;
+        unsigned long nextconnid;
         bool shutdown;
         ConnPool *firstPtr;
         ConnPool *defaultPtr;
         Ns_Thread joinThread;
     } pools;
+
+    struct {
+        unsigned long spool;
+        unsigned long queued;
+    } stats;
 
     /*
      * The following struct maintains various server options.
