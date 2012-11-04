@@ -685,23 +685,30 @@ NsFreeRequest(Request *reqPtr)
 {
     if (reqPtr != NULL) {
 
-        reqPtr->next       = NULL;
-        reqPtr->content    = NULL;
-        reqPtr->length     = 0;
-        reqPtr->avail      = 0;
-        reqPtr->coff       = 0;
-        reqPtr->woff       = 0;
-        reqPtr->roff       = 0;
-        reqPtr->leadblanks = 0;
+        reqPtr->next           = NULL;
+        reqPtr->content        = NULL;
+        reqPtr->length         = 0;
+        reqPtr->contentLength  = 0;
+        reqPtr->avail          = 0;
+        reqPtr->leadblanks     = 0;
 
         reqPtr->expectedLength = 0;
-        reqPtr->contentLength  = 0;
+        reqPtr->chunkStartOff  = 0;
+        reqPtr->chunkWriteOff  = 0;
+
+        reqPtr->woff           = 0;
+        reqPtr->roff           = 0;
+        reqPtr->coff           = 0;
 
         Tcl_DStringFree(&reqPtr->buffer);
-
         Ns_SetTrunc(reqPtr->headers, 0);
 
-        Ns_ResetRequest(&reqPtr->request);
+        if (reqPtr->auth) {
+	  Ns_SetFree(reqPtr->auth);
+	  reqPtr->auth = NULL;
+	}
+
+	Ns_ResetRequest(&reqPtr->request);
 
         Ns_MutexLock(&reqLock);
         reqPtr->nextPtr = firstReqPtr;
@@ -1438,14 +1445,6 @@ SockPrepare(Sock *sockPtr)
         reqPtr = ns_calloc(1, sizeof(Request));
         Tcl_DStringInit(&reqPtr->buffer);
         reqPtr->headers    = Ns_SetCreate(NULL);
-        reqPtr->next       = NULL;
-        reqPtr->content    = NULL;
-        reqPtr->length     = 0;
-        reqPtr->avail      = 0;
-        reqPtr->coff       = 0;
-        reqPtr->woff       = 0;
-        reqPtr->roff       = 0;
-        reqPtr->leadblanks = 0;
     }
     sockPtr->reqPtr = reqPtr;
 }
@@ -3098,9 +3097,11 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    //Ns_MutexLock(&drvPtr->servPtr->pools.lock);
-    drvPtr->servPtr->stats.spool++;
-    //Ns_MutexUnlock(&drvPtr->servPtr->pools.lock);
+    if (drvPtr->servPtr) {
+      //Ns_MutexLock(&drvPtr->servPtr->pools.lock);
+      drvPtr->servPtr->stats.spool++;
+      //Ns_MutexUnlock(&drvPtr->servPtr->pools.lock);
+    }
 
     wrSockPtr = (WriterSock*)ns_calloc(1, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
