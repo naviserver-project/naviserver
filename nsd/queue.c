@@ -895,10 +895,13 @@ NsConnThread(void *arg)
 			/* this should not happen; probably a signal was lost */
 			Ns_Log(Warning, "signal lost, resuming after timeout");
 			status = NS_OK;
+			break;
+		    } else if (poolPtr->threads.current <= poolPtr->threads.min) {
+		      continue;
+		    } else {
+		      //fprintf(stderr, "timeout can die\n");
+		      break;
 		    }
-		    if (poolPtr->threads.current <= poolPtr->threads.min) continue;
-		    //fprintf(stderr, "timeout can die\n");
-		    break;
 		}
 		if (argPtr->connPtr) break;
 		
