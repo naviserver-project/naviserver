@@ -1122,71 +1122,76 @@ DriverThread(void *arg)
 	    nextPtr = sockPtr->nextPtr;
 
 	    if (PollHup(&pdata, sockPtr->pidx)) {
-	      /*
-	       * Peer has closed the connection
-	       */
-	      SockRelease(sockPtr, SOCK_CLOSE, 0);
-
+		/*
+		 * Peer has closed the connection
+		 */
+		SockRelease(sockPtr, SOCK_CLOSE, 0);
+		
 	    } else if (PollIn(&pdata, sockPtr->pidx) == 0) {
-	      /*
-	       * Got no data
-	       */
+		/*
+		 * Got no data
+		 */
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
                     Push(sockPtr, readPtr);
                 }
-
+		
             } else {
-
+		
                 /*
 		 * Got some data.
                  * If enabled, perform read-ahead now.
                  */
-
-                sockPtr->keep = 0;
+		
                 if (sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) {
                     n = SockRead(sockPtr, 0);
+		    /*
+		     * Queue for connection processing if ready.
+		     */
+		    
+		    switch (n) {
+		    case SOCK_SPOOL:
+			if (!SockSpoolerQueue(sockPtr->drvPtr, sockPtr)) {
+			    Push(sockPtr, readPtr);
+			}
+			break;
+			
+		    case SOCK_MORE:
+			SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+			Push(sockPtr, readPtr);
+			break;
+			
+		    case SOCK_READY:
+			if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+			    Push(sockPtr, waitPtr);
+			}
+			break;
+			
+		    default:
+			SockRelease(sockPtr, n, errno);
+			break;
+		    }
                 } else {
-                    n = SOCK_READY;
-                }
-
-                /*
-                 * Queue for connection processing if ready.
-                 */
-
-                switch (n) {
-                case SOCK_SPOOL:
-                    if (!SockSpoolerQueue(sockPtr->drvPtr, sockPtr)) {
-                        Push(sockPtr, readPtr);
-                    }
-                    break;
-
-                case SOCK_MORE:
-                    SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                    Push(sockPtr, readPtr);
-                    break;
-
-                case SOCK_READY:
-                    if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                        Push(sockPtr, waitPtr);
-                    }
-                    break;
-
-                default:
-                    SockRelease(sockPtr, n, errno);
-                    break;
-                }
+		  /* no NS_DRIVER_ASYNC defined */
+		    Ns_Log(Notice, "DriverThread readahead have some data no async sock read, setting sock more  ===== diff time %d", 
+			   Ns_DiffTime(&sockPtr->timeout, &now, &diff));
+		    
+		    sockPtr->keep = 0;
+		    if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
+			SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
+                    } 
+		}
             }
             sockPtr = nextPtr;
         }
-
+	
         /*
          * Attempt to queue any pending connection
          * after reversing the list to ensure oldest
          * connections are tried first.
          */
-
+	
         if (waitPtr != NULL) {
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {

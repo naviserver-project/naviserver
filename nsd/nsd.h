@@ -608,6 +608,7 @@ typedef struct ConnPool {
 
         Ns_Cond  cond;
         Ns_Mutex lock;
+        int      lowwatermark;
         int      highwatermark;
 
     } wqueue;
@@ -662,6 +663,7 @@ typedef struct NsServer {
     struct {
         unsigned long spool;
         unsigned long queued;
+        unsigned long connthreads;
     } stats;
 
     /*
