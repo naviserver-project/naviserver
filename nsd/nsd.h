@@ -632,11 +632,19 @@ typedef struct ConnPool {
         int creating;
     } threads;
 
+    /*
+     * The following struct maintains the state of the thread
+     * connection queue.  "nextPtr" points to the next available
+     * connection thread, "args" keeps the array of all configured
+     * connection structs, and "lock" is used for locking this queue.
+     */
+
    struct {
-        ConnThreadArg *nextPtr;
-        ConnThreadArg *args;
-        Ns_Mutex       lock;
+       ConnThreadArg *nextPtr;
+       ConnThreadArg *args;
+       Ns_Mutex       lock;
    } tqueue;
+
 } ConnPool;
 
 /*
@@ -970,6 +978,7 @@ extern void NsStopServers(Ns_Time *toPtr);
 extern void NsStartServer(NsServer *servPtr);
 extern void NsStopServer(NsServer *servPtr);
 extern void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
+extern void NsWakeupDriver(Driver *drvPtr);
 
 /*
  * Url-specific data routines.

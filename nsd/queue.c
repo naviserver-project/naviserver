@@ -197,7 +197,7 @@ neededAdditionalConnectionThreads(ConnPool *poolPtr) {
 	 //&& poolPtr->threads.idle < 1
 	 && (poolPtr->threads.current < poolPtr->threads.min
 	     || (poolPtr->wqueue.wait.num > poolPtr->wqueue.lowwatermark)
-	     || (poolPtr->threads.idle < 1)
+	     //	     || (poolPtr->threads.idle < 1)
 	     )
 	 && poolPtr->threads.current < poolPtr->threads.max
 	 ) {
@@ -254,9 +254,12 @@ void
 NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr) {
     int create;
 
+    assert(servPtr);
+
     if (poolPtr == NULL) {
         /* 
-	 * Use just the default pool, if no pool was provided
+	 * Use the default pool for the time being, if no pool was
+	 * provided
 	 */
         poolPtr = servPtr->pools.defaultPtr;
     }
@@ -1047,6 +1050,8 @@ NsConnThread(void *arg)
     Ns_MutexLock(poolsLockPtr);
     poolPtr->threads.current--;
     Ns_MutexUnlock(poolsLockPtr);
+
+    NsWakeupDriver(connPtr->drvPtr);
 
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);

@@ -580,6 +580,28 @@ NsStopDrivers(void)
 /*
  *----------------------------------------------------------------------
  *
+ * NsWakeupDriver --
+ *
+ *      Wake up the associated DriverThread.  
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The poll waiting for this trigger will be interruped.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsWakeupDriver(Driver *drvPtr) {
+    assert(drvPtr);
+    SockTrigger(drvPtr->trigger[1]);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsWaitDriversShutdown --
  *
  *      Wait for exit of DriverThread.  This callback is invoke later by
@@ -1049,7 +1071,7 @@ DriverThread(void *arg)
          */
 
         if (readPtr == NULL && closePtr == NULL) {
-            pollto = 1 * 1000;
+            pollto = 10 * 1000;
         } else {
             sockPtr = readPtr;
             while (sockPtr != NULL) {
@@ -1069,11 +1091,33 @@ DriverThread(void *arg)
         }
 
         n = PollWait(&pdata, pollto);
+	// Ns_Log(Notice, "driver: wakeup %d trigger %d", n, PollIn(&pdata, 0));
 
         if (PollIn(&pdata, 0) && recv(drvPtr->trigger[0], &c, 1, 0) != 1) {
             errstr = ns_sockstrerror(ns_sockerrno);
             Ns_Fatal("driver: trigger recv() failed: %s", errstr);
         }
+	/*
+	 * Check whether we should reanimate some connection threads,
+	 * when e.g. the number of current threads dropped blow the
+	 * minimal value.  Perform this teste on timeouts (n == 0;
+	 * just for safety reasaons) or on explicit wakup calls.
+	 */
+	if (n == 0 || PollIn(&pdata, 0)) {
+	    if (drvPtr->servPtr) {
+		NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
+	    } else {
+		Tcl_HashSearch search;
+		Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&hosts, &search);
+		while (hPtr != NULL) {
+		    ServerMap     *mapPtr = Tcl_GetHashValue(hPtr);
+		    // TODO: we could reduce the calls in case multiple host entries are mapped to the same server.
+		    //Ns_Log(Notice, "CheckEnsure servPtr %p location %s", mapPtr->servPtr, mapPtr->location);
+		    NsEnsureRunningConnectionThreads(mapPtr->servPtr, NULL);
+		    hPtr = Tcl_NextHashEntry(&search);
+		}
+	    }
+	}
 
         /*
          * Update the current time and drain and/or release any
@@ -1143,7 +1187,6 @@ DriverThread(void *arg)
 		 * Got some data.
                  * If enabled, perform read-ahead now.
                  */
-		
                 if (sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) {
                     n = SockRead(sockPtr, 0);
 		    /*
@@ -1163,7 +1206,7 @@ DriverThread(void *arg)
 			break;
 			
 		    case SOCK_READY:
-			if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+		        if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
 			    Push(sockPtr, waitPtr);
 			}
 			break;
@@ -1247,27 +1290,6 @@ DriverThread(void *arg)
                 }
                 accepted++;
             }
-
-	    /*
-	     * Check whether we should reanimate some connection
-	     * threads. Under normal conditions, requests are dropping
-	     * in on a regular basis, and the liveliness of the
-	     * connection threads is checked when requests are
-	     * queued. However, on bursty loads that suddenly stop, it
-	     * is possible that the total number of requests allowed
-	     * to be processed by the existing connection threads is
-	     * less than the number of queued requests. Therefore,
-	     * when the last connection thread terminates, queued
-	     * remaining requests might be waiting.  Since the logic
-	     * for creating connection threads in on the driver side,
-	     * we care here about the already queued requests. The
-	     * check is performed only in the timeout case (when n ==
-	     * 0)
- 	     */
-	    if (n == 0 && drvPtr->servPtr) {
-	      NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
-	  }
-
         }
 
         /*
