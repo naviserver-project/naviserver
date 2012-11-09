@@ -1047,11 +1047,20 @@ NsConnThread(void *arg)
     }
     argPtr->state = connThread_dead;
 
-    Ns_MutexLock(poolsLockPtr);
-    poolPtr->threads.current--;
-    Ns_MutexUnlock(poolsLockPtr);
+    { int wakeup; 
+      /*
+       * Check, record that we are exiting amd wakeup the driver, when
+       * starvation due to not enough connection threads might happen.
+       */
+      Ns_MutexLock(poolsLockPtr);
+      poolPtr->threads.current--;
+      wakeup = (poolPtr->threads.current < poolPtr->threads.min);
+      Ns_MutexUnlock(poolsLockPtr);
 
-    NsWakeupDriver(connPtr->drvPtr);
+      if (wakeup) {
+	NsWakeupDriver(connPtr->drvPtr);
+      }
+    }
 
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);

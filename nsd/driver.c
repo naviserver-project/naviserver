@@ -1109,8 +1109,12 @@ DriverThread(void *arg)
 	    } else {
 		Tcl_HashSearch search;
 		Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&hosts, &search);
+		/* 
+		 * In case, we have a "global" driver, we have to
+		 * check all associated servers.
+		 */
 		while (hPtr != NULL) {
-		    ServerMap     *mapPtr = Tcl_GetHashValue(hPtr);
+		    ServerMap *mapPtr = Tcl_GetHashValue(hPtr);
 		    // TODO: we could reduce the calls in case multiple host entries are mapped to the same server.
 		    //Ns_Log(Notice, "CheckEnsure servPtr %p location %s", mapPtr->servPtr, mapPtr->location);
 		    NsEnsureRunningConnectionThreads(mapPtr->servPtr, NULL);
