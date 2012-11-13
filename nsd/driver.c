@@ -2780,7 +2780,7 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr)
     while (queuePtr != NULL) {
         Ns_MutexLock(&queuePtr->lock);
         if (!queuePtr->stopped && !queuePtr->shutdown) {
-            Ns_Log(Notice, "%d: triggering shutdown", queuePtr->id);
+            Ns_Log(Debug, "%d: triggering shutdown", queuePtr->id);
             queuePtr->shutdown = 1;
             SockTrigger(queuePtr->pipe[1]);
         }

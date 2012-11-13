@@ -307,7 +307,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
     NsServer *servPtr = sockPtr->servPtr;
     ConnPool *poolPtr = NULL;
     Conn     *connPtr = NULL;
-    int       create = 0, shutdown;
+    int       create = 0;
 
     /*
      * Select server connection pool.
@@ -329,11 +329,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
     //Ns_Log(Notice, "NsQueueConn sock %p reqPtr %p request %p argPtr %p",  
     //	   sockPtr, sockPtr->reqPtr, &sockPtr->reqPtr->request, poolPtr->tqueue.nextPtr);
    
-    Ns_MutexLock(&servPtr->pools.lock);
-    shutdown = servPtr->pools.shutdown;
-    Ns_MutexUnlock(&servPtr->pools.lock);
- 
-    if (!shutdown) {
+    if (!servPtr->pools.shutdown) {
 
 	Ns_MutexLock(&poolPtr->wqueue.lock);
 	if (poolPtr->wqueue.freePtr != NULL) {
@@ -635,6 +631,43 @@ NsStartServer(NsServer *servPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * NsWakeupConnThreads --
+ *
+ *      Wake up every idle connection thread of the specified pool.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NsWakeupConnThreads(ConnPool *poolPtr) {
+    int i;
+    //Ns_Log(Notice, "NsWakeupConnThreads: pool '%s' %p", poolPtr->pool, poolPtr);
+
+    Ns_MutexLock(&poolPtr->tqueue.lock);
+    for (i = 0; i < poolPtr->threads.max; i++) {
+	ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
+	//Ns_Log(Notice, "check conn thread %d state %d",i, argPtr->state);
+	if (argPtr->state == connThread_idle) {
+	    assert(argPtr->connPtr == NULL);
+	    //Ns_Log(Notice, "wakeup conn thread %d",i);
+	    Ns_MutexLock(&argPtr->lock);
+	    Ns_CondSignal(&argPtr->cond);
+	    Ns_MutexUnlock(&argPtr->lock);
+	}
+    }
+    Ns_MutexUnlock(&poolPtr->tqueue.lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsStopServer --
  *
  *      Signal and wait for connection threads to exit.
@@ -654,12 +687,10 @@ NsStopServer(NsServer *servPtr)
     ConnPool *poolPtr;
 
     Ns_Log(Notice, "serv: stopping server: %s", servPtr->server);
-    Ns_MutexLock(&servPtr->pools.lock);
     servPtr->pools.shutdown = 1;
-    Ns_MutexUnlock(&servPtr->pools.lock);
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
-        Ns_CondBroadcast(&poolPtr->wqueue.cond);
+	NsWakeupConnThreads(poolPtr);
         poolPtr = poolPtr->nextPtr;
     }
 }
@@ -670,6 +701,8 @@ NsWaitServer(NsServer *servPtr, Ns_Time *toPtr)
     ConnPool  *poolPtr;
     Ns_Thread  joinThread;
     int        status;
+
+    // Ns_Log(Notice, "NsWaitServer server: %s", servPtr->server);
 
     status = NS_OK;
     poolPtr = servPtr->pools.firstPtr;
@@ -765,7 +798,7 @@ NsConnThread(void *arg)
     unsigned int  id;
     int           status = NS_OK, cpt, ncons, timeout, current;
     char         *p, *path, *exitMsg;
-    Ns_Mutex     *poolsLockPtr = &servPtr->pools.lock;
+    Ns_Mutex     *poolsLockPtr  = &servPtr->pools.lock;
     Ns_Mutex     *tqueueLockPtr = &poolPtr->tqueue.lock;
     Ns_Mutex     *wqueueLockPtr = &poolPtr->wqueue.lock;
     Ns_Thread     joinThread;
@@ -791,8 +824,7 @@ NsConnThread(void *arg)
      * See how many connections this thread should run.  Setting
      * connsperthread to > 0 will cause the thread to graceously exit,
      * after processing that many requests, thus initiating kind-of
-     * Tcl-level garbage collection. The factor is varied pre the
-     * spread.
+     * Tcl-level garbage collection. 
      */
 
     path   = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
@@ -918,7 +950,7 @@ NsConnThread(void *arg)
 		}
 		if (argPtr->connPtr) break;
 		
-		Ns_Log(Notice, "CondTimedWait returned an unexpected result, maybe shutdown?");
+		//Ns_Log(Notice, "CondTimedWait returned an unexpected result, maybe shutdown?");
 	    }
 
 	    Ns_MutexUnlock(&argPtr->lock);
@@ -943,14 +975,11 @@ NsConnThread(void *arg)
 		    }
 		}
 		Ns_MutexUnlock(tqueueLockPtr);
-		
-		// ConnThreadQueuePrint(poolPtr, "wakeup");
-		// we could check the poolPtr->queue.wait.num above
 	    }
 	    
-	    Ns_MutexLock(poolsLockPtr); // TODO should go away
+	    Ns_MutexLock(poolsLockPtr);
 	    poolPtr->threads.idle --;
-	    Ns_MutexUnlock(poolsLockPtr); // TODO should go away
+	    Ns_MutexUnlock(poolsLockPtr);
 	    
 	    argPtr->state = connThread_busy;
 	    
@@ -1048,18 +1077,33 @@ NsConnThread(void *arg)
     argPtr->state = connThread_dead;
 
     { int wakeup; 
-      /*
-       * Check, record that we are exiting amd wakeup the driver, when
-       * starvation due to not enough connection threads might happen.
-       */
-      Ns_MutexLock(poolsLockPtr);
-      poolPtr->threads.current--;
-      wakeup = (poolPtr->threads.current < poolPtr->threads.min);
-      Ns_MutexUnlock(poolsLockPtr);
-
-      if (wakeup) {
-	NsWakeupDriver(connPtr->drvPtr);
-      }
+	/*
+	 * Record the fact that this driver is exiting by decrementing
+	 * the actually running threads and wakeup the driver to check
+	 * against thread starvation starvation (due to an insufficient
+	 * number of connection threads).
+	 */
+	Ns_MutexLock(poolsLockPtr);
+	poolPtr->threads.current--;
+	wakeup = (poolPtr->threads.current < poolPtr->threads.min);
+	Ns_MutexUnlock(poolsLockPtr);
+	
+	/* 
+	 * During shutdown, we do not want to restart connection
+	 * threads. The driver pointer might be already invalid. 
+	 */
+	if (wakeup && !servPtr->pools.shutdown) { 
+	    NsWakeupDriver(connPtr->drvPtr); 
+	} 
+    }
+    
+    /*
+     * During shutdown, the main thread waits for signals on the
+     * condition variable to check whether all threads have terminated
+     * already.
+     */
+    if (servPtr->pools.shutdown) {
+	Ns_CondSignal(&poolPtr->wqueue.cond); 
     }
 
     joinThread = servPtr->pools.joinThread;
@@ -1067,6 +1111,7 @@ NsConnThread(void *arg)
     if (joinThread != NULL) {
         JoinConnThread(&joinThread);
     }
+
     Ns_Log(Notice, "exiting: %s", exitMsg);
     argPtr->state = connThread_free; 
     Ns_ThreadExit(argPtr);
