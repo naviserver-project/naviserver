@@ -42,14 +42,15 @@
  */
 
 typedef struct Thread {
-    struct Thread  *nextPtr;	/* Next in list of all threads. */
-    time_t	    ctime;	/* Thread structure create time. */
-    int		    flags;	/* Detached, joined, etc. */
-    Ns_ThreadProc  *proc;	/* Thread startup routine. */
-    void           *arg;	/* Argument to startup proc. */
-    uintptr_t       tid;        /* Id set by thread for logging. */
-    unsigned char  *bottomOfStack; /* for estimating currentStackSize */
-    char	    name[NS_THREAD_NAMESIZE+1]; /* Thread name. */
+    struct Thread  *nextPtr;	     /* Next in list of all threads. */
+    time_t	    ctime;	     /* Thread structure create time. */
+    int		    flags;	     /* Detached, joined, etc. */
+    Ns_ThreadProc  *proc;	     /* Thread startup routine. */
+    void           *arg;	     /* Argument to startup proc. */
+    uintptr_t       tid;             /* Id set by thread for logging. */
+    pid_t           ostid;           /* OS level thread id (if available) */
+    unsigned char  *bottomOfStack;   /* for estimating currentStackSize */
+    char	    name[NS_THREAD_NAMESIZE+1];   /* Thread name. */
     char	    parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
 } Thread;
 
@@ -201,13 +202,18 @@ void
 NsThreadMain(void *arg)
 {
     Thread  *thrPtr = (Thread *) arg;
-    char	 name[NS_THREAD_NAMESIZE];
+    char     name[NS_THREAD_NAMESIZE];
 
     thrPtr->tid = Ns_ThreadId();
     Ns_TlsSet(&key, thrPtr);
     snprintf(name, sizeof(name), "-thread:%" PRIxPTR "-", thrPtr->tid);
     Ns_ThreadSetName(name);
     SetBottomOfStack(&thrPtr);
+#ifdef HAVE_GETTID
+    thrPtr->ostid = gettid();
+#else
+    thrPtr->ostid = 0;
+#endif
     (*thrPtr->proc) (thrPtr->arg);
 }
 
@@ -329,6 +335,9 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
             snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
             Tcl_DStringAppend(dsPtr, buf, -1);
         }
+        snprintf(buf, sizeof(buf), " %" PRIuMAX , (uintmax_t) thrPtr->ostid);
+        Tcl_DStringAppend(dsPtr, buf, -1);
+
         Tcl_DStringEndSublist(dsPtr);
         thrPtr = thrPtr->nextPtr;
     }
