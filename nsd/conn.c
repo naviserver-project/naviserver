@@ -841,7 +841,7 @@ Ns_ConnStartTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return &connPtr->startTime;
+    return &connPtr->acceptTime;
 }
 
 // TODO comment me, if we keep this
@@ -853,6 +853,14 @@ Ns_ConnAcceptTime(Ns_Conn *conn)
     return &connPtr->acceptTime;
 }
 
+// TODO comment me, if we keep this
+Ns_Time *
+Ns_ConnDequeueTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->requestDequeueTime;
+}
 
 
 /*
@@ -1488,7 +1496,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CStartIdx:
-        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&connPtr->startTime));
+        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&connPtr->acceptTime));
         break;
 
     case CCloseIdx:

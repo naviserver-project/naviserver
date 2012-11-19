@@ -1664,7 +1664,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
              *  otherwise NsGetRequest will call SockRead which is not what this driver wants
              */
 
-            SockPrepare(sockPtr);
+	    SockPrepare(sockPtr);
             status = SOCK_READY;
         } else {
             status = SOCK_MORE;

@@ -41,7 +41,7 @@
  * Local functions defined in this file
  */
 
-static void ConnRun(ConnThreadArg *argPtr, Conn *connPtr); /* Connection run routine. */
+static void ConnRun(ConnThreadArg *argPtr, Conn *connPtr); 
 static void CreateConnThread(ConnPool *poolPtr);
 static void JoinConnThread(Ns_Thread *threadPtr);
 static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state);
@@ -351,20 +351,14 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             connPtr->id        = servPtr->pools.nextconnid++;
 	    Ns_MutexUnlock(&servPtr->pools.lock);
 
-            connPtr->startTime  = *nowPtr;
-            connPtr->sockPtr    = sockPtr;
-            connPtr->drvPtr     = sockPtr->drvPtr;
-            connPtr->servPtr    = servPtr;
-            connPtr->server     = servPtr->server;
-            connPtr->location   = sockPtr->location;
-	    connPtr->acceptTime = sockPtr->acceptTime;
+            connPtr->requestQueueTime    = *nowPtr;
+            connPtr->sockPtr             = sockPtr;
+            connPtr->drvPtr              = sockPtr->drvPtr;
+            connPtr->servPtr             = servPtr;
+            connPtr->server              = servPtr->server;
+            connPtr->location            = sockPtr->location;
+	    connPtr->acceptTime          = sockPtr->acceptTime;
 	    connPtr->flags = 0;
-
-	    {   // this is intended for debugging only. 
-		Ns_Time pureAcceptTime;
-		Ns_DiffTime(nowPtr, &connPtr->acceptTime, &pureAcceptTime);
-		Ns_Log(Notice, "pure accept time %" PRIu64 ".%06ld", (int64_t) pureAcceptTime.sec, pureAcceptTime.usec);
-	    }
 
 	    if (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) {
 	        connPtr->flags |= NS_CONN_ENTITYTOOLARGE;
@@ -803,7 +797,7 @@ NsConnThread(void *arg)
     Conn         *connPtr;
     Ns_Time       wait, *timePtr = &wait;
     unsigned int  id;
-    int           status = NS_OK, cpt, ncons, timeout, current;
+    int           status = NS_OK, cpt, ncons, timeout, current, fromQueue;
     char         *p, *path, *exitMsg;
     Ns_Mutex     *poolsLockPtr  = &servPtr->pools.lock;
     Ns_Mutex     *tqueueLockPtr = &poolPtr->tqueue.lock;
@@ -899,6 +893,9 @@ NsConnThread(void *arg)
 	  
 	    argPtr->connPtr = connPtr;
 	    //Ns_Log(Notice, "**** take conn ptr from the queue %p", argPtr->connPtr);
+	    fromQueue = 1;
+	} else {
+	    fromQueue = 0;
 	}
       
 	if (argPtr->connPtr == NULL) {
@@ -1003,16 +1000,15 @@ NsConnThread(void *arg)
 	assert(connPtr);
 
 	{
-	    Ns_Time now, queueTime;
+	    Ns_Time now;
 	    Ns_GetTime(&now);
-	    Ns_DiffTime(&now, &connPtr->acceptTime, &queueTime);
-	    connPtr->acceptTime = queueTime;
+	    connPtr->requestDequeueTime = now;
 	}
 
-        /*
-         * Run the connection.
-         */
-        ConnRun(argPtr, connPtr);
+	/*
+	 * Run the connection.
+	 */
+	ConnRun(argPtr, connPtr);
 
         /*
          * push connection to the free list.
@@ -1055,13 +1051,30 @@ NsConnThread(void *arg)
 	    waiting  = poolPtr->wqueue.wait.num;
 	    lowwater = poolPtr->wqueue.lowwatermark;
 	    idle     = poolPtr->threads.idle;
-	    //min      = poolPtr->threads.min;
 	    current    = poolPtr->threads.current;
             Ns_MutexUnlock(poolsLockPtr);
 
-	    Ns_Log(Notice, "[%d] end of job, waiting %d current %d idle %d ncons %d",
+	    {   // this is intended for development only. 
+		Ns_Time now, acceptTime, queueTime, runTime, totalTime;
+		Ns_DiffTime(&connPtr->requestQueueTime, &connPtr->acceptTime, &acceptTime);
+		Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime, &queueTime);
+		Ns_GetTime(&now);
+		Ns_DiffTime(&now, &connPtr->requestDequeueTime, &runTime);
+		Ns_DiffTime(&now, &connPtr->acceptTime, &totalTime);
+
+	    Ns_Log(Notice, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+		   " accept %" PRIu64 ".%06ld"
+		   " queue %" PRIu64 ".%06ld"
+		   " run %" PRIu64 ".%06ld"
+		   " total %" PRIu64 ".%06ld",
 		   ThreadNr(poolPtr, argPtr),
-		   waiting, poolPtr->threads.current, idle, ncons);
+		   waiting, poolPtr->threads.current, idle, ncons, fromQueue,
+		   (int64_t) acceptTime.sec, acceptTime.usec,
+		   (int64_t) queueTime.sec, queueTime.usec,
+		   (int64_t) runTime.sec, runTime.usec,
+		   (int64_t) totalTime.sec, totalTime.usec
+		   );
+	    }
 	    
 	    if (waiting > 0) {
 		/* 
@@ -1464,7 +1477,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
 	    Tcl_DStringAppendElement(dsPtr, "unknown");
 	}
 	Ns_GetTime(&now);
-        Ns_DiffTime(&now, &connPtr->startTime, &diff);
+        Ns_DiffTime(&now, &connPtr->acceptTime, &diff);
         snprintf(buf, sizeof(buf), "%" PRIu64 ".%ld", (int64_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
         snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", connPtr->nContentSent);

@@ -614,8 +614,12 @@ LogTrace(void *arg, Ns_Conn *conn)
     }
 
     if ((logPtr->flags & LOG_QUEUETIME)) {
-        Ns_Time *timePtr = Ns_ConnAcceptTime(conn);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) timePtr->sec, timePtr->usec);
+      	Ns_Time totalQueueTime;
+        Ns_Time *acceptTimePtr  = Ns_ConnAcceptTime(conn);
+        Ns_Time *dequeueTimePtr = Ns_ConnDequeueTime(conn);
+
+	Ns_DiffTime(dequeueTimePtr, acceptTimePtr, &totalQueueTime);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) totalQueueTime.sec, totalQueueTime.usec);
     }
 
     /*

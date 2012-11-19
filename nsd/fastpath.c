@@ -423,7 +423,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
      */
 
     if (cache == NULL || connPtr->fileInfo.st_size > maxentry
-        || connPtr->fileInfo.st_ctime >= (connPtr->startTime.sec-1) ) {
+        || connPtr->fileInfo.st_ctime >= (connPtr->acceptTime.sec-1) ) {
 
         /*
          * Caching is disabled, the entry is too large for the cache,
