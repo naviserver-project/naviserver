@@ -505,7 +505,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     int          n, status, i, fd;
     size_t	 bufferSize;
     Ns_DString   ds;
-    Ns_Time      now, reqTime, queueTime;
+    Ns_Time      now, reqTime;
 
     Ns_DStringInit(&ds);
     Ns_MutexLock(&logPtr->lock);
@@ -514,11 +514,9 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Compute the request's elapsed time
      */
 
-    if ((logPtr->flags & (LOG_REQTIME|LOG_QUEUETIME))) {
+    if ((logPtr->flags & LOG_REQTIME)) {
         Ns_GetTime(&now);
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
-        Ns_DiffTime(&now, Ns_ConnAcceptTime(conn), &queueTime);
-        Ns_DiffTime(&queueTime, &reqTime, &queueTime);
     }
 
     /*
@@ -616,7 +614,8 @@ LogTrace(void *arg, Ns_Conn *conn)
     }
 
     if ((logPtr->flags & LOG_QUEUETIME)) {
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) queueTime.sec, queueTime.usec);
+        Ns_Time *timePtr = Ns_ConnAcceptTime(conn);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) timePtr->sec, timePtr->usec);
     }
 
     /*

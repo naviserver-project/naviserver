@@ -360,6 +360,12 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 	    connPtr->acceptTime = sockPtr->acceptTime;
 	    connPtr->flags = 0;
 
+	    {   // this is intended for debugging only. 
+		Ns_Time pureAcceptTime;
+		Ns_DiffTime(nowPtr, &connPtr->acceptTime, &pureAcceptTime);
+		Ns_Log(Notice, "pure accept time %" PRIu64 ".%06ld", (int64_t) pureAcceptTime.sec, pureAcceptTime.usec);
+	    }
+
 	    if (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) {
 	        connPtr->flags |= NS_CONN_ENTITYTOOLARGE;
 		sockPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
@@ -995,6 +1001,13 @@ NsConnThread(void *arg)
 	
 	connPtr = argPtr->connPtr;
 	assert(connPtr);
+
+	{
+	    Ns_Time now, queueTime;
+	    Ns_GetTime(&now);
+	    Ns_DiffTime(&now, &connPtr->acceptTime, &queueTime);
+	    connPtr->acceptTime = queueTime;
+	}
 
         /*
          * Run the connection.
