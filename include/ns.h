@@ -1012,6 +1012,9 @@ NS_EXTERN Ns_Time *
 Ns_ConnStartTime(Ns_Conn *conn);
 
 NS_EXTERN Ns_Time *
+Ns_ConnAcceptTime(Ns_Conn *conn);
+
+NS_EXTERN Ns_Time *
 Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 

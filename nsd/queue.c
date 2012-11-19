@@ -351,12 +351,13 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             connPtr->id        = servPtr->pools.nextconnid++;
 	    Ns_MutexUnlock(&servPtr->pools.lock);
 
-            connPtr->startTime = *nowPtr;
-            connPtr->sockPtr   = sockPtr;
-            connPtr->drvPtr    = sockPtr->drvPtr;
-            connPtr->servPtr   = servPtr;
-            connPtr->server    = servPtr->server;
-            connPtr->location  = sockPtr->location;
+            connPtr->startTime  = *nowPtr;
+            connPtr->sockPtr    = sockPtr;
+            connPtr->drvPtr     = sockPtr->drvPtr;
+            connPtr->servPtr    = servPtr;
+            connPtr->server     = servPtr->server;
+            connPtr->location   = sockPtr->location;
+	    connPtr->acceptTime = sockPtr->acceptTime;
 	    connPtr->flags = 0;
 
 	    if (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) {

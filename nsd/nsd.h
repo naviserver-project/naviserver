@@ -440,6 +440,7 @@ typedef struct Sock {
     int                 flags;           /* state flags used by driver */
     Ns_Time             timeout;
     Request            *reqPtr;
+    Ns_Time             acceptTime;
 
     int                 tfd;             /* file descriptor with request contents */
     char               *taddr;           /* mmap-ed temporary file */
@@ -534,6 +535,8 @@ typedef struct Conn {
     char idstr[16];
 
     Ns_Time startTime;
+    Ns_Time acceptTime;
+
     struct NsInterp *itPtr;
     struct stat fileInfo;
 

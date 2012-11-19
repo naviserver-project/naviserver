@@ -109,11 +109,11 @@ static Ns_ThreadProc WriterThread;
 static NS_SOCKET DriverListen(Driver *drvPtr);
 static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr);
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
-static int DriverKeep(Sock *sockPtr);
-static void DriverClose(Sock *sockPtr);
+static int     DriverKeep(Sock *sockPtr);
+static void    DriverClose(Sock *sockPtr);
 
 static int   SockSetServer(Sock *sockPtr);
-static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr);
+static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr);
 static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
 static void  SockPrepare(Sock *sockPtr);
 static void  SockRelease(Sock *sockPtr, int reason, int err);
@@ -1269,7 +1269,7 @@ DriverThread(void *arg)
             while (accepted < drvPtr->acceptsize
                    && drvPtr->queuesize < drvPtr->maxqueuesize
                    && PollIn(&pdata, drvPtr->pidx)
-                   && (n = SockAccept(drvPtr, &sockPtr)) != SOCK_ERROR) {
+                   && (n = SockAccept(drvPtr, &sockPtr, &now)) != SOCK_ERROR) {
 
                 switch (n) {
                 case SOCK_SPOOL:
@@ -1587,7 +1587,7 @@ SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
  */
 
 static int
-SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
+SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
 {
     Sock    *sockPtr;
     int      status;
@@ -1613,6 +1613,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr)
         sockPtr->keep   = 0;
         sockPtr->arg    = NULL;
     }
+    sockPtr->acceptTime = *nowPtr;
 
     /*
      * Accept the new connection.

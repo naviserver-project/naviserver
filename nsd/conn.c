@@ -844,6 +844,16 @@ Ns_ConnStartTime(Ns_Conn *conn)
     return &connPtr->startTime;
 }
 
+// TODO comment me, if we keep this
+Ns_Time *
+Ns_ConnAcceptTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->acceptTime;
+}
+
+
 
 /*
  *----------------------------------------------------------------------

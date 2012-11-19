@@ -41,8 +41,9 @@
 #define LOG_COMBINED      (1<<0)
 #define LOG_FMTTIME       (1<<1)
 #define LOG_REQTIME       (1<<2)
-#define LOG_CHECKFORPROXY (1<<3)
-#define LOG_SUPPRESSQUERY (1<<4)
+#define LOG_QUEUETIME     (1<<3)
+#define LOG_CHECKFORPROXY (1<<4)
+#define LOG_SUPPRESSQUERY (1<<5)
 
 #if !defined(PIPE_BUF)
 # define PIPE_BUF 512
@@ -185,6 +186,9 @@ Ns_ModuleInit(char *server, char *module)
     }
     if (Ns_ConfigBool(path, "logreqtime", NS_FALSE)) {
         logPtr->flags |= LOG_REQTIME;
+    }
+    if (Ns_ConfigBool(path, "logqueuetime", NS_FALSE)) {  // comment me
+        logPtr->flags |= LOG_QUEUETIME;
     }
     if (Ns_ConfigBool(path, "suppressquery", NS_FALSE)) {
         logPtr->flags |= LOG_SUPPRESSQUERY;
@@ -378,6 +382,9 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             if (strstr(ds.string, "logreqtime")) {
                 status |= LOG_REQTIME;
             }
+            if (strstr(ds.string, "logqueuetime")) {
+                status |= LOG_QUEUETIME;
+            }
             if (strstr(ds.string, "checkforproxy")) {
                 status |= LOG_CHECKFORPROXY;
             }
@@ -401,6 +408,9 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         }
         if ((status & LOG_REQTIME)) {
             Ns_DStringAppend(&ds, "logreqtime ");
+        }
+        if ((status & LOG_QUEUETIME)) {
+            Ns_DStringAppend(&ds, "logqueuetime ");
         }
         if ((status & LOG_CHECKFORPROXY)) {
             Ns_DStringAppend(&ds, "checkforproxy ");
@@ -495,7 +505,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     int          n, status, i, fd;
     size_t	 bufferSize;
     Ns_DString   ds;
-    Ns_Time      now, diff;
+    Ns_Time      now, reqTime, queueTime;
 
     Ns_DStringInit(&ds);
     Ns_MutexLock(&logPtr->lock);
@@ -504,9 +514,11 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Compute the request's elapsed time
      */
 
-    if ((logPtr->flags & LOG_REQTIME)) {
+    if ((logPtr->flags & (LOG_REQTIME|LOG_QUEUETIME))) {
         Ns_GetTime(&now);
-        Ns_DiffTime(&now, Ns_ConnStartTime(conn), &diff);
+        Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
+        Ns_DiffTime(&now, Ns_ConnAcceptTime(conn), &queueTime);
+        Ns_DiffTime(&queueTime, &reqTime, &queueTime);
     }
 
     /*
@@ -596,11 +608,15 @@ LogTrace(void *arg, Ns_Conn *conn)
     }
 
     /*
-     * Append the request's elapsed time (if enabled)
+     * Append the request's elapsed time and queue time (if enabled)
      */
 
     if ((logPtr->flags & LOG_REQTIME)) {
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) diff.sec, diff.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) reqTime.sec, reqTime.usec);
+    }
+
+    if ((logPtr->flags & LOG_QUEUETIME)) {
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) queueTime.sec, queueTime.usec);
     }
 
     /*
