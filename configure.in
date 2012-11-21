@@ -166,7 +166,7 @@ AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h netinet/tcp.h sys/sendfile.
 AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD, 1, [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
 AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL, 1, [Define to 1 if the <dl.h> header should be used.]),)
 
-AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop inet_pton gettid)
+AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop inet_pton)
 
 AC_SYS_LARGEFILE
 
@@ -188,6 +188,7 @@ AC_TYPE_UINTPTR_T
 
 AX_HAVE_CMMSG
 AX_HAVE_MTSAFE_DNS
+AX_HAVE_GETTID
 AX_CHECK_ZLIB
 
 

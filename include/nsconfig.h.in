@@ -43,7 +43,7 @@
 /* Define to 1 if you have the `getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
-/* Define to 1 if you have the `gettid' function. */
+/* Define to 1 when gettid system call is available. */
 #undef HAVE_GETTID
 
 /* Define to 1 if you have the `gettimeofday' function. */
@@ -311,11 +311,6 @@
 # ifndef WORDS_BIGENDIAN
 #  undef WORDS_BIGENDIAN
 # endif
-#endif
-
-/* Enable large inode numbers on Mac OS X 10.5.  */
-#ifndef _DARWIN_USE_64_BIT_INODE
-# define _DARWIN_USE_64_BIT_INODE 1
 #endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */

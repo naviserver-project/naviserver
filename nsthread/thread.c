@@ -36,6 +36,10 @@
 
 #include "thread.h"
 
+#ifdef HAVE_GETTID
+# include <sys/syscall.h>
+#endif
+
 /*
  * The following structure maintains all state for a thread
  * including thread local storage slots.
@@ -210,9 +214,7 @@ NsThreadMain(void *arg)
     Ns_ThreadSetName(name);
     SetBottomOfStack(&thrPtr);
 #ifdef HAVE_GETTID
-    thrPtr->ostid = gettid();
-#else
-    thrPtr->ostid = 0;
+    thrPtr->ostid = syscall(SYS_gettid);
 #endif
     (*thrPtr->proc) (thrPtr->arg);
 }
@@ -330,7 +332,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                  thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
         Tcl_DStringAppend(dsPtr, buf, -1);
         if (proc != NULL) {
-            (*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
+            (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
         } else {
             snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
             Tcl_DStringAppend(dsPtr, buf, -1);
@@ -400,16 +402,19 @@ NewThread(void)
 static Thread *
 GetThread(void)
 {
-    Thread *thisPtr;
+    Thread *thrPtr;
 
-    thisPtr = Ns_TlsGet(&key);
-    if (thisPtr == NULL) {
-        thisPtr = NewThread();
-        thisPtr->flags = NS_THREAD_DETACHED;
-        thisPtr->tid = Ns_ThreadId();
-        Ns_TlsSet(&key, thisPtr);
+    thrPtr = Ns_TlsGet(&key);
+    if (thrPtr == NULL) {
+        thrPtr = NewThread();
+        thrPtr->flags = NS_THREAD_DETACHED;
+        thrPtr->tid = Ns_ThreadId();
+        Ns_TlsSet(&key, thrPtr);
+#ifdef HAVE_GETTID
+        thrPtr->ostid = syscall(SYS_gettid);
+#endif
     }
-    return thisPtr;
+    return thrPtr;
 }
 
 
