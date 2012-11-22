@@ -1224,8 +1224,8 @@ DriverThread(void *arg)
 		    Ns_Log(Notice, "DriverThread readahead have some data no async sock read, setting sock more  ===== diff time %d", 
 			   Ns_DiffTime(&sockPtr->timeout, &now, &diff));
 		    
-		    sockPtr->keep = 0;
 		    if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
+		        sockPtr->keep = 0;
 			SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                     } 
 		}
