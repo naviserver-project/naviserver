@@ -41,7 +41,7 @@
 #define LOG_COMBINED      (1<<0)
 #define LOG_FMTTIME       (1<<1)
 #define LOG_REQTIME       (1<<2)
-#define LOG_QUEUETIME     (1<<3)
+#define LOG_PARTIALTIMES  (1<<3)
 #define LOG_CHECKFORPROXY (1<<4)
 #define LOG_SUPPRESSQUERY (1<<5)
 
@@ -187,8 +187,8 @@ Ns_ModuleInit(char *server, char *module)
     if (Ns_ConfigBool(path, "logreqtime", NS_FALSE)) {
         logPtr->flags |= LOG_REQTIME;
     }
-    if (Ns_ConfigBool(path, "logqueuetime", NS_FALSE)) {  // comment me
-        logPtr->flags |= LOG_QUEUETIME;
+    if (Ns_ConfigBool(path, "logpartialtimes", NS_FALSE)) {  // comment me
+        logPtr->flags |= LOG_PARTIALTIMES;
     }
     if (Ns_ConfigBool(path, "suppressquery", NS_FALSE)) {
         logPtr->flags |= LOG_SUPPRESSQUERY;
@@ -382,8 +382,8 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             if (strstr(ds.string, "logreqtime")) {
                 status |= LOG_REQTIME;
             }
-            if (strstr(ds.string, "logqueuetime")) {
-                status |= LOG_QUEUETIME;
+            if (strstr(ds.string, "logpartialtimes")) {
+                status |= LOG_PARTIALTIMES;
             }
             if (strstr(ds.string, "checkforproxy")) {
                 status |= LOG_CHECKFORPROXY;
@@ -409,8 +409,8 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         if ((status & LOG_REQTIME)) {
             Ns_DStringAppend(&ds, "logreqtime ");
         }
-        if ((status & LOG_QUEUETIME)) {
-            Ns_DStringAppend(&ds, "logqueuetime ");
+        if ((status & LOG_PARTIALTIMES)) {
+            Ns_DStringAppend(&ds, "logpartialtimes ");
         }
         if ((status & LOG_CHECKFORPROXY)) {
             Ns_DStringAppend(&ds, "checkforproxy ");
@@ -514,7 +514,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Compute the request's elapsed time
      */
 
-    if ((logPtr->flags & LOG_REQTIME)) {
+    if ((logPtr->flags & (LOG_REQTIME | LOG_PARTIALTIMES))) {
         Ns_GetTime(&now);
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
     }
@@ -613,13 +613,21 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) reqTime.sec, reqTime.usec);
     }
 
-    if ((logPtr->flags & LOG_QUEUETIME)) {
-      	Ns_Time totalQueueTime;
+    if ((logPtr->flags & LOG_PARTIALTIMES)) {
+	Ns_Time acceptTime, queueTime, runTime;
         Ns_Time *acceptTimePtr  = Ns_ConnAcceptTime(conn);
+        Ns_Time *queueTimePtr   = Ns_ConnQueueTime(conn);
         Ns_Time *dequeueTimePtr = Ns_ConnDequeueTime(conn);
 
-	Ns_DiffTime(dequeueTimePtr, acceptTimePtr, &totalQueueTime);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) totalQueueTime.sec, totalQueueTime.usec);
+	Ns_DiffTime(queueTimePtr,   acceptTimePtr,  &acceptTime);
+	Ns_DiffTime(dequeueTimePtr, queueTimePtr,   &queueTime);
+	Ns_DiffTime(&now,           dequeueTimePtr, &runTime);
+
+        Ns_DStringAppend(&ds, " \"");
+        Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)acceptTime.sec, acceptTime.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,  queueTime.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,    runTime.usec);
+        Ns_DStringAppend(&ds, "\"");
     }
 
     /*

@@ -1015,6 +1015,9 @@ NS_EXTERN Ns_Time *
 Ns_ConnAcceptTime(Ns_Conn *conn);
 
 NS_EXTERN Ns_Time *
+Ns_ConnQueueTime(Ns_Conn *conn);
+
+NS_EXTERN Ns_Time *
 Ns_ConnDequeueTime(Ns_Conn *conn);
 
 

@@ -855,6 +855,15 @@ Ns_ConnAcceptTime(Ns_Conn *conn)
 
 // TODO comment me, if we keep this
 Ns_Time *
+Ns_ConnQueueTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->requestQueueTime;
+}
+
+// TODO comment me, if we keep this
+Ns_Time *
 Ns_ConnDequeueTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
