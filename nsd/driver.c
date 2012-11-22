@@ -3111,7 +3111,7 @@ SockWriterRelease(WriterSock *wrSockPtr, int reason, int err)
 
 int
 NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
-              const char *data)
+              const char *data, int everysize)
 {
     Conn          *connPtr = (Conn*)conn;
     WriterSock    *wrSockPtr;
@@ -3134,7 +3134,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    if (nsend < (size_t)wrPtr->maxsize) {
+    if (nsend < (size_t)wrPtr->maxsize && !everysize) {
         Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%"
                             PRIdz " < %d)",
                nsend, wrPtr->maxsize);
@@ -3286,7 +3286,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
         if (data) {
-            rc = NsWriterQueue(conn, size, NULL, NULL, -1, data);
+            rc = NsWriterQueue(conn, size, NULL, NULL, -1, data, 1);
             Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         }
         break;
@@ -3347,7 +3347,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(name));
         }
 
-        rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, fd, NULL);
+        rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, fd, NULL, 1);
 
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         close(fd);

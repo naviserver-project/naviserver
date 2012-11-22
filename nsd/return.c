@@ -770,7 +770,7 @@ ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
     Ns_ConnSetTypeHeader(conn, type);
     Ns_ConnSetResponseStatus(conn, status);
 
-    if (NsWriterQueue(conn, len, chan, fp, fd, NULL) == NS_OK) {
+    if (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0) == NS_OK) {
         return NS_OK;
     }
 

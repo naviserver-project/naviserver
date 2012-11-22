@@ -1017,7 +1017,7 @@ extern Request *NsGetRequest(Sock *sockPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
 extern int NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
-                         FILE *fp, int fd, const char *data);
+                         FILE *fp, int fd, const char *data, int everysize);
 
 extern void NsFreeAdp(NsInterp *itPtr);
 extern void NsTclRunAtClose(NsInterp *itPtr)
