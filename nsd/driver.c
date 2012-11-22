@@ -1293,6 +1293,17 @@ DriverThread(void *arg)
                     Ns_Fatal("driver: SockAccept returned: %d", n);
                 }
                 accepted++;
+#ifdef __APPLE__
+		/* 
+		 * On Darwin, the first accept() succeeds typically,
+		 * but it is useless to try a attempt, since this
+		 * leads always to an EAGAIN
+		 */
+		break;
+#endif
+            }
+	    if (accepted > 0) {
+	        Ns_Log(Notice, "... sockAccept accepted %d connections", accepted);
             }
         }
 
