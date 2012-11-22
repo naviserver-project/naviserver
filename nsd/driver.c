@@ -1625,7 +1625,6 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
         sockPtr->flags  = 0;
         sockPtr->arg    = NULL;
     }
-    sockPtr->acceptTime = *nowPtr;
 
     /*
      * Accept the new connection.
@@ -1643,6 +1642,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
         sockPtr = NULL;
 
     } else {
+	sockPtr->acceptTime = *nowPtr;
         drvPtr->queuesize++;
 
         if (status == NS_DRIVER_ACCEPT_DATA) {
