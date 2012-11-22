@@ -1622,6 +1622,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
         sockPtr->tfd    = 0;
         sockPtr->taddr  = 0;
         sockPtr->keep   = 0;
+        sockPtr->flags  = 0;
         sockPtr->arg    = NULL;
     }
     sockPtr->acceptTime = *nowPtr;
