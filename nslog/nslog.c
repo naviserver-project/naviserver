@@ -868,7 +868,9 @@ LogRoll(Log *logPtr)
                 Ns_Log(Error, "nslog: access(%s, F_OK) failed: '%s'",
                        ds.string, strerror(Tcl_GetErrno()));
                 status = NS_ERROR;
-            }
+            } else {
+		status = NS_OK;
+	    }
             if (status == NS_OK && Tcl_FSRenameFile(path, newpath)) {
                 Ns_Log(Error, "nslog: rename(%s,%s) failed: '%s'",
                        logPtr->file, ds.string, strerror(Tcl_GetErrno()));
