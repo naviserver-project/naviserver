@@ -44,6 +44,7 @@ typedef struct {
     SSL_CTX     *ctx;
     Ns_Mutex     lock;
     int          verify;
+    int          deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
 } SSLDriver;
 
 typedef struct {
@@ -93,6 +94,8 @@ static int SessionSetVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr);
 static Session *SessionGet(Tcl_Interp *interp, char *id);
 static Ns_TaskProc SessionProc;
 
+static void SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock);
+
 /*
  * Static variables defined in this file.
  */
@@ -118,6 +121,7 @@ Ns_ModuleInit(char *server, char *module)
     path = Ns_ConfigGetPath(server, module, NULL);
 
     drvPtr = ns_calloc(1, sizeof(SSLDriver));
+    drvPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
     drvPtr->verify = Ns_ConfigBool(path, "verify", 0);
 
     init.version = NS_DRIVER_VERSION_2;
@@ -259,6 +263,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
     sock = Ns_SockListenEx((char*)address, port, backlog);
     if (sock != INVALID_SOCKET) {
         (void) Ns_SockSetNonBlocking(sock);
+        SetDeferAccept(driver, sock);
     }
     return sock;
 }
@@ -288,6 +293,15 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *sock
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
     if (sock->sock != INVALID_SOCKET) {
+#ifdef __APPLE__
+      /* 
+       * Darwin's poll returns per default writable in situations,
+       * where nothing can be written.  Setting the socket option for
+       * the send low watermark to 1 fixes this problem.
+       */
+        int value = 1;
+	setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
+#endif
         Ns_SockSetNonBlocking(sock->sock);
 
         if (sslPtr == NULL) {
@@ -1143,4 +1157,44 @@ SessionProc(Ns_Task *task, SOCKET sock, void *arg, int why)
 
     Ns_GetTime(&sesPtr->etime);
     Ns_TaskDone(sesPtr->task);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetDeferAccept --
+ *
+ *      Tell the OS not to give us a new socket until data is available.
+ *      This saves overhead in the poll() loop and the latency of a RT.
+ *
+ *      Otherwise, we will get socket as soon as the TCP connection
+ *      is established.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Disabled by default as Linux seems broken (does not respect
+ *      the timeout, linux-2.6.26).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock)
+{
+    SSLDriver *cfg = driver->arg;
+
+    if (cfg->deferaccept) {
+#ifdef TCP_DEFER_ACCEPT
+        int sec;
+
+        sec = driver->recvwait;
+        if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
+                       &sec, sizeof(sec)) == -1) {
+            Ns_Log(Error, "nssock: setsockopt(TCP_DEFER_ACCEPT): %s",
+                   ns_sockstrerror(ns_sockerrno));
+        }
+#endif
+    }
 }
