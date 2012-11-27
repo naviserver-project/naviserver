@@ -329,7 +329,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     drvPtr = ns_calloc(1, sizeof(Driver));
-
+    Ns_MutexInit(&drvPtr->lock);
     Ns_MutexSetName2(&drvPtr->lock, "ns:drv", module);
 
     if (ns_sockpair(drvPtr->trigger) != 0) {
@@ -442,6 +442,10 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                spPtr->threads, drvPtr->readahead);
         for (i = 0; i < spPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
+            char buffer[100];
+
+	    sprintf(buffer,"ns:driver:spooler:%d",i);
+	    Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
             queuePtr->id = i;
             Push(queuePtr, spPtr->firstPtr);
         }
@@ -464,6 +468,10 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize);
         for (i = 0; i < wrPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
+            char buffer[100];
+
+	    sprintf(buffer,"ns:driver:writer:%d",i);
+	    Ns_MutexSetName2(&queuePtr->lock, buffer,"queue");
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
         }
@@ -3434,6 +3442,7 @@ NsAsyncWriterQueueActivate()
 	    Ns_MutexUnlock(&reqLock);
 	    Ns_MutexSetName2(&asyncWriter->lock, "ns:driver","async-writer");
 	    queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
+	    Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer","queue");
 	    queuePtr->stopped = 1; /* not yet started */
 	    assert(asyncWriter->firstPtr == 0);
 	    asyncWriter->firstPtr = queuePtr;
@@ -3450,9 +3459,9 @@ NsAsyncWriterQueueActivate()
 	    Ns_MutexUnlock(&reqLock);
 	}
 #endif
-    } else {
-	queuePtr = asyncWriter->firstPtr;
     }
+    assert(asyncWriter);
+    queuePtr = asyncWriter->firstPtr;
 
     Ns_MutexLock(&queuePtr->lock);
     queuePtr->stopped = 0;
