@@ -694,7 +694,6 @@ LogTrace(void *arg, Ns_Conn *conn)
 
 #if 1
     // TODO: make me configurable, document me
-    int NsAsyncWriterQueue(int fd, char *buffer, size_t nbyte);
       
     if (bufferPtr && fd >= 0) {
 	NsAsyncWriterQueue(fd, bufferPtr, bufferSize);

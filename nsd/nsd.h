@@ -1023,6 +1023,7 @@ extern void NsFreeAdp(NsInterp *itPtr);
 extern void NsTclRunAtClose(NsInterp *itPtr)
      NS_GNUC_NONNULL(1);
 
+extern int NsAsyncWriterQueue(int fd, char *buffer, size_t nbyte);
 extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
 extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
