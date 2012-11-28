@@ -626,7 +626,7 @@ NsStartServer(NsServer *servPtr)
         }
         poolPtr = poolPtr->nextPtr;
     }
-    NsAsyncWriterQueueActivate();
+    NsAsyncWriterQueueEnable();
 }
 
 

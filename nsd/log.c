@@ -1299,7 +1299,7 @@ LogToAsyncFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
     Ns_DStringInit(&ds);
 
     LogToDString((void*)&ds, severity, stamp, msg, len);      
-    NsAsyncWriterQueue(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
+    NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
     Ns_DStringFree(&ds);
     return NS_OK;
