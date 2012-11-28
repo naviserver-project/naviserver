@@ -3634,7 +3634,6 @@ AsyncWriterThread(void *arg)
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     unsigned char   c;
     int             n, err, stopping, pollto, status;
-    Ns_Time         now;
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 

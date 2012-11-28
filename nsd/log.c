@@ -1049,7 +1049,6 @@ LogOpen(void)
 #endif
 
     fd = open(file, flags, 0644);
-    fprintf(stderr, "### LogOpen file %d opened\n", fd);
     if (fd == -1) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
@@ -1084,7 +1083,6 @@ LogOpen(void)
             close(fd);
         }
     }
-    fprintf(stderr, "### LogOpen done\n");
     return status;
 }
 

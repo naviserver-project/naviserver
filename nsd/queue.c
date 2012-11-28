@@ -557,6 +557,21 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         snprintf(buf, sizeof(buf), "%lu", servPtr->stats.connthreads);
         Tcl_DStringAppendElement(dsPtr, buf);
 
+        Tcl_DStringAppendElement(dsPtr, "accepttime");
+	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
+			 (int64_t)servPtr->stats.acceptTime.sec, 
+			 servPtr->stats.acceptTime.usec);
+
+        Tcl_DStringAppendElement(dsPtr, "queuetime");
+	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
+		 (int64_t)servPtr->stats.queueTime.sec,
+		 servPtr->stats.queueTime.usec);
+	
+	Tcl_DStringAppendElement(dsPtr, "runtime");
+	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
+		 (int64_t)servPtr->stats.runTime.sec, 
+		 servPtr->stats.runTime.usec);
+
         Tcl_DStringResult(interp, dsPtr);
         break;
 

@@ -677,6 +677,9 @@ typedef struct NsServer {
         unsigned long spool;
         unsigned long queued;
         unsigned long connthreads;
+        Ns_Time acceptTime;
+	Ns_Time queueTime; 
+	Ns_Time runTime;
     } stats;
 
     /*
@@ -1026,7 +1029,6 @@ extern void NsTclRunAtClose(NsInterp *itPtr)
 extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
 extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
-extern int NsAsyncWrite(int fd, char *buffer, size_t nbyte);
 extern void NsAsyncWriterQueueEnable();
 extern void NsAsyncWriterQueueDisable();
 

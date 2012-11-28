@@ -615,13 +615,12 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if ((logPtr->flags & LOG_PARTIALTIMES)) {
 	Ns_Time acceptTime, queueTime, runTime;
-        Ns_Time *acceptTimePtr  = Ns_ConnAcceptTime(conn);
-        Ns_Time *queueTimePtr   = Ns_ConnQueueTime(conn);
-        Ns_Time *dequeueTimePtr = Ns_ConnDequeueTime(conn);
 
-	Ns_DiffTime(queueTimePtr,   acceptTimePtr,  &acceptTime);
-	Ns_DiffTime(dequeueTimePtr, queueTimePtr,   &queueTime);
-	Ns_DiffTime(&now,           dequeueTimePtr, &runTime);
+	// this is most probably not the best place, since it means,
+	// that if we don't include partial times in the access log, 
+	// they won't be included in the server stats. we just want to 
+	// see if we can make use from this data
+        Ns_ConnTimeStats(conn, &acceptTime, &queueTime, &runTime);
 
         Ns_DStringAppend(&ds, " \"");
         Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)acceptTime.sec, acceptTime.usec);

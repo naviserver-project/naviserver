@@ -1020,6 +1020,11 @@ Ns_ConnQueueTime(Ns_Conn *conn);
 NS_EXTERN Ns_Time *
 Ns_ConnDequeueTime(Ns_Conn *conn);
 
+NS_EXTERN void
+Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, Ns_Time *runTimePtr);
+
+NS_EXTERN int 
+NsAsyncWrite(int fd, char *buffer, size_t nbyte);
 
 NS_EXTERN Ns_Time *
 Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
