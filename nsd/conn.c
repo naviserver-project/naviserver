@@ -873,19 +873,17 @@ Ns_ConnDequeueTime(Ns_Conn *conn)
 
 // TODO comment me, if we keep this
 void
-Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, Ns_Time *runTimePtr) {
+Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr,
+		 Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, Ns_Time *runTimePtr) {
     Conn      *connPtr = (Conn *) conn;
-    //Ns_Driver *drvPtr  = connPtr->sockPtr->drvPtr;
     NsServer  *servPtr = connPtr->servPtr;
     Ns_Time    now;
     
     assert(servPtr);
 
-    Ns_GetTime(&now);
-
     Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         acceptTimePtr);
     Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   queueTimePtr);
-    Ns_DiffTime(&now,                         &connPtr->requestDequeueTime, runTimePtr);
+    Ns_DiffTime(nowPtr,                       &connPtr->requestDequeueTime, runTimePtr);
 
     Ns_MutexLock(&servPtr->pools.lock);
       

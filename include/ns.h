@@ -1009,22 +1009,24 @@ NS_EXTERN void
 Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_Time *
-Ns_ConnStartTime(Ns_Conn *conn);
+Ns_ConnStartTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Time *
-Ns_ConnAcceptTime(Ns_Conn *conn);
+Ns_ConnAcceptTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Time *
-Ns_ConnQueueTime(Ns_Conn *conn);
+Ns_ConnQueueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Time *
-Ns_ConnDequeueTime(Ns_Conn *conn);
+Ns_ConnDequeueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, Ns_Time *runTimePtr);
+Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr, 
+		 Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, Ns_Time *runTimePtr)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 NS_EXTERN int 
-NsAsyncWrite(int fd, char *buffer, size_t nbyte);
+NsAsyncWrite(int fd, char *buffer, size_t nbyte) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Time *
 Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);

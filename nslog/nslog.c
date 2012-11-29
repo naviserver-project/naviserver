@@ -505,7 +505,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     int          n, status, i, fd;
     size_t	 bufferSize;
     Ns_DString   ds;
-    Ns_Time      now, reqTime;
+    Ns_Time      now;
 
     Ns_DStringInit(&ds);
     Ns_MutexLock(&logPtr->lock);
@@ -516,7 +516,6 @@ LogTrace(void *arg, Ns_Conn *conn)
 
     if ((logPtr->flags & (LOG_REQTIME | LOG_PARTIALTIMES))) {
         Ns_GetTime(&now);
-        Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
     }
 
     /*
@@ -610,20 +609,25 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_REQTIME)) {
+	Ns_Time reqTime;
+
+        Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) reqTime.sec, reqTime.usec);
     }
 
     if ((logPtr->flags & LOG_PARTIALTIMES)) {
-	Ns_Time acceptTime, queueTime, runTime;
+	Ns_Time *startTimePtr, acceptTime, queueTime, runTime;
 
 	// this is most probably not the best place, since it means,
 	// that if we don't include partial times in the access log, 
 	// they won't be included in the server stats. we just want to 
 	// see if we can make use from this data
-        Ns_ConnTimeStats(conn, &acceptTime, &queueTime, &runTime);
+        Ns_ConnTimeStats(conn, &now, &acceptTime, &queueTime, &runTime);
+	startTimePtr = Ns_ConnStartTime(conn);
 
         Ns_DStringAppend(&ds, " \"");
-        Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)acceptTime.sec, acceptTime.usec);
+        Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)startTimePtr->sec, startTimePtr->usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)acceptTime.sec, acceptTime.usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,  queueTime.usec);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,    runTime.usec);
         Ns_DStringAppend(&ds, "\"");

@@ -810,7 +810,7 @@ NsConnThread(void *arg)
     ConnThreadArg *argPtr = arg;
     ConnPool     *poolPtr = argPtr->poolPtr;
     NsServer     *servPtr = poolPtr->servPtr;
-    Conn         *connPtr;
+    Conn         *connPtr = NULL;
     Ns_Time       wait, *timePtr = &wait;
     unsigned int  id;
     int           status = NS_OK, cpt, ncons, timeout, current, fromQueue;
