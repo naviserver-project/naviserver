@@ -643,3 +643,77 @@ FreeEntry(void *arg)
 
     DecrEntry(filePtr);
 }
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCacheStatsObjCmds --
+ *
+ *      Returns stats on a cache. The size and expirey time of each
+ *      entry in the cache is also appended if the -contents switch
+ *      is given.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+// document me, maybe refactor me
+int
+NsTclFastPathCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    Ns_CacheSearch  search;
+    Ns_Entry       *entry;
+    Ns_DString      ds;
+    Ns_Time        *timePtr;
+    int             contents = NS_FALSE, reset = NS_FALSE;
+
+    Ns_ObjvSpec opts[] = {
+        {"-contents", Ns_ObjvBool,  &contents, (void *) NS_TRUE},
+        {"-reset",    Ns_ObjvBool,  &reset,    (void *) NS_TRUE},
+        {"--",        Ns_ObjvBreak, NULL,      NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+    Ns_DStringInit(&ds);
+
+    Ns_CacheLock(cache);
+    if (contents) {
+        Tcl_DStringStartSublist(&ds);
+        entry = Ns_CacheFirstEntry(cache, &search);
+        while (entry != NULL) {
+	    size_t size = Ns_CacheGetSize(entry);
+            timePtr = Ns_CacheGetExpirey(entry);
+            if (timePtr->usec == 0) {
+                Ns_DStringPrintf(&ds, "%" PRIdz " %" PRIu64 " ",
+                                 size, (int64_t) timePtr->sec);
+            } else {
+                Ns_DStringPrintf(&ds, "%" PRIdz " %" PRIu64 ":%ld ",
+                                 size, (int64_t) timePtr->sec, timePtr->usec);
+            }
+            entry = Ns_CacheNextEntry(&search);
+        }
+        Tcl_DStringEndSublist(&ds);
+    } else {
+        Ns_CacheStats(cache, &ds);
+    }
+    if (reset) {
+        Ns_CacheResetStats(cache);
+    }
+    Ns_CacheUnlock(cache);
+
+    Tcl_DStringResult(interp, &ds);
+
+    return TCL_OK;
+}
