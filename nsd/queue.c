@@ -1079,12 +1079,14 @@ NsConnThread(void *arg)
 		Ns_DiffTime(&now, &connPtr->acceptTime, &totalTime);
 
 	    Ns_Log(Notice, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+		   " start %" PRIu64 ".%06ld"
 		   " accept %" PRIu64 ".%06ld"
 		   " queue %" PRIu64 ".%06ld"
 		   " run %" PRIu64 ".%06ld"
 		   " total %" PRIu64 ".%06ld",
 		   ThreadNr(poolPtr, argPtr),
 		   waiting, poolPtr->threads.current, idle, ncons, fromQueue,
+		   (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
 		   (int64_t) acceptTime.sec, acceptTime.usec,
 		   (int64_t) queueTime.sec, queueTime.usec,
 		   (int64_t) runTime.sec, runTime.usec,
