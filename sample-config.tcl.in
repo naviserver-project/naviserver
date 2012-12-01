@@ -251,8 +251,13 @@ ns_section 	"ns/server/${servername}"
    ns_param   	minthreads      	1
 
    # Connection thread lifetime management
-   ns_param   connsperthread  	10000 ;# Number of connections (requests) handled per thread
-   ns_param   threadtimeout   	120   ;# Timeout for idle theads
+   ns_param	connsperthread  10000   ;# Number of connections (requests) handled per thread
+   ns_param	threadtimeout   120     ;# Timeout for idle threads
+
+   # Connection thread creation eagerness
+   #ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
+   #ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
+                                        ;# 100 means to disable concurrent creates
 
    # Compress response character data: ns_return, ADP etc.
    ns_param    compressenable      off     ;# Default; use ns_conn compress to overide
