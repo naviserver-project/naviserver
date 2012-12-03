@@ -1,6 +1,7 @@
 SSL driver for NaviServer 4.x
-Release 0.1
+Release 0.2
 vlad@crystalballinc.com
+neumann@wu-wien.ac.at
 
 This is NaviServer module that implements HTTP over SSL support and
 adds new ns_ssl command.

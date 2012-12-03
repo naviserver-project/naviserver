@@ -9,7 +9,8 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * Copyright (C) 2001-2006 Vlad Seryakov
+ * Copyright (C) 2001-2012 Vlad Seryakov
+ * Copyright (C) 2012 Gustaf Neumann
  * All rights reserved.
  *
  * Alternatively, the contents of this file may be used under the terms
@@ -38,7 +39,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define SSL_VERSION  "0.1"
+#define NSSSL_VERSION  "0.2"
 
 typedef struct {
     SSL_CTX     *ctx;
@@ -134,7 +135,7 @@ Ns_ModuleInit(char *server, char *module)
     init.keepProc = Keep;
     init.requestProc = NULL;
     init.closeProc = Close;
-    init.opts = NS_DRIVER_SSL;
+    init.opts = NS_DRIVER_SSL|NS_DRIVER_ASYNC;
     init.arg = drvPtr;
     init.path = (char*)path;
 
@@ -165,10 +166,12 @@ Ns_ModuleInit(char *server, char *module)
         return NS_ERROR;
     }
 
-    // Load certificate and private key
+    /* 
+     * Load certificate and private key 
+     */
     value = Ns_ConfigGetValue(path, "certificate");
     if (value == NULL) {
-        Ns_Log(Error, "nsssl: certificate parameter should be specified");
+        Ns_Log(Error, "nsssl: certificate parameter should be specified under %s",path);
         return NS_ERROR;
     }
     if (SSL_CTX_use_certificate_chain_file(drvPtr->ctx, value) != 1) {
@@ -180,12 +183,16 @@ Ns_ModuleInit(char *server, char *module)
         return NS_ERROR;
     }
 
-    // Session cache support
+    /* 
+     * Session cache support
+     */
     Ns_DStringPrintf(&ds, "nsssl:%d", getpid());
     SSL_CTX_set_session_id_context(drvPtr->ctx, (void *) ds.string, ds.length);
     SSL_CTX_set_session_cache_mode(drvPtr->ctx, SSL_SESS_CACHE_SERVER);
 
-    // Parse SSL protocols
+    /*
+     * Parse SSL protocols
+     */
     n = SSL_OP_ALL;
     value = Ns_ConfigGetValue(path, "protocols");
     if (value != NULL) {
@@ -204,7 +211,9 @@ Ns_ModuleInit(char *server, char *module)
     }
     SSL_CTX_set_options(drvPtr->ctx, n);
 
-    // Parse SSL ciphers
+    /*
+     * Parse SSL ciphers
+     */
     value = Ns_ConfigGetValue(path, "ciphers");
     if (value != NULL && SSL_CTX_set_cipher_list(drvPtr->ctx, value) == 0) {
         Ns_Log(Error, "nsssl: error loading ciphers: %s", value);
@@ -218,7 +227,9 @@ Ns_ModuleInit(char *server, char *module)
         SSL_CTX_set_verify(drvPtr->ctx, SSL_VERIFY_PEER, NULL);
     }
 
-    // Seed the OpenSSL Pseudo-Random Number Generator.
+    /*
+     * Seed the OpenSSL Pseudo-Random Number Generator.
+     */
     Ns_DStringSetLength(&ds, 1024);
     for (num = 0; !RAND_status() && num < 3; num++) {
         Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
@@ -235,7 +246,7 @@ Ns_ModuleInit(char *server, char *module)
 
     Ns_TclRegisterTrace(server, SSLInterpInit, drvPtr, NS_TCL_TRACE_CREATE);
     Ns_DStringFree(&ds);
-    Ns_Log(Notice, "nsssl: version %s loaded", SSL_VERSION);
+    Ns_Log(Notice, "nsssl: version %s loaded", NSSSL_VERSION);
     return NS_OK;
 }
 
@@ -344,7 +355,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
     X509 *peer;
-    int rc;
+    int err, n;
 
     /*
      * Verify client certificate, driver may require valid cert
@@ -364,20 +375,28 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
         sslPtr->verified = 1;
     }
 
-    while (1) {
-        ERR_clear_error();
-        rc = SSL_read(sslPtr->ssl, bufs->iov_base, bufs->iov_len);
+    n = SSL_read(sslPtr->ssl, bufs->iov_base, bufs->iov_len);
+    err = SSL_get_error(sslPtr->ssl, n);
 
-        if (rc < 0 && SSL_get_error(sslPtr->ssl, rc) == SSL_ERROR_WANT_READ) {
-            Ns_Time timeout = { sock->driver->recvwait, 0 };
-            if (Ns_SockTimedWait(sock->sock, NS_SOCK_READ, &timeout) == NS_OK) {
-                continue;
-            }
-            SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
-        }
-        break;
+    switch (err) {
+
+    case SSL_ERROR_NONE: 
+	if (n < 0) { fprintf(stderr, "### SSL_read should not happen\n"); }
+	break;
+
+    case SSL_ERROR_WANT_READ: 
+	/*fprintf(stderr, "### SSL_read WANT_READ\n");*/
+	n = 0; 
+	break;
+    
+    default:
+	/*fprintf(stderr, "### SSL_read error\n");*/
+	SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
+	n = -1;
+	break;
     }
-    return rc;
+
+    return n;
 }
 
 
@@ -477,9 +496,9 @@ static void
 Close(Ns_Sock *sock)
 {
     SSLContext *sslPtr = sock->arg;
-    int i;
 
     if (sslPtr != NULL) {
+	int i;
         for (i = 0; i < 4 && !SSL_shutdown(sslPtr->ssl); i++);
         SSL_free(sslPtr->ssl);
         ns_free(sslPtr);
@@ -982,8 +1001,8 @@ SessionSetVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
 static Tcl_Obj *
 SessionResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
 {
-    char *eoh, *body, *p, save, *response;
-    int firsthdr, major, minor, len;
+    char *eoh, *body, *response;
+    int major, minor;
     Tcl_Obj *result;
 
     body = response = ds->string;
@@ -1007,11 +1026,15 @@ SessionResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
         *eoh = '\0';
         sscanf(response, "HTTP/%d.%d %d", &major, &minor, statusPtr);
         if (hdrs != NULL) {
+	    char *p, save;
+	    int firsthdr;
+
             save = *body;
             *body = '\0';
             firsthdr = 1;
             p = response;
             while ((eoh = strchr(p, '\n')) != NULL) {
+		int len;
                 *eoh++ = '\0';
                 len = strlen(p);
                 if (len > 0 && p[len-1] == '\r') {
