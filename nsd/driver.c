@@ -146,7 +146,7 @@ static void  SockSendResponse(Sock *sockPtr, int code, char *msg);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
 static void  SockClose(Sock *sockPtr, int keep);
-static int   SockRead(Sock *sockPtr, int spooler);
+static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr);
 static int   SockParse(Sock *sockPtr, int spooler);
 static void  SockPoll(Sock *sockPtr, int type, PollData *pdata);
 static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr);
@@ -430,7 +430,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     firstDrvPtr = drvPtr;
 
     /*
-     * Check if upload spooler has been disabled
+     * Check if upload spooler are enabled
      */
 
     spPtr = &drvPtr->spooler;
@@ -452,7 +452,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
 
     /*
-     * Number of writer threads
+     * Enable writer threads
      */
 
     wrPtr = &drvPtr->writer;
@@ -591,6 +591,8 @@ NsStopDrivers(void)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
+    NsAsyncWriterQueueDisable(1);
+
     while (drvPtr != NULL) {
         Ns_MutexLock(&drvPtr->lock);
         Ns_Log(Notice, "driver: stopping: %s", drvPtr->name);
@@ -691,14 +693,15 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
  */
 
 Request *
-NsGetRequest(Sock *sockPtr)
+NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr)
 {
     Request *reqPtr;
 
     if (sockPtr->reqPtr == NULL) {
         int status;
+
         do {
-            status = SockRead(sockPtr, 0);
+            status = SockRead(sockPtr, 0, nowPtr);
         } while (status == SOCK_MORE);
         if (status != SOCK_READY) {
             if (sockPtr->reqPtr != NULL) {
@@ -1099,31 +1102,35 @@ DriverThread(void *arg)
          * If there are any closing or read-ahead sockets, set the bits
          * and determine the minimum relative timeout.
 	 *
-	 * TODO: the various poll time outs should probably be configurable.
+	 * TODO: the various poll timeouts should probably be configurable.
          */
 
         if (readPtr == NULL && closePtr == NULL) {
             pollto = 10 * 1000;
         } else {
-            sockPtr = readPtr;
-            while (sockPtr != NULL) {
+
+            for (sockPtr = readPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
                 SockPoll(sockPtr, POLLIN, &pdata);
-                sockPtr = sockPtr->nextPtr;
             }
-            sockPtr = closePtr;
-            while (sockPtr != NULL) {
+            for (sockPtr = closePtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
                 SockPoll(sockPtr, POLLIN, &pdata);
-                sockPtr = sockPtr->nextPtr;
             }
+
             if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
-	        pollto = (int)(diff.sec * 1000 + diff.usec / 1000);
+		/* 
+		 * The resolution of pollto is ms, therefore, we round
+		 * up. If we would round down (eg. found 500
+		 * microseconds to 0 ms), the time comparison later
+		 * would determine that it is to early.
+		 */
+	        pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
+
             } else {
                 pollto = 0;
             }
         }
 
         n = PollWait(&pdata, pollto);
-	// Ns_Log(Notice, "driver: wakeup %d trigger %d", n, PollIn(&pdata, 0));
 
         if (PollIn(&pdata, 0) && recv(drvPtr->trigger[0], &c, 1, 0) != 1) {
             errstr = ns_sockstrerror(ns_sockerrno);
@@ -1132,8 +1139,8 @@ DriverThread(void *arg)
 	/*
 	 * Check whether we should reanimate some connection threads,
 	 * when e.g. the number of current threads dropped blow the
-	 * minimal value.  Perform this teste on timeouts (n == 0;
-	 * just for safety reasaons) or on explicit wakup calls.
+	 * minimal value.  Perform this test on timeouts (n == 0;
+	 * just for safety reasons) or on explicit wakeup calls.
 	 */
 	if (n == 0 || PollIn(&pdata, 0)) {
 	    if (drvPtr->servPtr) {
@@ -1147,8 +1154,10 @@ DriverThread(void *arg)
 		 */
 		while (hPtr != NULL) {
 		    ServerMap *mapPtr = Tcl_GetHashValue(hPtr);
-		    // TODO: we could reduce the calls in case multiple host entries are mapped to the same server.
-		    //Ns_Log(Notice, "CheckEnsure servPtr %p location %s", mapPtr->servPtr, mapPtr->location);
+		    /* 
+		     * We could reduce the calls in case multiple host
+		     * entries are mapped to the same server.
+		     */
 		    NsEnsureRunningConnectionThreads(mapPtr->servPtr, NULL);
 		    hPtr = Tcl_NextHashEntry(&search);
 		}
@@ -1159,7 +1168,6 @@ DriverThread(void *arg)
          * Update the current time and drain and/or release any
          * closing sockets.
          */
-
         Ns_GetTime(&now);
 
         if (closePtr != NULL) {
@@ -1172,7 +1180,6 @@ DriverThread(void *arg)
 		   * Peer has closed the connection
 		   */
 		  sockPtr->timeout = now;
-
 		} else if (PollIn(&pdata, sockPtr->pidx)) {
 		  /* 
 		   * Got some data
@@ -1185,7 +1192,8 @@ DriverThread(void *arg)
 		if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
 		    SockRelease(sockPtr, SOCK_CLOSETIMEOUT, 0);
 		} else {
-		  Push(sockPtr, closePtr);
+		    /* too early, keep waiting */
+		    Push(sockPtr, closePtr);
 		}
                 sockPtr = nextPtr;
             }
@@ -1214,6 +1222,7 @@ DriverThread(void *arg)
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
+		    /* too early, keep waiting */
                     Push(sockPtr, readPtr);
                 }
 		
@@ -1224,7 +1233,8 @@ DriverThread(void *arg)
                  * If enabled, perform read-ahead now.
                  */
                 if (sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) {
-                    n = SockRead(sockPtr, 0);
+                    n = SockRead(sockPtr, 0, &now);
+
 		    /*
 		     * Queue for connection processing if ready.
 		     */
@@ -1248,29 +1258,30 @@ DriverThread(void *arg)
 			break;
 			
 		    default:
+			Ns_Log(Warning, "sockread returned unexpected result %d; close socket", n);
 			SockRelease(sockPtr, n, errno);
 			break;
 		    }
                 } else {
-		  /* no NS_DRIVER_ASYNC defined */
-		    Ns_Log(Notice, "DriverThread readahead have some data no async sock read, setting sock more  ===== diff time %d", 
-			   Ns_DiffTime(&sockPtr->timeout, &now, &diff));
-		    
+		  /* potentially blocking driver, NS_DRIVER_ASYNC is not defined */
+
 		    if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-		        sockPtr->keep = 0;
+			Ns_Log(Notice, "read-ahead have some data no async sock read, setting sock more  ===== diff time %d", 
+			       Ns_DiffTime(&sockPtr->timeout, &now, &diff));
+			sockPtr->keep = 0;
 			SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
-                    } 
+                    } else if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+			Push(sockPtr, waitPtr);
+		    }
 		}
             }
             sockPtr = nextPtr;
         }
 	
         /*
-         * Attempt to queue any pending connection
-         * after reversing the list to ensure oldest
-         * connections are tried first.
+         * Attempt to queue any pending connection after reversing the
+         * list to ensure oldest connections are tried first.
          */
-	
         if (waitPtr != NULL) {
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
@@ -1316,7 +1327,7 @@ DriverThread(void *arg)
                     break;
 
                 case SOCK_READY:
-                    if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+		    if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
                         Push(sockPtr, waitPtr);
                     }
                     break;
@@ -1340,8 +1351,8 @@ DriverThread(void *arg)
         }
 
         /*
-         * Check for shutdown and get the list of any closing
-         * or keepalive sockets.
+         * Check for shutdown and get the list of any closing or
+         * keep-alive sockets.
          */
 
         Ns_MutexLock(&drvPtr->lock);
@@ -1357,28 +1368,13 @@ DriverThread(void *arg)
          * close list if some data has been read from the socket
          * (i.e., it's not a closing keep-alive connection).
          */
-
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             if (sockPtr->keep) {
-	        /*
-		 * When keep-alive is set and more requests are
-		 * already in the request queue, don't timeout but
-		 * process the requests immediately.
-	         */
-	        if (drvPtr->queuesize > 1 || PollIn(&pdata, sockPtr->pidx)) {
-		    /*fprintf(stderr, "FIX timeout keepwait %d drvPtr->queuesize %d flags %d %.6x pollin %d\n", 
-		      sockPtr->drvPtr->keepwait, drvPtr->queuesize, sockPtr->flags, sockPtr->flags,
-		      PollIn(&pdata, sockPtr->pidx)); */
-		    sockPtr->timeout = now;
-		} else {
-		    /*fprintf(stderr, "Update the timeout for each closing socket %d with keepwait %d drvPtr->queuesize %d\n", 
-		      PollIn(&pdata, drvPtr->pidx), sockPtr->drvPtr->keepwait, drvPtr->queuesize);*/
-		  SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
-		}
-		Push(sockPtr, readPtr);
+                SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
+                Push(sockPtr, readPtr);
             } else {
-                if (shutdown(sockPtr->sock, 1) != 0) {
+                if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
                 } else {
                     SockTimeout(sockPtr, &now, sockPtr->drvPtr->closewait);
@@ -1685,7 +1681,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
              */
 
             if (drvPtr->opts & NS_DRIVER_ASYNC) {
-                status = SockRead(sockPtr, 0);
+                status = SockRead(sockPtr, 0, nowPtr);
                 if (status < 0) {
                     SockRelease(sockPtr, status, errno);
                     status = SOCK_ERROR;
@@ -1697,7 +1693,6 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
                  * Queue this socket without reading, NsGetRequest in
                  * the connection thread will perform actual reading of the request
                  */
-
                 status = SOCK_READY;
             }
         } else
@@ -2077,7 +2072,7 @@ ChunkedDecode(Request *reqPtr, int update)
  */
 
 static int
-SockRead(Sock *sockPtr, int spooler)
+SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 {
     Driver       *drvPtr = sockPtr->drvPtr;
     DrvSpooler   *spPtr  = &drvPtr->spooler;
@@ -2088,6 +2083,22 @@ SockRead(Sock *sockPtr, int spooler)
     char         tbuf[4096];
     size_t       len, nread;
     ssize_t      n;
+
+    /*
+     * In case of keepwait, the accept time is not meaningful and
+     * reset to 0. In such cases, update acceptTime to the actual
+     * begin of a request. This part is intended for async drivers.
+     */
+    if (sockPtr->acceptTime.sec == 0) {
+	assert(timePtr);
+	/*fprintf(stderr, "SOCKREAD reset times "
+		" start %" PRIu64 ".%06ld"
+		" now %" PRIu64 ".%06ld\n",
+		(int64_t) sockPtr->acceptTime.sec, sockPtr->acceptTime.usec,
+		(int64_t) timePtr->sec, timePtr->usec
+		);*/
+	sockPtr->acceptTime = *timePtr; 
+    }
 
     /*
      * Initialize Request structure
@@ -2179,8 +2190,12 @@ SockRead(Sock *sockPtr, int spooler)
 
     n = DriverRecv(sockPtr, &buf, 1);
 
-    if (n < 0 || (n == 0 && !reqPtr->request.line)) {
+    if (n < 0) {
         return SOCK_READERROR;
+    }
+
+    if (n == 0) {
+        return SOCK_MORE;
     }
     
     if (sockPtr->tfd > 0) {
@@ -2229,6 +2244,16 @@ SockRead(Sock *sockPtr, int spooler)
  *----------------------------------------------------------------------
  */
 
+static char *strnchr(char *buffer, size_t len, int c) {
+    char *end = buffer + len;
+    for (end = buffer + len; buffer < end; buffer ++) {
+        if (*buffer == c) {
+            return buffer;
+        }
+    }
+    return NULL;
+}
+
 static int
 SockParse(Sock *sockPtr, int spooler)
 {
@@ -2244,7 +2269,7 @@ SockParse(Sock *sockPtr, int spooler)
     bufPtr = &reqPtr->buffer;
 
     /*
-     * Scan lines until start of content.
+     * Scan lines (header) until start of content (body-part)
      */
 
     while (reqPtr->coff == 0) {
@@ -2252,15 +2277,13 @@ SockParse(Sock *sockPtr, int spooler)
         /*
          * Find the next line.
          */
-
         s = bufPtr->string + reqPtr->roff;
-        e = strchr(s, '\n');
+        e = strnchr(s, reqPtr->avail, '\n');
+
         if (e == NULL) {
-
             /*
-             * Input not yet null terminated - request more.
+             * Input not yet newline terminated - request more.
              */
-
             return SOCK_MORE;
         }
 
@@ -2292,7 +2315,6 @@ SockParse(Sock *sockPtr, int spooler)
         /*
          * Update next read pointer to end of this line.
          */
-
         cnt = (int)(e - s) + 1;
         reqPtr->roff  += cnt;
         reqPtr->avail -= cnt;
@@ -2303,7 +2325,6 @@ SockParse(Sock *sockPtr, int spooler)
         /*
          * Check for end of headers.
          */
-
         if (e == s) {
 
             /*
@@ -2369,7 +2390,7 @@ SockParse(Sock *sockPtr, int spooler)
 			 * We have to read the full request (although
 			 * it is too large) to drain the
 			 * channel. Otherwise, the server might close
-			 * the connection *before* it has recevied
+			 * the connection *before* it has received
 			 * full request with its body. Such a
 			 * premature close leads to an error message
 			 * in clients like firefox. Therefore we do
@@ -2552,7 +2573,6 @@ SockParse(Sock *sockPtr, int spooler)
     /*
      * Wait for more input.
      */
-
     return SOCK_MORE;
 }
 
@@ -2722,7 +2742,7 @@ SpoolerThread(void *arg)
 	        /*
 		 * Got some data
 		 */
-                n = SockRead(sockPtr, 1);
+                n = SockRead(sockPtr, 1, &now);
                 switch (n) {
                 case SOCK_MORE:
                     SockTimeout(sockPtr, &now, drvPtr->recvwait);
@@ -3174,9 +3194,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     if (drvPtr->servPtr) {
-      //Ns_MutexLock(&drvPtr->servPtr->pools.lock);
-      drvPtr->servPtr->stats.spool++;
-      //Ns_MutexUnlock(&drvPtr->servPtr->pools.lock);
+	/* Ns_MutexLock(&drvPtr->servPtr->pools.lock); */
+	drvPtr->servPtr->stats.spool++;
+	/* Ns_MutexUnlock(&drvPtr->servPtr->pools.lock); */
     }
 
     wrSockPtr = (WriterSock*)ns_calloc(1, sizeof(WriterSock));
@@ -3250,7 +3270,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
            "size=%" PRIdz ", flags=%X: keep=%d, %s",
            queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd,
            nsend, wrSockPtr->flags, wrSockPtr->keep, connPtr->reqPtr->request.url);
-
+    /*fcntl(wrSockPtr->sockPtr->sock, F_SETFL, O_NONBLOCK);*/
+    
     /*
      * Now add new writer socket to the writer thread's queue
      */
@@ -3440,6 +3461,13 @@ NsAsyncWriterQueueEnable()
 {
     SpoolerQueue  *queuePtr;
 
+    if (!Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asyncwriter", NS_FALSE)) {
+	/*
+	 * Asyncwriter is disabled, nothing to do.
+	 */
+	return;
+    }
+
     /*
      * In case, the async writer is not allocated started, the static
      * variable asyncWriter is NULL.
@@ -3490,23 +3518,41 @@ NsAsyncWriterQueueEnable()
  *      None.
  *
  * Side effects:
- *      Disable aync writing by setting stopped to 1.
+ *      Disable async writing by setting stopped to 1.
  *
  *----------------------------------------------------------------------
  */
 void 
-NsAsyncWriterQueueDisable() 
+NsAsyncWriterQueueDisable(int shutdown) 
 {
     if (asyncWriter) {
 	SpoolerQueue *queuePtr = asyncWriter->firstPtr;
+	Ns_Time timeout;
 
 	assert(queuePtr);
 
+	Ns_GetTime(&timeout);
+	Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
+
 	Ns_MutexLock(&queuePtr->lock);
 	queuePtr->stopped = 1;
+	queuePtr->shutdown = shutdown;
+
+	/*
+	 * Trigger the AsyncWriter Thread to drain the spooler queue.
+	 */
+	SockTrigger(queuePtr->pipe[1]);
+	Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, &timeout);
+
 	Ns_MutexUnlock(&queuePtr->lock);
+	
+	if (shutdown) {
+	    ns_free(queuePtr);
+	    ns_free(asyncWriter);
+	    asyncWriter = NULL;
+	}
     }
-}
+ }
 
 
 /*
@@ -3533,7 +3579,7 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
 {
     SpoolerQueue  *queuePtr;
     int            trigger = 0;
-    AsyncWriteData *wdPtr, *newWdPtr, *lastWdPtr;
+    AsyncWriteData *wdPtr, *newWdPtr;
 
     /*
      * If the async writer has not started or is deactivated, behave
@@ -3569,7 +3615,7 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
     Ns_MutexLock(&queuePtr->lock);
     wdPtr = queuePtr->sockPtr;
     if (wdPtr) {
-	lastWdPtr = wdPtr;
+	AsyncWriteData *lastWdPtr = wdPtr;
 	for (wdPtr = wdPtr->nextPtr; wdPtr; lastWdPtr = wdPtr, wdPtr = wdPtr->nextPtr) {;}
 	lastWdPtr->nextPtr = newWdPtr;
     } else {
@@ -3607,7 +3653,6 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
 static void
 AsyncWriterRelease(AsyncWriteData *wdPtr, int reason, int err)
 {
-    //fprintf(stderr, "AsyncWriterRelease: reason %d err %d\n", reason, err);
     ns_free(wdPtr->data);
     ns_free(wdPtr);
 }
@@ -3637,9 +3682,9 @@ AsyncWriterThread(void *arg)
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 
-    fprintf(stderr, "--- AsyncWriterThread started queuePtr %p asyncWriter %p asyncWriter->firstPtr %p\n", 
+    /*fprintf(stderr, "--- AsyncWriterThread started queuePtr %p asyncWriter %p asyncWriter->firstPtr %p\n", 
 	    queuePtr,
-	    asyncWriter, asyncWriter->firstPtr);
+	    asyncWriter, asyncWriter->firstPtr);*/
     Ns_ThreadSetName("-asyncwriter%d-", queuePtr->id);
 
     /*
@@ -3659,7 +3704,7 @@ AsyncWriterThread(void *arg)
 
         /*
          * Always listen to the trigger pipe. We could as well perform
-         * in the writer thread aync write operations, but for the
+         * in the writer thread async write operations, but for the
          * effect of reducing latency in connection threads, this is
          * not an issue. To keep things simple, we perform the
          * typically small write operations without testing for POLLOUT.
@@ -3671,20 +3716,43 @@ AsyncWriterThread(void *arg)
         if (writePtr == NULL) {
             pollto = 30 * 1000;
         } else {
-	    pollto = -1;
+	    pollto = 0;
         }
 
         /*
          * wait for data
          */
         n = PollWait(&pdata, pollto);
+
         /*
          * Select and drain the trigger pipe if necessary.
          */
-        if (PollIn(&pdata, 0) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
-            Ns_Fatal("asyncwriter: trigger recv() failed: %s",
-                     ns_sockstrerror(ns_sockerrno));
-        }
+        if (PollIn(&pdata, 0)) {
+	    if (recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+		Ns_Fatal("asyncwriter: trigger recv() failed: %s",
+			 ns_sockstrerror(ns_sockerrno));
+	    }
+	    if (queuePtr->stopped) {
+		/*
+		 * Drain the queue from everything
+		 */
+		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
+		    n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		}
+		writePtr = NULL;
+
+		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
+		    n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		}
+		queuePtr->sockPtr = NULL;
+
+		/* 
+		 * Notify the caller (normally
+		 * NsAsyncWriterQueueDisable()) that we are done
+		 */
+		Ns_CondBroadcast(&queuePtr->cond);
+	    }
+	}
 
         /*
          * Write to all available file descriptors
@@ -3735,27 +3803,38 @@ AsyncWriterThread(void *arg)
             curPtr = nextPtr;
         }
 
-        /*
-         * Add fresh jobs to the writer queue. This means actually to
-         * move jobs from queuePtr->sockPtr (kept name for being able
-         * to use the same queue as above) to the currently active
-         * jobs in queuePtr->curPtr.
-         */
-        Ns_MutexLock(&queuePtr->lock);
-        curPtr = queuePtr->sockPtr;
-        queuePtr->sockPtr = NULL;
-        while (curPtr != NULL) {
-            nextPtr = curPtr->nextPtr;
-            Push(curPtr, writePtr);
-            queuePtr->queuesize++;
-            curPtr = nextPtr;
-        }
-        queuePtr->curPtr = writePtr;
+
 	/*
 	 * Check for shutdown
 	 */
         stopping = queuePtr->shutdown;
-        Ns_MutexUnlock(&queuePtr->lock);
+	if (stopping) {
+	    curPtr = queuePtr->sockPtr;
+	    assert(writePtr == NULL);
+	    while (curPtr != NULL) {
+		n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		curPtr = curPtr->nextPtr;
+	    }
+	} else {
+	    /*
+	     * Add fresh jobs to the writer queue. This means actually to
+	     * move jobs from queuePtr->sockPtr (kept name for being able
+	     * to use the same queue as above) to the currently active
+	     * jobs in queuePtr->curPtr.
+	     */
+	    Ns_MutexLock(&queuePtr->lock);
+	    curPtr = queuePtr->sockPtr;
+	    queuePtr->sockPtr = NULL;
+	    while (curPtr != NULL) {
+		nextPtr = curPtr->nextPtr;
+		Push(curPtr, writePtr);
+		queuePtr->queuesize++;
+		curPtr = nextPtr;
+	    }
+	    queuePtr->curPtr = writePtr;
+	    Ns_MutexUnlock(&queuePtr->lock);
+	}
+
     }
 
     PollFree(&pdata);
@@ -3763,7 +3842,4 @@ AsyncWriterThread(void *arg)
     queuePtr->stopped = 1;
     Ns_Log(Notice, "exiting");
 
-    Ns_MutexLock(&queuePtr->lock);
-    Ns_CondBroadcast(&queuePtr->cond);
-    Ns_MutexUnlock(&queuePtr->lock);
 }

@@ -253,9 +253,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
     servPtr->opts.errorminsize = Ns_ConfigInt(path, "errorminsize", 514);
-    /* Does not seem to be used
-    servPtr->opts.flushcontent = Ns_ConfigBool(path, "flushcontent", NS_FALSE);
-    */
+
     servPtr->opts.hdrcase = Preserve;
     p = Ns_ConfigString(path, "headercase", "preserve");
     if (STRIEQ(p, "tolower")) {
@@ -414,7 +412,7 @@ CreatePool(NsServer *servPtr, char *pool)
     queueLength = maxconns - poolPtr->threads.max;
 
     highwatermark = Ns_ConfigIntRange(path, "highwatermark", 80, 0, 100);
-    lowwatermark =  Ns_ConfigIntRange(path, "lowwatermark", 5, 0, 100);
+    lowwatermark =  Ns_ConfigIntRange(path, "lowwatermark", 10, 0, 100);
     poolPtr->wqueue.highwatermark = (queueLength * highwatermark) / 100;
     poolPtr->wqueue.lowwatermark  = (queueLength * lowwatermark) / 100;
 

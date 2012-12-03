@@ -824,8 +824,14 @@ Ns_ConnDriverName(Ns_Conn *conn)
  * Ns_ConnStartTime --
  *
  *      Return the connection start time, which is the time the
- *      connection was queued from the driver thread, not the time
- *      the underlying socket was opened to the server.
+ *      connection was queued from the driver thread, not the time the
+ *      underlying socket was opened to the server. Similarly
+ *      Ns_ConnAcceptTime() returns the time the connection was
+ *      accepted (this is maybe a kept open connection),
+ *      Ns_ConnQueueTime() returns the time a request was queued,
+ *      Ns_ConnDequeueTime() returns the time a request was taken out
+ *      of the queue, and Ns_ConnFilterTime() is the time stampt after
+ *      the filters are executed.
  *
  * Results:
  *      Ns_Time pointer.
@@ -841,10 +847,9 @@ Ns_ConnStartTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return &connPtr->acceptTime;
+    return &connPtr->requestQueueTime;
 }
 
-// TODO comment me, if we keep this
 Ns_Time *
 Ns_ConnAcceptTime(Ns_Conn *conn)
 {
@@ -853,7 +858,6 @@ Ns_ConnAcceptTime(Ns_Conn *conn)
     return &connPtr->acceptTime;
 }
 
-// TODO comment me, if we keep this
 Ns_Time *
 Ns_ConnQueueTime(Ns_Conn *conn)
 {
@@ -862,7 +866,6 @@ Ns_ConnQueueTime(Ns_Conn *conn)
     return &connPtr->requestQueueTime;
 }
 
-// TODO comment me, if we keep this
 Ns_Time *
 Ns_ConnDequeueTime(Ns_Conn *conn)
 {
@@ -871,25 +874,60 @@ Ns_ConnDequeueTime(Ns_Conn *conn)
     return &connPtr->requestDequeueTime;
 }
 
-// TODO comment me, if we keep this
+Ns_Time *
+Ns_ConnFilterTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->filterDoneTime;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnTimeStats --
+ *
+ *      Return for a given connection and nowPtr the acceptTimeSpan,
+ *      queueTimeSpan, filterTimeSpan and runTimeSpan. The
+ *      
+ *         acceptTimeSpan = queueTime - acceptTime 
+ *         queueTimeSpan  = dequeueTime - queueTime
+ *         filterTimeSpan = filterDoneTime - dequeueTime
+ *         runTimeSpan    = now - filterDoneTime
+ *
+ *      In addition, this function updates the statistics and should
+ *      be called only once per request.
+ *
+ * Results:
+ *      Four time structures (argument 3 to 7)
+ *
+ * Side effects:
+ *      update statistics
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr,
-		 Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, Ns_Time *runTimePtr) {
+		 Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr, 
+		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr) {
     Conn      *connPtr = (Conn *) conn;
     NsServer  *servPtr = connPtr->servPtr;
-    Ns_Time    now;
     
     assert(servPtr);
 
-    Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         acceptTimePtr);
-    Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   queueTimePtr);
-    Ns_DiffTime(nowPtr,                       &connPtr->requestDequeueTime, runTimePtr);
+    Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         acceptTimeSpanPtr);
+    Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   queueTimeSpanPtr);
+    Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, filterTimeSpanPtr);
+    Ns_DiffTime(nowPtr,                       &connPtr->filterDoneTime,     runTimeSpanPtr);
 
     Ns_MutexLock(&servPtr->pools.lock);
       
-    Ns_IncrTime(&servPtr->stats.acceptTime, acceptTimePtr->sec, acceptTimePtr->usec);
-    Ns_IncrTime(&servPtr->stats.queueTime,  queueTimePtr->sec,  queueTimePtr->usec);
-    Ns_IncrTime(&servPtr->stats.runTime,    runTimePtr->sec,    runTimePtr->usec);
+    Ns_IncrTime(&servPtr->stats.acceptTime, acceptTimeSpanPtr->sec, acceptTimeSpanPtr->usec);
+    Ns_IncrTime(&servPtr->stats.queueTime,  queueTimeSpanPtr->sec,  queueTimeSpanPtr->usec);
+    Ns_IncrTime(&servPtr->stats.filterTime, filterTimeSpanPtr->sec, filterTimeSpanPtr->usec);
+    Ns_IncrTime(&servPtr->stats.runTime,    runTimeSpanPtr->sec,    runTimeSpanPtr->usec);
     
     Ns_MutexUnlock(&servPtr->pools.lock);
 }
@@ -971,11 +1009,10 @@ int
 Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
 {
     Conn *connPtr = (Conn *) conn;
-    char *hdr;
 
     if (connPtr->servPtr->opts.modsince) {
-        if ((hdr = Ns_SetIGet(conn->headers, "If-Modified-Since")) != NULL
-                && Ns_ParseHttpTime(hdr) >= since) {
+	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
+        if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {
             return NS_FALSE;
         }
     }
@@ -1529,7 +1566,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CStartIdx:
-        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&connPtr->acceptTime));
+        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&connPtr->requestQueueTime));
         break;
 
     case CCloseIdx:
@@ -1627,7 +1664,7 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj **objv)
 {
     NsInterp    *itPtr = arg;
-    size_t       toCopy = 0;
+    int         toCopy = 0;
     char        *chanName;
     Request     *reqPtr;
     Tcl_Channel  chan;
@@ -1659,7 +1696,7 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_Flush(chan);
     reqPtr = ((Conn *)itPtr->conn)->reqPtr;
     if (toCopy > reqPtr->avail || toCopy <= 0) {
-        toCopy = reqPtr->avail;
+        toCopy = (int)reqPtr->avail;
     }
     if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
         Tcl_SetResult(interp, "could not copy content", TCL_STATIC);

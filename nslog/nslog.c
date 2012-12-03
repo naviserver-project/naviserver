@@ -616,20 +616,21 @@ LogTrace(void *arg, Ns_Conn *conn)
     }
 
     if ((logPtr->flags & LOG_PARTIALTIMES)) {
-	Ns_Time *startTimePtr, acceptTime, queueTime, runTime;
+	Ns_Time *startTimePtr, acceptTime, queueTime, filterTime, runTime;
 
 	// this is most probably not the best place, since it means,
 	// that if we don't include partial times in the access log, 
 	// they won't be included in the server stats. we just want to 
 	// see if we can make use from this data
-        Ns_ConnTimeStats(conn, &now, &acceptTime, &queueTime, &runTime);
+        Ns_ConnTimeStats(conn, &now, &acceptTime, &queueTime, &filterTime, &runTime);
 	startTimePtr = Ns_ConnStartTime(conn);
 
         Ns_DStringAppend(&ds, " \"");
         Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)startTimePtr->sec, startTimePtr->usec);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)acceptTime.sec, acceptTime.usec);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,  queueTime.usec);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,    runTime.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)acceptTime.sec,    acceptTime.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)queueTime.sec,     queueTime.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)filterTime.sec,    filterTime.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)runTime.sec,       runTime.usec);
         Ns_DStringAppend(&ds, "\"");
     }
 
@@ -845,7 +846,9 @@ static int
 LogRoll(Log *logPtr)
 {
     int      status;
-    Tcl_Obj *path, *newpath;
+    Tcl_Obj *path;
+
+    NsAsyncWriterQueueDisable(0);
 
     LogClose(logPtr);
 
@@ -865,6 +868,7 @@ LogRoll(Log *logPtr)
             time_t      now = time(0);
             char        timeBuf[512];
             Ns_DString  ds;
+	    Tcl_Obj    *newpath;
             struct tm  *ptm = ns_localtime(&now);
 
             strftime(timeBuf, sizeof(timeBuf)-1, logPtr->rollfmt, ptm);
@@ -896,8 +900,13 @@ LogRoll(Log *logPtr)
     }
 
     Tcl_DecrRefCount(path);
+    
+    if (status == NS_OK) {
+	status = LogOpen(logPtr);
+    }
+    NsAsyncWriterQueueEnable();
 
-    return (status == NS_OK) ? LogOpen(logPtr) : NS_ERROR;
+    return status;
 }
 
 

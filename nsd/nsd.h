@@ -299,7 +299,7 @@ typedef struct Request {
     char *content;              /* Start of content */
     size_t length;              /* Length of content */
     size_t contentLength;       /* Provided content length */
-    size_t avail;                /* Bytes avail in buffer */
+    size_t avail;               /* Bytes avail in buffer */
     int leadblanks;             /* Number of leading blank lines read */
 
    /*
@@ -538,6 +538,7 @@ typedef struct Conn {
     Ns_Time acceptTime;          /* time stamp, when the request was accepted */
     Ns_Time requestQueueTime;    /* time stamp, when the request was queued */
     Ns_Time requestDequeueTime;  /* time stamp, when the request was dequeued */
+    Ns_Time filterDoneTime;      /* time stamp, after filters */
 
     struct NsInterp *itPtr;
     struct stat fileInfo;
@@ -679,6 +680,7 @@ typedef struct NsServer {
         unsigned long connthreads;
         Ns_Time acceptTime;
 	Ns_Time queueTime; 
+	Ns_Time filterTime; 
 	Ns_Time runTime;
     } stats;
 
@@ -1016,7 +1018,7 @@ extern void NsMapPool(ConnPool *poolPtr, char *map);
 extern void NsSockClose(Sock *sockPtr, int keep);
 extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 
-extern Request *NsGetRequest(Sock *sockPtr);
+extern Request *NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
 extern int NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,

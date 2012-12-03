@@ -348,17 +348,23 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 	    //ConnThreadQueuePrint(poolPtr, "driver");
 
 	    Ns_MutexLock(&servPtr->pools.lock);
-            connPtr->id        = servPtr->pools.nextconnid++;
+            connPtr->id                  = servPtr->pools.nextconnid++;
 	    Ns_MutexUnlock(&servPtr->pools.lock);
 
-            connPtr->requestQueueTime    = *nowPtr;
-            connPtr->sockPtr             = sockPtr;
-            connPtr->drvPtr              = sockPtr->drvPtr;
-            connPtr->servPtr             = servPtr;
-            connPtr->server              = servPtr->server;
-            connPtr->location            = sockPtr->location;
-	    connPtr->acceptTime          = sockPtr->acceptTime;
-	    connPtr->flags = 0;
+            connPtr->requestQueueTime     = *nowPtr;
+            connPtr->sockPtr              = sockPtr;
+            connPtr->drvPtr               = sockPtr->drvPtr;
+            connPtr->servPtr              = servPtr;
+            connPtr->server               = servPtr->server;
+            connPtr->location             = sockPtr->location;
+	    connPtr->flags                = 0;
+	    connPtr->requestQueueTime     = *nowPtr;
+	    if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0) {
+		connPtr->acceptTime       = *nowPtr;
+	    } else {
+		connPtr->acceptTime       = sockPtr->acceptTime;
+	    }
+	    sockPtr->acceptTime.sec       = 0; /* invalidate time */
 
 	    if (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) {
 	        connPtr->flags |= NS_CONN_ENTITYTOOLARGE;
@@ -566,6 +572,11 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
 		 (int64_t)servPtr->stats.queueTime.sec,
 		 servPtr->stats.queueTime.usec);
+
+        Tcl_DStringAppendElement(dsPtr, "filtertime");
+	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
+		 (int64_t)servPtr->stats.filterTime.sec,
+		 servPtr->stats.filterTime.usec);
 	
 	Tcl_DStringAppendElement(dsPtr, "runtime");
 	Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
@@ -664,15 +675,13 @@ NsStartServer(NsServer *servPtr)
 static void
 NsWakeupConnThreads(ConnPool *poolPtr) {
     int i;
-    //Ns_Log(Notice, "NsWakeupConnThreads: pool '%s' %p", poolPtr->pool, poolPtr);
 
     Ns_MutexLock(&poolPtr->tqueue.lock);
     for (i = 0; i < poolPtr->threads.max; i++) {
 	ConnThreadArg *argPtr = &poolPtr->tqueue.args[i];
-	//Ns_Log(Notice, "check conn thread %d state %d",i, argPtr->state);
+
 	if (argPtr->state == connThread_idle) {
 	    assert(argPtr->connPtr == NULL);
-	    //Ns_Log(Notice, "wakeup conn thread %d",i);
 	    Ns_MutexLock(&argPtr->lock);
 	    Ns_CondSignal(&argPtr->cond);
 	    Ns_MutexUnlock(&argPtr->lock);
@@ -718,8 +727,6 @@ NsWaitServer(NsServer *servPtr, Ns_Time *toPtr)
     ConnPool  *poolPtr;
     Ns_Thread  joinThread;
     int        status;
-
-    // Ns_Log(Notice, "NsWaitServer server: %s", servPtr->server);
 
     status = NS_OK;
     poolPtr = servPtr->pools.firstPtr;
@@ -1067,29 +1074,39 @@ NsConnThread(void *arg)
 	    waiting  = poolPtr->wqueue.wait.num;
 	    lowwater = poolPtr->wqueue.lowwatermark;
 	    idle     = poolPtr->threads.idle;
-	    current    = poolPtr->threads.current;
+	    current  = poolPtr->threads.current;
             Ns_MutexUnlock(poolsLockPtr);
 
 	    {   // this is intended for development only. 
-		Ns_Time now, acceptTime, queueTime, runTime, totalTime;
+		Ns_Time now, acceptTime, queueTime, filterTime, netRunTime, runTime, totalTime;
+
 		Ns_DiffTime(&connPtr->requestQueueTime, &connPtr->acceptTime, &acceptTime);
 		Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime, &queueTime);
+		Ns_DiffTime(&connPtr->filterDoneTime, &connPtr->requestDequeueTime, &filterTime);
+
 		Ns_GetTime(&now);
 		Ns_DiffTime(&now, &connPtr->requestDequeueTime, &runTime);
-		Ns_DiffTime(&now, &connPtr->acceptTime, &totalTime);
+		Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
+		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &totalTime);
 
 	    Ns_Log(Notice, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
 		   " start %" PRIu64 ".%06ld"
+		   " %" PRIu64 ".%06ld"
 		   " accept %" PRIu64 ".%06ld"
 		   " queue %" PRIu64 ".%06ld"
+		   " filter %" PRIu64 ".%06ld"
 		   " run %" PRIu64 ".%06ld"
+		   " netrun %" PRIu64 ".%06ld"
 		   " total %" PRIu64 ".%06ld",
 		   ThreadNr(poolPtr, argPtr),
 		   waiting, poolPtr->threads.current, idle, ncons, fromQueue,
 		   (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
+		   (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
 		   (int64_t) acceptTime.sec, acceptTime.usec,
 		   (int64_t) queueTime.sec, queueTime.usec,
+		   (int64_t) filterTime.sec, filterTime.usec,
 		   (int64_t) runTime.sec, runTime.usec,
+		   (int64_t) netRunTime.sec, netRunTime.usec,
 		   (int64_t) totalTime.sec, totalTime.usec
 		   );
 	    }
@@ -1186,18 +1203,20 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     Ns_Conn  *conn = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->servPtr;
     int       status = NS_OK;
+    Sock     *sockPtr = connPtr->sockPtr;
     char     *auth;
 
     /*
      * Re-initialize and run the connection. 
      */
-    if (connPtr->sockPtr) {
-	connPtr->reqPtr = NsGetRequest(connPtr->sockPtr);
+    if (sockPtr) {
+	connPtr->reqPtr = NsGetRequest(sockPtr, &connPtr->requestDequeueTime);
     } else {
 	connPtr->reqPtr = NULL;
     }
-    
+
     if (connPtr->reqPtr == NULL) {
+	Ns_Log(Notice, "=== *********** connPtr %p has no reqPtr, calling close ======", connPtr);
         Ns_ConnClose(conn);
         return;
     }
@@ -1206,8 +1225,8 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
      * Make sure we update peer address with actual remote IP address
      */
 
-    connPtr->reqPtr->port = ntohs(connPtr->sockPtr->sa.sin_port);
-    strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(connPtr->sockPtr->sa.sin_addr));
+    connPtr->reqPtr->port = ntohs(sockPtr->sa.sin_port);
+    strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
 
     connPtr->request = &connPtr->reqPtr->request;
 
@@ -1261,7 +1280,7 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
      */
 
     if (connPtr->sockPtr->drvPtr->requestProc != NULL) {
-        status = (*connPtr->sockPtr->drvPtr->requestProc)(connPtr->sockPtr->drvPtr->arg, conn);
+        status = (*sockPtr->drvPtr->requestProc)(sockPtr->drvPtr->arg, conn);
     }
 
     /*
@@ -1274,6 +1293,11 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
         if (status == NS_OK) {
             status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
         }
+	{
+	    Ns_Time now;
+	    Ns_GetTime(&now);
+	    connPtr->filterDoneTime = now;
+	}
         if (status == NS_OK) {
             status = Ns_AuthorizeRequest(servPtr->server,
                                          connPtr->request->method,
@@ -1284,6 +1308,11 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
             switch (status) {
             case NS_OK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
+		    {
+			Ns_Time now;
+			Ns_GetTime(&now);
+			connPtr->filterDoneTime = now;
+		    }
                 if (status == NS_OK) {
                     status = Ns_ConnRunRequest(conn);
                 }
@@ -1495,7 +1524,7 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
 	    Tcl_DStringAppendElement(dsPtr, "unknown");
 	}
 	Ns_GetTime(&now);
-        Ns_DiffTime(&now, &connPtr->acceptTime, &diff);
+        Ns_DiffTime(&now, &connPtr->requestQueueTime, &diff);
         snprintf(buf, sizeof(buf), "%" PRIu64 ".%ld", (int64_t) diff.sec, diff.usec);
         Tcl_DStringAppendElement(dsPtr, buf);
         snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", connPtr->nContentSent);
