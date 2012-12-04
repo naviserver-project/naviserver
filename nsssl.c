@@ -108,6 +108,13 @@ static Ns_Mutex session_lock;
 
 NS_EXPORT int Ns_ModuleVersion = 1;
 
+static void 
+SSL_infoCB(const SSL *ssl, int where, int ret) {
+    if ((where & SSL_CB_HANDSHAKE_DONE)) {
+        ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
+    }
+}
+
 NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
@@ -212,6 +219,12 @@ Ns_ModuleInit(char *server, char *module)
     SSL_CTX_set_options(drvPtr->ctx, n);
 
     /*
+     * Set info callback to prevent client-initiated renegotiation
+     * (after the handshake).
+     */
+    SSL_CTX_set_info_callback(drvPtr->ctx, SSL_infoCB);
+
+    /*
      * Parse SSL ciphers
      */
     value = Ns_ConfigGetValue(path, "ciphers");
@@ -223,6 +236,16 @@ Ns_ModuleInit(char *server, char *module)
     SSL_CTX_set_mode(drvPtr->ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SINGLE_DH_USE);
     SSL_CTX_set_options(drvPtr->ctx, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+    /*
+     * Prefer server ciphers to secure against BEAST attack.
+     */
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+    /*
+     * Disable compression to avoid CRIME attack.
+     */
+#ifdef SSL_OP_NO_COMPRESSION
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_NO_COMPRESSION);
+#endif
     if (drvPtr->verify) {
         SSL_CTX_set_verify(drvPtr->ctx, SSL_VERIFY_PEER, NULL);
     }
