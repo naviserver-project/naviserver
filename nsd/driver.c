@@ -2080,7 +2080,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     Tcl_DString  *bufPtr = NULL;
 
     struct iovec  buf;
-    char         tbuf[4096];
+    char         tbuf[16384];
     size_t       len, nread;
     ssize_t      n;
 
@@ -2191,10 +2191,12 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     n = DriverRecv(sockPtr, &buf, 1);
 
     if (n < 0) {
+	Tcl_DStringSetLength(bufPtr, len);
         return SOCK_READERROR;
     }
 
     if (n == 0) {
+	Tcl_DStringSetLength(bufPtr, len);
         return SOCK_MORE;
     }
     
