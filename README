@@ -1,4 +1,4 @@
-SSL driver for NaviServer 4.x
+SSL driver for NaviServer 4.99.x
 Release 0.2
 vlad@crystalballinc.com
 neumann@wu-wien.ac.at
@@ -20,7 +20,7 @@ adds new ns_ssl command.
    ns_param	 certificate 		/usr/local/ns/modules/nsssl/server.pem
    ns_param      address    		0.0.0.0
    ns_param      port       		443
-   ns_param      ciphers                "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP"
+   ns_param      ciphers                "RC4:HIGH:!aNULL:!MD5;"
    ns_param      protocols              "!SSLv2"
    ns_param      verify                 0
 
