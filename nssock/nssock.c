@@ -204,7 +204,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
     if (n == 0) {
 	/* this means usually eof, return value of 0 means in the driver SOCK_MORE */
-	n = 1;
+	n = -1;
     }
     return n;
 }
