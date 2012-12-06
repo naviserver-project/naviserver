@@ -199,7 +199,14 @@ static ssize_t
 Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    int n;
+    
+    n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    if (n == 0) {
+	/* this means usually eof, return value of 0 means in the driver SOCK_MORE */
+	n = 1;
+    }
+    return n;
 }
 
 
