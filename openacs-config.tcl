@@ -94,7 +94,7 @@ ns_section ns/parameters
     #ns_param   schedsperthread	0
 
     # Write asynchronously to log files (access log and error log)
-    #ns_param	asyncwriter	true 	;# false
+    #ns_param	asynclogwriter	true 	;# false
 
     #
     # Encoding settings (see http://dqd.com/~mayoff/encoding-doc.html)

@@ -3463,7 +3463,7 @@ NsAsyncWriterQueueEnable()
 {
     SpoolerQueue  *queuePtr;
 
-    if (!Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asyncwriter", NS_FALSE)) {
+    if (!Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE)) {
 	/*
 	 * Asyncwriter is disabled, nothing to do.
 	 */
@@ -3687,7 +3687,7 @@ AsyncWriterThread(void *arg)
     /*fprintf(stderr, "--- AsyncWriterThread started queuePtr %p asyncWriter %p asyncWriter->firstPtr %p\n", 
 	    queuePtr,
 	    asyncWriter, asyncWriter->firstPtr);*/
-    Ns_ThreadSetName("-asyncwriter%d-", queuePtr->id);
+    Ns_ThreadSetName("-asynclogwriter%d-", queuePtr->id);
 
     /*
      * Allocate and initialize controlling variables
@@ -3731,7 +3731,7 @@ AsyncWriterThread(void *arg)
          */
         if (PollIn(&pdata, 0)) {
 	    if (recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
-		Ns_Fatal("asyncwriter: trigger recv() failed: %s",
+		Ns_Fatal("asynclogwriter: trigger recv() failed: %s",
 			 ns_sockstrerror(ns_sockerrno));
 	    }
 	    if (queuePtr->stopped) {
