@@ -398,28 +398,40 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
         sslPtr->verified = 1;
     }
 
-    n = SSL_read(sslPtr->ssl, bufs->iov_base, bufs->iov_len);
-    err = SSL_get_error(sslPtr->ssl, n);
+    while (1) {
+        char *p = (char *)bufs->iov_base;
+	int   got = 0;
+	
+        ERR_clear_error();
+        n = SSL_read(sslPtr->ssl, p + got, bufs->iov_len - got);
+        err = SSL_get_error(sslPtr->ssl, n);
 
-    switch (err) {
-
-    case SSL_ERROR_NONE: 
-	if (n < 0) { fprintf(stderr, "### SSL_read should not happen\n"); }
-	break;
-
-    case SSL_ERROR_WANT_READ: 
-	/*fprintf(stderr, "### SSL_read WANT_READ\n");*/
-	n = 0; 
-	break;
-    
-    default:
-	/*fprintf(stderr, "### SSL_read error\n");*/
-	SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
-	n = -1;
-	break;
+        switch (err) {
+        case SSL_ERROR_NONE: 
+            if (n < 0) { 
+		fprintf(stderr, "### SSL_read should not happen\n"); 
+		return n;
+	    }
+            /*fprintf(stderr, "### SSL_read %d pending %d\n", n, SSL_pending(sslPtr->ssl));*/
+	    got += n;
+            if (n == 1 && got < bufs->iov_len) {
+                /*fprintf(stderr, "### SSL retry after read of %d bytes\n", n);*/
+                continue;
+            }
+	    return got;
+            
+        case SSL_ERROR_WANT_READ: 
+            /*fprintf(stderr, "### SSL_read WANT_READ returns %d\n", got);*/
+            return got;
+            
+        default:
+            /*fprintf(stderr, "### SSL_read error\n");*/
+            SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
+            return -1;
+        }
     }
-
-    return n;
+    
+    return -1;
 }
 
 
