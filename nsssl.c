@@ -1241,6 +1241,19 @@ SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock)
             Ns_Log(Error, "nssock: setsockopt(TCP_DEFER_ACCEPT): %s",
                    ns_sockstrerror(ns_sockerrno));
         }
+#else
+# ifdef SO_ACCEPTFILTER
+        struct accept_filter_arg afa;
+	int n;
+
+	memset(&afa, 0, sizeof(afa));
+	strcpy(afa.af_name, "httpready");
+	n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa));
+        if (n < 0) {
+	    Ns_Log(Error, "nssock: setsockopt(SO_ACCEPTFILTER): %s",
+                   ns_sockstrerror(ns_sockerrno));
+	}
+# endif
 #endif
     }
 }
