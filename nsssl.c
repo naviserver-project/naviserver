@@ -342,7 +342,10 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *sock
             sslPtr = ns_calloc(1, sizeof(SSLContext));
             sslPtr->ssl = SSL_new(drvPtr->ctx);
             if (sslPtr->ssl == NULL) {
-                Ns_Log(Error, "%d: SSL session init error for %s: [%s]", sock->sock, ns_inet_ntoa(sock->sa.sin_addr), strerror(errno));
+                Ns_Log(Error, "%d: SSL session init error for %s: [%s]", 
+		       sock->sock, 
+		       ns_inet_ntoa(sock->sa.sin_addr), 
+		       strerror(errno));
                 ns_free(sslPtr);
                 return NS_DRIVER_ACCEPT_ERROR;
             }
@@ -388,11 +391,13 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
         if ((peer = SSL_get_peer_certificate(sslPtr->ssl))) {
              X509_free(peer);
              if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
-                 Ns_Log(Error, "nsssl: client certificate not valid by %s", ns_inet_ntoa(sock->sa.sin_addr));
+                 Ns_Log(Error, "nsssl: client certificate not valid by %s", 
+			ns_inet_ntoa(sock->sa.sin_addr));
                  return NS_ERROR;
              }
         } else {
-            Ns_Log(Error, "nsssl: no client certificate provided by %s", ns_inet_ntoa(sock->sa.sin_addr));
+            Ns_Log(Error, "nsssl: no client certificate provided by %s", 
+		   ns_inet_ntoa(sock->sa.sin_addr));
             return NS_ERROR;
         }
         sslPtr->verified = 1;
@@ -455,27 +460,33 @@ static ssize_t
 Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flags)
 {
     SSLContext *sslPtr = sock->arg;
-    int rc, size;
+    int rc, size, decork;
 
     size = 0;
+    decork = Ns_SockCork(sock, 1);
     while (nbufs > 0) {
-        ERR_clear_error();
-        rc = SSL_write(sslPtr->ssl, bufs->iov_base, bufs->iov_len);
+	if (bufs->iov_len > 0) {
+	    ERR_clear_error();
+	    rc = SSL_write(sslPtr->ssl, bufs->iov_base, bufs->iov_len);
 
-        if (rc < 0) {
-            if (SSL_get_error(sslPtr->ssl, rc) == SSL_ERROR_WANT_WRITE) {
-                Ns_Time timeout = { sock->driver->sendwait, 0 };
-                if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, &timeout) == NS_OK) {
-                    continue;
-                }
-            }
-            SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
-            return -1;
-        }
-        nbufs--;
-        bufs++;
-        size += rc;
+	    if (rc < 0) {
+		if (SSL_get_error(sslPtr->ssl, rc) == SSL_ERROR_WANT_WRITE) {
+		    Ns_Time timeout = { sock->driver->sendwait, 0 };
+		    if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, &timeout) == NS_OK) {
+			continue;
+		    }
+		}
+		if (decork) {Ns_SockCork(sock->sock, 0);}
+		SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
+		return -1;
+	    }
+	    size += rc;
+	}
+	nbufs--;
+	bufs++;
     }
+
+    if (decork) {Ns_SockCork(sock->sock, 0);}
     return size;
 }
 
