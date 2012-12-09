@@ -385,7 +385,6 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 #ifdef TCP_NODELAY
 	int value = 1;
 
-	fprintf(stderr, "### set nodelay %d\n", sock);
         if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
                        &value, sizeof(value)) == -1) {
             Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
