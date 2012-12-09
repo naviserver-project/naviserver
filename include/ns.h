@@ -71,6 +71,7 @@
 #define NS_CONN_CHUNK              0x080 /* Streamed data is to be chunked. */
 #define NS_CONN_SENT_LAST_CHUNK    0x100 /* Marks that the last chunk was sent in chunked mode */
 #define NS_CONN_SENT_VIA_WRITER    0x200 /* Response data has been sent via writer thread */
+#define NS_CONN_SOCK_CORKED        0x400 /* underlying socket is corked */
 #define NS_CONN_ENTITYTOOLARGE    0x2000 /* the sent Entity was too large */
 #define NS_CONN_REQUESTURITOOLONG 0x4000 /* request-URI too long */
 #define NS_CONN_LINETOOLONG       0x8000 /* request Header line too long */
@@ -2377,6 +2378,9 @@ NS_EXTERN ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_SockCork(Ns_Sock *sock, int cork);
 
 /*
  * sock.c:

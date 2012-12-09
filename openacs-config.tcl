@@ -284,6 +284,7 @@ ns_section ns/server/${server}/module/nssock
 	#ns_param   sendwait		30	;# 30, timeout in seconds for send operations
 	#ns_param   closewait		2	;# 2, timeout in seconds for close on socket
 	#ns_param   keepwait		2	;# 5, timeout in seconds for keep-alive
+	#ns_param   nodelay		true	;# false; activate TCP_NODELAY if not activated per default on your OS
 	#ns_param   keepalivemaxuploadsize	500000	;# 0, don't allow keep-alive for upload content larger than this
 	#ns_param   keepalivemaxdownloadsize	1000000 ;# 0, don't allow keep-alive for download content larger than this
 	#
@@ -312,6 +313,7 @@ ns_section ns/server/${server}/module/nslog
 	#
 	#ns_param   suppressquery	true	;# false, suppress query portion in log entry
 	#ns_param   logreqtime		true	;# false, include time to service the request
+	ns_param    logpartialtimes	true	;# false, include partial request times (accept, queue, filter, run)
 	#ns_param   formattedtime	true	;# true, timestamps formatted or in secs (unix time)
 	#ns_param   logcombined		true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
 	#ns_param   extendedheaders	COOKIE	;# comma delimited list of HTTP heads to log per entry
