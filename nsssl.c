@@ -476,7 +476,7 @@ Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
 			continue;
 		    }
 		}
-		if (decork) {Ns_SockCork(sock->sock, 0);}
+		if (decork) {Ns_SockCork(sock, 0);}
 		SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
 		return -1;
 	    }
@@ -486,7 +486,7 @@ Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
 	bufs++;
     }
 
-    if (decork) {Ns_SockCork(sock->sock, 0);}
+    if (decork) {Ns_SockCork(sock, 0);}
     return size;
 }
 
