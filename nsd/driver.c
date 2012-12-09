@@ -56,10 +56,6 @@
 #define SOCK_BADHEADER           (-13)
 #define SOCK_TOOMANYHEADERS      (-14)
 
-/* WriterSock flags, keep it in upper range not to conflict with Conn flags */
-
-#define WRITER_TIMEOUT           0x10000
-
 /*
  * The following are valid driver state flags.
  */
