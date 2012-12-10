@@ -141,6 +141,12 @@ Returns the version of the HTTP request. This is usually 1.0 or 1.1.
 Returns name of the temprorary file which holds contents of the request. This only works
 when maxupload parameter to nssock driver is set to the value between 1K and maxinput
 
+[call [cmd  ns_conn] [arg zipaccepted]]
+
+Returns 0 or 1 depending on whether or not the client accepts a zip
+encoded response.
+
+
 [list_end]
 
 [section EXAMPLES]

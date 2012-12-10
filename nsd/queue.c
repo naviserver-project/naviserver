@@ -376,6 +376,10 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 	        connPtr->flags |= NS_CONN_LINETOOLONG;
 		sockPtr->flags &= ~NS_CONN_LINETOOLONG;
 	    }
+	    if (sockPtr->flags & NS_CONN_ZIPACCEPTED) {
+	        connPtr->flags |= NS_CONN_ZIPACCEPTED;
+		sockPtr->flags &= ~NS_CONN_ZIPACCEPTED;
+	    }
 
 	    /*
 	     * Try to get an entry from the connection thread queue,

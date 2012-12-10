@@ -2324,6 +2324,7 @@ SockParse(Sock *sockPtr, int spooler)
          * Check for end of headers.
          */
         if (e == s) {
+	    int gzip;
 
             /*
              * Look for a blank line on its own prior to any "real"
@@ -2412,6 +2413,19 @@ SockParse(Sock *sockPtr, int spooler)
                 }
 
             }
+
+	    s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
+	    if (s != NULL) {
+		/* get gzip from accept-encoding header */
+		gzip = NsParseAcceptEnconding(reqPtr->request.version, s);
+	    } else {
+		/* no accept-encoding header; make gzip default in HTTP/1.1 */
+		gzip = (reqPtr->request.version >= 1.1);
+	    }
+	    if (gzip) {
+		sockPtr->flags |= NS_CONN_ZIPACCEPTED;
+	    }
+
         } else {
             save = *e;
             *e = '\0';

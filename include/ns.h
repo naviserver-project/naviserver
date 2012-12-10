@@ -72,9 +72,11 @@
 #define NS_CONN_SENT_LAST_CHUNK    0x100 /* Marks that the last chunk was sent in chunked mode */
 #define NS_CONN_SENT_VIA_WRITER    0x200 /* Response data has been sent via writer thread */
 #define NS_CONN_SOCK_CORKED        0x400 /* underlying socket is corked */
+#define NS_CONN_ZIPACCEPTED        0x800 /* the request accepts zip encoding */
 #define NS_CONN_ENTITYTOOLARGE    0x2000 /* the sent Entity was too large */
 #define NS_CONN_REQUESTURITOOLONG 0x4000 /* request-URI too long */
 #define NS_CONN_LINETOOLONG       0x8000 /* request Header line too long */
+
 
 /*
  * The following are valid return codes from an Ns_UserAuthorizeProc.

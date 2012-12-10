@@ -446,12 +446,31 @@ test compress-3.5 {ns_write streaming + HTTP 1.1 chunking, compressed} -setup {
     ns_unregister_op GET /compress
 } -result "200 gzip Accept-Encoding chunked {} {31 37 0a 1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 0a 65 0a 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff 0a 61 0a 03 00 12 13 05 72 0f 00 00 00 0a 30 0a 0a}"
 
-
-
 # 1f 8b 08 00 00 00 00 00 04 03
 # 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff
 # 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff
 # 03 00 12 13 05 72 0f 00 00 00
+
+test compress-4.1 {HTTP 1.0: no Accept-Encoding} -setup {
+    ns_register_proc GET /nsconn {
+        ns_return 200 text/plain x[ns_conn zipaccepted]y
+    }
+} -body {
+    nstest::http -http 1.0 -getbody 1 -getheaders {Content-Encoding Vary} \
+        GET /nsconn
+} -result "200 {} {} x0y"
+
+test compress-4.2 {HTTP 1.0: Accept-Encoding gzip} -setup {
+    ns_register_proc GET /nsconn {
+        ns_return 200 text/plain x[ns_conn zipaccepted]y
+    }
+} -body {
+    nstest::http -http 1.0 -getbody 1 -getheaders {Content-Encoding Vary} -setheaders {Accept-Encoding gzip} \
+        GET /nsconn
+} -result "200 {} {} x1y"
+
+
+
 
 
 cleanupTests

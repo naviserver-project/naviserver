@@ -1199,7 +1199,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "outputheaders", "peeraddr", "peerport", "port", "protocol",
         "query", "request", "server", "sock", "start", "status", "timeout",
         "url", "urlc", "urlencoding", "urlv", "version",
-        "keepalive", "compress",
+        "keepalive", "compress", "zipaccepted",
         NULL
     };
     enum ISubCmdIdx {
@@ -1213,7 +1213,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CTimeoutIdx, CUrlIdx,
         CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx,
-        CKeepAliveIdx, CCompressIdx
+        CKeepAliveIdx, CCompressIdx, CZipacceptedIdx,
     };
 
     if (objc < 2) {
@@ -1442,8 +1442,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         }
         break;
 
-    case CFileOffIdx: /* FALL-THRU */
-    case CFileLenIdx: /* FALL-THRU */
+    case CFileOffIdx: /* fall through */
+    case CFileLenIdx: /* fall through */
     case CFileHdrIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -1598,6 +1598,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return TCL_ERROR;
         }
 	break;
+
+    case CZipacceptedIdx:
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0));
+	break;
+
     }
 
     return TCL_OK;
