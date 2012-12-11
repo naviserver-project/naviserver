@@ -357,7 +357,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             connPtr->servPtr              = servPtr;
             connPtr->server               = servPtr->server;
             connPtr->location             = sockPtr->location;
-	    connPtr->flags                = 0;
+	    connPtr->flags                = sockPtr->flags;
 	    connPtr->requestQueueTime     = *nowPtr;
 	    if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0) {
 		connPtr->acceptTime       = *nowPtr;
@@ -365,21 +365,6 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 		connPtr->acceptTime       = sockPtr->acceptTime;
 	    }
 	    sockPtr->acceptTime.sec       = 0; /* invalidate time */
-
-	    if (sockPtr->flags & NS_CONN_ENTITYTOOLARGE) {
-	        connPtr->flags |= NS_CONN_ENTITYTOOLARGE;
-		sockPtr->flags &= ~NS_CONN_ENTITYTOOLARGE;
-	    } else if (sockPtr->flags & NS_CONN_REQUESTURITOOLONG) {
-	        connPtr->flags |= NS_CONN_REQUESTURITOOLONG;
-		sockPtr->flags &= ~NS_CONN_REQUESTURITOOLONG;
-	    } else if (sockPtr->flags & NS_CONN_LINETOOLONG) {
-	        connPtr->flags |= NS_CONN_LINETOOLONG;
-		sockPtr->flags &= ~NS_CONN_LINETOOLONG;
-	    }
-	    if (sockPtr->flags & NS_CONN_ZIPACCEPTED) {
-	        connPtr->flags |= NS_CONN_ZIPACCEPTED;
-		sockPtr->flags &= ~NS_CONN_ZIPACCEPTED;
-	    }
 
 	    /*
 	     * Try to get an entry from the connection thread queue,
@@ -856,7 +841,7 @@ NsConnThread(void *arg)
      */
 
     path   = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
-    cpt    = Ns_ConfigIntRange(path, "connsperthread", 0, 0, INT_MAX);
+    cpt    = Ns_ConfigIntRange(path, "connsperthread", 10000, 0, INT_MAX);
     
     ncons   = cpt;
     timeout = poolPtr->threads.timeout;

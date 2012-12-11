@@ -151,7 +151,7 @@ ns_section ns/server/${server}
 	#ns_param	maxconnections	100	;# 100; number of allocated connection stuctures
 	#ns_param	maxthreads	10	;# 10; maximal number of connection threads
 	#ns_param	minthreads	1	;# 1; minimal number of connection threads
-	ns_param	connsperthread	100	;# 0; number of connections (requests) handled per thread
+	ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
 	#ns_param	threadtimeout	120	;# 120; timeout for idle theads
         #ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
         ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
