@@ -350,7 +350,16 @@ SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock)
     Config *cfg = driver->arg;
 
     if (cfg->deferaccept) {
-#ifdef TCP_DEFER_ACCEPT
+#ifdef TCP_FASTOPEN_UNTESTED
+        int qlen = 5;
+
+        if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
+                       &sec, sizeof(qlen)) == -1) {
+            Ns_Log(Error, "nssock: setsockopt(TCP_FASTOPEN): %s",
+                   ns_sockstrerror(ns_sockerrno));
+        }
+#else
+# ifdef TCP_DEFER_ACCEPT
         int sec;
 
         sec = driver->recvwait;
@@ -359,8 +368,8 @@ SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock)
             Ns_Log(Error, "nssock: setsockopt(TCP_DEFER_ACCEPT): %s",
                    ns_sockstrerror(ns_sockerrno));
         }
-#else
-# ifdef SO_ACCEPTFILTER
+# else
+#  ifdef SO_ACCEPTFILTER
         struct accept_filter_arg afa;
 	int n;
 
@@ -371,6 +380,7 @@ SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock)
             Ns_Log(Error, "nssock: setsockopt(SO_ACCEPTFILTER): %s",
                    ns_sockstrerror(ns_sockerrno));
 	}
+#  endif
 # endif
 #endif
     }
