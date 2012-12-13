@@ -2455,7 +2455,7 @@ NS_EXTERN int
 Ns_SockSetBlocking(NS_SOCKET sock);
 
 NS_EXTERN void
-Ns_SockSetDeferAccept(NS_SOCKET sock);
+Ns_SockSetDeferAccept(NS_SOCKET sock, int secs);
 
 NS_EXTERN int
 Ns_GetSockAddr(struct sockaddr_in *psa, char *host, int port);

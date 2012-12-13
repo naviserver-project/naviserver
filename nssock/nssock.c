@@ -132,7 +132,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
 
         (void) Ns_SockSetNonBlocking(sock);
 	if (cfg->deferaccept) {
-	    Ns_SockSetDeferAccept(sock);
+	    Ns_SockSetDeferAccept(sock, driver->recvwait);
 	}
     }
     return sock;

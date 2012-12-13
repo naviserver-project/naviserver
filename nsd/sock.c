@@ -725,7 +725,7 @@ Ns_SockSetBlocking(NS_SOCKET sock)
  */
 
 void
-Ns_SockSetDeferAccept(NS_SOCKET sock)
+Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
 {
 #ifdef TCP_FASTOPEN_UNTESTED
     int qlen = 5;
@@ -737,11 +737,8 @@ Ns_SockSetDeferAccept(NS_SOCKET sock)
     }
 #else
 # ifdef TCP_DEFER_ACCEPT
-    int sec;
-    
-    sec = driver->recvwait;
     if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
-		   &sec, sizeof(sec)) == -1) {
+		   &secs, sizeof(secs)) == -1) {
 	Ns_Log(Error, "sock: setsockopt(TCP_DEFER_ACCEPT): %s",
 	       ns_sockstrerror(ns_sockerrno));
     }
