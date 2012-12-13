@@ -653,7 +653,7 @@ int
 NsParseAcceptEnconding(double version, CONST char *hdr) 
 {
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
-    int gzip;
+    int gzip = 0;
 
     assert(hdr);
     if (GetEncodingFormat(hdr, "gzip", &gzipQvalue)) {
