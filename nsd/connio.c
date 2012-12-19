@@ -571,17 +571,26 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].iov_len;
     }
+   
+    if (towrite == 0) {
+	return 0;
+    }
+
+    if (NsWriterQueue(conn, towrite, NULL, NULL, -1, NULL, bufs, nbufs, 0) == NS_OK) {
+	Ns_Log(Debug, "==== writer sent %ld bytes\n", towrite);
+	return towrite;
+    }
 
     while (towrite > 0) {
-        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs, 0);
-        if (sent < 0) {
-            break;
-        }
-        towrite -= sent;
-        nwrote += sent;
+	sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs, 0);
+	if (sent < 0) {
+	    break;
+	}
+	towrite -= sent;
+	nwrote += sent;
     }
     if (nwrote > 0) {
-        connPtr->nContentSent += nwrote;
+	connPtr->nContentSent += nwrote;
     }
 
     return (int) (nwrote ? nwrote : sent);

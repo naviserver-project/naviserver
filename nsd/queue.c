@@ -1104,9 +1104,10 @@ NsConnThread(void *arg)
 		/* 
 		 * There are waiting requests. Work on those unless we
 		 * are expiring or we are already under the lowwater
-		 * mark of connection threads.
+		 * mark of connection threads, or we are the last man
+		 * standing.
 		 */
-		if (ncons > 0 || waiting > lowwater || current < 2) {
+		if (ncons > 0 || waiting > lowwater || current <= 1) {
 		    //Ns_Log(Notice, "*** work on waiting request (waiting %d)", waiting);
 		    continue;
 		}
@@ -1114,8 +1115,6 @@ NsConnThread(void *arg)
 	    }
 	    
 	    if (ncons <= 0) {
-	        Ns_Log(Notice, "thread is working overtime due to stress %d, waiting %d",
-		       ncons, waiting);
 		exitMsg = "exceeded max connections per thread";
 		break;
 	    }
