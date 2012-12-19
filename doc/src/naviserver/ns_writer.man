@@ -16,12 +16,14 @@ operations which consumes less resources than returning multiple files to the sl
 [call [cmd ns_writer] [arg list]]
 
 [para]
-Returns list of all currently submitted files
+Returns list of all currently submitted files. Every list entry
+contains name name of the driver, the ip-address of the requestor, the
+file descriptor, the remaining size and the already sent bytes.
 
 [call [cmd ns_writer] [arg submit] [arg data]]
 
 [para]
-Submit arbitrary data to be returned via writer, data can be binary
+Submit arbitrary data to be returned via writer, data can be binary.
 
 [call [cmd ns_writer] [arg submitfile] [opt [arg -headers]] [opt [arg {-offset offset}]] [opt [arg {-size size}]] [arg file]]
 
@@ -72,8 +74,8 @@ ns_writer submitfile /tmp/biglist.txt
 [example_end]
 
 
-[see_also nsd]
-[keywords NaviServer]
+[see_also ns_returnfile]
+[keywords NaviServer WriterThread]
 [manpage_end]
 
 
