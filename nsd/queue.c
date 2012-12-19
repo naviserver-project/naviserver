@@ -1066,7 +1066,7 @@ NsConnThread(void *arg)
 	    current  = poolPtr->threads.current;
             Ns_MutexUnlock(poolsLockPtr);
 
-	    {   // this is intended for development only. 
+	    if (Ns_LogSeverityEnabled(Debug)) {
 		Ns_Time now, acceptTime, queueTime, filterTime, netRunTime, runTime, totalTime;
 
 		Ns_DiffTime(&connPtr->requestQueueTime, &connPtr->acceptTime, &acceptTime);
@@ -1078,7 +1078,7 @@ NsConnThread(void *arg)
 		Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
 		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &totalTime);
 
-	    Ns_Log(Notice, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+	    Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
 		   " start %" PRIu64 ".%06ld"
 		   " %" PRIu64 ".%06ld"
 		   " accept %" PRIu64 ".%06ld"
