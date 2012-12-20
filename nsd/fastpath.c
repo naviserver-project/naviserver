@@ -70,9 +70,9 @@ static Ns_ServerInitProc ConfigServerFastpath;
  * Local variables defined in this file.
  */
 
-static Ns_Cache *cache;    /* Global cache of pages for all virtual servers.     */
-static int       maxentry; /* Maximum size of an individual entry in the cache.  */
-static int       usemmap;  /* Use the mmap() system call to read data from disk. */
+static Ns_Cache *cache = NULL;  /* Global cache of pages for all virtual servers.     */
+static int       maxentry;      /* Maximum size of an individual entry in the cache.  */
+static int       usemmap;       /* Use the mmap() system call to read data from disk. */
 
 
 
@@ -686,9 +686,15 @@ NsTclFastPathCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    Ns_DStringInit(&ds);
 
+    /* if there is no cache defined, return empty */
+    if (cache == NULL) {
+	return TCL_OK;
+    }
+
+    Ns_DStringInit(&ds);
     Ns_CacheLock(cache);
+
     if (contents) {
         Tcl_DStringStartSublist(&ds);
         entry = Ns_CacheFirstEntry(cache, &search);
