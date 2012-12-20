@@ -15,10 +15,12 @@ operations which consumes less resources than returning multiple files to the sl
 
 [call [cmd ns_writer] [arg list]]
 
-[para]
+[para] 
 Returns list of all currently submitted files. Every list entry
-contains name name of the driver, the ip-address of the requestor, the
-file descriptor, the remaining size and the already sent bytes.
+contains the start time of the initiating request, name of the thread,
+driver, the ip-address of the requestor, the file descriptor, the
+remaining size and the bytes already sent, and the client data as
+provided via [lb]ns_conn clientdata[rb]
 
 [call [cmd ns_writer] [arg submit] [arg data]]
 
@@ -73,8 +75,7 @@ ns_writer submitfile /tmp/biglist.txt
 
 [example_end]
 
-
-[see_also ns_returnfile]
+[see_also ns_returnfile ns_conn]
 [keywords NaviServer WriterThread]
 [manpage_end]
 

@@ -1191,7 +1191,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     static CONST char *opts[] = {
 	"auth", "authpassword", "authuser", 
-	"channel", "close", "compress", "content", "contentfile", "contentlength", "contentsentlength",	"copy", 
+	"channel", "clientdata", "close", "compress", "content", 
+	"contentfile", "contentlength", "contentsentlength", "copy", 
 	"driver", 
 	"encoding", 
 	"fileheaders", "filelength", "fileoffset","files", "flags", "form", 
@@ -1213,7 +1214,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     };
     enum ISubCmdIdx {
 	CAuthIdx, CAuthPasswordIdx, CAuthUserIdx, 
-	CChannelIdx, CCloseIdx, CCompressIdx, CContentIdx, CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx, 
+	CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx, 
+	CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx, 
 	CDriverIdx, 
 	CEncodingIdx,
 	CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx, 
@@ -1268,6 +1270,17 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return NS_ERROR;
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
+        break;
+
+    case CClientdataIdx:
+        if (objc > 2) {
+	    char *value = Tcl_GetString(objv[2]);
+	    if (connPtr->clientData) {
+		ns_free(connPtr->clientData);
+	    }
+	    connPtr->clientData = ns_strdup(value);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->clientData, -1));
         break;
 
     case CCompressIdx:

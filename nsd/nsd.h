@@ -210,7 +210,9 @@ typedef struct WriterSock {
     size_t             size;
     size_t             bufsize;
     unsigned int       flags;
-    unsigned char      *buf;
+    unsigned char     *buf;
+    char              *clientData;
+    Ns_Time            startTime;
 } WriterSock;
 
 /*
@@ -230,7 +232,9 @@ typedef struct SpoolerQueue {
     int                  shutdown;    /* Flag to indicate shutdown */
     int                  id;          /* Queue id */
     int                  queuesize;   /* Number of active sockets in the queue */
+    CONST char          *threadname;  /* name of the thread working on this queue */
 } SpoolerQueue;
+
 
 /*
  * The following structure maintains an ADP call frame.
@@ -527,6 +531,7 @@ typedef struct Conn {
 
     char *server;
     char *location;
+    char *clientData;
 
     struct Request  *reqPtr;
     struct NsServer *servPtr;

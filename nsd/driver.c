@@ -2694,6 +2694,7 @@ SpoolerThread(void *arg)
     PollData       pdata;
 
     Ns_ThreadSetName("-spooler%d-", queuePtr->id);
+    queuePtr->threadname = Ns_ThreadGetName();
 
     /*
      * Loop forever until signalled to shutdown and all
@@ -2967,8 +2968,8 @@ WriterThread(void *arg)
     PollData        pdata;
     struct iovec    vbuf;
 
-
     Ns_ThreadSetName("-writer%d-", queuePtr->id);
+    queuePtr->threadname = Ns_ThreadGetName();
 
     /*
      * Loop forever until signalled to shutdown and all
@@ -3216,6 +3217,9 @@ SockWriterRelease(SpoolerQueue *queuePtr, WriterSock *wrSockPtr, int reason, int
     } else {
         NsSockClose(wrSockPtr->sockPtr, wrSockPtr->keep);
     }
+    if (wrSockPtr->clientData) {
+	ns_free(wrSockPtr->clientData);
+    }
     if (wrSockPtr->fd > -1) {
         close(wrSockPtr->fd);
         ns_free(wrSockPtr->buf);
@@ -3228,7 +3232,8 @@ SockWriterRelease(SpoolerQueue *queuePtr, WriterSock *wrSockPtr, int reason, int
 
 int
 NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
-              const char *data, struct iovec *bufs, int nbufs, int everysize)
+              const char *data, struct iovec *bufs, int nbufs,
+	      int everysize)
 {
     Conn          *connPtr = (Conn*)conn;
     WriterSock    *wrSockPtr;
@@ -3301,6 +3306,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         wrSockPtr->bufsize = nsend;
     }
 
+    if (connPtr->clientData) {
+	wrSockPtr->clientData = ns_strdup(connPtr->clientData);
+    }
+    wrSockPtr->startTime = *Ns_ConnStartTime(conn);
     /*
      * Make sure we have proper content length header for keep-alives
      */
@@ -3370,7 +3379,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
     int           fd, opt, rc;
-    Tcl_DString   ds;
+    Tcl_DString   ds, *dsPtr = &ds;
     Ns_Conn      *conn;
     Driver       *drvPtr;
     DrvWriter    *wrPtr;
@@ -3480,7 +3489,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     case cmdListIdx:
-        Tcl_DStringInit(&ds);
+        Tcl_DStringInit(dsPtr);
         drvPtr = firstDrvPtr;
         while (drvPtr != NULL) {
             wrPtr = &drvPtr->writer;
@@ -3489,11 +3498,15 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Ns_MutexLock(&queuePtr->lock);
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
-                    Ns_DStringPrintf(&ds, "{%s %s %d "
-                                     "%" TCL_LL_MODIFIER "d %" TCL_LL_MODIFIER "d} ",
+                    Ns_DStringPrintf(dsPtr, "{%" PRIu64 ".%06ld %s %s %s %d "
+                                     "%" TCL_LL_MODIFIER "d %" TCL_LL_MODIFIER "d ",
+				     (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
+				     queuePtr->threadname,
                                      drvPtr->name,
                                      ns_inet_ntoa(wrSockPtr->sockPtr->sa.sin_addr),
                                      wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
+                    Ns_DStringAppendElement(dsPtr, wrSockPtr->clientData ? wrSockPtr->clientData : "");
+                    Ns_DStringAppend(dsPtr, "} ");
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
                 Ns_MutexUnlock(&queuePtr->lock);
@@ -3502,7 +3515,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             drvPtr = drvPtr->nextPtr;
         }
         Tcl_AppendResult(interp, ds.string, 0);
-        Tcl_DStringFree(&ds);
+        Tcl_DStringFree(dsPtr);
         break;
     }
 
@@ -3759,6 +3772,7 @@ AsyncWriterThread(void *arg)
 	    queuePtr,
 	    asyncWriter, asyncWriter->firstPtr);*/
     Ns_ThreadSetName("-asynclogwriter%d-", queuePtr->id);
+    queuePtr->threadname = Ns_ThreadGetName();
 
     /*
      * Allocate and initialize controlling variables

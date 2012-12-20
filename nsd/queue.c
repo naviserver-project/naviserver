@@ -200,6 +200,7 @@ neededAdditionalConnectionThreads(ConnPool *poolPtr) {
 	     //	     || (poolPtr->threads.idle < 1)
 	     )
 	 && poolPtr->threads.current < poolPtr->threads.max
+	 && poolPtr->servPtr->pools.shutdown == 0
 	 ) {
       //wantCreate = poolPtr->threads.min - poolPtr->threads.idle;
       wantCreate = 1;
@@ -1011,11 +1012,7 @@ NsConnThread(void *arg)
 	connPtr = argPtr->connPtr;
 	assert(connPtr);
 
-	{
-	    Ns_Time now;
-	    Ns_GetTime(&now);
-	    connPtr->requestDequeueTime = now;
-	}
+	Ns_GetTime(&connPtr->requestDequeueTime);
 
 	/*
 	 * Run the connection.
@@ -1358,6 +1355,10 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     connPtr->outputheaders = NULL;
     NsFreeRequest(connPtr->reqPtr);
     connPtr->reqPtr = NULL;
+    if (connPtr->clientData) {
+      ns_free(connPtr->clientData);
+      connPtr->clientData = NULL;
+    }
 }
 
 

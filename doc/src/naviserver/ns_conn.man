@@ -40,6 +40,17 @@ Returns the decoded user name from the authorization data.
 
 Returns the Tcl channel name for the current connection.
 
+
+[call [cmd  ns_conn] [cmd clientdata] [opt [arg value]]]
+
+Query or set the client date of the current connection. The client
+data is provided by the application and is potentially passed to
+different threads and can be used to establish the context with the
+connection thread. For example, the writer thread outputs the client
+data when listing running connections (one can determine e.g. which
+user has initiated the delivery, etc.).
+
+
 [call [cmd  ns_conn] [cmd close]]
 
 Closes the connection so the script (or ADP) can do any time-consuming processing
