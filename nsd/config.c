@@ -816,7 +816,7 @@ ConfigGet(CONST char *section, CONST char *key, int exact, CONST char *defstr)
 
     s = NULL;
     if (section != NULL && key != NULL) {
-        set = Ns_ConfigCreateSection(section);
+      set = GetSection(section, 0);
         if (set != NULL) {
             int  i;
             if (exact) {
