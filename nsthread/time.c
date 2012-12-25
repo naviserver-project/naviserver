@@ -91,10 +91,10 @@ Ns_GetTime(Ns_Time *timePtr)
 void
 Ns_AdjTime(Ns_Time *timePtr)
 {
-    if (timePtr->usec < 0) {
+    if (unlikely(timePtr->usec < 0)) {
         timePtr->sec += (timePtr->usec / 1000000L) - 1;
         timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
-    } else if (timePtr->usec > 1000000L) {
+    } else if (unlikely(timePtr->usec > 1000000L)) {
         timePtr->sec += timePtr->usec / 1000000L;
         timePtr->usec = timePtr->usec % 1000000L;
     }

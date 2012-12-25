@@ -137,7 +137,7 @@ NsRunFilters(Ns_Conn *conn, int why)
         Ns_MutexLock(&connPtr->servPtr->filter.lock);
 	fPtr = connPtr->servPtr->filter.firstFilterPtr;
 	while (fPtr != NULL && status == NS_OK) {
-	    if ((fPtr->when & why)
+	    if (unlikely(fPtr->when & why)
 		&& Tcl_StringMatch(conn->request->method, fPtr->method)
 		&& Tcl_StringMatch(conn->request->url, fPtr->url)) {
 	        Ns_MutexUnlock(&connPtr->servPtr->filter.lock);

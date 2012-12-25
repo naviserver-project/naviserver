@@ -203,7 +203,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
     Ns_Time start, end, diff;
 
     Ns_GetTime(&start);
-    if (!NsLockTry(mutexPtr->lock)) {
+    if (unlikely(!NsLockTry(mutexPtr->lock))) {
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
         /*

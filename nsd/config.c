@@ -876,15 +876,15 @@ GetSection(CONST char *section, int create)
     }
     Ns_DStringAppend(&ds, p);
     s = ds.string;
-    while (*s != '\0') {
-        if (*s == '\\') {
+    while (unlikely(*s != '\0')) {
+	if (unlikely(*s == '\\')) {
             *s = '/';
-        } else if (isupper(UCHAR(*s))) {
+        } else if (unlikely(isupper(UCHAR(*s)))) {
             *s = tolower(UCHAR(*s));
         }
         ++s;
     }
-    while (--s > ds.string && isspace(UCHAR(*s))) {
+    while (--s > ds.string && (unlikely(isspace(UCHAR(*s))))) {
         *s = '\0';
     }
     section = ds.string;
@@ -894,13 +894,13 @@ GetSection(CONST char *section, int create)
      */
 
     set = NULL;
-    if (!create) {
+    if (likely(create != 1)) {
         hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
     } else {
         hPtr = Tcl_CreateHashEntry(&nsconf.sections, section, &isNew);
         if (isNew) {
             set = Ns_SetCreate(section);
-        Tcl_SetHashValue(hPtr, set);
+	    Tcl_SetHashValue(hPtr, set);
         }
     }
     if (hPtr != NULL) {

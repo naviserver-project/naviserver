@@ -431,8 +431,8 @@ noGlobChars(CONST char *pattern)
     register char c;
     CONST char *p = pattern;
 
-    for (c=*p; c; c = *++p) {
-        if (c == '*' || c == '?' || c == '[') {
+    for (c = *p; likely(c); c = *++p) {
+	if (unlikely(c == '*') || unlikely(c == '?') || unlikely(c == '[')) {
             return 0;
         }
     }
@@ -759,15 +759,16 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
           Tcl_Obj *CONST objv[])
 {
     TclCache          **cPtrPtr = spec->dest;
-    NsInterp           *itPtr = spec->arg;
-    NsServer           *servPtr = itPtr->servPtr;
-    Tcl_HashEntry      *hPtr;
     static CONST char  *cacheType = "ns:cache";
+    Tcl_HashEntry      *hPtr;
 
-    if (*objcPtr < 1) {
+    if (unlikely(*objcPtr < 1)) {
         return TCL_ERROR;
     }
-    if (Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **) cPtrPtr) != TCL_OK) {
+    if (unlikely(Ns_TclGetOpaqueFromObj(objv[0], cacheType, (void **) cPtrPtr) != TCL_OK)) {
+	NsInterp *itPtr = spec->arg;
+	NsServer *servPtr = itPtr->servPtr;
+
         Ns_MutexLock(&servPtr->tcl.cachelock);
         hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, Tcl_GetString(objv[0]));
         Ns_MutexUnlock(&servPtr->tcl.cachelock);

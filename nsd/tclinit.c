@@ -1275,7 +1275,8 @@ NsTclAppInit(Tcl_Interp *interp)
 NsInterp *
 NsGetInterpData(Tcl_Interp *interp)
 {
-    return (interp ? Tcl_GetAssocData(interp, "ns:data", NULL) : NULL);
+    assert(interp);
+    return Tcl_GetAssocData(interp, "ns:data", NULL);
 }
 
 

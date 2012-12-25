@@ -217,15 +217,15 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         SValueIdx
     };
 
-    if (objc < 2) {
+    if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
+    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+				     &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
-    if (opt == SCreateidx) {
+    if (unlikely(opt == SCreateidx)) {
         opt = SNewIdx;
     }
 
@@ -279,7 +279,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             break;
 
         case SCopyIdx:
-            if (i >= objc) {
+            if (unlikely(i >= objc)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId");
                 return TCL_ERROR;
             }
@@ -290,7 +290,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             break;
 
         case SSplitIdx:
-            if ((objc - i) < 1) {
+            if (unlikely((objc - i) < 1)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId ?splitChar");
                 return TCL_ERROR;
             }
@@ -312,11 +312,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
          * All futher commands require a valid set.
          */
 
-        if (objc < 3) {
+	if (unlikely(objc < 3)) {
             Tcl_WrongNumArgs(interp, 2, objv, "setId ?args?");
             return TCL_ERROR;
         }
-        if (LookupObjSet(itPtr, objv[2], 0, &set) != TCL_OK) {
+        if (unlikely(LookupObjSet(itPtr, objv[2], 0, &set) != TCL_OK)) {
             return TCL_ERROR;
         }
 
@@ -330,10 +330,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * These commands require only the set.
              */
 
-            if (objc != 3) {
+            if (unlikely(objc != 3)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId");
                 return TCL_ERROR;
             }
+
             switch (opt) {
             case SArrayIdx:
                 Tcl_DStringInit(&ds);
@@ -365,7 +366,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
         case SGetIdx:
         case SIGetIdx:
-            if (objc < 4) {
+            if (unlikely(objc < 4)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId key ?dflt?");
                 return TCL_ERROR;
             }
@@ -392,7 +393,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * These commands require a set and string key.
              */
 
-            if (objc != 4) {
+            if (unlikely(objc != 4)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId key");
                 return TCL_ERROR;
             }
@@ -440,19 +441,19 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * These commands require a set and key/value index.
              */
 
-            if (objc != 4) {
+            if (unlikely(objc != 4)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId index");
                 return TCL_ERROR;
             }
-            if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+            if (unlikely(Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK)) {
                 return TCL_ERROR;
             }
-            if (i < 0) {
+            if (unlikely(i < 0)) {
                 Tcl_AppendResult(interp, "invalid index \"",
                                  Tcl_GetString(objv[3]), "\": must be >= 0", NULL);
                 return TCL_ERROR;
             }
-            if (i >= Ns_SetSize(set)) {
+            if (unlikely(i >= Ns_SetSize(set))) {
                 Tcl_AppendResult(interp, "invalid index \"",
                                  Tcl_GetString(objv[3]),
                                  "\": beyond range of set fields", NULL);
@@ -493,7 +494,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * These commands require a set, key, and value.
              */
 
-            if (objc != 5) {
+            if (unlikely(objc != 5)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setId key value");
                 return TCL_ERROR;
             }
@@ -534,11 +535,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * These commands require two sets.
              */
 
-            if (objc != 4) {
+            if (unlikely(objc != 4)) {
                 Tcl_WrongNumArgs(interp, 2, objv, "setTo setFrom");
                 return TCL_ERROR;
             }
-            if (LookupObjSet(itPtr, objv[3], 0, &set2Ptr) != TCL_OK) {
+            if (unlikely(LookupObjSet(itPtr, objv[3], 0, &set2Ptr) != TCL_OK)) {
                 return TCL_ERROR;
             }
             if (opt == SMergeIdx) {
@@ -683,7 +684,7 @@ LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry, Ns_Set **setPtr)
     NsInterp *itPtr;
 
     itPtr = NsGetInterpData(interp);
-    if (itPtr == NULL) {
+    if (unlikely(itPtr == NULL)) {
         Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
         return TCL_ERROR;
     }
@@ -697,13 +698,13 @@ LookupSet(NsInterp *itPtr, char *id, int deleteEntry, Ns_Set **setPtr)
     Ns_Set        *set = NULL;
 
     hPtr = Tcl_FindHashEntry(&itPtr->sets, id);
-    if (hPtr != NULL) {
+    if (likely(hPtr != NULL)) {
         set = (Ns_Set *) Tcl_GetHashValue(hPtr);
-        if (deleteEntry) {
+        if (unlikely(deleteEntry)) {
             Tcl_DeleteHashEntry(hPtr);
         }
     }
-    if (set == NULL) {
+    if (unlikely(set == NULL)) {
         Tcl_AppendResult(itPtr->interp, "no such set: ", id, NULL);
         return TCL_ERROR;
     }

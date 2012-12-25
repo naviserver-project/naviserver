@@ -504,12 +504,12 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         IUrl2FileIdx, IShutdownPendingIdx, IStartedIdx
     };
 
-    if (objc != 2) {
+    if (unlikely(objc != 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
+    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+				     &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
 
@@ -651,7 +651,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
      * The following subcommands require a virtual server.
      */
 
-    if (itPtr->servPtr == NULL) {
+    if (unlikely(itPtr->servPtr == NULL)) {
         Tcl_SetResult(interp, "no server", TCL_STATIC);
         return TCL_ERROR;
     }

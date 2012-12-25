@@ -1235,12 +1235,12 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	CZipacceptedIdx
     };
 
-    if (objc < 2) {
+    if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
+    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+				     &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
 
@@ -1248,11 +1248,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
      * Only the "isconnected" option operates without a conn.
      */
 
-    if (opt == CIsConnectedIdx) {
+    if (unlikely(opt == CIsConnectedIdx)) {
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connPtr ? 1 : 0));
         return TCL_OK;
     }
-    if (connPtr == NULL) {
+    if (unlikely(connPtr == NULL)) {
         Tcl_SetResult(interp, "no current connection", TCL_STATIC);
         return TCL_ERROR;
     }
@@ -1426,7 +1426,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CHeadersIdx:
-        if (itPtr->nsconn.flags & CONN_TCLHDRS) {
+        if (likely(itPtr->nsconn.flags & CONN_TCLHDRS)) {
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
@@ -1436,7 +1436,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case COutputHeadersIdx:
-        if (itPtr->nsconn.flags & CONN_TCLOUTHDRS) {
+        if (likely(itPtr->nsconn.flags & CONN_TCLOUTHDRS)) {
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);

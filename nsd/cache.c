@@ -881,7 +881,7 @@ Expired(Entry *ePtr, Ns_Time *nowPtr)
 {
     Ns_Time  now;
 
-    if (ePtr->expires.sec > 0) {
+    if (unlikely(ePtr->expires.sec > 0)) {
         if (nowPtr == NULL) {
             Ns_GetTime(&now);
             nowPtr = &now;
@@ -949,13 +949,13 @@ Delink(Entry *ePtr)
 static void
 Push(Entry *ePtr)
 {
-    if (ePtr->cachePtr->firstEntryPtr != NULL) {
+    if (likely(ePtr->cachePtr->firstEntryPtr != NULL)) {
         ePtr->cachePtr->firstEntryPtr->prevPtr = ePtr;
     }
     ePtr->prevPtr = NULL;
     ePtr->nextPtr = ePtr->cachePtr->firstEntryPtr;
     ePtr->cachePtr->firstEntryPtr = ePtr;
-    if (ePtr->cachePtr->lastEntryPtr == NULL) {
+    if (unlikely(ePtr->cachePtr->lastEntryPtr == NULL)) {
         ePtr->cachePtr->lastEntryPtr = ePtr;
     }
 }

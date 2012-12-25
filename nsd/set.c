@@ -232,8 +232,8 @@ Ns_SetFindCmp(Ns_Set *set, CONST char *key,
 
     for (i = 0; i < set->size; ++i) {
         name = set->fields[i].name;
-        if ((key == NULL && name == NULL) ||
-            (key != NULL && name != NULL && ((*cmp) (key, name)) == 0)) {
+        if ((unlikely(key == NULL) && unlikely(name == NULL)) ||
+            (likely(key != NULL) && likely(name != NULL) && ((*cmp) (key, name)) == 0)) {
 
             return i;
         }

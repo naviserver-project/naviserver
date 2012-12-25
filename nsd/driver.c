@@ -1091,7 +1091,7 @@ DriverThread(void *arg)
         PollReset(&pdata);
         PollSet(&pdata, drvPtr->trigger[0], POLLIN, NULL);
 
-        if (waitPtr == NULL) {
+        if (likely(waitPtr == NULL)) {
             drvPtr->pidx = PollSet(&pdata, drvPtr->sock, POLLIN, NULL);
         }
 
@@ -1211,7 +1211,7 @@ DriverThread(void *arg)
         while (sockPtr != NULL) {
 	    nextPtr = sockPtr->nextPtr;
 
-	    if (PollHup(&pdata, sockPtr->pidx)) {
+	    if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
 		/*
 		 * Peer has closed the connection
 		 */
@@ -1235,7 +1235,7 @@ DriverThread(void *arg)
 		 * Got some data.
                  * If enabled, perform read-ahead now.
                  */
-                if (sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) {
+                if (likely(sockPtr->drvPtr->opts & NS_DRIVER_ASYNC)) {
                     n = SockRead(sockPtr, 0, &now);
 
 		    //Ns_Log(Notice, "--- readPtr %p got data fd %d SockRead returned %d", sockPtr, sockPtr->sock, n);
@@ -1451,7 +1451,7 @@ PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
      * Grow the pfds array if necessary.
      */
 
-    if (pdata->nfds >= pdata->maxfds) {
+    if (unlikely(pdata->nfds >= pdata->maxfds)) {
         pdata->maxfds += 100;
         pdata->pfds = ns_realloc(pdata->pfds, pdata->maxfds * sizeof(struct pollfd));
     }
@@ -1929,7 +1929,7 @@ SockTrigger(NS_SOCKET fd)
 {
     if (send(fd, "", 1, 0) != 1) {
         char * errstr = ns_sockstrerror(ns_sockerrno);
-        Ns_Fatal("driver: trigger send() failed: %s", errstr);
+        Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
     }
 }
 
@@ -2261,7 +2261,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 static char *strnchr(char *buffer, size_t len, int c) {
     char *end = buffer + len;
     for (end = buffer + len; buffer < end; buffer ++) {
-        if (*buffer == c) {
+        if (unlikely(*buffer == c)) {
             return buffer;
         }
     }
@@ -2294,7 +2294,7 @@ SockParse(Sock *sockPtr, int spooler)
         s = bufPtr->string + reqPtr->roff;
         e = strnchr(s, reqPtr->avail, '\n');
 
-        if (e == NULL) {
+        if (unlikely(e == NULL)) {
             /*
              * Input not yet newline terminated - request more.
              */
@@ -2315,7 +2315,7 @@ SockParse(Sock *sockPtr, int spooler)
          * ConnRunRequest().
          */
 
-        if ((e - s) > drvPtr->maxline) {
+        if (unlikely((e - s) > drvPtr->maxline)) {
 	    sockPtr->keep = 0;
             if (reqPtr->request.line == NULL) {
                 Ns_Log(DriverDebug, "SockParse: maxline reached of %d bytes",
@@ -2332,14 +2332,14 @@ SockParse(Sock *sockPtr, int spooler)
         cnt = (int)(e - s) + 1;
         reqPtr->roff  += cnt;
         reqPtr->avail -= cnt;
-        if (e > s && e[-1] == '\r') {
+        if (likely(e > s) && likely(e[-1] == '\r')) {
             --e;
         }
 
         /*
          * Check for end of headers.
          */
-        if (e == s) {
+        if (unlikely(e == s)) {
 	    int gzip;
 
             /*
@@ -2446,7 +2446,7 @@ SockParse(Sock *sockPtr, int spooler)
             save = *e;
             *e = '\0';
 
-            if (reqPtr->request.line == NULL) {
+            if (unlikely(reqPtr->request.line == NULL)) {
                 if (Ns_ParseRequest(&reqPtr->request, s) == NS_ERROR) {
 
                     /*
@@ -2469,14 +2469,14 @@ SockParse(Sock *sockPtr, int spooler)
              * Check for max number of headers
              */
 
-            if (Ns_SetSize(reqPtr->headers) > drvPtr->maxheaders) {
+            if (unlikely(Ns_SetSize(reqPtr->headers) > drvPtr->maxheaders)) {
                 Ns_Log(DriverDebug, "SockParse: maxheaders reached of %d bytes",
                        drvPtr->maxheaders);
                 return SOCK_TOOMANYHEADERS;
             }
 
             *e = save;
-            if (reqPtr->request.version <= 0.0) {
+            if (unlikely(reqPtr->request.version <= 0.0)) {
 
                 /*
                  * Pre-HTTP/1.0 request.
@@ -2735,7 +2735,7 @@ SpoolerThread(void *arg)
 
         n = PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+        if (PollIn(&pdata, 0) && unlikely(recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
             Ns_Fatal("spooler: trigger recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -2751,7 +2751,7 @@ SpoolerThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             drvPtr  = sockPtr->drvPtr;
-            if (PollHup(&pdata, sockPtr->pidx)) {
+            if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
 		/*
 		 * Peer has closed the connection
 		 */
@@ -2998,7 +2998,7 @@ WriterThread(void *arg)
         } else {
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
 		//fprintf(stderr, "### Writer %p size %ld fd %d\n", curPtr, curPtr->size, curPtr->sockPtr->sock);
-                if (curPtr->size > 0) {
+                if (likely(curPtr->size > 0)) {
                     SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
 		}
 	    }
@@ -3010,7 +3010,7 @@ WriterThread(void *arg)
          */
         n = PollWait(&pdata, pollto);
 
-        if (PollIn(&pdata, 0) && recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+        if (PollIn(&pdata, 0) && unlikely(recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
             Ns_Fatal("writer: trigger recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
@@ -3032,12 +3032,12 @@ WriterThread(void *arg)
             wrPtr   = &drvPtr->writer;
             err = status = NS_OK;
 
-	    if (PollHup(&pdata, sockPtr->pidx)) {
+	    if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
 		//Ns_Log(Notice, "### Writer %p reached POLLHUP fd %d", curPtr, sockPtr->sock);
 		status = SOCK_CLOSE;
 		err = 0;
-	    } else if (PollOut(&pdata, sockPtr->pidx)) {
-		if (curPtr->size < 1 ) {
+	    } else if (likely(PollOut(&pdata, sockPtr->pidx))) {
+		if (unlikely(curPtr->size < 1)) {
 		    Ns_Log(Notice, "### Writer %p size %ld < 1, SHOULD NOT HAPPEN, sock %d", 
 			    curPtr, curPtr->size, sockPtr->sock);
 		    status = SOCK_CLOSE;

@@ -663,13 +663,13 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
     enc = (part == 'q') ? queryenc : pathenc;
     p = string;
     n = 0;
-    while (UCHAR(*p) != '\0') {
-        if (UCHAR(p[0]) == '%' &&
+    while (likely(UCHAR(*p) != '\0')) {
+	if (unlikely(UCHAR(p[0]) == '%') &&
             (i = enc[UCHAR(p[1])].hex) >= 0 &&
             (j = enc[UCHAR(p[2])].hex) >= 0) {
             *q++ = (unsigned char) ((i << 4) + j);
             p += 3;
-        } else if (UCHAR(p[0]) == '+' && part == 'q') {
+        } else if (unlikely(UCHAR(p[0]) == '+') && part == 'q') {
             *q++ = ' ';
             ++p;
         } else {

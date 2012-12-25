@@ -75,7 +75,7 @@ ns_malloc(size_t size)
 void
 ns_free(void *ptr)
 {
-    if (ptr != NULL) {
+    if (likely(ptr != NULL)) {
 	ckfree(ptr);
     }
 }
@@ -105,8 +105,8 @@ ns_strncopy(const char *old, ssize_t size)
 {
     char *new = NULL;
 
-    if (old != NULL) {
-        size = size > 0 ? size : strlen(old);
+    if (likely(old != NULL)) {
+        size = likely(size > 0) ? size : strlen(old);
         new = ns_malloc(size + 1);
         strncpy(new, old, size);
         new[size] = 0;

@@ -375,7 +375,7 @@ Ns_LogSeverityName(Ns_LogSeverity severity)
 int
 Ns_LogSeverityEnabled(Ns_LogSeverity severity)
 {
-    if (severity < severityCount) {
+    if (likely(severity < severityCount)) {
         return severityConfig[severity].enabled;
     }
     return NS_TRUE;
