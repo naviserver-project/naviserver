@@ -93,13 +93,20 @@ ns_section ns/parameters
     #ns_param   jobtimeout	300
     #ns_param   schedsperthread	0
 
+    # Write asynchronously to log files (access log and error log)
+    #ns_param	asynclogwriter	true 	;# false
+
     #
     # Encoding settings (see http://dqd.com/~mayoff/encoding-doc.html)
     #
     #ns_param   HackContentType	1
     #     
-    # Defaults charsets are utf-8
-    #ns_param   OutputCharset	utf-8
+    # Naviserver's defaults charsets are all utf-8.  Allthough the
+    # default charset is utf-8, set the parameter "OutputCharset"
+    # here, since otherwise OpenACS uses in the meta-tags the charset
+    # from [ad_conn charset], which is taken from the db and
+    # per-default ISO-8859-1.
+    ns_param   OutputCharset	utf-8   
     #ns_param   URLCharset	utf-8
 
 #---------------------------------------------------------------------
@@ -145,14 +152,14 @@ ns_section ns/server/${server}
 	#
 	# Scaling and Tuning Options
 	#
-	#ns_param   maxconnections	100	;# 100, number of allocated connection stuctures
-	#ns_param   maxthreads		10	;# 10, maximal number of connection threads
-	#ns_param   minthreads          1	;# 1, minimal number of connection threads
-	ns_param   connsperthread	100	;# 0, number of connections (requests) handled per thread
-	#ns_param   threadtimeout	120	;# 120, timeout for idle theads
-	#ns_param   spread		0	;# 20, spread factor in percent for varying connsperthread and threadtimeout
-        ns_param concurrentcreatethreshold 100  ;# 80; allow concrruent creates when queue is fully beyond this percentage
-                                                ;# 100 is a concervative value, disabling concurrent creates
+	#ns_param	maxconnections	100	;# 100; number of allocated connection stuctures
+	#ns_param	maxthreads	10	;# 10; maximal number of connection threads
+	#ns_param	minthreads	1	;# 1; minimal number of connection threads
+	ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
+	#ns_param	threadtimeout	120	;# 120; timeout for idle theads
+        #ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
+        ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
+                                                ;# 100 means to disable concurrent creates
 	#
 	# Directory listing options
 	#
@@ -281,6 +288,7 @@ ns_section ns/server/${server}/module/nssock
 	#ns_param   sendwait		30	;# 30, timeout in seconds for send operations
 	#ns_param   closewait		2	;# 2, timeout in seconds for close on socket
 	#ns_param   keepwait		2	;# 5, timeout in seconds for keep-alive
+	#ns_param   nodelay		true	;# false; activate TCP_NODELAY if not activated per default on your OS
 	#ns_param   keepalivemaxuploadsize	500000	;# 0, don't allow keep-alive for upload content larger than this
 	#ns_param   keepalivemaxdownloadsize	1000000 ;# 0, don't allow keep-alive for download content larger than this
 	#
@@ -309,6 +317,7 @@ ns_section ns/server/${server}/module/nslog
 	#
 	#ns_param   suppressquery	true	;# false, suppress query portion in log entry
 	#ns_param   logreqtime		true	;# false, include time to service the request
+	ns_param    logpartialtimes	true	;# false, include partial request times (accept, queue, filter, run)
 	#ns_param   formattedtime	true	;# true, timestamps formatted or in secs (unix time)
 	#ns_param   logcombined		true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
 	#ns_param   extendedheaders	COOKIE	;# comma delimited list of HTTP heads to log per entry

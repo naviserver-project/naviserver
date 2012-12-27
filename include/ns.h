@@ -71,9 +71,12 @@
 #define NS_CONN_CHUNK              0x080 /* Streamed data is to be chunked. */
 #define NS_CONN_SENT_LAST_CHUNK    0x100 /* Marks that the last chunk was sent in chunked mode */
 #define NS_CONN_SENT_VIA_WRITER    0x200 /* Response data has been sent via writer thread */
+#define NS_CONN_SOCK_CORKED        0x400 /* underlying socket is corked */
+#define NS_CONN_ZIPACCEPTED        0x800 /* the request accepts zip encoding */
 #define NS_CONN_ENTITYTOOLARGE    0x2000 /* the sent Entity was too large */
 #define NS_CONN_REQUESTURITOOLONG 0x4000 /* request-URI too long */
 #define NS_CONN_LINETOOLONG       0x8000 /* request Header line too long */
+
 
 /*
  * The following are valid return codes from an Ns_UserAuthorizeProc.
@@ -1009,7 +1012,34 @@ NS_EXTERN void
 Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_Time *
-Ns_ConnStartTime(Ns_Conn *conn);
+Ns_ConnStartTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Time *
+Ns_ConnAcceptTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Time *
+Ns_ConnQueueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Time *
+Ns_ConnDequeueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Time *
+Ns_ConnFilterTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr, 
+		 Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, 
+		 Ns_Time *filterTimePtr, Ns_Time *runTimePtr)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+
+NS_EXTERN int 
+NsAsyncWrite(int fd, char *buffer, size_t nbyte) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void
+NsAsyncWriterQueueDisable(int shutdown);
+
+NS_EXTERN void
+NsAsyncWriterQueueEnable();
 
 NS_EXTERN Ns_Time *
 Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
@@ -2351,6 +2381,9 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN int
+Ns_SockCork(Ns_Sock *sock, int cork);
+
 /*
  * sock.c:
  */
@@ -2420,6 +2453,9 @@ Ns_SockSetNonBlocking(NS_SOCKET sock);
 
 NS_EXTERN int
 Ns_SockSetBlocking(NS_SOCKET sock);
+
+NS_EXTERN void
+Ns_SockSetDeferAccept(NS_SOCKET sock, int secs);
 
 NS_EXTERN int
 Ns_GetSockAddr(struct sockaddr_in *psa, char *host, int port);

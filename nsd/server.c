@@ -253,9 +253,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
     servPtr->opts.errorminsize = Ns_ConfigInt(path, "errorminsize", 514);
-    /* Does not seem to be used
-    servPtr->opts.flushcontent = Ns_ConfigBool(path, "flushcontent", NS_FALSE);
-    */
+
     servPtr->opts.hdrcase = Preserve;
     p = Ns_ConfigString(path, "headercase", "preserve");
     if (STRIEQ(p, "tolower")) {
@@ -358,7 +356,7 @@ CreatePool(NsServer *servPtr, char *pool)
 {
     ConnPool *poolPtr;
     Conn     *connBufPtr, *connPtr;
-    int       i, n, maxconns, threshold;
+    int       i, n, maxconns, lowwatermark, highwatermark, queueLength;
     char     *path;
     Ns_Set   *set;
 
@@ -402,7 +400,7 @@ CreatePool(NsServer *servPtr, char *pool)
         Ns_CompressInit(&connPtr->stream);
     }
     connBufPtr[n].nextPtr = NULL;
-    poolPtr->queue.freePtr = &connBufPtr[0];
+    poolPtr->wqueue.freePtr = &connBufPtr[0];
 
     poolPtr->threads.max =
         Ns_ConfigIntRange(path, "maxthreads", 10, 0, maxconns);
@@ -410,32 +408,40 @@ CreatePool(NsServer *servPtr, char *pool)
         Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
     poolPtr->threads.timeout =
         Ns_ConfigIntRange(path, "threadtimeout", 120, 0, INT_MAX);
-    threshold =
-      Ns_ConfigIntRange(path, "concurrentcreatethreshold", 80, 0, 100);
 
-    if (threshold == 0) {
-        /* 
-	 * Eager parallel thread creation: allow parallel
-	 * connectionthread creation whenever requests are queued.
-	 */
-        poolPtr->queue.highwatermark = 0;
-    } else if (threshold == 100) {
-        /* 
-	 * No parallel thread creation 
-	 */
-        poolPtr->queue.highwatermark = INT_MAX;
-    } else {
-        /* 
-	 * Parallel threads are allowed, when the number of queued
-	 * requests is higher than the configured value. The value is
-	 * specified as the percentage of the queue size.
-	 *
-	 * Since every connection thread requires a connection, the
-	 * actual number of slots for queued requests is (maxconns -
-	 * maxthreads).
-	 */
-        int queueDepth = maxconns - poolPtr->threads.max;
+    queueLength = maxconns - poolPtr->threads.max;
 
-        poolPtr->queue.highwatermark = (queueDepth * threshold) / 100;
+    highwatermark = Ns_ConfigIntRange(path, "highwatermark", 80, 0, 100);
+    lowwatermark =  Ns_ConfigIntRange(path, "lowwatermark", 10, 0, 100);
+    poolPtr->wqueue.highwatermark = (queueLength * highwatermark) / 100;
+    poolPtr->wqueue.lowwatermark  = (queueLength * lowwatermark) / 100;
+
+    Ns_Log(Notice, "queueLength %d low water %d high water %d",  
+	   queueLength, poolPtr->wqueue.lowwatermark, poolPtr->wqueue.highwatermark);
+
+    poolPtr->tqueue.args = ns_calloc((size_t) poolPtr->threads.max, sizeof(ConnThreadArg));
+    /*
+     * The Pools are never freed before exit, so there is apparently no
+     * need to free connBufPtr or threadQueue.args explicitely.
+     */
+    {
+	char name[128] = "nsd:";
+	
+	if (*pool == 0) {
+	    pool = "default";
+	}
+	strncat(name, pool, 120);
+	
+	for (i = 0; i < poolPtr->threads.max; i++) {
+	    char buffer[64];
+	    sprintf(buffer, "connthread:%d", i);
+	    Ns_MutexInit(&poolPtr->tqueue.args[i].lock);
+	    Ns_MutexSetName2(&poolPtr->tqueue.args[i].lock, name, buffer);
+	}
+	Ns_MutexInit(&poolPtr->tqueue.lock);
+	Ns_MutexSetName2(&poolPtr->tqueue.lock, name, "tqueue");
+	
+	Ns_MutexInit(&poolPtr->wqueue.lock);
+	Ns_MutexSetName2(&poolPtr->wqueue.lock, name, "wqueue");
     }
 }

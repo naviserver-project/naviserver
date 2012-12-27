@@ -56,12 +56,19 @@
 void
 Ns_GetTime(Ns_Time *timePtr)
 {
-    Tcl_Time tbuf;
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval tbuf;
 
+    gettimeofday(&tbuf, NULL);
+    timePtr->sec = tbuf.tv_sec;
+    timePtr->usec = tbuf.tv_usec;
+#else
+    Tcl_Time tbuf;
     Tcl_GetTime(&tbuf);
 
     timePtr->sec = tbuf.sec;
     timePtr->usec = tbuf.usec;
+#endif
 }
 
 
@@ -84,10 +91,10 @@ Ns_GetTime(Ns_Time *timePtr)
 void
 Ns_AdjTime(Ns_Time *timePtr)
 {
-    if (timePtr->usec < 0) {
+    if (unlikely(timePtr->usec < 0)) {
         timePtr->sec += (timePtr->usec / 1000000L) - 1;
         timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
-    } else if (timePtr->usec > 1000000L) {
+    } else if (unlikely(timePtr->usec > 1000000L)) {
         timePtr->sec += timePtr->usec / 1000000L;
         timePtr->usec = timePtr->usec % 1000000L;
     }

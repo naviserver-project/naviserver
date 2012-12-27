@@ -56,7 +56,7 @@
 void
 Ns_QuoteHtml(Ns_DString *pds, char *string)
 {
-    while (*string != '\0') {
+    while (likely(*string != '\0')) {
         switch (*string) {
         case '<':
             Ns_DStringAppend(pds, "&lt;");
@@ -108,7 +108,7 @@ NsTclQuoteHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
     Ns_DString ds;
 
-    if (argc != 2) {
+    if (unlikely(argc != 2)) {
         Tcl_AppendResult(interp, "wrong # args:  should be \"",
                          argv[0], " html\"", NULL);
         return TCL_ERROR;

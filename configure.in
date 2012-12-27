@@ -35,7 +35,7 @@
 
 AC_PREREQ([2.59])
 
-AC_INIT([NaviServer], [4.99.4], [naviserver-devel@lists.sourceforge.net])
+AC_INIT([NaviServer], [4.99.5], [naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
@@ -188,6 +188,7 @@ AC_TYPE_UINTPTR_T
 
 AX_HAVE_CMMSG
 AX_HAVE_MTSAFE_DNS
+AX_HAVE_GETTID
 AX_CHECK_ZLIB
 
 
@@ -218,6 +219,7 @@ AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
 # be working (but does not report POLLHUP).
 
 AC_CHECK_FUNCS(poll)
+AC_CHECK_FUNCS(gettimeofday)
 
 #
 # Detemine the maximum value of time_t depending on the size of the

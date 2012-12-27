@@ -36,20 +36,25 @@
 
 #include "thread.h"
 
+#ifdef HAVE_GETTID
+# include <sys/syscall.h>
+#endif
+
 /*
  * The following structure maintains all state for a thread
  * including thread local storage slots.
  */
 
 typedef struct Thread {
-    struct Thread  *nextPtr;	/* Next in list of all threads. */
-    time_t	    ctime;	/* Thread structure create time. */
-    int		    flags;	/* Detached, joined, etc. */
-    Ns_ThreadProc  *proc;	/* Thread startup routine. */
-    void           *arg;	/* Argument to startup proc. */
-    uintptr_t       tid;        /* Id set by thread for logging. */
-    unsigned char  *bottomOfStack; /* for estimating currentStackSize */
-    char	    name[NS_THREAD_NAMESIZE+1]; /* Thread name. */
+    struct Thread  *nextPtr;	     /* Next in list of all threads. */
+    time_t	    ctime;	     /* Thread structure create time. */
+    int		    flags;	     /* Detached, joined, etc. */
+    Ns_ThreadProc  *proc;	     /* Thread startup routine. */
+    void           *arg;	     /* Argument to startup proc. */
+    uintptr_t       tid;             /* Id set by thread for logging. */
+    pid_t           ostid;           /* OS level thread id (if available) */
+    unsigned char  *bottomOfStack;   /* for estimating currentStackSize */
+    char	    name[NS_THREAD_NAMESIZE+1];   /* Thread name. */
     char	    parent[NS_THREAD_NAMESIZE+1]; /* Parent name. */
 } Thread;
 
@@ -201,13 +206,16 @@ void
 NsThreadMain(void *arg)
 {
     Thread  *thrPtr = (Thread *) arg;
-    char	 name[NS_THREAD_NAMESIZE];
+    char     name[NS_THREAD_NAMESIZE];
 
     thrPtr->tid = Ns_ThreadId();
     Ns_TlsSet(&key, thrPtr);
     snprintf(name, sizeof(name), "-thread:%" PRIxPTR "-", thrPtr->tid);
     Ns_ThreadSetName(name);
     SetBottomOfStack(&thrPtr);
+#ifdef HAVE_GETTID
+    thrPtr->ostid = syscall(SYS_gettid);
+#endif
     (*thrPtr->proc) (thrPtr->arg);
 }
 
@@ -324,11 +332,14 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                  thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
         Tcl_DStringAppend(dsPtr, buf, -1);
         if (proc != NULL) {
-            (*proc)(dsPtr, (void *) thrPtr->proc, thrPtr->arg);
+            (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
         } else {
             snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
             Tcl_DStringAppend(dsPtr, buf, -1);
         }
+        snprintf(buf, sizeof(buf), " %" PRIuMAX , (uintmax_t) thrPtr->ostid);
+        Tcl_DStringAppend(dsPtr, buf, -1);
+
         Tcl_DStringEndSublist(dsPtr);
         thrPtr = thrPtr->nextPtr;
     }
@@ -391,16 +402,19 @@ NewThread(void)
 static Thread *
 GetThread(void)
 {
-    Thread *thisPtr;
+    Thread *thrPtr;
 
-    thisPtr = Ns_TlsGet(&key);
-    if (thisPtr == NULL) {
-        thisPtr = NewThread();
-        thisPtr->flags = NS_THREAD_DETACHED;
-        thisPtr->tid = Ns_ThreadId();
-        Ns_TlsSet(&key, thisPtr);
+    thrPtr = Ns_TlsGet(&key);
+    if (thrPtr == NULL) {
+        thrPtr = NewThread();
+        thrPtr->flags = NS_THREAD_DETACHED;
+        thrPtr->tid = Ns_ThreadId();
+        Ns_TlsSet(&key, thrPtr);
+#ifdef HAVE_GETTID
+        thrPtr->ostid = syscall(SYS_gettid);
+#endif
     }
-    return thisPtr;
+    return thrPtr;
 }
 
 

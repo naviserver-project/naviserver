@@ -41,6 +41,7 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 
 typedef struct Config {
     int        deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
+    int        nodelay;      /* Enable the TCP_NODEALY optimization. */
 } Config;
 
 /*
@@ -55,7 +56,7 @@ static Ns_DriverSendFileProc SendFile;
 static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 
-static void SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock);
+static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock);
 
 
 /*
@@ -84,6 +85,7 @@ Ns_ModuleInit(char *server, char *module)
     path = Ns_ConfigGetPath(server, module, NULL);
     cfg = ns_malloc(sizeof(Config));
     cfg->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
+    cfg->nodelay = Ns_ConfigBool(path, "nodelay", NS_FALSE);
 
     init.version = NS_DRIVER_VERSION_2;
     init.name = "nssock";
@@ -126,8 +128,12 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
 
     sock = Ns_SockListenEx((char*)address, port, backlog);
     if (sock != INVALID_SOCKET) {
+	Config *cfg = driver->arg;
+
         (void) Ns_SockSetNonBlocking(sock);
-        SetDeferAccept(driver, sock);
+	if (cfg->deferaccept) {
+	    Ns_SockSetDeferAccept(sock, driver->recvwait);
+	}
     }
     return sock;
 }
@@ -171,6 +177,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
 	setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
 #endif
         Ns_SockSetNonBlocking(sock->sock);
+	SetNodelay(sock->driver, sock->sock);
         status = cfg->deferaccept
             ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
     }
@@ -199,7 +206,14 @@ static ssize_t
 Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    ssize_t n;
+    
+    n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    if (n == 0) {
+	/* this means usually eof, return value of 0 means in the driver SOCK_MORE */
+	n = -1;
+    }
+    return n;
 }
 
 
@@ -224,7 +238,16 @@ static ssize_t
 Send(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    ssize_t n;
+    int     decork;
+
+    decork = Ns_SockCork(sock, 1);
+    n = Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+
+    if (decork) {
+      Ns_SockCork(sock, 0);
+    }
+    return n;
 }
 
 
@@ -302,41 +325,19 @@ Close(Ns_Sock *sock)
     }
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * SetDeferAccept --
- *
- *      Tell the OS not to give us a new socket until data is available.
- *      This saves overhead in the poll() loop and the latency of a RT.
- *
- *      Otherwise, we will get socket as soon as the TCP connection
- *      is established.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Disabled by default as Linux seems broken (does not respect
- *      the timeout, linux-2.6.26).
- *
- *----------------------------------------------------------------------
- */
 
 static void
-SetDeferAccept(Ns_Driver *driver, NS_SOCKET sock)
+SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 {
     Config *cfg = driver->arg;
 
-    if (cfg->deferaccept) {
-#ifdef TCP_DEFER_ACCEPT
-        int sec;
+    if (cfg->nodelay) {
+#ifdef TCP_NODELAY
+	int value = 1;
 
-        sec = driver->recvwait;
-        if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
-                       &sec, sizeof(sec)) == -1) {
-            Ns_Log(Error, "nssock: setsockopt(TCP_DEFER_ACCEPT): %s",
+        if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+                       &value, sizeof(value)) == -1) {
+            Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
                    ns_sockstrerror(ns_sockerrno));
         }
 #endif

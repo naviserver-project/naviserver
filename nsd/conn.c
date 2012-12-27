@@ -824,8 +824,14 @@ Ns_ConnDriverName(Ns_Conn *conn)
  * Ns_ConnStartTime --
  *
  *      Return the connection start time, which is the time the
- *      connection was queued from the driver thread, not the time
- *      the underlying socket was opened to the server.
+ *      connection was queued from the driver thread, not the time the
+ *      underlying socket was opened to the server. Similarly
+ *      Ns_ConnAcceptTime() returns the time the connection was
+ *      accepted (this is maybe a kept open connection),
+ *      Ns_ConnQueueTime() returns the time a request was queued,
+ *      Ns_ConnDequeueTime() returns the time a request was taken out
+ *      of the queue, and Ns_ConnFilterTime() is the time stampt after
+ *      the filters are executed.
  *
  * Results:
  *      Ns_Time pointer.
@@ -841,8 +847,91 @@ Ns_ConnStartTime(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return &connPtr->startTime;
+    return &connPtr->requestQueueTime;
 }
+
+Ns_Time *
+Ns_ConnAcceptTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->acceptTime;
+}
+
+Ns_Time *
+Ns_ConnQueueTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->requestQueueTime;
+}
+
+Ns_Time *
+Ns_ConnDequeueTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->requestDequeueTime;
+}
+
+Ns_Time *
+Ns_ConnFilterTime(Ns_Conn *conn)
+{
+    Conn *connPtr = (Conn *) conn;
+
+    return &connPtr->filterDoneTime;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnTimeStats --
+ *
+ *      Return for a given connection and nowPtr the acceptTimeSpan,
+ *      queueTimeSpan, filterTimeSpan and runTimeSpan. The
+ *      
+ *         acceptTimeSpan = queueTime - acceptTime 
+ *         queueTimeSpan  = dequeueTime - queueTime
+ *         filterTimeSpan = filterDoneTime - dequeueTime
+ *         runTimeSpan    = now - filterDoneTime
+ *
+ *      In addition, this function updates the statistics and should
+ *      be called only once per request.
+ *
+ * Results:
+ *      Four time structures (argument 3 to 7)
+ *
+ * Side effects:
+ *      update statistics
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr,
+		 Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr, 
+		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr) {
+    Conn      *connPtr = (Conn *) conn;
+    NsServer  *servPtr = connPtr->servPtr;
+    
+    assert(servPtr);
+
+    Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         acceptTimeSpanPtr);
+    Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   queueTimeSpanPtr);
+    Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, filterTimeSpanPtr);
+    Ns_DiffTime(nowPtr,                       &connPtr->filterDoneTime,     runTimeSpanPtr);
+
+    Ns_MutexLock(&servPtr->pools.lock);
+      
+    Ns_IncrTime(&servPtr->stats.acceptTime, acceptTimeSpanPtr->sec, acceptTimeSpanPtr->usec);
+    Ns_IncrTime(&servPtr->stats.queueTime,  queueTimeSpanPtr->sec,  queueTimeSpanPtr->usec);
+    Ns_IncrTime(&servPtr->stats.filterTime, filterTimeSpanPtr->sec, filterTimeSpanPtr->usec);
+    Ns_IncrTime(&servPtr->stats.runTime,    runTimeSpanPtr->sec,    runTimeSpanPtr->usec);
+    
+    Ns_MutexUnlock(&servPtr->pools.lock);
+}
+
 
 
 /*
@@ -920,11 +1009,10 @@ int
 Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
 {
     Conn *connPtr = (Conn *) conn;
-    char *hdr;
 
     if (connPtr->servPtr->opts.modsince) {
-        if ((hdr = Ns_SetIGet(conn->headers, "If-Modified-Since")) != NULL
-                && Ns_ParseHttpTime(hdr) >= since) {
+	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
+        if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {
             return NS_FALSE;
         }
     }
@@ -1102,38 +1190,57 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     int idx, off, len, opt, n;
 
     static CONST char *opts[] = {
-        "authpassword", "authuser", "auth",
-        "close", "content", "contentlength", "contentsentlength",
-        "contentfile",
-        "copy", "channel", "driver", "encoding", "files", "fileoffset",
-        "filelength", "fileheaders", "flags", "form", "headers",
-        "host", "id", "isconnected", "location", "method",
-        "outputheaders", "peeraddr", "peerport", "port", "protocol",
-        "query", "request", "server", "sock", "start", "status", "timeout",
-        "url", "urlc", "urlencoding", "urlv", "version",
-        "keepalive", "compress",
+	"auth", "authpassword", "authuser", 
+	"channel", "clientdata", "close", "compress", "content", 
+	"contentfile", "contentlength", "contentsentlength", "copy", 
+	"driver", 
+	"encoding", 
+	"fileheaders", "filelength", "fileoffset","files", "flags", "form", 
+	"headers", "host", 
+	"id", "isconnected", 
+	"keepalive", 
+	"location", 
+	"method",
+	"outputheaders", 
+	"peeraddr", "peerport", "port", "protocol",
+	"query", 
+	"request", 
+	"server", "sock", "start", "status", 
+	"timeout",
+	"url", "urlc", "urlencoding", "urlv", 
+	"version",
+	"zipaccepted",
         NULL
     };
     enum ISubCmdIdx {
-        CAuthPasswordIdx, CAuthUserIdx, CAuthIdx,
-        CCloseIdx, CContentIdx, CContentLengthIdx, CContentSentLenIdx,
-        CContentFileIdx,
-        CCopyIdx, CChannelIdx, CDriverIdx, CEncodingIdx,
-        CFilesIdx, CFileOffIdx, CFileLenIdx, CFileHdrIdx, CFlagsIdx,
-        CFormIdx, CHeadersIdx, CHostIdx, CIdIdx, CIsConnectedIdx,
-        CLocationIdx, CMethodIdx, COutputHeadersIdx, CPeerAddrIdx,
-        CPeerPortIdx, CPortIdx, CProtocolIdx, CQueryIdx, CRequestIdx,
-        CServerIdx, CSockIdx, CStartIdx, CStatusIdx, CTimeoutIdx, CUrlIdx,
-        CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, CVersionIdx,
-        CKeepAliveIdx, CCompressIdx
+	CAuthIdx, CAuthPasswordIdx, CAuthUserIdx, 
+	CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx, 
+	CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx, 
+	CDriverIdx, 
+	CEncodingIdx,
+	CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx, 
+	CHeadersIdx, CHostIdx, 
+	CIdIdx, CIsConnectedIdx,
+	CKeepAliveIdx, 
+	CLocationIdx, 
+	CMethodIdx, 
+	COutputHeadersIdx, 
+	CPeerAddrIdx, CPeerPortIdx, CPortIdx, CProtocolIdx, 
+	CQueryIdx, 
+	CRequestIdx,
+	CServerIdx, CSockIdx, CStartIdx, CStatusIdx, 
+	CTimeoutIdx, 
+	CUrlIdx, CUrlcIdx, CUrlEncodingIdx, CUrlvIdx, 
+	CVersionIdx,
+	CZipacceptedIdx
     };
 
-    if (objc < 2) {
+    if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
+    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+				     &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
 
@@ -1141,11 +1248,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
      * Only the "isconnected" option operates without a conn.
      */
 
-    if (opt == CIsConnectedIdx) {
+    if (unlikely(opt == CIsConnectedIdx)) {
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connPtr ? 1 : 0));
         return TCL_OK;
     }
-    if (connPtr == NULL) {
+    if (unlikely(connPtr == NULL)) {
         Tcl_SetResult(interp, "no current connection", TCL_STATIC);
         return TCL_ERROR;
     }
@@ -1163,6 +1270,17 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return NS_ERROR;
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
+        break;
+
+    case CClientdataIdx:
+        if (objc > 2) {
+	    char *value = Tcl_GetString(objv[2]);
+	    if (connPtr->clientData) {
+		ns_free(connPtr->clientData);
+	    }
+	    connPtr->clientData = ns_strdup(value);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->clientData, -1));
         break;
 
     case CCompressIdx:
@@ -1308,7 +1426,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CHeadersIdx:
-        if (itPtr->nsconn.flags & CONN_TCLHDRS) {
+        if (likely(itPtr->nsconn.flags & CONN_TCLHDRS)) {
             Tcl_SetResult(interp, itPtr->nsconn.hdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->headers, NS_TCL_SET_STATIC);
@@ -1318,7 +1436,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case COutputHeadersIdx:
-        if (itPtr->nsconn.flags & CONN_TCLOUTHDRS) {
+        if (likely(itPtr->nsconn.flags & CONN_TCLOUTHDRS)) {
             Tcl_SetResult(interp, itPtr->nsconn.outhdrs, TCL_STATIC);
         } else {
             Ns_TclEnterSet(interp, connPtr->outputheaders, NS_TCL_SET_STATIC);
@@ -1354,8 +1472,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         }
         break;
 
-    case CFileOffIdx: /* FALL-THRU */
-    case CFileLenIdx: /* FALL-THRU */
+    case CFileOffIdx: /* fall through */
+    case CFileLenIdx: /* fall through */
     case CFileHdrIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -1478,7 +1596,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         break;
 
     case CStartIdx:
-        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&connPtr->startTime));
+        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&connPtr->requestQueueTime));
         break;
 
     case CCloseIdx:
@@ -1510,6 +1628,11 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             return TCL_ERROR;
         }
 	break;
+
+    case CZipacceptedIdx:
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0));
+	break;
+
     }
 
     return TCL_OK;
@@ -1576,7 +1699,7 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj **objv)
 {
     NsInterp    *itPtr = arg;
-    size_t       toCopy = 0;
+    int         toCopy = 0;
     char        *chanName;
     Request     *reqPtr;
     Tcl_Channel  chan;
@@ -1608,7 +1731,7 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_Flush(chan);
     reqPtr = ((Conn *)itPtr->conn)->reqPtr;
     if (toCopy > reqPtr->avail || toCopy <= 0) {
-        toCopy = reqPtr->avail;
+        toCopy = (int)reqPtr->avail;
     }
     if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
         Tcl_SetResult(interp, "could not copy content", TCL_STATIC);

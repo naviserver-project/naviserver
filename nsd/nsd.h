@@ -210,7 +210,9 @@ typedef struct WriterSock {
     size_t             size;
     size_t             bufsize;
     unsigned int       flags;
-    unsigned char      *buf;
+    unsigned char     *buf;
+    char              *clientData;
+    Ns_Time            startTime;
 } WriterSock;
 
 /*
@@ -230,7 +232,9 @@ typedef struct SpoolerQueue {
     int                  shutdown;    /* Flag to indicate shutdown */
     int                  id;          /* Queue id */
     int                  queuesize;   /* Number of active sockets in the queue */
+    CONST char          *threadname;  /* name of the thread working on this queue */
 } SpoolerQueue;
+
 
 /*
  * The following structure maintains an ADP call frame.
@@ -299,7 +303,7 @@ typedef struct Request {
     char *content;              /* Start of content */
     size_t length;              /* Length of content */
     size_t contentLength;       /* Provided content length */
-    size_t avail;                /* Bytes avail in buffer */
+    size_t avail;               /* Bytes avail in buffer */
     int leadblanks;             /* Number of leading blank lines read */
 
    /*
@@ -441,6 +445,8 @@ typedef struct Sock {
     Ns_Time             timeout;
     Request            *reqPtr;
 
+    Ns_Time             acceptTime;
+
     int                 tfd;             /* file descriptor with request contents */
     char               *taddr;           /* mmap-ed temporary file */
     size_t              tsize;           /* size of mmap region */
@@ -525,6 +531,7 @@ typedef struct Conn {
 
     char *server;
     char *location;
+    char *clientData;
 
     struct Request  *reqPtr;
     struct NsServer *servPtr;
@@ -533,7 +540,11 @@ typedef struct Conn {
     int id;
     char idstr[16];
 
-    Ns_Time startTime;
+    Ns_Time acceptTime;          /* time stamp, when the request was accepted */
+    Ns_Time requestQueueTime;    /* time stamp, when the request was queued */
+    Ns_Time requestDequeueTime;  /* time stamp, when the request was dequeued */
+    Ns_Time filterDoneTime;      /* time stamp, after filters */
+
     struct NsInterp *itPtr;
     struct stat fileInfo;
 
@@ -555,6 +566,32 @@ typedef struct Conn {
     void *cls[NS_CONN_MAXCLS];
 
 } Conn;
+
+
+/*
+ * The following structure is allocated for each connection thread.
+ * The connPtr member is used for connecting threads with the request
+ * info. The states if a conn thread are defined via enumeration.
+ */
+typedef enum {
+  connThread_free,
+  connThread_initial,
+  connThread_warmup,
+  connThread_ready,
+  connThread_idle,
+  connThread_busy,
+  connThread_dead
+} ConnThreadState;
+
+typedef struct ConnThreadArg {
+    struct ConnPool      *poolPtr;
+    struct Conn          *connPtr;
+    ConnThreadState       state;
+    uintptr_t             tid;         // not needed
+    Ns_Cond               cond;        /* Cond for signaling this conn thread */
+    Ns_Mutex              lock;
+    struct ConnThreadArg *nextPtr;     /* used for the conn thread queue */
+} ConnThreadArg;
 
 /*
  * The following structure maintains a connection thread pool.
@@ -580,18 +617,15 @@ typedef struct ConnPool {
             Conn *lastPtr;
         } wait;
 
-        struct {
-            Conn *firstPtr;
-            Conn *lastPtr;
-        } active;
-
         Ns_Cond  cond;
+        Ns_Mutex lock;
+        int      lowwatermark;
         int      highwatermark;
 
-    } queue;
+    } wqueue;
 
     /*
-     * The following struct maintins the state of the threads.  Min and max
+     * The following struct maintains the state of the threads.  Min and max
      * threads are determined at startup and then NsQueueConn ensures the
      * current number of threads remains within that range with individual
      * threads waiting no more than the timeout for a connection to
@@ -609,6 +643,19 @@ typedef struct ConnPool {
         int creating;
     } threads;
 
+    /*
+     * The following struct maintains the state of the thread
+     * connection queue.  "nextPtr" points to the next available
+     * connection thread, "args" keeps the array of all configured
+     * connection structs, and "lock" is used for locking this queue.
+     */
+
+   struct {
+       ConnThreadArg *nextPtr;
+       ConnThreadArg *args;
+       Ns_Mutex       lock;
+   } tqueue;
+
 } ConnPool;
 
 /*
@@ -625,12 +672,22 @@ typedef struct NsServer {
 
     struct {
         Ns_Mutex lock;
-        int nextconnid;
+        unsigned long nextconnid;
         bool shutdown;
         ConnPool *firstPtr;
         ConnPool *defaultPtr;
         Ns_Thread joinThread;
     } pools;
+
+    struct {
+        unsigned long spool;
+        unsigned long queued;
+        unsigned long connthreads;
+        Ns_Time acceptTime;
+	Ns_Time queueTime; 
+	Ns_Time filterTime; 
+	Ns_Time runTime;
+    } stats;
 
     /*
      * The following struct maintains various server options.
@@ -936,6 +993,7 @@ extern void NsStopServers(Ns_Time *toPtr);
 extern void NsStartServer(NsServer *servPtr);
 extern void NsStopServer(NsServer *servPtr);
 extern void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
+extern void NsWakeupDriver(Driver *drvPtr);
 
 /*
  * Url-specific data routines.
@@ -965,11 +1023,12 @@ extern void NsMapPool(ConnPool *poolPtr, char *map);
 extern void NsSockClose(Sock *sockPtr, int keep);
 extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 
-extern Request *NsGetRequest(Sock *sockPtr);
+extern Request *NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr);
 extern void NsFreeRequest(Request *reqPtr);
 
 extern int NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
-                         FILE *fp, int fd, const char *data);
+                         FILE *fp, int fd, const char *data,  struct iovec *bufs, int nbufs, 
+			 int everysize);
 
 extern void NsFreeAdp(NsInterp *itPtr);
 extern void NsTclRunAtClose(NsInterp *itPtr)
@@ -977,6 +1036,9 @@ extern void NsTclRunAtClose(NsInterp *itPtr)
 
 extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
 extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
+
+extern void NsAsyncWriterQueueEnable();
+extern void NsAsyncWriterQueueDisable();
 
 /*
  * External callback functions.
@@ -1077,6 +1139,11 @@ extern int NsMatchRange(Ns_Conn *conn, time_t mtime);
 extern int NsConnParseRange(Ns_Conn *conn, CONST char *type,
                             int fd, CONST void *data, size_t length,
                             Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
+/*
+ * request parsing
+ */
+extern int NsParseAcceptEnconding(double version, CONST char *hdr);
+
 
 /*
  * ADP routines.

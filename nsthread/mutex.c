@@ -51,7 +51,7 @@ typedef struct Mutex {
     char	     name[NS_THREAD_NAMESIZE+1];
 } Mutex;
 
-#define GETMUTEX(mutex) (*(mutex)?((Mutex *)*(mutex)):GetMutex((mutex)))
+#define GETMUTEX(mutex) (*(mutex) ? ((Mutex *)*(mutex)) : GetMutex((mutex)))
 static Mutex *GetMutex(Ns_Mutex *mutex);
 static Mutex *firstMutexPtr;
 
@@ -203,7 +203,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
     Ns_Time start, end, diff;
 
     Ns_GetTime(&start);
-    if (!NsLockTry(mutexPtr->lock)) {
+    if (unlikely(!NsLockTry(mutexPtr->lock))) {
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
         /*

@@ -49,7 +49,6 @@ to be closed or monitored for keep-alive and the calling connection thread
 continues to execute code.
 
 
-
 [call [cmd  ns_returnfile] \
      [arg status] \
      [arg mime-type] \
@@ -160,9 +159,8 @@ ns_register_proc GET /hello {
 [example_end]
 
 
+[see_also returnstatus-cmds ns_write ns_guesstype \
+	ns_register_fastpath ns_adp_puts ns_conn ns_writer]
 
-
-[see_also returnstatus-cmds ns_write ns_guesstype ns_register_fastpath ns_adp_puts ns_conn]
 [keywords return response status charset encoding]
-
 [manpage_end]

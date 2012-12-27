@@ -1470,7 +1470,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
     Channel *channelPtr;
     char    *p;
     size_t   l, i;
-    int      depth, doit, n = 0;
+    int      depth = 0, doit, n = 0;
     void    *data;
 
     /*

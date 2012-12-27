@@ -247,6 +247,18 @@ Ns_ParseHttpTime(char *str)
     }
     tm.tm_isdst = 0;
 #ifdef HAVE_TIMEGM
+    /*
+     * Initialize the mutex (if this did not happen so far) and
+     * provide a name for it.
+     */
+    if (lock == NULL) {
+      Ns_MasterLock();
+      if (lock == NULL) {
+	Ns_MutexInit(&lock);
+	Ns_MutexSetName2(&lock,"ns:httptime",NULL);
+      }
+      Ns_MasterUnlock();
+    }
     Ns_MutexLock(&lock);
     t = timegm(&tm);
     Ns_MutexUnlock(&lock);

@@ -155,6 +155,7 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
      */
     
     request->line = ns_strdup(l);
+    //Ns_Log(Notice, "Ns_ParseRequest %p %s", request, request->line);
 
     /*
      * Look for the minimum of method and url.
@@ -370,7 +371,7 @@ FreeUrl(Ns_Request * request)
  */
 
 static void
-SetUrl(Ns_Request * request, char *url)
+SetUrl(Ns_Request *request, char *url)
 {
     Ns_DString  ds1, ds2;
     char       *p;
@@ -521,4 +522,174 @@ Ns_ParseHeader(Ns_Set *set, char *line, Ns_HeaderCaseDisposition disp)
         *sep = ':';
     }
     return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetQvalue --
+ *
+ *      Return the next qvalue string from accept encodings
+ *
+ * Results:
+ *      string, setting lenghtPtr; or NULL, if no or invalie
+ *      qvalue provided
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static CONST char *
+GetQvalue(CONST char *str, int *lenPtr) {
+    CONST char *resultString;
+
+    assert(str);
+    assert(lenPtr);
+
+    for (; *str == ' '; str++);
+    if (*str != ';') {
+        return NULL;
+    }
+    for (str ++; *str == ' '; str++);
+
+    if (*str != 'q') {
+        return NULL;
+    }
+    for (str ++; *str == ' '; str++);
+    if (*str != '=') {
+        return NULL;
+    }
+    for (str ++; *str == ' '; str++);
+    if (!isdigit(*str)) {
+        return NULL;
+    }
+
+    resultString = str;
+    str++;
+    if (*str == '.') {
+        /*
+	 * Looks like a floating point number; RFC2612 allows up to
+	 * three digits after the comma.
+	 */
+      str ++;
+      if (isdigit(*str)) {
+	  str++;
+	  if (isdigit(*str)) {
+	      str++;
+	      if (isdigit(*str)) {
+		  str++;
+	      }
+	  }
+      }
+    }
+    /* str should point to a valid terminator of the number */
+    if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
+        *lenPtr = (int)(str - resultString);
+	return resultString;
+    }
+    return NULL;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetEncodingFormat --
+ *
+ *      Search on encodingString (header field accept-encodings) for
+ *      encodingFormat (e.g. "gzip", "identy") and return its q value.
+ *
+ * Results:
+ *      On success non-NULL value and he parsed qValue;
+ *      On failure NULL value qValue set to -1;
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double *qValue) {
+  char *encodingStr = strstr(encodingString, encodingFormat);
+
+  if (encodingStr) {
+      int len = 0;
+      CONST char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+
+      if (qValueString) {
+	*qValue = strtod(qValueString, NULL);
+      } else {
+	*qValue = 1.0;
+      }
+      return encodingStr;
+  }
+
+  *qValue = -1.0;
+  return NULL;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsParseAcceptEnconding --
+ *
+ *      Parse the accept-encoding line and return whether gzip
+ *      encoding is accepted or not.
+ *
+ * Results:
+ *      0 or 1
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsParseAcceptEnconding(double version, CONST char *hdr) 
+{
+    double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
+    int gzip = 0;
+
+    assert(hdr);
+    if (GetEncodingFormat(hdr, "gzip", &gzipQvalue)) {
+	/* we have gzip specified in accept-encoding */
+	if (gzipQvalue > 0.999) {
+	    /* gzip qvalue 1, use it, nothing else can be higher */
+	    gzip = 1;
+	} else if (gzipQvalue < 0.0009) {
+	    /* gzip qvalue 0, forbid gzip */
+	    gzip = 0;
+	} else {
+	    /* a middle gzip qvalue, compare it with identity and default */
+	    if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
+		/* gzip qvalue larger than identity */
+		gzip = (gzipQvalue >= identityQvalue);
+	    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
+		/* gzip qvalue larger than default */
+		gzip = (gzipQvalue >= starQvalue);
+	    } else {
+		/* just the low qvalue was specified */
+		gzip = 1;
+	    }
+	}
+    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
+	/* star matches everything, so as well gzip */
+	if (starQvalue < 0.0009) {
+	    /* star qvalue forbids gzip */
+	    gzip = 0;
+	} else if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
+	    /* star qvalue allows gzip in HTTP/1.1 */
+	    gzip = (starQvalue >= identityQvalue) && (version >= 1.1);
+	} else {
+	    /* no identity specified, assume gzip is matched with * in HTTP/1.1 */
+	    gzip = (version >= 1.1);
+	}
+    }
+
+    return gzip;
 }

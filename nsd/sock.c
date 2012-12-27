@@ -468,6 +468,8 @@ Ns_SockAccept(NS_SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
 
     if (sock != INVALID_SOCKET) {
         sock = SockSetup(sock);
+    } else if (errno != EAGAIN) {
+        Ns_Log(Notice, "accept() fails, reason: %s", strerror(errno));
     }
 
     return sock;
@@ -699,6 +701,64 @@ Ns_SockSetBlocking(NS_SOCKET sock)
 
     return NS_OK;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetDeferAccept --
+ *
+ *      Tell the OS not to give us a new socket until data is available.
+ *      This saves overhead in the poll() loop and the latency of a RT.
+ *
+ *      Otherwise, we will get socket as soon as the TCP connection
+ *      is established.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Disabled by default as Linux seems broken (does not respect
+ *      the timeout, linux-2.6.26).
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
+{
+#ifdef TCP_FASTOPEN_UNTESTED
+    int qlen = 5;
+  
+    if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
+		   &sec, sizeof(qlen)) == -1) {
+	Ns_Log(Error, "sock: setsockopt(TCP_FASTOPEN): %s",
+	       ns_sockstrerror(ns_sockerrno));
+    }
+#else
+# ifdef TCP_DEFER_ACCEPT
+    if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
+		   &secs, sizeof(secs)) == -1) {
+	Ns_Log(Error, "sock: setsockopt(TCP_DEFER_ACCEPT): %s",
+	       ns_sockstrerror(ns_sockerrno));
+    }
+# else
+#  ifdef SO_ACCEPTFILTER
+    struct accept_filter_arg afa;
+    int n;
+    
+    memset(&afa, 0, sizeof(afa));
+    strcpy(afa.af_name, "httpready");
+    n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa));
+    if (n < 0) {
+	Ns_Log(Error, "sock: setsockopt(SO_ACCEPTFILTER): %s",
+	       ns_sockstrerror(ns_sockerrno));
+    }
+#  endif
+# endif
+#endif
+}
+
 
 
 /*

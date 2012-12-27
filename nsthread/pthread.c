@@ -275,9 +275,9 @@ NsLockTry(void *lock)
     int err;
 
     err = pthread_mutex_trylock((pthread_mutex_t *) lock);
-    if (err == EBUSY) {
+    if (unlikely(err == EBUSY)) {
 	return 0;
-    } else if (err != 0) {
+    } else if (unlikely(err != 0)) {
     	NsThreadFatal("NsLockTry", "pthread_mutex_trylock", err);
     }
     return 1;
@@ -306,7 +306,7 @@ NsLockUnset(void *lock)
     int err;
 
     err = pthread_mutex_unlock((pthread_mutex_t *) lock);
-    if (err != 0) {
+    if (unlikely(err != 0)) {
     	NsThreadFatal("NsLockUnset", "pthread_mutex_unlock", err);
     }
 }

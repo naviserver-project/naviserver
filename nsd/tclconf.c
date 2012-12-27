@@ -77,7 +77,7 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         {"?default", Ns_ObjvObj,    &defObj,  NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (unlikely(Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK)) {
         return TCL_ERROR;
     }
     if (min > LLONG_MIN || max < LLONG_MAX) {
@@ -105,7 +105,7 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
              * There is no Tcl_GetWideInt so we put same error message as Tcl_GetInt
              */
 
-            if (Ns_StrToWideInt(value, &v) != NS_OK) {
+	    if (unlikely(Ns_StrToWideInt(value, &v) != NS_OK)) {
                 Tcl_AppendResult(interp, "expected integer but got \"", value, "\"", NULL);
                 return TCL_ERROR;
             } 
@@ -128,7 +128,7 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 
     if (defObj != NULL) {
         if (isbool) {
-            if (Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK) {
+            if (unlikely(Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)) {
                 return TCL_ERROR;
             }
             defObj = Tcl_NewIntObj(i);

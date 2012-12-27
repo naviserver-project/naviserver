@@ -159,111 +159,6 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     return status;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * GetQvalue --
- *
- *      Return the next qvalue string from accept encodings
- *
- * Results:
- *      string, setting lenghtPtr; or NULL, if no or invalie
- *      qvalue provided
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-static CONST char *
-GetQvalue(CONST char *str, int *lenPtr) {
-    CONST char *resultString;
-
-    assert(str);
-    assert(lenPtr);
-
-    for (; *str == ' '; str++);
-    if (*str != ';') {
-        return NULL;
-    }
-    for (str ++; *str == ' '; str++);
-
-    if (*str != 'q') {
-        return NULL;
-    }
-    for (str ++; *str == ' '; str++);
-    if (*str != '=') {
-        return NULL;
-    }
-    for (str ++; *str == ' '; str++);
-    if (!isdigit(*str)) {
-        return NULL;
-    }
-
-    resultString = str;
-    str++;
-    if (*str == '.') {
-        /*
-	 * Looks like a floating point number; RFC2612 allows up to
-	 * three digits after the comma.
-	 */
-      str ++;
-      if (isdigit(*str)) {
-	  str++;
-	  if (isdigit(*str)) {
-	      str++;
-	      if (isdigit(*str)) {
-		  str++;
-	      }
-	  }
-      }
-    }
-    /* str should point to a valid terminator of the number */
-    if (*str == ' ' || *str == ',' || *str == ';' || *str == '\0') {
-        *lenPtr = (int)(str - resultString);
-	return resultString;
-    }
-    return NULL;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetEncodingFormat --
- *
- *      Search on encodingString (header field accept-encodings) for
- *      encodingFormat (e.g. "gzip", "identy") and return its q value.
- *
- * Results:
- *      On success non-NULL value and he parsed qValue;
- *      On failare NULL value qValue set to -1;
- *
- * Side effects:
- *      Nones.
- *
- *----------------------------------------------------------------------
- */
-static char *
-GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double *qValue) {
-  char *encodingStr = strstr(encodingString, encodingFormat);
-
-  if (encodingStr) {
-      int len = 0;
-      CONST char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
-
-      if (qValueString) {
-	*qValue = strtod(qValueString, NULL);
-      } else {
-	*qValue = 1.0;
-      }
-      return encodingStr;
-  }
-
-  *qValue = -1.0;
-  return NULL;
-}
 
 
 /*
@@ -287,7 +182,6 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 {
     Ns_Conn  *conn    = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->servPtr;
-    char     *hdr;
     int       level, compress = 0;
 
     /* Check the default setting and explicit overide. */
@@ -306,58 +200,11 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
             /* We won't be compressing if there are no headers or body. */
 
             if (!(connPtr->flags & NS_CONN_SENTHDRS)
-                && !(connPtr->flags & NS_CONN_SKIPBODY)) {
-	        /* make gzip default in http 1.1 */
-  	        int gzip = (connPtr->request->version >= 1.1);
-
-                /* Check that the client supports compression. */
-		hdr = Ns_SetIGet(Ns_ConnHeaders(conn), "Accept-Encoding");
+		&& !(connPtr->flags & NS_CONN_SKIPBODY)) {
 		
-                if (hdr != NULL) {
-		    double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
-		
-		    if (GetEncodingFormat(hdr, "gzip", &gzipQvalue)) {
-		        /* we have gzip specified in accept-encoding */
-		        if (gzipQvalue > 0.999) {
-			    /* gzip qvalue 1, use it, nothing else can be higher */
-			    gzip = 1;
-			} else if (gzipQvalue < 0.0009) {
-			    /* gzip qvalue 0, forbid gzip */
-			    gzip = 0;
-			} else {
-			    /* a middle gzip qvalue, compare it with identity and default */
-			    if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
-			        /* gzip qvalue larger than identity */
-			        gzip = (gzipQvalue >= identityQvalue);
-			    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
-			        /* gzip qvalue larger than default */
-			        gzip = (gzipQvalue >= starQvalue);
-			    } else {
-			        /* just the low qvalue was specified */
-			        gzip = 1;
-			    }
-			}
-		    } else if (GetEncodingFormat(hdr, "*", &starQvalue)) {
-		        /* star matches everything, so as well gzip */
-		        if (starQvalue < 0.0009) {
-			    /* star qvalue forbids gzip */
-			    gzip = 0;
-			} else if (GetEncodingFormat(hdr, "identity", &identityQvalue)) {
-			    /* star qvalue allows gzip in HTTP/1.1 */
-			    gzip = (starQvalue >= identityQvalue) && (connPtr->request->version >= 1.1);
-			} else {
-			    /* no identity specified, assume gzip is matched with * in HTTP/1.1 */
-			    gzip = (connPtr->request->version >= 1.1);
-			}
-		    }
-		} else {
-		    /* no accept-encoding header; make gzip default in HTTP/1.1 */
-		    gzip = (connPtr->request->version >= 1.1);
-		}
-
                 Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
 
-                if (gzip) {
+                if (connPtr->flags & NS_CONN_ZIPACCEPTED) {
                     Ns_ConnSetHeaders(conn, "Content-Encoding", "gzip");
                     compress = level;
                 }
@@ -724,17 +571,26 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].iov_len;
     }
+   
+    if (towrite == 0) {
+	return 0;
+    }
+
+    if (NsWriterQueue(conn, towrite, NULL, NULL, -1, NULL, bufs, nbufs, 0) == NS_OK) {
+	Ns_Log(Debug, "==== writer sent %ld bytes\n", towrite);
+	return towrite;
+    }
 
     while (towrite > 0) {
-        sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs, 0);
-        if (sent < 0) {
-            break;
-        }
-        towrite -= sent;
-        nwrote += sent;
+	sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs, 0);
+	if (sent < 0) {
+	    break;
+	}
+	towrite -= sent;
+	nwrote += sent;
     }
     if (nwrote > 0) {
-        connPtr->nContentSent += nwrote;
+	connPtr->nContentSent += nwrote;
     }
 
     return (int) (nwrote ? nwrote : sent);
