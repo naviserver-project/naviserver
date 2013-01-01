@@ -51,10 +51,11 @@ enabled. If [opt [arg keep]] is given it replaces any existing value.
 
 [call [cmd ns_accesslog] [arg flags] [opt [arg flags]]]
 
-Return a list of the enabled logging options, or reset the list if a new set of
-flags is given. Valid flags are: logcombined, formattedtime, logreqtime, checkforproxy,
-and suppressquery. They have the same meaning as the similarly named configuration
-parameters.
+Return a list of the enabled logging options, or reset the list if a
+new set of flags is given. Valid flags are: logcombined,
+formattedtime, logpartialtimes, logreqtime, checkforproxy, and
+suppressquery. They have the same meaning as the similarly named
+configuration parameters.
 
 
 
@@ -130,9 +131,15 @@ If true then the value of the X-Forwarded-For HTTP header is logged as the IP
 address of the client. Otherwise, the TCP peer address is logged. Only enable
 this if you run your own, trusted proxy server. Default: false.
 
+[def logpartialtimes]
+If true then include the high-resolution start time of the request
+together with partial request durations (accept, queue, filter,
+run) in the access log.
+Default: false.
+
 [def logreqtime]
 If true then log the total amount of time the request took to run in seconds and
-milliseconds.
+milliseconds.  Default: false.
 
 [def extendedheaders]
 A space separated list of additional HTTP headers whos value should be logged.

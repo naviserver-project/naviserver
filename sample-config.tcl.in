@@ -426,6 +426,9 @@ ns_section 	"ns/server/${servername}/module/nslog"
    # Put in the log request elapsed time
    ns_param	logreqtime		false
 
+   # Include high-res start time and partial request durations (accept, queue, filter, run)
+   ns_param	logpartialtimes		false
+
    # Max # of lines in the buffer, 0 ni limit
    ns_param   	maxbuffer       	0
 

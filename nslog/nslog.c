@@ -187,7 +187,7 @@ Ns_ModuleInit(char *server, char *module)
     if (Ns_ConfigBool(path, "logreqtime", NS_FALSE)) {
         logPtr->flags |= LOG_REQTIME;
     }
-    if (Ns_ConfigBool(path, "logpartialtimes", NS_FALSE)) {  // comment me
+    if (Ns_ConfigBool(path, "logpartialtimes", NS_FALSE)) {
         logPtr->flags |= LOG_PARTIALTIMES;
     }
     if (Ns_ConfigBool(path, "suppressquery", NS_FALSE)) {
@@ -503,20 +503,16 @@ LogTrace(void *arg, Ns_Conn *conn)
     CONST char **h;
     char        *p, *user, buffer[PIPE_BUF], *bufferPtr = NULL;
     int          n, status, i, fd;
-    size_t	 bufferSize;
+    size_t	 bufferSize = 0;
     Ns_DString   ds;
-    Ns_Time      now;
+    Ns_Time      now, acceptTime, queueTime, filterTime, runTime;
+
 
     Ns_DStringInit(&ds);
     Ns_MutexLock(&logPtr->lock);
 
-    /*
-     * Compute the request's elapsed time
-     */
-
-    if ((logPtr->flags & (LOG_REQTIME | LOG_PARTIALTIMES))) {
-        Ns_GetTime(&now);
-    }
+    /* Get the current time for the timing computations */
+    Ns_GetTime(&now);
 
     /*
      * Append the peer address. Watch for users coming
@@ -615,15 +611,10 @@ LogTrace(void *arg, Ns_Conn *conn)
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) reqTime.sec, reqTime.usec);
     }
 
-    if ((logPtr->flags & LOG_PARTIALTIMES)) {
-	Ns_Time *startTimePtr, acceptTime, queueTime, filterTime, runTime;
+    Ns_ConnTimeStats(conn, &now, &acceptTime, &queueTime, &filterTime, &runTime);
 
-	// this is most probably not the best place, since it means,
-	// that if we don't include partial times in the access log, 
-	// they won't be included in the server stats. we just want to 
-	// see if we can make use from this data
-        Ns_ConnTimeStats(conn, &now, &acceptTime, &queueTime, &filterTime, &runTime);
-	startTimePtr = Ns_ConnStartTime(conn);
+    if ((logPtr->flags & LOG_PARTIALTIMES)) {
+        Ns_Time *startTimePtr =  Ns_ConnStartTime(conn);
 
         Ns_DStringAppend(&ds, " \"");
         Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)startTimePtr->sec, startTimePtr->usec);
@@ -696,19 +687,10 @@ LogTrace(void *arg, Ns_Conn *conn)
     fd = logPtr->fd;
     Ns_MutexUnlock(&logPtr->lock);
 
-#if 1
-    // TODO: make me configurable, document me
-      
-    if (bufferPtr && fd >= 0) {
-	NsAsyncWrite(fd, bufferPtr, bufferSize);
+    if (likely(bufferPtr != NULL) && likely(fd >= 0) && likely(bufferSize > 0)) {
+      NsAsyncWrite(fd, bufferPtr, bufferSize);
     }
-#else
-    if (bufferPtr) {
-        if (fd >= 0 && write(fd, bufferPtr, bufferSize) != bufferSize) {
-	    Ns_Log(Error, "nslog: write() failed: '%s'", strerror(errno));
-	}
-    }
-#endif
+
     Ns_DStringFree(&ds);
 }
 
