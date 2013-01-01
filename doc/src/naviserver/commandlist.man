@@ -6,7 +6,6 @@
 
 [description]
 List of all currently available NaviServer commands.
-Commands marked with (T) are TCL commands.
 
 [section {Access logfile}]
 [list_begin definitions]
@@ -59,6 +58,8 @@ Commands marked with (T) are TCL commands.
 
 [section {Cache commands}]
 [list_begin definitions]
+[call [cmd ns_cache]]
+[list_begin definitions]
 [call [cmd ns_cache_flush]]
 [call [cmd ns_cache_keys]]
 [call [cmd ns_cache_names]]
@@ -68,9 +69,14 @@ Commands marked with (T) are TCL commands.
 [call [cmd ns_cache_eval]]
 [call [cmd ns_cache_incr]]
 [call [cmd ns_cache_lappend]]
-[call [cmd ns_memoize ] [arg T]]
-[call [cmd ns_memoize_flush ] [arg T]]
-[call [cmd ns_memoize_stats ] [arg T]]
+[call [cmd ns_fastpath_cache_stats]]
+[list_end]
+
+[call [cmd ns_memoize]]
+[list_begin definitions]
+[call [cmd ns_memoize_flush]]
+[call [cmd ns_memoize_stats]]
+[list_end]
 [list_end]
 
 [section {Cookie commands}]
@@ -318,7 +324,11 @@ Commands marked with (T) are TCL commands.
 [section {Data structures}]
 [list_begin definitions]
 [call [cmd ns_set]]
-[call [cmd ns_findset ] [arg T]]
+[call [cmd ns_findset]]
+[call [cmd keyldel]]
+[call [cmd keylget]]
+[call [cmd keylkeys]]
+[call [cmd keylset]]
 [list_end]
 
 [section {Healthiness related commands :*)}]

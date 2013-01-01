@@ -24,8 +24,8 @@ url pattern
 
 [list_end]
 
-[see_also nsd]
-[keywords NaviServer]
+[see_also ns_cache]
+[keywords cache fastpath]
 [manpage_end]
 
 

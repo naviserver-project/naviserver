@@ -202,6 +202,16 @@ way for a new entry.
 [list_end]
 
 
+[call [cmd ns_fastpath_cache_stats] \
+        [opt [option "-contents"]] \
+        [opt [option "-reset"]] \
+        [opt [arg --]] \
+        [arg name] ]
+
+Return the accumulated statistics for fastpatch cache in array-get
+format since the cache was created or was last reset. For deails, see
+[cmd ns_cache_stats] above.
+
 [list_end]
 
 
@@ -274,7 +284,7 @@ ns_return 200 text/html [lb]example_personalised_page $user $ad[rb]
 [example_end]
 
 
-[see_also ns_memoize nsv]
-[keywords cache]
+[see_also ns_memoize nsv ns_time]
+[keywords cache fastpath]
 
 [manpage_end]

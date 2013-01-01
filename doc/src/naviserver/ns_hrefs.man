@@ -6,7 +6,7 @@
 
 [description]
 
-This command finds the anchor elements (&lt;A&gt;) in a chunk of HTML, html, and 
+This command finds the anchor elements in a chunk of HTML, and 
 returns a list of the URLs in those elements' href attributes.
 
 [section {COMMANDS}]
@@ -23,7 +23,11 @@ returns a list of the URLs in those elements' href attributes.
 [section EXAMPLES]
 
 [example_begin]
-   % set html {One good website is }
+   % set html {One good website is <A href='http://google.com/'>Google</A>.
+              Another is <a href='http://www.yahoo.com'>Yahoo!</a>}
+
+   % ns_hrefs $html
+   http://google.com/ http://www.yahoo.com
 [example_end]
 
 [manpage_end]
