@@ -822,7 +822,6 @@ NsConnThread(void *arg)
      */
 
     Ns_TlsSet(&argtls, argPtr);
-    argPtr->tid = Ns_ThreadId();  // unused
     argPtr->state = connThread_warmup;
 
     //Ns_Log(Notice, "[%d] NsConnThread state %d", ThreadNr(poolPtr, argPtr), argPtr->state);

@@ -587,7 +587,6 @@ typedef struct ConnThreadArg {
     struct ConnPool      *poolPtr;
     struct Conn          *connPtr;
     ConnThreadState       state;
-    uintptr_t             tid;         // not needed
     Ns_Cond               cond;        /* Cond for signaling this conn thread */
     Ns_Mutex              lock;
     struct ConnThreadArg *nextPtr;     /* used for the conn thread queue */
