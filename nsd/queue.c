@@ -142,10 +142,10 @@ void
 NsMapPool(ConnPool *poolPtr, char *map)
 {
     char *server = poolPtr->servPtr->server;
-    char **mv;
+    CONST char **mv;
     int  mc;
 
-    if (Tcl_SplitList(NULL, map, &mc, (CONST char***)&mv) == TCL_OK) {
+    if (Tcl_SplitList(NULL, map, &mc, &mv) == TCL_OK) {
         if (mc == 2) {
             Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, 0, NULL);
             Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s", 
