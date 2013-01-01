@@ -109,7 +109,6 @@ static Ns_TlsCleanup FreeCache;
 static Tcl_PanicProc Panic;
 
 static Ns_LogFilter LogToFile;
-static Ns_LogFilter LogToAsyncFile;
 static Ns_LogFilter LogToTcl;
 static Ns_LogFilter LogToDString;
 
@@ -185,8 +184,7 @@ NsInitLog(void)
     Tcl_InitHashTable(&severityTable, TCL_STRING_KEYS);
 
     Tcl_SetPanicProc(Panic);
-    Ns_AddLogFilter(LogToAsyncFile, (void *) STDERR_FILENO, NULL); // todo make me configurable
-    //Ns_AddLogFilter(LogToFile, (void *) STDERR_FILENO, NULL); // todo make me configurable
+    Ns_AddLogFilter(LogToFile, (void *) STDERR_FILENO, NULL);
 
     /*
      * Initialise the entire space with backwards-compatible integer keys.
@@ -1261,38 +1259,6 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
 
 static int
 LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
-          char *msg, size_t len)
-{
-    int        ret, fd = (int)(intptr_t) arg;
-    Ns_DString ds;
-
-    Ns_DStringInit(&ds);
-    LogToDString((void*)&ds, severity, stamp, msg, len);
-    ret = write(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
-    Ns_DStringFree(&ds);
-
-    return ret < 0 ? NS_ERROR : NS_OK;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * LogToFile --
- *
- *      Callback to write the log line to the passed file descriptor.
- *
- * Results:
- *      Standard NS result code.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-LogToAsyncFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
           char *msg, size_t len)
 {
     int        fd = (int)(intptr_t) arg;
