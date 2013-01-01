@@ -1385,7 +1385,7 @@ CreateConnThread(ConnPool *poolPtr)
     poolPtr->servPtr->stats.connthreads++;
     Ns_MutexUnlock(&poolPtr->tqueue.lock);
 
-    //Ns_Log(Notice, "CreateConnThread use thread slot [%d]", i);
+    /* Ns_Log(Notice, "CreateConnThread use thread slot [%d]", i);*/
 
     argPtr->poolPtr = poolPtr;
     argPtr->connPtr = NULL;
