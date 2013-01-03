@@ -882,7 +882,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         IGetTracesIdx, IMarkForDeleteIdx, IOnCreateIdx, IOnCleanupIdx, IOnDeleteIdx,
         IOnInitIdx, IRunTracesIdx, ISaveIdx, ITraceIdx, IUpdateIdx
     };
-    Ns_ObjvTable traceWhen[] = {
+    static Ns_ObjvTable traceWhen[] = {
         {"create",     NS_TCL_TRACE_CREATE},
         {"delete",     NS_TCL_TRACE_DELETE},
         {"allocate",   NS_TCL_TRACE_ALLOCATE},

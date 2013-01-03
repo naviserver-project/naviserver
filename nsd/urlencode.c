@@ -450,7 +450,7 @@ NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     char        *charset  = NULL;
     Tcl_Encoding encoding = NULL;
 
-    Ns_ObjvTable parts[] = {
+    static Ns_ObjvTable parts[] = {
         {"query",    'q'},
         {"path",     'p'},
         {NULL,       0}
@@ -514,7 +514,7 @@ NsTclUrlDecodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     int          part = 'q';
     Tcl_Encoding encoding = NULL;
 
-    Ns_ObjvTable parts[] = {
+    static Ns_ObjvTable parts[] = {
         {"query",    'q'},
         {"path",     'p'},
         {NULL,       0}
