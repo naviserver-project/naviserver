@@ -546,7 +546,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	optArg = Tcl_GetString(objv[i+1]);
     }
 
-    if (subcmd != SMinthreadsIdx) {	
+    if (subcmd != SMinthreadsIdx && subcmd != SMaxthreadsIdx) {	
 	/*
 	 * just for backwards compatibility
 	 */
