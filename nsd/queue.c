@@ -814,7 +814,8 @@ NsConnThread(void *arg)
     Ns_Thread     joinThread;
 
     /*
-     * Set the conn thread name.
+     * Set the ConnThreadArg into thread local storage and get the id
+     * of the thread.
      */
 
     Ns_TlsSet(&argtls, argPtr);
@@ -824,7 +825,10 @@ NsConnThread(void *arg)
     id = poolPtr->threads.nextid++;
     Ns_MutexUnlock(poolsLockPtr);
 
-    p = (poolPtr->pool != NULL && *poolPtr->pool ? poolPtr->pool : 0);
+    /*
+     * Set the conn thread name.
+     */
+    p = (poolPtr->pool != NULL && *poolPtr->pool ? poolPtr->pool : NULL);
     Ns_ThreadSetName("-conn:%s%s%s:%d", servPtr->server, p ? ":" : "", p ? p : "", id);
 
     /*
