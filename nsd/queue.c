@@ -479,7 +479,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     int          opt, subcmd, i = 1, value = 0;
     NsInterp    *itPtr = arg;
-    NsServer    *servPtr = itPtr->servPtr;
+    NsServer    *servPtr;
     ConnPool    *poolPtr;
     char        *pool = NULL, *server = NULL, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
@@ -553,13 +553,24 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	pool = optArg;
     }
 
+    if (server) {
+	servPtr = NsGetServer(server);
+        if (servPtr == NULL) {
+            Tcl_AppendResult(interp, "no such server: ", server, NULL);
+            return TCL_ERROR;
+        }
+    } else {
+	servPtr = itPtr->servPtr;
+    }
+
+
     if (pool) {
         poolPtr = servPtr->pools.firstPtr;
         while (poolPtr != NULL && !STREQ(poolPtr->pool, pool)) {
             poolPtr = poolPtr->nextPtr;
         }
         if (poolPtr == NULL) {
-            Tcl_AppendResult(interp, "no such pool: ", pool, NULL);
+            Tcl_AppendResult(interp, "no such pool ", pool, " for server ", servPtr->server, NULL);
             return TCL_ERROR;
         }
     } else {
