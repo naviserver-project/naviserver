@@ -3237,7 +3237,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    Ns_Log(Notice, "NsWriterQueue: writer threads %d nsend %ld maxsize %d", wrPtr->threads, nsend, wrPtr->maxsize);
+    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %ld maxsize %d", wrPtr->threads, nsend, wrPtr->maxsize);
 
     assert(connPtr->servPtr);
     /* Ns_MutexLock(&connPtr->servPtr->pools.lock); */
