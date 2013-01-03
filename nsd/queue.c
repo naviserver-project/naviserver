@@ -277,7 +277,11 @@ NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr) {
     Ns_MutexUnlock(&servPtr->pools.lock);
 
     if (create) {
-        Ns_Log(Notice, "NsEnsureRunningConnectionThreads wantCreate %d", create);
+        Ns_Log(Notice, "NsEnsureRunningConnectionThreads wantCreate %d waiting %d idle %d current %d", 
+	       create,
+	       poolPtr->wqueue.wait.num,
+	       poolPtr->threads.idle, 
+	       poolPtr->threads.current);
         CreateConnThread(poolPtr);
     }
 }
@@ -388,7 +392,9 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 		argPtr->connPtr = connPtr;
 
 		Ns_MutexLock(&poolPtr->wqueue.lock);
+		Ns_MutexLock(&servPtr->pools.lock);
 		create = neededAdditionalConnectionThreads(poolPtr);
+		Ns_MutexUnlock(&servPtr->pools.lock);
 		Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
 	    } else {
@@ -405,14 +411,16 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 		poolPtr->wqueue.wait.lastPtr = connPtr;
 		poolPtr->wqueue.wait.num ++;
 		poolPtr->servPtr->stats.queued++;
+		Ns_MutexLock(&servPtr->pools.lock);
 		create = neededAdditionalConnectionThreads(poolPtr);
+		Ns_MutexUnlock(&servPtr->pools.lock);
 		Ns_MutexUnlock(&poolPtr->wqueue.lock);
 	    }
         }
     }
 
     if (connPtr == NULL) {
-	Ns_Log(Notice, "[%s] All avaliable connections are used, waiting %d idle %d current %d ",
+	Ns_Log(Notice, "[%s] All avaliable connections are used, waiting %d idle %d current %d",
 	       poolPtr->servPtr->server, 
 	       poolPtr->wqueue.wait.num,
 	       poolPtr->threads.idle, 
@@ -432,8 +440,13 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
     }
 
     if (create) {
-        Ns_Log(Notice, "NsQueueConn wantCreate %d", create);
-        Ns_MutexLock(&servPtr->pools.lock);
+        Ns_Log(Notice, "NsQueueConn wantCreate %d waiting %d idle %d current %d", 
+	       create,
+	       poolPtr->wqueue.wait.num,
+	       poolPtr->threads.idle, 
+	       poolPtr->threads.current);
+
+	Ns_MutexLock(&servPtr->pools.lock);
 	poolPtr->threads.current ++;
 	poolPtr->threads.creating ++;
         Ns_MutexUnlock(&servPtr->pools.lock);
