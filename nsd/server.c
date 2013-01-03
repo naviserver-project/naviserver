@@ -393,6 +393,7 @@ CreatePool(NsServer *servPtr, char *pool)
      */
 
     maxconns = Ns_ConfigIntRange(path, "maxconnections", 100, 1, INT_MAX);
+    poolPtr->wqueue.maxconns = maxconns;
     connBufPtr = ns_calloc((size_t) maxconns, sizeof(Conn));
     for (n = 0; n < maxconns - 1; ++n) {
         connPtr = &connBufPtr[n];
@@ -419,7 +420,13 @@ CreatePool(NsServer *servPtr, char *pool)
     Ns_Log(Notice, "queueLength %d low water %d high water %d",  
 	   queueLength, poolPtr->wqueue.lowwatermark, poolPtr->wqueue.highwatermark);
 
-    poolPtr->tqueue.args = ns_calloc((size_t) poolPtr->threads.max, sizeof(ConnThreadArg));
+    /* 
+     * To allow to vary maxthreads at runtime, allow potentially
+     * maxconns threads to be created. Otherwise, maxthreads would be
+     * sufficient.
+     */
+    poolPtr->tqueue.args = ns_calloc((size_t)maxconns, sizeof(ConnThreadArg));
+
     /*
      * The Pools are never freed before exit, so there is apparently no
      * need to free connBufPtr or threadQueue.args explicitely.
@@ -432,7 +439,7 @@ CreatePool(NsServer *servPtr, char *pool)
 	}
 	strncat(name, pool, 120);
 	
-	for (i = 0; i < poolPtr->threads.max; i++) {
+	for (i = 0; i < maxconns; i++) {
 	    char buffer[64];
 	    sprintf(buffer, "connthread:%d", i);
 	    Ns_MutexInit(&poolPtr->tqueue.args[i].lock);

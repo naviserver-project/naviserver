@@ -477,35 +477,83 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 int
 NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    int          opt;
+    int          opt, subcmd, i = 1, value = 0;
     NsInterp    *itPtr = arg;
     NsServer    *servPtr = itPtr->servPtr;
     ConnPool    *poolPtr;
-    char        *pool, buf[100];
+    char        *pool = NULL, *server = NULL, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
-    static CONST char *opts[] = {
-        "active", "all", "connections", "keepalive", "pools", "queued",
+    static CONST char *subcmds[] = {
+        "active", "all", "connections", "keepalive", 
+	"maxthreads", "minthreads", 
+	"pools", "queued",
         "threads", "stats", "waiting", NULL,
     };
 
     enum {
-        SActiveIdx, SAllIdx, SConnectionsIdx, SKeepaliveIdx, SPoolsIdx,
-        SQueuedIdx, SThreadsIdx, SStatsIdx, SWaitingIdx,
+        SActiveIdx, SAllIdx, SConnectionsIdx, SKeepaliveIdx, 
+	SMaxthreadsIdx, SMinthreadsIdx,
+	SPoolsIdx, SQueuedIdx, SThreadsIdx, SStatsIdx, SWaitingIdx,
     };
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?pool?");
+    static CONST char *options[] = {
+        "-server", "-pool", "--", NULL,
+    };
+    enum {
+        OServerIdx, OPoolIdx, ONoneIdx,
+    };
+
+    if (objc < 2) {
+    usage_error:
+        Tcl_WrongNumArgs(interp, 1, objv, "?-server server? ?-pool pool? ?--? subcmd ?arg?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                            &opt) != TCL_OK) {
-        return TCL_ERROR;
+
+    while (1) {
+	if (objc <= i)  {goto usage_error;}
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+				&opt) != TCL_OK) {
+	    break;
+	}
+	if (opt == ONoneIdx) {
+	    i++;
+	    break;
+	} else if (opt == OServerIdx) {
+	    if (objc < i + 1)  {goto usage_error;} else {
+		// not used yet
+		i++; server = Tcl_GetString(objv[i]); i++;
+	    }
+	} else if (opt == OPoolIdx) {
+	    if (objc < i + 1)  {goto usage_error;} else {
+		// not used yet
+		i++; pool = Tcl_GetString(objv[i]); i++;
+	    }
+	}
     }
-    if (objc == 2) {
-        poolPtr = servPtr->pools.defaultPtr;
-    } else {
-        pool = Tcl_GetString(objv[2]);
+    Tcl_ResetResult(interp);
+    //fprintf(stderr, "server %s pool %s i %d objc %d\n", server, pool, i, objc);
+
+    if (objc < i) {goto usage_error;}
+    if (Tcl_GetIndexFromObj(interp, objv[i], subcmds, "subcmd", 0,
+                            &subcmd) != TCL_OK) {
+        goto usage_error;
+    }
+    //fprintf(stderr, "after cmd %d server %s pool %s i %d objc %d\n", subcmd, server, pool, i, objc);
+    if ((objc - i) > 2) {
+	goto usage_error;
+    } else if ((objc - i) == 2) {
+	optArg = Tcl_GetString(objv[i+1]);
+    }
+
+    if (subcmd != SMinthreadsIdx) {	
+	/*
+	 * just for backwards compatibility
+	 */
+	pool = optArg;
+    }
+
+    if (pool) {
         poolPtr = servPtr->pools.firstPtr;
         while (poolPtr != NULL && !STREQ(poolPtr->pool, pool)) {
             poolPtr = poolPtr->nextPtr;
@@ -514,9 +562,11 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             Tcl_AppendResult(interp, "no such pool: ", pool, NULL);
             return TCL_ERROR;
         }
+    } else {
+	poolPtr = servPtr->pools.defaultPtr;
     }
 
-    switch (opt) {
+    switch (subcmd) {
     case SPoolsIdx:
         poolPtr = servPtr->pools.firstPtr;
         while (poolPtr != NULL) {
@@ -533,6 +583,32 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
         break;
 
+    case SMaxthreadsIdx:
+	if (optArg) {
+	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
+		Tcl_AppendResult(interp, "argument is not a valid integer: ", optArg, NULL);
+		return TCL_ERROR;
+	    }
+	    Ns_MutexLock(&servPtr->pools.lock);
+	    poolPtr->threads.max = value;
+	    Ns_MutexUnlock(&servPtr->pools.lock);
+	}
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.max));
+	break;
+
+    case SMinthreadsIdx:
+	if (optArg) {
+	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < 1 || value > poolPtr->threads.max) {
+		Tcl_AppendResult(interp, "argument is not a valid integer: ", optArg, NULL);
+		return TCL_ERROR;
+	    }
+	    Ns_MutexLock(&servPtr->pools.lock);
+	    poolPtr->threads.min = value;
+	    Ns_MutexUnlock(&servPtr->pools.lock);
+	}
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.min));
+	break;
+    
     case SConnectionsIdx:
         Tcl_SetObjResult(interp, Tcl_NewLongObj(servPtr->pools.nextconnid));
         break;

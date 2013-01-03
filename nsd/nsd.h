@@ -609,6 +609,7 @@ typedef struct ConnPool {
 
     struct {
         Conn *freePtr;
+	int maxconns;
 
         struct {
             int   num;
