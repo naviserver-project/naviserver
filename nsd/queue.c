@@ -488,13 +488,14 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "active", "all", "connections", "keepalive", 
 	"maxthreads", "minthreads", 
 	"pools", "queued",
-        "threads", "stats", "waiting", NULL,
+        "stats", "threads", "waiting", NULL,
     };
 
     enum {
         SActiveIdx, SAllIdx, SConnectionsIdx, SKeepaliveIdx, 
 	SMaxthreadsIdx, SMinthreadsIdx,
-	SPoolsIdx, SQueuedIdx, SThreadsIdx, SStatsIdx, SWaitingIdx,
+	SPoolsIdx, SQueuedIdx, 
+	SStatsIdx, SThreadsIdx, SWaitingIdx,
     };
 
     static CONST char *options[] = {
@@ -512,8 +513,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     while (1) {
 	if (objc <= i)  {goto usage_error;}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-				&opt) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &opt) != TCL_OK) {
 	    break;
 	}
 	if (opt == ONoneIdx) {
@@ -537,7 +537,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     if (objc < i) {goto usage_error;}
     if (Tcl_GetIndexFromObj(interp, objv[i], subcmds, "subcmd", 0,
                             &subcmd) != TCL_OK) {
-        goto usage_error;
+        return TCL_ERROR;
     }
     //fprintf(stderr, "after cmd %d server %s pool %s i %d objc %d\n", subcmd, server, pool, i, objc);
     if ((objc - i) > 2) {
