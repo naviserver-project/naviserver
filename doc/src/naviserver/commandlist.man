@@ -42,7 +42,6 @@ List of all currently available NaviServer commands.
 [call [cmd ns_adp_stream]]
 [call [cmd ns_adp_tell]]
 [call [cmd ns_adp_trunc]]
-[call [cmd ns_register_adp]]
 [call [cmd ns_register_adptag]]
 [call [cmd ns_unregister_adp]]
 [list_end]
@@ -247,10 +246,12 @@ List of all currently available NaviServer commands.
 
 [section {Registration of Filters and Procs}]
 [list_begin definitions]
-[call [cmd ns_unregister_proc]]
 [call [cmd ns_register_filter]]
+[call [cmd ns_register_adp]]
 [call [cmd ns_register_proc]]
+[call [cmd ns_register_tcl]]
 [call [cmd ns_register_trace]]
+[call [cmd ns_unregister_op]]
 [list_end]
 
 [section {TCL interpreter management commands}]

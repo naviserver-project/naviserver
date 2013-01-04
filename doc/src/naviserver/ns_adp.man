@@ -211,9 +211,9 @@ enabled to support compression of ADP output.
 
 [example_begin]
 
-ns_section ns/server/server1/adp
-ns_param gzip true ;# Enable ADP output compression.
-ns_param bufsize 102400; # Buffer size, 1meg default.
+   ns_section ns/server/server1/adp
+   ns_param gzip true ;# Enable ADP output compression.
+   ns_param bufsize 102400; # Buffer size, 1meg default.
 
 [example_end]
 
@@ -224,6 +224,132 @@ script blocks are properly coverted to UTF-8 for use
 internally. This mimetype is also used to set the character
 output encoding although the  ns_conn encoding  option
 can be used to override the encoding if necessary.
+
+
+
+[section CONFIGURATION]
+
+ADP pages can be enabled per-virtual-server in the configuration file.
+
+[example_begin]
+   [cmd ns_section] "ns/server/server1/adp"
+   [cmd ns_param]   map     /*.adp
+   ...
+[example_end]
+
+
+A [term map] entry is used to register the ADP page handler for each of the GET,
+HEAD and POST methods on the given URL. There may be zero or more map entries.
+
+
+
+[para]
+The following parameters provide a hook for running common code for each ADP
+either at the beginning of processing or for handling errors.
+
+[list_begin definitions]
+
+[def startpage]
+The path of an ADP page which is run before the requested ADP page.
+Default: none.
+
+[def errorpage]
+The path of an ADP page which is run when an code within an ADP raises an error
+which is not caught. Default: none.
+
+[list_end]
+
+
+
+[para]
+The following parameters control memory usage.
+
+[list_begin definitions]
+
+[def cachesize]
+The size in bytes of the per-virtual-server page cache. This is the cache of ADP
+pages as read from disk and converted to an efficient form for evaluation. In
+addition, a separate cache of script blocks is kept per-thread, which is not
+controlled by this parameter. Default: 5MB.
+
+[def bufsize]
+The size in bytes of the ADP output buffer. The buffer is flushed to the client
+when full, or each time a new chunk is appended when streaming is enabled.
+Default: 1MB.
+
+[def tracesize]
+The number of bytes of each text and script block which will be dumped to the
+error log when the [term trace] option is enabled. Default: 40.
+
+[list_end]
+
+
+
+[para]
+The following parameters set the default options for the ADP engine. They can be
+customised per-URL using the [option -options] flag of the [cmd ns_register_adp]
+command, or at run-time for each page using the [cmd ns_adp_ctl] command.
+
+[para]
+See [cmd ns_adp_ctl] for details on each option.
+
+
+[list_begin definitions]
+
+[def cache]
+Default: off.
+
+[def stream]
+Default: off.
+
+[def enablexpire]
+Default: off.
+
+[def enabledebug]
+Default: off.
+
+[def safeeval]
+Default: off.
+
+[def singlescript]
+Default: off.
+
+[def trace]
+Log each text and script block of each ADP page as it is executed. The first n
+bytes will be logged, as determined by the [term tracesize] parameter.
+Default: off.
+
+[def detailerror]
+Default: on.
+
+[def stricterror]
+Default: off.
+
+[def displayerror]
+Default: off.
+
+[def trimspace]
+Default: off.
+
+[def autoabort]
+Default: enabled.
+
+[list_end]
+
+
+
+[para]
+The following parameter...
+
+[list_begin definitions]
+
+[def debuginit]
+The command which is called when ADP page debugging is initiated. The parameter
+[term enabledebug] must be on for this to take effect.
+Default: [cmd ns_adp_debuginit].
+
+[list_end]
+
 
 [see_also ns_adp_include ns_adp_puts ns_adp_ctl]
 
