@@ -422,7 +422,7 @@ proc ns_parseformfile { file form contentType } {
 	    ns_set put $form $name.tmpfile $tmpfile
 
             if { [ns_conn isconnected] } {
-  	        ns_atclose "ns_unlink -nocomplain $tmpfile"
+	      ns_atclose [list file delete $tmpfile]
             }
 
 	} else {
