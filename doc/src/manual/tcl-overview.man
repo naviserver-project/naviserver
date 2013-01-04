@@ -1137,9 +1137,9 @@ Content File=$inp"
     if $WinCGI(debug) {
             ns_log Notice "CGI $pgm: ini: $ini, inp: $inp, out: $out"
     } else {
-            ns_unlink -nocomplain $ini
-            ns_unlink -nocomplain $inp
-            ns_unlink -nocomplain $out
+            file delete $ini
+            file delete $inp
+            file delete $out
     }
 }
 

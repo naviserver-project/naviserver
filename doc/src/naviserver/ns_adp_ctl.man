@@ -59,14 +59,14 @@ are formatted with information about the context of the HTTP
 request. This can be very helpful in debugging ADP errors
 but potentially a security risk if the HTTP context (e.g.,
 cookie headers) contains personal or sensitive data. Errors
-are logged to the server log and, if <i>displayerror</i> is
+are logged to the server log and, if [arg displayerror] is
 enabled, appened to the output buffer.
 
 [para]
 [arg displayerror]
 Query or set the displayerror option. When enabled, errors in ADP
 pages are formatted and appended to the output stream,
-normally visiable to a user&rsquo;s browser. This option
+normally visiable to a user's browser. This option
 should generally be enabled in development and disabled in
 production.
 
@@ -82,21 +82,21 @@ spec.
 [arg gzip]
 Query or set the gzip option.
 When enabled, the output buffer is compressed before being
-returned in the response. As ADP&rsquo;s are generally used
+returned in the response. As ADP's are generally used
 to generate text data such as HTML or XML, compression is
 normally quite successful at reducing the response size.
 
 [para]
 [arg cache]
 Query or set the cache option. When disabled, all requests
-to cache executed ADP blocks via the ns_adp_include -cache directive are
+to cache executed ADP blocks via the ns_adp_include [arg -cache] directive are
 ignored, resulting in normal execution of all code.
 
 [para]
 [arg safe]
 Query or set the safe option.
-When enabled, all code is executed in &quot;safe&quot; mode,
-disabling and ignoring any code within &lt;% registered
+When enabled, all code is executed in [arg safe]  mode,
+disabling and ignoring any code within registered
 tags.
 
 [para]
@@ -122,7 +122,7 @@ continuing to the next text or script block.
 
 [para]
 [arg trace]
-Query or set the <i>trace</i> option which currently does nothing.
+Query or set the [arg trace] option which currently does nothing.
 
 [para]
 [arg trimspace]
@@ -135,8 +135,10 @@ the end of a <% ns_adp_include myfile.adp %> ending up in the output stream.
 
 [list_end]
 
-[see_also ns_adp ns_adp_flush ns_adp_close ns_adp_mimetype]
-[keywords NaviServer]
+[see_also ns_adp ns_adp_mimetype  ns_adp_abort ns_adp_break ns_adp_close \
+	ns_adp_ctl ns_adp_dump \
+	ns_adp_flush ns_adp_return ns_adp_stream]
+[keywords ADP gzip]
 [manpage_end]
 
 

@@ -1,0 +1,36 @@
+[include version_include.man]
+[manpage_begin ns_adp_flush n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Flushes the ADP output buffer without closing the HTTP connection}]
+
+[description]
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_flush]]
+
+This command flushes the ADP output buffer (i.e. sends the current
+content to the browser or writes to the file channel and truncates the
+buffer). It will raise a Tcl exception if the underlying flush failed,
+for example, if the HTTP connection is closed or the channel write
+failed. 
+[para]
+Flushed content is returned in "chunked-encoding" format if
+the HTTP protocol version is at least 1.1 (normally the case for all
+modern browsers). A call to ns_adp_flush is not normally needed except
+for specialized applications as all content is automatically flushed
+at the end of a connection or on buffer overflow. See [cmd ns_adp_ctl] bufsize for details on buffer mangement. 
+
+[list_end ]
+
+[see_also ns_adp ns_adp_abort ns_adp_break ns_adp_close \
+	ns_adp_ctl ns_adp_dump \
+	ns_adp_flush ns_adp_return ns_adp_stream]
+[keywords ADP]
+
+[manpage_end]
+

@@ -286,7 +286,8 @@ if { [lb]string match /page/* [lb]ns_conn url[rb][rb] } {
 
 [example_end]
 
-[keywords ns_getform ns_queryget ns_time]
+[see_also ns_adp]
+[keywords ns_getform ns_queryget ns_time gzip]
 
 [manpage_end]
 

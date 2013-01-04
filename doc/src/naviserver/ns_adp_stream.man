@@ -1,0 +1,31 @@
+[include version_include.man]
+[manpage_begin ns_adp_stream n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Begin streaming of ADP output}]
+
+[description]
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_adp_stream]]
+
+This command turns on "streaming mode" of ADP output, where output is
+immediately sent instead of queued up in an output buffer. All data in
+the current ADP output buffer is flushed and written to the client and
+any subsequent data will be immediately written as well.
+
+[para]
+Streaming is only available when using the "fancy" ADP parser. 
+[list_end ]
+
+[see_also ns_adp ns_adp_abort ns_adp_break ns_adp_close \
+	ns_adp_ctl ns_adp_dump \
+	ns_adp_flush ns_adp_return ns_adp_stream]
+[keywords ADP]
+
+[manpage_end]
+
