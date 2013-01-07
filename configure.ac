@@ -40,7 +40,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
 AC_CONFIG_SRCDIR([include/ns.h])
-AC_CONFIG_HEADER([include/nsconfig.h])
+AC_CONFIG_HEADERS([include/nsconfig.h])
 
 #
 # Version info for include/nsversion.h
@@ -50,7 +50,7 @@ AC_CONFIG_HEADER([include/nsconfig.h])
 
 AC_SUBST([NS_MAJOR_VERSION],  4)
 AC_SUBST([NS_MINOR_VERSION],  99)
-AC_SUBST([NS_RELEASE_SERIAL], 4)
+AC_SUBST([NS_RELEASE_SERIAL], 5)
 AC_SUBST([NS_RELEASE_LEVEL],  [NS_ALPHA_RELEASE]) # ALPHA/BETA/FINAL
 
 AC_SUBST([NS_VERSION],     [\"${NS_MAJOR_VERSION}.${NS_MINOR_VERSION}\"])
@@ -64,7 +64,7 @@ AC_SUBST([ISO_BUILD_DATE], [`date +%Y-%m-%d`])
 # Include and verify Tcl config located by --with-tcl=
 #
 
-TEA_INIT([3.6])
+TEA_INIT([3.9])
 TEA_PATH_TCLCONFIG
 TEA_LOAD_TCLCONFIG
 TEA_SETUP_COMPILER

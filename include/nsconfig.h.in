@@ -1,7 +1,13 @@
-/* include/nsconfig.h.in.  Generated from configure.in by autoheader.  */
+/* include/nsconfig.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
+
+/* Defined when cygwin/mingw does not support EXCEPTION DISPOSITION */
+#undef EXCEPTION_DISPOSITION
+
+/* Defined when compiler supports casting to union type. */
+#undef HAVE_CAST_TO_UNION
 
 /* Define if you have support for BSD4.4 style msg passing. */
 #undef HAVE_CMMSG
@@ -96,6 +102,9 @@
 
 /* Do we have <net/errno.h>? */
 #undef HAVE_NET_ERRNO_H
+
+/* Defined when mingw does not support SEH */
+#undef HAVE_NO_SEH
 
 /* Define to 1 if you have the `open64' function. */
 #undef HAVE_OPEN64
@@ -192,11 +201,17 @@
 /* Define to 1 if the system has the type `unsigned long long int'. */
 #undef HAVE_UNSIGNED_LONG_LONG_INT
 
+/* Defined when cygwin/mingw ignores VOID define in winnt.h */
+#undef HAVE_WINNT_IGNORE_VOID
+
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
 
 /* Define to 1 if you have the `_NSGetEnviron' function. */
 #undef HAVE__NSGETENVIRON
+
+/* No Compiler support for module scope symbols */
+#undef MODULE_SCOPE
 
 /* Do we have <dirent.h>? */
 #undef NO_DIRENT_H
@@ -224,6 +239,9 @@
 
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
+
+/* No visibility hidden passed to zlib? */
+#undef NO_VIZ
 
 /* Name of package */
 #undef PACKAGE
@@ -282,9 +300,6 @@
 
 /* UNDER_CE version */
 #undef UNDER_CE
-
-/* Do we need a special AIX hack for timezones? */
-#undef USE_DELTA_FOR_TZ
 
 /* Define to 1 if the <dl.h> header should be used. */
 #undef USE_DLSHL

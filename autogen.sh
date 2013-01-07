@@ -6,7 +6,7 @@ test -z "$srcdir" && srcdir=.
 
 DIE=0
 
-(test -f $srcdir/configure.in) || {
+(test -f $srcdir/configure.ac) || {
     echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
     echo " top-level package directory"
     exit 1
