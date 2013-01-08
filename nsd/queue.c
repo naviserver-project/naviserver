@@ -351,6 +351,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 
 	    Ns_MutexLock(&servPtr->pools.lock);
             connPtr->id                  = servPtr->pools.nextconnid++;
+   	    servPtr->stats.processed++;
 	    Ns_MutexUnlock(&servPtr->pools.lock);
 
             connPtr->requestQueueTime     = *nowPtr;
@@ -621,14 +622,14 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	break;
     
     case SConnectionsIdx:
-        Tcl_SetObjResult(interp, Tcl_NewLongObj(servPtr->pools.nextconnid));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj(servPtr->stats.processed));
         break;
 
     case SStatsIdx:
         Tcl_DStringInit(dsPtr);
 
         Tcl_DStringAppendElement(dsPtr, "requests");
-        snprintf(buf, sizeof(buf), "%lu", servPtr->pools.nextconnid);
+        snprintf(buf, sizeof(buf), "%lu", servPtr->stats.processed);
         Tcl_DStringAppendElement(dsPtr, buf);
 
         Tcl_DStringAppendElement(dsPtr, "spools");

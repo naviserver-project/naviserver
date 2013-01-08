@@ -682,6 +682,7 @@ typedef struct NsServer {
     struct {
         unsigned long spool;
         unsigned long queued;
+	unsigned long processed;
         unsigned long connthreads;
         Ns_Time acceptTime;
 	Ns_Time queueTime; 
