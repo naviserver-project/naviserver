@@ -3214,7 +3214,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	      int everysize)
 {
     Conn          *connPtr = (Conn*)conn;
-    WriterSock    *wrSockPtr;
+    WriterSock    *wrSockPtr; 
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
     int            trigger = 0;
@@ -3234,6 +3234,11 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%"
                             PRIdz " < %d)",
                nsend, wrPtr->maxsize);
+        return NS_ERROR;
+    }
+
+    if (connPtr->flags & NS_CONN_STREAM) {
+        Ns_Log(DriverDebug, "NsWriterQueue: don't send stream content via writer");
         return NS_ERROR;
     }
 

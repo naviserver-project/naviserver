@@ -274,6 +274,10 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     bodyLength = Ns_SumVec(bufs, nbufs);
     towrite = 0;
 
+    if (flags & NS_CONN_STREAM) {
+	connPtr->flags |= NS_CONN_STREAM;
+    }
+
     /*
      * Send headers if not already sent.
      */
