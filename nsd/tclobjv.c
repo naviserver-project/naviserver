@@ -65,6 +65,63 @@ static Tcl_ObjType specType = {
 };
 
 
+// document me
+
+int
+Ns_OptionObj(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+    *clientData = objPtr;
+    return TCL_OK;
+}
+int
+Ns_OptionString(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+    *clientData = Tcl_GetString(objPtr);
+    return TCL_OK;
+}
+
+int 
+Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[], 
+		ClientData clientData[], Tcl_Interp *interp, int offset, 
+		int max, int *nextArg, int objc, Tcl_Obj *CONST objv[]) {
+    int i = offset, opt;
+    char *nextArgString;
+    
+    assert(subcmds && *subcmds[0]);
+	
+    while (1) {
+	if (objc <= i)  {return TCL_ERROR;}
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &opt) != TCL_OK) {
+	    break;
+	}
+	if (opt > max) {return TCL_ERROR;}
+	if (converter[opt] == NULL) {
+	    clientData[opt] = (ClientData)1;
+	    i++;
+	} else {
+	    if (objc < i + 1)  {return TCL_ERROR;}
+	    if ((converter[opt])(interp, objv[i], objv[i+1], &clientData[opt]) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    i += 2;
+	}
+    }
+    nextArgString = Tcl_GetString(objv[i]);
+    if (*nextArgString == '-') {
+	if (*(nextArgString+1) == '-' && *(nextArgString+2) == '\0') {
+	    /* handle '--' */
+	    i++;
+	} 
+#if 0	
+	else if (*(nextArgString+1) != '\0') {
+	    /* don't allow the next to start with '-' */
+	    return TCL_ERROR;
+	}
+#endif
+    }
+    *nextArg = i;
+    return TCL_OK;
+}
+
+
 
 /*
  *----------------------------------------------------------------------

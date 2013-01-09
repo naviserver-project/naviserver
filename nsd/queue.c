@@ -478,7 +478,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 int
 NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    int          opt, subcmd, i = 1, value = 0;
+    int          opt = 0, subcmd, value = 0, nextArgIdx;
     NsInterp    *itPtr = arg;
     NsServer    *servPtr;
     ConnPool    *poolPtr;
@@ -499,12 +499,10 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	SStatsIdx, SThreadsIdx, SWaitingIdx,
     };
 
-    static CONST char *options[] = {
-        "-server", "-pool", "--", NULL,
-    };
-    enum {
-        OServerIdx, OPoolIdx, ONoneIdx,
-    };
+    static CONST char  *options[]           = {"-server", "-pool", NULL};
+    enum                                      {OServerIdx, OPoolIdx};
+    ClientData          optionClientData[2] = {NULL, NULL};
+    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionString};
 
     if (objc < 2) {
     usage_error:
@@ -512,39 +510,31 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         return TCL_ERROR;
     }
 
-    while (1) {
-	if (objc <= i)  {goto usage_error;}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &opt) != TCL_OK) {
-	    break;
-	}
-	if (opt == ONoneIdx) {
-	    i++;
-	    break;
-	} else if (opt == OServerIdx) {
-	    if (objc < i + 1)  {goto usage_error;} else {
-		// not used yet
-		i++; server = Tcl_GetString(objv[i]); i++;
-	    }
-	} else if (opt == OPoolIdx) {
-	    if (objc < i + 1)  {goto usage_error;} else {
-		// not used yet
-		i++; pool = Tcl_GetString(objv[i]); i++;
-	    }
-	}
+    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 1, 
+			Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
+	goto usage_error;
     }
-    Tcl_ResetResult(interp);
-    //fprintf(stderr, "server %s pool %s i %d objc %d\n", server, pool, i, objc);
 
-    if (objc < i) {goto usage_error;}
-    if (Tcl_GetIndexFromObj(interp, objv[i], subcmds, "subcmd", 0,
+    server = optionClientData[OServerIdx];
+    pool   = optionClientData[OPoolIdx];
+
+    if (objc < nextArgIdx) {goto usage_error;}
+
+    //    char *nextArgString = Tcl_GetString(objv[nextArgIdx]); // remove inline decls
+    //if (*nextArgString == '-') {goto usage_error;}
+
+    Tcl_ResetResult(interp);
+    //fprintf(stderr, "server %s pool %s i %d objc %d\n", server, pool, nextArgIdx, objc);
+    
+    if (Tcl_GetIndexFromObj(interp, objv[nextArgIdx], subcmds, "subcmd", 0,
                             &subcmd) != TCL_OK) {
         return TCL_ERROR;
     }
-    //fprintf(stderr, "after cmd %d server %s pool %s i %d objc %d\n", subcmd, server, pool, i, objc);
-    if ((objc - i) > 2) {
+    //fprintf(stderr, "after cmd %d server %s pool %s i %d objc %d\n", subcmd, server, pool, nextArgIdx, objc);
+    if ((objc - nextArgIdx) > 2) {
 	goto usage_error;
-    } else if ((objc - i) == 2) {
-	optArg = Tcl_GetString(objv[i+1]);
+    } else if ((objc - nextArgIdx) == 2) {
+	optArg = Tcl_GetString(objv[nextArgIdx+1]);
     }
 
     if (subcmd != SMinthreadsIdx && subcmd != SMaxthreadsIdx) {	

@@ -23,6 +23,7 @@
  [call [cmd ns_urlencode] \
      [opt [option "-charset [arg charset]"]] \
      [opt [option "-part [arg part]"]] \
+     [opt [arg "--"]] \
      [arg components]]
 
 [list_end]

@@ -441,39 +441,53 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
  *
  *----------------------------------------------------------------------
  */
+Ns_OptionConverter Ns_OptionEnumPart;
+
+int
+Ns_OptionEnumPart(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+    int index, result;
+    static CONST char *opts[] = {"query", "path", NULL};
+    result = Tcl_GetIndexFromObj(interp, objPtr, opts, "-part", 0, &index);
+    *clientData = (ClientData) INT2PTR(index + 1);
+    return result;
+}
 
 int
 NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_DString   ds;
-    int          i, nargs, part = 'q';
+    int          i, part, nextArgIdx;
     char        *charset  = NULL;
     Tcl_Encoding encoding = NULL;
 
-    static Ns_ObjvTable parts[] = {
-        {"query",    'q'},
-        {"path",     'p'},
-        {NULL,       0}
-    };
-    Ns_ObjvSpec opts[] = {
-        {"-charset", Ns_ObjvString, &charset, NULL},
-        {"-part",    Ns_ObjvIndex,  &part,   &parts},
-        {"--",       Ns_ObjvBreak,  NULL,     NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    Ns_ObjvSpec args[] = {
-        {"component", Ns_ObjvArgs,  &nargs, NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    static CONST char  *options[]           = {"-charset", "-part", NULL};
+    enum                                      {OCharsetIdx, OPartIdx};
+    ClientData          optionClientData[2] = {NULL, NULL};
+    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
+    static int          optionPartValue[3]  = {'q', 'q', 'p'};
+
+    if (objc < 2) {
+    usage_error:
+	if (*Tcl_GetStringResult(interp) == '\0') {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?-charset charset? ?-part query|path? ?--? ?arg ...?");
+	}
         return TCL_ERROR;
     }
+
+    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 1, 
+			Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
+	goto usage_error;
+    }
+    if (objc < nextArgIdx) {goto usage_error;}
+
+    charset = optionClientData[OCharsetIdx];
+    part    = optionPartValue[PTR2INT(optionClientData[OPartIdx])];
 
     if (charset) {
         encoding = Ns_GetCharsetEncoding(charset);
     }
     Ns_DStringInit(&ds);
-    for (i = objc - nargs; i < objc; ++i) {
+    for (i = nextArgIdx; i < objc; ++i) {
         UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, part);
         if (i + 1 < objc) {
             if (part == 'q') {
@@ -510,35 +524,38 @@ int
 NsTclUrlDecodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_DString   ds;
-    char        *string, *charset = NULL;
-    int          part = 'q';
+    char        *charset = NULL;
+    int          part, nextArgIdx;
     Tcl_Encoding encoding = NULL;
+    static CONST char  *options[]           = {"-charset", "-part", NULL};
+    enum                                      {OCharsetIdx, OPartIdx};
+    ClientData          optionClientData[2] = {NULL, NULL};
+    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
+    static int          optionPartValue[3]  = {'q', 'q', 'p'};
 
-    static Ns_ObjvTable parts[] = {
-        {"query",    'q'},
-        {"path",     'p'},
-        {NULL,       0}
-    };
-    Ns_ObjvSpec opts[] = {
-        {"-charset", Ns_ObjvString,  &charset, NULL},
-        {"-part",    Ns_ObjvIndex,   &part,   &parts},
-        {"--",       Ns_ObjvBreak,   NULL,    NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    Ns_ObjvSpec args[] = {
-        {"component", Ns_ObjvString, &string, NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (objc < 2) {
+    usage_error:
+	if (*Tcl_GetStringResult(interp) == '\0') {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?-charset charset? ?-part query|path? ?--? string");
+	}
         return TCL_ERROR;
     }
+
+    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 1, 
+			Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
+	goto usage_error;
+    }
+    if (objc < nextArgIdx || (objc - nextArgIdx) > 1) {goto usage_error;}
+
+    charset = optionClientData[OCharsetIdx];
+    part    = optionPartValue[PTR2INT(optionClientData[OPartIdx])];
 
     Ns_DStringInit(&ds);
     if (charset) {
         encoding = Ns_GetCharsetEncoding(charset);
     }
 
-    UrlDecode(&ds, string, encoding, part);
+    UrlDecode(&ds, Tcl_GetString(objv[nextArgIdx]), encoding, part);
     Tcl_DStringResult(interp, &ds);
 
     return TCL_OK;

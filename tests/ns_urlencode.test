@@ -12,19 +12,19 @@ set unreservedChars "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO
 
 test ns_urlencode-1.1.1 {basic syntax} -body {
     ns_urlencode
-} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset charset? ?-part part? ?--? component"}
+} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset charset? ?-part query|path? ?--? ?arg ...?"}
 
 test ns_urlencode-1.1.2 {basic syntax} -body {
     ns_urlencode -part x y
-} -returnCodes error -result {bad option "x": must be query or path}
+} -returnCodes error -result {bad -part "x": must be query or path}
 
 test ns_urlencode-1.2.1 {basic syntax} -body {
     ns_urldecode
-} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-part part? ?--? component"}
+} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-part query|path? ?--? string"}
 
 test ns_urlencode-1.2.2 {basic syntax} -body {
     ns_urldecode -part x y
-} -returnCodes error -result {bad option "x": must be query or path}
+} -returnCodes error -result {bad -part "x": must be query or path}
 
 
 test ns_urlencode-2.1.1 {basic operation} -body {

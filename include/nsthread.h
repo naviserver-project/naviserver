@@ -506,6 +506,16 @@ typedef struct DIR_ *DIR;
 # endif
 #endif
 
+#if !defined(INT2PTR) && !defined(PTR2INT)
+#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
+#       define INT2PTR(p) ((void *)(intptr_t)(p))
+#       define PTR2INT(p) ((int)(intptr_t)(p))
+#   else
+#       define INT2PTR(p) ((void *)(p))
+#       define PTR2INT(p) ((int)(p))
+#   endif
+#endif
+
 #ifdef __cplusplus
 # define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
 #else

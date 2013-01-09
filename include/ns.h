@@ -299,6 +299,8 @@ struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *CONST objv[]);
 
+typedef int (Ns_OptionConverter) (Tcl_Interp *interp, Tcl_Obj *labelPtr, 
+				  Tcl_Obj *objPtr, ClientData *clientData);
 
 /*
  * The field of a key-value data structure.
@@ -1576,6 +1578,15 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 
+NS_EXTERN Ns_OptionConverter Ns_OptionObj;
+NS_EXTERN Ns_OptionConverter Ns_OptionString;
+
+#define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof(arr[0])))
+
+NS_EXTERN int
+Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[], 
+		ClientData clientData[], Tcl_Interp *interp, int offset, 
+		int max, int *nextArg, int objc, Tcl_Obj *CONST objv[]);
 
 /*
  * tclthread.c:
