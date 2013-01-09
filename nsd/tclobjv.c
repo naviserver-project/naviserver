@@ -85,8 +85,6 @@ Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[],
     int i = offset, opt;
     char *nextArgString;
     
-    assert(subcmds && *subcmds[0]);
-	
     while (1) {
 	if (objc <= i)  {return TCL_ERROR;}
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &opt) != TCL_OK) {
