@@ -23,7 +23,7 @@ test tclconnio-1.1 {ns_connsendfp} -setup {
 } -body {
     nstest::http -getbody 1 GET /tclconnio
 } -cleanup {
-    ns_unregister_proc GET /tclconnio
+    ns_unregister_op GET /tclconnio
 } -result 01234
 
 
@@ -43,7 +43,7 @@ test tclconnio-2.1 {ns_conn channel, no length, 1.0} -setup {
     nstest::http -http 1.0 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
-    ns_unregister_proc GET /tclconnio
+    ns_unregister_op GET /tclconnio
 } -result {200 {} close xxx}
 
 #
@@ -66,7 +66,7 @@ test tclconnio-2.2 {ns_conn channel, no length, 1.1} -constraints knownBug -setu
     nstest::http -http 1.1 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
-    ns_unregister_proc GET /tclconnio
+    ns_unregister_op GET /tclconnio
 } -result {200 {} keep-alive {1
 x
 1
@@ -92,7 +92,7 @@ test tclconnio-2.3 {ns_conn channel w/length, 1.0} -setup {
     nstest::http -http 1.0 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
-    ns_unregister_proc GET /tclconnio
+    ns_unregister_op GET /tclconnio
 } -result {200 3 close xxx}
 
 test tclconnio-2.4 {ns_conn channel w/length, 1.1} -setup {
@@ -110,7 +110,7 @@ test tclconnio-2.4 {ns_conn channel w/length, 1.1} -setup {
     nstest::http -http 1.1 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
-    ns_unregister_proc GET /tclconnio
+    ns_unregister_op GET /tclconnio
 } -result {200 3 keep-alive xxx}
 
 test tclconnio-2.5 {ns_conn channel, raw} -setup {
@@ -127,7 +127,7 @@ test tclconnio-2.5 {ns_conn channel, raw} -setup {
     nstest::http -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
-    ns_unregister_proc GET /tclconnio
+    ns_unregister_op GET /tclconnio
 } -result {{} {} xxx}
 
 
@@ -156,7 +156,7 @@ test tclconnio-3.1 {thread detach, raw} -constraints Thread -setup {
     nstest::http -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
-    ns_unregister_proc GET /tclconnio
+    ns_unregister_op GET /tclconnio
 } -result {{} {} xxx}
 
 

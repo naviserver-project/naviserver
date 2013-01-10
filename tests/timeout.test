@@ -24,7 +24,7 @@ test timeout-1.3 {registered proc} -setup {
 } -body {
     nstest::http -getbody 1 GET /timeout-1.3
 } -cleanup {
-    ns_unregister_proc GET /timeout-1.3
+    ns_unregister_op GET /timeout-1.3
 } -match glob -result {503 *Service Unavailable*}
 
 test timeout-1.4 {extra error info} -setup {
@@ -33,7 +33,7 @@ test timeout-1.4 {extra error info} -setup {
 } -body {
     nstest::http -getbody 1 GET /timeout-1.4
 } -cleanup {
-    ns_unregister_proc GET /timeout-1.4
+    ns_unregister_op GET /timeout-1.4
 } -match glob -result {503 *Service Unavailable*}
 
 test timeout-1.5 {ADP page} -body {

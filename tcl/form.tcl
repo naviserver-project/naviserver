@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # form.tcl -- Handle url-encoded or multi-part forms.
 #
 # Multi-part forms are described in RFC 1867:
@@ -285,20 +281,18 @@ proc ns_openexcl {file} {
 #   None.
 #
 # Side effects:
-#   This procedure is deprecated in favour of 
-#   [ns_conn encoding] which clears form cached
-#   on the C-level in the connection structure.
+#   This procedure is deprecated as connection forms
+#   are already cached on the C-level
 #
 
 proc ns_resetcachedform {{newform ""}} {
-    
-    global _ns_form
-    
-    if {[info exists _ns_form]} {
-        unset _ns_form
+    ns_deprecated "" "Forms are cached on the C level."
+
+    if {[info exists ::_ns_form]} {
+        unset ::_ns_form
     }
     if {$newform ne {}} {
-        set _ns_form $newform
+        set ::_ns_form $newform
     }
 }
 
@@ -318,10 +312,9 @@ proc ns_resetcachedform {{newform ""}} {
 #
 
 proc ns_isformcached {} {
+    ns_deprecated "" "Forms are cached on the C level."
 
-    global _ns_form
-
-    return [info exists _ns_form]
+    return [info exists ::_ns_form]
 }
 
 

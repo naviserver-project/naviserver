@@ -44,7 +44,7 @@ test filter-2.1 {correct order} -setup {
     after 2000
     list $result [nsv_get . .]
 } -cleanup {
-    ns_unregister_proc GET /filter-2.1
+    ns_unregister_op GET /filter-2.1
     nsv_unset -nocomplain . .
 } -result {{200 ok} {preauth-2.1 postauth-2.1 trace-2.1 voidtrace-2.1}}
 
@@ -79,7 +79,7 @@ test filter-2.3 {void trace always runs} -setup {
     list $result [nsv_get . .]
 } -cleanup {
     nsv_unset -nocomplain . .
-    ns_unregister_proc GET /filter-2.3
+    ns_unregister_op GET /filter-2.3
 } -result {500 voidtrace-2.3}
 
 
@@ -100,7 +100,7 @@ test filter-3.1 {return filter_break} -setup {
     list [nstest::http -getbody 1 GET /filter-3.1] [nsv_get . .]
 } -cleanup {
     nsv_unset -nocomplain . .
-    ns_unregister_proc GET /filter-3.1
+    ns_unregister_op GET /filter-3.1
 } -result {{200 ok} filter_break-3.1}
 
 test filter-3.2 {return filter_return} -setup {
@@ -121,7 +121,7 @@ test filter-3.2 {return filter_return} -setup {
     list [nstest::http -getbody 1 GET /filter-3.2] [nsv_get . .]
 } -cleanup {
     nsv_unset -nocomplain . .
-    ns_unregister_proc GET /filter-3.2
+    ns_unregister_op GET /filter-3.2
 } -result {{200 filter_return} filter_return-3.2}
 
 
@@ -138,7 +138,7 @@ test filter-4.1 {glob} -setup {
     nstest::http -getbody 1 GET /filter-4.1/X/literal/Y]
 } -cleanup {
     nsv_unset -nocomplain . .
-    ns_unregister_proc GET /filter-4.1
+    ns_unregister_op GET /filter-4.1
 } -result {200 filter-4.1}
 
 
@@ -159,7 +159,7 @@ test filter-5.1 {filter -first} -setup {
     nstest::http -getbody 1 GET /filter-5.1
 } -cleanup {
     nsv_unset -nocomplain . .
-    ns_unregister_proc GET /filter-5.1
+    ns_unregister_op GET /filter-5.1
 } -result {200 {filter-5.1-2 filter-5.1-1}}
 
 

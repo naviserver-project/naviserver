@@ -16,20 +16,19 @@ given value and the previous value is returned.
 
 [list_begin definitions]
 
-[call [cmd ns_adp_ctl] [arg bufsize] [opt [arg size]]]
-[call [cmd ns_adp_ctl] [arg chan] [opt [arg channel]]]
 [call [cmd ns_adp_ctl] [arg autoabort] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg bufsize] [opt [arg size]]]
+[call [cmd ns_adp_ctl] [arg cache] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg channel] [opt [arg chan]]]
 [call [cmd ns_adp_ctl] [arg detailerror] [opt [arg bool]]]
 [call [cmd ns_adp_ctl] [arg displayerror] [opt [arg bool]]]
 [call [cmd ns_adp_ctl] [arg expire] [opt [arg bool]]]
-[call [cmd ns_adp_ctl] [arg gzip] [opt [arg bool]]]
-[call [cmd ns_adp_ctl] [arg cache] [opt [arg bool]]]
 [call [cmd ns_adp_ctl] [arg safe] [opt [arg bool]]]
 [call [cmd ns_adp_ctl] [arg singlescript] [opt [arg bool]]]
+[call [cmd ns_adp_ctl] [arg stream] [opt [arg bool]]]
 [call [cmd ns_adp_ctl] [arg stricterror] [opt [arg bool]]]
 [call [cmd ns_adp_ctl] [arg trace] [opt [arg bool]]]
 [call [cmd ns_adp_ctl] [arg trimspace] [opt [arg bool]]]
-
 
 [para]
 [arg bufsize]
@@ -37,13 +36,14 @@ This command returns the currently
 ADP output buffer size, setting it to a new value if the
 optionial size argument is specified.
 
-[para] [arg chan]
+[para] [arg channel]
 This command is used to specify an
 open file channel to receive output when the buffer is
 flushed. If channel is the null string, the output
 channel is cleared. This capability can be useful for
 specialized uses of ADP outside the context of an HTTP
-connection, e.g., for debugging or testing.
+connection, e.g., for debugging or testing. Use an empty argument to
+reset the channel.
 
 [para]
 [arg autoabort]
@@ -79,14 +79,6 @@ control mechanisms should be used based on the HTTP/1.1
 spec.
 
 [para]
-[arg gzip]
-Query or set the gzip option.
-When enabled, the output buffer is compressed before being
-returned in the response. As ADP's are generally used
-to generate text data such as HTML or XML, compression is
-normally quite successful at reducing the response size.
-
-[para]
 [arg cache]
 Query or set the cache option. When disabled, all requests
 to cache executed ADP blocks via the ns_adp_include [arg -cache] directive are
@@ -114,6 +106,12 @@ execution environment where minor errors in one ADP do not
 inhibit execution of the overall page.
 
 [para]
+[arg stream]
+Query or set the streaming option.
+When enabled, partial adp-outputs are returned to the user as soon as
+possible via chunked encoding.
+
+[para]
 [arg stricterror]
 Query or set the stricterror option. When enabled, the result is
 similar to that of singlescript in that an error in a
@@ -135,10 +133,11 @@ the end of a <% ns_adp_include myfile.adp %> ending up in the output stream.
 
 [list_end]
 
-[see_also ns_adp ns_adp_mimetype  ns_adp_abort ns_adp_break ns_adp_close \
+[see_also ns_conn \
+	ns_adp ns_adp_mimetype  ns_adp_abort ns_adp_break ns_adp_close \
 	ns_adp_ctl ns_adp_dump \
 	ns_adp_flush ns_adp_return ns_adp_stream]
-[keywords ADP gzip]
+[keywords ADP]
 [manpage_end]
 
 

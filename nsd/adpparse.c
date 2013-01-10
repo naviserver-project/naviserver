@@ -387,7 +387,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char
 
                     if (!(flags & ADP_SAFE)) {
                         if (stream && !streamdone) {
-                            AppendBlock(&parse, "ns_adp_stream", NULL, 's', flags);
+                            AppendBlock(&parse, "ns_adp_ctl stream on", NULL, 's', flags);
                             streamdone = 1;
                         }
                         AppendBlock(&parse, script, s, 's', flags);

@@ -217,16 +217,16 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         { "channel",      CChanIdx },
 
         { "autoabort",    ADP_AUTOABORT },
+        { "cache",        ADP_CACHE },
         { "detailerror",  ADP_DETAIL },
         { "displayerror", ADP_DISPLAY },
         { "expire",       ADP_EXPIRE },
-        { "cache",        ADP_CACHE },
         { "safe",         ADP_SAFE },
         { "singlescript", ADP_SINGLE },
+        { "stream",       ADP_STREAM },
         { "stricterror",  ADP_STRICT },
         { "trace",        ADP_TRACE },
         { "trimspace",    ADP_TRIM },
-        { "stream",       ADP_STREAM },
         { NULL, 0}
     };
 

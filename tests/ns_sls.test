@@ -20,7 +20,7 @@ test sls-1.2 {basic syntax} -setup {
 } -body {
     nstest::http -getbody 1 GET /sls-1.2
 } -cleanup {
-    ns_unregister_proc GET /sls-1.2
+    ns_unregister_op GET /sls-1.2
 } -result {200 {wrong # args: should be "ns_sls command"}}
 
 test sls-1.3 {basic syntax} -setup {
@@ -32,7 +32,7 @@ test sls-1.3 {basic syntax} -setup {
 } -body {
     nstest::http -getbody 1 GET /sls-1.3
 } -cleanup {
-    ns_unregister_proc GET /sls-1.3
+    ns_unregister_op GET /sls-1.3
 } -result {200 {bad command "?": must be array, get, set, or unset}}
 
 
@@ -45,7 +45,7 @@ test sls-2.1 {set/get} -setup {
 } -body {
     nstest::http -getbody 1 GET /sls-2.1
 } -cleanup {
-    ns_unregister_proc GET /sls-2.1
+    ns_unregister_op GET /sls-2.1
 } -result {200 y}
 
 test sls-2.2 {set/get missing} -setup {
@@ -56,7 +56,7 @@ test sls-2.2 {set/get missing} -setup {
 } -body {
     nstest::http -getbody 1 GET /sls-2.2
 } -cleanup {
-    ns_unregister_proc GET /sls-2.2
+    ns_unregister_op GET /sls-2.2
 } -result {200 {key does not exist and no default given}}
 
 test sls-2.3 {set/get w/ default} -setup {
@@ -67,7 +67,7 @@ test sls-2.3 {set/get w/ default} -setup {
 } -body {
     nstest::http -getbody 1 GET /sls-2.3
 } -cleanup {
-    ns_unregister_proc GET /sls-2.3
+    ns_unregister_op GET /sls-2.3
 } -result {200 z}
 
 test sls-2.4 {list} -setup {
@@ -79,7 +79,7 @@ test sls-2.4 {list} -setup {
 } -body {
     nstest::http -getbody 1 GET /sls-2.4
 } -cleanup {
-    ns_unregister_proc GET /sls-2.4
+    ns_unregister_op GET /sls-2.4
 } -result {200 {a b x y}}
 
 test sls-2.5 {unset} -setup {
@@ -91,7 +91,7 @@ test sls-2.5 {unset} -setup {
 } -body {
     nstest::http -getbody 1 GET /sls-2.5
 } -cleanup {
-    ns_unregister_proc GET /sls-2.5
+    ns_unregister_op GET /sls-2.5
 } -result {200 none}
 
 

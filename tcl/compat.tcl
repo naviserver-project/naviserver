@@ -28,15 +28,18 @@
 #
 
 #
-# $Header$
-#
-
-#
 # compat.tcl --
 #
 #   Procs for backwards compatibility.
 #
 #
+
+proc ns_deprecated {{alternative ""} {explanation ""}} {
+    set msg "[uplevel {info level 0}] is deprecated."
+    if {$alternative ne ""} {append msg " Use '$alternative' instead!"}
+    if {$explanation ne ""} {append msg " " $explanation}
+    ns_log Warning $msg
+}
 
 #
 # ns_getchannels --
@@ -51,6 +54,7 @@
 #
 
 proc ns_getchannels {} {
+    ns_deprecated "file channels"
     file channels
 }
 
@@ -67,6 +71,7 @@ proc ns_getchannels {} {
 #
 
 proc ns_cpfp {chanin chanout {ncopy -1}} {
+    ns_deprecated "fcopy"
     fcopy $chanin $chanout -size $ncopy
 }
 
@@ -87,6 +92,7 @@ proc ns_cpfp {chanin chanout {ncopy -1}} {
 #
 
 proc ns_cp {args} {
+    ns_deprecated "file copy"
     set nargs [llength $args]
     if {$nargs == 2} {
         set pre 0
@@ -122,6 +128,7 @@ proc ns_cp {args} {
 #
 
 proc ns_mkdir {dir} {
+    ns_deprecated "file mkdir"
     file mkdir $dir
 }
 
@@ -140,6 +147,7 @@ proc ns_mkdir {dir} {
 #
 
 proc ns_rmdir {dir} {
+    ns_deprecated "file delete"
     if {![file isdirectory $dir]} {
         error "error deleting \"$dir\": not a directory"
     }
@@ -163,6 +171,7 @@ proc ns_rmdir {dir} {
 #
 
 proc ns_unlink {args} {
+    ns_deprecated "file delete"
     set nargs [llength $args]
     if {$nargs == 1} {
         set complain 1
@@ -197,6 +206,7 @@ proc ns_unlink {args} {
 #
 
 proc ns_link {args} {
+    ns_deprecated "file link -hard ..."
     set nargs [llength $args]
     if {$nargs == 2} {
         set cpl 1
@@ -247,7 +257,7 @@ proc ns_link {args} {
 #
 
 proc ns_rename {from to} {
-
+    ns_deprecated "file rename"
     if {[file exists $to]} {
         if {[file type $from] != [file type $to]} {
             error "rename (\"$from\", \"$to\"): not of the same type" 
@@ -273,6 +283,7 @@ proc ns_rename {from to} {
 #
 
 proc ns_chmod {file mode} {
+    ns_deprecated "file attributes"
     file attributes $file -permissions $mode
 }
 
@@ -320,6 +331,7 @@ proc ns_chmod {file mode} {
 #
 
 proc ns_adp_compress {{bool 1}} {
+    ns_deprecated "ns_conn compress"
     ns_conn compress $bool
     return ""
 }
@@ -331,6 +343,7 @@ proc ns_adp_compress {{bool 1}} {
 #
 
 proc ns_adp_stream {{bool 1}} {
+    ns_deprecated "ns_adp_ctl stream"
     ns_adp_ctl stream $bool
     ns_adp_flush
 }
@@ -343,6 +356,7 @@ proc ns_adp_stream {{bool 1}} {
 #
 
 proc ns_unregister_proc {args} {
+    ns_deprecated "ns_unregister_op"
     eval ns_unregister_op $args
 }
 
@@ -353,7 +367,7 @@ proc ns_unregister_proc {args} {
 #
 
 proc ns_var {cmd {key ""} {value ""}} {
-
+    ns_deprecated "nsv_*"
     switch $cmd {
 
         exists { return [nsv_exists ns:var $key] }

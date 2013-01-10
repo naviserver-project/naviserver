@@ -149,7 +149,7 @@ test tclresp-2.1 {ns_headers, status, http/1.0} -constraints serverListen -setup
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {999 {} close {} {} x}
 
 test tclresp-2.2 {ns_headers, status, type, http/1.0} -constraints serverListen -setup {
@@ -162,7 +162,7 @@ test tclresp-2.2 {ns_headers, status, type, http/1.0} -constraints serverListen 
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} close {} {} x}
 
 test tclresp-2.3 {ns_headers, status, type, length, http/1.0 keep-alive} -setup {
@@ -175,7 +175,7 @@ test tclresp-2.3 {ns_headers, status, type, length, http/1.0 keep-alive} -setup 
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} keep-alive {} 9 abcdefghi}
 
 test tclresp-2.3.1 {ns_headers, status, type, length, http/1.0 close} -setup {
@@ -188,7 +188,7 @@ test tclresp-2.3.1 {ns_headers, status, type, length, http/1.0 close} -setup {
         -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} close {} 9 abcdefghi}
 
 test tclresp-2.4 {ns_headers, status, type, length, http/1.1} -setup {
@@ -202,7 +202,7 @@ test tclresp-2.4 {ns_headers, status, type, length, http/1.1} -setup {
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} keep-alive {} 9 abcdefghi}
 
 test tclresp-2.5 {ns_headers, status, type, http/1.1} -constraints serverListen -setup {
@@ -216,7 +216,7 @@ test tclresp-2.5 {ns_headers, status, type, http/1.1} -constraints serverListen 
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} keep-alive chunked {} {5
 abcde
 4
@@ -233,7 +233,7 @@ test tclresp-3.1 {ns_return} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 1 x}
 
 test tclresp-3.2 {ns_return via spooler thread} -constraints serverListen -setup {
@@ -243,7 +243,7 @@ test tclresp-3.2 {ns_return via spooler thread} -constraints serverListen -setup
 } -body {
     nstest::http -getbody 1 -getheaders {content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result [list 200 1027 [string repeat x 1027]]
 
 test tclresp-3.3 {ns_return large string} -constraints serverListen -setup {
@@ -253,7 +253,7 @@ test tclresp-3.3 {ns_return large string} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result [list 200 [string repeat x 48982]]
 
 test tclresp-3.4 {ns_return larger string than can be sent in one write} \
@@ -265,7 +265,7 @@ test tclresp-3.4 {ns_return larger string than can be sent in one write} \
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result [list 200 [string repeat x 48983]]
 
 
@@ -275,7 +275,7 @@ test tclresp-4.1 {ns_respond implicit text type} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {\*/\*; charset=*} 1 x}
 
 test tclresp-4.2 {ns_respond explicit text type} -setup {
@@ -283,7 +283,7 @@ test tclresp-4.2 {ns_respond explicit text type} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} 1 x}
 
 test tclresp-4.3 {ns_respond implicit text type w/status} -setup {
@@ -291,7 +291,7 @@ test tclresp-4.3 {ns_respond implicit text type w/status} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {\*/\*; charset=*} 1 x}
 
 test tclresp-4.4 {ns_respond implicit text type w/length} -setup {
@@ -299,7 +299,7 @@ test tclresp-4.4 {ns_respond implicit text type w/length} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 {\*/\*; charset=*} 2 xx}
 
 test tclresp-4.5 {ns_respond} -setup {
@@ -311,7 +311,7 @@ test tclresp-4.5 {ns_respond} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders k GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 v x}
 
 test tclresp-4.6 {ns_respond} -constraints serverListen -setup {
@@ -319,7 +319,7 @@ test tclresp-4.6 {ns_respond} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 */* 10 0123456789}
 
 test tclresp-4.7 {ns_respond} -constraints serverListen -setup {
@@ -327,7 +327,7 @@ test tclresp-4.7 {ns_respond} -constraints serverListen -setup {
 } -body {
     nstest::http GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result 404
 
 test tclresp-4.8 {ns_respond} -constraints serverListen -setup {
@@ -335,7 +335,7 @@ test tclresp-4.8 {ns_respond} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 */* 5 01234}
 
 
@@ -345,7 +345,7 @@ test tclresp-5.1 {ns_returnfile} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 text/plain 10 0123456789}
 
 test tclresp-5.2 {ns_returnfile} -constraints serverListen -setup {
@@ -353,7 +353,7 @@ test tclresp-5.2 {ns_returnfile} -constraints serverListen -setup {
 } -body {
     nstest::http GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result 404
 
 test tclresp-5.3 {ns_returnfile fastpath cache collision} -constraints serverListen -setup {
@@ -375,7 +375,7 @@ test tclresp-5.3 {ns_returnfile fastpath cache collision} -constraints serverLis
     }]
     ns_register_proc GET /fastresp fast_coll
 } -cleanup {
-    ns_unregister_proc GET /fastresp
+    ns_unregister_op GET /fastresp
     set mutex [nsv_get fast_coll lock]
     ns_mutex lock $mutex
     nsv_unset fast_coll
@@ -398,7 +398,7 @@ test tclresp-6.1 {ns_returnfp} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {content-type content-length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 text/plain 5 01234}
 
 
@@ -408,7 +408,7 @@ test tclresp-7.1 {ns_returnbadrequest} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {400 *oops*}
 
 
@@ -418,7 +418,7 @@ test tclresp-8.1 {ns_returnnotfound} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {404 *Not Found*}
 
 test tclresp-8.2 {ns_returnunauthorized} -constraints serverListen -setup {
@@ -426,7 +426,7 @@ test tclresp-8.2 {ns_returnunauthorized} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {401 *Access Denied*}
 
 test tclresp-8.3 {ns_returnforbidden} -constraints serverListen -setup {
@@ -434,7 +434,7 @@ test tclresp-8.3 {ns_returnforbidden} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {403 *Forbidden*}
 
 
@@ -444,7 +444,7 @@ test tclresp-9.1 {ns_returnerror} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {400 *oops*}
 
 
@@ -454,7 +454,7 @@ test tclresp-10.1 {ns_returnnotice} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {200 *TITLE*MESSAGE*}
 
 
@@ -464,7 +464,7 @@ test tclresp-11.1 {ns_returnredirect} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 -getheaders location GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {302 http://example.com/x *Redirection*http://example.com/x*}
 
 test tclresp-11.2 {ns_returnmoved} -constraints serverListen -setup {
@@ -472,7 +472,7 @@ test tclresp-11.2 {ns_returnmoved} -constraints serverListen -setup {
 } -body {
     nstest::http -getbody 1 -getheaders location GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -match glob -result {301 http://example.com/x *Redirection*http://example.com/x*}
 
 test tclresp-12.1 {ns_write} -setup {
@@ -483,7 +483,7 @@ test tclresp-12.1 {ns_write} -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 x}
 
 test tclresp-12.2 {ns_write multiple buffers, encoded} -setup {
@@ -494,7 +494,7 @@ test tclresp-12.2 {ns_write multiple buffers, encoded} -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 xxx}
 
 test tclresp-12.3 {ns_write multiple binary buffers} -setup {
@@ -505,7 +505,7 @@ test tclresp-12.3 {ns_write multiple binary buffers} -setup {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 xxx}
 
 test tclresp-12.3.1 {
@@ -521,7 +521,7 @@ test tclresp-12.3.1 {
     nstest::http -http 1.1 -getbody 1 -getheaders {Content-Length Content-Type} \
         GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 3 foo/bar xxx}
 
 test tclresp-12.4 {
@@ -535,7 +535,7 @@ test tclresp-12.4 {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result "200 [string repeat x 750][string repeat y 750][string repeat z 750]"
 
 test tclresp-12.5 {
@@ -549,7 +549,7 @@ test tclresp-12.5 {
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 xxxx}
 
 
@@ -559,7 +559,7 @@ test tclresp-13.1 {ns_write without headers} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {Content-Type} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {{} x}
 
 test tclresp-13.2 {ns_write w/ manual headers} -setup {
@@ -570,7 +570,7 @@ test tclresp-13.2 {ns_write w/ manual headers} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {Content-Length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 1 x}
 
 test tclresp-13.3 {ns_startcontent w/ manual headers} -setup {
@@ -582,7 +582,7 @@ test tclresp-13.3 {ns_startcontent w/ manual headers} -setup {
 } -body {
     nstest::http -getbody 1 -getheaders {Content-Length} GET /tclresp
 } -cleanup {
-    ns_unregister_proc GET /tclresp
+    ns_unregister_op GET /tclresp
 } -result {200 1 x}
 
 

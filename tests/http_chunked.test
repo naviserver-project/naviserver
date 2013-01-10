@@ -86,7 +86,7 @@ test http_chunked-2.1 {
     nstest::http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
-    ns_unregister_proc GET /tclchunked
+    ns_unregister_op GET /tclchunked
 } -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
 
 test http_chunked-2.1.1 {
@@ -101,7 +101,7 @@ test http_chunked-2.1.1 {
     nstest::http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
-    ns_unregister_proc GET /tclchunked
+    ns_unregister_op GET /tclchunked
 } -result "200 chunked {} {a\n0123456789\n5\n01234\n0\n\n}"
 
 test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverListen -setup {
@@ -114,7 +114,7 @@ test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverList
     nstest::http -http 1.0 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
-    ns_unregister_proc GET /tclchunked
+    ns_unregister_op GET /tclchunked
 } -result {200 {} {} 012345678901234}
 
 test http_chunked-2.3 {
@@ -125,7 +125,7 @@ test http_chunked-2.3 {
     nstest::http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
-    ns_unregister_proc GET /tclchunked
+    ns_unregister_op GET /tclchunked
 } -result {200 {} 5 01234}
 
 
@@ -148,7 +148,7 @@ test http_chunked-3-1 {
 	-getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         PUT /tclchunked "0A\r\n1234567890\r\n03\r\nabc"
 } -cleanup {
-    ns_unregister_proc PUT /tclchunked
+    ns_unregister_op PUT /tclchunked
 } -result {200 {} 13 1234567890abc}
 
 

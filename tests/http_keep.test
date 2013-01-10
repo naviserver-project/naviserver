@@ -47,7 +47,7 @@ test keep-1 {keep-alive: 1.0} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
-    ns_unregister_proc GET /keep
+    ns_unregister_op GET /keep
 } -result {200 close x}
 
 test keep-2 {keep-alive: 1.0} -constraints serverListen -setup {
@@ -57,7 +57,7 @@ test keep-2 {keep-alive: 1.0} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
-    ns_unregister_proc GET /keep
+    ns_unregister_op GET /keep
 } -result {200 close x}
 
 test keep-3 {keep-alive: 1.0} -constraints serverListen -setup {
@@ -67,7 +67,7 @@ test keep-3 {keep-alive: 1.0} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
-    ns_unregister_proc GET /keep
+    ns_unregister_op GET /keep
 } -result {200 keep-alive x}
 
 test keep-4 {keep-alive: 1.0: POST} -constraints serverListen -setup {
@@ -79,7 +79,7 @@ test keep-4 {keep-alive: 1.0: POST} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		POST /keep body
 } -cleanup {
-    ns_unregister_proc POST /keep
+    ns_unregister_op POST /keep
 } -result {200 keep-alive {body 4}}
 
 test keep-5 {keep-alive: 1.0: POST} -constraints {serverListen knownBug} -setup {
@@ -91,7 +91,7 @@ test keep-5 {keep-alive: 1.0: POST} -constraints {serverListen knownBug} -setup 
 		-getbody 1 -getheaders {connection} \
 		POST /keep body
 } -cleanup {
-    ns_unregister_proc POST /keep
+    ns_unregister_op POST /keep
 } -result {200 close {body 4}}
 
 
@@ -103,7 +103,7 @@ test keep-6 {keep-alive: 1.1} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
-    ns_unregister_proc GET /keep
+    ns_unregister_op GET /keep
 } -result {200 keep-alive x}
 
 test keep-7 {keep-alive: 1.1} -constraints serverListen -setup {
@@ -113,7 +113,7 @@ test keep-7 {keep-alive: 1.1} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
-    ns_unregister_proc GET /keep
+    ns_unregister_op GET /keep
 } -result {200 keep-alive x}
 
 test keep-8 {keep-alive: 1.1} -constraints serverListen -setup {
@@ -123,7 +123,7 @@ test keep-8 {keep-alive: 1.1} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		GET /keep
 } -cleanup {
-    ns_unregister_proc GET /keep
+    ns_unregister_op GET /keep
 } -result {200 close x}
 
 test keep-9 {keep-alive: 1.1: POST} -constraints serverListen -setup {
@@ -135,7 +135,7 @@ test keep-9 {keep-alive: 1.1: POST} -constraints serverListen -setup {
 		-getbody 1 -getheaders {connection} \
 		POST /keep body
 } -cleanup {
-    ns_unregister_proc GET /keep
+    ns_unregister_op GET /keep
 } -result {200 keep-alive {body 4}}
 
 

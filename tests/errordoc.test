@@ -12,7 +12,7 @@ test errordoc-1.1 {adp template} -setup {
 } -body {
     nstest::http -getbody 1 GET /400error
 } -cleanup {
-    ns_unregister_proc GET /400error
+    ns_unregister_op GET /400error
 } -match glob -result {400 *oops*}
 
 

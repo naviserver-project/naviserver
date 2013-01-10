@@ -30,7 +30,7 @@ test url2file-2.1 {ns_url2file} -setup {
 } -body {
     nstest::http -getbody 1 GET /url2file
 } -cleanup {
-    ns_unregister_proc GET /url2file
+    ns_unregister_op GET /url2file
 } -result [list 200 [ns_pagepath foo]]
 
 

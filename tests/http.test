@@ -83,7 +83,7 @@ test http-3.1 {limits: request line length} -constraints {serverListen} -setup {
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /limits?[string repeat x 1050]
 } -cleanup {
-    ns_unregister_proc GET /limits
+    ns_unregister_op GET /limits
 } -match glob -result "414 *Request-URI Too Long*"
 
 test http-3.2a {limits: header line length} -constraints {serverListen} -setup {
@@ -95,7 +95,7 @@ test http-3.2a {limits: header line length} -constraints {serverListen} -setup {
         -setheaders [list x [string repeat x 1050]] \
         GET /limits
 } -cleanup {
-    ns_unregister_proc GET /limits
+    ns_unregister_op GET /limits
 } -match glob -result "431 *Request Header Fields Too Large*"
 
 test http-3.2b {long header line and long body} -constraints {serverListen} -setup {
@@ -108,7 +108,7 @@ test http-3.2b {long header line and long body} -constraints {serverListen} -set
 	       PUT /put [string repeat x 1000002]]
     list [lindex $r 0] [string length [lindex $r 1]]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
     unset -nocomplain r
 } -result {413 0}
 
@@ -124,7 +124,7 @@ test http-3.3 {limits: too many headers} -constraints serverListen -setup {
         -setheaders [split [string repeat xy 1024] ""] \
 	GET /limits
 } -cleanup {
-    ns_unregister_proc GET /limits
+    ns_unregister_op GET /limits
 } -result 414
 
 
@@ -136,7 +136,7 @@ test http-4.1 {HTTP/1.1 PUT small file} -constraints serverListen -setup {
 } -body {
     nstest::http -http 1.1 -getbody 1 PUT /put [string repeat x 128]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
 } -result [list 200 [string repeat x 128]]
 
 test http-4.2 {HTTP/1.1 PUT file == bufsize} -constraints {serverListen} -setup {
@@ -146,7 +146,7 @@ test http-4.2 {HTTP/1.1 PUT file == bufsize} -constraints {serverListen} -setup 
 } -body {
     nstest::http -http 1.1 -getbody 1 PUT /put [string repeat x 1024]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
 } -result [list 200 [string repeat x 1024]]
 
 test http-4.3 {HTTP/1.1 PUT file == maxreadahead} -setup {
@@ -156,7 +156,7 @@ test http-4.3 {HTTP/1.1 PUT file == maxreadahead} -setup {
 } -body {
     nstest::http -http 1.1 -getbody 1 PUT /put [string repeat x 1025]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
 } -result [list 200 [string repeat x 1025]]
 
 test http-4.4 {HTTP/1.1 PUT file == writersize} -setup {
@@ -166,7 +166,7 @@ test http-4.4 {HTTP/1.1 PUT file == writersize} -setup {
 } -body {
     nstest::http -http 1.1 -getbody 1 PUT /put [string repeat x 1026]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
 } -result [list 200 [string repeat x 1026]]
 
 test http-4.5 {HTTP/1.1 PUT file == uploadsize} -setup {
@@ -176,7 +176,7 @@ test http-4.5 {HTTP/1.1 PUT file == uploadsize} -setup {
 } -body {
     nstest::http -http 1.1 -getbody 1 PUT /put [string repeat x 1027]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
 } -result [list 200 [string repeat x 1027]]
 
 # NB: use -binary here to force no-charset conversion and hence chunking due
@@ -192,7 +192,7 @@ test http-4.6 {HTTP/1.1 PUT very large file} -setup {
                PUT /put [string repeat x 100000]]
     list [lindex $l 0] [lindex $l 1] [string length [lindex $l 2]]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
     unset -nocomplain l
 } -result [list 200 100000 100000]
 
@@ -204,7 +204,7 @@ test http-4.7 {HTTP/1.1 PUT one more large file} -setup {
     set l [nstest::http -http 1.1 -getbody 1 PUT /put [string repeat x 100000]]
     list [lindex $l 0] [string length [lindex $l 1]]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
     unset -nocomplain l
 } -result [list 200 100000]
 
@@ -217,7 +217,7 @@ test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     set r [nstest::http -http 1.1 PUT /put [string repeat x 1000002]]
     list [lindex $r 0] [string length [lindex $r 1]]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
     unset -nocomplain r
 } -result {413 0}
 
@@ -230,7 +230,7 @@ test http-4.9 {HTTP/1.1 PUT file much larger than maxinput} -constraints {} -set
     set r [nstest::http -http 1.1 PUT /put [string repeat x 1000002]]
     list [lindex $r 0] [string length [lindex $r 1]]
 } -cleanup {
-    ns_unregister_proc PUT /put
+    ns_unregister_op PUT /put
     unset -nocomplain r
 } -result {413 0}
 
@@ -249,7 +249,7 @@ test http-5.0 {HTTP/1.1 GET with "ns_conn content" after return} -constraints {}
     set r [nstest::http -http 1.1 GET /get]
     list [lindex $r 0] [string length [lindex $r 1]]
 } -cleanup {
-    ns_unregister_proc GET /get
+    ns_unregister_op GET /get
     unset -nocomplain r
 } -result {401 0}
 
@@ -282,7 +282,7 @@ Content-Type: text/plain
 content of file
 --AA--}]
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
     unset -nocomplain r
 } -result {200 {4 field1 f1 file error.log file.content-type text/plain}}
 
@@ -310,7 +310,7 @@ Content-Type: text/plain
 content of file
 --AA--}]
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
     unset -nocomplain r
 } -result {200 {3 file error.log file.content-type text/plain}}
 
@@ -338,7 +338,7 @@ Content-Type: text/plain
 content of file
 --AA--}]
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
     unset -nocomplain r
 } -result {200 {3 file {error "test".log} file.content-type text/plain}}
 
@@ -363,7 +363,7 @@ Content-Type: text/plain
 content of file
 --AA--}]
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
     unset -nocomplain r
 } -result {200 {3 file {error 'test'.log} file.content-type text/plain}}
 
@@ -388,7 +388,7 @@ Content-Type: text/plain
 content of file
 --AA--}
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
 } -result {200 {3 file {error "test.log} file.content-type text/plain}}
 
 test http-6.2d {
@@ -412,7 +412,7 @@ Content-Type: text/plain
 content of file
 --AA--}
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
 } -result {200 {3 file {error 'test.log} file.content-type text/plain}}
 
 
@@ -440,7 +440,7 @@ Content-Type: text/plain
 content of file
 --AA--}]
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
     unset -nocomplain r
 } -result {200 {3 file {error test.log} file.content-type text/plain}}
 
@@ -468,7 +468,7 @@ Content-Type: text/plain
 content of file
 --AA--}]
 } -cleanup {
-    ns_unregister_proc POST /form
+    ns_unregister_op POST /form
     unset -nocomplain r
 } -result {200 {3 file error file.content-type text/plain}}
 
