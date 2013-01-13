@@ -46,8 +46,10 @@ typedef struct Mutex {
     unsigned int     id;
     unsigned long    nlock;
     unsigned long    nbusy;
+    Ns_Time          start_time;
     Ns_Time          total_waiting_time;
     Ns_Time          max_waiting_time;
+    Ns_Time          total_lock_time;
     char	     name[NS_THREAD_NAMESIZE+1];
 } Mutex;
 
@@ -200,9 +202,9 @@ void
 Ns_MutexLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr = GETMUTEX(mutex);
-    Ns_Time start, end, diff;
+    Ns_Time end, diff;
 
-    Ns_GetTime(&start);
+    Ns_GetTime(&mutexPtr->start_time);
     if (unlikely(!NsLockTry(mutexPtr->lock))) {
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
@@ -210,8 +212,14 @@ Ns_MutexLock(Ns_Mutex *mutex)
          * Measure total and max waiting time for busy mutex locks.
          */
         Ns_GetTime(&end);
-        Ns_DiffTime(&end, &start, &diff);
-        Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
+        Ns_DiffTime(&end, &mutexPtr->start_time, &diff);
+	Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
+
+	if (diff.sec > 1 || diff.usec > 100000) {
+	    fprintf(stderr, "Mutex lock %s: wait duration %" PRIu64 ".%.6ld\n",
+		   mutexPtr->name, (int64_t)diff.sec, diff.usec);
+	}
+
         /* 
          * Keep max waiting time since server start. It might be a
 	 * good idea to either provide a call to reset the max-time,
@@ -278,8 +286,19 @@ void
 Ns_MutexUnlock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr = (Mutex *) *mutex;
+    Ns_Time end, diff;
 
     NsLockUnset(mutexPtr->lock);
+
+    Ns_GetTime(&end);
+    Ns_DiffTime(&end, &mutexPtr->start_time, &diff);
+    Ns_IncrTime(&mutexPtr->total_lock_time, diff.sec, diff.usec);
+
+    if (diff.sec > 1 || diff.usec > 100000) {
+	fprintf(stderr, "Mutex unlock %s: lock duration %" PRIu64 ".%.6ld\n",
+		mutexPtr->name, (int64_t)diff.sec, diff.usec);
+    }
+
 }
 
 
@@ -311,10 +330,12 @@ Ns_MutexList(Tcl_DString *dsPtr)
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, mutexPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
-        snprintf(buf, sizeof(buf), " %u %lu %lu %" PRIu64 ".%.6ld %" PRIu64 ".%.6ld", 
+        snprintf(buf, sizeof(buf), " %u %lu %lu %" PRIu64 ".%.6ld %" PRIu64 ".%.6ld %" PRIu64 ".%.6ld", 
                  mutexPtr->id, mutexPtr->nlock, mutexPtr->nbusy, 
                  (int64_t)mutexPtr->total_waiting_time.sec, mutexPtr->total_waiting_time.usec,
-                 (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec);
+                 (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec,
+                 (int64_t)mutexPtr->total_lock_time.sec, mutexPtr->total_lock_time.usec
+		 );
         Tcl_DStringAppend(dsPtr, buf, -1);
         Tcl_DStringEndSublist(dsPtr);
         mutexPtr = mutexPtr->nextPtr;
