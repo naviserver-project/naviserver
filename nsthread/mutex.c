@@ -294,10 +294,12 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
     Ns_DiffTime(&end, &mutexPtr->start_time, &diff);
     Ns_IncrTime(&mutexPtr->total_lock_time, diff.sec, diff.usec);
 
+    /*
     if (diff.sec > 1 || diff.usec > 100000) {
 	fprintf(stderr, "Mutex unlock %s: lock duration %" PRIu64 ".%.6ld\n",
 		mutexPtr->name, (int64_t)diff.sec, diff.usec);
     }
+    */
 
 }
 
