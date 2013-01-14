@@ -3010,7 +3010,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
     assert(wrSockPtr);
     wrSockPtr->refCount --;
-    
+
     if (wrSockPtr->refCount > 0) {
 	return;
     }
@@ -3281,7 +3281,12 @@ WriterThread(void *arg)
 		    /*
 		     * Size < 0 means that verything was sent.
 		     */
-		    status = SOCK_CLOSE;
+		    if (streaming != NS_WRITER_STREAM_ACTIVE) {
+			if (streaming == NS_WRITER_STREAM_FINISH) {
+			    Ns_ReleaseTemp(curPtr->fd);
+			}
+			status = SOCK_CLOSE;
+		    }
 		} else {
 		    /*
 		     * If size > 0, there is still something to send.

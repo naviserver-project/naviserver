@@ -1415,7 +1415,6 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
      * Deactivate stream writer
      */
     if (connPtr->fd) {
-	Ns_ReleaseTemp(connPtr->fd);
 	connPtr->fd = 0;
     }
     if (connPtr->streamWriter) {
