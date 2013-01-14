@@ -139,7 +139,6 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
         connPtr->compress = CheckCompress(connPtr, bufs, nbufs, flags);
     }
     if (connPtr->compress > 0) {
-
         int flush = (flags & NS_CONN_STREAM) ? 0 : 1;
 
         if (Ns_CompressBufsGzip(streamPtr, bufs, nbufs, &gzDs,
@@ -249,7 +248,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     Conn         *connPtr = (Conn *) conn;
     Ns_DString    ds;
     int           nsbufs, sbufIdx;
-    size_t        bodyLength, towrite, nwrote;
+    size_t        bodyLength, towrite;
+    ssize_t       nwrote;
     char          hdr[32];
     struct iovec  sbufs[32], *sbufPtr = sbufs;
 
@@ -330,9 +330,9 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
                 nsbufs += nbufs + 2;
             }
 
-            if (!(flags & NS_CONN_STREAM)) {
+	    if (flags & NS_CONN_STREAM_CLOSE) {
                 /*
-                 * Output end-of-content trailer.
+                 * Output end-of-content trailer for chunked encoding
                  */
 
                 towrite += Ns_SetVec(sbufPtr, sbufIdx, "0\r\n\r\n", 5);
@@ -355,7 +355,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
         ns_free(sbufPtr);
     }
 
-    return (nwrote < towrite) ? NS_ERROR : NS_OK;
+    return (nwrote < (ssize_t)towrite) ? NS_ERROR : NS_OK;
 }
 
 
@@ -414,12 +414,12 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 
     status = NS_OK;
     while (status == NS_OK && nsend > 0) {
-      toread = (size_t)nsend;
+	toread = (size_t)nsend;
         if (toread > sizeof(buf)) {
             toread = sizeof(buf);
         }
         if (chan != NULL) {
-	  nread = Tcl_Read(chan, buf, (int)toread);
+	    nread = Tcl_Read(chan, buf, (int)toread);
         } else if (fp != NULL) {
             nread = fread(buf, 1, toread, fp);
             if (ferror(fp)) {
@@ -558,7 +558,7 @@ Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 
-int
+ssize_t
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
     Conn    *connPtr = (Conn *) conn;
@@ -597,7 +597,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	connPtr->nContentSent += nwrote;
     }
 
-    return (int) (nwrote ? nwrote : sent);
+    return (nwrote ? nwrote : sent);
 }
 
 
@@ -655,6 +655,13 @@ int
 Ns_ConnClose(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
+    
+    Ns_Log(Debug, "Ns_ConnClose %p stream %.6x chunk %.6x via writer %.6x sockPtr %p", 
+	   connPtr, 
+	   connPtr->flags & NS_CONN_STREAM, 
+	   connPtr->flags & NS_CONN_CHUNK, 
+	   connPtr->flags & NS_CONN_SENT_VIA_WRITER, 
+	   connPtr->sockPtr);
 
     if (connPtr->sockPtr != NULL) {
         int keep;
@@ -668,12 +675,17 @@ Ns_ConnClose(Ns_Conn *conn)
              *   In chunked mode, write the end-of-content trailer.
              *   If compressing, write the gzip footer.
              */
-
-            (void) Ns_ConnWriteChars(conn, NULL, 0, 0);
+            (void) Ns_ConnWriteChars(conn, NULL, 0, NS_CONN_STREAM_CLOSE);
         }
 
-        keep = connPtr->keep > 0 ? 1 : 0;
-        NsSockClose(connPtr->sockPtr, keep);
+	/*
+	 * Close the connection to the client either here or in the
+	 * writer thread.
+	 */
+	if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0) {
+	    keep = connPtr->keep > 0 ? 1 : 0;
+	    NsSockClose(connPtr->sockPtr, keep);
+	}
 
         connPtr->sockPtr = NULL;
         connPtr->flags |= NS_CONN_CLOSED;

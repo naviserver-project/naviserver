@@ -13,7 +13,8 @@ operations which consumes less resources than returning multiple files to the sl
 
 [list_begin definitions]
 
-[call [cmd ns_writer] [arg list]]
+[call [cmd ns_writer] \
+	[arg list]]
 
 [para] 
 Returns list of all currently submitted files. Every list entry
@@ -27,7 +28,13 @@ provided via [lb]ns_conn clientdata[rb]
 [para]
 Submit arbitrary data to be returned via writer, data can be binary.
 
-[call [cmd ns_writer] [arg submitfile] [opt [arg -headers]] [opt [arg {-offset offset}]] [opt [arg {-size size}]] [arg file]]
+
+[call [cmd ns_writer] \
+	[arg submitfile] \
+	[opt [arg -headers]] \
+	[opt [arg {-offset offset}]] \
+	[opt [arg {-size size}]] \
+	[arg file]]
 
 [para]
 Submits file to be returned, optionally the following arguments can be used:
@@ -45,6 +52,24 @@ If specified, file will be returned starting with this offset
 If not specified, the whole file will be retuned, otherwise only given part. Can be combined with -offset
 to return chunks of file
 
+
+[call [cmd "ns_writer size"] \
+	[arg driver] \
+	[opt [arg value]]]
+
+[para]
+Query or set configuration parameter [term writersize] of the writer(s) of
+the specified driver.
+
+[call [cmd "ns_writer streaming"] \
+	[arg driver] \
+	[opt [arg value]]]
+
+[para]
+Query or set configuration parameter [term writerstreaming] of the writer(s) of
+the specified driver.
+
+
 [list_end]
 
 [section CONFIGURATION]
@@ -55,17 +80,25 @@ to return chunks of file
 [list_begin definitions]
 [def {ns_section "ns/server/default/module/nssock"}]
 [def {ns_param writerthreads 1}]
-[def {ns_param writersize [expr 1024*1024]}] 
+[def {ns_param writersize 4096}] 
+[def {ns_param writerstreaming true}] 
 [list_end]
 
 [para]
-writerthreads parameter specified how many writer threads will be used, multiple threads
+[term writerthreads] parameter specified how many writer threads will be used, multiple threads
 will be rotated to spread the load across all threads
 
 [para]
-writersize specifies minimal size of the file to be considered for writer thread, this parameter
+[term writersize] specifies the minimal size of the file to be considered for writer thread, this parameter
 is used by connection thread when returning file and if size exceeds configured value, file will be 
 returned via writer thread and connection thread will be released to handle other requests.
+
+[para]
+[term writerstreaming] specifies whether or not streaming HTML output (e.g. sent
+via [cmd ns_write]) should be sent via the writer. 
+When sending server responses over slow connections, this
+option reduces the blocking time of the connection threads and can
+therfore reduce the damage of slow-read attacks.
 
 [section EXAMPLES]
 
@@ -75,7 +108,7 @@ ns_writer submitfile /tmp/biglist.txt
 
 [example_end]
 
-[see_also ns_returnfile ns_conn]
+[see_also ns_returnfile ns_conn ns_write]
 [keywords NaviServer WriterThread]
 [manpage_end]
 

@@ -520,17 +520,12 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     if (objc < nextArgIdx) {goto usage_error;}
 
-    //    char *nextArgString = Tcl_GetString(objv[nextArgIdx]); // remove inline decls
-    //if (*nextArgString == '-') {goto usage_error;}
-
     Tcl_ResetResult(interp);
-    //fprintf(stderr, "server %s pool %s i %d objc %d\n", server, pool, nextArgIdx, objc);
-    
     if (Tcl_GetIndexFromObj(interp, objv[nextArgIdx], subcmds, "subcmd", 0,
                             &subcmd) != TCL_OK) {
         return TCL_ERROR;
     }
-    //fprintf(stderr, "after cmd %d server %s pool %s i %d objc %d\n", subcmd, server, pool, nextArgIdx, objc);
+
     if ((objc - nextArgIdx) > 2) {
 	goto usage_error;
     } else if ((objc - nextArgIdx) == 2) {
@@ -588,7 +583,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case SMaxthreadsIdx:
 	if (optArg) {
 	    if (Ns_StrToInt(optArg, &value) != NS_OK || value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
-		Tcl_AppendResult(interp, "argument is not a valid integer: ", optArg, NULL);
+		Tcl_AppendResult(interp, "argument is not an integer in valid range: ", optArg, NULL);
 		return TCL_ERROR;
 	    }
 	    Ns_MutexLock(&servPtr->pools.lock);
@@ -1396,6 +1391,7 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     }
 
     Ns_ConnClose(conn);
+
     if (status == NS_OK || status == NS_FILTER_RETURN) {
         status = NsRunFilters(conn, NS_FILTER_TRACE);
         if (status == NS_OK) {
@@ -1415,6 +1411,26 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     NsClsCleanup(connPtr);
     NsFreeConnInterp(connPtr);
 
+    /*
+     * Deactivate stream writer
+     */
+    if (connPtr->fd) {
+	Ns_ReleaseTemp(connPtr->fd);
+	connPtr->fd = 0;
+    }
+    if (connPtr->streamWriter) {
+	NsWriterLock();
+	WriterSock *wrPtr = connPtr->streamWriter;
+	if (wrPtr) {
+	    NsWriterFinish(wrPtr);
+	    connPtr->streamWriter = NULL;
+	}
+	NsWriterUnlock();
+    }
+
+    /*
+     * Free Structures
+     */
     Ns_ConnClearQuery(conn);
     Ns_SetFree(connPtr->auth);
     connPtr->auth = NULL;

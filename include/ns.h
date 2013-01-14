@@ -68,15 +68,15 @@
 #define NS_CONN_SENTHDRS           0x010 /* Response headers have been sent to client */
 #define NS_CONN_WRITE_ENCODED      0x020 /* Character data mode requested mime-type header. */
 #define NS_CONN_STREAM             0x040 /* Data is to be streamed when ready.  */
-#define NS_CONN_CHUNK              0x080 /* Streamed data is to be chunked. */
-#define NS_CONN_SENT_LAST_CHUNK    0x100 /* Marks that the last chunk was sent in chunked mode */
-#define NS_CONN_SENT_VIA_WRITER    0x200 /* Response data has been sent via writer thread */
-#define NS_CONN_SOCK_CORKED        0x400 /* underlying socket is corked */
-#define NS_CONN_ZIPACCEPTED        0x800 /* the request accepts zip encoding */
+#define NS_CONN_STREAM_CLOSE       0x080 /* Writer Stream should be closed.  */
+#define NS_CONN_CHUNK              0x100 /* Streamed data is to be chunked. */
+#define NS_CONN_SENT_LAST_CHUNK    0x200 /* Marks that the last chunk was sent in chunked mode */
+#define NS_CONN_SENT_VIA_WRITER    0x400 /* Response data has been sent via writer thread */
+#define NS_CONN_SOCK_CORKED        0x800 /* underlying socket is corked */
+#define NS_CONN_ZIPACCEPTED       0x1000 /* the request accepts zip encoding */
 #define NS_CONN_ENTITYTOOLARGE    0x2000 /* the sent Entity was too large */
 #define NS_CONN_REQUESTURITOOLONG 0x4000 /* request-URI too long */
 #define NS_CONN_LINETOOLONG       0x8000 /* request Header line too long */
-
 
 /*
  * The following are valid return codes from an Ns_UserAuthorizeProc.
@@ -1091,7 +1091,7 @@ NS_EXTERN int
 Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int
+NS_EXTERN ssize_t
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     NS_GNUC_NONNULL(1);
 

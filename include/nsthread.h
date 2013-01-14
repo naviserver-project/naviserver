@@ -462,6 +462,15 @@ typedef struct DIR_ *DIR;
 #endif
 
 /*
+ * There is apparently no platform independent print format for items
+ * of off_t. Therefore, we invent here our own variant, trying to
+ * stick to the naming conventions.
+ */
+#if !defined(PROTd)
+# define PROTd PRId64
+#endif
+
+/*
  * Older Solaris version (2.8-) have older definitions
  * of pointer formatting macros.
  */

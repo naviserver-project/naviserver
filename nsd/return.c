@@ -324,9 +324,9 @@ void
 Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
 {
     Conn *connPtr = (Conn *) conn;
-    char  strlength[TCL_INTEGER_SPACE];
 
     if (length >= 0) {
+        char strlength[TCL_INTEGER_SPACE];
         snprintf(strlength, sizeof(strlength), "%" TCL_LL_MODIFIER "d", length);
         Ns_ConnUpdateHeaders(conn, "Content-Length", strlength);
     } else {

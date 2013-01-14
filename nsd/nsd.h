@@ -181,7 +181,7 @@ struct _nsconf {
     } job;
 };
 
-extern struct _nsconf nsconf;
+NS_EXTERN struct _nsconf nsconf;
 
 /*
  * The following structure tracks a memory-mapped file
@@ -202,6 +202,11 @@ typedef struct FileMap {
 typedef struct WriterSock {
     struct WriterSock *nextPtr;
     struct Sock       *sockPtr;
+    struct SpoolerQueue *queuePtr; 
+    struct Conn       *connPtr;
+    int                status;
+    int                err;
+    int                refCount;
     char              *data;
     NS_SOCKET          fd;
     int                keep;
@@ -211,6 +216,8 @@ typedef struct WriterSock {
     size_t             bufsize;
     unsigned int       flags;
     unsigned char     *buf;
+    int                streaming;
+    Ns_Mutex           fdlock;
     char              *clientData;
     Ns_Time            startTime;
 } WriterSock;
@@ -341,6 +348,7 @@ typedef struct _DrvWriter {
     int threads;               /* Number of writer threads to run */
     int maxsize;               /* Max content size to use writer thread */
     int bufsize;               /* Size of the output buffer */
+    int streaming;             /* Activate writer for HTML streaming */
     Ns_Mutex lock;             /* Lock around writer queues */
     SpoolerQueue *firstPtr;    /* List of writer threads */
     SpoolerQueue *curPtr;      /* Current writer thread */
@@ -556,6 +564,9 @@ typedef struct Conn {
     int responseStatus;
     int recursionCount;
     int keep;
+
+    int fd;
+    WriterSock *streamWriter;
 
     Ns_CompressStream  stream;
     int requestCompress;
@@ -954,63 +965,63 @@ typedef struct NsInterp {
  * Libnsd initialization routines.
  */
 
-extern void NsInitBinder(void);
-extern void NsInitConf(void);
-extern void NsInitFd(void);
-extern void NsInitListen(void);
-extern void NsInitLog(void);
-extern void NsInitInfo(void);
-extern void NsInitModLoad(void);
-extern void NsInitProcInfo(void);
-extern void NsInitQueue(void);
-extern void NsInitLimits(void);
-extern void NsInitDrivers(void);
-extern void NsInitServers(void);
-extern void NsInitSched(void);
-extern void NsInitSls(void);
-extern void NsInitTcl(void);
-extern void NsInitRequests(void);
-extern void NsInitUrl2File(void);
+NS_EXTERN void NsInitBinder(void);
+NS_EXTERN void NsInitConf(void);
+NS_EXTERN void NsInitFd(void);
+NS_EXTERN void NsInitListen(void);
+NS_EXTERN void NsInitLog(void);
+NS_EXTERN void NsInitInfo(void);
+NS_EXTERN void NsInitModLoad(void);
+NS_EXTERN void NsInitProcInfo(void);
+NS_EXTERN void NsInitQueue(void);
+NS_EXTERN void NsInitLimits(void);
+NS_EXTERN void NsInitDrivers(void);
+NS_EXTERN void NsInitServers(void);
+NS_EXTERN void NsInitSched(void);
+NS_EXTERN void NsInitSls(void);
+NS_EXTERN void NsInitTcl(void);
+NS_EXTERN void NsInitRequests(void);
+NS_EXTERN void NsInitUrl2File(void);
 
-extern void NsConfigAdp(void);
-extern void NsConfigLog(void);
-extern void NsConfigFastpath(void);
-extern void NsConfigMimeTypes(void);
-extern void NsConfigDNS(void);
-extern void NsConfigRedirects(void);
-extern void NsConfigVhost(void);
-extern void NsConfigEncodings(void);
+NS_EXTERN void NsConfigAdp(void);
+NS_EXTERN void NsConfigLog(void);
+NS_EXTERN void NsConfigFastpath(void);
+NS_EXTERN void NsConfigMimeTypes(void);
+NS_EXTERN void NsConfigDNS(void);
+NS_EXTERN void NsConfigRedirects(void);
+NS_EXTERN void NsConfigVhost(void);
+NS_EXTERN void NsConfigEncodings(void);
 
 /*
  * Virtual server management routines.
  */
 
-extern void NsInitServer(char *server, Ns_ServerInitProc *initProc);
-extern void NsRegisterServerInit(Ns_ServerInitProc *proc);
-extern NsServer *NsGetInitServer(void);
-extern NsServer *NsGetServer(CONST char *server);
-extern void NsStartServers(void);
-extern void NsStopServers(Ns_Time *toPtr);
-extern void NsStartServer(NsServer *servPtr);
-extern void NsStopServer(NsServer *servPtr);
-extern void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
-extern void NsWakeupDriver(Driver *drvPtr);
+NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc);
+NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc);
+NS_EXTERN NsServer *NsGetInitServer(void);
+NS_EXTERN NsServer *NsGetServer(CONST char *server);
+NS_EXTERN void NsStartServers(void);
+NS_EXTERN void NsStopServers(Ns_Time *toPtr);
+NS_EXTERN void NsStartServer(NsServer *servPtr);
+NS_EXTERN void NsStopServer(NsServer *servPtr);
+NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
+NS_EXTERN void NsWakeupDriver(Driver *drvPtr);
 
 /*
  * Url-specific data routines.
  */
 
-extern void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
+NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
                               CONST char *url, int id, int fast);
 
 /*
  * Socket driver callbacks.
  */
 
-extern ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags);
-extern ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags);
+NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags);
+NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags);
 
-extern ssize_t
+NS_EXTERN ssize_t
 NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
                            Ns_Time *timeoutPtr, int flags,
                            Ns_DriverSendProc *sendProc)
@@ -1018,221 +1029,224 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 
 
 
-extern int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
-extern void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr);
-extern void NsMapPool(ConnPool *poolPtr, char *map);
-extern void NsSockClose(Sock *sockPtr, int keep);
-extern int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
+NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
+NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr);
+NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map);
+NS_EXTERN void NsSockClose(Sock *sockPtr, int keep);
+NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 
-extern Request *NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr);
-extern void NsFreeRequest(Request *reqPtr);
+NS_EXTERN Request *NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr);
+NS_EXTERN void NsFreeRequest(Request *reqPtr);
 
-extern int NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
-                         FILE *fp, int fd, const char *data,  struct iovec *bufs, int nbufs, 
-			 int everysize);
+NS_EXTERN void NsWriterLock(void);
+NS_EXTERN void NsWriterUnlock(void);
+NS_EXTERN void NsWriterFinish(WriterSock *wrSockPtr);
+NS_EXTERN int  NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
+			  FILE *fp, int fd, const char *data,  struct iovec *bufs, int nbufs, 
+			  int everysize);
 
-extern void NsFreeAdp(NsInterp *itPtr);
-extern void NsTclRunAtClose(NsInterp *itPtr)
+NS_EXTERN void NsFreeAdp(NsInterp *itPtr);
+NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)
      NS_GNUC_NONNULL(1);
 
-extern int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
-extern char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
+NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
+NS_EXTERN char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
-extern void NsAsyncWriterQueueEnable();
-extern void NsAsyncWriterQueueDisable();
+NS_EXTERN void NsAsyncWriterQueueEnable();
+NS_EXTERN void NsAsyncWriterQueueDisable();
 
 /*
  * External callback functions.
  */
 
-extern Ns_ConnLocationProc NsTclConnLocation;
-extern Ns_SchedProc NsTclSchedProc;
-extern Ns_ServerRootProc NsTclServerRoot;
-extern Ns_ThreadProc NsTclThread;
-extern Ns_ArgProc NsTclThreadArgProc;
-extern Ns_SockProc NsTclSockProc;
-extern Ns_ArgProc NsTclSockArgProc;
-extern Ns_ThreadProc NsConnThread;
-extern Ns_ArgProc NsConnArgProc;
-extern Ns_FilterProc NsTclFilterProc;
-extern Ns_FilterProc NsShortcutFilterProc;
-extern Ns_OpProc NsTclRequestProc;
-extern Ns_OpProc NsAdpPageProc;
-extern Ns_ArgProc NsAdpPageArgProc;
-extern Ns_TclTraceProc NsTclTraceProc;
-extern Ns_UrlToFileProc NsUrlToFileProc;
-extern Ns_Url2FileProc NsTclUrl2FileProc;
-extern Ns_Url2FileProc NsMountUrl2FileProc;
-extern Ns_ArgProc NsMountUrl2FileArgProc;
+NS_EXTERN Ns_ConnLocationProc NsTclConnLocation;
+NS_EXTERN Ns_SchedProc NsTclSchedProc;
+NS_EXTERN Ns_ServerRootProc NsTclServerRoot;
+NS_EXTERN Ns_ThreadProc NsTclThread;
+NS_EXTERN Ns_ArgProc NsTclThreadArgProc;
+NS_EXTERN Ns_SockProc NsTclSockProc;
+NS_EXTERN Ns_ArgProc NsTclSockArgProc;
+NS_EXTERN Ns_ThreadProc NsConnThread;
+NS_EXTERN Ns_ArgProc NsConnArgProc;
+NS_EXTERN Ns_FilterProc NsTclFilterProc;
+NS_EXTERN Ns_FilterProc NsShortcutFilterProc;
+NS_EXTERN Ns_OpProc NsTclRequestProc;
+NS_EXTERN Ns_OpProc NsAdpPageProc;
+NS_EXTERN Ns_ArgProc NsAdpPageArgProc;
+NS_EXTERN Ns_TclTraceProc NsTclTraceProc;
+NS_EXTERN Ns_UrlToFileProc NsUrlToFileProc;
+NS_EXTERN Ns_Url2FileProc NsTclUrl2FileProc;
+NS_EXTERN Ns_Url2FileProc NsMountUrl2FileProc;
+NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
 
-extern void NsGetCallbacks(Tcl_DString *dsPtr);
-extern void NsGetSockCallbacks(Tcl_DString *dsPtr);
-extern void NsGetScheduled(Tcl_DString *dsPtr);
-extern void NsGetMimeTypes(Tcl_DString *dsPtr);
-extern void NsGetTraces(Tcl_DString *dsPtr, char *server);
-extern void NsGetFilters(Tcl_DString *dsPtr, char *server);
-extern void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);
-extern void NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server);
+NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr);
+NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr);
+NS_EXTERN void NsGetScheduled(Tcl_DString *dsPtr);
+NS_EXTERN void NsGetMimeTypes(Tcl_DString *dsPtr);
+NS_EXTERN void NsGetTraces(Tcl_DString *dsPtr, char *server);
+NS_EXTERN void NsGetFilters(Tcl_DString *dsPtr, char *server);
+NS_EXTERN void NsGetRequestProcs(Tcl_DString *dsPtr, CONST char *server);
+NS_EXTERN void NsGetUrl2FileProcs(Ns_DString *dsPtr, CONST char *server);
 
 #ifdef _WIN32
-extern int NsConnectService(void);
-extern int NsInstallService(char *service);
-extern int NsRemoveService(char *service);
+NS_EXTERN int NsConnectService(void);
+NS_EXTERN int NsInstallService(char *service);
+NS_EXTERN int NsRemoveService(char *service);
 #endif
 
-extern void NsCreatePidFile(char *service);
-extern void NsRemovePidFile(char *service);
+NS_EXTERN void NsCreatePidFile(char *service);
+NS_EXTERN void NsRemovePidFile(char *service);
 
-extern void NsLogOpen(void);
-extern void NsTclInitObjs(void);
-extern void NsRunPreStartupProcs(void);
-extern void NsBlockSignals(int debug);
-extern void NsBlockSignal(int signal);
-extern void NsUnblockSignal(int signal);
-extern int  NsHandleSignals(void);
-extern void NsStopDrivers(void);
-extern void NsPreBind(char *bindargs, char *bindfile);
-extern void NsClosePreBound(void);
-extern char *NsConfigRead(CONST char *file);
-extern void NsConfigEval(CONST char *config, int argc, char **argv, int optind);
-extern void NsConfUpdate(void);
-extern void NsEnableDNSCache(int maxsize, int ttl, int timeout);
-extern void NsStartDrivers(void);
-extern void NsWaitDriversShutdown(Ns_Time *toPtr);
-extern void NsStartSchedShutdown(void);
-extern void NsWaitSchedShutdown(Ns_Time *toPtr);
-extern void NsStartSockShutdown(void);
-extern void NsWaitSockShutdown(Ns_Time *toPtr);
-extern void NsStartShutdownProcs(void);
-extern void NsWaitShutdownProcs(Ns_Time *toPtr);
-extern void NsStartTaskQueueShutdown(void);
-extern void NsWaitTaskQueueShutdown(Ns_Time *toPtr);
-extern void NsStartJobsShutdown(void);
-extern void NsWaitJobsShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsLogOpen(void);
+NS_EXTERN void NsTclInitObjs(void);
+NS_EXTERN void NsRunPreStartupProcs(void);
+NS_EXTERN void NsBlockSignals(int debug);
+NS_EXTERN void NsBlockSignal(int signal);
+NS_EXTERN void NsUnblockSignal(int signal);
+NS_EXTERN int  NsHandleSignals(void);
+NS_EXTERN void NsStopDrivers(void);
+NS_EXTERN void NsPreBind(char *bindargs, char *bindfile);
+NS_EXTERN void NsClosePreBound(void);
+NS_EXTERN char *NsConfigRead(CONST char *file);
+NS_EXTERN void NsConfigEval(CONST char *config, int argc, char **argv, int optind);
+NS_EXTERN void NsConfUpdate(void);
+NS_EXTERN void NsEnableDNSCache(int maxsize, int ttl, int timeout);
+NS_EXTERN void NsStartDrivers(void);
+NS_EXTERN void NsWaitDriversShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsStartSchedShutdown(void);
+NS_EXTERN void NsWaitSchedShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsStartSockShutdown(void);
+NS_EXTERN void NsWaitSockShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsStartShutdownProcs(void);
+NS_EXTERN void NsWaitShutdownProcs(Ns_Time *toPtr);
+NS_EXTERN void NsStartTaskQueueShutdown(void);
+NS_EXTERN void NsWaitTaskQueueShutdown(Ns_Time *toPtr);
+NS_EXTERN void NsStartJobsShutdown(void);
+NS_EXTERN void NsWaitJobsShutdown(Ns_Time *toPtr);
 
-extern Tcl_AppInitProc NsTclAppInit;
-extern void NsTclInitServer(CONST char *server)
+NS_EXTERN Tcl_AppInitProc NsTclAppInit;
+NS_EXTERN void NsTclInitServer(CONST char *server)
      NS_GNUC_NONNULL(1);
-extern void NsInitStaticModules(CONST char *server);
-extern NsInterp *NsGetInterpData(Tcl_Interp *interp)
+NS_EXTERN void NsInitStaticModules(CONST char *server);
+NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
-extern void NsFreeConnInterp(Conn *connPtr)
+NS_EXTERN void NsFreeConnInterp(Conn *connPtr)
      NS_GNUC_NONNULL(1);
 
-extern struct Bucket *NsTclCreateBuckets(CONST char *server, int nbuckets);
+NS_EXTERN struct Bucket *NsTclCreateBuckets(CONST char *server, int nbuckets);
 
-extern void NsSlsCleanup(Sock *sockPtr);
-extern void NsClsCleanup(Conn *connPtr);
-extern void NsTclAddBasicCmds(NsInterp *itPtr);
-extern void NsTclAddServerCmds(NsInterp *itPtr);
+NS_EXTERN void NsSlsCleanup(Sock *sockPtr);
+NS_EXTERN void NsClsCleanup(Conn *connPtr);
+NS_EXTERN void NsTclAddBasicCmds(NsInterp *itPtr);
+NS_EXTERN void NsTclAddServerCmds(NsInterp *itPtr);
 
-extern void NsRestoreSignals(void);
-extern void NsSendSignal(int sig);
+NS_EXTERN void NsRestoreSignals(void);
+NS_EXTERN void NsSendSignal(int sig);
 
 /*
  * Conn routines.
  */
 
-extern NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *url);
+NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *url);
 
-extern int NsMatchRange(Ns_Conn *conn, time_t mtime);
+NS_EXTERN int NsMatchRange(Ns_Conn *conn, time_t mtime);
 
-extern int NsConnParseRange(Ns_Conn *conn, CONST char *type,
+NS_EXTERN int NsConnParseRange(Ns_Conn *conn, CONST char *type,
                             int fd, CONST void *data, size_t length,
                             Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
 /*
  * request parsing
  */
-extern int NsParseAcceptEnconding(double version, CONST char *hdr);
+NS_EXTERN int NsParseAcceptEnconding(double version, CONST char *hdr);
 
 
 /*
  * ADP routines.
  */
 
-extern void NsAdpSetMimeType(NsInterp *itPtr, char *type);
-extern void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
-extern int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
-extern int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
-extern int NsAdpFlush(NsInterp *itPtr, int stream);
-extern int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
-extern int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
-extern int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
-extern int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
+NS_EXTERN void NsAdpSetMimeType(NsInterp *itPtr, char *type);
+NS_EXTERN void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
+NS_EXTERN int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
+NS_EXTERN int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream);
+NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
+NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
+NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
+NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[],
 			char *file, Ns_Time *ttlPtr);
-extern void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
+NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
 		       int flags, CONST char* file);
-extern void NsAdpFreeCode(AdpCode *codePtr);
-extern void NsAdpLogError(NsInterp *itPtr);
-extern void NsAdpInit(NsInterp *itPtr);
-extern void NsAdpReset(NsInterp *itPtr);
-extern void NsAdpFree(NsInterp *itPtr);
+NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);
+NS_EXTERN void NsAdpLogError(NsInterp *itPtr);
+NS_EXTERN void NsAdpInit(NsInterp *itPtr);
+NS_EXTERN void NsAdpReset(NsInterp *itPtr);
+NS_EXTERN void NsAdpFree(NsInterp *itPtr);
 
 /*
  * Tcl support routines.
  */
 
-extern void NsTclInitQueueType(void);
-extern void NsTclInitAddrType(void);
-extern void NsTclInitTimeType(void);
-extern void NsTclInitKeylistType(void);
-extern void NsTclInitSpecType(void);
+NS_EXTERN void NsTclInitQueueType(void);
+NS_EXTERN void NsTclInitAddrType(void);
+NS_EXTERN void NsTclInitTimeType(void);
+NS_EXTERN void NsTclInitKeylistType(void);
+NS_EXTERN void NsTclInitSpecType(void);
 
 /*
  * Callback routines.
  */
 
-extern int NsRunFilters(Ns_Conn *conn, int why);
-extern void NsRunCleanups(Ns_Conn *conn);
-extern void NsRunTraces(Ns_Conn *conn);
-extern void NsRunPreStartupProcs(void);
-extern void NsRunSignalProcs(void);
-extern void NsRunStartupProcs(void);
-extern void NsRunAtReadyProcs(void);
-extern void NsRunAtExitProcs(void);
+NS_EXTERN int NsRunFilters(Ns_Conn *conn, int why);
+NS_EXTERN void NsRunCleanups(Ns_Conn *conn);
+NS_EXTERN void NsRunTraces(Ns_Conn *conn);
+NS_EXTERN void NsRunPreStartupProcs(void);
+NS_EXTERN void NsRunSignalProcs(void);
+NS_EXTERN void NsRunStartupProcs(void);
+NS_EXTERN void NsRunAtReadyProcs(void);
+NS_EXTERN void NsRunAtExitProcs(void);
 
 /*
  * Upload progress routines.
  */
 
-extern void NsConfigProgress(void);
-extern void NsUpdateProgress(Ns_Sock *sock);
+NS_EXTERN void NsConfigProgress(void);
+NS_EXTERN void NsUpdateProgress(Ns_Sock *sock);
 
 /*
  * watchdog.c
  */
 
-extern int NsForkWatchedProcess(void);
+NS_EXTERN int NsForkWatchedProcess(void);
 
 /*
  * Utility functions.
  */
 
-extern int NsCloseAllFiles(int errFd);
-extern int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
-extern void NsMemUmap(FileMap *mapPtr);
+NS_EXTERN int NsCloseAllFiles(int errFd);
+NS_EXTERN int NsMemMap(CONST char *path, int size, int mode, FileMap *mapPtr);
+NS_EXTERN void NsMemUmap(FileMap *mapPtr);
 
-extern void NsStopSockCallbacks(void);
-extern void NsStopScheduledProcs(void);
-extern void NsGetBuf(char **bufPtr, int *sizePtr);
+NS_EXTERN void NsStopSockCallbacks(void);
+NS_EXTERN void NsStopScheduledProcs(void);
+NS_EXTERN void NsGetBuf(char **bufPtr, int *sizePtr);
 
-extern char *NsFindCharset(CONST char *mimetype, size_t *lenPtr);
-extern int NsEncodingIsUtf8(Tcl_Encoding encoding);
+NS_EXTERN char *NsFindCharset(CONST char *mimetype, size_t *lenPtr);
+NS_EXTERN int NsEncodingIsUtf8(Tcl_Encoding encoding);
 
-extern void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
+NS_EXTERN void NsUrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func,
                               Tcl_DString *dsPtr);
 
 void NsParseAuth(Conn *connPtr, char *auth);
 
-extern int NsTclObjIsByteArray(Tcl_Obj *objPtr);
+NS_EXTERN int NsTclObjIsByteArray(Tcl_Obj *objPtr);
 
-extern int NsTclTimeoutException(Tcl_Interp *interp);
+NS_EXTERN int NsTclTimeoutException(Tcl_Interp *interp);
 
 
 /*
  * Proxy support
  */
 
-extern int NsConnRunProxyRequest(Ns_Conn *conn);
+NS_EXTERN int NsConnRunProxyRequest(Ns_Conn *conn);
 
 #endif /* NSD_H */

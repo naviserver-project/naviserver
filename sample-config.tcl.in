@@ -401,6 +401,7 @@ ns_section 	"ns/server/${servername}/module/nssock"
    #ns_param	writerthreads	1	;# 0, number of writer threads
    #ns_param	writersize	1048576	;# 1024*1024, use writer threads for files larger than this value
    #ns_param	writerbufsize	8192	;# 8192, buffer (chunk) size for writer threads
+   #ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (e.g. ns_writer)
 
    # Tuning of keep-alives
    ns_param	keepwait		 5	 ;# timeout in seconds for keep-alive
