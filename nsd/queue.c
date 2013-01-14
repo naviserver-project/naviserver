@@ -663,7 +663,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     case SQueuedIdx:
     case SAllIdx:
         Tcl_DStringInit(dsPtr);
-        if (opt != SQueuedIdx) {
+        if (subcmd != SQueuedIdx) {
 	    int i;
 	    Ns_MutexLock(&poolPtr->tqueue.lock);
 	    for (i=0; i < poolPtr->threads.max; i++) {
@@ -674,7 +674,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	    }
 	    Ns_MutexUnlock(&poolPtr->tqueue.lock);
         }
-        if (opt != SActiveIdx) {
+        if (subcmd != SActiveIdx) {
 	    Ns_MutexLock(&poolPtr->wqueue.lock);
             AppendConnList(dsPtr, poolPtr->wqueue.wait.firstPtr, "queued");
 	    Ns_MutexUnlock(&poolPtr->wqueue.lock);
