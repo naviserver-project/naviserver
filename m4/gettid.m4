@@ -39,3 +39,17 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
         AC_MSG_RESULT(no)
     ])
 ]) # AX_HAVE_GETTID
+
+AC_DEFUN([AX_HAVE_TCP_FASTOPEN], [
+AC_MSG_CHECKING([for TCP_FASTOPEN support])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        #include <linux/tcp.h>
+    ]], [[
+        int main(void)  { return TCP_FASTOPEN != 0; }
+    ]])], [
+        AC_DEFINE(HAVE_TCP_FASTOPEN,1,[Define to 1 when TCP_FASTOPEN is available.])
+        AC_MSG_RESULT(yes)
+    ],[
+        AC_MSG_RESULT(no)
+    ])
+]) # AX_HAVE_TCP_FASTOPEN

@@ -40,6 +40,17 @@
 #define INADDR_NONE -1
 #endif
 
+/*
+ * TCP_FASTOPEN was introduced in Linux 3.7.0. At the time of this
+ * writing, TCP_FASTOPEN is just defined in linux/tcp.h, which we
+ * can't include here (testing with FC18)
+ */
+#ifdef HAVE_TCP_FASTOPEN
+# ifndef TCP_FASTOPEN 
+#  define TCP_FASTOPEN           23      /* Enable FastOpen on listeners */
+# endif
+#endif
+
 
 /*
  * Local functions defined in this file
@@ -727,11 +738,11 @@ Ns_SockSetBlocking(NS_SOCKET sock)
 void
 Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
 {
-#ifdef TCP_FASTOPEN_UNTESTED
+#ifdef TCP_FASTOPEN
     int qlen = 5;
   
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
-		   &sec, sizeof(qlen)) == -1) {
+		   &qlen, sizeof(qlen)) == -1) {
 	Ns_Log(Error, "sock: setsockopt(TCP_FASTOPEN): %s",
 	       ns_sockstrerror(ns_sockerrno));
     }
