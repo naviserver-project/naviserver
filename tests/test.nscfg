@@ -60,6 +60,7 @@ ns_param   writerthreads   3
 ns_param   writersize      1026
 ns_param   writerbufsize   512
 ns_param   deferaccept     0
+#ns_param   writerstreaming	true	;# false;  activate writer for streaming HTML output (e.g. ns_writer)
 
 ns_section "ns/module/nssock/servers"
 ns_param   test            test

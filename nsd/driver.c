@@ -2170,7 +2170,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
             mktemp(sockPtr->tfile);
             sockPtr->tfd = open(sockPtr->tfile, O_RDWR|O_CREAT|O_TRUNC|O_EXCL, 0600);
         } else {
-	    /* don't we need a Ns_ReleaseTemp() on cleanup? */
+	    /* GN: don't we need a Ns_ReleaseTemp() on cleanup? */
             sockPtr->tfd = Ns_GetTemp(); 
         }
 
@@ -3011,6 +3011,9 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     assert(wrSockPtr);
     wrSockPtr->refCount --;
 
+    Ns_Log(DriverDebug, "WriterSockRelease %p refCount %d", 
+	   wrSockPtr, wrSockPtr->refCount);
+
     if (wrSockPtr->refCount > 0) {
 	return;
     }
@@ -3060,7 +3063,9 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	ns_free(wrSockPtr->clientData);
     }
     if (wrSockPtr->fd > -1) {
-        close(wrSockPtr->fd);
+	if (wrSockPtr->streaming != NS_WRITER_STREAM_FINISH) {
+	    close(wrSockPtr->fd);
+	}
         ns_free(wrSockPtr->buf);
     }
 
@@ -3291,7 +3296,7 @@ WriterThread(void *arg)
 		    /*
 		     * If size > 0, there is still something to send.
 		     * If we are spooling from a file, read some data
-		     * from the file and place it into curPtr->buf.
+		     * from the (spool) file and place it into curPtr->buf.
 		     */
 		    if (curPtr->fd > -1) {
 			status = WriterReadFromSpool(wrPtr, curPtr);
@@ -3311,6 +3316,14 @@ WriterThread(void *arg)
 			    err = errno;
 			    status = SOCK_WRITEERROR;
 			} else {
+			    /* The current drivers assure complete or rejected writes 
+			       (n is either -1/0/bufsize) 
+			       the assert() will not stay here, but we should
+			       (a) move the the scatter/gather interface and
+			       (b) handle partial reads and timeouts in the writer
+			    */
+			    assert( curPtr->bufsize == n);
+
 			    /*
 			     * The actual amount sent (n) might be
 			     * less than requested. Keep that data for
@@ -3520,7 +3533,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     * Create a new temporary spool file.
 	     */
 	    first = 1;
-	    connPtr->fd = Ns_GetTemp();
+	    fd = connPtr->fd = Ns_GetTemp();
+
+	    Ns_Log(Notice, "NsWriterQueue: new tmp file has fd %d", fd);
 	
 	} else {
 	    /*
@@ -3556,7 +3571,6 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	if (first) {
 	    data = NULL;
 	    bufs = NULL;
-	    fd = connPtr->fd;
 	    connPtr->nContentSent = wrote;
 	    fcntl(connPtr->fd, F_SETFL, O_NONBLOCK);
 	    /*
@@ -3582,9 +3596,31 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    WriterSockRelease(wrSockPtr);
 	    return TCL_OK;
 	}
+    } else {
+	if (fp != NULL) {
+	    /* 
+	     * The client provided an open file pointer and closes it
+	     */
+	    fd = ns_sockdup(fileno(fp));
+	} else if (fd != -1) {
+	    /* 
+	     * The client provided an open file descriptor and closes it 
+	     */
+	    fd = ns_sockdup(fd);
+	} else if (chan != NULL) {
+	    /* 
+	     * The client provided an open tcl channel and closes it 
+	     */
+	    if (Tcl_GetChannelHandle(chan, TCL_READABLE,
+				     (ClientData)&fd) != TCL_OK) {
+		return NS_ERROR;
+	    }
+	    fd = ns_sockdup(fd);
+        }
     }
 
-    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %ld maxsize %d", wrPtr->threads, nsend, wrPtr->maxsize);
+    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %ld maxsize %d",
+	   wrPtr->threads, nsend, wrPtr->maxsize);
 
     assert(connPtr->servPtr);
     /* Ns_MutexLock(&connPtr->servPtr->pools.lock); */
@@ -3595,42 +3631,36 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     wrSockPtr->sockPtr = connPtr->sockPtr;
     wrSockPtr->sockPtr->timeout.sec = 0;
     wrSockPtr->flags = connPtr->flags;
-    wrSockPtr->fd = -1;
     wrSockPtr->refCount = 1;
 
-    if (chan != NULL) {
-        if (Tcl_GetChannelHandle(chan, TCL_READABLE,
-                                 (ClientData)&wrSockPtr->fd) != TCL_OK) {
-            ns_free(wrSockPtr);
-            return NS_ERROR;
-        }
-    } else if (fp != NULL) {
-        wrSockPtr->fd = fileno(fp);
-    } else if (fd != -1) {
-        wrSockPtr->fd = fd;
+    if (fd != -1) {
+	wrSockPtr->fd = fd;
+        wrSockPtr->buf = ns_malloc(wrPtr->bufsize);
+
     } else if (data != NULL) {
+	wrSockPtr->fd = -1;
         wrSockPtr->data = ns_malloc(nsend + 1);
         memcpy(wrSockPtr->data, data, nsend);
+
+        wrSockPtr->buf = (unsigned char*)wrSockPtr->data;
+        wrSockPtr->bufsize = nsend;
+
     } else if (bufs != NULL) {
 	int   i;
 	char *p;
+
+	wrSockPtr->fd = -1;
 	p = wrSockPtr->data = ns_malloc(nsend + 1);
 	for (i = 0; i < nbufs; i++) {
 	    memcpy(p, bufs[i].iov_base, bufs[i].iov_len);
 	    p += bufs[i].iov_len;
 	}
+        wrSockPtr->buf = (unsigned char*)wrSockPtr->data;
+        wrSockPtr->bufsize = nsend;
+
     } else {
         ns_free(wrSockPtr);
         return NS_ERROR;
-    }
-    if (wrSockPtr->fd > -1) {
-        wrSockPtr->fd  = ns_sockdup(wrSockPtr->fd);
-	Ns_Log(Notice, "sockdup to %d", wrSockPtr->fd);
-        wrSockPtr->buf = ns_malloc(wrPtr->bufsize);
-    }
-    if (wrSockPtr->data) {
-        wrSockPtr->buf = (unsigned char*)wrSockPtr->data;
-        wrSockPtr->bufsize = nsend;
     }
 
     if (connPtr->clientData) {
