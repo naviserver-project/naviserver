@@ -31,13 +31,16 @@
 
 #ifdef __linux
 
-char           *
-Ns_Encrypt(pw, salt, iobuf)
-    char           *pw;
-    char           *salt;
-    char            iobuf[];
+char *
+Ns_Encrypt(char *pw, char *salt, char iobuf[])
 {
-    strcpy(iobuf, crypt(pw, salt));
+    char *c = crypt(pw, salt);
+
+    if (c == NULL) {
+	*iobuf = 0;
+    } else {
+	strcpy(iobuf, c);
+    }
     return iobuf;
 }
 

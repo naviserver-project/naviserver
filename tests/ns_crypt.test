@@ -40,13 +40,13 @@ test ns_crypt-2.2 {basic operation} -body {
 } -result 1
 
 test ns_crypt-2.3 {basic operation} -body {
-     for {set i 0} {$i < 99} {incr i +1} {
+     for {set i 10} {$i < 99} {incr i +1} {
          set nscrypt([ns_crypt "foo" $i]) .
      }
      llength [array names nscrypt]
 } -cleanup {
      array unset nscrypt
-} -result 99
+} -result 89
 
 test ns_crypt-3.1 {usability for *nix like passwords: basic} -body {
      ns_crypt mypassword XL
