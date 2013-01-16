@@ -478,7 +478,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 int
 NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    int          opt = 0, subcmd, value = 0, nextArgIdx;
+    int          subcmd, value = 0, nextArgIdx;
     NsInterp    *itPtr = arg;
     NsServer    *servPtr;
     ConnPool    *poolPtr;
