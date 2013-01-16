@@ -1870,23 +1870,18 @@ SockSendResponse(Sock *sockPtr, int code, char *msg)
 {
     struct iovec iov[3];
     char header[32], *response = NULL;
+    ssize_t sent;
 
     switch (code) {
     case 413:
-        if (response == NULL) {
-            response = "Bad Request";
-        }
+	response = "Bad Request";
         break;
     case 414:
-        if (response == NULL) {
-            response = "Request-URI Too Long";
-        }
+	response = "Request-URI Too Long";
         break;
     case 400:
     default:
-        if (response == NULL) {
-            response = "Bad Request";
-        }
+	response = "Bad Request";
         break;
     }
     snprintf(header, sizeof(header),"HTTP/1.0 %d ", code);
@@ -1896,7 +1891,10 @@ SockSendResponse(Sock *sockPtr, int code, char *msg)
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len = 4;
-    NsDriverSend(sockPtr, iov, 3, 0);
+    sent = NsDriverSend(sockPtr, iov, 3, 0);
+    if (sent < iov[0].iov_len+iov[1].iov_len+iov[2].iov_len) {
+	Ns_Log(Warning, "Driver: partial write while sending error reply");
+    }
 }
 
 
