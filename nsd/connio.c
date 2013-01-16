@@ -580,7 +580,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	return 0;
     }
 
-    if (NsWriterQueue(conn, towrite, NULL, NULL, -1, NULL, bufs, nbufs, 0) == NS_OK) {
+    if (NsWriterQueue(conn, towrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
 	Ns_Log(Debug, "==== writer sent %ld bytes\n", towrite);
 	return towrite;
     }

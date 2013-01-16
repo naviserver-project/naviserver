@@ -198,7 +198,7 @@ typedef struct FileMap {
 /*
  * The following structure maintains writer socket
  */
-
+#define NS_WRITER_SOCK_PREALLOCATED_BUFS 8
 typedef struct WriterSock {
     struct WriterSock *nextPtr;
     struct Sock       *sockPtr;
@@ -207,7 +207,8 @@ typedef struct WriterSock {
     int                status;
     int                err;
     int                refCount;
-    char              *data;
+    struct iovec      *bufs;
+    int                nbufs;
     NS_SOCKET          fd;
     int                keep;
     Tcl_WideInt        nread;
@@ -220,6 +221,7 @@ typedef struct WriterSock {
     Ns_Mutex           fdlock;
     char              *clientData;
     Ns_Time            startTime;
+    struct iovec       preallocated_bufs[NS_WRITER_SOCK_PREALLOCATED_BUFS];
 } WriterSock;
 
 /*
@@ -1042,7 +1044,7 @@ NS_EXTERN void NsWriterLock(void);
 NS_EXTERN void NsWriterUnlock(void);
 NS_EXTERN void NsWriterFinish(WriterSock *wrSockPtr);
 NS_EXTERN int  NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
-			  FILE *fp, int fd, const char *data,  struct iovec *bufs, int nbufs, 
+			  FILE *fp, int fd, struct iovec *bufs, int nbufs, 
 			  int everysize);
 
 NS_EXTERN void NsFreeAdp(NsInterp *itPtr);
