@@ -319,7 +319,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
                  */
 
                 towrite += Ns_SetVec(sbufPtr, sbufIdx++,
-                                     hdr, sprintf(hdr, "%lx\r\n", bodyLength));
+                                     hdr, sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength));
 
                 (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
                 sbufIdx += nbufs;
@@ -581,7 +581,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     }
 
     if (NsWriterQueue(conn, towrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
-	Ns_Log(Debug, "==== writer sent %ld bytes\n", towrite);
+	Ns_Log(Debug, "==== writer sent %" PRIdz " bytes\n", towrite);
 	return towrite;
     }
 
@@ -1137,7 +1137,7 @@ CheckKeep(Conn *connPtr)
 
 		if (connPtr->drvPtr->keepmaxuploadsize
 		    && connPtr->contentLength > (size_t)connPtr->drvPtr->keepmaxuploadsize) {
-		    Ns_Log(Notice, "Disallow keep-alive, content-Length %ld larger keepmaxuploadsize %d: %s",
+		    Ns_Log(Notice, "Disallow keep-alive, content-Length %" PRIdz " larger keepmaxuploadsize %d: %s",
 			   connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
 			   connPtr->request->line);
 		    return 0;
