@@ -193,7 +193,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
             || (fd >= 0
                 && nsbufs > 0)) {
 
-            sent = NsDriverSend(sock->sock, sbufs, nsbufs, timeoutPtr, 0);
+	    sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0);
 
             nsbufs = 0;
             if (sent > 0) {
