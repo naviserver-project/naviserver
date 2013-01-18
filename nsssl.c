@@ -383,7 +383,8 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
     X509 *peer;
-    int err, n;
+    int err, n, got = 0;
+    char *p = (char *)bufs->iov_base;
 
     /*
      * Verify client certificate, driver may require valid cert
@@ -406,9 +407,6 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
     }
 
     while (1) {
-        char *p = (char *)bufs->iov_base;
-	int   got = 0;
-	
         ERR_clear_error();
         n = SSL_read(sslPtr->ssl, p + got, bufs->iov_len - got);
         err = SSL_get_error(sslPtr->ssl, n);
