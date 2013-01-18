@@ -193,7 +193,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
             || (fd >= 0
                 && nsbufs > 0)) {
 
-            sent = Ns_SockSendBufs(sock->sock, sbufs, nsbufs, timeoutPtr, 0);
+            sent = NsDriverSend(sock->sock, sbufs, nsbufs, timeoutPtr, 0);
 
             nsbufs = 0;
             if (sent > 0) {
@@ -513,5 +513,5 @@ ssize_t
 SendBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
          Ns_Time *timeoutPtr, int flags)
 {
-    return Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    return Ns_SockSendBufs(sock, bufs, nbufs, timeoutPtr, flags);
 }

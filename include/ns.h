@@ -2417,16 +2417,16 @@ NS_EXTERN int
 Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr);
 NS_EXTERN int
 Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t nrecv,
-                          Ns_Time *timeoutPtr);
+	    Ns_Time *timeoutPtr);
 NS_EXTERN int
 Ns_SockSend(NS_SOCKET sock, void *vbuf, size_t nsend,
-                          Ns_Time *timeoutPtr);
+	    Ns_Time *timeoutPtr);
 NS_EXTERN int
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-                              Ns_Time *timeoutPtr, int flags);
-NS_EXTERN int
-Ns_SockSendBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-                              Ns_Time *timeoutPtr, int flags);
+		Ns_Time *timeoutPtr, int flags);
+NS_EXTERN ssize_t
+Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
+		Ns_Time *timeoutPtr, int flags);
 
 NS_EXTERN NS_SOCKET
 Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;

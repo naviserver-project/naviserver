@@ -235,17 +235,40 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  */
 
 static ssize_t
-Send(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
      Ns_Time *timeoutPtr, int flags)
 {
-    ssize_t n;
-    int     decork;
+    ssize_t   n;
+    int       decork;
+    NS_SOCKET sock = sockPtr->sock;
 
-    decork = Ns_SockCork(sock, 1);
-    n = Ns_SockSendBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    decork = Ns_SockCork(sockPtr, 1);
 
+#ifdef _WIN32
+    DWORD n1;
+    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n1, flags,
+                NULL, NULL) != 0) {
+        n1 = -1;
+    }
+    n = n1;
+#else
+    {
+	struct msghdr msg;
+      
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = bufs;
+	msg.msg_iovlen = nbufs;
+	
+	n = sendmsg(sock, &msg, flags);
+	
+	if (n < 0) {
+	    Ns_Log(Debug, "SockSend: %s",
+		   ns_sockstrerror(ns_sockerrno));
+	}
+    }
+#endif
     if (decork) {
-      Ns_SockCork(sock, 0);
+      Ns_SockCork(sockPtr, 0);
     }
     return n;
 }

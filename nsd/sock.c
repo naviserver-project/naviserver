@@ -60,8 +60,6 @@ static NS_SOCKET SockConnect(char *host, int port, char *lhost, int lport,
 			     int async);
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 static int SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags);
-static int SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags);
-
 
 
 /*
@@ -213,8 +211,8 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
  *----------------------------------------------------------------------
  */
 
-int
-Ns_SockSendBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
+ssize_t
+Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
                 Ns_Time *timeoutPtr, int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
@@ -222,6 +220,7 @@ Ns_SockSendBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
     void         *data;
     size_t        len, towrite = 0;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
+    Sock          *sock = (Sock *)sockPtr;
 
     sbufPtr = sbufs;
     sbufLen = UIO_MAXIOV;
@@ -249,11 +248,11 @@ Ns_SockSendBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
          * Timeout once if first attempt would block.
          */
 
-        sent = SockSend(sock, sbufPtr, nsbufs, flags);
+        sent = NsDriverSend(sock, sbufPtr, nsbufs, flags);
         if (sent < 0
             && ns_sockerrno == EWOULDBLOCK
-            && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-            sent = SockSend(sock, sbufPtr, nsbufs, flags);
+            && Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+            sent = NsDriverSend(sock, sbufPtr, nsbufs, flags);
         }
         if (sent < 0) {
             break;
@@ -1127,49 +1126,3 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags)
 #endif
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * SockSend --
- *
- *      Send a vector of buffers on a non-blocking socket. Not all
- *      data may be sent.
- *
- * Results:
- *      Number of bytes sent or -1 on error.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags)
-{
-#ifdef _WIN32
-    DWORD n;
-    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n, flags,
-                NULL, NULL) != 0) {
-        n = -1;
-    }
-
-    return n;
-#else
-    int n;
-    struct msghdr msg;
-
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_iov = bufs;
-    msg.msg_iovlen = nbufs;
-
-    n = sendmsg(sock, &msg, flags);
-
-    if (n < 0) {
-        Ns_Log(Debug, "SockSend: %s",
-               ns_sockstrerror(ns_sockerrno));
-    }
-    return n;
-#endif
-}

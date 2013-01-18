@@ -198,30 +198,43 @@ typedef struct FileMap {
 /*
  * The following structure maintains writer socket
  */
-#define NS_WRITER_SOCK_PREALLOCATED_BUFS 8
 typedef struct WriterSock {
-    struct WriterSock *nextPtr;
-    struct Sock       *sockPtr;
+    struct WriterSock   *nextPtr;
+    struct Sock         *sockPtr;
     struct SpoolerQueue *queuePtr; 
-    struct Conn       *connPtr;
-    int                status;
-    int                err;
-    int                refCount;
-    struct iovec      *bufs;
-    int                nbufs;
-    NS_SOCKET          fd;
-    int                keep;
-    Tcl_WideInt        nread;
-    Tcl_WideInt        nsent;
-    size_t             size;
-    size_t             bufsize;
-    unsigned int       flags;
-    unsigned char     *buf;
-    int                streaming;
-    Ns_Mutex           fdlock;
+    struct Conn         *connPtr;
+    int                  status;
+    int                  err;
+    int                  refCount;
+    int                  keep;
+    Tcl_WideInt          nread;
+    Tcl_WideInt          nsent;
+    size_t               size;
+    unsigned int         flags;
+    int                  streaming;
+    NS_SOCKET            fd;
+    
+    union {
+    struct {
+	struct iovec      *bufs;                 /* incoming bufs to be sent */
+	int                nbufs;
+	int                bufIdx; 
+	struct iovec       sbufs[UIO_SMALLIOV];  /* scratch bufs for handling partial sends */
+	int                nsbufs;
+	int                sbufIdx;
+	struct iovec       preallocated_bufs[UIO_SMALLIOV];
+    } mem;
+
+    struct {
+	size_t             bufsize;
+	unsigned char     *buf;
+	Ns_Mutex           fdlock;
+    } file;
+    };
+
     char              *clientData;
     Ns_Time            startTime;
-    struct iovec       preallocated_bufs[NS_WRITER_SOCK_PREALLOCATED_BUFS];
+
 } WriterSock;
 
 /*

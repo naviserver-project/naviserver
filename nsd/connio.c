@@ -585,14 +585,17 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 	return towrite;
     }
 
-    while (towrite > 0) {
-	sent = NsDriverSend(connPtr->sockPtr, bufs, nbufs, 0);
-	if (sent < 0) {
-	    break;
-	}
-	towrite -= sent;
-	nwrote += sent;
+    {
+	Ns_Time timeout;
+	
+	timeout.sec = connPtr->sockPtr->drvPtr->sendwait;
+	timeout.usec = 0;
+      
+	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0);
     }
+    towrite -= sent;
+    nwrote += sent;
+
     if (nwrote > 0) {
 	connPtr->nContentSent += nwrote;
     }
