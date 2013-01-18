@@ -490,7 +490,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
     Conn *connPtr = (Conn *) conn;
 
     Ns_ConnSetResponseStatus(conn, status);
-    Ns_ConnWriteData(conn, NULL, 0, 0);
+    Ns_ConnWriteVData(conn, NULL, 0, 0);
 
     return connPtr->nContentSent;
 }
@@ -616,7 +616,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
 
     Ns_DStringVarAppend(&ds, "\n</BODY></HTML>\n", NULL);
 
-    result = Ns_ConnReturnHtml(conn, status, ds.string, ds.length);
+    result = Ns_ConnReturnCharData(conn, status, ds.string, ds.length, "text/html");
     Ns_DStringFree(&ds);
 
     return result;
@@ -680,14 +680,17 @@ int
 Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data, 
 		      ssize_t len, CONST char *type)
 {
+    struct iovec sbuf;
+
     if (type != NULL) {
         Ns_ConnSetEncodedTypeHeader(conn, type);
     }
-    if (len < 0) {
-        len = data ? strlen(data) : 0;
-    }
+
+    sbuf.iov_base = (void *)data;
+    sbuf.iov_len = len < 0 ? (data ? strlen(data) : 0) : len;
+
     Ns_ConnSetResponseStatus(conn, status);
-    Ns_ConnWriteChars(conn, data, len, 0);
+    Ns_ConnWriteVChars(conn, &sbuf, 1, 0);
 
     return Ns_ConnClose(conn);
 }
@@ -827,7 +830,7 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
             Ns_SetFileVec(bufs, 0, fd, data, 0, len);
             nbufs = 1;
         }
-        if ((result = Ns_ConnWriteData(conn, NULL, 0, NS_CONN_STREAM)) == NS_OK) {
+        if ((result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM)) == NS_OK) {
             result = Ns_ConnSendFileVec(conn, bufs, nbufs);
         }
     }

@@ -1057,7 +1057,7 @@ Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t towrite, int flags)
 
 NS_EXTERN int
 Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, int flags)
@@ -1065,7 +1065,7 @@ Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, int flags)
 
 NS_EXTERN int
 Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)

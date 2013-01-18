@@ -172,22 +172,27 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
 
     nCompressed = 0;
 
-    for (i = 0; i < nbufs; i++) {
-
-        z->next_in  = bufs[i].iov_base;
-        z->avail_in = bufs[i].iov_len;
-        nCompressed += z->avail_in;;
-
-        if (z->avail_in == 0 && i < nbufs -1) {
-            continue;
-        }
-        if (nCompressed == toCompress) {
-            flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
-        } else {
-            flushFlags = Z_NO_FLUSH;
-        }
-
+    if (nbufs == 0) {
+	flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
         DeflateOrAbort(z, flushFlags);
+    } else {
+	for (i = 0; i < nbufs; i++) {
+
+	    z->next_in  = bufs[i].iov_base;
+	    z->avail_in = bufs[i].iov_len;
+	    nCompressed += z->avail_in;;
+	    
+	    if (z->avail_in == 0 && i < nbufs -1) {
+		continue;
+	    }
+	    if (nCompressed == toCompress) {
+		flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
+	    } else {
+		flushFlags = Z_NO_FLUSH;
+	    }
+	    
+	    DeflateOrAbort(z, flushFlags);
+	}
     }
     Ns_DStringSetLength(dsPtr, dsPtr->length - z->avail_out);
 

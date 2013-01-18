@@ -1080,8 +1080,11 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_ConnSetResponseStatus(conn, httpstatus);
 copy:
     do {
-    	status = Ns_ConnWriteData(conn, cgiPtr->ptr, cgiPtr->cnt,
-                                  NS_CONN_STREAM);
+	struct iovec vbuf;
+
+	vbuf.iov_base = cgiPtr->ptr;
+	vbuf.iov_len  = cgiPtr->cnt;
+    	status = Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
     } while (status == NS_OK && CgiRead(cgiPtr) > 0);
 
     /*

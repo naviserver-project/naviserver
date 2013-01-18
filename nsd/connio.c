@@ -77,7 +77,7 @@ static int HdrEq(Ns_Set *set, char *name, char *value);
  *      NS_OK if all data written, NS_ERROR otherwise.
  *
  * Side effects:
- *      See Ns_ConnWriteData().
+ *      See Ns_ConnWriteVData().
  *
  *----------------------------------------------------------------------
  */
@@ -405,7 +405,7 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
      */
 
     if (nsend == 0) {
-        return Ns_ConnWriteData(conn, NULL, 0, 0);
+        return Ns_ConnWriteVData(conn, NULL, 0, 0);
     }
 
     /*
@@ -429,12 +429,16 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
             nread = read(fd, buf, toread);
         }
 
-        if (nread == -1
-                || nread == 0 /* NB: truncated file */) {
+        if (nread == -1 || nread == 0 /* NB: truncated file */) {
             status = NS_ERROR;
-        } else if ((status = Ns_ConnWriteData(conn, buf, nread, 0)) == NS_OK) {
-            nsend -= nread;
-        }
+        } else {
+	    struct iovec vbuf;
+	    vbuf.iov_base = (void *) buf;
+	    vbuf.iov_len = nread;
+	    if ((status = Ns_ConnWriteVData(conn, &vbuf, 1, 0)) == NS_OK) {
+		nsend -= nread;
+	    }
+	}
     }
 
     return status;
@@ -504,7 +508,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
  *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      See Ns_ConnWriteData().
+ *      See Ns_ConnWriteVData().
  *
  *----------------------------------------------------------------------
  */
@@ -512,7 +516,10 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
 int
 Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
 {
-    return Ns_ConnWriteData(conn, string, (int) strlen(string), NS_CONN_STREAM);
+    struct iovec vbuf;
+    vbuf.iov_base = (void *) string;
+    vbuf.iov_len  = strlen(string);
+    return Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
 }
 
 
@@ -527,7 +534,7 @@ Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
  *      NS_OK or NS_ERROR.
  *
  * Side effects:
- *      See Ns_ConnWriteData().
+ *      See Ns_ConnWriteVData().
  *
  *----------------------------------------------------------------------
  */
@@ -535,7 +542,11 @@ Ns_ConnPuts(Ns_Conn *conn, CONST char *string)
 int
 Ns_ConnSendDString(Ns_Conn *conn, Ns_DString *dsPtr)
 {
-    return Ns_ConnWriteData(conn, dsPtr->string, dsPtr->length, NS_CONN_STREAM);
+    struct iovec vbuf;
+
+    vbuf.iov_base = dsPtr->string;
+    vbuf.iov_len  = dsPtr->length;
+    return Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
 }
 
 
@@ -672,13 +683,12 @@ Ns_ConnClose(Ns_Conn *conn)
         if (connPtr->flags & NS_CONN_STREAM
              && (connPtr->flags & NS_CONN_CHUNK
                  || connPtr->compress > 0)) {
-
             /*
              * Streaming:
              *   In chunked mode, write the end-of-content trailer.
              *   If compressing, write the gzip footer.
              */
-            (void) Ns_ConnWriteChars(conn, NULL, 0, NS_CONN_STREAM_CLOSE);
+            (void) Ns_ConnWriteVChars(conn, NULL, 0, NS_CONN_STREAM_CLOSE);
         }
 
 	/*
@@ -724,9 +734,13 @@ Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, size_t towrite)
     Conn  *connPtr = (Conn *) conn;
     size_t n;
     int    status;
+    struct iovec vbuf;
+
+    vbuf.iov_base = (void *) buf;
+    vbuf.iov_len  = towrite;
 
     n = (size_t)connPtr->nContentSent;
-    status = Ns_ConnWriteData(conn, buf, towrite, 0);
+    status = Ns_ConnWriteVData(conn, &vbuf, 1, 0);
     if (status == NS_OK) {
       return (int)(connPtr->nContentSent - n);
     }
@@ -736,13 +750,20 @@ Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, size_t towrite)
 int
 Ns_WriteConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
 {
-    return Ns_ConnWriteData(conn, buf, towrite, NS_CONN_STREAM);
+    struct iovec vbuf;
+    vbuf.iov_base = (void *) buf;
+    vbuf.iov_len  = towrite;
+    return Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
 }
 
 int
 Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
 {
-    return Ns_ConnWriteChars(conn, buf, towrite, NS_CONN_STREAM);
+    struct iovec sbuf;
+
+    sbuf.iov_base = (void *)buf;
+    sbuf.iov_len = towrite;
+    return Ns_ConnWriteVChars(conn, &sbuf, 1, NS_CONN_STREAM);
 }
 
 

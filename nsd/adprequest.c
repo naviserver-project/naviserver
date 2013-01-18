@@ -479,6 +479,7 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                 Tcl_SetResult(interp, "adp flush failed: connection closed",
                               TCL_STATIC);
             } else {
+		struct iovec sbuf;
 
                 if (!(flags & ADP_FLUSHED) && (flags & ADP_EXPIRE)) {
                     Ns_ConnCondSetHeaders(conn, "Expires", "now");
@@ -488,9 +489,11 @@ NsAdpFlush(NsInterp *itPtr, int stream)
                     buf = NULL;
                     len = 0;
                 }
-
-                if (Ns_ConnWriteChars(itPtr->conn, buf, len,
-                                      stream ? NS_CONN_STREAM : 0) == NS_OK) {
+		
+		sbuf.iov_base = buf;
+		sbuf.iov_len  = len;
+                if (Ns_ConnWriteVChars(itPtr->conn, &sbuf, 1,
+				       stream ? NS_CONN_STREAM : 0) == NS_OK) {
                     result = TCL_OK;
                 }
                 if (result != TCL_OK) {
