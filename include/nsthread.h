@@ -401,19 +401,21 @@ typedef struct DIR_ *DIR;
  */
 
 #ifndef UIO_MAXIOV
-# if defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
-#  define UIO_MAXIOV 1024
-# elif defined(__sun)
-#  ifndef IOV_MAX
-#   define UIO_MAXIOV 16
-#  else
-#   define UIO_MAXIOV IOV_MAX
-#  endif
-# elif defined(IOV_MAX)
+# ifdef IOV_MAX
 #  define UIO_MAXIOV IOV_MAX
 # else
-#  define UIO_MAXIOV 16
+#  if defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
+#   define UIO_MAXIOV 1024
+#  elif defined(__sun)
+#   define UIO_MAXIOV 16
+#  else
+#   define UIO_MAXIOV 16
+#  endif
 # endif
+#endif
+
+#ifndef UIO_SMALLIOV
+# define UIO_SMALLIOV 8
 #endif
 
 /*
