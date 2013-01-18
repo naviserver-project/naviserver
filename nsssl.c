@@ -353,6 +353,7 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *sock
             }
             sock->arg = sslPtr;
             SSL_set_fd(sslPtr->ssl, sock->sock);
+	    SSL_set_mode(sslPtr->ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
             SSL_set_accept_state(sslPtr->ssl);
         }
         return NS_DRIVER_ACCEPT_DATA;
@@ -481,6 +482,10 @@ Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
 		return -1;
 	    }
 	    size += rc;
+	    if (rc < bufs->iov_len) {
+		Ns_Log(Debug, "SSL: partial write, wanted %ld wrote %d", bufs->iov_len, rc);
+		break;
+	    }
 	}
 	nbufs--;
 	bufs++;
