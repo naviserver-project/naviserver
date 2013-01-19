@@ -467,7 +467,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
  *
  * Ns_ConnQueueHeaders, Ns_ConnFlushHeaders, Ns_ConnSetRequiredHeaders --
  *
- *      Deperecated.
+ *      Deprecated.
  *
  * Results:
  *      None / Number of bytes written.
