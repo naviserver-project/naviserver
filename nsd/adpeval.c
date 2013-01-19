@@ -219,7 +219,6 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
     Tcl_Interp   *interp = itPtr->interp;
     AdpCode       code;
     Tcl_DString   output;
-    Tcl_Obj      *objPtr;
     int           result;
     char         *obj0;
 
@@ -244,6 +243,8 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
      */
 
     if (result == TCL_OK) {
+	Tcl_Obj *objPtr;
+
         if (resvar != NULL) {
             objPtr = Tcl_GetObjResult(interp);
             if (Tcl_SetVar2Ex(interp, resvar, NULL, objPtr, TCL_LEAVE_ERR_MSG)
@@ -399,11 +400,8 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     InterpPage     *ipagePtr;
     Page           *pagePtr;
     AdpCache       *cachePtr;
-    AdpCode        *codePtr;
     Ns_Time         now;
-    Ns_Entry       *ePtr;
-    Objs           *objsPtr;
-    int             isNew, cacheGen;
+    int             isNew;
     char           *p;
     int             result;
 
@@ -469,6 +467,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     } else if (S_ISREG(st.st_mode) == 0) {
         Tcl_AppendResult(interp, "not an ordinary file: ", file, NULL);
     } else {
+	Ns_Entry *ePtr;
 
         /*
          * Check for valid code in interp page cache.
@@ -546,10 +545,15 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
      */
 
     if (ipagePtr != NULL) {
+	AdpCode  *codePtr;
+        Objs *objsPtr;
+	int   cacheGen;
+
         pagePtr = ipagePtr->pagePtr;
         if (ttlPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {
             cachePtr = NULL;
         } else {
+
             Ns_MutexLock(&servPtr->adp.pagelock);
 
             /*
@@ -796,7 +800,7 @@ ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
     Tcl_Interp   *interp = itPtr->interp;
     Tcl_Encoding  encoding;
     Tcl_DString   utf;
-    char         *page, *buf;
+    char         *buf;
     int           fd, n, trys;
     size_t        size;
     Page         *pagePtr;
@@ -852,6 +856,8 @@ ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
     if (n != size) {
         Tcl_AppendResult(interp, "inconsistant file: ", file, NULL);
     } else {
+        char *page;
+
         buf[n] = '\0';
         Tcl_DStringInit(&utf);
         encoding = Ns_GetFileEncoding(file);
@@ -908,7 +914,6 @@ NsAdpLogError(NsInterp *itPtr)
     Tcl_Interp  *interp = itPtr->interp;
     Ns_Conn     *conn = itPtr->conn;
     Ns_DString   ds;
-    Tcl_Obj     *objv[2];
     AdpFrame    *framePtr;
     char        *adp, *inc, *dot, *err;
     int          i, len;
@@ -967,6 +972,8 @@ NsAdpLogError(NsInterp *itPtr)
     Ns_DStringFree(&ds);
     adp = (char*)itPtr->servPtr->adp.errorpage;
     if (adp != NULL && itPtr->adp.errorLevel == 0) {
+	Tcl_Obj *objv[2];
+
         ++itPtr->adp.errorLevel;
         objv[0] = Tcl_NewStringObj(adp, -1);
         Tcl_IncrRefCount(objv[0]);

@@ -1175,7 +1175,6 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 {
     Ns_ObjvSpec *specPtr;
     Ns_DString   ds;
-    char        *p;
 
     Ns_DStringInit(&ds);
     if (optSpec != NULL) {
@@ -1185,7 +1184,7 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             } else if (specPtr->proc == &Ns_ObjvBool && specPtr->arg != NULL) {
                 Ns_DStringPrintf(&ds, "?%s? ", specPtr->key);
             } else {
-                p = specPtr->key;
+	        char *p = specPtr->key;
                 if (*specPtr->key == '-') {
                     ++p;
                 }

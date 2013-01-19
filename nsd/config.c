@@ -811,12 +811,11 @@ SectionCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
 static char *
 ConfigGet(CONST char *section, CONST char *key, int exact, CONST char *defstr)
 {
-    Ns_Set         *set;
     char           *s;
 
     s = NULL;
     if (section != NULL && key != NULL) {
-      set = GetSection(section, 0);
+	Ns_Set  *set = GetSection(section, 0);
         if (set != NULL) {
             int  i;
             if (exact) {

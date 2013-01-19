@@ -215,7 +215,7 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     char     *name, *data, *domain = NULL, *path = NULL;
     int       flags = 0, secure = 0, scriptable = 0;
     time_t    maxage;
-    Ns_Time  *nowPtr, *expiresPtr = NULL;
+    Ns_Time  *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-secure",     Ns_ObjvBool,   &secure,     NULL},
@@ -249,7 +249,7 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
      */
 
     if (expiresPtr != NULL) {
-        nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
+        Ns_Time *nowPtr = Ns_ConnStartTime(conn); /* Approximately now... */
         if (expiresPtr->sec < 0) {
 	  maxage = TIME_T_MAX;
         } else if (expiresPtr->sec > nowPtr->sec) {

@@ -145,7 +145,6 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
 {
     va_list      ap;
     Ns_DString   ds;
-    char        *arg;
     int          deallocInterp = 0;
     int          status = TCL_ERROR;
 
@@ -154,7 +153,8 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
         deallocInterp = 1;
     }
     if (interp != NULL) {
-        int ii;
+        char *arg;
+        int   ii;
 
         Ns_DStringInit(&ds);
         Ns_DStringAppend(&ds, cbPtr->script);

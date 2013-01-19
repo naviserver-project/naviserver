@@ -366,7 +366,6 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 {
     NsLimits          **limitsPtrPtr = spec->dest;
     int                 create = spec->arg ? 1 : 0;
-    char               *limits;
     static CONST char  *limitsType = "ns:limits";
 
     if (*objcPtr < 1) {
@@ -374,8 +373,7 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     }
     if (Ns_TclGetOpaqueFromObj(objv[0], limitsType, (void **) limitsPtrPtr)
         != TCL_OK) {
-
-        limits = Tcl_GetString(objv[0]);
+        char *limits = Tcl_GetString(objv[0]);
         *limitsPtrPtr = FindLimits(limits, create);
         if (*limitsPtrPtr == NULL) {
             Tcl_AppendResult(interp, "no such limits: ", limits, NULL);

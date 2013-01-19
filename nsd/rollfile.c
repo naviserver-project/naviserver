@@ -77,7 +77,7 @@ static int Unlink(CONST char *file);
 int
 Ns_RollFile(CONST char *file, int max)
 {
-    char *first, *next, *dot;
+    char *first;
     int   err;
 
     if (max < 0 || max > 999) {
@@ -91,6 +91,7 @@ Ns_RollFile(CONST char *file, int max)
     err = Exists(first);
 
     if (err > 0) {
+        char *next;
         int num = 0;
 
         next = ns_strdup(first);
@@ -100,7 +101,7 @@ Ns_RollFile(CONST char *file, int max)
          */
 
         do {
-            dot = strrchr(next, '.') + 1;
+            char *dot = strrchr(next, '.') + 1;
             sprintf(dot, "%03d", num++);
         } while ((err = Exists(next)) == 1 && num < max);
 
@@ -115,7 +116,7 @@ Ns_RollFile(CONST char *file, int max)
          */
 
         while (err == 0 && num-- > 0) {
-            dot = strrchr(first, '.') + 1;
+            char *dot = strrchr(first, '.') + 1;
             sprintf(dot, "%03d", num);
             dot = strrchr(next, '.') + 1;
             sprintf(dot, "%03d", num + 1);

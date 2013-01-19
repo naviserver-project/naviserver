@@ -466,7 +466,7 @@ SetUrl(Ns_Request *request, char *url)
 int
 Ns_ParseHeader(Ns_Set *set, char *line, Ns_HeaderCaseDisposition disp)
 {
-    char           *key, *sep;
+    char           *sep;
     char           *value;
     int             index;
     Ns_DString	    ds;
@@ -493,6 +493,7 @@ Ns_ParseHeader(Ns_Set *set, char *line, Ns_HeaderCaseDisposition disp)
 	    Ns_DStringFree(&ds);
 	}
     } else {
+        char *key;
         sep = strchr(line, ':');
         if (sep == NULL) {
 	    return NS_ERROR;	/* Malformed header. */

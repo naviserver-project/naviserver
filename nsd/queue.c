@@ -1491,6 +1491,7 @@ CreateConnThread(ConnPool *poolPtr)
 	break;
       }
     }
+    assert(argPtr);
     argPtr->state = connThread_initial;
     poolPtr->servPtr->stats.connthreads++;
     Ns_MutexUnlock(&poolPtr->tqueue.lock);

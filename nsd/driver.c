@@ -3104,7 +3104,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
 static int
 WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
-    int            streaming = curPtr->streaming, status = NS_OK, n;
+    int            streaming = curPtr->streaming, status = NS_OK;
     Tcl_WideInt    toread, maxsize;
     unsigned char *bufPtr;
 
@@ -3141,7 +3141,8 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
      * Read content from the file into the buffer.
      */
     if (toread > 0) {
-	
+	int n;
+
 	if (streaming) {
 	    /* 
 	     * In streaming mode, the connection thread writes to the

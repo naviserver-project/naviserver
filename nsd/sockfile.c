@@ -173,7 +173,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
         length = bufs[i].length;
         fd     = bufs[i].fd;
 
-        if (length <= 0) {
+        if (length < 1) {
             continue;
         }
 

@@ -630,7 +630,8 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
 {
     Tcl_HashTable  *tablePtr;
     Tcl_HashEntry  *hPtr;
-    int             isNew, next;
+    int             isNew;
+    unsigned int    next;
     unsigned char   type;
     char            buf[TCL_INTEGER_SPACE + 1];
 

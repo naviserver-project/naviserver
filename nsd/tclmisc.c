@@ -150,9 +150,7 @@ CONST char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
 {
     NsInterp    *itPtr = NsGetInterpData(interp);
-    Ns_Conn     *conn;
     CONST char  *errorInfo, **logHeaders, **hdr;
-    char        *value;
     Ns_DString   ds;
 
     if (extraInfo != NULL) {
@@ -163,7 +161,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
         errorInfo = "";
     }
     if (itPtr != NULL && itPtr->conn != NULL) {
-        conn = itPtr->conn;
+        Ns_Conn *conn = itPtr->conn;
         Ns_DStringInit(&ds);
         if (conn->request->method != NULL) {
             Ns_DStringVarAppend(&ds, conn->request->method, " ", NULL);
@@ -176,7 +174,8 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
             for (hdr = logHeaders; *hdr != NULL; hdr++) {
-                if ((value = Ns_SetIGet(conn->headers, *hdr)) != NULL) {
+	        char *value = Ns_SetIGet(conn->headers, *hdr);
+                if (value != NULL) {
                     Ns_DStringVarAppend(&ds, ", ", *hdr, ": ", value, NULL);
                 }
             }
@@ -1020,7 +1019,6 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Tcl_Obj *CONST objv[])
 {
     struct stat st;
-    char *name;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "file ?varname?");
@@ -1031,7 +1029,7 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return NS_OK;
     }
     if (objc > 2) {
-        name = Tcl_GetString(objv[2]);
+        char *name = Tcl_GetString(objv[2]);
         Tcl_SetVar2Ex(interp, name, "dev", Tcl_NewIntObj(st.st_ino), 0);
         Tcl_SetVar2Ex(interp, name, "ino", Tcl_NewWideIntObj(st.st_ino), 0);
         Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewLongObj(st.st_nlink), 0);

@@ -919,7 +919,7 @@ MakePath(Ns_DString *dest, va_list *pap)
 static char *
 ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
 {
-    char       *safehost, *path, *p;
+    char       *safehost, *path;
     Ns_Conn    *conn;
     Ns_Set     *headers;
     Ns_DString  ds;
@@ -941,6 +941,7 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
                        && (headers = Ns_ConnHeaders(conn)) != NULL
                        && (rawhost = Ns_SetIGet(headers, "Host")) != NULL))
                && *rawhost != '\0') {
+        char *p;
 
         /*
          * Bail out if there are suspicious characters in the unprocessed Host.

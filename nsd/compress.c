@@ -144,7 +144,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
     z_stream   *z = &stream->z;
     size_t      toCompress, nCompressed, compressLen;
     ptrdiff_t   offset;
-    int         flushFlags, i;
+    int         flushFlags;
 
     offset = (ptrdiff_t) Ns_DStringLength(dsPtr);
     toCompress = Ns_SumVec(bufs, nbufs);
@@ -176,6 +176,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
 	flushFlags = flush ? Z_FINISH : Z_SYNC_FLUSH;
         DeflateOrAbort(z, flushFlags);
     } else {
+	int i;
 	for (i = 0; i < nbufs; i++) {
 
 	    z->next_in  = bufs[i].iov_base;

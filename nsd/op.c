@@ -252,7 +252,6 @@ Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
 int
 Ns_ConnRunRequest(Ns_Conn *conn)
 {
-    Req  *reqPtr;
     int   status = NS_OK;
     Conn *connPtr = (Conn *) conn;
     char *server = Ns_ConnServer(conn);
@@ -276,6 +275,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
      */
 
     if (conn->request->method != NULL && conn->request->url != NULL) {
+        Req  *reqPtr;
         Ns_MutexLock(&ulock);
         reqPtr = Ns_UrlSpecificGet(server, conn->request->method, conn->request->url, uid);
         if (reqPtr == NULL) {
@@ -431,11 +431,12 @@ Ns_UnRegisterProxyRequest(CONST char *server, CONST char *method,
                           CONST char *protocol)
 {
     NsServer      *servPtr;
-    Ns_DString     ds;
-    Tcl_HashEntry *hPtr;
 
     servPtr = NsGetServer(server);
     if (servPtr != NULL) {
+        Tcl_HashEntry *hPtr;
+        Ns_DString     ds;
+
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, method, protocol, NULL);
         Ns_MutexLock(&servPtr->request.plock);

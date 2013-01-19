@@ -250,7 +250,6 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     int           nsbufs, sbufIdx;
     size_t        bodyLength, towrite;
     ssize_t       nwrote;
-    char          hdr[32];
     struct iovec  sbufs[32], *sbufPtr = sbufs;
 
     Ns_DStringInit(&ds);
@@ -314,6 +313,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
         } else {
 
             if (bodyLength > 0) {
+		char hdr[32];
+
                 /*
                  * Output length header followed by content and then trailer.
                  */
@@ -678,7 +679,6 @@ Ns_ConnClose(Ns_Conn *conn)
 	   connPtr->sockPtr);
 
     if (connPtr->sockPtr != NULL) {
-        int keep;
 
         if (connPtr->flags & NS_CONN_STREAM
              && (connPtr->flags & NS_CONN_CHUNK
@@ -696,7 +696,7 @@ Ns_ConnClose(Ns_Conn *conn)
 	 * writer thread.
 	 */
 	if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0) {
-	    keep = connPtr->keep > 0 ? 1 : 0;
+	    int keep = connPtr->keep > 0 ? 1 : 0;
 	    NsSockClose(connPtr->sockPtr, keep);
 	}
 
