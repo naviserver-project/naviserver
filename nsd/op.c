@@ -472,7 +472,7 @@ int
 NsConnRunProxyRequest(Ns_Conn *conn)
 {
     Conn          *connPtr = (Conn *) conn;
-    NsServer      *servPtr = connPtr->servPtr;
+    NsServer      *servPtr = connPtr->poolPtr->servPtr;
     Ns_Request    *request = conn->request;
     Req           *reqPtr = NULL;
     int            status;

@@ -608,7 +608,7 @@ LogTrace(void *arg, Ns_Conn *conn)
 	Ns_Time reqTime;
 
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
-        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t) reqTime.sec, reqTime.usec);
+        Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)reqTime.sec, reqTime.usec);
     }
 
     Ns_ConnTimeStats(conn, &now, &acceptTime, &queueTime, &filterTime, &runTime);

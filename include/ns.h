@@ -2704,6 +2704,10 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN void
+Ns_LogDeprecated(Tcl_Obj *CONST objv[], int objc, char *alternative, char *explanation)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
 Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
     NS_GNUC_NONNULL(1);
 

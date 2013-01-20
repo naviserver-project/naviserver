@@ -99,7 +99,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 {
     Args      cmd;
     int       i, sig, optind;
-    char     *config;
+    char     *config = NULL;
     Ns_Time   timeout;
 
 #ifndef _WIN32
@@ -369,7 +369,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         }
     }
 
-    config = NsConfigRead(nsconf.config);
+    if (!(mode == 'c' && nsconf.config == NULL)) {
+	config = NsConfigRead(nsconf.config);
+    }
 
 #ifndef _WIN32
 
@@ -437,12 +439,14 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    /*
-     * Evaluate the config file.
-     */
-
-    NsConfigEval(config, argc, argv, optind);
-    ns_free(config);
+    if (config) {
+	/*
+	 * Evaluate the config file.
+	 */
+	
+	NsConfigEval(config, argc, argv, optind);
+	ns_free(config);
+    }
 
     /*
      * If no servers were defained, autocreate server "default"
@@ -496,8 +500,22 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         if (nsconf.home == NULL) {
             Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
         }
+    } else if (mode == 'c' && nsconf.config == NULL) {
+	/*
+	 * Try to get HOME from environment variable NAVISERVER. If
+	 * this is not defined, take the value from the path. Using
+	 * NAVISERVER makes especially sense when testing or running
+	 * nsd from the source directory.
+	 */
+	nsconf.home = getenv("NAVISERVER");
+	if (nsconf.home == NULL) {
+	    nsconf.home = MakePath("");
+	}
+	fprintf(stderr, "mode 'c' HOME <%s>\n", nsconf.home);
+
     }
     nsconf.home = SetCwd(nsconf.home);
+    fprintf(stderr, "HOME <%s>\n", nsconf.home);
 
     /*
      * Update core config values.

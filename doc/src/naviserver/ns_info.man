@@ -46,10 +46,6 @@ Returns all registered startup/exit/shutdown callbacks
 
 Returns the absolute path to the config file used to start the server
 
-[call [cmd  ns_info] [arg filters]]
-
-Returns a list of the currently defined filters.
-
 [call [cmd  ns_info] [arg home]]
 
 Returns the current working directory of the server
@@ -89,10 +85,6 @@ Returns the name of the server implementaiton, i.e. "NaviServer".
 Returns absolute  path and name of the nsd binary, which is currently
 executed.
 
-[call [cmd  ns_info] [arg pagedir]]
-
-Returns the absolute path to the page directory root.
-
 [call [cmd  ns_info] [arg patchlevel]]
 
 Returns the full version number of the server (including patch level).
@@ -112,11 +104,6 @@ Returns the platform on which the server was built.
 Returns usage info from the memory pools (returned by
 Tcl_GetMemoryInfo() if configured).
 
-
-[call [cmd  ns_info] [arg requestprocs]]
-
-Returns a list of the currently defined requestprocs  (the registered
-procs for certain request patterns)
 
 
 [call [cmd  ns_info] [arg scheduled]]
@@ -194,12 +181,6 @@ Returns 1 if the server is fully started, 0 otherwise.
 Returns the most detailed revision info, which might be shipped with
 the tar file or obtained from mercurial. 
 
-
-[call [cmd  ns_info] [arg tcllib]]
-
-Returns the path the virtual server's private Tcl library.
-
-
 [call [cmd  ns_info] [arg threads]]
 
 Returns a list of all threads in the current process (all virtual
@@ -219,19 +200,9 @@ parent, id, flag, ctime, procname, arg}:
 [list_end]
 
 
-[call [cmd  ns_info] [arg traces]]
-
-Returns a list of the currently defined traces.
-
-
 [call [cmd  ns_info] [arg uptime]]
 
 Returns the number of seconds since the nsd process started.
-
-
-[call [cmd  ns_info] [arg url2file]]
-
-Returns a list of the mappings from urls to files.
 
 
 [call [cmd  ns_info] [arg version]]

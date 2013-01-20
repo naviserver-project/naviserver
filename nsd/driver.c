@@ -3709,9 +3709,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %ld maxsize %d",
 	   wrPtr->threads, nsend, wrPtr->maxsize);
 
-    assert(connPtr->servPtr);
+    assert(connPtr->poolPtr);
     /* Ns_MutexLock(&connPtr->servPtr->pools.lock); */
-    connPtr->servPtr->stats.spool++;
+    connPtr->poolPtr->stats.spool++;
     /* Ns_MutexUnlock(&connPtr->servPtr->pools.lock); */
 
     wrSockPtr = (WriterSock *)ns_calloc(1, sizeof(WriterSock));

@@ -180,7 +180,7 @@ static int
 CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 {
     Ns_Conn  *conn    = (Ns_Conn *) connPtr;
-    NsServer *servPtr = connPtr->servPtr;
+    NsServer *servPtr = connPtr->poolPtr->servPtr;
     int       level, compress = 0;
 
     /* Check the default setting and explicit overide. */
@@ -909,7 +909,6 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
 {
     Ns_DString      ds;
     Conn           *connPtr = (Conn *) conn;
-    NsServer       *servPtr = connPtr->servPtr;
     size_t          nread, nline, maxhdr;
     int             status;
 
@@ -928,7 +927,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
                 if (ds.string[0] == '\0') {
                     break;
                 }
-                status = Ns_ParseHeader(set, ds.string, servPtr->opts.hdrcase);
+                status = Ns_ParseHeader(set, ds.string, connPtr->poolPtr->servPtr->opts.hdrcase);
             }
         }
     }

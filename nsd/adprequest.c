@@ -145,8 +145,8 @@ PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, int aflags)
      * Enable TclPro debugging if requested.
      */
 
-    servPtr = connPtr->servPtr;
-    if ((itPtr->servPtr->adp.flags & ADP_DEBUG) &&
+    servPtr = connPtr->poolPtr->servPtr;
+    if ((servPtr->adp.flags & ADP_DEBUG) &&
         conn->request->method != NULL &&
         STREQ(conn->request->method, "GET") &&
         (query = Ns_ConnGetQuery(conn)) != NULL) {

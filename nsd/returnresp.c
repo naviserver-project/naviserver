@@ -369,7 +369,7 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     if (Ns_SetIGet(conn->outputheaders, "WWW-Authenticate") == NULL) {
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, "Basic realm=\"",
-                            connPtr->servPtr->opts.realm, "\"", NULL);
+                            connPtr->poolPtr->servPtr->opts.realm, "\"", NULL);
         Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
         Ns_DStringFree(&ds);
     }
@@ -663,11 +663,9 @@ static int
 ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
 {
     Tcl_HashEntry *hPtr;
-    Conn          *connPtr;
-    NsServer      *servPtr;
+    Conn          *connPtr = (Conn *) conn;
+    NsServer      *servPtr = connPtr->poolPtr->servPtr;
 
-    connPtr = (Conn *) conn;
-    servPtr = connPtr->servPtr;
     hPtr = Tcl_FindHashEntry(&servPtr->request.redirect,
                              (char *)(intptr_t) status);
     if (hPtr != NULL) {

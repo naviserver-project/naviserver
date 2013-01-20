@@ -77,10 +77,6 @@ test ns_info-2.14.1 {basic operation} -body {
      file tail [ns_info nsd]
 } -match glob -result "*nsd"
 
-test ns_info-2.15.1 {basic operation} -body {
-     expr {[llength [split [ns_info pageroot] "/"]]>1}
-} -result 1
-
 test ns_info-2.16.1 {basic operation} -body {
      ns_info patchlevel
 } -match "glob" -result "4.99.*"
@@ -118,10 +114,6 @@ test ns_info-2.24.1 {basic operation} -body {
     expr {[ns_info tag] ne ""}
 } -result 1
 
-test ns_info-2.25.1 {basic operation} -body {
-     ns_info tcllib
-} -match "glob" -result "*modules*"
-
 test ns_info-2.26.1 {basic operation} -body {
     expr {[llength [ns_info threads]]>2}
 } -result 1
@@ -152,27 +144,6 @@ test ns_info-2.30.1 {basic operation} -body {
      string is int -strict [ns_info winnt]
 } -result 1
 
-test ns_info-2.31.1 {basic operation} -body {
-     ns_info filters
-} -result ""
-
-test ns_info-2.31.2 {basic operation} -setup {
-     proc _filter_do_nothing {args} {
-         return filter_ok
-     }
-     ns_register_filter preauth GET /ns_info-2.31.2 _filter_do_nothing
-} -body {
-     ns_info filters
-} -match glob -result {*{GET /ns_info-2.31.2 preauth ns:tclfilter _filter_do_nothing}*}
-
-
-test ns_info-2.32.1 {basic operation} -body {
-     expr {[llength [ns_info traces]]>-1}
-} -result 1
-
-test ns_info-2.33.1 {basic operation} -body {
-     expr {[llength [ns_info requestprocs]]>0}
-} -result 1
 
 
 

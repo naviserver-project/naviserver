@@ -1215,7 +1215,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
     Ns_DStringAppend(dsPtr, LogTime(GetCache(), stamp, 0));
     if (flags & LOG_USEC) {
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
-        Ns_DStringPrintf(dsPtr, ".%ld]", stamp->usec);
+        Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
     Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
                      Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),

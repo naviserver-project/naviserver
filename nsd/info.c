@@ -627,6 +627,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         return TCL_OK;
 
     case IWinntIdx:
+	Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
 #ifdef _WIN32
         Tcl_SetResult(interp, "1", TCL_STATIC);
 #else
@@ -661,6 +662,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     switch (opt) {
     case IPageDirIdx:
     case IPageRootIdx:
+	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
         NsPageRoot(&ds, itPtr->servPtr, NULL);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
@@ -670,25 +672,30 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         return TCL_OK;
 
     case ITclLibIdx:
+	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? tcllib", NULL);
         Tcl_SetResult(interp, itPtr->servPtr->tcl.library, TCL_STATIC);
         return TCL_OK;
 
     case IFiltersIdx:
+	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? filters", NULL);
         NsGetFilters(&ds, server);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
 
     case ITracesIdx:
+	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? traces", NULL);
         NsGetTraces(&ds, server);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
 
     case IRequestProcsIdx:
+	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? requestprocs", NULL);
         NsGetRequestProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;
 
     case IUrl2FileIdx:
+	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? url2file", NULL);
         NsGetUrl2FileProcs(&ds, server);
         Tcl_DStringResult(interp, &ds);
         return TCL_OK;

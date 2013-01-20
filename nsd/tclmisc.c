@@ -239,6 +239,48 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_LogDeprecated --
+ *
+ *      Report that a C-implmented Tcl command is deprecated.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Write log message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_LogDeprecated(Tcl_Obj *CONST objv[], int objc, char *alternative, char *explanation)
+{
+    Tcl_DString ds;
+    int i;
+
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, "'", 1);
+    for (i = 0; i < objc; i++) {
+	Tcl_DStringAppend(&ds, Tcl_GetString(objv[i]), -1);
+	Tcl_DStringAppend(&ds, " ", 1);
+    }
+    Tcl_DStringAppend(&ds, "' is depreacted. ", -1);
+    if (alternative != NULL) {
+	Tcl_DStringAppend(&ds, "Use '", -1);
+	Tcl_DStringAppend(&ds, alternative, -1);
+	Tcl_DStringAppend(&ds, "' instead. ", -1);
+    }
+    if (explanation != NULL) {
+	Tcl_DStringAppend(&ds, explanation, -1);
+    }
+    Ns_Log(Notice, Tcl_DStringValue(&ds));
+    Tcl_DStringFree(&ds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclStripHtmlCmd --
  *
  *      Implements ns_striphtml.

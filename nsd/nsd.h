@@ -557,7 +557,7 @@ typedef struct Conn {
     char *clientData;
 
     struct Request  *reqPtr;
-    struct NsServer *servPtr;
+    struct ConnPool *poolPtr;
     struct Driver   *drvPtr;
 
     int id;
@@ -676,11 +676,26 @@ typedef struct ConnPool {
      * connection structs, and "lock" is used for locking this queue.
      */
 
-   struct {
-       ConnThreadArg *nextPtr;
-       ConnThreadArg *args;
-       Ns_Mutex       lock;
-   } tqueue;
+    struct {
+	ConnThreadArg *nextPtr;
+	ConnThreadArg *args;
+	Ns_Mutex       lock;
+    } tqueue;
+    
+    /*
+     * Track "statistics" such as counts or aggregated times.
+     */
+
+    struct {
+        unsigned long spool;
+        unsigned long queued;
+	unsigned long processed;
+        unsigned long connthreads;
+        Ns_Time acceptTime;
+	Ns_Time queueTime; 
+	Ns_Time filterTime; 
+	Ns_Time runTime;
+    } stats;
 
 } ConnPool;
 
@@ -704,17 +719,6 @@ typedef struct NsServer {
         ConnPool *defaultPtr;
         Ns_Thread joinThread;
     } pools;
-
-    struct {
-        unsigned long spool;
-        unsigned long queued;
-	unsigned long processed;
-        unsigned long connthreads;
-        Ns_Time acceptTime;
-	Ns_Time queueTime; 
-	Ns_Time filterTime; 
-	Ns_Time runTime;
-    } stats;
 
     /*
      * The following struct maintains various server options.

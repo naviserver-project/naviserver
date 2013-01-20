@@ -186,9 +186,9 @@ WorkThread(void *arg)
         int             st;
 
         Ns_GetTime(&to);
-        Msg("time: %" PRIu64 " %ld", (int64_t) to.sec, to.usec);
+        Msg("time: %" PRIu64 ".%06ld", (int64_t) to.sec, to.usec);
         Ns_IncrTime(&to, 5, 0);
-        Msg("time: %" PRIu64 " %ld", (int64_t) to.sec, to.usec);
+        Msg("time: %" PRIu64 ".%06ld", (int64_t) to.sec, to.usec);
         Ns_MutexLock(&lock);
         time(&now);
         Msg("timed wait starts: %s", ns_ctime(&now));
@@ -295,7 +295,7 @@ MemTime(int ns)
     }
     Ns_GetTime(&end);
     Ns_DiffTime(&end, &start, &diff);
-    printf("done:  %" PRIu64 " seconds, %ld usec\n", (int64_t) diff.sec, diff.usec);
+    printf("done:  %" PRIu64 "%06ld sec\n", (int64_t) diff.sec, diff.usec);
 }
 
 

@@ -572,7 +572,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
                     CONST char *title, CONST char *notice)
 {
     Conn       *connPtr = (Conn *) conn;
-    NsServer   *servPtr = connPtr->servPtr;
+    NsServer   *servPtr = connPtr->poolPtr->servPtr;
     Ns_DString  ds;
     int         result;
 

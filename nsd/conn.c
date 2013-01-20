@@ -574,7 +574,7 @@ char *
 Ns_ConnLocation(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
-    NsServer *servPtr = connPtr->servPtr;
+    NsServer *servPtr = connPtr->poolPtr->servPtr;
     char *location = NULL;
 
     if (servPtr->vhost.locationProc != NULL) {
@@ -609,7 +609,7 @@ char *
 Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 {
     Conn       *connPtr = (Conn *) conn;
-    NsServer   *servPtr = connPtr->servPtr;
+    NsServer   *servPtr = connPtr->poolPtr->servPtr;
     Ns_Set     *headers;
     char       *location, *host;
 
@@ -913,23 +913,21 @@ Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr,
 		 Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr, 
 		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr) {
     Conn      *connPtr = (Conn *) conn;
-    NsServer  *servPtr = connPtr->servPtr;
+    ConnPool  *poolPtr = connPtr->poolPtr;
     
-    assert(servPtr);
+    assert(poolPtr);
 
     Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         acceptTimeSpanPtr);
     Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   queueTimeSpanPtr);
     Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, filterTimeSpanPtr);
     Ns_DiffTime(nowPtr,                       &connPtr->filterDoneTime,     runTimeSpanPtr);
 
-    Ns_MutexLock(&servPtr->pools.lock);
-      
-    Ns_IncrTime(&servPtr->stats.acceptTime, acceptTimeSpanPtr->sec, acceptTimeSpanPtr->usec);
-    Ns_IncrTime(&servPtr->stats.queueTime,  queueTimeSpanPtr->sec,  queueTimeSpanPtr->usec);
-    Ns_IncrTime(&servPtr->stats.filterTime, filterTimeSpanPtr->sec, filterTimeSpanPtr->usec);
-    Ns_IncrTime(&servPtr->stats.runTime,    runTimeSpanPtr->sec,    runTimeSpanPtr->usec);
-    
-    Ns_MutexUnlock(&servPtr->pools.lock);
+    Ns_MutexLock(&poolPtr->servPtr->pools.lock);
+    Ns_IncrTime(&poolPtr->stats.acceptTime, acceptTimeSpanPtr->sec, acceptTimeSpanPtr->usec);
+    Ns_IncrTime(&poolPtr->stats.queueTime,  queueTimeSpanPtr->sec,  queueTimeSpanPtr->usec);
+    Ns_IncrTime(&poolPtr->stats.filterTime, filterTimeSpanPtr->sec, filterTimeSpanPtr->usec);
+    Ns_IncrTime(&poolPtr->stats.runTime,    runTimeSpanPtr->sec,    runTimeSpanPtr->usec);
+    Ns_MutexUnlock(&poolPtr->servPtr->pools.lock);
 }
 
 
@@ -1010,7 +1008,7 @@ Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
 {
     Conn *connPtr = (Conn *) conn;
 
-    if (connPtr->servPtr->opts.modsince) {
+    if (connPtr->poolPtr->servPtr->opts.modsince) {
 	char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
         if (hdr != NULL && Ns_ParseHttpTime(hdr) >= since) {
             return NS_FALSE;

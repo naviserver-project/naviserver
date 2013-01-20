@@ -410,7 +410,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
     NsInterp *itPtr;
 
     if (connPtr->itPtr == NULL) {
-        itPtr = PopInterp(connPtr->servPtr, NULL);
+        itPtr = PopInterp(connPtr->poolPtr->servPtr, NULL);
         itPtr->conn = conn;
         itPtr->nsconn.flags = 0;
         connPtr->itPtr = itPtr;
