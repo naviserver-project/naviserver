@@ -511,8 +511,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 	if (nsconf.home == NULL) {
 	    nsconf.home = MakePath("");
 	}
-	fprintf(stderr, "mode 'c' HOME <%s>\n", nsconf.home);
-
     }
     nsconf.home = SetCwd(nsconf.home);
     fprintf(stderr, "HOME <%s>\n", nsconf.home);
