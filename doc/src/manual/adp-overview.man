@@ -322,8 +322,7 @@ can be used inside HTML tags.
 
 [section {Registered ADP Tags}]
 
-You can define your own ADP tags with the ns_adp_registertag or the
-ns_register_adptag Tcl functions.
+You can define your own ADP tags with the ns_adp_register* Tcl functions.
 
 [section {Example ADPs}]
 

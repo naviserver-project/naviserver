@@ -19,14 +19,16 @@ described in the  ns_adp  man page.
 
 [list_begin definitions]
 
-[call [cmd ns_adp_registeradp] [arg tag]  [opt [arg endtag]] [arg adp]]
-[call [cmd ns_adp_registertag] [arg tag]  [opt [arg endtag]] [arg adp]]
+[call [cmd ns_adp_registeradp] \
+	[arg tag]  \
+	[opt [arg endtag]] \
+	[arg adpstring]]
 
-These commands are identical and register an ADP
+This command registers an ADP
 code fragment to be invoked when the specified tag is
-encountered while parsing an ADP. The  tag  argument
+encountered while parsing an ADP. The  [arg tag]  argument
 specifies the tag that will trigger invocation of the ADP
-fragment, which is specified by the  adp  argument.
+fragment, which is specified by the  [arg adpstring]  argument.
 
 [para]
 If the  endtag  argument is specified, then the ADP fragment
@@ -43,6 +45,7 @@ When the ADP fragment is invoked, its result is inserted in the output
 instead of the tag (or, if the  endtag  was specified,
 in place of the tag, end tag, and the enclosed content).
 
+
 [para]
 Note: Care must be taken when using this function from inside an ADP, because
 the  adpstring  is likely to contain script delimiters
@@ -50,12 +53,26 @@ the  adpstring  is likely to contain script delimiters
 script fragments. It is probably easier to restrict use of
 this function to .tcl files.
 
-[call [cmd ns_adp_registerproc] [arg tag] [opt [arg endtag]] [arg proc]]
+[example_begin]
+   ns_adp_registeradp example example.adp
+   
+   ns_adp_registeradp printdate {
+        The current date is: <% ns_adp_puts [lb]ns_httptime [lb]ns_time[rb][rb] %>
+   }
+[example_end]
+Once defined, typically in a startup script, you could simple include  <example> or
+<printdate> in adp pages.
 
-This commands register a Tcl procedure to be evaluated when the given
-tag is encountered. The  tag  argument specifies the tag
-that will trigger a call to the procedure specified by the
-proc  argument.
+
+
+[call [cmd ns_adp_registerproc] \
+	[arg tag] \
+	[opt [arg endtag]] \
+	[arg proc]]
+
+This command registers a Tcl procedure to be evaluated when the given
+tag is encountered. The tag argument specifies the tag that will
+trigger a call to the procedure specified by the proc argument.
 
 [para]
 The procedure will be called with a variable number of arguments,
@@ -70,10 +87,13 @@ When the procedure is invoked, its result is inserted in the
 output instead of the tag (or, if the  endtag  was specified, in place of
 the tag, end tag, and the enclosed content).
 
-[call [cmd ns_adp_registerscript] [arg tag] [opt [arg endtag]] [arg script]]
-[call [cmd ns_register_adptag] [arg tag] [opt [arg endtag]] [arg script]]
 
-These commands are identical and register a Tcl script to be evaluated when the
+[call [cmd ns_adp_registerscript] \
+	[arg tag] \
+	[opt [arg endtag]] \
+	[arg script]]
+
+This command registers a Tcl script to be evaluated when the
 given tag is encountered. The  tag  argument specifies the tag that
 will trigger evaluation of the script specified by the
 script  argument.
@@ -115,7 +135,7 @@ proc recall {name} {
      lappend parsecommand $_adp_memory($name)
      ns_puts -nonewline [lb]uplevel $parsecommand[rb]
    } else {
-     ns_log Error "[lb]ns_adp_argv 0[rb]: Unable to recall
+     ns_log Error "[lb]ns_adp_argv 0[rb]: Unable to recall"
    }
 }
 
@@ -160,20 +180,7 @@ if {[lb]llength $rows[rb]  >  0}  {
 
 [example_end]
 
-The following example demonstrates the use of  ns_adp_registertag :
-
-[example_begin]
-
-ns_adp_registertag printdate {
-  The current date is: <%=[lb]ns_httptime [lb]ns_time[rb][rb]%>
-}
-
-[example_end]
-
 [list_end]
-
-Once defined, typically in a startup script, you could simple include the
-"<printdate>" tag to append the text with current date into the output buffer.
 
 [see_also ns_adp ns_adp_eval ns_adp_safeeval ns_adp_include]
 

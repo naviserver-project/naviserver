@@ -273,7 +273,7 @@ Ns_LogDeprecated(Tcl_Obj *CONST objv[], int objc, char *alternative, char *expla
     if (explanation != NULL) {
 	Tcl_DStringAppend(&ds, explanation, -1);
     }
-    Ns_Log(Notice, Tcl_DStringValue(&ds));
+    Ns_Log(Notice, "%s", Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
 }
 

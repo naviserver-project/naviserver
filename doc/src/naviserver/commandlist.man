@@ -14,12 +14,11 @@ List of all currently available NaviServer commands.
 
 [section {ADP commands}]
 [list_begin definitions]
-[call [cmd ns_adp_registertag]]
+[call [cmd ns_adp_register]]
 [list_begin definitions]
 [call [cmd ns_adp_registeradp]]
 [call [cmd ns_adp_registerproc]]
 [call [cmd ns_adp_registerscript]]
-[call [cmd ns_register_adptag]]
 [list_end]
 
 
