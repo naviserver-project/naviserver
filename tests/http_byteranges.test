@@ -226,6 +226,12 @@ test byteranges-2.8.2 {Simple range, beginning, fd} \
         GET /16480bytes
 } -result {206 5 {bytes 0-4/16480} 01234}
 
+test byteranges-2.8.3 {No range, beginning} \
+    -constraints {serverListen} -body {
+    nstest::http \
+        -getheaders {Content-length Content-range} \
+        GET /16480bytes
+    } -result {200 16480 {}}
 
 
 

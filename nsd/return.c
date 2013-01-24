@@ -824,8 +824,23 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
     Ns_DStringInit(&ds);
     rangeCount = NsConnParseRange(conn, type, fd, data, len,
                                   bufs, &nbufs, &ds);
+
+    if (rangeCount == 0) {
+	struct iovec vbuf;
+	int nvbufs = 0;
+
+	if (fd < 0) {
+	    nvbufs = 1;
+	    vbuf.iov_base = (void *)data;
+	    vbuf.iov_len  = len;
+	}
+	if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf, nvbufs, 0) == NS_OK) {
+	    Ns_DStringFree(&ds);
+	    return NS_OK;
+	}
+    }
     if (rangeCount >= 0) {
-        if (rangeCount == 0) {
+	if (rangeCount == 0) {
             Ns_ConnSetLengthHeader(conn, len);
             Ns_SetFileVec(bufs, 0, fd, data, 0, len);
             nbufs = 1;

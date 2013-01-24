@@ -99,10 +99,27 @@ ns_param   logdev          false
 ns_param   progressminsize 1
 
 ns_section "ns/fastpath"
-ns_param   cache           true
-ns_param   cachemaxsize    2055
-ns_param   cachemaxentry   32
-ns_param   mmap            false
+set v cache
+#set v mmap
+#set v none
+switch $v {
+    cache {
+	ns_param   cache           true
+	ns_param   cachemaxsize    2055
+	ns_param   cachemaxentry   32
+	ns_param   mmap            false
+    }
+    mmap {
+	ns_param   cache           false
+	ns_param   mmap            true
+    }
+    none {
+	ns_param   cache           false
+	ns_param   mmap            false
+    }
+}
+unset v
+
 
 ns_section "ns/limits"
 ns_param   confLimit1      "Config File Limit One"

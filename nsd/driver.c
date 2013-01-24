@@ -3068,10 +3068,14 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     }
 
     if (wrSockPtr->mem.bufs) {
-	int i;
+	if (wrSockPtr->mem.fmap.addr) {
+	    NsMemUmap(&wrSockPtr->mem.fmap);
 
-	for (i = 0; i < wrSockPtr->mem.nbufs; i++) {
-	    ns_free(wrSockPtr->mem.bufs[i].iov_base);
+	} else {
+	    int i;
+	    for (i = 0; i < wrSockPtr->mem.nbufs; i++) {
+		ns_free(wrSockPtr->mem.bufs[i].iov_base);
+	    }
 	}
 	if (wrSockPtr->mem.bufs != wrSockPtr->mem.preallocated_bufs) {
 	    ns_free(wrSockPtr->mem.bufs);
@@ -3737,10 +3741,29 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	}
 	wrSockPtr->mem.nbufs = nbufs;
 
-	for (i = 0; i < nbufs; i++) {
-	    wrSockPtr->mem.bufs[i].iov_base = ns_malloc(bufs[i].iov_len);
-	    wrSockPtr->mem.bufs[i].iov_len  = bufs[i].iov_len;
-	    memcpy(wrSockPtr->mem.bufs[i].iov_base, bufs[i].iov_base, bufs[i].iov_len);
+	if (connPtr->fmap.addr != NULL) {
+	    Ns_Log(DriverDebug, "NsWriterQueue: deliver fmapped %p", connPtr->fmap.addr);
+
+	    /*
+	     * We deliver an mmapped file, no need to copy content
+	     */
+	    for (i = 0; i < nbufs; i++) {
+		wrSockPtr->mem.bufs[i].iov_base = bufs[i].iov_base;
+		wrSockPtr->mem.bufs[i].iov_len  = bufs[i].iov_len;
+	    }
+	    /*
+	     * Make a copy of the fmap structure and make clear that
+	     * we unmap in the writer thread.
+	     */
+	    wrSockPtr->mem.fmap = connPtr->fmap;
+	    connPtr->fmap.addr = NULL;
+
+	} else {
+	    for (i = 0; i < nbufs; i++) {
+		wrSockPtr->mem.bufs[i].iov_base = ns_malloc(bufs[i].iov_len);
+		wrSockPtr->mem.bufs[i].iov_len  = bufs[i].iov_len;
+		memcpy(wrSockPtr->mem.bufs[i].iov_base, bufs[i].iov_base, bufs[i].iov_len);
+	    }
 	}
 
     } else {

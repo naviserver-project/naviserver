@@ -382,7 +382,6 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     int         isNew, fd, result = NS_ERROR;
     Ns_Entry   *entry;
     File       *filePtr;
-    FileMap     fmap;
 
     /*
      * Determine the mime type if not given.
@@ -422,20 +421,25 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
      * cached copy.
      */
 
-    if (cache == NULL || connPtr->fileInfo.st_size > maxentry
+    if (cache == NULL 
+	|| connPtr->fileInfo.st_size > maxentry
         || connPtr->fileInfo.st_ctime >= (connPtr->acceptTime.sec-1) ) {
 
         /*
-         * Caching is disabled, the entry is too large for the cache,
-	 * or the inode has been changed too recently (within 1 second
-	 * of the start of this connection) so send the content 
+         * The cache is not enabled or the entry is too large for the
+	 * cache, or the inode has been changed too recently (within 1
+	 * second of the start of this connection) so send the content
 	 * directly.
          */
 
         if (usemmap
-                && NsMemMap(file, connPtr->fileInfo.st_size, NS_MMAP_READ, &fmap) == NS_OK) {
-            result = Ns_ConnReturnData(conn, status, fmap.addr, fmap.size, type);
-            NsMemUmap(&fmap);
+	    && NsMemMap(file, connPtr->fileInfo.st_size, NS_MMAP_READ, &connPtr->fmap) == NS_OK) {
+            result = Ns_ConnReturnData(conn, status, connPtr->fmap.addr, connPtr->fmap.size, type);
+	    if ((connPtr->flags & NS_CONN_SENT_VIA_WRITER) == 0) {
+		NsMemUmap(&connPtr->fmap);
+	    }
+	    connPtr->fmap.addr = NULL;
+
         } else {
             fd = open(file, O_RDONLY | O_BINARY);
             if (fd < 0) {

@@ -223,6 +223,7 @@ typedef struct WriterSock {
 	int                nsbufs;
 	int                sbufIdx;
 	struct iovec       preallocated_bufs[UIO_SMALLIOV];
+	struct FileMap     fmap;
     } mem;
 
     struct {
@@ -570,6 +571,7 @@ typedef struct Conn {
 
     struct NsInterp *itPtr;
     struct stat fileInfo;
+    struct FileMap fmap;
 
     Tcl_Encoding outputEncoding;
     Tcl_Encoding urlEncoding;
