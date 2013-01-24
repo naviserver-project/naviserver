@@ -513,7 +513,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 	}
     }
     nsconf.home = SetCwd(nsconf.home);
-    fprintf(stderr, "HOME <%s>\n", nsconf.home);
 
     /*
      * Update core config values.
