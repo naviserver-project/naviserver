@@ -201,7 +201,7 @@ test byteranges-2.6 {Multiple overlapping ranges} -constraints serverListen -bod
 
 
 test byteranges-2.8.1 {Multiple non-contiguous ranges, fd} \
-    -constraints {knownBug serverListen} -body {
+    -constraints {serverListen} -body {
     nstest::http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range Content-length} \
         GET /16480bytes
@@ -220,7 +220,7 @@ Content-range: bytes 7-9/16480
 }]
 
 test byteranges-2.8.2 {Simple range, beginning, fd} \
-    -constraints {knownBug serverListen} -body {
+    -constraints {serverListen} -body {
     nstest::http -getbody 1 -setheaders {Range bytes=0-4} \
         -getheaders {Content-length Content-range} \
         GET /16480bytes
@@ -233,6 +233,16 @@ test byteranges-2.8.3 {No range, beginning} \
         GET /16480bytes
     } -result {200 16480 {}}
 
+test byteranges-2.8.4 {No range large headers} -constraints serverListen -setup {
+    ns_register_proc GET /tclresp {
+	ns_set put [ns_conn outputheaders] x [string repeat x 1050]
+	ns_returnfile 200 text/plain [ns_pagepath 16480bytes]
+    }
+} -body {
+    nstest::http -getheaders {content-type content-length} GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 text/plain 16480}
 
 
 test byteranges-3.1 {syntactically invalid} -constraints serverListen -body {

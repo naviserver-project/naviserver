@@ -213,6 +213,7 @@ typedef struct WriterSock {
     unsigned int         flags;
     int                  streaming;
     NS_SOCKET            fd;
+    char                 *headerString;
     
     union {
     struct {
@@ -227,6 +228,7 @@ typedef struct WriterSock {
     } mem;
 
     struct {
+	size_t             maxsize;
 	size_t             bufsize;
 	unsigned char     *buf;
 	Ns_Mutex           fdlock;

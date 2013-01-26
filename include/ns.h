@@ -1153,6 +1153,10 @@ NS_EXTERN int
 Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED;
 
+NS_EXTERN int
+Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt length, int flags, Ns_DString *dsPtr)
+    NS_GNUC_NONNULL(1);
+
 /*
  * cookies.c:
  */

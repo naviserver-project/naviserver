@@ -772,9 +772,10 @@ ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
 
     Ns_ConnSetTypeHeader(conn, type);
     Ns_ConnSetResponseStatus(conn, status);
-
-    if (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, 0) == NS_OK) {
-        return NS_OK;
+    
+    if ((chan != NULL || fp != NULL) 
+	&& (NsWriterQueue(conn, len, chan, fp, fd, NULL, 0, 0) == NS_OK)) {
+	return NS_OK;
     }
 
     if (chan != NULL) {
@@ -825,20 +826,43 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
     rangeCount = NsConnParseRange(conn, type, fd, data, len,
                                   bufs, &nbufs, &ds);
 
-    if (rangeCount == 0) {
-	struct iovec vbuf;
-	int nvbufs = 0;
-
-	if (fd < 0) {
+    /*
+     * We are able to handle the following cases via writer:
+     * - iovec based requests: all range request up to 32 ranges.
+     * - fd based requests: 0 or 1 range requests
+     */
+    if (fd == -1) {
+	int i, nvbufs;
+	struct iovec vbuf[32];
+	if (rangeCount == 0) {
 	    nvbufs = 1;
-	    vbuf.iov_base = (void *)data;
-	    vbuf.iov_len  = len;
+	    vbuf[0].iov_base = (void *)data;
+	    vbuf[0].iov_len  = len;
+	} else {
+	    nvbufs = rangeCount;
+	    len = 0;
+	    for (i = 0; i < rangeCount; i++) {
+		vbuf[0].iov_base = (void *)(intptr_t)bufs[0].offset;
+		vbuf[0].iov_len  = bufs[0].length;
+		len += bufs[0].length;
+	    }
 	}
-	if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf, nvbufs, 0) == NS_OK) {
+
+	if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, 0) == NS_OK) {
+	    Ns_DStringFree(&ds);
+	    return NS_OK;
+	}
+    } else if (rangeCount < 2) {
+	if (rangeCount == 1) {
+	    lseek(fd, bufs[0].offset, SEEK_SET);
+	    len = bufs[0].length;
+	}
+	if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, 0) == NS_OK) {
 	    Ns_DStringFree(&ds);
 	    return NS_OK;
 	}
     }
+    
     if (rangeCount >= 0) {
 	if (rangeCount == 0) {
             Ns_ConnSetLengthHeader(conn, len);

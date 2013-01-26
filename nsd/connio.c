@@ -55,8 +55,6 @@ static int ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
 static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
                     FILE *fp, int fd);
 
-static int ConstructHeaders(Ns_Conn *conn, Tcl_WideInt length, int flags,
-                            Ns_DString *dsPtr);
 static int CheckKeep(Conn *connPtr);
 static int CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags);
 static int HdrEq(Ns_Set *set, char *name, char *value);
@@ -283,7 +281,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 
     if (!(conn->flags & NS_CONN_SENTHDRS)) {
         conn->flags |= NS_CONN_SENTHDRS;
-        if (ConstructHeaders(conn, bodyLength, flags, &ds)) {
+        if (Ns_CompleteHeaders(conn, bodyLength, flags, &ds)) {
             towrite += Ns_SetVec(sbufPtr, sbufIdx++,
                                  Ns_DStringValue(&ds), Ns_DStringLength(&ds));
             nsbufs++;
@@ -1042,7 +1040,7 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
 /*
  *----------------------------------------------------------------------
  *
- * ConstructHeaders --
+ * Ns_CompleteHeaders --
  *
  *      Construct a set of headers including length, connection and
  *      transfer-encoding and then dump them to the dstring.
@@ -1056,9 +1054,9 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
  *----------------------------------------------------------------------
  */
 
-static int
-ConstructHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
-                 Ns_DString *dsPtr)
+int
+Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
+		   Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
     CONST char *keep;

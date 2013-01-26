@@ -258,8 +258,20 @@ Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = bufs;
 	msg.msg_iovlen = nbufs;
+
+#if 0
+	{ int i;
+	    for (i=0; i<nbufs; i++) {
+		//fprintf(stderr, "%d: <%s> (%ld)\n",i, (char*)bufs[i].iov_base, bufs[i].iov_len);
+		fprintf(stderr, "%d: len %ld\n",i, bufs[i].iov_len);
+	    }
+	}
+#endif	
 	
 	n = sendmsg(sock, &msg, flags);
+#if 0
+	fprintf(stderr, "=>sent %ld\n",n);
+#endif
 	
 	if (n < 0) {
 	    Ns_Log(Debug, "SockSend: %s",

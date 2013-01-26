@@ -3065,9 +3065,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	    close(wrSockPtr->fd);
 	}
         ns_free(wrSockPtr->file.buf);
-    }
-
-    if (wrSockPtr->mem.bufs) {
+    } else if (wrSockPtr->mem.bufs) {
 	if (wrSockPtr->mem.fmap.addr) {
 	    NsMemUmap(&wrSockPtr->mem.fmap);
 
@@ -3080,6 +3078,9 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	if (wrSockPtr->mem.bufs != wrSockPtr->mem.preallocated_bufs) {
 	    ns_free(wrSockPtr->mem.bufs);
 	}
+    }
+    if (wrSockPtr->headerString) {
+	ns_free(wrSockPtr->headerString);
     }
 
     ns_free(wrSockPtr);
@@ -3120,8 +3121,8 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 	toread = curPtr->nread;
     }
     
-    maxsize = wrPtr->bufsize;
-    bufPtr = curPtr->file.buf;
+    maxsize = curPtr->file.maxsize;
+    bufPtr  = curPtr->file.buf;
 			
     /*
      * When bufsize > 0 we have leftover from previous send. In such
@@ -3130,10 +3131,12 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
      */
 	
     if (curPtr->file.bufsize > 0) {
-	Ns_Log(Notice, "### Writer %p %.6x leftover %ld", 
-	       curPtr, curPtr->flags, curPtr->file.bufsize);
-	bufPtr = curPtr->file.buf + (maxsize - curPtr->file.bufsize);
-	memmove(curPtr->file.buf, bufPtr, curPtr->file.bufsize);
+	Tcl_WideInt offset = maxsize - curPtr->file.bufsize;
+	Ns_Log(DriverDebug, "### Writer %p %.6x leftover %ld diff %ld", 
+	       curPtr, curPtr->flags, curPtr->file.bufsize, offset);
+	if (likely(offset > 0)) {
+	    memmove(curPtr->file.buf, curPtr->file.buf + offset, curPtr->file.bufsize);
+	}
 	bufPtr = curPtr->file.buf + curPtr->file.bufsize;
 	maxsize -= curPtr->file.bufsize;
     }
@@ -3163,6 +3166,7 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 	}
 	
 	n = read(curPtr->fd, bufPtr, (size_t)toread);
+	//Ns_Log(Notice, "### Writer %p wantread %ld read %d", curPtr, toread, n);
 	
 	if (n <= 0) {
 	    status = SOCK_ERROR;
@@ -3203,8 +3207,8 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 
 static int
 WriterSend(WriterSock *curPtr, int *err) {
-    int           nbufs, status = NS_OK;
     struct iovec *bufs, vbuf;
+    int           nbufs, status = NS_OK;
     size_t        towrite;
     ssize_t       n;
     
@@ -3585,7 +3589,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     WriterSock    *wrSockPtr; 
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
-    int            trigger = 0;
+    int            trigger = 0, headerSize;
 
     if (conn == NULL) {
         return NS_ERROR;
@@ -3724,32 +3728,87 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     wrSockPtr->flags = connPtr->flags;
     wrSockPtr->refCount = 1;
 
+    /*
+     * Make sure we have proper content length header for keep-alives
+     */
+    Ns_ConnSetLengthHeader(conn, (wrSockPtr->flags & NS_CONN_STREAM) ? -1 : nsend);
+
+    /*
+     * Flush the headers
+     */
+
+    if (!(conn->flags & NS_CONN_SENTHDRS)) {
+	Tcl_DString    ds;
+
+	Ns_DStringInit(&ds);
+	Ns_Log(DriverDebug, "add header (fd %d)\n", fd);
+	conn->flags |= NS_CONN_SENTHDRS;
+	Ns_CompleteHeaders(conn, nsend, 0, &ds);
+
+	wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
+	headerSize = Ns_DStringLength(&ds);
+	Ns_DStringFree(&ds);
+    } else {
+	headerSize = 0;
+    }
+
     if (fd != -1) {
+	// maybe add mmap support for files (fd != -1)
+
 	wrSockPtr->fd = fd;
-        wrSockPtr->file.buf = ns_malloc(wrPtr->bufsize);
+	if (unlikely(headerSize >= wrPtr->bufsize)) {
+	    /* 
+	     * We have a header which is larger than bufsize; place it
+	     * as "leftover" and use the headerString as buffer for file
+	     * reads (rather rare case)
+	     */
+	    wrSockPtr->file.buf = (unsigned char *)wrSockPtr->headerString;
+	    wrSockPtr->file.maxsize = headerSize;
+	    wrSockPtr->file.bufsize = headerSize;
+	    wrSockPtr->headerString = NULL;
+	} else if (headerSize > 0) {
+	    /* 
+	     * We have a header that fits into the bufsize; place it
+	     * as "leftover" at the end of the buffer.
+	     */
+	    wrSockPtr->file.buf = ns_malloc(wrPtr->bufsize);
+	    memcpy(wrSockPtr->file.buf + (wrPtr->bufsize - headerSize), 
+		   wrSockPtr->headerString, headerSize);
+	    wrSockPtr->file.bufsize = headerSize;
+	    wrSockPtr->file.maxsize = wrPtr->bufsize;
+	    ns_free(wrSockPtr->headerString);
+	    wrSockPtr->headerString = NULL;
+	} else {
+	    assert(wrSockPtr->headerString == NULL);
+	    wrSockPtr->file.buf = ns_malloc(wrPtr->bufsize);
+	    wrSockPtr->file.maxsize = wrPtr->bufsize;
+	}
 
     } else if (bufs != NULL) {
-	int   i;
+	int   i, j, headerbufs = headerSize > 0 ? 1 : 0;
 
 	wrSockPtr->fd = -1;
 	
-	if (nbufs < UIO_SMALLIOV) {
+	if (nbufs+headerbufs < UIO_SMALLIOV) {
 	    wrSockPtr->mem.bufs = wrSockPtr->mem.preallocated_bufs;
 	} else {
 	    Ns_Log(Notice, "NsWriterQueue: alloc %d iovecs", nbufs);
-	    wrSockPtr->mem.bufs = ns_calloc(nbufs, sizeof(struct iovec));
+	    wrSockPtr->mem.bufs = ns_calloc(nbufs+headerbufs, sizeof(struct iovec));
 	}
-	wrSockPtr->mem.nbufs = nbufs;
+	wrSockPtr->mem.nbufs = nbufs+headerbufs;
+	if (headerbufs) {
+	    wrSockPtr->mem.bufs[0].iov_base = wrSockPtr->headerString;
+	    wrSockPtr->mem.bufs[0].iov_len  = headerSize;
+	}
 
 	if (connPtr->fmap.addr != NULL) {
 	    Ns_Log(DriverDebug, "NsWriterQueue: deliver fmapped %p", connPtr->fmap.addr);
-
 	    /*
-	     * We deliver an mmapped file, no need to copy content
+	     * Deliver an mmapped file, no need to copy content
 	     */
-	    for (i = 0; i < nbufs; i++) {
-		wrSockPtr->mem.bufs[i].iov_base = bufs[i].iov_base;
-		wrSockPtr->mem.bufs[i].iov_len  = bufs[i].iov_len;
+	    for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
+		wrSockPtr->mem.bufs[j].iov_base = bufs[i].iov_base;
+		wrSockPtr->mem.bufs[j].iov_len  = bufs[i].iov_len;
 	    }
 	    /*
 	     * Make a copy of the fmap structure and make clear that
@@ -3757,19 +3816,32 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     */
 	    wrSockPtr->mem.fmap = connPtr->fmap;
 	    connPtr->fmap.addr = NULL;
+	    /* header string will be freed via wrSockPtr->headerString */
 
 	} else {
-	    for (i = 0; i < nbufs; i++) {
-		wrSockPtr->mem.bufs[i].iov_base = ns_malloc(bufs[i].iov_len);
-		wrSockPtr->mem.bufs[i].iov_len  = bufs[i].iov_len;
-		memcpy(wrSockPtr->mem.bufs[i].iov_base, bufs[i].iov_base, bufs[i].iov_len);
+	    /*
+	     * Deliver an content from iovec. The lifetime of the
+	     * source is unknown, we have to copy the content.
+	     */
+	    for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
+		wrSockPtr->mem.bufs[j].iov_base = ns_malloc(bufs[i].iov_len);
+		wrSockPtr->mem.bufs[j].iov_len  = bufs[i].iov_len;
+		memcpy(wrSockPtr->mem.bufs[j].iov_base, bufs[i].iov_base, bufs[i].iov_len);
 	    }
+	    /* header string will be freed a buf[0] */
+	    wrSockPtr->headerString = NULL;
 	}
 
     } else {
         ns_free(wrSockPtr);
         return NS_ERROR;
     }
+    
+    /*
+     * Add header size to total size.
+     */
+    nsend += headerSize;
+
 
     if (connPtr->clientData) {
 	wrSockPtr->clientData = ns_strdup(connPtr->clientData);
@@ -3801,16 +3873,6 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      */
 
     connPtr->flags |= NS_CONN_SENT_VIA_WRITER;
-
-    /*
-     * Make sure we have proper content length header for keep-alives
-     */
-    Ns_ConnSetLengthHeader(conn, (wrSockPtr->flags & NS_CONN_STREAM) ? -1 : nsend);
-
-    /*
-     * Flush the headers
-     */
-    Ns_ConnWriteVData(conn, NULL, 0, 0);
 
     wrSockPtr->keep = connPtr->keep > 0 ? 1 : 0;
     wrSockPtr->size = nsend;
