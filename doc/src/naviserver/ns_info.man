@@ -94,11 +94,6 @@ Returns the full version number of the server (including patch level).
 Returns the process id of the running nsd process.
 
 
-[call [cmd  ns_info] [arg platform]]
-
-Returns the platform on which the server was built.
-
-
 [call [cmd  ns_info] [arg pools]]
 
 Returns usage info from the memory pools (returned by

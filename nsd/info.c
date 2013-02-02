@@ -578,6 +578,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         return TCL_OK;
 
     case IPlatformIdx:
+	Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
         Tcl_SetResult(interp, Ns_InfoPlatform(), TCL_STATIC);
         return TCL_OK;
 
