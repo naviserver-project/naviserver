@@ -11,7 +11,7 @@ test ns_server-1.1 {basic syntax: plain call} -body {
 
 test ns_server-1.2 {basic syntax: wrong argument} -body {
      ns_server ?
-} -returnCodes error -result {bad subcmd "?": must be active, all, connections, filters, keepalive, maxthreads, minthreads, pagedir, pools, queued, requestprocs, stats, tcllib, threads, traces, url2file, or waiting}
+} -returnCodes error -result {bad subcmd "?": must be active, all, connections, filters, keepalive, maxthreads, minthreads, pagedir, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, url2file, or waiting}
 
 test ns_server-2.1 {basic operation} -body {
     string is int -strict [ns_server connections]
@@ -117,6 +117,20 @@ test ns_server-2.12 {basic operation} -body {
      ns_server tcllib
 } -match "glob" -result "*modules*"
 
+test ns_server-2.13.1 {basic operation} -body {
+     ns_server serverdir
+} -match "glob" -result "*tests/testserver"
 
+test ns_server-2.13.2 {basic operation} -body {
+     ns_server -server test serverdir
+} -match "glob" -result "*tests/testserver"
+
+test ns_server-2.13.3 {basic operation} -body {
+     ns_server -server testvhost serverdir
+} -match "glob" -result "*tests/testserver"
+
+test ns_server-2.13.4 {basic operation} -body {
+     ns_server -server testvhost2 serverdir
+} -match "glob" -result "*tests/testserver"
 
 cleanupTests

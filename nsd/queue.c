@@ -493,7 +493,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	"pagedir", 
 	"pools", "queued",
 	"requestprocs",
-        "stats", 
+	"serverdir", "stats", 
 	"tcllib", "threads", "traces",
 	"url2file", "waiting", NULL,
     };
@@ -505,7 +505,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	SMaxthreadsIdx, SMinthreadsIdx,
 	SPagedirIdx, SPoolsIdx, SQueuedIdx, 
 	SRequestprocsIdx,
-	SStatsIdx, 
+	SServerdirIdx, SStatsIdx, 
 	STcllibIdx, SThreadsIdx, STracesIdx,
 	SUrl2fileIdx, SWaitingIdx,
     };
@@ -605,7 +605,13 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     case SPagedirIdx:
 	Tcl_DStringInit(dsPtr);
-        NsPageRoot(dsPtr, itPtr->servPtr, NULL);
+        NsPageRoot(dsPtr, servPtr, NULL);
+        Tcl_DStringResult(interp, dsPtr);
+        break;
+
+    case SServerdirIdx:
+	Tcl_DStringInit(dsPtr);
+	Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, -1);
         Tcl_DStringResult(interp, dsPtr);
         break;
 
@@ -1476,7 +1482,7 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     NsFreeConnInterp(connPtr);
 
     /*
-     * Deactivate stream writer
+     * Deactivate stream writer, if defined
      */
     if (connPtr->fd) {
 	connPtr->fd = 0;

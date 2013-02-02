@@ -30,7 +30,7 @@ Returns a list of the pools defined for this server.
 	[opt [option "-server [arg s]"]] \
 	[arg pagedir]]
 
-Returns the absolute path to the page directory root.
+Returns the path of the virtual server's page directory root.
 
 
 [call [cmd  ns_server] \
@@ -40,12 +40,19 @@ Returns the absolute path to the page directory root.
 Returns a list of the currently defined requestprocs  (the registered
 procs for certain request patterns).
 
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg serverdir]]
+
+Returns the path of the virtual server's base directory.
+
+
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[arg tcllib]]
 
-Returns the path the virtual server's private Tcl library.
-
+Returns the path of the virtual server's private Tcl library.
 
 
 [call [cmd  ns_server] \
