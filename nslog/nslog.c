@@ -505,14 +505,9 @@ LogTrace(void *arg, Ns_Conn *conn)
     int          n, status, i, fd;
     size_t	 bufferSize = 0;
     Ns_DString   ds;
-    Ns_Time      now, acceptTime, queueTime, filterTime, runTime;
-
 
     Ns_DStringInit(&ds);
     Ns_MutexLock(&logPtr->lock);
-
-    /* Get the current time for the timing computations */
-    Ns_GetTime(&now);
 
     /*
      * Append the peer address. Watch for users coming
@@ -605,16 +600,17 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
 
     if ((logPtr->flags & LOG_REQTIME)) {
-	Ns_Time reqTime;
-
+	Ns_Time reqTime, now;
+	Ns_GetTime(&now);
         Ns_DiffTime(&now, Ns_ConnStartTime(conn), &reqTime);
         Ns_DStringPrintf(&ds, " %" PRIu64 ".%06ld", (int64_t)reqTime.sec, reqTime.usec);
     }
 
-    Ns_ConnTimeStats(conn, &now, &acceptTime, &queueTime, &filterTime, &runTime);
-
     if ((logPtr->flags & LOG_PARTIALTIMES)) {
+	Ns_Time  acceptTime, queueTime, filterTime, runTime;
         Ns_Time *startTimePtr =  Ns_ConnStartTime(conn);
+
+	Ns_ConnTimeSpans(conn, &acceptTime, &queueTime, &filterTime, &runTime);
 
         Ns_DStringAppend(&ds, " \"");
         Ns_DStringPrintf(&ds, "%" PRIu64 ".%06ld",  (int64_t)startTimePtr->sec, startTimePtr->usec);

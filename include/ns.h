@@ -1029,10 +1029,13 @@ NS_EXTERN Ns_Time *
 Ns_ConnFilterTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr, 
-		 Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, 
+Ns_ConnTimeSpans(Ns_Conn *conn, Ns_Time *acceptTimePtr, Ns_Time *queueTimePtr, 
 		 Ns_Time *filterTimePtr, Ns_Time *runTimePtr)
-  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+NS_EXTERN void
+Ns_ConnTimeStats(Ns_Conn *conn)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN int 
 NsAsyncWrite(int fd, char *buffer, size_t nbyte) NS_GNUC_NONNULL(2);

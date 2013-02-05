@@ -490,8 +490,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	"filters",
 	"keepalive", 
 	"maxthreads", "minthreads", 
-	"pagedir", 
-	"pools", "queued",
+	"pagedir", "pools", "queued",
 	"requestprocs",
 	"serverdir", "stats", 
 	"tcllib", "threads", "traces",
@@ -1401,6 +1400,11 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     }
 
     /*
+     * provide a default filterDoneTime
+     */
+    Ns_GetTime(&connPtr->filterDoneTime);
+
+    /*
      * Run the rest of the request.
      */
 
@@ -1409,12 +1413,8 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     } else {
         if (status == NS_OK) {
             status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
+	    Ns_GetTime(&connPtr->filterDoneTime);
         }
-	{
-	    Ns_Time now;
-	    Ns_GetTime(&now);
-	    connPtr->filterDoneTime = now;
-	}
         if (status == NS_OK) {
             status = Ns_AuthorizeRequest(servPtr->server,
                                          connPtr->request->method,
@@ -1425,11 +1425,7 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
             switch (status) {
             case NS_OK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
-		    {
-			Ns_Time now;
-			Ns_GetTime(&now);
-			connPtr->filterDoneTime = now;
-		    }
+		Ns_GetTime(&connPtr->filterDoneTime);
                 if (status == NS_OK) {
                     status = Ns_ConnRunRequest(conn);
                 }
@@ -1461,6 +1457,7 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     }
 
     Ns_ConnClose(conn);
+    Ns_ConnTimeStats(conn);
 
     if (status == NS_OK || status == NS_FILTER_RETURN) {
         status = NsRunFilters(conn, NS_FILTER_TRACE);

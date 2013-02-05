@@ -888,8 +888,38 @@ Ns_ConnFilterTime(Ns_Conn *conn)
  *
  * Ns_ConnTimeStats --
  *
- *      Return for a given connection and nowPtr the acceptTimeSpan,
- *      queueTimeSpan, filterTimeSpan and runTimeSpan. The
+ *      Return for a given connection the time spans computed by
+ *      Ns_ConnTimeStats()
+ *      
+ * Results:
+ *      Four time structures (argument 2 to 5)
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_ConnTimeSpans(Ns_Conn *conn, 
+		 Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr, 
+		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr) {
+    Conn *connPtr = (Conn *) conn;
+
+    *acceptTimeSpanPtr = connPtr->acceptTimeSpan;
+    *queueTimeSpanPtr  = connPtr->queueTimeSpan;
+    *filterTimeSpanPtr = connPtr->filterTimeSpan;
+    *runTimeSpanPtr    = connPtr->runTimeSpan;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnTimeStats --
+ *
+ *      Compute for a given connection various time spans such as
+ *      acceptTimeSpan, queueTimeSpan, filterTimeSpan and
+ *      runTimeSpan as follows
  *      
  *         acceptTimeSpan = queueTime - acceptTime 
  *         queueTimeSpan  = dequeueTime - queueTime
@@ -900,33 +930,32 @@ Ns_ConnFilterTime(Ns_Conn *conn)
  *      be called only once per request.
  *
  * Results:
- *      Four time structures (argument 3 to 7)
+ *      none
  *
  * Side effects:
  *      update statistics
  *
  *----------------------------------------------------------------------
  */
-
 void
-Ns_ConnTimeStats(Ns_Conn *conn, Ns_Time *nowPtr,
-		 Ns_Time *acceptTimeSpanPtr, Ns_Time *queueTimeSpanPtr, 
-		 Ns_Time *filterTimeSpanPtr, Ns_Time *runTimeSpanPtr) {
+Ns_ConnTimeStats(Ns_Conn *conn) {
     Conn      *connPtr = (Conn *) conn;
     ConnPool  *poolPtr = connPtr->poolPtr;
-    
-    assert(poolPtr);
+    Ns_Time    now;
 
-    Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         acceptTimeSpanPtr);
-    Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   queueTimeSpanPtr);
-    Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, filterTimeSpanPtr);
-    Ns_DiffTime(nowPtr,                       &connPtr->filterDoneTime,     runTimeSpanPtr);
+    assert(poolPtr);
+    Ns_GetTime(&now);
+
+    Ns_DiffTime(&connPtr->requestQueueTime,   &connPtr->acceptTime,         &connPtr->acceptTimeSpan);
+    Ns_DiffTime(&connPtr->requestDequeueTime, &connPtr->requestQueueTime,   &connPtr->queueTimeSpan);
+    Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &connPtr->filterTimeSpan);
+    Ns_DiffTime(&now,                         &connPtr->filterDoneTime,     &connPtr->runTimeSpan);
 
     Ns_MutexLock(&poolPtr->servPtr->pools.lock);
-    Ns_IncrTime(&poolPtr->stats.acceptTime, acceptTimeSpanPtr->sec, acceptTimeSpanPtr->usec);
-    Ns_IncrTime(&poolPtr->stats.queueTime,  queueTimeSpanPtr->sec,  queueTimeSpanPtr->usec);
-    Ns_IncrTime(&poolPtr->stats.filterTime, filterTimeSpanPtr->sec, filterTimeSpanPtr->usec);
-    Ns_IncrTime(&poolPtr->stats.runTime,    runTimeSpanPtr->sec,    runTimeSpanPtr->usec);
+    Ns_IncrTime(&poolPtr->stats.acceptTime, connPtr->acceptTimeSpan.sec, connPtr->acceptTimeSpan.usec);
+    Ns_IncrTime(&poolPtr->stats.queueTime,  connPtr->queueTimeSpan.sec,  connPtr->queueTimeSpan.usec);
+    Ns_IncrTime(&poolPtr->stats.filterTime, connPtr->filterTimeSpan.sec, connPtr->filterTimeSpan.usec);
+    Ns_IncrTime(&poolPtr->stats.runTime,    connPtr->runTimeSpan.sec,    connPtr->runTimeSpan.usec);
     Ns_MutexUnlock(&poolPtr->servPtr->pools.lock);
 }
 

@@ -571,6 +571,11 @@ typedef struct Conn {
     Ns_Time requestDequeueTime;  /* time stamp, when the request was dequeued */
     Ns_Time filterDoneTime;      /* time stamp, after filters */
 
+    Ns_Time acceptTimeSpan;
+    Ns_Time queueTimeSpan; 
+    Ns_Time filterTimeSpan; 
+    Ns_Time runTimeSpan;
+
     struct NsInterp *itPtr;
     struct stat fileInfo;
     struct FileMap fmap;
