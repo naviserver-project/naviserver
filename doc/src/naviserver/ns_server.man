@@ -99,15 +99,6 @@ startup.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
-	[arg minthreads] \
-	[opt [arg value]]]
-
-Query or set the minimum number of connection threads for this server
-and pool. The value must be between 1 and [arg maxthreads].
-
-[call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
 	[arg maxthreads] \
 	[opt [arg value]]]
 
@@ -118,10 +109,20 @@ the maximum number of connections.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
+	[arg minthreads] \
+	[opt [arg value]]]
+
+Query or set the minimum number of connection threads for this server
+and pool. The value must be between 1 and [arg maxthreads].
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
 	[arg stats]]
 
 Returns a list of attribute value pairs containing statistics for the
-server and pool, containing the number of reqests, queued requests,
+server and pool, containing the number of requests, queued requests,
 cumulative times.
 
 [call [cmd  ns_server] \
