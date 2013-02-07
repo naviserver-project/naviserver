@@ -557,7 +557,11 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	/*
 	 * just for backwards compatibility
 	 */
-	pool = optArg;
+	if (optArg) {
+	    Ns_LogDeprecated(objv, nextArgIdx + 2, "ns_server ?-pool p? ...", 
+			     "Passing pool as second argument is deprected.");
+	    pool = optArg;
+	}
     }
 
     if (server) {
