@@ -3115,10 +3115,10 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 
     if (streaming) {
 	Ns_MutexLock(&curPtr->file.fdlock);
-	toread = curPtr->nread;
+	toread = curPtr->file.toread;
 	Ns_MutexUnlock(&curPtr->file.fdlock);
     } else {
-	toread = curPtr->nread;
+	toread = curPtr->file.toread;
     }
     
     maxsize = curPtr->file.maxsize;
@@ -3126,16 +3126,18 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 			
     /*
      * When bufsize > 0 we have leftover from previous send. In such
-     * cases, move the leftover to the front, and fill the buffer up
-     * with new content.
+     * cases, move the leftover to the front, and fill the reminder of
+     * the buffer with new content.
      */
 	
     if (curPtr->file.bufsize > 0) {
-	Tcl_WideInt offset = maxsize - curPtr->file.bufsize;
-	Ns_Log(DriverDebug, "### Writer %p %.6x leftover %ld diff %ld", 
-	       curPtr, curPtr->flags, curPtr->file.bufsize, offset);
-	if (likely(offset > 0)) {
-	    memmove(curPtr->file.buf, curPtr->file.buf + offset, curPtr->file.bufsize);
+	Ns_Log(DriverDebug, "### Writer %p %.6x leftover %ld offset %ld", 
+	       curPtr, curPtr->flags, curPtr->file.bufsize, 
+	       (long)curPtr->file.bufoffset);
+	if (likely(curPtr->file.bufoffset > 0)) {
+	    memmove(curPtr->file.buf, 
+		    curPtr->file.buf + curPtr->file.bufoffset, 
+		    curPtr->file.bufsize);
 	}
 	bufPtr = curPtr->file.buf + curPtr->file.bufsize;
 	maxsize -= curPtr->file.bufsize;
@@ -3166,16 +3168,15 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 	}
 	
 	n = read(curPtr->fd, bufPtr, (size_t)toread);
-	//Ns_Log(Notice, "### Writer %p wantread %ld read %d", curPtr, toread, n);
 	
 	if (n <= 0) {
 	    status = SOCK_ERROR;
 	} else {
 	    /* 
-	     * curPtr->nread is still protected by curPtr->file.fdlock when
+	     * curPtr->file.toread is still protected by curPtr->file.fdlock when
 	     * needed.
 	     */
-	    curPtr->nread -= n;
+	    curPtr->file.toread -= n;
 	    curPtr->file.bufsize += n;
 	}
 	
@@ -3266,7 +3267,7 @@ WriterSend(WriterSock *curPtr, int *err) {
     }
     
     n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0);
-    
+   
     if (n < 0) {
 	*err = errno;
 	status = SOCK_WRITEERROR;
@@ -3286,6 +3287,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 
 	if (curPtr->fd > -1) {
 	    curPtr->file.bufsize -= n;
+	    curPtr->file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
 	    if (n < towrite) {
@@ -3658,9 +3660,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    assert(bufs != NULL);
 	    for (i = 0; i < nbufs; i++) {
 		j = write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
+		wrote += j;
 		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %ld OK %d", 
 		       connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
-		wrote += j;
 	    }
 	}
 
@@ -3675,13 +3677,13 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    /*
 	     * This is a later streaming operation, where the writer
 	     * job (streamWriter) was previously established. Update
-	     * the controlling variables (size and nread), and the
+	     * the controlling variables (size and toread), and the
 	     * length info for the access log, and trigger the writer
 	     * to notify it about the change.
 	     */
 	    assert(wrSockPtr != NULL);
 	    connPtr->streamWriter->size += wrote;
-	    connPtr->streamWriter->nread += wrote;
+	    connPtr->streamWriter->file.toread += wrote;
 	    Ns_MutexUnlock(&wrSockPtr->file.fdlock);
 
 	    connPtr->nContentSent += wrote;
@@ -3772,8 +3774,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     * as "leftover" at the end of the buffer.
 	     */
 	    wrSockPtr->file.buf = ns_malloc(wrPtr->bufsize);
-	    memcpy(wrSockPtr->file.buf + (wrPtr->bufsize - headerSize), 
-		   wrSockPtr->headerString, headerSize);
+	    memcpy(wrSockPtr->file.buf, wrSockPtr->headerString, headerSize);
 	    wrSockPtr->file.bufsize = headerSize;
 	    wrSockPtr->file.maxsize = wrPtr->bufsize;
 	    ns_free(wrSockPtr->headerString);
@@ -3783,6 +3784,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    wrSockPtr->file.buf = ns_malloc(wrPtr->bufsize);
 	    wrSockPtr->file.maxsize = wrPtr->bufsize;
 	}
+	wrSockPtr->file.bufoffset = 0;
+	wrSockPtr->file.toread = nsend;
 
     } else if (bufs != NULL) {
 	int   i, j, headerbufs = headerSize > 0 ? 1 : 0;
@@ -3876,11 +3879,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     wrSockPtr->keep = connPtr->keep > 0 ? 1 : 0;
     wrSockPtr->size = nsend;
-    wrSockPtr->nread = nsend;
     
     if ((wrSockPtr->flags & NS_CONN_STREAM) == 0) { 
 	connPtr->sockPtr = NULL;
-	connPtr->nContentSent = nsend;
+	connPtr->nContentSent = nsend - headerSize;
     }
 
     /*
@@ -4075,7 +4077,6 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     case cmdSizeIdx:
     case cmdStreamingIdx:
-	// ns_writer size nssock 
 	if (objc < 3 || objc > 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "driver ?value?");
 	    return TCL_ERROR;

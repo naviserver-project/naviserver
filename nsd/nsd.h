@@ -207,7 +207,6 @@ typedef struct WriterSock {
     int                  err;
     int                  refCount;
     int                  keep;
-    Tcl_WideInt          nread;
     Tcl_WideInt          nsent;
     size_t               size;
     unsigned int         flags;
@@ -230,6 +229,8 @@ typedef struct WriterSock {
     struct {
 	size_t             maxsize;
 	size_t             bufsize;
+	off_t              bufoffset;
+	Tcl_WideInt        toread;
 	unsigned char     *buf;
 	Ns_Mutex           fdlock;
     } file;
