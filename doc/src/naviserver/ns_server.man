@@ -19,12 +19,6 @@ connection pools and queues.  The legal options (which may be abbreviated) are:
 
 Returns a list of the currently defined filters.
 
-[call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[arg pools]]
-
-Returns a list of the pools defined for this server.
-
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
@@ -32,6 +26,12 @@ Returns a list of the pools defined for this server.
 
 Returns the path of the virtual server's page directory root.
 
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[arg pools]]
+
+Returns a list of the pools defined for this server.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
