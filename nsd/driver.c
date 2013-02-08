@@ -2567,8 +2567,9 @@ SockParse(Sock *sockPtr, int spooler)
                 return SOCK_ERROR;
             }
             reqPtr->content = sockPtr->taddr;
-            Ns_Log(Debug, "spooling content to file: readahead=%" PRIdz ", filesize=%i",
-                   drvPtr->readahead, (int)sockPtr->tsize);
+            Ns_Log(Debug, "spooling content to file: readahead=%" 
+		   TCL_LL_MODIFIER "d, filesize=%" PRIdz,
+                   drvPtr->readahead, sockPtr->tsize);
 #endif
         } else {
             reqPtr->content = bufPtr->string + reqPtr->coff;
@@ -3131,8 +3132,10 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
      */
 	
     if (curPtr->file.bufsize > 0) {
-	Ns_Log(DriverDebug, "### Writer %p %.6x leftover %ld offset %ld", 
-	       curPtr, curPtr->flags, curPtr->file.bufsize, 
+	Ns_Log(DriverDebug, 
+	       "### Writer %p %.6x leftover %" PRIdz " offset %ld", 
+	       curPtr, curPtr->flags, 
+	       curPtr->file.bufsize, 
 	       (long)curPtr->file.bufoffset);
 	if (likely(curPtr->file.bufoffset > 0)) {
 	    memmove(curPtr->file.buf, 
@@ -3238,7 +3241,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    towrite += curPtr->mem.sbufs[i].iov_len;
 	}
 	Ns_Log(DriverDebug, 
-	       "### Writer wants to send remainder nbufs %d len %ld", 
+	       "### Writer wants to send remainder nbufs %d len %" PRIdz, 
 	       curPtr->mem.nsbufs, towrite);
 
 	/*
@@ -3251,7 +3254,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    if (vPtr->iov_len > 0 && vPtr->iov_base != NULL) {
 
 		Ns_Log(DriverDebug, 
-		       "### Writer copies source %d to scratch %d len %ld",
+		       "### Writer copies source %d to scratch %d len %" PRIdz,
 		       curPtr->mem.bufIdx, curPtr->mem.sbufIdx, vPtr->iov_len);
 
 		towrite += Ns_SetVec(curPtr->mem.sbufs, curPtr->mem.sbufIdx++, 
@@ -3263,7 +3266,8 @@ WriterSend(WriterSock *curPtr, int *err) {
 
 	bufs  = curPtr->mem.sbufs;
 	nbufs = curPtr->mem.nsbufs;
-	Ns_Log(DriverDebug, "### Writer wants to send %d bufs size %ld", nbufs, towrite);
+	Ns_Log(DriverDebug, "### Writer wants to send %d bufs size %" PRIdz, 
+	       nbufs, towrite);
     }
     
     n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0);
@@ -3369,7 +3373,7 @@ WriterThread(void *arg)
         } else {
 	    pollto = 1 * 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
-		Ns_Log(DriverDebug, "### Writer pollcollect %p size %ld streaming %d", 
+		Ns_Log(DriverDebug, "### Writer pollcollect %p size %" PRIdz " streaming %d", 
 		       curPtr, curPtr->size, curPtr->streaming);
 		if (likely(curPtr->size > 0)) {
                     SockPoll(curPtr->sockPtr, POLLOUT, &pdata);
@@ -3418,9 +3422,10 @@ WriterThread(void *arg)
 
 	    } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (streaming == NS_WRITER_STREAM_FINISH)) {
 		Ns_Log(DriverDebug, 
-		       "### Writer %p can write to client fd %d (trigger %d) streaming %.6x size %ld nsent %ld bufsize %ld", 
-		       curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
-		       curPtr->size, curPtr->nsent, curPtr->file.bufsize);
+                       "### Writer %p can write to client fd %d (trigger %d) streaming %.6x"
+		       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
+                       curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
+                       curPtr->size, curPtr->nsent, curPtr->file.bufsize);
 		if (unlikely(curPtr->size < 1)) {
 		    /*
 		     * Size < 0 means that verything was sent.
@@ -3471,12 +3476,12 @@ WriterThread(void *arg)
             if (status == NS_OK) {
                 if (curPtr->size > 0 || streaming == NS_WRITER_STREAM_ACTIVE) {
 		    Ns_Log(DriverDebug, 
-			   "Writer %p continue OK (size %ld) => PUSH", 
+			   "Writer %p continue OK (size %" PRIdz ") => PUSH", 
 			   curPtr, curPtr->size);
                     Push(curPtr, writePtr);
 		} else {
 		    Ns_Log(DriverDebug, 
-			   "Writer %p done OK (size %ld) => RELEASE", 
+			   "Writer %p done OK (size %" PRIdz ") => RELEASE", 
 			   curPtr, curPtr->size);
 		    WriterSockRelease(curPtr);
 		}
@@ -3598,7 +3603,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     Ns_Log(DriverDebug, 
-	   "NsWriterQueue: size %ld bufs %p (%d) flags %.6x stream %.6x chan %p fd %d", 
+	   "NsWriterQueue: size %" PRIdz " bufs %p (%d) flags %.6x stream %.6x chan %p fd %d", 
 	   nsend, bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM, chan, fd);
 
     wrPtr  = &connPtr->sockPtr->drvPtr->writer;
@@ -3661,7 +3666,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    for (i = 0; i < nbufs; i++) {
 		j = write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
 		wrote += j;
-		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %ld OK %d", 
+		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %" PRIdz " OK %d", 
 		       connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
 	    }
 	}
@@ -3716,7 +3721,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         }
     }
 
-    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %ld maxsize %d",
+    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %d",
 	   wrPtr->threads, nsend, wrPtr->maxsize);
 
     assert(connPtr->poolPtr);
@@ -4056,7 +4061,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
                     Ns_DStringPrintf(dsPtr, "{%" PRIu64 ".%06ld %s %s %s %d "
-                                     "%" TCL_LL_MODIFIER "d %" TCL_LL_MODIFIER "d ",
+                                     "%" PRIdz " %" TCL_LL_MODIFIER "d ",
 				     (int64_t) wrSockPtr->startTime.sec, wrSockPtr->startTime.usec,
 				     queuePtr->threadname,
                                      drvPtr->name,

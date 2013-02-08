@@ -92,7 +92,7 @@ NsConfigProgress(void)
         Ns_SlsAlloc(&slot, ResetProgress);
         Tcl_InitHashTable(&urlTable, TCL_STRING_KEYS);
         Ns_MutexSetName(&lock, "ns:progress");
-        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %ld bytes",
+        Ns_Log(Notice, "nsmain: enable progess statistics for uploads >= %" PRIdz " bytes",
                progressMinSize);
     }
 }
@@ -243,7 +243,7 @@ NsUpdateProgress(Ns_Sock *sock)
             Ns_MutexUnlock(&lock);
 
             if (!isNew) {
-                Ns_Log(Warning, "ns:progress(%" TCL_LL_MODIFIER "d/%" TCL_LL_MODIFIER "d): ignoring duplicate URL: %s",
+                Ns_Log(Warning, "ns:progress(%" PRIdz "/%" PRIdz "): ignoring duplicate URL: %s",
                        reqPtr->avail, reqPtr->length, key);
             }
 	    if (set) {Ns_SetFree(set);}

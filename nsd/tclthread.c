@@ -219,7 +219,8 @@ NsTclThreadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     case TStackinfoIdx: {
          size_t maxStackSize, estimatedSize;
          Ns_ThreadGetThreadInfo(&maxStackSize, &estimatedSize);
-	 Ns_TclPrintfResult(interp, "max %ld free %ld", maxStackSize, maxStackSize - estimatedSize);
+	 Ns_TclPrintfResult(interp, "max %" PRIdz " free %" PRIdz, 
+			    maxStackSize, maxStackSize - estimatedSize);
          break;
     }
 
