@@ -264,7 +264,7 @@ Ns_LogDeprecated(Tcl_Obj *CONST objv[], int objc, char *alternative, char *expla
 	Tcl_DStringAppend(&ds, Tcl_GetString(objv[i]), -1);
 	Tcl_DStringAppend(&ds, " ", 1);
     }
-    Tcl_DStringAppend(&ds, "' is depreacted. ", -1);
+    Tcl_DStringAppend(&ds, "' is deprecated. ", -1);
     if (alternative != NULL) {
 	Tcl_DStringAppend(&ds, "Use '", -1);
 	Tcl_DStringAppend(&ds, alternative, -1);
