@@ -33,11 +33,14 @@ namespace import -force ::tcltest::*
 
 tcltest::testConstraint notDarwin [expr {$::tcl_platform(os) != "Darwin"}]
 
-test ns_hostbyaddr-1.1 {good address} -constraints {notDarwin} -body {
+# "-constraints {notDarwin}" in the followng two tests
+# does not seem necessary in current Mac OS X installations
+
+test ns_hostbyaddr-1.1 {good address} -body {
     ns_hostbyaddr 127.0.0.1
 } -match glob -result localhost*
 
-test ns_hostbyaddr-1.2 {bad address} -constraints {notDarwin} -body {
+test ns_hostbyaddr-1.2 {bad address} -body {
     ns_hostbyaddr 0.0.0.0
 } -returnCodes error -result {could not lookup 0.0.0.0}
 
