@@ -380,7 +380,7 @@ if {$use_trace_inits} {
 
     proc ns_eval {cmd args} {
 
-        if {$cmd eq {-synch} || $cmd eq {-pending}} {
+        if {$cmd eq {-sync} || $cmd eq {-pending}} {
             # Skip for the compatibility
             set cmd  [lindex $args 0]
             set args [lrange $args 1 end]
@@ -457,7 +457,7 @@ if {$use_trace_inits} {
         if {$len == 0} {
             return
         }
-        if {$len > 1 && [lindex $args 0] eq "-synch"} {
+        if {$len > 1 && [lindex $args 0] eq "-sync"} {
             set sync 1
             set args [lreplace $args 0 0]
             incr len -1

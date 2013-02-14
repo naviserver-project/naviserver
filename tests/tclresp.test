@@ -361,7 +361,7 @@ test tclresp-5.3 {ns_returnfile fastpath cache collision} -constraints serverLis
     # this mutex isn't necessary; it only serves as an assurance that
     # the problem is in fact a cache collision and not a race condition
     nsv_set fast_coll lock [ns_mutex create]
-    ns_eval -synch [list {
+    ns_eval -sync [list {
 	proc fast_coll {} {
 	   set filename "/tmp/fast_coll"
 	   ns_mutex lock [nsv_get fast_coll lock]
