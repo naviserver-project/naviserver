@@ -85,9 +85,9 @@ test ns_info-2.17.1 {basic operation} -body {
      expr {[ns_info pid] == [pid]}
 } -result 1
 
-test ns_info-2.18.1 {basic operation} -body {
-     expr {[ns_info platform] ne ""}
-} -result 1
+#test ns_info-2.18.1 {basic operation} -body {
+#     expr {[ns_info platform] ne ""}
+#} -result 1
 
 test ns_info-2.19.1 {basic operation} -body {
     expr {[llength [ns_info pools]] == 0 \
@@ -140,9 +140,9 @@ test ns_info-2.29.1 {basic operation} -body {
      ns_info version
 } -result "4.99"
 
-test ns_info-2.30.1 {basic operation} -body {
-     string is int -strict [ns_info winnt]
-} -result 1
+#test ns_info-2.30.1 {basic operation} -body {
+#     string is int -strict [ns_info winnt]
+#} -result 1
 
 
 
