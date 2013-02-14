@@ -48,7 +48,7 @@ test ns_log-3.3 {severity} -body {
     ns_logctl get
 } -match glob -result "* Error: test\n"
 
-test ns_log-3.4 {severity fata never held} -body {
+test ns_log-3.4 {ns_log + severity "fatal" never writes} -body {
     ns_log fatal test
     ns_logctl get
 } -result {}
