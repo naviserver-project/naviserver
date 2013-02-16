@@ -3988,10 +3988,12 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     case cmdSubmitFileIdx: {
-        char *name;
         struct stat st;
-        Tcl_Obj *file = NULL;
-        Tcl_WideInt headers = 0, offset = 0, size = 0;
+        char       *name;
+        Tcl_Obj    *fileObj = NULL;
+	int         headers = 0;
+        Tcl_WideInt offset = 0, size = 0;
+	size_t      nrbytes;
 
         Ns_ObjvSpec opts[] = {
             {"-headers",  Ns_ObjvBool,    &headers, (void *) NS_TRUE},
@@ -4000,7 +4002,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             {NULL, NULL, NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
-            {"file",      Ns_ObjvObj,     &file,    NULL},
+            {"file",      Ns_ObjvObj,     &fileObj,    NULL},
             {NULL, NULL, NULL, NULL}
         };
 
@@ -4013,26 +4015,46 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             return TCL_ERROR;
         }
 
-        name = Tcl_GetString(file);
+        name = Tcl_GetString(fileObj);
 
-        if (size <= 0) {
-            rc = stat(name, &st);
-            if (rc != NS_OK) {
-                Tcl_AppendResult(interp, "stat failed for ", name, NULL);
-                return TCL_ERROR;
-            }
-            size = st.st_size;
-        }
+	rc = stat(name, &st);
+	if (rc != 0) {
+	    Tcl_AppendResult(interp, "file does not exist '", name, "'", NULL);
+	    return TCL_ERROR;
+	}
 
         fd = open(name, O_RDONLY);
         if (fd == -1) {
+	    Tcl_AppendResult(interp, "could not open file '", name, "'", NULL);
             return TCL_ERROR;
         }
 
-        if (offset > 0) {
+	if (size < 0 || size > st.st_size) {
+	    Tcl_AppendResult(interp, "size must be a positive value less or equal filesize", NULL);
+	    close(fd);
+	    return TCL_ERROR;
+	}
+
+	if (offset < 0 || offset > st.st_size) {
+	    Tcl_AppendResult(interp, "offset must be a positive value less or equal filesize", NULL);
+	    close(fd);
+	    return TCL_ERROR;
+	} 
+
+	if (size > 0) {
+	    if (size + offset > st.st_size) {
+		Tcl_AppendResult(interp, "offset + size must be less or equal filesize", NULL);
+		close(fd);
+		return TCL_ERROR;
+	    }
+	    nrbytes = size;
+	} else {
+	    nrbytes = st.st_size - offset;
+	}
+
+	if (offset > 0) {
 	    lseek(fd, (off_t)offset, SEEK_SET);
-            size -= offset;
-        }
+	}
 
         /*
          *  The caller requested that we build required headers
@@ -4042,7 +4064,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(name));
         }
 
-        rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, fd, NULL, 0, 1);
+        rc = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, 1);
 
         Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         close(fd);

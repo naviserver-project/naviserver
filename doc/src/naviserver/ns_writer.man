@@ -26,7 +26,7 @@ provided via [lb]ns_conn clientdata[rb]
 [call [cmd ns_writer] [arg submit] [arg data]]
 
 [para]
-Submit arbitrary data to be returned via writer, data can be binary.
+Submit arbitrary data to be returned via writer thread, data can be binary.
 
 
 [call [cmd ns_writer] \
@@ -37,7 +37,9 @@ Submit arbitrary data to be returned via writer, data can be binary.
 	[arg file]]
 
 [para]
-Submits file to be returned, optionally the following arguments can be used:
+Submits file to be returned via writer thread. For parital requests,
+ns_writer does NOT change status code or sets content-range.
+Optionally the following arguments can be used:
 
 [para]
 [arg -headers]
@@ -45,12 +47,13 @@ Tells the writer to provide required HTTP headers, like content size, type and s
 
 [para]
 [arg -offset]
-If specified, file will be returned starting with this offset
+If specified, file will be returned starting with this offset.
 
 [para]
 [arg -size]
-If not specified, the whole file will be retuned, otherwise only given part. Can be combined with -offset
-to return chunks of file
+If not specified, the whole file will be retuned, otherwise only given
+part. Can be combined with [arg -offset].
+
 
 
 [call [cmd "ns_writer size"] \
