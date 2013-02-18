@@ -31,12 +31,22 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-tcltest::testConstraint notDarwin [expr {$::tcl_platform(os) != "Darwin"}]
 
-# "-constraints {notDarwin}" in the followng two tests
-# does not seem necessary in current Mac OS X installations
+# "-constraints {notDarwin}" in the followng two tests does not seem
+# necessary in newest Mac OS X installations.  On Max OS X 10.8
+# (Darwin 12.*), everything seems fine, on 10.7 (Darwin 11.*), the
+# first test does not hold.
 
-test ns_hostbyaddr-1.1 {good address} -body {
+set ::notRecentDarwin 0
+if {$::tcl_platform(os) eq "Darwin"} {
+    if {[lindex [split $::tcl_platform(os) .] 0] < 12} {
+	set ::notRecentDarwin 1
+    }
+} 
+
+tcltest::testConstraint notDarwin [expr {$::notRecentDarwin}]
+
+test ns_hostbyaddr-1.1 {good address} -constraints {notDarwin} -body {
     ns_hostbyaddr 127.0.0.1
 } -match glob -result localhost*
 
