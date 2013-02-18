@@ -77,6 +77,12 @@ Ns_CompressInit(Ns_CompressStream *stream)
     z->zfree = ZFree;
     z->opaque = Z_NULL;
 
+    /*  
+     * Memory requirements (see zconf.h):
+     *    (1 << (windowBits+2)) +  (1 << (memLevel+9)) =
+     *    (1 << (15+2)) +  (1 << (9+9)) = 393216 = ~400KB
+     */
+
     status = deflateInit2(z,
                           Z_BEST_COMPRESSION, /* to size memory, will be reset later */
                           Z_DEFLATED, /* method. */
@@ -107,12 +113,13 @@ void
 Ns_CompressFree(Ns_CompressStream *stream)
 {
     z_stream *z = &stream->z;
-    int       status;
 
-    status = deflateEnd(z);
-    if (status != Z_OK && status != Z_DATA_ERROR) {
-        Ns_Log(Bug, "Ns_CompressFree: deflateEnd: %d (%s): %s",
-               status, zError(status), z->msg ? z->msg : "(unknown)");
+    if (z->zalloc) {
+	int status = deflateEnd(z);
+	if (status != Z_OK && status != Z_DATA_ERROR) {
+	    Ns_Log(Bug, "Ns_CompressFree: deflateEnd: %d (%s): %s",
+		   status, zError(status), z->msg ? z->msg : "(unknown)");
+	}
     }
 }
 
@@ -145,6 +152,10 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
     size_t      toCompress, nCompressed, compressLen;
     ptrdiff_t   offset;
     int         flushFlags;
+
+    if (z->zalloc == NULL) {
+	Ns_CompressInit(stream);
+    }
 
     offset = (ptrdiff_t) Ns_DStringLength(dsPtr);
     toCompress = Ns_SumVec(bufs, nbufs);
