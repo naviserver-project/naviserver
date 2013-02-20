@@ -3944,6 +3944,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     WriterSock   *wrSockPtr;
     SpoolerQueue *queuePtr;
     char         *driverName;
+    NsServer     *servPtr = NULL;
 
     static CONST char *opts[] = {
         "submit", "submitfile", "list", "size", "streaming", NULL
@@ -4072,10 +4073,44 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         break;
     }
 
-    case cmdListIdx:
+    case cmdListIdx: 
+
+	if (objc < 2) {
+	usage_error:
+	    Tcl_WrongNumArgs(interp, 2, objv, "?-server server?");
+	    return TCL_ERROR;
+	}
+
+	if (objc > 4) {
+	    goto usage_error;
+	} else if (objc > 2) {
+
+	    int                 nextArgIdx;
+	    static CONST char  *options[]           = {"-server", NULL};
+	    enum                                      {OServerIdx};
+	    ClientData          optionClientData[1] = {NULL};
+	    Ns_OptionConverter *optionConverter[1]  = {Ns_OptionServer};
+
+	    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 2, 
+				Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (*Tcl_GetStringResult(interp) != '\0') {
+		return TCL_ERROR;
+	    }
+	    servPtr = optionClientData[OServerIdx];
+	}
+
         Tcl_DStringInit(dsPtr);
-        drvPtr = firstDrvPtr;
-        while (drvPtr != NULL) {
+
+        for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
+	    /*
+	     * if server was specified, list only results from this server.
+	     */
+	    if (servPtr && servPtr != drvPtr->servPtr) {
+		continue;
+	    }
+
             wrPtr = &drvPtr->writer;
             queuePtr = wrPtr->firstPtr;
             while (queuePtr != NULL) {
@@ -4096,7 +4131,6 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                 Ns_MutexUnlock(&queuePtr->lock);
                 queuePtr = queuePtr->nextPtr;
             }
-            drvPtr = drvPtr->nextPtr;
         }
         Tcl_AppendResult(interp, ds.string, 0);
         Tcl_DStringFree(dsPtr);

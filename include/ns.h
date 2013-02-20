@@ -1587,6 +1587,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 
 NS_EXTERN Ns_OptionConverter Ns_OptionObj;
 NS_EXTERN Ns_OptionConverter Ns_OptionString;
+NS_EXTERN Ns_OptionConverter Ns_OptionServer;
 
 #define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof(arr[0])))
 

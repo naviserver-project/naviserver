@@ -482,7 +482,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     NsInterp    *itPtr = arg;
     NsServer    *servPtr;
     ConnPool    *poolPtr;
-    char        *pool = NULL, *server = NULL, *optArg = NULL, buf[100];
+    char        *pool = NULL, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
     static CONST char *subcmds[] = {
@@ -512,7 +512,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     static CONST char  *options[]           = {"-server", "-pool", NULL};
     enum                                      {OServerIdx, OPoolIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
-    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionString};
+    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionServer, Ns_OptionString};
 
     if (objc < 2) {
     usage_error:
@@ -522,11 +522,11 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 1, 
 			Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
-	goto usage_error;
+	return TCL_ERROR;
     }
 
-    server = optionClientData[OServerIdx];
-    pool   = optionClientData[OPoolIdx];
+    servPtr = optionClientData[OServerIdx];
+    pool    = optionClientData[OPoolIdx];
 
     if (objc < nextArgIdx) {goto usage_error;}
 
@@ -564,16 +564,9 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	}
     }
 
-    if (server) {
-	servPtr = NsGetServer(server);
-        if (servPtr == NULL) {
-            Tcl_AppendResult(interp, "no such server: ", server, NULL);
-            return TCL_ERROR;
-        }
-    } else {
+    if (servPtr == NULL) {
 	servPtr = itPtr->servPtr;
     }
-
 
     if (pool) {
         poolPtr = servPtr->pools.firstPtr;

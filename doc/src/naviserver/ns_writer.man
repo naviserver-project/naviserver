@@ -14,14 +14,17 @@ operations which consumes less resources than returning multiple files to the sl
 [list_begin definitions]
 
 [call [cmd ns_writer] \
-	[arg list]]
+	[arg list]
+	[opt [arg {-server s}] ]
 
 [para] 
 Returns list of all currently submitted files. Every list entry
 contains the start time of the initiating request, name of the thread,
 driver, the ip-address of the requestor, the file descriptor, the
 remaining size and the bytes already sent, and the client data as
-provided via [lb]ns_conn clientdata[rb]
+provided via [lb]ns_conn clientdata[rb]. If [arg {-server}] is
+specified, only the submitted file entries from the specified server
+are returned.
 
 [call [cmd ns_writer] [arg submit] [arg data]]
 
