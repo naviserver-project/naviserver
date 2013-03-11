@@ -14,8 +14,8 @@ operations which consumes less resources than returning multiple files to the sl
 [list_begin definitions]
 
 [call [cmd ns_writer] \
-	[arg list]
-	[opt [arg {-server s}] ]
+	[arg list] \
+	[opt [arg {-server s}] ]]
 
 [para] 
 Returns list of all currently submitted files. Every list entry
