@@ -450,6 +450,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
             queuePtr->id = i;
             Push(queuePtr, spPtr->firstPtr);
         }
+    } else {
+        Ns_Log(Notice, "%s: enable %d spooler thread(s) "
+               module, spPtr->threads);
     }
 
     /*
@@ -477,6 +480,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
         }
+    } else {
+        Ns_Log(Notice, "%s: enable %d writer thread(s) "
+               module, wrPtr->threads);
     }
 
     /*
@@ -3602,11 +3608,12 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         return NS_ERROR;
     }
 
-    Ns_Log(DriverDebug, 
-	   "NsWriterQueue: size %" PRIdz " bufs %p (%d) flags %.6x stream %.6x chan %p fd %d", 
-	   nsend, bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM, chan, fd);
-
     wrPtr  = &connPtr->sockPtr->drvPtr->writer;
+
+    Ns_Log(DriverDebug, 
+	   "NsWriterQueue: size %" PRIdz " bufs %p (%d) flags %.6x stream %.6x chan %p fd %d thread %d", 
+	   nsend, bufs, nbufs, connPtr->flags, connPtr->flags & NS_CONN_STREAM, chan, fd, wrPtr->threads);
+
     if (wrPtr->threads == 0) {
         Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");
         return NS_ERROR;
