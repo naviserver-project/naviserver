@@ -226,8 +226,8 @@ ns_ictl trace allocate ns_init
 ns_ictl trace deallocate ns_cleanup
 
 proc ns_cleanup {} {
-	ns_cleanupchans;  # Close files
-	ns_cleanupvars;   # Destroy global variables
+    ns_cleanupchans;  # Close files
+    ns_cleanupvars;   # Destroy global variables
     ns_set  cleanup;  # Destroy non-shared sets
     ns_http cleanup;  # Abort any http requests
     ns_ictl cleanup;  # Run depreciated 1-shot Ns_TclRegisterDefer's.
@@ -368,6 +368,49 @@ _ns_load_server_modules
 
 ns_runonce -global {ns_atprestartup _ns_load_global_modules}
 
+
+#
+# Return the config section where the current/specified driver is
+# defined. A driver might be installed globally (for all servers) or
+# for a single server. If the driver is not installed, return empty
+#
+proc ns_driversection {args} {
+  set driver [ns_conn driver]
+  set server [ns_info server]
+  set l [llength $args]
+  if {$l > 1} {
+    array set vars {-driver driver -server server}
+    for {set i 0} {$i < $l} {incr i} {
+      set opt [lindex $args $i]
+      switch -exact -- $opt {
+	-driver -
+	-server {
+	  incr i
+	  if {$i < $l} {
+	    set $vars($opt) [lindex $args $i]
+	    continue
+	  }
+	}
+      }
+      error "usage: ns_driversection ?-driver drv? ?-server s?"
+    }
+  }
+  if {[ns_config ns/modules $driver] ne ""} {
+    # driver is installed globally
+    set section ns/module/$driver
+  } elseif {[ns_config ns/server/$server/modules $driver] ne ""} {
+    # driver is installed for the server
+    set section ns/server/$server/module/$driver
+  } else {
+    # "driver $driver is not installed (server $server)"
+    set section ""
+  }
+  return $section
+}
+
+#
+# Define ns_eval depending on the configuration
+#
 
 if {$use_trace_inits} {
 
