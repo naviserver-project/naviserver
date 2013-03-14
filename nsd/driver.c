@@ -451,7 +451,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
             Push(queuePtr, spPtr->firstPtr);
         }
     } else {
-        Ns_Log(Notice, "%s: enable %d spooler thread(s) "
+        Ns_Log(Notice, "%s: enable %d spooler thread(s) ",
                module, spPtr->threads);
     }
 
@@ -481,7 +481,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
             Push(queuePtr, wrPtr->firstPtr);
         }
     } else {
-        Ns_Log(Notice, "%s: enable %d writer thread(s) "
+        Ns_Log(Notice, "%s: enable %d writer thread(s) ",
                module, wrPtr->threads);
     }
 
