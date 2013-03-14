@@ -160,6 +160,9 @@
 /* Define to 1 if Tcl exports the Tcl_GetMemoryInfo function. */
 #undef HAVE_TCL_GETMEMORYINFO
 
+/* Define to 1 when TCP_FASTOPEN is available. */
+#undef HAVE_TCP_FASTOPEN
+
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
 
