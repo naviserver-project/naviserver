@@ -5,7 +5,8 @@
 [titledesc {Fetch a web page}]
 
 [description]
-
+This command is deprecated; use [cmd ns_http] instead.
+[para]
 This command opens an http connection to a web page used to fetch its contents
 via the method, which may be POST, GET, or another valid http method.  If the
 act of opening the connections fails, it may throw an error.
@@ -78,8 +79,8 @@ Note: This command is currently implemented in Tcl, in the source file tcl/http.
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_http ns_httpget ns_httppost]
+[see_also ns_http ns_httpget ns_httppost ns_httptime]
+[keywords http-client] 
 
 [manpage_end]
 

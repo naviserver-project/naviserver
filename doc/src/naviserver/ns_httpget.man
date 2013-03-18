@@ -5,6 +5,8 @@
 [titledesc {Open an HTTP connection and fetch a page}]
 
 [description]
+This command is deprecated; use [cmd ns_http] instead.
+[para]
 ns_httpget opens an HTTP connection and fetches the page at the specified url.
 You can specify a timeout for opening the connection (the default is 30 seconds),
  and a maximum level of redirection (the default is 0). ns_httpget sends the 
@@ -23,6 +25,9 @@ HTTP/1.1 "Host:" header for proper support of virtual hosting.
 [example_begin]
 set page [lb]ns_httpget http://www.aolserver.com[rb]
 [example_end]
+
+[see_also ns_http ns_httppost ns_httpopen ns_httptime]
+[keywords http-client] 
 
 [manpage_end]
 
