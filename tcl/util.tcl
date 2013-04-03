@@ -80,9 +80,7 @@ proc ns_adp_include {args} {
 #   Output headers set may be extended.
 #
 
-proc ns_setexpires {args} {
-
-    set secs [lindex $args [expr {[llength $args] - 1}]]
+proc ns_setexpires {secs} {
     set when [ns_httptime [expr {$secs + [clock seconds]}]]
     ns_set update [ns_conn outputheaders] Expires $when
 }
