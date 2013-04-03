@@ -454,8 +454,8 @@ better-suited to different situations:
     ns_register_proc GET /example/showrefer showheader REFER
 
     proc showheader {conn key} {
-          set value [lb]ns_set get [lb]ns_conn headers $conn[rb] $key[rb]
-          ns_return $conn 200 text/plain "$key: $value"
+          set value [lb]ns_set get [lb]ns_conn headers[rb] $key[rb]
+          ns_return 200 text/plain "$key: $value"
     }
 
 [example_end]
@@ -499,7 +499,7 @@ which returns 'Hello World'.
 ns_register_proc GET /example/hello hello
 
 proc hello {conn context} {
-   ns_return $conn 200 text/plain "Hello World"
+   ns_return 200 text/plain "Hello World"
 }
 
 
@@ -534,8 +534,8 @@ ns_register_proc GET /example/showbrowser showheader USER-AGENT
 ns_register_proc GET /example/showrefer showheader REFERER
 
 proc showheader {conn key} {
-    set value [lb]ns_set iget [lb]ns_conn headers $conn[rb] $key[rb]
-    ns_return $conn 200 text/plain "$key: $value"
+    set value [lb]ns_set iget [lb]ns_conn headers[rb] $key[rb]
+    ns_return 200 text/plain "$key: $value"
 }
 
 [example_end]
@@ -579,7 +579,7 @@ ns_register_proc GET /example/genstory genstoryform
 ns_register_proc POST /example/genstory genstory
 
 proc genstoryform {conn context} {
-  ns_return $conn 200 text/html \
+  ns_return 200 text/html \
 "HTML>
 <HEAD>
 <TITLE>Automatic Story Generator</TITLE>
@@ -605,10 +605,10 @@ Verb: <INPUT TYPE=text NAME=verb2><BR>
 "}
 
 proc genstory {conn ignore} {
-  set formdata [lb]ns_conn form $conn[rb]
+  set formdata [lb]ns_conn form[rb]
 
   if {$formdata == ""} {
-    ns_return $conn 200 text/plain "Need form data!"
+    ns_return 200 text/plain "Need form data!"
     return
   }
 
@@ -621,7 +621,7 @@ proc genstory {conn ignore} {
   }
   append hrformdata "</dl>"
 
-  ns_return $conn 200 text/html \
+  ns_return 200 text/html \
 "<HTML>
 <HEAD>
 <TITLE>The story of [lb]ns_set get $formdata name1[rb] and
@@ -687,10 +687,10 @@ script.
 # * A counter is used to loop through all the key
 #   value pairs in the form.
 
-set formdata [lb]ns_conn form $conn[rb]
+set formdata [lb]ns_conn form[rb]
 
 if {$formdata == ""} {
-    ns_return $conn 200 text/plain "Need form data!"
+    ns_return 200 text/plain "Need form data!"
     return
 }
 
@@ -704,7 +704,7 @@ for {set i 0} {$i < $size} {incr i} {
 }
 append hrformdata "</dl>"
 
-ns_return $conn 200 text/html \
+ns_return 200 text/html \
 "<HTML>
 <HEAD>
 <TITLE>The story of [lb]ns_set get $formdata name1[rb] and
@@ -801,8 +801,8 @@ ns_register_proc GET /example/not_here3 not_here3
 proc not_here {conn ignore} {
   set headers [lb]ns_set new myheaders[rb]
   ns_set put $headers Location \
-      [lb]ns_conn location $conn[rb]/example/finaldest
-  ns_respond $conn -status 302 -type text/plain \
+      [lb]ns_conn location[rb]/example/finaldest
+  ns_respond -status 302 -type text/plain \
       -string "Redirection" -headers $headers
 }
 
@@ -810,27 +810,26 @@ proc not_here2 {conn context} {
   set content \
 "<HTML><HEAD><TITLE>Redirection</TITLE></HEAD><BODY>
 <H1>Redirection</H1>The actual location of what you were looking for is
-<A HREF=\"[lb]ns_conn location $conn[rb]/example/finaldest\"> here.</A>
+<A HREF=\"[lb]ns_conn location[rb]/example/finaldest\"> here.</A>
 </BODY></HTML>"
 
-  ns_write $conn \
+  ns_write  \
 "HTTP/1.0 302 Document follows
 MIME-Version: 1.0
 Content-Type: text/html
 Content-Length: [lb]string length $content[rb]
-Location: [lb]ns_conn location $conn[rb]/example/finaldest
+Location: [lb]ns_conn location[rb]/example/finaldest
 
 $content"
 }
 
 proc finaldest {conn context} {
-  ns_return $conn 200 text/plain \
+  ns_return 200 text/plain \
       "You have arrived at the final destination."
 }
 
 proc not_here3 {conn context} {
-  ns_returnredirect $conn \
-      [lb]ns_conn location $conn[rb]/example/finaldest
+  ns_returnredirect [lb]ns_conn location[rb]/example/finaldest
 }
 
 [example_end]
@@ -876,18 +875,18 @@ describes the columns of a database table using the NaviServer
 ns_register_proc GET /example/describetable describetable
 
 proc describetable {conn ignore} {
-    if {[lb]ns_conn urlc $conn[rb] != 4} {
-    return [lb]ns_returnbadrequest $conn "Missing table name and/or poolname"[rb]
+    if {[lb]ns_conn urlc[rb] != 4} {
+    return [lb]ns_returnbadrequest "Missing table name and/or poolname"[rb]
     }
-    set pool [lb]lindex [lb]ns_conn urlv $conn] 2[rb]
+    set pool [lb]lindex [lb]ns_conn urlv] 2[rb]
     if {[lb]lsearch $pool [lb]ns_db pools[rb][rb] == -1} {
-    return [lb]ns_returnbadrequest $conn "Pool $pool does not exist"[rb]
+    return [lb]ns_returnbadrequest "Pool $pool does not exist"[rb]
     }
     set db [lb]ns_db gethandle $pool[rb]
-    set table [lb]lindex [lb]ns_conn urlv $conn] 3[rb]
+    set table [lb]lindex [lb]ns_conn urlv] 3[rb]
     set tinfo [lb]ns_table info $db $table[rb]
     if {$tinfo == ""} {
-    return [lb]ns_returnbadrequest $conn "Table $table does not exist"[rb]
+    return [lb]ns_returnbadrequest "Table $table does not exist"[rb]
     }
     set output "<dl>"
     set size [lb]ns_column count $tinfo[rb]
@@ -896,7 +895,7 @@ proc describetable {conn ignore} {
                 <dd>[lb]ns_column typebyindex $tinfo $i[rb]</dd>"
     }
     append output "</dl><hr>"
-    ns_returnnotice $conn 200 "Table $table in pool $pool" $output
+    ns_returnnotice 200 "Table $table in pool $pool" $output
 }
 
 
@@ -946,7 +945,7 @@ proc getemps {conn context} {
             append ul "<LI>[lb]ns_set get $row emp_name[rb] \n"
         }
         append ul "</UL>"
-        ns_returnnotice $conn 200 "Employee list" $ul
+        ns_returnnotice 200 "Employee list" $ul
 }
 
 
@@ -1021,15 +1020,15 @@ proc win-cgi {conn ignored} {
     global WinCGI
 
     # The program is the second part of the WinCGI URL.
-    set args [lb]join [lb]split [lb]ns_conn query $conn[rb] &[rb][rb]
-    set pgm [lb]lindex [lb]ns_conn urlv $conn[rb] 1[rb]
+    set args [lb]join [lb]split [lb]ns_conn query[rb] &[rb][rb]
+    set pgm [lb]lindex [lb]ns_conn urlv[rb] 1[rb]
     regsub -all {\+} $args " " args
     foreach e [lb]split $WinCGI(dir)/$pgm /] {
             if {$e != ""} {lappend exec $e}
     }
     set exec [lb]join $exec [rb]
     if ![lb]file executable $exec[rb] {
-            return [lb]ns_returnnotfound $conn[rb]
+            return [lb]ns_returnnotfound[rb]
     }
 
     # WinCGI requires a few temporary files.
@@ -1039,7 +1038,7 @@ proc win-cgi {conn ignored} {
 
     # Copy the request content to the input file.
     set fp [lb]open $inp w[rb]
-    ns_writecontent $conn $fp
+    ns_writecontent $fp
     set len [lb]tell $fp[rb]
     close $fp
 
@@ -1048,16 +1047,16 @@ proc win-cgi {conn ignored} {
     puts $fp {[lb]CGI[rb]}
     puts $fp \
 "Request Protocol=HTTP/1.0
-Request Method=[lb]ns_conn method $conn[rb]
+Request Method=[lb]ns_conn method[rb]
 Executable Path=$WinCGI(prefix)/$pgm
 Server Software=[lb]ns_info name]/[lb]ns_info version[rb]
 Server Name=[lb]ns_info name[rb]
 Server Port=[lb]ns_info version[rb]
 Server Admin=[lb]ns_config NaviServer WebMaster[rb]
 CGI Version=CGI/1.2 (Win)
-Remote Address=[lb]ns_conn peeraddr $conn[rb]
+Remote Address=[lb]ns_conn peeraddr[rb]
 Authentication Method=Basic
-Authentication Realm=[lb]ns_conn location $conn[rb]
+Authentication Realm=[lb]ns_conn location[rb]
 Content Type=application/x-www-form-urlencoded
 Content Length=$len"
     puts $fp ""
@@ -1071,7 +1070,7 @@ Content File=$inp"
     # Set any POST or query form variables.
     puts $fp ""
     puts $fp {[lb]Form Literal[rb]}
-    set form [lb]ns_conn form $conn[rb]
+    set form [lb]ns_conn form[rb]
     if {$form != ""} {
             for {set i 0} {$i < [lb]ns_set size $form[rb]} {incr i} {
                     set key [lb]ns_set key $form $i[rb]
@@ -1083,7 +1082,7 @@ Content File=$inp"
     # Set the accept headers and accumulate the extra headers.
     puts $fp ""
     puts $fp {[lb]Accept[rb]}
-    set headers [lb]ns_conn headers $conn[rb]
+    set headers [lb]ns_conn headers[rb]
     set extras ""
     for {set i 0} {$i < [lb]ns_set size $headers[rb]} {incr i} {
             set key [lb]ns_set key $headers $i[rb]
@@ -1106,7 +1105,7 @@ Content File=$inp"
     # exit status or not creating the output file.
     catch {exec "$exec $ini $inp $out $args"}
     if [lb]catch {set fp [lb]open $out]}[rb] {
-            ns_returnerror $conn 500 "WinCGI exec failed"
+            ns_returnerror 500 "WinCGI exec failed"
     } else {
             set type text/html
             set status 200
@@ -1128,9 +1127,9 @@ Content File=$inp"
             close $fp
 
             if [lb]info exists location[rb] {
-                    ns_returnredirect $conn $location
+                    ns_returnredirect $location
             } else {
-                    ns_return $conn $status $type $page
+                    ns_return $status $type $page
             }
     }
 

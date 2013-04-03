@@ -470,7 +470,7 @@ displays the appropriate page:
  <BODY BGCOLOR="#ffffff">
  <%
  # Get form data and assign to variables
- set r [lb]ns_conn form $conn[rb]
+ set r [lb]ns_conn form[rb]
  set question [lb]ns_set get $r question[rb]
  # Display cookbook in appropriate format
  if {$question == "yes"} {ns_adp_include cookset.html} \
@@ -565,7 +565,7 @@ The second ADP, db2.adp, is used as the POST from the first ADP:
  <BODY>
  <H1>DB Example page 2</H1>
  <%
- set table [lb]ns_set get [lb]ns_conn form $conn[rb] Table[rb]
+ set table [lb]ns_set get [lb]ns_conn form[rb] Table[rb]
  set db [lb]ns_db gethandle[rb]
  %>
  Contents of <%=$table%>:
@@ -674,7 +674,7 @@ administrator and the user, and displays a confirmation message:
  Thank You for subscribing to our newsletter!
  <%
  # Get form data and assign to variables
- set r [lb]ns_conn form $conn[rb]
+ set r [lb]ns_conn form[rb]
  set name [lb]ns_set get $r name[rb]
  set title [lb]ns_set get $r title[rb]
  set notify [lb]ns_set get $r notify[rb]
@@ -745,8 +745,8 @@ includes a file, executes another ADP, and uses streaming.
  <%
 
  ## Proxies should cache this page for a maximum of 1 hour:
- ns_setexpires $conn 3600
- set host [lb]ns_set iget [lb]ns_conn headers $conn[rb] host[rb]
+ ns_setexpires 3600
+ set host [lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
 
  ## How many times has this page been accessed
  ## since the server was started?

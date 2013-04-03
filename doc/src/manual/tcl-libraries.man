@@ -41,7 +41,7 @@ request for /example/hello, plus the "hello" procedure itself:
 [example_begin]
 
  proc hello {conn context} {
-   ns_return $conn 200 text/plain "Hello World"
+   ns_return 200 text/plain "Hello World"
  }
 
 [example_end]
