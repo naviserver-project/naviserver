@@ -160,13 +160,6 @@ ns_section ns/server/${server}
         #ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
         ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
                                                 ;# 100 means to disable concurrent creates
-	#
-	# Directory listing options
-	#
-	#ns_param   directoryadp	$pageroot/dirlist.adp ;# Choose one or the other
-	#ns_param   directoryproc	_ns_dirlist           ;#  ...but not both!
-	#ns_param   directorylisting	fancy                 ;# Can be simple or fancy
-	#
 	# Compress response character data: ns_return, ADP etc.
 	#
 	#ns_param    compressenable      off	;# false, use "ns_conn compress" to override
@@ -239,6 +232,14 @@ ns_section ns/server/${server}/tcl
 ns_section "ns/server/${server}/fastpath"
 	ns_param        serverdir             ${homedir}
 	ns_param        pagedir               ${pageroot}
+	#
+	# Directory listing options
+	#
+	#ns_param   directoryfile	"index.adp index.tcl index.html index.htm"
+	#ns_param   directoryadp	$pageroot/dirlist.adp ;# Choose one or the other
+	#ns_param   directoryproc	_ns_dirlist           ;#  ...but not both!
+	#ns_param   directorylisting	fancy                 ;# Can be simple or fancy
+	#
 
 #---------------------------------------------------------------------
 #
