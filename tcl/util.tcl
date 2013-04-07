@@ -70,8 +70,11 @@ proc ns_adp_include {args} {
 #
 # ns_setexpires --
 #
-#   Assures connection output headers contain the
-#   Expires header.
+#   Assures connection output headers contain the "Expires"
+#   header. When "-cache-control" is specified the function adds as
+#   well a max-age header field to the response with the specified
+#   cache response directive (such as public, private, no-cache,
+#   no-store, no-transform, must-revalidate, or proxy-revalidate)
 #
 # Results:
 #   None.
@@ -80,9 +83,17 @@ proc ns_adp_include {args} {
 #   Output headers set may be extended.
 #
 
-proc ns_setexpires {secs} {
+proc ns_setexpires {args} {
+    set headers [ns_conn outputheaders]
+    set secs [lindex $args end]
+    if {[lindex $args 0] eq "-cache-control"} {
+        set cache_control [lindex $args 1]
+        ns_set update $headers Cache-Control "max-age=$secs, [lindex $args 1]"
+    } elseif {[llength $args] > 1} {
+	error "usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? secs"
+    }
     set when [ns_httptime [expr {$secs + [clock seconds]}]]
-    ns_set update [ns_conn outputheaders] Expires $when
+    ns_set update $headers Expires $when
 }
 
 

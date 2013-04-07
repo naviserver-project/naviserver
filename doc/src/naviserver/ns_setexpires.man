@@ -2,7 +2,7 @@
 [manpage_begin ns_setexpires n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Set the current connections Expires header to the current time plus seconds seconds}]
+[titledesc {Set the current connections Expires header field to the current time plus seconds seconds}]
 
 [description]
 
@@ -11,13 +11,16 @@ Set the current connections Expires header to the current time plus seconds seco
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
-[call [cmd ns_setexpires] [arg seconds]]
-
-
+[call [cmd ns_setexpires] \
+	[opt [option "--cache-control [arg cache-response-directive]"]] \
+	[arg seconds]]
 [list_end]
 
+Set the output headers contain the "Expires" header. When
+"-cache-control" is specified the function adds as well a "max-age"
+header field to the response with the specified cache response
+directive (such as public, private, no-cache, no-store, no-transform,
+must-revalidate, or proxy-revalidate)
 
 [section EXAMPLES]
 
@@ -25,11 +28,11 @@ Set the current connections Expires header to the current time plus seconds seco
    % ns_setexpires 60
 [example_end]
 
-Set the Expires header to expire in 1 minute from now
+Set the "Expires" header field to expire in 1 minute from now.
 
 
-[see_also nsd]
-[keywords ns_time ns_conn]
+[keywords cache]
+[see_also ns_time ns_conn]
 
 [manpage_end]
 
