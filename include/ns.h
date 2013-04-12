@@ -159,7 +159,7 @@
 #define NS_TCL_TRACE_ALLOCATE      0x04 /* Interp allocated, possibly from thread cache */
 #define NS_TCL_TRACE_DEALLOCATE    0x08 /* Interp de-allocated, returned to thread-cache */
 #define NS_TCL_TRACE_GETCONN       0x10 /* Interp allocated for connection processing (filter, proc) */
-#define NS_TCL_TRACE_FREECONN      0x20 /* Interp finnished connection processing */
+#define NS_TCL_TRACE_FREECONN      0x20 /* Interp finished connection processing */
 
 /*
  * The following define some buffer sizes and limits.
@@ -175,7 +175,7 @@
  */
 
 #define NS_TCL_SET_STATIC          0 /* Ns_Set managed elsewhere, maintain a Tcl reference */
-#define NS_TCL_SET_DYNAMIC         1 /* Tcl owns the Ns_Set and will free when finnished */
+#define NS_TCL_SET_DYNAMIC         1 /* Tcl owns the Ns_Set and will free when finished */
 
 #define NS_COOKIE_SECURE           1  /* The cookie should only be sent using HTTPS */
 #define NS_COOKIE_SCRIPTABLE       2  /* Available to javascript on the client. */

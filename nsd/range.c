@@ -163,7 +163,7 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
 
     /*
      * Construct the MIME headers for a multipart range against a 0 base
-     * and rebase after we've finnished resizing the string.
+     * and rebase after we've finished resizing the string.
      */
 
     dsbase = 0;
@@ -185,7 +185,7 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
     Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
 
     /*
-     * Rebase the header, add the data range, and finnish off with
+     * Rebase the header, add the data range, and finish off with
      * the rebased trailer.
      */
 

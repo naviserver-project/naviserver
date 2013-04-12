@@ -282,7 +282,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
      */
 
     Ns_MutexInit(&servPtr->pools.lock);
-    Ns_MutexSetName2(&servPtr->pools.lock, "nsd:queue", server);
+    Ns_MutexSetName2(&servPtr->pools.lock, "nsd:pools", server);
     Ns_MutexInit(&servPtr->filter.lock);
     Ns_MutexSetName2(&servPtr->filter.lock, "nsd:filter", server);
 
@@ -448,5 +448,8 @@ CreatePool(NsServer *servPtr, char *pool)
 	
 	Ns_MutexInit(&poolPtr->wqueue.lock);
 	Ns_MutexSetName2(&poolPtr->wqueue.lock, name, "wqueue");
+
+	Ns_MutexInit(&poolPtr->threads.lock);
+	Ns_MutexSetName2(&poolPtr->threads.lock, name, "threads");
     }
 }

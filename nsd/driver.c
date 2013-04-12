@@ -2238,7 +2238,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
  * SockParse --
  *
  *      Construct the given conn by parsing input buffer until end of
- *      headers.  Return NS_SOCK_READY when finnished parsing.
+ *      headers.  Return NS_SOCK_READY when finished parsing.
  *
  * Results:
  *      SOCK_READY:  Conn is ready for processing.
@@ -3732,9 +3732,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	   wrPtr->threads, nsend, wrPtr->maxsize);
 
     assert(connPtr->poolPtr);
-    /* Ns_MutexLock(&connPtr->servPtr->pools.lock); */
+    /* Ns_MutexLock(&connPtr->poolPtr->threads.lock); */
     connPtr->poolPtr->stats.spool++;
-    /* Ns_MutexUnlock(&connPtr->servPtr->pools.lock); */
+    /* Ns_MutexUnlock(&connPtr->poolPtr->threads.lock); */
 
     wrSockPtr = (WriterSock *)ns_calloc(1, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;

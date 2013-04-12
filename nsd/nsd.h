@@ -677,6 +677,7 @@ typedef struct ConnPool {
         int idle;
         int timeout;
         int creating;
+	Ns_Mutex lock;
     } threads;
 
     /*

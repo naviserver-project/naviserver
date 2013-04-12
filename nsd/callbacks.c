@@ -350,7 +350,7 @@ NsWaitShutdownProcs(Ns_Time *toPtr)
     }
 
     /*
-     * Wait for the shutdown thread to finnish running shutdown
+     * Wait for the shutdown thread to finish running shutdown
      * notification and one-shot callbacks.
      */
 

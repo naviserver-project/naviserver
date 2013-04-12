@@ -951,12 +951,12 @@ Ns_ConnTimeStats(Ns_Conn *conn) {
     Ns_DiffTime(&connPtr->filterDoneTime,     &connPtr->requestDequeueTime, &connPtr->filterTimeSpan);
     Ns_DiffTime(&now,                         &connPtr->filterDoneTime,     &connPtr->runTimeSpan);
 
-    Ns_MutexLock(&poolPtr->servPtr->pools.lock);
+    Ns_MutexLock(&poolPtr->threads.lock);
     Ns_IncrTime(&poolPtr->stats.acceptTime, connPtr->acceptTimeSpan.sec, connPtr->acceptTimeSpan.usec);
     Ns_IncrTime(&poolPtr->stats.queueTime,  connPtr->queueTimeSpan.sec,  connPtr->queueTimeSpan.usec);
     Ns_IncrTime(&poolPtr->stats.filterTime, connPtr->filterTimeSpan.sec, connPtr->filterTimeSpan.usec);
     Ns_IncrTime(&poolPtr->stats.runTime,    connPtr->runTimeSpan.sec,    connPtr->runTimeSpan.usec);
-    Ns_MutexUnlock(&poolPtr->servPtr->pools.lock);
+    Ns_MutexUnlock(&poolPtr->threads.lock);
 }
 
 
