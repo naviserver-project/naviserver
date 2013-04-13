@@ -665,11 +665,19 @@ ns_runonce {
             #    namespace eval $nsp {}
             # entry by adding the space.
             append script " "
+	    
+	    #
+	    # Keep the variables of all namespaces except these of "::"
+	    #
+	    if {$nsp ne "::"} {
+		foreach vn [info vars ${nsp}::*] {
+		    append script [_varscript $vn]
+		}
+	    }
 
-
-            foreach vn [info vars ${nsp}::*] {
-                append script [_varscript $vn]
-            }
+	    #
+	    # Save procs and command of all namespaces
+	    #
             foreach pn [info procs ${nsp}::*] {
                 set orig [namespace origin $pn]
                 if {$orig ne [namespace which -command $pn]} {
