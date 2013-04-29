@@ -77,8 +77,8 @@ set directoryfile             index.tcl,index.adp,index.html,index.htm
 # Global server parameters 
 #---------------------------------------------------------------------
 ns_section ns/parameters 
-    ns_param   serverlog	${logroot}/error-${server}.log 
-    ns_param   pidfile		${logroot}/nsd-${server}.pid
+    ns_param   serverlog	${logroot}/error.log 
+    ns_param   pidfile		${logroot}/nsd.pid
     ns_param   home		$homedir 
     ns_param   debug		$debug
     #
@@ -297,10 +297,10 @@ ns_section ns/server/${server}/module/nssock
 	#
 	#ns_param   spoolerthreads	1	;# 0, number of upload spooler threads
 	#ns_param   maxupload		0	;# 0, when specified, spool uploads larger than this value to a temp file
-	#ns_param   writerthreads	1	;# 0, number of writer threads
-	#ns_param   writersize		4096	;# 1024*1024, use writer threads for files larger than this value
+	ns_param   writerthreads	2	;# 0, number of writer threads
+	ns_param   writersize		4096	;# 1024*1024, use writer threads for files larger than this value
 	#ns_param   writerbufsize	8192	;# 8192, buffer size for writer threads
-	#ns_param   writerstreaming	true	;# false;  activate writer for streaming HTML output (e.g. ns_writer)
+	#ns_param   writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
 
 
 #---------------------------------------------------------------------
@@ -310,9 +310,9 @@ ns_section ns/server/${server}/module/nssock
 #---------------------------------------------------------------------
 ns_section ns/server/${server}/module/nslog 
 	#
-	# General parameters
+	# General parameters for access.log
 	#
-	ns_param   file			${logroot}/access-${server}.log
+	ns_param   file			${logroot}/access.log
 	#ns_param   maxbuffer		100	;# 0, number of logfile entries to keep in memory before flushing to disk
 	#
 	# Control what to log
