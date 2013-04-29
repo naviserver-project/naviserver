@@ -70,21 +70,21 @@ proc ns_share args {
 	by nsv."
 }
 
-if {[info command ::nx::Object] ne ""} {
+if {[info command ::nx::Object] ne "" && [::nx::Object info lookup method object] ne ""} {
   ns_log notice "Using ns_cache based on NX [package require nx]"
 
   #
   # Minimal ns_cache implementation based on NX
   #
   ::nx::Object create ::ns_cache {
-    :public method eval {cache_name key script} {
+    :public object method eval {cache_name key script} {
       set rc [catch {uplevel [list ns_cache_eval $cache_name $key $script]} result]
       return -code $rc $result
     }
 
-    :public alias flush ::ns_cache_flush
+    :public object alias flush ::ns_cache_flush
 
-    :public method create {cache_name {-size 1024000} {-timeout}} {
+    :public object method create {cache_name {-size 1024000} {-timeout}} {
       # expire in NS means timeout in AOLserver 
       if {[info exists timeout]} {
 	set create_cmd "ns_cache_create -expires $timeout $cache_name $size"  
@@ -94,7 +94,7 @@ if {[info command ::nx::Object] ne ""} {
       return  [{*}$create_cmd]
     }
 
-    :public method names {cache_name args} {
+    :public object method names {cache_name args} {
       set ts0 [clock clicks -milliseconds]
       set r [ns_cache_keys $cache_name {*}$args]
       set span [expr {[clock clicks -milliseconds] - $ts0}]
@@ -104,7 +104,7 @@ if {[info command ::nx::Object] ne ""} {
       return $r
     }
 
-    :public method get {cache_name key var_name:optional} {
+    :public object method get {cache_name key var_name:optional} {
       if {[info exists var_name]} {
 	# Check if we have an entry. This assumes that only valid (not
 	# expired) entries are returned, and this state will be true
@@ -124,11 +124,11 @@ if {[info command ::nx::Object] ne ""} {
       }
     }
 
-    :public method set {cache_name key value} {
+    :public object method set {cache_name key value} {
       uplevel ns_cache_eval -force -- $cache_name [list $key] [list set _ $value]
     }
 
-    :method unknown {subcmd cache_name args} {
+    :object method unknown {subcmd cache_name args} {
       ns_log notice "ns_cache unknown, subcmd=$subcmd, args=$args"
       set ts0 [clock clicks -milliseconds]
       #ns_log notice "ns_cache $subcmd $cache_name"
