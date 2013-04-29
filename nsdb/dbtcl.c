@@ -315,14 +315,14 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	    ns_free(handlesPtrPtr);
 	}
 	if (result != NS_TIMEOUT && result != NS_OK) {
-        Ns_TclPrintfResult(interp,
-            "could not allocate %d handle%s from pool \"%s\"",
-            nhandles,
-            nhandles > 1 ? "s" : "",
-            pool);
-        return TCL_ERROR;
-    }
-    break;
+	  Ns_TclPrintfResult(interp,
+			     "could not allocate %d handle%s from pool \"%s\"",
+			     nhandles,
+			     nhandles > 1 ? "s" : "",
+			     pool);
+	  return TCL_ERROR;
+	}
+	break;
     }
 
     case EXCEPTION:
