@@ -559,12 +559,12 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Append the request line plus query data (if configured)
      */
 
-    if (conn->request != NULL) {
-        if ((logPtr->flags & LOG_SUPPRESSQUERY)) {
-            Ns_DStringVarAppend(&ds, " \"", conn->request->url, "\" ", NULL);
-        } else {
-            Ns_DStringVarAppend(&ds, " \"", conn->request->line, "\" ", NULL);
-        }
+    if (likely(conn->request != NULL)) {
+	char *string = (logPtr->flags & LOG_SUPPRESSQUERY) ? 
+	    conn->request->url : 
+	    conn->request->line;
+
+	Ns_DStringVarAppend(&ds, " \"", likely(string != NULL)  ? string  : "", "\" ", NULL);
     } else {
         Ns_DStringAppend(&ds," \"\" ");
     }
