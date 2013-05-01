@@ -1522,6 +1522,11 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
     }
 
     /*
+     * Make sure, the system encoding is UTF-8.
+     */
+    Tcl_SetSystemEncoding(interp, "utf-8");
+
+    /*
      * Allocate and associate a new NsInterp struct for the interp.
      */
 
