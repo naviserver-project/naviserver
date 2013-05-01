@@ -322,7 +322,7 @@ ns_section ns/server/${server}/module/nslog
 	ns_param    logpartialtimes	true	;# false, include high-res start time and partial request durations (accept, queue, filter, run)
 	#ns_param   formattedtime	true	;# true, timestamps formatted or in secs (unix time)
 	#ns_param   logcombined		true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
-	#ns_param   extendedheaders	COOKIE	;# comma delimited list of HTTP heads to log per entry
+	#ns_param   extendedheaders	COOKIE	;# space delimited list of HTTP heads to log per entry
 	#ns_param   checkforproxy	true	;# false, check for proxy header (X-Forwarded-For)
 	#
 	#
