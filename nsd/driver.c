@@ -1267,6 +1267,11 @@ DriverThread(void *arg)
 			}
 			break;
 			
+		    case SOCK_READERROR:
+			Ns_Log(DriverDebug, "sockread returned read error; close socket");
+			SockRelease(sockPtr, n, errno);
+			break;
+
 		    default:
 			Ns_Log(Warning, "sockread returned unexpected result %d; close socket", n);
 			SockRelease(sockPtr, n, errno);
