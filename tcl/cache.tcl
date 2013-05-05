@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # cache.tcl --
 #
 #   Simple cache for procs and commands.
@@ -108,4 +104,4 @@ proc ns_memoize_stats {} {
     return [ns_cache_stats ns:memoize]
 }
 
-# EOF $RCSfile$
+# EOF 

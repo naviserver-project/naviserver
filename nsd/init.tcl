@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # init.tcl --
 #
 #   ns/server/$server/tcl:initfile
@@ -667,4 +663,4 @@ if {$use_trace_inits} {
 
 ns_ictl markfordelete
 
-# EOF $RCSfile$
+# EOF

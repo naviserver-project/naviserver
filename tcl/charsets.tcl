@@ -27,7 +27,6 @@
 # version of this file under either the License or the GPL.
 #
 
-# $Header$
 
 #
 # charsets.tcl --
@@ -338,4 +337,4 @@ proc _ns_multipartformdata_p {} {
     return [expr {[ns_conn method] eq {POST} && [string match $glob $type]}]
 }
 
-# EOF $RCSfile$
+# EOF

@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # file.tcl --
 #
 #   Support for .tcl-style dynamic pages.
@@ -127,4 +123,4 @@ proc ns_sourceproc {args} {
     }
 }
 
-# EOF $RCSfile$
+# EOF

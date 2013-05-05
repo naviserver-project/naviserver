@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # fastpath.tcl --
 #
 #   AOLserver 2.x fastpath routines moved from C.  The C code
@@ -167,4 +163,4 @@ $uptree
     ns_returnnotice 200 $url $html
 }
 
-# EOF $RCSfile$
+# EOF

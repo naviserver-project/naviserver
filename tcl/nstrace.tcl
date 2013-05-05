@@ -1291,5 +1291,5 @@ ns_runonce {
     }
 }
 
-# EOF $RCSfile$
+# EOF
 

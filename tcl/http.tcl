@@ -27,10 +27,6 @@
 # version of this file under either the License or the GPL.
 #
 
-#
-# $Header$
-#
-
 # http.tcl
 #
 #   Routines for making non-blocking HTTP connections through
@@ -665,5 +661,5 @@ proc ns_proxy_handler_http {args} {
     close $rfd
 }
 
-# EOF $RCSfile$
+# EOF
 

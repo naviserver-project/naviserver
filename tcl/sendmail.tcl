@@ -27,8 +27,6 @@
 # version of this file under either the License or the GPL.
 #
 
-# $Header$
-
 #
 # sendmail.tcl --
 #
@@ -584,4 +582,4 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
     }
 }
 
-# EOF $RCSfile$
+# EOF 

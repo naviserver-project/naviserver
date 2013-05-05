@@ -444,7 +444,4 @@ proc ns_parseformfile { file form contentType } {
     close $fp
 }
 
-# EOF $RCSfile$
-
-
-
+# EOF 

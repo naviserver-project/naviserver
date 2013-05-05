@@ -382,5 +382,5 @@ proc ns_var {cmd {key ""} {value ""}} {
     }
 }
 
-# EOF $RCSfile$
+# EOF
 

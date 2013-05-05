@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # init.tcl --
 #
 # 	Naviserver looks for init.tcl before sourcing all other files
@@ -59,4 +55,4 @@ if {[info exists ::auto_path] == 0} {
     set ::auto_path [concat [file join [ns_info home] lib] $::auto_path]
 }
 
-# EOF $RCSfile$
+# EOF

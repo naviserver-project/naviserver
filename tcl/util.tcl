@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # util.tcl --
 #
 #	Various utility procedures. Couple of please's in advance:
@@ -551,4 +547,4 @@ proc ns_updateheader {key value} {
     ns_set update [ns_conn outputheaders] $key $value
 }
 
-# EOF $RCSfile$
+# EOF
