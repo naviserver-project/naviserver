@@ -1,4 +1,330 @@
 ======================================
+NaviServer 4.99.5, released XXXX-XX-XX
+======================================
+
+New Features:
+
+    * New connection thread architecture:
+      - Introduced connection thread queues for better control over
+        connection threads and to reduce queuing operations for
+        handing requests from the driver to the connection threads.
+        
+
+    * Support for improved TCP socket option handling 
+      (when supported by the OS);
+       - use TCP_FASTOPEN (when deferaccept is configured)
+       - Adding TCP option "nodelay" for nssock on operating 
+         systems that do not use this by default (such as Linux)
+       - Use TCP_CORK to optimize TCP_PACKAGE size on machines where
+         this is available.
+
+    * Improved asynchronous request handling and log file writing to
+      reduce latencies and improve robustness
+
+       - Asynchronous HTML streaming via writer threads to reduce
+         connection thread blocking time for slow delivery lines.
+       - New asynchronous log file writer - configurable
+
+    * Better scalability by reducing busiest lock contention and
+      finer lock granularity (see below).
+
+    * Improved introspection commands:
+      - Report more detailed timing information and request statistics
+        via "ns_server ?-server s? ?-pool p? stats". The command
+        returns accept-times, queue-times, filter-times and run-times
+        per server and pool.
+      - Report OS-level thread ID via "ns_info threads" when supported
+        from the OS (currenly just Linux). This information is used by
+        nsstats to report e.g. system time and user time per thread.
+      - New subcommand "ns_conn clientdata" to query or set client data
+        (used e.g in ns_writer list)
+      - Added ns_fastpath_cache_stats to obtain usage info from the
+        fastpath cache
+
+    * Support for marking scripted and C-implemented Tcl-commands 
+      as deprecated.
+
+
+
+Performance Improvements:
+    * Server lock to pool lock in most cases
+    * Lazy init of zlib (mostly reduction in memory consumption)
+    * Allow delivery of mmapped files via writer without the need of copying content.
+    * Introduce separate locks for waiting queue (wqueue) and thread queue
+      (tqueue) per pool. In classical naviserver there is a pollslock
+      (covering all pools) used. The change leads to much finer lock
+      granularity in improves scalability.
+    * Added async disk writer to reduce request latencies due to file system latencies. 
+      Now used optionally for access log and error-log.
+    * Use GetSection() instead of Ns_ConfigCreateSection() in ConfigGet().
+      This is faster and removes the need for the most-frequently used mutex lock
+      in naviserver, namely "nsd:conf".
+    * Compiler optimizations for branch prediction - likely(),unlikely() macros.  
+    * Improved concurrency in writer threads by supporting asynchronous 
+      parial writes.
+
+
+Bug Fixes:
+    * Do not save variables of the toplevel namespace into the blueprint. 
+      OpenACS had with this a problem, since the database handles are managed via 
+      global variables, which is solved by this modification.
+    * ns_eval -sync syntax.
+    * Fixed all known range request bugs from regression test.
+    * Fix output for "ns_server active|queued|all"
+    * ns_server stats and in ns_server connections to be per server.
+    * Fix length computation in "ns_writer submitfile" when offset is specified
+    * Fix thread safety of "nswriter list".
+    * Simplified driver logic and fixed bad interaction with nsssl,
+      which used non-blocking sockets, but declared itself as a non-async
+      driver). Fixed potential bug for partial reads in header parsing
+      (string comparison could read past available bytes, pick up values
+      from previous requests). 
+    * Increase static buffer size to prevent SSL from stalling.
+    * Fix a bug showing up with nsssl (a driver has no NS_DRIVER_ASYNC flag set), 
+      where pollin says that data is available, but the read returns no data 
+      and leads to a busy loop.
+    * Fix bug in rolling access log when rollfmt is specified. Previously 
+      the log file was closed but not reopened, log data was lost.
+
+
+Documentation improvements:
+
+    * Updated/completed/added documentation (ns_conn, ns_http and
+      friends, ns_writer, ns_register, ns_register_op, ns_return, ...)
+
+    * Remove man pages for non-existing commands and half written man
+      pages.
+
+
+Tcl API Changes:
+
+    * ns_httpget, ns_httppost and ns_httpopen are deprecated (use
+      ns_http instead)
+
+    * ns_writer: added -server option to "ns_writer list" to list only
+      requests from a particular (virtual) server
+
+    * ns_driversection - determine the configsection for driver in the
+      config file.  Usage: ns_driversection ?-driver drv? ?-server s?
+
+    * "ns_info platform" is deprecated; use $::tcl_platform(platform) instead.
+      "ns_info winnt" is deprecated; use $::tcl_platform(platform) instead.
+
+    * ns_register_adptag is deprecated - use ns_adp_registerscript instead.
+
+    * ns_adp_registertag is deprecated - use ns_adp_registeradp instead.
+
+    * The following commands are deprecated
+      ns_info filters
+      ns_info pagedir
+      ns_info pageroot
+      ns_info requestprocs
+      ns_info tcllib
+      ns_info traces
+      ns_info url2file
+
+      and defined the following commands instead:
+
+      ns_server ?-server server? filters
+      ns_server ?-server server? pagedir
+      ns_server ?-server server? requestprocs
+      ns_server ?-server server? tcllib
+      ns_server ?-server server? traces
+      ns_server ?-server server? url2file
+
+    * ns_server - passing pool as 2nd argument is deprecated.
+      new option serverdir returns the base directory "ns_server ?-server s? serverdir" 
+     
+    * "ns_server keepalive" is deprecated - use "ns_conn keepalive" instead
+
+    * Added proc  "ns_deprecated" to flag deprecated commands in the the log file.
+
+    * Added commands to change server settings on the fly:
+      ns_server ?-server s? ?-pool p? maxthreads ?value?
+      ns_server ?-server s? ?-pool p? minthreads ?value?
+      
+    * Add "ns_server stats" to return number of requests, number of
+      spools and number of requests added to the waiting queue plus
+      cumulative times to serve requests.
+
+    * New commands "ns_writer size /driver/ ?value?"
+      If not specified, the whole file will be retuned, otherwise only
+      given part. Can be combined with -offset to return chunks of
+      file.
+
+    * New command "ns_writer streaming /driver/ ?value?" to query or
+      set the configuration parameter of writer thread.
+
+    * New command "ns_conn zipaccepted" returns whether or not the
+      client accepts a zip encoded response.
+
+    * New subcommand "ns_conn clientdata" to query or set the client
+      data for the current connection. The client data is provided by
+      the application and is potentially passed to different threads
+      and can be used to establish the context with the connection
+      thread. For example, the writer thread outputs the client data
+      when listing running connections (one can determine e.g. which
+      user has initiated the delivery, etc.).
+
+    * Output in "ns_writer list" now contains the start time of the
+      initiating request, the name of the thread, driver, the
+      ip-address of the requestor, the file descriptor, the remaining
+      size and the bytes already sent, and the client data as provided
+      via [ns_conn clientdata].
+
+
+C API Changes:
+    * Ns_OptionConverter: added Ns_OptionServer to convert string to
+      existing server.  Extended option parser to allow options at the
+      end of a command
+
+    * New function NsWakeupDriver(); used in queue to signal
+      conditions to the driver, when we might have to recreate
+      threads.
+
+    * New function NsWakeupConnThreads(ConnPool *poolPtr) to wake up
+      every idle conn thread during shutdown.
+
+
+Incompatible API Changes:
+   * ns_setexpires takes single argument for seconds to calculate
+     Expires header.  Passing conn no longer supported (was deprecated).
+
+Configuration Changes:
+    * Provided sample OpenACS config file openacs-config.tcl.
+
+    * New boolean parameter "writerstreaming" for drivers to
+      activate/deactivate streaming of HTML output via writer thread.
+
+    * New boolean parameter logpartialtimes true" for section
+      ns/server/${server}/module/nslog: Include a high-resolution
+      start time and partial request durations (accept, queue, filter,
+      run) in the access log.
+
+    * New integer parameters "lowwatermark" and "highwatermark" in
+      section ns/server/${server} for controlling connection thread
+      creation:
+
+        ns_param lowwatermark 10  ;# Create additional threads when 
+                                  ;# the queue is more than 10% full
+        ns_param highwatermark 80 ;# Allow concurrent when queue is 
+                                  ;# more than 80% full. Specifying 
+                                  ;# 100% effectively disables this.
+
+    * New boolen parameter asynclogwriter under ns/parameter to
+      turn on/off asynchronous writes to access log and error log
+
+    * Obsolete flushcontent parameter is no longer supported.
+
+Command Line Changes:
+
+    * Allow calls for "nsd -c" without config files.  
+
+        $ /usr/local/ns/bin/nsd  -c
+
+    * Allow specification of environment variable NAVISERVER to point
+      to the naviserver home directory (for e.g. log file
+      directories), otherwise determined by the location of the nsd
+      binary. Examples:
+
+        $ NAVISERVER=/usr/local/ns/ ./nsd/nsd  -c
+
+
+Code Changes:
+    * Moved statistics structure from NsServer to ConnPool to track
+      per-pool usage. Added member poolPtr to Conn for easy association.
+
+    * Defined new C function Ns_LogDeprecated() for handling deprecated
+      messages for tcl-level defined commands.
+
+    * Standardize printing of timings (get rid of stupid $sec.$microsecs,
+      where 1.2 means 1.000002 secs).
+
+    * Extend interface of NsWriterQueue() to accept iovec & nbufs
+      (as required by Ns_ConnSend()). This saves an unneeded copy of the
+      send data.
+
+    * Reduce number of (used) API calls by favoring iovec interface.
+
+    * Handle partial low-level writes correctly by allowing partial
+      writes at the driver level.
+
+      - The old SockSend() is now implemented using of nssock.sendProc
+        and performs partial writes on non-blocking sockets.
+
+      - Ns_SockSendBufs() delivers all iovec bufs like before but now
+        calls NsDriverSend() instead of the direct SockSend().
+
+      - Ns_ConnSend() calls Ns_SockSendBufs() instead of NsDriverSend() in
+        cases, where the writer thread is not used.
+
+      - Ns_SockSendBufs() calls NsDriverSend() instead of SockSend()
+
+      - Ns_SockSendFileBufs() calls NsDriverSend() instead of
+        Ns_SockSendBufs()
+
+      Further changes:
+
+      - Group fields in WriterSock to separate concern of file-spooling and
+        memory based requests.
+
+      - Factor out WriterSend() from DriverThread() to improve readability
+        and locality
+
+    * use scatter/gather interface for writer instead of the char* interface
+
+    * Generalized option parser from ns_server and used in
+      ns_urlencode and ns_urldecode to get rid of the potential crash
+      due to non-static strings in Tcl_GetIndexFromObjStruct().
+
+    * Update to TEA 3.9, rename configure.in to configure.ac as
+      suggested by the auto-tools warning
+
+    * Provide better error message when subcommand of "ns_server" not
+      found.
+
+    * Add lookup for server in NsTclServerObjCmd()
+
+    * Make Ns_ObjvTable static where possible
+
+    * Drop LogToAsyncFile and use NsAsyncWrite in LogToFile.  Async
+      log file writing can be switched on/off by configuring the async
+      log writer.
+
+    * Remove spread factor, which is not needed due to connection
+      thread queue
+
+    * use gettimeofday() if available instead of the rount trip to tcl
+
+    * Adjusting server exit to new infrastructure; new function
+      NsWakeupConnThreads(ConnPool *poolPtr) to wake up every idle
+      conn thread during shutdown.
+
+    * Report error message in sock accept, if the errno is different
+      from EAGAIN.
+
+    * Let Ns_ConnSend() use the writer thread to deliver adp-content
+      etc. without blocking a connection thread. This improves the request
+      latency and avoids potential slow-delovery DOS attacks.
+      
+    * Extend the interface of SockWriterRelease() to contain the
+      queue. SockWriterRelease() manages now the queue entries as seen
+      e.g. by "nswriter list".  Handle POLLHUP in writer thread
+      explicitly.
+
+    * Delegate close() operations from writer thread to driver thread via
+      NsSockClose().
+
+    * Added support for SO_ACCEPTFILTER for machines having no
+      TCP_DEFER_ACCEPT
+
+    * Extending buffer size when sending files via writer thread from
+      4KB to 16KB.
+
+    * Extended regression test
+
+
+======================================
 NaviServer 4.99.4, released XXXX-XX-XX
 ======================================
 
