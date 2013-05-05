@@ -27,7 +27,6 @@
 # version of this file under either the License or the GPL.
 #
 #
-# $Header$
 #
 
 NSBUILD=1
