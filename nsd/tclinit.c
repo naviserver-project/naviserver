@@ -1510,12 +1510,16 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
 {
     NsInterp   *itPtr;
     Tcl_Interp *interp;
+    static Ns_Mutex initLock = NULL; 
 
     /*
      * Create and initialize a basic Tcl interp.
      */
 
+    Ns_MutexLock(&initLock);
     interp = Tcl_CreateInterp();
+    Ns_MutexUnlock(&initLock);
+
     Tcl_InitMemory(interp);
     if (Tcl_Init(interp) != TCL_OK) {
         Ns_TclLogError(interp);
