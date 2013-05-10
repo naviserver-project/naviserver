@@ -983,7 +983,9 @@ NsConnThread(void *arg)
      */
 
     Ns_TlsSet(&argtls, argPtr);
+    Ns_MutexLock(tqueueLockPtr);
     argPtr->state = connThread_warmup;
+    Ns_MutexUnlock(tqueueLockPtr);
 
     Ns_MutexLock(threadsLockPtr);
     id = poolPtr->threads.nextid++;
@@ -1325,7 +1327,11 @@ NsConnThread(void *arg)
     }
 
     Ns_Log(Notice, "exiting: %s", exitMsg);
+
+    Ns_MutexLock(tqueueLockPtr);
     argPtr->state = connThread_free; 
+    Ns_MutexUnlock(tqueueLockPtr);
+
     Ns_ThreadExit(argPtr);
 }
 
