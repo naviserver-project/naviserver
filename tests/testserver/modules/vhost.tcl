@@ -23,7 +23,7 @@
 # version of this file under either the License or the GPL.
 #
 
-if {![string match testvhost* [ns_info server]]} {
+if {![string match "testvhost*" [ns_info server]]} {
     return
 }
 
@@ -58,7 +58,7 @@ ns_register_proc GET /location {
 
 
 
-if {![string equal testvhost2 [ns_info server]]} {
+if {"testvhost2" ne [ns_info server] } {
     return
 }
 
@@ -66,7 +66,7 @@ ns_serverrootproc nstest::serverroot arg
 ns_locationproc   nstest::location arg
 
 proc nstest::serverroot {{host ""} args} {
-    if {![string equal $host ""]} {
+    if {$host ne "" } {
         set path [eval file join testserverroot $host $args]
     } else {
         set path [eval file join testserverroot $args]

@@ -102,11 +102,11 @@ namespace eval ::nstest {
 	    ns_set icput $hdrs Accept */*
 	    ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
 
-	    if {[string equal $http 1.0]} {
+	    if {$http eq "1.0"} {
 		ns_set icput $hdrs Connection close
 	    }
 
-	    if {[string equal $port 80]} {
+	    if {$port eq "80"} {
 		ns_set icput $hdrs Host $host
 	    } else {
 		ns_set icput $hdrs Host $host:$port
@@ -123,7 +123,7 @@ namespace eval ::nstest {
 	    # Send the request.
 	    #
 
-	    if {[string equal $http ""]} {
+	    if {$http eq ""} {
 		set request "$method $url"
 	    } else {
 		set request "$method $url HTTP/$http"
@@ -191,7 +191,7 @@ namespace eval ::nstest {
 
 		    append body $buf
 
-		    if {[string equal $buf "0\n\n"] && [string equal $tencoding chunked]} {
+		    if {$buf eq "0\n\n" && $tencoding eq "chunked"} {
 			break
 		    }
 
