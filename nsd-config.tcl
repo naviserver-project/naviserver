@@ -10,6 +10,7 @@ ns_param        nsdb                nsdb.so
 ns_section     "ns/parameters"
 ns_param        home                $home
 ns_param        tcllibrary          tcl
+#ns_param        tclinitlock         true	       ;# default: false
 ns_param        serverlog           nsd.log
 ns_param        pidfile             nsd.pid
 #ns_param       logdebug            true               ;# default: false

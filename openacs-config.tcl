@@ -96,6 +96,11 @@ ns_section ns/parameters
     # Write asynchronously to log files (access log and error log)
     #ns_param	asynclogwriter	true 	;# false
 
+    # Enforce sequential thread initialization. This is not really
+    # desirably in general, but might be useful for hunting strange
+    # crashes or for debugging with valgrind.
+    #ns_param        tclinitlock         true	       ;# default: false
+
     #
     # Encoding settings (see http://dqd.com/~mayoff/encoding-doc.html)
     #
