@@ -242,7 +242,7 @@ void
 NsTclInitQueueType(void)
 {
     Tcl_InitHashTable(&tp.queues, TCL_STRING_KEYS);
-    Ns_MutexSetName(&tp.queuelock, "threadPool");
+    Ns_MutexSetName(&tp.queuelock, "jobThreadPool");
     tp.nextThreadId = 0;
     tp.nextQueueId = 0;
     tp.maxThreads = 0;
