@@ -1648,7 +1648,7 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 		# The -pthread needs to go in the CFLAGS, not LIBS
 		LIBS=`echo $LIBS | sed s/-pthread//`
 		CFLAGS="$CFLAGS -pthread"
-	    	LDFLAGS="$LDFLAGS -pthread"
+	    	LDFLAGS="$LDFLAGS -lpthread"
 	    ])
 	    case $system in
 	    FreeBSD-3.*)

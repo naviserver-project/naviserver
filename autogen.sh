@@ -6,13 +6,18 @@ test -z "$srcdir" && srcdir=.
 
 DIE=0
 
+AUTOCONF=${AUTOCONF:-autoconf}
+AUTOMAKE=${AUTOMAKE:-automake}
+AUTOHEADER=${AUTOHEADER:-autoheader}
+ACLOCAL=${ACLOCAL:-aclocal}
+
 (test -f $srcdir/configure.ac) || {
     echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
     echo " top-level package directory"
     exit 1
 }
 
-(autoconf --version) < /dev/null > /dev/null 2>&1 || {
+(${AUTOCONF} --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`autoconf' installed."
   echo "Download the appropriate package for your distribution,"
@@ -20,7 +25,7 @@ DIE=0
   DIE=1
 }
 
-(automake --version) < /dev/null > /dev/null 2>&1 || {
+(${AUTOMAKE} --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`automake' installed."
   echo "You can get it from: ftp://ftp.gnu.org/pub/gnu/"
@@ -29,7 +34,7 @@ DIE=0
 }
 
 # if no automake, don't bother testing for aclocal
-test -n "$NO_AUTOMAKE" || (aclocal --version) < /dev/null > /dev/null 2>&1 || {
+test -n "$NO_AUTOMAKE" || (${ACLOCAL} --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: Missing \`aclocal'.  The version of \`automake'"
   echo "installed doesn't appear recent enough."
@@ -44,13 +49,13 @@ fi
 rm -rf autom4te.cache
 
 echo "Running aclocal -I m4 $ACLOCAL_FLAGS"
-aclocal -I m4 $ACLOCAL_FLAGS || exit $?
+${ACLOCAL} -I m4 $ACLOCAL_FLAGS || exit $?
 
 echo "Running autoheader"
-autoheader || exit $?
+${AUTOHEADER} || exit $?
 
 echo "Running autoconf"
-autoconf || exit $?
+${AUTOCONF} || exit $?
 
 if test -z "$*"; then
   echo "**Warning**: I am going to run \`configure' with no arguments."

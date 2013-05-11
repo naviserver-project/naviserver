@@ -82,7 +82,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
 
 3c. Download, configure, build, and install NaviServer.
 
-    Oficial releases:
+    Official releases:
 
         http://sourceforge.net/project/showfiles.php?group_id=130646
 
@@ -133,9 +133,9 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
 
 
-    If you checked out the source directly replace "./configure"
-    in the example above with "./autogen.sh" to get the initial
-    makefiles created.
+    If you checked out the source directly from bitbucket, replace
+    "./configure" in the example above with "./autogen.sh" to get the
+    initial makefiles created.
 
     You will need recent versions of autoconf and automake installed.
     You will need 'dtplite' which is part of 'tcllib' installed if you
@@ -156,7 +156,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
     it's default value. Remove the ones you don't need.
 
     simple-config.tcl contains a basic set of the important configuration
-    options you are likely to need. Add to it as neccessary. 
+    options you are likely to need. Add to it as necessary. 
 
 
 3e. Try running the server in a shell window:
