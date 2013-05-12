@@ -486,7 +486,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         "address", "argv0", "boottime", "builddate", "callbacks",
         "config", "home", "hostname", "locks", "log",
         "major", "minor", "mimetypes", "name", "nsd", "pagedir", 
-	"pageroot", "patchlevel", "pid", "platform", "pools", 
+	"pageroot", "patchlevel", "pid", "platform", "pool", "pools", 
 	"scheduled", "server", "servers",
         "sockcallbacks", "tag", "tcllib", "threads", "uptime",
         "version", "winnt", "filters", "traces", "requestprocs",
@@ -498,7 +498,8 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         IConfigIdx, IHomeIdx, IHostNameIdx, ILocksIdx, ILogIdx,
         IMajorIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx, 
 	IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
-        IPidIdx, IPlatformIdx, IPoolsIdx, IScheduledIdx, IServerIdx, IServersIdx,
+        IPidIdx, IPlatformIdx, IPoolIdx, IPoolsIdx, 
+	IScheduledIdx, IServerIdx, IServersIdx,
         ISockCallbacksIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
         IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
         IUrl2FileIdx, IShutdownPendingIdx, IStartedIdx
@@ -670,6 +671,10 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     case IServerIdx:
         Tcl_SetResult(interp, server, TCL_STATIC);
+        return TCL_OK;
+
+    case IPoolIdx:
+        Tcl_SetResult(interp, ((Conn *)(itPtr->conn))->poolPtr->pool, TCL_STATIC);
         return TCL_OK;
 
     case ITclLibIdx:
