@@ -395,13 +395,17 @@ ns_section "ns/db/drivers"
     if { $database eq "oracle" } {
 	ns_param	ora8           ${bindir}/ora8.so
     } else {
-	ns_param	postgres       ${bindir}/nsdbpg.so  ;# Load PostgreSQL driver
+	ns_param	postgres       ${bindir}/nsdbpg.so
     }
 
     if { $database eq "oracle" } {
-        ns_section "ns/db/driver/ora8"
+      ns_section "ns/db/driver/ora8"
 	ns_param	maxStringLogLength -1
 	ns_param	LobBufferSize      32768
+    } else {
+      ns_section "ns/db/driver/postgres"
+	# Set this parameter, when "psql" is not on your path (OpenACS specific)
+	# ns_param	pgbin	"/usr/local/pg920/bin/"
     }
 
  
@@ -426,7 +430,6 @@ ns_section ns/db/pool/pool1
 	# ns_param	maxopen            0
 	ns_param	connections        15
 	ns_param	verbose            $debug
-	ns_param	extendedtableinfo  true
 	ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -445,7 +448,6 @@ ns_section ns/db/pool/pool2
 	# ns_param	maxopen            0
 	ns_param	connections        5
 	ns_param	verbose            $debug
-	ns_param	extendedtableinfo  true
 	ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -464,7 +466,6 @@ ns_section ns/db/pool/pool3
 	# ns_param	maxopen            0
 	ns_param	connections        5
 	ns_param	verbose            $debug
-	ns_param	extendedtableinfo  true
 	ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
