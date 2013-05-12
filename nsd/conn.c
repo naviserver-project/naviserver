@@ -1229,7 +1229,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	"location", 
 	"method",
 	"outputheaders", 
-	"peeraddr", "peerport", "port", "protocol",
+	"peeraddr", "peerport", "pool", "port", "protocol",
 	"query", 
 	"request", 
 	"server", "sock", "start", "status", 
@@ -1252,7 +1252,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 	CLocationIdx, 
 	CMethodIdx, 
 	COutputHeadersIdx, 
-	CPeerAddrIdx, CPeerPortIdx, CPortIdx, CProtocolIdx, 
+	CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CProtocolIdx, 
 	CQueryIdx, 
 	CRequestIdx,
 	CServerIdx, CSockIdx, CStartIdx, CStatusIdx, 
@@ -1588,6 +1588,10 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
     case CServerIdx:
         Tcl_SetResult(interp, Ns_ConnServer(conn), TCL_STATIC);
+        break;
+
+    case CPoolIdx:
+        Tcl_SetResult(interp, connPtr->poolPtr->pool, TCL_STATIC);
         break;
 
     case CStatusIdx:

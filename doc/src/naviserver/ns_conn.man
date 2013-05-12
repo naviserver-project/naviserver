@@ -193,6 +193,11 @@ IP address is returned in the form of a string separated with periods (e.g., 155
 Returns the port of the client, i.e. the "other side" of the HTTP connection. 
 
 
+[call [cmd  ns_conn] [cmd pool]]
+
+Returns the current connection pool from the currently connected server.
+
+
 [call [cmd  ns_conn] [cmd port]]
 
 Returns the port specified explicitly in the URL of the HTTP request. If the browser does

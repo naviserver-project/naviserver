@@ -99,11 +99,6 @@ Returns the process id of the running nsd process.
 Returns usage info from the memory pools (returned by
 Tcl_GetMemoryInfo() if configured).
 
-[call [cmd  ns_info] [arg pool]]
-
-Returns the current conneciton pool in the currently active server.
-
-
 [call [cmd  ns_info] [arg scheduled]]
 
 Returns the list of the scheduled procedures in the current process
