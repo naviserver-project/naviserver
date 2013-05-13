@@ -500,7 +500,7 @@ Ns_TclDestroyInterp(Tcl_Interp *interp)
 
       /*
        * Run traces (behaves gracefully, if there is no server
-       * associated.
+       * associated).
        */
       RunTraces(itPtr, NS_TCL_TRACE_DELETE);
 
@@ -1492,9 +1492,10 @@ GetCacheEntry(NsServer *servPtr)
 /*
  *----------------------------------------------------------------------
  *
- * CreateInterp --
+ * NS_TclCreateInterp --
  *
- *      Create a fresh new Tcl interp.
+ *      Create a fresh new Tcl interp. The creation is serialized to
+ *      prevent concurrent interp creations.
  *
  * Results:
  *      Tcl_Interp pointer.
@@ -1505,20 +1506,45 @@ GetCacheEntry(NsServer *servPtr)
  *----------------------------------------------------------------------
  */
 
+Tcl_Interp *
+NS_TclCreateInterp() {
+    static Ns_Mutex initLock = NULL; 
+    Tcl_Interp *interp;
+
+    Ns_MutexLock(&initLock);
+    interp = Tcl_CreateInterp();
+    Ns_MutexUnlock(&initLock);
+
+    return interp;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateInterp --
+ *
+ *      Create a fresh new Tcl interp configured for NaviServer
+ *
+ * Results:
+ *      Tcl_Interp pointer.
+ *
+ * Side effects:
+ *      Depends on Tcl library init scripts, errors will be logged.
+ *
+ *----------------------------------------------------------------------
+ */
 static Tcl_Interp *
 CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
 {
     NsInterp   *itPtr;
     Tcl_Interp *interp;
-    static Ns_Mutex initLock = NULL; 
 
     /*
      * Create and initialize a basic Tcl interp.
      */
 
-    Ns_MutexLock(&initLock);
-    interp = Tcl_CreateInterp();
-    Ns_MutexUnlock(&initLock);
+    interp = NS_TclCreateInterp();
 
     Tcl_InitMemory(interp);
     if (Tcl_Init(interp) != TCL_OK) {
