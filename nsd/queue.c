@@ -870,7 +870,7 @@ NsStopServer(NsServer *servPtr)
 {
     ConnPool *poolPtr;
 
-    Ns_Log(Notice, "serv: stopping server: %s", servPtr->server);
+    Ns_Log(Notice, "server [%s]: stopping", servPtr->server);
     servPtr->pools.shutdown = 1;
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
@@ -902,12 +902,12 @@ NsWaitServer(NsServer *servPtr, Ns_Time *toPtr)
     servPtr->pools.joinThread = NULL;
     Ns_MutexUnlock(&servPtr->pools.lock);
     if (status != NS_OK) {
-        Ns_Log(Warning, "serv: timeout waiting for connection thread exit");
+      Ns_Log(Warning, "server [%s]: timeout waiting for connection thread exit", servPtr->server);
     } else {
         if (joinThread != NULL) {
             JoinConnThread(&joinThread);
         }
-        Ns_Log(Notice, "serv: connection threads stopped");
+        Ns_Log(Notice, "server [%s]: connection threads stopped", servPtr->server);
     }
 }
 

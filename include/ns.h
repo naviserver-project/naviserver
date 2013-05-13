@@ -1836,9 +1836,9 @@ Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
+Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST char *file,
               CONST char *init)
-     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 /*
  * nsthread.c:
@@ -2616,6 +2616,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write, int *fdPtr);
  * tclinit.c:
  */
 
+
 NS_EXTERN int
 Nsd_Init(Tcl_Interp *interp);
 
@@ -2629,6 +2630,9 @@ Ns_TclInit(Tcl_Interp *interp)
 NS_EXTERN int
 Ns_TclEval(Ns_DString *dsPtr, CONST char *server, CONST char *script)
      NS_GNUC_NONNULL(3);
+
+NS_EXTERN Tcl_Interp *
+NS_TclCreateInterp();
 
 NS_EXTERN Tcl_Interp *
 Ns_TclAllocateInterp(CONST char *server);

@@ -106,15 +106,14 @@ Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
  */
 
 int
-Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
+Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST char *file,
               CONST char *init)
 {
     Tcl_PackageInitProc  *tclInitProc = NULL, *tclVerProc = NULL;
     Ns_ModuleInitProc    *initProc = NULL;
     Ns_DString            ds;
-    int                   status, *verPtr = NULL;
+    int                   status, *verPtr = NULL, privateInterp = (interp == NULL);
     Tcl_Obj              *pathObj;
-    Tcl_Interp           *interp;
     Tcl_LoadHandle        lh;
     Tcl_FSUnloadFileProc *uPtr;
 
@@ -134,17 +133,23 @@ Ns_ModuleLoad(CONST char *server, CONST char *module, CONST char *file,
         return NS_ERROR;
     }
 
-    interp = Tcl_CreateInterp();
+    if (privateInterp) {
+      interp = NS_TclCreateInterp();
+    }
     status = Tcl_FSLoadFile(interp, pathObj, init, "Ns_ModuleVersion",
                             &tclInitProc, &tclVerProc, &lh, &uPtr);
     Tcl_DecrRefCount(pathObj);
     if (status != TCL_OK) {
         Ns_Log(Error, "modload: %s: %s", file, Tcl_GetStringResult(interp));
-        Tcl_DeleteInterp(interp);
+	if (privateInterp) {
+	  Tcl_DeleteInterp(interp);
+	}
         Ns_DStringFree(&ds);
         return NS_ERROR;
     }
-    Tcl_DeleteInterp(interp);
+    if (privateInterp) {
+      Tcl_DeleteInterp(interp);
+    }
 
     initProc = (Ns_ModuleInitProc *) tclInitProc;
     verPtr = (int *) tclVerProc;
@@ -216,7 +221,7 @@ NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     } else {
         server = itPtr->servPtr->server;
     }
-    if (Ns_ModuleLoad(server, module, file, init) != NS_OK) {
+    if (Ns_ModuleLoad(interp, server, module, file, init) != NS_OK) {
         Ns_Fatal("modload: failed to load module '%s'", file);
     }
 

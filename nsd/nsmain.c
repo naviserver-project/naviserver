@@ -688,6 +688,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 
     NsStopDrivers();
     NsStopServers(&timeout);
+    NsStopSpoolers();
 
     /*
      * Next, start simultaneous shutdown in other systems and wait

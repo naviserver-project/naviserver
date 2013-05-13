@@ -60,9 +60,10 @@ runAllTests
 #
 # Shutdown the server to let the cleanup handlers run
 #
+#foreach s [ns_info servers] {puts stderr "$s: [ns_server -server $s stats]"}
 ns_shutdown
 
 #
-# Wait until these are finised, ns_shutdown will terminate this script
+# Wait until these are finished, ns_shutdown will terminate this script
 #
 after 2000 return

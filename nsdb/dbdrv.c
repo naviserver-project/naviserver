@@ -685,7 +685,7 @@ NsDbLoadDriver(char *driver)
 	    Ns_Log(Error, "dbdrv: no such driver '%s'", driver);
 	} else {
 	    path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
-            if (Ns_ModuleLoad(driver, path, module, "Ns_DbDriverInit")
+            if (Ns_ModuleLoad(NULL, driver, path, module, "Ns_DbDriverInit")
 		    != NS_OK) {
 		Ns_Log(Error, "dbdrv: failed to load driver '%s'",
 		       driver);

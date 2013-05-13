@@ -153,7 +153,7 @@ static int   SockParse(Sock *sockPtr, int spooler);
 static void  SockPoll(Sock *sockPtr, int type, PollData *pdata);
 static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr);
 static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc);
-static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr);
+static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name);
 static void  PollCreate(PollData *pdata);
 static void  PollFree(PollData *pdata);
 static void  PollReset(PollData *pdata);
@@ -603,7 +603,7 @@ NsStopDrivers(void)
 
     while (drvPtr != NULL) {
         Ns_MutexLock(&drvPtr->lock);
-        Ns_Log(Notice, "driver: stopping: %s", drvPtr->name);
+        Ns_Log(Notice, "[driver:%s]: stopping", drvPtr->name);
         drvPtr->flags |= DRIVER_SHUTDOWN;
         Ns_CondBroadcast(&drvPtr->cond);
         Ns_MutexUnlock(&drvPtr->lock);
@@ -617,6 +617,29 @@ NsStopDrivers(void)
         hPtr = Tcl_NextHashEntry(&search);
     }
 }
+
+
+void
+NsStopSpoolers(void)
+{
+    Driver *drvPtr = firstDrvPtr;
+
+    Ns_Log(Notice, "driver: stopping writer and spooler threads");
+    
+    /*
+     * Shutdown all spooler and writer threads
+     */
+    while (drvPtr != NULL) {
+	Ns_Time timeout;
+	Ns_GetTime(&timeout);
+	Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
+	
+	SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
+	SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
+        drvPtr = drvPtr->nextPtr;
+    }
+}
+
 
 
 /*
@@ -665,15 +688,17 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
     int status = NS_OK;
 
     while (drvPtr != NULL) {
+	char buffer[1024];
+	memcpy(buffer, drvPtr->module, strnlen(drvPtr->module, 1024));
         Ns_MutexLock(&drvPtr->lock);
         while (!(drvPtr->flags & DRIVER_STOPPED) && status == NS_OK) {
             status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
         }
         Ns_MutexUnlock(&drvPtr->lock);
         if (status != NS_OK) {
-            Ns_Log(Warning, "driver: shutdown timeout: %s", drvPtr->module);
+            Ns_Log(Warning, "[driver:%s]: shutdown timeout", drvPtr->module);
         } else {
-            Ns_Log(Notice, "driver: stopped: %s", drvPtr->module);
+            Ns_Log(Notice, "[driver:%s]: stopped", buffer);
             Ns_ThreadJoin(&drvPtr->thread, NULL);
             drvPtr->thread = NULL;
         }
@@ -1059,7 +1084,7 @@ static void
 DriverThread(void *arg)
 {
     Driver        *drvPtr = (Driver*)arg;
-    Ns_Time        timeout, now, diff;
+    Ns_Time        now, diff;
     char          *errstr, c, drain[1024];
     int            n, flags, stopping, pollto, accepted;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
@@ -1417,15 +1442,6 @@ DriverThread(void *arg)
     Ns_CondBroadcast(&drvPtr->cond);
     Ns_MutexUnlock(&drvPtr->lock);
 
-    /*
-     * Shutdown all spooler and writer threads
-     */
-
-    Ns_GetTime(&timeout);
-    Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
-
-    SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout);
-    SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout);
 }
 
 static void
@@ -2876,14 +2892,14 @@ SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 }
 
 static void
-SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr)
+SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
 {
     int status;
 
     while (queuePtr != NULL) {
         Ns_MutexLock(&queuePtr->lock);
         if (!queuePtr->stopped && !queuePtr->shutdown) {
-            Ns_Log(Debug, "%d: triggering shutdown", queuePtr->id);
+            Ns_Log(Debug, "%s%d: triggering shutdown", name, queuePtr->id);
             queuePtr->shutdown = 1;
             SockTrigger(queuePtr->pipe[1]);
         }
@@ -2892,11 +2908,15 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr)
             status = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, timeoutPtr);
         }
         if (status != NS_OK) {
-            Ns_Log(Warning, "%d: timeout waiting for shutdown", queuePtr->id);
+	    Ns_Log(Warning, "%s%d: timeout waiting for shutdown", name, queuePtr->id);
         } else {
-            Ns_Log(Notice, "%d: shutdown complete", queuePtr->id);
-            Ns_ThreadJoin(&queuePtr->thread, NULL);
-            queuePtr->thread = NULL;
+            /*Ns_Log(Notice, "%s%d: shutdown complete", name, queuePtr->id);*/
+	    if (queuePtr->thread) {
+		Ns_ThreadJoin(&queuePtr->thread, NULL);
+		queuePtr->thread = NULL;
+	    } else {
+		Ns_Log(Notice, "%s%d: shutdown: thread already gone", name, queuePtr->id);
+	    }
             ns_sockclose(queuePtr->pipe[0]);
             ns_sockclose(queuePtr->pipe[1]);
         }

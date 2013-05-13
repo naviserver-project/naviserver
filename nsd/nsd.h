@@ -1135,6 +1135,7 @@ NS_EXTERN void NsBlockSignal(int signal);
 NS_EXTERN void NsUnblockSignal(int signal);
 NS_EXTERN int  NsHandleSignals(void);
 NS_EXTERN void NsStopDrivers(void);
+NS_EXTERN void NsStopSpoolers(void);
 NS_EXTERN void NsPreBind(char *bindargs, char *bindfile);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN char *NsConfigRead(CONST char *file);
