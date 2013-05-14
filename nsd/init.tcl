@@ -45,8 +45,6 @@
 # Don't leave this to chance: either it's utf-8 or some one set it specifically.
 #
 
-encoding system [ns_config "ns/server/[ns_info server]" systemencoding utf-8]
-
 ns_log notice "nsd/init.tcl\[[ns_info server]\]: booting virtual server: " \
     "tcl system encoding: \"[encoding system]\""
 
