@@ -24,7 +24,7 @@ arguments are incorrect.
 
 
 [call [cmd  ns_return] \
-	[opt [arg {-binary}]] 
+	[opt [arg {-binary}]] \
 	[arg status] \
 	[arg mime-type] \
 	[arg body] ]
