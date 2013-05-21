@@ -603,7 +603,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
       
 	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0);
     }
-    towrite -= sent;
+    /*towrite -= sent;*/
     nwrote += sent;
 
     if (nwrote > 0) {

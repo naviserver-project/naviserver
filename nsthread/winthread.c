@@ -579,7 +579,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
 {
     int         status;
     Cond       *condPtr;
-    WinThread  *wPtr, **waitPtrPtr;
+    WinThread  *wPtr;
     Ns_Time     now, wait;
     DWORD       msec, w;
 
@@ -634,6 +634,8 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, Ns_Time *timePtr)
     if (!wPtr->condwait) {
         status = NS_OK;
     } else {
+        WinThread  **waitPtrPtr;
+
         status = NS_TIMEOUT;
         waitPtrPtr = &condPtr->waitPtr;
         while (*waitPtrPtr != wPtr) {

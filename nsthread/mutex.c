@@ -163,10 +163,11 @@ Ns_MutexSetName2(Ns_Mutex *mutex, CONST char *prefix, CONST char *name)
 void
 Ns_MutexDestroy(Ns_Mutex *mutex)
 {
-    Mutex       **mutexPtrPtr;
     Mutex	 *mutexPtr = (Mutex *) *mutex;
 
     if (mutexPtr != NULL) {
+        Mutex  **mutexPtrPtr;
+
 	NsLockFree(mutexPtr->lock);
     	Ns_MasterLock();
     	mutexPtrPtr = &firstMutexPtr;

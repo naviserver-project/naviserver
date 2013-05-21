@@ -536,7 +536,7 @@ WalkTrie(Trie *triePtr, Ns_ArgProc func,
          */
 
         depth = 0;
-        while (stack[depth] != NULL && depth < STACK_SIZE) {
+        while (depth < STACK_SIZE && stack[depth] != NULL) {
             depth++;
         }
         stack[depth] = branchPtr->word;
@@ -752,10 +752,8 @@ static void
 TrieAdd(Trie *triePtr, char *seq, void *data, int flags,
         void (*deletefunc)(void *))
 {
-    Node   *nodePtr;
-    Branch *branchPtr;
-
     if (*seq != '\0') {
+        Branch *branchPtr;
 
         /*
          * We are still parsing the middle of a sequence, such as "foo" in:
@@ -777,6 +775,7 @@ TrieAdd(Trie *triePtr, char *seq, void *data, int flags,
                 deletefunc);
 
     } else {
+        Node   *nodePtr;
 
         /*
          * The entire sequence has been traversed, creating a branch
@@ -929,10 +928,7 @@ TrieTruncBranch(Trie *triePtr, char *seq)
 static void
 TrieDestroy(Trie *triePtr)
 {
-    Branch *branchPtr;
-    int     n;
-
-    n = Ns_IndexCount(&triePtr->branches);
+    int n = Ns_IndexCount(&triePtr->branches);
 
     if (n > 0) {
         int i;
@@ -942,7 +938,7 @@ TrieDestroy(Trie *triePtr)
          */
 
         for (i = 0; i < n; i++) {
-            branchPtr = Ns_IndexEl(&triePtr->branches, i);
+	    Branch *branchPtr = Ns_IndexEl(&triePtr->branches, i);
             BranchDestroy(branchPtr);
         }
         Ns_IndexDestroy(&triePtr->branches);

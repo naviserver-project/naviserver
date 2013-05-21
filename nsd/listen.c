@@ -107,7 +107,6 @@ Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
 {
     Tcl_HashTable      *tablePtr = NULL;
     Tcl_HashEntry      *hPtr;
-    ListenData         *ldPtr;
     NS_SOCKET           sock;
     int                 isNew, status;
     struct sockaddr_in  sa;
@@ -157,6 +156,8 @@ Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
         if (!isNew) {
             status = NS_ERROR;
         } else {
+	     ListenData *ldPtr;
+
             ldPtr = ns_malloc(sizeof(ListenData));
             ldPtr->proc = proc;
             ldPtr->arg = arg;
@@ -221,9 +222,7 @@ ListenCallback(NS_SOCKET sock, void *arg, int why)
     struct sockaddr_in  sa;
     socklen_t           len;
     Tcl_HashTable      *tablePtr;
-    Tcl_HashEntry      *hPtr;
     NS_SOCKET           newSock;
-    ListenData         *ldPtr;
 
     tablePtr = arg;
     if (why == NS_SOCK_EXIT) {
@@ -232,6 +231,9 @@ ListenCallback(NS_SOCKET sock, void *arg, int why)
     }
     newSock = Ns_SockAccept(sock, NULL, NULL);
     if (newSock != INVALID_SOCKET) {
+        Tcl_HashEntry *hPtr;
+        ListenData    *ldPtr;
+
         Ns_SockSetBlocking(newSock);
         len = sizeof(sa);
         getsockname(newSock, (struct sockaddr *) &sa, &len);

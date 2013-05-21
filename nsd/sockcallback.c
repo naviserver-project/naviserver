@@ -481,16 +481,16 @@ SockCallbackThread(void *ignored)
 void
 NsGetSockCallbacks(Tcl_DString *dsPtr)
 {
-    Callback       *cbPtr;
-    Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    char            buf[TCL_INTEGER_SPACE];
 
     Ns_MutexLock(&lock);
     if (running) {
-        hPtr = Tcl_FirstHashEntry(&table, &search);
+        Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&table, &search);
+
         while (hPtr != NULL) {
-            cbPtr = Tcl_GetHashValue(hPtr);
+	    Callback *cbPtr = Tcl_GetHashValue(hPtr);
+	    char      buf[TCL_INTEGER_SPACE];
+
             Tcl_DStringStartSublist(dsPtr);
             snprintf(buf, sizeof(buf), "%d", (int) cbPtr->sock);
             Tcl_DStringAppendElement(dsPtr, buf);

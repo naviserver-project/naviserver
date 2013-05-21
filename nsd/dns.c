@@ -164,7 +164,6 @@ Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host)
 static int
 DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
 {
-    Ns_Entry   *entry;
     Ns_DString  ds;
     Ns_Time     time;
     int         isNew, status;
@@ -177,6 +176,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
     if (cache == NULL) {
         status = (*getProc)(&ds, key);
     } else {
+        Ns_Entry   *entry;
 
         Ns_GetTime(&time);
         Ns_IncrTime(&time, timeout, 0);
@@ -322,13 +322,14 @@ GetHost(Ns_DString *dsPtr, char *addr)
 static int
 GetHost(Ns_DString *dsPtr, char *addr)
 {
-    struct hostent *he;
     struct sockaddr_in sa;
     static Ns_Cs cs;
     int status = NS_FALSE;
 
     sa.sin_addr.s_addr = inet_addr(addr);
     if (sa.sin_addr.s_addr != INADDR_NONE) {
+        struct hostent *he;
+
         Ns_CsEnter(&cs);
         he = gethostbyaddr((char *) &sa.sin_addr,
                            sizeof(struct in_addr), AF_INET);

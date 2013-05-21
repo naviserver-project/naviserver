@@ -258,7 +258,6 @@ AcceptProc(NS_SOCKET lsock, void *arg, int why)
     Mod *modPtr = arg;
     Sess *sessPtr;
     int len;
-    static int next;
 
     if (why == NS_SOCK_EXIT) {
 	Ns_Log(Notice, "nscp: shutdown");
@@ -274,6 +273,7 @@ AcceptProc(NS_SOCKET lsock, void *arg, int why)
 	       ns_sockstrerror(ns_sockerrno));
 	ns_free(sessPtr);
     } else {
+        static int next;
 	sessPtr->id = ++next;
 	Ns_ThreadCreate(EvalThread, sessPtr, 0, NULL);
     }
@@ -512,22 +512,24 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
 static int
 Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 {
-    Tcl_HashEntry *hPtr;
     Tcl_DString uds, pds, msgDs;
-    char *encpass, *user, *pass, buf[NS_ENCRYPT_BUFSIZE];
-    int ok;
+    char       *user = NULL;
+    int         ok = 0;
 
-    user = NULL;
-    ok = 0;
     Tcl_DStringInit(&uds);
     Tcl_DStringInit(&pds);
     if (GetLine(sessPtr->sock, "login: ", &uds, 1) &&
 	GetLine(sessPtr->sock, "Password: ", &pds, sessPtr->modPtr->echo)) {
+        Tcl_HashEntry  *hPtr;
+	char           *pass;
+
 	user = Ns_StrTrim(uds.string);
 	pass = Ns_StrTrim(pds.string);
     	hPtr = Tcl_FindHashEntry(&sessPtr->modPtr->users, user);
 	if (hPtr != NULL) {
-    	    encpass = Tcl_GetHashValue(hPtr);
+	    char *encpass = Tcl_GetHashValue(hPtr);
+	    char  buf[NS_ENCRYPT_BUFSIZE];
+
 	    Ns_Encrypt(pass, encpass, buf);
     	    if (STREQ(buf, encpass)) {
 		ok = 1;

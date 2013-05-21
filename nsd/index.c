@@ -249,8 +249,6 @@ void **
 Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key)
 {
     void **firstPtrPtr;
-    void **retPtrPtr;
-    size_t n;
 
     /*
      * Find a place in the array that matches the key
@@ -262,7 +260,8 @@ Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key)
     if (firstPtrPtr == NULL) {
         return NULL;
     } else {
-        size_t i;
+        size_t i, n;
+        void **retPtrPtr;
 
         /*
 	 * Search linearly back to make sure we've got the first one

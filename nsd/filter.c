@@ -82,7 +82,7 @@ Ns_RegisterFilter(char *server, char *method, char *url,
     Ns_FilterProc *proc, int when, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
-    Filter *fPtr, **fPtrPtr;
+    Filter *fPtr;
 
     if (servPtr == NULL) {
 	return NULL;
@@ -98,6 +98,8 @@ Ns_RegisterFilter(char *server, char *method, char *url,
         fPtr->nextPtr = servPtr->filter.firstFilterPtr;
         servPtr->filter.firstFilterPtr = fPtr;
     } else {
+        Filter **fPtrPtr;
+
         fPtr->nextPtr = NULL;
         fPtrPtr = &servPtr->filter.firstFilterPtr;
         while (*fPtrPtr != NULL) {

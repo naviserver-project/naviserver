@@ -242,7 +242,6 @@ MatchFiles(CONST char *filename, File **files)
     Tcl_Obj          *matched, **matchElems;
     Tcl_GlobTypeData  types;
     Tcl_StatBuf       st;
-    File             *fiPtr;
     int               numElems, code;
     char             *pattern;
 
@@ -287,7 +286,6 @@ MatchFiles(CONST char *filename, File **files)
     if (code != TCL_OK) {
         numElems = -1;
     } else {
-
         /*
          * Construct array of File's to pass to caller
          */
@@ -295,7 +293,8 @@ MatchFiles(CONST char *filename, File **files)
         Tcl_ListObjGetElements(NULL, matched, &numElems, &matchElems);
 
         if (numElems > 0) {
-	    int ii;
+	    File *fiPtr;
+	    int   ii;
 
             *files = ns_malloc(sizeof(File) * numElems);
             for (ii = 0, fiPtr = *files; ii < numElems; ii++, fiPtr++) {

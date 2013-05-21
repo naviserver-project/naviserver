@@ -64,7 +64,6 @@ NsCreatePidFile(char *procname)
 {
     Tcl_Obj     *path;
     Tcl_Channel  chan;
-    char         buf[TCL_INTEGER_SPACE + 1];
 
     path = GetFile(procname);
     chan = Tcl_OpenFileChannel(NULL, Tcl_GetString(path), "w", 0644);
@@ -77,6 +76,7 @@ NsCreatePidFile(char *procname)
                Tcl_GetString(path), strerror(Tcl_GetErrno()));
     } else {
         size_t towrite;
+        char   buf[TCL_INTEGER_SPACE + 1];
 
         snprintf(buf, sizeof(buf), "%d\n", nsconf.pid);
         towrite = strlen(buf);
