@@ -2192,8 +2192,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
         if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16);
             sprintf(sockPtr->tfile, "%s%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
-            mkstemp(sockPtr->tfile);
-            sockPtr->tfd = open(sockPtr->tfile, O_RDWR|O_CREAT|O_TRUNC|O_EXCL, 0600);
+            sockPtr->tfd = mkstemp(sockPtr->tfile);
         } else {
 	    /* GN: don't we need a Ns_ReleaseTemp() on cleanup? */
             sockPtr->tfd = Ns_GetTemp(); 
