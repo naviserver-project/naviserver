@@ -298,10 +298,10 @@ void
 Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
 {
     Tcl_HashTable *tblPtr;
-    Tcl_HashEntry *hPtr;
 
     if ((tblPtr = Ns_SlsGet(&kslot, sock)) != NULL) {
-        hPtr = Tcl_FindHashEntry(tblPtr, key);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(tblPtr, key);
+
         if (hPtr) {
             ns_free(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);

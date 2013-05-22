@@ -424,7 +424,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
     NS_SOCKET sock;
     Http *httpPtr = NULL;
     int i, len;
-    char *key, *body, *host, *file, *port;
+    char *host, *file, *port;
 
     if (strncmp(url, "http://", 7) != 0 || url[7] == '\0') {
 	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
@@ -447,7 +447,8 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
         *port = ':';
     }
     if (sock != INVALID_SOCKET) {
-        int uaFlag = -1;
+        int   uaFlag = -1;
+	char *body;
 
         httpPtr = ns_malloc(sizeof(Http));
         httpPtr->sock = sock;
@@ -466,7 +467,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
         }
         if (hdrs != NULL) {
             for (i = 0; i < Ns_SetSize(hdrs); i++) {
-                key = Ns_SetKey(hdrs, i);
+                char *key = Ns_SetKey(hdrs, i);
                 if (uaFlag) {
                     uaFlag = strcasecmp(key, "User-Agent");
                 }
@@ -545,7 +546,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrs,
 static Tcl_Obj *
 HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
 {
-    char *eoh, *body, *p, *response;
+    char *eoh, *body, *response;
     int major, minor;
     Tcl_Obj *result;
 
@@ -572,7 +573,7 @@ HttpResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
 	sscanf(response, "HTTP/%d.%d %d", &major, &minor, statusPtr);
     	if (hdrs != NULL) {
             int firsthdr = 1;
-	    char save = *body;
+	    char save = *body, *p;
 
 	    *body = '\0';
             p = response;

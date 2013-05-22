@@ -1427,7 +1427,6 @@ static int CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     User *userPtr;
     char *user, *pwd;
     Tcl_HashEntry *hPtr;
-    char buf[NS_ENCRYPT_BUFSIZE];
 
     if (objc != 4) {
         Tcl_WrongNumArgs(interp, 2, objv, "user pwd");
@@ -1444,6 +1443,8 @@ static int CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     }
     userPtr = Tcl_GetHashValue(hPtr);
     if (userPtr->pwd[0] != 0) {
+        char buf[NS_ENCRYPT_BUFSIZE];
+
         if (pwd[0] == 0) {
             Tcl_AppendResult(interp, "empty password given", NULL);
             goto done;

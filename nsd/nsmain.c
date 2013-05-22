@@ -1003,10 +1003,10 @@ UsageError(char *msg, ...)
 static char *
 MakePath(char *file)
 {
-    Tcl_Obj *obj;
-    char *str, *path = NULL;
-
     if (Ns_PathIsAbsolute(nsconf.nsd)) {
+        char *str, *path = NULL;
+        Tcl_Obj *obj;
+
         str = strstr(nsconf.nsd, "/bin/");
         if (str == NULL) {
             str = strrchr(nsconf.nsd, '/');

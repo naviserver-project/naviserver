@@ -380,8 +380,6 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 {
     Conn        *connPtr = (Conn *) conn;
     int         isNew, fd, result = NS_ERROR;
-    Ns_Entry   *entry;
-    File       *filePtr;
 
     /*
      * Determine the mime type if not given.
@@ -452,6 +450,8 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
         }
 
     } else {
+        Ns_Entry   *entry;
+        File       *filePtr;
 
         /*
          * Search for an existing cache entry for this file, validating
@@ -672,11 +672,8 @@ int
 NsTclFastPathCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_CacheSearch  search;
-    Ns_Entry       *entry;
     Ns_DString      ds;
-    Ns_Time        *timePtr;
     int             contents = NS_FALSE, reset = NS_FALSE;
-
     Ns_ObjvSpec opts[] = {
         {"-contents", Ns_ObjvBool,  &contents, (void *) NS_TRUE},
         {"-reset",    Ns_ObjvBool,  &reset,    (void *) NS_TRUE},
@@ -700,11 +697,14 @@ NsTclFastPathCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_
     Ns_CacheLock(cache);
 
     if (contents) {
+        Ns_Entry       *entry;
+
         Tcl_DStringStartSublist(&ds);
         entry = Ns_CacheFirstEntry(cache, &search);
         while (entry != NULL) {
-	    size_t size = Ns_CacheGetSize(entry);
-            timePtr = Ns_CacheGetExpirey(entry);
+	    size_t   size = Ns_CacheGetSize(entry);
+	    Ns_Time *timePtr =  Ns_CacheGetExpirey(entry);
+
             if (timePtr->usec == 0) {
                 Ns_DStringPrintf(&ds, "%" PRIdz " %" PRIu64 " ",
                                  size, (int64_t) timePtr->sec);

@@ -69,7 +69,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
 {
     Conn           *connPtr = (Conn *) conn;
     Tcl_DString     bound;
-    char           *s, *e, *form, *formend;
+    char           *s, *e, *form;
     
     if (connPtr->query == NULL) {
         connPtr->query = Ns_SetCreate(NULL);
@@ -90,7 +90,8 @@ Ns_ConnGetQuery(Ns_Conn *conn)
             if (!GetBoundary(&bound, conn)) {
                 ParseQuery(form, connPtr->query, connPtr->urlEncoding);
             } else {
-                formend = form + connPtr->reqPtr->length;
+                char *formend = form + connPtr->reqPtr->length;
+
                 s = NextBoundry(&bound, form, formend);
                 while (s != NULL) {
                     s += bound.length;
@@ -291,13 +292,10 @@ static void
 ParseMultiInput(Conn *connPtr, char *start, char *end)
 {
     Tcl_Encoding encoding = connPtr->urlEncoding;
-    Tcl_DString kds, vds;
-    Tcl_HashEntry *hPtr;
-    FormFile      *filePtr;
-    char *s, *e, *ks, *ke, *fs, *fe, save, saveend;
-    char *key, *value, *disp, unescape;
-    Ns_Set *set;
-    int isNew;
+    Tcl_DString  kds, vds;
+    char        *s, *e, *ks, *ke, *fs, *fe, save, saveend, *disp, unescape;
+    Ns_Set      *set;
+    int          isNew;
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
@@ -338,14 +336,19 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
     disp = Ns_SetGet(set, "content-disposition");
     if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape)) {
-        key = Ext2Utf(&kds, ks, ke-ks, encoding, unescape);
+        char *key = Ext2Utf(&kds, ks, ke-ks, encoding, unescape);
+	char *value;
+
         if (!GetValue(disp, "filename=", &fs, &fe, &unescape)) {
 	    value = Ext2Utf(&vds, start, end-start, encoding, unescape);
         } else {
+	    Tcl_HashEntry *hPtr;
+
             value = Ext2Utf(&vds, fs, fe-fs, encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew) {
-                filePtr = ns_malloc(sizeof(FormFile));
+	        FormFile *filePtr = ns_malloc(sizeof(FormFile));
+
                 filePtr->hdrs = set;
                 filePtr->off = (off_t)(start - connPtr->reqPtr->content);
                 filePtr->len = end - start;

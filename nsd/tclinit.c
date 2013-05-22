@@ -585,7 +585,6 @@ Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
 {
     TclTrace   *tracePtr;
     NsServer   *servPtr;
-    Tcl_Interp *interp;
 
     servPtr = NsGetServer(server);
     if (servPtr == NULL) {
@@ -618,7 +617,8 @@ Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
      */
 
     if (when & NS_TCL_TRACE_CREATE || when & NS_TCL_TRACE_ALLOCATE) {
-        interp = Ns_TclAllocateInterp(server);
+	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
+
         if ((*proc)(interp, arg) != TCL_OK) {
             Ns_TclLogError(interp);
         }
@@ -1203,10 +1203,10 @@ void
 NsTclInitServer(CONST char *server)
 {
     NsServer *servPtr = NsGetServer(server);
-    Tcl_Interp *interp;
 
     if (servPtr != NULL) {
-        interp = Ns_TclAllocateInterp(server);
+	Tcl_Interp *interp = Ns_TclAllocateInterp(server);
+
         if (Tcl_EvalFile(interp, servPtr->tcl.initfile) != TCL_OK) {
             Ns_TclLogError(interp);
         }

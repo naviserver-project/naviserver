@@ -1070,7 +1070,7 @@ TclX_KeyedListSet (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *val
     keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
     size_t        keyLen;
-    int           findIdx, status;
+    int           findIdx;
     Tcl_Obj      *newKeylPtr;
 
     if (Tcl_ConvertToType (interp, keylPtr, &keyedListType) != TCL_OK)
@@ -1112,11 +1112,12 @@ TclX_KeyedListSet (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *val
      * come back without error.
      */
     if (findIdx >= 0) {
+        int status;
+
         DupSharedKeyListChild (keylIntPtr, findIdx);
-        status =
-            TclX_KeyedListSet (interp, 
-                               keylIntPtr->entries [findIdx].valuePtr,
-                               nextSubKey, valuePtr);
+        status = TclX_KeyedListSet (interp, 
+				    keylIntPtr->entries [findIdx].valuePtr,
+				    nextSubKey, valuePtr);
         if (status == TCL_OK) {
             Tcl_InvalidateStringRep (keylPtr);
         }
@@ -1163,7 +1164,7 @@ TclX_KeyedListSet (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *val
 int
 TclX_KeyedListDelete (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key)
 {
-    keylIntObj_t *keylIntPtr, *subKeylIntPtr;
+    keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
     int           findIdx;
     int           status;
@@ -1204,6 +1205,8 @@ TclX_KeyedListDelete (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key)
                                    keylIntPtr->entries [findIdx].valuePtr,
                                    nextSubKey);
     if (status == TCL_OK) {
+        keylIntObj_t *subKeylIntPtr;
+
         subKeylIntPtr = (keylIntObj_t *)
             keylIntPtr->entries [findIdx].valuePtr->internalRep.otherValuePtr;
         if (subKeylIntPtr->numEntries == 0) {

@@ -832,13 +832,16 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
      * - fd based requests: 0 or 1 range requests
      */
     if (fd == -1) {
-	int i, nvbufs;
+	int nvbufs;
 	struct iovec vbuf[32];
+
 	if (rangeCount == 0) {
 	    nvbufs = 1;
 	    vbuf[0].iov_base = (void *)data;
 	    vbuf[0].iov_len  = len;
 	} else {
+	    int i;
+
 	    nvbufs = rangeCount;
 	    len = 0;
 	    for (i = 0; i < rangeCount; i++) {

@@ -662,7 +662,6 @@ struct DbDriver *
 NsDbLoadDriver(char *driver)
 {
     Tcl_HashEntry  *hPtr;
-    char           *module, *path;
     int             isNew;
     DbDriver	   *driverPtr;
     static int 	    initialized = NS_FALSE;
@@ -676,6 +675,8 @@ NsDbLoadDriver(char *driver)
     if (isNew == 0) {
 	driverPtr = (DbDriver *) Tcl_GetHashValue(hPtr);
     } else {
+        char *module;
+
 	driverPtr = ns_malloc(sizeof(DbDriver));
 	memset(driverPtr, 0, sizeof(DbDriver));
 	driverPtr->name = Tcl_GetHashKey(&driversTable, hPtr);
@@ -684,7 +685,8 @@ NsDbLoadDriver(char *driver)
         if (module == NULL) {
 	    Ns_Log(Error, "dbdrv: no such driver '%s'", driver);
 	} else {
-	    path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
+	    char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, NULL);
+
             if (Ns_ModuleLoad(NULL, driver, path, module, "Ns_DbDriverInit")
 		    != NS_OK) {
 		Ns_Log(Error, "dbdrv: failed to load driver '%s'",

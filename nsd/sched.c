@@ -267,7 +267,6 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
 {
     Event          *ePtr;
     int             id, isNew;
-    static int      nextId;
     time_t          now;
 
     if (interval < 0) {
@@ -290,6 +289,8 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
         ns_free(ePtr);
     } else {
         do {
+	    static int nextId;
+
             id = nextId++;
             if (nextId < 0) {
                 nextId = 0;
@@ -332,14 +333,14 @@ Ns_UnscheduleProc(int id)
 int
 Ns_Cancel(int id)
 {
-    Tcl_HashEntry  *hPtr = NULL;
     Event          *ePtr = NULL;
     int             cancelled;
 
     cancelled = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
             Tcl_DeleteHashEntry(hPtr);
@@ -377,14 +378,14 @@ Ns_Cancel(int id)
 int
 Ns_Pause(int id)
 {
-    Tcl_HashEntry  *hPtr;
     Event          *ePtr;
     int             paused;
 
     paused = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
             if (!(ePtr->flags & NS_SCHED_PAUSED)) {
@@ -420,7 +421,6 @@ Ns_Pause(int id)
 int
 Ns_Resume(int id)
 {
-    Tcl_HashEntry  *hPtr;
     Event          *ePtr;
     int         resumed;
     time_t      now;
@@ -428,7 +428,8 @@ Ns_Resume(int id)
     resumed = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
             if ((ePtr->flags & NS_SCHED_PAUSED)) {

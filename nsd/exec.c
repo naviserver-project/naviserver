@@ -165,7 +165,6 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
     return status;
     
 #else
-    char *coredump;
     int status;
     pid_t p;
     
@@ -177,7 +176,7 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
         return NS_ERROR;
     }
     if (WIFSIGNALED(status)) {
-    	coredump = "";
+        char *coredump = "";
 #ifdef WCOREDUMP
         if (WCOREDUMP(status)) {
             coredump = " - core dumped";

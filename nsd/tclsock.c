@@ -1082,15 +1082,14 @@ EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
 int
 NsTclSockProc(NS_SOCKET sock, void *arg, int why)
 {
-    Tcl_Interp  *interp;
     Tcl_DString  script;
-    Tcl_Obj     *objPtr;
-    char        *w;
     int          ok;
     Callback    *cbPtr = arg;
 
     if (why != NS_SOCK_EXIT || (cbPtr->when & NS_SOCK_EXIT)) {
-        int result;
+        Tcl_Interp  *interp;
+	char        *w;
+        int          result;
 
         Tcl_DStringInit(&script);
         interp = Ns_TclAllocateInterp(cbPtr->server);
@@ -1130,6 +1129,8 @@ NsTclSockProc(NS_SOCKET sock, void *arg, int why)
         if (result != TCL_OK) {
             Ns_TclLogError(interp);
         } else {
+	    Tcl_Obj *objPtr;
+
             objPtr = Tcl_GetObjResult(interp);
             result = Tcl_GetBooleanFromObj(interp, objPtr, &ok);
             if (result != TCL_OK || !ok) {
@@ -1177,14 +1178,15 @@ SockListenCallback(NS_SOCKET sock, void *arg, int why)
     ListenCallback *lcbPtr = arg;
     Tcl_Interp     *interp;
     Tcl_DString     script;
-    Tcl_Obj        *listPtr, **objv;
+    Tcl_Obj       **objv;
     int             result, objc;
 
     interp = Ns_TclAllocateInterp(lcbPtr->server);
     result = EnterDupedSocks(interp, sock);
 
     if (result == TCL_OK) {
-        listPtr = Tcl_GetObjResult(interp);
+        Tcl_Obj  *listPtr = Tcl_GetObjResult(interp);
+
         if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) == TCL_OK 
             && objc == 2) {
             Tcl_DStringInit(&script);

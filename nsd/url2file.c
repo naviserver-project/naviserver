@@ -237,7 +237,6 @@ Ns_UrlToFile(Ns_DString *dsPtr, CONST char *server, CONST char *url)
 int
 NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
 {
-    Url2File *u2fPtr;
     int       status = NS_ERROR;
 
     if (url == NULL) {
@@ -246,6 +245,8 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url)
     if (servPtr->fastpath.url2file != NULL) {
         status = (*servPtr->fastpath.url2file)(dsPtr, servPtr->server, url);
     } else {
+        Url2File *u2fPtr;
+
         Ns_MutexLock(&ulock);
         u2fPtr = NsUrlSpecificGet(servPtr, "x", url, uid, 0);
         if (u2fPtr == NULL) {
@@ -474,7 +475,6 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                                 Tcl_Obj *CONST objv[])
 {
     NsInterp   *itPtr = arg;
-    Mount      *mPtr;
     CONST char *url = NULL, *basepath = NULL;
     int         flags = 0;
 
@@ -496,6 +496,8 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                                 Ns_FastUrl2FileProc, NULL, itPtr->servPtr,
                                 flags);
     } else {
+        Mount *mPtr;
+
         mPtr = ns_malloc(sizeof(Mount));
         mPtr->basepath = ns_strdup(basepath);
         mPtr->url = ns_strdup(url);

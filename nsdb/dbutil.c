@@ -190,7 +190,6 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
     Ns_DString      dsSql;
     int             i, status, inquote;
     char            c, lastc;
-    char           *p;
 
     fp = fopen(filename, "rt");
     if (fp == NULL) {
@@ -264,6 +263,8 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
      * If dstring contains anything but whitespace, return error
      */
     if (status != NS_ERROR) {
+        char *p;
+
         for (p = dsSql.string; *p != '\0'; p++) {
             if (isspace(UCHAR(*p)) == 0) {
                 Ns_DbSetException(handle, NS_SQLERRORCODE,

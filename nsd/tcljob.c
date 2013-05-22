@@ -1585,7 +1585,6 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
 static int
 ReleaseQueue(Queue *queuePtr, int locked)
 {
-    Tcl_HashEntry  *qPtr;
     Tcl_HashSearch  search;
     int             deleted = 0;
 
@@ -1598,6 +1597,7 @@ ReleaseQueue(Queue *queuePtr, int locked)
     if (queuePtr->req == QUEUE_REQ_DELETE
         && queuePtr->refCount <= 0
         && (Tcl_FirstHashEntry(&queuePtr->jobs, &search) == NULL)) {
+        Tcl_HashEntry *qPtr;
 
         if (!locked) {
             Ns_MutexLock(&tp.queuelock);

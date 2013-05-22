@@ -622,7 +622,6 @@ NsDbInitPools(void)
 void
 NsDbInitServer(char *server)
 {
-    Pool	   *poolPtr;
     ServData	   *sdataPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
@@ -653,6 +652,8 @@ NsDbInitServer(char *server)
     sdataPtr->allowed = "";
     pool = Ns_ConfigGetValue(path, "pools");
     if (pool != NULL && poolsTable.numEntries > 0) {
+        Pool *poolPtr;
+
 	Ns_DStringInit(&ds);
     	if (STREQ(pool, "*")) {
 	    hPtr = Tcl_FirstHashEntry(&poolsTable, &search);

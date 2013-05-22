@@ -155,16 +155,16 @@ NsDbAddCmds(Tcl_Interp *interp, void *arg)
 int
 NsDbReleaseHandles(Tcl_Interp *interp, void *arg)
 {
-    Ns_DbHandle    *handlePtr;
-    Tcl_HashEntry  *hPtr;
-    Tcl_HashSearch  search;
     InterpData     *idataPtr;
 
     idataPtr = Tcl_GetAssocData(interp, datakey, NULL);
     if (idataPtr != NULL) {
-        hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
+        Tcl_HashSearch  search;
+        Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&idataPtr->dbs, &search);
+
         while (hPtr != NULL) {
-            handlePtr = Tcl_GetHashValue(hPtr);
+	    Ns_DbHandle *handlePtr = Tcl_GetHashValue(hPtr);
+
             Ns_DbPoolPutHandle(handlePtr);
             hPtr = Tcl_NextHashEntry(&search);
         }
