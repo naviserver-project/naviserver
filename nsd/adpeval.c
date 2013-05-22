@@ -1162,7 +1162,7 @@ AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
     char       *file   = Tcl_GetString(itPtr->adp.framePtr->objv[0]);
     char        debugfile[255];
     Ns_DString  ds;
-    int         code;
+    int         code, fd;
 
     code = TCL_ERROR;
     Ns_DStringInit(&ds);
@@ -1177,25 +1177,20 @@ AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript)
     snprintf(debugfile, sizeof(debugfile),
              P_tmpdir "/adp%d.%d.XXXXXX",
              level, nscript);
-    if (mktemp(debugfile) == NULL) {
+    fd = mkstemp(debugfile);
+    if (fd < 0) {
         Tcl_SetResult(interp, "could not create adp debug file", TCL_STATIC);
     } else {
-        int fd = open(debugfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
-        if (fd < 0) {
-            Tcl_AppendResult(interp, "could not create adp debug file \"",
-                             debugfile, "\": ", Tcl_PosixError(interp), NULL);
+        if (write(fd, ds.string, (size_t)ds.length) < 0) {
+	    Tcl_AppendResult(interp, "write to \"", debugfile,
+			     "\" failed: ", Tcl_PosixError(interp), NULL);
 	} else {
-            if (write(fd, ds.string, (size_t)ds.length) < 0) {
-                Tcl_AppendResult(interp, "write to \"", debugfile,
-                                 "\" failed: ", Tcl_PosixError(interp), NULL);
-            } else {
-                Ns_DStringTrunc(&ds, 0);
-                Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
-                code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
-            }
-            close(fd);
-            unlink(debugfile);
-        }
+	    Ns_DStringTrunc(&ds, 0);
+	    Ns_DStringVarAppend(&ds, "source ", debugfile, NULL);
+	    code = Tcl_EvalEx(interp, ds.string, ds.length, 0);
+	}
+	close(fd);
+	unlink(debugfile);
     }
     Ns_DStringFree(&ds);
 

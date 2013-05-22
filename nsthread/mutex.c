@@ -136,6 +136,7 @@ Ns_MutexSetName2(Ns_Mutex *mutex, CONST char *prefix, CONST char *name)
     p = strncpy(mutexPtr->name, prefix, (size_t)plen) + plen;
     if (nlen > 0) {
 	*p++ = ':';
+	assert(name);
 	p = strncpy(p, name, (size_t)nlen) + nlen;
     }
     *p = '\0';

@@ -814,7 +814,7 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
 #ifdef HAVE_CMMSG
     {
       struct cmsghdr *c = CMSG_FIRSTHDR(&msg);
-      if (c->cmsg_type == SCM_RIGHTS) { 
+      if (c && c->cmsg_type == SCM_RIGHTS) { 
 	  int *ptr = (int*)CMSG_DATA(c);
           sock = *ptr;
       }

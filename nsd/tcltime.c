@@ -237,7 +237,7 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
 int
 NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
-    Ns_Time result, t1, t2;
+    Ns_Time result = {0, 0}, t1, t2;
     long sec;
     int opt;
 

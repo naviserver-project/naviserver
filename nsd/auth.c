@@ -324,6 +324,8 @@ NsParseAuth(Conn *connPtr, char *auth)
             }
 
         }
-        *p = save;
+        if (p) {
+	    *p = save;
+	}
     }
 }

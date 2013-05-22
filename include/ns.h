@@ -1838,7 +1838,7 @@ Ns_RegisterModule(CONST char *name, Ns_ModuleInitProc *proc)
 NS_EXTERN int
 Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST char *file,
               CONST char *init)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 /*
  * nsthread.c:

@@ -191,7 +191,7 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
          */
 
         if ((ioflags & NS_CONN_STREAM)
-            || Ns_SumVec(bufs, nbufs) >= (size_t)servPtr->compress.minsize
+            || (bufs && Ns_SumVec(bufs, nbufs) >= (size_t)servPtr->compress.minsize)
             || connPtr->responseLength >= servPtr->compress.minsize) {
 
             /* We won't be compressing if there are no headers or body. */
@@ -268,7 +268,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
      * Work out the body length for non-chunking case.
      */
 
-    bodyLength = Ns_SumVec(bufs, nbufs);
+    bodyLength = bufs ? Ns_SumVec(bufs, nbufs) : 0;
     towrite = 0;
 
     if (flags & NS_CONN_STREAM) {
@@ -603,7 +603,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
       
 	sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0);
     }
-    towrite -= sent;
+    /*towrite -= sent;*/
     nwrote += sent;
 
     if (nwrote > 0) {

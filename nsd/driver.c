@@ -2192,7 +2192,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
         if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16);
             sprintf(sockPtr->tfile, "%s%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
-            mktemp(sockPtr->tfile);
+            mkstemp(sockPtr->tfile);
             sockPtr->tfd = open(sockPtr->tfile, O_RDWR|O_CREAT|O_TRUNC|O_EXCL, 0600);
         } else {
 	    /* GN: don't we need a Ns_ReleaseTemp() on cleanup? */
@@ -2277,7 +2277,8 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
  */
 
 static char *strnchr(char *buffer, size_t len, int c) {
-    char *end = buffer + len;
+    char *end;
+
     for (end = buffer + len; buffer < end; buffer ++) {
         if (unlikely(*buffer == c)) {
             return buffer;
@@ -2758,7 +2759,7 @@ SpoolerThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
 
-        n = PollWait(&pdata, pollto);
+        /*n =*/ PollWait(&pdata, pollto);
 
         if (PollIn(&pdata, 0) && unlikely(recv(queuePtr->pipe[0], &c, 1, 0) != 1)) {
             Ns_Fatal("spooler: trigger recv() failed: %s",
@@ -4508,7 +4509,7 @@ AsyncWriterThread(void *arg)
         /*
          * wait for data
          */
-        n = PollWait(&pdata, pollto);
+        /*n =*/ PollWait(&pdata, pollto);
 
         /*
          * Select and drain the trigger pipe if necessary.
@@ -4523,12 +4524,12 @@ AsyncWriterThread(void *arg)
 		 * Drain the queue from everything
 		 */
 		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		writePtr = NULL;
 
 		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		queuePtr->sockPtr = NULL;
 
@@ -4598,7 +4599,7 @@ AsyncWriterThread(void *arg)
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
-		n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		curPtr = curPtr->nextPtr;
 	    }
 	} else {

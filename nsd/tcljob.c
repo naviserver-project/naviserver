@@ -1176,6 +1176,7 @@ JobThread(void *arg)
         if (LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1) != TCL_OK) {
             Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
         }
+	assert(queuePtr);
 
         interp = Ns_TclAllocateInterp(jobPtr->server);
 
@@ -1330,6 +1331,7 @@ GetNextJob(void)
         if (LookupQueue(NULL, jobPtr->queueId, &queuePtr, 1) != TCL_OK) {
             Ns_Log(Fatal, "cannot find queue: %s", jobPtr->queueId);
         }
+	assert(queuePtr);
 
         if (queuePtr->nRunning < queuePtr->maxThreads) {
             

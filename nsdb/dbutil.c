@@ -238,7 +238,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
                     goto loopstart;
                 }
                 while ((i = getc(fp)) != EOF) {
-                    lastc = c;
+		    /*lastc = c; never used */
                     c = (char) i;
                     if (c == '\n') {
                         break;

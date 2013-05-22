@@ -1934,6 +1934,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         return TCL_ERROR;
     }
     poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+    assert(idataPtr);
     cntPtr = Tcl_CreateHashEntry(&idataPtr->cnts, (char *) poolPtr, &isNew);
     if ((intptr_t) Tcl_GetHashValue(cntPtr) > 0) {
         err = EDeadlock;

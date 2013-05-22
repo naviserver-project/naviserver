@@ -1306,7 +1306,7 @@ NsConnThread(void *arg)
 	 * During shutdown, we do not want to restart connection
 	 * threads. The driver pointer might be already invalid. 
 	 */
-	if (wakeup && !shutdown) { 
+	if (wakeup && connPtr && !shutdown) { 
 	    NsWakeupDriver(connPtr->drvPtr); 
 	} 
     }

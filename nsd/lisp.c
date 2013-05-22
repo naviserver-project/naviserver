@@ -299,7 +299,9 @@ Ns_ListCopy(Ns_List *lPtr)
         curPtr->rest = newPtr;
         curPtr = newPtr;
     }
-    newPtr->rest = NULL;
+    if (newPtr) {
+        newPtr->rest = NULL;
+    }
     
     return headPtr;
 }
