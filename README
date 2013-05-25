@@ -92,8 +92,8 @@ Mac OS/X 10.2+ and Windows. To compile and install:
 
     The following should work for official releases:
 
-        $ gunzip < naviserver-4.99.4.tar.gz | tar xvf -
-        $ cd naviserver-4.99.4
+        $ gunzip < naviserver-4.99.5.tar.gz | tar xvf -
+        $ cd naviserver-4.99.5
         $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
         $ make
         $ su -c 'make install'
@@ -141,7 +141,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
     You will need 'dtplite' which is part of 'tcllib' installed if you
     want to build the documentation.
 
-    See: 'make help' for more.
+    See: 'make help' for more help in the build process.
 
 
 3d. Create and edit a config file (nsd.tcl, by convention)
@@ -204,7 +204,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         c:>cd msys
         c:\msys> msys.bat
 
-        $ cd /c/naviserver-4.99.4
+        $ cd /c/naviserver-4.99.5
         $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
         $ make install
 

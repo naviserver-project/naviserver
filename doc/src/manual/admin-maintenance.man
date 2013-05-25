@@ -264,7 +264,7 @@ You can see the result in the security info:
 
 [example_begin]
 ...
-[lb]-main-[rb] Notice: nsmain: NaviServer/4.99.0 starting
+[lb]-main-[rb] Notice: nsmain: NaviServer/4.99.5 starting
 [lb]-main-[rb] Notice: nsmain: security info: uid=0, euid=0, gid=8, egid=8
 ...
 [example_end]
@@ -350,7 +350,7 @@ Just a quick example: The server is started and two commands are issued, ns_info
 
 buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.tcl
 [lb]-main-[rb] Notice: encoding: loaded: iso8859-1
-[lb]-main-[rb] Notice: nsmain: NaviServer/4.99.0 starting
+[lb]-main-[rb] Notice: nsmain: NaviServer/4.99.5 starting
 [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
 [lb]-main-[rb] Notice: nsmain: max files: FD_SETSIZE = 1024, rl_cur = 1024, rl_max = 1024
 [lb]-main-[rb] Notice: adp[lb]server1[rb]: mapped /*.adp
@@ -358,7 +358,7 @@ buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.t
 [lb]-main-[rb] Notice: modload: loading '/usr/local/ns/bin/nslog.so'
 [lb]-main-[rb] Notice: nslog: opened '/usr/local/ns/servers/server1/modules/nslog/access.log'
 [lb]-main-[rb] Notice: conf: [lb]ns/server/server1[rb]enabletclpages = 0
-[lb]-main-[rb] Notice: nsmain: NaviServer/4.99.0 running
+[lb]-main-[rb] Notice: nsmain: NaviServer/4.95.0 running
 [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
 [lb]-sched-[rb] Notice: sched: starting
 [lb]-main-[rb] Notice: nssock: listening on 10.0.0.100:8000
