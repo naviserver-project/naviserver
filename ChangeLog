@@ -1,0 +1,136 @@
+2013-01-18 10:56 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (60b45c18e323 [naviserver-4.99.5])
+
+	* nsssl.c:
+	enable parital write operations on a per-connection basis (value in
+	CTX does not seem to propergate)
+
+2013-01-18 09:26 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (03e063926a22)
+
+	* nsssl.c:
+	fix 1 byte reads
+
+2012-12-13 20:05 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (fa72b8bd3b30)
+
+	* nsssl.c:
+	Pass accept timeout to Ns_SockSetDeferAccept()
+
+2012-12-13 18:01 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c6746f2f53a7)
+
+	* nsssl.c:
+	Use refactored function Ns_SockSetDeferAccept() instead of private
+	implementation
+
+2012-12-09 17:20 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (91d12f60cd2d)
+
+	* nsssl.c:
+	pass structure to SockCork, not fd.
+
+2012-12-09 17:08 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (32a310a58767)
+
+	* nsssl.c:
+	Using TCP_CORK for optimizing TCP tracffc. Avoid send attempts on
+	zero-byte buffers.
+
+2012-12-07 19:58 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (41b46f7473a3)
+
+	* nsssl.c:
+	SSL_read frequently returns just 1 byte in a read operation. Perform
+	in such cases a second attempt (which will return significantly more
+	data)
+
+2012-12-07 19:54 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (576e9f82a868)
+
+	* nsssl.c:
+	added SO_ACCEPTFILTER for machines having no TCP_DEFER_ACCEPT
+
+2012-12-06 11:13 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (b163e8794a34)
+
+	* README:
+	update recommended cipher configuration (old one exposes
+	vulnerabilities)
+
+2012-12-05 00:12 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (230a03690f6f)
+
+	* nsssl.c:
+	Prefer server ciphers to secure against BEAST attack. Disable
+	compression to avoid CRIME attack. Prevent client-initiated
+	renegotiation which is an attack point for DoS.
+
+2012-12-03 10:51 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (465f2f74b2c1)
+
+	* README, nsssl.c:
+	Define driver properly as NS_DRIVER_ASYNC; don't enter eventloop via
+	Ns_SockTimedWait() since this might interact badly with the toplevel
+	event loop in driver.c. Various small cleanups. Tagged old version
+	as 0.1 and incremented version number to 0.2. Tested on Linux and
+	Mac OS X.
+
+2012-12-03 10:40 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a59265f1f10e)
+
+	* .hgtags: new file.
+	* .hgtags:
+	Added tag nsssl-0.1 for changeset 07e8df5c88e7
+
+2012-11-26 03:54 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (07e8df5c88e7 [nsssl-0.1])
+
+	* nsssl.c:
+	add Darwin fix, allow deferaccept
+
+2010-09-14 02:10 -0400  Vlad Seryakov  <vseryakov@gmail.com>  (7b64fe471ae9)
+
+	* nsssl.c:
+	Fixed wrong args bug
+
+2008-11-07 20:42 +0000  Vlad Seryakov  <vlad@crystalballinc.com>  (a2d7f6bf1f1f)
+
+	* nsssl.c:
+	Don't implement driver SendFile callback as this is handled
+	automatically
+
+2008-10-22 20:47 +0100  Vlad Seryakov  <vlad@crystalballinc.com>  (fee758b57a95)
+
+	* nsssl.c:
+	Check the return value of SSL_new() in Accept()
+
+2008-10-22 04:23 +0100  Vlad Seryakov  <vlad@crystalballinc.com>  (818d2d081b06)
+
+	* nsssl.c:
+	Drop the Ns_DriverRequestProc; validate client cert in Recv
+
+2008-10-22 03:14 +0100  Vlad Seryakov  <vlad@crystalballinc.com>  (2b5c7e8acda8)
+
+	* nsssl.c:
+	Implement new driver callback interface
+
+2008-05-05 22:19 +0100  Vlad Seryakov  <vlad@crystalballinc.com>  (a9dcf4225aa3)
+
+	* nsssl.c:
+	No longer use NS_DRIVER_QUEUE_ON_ACCEPT flag, should be automatic;
+	reindent
+
+2007-04-25 00:01 +0100  Vlad Seryakov  <vlad@crystalballinc.com>  (2a38d1f67e19)
+
+	* README, nsssl.c:
+	Implement https client requests, mimicking ns_http command
+
+2007-04-05 11:13 +0100  Zoran Vasiljevic  <zv@archiware.com>  (70672be84d37)
+
+	* README:
+	Fix the example of loading the module
+
+2007-01-02 22:46 +0000  Vlad Seryakov  <vlad@crystalballinc.com>  (9d06ffe63818)
+
+	* nsssl.c:
+	Add stub ns_ssl command
+
+2006-11-28 20:12 +0000  Vlad Seryakov  <vlad@crystalballinc.com>  (e5989f04079e)
+
+	* nsssl.c:
+	Add random seed to ssl init module
+
+2006-11-28 19:36 +0000  Vlad Seryakov  <vlad@crystalballinc.com>  (bf1567892d82)
+
+	* LICENSE, Makefile, README, nsssl.c: new file.
+	* LICENSE, Makefile, README, nsssl.c:
+	Initial revision
+

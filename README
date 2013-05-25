@@ -6,6 +6,12 @@ neumann@wu-wien.ac.at
 This is NaviServer module that implements HTTP over SSL support and
 adds new ns_ssl command.
 
+New in Version 0.2:
+ - Made driver fully asynchronous, supporting parital read and writes
+ - Performance improvements: E.g. support for TCP_CORK and deferaccept
+ - Strengthen security against BEAST and CRIME attack
+
+
 /*--------------------------------------------------------------------*/
 
 
