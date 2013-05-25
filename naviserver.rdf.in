@@ -4,7 +4,6 @@
          xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
 
 <!-- DOAP is a project to create an XML/RDF vocabulary to describe open source projects. -->
-<!-- $Id$ -->
 <Project>   
 
     <name>@PACKAGE_NAME@</name>
