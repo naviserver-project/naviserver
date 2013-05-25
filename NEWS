@@ -1,5 +1,5 @@
 ======================================
-NaviServer 4.99.5, released XXXX-XX-XX
+NaviServer 4.99.5, released 2013-05-25
 ======================================
 
 New Features:
@@ -8,7 +8,6 @@ New Features:
       - Introduced connection thread queues for better control over
         connection threads and to reduce queuing operations for
         handing requests from the driver to the connection threads.
-        
 
     * Support for improved TCP socket option handling 
       (when supported by the OS);
@@ -23,7 +22,8 @@ New Features:
 
        - Asynchronous HTML streaming via writer threads to reduce
          connection thread blocking time for slow delivery lines.
-       - New asynchronous log file writer - configurable
+       - New asynchronous log file writer to write access.log
+         and error.log without blocking - configurable
 
     * Better scalability by reducing busiest lock contention and
       finer lock granularity (see below).
@@ -35,7 +35,7 @@ New Features:
         per server and pool.
       - Report OS-level thread ID via "ns_info threads" when supported
         from the OS (currenly just Linux). This information is used by
-        nsstats to report e.g. system time and user time per thread.
+        nsstats.tcl to report e.g. system time and user time per thread.
       - New subcommand "ns_conn clientdata" to query or set client data
         (used e.g in ns_writer list)
       - Added ns_fastpath_cache_stats to obtain usage info from the
@@ -47,6 +47,7 @@ New Features:
 
 
 Performance Improvements:
+
     * Server lock to pool lock in most cases
     * Lazy init of zlib (mostly reduction in memory consumption)
     * Allow delivery of mmapped files via writer without the need of copying content.
@@ -65,6 +66,7 @@ Performance Improvements:
 
 
 Bug Fixes:
+
     * Do not save variables of the toplevel namespace into the blueprint. 
       OpenACS had with this a problem, since the database handles are managed via 
       global variables, which is solved by this modification.
@@ -85,6 +87,8 @@ Bug Fixes:
       and leads to a busy loop.
     * Fix bug in rolling access log when rollfmt is specified. Previously 
       the log file was closed but not reopened, log data was lost.
+    * Protect against a bug in Tcl, when several threads are created
+      concurrently via Tcl_CreateInterp()
 
 
 Documentation improvements:
@@ -95,8 +99,51 @@ Documentation improvements:
     * Remove man pages for non-existing commands and half written man
       pages.
 
+    * Updated documentation in configuration files
+
+    * Added sample configuration file for OpenACS
+
 
 Tcl API Changes:
+
+    * Added proc  "ns_deprecated" to flag deprecated commands 
+      in the the errlor.log file.
+
+    * Added commands to change server settings on the fly:
+      ns_server ?-server s? ?-pool p? maxthreads ?value?
+      ns_server ?-server s? ?-pool p? minthreads ?value?
+      
+    * Add "ns_server stats" to return number of requests, number of
+      spools and number of requests added to the waiting queue plus
+      cumulative times to serve requests.
+
+    * New commands "ns_writer size /driver/ ?value?"
+      If not specified, the whole file will be retuned, otherwise only
+      given part. Can be combined with -offset to return chunks of
+      file.
+
+    * New command "ns_writer streaming /driver/ ?value?" to query or
+      set the configuration parameter of writer thread.
+
+    * New command "ns_conn zipaccepted" returns whether or not the
+      client accepts a zip encoded response.
+
+    * New command "ns_conn pool" returns the connection pool of
+      the current request (connection).
+
+    * New subcommand "ns_conn clientdata" to query or set the client
+      data for the current connection. The client data is provided by
+      the application and is potentially passed to different threads
+      and can be used to establish the context with the connection
+      thread. For example, the writer thread outputs the client data
+      when listing running connections (one can determine e.g. which
+      user has initiated the delivery, etc.).
+
+    * Output in "ns_writer list" now contains the start time of the
+      initiating request, the name of the thread, driver, the
+      ip-address of the requestor, the file descriptor, the remaining
+      size and the bytes already sent, and the client data as provided
+      via [ns_conn clientdata].
 
     * ns_httpget, ns_httppost and ns_httpopen are deprecated (use
       ns_http instead)
@@ -104,7 +151,7 @@ Tcl API Changes:
     * ns_writer: added -server option to "ns_writer list" to list only
       requests from a particular (virtual) server
 
-    * ns_driversection - determine the configsection for driver in the
+    * ns_driversection: determine the configsection for driver in the
       config file.  Usage: ns_driversection ?-driver drv? ?-server s?
 
     * "ns_info platform" is deprecated; use $::tcl_platform(platform) instead.
@@ -136,41 +183,6 @@ Tcl API Changes:
       new option serverdir returns the base directory "ns_server ?-server s? serverdir" 
      
     * "ns_server keepalive" is deprecated - use "ns_conn keepalive" instead
-
-    * Added proc  "ns_deprecated" to flag deprecated commands in the the log file.
-
-    * Added commands to change server settings on the fly:
-      ns_server ?-server s? ?-pool p? maxthreads ?value?
-      ns_server ?-server s? ?-pool p? minthreads ?value?
-      
-    * Add "ns_server stats" to return number of requests, number of
-      spools and number of requests added to the waiting queue plus
-      cumulative times to serve requests.
-
-    * New commands "ns_writer size /driver/ ?value?"
-      If not specified, the whole file will be retuned, otherwise only
-      given part. Can be combined with -offset to return chunks of
-      file.
-
-    * New command "ns_writer streaming /driver/ ?value?" to query or
-      set the configuration parameter of writer thread.
-
-    * New command "ns_conn zipaccepted" returns whether or not the
-      client accepts a zip encoded response.
-
-    * New subcommand "ns_conn clientdata" to query or set the client
-      data for the current connection. The client data is provided by
-      the application and is potentially passed to different threads
-      and can be used to establish the context with the connection
-      thread. For example, the writer thread outputs the client data
-      when listing running connections (one can determine e.g. which
-      user has initiated the delivery, etc.).
-
-    * Output in "ns_writer list" now contains the start time of the
-      initiating request, the name of the thread, driver, the
-      ip-address of the requestor, the file descriptor, the remaining
-      size and the bytes already sent, and the client data as provided
-      via [ns_conn clientdata].
 
 
 C API Changes:
@@ -320,6 +332,10 @@ Code Changes:
 
     * Extending buffer size when sending files via writer thread from
       4KB to 16KB.
+
+    * Replaced unsafe system calls with safe ones (e.g. mktemp() by mkstemp())
+
+    * Improved code quality with static analyzer and valgrind
 
     * Extended regression test
 
