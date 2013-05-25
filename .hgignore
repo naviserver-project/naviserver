@@ -27,6 +27,7 @@ config.cache
 config.log
 config.status
 configure
+version_include.man
 
 tests/testserver/access.log
 tests/testserver/nsd.pid
