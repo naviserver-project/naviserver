@@ -1106,7 +1106,7 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     return NS_OK;
 }
 
-/* $Id$
+/*
  *
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
@@ -1122,126 +1122,6 @@ NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  * MD5Context structure, pass it to MD5Init, call MD5Update as
  * needed on buffers full of bytes, and then call MD5Final, which
  * will fill a supplied 16-byte array with the digest.
- *
- * $Log$
- * Revision 1.33  2008/10/20 00:06:54  seryakov
- * Driver changed, no request hacks, request can be empty, ns_conn content returns binary now
- *
- * Revision 1.32  2008/08/29 20:43:07  seryakov
- * Revert ns_filestat to not raise exception and use native system call
- *
- * Revision 1.31  2008/08/28 22:28:51  sdeasey
- * 	* configure.in:
- * 	* nsd/nsd.h:
- * 	* nsd/fastpath.c: Remove calls to Tcl's VFS routines within the
- * 	fastpath, as it adds a lot of noise. For starkit users there is
- * 	a new nsvfs module which provides pure Tcl VFS access to the file
- * 	system for the fastpath, and wrappers for ns_return and
- * 	ns_respond. This is actually more flexible: you can wrapped access
- * 	to /admin*, for bundled starkit files, and native access to
- * 	/fast*, for user added content.
- * 	* nsd/rollfile.c:
- * 	* nsd/tclmisc.c: Replace calls to the NsFast* wrappers with
- * 	straight Tcl_* calls.
- *
- * Revision 1.30  2008/03/09 07:34:48  seryakov
- *         Port to Win32 platform using Mingw32/Msys environment. Msys is what Tcl project using, same
- *         basic archive is what needed to conpile navoiserber for win32. Works stable as oppose to
- *         MSVC compiled code which used to crash for unknown reasons. Same configure script is used
- *         and config.h.
- *
- * Revision 1.29  2007/11/18 04:58:20  seryakov
- * Bad move, revert NsFastStat changes back, windwos port just needs proper
- * flags setup to work with the same stat or stat64 structures
- *
- * Revision 1.28  2007/11/18 04:23:36  seryakov
- *         * nsd/nsd.h:
- *         * nsd/fastpath.c: Added private function NsFastAllocStatBuf
- *         to follow Tcl VFS API
- *
- * Revision 1.27  2007/11/18 00:24:13  seryakov
- *         * include/Makefile.win32:
- *         Make sure src incude goes first
- *
- *         * nsd/tclmisc.c:
- *         * nsd/rollfile.c:
- *         * nsd/fastpath.c: Use Tcl_allocStatBuf for Tcl_FSStat to be
- *         portable. On Windows using static struct corrupts stack.
- *
- * Revision 1.26  2007/11/14 00:50:33  seryakov
- *         * include/nsthread.h:
- *         * include/Makefile.module
- *         * include/Makefile.win32
- *         * nsthread/winthread.c:
- *         * nsthread/Makefile:
- *         * nsd/Makefile:
- *         * nscp/Makefile:
- *         * nssock/Makefile:
- *         * nsdb/Makefile:
- *         * nscgi/Makefile:
- *         * nslog/Makefile:
- *         * nsd/nsmain.c:
- *         * nsd/tcltime.c:
- *         * nsd/tclmisc.c: Initial Windows port, still work in progress.
- *         New makefile added to perform compiling fromcommand line using the same top
- *         level makefile. To compile for windows, copy include/Makefile.win32
- *         into include/Makefile.module, the rest stays the same, only every module
- *         needs to be compiled separately, root Makefile is still unix specific.
- *
- * Revision 1.25  2007/10/21 15:44:39  seryakov
- *         * nsd/nswin32.c: No need for extra stubs
- *         * include/ns.h:
- *         * nsproxy/nsproxylib.c:
- *         * nsd/nsmain.c:
- *         * nsd/unix.c: New public API functions Ns_SetUser/Ns_SetGroup instead of
- *         deleted Ns_SetPriveleges. New Tcl commands ns_setuser/ns_setgroup instead of
- *         ns_setpriveleges
- *
- * Revision 1.24  2007/10/20 17:20:32  seryakov
- *     * include/ns.h:
- *     * nsd/unix.c: Added 2 new public API functions Ns_SetPriveleges and Ns_GetPriveleges
- *       which are resolve and assign user uid/gid
- *
- *     * nsproxy/nsproxylib.c:
- *     * nsd/nsmain.c: Switched to use new function that assign user real uid/gid
- *
- *     * nsd/tclmisc.c: New Tcl command ns_setpriveleges that sets real uid and gid
- *
- * Revision 1.23  2007/08/14 08:49:10  vasiljevic
- * Replaced uint32 with uint32_t.
- *
- * Revision 1.22  2007/05/21 05:28:39  seryakov
- *         * include/ns.h:
- *         * nsd/tclmisc.c: Added public domain MD5 implementation, new command ns_md5 created,
- *         new C API public functions added:
- *                Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
- *                Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
- *                Ns_CtxMD5Final(unsigned char digest[16], Ns_CtxMD5 *ctx)
- *                Ns_CtxSHAInit(Ns_CtxSHA1 *ctx)
- *                Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, unsigned len)
- *                Ns_CtxSHAFinal(unsigned char digest[20], Ns_CtxSHA1 *ctx)
- *
- *         * nsperm/nsperm.c: Added first pieces to support both Basic and Digest
- *         authentications
- *
- * Revision 1.2  2000/09/11 05:13:24  vlad
- * *** empty log message ***
- *
- * Revision 1.1.1.1  1999/08/19 13:13:26  aland
- * 	Start of the pam_radius module
- *
- * Revision 1.2  1998/04/03 20:19:21  aland
- * now builds cleanly on Solaris 2.6
- *
- * Revision 1.1  1998/04/03 19:36:59  aland
- * oh yeah, do MD5 stuff, too
- *
- * Revision 1.1  1996/12/01 03:06:54  morgan
- * Initial revision
- *
- * Revision 1.1  1996/09/05 06:43:31  morgan
- * Initial revision
- *
  */
 
 static void MD5Transform(uint32_t buf[4], uint32_t const in[16]);
