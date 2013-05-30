@@ -84,10 +84,20 @@ Test whether a key exists in the nsv array.
 [example_end]
 
 
-[call [cmd nsv_get] [arg array] [arg key]]
+[call [cmd nsv_get] \
+	[arg array] \
+	[arg key] \
+	[opt [arg varName]]]
 
 
-Get the value for the key from the nsv array.  Error occurs if key does not exist.
+Get the value for the key from the nsv array.  If the the optional
+[arg varName] is provided, the function returns on success 1 and on
+failure 0. On success, it binds the variable [arg varName]. If the
+variable name is not provided, it returns on success the value and
+raises on failure an error (similar to ns_cache_get).
+With the optional variable name, this function allows an atomic 
+check for existence followed by a get operation.
+
 
 [example_begin]
    % nsv_get shared_array key1
@@ -409,8 +419,8 @@ immediately, try increasing nsvbuckets.
 
 
 
-[see_also nsd]
-
+[see_also nsd ns_cache_get]
+[keywords nsv shared variables]
 
 [manpage_end]
 

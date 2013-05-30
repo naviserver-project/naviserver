@@ -70,6 +70,7 @@ Causes the current thread to yield its CPU to other running threads.
 Calling ns_thread join on an invalid thread ID or a thread ID that has
 already been joined will cause the server to abort with a fatal error.  See 
 
+[keywords stack]
 
 [manpage_end]
 

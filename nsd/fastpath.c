@@ -653,7 +653,7 @@ FreeEntry(void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclCacheStatsObjCmds --
+ * NsTclFastPathCacheStatsObjCmd --
  *
  *      Returns stats on a cache. The size and expirey time of each
  *      entry in the cache is also appended if the -contents switch

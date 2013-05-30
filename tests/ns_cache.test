@@ -379,10 +379,44 @@ test cache-9.5 {cache lappend multiple values} -body {
     ns_cache_flush c1
 } -result {a b c}
 
+test cache-9.6 {cache get} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k1
+} -cleanup {
+    ns_cache_flush c1
+} -result {a}
 
+test cache-9.7 {cache get varname} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k1 v
+} -cleanup {
+    ns_cache_flush c1
+} -result {1}
+
+test cache-9.8 {cache get varname value} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k1 v
+    set v
+} -cleanup {
+    ns_cache_flush c1
+} -result {a}
+
+test cache-9.9 {cache get varname non-existing} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k2
+} -cleanup {
+    ns_cache_flush c1
+} -returnCodes error -result {no such key: k2}
+
+test cache-9.10 {cache get varname non-existing varname} -body {
+    ns_cache_eval c1 k1 {return a}
+    ns_cache_get c1 k2 v
+} -cleanup {
+    ns_cache_flush c1
+} -result {0}
 
 test cache-10.1 {memoize} -body {
-    ns_memoize {return a}
+    ns_cache_eval c1 k1 {return a}
 } -cleanup {
     ns_memoize_flush
 } -result a
@@ -414,6 +448,8 @@ test cache-10.5 {memoize flush glob} -body {
 } -cleanup {
     ns_memoize_flush
 } -result 2
+
+
 
 
 

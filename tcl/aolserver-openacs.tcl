@@ -106,21 +106,9 @@ if {[info command ::nx::Object] ne "" && [::nx::Object info lookup method object
 
     :public object method get {cache_name key var_name:optional} {
       if {[info exists var_name]} {
-	# Check if we have an entry. This assumes that only valid (not
-	# expired) entries are returned, and this state will be true
-	# for the subsequence _eval as well.
-	if {[ns_cache_keys $cache_name $key] ne ""} {
-	  # The next pattern assumes, that the script == key, as in
-	  # util_memoize
-	  set r [ns_cache_eval $cache_name $key $key]
-	  uplevel set $var_name [list $r]
-	  return 1
-	} else {
-	  return 0
-	}
+	return [uplevel [list ns_cache_get $cache_name $key $var_name]]
       } else {
-	set r [ns_cache_eval $cache_name $key $key]
-	return $r
+	return [ns_cache_get $cache_name $key]
       }
     }
 

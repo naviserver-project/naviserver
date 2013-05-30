@@ -83,6 +83,18 @@ If the [opt [option -force]] option is set then any existing cached value is rem
 whether it has expired or not, and the [arg script] is run to regenerate it.
 
 
+[call [cmd ns_cache_get] \
+	[arg name] \
+        [arg key] \
+        [opt [arg varName]] ]
+
+Get the cached value for the provided key from the cache.
+If the optional variable name is not provided, it returns 
+the associated value on success or it raises an error,
+if the key does not exist. If the optional variable name is
+provided it returns 1 or 0 on success / failure and sets
+the provided variable with the associated value (similar to 
+nsv_get).
 
 [call [cmd ns_cache_incr] \
      [opt [option "-timeout [arg t]"]] \

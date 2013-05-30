@@ -131,9 +131,10 @@ NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     Array         *arrayPtr;
     Tcl_HashEntry *hPtr;
+    Tcl_Obj       *resultObj;
 
-    if (unlikely(objc != 3)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key");
+    if (unlikely(objc < 3 || objc > 4)) {
+        Tcl_WrongNumArgs(interp, 1, objv, "array key ?varName?");
         return TCL_ERROR;
     }
     if (unlikely((arrayPtr = LockArrayObj(interp, objv[1], 0)) == NULL)) {
@@ -141,16 +142,24 @@ NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     }
 
     hPtr = Tcl_FindHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]));
-    if (likely(hPtr != NULL)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
-    }
+    resultObj = likely(hPtr != NULL) ? Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1) : NULL;
     UnlockArray(arrayPtr);
 
-    if (unlikely(hPtr == NULL)) {
-        Tcl_AppendResult(interp, "no such key: ",
-                         Tcl_GetString(objv[2]), NULL);
-        return TCL_ERROR;
+    if (objc == 3) {
+	if (resultObj) {
+	    Tcl_SetObjResult(interp, resultObj);
+	} else {
+	    Tcl_AppendResult(interp, "no such key: ",
+			     Tcl_GetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(resultObj != NULL));
+	if (resultObj) {
+	    Tcl_ObjSetVar2(interp, objv[3], NULL, resultObj, 0);
+	}
     }
+
     return TCL_OK;
 }
 

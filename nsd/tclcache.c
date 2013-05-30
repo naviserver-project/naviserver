@@ -501,6 +501,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     return TCL_OK;
 }
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -583,7 +584,67 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 /*
  *----------------------------------------------------------------------
  *
- * NsTclCacheStatsObjCmds --
+ * NsTclCacheGetObjCmd --
+ *
+ *      Return an entry from the cache. This function behaves
+ *      similar to nsv_get; if the optional varname is passed,
+ *      it returns 0 or 1 depending on succes and bind the variable
+ *      on success. If no varName is provided, it returns the value
+ *      or an error.
+ *
+ * Results:
+ *      TCL result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+{
+    TclCache       *cPtr;
+    Ns_Entry       *entry;
+    char           *key;
+    Tcl_Obj        *varNameObj = NULL, *resultObj;
+
+    Ns_ObjvSpec args[] = {
+        {"cache",    ObjvCache,     &cPtr,        arg},
+        {"key",      Ns_ObjvString, &key,         NULL},
+        {"?varName", Ns_ObjvObj,    &varNameObj,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    Ns_CacheLock(cPtr->cache);
+    entry = Ns_CacheFindEntry(cPtr->cache, key);
+    resultObj = entry ? Tcl_NewStringObj(Ns_CacheGetValue(entry), -1) : NULL;
+    Ns_CacheUnlock(cPtr->cache);
+
+    if (varNameObj) {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(resultObj != NULL));
+	if (resultObj) {
+	    Tcl_ObjSetVar2(interp, varNameObj, NULL, resultObj, 0);
+	}
+    } else {
+	if (resultObj) {
+	    Tcl_SetObjResult(interp, resultObj);
+	} else {
+	    Tcl_AppendResult(interp, "no such key: ",
+			     Tcl_GetString(objv[2]), NULL);
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCacheStatsObjCmd --
  *
  *      Returns stats on a cache. The size and expirey time of each
  *      entry in the cache is also appended if the -contents switch
