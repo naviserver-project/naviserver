@@ -339,7 +339,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     drvPtr->server       = server;
     drvPtr->name         = init->name;
-    drvPtr->module       = module;
+    drvPtr->module       = ns_strdup(module);
     drvPtr->listenProc   = init->listenProc;
     drvPtr->acceptProc   = init->acceptProc;
     drvPtr->recvProc     = init->recvProc;
@@ -688,8 +688,6 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
     int status = NS_OK;
 
     while (drvPtr != NULL) {
-	char buffer[1024];
-	memcpy(buffer, drvPtr->module, strnlen(drvPtr->module, 1024));
         Ns_MutexLock(&drvPtr->lock);
         while (!(drvPtr->flags & DRIVER_STOPPED) && status == NS_OK) {
             status = Ns_CondTimedWait(&drvPtr->cond, &drvPtr->lock, toPtr);
@@ -698,7 +696,7 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
         if (status != NS_OK) {
             Ns_Log(Warning, "[driver:%s]: shutdown timeout", drvPtr->module);
         } else {
-            Ns_Log(Notice, "[driver:%s]: stopped", buffer);
+            Ns_Log(Notice, "[driver:%s]: stopped", drvPtr->module);
             Ns_ThreadJoin(&drvPtr->thread, NULL);
             drvPtr->thread = NULL;
         }
