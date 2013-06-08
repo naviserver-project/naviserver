@@ -742,15 +742,19 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
   
     if (setsockopt(sock, IPPROTO_TCP, TCP_FASTOPEN,
 		   &qlen, sizeof(qlen)) == -1) {
-	Ns_Log(Error, "sock: setsockopt(TCP_FASTOPEN): %s",
+	Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
 	       ns_sockstrerror(ns_sockerrno));
+    } else {
+        Ns_Log(Notice, "deferaccept: socket option TCP_FASTOPEN activated");
     }
 #else
 # ifdef TCP_DEFER_ACCEPT
     if (setsockopt(sock, IPPROTO_TCP, TCP_DEFER_ACCEPT,
 		   &secs, sizeof(secs)) == -1) {
-	Ns_Log(Error, "sock: setsockopt(TCP_DEFER_ACCEPT): %s",
+	Ns_Log(Error, "deferaccept setsockopt(TCP_DEFER_ACCEPT): %s",
 	       ns_sockstrerror(ns_sockerrno));
+    } else {
+        Ns_Log(Notice, "deferaccept: socket option DEFER_ACCEPT activated (timeout %d)", secs);
     }
 # else
 #  ifdef SO_ACCEPTFILTER
@@ -761,8 +765,11 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
     strcpy(afa.af_name, "httpready");
     n = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa));
     if (n < 0) {
-	Ns_Log(Error, "sock: setsockopt(SO_ACCEPTFILTER): %s",
+	Ns_Log(Error, "deferaccept setsockopt(SO_ACCEPTFILTER): %s",
 	       ns_sockstrerror(ns_sockerrno));
+    } else {
+        Ns_Log(Notice, "deferaccept: socket option SO_ACCEPTFILTER activated");
+
     }
 #  endif
 # endif

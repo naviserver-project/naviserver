@@ -374,7 +374,9 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
                        &value, sizeof(value)) == -1) {
             Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
                    ns_sockstrerror(ns_sockerrno));
-        }
+        } else {
+	    Ns_Log(Debug, "nodelay: socket option TCP_NODELAY activated");
+	}
 #endif
     }
 }
