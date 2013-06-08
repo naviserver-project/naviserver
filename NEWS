@@ -106,83 +106,147 @@ Documentation improvements:
 
 Tcl API Changes:
 
-    * Added proc  "ns_deprecated" to flag deprecated commands 
-      in the the errlor.log file.
+    * New and modified commands/subcommands:
 
-    * Added commands to change server settings on the fly:
-      ns_server ?-server s? ?-pool p? maxthreads ?value?
-      ns_server ?-server s? ?-pool p? minthreads ?value?
-      
-    * Add "ns_server stats" to return number of requests, number of
-      spools and number of requests added to the waiting queue plus
-      cumulative times to serve requests.
+      - nsv_get: added optional argument ?varName? to nsv_get to
+        obtain compatibility with tsv::get in the Tcl thread
+        library. This option allows an atomic test + get operation,
+        avoiding unsafe nsv_exists following by nsv_get.
 
-    * New commands "ns_writer size /driver/ ?value?"
-      If not specified, the whole file will be retuned, otherwise only
-      given part. Can be combined with -offset to return chunks of
-      file.
+          nsv_get /array/ /key/ ?/varName/?
 
-    * New command "ns_writer streaming /driver/ ?value?" to query or
-      set the configuration parameter of writer thread.
+      - Obtain a value from the cache 
+        (similar to nsv_get)
 
-    * New command "ns_conn zipaccepted" returns whether or not the
-      client accepts a zip encoded response.
+          ns_cache_get /cache/ /key/ ?/varName/?
+        
+      - Write a notice to the error.log when this command 
+        is used 
 
-    * New command "ns_conn pool" returns the connection pool of
-      the current request (connection).
+          ns_deprecated ?/alternative/? ?/explanation/?
 
-    * New subcommand "ns_conn clientdata" to query or set the client
-      data for the current connection. The client data is provided by
-      the application and is potentially passed to different threads
-      and can be used to establish the context with the connection
-      thread. For example, the writer thread outputs the client data
-      when listing running connections (one can determine e.g. which
-      user has initiated the delivery, etc.).
+      - Change server settings on the fly:
 
-    * Output in "ns_writer list" now contains the start time of the
-      initiating request, the name of the thread, driver, the
-      ip-address of the requestor, the file descriptor, the remaining
-      size and the bytes already sent, and the client data as provided
-      via [ns_conn clientdata].
+          ns_server ?-server /server/? ?-pool /p/? maxthreads ?/value/?
+          ns_server ?-server /server/? ?-pool /p/? minthreads ?/value/?
 
-    * ns_httpget, ns_httppost and ns_httpopen are deprecated (use
-      ns_http instead)
+      - The following commands can return now server-specific
+        results, when "-server ..." is used:
 
-    * ns_writer: added -server option to "ns_writer list" to list only
-      requests from a particular (virtual) server
+          ns_server ?-server /server/? filters
+          ns_server ?-server /server/? pagedir
+          ns_server ?-server /server/? requestprocs
+          ns_server ?-server /server/? tcllib
+          ns_server ?-server /server/? traces
+          ns_server ?-server /server/? url2file
 
-    * ns_driversection: determine the configsection for driver in the
-      config file.  Usage: ns_driversection ?-driver drv? ?-server s?
 
-    * "ns_info platform" is deprecated; use $::tcl_platform(platform) instead.
-      "ns_info winnt" is deprecated; use $::tcl_platform(platform) instead.
+      - The following commands can return now server-specific
+        and pool-specific results:
 
-    * ns_register_adptag is deprecated - use ns_adp_registerscript instead.
+          ns_server ?-server /server/? ?-pool p? active
+          ns_server ?-server /server/? ?-pool p? all
+          ns_server ?-server /server/? ?-pool p? queued
+          ns_server ?-server /server/? ?-pool p? connections
+          ns_server ?-server /server/? ?-pool p? maxthreads ?value?
+          ns_server ?-server /server/? ?-pool p? minthreads ?value?
+          ns_server ?-server /server/? ?-pool p? stats
+          ns_server ?-server /server/? ?-pool p? threads
+          ns_server ?-server /server/? ?-pool p? waiting
 
-    * ns_adp_registertag is deprecated - use ns_adp_registeradp instead.
+      - Return number of requests, number of spools and number of
+        requests added to the waiting queue plus cumulative times to
+        serve requests.
 
-    * The following commands are deprecated
-      ns_info filters
-      ns_info pagedir
-      ns_info pageroot
-      ns_info requestprocs
-      ns_info tcllib
-      ns_info traces
-      ns_info url2file
+          ns_server ?-server /server/? ?-pool /p/? stats
 
-      and defined the following commands instead:
+      - Query for the current connection, whether
+        the requestor accepts zipped results
+        
+          ns_conn zipaccepted
 
-      ns_server ?-server server? filters
-      ns_server ?-server server? pagedir
-      ns_server ?-server server? requestprocs
-      ns_server ?-server server? tcllib
-      ns_server ?-server server? traces
-      ns_server ?-server server? url2file
+      - Return for the current connection the 
+        connection pool
 
-    * ns_server - passing pool as 2nd argument is deprecated.
-      new option serverdir returns the base directory "ns_server ?-server s? serverdir" 
+          ns_conn pool
+ 
+      - Query or set for the current connection the client data.  The
+        client data is provided by the application and is potentially
+        passed to different threads and can be used to establish the
+        context with the connection thread. For example, the writer
+        thread outputs the client data when listing running connections
+        (one can determine e.g. which user has initiated the delivery,
+        etc.).
+
+          ns_conn clientdata
+
+      - Query or modify the size limit of files being delivered
+        via the writer threads
+
+          ns_writer size /driver/ ?/value/?
+
+      - Query or modify the configuration parameter
+        writerstreaming that controls streaming HTML
+        output via writer threads
+  
+          ns_writer streaming /driver/ ?/value/?
+
+      - Allow to restrict the output of "ns_writer list"
+        to list only requests from a particular (virtual) server
+
+          ns_writer list ?-server /server/?
+
+      - The output of "ns_writer list" now contains the start time of
+        the initiating request, the name of the thread, driver, the
+        ip-address of the requestor, the file descriptor, the
+        remaining size and the bytes already sent, and the client data
+        as provided via [ns_conn clientdata].
+
+      - Determine the section in the configuration for a driver
+        in the configuration file
+
+          ns_driversection ?-driver /drv/? ?-server /server/?
+
+
+    * Deprecated commands/subcommands:
+
+
+      - ns_httpget, ns_httppost and ns_httpopen are deprecated (use
+        ns_http instead)
+
+      - "ns_info platform" is deprecated; use $::tcl_platform(platform) instead.
+        "ns_info winnt" is deprecated; use $::tcl_platform(platform) instead.
+
+      - ns_register_adptag is deprecated - use ns_adp_registerscript instead.
+
+      - ns_adp_registertag is deprecated - use ns_adp_registeradp instead.
+
+      - The following commands are deprecated
+
+          ns_info filters
+          ns_info pagedir
+          ns_info pageroot
+          ns_info requestprocs
+          ns_info tcllib
+          ns_info traces
+          ns_info url2file
+
+        and defined the following commands instead:
+
+          ns_server ?-server /server/? filters
+          ns_server ?-server /server/? pagedir
+          ns_server ?-server /server/? requestprocs
+          ns_server ?-server /server/? tcllib
+          ns_server ?-server /server/? traces
+          ns_server ?-server /server/? url2file
+
+      - ns_server - passing pool as 2nd argument is deprecated.
+        new option serverdir returns the base directory. Using 
+        instead the explicit options
+          "ns_server ?-server /server/? serverdir" 
      
-    * "ns_server keepalive" is deprecated - use "ns_conn keepalive" instead
+      - "ns_server keepalive" is deprecated;
+        use "ns_conn keepalive" instead
 
 
 C API Changes:
