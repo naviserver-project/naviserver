@@ -282,8 +282,8 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
         {"-timeout",  Ns_ObjvTime, &timeoutPtr,  NULL},
         {"-elapsed",  Ns_ObjvObj,  &elapsedPtr,  NULL},
         {"-result",   Ns_ObjvObj,  &resultPtr,   NULL},
-        {"-status",   Ns_ObjvObj,  &statusPtr,   NULL},
         {"-headers",  Ns_ObjvSet,  &hdrPtr,      NULL},
+        {"-status",   Ns_ObjvObj,  &statusPtr,   NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
