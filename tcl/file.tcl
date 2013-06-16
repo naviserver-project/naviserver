@@ -40,7 +40,7 @@
 
 set path ns/server/[ns_info server]
 set on [ns_config -bool $path enabletclpages off]
-ns_log notice "conf: \[$path\]enabletclpages = $on"
+ns_log notice "conf: \[$path\] enabletclpages = $on"
 
 if {$on} {
     ns_log notice "tcl: enabling .tcl pages"
@@ -49,7 +49,6 @@ if {$on} {
     ns_register_proc POST /*.tcl ns_sourceproc
     ns_register_proc HEAD /*.tcl ns_sourceproc
 }
-
 
 #
 # ns_tcl_abort --
