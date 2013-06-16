@@ -3623,7 +3623,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     DrvWriter     *wrPtr;
     int            trigger = 0, headerSize;
 
-    if (conn == NULL) {
+    if (conn == NULL || connPtr->sockPtr == NULL) {
         return NS_ERROR;
     }
 
