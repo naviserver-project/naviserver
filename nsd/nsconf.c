@@ -208,8 +208,12 @@ NsConfUpdate(void)
     Ns_DStringInit(&ds);
     nsconf.tcl.sharedlibrary = (char*)Ns_ConfigString(path, "tcllibrary", "tcl");
     if (!Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary)) {
+	Ns_Set *set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+
         Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, NULL);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
+
+	Ns_SetUpdate(set, "tcllibrary", nsconf.tcl.sharedlibrary);
     }
     nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);
     Ns_DStringFree(&ds);

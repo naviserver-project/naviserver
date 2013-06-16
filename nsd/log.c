@@ -233,6 +233,7 @@ NsConfigLog(void)
 {
     Ns_DString  ds;
     CONST char *path = NS_CONFIG_PARAMETERS;
+    Ns_Set *set = Ns_ConfigCreateSection(path);
 
     severityConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);
     severityConfig[Dev   ].enabled = Ns_ConfigBool(path, "logdev",    NS_FALSE);
@@ -259,6 +260,7 @@ NsConfigLog(void)
             Ns_HomePath(&ds, file, NULL);
         }
         file = Ns_DStringExport(&ds);
+	Ns_SetUpdate(set, "serverlog", file);
     }
 }
 

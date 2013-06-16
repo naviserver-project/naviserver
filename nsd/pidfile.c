@@ -128,13 +128,19 @@ GetFile(char *procname)
     file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "pidfile");
     if (file == NULL) {
         Ns_DString ds;
+	Ns_Set *set;
+
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", NULL)) {
             Ns_HomePath(&ds, "logs/nsd.pid", NULL);
         } else {
             Ns_HomePath(&ds, "nsd.pid", NULL);
         }
-        path = Tcl_NewStringObj(ds.string, -1);
+        path = Tcl_NewStringObj(ds.string, ds.length);
+
+	set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+	Ns_SetUpdate(set, "pidfile", ds.string);
+
         Ns_DStringFree(&ds);
     } else {
         path = Tcl_NewStringObj(file, -1);
