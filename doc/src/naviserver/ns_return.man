@@ -127,8 +127,8 @@ The file identified by the given [arg pathname] will be sent as the response
 body. The bytes of the file will not be transformed in any way.
 
 [opt_def -fileid [arg channel]]
-[arg length] bytes of the given channel will be used as the response body.
-The bytes of the file will not be transformed in any way.
+The file identified by the given Tcl [arg channel] will be sent as the response
+body. The bytes of the file will not be transformed in any way.
 
 [opt_def -length [arg length]]
 Specifies the number of bytes to send from the channel.
