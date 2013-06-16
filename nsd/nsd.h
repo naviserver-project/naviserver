@@ -116,6 +116,7 @@ struct _nsconf {
     char *name;
     char *version;
     char *home;
+    char *tmpDir;
     char *config;
     char *build;
     int pid;

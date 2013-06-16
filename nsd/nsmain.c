@@ -101,6 +101,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     int       i, sig, optind;
     char     *config = NULL;
     Ns_Time   timeout;
+    Ns_Set   *set;
 
 #ifndef _WIN32
     int       debug = 0, mode = 0;
@@ -476,7 +477,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     /*
      * Set the procname used for the pid file.
      */
-
     procname = (server ? server : Ns_SetKey(servers, 0));
 
     /*
@@ -514,11 +514,26 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
     nsconf.home = SetCwd(nsconf.home);
 
+    /* 
+     * Make the result queryable.
+     */
+    set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+    Ns_SetUpdate(set, "home", nsconf.home);
+
     /*
      * Update core config values.
      */
 
     NsConfUpdate();
+
+    nsconf.tmpDir = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "tmpdir");
+    if (nsconf.tmpDir == NULL) {
+	nsconf.tmpDir = getenv("TMPDIR");
+	if (nsconf.tmpDir == NULL) {
+	    nsconf.tmpDir = P_tmpdir;
+	}
+	Ns_SetUpdate(set, "tmpdir", nsconf.tmpDir);
+    }
 
 #ifdef _WIN32
 
