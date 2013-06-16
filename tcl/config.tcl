@@ -127,20 +127,20 @@ proc _ns_config_server_limits {server} {
 
 proc _ns_config_server_adp_pages {server} {
 
-	set path "ns/server/$server/adp"
+    set path "ns/server/$server/adp"
     set adps [ns_configsection $path]
 
-	if {$adps eq "" || [ns_config -bool $path disabled false]} {
-		return
+    if {$adps eq "" || [ns_config -bool $path disabled false]} {
+	return
+    }
+    foreach {key url} [ns_set array $adps] {
+	if {$key eq "map"} {
+	    foreach {method} {GET HEAD POST} {
+		ns_register_adp $method $url
+	    }
+	    ns_log notice "adp\[$server\]: mapped {GET HEAD POST} $url"
 	}
-	foreach {key url} [ns_set array $adps] {
-		if {$key eq "map"} {
-			foreach {method} {GET HEAD POST} {
-				ns_register_adp $method $url
-			}
-			ns_log notice "adp\[$server\]: mapped {GET HEAD POST} $url"
-		}
-	}
+    }
 }
 
 #
