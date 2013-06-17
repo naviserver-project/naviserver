@@ -231,6 +231,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     DrvWriter      *wrPtr;
     DrvSpooler     *spPtr;
     NsServer       *servPtr = NULL;
+    Ns_Set         *set;
 
     if (server != NULL && (servPtr = NsGetServer(server)) == NULL) {
         return NS_ERROR;
@@ -243,6 +244,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
 
     path = (init->path ? init->path : Ns_ConfigGetPath(server, module, NULL));
+    set = Ns_ConfigCreateSection(path);
 
     /*
      * Determine the hostname used for the local address to bind
@@ -281,18 +283,21 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
          */
 
         if (he == NULL || he->h_name == NULL) {
-            Ns_Log(Error, "%s: could not resolve %s", module,
-                   host ? host : Ns_InfoHostname());
+            Ns_Log(Error, "%s: could not resolve %s", module, 
+		   host ? host : Ns_InfoHostname());
             return NS_ERROR;
         }
         if (*(he->h_addr_list) == NULL) {
-            Ns_Log(Error, "%s: no addresses for %s", module,
-                   he->h_name);
+            Ns_Log(Error, "%s: no addresses for %s", module, he->h_name);
             return NS_ERROR;
         }
 
         memcpy(&ia.s_addr, he->h_addr_list[0], sizeof(ia.s_addr));
         address = ns_inet_ntoa(ia);
+
+	if (address && path) {
+	    Ns_SetUpdate(set, "address", address);
+	}
 
         /*
          * Finally, if no hostname was specified, set it to the hostname
@@ -311,6 +316,10 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
     if (host == NULL) {
         host = address;
+    }
+
+    if (host && path) {
+	Ns_SetUpdate(set, "hostname", host);
     }
 
     /*
