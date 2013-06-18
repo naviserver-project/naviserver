@@ -1089,7 +1089,7 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
     char          *errstr, c, drain[1024];
-    int            n, flags, stopping, pollto, accepted;
+    int            flags, stopping, pollto, accepted;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
     PollData       pdata;
 
@@ -1123,6 +1123,7 @@ DriverThread(void *arg)
     stopping = (flags & DRIVER_SHUTDOWN);
 
     while (!stopping) {
+	int n;
 
         /*
          * Set the bits for all active drivers if a connection
@@ -2037,13 +2038,14 @@ static int
 ChunkedDecode(Request *reqPtr, int update)
 {
     Tcl_DString *bufPtr = &reqPtr->buffer;
-    long chunk_length;
     char 
       *end = bufPtr->string + bufPtr->length, 
       *chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
     while (reqPtr->chunkStartOff <  bufPtr->length) {
       char *p = strstr(chunkStart, "\r\n");
+      long chunk_length;
+
       if (!p) {
         Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
         return -1;
@@ -2294,8 +2296,7 @@ SockParse(Sock *sockPtr, int spooler)
 {
     Request      *reqPtr;
     Tcl_DString  *bufPtr;
-    char         *s, *e, save;
-    int           cnt;
+    char          save;
     Driver       *drvPtr = sockPtr->drvPtr;
 
     NsUpdateProgress((Ns_Sock *) sockPtr);
@@ -2308,6 +2309,8 @@ SockParse(Sock *sockPtr, int spooler)
      */
 
     while (reqPtr->coff == 0) {
+	char *s, *e;
+	int cnt;
 
         /*
          * Find the next line.
@@ -2897,9 +2900,9 @@ SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 static void
 SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
 {
-    int status;
-
     while (queuePtr != NULL) {
+	int status;
+
         Ns_MutexLock(&queuePtr->lock);
         if (!queuePtr->stopped && !queuePtr->shutdown) {
             Ns_Log(Debug, "%s%d: triggering shutdown", name, queuePtr->id);
@@ -3696,10 +3699,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	 * output (iovec bufs). Write the content to the spool file.
 	 */
 	{
-	    int i, j;
+	    int i;
 	    assert(bufs != NULL);
 	    for (i = 0; i < nbufs; i++) {
-		j = write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
+		int j = write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
 		wrote += j;
 		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %" PRIdz " OK %d", 
 		       connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
