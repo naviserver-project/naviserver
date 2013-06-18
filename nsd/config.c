@@ -473,7 +473,7 @@ Ns_ConfigGetPath(CONST char *server, CONST char *module, ...)
     va_end(ap);
     Ns_Log(Dev, "config section: %s", Ns_DStringValue(&ds));
 
-    set = Ns_ConfigGetSection(ds.string);
+    set = Ns_ConfigCreateSection(ds.string);
     Ns_DStringFree(&ds);
 
     return (set ? Ns_SetName(set) : NULL);
