@@ -39,7 +39,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "0.2"
+#define NSSSL_VERSION  "0.3"
 
 typedef struct {
     SSL_CTX     *ctx;
@@ -54,20 +54,10 @@ typedef struct {
 } SSLContext;
 
 typedef struct {
-    int          sock;
-    size_t       len;
-    int          status;
-    Ns_Time      timeout;
-    Ns_Time      stime;
-    Ns_Time      etime;
-    Ns_Task     *task;
-    char        *url;
-    char        *error;
-    char        *next;
-    Tcl_DString  ds;
+    Ns_HttpTask http;
     SSL_CTX     *ctx;
     SSL         *ssl;
-} Session;
+} Https;
 
 /*
  * Local functions defined in this file
@@ -85,15 +75,14 @@ static int SSLObjCmd(ClientData arg, Tcl_Interp *interp,int objc,Tcl_Obj *CONST 
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 static void SSLLock(int mode, int n, const char *file, int line);
 static unsigned long SSLThreadId(void);
-
-
-static Tcl_Obj *SessionResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs);
-static void SessionClose(Session *sesPtr);
-static void SessionCancel(Session *sesPtr);
-static void SessionAbort(Session *sesPtr);
-static int SessionSetVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr);
-static Session *SessionGet(Tcl_Interp *interp, char *id);
-static Ns_TaskProc SessionProc;
+static int HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
+			Tcl_Obj *bodyPtr, char *cert, char *caFile, char *caPath, int verify,
+			Https **httpsPtrPtr);
+static void HttpsClose(Https *httpsPtr);
+static void HttpsCancel(Https *httpsPtr);
+static void HttpsAbort(Https *httpsPtr);
+static Https *HttpsGet(Tcl_Interp *interp, char *id);
+static Ns_TaskProc HttpsProc;
 
 /*
  * Static variables defined in this file.
@@ -189,7 +178,7 @@ Ns_ModuleInit(char *server, char *module)
     }
 
     /* 
-     * Session cache support
+     * Https cache support
      */
     Ns_DStringPrintf(&ds, "nsssl:%d", getpid());
     SSL_CTX_set_session_id_context(drvPtr->ctx, (void *) ds.string, ds.length);
@@ -383,8 +372,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
 {
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
-    X509 *peer;
-    int err, n, got = 0;
+    int got = 0;
     char *p = (char *)bufs->iov_base;
 
     /*
@@ -392,6 +380,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
      */
 
     if (drvPtr->verify && sslPtr->verified == 0) {
+	X509 *peer;
         if ((peer = SSL_get_peer_certificate(sslPtr->ssl))) {
              X509_free(peer);
              if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
@@ -408,6 +397,8 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
     }
 
     while (1) {
+	int err, n;
+
         ERR_clear_error();
         n = SSL_read(sslPtr->ssl, p + got, bufs->iov_len - got);
         err = SSL_get_error(sslPtr->ssl, n);
@@ -424,6 +415,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
                 /*fprintf(stderr, "### SSL retry after read of %d bytes\n", n);*/
                 continue;
             }
+            /*Ns_Log(Notice, "### SSL_read %d got <%s>", got, p);*/
 	    return got;
             
         case SSL_ERROR_WANT_READ: 
@@ -501,7 +493,7 @@ Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
  *
  * Keep --
  *
- *      Mo keepalives
+ *      No keepalives
  *
  * Results:
  *      0, always.
@@ -630,10 +622,11 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    Session *sesPtr = NULL;
+    Https *httpsPtr = NULL;
+    Ns_HttpTask *httpPtr;
     Ns_Set *hdrPtr = NULL;
     Ns_Time *timeoutPtr = NULL;
-    int i, opt, flag, run = 0;
+    int opt, run = 0;
 
     static CONST char *opts[] = {
        "cancel", "cleanup", "run", "queue", "wait", "list",
@@ -656,19 +649,19 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     run = 1;
 
     case HQueueIdx: {
-        int sock, len, uaFlag = -1, verify = 0;
-        char *key, *body, *host, *file, *port, *cert = NULL;
+        int verify = 0, flag, i;
+        char *cert = NULL;
         char buf[32], *url = NULL, *method = "GET", *caFile = NULL, *caPath = NULL;
         Tcl_Obj *bodyPtr = NULL;
 
         Ns_ObjvSpec opts[] = {
             {"-timeout",  Ns_ObjvTime,    &timeoutPtr,  NULL},
+            {"-headers",  Ns_ObjvSet,     &hdrPtr,      NULL},
             {"-method",   Ns_ObjvString,  &method,      NULL},
             {"-cert",     Ns_ObjvString,  &cert,        NULL},
             {"-cafile",   Ns_ObjvString,  &caFile,      NULL},
             {"-capath",   Ns_ObjvString,  &caPath,      NULL},
             {"-body",     Ns_ObjvObj,     &bodyPtr,     NULL},
-            {"-headers",  Ns_ObjvSet,     &hdrPtr,      NULL},
             {"-verify",   Ns_ObjvBool,    &verify,      NULL},
             {NULL, NULL,  NULL, NULL}
         };
@@ -679,163 +672,24 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
+	if (HttpsConnect(interp, method, url, hdrPtr, bodyPtr, 
+			 cert, caFile, caPath, verify,
+			 &httpsPtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
 
-        /*
-         * Parse and split url
-         */
+	httpPtr = &httpsPtr->http;
+        Ns_GetTime(&httpPtr->stime);
+        httpPtr->timeout = httpPtr->stime;
 
-        if (strncmp(url, "https://", 8) != 0 || url[8] == '\0') {
-            Tcl_AppendResult(interp, "invalid url: ", url, NULL);
-            return TCL_ERROR;
-        }
-        host = url + 8;
-        file = strchr(host, '/');
-        if (file != NULL) {
-            *file = '\0';
-        }
-        port = strchr(host, ':');
-        if (port == NULL) {
-            flag = 443;
-        } else {
-            *port = '\0';
-            flag = (int) strtol(port+1, NULL, 10);
-        }
-
-        /*
-         * Connect to the host and allocate session struct
-         */
-
-        sock = Ns_SockAsyncConnect(host, flag);
-        if (sock == INVALID_SOCKET) {
-            Tcl_AppendResult(interp, "connect to ", url, " failed: ", ns_sockstrerror(ns_sockerrno), NULL);
-            return TCL_ERROR;
-        }
-
-        sesPtr = ns_calloc(1, sizeof(Session));
-        sesPtr->sock = sock;
-        sesPtr->url = ns_strdup(url);
-        Tcl_DStringInit(&sesPtr->ds);
-
-        /*
-         *  Restore the url string
-         */
-
-        if (port != NULL) {
-            *port = ':';
-        }
-        if (file != NULL) {
-            *file = '/';
-        }
-
-        /*
-         * Now initialize OpenSSL context
-         */
-
-        sesPtr->ctx = SSL_CTX_new(SSLv23_client_method());
-        if (sesPtr->ctx == NULL) {
-            Tcl_AppendResult(interp, "ctx init failed: ", ERR_error_string(ERR_get_error(), NULL), NULL);
-            SessionClose(sesPtr);
-            return TCL_ERROR;
-        }
-        SSL_CTX_set_default_verify_paths(sesPtr->ctx);
-        SSL_CTX_load_verify_locations (sesPtr->ctx, caFile, caPath);
-        SSL_CTX_set_verify(sesPtr->ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
-        SSL_CTX_set_mode(sesPtr->ctx, SSL_MODE_AUTO_RETRY);
-        SSL_CTX_set_mode(sesPtr->ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
-
-        if (cert != NULL) {
-            if (SSL_CTX_use_certificate_chain_file(sesPtr->ctx, cert) != 1) {
-                Tcl_AppendResult(interp, "certificate load error: ", ERR_error_string(ERR_get_error(), NULL), NULL);
-                SessionClose(sesPtr);
-                return NS_ERROR;
-            }
-            if (SSL_CTX_use_PrivateKey_file(sesPtr->ctx, cert, SSL_FILETYPE_PEM) != 1) {
-                Tcl_AppendResult(interp, "private key load error: ", ERR_error_string(ERR_get_error(), NULL), NULL);
-                SessionClose(sesPtr);
-                return NS_ERROR;
-            }
-        }
-
-        sesPtr->ssl = SSL_new(sesPtr->ctx);
-        if (sesPtr->ssl == NULL) {
-            Tcl_AppendResult(interp, "ssl init failed: ", ERR_error_string(ERR_get_error(), NULL), NULL);
-            SessionClose(sesPtr);
-            return TCL_ERROR;
-        }
-
-        SSL_set_fd(sesPtr->ssl, sock);
-        SSL_set_connect_state(sesPtr->ssl);
-
-        if (SSL_connect(sesPtr->ssl) <= 0 || sesPtr->ssl->state != SSL_ST_OK) {
-            Tcl_AppendResult(interp, "ssl connect failed: ", ERR_error_string(ERR_get_error(), NULL), NULL);
-            SessionClose(sesPtr);
-            return TCL_ERROR;
-        }
-
-        Ns_DStringPrintf(&sesPtr->ds, "%s %s HTTP/1.0\r\n", method, file ? file : "/");
-
-        /*
-         * Submit provided headers
-         */
-
-        if (hdrPtr != NULL) {
-            for (i = 0; i < Ns_SetSize(hdrPtr); i++) {
-                key = Ns_SetKey(hdrPtr, i);
-                if (uaFlag) {
-                    uaFlag = strcasecmp(key, "User-Agent");
-                }
-                Ns_DStringPrintf(&sesPtr->ds, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
-            }
-        }
-
-        /*
-         * User-Agent header was not supplied, add our own header
-         */
-
-        if (uaFlag) {
-            Ns_DStringPrintf(&sesPtr->ds, "User-Agent: %s/%s\r\n",
-                             Ns_InfoServerName(),
-                             Ns_InfoServerVersion());
-        }
-
-        /*
-         * No keep-alive even in case of HTTP 1.1
-         */
-
-        Ns_DStringAppend(&sesPtr->ds, "Connection: close\r\n");
-        if (port == NULL) {
-            Ns_DStringPrintf(&sesPtr->ds, "Host: %s\r\n", host);
-        } else {
-            Ns_DStringPrintf(&sesPtr->ds, "Host: %s:%d\r\n", host, flag);
-        }
-
-        body = NULL;
-        if (bodyPtr != NULL) {
-            body = Tcl_GetStringFromObj(bodyPtr, &len);
-            if (len == 0) {
-                body = NULL;
-            }
-        }
-        if (body != NULL) {
-            Ns_DStringPrintf(&sesPtr->ds, "Content-Length: %d\r\n", len);
-        }
-        Tcl_DStringAppend(&sesPtr->ds, "\r\n", 2);
-        if (body != NULL) {
-            Tcl_DStringAppend(&sesPtr->ds, body, len);
-        }
-        sesPtr->next = sesPtr->ds.string;
-        sesPtr->len = sesPtr->ds.length;
-
-        Ns_GetTime(&sesPtr->stime);
-        sesPtr->timeout = sesPtr->stime;
         if (timeoutPtr != NULL) {
-            Ns_IncrTime(&sesPtr->timeout, timeoutPtr->sec, timeoutPtr->usec);
+            Ns_IncrTime(&httpPtr->timeout, timeoutPtr->sec, timeoutPtr->usec);
         } else {
-            Ns_IncrTime(&sesPtr->timeout, 2, 0);
+            Ns_IncrTime(&httpPtr->timeout, 2, 0);
         }
-        sesPtr->task = Ns_TaskCreate(sesPtr->sock, SessionProc, sesPtr);
+        httpPtr->task = Ns_TaskCreate(httpPtr->sock, HttpsProc, httpsPtr);
         if (run) {
-            Ns_TaskRun(sesPtr->task);
+            Ns_TaskRun(httpPtr->task);
         } else {
             if (session_queue == NULL) {
                 Ns_MasterLock();
@@ -844,8 +698,8 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
                 }
                 Ns_MasterUnlock();
             }
-            if (Ns_TaskEnqueue(sesPtr->task, session_queue) != NS_OK) {
-                SessionClose(sesPtr);
+            if (Ns_TaskEnqueue(httpPtr->task, session_queue) != NS_OK) {
+                HttpsClose(httpsPtr);
                 Tcl_AppendResult(interp, "could not queue ssl task", NULL);
                 return TCL_ERROR;
             }
@@ -856,7 +710,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             sprintf(buf, "ssl%d", i++);
             hPtr = Tcl_CreateHashEntry(&session_table, buf, &flag);
         } while (!flag);
-        Tcl_SetHashValue(hPtr, sesPtr);
+        Tcl_SetHashValue(hPtr, httpsPtr);
         Ns_MutexUnlock(&session_lock);
 
         Tcl_SetResult(interp, buf, TCL_VOLATILE);
@@ -864,19 +718,23 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     }
 
     case HWaitIdx: {
-        Tcl_Obj *elapsedPtr = NULL;
-        Tcl_Obj *resultPtr = NULL;
-        Tcl_Obj *statusPtr = NULL;
+        Tcl_Obj *elapsedVarPtr = NULL;
+        Tcl_Obj *resultVarPtr = NULL;
+        Tcl_Obj *statusVarPtr = NULL;
+        Tcl_Obj *fileVarPtr = NULL;
         Tcl_Obj *valPtr;
         char *id = NULL;
         Ns_Time diff;
+	int spoolLimit = -1;
 
         Ns_ObjvSpec opts[] = {
-            {"-timeout",  Ns_ObjvTime, &timeoutPtr,  NULL},
-            {"-elapsed",  Ns_ObjvObj,  &elapsedPtr,  NULL},
-            {"-result",   Ns_ObjvObj,  &resultPtr,   NULL},
-            {"-status",   Ns_ObjvObj,  &statusPtr,   NULL},
-            {"-headers",  Ns_ObjvSet,  &hdrPtr,      NULL},
+            {"-timeout",   Ns_ObjvTime, &timeoutPtr,     NULL},
+            {"-headers",   Ns_ObjvSet,  &hdrPtr,         NULL},
+            {"-elapsed",   Ns_ObjvObj,  &elapsedVarPtr,  NULL},
+            {"-result",    Ns_ObjvObj,  &resultVarPtr,   NULL},
+            {"-status",    Ns_ObjvObj,  &statusVarPtr,   NULL},
+	    {"-file",      Ns_ObjvObj,  &fileVarPtr,     NULL},
+	    {"-spoolsize", Ns_ObjvInt,  &spoolLimit,     NULL},
             {NULL, NULL,  NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
@@ -887,43 +745,86 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
-        if (!(sesPtr = SessionGet(interp, id))) {
+        if (!(httpsPtr = HttpsGet(interp, id))) {
             return TCL_ERROR;
         }
-        if (Ns_TaskWait(sesPtr->task, timeoutPtr) != NS_OK) {
-            SessionCancel(sesPtr);
+	httpPtr = &httpsPtr->http;
+
+	if (spoolLimit > -1) {
+	    if (hdrPtr == NULL) {
+	    /*
+	     * If no output headers are provided, we create our
+	     * own. The ns_set is needed for checking the content
+	     * length of the reply.
+	     */
+		hdrPtr = Ns_SetCreate("outputHeaders");
+	    }
+	    httpPtr->spoolLimit = spoolLimit;
+	    httpPtr->replyHeaders = hdrPtr;
+	    Ns_HttpCheckSpool(httpPtr);
+	}
+
+        if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
+            HttpsCancel(httpsPtr);
             Tcl_AppendResult(interp, "timeout waiting for task", NULL);
             return TCL_ERROR;
         }
-        if (elapsedPtr != NULL) {
-            Ns_DiffTime(&sesPtr->etime, &sesPtr->stime, &diff);
+	
+        if (elapsedVarPtr != NULL) {
+            Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
             valPtr = Tcl_NewObj();
             Ns_TclSetTimeObj(valPtr, &diff);
-            if (!SessionSetVar(interp, elapsedPtr, valPtr)) {
-                SessionClose(sesPtr);
-                return TCL_ERROR;
+            if (!Ns_SetNamedVar(interp, elapsedVarPtr, valPtr)) {
+		HttpsClose(httpsPtr);
+		return TCL_ERROR;
             }
         }
-        if (sesPtr->error) {
-            Tcl_AppendResult(interp, "ssl failed: ", sesPtr->error, NULL);
-            SessionClose(sesPtr);
+
+        if (httpPtr->error) {
+            Tcl_AppendResult(interp, "ns_ssl failed: ", httpPtr->error, NULL);
+            HttpsClose(httpsPtr);
             return TCL_ERROR;
         }
-        valPtr = SessionResult(&sesPtr->ds, &flag, hdrPtr);
-        if (statusPtr != NULL && !SessionSetVar(interp, statusPtr, Tcl_NewIntObj(flag))) {
-            SessionClose(sesPtr);
+
+	if (httpPtr->replyHeaderSize == 0) {
+	    Ns_HttpCheckHeader(httpPtr);
+	}
+	Ns_HttpCheckSpool(httpPtr);
+
+	Ns_Log(Notice, "SSL request finished %d <%s>", httpPtr->status, httpPtr->replyHeaders->name);
+	if (httpPtr->status == 0) {
+	    Ns_Log(Notice, "======= SSL response <%s>", httpPtr->ds.string);
+	}
+
+        if (statusVarPtr != NULL && !Ns_SetNamedVar(interp, statusVarPtr, Tcl_NewIntObj(httpPtr->status))) {
+            HttpsClose(httpsPtr);
             return TCL_ERROR;
         }
-        if (resultPtr == NULL) {
+	
+	if (httpPtr->spoolFd > 0)  {
+	    close(httpPtr->spoolFd);
+	    valPtr = Tcl_NewObj();
+	} else {
+	    valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
+					 (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
+	}
+
+	if (fileVarPtr && httpPtr->spoolFd > 0 
+	    && !Ns_SetNamedVar(interp, fileVarPtr, Tcl_NewStringObj(httpPtr->spoolFileName, -1))) {
+	    HttpsClose(httpsPtr);
+	    return TCL_ERROR;	
+	}
+
+        if (resultVarPtr == NULL) {
             Tcl_SetObjResult(interp, valPtr);
         } else {
-            if (!SessionSetVar(interp, resultPtr, valPtr)) {
-                SessionClose(sesPtr);
+            if (!Ns_SetNamedVar(interp, resultVarPtr, valPtr)) {
+                HttpsClose(httpsPtr);
                 return TCL_ERROR;
             }
             Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
         }
-        SessionClose(sesPtr);
+        HttpsClose(httpsPtr);
         break;
     }
 
@@ -932,18 +833,18 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             Tcl_WrongNumArgs(interp, 2, objv, "id");
             return TCL_ERROR;
         }
-        if (!(sesPtr = SessionGet(interp, Tcl_GetString(objv[2])))) {
+        if (!(httpsPtr = HttpsGet(interp, Tcl_GetString(objv[2])))) {
             return TCL_ERROR;
         }
-        SessionAbort(sesPtr);
+        HttpsAbort(httpsPtr);
         break;
 
     case HCleanupIdx:
         Ns_MutexLock(&session_lock);
         hPtr = Tcl_FirstHashEntry(&session_table, &search);
         while (hPtr != NULL) {
-            sesPtr = Tcl_GetHashValue(hPtr);
-            SessionAbort(sesPtr);
+            httpsPtr = Tcl_GetHashValue(hPtr);
+            HttpsAbort(httpsPtr);
             hPtr = Tcl_NextHashEntry(&search);
         }
         Tcl_DeleteHashTable(&session_table);
@@ -955,10 +856,11 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         Ns_MutexLock(&session_lock);
         hPtr = Tcl_FirstHashEntry(&session_table, &search);
         while (hPtr != NULL) {
-            sesPtr = Tcl_GetHashValue(hPtr);
+            httpsPtr = Tcl_GetHashValue(hPtr);
+	    httpPtr = &httpsPtr->http;
             Tcl_AppendResult(interp, Tcl_GetHashKey(&session_table, hPtr), " ",
-                             sesPtr->url, " ",
-                             Ns_TaskCompleted(sesPtr->task) ? "done" : "running",
+                             httpPtr->url, " ",
+                             Ns_TaskCompleted(httpPtr->task) ? "done" : "running",
                              " ", NULL);
             hPtr = Tcl_NextHashEntry(&search);
         }
@@ -972,9 +874,9 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 /*
  *----------------------------------------------------------------------
  *
- * SessionGet --
+ * HttpsGet --
  *
- *  Locate and remove the Session struct for a given id.
+ *  Locate and remove the Https struct for a given id.
  *
  * Results:
  *  pointer on success, NULL otherwise.
@@ -985,172 +887,294 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
  *----------------------------------------------------------------------
  */
 
-static Session *
-SessionGet(Tcl_Interp *interp, char *id)
+static Https *
+HttpsGet(Tcl_Interp *interp, char *id)
 {
-    Session *sesPtr = NULL;
+    Https *httpsPtr = NULL;
     Tcl_HashEntry *hPtr;
 
     Ns_MutexLock(&session_lock);
     hPtr = Tcl_FindHashEntry(&session_table, id);
     if (hPtr != NULL) {
-        sesPtr = Tcl_GetHashValue(hPtr);
+        httpsPtr = Tcl_GetHashValue(hPtr);
         Tcl_DeleteHashEntry(hPtr);
     } else {
         Tcl_AppendResult(interp, "no such request: ", id, NULL);
     }
     Ns_MutexUnlock(&session_lock);
-    return sesPtr;
+    return httpsPtr;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * SessionSetVar --
+ * HttpsConnect --
  *
- *  Set a variable by name.  Convience routine for for SessionWaitCmd.
+ *        Open a connection to the given URL host and construct
+ *        an Http structure to fetch the file.
  *
  * Results:
- *  1 on success, 0 otherwise.
+ *        Tcl result code.
  *
  * Side effects:
- *  None.
+ *        Updates httpsPtrPtr with newly allocated Https struct
+ *        on success.
  *
  *----------------------------------------------------------------------
  */
 
-static int
-SessionSetVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
+int
+HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, 
+	     char *cert, char *caFile, char *caPath, int verify,
+	     Https **httpsPtrPtr)
 {
-    Tcl_Obj *errPtr;
+    NS_SOCKET    sock;
+    Ns_HttpTask *httpPtr = NULL;
+    Https       *httpsPtr = NULL;
+    int          len, portNr, uaFlag = -1;
+    char        *host, *file, *port, *body;
+    char         hostBuffer[256];
+    
+    /*
+     * Parse and split url
+     */
+    
+    if (strncmp(url, "https://", 8) != 0 || url[8] == '\0') {
+	Tcl_AppendResult(interp, "invalid url: ", url, NULL);
+	return TCL_ERROR;
+    }
+    host = url + 8;
+    file = strchr(host, '/');
+    // Ns_Log(Notice, "XXX search host <%s> for slash => file <%s>", host, file);
+    if (file != NULL) {
+	*file = '\0';
+    }
+    //Ns_Log(Notice, "XXX remaining host <%s>", host);
+    port = strchr(host, ':');
+    if (port == NULL) {
+	portNr = 443;
+    } else {
+	*port = '\0';
+	portNr = (int) strtol(port+1, NULL, 10);
+    }
 
-    Tcl_IncrRefCount(valPtr);
-    errPtr = Tcl_ObjSetVar2(interp, varPtr, NULL, valPtr, TCL_PARSE_PART1|TCL_LEAVE_ERR_MSG);
-    Tcl_DecrRefCount(valPtr);
-    return (errPtr ? 1 : 0);
+    //Ns_Log(Notice, "XXX url <%s> port %d host <%s> file <%s>", url, portNr, host, file);
+    strncpy(hostBuffer, host, sizeof(hostBuffer));
+    
+    /*
+     * Connect to the host and allocate session struct
+     */
+
+    sock = Ns_SockAsyncConnect(hostBuffer, portNr);
+    if (sock == INVALID_SOCKET) {
+	Tcl_AppendResult(interp, "connect to ", url, " failed: ", ns_sockstrerror(ns_sockerrno), NULL);
+	return TCL_ERROR;
+    }
+
+    if (file != NULL) {
+	*file = '/';
+    }
+
+    httpsPtr = ns_calloc(1, sizeof(Https));
+    httpPtr  = &httpsPtr->http;
+
+    httpPtr->sock            = sock;
+    httpPtr->spoolLimit      = -1;
+    httpPtr->url             = ns_strdup(url);
+    Ns_MutexInit(&httpPtr->lock);
+    /*Ns_MutexSetName(&httpPtr->lock, name, buffer);*/
+    Tcl_DStringInit(&httpPtr->ds);
+
+    //Ns_Log(Notice, "url <%s> port %d sock %d host <%s> file <%s>", httpPtr->url, portNr, sock, hostBuffer, file);
+
+    /*
+     * Now initialize OpenSSL context
+     */
+    
+    httpsPtr->ctx = SSL_CTX_new(SSLv23_client_method());
+    if (httpsPtr->ctx == NULL) {
+	Tcl_AppendResult(interp, "ctx init failed: ", ERR_error_string(ERR_get_error(), NULL), NULL);
+	HttpsClose(httpsPtr);
+	return TCL_ERROR;
+    }
+
+    SSL_CTX_set_default_verify_paths(httpsPtr->ctx);
+    SSL_CTX_load_verify_locations (httpsPtr->ctx, caFile, caPath);
+    SSL_CTX_set_verify(httpsPtr->ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+    SSL_CTX_set_mode(httpsPtr->ctx, SSL_MODE_AUTO_RETRY);
+    SSL_CTX_set_mode(httpsPtr->ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    
+    if (cert != NULL) {
+	if (SSL_CTX_use_certificate_chain_file(httpsPtr->ctx, cert) != 1) {
+	    Tcl_AppendResult(interp, "certificate load error: ", ERR_error_string(ERR_get_error(), NULL), NULL);
+	    HttpsClose(httpsPtr);
+	    return TCL_ERROR;
+	}
+
+	if (SSL_CTX_use_PrivateKey_file(httpsPtr->ctx, cert, SSL_FILETYPE_PEM) != 1) {
+	    Tcl_AppendResult(interp, "private key load error: ", ERR_error_string(ERR_get_error(), NULL), NULL);
+	    HttpsClose(httpsPtr);
+	    return TCL_ERROR;
+	}
+    }
+    
+    httpsPtr->ssl = SSL_new(httpsPtr->ctx);
+    if (httpsPtr->ssl == NULL) {
+	Tcl_AppendResult(interp, "ssl init failed: ", ERR_error_string(ERR_get_error(), NULL), NULL);
+	HttpsClose(httpsPtr);
+	return TCL_ERROR;
+    }
+    
+    SSL_set_fd(httpsPtr->ssl, sock);
+    SSL_set_connect_state(httpsPtr->ssl);
+    
+    while (1) {
+	int rc, err;
+
+	Ns_Log(Debug, "ssl connect");
+	rc = SSL_connect(httpsPtr->ssl);
+	err = SSL_get_error(httpsPtr->ssl, rc);
+
+	if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+	    Ns_Time timeout = { 0, 10000 }; /* 10ms */
+	    Ns_SockTimedWait(sock, NS_SOCK_WRITE|NS_SOCK_READ, &timeout);
+	    continue;
+	}
+	break;
+    }
+
+    if (!SSL_is_init_finished(httpsPtr->ssl)) {
+	Tcl_AppendResult(interp, "ssl connect failed: ", ERR_error_string(ERR_get_error(), NULL), NULL);
+	HttpsClose(httpsPtr);
+	return TCL_ERROR;
+    }
+    
+    Ns_DStringPrintf(&httpPtr->ds, "%s %s HTTP/1.0\r\n", method, file ? file : "/");
+
+    /*
+     * Submit provided headers
+     */
+    
+    if (hdrPtr != NULL) {
+	int i;
+
+	/*
+	 * Remove the header fields, we are providing
+	 */
+	Ns_SetIDeleteKey(hdrPtr, "Host");
+	Ns_SetIDeleteKey(hdrPtr, "Connection");
+	Ns_SetIDeleteKey(hdrPtr, "Content-Length");
+
+	for (i = 0; i < Ns_SetSize(hdrPtr); i++) {
+	    char *key = Ns_SetKey(hdrPtr, i);
+	    if (uaFlag) {
+		uaFlag = strcasecmp(key, "User-Agent");
+	    }
+	    Ns_DStringPrintf(&httpPtr->ds, "%s: %s\r\n", key, Ns_SetValue(hdrPtr, i));
+	}
+    }
+
+    /*
+     * No keep-alive even in case of HTTP 1.1
+     */
+    Ns_DStringAppend(&httpPtr->ds, "Connection: close\r\n");
+    
+    /*
+     * User-Agent header was not supplied, add our own header
+     */
+    if (uaFlag) {
+	Ns_DStringPrintf(&httpPtr->ds, "User-Agent: %s/%s\r\n",
+			 Ns_InfoServerName(),
+			 Ns_InfoServerVersion());
+    }
+    
+    if (port == NULL) {
+	Ns_DStringPrintf(&httpPtr->ds, "Host: %s\r\n", hostBuffer);
+    } else {
+	Ns_DStringPrintf(&httpPtr->ds, "Host: %s:%d\r\n", hostBuffer, portNr);
+    }
+
+    body = NULL;
+    if (bodyPtr != NULL) {
+	body = Tcl_GetStringFromObj(bodyPtr, &len);
+	if (len == 0) {
+	    body = NULL;
+	}
+    }
+    if (body != NULL) {
+	Ns_DStringPrintf(&httpPtr->ds, "Content-Length: %d\r\n", len);
+    }
+    Tcl_DStringAppend(&httpPtr->ds, "\r\n", 2);
+    if (body != NULL) {
+	Tcl_DStringAppend(&httpPtr->ds, body, len);
+    }
+    httpPtr->next = httpPtr->ds.string;
+    httpPtr->len = httpPtr->ds.length;
+
+    /*Ns_Log(Notice, "final request <%s>", httpPtr->ds.string);*/
+    
+    *httpsPtrPtr = httpsPtr;
+    return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * SessionResult --
+ * HttpsClose --
  *
- *        Parse an Session response for the result body and headers.
+ *        Finish Http Task and cleanup memory
  *
  * Results:
- *        Pointer to body within Session buffer.
+ *        None
  *
  * Side effects:
- *        Will append parsed response headers to given hdrs if
- *        not NULL and set HTTP status code in given statusPtr.
+ *        Free up memory
  *
  *----------------------------------------------------------------------
  */
-
-static Tcl_Obj *
-SessionResult(Tcl_DString *ds, int *statusPtr, Ns_Set *hdrs)
-{
-    char *eoh, *body, *response;
-    int major, minor;
-    Tcl_Obj *result;
-
-    body = response = ds->string;
-    eoh = strstr(response, "\r\n\r\n");
-    if (eoh != NULL) {
-        body = eoh + 4;
-        eoh += 2;
-    } else {
-        eoh = strstr(response, "\n\n");
-        if (eoh != NULL) {
-            body = eoh + 2;
-            eoh += 1;
-        }
-    }
-
-    result = Tcl_NewByteArrayObj((unsigned char*)body, ds->length-(body-response));
-
-    if (eoh == NULL) {
-        *statusPtr = 0;
-    } else {
-        *eoh = '\0';
-        sscanf(response, "HTTP/%d.%d %d", &major, &minor, statusPtr);
-        if (hdrs != NULL) {
-	    char *p, save;
-	    int firsthdr;
-
-            save = *body;
-            *body = '\0';
-            firsthdr = 1;
-            p = response;
-            while ((eoh = strchr(p, '\n')) != NULL) {
-		int len;
-                *eoh++ = '\0';
-                len = strlen(p);
-                if (len > 0 && p[len-1] == '\r') {
-                    p[len-1] = '\0';
-                }
-                if (firsthdr) {
-                    if (hdrs->name != NULL) {
-                        ns_free(hdrs->name);
-                    }
-                    hdrs->name = ns_strdup(p);
-                    firsthdr = 0;
-                } else
-                if (Ns_ParseHeader(hdrs, p, ToLower) != NS_OK) {
-                    break;
-                }
-                p = eoh;
-            }
-            *body = save;
-        }
-    }
-    return result;
-}
-
 static void
-SessionClose(Session *sesPtr)
+HttpsClose(Https *httpsPtr)
 {
-    if (sesPtr->task != NULL) {
-        Ns_TaskFree(sesPtr->task);
+    Ns_HttpTask *httpPtr = &httpsPtr->http;
+
+    if (httpPtr->task != NULL) {Ns_TaskFree(httpPtr->task);}
+    if (httpsPtr->ssl != NULL) {
+        SSL_shutdown(httpsPtr->ssl);
+        SSL_free(httpsPtr->ssl);
     }
-    if (sesPtr->ssl != NULL) {
-        SSL_shutdown(sesPtr->ssl);
-        SSL_free(sesPtr->ssl);
-    }
-    if (sesPtr->ctx != NULL) {
-        SSL_CTX_free(sesPtr->ctx);
-    }
-    if (sesPtr->sock > 0) {
-        ns_sockclose(sesPtr->sock);
-    }
-    Tcl_DStringFree(&sesPtr->ds);
-    ns_free(sesPtr->url);
-    ns_free(sesPtr);
+    if (httpsPtr->ctx != NULL)  {SSL_CTX_free(httpsPtr->ctx);}
+    if (httpPtr->sock > 0)      {ns_sockclose(httpPtr->sock);}
+    if (httpPtr->spoolFileName) {ns_free(httpPtr->spoolFileName);}
+    if (httpPtr->spoolFd > 0)   {close(httpPtr->spoolFd);}
+    Ns_MutexDestroy(&httpPtr->lock);
+    Tcl_DStringFree(&httpPtr->ds);
+    ns_free(httpPtr->url);
+    ns_free(httpsPtr);
 }
 
 
 static void
-SessionCancel(Session *sesPtr)
+HttpsCancel(Https *httpsPtr)
 {
-    Ns_TaskCancel(sesPtr->task);
-    Ns_TaskWait(sesPtr->task, NULL);
+    Ns_HttpTask *httpPtr = &httpsPtr->http;
+
+    Ns_TaskCancel(httpPtr->task);
+    Ns_TaskWait(httpPtr->task, NULL);
 }
 
 
 static void
-SessionAbort(Session *sesPtr)
+HttpsAbort(Https *httpsPtr)
 {
-    SessionCancel(sesPtr);
-    SessionClose(sesPtr);
+    HttpsCancel(httpsPtr);
+    HttpsClose(httpsPtr);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * SessionProc --
+ * HttpsProc --
  *
  *        Task callback for ns_http connections.
  *
@@ -1165,47 +1189,100 @@ SessionAbort(Session *sesPtr)
  */
 
 static void
-SessionProc(Ns_Task *task, SOCKET sock, void *arg, int why)
+HttpsProc(Ns_Task *task, SOCKET sock, void *arg, int why)
 {
-    Session *sesPtr = arg;
-    char buf[4096];
-    int n;
+    Https       *httpsPtr = arg;
+    Ns_HttpTask *httpPtr  = &httpsPtr->http;
+    char buf[16384];
+    int n, err, got;
 
     switch (why) {
     case NS_SOCK_INIT:
-    Ns_TaskCallback(task, NS_SOCK_WRITE, &sesPtr->timeout);
-    return;
+	Ns_TaskCallback(task, NS_SOCK_WRITE, &httpPtr->timeout);
+	return;
 
     case NS_SOCK_WRITE:
-        do {
-           n = SSL_write(sesPtr->ssl, sesPtr->next, sesPtr->len);
-        } while (n == -1 && SSL_get_error(sesPtr->ssl, n) == SSL_ERROR_SYSCALL && errno == EINTR);
+
+	while (1) {
+	    n = SSL_write(httpsPtr->ssl, httpPtr->next, httpPtr->len);
+	    err = SSL_get_error(httpsPtr->ssl, n);
+	    if (err == SSL_ERROR_WANT_WRITE) {
+		Ns_Time timeout = { 0, 10000 }; /* 10ms */
+		Ns_SockTimedWait(httpPtr->sock, NS_SOCK_WRITE, &timeout);
+		continue;
+	    }
+	    break;
+	}
 
         if (n < 0) {
-            sesPtr->error = "send failed";
+            httpPtr->error = "send failed";
         } else {
-            sesPtr->next += n;
-            sesPtr->len -= n;
-            if (sesPtr->len == 0) {
-                shutdown(sock, 1);
-                Tcl_DStringTrunc(&sesPtr->ds, 0);
-                Ns_TaskCallback(task, NS_SOCK_READ, &sesPtr->timeout);
+            httpPtr->next += n;
+            httpPtr->len -= n;
+            if (httpPtr->len == 0) {
+		SSL_set_shutdown(httpsPtr->ssl, SSL_SENT_SHUTDOWN);
+                /*shutdown(sock, 1);*/
+		/*Ns_Log(Notice, "SSL WRITE done, switch to READ");*/
+                Tcl_DStringTrunc(&httpPtr->ds, 0);
+                Ns_TaskCallback(task, NS_SOCK_READ, &httpPtr->timeout);
             }
             return;
         }
         break;
 
     case NS_SOCK_READ:
-        do {
-           n = SSL_read(sesPtr->ssl, buf, sizeof(buf));
-        } while (n == -1 && SSL_get_error(sesPtr->ssl, n) == SSL_ERROR_SYSCALL && errno == EINTR);
+	got = 0;
+        while (1) {
+	    n = SSL_read(httpsPtr->ssl, buf+got, sizeof(buf)-got);
+	    err = SSL_get_error(httpsPtr->ssl, n);
+	    /*fprintf(stderr, "### SSL_read n %d got %d err %d\n", n, got, err); */
+	    switch (err) {
+	    case SSL_ERROR_NONE: 
+		if (n < 0) { 
+		    fprintf(stderr, "### SSL_read should not happen\n"); 
+		    break;
+		}
+		got += n;
+		break;
 
-        if (n > 0) {
-            Tcl_DStringAppend(&sesPtr->ds, buf, n);
+	    case SSL_ERROR_WANT_READ: 
+		/*fprintf(stderr, "### WANT read, n %d\n", (int)n); */
+		got += n;
+		continue;
+	    }
+	    break;
+        }
+	n = got;
+
+	/*Ns_Log(Notice, "Task READ got %d bytes err %d", (int)n, err);*/
+	
+        if (likely(n > 0)) {
+	    /* 
+	     * In case we are spooling, write to the spoolfile,
+	     * otherwise append to the DString. Spooling is only
+	     * activated after (a) having processed the headers, and
+	     * (b) after the wait command has required to spool. Both
+	     * conditions are necessary, but might be happen in
+	     * different orders.
+	     */
+	    if (httpPtr->spoolFd > 0) {
+		Ns_Log(Debug, "Task got %d bytes, spooled", (int)n);
+		write(httpPtr->spoolFd, buf, n);
+	    } else {
+		Tcl_DStringAppend(&httpPtr->ds, buf, n);
+		if (unlikely(httpPtr->replyHeaderSize == 0)) {
+		    Ns_HttpCheckHeader(httpPtr);
+		}
+		/*
+		 * Ns_HttpCheckSpool might set httpPtr->spoolFd
+		 */
+		Ns_HttpCheckSpool(httpPtr);
+		/*Ns_Log(Notice, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
+	    }
             return;
         }
         if (n < 0) {
-            sesPtr->error = "recv failed";
+            httpPtr->error = "recv failed";
         }
         break;
 
@@ -1213,15 +1290,15 @@ SessionProc(Ns_Task *task, SOCKET sock, void *arg, int why)
         return;
 
     case NS_SOCK_TIMEOUT:
-        sesPtr->error = "timeout";
+        httpPtr->error = "timeout";
         break;
 
     case NS_SOCK_EXIT:
-        sesPtr->error = "shutdown";
+        httpPtr->error = "shutdown";
         break;
 
     case NS_SOCK_CANCEL:
-        sesPtr->error = "cancelled";
+        httpPtr->error = "cancelled";
         break;
     }
 
@@ -1229,7 +1306,7 @@ SessionProc(Ns_Task *task, SOCKET sock, void *arg, int why)
      * Get completion time and mark task as done.
      */
 
-    Ns_GetTime(&sesPtr->etime);
-    Ns_TaskDone(sesPtr->task);
+    Ns_GetTime(&httpPtr->etime);
+    Ns_TaskDone(httpPtr->task);
 }
 
