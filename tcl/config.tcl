@@ -76,10 +76,10 @@ proc _ns_config_global_limits {} {
 
             if {[catch {
                 array set l [ns_limits_set \
-                    -maxrun    [ns_config -int $path maxrun    100] \
-                    -maxwait   [ns_config -int $path maxwait   100] \
-                    -maxupload [ns_config -int $path maxupload 10240000] \
-                    -timeout   [ns_config -int $path timeout   60] \
+                    -maxrun    [ns_config -int -set $path maxrun    100] \
+                    -maxwait   [ns_config -int -set $path maxwait   100] \
+                    -maxupload [ns_config -int -set $path maxupload 10240000] \
+                    -timeout   [ns_config -int -set $path timeout   60] \
                     $limit ]
             } errmsg]} {
                 ns_log error limits: $errmsg
@@ -150,7 +150,7 @@ proc _ns_config_server_adp_pages {server} {
 
 proc _ns_config_server_tcl_pages {server} {
 
-	if {[ns_config -bool "ns/server/$server/adp" enabletclpages false]} {
+	if {[ns_config -bool -set "ns/server/$server/adp" enabletclpages false]} {
 		foreach {method} {GET HEAD POST} {
 			ns_register_tcl $method /*.tcl
 		}

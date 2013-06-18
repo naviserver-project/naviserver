@@ -39,13 +39,13 @@
 
 set path ns/server/[ns_info server]/fastpath
 
-nsv_set _ns_fastpath type      [ns_config $path directorylisting   none]
-nsv_set _ns_fastpath hidedot   [ns_config -bool $path hidedotfiles    1]
+nsv_set _ns_fastpath type      [ns_config -set $path directorylisting   none]
+nsv_set _ns_fastpath hidedot   [ns_config -bool -set $path hidedotfiles    1]
 
 # the following three lines are apparently not used anymore
-#nsv_set _ns_fastpath toppage   [ns_config -bool $path returnmwtoppage 0]
-#nsv_set _ns_fastpath builddirs [ns_config -bool $path builddirs       0]
-#nsv_set _ns_fastpath serverlog [ns_config -bool $path serverlog       1]
+#nsv_set _ns_fastpath toppage   [ns_config -bool -set $path returnmwtoppage 0]
+#nsv_set _ns_fastpath builddirs [ns_config -bool -set $path builddirs       0]
+#nsv_set _ns_fastpath serverlog [ns_config -bool -set $path serverlog       1]
 
 #
 # ns_returnok --

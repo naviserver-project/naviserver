@@ -54,10 +54,10 @@ ns_runonce -global {
 
             if {[catch {
                 array set l [ns_limits_set \
-                    -maxrun    [ns_config -int $path maxrun    100] \
-                    -maxwait   [ns_config -int $path maxwait   100] \
-                    -maxupload [ns_config -int $path maxupload 10240000] \
-                    -timeout   [ns_config -int $path timeout   60] \
+                    -maxrun    [ns_config -int -set $path maxrun    100] \
+                    -maxwait   [ns_config -int -set $path maxwait   100] \
+                    -maxupload [ns_config -int -set $path maxupload 10240000] \
+                    -timeout   [ns_config -int -set $path timeout   60] \
                     $limit ]
             } errmsg]} {
                 ns_log error limits: $errmsg

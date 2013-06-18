@@ -182,7 +182,7 @@ proc __ns_sourcemodule {modname} {
 source [file join [ns_library shared] nstrace.tcl]
 
 set section ns/server/[ns_info server]/tcl
-set use_trace_inits [ns_config -bool $section lazyloader false]
+set use_trace_inits [ns_config -bool -set $section lazyloader false]
 
 if {$use_trace_inits} {
 

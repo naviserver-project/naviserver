@@ -600,10 +600,10 @@ proc _ns_http_getcontent {timeout sock length {copy 0}} {
 # All requests that start with http:// will be proxied.
 #
 
-if {[ns_config -bool ns/server/[ns_info server] enablehttpproxy off]} {
+if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
     ns_register_proxy GET  http ns_proxy_handler_http
     ns_register_proxy POST http ns_proxy_handler_http
-    nsv_set ns:proxy allow [ns_config ns/server/[ns_info server] allowhttpproxy]
+    nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
 }
 
 proc ns_proxy_handler_http {args} {

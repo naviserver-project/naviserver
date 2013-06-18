@@ -35,7 +35,7 @@
 
 set path "ns/server/[ns_info server]/tcl"
 ns_cache_create ns:memoize \
-    [ns_config -int $path memoizecache [expr {1024*1024*10}]]
+    [ns_config -int -set $path memoizecache [expr {1024*1024*10}]]
 
 #
 # ns_memoize --

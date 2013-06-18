@@ -174,7 +174,7 @@ proc ns_encodingfortype {type} {
     if {[regexp {;[ \t\r\n]*charset[ \t\r\n]*=([^;]*)} $type junk set]} {
         return [ns_encodingforcharset [string trim $set]]
     } elseif {[string match "text/*" $type]} {
-        set set [ns_config ns/parameters OutputCharset iso-8859-1]
+        set set [ns_config -set ns/parameters OutputCharset iso-8859-1]
         return [ns_encodingforcharset $set]
     } else {
         return binary
@@ -199,10 +199,10 @@ proc ns_encodingfortype {type} {
 proc ns_choosecharset {args} {
 
     set preffered_charsets \
-        [ns_config ns/parameters PreferredCharsets {utf-8 iso-8859-1}]
+        [ns_config -set ns/parameters PreferredCharsets {utf-8 iso-8859-1}]
     
     set default_charset \
-        [ns_config ns/parameters OutputCharset iso-8859-1]
+        [ns_config -set ns/parameters OutputCharset iso-8859-1]
     
     for {set i 0; set n [llength $args]} {$i < $n} {incr i} {
         set arg [lindex $args $i]

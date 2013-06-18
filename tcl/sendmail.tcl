@@ -116,8 +116,8 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
     # Apply encoding on subject, body, if configured
     #
 
-    if {[ns_config ns/parameters smtpencodingmode false]} {
-        set encoding [ns_config ns/parameters smtpencoding "utf-8"]
+    if {[ns_config -set ns/parameters smtpencodingmode false]} {
+        set encoding [ns_config -set ns/parameters smtpencoding "utf-8"]
         set quotemsg 0
 
         set cbody [encoding convertto $encoding $body]
@@ -199,7 +199,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
         set host [ns_info hostname]
     }
 
-    if {[ns_config ns/parameters smtpmsgid false] &&
+    if {[ns_config -set ns/parameters smtpmsgid false] &&
         ($headers eq {} || ([ns_set iget $headers "Message-ID"] eq {}))} {
         set threads [ns_info threads]
         set nowsecs [clock seconds]
@@ -247,11 +247,11 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
     #
 
     set smtphost [ns_config ns/parameters smtphost]
-    set smtpport [ns_config ns/parameters smtpport 25]
-    set timeout  [ns_config ns/parameters smtptimeout 60]
+    set smtpport [ns_config -set ns/parameters smtpport 25]
+    set timeout  [ns_config -set ns/parameters smtptimeout 60]
 
     if {$smtphost eq {}} { 
-        set smtphost [ns_config ns/parameters mailhost "localhost"]
+        set smtphost [ns_config -set ns/parameters mailhost "localhost"]
     }
 
     set fds [ns_sockopen -timeout $timeout $smtphost $smtpport]
@@ -495,12 +495,12 @@ proc _ns_sendmail_breaklines {string} {
 
 proc _ns_smtp_send {mode sock string} {
 
-    if {[ns_config -bool ns/parameters smtplogmode false]} {
+    if {[ns_config -bool -set ns/parameters smtplogmode false]} {
         ns_log notice "S: $mode $sock $string"
         return ""
     }
 
-    set tout [ns_config ns/parameters smtptimeout 60]
+    set tout [ns_config -set ns/parameters smtptimeout 60]
 
     foreach line [split $string "\n"] {
       if {[lindex [ns_sockselect -timeout $tout {} $sock {}] 1] eq {}} {
@@ -529,12 +529,12 @@ proc _ns_smtp_send {mode sock string} {
 
 proc _ns_smtp_recv {mode sock check {error 1}} {
 
-    if {[ns_config -bool ns/parameters smtplogmode false]} {
+    if {[ns_config -bool -set ns/parameters smtplogmode false]} {
         ns_log notice "R: $mode $sock $check"
         return ""
     }
 
-    set tout [ns_config ns/parameters smtptimeout 60]
+    set tout [ns_config -set ns/parameters smtptimeout 60]
 
     while (1) {
         if {[lindex [ns_sockselect -timeout $tout $sock {} {}] 0] eq {}} {

@@ -144,9 +144,9 @@ ns_runonce {
 
    set path ns/server/[ns_info server]/module/nsperm
 
-   if { [ns_config -bool $path htaccess 0] } {
+   if { [ns_config -bool -set $path htaccess 0] } {
       nsv_set nsperm lock [ns_mutex create]
-      nsv_set nsperm passwdfile [ns_config $path passwdfile [file join [ns_info home] modules nsperm passwd]]
+      nsv_set nsperm passwdfile [ns_config -set $path passwdfile [file join [ns_info home] modules nsperm passwd]]
       ns_register_filter preauth GET /* ns_perm_filter
 
       ns_log Notice nsperm: enabling .htaccess support

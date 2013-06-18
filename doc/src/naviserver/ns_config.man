@@ -38,6 +38,7 @@ configuration file.
       [opt [option "-min [arg minint]"] ] \
       [opt [option "-max [arg maxint]"] ] \
       [opt [option -exact] ] \
+      [opt [option -set] ]\
       [arg section] \
       [arg key] \
       [opt [arg default] ] ]
@@ -73,6 +74,11 @@ if the parameter > [arg maxint], unless a valid default value is given.
 
 [opt_def -exact]
 Specifies case-sensitive parameter key matching. Not recommended.
+
+[opt_def -set]
+Specifies that the parameter is set to the default value,
+when this parameter was not provided earlier. This makes
+the default later retrievable via ns_config.
 
 [list_end]
 

@@ -10,7 +10,7 @@ eval ::tcltest::configure $argv
 test ns_config-1.1 {basic syntax} -body {
     ns_config
 } -returnCodes error -result \
-    {wrong # args: should be "ns_config ?-bool? ?-int? ?-min min? ?-max max? ?-exact? ?--? section key ?default?"}
+    {wrong # args: should be "ns_config ?-bool? ?-int? ?-min min? ?-max max? ?-exact? ?-set? ?--? section key ?default?"}
 
 
 
@@ -145,6 +145,22 @@ test ns_config-7.3 {section missing} -body {
     ns_configsection does/not/exist
 } -result {}
 
+
+test ns_config-8.1 {missing -set} -body {
+    ns_config ns/testconfig missing missing
+} -result {missing}
+
+test ns_config-8.2 {missing -set} -body {
+    ns_config ns/testconfig missing 
+} -result {}
+
+test ns_config-8.3 {missing -set} -body {
+    ns_config ns/testconfig missing here 
+} -result {here}
+
+test ns_config-8.4 {missing -set} -body {
+    ns_config ns/testconfig missing here 
+} -result {here}
 
 
 

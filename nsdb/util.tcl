@@ -45,7 +45,7 @@ nsv_set _nsdb months [list January February March April May June \
 # on server shutdown
 #
 
-if { [ns_config -bool ns/parameters dbcloseonexit off] } {
+if { [ns_config -bool -set ns/parameters dbcloseonexit off] } {
   ns_log Notice conf: enabling nsdb onexit handler
   ns_atexit ns_dbshutdown
 }
