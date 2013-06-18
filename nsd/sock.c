@@ -381,25 +381,23 @@ Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr)
         msec = timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000;
     }
     pfd.fd = sock;
+    pfd.events = 0;
 
-    switch (what) {
-    case NS_SOCK_READ:
-        pfd.events = POLLIN;
-        break;
-    case NS_SOCK_WRITE:
-        pfd.events = POLLOUT;
-        break;
-    case NS_SOCK_EXCEPTION:
-        pfd.events = POLLPRI;
-        break;
-    default:
-        return NS_ERROR;
-        break;
+    if (what & NS_SOCK_READ) {
+	pfd.events |= POLLIN;
     }
+    if (what & NS_SOCK_WRITE) {
+	pfd.events |= POLLOUT;
+    }
+    if (what & NS_SOCK_EXCEPTION) {
+	pfd.events |= POLLPRI;
+    }
+
     pfd.revents = 0;
     do {
         n = ns_poll(&pfd, 1, msec);
     } while (n < 0 && errno == EINTR);
+
     if (n > 0) {
         return NS_OK;
     }
