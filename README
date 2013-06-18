@@ -1,5 +1,5 @@
-SSL driver for NaviServer 4.99.x
-Release 0.2
+SSL driver for NaviServer 4.99.5
+Release 0.3
 vlad@crystalballinc.com
 neumann@wu-wien.ac.at
 
@@ -11,6 +11,10 @@ New in Version 0.2:
  - Performance improvements: E.g. support for TCP_CORK and deferaccept
  - Strengthen security against BEAST and CRIME attack
 
+New in Version 0.3:
+ - ns_ssl working with asynchronous I/O
+ - ns_ssl: spooling of large content to a file instead of memory
+ - requires NaviServer 4.99.6
 
 /*--------------------------------------------------------------------*/
 
@@ -51,10 +55,20 @@ New in Version 0.2:
 
  Usage
 
-   There is Tcl command ns_ssl provided by the module, usage is the same as ns_http command,
-   it does HTTP requests over SSL
+   The module provide additionally the command "ns_ssl" 
+   which is the http conterpart to "ns_http". 
+
+    ns_ssl cancel id
+    ns_ssl cleanup
+    ns_ssl list
+    ns_ssl queue ?-method M? ?-headers S? ?-body B? ?-timeout T? ?-cert C? ?-cafile CA? ?-capath CP? ?-verify? -url
+    ns_ssl run ?-method M? ?-headers S? ?-body B? ?-timeout T? url
+    ns_ssl wait ?-elapsed varName? ?-file varName? ?-headers H? ?-result varName? ?-spoolsize int? ?-status varName? ?-timeout t? id
+
+  See the naviserver documentation of "ns_http" for usage and details about the options.
 
  Authors
 
      Vlad Seryakov vlad@crystalballinc.com
+     Gustaf Neumann neumann@wu-wien.ac.at
 
