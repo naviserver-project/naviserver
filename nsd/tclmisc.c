@@ -281,6 +281,35 @@ Ns_LogDeprecated(Tcl_Obj *CONST objv[], int objc, char *alternative, char *expla
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_SetNamedVar --
+ *
+ *	Set a variable by denoted by a name.  Convenience routine for
+ *	tcl-commands, when var names are passed in (e.g ns_http).
+ *
+ * Results:
+ *	1 on success, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
+{
+    Tcl_Obj *errPtr;
+
+    Tcl_IncrRefCount(valPtr);
+    errPtr = Tcl_ObjSetVar2(interp, varPtr, NULL, valPtr,
+			       TCL_PARSE_PART1|TCL_LEAVE_ERR_MSG);
+    Tcl_DecrRefCount(valPtr);
+    return (errPtr ? 1 : 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclStripHtmlCmd --
  *
  *      Implements ns_striphtml.

@@ -524,6 +524,29 @@ typedef struct Ns_DriverInitData {
 } Ns_DriverInitData;
 
 /*
+ * For HTTP tasks (in ns_http and ns_https)
+ */
+typedef struct {
+    Ns_Task    *task;
+    NS_SOCKET   sock;
+    int         status;
+    char       *url;
+    char       *error;
+    char       *next;             /* write to client */
+    size_t      len;              /* size of request */
+    int         replyHeaderSize;
+    Ns_Set     *replyHeaders;     /* ns_set for header fields of the reply */
+    int         spoolLimit;       /* spool to file, when this body > this size */
+    int         spoolFd;          /* fd of spool file */
+    char       *spoolFileName;    /* filename of spoolfile */
+    Ns_Mutex    lock;             /* needed for switching modes (spooling to file/memory) */
+    Ns_Time     timeout;
+    Ns_Time     stime;
+    Ns_Time     etime;
+    Tcl_DString ds;
+} Ns_HttpTask;
+
+/*
  * MD5 digest implementation
  */
 
@@ -2696,9 +2719,26 @@ NS_EXTERN void
 Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED;
 
+
+/*
+ * tclhttp.c
+ */
+NS_EXTERN void
+Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void
+Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
+    NS_GNUC_NONNULL(1); 
+
 /*
  * tclmisc.c
  */
+
+NS_EXTERN int
+Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 
 NS_EXTERN void Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
      NS_GNUC_PRINTF(2, 3);

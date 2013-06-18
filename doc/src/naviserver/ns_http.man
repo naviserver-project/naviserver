@@ -30,7 +30,9 @@ id url done|running ....
 	[opt [arg {-method M}]] \
 	[opt [arg {-headers S}]] \
 	[opt [arg {-body B}]] \
-	[opt [arg {-timeout T}]]]
+	[opt [arg {-timeout T}]] \
+	[arg url] \
+	]
 
 [arg -method]
 use the specified HTTP method such as GET or POST or HEAD
@@ -39,23 +41,28 @@ use the specified HTTP method such as GET or POST or HEAD
 [arg -headers]
 headers is the ns_set ID containing the additional headers to include in the HTTP request.
 
+[para]
 [arg -body]
 body is the value which will be sent as the HTTP request body.
 
+[para]
 [arg -timeout]
 Timeout for how long to wait reply back from the web server
 
 [para]
-The command [cmd "ns_http queue"] returns the ns_set ID of the HTTP
-request, which might be used later for waiting for this request or
-canceling this request.
+The command [cmd "ns_http queue"] opens a connection to the web server
+denoted in the [arg url] and returns on success the [arg id] of the HTTP
+request, which might be used later in a [cmd "ns_http wait"] 
+or [cmd "ns_http cancel"] command to refer to this request.
 
 
 [call [cmd "ns_http run"] \
 	[opt [arg {-method M}]] \
 	[opt [arg {-headers S}]] \
 	[opt [arg {-body B}]] \
-	[opt [arg {-timeout T}]]]
+	[opt [arg {-timeout T}]] \
+	[arg url] \
+	]
 
 [para] 
 Send a HTTP reuqest and wait for the result.  The command 
@@ -64,35 +71,57 @@ Send a HTTP reuqest and wait for the result.  The command
 
 
 [call [cmd "ns_http wait"] \
-	[opt [arg {-result var}]] \
-	[opt [arg {-status var}]] \
-	[opt [arg {-timeout t}]] \
+	[opt [arg {-elapsed varName}]] \
+	[opt [arg {-file varName}]] \
 	[opt [arg {-headers H}]] \
-	[opt [arg {-elapsed var}]] \
+	[opt [arg {-result varName}]] \
+	[opt [arg {-spoolsize int}]] \
+	[opt [arg {-status varName}]] \
+	[opt [arg {-timeout t}]] \
 	[arg id]]
 
+[para]
 [arg -elapsed]
-var is the name of a variable that should be used to store the elapsed time for the request from beginning to finish
+varName is the name of a variable that should be used to store the elapsed
+time for the request from beginning to finish
 
 [para]
-[arg -result]
-var is the name of a variable that should be used to store the HTTP response body.
-
-[para]
-[arg -status]
-var is the name of a variable that should be used to store the HTTP response status
-
-[para]
-[arg -timeout]
-Default timeout is "2:0" (2s, 0usec).
+[arg -file]
+varName is the name of a variable that will contain the name of the 
+temporary file in case the request was larger than [arg -spoolsize]
 
 [para]
 [arg -headers]
 headers is the ns_set ID which will receive the headers from the HTTP response.
 
 [para]
+[arg -result]
+varName is the name of a variable that should be used to store the HTTP response body.
+
+[para]
+[arg -spoolsize]
+In case the result is larger than spoolsize, it will be spooled to a
+temporary file returned in the variable denoted by [arg -file].
+
+[para]
+[arg -status]
+varName is the name of a variable that should be used to store the HTTP response status
+
+[para]
+[arg -timeout]
+Timeout for the request. Default timeout is "2:0" (2s, 0usec).
+
+[para]
 [arg id]
 ns_set ID of the HTTP request to wait for.
+
+[para]
+The command [cmd "ns_http wait"] specifies, how the results of request
+should be delivered and what information should be obtained from the
+request in which form. The command waits until the request is
+finished. For retrieving large content (e.g. .mp4 files) from a
+server, it is recommended to use the [arg -spoolsize] option,
+since per default the results are received into memory.
 
 [list_end]
 
