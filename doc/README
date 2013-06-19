@@ -1,0 +1,86 @@
+
+#
+# Things to remember when writing man pages
+#
+
+This README file is an initial attempt to provide a guideline on how to
+structure and how to use the markup options of dtplite for the
+naviserver documentation. It took me always quite a long time how to
+figure one could or should to use dtplite so i starte writing this.
+Judging from the different usage pattern in the documentation, i guess
+others had similar problems. 
+
+However this is just a first start and is aimed to provide
+best-practice examples.
+
+Structure:
+==========
+
+- Begin of man page
+- [section COMMANDS]
+- [section OPTIONS]
+- [section EXAMPLES]
+- [section CONFIGURATION]
+- End of man page
+
+
+Begin of a man page:
+====================
+
+[include version_include.man]
+
+[manpage_begin ns_cache n [vset version]]
+[moddesc   {NaviServer Built-In Commands}]
+[titledesc {Cache manipulation}]
+
+... general description ...
+
+Sample definition of a command:
+===============================
+
+[call [cmd ns_xxxx] \
+        [opt [option "-contents"]] \
+        [opt [option "-reset"]] \
+	[opt [option "-status [arg status]"]] \
+        [opt [arg --]] \
+        [arg name] ]
+
+References in the text:
+=======================
+the command .... receives optionally the option [option -content] ... 
+and the argument [arg name] ...
+Refer to a different command directly with [cmd ns_time] ...
+the command xxxx return [term true] if the...
+this is [emph important]
+this is a URL [uri http://....]
+this is a constant [const 10]
+
+http://docs.activestate.com/activetcl/8.5/tcllib/doctools/doctools_lang_intro.html
+
+[section OPTIONS]
+====================
+
+Describe common options used for several commands.
+
+[list_begin options]
+[opt_def -timeout [arg t]]
+...
+[opt_def -expires [arg t]]
+...
+[para]
+.... The [option -expires] ...
+[list_end]
+
+
+
+End of the man page:
+====================
+- see_also: refer explicit to other commands or man pages
+- keywords: links to other pages with the same keyword
+
+Example:
+
+[see_also ns_log ns_rollfile]
+[keywords log path proxy ipaddress]
+
+[manpage_end]
