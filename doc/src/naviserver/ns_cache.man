@@ -1,5 +1,4 @@
 [include version_include.man]
-[include version_include.man]
 
 [manpage_begin ns_cache n [vset version]]
 [moddesc   {NaviServer Built-In Commands}]
@@ -25,6 +24,29 @@ for new entries. Similarly, expired entries will remain in the cache and only be
 deleted when they reach the end of the LRU list, or are accessed and it is
 noticed that they have expired.
 
+[section {OPTIONS}]
+
+The following options are used for several commands below.
+
+[list_begin options]
+
+[opt_def -timeout [arg t]]
+The time in seconds to wait for some other thread to compute the cache value.
+
+[opt_def -expires [arg t]]
+A time in the future when the cache value expires. The expired value will be
+deleted only when retrieved, e.g. via [cmd ns_cache_eval].
+
+[para]
+The [option -expires] time can be expressed either as an absolute time in
+the future (the number of seconds since 190), or as an offset from the current
+time. Small values are treated as offsets, large values as absolute time. It is
+slightly less efficient to specify an offset as the current time must be looked
+up.
+
+
+[list_end]
+
 
 [section {COMMANDS}]
 
@@ -39,9 +61,9 @@ noticed that they have expired.
      [arg size]  ]
 
 Create a new Tcl cache identified by [arg name] with maximum size 
-[arg size]. Optionally, one can specify a default [arg -timeout]
-and a default [arg -expires] and the maximum size of a single 
-entry (parameter [arg -maxentry]).
+[arg size]. Optionally, one can specify a default [option -timeout]
+and a default [option -expires] and the maximum size of a single 
+entry (parameter [option -maxentry]).
 
 
 
@@ -59,9 +81,8 @@ Return the list of all caches for the current virtual server.
 Return a list of all keys in the named cache. If [arg pattern] is
 given then each key is matched against the globbing pattern, and only
 those which match are included in the list. When the option 
-[opt [option "-exact"]] is used, [arg pattern] is interpreted
+[option "-exact"] is used, [arg pattern] is interpreted
 literally,  either a key with a literally exact match or empty is returned.
-
 
 
 [call [cmd ns_cache_eval] \
@@ -82,7 +103,7 @@ into the cache.
 The [arg script] is also executed if a cached value exists but has expired.
 
 [para]
-If the [opt [option -force]] option is set then any existing cached value is removed
+If the [option -force] option is set then any existing cached value is removed
 whether it has expired or not, and the [arg script] is run to regenerate it.
 
 
@@ -154,8 +175,8 @@ If the cache value does not already exist it is created.
 Flush the entries in a cache. If 
 
 [para]
-The number of entries flushed are returned. If [opt [arg args]] are given then
-they are the keys in the cache to be flushed. If the [opt [option -glob]] option
+The number of entries flushed are returned. If [arg args] are given then
+they are the keys in the cache to be flushed. If the [option -glob] option
 is given then the keys are treated as globbing patterns and only the keys which
 match are flushed.
 
@@ -171,11 +192,11 @@ Return the accumulated statistics for the given cache [arg name] in array-get
 format since the cache was created or was last reset.
 
 [para]
-If the [opt [option -reset]] option is given then the statistics will be reset
+If the [option -reset] option is given then the statistics will be reset
 to zero after the command returns.
 
 [para]
-If the [opt [option -contents]] option is given then the first element of the
+If the [option -contents] option is given then the first element of the
 returned list contains the size and expire time for each entry in the
 cache. The time is in [cmd ns_time] timespec format.
 
@@ -185,7 +206,7 @@ The cache statistics track the following items:
 
 [def maxsize]
 The maximum size in bytes this cache can grow to, as specified by the
-[opt [option -size]] option to [cmd ns_cache_create].
+[option -size] option to [cmd ns_cache_create].
 
 [def size]
 The current size of the cache, in bytes.
@@ -230,29 +251,6 @@ format since the cache was created or was last reset. For details, see
 [list_end]
 
 
-[section {OPTIONS}]
-
-[list_begin options]
-
-[opt_def -timeout [arg t]]
-The time in seconds to wait for some other thread to compute the cache value.
-
-[opt_def -expires [arg t]]
-A time in the future when the cache value expires. The expired value will be
-deleted only when retrieved, e.g. via [cmd ns_cache_eval].
-
-[para]
-The [opt [option -expires]] time can be expressed either as an absolute time in
-the future (the number of seconds since 190), or as an offset from the current
-time. Small values are treated as offsets, large values as absolute time. It is
-slightly less efficient to specify an offset as the current time must be looked
-up.
-
-
-[list_end]
-
-
-
 [section EXAMPLES]
 
 In the following example our goal is to serve a web page within 5 seconds. The
@@ -262,7 +260,7 @@ personalized advert, both of which are stored in a database.
 [para]
 The data doesn't change often so a cache is used to speed up access. Even so,
 the server may become so busy that database queries take longer than our target
-response time of 5 seconds so we specify a [opt [option -timeout]] to both calls
+response time of 5 seconds so we specify a [option -timeout] to both calls
 to the [cmd ns_cache_eval] command.
 
 [para]

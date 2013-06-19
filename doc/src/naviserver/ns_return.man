@@ -24,14 +24,14 @@ arguments are incorrect.
 
 
 [call [cmd  ns_return] \
-	[opt [arg {-binary}]] \
+	[opt [option {-binary}]] \
 	[arg status] \
 	[arg mime-type] \
 	[arg body] ]
 
 Return a complete response to the client consisting of the given [arg body]
 and a set of HTTP headers. [arg status] is an integer HTTP status code such as
-200 (OK) or 404 (Not Found). When the optional flag [arg {-binary}] is
+200 (OK) or 404 (Not Found). When the optional flag [option {-binary}] is
 used, the content of the tcl bytearray is transmitted.
 
 [para]
@@ -86,14 +86,14 @@ continues to execure code.
 
 
 [call [cmd ns_respond] \
-     [opt [option "-status status"]] \
-     [opt [option "-type mime-type"]] \
-     [opt [option "-length length"]] \
-     [opt [option "-headers setid"]] \
-     [opt [option "-string body"]] \
-     [opt [option "-binary body"]] \
-     [opt [option "-file filepath"]] \
-     [opt [option "-fileid channel"]] ]
+     [opt [option "-status [arg status]"]] \
+     [opt [option "-type [arg mime-type]"]] \
+     [opt [option "-length [arg int]"]] \
+     [opt [option "-headers [arg setid]"]] \
+     [opt [option "-string [arg body]"]] \
+     [opt [option "-binary [arg body]"]] \
+     [opt [option "-file [arg filepath]"]] \
+     [opt [option "-fileid [arg channel]"]] ]
 
 Return a complete response to the client using exactly one of [option -string],
 [option -binary], [option -file] or [option -fileid] as the body.
@@ -123,7 +123,7 @@ The byte-array representation of the given Tcl object will be used as the
 reponse body. No character set conversion will be done.
 
 [opt_def -file [arg filepath]]
-The file identified by the given [arg pathname] will be sent as the response
+The file identified by the given [arg filepath] will be sent as the response
 body. The bytes of the file will not be transformed in any way.
 
 [opt_def -fileid [arg channel]]
