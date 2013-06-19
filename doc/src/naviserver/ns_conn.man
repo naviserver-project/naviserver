@@ -20,28 +20,28 @@ The subcommands of ns_conn are (in alphabetical order):
 
 [list_begin definitions]
 
-[call [cmd  ns_conn] [cmd auth]]
+[call [cmd  "ns_conn auth"]]
 
 Returns all authorization headers as a ns_set. For Basic authentication
 there are reserved keys: Username and Password, these are the keys returned by ns_conn authuser and
 ns_conn authpassword. This ns_set can be updated.
 
-[call [cmd  ns_conn] [cmd authpassword]]
+[call [cmd  "ns_conn authpassword"]]
 
 Returns the decoded user password from the authorization data.
 
-[call [cmd  ns_conn] [cmd authuser]]
+[call [cmd  "ns_conn authuser"]]
 
 Returns the decoded user name from the authorization data.
 
 
 
-[call [cmd  ns_conn] [cmd channel]]
+[call [cmd  "ns_conn channel"]]
 
 Returns the Tcl channel name for the current connection.
 
 
-[call [cmd  ns_conn] [cmd clientdata] [opt [arg value]]]
+[call [cmd  "ns_conn clientdata"] [opt [arg value]]]
 
 Query or set the client date of the current connection. The client
 data is provided by the application and is potentially passed to
@@ -51,229 +51,230 @@ data when listing running connections (one can determine e.g. which
 user has initiated the delivery, etc.).
 
 
-[call [cmd  ns_conn] [cmd close]]
+[call [cmd  "ns_conn close"]]
 
 Closes the connection so the script (or ADP) can do any time-consuming processing
 without making the client wait. If you use ns_conn close in an ADP, streaming
 should be turned on before closing the connection (i.e. <SCRIPT RUNAT=SERVER STREAM=ON>)
 or nothing will get sent out at all.
 
-[call [cmd  ns_conn] [cmd compress] [opt [arg level]]]
+[call [cmd  "ns_conn compress"] [opt [arg level]]]
 
 Either set or query the compression level for the current connection.
 
 
-[call [cmd  ns_conn] [cmd content] [opt [arg offset]] [opt [arg length]]]
+[call [cmd  "ns_conn content"] [opt [arg offset]] [opt [arg length]]]
 
 Returns the content of the HTTP request body, optionally a substring of that content
 starting at offset and extending length characters.
 
 
-[call [cmd  ns_conn] [cmd contentfile]]
+[call [cmd  "ns_conn contentfile"]]
 
 Returns name of the temporary file which holds contents of the request. This only works
 when maxupload parameter to nssock driver is set to the value between 1K and maxinput.
 
 
-[call [cmd  ns_conn] [cmd contentlength]]
+[call [cmd  "ns_conn contentlength"]]
 
 Returns the number of bytes in the content passed in.
 
 
-[call [cmd  ns_conn] [cmd contentsentlength] [opt [arg bytes]]]
+[call [cmd  "ns_conn contentsentlength"] [opt [arg bytes]]]
 
 Returns or sets the number of bytes in the content to be sent. 
 
 
-[call [cmd  ns_conn] [cmd copy] [arg off] [arg len] [arg chan]]
+[call [cmd  "ns_conn copy"] [arg off] [arg len] [arg chan]]
 
 Copies data from the current connection to chan starting at byte off
 for len bytes.
 
 
-[call [cmd  ns_conn] [cmd driver]]
+[call [cmd  "ns_conn driver"]]
 
 Returns the name of the module (nssock or nsssl) that is acting as the
 communications driver for this connection.
 
 
-[call [cmd  ns_conn] [cmd encoding] [opt [arg encoding]]]
+[call [cmd  "ns_conn encoding"] [opt [arg encoding]]]
 
 Query or set the encoding for the current connection.
 
 
-[call [cmd  ns_conn] [cmd fileheaders]  [arg file]]
+[call [cmd  "ns_conn fileheaders"]  [arg file]]
 
 Return the header information for the uploaded file with the specified
 name (returned via [lb]ns_conn files[rb]).
 
-[call [cmd  ns_conn] [cmd filelength]  [arg file]]
+[call [cmd  "ns_conn filelength"]  [arg file]]
 
 Return the length of the uploaded file with the specified
 name (returned via [lb]ns_conn files[rb]).
 
-[call [cmd  ns_conn] [cmd fileoffset]  [arg file]]
+[call [cmd  "ns_conn fileoffset"]  [arg file]]
 
 Return the offset of the uploaded file with the specified
 name (returned via [lb]ns_conn files[rb]).
 
 
-[call [cmd  ns_conn] [cmd files]]
+[call [cmd  "ns_conn files"]]
 
 Return files uploaded with the current form.
 
 
-[call [cmd  ns_conn] [cmd flags]]
+[call [cmd  "ns_conn flags"]]
 
 Return the internal flags of the current connection. Use with care,
 the flags might change over versions.
 
 
-[call [cmd  ns_conn] [cmd form]]
+[call [cmd  "ns_conn form"]]
 
 Returns any submitted form data as an ns_set. This form data may have been submitted
 with a POST or appended to the URL in a GET request. Note: ns_conn form is not suitable
 for multipart formdata file upload widgets.
 
 
-[call [cmd  ns_conn] [cmd headers]]
+[call [cmd  "ns_conn headers"]]
 
 Returns all the header data as an ns_set. The keys of the ns_set represent the field
 names. The case of the returned field names depends on the HeaderCase configuration
 parameter. By default, HeaderCase is "Preserve", which means case is preserved.
 
-[call [cmd  ns_conn] [cmd host]]
+[call [cmd  "ns_conn host"]]
 
-Returns the host part of the URL in the HTTP request.
+Returns the host part of the URL in the HTTP request line. This is
+only set, when the NaviServer is used as a proxy server.
 
-
-[call [cmd  ns_conn] [cmd id]]
+[call [cmd  "ns_conn id"]]
 
 Returns the unique identifier of the current connection.
 
 
-[call [cmd  ns_conn] [cmd isconnected]]
+[call [cmd  "ns_conn isconnected"]]
 
 Returns 1 if you're in a connection thread, and you are therefore allowed to make
 calls to ns_conn. It returns 0 if you're not in a connection thread (such as when
 you're in a schedule procedure) and you are not allowed to make calls to ns_conn.
 
 
-[call [cmd  ns_conn] [cmd keepalive] [opt [arg value]]]
+[call [cmd  "ns_conn keepalive"] [opt [arg value]]]
 
 Query or set the keepalive for the current connection.
 
 
-[call [cmd  ns_conn] [cmd location]]
+[call [cmd  "ns_conn location"]]
 
 Returns the location string for this virtual server in the form:
 protocol://hostname[lb]:port[rb].
 
 
-[call [cmd  ns_conn] [cmd method]]
+[call [cmd  "ns_conn method"]]
 
 Returns the HTTP method, e.g. GET.
 
 
-[call [cmd  ns_conn] [cmd outputheaders]]
+[call [cmd  "ns_conn outputheaders"]]
 
 Returns an ns_set containing the headers that will be sent out when a result is returned
 to the client. This ns_set can be manipulated like any other ns_set. You can also use this
 command to write to the set of output headers. For example: ns_set put [lb]ns_conn outputheaders[rb] key value.
 
 
-[call [cmd  ns_conn] [cmd peeraddr]]
+[call [cmd  "ns_conn  peeraddr"]]
 
 Returns the IP address of the client, i.e. the "other side" of the HTTP connection. The
 IP address is returned in the form of a string separated with periods (e.g., 155.164.59.75).
 
 
-[call [cmd  ns_conn] [cmd peerport]]
+[call [cmd  "ns_conn  peerport"]]
 
 Returns the port of the client, i.e. the "other side" of the HTTP connection. 
 
 
-[call [cmd  ns_conn] [cmd pool]]
+[call [cmd  "ns_conn pool"]]
 
 Returns the current connection pool from the currently connected server.
 
 
-[call [cmd  ns_conn] [cmd port]]
+[call [cmd  "ns_conn port"]]
 
 Returns the port specified explicitly in the URL of the HTTP request. If the browser does
 not explicitly send the ":port" part of the URL, the port number returned will be 0.
 
 
-[call [cmd  ns_conn] [cmd protocol]]
+[call [cmd  "ns_conn protocol"]]
 
-Returns the protocol of the URL in the HTTP request (usually unspecified).
+Returns the protocol of the URL in the HTTP request line.
+This is only set, when the NaviServer is used as a proxy server.
 
 
-[call [cmd  ns_conn] [cmd query]]
+[call [cmd  "ns_conn query"]]
 
 Returns any query data that was part of the HTTP request.
 
 
-[call [cmd  ns_conn] [cmd request]]
+[call [cmd  "ns_conn request"]]
 
 Returns the HTTP request line as presented by the client, e.g. GET / HTTP/1.1.
 
 
-[call [cmd  ns_conn] [cmd server]]
+[call [cmd  "ns_conn server"]]
 
 Returns the name of the server handling the request.
 
 
-[call [cmd  ns_conn] [cmd sock]]
+[call [cmd  "ns_conn sock"]]
 
 Returns the socket id (integer fd) of current connection.
 
 
 
-[call [cmd  ns_conn] [cmd start]]
+[call [cmd  "ns_conn start"]]
 
 Returns the time the connection request started in "sec:usec" (aka
 ns_time) format.
 
 
-[call [cmd  ns_conn] [cmd status] [opt [arg value]]]
+[call [cmd  "ns_conn status"] [opt [arg value]]]
 
 Query or set the HTTP status code for the current connection.
 
 
-[call [cmd  ns_conn] [cmd timeout]]
+[call [cmd  "ns_conn timeout"]]
 
 Returns absolute time value beyond which conn should not wait on
 resources, such as condition variables.
 
 
-[call [cmd  ns_conn] [cmd url]]
+[call [cmd  "ns_conn url"]]
 
 Returns the URL of the HTTP request. This is the portion of the request after the
 hostname, for example [lb]ns_conn url[rb] on  returns /index.adp.
 
 
-[call [cmd  ns_conn] [cmd urlc]]
+[call [cmd  "ns_conn urlc"]]
 
 Returns the number of elements (delimited by `/') in the URL of the HTTP request.
 
 
-[call [cmd  ns_conn] [cmd urlencoding] [opt [arg encoding]]]
+[call [cmd  "ns_conn urlencoding"] [opt [arg encoding]]]
 
 Query or set the url encoding for the current connection.
 
 
-[call [cmd  ns_conn] [cmd urlv]]
+[call [cmd  "ns_conn urlv"]]
 
 Returns a list containing the pieces of the URL delimited by `/'.
 
 
-[call [cmd  ns_conn] [cmd version]]
+[call [cmd  "ns_conn version"]]
 
 Returns the version of the HTTP request. This is usually 1.0 or 1.1.
 
 
-[call [cmd  ns_conn] [cmd zipaccepted]]
+[call [cmd  "ns_conn zipaccepted"]]
 
 Returns 0 or 1 depending on whether or not the client accepts a zip
 encoded response.

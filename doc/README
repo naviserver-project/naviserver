@@ -45,6 +45,12 @@ Sample definition of a command:
         [opt [arg --]] \
         [arg name] ]
 
+For subcommands use:
+    [call [cmd  "ns_conn encoding"] [opt [arg encoding]]]
+instead of 
+    [call [cmd  ns_conn] [cmd encoding]] [opt [arg encoding]]]
+since we might get a wrong (higlighted) rendering of "encoding".
+
 References in the text:
 =======================
 the command .... receives optionally the option [option -content] ... 
