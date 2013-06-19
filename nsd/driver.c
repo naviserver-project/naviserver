@@ -506,6 +506,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         defMapPtr = NULL;
         path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
         set  = Ns_ConfigGetSection(path);
+        Ns_DStringInit(&ds);
         for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
             server  = Ns_SetKey(set, i);
             host    = Ns_SetValue(set, i);
@@ -529,6 +530,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                 }
             }
         }
+        Ns_DStringFree(&ds);
+
         if (defMapPtr == NULL) {
             Ns_Fatal("%s: default server %s not defined in %s",
                      module, server, path);
