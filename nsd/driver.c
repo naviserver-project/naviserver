@@ -347,8 +347,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     }
 
     drvPtr->server       = server;
-    drvPtr->name         = init->name;
     drvPtr->module       = ns_strdup(module);
+    /*drvPtr->name         = init->name;*/
+    drvPtr->name         = drvPtr->module;
     drvPtr->listenProc   = init->listenProc;
     drvPtr->acceptProc   = init->acceptProc;
     drvPtr->recvProc     = init->recvProc;
