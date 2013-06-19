@@ -1,0 +1,173 @@
+[include version_include.man]
+
+[manpage_begin nssock n [vset version]]
+[moddesc   {NaviServer Module Commands}]
+[titledesc {Configuring http socket communications}]
+
+[description]
+
+This module [term nssock] is used for the socket communication for http. For
+the communication via https, the module [term nsssl] is used, which shares
+the configuration parameters presented here and adds additional parameters.
+
+[para]
+The module [term nssock] is typically loaded per server, e.g. for
+[term server1]:
+
+[example_begin]
+   ns_section ns/server/server1/modules
+   ns_param   nssock   nssock.so
+ 
+   ns_section ns/server/server1/module/nssock
+   ns_param port 8000
+   ...
+[example_end]
+
+This amount of configuration is sufficient for many installations, which
+do not want to run the server on port 80 (which requires as well root
+permissions for starting).
+
+[section CONFIGURATION]
+
+The module [term nssock] provides a rich set of configuration options, which
+are important for large installation. However, all parameters are
+equipped with sensible default values, such that none of these are required.
+
+[list_begin definitions]
+
+[def acceptsize]
+Maximum number of requests accepted at once (integer, defaults to
+[term backlog])
+
+[def address]
+IP-Address on which the server should listen (default: 0.0.0.0)
+
+[def backlog]
+Maximum number of entries for waiting listen connections (integer,
+default: 256)
+
+[def bufsize]
+Maximum size in bytes (octets) for a single receive operation
+(integer, 16384)
+
+[def closewait]
+Timeout in seconds for close on socket to drain potential garbage if
+no keep alive is performed. (integer, default: 2)
+
+[def defaultserver]
+When virtual servers are defined, this refers to the default server
+(the server, receiving all urls not mapped to a specific server)
+
+[def deferaccept]
+
+TCP Performance option; use TCP_FASTOPEN or TCP_DEFER_ACCEPT or
+SO_ACCEPTFILTER, whatever is available in your operating system to
+improve the performance of the initial TCP 3-way handshake. The
+capabilities of the operating system are determined at compile time.
+If you want to use TCP_FASTOPEN (introduced by Linux kernel 3.7.0), 
+you might have to activate this option in your kernel, 
+by using [example {
+   sudo sysctl net.ipv4.tcp_fastopen=1
+}] (boolean, default: false)
+
+[def hostname]
+Hostname of the server, can be looked up automatically if not specified.
+
+[def keepalivemaxdownloadsize]
+Don't allow keep-alive for downloads content larger than this size in
+bytes; a value of 0 means that this feature is deactivated (integer, default 0)
+
+[def keepalivemaxuploadsize]
+Don't allow keep-alive for upload content larger than this size in
+bytes; a value of 0 means that this feature is deactivated (integer, default 0)
+
+[def keepwait]
+Timeout in seconds for keep-alive. (integer, default: 5)
+
+[def location]
+Provide a default for protocol://hostname[lb]:port[rb]. Useful
+for virtual servers.
+
+[def maxheaders]
+Maximum number of header lines (integer, 128)
+
+[def maxinput]
+Maximum size in bytes (octets) for content loaded into the server, such as upload of
+files. (integer, default: 1048576)
+
+[def maxline]
+Maximum size in bytes (octets) of a single header line (integer,
+default: 8192)
+
+[def maxqueuesize]
+Size of the queue of accepted requests waiting for a connection thread
+(integer, default 1024).
+
+[def maxupload]
+When spooler threads are activated, use spooler threads for uploads
+larger than this size in bytes (see as well [term spoolerthreads])
+
+[def nodelay]
+TCP Performance option; use TCP_NODELAY (OS-default on
+Linux). (boolean, default: false)
+
+[def port]
+Port, on which the server listens (integer, default: 80)
+
+[def readahead]
+Maximum size in bytes (octets) for asynchronous read ahead operations
+(integer, defaults to [term bufsize])
+
+[def recvwait]
+Timeout in seconds for receive operations. (integer, default: 30)
+
+[def sendwait]
+Timeout in seconds for send operations. (integer, default: 30)
+
+[def spoolerthreads]
+Number of spooler threads, which spool uploads to a file rather than
+to memory; see as well [term maxupload] (integer, default: 0)
+
+[def uploadpath]
+Directory for uploads, defaults to the setting of [term "ns/parameter tmpdir"].
+
+[def writerbufsize]
+Buffer size in bytes (octets) for writer threads (integer, default: 8192)
+
+[def writersize]
+Use writer threads for replies above this size. (integer, default: 1048576)
+
+[def writerstreaming]
+Use writer threads for streaming HTML output
+(e.g. ns_write ...). (boolean, default: false)
+
+[def writerthreads]
+Number of writer threads. (integer, default: 0)
+
+[list_end]
+
+[section EXAMPLES]
+
+In case, one requires for one naviserver to listen on several ports, 
+it is possible to load the nssock module twice with different names,
+here [term nssock1] and [term nssock2].
+
+[example_begin]
+   ns_section ns/server/server1/modules
+   ns_param   nssock1   nssock.so
+   ns_param   nssock2   nssock.so
+ 
+   ns_section ns/server/server1/module/nssock1
+   ns_param   port    8000
+   
+   ns_section ns/server/server1/module/nssock2
+   ns_param   port    8001
+[example_end]
+
+More to come here...
+
+
+[see_also ns_log ns_write]
+[keywords performance tuning configuration TCP TCP_FASTOPEN]
+
+[manpage_end]

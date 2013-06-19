@@ -149,6 +149,7 @@ build-doc:
 		       nsproxy \
 		       nscp \
 		       nsperm \
+		       nssock \
                        doc/src/manual \
                        doc/src/naviserver \
                        modules/nsexpat \
