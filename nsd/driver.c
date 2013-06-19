@@ -222,7 +222,7 @@ int
 Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 {
     char           *path,*address, *host, *bindaddr, *defproto, *defserver;
-    int             i, n, defport;
+    int             i, n, defport, noHostNameGiven;
     ServerMap      *mapPtr;
     Ns_DString      ds;
     struct in_addr  ia;
@@ -252,6 +252,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     host = Ns_ConfigGetValue(path, "hostname");
+    noHostNameGiven = (host == NULL);
     bindaddr = address = Ns_ConfigGetValue(path, "address");
     defserver = Ns_ConfigGetValue(path, "defaultserver");
 
@@ -318,7 +319,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         host = address;
     }
 
-    if (host && path) {
+    if (noHostNameGiven && host && path) {
 	Ns_SetUpdate(set, "hostname", host);
     }
 
