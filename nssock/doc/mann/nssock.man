@@ -37,7 +37,7 @@ equipped with sensible default values, such that none of these are required.
 
 [def acceptsize]
 Maximum number of requests accepted at once (integer, defaults to
-[term backlog])
+the value [term backlog])
 
 [def address]
 IP-Address on which the server should listen (default: 0.0.0.0)
