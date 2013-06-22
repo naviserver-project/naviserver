@@ -2468,7 +2468,13 @@ SockParse(Sock *sockPtr, int spooler)
 		gzip = (reqPtr->request.version >= 1.1);
 	    }
 	    if (gzip) {
-		sockPtr->flags |= NS_CONN_ZIPACCEPTED;
+		/*
+		 * Don't allow gzip results for Range requests.
+		 */
+		s = Ns_SetIGet(reqPtr->headers, "Range");
+		if (s == NULL) {
+		    sockPtr->flags |= NS_CONN_ZIPACCEPTED;
+		}
 	    }
 
         } else {
