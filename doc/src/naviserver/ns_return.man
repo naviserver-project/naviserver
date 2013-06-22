@@ -13,10 +13,16 @@ encoding, compressed and/or sent in chunks as automatically negotiated by
 the client and server settings.
 
 [para]
-Unless otherwise noted, these commands return [term true] if the command
-failed and [term false] otherwise. All of them can raise an error if their
+Unless otherwise noted, these commands return [const true] if the command
+failed and [const false] otherwise. All of them can raise an error if their
 arguments are incorrect.
 
+[para]
+The behavior of the file delivery commands [cmd ns_return] 
+and [cmd ns_reponse] is influenced
+by the [const fastpath] settings, that define, how static files are
+served. The fastpath settings are decribed in the [sectref CONFIGURATION]
+section at the end of this page.
 
 
 [section {COMMANDS}]
@@ -106,10 +112,10 @@ continues to execure code.
 [list_begin options]
 
 [opt_def -status [arg status]]
-The HTTP status code. Default [term 200].
+The HTTP status code. Default [const 200].
 
 [opt_def -type [arg mime-type]]
-The mime-type of the response body. Default [term */*].
+The mime-type of the response body. Default [const */*].
 
 [opt_def -headers [arg setid]]
 A set of headers which will replace any pending headers for the response.
@@ -160,9 +166,136 @@ ns_register_proc GET /hello {
 }
 [example_end]
 
+[section CONFIGURATION]
+
+The behavior of the file delivery commands [cmd ns_return] and 
+[cmd "ns_respond -file ..."], as well as the automatic delivery of static
+files is influenced by the [const fastpath] settings, which define, how
+files are served. The fastpath section of the configuration file for a
+server [const server1] has a global part (general settings for all
+servers) and a per (virtual) server part:
+
+[example_begin]
+   ns_section ns/fastpath
+   # global configuration
+   ns_param  ...
+   ...
+   
+   ns_section ns/server/server1/fastpath
+   # per-server configuration
+   ns_param  ...
+   ...
+[example_end]
+
+
+Most prominently, the [emph "global fastpath parameters"] define the delivery
+mode.  In general, fastpath supports three delivery modes for static
+content:
+
+[list_begin enumerated]
+[enum] Delivering file via chunk reads from the file, where the
+chunk size is typical the [const writersize] of a writer thread.
+This is the same behavior as in
+[cmd "ns_respond -fileid ..."] or in 
+[cmd "ns_returnfp"]. This delivery mode is activated, when
+both the global fastpath parametr [const cache] and [const mmap]
+are false.
+
+[enum] Delivering from mapped memory, when when [const mmap] is defined
+and the operating supports it. In this case the file to be delivered
+is mapped into memory and served from there. The buffer size etc. is
+determined from the operating system. This option is activated, when
+the global fastpath parameter [const mmap] is true and [const cache] is
+false.
+
+[enum] Deliverying the file from the own NaviServer file cache.  This
+option is acitivated, when the parameter [const cache] is set to true.
+[list_end]
+
+[subsection "Global fastpath configuration parameters"]
+
+[list_begin definitions]
+
+[def cache]
+Use the NaviServer file cache for file deliveries
+(boolean, defaults to false)
+
+[def cachemaxentry]
+Maximum size of a single entry, when parameter [const cache] is true
+(integer, defaults to 8192)
+
+[def cachemaxsize]
+Size of the cache, when parameter [const cache] is true
+(integer, defaults to 10240000)
+
+[def mmap]
+Use mmap for file deliveries (and cache is false)
+(boolean, defaults to false)
+
+[def gzip_static]
+Send the gzipped version of the file if available and the client
+accepts gzipped content. When a file [const path/foo.ext] is requested,
+and there exists a file  [const path/foo.ext.gz], and the
+timestamp of the gzipped file is equal or newer than the
+source file, use the gzipped file for delivery. 
+(boolean, defaults to false)
+
+[def gzip_cmd]
+Command for zipping files in case the (static) gzipped version of the
+file is older than the source. The command is just used for
+re-gzipping outdated files, it does not actively compress files, which
+were previously not compressed (this would be wasteful for e.g. large
+tmp files, there is not cleanup, etc.). If this parameter is not
+defined, outdated gzipped files are ignored, and a warning is written
+to the error.log. Example setting: "/usr/bin/gzip -9".  (string,
+defaults to "") 
+
+[list_end]
+
+[subsection "Per-server fastpath configuration parameters"]
+[list_begin definitions]
+
+[def directoryadp]
+Name of an adp page to use to display directory listings.
+One can either specify [const directoryadp], 
+or [const directoryproc], but not both.
+(string, defaults to "")
+
+[def directoryfile]
+Index files for directory
+(string, defaults to index.adp index.tcl index.html index.htm)
+
+[def directorylisting]
+Style of directory listings, Can be [const fancy] or [const simple].
+(string, defaults to simple)
+
+[def directoryproc]
+Name of Tcl proc to use to display directory listings.
+One can either specify [const directoryproc], 
+or [const directoryadp], but not both.
+(string, defaults to _ns_dirlist)
+
+[def hidedotfiles]
+Hide files starting with a dot in directory listings
+(boolean, defaults to false)
+
+[def pagedir]
+Defines absolute or relative path for serving content files. Relative
+names are relativ to the [const serverdir]
+(string, defaults to serverdir/pages)
+
+[def serverdir]
+Defines absolute path to server's home directory.
+(string, defaults to "")
+
+[list_end]
+
+
+
 
 [see_also returnstatus-cmds ns_write ns_guesstype \
-	ns_register_fastpath ns_adp_puts ns_conn ns_writer]
+	ns_register ns_adp_puts ns_conn ns_writer]
 
-[keywords return response status charset encoding]
+[keywords return response status charset encoding configuration \
+fastpath mmap cache gzip serverdir pagedir writer]
 [manpage_end]

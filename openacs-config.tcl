@@ -120,18 +120,28 @@ ns_section ns/parameters
 ns_section ns/threads 
 	ns_param	stacksize	[expr {128 * 8192}]
 
-# 
-# MIME types. 
-# 
+#---------------------------------------------------------------------
+# Extra mime types
+#---------------------------------------------------------------------
 ns_section ns/mimetypes
 	#  Note: NaviServer already has an exhaustive list of MIME types:
 	#  see: /usr/local/src/naviserver/nsd/mimetypes.c
 	#  but in case something is missing you can add it here. 
-	ns_param	Default		*/*
-	ns_param	NoExtension	*/*
-	ns_param	.pcd		image/x-photo-cd
-	ns_param	.prc		application/x-pilot
+	#ns_param	Default		*/*
+	#ns_param	NoExtension	*/*
+	#ns_param	.pcd		image/x-photo-cd
+	#ns_param	.prc		application/x-pilot
 
+#---------------------------------------------------------------------
+# Global fastpath parameters
+#---------------------------------------------------------------------
+ns_section      "ns/fastpath"
+    #ns_param        cache               true       ;# default: false
+    #ns_param        cachemaxsize        10240000   ;# default: 1024*10000
+    #ns_param        cachemaxentry       100000     ;# default: 8192
+    #ns_param        mmap                true       ;# default: false
+    #ns_param        gzip_static         true       ;# check for static gzip; default: false
+    #ns_param        gzip_cmd            "/usr/bin/gzip -9"  ;# use for re-compressing
 
 #---------------------------------------------------------------------
 # 
