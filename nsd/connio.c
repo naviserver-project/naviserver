@@ -94,7 +94,6 @@ int
 Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
 {
     Conn              *connPtr   = (Conn *) conn;
-    Ns_CompressStream *streamPtr = &connPtr->stream;
     Ns_DString         encDs, gzDs;
     struct iovec       iov;
     CONST char        *utfBytes;
@@ -139,7 +138,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     if (connPtr->compress > 0) {
         int flush = (flags & NS_CONN_STREAM) ? 0 : 1;
 
-        if (Ns_CompressBufsGzip(streamPtr, bufs, nbufs, &gzDs,
+        if (Ns_CompressBufsGzip(&connPtr->stream, bufs, nbufs, &gzDs,
                                 connPtr->compress, flush) == NS_OK) {
             /* NB: Compression will always succeed. */
             Ns_SetVec(&iov, 0, gzDs.string, gzDs.length);
@@ -396,7 +395,7 @@ static int
 ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
     int          status;
-    size_t       toread, nread;
+    size_t       nread;
     char         buf[IOBUFSZ];
 
     /*
@@ -413,7 +412,8 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 
     status = NS_OK;
     while (status == NS_OK && nsend > 0) {
-	toread = (size_t)nsend;
+        size_t toread = (size_t)nsend;
+
         if (toread > sizeof(buf)) {
             toread = sizeof(buf);
         }
@@ -432,6 +432,7 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
             status = NS_ERROR;
         } else {
 	    struct iovec vbuf;
+
 	    vbuf.iov_base = (void *) buf;
 	    vbuf.iov_len = nread;
 	    if ((status = Ns_ConnWriteVData(conn, &vbuf, 1, 0)) == NS_OK) {
@@ -466,7 +467,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
 {
     Conn        *connPtr = (Conn *) conn;
     int          i;
-    ssize_t      towrite, nwrote, sent;
+    ssize_t      towrite, nwrote;
 
     nwrote = 0;
     towrite = 0;
@@ -476,7 +477,8 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     }
 
     while (towrite > 0) {
-        sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs, 0);
+        ssize_t sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs, 0);
+
         if (sent < 1) {
             break;
         }
