@@ -21,8 +21,8 @@ This function sets the socket for the specified sockId to blocking.
 [example_end]
 
 
-[see_also nsd]
-[keywords NaviServer]
+[see_also nsd ns_socknonblocking]
+[keywords NaviServer socket blocking]
 [manpage_end]
 
 

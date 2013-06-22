@@ -23,8 +23,8 @@ address argument to specify all addresses.
 [example_end]
 
 
-[see_also nsd]
-[keywords NaviServer ns_sockaccept]
+[see_also nsd ns_sockaccept]
+[keywords NaviServer socket listen]
 [manpage_end]
 
 

@@ -46,7 +46,7 @@ close $wid
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer socket]
 [manpage_end]
 
 

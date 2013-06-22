@@ -115,7 +115,7 @@ ns_writer submitfile /tmp/biglist.txt
 [example_end]
 
 [see_also ns_returnfile ns_conn ns_write]
-[keywords NaviServer WriterThread]
+[keywords writer configuration]
 [manpage_end]
 
 

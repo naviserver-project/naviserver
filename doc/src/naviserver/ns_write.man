@@ -124,6 +124,6 @@ ns_register_proc GET /blobs {
 
 
 [see_also ns_return ns_conn]
-[keywords return response status charset encoding]
+[keywords return response status charset encoding writer]
 
 [manpage_end]

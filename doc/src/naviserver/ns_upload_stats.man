@@ -38,5 +38,5 @@ Put some examples here to illustrate command usage.
 
 
 [see_also nsd]
-[keywords NaviServer upload progress]
+[keywords NaviServer upload progress configuration]
 [manpage_end]

@@ -209,6 +209,6 @@ Notice: S: Quit sock12 QUIT 60
 
 [see_also nsd]
 
-[keywords NaviServer ns_sendmail ns_sendmail_config mail smtp RFC2822]
+[keywords NaviServer sendmail mail smtp RFC822 configuration]
 
 [manpage_end]

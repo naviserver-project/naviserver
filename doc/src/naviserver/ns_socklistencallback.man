@@ -23,7 +23,7 @@ the specified script when new connections are received.
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer socket listen callback]
 [manpage_end]
 
 

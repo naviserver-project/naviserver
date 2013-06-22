@@ -204,6 +204,6 @@ ns_register_proc GET /service {
 
 
 [see_also ns_return ns_internalredirect]
-[keywords return redirect response status]
+[keywords return redirect response status configuration]
 
 [manpage_end]

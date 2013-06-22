@@ -353,7 +353,7 @@ Default: [cmd ns_adp_debuginit].
 
 [see_also ns_adp_include ns_adp_puts ns_adp_ctl]
 
-[keywords ADP gzip ns_conn]
+[keywords ADP gzip ns_conn configuration]
 
 [manpage_end]
 

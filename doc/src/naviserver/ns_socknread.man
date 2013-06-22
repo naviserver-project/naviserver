@@ -23,7 +23,7 @@ This function returns the number of bytes waiting to be read from the specified 
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer socket]
 [manpage_end]
 
 

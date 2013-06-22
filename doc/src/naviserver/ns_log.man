@@ -304,7 +304,7 @@ nscp:6> [cmd ns_log] my:debug "a debug message"
 
 
 [see_also ns_accesslog ns_info ns_rollfile]
-[keywords log path error]
+[keywords log path error configuration]
 
 
 [manpage_end]

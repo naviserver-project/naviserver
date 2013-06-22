@@ -23,7 +23,7 @@ of file ids: the first one for reads and the second one for writes.
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer socket]
 [manpage_end]
 
 

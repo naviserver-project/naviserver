@@ -232,5 +232,5 @@ ns_schedule_proc 3600 log_limits
 
 
 [see_also ns_server]
-[keywords resource limit upload timeout]
+[keywords resource limit upload timeout configuration]
 [manpage_end]

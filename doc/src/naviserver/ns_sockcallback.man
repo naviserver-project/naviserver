@@ -50,7 +50,7 @@ proc newconn {sock when} {
 
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer socket callback]
 [manpage_end]
 
 
