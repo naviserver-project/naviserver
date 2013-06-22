@@ -892,11 +892,11 @@ AddType(CONST char *ext, CONST char *type)
 	char *oldType = Tcl_GetHashValue(he);
 	if (strcmp(oldType, type) == 0) {
 	    Ns_Log(Warning, 
-		   "config mimtypes: redefine mimetype for %s with identical value (%s); statement useless",
+		   "config mimtypes: redefine mime type for %s with identical value (%s); statement useless",
 		   ext, oldType);
 	} else {
 	    Ns_Log(Warning, 
-		   "config mimtypes: redefine predefined mimetype for %s value '%s' with different value: %s",
+		   "config mimtypes: redefine predefined mime type for %s value '%s' with different value: %s",
 		   ext, oldType, type);
 	}
 
