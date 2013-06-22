@@ -18,10 +18,10 @@ failed and [const false] otherwise. All of them can raise an error if their
 arguments are incorrect.
 
 [para]
-The behavior of the file delivery commands [cmd ns_return] 
-and [cmd ns_reponse] is influenced
+The behavior of the file delivery commands [cmd ns_returnfile] 
+and [cmd ns_repond] is influenced
 by the [const fastpath] settings, that define, how static files are
-served. The fastpath settings are decribed in the [sectref CONFIGURATION]
+served. The fastpath settings are described in the [sectref CONFIGURATION]
 section at the end of this page.
 
 
@@ -38,7 +38,7 @@ section at the end of this page.
 Return a complete response to the client consisting of the given [arg body]
 and a set of HTTP headers. [arg status] is an integer HTTP status code such as
 200 (OK) or 404 (Not Found). When the optional flag [option {-binary}] is
-used, the content of the tcl bytearray is transmitted.
+used, the content of the tcl byte-array is transmitted.
 
 [para]
 [arg mime-type] is the mime-type of the body. If a [term charset] attribute
@@ -70,7 +70,7 @@ way.
 [para]
 After the command completes the connection is returned to the driver thread
 to be closed or monitored for keep-alive and the calling connection thread
-continues to execure code.
+continues to execute code.
 
 
 
@@ -87,7 +87,7 @@ at [arg length] bytes. The bytes of the file are not transformed in any way.
 [para]
 After the command completes the connection is returned to the driver thread
 to be closed or monitored for keep-alive and the calling connection thread
-continues to execure code.
+continues to execute code.
 
 
 
@@ -107,7 +107,7 @@ Return a complete response to the client using exactly one of [option -string],
 [para]
 After the command completes the connection is returned to the driver thread
 to be closed or monitored for keep-alive and the calling connection thread
-continues to execure code.
+continues to execute code.
 
 [list_begin options]
 
@@ -122,11 +122,11 @@ A set of headers which will replace any pending headers for the response.
 
 [opt_def -string [arg body]]
 The Tcl string to send as the response body. The body may be encoded into
-an apprpriate character set if required by the client and server settings.
+an appropriate character set if required by the client and server settings.
 
 [opt_def -binary [arg body]]
 The byte-array representation of the given Tcl object will be used as the
-reponse body. No character set conversion will be done.
+response body. No character set conversion will be done.
 
 [opt_def -file [arg filepath]]
 The file identified by the given [arg filepath] will be sent as the response
@@ -168,7 +168,7 @@ ns_register_proc GET /hello {
 
 [section CONFIGURATION]
 
-The behavior of the file delivery commands [cmd ns_return] and 
+The behavior of the file delivery commands [cmd ns_returnfile] and 
 [cmd "ns_respond -file ..."], as well as the automatic delivery of static
 files is influenced by the [const fastpath] settings, which define, how
 files are served. The fastpath section of the configuration file for a
@@ -198,7 +198,7 @@ chunk size is typical the [const writersize] of a writer thread.
 This is the same behavior as in
 [cmd "ns_respond -fileid ..."] or in 
 [cmd "ns_returnfp"]. This delivery mode is activated, when
-both the global fastpath parametr [const cache] and [const mmap]
+both the global fastpath parameter [const cache] and [const mmap]
 are false.
 
 [enum] Delivering from mapped memory, when when [const mmap] is defined
@@ -208,8 +208,8 @@ determined from the operating system. This option is activated, when
 the global fastpath parameter [const mmap] is true and [const cache] is
 false.
 
-[enum] Deliverying the file from the own NaviServer file cache.  This
-option is acitivated, when the parameter [const cache] is set to true.
+[enum] Delivering the file from the own NaviServer file cache.  This
+option is activated, when the parameter [const cache] is set to true.
 [list_end]
 
 [subsection "Global fastpath configuration parameters"]
