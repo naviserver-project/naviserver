@@ -383,8 +383,8 @@ a linear search through the whole underlying C array.)  If you stuff very large
 amounts of data into an ns_set, performance will be very poor - use a Tcl Array instead for that.
 
 
-[see_also nsd]
-[keywords ns_findset]
+[see_also ns_findset]
+[keywords ns_set]
 
 [manpage_end]
 
