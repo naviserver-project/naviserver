@@ -165,4 +165,27 @@ $uptree
     ns_returnnotice 200 $url $html
 }
 
+
+#
+# ns_zipfile --
+#
+#   call gzip on a file to produce a same-named file
+#   in the same directory
+#
+# Results:
+#   None.
+#
+# Side effects:
+#   Create a gzipped file.
+#
+
+proc ns_gzipfile {source target} {
+    set gzipCmd [ns_config ns/fastpath gzip_cmd]
+    if {$gzipCmd eq ""} {error "no ns/fastpath gzip_cmd configured"}
+    exec {*}$gzipCmd < $source > $target
+}
+
+
+
+
 # EOF

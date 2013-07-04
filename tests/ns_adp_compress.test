@@ -243,7 +243,7 @@ test compress-2.1 {HTTP 1.1: no Accept-Encoding} -body {
         -encoding binary \
         -getheaders {Content-Encoding Vary} \
         GET /ns_adp_compress.adp
-} -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
+} -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-2.2 {HTTP 1.1: Accept-Encoding *} -body {
     nstest::http \
@@ -458,14 +458,17 @@ test compress-4.1 {HTTP 1.0: no Accept-Encoding} -setup {
 } -body {
     nstest::http -http 1.0 -getbody 1 -getheaders {Content-Encoding Vary} \
         GET /nsconn
-} -result "200 {} {} x0y"
+} -result "200 {} Accept-Encoding x0y"
 
 test compress-4.2 {HTTP 1.0: Accept-Encoding gzip} -setup {
     ns_register_proc GET /nsconn {
+	ns_conn compress 0
         ns_return 200 text/plain x[ns_conn zipaccepted]y
     }
 } -body {
-    nstest::http -http 1.0 -getbody 1 -getheaders {Content-Encoding Vary} -setheaders {Accept-Encoding gzip} \
+    nstest::http -http 1.0 -getbody 1 \
+	-getheaders {Content-Encoding Vary} \
+	-setheaders {Accept-Encoding gzip} \
         GET /nsconn
 } -result "200 {} {} x1y"
 

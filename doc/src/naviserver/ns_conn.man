@@ -61,19 +61,22 @@ or nothing will get sent out at all.
 [call [cmd  "ns_conn compress"] [opt [arg level]]]
 
 Either set or query the compression level for the current connection.
-
+Use [cmd  "ns_conn compress 0"] to indicate that compression should be
+deactivated
 
 [call [cmd  "ns_conn content"] [opt [arg offset]] [opt [arg length]]]
 
-Returns the content of the HTTP request body, optionally a substring of that content
-starting at offset and extending length characters.
-
+Returns the content of the HTTP request body, optionally a substring
+of that content starting at offset and extending length
+characters. Note that the client response might be returned as string
+content (as retrieved by this command) or as file 
+(see [cmd "ns_conn contentfile"] ).
 
 [call [cmd  "ns_conn contentfile"]]
 
-Returns name of the temporary file which holds contents of the request. This only works
-when maxupload parameter to nssock driver is set to the value between 1K and maxinput.
-
+Returns name of the temporary file which holds contents of the
+request. Whether of not a content files is returned depends on the
+configuration settings.
 
 [call [cmd  "ns_conn contentlength"]]
 

@@ -233,22 +233,33 @@ Use mmap for file deliveries (and cache is false)
 (boolean, defaults to false)
 
 [def gzip_static]
-Send the gzipped version of the file if available and the client
-accepts gzipped content. When a file [const path/foo.ext] is requested,
+Send the gzip-ed version of the file if available and the client
+accepts gzip-ed content. When a file [const path/foo.ext] is requested,
 and there exists a file  [const path/foo.ext.gz], and the
-timestamp of the gzipped file is equal or newer than the
-source file, use the gzipped file for delivery. 
+timestamp of the gzip-ed file is equal or newer than the
+source file, use the gzip-ed file for delivery. 
 (boolean, defaults to false)
 
+[def gzip_refresh]
+Refresh gzip file (i.e. re-gzip source) when the modification time of
+the gzip file is older than the modification time of the source.
+Note, that the command is just used for re-gzip-ing outdated files; it
+does not actively compress files, which were previously not compressed
+(this would be wasteful for e.g. large tmp files, there is not
+cleanup, etc.).  For refreshing gzip files, the Tcl command
+"::ns_gzipfile source target" is used.  This command can be
+potentially redefined by an application.  When this parameter is not
+defined (or the refresh cmd fails), outdated gzip-ed files are
+ignored, and a warning is written to the error.log. (boolean, defaults
+to false)
+
 [def gzip_cmd]
-Command for zipping files in case the (static) gzipped version of the
-file is older than the source. The command is just used for
-re-gzipping outdated files, it does not actively compress files, which
-were previously not compressed (this would be wasteful for e.g. large
-tmp files, there is not cleanup, etc.). If this parameter is not
-defined, outdated gzipped files are ignored, and a warning is written
-to the error.log. Example setting: "/usr/bin/gzip -9".  (string,
-defaults to "") 
+Command for gzip-ing files, used by [cmd ::ns_gzipfile].  
+Teh value of [term gzip_cmd] is used in [cmd ::ns_gzipfile]
+to locate the gzip command in the OS.  If [term gzip_cmd] 
+is not defined, and [cmd ::ns_gzipfile] is called, an error 
+is written to the error.log. 
+Example setting: "/usr/bin/gzip -9".  (string, defaults to "")
 
 [list_end]
 

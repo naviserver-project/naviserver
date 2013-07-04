@@ -147,7 +147,7 @@ ns_param   URLCharset      iso-8859-1
 ns_param   OutputCharset   iso-8859-1
 ns_param   HackContentType true
 
-ns_param   compressenable  false ;# turned on as needed for tests
+ns_param   compressenable  true  ;# turned on as needed for tests
 ns_param   compresslevel   4     ;# default
 ns_param   compressminsize 3     ;# for testing, compress almost everything
 ns_param   minthreads 2

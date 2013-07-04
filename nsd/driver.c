@@ -2464,8 +2464,8 @@ SockParse(Sock *sockPtr, int spooler)
 		/* get gzip from accept-encoding header */
 		gzip = NsParseAcceptEnconding(reqPtr->request.version, s);
 	    } else {
-		/* no accept-encoding header; make gzip default in HTTP/1.1 */
-		gzip = (reqPtr->request.version >= 1.1);
+		/* no accept-encoding header; don't allow gzip */
+		gzip = 0;
 	    }
 	    if (gzip) {
 		/*

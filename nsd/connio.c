@@ -197,8 +197,7 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
 
             if (!(connPtr->flags & NS_CONN_SENTHDRS)
 		&& !(connPtr->flags & NS_CONN_SKIPBODY)) {
-		
-                Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
+	        Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
 
                 if (connPtr->flags & NS_CONN_ZIPACCEPTED) {
                     Ns_ConnSetHeaders(conn, "Content-Encoding", "gzip");

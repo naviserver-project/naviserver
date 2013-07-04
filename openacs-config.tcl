@@ -141,6 +141,7 @@ ns_section      "ns/fastpath"
     #ns_param        cachemaxentry       100000     ;# default: 8192
     #ns_param        mmap                true       ;# default: false
     #ns_param        gzip_static         true       ;# check for static gzip; default: false
+    #ns_param        gzip_refresh        true       ;# refresh stale .gz files on the fly using ::ns_gzipfile
     #ns_param        gzip_cmd            "/usr/bin/gzip -9"  ;# use for re-compressing
 
 #---------------------------------------------------------------------

@@ -358,8 +358,11 @@ ns_section	"ns/fastpath"
    # Use mmap() for cache. Optional, default is false.
    ns_param	mmap			false
 
-   # Return gzipped variant, if available and allowed by client
+   # Return gzip-ed variant, if available and allowed by client (default false)
    #ns_param	gzip_static		true
+
+   # Refresh stale .gz files on the fly using ::ns_gzipfile (default false)
+   #ns_param	gzip_refresh		true
 
    # Return the specified command for re-compressing when gzip file is outdated
    #ns_param	gzip_cmd		"/usr/bin/gzip -9"
