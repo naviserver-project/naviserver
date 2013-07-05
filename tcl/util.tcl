@@ -225,6 +225,7 @@ proc ns_paren {val} {
 #
 
 proc Paren {val} {
+    ns_deprecated "ns_paren"
     return [ns_paren $val]
 }
 
