@@ -128,6 +128,11 @@ ns_runonce {
         
         # Exported commands
         namespace export unknown
+
+	# blacklisted procs
+	array set ::nstrace::blacklistProcs {
+	    ::clock 1
+	}
         
         # Initialize nstrace shared state
         if {[nsv_array exists nstrace] == 0} {
@@ -680,6 +685,9 @@ ns_runonce {
 	    # Save procs and command of all namespaces
 	    #
             foreach pn [info procs ${nsp}::*] {
+		if {[info exists ::nstrace::blacklistProcs($pn)]} {
+		    continue
+		}
                 set orig [namespace origin $pn]
                 if {$orig ne [namespace which -command $pn]} {
                     append import "namespace import -force [list $orig]" \n
