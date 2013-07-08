@@ -643,6 +643,34 @@ ns_runonce {
             }
         }
 
+	#
+	# helper proc for ensembles
+	# reconfigures rather than recreates existing ensembles
+	# to prevent loss of bytecoding
+	# 
+
+	proc _create_or_config_ensemble {cmd cfg} {
+	    if {[info command $cmd] eq $cmd && [namespace ensemble exists $cmd]} {
+	       uplevel 1 [list ::namespace ensemble configure $cmd {*}$cfg]
+	    } else {
+	       uplevel 1 [list ::namespace ensemble create -command $cmd {*}$cfg]
+	    }
+	}
+
+	#
+	# helper proc for ensemble serialization
+	# 
+
+	proc _getensemble {cmd} {
+	    if {[namespace ensemble exists $cmd]} {
+		set _cfg [namespace ensemble configure $cmd]
+		set _enns [dict get $_cfg -namespace]
+		dict unset _cfg -namespace
+		set _encmd [list ::nstrace::_create_or_config_ensemble $cmd $_cfg]
+		return [list namespace eval $_enns $_encmd]\n
+	    }
+	}
+
         #
         # Generates scipts to re-generate namespace definition.
         # Returns two scripts: first is used to re-generate 
@@ -701,6 +729,7 @@ ns_runonce {
                     $orig ne [namespace which -command $cn]} {
                     append import "namespace import -force [list $orig]" \n
                 }
+		append import [_getensemble $cn]
             }
             foreach ex [namespace eval $nsp [list namespace export]] {
                 append script "namespace export [list $ex]" \n
