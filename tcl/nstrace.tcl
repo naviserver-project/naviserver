@@ -129,11 +129,6 @@ ns_runonce {
         # Exported commands
         namespace export unknown
 
-	# blacklisted procs
-	array set ::nstrace::blacklistProcs {
-	    ::clock 1
-	}
-        
         # Initialize nstrace shared state
         if {[nsv_array exists nstrace] == 0} {
             nsv_set nstrace lastepoch $epoch
@@ -465,10 +460,12 @@ ns_runonce {
 
             #
             # Script is output to file mainly for
-            # interactive debugging purposes.
-            #
-
+            # interactive debugging purposes. The first line
+            # gives you always the latest version, the second
+	    # one is useful for debugging e.g. ns_eval.
+	  
 	    #if {1} {_savescript /tmp/__ns_blueprint.tcl $script}
+	    #if {1} {_savescript /tmp/__ns_blueprint[clock format [clock seconds] -format %d-%b-%Y-%H:%M:%S].tcl $script}
 
             if {$file ne ""} {
                 _savescript $file $script
@@ -713,9 +710,6 @@ ns_runonce {
 	    # Save procs and command of all namespaces
 	    #
             foreach pn [info procs ${nsp}::*] {
-		if {[info exists ::nstrace::blacklistProcs($pn)]} {
-		    continue
-		}
                 set orig [namespace origin $pn]
                 if {$orig ne [namespace which -command $pn]} {
                     append import "namespace import -force [list $orig]" \n
