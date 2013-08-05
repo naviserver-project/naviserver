@@ -574,11 +574,21 @@ ns_runonce {
 
         proc getentry {store var} {
             variable epoch
-            set ei $::errorInfo
-            set ec $::errorCode
+	    
+	    if {[info exists ::errorInfo]} {set savedErrorInfo $::errorInfo}
+	    if {[info exists ::errorCode]} {set savedErrorCode $::errorCode}
+
             if {[catch {nsv_set nstrace-${store}-${epoch} $var} val]} {
-                set ::errorInfo $ei
-                set ::errorCode $ec
+		if {[info exists savedErrorInfo]} {
+		    set ::errorInfo $savedErrorInfo
+		} else {
+		    unset -nocomplain ::errorInfo
+		}
+		if {[info exists savedErrorCode]} {
+		    set ::errorCode $savedErrorCode
+		} else {
+		    unset -nocomplain ::errorCode
+		}
                 set val ""
             }
             return $val
