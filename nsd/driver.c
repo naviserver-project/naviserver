@@ -2602,7 +2602,10 @@ SockParse(Sock *sockPtr, int spooler)
 	     * always into the mmapped area. Might lead to crashes
 	     * when we hitting page boundaries.
 	     */
-	    write(sockPtr->tfd, "\0", 1); 
+	    int result = write(sockPtr->tfd, "\0", 1); 
+	    if (result == -1) {
+		Ns_Log(Error, "socket: could not append terminating 0-byte");
+	    }
             sockPtr->tsize = reqPtr->length + 1;
             sockPtr->taddr = mmap(0, sockPtr->tsize, prot, MAP_PRIVATE,
                                   sockPtr->tfd, 0);
@@ -4386,10 +4389,12 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
 
     /*
      * If the async writer has not started or is deactivated, behave
-     * like a write() command.
+     * like a write() command. If the write() fails, we can't do much,
+     * since writing of an error message to the log might bring us
+     * into an infinte loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
-	write(fd, buffer, nbyte);
+	(void) write(fd, buffer, nbyte);
         return NS_ERROR;
     }
 
@@ -4540,12 +4545,12 @@ AsyncWriterThread(void *arg)
 		 * Drain the queue from everything
 		 */
 		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    (void)write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		writePtr = NULL;
 
 		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    (void)write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		queuePtr->sockPtr = NULL;
 
@@ -4615,7 +4620,7 @@ AsyncWriterThread(void *arg)
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
-		write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		(void)write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		curPtr = curPtr->nextPtr;
 	    }
 	} else {

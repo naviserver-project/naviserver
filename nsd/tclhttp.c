@@ -390,11 +390,15 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		  length, httpPtr->spoolLimit, httpPtr->spoolFileName);*/
 		
 		if (fd) {
+		    int result;
 		    /*Ns_Log(Notice, "ns_http: we spool %d bytes", 
 		      httpPtr->ds.length - httpPtr->replyHeaderSize);*/
-		    write(fd, 
-			  httpPtr->ds.string + httpPtr->replyHeaderSize, 
-			  httpPtr->ds.length - httpPtr->replyHeaderSize);
+		    result = write(fd, 
+				   httpPtr->ds.string + httpPtr->replyHeaderSize, 
+				   httpPtr->ds.length - httpPtr->replyHeaderSize);
+		    if (result == -1) {
+			Ns_Log(Error, "ns_http: spool of uploaded content failed");
+		    }
 		}
 		/* now, other threads might write to this fd as well */
 		httpPtr->spoolFd = fd;
@@ -810,8 +814,12 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, int why)
 	     * different orders.
 	     */
 	    if (httpPtr->spoolFd > 0) {
+		int result;
 		Ns_Log(Debug, "Task got %d bytes, spooled", (int)n);
-		write(httpPtr->spoolFd, buf, n);
+		result = write(httpPtr->spoolFd, buf, n);
+		if (result == -1) {
+		    Ns_Log(Error, "task: spooling of received content failed");
+		}
 	    } else {
 		Tcl_DStringAppend(&httpPtr->ds, buf, n);
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {
