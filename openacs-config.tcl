@@ -71,7 +71,7 @@ set max_file_upload_min        5
 #---------------------------------------------------------------------
 # Where are your pages going to live ?
 set pageroot                  ${serverroot}/www 
-set directoryfile             index.tcl,index.adp,index.html,index.htm
+set directoryfile             "index.tcl index.adp index.html index.htm"
 
 #---------------------------------------------------------------------
 # Global server parameters 
@@ -161,7 +161,6 @@ ns_section ns/servers
 # Server parameters 
 # 
 ns_section ns/server/${server} 
-	ns_param	directoryfile	$directoryfile
 	#
 	# Scaling and Tuning Options
 	#
