@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {NaviServer Maintenance Guide} n [vset version]]
+[manpage_begin admin-maintenance n [vset version]]
 
 [titledesc {NaviServer Maintenance Guide}]
 

@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {History of NaviServer} n [vset version]]
+[manpage_begin {main-history} n [vset version]]
 
 [titledesc {History of NaviServer}]
 

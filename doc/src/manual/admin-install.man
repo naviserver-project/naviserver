@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {NaviServer Installation Guide} n [vset version]]
+[manpage_begin admin-install n [vset version]]
 
 [titledesc {NaviServer Installation Guide}]
 

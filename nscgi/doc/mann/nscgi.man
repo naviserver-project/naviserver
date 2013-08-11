@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {NaviServer CGI Interface Guide} n [vset version]]
+[manpage_begin {nscgi} n [vset version]]
 
 [titledesc {NaviServer CGI Interface Guide}]
 

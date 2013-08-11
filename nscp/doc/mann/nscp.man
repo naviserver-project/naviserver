@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {NaviServer Control Port Guide} n [vset version]]
+[manpage_begin {nscp} n [vset version]]
 
 [titledesc {NaviServer Control Port Guide}]
 

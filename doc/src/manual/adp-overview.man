@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {NaviServer ADP Development} n [vset version]]
+[manpage_begin {adp-overview} n [vset version]]
 
 [titledesc {NaviServer ADP Development}]
 

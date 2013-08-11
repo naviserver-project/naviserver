@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {NaviServer Tcl Libraries} n [vset version]]
+[manpage_begin {tcl-libraries} n [vset version]]
 
 [titledesc {NaviServer Tcl Libraries}]
 

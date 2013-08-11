@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {Support for .tcl-style dynamic pages} n [vset version]]
+[manpage_begin {tcl-lib-file} n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
 [titledesc {Support for .tcl-style dynamic pages}]

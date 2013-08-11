@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {NaviServer urlspace Data Structure} n [vset version]]
+[manpage_begin {c-urlspace} n [vset version]]
 
 [titledesc {NaviServer urlspace Data Structure}]
 

@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {Engineering Standards Manual} n [vset version]]
+[manpage_begin {main-standards} n [vset version]]
 
 [titledesc {Engineering Standards Manual}]
 [description]

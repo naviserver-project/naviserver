@@ -1,6 +1,6 @@
 [include version_include.man]
-[manpage_begin ns_adp n [vset version]] [moddesc {NaviServer Built-in
-Commands}]
+[manpage_begin ns_adp n [vset version]] 
+[moddesc {NaviServer Built-in Commands}]
 
 [titledesc {ADP introduction and operation}]
 

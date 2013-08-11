@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {Managing TCL interpreter initialization} n [vset version]]
+[manpage_begin {tcl-lib-nstrace} n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
 [titledesc {Managing TCL interpreter initialization}]

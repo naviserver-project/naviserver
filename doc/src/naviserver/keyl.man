@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin {Keyed Lists} n [vset version]]
+[manpage_begin {keyl} n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
 [titledesc {Keyed Lists}]
