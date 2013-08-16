@@ -41,7 +41,7 @@ endif
 
 distfiles = $(dirs) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
-	README NEWS sample-config.tcl.in simple-config.tcl \
+	README NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in bitbucket-install.tcl
 
@@ -101,6 +101,7 @@ install-dirs: all
 	done
 
 install-config: all
+	@mkdir -p $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
 	@for i in nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
@@ -239,7 +240,7 @@ dist: clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,Makefile.global,Makefile.module,stamp-h1}
 	hg log --style=changelog > naviserver-$(NS_PATCH_LEVEL)/ChangeLog
 	find naviserver-$(NS_PATCH_LEVEL) -name '.[a-zA-Z_]*' -exec rm \{} \;
-	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz naviserver-$(NS_PATCH_LEVEL)
+	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
 
