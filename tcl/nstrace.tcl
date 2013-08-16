@@ -645,7 +645,7 @@ ns_runonce {
             variable nsplist
             lappend nsplist $top
             foreach nsp [namespace children $top] {
-		if {$nsp eq "::tcl"} {continue}
+		#if {$nsp eq "::tcl"} {continue}
                 _namespaces $nsp
             }
         }
