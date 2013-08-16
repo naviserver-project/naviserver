@@ -41,7 +41,7 @@ endif
 
 distfiles = $(dirs) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
-	README NEWS sample-config.tcl.in simple-config.tcl \
+	README NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in bitbucket-install.tcl
 
@@ -101,6 +101,7 @@ install-dirs: all
 	done
 
 install-config: all
+	@mkdir -p $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
 	@for i in nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
