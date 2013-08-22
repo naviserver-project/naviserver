@@ -352,12 +352,6 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 void
 Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 {
-    if (httpPtr->spoolLimit == -1) {
-	/*
-	 * Nothing to do.
-	 */
-	return;
-    }
     /*
      * There is a header, but it is not parsed yet.
      */
@@ -372,36 +366,38 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 	    if (httpPtr->status == 0) {
 		Ns_Log(Warning, "ns_http: Parsing reply header failed");
 	    }
-	    s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
-	    if (s && Ns_StrToWideInt(s, &length) == NS_OK && length > 0 
-		&& length >= httpPtr->spoolLimit) {
-		int fd;
-		/*
-		 * We have a valid reply length, which is larger than
-		 * the spool limit. Create a temporary spool file and
-		 * rember its fd finally in httpPtr->spoolFd to flag
-		 * that later receives will write there.
-		 */
-		httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 12);
-		sprintf(httpPtr->spoolFileName, "%shttp.XXXXXX",nsconf.tmpDir);
-		fd = mkstemp(httpPtr->spoolFileName);
-
-		/*Ns_Log(Notice, "reply content length %ld larger than limit %d (%s)", 
-		  length, httpPtr->spoolLimit, httpPtr->spoolFileName);*/
-		
-		if (fd) {
-		    int result;
-		    /*Ns_Log(Notice, "ns_http: we spool %d bytes", 
-		      httpPtr->ds.length - httpPtr->replyHeaderSize);*/
-		    result = write(fd, 
-				   httpPtr->ds.string + httpPtr->replyHeaderSize, 
-				   httpPtr->ds.length - httpPtr->replyHeaderSize);
-		    if (result == -1) {
-			Ns_Log(Error, "ns_http: spool of uploaded content failed");
+	    if (httpPtr->spoolLimit > -1) {
+		s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
+		if (s && Ns_StrToWideInt(s, &length) == NS_OK && length > 0 
+		    && length >= httpPtr->spoolLimit) {
+		    int fd;
+		    /*
+		     * We have a valid reply length, which is larger than
+		     * the spool limit. Create a temporary spool file and
+		     * rember its fd finally in httpPtr->spoolFd to flag
+		     * that later receives will write there.
+		     */
+		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 12);
+		    sprintf(httpPtr->spoolFileName, "%shttp.XXXXXX",nsconf.tmpDir);
+		    fd = mkstemp(httpPtr->spoolFileName);
+		    
+		    /*Ns_Log(Notice, "reply content length %ld larger than limit %d (%s)", 
+		      length, httpPtr->spoolLimit, httpPtr->spoolFileName);*/
+		    
+		    if (fd) {
+			int result;
+			/*Ns_Log(Notice, "ns_http: we spool %d bytes", 
+			  httpPtr->ds.length - httpPtr->replyHeaderSize);*/
+			result = write(fd, 
+				       httpPtr->ds.string + httpPtr->replyHeaderSize, 
+				       httpPtr->ds.length - httpPtr->replyHeaderSize);
+			if (result == -1) {
+			    Ns_Log(Error, "ns_http: spool of uploaded content failed");
+			}
 		    }
+		    /* now, other threads might write to this fd as well */
+		    httpPtr->spoolFd = fd;
 		}
-		/* now, other threads might write to this fd as well */
-		httpPtr->spoolFd = fd;
 	    }
 	}
 	Ns_MutexUnlock(&httpPtr->lock);
@@ -461,19 +457,17 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
 	return TCL_ERROR;
     }
 
-    if (spoolLimit > -1) {
-	if (hdrPtr == NULL) {
-	    /*
-	     * If no output headers are provided, we create our
-	     * own. The ns_set is needed for checking the content
-	     * length of the reply.
-	     */
-	    hdrPtr = Ns_SetCreate("outputHeaders");
-	}
-	httpPtr->spoolLimit = spoolLimit;
-	httpPtr->replyHeaders = hdrPtr;
-	Ns_HttpCheckSpool(httpPtr);
+    if (hdrPtr == NULL) {
+      /*
+       * If no output headers are provided, we create our
+       * own. The ns_set is needed for checking the content
+       * length of the reply.
+       */
+      hdrPtr = Ns_SetCreate("outputHeaders");
     }
+    httpPtr->spoolLimit = spoolLimit;
+    httpPtr->replyHeaders = hdrPtr;
+    Ns_HttpCheckSpool(httpPtr);
 
     if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
 	HttpCancel(httpPtr);
