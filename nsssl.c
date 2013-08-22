@@ -750,19 +750,17 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         }
 	httpPtr = &httpsPtr->http;
 
-	if (spoolLimit > -1) {
-	    if (hdrPtr == NULL) {
-	    /*
-	     * If no output headers are provided, we create our
-	     * own. The ns_set is needed for checking the content
-	     * length of the reply.
-	     */
-		hdrPtr = Ns_SetCreate("outputHeaders");
-	    }
-	    httpPtr->spoolLimit = spoolLimit;
-	    httpPtr->replyHeaders = hdrPtr;
-	    Ns_HttpCheckSpool(httpPtr);
+	if (hdrPtr == NULL) {
+	  /*
+	   * If no output headers are provided, we create our
+	   * own. The ns_set is needed for checking the content
+	   * length of the reply.
+	   */
+	  hdrPtr = Ns_SetCreate("outputHeaders");
 	}
+	httpPtr->spoolLimit = spoolLimit;
+	httpPtr->replyHeaders = hdrPtr;
+	Ns_HttpCheckSpool(httpPtr);
 
         if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
             HttpsCancel(httpsPtr);
