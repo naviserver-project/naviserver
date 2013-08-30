@@ -27,11 +27,14 @@ set address		127.0.0.1
 set server		"openacs" 
 set servername		"New OpenACS Installation - Development"
 
-set serverroot		"/var/www/${server}"
+set serverroot		/var/www/${server}
 set logroot		${serverroot}/log/
 
 set homedir		/usr/local/ns
 set bindir		${homedir}/bin
+
+# Are we runnng behind a proxy?
+set proxy_mode		false
 
 #---------------------------------------------------------------------
 # Which database do you want? postgres or oracle
@@ -114,6 +117,10 @@ ns_section ns/parameters
 	ns_param	OutputCharset	utf-8   
 	# ns_param	URLCharset	utf-8
 
+	# Running behind proxy? Used by OpenACS...
+	ns_param	ReverseProxyMode	$proxy_mode
+
+
 #---------------------------------------------------------------------
 # Thread library (nsthread) parameters 
 #---------------------------------------------------------------------
@@ -166,7 +173,7 @@ ns_section ns/server/${server}
 	#
 	# ns_param	maxconnections	100	;# 100; number of allocated connection stuctures
 	# ns_param	maxthreads	10	;# 10; maximal number of connection threads
-	# ns_param	minthreads	1	;# 1; minimal number of connection threads
+	ns_param	minthreads	2	;# 1; minimal number of connection threads
 	ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
 	# ns_param	threadtimeout	120	;# 120; timeout for idle theads
         # ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
@@ -336,7 +343,7 @@ ns_section ns/server/${server}/module/nslog
 	# ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
 	# ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
 	# ns_param	extendedheaders	COOKIE	;# space delimited list of HTTP heads to log per entry
-	# ns_param	checkforproxy	true	;# false, check for proxy header (X-Forwarded-For)
+	ns_param	checkforproxy	$proxy_mode ;# false, check for proxy header (X-Forwarded-For)
 	#
 	#
 	# Control log file rolling
