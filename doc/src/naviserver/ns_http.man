@@ -47,7 +47,8 @@ body is the value which will be sent as the HTTP request body.
 
 [para]
 [arg -timeout]
-Timeout for how long to wait reply back from the web server
+Timeout for how long to wait for finishing the request (default
+2:0, secs:microsesc)
 
 [para]
 The command [cmd "ns_http queue"] opens a connection to the web server
@@ -109,7 +110,8 @@ varName is the name of a variable that should be used to store the HTTP response
 
 [para]
 [arg -timeout]
-Timeout for the request. Default timeout is "2:0" (2s, 0usec).
+Optional additional timeout for the wait command. Might be governed by
+the timeout specified in the queue subcommand.
 
 [para]
 [arg id]
@@ -127,11 +129,32 @@ since per default the results are received into memory.
 
 [section EXAMPLES]
 
+First, a minimal example:
 [example_begin]
  % ns_http queue http://www.google.com
- % http0
- % ns_http wait -status status -result result http0
- % 1
+ http0
+ % ns_http wait -status S -result R http0
+ 1
+[example_end]
+
+The second example set a larger timeout on the request, provides
+query-headers and returns reply-headers, and spools results to a file,
+when the result is larger than 100 bytes.
+
+[example_begin]
+ set queryHeaders [lb]ns_set create[rb]
+ set replyHeaders [lb]ns_set create[rb]
+ ns_set update $queryHeaders Host localhost
+ 
+ set h [lb]ns_http queue -headers $queryHeaders -timeout 10:0 http://www.google.com[rb]
+ ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1000 -file F $h
+ 
+ if {[lb]info exists F[rb]} {
+   ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
+   file delete $F
+ } else {
+   ns_log notice "Got [lb]string length $R[rb] bytes"
+ }
 [example_end]
 
 
