@@ -444,12 +444,44 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     if (conn->outputheaders != NULL) {
-
         for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {
-                Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
+		char *lineBreak = strchr(value, '\n');
+
+		if (!lineBreak) {
+		    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", NULL);
+		} else {
+		    Ns_DString sanitize, *sPtr = &sanitize;
+		    /*
+		     * We have to sanititize the header field to avoid
+		     * a HTTP response splitting attack. After each
+		     * newline in the value, we insert a TAB character
+		     * (see Section 4.2 in RFC 2616)
+		     */
+
+		    Ns_DStringInit(&sanitize);
+
+		    do {
+			size_t offset = lineBreak - value;
+			
+			if (offset > 0) {
+			    Tcl_DStringAppend(sPtr, value, offset);
+			}
+			Tcl_DStringAppend(sPtr, "\n\t", 2);
+
+			offset ++;
+			value += offset;
+			lineBreak = strchr(value, '\n');
+
+		    } while (lineBreak != NULL);
+
+		    Tcl_DStringAppend(sPtr, value, -1);
+
+		    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sPtr), "\r\n", NULL);
+		    Ns_DStringFree(sPtr);
+		}
             }
         }
     }
