@@ -2146,6 +2146,12 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     SockPrepare(sockPtr);
 
     /*
+     * For HTTP/1.1 we have to make sure that the flags of the
+     * reused socket connection are cleared.
+     */
+    sockPtr->flags = 0;
+
+    /*
      * On the first read, attempt to read-ahead bufsize bytes.
      * Otherwise, read only the number of bytes left in the
      * content.
