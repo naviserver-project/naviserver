@@ -2146,12 +2146,6 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     SockPrepare(sockPtr);
 
     /*
-     * For HTTP/1.1 we have to make sure that the flags of the
-     * reused socket connection are cleared.
-     */
-    sockPtr->flags = 0;
-
-    /*
      * On the first read, attempt to read-ahead bufsize bytes.
      * Otherwise, read only the number of bytes left in the
      * content.
@@ -2464,6 +2458,11 @@ SockParse(Sock *sockPtr, int spooler)
                 }
 
             }
+	    
+	    /*
+	     * Clear NS_CONN_ZIPACCEPTED flag
+	     */
+	    sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED);
 
 	    s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
 	    if (s != NULL) {
@@ -4400,7 +4399,8 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
      * into an infinte loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
-	(void) write(fd, buffer, nbyte);
+        int unused NS_GNUC_UNUSED =
+	  write(fd, buffer, nbyte);
         return NS_ERROR;
     }
 
