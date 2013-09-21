@@ -147,7 +147,7 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
-    char           *path, *key, *value, *section;
+    char           *path, *section;
     int             i;
     Ns_Set         *set;
     Ns_DString      ds;
@@ -224,8 +224,8 @@ Ns_ModuleInit(char *server, char *module)
 
     set = Ns_ConfigGetSection(path);
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-        key = Ns_SetKey(set, i);
-        value = Ns_SetValue(set, i);
+        char *key   = Ns_SetKey(set, i);
+        char *value = Ns_SetValue(set, i);
         if (STRIEQ(key, "map")) {
             CgiRegister(modPtr, value);
         }
@@ -687,8 +687,8 @@ CgiFree(Cgi *cgiPtr)
 static int
 CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int i, index, opipe[2];
-    char *s, *e, *p, **envp;
+    int i, opipe[2];
+    char *s, *e, *p;
     Ns_DString *dsPtr;
     Mod *modPtr = cgiPtr->modPtr;
 
@@ -713,7 +713,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_SetMerge(cgiPtr->env, modPtr->mergeEnv);
     }
     if (modPtr->flags & CGI_SYSENV) {
-	envp = Ns_CopyEnviron(dsPtr);
+	char **envp = Ns_CopyEnviron(dsPtr);
 	while (*envp != NULL) {
 	    s = *envp;
 	    e = strchr(s, '=');
@@ -840,6 +840,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     Ns_DStringAppend(dsPtr, "HTTP_");
     for (i = 0; i < Ns_SetSize(conn->headers); ++i) {
+	int index;
+
         s = Ns_SetKey(conn->headers, i);
         e = Ns_SetValue(conn->headers, i);
         Ns_DStringAppend(dsPtr, s);

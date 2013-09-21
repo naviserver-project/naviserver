@@ -568,11 +568,10 @@ Ns_DbBouncePool(char *pool)
 void
 NsDbInitPools(void)
 {
-    Tcl_HashEntry  *hPtr;
-    Pool           *poolPtr;
-    Ns_Set         *pools;
-    char           *path, *pool, *driver;
-    int		    isNew, i;
+    Pool     *poolPtr;
+    Ns_Set   *pools;
+    char     *path, *driver;
+    int	      isNew, i;
 
     Ns_TlsAlloc(&tls, FreeTable);
 
@@ -583,9 +582,11 @@ NsDbInitPools(void)
     Tcl_InitHashTable(&serversTable, TCL_STRING_KEYS);
     Tcl_InitHashTable(&poolsTable, TCL_STRING_KEYS);
     pools = Ns_ConfigGetSection("ns/db/pools");
+
     for (i = 0; pools != NULL && i < Ns_SetSize(pools); ++i) {
-	pool = Ns_SetKey(pools, i);
-	hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
+	char          *pool = Ns_SetKey(pools, i);
+        Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
+
 	if (!isNew) {
 	    Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
 	    continue;	

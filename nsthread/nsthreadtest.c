@@ -230,15 +230,15 @@ AtExit(void)
 #define NA 10000
 #define BS 1024*16
 
-int             nthreads = 10;
-int             memstart;
-int             nrunning;
+int nthreads = 10;
+int memstart;
+int nrunning;
 
 void
 MemThread(void *arg)
 {
-    int             i,n;
-    void           *ptr;
+    int    i;
+    void  *ptr;
 
     Ns_MutexLock(&lock);
     ++nrunning;
@@ -250,7 +250,7 @@ MemThread(void *arg)
 
     ptr = NULL;
     for (i = 0; i < NA; ++i) {
-	n = rand() % BS;
+	int n = rand() % BS;
 	if (arg) {
 	    if (ptr)
 		ns_free(ptr);

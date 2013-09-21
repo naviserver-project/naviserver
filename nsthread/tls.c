@@ -170,11 +170,13 @@ Ns_TlsGet(Ns_Tls *keyPtr)
 void
 NsCleanupTls(void **slots)
 {
-    int i, trys, retry;
+    int trys, retry;
     void *arg;
 
     trys = 0;
     do {
+	int i;
+
 	retry = 0;
     	i = NS_THREAD_MAXTLS;
     	while (i-- > 0) {

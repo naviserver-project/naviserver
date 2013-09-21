@@ -271,7 +271,6 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     CONST char **hdrs;
     int          status, intarg, cmd;
     Ns_DString   ds;
-    Tcl_Obj     *path;
     Log         *logPtr = arg;
 
     enum {
@@ -452,7 +451,8 @@ LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             if (Tcl_FSAccess(objv[2], F_OK) == 0) {
                 status = Ns_RollFile(strarg, logPtr->maxbackup);
             } else {
-                path = Tcl_NewStringObj(logPtr->file, -1);
+                Tcl_Obj *path = Tcl_NewStringObj(logPtr->file, -1);
+
                 Tcl_IncrRefCount(path);
                 status = Tcl_FSRenameFile(path, objv[2]);
                 Tcl_DecrRefCount(path);

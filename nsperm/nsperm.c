@@ -562,7 +562,7 @@ static int ValidateUserAddr(User * userPtr, char *peer)
     struct in_addr peerip, ip, mask;
     int retval;
     Tcl_HashSearch search;
-    Tcl_HashEntry *hPtr, *entryPtr;
+    Tcl_HashEntry *hPtr;
 
     if (peer == NULL) {
         return NS_TRUE;
@@ -580,6 +580,8 @@ static int ValidateUserAddr(User * userPtr, char *peer)
 
     hPtr = Tcl_FirstHashEntry(&userPtr->masks, &search);
     while (hPtr != NULL) {
+	Tcl_HashEntry *entryPtr;
+
         mask.s_addr = (unsigned long) Tcl_GetHashKey(&userPtr->masks, hPtr);
         ip.s_addr = peerip.s_addr & mask.s_addr;
 
@@ -929,15 +931,17 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
 {
     Server *servPtr = data;
-    User *userPtr;
     struct in_addr ip;
     Tcl_HashSearch search, msearch;
-    Tcl_HashEntry *hPtr, *mPtr;
+    Tcl_HashEntry *hPtr;
 
     Ns_RWLockRdLock(&servPtr->lock);
     hPtr = Tcl_FirstHashEntry(&servPtr->users, &search);
+
     while (hPtr != NULL) {
-        userPtr = Tcl_GetHashValue(hPtr);
+	Tcl_HashEntry *mPtr;
+	User          *userPtr = Tcl_GetHashValue(hPtr);
+
         Tcl_AppendResult(interp, "{", Tcl_GetHashKey(&servPtr->users, hPtr), "} {", userPtr->pwd, "} {", NULL);
 
         if (userPtr->hosts.numEntries > 0 || userPtr->masks.numEntries > 0 || userPtr->nets.numEntries > 0) {
@@ -1156,14 +1160,16 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
 static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj * CONST objv[])
 {
     Server *servPtr = data;
-    Group *groupPtr;
-    Tcl_HashSearch search, usearch;
-    Tcl_HashEntry *hPtr, *uhPtr;
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
 
     Ns_RWLockRdLock(&servPtr->lock);
     hPtr = Tcl_FirstHashEntry(&servPtr->groups, &search);
     while (hPtr != NULL) {
-        groupPtr = Tcl_GetHashValue(hPtr);
+	Tcl_HashSearch usearch;
+	Tcl_HashEntry *uhPtr;
+	Group         *groupPtr = Tcl_GetHashValue(hPtr);
+
         Tcl_AppendResult(interp, Tcl_GetHashKey(&servPtr->groups, hPtr), " { ", NULL);
 
         /*
@@ -1204,7 +1210,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     Server *servPtr = data;
     Perm *permPtr;
     Ns_DString base;
-    char *method, *url, *key;
+    char *method, *url;
     int i, isNew, flags = 0, nargs = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -1253,7 +1259,8 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     }
 
     for (i = objc - nargs; i < objc; i++) {
-        key = Tcl_GetString(objv[i]);
+        char *key = Tcl_GetString(objv[i]);
+
         if (user) {
             if (allow) {
                 (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &isNew);

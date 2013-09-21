@@ -115,7 +115,7 @@ NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
     Mod           *modPtr;
-    char          *path, *addr, *pass, *user, *key, *end;
+    char          *path, *addr, *end;
     int            i, isNew, port;
     NS_SOCKET      lsock;
     Tcl_HashEntry *hPtr;
@@ -168,6 +168,7 @@ Ns_ModuleInit(char *server, char *module)
 
     if (set == NULL && !strcmp(addr, "127.0.0.1")) {
         Ns_DString ds;
+
         Ns_DStringInit(&ds);
         path = Ns_ModulePath(&ds, server, module, "users", NULL);
         set = Ns_ConfigCreateSection(path);
@@ -176,8 +177,10 @@ Ns_ModuleInit(char *server, char *module)
     }
 
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-	key = Ns_SetKey(set, i);
-	user = Ns_SetValue(set, i);
+	char *pass;
+	char *key = Ns_SetKey(set, i);
+	char *user = Ns_SetValue(set, i);
+
 	if (!STRIEQ(key, "user") || (pass = strchr(user, ':')) == NULL) {
 	    continue;
 	}
