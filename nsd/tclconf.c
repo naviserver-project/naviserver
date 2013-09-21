@@ -128,7 +128,6 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
      */
 
     if (defObj != NULL) {
-	Ns_Set *set;
 
         if (isbool) {
             if (unlikely(Tcl_GetBooleanFromObj(interp, defObj, &i) != TCL_OK)) {
@@ -147,7 +146,8 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 
 	if (doSet) {
 	    /* make setting queryable */
-	    set = Ns_ConfigCreateSection(section);
+
+	    Ns_Set *set = Ns_ConfigCreateSection(section);
 	    if (set) {
 		Ns_SetUpdate(set, key, Tcl_GetString(defObj));
 	    }

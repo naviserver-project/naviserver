@@ -603,7 +603,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    TclCache       *cPtr;
+    TclCache       *cPtr = NULL;
     Ns_Entry       *entry;
     char           *key;
     Tcl_Obj        *varNameObj = NULL, *resultObj;
@@ -617,6 +617,7 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+    assert(cPtr != NULL);
 
     Ns_CacheLock(cPtr->cache);
     entry = Ns_CacheFindEntry(cPtr->cache, key);

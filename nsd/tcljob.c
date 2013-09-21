@@ -347,8 +347,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 {
     NsInterp       *itPtr = arg;
     Queue          *queuePtr = NULL;
-    Job            *jobPtr = NULL, **nextPtrPtr;
-    int             code, isNew, create = 0, max, opt, argIndex;
+    Job            *jobPtr = NULL;
+    int             code, isNew, max, opt, argIndex;
     char           *jobId = NULL, buf[100], *queueId = NULL;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
@@ -497,7 +497,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * Add a new job the specified queue.
              */
 
-            int head = 0, jobType = JOB_NON_DETACHED;
+	    int   create = 0, head = 0, jobType = JOB_NON_DETACHED;
             char *script = NULL;
 
             Ns_ObjvSpec opts[] = {
@@ -580,7 +580,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
                 jobPtr->nextPtr = tp.firstPtr;
                 tp.firstPtr = jobPtr;
             } else {
-                nextPtrPtr = &tp.firstPtr;
+	        Job  **nextPtrPtr = &tp.firstPtr;
+
                 while (*nextPtrPtr != NULL) {
                     nextPtrPtr = &((*nextPtrPtr)->nextPtr);
                 }
@@ -921,10 +922,9 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              *    Code    (Standard Tcl result code)
              */
 
-            Tcl_Obj    *jobList, *jobFieldList;
+            Tcl_Obj    *jobList;
             CONST char *jobId, *jobState, *jobCode, *jobType, *jobReq;
-            char       *jobResults, *jobScript, thrId[32];
-            double      delta;
+            char        thrId[32];
 
             if (objc != 3) {
                 Tcl_WrongNumArgs(interp, 2, objv, "queueId");
@@ -939,6 +939,10 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
             jobList = Tcl_NewListObj(0, NULL);
             hPtr = Tcl_FirstHashEntry(&queuePtr->jobs, &search);
             while (hPtr != NULL) {
+		Tcl_Obj    *jobFieldList;
+		char       *jobResults, *jobScript;
+		double      delta;
+
                 jobPtr = (Job *)Tcl_GetHashValue(hPtr);
                 jobId      = Tcl_GetHashKey(&queuePtr->jobs, hPtr);
                 jobCode    = GetJobCodeStr(jobPtr->code);
@@ -1007,14 +1011,17 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
              * Returns a list of all the queues and the queue information.
              */
 
-            Tcl_Obj    *queueList, *queueFieldList;
+            Tcl_Obj    *queueList;
             CONST char *queueReq;
 
             /* Create a Tcl List to hold the list of jobs. */
             queueList = Tcl_NewListObj(0, NULL);
             Ns_MutexLock(&tp.queuelock);
             hPtr = Tcl_FirstHashEntry(&tp.queues, &search);
+
             while (hPtr != NULL) {
+		Tcl_Obj    *queueFieldList;
+
                 queuePtr = Tcl_GetHashValue(hPtr);
                 /* Create a Tcl List to hold the list of queue fields. */
                 queueFieldList = Tcl_NewListObj(0, NULL);
@@ -1125,14 +1132,12 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 static void
 JobThread(void *arg)
 {
-    Tcl_Interp        *interp;
-    Job               *jobPtr;
     CONST char        *err;
     Queue             *queuePtr;
     Tcl_HashEntry     *hPtr;
     Tcl_AsyncHandler  async;
     Ns_Time           *timePtr, wait;
-    int               jpt, njobs, status, tid, code;
+    int               jpt, njobs, tid;
 
     Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
@@ -1153,6 +1158,10 @@ JobThread(void *arg)
     jpt = njobs = tp.jobsPerThread;
 
     while (jpt == 0 || njobs > 0) {
+	Job         *jobPtr;
+	Tcl_Interp *interp;
+	int         status, code;
+
         ++tp.nidle;
         status = NS_OK;
         if (tp.timeout > 0) {
@@ -1644,14 +1653,14 @@ ReleaseQueue(Queue *queuePtr, int locked)
 static int
 AnyDone(Queue *queue)
 {
-    Job            *jobPtr;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
     hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
 
     while (hPtr != NULL) {
-        jobPtr = Tcl_GetHashValue(hPtr);
+	Job *jobPtr = Tcl_GetHashValue(hPtr);
+
         if (jobPtr->state == JOB_DONE) {
             return 1;
         }

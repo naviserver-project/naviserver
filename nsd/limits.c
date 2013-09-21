@@ -171,7 +171,7 @@ NsTclListLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **ob
 {
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    char           *limits, *pattern;
+    char           *pattern;
 
     if (objc > 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
@@ -181,7 +181,8 @@ NsTclListLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **ob
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&limtable, &search);
     while (hPtr != NULL) {
-        limits = Tcl_GetHashKey(&limtable, hPtr);
+        char *limits = Tcl_GetHashKey(&limtable, hPtr);
+
         if (pattern == NULL || Tcl_StringMatch(limits, pattern)) {
             Tcl_AppendElement(interp, limits);
         }

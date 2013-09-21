@@ -90,7 +90,6 @@ Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[],
 		ClientData clientData[], Tcl_Interp *interp, int offset, 
 		int max, int *nextArg, int objc, Tcl_Obj *CONST objv[]) {
     int i = offset, opt;
-    char *nextArgString;
 
     Tcl_ResetResult(interp);
     
@@ -127,7 +126,8 @@ Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[],
 	}
     }
     if (objc > i) {
-	nextArgString = Tcl_GetString(objv[i]);
+        char *nextArgString = Tcl_GetString(objv[i]);
+
 	if (*nextArgString == '-') {
 	    if (*(nextArgString+1) == '-' && *(nextArgString+2) == '\0') {
 		/* handle '--' */
@@ -793,7 +793,6 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     Ns_ObjvSpec   *specPtr, *optSpec, *argSpec = NULL;
     Tcl_Obj      **specv, **specPair, *defObjPtr;
     int            numSpecs, specLen, keyLen, i;
-    char          *key;
 
     if (Tcl_ListObjGetElements(interp, objPtr, &numSpecs, &specv) != TCL_OK) {
         return TCL_ERROR;
@@ -802,6 +801,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     specPtr = optSpec;
 
     for (i = 0; i < numSpecs; ++i) {
+	char *key;
 
         /*
          * Check for a default and extract the key.

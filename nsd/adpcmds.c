@@ -544,14 +544,14 @@ NsTclAdpAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     NsInterp *itPtr = arg;
     int       i, len;
-    char     *s;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string ?string ...?");
         return TCL_ERROR;
     }
     for (i = 1; i < objc; ++i) {
-        s = Tcl_GetStringFromObj(objv[i], &len);
+        char  *s = Tcl_GetStringFromObj(objv[i], &len);
+
         if (NsAdpAppend(itPtr, s, len) != TCL_OK) {
             return TCL_ERROR;
         }

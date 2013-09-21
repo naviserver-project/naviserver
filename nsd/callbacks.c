@@ -301,7 +301,6 @@ static void
 ShutdownThread(void *arg)
 {
     Callback         *cbPtr;
-    Ns_ShutdownProc  *proc;
 
     Ns_ThreadSetName("-shutdown-");
 
@@ -311,7 +310,7 @@ ShutdownThread(void *arg)
      */
 
     for (cbPtr = arg; cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
-        proc = (Ns_ShutdownProc *)cbPtr->proc;
+	Ns_ShutdownProc  *proc = (Ns_ShutdownProc *)cbPtr->proc;
         (*proc)(NULL, cbPtr->arg);
     }
 
@@ -494,10 +493,10 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
 static void
 RunCallbacks(CONST char *list, Callback *cbPtr)
 {
-    Ns_Callback *proc;
-    Ns_DString   ds;
-
     while (cbPtr != NULL) {
+	Ns_Callback *proc;
+	Ns_DString   ds;
+
         if (Ns_LogSeverityEnabled(Debug)) {
             Ns_DStringInit(&ds);
             Ns_GetProcInfo(&ds, (void *)cbPtr->proc, cbPtr->arg);

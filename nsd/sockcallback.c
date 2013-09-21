@@ -291,8 +291,7 @@ SockCallbackThread(void *ignored)
 {
     char           c;
     int            when[3], events[3];
-    int            n, i, isNew, stop;
-    int		   max, nfds, pollto;
+    int            n, i, isNew, max;
     Callback      *cbPtr, *nextPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -315,6 +314,7 @@ SockCallbackThread(void *ignored)
     pfds[0].events = POLLIN;
 
     while (1) {
+	int stop, nfds, pollto;
 
 	/*
 	 * Grab the list of any queue updates and the shutdown

@@ -569,12 +569,12 @@ Ns_CacheFirstEntry(Ns_Cache *cache, Ns_CacheSearch *search)
 {
     Cache          *cachePtr = (Cache *) cache;
     Tcl_HashEntry  *hPtr;
-    Ns_Entry       *entry;
 
     Ns_GetTime(&search->now);
     hPtr = Tcl_FirstHashEntry(&cachePtr->entriesTable, &search->hsearch);
     while (hPtr != NULL) {
-        entry = Tcl_GetHashValue(hPtr);
+        Ns_Entry  *entry = Tcl_GetHashValue(hPtr);
+
         if (Ns_CacheGetValue(entry) != NULL) {
             if (!Expired((Entry *) entry, &search->now)) {
                 return entry;
@@ -609,11 +609,11 @@ Ns_Entry *
 Ns_CacheNextEntry(Ns_CacheSearch *search)
 {
     Tcl_HashEntry  *hPtr;
-    Ns_Entry       *entry;
 
     hPtr = Tcl_NextHashEntry(&search->hsearch);
     while (hPtr != NULL) {
-        entry = Tcl_GetHashValue(hPtr);
+        Ns_Entry *entry = Tcl_GetHashValue(hPtr);
+
         if (Ns_CacheGetValue(entry) != NULL) {
             if (!Expired((Entry *) entry, &search->now)) {
                 return entry;

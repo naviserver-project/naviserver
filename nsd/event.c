@@ -112,7 +112,6 @@ Ns_EventQueue *
 Ns_CreateEventQueue(int maxevents)
 {
     EventQueue *queuePtr;
-    Event      *evPtr;
     int         i;
 
     assert(maxevents > 0);
@@ -124,7 +123,7 @@ Ns_CreateEventQueue(int maxevents)
                  ns_sockstrerror(ns_sockerrno));
     }
     for (i = 0; i < maxevents; i++) {
-        evPtr = &queuePtr->events[i];
+        Event  *evPtr = &queuePtr->events[i];
         evPtr->nextPtr = &queuePtr->events[i+1];
     }
     queuePtr->events[maxevents].nextPtr = NULL;
@@ -255,7 +254,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     EventQueue *queuePtr = (EventQueue *) queue;
     Event      *evPtr, *nextPtr;
     Ns_Time     now, *timeoutPtr;
-    int         i, n, nfds, revents;
+    int         i, n, nfds;
     char        c;
 
     Ns_GetTime(&now);
@@ -327,6 +326,8 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     queuePtr->firstWaitPtr = NULL;
 
     while (evPtr != NULL) {
+	int revents;
+
         nextPtr = evPtr->nextPtr;
 
         /*

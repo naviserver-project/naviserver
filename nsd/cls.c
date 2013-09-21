@@ -149,11 +149,13 @@ Ns_ClsGet(Ns_Cls *clsPtr, Ns_Conn *conn)
 void
 NsClsCleanup(Conn *connPtr)
 {
-    int i, trys, retry;
+    int trys, retry;
     void *arg;
 
     trys = 0;
     do {
+        int i;
+
 	retry = 0;
     	i = NS_CONN_MAXCLS;
     	while (i-- > 0) {

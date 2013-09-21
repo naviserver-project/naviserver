@@ -135,13 +135,13 @@ NsGetInitServer(void)
 void
 NsStartServers(void)
 {
-    NsServer      *servPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
     hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
     while (hPtr != NULL) {
-        servPtr = Tcl_GetHashValue(hPtr);
+        NsServer *servPtr = Tcl_GetHashValue(hPtr);
+
         NsStartServer(servPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -356,7 +356,6 @@ CreatePool(NsServer *servPtr, char *pool)
     Conn     *connBufPtr, *connPtr;
     int       i, n, maxconns, lowwatermark, highwatermark, queueLength;
     char     *path;
-    Ns_Set   *set;
 
     poolPtr = ns_calloc(1, sizeof(ConnPool));
     poolPtr->pool = pool;
@@ -366,7 +365,7 @@ CreatePool(NsServer *servPtr, char *pool)
         path = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
-
+	Ns_Set *set;
         /*
          * Map requested method/URL's to this pool.
          */

@@ -631,13 +631,15 @@ GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr)
 static void
 ParseAtts(char *s, char *e, int *servPtr, Tcl_DString *attsPtr, int atts)
 {
-    char *vs = NULL, *ve = NULL, *as = NULL, *ae = NULL;
-    char end = 0, vsave = 0, asave = 0;
+    char *vs = NULL, *ve = NULL, *as = NULL;
+    char end = 0, vsave = 0;
 
     if (servPtr != NULL) {
         *servPtr = 0;
     }
     while (s < e) {
+	char *ae, asave;
+
         /*
          * Trim attribute name.
          */

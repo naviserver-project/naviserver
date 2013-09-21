@@ -219,10 +219,11 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
         }
     } else if (status == TCL_OK) {
         if (keyesArgcPtr && keyesArgvPtr) {
-            size_t keySize = 0, totalKeySize = 0;
-            int ii, keyCount;
-            char **keyArgv, *keyPtr, *nextByte;
+            size_t    keySize = 0, totalKeySize = 0;
+            int       ii, keyCount;
+            char    **keyArgv, *nextByte;
             Tcl_Obj **objValues;
+
             if (Tcl_ListObjGetElements(interp, objValPtr, &keyCount,
                                        &objValues) != TCL_OK) {
                 Tcl_DecrRefCount(keylistPtr);
@@ -235,7 +236,10 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
             keyArgv = (char **)ckalloc((int)(((keyCount+1)*sizeof(char *)) + totalKeySize));
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + ((keyCount+1) * sizeof(char *));
+
             for (ii = 0; ii < keyCount; ii++) {
+		char *keyPtr;
+
                 keyArgv[ii] = nextByte;
                 keyPtr = Tcl_GetStringFromObj(objValues[ii], (int *)&keySize);
                 strncpy(nextByte, keyPtr, keySize);
@@ -1239,9 +1243,9 @@ int
 TclX_KeyedListGetKeys (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj **listObjPtrPtr)
 {
     keylIntObj_t *keylIntPtr;
-    Tcl_Obj      *nameObjPtr, *listObjPtr;
+    Tcl_Obj      *listObjPtr;
     char         *nextSubKey;
-    int           idx, findIdx;
+    int           idx;
 
     if (Tcl_ConvertToType (interp, keylPtr, &keyedListType) != TCL_OK)
         return TCL_ERROR;
@@ -1252,7 +1256,7 @@ TclX_KeyedListGetKeys (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj 
      * the end of all of the elements of the key.
      */
     if ((key != NULL) && (key [0] != '\0')) {
-        findIdx = FindKeyedListEntry (keylIntPtr, key, NULL, &nextSubKey);
+        int findIdx = FindKeyedListEntry (keylIntPtr, key, NULL, &nextSubKey);
         if (findIdx < 0) {
             TclX_Assert (keylIntPtr->arraySize >= keylIntPtr->numEntries);
             return TCL_BREAK;
@@ -1269,8 +1273,8 @@ TclX_KeyedListGetKeys (Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj 
      */
     listObjPtr = Tcl_NewListObj (0, NULL);
     for (idx = 0; idx < keylIntPtr->numEntries; idx++) {
-        nameObjPtr = Tcl_NewStringObj (keylIntPtr->entries [idx].key,
-                                       -1);
+	Tcl_Obj  *nameObjPtr = Tcl_NewStringObj (keylIntPtr->entries [idx].key, -1);
+
         if (Tcl_ListObjAppendElement (interp, listObjPtr,
                                       nameObjPtr) != TCL_OK) {
             Tcl_DecrRefCount (nameObjPtr);
@@ -1430,8 +1434,8 @@ int
 TclX_KeyldelObjCmd (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Tcl_Obj *keylVarPtr, *keylPtr;
-    char *varName, *key;
-    int idx, keyLen, status;
+    char *varName;
+    int idx, keyLen;
 
     if (objc < 3) {
         return TclX_WrongArgs (interp, objv [0], "listvar key ?key ...?");
@@ -1462,7 +1466,9 @@ TclX_KeyldelObjCmd (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     keylPtr = keylVarPtr;
 
     for (idx = 2; idx < objc; idx++) {
-        key = Tcl_GetStringFromObj (objv [idx], &keyLen);
+        char *key = Tcl_GetStringFromObj (objv [idx], &keyLen);
+	int status;
+
         if (ValidateKey (interp, key, keyLen, TRUE) == TCL_ERROR) {
             return TCL_ERROR;
         }

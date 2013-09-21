@@ -102,15 +102,12 @@ Ns_SetFileVec(Ns_FileVec *bufs, int i,  int fd, CONST void *data,
 int
 Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 {
-    int          i, fd;
-    off_t        offset;
-    size_t       length;
+    int          i;
 
     for (i = 0; i < nbufs && sent > 0; i++) {
-
-        fd     = bufs[i].fd;
-        offset = bufs[i].offset;
-        length = bufs[i].length;
+	int    fd     = bufs[i].fd;
+	size_t length = bufs[i].length;
+	off_t  offset = bufs[i].offset;
 
         if (length > 0) {
             if (sent >= length) {
@@ -158,20 +155,18 @@ ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
                     Ns_Time *timeoutPtr, int flags)
 {
-    off_t         offset;
-    size_t        length;
+
     ssize_t       sent, towrite, nwrote;
     struct iovec  sbufs[UIO_MAXIOV];
-    int           nsbufs = 0, i, fd;
+    int           nsbufs = 0, i;
 
     towrite = nwrote = 0;
     sent = -1;
 
     for (i = 0; i < nbufs; i++) {
-
-        offset = bufs[i].offset;
-        length = bufs[i].length;
-        fd     = bufs[i].fd;
+	size_t   length = bufs[i].length;
+	off_t    offset = bufs[i].offset;
+        int      fd     = bufs[i].fd;
 
         if (length < 1) {
             continue;
@@ -287,20 +282,17 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
                            Ns_Time *timeoutPtr, int flags,
                            Ns_DriverSendProc *sendProc)
 {
-    off_t         offset;
-    size_t        tosend;
     ssize_t       sent, nwrote;
     struct iovec  iov;
-    int           i, fd;
+    int           i;
 
     nwrote = 0;
     sent = -1;
 
     for (i = 0; i < nbufs; i++) {
-
-        offset = bufs[i].offset;
-        tosend = bufs[i].length;
-        fd     = bufs[i].fd;
+	size_t  tosend = bufs[i].length;
+        int     fd     = bufs[i].fd;
+	off_t   offset = bufs[i].offset;
 
         if (tosend > 0) {
             if (fd < 0) {
@@ -452,15 +444,12 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
 {
     char          buf[16384];
     struct iovec  iov;
-    ssize_t       nwrote, sent, nread;
-    size_t        toread;
+    ssize_t       nwrote = 0, toread = length;
     int           decork;
-
-    toread = length;
-    nwrote = 0;
 
     decork = Ns_SockCork(sock, 1);
     while (toread > 0) {
+	ssize_t sent, nread;
 
         nread = pread(fd, buf, MIN(toread, sizeof(buf)), offset);
         if (nread <= 0) {

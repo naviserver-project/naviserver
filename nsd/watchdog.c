@@ -105,12 +105,12 @@ int
 NsForkWatchedProcess()
 {
     struct itimerval timer;
-    unsigned int startTime;
     unsigned int numRestarts = 0, restartWait = 0;
 
     SysLog(LOG_NOTICE, "watchdog: started.");
 
     while (!watchdogExit) {
+        unsigned int startTime;
 
         if (restartWait) {
             SysLog(LOG_WARNING,

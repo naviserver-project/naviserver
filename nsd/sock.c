@@ -109,13 +109,10 @@ int
 Ns_ResetVec(struct iovec *iov, int nbufs, size_t sent)
 {
     int     i;
-    char   *data;
-    size_t  len;
 
     for (i = 0; i < nbufs && sent > 0; i++) {
-
-        data = iov[i].iov_base;
-        len  = iov[i].iov_len;
+        char   *data = iov[i].iov_base;
+	size_t  len  = iov[i].iov_len;
 
         if (len > 0) {
             if (sent >= len) {

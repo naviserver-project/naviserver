@@ -209,7 +209,7 @@ Ns_TclCallbackProc(void *arg)
 {
     Ns_TclCallback *cbPtr = arg;
 
-    (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, NULL);
+    (void) Ns_TclEvalCallback(NULL, cbPtr, (Ns_DString *)NULL, NULL);
 }
 
 

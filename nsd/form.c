@@ -136,7 +136,6 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     Conn           *connPtr = (Conn *) conn;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    FormFile       *filePtr;
 
     if (conn == NULL || connPtr->query == NULL) {
         return;
@@ -147,7 +146,8 @@ Ns_ConnClearQuery(Ns_Conn *conn)
 
     hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
     while (hPtr != NULL) {
-        filePtr = Tcl_GetHashValue(hPtr);
+	FormFile *filePtr = Tcl_GetHashValue(hPtr);
+
         Ns_SetFree(filePtr->hdrs);
         ns_free(filePtr);
         hPtr = Tcl_NextHashEntry(&search);
@@ -238,13 +238,16 @@ NsTclParseQueryObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **
 static void
 ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding)
 {
-    char        *p, *k, *v;
     Tcl_DString  kds, vds;
+    char        *p;
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
     p = form;
+
     while (p != NULL) {
+	char *k, *v;
+
         k = p;
         p = strchr(p, '&');
         if (p != NULL) {
@@ -293,7 +296,7 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 {
     Tcl_Encoding encoding = connPtr->urlEncoding;
     Tcl_DString  kds, vds;
-    char        *s, *e, *ks, *ke, *fs, *fe, save, saveend, *disp, unescape;
+    char        *e, *ks, *ke, *fs, *fe, saveend, *disp, unescape;
     Ns_Set      *set;
     int          isNew;
 
@@ -316,7 +319,8 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
     ks = fs = NULL;
     while ((e = strchr(start, '\n')) != NULL) {
-        s = start;
+	char save, *s = start;
+
         start = e + 1;
         if (e > s && e[-1] == '\r') {
             --e;

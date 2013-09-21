@@ -313,11 +313,11 @@ Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key)
 static int
 BinSearch(void **elPtrPtr, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
 {
-    int cond = 0, low = 0, high = 0, mid = 0;
+    int low = 0, high = n-1, mid = 0;
 
-    low = 0;
-    high = n - 1;
     while (low <= high) {
+	int cond;
+
         mid = (low + high) / 2;
         if ((cond = (*cmpProc) (elPtrPtr, listPtrPtr + mid)) < 0) {
             high = mid - 1;
@@ -351,11 +351,11 @@ BinSearch(void **elPtrPtr, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
 static int
 BinSearchKey(void *key, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc)
 {
-    int cond = 0, low = 0, high = 0, mid = 0;
+    int low = 0, high = n-1, mid = 0;
 
-    low = 0;
-    high = n - 1;
     while (low <= high) {
+	int cond;
+
         mid = (low + high) / 2;
         if ((cond = (*cmpProc) (key, listPtrPtr + mid)) < 0) {
             high = mid - 1;
@@ -771,10 +771,10 @@ NsBsearch (register const void *key, register const void *base,
            register size_t nmemb, register size_t size,
            int (*compar)(const void *, const void *))
 {
-    register const void *mid_point;
-    register int  cmp;
-
     while (nmemb > 0) {
+	register const void *mid_point;
+	register int         cmp;
+
         mid_point = (char *)base + size * (nmemb >> 1);
         if ((cmp = (*compar)(key, mid_point)) == 0)
             return (void *)mid_point;

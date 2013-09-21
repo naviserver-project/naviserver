@@ -428,12 +428,13 @@ void
 NsSlsCleanup(Sock *sockPtr)
 {
     void *arg;
-    int   i, trys, retry;
+    int   trys, retry;
 
     trys = 0;
     do {
+        int i = nsconf.nextSlsId;
+
         retry = 0;
-        i = nsconf.nextSlsId;
         while (i-- > 0) {
             if (cleanupProcs[i] != NULL && sockPtr->sls[i] != NULL) {
                 arg = sockPtr->sls[i];

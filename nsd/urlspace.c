@@ -1465,7 +1465,8 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
 {
     Channel *channelPtr;
     char    *p;
-    size_t   l, i;
+    size_t   l;
+    ssize_t  i;
     int      depth = 0, doit, n = 0;
     void    *data;
 
@@ -1595,7 +1596,8 @@ JunctionFindExact(Junction *juncPtr, char *seq, int flags, int fast)
 {
     Channel *channelPtr;
     char    *p;
-    size_t  l, i;
+    size_t  l;
+    ssize_t i;
     int     depth = 0;
     void   *data = NULL;
 
@@ -1684,7 +1686,8 @@ JunctionDeleteNode(Junction *juncPtr, char *seq, int flags)
 {
     Channel *channelPtr;
     char    *p;
-    size_t   l, i;
+    size_t   l;
+    ssize_t  i;
     int      depth = 0;
     void    *data = NULL;
 

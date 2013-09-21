@@ -1206,7 +1206,6 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     NsInterp *itPtr = arg;
     Ns_Conn *conn = itPtr->conn;
     Conn *connPtr = (Conn *) conn;
-    Ns_Set *form;
     Ns_Request *request;
     Tcl_Encoding encoding;
     Tcl_Channel chan;
@@ -1476,7 +1475,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         if (itPtr->nsconn.flags & CONN_TCLFORM) {
             Tcl_SetResult(interp, itPtr->nsconn.form, TCL_STATIC);
         } else {
-            form = Ns_ConnGetQuery(conn);
+	    Ns_Set *form = Ns_ConnGetQuery(conn);
+
             if (form == NULL) {
                 itPtr->nsconn.form[0] = '\0';
             } else {

@@ -814,10 +814,9 @@ TaskThread(void *arg)
 {
     TaskQueue     *queuePtr = arg;
     char           c;
-    int            broadcast, max, nfds, shutdown;
+    int            max;
     Task          *taskPtr, *nextPtr, *firstWaitPtr;
     struct pollfd *pfds;
-    Ns_Time        now, *timeoutPtr;
 
     Ns_ThreadSetName("task:%s", queuePtr->name);
     Ns_Log(Notice, "starting");
@@ -827,7 +826,8 @@ TaskThread(void *arg)
     firstWaitPtr = NULL;
 
     while (1) {
-        int n;
+	int n, broadcast, nfds, shutdown;
+	Ns_Time  *timeoutPtr, now;
 
         /*
          * Get the shutdown flag and process any incoming signals.

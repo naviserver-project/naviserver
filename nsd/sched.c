@@ -869,12 +869,12 @@ NsGetScheduled(Tcl_DString *dsPtr)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    Event *ePtr;
 
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&eventsTable, &search);
     while (hPtr != NULL) {
-        ePtr = Tcl_GetHashValue(hPtr);
+        Event *ePtr = Tcl_GetHashValue(hPtr);
+
         Tcl_DStringStartSublist(dsPtr);
         Ns_DStringPrintf(dsPtr, "%d %d %d %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64,
             ePtr->id, ePtr->flags, ePtr->interval,

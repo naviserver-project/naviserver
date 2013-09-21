@@ -652,7 +652,7 @@ UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
 char *
 UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
 {
-    register int   i, j, n;
+    register int   i, n;
     register char *p, *q;
     char          *copy = NULL;
     size_t         length;
@@ -681,6 +681,8 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
     p = string;
     n = 0;
     while (likely(UCHAR(*p) != '\0')) {
+	int j;
+
 	if (unlikely(UCHAR(p[0]) == '%') &&
             (i = enc[UCHAR(p[1])].hex) >= 0 &&
             (j = enc[UCHAR(p[2])].hex) >= 0) {

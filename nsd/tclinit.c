@@ -1841,10 +1841,11 @@ DeleteInterps(void *arg)
     Tcl_HashTable  *tablePtr = arg;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
-    NsInterp       *itPtr;
  
     hPtr = Tcl_FirstHashEntry(tablePtr, &search);
     while (hPtr != NULL) {
+        NsInterp  *itPtr;
+
         if ((itPtr = Tcl_GetHashValue(hPtr)) != NULL) {
 	    if (itPtr->interp) {
 	        Ns_TclDestroyInterp(itPtr->interp);

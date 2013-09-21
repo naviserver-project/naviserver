@@ -234,10 +234,7 @@ Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
 void
 NsParseAuth(Conn *connPtr, char *auth)
 {
-    register char *p, *q, *v;
-    char           save, save2;
-    int            idx;
-    size_t         size;
+    register char *p;
 
     if (connPtr->auth == NULL) {
         connPtr->auth = Ns_SetCreate(NULL);
@@ -248,10 +245,15 @@ NsParseAuth(Conn *connPtr, char *auth)
         ++p;
     }
     if (*p != '\0') {
+	register char *q, *v;
+	char           save;
+
         save = *p;
         *p = '\0';
 
         if (STRIEQ(auth, "Basic")) {
+	    size_t size;
+
             Ns_SetPut(connPtr->auth, "AuthMethod", "Basic");
 
             /* Skip spaces */
@@ -283,6 +285,9 @@ NsParseAuth(Conn *connPtr, char *auth)
             }
 
             while (q != NULL && *q != '\0') {
+		int  idx;
+		char save2;
+
                 p = strchr(q, '=');
                 if (p == NULL) {
                     break;

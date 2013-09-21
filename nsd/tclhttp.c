@@ -257,7 +257,7 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
     assert(hdrPtr);
     assert(response);
 
-    sscanf(response, "HTTP/%d.%d %d", &major, &minor, statusPtr);
+    sscanf(response, "HTTP/%2d.%2d %3d", &major, &minor, statusPtr);
     p = response;
     while ((eol = strchr(p, '\n')) != NULL) {
 	size_t len;
@@ -359,7 +359,6 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 	Ns_MutexLock(&httpPtr->lock);
 	if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
 	    Tcl_WideInt length;
-	    char *s;
 
 	    assert(httpPtr->replyHeaders);
 	    HttpParseHeaders(httpPtr->ds.string, httpPtr->replyHeaders, &httpPtr->status);
@@ -367,7 +366,8 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		Ns_Log(Warning, "ns_http: Parsing reply header failed");
 	    }
 	    if (httpPtr->spoolLimit > -1) {
-		s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
+	        char *s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
+
 		if (s && Ns_StrToWideInt(s, &length) == NS_OK && length > 0 
 		    && length >= httpPtr->spoolLimit) {
 		    int fd;

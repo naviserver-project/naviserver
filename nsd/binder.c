@@ -348,8 +348,10 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
 NS_SOCKET
 Ns_SockBindUnix(char *path, int socktype, int mode)
 {
-    int                sock = -1;
-#ifndef _WIN32
+    int sock;
+#ifdef _WIN32
+    sock = -1;
+#else
     struct sockaddr_un addr;
 
     memset(&addr, 0, sizeof(addr));
@@ -393,7 +395,7 @@ Ns_SockBindUnix(char *path, int socktype, int mode)
 NS_SOCKET
 Ns_SockBindRaw(int proto)
 {
-    NS_SOCKET sock = -1;
+    NS_SOCKET sock;
 
     sock = socket(AF_INET, SOCK_RAW, proto);
 
@@ -611,10 +613,11 @@ PreBind(char *line)
 #ifndef _WIN32
     Tcl_HashEntry      *hPtr;
     int                isNew, sock, port, mode;
-    char               *next, *str, *addr, *proto;
+    char               *next, *str;
     struct sockaddr_in sa;
 
     for (;line != NULL; line = next) {
+        char  *addr, *proto;
         next = strchr(line, ',');
         if (next) {
             *next++ = '\0';
@@ -779,7 +782,7 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
     iov[2].iov_len = sizeof(type);
     iov[3].iov_base = (caddr_t) data;
     iov[3].iov_len = sizeof(data);
-    memset(data, 0, sizeof(data));
+    /*memset(data, 0, sizeof(data));*/
     strncpy(data, address, sizeof(data)-1);
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;

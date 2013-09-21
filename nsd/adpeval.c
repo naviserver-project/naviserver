@@ -747,19 +747,18 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
-    char           *file;
     Ns_DString      ds;
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
-    Page           *pagePtr;
 
     Ns_DStringInit(&ds);
 
     Ns_MutexLock(&servPtr->adp.pagelock);
     hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
     while (hPtr != NULL) {
-        pagePtr = Tcl_GetHashValue(hPtr);
-        file = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
+	Page  *pagePtr = Tcl_GetHashValue(hPtr);
+        char  *file    = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
+
         Ns_DStringPrintf(&ds, "{%s} "
             "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
             "refcnt %d evals %d size %" PRIu64 " blocks %d scripts %d} ",
@@ -916,7 +915,7 @@ NsAdpLogError(NsInterp *itPtr)
     Ns_DString   ds;
     AdpFrame    *framePtr;
     char        *adp, *inc, *dot, *err;
-    int          i, len;
+    int          len;
 
     framePtr = itPtr->adp.framePtr;
     Ns_DStringInit(&ds);
@@ -951,6 +950,8 @@ NsAdpLogError(NsInterp *itPtr)
         inc = "\n    included from ";
     }
     if (conn != NULL && (itPtr->adp.flags & ADP_DETAIL)) {
+	int i;
+
         Ns_DStringPrintf(&ds, "\n    while processing connection #%d:\n%8s%s",
                          Ns_ConnId(conn), "",
                          conn->request->line);
@@ -1014,7 +1015,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     AdpFrame    frame;
     Ns_DString  cwd;
     Tcl_Obj    *objPtr;
-    int         nscript, nblocks, result, len, i;
+    int         nscript, nblocks, result, i;
     char       *ptr, *slash, *savecwd;
 
     /*
@@ -1053,6 +1054,8 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     nscript = 0;
     result = TCL_OK;
     for (i = 0; itPtr->adp.exception == ADP_OK && i < nblocks; ++i) {
+	int len; 
+
         frame.line = AdpCodeLine(codePtr, i);
         len = AdpCodeLen(codePtr, i);
         if (itPtr->adp.flags & ADP_TRACE) {
