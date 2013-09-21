@@ -4551,12 +4551,14 @@ AsyncWriterThread(void *arg)
 		 * Drain the queue from everything
 		 */
 		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    (void)write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    int unused NS_GNUC_UNUSED = 
+		      write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		writePtr = NULL;
 
 		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    (void)write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    int unused NS_GNUC_UNUSED = 
+		      write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		queuePtr->sockPtr = NULL;
 
@@ -4626,7 +4628,8 @@ AsyncWriterThread(void *arg)
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
-		(void)write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+	      int unused NS_GNUC_UNUSED = 
+		write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		curPtr = curPtr->nextPtr;
 	    }
 	} else {
