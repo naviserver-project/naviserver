@@ -727,6 +727,14 @@ ns_runonce {
                     append script [_procscript $pn]
                 }
             }
+
+            # Add aliases
+            foreach cmd [interp aliases {}] {
+		if {[namespace qualifiers $cmd] eq $nsp} {
+                    append script "interp alias {} $cmd {} [interp alias {} $cmd]" \n
+                }
+            }    
+
             foreach cn [info commands ${nsp}::*] {
                 set orig [namespace origin $cn]
                 if {[info procs $cn] eq {} &&
