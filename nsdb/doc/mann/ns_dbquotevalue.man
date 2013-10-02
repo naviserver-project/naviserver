@@ -57,7 +57,7 @@ tables or columns.
 
 [example_begin]
    % ns_dbquotevalue "John's Car"
-   'Johns Car'
+   'John''s Car'
 [example_end]
 
 [example_begin]
@@ -66,13 +66,8 @@ tables or columns.
 [example_end]
 
 [example_begin]
-   % ns_dbquotevalue ColumnName
-   ColumnName
-[example_end]
-
-[example_begin]
    % ns_dbquotevalue "Column Name"
-   "Column Name"
+   'Column Name'
 [example_end]
 
 
