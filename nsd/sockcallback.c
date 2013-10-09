@@ -360,7 +360,7 @@ SockCallbackThread(void *ignored)
 
 	if (max <= table.numEntries) {
 	    max  = table.numEntries + 100;
-	    pfds = ns_realloc(pfds, (size_t)max);
+	    pfds = ns_realloc(pfds, sizeof(struct pollfd) * max);
 	}
 
         /*
