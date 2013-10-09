@@ -152,7 +152,7 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
         # even with HTTP/1.0.
         #
 
-        if {$rqset == {} || [ns_set iget $rqset Host] == ""} {
+        if {$rqset eq "" || [ns_set iget $rqset Host] eq ""} {
             if {$port == 80} {
                 _ns_http_puts $timeout $wfd "Host: $host"
             } else {
@@ -378,7 +378,7 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
     # chunks into one body
     #
 
-    if {$encoding == "chunked"} {
+    if {$encoding eq "chunked"} {
         set text ""
         set offset 0
         while {1} {
@@ -388,12 +388,12 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
                 break
             }
             set size [scan [string range $content $offset $end] %x]
-            if {$size == 0 || $size == ""} {
+            if {$size == 0 || $size eq ""} {
                 break
             }
             set offset [incr end]
             # Read data
-            append text [string range $content $offset [expr $offset+$size-1]]
+            append text [string range $content $offset [expr {$offset+$size-1}]]
             incr offset [incr size]
         }
         set content $text

@@ -391,14 +391,14 @@ proc ns_parseformfile { file form contentType } {
 		}
 		set end [tell $fp]
 	    }
-	    set length [expr $end - $start - 2]
+	    set length [expr {$end - $start - 2}]
 
 	    # create a temp file for the content, which will be deleted
 	    # when the connection close.  ns_openexcl can fail, hence why 
 	    # we keep spinning
 
 	    set tmp ""
-	    while { $tmp == "" } {
+	    while { $tmp eq "" } {
 		set tmpfile [ns_tmpnam]
 		set tmp [ns_openexcl $tmpfile]
 	    }

@@ -179,7 +179,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
     # Put Cc: recipients in separate header
     #
 
-    if {$cclist != ""} {
+    if {$cclist ne ""} {
         append msg "Cc: " [join $cclist ","] \n
     }
 
