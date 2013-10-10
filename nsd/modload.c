@@ -117,7 +117,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST 
     Tcl_LoadHandle        lh;
     Tcl_FSUnloadFileProc *uPtr;
 
-    Ns_Log(Notice, "modload: loading %s", file);
+    Ns_Log(Notice, "modload: loading module %s from file %s", module, file);
 
     Ns_DStringInit(&ds);
     if (!Ns_PathIsAbsolute(file)) {
@@ -221,6 +221,7 @@ NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     } else {
         server = itPtr->servPtr->server;
     }
+
     if (Ns_ModuleLoad(interp, server, module, file, init) != NS_OK) {
         Ns_Fatal("modload: failed to load module '%s'", file);
     }
