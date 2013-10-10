@@ -164,7 +164,7 @@ proc __ns_sourcemodule {modname} {
 #  b. Register introspection traces on selected set of
 #     Tcl commands and capture the state in thread-shared
 #     variables. Then synthetize new Tcl script with 
-#     overloaded Tcl [unknown] command to load referenced
+#     overloaded Tcl [unknown]Â command to load referenced
 #     items (procs, packages etc) on as-needed basis out
 #     of the captured state.
 #
@@ -236,7 +236,7 @@ proc ns_cleanup {} {
 proc ns_cleanupchans {} {
     ns_chan cleanup
     foreach f [file channels] {
-        if {![string match std* $f]} {
+        if {![string match "std*" $f]} {
             catch {close $f}
         }
     }
@@ -613,7 +613,7 @@ if {$use_trace_inits} {
 
         set didsaveproc 0
 
-        if {[info proc _saved_ns_eval] eq ""} {
+        if {[info procs _saved_ns_eval] eq ""} {
             rename ns_eval _saved_ns_eval
             proc ns_eval {args} {
                 set len [llength $args]
