@@ -262,7 +262,7 @@ Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
 #if 0
 	{ int i;
 	    for (i=0; i<nbufs; i++) {
-		//fprintf(stderr, "%d: <%s> (%ld)\n",i, (char*)bufs[i].iov_base, bufs[i].iov_len);
+		fprintf(stderr, "%d: <%s> (%ld)\n",i, (char*)bufs[i].iov_base, bufs[i].iov_len);
 		fprintf(stderr, "%d: len %ld\n",i, bufs[i].iov_len);
 	    }
 	}
@@ -271,6 +271,7 @@ Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
 	n = sendmsg(sock, &msg, flags);
 #if 0
 	fprintf(stderr, "=>sent %ld\n",n);
+	if (n<=0) {printf("sendmsg sock %d error %d %s\n",sock, errno,strerror(errno));}
 #endif
 	
 	if (n < 0) {
