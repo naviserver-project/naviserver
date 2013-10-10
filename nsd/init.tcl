@@ -327,26 +327,26 @@ proc ns_module {key {val ""}} {
     return $val
 }
 
-
 proc _ns_load_server_modules {} {
     set modules [ns_configsection ns/server/[ns_info server]/modules]
-    if {$modules ne {}} {
+    if {$modules ne ""} {
         foreach {module file} [ns_set array $modules] {
-            if {[string tolower $file] ne {tcl}} {
-                ns_moduleload $module $file
-            }
-            ns_ictl addmodule $module
+	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
+	    ns_moduleload $module $file 
+	    ns_ictl addmodule $module
         }
     }
 }
 
 proc _ns_load_global_modules {} {
-	set modules [ns_configsection ns/modules]
-	if {$modules ne {}} {
-		foreach {module file} [ns_set array $modules] {
-			ns_moduleload -global $module $file
-		}
+    set modules [ns_configsection ns/modules]
+    
+    if {$modules ne ""} {
+	foreach {module file} [ns_set array $modules] {
+	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
+	    ns_moduleload -global $module $file
 	}
+    }
 }
 
 #
@@ -369,7 +369,7 @@ ns_runonce -global {ns_atprestartup _ns_load_global_modules}
 # for a single server. If the driver is not installed, return empty
 #
 proc ns_driversection {args} {
-  set driver [ns_conn driver]
+  set driver ""
   set server [ns_info server]
   set l [llength $args]
   if {$l > 1} {
@@ -389,6 +389,13 @@ proc ns_driversection {args} {
       error "usage: ns_driversection ?-driver drv? ?-server s?"
     }
   }
+  if {$driver eq ""} {
+    if {[ns_conn isconnected]} {
+      set driver [ns_conn driver]
+    } else {
+      set driver nssock
+    }
+  }
   if {[ns_config ns/modules $driver] ne ""} {
     # driver is installed globally
     set section ns/module/$driver
@@ -399,6 +406,7 @@ proc ns_driversection {args} {
     # "driver $driver is not installed (server $server)"
     set section ""
   }
+
   return $section
 }
 
