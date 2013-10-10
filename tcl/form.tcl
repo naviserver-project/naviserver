@@ -355,7 +355,7 @@ proc ns_parseformfile { file form contentType } {
 
 	# fetch the disposition line and field name
 	set disposition [string trim [gets $fp]]
-	if { ![string length $disposition] } {
+	if { $disposition eq "" } {
 	    break
 	}
 
@@ -366,7 +366,7 @@ proc ns_parseformfile { file form contentType } {
 	
 	while { ![eof $fp] } {
 	    set line [string trim [gets $fp]]
-	    if { ![string length $line] } {
+	    if { $line eq "" } {
 		break
 	    }
 	    set header [split $line :]

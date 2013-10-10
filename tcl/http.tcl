@@ -180,7 +180,7 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
         set rpset [ns_set new [_ns_http_gets $timeout $rfd]]
         while {1} {
             set line [_ns_http_gets $timeout $rfd]
-            if {![string length $line]} {
+            if {$line eq ""} {
                 break ; # Empty line - end of headers
             }
             ns_parseheader $rpset $line
