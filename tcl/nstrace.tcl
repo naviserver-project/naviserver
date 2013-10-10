@@ -377,7 +377,7 @@ ns_runonce {
             # 2.0 and NX).
             #
 	    set nsps [list]
-	    if {[info command ::nsf::object::exists] ne ""} {
+	    if {[info commands ::nsf::object::exists] ne ""} {
 	      # NX, XOTcl 2
 	      set xotcl 2
 	      foreach n [namespaces] {
@@ -386,7 +386,7 @@ ns_runonce {
 		    || [::nsf::object::exists $n]} { continue }
 		lappend nsps $n
 	      }
-	    } elseif {[info command ::xotcl::Object] ne ""} {
+	    } elseif {[info commands ::xotcl::Object] ne ""} {
 	      # XOTcl 1
 	      set xotcl 1
 	      foreach n [namespaces] {
@@ -657,7 +657,7 @@ ns_runonce {
 	# 
 
 	proc _create_or_config_ensemble {cmd cfg} {
-	    if {[info command $cmd] eq $cmd && [namespace ensemble exists $cmd]} {
+	    if {[info commands $cmd] eq $cmd && [namespace ensemble exists $cmd]} {
 	       uplevel 1 [list ::namespace ensemble configure $cmd {*}$cfg]
 	    } else {
 	       uplevel 1 [list ::namespace ensemble create -command $cmd {*}$cfg]
@@ -1176,7 +1176,7 @@ ns_runonce {
             # $old or $new is a proc, since the procs are already
             # parts of the serialized blueprint.
             #
-            if {"[info proc $old][info proc $new]" eq ""} {
+            if {"[info procs $old][info procs $new]" eq ""} {
               append script "rename [list $old] [list $new]" \n
             }
         }
@@ -1237,11 +1237,11 @@ ns_runonce {
             return
         }
         return {
-            if {[info command ::tcl::unknown] eq {}} {
+            if {[info commands ::tcl::unknown] eq {}} {
                 rename ::unknown ::tcl::unknown
                 namespace import -force ::nstrace::unknown
             }
-            if {[info command ::tcl::info] eq {}} {
+            if {[info commands ::tcl::info] eq {}} {
                 rename ::info ::tcl::info
             }
             proc ::info args {
