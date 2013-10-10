@@ -70,7 +70,7 @@ proc ns_share args {
 	by nsv."
 }
 
-if {[info command ::nx::Object] ne "" && [::nx::Object info lookup method object] ne ""} {
+if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method object] ne ""} {
   ns_log notice "Using ns_cache based on NX [package require nx]"
 
   #
