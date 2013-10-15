@@ -12,8 +12,6 @@ ns_log notice "nsd.tcl: starting to read config file..."
 # change to 80 and 443 for production use
 set httpport		8000
 set httpsport		8443 
-# If setting port below 1024 with NaviServer, read comments in file:
-#  /usr/local/ns/service0/packages/etc/daemontools/run
 
 # The hostname and address should be set to actual values.
 # setting the address to 0.0.0.0 means aolserver listens on all interfaces
@@ -21,8 +19,9 @@ set hostname		localhost
 set address		127.0.0.1
 
 # Note: If port is privileged (usually < 1024), OpenACS must be
-# started by root, and, in NaviServer, the run script have a 
-# '-b address' flag which matches the address according to settings (above)
+# started by root, and the run script must contain the flag 
+# '-b address:port' which matches the address and port 
+# as specified above.
 
 set server		"openacs" 
 set servername		"New OpenACS Installation - Development"
@@ -176,8 +175,8 @@ ns_section ns/server/${server}
 	ns_param	minthreads	2	;# 1; minimal number of connection threads
 	ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
 	# ns_param	threadtimeout	120	;# 120; timeout for idle theads
-        # ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
-        ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
+	# ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
+	ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
                                                 ;# 100 means to disable concurrent creates
 
 	# Compress response character data: ns_return, ADP etc.
