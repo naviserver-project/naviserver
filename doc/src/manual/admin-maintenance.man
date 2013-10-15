@@ -7,7 +7,7 @@
 
 [section {Running NaviServer}]
 
-bin/nsd [lb]-h|V[rb] [lb]-c|f|i|w[rb] [lb]-u <user>[rb] [lb]-g <group>[rb] [lb]-r <path>[rb] [lb]-b <address:port>|-B <file>[rb] [lb]-s <server>[rb] -t <file>
+bin/nsd [lb]-h|V[rb] [lb]-c|f|i|w[rb] [lb]-d[rb] [lb]-u <user>[rb] [lb]-g <group>[rb] [lb]-r <path>[rb] [lb]-b <address:port>|-B <file>[rb] [lb]-s <server>[rb] -t <file>
 
 [para]
 
@@ -15,75 +15,59 @@ Options:
 
 [para]
 
-
 [list_begin itemized]
 
-[item] [emph {-i}]
+[item] [emph {-h}]
+[para] Print short help message
 
+[item] [emph {-V}]
+[para] Print the version number of NaviServer.
 
+[item] [emph {-c}]
 [para]
+     Run in command (interactive) mode, when started Tcl shell will be provided 
+     same way as tclsh
 
+[item] [emph {-f}]
+[para]  Run NaviServer in the foreground.
+
+[item] [emph {-i}]
+[para]
      Run NaviServer from /etc/inittab. This option is similar to -f except
      that stdout goes to the server.log file.
 
-[item] [emph {-f}]
+[item] [emph {-w}]
+[para]  Run under watchdog (restart a failed server)
 
+[item] [emph {-d}]
+[para]  Run in debugger-friendly mode (ignore SIGINT)
 
-[para]
+[item] [emph {-u}]
+[para] Run under the specified user id
 
-     Run NaviServer in the foreground.
+[item] [emph {-g}]
+[para] Run under the specified group id
+
+[item] [emph {-r directory}]
+[para]  Change root directory (chroot) to the specified path.
+
+[item] [emph {-b address:port}]
+[para]  Prebind to address and port. This is necessary when starting
+the server under a priviledged port running with a non-root user-id.
+multiple prebind address might be specified in a comma separated list.
+
+[item] [emph {-B file}]
+[para]  Prebind to address:port list from the specified file
+
 
 [item] [emph {-s servername}]
-
-
 [para]
-
      Specify the server to run, if the configuration file defines multiple
      servers. The Server1 server will be run by default.
 
-[item] [emph {-d}]
-
-
-[para]
-
-     Run NaviServer in the debugger (ignore SIGINT).
-
-[item] [emph {-V}]
-
-
-[para]
-
-     Print the version number of NaviServer.
-
-[item] [emph {-r root}]
-
-
-[para]
-
-     Perform chroot to a new root directory.
-
-[item] [emph {-w}]
-
-
-[para]
-
-     Run under watchdog
-
-
 [item] [emph {-t config}]
-
-
 [para]
-
      Required. Specify the path to the configuration file.
-
-[item] [emph {-c}]
-
-
-[para]
-
-     Run in command (interactive) mode, when started Tcl shell will be provided 
-     same way as tclsh
 
 [list_end]
 
@@ -152,7 +136,7 @@ It creates processes from the script /etc/inittab. Add a line like
 
 [example_begin]
 
-ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g users -t /usr/local/ns/config.tcl
+ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g www -t /usr/local/ns/config.tcl
 
 [example_end]
 

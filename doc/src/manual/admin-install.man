@@ -200,8 +200,9 @@ For the mode  of operation, there are three choices:
 
 [list_begin itemized]
 
-[item]
-[emph {bin/nsd  -ft conf/nsd-config.tcl -u user}]
+[item] Foreground mode:
+[para]
+[emph {bin/nsd  -f -t conf/nsd-config.tcl -u user -g group}]
 
 [para]
 In [emph {Foreground }]mode , the server starts  and emits diagnostic log messages
@@ -214,7 +215,9 @@ To stop a server running the foreground simply press  interrupt on your keyboard
 initiate shutdown.
 
 
-[item]
+[item] Background mode:
+
+[para]
 [emph {bin/nsd -t conf/nsd-config.tcl -u user -g group}]
 
 [para]
@@ -230,34 +233,27 @@ nsd binary.  This flag  will determine the process id from a special marker
 file, send the signal and wait for shutdown, e.g.:
 
 
-[item]
-[emph {bin/nsd -Kt conf/nsd-config.tcl -u user}]
+[item] Inittab mode:
 
 [para]
 
-You may also use the -k flag to kill and restart a  background server.
-
-
-[item]
-[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -it /usr/local/ns/nsd-config.tcl -u user}]
+[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -i -t /usr/local/ns/nsd-config.tcl -u user -g group}]
 
 [para]
 In [emph {Inittab}] mode, the server runs in the foreground  but opens the
 log file as with background mode.  This mode is used  when the server is
 started from an entry in the /etc/inittab file.   The benefit of this mode
-is that init will restart the server if it  happens to crash.   Production
-servers at AOL normally run in this mode.   To run the server  from /etc/inittab,
-add an entry similar to the following, substituting the proper id, run levels,
-and full pathnames:
+is that init will restart the server if it  happens to crash. 
+
+[item] Watchdog mode:
 
 [para]
 
-To restart a server you can simply kill the current server with the -K flag
-as with the background  mode; init will then restart the server for you.
-To stop a  server running in inittab mode  you must comment out or remove
-the  entry from the /etc/inittab file  and signal the init process to re-read
-inittab with the "[emph {init q}]" command.
+[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -w -t /usr/local/ns/nsd-config.tcl -u user -g group}]
 
+[para]
+In [emph {Watchdog}] mode, the server is restarted automatically when
+it crashes independent from the respawn support from the operating system.
 
 [list_end]
 
