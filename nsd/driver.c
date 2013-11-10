@@ -977,6 +977,17 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
     timeout.sec = sockPtr->drvPtr->sendwait;
     timeout.usec = 0;
 
+#if 0
+    fprintf(stderr, "NsDriverSend: nbufs %d\n", nbufs);
+    fprintf(stderr, "NsDriverSend: bufs[0] %d '%s'\n", bufs[0].iov_len, (char *)bufs[0].iov_base);
+    {int i; char *p= (char *)bufs[0].iov_base;
+      for (i=0; i<bufs[0].iov_len; i++) {
+	char c = *(p+i);
+	fprintf(stderr, "[%d] '%c' %d, ", i+1, c<32 ? 32 : c, c);
+      }
+      fprintf(stderr, "\n");
+    }
+#endif
     return (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                         &timeout, flags);
 }

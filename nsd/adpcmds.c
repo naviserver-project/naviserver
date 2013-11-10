@@ -154,7 +154,7 @@ int
 NsTclAdpIdentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                     Tcl_Obj **objv)
 {
-    AdpFrame *framePtr;
+    AdpFrame *framePtr = NULL;
 
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?ident?");
@@ -820,7 +820,7 @@ int
 NsTclAdpInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj **objv)
 {
-    AdpFrame *framePtr;
+    AdpFrame *framePtr = NULL;
     Tcl_Obj  *result;
 
     if (objc != 1) {
@@ -860,7 +860,7 @@ int
 NsTclAdpArgcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj **objv)
 {
-    AdpFrame *framePtr;
+    AdpFrame *framePtr = NULL;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -896,7 +896,7 @@ int
 NsTclAdpArgvObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj **objv)
 {
-    AdpFrame *framePtr;
+    AdpFrame *framePtr = NULL;
     int       i;
 
     if (objc > 3) {
@@ -946,7 +946,7 @@ int
 NsTclAdpBindArgsObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                        Tcl_Obj **objv)
 {
-    AdpFrame *framePtr;
+    AdpFrame *framePtr = NULL;
     int       i;
 
     if (objc < 2) {
@@ -1220,7 +1220,7 @@ GetFrame(ClientData arg, AdpFrame **framePtrPtr)
 static int
 GetOutput(ClientData arg, Tcl_DString **dsPtrPtr)
 {
-    AdpFrame *framePtr;
+    AdpFrame *framePtr = NULL;
 
     if (GetFrame(arg, &framePtr) != TCL_OK) {
         return TCL_ERROR;

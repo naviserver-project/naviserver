@@ -362,7 +362,6 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
             connPtr->server               = servPtr->server;
             connPtr->location             = sockPtr->location;
 	    connPtr->flags                = sockPtr->flags;
-	    connPtr->requestQueueTime     = *nowPtr;
 	    if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0) {
 		connPtr->acceptTime       = *nowPtr;
 	    } else {

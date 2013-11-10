@@ -262,6 +262,8 @@ GetHost(Ns_DString *dsPtr, char *addr)
     Ns_CsEnter(&cs);
 #endif
 
+    Ns_Log(Notice, "======== GetHost %s", addr);
+
     memset(&sa, 0, sizeof(struct sockaddr_in));
 
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
@@ -277,7 +279,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
         Ns_DStringAppend(dsPtr, buf);
         status = NS_TRUE;
     } else if (result != EAI_NONAME) {
-        Ns_Log(Error, "dns: getnameinfo failed: %s", gai_strerror(result));
+        Ns_Log(Error, "dns: getnameinfo failed: %s (%s)", gai_strerror(result), addr);
     }
 #ifndef HAVE_MTSAFE_DNS
     Ns_CsLeave(&cs);

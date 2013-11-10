@@ -70,7 +70,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
-    Ns_Conn  *conn;
+    Ns_Conn  *conn = NULL;
     int       status, length = -1, binary = 0;
     char     *type = NULL;
 
@@ -140,7 +140,7 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj **objv)
 {
     NsInterp     *itPtr = arg;
-    Ns_Conn      *conn;
+    Ns_Conn      *conn = NULL;
     Tcl_Encoding  encoding = NULL;
     char         *charset = NULL, *type = NULL;
 
@@ -206,7 +206,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                  Tcl_Obj *CONST objv[])
 {
     NsInterp     *itPtr = arg;
-    Ns_Conn      *conn;
+    Ns_Conn      *conn  = NULL;
     int           length, i, n, flags, binary, status;
     struct iovec  iov[32];
     struct iovec *sbufs = iov;
@@ -311,7 +311,7 @@ int
 NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     Tcl_Obj *dataObj;
     char    *type, *data;
     int      status, len, result, binary = NS_FALSE;
@@ -367,7 +367,7 @@ int
 NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
-    Ns_Conn     *conn;
+    Ns_Conn     *conn = NULL;
     int          status = 200, length = -1;
     char        *type = "*/*", *setid = NULL, *binary = NULL;
     char        *string = NULL, *filename = NULL, *chanid = NULL;
@@ -474,7 +474,7 @@ int
 NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     int      status, result;
 
     if (objc != 4) {
@@ -519,7 +519,7 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     int          len, status, result;
     Tcl_Channel  chan;
-    Ns_Conn     *conn;
+    Ns_Conn     *conn = NULL;
 
     if (objc != 5) {
         Tcl_WrongNumArgs(interp, 1, objv, "status type channel len");
@@ -567,7 +567,7 @@ int
 NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[])
 {
-    Ns_Conn     *conn;
+    Ns_Conn     *conn = NULL;
     Tcl_Channel  chan;
     int          len;
 
@@ -621,7 +621,7 @@ int
 NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                             Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     int      result;
 
     if (objc != 2) {
@@ -660,7 +660,7 @@ static int
 ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_Obj *CONST objv[], int (*proc) (Ns_Conn *))
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
 
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
@@ -727,7 +727,7 @@ int
 NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                        Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     int      status, result;
 
     if (objc != 3) {
@@ -768,7 +768,7 @@ int
 NsTclReturnMovedObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     int      result;
 
     if (objc != 2) {
@@ -806,7 +806,7 @@ int
 NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                         Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     int      status, result;
 
     if (objc != 4) {
@@ -848,7 +848,7 @@ int
 NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     int      result;
 
     if (objc != 2) {
@@ -884,7 +884,7 @@ int
 NsTclInternalRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 			  Tcl_Obj *CONST objv[])
 {
-    Ns_Conn *conn;
+    Ns_Conn *conn = NULL;
     int      result;
 
     if (objc != 2) {
