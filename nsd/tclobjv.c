@@ -79,6 +79,18 @@ Ns_OptionString(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientDa
 }
 
 int
+Ns_OptionBoolean(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+    int bool, result;
+
+    result = Tcl_GetBooleanFromObj(interp, objPtr, &bool);
+    if (result == TCL_OK) {
+	*clientData = INT2PTR(bool);
+	return TCL_OK;
+    }
+    return TCL_ERROR;
+}
+
+int
 Ns_OptionServer(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
     NsServer *servPtr = NsGetServer(Tcl_GetString(objPtr));
     *clientData = servPtr;

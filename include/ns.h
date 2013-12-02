@@ -1609,6 +1609,7 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 
+NS_EXTERN Ns_OptionConverter Ns_OptionBoolean;
 NS_EXTERN Ns_OptionConverter Ns_OptionObj;
 NS_EXTERN Ns_OptionConverter Ns_OptionString;
 NS_EXTERN Ns_OptionConverter Ns_OptionServer;

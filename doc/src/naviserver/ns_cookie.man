@@ -52,12 +52,17 @@ The [arg data] will be URL-encoded to escape special characters.
 [cmd ns_getcookie] correctly reverses the encoding.
 
 
-
-[call [cmd ns_getcookie] [arg name] [opt [arg default]] ]
+[call [cmd ns_getcookie] \
+	[opt [option "-include_set_cookie [arg bool]"]] \
+	[opt [arg --]] \
+	[arg name]	\
+	[opt [arg default]]  ]
 
 Get the cookie data identified by [arg name]. If no such cookie exists then
 [arg default] is returned. If [arg default] is not given and no such cookie
-exists, an error is raised.
+exists, an error is raised. When the option -include_set_cookie is set
+true, then this command will search as well in the cookies being
+currently set in the output headers.
 
 [para]
 Only the first cookie identified by [arg name] is returned. If two cookies
@@ -67,7 +72,6 @@ and/or [arg path], which cookie data is returned depends on the user agent.
 [para]
 When using [arg domain] or [arg path] to restrict cookies, use a unique name for
 each restricted cookie.
-
 
 
 [call [cmd ns_deletecookie] \

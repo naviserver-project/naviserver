@@ -158,10 +158,9 @@ Ns_ConnDeleteSecureCookie(Ns_Conn *conn, char *name, char *domain, char *path)
  *----------------------------------------------------------------------
  */
 
-char *
-Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
+static char * 
+SearchCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name) 
 {
-    Ns_Set  *hdrs = Ns_ConnHeaders(conn);
     char    *p, *q, *value = NULL;
     char     save;
     int      i;
@@ -170,8 +169,7 @@ Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
     nameLen = strlen(name);
 
     for (i = 0; i < hdrs->size; ++i) {
-
-        if (strcasecmp(hdrs->fields[i].name, "Cookie") == 0
+        if (strcasecmp(hdrs->fields[i].name, setName) == 0
             && (p = strstr(hdrs->fields[i].value, name)) != NULL) {
 
             if (*(p += nameLen) == '=') {
@@ -194,6 +192,13 @@ Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
 
     return value;
 }
+
+char *
+Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
+{
+    return SearchCookie(dest, Ns_ConnHeaders(conn), "cookie", name);
+}
+
 
 
 /*
@@ -297,20 +302,47 @@ NsTclGetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 {
     Ns_Conn     *conn;
     Ns_DString   ds;
-    int          status = TCL_OK;
+    char        *name, *value = NULL;
+    int          status = TCL_OK, nextArgIdx;
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "name ?default?");
+    static CONST char  *options[]           = {"-include_set_cookies", NULL};
+    enum                                      {OSetCookiesIdx};
+    ClientData          optionClientData[2] = {NULL};
+    Ns_OptionConverter *optionConverter[2]  = {Ns_OptionBoolean};
+
+    if (objc < 1) {
+    usage_error:
+	if (*Tcl_GetStringResult(interp) == '\0') {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?-include_set_cookies bool? ?--? name ?default?");
+	}
         return TCL_ERROR;
     }
+
+    if (Ns_ParseOptions(options, optionConverter, optionClientData, interp, 1, 
+			Ns_NrElements(options)-1, &nextArgIdx, objc, objv) != TCL_OK) {
+	goto usage_error;
+    }
+    if (objc < nextArgIdx || objc - nextArgIdx > 2) {goto usage_error;}
+
+
     if ((conn = GetConn(interp)) == NULL) {
         return TCL_ERROR;
     }
+
     Ns_DStringInit(&ds);
-    if (Ns_ConnGetCookie(&ds, conn, Tcl_GetString(objv[1]))) {
+    name = Tcl_GetString(objv[nextArgIdx]);
+
+    if (PTR2INT(optionClientData[OSetCookiesIdx])) {
+	value = SearchCookie(&ds, Ns_ConnOutputHeaders(conn), "set-cookie", name);
+    }
+    if (value == NULL) {
+	value = SearchCookie(&ds, Ns_ConnHeaders(conn), "cookie", name);
+    }
+    
+    if (value) {
         Tcl_DStringResult(interp, &ds);
-    } else if (objc == 3) {
-        Tcl_SetObjResult(interp, objv[2]);
+    } else if (nextArgIdx + 2 == objc) {
+        Tcl_SetObjResult(interp, objv[nextArgIdx + 1]);
     } else {
         Tcl_SetResult(interp, "no matching cookie", TCL_STATIC);
         status = TCL_ERROR;
