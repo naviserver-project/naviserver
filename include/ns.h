@@ -179,6 +179,7 @@
 
 #define NS_COOKIE_SECURE           1  /* The cookie should only be sent using HTTPS */
 #define NS_COOKIE_SCRIPTABLE       2  /* Available to javascript on the client. */
+#define NS_COOKIE_DISCARD          4  /* Discard the cookie at the end of the current session. */
 
 #ifdef _WIN32
 #define ns_sockclose               closesocket

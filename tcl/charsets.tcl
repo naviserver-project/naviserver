@@ -288,7 +288,7 @@ proc ns_choosecharset {args} {
     }
     
     foreach charset $preferred_charsets {
-        if {[lsearch -exact $accept_charsets $charset] != -1} {
+        if {$charset in $accept_charsets} {
 
             #
             # Return the first preferred charset
@@ -302,7 +302,7 @@ proc ns_choosecharset {args} {
     set supported_charsets [ns_charsets]
     
     foreach charset $accept_charsets {
-        if {[lsearch -exact $supported_charsets $charset] != -1} {
+        if {$charset in $supported_charsets} {
             
             #
             # Return the first acceptable charset

@@ -121,7 +121,16 @@ test cookie-2.9 {set scriptable cookie} -setup {
     ns_unregister_op GET /cookie-2.9
 } -result {200 x=\"y\"}
 
-
+test cookie-2.10 {set discard flag for cookie} -setup {
+    ns_register_proc GET /cookie-2.10 {
+        ns_setcookie -discard t -- x 1
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest::http -getheaders {Set-Cookie} GET /cookie-2.10
+} -cleanup {
+    ns_unregister_op GET /cookie-2.10
+} -result {200 {x="1"; Discard; HttpOnly}}
 
 test cookie-3.1 {delete cookie} -setup {
     ns_register_proc GET /cookie-3.1 {

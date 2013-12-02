@@ -26,6 +26,7 @@ is widely supported by user agents.
 [list_begin definitions]
 
 [call [cmd ns_setcookie] \
+ [opt [option "-discard [arg bool]"]] \
  [opt [option "-secure [arg bool]"]] \
  [opt [option "-scriptable [arg bool]"]] \
  [opt [option "-domain [arg d]"]] \
@@ -87,6 +88,10 @@ for the cookie to be deleted.
 [section {OPTIONS}]
 
 [list_begin options]
+
+[opt_def -discard [arg boolean]]
+If the discard option is true then the cookie will be automaticalled
+deleted at the end of the current session (when the user agent terminates).
 
 [opt_def -secure [arg boolean]]
 If the secure option is true then the the cookie will only be sent back to the

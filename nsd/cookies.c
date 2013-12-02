@@ -89,9 +89,13 @@ Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
     if (flags & NS_COOKIE_SECURE) {
         Ns_DStringAppend(&cookie, "; Secure");
     }
+    if (flags & NS_COOKIE_DISCARD) {
+        Ns_DStringAppend(&cookie, "; Discard");
+    }
     if (!(flags & NS_COOKIE_SCRIPTABLE)) {
         Ns_DStringAppend(&cookie, "; HttpOnly");
     }
+
     Ns_ConnSetHeaders(conn, "Set-Cookie", cookie.string);
     Ns_DStringFree(&cookie);
 }
@@ -213,11 +217,12 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
-    int       flags = 0, secure = 0, scriptable = 0;
+    int       flags = 0, secure = 0, scriptable = 0, discard = 0;
     time_t    maxage;
     Ns_Time  *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
+        {"-discard",    Ns_ObjvBool,   &discard,    NULL},
         {"-secure",     Ns_ObjvBool,   &secure,     NULL},
         {"-scriptable", Ns_ObjvBool,   &scriptable, NULL},
         {"-domain",     Ns_ObjvString, &domain,     NULL},
@@ -240,6 +245,9 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     }
     if (scriptable) {
         flags |= NS_COOKIE_SCRIPTABLE;
+    }
+    if (discard) {
+        flags |= NS_COOKIE_DISCARD;
     }
 
     /*

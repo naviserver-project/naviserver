@@ -27,15 +27,15 @@
 
 [example_begin]
    # In a.adp:
-   &lt;% ns_adp_include b.adp 1 2 3 %&gt;
+   <% ns_adp_include b.adp 1 2 3 %>
 [example_end]
 
 [example_begin]
    # In b.adp:
-   &lt;%
+   <%
      ns_adp_bind_args x y z
-     list $x $y $z    &nbsp;;# =&gt; {1 2 3}
-   %&gt;
+     list $x $y $z       ;# => {1 2 3}
+   %>
 [example_end]
 
 
