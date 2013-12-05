@@ -41,6 +41,7 @@ namespace eval ::nstest {
 	    {-http 1.0} 
 	    -setheaders 
 	    -getheaders 
+	    -getmultiheaders 
 	    {-getbody 0} 
 	    {-getbinary 0} 
 	    {-omitcontentlength 0} 
@@ -249,6 +250,16 @@ namespace eval ::nstest {
 	if {[info exists getheaders]} {
 	    foreach h $getheaders {
 		lappend response [ns_set iget $hdrs $h]
+	    }
+	}
+	if {[info exists getmultiheaders]} {
+	    foreach h $getmultiheaders {
+		for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {
+		    set key [ns_set key $hdrs $i]
+		    if {[string tolower $h] eq [string tolower $key]} {
+			lappend response [ns_set value $hdrs $i]
+		    }
+		}
 	    }
 	}
 
