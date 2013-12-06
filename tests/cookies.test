@@ -9,7 +9,7 @@ eval ::tcltest::configure $argv
 
 test cookie-1.1 {basic syntax} -body {
     ns_getcookie
-} -returnCodes error -result {wrong # args: should be "ns_getcookie name ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_getcookie ?-include_set_cookies bool? ?--? name ?default?"}
 
 test cookie-1.2 {basic syntax} -body {
     ns_setcookie
@@ -132,6 +132,33 @@ test cookie-2.10 {set discard flag for cookie} -setup {
     ns_unregister_op GET /cookie-2.10
 } -result {200 {x="1"; Discard; HttpOnly}}
 
+test cookie-2.11 {set discard flag for cookie} -setup {
+    ns_register_proc GET /cookie-2.11 {
+        ns_setcookie x 1
+        ns_setcookie x 2
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest::http -getmultiheaders {Set-Cookie} GET /cookie-2.11
+} -cleanup {
+    ns_unregister_op GET /cookie-2.11
+} -result {200 {x="1"; HttpOnly} {x="2"; HttpOnly}}
+
+test cookie-2.12 {set discard flag for cookie} -setup {
+    ns_register_proc GET /cookie-2.12 {
+        ns_setcookie x 1
+        ns_setcookie -replace true x 2
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest::http -getmultiheaders {Set-Cookie} GET /cookie-2.12
+} -cleanup {
+    ns_unregister_op GET /cookie-2.12
+} -result {200 {x="2"; HttpOnly}}
+
+
+
+
 test cookie-3.1 {delete cookie} -setup {
     ns_register_proc GET /cookie-3.1 {
         ns_deletecookie x
@@ -152,7 +179,7 @@ test cookie-3.2 {delete cookie w/ all options} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-3.2
 } -cleanup {
     ns_unregister_op GET /cookie-3.2
-} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure; HttpOnly}}
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure}}
 
 
 
