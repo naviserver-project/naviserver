@@ -414,8 +414,10 @@ CreatePool(NsServer *servPtr, char *pool)
     poolPtr->wqueue.highwatermark = (queueLength * highwatermark) / 100;
     poolPtr->wqueue.lowwatermark  = (queueLength * lowwatermark) / 100;
 
-    Ns_Log(Notice, "queueLength %d low water %d high water %d",  
-	   queueLength, poolPtr->wqueue.lowwatermark, poolPtr->wqueue.highwatermark);
+    Ns_Log(Notice, "pool %s: queueLength %d low water %d high water %d",  
+	   *pool == '\0' ? "default" : pool, 
+	   queueLength, poolPtr->wqueue.lowwatermark, 
+	   poolPtr->wqueue.highwatermark);
 
     /* 
      * To allow to vary maxthreads at runtime, allow potentially
