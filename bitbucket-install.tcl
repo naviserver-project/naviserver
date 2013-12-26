@@ -3,11 +3,11 @@ switch -exact $pageName {
   nsconf.tcl -
   nsstats.tcl {
     set source https://bitbucket.org/naviserver/[file root $pageName]/get/tip.tar.gz
-    set page /opt/local/ns/pages/$pageName
+    set page [ns_info pagedir]/$pageName
     if {![file readable $page]} {
       exec wget --quiet --no-check-certificate -O /tmp/nsstats.tar.gz $source
       if {[catch {exec tar Ozxvf /tmp/nsstats.tar.gz *$pageName > $page} errorMsg]} {
-	if {[lindex $errorMsg 0] ne "x"} {
+	if {[string match "x *" $errorMsg]} { 
 	  ns_log notice "error: $errorMsg"
 	  ns_return 200 text/html \
 	      "<html><body>error while downloading $pageName: <b>$errorMsg</b>. <a href='/'>return</a>" 
