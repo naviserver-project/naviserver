@@ -465,13 +465,14 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     NsInterp   *itPtr = arg;
     int         result, flags, nargs = 0;
     char       *resvar = NULL;
-    int         file = 0, safe = 0;
+    int         file = 0, safe = 0, string = 0;
     char       *cwd = NULL, *savecwd = NULL;
 
     Ns_ObjvSpec opts[] = {
+        {"-cwd",         Ns_ObjvString, &cwd,    NULL},
         {"-file",        Ns_ObjvBool,   &file,   (void *) NS_TRUE},
         {"-safe",        Ns_ObjvBool,   &safe,   (void *) NS_TRUE},
-        {"-cwd",         Ns_ObjvString, &cwd,    NULL},
+        {"-string",      Ns_ObjvBool,   &string, (void *) NS_TRUE},
         {"--",           Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -485,10 +486,17 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     objv = objv + (objc - nargs);
     objc = nargs;
 
+    if (string && file) {
+      Tcl_AppendResult(interp, "specify either '-string' or '-file', but not both.", NULL);
+      return TCL_ERROR;
+    }
+
     flags = itPtr->adp.flags;
     if (file) {
+	/* file mode */
         itPtr->adp.flags |= ADP_TCLFILE;
     } else {
+	/* string mode */
         itPtr->adp.flags &= ~ADP_TCLFILE;
     }
     if (safe) {

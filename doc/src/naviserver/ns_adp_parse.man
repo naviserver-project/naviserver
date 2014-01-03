@@ -24,12 +24,17 @@ enclosing script.
 [list_begin definitions]
 
 [call [cmd ns_adp_parse] \
-	[opt [arg {-file file}]] \
-	[opt [arg -safe]] \
 	[opt [arg {-cwd path}]] \
+	[opt [arg {-file}]] \
+	[opt [arg {-safe}]] \
+	[opt [arg {-string}]] \
 	[opt {args ...}]]
 
 [list_end]
+
+[para]
+The [opt -cwd] option can be used to set the current working directory
+for this adp parse operation
 
 [para]
 The [opt -file] option can be used to parse ADP contained in
@@ -41,8 +46,8 @@ being appended to the output stream.
 The [opt -safe] option can be used to set the adp safe flag.
 
 [para]
-The [opt -cwd] option can be used to set the current working directory
-for this adp parse operation
+The [opt -string] option is provided for backwards compatibility, but
+does nothing since string mode is the default mode.
 
 [para]
 Additional arguments are passed to the ADP execution and can be
