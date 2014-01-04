@@ -35,8 +35,8 @@ Time (GMT).  The structure of the list corresponds to the Unix struct tm time st
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_fmttime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
+[keywords time]
+[see_also ns_fmttime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
 
 [manpage_end]
 

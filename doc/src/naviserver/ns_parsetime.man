@@ -7,6 +7,18 @@
 
 [description]
 
+[list_begin definitions]
+[call [cmd {ns_parsetime sec}] [arg time]]
+[call [cmd {ns_parsetime min}] [arg time]]
+[call [cmd {ns_parsetime hour}] [arg time]]
+[call [cmd {ns_parsetime mday}] [arg time]]
+[call [cmd {ns_parsetime mon}] [arg time]]
+[call [cmd {ns_parsetime year}] [arg time]]
+[call [cmd {ns_parsetime wday}] [arg time]]
+[call [cmd {ns_parsetime yday}] [arg time]]
+[call [cmd {ns_parsetime isdst}] [arg time]]
+[list_end]
+
 This command takes a nine-element Tcl list as time representing the Unix struct 
 tm structure (as would be returned from ns_gmtime or ns_localtime) and based on 
 option, returns an element from the list.  The valid options are: sec, min, hour,
@@ -14,21 +26,23 @@ mday, mon, year, wday, yday, isdst.  The options are listed in order of the actu
 elements in the Tcl list itself.
 
 
-[list_begin definitions]
-[call [cmd ns_parsetime] [arg option] [arg time]]
-[list_end]
 
 [section EXAMPLES]
 
 
 [example_begin]
-   % set time ns_localtime
-   33 33 22 11 5 104 5 162 1
+   % set time [lb]ns_localtime[rb]
+   18 45 16 4 0 114 6 3 0
+   
+   % ns_parsetime year $time
+   114
+   
+   % expr {[lb]ns_parsetime year $time[rb] + 1900}
+   2014
 [example_end]
 
-[example_begin]
-   % expr {1900 + 123}
-[example_end]
+[keywords time]
+[see_also ns_gmtime ns_localtime]
 
 [manpage_end]
 

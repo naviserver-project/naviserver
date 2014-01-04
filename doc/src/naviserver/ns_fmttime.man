@@ -44,8 +44,8 @@ date and time representation for the current locale, which on some platforms sho
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_gmtime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
+[keywords time]
+[see_also ns_gmtime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
 
 
 [manpage_end]

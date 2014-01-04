@@ -20,6 +20,8 @@
 
 [list_end]
 
+[keywords time]
+[see_also keywords ns_fmttime ns_httptime ns_localtime ns_parsehttptime ns_parsetime ns_time]
 
 [manpage_end]
 
