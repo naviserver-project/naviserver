@@ -242,11 +242,11 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
     int opt;
 
     static CONST char *opts[] = {
-        "adjust", "diff", "get", "incr", "make",
-        "seconds", "microseconds", NULL
+	"adjust", "diff", "format", "get", "incr", "make",
+	"seconds", "microseconds", NULL
     };
     enum {
-        TAdjustIdx, TDiffIdx, TGetIdx, TIncrIdx, TMakeIdx,
+        TAdjustIdx, TDiffIdx, TFormatIdx, TGetIdx, TIncrIdx, TMakeIdx,
         TSecondsIdx, TMicroSecondsIdx
     };
 
@@ -335,6 +335,26 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 						       result.sec : result.usec)));
         return TCL_OK;
         break;
+
+    case TFormatIdx:
+        if (objc != 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "time");
+            return TCL_ERROR;
+        }
+        if (Ns_TclGetTimeFromObj(interp, objv[2], &result) != TCL_OK) {
+            return TCL_ERROR;
+        }
+
+	{ 
+	  Tcl_DString ds, *dsPtr = &ds;
+
+	  Tcl_DStringInit(dsPtr);
+	  Ns_DStringPrintf(dsPtr, " %" PRIu64 ".%06ld", 
+			   (int64_t)result.sec, result.usec);
+	  Tcl_DStringResult(interp, dsPtr);
+	}
+	return TCL_OK;
+	break;  
     }
 
     Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&result));
