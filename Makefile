@@ -139,7 +139,7 @@ install-examples:
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/examples/; \
 	done
 
-DTPLITE=dtplite
+DTPLITE=$(NAVISERVER)/bin/tclsh $(NAVISERVER)/bin/dtplite
 
 build-doc:
 	$(RM) doc/html doc/man doc/tmp
