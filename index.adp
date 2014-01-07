@@ -44,9 +44,9 @@
    ns_adp_puts {<li>The Naviserver <a href="nsstats.tcl">Statistics page</a> can be
                     useful in resolving performance issues.}
 
-   if { ![file exists [ns_info pageroot]/nsstats.tcl] } {
+   if { ![file exists [ns_server pagedir]/nsstats.tcl] } {
      ns_adp_puts [subst {<br><i>Currently nsstats is not installed as
-                     [ns_info pageroot]/nsstats.tcl, to install you need to
+                     [ns_server pagedir]/nsstats.tcl, to install you need to
                      download modules and do make install in nsstats
                      directory. <a href = 'bitbucket-install.tcl?file=nsstats.tcl'>Install now</a>.
                      </i>}]
@@ -57,13 +57,13 @@
   <li>The Naviserver runtime <a href="nsconf.tcl">Config page</a> can be
     useful in reviewing server's setup.<br>
   <%
-   if { ![file exists [ns_info pageroot]/nsconf.tcl] } {
+   if { ![file exists [ns_server pagedir]/nsconf.tcl] } {
      ns_adp_puts [subst {<i>Currently nsconf is not installed yet.
 	<a href = 'bitbucket-install.tcl?file=nsconf.tcl'>Install now</a>.</i>
     }]
    } else {
     ns_adp_puts [subst {The nsconf module has to be enabled and protected by a password in
-    <strong>[ns_info pageroot]/nsconf.tcl</strong>.}]
+    <strong>[ns_server pagedir]/nsconf.tcl</strong>.}]
     }
     %>
     <p>
