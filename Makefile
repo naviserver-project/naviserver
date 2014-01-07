@@ -96,7 +96,7 @@ install-notice:
 	echo ""
 
 install-dirs: all
-	@for i in bin lib logs include tcl pages conf modules cgi-bin; do \
+	@for i in bin lib logs include tcl pages conf modules modules/tcl cgi-bin; do \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/$$i; \
 	done
 
