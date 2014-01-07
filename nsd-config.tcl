@@ -1,4 +1,5 @@
-set             home                /usr/local/ns
+#set             home                /usr/local/ns
+set             home                [file dirname [file dirname [info nameofexecutable]]]
 
 ns_section     "ns/server/default/modules"
 ns_param        nscp                nscp.so
