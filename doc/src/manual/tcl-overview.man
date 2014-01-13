@@ -281,7 +281,7 @@ better-suited to different situations:
 
 
    To share a file between the interpreters in a group, use the Tcl
-   detach command. A shared file is left open after an interpreter is
+   nsv_* command. A shared file is left open after an interpreter is
    deallocated.
 
 
@@ -294,23 +294,18 @@ better-suited to different situations:
 [example_begin]
 
     #init time:
-    set sharedFile [lb]open myfile.dat[rb]
-    detach $sharedFile
+    nsv_set . sharedFile [lb]open myfile.dat[rb]
 
 [example_end]
 
 
 
 [para]
-
-
    You must manually close the shared file (by performing a close) when
    it is no longer needed or when the server is shut down.
 
 
 [para]
-
-
    Note that there is no implicit locking between interpreters. This
    means that one interpreter can be performing a gets command on the
    shared file at the same time another interpreter performs a close on
@@ -320,22 +315,15 @@ better-suited to different situations:
 
 
 [para]
-
-
    For example:, at initialization time (for example, in your init.tcl
    script), open a shared file and create a mutex:
 
 
 [para]
 
-
-
 [example_begin]
-
-    set sharedLock [lb]ns_mutex create[rb]
-    set sharedFile [lb]open myfile.dat[rb]
-    detach $sharedFile
-
+    nsv_set . sharedLock [lb]ns_mutex create[rb]
+    nsv_set . sharedFile [lb]open myfile.dat[rb]
 [example_end]
 
 
@@ -346,42 +334,31 @@ better-suited to different situations:
    At run time, use the mutex to protect any actions you perform on the
    shared file:
 
-
 [para]
-
-
 
 [example_begin]
 
-    ns_share sharedLock
-    ns_share sharedFile
-    ns_mutex lock $sharedLock
+    ns_mutex lock [lb]nsv_get . sharedLock[rb]
+    set sharedFile  [lb]nsv_get . sharedFile[rb]
     puts $sharedFile ...
     gets $sharedFile ...
-    ns_mutex unlock $sharedLock
-
+    ns_mutex unlock [lb]nsv_get . sharedLock[rb]
 
 [example_end]
 
 
 
 [para]
-
-
    At shutdown (for example, in your shutdown procedure registered with
    ns_atshutdown), close the file and destroy the lock:
-
-
 [para]
 
 
 
 [example_begin]
 
-    ns_share sharedLock
-    ns_share sharedFile
-    close $SharedFile
-    ns_mutex destroy $SharedLock
+    close [lb]nsv_get . sharedFile[rb]
+    ns_mutex destroy [lb]nsv_get . sharedLock[rb]
 
 [example_end]
 
