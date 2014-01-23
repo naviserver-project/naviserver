@@ -68,8 +68,8 @@ Mac OS/X 10.2+ and Windows. To compile and install:
     directory you intend to install the server (e.g., /usr/local/ns) or
     in some other location. The following should work:
 
-    $ gunzip < tcl8.4.12-src.tar.gz | tar xvf -
-    $ cd tcl8.4.12/unix
+    $ gunzip < tcl8.5.15-src.tar.gz | tar xvf -
+    $ cd tcl8.5.15/unix
     $ ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
     $ make install
 
