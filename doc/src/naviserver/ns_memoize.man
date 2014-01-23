@@ -32,11 +32,13 @@ Evaluate [arg script] and [arg args] and return the result. The result is
 cached so that future evaluations of the same [arg script] and [arg args] will
 return the cached result without first evaluating the script.
 
-[para]
-The script result remains valid until the supplied expirey time passes, or
-forever if not specified. The expirey time can be expressed either as an
-absolute time in the future (seconds since the Unix epoch), or as an offset
-from the current time.
+[para] 
+The script result remains valid until the supplied expire time
+passes, or forever if not specified. The value for 
+[option -expires] 
+can be expressed either as an absolute time in the
+future (large values are interpreted as seconds since the Unix epoch), 
+or as an offset from the current time.
 
 [para]
 If two threads execute the same [arg script] and [arg args], one will wait for
