@@ -80,7 +80,12 @@ install-notice:
 	@echo ""
 	@if [ "`whoami`" = "root" ]; then \
 	  echo "  Because you are running as root, the server needs an unprivileged user to be"; \
-	  echo "  specified (e.g. nsadmin). The permissions for log directory have to be set up:"; \
+	  echo "  specified (e.g. nsadmin). This user can be created on a Linux-like system with"; \
+	  echo "  the command"; \
+	  echo ""; \
+	  echo "  useradd nsadmin"; \
+	  echo ""; \
+	  echo "The permissions for log directory have to be set up:"; \
 	  echo ""; \
 	  echo "  chown -R nsadmin $(NAVISERVER)/logs"; \
 	  echo ""; \
