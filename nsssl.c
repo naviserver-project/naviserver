@@ -39,7 +39,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "0.3"
+#define NSSSL_VERSION  "0.4"
 
 typedef struct {
     SSL_CTX     *ctx;
