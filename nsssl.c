@@ -178,6 +178,20 @@ Ns_ModuleInit(char *server, char *module)
     }
 
     /* 
+     * Get DH parameters from .pem file
+     */
+    {
+        BIO *bio = BIO_new_file(value, "r");
+        DH  *dh  = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+        BIO_free(bio);
+
+        if (SSL_CTX_set_tmp_dh(drvPtr->ctx, dh) < 0) {
+	    Ns_Log(Error, "nsssl: Couldn't set DH parameters");
+	    return NS_ERROR;
+	}
+    }
+
+    /* 
      * Https cache support
      */
     Ns_DStringPrintf(&ds, "nsssl:%d", getpid());

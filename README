@@ -16,46 +16,53 @@ New in Version 0.3:
  - ns_ssl: spooling of large content to a file instead of memory
  - requires NaviServer 4.99.6
 
+New in Version 0.4:
+ - support for forward secrecy + diffie-hellmann key exchange
+
 /*--------------------------------------------------------------------*/
 
 
- Configuration
+ Configuration:
 
    nsd.tcl
 
-   ns_section    ns/server/${servername}/modules
-   ns_param      nsssl        		nsssl.so
+     ns_section    ns/server/${servername}/modules
+     ns_param      nsssl        		nsssl.so
 
-   ns_section    ns/server/${servername}/module/nsssl
-   ns_param	 certificate 		/usr/local/ns/modules/nsssl/server.pem
-   ns_param      address    		0.0.0.0
-   ns_param      port       		443
-   ns_param      ciphers                "RC4:HIGH:!aNULL:!MD5;"
-   ns_param      protocols              "!SSLv2"
-   ns_param      verify                 0
+     ns_section    ns/server/${servername}/module/nsssl
+     ns_param	 certificate 		/usr/local/ns/modules/nsssl/server.pem
+     ns_param      address    		0.0.0.0
+     ns_param      port       		443
+     ns_param      ciphers                "RC4:HIGH:!aNULL:!MD5;"
+     ns_param      protocols              "!SSLv2"
+     ns_param      verify                 0
 
-  certificate is required and will not run without it, it should contain cert and privkey
+   certificate is required and will not run without it, it should contain cert and privkey
 
-  ciphers parameter defines which ciphers will be used, by default nsssl uses all ciphers
+   ciphers parameter defines which ciphers will be used, by default nsssl uses all ciphers
+            see e.g.: https://wiki.mozilla.org/Security/Server_Side_TLS
 
-  protocols parameter defines which protocols can be disabled, options are:
+   protocols parameter defines which protocols can be disabled, options are:
             !SSLv2 !SSLv3 !TLSv1, by default all protocosl are enabled
 
-  verify if set to 1 will reject any connections without valid ceritificate
+   verify if set to 1 will reject any connections without valid ceritificate
 
-  all other driver related parameters can be specified, see nssock for more details
+ All other driver related parameters if the HTTP driver can be specified
+ (see nssock for more details).
 
- Creating self-signed certificate
+ Creating self-signed certificate 
+ (The last line is optional but necessary perfect forward secrecy)
 
-  openssl genrsa 1024 > host.key
-  openssl req -new -x509 -nodes -sha1 -days 365 -key host.key > host.cert
-  cat host.cert host.key > server.pem
-  rm -rf host.cert host.key
+    openssl genrsa 1024 > host.key
+    openssl req -new -x509 -nodes -sha1 -days 365 -key host.key > host.cert
+    cat host.cert host.key > server.pem
+    rm -rf host.cert host.key
+    openssl dhparam 2048 >> server.pem
 
 
- Usage
+ Usage_
 
-   The module provide additionally the command "ns_ssl" 
+   The module provides additionally the command "ns_ssl" 
    which is the http conterpart to "ns_http". 
 
     ns_ssl cancel id
