@@ -332,7 +332,6 @@ proc ns_module {key {val ""}} {
 
 proc _ns_load_server_modules {{network 0}} {
     set modules [ns_configsection ns/server/[ns_info server]/modules]
-  puts stderr "SERVER MODULES <[ns_set array $modules]>"
     if {$modules ne ""} {
         foreach {module file} [ns_set array $modules] {
 	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
@@ -345,7 +344,6 @@ proc _ns_load_server_modules {{network 0}} {
 
 proc _ns_load_global_modules {{network 0}} {
     set modules [ns_configsection ns/modules]
-      puts stderr "GLOBAL MODULES <[ns_set array $modules]>"
 
     if {$modules ne ""} {
 	foreach {module file} [ns_set array $modules] {
