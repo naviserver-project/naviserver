@@ -319,6 +319,9 @@ proc ns_module {key {val ""}} {
         clear {
             unset -nocomplain _module
         }
+	network {
+	    set val [regexp {nssock|nsssl} $val]
+	}
         default {
             error "ns_module: invalid command: $key"
         }
@@ -327,27 +330,32 @@ proc ns_module {key {val ""}} {
     return $val
 }
 
-proc _ns_load_server_modules {} {
+proc _ns_load_server_modules {{network 0}} {
     set modules [ns_configsection ns/server/[ns_info server]/modules]
+  puts stderr "SERVER MODULES <[ns_set array $modules]>"
     if {$modules ne ""} {
         foreach {module file} [ns_set array $modules] {
 	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
+	    if {$network != [ns_module network $module]} continue
 	    ns_moduleload $module $file 
 	    ns_ictl addmodule $module
         }
     }
 }
 
-proc _ns_load_global_modules {} {
+proc _ns_load_global_modules {{network 0}} {
     set modules [ns_configsection ns/modules]
-    
+      puts stderr "GLOBAL MODULES <[ns_set array $modules]>"
+
     if {$modules ne ""} {
 	foreach {module file} [ns_set array $modules] {
 	    if {[string tolower $file] eq "tcl" || $file eq ""} continue
+	    if {$network != [ns_module network $module]} continue
 	    ns_moduleload -global $module $file
 	}
     }
 }
+
 
 #
 # Load global binary modules.
@@ -357,11 +365,13 @@ proc _ns_load_global_modules {} {
 # first per-server and then loaded globally. We'll have to fix
 # this nonsense some time later...
 #
+proc _ns_load_modules {{network 0}} {
+    _ns_load_server_modules $network
+    _ns_load_global_modules $network
+}
 
-_ns_load_server_modules
-
-ns_runonce -global {ns_atprestartup _ns_load_global_modules}
-
+_ns_load_modules
+ns_runonce -global {ns_atprestartup _ns_load_modules 1}
 
 #
 # Return the config section where the current/specified driver is
