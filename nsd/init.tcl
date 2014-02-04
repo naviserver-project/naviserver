@@ -363,13 +363,11 @@ proc _ns_load_global_modules {{network 0}} {
 # first per-server and then loaded globally. We'll have to fix
 # this nonsense some time later...
 #
-proc _ns_load_modules {{network 0}} {
-    _ns_load_server_modules $network
-    _ns_load_global_modules $network
-}
 
-_ns_load_modules
-ns_runonce -global {ns_atprestartup _ns_load_modules 1}
+_ns_load_server_modules 0
+_ns_load_global_modules 0
+_ns_load_server_modules 1
+ns_runonce -global {ns_atprestartup _ns_load_global_modules 1}
 
 #
 # Return the config section where the current/specified driver is
