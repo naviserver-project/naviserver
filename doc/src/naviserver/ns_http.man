@@ -47,8 +47,8 @@ body is the value which will be sent as the HTTP request body.
 
 [para]
 [arg -timeout]
-Timeout for how long to wait for finishing the request (default
-2:0, secs:microsesc)
+Timeout for how long to wait for finishing the whole request 
+(default 2:0, secs:microsesc)
 
 [para]
 The command [cmd "ns_http queue"] opens a connection to the web server
@@ -79,6 +79,7 @@ Send a HTTP reuqest and wait for the result.  The command
 	[opt [arg {-spoolsize int}]] \
 	[opt [arg {-status varName}]] \
 	[opt [arg {-timeout t}]] \
+	[opt [arg {-decompress}]] \
 	[arg id]]
 
 [para]
@@ -108,10 +109,16 @@ temporary file returned in the variable denoted by [arg -file].
 [arg -status]
 varName is the name of a variable that should be used to store the HTTP response status
 
+[para] 
+[arg -timeout] 
+Optional timeout for the [cmd wait] subcommand. The task
+might wait for input until the specified timeout for input. Might be
+governed by the total timeout specified in the [cmd queue] subcommand.
+
 [para]
-[arg -timeout]
-Optional additional timeout for the wait command. Might be governed by
-the timeout specified in the queue subcommand.
+[arg -decompress]
+In case the response has a content encoding of gzip, automatically
+decompress the result
 
 [para]
 [arg id]

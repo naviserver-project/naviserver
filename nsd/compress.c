@@ -123,6 +123,93 @@ Ns_CompressFree(Ns_CompressStream *stream)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_InflateInit, Ns_InflateBufferInit, Ns_InflateBuffer, Ns_InflateEnd --
+ *
+ *      Initialize decompression stream, decompress from the stream
+ *      and terminate stream.
+ *
+ * Results:
+ *      Tcl result codes.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_InflateInit(Ns_CompressStream *stream)
+{
+    z_stream *zPtr = &stream->z;
+    int       status, result = TCL_OK;
+
+    zPtr->zalloc   = ZAlloc;
+    zPtr->zfree    = ZFree;
+    zPtr->opaque   = Z_NULL;
+    zPtr->avail_in = 0;
+    zPtr->next_in  = Z_NULL;
+    status = inflateInit2(zPtr, 15 + 16); /* windowBits: 15 (max), +16 (Gzip header/footer). */
+    if (status != Z_OK) {
+	Ns_Log(Bug, "Ns_Compress: inflateInit: %d (%s): %s",
+	       status, zError(status), zPtr->msg ? zPtr->msg : "(unknown)");
+	result = NS_ERROR;
+    }
+    return result;
+}
+
+
+int
+Ns_InflateBufferInit(Ns_CompressStream *stream, char *in, int inSize) 
+{
+    z_stream *zPtr = &stream->z;
+
+    zPtr->avail_in = inSize;
+    zPtr->next_in  = (unsigned char *)in;
+
+    return TCL_OK;
+}
+
+int
+Ns_InflateBuffer(Ns_CompressStream *stream, char *out, int outSize, int *nrBytes) 
+{
+    z_stream *zPtr = &stream->z;
+    int       status, result = TCL_OK;
+    
+    zPtr->avail_out = outSize;
+    zPtr->next_out  = (unsigned char *)out;
+    status = inflate(zPtr, Z_NO_FLUSH);
+
+    if (status != Z_OK && status != Z_PARTIAL_FLUSH) {
+	Ns_Log(Bug, "Ns_Compress: inflateBuffer: %d (%s); %s",
+	       status, zError(status), zPtr->msg ? zPtr->msg : "(unknown)");
+	result = TCL_ERROR;
+    } else if (zPtr->avail_out == 0) {
+	result = TCL_CONTINUE;
+    }
+    
+    *nrBytes = outSize-zPtr->avail_out;
+
+    return result;
+}
+
+int
+Ns_InflateEnd(Ns_CompressStream *stream) 
+{
+    z_stream *zPtr = &stream->z;
+    int       status, result = TCL_OK;
+
+    status = inflateEnd(zPtr);
+    if (status != Z_OK) {
+	Ns_Log(Bug, "Ns_Compress: inflateEnd: %d (%s); %s",
+	       status, zError(status), zPtr->msg ? zPtr->msg : "(unknown)");
+	result = TCL_ERROR;
+    }
+    return result;
+
+}
 
 /*
  *----------------------------------------------------------------------
@@ -338,6 +425,29 @@ Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs,
 
 int
 Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level)
+{
+    return NS_ERROR;
+}
+
+int 
+Ns_InflateInit(Ns_CompressStream *stream) 
+{
+    return NS_ERROR;
+}
+
+int
+Ns_InflateBufferInit(Ns_CompressStream *stream, char *in, int inSize) 
+{
+    return NS_ERROR;
+}
+int
+Ns_InflateBuffer(Ns_CompressStream *stream, char *out, int outSize, int *nrBytes) 
+{
+    return NS_ERROR;
+}
+
+int
+Ns_InflateEnd(Ns_CompressStream *stream) 
 {
     return NS_ERROR;
 }

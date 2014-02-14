@@ -41,6 +41,10 @@
 #include "nsversion.h"
 #include "nsthread.h"
 
+#ifdef HAVE_ZLIB_H
+# include <zlib.h>
+#endif
+
 #ifdef NSD_EXPORTS
 #undef NS_EXTERN
 #ifdef __cplusplus
@@ -525,28 +529,7 @@ typedef struct Ns_DriverInitData {
     char                  *path;         /* Path to find port, address, etc. */
 } Ns_DriverInitData;
 
-/*
- * For HTTP tasks (in ns_http and ns_https)
- */
-typedef struct {
-    Ns_Task    *task;
-    NS_SOCKET   sock;
-    int         status;
-    char       *url;
-    char       *error;
-    char       *next;             /* write to client */
-    size_t      len;              /* size of request */
-    int         replyHeaderSize;
-    Ns_Set     *replyHeaders;     /* ns_set for header fields of the reply */
-    int         spoolLimit;       /* spool to file, when this body > this size */
-    int         spoolFd;          /* fd of spool file */
-    char       *spoolFileName;    /* filename of spoolfile */
-    Ns_Mutex    lock;             /* needed for switching modes (spooling to file/memory) */
-    Ns_Time     timeout;
-    Ns_Time     stime;
-    Ns_Time     etime;
-    Tcl_DString ds;
-} Ns_HttpTask;
+
 
 /*
  * MD5 digest implementation
@@ -804,10 +787,6 @@ NS_EXTERN void Ns_ClsSet(Ns_Cls *clsPtr, Ns_Conn *conn, void *data);
  * compress.c:
  */
 
-#ifdef HAVE_ZLIB_H
-# include <zlib.h>
-#endif
-
 typedef struct Ns_CompressStream {
 
 #ifdef HAVE_ZLIB_H
@@ -833,6 +812,54 @@ Ns_CompressBufsGzip(Ns_CompressStream *, struct iovec *bufs, int nbufs, Ns_DStri
 
 NS_EXTERN int
 Ns_CompressGzip(const char *buf, int len, Tcl_DString *outPtr, int level);
+
+
+NS_EXTERN int 
+Ns_InflateInit(Ns_CompressStream *stream) 
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int
+Ns_InflateBufferInit(Ns_CompressStream *stream, char *in, int inSize) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int
+Ns_InflateBuffer(Ns_CompressStream *stream, char *out, int outSize, int *nrBytes) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
+NS_EXTERN int
+Ns_InflateEnd(Ns_CompressStream *stream) 
+    NS_GNUC_NONNULL(1);
+
+/*
+ * For HTTP tasks (in ns_http and ns_https)
+ */
+typedef struct {
+    Ns_Task    *task;
+    NS_SOCKET   sock;
+    int         status;
+    char       *url;
+    char       *error;
+    char       *next;             /* write to client */
+    size_t      len;              /* size of request */
+    int         replyHeaderSize;
+    Ns_Set     *replyHeaders;     /* ns_set for header fields of the reply */
+    int         spoolLimit;       /* spool to file, when this body > this size */
+    int         spoolFd;          /* fd of spool file */
+    char       *spoolFileName;    /* filename of spoolfile */
+    Ns_Mutex    lock;             /* needed for switching modes (spooling to file/memory) */
+    int         flags;
+    Ns_CompressStream *compress;
+    Ns_Time     timeout;
+    Ns_Time     stime;
+    Ns_Time     etime;
+    Tcl_DString ds;
+} Ns_HttpTask;
+
+#define NS_HTTP_FLAG_DECOMPRESS    0x0001
+#define NS_HTTP_FLAG_GZIP_ENCODING 0x0002
+#define NS_HTTP_FLAG_GUNZIP        (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
+
+
 
 /*
  * config.c:
@@ -2733,6 +2760,10 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 NS_EXTERN void
 Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
     NS_GNUC_NONNULL(1); 
+
+NS_EXTERN int
+Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, char *inBuf, int inSize) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2); 
 
 /*
  * tclmisc.c

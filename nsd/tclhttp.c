@@ -284,6 +284,43 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * ProcessReplyHeaderFields --
+ *
+ *	Extract information from the reply header field for efficient
+ *	processing.
+ *
+ * Results:
+ *	none
+ *
+ * Side effects:
+ *	mit setting flags, might allocate Ns_CompressStream
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ProcessReplyHeaderFields(Ns_HttpTask *httpPtr) 
+{
+    char *encString;
+
+    Ns_Log(Debug, "ProcessReplyHeaderFields %p", httpPtr->replyHeaders);
+
+    encString = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
+
+    if (encString != NULL && strncmp("gzip", encString, 4) == 0) {
+      httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
+
+      if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == NS_HTTP_FLAG_GUNZIP) {
+	  httpPtr->compress = ns_calloc(1, sizeof(Ns_CompressStream));
+	  Ns_InflateInit(httpPtr->compress);
+      }
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_HttpCheckHeader --
  *
  *	Check, whether we have received a response containing the full
@@ -356,6 +393,8 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
      * There is a header, but it is not parsed yet.
      */
     if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
+	int contentSize = httpPtr->ds.length - httpPtr->replyHeaderSize;
+
 	Ns_MutexLock(&httpPtr->lock);
 	if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
 	    Tcl_WideInt length;
@@ -365,6 +404,8 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 	    if (httpPtr->status == 0) {
 		Ns_Log(Warning, "ns_http: Parsing reply header failed");
 	    }
+	    ProcessReplyHeaderFields(httpPtr);
+
 	    if (httpPtr->spoolLimit > -1) {
 	        char *s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
 
@@ -385,22 +426,35 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		      length, httpPtr->spoolLimit, httpPtr->spoolFileName);*/
 		    
 		    if (fd) {
-			int result;
-			/*Ns_Log(Notice, "ns_http: we spool %d bytes", 
-			  httpPtr->ds.length - httpPtr->replyHeaderSize);*/
-			result = write(fd, 
-				       httpPtr->ds.string + httpPtr->replyHeaderSize, 
-				       httpPtr->ds.length - httpPtr->replyHeaderSize);
-			if (result == -1) {
-			    Ns_Log(Error, "ns_http: spool of uploaded content failed");
-			}
+			/*Ns_Log(Notice, "ns_http: we spool %d bytes", contentSize); */
+			httpPtr->spoolFd = fd;
+			Ns_HttpAppendBuffer(httpPtr, 
+					    httpPtr->ds.string + httpPtr->replyHeaderSize, 
+					    contentSize);
 		    }
-		    /* now, other threads might write to this fd as well */
-		    httpPtr->spoolFd = fd;
 		}
 	    }
 	}
 	Ns_MutexUnlock(&httpPtr->lock);
+
+	if (contentSize > 0 && httpPtr->spoolFd == 0) {
+	    Tcl_DString ds, *dsPtr = &ds;
+
+	    /*
+	     * We have in httpPtr->ds the header and some content. We
+	     * might have to decompress the first content chunk and to
+	     * replace the compressed content with the decompressed.
+	     */
+
+	    Ns_Log(Debug, "ns_http: got header %d + %d bytes", httpPtr->replyHeaderSize, contentSize);
+
+	    Tcl_DStringInit(dsPtr);
+	    Tcl_DStringAppend(dsPtr, httpPtr->ds.string + httpPtr->replyHeaderSize, contentSize);
+	    Tcl_DStringTrunc(&httpPtr->ds, httpPtr->replyHeaderSize);
+	    Ns_HttpAppendBuffer(httpPtr, dsPtr->string, contentSize);
+
+	    Tcl_DStringFree(dsPtr);
+	}
     }
 }
 
@@ -433,16 +487,17 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
     Ns_Set      *hdrPtr = NULL;
     Ns_HttpTask *httpPtr = NULL;
     Ns_Time      diff;
-    int          result = TCL_ERROR, spoolLimit = -1;
+    int          result = TCL_ERROR, spoolLimit = -1, decompress = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-timeout",   Ns_ObjvTime,   &timeoutPtr,    NULL},
-        {"-headers",   Ns_ObjvSet,    &hdrPtr,        NULL},
-        {"-elapsed",   Ns_ObjvObj,    &elapsedVarPtr, NULL},
-        {"-result",    Ns_ObjvObj,    &resultVarPtr,  NULL},
-        {"-status",    Ns_ObjvObj,    &statusVarPtr,  NULL},
-        {"-file",      Ns_ObjvObj,    &fileVarPtr,    NULL},
-        {"-spoolsize", Ns_ObjvInt,    &spoolLimit,    NULL},
+        {"-timeout",    Ns_ObjvTime,   &timeoutPtr,    NULL},
+        {"-headers",    Ns_ObjvSet,    &hdrPtr,        NULL},
+        {"-elapsed",    Ns_ObjvObj,    &elapsedVarPtr, NULL},
+        {"-result",     Ns_ObjvObj,    &resultVarPtr,  NULL},
+        {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
+        {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
+        {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
+        {"-decompress", Ns_ObjvBool,   &decompress,    (void *)NS_TRUE},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -453,8 +508,12 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+
     if (!HttpGet(itPtr, id, &httpPtr, 1)) {
 	return TCL_ERROR;
+    }
+    if (decompress) {
+      httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
     }
 
     if (hdrPtr == NULL) {
@@ -467,6 +526,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
     }
     httpPtr->spoolLimit = spoolLimit;
     httpPtr->replyHeaders = hdrPtr;
+
     Ns_HttpCheckSpool(httpPtr);
 
     if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
@@ -709,6 +769,77 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_HttpAppendBuffer, HttpAppendRawBuffer --
+ *
+ *        The HTTP client has received some content. Append this
+ *        content either raw or uncompressed to either a file
+ *        descriptor or the the DString. HttpAppendRawBuffer appends
+ *        data without any decompression.
+ *
+ * Results:
+ *        Tcl result code
+ *
+ * Side effects:
+ *        Writing to the spool file or appending to the DString
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HttpAppendRawBuffer(Ns_HttpTask *httpPtr, char *outBuf, int outSize) 
+{
+    int status = TCL_OK;
+
+    if (httpPtr->spoolFd > 0) {
+	int result = write(httpPtr->spoolFd, outBuf, outSize);
+	if (result == -1) {
+	    Ns_Log(Error, "task: spooling of received content failed");
+	    status = TCL_ERROR;
+	}
+    } else {
+	Tcl_DStringAppend(&httpPtr->ds, outBuf, outSize);
+    }
+
+    return status;
+}
+
+int
+Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, char *inBuf, int inSize) 
+{
+    int status = TCL_OK;
+
+    Ns_Log(Debug, "Ns_HttpAppendBuffer: got %d bytes flags %.6x", inSize, httpPtr->flags);
+    
+    if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) != NS_HTTP_FLAG_GUNZIP)) {
+	/*
+	 * Output raw content
+	 */
+	HttpAppendRawBuffer(httpPtr, inBuf, inSize);
+
+    } else {
+	char out[16384];
+
+	/*
+	 * Output decompressed content
+	 */
+	Ns_InflateBufferInit(httpPtr->compress, inBuf, inSize);
+	Ns_Log(Debug, "InflateBuffer: got %d compressed bytes", inSize);
+	do {
+	    int uncompressedLen = 0;
+		
+	    status = Ns_InflateBuffer(httpPtr->compress, out, sizeof(out), &uncompressedLen);
+	    Ns_Log(Debug, "InflateBuffer status %d uncompressed %d bytes", status, uncompressedLen);
+	    
+	    HttpAppendRawBuffer(httpPtr, out, uncompressedLen);
+
+	} while(status == TCL_CONTINUE);
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * HttpClose --
  *
  *        Finish Http Task and cleanup memory
@@ -729,6 +860,10 @@ HttpClose(Ns_HttpTask *httpPtr)
     if (httpPtr->sock > 0)      {ns_sockclose(httpPtr->sock);}
     if (httpPtr->spoolFileName) {ns_free(httpPtr->spoolFileName);}
     if (httpPtr->spoolFd > 0)   {close(httpPtr->spoolFd);}
+    if (httpPtr->compress)      {
+	Ns_InflateEnd(httpPtr->compress);
+	ns_free(httpPtr->compress);
+    }
     Ns_MutexDestroy(&httpPtr->lock);
     Tcl_DStringFree(&httpPtr->ds);
     ns_free(httpPtr->url);
@@ -799,23 +934,19 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, int why)
     case NS_SOCK_READ:
     	n = recv(sock, buf, sizeof(buf), 0);
     	if (likely(n > 0)) {
+
 	    /* 
-	     * In case we are spooling, write to the spoolfile,
-	     * otherwise append to the DString. Spooling is only
-	     * activated after (a) having processed the headers, and
-	     * (b) after the wait command has required to spool. Both
-	     * conditions are necessary, but might be happen in
-	     * different orders.
+	     * Spooling is only activated after (a) having processed
+	     * the headers, and (b) after the wait command has
+	     * required to spool. Once we know spoolFd, there is no
+	     * need to HttpCheckHeader() again.
 	     */
 	    if (httpPtr->spoolFd > 0) {
-		int result;
-		Ns_Log(Debug, "Task got %d bytes, spooled", (int)n);
-		result = write(httpPtr->spoolFd, buf, n);
-		if (result == -1) {
-		    Ns_Log(Error, "task: spooling of received content failed");
-		}
+		Ns_HttpAppendBuffer(httpPtr, buf, n);
 	    } else {
-		Tcl_DStringAppend(&httpPtr->ds, buf, n);
+		Ns_Log(Notice, "Task got %d bytes", (int)n);
+		Ns_HttpAppendBuffer(httpPtr, buf, n);
+
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {
 		    Ns_HttpCheckHeader(httpPtr);
 		}
