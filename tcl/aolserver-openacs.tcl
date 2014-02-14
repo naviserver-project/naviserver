@@ -78,7 +78,7 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
   #
   ::nx::Object create ::ns_cache {
     :public object method eval {cache_name key script} {
-      set rc [catch {:uplevel [list ns_cache_eval $cache_name $key $script]} result]
+      set rc [catch {uplevel [list ns_cache_eval $cache_name $key $script]} result]
       return -code $rc $result
     }
 
