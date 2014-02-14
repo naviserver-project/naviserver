@@ -739,16 +739,17 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         Tcl_Obj *valPtr;
         char *id = NULL;
         Ns_Time diff;
-	int spoolLimit = -1;
+	int spoolLimit = -1, decompress = 0;
 
         Ns_ObjvSpec opts[] = {
-            {"-timeout",   Ns_ObjvTime, &timeoutPtr,     NULL},
-            {"-headers",   Ns_ObjvSet,  &hdrPtr,         NULL},
-            {"-elapsed",   Ns_ObjvObj,  &elapsedVarPtr,  NULL},
-            {"-result",    Ns_ObjvObj,  &resultVarPtr,   NULL},
-            {"-status",    Ns_ObjvObj,  &statusVarPtr,   NULL},
-	    {"-file",      Ns_ObjvObj,  &fileVarPtr,     NULL},
-	    {"-spoolsize", Ns_ObjvInt,  &spoolLimit,     NULL},
+            {"-timeout",    Ns_ObjvTime, &timeoutPtr,    NULL},
+            {"-headers",    Ns_ObjvSet,  &hdrPtr,        NULL},
+            {"-elapsed",    Ns_ObjvObj,  &elapsedVarPtr, NULL},
+            {"-result",     Ns_ObjvObj,  &resultVarPtr,  NULL},
+            {"-status",     Ns_ObjvObj,  &statusVarPtr,  NULL},
+	    {"-file",       Ns_ObjvObj,  &fileVarPtr,    NULL},
+	    {"-spoolsize",  Ns_ObjvInt,  &spoolLimit,    NULL},
+	    {"-decompress", Ns_ObjvBool, &decompress,    (void *)NS_TRUE},
             {NULL, NULL,  NULL, NULL}
         };
         Ns_ObjvSpec args[] = {
@@ -759,10 +760,15 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
+
         if (!(httpsPtr = HttpsGet(interp, id))) {
             return TCL_ERROR;
         }
 	httpPtr = &httpsPtr->http;
+
+	if (decompress) {
+	  httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+	}
 
 	if (hdrPtr == NULL) {
 	  /*
@@ -774,6 +780,8 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	}
 	httpPtr->spoolLimit = spoolLimit;
 	httpPtr->replyHeaders = hdrPtr;
+    fprintf(stderr, "replyheaders set to %p\n", hdrPtr );
+
 	Ns_HttpCheckSpool(httpPtr);
 
         if (Ns_TaskWait(httpPtr->task, timeoutPtr) != NS_OK) {
@@ -817,7 +825,7 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	    close(httpPtr->spoolFd);
 	    valPtr = Tcl_NewObj();
 	} else {
-	    valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
+	  valPtr = Tcl_NewByteArrayObj((unsigned char*)httpPtr->ds.string + httpPtr->replyHeaderSize, 
 					 (int)httpPtr->ds.length - httpPtr->replyHeaderSize);
 	}
 
@@ -1158,6 +1166,10 @@ HttpsClose(Https *httpsPtr)
     if (httpPtr->sock > 0)      {ns_sockclose(httpPtr->sock);}
     if (httpPtr->spoolFileName) {ns_free(httpPtr->spoolFileName);}
     if (httpPtr->spoolFd > 0)   {close(httpPtr->spoolFd);}
+    if (httpPtr->compress)      {
+	Ns_InflateEnd(httpPtr->compress);
+	ns_free(httpPtr->compress);
+    }
     Ns_MutexDestroy(&httpPtr->lock);
     Tcl_DStringFree(&httpPtr->ds);
     ns_free(httpPtr->url);
@@ -1270,18 +1282,17 @@ HttpsProc(Ns_Task *task, SOCKET sock, void *arg, int why)
 	
         if (likely(n > 0)) {
 	    /* 
-	     * In case we are spooling, write to the spoolfile,
-	     * otherwise append to the DString. Spooling is only
-	     * activated after (a) having processed the headers, and
-	     * (b) after the wait command has required to spool. Both
-	     * conditions are necessary, but might be happen in
-	     * different orders.
+	     * Spooling is only activated after (a) having processed
+	     * the headers, and (b) after the wait command has
+	     * required to spool. Once we know spoolFd, there is no
+	     * need to HttpCheckHeader() again.
 	     */
 	    if (httpPtr->spoolFd > 0) {
-		Ns_Log(Debug, "Task got %d bytes, spooled", (int)n);
-		write(httpPtr->spoolFd, buf, n);
+		Ns_HttpAppendBuffer(httpPtr, buf, n);
 	    } else {
-		Tcl_DStringAppend(&httpPtr->ds, buf, n);
+		Ns_Log(Notice, "Task got %d bytes", (int)n);
+		Ns_HttpAppendBuffer(httpPtr, buf, n);
+
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {
 		    Ns_HttpCheckHeader(httpPtr);
 		}

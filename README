@@ -70,7 +70,7 @@ New in Version 0.4:
     ns_ssl list
     ns_ssl queue ?-method M? ?-headers S? ?-body B? ?-timeout T? ?-cert C? ?-cafile CA? ?-capath CP? ?-verify? -url
     ns_ssl run ?-method M? ?-headers S? ?-body B? ?-timeout T? url
-    ns_ssl wait ?-elapsed varName? ?-file varName? ?-headers H? ?-result varName? ?-spoolsize int? ?-status varName? ?-timeout t? id
+    ns_ssl wait ?-elapsed varName? ?-file varName? ?-headers H? ?-result varName? ?-spoolsize int? ?-status varName? ?-timeout t? ?-decompress? id
 
   See the naviserver documentation of "ns_http" for usage and details about the options.
 
