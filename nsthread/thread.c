@@ -74,7 +74,7 @@ static Thread *firstThreadPtr;
  */
 
 static Ns_Tls key;
-static long defstacksize;
+static long defstacksize = 0;
 
 
 /*
