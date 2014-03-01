@@ -367,7 +367,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
         case SGetIdx:
         case SIGetIdx:
             if (unlikely(objc < 4)) {
-                Tcl_WrongNumArgs(interp, 2, objv, "setId key ?dflt?");
+                Tcl_WrongNumArgs(interp, 2, objv, "setId key ?default?");
                 return TCL_ERROR;
             }
             key = Tcl_GetString(objv[3]);
