@@ -418,7 +418,7 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
         ePtr->expires = *timeoutPtr;
     }
     cachePtr->currentSize += size;
-    if (ePtr->cachePtr->maxSize > 0) {
+    if (cachePtr->maxSize > 0) {
         /* 
 	 * Make space for the new entry, but don't delete the current
 	 * entry, and don't delete other newborn entries (with a value
@@ -457,17 +457,27 @@ void
 Ns_CacheUnsetValue(Ns_Entry *entry)
 {
     Entry *ePtr = (Entry *) entry;
+    void *value = ePtr->value;
     Cache *cachePtr;
 
-    if (ePtr->value != NULL) {
+    if (value != NULL) {
+	/*
+	 * In case, the freeProc() wants to allocate itself
+	 * (indirectly) a cache entry, we have to make sure, that
+	 * ePtr->value is not freed twice. Therefore, we keep the
+	 * affected member "value" in a local variable and set
+	 * ePtr->value to NULL before it is actually deallocated and
+	 * call the freeProc after updating all entry members.
+	 */
         cachePtr = ePtr->cachePtr;
         cachePtr->currentSize -= ePtr->size;
-        if (cachePtr->freeProc != NULL) {
-            (*cachePtr->freeProc)(ePtr->value);
-        }
-        ePtr->size = 0;
+	ePtr->size = 0;
         ePtr->value = NULL;
         ePtr->expires.sec = ePtr->expires.usec = 0;
+		
+        if (cachePtr->freeProc != NULL) {
+            (*cachePtr->freeProc)(value);
+        }
     }
 }
 
