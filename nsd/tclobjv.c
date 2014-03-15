@@ -185,6 +185,69 @@ NsTclInitSpecType()
 /*
  *----------------------------------------------------------------------
  *
+ * GetOptIndex --
+ *
+ *      Process options similar to Tcl_GetIndexFromObj() but allow
+ *      only options (starting with a "-"), allow only exact matches
+ *      and don't cache results as internal reps.
+ *
+ *      Background: Tcl_GetIndexFromObj() validates internal reps
+ *      based on the pointer of the base string table, which works
+ *      only reliably with static string tables. Since NaviServer
+ *      can't use static string tables, these are allocated on the
+ *      stack. This can lead to mix-ups for shared objects with the
+ *      consequence the the resulting indices might be incorrect,
+ *      leading to potential crashes. In order to allow caching, it
+ *      should be possible to validate the entries based on other
+ *      means, but this requires a different interface.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int 
+GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr) 
+{
+    Ns_ObjvSpec *entryPtr;
+    char        *key = Tcl_GetString(obj);
+    int          idx;
+
+
+    if (*key != '-') {
+	return TCL_ERROR;
+    }
+
+    for (entryPtr = tablePtr, idx = 0; entryPtr->key != NULL;  entryPtr++, idx++) {
+	char *p1, *p2;
+
+        for (p1 = key, p2 = entryPtr->key; *p1 == *p2; p1++, p2++) {
+            if (*p1 == '\0') {
+		/*
+		 * Both words are at their ends. Match is successfut
+		 */
+                *idxPtr = idx;
+		return TCL_OK;
+            }
+        }
+        if (*p1 == '\0') {
+            /*
+             * The value is an abbreviation for this entry.
+             */
+	    return TCL_ERROR;
+        }
+    }
+ 
+   return TCL_ERROR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ParseObjv --
  *
  *      Process objv acording to given option and arg specs.
@@ -197,7 +260,6 @@ NsTclInitSpecType()
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              int offset, int objc, Tcl_Obj *CONST objv[])
@@ -206,16 +268,23 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     int          optIndex, status, remain = (objc - offset);
 
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
+
         while (remain > 0) {
-            if (Tcl_GetIndexFromObjStruct(NULL, objv[objc - remain], optSpec,
-                                          sizeof(Ns_ObjvSpec), "option",
-                                          TCL_EXACT, &optIndex) != TCL_OK) {
-                break;
-            }
+	    Tcl_Obj *obj = objv[objc - remain];
+
+	    status = Tcl_IsShared(obj) ? 
+		GetOptIndex(obj, optSpec, &optIndex) :
+		Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,
+					  sizeof(Ns_ObjvSpec), "option",
+					  TCL_EXACT, &optIndex);
+	    if (status != TCL_OK) {
+		break;
+	    }
+
             --remain;
             specPtr = optSpec + optIndex;
-            status = specPtr->proc(specPtr, interp, &remain,
-                                   objv + (objc - remain));
+            status = specPtr->proc(specPtr, interp, &remain, objv + (objc - remain));
+
             if (status == TCL_BREAK) {
                 break;
             } else if (status != TCL_OK) {
