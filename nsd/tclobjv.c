@@ -227,7 +227,7 @@ GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
         for (p1 = key, p2 = entryPtr->key; *p1 == *p2; p1++, p2++) {
             if (*p1 == '\0') {
 		/*
-		 * Both words are at their ends. Match is successfut
+		 * Both words are at their ends. Match is successful.
 		 */
                 *idxPtr = idx;
 		return TCL_OK;

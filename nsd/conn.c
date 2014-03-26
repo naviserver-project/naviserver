@@ -527,7 +527,7 @@ Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg)
  *
  *      Set pointer to custom routine that acts like Ns_ConnLocation();
  *
- *      Depreciated: Use Ns_SetConnLocationProc() which is virtual host
+ *      Deprecated: Use Ns_SetConnLocationProc() which is virtual host
  *      aware.
  *
  * Results:
@@ -558,7 +558,7 @@ Ns_SetLocationProc(char *server, Ns_LocationProc *proc)
  *      Get the location according to the driver for this connection.
  *      It is of the form SCHEME://HOSTNAME:PORT
  *
- *      Depreciated: Use Ns_ConnLocationAppend() which is virtual host
+ *      Deprecated: Use Ns_ConnLocationAppend() which is virtual host
  *      aware.
  *
  * Results:
