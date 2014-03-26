@@ -645,6 +645,8 @@ Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
  *      virtual server argument so must assume the currently
  *      initializing server is the intended server.
  *
+ *      Deprecated.
+ *
  * Results:
  *      See Ns_TclRegisterTrace.
  *
@@ -696,6 +698,8 @@ RegisterAt(Ns_TclTraceProc *proc, void *arg, int when)
  *      given proc immediately on each interp in a shared pool which
  *      explains this otherwise misnamed API.
  *
+ *      Deprecated.
+ *
  * Results:
  *      See Ns_TclRegisterTrace.
  *
@@ -720,6 +724,8 @@ Ns_TclInitInterps(CONST char *server, Ns_TclInterpInitProc *proc, void *arg)
  *      Register a procedure to be called when the interp is deallocated.
  *      This is a one-shot FIFO order callback mechanism which is seldom
  *      used.
+ *
+ *      Deprecated.
  *
  * Results:
  *      None.

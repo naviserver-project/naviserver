@@ -32,7 +32,6 @@
  *      
  *      Stronger compile time error checking when using GCC.
  *
- * $Header$
  */
 
 #ifndef NSCHECK_H
@@ -76,6 +75,11 @@
 # define NS_GNUC_DEPRECATED
 #endif
 
+#if __GNUC_PREREQ(4,5)
+# define NS_GNUC_DEPRECATED_FOR(f) __attribute__((deprecated("Use " #f " instead")))
+#else
+# define NS_GNUC_DEPRECATED_FOR(f) NS_GNUC_DEPRECATED
+#endif
 
 #if __GNUC_PREREQ(3,1)
 # define NS_GNUC_USED __attribute__((__used__))

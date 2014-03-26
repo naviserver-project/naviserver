@@ -1033,7 +1033,7 @@ NS_EXTERN int
 Ns_ConnPeerPort(Ns_Conn *conn);
 
 NS_EXTERN char *
-Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED;
+Ns_ConnLocation(Ns_Conn *conn) NS_GNUC_DEPRECATED_FOR(Ns_ConnLocationAppend);
 
 NS_EXTERN char *
 Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest);
@@ -1063,7 +1063,7 @@ NS_EXTERN int
 Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
 
 NS_EXTERN void
-Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED;
+Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
 
 NS_EXTERN Ns_Time *
 Ns_ConnStartTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
@@ -1193,20 +1193,16 @@ Ns_ConnCopyToChannel(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan)
 
 
 NS_EXTERN int
-Ns_ConnInit(Ns_Conn *connPtr)
-    NS_GNUC_DEPRECATED;
-
-NS_EXTERN int
 Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, size_t towrite)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN int
 Ns_WriteConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
-    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVData);
 
 NS_EXTERN int
 Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED;
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVChars);
 
 NS_EXTERN int
 Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt length, int flags, Ns_DString *dsPtr)
@@ -1358,7 +1354,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type,
 
 NS_EXTERN CONST char *
 Ns_PageRoot(CONST char *server)
-    NS_GNUC_DEPRECATED;
+    NS_GNUC_DEPRECATED_FOR(Ns_PagePath);
 
 NS_EXTERN int
 Ns_UrlIsFile(CONST char *server, CONST char *url);
@@ -1736,10 +1732,12 @@ Ns_LogTime2(char *timeBuf, int gmt)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr) NS_GNUC_DEPRECATED;
+Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr) 
+    NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
 
 NS_EXTERN void
-Ns_SetNsLogProc(Ns_LogProc *procPtr)  NS_GNUC_DEPRECATED;
+Ns_SetNsLogProc(Ns_LogProc *procPtr)  
+    NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
 
 NS_EXTERN void
 Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freePtr);
@@ -1877,7 +1875,7 @@ Ns_GetFileEncoding(CONST char *file)
 
 NS_EXTERN Tcl_Encoding
 Ns_GetEncoding(CONST char *name)
-    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_GetCharsetEncodingEx);
 
 
 /*
@@ -2490,7 +2488,8 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
 		Ns_Time *timeoutPtr, int flags);
 
 NS_EXTERN NS_SOCKET
-Ns_BindSock(struct sockaddr_in *psa) NS_GNUC_DEPRECATED;
+Ns_BindSock(struct sockaddr_in *psa) 
+    NS_GNUC_DEPRECATED_FOR(Ns_SockBind);
 
 NS_EXTERN NS_SOCKET
 Ns_SockBind(struct sockaddr_in *psa);
@@ -2727,23 +2726,23 @@ Ns_TclInitModule(CONST char *server, CONST char *module)
 
 NS_EXTERN void
 Ns_FreeConnInterp(Ns_Conn *conn)
-     NS_GNUC_DEPRECATED;
+     NS_GNUC_DEPRECATED_FOR(NsFreeConnInterp);
 
 NS_EXTERN int
 Ns_TclRegisterAtCreate(Ns_TclTraceProc *proc, void *arg)
-     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int
 Ns_TclRegisterAtCleanup(Ns_TclTraceProc *proc, void *arg)
-     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int
 Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
-     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
 NS_EXTERN int
 Ns_TclInitInterps(CONST char *server, Ns_TclInterpInitProc *proc, void *arg)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED;
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_TclRegisterTrace);
 
 NS_EXTERN void
 Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
@@ -2787,7 +2786,7 @@ Ns_TclLogError(Tcl_Interp *interp)
 
 NS_EXTERN CONST char *
 Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
-    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
+    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_TclLoggErrorInfo);
 
 NS_EXTERN void
 Ns_LogDeprecated(Tcl_Obj *CONST objv[], int objc, char *alternative, char *explanation)
@@ -2916,19 +2915,19 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, char *str, Tcl_Encoding enc);
 
 NS_EXTERN char *
 Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
-                                         Tcl_Encoding encoding) NS_GNUC_DEPRECATED;
+			 Tcl_Encoding encoding) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode);
 
 NS_EXTERN char *
 Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string,
-                                         Tcl_Encoding encoding) NS_GNUC_DEPRECATED;
+			 Tcl_Encoding encoding) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode);
 
 NS_EXTERN char *
 Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string,
-                                    char *charset) NS_GNUC_DEPRECATED;
+		    char *charset) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryEncode);
 
 NS_EXTERN char *
 Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string,
-                                    char *charset) NS_GNUC_DEPRECATED;
+		    char *charset) NS_GNUC_DEPRECATED_FOR(Ns_UrlQueryDecode);
 
 /*
  * urlopen.c:

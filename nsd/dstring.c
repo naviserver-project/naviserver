@@ -309,6 +309,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
  * Ns_DStringPop --
  *
  *      Allocate a new dstring.
+ *      Deprecated.
  *
  * Results:
  *      Pointer to Ns_DString.
@@ -334,6 +335,7 @@ Ns_DStringPop(void)
  * Ns_DStringPush --
  *
  *      Free a dstring.
+ *      Deprecated.
  *
  * Results:
  *  None.
