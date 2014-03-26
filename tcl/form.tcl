@@ -201,7 +201,7 @@ proc ns_getform {{charset ""}}  {
             set hdr [ns_conn fileheaders $file]
             set fp ""
             while {$fp eq {}} {
-                set tmpfile [ns_tmpnam]
+                set tmpfile [ns_mktemp]
                 set fp [ns_openexcl $tmpfile]
             }
             ns_atclose [list file delete $tmpfile]
@@ -399,7 +399,7 @@ proc ns_parseformfile { file form contentType } {
 
 	    set tmp ""
 	    while { $tmp eq "" } {
-		set tmpfile [ns_tmpnam]
+		set tmpfile [ns_mktemp]
 		set tmp [ns_openexcl $tmpfile]
 	    }
 

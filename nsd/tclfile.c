@@ -222,16 +222,23 @@ NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 int
 NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
-    char *buffer;
 
-    if (argc != 2) {
+    if (argc == 1) {
+        char buffer[PATH_MAX] = {0};
+
+        snprintf(buffer, PATH_MAX - 1, "%s/ns-XXXXXX", nsconf.tmpDir);
+	Tcl_SetResult(interp, mktemp(buffer), TCL_VOLATILE);
+
+    } else if (argc == 2) {
+	char *buffer = ns_strdup(argv[1]);
+
+	Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
+
+    } else {
         Tcl_AppendResult(interp, "wrong # of args: should be \"",
-                         argv[0], " template\"", NULL);
+                         argv[0], " ?template?\"", NULL);
         return TCL_ERROR;
     }
-    
-    buffer = ns_strdup(argv[1]);
-    Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
 
     return TCL_OK;
 }
@@ -258,6 +265,8 @@ NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
     char buf[L_tmpnam];
+
+    Ns_LogDeprecated(objv, 1, "ns_mktemp ?template?", NULL);
 
     if (tmpnam(buf) == NULL) {
         Tcl_SetResult(interp, "could not get temporary filename", TCL_STATIC);

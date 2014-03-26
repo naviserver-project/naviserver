@@ -1009,9 +1009,9 @@ proc win-cgi {conn ignored} {
     }
 
     # WinCGI requires a few temporary files.
-    set ini [lb]ns_tmpnam[rb]
-    set inp [lb]ns_tmpnam[rb]
-    set out [lb]ns_tmpnam[rb]
+    set ini [lb]ns_mktemp[rb]
+    set inp [lb]ns_mktemp[rb]
+    set out [lb]ns_mktemp[rb]
 
     # Copy the request content to the input file.
     set fp [lb]open $inp w[rb]
