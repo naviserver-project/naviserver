@@ -270,7 +270,7 @@ Ns_ModuleInit(char *server, char *module)
 
     Ns_TclRegisterTrace(server, SSLInterpInit, drvPtr, NS_TCL_TRACE_CREATE);
     Ns_DStringFree(&ds);
-    Ns_Log(Notice, "nsssl: version %s loaded", NSSSL_VERSION);
+    Ns_Log(Notice, "nsssl: version %s loaded, based on %s", NSSSL_VERSION, SSLeay_version(SSLEAY_VERSION));
     return NS_OK;
 }
 
