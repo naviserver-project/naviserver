@@ -33,9 +33,9 @@
 #    NaviServer configure script.
 #
 
-AC_PREREQ([2.59])
+AC_PREREQ([2.69])
 
-AC_INIT([NaviServer], [4.99.6], [naviserver-devel@lists.sourceforge.net])
+AC_INIT([NaviServer],[4.99.6],[naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
@@ -282,7 +282,7 @@ AC_SUBST(STATIC_BUILD)
 AC_CACHE_CHECK([for shared libgcc], ac_cv_shared_libgcc, [
   ac_save_LIBS="$LIBS"
   LIBS="-lgcc_s $LIBS"
-  AC_TRY_LINK(, [return 0], ac_cv_shared_libgcc=yes, ac_cv_shared_libgcc=no)
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0]])],[ac_cv_shared_libgcc=yes],[ac_cv_shared_libgcc=no])
   LIBS="$ac_save_LIBS"
 ])
 if test "$ac_cv_shared_libgcc" = "yes" ; then
