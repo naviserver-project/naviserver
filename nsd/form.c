@@ -137,7 +137,7 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
-    if (conn == NULL || connPtr->query == NULL) {
+    if (connPtr == NULL || connPtr->query == NULL) {
         return;
     }
 

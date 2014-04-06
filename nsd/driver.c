@@ -3665,11 +3665,11 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     DrvWriter     *wrPtr;
     int            trigger = 0, headerSize;
 
-    if (conn == NULL || connPtr->sockPtr == NULL) {
+    if (connPtr == NULL || connPtr->sockPtr == NULL) {
         return NS_ERROR;
     }
 
-    wrPtr  = &connPtr->sockPtr->drvPtr->writer;
+    wrPtr = &connPtr->sockPtr->drvPtr->writer;
 
     Ns_Log(DriverDebug, 
 	   "NsWriterQueue: size %" PRIdz " bufs %p (%d) flags %.6x stream %.6x chan %p fd %d thread %d", 
