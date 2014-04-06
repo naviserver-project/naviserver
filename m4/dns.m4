@@ -140,11 +140,9 @@ AC_DEFUN([AX_HAVE_MTSAFE_DNS],
        -a "${ac_cv_func_getnameinfo}" = "yes" ; then \
     if test "`uname -s`" = "Darwin"; then \
         AC_MSG_CHECKING(if we have working getaddrinfo)
-	AC_TRY_RUN([#include <mach-o/dyld.h>
+	AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <mach-o/dyld.h>
 #include <stdlib.h>
-int main() { if (NSVersionOfRunTimeLibrary("System") >= (60 << 16)) {exit(0);} else {exit(1);}}],
-	   [have_mtsafe_dns=yes],
-	   [have_mtsafe_dns=no])
+int main() { if (NSVersionOfRunTimeLibrary("System") >= (60 << 16)) {exit(0);} else {exit(1);}}]])],[have_mtsafe_dns=yes],[have_mtsafe_dns=no],[])
     else
         have_mtsafe_dns=yes
     fi
