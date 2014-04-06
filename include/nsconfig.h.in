@@ -58,6 +58,9 @@
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
+/* Compiler support for module scope symbols */
+#undef HAVE_HIDDEN
+
 /* Define to 1 if you have the `inet_ntop' function. */
 #undef HAVE_INET_NTOP
 
@@ -242,9 +245,6 @@
 
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
-
-/* No visibility hidden passed to zlib? */
-#undef NO_VIZ
 
 /* Name of package */
 #undef PACKAGE
