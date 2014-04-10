@@ -7,7 +7,7 @@ This is NaviServer module that implements HTTP over SSL support and
 adds new ns_ssl command.
 
 New in Version 0.2:
- - Made driver fully asynchronous, supporting parital read and writes
+ - Made driver fully asynchronous, supporting partial read and writes
  - Performance improvements: E.g. support for TCP_CORK and deferaccept
  - Strengthen security against BEAST and CRIME attack
 
@@ -17,17 +17,17 @@ New in Version 0.3:
  - requires NaviServer 4.99.6
 
 New in Version 0.4:
- - support for forward secrecy + diffie-hellmann key exchange
-   If one is using *DHE* ciphers, the diffie hellman parameters
+ - Support for forward secrecy + Diffie-Hellmann key exchange.
+   If the *DHE* ciphers are to be used, the Diffie-Hellman parameters
    should be appended to the certificate file (e.g. "server.pem",
    see sample below)
 
-New in Version 0.4:
-- support for Eliptic Curve Cryptograpy 
+New in Version 0.5:
+- Support for Elliptic Curve Cryptography 
   (such as Elliptic Curve Diffie-Hellman (ECDH))
-- provide compiled-in defaults for DH parmeters
-- handling several SSL and TLS bugs.
-- deactivated SSLv2
+- Provide compiled-in defaults for DH parameters
+- Handling several SSL and TLS bugs.
+- Deactivated SSLv2
   
 
 /*--------------------------------------------------------------------*/
