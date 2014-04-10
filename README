@@ -21,6 +21,13 @@ New in Version 0.4:
    If one is using *DHE* ciphers, the diffie hellman parameters
    should be appended to the certificate file (e.g. "server.pem",
    see sample below)
+
+New in Version 0.4:
+- support for Eliptic Curve Cryptograpy 
+  (such as Elliptic Curve Diffie-Hellman (ECDH))
+- provide compiled-in defaults for DH parmeters
+- handling several SSL and TLS bugs.
+- deactivated SSLv2
   
 
 /*--------------------------------------------------------------------*/

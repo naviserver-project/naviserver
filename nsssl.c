@@ -31,6 +31,7 @@
  * Authors
  *
  *     Vlad Seryakov vlad@crystalballinc.com
+ *     Gustaf Neumann neumann@wu-wien.ac.at
  */
 
 #include "ns.h"
@@ -39,13 +40,15 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "0.4"
+#define NSSSL_VERSION  "0.5"
 
 typedef struct {
     SSL_CTX     *ctx;
     Ns_Mutex     lock;
     int          verify;
     int          deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
+    DH          *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
+    DH          *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
 } SSLDriver;
 
 typedef struct {
@@ -84,6 +87,8 @@ static void HttpsAbort(Https *httpsPtr);
 static Https *HttpsGet(Tcl_Interp *interp, char *id);
 static Ns_TaskProc HttpsProc;
 
+static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
+
 /*
  * Static variables defined in this file.
  */
@@ -100,6 +105,36 @@ SSL_infoCB(const SSL *ssl, int where, int ret) {
     if ((where & SSL_CB_HANDSHAKE_DONE)) {
         ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
     }
+}
+
+/*
+ * Include pre-generated DH parameters 
+ */
+#include "dhparams.h"
+
+/*
+ * Callback used for ephemeral DH keys
+ */
+static DH *
+SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
+    SSLDriver *drvPtr;
+    DH *key;
+
+    Ns_Log(Debug, "SSL_dhCB: isExport %d keyLength %d", isExport, keyLength);
+    drvPtr = (SSLDriver *) SSL_get_app_data(ssl);
+
+    key = 0;
+    switch (keyLength) {
+    case 512:
+        key = drvPtr->dhKey512;
+        break;
+
+    case 1024:
+    default:
+        key = drvPtr->dhKey1024;
+    }
+    Ns_Log(Debug, "SSL_dhCB: returns %p\n", key);
+    return key;
 }
 
 NS_EXPORT int
@@ -159,6 +194,13 @@ Ns_ModuleInit(char *server, char *module)
         Ns_Log(Error, "nsssl: init error [%s]",strerror(errno));
         return NS_ERROR;
     }
+    SSL_CTX_set_app_data(drvPtr->ctx, drvPtr);
+
+    /*
+     * Get default keys and save it in the driver data for fast reuse.
+     */
+    drvPtr->dhKey512 = get_dh512();
+    drvPtr->dhKey1024 = get_dh1024();
 
     /* 
      * Load certificate and private key 
@@ -189,6 +231,26 @@ Ns_ModuleInit(char *server, char *module)
 	    Ns_Log(Error, "nsssl: Couldn't set DH parameters");
 	    return NS_ERROR;
 	}
+        DH_free(dh);
+    }
+
+    /* 
+     * Generate key for eliptic curve cryptography (potentially used
+     * for Elliptic Curve Digital Signature Algorithm (ECDSA) and
+     * Elliptic Curve Diffie-Hellman (ECDH).
+     */
+    {
+	EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+	if (ecdh == NULL) {
+	    Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
+	    return NS_ERROR;
+	}
+	SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
+	if (SSL_CTX_set_tmp_ecdh(drvPtr->ctx, ecdh) != 1) {
+	    Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
+	    return NS_ERROR;
+	}
+	EC_KEY_free (ecdh);
     }
 
     /* 
@@ -236,11 +298,18 @@ Ns_ModuleInit(char *server, char *module)
     SSL_CTX_set_default_passwd_cb(drvPtr->ctx, SSLPassword);
     SSL_CTX_set_mode(drvPtr->ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SINGLE_DH_USE);
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SSLEAY_080_CLIENT_DH_BUG);
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_TLS_D5_BUG);
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_TLS_BLOCK_PADDING_BUG);
+
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
     SSL_CTX_set_options(drvPtr->ctx, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
     /*
      * Prefer server ciphers to secure against BEAST attack.
      */
     SSL_CTX_set_options(drvPtr->ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_NO_SSLv2);
+    SSL_CTX_set_options(drvPtr->ctx, SSL_OP_SINGLE_DH_USE);
     /*
      * Disable compression to avoid CRIME attack.
      */
@@ -250,6 +319,8 @@ Ns_ModuleInit(char *server, char *module)
     if (drvPtr->verify) {
         SSL_CTX_set_verify(drvPtr->ctx, SSL_VERIFY_PEER, NULL);
     }
+
+    SSL_CTX_set_tmp_dh_callback(drvPtr->ctx, SSL_dhCB);
 
     /*
      * Seed the OpenSSL Pseudo-Random Number Generator.
@@ -358,6 +429,8 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *sock
             SSL_set_fd(sslPtr->ssl, sock->sock);
 	    SSL_set_mode(sslPtr->ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
             SSL_set_accept_state(sslPtr->ssl);
+            SSL_set_app_data(sslPtr->ssl, drvPtr);
+            SSL_set_tmp_dh_callback(sslPtr->ssl, SSL_dhCB);
         }
         return NS_DRIVER_ACCEPT_DATA;
     }

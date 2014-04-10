@@ -16,3 +16,8 @@ MODLIBS  += -lssl -lcrypto
 
 include  $(NAVISERVER)/include/Makefile.module
 
+dhparams.h:
+	openssl dhparam -C -2 -noout 512 >> dhparams.h
+	openssl dhparam -C -2 -noout 1024 >> dhparams.h
+
+nsssl.o: dhparams.h
