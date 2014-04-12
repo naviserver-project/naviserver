@@ -853,7 +853,6 @@ SSLObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	}
 	httpPtr->spoolLimit = spoolLimit;
 	httpPtr->replyHeaders = hdrPtr;
-    fprintf(stderr, "replyheaders set to %p\n", hdrPtr );
 
 	Ns_HttpCheckSpool(httpPtr);
 
