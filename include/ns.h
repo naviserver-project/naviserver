@@ -431,6 +431,7 @@ typedef struct Ns_Driver {
     int      sendwait;      /* send() I/O timeout in seconds */
     int      recvwait;      /* recv() I/O timeout in seconds */
     int      bufsize;       /* Conn bufsize (0 for SSL) */
+    char    *extraHeaders;  /* Extra header fields added for every request */
 } Ns_Driver;
 
 /*

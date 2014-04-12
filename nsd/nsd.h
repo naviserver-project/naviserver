@@ -390,6 +390,7 @@ typedef struct Driver {
     int   sendwait;                     /* send() I/O timeout */
     int   recvwait;                     /* recv() I/O timeout */
     int   bufsize;                      /* Conn bufsize (0 for SSL) */
+    char *extraHeaders;                 /* Extra header fields added for every request */
 
     /*
      * Private to Driver.

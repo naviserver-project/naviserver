@@ -408,7 +408,7 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
     int         i;
-    CONST char *reason, *value, *key;
+    CONST char *reason, *value;
 
     /*
      * Construct the HTTP response status line.
@@ -432,12 +432,20 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
      */
 
     Ns_DStringVarAppend(dsPtr,
-        "MIME-Version: 1.0\r\n"
-        "Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
-        "Date: ",
-        NULL);
+			"MIME-Version: 1.0\r\n"
+			"Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
+			"Date: ",
+			NULL);
     Ns_HttpTime(dsPtr, NULL);
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
+
+    /*
+     * Add extra headers from config file, if available.
+     */
+    value = Ns_ConnSockPtr(conn)->driver->extraHeaders;
+    if (value != NULL) {
+      Ns_DStringNAppend(dsPtr, value, -1);
+    }
 
     /*
      * Output any extra headers.
@@ -445,6 +453,8 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 
     if (conn->outputheaders != NULL) {
         for (i = 0; i < Ns_SetSize(conn->outputheaders); i++) {
+	    CONST char *key;
+
             key = Ns_SetKey(conn->outputheaders, i);
             value = Ns_SetValue(conn->outputheaders, i);
             if (key != NULL && value != NULL) {

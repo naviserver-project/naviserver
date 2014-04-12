@@ -114,6 +114,13 @@ Linux). (boolean, default: false)
 [def port]
 Port, on which the server listens (integer, default: 80)
 
+[def extraheaders]
+This parameter can be used to add extra response headers
+for every reponse sent over this driver. The extraheaders
+have the form for attribute/value pairs. This mechanism can be used
+to implement for example HTTP Strict Transport Security in 
+nsssl, which uses the same parameter definition.
+
 [def readahead]
 Maximum size in bytes (octets) for asynchronous read ahead operations
 (integer, defaults to [term bufsize])
