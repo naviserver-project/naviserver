@@ -33,10 +33,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     ]], [[
         int main(void) { return syscall(SYS_gettid); }
     ]])], [
-        AC_DEFINE(HAVE_GETTID,1,[Define to 1 when gettid system call is available.])
-        AC_MSG_RESULT(yes)
+        AC_DEFINE([HAVE_GETTID],1,[Define to 1 when gettid system call is available.])
+        AC_MSG_RESULT([yes])
     ],[
-        AC_MSG_RESULT(no)
+        AC_MSG_RESULT([no])
     ])
 ]) # AX_HAVE_GETTID
 
@@ -47,9 +47,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     ]], [[
         int main(void)  { return TCP_FASTOPEN != 0; }
     ]])], [
-        AC_DEFINE(HAVE_TCP_FASTOPEN,1,[Define to 1 when TCP_FASTOPEN is available.])
-        AC_MSG_RESULT(yes)
+        AC_DEFINE([HAVE_TCP_FASTOPEN],1,[Define to 1 when TCP_FASTOPEN is available.])
+        AC_MSG_RESULT([yes])
     ],[
-        AC_MSG_RESULT(no)
+        AC_MSG_RESULT([no])
     ])
 ]) # AX_HAVE_TCP_FASTOPEN

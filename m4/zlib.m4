@@ -37,7 +37,7 @@ AC_ARG_WITH([zlib],
     ZLIB_INCLUDES=""
     ZLIB_LIBS="-lz"
   ])
-AC_MSG_RESULT($ac_zlib)
+AC_MSG_RESULT([$ac_zlib])
 
 if test "${ac_zlib}" = "yes" ; then
   save_CPPFLAGS="$CPPFLAGS"
@@ -45,8 +45,8 @@ if test "${ac_zlib}" = "yes" ; then
   CPPFLAGS="$ZLIB_INCLUDES $CPPFLAGS"
   LIBS="$LIBS $ZLIB_LIBS"
 
-  AC_CHECK_HEADERS(zlib.h)
-  AC_CHECK_LIB(z, compress2)
+  AC_CHECK_HEADERS([zlib.h])
+  AC_CHECK_LIB([z], [compress2])
 
   if test "${ac_cv_header_zlib_h}" != "yes" -o "${ac_cv_lib_z_compress2}" != "yes" ; then
     AC_MSG_ERROR([Zlib compression support requested but not available])

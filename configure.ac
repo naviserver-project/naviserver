@@ -28,7 +28,7 @@
 #
 
 #
-# configure.in --
+# configure.ac --
 #
 #    NaviServer configure script.
 #
@@ -38,7 +38,7 @@ AC_PREREQ([2.69])
 AC_INIT([NaviServer],[4.99.6],[naviserver-devel@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
+#AM_INIT_AUTOMAKE([1.9 -Wall -Werror foreign])
 AC_CONFIG_SRCDIR([include/ns.h])
 AC_CONFIG_HEADERS([include/nsconfig.h])
 
@@ -48,9 +48,9 @@ AC_CONFIG_HEADERS([include/nsconfig.h])
 # Don't forget to update the naviserver.rdf DOAP before making a release.
 #
 
-AC_SUBST([NS_MAJOR_VERSION],  4)
-AC_SUBST([NS_MINOR_VERSION],  99)
-AC_SUBST([NS_RELEASE_SERIAL], 5)
+AC_SUBST([NS_MAJOR_VERSION],  [4])
+AC_SUBST([NS_MINOR_VERSION],  [99])
+AC_SUBST([NS_RELEASE_SERIAL], [5])
 AC_SUBST([NS_RELEASE_LEVEL],  [NS_ALPHA_RELEASE]) # ALPHA/BETA/FINAL
 
 AC_SUBST([NS_VERSION],     [\"${NS_MAJOR_VERSION}.${NS_MINOR_VERSION}\"])
@@ -146,27 +146,27 @@ esac
 
 SRCDIR=`cd $srcdir; pwd`
 NAVISERVER=$prefix
-AC_SUBST(SRCDIR)
-AC_SUBST(LDLIB)
-AC_SUBST(LDSO)
-AC_SUBST(CCRFLAG)
-AC_SUBST(LDRFLAG)
-AC_SUBST(CCRPATH)
-AC_SUBST(LDRPATH)
-AC_SUBST(SHLIB_SUFFIX)
-AC_SUBST(TCL_EXEC_PREFIX)
-AC_SUBST(NAVISERVER)
+AC_SUBST([SRCDIR])
+AC_SUBST([LDLIB])
+AC_SUBST([LDSO])
+AC_SUBST([CCRFLAG])
+AC_SUBST([LDRFLAG])
+AC_SUBST([CCRPATH])
+AC_SUBST([LDRPATH])
+AC_SUBST([SHLIB_SUFFIX])
+AC_SUBST([TCL_EXEC_PREFIX])
+AC_SUBST([NAVISERVER])
 
 
 #
 # Additional checks.
 #
 
-AC_CHECK_HEADERS(inttypes.h uio.h sys/uio.h stdint.h netinet/tcp.h sys/sendfile.h)
-AC_CHECK_HEADER(mach-o/dyld.h, AC_DEFINE(USE_DYLD, 1, [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
-AC_CHECK_HEADER(dl.h, AC_DEFINE(USE_DLSHL, 1, [Define to 1 if the <dl.h> header should be used.]),)
+AC_CHECK_HEADERS([inttypes.h uio.h sys/uio.h stdint.h netinet/tcp.h sys/sendfile.h])
+AC_CHECK_HEADER([mach-o/dyld.h], AC_DEFINE([USE_DYLD], [1], [Define to 1 if the <mach-o/dyld.h> header should be used.]),)
+AC_CHECK_HEADER([dl.h], AC_DEFINE([USE_DLSHL], [1], [Define to 1 if the <dl.h> header should be used.]),)
 
-AC_CHECK_FUNCS(timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop inet_pton)
+AC_CHECK_FUNCS([timegm fork1 drand48 random _NSGetEnviron unsetenv inet_ntop inet_pton])
 
 AC_SYS_LARGEFILE
 
@@ -199,8 +199,8 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
   int main(int argc, char **argv) {
     return (sizeof(stdout->_file) == 1) ? 0 : 1;
   }
-]])],[AC_DEFINE(USE_DUPHIGH, 1, need for dup high) as_ok=yes],[as_ok=no],[as_ok=no])
-AC_MSG_RESULT($as_ok)
+]])],[AC_DEFINE([USE_DUPHIGH], [1], need for dup high) as_ok=yes],[as_ok=no],[as_ok=no])
+AC_MSG_RESULT([$as_ok])
 
 
 #
@@ -208,8 +208,8 @@ AC_MSG_RESULT($as_ok)
 # flags. Physically check to see if it's actually available.
 #
 
-AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
-             AC_DEFINE([HAVE_TCL_GETMEMORYINFO], 1,
+AC_CHECK_LIB([$TCL_LIB], [Tcl_GetMemoryInfo],
+             AC_DEFINE([HAVE_TCL_GETMEMORYINFO], [1],
                        [Define to 1 if Tcl exports the Tcl_GetMemoryInfo function.]))
 
 #
@@ -219,8 +219,8 @@ AC_CHECK_LIB($TCL_LIB, Tcl_GetMemoryInfo,
 # still provide our own alternative implementation which is known to
 # be working (but does not report POLLHUP).
 
-AC_CHECK_FUNCS(poll)
-AC_CHECK_FUNCS(gettimeofday)
+AC_CHECK_FUNCS([poll])
+AC_CHECK_FUNCS([gettimeofday])
 
 #
 # Detemine the maximum value of time_t depending on the size of the
@@ -261,7 +261,7 @@ AC_DEFINE_UNQUOTED([PACKAGE_TAG], "$ns_package_tag",
 #
 
 AC_MSG_CHECKING([how to build server image])
-AC_ARG_ENABLE(shared,
+AC_ARG_ENABLE([shared],
   [  --enable-shared         build and link with shared libraries [--enable-shared]],
    shared_ok=$enable_shared, shared_ok=yes)
 if test "$shared_ok" = "yes" ; then
@@ -277,7 +277,7 @@ else
   STATIC_BUILD=1
   AC_MSG_RESULT([static])
 fi
-AC_SUBST(STATIC_BUILD)
+AC_SUBST([STATIC_BUILD])
 
 AC_CACHE_CHECK([for shared libgcc], ac_cv_shared_libgcc, [
   ac_save_LIBS="$LIBS"
@@ -306,13 +306,13 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len],,,[
 
 AC_CHECK_LIB([crypt], [crypt],
   [
-    AC_DEFINE(HAVE_CRYPT, [],
+    AC_DEFINE([HAVE_CRYPT], [],
               [Define to 1 if the native crypt library should be used])
     CRYPT_LIBS="-lcrypt"
   ],
   CRYPT_LIBS=""
 )
-AC_SUBST(CRYPT_LIBS)
+AC_SUBST([CRYPT_LIBS])
 
 
 
