@@ -343,8 +343,10 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
  *
  * NsTclObjIsByteArray --
  *
- *      Does the given Tcl object have a byte array internal rep?
- *      Don't convert it.
+ *      Does the given Tcl object have a byte array internal rep?  The
+ *      function determines when it is safe to interpret a string as a
+ *      byte array directly. It is the same as Tcl 8.6's
+ *      TclIsPureByteArray(Tcl_Obj *objPtr)
  *
  * Results:
  *      Boolean.
@@ -358,7 +360,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, CONST char *type, void *addr)
 int
 NsTclObjIsByteArray(Tcl_Obj *objPtr)
 {
-    return (objPtr->typePtr == byteArrayTypePtr);
+    return (objPtr->typePtr == byteArrayTypePtr && (objPtr->bytes==NULL));
 }
 
 
