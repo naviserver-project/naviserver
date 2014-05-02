@@ -144,7 +144,7 @@ Ns_ModuleInit(char *server, char *module)
     int num, n;
     char *path, *value;
     SSLDriver *drvPtr;
-    Ns_DriverInitData init;
+    Ns_DriverInitData init = {0};
 
     Ns_DStringInit(&ds);
 
