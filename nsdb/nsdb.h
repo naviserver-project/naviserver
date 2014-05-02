@@ -32,7 +32,6 @@
  *
  *      Public types and function declarations for the nsdb module.
  *
- *	$Header$
  */
 
 #ifndef NSDB_H

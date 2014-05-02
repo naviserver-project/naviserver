@@ -27,8 +27,6 @@
 # version of this file under either the License or the GPL.
 # 
 #
-# $Header$
-#
 
 dnl
 dnl Check to see what variant of gethostbyname_r() we have.  Defines

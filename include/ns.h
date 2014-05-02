@@ -32,7 +32,6 @@
  *
  *      All the public types and function declarations for the core server.
  *
- *	$Header$
  */
 
 #ifndef NS_H

@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # modules/nsperm/init.tcl -
 #   Initialization for nsperm module
 #

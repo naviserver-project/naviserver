@@ -32,7 +32,6 @@
  *
  *	Private nsthread library include.
  *
- *	$Header$
  */
 
 #ifndef THREAD_H

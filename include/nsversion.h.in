@@ -32,7 +32,6 @@
  *
  *      Version info maintained in configure.in
  *
- *	$Header$
  */
 
 #ifndef NSVERSION_H

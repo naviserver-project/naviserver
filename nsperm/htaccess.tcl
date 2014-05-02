@@ -27,9 +27,6 @@
 # version of this file under either the License or the GPL.
 #
 
-#
-# $Header$
-#
 
 #
 # modules/nsperm/htaccess.tcl -

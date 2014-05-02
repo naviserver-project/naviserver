@@ -27,8 +27,6 @@
 # version of this file under either the License or the GPL.
 # 
 #
-# $Header$
-#
 
 MODNAME  =  nsperm
 MOD      =  nsperm.so

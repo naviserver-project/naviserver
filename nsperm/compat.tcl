@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # compat.tcl -
 #	Compatibility functions
 #

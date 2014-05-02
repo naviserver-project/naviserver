@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # limits.tcl --
 #
 #      Configure request limits (maxupload, timeout, etc.)

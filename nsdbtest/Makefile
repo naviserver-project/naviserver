@@ -1,6 +1,5 @@
 # 
 #
-# $Header$
 #
 
 MODNAME  =  nsdbtest

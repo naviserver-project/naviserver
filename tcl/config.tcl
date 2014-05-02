@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # config.tcl --
 #
 #   Configure the various sub-systems of the server.

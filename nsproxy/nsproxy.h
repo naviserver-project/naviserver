@@ -31,8 +31,6 @@
  * nsproxy.h --
  *
  *      Definitions for simple slave-process proxies.
- *
- * $Header$
  */
 
 #ifndef NSPROXY_H

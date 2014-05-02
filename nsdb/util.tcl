@@ -28,10 +28,6 @@
 #
 
 #
-# $Header$
-#
-
-#
 # nsdb.tcl --
 #
 #	Database services utils.
