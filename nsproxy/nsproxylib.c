@@ -2544,9 +2544,9 @@ CloseProxy(Proxy *proxyPtr)
  */
 
 static void
-Kill(int pid, int sig)
+Kill(pid_t pid, int sig)
 {
-    if (kill((pid_t)pid, sig) != 0 && errno != ESRCH) {
+    if (kill(pid, sig) != 0 && errno != ESRCH) {
         Ns_Log(Error, "kill(%d, %d) failed: %s", pid, sig, strerror(errno));
     }
 }
