@@ -246,7 +246,7 @@ static void   SetOpt(char *str, char **optPtr);
 static void   ReaperThread(void *ignored);
 static void   CloseSlave(Slave *slavePtr, int ms);
 static void   ReapProxies(void);
-static void   Kill(int pid, int sig);
+static void   Kill(pid_t pid, int sig);
 static int    GetTimeDiff(Ns_Time *tsPtr);
 
 static void   AppendStr(Tcl_Interp *interp, CONST char *flag, char *val);
@@ -762,7 +762,8 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     Pool  *poolPtr = proxyPtr->poolPtr;
     char  *argv[5], active[100];
     Slave *slavePtr;
-    int    rpipe[2], wpipe[2], pid, len;
+    int    rpipe[2], wpipe[2], len;
+    pid_t  pid;
 
     len = sizeof(active) - 1;
     memset(active, ' ', len);
@@ -811,7 +812,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
 
     SetExpire(slavePtr, proxyPtr->conf.tidle);
 
-    Ns_Log(Debug, "nsproxy: slave %d started", (int) slavePtr->pid);
+    Ns_Log(Debug, "nsproxy: slave %ld started", (long) slavePtr->pid);
 
     return slavePtr;
 }
@@ -2147,9 +2148,9 @@ FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     Tcl_DStringGetResult(interp, &ds);
 
     Tcl_DStringStartSublist(&ds);
-    Ns_DStringPrintf(&ds, "handle %s slave %d start %" PRIu64 ":%ld script",
+    Ns_DStringPrintf(&ds, "handle %s slave %ld start %" PRIu64 ":%ld script",
                      proxyPtr->id,
-                     proxyPtr->slavePtr ? proxyPtr->slavePtr->pid : 0,
+                     (long) (proxyPtr->slavePtr ? proxyPtr->slavePtr->pid : 0),
                      (int64_t) proxyPtr->when.sec, proxyPtr->when.usec);
 
     Tcl_DStringAppendElement(&ds, Tcl_DStringValue(&proxyPtr->in) + sizeof(Req));

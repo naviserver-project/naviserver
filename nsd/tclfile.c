@@ -797,7 +797,7 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 static void 
 UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
-    Tcl_ChannelType *chanTypePtr;
+    const Tcl_ChannelType *chanTypePtr;
     Tcl_DriverWatchProc *watchProc;
 
     Tcl_ClearChannelHandlers(chan);

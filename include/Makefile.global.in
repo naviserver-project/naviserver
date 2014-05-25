@@ -115,15 +115,23 @@ INSTSRVPAG   = $(INSTSRV)/pages
 # Platform-specific options.
 uname = $(shell uname -a)
 
-# Solaris 2.6+
+#
+# Solaris, OpenSolaris
+#
 ifneq (,$(findstring SunOS,$(uname)))
+
+    # Solaris 2.6+
     ifneq (,$(findstring 5.6,$(uname)))
         NSLIBS += -lthread -lposix4
     else
         NSLIBS += -lrt
     endif
-endif
 
+    # OpenSolaris (e.g. OmniOS)
+    ifneq (,$(findstring 5.11,$(uname)))
+        NSLIBS += -lsendfile
+    endif
+endif
 
 #
 # For static linking on Darwin, link modules

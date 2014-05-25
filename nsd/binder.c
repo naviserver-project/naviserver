@@ -1037,8 +1037,10 @@ Binder(void)
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 1;
+#ifdef HAVE_CMMSG
         msg.msg_control = address;
         msg.msg_controllen = sizeof(address); 
+#endif
 
         if (fd != -1) {
 #ifdef HAVE_CMMSG

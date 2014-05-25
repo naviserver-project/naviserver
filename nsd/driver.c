@@ -3349,7 +3349,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    if (vPtr->iov_len > 0 && vPtr->iov_base != NULL) {
 
 		Ns_Log(DriverDebug, 
-		       "### Writer copies source %d to scratch %d len %" PRIdz,
+		       "### Writer copies source %d to scratch %d len %" PRIiovlen,
 		       curPtr->mem.bufIdx, curPtr->mem.sbufIdx, vPtr->iov_len);
 
 		towrite += Ns_SetVec(curPtr->mem.sbufs, curPtr->mem.sbufIdx++, 
@@ -3762,7 +3762,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    for (i = 0; i < nbufs; i++) {
 		int j = write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
 		wrote += j;
-		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %" PRIdz " OK %d", 
+		Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %d of %" PRIiovlen " OK %d", 
 		       connPtr->fd, i, j, bufs[i].iov_len, j == bufs[i].iov_len);
 	    }
 	}

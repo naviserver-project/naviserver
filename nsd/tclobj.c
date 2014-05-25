@@ -55,7 +55,7 @@ static Tcl_ObjType addrType = {
     SetAddrFromAny
 };
 
-static Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
+static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclIsByteArray(). */
 
 
 /*
@@ -103,7 +103,7 @@ NsTclInitAddrType(void)
 void
 Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
 {
-    Tcl_ObjType *typePtr = objPtr->typePtr;
+    const Tcl_ObjType *typePtr = objPtr->typePtr;
 
     if (typePtr != NULL && typePtr->freeIntRepProc != NULL) {
         (*typePtr->freeIntRepProc)(objPtr);

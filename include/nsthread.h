@@ -269,6 +269,7 @@ typedef struct DIR_ *DIR;
 # ifdef __sun
 #  include <sys/filio.h>
 #  include <sys/systeminfo.h>
+#  include <alloca.h>
 #  define gethostname(b,s) (!(sysinfo(SI_HOSTNAME, b, s) > 0))
 # endif
 
@@ -470,6 +471,12 @@ typedef struct DIR_ *DIR;
  */
 #if !defined(PROTd)
 # define PROTd PRId64
+#endif
+
+#if defined(__sun) && defined(__SVR4)
+# define PRIiovlen "ld"
+#else
+# define PRIiovlen PRIdz
 #endif
 
 /*

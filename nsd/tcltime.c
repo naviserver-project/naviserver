@@ -57,7 +57,7 @@ static Tcl_ObjType timeType = {
     SetTimeFromAny
 };
 
-static Tcl_ObjType *intTypePtr;
+static const Tcl_ObjType *intTypePtr;
 
 
 
