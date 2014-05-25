@@ -2547,7 +2547,7 @@ static void
 Kill(pid_t pid, int sig)
 {
     if (kill(pid, sig) != 0 && errno != ESRCH) {
-        Ns_Log(Error, "kill(%d, %d) failed: %s", pid, sig, strerror(errno));
+        Ns_Log(Error, "kill(%ld, %d) failed: %s", (long)pid, sig, strerror(errno));
     }
 }
 
