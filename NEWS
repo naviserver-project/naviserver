@@ -4,13 +4,193 @@ NaviServer 4.99.6, released 2014-XX-XX
 
 New Features:
 
+    * Added support for delivering static gzipped content via ns/fastpath.
+      NaviServer allows now deliver gzipped content fro static files
+      in cases the client requests for this. The gzipped files are stored
+      statically in the file system like the unzipped content. Therefore
+      the file delivery of gzipped content can be performed without 
+      runtime penalty. NaviServer compares the time stamps of the
+      compressed and uncompressed content. If the time-stamp of the
+      uncompressed content is changed, NaviServer refreshes the compressed
+      content automatically.
+
+      The static gzip delivery is controlled over the following configuration
+      parameters:
+
+	- parameter "gzip_static" for "ns/fastpath" (default false)
+
+	  Send the gzipped version of the file if available and the
+  	  client accepts gzipped content. When a file path/foo.ext is
+  	  requested, and there exists a file path/foo.ext.gz, and the
+  	  timestamp of the gzipped file is equal or newer than the
+  	  source file, use the gzipped file for delivery.
+
+	- parameter "gzip_cmd" for "ns/fastpath" (default "")
+
+  	  Command for zipping files in case the (static) gzipped
+	  version of the file is older than the source. The command is
+	  just used for re- gzipping outdated files, it does not
+	  actively compress files, which were previously not
+	  compressed (this would be wasteful for e.g.  large tmp
+	  files, there is not cleanup, etc.). If this parameter is not
+	  defined, outdated gzipped files are ignored, and a warning
+	  is written to the error.log. Example setting: "/usr/bin/gzip -9".
+
+        - parameter "gzip_refresh" (default false)
+
+          When the parameter is set to true and the modification time
+          of the compressed file is older than the modification time
+          of the source then refresh the compressed file automatically
+          with the command "::ns_gzipfile source target". When this
+          parameter is not defined (or the refresh cmd fails),
+          outdated gzip-ed files are ignored, a warning is written to
+          the error.log and the content is delivered uncompressed.
+
+      The content is never deliver gzipped on range requests, 
+
+
+
+    * Security improvements:
+
+      - Prevent potential HTTP response splitting attack: all response
+        header fields are sanitized to avoid injection of header file
+        contents potentially leading to HTTP response splitting attacks.
+
+      - Improved nsssl driver
+        * provide forward secrecy and DH key exchange with precompiled
+          defaults
+        * support elliptic curve cryptography (ECDH)
+        * deactivated SSLv2
+
+      - By using parameter "extraheaders" (see below) in nsssl one can
+	activate HTTP Strict Transport Security (HSTS) for nsssl (see
+	https://bitbucket.org/naviserver/nsssl/)
+
+      - The sample configuration of nsssl leads to a "A+" rating from
+        SSL labs.
+
+
+    * Mime-types overhaul:
+       
+      - NaviServer supports now the all mimetypes as defined via RFCs,
+	W3C and IANA
+      - Some incorrect mimetypes are fixed
+      - scripted mimetype definitions produce warnings on overwriting
+        of mimetypes and on useless definitions.
+
+
+   * Modules update:
+
+      - include nsdbi* in packaged module tar file
+      - extended options in ns_dbi for dbi_rows
+      - added compatibility to nsdns for new versions of DiG (9.10.*)
+      - fixes for nsudp (HTTP over UDP), nsdbpg, nszlib, nssmtpd, nsstats
+
+
 Performance Improvements:
 
 Bug Fixes:
 
+    * Tcl argument list parser: The old implementation could lead to
+      crashes when Tcl_Objs where shared and the internal validation
+      of the internal representation failed.
+
+      Tcl_GetIndexFromObj() validates internal representations based
+      on the pointer of the base string table, which works only
+      reliably with static string tables. Since command definitions
+      contain non-static fields (which cannot be determined at compile
+      time) NaviServer can't use static string tables, but uses
+      stack-allocated string tables for command definitions. This can
+      lead to mix-ups for shared Tcl_Objs (keeping base of string
+      table and index) in case two string tables are at the same
+      position on the stack. As a consequence, the internal
+      representation with a potentially wrong index is reused,
+      leading to potential crashes. Now. the caching is only allowed
+      for non-shared Tcl_Objs.
+
+    * Module loading: Previous versions of NaviServer loaded always
+      "global modules" after per-server modules (and after blueprint
+      generation).  If e.g. a database modules was loaded globally, it
+      was not possible to refer to its defined command from the
+      blueprint. Now, just the loading of network modules happens in
+      the strict old order.
+
+    * Ns_CacheUnsetValue() is now more robust against code, where
+      freeProc calls a ns_cache operation (such as
+      e.g. nsdbipg). Before that modification, double free operations
+      were possible when the cache was pruned.  
+
+    * Make sure to initialize all members of Ns_DriverInitData to zero
+
+    * sockcallback.c: fix size of reallocation unit (many thanks to
+      Wolfgang Winkler for pointing this out)
+
+    * tclmisc.c: fix incorrect type for allocation unit (sha context
+      instead of md5 context)
+
+    * fix clock ensemble oddity in blueprint (error message: Error:
+      time zone ":Tcl/Localtime" not found; many thanks to David Osborne)
+
+    * save Tcl interpreter aliases and ensembles in blueprint (Many
+      thanks to Jeff Rogers)
+
+    * Fix generation of documentation: dtplite from tcllib 1.15 does
+      not allow spaces in "titles" of manpages. Fix all manpages, such
+      that build-doc works again.
+
+
 Documentation improvements:
 
+    * Doc page for ns_return: added section for describing fastpath configuration
+
+    * Document that "ns_conn compress 0" can deactivate compression
+
+    * Updated documentation of deprecated commands in the source
+
+    * Fixed/updated/extended various man pages such as ns_tmpnam,
+      ns_getform, ns_set
+
+    * Removed obsolete commands from the documentation (ns_set with
+      -persist, -shared, ns_share)
+        
+
 Tcl API Changes:
+
+    * ns_setcookie, ns_getcookie ns_deletecookie:
+
+      - ns_setcookie, ns_deletecookie: added flag "-replace" to
+        replace already issued cookie requests in output headers; the
+        same option is used in OpenACS.
+
+      - ns_setcookie: added option "-discard" as specified in RFC 2965
+
+      - ns_getcookie: added option ?-include_set_cookies bool? to
+        search cookies being set as well (from output headers); the
+        same option is used in OpenACS.
+ 
+    * ns_http: 
+
+      - Added flags "-file /varName/" and "-spoolsize /int/" to
+        "ns_http wait". If the content of the obtained file is larger
+        or equal than spoolsize, it is spooled to temp file,
+	and the name of the temp file is returned in the variable provided
+	by "-file". These options make it possible to retrieve also large
+	content (e.g. video files) via ns_http without bloating memory
+
+      - Additional parameter "-decompress" for "ns_http wait" to
+	compress the result on the fly (incrementally) in case it is content
+	encoding is "gzip"
+
+    * ns_time: add option "ns_time format" to print a time in the sec:usec 
+      format in secs in a decimal dot notation
+
+    * Allow "ns_mktemp" to be called without template (makes migration simpler)
+
+    * Mark ns_tmpnam as deprecated since it uses an deprecated C-library 
+      function (use ns_mktemp instead)
+
+    * Mark ns_connsendfp as deprecated as documented (is superseded by ns_writefp)
+
 
 C API Changes:
 
@@ -18,9 +198,41 @@ Incompatible API Changes:
 
 Configuration Changes:
 
+    * New parameter "extraheaders" to drivers (e.g. nssock,
+      nsssl). This feature allows an admin to specify extra reply
+      headers sent back on every request. By using this feature, one
+      can activate for example HTTP Strict Transport Security (HSTS)
+      for nsssl (see https://bitbucket.org/naviserver/nsssl/)
+
+    * Update man pages and sample config files
+
+
 Command Line Changes:
 
 Code Changes:
+    * Added compatibility with OpenSolaris (e.g. OmniOS).
+
+    * Code Cleanup
+      - reduce variable scopes to improve locality
+      - Get rid of CVS variables
+      - make test for byte-array safe for changes introduced in tcl 8.6 and
+	back-ported to Tcl 8.5 (see e.g. http://core.tcl.tk/tcl/info/91be696bf3)
+      - defined new macro NS_GNUC_DEPRECATED_FOR() to be able to provide
+	replacement hint and use it where appropriate
+      - improve error message
+
+    * Test environment:
+      - nstest::http: added flag "-getmultiheaders" to return all
+	header fields (multiset) with the specified name
+
+    * Build environment:
+      - use recommended autoconf constants quoting
+      - deactivate AM_* macros (get rid of warnings), since these are not
+	used by autogen.sh
+      - replace obsolete macro AC_TRY_RUN, AC_TRY_LINK
+      - use recent version of install-sh and tcl.m4
+
+   * Extended regression test
 
 ======================================
 NaviServer 4.99.5, released 2013-05-25
