@@ -2,6 +2,9 @@
 NaviServer 4.99.6, released 2014-XX-XX
 ======================================
 
+Changes relative to 4.99.5
+    196 files changed, 4883 insertions(+), 2632 deletions(-)
+
 New Features:
 
     * Added support for delivering static gzipped content via ns/fastpath.
