@@ -411,11 +411,13 @@ NsAdpFlush(NsInterp *itPtr, int stream)
 
     conn = itPtr->adp.conn ? itPtr->adp.conn : itPtr->conn;
 
-    if (conn == NULL && itPtr->adp.chan == NULL) {
+    if (conn == NULL) {
+        assert(itPtr->adp.chan == NULL);
         Tcl_SetResult(interp, "no adp output context", TCL_STATIC);
         return TCL_ERROR;
     }
     assert(conn);
+
     buf = itPtr->adp.output.string;
     len = itPtr->adp.output.length;
 
