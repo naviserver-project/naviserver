@@ -242,7 +242,7 @@ source file, use the gzip-ed file for delivery.
 
 [def gzip_refresh]
 Refresh gzip file (i.e. re-gzip source) when the modification time of
-the gzip file is older than the modification time of the source.
+the compressed file is older than the modification time of the source.
 Note, that the command is just used for re-gzip-ing outdated files; it
 does not actively compress files, which were previously not compressed
 (this would be wasteful for e.g. large tmp files, there is not
