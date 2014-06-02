@@ -2240,8 +2240,12 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 
         if (drvPtr->maxupload > 0 && reqPtr->length > drvPtr->maxupload) {
             sockPtr->tfile = ns_malloc(strlen(drvPtr->uploadpath) + 16);
-            sprintf(sockPtr->tfile, "%s%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
+            sprintf(sockPtr->tfile, "%s/%d.XXXXXX", drvPtr->uploadpath, sockPtr->sock);
             sockPtr->tfd = mkstemp(sockPtr->tfile);
+	    if (sockPtr->tfd == -1) {
+	      Ns_Log(Error, "nssock: cannot create spool file with template '%s': %s", 
+		     sockPtr->tfile, strerror(errno));
+	    }
         } else {
 	    /* GN: don't we need a Ns_ReleaseTemp() on cleanup? */
             sockPtr->tfd = Ns_GetTemp(); 

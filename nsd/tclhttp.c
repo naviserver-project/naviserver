@@ -418,15 +418,20 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 		     * rember its fd finally in httpPtr->spoolFd to flag
 		     * that later receives will write there.
 		     */
-		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 12);
-		    sprintf(httpPtr->spoolFileName, "%shttp.XXXXXX",nsconf.tmpDir);
+		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13);
+		    sprintf(httpPtr->spoolFileName, "%s/http.XXXXXX",nsconf.tmpDir);
 		    fd = mkstemp(httpPtr->spoolFileName);
 		    
 		    /*Ns_Log(Notice, "reply content length %ld larger than limit %d (%s)", 
 		      length, httpPtr->spoolLimit, httpPtr->spoolFileName);*/
+
+		    if (fd == -1) {
+		      Ns_Log(Error, "ns_http: cannot create spool file with template '%s': %s", 
+			     httpPtr->spoolFileName, strerror(errno));
+		    }
 		    
 		    if (fd) {
-			/*Ns_Log(Notice, "ns_http: we spool %d bytes", contentSize); */
+		      /*Ns_Log(Notice, "ns_http: we spool %d bytes to fd %d", contentSize, fd); */
 			httpPtr->spoolFd = fd;
 			Ns_HttpAppendBuffer(httpPtr, 
 					    httpPtr->ds.string + httpPtr->replyHeaderSize, 
