@@ -465,7 +465,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     NsInterp   *itPtr = arg;
     int         result, flags, nargs = 0;
     char       *resvar = NULL;
-    int         file = 0, safe = 0, string = 0;
+    int         file = 0, safe = 0, string = 0, tcl = 0;
     char       *cwd = NULL, *savecwd = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -473,6 +473,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         {"-file",        Ns_ObjvBool,   &file,   (void *) NS_TRUE},
         {"-safe",        Ns_ObjvBool,   &safe,   (void *) NS_TRUE},
         {"-string",      Ns_ObjvBool,   &string, (void *) NS_TRUE},
+        {"-tcl",         Ns_ObjvBool,   &tcl,    (void *) NS_TRUE},
         {"--",           Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -492,12 +493,18 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
 
     flags = itPtr->adp.flags;
+    itPtr->adp.flags &= ~ADP_TCLFILE;
+
     if (file) {
 	/* file mode */
-        itPtr->adp.flags |= ADP_TCLFILE;
+        itPtr->adp.flags |= ADP_ADPFILE;
     } else {
 	/* string mode */
-        itPtr->adp.flags &= ~ADP_TCLFILE;
+        itPtr->adp.flags &= ~ADP_ADPFILE;
+    }
+    if (tcl) {
+        /* tcl script */
+        itPtr->adp.flags |= ~ADP_TCLFILE;
     }
     if (safe) {
         itPtr->adp.flags |= ADP_SAFE;
