@@ -65,8 +65,8 @@ be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations
 [section EXAMPLES]
 
 [example_begin]
-   % ns_adp_parse {<%= [lb]expr 2 + 2[rb] %>}
-   4
+   % ns_adp_parse {2 + 2 = <%= [lb]expr 2 + 2[rb] !!!%>}
+   2 + 2 = 4 !!!
 [example_end]
 
 [example_begin]
