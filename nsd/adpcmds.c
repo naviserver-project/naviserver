@@ -504,7 +504,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
     if (tcl) {
         /* tcl script */
-        itPtr->adp.flags |= ~ADP_TCLFILE;
+        itPtr->adp.flags |= ADP_TCLFILE;
     }
     if (safe) {
         itPtr->adp.flags |= ADP_SAFE;
