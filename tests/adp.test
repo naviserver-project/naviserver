@@ -130,4 +130,29 @@ test adp-5.2 {Deeply nested ADP tags} -body {
 }}
 
 
+#
+# ns_adp_parse 
+#
+
+test adp-6.1 {adp-parse string} -body {
+    ns_adp_parse {2 + 2 = <%= [expr 2 + 2] %> !!!}
+} -result {2 + 2 = 4 !!!}
+
+test adp-6.2 {adp-parse string} -body {
+    ns_adp_parse -string {2 + 2 = <%= [expr 2 + 2] %> !!!}
+} -result {2 + 2 = 4 !!!}
+
+
+test adp-6.3 {adp-parse file} -body {
+    ns_adp_parse -file adp1.adp
+} -result {2 + 2 = 4 !!!
+}
+
+test adp-6.4 {adp-parse file with arguments} -body {
+    ns_adp_parse -file adp2.adp hello world
+} -result {2 + 2 = 4 !!!
+argc 3
+argv adp2.adp hello world
+}
+
 cleanupTests

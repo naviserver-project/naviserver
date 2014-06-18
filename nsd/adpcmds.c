@@ -463,10 +463,10 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                     Tcl_Obj **objv)
 {
     NsInterp   *itPtr = arg;
-    int         result, flags, nargs = 0;
+    int         result, savedFlags, nargs = 0;
     char       *resvar = NULL;
     int         file = 0, safe = 0, string = 0, tcl = 0;
-    char       *cwd = NULL, *savecwd = NULL;
+    char       *cwd = NULL, *savedCwd = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,    NULL},
@@ -492,15 +492,20 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
       return TCL_ERROR;
     }
 
-    flags = itPtr->adp.flags;
-    itPtr->adp.flags &= ~ADP_TCLFILE;
+    savedFlags = itPtr->adp.flags;
+
+    /*
+     * We control the following three flags via parameter for this
+     * function, so clear the values first.
+     */
+    itPtr->adp.flags &= ~(ADP_TCLFILE|ADP_ADPFILE|ADP_SAFE);
 
     if (file) {
 	/* file mode */
         itPtr->adp.flags |= ADP_ADPFILE;
     } else {
 	/* string mode */
-        itPtr->adp.flags &= ~ADP_ADPFILE;
+        //itPtr->adp.flags &= ~ADP_ADPFILE;
     }
     if (tcl) {
         /* tcl script */
@@ -516,7 +521,7 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
      */
 
     if (cwd != NULL) {
-        savecwd = itPtr->adp.cwd;
+        savedCwd = itPtr->adp.cwd;
         itPtr->adp.cwd = cwd;
     }
     if (file) {
@@ -525,9 +530,9 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         result = NsAdpEval(arg, objc, objv, resvar);
     }
     if (cwd != NULL) {
-        itPtr->adp.cwd = savecwd;
+        itPtr->adp.cwd = savedCwd;
     }
-    itPtr->adp.flags = flags;
+    itPtr->adp.flags = savedFlags;
 
     return result;
 }

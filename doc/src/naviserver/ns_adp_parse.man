@@ -28,35 +28,34 @@ enclosing script.
 	[opt [arg {-file}]] \
 	[opt [arg {-safe}]] \
 	[opt [arg {-string}]] \
+	[opt [arg {-tcl}]] \
 	[opt {args ...}]]
 
 [list_end]
 
 [para]
-The [opt -cwd] option can be used to set the current working directory
+The option [opt  [arg -cwd]] can be used to set the current working directory
 for this adp parse operation
 
 [para]
-The [opt -file] option can be used to parse ADP contained in
+The option  [opt [arg -file]] can be used to parse ADP contained in
 the given file.  This use is similar to that of ns_adp_include
 except the result is returned by the command instead of automatically
 being appended to the output stream.
 
 [para]
-The [opt -safe] option can be used to set the adp safe flag.
+The option [opt [arg -safe]] can be used to set the adp safe flag.
 
 [para]
-The [opt -string] option is provided for backwards compatibility, but
+The option [opt [arg -string]] is provided for backwards compatibility, but
 does nothing since string mode is the default mode.
 
 [para]
-Additional arguments are passed to the ADP execution and can be
-accessed via the ns_adp_argc, ns_adp_argv, and
-ns_adp_bind_args commands.
+The option [opt [arg -tcl]] can be provided to process a tcl file.
 
 [para]
-You can pass optional arguments to the ADP.  The arguments can be accessed within the
-ADP using the ns_adp_argc, ns_adp_argv and ns_adp_bind_args commands.
+Additional arguments can be provided, which are passed to the adp evaluation.  The arguments can be accessed within the
+ADP using the [cmd ns_adp_argc], [cmd ns_adp_argv], and [cmd ns_adp_bind_args] commands.
 
 [para]
 If this call is a nested ADP evaluation (where one ADP calls another), an error will
@@ -65,13 +64,16 @@ be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations
 [section EXAMPLES]
 
 [example_begin]
-   % ns_adp_parse {2 + 2 = <%= [lb]expr 2 + 2[rb] !!!%>}
+   % ns_adp_parse {2 + 2 = <%= [lb]expr 2 + 2[rb] %> !!!}
    2 + 2 = 4 !!!
 [example_end]
 
 [example_begin]
    % ns_adp_parse -file foo.tcl
 [example_end]
+
+[see_also ns_adp_argc ns_adp_argv ns_adp_bind_args]
+[keywords ADP]
 
 [manpage_end]
 
