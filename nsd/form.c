@@ -395,12 +395,13 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 static int
 GetBoundary(Tcl_DString *dsPtr, Ns_Conn *conn)
 {
-    CONST char *type, *bs, *be;
+    CONST char *type, *bs;
 
     type = Ns_SetIGet(conn->headers, "content-type");
     if (type != NULL
         && Ns_StrCaseFind(type, "multipart/form-data") != NULL
         && (bs = Ns_StrCaseFind(type, "boundary=")) != NULL) {
+        CONST char *be;
         bs += 9;
         be = bs;
         while (*be && !isspace(UCHAR(*be))) {

@@ -826,7 +826,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
     SetUpdate(cgiPtr->env, "CONTENT_TYPE", s);
 
-    if (conn->contentLength <= 0) {
+    if (conn->contentLength == 0) {
         SetUpdate(cgiPtr->env, "CONTENT_LENGTH", "");
     } else {
         Ns_DStringPrintf(dsPtr, "%u", (unsigned) conn->contentLength);

@@ -150,7 +150,7 @@ CONST char *
 Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
 {
     NsInterp    *itPtr = NsGetInterpData(interp);
-    CONST char  *errorInfo, **logHeaders, **hdr;
+    CONST char  *errorInfo, **logHeaders;
     Ns_DString   ds;
 
     if (extraInfo != NULL) {
@@ -173,8 +173,11 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, CONST char *extraInfo)
 
         logHeaders = itPtr->servPtr->tcl.errorLogHeaders;
         if (logHeaders != NULL) {
+	    CONST char  **hdr;
+
             for (hdr = logHeaders; *hdr != NULL; hdr++) {
 	        char *value = Ns_SetIGet(conn->headers, *hdr);
+
                 if (value != NULL) {
                     Ns_DStringVarAppend(&ds, ", ", *hdr, ": ", value, NULL);
                 }

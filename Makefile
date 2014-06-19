@@ -218,7 +218,9 @@ memcheck: all
 helgrind: all
 	$(LD_LIBRARY_PATH) valgrind --tool=helgrind ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
-
+cppcheck:
+	cppcheck --enable=all nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
+		-I./include -I/usr/include $(DEFS)
 
 checkexports: all
 	@for i in $(dirs); do \

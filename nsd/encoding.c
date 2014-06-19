@@ -278,14 +278,15 @@ ConfigServerEncodings(CONST char *server)
 Tcl_Encoding
 Ns_GetFileEncoding(CONST char *file)
 {
-    CONST char    *ext, *name;
+    CONST char    *ext;
     Tcl_Encoding   encoding = NULL;
 
     ext = strrchr(file, '.');
     if (ext != NULL) {
         Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&extensions, ext);
+
         if (hPtr != NULL) {
-            name = Tcl_GetHashValue(hPtr);
+	    CONST char  *name = Tcl_GetHashValue(hPtr);
             encoding = Ns_GetCharsetEncoding(name);
         }
     }

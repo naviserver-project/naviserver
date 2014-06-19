@@ -789,7 +789,6 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     int             count, opt, i;
     Ns_DString      ds;
     Tcl_Obj        *objPtr;
-    Ns_LogSeverity  severity;
     LogCache       *cachePtr = GetCache();
     LogFilter       filter, *filterPtr = &filter;
     void           *addr;
@@ -877,6 +876,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
     case CSeverityIdx:
       {
+	Ns_LogSeverity severity;
         void *addrPtr;
 	int   enabled;
 
@@ -884,6 +884,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?bool?");
             return TCL_ERROR;
         }
+
         if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
 	    severity = (Ns_LogSeverity)addrPtr;
 	} else {

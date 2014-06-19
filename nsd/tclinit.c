@@ -291,11 +291,12 @@ int
 Ns_TclEval(Ns_DString *dsPtr, CONST char *server, CONST char *script)
 {
     Tcl_Interp *interp;
-    CONST char *result;
     int         retcode = NS_ERROR;
 
     interp = Ns_TclAllocateInterp(server);
     if (interp != NULL) {
+        CONST char *result;
+
         if (Tcl_EvalEx(interp, script, -1, 0) != TCL_OK) {
             result = Ns_TclLogError(interp);
         } else {

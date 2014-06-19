@@ -96,7 +96,6 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
     Conn              *connPtr   = (Conn *) conn;
     Ns_DString         encDs, gzDs;
     struct iovec       iov;
-    CONST char        *utfBytes;
     int                status;
 
     Ns_DStringInit(&encDs);
@@ -113,7 +112,8 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
         int i;
 
         for (i = 0; i < nbufs; i++) {
-	    size_t utfLen;
+	    CONST char *utfBytes;
+	    size_t      utfLen;
 
             utfBytes = bufs[i].iov_base;
             utfLen   = bufs[i].iov_len;

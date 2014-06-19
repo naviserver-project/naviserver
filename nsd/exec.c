@@ -511,7 +511,7 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
 	    result = ERR_EXEC;
 	}
 	errnum = errno;
-	{ int unued NS_GNUC_UNUSED = 
+	{ int unused NS_GNUC_UNUSED = 
 	    writev(errpipe[1], iov, 2);
 	}
 	_exit(1);
