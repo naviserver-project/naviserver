@@ -1,9 +1,9 @@
 ======================================
-NaviServer 4.99.6, released 2014-XX-XX
+NaviServer 4.99.6, released 2014-06-29
 ======================================
 
 Changes relative to 4.99.5
-    196 files changed, 4883 insertions(+), 2632 deletions(-)
+    198 files changed, 4972 insertions(+), 2657 deletions(-)
 
 New Features:
 
@@ -90,8 +90,6 @@ New Features:
       - fixes for nsudp (HTTP over UDP), nsdbpg, nszlib, nssmtpd, nsstats
 
 
-Performance Improvements:
-
 Bug Fixes:
 
     * Tcl argument list parser: The old implementation could lead to
@@ -131,10 +129,12 @@ Bug Fixes:
     * tclmisc.c: fix incorrect type for allocation unit (sha context
       instead of md5 context)
 
-    * fix clock ensemble oddity in blueprint (error message: Error:
+    * Fix flag settings in ns_adp_parse
+
+    * Fix clock ensemble oddity in blueprint (error message: Error:
       time zone ":Tcl/Localtime" not found; many thanks to David Osborne)
 
-    * save Tcl interpreter aliases and ensembles in blueprint (Many
+    * Save Tcl interpreter aliases and ensembles in blueprint (Many
       thanks to Jeff Rogers)
 
     * Fix generation of documentation: dtplite from tcllib 1.15 does
@@ -187,17 +187,21 @@ Tcl API Changes:
     * ns_time: add option "ns_time format" to print a time in the sec:usec 
       format in secs in a decimal dot notation
 
-    * Allow "ns_mktemp" to be called without template (makes migration simpler)
-
     * Mark ns_tmpnam as deprecated since it uses an deprecated C-library 
       function (use ns_mktemp instead)
 
-    * Mark ns_connsendfp as deprecated as documented (is superseded by ns_writefp)
+    * Allow "ns_mktemp" to be called without template 
+      (makes migration from ns_tmpnam simpler)
+
+    * Mark ns_connsendfp as deprecated (it was already 
+      documented as deprecated, superseded by ns_writefp)
 
 
 C API Changes:
+    None
 
 Incompatible API Changes:
+    None
 
 Configuration Changes:
 
@@ -211,6 +215,7 @@ Configuration Changes:
 
 
 Command Line Changes:
+    None
 
 Code Changes:
     * Added compatibility with OpenSolaris (e.g. OmniOS).
@@ -234,6 +239,7 @@ Code Changes:
 	used by autogen.sh
       - replace obsolete macro AC_TRY_RUN, AC_TRY_LINK
       - use recent version of install-sh and tcl.m4
+      - additional make target: cppcheck
 
    * Extended regression test
 
