@@ -57,7 +57,7 @@ The server is known to compile and run on FreeBSD, Linux, Solaris,
 Mac OS/X 10.2+ and Windows. To compile and install:
 
 
-3a. Download, configure, build and install Tcl 8.4 or better
+3a. Download, configure, build and install Tcl 8.5 or better
 
     You may use the version of Tcl already installed on your machine
     if it was built with threads enabled. The configure step below
@@ -92,8 +92,8 @@ Mac OS/X 10.2+ and Windows. To compile and install:
 
     The following should work for official releases:
 
-        $ gunzip < naviserver-4.99.5.tar.gz | tar xvf -
-        $ cd naviserver-4.99.5
+        $ gunzip < naviserver-4.99.6.tar.gz | tar xvf -
+        $ cd naviserver-4.99.6
         $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
         $ make
         $ su -c 'make install'
@@ -105,7 +105,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         Path to library installation directory of Tcl where
         configure can find the tclConfig.sh script.  Without
         this option, configure will search around for
-        tclConfig.sh, perhaps finding it in ../tcl8.4.12/unix.
+        tclConfig.sh, perhaps finding it in ../tcl8.5.15/unix.
 
     --with-zlib=/usr
 
@@ -204,7 +204,7 @@ Mac OS/X 10.2+ and Windows. To compile and install:
         c:>cd msys
         c:\msys> msys.bat
 
-        $ cd /c/naviserver-4.99.5
+        $ cd /c/naviserver-4.99.6
         $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
         $ make install
 

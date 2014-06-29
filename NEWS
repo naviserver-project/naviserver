@@ -5,20 +5,22 @@ NaviServer 4.99.6, released 2014-06-29
 Changes relative to 4.99.5
     198 files changed, 4972 insertions(+), 2657 deletions(-)
 
-New Features:
+New Features/Performance Improvements:
 
-    * Added support for delivering static gzipped content via ns/fastpath.
-      NaviServer allows now deliver gzipped content fro static files
-      in cases the client requests for this. The gzipped files are stored
+    * Added support for delivering static gzipped content 
+      via ns/fastpath.
+      NaviServer allows now deliver gzipped content for static files
+      in cases the client requests for this. The gzipped files 
+      are stored
       statically in the file system like the unzipped content. Therefore
       the file delivery of gzipped content can be performed without 
       runtime penalty. NaviServer compares the time stamps of the
       compressed and uncompressed content. If the time-stamp of the
-      uncompressed content is changed, NaviServer refreshes the compressed
-      content automatically.
+      uncompressed content is changed, NaviServer refreshes the
+      compressed content automatically.
 
-      The static gzip delivery is controlled over the following configuration
-      parameters:
+      The static gzip delivery is controlled over the following
+      configuration parameters:
 
 	- parameter "gzip_static" for "ns/fastpath" (default false)
 
@@ -37,7 +39,8 @@ New Features:
 	  compressed (this would be wasteful for e.g.  large tmp
 	  files, there is not cleanup, etc.). If this parameter is not
 	  defined, outdated gzipped files are ignored, and a warning
-	  is written to the error.log. Example setting: "/usr/bin/gzip -9".
+	  is written to the error.log. Example setting: 
+          "/usr/bin/gzip -9".
 
         - parameter "gzip_refresh" (default false)
 
@@ -49,7 +52,7 @@ New Features:
           outdated gzip-ed files are ignored, a warning is written to
           the error.log and the content is delivered uncompressed.
 
-      The content is never deliver gzipped on range requests, 
+      The content is never delivered gzipped on range requests. 
 
 
 
@@ -87,7 +90,8 @@ New Features:
       - include nsdbi* in packaged module tar file
       - extended options in ns_dbi for dbi_rows
       - added compatibility to nsdns for new versions of DiG (9.10.*)
-      - fixes for nsudp (HTTP over UDP), nsdbpg, nszlib, nssmtpd, nsstats
+      - fixes for nsudp (HTTP over UDP), nsdbpg, nszlib, 
+        nssmtpd, nsstats
 
 
 Bug Fixes:
@@ -132,7 +136,8 @@ Bug Fixes:
     * Fix flag settings in ns_adp_parse
 
     * Fix clock ensemble oddity in blueprint (error message: Error:
-      time zone ":Tcl/Localtime" not found; many thanks to David Osborne)
+      time zone ":Tcl/Localtime" not found; many thanks to 
+      David Osborne)
 
     * Save Tcl interpreter aliases and ensembles in blueprint (Many
       thanks to Jeff Rogers)
@@ -144,7 +149,8 @@ Bug Fixes:
 
 Documentation improvements:
 
-    * Doc page for ns_return: added section for describing fastpath configuration
+    * Doc page for ns_return: added section for describing 
+      fastpath configuration
 
     * Document that "ns_conn compress 0" can deactivate compression
 
@@ -176,19 +182,20 @@ Tcl API Changes:
       - Added flags "-file /varName/" and "-spoolsize /int/" to
         "ns_http wait". If the content of the obtained file is larger
         or equal than spoolsize, it is spooled to temp file,
-	and the name of the temp file is returned in the variable provided
-	by "-file". These options make it possible to retrieve also large
+	and the name of the temp file is returned in the 
+        variable provided by "-file". These options make it 
+        possible to retrieve also large
 	content (e.g. video files) via ns_http without bloating memory
 
       - Additional parameter "-decompress" for "ns_http wait" to
-	compress the result on the fly (incrementally) in case it is content
-	encoding is "gzip"
+	compress the result on the fly (incrementally) in 
+        case it is content encoding is "gzip"
 
-    * ns_time: add option "ns_time format" to print a time in the sec:usec 
-      format in secs in a decimal dot notation
+    * ns_time: add option "ns_time format" to print a time 
+      in the sec:usec format in secs in a decimal dot notation
 
-    * Mark ns_tmpnam as deprecated since it uses an deprecated C-library 
-      function (use ns_mktemp instead)
+    * Mark ns_tmpnam as deprecated since it uses an 
+      deprecated C-library function (use ns_mktemp instead)
 
     * Allow "ns_mktemp" to be called without template 
       (makes migration from ns_tmpnam simpler)
@@ -223,8 +230,9 @@ Code Changes:
     * Code Cleanup
       - reduce variable scopes to improve locality
       - Get rid of CVS variables
-      - make test for byte-array safe for changes introduced in tcl 8.6 and
-	back-ported to Tcl 8.5 (see e.g. http://core.tcl.tk/tcl/info/91be696bf3)
+      - make test for byte-array safe for changes introduced in 
+        Tcl 8.6 and back-ported to Tcl 8.5 
+        (see e.g. http://core.tcl.tk/tcl/info/91be696bf3)
       - defined new macro NS_GNUC_DEPRECATED_FOR() to be able to provide
 	replacement hint and use it where appropriate
       - improve error message
@@ -235,8 +243,8 @@ Code Changes:
 
     * Build environment:
       - use recommended autoconf constants quoting
-      - deactivate AM_* macros (get rid of warnings), since these are not
-	used by autogen.sh
+      - deactivate AM_* macros (get rid of warnings), since 
+        these are not used by autogen.sh
       - replace obsolete macro AC_TRY_RUN, AC_TRY_LINK
       - use recent version of install-sh and tcl.m4
       - additional make target: cppcheck
@@ -279,7 +287,7 @@ New Features:
         returns accept-times, queue-times, filter-times and run-times
         per server and pool.
       - Report OS-level thread ID via "ns_info threads" when supported
-        from the OS (currenly just Linux). This information is used by
+        from the OS (currently just Linux). This information is used by
         nsstats.tcl to report e.g. system time and user time per thread.
       - New subcommand "ns_conn clientdata" to query or set client data
         (used e.g in ns_writer list)
@@ -297,7 +305,7 @@ Performance Improvements:
     * Lazy init of zlib (mostly reduction in memory consumption)
     * Allow delivery of mmapped files via writer without the need of copying content.
     * Introduce separate locks for waiting queue (wqueue) and thread queue
-      (tqueue) per pool. In classical naviserver there is a pollslock
+      (tqueue) per pool. In classical naviserver there is was a single poll lock
       (covering all pools) used. The change leads to much finer lock
       granularity in improves scalability.
     * Added async disk writer to reduce request latencies due to file system latencies. 
