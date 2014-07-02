@@ -173,7 +173,8 @@ Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
     } else if (maxage < 0) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-1980 01:00:00 GMT");
     }
-    if (domain != NULL) {
+    /* ignore empty domain, since IE rejects it */
+    if (domain != NULL && *domain != '\0') {
         Ns_DStringVarAppend(&cookie, "; Domain=", domain, NULL);
     }
     if (path != NULL) {

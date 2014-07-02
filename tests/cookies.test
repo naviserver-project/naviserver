@@ -65,6 +65,18 @@ test cookie-2.4 {set cookie w/ domain} -setup {
     ns_unregister_op GET /cookie-2.4
 } -result {200 {x="y"; Domain=example.com; HttpOnly}}
 
+test cookie-2.4 {set cookie with empty domain} -setup {
+    ns_register_proc GET /cookie-2.4 {
+        ns_setcookie -domain "" -- x y
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest::http -getheaders {Set-Cookie} GET /cookie-2.4
+} -cleanup {
+    ns_unregister_op GET /cookie-2.4
+} -result {200 {x="y"; HttpOnly}}
+
+
 test cookie-2.5 {set cookie w/ path} -setup {
     ns_register_proc GET /cookie-2.5 {
         ns_setcookie -path /foo/bar -- x y

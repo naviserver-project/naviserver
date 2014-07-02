@@ -40,7 +40,7 @@ is widely supported by user agents.
 Send [arg data] to the user agent as a cookie, using [arg name] as the
 identifier. The user agent will send the cookie data back to the server
 during subsequent requests for which the [arg domain] and [arg path] match,
-if it has not expired.
+if it has not expired. If the provided domain is empty, it is ignored.
 
 [para]
 A cookie is identified by a signature which is made up of it's name, domain,
@@ -85,7 +85,7 @@ each restricted cookie.
 
 Instruct the client to delete the cookie data identified by [arg name]. The
 complete cookie signature including [arg domain] and [arg path] must match
-for the cookie to be deleted.
+for the cookie to be deleted. If the provided domain is empty, it is ignored.
 
 
 [list_end]
