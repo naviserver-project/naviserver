@@ -405,5 +405,18 @@ test byteranges-5.2.6 {ns_writer range reply - wrong file} \
 	nstest::http -getbody 1 \
 	    GET /tclresp
     } -match glob -result {200 {file does not exist*}}
+
+
+#
+# Range requests on adp files are currently ignored
+#
+test byteranges-6.0 {ADP + byte range} \
+    -constraints serverListen -setup { 
+	ns_register_adp GET /dejavu helloworld.adp
+    } -body {
+	nstest::http -getbody 1 -setheaders {Range bytes 2-3} \
+	    GET /dejavu
+    } -result {200 {Hello World!}}
+    
     
 cleanupTests
