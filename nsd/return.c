@@ -887,9 +887,9 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
 	    nvbufs = rangeCount;
 	    len = 0;
 	    for (i = 0; i < rangeCount; i++) {
-		vbuf[0].iov_base = (void *)(intptr_t)bufs[0].offset;
-		vbuf[0].iov_len  = bufs[0].length;
-		len += bufs[0].length;
+		vbuf[i].iov_base = (void *)(intptr_t)bufs[i].offset;
+		vbuf[i].iov_len  = bufs[i].length;
+		len += bufs[i].length;
 	    }
 	}
 
