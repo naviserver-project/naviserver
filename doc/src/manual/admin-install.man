@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin admin-install n [vset version]]
+[moddesc {NaviServer Manual}]
 
 [titledesc {NaviServer Installation Guide}]
 
@@ -20,6 +21,8 @@ NaviServer is reasonably portable and known to compile and run on the following 
 [item]OpenBSD 2.5 and better (x86 and others)
 
 [item]Solaris 2.x and better (SPARC and x86)
+
+[item]OpenSolaris (OmniOS, OpenIndiana)
 
 [item]IRIX 6.x (mips)
 
@@ -195,8 +198,8 @@ You may either specify a Unix username or numeric uid, e.g.:
 
 [para]
 
-For the mode  of operation, there are three choices: 
-[emph {Foreground, Background,}] and [emph {Inittab.}]
+For the mode  of operation, there are four choices: 
+[emph {Foreground, Background, Background with watchdog}] and [emph {Inittab.}]
 
 [list_begin itemized]
 
@@ -232,6 +235,16 @@ to send a SIGTERM to the background  process id(*) or the special -K flag of the
 nsd binary.  This flag  will determine the process id from a special marker
 file, send the signal and wait for shutdown, e.g.:
 
+[item] Background mode with built-in watchdog:
+
+[para]
+
+[emph {/usr/local/ns/bin/nsd  -w -t /usr/local/ns/nsd-config.tcl -u user -g group}]
+
+[para]
+In [emph {Watchdog}] mode, the server is restarted automatically when
+it crashes independent from the respawn support from the operating system.
+
 
 [item] Inittab mode:
 
@@ -245,15 +258,6 @@ log file as with background mode.  This mode is used  when the server is
 started from an entry in the /etc/inittab file.   The benefit of this mode
 is that init will restart the server if it  happens to crash. 
 
-[item] Watchdog mode:
-
-[para]
-
-[emph {w1:23:respawn:/usr/local/ns/bin/nsd  -w -t /usr/local/ns/nsd-config.tcl -u user -g group}]
-
-[para]
-In [emph {Watchdog}] mode, the server is restarted automatically when
-it crashes independent from the respawn support from the operating system.
 
 [list_end]
 
@@ -263,5 +267,9 @@ individual threads.  The main  process id can be determined  by checking
 the log/nsd.pid file or looking  at the last few entries  of the server
 log, each of which will include the process  id and thread  id in the form
 [lb]pid.tid[rb].  You can also telnet to the control port and type "ns_info pid".
+
+[see_also admin-maintenance]
+
+[keywords nsd command-line-options]
 
 [manpage_end]

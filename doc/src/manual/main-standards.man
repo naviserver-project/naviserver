@@ -1,9 +1,11 @@
 [include version_include.man]
 [manpage_begin {main-standards} n [vset version]]
+[moddesc {NaviServer Manual}]
 
 [titledesc {Engineering Standards Manual}]
-[description]
 
+
+[description]
 
 Contributed by George Nachman.
 

@@ -261,4 +261,7 @@ Useful commands:
 
 [list_end]
 
+[see_also admin-maintenance]
+[keywords nscp]
+
 [manpage_end]

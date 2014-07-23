@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin {main-faq} n [vset version]]
+[moddesc {NaviServer Manual}]
 
 [titledesc {NaviServer Frequently-Asked Questions (FAQ)}]
 

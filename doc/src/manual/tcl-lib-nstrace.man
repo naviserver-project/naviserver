@@ -1,6 +1,6 @@
 [include version_include.man]
 [manpage_begin {tcl-lib-nstrace} n [vset version]]
-[moddesc {NaviServer Built-in Commands}]
+[moddesc {NaviServer Manual}]
 
 [titledesc {Managing TCL interpreter initialization}]
 
@@ -95,5 +95,5 @@ For the information of how to add new tracers please look into the source code o
 [list_end]
 
 [see_also nsd]
-[keywords NaviServer]
+[keywords NaviServer nstrace]
 [manpage_end]

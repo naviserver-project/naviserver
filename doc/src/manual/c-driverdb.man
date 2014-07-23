@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin {c-driverdb} n [vset version]]
+[moddesc {NaviServer Manual}]
 
 [titledesc {NaviServer Database Driver Development Guide}]
 

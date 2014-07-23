@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin admin-maintenance n [vset version]]
+[moddesc {NaviServer Manual}]
 
 [titledesc {NaviServer Maintenance Guide}]
 
@@ -1177,7 +1178,7 @@ server and queries through stored procedures.
 
 
 For more information about the Tcl functions for stored procedures,
-see the "ns_db" section of the NaviServer Tcl Developer's Guide. For
+see the [term ns_db] section of the NaviServer Tcl Developer's Guide. For
 more information about the C functions for stored procedures, see the
 "Stored Procedure Functions" section of the NaviServer C Developer's
 Guide.
@@ -1196,8 +1197,11 @@ from localhost, it still poses a risk potential.
 
 [para]
 
-
 For more information about the control port interface, see the
-"NaviServer's Control Port Interface" section.
+documentation of the [term nscp] ("NaviServer's Control Port") module.
+
+[see_also admin-install]
+
+[keywords nsd command-line-options nscp ns_db]
 
 [manpage_end]

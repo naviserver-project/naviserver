@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin {tcl-overview} n [vset version]]
+[moddesc {NaviServer Manual}]
 
 [titledesc {NaviServer Tcl Overview}]
 
@@ -584,7 +585,7 @@ Verb: <INPUT TYPE=text NAME=verb2><BR>
 proc genstory {conn ignore} {
   set formdata [lb]ns_conn form[rb]
 
-  if {$formdata == ""} {
+  if {$formdata eq ""} {
     ns_return 200 text/plain "Need form data!"
     return
   }
@@ -666,7 +667,7 @@ script.
 
 set formdata [lb]ns_conn form[rb]
 
-if {$formdata == ""} {
+if {$formdata eq ""} {
     ns_return 200 text/plain "Need form data!"
     return
 }
@@ -862,7 +863,7 @@ proc describetable {conn ignore} {
     set db [lb]ns_db gethandle $pool[rb]
     set table [lb]lindex [lb]ns_conn urlv] 3[rb]
     set tinfo [lb]ns_table info $db $table[rb]
-    if {$tinfo == ""} {
+    if {$tinfo eq ""} {
     return [lb]ns_returnbadrequest "Table $table does not exist"[rb]
     }
     set output "<dl>"
@@ -969,16 +970,16 @@ WinCGI interface.
 #
 global WinCGI
 set WinCGI(section) "ns\\server\\[lb]ns_info server]\\wincgi"
-if {[lb]set WinCGI(prefix) [lb]ns_config $WinCGI(section) prefix[rb][rb] == ""} {
+if {[lb]set WinCGI(prefix) [lb]ns_config $WinCGI(section) prefix[rb][rb] eq ""} {
     set WinCGI(prefix) /cgi-win
 }
-if {[lb]set WinCGI(dir) [lb]ns_config $WinCGI(section) dir[rb][rb] == ""} {
+if {[lb]set WinCGI(dir) [lb]ns_config $WinCGI(section) dir[rb][rb] eq ""} {
     set WinCGI(dir) [lb]ns_info home[rb]/$WinCGI(prefix)
 }
-if {[lb]set WinCGI(gmtoff) [lb]ns_config $WinCGI(section) gmtoff[rb][rb] == ""} {
+if {[lb]set WinCGI(gmtoff) [lb]ns_config $WinCGI(section) gmtoff[rb][rb] eq ""} {
     set WinCGI(gmtoff) 0
 }
-if {[lb]set WinCGI(debug) [lb]ns_config -bool $WinCGI(section) debug[rb][rb] == ""} {
+if {[lb]set WinCGI(debug) [lb]ns_config -bool $WinCGI(section) debug[rb][rb] eq ""} {
     set WinCGI(debug) 0
 }
 
@@ -1001,7 +1002,7 @@ proc win-cgi {conn ignored} {
     set pgm [lb]lindex [lb]ns_conn urlv[rb] 1[rb]
     regsub -all {\+} $args " " args
     foreach e [lb]split $WinCGI(dir)/$pgm /] {
-            if {$e != ""} {lappend exec $e}
+            if {$e ne ""} {lappend exec $e}
     }
     set exec [lb]join $exec [rb]
     if ![lb]file executable $exec[rb] {
@@ -1048,7 +1049,7 @@ Content File=$inp"
     puts $fp ""
     puts $fp {[lb]Form Literal[rb]}
     set form [lb]ns_conn form[rb]
-    if {$form != ""} {
+    if {$form ne ""} {
             for {set i 0} {$i < [lb]ns_set size $form[rb]} {incr i} {
                     set key [lb]ns_set key $form $i[rb]
                     set value [lb]ns_set value $form $i[rb]
@@ -1065,9 +1066,9 @@ Content File=$inp"
             set key [lb]ns_set key $headers $i[rb]
             set ukey [lb]string toupper $key[rb]
             set value [lb]ns_set value $headers $i[rb]
-            if {$ukey == "ACCEPT"} {
+            if {$ukey eq "ACCEPT"} {
                     puts $fp "$value=Yes"
-            } elseif {$key != "CONTENT-LENGTH" && $key != "CONTENT-TYPE"} {
+            } elseif {$key ne "CONTENT-LENGTH" && $key ne "CONTENT-TYPE"} {
                     append extras "$key=$value\n"
             }
     }
@@ -1088,15 +1089,15 @@ Content File=$inp"
             set status 200
             while {[lb]gets $fp line[rb] > 0} {
                     set line [lb]string trim $line[rb]
-                    if {$line == ""} break
+                    if {$line eq ""} break
                     set head [lb]split $line :[rb]
                     set key [lb]string tolower [lb]string trim [lb]lindex $head 0[rb][rb][rb]
                     set value [lb]string trim [lb]lindex $head 1[rb][rb]
-                    if {$key == "content-type"} {
+                    if {$key eq "content-type"} {
                             set type $value
-                    } elseif {$key == "location"} {
+                    } elseif {$key eq "location"} {
                             set location $value
-                    } elseif {$key == "status"} {
+                    } elseif {$key eq "status"} {
                             set status $status
                     }
             }

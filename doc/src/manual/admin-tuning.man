@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin {admin-tuning} n [vset version]]
+[moddesc {NaviServer Manual}]
 
 [titledesc {NaviServer Tuning and Scaling Guide}]
 
@@ -61,7 +62,7 @@ is hit.
 
 Thread settings are sometimes helpful, sometimes not. In ns/server/servername,
 the options are "connsperthread", "flushcontent", "maxconnections", 
-"maxthreads", "minthreads" and "threadtimeout. In nearly all cases the
+"maxthreads", "minthreads" and "threadtimeout". In nearly all cases the
 defaults are optimal, with the exception of maxthreads which should be carefully
 adjusted based on your load. Along with "maxthreads", the "maxconnections"
 setting can be tricky, since making it too large can cause your system to
