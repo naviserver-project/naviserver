@@ -63,6 +63,13 @@ this is a constant [const 10]
 
 http://docs.activestate.com/activetcl/8.5/tcllib/doctools/doctools_lang_intro.html
 
+References between pages and "modules":
+=======================================
+
+Note that keywords work across "modules" (i.e. between "manual" and "naviserver"),
+but see_also does not work here. One can man a see_also reference to a "keyword".
+As a consequence, cross referenced sections need to have "keywords" entries.
+
 [section OPTIONS]
 ====================
 
