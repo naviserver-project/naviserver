@@ -409,22 +409,24 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
 	    if (httpPtr->spoolLimit > -1) {
 	        char *s = Ns_SetIGet(httpPtr->replyHeaders, "content-length");
 
-		if (s && Ns_StrToWideInt(s, &length) == NS_OK && length > 0 
-		    && length >= httpPtr->spoolLimit) {
+		if ((s != NULL
+		     && Ns_StrToWideInt(s, &length) == NS_OK && length > 0 
+		     && length >= httpPtr->spoolLimit
+		     ) || contentSize >= httpPtr->spoolLimit
+		    ) {
 		    int fd;
 		    /*
-		     * We have a valid reply length, which is larger than
-		     * the spool limit. Create a temporary spool file and
-		     * rember its fd finally in httpPtr->spoolFd to flag
-		     * that later receives will write there.
+		     * We have a valid reply length, which is larger
+		     * than the spool limit, or the we have an actual
+		     * content larger than the limit. Create a
+		     * temporary spool file and rember its fd finally
+		     * in httpPtr->spoolFd to flag that later receives
+		     * will write there.
 		     */
 		    httpPtr->spoolFileName = ns_malloc(strlen(nsconf.tmpDir) + 13);
 		    sprintf(httpPtr->spoolFileName, "%s/http.XXXXXX",nsconf.tmpDir);
 		    fd = mkstemp(httpPtr->spoolFileName);
 		    
-		    /*Ns_Log(Notice, "reply content length %ld larger than limit %d (%s)", 
-		      length, httpPtr->spoolLimit, httpPtr->spoolFileName);*/
-
 		    if (fd == -1) {
 		      Ns_Log(Error, "ns_http: cannot create spool file with template '%s': %s", 
 			     httpPtr->spoolFileName, strerror(errno));
