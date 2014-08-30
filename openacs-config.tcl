@@ -26,11 +26,11 @@ set address		127.0.0.1
 set server		"openacs" 
 set servername		"New OpenACS Installation - Development"
 
-set serverroot		/var/www/${server}
-set logroot		${serverroot}/log/
+set serverroot		/var/www/$server
+set logroot		$serverroot/log/
 
 set homedir		/usr/local/ns
-set bindir		${homedir}/bin
+set bindir		$homedir/bin
 
 # Are we runnng behind a proxy?
 set proxy_mode		false
@@ -56,6 +56,11 @@ set dev   false
 
 set max_file_upload_mb        20
 set max_file_upload_min        5
+
+#---------------------------------------------------------------------
+# set environment variables HOME and LANG
+set env(HOME) $homedir
+set env(LANG) en_US.UTF-8
 
 ###################################################################### 
 #
