@@ -354,7 +354,7 @@ Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
 	    } else {
 		eoh = strstr(httpPtr->ds.string, "\n\n");
 		if (eoh != NULL) {
-		    Ns_Log(Notice, "HttpCheckHeader: http client reply contains no crlf, this should not happen");
+		    Ns_Log(Warning, "HttpCheckHeader: http client reply contains no crlf, this should not happen");
 		    httpPtr->replyHeaderSize = (eoh - httpPtr->ds.string) + 2;
 		    eoh += 1;
 		    *eoh = '\0';
@@ -951,7 +951,7 @@ HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, int why)
 	    if (httpPtr->spoolFd > 0) {
 		Ns_HttpAppendBuffer(httpPtr, buf, n);
 	    } else {
-		Ns_Log(Notice, "Task got %d bytes", (int)n);
+		Ns_Log(Debug, "Task got %d bytes", (int)n);
 		Ns_HttpAppendBuffer(httpPtr, buf, n);
 
 		if (unlikely(httpPtr->replyHeaderSize == 0)) {
