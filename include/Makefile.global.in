@@ -78,6 +78,7 @@ ifndef NSBUILD
     LDFLAGS += -L$(NAVISERVER)/lib
     NSLIBS  += -lnsthread -lnsd
     INCDIR   = $(NAVISERVER)/include
+    CFLAGS  += @ZLIB_INCLUDES@
 else
     LDFLAGS += -L../nsthread -L../nsd -L../nsdb
     INCDIR   = ../include
