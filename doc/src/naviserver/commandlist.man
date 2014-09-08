@@ -21,7 +21,6 @@ List of all currently available NaviServer commands.
 [call [cmd ns_adp_registerscript]]
 [list_end]
 
-
 [def "ADP configuration"] 
 [list_begin definitions]
 [call [cmd ns_adp_ctl]]
@@ -244,6 +243,25 @@ List of all currently available NaviServer commands.
 [call [cmd ns_resume]]
 [call [cmd ns_unschedule_proc]]
 [list_end]
+
+[section {Sharing variables}]
+[list_begin definitions]
+[call [cmd nsv]]
+[list_begin definitions]
+[call [cmd {nsv_array}]]
+[call [cmd {nsv_bucket}]]
+[call [cmd {nsv_exists}]]
+[call [cmd {nsv_get}]]
+[call [cmd {nsv_incr}]]
+[call [cmd {nsv_append}]]
+[call [cmd {nsv_lappend}]]
+[call [cmd {nsv_names}]]
+[call [cmd {nsv_set}]]
+[call [cmd {nsv_unset}]]
+
+[list_end]
+[list_end]
+
 
 [section {Tcl channel management}]
 [list_begin definitions]
