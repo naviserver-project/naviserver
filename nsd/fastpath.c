@@ -447,16 +447,6 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
     }
 
 
-    /*
-     * For no output (i.e., HEAD request), just send required
-     * headers.
-     */
-
-    if (conn->flags & NS_CONN_SKIPBODY) {
-        return Ns_ConnReturnData(conn, status, "", connPtr->fileInfo.st_size, type);
-    }
-
-	
     Tcl_DStringInit(dsPtr);
     
     /*
@@ -499,6 +489,16 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
 		       gzFile);
 	    }
 	}
+    }
+
+    /*
+     * For no output (i.e., HEAD request), just send required
+     * headers.
+     */
+
+    if (conn->flags & NS_CONN_SKIPBODY) {
+	Ns_DStringFree(dsPtr);
+        return Ns_ConnReturnData(conn, status, "", connPtr->fileInfo.st_size, type);
     }
     
     /*
