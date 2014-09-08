@@ -694,6 +694,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data,
         len = data ? strlen(data) : 0;
     }
     Ns_ConnSetResponseStatus(conn, status);
+
     result = ReturnRange(conn, type, -1, data, len);
     Ns_ConnClose(conn);
 
@@ -869,48 +870,59 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
                                   bufs, &nbufs, &ds);
 
     /*
-     * We are able to handle the following cases via writer:
-     * - iovec based requests: all range request up to 32 ranges.
-     * - fd based requests: 0 or 1 range requests
+     * Don't use writer when only headers are returned
      */
-    if (fd == -1) {
-	int nvbufs;
-	struct iovec vbuf[32];
+    if ((conn->flags & NS_CONN_SKIPBODY) == 0) {
 
-	if (rangeCount == 0) {
-	    nvbufs = 1;
-	    vbuf[0].iov_base = (void *)data;
-	    vbuf[0].iov_len  = len;
-	} else {
-	    int i;
+	/*
+	 * We are able to handle the following cases via writer:
+	 * - iovec based requests: all range request up to 32 ranges.
+	 * - fd based requests: 0 or 1 range requests
+	 */
+	if (fd == -1) {
+	    int nvbufs;
+	    struct iovec vbuf[32];
 
-	    nvbufs = rangeCount;
-	    len = 0;
-	    for (i = 0; i < rangeCount; i++) {
-		vbuf[i].iov_base = (void *)(intptr_t)bufs[i].offset;
-		vbuf[i].iov_len  = bufs[i].length;
-		len += bufs[i].length;
+	    if (rangeCount == 0) {
+		nvbufs = 1;
+		vbuf[0].iov_base = (void *)data;
+		vbuf[0].iov_len  = len;
+	    } else {
+		int i;
+
+		nvbufs = rangeCount;
+		len = 0;
+		for (i = 0; i < rangeCount; i++) {
+		    vbuf[i].iov_base = (void *)(intptr_t)bufs[i].offset;
+		    vbuf[i].iov_len  = bufs[i].length;
+		    len += bufs[i].length;
+		}
 	    }
-	}
 
-	if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, 0) == NS_OK) {
-	    Ns_DStringFree(&ds);
-	    return NS_OK;
-	}
-    } else if (rangeCount < 2) {
-	if (rangeCount == 1) {
-	    lseek(fd, bufs[0].offset, SEEK_SET);
-	    len = bufs[0].length;
-	}
-	if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, 0) == NS_OK) {
-	    Ns_DStringFree(&ds);
-	    return NS_OK;
+	    if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, 0) == NS_OK) {
+		Ns_DStringFree(&ds);
+		return NS_OK;
+	    }
+	} else if (rangeCount < 2) {
+	    if (rangeCount == 1) {
+		lseek(fd, bufs[0].offset, SEEK_SET);
+		len = bufs[0].length;
+	    }
+	    if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, 0) == NS_OK) {
+		Ns_DStringFree(&ds);
+		return NS_OK;
+	    }
 	}
     }
     
     if (rangeCount >= 0) {
 	if (rangeCount == 0) {
             Ns_ConnSetLengthHeader(conn, len);
+
+	    if ((conn->flags & NS_CONN_SKIPBODY)) {
+	      len = 0;
+	    }
+
             Ns_SetFileVec(bufs, 0, fd, data, 0, len);
             nbufs = 1;
         }

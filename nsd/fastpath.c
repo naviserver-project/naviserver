@@ -453,7 +453,7 @@ FastReturn(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
      */
 
     if (conn->flags & NS_CONN_SKIPBODY) {
-        return Ns_ConnReturnData(conn, status, "", 0, type);
+        return Ns_ConnReturnData(conn, status, "", connPtr->fileInfo.st_size, type);
     }
 
 	
