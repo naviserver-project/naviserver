@@ -870,7 +870,8 @@ void
 NsForkBinder(void)
 {
 #ifndef _WIN32
-    int pid, status;
+    pid_t pid;
+    int status;
 
     /*
      * Create two socket pipes, one for sending the request and one

@@ -38,7 +38,7 @@
 #ifdef _WIN32
 #include <process.h>
 static char   **Set2Argv(Ns_DString *dsPtr, Ns_Set *set);
-static int  	WaitForProcess(int pid, int *statusPtr);
+static int  	WaitForProcess(pid_t pid, int *statusPtr);
 #else
 #define ERR_DUP         (-1)
 #define ERR_CHDIR	(-2)
@@ -65,7 +65,7 @@ static int ExecProc(char *exec, char *dir, int fdin, int fdout,
  *----------------------------------------------------------------------
  */
 
-int
+pid_t
 Ns_ExecProcess(char *exec, char *dir, int fdin, int fdout, char *args,
 	       Ns_Set *env)
 {
@@ -89,7 +89,7 @@ Ns_ExecProcess(char *exec, char *dir, int fdin, int fdout, char *args,
  *----------------------------------------------------------------------
  */
 
-int
+pid_t
 Ns_ExecProc(char *exec, char **argv)
 {
     return Ns_ExecArgv(exec, NULL, 0, 1, argv, NULL);
@@ -112,7 +112,7 @@ Ns_ExecProc(char *exec, char **argv)
  */
 
 int
-Ns_WaitProcess(int pid)
+Ns_WaitProcess(pid_t pid)
 {
     return Ns_WaitForProcess(pid, NULL);
 }
@@ -134,7 +134,7 @@ Ns_WaitProcess(int pid)
  */
 
 int
-Ns_WaitForProcess(int pid, int *exitcodePtr)
+Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 {
 #ifdef _WIN32
     HANDLE process = (HANDLE) pid;
@@ -218,12 +218,12 @@ Ns_WaitForProcess(int pid, int *exitcodePtr)
  *----------------------------------------------------------------------
  */
 
-int
+pid_t
 Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
 	      char *args, Ns_Set *env)
 {
 #ifndef _WIN32
-    int    pid;
+    pid_t  pid;
     char **argv;
     Ns_DString vds;
 
@@ -246,7 +246,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
     STARTUPINFO     si;
     PROCESS_INFORMATION pi;
     HANDLE          hCurrentProcess;
-    int             pid;
+    pid_t           pid;
     Ns_DString      cds, xds, eds;
     char           *envp;
     OSVERSIONINFO   oinfo;
@@ -303,7 +303,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
         Ns_DStringVarAppend(&cds, cmd, " /c ", exec, NULL);
         exec = NULL;
     } else {
-        char           *s;
+        char *s;
 
         s = args;
         while (*s != '\0') {
@@ -366,7 +366,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
  *----------------------------------------------------------------------
  */
 
-int
+pid_t
 Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
 	    char **argv, Ns_Set *env)
 {
@@ -374,7 +374,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     /*
      * Win32 ExecArgv simply calls ExecArgblk.
      */
-    int             pid;     
+    pid_t           pid;     
     Ns_DString      ads;
     char	   *args;
 
@@ -394,7 +394,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
 #else
     Ns_DString eds;
     char *argvSh[4], **envp;
-    int pid;
+    pid_t pid;
     
     if (exec == NULL) {
         return -1;

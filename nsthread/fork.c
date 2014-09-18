@@ -54,7 +54,7 @@
  *----------------------------------------------------------------------
  */
 
-int
+pid_t
 ns_fork(void)
 {
 #ifdef HAVE_FORK1
@@ -68,7 +68,7 @@ ns_fork(void)
 #undef Ns_Fork
 #endif
 
-int
+pid_t
 Ns_Fork(void)
 {
     return ns_fork();

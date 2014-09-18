@@ -119,7 +119,7 @@ struct _nsconf {
     char *tmpDir;
     char *config;
     char *build;
-    int pid;
+    pid_t pid;
     time_t boot_t;
     char hostname[255];
     char address[16];

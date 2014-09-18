@@ -1113,7 +1113,7 @@ symlink(char *from, char *to)
 #endif
 
 int
-kill(int pid, int sig)
+kill(pid_t pid, int sig)
 {
     HANDLE handle;
     BOOL rv;

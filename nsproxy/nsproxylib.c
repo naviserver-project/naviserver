@@ -2494,7 +2494,7 @@ CloseSlave(Slave *slavePtr, int ms)
     slavePtr->nextPtr = firstClosePtr;
     firstClosePtr = slavePtr;
 
-    Ns_Log(Debug, "nsproxy: slave %d closed", (int) slavePtr->pid);
+    Ns_Log(Debug, "nsproxy: slave %ld closed", (long) slavePtr->pid);
 }
 
 /*
@@ -2713,7 +2713,7 @@ ReaperThread(void *ignored)
                 if (slavePtr->signal >= 0) {
                     Ns_WaitProcess(slavePtr->pid); /* Should not really wait */
                 } else {
-                    Ns_Log(Warning, "nsproxy: zombie: %d", (int)slavePtr->pid);
+                    Ns_Log(Warning, "nsproxy: zombie: %ld", (long)slavePtr->pid);
                 }
                 if (prevSlavePtr != NULL) {
                     prevSlavePtr->nextPtr = slavePtr->nextPtr;

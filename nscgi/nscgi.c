@@ -72,7 +72,7 @@ typedef struct Mod {
 typedef struct Cgi {
     Mod     	   *modPtr;
     int		    flags;
-    int     	    pid;
+    pid_t     	    pid;
     Ns_Set	   *env;
     char    	   *name;
     char    	   *path;

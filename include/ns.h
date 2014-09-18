@@ -1324,25 +1324,25 @@ Ns_ExitEventQueue(Ns_EventQueue *queue)
  * exec.c:
  */
 
-NS_EXTERN int
+NS_EXTERN pid_t
 Ns_ExecProcess(char *exec, char *dir, int fdin, int fdout,
-			  char *args, Ns_Set *env);
+	       char *args, Ns_Set *env);
 
-NS_EXTERN int
+NS_EXTERN pid_t
 Ns_ExecProc(char *exec, char **argv);
 
-NS_EXTERN int
+NS_EXTERN pid_t
 Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
-			 char *args, Ns_Set *env);
+	      char *args, Ns_Set *env);
 
-NS_EXTERN int
+NS_EXTERN pid_t
 Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout, char **argv, Ns_Set *env);
 
 NS_EXTERN int
-Ns_WaitProcess(int pid);
+Ns_WaitProcess(pid_t pid);
 
 NS_EXTERN int
-Ns_WaitForProcess(int pid, int *statusPtr);
+Ns_WaitForProcess(pid_t pid, int *statusPtr);
 
 /*
  * fastpath.c:

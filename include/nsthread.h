@@ -121,6 +121,8 @@ typedef unsigned __int64 uint64_t;
 typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
+typedef          HANDLE pid_t;
+
 #  ifdef _WIN64
 typedef int64_t ssize_t;
 #  else
@@ -588,7 +590,7 @@ NS_EXTERN void Nsthreads_LibInit(void);
  * fork.c:
  */
 
-NS_EXTERN int ns_fork(void);
+NS_EXTERN pid_t ns_fork(void);
 
 /*
  * master.c:
