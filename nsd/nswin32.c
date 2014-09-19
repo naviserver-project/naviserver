@@ -295,7 +295,7 @@ NsConnectService(void)
 int
 NsRemoveService(char *server)
 {
-    SC_HANDLE hmgr, hsrv;
+    SC_HANDLE hmgr;
     SERVICE_STATUS status;
     Ns_DString name;
     BOOL ok;
@@ -305,7 +305,7 @@ NsRemoveService(char *server)
     ok = FALSE;
     hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (hmgr != NULL) {
-        hsrv = OpenService(hmgr, name.string, SERVICE_ALL_ACCESS);
+        SC_HANDLE hsrv = OpenService(hmgr, name.string, SERVICE_ALL_ACCESS);
         if (hsrv != NULL) {
             ControlService(hsrv, SERVICE_CONTROL_STOP, &status);
             ok = DeleteService(hsrv);
@@ -1018,8 +1018,6 @@ ServiceHandler(DWORD code)
 static void
 ReportStatus(DWORD state, DWORD code, DWORD hint)
 {
-    static DWORD check = 1;
-
     if (state == SERVICE_START_PENDING) {
         curStatus.dwControlsAccepted = 0;
     } else {
@@ -1035,6 +1033,7 @@ ReportStatus(DWORD state, DWORD code, DWORD hint)
     if (state == SERVICE_RUNNING || state == SERVICE_STOPPED) {
         curStatus.dwCheckPoint = 0;
     } else {
+        static DWORD check = 1;
         curStatus.dwCheckPoint = check++;
     }
     if (hStatus != 0 && SetServiceStatus(hStatus, &curStatus) != TRUE) {
