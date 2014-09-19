@@ -247,9 +247,9 @@ Ns_SockListenRaw(int proto)
 NS_SOCKET
 Ns_SockListenUnix(char *path, int backlog, int  mode)
 {
-    int            sock = INVALID_SOCKET;
+    NS_SOCKET      sock = INVALID_SOCKET;
 #ifndef _WIN32
-    Tcl_HashEntry  *hPtr;
+    Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
     Ns_MutexLock(&lock);
@@ -348,7 +348,7 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
 NS_SOCKET
 Ns_SockBindUnix(char *path, int socktype, int mode)
 {
-    int sock;
+    NS_SOCKET sock;
 #ifdef _WIN32
     sock = INVALID_SOCKET;
 #else
