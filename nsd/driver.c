@@ -3160,7 +3160,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     if (wrSockPtr->clientData) {
 	ns_free(wrSockPtr->clientData);
     }
-    if (wrSockPtr->fd > -1) {
+    if (wrSockPtr->fd != INVALID_SOCKET) {
 	if (wrSockPtr->streaming != NS_WRITER_STREAM_FINISH) {
 	    close(wrSockPtr->fd);
 	}
@@ -3895,7 +3895,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     } else if (bufs != NULL) {
 	int   i, j, headerbufs = headerSize > 0 ? 1 : 0;
 
-	wrSockPtr->fd = -1;
+	wrSockPtr->fd = INVALID_SOCKET;
 	
 	if (nbufs+headerbufs < UIO_SMALLIOV) {
 	    wrSockPtr->mem.bufs = wrSockPtr->mem.preallocated_bufs;
