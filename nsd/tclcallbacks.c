@@ -170,7 +170,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
         if (status != TCL_OK) {
             Ns_DStringSetLength(&ds, 0);
             Ns_DStringAppend(&ds, "\n    while executing callback\n");
-            Ns_GetProcInfo(&ds, (void *)cbPtr->cbProc, cbPtr);
+            Ns_GetProcInfo(&ds, cbPtr->cbProc, cbPtr);
             Tcl_AddObjErrorInfo(interp, ds.string, ds.length);
             if (deallocInterp) {
                 Ns_TclLogError(interp);
@@ -323,8 +323,8 @@ NsTclAtShutdownObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     static int      once = 0;
 
     if (!once) {
-      Ns_RegisterProcInfo((void *)ShutdownProc, "ns:tclshutdown",
-                            Ns_TclCallbackArgProc);
+      Ns_RegisterProcInfo(ShutdownProc, "ns:tclshutdown",
+			  Ns_TclCallbackArgProc);
         once = 1;
     }
     if (objc < 2) {

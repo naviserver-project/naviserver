@@ -359,7 +359,7 @@ NsGetFilters(Tcl_DString *dsPtr, char *server)
             Tcl_DStringAppendElement(dsPtr, "trace");
             break;
         }
-        Ns_GetProcInfo(dsPtr, (void *) fPtr->proc, fPtr->arg);
+        Ns_GetProcInfo(dsPtr, fPtr->proc, fPtr->arg);
         Tcl_DStringEndSublist(dsPtr);
         fPtr = fPtr->nextPtr;
     }
@@ -379,7 +379,7 @@ NsGetTraces(Tcl_DString *dsPtr, char *server)
     while (tracePtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, "trace");
-        Ns_GetProcInfo(dsPtr, (void *) tracePtr->proc, tracePtr->arg);
+        Ns_GetProcInfo(dsPtr, tracePtr->proc, tracePtr->arg);
         Tcl_DStringEndSublist(dsPtr);
 	tracePtr = tracePtr->nextPtr;
     }
@@ -388,7 +388,7 @@ NsGetTraces(Tcl_DString *dsPtr, char *server)
     while (tracePtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, "cleanup");
-        Ns_GetProcInfo(dsPtr, (void *) tracePtr->proc, tracePtr->arg);
+        Ns_GetProcInfo(dsPtr, tracePtr->proc, tracePtr->arg);
         Tcl_DStringEndSublist(dsPtr);
 	tracePtr = tracePtr->nextPtr;
     }

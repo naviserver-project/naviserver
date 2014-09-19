@@ -412,7 +412,7 @@ AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr)
     while (cbPtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, list);
-        Ns_GetProcInfo(dsPtr, (void *)cbPtr->proc, cbPtr->arg);
+        Ns_GetProcInfo(dsPtr, cbPtr->proc, cbPtr->arg);
         Tcl_DStringEndSublist(dsPtr);
 
         cbPtr = cbPtr->nextPtr;
@@ -499,7 +499,7 @@ RunCallbacks(CONST char *list, Callback *cbPtr)
 
         if (Ns_LogSeverityEnabled(Debug)) {
             Ns_DStringInit(&ds);
-            Ns_GetProcInfo(&ds, (void *)cbPtr->proc, cbPtr->arg);
+            Ns_GetProcInfo(&ds, cbPtr->proc, cbPtr->arg);
             Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));
             Ns_DStringFree(&ds);
         }

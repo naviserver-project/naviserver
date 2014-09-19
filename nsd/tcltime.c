@@ -51,8 +51,8 @@ static void  UpdateStringOfTime(Tcl_Obj *objPtr);
 
 static Tcl_ObjType timeType = {
     "ns:time",
-    (Tcl_FreeInternalRepProc *) NULL,
-    (Tcl_DupInternalRepProc *) NULL,
+    NULL,
+    NULL,
     UpdateStringOfTime,
     SetTimeFromAny
 };

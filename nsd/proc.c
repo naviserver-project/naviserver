@@ -64,22 +64,22 @@ static struct proc {
     char       *desc;
     Ns_ArgProc *argProc;
 } procs[] = {
-    {(void *) NsTclThread,         "ns:tclthread",        NsTclThreadArgProc},
-    {(void *) Ns_TclCallbackProc,  "ns:tclcallback",      Ns_TclCallbackArgProc},
-    {(void *) NsTclConnLocation,   "ns:tclconnlocation",  Ns_TclCallbackArgProc},
-    {(void *) NsTclSchedProc,      "ns:tclschedproc",     Ns_TclCallbackArgProc},
-    {(void *) NsTclServerRoot,     "ns:tclserverroot",    Ns_TclCallbackArgProc},
-    {(void *) NsTclSockProc,       "ns:tclsockcallback",  NsTclSockArgProc},
-    {(void *) NsConnThread,        "ns:connthread",       NsConnArgProc},
-    {(void *) NsTclFilterProc,     "ns:tclfilter",        Ns_TclCallbackArgProc},
-    {(void *) NsShortcutFilterProc, "ns:shortcutfilter",  NULL},
-    {(void *) NsTclRequestProc,    "ns:tclrequest",       Ns_TclCallbackArgProc},
-    {(void *) NsAdpPageProc,       "ns:adppage",          NsAdpPageArgProc},
-    {(void *) Ns_FastPathProc,     "ns:fastget",          NULL},
-    {(void *) NsTclTraceProc,      "ns:tcltrace",         Ns_TclCallbackArgProc},
-    {(void *) NsTclUrl2FileProc,   "ns:tclurl2file",      Ns_TclCallbackArgProc},
-    {(void *) NsMountUrl2FileProc, "ns:mounturl2file",    NsMountUrl2FileArgProc},
-    {(void *) Ns_FastUrl2FileProc, "ns:fasturl2file",     ServerArgProc},
+    { NsTclThread,         "ns:tclthread",        NsTclThreadArgProc},
+    { Ns_TclCallbackProc,  "ns:tclcallback",      Ns_TclCallbackArgProc},
+    { NsTclConnLocation,   "ns:tclconnlocation",  Ns_TclCallbackArgProc},
+    { NsTclSchedProc,      "ns:tclschedproc",     Ns_TclCallbackArgProc},
+    { NsTclServerRoot,     "ns:tclserverroot",    Ns_TclCallbackArgProc},
+    { NsTclSockProc,       "ns:tclsockcallback",  NsTclSockArgProc},
+    { NsConnThread,        "ns:connthread",       NsConnArgProc},
+    { NsTclFilterProc,     "ns:tclfilter",        Ns_TclCallbackArgProc},
+    { NsShortcutFilterProc, "ns:shortcutfilter",  NULL},
+    { NsTclRequestProc,    "ns:tclrequest",       Ns_TclCallbackArgProc},
+    { NsAdpPageProc,       "ns:adppage",          NsAdpPageArgProc},
+    { Ns_FastPathProc,     "ns:fastget",          NULL},
+    { NsTclTraceProc,      "ns:tcltrace",         Ns_TclCallbackArgProc},
+    { NsTclUrl2FileProc,   "ns:tclurl2file",      Ns_TclCallbackArgProc},
+    { NsMountUrl2FileProc, "ns:mounturl2file",    NsMountUrl2FileArgProc},
+    { Ns_FastUrl2FileProc, "ns:fasturl2file",     ServerArgProc},
     {NULL, NULL, NULL}
 };
 
