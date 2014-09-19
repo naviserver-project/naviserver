@@ -193,7 +193,7 @@ Ns_ModuleInit(char *server, char *module)
 	    ns_free(Tcl_GetHashValue(hPtr));
 	}
 	*pass = ':';
-	pass ++;
+	pass += 1;
 	end = strchr(pass, ':');
 	if (end != NULL) {
 	    *end = '\0';
