@@ -536,7 +536,7 @@ WalkTrie(Trie *triePtr, Ns_ArgProc func,
          */
 
         depth = 0;
-        while (depth < STACK_SIZE && stack[depth] != NULL) {
+        while (depth < STACK_SIZE -1 && stack[depth] != NULL) {
             depth++;
         }
         stack[depth] = branchPtr->word;
@@ -546,7 +546,7 @@ WalkTrie(Trie *triePtr, Ns_ArgProc func,
          * Restore stack position
          */
 
-        stack[depth] = 0;
+        stack[depth] = NULL;
     }
 
     nodePtr = triePtr->node;
@@ -1563,7 +1563,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
             }
         }
 #endif
-   }
+    }
 
 #ifdef DEBUG
     if (depth > 0) {
@@ -1571,7 +1571,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
     }
 #endif
 
-   return data;
+    return data;
 }
 
 

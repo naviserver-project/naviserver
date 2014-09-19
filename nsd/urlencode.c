@@ -265,6 +265,7 @@ Ns_GetUrlEncoding(char *charset)
 
     if (encoding == NULL) {
         Conn *connPtr = (Conn *) Ns_GetConn();
+
         if (connPtr != NULL) {
             encoding = connPtr->urlEncoding;
         } else {
@@ -303,7 +304,7 @@ Ns_GetUrlEncoding(char *charset)
             */
             encoding = Ns_GetCharsetEncoding("utf-8");
       }
-   } 
+    }
 
     return encoding;
 }

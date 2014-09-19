@@ -356,25 +356,25 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
             intag = 1;
 
         } else if (intag && (*inPtr == '>')) {
-        /* inside a tag that closes */
+	    /* inside a tag that closes */
             intag = 0;
 
         } else if (intspec && (*inPtr == ';')) {
-        /* inside a special character that closes */
+	    /* inside a special character that closes */
             intspec = 0;
 
         } else if (!intag && !intspec) {
-        /* regular text */
+	    /* regular text */
 
             if (*inPtr == '&') {
-        /* starting a new special character */
-                intspec=WordEndsInSemi(inPtr);
-        }
+		/* starting a new special character */
+		intspec=WordEndsInSemi(inPtr);
+	    }
 
             if (!intspec) {
-        /* incr pointer only if we're not in something htmlish */
+		/* incr pointer only if we're not in something htmlish */
                 *outPtr++ = *inPtr;
-        }
+	    }
         }
         ++inPtr;
     }
