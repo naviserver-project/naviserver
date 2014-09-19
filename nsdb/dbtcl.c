@@ -309,7 +309,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
   	    int i;
 
 	    for (i = 0; i < nhandles; ++i) {
-                EnterDbHandle(idataPtr, interp, handlesPtrPtr[i]);
+	        EnterDbHandle(idataPtr, interp, *(handlesPtrPtr + i));
             }
 	}
 	if (handlesPtrPtr != &handlePtr) {
