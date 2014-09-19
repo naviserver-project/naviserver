@@ -433,7 +433,7 @@ Ns_SockWait(NS_SOCKET sock, int what, int timeout)
  *      Listen for connections with default backlog.
  *
  * Results:
- *      A socket or -1 on error.
+ *      A socket or INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -456,7 +456,7 @@ Ns_SockListen(char *address, int port)
  *      Accept a TCP socket, setting close on exec.
  *
  * Results:
- *      A socket or -1 on error.
+ *      A socket or INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -489,7 +489,7 @@ Ns_SockAccept(NS_SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
  *      Create a TCP socket and bind it to the passed-in address.
  *
  * Results:
- *      A socket or -1 on error.
+ *      A socket or INVALID_SOCKET on error.
  *
  * Side effects:
  *      Will set SO_REUSEADDR on the socket.
@@ -539,7 +539,7 @@ Ns_SockBind(struct sockaddr_in *saPtr)
  *      Open a TCP connection to a host/port.
  *
  * Results:
- *      A socket, or -1 on error.
+ *      A socket, or INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -568,7 +568,7 @@ Ns_SockConnect2(char *host, int port, char *lhost, int lport)
  *      Like Ns_SockConnect, but uses a nonblocking socket.
  *
  * Results:
- *      A socket, or -1 on error.
+ *      A socket, or INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -597,7 +597,7 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  *      Like Ns_SockConnect, but with an optional timeout in seconds.
  *
  * Results:
- *      A socket, or -1 on error.
+ *      A socket, or INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -1008,7 +1008,7 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
  *      Open a TCP connection to a host/port.
  *
  * Results:
- *      A socket or -1 on error.
+ *      A socket or INVALID_SOCKET on error.
  *
  * Side effects:
  *      If async is true, the returned socket will be nonblocking.
@@ -1068,12 +1068,12 @@ static NS_SOCKET
 SockSetup(NS_SOCKET sock)
 {
 #ifdef USE_DUPHIGH
-    int nsock;
+    NS_SOCKET nsock;
 
     nsock = fcntl(sock, F_DUPFD, 256);
-    if (nsock != -1) {
-    close(sock);
-    sock = nsock;
+    if (nsock != INVALID_SOCKET) {
+      close(sock);
+      sock = nsock;
     }
 #endif
 #ifndef _WIN32

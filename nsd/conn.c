@@ -738,7 +738,7 @@ Ns_ConnSock(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return (connPtr->sockPtr ? connPtr->sockPtr->sock : -1);
+    return (connPtr->sockPtr ? connPtr->sockPtr->sock : INVALID_SOCKET);
 }
 
 /*

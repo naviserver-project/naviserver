@@ -790,7 +790,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) != NS_OK) {
-        return -1;
+        return INVALID_SOCKET;
     }
     sock = Ns_SockBind(&sa);
     if (sock != INVALID_SOCKET && listen(sock, backlog) != 0) {
@@ -1062,7 +1062,7 @@ ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;
     unsigned long int i;
-    NS_SOCKET n = -1;
+    NS_SOCKET n = INVALID_SOCKET;
     int rc;
 
     FD_ZERO(&ifds);

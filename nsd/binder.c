@@ -87,7 +87,7 @@ static void Binder(void);
 NS_SOCKET
 Ns_SockListenEx(char *address, int port, int backlog)
 {
-    NS_SOCKET          sock = -1;
+    NS_SOCKET          sock = INVALID_SOCKET;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -108,7 +108,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
             int err = errno;
             close(sock);
             errno = err;
-            sock = -1;
+            sock = INVALID_SOCKET;
             Ns_SetSockErrno(err);
         }
     }
@@ -118,7 +118,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
      * directly, try to do it through the binder
      */
 
-    if (sock == -1 && binderRunning) {
+    if (sock == INVALID_SOCKET && binderRunning) {
         sock = Ns_SockBinderListen('T', address, port, backlog);
     }
     return sock;
@@ -144,7 +144,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
 NS_SOCKET
 Ns_SockListenUdp(char *address, int port)
 {
-    NS_SOCKET          sock = -1;
+    NS_SOCKET          sock = INVALID_SOCKET;
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) == NS_OK) {
@@ -167,7 +167,7 @@ Ns_SockListenUdp(char *address, int port)
      * directly, try to do it through the binder
      */
 
-    if (sock == -1 && binderRunning) {
+    if (sock == INVALID_SOCKET && binderRunning) {
         sock = Ns_SockBinderListen('U', address, port, 0);
     }
 
@@ -194,7 +194,7 @@ Ns_SockListenUdp(char *address, int port)
 NS_SOCKET
 Ns_SockListenRaw(int proto)
 {
-    NS_SOCKET       sock = -1;
+    NS_SOCKET       sock = INVALID_SOCKET;
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
@@ -219,7 +219,7 @@ Ns_SockListenRaw(int proto)
      * directly, try to do it through the binder
      */
 
-    if (sock == -1 && binderRunning) {
+    if (sock == INVALID_SOCKET && binderRunning) {
         sock = Ns_SockBinderListen('R', 0, proto, proto);
     }
 
@@ -247,7 +247,7 @@ Ns_SockListenRaw(int proto)
 NS_SOCKET
 Ns_SockListenUnix(char *path, int backlog, int  mode)
 {
-    int            sock = -1;
+    int            sock = INVALID_SOCKET;
 #ifndef _WIN32
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
@@ -273,7 +273,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
 
         close(sock);
         errno = err;
-        sock = -1;
+        sock = INVALID_SOCKET;
         Ns_SetSockErrno(err);
     }
 
@@ -282,7 +282,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
      * directly, try to do it through the binder
      */
 
-    if (sock == -1 && binderRunning) {
+    if (sock == INVALID_SOCKET && binderRunning) {
         sock = Ns_SockBinderListen('D', path, mode, backlog);
     }
 #endif /* _WIN32 */
@@ -314,13 +314,13 @@ Ns_SockBindUdp(struct sockaddr_in *saPtr)
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if (sock == -1
+    if (sock == INVALID_SOCKET
         || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, sizeof(n)) == -1
         || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, sizeof(n)) == -1
         || bind(sock,(struct sockaddr*)saPtr, sizeof(struct sockaddr_in)) == -1) {
         int err = errno;
         close(sock);
-        sock = -1;
+        sock = INVALID_SOCKET;
         Ns_SetSockErrno(err);
     }
 
@@ -350,7 +350,7 @@ Ns_SockBindUnix(char *path, int socktype, int mode)
 {
     int sock;
 #ifdef _WIN32
-    sock = -1;
+    sock = INVALID_SOCKET;
 #else
     struct sockaddr_un addr;
 
@@ -361,12 +361,12 @@ Ns_SockBindUnix(char *path, int socktype, int mode)
 
     sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
 
-    if (sock == -1
+    if (sock == INVALID_SOCKET
         || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
         || (mode && chmod(path, mode) == -1)) {
         int err = errno;
         close(sock);
-        sock = -1;
+        sock = INVALID_SOCKET;
         Ns_SetSockErrno(err);
     }
 #endif /* _WIN32 */
@@ -399,7 +399,7 @@ Ns_SockBindRaw(int proto)
 
     sock = socket(AF_INET, SOCK_RAW, proto);
 
-    if (sock == -1) {
+    if (sock == INVALID_SOCKET) {
         int err = errno;
         close(sock);
         Ns_SetSockErrno(err);
@@ -653,7 +653,7 @@ PreBind(char *line)
                 continue;
             }
             sock = Ns_SockBind(&sa);
-            if (sock == -1) {
+            if (sock == INVALID_SOCKET) {
                 Ns_Log(Error, "prebind: tcp: %s:%d: %s", addr, port,
                        strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);
@@ -676,7 +676,7 @@ PreBind(char *line)
                 continue;
             }
             sock = Ns_SockBindUdp(&sa);
-            if (sock == -1) {
+            if (sock == INVALID_SOCKET) {
                 Ns_Log(Error, "prebind: udp: %s:%d: %s", addr, port,
                        strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);
@@ -696,7 +696,7 @@ PreBind(char *line)
             }
             while(count--) {
                 sock = Ns_SockBindRaw(IPPROTO_ICMP);
-                if (sock == -1) {
+                if (sock == INVALID_SOCKET) {
                     Ns_Log(Error, "prebind: icmp: %s",strerror(errno));
                     continue;
                 }
@@ -725,7 +725,7 @@ PreBind(char *line)
                 continue;
             }
             sock = Ns_SockBindUnix(line, SOCK_STREAM, mode);
-            if (sock == -1) {
+            if (sock == INVALID_SOCKET) {
                 Ns_Log(Error, "prebind: unix: %s: %s", proto, strerror(errno));
                 Tcl_DeleteHashEntry(hPtr);
                 continue;
@@ -764,7 +764,7 @@ PreBind(char *line)
 NS_SOCKET
 Ns_SockBinderListen(int type, char *address, int port, int options)
 {
-    NS_SOCKET     sock = -1;
+    NS_SOCKET     sock = INVALID_SOCKET;
 #ifndef _WIN32
     int           n, err;
     char          data[64];
@@ -832,14 +832,14 @@ Ns_SockBinderListen(int type, char *address, int port, int options)
 
     if (sock != INVALID_SOCKET && Ns_CloseOnExec(sock) != NS_OK) {
         close(sock);
-        sock = -1;
+        sock = INVALID_SOCKET;
     }
     if (err == 0) {
         Ns_Log(Notice, "Ns_SockBinderListen: listen(%s,%d) = %d",
                address, port, sock);
     } else {
         Ns_SetSockErrno(err);
-        sock = -1;
+        sock = INVALID_SOCKET;
         Ns_Log(Error, "Ns_SockBinderListen: listen(%s,%d) failed: '%s'",
                address, port, ns_sockstrerror(ns_sockerrno));
     }

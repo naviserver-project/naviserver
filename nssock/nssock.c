@@ -355,9 +355,9 @@ Keep(Ns_Sock *sock)
 static void
 Close(Ns_Sock *sock)
 {
-    if (sock->sock > -1) {
+    if (sock->sock != INVALID_SOCKET) {
         ns_sockclose(sock->sock);
-        sock->sock = -1;
+        sock->sock = INVALID_SOCKET;
     }
 }
 
