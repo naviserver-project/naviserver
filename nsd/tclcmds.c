@@ -253,7 +253,7 @@ extern Tcl_CmdProc
  */
 
 typedef struct Cmd {
-    char *name;
+    CONST char *name;
     Tcl_CmdProc *proc;
     Tcl_ObjCmdProc *objProc;
 } Cmd;
