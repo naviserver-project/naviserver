@@ -1552,28 +1552,16 @@ TclX_KeyedListInit (Tcl_Interp *interp)
 {
     Tcl_RegisterObjType (&keyedListType);
 
-    Tcl_CreateObjCommand (interp, 
-              "keylget",
-              TclX_KeylgetObjCmd,
-                          (ClientData) NULL,
-              (Tcl_CmdDeleteProc*) NULL);
+    Tcl_CreateObjCommand(interp, "keylget", TclX_KeylgetObjCmd, 
+			 (ClientData) NULL, NULL);
 
-    Tcl_CreateObjCommand (interp, 
-              "keylset",
-              TclX_KeylsetObjCmd,
-                          (ClientData) NULL,
-              (Tcl_CmdDeleteProc*) NULL);
+    Tcl_CreateObjCommand(interp, "keylset", TclX_KeylsetObjCmd,
+			 (ClientData) NULL, NULL);
 
-    Tcl_CreateObjCommand (interp,
-              "keyldel",
-              TclX_KeyldelObjCmd,
-                          (ClientData) NULL,
-              (Tcl_CmdDeleteProc*) NULL);
+    Tcl_CreateObjCommand(interp, "keyldel", TclX_KeyldelObjCmd,
+			 (ClientData) NULL, NULL);
 
-    Tcl_CreateObjCommand (interp, 
-              "keylkeys",
-              TclX_KeylkeysObjCmd,
-                          (ClientData) NULL,
-              (Tcl_CmdDeleteProc*) NULL);
+    Tcl_CreateObjCommand(interp, "keylkeys", TclX_KeylkeysObjCmd,
+                          (ClientData) NULL,NULL);
 }
 
