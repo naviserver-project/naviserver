@@ -192,7 +192,8 @@ Ns_ModuleInit(char *server, char *module)
 	    Ns_Log(Warning, "nscp: duplicate user: %s", user);
 	    ns_free(Tcl_GetHashValue(hPtr));
 	}
-	*pass++ = ':';
+	*pass = ':';
+	pass ++;
 	end = strchr(pass, ':');
 	if (end != NULL) {
 	    *end = '\0';
