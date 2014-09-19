@@ -2153,7 +2153,6 @@ static int
 SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 {
     Driver       *drvPtr = sockPtr->drvPtr;
-    DrvSpooler   *spPtr  = &drvPtr->spooler;
     Request      *reqPtr = NULL;
     Tcl_DString  *bufPtr = NULL;
 
@@ -2222,6 +2221,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     if (reqPtr->coff > 0 &&
         !reqPtr->chunkStartOff /* never spool chunked encoded data since we decode in memory */ &&
         reqPtr->length > drvPtr->readahead && sockPtr->tfd <= 0) {
+        DrvSpooler   *spPtr  = &drvPtr->spooler;
 
         /*
          * In driver mode send this Sock to the spooler thread if
