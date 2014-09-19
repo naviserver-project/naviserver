@@ -168,11 +168,13 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr,   itPtr},
+        {"cache",    ObjvCache,     &cPtr,   NULL},
         {"key",      Ns_ObjvString, &key,    NULL},
         {"args",     Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
     };
+    args[0].arg = itPtr; /* pass non-constant itPtr for "cache" */
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
@@ -267,11 +269,13 @@ NsTclCacheIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr, itPtr},
+        {"cache",    ObjvCache,     &cPtr,  NULL},
         {"key",      Ns_ObjvString, &key,   NULL},
         {"?incr",    Ns_ObjvInt,    &incr,  NULL},
         {NULL, NULL, NULL, NULL}
     };
+    args[0].arg = itPtr; /* pass non-constant itPtr for "cache" */
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }

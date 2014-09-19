@@ -421,7 +421,11 @@ Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr)
 int
 Ns_SockWait(NS_SOCKET sock, int what, int timeout)
 {
-    Ns_Time tm = { timeout, 0 };
+    Ns_Time tm;
+
+    tm.sec  = timeout;
+    tm.usec = 0;
+
     return Ns_SockTimedWait(sock, what, &tm);
 }
 
