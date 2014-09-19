@@ -387,7 +387,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
 
     major = htons(MAJOR_VERSION);
     minor = htons(MINOR_VERSION);
-    proc.pid = -1;
+    proc.pid = NS_INVALID_PID;
 
     proc.rfd = dup(0);
     if (proc.rfd < 0) {
@@ -797,7 +797,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     ns_free(argv[0]);
     ns_free(argv[1]);
 
-    if (pid < 0) {
+    if (pid == NS_INVALID_PID) {
         Tcl_AppendResult(interp, "exec failed: ", Tcl_PosixError(interp), NULL);
         close(wpipe[0]);
         close(rpipe[1]);
@@ -2738,8 +2738,8 @@ ReaperThread(void *ignored)
                     tout = slavePtr->expire;
                 }
                 if (slavePtr->signal != slavePtr->sigsent) {
-                    Ns_Log(Warning, "[%s]: pid %d won't die, send signal %d",
-                           slavePtr->poolPtr->name, (int)slavePtr->pid,
+                    Ns_Log(Warning, "[%s]: pid %ld won't die, send signal %d",
+                           slavePtr->poolPtr->name, (long)slavePtr->pid,
                            (int)slavePtr->signal);
                     Kill(slavePtr->pid, slavePtr->signal);
                     slavePtr->sigsent = slavePtr->signal;

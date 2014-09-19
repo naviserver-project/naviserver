@@ -135,7 +135,7 @@ NsForkWatchedProcess()
          */
 
         watchedPid = ns_fork();
-        if (watchedPid == -1) {
+        if (watchedPid == NS_INVALID_PID) {
             SysLog(LOG_ERR, "watchdog: fork() failed: '%s'.", strerror(errno));
             Ns_Fatal("watchdog: fork() failed: '%s'.", strerror(errno));
         }
@@ -232,7 +232,7 @@ WaitForServer()
 
     do {
         pid = waitpid(watchedPid, &status, 0);
-    } while (pid == -1 && errno == EINTR && watchedPid);
+    } while (pid == NS_INVALID_PID && errno == EINTR && watchedPid);
 
     if (processDied) {
         msg = "terminated";

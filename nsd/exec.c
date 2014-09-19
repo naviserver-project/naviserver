@@ -56,8 +56,8 @@ static int ExecProc(char *exec, char *dir, int fdin, int fdout,
  *	Execute a command in a child process.
  *
  * Results:
- *      Return process id of child process exec'ing the command or
- *	-1 on failure.
+ *      Return pid of child process exec'ing the command or
+ *	NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -80,8 +80,8 @@ Ns_ExecProcess(char *exec, char *dir, int fdin, int fdout, char *args,
  *      Execute a command in a child process.
  *
  * Results:
- *      Return process id of child process exec'ing the command or
- *	-1 on failure.
+ *      Return pid of child process exec'ing the command or
+ *	NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -209,8 +209,8 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
  *  	byte separated list of args.
  *
  * Results:
- *      Return process id of child process exec'ing the command or
- *	-1 on failure.
+ *      Return pid of child process exec'ing the command or
+ *	NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -253,7 +253,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
     char           *cmd;
 
     if (exec == NULL) {
-        return -1;
+        return NS_INVALID_PID;
     }
     oinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     if (GetVersionEx(&oinfo) == TRUE && oinfo.dwPlatformId != VER_PLATFORM_WIN32_NT) {
@@ -277,7 +277,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
             &si.hStdOutput, 0, TRUE, DUPLICATE_SAME_ACCESS) != TRUE) {
         Ns_Log(Error, "exec: failed to duplicate handle: %s",
         NsWin32ErrMsg(GetLastError()));
-        return -1;
+        return NS_INVALID_PID;
     }
     if (fdin < 0) {
         fdin = 0;
@@ -287,7 +287,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
         Ns_Log(Error, "exec: failed to duplicate handle: %s",
         NsWin32ErrMsg(GetLastError()));
         (void) CloseHandle(si.hStdOutput);
-        return -1;
+        return NS_INVALID_PID;
     }
 
     /*
@@ -335,10 +335,10 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
     if (CreateProcess(exec, cds.string, NULL, NULL, TRUE, 0, envp, dir, &si, &pi) != TRUE) {
         Ns_Log(Error, "exec: failed to create process: %s: %s",
         exec ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
-        pid = -1;
+        pid = NS_INVALID_PID;
     } else {
         CloseHandle(pi.hThread);
-        pid = (int) pi.hProcess;
+        pid = pi.hProcess;
     }
     Ns_DStringFree(&cds);
     Ns_DStringFree(&xds);
@@ -357,8 +357,8 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
  *	Execute a program in a new child process.
  *
  * Results:
- *      Return process id of child process exec'ing the command or
- *	-1 on failure.
+ *      Return pid of child process exec'ing the command or
+ *	NS_INVALID_PID on failure.
  *
  * Side effects:
  *      None.
@@ -390,6 +390,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     }
     pid = Ns_ExecArgblk(exec, dir, fdin, fdout, args, env);
     Ns_DStringFree(&ads);
+
     return pid;
 #else
     Ns_DString eds;
@@ -397,7 +398,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     pid_t pid;
     
     if (exec == NULL) {
-        return -1;
+        return NS_INVALID_PID;
     }
     if (argv == NULL) {
         argv = argvSh;
@@ -428,6 +429,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
     }
     pid = ExecProc(exec, dir, fdin, fdout, argv, envp);
     Ns_DStringFree(&eds);
+
     return pid;
 #endif
 }
@@ -442,7 +444,7 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
  *  	full error status from the child on failure.
  *
  * Results:
- *      Valid new child pid or -1 on error.
+ *      Valid new child pid or NS_INVALID_PID on error.
  *
  * Side effects:
  *      None.
@@ -450,12 +452,13 @@ Ns_ExecArgv(char *exec, char *dir, int fdin, int fdout,
  *----------------------------------------------------------------------
  */
 
-static int
+static pid_t
 ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
     	 char **envp)
 {
     struct iovec iov[2];
-    int    pid, errpipe[2], errnum, result;
+    int    errpipe[2], errnum, result;
+    pid_t  pid;
 
     /*
      * Create a pipe for child error message.
@@ -463,7 +466,7 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
      
     if (ns_pipe(errpipe) < 0) {
         Ns_Log(Error, "exec: ns_pipe() failed: %s", strerror(errno));
-	return -1;
+	return NS_INVALID_PID;
     }
 
     /*
@@ -475,7 +478,7 @@ ExecProc(char *exec, char *dir, int fdin, int fdout, char **argv,
         close(errpipe[0]);
         close(errpipe[1]);
         Ns_Log(Error, "exec: ns_fork() failed: %s", strerror(errno));
-	return -1;
+	return NS_INVALID_PID;
     }
     iov[0].iov_base = (caddr_t) &result;
     iov[1].iov_base = (caddr_t) &errnum;

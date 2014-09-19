@@ -122,6 +122,7 @@ typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
 typedef          HANDLE pid_t;
+#define NS_INVALID_PID 0
 
 #  ifdef _WIN64
 typedef int64_t ssize_t;
@@ -241,7 +242,7 @@ typedef struct DIR_ *DIR;
 #include <poll.h>
 
 #define NS_SOCKET	int
-
+#define NS_INVALID_PID  -1
 /* 
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
  * the time being, allthough the use of SOCKET should be deprecated.

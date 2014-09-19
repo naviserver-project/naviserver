@@ -385,7 +385,7 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
     memset(cgiPtr, 0, ((char *) &cgiPtr->ds[0]) - (char *) cgiPtr);
     cgiPtr->buf[0] = '\0';
     cgiPtr->modPtr = modPtr;
-    cgiPtr->pid = -1;
+    cgiPtr->pid = NS_INVALID_PID;
     cgiPtr->ofd = cgiPtr->ifd = -1;
     cgiPtr->ptr = cgiPtr->buf;
     for (i = 0; i < NDSTRINGS; ++i) {
@@ -652,7 +652,7 @@ CgiFree(Cgi *cgiPtr)
      * Reap the process.
      */
 
-    if (cgiPtr->pid != -1 && Ns_WaitProcess(cgiPtr->pid) != NS_OK) {
+    if (cgiPtr->pid != NS_INVALID_PID && Ns_WaitProcess(cgiPtr->pid) != NS_OK) {
 	Ns_Log(Error, "nscgi: wait for %s failed: %s",
 	       cgiPtr->exec, strerror(errno));
     }
@@ -786,7 +786,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     p = strchr(s, ':');   /* Get to the port number    */
     if (p != NULL) {
         SetUpdate(cgiPtr->env, "SERVER_PORT", p);
-        for (i = 0; p != '\0'; ++p) {
+        for (i = 0; *p != '\0'; ++p) {
             ++i;
         }
         Ns_DStringTrunc(dsPtr, i);
@@ -910,7 +910,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 	cgiPtr->ifd < 0 ? devNull : cgiPtr->ifd,
 	opipe[1], dsPtr->string, cgiPtr->env);
     close(opipe[1]);
-    if (cgiPtr->pid < 0) {
+    if (cgiPtr->pid == NS_INVALID_PID) {
     	close(opipe[0]);
 	return NS_ERROR;
     }
