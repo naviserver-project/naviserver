@@ -394,7 +394,7 @@ static int
 ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
     int          status;
-    size_t       nread;
+    int          nread;
     char         buf[IOBUFSZ];
 
     /*
@@ -790,7 +790,7 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
 
     p = buf;
     while (bufsize > 1) {
-        if (Ns_ConnRead(conn, p, 1) != 1) {
+        if (Ns_ConnRead(conn, p, 1) != 0) {
             return NULL;
         }
         if (*p++ == '\n') {
@@ -827,7 +827,7 @@ Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toread)
     Request *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
-        return -1;
+        return 0;
     }
     if (toread > reqPtr->avail) {
         toread = reqPtr->avail;
