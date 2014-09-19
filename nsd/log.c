@@ -1232,7 +1232,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
      * Add the log message
      */
 
-    if (len == -1) {
+    if (len == 0) {
         len = strlen(msg);
     }
     Ns_DStringNAppend(dsPtr, msg, (int)len);
@@ -1322,7 +1322,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
     interp = Ns_TclAllocateInterp(cbPtr->server);
     if (interp == NULL) {
         char *err = "LogToTcl: can't get interpreter";
-        LogToFile(logfile, Error, stampPtr, err, -1);
+        LogToFile(logfile, Error, stampPtr, err, 0);
         return NS_ERROR;
     }
 
