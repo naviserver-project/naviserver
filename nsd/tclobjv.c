@@ -300,7 +300,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
         }
         return NS_OK;
     }
-    for (specPtr = argSpec; specPtr->key != NULL; specPtr++) {
+    for (specPtr = argSpec; specPtr && specPtr->key != NULL; specPtr++) {
 	if (unlikely(remain == 0)) {
             if (unlikely(specPtr->key[0] != '?')) {
                 goto badargs; /* Too few args. */
