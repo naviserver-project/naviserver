@@ -1105,7 +1105,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
             tracePtr = servPtr->tcl.firstTracePtr;
             while (tracePtr != NULL) {
                 if (tracePtr->when & when) {
-		  Ns_GetProcInfo(&ds, (void *)tracePtr->proc, tracePtr->arg);
+		  Ns_GetProcInfo(&ds, tracePtr->proc, tracePtr->arg);
                 }
                 tracePtr = tracePtr->nextPtr;
             }
@@ -1786,7 +1786,7 @@ LogTrace(NsInterp *itPtr, TclTrace *tracePtr, int why)
             Tcl_DStringAppendElement(&ds, "freeconn");
             break;
         }
-        Ns_GetProcInfo(&ds, (void *)tracePtr->proc, tracePtr->arg);
+        Ns_GetProcInfo(&ds, tracePtr->proc, tracePtr->arg);
         Ns_Log(Debug, "ns:interptrace[%s]: %s",
                itPtr->servPtr->server, Ns_DStringValue(&ds));
         Ns_DStringFree(&ds);

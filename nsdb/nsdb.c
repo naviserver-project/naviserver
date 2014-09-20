@@ -70,8 +70,8 @@ Ns_ModuleInit(char *server, char *module)
                                NS_TCL_TRACE_DEALLOCATE) != NS_OK) {
         return NS_ERROR;
     }
-    Ns_RegisterProcInfo((void *)NsDbAddCmds, "nsdb:initinterp", NULL);
-    Ns_RegisterProcInfo((void *)NsDbReleaseHandles, "nsdb:releasehandles", NULL);
+    Ns_RegisterProcInfo(NsDbAddCmds, "nsdb:initinterp", NULL);
+    Ns_RegisterProcInfo(NsDbReleaseHandles, "nsdb:releasehandles", NULL);
 
     return NS_OK;
 }

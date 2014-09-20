@@ -508,7 +508,7 @@ NsGetSockCallbacks(Tcl_DString *dsPtr)
                 Tcl_DStringAppendElement(dsPtr, "exit");
             }
             Tcl_DStringEndSublist(dsPtr);
-            Ns_GetProcInfo(dsPtr, (void *)cbPtr->proc, cbPtr->arg);
+            Ns_GetProcInfo(dsPtr, cbPtr->proc, cbPtr->arg);
             snprintf(buf, sizeof(buf), "%d", cbPtr->timeout);
             Tcl_DStringAppendElement(dsPtr, buf);
             Tcl_DStringEndSublist(dsPtr);

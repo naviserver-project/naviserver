@@ -49,8 +49,8 @@ static Tcl_SetFromAnyProc   SetAddrFromAny;
 
 static Tcl_ObjType addrType = {
     "ns:addr",
-    (Tcl_FreeInternalRepProc *) NULL,
-    (Tcl_DupInternalRepProc *)  NULL,
+    NULL,
+    NULL,
     UpdateStringOfAddr,
     SetAddrFromAny
 };
