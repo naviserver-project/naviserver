@@ -344,11 +344,13 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache", ObjvCache,     &cPtr,      itPtr},
+        {"cache", ObjvCache,     &cPtr,      NULL},
         {"key",   Ns_ObjvString, &key,       NULL},
         {"args",  Ns_ObjvArgs,   &nelements, NULL},
         {NULL, NULL, NULL, NULL}
     };
+    args[0].arg = itPtr; /* pass non-constant itPtr for "cache" */
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
@@ -460,10 +462,12 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr,    arg},
+        {"cache",    ObjvCache,     &cPtr,    NULL},
         {"?pattern", Ns_ObjvString, &pattern, NULL},
         {NULL, NULL, NULL, NULL}
     };
+    args[0].arg = arg; /* pass non-constant arg for "cache" */
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
@@ -540,10 +544,12 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,    &cPtr,      arg},
+        {"cache",    ObjvCache,    &cPtr,      NULL},
         {"?args",    Ns_ObjvArgs,  &npatterns, NULL},
         {NULL, NULL, NULL, NULL}
     };
+    args[0].arg = arg; /* pass non-constant arg for "cache" */
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
@@ -613,11 +619,13 @@ NsTclCacheGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     Tcl_Obj        *varNameObj = NULL, *resultObj;
 
     Ns_ObjvSpec args[] = {
-        {"cache",    ObjvCache,     &cPtr,        arg},
+        {"cache",    ObjvCache,     &cPtr,        NULL},
         {"key",      Ns_ObjvString, &key,         NULL},
         {"?varName", Ns_ObjvObj,    &varNameObj,  NULL},
         {NULL, NULL, NULL, NULL}
     };
+    args[0].arg = arg; /* pass non-constant arg for "cache" */
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
