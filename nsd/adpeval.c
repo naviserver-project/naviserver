@@ -97,11 +97,11 @@ typedef struct InterpPage {
  */
 
 static Page *ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags);
-static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar);
-static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
+static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);
+static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *file,
                    AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
                    struct stat *stPtr);
-static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
+static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *file,
                      Ns_Time *ttlPtr, Tcl_DString *outputPtr);
 static int AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript);
 static void DecrCache(AdpCache *cachePtr);
@@ -201,20 +201,20 @@ ConfigServerAdp(CONST char *server)
  */
 
 int
-NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
+NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar)
 {
     return AdpEval(itPtr, objc, objv, resvar);
 }
 
 int
-NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
+NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar)
 {
     itPtr->adp.flags |= ADP_ADPFILE;
     return AdpEval(itPtr, objc, objv, resvar);
 }
 
 static int
-AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
+AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar)
 {
     Tcl_Interp   *interp = itPtr->interp;
     AdpCode       code;
@@ -280,7 +280,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *resvar)
  */
 
 int
-NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file, Ns_Time *expiresPtr)
+NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *file, Ns_Time *expiresPtr)
 {
     Ns_DString *outputPtr;
 
@@ -389,7 +389,7 @@ NsAdpReset(NsInterp *itPtr)
  */
 
 static int
-AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
+AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *file,
           Ns_Time *ttlPtr, Tcl_DString *outputPtr)
 {
     NsServer       *servPtr = itPtr->servPtr;
@@ -1007,7 +1007,7 @@ NsAdpLogError(NsInterp *itPtr)
  */
 
 static int
-AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
+AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *file,
         AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
         struct stat *stPtr)
 {
@@ -1025,7 +1025,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *objv[], char *file,
     Ns_DStringInit(&cwd);
     frame.file = file;
     frame.objc = objc;
-    frame.objv = objv;
+    frame.objv = (Tcl_Obj **)objv;
     if (stPtr != NULL) {
         frame.size = stPtr->st_size;
         frame.mtime = stPtr->st_mtime;

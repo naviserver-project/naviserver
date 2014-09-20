@@ -474,7 +474,7 @@ Ns_InfoTag(void)
  */
 
 int
-NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     int         opt;
     NsInterp    *itPtr = arg;

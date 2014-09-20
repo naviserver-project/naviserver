@@ -39,9 +39,9 @@
  * Local functions defined in this file.
  */
 
-static int ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj **objv,
+static int ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[],
                            int exception);
-static int EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj **objv);
+static int EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[]);
 static int GetFrame(ClientData arg, AdpFrame **framePtrPtr);
 static int GetOutput(ClientData arg, Tcl_DString **dsPtrPtr);
 static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr);
@@ -340,7 +340,7 @@ NsTclAdpEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 }
 
 int
-NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
 
@@ -349,7 +349,7 @@ NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **o
 }
 
 static int
-EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj **objv)
+EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[])
 {
     if (objc < 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "page ?args ...?");
@@ -682,7 +682,7 @@ NsTclAdpAbortObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 }
 
 static int
-ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj **objv, int exception)
+ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], int exception)
 {
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "?retval?");

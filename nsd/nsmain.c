@@ -828,7 +828,7 @@ Ns_StopServer(char *server)
  */
 
 int
-NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     int timeout = 0, signal = NS_SIGTERM;
 

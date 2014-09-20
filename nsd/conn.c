@@ -37,7 +37,7 @@
 #include "nsd.h"
 
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
-static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv,
+static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST objv[],
                       int *offPtr, int *lenPtr);
 static Tcl_Channel MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn);
 
@@ -1201,7 +1201,7 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  */
 
 int
-NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
     Ns_Conn *conn = itPtr->conn;
@@ -1861,7 +1861,7 @@ GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
  */
 
 static int
-GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj **objv, int *offPtr,
+GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST objv[], int *offPtr,
            int *lenPtr)
 {
     int off, len;

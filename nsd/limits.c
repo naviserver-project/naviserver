@@ -133,7 +133,7 @@ NsGetRequestLimits(NsServer *servPtr, char *method, char *url)
  */
 
 int
-NsTclGetLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclGetLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsLimits *limitsPtr;
 
@@ -167,7 +167,7 @@ NsTclGetLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
  */
 
 int
-NsTclListLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclListLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
@@ -212,7 +212,7 @@ NsTclListLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **ob
  */
 
 int
-NsTclSetLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclSetLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsLimits *limitsPtr;
     int       maxrun = -1, maxwait = -1, maxupload = -1, timeout = -1;
@@ -267,7 +267,7 @@ NsTclSetLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **obj
  */
 
 int
-NsTclRegisterLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclRegisterLimitsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
     NsLimits *limitsPtr;

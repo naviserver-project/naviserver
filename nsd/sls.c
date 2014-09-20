@@ -327,7 +327,7 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
  */
 
 int
-NsTclSlsObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclSlsObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn    *conn;
     Ns_Sock    *sock;

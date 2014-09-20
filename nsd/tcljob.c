@@ -343,7 +343,7 @@ NsWaitJobsShutdown(Ns_Time *toPtr)
  */
 
 int
-NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp       *itPtr = arg;
     Queue          *queuePtr = NULL;

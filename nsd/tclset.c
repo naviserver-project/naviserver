@@ -187,7 +187,7 @@ Ns_TclFreeSet(Tcl_Interp *interp, char *id)
  */
 
 int
-NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp        *itPtr = arg;
     Ns_Set          *set, *set2Ptr, **sets;
