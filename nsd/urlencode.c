@@ -303,7 +303,7 @@ Ns_GetUrlEncoding(char *charset)
                -gustaf neumann
             */
             encoding = Ns_GetCharsetEncoding("utf-8");
-      }
+	}
     }
 
     return encoding;
