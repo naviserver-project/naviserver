@@ -3318,7 +3318,7 @@ WriterSend(WriterSock *curPtr, int *err) {
     /*
      * Prepare send operation
      */
-    if (curPtr->fd > -1) {
+    if (curPtr->fd != INVALID_SOCKET) {
 	/*
 	 * Send a single buffer with curPtr->file.bufsize bytes from the
 	 * curPtr->file.buf to the client.
@@ -3388,7 +3388,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	curPtr->nsent += n;
 	curPtr->sockPtr->timeout.sec = 0;
 
-	if (curPtr->fd > -1) {
+	if (curPtr->fd != INVALID_SOCKET) {
 	    curPtr->file.bufsize -= n;
 	    curPtr->file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
@@ -3541,7 +3541,7 @@ WriterThread(void *arg)
 		     * If we are spooling from a file, read some data
 		     * from the (spool) file and place it into curPtr->file.buf.
 		     */
-		    if (curPtr->fd > -1) {
+		    if (curPtr->fd != INVALID_SOCKET) {
 			status = WriterReadFromSpool(wrPtr, curPtr);
 		    }
 		    

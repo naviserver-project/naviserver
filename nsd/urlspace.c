@@ -1508,7 +1508,7 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
      */
 
 #ifndef __URLSPACE_OPTIMIZE__
-    for (i = 0; i < l; i++) {
+    for (i = 0; i < (ssize_t)l; i++) {
       channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     for (i = (l - 1); i >= 0; i--) {
@@ -1618,7 +1618,7 @@ JunctionFindExact(Junction *juncPtr, char *seq, int flags, int fast)
 #ifndef __URLSPACE_OPTIMIZE__
     l = Ns_IndexCount(&juncPtr->byuse);
 
-    for (i = 0; i < l; i++) {
+    for (i = 0; i < (ssize_t)l; i++) {
         channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     l = Ns_IndexCount(&juncPtr->byname);
@@ -1646,7 +1646,7 @@ JunctionFindExact(Junction *juncPtr, char *seq, int flags, int fast)
      */
 
 #ifndef __URLSPACE_OPTIMIZE__
-    for (i = 0; i < l; i++) {
+    for (i = 0; i < (ssize_t)l; i++) {
       channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     for (i = (l - 1); i >= 0; i--) {
@@ -1702,7 +1702,7 @@ JunctionDeleteNode(Junction *juncPtr, char *seq, int flags)
 
 #ifndef __URLSPACE_OPTIMIZE__
     l = Ns_IndexCount(&juncPtr->byuse);
-    for (i = 0; (i < l) && (data == NULL); i++) {
+    for (i = 0; i < (ssize_t)l && data == NULL; i++) {
       channelPtr = Ns_IndexEl(&juncPtr->byuse, (int)i);
 #else
     l = Ns_IndexCount(&juncPtr->byname);

@@ -761,10 +761,10 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 
         Ns_DStringPrintf(&ds, "{%s} "
             "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
-            "refcnt %d evals %d size %" PRIu64 " blocks %d scripts %d} ",
+            "refcnt %d evals %d size %" PRIdz " blocks %d scripts %d} ",
             file,
             (uint64_t) pagePtr->dev, (uint64_t) pagePtr->ino, (uint64_t) pagePtr->mtime,
-            pagePtr->refcnt, pagePtr->evals, (uint64_t) pagePtr->size,
+            pagePtr->refcnt, pagePtr->evals, pagePtr->size,
             pagePtr->code.nblocks, pagePtr->code.nscripts);
         hPtr = Tcl_NextHashEntry(&search);
     }
