@@ -1288,7 +1288,7 @@ WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
         for (specPtr = optSpec; specPtr->key != NULL; ++specPtr) {
             if (STREQ(specPtr->key, "--")) {
                 Ns_DStringAppend(&ds, "?--? ");
-            } else if (specPtr->proc == &Ns_ObjvBool && specPtr->arg != NULL) {
+            } else if (specPtr->proc == Ns_ObjvBool && specPtr->arg != NULL) {
                 Ns_DStringPrintf(&ds, "?%s? ", specPtr->key);
             } else {
 	        char *p = specPtr->key;

@@ -69,7 +69,7 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *name)
 {
     Ns_TclCallback cb;
 
-    cb.cbProc = (Ns_Callback *) &NsTclRequestProc;
+    cb.cbProc = (Ns_Callback *) NsTclRequestProc;
     cb.server = Ns_ConnServer(conn);
     cb.script = (char *) name;
     cb.argc   = 0;
