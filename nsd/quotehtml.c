@@ -54,7 +54,7 @@
  */
 
 void
-Ns_QuoteHtml(Ns_DString *pds, char *string)
+Ns_QuoteHtml(Ns_DString *pds, CONST char *string)
 {
     while (likely(*string != '\0')) {
         switch (*string) {
@@ -104,7 +104,7 @@ Ns_QuoteHtml(Ns_DString *pds, char *string)
  */
 
 int
-NsTclQuoteHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+NsTclQuoteHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     Ns_DString ds;
 

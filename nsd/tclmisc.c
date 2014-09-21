@@ -327,7 +327,7 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
  */
 
 int
-NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     int   intag;     /* flag to see if are we inside a tag */
     int   intspec;   /* flag to see if we are inside a special char */
@@ -441,9 +441,10 @@ NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
-    char *p, *s, *e, *he, save;
+    char       *s, *e, *he, save;
+    CONST char *p;
 
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -602,7 +603,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclCrashCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+NsTclCrashCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     char *death;
 

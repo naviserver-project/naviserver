@@ -220,7 +220,7 @@ NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
 
     if (argc == 1) {

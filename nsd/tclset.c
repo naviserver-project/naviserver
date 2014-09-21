@@ -49,7 +49,7 @@
  * Local functions defined in this file
  */
 
-static int LookupSet(NsInterp *itPtr, char *id, int deleteEntry, Ns_Set **setPtr);
+static int LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **setPtr);
 static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry,
                         Ns_Set **setPtr);
 static int LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry,
@@ -574,7 +574,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
  */
 
 int
-NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     NsInterp *itPtr = arg;
     Ns_Set *set;
@@ -693,7 +693,7 @@ LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry, Ns_Set **setPtr)
 }
 
 static int
-LookupSet(NsInterp *itPtr, char *id, int deleteEntry, Ns_Set **setPtr)
+LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **setPtr)
 {
     Tcl_HashEntry *hPtr;
     Ns_Set        *set = NULL;

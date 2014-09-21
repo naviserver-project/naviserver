@@ -973,7 +973,7 @@ NS_EXTERN int
 Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since);
 
 NS_EXTERN int
-Ns_ParseHeader(Ns_Set *set, char *header, Ns_HeaderCaseDisposition disp);
+Ns_ParseHeader(Ns_Set *set, CONST char *header, Ns_HeaderCaseDisposition disp);
 
 NS_EXTERN Ns_Set  *
 Ns_ConnGetQuery(Ns_Conn *conn);
@@ -2013,7 +2013,7 @@ Ns_GetConn(void);
  */
 
 NS_EXTERN void
-Ns_QuoteHtml(Ns_DString *pds, char *string);
+Ns_QuoteHtml(Ns_DString *pds, CONST char *string);
 
 /*
  * request.c:

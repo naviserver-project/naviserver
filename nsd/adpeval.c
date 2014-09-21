@@ -743,7 +743,7 @@ NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
  */
 
 int
-NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
@@ -761,7 +761,7 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
 
         Ns_DStringPrintf(&ds, "{%s} "
             "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
-            "refcnt %d evals %d size %" PRIdz " blocks %d scripts %d} ",
+            "refcnt %d evals %d size %" PROTd" blocks %d scripts %d} ",
             file,
             (uint64_t) pagePtr->dev, (uint64_t) pagePtr->ino, (uint64_t) pagePtr->mtime,
             pagePtr->refcnt, pagePtr->evals, pagePtr->size,

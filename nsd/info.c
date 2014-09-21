@@ -726,7 +726,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 int
-NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, char **argv)
+NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     NsInterp *itPtr = arg;
     char *lib;

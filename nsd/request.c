@@ -464,7 +464,7 @@ SetUrl(Ns_Request *request, char *url)
  */
 
 int
-Ns_ParseHeader(Ns_Set *set, char *line, Ns_HeaderCaseDisposition disp)
+Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp)
 {
     char           *sep;
     char           *value;
