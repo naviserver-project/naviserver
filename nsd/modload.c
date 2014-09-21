@@ -152,7 +152,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST 
     }
 
     initProc = (Ns_ModuleInitProc *) tclInitProc;
-    verPtr = tclVerProc;
+    verPtr = (int *) tclVerProc;
 
     if (initProc == NULL) {
         Ns_Log(Error, "modload: %s: %s: symbol not found", file, init);
