@@ -62,14 +62,14 @@
 #  define likely(x) (x)
 #endif
 
-/*
- *
+/***************************************************************
  * Main Windows defines, including 
+ *
  *  - mingw 
  *  - Visual Studio
  *  - WIN32
  *  - WIN64
- */ 
+ ***************************************************************/
 #ifdef _WIN32
 # define NS_EXPORT                   __declspec(dllexport)
 # define NS_IMPORT                   __declspec(dllimport)
@@ -216,11 +216,17 @@ struct dirent {
 };
 
 typedef struct DIR_ *DIR;
-
-# else
-/*
- * Not windows
+/* 
+ * End of Windows section 
  */
+# else
+/***************************************************************
+ *
+ * Not windows 
+ *
+ * mostly Unix style OSes, including Mac OS X
+ *
+ ***************************************************************/
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/time.h>
