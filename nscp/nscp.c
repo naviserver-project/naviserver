@@ -176,6 +176,10 @@ Ns_ModuleInit(char *server, char *module)
         Ns_DStringFree(&ds);
     }
 
+    /*
+     * Process the setup ns_set
+     */
+
     for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
 	char *pass;
 	char *key = Ns_SetKey(set, i);
@@ -208,7 +212,7 @@ Ns_ModuleInit(char *server, char *module)
 	Ns_Log(Warning, "nscp: no authorized users");
     }
     Ns_SockCallback(lsock, AcceptProc, modPtr, NS_SOCK_READ|NS_SOCK_EXIT);
-    Ns_RegisterProcInfo((void *)AcceptProc, "nscp", ArgProc);
+    Ns_RegisterProcInfo(AcceptProc, "nscp", ArgProc);
     return NS_OK;
 }
 
@@ -540,6 +544,10 @@ Login(Sess *sessPtr, Tcl_DString *unameDSPtr)
 	    }
 	}
     }
+
+    /*
+     * Report the result of the login to the user.
+     */
 
     Ns_DStringInit(&msgDs);
     if (ok) {

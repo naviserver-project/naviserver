@@ -633,7 +633,7 @@ WalkCallback(Ns_DString *dsPtr, void *arg)
 {
     Url2File *u2fPtr = arg;
 
-    Ns_GetProcInfo(dsPtr, (void *)u2fPtr->proc, u2fPtr->arg);
+    Ns_GetProcInfo(dsPtr, u2fPtr->proc, u2fPtr->arg);
 }
 
 
