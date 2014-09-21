@@ -90,8 +90,8 @@ Ns_TclPrintfResult(Tcl_Interp *interp, char *fmt, ...)
  */
 
 int
-NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, 
+		   int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp             *itPtr = arg;
     CONST char           *script;
@@ -407,8 +407,8 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* ar
  */
 
 int
-NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                 Tcl_Obj *CONST objv[])
+NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, 
+		 int objc, Tcl_Obj *CONST objv[])
 {
     char buf[NS_ENCRYPT_BUFSIZE];
 
@@ -524,8 +524,8 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[]
  */
 
 int
-NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
-                      Tcl_Obj **objv)
+NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, 
+		      int objc, Tcl_Obj *CONST objv[])
 {
     unsigned char *string;
     char          *result;
@@ -562,8 +562,8 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
-                      Tcl_Obj **objv)
+NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, 
+		      int objc, Tcl_Obj *CONST objv[])
 {
     int            size;
     char          *string;
@@ -1045,8 +1045,8 @@ void Ns_CtxString(unsigned char *digest, char *buf, int size)
  */
 
 int
-NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                Tcl_Obj *CONST objv[])
+NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, 
+		int objc, Tcl_Obj *CONST objv[])
 {
     Ns_CtxSHA1     ctx;
     unsigned char  digest[20];
@@ -1090,8 +1090,8 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                Tcl_Obj *CONST objv[])
+NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, 
+		    int objc, Tcl_Obj *CONST objv[])
 {
     struct stat st;
 
@@ -1407,8 +1407,8 @@ static void MD5Transform(uint32_t buf[4], uint32_t const in[16])
  */
 
 int
-NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                Tcl_Obj *CONST objv[])
+NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, 
+	       int objc, Tcl_Obj *CONST objv[])
 {
     Ns_CtxMD5      ctx;
     unsigned char  digest[16];
@@ -1449,7 +1449,8 @@ NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclSetUserObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSetUserObjCmd(ClientData arg, Tcl_Interp *interp, 
+		   int objc, Tcl_Obj *CONST objv[])
 {
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "user");
@@ -1461,7 +1462,8 @@ NsTclSetUserObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
 }
 
 int
-NsTclSetGroupObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSetGroupObjCmd(ClientData arg, Tcl_Interp *interp, 
+		    int objc, Tcl_Obj *CONST objv[])
 {
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "group");

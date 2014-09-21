@@ -1687,8 +1687,8 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 int
-NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[])
+NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, 
+			int objc, Tcl_Obj *CONST objv[])
 {
     NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
@@ -1726,8 +1726,8 @@ NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj **objv)
+NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, 
+			int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp    *itPtr = arg;
     int         toCopy = 0;

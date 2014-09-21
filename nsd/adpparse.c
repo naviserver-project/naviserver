@@ -81,7 +81,7 @@ static void AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags);
 static void AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae,
                       char *se, int flags);
 static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj **objv, int type);
+                          Tcl_Obj *CONST objv[], int type);
 static void AppendLengths(AdpCode *codePtr, int *lens, int *lines);
 static void GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr);
 static char *GetScript(char *tag, char *a, char *e, int *streamPtr);
@@ -106,45 +106,45 @@ static char *GetScript(char *tag, char *a, char *e, int *streamPtr);
  */
 
 int
-NsTclAdpRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj **objv)
+NsTclAdpRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, 
+			  int objc, Tcl_Obj *CONST objv[])
 {
     return RegisterObjCmd(arg, interp, objc, objv, TAG_ADP);
 }
 
 int
-NsTclAdpRegisterTagObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj **objv)
+NsTclAdpRegisterTagObjCmd(ClientData arg, Tcl_Interp *interp, 
+			  int objc, Tcl_Obj *CONST objv[])
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registeradp", NULL);
     return RegisterObjCmd(arg, interp, objc, objv, TAG_ADP);
 }
 
 int
-NsTclAdpRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                           Tcl_Obj **objv)
+NsTclAdpRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, 
+			   int objc, Tcl_Obj *CONST objv[])
 {
     return RegisterObjCmd(arg, interp, objc, objv, TAG_PROC);
 }
 
 int
-NsTclAdpRegisterScriptObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                             Tcl_Obj **objv)
+NsTclAdpRegisterScriptObjCmd(ClientData arg, Tcl_Interp *interp, 
+			     int objc, Tcl_Obj *CONST objv[])
 {
     return RegisterObjCmd(arg, interp, objc, objv, TAG_SCRIPT);
 }
 
 int
-NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                             Tcl_Obj **objv)
+NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, 
+			     int objc, Tcl_Obj *CONST objv[])
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registerscript", NULL);
     return RegisterObjCmd(arg, interp, objc, objv, TAG_SCRIPT);
 }
 
 static int
-RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-               Tcl_Obj **objv, int type)
+RegisterObjCmd(ClientData arg, Tcl_Interp *interp, 
+	       int objc, Tcl_Obj *CONST objv[], int type)
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;

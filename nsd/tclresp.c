@@ -66,8 +66,8 @@ static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
  */
 
 int
-NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, 
+		   int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
     Ns_Conn  *conn = NULL;
@@ -136,8 +136,8 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj **objv)
+NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, 
+			int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp     *itPtr = arg;
     Ns_Conn      *conn = NULL;
@@ -202,8 +202,8 @@ NsTclStartContentObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                 Tcl_Obj *CONST objv[])
+NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, 
+		 int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp     *itPtr = arg;
     Ns_Conn      *conn  = NULL;
@@ -308,8 +308,8 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                  Tcl_Obj *CONST objv[])
+NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, 
+		  int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     Tcl_Obj *dataObj;
@@ -364,8 +364,8 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, 
+		   int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn     *conn = NULL;
     int          status = 200, length = -1;
@@ -471,8 +471,8 @@ NsTclRespondObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                      Tcl_Obj *CONST objv[])
+NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, 
+		      int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     int      status, result;
@@ -514,8 +514,8 @@ NsTclReturnFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                    Tcl_Obj *CONST objv[])
+NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, 
+		    int objc, Tcl_Obj *CONST objv[])
 {
     int          len, status, result;
     Tcl_Channel  chan;
@@ -564,8 +564,8 @@ NsTclReturnFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                      Tcl_Obj *CONST objv[])
+NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, 
+		      int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn     *conn = NULL;
     Tcl_Channel  chan;
@@ -618,8 +618,8 @@ NsTclConnSendFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                            Tcl_Obj *CONST objv[])
+NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp, 
+			    int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     int      result;
@@ -670,36 +670,36 @@ ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 }
 
 int
-NsTclReturnNotFoundObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj *CONST objv[])
+NsTclReturnNotFoundObjCmd(ClientData arg, Tcl_Interp *interp, 
+			  int objc, Tcl_Obj *CONST objv[])
 {
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnNotFound);
 }
 
 int
-NsTclReturnUnauthorizedObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                              Tcl_Obj *CONST objv[])
+NsTclReturnUnauthorizedObjCmd(ClientData arg, Tcl_Interp *interp, 
+			      int objc, Tcl_Obj *CONST objv[])
 {
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnUnauthorized);
 }
 
 int
-NsTclReturnForbiddenObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                           Tcl_Obj *CONST objv[])
+NsTclReturnForbiddenObjCmd(ClientData arg, Tcl_Interp *interp, 
+			   int objc, Tcl_Obj *CONST objv[])
 {
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnForbidden);
 }
 
 int
-NsTclReturnUnavailableObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                             Tcl_Obj *CONST objv[])
+NsTclReturnUnavailableObjCmd(ClientData arg, Tcl_Interp *interp, 
+			     int objc, Tcl_Obj *CONST objv[])
 {
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnUnavailable);
 }
 
 int
-NsTclReturnTooLargeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj *CONST objv[])
+NsTclReturnTooLargeObjCmd(ClientData arg, Tcl_Interp *interp, 
+			  int objc, Tcl_Obj *CONST objv[])
 {
     return ReturnObjCmd(arg, interp, objc, objv, Ns_ConnReturnEntityTooLarge);
 }
@@ -724,8 +724,8 @@ NsTclReturnTooLargeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                       Tcl_Obj *CONST objv[])
+NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, 
+		       int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     int      status, result;
@@ -765,8 +765,8 @@ NsTclReturnErrorObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnMovedObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj *CONST objv[])
+NsTclReturnMovedObjCmd(ClientData arg, Tcl_Interp *interp, 
+		       int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     int      result;
@@ -803,8 +803,8 @@ NsTclReturnMovedObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[])
+NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, 
+			int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     int      status, result;
@@ -845,8 +845,8 @@ NsTclReturnNoticeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj *CONST objv[])
+NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, 
+			  int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     int      result;
@@ -881,8 +881,8 @@ NsTclReturnRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclInternalRedirectObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-			  Tcl_Obj *CONST objv[])
+NsTclInternalRedirectObjCmd(ClientData arg, Tcl_Interp *interp, 
+			    int objc, Tcl_Obj *CONST objv[])
 {
     Ns_Conn *conn = NULL;
     int      result;
