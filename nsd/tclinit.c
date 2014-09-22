@@ -1072,7 +1072,6 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
             break;
         }
         goto trace;
-        break;
 
     case ITraceIdx:
         /*

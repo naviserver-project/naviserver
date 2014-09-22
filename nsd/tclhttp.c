@@ -105,11 +105,9 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
 	/* FALLTHROUGH */
     case HQueueIdx:
 	return HttpQueueCmd(itPtr, objc, objv, run);
-	break;
 
     case HWaitIdx:
 	return HttpWaitCmd(itPtr, objc, objv);
-	break;
 
     case HCancelIdx:
         if (objc != 2) {

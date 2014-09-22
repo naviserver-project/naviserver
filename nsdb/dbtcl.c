@@ -448,7 +448,6 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 	        break;
 	    default:
 	        return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-	        break;
 	    }
             break;
 
@@ -538,7 +537,6 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
                 break;
             default:
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-                break;
             }
             break;
 
@@ -577,7 +575,6 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
                 break;
             default:
                 return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-                break;
             }
             break;
         }

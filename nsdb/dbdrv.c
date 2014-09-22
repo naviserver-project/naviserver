@@ -242,7 +242,6 @@ Ns_DbRegisterDriver(char *driver, Ns_DbProc *procs)
 	    default:
 		Ns_Log(Error, "dbdrv: unknown driver id '%d'", procs->id);
 		return NS_ERROR;
-		break;
 	}
 	++procs;
     }

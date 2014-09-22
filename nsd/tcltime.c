@@ -334,7 +334,6 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         Tcl_SetObjResult(interp, Tcl_NewLongObj((long)(opt == TSecondsIdx ?
 						       result.sec : result.usec)));
         return TCL_OK;
-        break;
 
     case TFormatIdx:
         if (objc != 3) {
@@ -354,7 +353,6 @@ NsTclTimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 	  Tcl_DStringResult(interp, dsPtr);
 	}
 	return TCL_OK;
-	break;  
     }
 
     Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&result));
