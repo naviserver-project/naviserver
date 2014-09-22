@@ -152,7 +152,7 @@ Ns_ModuleInit(char *server, char *module)
     Ns_Set         *set;
     Ns_DString      ds;
     Mod		   *modPtr;
-    static int	    initialized;
+    static int	    initialized = 0;
 
     /*
      * On the first (and likely only) load, register

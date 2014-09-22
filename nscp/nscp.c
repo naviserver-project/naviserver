@@ -281,7 +281,8 @@ AcceptProc(NS_SOCKET lsock, void *arg, int why)
 	       ns_sockstrerror(ns_sockerrno));
 	ns_free(sessPtr);
     } else {
-        static int next;
+        static int next = 0;
+
 	sessPtr->id = ++next;
 	Ns_ThreadCreate(EvalThread, sessPtr, 0, NULL);
     }

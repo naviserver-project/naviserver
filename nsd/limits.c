@@ -53,10 +53,10 @@ static void LimitsResult(Tcl_Interp *interp, NsLimits *limitsPtr);
  * Static variables defined in this file.
  */
 
-static int            limid;
-static NsLimits      *defLimitsPtr; /* Default limits if none registered. */
-static Tcl_HashTable  limtable;     /* Process-wide hash of limits. */
-static Ns_Mutex       lock;         /* Lock for limtable and urlspecific data. */
+static int            limid = 0;
+static NsLimits      *defLimitsPtr;     /* Default limits if none registered. */
+static Tcl_HashTable  limtable;         /* Process-wide hash of limits. */
+static Ns_Mutex       lock = 0;         /* Lock for limtable and urlspecific data. */
 
 
 

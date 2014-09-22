@@ -97,7 +97,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp,
     CONST char           *script;
     int                   isNew, global = NS_FALSE;
     static Tcl_HashTable  runTable;
-    static int            initialized;
+    static int            initialized = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-global", Ns_ObjvBool,  &global, (void *) NS_TRUE},

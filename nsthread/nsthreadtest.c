@@ -54,17 +54,17 @@ extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * Collection of synchronization objects for tests.
  */
 
-static Ns_Mutex block;
-static Ns_Mutex slock;
-static Ns_Mutex lock;
-static Ns_Cond  cond;
+static Ns_Mutex block = NULL;
+static Ns_Mutex slock = NULL;
+static Ns_Mutex lock  = NULL;
+static Ns_Cond  cond  = NULL;
 static Ns_Tls   key;
 static Ns_RWLock rwlock;
 static Ns_Sema  sema;
 static Ns_Cs    cs;
-static Ns_Mutex dlock;
-static Ns_Cond  dcond;
-static int      dstop;
+static Ns_Mutex dlock = NULL;
+static Ns_Cond  dcond = NULL;
+static int      dstop = 0;
 
 /*
  * Msg -
@@ -354,9 +354,9 @@ DumperThread(void *arg)
  * can call Ns API's which will cleanup at thread exit.
  */
 
-static Ns_Mutex plock;
-static Ns_Cond pcond;
-static int pgo;
+static Ns_Mutex plock = NULL;
+static Ns_Cond pcond  = NULL;
+static int pgo = 0;
 
 void
 PthreadTlsCleanup(void *arg)

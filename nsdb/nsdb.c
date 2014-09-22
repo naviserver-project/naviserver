@@ -57,7 +57,7 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
-    static int once;
+    static int once = 0;
 
     if (!once) {
 	NsDbInitPools();

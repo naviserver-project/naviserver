@@ -42,7 +42,7 @@
 #else
 # define DEVNULL "/dev/null"
 # ifdef USE_DUPHIGH
-static int dupHigh;
+static int dupHigh = 0;
 # endif
 #endif
 
@@ -56,9 +56,9 @@ typedef struct Tmp {
     int fd;
 } Tmp;
 
-static Tmp *firstTmpPtr;
-static Ns_Mutex lock;
-static int devNull;
+static Tmp      *firstTmpPtr = NULL;
+static Ns_Mutex  lock;
+static int       devNull;
 
 /*
  * The following constants are defined for this file

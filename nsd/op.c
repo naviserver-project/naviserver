@@ -61,8 +61,8 @@ static void FreeReq(void *arg);
  * Static variables defined in this file.
  */
 
-static Ns_Mutex       ulock;
-static int            uid;
+static Ns_Mutex       ulock = NULL;
+static int            uid = 0;
 
 
 /*

@@ -289,7 +289,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
         ns_free(ePtr);
     } else {
         do {
-	    static int nextId;
+	    static int nextId = 0;
 
             id = nextId++;
             if (nextId < 0) {

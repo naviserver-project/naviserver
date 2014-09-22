@@ -58,7 +58,7 @@ static SERVICE_STATUS_HANDLE hStatus = 0;
 static SERVICE_STATUS curStatus;
 static Ns_Tls tls;
 static int service = 0;
-static int tick;
+static int tick = 0;
 static int sigpending = 0;
 static int servicefailed = 0;
 

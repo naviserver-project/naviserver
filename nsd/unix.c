@@ -50,8 +50,8 @@ static void Abort(int signal);
  * Static variables defined in this file.
  */
 
-static Ns_Mutex lock;
-static int debugMode;
+static Ns_Mutex lock = NULL;
+static int debugMode = 0;
 
 
 /*

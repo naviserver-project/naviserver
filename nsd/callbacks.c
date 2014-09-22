@@ -72,9 +72,9 @@ static Callback *firstReady;
 static Ns_Mutex  lock;
 static Ns_Cond   cond;
 
-static int       shutdownPending;
-static int       shutdownComplete;
-static Ns_Thread shutdownThread;
+static int       shutdownPending  = 0;
+static int       shutdownComplete = 0;
+static Ns_Thread shutdownThread   = NULL;
 
 
 

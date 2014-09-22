@@ -51,8 +51,8 @@ static void AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state);
  * Static variables defined in this file.
  */
 
-static Ns_Tls argtls;
-static int    poolid;
+static Ns_Tls argtls = NULL;
+static int    poolid = 0;
 
 /*
  * Debugging stuff
