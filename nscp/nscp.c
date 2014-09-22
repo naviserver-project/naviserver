@@ -166,7 +166,7 @@ Ns_ModuleInit(char *server, char *module)
      * In default local mode just create empty user without password
      */
 
-    if (set == NULL && !strcmp(addr, "127.0.0.1")) {
+    if (set == NULL && STREQ(addr, "127.0.0.1")) {
         Ns_DString ds;
 
         Ns_DStringInit(&ds);

@@ -421,7 +421,7 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
      * define how to verify user
      */
 
-    if (!strcmp(auth, "Basic")) {
+    if (STREQ(auth, "Basic")) {
 
         /*
          * Basic Authentiction: Verify user password (if any).
@@ -439,16 +439,17 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
                 goto done;
             }
         }
-    } else
+    } else {
 
         /*
          * Digest Authentication
          */
 
-    if (!strcmp(auth, "Digest")) {
+	if (STREQ(auth, "Digest")) {
 
+	}
     }
-
+    
     /*
      * Check for a vaild user address.
      */

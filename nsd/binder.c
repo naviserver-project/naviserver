@@ -255,7 +255,9 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
-        if (!strcmp(path, (char*) Tcl_GetHashValue(hPtr))) {
+	char *value = (char*) Tcl_GetHashValue(hPtr);
+
+        if (STREQ(path, value)) {
             sock = (int)(intptr_t) Tcl_GetHashKey(&preboundRaw, hPtr);
             Tcl_DeleteHashEntry(hPtr);
             break;
@@ -640,7 +642,7 @@ PreBind(char *line)
             proto = str;
         }
 
-        if (!strcmp(proto,"tcp") && port > 0) {
+        if (STREQ(proto,"tcp") && port > 0) {
             if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: tcp: invalid address: %s:%d",
                        addr, port);
@@ -663,7 +665,7 @@ PreBind(char *line)
             Ns_Log(Notice, "prebind: tcp: %s:%d = %d", addr, port, sock);
         }
 
-        if (!strcmp(proto,"udp") && port > 0) {
+        if (STREQ(proto,"udp") && port > 0) {
             if (Ns_GetSockAddr(&sa, addr, port) != NS_OK) {
                 Ns_Log(Error, "prebind: udp: invalid address: %s:%d",
                        addr, port);

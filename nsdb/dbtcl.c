@@ -611,22 +611,27 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         break;
 
     case SP_SETPARAM:
-	if (objc != 7) {
-            Tcl_WrongNumArgs(interp, 2, objv, "dbId paramname type in|out value");
+	{
+	    char *arg5;
+
+	    if (objc != 7) {
+		Tcl_WrongNumArgs(interp, 2, objv, "dbId paramname type in|out value");
+	    }
+	    arg5 = Tcl_GetString(objv[5]);
+
+	    if (!STREQ(arg5, "in") && !STREQ(arg5, "out")) {
+		Tcl_SetResult(interp, "inout parameter of setparam must "
+			      "be \"in\" or \"out\"", TCL_STATIC);
+		return TCL_ERROR;
+	    }
+	    if (Ns_DbSpSetParam(handlePtr, Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
+				arg5, Tcl_GetString(objv[6])) != NS_OK) {
+		return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+	    } else {
+		Tcl_SetResult(interp, "1", TCL_STATIC);
+	    }
+	    break;
 	}
-	if (!STREQ(Tcl_GetString(objv[5]), "in") &&
-            !STREQ(Tcl_GetString(objv[5]), "out")) {
-	    Tcl_SetResult(interp, "inout parameter of setparam must "
-	    	      "be \"in\" or \"out\"", TCL_STATIC);
-	    return TCL_ERROR;
-	}
-	if (Ns_DbSpSetParam(handlePtr, Tcl_GetString(objv[3]), Tcl_GetString(objv[4]),
-            Tcl_GetString(objv[5]), Tcl_GetString(objv[6])) != NS_OK) {
-	    return DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-	} else {
-	    Tcl_SetResult(interp, "1", TCL_STATIC);
-	}
-        break;
     }
 
     return TCL_OK;

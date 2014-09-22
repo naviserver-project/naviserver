@@ -1582,7 +1582,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
         Ns_MutexLock(&poolPtr->lock);
         proxyPtr = poolPtr->runPtr;
         while (proxyPtr != NULL) {
-            if (proxyId == NULL || !strcmp(proxyId, proxyPtr->id)) {
+            if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
                 FmtActiveProxy(interp, proxyPtr);
             }
             proxyPtr = proxyPtr->runPtr;
@@ -1612,7 +1612,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
                 case PClearIdx: proxyPtr = poolPtr->firstPtr; break;
                 }
                 while (proxyPtr != NULL) {
-                    if (proxyId == NULL || !strcmp(proxyId, proxyPtr->id)) {
+                    if (proxyId == NULL || STREQ(proxyId, proxyPtr->id)) {
                         if (proxyPtr->slavePtr) {
                             CloseSlave(proxyPtr->slavePtr,proxyPtr->conf.twait);
                             proxyPtr->slavePtr = NULL;

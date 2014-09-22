@@ -890,7 +890,8 @@ AddType(CONST char *ext, CONST char *type)
     he = Tcl_CreateHashEntry(&types, ext, &isNew);
     if (isNew == 0) {
 	char *oldType = Tcl_GetHashValue(he);
-	if (strcmp(oldType, type) == 0) {
+
+	if (STREQ(oldType, type)) {
 	    Ns_Log(Warning, 
 		   "config mimtypes: redefine mime type for %s with identical value (%s); statement useless",
 		   ext, oldType);
