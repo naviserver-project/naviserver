@@ -625,19 +625,21 @@ NsTclSelectObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
         status = TCL_OK;
 
     } else {
-
+	
         /*
          * Actually perform the select.
          */
+	NS_SOCKET sock;
+
         
         do {
-            i = select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
-        } while (i < 0 && errno == EINTR);
-        if (i == INVALID_SOCKET) {
+            sock = select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
+        } while (sock == INVALID_SOCKET && errno == EINTR);
+        if (sock == INVALID_SOCKET) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
                                    Tcl_PosixError(interp), NULL);
         } else {
-            if (i == 0) {
+            if (sock == 0) {
 
                 /*
                  * The sets can have any random value now

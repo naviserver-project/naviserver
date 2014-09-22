@@ -729,7 +729,7 @@ Ns_VarExists(CONST char *server, CONST char *array, CONST char *key)
 
 int
 Ns_VarSet(CONST char *server, CONST char *array, CONST char *key,
-          CONST char *value, size_t len)
+          CONST char *value, ssize_t len)
 {
     NsServer      *servPtr;
     Array         *arrayPtr;

@@ -265,7 +265,8 @@ static int CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr);
 
 static Junction *JunctionGet(NsServer *servPtr, int id);
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
-                        int flags, void (*deletefunc)(void *));
+                        int flags, void (*deletefunc)(void *))
+        NS_GNUC_NONNULL(2);
 static void *JunctionFind(Junction *juncPtr, char *seq, int fast);
 static void *JunctionFindExact(Junction *juncPtr, char *seq, int flags,
                                int fast);
@@ -1375,7 +1376,8 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, int flags,
     char       *p;
     int         depth;
     size_t      l;
-
+    
+    assert(seq != NULL);
     depth = 0;
     Ns_DStringInit(&dsFilter);
 
@@ -1397,8 +1399,8 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, int flags,
      *
      * dsWord will eventually be used to set or find&reuse a channel filter.
      */
-    
-    if ((p != NULL) && (depth > 0) && (strchr(p, '*') || strchr(p, '?'))) {
+    assert(p != NULL);
+    if ((depth > 0) && (strchr(p, '*') || strchr(p, '?'))) {
         Ns_DStringAppend(&dsFilter, p);
         *p = '\0';
     } else {

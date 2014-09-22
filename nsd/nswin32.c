@@ -1070,7 +1070,7 @@ ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
     FD_ZERO(&efds);
 
     for (i = 0; i < nfds; ++i) {
-        if (fds[i].fd == -1) {
+        if (fds[i].fd == INVALID_SOCKET) {
             continue;
         }
 #ifndef _MSC_VER
@@ -1102,7 +1102,7 @@ ns_poll(struct pollfd *fds, unsigned long int nfds, int timo)
     }
     for (i = 0; i < nfds; ++i) {
         fds[i].revents = 0;
-        if (fds[i].fd == -1) {
+        if (fds[i].fd == INVALID_SOCKET) {
             continue;
         }
         if (FD_ISSET(fds[i].fd, &ifds)) {

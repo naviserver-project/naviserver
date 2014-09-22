@@ -247,12 +247,10 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
 
     case SListIdx:
         tablePtr = &itPtr->sets;
-        if (tablePtr != NULL) {
-            hPtr = Tcl_FirstHashEntry(tablePtr, &search);
-            while (hPtr != NULL) {
-                Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
-                hPtr = Tcl_NextHashEntry(&search);
-            }
+	hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+	while (hPtr != NULL) {
+	    Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
+	    hPtr = Tcl_NextHashEntry(&search);
         }
         break;
 
