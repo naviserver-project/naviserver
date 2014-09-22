@@ -688,9 +688,11 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache", ObjvCache, &cPtr, arg},
+        {"cache", ObjvCache, &cPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
+    args[0].arg = arg; /* pass non-constant arg for "cache" */
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
