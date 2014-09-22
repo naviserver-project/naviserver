@@ -2438,7 +2438,7 @@ SockParse(Sock *sockPtr, int spooler)
 
                 if (s != NULL) {
                     /* Lower case is in the standard, capitalized by Mac OS X */
-                    if (strcmp(s,"chunked") == 0 || strcmp(s,"Chunked") == 0 ) {
+                    if (STREQ(s, "chunked") || STREQ(s, "Chunked")) {
                         Tcl_WideInt expected;
                         
                         reqPtr->chunkStartOff = reqPtr->coff;
@@ -4442,8 +4442,7 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
      * into an infinte loop.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
-        int unused NS_GNUC_UNUSED =
-	  write(fd, buffer, nbyte);
+	int UNUSED(len) = write(fd, buffer, nbyte);
         return NS_ERROR;
     }
 
@@ -4594,14 +4593,12 @@ AsyncWriterThread(void *arg)
 		 * Drain the queue from everything
 		 */
 		for (curPtr = writePtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    int unused NS_GNUC_UNUSED = 
-		      write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    int UNUSED(len) = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		writePtr = NULL;
 
 		for (curPtr = queuePtr->sockPtr; curPtr;  curPtr = curPtr->nextPtr) {
-		    int unused NS_GNUC_UNUSED = 
-		      write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		    int UNUSED(len) = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		}
 		queuePtr->sockPtr = NULL;
 
@@ -4671,8 +4668,7 @@ AsyncWriterThread(void *arg)
 	    curPtr = queuePtr->sockPtr;
 	    assert(writePtr == NULL);
 	    while (curPtr != NULL) {
-	      int unused NS_GNUC_UNUSED = 
-		write(curPtr->fd, curPtr->buf, curPtr->bufsize);
+		int UNUSED(len) = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 		curPtr = curPtr->nextPtr;
 	    }
 	} else {

@@ -107,6 +107,19 @@
 # define NS_GNUC_SCANF(fmtarg, firstvararg)
 #endif
 
+/*
+ * Tries to use gcc __attribute__ unused and mangles the name, so the
+ * attribute could not be used, if declared as unused.
+ */
+#ifdef UNUSED
+#elif __GNUC_PREREQ(2, 7)
+# define UNUSED(x) UNUSED_ ## x __attribute__((unused))
+#elif defined(__LCLINT__)
+# define UNUSED(x) /*@unused@*/ x
+#else
+# define UNUSED(x) x
+#endif
+
 
 #if __GNUC_PREREQ(2,96)
 # define NS_GNUC_MALLOC __attribute__((__malloc__))
