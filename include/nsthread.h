@@ -330,9 +330,11 @@ typedef struct DIR_ *DIR;
 # endif
 #endif /* _WIN32 */
 
-/*
+/***************************************************************
+ *
  * Common part, Unix and Windows
- */
+ *
+ ***************************************************************/
 
 #include "tcl.h"
 #include <limits.h>
