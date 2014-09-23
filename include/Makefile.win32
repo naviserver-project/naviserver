@@ -1,0 +1,252 @@
+#
+# The contents of this file are subject to the AOLserver Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://aolserver.com/.
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is AOLserver Code and related documentation
+# distributed by AOL.
+#
+# The Initial Developer of the Original Code is America Online,
+# Inc. Portions created by AOL are Copyright (C) 1999 America Online,
+# Inc. All Rights Reserved.
+#
+# Alternatively, the contents of this file may be used under the terms
+# of the GNU General Public License (the "GPL"), in which case the
+# provisions of GPL are applicable instead of those above.  If you wish
+# to allow use of your version of this file only under the terms of the
+# GPL and not to allow others to use your version of this file under the
+# License, indicate your decision by deleting the provisions above and
+# replace them with the notice and other provisions required by the GPL.
+# If you do not delete the provisions above, a recipient may use your
+# version of this file under either the License or the GPL.
+#
+#
+# $Header: /Volumes/DATEN0/develop/local/CVS/dev/naviserver/include/Makefile.win32,v 1.1.1.1 2008/02/18 15:49:10 zoran Exp $
+
+#
+# Makefile.win32 --
+#
+# 	Common nmake file for Naviserver Win32 builds.
+#
+# Usage:
+#
+#	Create a stub makefile which defines one or more of the following
+#	and includes this file:
+#
+#	DLL	Basename of a DLL, e.g., "DLL=myapi" builds "myapi.dll" and
+#		"myapi.lib".
+#
+#	PGM	Basename of a program, e.g., "PGM=mybin" builds "mybin.exe".
+#
+#	OBJS	List of objects to be built for DLL or MOD.
+#
+#	PGMOBJS	List of objects for PGM.  The program will also be linked
+#		against a DLL, if any.
+#
+#	In addition, you can also define:
+#
+#	NAVISERVER  Installation directory (default "c:\Naviserver").
+#	TCLPATH	    Path to Tcl installation
+#	TCLLIB	    Tcl .lib file to use for linking
+#	DEBUG	    If == 1 build debug version.
+#	DEFS	    Additional CFLAGS, e.g., "/D MYDLL_EXPORTS.".
+#	LIBS	    Additional libraries, e.g., "/LIBPATH:c:\fun fun.lib"
+#	INSTALL	    Additional install directives, e.g., "install-config".
+#	NSBUILD	    If set, build from sources.
+#
+
+
+!ifndef NAVISERVER
+NAVISERVER = C:\Naviserver
+!endif
+
+
+#
+# Update options when building from sources or installed location.
+#
+
+!ifndef NSBUILD
+INCDIR = $(NAVISERVER)\include
+LIBS = $(LIBS) /LIBPATH:"$(NAVISERVER)\lib" nsd.lib nsthread.lib
+!else
+INCDIR = ..\include
+!if "$(DLL)" != "nsthread"
+LIBS = $(LIBS) /LIBPATH:"..\nsthread" nsthread.lib
+!if "$(DLL)" != "nsd"
+LIBS = $(LIBS) /LIBPATH:"..\nsd" nsd.lib
+!endif
+!endif
+!endif
+
+
+
+#
+# Install directories.
+#
+
+INSTBIN	= "$(NAVISERVER)\bin\"
+INSTLIB	= "$(NAVISERVER)\lib\"
+INSTINC	= "$(NAVISERVER)\include\"
+INSTTCL	= "$(NAVISERVER)\tcl\"
+
+#
+# Install utilities
+#
+
+INSTALL_DATA	= copy /y
+INSTALL_SH	= copy /y
+RM		= del /q /f
+
+#
+# Tcl directories
+#
+
+!ifdef TCLPATH
+DEFS	= $(DEFS) /I "$(TCLPATH)/include"
+LIBS	= $(LIBS) /LIBPATH:"$(TCLPATH)/lib"
+!endif
+!ifdef TCLLIB
+LIBS	= $(LIBS) $(TCLLIB)
+!else
+LIBS	= $(LIBS) tcl84t.lib
+!endif
+
+#
+# Common compiler and linker options.
+#
+
+COPTS	= /W1 /nologo /c
+
+DEFS	= $(DEFS) /D "_WINDOWS" /D "TCL_THREADS=1" \
+		  /D "WIN32" /D "FD_SETSIZE=128" \
+		  /D "NO_CONST=1" /D "_MBCS" \
+		  /D _CRT_SECURE_NO_WARNINGS \
+ 		  /D _CRT_SECURE_NO_DEPRECATE \
+		  /D _CRT_NONSTDC_NO_DEPRECATE
+
+LOPTS   = /NOLOGO /SUBSYSTEM:CONSOLE /OPT:NOREF /OPT:NOWIN98 /OPT:NOICF
+
+
+#
+# Variables for building a DLL module.
+#
+
+!ifdef DLL
+DLLBIN  = $(DLL).dll
+DLLLIB  = $(DLL).lib
+BUILD	= $(BUILD) $(DLLBIN)
+INSTALL = $(INSTALL) install-dll
+CLEAN	= $(CLEAN) clean-dll
+OBJS	= $(OBJS) $(WINOBJS) $(DLLOBJS) $(MODOBJS)
+HDRS	= $(HDRS) $(INCDIR)/ns.h $(INCDIR)/nsthread.h
+!ifdef DLLINIT
+DLLOPTS	= /EXPORT:$(DLLINIT)
+!else
+DLLOPTS = /EXPORT:Ns_ModuleInit
+!endif
+!endif
+
+
+#
+# Variables for building a program, optionally with cooresponding DLL.
+#
+
+!ifdef PGM
+PGMBIN	 = $(PGM).exe
+BUILD	 = $(BUILD) $(PGMBIN)
+INSTALL	 = $(INSTALL) install-pgm
+CLEAN  	 = $(CLEAN) clean-pgm
+!ifdef DLL
+PGMLIBS  = $(PGMLIBS) $(DLLLIB)
+!endif
+!endif
+
+
+#
+# Update options for release or debug build.
+#
+
+!if "$(DEBUG)" == "1"
+COPTS	= $(COPTS) /MTd /Od /Zi /RTC1
+DEFS	= $(DEFS) /D "_DEBUG"
+LOPTS	= $(LOPTS) /DEBUG
+!else
+COPTS	= $(COPTS) /MT /O2
+DEFS	= $(DEFS) /D "NDEBUG"
+!endif
+
+
+#
+# Final flags for compiler and linker
+#
+
+CFLAGS  = $(COPTS) /I "$(INCDIR)" $(DEFS)
+LIBS	= $(LIBS) $(TCLLIB) kernel32.lib advapi32.lib ws2_32.lib user32.lib
+
+
+#
+# Rules.
+#
+
+all build: $(BUILD)
+
+install: $(INSTALL)
+
+clean: $(CLEAN)
+
+!ifdef DLL
+$(DLLBIN): $(OBJS)
+	link.exe $(LOPTS) $(DLLOPTS) /DLL /OUT:$(DLLBIN) /IMPLIB:$(DLLLIB) $(OBJS) $(DLLLIBS) $(LIBS)
+!endif
+
+!ifdef PGM
+$(PGMBIN): $(PGMOBJS) $(DLLLIB)
+	link.exe $(LOPTS) $(PGMOPTS) /OUT:$(PGMBIN) $(PGMOBJS) $(PGMLIBS) $(LIBS)
+!endif
+
+!ifdef OBJS
+$(OBJS): $(HDRS)
+!endif
+
+.c.o:
+	$(CC) $(CFLAGS) /c /Fo$*.o $*.c
+
+install-dll: $(DLLBIN) $(DLLLIB)
+	$(INSTALL_SH) $(DLLBIN) $(INSTBIN)
+	$(INSTALL_SH) $(DLLLIB) $(INSTLIB)
+!ifdef DLLHDRS
+	$(INSTALL_DATA) $(DLLHDRS) $(INSTINC)
+!endif
+!ifdef DLLTCL
+	$(INSTALL_DATA) $(DLLTCL) $(INSTTCL)
+!endif
+
+install-pgm: $(PGMBIN)
+	$(INSTALL_SH) $(PGMBIN) $(INSTBIN)
+
+install-tcl:
+	$(INSTALL_DATA) *.tcl $(INSTTCL)
+
+install-include:
+	$(INSTALL_DATA) *.h $(INSTINC)
+	$(INSTALL_DATA) Makefile.win32 $(INSTINC)
+
+install-lib:
+	$(INSTALL_DATA) *.lib $(INSTLIB)
+
+clean-extra:
+	$(RM) *.exp *.ilk *.pdb *.manifest
+
+clean-dll: clean-extra
+	$(RM) $(OBJS) $(DLLBIN) $(DLLLIB)
+
+clean-pgm:
+	$(RM) $(PGMBIN) $(PGMOBJS)
+
+.PHONY: clean-dll clean-pgm install-dll install-pgm
