@@ -47,9 +47,12 @@
 
 #include <nscheck.h>
 
-#if defined(__GNUC__) || defined(__MINGW32__)
+/*
+ * AFAICT, there is no reason to conditionalize NSTHREAD_EXPORTS
+ * depending on the compiler used, it should ALWAYS be set:
+ * --atp@piskorski.com, 2014/09/23 13:14 EDT
+ */
 #define NSTHREAD_EXPORTS
-#endif
 
 #if defined(__GNUC__) && __GNUC__ > 2
 /* Use gcc branch prediction hint to minimize cost of e.g. DTrace
