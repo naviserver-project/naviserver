@@ -144,7 +144,19 @@ install-examples:
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/examples/; \
 	done
 
-DTPLITE=dtplite
+
+# On some systems you may need a special shell script to control the
+# PATH seen by dtplite, as that influences which versions of tclsh and
+# Tcllib dtplite uses.  I personally found it necessary to use a
+# one-line script like this for the DTPLITE command:
+#   env PATH=/usr/sbin:/usr/bin:/sbin:/bin dtplite "$@"
+# --atp@piskorski.com, 2014/08/27 10:52 EDT
+
+ifeq ($(DTPLITE),)
+  DTPLITE=dtplite
+else
+  # Do nothing, use the environment variable as is.
+endif
 
 build-doc:
 	$(RM) doc/html doc/man doc/tmp
