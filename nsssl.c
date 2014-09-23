@@ -455,7 +455,7 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *sock
  */
 
 static ssize_t
-Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flags)
+Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned int flags)
 {
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
@@ -537,7 +537,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flag
  */
 
 static ssize_t
-Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, int flags)
+Send(Ns_Sock *sock, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr, unsigned int flags)
 {
     SSLContext *sslPtr = sock->arg;
     int rc, size, decork;
