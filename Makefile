@@ -220,7 +220,7 @@ helgrind: all
 
 cppcheck:
 	cppcheck --enable=all nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
-		-I./include -I/usr/include $(DEFS)
+		-I./include -I/usr/include -D__x86_64__ $(DEFS)
 
 checkexports: all
 	@for i in $(dirs); do \

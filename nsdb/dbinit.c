@@ -108,20 +108,21 @@ typedef struct ServData {
  * Local functions defined in this file
  */
 
-static Pool    *GetPool(char *pool);
-static void     ReturnHandle(Handle * handle);
-static int      IsStale(Handle *, time_t now);
-static int	Connect(Handle *);
-static Pool    *CreatePool(char *pool, char *path, char *driver);
-static int	IncrCount(Pool *poolPtr, int incr);
-static ServData *GetServer(char *server);
-static Ns_TlsCleanup FreeTable;
-static Ns_Callback CheckPool;
-static Ns_ArgProc CheckArgProc;
+static Pool     *GetPool(char *pool)                NS_GNUC_NONNULL(1);
+static void      ReturnHandle(Handle *handle)       NS_GNUC_NONNULL(1);
+static int       IsStale(Handle *, time_t now)      NS_GNUC_NONNULL(1);
+static int	 Connect(Handle *)                  NS_GNUC_NONNULL(1);
+static Pool     *CreatePool(char *pool, char *path, char *driver);
+static int	 IncrCount(Pool *poolPtr, int incr) NS_GNUC_NONNULL(1);
+static ServData *GetServer(char *server)            NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file
  */
+
+static Ns_TlsCleanup FreeTable;
+static Ns_Callback CheckPool;
+static Ns_ArgProc CheckArgProc;
 
 static Tcl_HashTable poolsTable;
 static Tcl_HashTable serversTable;
@@ -802,6 +803,8 @@ GetPool(char *pool)
 {
     Tcl_HashEntry   *hPtr;
 
+    assert(pool != NULL);
+
     hPtr = Tcl_FindHashEntry(&poolsTable, pool);
     if (hPtr == NULL) {
 	return NULL;
@@ -835,6 +838,8 @@ static void
 ReturnHandle(Handle *handlePtr)
 {
     Pool         *poolPtr;
+
+    assert(handlePtr != NULL);
 
     poolPtr = handlePtr->poolPtr;
     if (poolPtr->firstPtr == NULL) {
@@ -870,11 +875,13 @@ ReturnHandle(Handle *handlePtr)
 static int
 IsStale(Handle *handlePtr, time_t now)
 {
-    time_t    minAccess, minOpen;
-    
+    assert(handlePtr != NULL);
+
     if (handlePtr->connected) {
+        time_t    minAccess, minOpen;
+
 	minAccess = now - handlePtr->poolPtr->maxidle;
-	minOpen = now - handlePtr->poolPtr->maxopen;
+	minOpen   = now - handlePtr->poolPtr->maxopen;
 	if ((handlePtr->poolPtr->maxidle && handlePtr->atime < minAccess) || 
 	    (handlePtr->poolPtr->maxopen && (handlePtr->otime < minOpen)) ||
 	    (handlePtr->stale == NS_TRUE) ||
@@ -1101,6 +1108,8 @@ Connect(Handle *handlePtr)
 {
     int status;
 
+    assert(handlePtr != NULL);
+
     status = NsDbOpen((Ns_DbHandle *) handlePtr);
     if (status != NS_OK) {
     	handlePtr->connected = NS_FALSE;
@@ -1137,6 +1146,8 @@ IncrCount(Pool *poolPtr, int incr)
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry *hPtr;
     int prev, count, isNew;
+
+    assert(poolPtr != NULL);
 
     tablePtr = Ns_TlsGet(&tls);
     if (tablePtr == NULL) {
@@ -1180,6 +1191,8 @@ static ServData *
 GetServer(char *server)
 {
     Tcl_HashEntry *hPtr;
+
+    assert(server != NULL);
 
     hPtr = Tcl_FindHashEntry(&serversTable, server);
     if (hPtr != NULL) {
