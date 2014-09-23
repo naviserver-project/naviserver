@@ -310,13 +310,14 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 
             if (bodyLength > 0) {
 		char hdr[32];
+		size_t len;
 
                 /*
                  * Output length header followed by content and then trailer.
                  */
 
-                towrite += Ns_SetVec(sbufPtr, sbufIdx++,
-                                     hdr, sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength));
+		len = sprintf(hdr, "%lx\r\n", (unsigned long)bodyLength);
+                towrite += Ns_SetVec(sbufPtr, sbufIdx++, hdr, len);
 
                 (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
                 sbufIdx += nbufs;
