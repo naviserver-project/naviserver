@@ -16,21 +16,25 @@
 
 
 
-#
-# Set path where Tcl is installed
-#
+TCLPATH	= C:\P\Tcl85
+TCLLIB  = tcl85.lib
 
-TCLPATH	= C:\Naviserver
-TCLLIB  = tcl84t.lib
+## TODO: Why is it necessary to set these variables here?  Shouldn't
+## we just run the appropriate vcvars32.bat or other setup script?
+## --atp@piskorski.com, 2014/09/17 12:05 EDT
 
-#
-# Set path to the Visual Studio compiler
-#
+# We definitely need this file:
+#   "C:\Program Files\Microsoft SDKs\Windows\v7.1\Include\Windows.h"
 
-VC	= C:\Program Files\Microsoft Visual Studio 8\VC
+#VC	= $(MY_VC)
+#MSDK	= $(MY_MSDK)
+VC	= C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC
+MSDK	= C:\Program Files\Microsoft SDKs\Windows\v7.1
 
-LIB	= $(VC)\Lib;$(VC)\PlatformSDK\Lib;$(TCLPATH)\Lib
-INCLUDE	= $(VC)\ATLMFC\Include;$(VC)\Include;$(VC)\PlatformSDK\Include;$(TCLPATH)\Include
+LIB	= $(LIB);$(MSDK)\Lib;$(TCLPATH)\lib
+#LIB	= $(LIB);$(VC)\Lib
+INCLUDE	= $(INCLUDE);$(MSDK)\Include;$(TCLPATH)\include
+#INCLUDE	= $(INCLUDE);$(VC)\include
 
 
 #
@@ -43,7 +47,7 @@ NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DE
 #
 # Build all core modules
 #
-all: 
+all:
 	cd nsthread
 	$(NMAKE)
 	cd ..\nsd
@@ -58,7 +62,7 @@ all:
 	$(NMAKE)
 	cd ..\nslog
 	$(NMAKE)
-	cd ../nsperm
+	cd ..\nsperm
 	$(NMAKE)
 	cd ..
 

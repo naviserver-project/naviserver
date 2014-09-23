@@ -108,8 +108,8 @@ RM		= del /q /f
 #
 
 !ifdef TCLPATH
-DEFS	= $(DEFS) /I "$(TCLPATH)/include"
-LIBS	= $(LIBS) /LIBPATH:"$(TCLPATH)/lib"
+DEFS	= $(DEFS) /I "$(TCLPATH)\include"
+LIBS	= $(LIBS) /LIBPATH:"$(TCLPATH)\lib"
 !endif
 !ifdef TCLLIB
 LIBS	= $(LIBS) $(TCLLIB)
@@ -130,7 +130,7 @@ DEFS	= $(DEFS) /D "_WINDOWS" /D "TCL_THREADS=1" \
  		  /D _CRT_SECURE_NO_DEPRECATE \
 		  /D _CRT_NONSTDC_NO_DEPRECATE
 
-LOPTS   = /NOLOGO /SUBSYSTEM:CONSOLE /OPT:NOREF /OPT:NOWIN98 /OPT:NOICF
+LOPTS   = /NOLOGO /SUBSYSTEM:CONSOLE /OPT:NOREF /OPT:NOICF
 
 
 #
@@ -143,13 +143,18 @@ DLLLIB  = $(DLL).lib
 BUILD	= $(BUILD) $(DLLBIN)
 INSTALL = $(INSTALL) install-dll
 CLEAN	= $(CLEAN) clean-dll
-OBJS	= $(OBJS) $(WINOBJS) $(DLLOBJS) $(MODOBJS)
-HDRS	= $(HDRS) $(INCDIR)/ns.h $(INCDIR)/nsthread.h
+OBJS	= $(OBJS) $(WINOBJS) $(DLLOBJS) $(MODOBJS) $(LIBOBJS)
+HDRS	= $(HDRS) $(INCDIR)\ns.h $(INCDIR)\nsthread.h
+
 !ifdef DLLINIT
 DLLOPTS	= /EXPORT:$(DLLINIT)
+!elseif "$(DLL)" == "nsthread"
+# nsthread does NOT define Ns_ModuleInit function:
+DLLOPTS	= 
 !else
 DLLOPTS = /EXPORT:Ns_ModuleInit
 !endif
+
 !endif
 
 
