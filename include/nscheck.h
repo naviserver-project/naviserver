@@ -113,13 +113,12 @@
  */
 #ifdef UNUSED
 #elif __GNUC_PREREQ(2, 7)
-# define UNUSED(x) UNUSED_ ## x __attribute__((unused))
+# define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
 #elif defined(__LCLINT__)
 # define UNUSED(x) /*@unused@*/ x
 #else
 # define UNUSED(x) x
 #endif
-
 
 #if __GNUC_PREREQ(2,96)
 # define NS_GNUC_MALLOC __attribute__((__malloc__))

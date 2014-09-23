@@ -912,7 +912,7 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
          Tcl_DString *dsPtr)
 {
     int           fargc;
-    char        **fargv;
+    CONST char  **fargv = NULL;
     NS_SOCKET     sock;
     Tcl_DString   ds;
 
@@ -920,7 +920,7 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
     if (dsPtr == NULL) {
         dsPtr = &ds;
     }
-    Tcl_SplitList(interp, flist, &fargc, (CONST char***)&fargv);
+    Tcl_SplitList(interp, flist, &fargc, &fargv);
     while (fargc--) {
         Ns_TclGetOpenFd(interp, fargv[fargc], write, (int *) &sock);
         if (FD_ISSET(sock, setPtr)) {
@@ -960,12 +960,11 @@ static int
 GetSet(Tcl_Interp *interp, char *flist, int write, fd_set **setPtrPtr,
        fd_set *setPtr, int *maxPtr)
 {
-    int       fargc, status;
-    NS_SOCKET sock;
-    char    **fargv;
+    int          fargc, status;
+    NS_SOCKET    sock;
+    CONST char **fargv = NULL;
     
-    if (Tcl_SplitList(interp, flist, &fargc,
-                      (CONST char***)&fargv) != TCL_OK) {
+    if (Tcl_SplitList(interp, flist, &fargc, &fargv) != TCL_OK) {
         return TCL_ERROR;
     }
     if (fargc == 0) {

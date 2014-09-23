@@ -886,10 +886,11 @@ NsFreeRequest(Request *reqPtr)
 void
 NsSockClose(Sock *sockPtr, int keep)
 {
-    Driver *drvPtr = sockPtr->drvPtr;
+    Driver *drvPtr;
     int     trigger = 0;
 
     assert(sockPtr != NULL);
+    drvPtr = sockPtr->drvPtr;
 
     Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", sockPtr, keep);
 
@@ -1863,9 +1864,10 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
 static void
 SockRelease(Sock *sockPtr, int reason, int err)
 {
-    Driver *drvPtr = sockPtr->drvPtr;
+    Driver *drvPtr;
 
     assert(sockPtr != NULL);
+    drvPtr = sockPtr->drvPtr;
 
     SockError(sockPtr, reason, err);
     SockClose(sockPtr, 0);
@@ -2204,7 +2206,7 @@ ChunkedDecode(Request *reqPtr, int update)
 static int
 SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 {
-    Driver       *drvPtr = sockPtr->drvPtr;
+    Driver       *drvPtr;
     Request      *reqPtr = NULL;
     Tcl_DString  *bufPtr = NULL;
 
@@ -2214,6 +2216,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     ssize_t      n;
 
     assert(sockPtr != NULL);
+    drvPtr = sockPtr->drvPtr;
 
     /*
      * In case of keepwait, the accept time is not meaningful and
@@ -2399,9 +2402,10 @@ SockParse(Sock *sockPtr, int spooler)
     Request      *reqPtr;
     Tcl_DString  *bufPtr;
     char          save;
-    Driver       *drvPtr = sockPtr->drvPtr;
+    Driver       *drvPtr;
 
     assert(sockPtr != NULL);
+    drvPtr = sockPtr->drvPtr;
 
     NsUpdateProgress((Ns_Sock *) sockPtr);
 

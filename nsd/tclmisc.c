@@ -970,7 +970,6 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
 #endif
     uint8_t *p = (uint8_t *) ctx->key + i;	/* First unused byte */
-    uint32_t t;
 
     /* Set the first char of padding to 0x80. There is always room. */
     *p++ = 0x80;
@@ -1005,7 +1004,8 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     /*memcpy(digest, ctx->iv, sizeof(digest));*/
 
     for (i = 0; i < SHA_HASHWORDS; i++) {
-        t = ctx->iv[i];
+	uint32_t t = ctx->iv[i];
+
         digest[i * 4 + 0] = (uint8_t) (t >> 24);
         digest[i * 4 + 1] = (uint8_t) (t >> 16);
         digest[i * 4 + 2] = (uint8_t) (t >> 8);

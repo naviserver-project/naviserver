@@ -296,7 +296,6 @@ SockCallbackThread(void *ignored)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     struct pollfd *pfds;
-    time_t         now;
 
     Ns_ThreadSetName("-socks-");
     Ns_WaitForStartup();
@@ -315,6 +314,7 @@ SockCallbackThread(void *ignored)
 
     while (1) {
 	int stop, nfds, pollto;
+	time_t now;
 
 	/*
 	 * Grab the list of any queue updates and the shutdown

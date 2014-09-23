@@ -553,7 +553,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    assert(cPtr);
+    assert(cPtr != NULL);
     cache = cPtr->cache;
 
     Ns_CacheLock(cache);
@@ -696,7 +696,8 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    assert(cPtr);
+
+    assert(cPtr != NULL);
     cache = cPtr->cache;
     Ns_DStringInit(&ds);
 

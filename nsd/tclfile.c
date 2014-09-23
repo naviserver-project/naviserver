@@ -75,7 +75,7 @@ GetOpenChannel(Tcl_Interp *interp, Tcl_Obj *obj, int write,
 }
 
 int
-Ns_TclGetOpenChannel(Tcl_Interp *interp, char *chanId, int write,
+Ns_TclGetOpenChannel(Tcl_Interp *interp, CONST char *chanId, int write,
                      int check, Tcl_Channel *chanPtr)
 {
     int mode;
@@ -119,7 +119,7 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, char *chanId, int write,
  */
 
 int
-Ns_TclGetOpenFd(Tcl_Interp *interp, char *chanId, int write, int *fdPtr)
+Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr)
 {
     Tcl_Channel chan;
     ClientData  data;
