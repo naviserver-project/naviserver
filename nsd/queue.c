@@ -41,7 +41,9 @@
  * Local functions defined in this file
  */
 
-static void ConnRun(ConnThreadArg *argPtr, Conn *connPtr); 
+static void ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void CreateConnThread(ConnPool *poolPtr);
 static void JoinConnThread(Ns_Thread *threadPtr);
 static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state);
@@ -1360,6 +1362,9 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     int       status = NS_OK;
     Sock     *sockPtr = connPtr->sockPtr;
     char     *auth;
+
+    assert(argPtr != NULL);
+    assert(connPtr != NULL);
 
     /*
      * Re-initialize and run the connection. 

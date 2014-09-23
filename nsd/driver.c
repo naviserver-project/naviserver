@@ -132,33 +132,54 @@ static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 static Ns_ThreadProc AsyncWriterThread;
 
-static NS_SOCKET DriverListen(Driver *drvPtr);
-static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr);
-static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs);
-static int     DriverKeep(Sock *sockPtr);
-static void    DriverClose(Sock *sockPtr);
+static NS_SOCKET DriverListen(Driver *drvPtr)
+    NS_GNUC_NONNULL(1);
+static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
+    NS_GNUC_NONNULL(1);
+static int     DriverKeep(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static void    DriverClose(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
 
-static int   SockSetServer(Sock *sockPtr);
-static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr);
-static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr);
-static void  SockPrepare(Sock *sockPtr);
-static void  SockRelease(Sock *sockPtr, int reason, int err);
+static int   SockSetServer(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static int   SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
+    NS_GNUC_NONNULL(1);
+static int   SockQueue(Sock *sockPtr, Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1);
+static void  SockPrepare(Sock *sockPtr)
+    NS_GNUC_NONNULL(1);
+static void  SockRelease(Sock *sockPtr, int reason, int err)
+    NS_GNUC_NONNULL(1);
 static void  SockError(Sock *sockPtr, int reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code, char *msg);
 static void  SockTrigger(NS_SOCKET sock);
-static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout);
-static void  SockClose(Sock *sockPtr, int keep);
-static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr);
-static int   SockParse(Sock *sockPtr, int spooler);
-static void  SockPoll(Sock *sockPtr, int type, PollData *pdata);
-static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr);
+static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
+    NS_GNUC_NONNULL(1);
+static void  SockClose(Sock *sockPtr, int keep)
+    NS_GNUC_NONNULL(1);
+static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1);
+static int   SockParse(Sock *sockPtr, int spooler)
+    NS_GNUC_NONNULL(1);
+static void  SockPoll(Sock *sockPtr, int type, PollData *pdata)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc);
 static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name);
-static void  PollCreate(PollData *pdata);
-static void  PollFree(PollData *pdata);
-static void  PollReset(PollData *pdata);
-static int   PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr);
-static int   PollWait(PollData *pdata, int waittime);
+static void  PollCreate(PollData *pdata)
+    NS_GNUC_NONNULL(1);
+static void  PollFree(PollData *pdata)
+    NS_GNUC_NONNULL(1);
+static void  PollReset(PollData *pdata)
+    NS_GNUC_NONNULL(1);
+static int   PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(1);
+static int   PollWait(PollData *pdata, int waittime)
+    NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file.
@@ -766,6 +787,8 @@ NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr)
 {
     Request *reqPtr;
 
+    assert(sockPtr != NULL);
+
     if (sockPtr->reqPtr == NULL) {
         int status;
 
@@ -866,6 +889,8 @@ NsSockClose(Sock *sockPtr, int keep)
     Driver *drvPtr = sockPtr->drvPtr;
     int     trigger = 0;
 
+    assert(sockPtr != NULL);
+
     Ns_Log(DriverDebug, "NsSockClose sockPtr %p keep %d", sockPtr, keep);
 
     SockClose(sockPtr, keep);
@@ -904,6 +929,8 @@ static NS_SOCKET
 DriverListen(Driver *drvPtr)
 {
     NS_SOCKET sock;
+
+    assert(drvPtr != NULL);
 
     sock = (*drvPtr->listenProc)((Ns_Driver *) drvPtr,
                                  drvPtr->bindaddr,
@@ -946,6 +973,8 @@ DriverAccept(Sock *sockPtr)
 {
     int n = sizeof(struct sockaddr_in);
 
+    assert(sockPtr != NULL);
+
     return (*sockPtr->drvPtr->acceptProc)((Ns_Sock *) sockPtr,
                                           sockPtr->drvPtr->sock,
                                           (struct sockaddr *) &sockPtr->sa, &n);
@@ -972,6 +1001,8 @@ static ssize_t
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
     Ns_Time timeout;
+    
+    assert(sockPtr != NULL);
 
     timeout.sec = sockPtr->drvPtr->recvwait;
     timeout.usec = 0;
@@ -1081,6 +1112,7 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags)
 static int
 DriverKeep(Sock *sockPtr)
 {
+    assert(sockPtr != NULL);
     return (*sockPtr->drvPtr->keepProc)((Ns_Sock *) sockPtr);
 }
 
@@ -1104,6 +1136,7 @@ DriverKeep(Sock *sockPtr)
 static void
 DriverClose(Sock *sockPtr)
 {
+    assert(sockPtr != NULL);
     (*sockPtr->drvPtr->closeProc)((Ns_Sock *) sockPtr);
 }
 
@@ -1495,12 +1528,14 @@ DriverThread(void *arg)
 static void
 PollCreate(PollData *pdata)
 {
+    assert(pdata != NULL);
     memset((pdata), 0, sizeof(PollData));
 }
 
 static void
 PollFree(PollData *pdata)
 {
+    assert(pdata != NULL);
     ns_free(pdata->pfds);
     memset((pdata), 0, sizeof(PollData));
 }
@@ -1508,6 +1543,7 @@ PollFree(PollData *pdata)
 static void
 PollReset(PollData *pdata)
 {
+    assert(pdata != NULL);
     pdata->nfds = 0;
     pdata->timeout.sec = TIME_T_MAX;
     pdata->timeout.usec = 0;
@@ -1516,6 +1552,7 @@ PollReset(PollData *pdata)
 static int
 PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
 {
+    assert(pdata != NULL);
     /*
      * Grow the pfds array if necessary.
      */
@@ -1549,6 +1586,8 @@ PollWait(PollData *pdata, int waittime)
 {
     int n;
 
+    assert(pdata != NULL);
+
     do {
         n = ns_poll(pdata->pfds, pdata->nfds, waittime);
     } while (n < 0  && errno == EINTR);
@@ -1580,6 +1619,8 @@ static void
 SockPrepare(Sock *sockPtr)
 {
     Request *reqPtr;
+
+    assert(sockPtr != NULL);
 
     if (sockPtr->reqPtr != NULL) {
         return;
@@ -1622,6 +1663,7 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
     /*
      *  Verify the conditions, Request struct should exists already
      */
+    assert(sockPtr != NULL);
 
     if (!SockSetServer(sockPtr)) {
         SockRelease(sockPtr, SOCK_SERVERREJECT, 0);
@@ -1660,6 +1702,8 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
 static void
 SockPoll(Sock *sockPtr, int type, PollData *pdata)
 {
+    assert(sockPtr != NULL);
+    assert(pdata != NULL);
     sockPtr->pidx = PollSet(pdata, sockPtr->sock, type, &sockPtr->timeout);
 }
 
@@ -1682,6 +1726,7 @@ SockPoll(Sock *sockPtr, int type, PollData *pdata)
 static void
 SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
 {
+    assert(sockPtr != NULL);
     sockPtr->timeout = *nowPtr;
     Ns_IncrTime(&sockPtr->timeout, timeout, 0);
 }
@@ -1709,6 +1754,8 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
 {
     Sock    *sockPtr;
     int      status;
+
+    assert(drvPtr != NULL);
 
     /*
      * Allocate and/or initialize a Sock structure.
@@ -1816,6 +1863,8 @@ static void
 SockRelease(Sock *sockPtr, int reason, int err)
 {
     Driver *drvPtr = sockPtr->drvPtr;
+
+    assert(sockPtr != NULL);
 
     SockError(sockPtr, reason, err);
     SockClose(sockPtr, 0);
@@ -2017,6 +2066,8 @@ SockTrigger(NS_SOCKET fd)
 static void
 SockClose(Sock *sockPtr, int keep)
 {
+    assert(sockPtr != NULL);
+
     if (keep) {
         keep = DriverKeep(sockPtr);
     }
@@ -2160,6 +2211,8 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     char         tbuf[16384];
     size_t       len, nread;
     ssize_t      n;
+
+    assert(sockPtr != NULL);
 
     /*
      * In case of keepwait, the accept time is not meaningful and
@@ -2346,6 +2399,8 @@ SockParse(Sock *sockPtr, int spooler)
     Tcl_DString  *bufPtr;
     char          save;
     Driver       *drvPtr = sockPtr->drvPtr;
+
+    assert(sockPtr != NULL);
 
     NsUpdateProgress((Ns_Sock *) sockPtr);
 
@@ -2714,6 +2769,8 @@ SockSetServer(Sock *sockPtr)
     char          *host = NULL;
     int            status = 1;
 
+    assert(sockPtr != NULL);
+
     sockPtr->servPtr  = sockPtr->drvPtr->servPtr;
     sockPtr->location = sockPtr->drvPtr->location;
 
@@ -2999,6 +3056,8 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     int trigger = 0;
     SpoolerQueue *queuePtr;
 
+    assert(drvPtr != NULL);
+    assert(sockPtr != NULL);
     /*
      * Get the next spooler thread from the list, all spooler requests are
      * rotated between all spooler threads

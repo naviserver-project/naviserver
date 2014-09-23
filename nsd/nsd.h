@@ -1037,7 +1037,7 @@ NS_EXTERN void NsStopServers(Ns_Time *toPtr);
 NS_EXTERN void NsStartServer(NsServer *servPtr);
 NS_EXTERN void NsStopServer(NsServer *servPtr);
 NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
-NS_EXTERN void NsWakeupDriver(Driver *drvPtr);
+NS_EXTERN void NsWakeupDriver(Driver *drvPtr) NS_GNUC_NONNULL(1);
 
 /*
  * Url-specific data routines.
@@ -1064,10 +1064,12 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
 NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr);
 NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map);
-NS_EXTERN void NsSockClose(Sock *sockPtr, int keep);
+NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
+    NS_GNUC_NONNULL(1);
 NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
 
-NS_EXTERN Request *NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr);
+NS_EXTERN Request *NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr)
+    NS_GNUC_NONNULL(1);
 NS_EXTERN void NsFreeRequest(Request *reqPtr);
 
 NS_EXTERN void NsWriterLock(void);
