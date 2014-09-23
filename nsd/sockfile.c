@@ -42,7 +42,7 @@
  */
 
 static ssize_t SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-                      Ns_Time *timeoutPtr, int flags,
+                      Ns_Time *timeoutPtr, unsigned int flags,
                       Ns_DriverSendProc *sendProc);
 
 static Ns_DriverSendProc SendBufs;
@@ -153,7 +153,7 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, int flags)
+                    Ns_Time *timeoutPtr, unsigned int flags)
 {
 
     ssize_t       sent, towrite, nwrote;
@@ -248,7 +248,7 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t tosend, Ns_Time *timeoutPtr
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, int flags)
+                    Ns_Time *timeoutPtr, unsigned int flags)
 {
     return NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
                                       SendBufs);
@@ -279,7 +279,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 
 ssize_t
 NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                           Ns_Time *timeoutPtr, int flags,
+                           Ns_Time *timeoutPtr, unsigned int flags,
                            Ns_DriverSendProc *sendProc)
 {
     ssize_t       sent, nwrote;
@@ -439,7 +439,7 @@ Ns_SockCork(Ns_Sock *sock, int cork)
 
 static ssize_t
 SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-       Ns_Time *timeoutPtr, int flags,
+       Ns_Time *timeoutPtr, unsigned int flags,
        Ns_DriverSendProc *sendPtr)
 {
     char          buf[16384];
@@ -500,7 +500,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
 
 ssize_t
 SendBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
-         Ns_Time *timeoutPtr, int flags)
+         Ns_Time *timeoutPtr, unsigned int flags)
 {
     return Ns_SockSendBufs(sock, bufs, nbufs, timeoutPtr, flags);
 }

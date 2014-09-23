@@ -81,7 +81,7 @@ static int HdrEq(Ns_Set *set, char *name, char *value);
  */
 
 int
-Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t towrite, int flags)
+Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t towrite, unsigned int flags)
 {
     struct iovec sbuf;
 
@@ -91,7 +91,7 @@ Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t towrite, int flags)
 }
 
 int
-Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
+Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Conn              *connPtr   = (Conn *) conn;
     Ns_DString         encDs, gzDs;
@@ -228,7 +228,7 @@ CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
  */
 
 int
-Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, int flags)
+Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, unsigned int flags)
 {
     struct iovec vbuf;
 
@@ -239,7 +239,7 @@ Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, int flags)
 }
 
 int
-Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
+Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Conn         *connPtr = (Conn *) conn;
     Ns_DString    ds;
@@ -1056,8 +1056,8 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
  */
 
 int
-Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, int flags,
-		   Ns_DString *dsPtr)
+Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, 
+		   unsigned int flags, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;
     CONST char *keep;

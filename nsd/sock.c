@@ -59,7 +59,7 @@
 static NS_SOCKET SockConnect(char *host, int port, char *lhost, int lport,
 			     int async);
 static NS_SOCKET SockSetup(NS_SOCKET sock);
-static int SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags);
+static int SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
 
 
 /*
@@ -177,7 +177,7 @@ Ns_SumVec(struct iovec *bufs, int nbufs)
 
 int
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-                Ns_Time *timeoutPtr, int flags)
+                Ns_Time *timeoutPtr, unsigned int flags)
 {
     int n;
 
@@ -210,7 +210,7 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 
 ssize_t
 Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
-                Ns_Time *timeoutPtr, int flags)
+                Ns_Time *timeoutPtr, unsigned int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
     int           nwrote = 0, sent = -1;
@@ -1104,7 +1104,7 @@ SockSetup(NS_SOCKET sock)
  */
 
 static int
-SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, int flags)
+SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 {
     int n;
 

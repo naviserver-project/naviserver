@@ -77,9 +77,9 @@ typedef struct Parse {
  * Local functions defined in this file
  */
 
-static void AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags);
+static void AppendBlock(Parse *parsePtr, char *s, char *e, int type, unsigned int flags);
 static void AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae,
-                      char *se, int flags);
+                      char *se, unsigned int flags);
 static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[], int type);
 static void AppendLengths(AdpCode *codePtr, int *lens, int *lines);
@@ -228,7 +228,8 @@ RegisterObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 void
-NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, int flags, CONST char* file)
+NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
+	   unsigned int flags, CONST char* file)
 {
     int             level, stream, streamdone;
     Tag            *tagPtr = NULL;
@@ -514,7 +515,7 @@ NsAdpFreeCode(AdpCode *codePtr)
  */
 
 static void
-AppendBlock(Parse *parsePtr, char *s, char *e, int type, int flags)
+AppendBlock(Parse *parsePtr, char *s, char *e, int type, unsigned int flags)
 {
     AdpCode *codePtr = parsePtr->codePtr;
     ssize_t   len;
@@ -792,7 +793,7 @@ GetScript(char *tag, char *a, char *e, int *streamPtr)
  */
 
 static void
-AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, int flags)
+AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, unsigned int flags)
 {
     Tcl_DString script;
 

@@ -349,12 +349,12 @@ typedef struct Ns_Request {
  */
 
 typedef struct Ns_Conn {
-    Ns_Request *request;
-    Ns_Set     *headers;
-    Ns_Set     *outputheaders;
-    Ns_Set     *auth;
-    size_t      contentLength;
-    int         flags;		/* Currently, only NS_CONN_CLOSED. */
+    Ns_Request  *request;
+    Ns_Set      *headers;
+    Ns_Set      *outputheaders;
+    Ns_Set      *auth;
+    size_t       contentLength;
+    unsigned int flags;		/* Currently, only NS_CONN_CLOSED. */
 } Ns_Conn;
 
 /*
@@ -483,17 +483,17 @@ typedef NS_DRIVER_ACCEPT_STATUS
 
 typedef ssize_t
 (Ns_DriverRecvProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, int flags)
+                    Ns_Time *timeoutPtr, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
 (Ns_DriverSendProc)(Ns_Sock *sock, struct iovec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, int flags)
+                    Ns_Time *timeoutPtr, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
 (Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
-                        Ns_Time *timeoutPtr, int flags)
+                        Ns_Time *timeoutPtr, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef int
@@ -792,7 +792,7 @@ typedef struct Ns_CompressStream {
 #ifdef HAVE_ZLIB_H
     z_stream   z;
 #endif
-    int        flags;
+    unsigned int flags;
 
 } Ns_CompressStream;
 
@@ -847,7 +847,7 @@ typedef struct {
     int         spoolFd;          /* fd of spool file */
     char       *spoolFileName;    /* filename of spoolfile */
     Ns_Mutex    lock;             /* needed for switching modes (spooling to file/memory) */
-    int         flags;
+    unsigned int       flags;
     Ns_CompressStream *compress;
     Ns_Time     timeout;
     Ns_Time     stime;
@@ -874,8 +874,8 @@ Ns_ConfigBool(CONST char *section, CONST char *key, int def)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConfigFlag(CONST char *section, CONST char *key, int flag, int def,
-              int *flagsPtr)
+Ns_ConfigFlag(CONST char *section, CONST char *key, unsigned int flag, int def,
+              unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 NS_EXTERN int
@@ -1107,19 +1107,19 @@ Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN int
-Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t towrite, int flags)
+Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t towrite, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
+Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, int flags)
+Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, int flags)
+Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -1205,7 +1205,7 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVChars);
 
 NS_EXTERN int
-Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt length, int flags, Ns_DString *dsPtr)
+Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt length, unsigned int flags, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -1220,7 +1220,7 @@ Ns_ConnSetSecureCookie(Ns_Conn *conn,  char *name, char *value, time_t maxage);
 
 NS_EXTERN void
 Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
-                                  char *domain, char *path, int flags);
+                                  char *domain, char *path, unsigned int flags);
 NS_EXTERN void
 Ns_ConnDeleteCookie(Ns_Conn *conn, char *name, char *domain, char *path);
 
@@ -1907,7 +1907,7 @@ Ns_GetThreadServer(void);
 
 NS_EXTERN void
 Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
-                   Ns_OpProc *proc, Ns_Callback *del, void *arg, int flags)
+                   Ns_OpProc *proc, Ns_Callback *del, void *arg, int unsigned flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_NONNULL(4);
 
@@ -1920,7 +1920,7 @@ Ns_RegisterProxyRequest(CONST char *server, CONST char *method, CONST char *prot
 NS_EXTERN void
 Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
-              int *flagsPtr)
+              unsigned int *flagsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6)
     NS_GNUC_NONNULL(7);
@@ -1937,7 +1937,7 @@ Ns_UnRegisterProxyRequest(CONST char *server, CONST char *method,
 
 NS_EXTERN void
 Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
-                       int flags)
+                       unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
@@ -2250,16 +2250,16 @@ NS_EXTERN int
 Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval);
 
 NS_EXTERN int
-Ns_ScheduleDaily(Ns_SchedProc *proc, void *arg, int flags,
+Ns_ScheduleDaily(Ns_SchedProc *proc, void *arg, unsigned int flags,
 			    int hour, int minute, Ns_SchedProc *cleanupProc);
 
 NS_EXTERN int
-Ns_ScheduleWeekly(Ns_SchedProc *proc, void *arg, int flags,
+Ns_ScheduleWeekly(Ns_SchedProc *proc, void *arg, unsigned int flags,
 			     int day, int hour, int minute,
 			     Ns_SchedProc *cleanupProc);
 
 NS_EXTERN int
-Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
+Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
 			     int interval, Ns_SchedProc *cleanupProc);
 
 NS_EXTERN void
@@ -2448,7 +2448,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 
 NS_EXTERN ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                    Ns_Time *timeoutPtr, int flags)
+                    Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
@@ -2482,10 +2482,10 @@ Ns_SockSend(NS_SOCKET sock, void *vbuf, size_t nsend,
 	    Ns_Time *timeoutPtr);
 NS_EXTERN int
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-		Ns_Time *timeoutPtr, int flags);
+		Ns_Time *timeoutPtr, unsigned int flags);
 NS_EXTERN ssize_t
 Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
-		Ns_Time *timeoutPtr, int flags);
+		Ns_Time *timeoutPtr, unsigned int flags);
 
 NS_EXTERN NS_SOCKET
 Ns_BindSock(struct sockaddr_in *psa) 
@@ -2832,7 +2832,7 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *proc)
  * tclset.c:
  */
 
-NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, int flags)
+NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, char *setId)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -2875,11 +2875,11 @@ Ns_AbsoluteUrl(Ns_DString *pds, CONST char *url, CONST char *baseurl)
 NS_EXTERN void
 Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
                         Ns_Url2FileProc *proc, Ns_Callback *deletecb,
-                        void *arg, int flags)
+                        void *arg, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, int inherit)
+Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
@@ -2952,7 +2952,7 @@ Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsP
 
 NS_EXTERN void
 Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
-                  void *data, int flags, void (*deletefunc)(void *))
+                  void *data, unsigned int flags, void (*deletefunc)(void *))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
@@ -2965,12 +2965,12 @@ Ns_UrlSpecificGetFast(CONST char *server, CONST char *method, CONST char *url, i
 
 NS_EXTERN void *
 Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
-                       int id, int flags)
+                       int id, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *
 Ns_UrlSpecificDestroy(CONST char *server, CONST char *method, CONST char *url,
-                      int id, int flags)
+                      int id, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*

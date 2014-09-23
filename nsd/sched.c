@@ -58,7 +58,7 @@ typedef struct Event {
     time_t          lastqueue;  /* Last time queued for run. */
     time_t          laststart;  /* Last time run started. */
     time_t          lastend;    /* Last time run finished. */
-    int             flags;      /* One or more of NS_SCHED_ONCE, NS_SCHED_THREAD,
+    unsigned int    flags;      /* One or more of NS_SCHED_ONCE, NS_SCHED_THREAD,
                                  * NS_SCHED_DAILY, or NS_SCHED_WEEKLY. */
     int             interval;   /* Interval specification. */
     Ns_SchedProc   *proc;       /* Procedure to execute. */
@@ -200,7 +200,7 @@ Ns_ScheduleProc(Ns_Callback *proc, void *arg, int thread, int interval)
  */
 
 int
-Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, int flags,
+Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, unsigned int flags,
     int hour, int minute, Ns_SchedProc *cleanupProc)
 {
     int seconds;
@@ -230,7 +230,7 @@ Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, int flags,
  */
 
 int
-Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, int flags,
+Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
     int day, int hour, int minute, Ns_SchedProc *cleanupProc)
 {
     int seconds;
@@ -262,7 +262,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, int flags,
  */
 
 int
-Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, int flags,
+Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
     int interval, Ns_SchedProc *deleteProc)
 {
     Event          *ePtr;

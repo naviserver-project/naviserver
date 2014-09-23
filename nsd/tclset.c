@@ -54,7 +54,7 @@ static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry,
                         Ns_Set **setPtr);
 static int LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry,
                            Ns_Set **setPtr);
-static int EnterSet(NsInterp *itPtr, Ns_Set *set, int flags);
+static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags);
 
 
 /*
@@ -75,7 +75,7 @@ static int EnterSet(NsInterp *itPtr, Ns_Set *set, int flags);
  */
 
 int
-Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, int flags)
+Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
 {
     NsInterp *itPtr = NsGetInterpData(interp);
 
@@ -624,7 +624,7 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* ar
  */
 
 static int
-EnterSet(NsInterp *itPtr, Ns_Set *set, int flags)
+EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
 {
     Tcl_HashTable  *tablePtr;
     Tcl_HashEntry  *hPtr;

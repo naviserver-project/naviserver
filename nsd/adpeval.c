@@ -60,7 +60,7 @@ typedef struct Page {
     off_t          size;     /* Original size of file. */
     dev_t          dev;      /* Device and inode to try to catch modifications ... */
     ino_t          ino;      /* ...below the mtime granularity. */
-    int            flags;    /* Flags used on last compile, e.g., SAFE. */
+    unsigned int   flags;    /* Flags used on last compile, e.g., SAFE. */
     int            refcnt;   /* Refcnt of current interps using page. */
     int            evals;    /* Count of page evaluations. */
     int            locked;   /* Page locked for cache update. */
@@ -96,7 +96,7 @@ typedef struct InterpPage {
  * Local functions defined in this file.
  */
 
-static Page *ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags);
+static Page *ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags);
 static int AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);
 static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *file,
                    AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
@@ -794,7 +794,7 @@ NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[
  */
 
 static Page *
-ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, int flags)
+ParseFile(NsInterp *itPtr, char *file, struct stat *stPtr, unsigned int flags)
 {
     Tcl_Interp   *interp = itPtr->interp;
     Tcl_Encoding  encoding;

@@ -124,7 +124,8 @@ ConfigServerProxy(CONST char *server)
 
 void
 Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
-                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg, int flags)
+                   Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg, 
+		   unsigned int flags)
 {
     Req *reqPtr;
 
@@ -159,7 +160,8 @@ Ns_RegisterRequest(CONST char *server, CONST char *method, CONST char *url,
 
 void
 Ns_GetRequest(CONST char *server, CONST char *method, CONST char *url,
-              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr, int *flagsPtr)
+              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr, 
+	      unsigned int *flagsPtr)
 {
     Req *reqPtr;
 
@@ -224,7 +226,7 @@ Ns_UnRegisterRequest(CONST char *server, CONST char *method, CONST char *url,
 
 void
 Ns_UnRegisterRequestEx(CONST char *server, CONST char *method, CONST char *url,
-                       int flags)
+                       unsigned int flags)
 {
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificDestroy(server, method, url, uid, flags);

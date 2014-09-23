@@ -1029,7 +1029,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
  */
 
 ssize_t
-NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
+NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Ns_Time timeout;
 
@@ -1071,7 +1071,7 @@ NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags)
  */
 
 ssize_t
-NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags)
+NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 {
     Driver  *drvPtr = sockPtr->drvPtr;
     ssize_t  n;
@@ -1166,7 +1166,8 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
     char          *errstr, c, drain[1024];
-    int            flags, stopping, pollto, accepted;
+    int            stopping, pollto, accepted;
+    unsigned int   flags;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
     PollData       pdata;
 

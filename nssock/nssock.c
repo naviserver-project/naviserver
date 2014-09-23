@@ -204,7 +204,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
 
 static ssize_t
 Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
-     Ns_Time *timeoutPtr, int flags)
+     Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t n;
     
@@ -236,7 +236,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 
 static ssize_t
 Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
-     Ns_Time *timeoutPtr, int flags)
+     Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t   n;
     int       decork;
@@ -307,7 +307,7 @@ Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
 
 static ssize_t
 SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
-         Ns_Time *timeoutPtr, int flags)
+         Ns_Time *timeoutPtr, unsigned int flags)
 {
     return Ns_SockSendFileBufs(sock, bufs, nbufs, timeoutPtr, flags);
 }

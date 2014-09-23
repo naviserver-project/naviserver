@@ -277,7 +277,7 @@ typedef struct AdpFrame {
     Tcl_Obj          **objv;
     char	      *savecwd;
     char	      *file;
-    int                flags;
+    unsigned int       flags;
     Ns_DString         cwdbuf;
     Tcl_DString	      *outputPtr;
 } AdpFrame;
@@ -427,7 +427,7 @@ typedef struct Driver {
     int acceptsize;                     /* Number requests to accept at once */
     int loggingFlags;                   /* Logging control flags */
 
-    int flags;                          /* Driver state flags. */
+    unsigned int flags;                 /* Driver state flags. */
     Ns_Thread thread;                   /* Thread id to join on shutdown. */
     Ns_Mutex lock;                      /* Lock to protect lists below. */
     Ns_Cond cond;                       /* Cond to signal reader threads,
@@ -470,7 +470,7 @@ typedef struct Sock {
     char               *location;
     int                 keep;
     int                 pidx;            /* poll() index */
-    int                 flags;           /* state flags used by driver */
+    unsigned int        flags;           /* state flags used by driver */
     Ns_Time             timeout;
     Request            *reqPtr;
 
@@ -540,7 +540,7 @@ typedef struct Conn {
     Ns_Set *auth;
 
     size_t contentLength;
-    int flags;
+    unsigned int flags;
 
     /*
      * Visible only in a Conn:
@@ -859,7 +859,7 @@ typedef struct NsServer {
      */
 
     struct {
-        int flags;
+        unsigned int flags;
         int tracesize;
         size_t bufsize;
         size_t cachesize;
@@ -941,7 +941,7 @@ typedef struct NsInterp {
     Ns_Conn *conn;
 
     struct {
-        int  flags;
+        unsigned int  flags;
         char auth[16];
         char form[16];
         char hdrs[16];
@@ -954,7 +954,7 @@ typedef struct NsInterp {
      */
 
     struct adp {
-	int		   flags;
+	unsigned int	   flags;
 	int		   exception;
 	int		   refresh;
 	size_t		   bufsize;
@@ -1050,12 +1050,12 @@ NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
  * Socket driver callbacks.
  */
 
-NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, int flags);
-NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, int flags);
+NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags);
+NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags);
 
 NS_EXTERN ssize_t
 NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
-                           Ns_Time *timeoutPtr, int flags,
+                           Ns_Time *timeoutPtr, unsigned int flags,
                            Ns_DriverSendProc *sendProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
@@ -1210,7 +1210,7 @@ NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[],
 			char *file, Ns_Time *ttlPtr);
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
-		       int flags, CONST char* file);
+		       unsigned int flags, CONST char* file);
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);
 NS_EXTERN void NsAdpLogError(NsInterp *itPtr);
 NS_EXTERN void NsAdpInit(NsInterp *itPtr);

@@ -152,7 +152,7 @@ DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
 
 void
 Ns_ConnSetCookieEx(Ns_Conn *conn,  char *name, char *value, time_t maxage,
-                   char *domain, char *path, int flags)
+                   char *domain, char *path, unsigned int flags)
 {
     Ns_DString  cookie;
 
@@ -284,7 +284,8 @@ NsTclSetCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
-    int       flags = 0, secure = 0, scriptable = 0, discard = 0, replace = 0;
+    int       secure = 0, scriptable = 0, discard = 0, replace = 0;
+    unsigned int flags = 0;
     time_t    maxage;
     Ns_Time  *expiresPtr = NULL;
 
@@ -439,7 +440,8 @@ NsTclDeleteCookieObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *domain = NULL, *path = NULL;
-    int       flags = NS_COOKIE_SCRIPTABLE, secure = 0, replace = 0;
+    unsigned int flags = NS_COOKIE_SCRIPTABLE;
+    int       secure = 0, replace = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-secure",  Ns_ObjvBool,   &secure,  NULL},

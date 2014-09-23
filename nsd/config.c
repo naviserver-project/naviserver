@@ -133,8 +133,8 @@ Ns_ConfigBool(CONST char *section, CONST char *key, int def)
  */
 
 int
-Ns_ConfigFlag(CONST char *section, CONST char *key, int flag, int def,
-              int *flagsPtr)
+Ns_ConfigFlag(CONST char *section, CONST char *key, unsigned int flag, int def,
+              unsigned int *flagsPtr)
 {
     CONST char *s;
     int value = 0, found = NS_FALSE;

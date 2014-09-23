@@ -138,7 +138,7 @@ ConfigServerUrl2File(CONST char *server)
 void
 Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
                         Ns_Url2FileProc *proc, Ns_Callback *deleteCallback, void *arg,
-                        int flags)
+                        unsigned int flags)
 {
     NsServer *servPtr = NsGetServer(server);
     Url2File *u2fPtr;
@@ -173,7 +173,7 @@ Ns_RegisterUrl2FileProc(CONST char *server, CONST char *url,
  */
 
 void
-Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, int flags)
+Ns_UnRegisterUrl2FileProc(CONST char *server, CONST char *url, unsigned int flags)
 {
     Ns_MutexLock(&ulock);
     Ns_UrlSpecificDestroy(server, "x", url, uid, flags);
@@ -474,9 +474,9 @@ int
 NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
                                 Tcl_Obj *CONST objv[])
 {
-    NsInterp   *itPtr = arg;
-    CONST char *url = NULL, *basepath = NULL;
-    int         flags = 0;
+    NsInterp     *itPtr = arg;
+    CONST char   *url = NULL, *basepath = NULL;
+    unsigned int  flags = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
