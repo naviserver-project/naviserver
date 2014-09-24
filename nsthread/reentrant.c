@@ -44,12 +44,12 @@
 
 typedef struct Tls {
     char	    	nabuf[16];
+    char		asbuf[27];
 #ifndef _WIN32
     char	       *stbuf;
     struct tm   	gtbuf;
     struct tm   	ltbuf;
     char		ctbuf[27];
-    char		asbuf[27];
     struct {
 	struct dirent ent;
 	char name[PATH_MAX+1];
@@ -119,7 +119,16 @@ ns_ctime(const time_t * clock)
 char *
 ns_asctime(const struct tm *tmPtr)
 {
-    return asctime(tmPtr);
+    Tls *tlsPtr = GetTls();
+    error_t errNum;
+
+    errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
+    if (errNum) {
+      Ns_Log(Warning, "ns_asciitime: call to asctime_s returned an error code %d",
+	     int(errNum));
+     }
+
+    return tlsPtr->asbuf;
 }
 
 char *
