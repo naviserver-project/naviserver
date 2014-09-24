@@ -1469,17 +1469,14 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
     char    *p;
     size_t   l;
     ssize_t  i;
-    int      depth = 0, doit, n = 0;
+    int      depth = 0, doit;
     void    *data;
 
     /*
      * After this loop, p will point at the last element in the sequence.
-     * n will be the number of elements in the sequence.
      */
     
-    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) {
-        n++;
-    }
+    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) ;
 
     /*
      * Check filters from most restrictive to least restrictive
@@ -1600,17 +1597,13 @@ JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags, int fast)
     char    *p;
     size_t  l;
     ssize_t i;
-    int     depth = 0;
     void   *data = NULL;
 
     /*
-     * Set p to the last element of the sequence, and
-     * depth to the number of elements in the sequence.
+     * Set p to the last element of the sequence.
      */
 
-    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l) {
-        depth++;
-    }
+    for (p = seq; p[l = strlen(p) + 1] != '\0'; p += l);
 
     /*
      * First, loop through all the channels that have non-"*"
