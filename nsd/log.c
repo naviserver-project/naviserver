@@ -193,7 +193,7 @@ NsInitLog(void)
     for (i = Dev +1; i < severityCount; i++) {
         snprintf(buf, sizeof(buf), "%d", i);
         hPtr = Tcl_CreateHashEntry(&severityTable, buf, &isNew);
-        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) i);
+        Tcl_SetHashValue(hPtr, INT2PTR(i));
         severityConfig[i].string = Tcl_GetHashKey(&severityTable, hPtr);
         severityConfig[i].enabled = 0;
     }
@@ -207,7 +207,7 @@ NsInitLog(void)
 
         strcpy(buf, severityConfig[i].string);
         hPtr = Tcl_CreateHashEntry(&severityTable, Ns_StrToLower(buf), &isNew);
-        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) i);
+        Tcl_SetHashValue(hPtr, INT2PTR(i));
     }
 }
 
@@ -746,7 +746,7 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK) {
         return TCL_ERROR;
     }
-    severity = (Ns_LogSeverity)addrPtr;
+    severity = PTR2INT(addrPtr);
 
     if (objc == 3) {
         Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
@@ -886,7 +886,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
 
         if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
-	    severity = (Ns_LogSeverity)addrPtr;
+	    severity = PTR2INT(addrPtr);
 	} else {
             if (objc == 3) {
                 return TCL_ERROR;
@@ -1460,6 +1460,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
     
     if (Ns_TclGetOpaqueFromObj(objPtr, severityType, addrPtrPtr) != TCL_OK) {
 	Tcl_HashEntry *hPtr;
+
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&severityTable, Tcl_GetString(objPtr));
         Ns_MutexUnlock(&lock);
@@ -1472,7 +1473,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
              */
             if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
                     && i < severityCount) {
-              *addrPtrPtr = (void*)(intptr_t)i;
+		*addrPtrPtr = INT2PTR(i);
             } else {
                 Tcl_AppendResult(interp, "unknown severity: \"",
                                  Tcl_GetString(objPtr),
