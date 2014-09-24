@@ -84,7 +84,7 @@ static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[], int type);
 static void AppendLengths(AdpCode *codePtr, int *lens, int *lines);
 static void GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr);
-static char *GetScript(char *tag, char *a, char *e, int *streamPtr);
+static char *GetScript(char *tag, char *a, char *e, unsigned int *streamPtr);
 
 
 /*
@@ -231,7 +231,8 @@ void
 NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp, 
 	   unsigned int flags, CONST char* file)
 {
-    int             level, stream, streamdone;
+    int             level, streamDone;
+    unsigned int    streamFlag;
     Tag            *tagPtr = NULL;
     char           *script = "", *s, *e, *n;
     char           *a, *as = "", *ae = "", *text;
@@ -287,7 +288,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
      */
 
     text = adp;
-    streamdone = stream = 0;
+    streamDone = streamFlag = 0;
     level = 0;
     state = TagNext;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
@@ -347,7 +348,7 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                  */
 
                 GetTag(&tag, s, e, &a);
-                script = GetScript(tag.string, a, e, &stream);
+                script = GetScript(tag.string, a, e, &streamFlag);
                 if (script != NULL) {
                     /*
                      * Append text and begin looking for closing </script> tag.
@@ -402,9 +403,9 @@ NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
                      */
 
                     if (!(flags & ADP_SAFE)) {
-                        if (stream && !streamdone) {
+                        if (streamFlag && !streamDone) {
                             AppendBlock(&parse, "ns_adp_ctl stream on", NULL, 's', flags);
-                            streamdone = 1;
+                            streamDone = 1;
                         }
                         AppendBlock(&parse, script, s, 's', flags);
                     }
@@ -623,20 +624,20 @@ GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr)
  *      None.
  *
  * Side effects:
- *      Flags in given servPtr are updated and/or data copied to given
+ *      Flags in given flagsPtr are updated and/or data copied to given
  *      dstring.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-ParseAtts(char *s, char *e, int *servPtr, Tcl_DString *attsPtr, int atts)
+ParseAtts(char *s, char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
 {
     char *vs = NULL, *ve = NULL, *as = NULL;
     char end = 0, vsave = 0;
 
-    if (servPtr != NULL) {
-        *servPtr = 0;
+    if (flagsPtr != NULL) {
+        *flagsPtr = 0;
     }
     while (s < e) {
 	char *ae, asave;
@@ -722,13 +723,13 @@ ParseAtts(char *s, char *e, int *servPtr, Tcl_DString *attsPtr, int atts)
             }
             Tcl_DStringAppendElement(attsPtr, vs);
         }
-        if (servPtr != NULL && vs != as) {
+        if (flagsPtr != NULL && vs != as) {
             if (STRIEQ(as, "runat") && STRIEQ(vs, "server")) {
-                *servPtr |= SERV_RUNAT;
+                *flagsPtr |= SERV_RUNAT;
             } else if (STRIEQ(as, "language") && !STRIEQ(vs, "tcl")) {
-                *servPtr |= SERV_NOTTCL;
+                *flagsPtr |= SERV_NOTTCL;
             } else if (STRIEQ(as, "stream") && STRIEQ(vs, "on")) {
-                *servPtr |= SERV_STREAM;
+                *flagsPtr |= SERV_STREAM;
             }
         }
 
@@ -761,14 +762,14 @@ ParseAtts(char *s, char *e, int *servPtr, Tcl_DString *attsPtr, int atts)
  */
 
 static char *
-GetScript(char *tag, char *a, char *e, int *streamPtr)
+GetScript(char *tag, char *a, char *e, unsigned int *streamFlagPtr)
 {
-    int serv;
+    int flags;
 
     if (a < e && STRIEQ(tag, "script")) {
-        ParseAtts(a, e, &serv, NULL, 1);
-        if ((serv & SERV_RUNAT) && !(serv & SERV_NOTTCL)) {
-            *streamPtr = (serv & SERV_STREAM);
+        ParseAtts(a, e, &flags, NULL, 1);
+        if ((flags & SERV_RUNAT) && !(flags & SERV_NOTTCL)) {
+            *streamFlagPtr = (flags & SERV_STREAM);
             return (e + 1);
         }
     }
