@@ -204,7 +204,8 @@ AC_MSG_RESULT([$as_ok])
 
 AC_CHECK_TYPE([nfds_t],
 	[AC_DEFINE([NS_POLL_NFDS_TYPE],[nfds_t],[type of second ns_poll() argument])],
-	[AC_DEFINE([NS_POLL_NFDS_TYPE],[unsigned int],[type of second ns_poll() argument])])
+	[AC_DEFINE([NS_POLL_NFDS_TYPE],[unsigned int],[type of second ns_poll() argument])],
+	[#include <poll.h>])
 
 #
 # Tcl_GetMemoryInfo() is exported depending on a complex set of compilation

@@ -713,7 +713,7 @@ Ns_SetUser(char *user)
 
 #ifdef HAVE_POLL
 int
-ns_poll(struct pollfd *fds, nfds_t nfds, int timo)
+ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
 {
     return poll(fds, nfds, timo);
 }
