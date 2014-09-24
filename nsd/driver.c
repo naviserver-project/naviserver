@@ -3842,6 +3842,12 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    bufs = NULL;
 	    connPtr->nContentSent = wrote;
 #ifdef _WIN32
+            /*
+             * For portability examples, see e.g.:
+             * http://stackoverflow.com/questions/1738799/non-blocking-socket-on-windows-doesnt-return-after-send-call
+             * http://www.opensource.apple.com/source/curl/curl-68/curl/lib/nonblock.c
+             * http://lists.fedoraproject.org/pipermail/mingw/2008-November/000034.html
+             */
             ioctlsocket(connPtr->fd, FIONBIO, &foo);
 #else
 	    fcntl(connPtr->fd, F_SETFL, O_NONBLOCK);
