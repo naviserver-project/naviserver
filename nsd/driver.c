@@ -3836,9 +3836,16 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	}
 
 	if (first) {
+#ifdef _WIN32
+            unsigned long foo = 1;
+#endif
 	    bufs = NULL;
 	    connPtr->nContentSent = wrote;
+#ifdef _WIN32
+            ioctlsocket(connPtr->fd, FIONBIO, &foo);
+#else
 	    fcntl(connPtr->fd, F_SETFL, O_NONBLOCK);
+#endif
 	    /*
 	     * Fall through to register stream writer with temp file 
 	     */
