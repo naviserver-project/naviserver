@@ -64,22 +64,22 @@
  * The following describe various properties of a connection.
  */
 
-#define NS_CONN_CLOSED             0x001 /* The underlying socket is closed */
-#define NS_CONN_SKIPHDRS           0x002 /* Client is HTTP/0.9, do not send HTTP headers  */
-#define NS_CONN_SKIPBODY           0x004 /* HTTP HEAD request, do not send body */
-#define NS_CONN_READHDRS           0x008 /* Unused */
-#define NS_CONN_SENTHDRS           0x010 /* Response headers have been sent to client */
-#define NS_CONN_WRITE_ENCODED      0x020 /* Character data mode requested mime-type header. */
-#define NS_CONN_STREAM             0x040 /* Data is to be streamed when ready.  */
-#define NS_CONN_STREAM_CLOSE       0x080 /* Writer Stream should be closed.  */
-#define NS_CONN_CHUNK              0x100 /* Streamed data is to be chunked. */
-#define NS_CONN_SENT_LAST_CHUNK    0x200 /* Marks that the last chunk was sent in chunked mode */
-#define NS_CONN_SENT_VIA_WRITER    0x400 /* Response data has been sent via writer thread */
-#define NS_CONN_SOCK_CORKED        0x800 /* underlying socket is corked */
-#define NS_CONN_ZIPACCEPTED       0x1000 /* the request accepts zip encoding */
-#define NS_CONN_ENTITYTOOLARGE    0x2000 /* the sent Entity was too large */
-#define NS_CONN_REQUESTURITOOLONG 0x4000 /* request-URI too long */
-#define NS_CONN_LINETOOLONG       0x8000 /* request Header line too long */
+#define NS_CONN_CLOSED             0x001U /* The underlying socket is closed */
+#define NS_CONN_SKIPHDRS           0x002U /* Client is HTTP/0.9, do not send HTTP headers  */
+#define NS_CONN_SKIPBODY           0x004U /* HTTP HEAD request, do not send body */
+#define NS_CONN_READHDRS           0x008U /* Unused */
+#define NS_CONN_SENTHDRS           0x010U /* Response headers have been sent to client */
+#define NS_CONN_WRITE_ENCODED      0x020U /* Character data mode requested mime-type header. */
+#define NS_CONN_STREAM             0x040U /* Data is to be streamed when ready.  */
+#define NS_CONN_STREAM_CLOSE       0x080U /* Writer Stream should be closed.  */
+#define NS_CONN_CHUNK              0x100U /* Streamed data is to be chunked. */
+#define NS_CONN_SENT_LAST_CHUNK    0x200U /* Marks that the last chunk was sent in chunked mode */
+#define NS_CONN_SENT_VIA_WRITER    0x400U /* Response data has been sent via writer thread */
+#define NS_CONN_SOCK_CORKED        0x800U /* underlying socket is corked */
+#define NS_CONN_ZIPACCEPTED       0x1000U /* the request accepts zip encoding */
+#define NS_CONN_ENTITYTOOLARGE    0x2000U /* the sent Entity was too large */
+#define NS_CONN_REQUESTURITOOLONG 0x4000U /* request-URI too long */
+#define NS_CONN_LINETOOLONG       0x8000U/* request Header line too long */
 
 /*
  * The following are valid return codes from an Ns_UserAuthorizeProc.
@@ -95,19 +95,19 @@
  * URL specific data.
  */
 
-#define NS_OP_NOINHERIT            0x02 /* Match URL exactly */
-#define NS_OP_NODELETE             0x04 /* Do call previous procs Ns_OpDeleteProc */
-#define NS_OP_RECURSE              0x08 /* Also destroy registered procs below given URL */
+#define NS_OP_NOINHERIT            0x02U /* Match URL exactly */
+#define NS_OP_NODELETE             0x04U /* Do call previous procs Ns_OpDeleteProc */
+#define NS_OP_RECURSE              0x08U /* Also destroy registered procs below given URL */
 
 /*
  * The following types of filters may be registered.
  */
 
-#define NS_FILTER_PRE_AUTH         0x01 /* Runs before any Ns_UserAuthProc */
-#define NS_FILTER_POST_AUTH        0x02 /* Runs after any Ns_UserAuthProc */
-#define NS_FILTER_TRACE            0x04 /* Runs after Ns_OpProc completes successfully */
-#define NS_FILTER_VOID_TRACE       0x08 /* Run ns_register_trace procs after previous traces */
-#define NS_FILTER_FIRST            0x10 /* Register filter at head of queue. */
+#define NS_FILTER_PRE_AUTH         0x01U /* Runs before any Ns_UserAuthProc */
+#define NS_FILTER_POST_AUTH        0x02U /* Runs after any Ns_UserAuthProc */
+#define NS_FILTER_TRACE            0x04U /* Runs after Ns_OpProc completes successfully */
+#define NS_FILTER_VOID_TRACE       0x08U /* Run ns_register_trace procs after previous traces */
+#define NS_FILTER_FIRST            0x10U /* Register filter at head of queue. */
 
 /*
  * The following are valid return codes from an Ns_FilterProc.
@@ -121,34 +121,34 @@
  * The following are the valid attributes of a scheduled event.
  */
 
-#define NS_SCHED_THREAD            0x01 /* Ns_SchedProc will run in detached thread */
-#define NS_SCHED_ONCE              0x02 /* Call cleanup proc after running once */
-#define NS_SCHED_DAILY             0x04 /* Event is scheduled to occur daily */
-#define NS_SCHED_WEEKLY            0x08 /* Event is scheduled to occur weekly */
-#define NS_SCHED_PAUSED            0x10 /* Event is currently paused */
-#define NS_SCHED_RUNNING           0x20 /* Event is currently running, perhaps in detached thread */
+#define NS_SCHED_THREAD            0x01U /* Ns_SchedProc will run in detached thread */
+#define NS_SCHED_ONCE              0x02U /* Call cleanup proc after running once */
+#define NS_SCHED_DAILY             0x04U /* Event is scheduled to occur daily */
+#define NS_SCHED_WEEKLY            0x08U /* Event is scheduled to occur weekly */
+#define NS_SCHED_PAUSED            0x10U /* Event is currently paused */
+#define NS_SCHED_RUNNING           0x20U /* Event is currently running, perhaps in detached thread */
 
 /*
  * The following define socket events for the Ns_Sock* APIs.
  */
 
-#define NS_SOCK_READ               0x01 /* Socket is readable */
-#define NS_SOCK_WRITE              0x02 /* Socket is writeable */
-#define NS_SOCK_EXCEPTION          0x04 /* Socket has OOB data */
-#define NS_SOCK_EXIT               0x08 /* The server is shutting down */
-#define NS_SOCK_DONE               0x10 /* Task processing is done */
-#define NS_SOCK_CANCEL             0x20 /* Remove event from sock callback thread */
-#define NS_SOCK_TIMEOUT            0x40 /* Timeout waiting for socket event. */
-#define NS_SOCK_INIT               0x80 /* Initialise a Task callback. */
+#define NS_SOCK_READ               0x01U /* Socket is readable */
+#define NS_SOCK_WRITE              0x02U /* Socket is writeable */
+#define NS_SOCK_EXCEPTION          0x04U /* Socket has OOB data */
+#define NS_SOCK_EXIT               0x08U /* The server is shutting down */
+#define NS_SOCK_DONE               0x10U /* Task processing is done */
+#define NS_SOCK_CANCEL             0x20U /* Remove event from sock callback thread */
+#define NS_SOCK_TIMEOUT            0x40U /* Timeout waiting for socket event. */
+#define NS_SOCK_INIT               0x80U /* Initialise a Task callback. */
 #define NS_SOCK_ANY                (NS_SOCK_READ|NS_SOCK_WRITE|NS_SOCK_EXCEPTION)
 
 /*
  * The following are valid comm driver options.
  */
 
-#define NS_DRIVER_ASYNC            0x01 /* Use async read-ahead. */
-#define NS_DRIVER_SSL              0x02 /* Use SSL port, protocol defaults. */
-#define NS_DRIVER_NOPARSE          0x04 /* Do not parse request */
+#define NS_DRIVER_ASYNC            0x01U /* Use async read-ahead. */
+#define NS_DRIVER_SSL              0x02U /* Use SSL port, protocol defaults. */
+#define NS_DRIVER_NOPARSE          0x04U /* Do not parse request */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* Current version. */
@@ -157,12 +157,12 @@
  * The following are valid Tcl interp traces.
  */
 
-#define NS_TCL_TRACE_CREATE        0x01 /* New interp created */
-#define NS_TCL_TRACE_DELETE        0x02 /* Interp destroyed */
-#define NS_TCL_TRACE_ALLOCATE      0x04 /* Interp allocated, possibly from thread cache */
-#define NS_TCL_TRACE_DEALLOCATE    0x08 /* Interp de-allocated, returned to thread-cache */
-#define NS_TCL_TRACE_GETCONN       0x10 /* Interp allocated for connection processing (filter, proc) */
-#define NS_TCL_TRACE_FREECONN      0x20 /* Interp finished connection processing */
+#define NS_TCL_TRACE_CREATE        0x01U /* New interp created */
+#define NS_TCL_TRACE_DELETE        0x02U /* Interp destroyed */
+#define NS_TCL_TRACE_ALLOCATE      0x04U /* Interp allocated, possibly from thread cache */
+#define NS_TCL_TRACE_DEALLOCATE    0x08U /* Interp de-allocated, returned to thread-cache */
+#define NS_TCL_TRACE_GETCONN       0x10U /* Interp allocated for connection processing (filter, proc) */
+#define NS_TCL_TRACE_FREECONN      0x20U /* Interp finished connection processing */
 
 /*
  * The following define some buffer sizes and limits.
@@ -524,7 +524,7 @@ typedef struct Ns_DriverInitData {
     Ns_DriverKeepProc     *keepProc;     /* Keep a socket open after conn done? */
     Ns_DriverRequestProc  *requestProc;  /* First proc to be called by a connection thread. */
     Ns_DriverCloseProc    *closeProc;    /* Close a connection socket. */
-    int                    opts;         /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
+    unsigned int           opts;         /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                  *arg;          /* Module's driver callback data */
     char                  *path;         /* Path to find port, address, etc. */
 } Ns_DriverInitData;
@@ -855,8 +855,8 @@ typedef struct {
     Tcl_DString ds;
 } Ns_HttpTask;
 
-#define NS_HTTP_FLAG_DECOMPRESS    0x0001
-#define NS_HTTP_FLAG_GZIP_ENCODING 0x0002
+#define NS_HTTP_FLAG_DECOMPRESS    0x0001U
+#define NS_HTTP_FLAG_GZIP_ENCODING 0x0002U
 #define NS_HTTP_FLAG_GUNZIP        (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 
 

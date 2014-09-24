@@ -40,9 +40,9 @@
  * The following define available flags bits.
  */
 
-#define LOG_ROLL   0x01
-#define LOG_EXPAND 0x02
-#define LOG_USEC   0x04
+#define LOG_ROLL   0x01U
+#define LOG_EXPAND 0x02U
+#define LOG_USEC   0x04U
 
 /*
  * The following struct represents a log entry header as stored in

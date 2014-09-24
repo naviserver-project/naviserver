@@ -43,22 +43,22 @@
  * Various ADP option bits.
  */
 
-#define ADP_SAFE                       0x01    /* Use Tcl_SafeEval for ADP */
-#define ADP_SINGLE                     0x02    /* Combine blocks into a single script */
-#define ADP_DEBUG                      0x04    /* Enable debugging */
-#define ADP_EXPIRE                     0x08    /* Send Expires: now header on output */
-#define ADP_CACHE                      0x10    /* Enable output caching */
-#define ADP_TRACE                      0x20    /* Trace execution */
-#define ADP_DETAIL                     0x80    /* Log connection details on error */
-#define ADP_STRICT                     0x100   /* Strict error handling */
-#define ADP_DISPLAY                    0x200   /* Display error messages in output stream */
-#define ADP_TRIM                       0x400   /* Display error messages in output stream */
-#define ADP_FLUSHED                    0x800   /* Some output has been sent */
-#define ADP_ERRLOGGED                  0x1000  /* Error message has already been logged */
-#define ADP_AUTOABORT                  0x2000  /* Raise abort on flush error */
-#define ADP_ADPFILE                    0x4000  /* Object to evaluate is a file */
-#define ADP_STREAM                     0x8000  /* Enable ADP streaming */
-#define ADP_TCLFILE                    0x10000 /* Object to evaluate is a Tcl file */
+#define ADP_SAFE                       0x01U    /* Use Tcl_SafeEval for ADP */
+#define ADP_SINGLE                     0x02U    /* Combine blocks into a single script */
+#define ADP_DEBUG                      0x04U    /* Enable debugging */
+#define ADP_EXPIRE                     0x08U    /* Send Expires: now header on output */
+#define ADP_CACHE                      0x10U    /* Enable output caching */
+#define ADP_TRACE                      0x20U    /* Trace execution */
+#define ADP_DETAIL                     0x80U    /* Log connection details on error */
+#define ADP_STRICT                     0x100U   /* Strict error handling */
+#define ADP_DISPLAY                    0x200U   /* Display error messages in output stream */
+#define ADP_TRIM                       0x400U   /* Display error messages in output stream */
+#define ADP_FLUSHED                    0x800U   /* Some output has been sent */
+#define ADP_ERRLOGGED                  0x1000U  /* Error message has already been logged */
+#define ADP_AUTOABORT                  0x2000U  /* Raise abort on flush error */
+#define ADP_ADPFILE                    0x4000U  /* Object to evaluate is a file */
+#define ADP_STREAM                     0x8000U  /* Enable ADP streaming */
+#define ADP_TCLFILE                    0x10000U /* Object to evaluate is a Tcl file */
 
 #define ADP_OK                         0
 #define ADP_BREAK                      1
@@ -406,7 +406,7 @@ typedef struct Driver {
     Ns_DriverKeepProc     *keepProc;
     Ns_DriverRequestProc  *requestProc;
     Ns_DriverCloseProc    *closeProc;
-    int opts;                           /* NS_DRIVER_* options */
+    unsigned int opts;                  /* NS_DRIVER_* options */
     int closewait;                      /* Graceful close timeout */
     int keepwait;                       /* Keepalive timeout */
     int keepmaxdownloadsize;            /* When set, allow keepalive only for download requests up to this size */
@@ -425,7 +425,7 @@ typedef struct Driver {
     int queuesize;                      /* Current number of sockets in the queue */
     int maxqueuesize;                   /* Maximum number of sockets in the queue */
     int acceptsize;                     /* Number requests to accept at once */
-    int loggingFlags;                   /* Logging control flags */
+    unsigned int loggingFlags;          /* Logging control flags */
 
     unsigned int flags;                 /* Driver state flags. */
     Ns_Thread thread;                   /* Thread id to join on shutdown. */
@@ -779,7 +779,7 @@ typedef struct NsServer {
 
     struct {
         bool enabled;
-        int opts; /* NSD_STRIP_WWW | NSD_STRIP_PORT */
+        unsigned int opts; /* NSD_STRIP_WWW | NSD_STRIP_PORT */
         CONST char *hostprefix;
         int hosthashlevel;
         Ns_ServerRootProc *serverRootProc;

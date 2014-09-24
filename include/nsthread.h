@@ -85,7 +85,7 @@
 # endif
 
 # ifndef _WIN32_WINNT
-#  define _WIN32_WINNT                0x0400
+#  define _WIN32_WINNT                0x0400U
 # endif
 
 #include <windows.h>
@@ -195,11 +195,11 @@ struct iovec {
  * The following is for supporting our own poll() emulation.
  */
 
-# define POLLIN                      0x0001
-# define POLLPRI                     0x0002
-# define POLLOUT                     0x0004
-# define POLLERR                     0x0008
-# define POLLHUP                     0x0010
+# define POLLIN                      0x0001U
+# define POLLPRI                     0x0002U
+# define POLLOUT                     0x0004U
+# define POLLERR                     0x0008U
+# define POLLHUP                     0x0010U
 
 struct pollfd {
     NS_SOCKET      fd;

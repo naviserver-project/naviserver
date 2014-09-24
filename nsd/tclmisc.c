@@ -708,11 +708,11 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 {
 
     /* Set the h-vars to their initial values */
-    ctx->iv[0] = 0x67452301;
-    ctx->iv[1] = 0xEFCDAB89;
-    ctx->iv[2] = 0x98BADCFE;
-    ctx->iv[3] = 0x10325476;
-    ctx->iv[4] = 0xC3D2E1F0;
+    ctx->iv[0] = 0x67452301U;
+    ctx->iv[1] = 0xEFCDAB89U;
+    ctx->iv[2] = 0x98BADCFEU;
+    ctx->iv[3] = 0x10325476U;
+    ctx->iv[4] = 0xC3D2E1F0U;
 
     /* Initialise bit count */
 #ifdef HAVE64
@@ -740,10 +740,10 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 #define f4(x,y,z) ( x ^ y ^ z )			/* Rounds 60-79 */
 
 /* The SHA Mysterious Constants. */
-#define K2 0x5A827999L		/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
-#define K3 0x6ED9EBA1L		/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
-#define K5 0x8F1BBCDCL		/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
-#define K10 0xCA62C1D6L		/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
+#define K2  0x5A827999UL	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
+#define K3  0x6ED9EBA1UL	/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
+#define K5  0x8F1BBCDCUL	/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
+#define K10 0xCA62C1D6UL	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
 
 /* 32-bit rotate left - kludged with shifts */
 #define ROTL(n,X) ( (X << n) | (X >> (32-n)) )

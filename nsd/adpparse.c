@@ -764,7 +764,7 @@ ParseAtts(char *s, char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int at
 static char *
 GetScript(char *tag, char *a, char *e, unsigned int *streamFlagPtr)
 {
-    int flags;
+    unsigned int flags;
 
     if (a < e && STRIEQ(tag, "script")) {
         ParseAtts(a, e, &flags, NULL, 1);
