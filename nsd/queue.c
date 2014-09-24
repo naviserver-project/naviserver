@@ -521,7 +521,8 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 	"requestprocs",
 	"serverdir", "stats", 
 	"tcllib", "threads", "traces",
-	"url2file", "waiting", NULL,
+	"url2file", "waiting", 
+	NULL
     };
 
     enum {
@@ -533,7 +534,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 	SRequestprocsIdx,
 	SServerdirIdx, SStatsIdx, 
 	STcllibIdx, SThreadsIdx, STracesIdx,
-	SUrl2fileIdx, SWaitingIdx,
+	SUrl2fileIdx, SWaitingIdx
     };
 
     static CONST char  *options[]           = {"-server", "-pool", NULL};
@@ -1240,26 +1241,26 @@ NsConnThread(void *arg)
 		Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
 		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &totalTime);
 
-	    Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
-		   " start %" PRIu64 ".%06ld"
-		   " %" PRIu64 ".%06ld"
-		   " accept %" PRIu64 ".%06ld"
-		   " queue %" PRIu64 ".%06ld"
-		   " filter %" PRIu64 ".%06ld"
-		   " run %" PRIu64 ".%06ld"
-		   " netrun %" PRIu64 ".%06ld"
-		   " total %" PRIu64 ".%06ld",
-		   ThreadNr(poolPtr, argPtr),
-		   waiting, poolPtr->threads.current, idle, ncons, fromQueue,
-		   (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
-		   (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
-		   (int64_t) acceptTime.sec, acceptTime.usec,
-		   (int64_t) queueTime.sec, queueTime.usec,
-		   (int64_t) filterTime.sec, filterTime.usec,
-		   (int64_t) runTime.sec, runTime.usec,
-		   (int64_t) netRunTime.sec, netRunTime.usec,
-		   (int64_t) totalTime.sec, totalTime.usec
-		   );
+		Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+		       " start %" PRIu64 ".%06ld"
+		       " %" PRIu64 ".%06ld"
+		       " accept %" PRIu64 ".%06ld"
+		       " queue %" PRIu64 ".%06ld"
+		       " filter %" PRIu64 ".%06ld"
+		       " run %" PRIu64 ".%06ld"
+		       " netrun %" PRIu64 ".%06ld"
+		       " total %" PRIu64 ".%06ld",
+		       ThreadNr(poolPtr, argPtr),
+		       waiting, poolPtr->threads.current, idle, ncons, fromQueue,
+		       (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
+		       (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
+		       (int64_t) acceptTime.sec, acceptTime.usec,
+		       (int64_t) queueTime.sec, queueTime.usec,
+		       (int64_t) filterTime.sec, filterTime.usec,
+		       (int64_t) runTime.sec, runTime.usec,
+		       (int64_t) netRunTime.sec, netRunTime.usec,
+		       (int64_t) totalTime.sec, totalTime.usec
+		       );
 	    }
 	    
 	    if (waiting > 0) {

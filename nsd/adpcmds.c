@@ -349,10 +349,12 @@ NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 static int
 EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[])
 {
+
     if (objc < 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "page ?args ...?");
-    return TCL_ERROR;
+	return TCL_ERROR;
     }
+
     return NsAdpEval(itPtr, objc-1, objv+1, NULL);
 }
 

@@ -733,23 +733,24 @@ NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[]
     Ns_DString ds;
 
     if (argc != 2 && argc != 3) {
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        argv[0], " library ?module?\"", NULL);
-    return TCL_ERROR;
+	Tcl_AppendResult(interp, "wrong # args: should be \"",
+			 argv[0], " library ?module?\"", NULL);
+	return TCL_ERROR;
     }
     if (STREQ(argv[1], "private")) {
         lib = itPtr->servPtr->tcl.library;
     } else if (STREQ(argv[1], "shared")) {
         lib = nsconf.tcl.sharedlibrary;
     } else {
-    Tcl_AppendResult(interp, "unknown library \"",
-       argv[1], "\": should be private or shared", NULL);
-    return TCL_ERROR;
+	Tcl_AppendResult(interp, "unknown library \"",
+			 argv[1], "\": should be private or shared", NULL);
+	return TCL_ERROR;
     }
     Ns_DStringInit(&ds);
     Ns_MakePath(&ds, lib, argv[2], NULL);
     Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
     Ns_DStringFree(&ds);
+
     return TCL_OK;
 }
 

@@ -602,10 +602,10 @@ GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr)
     Tcl_DStringTrunc(dsPtr, 0);
     Tcl_DStringAppend(dsPtr, t, (int)(s - t));
     if (aPtr != NULL) {
-    while (s < e && isspace(UCHAR(*s))) {
-        ++s;
-    }
-    *aPtr = s;
+	while (s < e && isspace(UCHAR(*s))) {
+	    ++s;
+	}
+	*aPtr = s;
     }
     dsPtr->length = Tcl_UtfToLower(dsPtr->string);
 }
