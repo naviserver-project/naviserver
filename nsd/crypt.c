@@ -304,10 +304,11 @@ encrypt_private(struct sched *sp, char *block, int edflag)
         /*
          * Set direction
          */
-        if (edflag)
+	if (edflag) {
             i = 15 - ii;
-        else
+	} else {
             i = ii;
+	}
 
         /*
          * Save the R array, which will be the new L.
@@ -402,10 +403,12 @@ Ns_Encrypt(pw, salt, iobuf)
     for (i = 0; i < 2; i++) {
         c = *salt++;
         iobuf[i] = c;
-        if (c > 'Z')
+        if (c > 'Z') {
             c -= 6;
-        if (c > '9')
+	}
+        if (c > '9') {
             c -= 7;
+	}
         c -= '.';
         for (j = 0; j < 6; j++) {
             if ((c >> j) & 01) {
@@ -416,8 +419,9 @@ Ns_Encrypt(pw, salt, iobuf)
         }
     }
 
-    for (i = 0; i < 25; i++)
+    for (i = 0; i < 25; i++) {
         encrypt_private(&s, block, 0);
+    }
 
     for (i = 0; i < 11; i++) {
         c = 0;
@@ -426,15 +430,18 @@ Ns_Encrypt(pw, salt, iobuf)
             c |= block[6 * i + j];
         }
         c += '.';
-        if (c > '9')
+        if (c > '9') {
             c += 7;
-        if (c > 'Z')
+	}
+        if (c > 'Z') {
             c += 6;
+	}
         iobuf[i + 2] = c;
     }
     iobuf[i + 2] = 0;
-    if (iobuf[1] == 0)
+    if (iobuf[1] == 0) {
         iobuf[1] = iobuf[0];
+    }
 
     return (iobuf);
 }

@@ -1104,7 +1104,7 @@ NsConnThread(void *arg)
 	     */
 	    while (1) {
 
-		if (servPtr->pools.shutdown) break;
+		if (servPtr->pools.shutdown) {break;}
 		
 		Ns_GetTime(timePtr);
 		Ns_IncrTime(timePtr, timeout, 0);
@@ -1117,13 +1117,13 @@ NsConnThread(void *arg)
 			Ns_Log(Warning, "signal lost, resuming after timeout");
 			status = NS_OK;
 		    }
-		    if (poolPtr->threads.current <= poolPtr->threads.min) continue;
+		    if (poolPtr->threads.current <= poolPtr->threads.min) {continue;}
 		    /* 
 		     * We have a timeout, and the thread can exit 
 		     */
 		    break;
 		}
-		if (argPtr->connPtr) break;
+		if (argPtr->connPtr) {break;}
 		
 		Ns_Log(Debug, "CondTimedWait returned an unexpected result, maybe shutdown?");
 	    }

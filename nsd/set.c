@@ -443,7 +443,10 @@ Ns_SetIGet(Ns_Set *set, CONST char *key)
 char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
 {
     char *value = Ns_SetGet(set, key);
-    if (value == NULL || *value == '\0') value = (char*)def;
+
+    if (value == NULL || *value == '\0') {
+	value = (char*)def;
+    }
     return value;
 }
 
@@ -467,7 +470,10 @@ char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
 char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def)
 {
     char *value = Ns_SetIGet(set, key);
-    if (value == NULL || *value == '\0') value = (char*)def;
+
+    if (value == NULL || *value == '\0') {
+	value = (char*)def;
+    }
     return value;
 }
 
