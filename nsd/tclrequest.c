@@ -97,7 +97,7 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *name)
 
 int
 NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[], int adp)
+                        Tcl_Obj *CONST objv[])
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
@@ -148,7 +148,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
 int
 NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[], int adp)
+                        Tcl_Obj *CONST objv[])
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
@@ -197,8 +197,8 @@ NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                            Tcl_Obj *CONST objv[], int adp)
+NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, 
+			    int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp       *itPtr = arg;
     char           *method, *url;
