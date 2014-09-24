@@ -3003,7 +3003,7 @@ NS_EXTERN int
 ns_pipe(int *fds);
 
 NS_EXTERN int
-ns_poll(struct pollfd *fds, unsigned long int nfds, int timo);
+ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo);
 
 NS_EXTERN int
 Ns_GetNameForUid(Ns_DString *dsPtr, int uid);

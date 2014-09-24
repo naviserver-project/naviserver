@@ -89,7 +89,7 @@ typedef struct ServerMap {
  */
 
 typedef struct PollData {
-    int nfds;                   /* Number of fd's being monitored. */
+    unsigned int nfds;          /* Number of fd's being monitored. */
     int maxfds;                 /* Max fd's (will grow as needed). */
     struct pollfd *pfds;        /* Dynamic array of poll struct's. */
     Ns_Time timeout;            /* Min timeout, if any, for next spin. */

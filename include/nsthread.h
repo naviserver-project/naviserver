@@ -97,10 +97,14 @@
 #include <process.h>
 #include <direct.h>
 
-#define NS_SOCKET	SOCKET
+# define NS_SOCKET	SOCKET
 
 # define STDOUT_FILENO               1
 # define STDERR_FILENO               2
+
+# if !defined(NS_POLL_NFDS_TYPE) 
+#  define NS_POLL_NFDS_TYPE unsigned int
+# endif
 
 # if defined(_MSC_VER)
 /*
