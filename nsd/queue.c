@@ -1529,8 +1529,9 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
 	connPtr->fd = 0;
     }
     if (connPtr->streamWriter) {
+        WriterSock *wrPtr;
 	NsWriterLock();
-	WriterSock *wrPtr = connPtr->streamWriter;
+	wrPtr = connPtr->streamWriter;
 	if (wrPtr) {
 	    NsWriterFinish(wrPtr);
 	    connPtr->streamWriter = NULL;
