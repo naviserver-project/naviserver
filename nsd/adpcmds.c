@@ -199,7 +199,8 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     Tcl_Channel  chan;
     char        *id;
     size_t       size;
-    int          opt, flag, old;
+    int          opt;
+    unsigned int flag, oldFlag;
 
     enum {
         CBufSizeIdx = -1,
@@ -207,8 +208,8 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     };
 
     static struct {
-        char   *option;
-        int     flag;
+        char        *option;
+        unsigned int flag;
     } adpCtlOpts[] = {
 
         { "bufsize",      CBufSizeIdx },
@@ -292,7 +293,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
             Tcl_WrongNumArgs(interp, 2, objv, "?bool?");
             return TCL_ERROR;
         }
-        old = (itPtr->adp.flags & flag);
+        oldFlag = (itPtr->adp.flags & flag);
         if (objc == 3) {
   	    int boolVal;
 
@@ -305,7 +306,7 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
                 itPtr->adp.flags &= ~flag;
             }
         }
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(old));
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(oldFlag));
         break;
     }
 
@@ -378,7 +379,8 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 {
     NsInterp    *itPtr = arg;
     Tcl_DString *dsPtr;
-    int          result, flags;
+    int          result;
+    unsigned int flags;
     char        *file;
     int          tcl = 0, nocache = 0, nargs = 0;
     Ns_Time     *ttlPtr = NULL;
@@ -457,11 +459,12 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 int
 NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    NsInterp   *itPtr = arg;
-    int         result, savedFlags, nargs = 0;
-    char       *resvar = NULL;
-    int         file = 0, safe = 0, string = 0, tcl = 0;
-    char       *cwd = NULL, *savedCwd = NULL;
+    NsInterp    *itPtr = arg;
+    int          result, nargs = 0;
+    unsigned int savedFlags;
+    char        *resvar = NULL;
+    int          file = 0, safe = 0, string = 0, tcl = 0;
+    char        *cwd = NULL, *savedCwd = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,    NULL},
