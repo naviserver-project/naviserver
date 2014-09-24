@@ -673,7 +673,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
 int
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
-    int nb = 1;
+    unsigned int nb = 1;
 
     if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
         return NS_ERROR;
@@ -702,7 +702,7 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
 int
 Ns_SockSetBlocking(NS_SOCKET sock)
 {
-    int nb = 0;
+    unsigned int nb = 0;
 
     if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
         return NS_ERROR;
