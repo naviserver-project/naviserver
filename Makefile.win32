@@ -37,6 +37,11 @@ LIB	= $(LIB);$(MSDK)\Lib;$(TCLPATH)\lib
 INCLUDE	= $(INCLUDE);$(MSDK)\Include;$(TCLPATH)\include
 #INCLUDE	= $(INCLUDE);$(VC)\include
 
+# include/Makefile.win32 uses this DEBUG flag.  For now default it to
+# 1 rather than 0 or unset:
+!ifndef DEBUG
+DEBUG=1
+!endif
 
 # nmake command to exec for each module:
 NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
