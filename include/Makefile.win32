@@ -150,8 +150,8 @@ HDRS	= $(HDRS) $(INCDIR)\ns.h $(INCDIR)\nsthread.h
 
 !ifdef DLLINIT
 DLLOPTS	= /EXPORT:$(DLLINIT)
-!elseif "$(DLL)" == "nsthread"
-# nsthread does NOT define Ns_ModuleInit function:
+!elseif "$(DLL)" == "nsthread" || "$(DLL)" == "nsd"
+# nsthread and nsd do NOT define Ns_ModuleInit functions.
 DLLOPTS	= 
 !else
 DLLOPTS = /EXPORT:Ns_ModuleInit
