@@ -46,7 +46,8 @@
 #
 #	PGM	Basename of a program, e.g., "PGM=mybin" builds "mybin.exe".
 #
-#	OBJS	List of objects to be built for DLL or MOD.
+#	MODOBJS	List of objects to be built for MOD.
+#	LIBOBJS	List of objects to be built for DLL.
 #
 #	PGMOBJS	List of objects for PGM.  The program will also be linked
 #		against a DLL, if any.
