@@ -552,6 +552,8 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
             Ns_Fatal("%s: virtual servers configured,"
                      " but %s has no defaultserver defined", module, path);
         }
+	assert(defserver != NULL);
+
         defMapPtr = NULL;
         path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
         set  = Ns_ConfigGetSection(path);
@@ -1033,6 +1035,9 @@ ssize_t
 NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags)
 {
     Ns_Time timeout;
+
+    assert(sockPtr != NULL);
+    assert(sockPtr->drvPtr != NULL);
 
     timeout.sec = sockPtr->drvPtr->sendwait;
     timeout.usec = 0;

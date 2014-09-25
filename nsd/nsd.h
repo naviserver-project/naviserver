@@ -1051,8 +1051,10 @@ NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
  * Socket driver callbacks.
  */
 
-NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags);
-NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags);
+NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, struct iovec *bufs, int nbufs, unsigned int flags)
+    NS_GNUC_NONNULL(1);
+NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t
 NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
@@ -1246,7 +1248,7 @@ NS_EXTERN void NsRunAtExitProcs(void);
  */
 
 NS_EXTERN void NsConfigProgress(void);
-NS_EXTERN void NsUpdateProgress(Ns_Sock *sock);
+NS_EXTERN void NsUpdateProgress(Ns_Sock *sock) NS_GNUC_NONNULL(1);
 
 /*
  * watchdog.c

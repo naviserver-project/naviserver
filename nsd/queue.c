@@ -1354,6 +1354,9 @@ NsConnThread(void *arg)
  *
  *----------------------------------------------------------------------
  */
+static void
+ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void
 ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
@@ -1381,11 +1384,11 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
         Ns_ConnClose(conn);
         return;
     }
+    assert(sockPtr != NULL);
 
     /*
      * Make sure we update peer address with actual remote IP address
      */
-
     connPtr->reqPtr->port = ntohs(sockPtr->sa.sin_port);
     strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
 

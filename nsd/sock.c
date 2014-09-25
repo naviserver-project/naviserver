@@ -219,6 +219,9 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
     Sock          *sock = (Sock *)sockPtr;
 
+    assert(sockPtr != NULL);
+    assert(nbufs < 1 || bufs != NULL);
+
     sbufPtr = sbufs;
     sbufLen = UIO_MAXIOV;
 

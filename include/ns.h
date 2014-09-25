@@ -2485,7 +2485,9 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 		Ns_Time *timeoutPtr, unsigned int flags);
 NS_EXTERN ssize_t
 Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
-		Ns_Time *timeoutPtr, unsigned int flags);
+		Ns_Time *timeoutPtr, unsigned int flags)
+    NS_GNUC_NONNULL(1);
+
 
 NS_EXTERN NS_SOCKET
 Ns_BindSock(struct sockaddr_in *psa) 

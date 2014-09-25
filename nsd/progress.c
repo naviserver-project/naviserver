@@ -180,11 +180,17 @@ void
 NsUpdateProgress(Ns_Sock *sock)
 {
     Sock          *sockPtr = (Sock *) sock;
-    Request       *reqPtr  = sockPtr->reqPtr;
-    Ns_Request    *request = &reqPtr->request;
+    Request       *reqPtr;
+    Ns_Request    *request;
     Tcl_HashEntry *hPtr;
     Ns_DString     ds;
     int            isNew;
+
+    assert(sockPtr != NULL);
+    assert(sockPtr->reqPtr != NULL);
+
+    reqPtr  = sockPtr->reqPtr;
+    request = &reqPtr->request;
 
     if (progressMinSize > 0
         && request->url != NULL
