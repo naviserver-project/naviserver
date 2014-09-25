@@ -39,9 +39,9 @@
 #     MOD         File name of binary loadable module
 #     MODOBJS     List of module object files (required with MOD)
 #     TCL         List of module shared Tcl files
-#     LIB         Root name of dynamic library (without lib prefix or extension)
-#     LIBOBJS     List of library object files (required with LIB)
-#     LIBHDRS     List of public header files to install (required with module LIB)
+#     LIBNM       Root name of dynamic library (without lib prefix or extension)
+#     LIBOBJS     List of library object files (required with LIBNM)
+#     LIBHDRS     List of public header files to install (required with module LIBNM)
 #     PGM         Name of executable program
 #     PGMOBJS     List of program object files (required with PGM)
 #     HDRS        Header files which objects depend on
@@ -52,13 +52,17 @@
 #     CLEAN       Extra clean directive(s)
 #     DESTDIR     Root directory for install
 #
-#     At least one of PGM, MOD, or LIB must be defined.  For backwards compatibility,
+#     At least one of PGM, MOD, or LIBNM must be defined.  For backwards compatibility,
 #     MODOBJS will default to OBJS and MODINST can be used for module install.
 #
-#     For static builds (use configure --disable-shared) the LIB variable is
+#     For static builds (use configure --disable-shared) the LIBNM variable is
 #     replaced with ALIB which triggers the linking of the static library.
 #
 #     See nsd/Makefile and nsdb/Makefile for examples.
+#
+#     Note that we do *not* use a variables named "LIB" or "INCLUDE",
+#     because they would conflict with environment variables of the same
+#     name needed by the Microsoft Windows compiler and/or linker.
 #
 
 uname = $(shell uname -a)
@@ -67,8 +71,8 @@ STATIC_BUILD = @STATIC_BUILD@
 
 ifdef NSBUILD
     ifeq ($(STATIC_BUILD), 1)
-        ALIB    := $(LIB)
-        LIB     :=
+        ALIB    := $(LIBNM)
+        LIBNM   :=
     endif
     include ../include/Makefile.global
 else
@@ -95,8 +99,8 @@ ifdef TCL
     INSTALL += install-tcl
 endif
 
-ifdef LIB
-    LIBFILE	 = lib$(LIB)$(LIBEXT)
+ifdef LIBNM
+    LIBFILE	 = lib$(LIBNM)$(LIBEXT)
     BUILD   += $(LIBFILE)
     INSTALL += install-lib
     CLEAN   += clean-lib

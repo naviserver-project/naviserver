@@ -28,7 +28,7 @@
 # 
 
 MODNAME = nsdb
-LIB     = nsdb
+LIBNM   = nsdb
 LIBOBJS = dbinit.o dbdrv.o dbtcl.o dbutil.o
 LIBHDRS = nsdb.h
 MOD     = nsdb.so

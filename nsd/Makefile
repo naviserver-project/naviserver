@@ -29,7 +29,8 @@
 #
 
 INSTALL	= install-init
-LIB	= nsd
+LIBNM	= nsd
+DLL	= $(LIBNM)
 PGM	= nsd
 PGMOBJS	= main.o
 HDRS	= nsd.h
