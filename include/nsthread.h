@@ -158,7 +158,7 @@ typedef int32_t ssize_t;
 # define vsnprintf                   _vsnprintf
 
 /*
- * Under MinGW we use config.h, for MSVC we pre-define environment here
+ * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
  */
 
 # ifndef HAVE_CONFIG_H
@@ -401,8 +401,9 @@ typedef struct DIR_ *DIR;
 #define PATH_MAX 1024
 #endif
 
-/* Some very old gcc versions do not have it defined, instead of messing with confiture here it
- * is a simple define for such cases
+/* 
+ * Some very old gcc versions do not have LLONG_* defined, instead of
+ * messing with configure here it is a simple define for such cases
  */
 
 #ifndef LLONG_MAX

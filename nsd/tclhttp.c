@@ -245,6 +245,9 @@ HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int run)
  *
  *----------------------------------------------------------------------
  */
+static void
+HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr) 
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void
 HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
@@ -254,6 +257,7 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
 
     assert(hdrPtr);
     assert(response);
+    assert(statusPtr);
 
     sscanf(response, "HTTP/%2d.%2d %3d", &major, &minor, statusPtr);
     p = response;
