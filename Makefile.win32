@@ -38,80 +38,46 @@ INCLUDE	= $(INCLUDE);$(MSDK)\Include;$(TCLPATH)\include
 #INCLUDE	= $(INCLUDE);$(VC)\include
 
 
-#
-# nmake command to exec for each module
-#
-
+# nmake command to exec for each module:
 NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
 
 
+# Note our use below of nmake's macro string substition feature:
+#   http://msdn.microsoft.com/en-us/library/bsd42ets%28v=vs.110%29.aspx
 #
-# Build all core modules
+# Our use of $(build_targets) below expands into a separate target for
+# each module, which is especially convenient when we only want to
+# build one or two of them at a time (e.g., for debugging).  But nmake
+# does not have anything like Gnu make's explicit ".PHONY" syntax, so
+# we must make sure that each target name is NOT a valid file or
+# directory.  Thus our use of _, I, or C prefixes with each module
+# name.
 #
-all:
-	cd nsthread
-	$(NMAKE)
-	cd ..\nsd
-	$(NMAKE)
-	cd ..\nscgi
-	$(NMAKE)
-	cd ..\nscp
-	$(NMAKE)
-	cd ..\nsdb
-	$(NMAKE)
-	cd ..\nssock
-	$(NMAKE)
-	cd ..\nslog
-	$(NMAKE)
-	cd ..\nsperm
-	$(NMAKE)
-	cd ..
+# Independently of this makefile, to clean a single module you can
+# simply cd into its subdirectory in the DOS/command shell and run
+# "nmake clean".  That works fine.  Or using this makefile, you can
+# run the single "clean" target to clean them all, or one or more
+# individual clean targets like "Cnsthread Cnsd".
+#
+# --atp@piskorski.com, 2014/09/25 16:29 EDT
 
-#
-# Install to NAVISERVER directory
-#
-install:
-	cd nsthread
-	$(NMAKE) install
-	cd ../nsd
-	$(NMAKE) install
-	cd ../nscgi
-	$(NMAKE) install
-	cd ../nscp
-	$(NMAKE) install
-	cd ../nsdb
-	$(NMAKE) install
-	cd ../nssock
-	$(NMAKE) install
-	cd ../nslog
-	$(NMAKE) install
-	cd ../nsperm
-	$(NMAKE) install
-	cd ../tcl
-	nmake -f ../include/Makefile.win32 install-tcl 
-	cd ../include
-	nmake -f Makefile.win32 install-include
-	cd ..
+build_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm
+install_targets = $(build_targets:_=I)
+clean_targets = $(build_targets:_=C)
 
-#
-# Cleanup all directories
-#
-clean:
-	cd nsthread
-	$(NMAKE) clean
-	cd ../nsd
-	$(NMAKE) clean
-	cd ../nscgi
-	$(NMAKE) clean
-	cd ../nscp
-	$(NMAKE) clean
-	cd ../nsdb
-	$(NMAKE) clean
-	cd ../nssock
-	$(NMAKE) clean
-	cd ../nslog
-	$(NMAKE) clean
-	cd ../nsperm
-	$(NMAKE) clean
-	cd ..
+all: $(build_targets)
+clean: $(clean_targets)
+install: $(install_targets) I_tcl I_include
 
+$(build_targets):
+	pushd $(@:_=) & $(NMAKE) & popd
+$(clean_targets):
+	pushd $(@:C=) & $(NMAKE) clean & popd
+
+# Install to the NAVISERVER directory:
+$(install_targets):
+	pushd $(@:I=) & $(NMAKE) install & popd
+I_tcl:
+	pushd tcl & nmake -f ../include/Makefile.win32 install-tcl & popd
+I_include:
+	pushd include & nmake -f Makefile.win32 install-include & popd
