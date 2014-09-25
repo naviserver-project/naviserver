@@ -203,8 +203,8 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     unsigned int flag, oldFlag;
 
     enum {
-        CBufSizeIdx = -1,
-        CChanIdx = -2
+        CBufSizeIdx = ADP_OPTIONMAX + 1,
+        CChanIdx    = ADP_OPTIONMAX + 2
     };
 
     static struct {

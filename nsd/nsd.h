@@ -59,6 +59,7 @@
 #define ADP_ADPFILE                    0x4000U  /* Object to evaluate is a file */
 #define ADP_STREAM                     0x8000U  /* Enable ADP streaming */
 #define ADP_TCLFILE                    0x10000U /* Object to evaluate is a Tcl file */
+#define ADP_OPTIONMAX                  0x1000000U /* watermark for flag values */
 
 #define ADP_OK                         0
 #define ADP_BREAK                      1
