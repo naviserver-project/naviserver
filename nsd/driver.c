@@ -3233,19 +3233,19 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 	if (wrSockPtr->streaming != NS_WRITER_STREAM_FINISH) {
 	    close(wrSockPtr->fd);
 	}
-        ns_free(wrSockPtr->file.buf);
-    } else if (wrSockPtr->mem.bufs) {
-	if (wrSockPtr->mem.fmap.addr) {
-	    NsMemUmap(&wrSockPtr->mem.fmap);
+        ns_free(wrSockPtr->c.file.buf);
+    } else if (wrSockPtr->c.mem.bufs) {
+	if (wrSockPtr->c.mem.fmap.addr) {
+	    NsMemUmap(&wrSockPtr->c.mem.fmap);
 
 	} else {
 	    int i;
-	    for (i = 0; i < wrSockPtr->mem.nbufs; i++) {
-		ns_free(wrSockPtr->mem.bufs[i].iov_base);
+	    for (i = 0; i < wrSockPtr->c.mem.nbufs; i++) {
+		ns_free(wrSockPtr->c.mem.bufs[i].iov_base);
 	    }
 	}
-	if (wrSockPtr->mem.bufs != wrSockPtr->mem.preallocated_bufs) {
-	    ns_free(wrSockPtr->mem.bufs);
+	if (wrSockPtr->c.mem.bufs != wrSockPtr->c.mem.preallocated_bufs) {
+	    ns_free(wrSockPtr->c.mem.bufs);
 	}
     }
     if (wrSockPtr->headerString) {
@@ -3271,7 +3271,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
  *      None.
  *
  * Side effects:
- *      Fills up curPtr->file.buf and updates counters/sizes.
+ *      Fills up curPtr->c.file.buf and updates counters/sizes.
  *
  *----------------------------------------------------------------------
  */
@@ -3283,35 +3283,35 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
     unsigned char *bufPtr;
 
     if (streaming) {
-	Ns_MutexLock(&curPtr->file.fdlock);
-	toread = curPtr->file.toread;
-	Ns_MutexUnlock(&curPtr->file.fdlock);
+	Ns_MutexLock(&curPtr->c.file.fdlock);
+	toread = curPtr->c.file.toread;
+	Ns_MutexUnlock(&curPtr->c.file.fdlock);
     } else {
-	toread = curPtr->file.toread;
+	toread = curPtr->c.file.toread;
     }
     
-    maxsize = curPtr->file.maxsize;
-    bufPtr  = curPtr->file.buf;
+    maxsize = curPtr->c.file.maxsize;
+    bufPtr  = curPtr->c.file.buf;
 			
     /*
      * When bufsize > 0 we have leftover from previous send. In such
      * cases, move the leftover to the front, and fill the reminder of
-     * the buffer with new content.
+     * the buffer with new c.
      */
 	
-    if (curPtr->file.bufsize > 0) {
+    if (curPtr->c.file.bufsize > 0) {
 	Ns_Log(DriverDebug, 
 	       "### Writer %p %.6x leftover %" PRIdz " offset %ld", 
 	       curPtr, curPtr->flags, 
-	       curPtr->file.bufsize, 
-	       (long)curPtr->file.bufoffset);
-	if (likely(curPtr->file.bufoffset > 0)) {
-	    memmove(curPtr->file.buf, 
-		    curPtr->file.buf + curPtr->file.bufoffset, 
-		    curPtr->file.bufsize);
+	       curPtr->c.file.bufsize, 
+	       (long)curPtr->c.file.bufoffset);
+	if (likely(curPtr->c.file.bufoffset > 0)) {
+	    memmove(curPtr->c.file.buf, 
+		    curPtr->c.file.buf + curPtr->c.file.bufoffset, 
+		    curPtr->c.file.bufsize);
 	}
-	bufPtr = curPtr->file.buf + curPtr->file.bufsize;
-	maxsize -= curPtr->file.bufsize;
+	bufPtr = curPtr->c.file.buf + curPtr->c.file.bufsize;
+	maxsize -= curPtr->c.file.bufsize;
     }
     if (toread > maxsize) {
 	toread = maxsize;
@@ -3334,7 +3334,7 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 	     * set the read pointer to the position after the last
 	     * send operation.
 	     */
-	    Ns_MutexLock(&curPtr->file.fdlock);
+	    Ns_MutexLock(&curPtr->c.file.fdlock);
 	    lseek(curPtr->fd, curPtr->nsent, SEEK_SET);
 	}
 	
@@ -3344,15 +3344,15 @@ WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
 	    status = SOCK_ERROR;
 	} else {
 	    /* 
-	     * curPtr->file.toread is still protected by curPtr->file.fdlock when
+	     * curPtr->c.file.toread is still protected by curPtr->c.file.fdlock when
 	     * needed.
 	     */
-	    curPtr->file.toread -= n;
-	    curPtr->file.bufsize += n;
+	    curPtr->c.file.toread -= n;
+	    curPtr->c.file.bufsize += n;
 	}
 	
 	if (streaming) {
-	    Ns_MutexUnlock(&curPtr->file.fdlock);
+	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
 	}
     }
 
@@ -3389,14 +3389,14 @@ WriterSend(WriterSock *curPtr, int *err) {
      */
     if (curPtr->fd != INVALID_SOCKET) {
 	/*
-	 * Send a single buffer with curPtr->file.bufsize bytes from the
-	 * curPtr->file.buf to the client.
+	 * Send a single buffer with curPtr->c.file.bufsize bytes from the
+	 * curPtr->c.file.buf to the client.
 	 */
-	vbuf.iov_len = curPtr->file.bufsize;
-	vbuf.iov_base = (void *)curPtr->file.buf;
+	vbuf.iov_len = curPtr->c.file.bufsize;
+	vbuf.iov_base = (void *)curPtr->c.file.buf;
 	bufs = &vbuf;
 	nbufs = 1;
-	towrite = curPtr->file.bufsize;
+	towrite = curPtr->c.file.bufsize;
     } else {
 	int i;
 
@@ -3405,35 +3405,35 @@ WriterSend(WriterSock *curPtr, int *err) {
 	 * Get length of remaining buffers
 	 */
 	towrite = 0;
-	for (i = 0; i < curPtr->mem.nsbufs; i ++) {
-	    towrite += curPtr->mem.sbufs[i].iov_len;
+	for (i = 0; i < curPtr->c.mem.nsbufs; i ++) {
+	    towrite += curPtr->c.mem.sbufs[i].iov_len;
 	}
 	Ns_Log(DriverDebug, 
 	       "### Writer wants to send remainder nbufs %d len %" PRIdz, 
-	       curPtr->mem.nsbufs, towrite);
+	       curPtr->c.mem.nsbufs, towrite);
 
 	/*
 	 * Add buffers from the source and fill structure up to max 
 	 */
-	while (curPtr->mem.bufIdx  < curPtr->mem.nbufs && 
-	       curPtr->mem.sbufIdx < UIO_SMALLIOV) {
-	    struct iovec *vPtr = &curPtr->mem.bufs[curPtr->mem.bufIdx];
+	while (curPtr->c.mem.bufIdx  < curPtr->c.mem.nbufs && 
+	       curPtr->c.mem.sbufIdx < UIO_SMALLIOV) {
+	    struct iovec *vPtr = &curPtr->c.mem.bufs[curPtr->c.mem.bufIdx];
 	    
 	    if (vPtr->iov_len > 0 && vPtr->iov_base != NULL) {
 
 		Ns_Log(DriverDebug, 
 		       "### Writer copies source %d to scratch %d len %" PRIiovlen,
-		       curPtr->mem.bufIdx, curPtr->mem.sbufIdx, vPtr->iov_len);
+		       curPtr->c.mem.bufIdx, curPtr->c.mem.sbufIdx, vPtr->iov_len);
 
-		towrite += Ns_SetVec(curPtr->mem.sbufs, curPtr->mem.sbufIdx++, 
+		towrite += Ns_SetVec(curPtr->c.mem.sbufs, curPtr->c.mem.sbufIdx++, 
 				     vPtr->iov_base, vPtr->iov_len);
-		curPtr->mem.nsbufs++;
+		curPtr->c.mem.nsbufs++;
 	    }
-	    curPtr->mem.bufIdx++;
+	    curPtr->c.mem.bufIdx++;
 	}
 
-	bufs  = curPtr->mem.sbufs;
-	nbufs = curPtr->mem.nsbufs;
+	bufs  = curPtr->c.mem.sbufs;
+	nbufs = curPtr->c.mem.nsbufs;
 	Ns_Log(DriverDebug, "### Writer wants to send %d bufs size %" PRIdz, 
 	       nbufs, towrite);
     }
@@ -3448,9 +3448,9 @@ WriterSend(WriterSock *curPtr, int *err) {
 	 * We have sent something.
 	*/
 	if (curPtr->streaming) {
-	    Ns_MutexLock(&curPtr->file.fdlock);
+	    Ns_MutexLock(&curPtr->c.file.fdlock);
 	    curPtr->size -= n;
-	    Ns_MutexUnlock(&curPtr->file.fdlock);
+	    Ns_MutexUnlock(&curPtr->c.file.fdlock);
 	} else {
 	    curPtr->size -= n;
 	}
@@ -3458,8 +3458,8 @@ WriterSend(WriterSock *curPtr, int *err) {
 	curPtr->sockPtr->timeout.sec = 0;
 
 	if (curPtr->fd != INVALID_SOCKET) {
-	    curPtr->file.bufsize -= n;
-	    curPtr->file.bufoffset = n;
+	    curPtr->c.file.bufsize -= n;
+	    curPtr->c.file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
 	    if (n < towrite) {
@@ -3468,12 +3468,12 @@ WriterSend(WriterSock *curPtr, int *err) {
 		 * structure. We have to compact it to fill content in
 		 * the next round.
 		 */
-		curPtr->mem.sbufIdx = Ns_ResetVec(curPtr->mem.sbufs, curPtr->mem.nsbufs, n);
-		curPtr->mem.nsbufs -= curPtr->mem.sbufIdx;
+		curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, n);
+		curPtr->c.mem.nsbufs -= curPtr->c.mem.sbufIdx;
 		
-		memmove(curPtr->mem.sbufs, curPtr->mem.sbufs + curPtr->mem.sbufIdx, 
+		memmove(curPtr->c.mem.sbufs, curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx, 
 		/* move the iovecs to the start of the scratch buffers */
-			(size_t) sizeof(struct iovec) * curPtr->mem.nsbufs);
+			(size_t) sizeof(struct iovec) * curPtr->c.mem.nsbufs);
 	    }
 	}
     }
@@ -3593,7 +3593,7 @@ WriterThread(void *arg)
                        "### Writer %p can write to client fd %d (trigger %d) streaming %.6x"
 		       " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
                        curPtr, sockPtr->sock, PollIn(&pdata, 0), streaming,
-                       curPtr->size, curPtr->nsent, curPtr->file.bufsize);
+                       curPtr->size, curPtr->nsent, curPtr->c.file.bufsize);
 		if (unlikely(curPtr->size < 1)) {
 		    /*
 		     * Size < 0 means that verything was sent.
@@ -3608,7 +3608,7 @@ WriterThread(void *arg)
 		    /*
 		     * If size > 0, there is still something to send.
 		     * If we are spooling from a file, read some data
-		     * from the (spool) file and place it into curPtr->file.buf.
+		     * from the (spool) file and place it into curPtr->c.file.buf.
 		     */
 		    if (curPtr->fd != INVALID_SOCKET) {
 			status = WriterReadFromSpool(wrPtr, curPtr);
@@ -3821,7 +3821,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 		       "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
 		return NS_ERROR;
 	    }
-	    Ns_MutexLock(&wrSockPtr->file.fdlock);
+	    Ns_MutexLock(&wrSockPtr->c.file.fdlock);
 	    lseek(connPtr->fd, 0, SEEK_END);
 	}
 
@@ -3857,8 +3857,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     */
 	    assert(wrSockPtr != NULL);
 	    connPtr->streamWriter->size += wrote;
-	    connPtr->streamWriter->file.toread += wrote;
-	    Ns_MutexUnlock(&wrSockPtr->file.fdlock);
+	    connPtr->streamWriter->c.file.toread += wrote;
+	    Ns_MutexUnlock(&wrSockPtr->c.file.fdlock);
 
 	    connPtr->nContentSent += wrote;
 	    if (likely(wrSockPtr->queuePtr != NULL)) {
@@ -3929,7 +3929,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     if (fd != -1) {
-	// maybe add mmap support for files (fd != -1)
+	/* maybe add mmap support for files (fd != -1) */
 
 	wrSockPtr->fd = fd;
 	if (unlikely(headerSize >= wrPtr->bufsize)) {
@@ -3938,28 +3938,28 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     * as "leftover" and use the headerString as buffer for file
 	     * reads (rather rare case)
 	     */
-	    wrSockPtr->file.buf = (unsigned char *)wrSockPtr->headerString;
-	    wrSockPtr->file.maxsize = headerSize;
-	    wrSockPtr->file.bufsize = headerSize;
+	    wrSockPtr->c.file.buf = (unsigned char *)wrSockPtr->headerString;
+	    wrSockPtr->c.file.maxsize = headerSize;
+	    wrSockPtr->c.file.bufsize = headerSize;
 	    wrSockPtr->headerString = NULL;
 	} else if (headerSize > 0) {
 	    /* 
 	     * We have a header that fits into the bufsize; place it
 	     * as "leftover" at the end of the buffer.
 	     */
-	    wrSockPtr->file.buf = ns_malloc(wrPtr->bufsize);
-	    memcpy(wrSockPtr->file.buf, wrSockPtr->headerString, headerSize);
-	    wrSockPtr->file.bufsize = headerSize;
-	    wrSockPtr->file.maxsize = wrPtr->bufsize;
+	    wrSockPtr->c.file.buf = ns_malloc(wrPtr->bufsize);
+	    memcpy(wrSockPtr->c.file.buf, wrSockPtr->headerString, headerSize);
+	    wrSockPtr->c.file.bufsize = headerSize;
+	    wrSockPtr->c.file.maxsize = wrPtr->bufsize;
 	    ns_free(wrSockPtr->headerString);
 	    wrSockPtr->headerString = NULL;
 	} else {
 	    assert(wrSockPtr->headerString == NULL);
-	    wrSockPtr->file.buf = ns_malloc(wrPtr->bufsize);
-	    wrSockPtr->file.maxsize = wrPtr->bufsize;
+	    wrSockPtr->c.file.buf = ns_malloc(wrPtr->bufsize);
+	    wrSockPtr->c.file.maxsize = wrPtr->bufsize;
 	}
-	wrSockPtr->file.bufoffset = 0;
-	wrSockPtr->file.toread = nsend;
+	wrSockPtr->c.file.bufoffset = 0;
+	wrSockPtr->c.file.toread = nsend;
 
     } else if (bufs != NULL) {
 	int   i, j, headerbufs = headerSize > 0 ? 1 : 0;
@@ -3967,15 +3967,15 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	wrSockPtr->fd = INVALID_SOCKET;
 	
 	if (nbufs+headerbufs < UIO_SMALLIOV) {
-	    wrSockPtr->mem.bufs = wrSockPtr->mem.preallocated_bufs;
+	    wrSockPtr->c.mem.bufs = wrSockPtr->c.mem.preallocated_bufs;
 	} else {
 	    Ns_Log(Notice, "NsWriterQueue: alloc %d iovecs", nbufs);
-	    wrSockPtr->mem.bufs = ns_calloc(nbufs+headerbufs, sizeof(struct iovec));
+	    wrSockPtr->c.mem.bufs = ns_calloc(nbufs+headerbufs, sizeof(struct iovec));
 	}
-	wrSockPtr->mem.nbufs = nbufs+headerbufs;
+	wrSockPtr->c.mem.nbufs = nbufs+headerbufs;
 	if (headerbufs) {
-	    wrSockPtr->mem.bufs[0].iov_base = wrSockPtr->headerString;
-	    wrSockPtr->mem.bufs[0].iov_len  = headerSize;
+	    wrSockPtr->c.mem.bufs[0].iov_base = wrSockPtr->headerString;
+	    wrSockPtr->c.mem.bufs[0].iov_len  = headerSize;
 	}
 
 	if (connPtr->fmap.addr != NULL) {
@@ -3984,26 +3984,26 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     * Deliver an mmapped file, no need to copy content
 	     */
 	    for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
-		wrSockPtr->mem.bufs[j].iov_base = bufs[i].iov_base;
-		wrSockPtr->mem.bufs[j].iov_len  = bufs[i].iov_len;
+		wrSockPtr->c.mem.bufs[j].iov_base = bufs[i].iov_base;
+		wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
 	    }
 	    /*
 	     * Make a copy of the fmap structure and make clear that
 	     * we unmap in the writer thread.
 	     */
-	    wrSockPtr->mem.fmap = connPtr->fmap;
+	    wrSockPtr->c.mem.fmap = connPtr->fmap;
 	    connPtr->fmap.addr = NULL;
 	    /* header string will be freed via wrSockPtr->headerString */
 
 	} else {
 	    /*
 	     * Deliver an content from iovec. The lifetime of the
-	     * source is unknown, we have to copy the content.
+	     * source is unknown, we have to copy the c.
 	     */
 	    for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
-		wrSockPtr->mem.bufs[j].iov_base = ns_malloc(bufs[i].iov_len);
-		wrSockPtr->mem.bufs[j].iov_len  = bufs[i].iov_len;
-		memcpy(wrSockPtr->mem.bufs[j].iov_base, bufs[i].iov_base, bufs[i].iov_len);
+		wrSockPtr->c.mem.bufs[j].iov_base = ns_malloc(bufs[i].iov_len);
+		wrSockPtr->c.mem.bufs[j].iov_len  = bufs[i].iov_len;
+		memcpy(wrSockPtr->c.mem.bufs[j].iov_base, bufs[i].iov_base, bufs[i].iov_len);
 	    }
 	    /* header string will be freed a buf[0] */
 	    wrSockPtr->headerString = NULL;

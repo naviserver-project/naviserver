@@ -100,8 +100,8 @@ Ns_ModuleInit(CONST char *server, CONST char *module)
     if (!once) {
         once = 1;
         Nsproxy_LibInit();
-        Ns_RegisterProcInfo(InitInterp, "nsproxy:initinterp", NULL);
-        Ns_RegisterProcInfo(Ns_ProxyCleanup, "nsproxy:cleanup", NULL);
+        Ns_RegisterProcInfo((Ns_Callback *)InitInterp, "nsproxy:initinterp", NULL);
+        Ns_RegisterProcInfo((Ns_Callback *)Ns_ProxyCleanup, "nsproxy:cleanup", NULL);
     }
 
     smPtr = ns_malloc(sizeof(SrvMod));

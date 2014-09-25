@@ -435,7 +435,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, NULL) != TCL_OK) {
         if (NsTclTimeoutException(interp)) {
             Ns_DStringInit(&ds);
-            Ns_GetProcInfo(&ds, NsTclRequestProc, arg);
+            Ns_GetProcInfo(&ds, (Ns_Callback *)NsTclRequestProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
             Ns_DStringFree(&ds);
             status = Ns_ConnReturnUnavailable(conn);
@@ -526,7 +526,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
          */
 
         if (NsTclTimeoutException(interp)) {
-	    Ns_GetProcInfo(&ds, NsTclFilterProc, arg);
+	    Ns_GetProcInfo(&ds, (Ns_Callback *)NsTclFilterProc, arg);
 	    Ns_Log(Dev, "%s: %s", ds.string, result);
             Ns_ConnReturnUnavailable(conn);
             status = NS_FILTER_RETURN;

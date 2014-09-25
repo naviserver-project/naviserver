@@ -332,7 +332,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                  thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
         Tcl_DStringAppend(dsPtr, buf, -1);
         if (proc != NULL) {
-            (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
+	    (*proc)(dsPtr, (void *)thrPtr->proc, thrPtr->arg);
         } else {
             snprintf(buf, sizeof(buf), " %p %p", thrPtr->proc, thrPtr->arg);
             Tcl_DStringAppend(dsPtr, buf, -1);

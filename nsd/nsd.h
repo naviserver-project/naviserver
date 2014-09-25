@@ -217,26 +217,26 @@ typedef struct WriterSock {
     char                 *headerString;
     
     union {
-    struct {
-	struct iovec      *bufs;                 /* incoming bufs to be sent */
-	int                nbufs;
-	int                bufIdx; 
-	struct iovec       sbufs[UIO_SMALLIOV];  /* scratch bufs for handling partial sends */
-	int                nsbufs;
-	int                sbufIdx;
-	struct iovec       preallocated_bufs[UIO_SMALLIOV];
-	struct FileMap     fmap;
-    } mem;
+	struct {
+	    struct iovec      *bufs;                 /* incoming bufs to be sent */
+	    int                nbufs;
+	    int                bufIdx; 
+	    struct iovec       sbufs[UIO_SMALLIOV];  /* scratch bufs for handling partial sends */
+	    int                nsbufs;
+	    int                sbufIdx;
+	    struct iovec       preallocated_bufs[UIO_SMALLIOV];
+	    struct FileMap     fmap;
+	} mem;
 
-    struct {
-	size_t             maxsize;
-	size_t             bufsize;
-	off_t              bufoffset;
-	Tcl_WideInt        toread;
-	unsigned char     *buf;
-	Ns_Mutex           fdlock;
-    } file;
-    };
+	struct {
+	    size_t             maxsize;
+	    size_t             bufsize;
+	    off_t              bufoffset;
+	    Tcl_WideInt        toread;
+	    unsigned char     *buf;
+	    Ns_Mutex           fdlock;
+	} file;
+    } c;
 
     char              *clientData;
     Ns_Time            startTime;

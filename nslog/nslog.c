@@ -116,10 +116,10 @@ Ns_ModuleInit(char *server, char *module)
 
     if (first) {
         first = 0;
-        Ns_RegisterProcInfo(LogRollCallback, "nslog:roll", LogArg);
-        Ns_RegisterProcInfo(LogCloseCallback, "nslog:close", LogArg);
-        Ns_RegisterProcInfo(LogTrace, "nslog:conntrace", LogArg);
-        Ns_RegisterProcInfo(AddCmds, "nslog:initinterp", LogArg);
+        Ns_RegisterProcInfo((Ns_Callback *)LogRollCallback, "nslog:roll", LogArg);
+        Ns_RegisterProcInfo((Ns_Callback *)LogCloseCallback, "nslog:close", LogArg);
+        Ns_RegisterProcInfo((Ns_Callback *)LogTrace, "nslog:conntrace", LogArg);
+        Ns_RegisterProcInfo((Ns_Callback *)AddCmds, "nslog:initinterp", LogArg);
     }
 
     Ns_DStringInit(&ds);
