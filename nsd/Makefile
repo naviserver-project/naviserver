@@ -50,11 +50,6 @@ LIBOBJS = adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  url.o url2file.o urlencode.o urlopen.o urlspace.o uuencode.o \
 	  unix.o watchdog.o nswin32.o
 
-# If you define LIBOBJS here it breaks the Windows build with this error:
-#   ../include/Makefile.win32(147) : fatal error U1070: cycle in macro definition 'OBJS'
-# TODO: But do need LIBOBJS on Linux?  --atp@piskorski.com, 2014/09/23 20:25 EDT
-#LIBOBJS	 = $(OBJS)
-
 include ../include/Makefile.build
 
 install-init:
