@@ -50,10 +50,7 @@ typedef struct Tls {
     struct tm   	gtbuf;
     struct tm   	ltbuf;
     char		ctbuf[27];
-    struct {
-	struct dirent ent;
-	char name[PATH_MAX+1];
-    } rdbuf;
+    struct dirent       ent;
 #endif
 } Tls;
 
@@ -149,7 +146,7 @@ ns_readdir(DIR * dir)
     struct dirent *ent;
     Tls *tlsPtr = GetTls();
 
-    ent = &tlsPtr->rdbuf.ent; 
+    ent = &tlsPtr->ent; 
     if (readdir_r(dir, ent, &ent) != 0) {
 	ent = NULL;
     }
