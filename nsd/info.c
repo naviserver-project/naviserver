@@ -153,7 +153,7 @@ Ns_InfoConfigFile(void)
  *----------------------------------------------------------------------
  */
 
-int
+pid_t
 Ns_InfoPid(void)
 {
     return nsconf.pid;
@@ -600,7 +600,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         return TCL_OK;
 
     case IPidIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_InfoPid()));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)Ns_InfoPid()));
         return TCL_OK;
 
     case IMajorIdx:

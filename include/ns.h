@@ -1804,7 +1804,7 @@ Ns_InfoServerVersion(void);
 NS_EXTERN char *
 Ns_InfoConfigFile(void);
 
-NS_EXTERN int
+NS_EXTERN pid_t
 Ns_InfoPid(void);
 
 NS_EXTERN char *
