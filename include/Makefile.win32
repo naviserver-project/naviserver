@@ -69,6 +69,12 @@
 NAVISERVER = C:\Naviserver
 !endif
 
+!ifndef DLL
+!ifdef MOD
+DLL = $(MOD)
+!endif
+!endif
+
 
 #
 # Update options when building from sources or installed location.
@@ -129,8 +135,7 @@ COPTS	= /W1 /nologo /c
 DEFS	= $(DEFS) /D "_WINDOWS" /D "TCL_THREADS=1" \
 		  /D "WIN32" /D "FD_SETSIZE=128" \
 		  /D "NO_CONST=1" /D "_MBCS" \
-		  /D _CRT_SECURE_NO_WARNINGS \
- 		  /D _CRT_SECURE_NO_DEPRECATE \
+		  /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE \
 		  /D _CRT_NONSTDC_NO_DEPRECATE
 
 LOPTS   = /NOLOGO /SUBSYSTEM:CONSOLE /OPT:NOREF /OPT:NOICF
