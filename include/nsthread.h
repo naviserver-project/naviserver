@@ -85,7 +85,7 @@
 # endif
 
 # ifndef _WIN32_WINNT
-#  define _WIN32_WINNT                0x0400U
+#  define _WIN32_WINNT                0x0400
 # endif
 
 #include <windows.h>
