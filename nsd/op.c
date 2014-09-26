@@ -539,7 +539,7 @@ WalkCallback(Tcl_DString *dsPtr, void *arg)
 {
      Req *reqPtr = arg;
 
-     Ns_GetProcInfo(dsPtr, reqPtr->proc, reqPtr->arg);
+     Ns_GetProcInfo(dsPtr, (Ns_Callback *)reqPtr->proc, reqPtr->arg);
 }
 
 

@@ -97,7 +97,7 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *name)
 
 int
 NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[], int adp)
+                        Tcl_Obj *CONST objv[])
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
@@ -148,7 +148,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
 int
 NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[], int adp)
+                        Tcl_Obj *CONST objv[])
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
@@ -197,8 +197,8 @@ NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                            Tcl_Obj *CONST objv[], int adp)
+NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, 
+			    int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp       *itPtr = arg;
     char           *method, *url;
@@ -435,7 +435,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
     if (Ns_TclEvalCallback(interp, cbPtr, NULL, NULL) != TCL_OK) {
         if (NsTclTimeoutException(interp)) {
             Ns_DStringInit(&ds);
-            Ns_GetProcInfo(&ds, NsTclRequestProc, arg);
+            Ns_GetProcInfo(&ds, (Ns_Callback *)NsTclRequestProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
             Ns_DStringFree(&ds);
             status = Ns_ConnReturnUnavailable(conn);
@@ -526,7 +526,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
          */
 
         if (NsTclTimeoutException(interp)) {
-	    Ns_GetProcInfo(&ds, NsTclFilterProc, arg);
+	    Ns_GetProcInfo(&ds, (Ns_Callback *)NsTclFilterProc, arg);
 	    Ns_Log(Dev, "%s: %s", ds.string, result);
             Ns_ConnReturnUnavailable(conn);
             status = NS_FILTER_RETURN;

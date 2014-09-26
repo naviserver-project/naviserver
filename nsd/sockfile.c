@@ -336,7 +336,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 #include <io.h>
 #include <stdio.h>
 
-int pread(unsigned int fd, char *buf, size_t count, off_t offset)
+ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
 {
     OVERLAPPED overlapped = { 0 };
     HANDLE fh = (HANDLE)_get_osfhandle(fd);

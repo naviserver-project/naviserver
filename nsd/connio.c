@@ -584,6 +584,8 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 
     towrite = nwrote = sent = 0;
 
+    assert(nbufs <= 0 || bufs != NULL);
+
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].iov_len;
     }

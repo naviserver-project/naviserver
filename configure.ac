@@ -202,6 +202,10 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 ]])],[AC_DEFINE([USE_DUPHIGH], [1], need for dup high) as_ok=yes],[as_ok=no],[as_ok=no])
 AC_MSG_RESULT([$as_ok])
 
+AC_CHECK_TYPE([nfds_t],
+	[AC_DEFINE([NS_POLL_NFDS_TYPE],[nfds_t],[type of second ns_poll() argument])],
+	[AC_DEFINE([NS_POLL_NFDS_TYPE],[unsigned int],[type of second ns_poll() argument])],
+	[#include <poll.h>])
 
 #
 # Tcl_GetMemoryInfo() is exported depending on a complex set of compilation

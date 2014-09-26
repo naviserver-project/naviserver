@@ -316,15 +316,15 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
                 Ns_DStringNAppend(&cds, " ", 1);
             }
         }
-    Ns_NormalizePath(&xds, exec);
-    s = xds.string;
-    while (*s != '\0') {
-        if (*s == '/') {
-            *s = '\\';
-        }
-        ++s;
-    }
-    exec = xds.string;
+	Ns_NormalizePath(&xds, exec);
+	s = xds.string;
+	while (*s != '\0') {
+	    if (*s == '/') {
+		*s = '\\';
+	    }
+	    ++s;
+	}
+	exec = xds.string;
     }
     if (env == NULL) {
         envp = NULL;

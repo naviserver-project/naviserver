@@ -246,6 +246,9 @@
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
 
+/* type of second ns_poll() argument */
+#undef NS_POLL_NFDS_TYPE
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 

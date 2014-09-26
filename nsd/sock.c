@@ -219,6 +219,9 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
     Sock          *sock = (Sock *)sockPtr;
 
+    assert(sockPtr != NULL);
+    assert(nbufs < 1 || bufs != NULL);
+
     sbufPtr = sbufs;
     sbufLen = UIO_MAXIOV;
 
@@ -673,7 +676,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
 int
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
-    int nb = 1;
+    unsigned int nb = 1;
 
     if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
         return NS_ERROR;
@@ -702,7 +705,7 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
 int
 Ns_SockSetBlocking(NS_SOCKET sock)
 {
-    int nb = 0;
+    unsigned int nb = 0;
 
     if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
         return NS_ERROR;

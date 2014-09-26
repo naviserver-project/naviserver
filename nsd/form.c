@@ -95,8 +95,8 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                 s = NextBoundry(&bound, form, formend);
                 while (s != NULL) {
                     s += bound.length;
-                    if (*s == '\r') ++s;
-                    if (*s == '\n') ++s;
+                    if (*s == '\r') {++s;}
+                    if (*s == '\n') {++s;}
                     e = NextBoundry(&bound, s, formend);
                     if (e != NULL) {
                         ParseMultiInput(connPtr, s, e);
@@ -308,8 +308,8 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
      * Trim off the trailing \r\n and null terminate the input.
      */
 
-    if (end > start && end[-1] == '\n') --end;
-    if (end > start && end[-1] == '\r') --end;
+    if (end > start && end[-1] == '\n') {--end;}
+    if (end > start && end[-1] == '\r') {--end;}
     saveend = *end;
     *end = '\0';
 

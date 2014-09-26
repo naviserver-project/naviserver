@@ -44,8 +44,8 @@
  */
 
 static Ns_ServerInitProc ConfigServerRedirects;
-static int ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr);
-
+static int ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 
 /*
@@ -369,6 +369,8 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
     Ns_DString  ds;
     int         result;
 
+    assert(conn != NULL);
+
     if (Ns_SetIGet(conn->outputheaders, "WWW-Authenticate") == NULL) {
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, "Basic realm=\"",
@@ -602,6 +604,8 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
 {
     int result;
 
+    assert(conn != NULL);
+
     Ns_SetTrunc(conn->outputheaders, 0);
     if (ReturnRedirect(conn, 500, &result)) {
         return result;
@@ -633,6 +637,8 @@ int
 Ns_ConnReturnUnavailable(Ns_Conn *conn)
 {
     int result;
+
+    assert(conn != NULL);
 
     Ns_SetTrunc(conn->outputheaders, 0);
     if (ReturnRedirect(conn, 503, &result)) {
@@ -667,7 +673,13 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
 {
     Tcl_HashEntry *hPtr;
     Conn          *connPtr = (Conn *) conn;
-    NsServer      *servPtr = connPtr->poolPtr->servPtr;
+    NsServer      *servPtr;
+
+    assert(connPtr != NULL);
+    assert(resultPtr != NULL);
+
+    servPtr = connPtr->poolPtr->servPtr;
+    assert(servPtr != NULL);
 
     hPtr = Tcl_FindHashEntry(&servPtr->request.redirect,
                              (char *)(intptr_t) status);

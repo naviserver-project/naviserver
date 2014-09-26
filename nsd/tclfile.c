@@ -661,6 +661,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
             Tcl_AppendResult(interp, "channel \"", name, "\" not found", NULL);
             return TCL_ERROR;
         }
+	assert(regChan != NULL);
         SpliceChannel(interp, regChan->chan);
         Tcl_SetResult(interp, regChan->name, TCL_VOLATILE);
         hPtr = Tcl_CreateHashEntry(&itPtr->chans, name, &isNew);
@@ -731,7 +732,8 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         }
         hPtr = Tcl_FirstHashEntry(tabPtr, &search);
         while (hPtr != NULL) {
-            regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
+	    regChan = (NsRegChan*)Tcl_GetHashValue(hPtr);
+	    assert(regChan != NULL);
             if (shared) {
                 Tcl_SpliceChannel(regChan->chan);
                 Tcl_UnregisterChannel((Tcl_Interp*)NULL, regChan->chan);

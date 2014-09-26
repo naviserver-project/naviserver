@@ -608,11 +608,11 @@ NsClosePreBound(void)
  *
  *----------------------------------------------------------------------
  */
+#ifndef _WIN32
 
 static void
 PreBind(char *line)
 {
-#ifndef _WIN32
     Tcl_HashEntry      *hPtr;
     int                isNew, sock, port, mode;
     char               *next, *str;
@@ -736,8 +736,8 @@ PreBind(char *line)
             Ns_Log(Notice, "prebind: unix: %s = %d", line, sock);
         }
     }
-#endif
 }
+#endif
 
 
 /*
@@ -965,10 +965,10 @@ NsStopBinder(void)
  *----------------------------------------------------------------------
  */
 
+#ifndef _WIN32
 static void
 Binder(void)
 {
-#ifndef _WIN32
     int           options, type, port, n, err, fd;
     char          address[64];
     struct msghdr msg;
@@ -1077,5 +1077,5 @@ Binder(void)
         }
     }
     Ns_Log(Notice, "binder: stopped");
-#endif /* _WIN32 */
 }
+#endif /* _WIN32 */

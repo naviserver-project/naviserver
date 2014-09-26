@@ -88,7 +88,7 @@
 # endif
 
 # ifndef _WIN32_WINNT
-#  define _WIN32_WINNT                0x0400
+#  define _WIN32_WINNT                0x0400U
 # endif
 
 #include <windows.h>
@@ -100,10 +100,14 @@
 #include <process.h>
 #include <direct.h>
 
-#define NS_SOCKET	SOCKET
+# define NS_SOCKET	SOCKET
 
 # define STDOUT_FILENO               1
 # define STDERR_FILENO               2
+
+# if !defined(NS_POLL_NFDS_TYPE) 
+#  define NS_POLL_NFDS_TYPE unsigned int
+# endif
 
 # if defined(_MSC_VER)
 /*
@@ -157,7 +161,7 @@ typedef int32_t ssize_t;
 # define vsnprintf                   _vsnprintf
 
 /*
- * Under MinGW we use config.h, for MSVC we pre-define environment here
+ * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
  */
 
 # ifndef HAVE_CONFIG_H
@@ -198,11 +202,11 @@ struct iovec {
  * The following is for supporting our own poll() emulation.
  */
 
-# define POLLIN                      0x0001
-# define POLLPRI                     0x0002
-# define POLLOUT                     0x0004
-# define POLLERR                     0x0008
-# define POLLHUP                     0x0010
+# define POLLIN                      0x0001U
+# define POLLPRI                     0x0002U
+# define POLLOUT                     0x0004U
+# define POLLERR                     0x0008U
+# define POLLHUP                     0x0010U
 
 struct pollfd {
     NS_SOCKET      fd;
@@ -400,8 +404,9 @@ typedef struct DIR_ *DIR;
 #define PATH_MAX 1024
 #endif
 
-/* Some very old gcc versions do not have it defined, instead of messing with confiture here it
- * is a simple define for such cases
+/* 
+ * Some very old gcc versions do not have LLONG_* defined, instead of
+ * messing with configure here it is a simple define for such cases
  */
 
 #ifndef LLONG_MAX

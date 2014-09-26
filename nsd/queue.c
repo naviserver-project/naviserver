@@ -521,7 +521,8 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 	"requestprocs",
 	"serverdir", "stats", 
 	"tcllib", "threads", "traces",
-	"url2file", "waiting", NULL,
+	"url2file", "waiting", 
+	NULL
     };
 
     enum {
@@ -533,7 +534,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 	SRequestprocsIdx,
 	SServerdirIdx, SStatsIdx, 
 	STcllibIdx, SThreadsIdx, STracesIdx,
-	SUrl2fileIdx, SWaitingIdx,
+	SUrl2fileIdx, SWaitingIdx
     };
 
     static CONST char  *options[]           = {"-server", "-pool", NULL};
@@ -1103,7 +1104,7 @@ NsConnThread(void *arg)
 	     */
 	    while (1) {
 
-		if (servPtr->pools.shutdown) break;
+		if (servPtr->pools.shutdown) {break;}
 		
 		Ns_GetTime(timePtr);
 		Ns_IncrTime(timePtr, timeout, 0);
@@ -1116,13 +1117,13 @@ NsConnThread(void *arg)
 			Ns_Log(Warning, "signal lost, resuming after timeout");
 			status = NS_OK;
 		    }
-		    if (poolPtr->threads.current <= poolPtr->threads.min) continue;
+		    if (poolPtr->threads.current <= poolPtr->threads.min) {continue;}
 		    /* 
 		     * We have a timeout, and the thread can exit 
 		     */
 		    break;
 		}
-		if (argPtr->connPtr) break;
+		if (argPtr->connPtr) {break;}
 		
 		Ns_Log(Debug, "CondTimedWait returned an unexpected result, maybe shutdown?");
 	    }
@@ -1240,26 +1241,26 @@ NsConnThread(void *arg)
 		Ns_DiffTime(&now, &connPtr->filterDoneTime,     &netRunTime);
 		Ns_DiffTime(&now, &connPtr->requestQueueTime,   &totalTime);
 
-	    Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
-		   " start %" PRIu64 ".%06ld"
-		   " %" PRIu64 ".%06ld"
-		   " accept %" PRIu64 ".%06ld"
-		   " queue %" PRIu64 ".%06ld"
-		   " filter %" PRIu64 ".%06ld"
-		   " run %" PRIu64 ".%06ld"
-		   " netrun %" PRIu64 ".%06ld"
-		   " total %" PRIu64 ".%06ld",
-		   ThreadNr(poolPtr, argPtr),
-		   waiting, poolPtr->threads.current, idle, ncons, fromQueue,
-		   (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
-		   (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
-		   (int64_t) acceptTime.sec, acceptTime.usec,
-		   (int64_t) queueTime.sec, queueTime.usec,
-		   (int64_t) filterTime.sec, filterTime.usec,
-		   (int64_t) runTime.sec, runTime.usec,
-		   (int64_t) netRunTime.sec, netRunTime.usec,
-		   (int64_t) totalTime.sec, totalTime.usec
-		   );
+		Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
+		       " start %" PRIu64 ".%06ld"
+		       " %" PRIu64 ".%06ld"
+		       " accept %" PRIu64 ".%06ld"
+		       " queue %" PRIu64 ".%06ld"
+		       " filter %" PRIu64 ".%06ld"
+		       " run %" PRIu64 ".%06ld"
+		       " netrun %" PRIu64 ".%06ld"
+		       " total %" PRIu64 ".%06ld",
+		       ThreadNr(poolPtr, argPtr),
+		       waiting, poolPtr->threads.current, idle, ncons, fromQueue,
+		       (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,
+		       (int64_t) connPtr->requestQueueTime.sec, connPtr->requestQueueTime.usec,
+		       (int64_t) acceptTime.sec, acceptTime.usec,
+		       (int64_t) queueTime.sec, queueTime.usec,
+		       (int64_t) filterTime.sec, filterTime.usec,
+		       (int64_t) runTime.sec, runTime.usec,
+		       (int64_t) netRunTime.sec, netRunTime.usec,
+		       (int64_t) totalTime.sec, totalTime.usec
+		       );
 	    }
 	    
 	    if (waiting > 0) {
@@ -1353,6 +1354,9 @@ NsConnThread(void *arg)
  *
  *----------------------------------------------------------------------
  */
+static void
+ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void
 ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
@@ -1380,11 +1384,11 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
         Ns_ConnClose(conn);
         return;
     }
+    assert(sockPtr != NULL);
 
     /*
      * Make sure we update peer address with actual remote IP address
      */
-
     connPtr->reqPtr->port = ntohs(sockPtr->sa.sin_port);
     strcpy(connPtr->reqPtr->peer, ns_inet_ntoa(sockPtr->sa.sin_addr));
 

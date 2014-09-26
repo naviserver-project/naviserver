@@ -58,12 +58,12 @@ typedef struct TaskQueue {
  * and manage the state tasks.
  */
 
-#define TASK_INIT           0x01
-#define TASK_CANCEL         0x02
-#define TASK_WAIT           0x04
-#define TASK_TIMEOUT        0x08
-#define TASK_DONE           0x10
-#define TASK_PENDING        0x20
+#define TASK_INIT           0x01U
+#define TASK_CANCEL         0x02U
+#define TASK_WAIT           0x04U
+#define TASK_TIMEOUT        0x08U
+#define TASK_DONE           0x10U
+#define TASK_PENDING        0x20U
 
 /*
  * The following defines a task.

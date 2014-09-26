@@ -212,7 +212,7 @@ Ns_ModuleInit(char *server, char *module)
 	Ns_Log(Warning, "nscp: no authorized users");
     }
     Ns_SockCallback(lsock, AcceptProc, modPtr, NS_SOCK_READ|NS_SOCK_EXIT);
-    Ns_RegisterProcInfo(AcceptProc, "nscp", ArgProc);
+    Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
     return NS_OK;
 }
 
