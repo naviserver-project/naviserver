@@ -248,6 +248,9 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     ssize_t       nwrote;
     struct iovec  sbufs[32], *sbufPtr = sbufs;
 
+    assert(connPtr);
+    assert(nbufs < 1 || bufs != NULL);
+
     Ns_DStringInit(&ds);
 
     /*

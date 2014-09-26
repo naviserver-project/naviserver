@@ -2346,7 +2346,8 @@ NS_EXTERN Ns_Set *
 Ns_SetCopy(Ns_Set *old);
 
 NS_EXTERN void
-Ns_SetMove(Ns_Set *to, Ns_Set *from);
+Ns_SetMove(Ns_Set *to, Ns_Set *from)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_SetPrint(Ns_Set *set);

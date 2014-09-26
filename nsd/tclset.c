@@ -49,12 +49,14 @@
  * Local functions defined in this file
  */
 
-static int LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **setPtr);
-static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry,
-                        Ns_Set **setPtr);
-static int LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry,
-                           Ns_Set **setPtr);
-static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags);
+static int LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **setPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry, Ns_Set **setPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+static int LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry, Ns_Set **setPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -77,8 +79,12 @@ static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags);
 int
 Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
 {
-    NsInterp *itPtr = NsGetInterpData(interp);
+    NsInterp *itPtr;
 
+    assert(interp != NULL);
+    assert(set != NULL);
+
+    itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {
         Tcl_SetResult(interp, "ns_set not supported", TCL_STATIC);
         return TCL_ERROR;
@@ -106,8 +112,11 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
 Ns_Set *
 Ns_TclGetSet(Tcl_Interp *interp, char *id)
 {
-    Ns_Set *set;
+    Ns_Set *set = NULL;
 
+    assert(interp != NULL);
+    assert(id != NULL);
+	
     if (LookupInterpSet(interp, id, 0, &set) != TCL_OK) {
         set = NULL;
     }
@@ -134,6 +143,10 @@ Ns_TclGetSet(Tcl_Interp *interp, char *id)
 int
 Ns_TclGetSet2(Tcl_Interp *interp, char *id, Ns_Set **setPtr)
 {
+    assert(interp != NULL);
+    assert(id != NULL);
+    assert(setPtr != NULL);
+
     return LookupInterpSet(interp, id, 0, setPtr);
 }
 
@@ -158,7 +171,10 @@ Ns_TclGetSet2(Tcl_Interp *interp, char *id, Ns_Set **setPtr)
 int
 Ns_TclFreeSet(Tcl_Interp *interp, char *id)
 {
-    Ns_Set  *set;
+    Ns_Set  *set = NULL;
+
+    assert(interp != NULL);
+    assert(id != NULL);
 
     if (LookupInterpSet(interp, id, 1, &set) != TCL_OK) {
         return TCL_ERROR;
@@ -190,7 +206,7 @@ int
 NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp        *itPtr = arg;
-    Ns_Set          *set, *set2Ptr, **sets;
+    Ns_Set          *set = NULL, *set2Ptr, **sets;
     int              i, flags, opt;
     char            *key, *val, *def, *name, *split;
     Tcl_DString      ds;
@@ -537,9 +553,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
                 Tcl_WrongNumArgs(interp, 2, objv, "setTo setFrom");
                 return TCL_ERROR;
             }
+	    set2Ptr = NULL;
             if (unlikely(LookupObjSet(itPtr, objv[3], 0, &set2Ptr) != TCL_OK)) {
                 return TCL_ERROR;
             }
+	    assert (set2Ptr != NULL);
             if (opt == SMergeIdx) {
                 Ns_SetMerge(set, set2Ptr);
             } else {
@@ -578,6 +596,8 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* ar
     Ns_Set *set;
     Ns_HeaderCaseDisposition disp;
 
+    assert(arg != NULL);
+
     if (argc != 3 && argc != 4) {
         Tcl_AppendResult(interp, "wrong # of args: should be \"",
             argv[0], " set header ?tolower|toupper|preserve?\"", NULL);
@@ -586,6 +606,8 @@ NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* ar
     if (LookupSet(itPtr, argv[1], 0, &set) != TCL_OK) {
         return TCL_ERROR;
     }
+    assert(set != NULL);
+
     if (argc < 4) {
         disp = ToLower;
     } else if (STREQ(argv[3], "toupper")) {
@@ -633,6 +655,9 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
     unsigned char   type;
     char            buf[TCL_INTEGER_SPACE + 1];
 
+    assert(itPtr != NULL);
+    assert(set != NULL);
+
     tablePtr = &itPtr->sets;
     type = (flags & NS_TCL_SET_DYNAMIC) ? SET_DYNAMIC : SET_STATIC;
 
@@ -674,6 +699,10 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
 static int
 LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry, Ns_Set **setPtr)
 {
+    assert(itPtr != NULL);
+    assert(idPtr != NULL);
+    assert(setPtr != NULL);
+
     return LookupSet(itPtr, Tcl_GetString(idPtr), deleteEntry, setPtr);
 }
 
@@ -681,6 +710,10 @@ static int
 LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry, Ns_Set **setPtr)
 {
     NsInterp *itPtr;
+
+    assert(interp != NULL);
+    assert(id != NULL);
+    assert(setPtr != NULL);
 
     itPtr = NsGetInterpData(interp);
     if (unlikely(itPtr == NULL)) {
@@ -695,6 +728,10 @@ LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **setPtr)
 {
     Tcl_HashEntry *hPtr;
     Ns_Set        *set = NULL;
+
+    assert(itPtr != NULL);
+    assert(id != NULL);
+    assert(setPtr != NULL);
 
     hPtr = Tcl_FindHashEntry(&itPtr->sets, id);
     if (likely(hPtr != NULL)) {
