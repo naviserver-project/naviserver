@@ -241,11 +241,13 @@ Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
     ssize_t   n;
     int       decork;
     NS_SOCKET sock = sockPtr->sock;
+#ifdef _WIN32
+    DWORD n1;
+#endif	
 
     decork = Ns_SockCork(sockPtr, 1);
 
 #ifdef _WIN32
-    DWORD n1;
     if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n1, flags,
                 NULL, NULL) != 0) {
         n1 = -1;
