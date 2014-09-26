@@ -340,7 +340,7 @@ typedef struct DIR_ *DIR;
  *
  ***************************************************************/
 
-#include "tcl.h"
+#include <tcl.h>
 #include <limits.h>
 #include <time.h>
 #include <fcntl.h>
