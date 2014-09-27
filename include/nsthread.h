@@ -84,8 +84,16 @@
 #  define WIN32_LEAN_AND_MEAN
 # endif
 
+/* 
+ * 0x0400  Windows NT
+ * 0x0500  Windows XP
+ * 0x0600  Windows Vista
+ * 0x0601  Windows 7 
+ * 0x0602  Windows 8
+ * 0x0603  Windows 8.1
+ */
 # ifndef _WIN32_WINNT
-#  define _WIN32_WINNT                0x0400
+#  define _WIN32_WINNT                0x0600
 # endif
 
 #include <windows.h>
@@ -125,7 +133,7 @@ typedef unsigned __int64 uint64_t;
 typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
-typedef          HANDLE pid_t;
+typedef          DWORD pid_t;
 #define NS_INVALID_PID 0
 
 #  ifdef _WIN64
@@ -198,18 +206,34 @@ struct iovec {
 /*
  * The following is for supporting our own poll() emulation.
  */
-
-# define POLLIN                      0x0001U
-# define POLLPRI                     0x0002U
-# define POLLOUT                     0x0004U
-# define POLLERR                     0x0008U
-# define POLLHUP                     0x0010U
+# ifndef POLLIN 
+#  define POLLIN                      0x0001U
+#  define POLLPRI                     0x0002U
+#  define POLLOUT                     0x0004U
+#  define POLLERR                     0x0008U
+#  define POLLHUP                     0x0010U
 
 struct pollfd {
     NS_SOCKET      fd;
     unsigned short events;
     unsigned short revents;
 };
+# endif
+
+
+/*
+ * Provide compatibility for shutdown() on sockets.
+ */
+
+# ifndef SHUT_RD
+#  define SHUT_RD SD_RECEIVE
+# endif
+# ifndef SHUT_WR
+#  define SHUT_WR SD_SEND
+# endif
+# ifndef SHUT_RDWR
+#  define SHUT_RDWR SD_BOTH
+# endif
 
 /*
  * The following is for supporting opendir/readdir functionality
@@ -751,7 +775,7 @@ NS_EXTERN int closedir(DIR *dp);
 NS_EXTERN int truncate(char *file, off_t size);
 NS_EXTERN int link(char *from, char *to);
 NS_EXTERN int symlink(char *from, char *to);
-NS_EXTERN int kill(int pid, int sig);
+NS_EXTERN int kill(pid_t pid, int sig);
 #endif
 
 /*

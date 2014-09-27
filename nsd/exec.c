@@ -338,7 +338,7 @@ Ns_ExecArgblk(char *exec, char *dir, int fdin, int fdout,
         pid = NS_INVALID_PID;
     } else {
         CloseHandle(pi.hThread);
-        pid = pi.hProcess;
+		pid = pi.dwProcessId;
     }
     Ns_DStringFree(&cds);
     Ns_DStringFree(&xds);

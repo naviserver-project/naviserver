@@ -35,6 +35,7 @@
  *	data buffers.  See the corresponding manual page for details.
  */
 
+#include "ns.h"
 #include "thread.h"
 
 /*
@@ -45,11 +46,11 @@
 typedef struct Tls {
     char	    	nabuf[16];
     char		asbuf[27];
-#ifndef _WIN32
     char	       *stbuf;
+    char		ctbuf[27];
     struct tm   	gtbuf;
     struct tm   	ltbuf;
-    char		ctbuf[27];
+#ifndef _WIN32
     struct dirent       ent;
 #endif
 } Tls;
@@ -62,6 +63,84 @@ NsInitReentrant(void)
 {
     Ns_TlsAlloc(&tls, ns_free);
 }
+
+
+#ifdef _WIN32
+
+char *
+ns_inet_ntoa(struct in_addr addr)
+{
+    Tls *tlsPtr = GetTls();
+
+    /*
+     * InetNtop supports AF_INET and AF_INET6.
+     */
+    InetNtop(AF_INET, &addr, tlsPtr->nabuf, sizeof(tlsPtr->nabuf)); 
+
+    return tlsPtr->nabuf;
+}
+
+struct dirent *
+ns_readdir(DIR * dir)
+{
+    return readdir(dir);
+}
+
+struct tm *
+ns_localtime(const time_t *clock)
+{
+    Tls *tlsPtr = GetTls();
+
+    localtime_s(&tlsPtr->ltbuf, clock);
+    return &tlsPtr->ltbuf;
+}
+
+struct tm *
+ns_gmtime(const time_t *clock)
+{
+    Tls *tlsPtr = GetTls();
+
+    gmtime_s(&tlsPtr->gtbuf, clock);
+    return &tlsPtr->gtbuf;
+}
+
+char *
+ns_ctime(const time_t *clock)
+{
+    Tls *tlsPtr = GetTls();
+
+    ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
+    return tlsPtr->ctbuf;
+}
+
+char *
+ns_asctime(const struct tm *tmPtr)
+{
+    Tls *tlsPtr = GetTls();
+    int errNum;
+
+    errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
+    if (errNum) {
+      Ns_Log(Warning, "ns_asciitime: call to asctime_s returned an error code %d", errNum);
+     }
+
+    return tlsPtr->asbuf;
+}
+
+char *
+ns_strtok(char *s1, const char *s2)
+{
+    Tls *tlsPtr = GetTls();
+
+    return strtok_s(s1, s2, &tlsPtr->stbuf);
+}
+
+#else
+
+/*
+ * The unix retentrant functions copy to per-thread buffers from
+ * reentrant routines.
+ */
 
 char *
 ns_inet_ntoa(struct in_addr addr)
@@ -82,63 +161,6 @@ ns_inet_ntoa(struct in_addr addr)
 #endif
     return tlsPtr->nabuf;
 }
-
-#ifdef _WIN32
-
-/*
- * Routines on WIN32 are thread safe.
- */
-
-struct dirent *
-ns_readdir(DIR * dir)
-{
-    return readdir(dir);
-}
-
-struct tm *
-ns_localtime(const time_t * clock)
-{
-    return localtime(clock);
-}
-
-struct tm *
-ns_gmtime(const time_t * clock)
-{
-    return gmtime(clock);
-}
-
-char *
-ns_ctime(const time_t * clock)
-{
-    return ctime(clock);
-}
-
-char *
-ns_asctime(const struct tm *tmPtr)
-{
-    Tls *tlsPtr = GetTls();
-    error_t errNum;
-
-    errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
-    if (errNum) {
-      Ns_Log(Warning, "ns_asciitime: call to asctime_s returned an error code %d",
-	     int(errNum));
-     }
-
-    return tlsPtr->asbuf;
-}
-
-char *
-ns_strtok(char *s1, const char *s2)
-{
-    return strtok(s1, s2);
-}
-
-#else
-
-/*
- * Copy to per-thread buffers from reentrant routines.
- */
 
 struct dirent *
 ns_readdir(DIR * dir)
