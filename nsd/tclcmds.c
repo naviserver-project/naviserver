@@ -40,7 +40,7 @@
  */
 
 extern Tcl_ObjCmdProc
-NsTclAdpAbortObjCmd,
+    NsTclAdpAbortObjCmd,
     NsTclAdpAppendObjCmd,
     NsTclAdpArgcObjCmd,
     NsTclAdpArgvObjCmd,
@@ -232,7 +232,7 @@ NsTclAdpAbortObjCmd,
     NsTclWriterObjCmd;
 
 extern Tcl_CmdProc
-NsTclAdpStatsCmd,
+    NsTclAdpStatsCmd,
     NsTclHrefsCmd,
     NsTclLibraryCmd,
     NsTclMkTempCmd,
