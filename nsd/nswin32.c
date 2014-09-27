@@ -690,6 +690,30 @@ ns_sockdup(NS_SOCKET sock)
 
 /*
  *----------------------------------------------------------------------
+ * ns_sock_set_blocking --
+ *
+ *      Set a channel blocking or non-blocking
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Change blocking state of a channel
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ns_sock_set_blocking(NS_SOCKET fd, int blocking) 
+{
+    unsigned long state = (blocking == 0);
+
+    return ioctlsocket(fd, FIONBIO, &state);
+}
+
+
+/*
+ *----------------------------------------------------------------------
  *
  * ns_pipe --
  *

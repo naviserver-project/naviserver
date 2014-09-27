@@ -406,6 +406,34 @@ Pipe(int *fds, int sockpair)
 
 /*
  *----------------------------------------------------------------------
+ * ns_sock_set_blocking --
+ *
+ *      Set a channel blocking or non-blocking
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Change blocking state of a channel
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ns_sock_set_blocking(NS_SOCKET fd, int blocking) 
+{
+    unsigned int flags = fcntl(fd, F_GETFD, 0);
+
+    if (blocking) {
+	return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+    } else {
+	return fcntl(fd, F_SETFL, flags|O_NONBLOCK);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
  * Ns_GetNameForUid --
  *
  *      Get the user name given the id

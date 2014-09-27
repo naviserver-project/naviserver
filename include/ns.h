@@ -2407,7 +2407,7 @@ NS_EXTERN NS_SOCKET
 Ns_SockBinderListen(int type, char *address, int port, int options);
 
 /*
- * sls.s
+ * sls.c
  */
 
 NS_EXTERN void
@@ -3005,6 +3005,9 @@ Ns_ReleaseTemp(int fd);
 
 NS_EXTERN int
 ns_sockpair(NS_SOCKET *socks);
+
+NS_EXTERN int
+ns_sock_set_blocking(NS_SOCKET fd, int blocking);
 
 NS_EXTERN int
 ns_pipe(int *fds);
