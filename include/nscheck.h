@@ -130,4 +130,10 @@
 # define NS_GNUC_CONST
 #endif
 
+#if __GNUC_PREREQ(4, 9)
+# define NS_GNUC_RETURNS_NONNULL __attribute__((returns_nonnull))
+#else
+# define NS_GNUC_RETURNS_NONNULL
+#endif
+
 #endif /* NSCHECK_H */
