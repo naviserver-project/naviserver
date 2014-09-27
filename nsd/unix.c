@@ -422,6 +422,10 @@ Pipe(int *fds, int sockpair)
 int
 ns_sock_set_blocking(NS_SOCKET fd, int blocking) 
 {
+#if defined USE_FIONBIO
+    int state = (blocking == 0);
+    return ioctl(fd, FIONBIO, &state);
+#else
     unsigned int flags = fcntl(fd, F_GETFD, 0);
 
     if (blocking) {
@@ -429,6 +433,7 @@ ns_sock_set_blocking(NS_SOCKET fd, int blocking)
     } else {
 	return fcntl(fd, F_SETFL, flags|O_NONBLOCK);
     }
+#endif
 }
 
 
