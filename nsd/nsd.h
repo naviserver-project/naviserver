@@ -1034,10 +1034,10 @@ NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc);
 NS_EXTERN NsServer *NsGetInitServer(void);
 NS_EXTERN NsServer *NsGetServer(CONST char *server);
 NS_EXTERN void NsStartServers(void);
-NS_EXTERN void NsStopServers(Ns_Time *toPtr);
-NS_EXTERN void NsStartServer(NsServer *servPtr);
-NS_EXTERN void NsStopServer(NsServer *servPtr);
-NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
+NS_EXTERN void NsStopServers(Ns_Time *toPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStartServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStopServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsWakeupDriver(Driver *drvPtr) NS_GNUC_NONNULL(1);
 
 /*
@@ -1045,7 +1045,7 @@ NS_EXTERN void NsWakeupDriver(Driver *drvPtr) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
-                              CONST char *url, int id, int fast);
+				 CONST char *url, int id, int fast);
 
 /*
  * Socket driver callbacks.
@@ -1064,9 +1064,12 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 
 
 
-NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
-NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr);
-NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map);
+NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr)
+     NS_GNUC_NONNULL(1);
+NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
 NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);

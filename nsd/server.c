@@ -171,6 +171,8 @@ NsStopServers(Ns_Time *toPtr)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
+    assert(toPtr != NULL);
+
     hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
     while (hPtr != NULL) {
         servPtr = Tcl_GetHashValue(hPtr);
