@@ -154,7 +154,8 @@ static void  SockPrepare(Sock *sockPtr)
 static void  SockRelease(Sock *sockPtr, int reason, int err)
     NS_GNUC_NONNULL(1);
 static void  SockError(Sock *sockPtr, int reason, int err);
-static void  SockSendResponse(Sock *sockPtr, int code, char *msg);
+static void  SockSendResponse(Sock *sockPtr, int code)
+    NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
     NS_GNUC_NONNULL(1);
@@ -168,8 +169,10 @@ static void  SockPoll(Sock *sockPtr, int type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc);
-static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name);
+static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
+    NS_GNUC_NONNULL(2);
+static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static void  PollCreate(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void  PollFree(PollData *pdata)
@@ -1950,22 +1953,22 @@ SockError(Sock *sockPtr, int reason, int err)
 
     case SOCK_BADREQUEST:
         errMsg = "Bad Request";
-        SockSendResponse(sockPtr, 400, errMsg);
+        SockSendResponse(sockPtr, 400);
         break;
 
     case SOCK_TOOMANYHEADERS:
         errMsg = "Too Many Request Headers";
-        SockSendResponse(sockPtr, 414, errMsg);
+        SockSendResponse(sockPtr, 414);
         break;
 
     case SOCK_BADHEADER:
         errMsg = "Invalid Request Header";
-        SockSendResponse(sockPtr, 400, errMsg);
+        SockSendResponse(sockPtr, 400);
         break;
 
     case SOCK_ENTITYTOOLARGE:
         errMsg = "Request Entity Too Large";
-        SockSendResponse(sockPtr, 413, errMsg);
+        SockSendResponse(sockPtr, 413);
         break;
     }
     if (errMsg != NULL) {
@@ -1997,12 +2000,14 @@ SockError(Sock *sockPtr, int reason, int err)
  *----------------------------------------------------------------------
  */
 
-void
-SockSendResponse(Sock *sockPtr, int code, char *msg)
+static void
+SockSendResponse(Sock *sockPtr, int code)
 {
     struct iovec iov[3];
     char header[32], *response = NULL;
     ssize_t sent;
+
+    assert(sockPtr != NULL);
 
     switch (code) {
     case 413:
@@ -2051,6 +2056,7 @@ SockTrigger(NS_SOCKET fd)
 {
     if (send(fd, "", 1, 0) != 1) {
         char * errstr = ns_sockstrerror(ns_sockerrno);
+
         Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
     }
 }
@@ -3017,6 +3023,7 @@ SpoolerThread(void *arg)
 static void
 SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 {
+    assert(proc != NULL);
     while (queuePtr != NULL) {
         if (ns_sockpair(queuePtr->pipe)) {
             Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
@@ -3029,6 +3036,10 @@ SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 static void
 SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
 {
+
+    assert(timeoutPtr != NULL);
+    assert(name != NULL);
+
     while (queuePtr != NULL) {
 	int status;
 
