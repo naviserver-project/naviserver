@@ -72,7 +72,6 @@ extern Tcl_ObjCmdProc
     NsTclAdpTruncObjCmd,
     NsTclAtCloseObjCmd,
     NsTclAfterObjCmd,
-    NsTclAtCloseObjCmd,
     NsTclAtExitObjCmd,
     NsTclAtPreStartupObjCmd,
     NsTclAtShutdownObjCmd,
