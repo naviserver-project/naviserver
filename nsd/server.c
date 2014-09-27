@@ -50,7 +50,8 @@ typedef struct ServerInit {
  * Local functions defined in this file.
  */
 
-static void CreatePool(NsServer *servPtr, char *pool);
+static void CreatePool(NsServer *servPtr, char *pool)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -215,6 +216,9 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     Ns_Set            *set;
     int                i, n;
 
+    assert(server != NULL);
+    assert(staticInitProc != NULL);
+
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (!n) {
         Ns_Log(Error, "duplicate server: %s", server);
@@ -322,6 +326,8 @@ NsRegisterServerInit(Ns_ServerInitProc *proc)
 {
     ServerInit *initPtr;
 
+    assert(proc != NULL);
+
     initPtr = ns_malloc(sizeof(ServerInit));
     initPtr->proc = proc;
     initPtr->nextPtr = NULL;
@@ -358,6 +364,9 @@ CreatePool(NsServer *servPtr, char *pool)
     Conn     *connBufPtr, *connPtr;
     int       i, n, maxconns, lowwatermark, highwatermark, queueLength;
     char     *path;
+
+    assert(servPtr != NULL);
+    assert(pool != NULL);
 
     poolPtr = ns_calloc(1, sizeof(ConnPool));
     poolPtr->pool = pool;

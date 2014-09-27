@@ -161,7 +161,10 @@ ConfigServerTcl(CONST char *server)
     int         n;
     Ns_Set     *set;
 
+    assert(server != NULL);
     servPtr = NsGetServer(server);
+    assert(servPtr != NULL);
+
     path = Ns_ConfigGetPath(server, NULL, "tcl", NULL);
     set = Ns_ConfigCreateSection(path);
 

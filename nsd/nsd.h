@@ -1029,8 +1029,10 @@ NS_EXTERN void NsConfigEncodings(void);
  * Virtual server management routines.
  */
 
-NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc);
-NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc);
+NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
+    NS_GNUC_NONNULL(1);
 NS_EXTERN NsServer *NsGetInitServer(void);
 NS_EXTERN NsServer *NsGetServer(CONST char *server);
 NS_EXTERN void NsStartServers(void);
