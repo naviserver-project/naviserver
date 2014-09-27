@@ -154,7 +154,7 @@ Ns_ModuleInit(char *server, char *module)
 	    int status;
 
             Ns_DStringTrunc(&ds, 0);
-            Ns_ModulePath(&ds, server, module, NULL, NULL);
+            Ns_ModulePath(&ds, server, module, NULL, (char *)0);
             dirpath = Tcl_NewStringObj(ds.string, -1);
             Tcl_IncrRefCount(dirpath);
             status = Tcl_FSCreateDirectory(dirpath);
@@ -166,7 +166,7 @@ Ns_ModuleInit(char *server, char *module)
                 return NS_ERROR;
             }
             Ns_DStringTrunc(&ds, 0);
-            Ns_ModulePath(&ds, server, module, file, NULL);
+            Ns_ModulePath(&ds, server, module, file, (char *)0);
         }
         logPtr->file = Ns_DStringExport(&ds);
     }

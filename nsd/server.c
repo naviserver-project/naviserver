@@ -247,7 +247,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     }
 
     Ns_DStringInit(&ds);
-    path = Ns_ConfigGetPath(server, NULL, NULL);
+    path = Ns_ConfigGetPath(server, NULL, (char *)0);
 
     /*
      * Set some server options.
@@ -373,7 +373,7 @@ CreatePool(NsServer *servPtr, char *pool)
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {
         /* NB: Default options from pre-4.0 ns/server/server1 section. */
-        path = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
+      path = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
 	Ns_Set *set;

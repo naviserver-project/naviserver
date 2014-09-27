@@ -1347,7 +1347,7 @@ NsTclTraceProc(Tcl_Interp *interp, void *arg)
     Ns_TclCallback *cbPtr = arg;
     int             status;
 
-    status = Ns_TclEvalCallback(interp, cbPtr, NULL, NULL);
+    status = Ns_TclEvalCallback(interp, cbPtr, NULL, (char *)0);
     if (status != TCL_OK) {
         Ns_TclLogError(interp);
     }

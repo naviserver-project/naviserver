@@ -699,11 +699,11 @@ NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     }
     module = objc > 2 ? Tcl_GetString(objv[2]) : NULL;
     /* 
-     * cppcheck complains about potential compatibility problem, when
-     * NULL is specified in last arg, cpp complains, if not. Let's
-     * trust gcc and proven code.
+     * Use (char *)0 as sentinel instead of NULL to make the function
+     * portable. Cppcheck showed this problem in a first step.  See
+     * e.g. http://ewontfix.com/11/.
      */
-    Ns_ModulePath(&ds, Tcl_GetString(objv[1]), module, NULL);
+    Ns_ModulePath(&ds, Tcl_GetString(objv[1]), module, (char *)0);
     for (i = 3; i < objc; ++i) {
         Ns_MakePath(&ds, Tcl_GetString(objv[i]), NULL);
     }

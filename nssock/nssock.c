@@ -82,7 +82,7 @@ Ns_ModuleInit(char *server, char *module)
     Config            *cfg;
     CONST char        *path;
 
-    path = Ns_ConfigGetPath(server, module, NULL);
+    path = Ns_ConfigGetPath(server, module, (char *)0);
     cfg = ns_malloc(sizeof(Config));
     cfg->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
     cfg->nodelay = Ns_ConfigBool(path, "nodelay", NS_FALSE);

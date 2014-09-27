@@ -267,7 +267,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         return NS_ERROR;
     }
 
-    path = (init->path ? init->path : Ns_ConfigGetPath(server, module, NULL));
+    path = (init->path ? init->path : Ns_ConfigGetPath(server, module, (char *)0));
     set = Ns_ConfigCreateSection(path);
 
     /*

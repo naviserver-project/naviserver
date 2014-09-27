@@ -218,7 +218,7 @@ ConfigServerEncodings(CONST char *server)
      * Configure the encoding used in the request URL.
      */
 
-    path = Ns_ConfigGetPath(server, NULL, NULL);
+    path = Ns_ConfigGetPath(server, NULL, (char *)0);
 
     servPtr->encoding.urlCharset =
         Ns_ConfigString(path, "urlCharset", "utf-8");
