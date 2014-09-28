@@ -738,6 +738,47 @@ ns_pipe(int *fds)
 /*
  *----------------------------------------------------------------------
  *
+ * ns_mkstemp --
+ *
+ *      Create a temporary file based on the provided template and
+ *      return its fd.  This is a cheap replacement for mkstemp()
+ *      under unix-like systems.
+ *
+ * Results:
+ *      fd if ok, -1 on error.
+ *
+ * Side effects:
+ *      Opens a temporary file.
+ *
+ *----------------------------------------------------------------------
+ */
+#include <share.h>
+
+int
+ns_mkstemp(char *template) 
+{
+    int err, fd = -1;
+
+    err = _mktemp_s(template, strlen(template));
+
+    if (err == 0) {
+	err = _sopen_s(&fd, template, 
+		       O_RDWR | O_CREAT |_O_TEMPORARY | O_EXCL, 
+		       _SH_DENYRW,
+		       _S_IREAD | _S_IWRITE);
+    }
+
+    if (err != 0) {
+	return -1;
+    }
+
+    return fd;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ns_sockpair --
  *
  *      Create a pair of connected sockets via brute force.

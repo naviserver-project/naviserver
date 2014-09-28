@@ -3013,6 +3013,9 @@ NS_EXTERN int
 ns_pipe(int *fds);
 
 NS_EXTERN int
+ns_mkstemp(char *template);
+
+NS_EXTERN int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo);
 
 NS_EXTERN int

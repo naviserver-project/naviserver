@@ -164,6 +164,10 @@ typedef int32_t ssize_t;
 # define strcasecmp                  _stricmp
 # define strncasecmp                 _strnicmp
 # define vsnprintf                   _vsnprintf
+# define close                       _close
+# define write                       _write
+
+# define mkstemp		     ns_mkstemp
 
 /*
  * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
@@ -276,7 +280,8 @@ typedef struct DIR_ *DIR;
 #include <poll.h>
 
 #define NS_SOCKET	int
-#define NS_INVALID_PID  -1
+#define NS_INVALID_PID  (-1)
+
 /* 
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
  * the time being, allthough the use of SOCKET should be deprecated.
