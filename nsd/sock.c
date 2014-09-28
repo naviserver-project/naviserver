@@ -676,12 +676,9 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
 int
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
-    unsigned int nb = 1;
-
-    if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
-        return NS_ERROR;
+    if (ns_sock_set_blocking(sock, 0) == -1) {
+	return NS_ERROR;
     }
-
     return NS_OK;
 }
 
@@ -705,12 +702,9 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
 int
 Ns_SockSetBlocking(NS_SOCKET sock)
 {
-    unsigned int nb = 0;
-
-    if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
-        return NS_ERROR;
+    if (ns_sock_set_blocking(sock, 1) == -1) {
+	return NS_ERROR;
     }
-
     return NS_OK;
 }
 
@@ -1040,7 +1034,7 @@ SockConnect(char *host, int port, char *lhost, int lport, int async)
             Ns_SockSetNonBlocking(sock);
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
-            int err = ns_sockerrno;
+            unsigned int err = ns_sockerrno;
             if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
                 sock = INVALID_SOCKET;
