@@ -2476,9 +2476,9 @@ Ns_SumVec(struct iovec *iov, int nbufs)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_SockWait(NS_SOCKET sock, int what, int timeout);
+Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout);
 NS_EXTERN int
-Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr);
+Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr);
 NS_EXTERN int
 Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t nrecv,
 	    Ns_Time *timeoutPtr);

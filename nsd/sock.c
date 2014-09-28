@@ -372,7 +372,7 @@ Ns_SockSend(NS_SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr)
+Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr)
 {
     int           n, msec = -1;
     struct pollfd pfd;
@@ -422,7 +422,7 @@ Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockWait(NS_SOCKET sock, int what, int timeout)
+Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
 {
     Ns_Time tm;
 

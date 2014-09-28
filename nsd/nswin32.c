@@ -428,7 +428,7 @@ NsRestoreSignals(void)
 int
 NsHandleSignals(void)
 {
-    int sig;
+    unsigned int sig;
 
     /*
      * If running as a service, stop the ticker thread and report

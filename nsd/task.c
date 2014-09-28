@@ -80,7 +80,7 @@ typedef struct Task {
     int                events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
     int                signal;        /* Signal bits sent to/from queue thread. */
-    int                flags;         /* Flags private to queue. */
+    unsigned int       flags;         /* Flags private to queue. */
 } Task;
 
 /*

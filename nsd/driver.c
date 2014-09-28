@@ -60,12 +60,12 @@
  * The following are valid driver state flags.
  */
 
-#define DRIVER_STARTED           1
-#define DRIVER_STOPPED           2
-#define DRIVER_SHUTDOWN          4
-#define DRIVER_FAILED            8
-#define DRIVER_QUERY             16
-#define DRIVER_DEBUG             32
+#define DRIVER_STARTED           1U
+#define DRIVER_STOPPED           2U
+#define DRIVER_SHUTDOWN          4U
+#define DRIVER_FAILED            8U
+#define DRIVER_QUERY             16U
+#define DRIVER_DEBUG             32U
 
 /*
  * Managing streaming output via writer
