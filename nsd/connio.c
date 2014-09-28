@@ -304,6 +304,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
                 sbufPtr = bufs;
                 nsbufs = nbufs;
             } else {
+		assert(bufs != NULL);
                 (void) memcpy(sbufPtr + sbufIdx, bufs, nbufs * sizeof(struct iovec));
                 nsbufs += nbufs;
             }
