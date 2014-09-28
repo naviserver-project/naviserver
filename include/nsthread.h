@@ -160,11 +160,22 @@ typedef int32_t ssize_t;
 # define ftruncate(f,s)              chsize((f),(s))
 # define mkdir(d,m)                  _mkdir((d))
 # define sleep(n)                    (Sleep((n)*1000))
+
+# define access                      _access
+# define chsize                      _chsize
+# define close                       _close
+# define dup2                        _dup2
+# define getpid                      _getpid
+# define lseek                       _lseek
+# define mktemp                      _mktemp
+# define open                        _open
+# define putenv                      _putenv
+# define read                        _read
 # define snprintf                    _snprintf
 # define strcasecmp                  _stricmp
 # define strncasecmp                 _strnicmp
+# define unlink                      _unlink
 # define vsnprintf                   _vsnprintf
-# define close                       _close
 # define write                       _write
 
 # define mkstemp		     ns_mkstemp
