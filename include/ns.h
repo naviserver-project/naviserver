@@ -204,7 +204,7 @@
  */
 
 #define UCHAR(c)                   ((unsigned char)(c))
-#define STREQ(a,b)                 (((*a) == (*b)) && (strcmp((a),(b)) == 0))
+#define STREQ(a,b)                 (((*(a)) == (*(b))) && (strcmp((a),(b)) == 0))
 #define STRIEQ(a,b)                (strcasecmp((a),(b)) == 0)
 #define Ns_IndexCount(X)           ((X)->n)
 #define Ns_ListPush(elem,list)     ((list)=Ns_ListCons((elem),(list)))
@@ -1638,7 +1638,7 @@ NS_EXTERN Ns_OptionConverter Ns_OptionObj;
 NS_EXTERN Ns_OptionConverter Ns_OptionString;
 NS_EXTERN Ns_OptionConverter Ns_OptionServer;
 
-#define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof(arr[0])))
+#define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof((arr)[0])))
 
 NS_EXTERN int
 Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[], 

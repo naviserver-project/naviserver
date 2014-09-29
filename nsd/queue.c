@@ -64,7 +64,7 @@ static int    poolid = 0;
 /*
  * Debugging stuff
  */
-#define ThreadNr(poolPtr, argPtr) (int)(argPtr ? (argPtr - poolPtr->tqueue.args) : -1)
+#define ThreadNr(poolPtr, argPtr) (int)((argPtr) ? ((argPtr) - (poolPtr)->tqueue.args) : -1)
 
 #if 0
 static void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {

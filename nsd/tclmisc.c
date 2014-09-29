@@ -734,10 +734,10 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
    Note that it may be necessary to add parentheses to these macros
    if they are to be called with expressions as arguments.
  */
-#define f1(x,y,z) ( z ^ (x & (y ^ z) ) )	/* Rounds 0-19 */
-#define f2(x,y,z) ( x ^ y ^ z )			/* Rounds 20-39 */
-#define f3(x,y,z) ( (x & y) + (z & (x ^ y) ) )	/* Rounds 40-59 */
-#define f4(x,y,z) ( x ^ y ^ z )			/* Rounds 60-79 */
+#define f1(x,y,z) ( (z) ^ ((x) & ((y) ^ (z)) ) )	/* Rounds 0-19 */
+#define f2(x,y,z) ( (x) ^ (y) ^ (z) )			/* Rounds 20-39 */
+#define f3(x,y,z) ( ((x) & (y)) + ((z) & ((x) ^ (y)) ) )	/* Rounds 40-59 */
+#define f4(x,y,z) ( (x) ^ (y) ^ (z) )			/* Rounds 60-79 */
 
 /* The SHA Mysterious Constants. */
 #define K2  0x5A827999UL	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
@@ -746,7 +746,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 #define K10 0xCA62C1D6UL	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
 
 /* 32-bit rotate left - kludged with shifts */
-#define ROTL(n,X) ( (X << n) | (X >> (32-n)) )
+#define ROTL(n,X) ( ((X) << (n)) | ((X) >> (32-(n))) )
 
 /*
    The initial expanding function
@@ -764,14 +764,14 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
  */
 #if SHA_VERSION			/* FIPS 180.1 */
 
-#define expandx(W,i) (t = W[i&15U] ^ W[(i-14)&15U] ^ W[(i-8)&15U] ^ W[(i-3)&15U],\
+#define expandx(W,i) (t = W[(i)&15U] ^ W[((i)-14)&15U] ^ W[((i)-8)&15U] ^ W[((i)-3)&15U], \
 			ROTL(1, t))
-#define expand(W,i) (W[i&15U] = expandx(W,i))
+#define expand(W,i) (W[(i)&15U] = expandx(W,(i)))
 
 #else /* Old FIPS 180 */
 
-#define expandx(W,i) (W[i&15U] ^ W[(i-14)&15U] ^ W[(i-8)&15U] ^ W[(i-3)&15U])
-#define expand(W,i) (W[i&15U] ^= W[(i-14)&15U] ^ W[(i-8)&15U] ^ W[(i-3)&15U])a
+#define expandx(W,i) (W[(i)&15U] ^ W[((i)-14)&15U] ^ W[((i)-8)&15U] ^ W[((i)-3)&15U])
+#define expand(W,i) (W[(i)&15U] ^= W[((i)-14)&15U] ^ W[((i)-8)&15U] ^ W[((i)-3)&15U])
 
 #endif /* SHA_VERSION */
 
@@ -788,7 +788,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
    the variables (e,a,b,c,d) = (a',b',c',d',e') each iteration.
  */
 #define subRound(a, b, c, d, e, f, k, data) \
-	 ( e += ROTL(5,a) + f(b, c, d) + k + data, b = ROTL(30, b) )
+    ( (e) += ROTL(5,(a)) + f((b), (c), (d)) + (k) + (data), (b) = ROTL(30, (b)) )
 /*
    The above code is replicated 20 times for each of the 4 functions,
    using the next 20 values from the W[] array for "data" each time.
@@ -1294,14 +1294,14 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 /* The four core functions - F1 is optimized somewhat */
 
 /* #define F1(x, y, z) (x & y | ~x & z) */
-#define F1(x, y, z) (z ^ (x & (y ^ z)))
-#define F2(x, y, z) F1(z, x, y)
-#define F3(x, y, z) (x ^ y ^ z)
-#define F4(x, y, z) (y ^ (x | ~z))
+#define F1(x, y, z) ((z) ^ ((x) & ((y) ^ (z))))
+#define F2(x, y, z) F1((z), (x), (y))
+#define F3(x, y, z) ((x) ^ (y) ^ (z))
+#define F4(x, y, z) ((y) ^ ((x) | ~(z)))
 
 /* This is the central step in the MD5 algorithm. */
 #define MD5STEP(f, w, x, y, z, data, s) \
-  ( w += f(x, y, z) + (data),  w = w<<s | w>>(32-s),  w += x )
+    ( (w) += f((x), (y), (z)) + (data),  (w) = (w)<<(s) | (w)>>(32-(s)),  (w) += (x) )
 
 /*
  * The core of the MD5 algorithm, this alters an existing MD5 hash to

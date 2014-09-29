@@ -441,10 +441,10 @@ typedef struct {
  * than the parent.
  */
 #define DupSharedKeyListChild(keylIntPtr, idx) \
-    if (Tcl_IsShared(keylIntPtr->entries[idx].valuePtr)) { \
-        keylIntPtr->entries[idx].valuePtr = \
-            Tcl_DuplicateObj(keylIntPtr->entries[idx].valuePtr); \
-        Tcl_IncrRefCount(keylIntPtr->entries[idx].valuePtr); \
+    if (Tcl_IsShared((keylIntPtr)->entries[(idx)].valuePtr)) {	 \
+	(keylIntPtr)->entries[(idx)].valuePtr =				\
+	    Tcl_DuplicateObj((keylIntPtr)->entries[(idx)].valuePtr);	\
+        Tcl_IncrRefCount((keylIntPtr)->entries[(idx)].valuePtr);	\
     }
 
 /*
