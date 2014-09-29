@@ -2229,6 +2229,8 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     assert(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
 
+    tbuf[0] = '\0';
+
     /*
      * In case of keepwait, the accept time is not meaningful and
      * reset to 0. In such cases, update acceptTime to the actual
