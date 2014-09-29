@@ -197,10 +197,17 @@ NsTclEnvObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
 
     case IGetIdx:
     case IUnsetIdx:
-        if ((objc != 3 && objc != 4)
-            || (objc == 4 && !STREQ(Tcl_GetString(objv[2]), "-nocomplain"))) {
+	if (objc != 3 && objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
             goto done;
+        }
+
+        if (objc == 4) {
+	    CONST char *arg = Tcl_GetString(objv[2]);
+	    if (!STREQ(arg, "-nocomplain")) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
+		goto done;
+	    }
         }
         name = Tcl_GetString(objv[2]);
         value = getenv(name);
