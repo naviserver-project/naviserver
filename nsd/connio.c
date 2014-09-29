@@ -56,7 +56,7 @@ static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
                     FILE *fp, int fd);
 
 static int CheckKeep(Conn *connPtr);
-static int CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags);
+static int CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, unsigned int ioflags);
 static int HdrEq(Ns_Set *set, char *name, char *value);
 
 
@@ -108,7 +108,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
     if (connPtr->outputEncoding != NULL
         && !NsEncodingIsUtf8(connPtr->outputEncoding)
         && nbufs > 0
-        && bufs[0].iov_len > 0) {
+        && bufs[0].iov_len > 0U) {
         int i;
 
         for (i = 0; i < nbufs; i++) {
@@ -118,7 +118,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
             utfBytes = bufs[i].iov_base;
             utfLen   = bufs[i].iov_len;
 
-            if (utfLen > 0) {
+            if (utfLen > 0U) {
                 (void) Tcl_UtfToExternalDString(connPtr->outputEncoding,
                                                 utfBytes, (int)utfLen, &encDs);
             }
@@ -174,7 +174,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
  */
 
 static int
-CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, int ioflags)
+CheckCompress(Conn *connPtr, struct iovec *bufs, int nbufs, unsigned int ioflags)
 {
     Ns_Conn  *conn    = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->poolPtr->servPtr;
@@ -248,7 +248,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     ssize_t       nwrote;
     struct iovec  sbufs[32], *sbufPtr = sbufs;
 
-    assert(connPtr);
+    assert(connPtr != NULL);
     assert(nbufs < 1 || bufs != NULL);
 
     Ns_DStringInit(&ds);
@@ -269,8 +269,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
      * Work out the body length for non-chunking case.
      */
 
-    bodyLength = bufs ? Ns_SumVec(bufs, nbufs) : 0;
-    towrite = 0;
+    bodyLength = bufs ? Ns_SumVec(bufs, nbufs) : 0U;
+    towrite = 0U;
 
     if (flags & NS_CONN_STREAM) {
 	connPtr->flags |= NS_CONN_STREAM;
@@ -312,7 +312,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 
         } else {
 
-            if (bodyLength > 0) {
+            if (bodyLength > 0U) {
 		char hdr[32];
 		size_t len;
 
@@ -407,7 +407,7 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
      */
 
     if (nsend == 0) {
-        return Ns_ConnWriteVData(conn, NULL, 0, 0);
+        return Ns_ConnWriteVData(conn, NULL, 0, 0U);
     }
 
     /*
@@ -438,8 +438,8 @@ ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan, FILE *fp, int fd)
 	    struct iovec vbuf;
 
 	    vbuf.iov_base = (void *) buf;
-	    vbuf.iov_len = nread;
-	    if ((status = Ns_ConnWriteVData(conn, &vbuf, 1, 0)) == NS_OK) {
+	    vbuf.iov_len = (size_t)nread;
+	    if ((status = Ns_ConnWriteVData(conn, &vbuf, 1, 0U)) == NS_OK) {
 		nsend -= nread;
 	    }
 	}
@@ -586,7 +586,8 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         return -1;
     }
 
-    towrite = nwrote = sent = 0;
+    towrite = 0U;
+    nwrote = sent = 0;
 
     assert(nbufs <= 0 || bufs != NULL);
 
@@ -594,13 +595,13 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         towrite += bufs[i].iov_len;
     }
    
-    if (towrite == 0) {
+    if (towrite == 0U) {
 	return 0;
     }
 
     if (NsWriterQueue(conn, towrite, NULL, NULL, -1, bufs, nbufs, 0) == NS_OK) {
 	Ns_Log(Debug, "==== writer sent %" PRIdz " bytes\n", towrite);
-	return towrite;
+	return (ssize_t)towrite;
     }
 
     {
@@ -648,7 +649,7 @@ Ns_ConnFlushContent(Ns_Conn *conn)
         return -1;
     }
     reqPtr->next  += reqPtr->avail;
-    reqPtr->avail  = 0;
+    reqPtr->avail  = 0U;
 
     return NS_OK;
 }
@@ -746,7 +747,7 @@ Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, size_t towrite)
     vbuf.iov_len  = towrite;
 
     n = (size_t)connPtr->nContentSent;
-    status = Ns_ConnWriteVData(conn, &vbuf, 1, 0);
+    status = Ns_ConnWriteVData(conn, &vbuf, 1, 0U);
     if (status == NS_OK) {
       return (int)(connPtr->nContentSent - n);
     }
@@ -796,7 +797,7 @@ Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
     char *p;
 
     p = buf;
-    while (bufsize > 1) {
+    while (bufsize > 1U) {
         if (Ns_ConnRead(conn, p, 1) != 0) {
             return NULL;
         }
@@ -834,7 +835,7 @@ Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toread)
     Request *reqPtr = connPtr->reqPtr;
 
     if (connPtr->sockPtr == NULL) {
-        return 0;
+        return 0U;
     }
     if (toread > reqPtr->avail) {
         toread = reqPtr->avail;
@@ -919,7 +920,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
     int             status;
 
     Ns_DStringInit(&ds);
-    nread = 0;
+    nread = 0U;
     maxhdr = connPtr->drvPtr->maxheaders;
     status = NS_OK;
     while (nread < maxhdr && status == NS_OK) {
@@ -1039,7 +1040,7 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
         }
         ncopy -= nwrote;
         reqPtr->next  += nwrote;
-        reqPtr->avail -= nwrote;
+        reqPtr->avail -= (size_t)nwrote;
     }
     return NS_OK;
 }
@@ -1063,7 +1064,7 @@ ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
  */
 
 int
-Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt dataLength, 
+Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, 
 		   unsigned int flags, Ns_DString *dsPtr)
 {
     Conn       *connPtr = (Conn *) conn;

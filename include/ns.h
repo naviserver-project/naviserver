@@ -177,13 +177,13 @@
  * The following flags define how Ns_Set's are managed by Tcl.
  */
 
-#define NS_TCL_SET_STATIC          0 /* Ns_Set managed elsewhere, maintain a Tcl reference */
-#define NS_TCL_SET_DYNAMIC         1 /* Tcl owns the Ns_Set and will free when finished */
+#define NS_TCL_SET_STATIC          0U /* Ns_Set managed elsewhere, maintain a Tcl reference */
+#define NS_TCL_SET_DYNAMIC         1U /* Tcl owns the Ns_Set and will free when finished */
 
-#define NS_COOKIE_SECURE           1  /* The cookie should only be sent using HTTPS */
-#define NS_COOKIE_SCRIPTABLE       2  /* Available to javascript on the client. */
-#define NS_COOKIE_DISCARD          4  /* Discard the cookie at the end of the current session. */
-#define NS_COOKIE_REPLACE          8  /* Replace the cookie in the output headers. */
+#define NS_COOKIE_SECURE           1U  /* The cookie should only be sent using HTTPS */
+#define NS_COOKIE_SCRIPTABLE       2U  /* Available to javascript on the client. */
+#define NS_COOKIE_DISCARD          4U  /* Discard the cookie at the end of the current session. */
+#define NS_COOKIE_REPLACE          8U  /* Replace the cookie in the output headers. */
 
 #ifdef _WIN32
 #define ns_sockclose               closesocket
@@ -1205,7 +1205,7 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVChars);
 
 NS_EXTERN int
-Ns_CompleteHeaders(Ns_Conn *conn, Tcl_WideInt length, unsigned int flags, Ns_DString *dsPtr)
+Ns_CompleteHeaders(Ns_Conn *conn, size_t length, unsigned int flags, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1);
 
 /*
