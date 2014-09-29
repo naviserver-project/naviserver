@@ -290,9 +290,9 @@ typedef void  (Ns_ShutdownProc) (Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
-typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, int why);
-typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, int why);
-typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, int why);
+typedef int   (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
+typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, unsigned int why);
+typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, unsigned int why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (CONST char *server);
 typedef int   (Ns_ModuleInitProc) (CONST char *server, CONST char *module);
@@ -1304,7 +1304,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
-Ns_EventCallback(Ns_Event *event, int when, Ns_Time *timeoutPtr)
+Ns_EventCallback(Ns_Event *event, int unsigned when, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -1370,7 +1370,7 @@ NS_EXTERN Ns_OpProc Ns_FastPathProc;
 
 NS_EXTERN void *
 Ns_RegisterFilter(char *server, char *method, char *URL,
-			       Ns_FilterProc *proc, int when, void *args);
+			       Ns_FilterProc *proc, unsigned int when, void *args);
 
 NS_EXTERN void *
 Ns_RegisterServerTrace(char *server, Ns_TraceProc *proc, void *arg);
@@ -1552,7 +1552,7 @@ Ns_TaskRun(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TaskCallback(Ns_Task *task, int when, Ns_Time *timeoutPtr)
+Ns_TaskCallback(Ns_Task *task, unsigned int when, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2575,10 +2575,10 @@ ns_socknbclose(NS_SOCKET sock);
  */
 
 NS_EXTERN int
-Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when);
+Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when);
 
 NS_EXTERN int
-Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout);
+Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeout);
 
 NS_EXTERN void
 Ns_SockCancelCallback(NS_SOCKET sock);
@@ -2717,7 +2717,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc, void *arg, int when)
+Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc, void *arg, unsigned int when)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *

@@ -44,10 +44,16 @@
  */
 
 static Ns_ServerInitProc ConfigServerVhost;
+static int ConfigServerVhost(CONST char *server)
+    NS_GNUC_NONNULL(1);
+
 static int PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                      Tcl_Obj *CONST objv[], int cmd);
-static char *MakePath(Ns_DString *dest, va_list *pap);
-static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
+                      Tcl_Obj *CONST objv[], int cmd)
+    NS_GNUC_NONNULL(2);
+static char *MakePath(Ns_DString *dest, va_list *pap)
+    NS_GNUC_NONNULL(1);
+static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 
@@ -80,12 +86,14 @@ ConfigServerVhost(CONST char *server)
     Ns_DString  ds;
     CONST char *path;
 
+    assert(server != NULL);
+
     path = Ns_ConfigGetPath(server, NULL, "vhost", NULL);
 
     servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
     if (servPtr->vhost.enabled
-            && Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
-        Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
+	&& Ns_PathIsAbsolute(servPtr->fastpath.pagedir)) {
+	Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
                server, servPtr->fastpath.pagedir);
         servPtr->vhost.enabled = NS_FALSE;
     }
@@ -760,6 +768,8 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
         {"?path", Ns_ObjvArgs, &npaths, NULL},
         {NULL, NULL, NULL, NULL}
     };
+    assert(interp != NULL);
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
@@ -875,6 +885,8 @@ MakePath(Ns_DString *dest, va_list *pap)
     char *s;
     int len;
 
+    assert(dest != NULL);
+
     while ((s = va_arg(*pap, char *)) != NULL) {
         if (isalpha(UCHAR(*s)) && s[1] == ':') {
             char temp = *(s+2);
@@ -928,6 +940,9 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
     Ns_Conn    *conn;
     Ns_Set     *headers;
     Ns_DString  ds;
+
+    assert(dest != NULL);
+    assert(servPtr != NULL);
 
     if (servPtr->vhost.serverRootProc != NULL) {
 

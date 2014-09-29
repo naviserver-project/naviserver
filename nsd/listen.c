@@ -220,7 +220,7 @@ Ns_SockPortBound(int port)
  */
 
 static int
-ListenCallback(NS_SOCKET sock, void *arg, int why)
+ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
 {
     struct sockaddr_in  sa;
     socklen_t           len;
@@ -242,7 +242,7 @@ ListenCallback(NS_SOCKET sock, void *arg, int why)
         getsockname(newSock, (struct sockaddr *) &sa, &len);
         ldPtr = NULL;
         Ns_MutexLock(&lock);
-        hPtr = Tcl_FindHashEntry(tablePtr, (char *)(intptr_t) sa.sin_addr.s_addr);
+        hPtr = Tcl_FindHashEntry(tablePtr, INT2PTR(sa.sin_addr.s_addr));
         if (hPtr == NULL) {
             hPtr = Tcl_FindHashEntry(tablePtr, (char *) INADDR_ANY);
         }

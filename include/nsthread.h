@@ -590,6 +590,14 @@ typedef struct DIR_ *DIR;
 #   endif
 #endif
 
+#ifdef _WIN32
+# define PTR2NSSOCK(p) (p)
+# define NSSOCK2PTR(p) (p)
+#else
+# define PTR2NSSOCK(p) PTR2INT(p)
+# define NSSOCK2PTR(p) INT2PTR(p)
+#endif
+
 #ifdef __cplusplus
 # define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
 #else

@@ -1925,7 +1925,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
      * Create Tcl channel arround the connection socket
      */
 
-    chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t)connPtr->sockPtr->sock);
+    chan = Tcl_MakeTcpClientChannel(NSSOCK2PTR(connPtr->sockPtr->sock));
     if (chan == NULL) {
         Tcl_AppendResult(itPtr->interp, Tcl_PosixError(itPtr->interp), NULL);
         return NULL;

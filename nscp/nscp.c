@@ -261,7 +261,7 @@ ArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static int
-AcceptProc(NS_SOCKET lsock, void *arg, int why)
+AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
 {
     Mod *modPtr = arg;
     Sess *sessPtr;

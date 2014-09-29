@@ -109,8 +109,8 @@ static Ns_Mutex   lock;          /* Lock for queue list. */
  */
 
 static struct {
-    int when;           /* SOCK when bit. */
-    int event;          /* Poll event bit. */
+    unsigned int when;           /* SOCK when bit. */
+    unsigned int event;          /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
@@ -434,7 +434,7 @@ Ns_TaskCompleted(Ns_Task *task)
  */
 
 void
-Ns_TaskCallback(Ns_Task *task, int when, Ns_Time *timeoutPtr)
+Ns_TaskCallback(Ns_Task *task, unsigned int when, Ns_Time *timeoutPtr)
 {
     Task *taskPtr = (Task *) task;
     int   i;

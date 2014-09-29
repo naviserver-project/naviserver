@@ -958,7 +958,7 @@ HttpAbort(Ns_HttpTask *httpPtr)
  */
 
 static void
-HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, int why)
+HttpProc(Ns_Task *task, NS_SOCKET sock, void *arg, unsigned int why)
 {
     Ns_HttpTask *httpPtr = arg;
     char buf[16384];

@@ -82,8 +82,8 @@ typedef struct EventQueue {
  */
 
 static struct {
-    int when;           /* Event when bit. */
-    int event;          /* Poll event bit. */
+    unsigned int when;  /* Event when bit. */
+    unsigned int event; /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},
@@ -195,7 +195,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
  */
 
 void
-Ns_EventCallback(Ns_Event *event, int when, Ns_Time *timeoutPtr)
+Ns_EventCallback(Ns_Event *event, unsigned int when, Ns_Time *timeoutPtr)
 {
     Event *evPtr = (Event *) event;
     int    i;

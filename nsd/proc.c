@@ -72,7 +72,7 @@ static struct proc {
     { (Ns_Callback *)NsTclSockProc,        "ns:tclsockcallback",  NsTclSockArgProc},
     {                NsConnThread,         "ns:connthread",       NsConnArgProc},
     { (Ns_Callback *)NsTclFilterProc,      "ns:tclfilter",        Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsShortcutFilterProc, "ns:shortcutfilter",  NULL},
+    { (Ns_Callback *)NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
     { (Ns_Callback *)NsTclRequestProc,     "ns:tclrequest",       Ns_TclCallbackArgProc},
     { (Ns_Callback *)NsAdpPageProc,        "ns:adppage",          NsAdpPageArgProc},
     { (Ns_Callback *)Ns_FastPathProc,      "ns:fastget",          NULL},

@@ -44,7 +44,7 @@ typedef struct Callback {
     struct Callback     *nextPtr;
     NS_SOCKET            sock;
     int			 idx;
-    int                  when;
+    unsigned int         when;
     int                  timeout;
     time_t               expires;
     Ns_SockProc         *proc;
@@ -56,7 +56,7 @@ typedef struct Callback {
  */
 
 static Ns_ThreadProc SockCallbackThread;
-static int Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout);
+static int Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeout);
 static void CallbackTrigger(void);
 
 /*
@@ -91,13 +91,13 @@ static Tcl_HashTable table;
  */
 
 int
-Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when)
+Ns_SockCallback(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when)
 {
     return Queue(sock, proc, arg, when, 0);
 }
 
 int
-Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout)
+Ns_SockCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeout)
 {
     return Queue(sock, proc, arg, when, timeout);
 }
@@ -223,7 +223,7 @@ CallbackTrigger(void)
  */
 
 static int
-Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, int when, int timeout)
+Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeout)
 {
     Callback   *cbPtr;
     int         status, trigger, create;
@@ -290,7 +290,7 @@ static void
 SockCallbackThread(void *ignored)
 {
     char           c;
-    int            when[3], events[3];
+    unsigned int   when[3], events[3];
     int            n, i, isNew, max;
     Callback      *cbPtr, *nextPtr;
     Tcl_HashEntry *hPtr;
@@ -335,7 +335,7 @@ SockCallbackThread(void *ignored)
         while (cbPtr != NULL) {
             nextPtr = cbPtr->nextPtr;
             if (cbPtr->when & NS_SOCK_CANCEL) {
-                hPtr = Tcl_FindHashEntry(&table, (char *)(intptr_t) cbPtr->sock);
+		hPtr = Tcl_FindHashEntry(&table, NSSOCK2PTR(cbPtr->sock));
                 if (hPtr != NULL) {
                     ns_free(Tcl_GetHashValue(hPtr));
                     Tcl_DeleteHashEntry(hPtr);
@@ -345,7 +345,7 @@ SockCallbackThread(void *ignored)
                 }
                 ns_free(cbPtr);
             } else {
-                hPtr = Tcl_CreateHashEntry(&table, (char *)(intptr_t) cbPtr->sock, &isNew);
+                hPtr = Tcl_CreateHashEntry(&table, NSSOCK2PTR(cbPtr->sock), &isNew);
                 if (!isNew) {
                     ns_free(Tcl_GetHashValue(hPtr));
                 }

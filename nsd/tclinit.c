@@ -44,7 +44,7 @@ typedef struct TclTrace {
     struct TclTrace    *prevPtr;
     Ns_TclTraceProc    *proc;
     void               *arg;
-    int                 when;
+    unsigned int        when;
 } TclTrace;
 
 /*
@@ -84,9 +84,9 @@ static Tcl_Interp *CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr);
 static NsInterp *NewInterpData(Tcl_Interp *interp, NsServer *servPtr);
 static int UpdateInterp(NsInterp *itPtr);
 static Tcl_InterpDeleteProc FreeInterpData;
-static void RunTraces(NsInterp *itPtr, int why);
-static void LogTrace(NsInterp *itPtr, TclTrace *tracePtr, int why);
-static int RegisterAt(Ns_TclTraceProc *proc, void *arg, int when);
+static void RunTraces(NsInterp *itPtr, unsigned int why);
+static void LogTrace(NsInterp *itPtr, TclTrace *tracePtr, unsigned int why);
+static int RegisterAt(Ns_TclTraceProc *proc, void *arg, unsigned int when);
 static Ns_TlsCleanup DeleteInterps;
 static Ns_ServerInitProc ConfigServerTcl;
 
@@ -589,7 +589,7 @@ Ns_TclMarkForDelete(Tcl_Interp *interp)
 
 int
 Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc,
-                    void *arg, int when)
+                    void *arg, unsigned int when)
 {
     TclTrace   *tracePtr;
     NsServer   *servPtr;
@@ -679,7 +679,7 @@ Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, void *arg)
 }
 
 static int
-RegisterAt(Ns_TclTraceProc *proc, void *arg, int when)
+RegisterAt(Ns_TclTraceProc *proc, void *arg, unsigned int when)
 {
     NsServer *servPtr;
 
@@ -1720,7 +1720,7 @@ UpdateInterp(NsInterp *itPtr)
  */
 
 static void
-RunTraces(NsInterp *itPtr, int why)
+RunTraces(NsInterp *itPtr, unsigned int why)
 {
     TclTrace *tracePtr;
     NsServer *servPtr = itPtr->servPtr;
@@ -1762,7 +1762,7 @@ RunTraces(NsInterp *itPtr, int why)
 }
 
 static void
-LogTrace(NsInterp *itPtr, TclTrace *tracePtr, int why)
+LogTrace(NsInterp *itPtr, TclTrace *tracePtr, unsigned int why)
 {
     Ns_DString  ds;
 

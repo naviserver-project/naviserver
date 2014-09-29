@@ -131,7 +131,7 @@ Ns_RegisterReturn(int status, CONST char *url)
     servPtr = NsGetInitServer();
     if (servPtr != NULL) {
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&servPtr->request.redirect,
-						  (char *)(intptr_t) status, &isNew);
+						  INT2PTR(status), &isNew);
         if (!isNew) {
             ns_free(Tcl_GetHashValue(hPtr));
         }
@@ -681,8 +681,7 @@ ReturnRedirect(Ns_Conn *conn, int status, int *resultPtr)
     servPtr = connPtr->poolPtr->servPtr;
     assert(servPtr != NULL);
 
-    hPtr = Tcl_FindHashEntry(&servPtr->request.redirect,
-                             (char *)(intptr_t) status);
+    hPtr = Tcl_FindHashEntry(&servPtr->request.redirect, INT2PTR(status));
     if (hPtr != NULL) {
         if (++connPtr->recursionCount > MAX_RECURSION) {
             Ns_Log(Error, "return: failed to redirect '%d': "

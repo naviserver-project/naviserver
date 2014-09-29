@@ -41,10 +41,10 @@
  */
 
 typedef struct Callback {
-    char       *server;
-    Tcl_Channel chan;
-    int         when;
-    char        script[1];
+    char        *server;
+    Tcl_Channel  chan;
+    unsigned int when;
+    char         script[1];
 } Callback;
 
 /*
@@ -53,7 +53,7 @@ typedef struct Callback {
 
 typedef struct ListenCallback {
     char *server;
-    char script[1];
+    char  script[1];
 } ListenCallback;
 
 /*
@@ -61,20 +61,47 @@ typedef struct ListenCallback {
  */
 
 static int GetSet(Tcl_Interp *interp, char *flist, int write, 
-                  fd_set ** ppset, fd_set * pset, int *maxPtr);
+                  fd_set **setPtrPtr, fd_set *setPtr, int *maxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) 
+    NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
-static void AppendReadyFiles(Tcl_Interp *interp, fd_set * pset, 
-                             int write, char *flist, Tcl_DString *pds);
+static int GetObjCmd(Tcl_Interp *interp, int objc, 
+		     Tcl_Obj *CONST objv[], int byaddr)
+    NS_GNUC_NONNULL(1);
 
-static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock);
-static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock);
-static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock);
+static void AppendReadyFiles(Tcl_Interp *interp, fd_set *pset, 
+                             int write, char *flist, Tcl_DString *pds)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+
+static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
+    NS_GNUC_NONNULL(1);
+static int EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
+    NS_GNUC_NONNULL(1);
+static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
+    NS_GNUC_NONNULL(1);
 
 static int SockSetBlocking(char *value, Tcl_Interp *interp, int objc, 
-                           Tcl_Obj *CONST objv[]);
+                           Tcl_Obj *CONST objv[])
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_SockProc SockListenCallback;
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclSockArgProc --
+ *
+ *      Ns_ArgProc for info callback
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Appending script to the provided DString.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 NsTclSockArgProc(Tcl_DString *dsPtr, void *arg)
 {
@@ -105,6 +132,8 @@ GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int byaddr)
 {
     Ns_DString ds;
     int        status;
+
+    assert(interp != NULL);
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "address");
@@ -729,11 +758,12 @@ int
 NsTclSockCallbackObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
                 Tcl_Obj *CONST objv[])
 {
-    char     *s;
-    NS_SOCKET sock;
-    int       when, timeout = 0;
-    Callback *cbPtr;
-    NsInterp *itPtr = arg;
+    char        *s;
+    NS_SOCKET    sock;
+    int          timeout = 0;
+    unsigned int when;
+    Callback    *cbPtr;
+    NsInterp    *itPtr = arg;
 
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId script when ?timeout?");
@@ -874,6 +904,9 @@ SockSetBlocking(char *value, Tcl_Interp *interp, int objc,
 {
     Tcl_Channel chan;
 
+    assert(value != NULL);
+    assert(interp != NULL);
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "sockId");
         return TCL_ERROR;
@@ -915,6 +948,9 @@ AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
     CONST char  **fargv = NULL;
     NS_SOCKET     sock;
     Tcl_DString   ds;
+
+    assert(interp != NULL);
+    assert(flist != NULL);
 
     Tcl_DStringInit(&ds);
     if (dsPtr == NULL) {
@@ -963,6 +999,12 @@ GetSet(Tcl_Interp *interp, char *flist, int write, fd_set **setPtrPtr,
     int          fargc, status;
     NS_SOCKET    sock;
     CONST char **fargv = NULL;
+
+    assert(interp != NULL);
+    assert(flist != NULL);
+    assert(setPtrPtr != NULL);
+    assert(setPtr != NULL);
+    assert(maxPtr != NULL);
     
     if (Tcl_SplitList(interp, flist, &fargc, &fargv) != TCL_OK) {
         return TCL_ERROR;
@@ -1025,7 +1067,9 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
 {
     Tcl_Channel chan;
 
-    chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
+    assert(interp != NULL);
+
+    chan = Tcl_MakeTcpClientChannel(INT2PTR(sock));
     if (chan == NULL) {
         Tcl_AppendResult(interp, "could not open socket", NULL);
         ns_sockclose(sock);
@@ -1041,6 +1085,8 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
 static int
 EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 {
+    assert(interp != NULL);
+
     sock = ns_sockdup(sock);
     if (sock == INVALID_SOCKET) {
         Tcl_AppendResult(interp, "could not dup socket: ", 
@@ -1054,6 +1100,8 @@ EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
 static int
 EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
 {
+    assert(interp != NULL);
+
     if (EnterSock(interp, sock) != TCL_OK ||
         EnterDup(interp, sock) != TCL_OK) {
         return TCL_ERROR;
@@ -1081,7 +1129,7 @@ EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock)
  */
 
 int
-NsTclSockProc(NS_SOCKET sock, void *arg, int why)
+NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 {
     Tcl_DString  script;
     int          ok;
@@ -1103,7 +1151,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, int why)
              * register the channel.
              */
             
-            cbPtr->chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t) sock);
+            cbPtr->chan = Tcl_MakeTcpClientChannel(INT2PTR(sock));
             if (cbPtr->chan == NULL) {
                 Ns_Log(Error, "could not make channel for sock: %d", sock);
                 goto fail;
@@ -1174,7 +1222,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, int why)
  */
 
 static int
-SockListenCallback(NS_SOCKET sock, void *arg, int why)
+SockListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
 {
     ListenCallback *lcbPtr = arg;
     Tcl_Interp     *interp;
