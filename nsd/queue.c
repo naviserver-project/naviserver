@@ -1747,9 +1747,11 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
         if (connPtr->request) {
 	    char *p;
 	    p = connPtr->request->method ? connPtr->request->method : "?";
-	    Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
+	    (void)strncpy(buf, p, sizeof(buf));
+	    Tcl_DStringAppendElement(dsPtr, buf);
 	    p = connPtr->request->url ? connPtr->request->url : "?";
-	    Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
+	    (void)strncpy(buf, p, sizeof(buf));
+	    Tcl_DStringAppendElement(dsPtr, buf);
 	} else {
 	    Ns_Log(Notice, "AppendConn: no request in state %s; ignore conn in output", state);
 	    Tcl_DStringAppendElement(dsPtr, "unknown");
