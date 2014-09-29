@@ -576,7 +576,7 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp,
 
     string = Tcl_GetStringFromObj(objv[1], &size);
     size += 3;
-    decoded = ns_malloc(size);
+    decoded = (unsigned char *)ns_malloc(size);
     size = (int)Ns_HtuuDecode(string, decoded, size);
     decoded[size] = '\0';
     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, size));
@@ -686,8 +686,8 @@ static char hexChars[] = "0123456789ABCDEF";
 
 #define SHA_VERSION 1
 
-#define SHA_BLOCKBYTES 64
-#define SHA_HASHBYTES 20
+#define SHA_BLOCKBYTES 64U
+#define SHA_HASHBYTES 20U
 
 /*
    Shuffle the bytes into big-endian order within words, as per the
@@ -716,10 +716,10 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 
     /* Initialise bit count */
 #ifdef HAVE64
-    ctx->bytes = 0;
+    ctx->bytes = 0U;
 #else
-    ctx->bytesHi = 0;
-    ctx->bytesLo = 0;
+    ctx->bytesHi = 0U;
+    ctx->bytesLo = 0U;
 #endif
 }
 
@@ -788,7 +788,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
    the variables (e,a,b,c,d) = (a',b',c',d',e') each iteration.
  */
 #define subRound(a, b, c, d, e, f, k, data) \
-    ( (e) += ROTL(5,(a)) + f((b), (c), (d)) + (k) + (data), (b) = ROTL(30, (b)) )
+    ( (e) += ROTL(5U,(a)) + f((b), (c), (d)) + (k) + (data), (b) = ROTL(30U, (b)) )
 /*
    The above code is replicated 20 times for each of the 4 functions,
    using the next 20 values from the W[] array for "data" each time.

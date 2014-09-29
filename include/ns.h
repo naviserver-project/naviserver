@@ -545,8 +545,8 @@ typedef struct Ns_CtxMD5 {
  * SHA1 digest implementation
  */
 
-#define SHA_HASHWORDS  5
-#define SHA_BLOCKWORDS 16
+#define SHA_HASHWORDS  5U
+#define SHA_BLOCKWORDS 16U
 
 typedef struct Ns_CtxSHA1 {
     unsigned int key[SHA_BLOCKWORDS];
