@@ -390,15 +390,18 @@ GetAddr(Ns_DString *dsPtr, char *host)
 static int
 GetAddr(Ns_DString *dsPtr, char *host)
 {
-    struct hostent he;
     struct in_addr ia, *ptr;
-#ifdef HAVE_GETHOSTBYNAME_R_3
-    struct hostent_data data;
-#endif
     char buf[2048];
     int result = 0;
     int h_errnop = 0;
     int status = NS_FALSE;
+#if defined(HAVE_GETHOSTBYNAME_R_6) || defined(HAVE_GETHOSTBYNAME_R_5) || defined(HAVE_GETHOSTBYNAME_R_6)
+    struct hostent he;
+#endif
+#ifdef HAVE_GETHOSTBYNAME_R_3
+    struct hostent_data data;
+#endif
+
 
     memset(buf, 0, sizeof(buf));
 

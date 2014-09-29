@@ -165,7 +165,7 @@ static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static int   SockParse(Sock *sockPtr, int spooler)
     NS_GNUC_NONNULL(1);
-static void  SockPoll(Sock *sockPtr, int type, PollData *pdata)
+static void  SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -179,7 +179,7 @@ static void  PollFree(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void  PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static int   PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
+static int   PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 static int   PollWait(PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
@@ -1560,7 +1560,7 @@ PollReset(PollData *pdata)
 }
 
 static int
-PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
+PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
 {
     assert(pdata != NULL);
     /*
@@ -1710,7 +1710,7 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
  */
 
 static void
-SockPoll(Sock *sockPtr, int type, PollData *pdata)
+SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
 {
     assert(sockPtr != NULL);
     assert(pdata != NULL);

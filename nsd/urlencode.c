@@ -51,9 +51,12 @@ typedef struct ByteKey {
  */
 
 static char *UrlEncode(Ns_DString *dsPtr, char *string,
-                       Tcl_Encoding encoding, int part);
+                       Tcl_Encoding encoding, int part)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static char *UrlDecode(Ns_DString *dsPtr, char *string,
-                       Tcl_Encoding encoding, int part);
+                       Tcl_Encoding encoding, int part)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  * Local variables defined in this file.
@@ -331,12 +334,18 @@ Ns_GetUrlEncoding(char *charset)
 char *
 Ns_UrlPathEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 {
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     return UrlEncode(dsPtr, string, encoding, 'p');
 }
 
 char *
 Ns_UrlPathDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 {
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     return UrlDecode(dsPtr, string, encoding, 'p');
 }
 
@@ -363,12 +372,18 @@ Ns_UrlPathDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 char *
 Ns_UrlQueryEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 {
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     return UrlEncode(dsPtr, string, encoding, 'q');
 }
 
 char *
 Ns_UrlQueryDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 {
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     return UrlDecode(dsPtr, string, encoding, 'q');
 }
 
@@ -394,6 +409,9 @@ Ns_UrlQueryDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 char *
 Ns_EncodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 {
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     return Ns_UrlQueryEncode(dsPtr, string, encoding);
 }
 
@@ -402,6 +420,9 @@ Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
 
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     return Ns_UrlQueryEncode(dsPtr, string, encoding);
 
 }
@@ -409,6 +430,9 @@ Ns_EncodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
 char *
 Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding)
 {
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     return Ns_UrlQueryDecode(dsPtr, string, encoding);
 }
 
@@ -416,6 +440,9 @@ char *
 Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
 {
     Tcl_Encoding encoding = Ns_GetUrlEncoding(charset);
+
+    assert(dsPtr != NULL);
+    assert(string != NULL);
 
     return Ns_UrlQueryDecode(dsPtr, string, encoding);
 }
@@ -588,6 +615,9 @@ UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
     Tcl_DString    ds;
     ByteKey       *enc;
 
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     if (encoding != NULL) {
         string = Tcl_UtfToExternalDString(encoding, string, -1, &ds);
     }
@@ -650,7 +680,7 @@ UrlEncode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
  *----------------------------------------------------------------------
  */
 
-char *
+static char *
 UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
 {
     register int   i, n;
@@ -659,6 +689,9 @@ UrlDecode(Ns_DString *dsPtr, char *string, Tcl_Encoding encoding, int part)
     size_t         length;
     Tcl_DString    ds;
     ByteKey       *enc;
+
+    assert(dsPtr != NULL);
+    assert(string != NULL);
 
     /*
      * Copy the decoded characters directly to the dstring,
