@@ -1426,13 +1426,10 @@ NewQueue(CONST char *queueName, CONST char *queueDesc, int maxThreads)
     queue = ns_calloc(1, sizeof(Queue));
     queue->req = QUEUE_REQ_NONE;
 
-    queue->name = ns_calloc(1, strlen(queueName) + 1);
-    strcpy(queue->name, queueName);
+    queue->name = ns_strdup(queueName);
+    queue->desc = ns_strdup(queueDesc);
 
-    queue->desc = ns_calloc(1, strlen(queueDesc) + 1);
-    strcpy(queue->desc, queueDesc);
     queue->maxThreads = maxThreads;
-
     queue->refCount = 0;
 
     Ns_MutexSetName2(&queue->lock, "tcljob", queueName);
@@ -1505,8 +1502,7 @@ NewJob(CONST char* server, CONST char* queueId, int type, char *script)
     jobPtr->code   = TCL_OK;
     jobPtr->req    = JOB_NONE;
 
-    jobPtr->queueId = ns_calloc(1, strlen(queueId) + 1);
-    strcpy(jobPtr->queueId, queueId);
+    jobPtr->queueId = ns_strdup(queueId);
 
     Tcl_DStringInit(&jobPtr->id);
     Tcl_DStringInit(&jobPtr->script);
@@ -1947,12 +1943,12 @@ AppendField(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
      * it will set the result anyway.
      */
 
-    elObj = Tcl_NewStringObj(name, (int)strlen(name));
+    elObj = Tcl_NewStringObj(name, -1);
     if (Tcl_ListObjAppendElement(interp, list, elObj) != TCL_OK) {
         return TCL_ERROR;
     }
 
-    elObj = Tcl_NewStringObj(value, (int)strlen(value));
+    elObj = Tcl_NewStringObj(value, -1);
     if (Tcl_ListObjAppendElement(interp, list, elObj) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -1987,7 +1983,7 @@ AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name, int value)
      * it will set the result anyway
      */
 
-    elObj = Tcl_NewStringObj(name, (int)strlen(name));
+    elObj = Tcl_NewStringObj(name, -1);
     if (Tcl_ListObjAppendElement(interp, list, elObj) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -2025,7 +2021,7 @@ AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
     assert(list != NULL);
     assert(name != NULL);
 
-    elObj = Tcl_NewStringObj(name, (int)strlen(name));
+    elObj = Tcl_NewStringObj(name, -1);
     if (Tcl_ListObjAppendElement(interp, list, elObj) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -2063,7 +2059,7 @@ AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, CONST char *name,
     assert(list != NULL);
     assert(name != NULL);
 
-    elObj = Tcl_NewStringObj(name, (int)strlen(name));
+    elObj = Tcl_NewStringObj(name, -1);
     if (Tcl_ListObjAppendElement(interp, list, elObj) != TCL_OK) {
         return TCL_ERROR;
     }
