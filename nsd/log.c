@@ -121,7 +121,7 @@ static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
 static CONST char  *file;
-static int          flags;
+static unsigned int flags;
 static int          maxback;
 
 static LogFilter   *filters;

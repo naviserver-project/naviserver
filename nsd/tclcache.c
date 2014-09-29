@@ -84,23 +84,29 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     NsServer      *servPtr = itPtr->servPtr;
     Tcl_HashEntry *hPtr;
     char          *name = NULL;
-    int            isNew, maxSize = 0, maxEntry = 0;
+    int            isNew;
+    int            iMaxSize = 0, iMaxEntry = 0;
     Ns_Time       *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
         {"-expires",  Ns_ObjvTime,  &expPtr,     NULL},
-        {"-maxentry", Ns_ObjvInt,   &maxEntry,   NULL},
+        {"-maxentry", Ns_ObjvInt,   &iMaxEntry,   NULL},
         {"--",        Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"cache",   Ns_ObjvString, &name,    NULL},
-        {"size",    Ns_ObjvInt,    &maxSize, NULL},
+        {"size",    Ns_ObjvInt,    &iMaxSize, NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
+    }
+    if (iMaxSize < 0 || iMaxEntry < 0) {
+      Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			     "maxsize and maxentry must be positive numbers", NULL);
+      return TCL_ERROR;
     }
 
     Ns_MutexLock(&servPtr->tcl.cachelock);
@@ -108,8 +114,8 @@ NsTclCacheCreateObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     if (isNew) {
         TclCache *cPtr = ns_calloc(1, sizeof(TclCache));
 
-        cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, maxSize, ns_free);
-        cPtr->maxEntry = maxEntry;
+        cPtr->cache = Ns_CacheCreateSz(name, TCL_STRING_KEYS, (size_t)iMaxSize, ns_free);
+        cPtr->maxEntry = (size_t)iMaxEntry;
         if (timeoutPtr != NULL) {
             cPtr->timeout = *timeoutPtr;
         }
@@ -800,23 +806,27 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
 {
     char    *string;
     int      len;
+    size_t   length;
     Ns_Time  time;
 
     string = Tcl_GetStringFromObj(valObj, &len);
-    if (cPtr->maxEntry > 0 && (size_t)len > cPtr->maxEntry) {
+    assert(len >= 0);
+    length = (size_t)len;
+
+    if (cPtr->maxEntry > 0 && length > cPtr->maxEntry) {
         Ns_CacheDeleteEntry(entry);
     } else {
-        char *value = ns_malloc(len+1);
+      char *value = ns_malloc(length + 1);
 
-        memcpy(value, string, len);
-        value[len] = '\0';
+      memcpy(value, string, length);
+        value[length] = '\0';
         if (expPtr == NULL
             && (cPtr->expires.sec > 0 || cPtr->expires.usec > 0)) {
             expPtr = Ns_AbsoluteTime(&time, &cPtr->expires);
         } else {
             expPtr = Ns_AbsoluteTime(&time, expPtr);
         }
-        Ns_CacheSetValueExpires(entry, value, len, expPtr, cost);
+        Ns_CacheSetValueExpires(entry, value, length, expPtr, cost);
     }
 }
 
