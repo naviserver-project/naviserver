@@ -90,7 +90,7 @@ typedef struct ServerMap {
 
 typedef struct PollData {
     unsigned int nfds;          /* Number of fd's being monitored. */
-    int maxfds;                 /* Max fd's (will grow as needed). */
+    unsigned int maxfds;        /* Max fd's (will grow as needed). */
     struct pollfd *pfds;        /* Dynamic array of poll struct's. */
     Ns_Time timeout;            /* Min timeout, if any, for next spin. */
 } PollData;
@@ -2029,7 +2029,7 @@ SockSendResponse(Sock *sockPtr, int code)
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len = 4;
     sent = NsDriverSend(sockPtr, iov, 3, 0);
-    if (sent < iov[0].iov_len+iov[1].iov_len+iov[2].iov_len) {
+    if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
 	Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
 }
@@ -3473,7 +3473,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    curPtr->c.file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
-	    if (n < towrite) {
+	  if (n < (ssize_t)towrite) {
 		/*
 		 * We have a partial transmit from the iovec
 		 * structure. We have to compact it to fill content in
@@ -4228,9 +4228,9 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 		close(fd);
 		return TCL_ERROR;
 	    }
-	    nrbytes = size;
+	    nrbytes = (size_t)size;
 	} else {
-	    nrbytes = st.st_size - offset;
+	  nrbytes = (size_t)(st.st_size - offset);
 	}
 
 	if (offset > 0) {

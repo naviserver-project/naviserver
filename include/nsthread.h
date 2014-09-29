@@ -158,15 +158,16 @@ typedef int32_t ssize_t;
 # define DEVNULL	             "nul:"
 
 # define ftruncate(f,s)              chsize((f),(s))
-# define mkdir(d,m)                  _mkdir((d))
 # define sleep(n)                    (Sleep((n)*1000))
 
 # define access                      _access
 # define chsize                      _chsize
 # define close                       _close
 # define dup2                        _dup2
+# define fileno                      _fileno
 # define getpid                      _getpid
 # define lseek                       _lseek
+# define mkdir(d,m)                  _mkdir((d))
 # define mktemp                      _mktemp
 # define open                        _open
 # define putenv                      _putenv
@@ -582,17 +583,21 @@ typedef struct DIR_ *DIR;
 
 #if !defined(INT2PTR) && !defined(PTR2INT)
 #   if defined(HAVE_INTPTR_T) || defined(intptr_t)
-#       define INT2PTR(p) ((void *)(intptr_t)(p))
-#       define PTR2INT(p) ((int)(intptr_t)(p))
+#       define INT2PTR(p)  ((void *)(intptr_t)(p))
+#       define PTR2INT(p)  ((int)(intptr_t)(p))
+#       define UINT2PTR(p) ((void *)(uintptr_t)(p))
+#       define PTR2UINT(p) ((unsigned int)(uintptr_t)(p))
 #   else
-#       define INT2PTR(p) ((void *)(p))
-#       define PTR2INT(p) ((int)(p))
+#       define INT2PTR(p)  ((void *)(p))
+#       define PTR2INT(p)  ((int)(p))
+#       define UINT2PTR(p) ((void *)(p))
+#       define PTR2UINT(p) ((unsigned int)(p))
 #   endif
 #endif
 
 #ifdef _WIN32
-# define PTR2NSSOCK(p) (p)
-# define NSSOCK2PTR(p) (p)
+# define PTR2NSSOCK(p) PTR2UINT(p)
+# define NSSOCK2PTR(p) UINT2PTR(p)
 #else
 # define PTR2NSSOCK(p) PTR2INT(p)
 # define NSSOCK2PTR(p) INT2PTR(p)
