@@ -1285,7 +1285,7 @@ HttpsAbort(Https *httpsPtr)
  */
 
 static void
-HttpsProc(Ns_Task *task, SOCKET sock, void *arg, int why)
+HttpsProc(Ns_Task *task, SOCKET sock, void *arg, unsigned int why)
 {
     Https       *httpsPtr = arg;
     Ns_HttpTask *httpPtr  = &httpsPtr->http;
