@@ -121,7 +121,11 @@ ns_asctime(const struct tm *tmPtr)
 
     errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
     if (errNum) {
-      Ns_Log(Warning, "ns_asciitime: call to asctime_s returned an error code %d", errNum);
+        /*
+         * TODO: Cannot call Ns_Log() here (and not in the Linux version
+         * either), doing so triggers an "unresolved external" link error:
+         */
+        /* Ns_Log(Warning, "ns_asciitime: call to asctime_s returned an error code %d", errNum); */
      }
 
     return tlsPtr->asbuf;
