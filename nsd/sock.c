@@ -372,7 +372,7 @@ Ns_SockSend(NS_SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr)
+Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr)
 {
     int           n, msec = -1;
     struct pollfd pfd;
@@ -422,7 +422,7 @@ Ns_SockTimedWait(NS_SOCKET sock, int what, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockWait(NS_SOCKET sock, int what, int timeout)
+Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
 {
     Ns_Time tm;
 
@@ -676,12 +676,9 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
 int
 Ns_SockSetNonBlocking(NS_SOCKET sock)
 {
-    unsigned int nb = 1;
-
-    if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
-        return NS_ERROR;
+    if (ns_sock_set_blocking(sock, 0) == -1) {
+	return NS_ERROR;
     }
-
     return NS_OK;
 }
 
@@ -705,12 +702,9 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
 int
 Ns_SockSetBlocking(NS_SOCKET sock)
 {
-    unsigned int nb = 0;
-
-    if (ns_sockioctl(sock, FIONBIO, &nb) == -1) {
-        return NS_ERROR;
+    if (ns_sock_set_blocking(sock, 1) == -1) {
+	return NS_ERROR;
     }
-
     return NS_OK;
 }
 
@@ -873,7 +867,7 @@ Ns_SockPipe(NS_SOCKET socks[2])
  */
 
 static int
-CloseLater(NS_SOCKET sock, void *arg, int why)
+CloseLater(NS_SOCKET sock, void *arg, unsigned int why)
 {
     ns_sockclose(sock);
     return NS_FALSE;
@@ -1040,7 +1034,7 @@ SockConnect(char *host, int port, char *lhost, int lport, int async)
             Ns_SockSetNonBlocking(sock);
         }
         if (connect(sock, (struct sockaddr *) &sa, sizeof(sa)) != 0) {
-            int err = ns_sockerrno;
+            unsigned int err = ns_sockerrno;
             if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
                 sock = INVALID_SOCKET;

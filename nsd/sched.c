@@ -296,7 +296,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
             if (nextId < 0) {
                 nextId = 0;
             }
-            ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, (char *)(intptr_t)id, &isNew);
+            ePtr->hPtr = Tcl_CreateHashEntry(&eventsTable, INT2PTR(id), &isNew);
         } while (!isNew);
         Tcl_SetHashValue(ePtr->hPtr, ePtr);
         ePtr->id = id;
@@ -340,7 +340,7 @@ Ns_Cancel(int id)
     cancelled = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
@@ -385,7 +385,7 @@ Ns_Pause(int id)
     paused = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);
@@ -429,7 +429,7 @@ Ns_Resume(int id)
     resumed = 0;
     Ns_MutexLock(&lock);
     if (!shutdownPending) {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, (char *)(intptr_t) id);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&eventsTable, INT2PTR(id));
 
         if (hPtr != NULL) {
             ePtr = Tcl_GetHashValue(hPtr);

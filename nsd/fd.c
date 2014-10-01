@@ -225,12 +225,6 @@ Ns_CloseOnExec(int fd)
  */
 
 int
-ns_closeonexec(int fd)
-{
-    return Ns_CloseOnExec(fd);
-}
-
-int
 Ns_NoCloseOnExec(int fd)
 {
 #ifdef _WIN32
@@ -264,12 +258,6 @@ Ns_NoCloseOnExec(int fd)
  *
  *----------------------------------------------------------------------
  */
-
-int
-ns_duphigh(int *fdPtr)
-{
-   return Ns_DupHigh(fdPtr);
-}
 
 int
 Ns_DupHigh(int *fdPtr)

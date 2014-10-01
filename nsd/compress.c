@@ -162,7 +162,7 @@ Ns_InflateInit(Ns_CompressStream *stream)
 
 
 int
-Ns_InflateBufferInit(Ns_CompressStream *stream, char *in, int inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *stream, CONST char *in, int inSize) 
 {
     z_stream *zPtr = &stream->z;
 
@@ -173,7 +173,7 @@ Ns_InflateBufferInit(Ns_CompressStream *stream, char *in, int inSize)
 }
 
 int
-Ns_InflateBuffer(Ns_CompressStream *stream, char *out, int outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *stream, CONST char *out, int outSize, int *nrBytes) 
 {
     z_stream *zPtr = &stream->z;
     int       status, result = TCL_OK;

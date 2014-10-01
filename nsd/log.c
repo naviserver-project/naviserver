@@ -121,7 +121,7 @@ static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
 static CONST char  *file;
-static int          flags;
+static unsigned int flags;
 static int          maxback;
 
 static LogFilter   *filters;
@@ -254,7 +254,7 @@ NsConfigLog(void)
     file = Ns_ConfigString(path, "serverlog", "nsd.log");
     if (!Ns_PathIsAbsolute(file)) {
         Ns_DStringInit(&ds);
-        if (Ns_HomePathExists("logs", NULL)) {
+        if (Ns_HomePathExists("logs", (char *)0)) {
             Ns_HomePath(&ds, "logs", file, NULL);
         } else {
             Ns_HomePath(&ds, file, NULL);

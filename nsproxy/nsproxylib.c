@@ -2196,7 +2196,7 @@ GetPool(char *poolName, InterpData *idataPtr)
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);
         if (idataPtr && idataPtr->server && idataPtr->module) {
-            path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, NULL);
+	  path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, (char *)0);
         }
         if (path != NULL && (exec = Ns_ConfigGetValue(path, "exec")) != NULL) {
             SetOpt(exec, &poolPtr->exec);

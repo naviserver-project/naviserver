@@ -60,12 +60,12 @@
  * The following are valid driver state flags.
  */
 
-#define DRIVER_STARTED           1
-#define DRIVER_STOPPED           2
-#define DRIVER_SHUTDOWN          4
-#define DRIVER_FAILED            8
-#define DRIVER_QUERY             16
-#define DRIVER_DEBUG             32
+#define DRIVER_STARTED           1U
+#define DRIVER_STOPPED           2U
+#define DRIVER_SHUTDOWN          4U
+#define DRIVER_FAILED            8U
+#define DRIVER_QUERY             16U
+#define DRIVER_DEBUG             32U
 
 /*
  * Managing streaming output via writer
@@ -90,7 +90,7 @@ typedef struct ServerMap {
 
 typedef struct PollData {
     unsigned int nfds;          /* Number of fd's being monitored. */
-    int maxfds;                 /* Max fd's (will grow as needed). */
+    unsigned int maxfds;        /* Max fd's (will grow as needed). */
     struct pollfd *pfds;        /* Dynamic array of poll struct's. */
     Ns_Time timeout;            /* Min timeout, if any, for next spin. */
 } PollData;
@@ -154,7 +154,8 @@ static void  SockPrepare(Sock *sockPtr)
 static void  SockRelease(Sock *sockPtr, int reason, int err)
     NS_GNUC_NONNULL(1);
 static void  SockError(Sock *sockPtr, int reason, int err);
-static void  SockSendResponse(Sock *sockPtr, int code, char *msg);
+static void  SockSendResponse(Sock *sockPtr, int code)
+    NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
     NS_GNUC_NONNULL(1);
@@ -164,19 +165,21 @@ static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static int   SockParse(Sock *sockPtr, int spooler)
     NS_GNUC_NONNULL(1);
-static void  SockPoll(Sock *sockPtr, int type, PollData *pdata)
+static void  SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc);
-static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name);
+static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
+    NS_GNUC_NONNULL(2);
+static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static void  PollCreate(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void  PollFree(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static void  PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static int   PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
+static int   PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 static int   PollWait(PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
@@ -264,7 +267,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         return NS_ERROR;
     }
 
-    path = (init->path ? init->path : Ns_ConfigGetPath(server, module, NULL));
+    path = (init->path ? init->path : Ns_ConfigGetPath(server, module, (char *)0));
     set = Ns_ConfigCreateSection(path);
 
     /*
@@ -1557,7 +1560,7 @@ PollReset(PollData *pdata)
 }
 
 static int
-PollSet(PollData *pdata, NS_SOCKET sock, int type, Ns_Time *timeoutPtr)
+PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
 {
     assert(pdata != NULL);
     /*
@@ -1707,7 +1710,7 @@ SockQueue(Sock *sockPtr, Ns_Time *timePtr)
  */
 
 static void
-SockPoll(Sock *sockPtr, int type, PollData *pdata)
+SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
 {
     assert(sockPtr != NULL);
     assert(pdata != NULL);
@@ -1950,22 +1953,22 @@ SockError(Sock *sockPtr, int reason, int err)
 
     case SOCK_BADREQUEST:
         errMsg = "Bad Request";
-        SockSendResponse(sockPtr, 400, errMsg);
+        SockSendResponse(sockPtr, 400);
         break;
 
     case SOCK_TOOMANYHEADERS:
         errMsg = "Too Many Request Headers";
-        SockSendResponse(sockPtr, 414, errMsg);
+        SockSendResponse(sockPtr, 414);
         break;
 
     case SOCK_BADHEADER:
         errMsg = "Invalid Request Header";
-        SockSendResponse(sockPtr, 400, errMsg);
+        SockSendResponse(sockPtr, 400);
         break;
 
     case SOCK_ENTITYTOOLARGE:
         errMsg = "Request Entity Too Large";
-        SockSendResponse(sockPtr, 413, errMsg);
+        SockSendResponse(sockPtr, 413);
         break;
     }
     if (errMsg != NULL) {
@@ -1997,12 +2000,14 @@ SockError(Sock *sockPtr, int reason, int err)
  *----------------------------------------------------------------------
  */
 
-void
-SockSendResponse(Sock *sockPtr, int code, char *msg)
+static void
+SockSendResponse(Sock *sockPtr, int code)
 {
     struct iovec iov[3];
     char header[32], *response = NULL;
     ssize_t sent;
+
+    assert(sockPtr != NULL);
 
     switch (code) {
     case 413:
@@ -2024,7 +2029,7 @@ SockSendResponse(Sock *sockPtr, int code, char *msg)
     iov[2].iov_base = "\r\n\r\n";
     iov[2].iov_len = 4;
     sent = NsDriverSend(sockPtr, iov, 3, 0);
-    if (sent < iov[0].iov_len+iov[1].iov_len+iov[2].iov_len) {
+    if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
 	Ns_Log(Warning, "Driver: partial write while sending error reply");
     }
 }
@@ -2051,6 +2056,7 @@ SockTrigger(NS_SOCKET fd)
 {
     if (send(fd, "", 1, 0) != 1) {
         char * errstr = ns_sockstrerror(ns_sockerrno);
+
         Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
     }
 }
@@ -2222,6 +2228,8 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 
     assert(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
+
+    tbuf[0] = '\0';
 
     /*
      * In case of keepwait, the accept time is not meaningful and
@@ -3017,6 +3025,7 @@ SpoolerThread(void *arg)
 static void
 SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 {
+    assert(proc != NULL);
     while (queuePtr != NULL) {
         if (ns_sockpair(queuePtr->pipe)) {
             Ns_Fatal("ns_sockpair() failed: %s", ns_sockstrerror(ns_sockerrno));
@@ -3029,6 +3038,10 @@ SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
 static void
 SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
 {
+
+    assert(timeoutPtr != NULL);
+    assert(name != NULL);
+
     while (queuePtr != NULL) {
 	int status;
 
@@ -3462,7 +3475,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    curPtr->c.file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
-	    if (n < towrite) {
+	  if (n < (ssize_t)towrite) {
 		/*
 		 * We have a partial transmit from the iovec
 		 * structure. We have to compact it to fill content in
@@ -3841,22 +3854,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	}
 
 	if (first) {
-#ifdef _WIN32
-            unsigned long foo = 1;
-#endif
 	    bufs = NULL;
 	    connPtr->nContentSent = wrote;
-#ifdef _WIN32
-            /*
-             * For portability examples, see e.g.:
-             * http://stackoverflow.com/questions/1738799/non-blocking-socket-on-windows-doesnt-return-after-send-call
-             * http://www.opensource.apple.com/source/curl/curl-68/curl/lib/nonblock.c
-             * http://lists.fedoraproject.org/pipermail/mingw/2008-November/000034.html
-             */
-            ioctlsocket(connPtr->fd, FIONBIO, &foo);
-#else
-	    fcntl(connPtr->fd, F_SETFL, O_NONBLOCK);
-#endif
+	    ns_sock_set_blocking(connPtr->fd, 0);
 	    /*
 	     * Fall through to register stream writer with temp file 
 	     */
@@ -4230,9 +4230,9 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 		close(fd);
 		return TCL_ERROR;
 	    }
-	    nrbytes = size;
+	    nrbytes = (size_t)size;
 	} else {
-	    nrbytes = st.st_size - offset;
+	  nrbytes = (size_t)(st.st_size - offset);
 	}
 
 	if (offset > 0) {

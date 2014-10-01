@@ -107,7 +107,7 @@ Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
     cleanupProcs = ns_realloc(cleanupProcs, sizeof(Ns_Callback *) * nsconf.nextSlsId);
     cleanupProcs[id] = cleanup;
 
-    *slsPtr = (void *) (intptr_t)id;
+    *slsPtr = INT2PTR(id);
 }
 
 
@@ -467,7 +467,7 @@ static void **
 GetSlot(Ns_Sls *slsPtr, Ns_Sock *sock)
 {
     Sock      *sockPtr = (Sock *) sock;
-    int        id      = (int)(intptr_t) *slsPtr;
+    int        id      = PTR2INT(*slsPtr);
 
     if (id >= nsconf.nextSlsId) {
         Ns_Fatal("Ns_Sls: invalid key: %d: must be between 0 and %d",

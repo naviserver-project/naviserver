@@ -1795,7 +1795,7 @@ NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, void *arg)
     Ns_TclCallback *cbPtr = arg;
     Tcl_Interp *interp = Ns_GetConnInterp(conn);
 
-    if (Ns_TclEvalCallback(interp, cbPtr, dest, NULL) != NS_OK) {
+    if (Ns_TclEvalCallback(interp, cbPtr, dest, (char *)0) != NS_OK) {
         Ns_TclLogError(interp);
         return NULL;
     }
@@ -1925,7 +1925,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
      * Create Tcl channel arround the connection socket
      */
 
-    chan = Tcl_MakeTcpClientChannel((ClientData)(intptr_t)connPtr->sockPtr->sock);
+    chan = Tcl_MakeTcpClientChannel(NSSOCK2PTR(connPtr->sockPtr->sock));
     if (chan == NULL) {
         Tcl_AppendResult(itPtr->interp, Tcl_PosixError(itPtr->interp), NULL);
         return NULL;

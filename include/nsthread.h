@@ -87,8 +87,16 @@
 #  define WIN32_LEAN_AND_MEAN
 # endif
 
+/* 
+ * 0x0400  Windows NT
+ * 0x0500  Windows XP
+ * 0x0600  Windows Vista
+ * 0x0601  Windows 7 
+ * 0x0602  Windows 8
+ * 0x0603  Windows 8.1
+ */
 # ifndef _WIN32_WINNT
-#  define _WIN32_WINNT                0x0400U
+#  define _WIN32_WINNT                0x0600
 # endif
 
 #include <windows.h>
@@ -128,7 +136,7 @@ typedef unsigned __int64 uint64_t;
 typedef          long int intmax_t;
 typedef unsigned long int uintmax_t;
 
-typedef          HANDLE pid_t;
+typedef          DWORD pid_t;
 #define NS_INVALID_PID 0
 
 #  ifdef _WIN64
@@ -153,12 +161,28 @@ typedef int32_t ssize_t;
 # define DEVNULL	             "nul:"
 
 # define ftruncate(f,s)              chsize((f),(s))
-# define mkdir(d,m)                  _mkdir((d))
 # define sleep(n)                    (Sleep((n)*1000))
+
+# define access                      _access
+# define chsize                      _chsize
+# define close                       _close
+# define dup2                        _dup2
+# define fileno                      _fileno
+# define getpid                      _getpid
+# define lseek                       _lseek
+# define mkdir(d,m)                  _mkdir((d))
+# define mktemp                      _mktemp
+# define open                        _open
+# define putenv                      _putenv
+# define read                        _read
 # define snprintf                    _snprintf
 # define strcasecmp                  _stricmp
 # define strncasecmp                 _strnicmp
+# define unlink                      _unlink
 # define vsnprintf                   _vsnprintf
+# define write                       _write
+
+# define mkstemp		     ns_mkstemp
 
 /*
  * Under MinGW we use nsconfig.h, for MSVC we pre-define environment here
@@ -201,18 +225,34 @@ struct iovec {
 /*
  * The following is for supporting our own poll() emulation.
  */
-
-# define POLLIN                      0x0001U
-# define POLLPRI                     0x0002U
-# define POLLOUT                     0x0004U
-# define POLLERR                     0x0008U
-# define POLLHUP                     0x0010U
+# ifndef POLLIN 
+#  define POLLIN                      0x0001U
+#  define POLLPRI                     0x0002U
+#  define POLLOUT                     0x0004U
+#  define POLLERR                     0x0008U
+#  define POLLHUP                     0x0010U
 
 struct pollfd {
     NS_SOCKET      fd;
     unsigned short events;
     unsigned short revents;
 };
+# endif
+
+
+/*
+ * Provide compatibility for shutdown() on sockets.
+ */
+
+# ifndef SHUT_RD
+#  define SHUT_RD SD_RECEIVE
+# endif
+# ifndef SHUT_WR
+#  define SHUT_WR SD_SEND
+# endif
+# ifndef SHUT_RDWR
+#  define SHUT_RDWR SD_BOTH
+# endif
 
 /*
  * The following is for supporting opendir/readdir functionality
@@ -255,7 +295,8 @@ typedef struct DIR_ *DIR;
 #include <poll.h>
 
 #define NS_SOCKET	int
-#define NS_INVALID_PID  -1
+#define NS_INVALID_PID  (-1)
+
 /* 
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
  * the time being, allthough the use of SOCKET should be deprecated.
@@ -343,7 +384,7 @@ typedef struct DIR_ *DIR;
  *
  ***************************************************************/
 
-#include "tcl.h"
+#include <tcl.h>
 #include <limits.h>
 #include <time.h>
 #include <fcntl.h>
@@ -545,12 +586,24 @@ typedef struct DIR_ *DIR;
 
 #if !defined(INT2PTR) && !defined(PTR2INT)
 #   if defined(HAVE_INTPTR_T) || defined(intptr_t)
-#       define INT2PTR(p) ((void *)(intptr_t)(p))
-#       define PTR2INT(p) ((int)(intptr_t)(p))
+#       define INT2PTR(p)  ((void *)(intptr_t)(p))
+#       define PTR2INT(p)  ((int)(intptr_t)(p))
+#       define UINT2PTR(p) ((void *)(uintptr_t)(p))
+#       define PTR2UINT(p) ((unsigned int)(uintptr_t)(p))
 #   else
-#       define INT2PTR(p) ((void *)(p))
-#       define PTR2INT(p) ((int)(p))
+#       define INT2PTR(p)  ((void *)(p))
+#       define PTR2INT(p)  ((int)(p))
+#       define UINT2PTR(p) ((void *)(p))
+#       define PTR2UINT(p) ((unsigned int)(p))
 #   endif
+#endif
+
+#ifdef _WIN32
+# define PTR2NSSOCK(p) PTR2UINT(p)
+# define NSSOCK2PTR(p) UINT2PTR(p)
+#else
+# define PTR2NSSOCK(p) PTR2INT(p)
+# define NSSOCK2PTR(p) INT2PTR(p)
 #endif
 
 #ifdef __cplusplus
@@ -754,7 +807,7 @@ NS_EXTERN int closedir(DIR *dp);
 NS_EXTERN int truncate(char *file, off_t size);
 NS_EXTERN int link(char *from, char *to);
 NS_EXTERN int symlink(char *from, char *to);
-NS_EXTERN int kill(int pid, int sig);
+NS_EXTERN int kill(pid_t pid, int sig);
 #endif
 
 /*

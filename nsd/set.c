@@ -830,6 +830,9 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
 {
     int             i;
 
+    assert(from != NULL);
+    assert(to != NULL);
+
     for (i = 0; i < from->size; i++) {
 	Ns_SetPut(to, from->fields[i].name, from->fields[i].value);
     }

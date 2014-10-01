@@ -125,7 +125,7 @@ Ns_ModuleInit(char *server, char *module)
      * Create the listening socket and callback.
      */
 
-    path = Ns_ConfigGetPath(server, module, NULL);
+    path = Ns_ConfigGetPath(server, module, (char *)0);
     if (((addr = (char*)Ns_ConfigString(path, "address", "127.0.0.1")) == NULL)
 	 || (port = Ns_ConfigInt(path, "port", 2080)) <= 0 )  {
 	Ns_Log(Error, "nscp: address and port must be specified in config");
@@ -170,7 +170,7 @@ Ns_ModuleInit(char *server, char *module)
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
-        path = Ns_ModulePath(&ds, server, module, "users", NULL);
+        path = Ns_ModulePath(&ds, server, module, "users", (char *)0);
         set = Ns_ConfigCreateSection(path);
         Ns_SetUpdate(set, "user", "::");
         Ns_DStringFree(&ds);
@@ -261,7 +261,7 @@ ArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static int
-AcceptProc(NS_SOCKET lsock, void *arg, int why)
+AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
 {
     Mod *modPtr = arg;
     Sess *sessPtr;

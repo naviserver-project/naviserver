@@ -45,7 +45,7 @@ typedef struct Filter {
     Ns_FilterProc *proc;
     char          *method;
     char          *url;
-    int            when;
+    unsigned int   when;
     void          *arg;
 } Filter;
 
@@ -79,7 +79,7 @@ static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
 
 void *
 Ns_RegisterFilter(char *server, char *method, char *url,
-    Ns_FilterProc *proc, int when, void *arg)
+    Ns_FilterProc *proc, unsigned int when, void *arg)
 {
     NsServer *servPtr = NsGetServer(server);
     Filter *fPtr;
@@ -128,7 +128,7 @@ Ns_RegisterFilter(char *server, char *method, char *url,
  */
 
 int
-NsRunFilters(Ns_Conn *conn, int why)
+NsRunFilters(Ns_Conn *conn, unsigned int why)
 {
     Conn *connPtr = (Conn *) conn;
     NsServer *servPtr = connPtr->poolPtr->servPtr;

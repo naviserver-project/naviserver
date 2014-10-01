@@ -37,14 +37,24 @@
 
 #include "nsd.h"
 
+#define HTTP "HTTP/"
+
 /*
  * Local functions defined in this file.
  */
 
-static void SetUrl(Ns_Request * request, char *url);
-static void FreeUrl(Ns_Request * request);
+static void SetUrl(Ns_Request *request, char *url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-#define HTTP "HTTP/"
+static void FreeUrl(Ns_Request *request)
+    NS_GNUC_NONNULL(1);
+
+static CONST char *GetQvalue(CONST char *str, int *lenPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static char *GetEncodingFormat(CONST char *encodingString, 
+			       CONST char *encodingFormat, double *qValue)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
 /*
@@ -129,6 +139,8 @@ Ns_ParseRequest(Ns_Request *request, CONST char *line)
 {
     char       *url, *l, *p;
     Ns_DString  ds;
+
+    assert(line != NULL);
 
     if (request == NULL) {
         return NS_ERROR;
@@ -283,6 +295,8 @@ Ns_SkipUrl(Ns_Request *request, int n)
 {
     size_t skip;
 
+    assert(request != NULL);
+
     if (n > request->urlc) {
         return NULL;
     }
@@ -311,9 +325,12 @@ Ns_SkipUrl(Ns_Request *request, int n)
  */
 
 void
-Ns_SetRequestUrl(Ns_Request * request, CONST char *url)
+Ns_SetRequestUrl(Ns_Request *request, CONST char *url)
 {
     Ns_DString      ds;
+
+    assert(request != NULL);
+    assert(url != NULL);
 
     FreeUrl(request);
     Ns_DStringInit(&ds);
@@ -340,8 +357,10 @@ Ns_SetRequestUrl(Ns_Request * request, CONST char *url)
  */
 
 static void
-FreeUrl(Ns_Request * request)
+FreeUrl(Ns_Request *request)
 {
+    assert(request != NULL);
+
     if (request->url != NULL) {
         ns_free(request->url);
         request->url = NULL;
@@ -375,6 +394,9 @@ SetUrl(Ns_Request *request, char *url)
 {
     Ns_DString  ds1, ds2;
     char       *p;
+
+    assert(request != NULL);
+    assert(url != NULL);
 
     Ns_DStringInit(&ds1);
     Ns_DStringInit(&ds2);
@@ -614,22 +636,28 @@ GetQvalue(CONST char *str, int *lenPtr) {
  */
 static char *
 GetEncodingFormat(CONST char *encodingString, CONST char *encodingFormat, double *qValue) {
-  char *encodingStr = strstr(encodingString, encodingFormat);
+    char *encodingStr;
 
-  if (encodingStr) {
-      int len = 0;
-      CONST char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+    assert(encodingString != NULL);
+    assert(encodingFormat != NULL);
+    assert(qValue != NULL);
 
-      if (qValueString) {
-	*qValue = strtod(qValueString, NULL);
-      } else {
-	*qValue = 1.0;
-      }
-      return encodingStr;
-  }
+    encodingStr = strstr(encodingString, encodingFormat);
 
-  *qValue = -1.0;
-  return NULL;
+    if (encodingStr) {
+	int len = 0;
+	CONST char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+
+	if (qValueString) {
+	    *qValue = strtod(qValueString, NULL);
+	} else {
+	    *qValue = 1.0;
+	}
+	return encodingStr;
+    }
+    
+    *qValue = -1.0;
+    return NULL;
 }
 
 
@@ -656,7 +684,8 @@ NsParseAcceptEnconding(double version, CONST char *hdr)
     double gzipQvalue = -1.0, starQvalue = -1.0, identityQvalue = -1.0;
     int gzip = 0;
 
-    assert(hdr);
+    assert(hdr != NULL);
+
     if (GetEncodingFormat(hdr, "gzip", &gzipQvalue)) {
 	/* we have gzip specified in accept-encoding */
 	if (gzipQvalue > 0.999) {

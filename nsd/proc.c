@@ -72,7 +72,7 @@ static struct proc {
     { (Ns_Callback *)NsTclSockProc,        "ns:tclsockcallback",  NsTclSockArgProc},
     {                NsConnThread,         "ns:connthread",       NsConnArgProc},
     { (Ns_Callback *)NsTclFilterProc,      "ns:tclfilter",        Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsShortcutFilterProc, "ns:shortcutfilter",  NULL},
+    { (Ns_Callback *)NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
     { (Ns_Callback *)NsTclRequestProc,     "ns:tclrequest",       Ns_TclCallbackArgProc},
     { (Ns_Callback *)NsAdpPageProc,        "ns:adppage",          NsAdpPageArgProc},
     { (Ns_Callback *)Ns_FastPathProc,      "ns:fastget",          NULL},
@@ -140,7 +140,7 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, char *desc, Ns_ArgProc *argProc)
     Info          *iPtr;
     int            isNew;
 
-    hPtr = Tcl_CreateHashEntry(&info, (char *) procAddr, &isNew);
+    hPtr = Tcl_CreateHashEntry(&info, (CONST char *)procAddr, &isNew);
     if (!isNew) {
         iPtr = Tcl_GetHashValue(hPtr);
     } else {
@@ -176,7 +176,7 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, void *arg)
     Info                   *iPtr;
     static Info nullInfo =  {NULL, NULL};
 
-    hPtr = Tcl_FindHashEntry(&info, (char *) procAddr);
+    hPtr = Tcl_FindHashEntry(&info, (CONST char *) procAddr);
     if (hPtr != NULL) {
         iPtr = Tcl_GetHashValue(hPtr);
     } else {

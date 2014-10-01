@@ -131,8 +131,8 @@ GetFile(char *procname)
 	Ns_Set *set;
 
         Ns_DStringInit(&ds);
-        if (Ns_HomePathExists("logs", NULL)) {
-            Ns_HomePath(&ds, "logs/nsd.pid", NULL);
+        if (Ns_HomePathExists("logs", (char *)0)) {
+	    Ns_HomePath(&ds, "logs/nsd.pid", NULL);
         } else {
             Ns_HomePath(&ds, "nsd.pid", NULL);
         }

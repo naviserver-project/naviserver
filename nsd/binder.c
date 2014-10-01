@@ -95,7 +95,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&preboundTcp, (char *) &sa);
         if (hPtr != NULL) {
-            sock = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+	    sock = PTR2INT(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
         Ns_MutexUnlock(&lock);
@@ -152,7 +152,7 @@ Ns_SockListenUdp(char *address, int port)
         Ns_MutexLock(&lock);
         hPtr = Tcl_FindHashEntry(&preboundUdp, (char *) &sa);
         if (hPtr != NULL) {
-            sock = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+            sock = PTR2INT(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
         Ns_MutexUnlock(&lock);
@@ -201,8 +201,8 @@ Ns_SockListenRaw(int proto)
     Ns_MutexLock(&lock);
     hPtr = Tcl_FirstHashEntry(&preboundRaw, &search);
     while (hPtr != NULL) {
-        if (proto == (int)(intptr_t) Tcl_GetHashValue(hPtr)) {
-            sock = (int)(intptr_t) Tcl_GetHashKey(&preboundRaw, hPtr);
+        if (proto == PTR2INT(Tcl_GetHashValue(hPtr))) {
+	    sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
             Tcl_DeleteHashEntry(hPtr);
             break;
         }
@@ -258,7 +258,7 @@ Ns_SockListenUnix(char *path, int backlog, int  mode)
 	char *value = (char*) Tcl_GetHashValue(hPtr);
 
         if (STREQ(path, value)) {
-            sock = (int)(intptr_t) Tcl_GetHashKey(&preboundRaw, hPtr);
+            sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
             Tcl_DeleteHashEntry(hPtr);
             break;
         }
@@ -505,7 +505,8 @@ NsClosePreBound(void)
     Tcl_HashEntry      *hPtr;
     Tcl_HashSearch     search;
     char               *addr;
-    int                port, sock;
+    int                port;
+    NS_SOCKET          sock;
     struct sockaddr_in *saPtr;
 
     Ns_MutexLock(&lock);
@@ -519,7 +520,7 @@ NsClosePreBound(void)
         saPtr = (struct sockaddr_in *) Tcl_GetHashKey(&preboundTcp, hPtr);
         addr = ns_inet_ntoa(saPtr->sin_addr);
         port = htons(saPtr->sin_port);
-        sock = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+        sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused TCP socket: %s:%d = %d",
                addr, port, sock);
         close(sock);
@@ -538,7 +539,7 @@ NsClosePreBound(void)
         saPtr = (struct sockaddr_in *) Tcl_GetHashKey(&preboundUdp, hPtr);
         addr = ns_inet_ntoa(saPtr->sin_addr);
         port = htons(saPtr->sin_port);
-        sock = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+        sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused UDP socket: %s:%d = %d",
                addr, port, sock);
         close(sock);
@@ -554,8 +555,8 @@ NsClosePreBound(void)
 
     hPtr = Tcl_FirstHashEntry(&preboundRaw, &search);
     while (hPtr != NULL) {
-        sock = (int)(intptr_t) Tcl_GetHashKey(&preboundRaw, hPtr);
-        port = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+        sock = PTR2NSSOCK(Tcl_GetHashKey(&preboundRaw, hPtr));
+        port = PTR2INT(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused raw socket: %d = %d",
                port, sock);
         close(sock);
@@ -572,7 +573,7 @@ NsClosePreBound(void)
     hPtr = Tcl_FirstHashEntry(&preboundUnix, &search);
     while (hPtr != NULL) {
         addr = (char *) Tcl_GetHashKey(&preboundUnix, hPtr);
-        sock = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+        sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused Unix-domain socket: %s = %d",
                addr, sock);
         close(sock);
@@ -661,7 +662,7 @@ PreBind(char *line)
                 Tcl_DeleteHashEntry(hPtr);
                 continue;
             }
-            Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) sock);
+            Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
             Ns_Log(Notice, "prebind: tcp: %s:%d = %d", addr, port, sock);
         }
 
@@ -684,7 +685,7 @@ PreBind(char *line)
                 Tcl_DeleteHashEntry(hPtr);
                 continue;
             }
-            Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) sock);
+            Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
             Ns_Log(Notice, "prebind: udp: %s:%d = %d", addr, port, sock);
         }
 
@@ -702,7 +703,7 @@ PreBind(char *line)
                     Ns_Log(Error, "prebind: icmp: %s",strerror(errno));
                     continue;
                 }
-                hPtr = Tcl_CreateHashEntry(&preboundRaw, (char *)(intptr_t) sock, &isNew);
+                hPtr = Tcl_CreateHashEntry(&preboundRaw, NSSOCK2PTR(sock), &isNew);
                 if (!isNew) {
                     Ns_Log(Error, "prebind: icmp: duplicate entry");
                     close(sock);
@@ -732,7 +733,7 @@ PreBind(char *line)
                 Tcl_DeleteHashEntry(hPtr);
                 continue;
             }
-            Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) sock);
+            Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
             Ns_Log(Notice, "prebind: unix: %s = %d", line, sock);
         }
     }

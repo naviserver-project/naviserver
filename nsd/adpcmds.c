@@ -86,8 +86,11 @@ NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len)
         return TCL_ERROR;
     }
     Ns_DStringNAppend(bufPtr, buf, len);
-    if (((itPtr->adp.flags & ADP_STREAM) || bufPtr->length > itPtr->adp.bufsize)
-            && NsAdpFlush(itPtr, 1) != TCL_OK) {
+    if (
+	((itPtr->adp.flags & ADP_STREAM) 
+	 || (size_t)bufPtr->length > itPtr->adp.bufsize
+	 ) 
+	&& NsAdpFlush(itPtr, 1) != TCL_OK) {
         return TCL_ERROR;
     }
     return TCL_OK;

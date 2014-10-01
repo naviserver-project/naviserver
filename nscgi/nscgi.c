@@ -176,7 +176,7 @@ Ns_ModuleInit(char *server, char *module)
      * Config basic options.
      */
 
-    path = Ns_ConfigGetPath(server, module, NULL);
+    path = Ns_ConfigGetPath(server, module, (char *)0);
     modPtr = ns_calloc(1, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;

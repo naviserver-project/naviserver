@@ -377,7 +377,7 @@ NsTclSchedProc(void *arg, int id)
 {
     Ns_TclCallback *cbPtr = arg;
 
-    (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, NULL);
+    (void) Ns_TclEvalCallback(NULL, cbPtr, NULL, (char *)0);
 }
 
 

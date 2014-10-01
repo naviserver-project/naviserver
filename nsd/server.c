@@ -50,7 +50,8 @@ typedef struct ServerInit {
  * Local functions defined in this file.
  */
 
-static void CreatePool(NsServer *servPtr, char *pool);
+static void CreatePool(NsServer *servPtr, char *pool)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -171,6 +172,8 @@ NsStopServers(Ns_Time *toPtr)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
+    assert(toPtr != NULL);
+
     hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
     while (hPtr != NULL) {
         servPtr = Tcl_GetHashValue(hPtr);
@@ -213,6 +216,9 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     Ns_Set            *set;
     int                i, n;
 
+    assert(server != NULL);
+    assert(staticInitProc != NULL);
+
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (!n) {
         Ns_Log(Error, "duplicate server: %s", server);
@@ -241,7 +247,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     }
 
     Ns_DStringInit(&ds);
-    path = Ns_ConfigGetPath(server, NULL, NULL);
+    path = Ns_ConfigGetPath(server, NULL, (char *)0);
 
     /*
      * Set some server options.
@@ -320,6 +326,8 @@ NsRegisterServerInit(Ns_ServerInitProc *proc)
 {
     ServerInit *initPtr;
 
+    assert(proc != NULL);
+
     initPtr = ns_malloc(sizeof(ServerInit));
     initPtr->proc = proc;
     initPtr->nextPtr = NULL;
@@ -357,12 +365,15 @@ CreatePool(NsServer *servPtr, char *pool)
     int       i, n, maxconns, lowwatermark, highwatermark, queueLength;
     char     *path;
 
+    assert(servPtr != NULL);
+    assert(pool != NULL);
+
     poolPtr = ns_calloc(1, sizeof(ConnPool));
     poolPtr->pool = pool;
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {
         /* NB: Default options from pre-4.0 ns/server/server1 section. */
-        path = Ns_ConfigGetPath(servPtr->server, NULL, NULL);
+      path = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
 	Ns_Set *set;

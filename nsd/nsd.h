@@ -995,6 +995,218 @@ typedef struct NsInterp {
 } NsInterp;
 
 /*
+ * Tcl object and string commands.
+ */
+
+NS_EXTERN Tcl_ObjCmdProc
+    NsTclAdpAbortObjCmd,
+    NsTclAdpAppendObjCmd,
+    NsTclAdpArgcObjCmd,
+    NsTclAdpArgvObjCmd,
+    NsTclAdpBindArgsObjCmd,
+    NsTclAdpBreakObjCmd,
+    NsTclAdpCloseObjCmd,
+    NsTclAdpCompressObjCmd,
+    NsTclAdpCtlObjCmd,
+    NsTclAdpDebugObjCmd,
+    NsTclAdpDirObjCmd,
+    NsTclAdpDumpObjCmd,
+    NsTclAdpEvalObjCmd,
+    NsTclAdpExceptionObjCmd,
+    NsTclAdpFlushObjCmd,
+    NsTclAdpIdentObjCmd,
+    NsTclAdpIncludeObjCmd,
+    NsTclAdpInfoObjCmd,
+    NsTclAdpMimeTypeObjCmd,
+    NsTclAdpParseObjCmd,
+    NsTclAdpPutsObjCmd,
+    NsTclAdpRegisterAdpObjCmd,
+    NsTclAdpRegisterAdptagObjCmd,
+    NsTclAdpRegisterProcObjCmd,
+    NsTclAdpRegisterScriptObjCmd,
+    NsTclAdpRegisterTagObjCmd,
+    NsTclAdpReturnObjCmd,
+    NsTclAdpSafeEvalObjCmd,
+    NsTclAdpTellObjCmd,
+    NsTclAdpTruncObjCmd,
+    NsTclAfterObjCmd,
+    NsTclAtCloseObjCmd,
+    NsTclAtExitObjCmd,
+    NsTclAtPreStartupObjCmd,
+    NsTclAtShutdownObjCmd,
+    NsTclAtSignalObjCmd,
+    NsTclAtStartupObjCmd,
+    NsTclCacheAppendObjCmd,
+    NsTclCacheCreateObjCmd,
+    NsTclCacheEvalObjCmd,
+    NsTclCacheFlushObjCmd,
+    NsTclCacheGetObjCmd,
+    NsTclCacheIncrObjCmd,
+    NsTclCacheKeysObjCmd,
+    NsTclCacheLappendObjCmd,
+    NsTclCacheNamesObjCmd,
+    NsTclCacheStatsObjCmd,
+    NsTclCancelObjCmd,
+    NsTclChanObjCmd,
+    NsTclCharsetsObjCmd,
+    NsTclCondObjCmd,
+    NsTclConfigObjCmd,
+    NsTclConfigSectionObjCmd,
+    NsTclConfigSectionsObjCmd,
+    NsTclConnObjCmd,
+    NsTclConnSendFpObjCmd,
+    NsTclCritSecObjCmd,
+    NsTclCryptObjCmd,
+    NsTclDeleteCookieObjCmd,
+    NsTclEncodingForCharsetObjCmd,
+    NsTclEnvObjCmd,
+    NsTclFTruncateObjCmd,
+    NsTclFastPathCacheStatsObjCmd,
+    NsTclFileStatObjCmd,
+    NsTclGetAddrObjCmd,
+    NsTclGetCookieObjCmd,
+    NsTclGetHostObjCmd,
+    NsTclGetLimitsObjCmd,
+    NsTclGetUrlObjCmd,
+    NsTclGifSizeObjCmd,
+    NsTclGmTimeObjCmd,
+    NsTclGuessTypeObjCmd,
+    NsTclHTUUDecodeObjCmd,
+    NsTclHTUUEncodeObjCmd,
+    NsTclHashPathObjCmd,
+    NsTclHeadersObjCmd,
+    NsTclHttpObjCmd,
+    NsTclHttpTimeObjCmd,
+    NsTclICtlObjCmd,
+    NsTclImgMimeObjCmd,
+    NsTclImgSizeObjCmd,
+    NsTclImgTypeObjCmd,
+    NsTclInfoObjCmd,
+    NsTclInternalRedirectObjCmd,
+    NsTclJobObjCmd,
+    NsTclJpegSizeObjCmd,
+    NsTclKillObjCmd,
+    NsTclListLimitsObjCmd,
+    NsTclLocalTimeObjCmd,
+    NsTclLocationProcObjCmd,
+    NsTclLogCtlObjCmd,
+    NsTclLogObjCmd,
+    NsTclLogRollObjCmd,
+    NsTclMD5ObjCmd,
+    NsTclModuleLoadObjCmd,
+    NsTclModulePathObjCmd,
+    NsTclMutexObjCmd,
+    NsTclNormalizePathObjCmd,
+    NsTclNsvAppendObjCmd,
+    NsTclNsvArrayObjCmd,
+    NsTclNsvBucketObjCmd,
+    NsTclNsvExistsObjCmd,
+    NsTclNsvGetObjCmd,
+    NsTclNsvIncrObjCmd,
+    NsTclNsvLappendObjCmd,
+    NsTclNsvNamesObjCmd,
+    NsTclNsvSetObjCmd,
+    NsTclNsvUnsetObjCmd,
+    NsTclPagePathObjCmd,
+    NsTclParseArgsObjCmd,
+    NsTclParseHttpTimeObjCmd,
+    NsTclParseQueryObjCmd,
+    NsTclPauseObjCmd,
+    NsTclPngSizeObjCmd,
+    NsTclProgressObjCmd,
+    NsTclPurgeFilesObjCmd,
+    NsTclRWLockObjCmd,
+    NsTclRandObjCmd,
+    NsTclRegisterAdpObjCmd,
+    NsTclRegisterFastPathObjCmd,
+    NsTclRegisterFastUrl2FileObjCmd,
+    NsTclRegisterFilterObjCmd,
+    NsTclRegisterLimitsObjCmd,
+    NsTclRegisterProcObjCmd,
+    NsTclRegisterProxyObjCmd,
+    NsTclRegisterTclObjCmd,
+    NsTclRegisterTraceObjCmd,
+    NsTclRegisterUrl2FileObjCmd,
+    NsTclRequestAuthorizeObjCmd,
+    NsTclRespondObjCmd,
+    NsTclResumeObjCmd,
+    NsTclReturnBadRequestObjCmd,
+    NsTclReturnErrorObjCmd,
+    NsTclReturnFileObjCmd,
+    NsTclReturnForbiddenObjCmd,
+    NsTclReturnFpObjCmd,
+    NsTclReturnMovedObjCmd,
+    NsTclReturnNotFoundObjCmd,
+    NsTclReturnNoticeObjCmd,
+    NsTclReturnObjCmd,
+    NsTclReturnRedirectObjCmd,
+    NsTclReturnUnauthorizedObjCmd,
+    NsTclReturnUnavailableObjCmd,
+    NsTclRollFileObjCmd,
+    NsTclRunOnceObjCmd,
+    NsTclSHA1ObjCmd,
+    NsTclSchedDailyObjCmd,
+    NsTclSchedObjCmd,
+    NsTclSchedWeeklyObjCmd,
+    NsTclSelectObjCmd,
+    NsTclSemaObjCmd,
+    NsTclServerObjCmd,
+    NsTclServerPathObjCmd,
+    NsTclServerRootProcObjCmd,
+    NsTclSetCookieObjCmd,
+    NsTclSetGroupObjCmd,
+    NsTclSetLimitsObjCmd,
+    NsTclSetObjCmd,
+    NsTclSetUserObjCmd,
+    NsTclShortcutFilterObjCmd,
+    NsTclShutdownObjCmd,
+    NsTclSleepObjCmd,
+    NsTclSlsObjCmd,
+    NsTclSockAcceptObjCmd,
+    NsTclSockCallbackObjCmd,
+    NsTclSockCheckObjCmd,
+    NsTclSockListenCallbackObjCmd,
+    NsTclSockListenObjCmd,
+    NsTclSockNReadObjCmd,
+    NsTclSockOpenObjCmd,
+    NsTclSockSetBlockingObjCmd,
+    NsTclSockSetNonBlockingObjCmd,
+    NsTclSocketPairObjCmd,
+    NsTclStartContentObjCmd,
+    NsTclStrftimeObjCmd,
+    NsTclSymlinkObjCmd,
+    NsTclThreadObjCmd,
+    NsTclTimeObjCmd,
+    NsTclTmpNamObjCmd,
+    NsTclTruncateObjCmd,
+    NsTclUnRegisterOpObjCmd,
+    NsTclUnRegisterUrl2FileObjCmd,
+    NsTclUnscheduleObjCmd,
+    NsTclUrl2FileObjCmd,
+    NsTclUrlDecodeObjCmd,
+    NsTclUrlEncodeObjCmd,
+    NsTclWriteContentObjCmd,
+    NsTclWriteFpObjCmd,
+    NsTclWriteObjCmd,
+    NsTclWriterObjCmd,
+    TclX_KeylgetObjCmd,
+    TclX_KeyldelObjCmd,
+    TclX_KeylkeysObjCmd,
+    TclX_KeylsetObjCmd;
+
+NS_EXTERN Tcl_CmdProc
+    NsTclAdpStatsCmd,
+    NsTclHrefsCmd,
+    NsTclLibraryCmd,
+    NsTclMkTempCmd,
+    NsTclParseHeaderCmd,
+    NsTclQuoteHtmlCmd,
+    NsTclRegisterTagCmd,
+    NsTclShareCmd,
+    NsTclStripHtmlCmd;
+
+
+/*
  * Libnsd initialization routines.
  */
 
@@ -1029,15 +1241,17 @@ NS_EXTERN void NsConfigEncodings(void);
  * Virtual server management routines.
  */
 
-NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc);
-NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc);
+NS_EXTERN void NsInitServer(char *server, Ns_ServerInitProc *initProc)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
+    NS_GNUC_NONNULL(1);
 NS_EXTERN NsServer *NsGetInitServer(void);
 NS_EXTERN NsServer *NsGetServer(CONST char *server);
 NS_EXTERN void NsStartServers(void);
-NS_EXTERN void NsStopServers(Ns_Time *toPtr);
-NS_EXTERN void NsStartServer(NsServer *servPtr);
-NS_EXTERN void NsStopServer(NsServer *servPtr);
-NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr);
+NS_EXTERN void NsStopServers(Ns_Time *toPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStartServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStopServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsWakeupDriver(Driver *drvPtr) NS_GNUC_NONNULL(1);
 
 /*
@@ -1045,7 +1259,7 @@ NS_EXTERN void NsWakeupDriver(Driver *drvPtr) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, CONST char *method,
-                              CONST char *url, int id, int fast);
+				 CONST char *url, int id, int fast);
 
 /*
  * Socket driver callbacks.
@@ -1064,9 +1278,12 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 
 
 
-NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr);
-NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr);
-NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map);
+NS_EXTERN int  NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr)
+     NS_GNUC_NONNULL(1);
+NS_EXTERN void NsMapPool(ConnPool *poolPtr, char *map)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
 NS_EXTERN int NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr);
@@ -1234,7 +1451,7 @@ NS_EXTERN void NsTclInitSpecType(void);
  * Callback routines.
  */
 
-NS_EXTERN int NsRunFilters(Ns_Conn *conn, int why);
+NS_EXTERN int NsRunFilters(Ns_Conn *conn, unsigned int why);
 NS_EXTERN void NsRunCleanups(Ns_Conn *conn);
 NS_EXTERN void NsRunTraces(Ns_Conn *conn);
 NS_EXTERN void NsRunPreStartupProcs(void);

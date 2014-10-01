@@ -441,10 +441,10 @@ typedef struct {
  * than the parent.
  */
 #define DupSharedKeyListChild(keylIntPtr, idx) \
-    if (Tcl_IsShared(keylIntPtr->entries[idx].valuePtr)) { \
-        keylIntPtr->entries[idx].valuePtr = \
-            Tcl_DuplicateObj(keylIntPtr->entries[idx].valuePtr); \
-        Tcl_IncrRefCount(keylIntPtr->entries[idx].valuePtr); \
+    if (Tcl_IsShared((keylIntPtr)->entries[(idx)].valuePtr)) {	 \
+	(keylIntPtr)->entries[(idx)].valuePtr =				\
+	    Tcl_DuplicateObj((keylIntPtr)->entries[(idx)].valuePtr);	\
+        Tcl_IncrRefCount((keylIntPtr)->entries[(idx)].valuePtr);	\
     }
 
 /*
@@ -515,30 +515,6 @@ SetKeyedListFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 static void
 UpdateStringOfKeyedList _ANSI_ARGS_((Tcl_Obj *keylPtr));
 
-
-int 
-TclX_KeylgetObjCmd _ANSI_ARGS_((ClientData   clientData,
-                                Tcl_Interp  *interp,
-                                int          objc,
-                                Tcl_Obj     *CONST objv[]));
-
-int
-TclX_KeylsetObjCmd _ANSI_ARGS_((ClientData   clientData,
-                                Tcl_Interp  *interp,
-                                int          objc,
-                                Tcl_Obj     *CONST objv[]));
-
-int 
-TclX_KeyldelObjCmd _ANSI_ARGS_((ClientData   clientData,
-                                Tcl_Interp  *interp,
-                                int          objc,
-                                Tcl_Obj     *CONST objv[]));
-
-int 
-TclX_KeylkeysObjCmd _ANSI_ARGS_((ClientData   clientData,
-                                 Tcl_Interp  *interp,
-                                 int          objc,
-                                 Tcl_Obj     *CONST objv[]));
 
 /*
  * Type definition.

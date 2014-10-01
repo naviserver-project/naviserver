@@ -44,10 +44,15 @@
 static void ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void CreateConnThread(ConnPool *poolPtr);
-static void JoinConnThread(Ns_Thread *threadPtr);
-static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state);
-static void AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state);
+static void CreateConnThread(ConnPool *poolPtr)
+    NS_GNUC_NONNULL(1);
+static void JoinConnThread(Ns_Thread *threadPtr)
+    NS_GNUC_NONNULL(1);
+
+static void AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static void AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 /*
  * Static variables defined in this file.
@@ -59,7 +64,7 @@ static int    poolid = 0;
 /*
  * Debugging stuff
  */
-#define ThreadNr(poolPtr, argPtr) (int)(argPtr ? (argPtr - poolPtr->tqueue.args) : -1)
+#define ThreadNr(poolPtr, argPtr) (int)((argPtr) ? ((argPtr) - (poolPtr)->tqueue.args) : -1)
 
 #if 0
 static void ConnThreadQueuePrint(ConnPool *poolPtr, char *key) {
@@ -145,9 +150,14 @@ Ns_GetConn(void)
 void
 NsMapPool(ConnPool *poolPtr, char *map)
 {
-    char *server = poolPtr->servPtr->server;
     CONST char **mv;
+    char *server;
     int  mc;
+
+    assert(poolPtr != NULL);
+    assert(map != NULL);
+
+    server = poolPtr->servPtr->server;
 
     if (Tcl_SplitList(NULL, map, &mc, &mv) == TCL_OK) {
         if (mc == 2) {
@@ -178,8 +188,14 @@ NsMapPool(ConnPool *poolPtr, char *map)
  *----------------------------------------------------------------------
  */
 static int 
+neededAdditionalConnectionThreads(ConnPool *poolPtr) 
+     NS_GNUC_NONNULL(1);
+
+static int 
 neededAdditionalConnectionThreads(ConnPool *poolPtr) {
     int wantCreate;
+
+    assert(poolPtr != NULL);
 
     /* 
      * Create new connection threads, if
@@ -257,7 +273,7 @@ void
 NsEnsureRunningConnectionThreads(NsServer *servPtr, ConnPool *poolPtr) {
     int create;
 
-    assert(servPtr);
+    assert(servPtr != NULL);
 
     if (poolPtr == NULL) {
         /* 
@@ -310,10 +326,15 @@ int
 NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
 {
     ConnThreadArg *argPtr = NULL;
-    NsServer *servPtr = sockPtr->servPtr;
+    NsServer *servPtr;
     ConnPool *poolPtr = NULL;
     Conn     *connPtr = NULL;
     int       create = 0;
+
+    assert(sockPtr != NULL);
+    assert(nowPtr != NULL);
+
+    servPtr = sockPtr->servPtr;
 
     /*
      * Select server connection pool.
@@ -802,6 +823,8 @@ NsStartServer(NsServer *servPtr)
     ConnPool *poolPtr;
     int       n;
 
+    assert(servPtr != NULL);
+
     poolPtr = servPtr->pools.firstPtr;
     while (poolPtr != NULL) {
         poolPtr->threads.idle = 0;
@@ -833,8 +856,14 @@ NsStartServer(NsServer *servPtr)
  */
 
 static void
+NsWakeupConnThreads(ConnPool *poolPtr) 
+    NS_GNUC_NONNULL(1);
+
+static void
 NsWakeupConnThreads(ConnPool *poolPtr) {
     int i;
+
+    assert(poolPtr != NULL);
 
     Ns_MutexLock(&poolPtr->tqueue.lock);
     for (i = 0; i < poolPtr->threads.max; i++) {
@@ -872,6 +901,8 @@ NsStopServer(NsServer *servPtr)
 {
     ConnPool *poolPtr;
 
+    assert(servPtr != NULL);
+
     Ns_Log(Notice, "server [%s]: stopping", servPtr->server);
     servPtr->pools.shutdown = 1;
     poolPtr = servPtr->pools.firstPtr;
@@ -887,6 +918,9 @@ NsWaitServer(NsServer *servPtr, Ns_Time *toPtr)
     ConnPool  *poolPtr;
     Ns_Thread  joinThread;
     int        status;
+
+    assert(servPtr != NULL);
+    assert(toPtr != NULL);
 
     status = NS_OK;
     poolPtr = servPtr->pools.firstPtr;
@@ -934,6 +968,8 @@ void
 NsConnArgProc(Tcl_DString *dsPtr, void *arg)
 {
     ConnThreadArg *argPtr = arg;
+
+    assert(dsPtr != NULL);
 
     if (arg != NULL) {
         ConnPool     *poolPtr = argPtr->poolPtr;
@@ -1533,7 +1569,8 @@ ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
 	connPtr->fd = 0;
     }
     if (connPtr->streamWriter) {
-        WriterSock *wrPtr;
+	WriterSock *wrPtr;
+
 	NsWriterLock();
 	wrPtr = connPtr->streamWriter;
 	if (wrPtr) {
@@ -1591,6 +1628,9 @@ CreateConnThread(ConnPool *poolPtr)
 	     );
     }
 #endif
+
+    assert(poolPtr != NULL);
+
     /*
      * Get first free connection thread slot; selecting a slot and
      * occupying it has to be done under a mutex lock, since we do not
@@ -1643,6 +1683,8 @@ JoinConnThread(Ns_Thread *threadPtr)
 {
     void *argArg;
 
+    assert(threadPtr != NULL);
+
     Ns_ThreadJoin(threadPtr, &argArg);
     /*
      * There is no need to free ConnThreadArg here, since it is
@@ -1671,6 +1713,9 @@ static void
 AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
 {
     Ns_Time now, diff;
+
+    assert(dsPtr != NULL);
+    assert(state != NULL);
 
     Tcl_DStringStartSublist(dsPtr);
 
@@ -1702,9 +1747,11 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
         if (connPtr->request) {
 	    char *p;
 	    p = connPtr->request->method ? connPtr->request->method : "?";
-	    Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
+	    (void)strncpy(buf, p, sizeof(buf));
+	    Tcl_DStringAppendElement(dsPtr, buf);
 	    p = connPtr->request->url ? connPtr->request->url : "?";
-	    Tcl_DStringAppendElement(dsPtr, strncpy(buf, p, sizeof(buf)));
+	    (void)strncpy(buf, p, sizeof(buf));
+	    Tcl_DStringAppendElement(dsPtr, buf);
 	} else {
 	    Ns_Log(Notice, "AppendConn: no request in state %s; ignore conn in output", state);
 	    Tcl_DStringAppendElement(dsPtr, "unknown");
@@ -1740,6 +1787,9 @@ AppendConn(Tcl_DString *dsPtr, Conn *connPtr, char *state)
 static void
 AppendConnList(Tcl_DString *dsPtr, Conn *firstPtr, char *state)
 {
+    assert(dsPtr != NULL);
+    assert(state != NULL);
+
     while (firstPtr != NULL) {
         AppendConn(dsPtr, firstPtr, state);
         firstPtr = firstPtr->nextPtr;

@@ -134,7 +134,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr)
         return TCL_ERROR;
     }
 
-    *fdPtr = (int)(intptr_t) data;
+    *fdPtr = PTR2INT(data);
 
     return TCL_OK;
 }
@@ -799,7 +799,7 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 static void 
 UnspliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
 {
-    const Tcl_ChannelType *chanTypePtr;
+    Tcl_ChannelType *chanTypePtr;
     Tcl_DriverWatchProc *watchProc;
 
     Tcl_ClearChannelHandlers(chan);
