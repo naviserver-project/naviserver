@@ -169,7 +169,12 @@ DLLOPTS	= /EXPORT:$(DLLINIT)
 # nsthread and nsd do NOT define Ns_ModuleInit functions.
 DLLOPTS	= 
 !else
-DLLOPTS = /EXPORT:Ns_ModuleInit
+# Each normal individual Naviserver module defines a "NS_EXPORT int
+# Ns_ModuleInit" function, so do NOT also export it here.  If you do
+# then on 64-bit Windows you will get "LNK4197: export 'Ns_ModuleInit'
+# specified multiple times" warnings:  --atp@piskorski.com, 2014/10/02
+
+#DLLOPTS = /EXPORT:Ns_ModuleInit
 !endif
 
 !endif
