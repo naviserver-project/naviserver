@@ -69,9 +69,18 @@
 NAVISERVER = C:\Naviserver
 !endif
 
+# Strangely, the module-specific Makefiles set e.g. "MOD = nscgi.so",
+# *with* the trailing *.so!  That seems wrong to me, but rather than
+# change it we will cope with it here by stripping the .so suffix:
+# --atp@piskorski.com, 2014/10/02 12:56 EDT
+
+# If the module Makefile set DLL use that, but if not fall back to the
+# module name given in MOD:
 !ifndef DLL
 !ifdef MOD
-DLL = $(MOD)
+# TODO: Unfortunately this removes the literal string ".so" from
+# ANYWHERE in the string, not solely at the end:
+DLL = $(MOD:.so=)
 !endif
 !endif
 
