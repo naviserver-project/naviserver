@@ -101,11 +101,7 @@ else
     endif
 endif
 
-# Running configure with --enable-rpath is NOT turning on rpath
-# support the way it should, but I don't understand why, so hack it in
-# here instead:  --atp@piskorski.com, 2014/09/25
-TODO_RPATH   = -Wl,-rpath,${NAVISERVER}/lib
-NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@ $(TODO_RPATH)
+NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@
 CCLIBS       = $(NSLIBS)
 
 # Install directories
