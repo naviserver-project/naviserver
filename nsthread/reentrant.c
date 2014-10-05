@@ -35,8 +35,13 @@
  *	data buffers.  See the corresponding manual page for details.
  */
 
-#include "ns.h"
 #include "thread.h"
+/*
+ * WARNING: KLUDGE ALERT: do no include ns.h before thread.h, since
+ * ns.h defines NS_EXTERN differently.
+ */
+#include "ns.h"
+
 
 /*
  * The following structure maintains state for the
