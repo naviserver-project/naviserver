@@ -1184,24 +1184,5 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     return rc;
 }
 
-
-/*
- * The Posix function mkstemp does not exist on Windows.
- *
- * TODO: Currently this is just a fake do-nothing stub.  We may want
- * to use TclpCreateTempFile() (in win/tclWinPipe.c) from Tcl 8.4 or
- * later.  Or see also here for other possible Windows implementations:
- *
- * http://stackoverflow.com/questions/6036227/mkstemp-implementation-for-win32
- * http://sourceforge.net/p/mingw/bugs/2003/
- */ 
-#ifndef mkstemp
-int mkstemp(char *template) {
-    Ns_Log(Error, "mkstemp() not implemented on Windows.");
-    return EEXIST;
-}
-#endif
-
-
 #endif
 
