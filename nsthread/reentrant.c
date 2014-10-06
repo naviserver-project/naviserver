@@ -36,12 +36,6 @@
  */
 
 #include "thread.h"
-/*
- * WARNING: KLUDGE ALERT: do no include ns.h before thread.h, since
- * ns.h defines NS_EXTERN differently.
- */
-#include "ns.h"
-
 
 /*
  * The following structure maintains state for the
@@ -95,8 +89,13 @@ struct tm *
 ns_localtime(const time_t *clock)
 {
     Tls *tlsPtr = GetTls();
+    int errNum;
 
-    localtime_s(&tlsPtr->ltbuf, clock);
+    errNum = localtime_s(&tlsPtr->ltbuf, clock);
+    if (errNum) {
+	NsThreadFatal("ns_localtime","localtime_s", errNum);
+     }
+
     return &tlsPtr->ltbuf;
 }
 
@@ -126,8 +125,8 @@ ns_asctime(const struct tm *tmPtr)
 
     errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
     if (errNum) {
-      Ns_Log(Warning, "ns_asciitime: call to asctime_s returned an error code %d", errNum);
-     }
+	NsThreadFatal("ns_asctime","asctime_s", errNum);
+    }
 
     return tlsPtr->asbuf;
 }
