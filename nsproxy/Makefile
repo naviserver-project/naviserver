@@ -28,7 +28,7 @@
 #
 
 MODNAME  = nsproxy
-LIB      = $(MODNAME)
+LIBNM    = $(MODNAME)
 PGM	 = $(MODNAME) 
 MOD      = $(MODNAME).so
 LIBHDRS  = nsproxy.h

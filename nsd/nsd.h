@@ -1504,4 +1504,31 @@ NS_EXTERN int NsTclTimeoutException(Tcl_Interp *interp);
 
 NS_EXTERN int NsConnRunProxyRequest(Ns_Conn *conn);
 
+
+/*
+ * Definitions missing on Windows:
+ *
+ * See also:
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740481
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740126
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms741621
+ * http://stackoverflow.com/questions/1150635/unix-nonblocking-i-o-o-nonblock-vs-fionbio
+ */
+
+#ifdef _WIN32
+#ifndef SHUT_RD
+#  define SHUT_RD SD_RECEIVE
+#endif
+#ifndef SHUT_WR
+#  define SHUT_WR SD_SEND
+#endif
+#ifndef SHUT_RDWR
+#  define SHUT_RDWR SD_BOTH
+#endif
+#ifndef O_NONBLOCK
+#  define O_NONBLOCK FIONBIO
+#endif
+#endif
+
+
 #endif /* NSD_H */

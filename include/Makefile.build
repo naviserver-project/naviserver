@@ -1,4 +1,5 @@
-#
+# Emacs mode:  -*-Makefile-*-
+
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -34,4 +35,13 @@
 #
 
 NSBUILD=1
+
+# TODO: It sure would be nice to conditionalize this properly, but I
+# cannot figure out anyway way to write if statements that work in
+# both Gnu Make and Windows nmake.  --atp@piskorski.com, 2014/09/25
+#
+# For Windows using nmake, comment out the Makefile.module line below
+# and use the Makefile.win32 instead:
+
 include ../include/Makefile.module
+#include ../include/Makefile.win32

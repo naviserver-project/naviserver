@@ -29,12 +29,13 @@
 #
 
 INSTALL	= install-init
-LIB	= nsd
+LIBNM	= nsd
+DLL	= $(LIBNM)
 PGM	= nsd
 PGMOBJS	= main.o
 HDRS	= nsd.h
 
-OBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
+LIBOBJS = adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  cache.o callbacks.o cls.o compress.o config.o conn.o connio.o cookies.o \
 	  crypt.o dns.o driver.o dstring.o encoding.o event.o exec.o \
 	  fastpath.o fd.o filter.o form.o httptime.o index.o info.o \
@@ -48,8 +49,6 @@ OBJS	= adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  tclthread.o tcltime.o tclvar.o tclxkeylist.o stamp.o \
 	  url.o url2file.o urlencode.o urlopen.o urlspace.o uuencode.o \
 	  unix.o watchdog.o nswin32.o
-
-LIBOBJS	 = $(OBJS)
 
 include ../include/Makefile.build
 

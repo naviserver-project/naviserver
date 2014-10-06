@@ -1,4 +1,5 @@
-#
+# Emacs mode:  -*-Makefile-*-
+
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -82,13 +83,13 @@ ifndef NSBUILD
 else
     LDFLAGS += -L../nsthread -L../nsd -L../nsdb
     INCDIR   = ../include
-	ifeq (nsd,$(LIB))
+	ifeq (nsd,$(LIBNM))
 		CFLAGS += @ZLIB_INCLUDES@
 		NSLIBS += @ZLIB_LIBS@ @CRYPT_LIBS@
 	endif
-    ifneq (nsthread,$(LIB))
+    ifneq (nsthread,$(LIBNM))
         NSLIBS += -lnsthread
-        ifneq (nsd,$(LIB))
+        ifneq (nsd,$(LIBNM))
             ifneq (nsthreadtest,$(PGM))
                 ifeq (nsdbtest,$(MODNAME))
                     NSLIBS += -lnsd -lnsdb
@@ -100,7 +101,11 @@ else
     endif
 endif
 
-NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@
+# Running configure with --enable-rpath is NOT turning on rpath
+# support the way it should, but I don't understand why, so hack it in
+# here instead:  --atp@piskorski.com, 2014/09/25
+TODO_RPATH   = -Wl,-rpath,${NAVISERVER}/lib
+NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@ $(TODO_RPATH)
 CCLIBS       = $(NSLIBS)
 
 # Install directories

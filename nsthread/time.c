@@ -56,13 +56,42 @@
 void
 Ns_GetTime(Ns_Time *timePtr)
 {
-#ifdef HAVE_GETTIMEOFDAY
+#ifdef _WIN32
+/*
+ * This is same Windows-specific code used in AOLserver 4.0.7 and
+ * 4.5.2, and in Naviserver prior to Zoran's 2007-09-29 change:
+ */
+/* Number of 100 nanosecond units from 1601-01-01 to 1970-01-01: */
+#define EPOCH_BIAS  116444736000000000i64
+    union {
+	unsigned __int64    i;
+	FILETIME	    s;
+    } ft;
+
+    GetSystemTimeAsFileTime(&ft.s);
+    timePtr->sec = (time_t)((ft.i - EPOCH_BIAS) / 10000000i64);
+    timePtr->usec =(long)((ft.i / 10i64) % 1000000i64);
+
+#elif HAVE_GETTIMEOFDAY
+/*
+ * Essentially this same Unix-only code has been here since at least
+ * AOLserver 4.0.7, and probably earlier:
+ */
     struct timeval tbuf;
 
     gettimeofday(&tbuf, NULL);
     timePtr->sec = tbuf.tv_sec;
     timePtr->usec = tbuf.tv_usec;
+
 #else
+/*
+ * Platform-independent approach using Tcl_GetTime(), added by Zoran
+ * Vasiljevic on 2007-09-29.
+ *
+ * At least on Windows 7 64-bit with ActiveTcl 8.5, this code makes my
+ * Naviserver build lock up hard on startup, inside TclpGetDate():
+ * --atp@piskorski.com, 2014/10/04 01:20 EDT
+ */
     Tcl_Time tbuf;
     Tcl_GetTime(&tbuf);
 

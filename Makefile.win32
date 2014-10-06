@@ -1,0 +1,88 @@
+# Emacs mode:  -*-Makefile-*-
+
+#
+# 1. Edit include/Makefile.build and replace Makefile.module with
+#    Makefile.win32
+# 
+# 2. Update TCLPATH and VC varibales below to reflect actual path to
+#    Tcl and VicualC++ installations
+#   
+# 3. nmake -f Makefile.win32
+#
+#    or
+#
+#    nmake -f Makefile.win32 TCLPATH=c:\tcl VC=c:\vc
+#
+#
+
+
+
+TCLPATH	= C:\P\Tcl85
+TCLLIB  = tcl85.lib
+
+## TODO: Why is it necessary to set these variables here?  Shouldn't
+## we just run the appropriate vcvars32.bat or other setup script?
+## --atp@piskorski.com, 2014/09/17 12:05 EDT
+
+# We definitely need this file:
+#   "C:\Program Files\Microsoft SDKs\Windows\v7.1\Include\Windows.h"
+
+#VC	= $(MY_VC)
+#MSDK	= $(MY_MSDK)
+VC	= C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC
+MSDK	= C:\Program Files\Microsoft SDKs\Windows\v7.1
+
+LIB	= $(LIB);$(MSDK)\Lib;$(TCLPATH)\lib
+#LIB	= $(LIB);$(VC)\Lib
+INCLUDE	= $(INCLUDE);$(MSDK)\Include;$(TCLPATH)\include
+#INCLUDE	= $(INCLUDE);$(VC)\include
+
+# include/Makefile.win32 uses this DEBUG flag.  For now default it to
+# 1 rather than 0 or unset:
+!ifndef DEBUG
+DEBUG=1
+!endif
+
+# nmake command to exec for each module:
+NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
+
+
+# Note our use below of nmake's macro string substition feature:
+#   http://msdn.microsoft.com/en-us/library/bsd42ets%28v=vs.110%29.aspx
+#
+# Our use of $(build_targets) below expands into a separate target for
+# each module, which is especially convenient when we only want to
+# build one or two of them at a time (e.g., for debugging).  But nmake
+# does not have anything like Gnu make's explicit ".PHONY" syntax, so
+# we must make sure that each target name is NOT a valid file or
+# directory.  Thus our use of _, I, or C prefixes with each module
+# name.
+#
+# Independently of this makefile, to clean a single module you can
+# simply cd into its subdirectory in the DOS/command shell and run
+# "nmake clean".  That works fine.  Or using this makefile, you can
+# run the single "clean" target to clean them all, or one or more
+# individual clean targets like "Cnsthread Cnsd".
+#
+# --atp@piskorski.com, 2014/09/25 16:29 EDT
+
+build_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm
+install_targets = $(build_targets:_=I)
+clean_targets = $(build_targets:_=C)
+
+all: $(build_targets)
+clean: $(clean_targets)
+install: $(install_targets) I_tcl I_include
+
+$(build_targets):
+	pushd $(@:_=) & $(NMAKE) & popd
+$(clean_targets):
+	pushd $(@:C=) & $(NMAKE) clean & popd
+
+# Install to the NAVISERVER directory:
+$(install_targets):
+	pushd $(@:I=) & $(NMAKE) install & popd
+I_tcl:
+	pushd tcl & nmake -f ../include/Makefile.win32 install-tcl & popd
+I_include:
+	pushd include & nmake -f Makefile.win32 install-include & popd
