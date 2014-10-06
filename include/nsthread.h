@@ -110,10 +110,6 @@
 # define STDOUT_FILENO               1
 # define STDERR_FILENO               2
 
-# if !defined(NS_POLL_NFDS_TYPE) 
-#  define NS_POLL_NFDS_TYPE unsigned int
-# endif
-
 # if defined(_MSC_VER)
 /*
  * Visual Studio defines
@@ -394,6 +390,10 @@ typedef struct DIR_ *DIR;
 #include <stdarg.h>
 #include <assert.h>
 #include <sys/stat.h>
+
+#if !defined(NS_POLL_NFDS_TYPE) 
+# define NS_POLL_NFDS_TYPE unsigned int
+#endif
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
