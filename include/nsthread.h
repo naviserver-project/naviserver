@@ -143,6 +143,23 @@ typedef int32_t ssize_t;
 
 #  define atoll                       _atoi64
 #  define strtoll                     _strtoi64
+
+#  define access                      _access
+#  define chsize                      _chsize
+#  define close                       _close
+#  define dup2                        _dup2
+#  define fileno                      _fileno
+#  define getpid                      _getpid
+#  define lseek                       _lseek
+#  define mktemp                      _mktemp
+#  define open                        _open
+#  define putenv                      _putenv
+#  define read                        _read
+#  define snprintf                    _snprintf
+#  define unlink                      _unlink
+#  define vsnprintf                   _vsnprintf
+#  define write                       _write
+
 # endif
 
 /* defines for mingw, not covered above */
@@ -163,25 +180,10 @@ typedef int32_t ssize_t;
 
 # define ftruncate(f,s)              chsize((f),(s))
 # define sleep(n)                    (Sleep((n)*1000))
-
-# define access                      _access
-# define chsize                      _chsize
-# define close                       _close
-# define dup2                        _dup2
-# define fileno                      _fileno
-# define getpid                      _getpid
-# define lseek                       _lseek
 # define mkdir(d,m)                  _mkdir((d))
-# define mktemp                      _mktemp
-# define open                        _open
-# define putenv                      _putenv
-# define read                        _read
-# define snprintf                    _snprintf
 # define strcasecmp                  _stricmp
 # define strncasecmp                 _strnicmp
-# define unlink                      _unlink
-# define vsnprintf                   _vsnprintf
-# define write                       _write
+
 
 # define mkstemp		     ns_mkstemp
 
