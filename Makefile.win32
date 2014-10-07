@@ -3,39 +3,48 @@
 #
 # 1. Edit include/Makefile.build and replace Makefile.module with
 #    Makefile.win32
-# 
+#
 # 2. Update TCLPATH and VC varibales below to reflect actual path to
 #    Tcl and VicualC++ installations
-#   
-# 3. nmake -f Makefile.win32
 #
+# 3. Run appropriate Microsoft build setup script.  E.g.:
+#    "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
+#
+# 4. nmake -f Makefile.win32
 #    or
-#
 #    nmake -f Makefile.win32 TCLPATH=c:\tcl VC=c:\vc
 #
 #
 
 
-
-TCLPATH	= C:\P\Tcl85
+TCLPATH = C:\P\Tcl85
 TCLLIB  = tcl85.lib
+VC      = %ProgramFiles(x86)%\Microsoft Visual Studio 10.0\VC
+MSDK    = %ProgramFiles%\Microsoft SDKs\Windows\v7.1
 
-## TODO: Why is it necessary to set these variables here?  Shouldn't
-## we just run the appropriate vcvars32.bat or other setup script?
-## --atp@piskorski.com, 2014/09/17 12:05 EDT
+# Note that I compile Naviserver (on Windows 7 x86-64) like so:
+#
+# "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
+# cd C:\foo\naviserver
+# nmake -f Makefile.win32
+#
+# Running SetEnv.Cmd sets various important environment variables.
+# I do not run vcvars32.bat because it is intended for 32-bit builds only.
+# I believe I COULD run vcvarsall.bat instead of SetEnv.Cmd, but I'm
+# not clear on their real differences, except that vcvarsall.bat ships
+# with Visual Studio while SetEnv.Cmd ships with the Microsoft SDK.
 
-# We definitely need this file:
-#   "C:\Program Files\Microsoft SDKs\Windows\v7.1\Include\Windows.h"
+## If your call to SetEnv.Cmd is working correctly, you should only
+## need to append to LIB and INCLUDE like this:
+LIB     = $(LIB);$(TCLPATH)\lib
+INCLUDE = $(INCLUDE);$(TCLPATH)\include
 
-#VC	= $(MY_VC)
-#MSDK	= $(MY_MSDK)
-VC	= C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC
-MSDK	= C:\Program Files\Microsoft SDKs\Windows\v7.1
+## But for reference and to help debugging, these are the full LIB and
+## INCLUDE environment variable settings I need (currently, on x86-64)
+## when set from scratch, smashing over any values set by SetEnv.Cmd:
+#LIB     = $(MSDK)\Lib\X64;$(VC)\Lib\amd64;$(TCLPATH)\lib
+#INCLUDE = $(MSDK)\Include;$(VC)\include;$(TCLPATH)\include
 
-LIB	= $(LIB);$(MSDK)\Lib;$(TCLPATH)\lib
-#LIB	= $(LIB);$(VC)\Lib
-INCLUDE	= $(INCLUDE);$(MSDK)\Include;$(TCLPATH)\include
-#INCLUDE	= $(INCLUDE);$(VC)\include
 
 # include/Makefile.win32 uses this DEBUG flag.  For now default it to
 # 1 rather than 0 or unset:
@@ -44,7 +53,16 @@ DEBUG=1
 !endif
 
 # nmake command to exec for each module:
-NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
+NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG) INCLUDE="$(INCLUDE)"
+
+
+# To build for XP rather than a newer version of Windows, we would
+# need to set additional options as explained here:
+#
+# http://blogs.msdn.com/b/vcblog/archive/2012/10/08/windows-xp-targeting-with-c-in-visual-studio-2012.aspx
+# Windows XP Targeting with C++ in Visual Studio 2012; by Ibrahim Damlaj; 8 Oct 2012
+#
+# However, include/nsthread.h sets WINVERSION to Vista to allow usage of InetNtop().
 
 
 # Note our use below of nmake's macro string substition feature:
