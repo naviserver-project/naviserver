@@ -145,6 +145,11 @@ typedef int32_t ssize_t;
 #  define strtoll                     _strtoi64
 # endif
 
+/* defines for mingw, not covered above */
+# if !defined(NS_INVALID_PID)
+#  define NS_INVALID_PID 	(-1)
+# endif
+
 #include <sys/stat.h> /* for __stat64 */
 #include <malloc.h>   /* for alloca   */
 

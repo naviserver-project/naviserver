@@ -206,14 +206,14 @@ Ns_MutexLock(Ns_Mutex *mutex)
     Mutex *mutexPtr = GETMUTEX(mutex);
     Ns_Time end, diff, startTime;
 
-#ifndef _WIN32
+#ifndef _MSC_VER
     Ns_GetTime(&startTime);
 #endif
     if (unlikely(!NsLockTry(mutexPtr->lock))) {
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
 
-#ifndef _WIN32     
+#ifndef _MSC_VER     
         /*
          * Measure total and max waiting time for busy mutex locks.
          */
@@ -239,7 +239,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
         }
 #endif
     }
-#ifndef _WIN32     
+#ifndef _MSC_VER     
     mutexPtr->start_time = startTime;
 #endif
     ++mutexPtr->nlock;
@@ -298,7 +298,7 @@ Ns_MutexUnlock(Ns_Mutex *mutex)
     Mutex *mutexPtr = (Mutex *) *mutex;
     Ns_Time end, diff;
 
-#ifndef _WIN32
+#ifndef _MSC_VER
     Ns_GetTime(&end);
     Ns_DiffTime(&end, &mutexPtr->start_time, &diff);
     Ns_IncrTime(&mutexPtr->total_lock_time, diff.sec, diff.usec);

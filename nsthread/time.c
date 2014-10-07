@@ -56,13 +56,19 @@
 void
 Ns_GetTime(Ns_Time *timePtr)
 {
-#ifdef _WIN32
-/*
- * This is same Windows-specific code used in AOLserver 4.0.7 and
- * 4.5.2, and in Naviserver prior to Zoran's 2007-09-29 change:
- */
-/* Number of 100 nanosecond units from 1601-01-01 to 1970-01-01: */
+#ifdef _MSC_VER
+  /*
+   * This is same Windows-specific code used in AOLserver 4.0.7 and
+   * 4.5.2, and in Naviserver prior to Zoran's 2007-09-29 change:
+   */
+
+  /*
+   * GN: the following constants/types are probably dependent on _WIN64
+   */
+
+  /* Number of 100 nanosecond units from 1601-01-01 to 1970-01-01: */
 #define EPOCH_BIAS  116444736000000000i64
+
     union {
 	unsigned __int64    i;
 	FILETIME	    s;
@@ -72,7 +78,7 @@ Ns_GetTime(Ns_Time *timePtr)
     timePtr->sec = (time_t)((ft.i - EPOCH_BIAS) / 10000000i64);
     timePtr->usec =(long)((ft.i / 10i64) % 1000000i64);
 
-#elif HAVE_GETTIMEOFDAY
+#elseif defined(HAVE_GETTIMEOFDAY)
 /*
  * Essentially this same Unix-only code has been here since at least
  * AOLserver 4.0.7, and probably earlier:
