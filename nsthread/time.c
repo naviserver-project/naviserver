@@ -78,8 +78,10 @@ Ns_GetTime(Ns_Time *timePtr)
     timePtr->sec = (time_t)((ft.i - EPOCH_BIAS) / 10000000i64);
     timePtr->usec =(long)((ft.i / 10i64) % 1000000i64);
 
-#elseif defined(HAVE_GETTIMEOFDAY)
+#elif defined(HAVE_GETTIMEOFDAY)
+
 /*
+ * Use native gettimeofday() 
  * Essentially this same Unix-only code has been here since at least
  * AOLserver 4.0.7, and probably earlier:
  */
