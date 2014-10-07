@@ -113,10 +113,6 @@
 # define STDOUT_FILENO               1
 # define STDERR_FILENO               2
 
-# if !defined(NS_POLL_NFDS_TYPE) 
-#  define NS_POLL_NFDS_TYPE unsigned int
-# endif
-
 # if defined(_MSC_VER)
 /*
  * Visual Studio defines
@@ -147,6 +143,28 @@ typedef int32_t ssize_t;
 
 #  define atoll                       _atoi64
 #  define strtoll                     _strtoi64
+
+#  define access                      _access
+#  define chsize                      _chsize
+#  define close                       _close
+#  define dup2                        _dup2
+#  define fileno                      _fileno
+#  define getpid                      _getpid
+#  define lseek                       _lseek
+#  define mktemp                      _mktemp
+#  define open                        _open
+#  define putenv                      _putenv
+#  define read                        _read
+#  define snprintf                    _snprintf
+#  define unlink                      _unlink
+#  define vsnprintf                   _vsnprintf
+#  define write                       _write
+
+# endif
+
+/* defines for mingw, not covered above */
+# if !defined(NS_INVALID_PID)
+#  define NS_INVALID_PID 	(-1)
 # endif
 
 #include <sys/stat.h> /* for __stat64 */
@@ -162,25 +180,10 @@ typedef int32_t ssize_t;
 
 # define ftruncate(f,s)              chsize((f),(s))
 # define sleep(n)                    (Sleep((n)*1000))
-
-# define access                      _access
-# define chsize                      _chsize
-# define close                       _close
-# define dup2                        _dup2
-# define fileno                      _fileno
-# define getpid                      _getpid
-# define lseek                       _lseek
 # define mkdir(d,m)                  _mkdir((d))
-# define mktemp                      _mktemp
-# define open                        _open
-# define putenv                      _putenv
-# define read                        _read
-# define snprintf                    _snprintf
 # define strcasecmp                  _stricmp
 # define strncasecmp                 _strnicmp
-# define unlink                      _unlink
-# define vsnprintf                   _vsnprintf
-# define write                       _write
+
 
 # define mkstemp		     ns_mkstemp
 
@@ -397,6 +400,10 @@ typedef struct DIR_ *DIR;
 #include <stdarg.h>
 #include <assert.h>
 #include <sys/stat.h>
+
+#if !defined(NS_POLL_NFDS_TYPE) 
+# define NS_POLL_NFDS_TYPE unsigned int
+#endif
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>

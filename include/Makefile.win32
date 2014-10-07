@@ -54,7 +54,7 @@
 #
 #	In addition, you can also define:
 #
-#	NAVISERVER  Installation directory (default "c:\Naviserver").
+#	NAVISERVER  Installation directory (default "c:\ns").
 #	TCLPATH	    Path to Tcl installation
 #	TCLLIB	    Tcl .lib file to use for linking
 #	DEBUG	    If == 1 build debug version.
@@ -66,7 +66,7 @@
 
 
 !ifndef NAVISERVER
-NAVISERVER = C:\Naviserver
+NAVISERVER = C:\ns
 !endif
 
 # Strangely, the module-specific Makefiles set e.g. "MOD = nscgi.so",

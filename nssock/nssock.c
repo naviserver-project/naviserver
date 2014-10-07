@@ -241,47 +241,33 @@ Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
     ssize_t   n;
     int       decork;
     NS_SOCKET sock = sockPtr->sock;
-#ifdef _WIN32
-    DWORD n1;
-#endif	
 
     decork = Ns_SockCork(sockPtr, 1);
 
-#ifdef _WIN32
-    if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n1, flags,
-                NULL, NULL) != 0) {
-        n1 = -1;
-    }
-    n = n1;
-#else
     {
+#ifdef _WIN32
+	DWORD n1;
+	if (WSASend(sock, (LPWSABUF)bufs, nbufs, &n1, flags,
+		    NULL, NULL) != 0) {
+	    n1 = -1;
+	}
+	n = n1;
+#else
 	struct msghdr msg;
       
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = bufs;
 	msg.msg_iovlen = nbufs;
 
-#if 0
-	{ int i;
-	    for (i=0; i<nbufs; i++) {
-		fprintf(stderr, "%d: <%s> (%ld)\n",i, (char*)bufs[i].iov_base, bufs[i].iov_len);
-		fprintf(stderr, "%d: len %ld\n",i, bufs[i].iov_len);
-	    }
-	}
-#endif	
-	
 	n = sendmsg(sock, &msg, flags);
-#if 0
-	fprintf(stderr, "=>sent %ld\n",n);
-	if (n<=0) {printf("sendmsg sock %d error %d %s\n",sock, errno,strerror(errno));}
-#endif
 	
 	if (n < 0) {
 	    Ns_Log(Debug, "SockSend: %s",
 		   ns_sockstrerror(ns_sockerrno));
 	}
-    }
 #endif
+    }
+
     if (decork) {
       Ns_SockCork(sockPtr, 0);
     }
@@ -369,17 +355,18 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 {
     Config *cfg = driver->arg;
 
-    if (cfg->nodelay) {
 #ifdef TCP_NODELAY
+    if (cfg->nodelay) {
 	int value = 1;
 
         if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
-                       &value, sizeof(value)) == -1) {
+                       (CONST void *)&value, sizeof(value)) == -1) {
             Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
                    ns_sockstrerror(ns_sockerrno));
         } else {
 	    Ns_Log(Debug, "nodelay: socket option TCP_NODELAY activated");
 	}
-#endif
     }
+#endif
+
 }

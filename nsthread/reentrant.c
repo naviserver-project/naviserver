@@ -35,7 +35,6 @@
  *	data buffers.  See the corresponding manual page for details.
  */
 
-#include "ns.h"
 #include "thread.h"
 
 /*
@@ -58,15 +57,69 @@ typedef struct Tls {
 static Ns_Tls tls;
 static Tls *GetTls(void);
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitReentrant --
+ *
+ *	Initialize reentrant function handling.  Some of the
+ *      retentrant functions use to per-thread buffers (thread local
+ *      storage) for reentrant routines
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocating thread local storage id.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 NsInitReentrant(void)
 {
     Ns_TlsAlloc(&tls, ns_free);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetTls --
+ *
+ *	Return thread local storage. If not allocated yet, allocate
+ *	memory via calloc.
+ *
+ * Results:
+ *	Pointer to thread local storage
+ *
+ * Side effects:
+ *	Allocating potentially memory .
+ *
+ *----------------------------------------------------------------------
+ */
+static Tls *
+GetTls(void)
+{
+    Tls *tlsPtr;
 
-#ifdef _WIN32
+    tlsPtr = Ns_TlsGet(&tls);
+    if (tlsPtr == NULL) {
+	tlsPtr = ns_calloc(1, sizeof(Tls));
+	Ns_TlsSet(&tls, tlsPtr);
+    }
+    return tlsPtr;
+}
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_inet_ntoa 
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef _MSC_VER
 char *
 ns_inet_ntoa(struct in_addr addr)
 {
@@ -79,73 +132,7 @@ ns_inet_ntoa(struct in_addr addr)
 
     return tlsPtr->nabuf;
 }
-
-struct dirent *
-ns_readdir(DIR * dir)
-{
-    return readdir(dir);
-}
-
-struct tm *
-ns_localtime(const time_t *clock)
-{
-    Tls *tlsPtr = GetTls();
-
-    localtime_s(&tlsPtr->ltbuf, clock);
-    return &tlsPtr->ltbuf;
-}
-
-struct tm *
-ns_gmtime(const time_t *clock)
-{
-    Tls *tlsPtr = GetTls();
-
-    gmtime_s(&tlsPtr->gtbuf, clock);
-    return &tlsPtr->gtbuf;
-}
-
-char *
-ns_ctime(const time_t *clock)
-{
-    Tls *tlsPtr = GetTls();
-
-    ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
-    return tlsPtr->ctbuf;
-}
-
-char *
-ns_asctime(const struct tm *tmPtr)
-{
-    Tls *tlsPtr = GetTls();
-    int errNum;
-
-    errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
-    if (errNum) {
-        /*
-         * TODO: Cannot call Ns_Log() here (and not in the Linux version
-         * either), doing so triggers an "unresolved external" link error:
-         */
-        /* Ns_Log(Warning, "ns_asciitime: call to asctime_s returned an error code %d", errNum); */
-     }
-
-    return tlsPtr->asbuf;
-}
-
-char *
-ns_strtok(char *s1, const char *s2)
-{
-    Tls *tlsPtr = GetTls();
-
-    return strtok_s(s1, s2, &tlsPtr->stbuf);
-}
-
-#else
-
-/*
- * The unix retentrant functions copy to per-thread buffers from
- * reentrant routines.
- */
-
+#else 
 char *
 ns_inet_ntoa(struct in_addr addr)
 {
@@ -165,7 +152,23 @@ ns_inet_ntoa(struct in_addr addr)
 #endif
     return tlsPtr->nabuf;
 }
+#endif
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_readdir 
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef _WIN32
+struct dirent *
+ns_readdir(DIR * dir)
+{
+    return readdir(dir);
+}
+#else
 struct dirent *
 ns_readdir(DIR * dir)
 {
@@ -178,58 +181,163 @@ ns_readdir(DIR * dir)
     }
     return ent;
 }
+#endif
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_localtime 
+ *
+ *----------------------------------------------------------------------
+ */
 struct tm *
-ns_localtime(const time_t * clock)
+ns_localtime(const time_t *clock)
 {
-    Tls *tlsPtr = GetTls();
+#ifdef _MSC_VER
 
+    Tls *tlsPtr = GetTls();
+    int errNum;
+
+    errNum = localtime_s(&tlsPtr->ltbuf, clock);
+    if (errNum) {
+	NsThreadFatal("ns_localtime","localtime_s", errNum);
+     }
+
+    return &tlsPtr->ltbuf;
+
+#elif defined(_WIN32)
+
+    return localtime(clock);
+
+#else
+
+    Tls *tlsPtr = GetTls();
     return localtime_r(clock, &tlsPtr->ltbuf);
+
+#endif
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_gmtime 
+ *
+ *----------------------------------------------------------------------
+ */
 struct tm *
-ns_gmtime(const time_t * clock)
+ns_gmtime(const time_t *clock)
 {
-    Tls *tlsPtr = GetTls();
+#ifdef _MSC_VER
 
+    Tls *tlsPtr = GetTls();
+    gmtime_s(&tlsPtr->gtbuf, clock);
+    return &tlsPtr->gtbuf;
+
+#elif defined(_WIN32)
+
+    return gmtime(clock);
+
+#else
+
+    Tls *tlsPtr = GetTls();
     return gmtime_r(clock, &tlsPtr->gtbuf);
+
+#endif
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_ctime 
+ *
+ *----------------------------------------------------------------------
+ */
 char *
-ns_ctime(const time_t * clock)
+ns_ctime(const time_t *clock)
 {
-    Tls *tlsPtr = GetTls();
+#ifdef _MSC_VER
 
+    Tls *tlsPtr = GetTls();
+    ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
+    return tlsPtr->ctbuf;
+
+#elif defined(_WIN32)
+
+    return ctime(clock);
+
+#else
+    Tls *tlsPtr = GetTls();
     return ctime_r(clock, tlsPtr->ctbuf);
+#endif
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_asctime 
+ *
+ *----------------------------------------------------------------------
+ */
 
 char *
 ns_asctime(const struct tm *tmPtr)
 {
-    Tls *tlsPtr = GetTls();
+#ifdef _MSC_VER
 
+    Tls *tlsPtr = GetTls();
+    int errNum;
+
+    errNum = asctime_s(tlsPtr->asbuf, sizeof(tlsPtr->asbuf), tmPtr);
+    if (errNum) {
+	NsThreadFatal("ns_asctime","asctime_s", errNum);
+    }
+
+    return tlsPtr->asbuf;
+
+#elif defined(_WIN32)
+
+    return asctime(tmPtr);
+
+#else
+
+    Tls *tlsPtr = GetTls();
     return asctime_r(tmPtr, tlsPtr->asbuf);
+
+#endif
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_strtok 
+ *
+ *----------------------------------------------------------------------
+ */
 
 char *
 ns_strtok(char *s1, const char *s2)
 {
-    Tls *tlsPtr = GetTls();
+#ifdef _MSC_VER
 
-    return strtok_r(s1, s2, &tlsPtr->stbuf);
-}
+    Tls *tlsPtr = GetTls();
+    return strtok_s(s1, s2, &tlsPtr->stbuf);
+
+#elif defined(_WIN32)
+
+    return strtok(s1, s2);
+
+#else
+
+    Tls *tlsPtr = GetTls();
+    return strtok_r(s1, s2, &tlsPtr->stbuf)
 
 #endif
-
-static Tls *
-GetTls(void)
-{
-    Tls *tlsPtr;
-
-    tlsPtr = Ns_TlsGet(&tls);
-    if (tlsPtr == NULL) {
-	tlsPtr = ns_calloc(1, sizeof(Tls));
-	Ns_TlsSet(&tls, tlsPtr);
-    }
-    return tlsPtr;
 }
+
+
+
+
