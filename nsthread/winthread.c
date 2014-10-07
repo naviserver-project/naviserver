@@ -732,7 +732,7 @@ NsCreateThread(void *arg, long stacksize, Ns_Thread *resultPtr)
 void
 Ns_ThreadExit(void *arg)
 {
-    _endthreadex((unsigned) arg);
+    _endthreadex( PTR2UINT(arg) ); 
 }
 
 
@@ -768,7 +768,7 @@ Ns_ThreadJoin(Ns_Thread *thread, void **argPtr)
         NsThreadFatal("Ns_ThreadJoin", "CloseHandle", GetLastError());
     }
     if (argPtr != NULL) {
-        *argPtr = (void *) exitcode;
+        *argPtr = UINT2PTR(exitcode);
     }
 }
 
