@@ -333,7 +333,7 @@ ns_strtok(char *s1, const char *s2)
 #else
 
     Tls *tlsPtr = GetTls();
-    return strtok_r(s1, s2, &tlsPtr->stbuf)
+    return strtok_r(s1, s2, &tlsPtr->stbuf);
 
 #endif
 }
