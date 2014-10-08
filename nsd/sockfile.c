@@ -348,7 +348,7 @@ ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
     }
 
     overlapped.Offset = (DWORD)offset;
-    overlapped.OffsetHigh = ((DWORD)offset >> 32);
+    overlapped.OffsetHigh = (DWORD)(offset >> 32);
 
     if (!ReadFile(fh, buf, c, &ret, &overlapped)) {
         return -1;
