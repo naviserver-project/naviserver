@@ -232,7 +232,13 @@ ns_gmtime(const time_t *clock)
 #ifdef _MSC_VER
 
     Tls *tlsPtr = GetTls();
-    gmtime_s(&tlsPtr->gtbuf, clock);
+    int errNum;
+
+    errNum = gmtime_s(&tlsPtr->gtbuf, clock);
+    if (errNum) {
+	NsThreadFatal("ns_gmtime","gmtime_s", errNum);
+     }
+
     return &tlsPtr->gtbuf;
 
 #elif defined(_WIN32)
@@ -261,7 +267,13 @@ ns_ctime(const time_t *clock)
 #ifdef _MSC_VER
 
     Tls *tlsPtr = GetTls();
-    ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
+    int errNum;
+
+    errNum = ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
+    if (errNum) {
+	NsThreadFatal("ns_ctime","ctime_s", errNum);
+    }
+
     return tlsPtr->ctbuf;
 
 #elif defined(_WIN32)
