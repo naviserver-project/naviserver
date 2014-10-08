@@ -40,8 +40,15 @@
  * Static functions defined in this file.
  */
 
-static int Result(Tcl_Interp *interp, int result);
-static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr);
+static int Result(Tcl_Interp *interp, int result) NS_GNUC_NONNULL(1);
+
+static int GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static int ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+			Tcl_Obj *CONST objv[], int (*proc) (Ns_Conn *))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 
 
@@ -662,6 +669,9 @@ ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 {
     Ns_Conn *conn = NULL;
 
+    assert(arg != NULL);
+    assert(interp != NULL);
+
     if (GetConn(arg, interp, &conn) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -903,6 +913,7 @@ NsTclInternalRedirectObjCmd(ClientData arg, Tcl_Interp *interp,
 static int
 Result(Tcl_Interp *interp, int result)
 {
+    assert(interp != NULL);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result == NS_OK ? 1 : 0));
     return TCL_OK;
 }
@@ -912,6 +923,10 @@ static int
 GetConn(ClientData arg, Tcl_Interp *interp, Ns_Conn **connPtr)
 {
     NsInterp *itPtr = arg;
+
+    assert(arg != NULL);
+    assert(interp != NULL);
+    assert(connPtr != NULL);
 
     if (itPtr->conn == NULL) {
         Tcl_SetResult(interp, "no connection", TCL_STATIC);
