@@ -56,7 +56,7 @@
 void
 Ns_GetTime(Ns_Time *timePtr)
 {
-#ifdef _MSC_VER
+#ifdef _MSC_VER______DEACTIVATED____
   /*
    * This is same Windows-specific code used in AOLserver 4.0.7 and
    * 4.5.2, and in Naviserver prior to Zoran's 2007-09-29 change:
@@ -75,7 +75,7 @@ Ns_GetTime(Ns_Time *timePtr)
     } ft;
 
     GetSystemTimeAsFileTime(&ft.s);
-    timePtr->sec = (time_t)((ft.i - EPOCH_BIAS) / 10000000i64);
+    timePtr->sec = (long)((ft.i - EPOCH_BIAS) / 10000000i64);
     timePtr->usec =(long)((ft.i / 10i64) % 1000000i64);
 
 #elif defined(HAVE_GETTIMEOFDAY)
@@ -93,12 +93,7 @@ Ns_GetTime(Ns_Time *timePtr)
 
 #else
 /*
- * Platform-independent approach using Tcl_GetTime(), added by Zoran
- * Vasiljevic on 2007-09-29.
- *
- * At least on Windows 7 64-bit with ActiveTcl 8.5, this code makes my
- * Naviserver build lock up hard on startup, inside TclpGetDate():
- * --atp@piskorski.com, 2014/10/04 01:20 EDT
+ * Platform-independent approach using Tcl_GetTime()
  */
     Tcl_Time tbuf;
     Tcl_GetTime(&tbuf);
