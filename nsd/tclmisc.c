@@ -42,6 +42,10 @@
 
 static int WordEndsInSemi(char *ip);
 
+static void shaByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void SHATransform(Ns_CtxSHA1 *sha) NS_GNUC_NONNULL(1);
+
 
 /*
  *----------------------------------------------------------------------
@@ -693,8 +697,10 @@ static char hexChars[] = "0123456789ABCDEF";
    Shuffle the bytes into big-endian order within words, as per the
    SHA spec.
  */
+
+
 static void
-shaByteSwap(uint32_t * dest, uint8_t const *src, unsigned int words)
+shaByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
 {
     do {
        *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
@@ -802,6 +808,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 
    Note that this corrupts the sha->key area.
  */
+
 static void
 SHATransform(Ns_CtxSHA1 *sha)
 {
@@ -809,6 +816,8 @@ SHATransform(Ns_CtxSHA1 *sha)
 #if SHA_VERSION
     register uint32_t t;
 #endif
+
+    assert(sha != NULL);
 
     /* Set up first buffer */
     A = sha->iv[0];

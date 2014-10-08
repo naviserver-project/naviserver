@@ -57,6 +57,9 @@ static int CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 static Ns_Entry *CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key,
                              int *newPtr, Ns_Time *timeoutPtr);
 static void SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost);
+static int noGlobChars(CONST char *pattern) 
+    NS_GNUC_NONNULL(1);
+
 static Ns_ObjvProc ObjvCache;
 
 
@@ -442,6 +445,8 @@ noGlobChars(CONST char *pattern)
 {
     register char c;
     CONST char *p = pattern;
+
+    assert(pattern != NULL);
 
     for (c = *p; likely(c); c = *++p) {
 	if (unlikely(c == '*') || unlikely(c == '?') || unlikely(c == '[')) {

@@ -165,23 +165,35 @@ static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static int   SockParse(Sock *sockPtr, int spooler)
     NS_GNUC_NONNULL(1);
-static void  SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
+static void SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
-static int   SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
+static int  SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void  SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
+static void SpoolerQueueStart(SpoolerQueue *queuePtr, Ns_ThreadProc *proc)
     NS_GNUC_NONNULL(2);
-static void  SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
+static void SpoolerQueueStop(SpoolerQueue *queuePtr, Ns_Time *timeoutPtr, CONST char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-static void  PollCreate(PollData *pdata)
+static void PollCreate(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static void  PollFree(PollData *pdata)
+static void PollFree(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static void  PollReset(PollData *pdata)
+static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
-static int   PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
+static int PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
-static int   PollWait(PollData *pdata, int waittime)
+static int PollWait(PollData *pdata, int waittime)
+    NS_GNUC_NONNULL(1);
+static int ChunkedDecode(Request *reqPtr, int update)
+    NS_GNUC_NONNULL(1);
+static WriterSock *WriterSockRequire(Conn *connPtr) 
+    NS_GNUC_NONNULL(1);
+static void WriterSockRelease(WriterSock *wrSockPtr) 
+    NS_GNUC_NONNULL(1);
+static int WriterReadFromSpool(WriterSock *curPtr)
+    NS_GNUC_NONNULL(1);
+static int WriterSend(WriterSock *curPtr, int *err) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void AsyncWriterRelease(AsyncWriteData *wdPtr, int reason, int err)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -2397,9 +2409,13 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
  *
  *----------------------------------------------------------------------
  */
+static char *strnchr(char *buffer, size_t len, int c)
+    NS_GNUC_NONNULL(1);
 
 static char *strnchr(char *buffer, size_t len, int c) {
     char *end;
+
+    assert(buffer != NULL);
 
     for (end = buffer + len; buffer < end; buffer ++) {
         if (unlikely(*buffer == c)) {
@@ -3175,6 +3191,8 @@ static WriterSock *
 WriterSockRequire(Conn *connPtr) {
     WriterSock *wrSockPtr;
 
+    assert(connPtr != NULL);
+
     NsWriterLock();
     wrSockPtr = connPtr->streamWriter;
     if (wrSockPtr) {
@@ -3187,6 +3205,8 @@ WriterSockRequire(Conn *connPtr) {
 static void
 WriterSockRelease(WriterSock *wrSockPtr) {
     SpoolerQueue *queuePtr;
+
+    assert(wrSockPtr != NULL);
 
     assert(wrSockPtr);
     wrSockPtr->refCount --;
@@ -3290,11 +3310,14 @@ WriterSockRelease(WriterSock *wrSockPtr) {
  */
 
 static int
-WriterReadFromSpool(DrvWriter *wrPtr, WriterSock *curPtr) {
-    int            streaming = curPtr->streaming, status = NS_OK;
+WriterReadFromSpool(WriterSock *curPtr) {
+    int            streaming, status = NS_OK;
     Tcl_WideInt    toread, maxsize;
     unsigned char *bufPtr;
 
+    assert(curPtr != NULL);
+
+    streaming = curPtr->streaming;
     if (streaming) {
 	Ns_MutexLock(&curPtr->c.file.fdlock);
 	toread = curPtr->c.file.toread;
@@ -3396,6 +3419,9 @@ WriterSend(WriterSock *curPtr, int *err) {
     int           nbufs, status = NS_OK;
     size_t        towrite;
     ssize_t       n;
+
+    assert(curPtr != NULL);
+    assert(err != NULL);
     
     /*
      * Prepare send operation
@@ -3520,7 +3546,6 @@ WriterThread(void *arg)
     Ns_Time         now;
     Sock           *sockPtr;
     Driver         *drvPtr;
-    DrvWriter      *wrPtr;
     WriterSock     *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 
@@ -3590,7 +3615,6 @@ WriterThread(void *arg)
 
             sockPtr = curPtr->sockPtr;
             drvPtr  = sockPtr->drvPtr;
-            wrPtr   = &drvPtr->writer;
             err = status = NS_OK;
 
 	    /* the truth value of streaming does not change through concurrency */
@@ -3624,7 +3648,7 @@ WriterThread(void *arg)
 		     * from the (spool) file and place it into curPtr->c.file.buf.
 		     */
 		    if (curPtr->fd != INVALID_SOCKET) {
-			status = WriterReadFromSpool(wrPtr, curPtr);
+			status = WriterReadFromSpool(curPtr);
 		    }
 		    
 		    if (status == NS_OK) {
@@ -4590,6 +4614,8 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
 static void
 AsyncWriterRelease(AsyncWriteData *wdPtr, int reason, int err)
 {
+    assert(wdPtr != NULL);
+
     ns_free(wdPtr->data);
     ns_free(wdPtr);
 }
