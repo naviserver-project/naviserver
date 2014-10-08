@@ -38,6 +38,24 @@
 
 
 /*
+ * Platform-independent approach using Tcl_GetTime(), added by Zoran
+ * Vasiljevic on 2007-09-29:
+ *
+ * At least on Windows 7 64-bit with ActiveTcl 8.5, this code makes my
+ * Naviserver build lock up hard on startup, inside TclpGetDate():
+ * --atp@piskorski.com, 2014/10/04 01:20 EDT
+ */
+void
+Ns_GetTimeFromTcl(Ns_Time *timePtr)
+{
+    Tcl_Time tbuf;
+    Tcl_GetTime(&tbuf);
+
+    timePtr->sec = tbuf.sec;
+    timePtr->usec = tbuf.usec;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * Ns_GetTime --
@@ -65,7 +83,6 @@ Ns_GetTime(Ns_Time *timePtr)
   /*
    * GN: the following constants/types are probably dependent on _WIN64
    */
-
   /* Number of 100 nanosecond units from 1601-01-01 to 1970-01-01: */
 #define EPOCH_BIAS  116444736000000000i64
 
@@ -79,7 +96,6 @@ Ns_GetTime(Ns_Time *timePtr)
     timePtr->usec =(long)((ft.i / 10i64) % 1000000i64);
 
 #elif defined(HAVE_GETTIMEOFDAY)
-
 /*
  * Use native gettimeofday() 
  * Essentially this same Unix-only code has been here since at least
@@ -92,19 +108,7 @@ Ns_GetTime(Ns_Time *timePtr)
     timePtr->usec = tbuf.tv_usec;
 
 #else
-/*
- * Platform-independent approach using Tcl_GetTime(), added by Zoran
- * Vasiljevic on 2007-09-29.
- *
- * At least on Windows 7 64-bit with ActiveTcl 8.5, this code makes my
- * Naviserver build lock up hard on startup, inside TclpGetDate():
- * --atp@piskorski.com, 2014/10/04 01:20 EDT
- */
-    Tcl_Time tbuf;
-    Tcl_GetTime(&tbuf);
-
-    timePtr->sec = tbuf.sec;
-    timePtr->usec = tbuf.usec;
+    Ns_GetTimeFromTcl(timePtr);
 #endif
 }
 
