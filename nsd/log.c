@@ -683,10 +683,14 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
     }
     if (*tp != timePtr->sec) {
         size_t n;
+	time_t secs;
 	struct tm *ptm;
 
         *tp = timePtr->sec;
-        ptm = ns_localtime(&timePtr->sec);
+
+	secs = timePtr->sec;
+        ptm = ns_localtime(&secs);
+
         n = strftime(bp, 32, "[%d/%b/%Y:%H:%M:%S", ptm);
         if (!gmt) {
             bp[n++] = ']';
