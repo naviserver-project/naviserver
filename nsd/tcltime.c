@@ -174,13 +174,13 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
         if (Tcl_GetLongFromObj(interp, objPtr, &sec) != TCL_OK) {
             return TCL_ERROR;
         }
-        timePtr->sec = (time_t)sec;
+        timePtr->sec = sec;
         timePtr->usec = 0;
     } else {
         if (Tcl_ConvertToType(interp, objPtr, &timeType) != TCL_OK) {
             return TCL_ERROR;
         }
-        timePtr->sec = (time_t)objPtr->internalRep.twoPtrValue.ptr1;
+        timePtr->sec =  (long) objPtr->internalRep.twoPtrValue.ptr1;
         timePtr->usec = (long) objPtr->internalRep.twoPtrValue.ptr2;
     }
     return TCL_OK;
@@ -493,7 +493,7 @@ NsTclStrftimeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     if (Tcl_GetLongFromObj(interp, objv[1], &sec) != TCL_OK) {
         return TCL_ERROR;
     }
-    time = (time_t)sec;
+    time = sec;
 
     if (objc > 2) {
         fmt = Tcl_GetString(objv[2]);
@@ -588,7 +588,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
         *sep = '\0';
         result = Tcl_GetInt(interp, str, &value);
-        time.sec = (time_t) value;
+        time.sec = value;
         *sep = ':';
         if (result != TCL_OK) {
             return TCL_ERROR;

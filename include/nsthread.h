@@ -649,7 +649,7 @@ typedef struct Ns_Sema_     *Ns_Sema;
 typedef struct Ns_RWLock_   *Ns_RWLock;
 
 typedef struct Ns_Time {
-    time_t  sec;
+    long    sec;
     long    usec;
 } Ns_Time;
 

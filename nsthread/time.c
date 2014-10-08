@@ -218,7 +218,7 @@ void
 Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)
 {
     timePtr->usec += usec;
-    timePtr->sec += (time_t)sec;
+    timePtr->sec += sec;
     Ns_AdjTime(timePtr);
 }
 
