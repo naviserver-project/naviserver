@@ -1618,20 +1618,21 @@ NS_EXTERN int
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
                            Tcl_Interp *interp, int offset, int objc, Tcl_Obj *CONST objv[]);
 
+NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBool;
+NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
+NS_EXTERN Ns_ObjvProc Ns_ObjvByteArray;
+NS_EXTERN Ns_ObjvProc Ns_ObjvDouble;
+NS_EXTERN Ns_ObjvProc Ns_ObjvEval;
+NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
+NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvInt;
 NS_EXTERN Ns_ObjvProc Ns_ObjvLong;
-NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
-NS_EXTERN Ns_ObjvProc Ns_ObjvDouble;
-NS_EXTERN Ns_ObjvProc Ns_ObjvString;
-NS_EXTERN Ns_ObjvProc Ns_ObjvByteArray;
 NS_EXTERN Ns_ObjvProc Ns_ObjvObj;
-NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
-NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
-NS_EXTERN Ns_ObjvProc Ns_ObjvBreak;
-NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
-NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
+NS_EXTERN Ns_ObjvProc Ns_ObjvString;
+NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
+NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
 
 NS_EXTERN Ns_OptionConverter Ns_OptionBoolean;
 NS_EXTERN Ns_OptionConverter Ns_OptionObj;
