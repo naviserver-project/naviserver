@@ -1306,9 +1306,6 @@ NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)
 NS_EXTERN int NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, CONST char *url);
 NS_EXTERN char *NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host);
 
-NS_EXTERN void NsAsyncWriterQueueEnable();
-NS_EXTERN void NsAsyncWriterQueueDisable();
-
 /*
  * External callback functions.
  */

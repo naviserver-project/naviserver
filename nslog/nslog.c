@@ -847,9 +847,11 @@ LogRoll(Log *logPtr)
             char        timeBuf[512];
             Ns_DString  ds;
 	    Tcl_Obj    *newpath;
-            struct tm  *ptm = ns_localtime(&now);
+            struct tm  *ptm;
 
+            ptm = ns_localtime(&now);
             strftime(timeBuf, sizeof(timeBuf)-1, logPtr->rollfmt, ptm);
+
             Ns_DStringInit(&ds);
             Ns_DStringVarAppend(&ds, logPtr->file,".", timeBuf, NULL);
             newpath = Tcl_NewStringObj(ds.string, -1);

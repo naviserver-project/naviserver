@@ -73,8 +73,8 @@ Ns_GetTimeFromWindowsFileTime(Ns_Time *timePtr)
     } ft;
 
     GetSystemTimeAsFileTime(&ft.s);
-    timePtr->sec = (time_t)((ft.i - EPOCH_BIAS) / 10000000i64);
-    timePtr->usec =(long)((ft.i / 10i64) % 1000000i64);
+    timePtr->sec  = (long)((ft.i - EPOCH_BIAS) / 10000000i64);
+    timePtr->usec = (long)((ft.i / 10i64     ) %  1000000i64);
 }
 #endif
 

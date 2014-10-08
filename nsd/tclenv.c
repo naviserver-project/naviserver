@@ -122,7 +122,7 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclEnvCmd --
+ * NsTclEnvObjCmd --
  *
  *      Implements the ns_env command.  No attempt is made to avoid the
  *      race condition between finding a variable and using it as it is
@@ -236,7 +236,7 @@ NsTclEnvObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
  *
  * PutEnv --
  *
- *      NsTclEnvCmd helper routine to update an environment variable.
+ *      NsTclEnvObjCmd helper routine to update an environment variable.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
