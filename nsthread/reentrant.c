@@ -191,32 +191,58 @@ ns_readdir(DIR * dir)
  *
  *----------------------------------------------------------------------
  */
-struct tm *
-ns_localtime(const time_t *clock)
-{
 #ifdef _MSC_VER
+#define ATP_LLD_MSC_HACK_no
+#endif
 
+#ifdef ATP_LLD_MSC_HACK_YES
+struct tm *
+ns_localtime(const time_t *clock_IGNORE)
+{
     Tls *tlsPtr = GetTls();
     int errNum;
-
+    time_t foo;  time_t* clock = &foo;
+    /*
+     * Completely ignore the input clock time and instead fetch the
+     * current time.  This is a hack to work-around the incoming bogus
+     * (wrong type?) clock values: --atp@piskorski.com, 2014/10/07 23:11 EDT
+     */
+    time(&foo);
     errNum = localtime_s(&tlsPtr->ltbuf, clock);
     if (errNum) {
 	NsThreadFatal("ns_localtime","localtime_s", errNum);
      }
+    return &tlsPtr->ltbuf;
+}
+#else
 
+struct tm *
+ns_localtime(const time_t *clock)
+{
+#ifdef _MSC_VER
+    Tls *tlsPtr = GetTls();
+    int errNum;
+
+    errNum = localtime_s(&tlsPtr->ltbuf, clock);
+    /*
+      printf("\nDebug: ns_localtime: errNum from localtime_s:  %d", errNum);
+      printf("\n  clock lld:  %lld", (long long)*clock);
+      printf("\n  clock  ld:  %ld" , (long)*clock);
+      printf("\n  clock   d:  %d\n", (int)*clock);
+    */
+    if (errNum) {
+	NsThreadFatal("ns_localtime","localtime_s", errNum);
+    }
     return &tlsPtr->ltbuf;
 
 #elif defined(_WIN32)
-
     return localtime(clock);
-
 #else
-
     Tls *tlsPtr = GetTls();
     return localtime_r(clock, &tlsPtr->ltbuf);
-
 #endif
 }
+#endif
 
 
 /*
