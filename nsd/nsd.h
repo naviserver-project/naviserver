@@ -72,11 +72,11 @@
 
 #define MAX_URLSPACES                  16
 
-#define CONN_TCLFORM                   1  /* Query form set is registered for interp */
-#define CONN_TCLHDRS                   2  /* Input headers set is registered for interp */
-#define CONN_TCLOUTHDRS                4  /* Output headers set is registered for interp */
-#define CONN_TCLAUTH                   8  /* 'auth' headers set is registered for interp */
-#define CONN_TCLHTTP                   16  /* HTTP headers requested by ns_headers */
+#define CONN_TCLFORM                   0x01U  /* Query form set is registered for interp */
+#define CONN_TCLHDRS                   0x02U  /* Input headers set is registered for interp */
+#define CONN_TCLOUTHDRS                0x04U  /* Output headers set is registered for interp */
+#define CONN_TCLAUTH                   0x08U  /* 'auth' headers set is registered for interp */
+#define CONN_TCLHTTP                   0x16U  /* HTTP headers requested by ns_headers */
 
 
 /*
