@@ -761,8 +761,8 @@ NS_EXTERN void Ns_SemaPost(Ns_Sema *semaPtr, int count);
  */
 
 #ifndef _WIN32
-NS_EXTERN int ns_sigmask(int how, sigset_t * set, sigset_t * oset);
-NS_EXTERN int ns_sigwait(sigset_t * set, int *sig);
+NS_EXTERN int ns_sigmask(int how, sigset_t *set, sigset_t *oset) NS_GNUC_NONNULL(2);
+NS_EXTERN int ns_sigwait(sigset_t *set, int *sig) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int ns_signal(int sig, void (*proc)(int));
 #endif
 
