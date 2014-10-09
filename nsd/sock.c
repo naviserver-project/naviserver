@@ -480,7 +480,7 @@ Ns_SockAccept(NS_SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
 
     if (sock != INVALID_SOCKET) {
         sock = SockSetup(sock);
-    } else if (errno != EAGAIN) {
+    } else if (errno != 0 && errno != EAGAIN) {
         Ns_Log(Notice, "accept() fails, reason: %s", strerror(errno));
     }
 
