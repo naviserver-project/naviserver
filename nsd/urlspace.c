@@ -1378,6 +1378,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
     size_t      l;
     
     assert(seq != NULL);
+
     depth = 0;
     Ns_DStringInit(&dsFilter);
 

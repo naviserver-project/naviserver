@@ -137,6 +137,8 @@ ConfigServerVhost(CONST char *server)
 int
 Ns_PathIsAbsolute(CONST char *path)
 {
+    assert(path != NULL);
+
 #ifdef _WIN32
     if (isalpha(UCHAR(*path)) && path[1] == ':') {
         path += 2;

@@ -1551,7 +1551,7 @@ static void
 PollCreate(PollData *pdata)
 {
     assert(pdata != NULL);
-    memset((pdata), 0, sizeof(PollData));
+    memset(pdata, 0, sizeof(PollData));
 }
 
 static void
@@ -1559,7 +1559,7 @@ PollFree(PollData *pdata)
 {
     assert(pdata != NULL);
     ns_free(pdata->pfds);
-    memset((pdata), 0, sizeof(PollData));
+    memset(pdata, 0, sizeof(PollData));
 }
 
 static void
@@ -3614,7 +3614,7 @@ WriterThread(void *arg)
             nextPtr = curPtr->nextPtr;
 
             sockPtr = curPtr->sockPtr;
-            drvPtr  = sockPtr->drvPtr;
+            /*drvPtr  = sockPtr->drvPtr;*/
             err = status = NS_OK;
 
 	    /* the truth value of streaming does not change through concurrency */

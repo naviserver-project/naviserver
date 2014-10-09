@@ -1954,7 +1954,8 @@ Ns_ConnRedirect(Ns_Conn *conn, CONST char *url)
  */
 
 NS_EXTERN int
-Ns_PathIsAbsolute(CONST char *path);
+Ns_PathIsAbsolute(CONST char *path)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
 Ns_NormalizePath(Ns_DString *dsPtr, CONST char *path);

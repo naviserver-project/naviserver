@@ -1392,10 +1392,6 @@ NsConnThread(void *arg)
  */
 static void
 ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-static void
-ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
 {
     Ns_Conn  *conn = (Ns_Conn *) connPtr;
     NsServer *servPtr = connPtr->poolPtr->servPtr;

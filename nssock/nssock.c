@@ -353,9 +353,9 @@ Close(Ns_Sock *sock)
 static void
 SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
 {
+#ifdef TCP_NODELAY
     Config *cfg = driver->arg;
 
-#ifdef TCP_NODELAY
     if (cfg->nodelay) {
 	int value = 1;
 

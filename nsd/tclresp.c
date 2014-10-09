@@ -243,7 +243,7 @@ NsTclWriteObjCmd(ClientData arg, Tcl_Interp *interp,
      * Allocate space for large numbers of buffers.
      */
 
-    if (objc > sizeof(iov) / sizeof(struct iovec)) {
+    if (objc > (int)(sizeof(iov) / sizeof(struct iovec))) {
         sbufs = ns_calloc(objc, sizeof(struct iovec));
     }
 

@@ -1761,7 +1761,7 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp,
     }
     Tcl_Flush(chan);
     reqPtr = ((Conn *)itPtr->conn)->reqPtr;
-    if (toCopy > reqPtr->avail || toCopy <= 0) {
+    if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
         toCopy = (int)reqPtr->avail;
     }
     if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {

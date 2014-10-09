@@ -271,9 +271,9 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
     char *p, *eol;
     int firsthdr = 1, major, minor;
 
-    assert(hdrPtr);
-    assert(response);
-    assert(statusPtr);
+    assert(hdrPtr != NULL);
+    assert(response != NULL);
+    assert(statusPtr != NULL);
 
     sscanf(response, "HTTP/%2d.%2d %3d", &major, &minor, statusPtr);
     p = response;

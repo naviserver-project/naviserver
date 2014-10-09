@@ -451,7 +451,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     while (toread > 0) {
 	ssize_t sent, nread;
 
-        nread = pread(fd, buf, MIN(toread, sizeof(buf)), offset);
+        nread = pread(fd, buf, MIN((size_t)toread, sizeof(buf)), offset);
         if (nread <= 0) {
             break;
         }

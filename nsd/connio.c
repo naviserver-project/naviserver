@@ -316,6 +316,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 		char hdr[32];
 		size_t len;
 
+		assert(nbufs > 0);
+		assert(bufs != NULL);
                 /*
                  * Output length header followed by content and then trailer.
                  */

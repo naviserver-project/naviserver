@@ -334,7 +334,8 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         return TCL_ERROR;
     }
     arrayPtr = LockArrayObj(interp, objv[1], 1);
-    assert(arrayPtr);
+
+    assert(arrayPtr != NULL);
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
     if (unlikely(isNew)) {
