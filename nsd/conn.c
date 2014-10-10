@@ -1623,7 +1623,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         break;
 
     case CFlagsIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->flags));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((int)connPtr->flags));
         break;
 
     case CStartIdx:

@@ -1420,7 +1420,7 @@ NS_EXTERN void NsAdpSetMimeType(NsInterp *itPtr, char *type);
 NS_EXTERN void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
 NS_EXTERN int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
-NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream);
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) NS_GNUC_NONNULL(1);
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);

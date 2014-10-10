@@ -264,7 +264,7 @@ NsTclSockNReadObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
     nread += Tcl_InputBuffered(chan);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(nread));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)nread));
 
     return TCL_OK;
 }
