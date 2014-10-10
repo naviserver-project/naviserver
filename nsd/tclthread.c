@@ -53,8 +53,8 @@ typedef struct TclThreadArg {
 
 static void CreateTclThread(NsInterp *itPtr, char *script, int detached,
                             Ns_Thread *thrPtr);
-static void *CreateSynchObject(NsInterp *,
-                               Tcl_HashTable *, unsigned int *idPtr,
+static void *CreateSynchObject(NsInterp *itPtr,
+                               Tcl_HashTable *typeTable, unsigned int *idPtr,
                                Ns_Callback *initProc, CONST char *type,
                                Tcl_Obj *objPtr, int cnt);
 
@@ -67,7 +67,6 @@ static const char *csType     = "ns:critsec";
 static const char *semaType   = "ns:semaphore";
 static const char *condType   = "ns:condition";
 static const char *rwType     = "ns:rwlock";
-
 static const char *threadType = "ns:thread";
 
 

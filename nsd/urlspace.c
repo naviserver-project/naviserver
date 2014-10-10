@@ -151,10 +151,10 @@
  */
 
 typedef struct {
-    void  *dataInherit;                      /* User's data */
-    void  *dataNoInherit;                    /* User's data */
-    void   (*deletefuncInherit) (void *);    /* Cleanup function */
-    void   (*deletefuncNoInherit) (void *);  /* Cleanup function */
+    void  *dataInherit;                          /* User's data */
+    void  *dataNoInherit;                        /* User's data */
+    void   (*deletefuncInherit) (void *data);    /* Cleanup function */
+    void   (*deletefuncNoInherit) (void *data);  /* Cleanup function */
 } Node;
 
 /*
@@ -239,7 +239,7 @@ static void PrintSeq(CONST char *seq);
 
 static void  TrieInit(Trie *triePtr);
 static void  TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags, 
-                     void (*deletefunc)(void *));
+                     void (*deletefunc)(void *data));
 static void *TrieFind(Trie *triePtr, char *seq, int *depthPtr);
 static void *TrieFindExact(Trie *triePtr, char *seq, unsigned int flags);
 static void *TrieDelete(Trie *triePtr, char *seq, unsigned int flags);
@@ -265,7 +265,7 @@ static int CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr);
 
 static Junction *JunctionGet(NsServer *servPtr, int id);
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
-                        unsigned int flags, void (*deletefunc)(void *))
+                        unsigned int flags, void (*deletefunc)(void *data))
         NS_GNUC_NONNULL(2);
 static void *JunctionFind(Junction *juncPtr, char *seq, int fast);
 static void *JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags,
@@ -332,7 +332,7 @@ Ns_UrlSpecificAlloc(void)
 
 void
 Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
-                  void *data, unsigned int flags, void (*deletefunc) (void *))
+                  void *data, unsigned int flags, void (*deletefunc) (void *data))
 {
     NsServer   *servPtr = NsGetServer(server);
     Ns_DString  ds;
@@ -720,8 +720,8 @@ static void
 TrieInit(Trie *triePtr)
 {
     Ns_IndexInit(&triePtr->branches, 25,
-        (int (*) (const void *, const void *)) CmpBranches,
-        (int (*) (const void *, const void *)) CmpKeyWithBranch);
+        (int (*) (const void *left, const void *right)) CmpBranches,
+        (int (*) (const void *left, const void *right)) CmpKeyWithBranch);
     triePtr->node = NULL;
 }
 
@@ -751,7 +751,7 @@ TrieInit(Trie *triePtr)
 
 static void
 TrieAdd(Trie *triePtr, char *seq, void *data, unsigned int flags,
-        void (*deletefunc)(void *))
+        void (*deletefunc)(void *data))
 {
     if (*seq != '\0') {
         Branch *branchPtr;
@@ -1284,12 +1284,12 @@ JunctionGet(NsServer *servPtr, int id)
         juncPtr = ns_malloc(sizeof *juncPtr);
 #ifndef __URLSPACE_OPTIMIZE__
         Ns_IndexInit(&juncPtr->byuse, 5,
-                     (int (*) (const void *, const void *)) CmpChannels,
-                     (int (*) (const void *, const void *)) CmpKeyWithChannel);
+                     (int (*) (const void *left, const void *right)) CmpChannels,
+                     (int (*) (const void *left, const void *right)) CmpKeyWithChannel);
 #endif
         Ns_IndexInit(&juncPtr->byname, 5,
-                     (int (*) (const void *, const void *)) CmpChannelsAsStrings,
-                     (int (*) (const void *, const void *)) CmpKeyWithChannelAsStrings);
+                     (int (*) (const void *left, const void *right)) CmpChannelsAsStrings,
+                     (int (*) (const void *left, const void *right)) CmpKeyWithChannelAsStrings);
         servPtr->urlspace[id] = juncPtr;
     }
     return juncPtr;
@@ -1369,7 +1369,7 @@ JunctionTruncBranch(Junction *juncPtr, char *seq)
 
 static void
 JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
-            void (*deletefunc)(void *))
+            void (*deletefunc)(void *data))
 {
     Channel    *channelPtr;
     Ns_DString  dsFilter;

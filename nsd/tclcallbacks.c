@@ -37,7 +37,7 @@
 
 #include "nsd.h"
 
-typedef void *(AtProc)(Ns_Callback *, void *);
+typedef void *(AtProc)(Ns_Callback *proc, void *data);
 
 
 /*

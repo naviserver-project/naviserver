@@ -62,8 +62,8 @@ static int BinSearchKey(void *key, void **list, int n, Ns_IndexCmpProc *cmp);
 
 void
 Ns_IndexInit(Ns_Index *indexPtr, int inc,
-	     int (*CmpEls) (const void *, const void *),
-	     int (*CmpKeyWithEl) (const void *, const void *))
+	     int (*CmpEls) (const void *left, const void *right),
+	     int (*CmpKeyWithEl) (const void *left, const void *right))
 {
     indexPtr->n = 0;
     indexPtr->max = inc;
@@ -542,8 +542,9 @@ CmpKeyWithStr(char *key, char **elPtr)
 void
 Ns_IndexStringInit(Ns_Index *indexPtr, int inc)
 {
-    Ns_IndexInit(indexPtr, inc, (int (*) (const void *, const void *)) CmpStr,
-        (int (*) (const void *, const void *)) CmpKeyWithStr);
+    Ns_IndexInit(indexPtr, inc, 
+		 (int (*) (const void *left, const void *right)) CmpStr,
+		 (int (*) (const void *left, const void *right)) CmpKeyWithStr);
 }
 
 
@@ -740,8 +741,9 @@ CmpKeyWithInt(int *keyPtr, int *elPtr)
 void
 Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
 {
-    Ns_IndexInit(indexPtr, inc, (int (*) (const void *, const void *)) CmpInts,
-        (int (*) (const void *, const void *)) CmpKeyWithInt);
+    Ns_IndexInit(indexPtr, inc, 
+		 (int (*) (const void *left, const void *right)) CmpInts,
+		 (int (*) (const void *left, const void *right)) CmpKeyWithInt);
 }
 
 #ifdef _WIN32
@@ -769,7 +771,7 @@ Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
 static void * 
 NsBsearch (register const void *key, register const void *base,
            register size_t nmemb, register size_t size,
-           int (*compar)(const void *, const void *))
+           int (*compar)(const void *left, const void *right))
 {
     while (nmemb > 0) {
 	register const void *mid_point;

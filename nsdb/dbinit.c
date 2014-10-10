@@ -108,13 +108,13 @@ typedef struct ServData {
  * Local functions defined in this file
  */
 
-static Pool     *GetPool(char *pool)                NS_GNUC_NONNULL(1);
-static void      ReturnHandle(Handle *handle)       NS_GNUC_NONNULL(1);
-static int       IsStale(Handle *, time_t now)      NS_GNUC_NONNULL(1);
-static int	 Connect(Handle *)                  NS_GNUC_NONNULL(1);
+static Pool     *GetPool(char *pool)                 NS_GNUC_NONNULL(1);
+static void      ReturnHandle(Handle *handle)        NS_GNUC_NONNULL(1);
+static int       IsStale(Handle *handle, time_t now) NS_GNUC_NONNULL(1);
+static int	 Connect(Handle *handle)             NS_GNUC_NONNULL(1);
 static Pool     *CreatePool(char *pool, char *path, char *driver);
-static int	 IncrCount(Pool *poolPtr, int incr) NS_GNUC_NONNULL(1);
-static ServData *GetServer(char *server)            NS_GNUC_NONNULL(1);
+static int	 IncrCount(Pool *poolPtr, int incr)  NS_GNUC_NONNULL(1);
+static ServData *GetServer(char *server)             NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file

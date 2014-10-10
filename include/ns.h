@@ -279,12 +279,12 @@ typedef enum {
  * Typedefs of functions
  */
 
-typedef int   (Ns_IndexCmpProc) (const void *, const void *);
-typedef int   (Ns_SortProc) (void *, void *);
-typedef int   (Ns_EqualProc) (void *, void *);
-typedef void  (Ns_ElemVoidProc) (void *);
-typedef void *(Ns_ElemValProc) (void *);
-typedef int   (Ns_ElemTestProc) (void *);
+typedef int   (Ns_IndexCmpProc) (const void *left, const void *right);
+typedef int   (Ns_SortProc) (void *left, void *right);
+typedef int   (Ns_EqualProc) (void *left, void *right);
+typedef void  (Ns_ElemVoidProc) (void *elem);
+typedef void *(Ns_ElemValProc) (void *elem);
+typedef int   (Ns_ElemTestProc) (void *elem);
 typedef void  (Ns_Callback) (void *arg);
 typedef void  (Ns_ShutdownProc) (Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, void *arg);
@@ -798,16 +798,16 @@ typedef struct Ns_CompressStream {
 
 
 NS_EXTERN int
-Ns_CompressInit(Ns_CompressStream *)
+Ns_CompressInit(Ns_CompressStream *stream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_CompressFree(Ns_CompressStream *)
+Ns_CompressFree(Ns_CompressStream *stream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_CompressBufsGzip(Ns_CompressStream *, struct iovec *bufs, int nbufs, Ns_DString *,
-                    int level, int flush)
+Ns_CompressBufsGzip(Ns_CompressStream *stream, struct iovec *bufs, int nbufs, 
+		    Ns_DString *dsPtr, int level, int flush)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
@@ -1396,8 +1396,8 @@ Ns_HtuuDecode(char *string, unsigned char *buf, size_t bufsize);
  */
 
 NS_EXTERN void
-Ns_IndexInit(Ns_Index *indexPtr, int inc, int (*CmpEls) (const void *, const void *),
-     			         int (*CmpKeyWithEl) (const void *, const void *));
+Ns_IndexInit(Ns_Index *indexPtr, int inc, int (*CmpEls) (const void *left, const void *right),
+     			         int (*CmpKeyWithEl) (const void *left, const void *right));
 
 NS_EXTERN void
 Ns_IndexTrunc(Ns_Index*indexPtr);
@@ -2969,7 +2969,7 @@ Ns_UrlSpecificWalk(int id, CONST char *server, Ns_ArgProc func, Tcl_DString *dsP
 
 NS_EXTERN void
 Ns_UrlSpecificSet(CONST char *server, CONST char *method, CONST char *url, int id,
-                  void *data, unsigned int flags, void (*deletefunc)(void *))
+                  void *data, unsigned int flags, void (*deletefunc)(void *data))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
