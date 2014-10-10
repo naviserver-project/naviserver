@@ -39,8 +39,8 @@
  * Local functions defined in this file.
  */
 
-static void AddCharset(CONST char *name, CONST char *charset);
-static void AddExtension(CONST char *name, CONST char *charset);
+static void AddCharset(const char *name, const char *charset);
+static void AddExtension(const char *name, const char *charset);
 static Tcl_Encoding LoadEncoding(CONST char *name);
 static Ns_ServerInitProc ConfigServerEncodings;
 
@@ -615,7 +615,7 @@ LoadEncoding(CONST char *name)
  */
 
 static void
-AddExtension(CONST char *ext, CONST char *name)
+AddExtension(const char *ext, const char *name)
 {
     Tcl_HashEntry  *hPtr;
     int             isNew;
@@ -625,7 +625,7 @@ AddExtension(CONST char *ext, CONST char *name)
 }
 
 static void
-AddCharset(CONST char *charset, CONST char *name)
+AddCharset(const char *charset, const char *name)
 {
     Tcl_HashEntry  *hPtr;
     Ns_DString      ds;
