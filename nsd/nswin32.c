@@ -474,7 +474,7 @@ NsHandleSignals(void)
         StartTicker(SERVICE_STOP_PENDING);
     }
 
-    return sig;
+    return (int)sig;
 }
 
 
@@ -1021,7 +1021,7 @@ ServiceMain(DWORD argc, LPTSTR *argv)
     curStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
     curStatus.dwServiceSpecificExitCode = 0;
     StartTicker(SERVICE_START_PENDING);
-    Ns_Main(argc, argv, NULL);
+    Ns_Main((int)argc, argv, NULL);
     StopTicker();
     ReportStatus(SERVICE_STOP_PENDING, NO_ERROR, 100);
     if (!servicefailed) {
@@ -1161,7 +1161,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
         timeout.tv_sec = timo / 1000;
         timeout.tv_usec = (timo - timeout.tv_sec * 1000) * 1000;
     }
-    rc = select(++n, &ifds, &ofds, &efds, toptr);
+    rc = select((int)++n, &ifds, &ofds, &efds, toptr);
     if (rc <= 0) {
         return rc;
     }
