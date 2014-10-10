@@ -77,9 +77,9 @@ typedef struct Task {
     Ns_TaskProc       *proc;          /* Queue callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
-    int                events;        /* Poll events. */
+    unsigned int       events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
-    int                signal;        /* Signal bits sent to/from queue thread. */
+    unsigned int       signal;        /* Signal bits sent to/from queue thread. */
     unsigned int       flags;         /* Flags private to queue. */
 } Task;
 
