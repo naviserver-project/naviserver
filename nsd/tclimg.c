@@ -624,10 +624,10 @@ GetImageType(Tcl_Channel chan)
     unsigned char buf[8];
     enum imgtype type = unknown;
 
-    static unsigned char jpeg_magic  [] = {0xff, 0xd8};
-    static unsigned char gif87_magic [] = {'G','I','F','8','7','a'};
-    static unsigned char gif89_magic [] = {'G','I','F','8','9','a'};
-    static unsigned char png_magic   [] = {0x89,0x50,0x4e,0x47,0xd,0xa,0x1a,0xa};
+    static CONST unsigned char jpeg_magic  [] = {0xff, 0xd8};
+    static CONST unsigned char gif87_magic [] = {'G','I','F','8','7','a'};
+    static CONST unsigned char gif89_magic [] = {'G','I','F','8','9','a'};
+    static CONST unsigned char png_magic   [] = {0x89,0x50,0x4e,0x47,0xd,0xa,0x1a,0xa};
 
     Tcl_Seek(chan, 0, SEEK_SET);
 
@@ -638,7 +638,7 @@ GetImageType(Tcl_Channel chan)
 
     if (!memcmp(buf, jpeg_magic, sizeof(jpeg_magic))) {
         unsigned char trail[] = {0x00, 0x00};
-	static unsigned char jpeg_trail  [] = {0xff, 0xd9};
+	static CONST unsigned char jpeg_trail  [] = {0xff, 0xd9};
 
         Tcl_Seek(chan,  0, SEEK_END);
         Tcl_Seek(chan, -2, SEEK_CUR);
