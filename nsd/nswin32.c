@@ -180,7 +180,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
  */
 
 char *
-NsWin32ErrMsg(int err)
+NsWin32ErrMsg(DWORD err)
 {
     char *msg;
 

@@ -2563,7 +2563,7 @@ Ns_SockStrError(int err);
 
 #ifdef _WIN32
 NS_EXTERN char *
-NsWin32ErrMsg(int err);
+NsWin32ErrMsg(DWORD err);
 
 NS_EXTERN NS_SOCKET
 ns_sockdup(NS_SOCKET sock);
