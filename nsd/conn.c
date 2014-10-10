@@ -1215,7 +1215,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     Ns_DString ds;
     int idx, off, len, opt, n;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
 	"auth", "authpassword", "authuser", 
 	"channel", "clientdata", "close", "compress", "content", 
 	"contentfile", "contentlength", "contentsentlength", "copy", 

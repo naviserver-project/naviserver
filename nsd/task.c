@@ -93,6 +93,7 @@ static void StopQueue(TaskQueue *queuePtr);
 static int SignalQueue(Task *taskPtr, int bit);
 static Ns_ThreadProc TaskThread;
 static void RunTask(Task *taskPtr, int revents, Ns_Time *nowPtr);
+
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
 
 /*
@@ -108,7 +109,7 @@ static Ns_Mutex   lock;          /* Lock for queue list. */
  * when multiple events are ready.
  */
 
-static struct {
+static const struct {
     unsigned int when;           /* SOCK when bit. */
     unsigned int event;          /* Poll event bit. */
 } map[] = {

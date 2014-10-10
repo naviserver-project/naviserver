@@ -125,8 +125,8 @@ static unsigned int flags;
 static int          maxback;
 
 static LogFilter   *filters;
-static CONST char  *filterType = "ns:logfilter";
-static CONST char  *severityType = "ns:logseverity";
+static const char  *filterType = "ns:logfilter";
+static const char  *severityType = "ns:logseverity";
 
 /*
  * The following table defines which severity levels
@@ -149,7 +149,7 @@ static struct {
     { "Dev",     NS_FALSE }
 };
 
-static int severityCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
+static const int severityCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
 static int severityIdx = 0;
 
 static Tcl_HashTable severityTable; /* Map severity names to indexes for Tcl. */
@@ -798,7 +798,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     void           *addr;
     Ns_TclCallback *cbPtr;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "hold", "count", "get", "peek", "flush", "release",
         "truncate", "severity", "severities",
         "register", "unregister", NULL

@@ -81,9 +81,9 @@ typedef struct EventQueue {
  * Static variables defined in this file.
  */
 
-static struct {
-    unsigned int when;  /* Event when bit. */
-    unsigned int event; /* Poll event bit. */
+static const struct {
+    unsigned const int when;  /* Event when bit. */
+    unsigned const int event; /* Poll event bit. */
 } map[] = {
     {NS_SOCK_EXCEPTION, POLLPRI},
     {NS_SOCK_WRITE,     POLLOUT},

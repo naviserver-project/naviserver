@@ -680,7 +680,7 @@ WordEndsInSemi(char *ip)
  *
  */
 
-static char hexChars[] = "0123456789ABCDEF";
+static const char hexChars[] = "0123456789ABCDEF";
 
 /*
  * Define to 1 for FIPS 180.1 version (with extra rotate in prescheduling),

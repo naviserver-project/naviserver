@@ -145,7 +145,7 @@ NsTclEnvObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
     int          status, i, opt;
     Tcl_Obj     *result;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "exists", "names", "get", "set", "unset", NULL
     };
     enum {

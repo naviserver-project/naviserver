@@ -885,7 +885,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     char           *script;
     int             remain = 0, opt, length, when = 0, result = TCL_OK;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",
         "gettraces", "markfordelete", "oncreate", "oncleanup", "ondelete",
         "oninit", "runtraces", "save", "trace", "update",

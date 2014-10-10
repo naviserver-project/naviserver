@@ -62,13 +62,13 @@ static void *CreateSynchObject(NsInterp *,
  * Local variables defined in this file.
  */
 
-static CONST char *mutexType  = "ns:mutex";
-static CONST char *csType     = "ns:critsec";
-static CONST char *semaType   = "ns:semaphore";
-static CONST char *condType   = "ns:condition";
-static CONST char *rwType     = "ns:rwlock";
+static const char *mutexType  = "ns:mutex";
+static const char *csType     = "ns:critsec";
+static const char *semaType   = "ns:semaphore";
+static const char *condType   = "ns:condition";
+static const char *rwType     = "ns:rwlock";
 
-static CONST char *threadType = "ns:thread";
+static const char *threadType = "ns:thread";
 
 
 /*

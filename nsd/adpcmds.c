@@ -210,9 +210,9 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
         CChanIdx    = ADP_OPTIONMAX + 2
     };
 
-    static struct {
-        char        *option;
-        unsigned int flag;
+    static const struct {
+        const char        *option;
+        const unsigned int flag;
     } adpCtlOpts[] = {
 
         { "bufsize",      CBufSizeIdx },

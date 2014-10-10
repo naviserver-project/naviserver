@@ -48,12 +48,12 @@ static int MakeMonth(char *s);
  * Static variables defined in this file
  */
 
-static CONST char *month_names[] = {
+static const char *month_names[] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-static CONST char *week_names[] = {
+static const char *week_names[] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 

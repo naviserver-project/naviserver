@@ -215,7 +215,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
     Tcl_HashSearch   search;
     Tcl_Obj         *objPtr;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "array", "cleanup", "copy", "cput", "create", "delete",
         "delkey", "find", "free", "get", "icput", "idelete",
         "idelkey", "ifind", "iget", "isnull", "iunique", "key",

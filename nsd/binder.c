@@ -55,7 +55,7 @@ static Tcl_HashTable preboundRaw;
 static Tcl_HashTable preboundUnix;
 
 static int binderRunning = 0;
-static int binderRequest[2] = { -1, -1 };
+static int binderRequest[2]  = { -1, -1 };
 static int binderResponse[2] = { -1, -1 };
 
 /*

@@ -66,8 +66,8 @@ static Tcl_Encoding   utf8Encoding; /* Cached pointer to utf-8 encoding. */
  */
 
 static struct {
-    CONST char  *extension;
-    CONST char  *name;
+    const char  *extension;
+    const char  *name;
 } builtinExt[] = {
     {".txt",    "ascii"},
     {".htm",    "iso8859-1"},
@@ -81,8 +81,8 @@ static struct {
  */
 
 static struct {
-    CONST char  *charset;
-    CONST char  *name;
+    const char  *charset;
+    const char  *name;
 } builtinChar[] = {
     { "iso-2022-jp",        "iso2022-jp" },
     { "iso-2022-kr",        "iso2022-kr" },

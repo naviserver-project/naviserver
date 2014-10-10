@@ -85,12 +85,12 @@ static Ns_ArgProc ArgProc;
 #define TN_IP   244
 #define TN_ECHO   1
 
-static unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
-static unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
-static unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
-static unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
+static const unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
+static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
+static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
+static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 
 /*

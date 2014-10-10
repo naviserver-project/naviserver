@@ -593,7 +593,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "cleanup", "list", "create", "put", "get", NULL
     };
 

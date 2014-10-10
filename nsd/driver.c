@@ -4152,7 +4152,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     char         *driverName;
     NsServer     *servPtr = NULL;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "submit", "submitfile", "list", "size", "streaming", NULL
     };
 
@@ -4292,7 +4292,7 @@ NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 	} else if (objc > 2) {
 
 	    int                 nextArgIdx;
-	    static CONST char  *options[]           = {"-server", NULL};
+	    static const char  *options[]           = {"-server", NULL};
 	    enum                                      {OServerIdx};
 	    ClientData          optionClientData[1] = {NULL};
 	    Ns_OptionConverter *optionConverter[1]  = {Ns_OptionServer};

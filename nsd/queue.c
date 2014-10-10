@@ -533,7 +533,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     char        *pool = NULL, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
-    static CONST char *subcmds[] = {
+    static const char *subcmds[] = {
         "active", "all", "connections", 
 	"filters",
 	"keepalive", 

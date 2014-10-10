@@ -474,7 +474,7 @@ Ns_OptionConverter Ns_OptionEnumPart;
 int
 Ns_OptionEnumPart(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
     int index, result;
-    static CONST char *opts[] = {"query", "path", NULL};
+    static const char *opts[] = {"query", "path", NULL};
     result = Tcl_GetIndexFromObj(interp, objPtr, opts, "-part", 0, &index);
     *clientData = (ClientData) INT2PTR(index + 1);
     return result;
@@ -488,11 +488,11 @@ NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     char        *charset  = NULL;
     Tcl_Encoding encoding = NULL;
 
-    static CONST char  *options[]           = {"-charset", "-part", NULL};
+    static const char  *options[]           = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
-    static int          optionPartValue[3]  = {'q', 'q', 'p'};
+    static const int    optionPartValue[3]  = {'q', 'q', 'p'};
 
     if (objc < 2) {
     usage_error:
@@ -555,11 +555,11 @@ NsTclUrlDecodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     char        *charset = NULL;
     int          part, nextArgIdx;
     Tcl_Encoding encoding = NULL;
-    static CONST char  *options[]           = {"-charset", "-part", NULL};
+    static const char  *options[]           = {"-charset", "-part", NULL};
     enum                                      {OCharsetIdx, OPartIdx};
     ClientData          optionClientData[2] = {NULL, NULL};
     Ns_OptionConverter *optionConverter[2]  = {Ns_OptionString, Ns_OptionEnumPart};
-    static int          optionPartValue[3]  = {'q', 'q', 'p'};
+    static const int    optionPartValue[3]  = {'q', 'q', 'p'};
 
     if (objc < 2) {
     usage_error:

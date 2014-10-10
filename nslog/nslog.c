@@ -104,7 +104,7 @@ static int LogClose(Log *logPtr);
 NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
-    CONST char *path, *file;
+    const char *path, *file;
     Log        *logPtr;
     Ns_DString  ds;
     static int  first = 1;

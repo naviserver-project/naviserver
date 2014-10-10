@@ -61,7 +61,7 @@
 /*
  * Used to return argument messages by most commands.
  */
-static char *tclXWrongArgs = "wrong # args: ";
+static const char *tclXWrongArgs = "wrong # args: ";
 
 /*
  * Those are used in TclX_IsNullObj() in read-only mode

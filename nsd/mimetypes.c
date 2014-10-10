@@ -57,9 +57,9 @@ static char            *noextType = TYPE_DEFAULT;
  * the client.  Case in the extension is ignored.
  */
 
-static struct exttype {
-    CONST char     *ext;
-    CONST char     *type;
+static const struct exttype {
+    const char     *ext;
+    const char     *type;
 } typetab[] = {
 
     /*

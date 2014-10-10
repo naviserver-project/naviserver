@@ -541,7 +541,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
     int             i, opt, lobjc, size;
     Tcl_Obj       **lobjv;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "set", "reset", "get", "names", "size", "exists", NULL
     };
     enum ISubCmdIdx {
@@ -1131,7 +1131,7 @@ static Array *
 LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, int create)
 {
     Array              *arrayPtr = NULL;
-    static CONST char  *arrayType = "nsv:array";
+    static const char  *arrayType = "nsv:array";
 
     if (likely(Ns_TclGetOpaqueFromObj(arrayObj, arrayType, (void **) &arrayPtr)
 	       == TCL_OK)) {
