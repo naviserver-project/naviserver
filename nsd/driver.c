@@ -935,7 +935,7 @@ NsSockClose(Sock *sockPtr, int keep)
  *      Open a listening socket for accepting connections.
  *
  * Results:
- *      File description of socket, or INVALID_SOCKET on error.
+ *      File description of socket, or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      Depends on driver.
@@ -954,7 +954,7 @@ DriverListen(Driver *drvPtr)
                                  drvPtr->bindaddr,
                                  drvPtr->port,
                                  drvPtr->backlog);
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
         Ns_Log(Error, "%s: failed to listen on %s:%d: %s",
                drvPtr->name, drvPtr->address, drvPtr->port,
                ns_sockstrerror(ns_sockerrno));
@@ -1197,7 +1197,7 @@ DriverThread(void *arg)
     flags = DRIVER_STARTED;
     drvPtr->sock = DriverListen(drvPtr);
 
-    if (drvPtr->sock == INVALID_SOCKET) {
+    if (drvPtr->sock == NS_INVALID_SOCKET) {
         flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
     } else {
         SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
@@ -1533,7 +1533,7 @@ DriverThread(void *arg)
 
         if (stopping) {
             ns_sockclose(drvPtr->sock);
-            drvPtr->sock = INVALID_SOCKET;
+            drvPtr->sock = NS_INVALID_SOCKET;
         }
     }
 

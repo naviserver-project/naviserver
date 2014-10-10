@@ -99,16 +99,14 @@
 #  define _WIN32_WINNT                0x0600
 # endif
 
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <io.h>
-#include <process.h>
-#include <direct.h>
-
-# define NS_SOCKET	SOCKET
+# include <windows.h>
+# include <winsock2.h>
+# include <ws2tcpip.h>
+# include <sys/timeb.h>
+# include <sys/types.h>
+# include <io.h>
+# include <process.h>
+# include <direct.h>
 
 # define STDOUT_FILENO               1
 # define STDERR_FILENO               2
@@ -117,6 +115,9 @@
 /*
  * Visual Studio defines
  */
+#  define NS_SOCKET		SOCKET
+#  define NS_INVALID_SOCKET     INVALID_SOCKET
+
 typedef          __int8 int8_t;
 typedef unsigned __int8 uint8_t;
 
@@ -161,15 +162,22 @@ typedef int32_t ssize_t;
 #  define vsnprintf                   _vsnprintf
 #  define write                       _write
 
-# endif
+#  define ftruncate(f,s)              chsize((f),(s))
 
-/* defines for mingw, not covered above */
-# if !defined(NS_INVALID_PID)
+# else
+/*
+ * MinGW
+ */
+#  define NS_SOCKET 		int
 #  define NS_INVALID_PID 	(-1)
+#  define NS_INVALID_SOCKET     (-1)
 # endif
 
-#include <sys/stat.h> /* for __stat64 */
-#include <malloc.h>   /* for alloca   */
+/*
+ * ALL _WIN32
+ */
+# include <sys/stat.h> /* for __stat64 */
+# include <malloc.h>   /* for alloca   */
 
 # define NS_SIGHUP                  1
 # define NS_SIGINT                  2
@@ -179,7 +187,6 @@ typedef int32_t ssize_t;
 
 # define DEVNULL	             "nul:"
 
-# define ftruncate(f,s)              chsize((f),(s))
 # define sleep(n)                    (Sleep((n)*1000))
 # define mkdir(d,m)                  _mkdir((d))
 # define strcasecmp                  _stricmp
@@ -358,7 +365,7 @@ typedef struct DIR_ *DIR;
 # define O_TEXT                      0
 # define O_BINARY                    0
 
-# define INVALID_SOCKET              (-1)
+# define NS_INVALID_SOCKET           (-1)
 # define SOCKET_ERROR                (-1)
 
 # define NS_SIGHUP                   SIGHUP
@@ -812,10 +819,13 @@ NS_EXTERN void *Ns_TlsGet(Ns_Tls *tlsPtr);
 NS_EXTERN DIR *opendir(char *pathname);
 NS_EXTERN struct dirent *readdir(DIR *dp);
 NS_EXTERN int closedir(DIR *dp);
-NS_EXTERN int truncate(char *file, off_t size);
 NS_EXTERN int link(char *from, char *to);
 NS_EXTERN int symlink(char *from, char *to);
 NS_EXTERN int kill(pid_t pid, int sig);
+
+# ifdef _MSC_VER
+NS_EXTERN int truncate(char *file, off_t size);
+# endif
 #endif
 
 /*

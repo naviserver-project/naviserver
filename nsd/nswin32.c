@@ -681,7 +681,7 @@ ns_sockdup(NS_SOCKET sock)
     src = (HANDLE) sock;
     hp = GetCurrentProcess();
     if (!DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
-        return INVALID_SOCKET;
+        return NS_INVALID_SOCKET;
     }
 
     return (NS_SOCKET) dup;
@@ -802,13 +802,13 @@ ns_sockpair(NS_SOCKET socks[2])
 
     size = sizeof(struct sockaddr_in);
     sock = Ns_SockListen("127.0.0.1", 0);
-    if (sock == INVALID_SOCKET ||
+    if (sock == NS_INVALID_SOCKET ||
         getsockname(sock, (struct sockaddr *) &ia[0], &size) != 0) {
         return -1;
     }
     size = sizeof(struct sockaddr_in);
     socks[1] = Ns_SockConnect("127.0.0.1", (int) ntohs(ia[0].sin_port));
-    if (socks[1] == INVALID_SOCKET ||
+    if (socks[1] == NS_INVALID_SOCKET ||
         getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
         ns_sockclose(sock);
         return -1;
@@ -816,7 +816,7 @@ ns_sockpair(NS_SOCKET socks[2])
     size = sizeof(struct sockaddr_in);
     socks[0] = accept(sock, (struct sockaddr *) &ia[0], &size);
     ns_sockclose(sock);
-    if (socks[0] == INVALID_SOCKET) {
+    if (socks[0] == NS_INVALID_SOCKET) {
         ns_sockclose(socks[1]);
         return -1;
     }
@@ -840,7 +840,7 @@ ns_sockpair(NS_SOCKET socks[2])
  *      privileged port issues.
  *
  * Results:
- *      Socket descriptor or INVALID_SOCKET on error.
+ *      Socket descriptor or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -855,12 +855,12 @@ Ns_SockListenEx(char *address, int port, int backlog)
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) != NS_OK) {
-        return INVALID_SOCKET;
+        return NS_INVALID_SOCKET;
     }
     sock = Ns_SockBind(&sa);
-    if (sock != INVALID_SOCKET && listen(sock, backlog) != 0) {
+    if (sock != NS_INVALID_SOCKET && listen(sock, backlog) != 0) {
         ns_sockclose(sock);
-        sock = INVALID_SOCKET;
+        sock = NS_INVALID_SOCKET;
     }
 
     return sock;
@@ -1127,7 +1127,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;
     unsigned long int i;
-    NS_SOCKET n = INVALID_SOCKET;
+    NS_SOCKET n = NS_INVALID_SOCKET;
     int rc;
 
     FD_ZERO(&ifds);
@@ -1135,7 +1135,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     FD_ZERO(&efds);
 
     for (i = 0; i < nfds; ++i) {
-        if (fds[i].fd == INVALID_SOCKET) {
+        if (fds[i].fd == NS_INVALID_SOCKET) {
             continue;
         }
 #ifndef _MSC_VER
@@ -1167,7 +1167,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     }
     for (i = 0; i < nfds; ++i) {
         fds[i].revents = 0;
-        if (fds[i].fd == INVALID_SOCKET) {
+        if (fds[i].fd == NS_INVALID_SOCKET) {
             continue;
         }
         if (FD_ISSET(fds[i].fd, &ifds)) {

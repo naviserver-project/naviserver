@@ -113,7 +113,7 @@ Ns_ModuleInit(char *server, char *module)
  *      Open a listening TCP socket in non-blocking mode.
  *
  * Results:
- *      The open socket or INVALID_SOCKET on error.
+ *      The open socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      Enable TCP_DEFER_ACCEPT if available.
@@ -127,7 +127,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
     NS_SOCKET sock;
 
     sock = Ns_SockListenEx((char*)address, port, backlog);
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
 	Config *cfg = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
@@ -165,7 +165,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock,
     int     status = NS_DRIVER_ACCEPT_ERROR;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
-    if (sock->sock != INVALID_SOCKET) {
+    if (sock->sock != NS_INVALID_SOCKET) {
 
 #ifdef __APPLE__
       /* 
@@ -343,9 +343,9 @@ Keep(Ns_Sock *sock)
 static void
 Close(Ns_Sock *sock)
 {
-    if (sock->sock != INVALID_SOCKET) {
+    if (sock->sock != NS_INVALID_SOCKET) {
         ns_sockclose(sock->sock);
-        sock->sock = INVALID_SOCKET;
+        sock->sock = NS_INVALID_SOCKET;
     }
 }
 

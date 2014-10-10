@@ -306,7 +306,7 @@ NsTclSockListenObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
     sock = Ns_SockListen(addr, port);
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
                                "could not listen on \"",
                                Tcl_GetString(objv[1]), ":", 
@@ -349,7 +349,7 @@ NsTclSockAcceptObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         return TCL_ERROR;
     }
     sock = Ns_SockAccept(sock, NULL, 0);
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "accept failed: ",
                                Tcl_PosixError(interp), NULL);
@@ -533,7 +533,7 @@ NsTclSockOpenObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         sock = Ns_SockTimedConnect2(host, port, lhost, lport, &timeout);
     }
 
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                                "can't connect to \"", host, ":",
                                Tcl_GetString(objv[first+1]), "\"; ",
@@ -663,8 +663,8 @@ NsTclSelectObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
         
         do {
             sock = select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
-        } while (sock == INVALID_SOCKET && errno == EINTR);
-        if (sock == INVALID_SOCKET) {
+        } while (sock == NS_INVALID_SOCKET && errno == EINTR);
+        if (sock == NS_INVALID_SOCKET) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
                                    Tcl_PosixError(interp), NULL);
         } else {
@@ -1088,7 +1088,7 @@ EnterDup(Tcl_Interp *interp, NS_SOCKET sock)
     assert(interp != NULL);
 
     sock = ns_sockdup(sock);
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
         Tcl_AppendResult(interp, "could not dup socket: ", 
                          ns_sockstrerror(errno), NULL);
         return TCL_ERROR;

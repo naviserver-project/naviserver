@@ -746,7 +746,7 @@ Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
 		 (int (*) (const void *left, const void *right)) CmpKeyWithInt);
 }
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define bsearch(a,b,c,d,e) NsBsearch((a),(b),(c),(d),(e))
 
 /*

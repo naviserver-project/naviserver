@@ -543,7 +543,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
 
     if (mode == 'I' || mode == 'R' || mode == 'S') {
-        int status;
+	int status = TCL_OK;
 
         Ns_ThreadSetName("-service-");
         switch (mode) {

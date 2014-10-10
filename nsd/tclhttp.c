@@ -711,7 +711,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
     strncpy(hostBuffer, host, sizeof(hostBuffer));
     sock = Ns_SockAsyncConnect(hostBuffer, portNr);
 
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
 	Tcl_AppendResult(interp, "connect to \"", url, "\" failed: ",
 	 		 ns_sockstrerror(ns_sockerrno), NULL);
 	return TCL_ERROR;

@@ -125,7 +125,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     int             status, n;
     unsigned int    tosend;
 
-    sock = INVALID_SOCKET;
+    sock = NS_INVALID_SOCKET;
     Ns_DStringInit(&ds);
 
     /*
@@ -145,7 +145,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
         request.port = 80;
     }
     sock = Ns_SockConnect(request.host, request.port);
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
         Ns_Log(Error, "urlopen: failed to connect to '%s': '%s'",
                url, ns_sockstrerror(ns_sockerrno));
         goto done;
@@ -218,7 +218,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
  done:
     Ns_ResetRequest(&request);
 
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
         ns_sockclose(sock);
     }
     Ns_DStringFree(&ds);

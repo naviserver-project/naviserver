@@ -738,7 +738,7 @@ Ns_ConnSock(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return (connPtr->sockPtr ? connPtr->sockPtr->sock : INVALID_SOCKET);
+    return (connPtr->sockPtr ? connPtr->sockPtr->sock : NS_INVALID_SOCKET);
 }
 
 /*
@@ -1916,7 +1916,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
         return NULL;
     }
 
-    if (connPtr->sockPtr->sock == INVALID_SOCKET) {
+    if (connPtr->sockPtr->sock == NS_INVALID_SOCKET) {
         Tcl_AppendResult(itPtr->interp, "no socket for connection", NULL);
         return NULL;
     }
@@ -1953,7 +1953,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
     }
 
     Ns_SockSetBlocking(connPtr->sockPtr->sock);
-    connPtr->sockPtr->sock = INVALID_SOCKET;
+    connPtr->sockPtr->sock = NS_INVALID_SOCKET;
 
     return chan;
 }

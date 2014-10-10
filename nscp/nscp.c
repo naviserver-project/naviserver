@@ -132,7 +132,7 @@ Ns_ModuleInit(char *server, char *module)
 	return NS_ERROR;
     }
     lsock = Ns_SockListen(addr, port);
-    if (lsock == INVALID_SOCKET) {
+    if (lsock == NS_INVALID_SOCKET) {
 	Ns_Log(Error, "nscp: could not listen on %s:%d", addr, port);
 	return NS_ERROR;
     }
@@ -276,7 +276,7 @@ AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
     sessPtr->modPtr = modPtr;
     len = sizeof(struct sockaddr_in);
     sessPtr->sock = Ns_SockAccept(lsock, (struct sockaddr *) &sessPtr->sa, &len);
-    if (sessPtr->sock == INVALID_SOCKET) {
+    if (sessPtr->sock == NS_INVALID_SOCKET) {
 	Ns_Log(Error, "nscp: accept() failed: %s",
 	       ns_sockstrerror(ns_sockerrno));
 	ns_free(sessPtr);
