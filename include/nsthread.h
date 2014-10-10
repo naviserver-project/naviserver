@@ -147,6 +147,7 @@ typedef int32_t ssize_t;
 #  define access                      _access
 #  define chsize                      _chsize
 #  define close                       _close
+#  define dup                         _dup
 #  define dup2                        _dup2
 #  define fileno                      _fileno
 #  define getpid                      _getpid

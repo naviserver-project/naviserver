@@ -213,7 +213,7 @@ typedef struct WriterSock {
     size_t               size;
     unsigned int         flags;
     int                  streaming;
-    NS_SOCKET            fd;
+    int                  fd;
     char                 *headerString;
     
     union {
