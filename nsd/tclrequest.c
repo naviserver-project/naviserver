@@ -466,7 +466,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
  */
 
 int
-NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
+NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
 {
     Ns_TclCallback      *cbPtr = arg;
     Tcl_DString          ds;
@@ -577,7 +577,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
  */
 
 int
-NsShortcutFilterProc(void *arg, Ns_Conn *conn, int why)
+NsShortcutFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
 {
     return NS_FILTER_BREAK;
 }

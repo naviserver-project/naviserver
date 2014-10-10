@@ -572,7 +572,7 @@ typedef void (Ns_TraceProc)
     (void *arg, Ns_Conn *conn);
 
 typedef int (Ns_FilterProc)
-    (void *arg, Ns_Conn *conn, int why);
+    (void *arg, Ns_Conn *conn, unsigned int why);
 
 typedef int (Ns_LogFilter)
     (void *arg, Ns_LogSeverity severity, Ns_Time *time, char *msg, size_t len);
