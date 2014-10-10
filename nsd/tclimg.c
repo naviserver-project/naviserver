@@ -494,7 +494,7 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         while (1) {
 	    unsigned int i;
-	    uint32_t     numBytes;
+	    uint32_t     numBytes = 0U;
 
             i = JpegNextMarker(chan);
             if (i == EOF || i == M_SOS || i == M_EOI) {
@@ -503,8 +503,8 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
             if (0xC0 <= i && i <= 0xC3) {
 	        uint32_t first;
                 if (JpegRead2Bytes(chan, &first) && ChanGetc(chan) != EOF
-                    && JpegRead2Bytes(chan, wPtr)
-                    && JpegRead2Bytes(chan, hPtr)) {
+                    && JpegRead2Bytes(chan, hPtr)
+                    && JpegRead2Bytes(chan, wPtr)) {
                     return TCL_OK;
                 }
                 break;
