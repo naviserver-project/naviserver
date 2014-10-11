@@ -1117,7 +1117,7 @@ TrieDelete(Trie *triePtr, char *seq, unsigned int flags)
             data = nodePtr->dataNoInherit;
             nodePtr->dataNoInherit = NULL;
             if (nodePtr->deletefuncNoInherit != NULL) {
-                if (!(flags & NS_OP_NODELETE)) {
+                if ((flags & NS_OP_NODELETE) == 0U) {
                         (*nodePtr->deletefuncNoInherit) (data);
                 }
                 nodePtr->deletefuncNoInherit = NULL;
@@ -1126,7 +1126,7 @@ TrieDelete(Trie *triePtr, char *seq, unsigned int flags)
             data = nodePtr->dataInherit;
             nodePtr->dataInherit = NULL;
             if (nodePtr->deletefuncInherit != NULL) {
-                if (!(flags & NS_OP_NODELETE)) {
+                if ((flags & NS_OP_NODELETE) == 0U) {
                     (*nodePtr->deletefuncInherit) (data);
                 }
                 nodePtr->deletefuncInherit = NULL;
@@ -1167,7 +1167,7 @@ CmpChannels(Channel **leftPtrPtr, Channel **rightPtrPtr)
     rcontainsl = Tcl_StringMatch((*leftPtrPtr)->filter,
                                  (*rightPtrPtr)->filter);
 
-    if (lcontainsr && rcontainsl) {
+    if (lcontainsr != 0 && rcontainsl != 0) {
         return 0;
     } else if (lcontainsr) {
         return 1;
@@ -1203,7 +1203,7 @@ CmpKeyWithChannel(CONST char *key, Channel **channelPtrPtr)
 
     lcontainsr = Tcl_StringMatch((*channelPtrPtr)->filter, key);
     rcontainsl = Tcl_StringMatch(key, (*channelPtrPtr)->filter);
-    if (lcontainsr && rcontainsl) {
+    if (lcontainsr != 0 && rcontainsl != 0) {
         return 0;
     } else if (lcontainsr) {
         return 1;
