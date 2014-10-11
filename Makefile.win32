@@ -84,22 +84,65 @@ NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DE
 #
 # --atp@piskorski.com, 2014/09/25 16:29 EDT
 
-build_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm
-install_targets = $(build_targets:_=I)
-clean_targets = $(build_targets:_=C)
+# For the core Naviserver modules, we use the same module/Makefile for
+# both make and nmake.  Unfortunately, it looks like that won't work
+# for add-on modules.  Their makefiles have more diversity, and even
+# if they are did NOT, there are still other stumbling blocks.  E.g.:
+#
+# Microsoft nmake supports an undocumented "include" command, but it
+# apparently ONLY allows hard-coded paths, it does NOT allow using
+# variables!  The documented "!include" command, on the other hand,
+# uses variables in the way you'd expect.
+#
+# So for add-on modules, we will instead use separate
+# module/Makefile.win32 files.
+# --atp@piskorski.com, 2014/10/10 17:25 EDT
 
-all: $(build_targets)
-clean: $(clean_targets)
-install: $(install_targets) I_tcl I_include
+core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm
+module_targets = _FAKE
 
-$(build_targets):
+tgts_core_clean = $(core_targets:_=C)
+tgts_modl_clean = $(module_targets:_=C)
+tgts_core_inst  = $(core_targets:_=I)
+tgts_modl_inst  = $(module_targets:_=I)
+
+all: all-core all-mod
+clean: clean-core clean-mod
+install: install-core install-mod
+
+all-core: $(core_targets)
+all-mod:  $(module_targets)
+clean-core: $(tgts_core_clean)
+clean-mod:  $(tgts_modl_clean)
+install-core: $(tgts_core_inst) I_tcl I_include
+install-mod:  $(tgts_modl_inst)
+
+# Bizarrely, from within nmake changing directories with "pushd" or
+# "popd" only takes effect for THAT ONE LINE, while using "cd" retains
+# the new directory location across multiple nmake command lines!
+# Why, I have no idea.  --atp@piskorski.com, 2014/10/11 05:54 EDT
+
+$(core_targets):
 	pushd $(@:_=) & $(NMAKE) & popd
-$(clean_targets):
+$(module_targets):
+	if not exist "..\$(@:_=)" (echo No such directory:  ..\$(@:_=)) else ( \
+	pushd "..\$(@:_=)" & $(NMAKE) -f Makefile.win32 & popd )
+$(tgts_core_clean):
 	pushd $(@:C=) & $(NMAKE) clean & popd
+$(tgts_modl_clean):
+	@if not exist "..\$(@:C=)" (echo No such directory:  ..\$(@:C=)) else ( \
+	pushd "..\$(@:C=)" & $(NMAKE) -f Makefile.win32 clean & popd )
+
+
+# TODO: I have not used nor debugged the install process here at all,
+# as I currently use a Tcl script for installing on Windows.
+# --atp@piskorski.com, 2014/10/10 12:14 EDT
 
 # Install to the NAVISERVER directory:
-$(install_targets):
+$(tgts_core_inst):
 	pushd $(@:I=) & $(NMAKE) install & popd
+$(tgts_modl_inst):
+	pushd "..\$(@:I=)" & $(NMAKE) -f Makefile.win32 install & popd
 I_tcl:
 	pushd tcl & nmake -f ../include/Makefile.win32 install-tcl & popd
 I_include:
