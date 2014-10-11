@@ -129,7 +129,7 @@ PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, unsigned int a
     Tcl_Obj      *objv[2];
     int           result;
 
-    assert(conn != NULL);
+    assert(connPtr != NULL);
 
     /*
      * Verify the file exists.
@@ -268,7 +268,7 @@ RegisterPage(ClientData arg,
     NsInterp   *itPtr = arg;
     AdpRequest *adp;
 
-    assert(arg != NULL);
+    assert(itPtr != NULL);
     assert(method != NULL);
     assert(url != NULL);
 
