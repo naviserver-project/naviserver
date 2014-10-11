@@ -99,7 +99,7 @@ NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 # --atp@piskorski.com, 2014/10/10 17:25 EDT
 
 core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm
-module_targets = _FAKE
+module_targets = _nsssl
 
 tgts_core_clean = $(core_targets:_=C)
 tgts_modl_clean = $(module_targets:_=C)
