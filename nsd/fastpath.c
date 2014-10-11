@@ -63,6 +63,10 @@ static int  FastStat       (CONST char *path, struct stat *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  FastReturn     (Ns_Conn *conn, int status, CONST char *type,
                             CONST char *file);
+static int  GzipFile       (Tcl_Interp *interp, CONST char *fileName, CONST char *gzFileName) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+
 static Ns_ServerInitProc ConfigServerFastpath;
 
 
@@ -386,6 +390,10 @@ GzipFile(Tcl_Interp *interp, CONST char *fileName, CONST char *gzFileName)
 {
     int result;
     Tcl_DString ds, *dsPtr = &ds;
+
+    assert(interp != NULL);
+    assert(fileName != NULL);
+    assert(gzFileName != NULL);
 
     Tcl_DStringInit(dsPtr);
     Tcl_DStringAppend(dsPtr, "::ns_gzipfile ", 13);

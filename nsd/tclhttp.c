@@ -59,6 +59,9 @@ static void HttpAbort(Ns_HttpTask *httpPtr)  NS_GNUC_NONNULL(1);
 static int HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int outSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static void ProcessReplyHeaderFields(Ns_HttpTask *httpPtr) 
+    NS_GNUC_NONNULL(1);
+
 static Ns_TaskProc HttpProc;
 
 /*
@@ -319,6 +322,8 @@ static void
 ProcessReplyHeaderFields(Ns_HttpTask *httpPtr) 
 {
     char *encString;
+
+    assert(httpPtr != NULL);
 
     Ns_Log(Debug, "ProcessReplyHeaderFields %p", httpPtr->replyHeaders);
 

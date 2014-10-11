@@ -283,6 +283,12 @@ static const Cmd servCmds[] = {
     {NULL, NULL, NULL}
 };
 
+/* 
+ * Locally defined functions.
+ */
+static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr);
+
+
 
 /*
  *----------------------------------------------------------------------

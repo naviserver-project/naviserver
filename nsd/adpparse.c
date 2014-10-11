@@ -85,6 +85,8 @@ static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 static void AppendLengths(AdpCode *codePtr, int *lens, int *lines);
 static void GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr);
 static char *GetScript(char *tag, char *a, char *e, unsigned int *streamPtr);
+static void ParseAtts(char *s, char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -635,6 +637,9 @@ ParseAtts(char *s, char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int at
 {
     char *vs = NULL, *ve = NULL, *as = NULL;
     char end = 0, vsave = 0;
+
+    assert(s != NULL);
+    assert(e != NULL);
 
     if (flagsPtr != NULL) {
         *flagsPtr = 0;

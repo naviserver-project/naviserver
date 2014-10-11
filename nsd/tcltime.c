@@ -44,6 +44,8 @@
 static void  SetTimeInternalRep(Tcl_Obj *objPtr, Ns_Time *timePtr);
 static int   SetTimeFromAny (Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void  UpdateStringOfTime(Tcl_Obj *objPtr);
+static int TmObjCmd(ClientData isgmt, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+
 
 /*
  * Local variables defined in this file.

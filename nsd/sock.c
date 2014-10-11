@@ -61,6 +61,7 @@ static NS_SOCKET SockConnect(char *host, int port, char *lhost, int lport,
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 static int SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
 
+static Ns_SockProc CloseLater;
 
 /*
  *----------------------------------------------------------------------

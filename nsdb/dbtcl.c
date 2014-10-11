@@ -55,8 +55,16 @@ static void EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle 
 static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, char *handleId,
 		       Ns_DbHandle **handle, Tcl_HashEntry **phe);
 static Tcl_InterpDeleteProc FreeData;
-static Tcl_ObjCmdProc DbObjCmd, QuoteListToListObjCmd, GetCsvObjCmd, DbErrorCodeObjCmd,
-       DbErrorMsgObjCmd, GetCsvObjCmd, DbConfigPathObjCmd, PoolDescriptionObjCmd;
+static Tcl_ObjCmdProc 
+    DbConfigPathObjCmd, 
+    DbErrorCodeObjCmd,
+    DbErrorMsgObjCmd, 
+    DbObjCmd, 
+    GetCsvObjCmd, 
+    PoolDescriptionObjCmd,
+    QuoteListToListObjCmd;
+static int ErrorObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char cmd);
+
 
 /*
  * Local variables defined in this file.

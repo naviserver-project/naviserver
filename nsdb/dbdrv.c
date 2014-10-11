@@ -58,9 +58,9 @@ typedef int (ResetProc) (Ns_DbHandle *handle);
 typedef int (SpStartProc) (Ns_DbHandle *handle, char *procname);
 typedef int (SpSetParamProc) (Ns_DbHandle *handle, char *args);
 typedef int (SpExecProc) (Ns_DbHandle *handle);
-typedef int (SpReturnCodeProc) (Ns_DbHandle *dbhandle, char *returnCode,
-				int bufsize);
+typedef int (SpReturnCodeProc) (Ns_DbHandle *dbhandle, char *returnCode, int bufsize);
 typedef Ns_Set *(SpGetParamsProc) (Ns_DbHandle *handle);
+
 
 /*
  * The following structure specifies the driver-specific functions
@@ -96,6 +96,9 @@ typedef struct DbDriver {
  */
 
 static Tcl_HashTable driversTable;
+
+static void UnsupProcId(char *name);
+
 
 
 /*

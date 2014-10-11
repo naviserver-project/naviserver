@@ -42,6 +42,12 @@
 
 static Ns_Conn *GetConn(Tcl_Interp *interp);
 
+static int SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name) 
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  *----------------------------------------------------------------------
@@ -68,6 +74,10 @@ SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name)
     char     save;
     int      i, index = -1;
     size_t   nameLen;
+
+    assert(hdrs != NULL);
+    assert(setName != NULL);
+    assert(name != NULL);
 
     nameLen = strlen(name);
 
@@ -119,6 +129,10 @@ static int
 DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
 {
     int success = 0;
+
+    assert(hdrs != NULL);
+    assert(setName != NULL);
+    assert(name != NULL);
 
     while (1) {
 	int idx = SearchFirstCookie(NULL, hdrs, setName, name);

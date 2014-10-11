@@ -157,6 +157,15 @@ static const char     e[] = {
 };
 
 /*
+ * Locally defined functions
+ */
+static void setkey_private(struct sched *sp, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void encrypt_private(struct sched *sp, char *block, int edflag)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+/*
  * Set up the key schedule from the key.
  */
 
@@ -165,6 +174,9 @@ setkey_private(struct sched *sp, const char *key)
 {
     register int    i, j, k;
     int             t;
+
+    assert(sp != NULL);
+    assert(key != NULL);
 
     /*
      * First, generate C and D by permuting the key.  The low order bit of
@@ -289,6 +301,9 @@ encrypt_private(struct sched *sp, char *block, int edflag)
 
     int             i, ii;
     register int    t, j, k;
+
+    assert(sp != NULL);
+    assert(block != NULL);
 
     /*
      * First, permute the bits in the input

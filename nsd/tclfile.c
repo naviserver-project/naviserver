@@ -47,6 +47,7 @@ typedef struct _NsRegChan {
 
 static void SpliceChannel   (Tcl_Interp *interp, Tcl_Channel chan);
 static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
+static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char *cmd);
 
 
 
