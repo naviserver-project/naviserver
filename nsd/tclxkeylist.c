@@ -24,6 +24,11 @@
 
 #include "nsd.h"
 
+static int TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, char *string);
+static int TclX_IsNullObj(Tcl_Obj *objPtr);
+
+
+
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 /*          Stuff copied from the rest of TclX to avoid dependencies         */
@@ -92,7 +97,7 @@ void NsTclInitKeylistType(void)
  *   TCL_ERROR
  *-----------------------------------------------------------------------------
  */
-int
+static int
 TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, char *string)
 {
     char    *commandName;
@@ -123,7 +128,7 @@ TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, char *string)
  *   True if NULL, FALSE if not.
  *-----------------------------------------------------------------------------
  */
-int
+static int
 TclX_IsNullObj(Tcl_Obj *objPtr)
 {
     int length;
@@ -1526,29 +1531,4 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     return TCL_OK;
 }
 
-/*-----------------------------------------------------------------------------
- * TclX_KeyedListInit --
- *   Initialize the keyed list commands for this interpreter.
- *
- * Parameters:
- *   o interp - Interpreter to add commands to.
- *-----------------------------------------------------------------------------
- */
-void
-TclX_KeyedListInit(Tcl_Interp *interp)
-{
-    Tcl_RegisterObjType(&keyedListType);
-
-    Tcl_CreateObjCommand(interp, "keylget", TclX_KeylgetObjCmd, 
-			 (ClientData) NULL, NULL);
-
-    Tcl_CreateObjCommand(interp, "keylset", TclX_KeylsetObjCmd,
-			 (ClientData) NULL, NULL);
-
-    Tcl_CreateObjCommand(interp, "keyldel", TclX_KeyldelObjCmd,
-			 (ClientData) NULL, NULL);
-
-    Tcl_CreateObjCommand(interp, "keylkeys", TclX_KeylkeysObjCmd,
-                          (ClientData) NULL,NULL);
-}
 
