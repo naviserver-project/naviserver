@@ -798,7 +798,7 @@ Ns_VarIncr(CONST char *server, CONST char *array, CONST char *key, int incr)
 
 int
 Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
-             CONST char *value, size_t len)
+             CONST char *value, ssize_t len)
 {
     NsServer      *servPtr;
     Array         *arrayPtr;
@@ -814,7 +814,7 @@ Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
 
         oldString = Tcl_GetHashValue(hPtr);
-        oldLen = oldString ? strlen(oldString) : 0;
+        oldLen = oldString ? strlen(oldString) : 0U;
 
         newLen = oldLen + (len > -1 ? len : strlen(value)) + 1;
         newString = ns_realloc(oldString, newLen + 1);
@@ -899,7 +899,7 @@ LockArray(NsServer *servPtr, CONST char *array, int create)
         }
         result += (result<<3) + i;
     }
-    bucketPtr = &servPtr->nsv.buckets[result % servPtr->nsv.nbuckets];
+    bucketPtr = &servPtr->nsv.buckets[result % (unsigned int)servPtr->nsv.nbuckets];
 
     Ns_MutexLock(&bucketPtr->lock);
     if (unlikely(create)) {

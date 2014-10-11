@@ -189,7 +189,7 @@ NsWin32ErrMsg(DWORD err)
         msg = ns_malloc(100);
         Ns_TlsSet(&tls, msg);
     }
-    snprintf(msg, 100, "win32 error code: %d", err);
+    snprintf(msg, 100, "win32 error code: %lu", err);
 
     return msg;
 }

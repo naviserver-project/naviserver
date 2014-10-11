@@ -1226,7 +1226,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
     Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
-                     Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+                     (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
                      Ns_LogSeverityName(severity));
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(dsPtr, "\n    ");

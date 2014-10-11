@@ -2234,7 +2234,7 @@ Ns_VarIncr(CONST char *server, CONST char *array, CONST char *key, int count);
 
 NS_EXTERN int
 Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
-             CONST char *value, size_t len);
+             CONST char *value, ssize_t len);
 
 /*
  * sched.c:

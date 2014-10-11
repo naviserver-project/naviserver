@@ -45,9 +45,9 @@
 #define TAG_SERVER  4
 
 #define APPEND      "ns_adp_append "
-#define APPEND_LEN  (sizeof(APPEND)-1)
+#define APPEND_LEN  (int)(sizeof(APPEND)-1)
 
-#define LENSZ       (sizeof(int))
+#define LENSZ       (int)(sizeof(int))
 
 /*
  * The following structure maintains proc and adp registered tags.

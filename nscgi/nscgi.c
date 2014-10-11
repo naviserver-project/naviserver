@@ -267,7 +267,7 @@ CgiRequest(void *arg, Ns_Conn *conn)
      * Check for input overflow and initialize the CGI context.
      */
 
-    if (modPtr->maxInput > 0 && conn->contentLength > modPtr->maxInput) {
+    if (modPtr->maxInput > 0 && (int)conn->contentLength > modPtr->maxInput) {
         return Ns_ConnReturnBadRequest(conn, "Exceeded maximum CGI input size");
     }
     if (CgiInit(&cgi, mapPtr, conn) != NS_OK) {

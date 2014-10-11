@@ -259,7 +259,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
      * HTTP chunked header/footer pair. Use the stack if possible.
      */
 
-    if (nbufs + 2 + 1 > (sizeof(sbufs) / sizeof(struct iovec))) {
+    if (nbufs + 2 + 1 > (int)(sizeof(sbufs) / sizeof(struct iovec))) {
         sbufPtr = ns_calloc(nbufs + 2 + 1, sizeof(struct iovec));
     }
     nsbufs = 0;
