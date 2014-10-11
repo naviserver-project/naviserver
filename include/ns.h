@@ -1107,7 +1107,7 @@ Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
  */
 
 NS_EXTERN int
-Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t towrite, unsigned int flags)
+Ns_ConnWriteChars(Ns_Conn *conn, CONST char *buf, size_t toWrite, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -1115,7 +1115,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t towrite, unsigned int flags)
+Ns_ConnWriteData(Ns_Conn *conn, CONST void *buf, size_t toWrite, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -1160,11 +1160,11 @@ Ns_ConnFlushContent(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ConnGets(char *outBuffer, size_t inSize, Ns_Conn *conn)
+Ns_ConnGets(char *buf, size_t bufsize, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN size_t
-Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toread)
+Ns_ConnRead(Ns_Conn *conn, void *vbuf, size_t toRead)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
@@ -1176,7 +1176,7 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_ConnCopyToDString(Ns_Conn *conn, size_t ncopy, Ns_DString *dsPtr)
+Ns_ConnCopyToDString(Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
@@ -1193,15 +1193,15 @@ Ns_ConnCopyToChannel(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan)
 
 
 NS_EXTERN int
-Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, size_t towrite)
+Ns_ConnWrite(Ns_Conn *conn, CONST void *buf, size_t toWrite)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN int
-Ns_WriteConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
+Ns_WriteConn(Ns_Conn *conn, CONST char *buf, size_t toWrite)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVData);
 
 NS_EXTERN int
-Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t towrite)
+Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t toWrite)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_ConnWriteVChars);
 
 NS_EXTERN int
@@ -2474,7 +2474,7 @@ Ns_ResetVec(struct iovec *iov, int nbufs, size_t sent)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN size_t
-Ns_SumVec(struct iovec *iov, int nbufs)
+Ns_SumVec(struct iovec *bufs, int nbufs)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -2485,7 +2485,7 @@ Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout);
 NS_EXTERN int
 Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr);
 NS_EXTERN int
-Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t nrecv,
+Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t toWrite,
 	    Ns_Time *timeoutPtr);
 NS_EXTERN int
 Ns_SockSend(NS_SOCKET sock, void *vbuf, size_t nsend,

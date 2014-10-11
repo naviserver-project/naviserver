@@ -107,20 +107,20 @@ Ns_SetVec(struct iovec *iov, int i, CONST void *data, size_t len)
  */
 
 int
-Ns_ResetVec(struct iovec *iov, int nbufs, size_t sent)
+Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 {
     int     i;
 
     for (i = 0; i < nbufs && sent > 0; i++) {
-        char   *data = iov[i].iov_base;
-	size_t  len  = iov[i].iov_len;
+        char   *data = bufs[i].iov_base;
+	size_t  len  = bufs[i].iov_len;
 
         if (len > 0) {
             if (sent >= len) {
                 sent -= len;
-                Ns_SetVec(iov, i, NULL, 0);
+                Ns_SetVec(bufs, i, NULL, 0);
             } else {
-                Ns_SetVec(iov, i, data + sent, len - sent);
+                Ns_SetVec(bufs, i, data + sent, len - sent);
                 break;
             }
         }
@@ -306,16 +306,16 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
  */
 
 int
-Ns_SockRecv(NS_SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
+Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t toRead, Ns_Time *timePtr)
 {
     int nread;
 
-    nread = recv(sock, buf, toread, 0);
+    nread = recv(sock, vbuf, toRead, 0);
 
     if (nread == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_READ, timePtr) == NS_OK) {
-        nread = recv(sock, buf, toread, 0);
+        nread = recv(sock, vbuf, toRead, 0);
     }
 
     return nread;
@@ -340,16 +340,16 @@ Ns_SockRecv(NS_SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
  */
 
 int
-Ns_SockSend(NS_SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
+Ns_SockSend(NS_SOCKET sock, void *vbuf, size_t toWrite, Ns_Time *timeoutPtr)
 {
     int nwrote;
 
-    nwrote = send(sock, buf, towrite, 0);
+    nwrote = send(sock, vbuf, toWrite, 0);
 
     if (nwrote == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-        nwrote = send(sock, buf, towrite, 0);
+        nwrote = send(sock, vbuf, toWrite, 0);
     }
 
     return nwrote;

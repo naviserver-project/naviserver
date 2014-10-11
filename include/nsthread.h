@@ -236,7 +236,7 @@ struct iovec {
 /*
  * The following is for supporting our own poll() emulation.
  */
-# ifndef POLLIN 
+# ifndef POLLIN
 #  define POLLIN                      0x0001U
 #  define POLLPRI                     0x0002U
 #  define POLLOUT                     0x0004U

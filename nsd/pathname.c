@@ -51,7 +51,7 @@ static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1);
-static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
+static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawHost)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -295,27 +295,27 @@ Ns_MakePath(Ns_DString *dest, ...)
  */
 
 char *
-Ns_HashPath(Ns_DString *dest, CONST char *string, int levels)
+Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels)
 {
     CONST char *p = string;
     int         i;
 
     for (i = 0; i < levels; ++i) {
-        if (dest->string[dest->length] != '/') {
-            Ns_DStringNAppend(dest, "/", 1);
+        if (dsPtr->string[dsPtr->length] != '/') {
+            Ns_DStringNAppend(dsPtr, "/", 1);
         }
         while (*p == '.' || ISSLASH(*p)) {
             ++p;
         }
         if (*p != '\0') {
-            Ns_DStringNAppend(dest, p, 1);
+            Ns_DStringNAppend(dsPtr, p, 1);
             p++;
         } else {
-            Ns_DStringNAppend(dest, "_", 1);
+            Ns_DStringNAppend(dsPtr, "_", 1);
         }
     }
 
-    return Ns_DStringValue(dest);
+    return Ns_DStringValue(dsPtr);
 }
 
 
@@ -931,9 +931,8 @@ MakePath(Ns_DString *dest, va_list *pap)
  *
  *----------------------------------------------------------------------
  */
-
 static char *
-ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
+ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawHost)
 {
     char       *safehost, *path;
     Ns_Conn    *conn;
@@ -949,24 +948,24 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
          * Prefer to run a user-registered Ns_ServerRootProc.
          */
 
-        path = (servPtr->vhost.serverRootProc)(dest, rawhost, servPtr->vhost.serverRootArg);
+        path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
         if (path == NULL) {
             goto defpath;
         }
 
     } else if (servPtr->vhost.enabled
-               && (rawhost != NULL
+               && (rawHost != NULL
                    || ((conn = Ns_GetConn()) != NULL
                        && (headers = Ns_ConnHeaders(conn)) != NULL
-                       && (rawhost = Ns_SetIGet(headers, "Host")) != NULL))
-               && *rawhost != '\0') {
+                       && (rawHost = Ns_SetIGet(headers, "Host")) != NULL))
+               && *rawHost != '\0') {
         char *p;
 
         /*
          * Bail out if there are suspicious characters in the unprocessed Host.
          */
 
-        if (!Ns_StrIsHost(rawhost)) {
+        if (!Ns_StrIsHost(rawHost)) {
             goto defpath;
         }
 
@@ -975,7 +974,7 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
          */
 
         Ns_DStringInit(&ds);
-        safehost = Ns_DStringAppend(&ds, rawhost);
+        safehost = Ns_DStringAppend(&ds, rawHost);
 
         Ns_StrToLower(safehost);
         if ((servPtr->vhost.opts & NSD_STRIP_WWW)

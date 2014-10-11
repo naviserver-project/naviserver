@@ -400,10 +400,12 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->servPtr      = servPtr;
 
     drvPtr->maxinput     = Ns_ConfigWideIntRange(path, "maxinput",
-                                             1024*1024,    1024, LLONG_MAX);
+						 (Tcl_WideInt)1024*1024, 
+						 (Tcl_WideInt)1024, LLONG_MAX);
 
     drvPtr->maxupload     = Ns_ConfigWideIntRange(path, "maxupload",
-                                             0,            0, drvPtr->maxinput);
+						  (Tcl_WideInt)0,            
+						  (Tcl_WideInt)0, drvPtr->maxinput);
 
     drvPtr->maxline      = Ns_ConfigIntRange(path, "maxline",
                                              8192,         256, INT_MAX);
@@ -439,8 +441,9 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                                              256,          1, INT_MAX);
 
     drvPtr->readahead    = Ns_ConfigWideIntRange(path, "readahead",
-                                             drvPtr->bufsize,
-                                             drvPtr->bufsize, drvPtr->maxinput);
+						 (Tcl_WideInt)drvPtr->bufsize,
+						 (Tcl_WideInt)drvPtr->bufsize, 
+						 drvPtr->maxinput);
 
     drvPtr->acceptsize   = Ns_ConfigIntRange(path, "acceptsize",
                                              drvPtr->backlog, 1, INT_MAX);

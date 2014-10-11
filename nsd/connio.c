@@ -52,7 +52,7 @@
 
 static int ConnSend(Ns_Conn *conn, Tcl_WideInt nsend, Tcl_Channel chan,
                     FILE *fp, int fd);
-static int ConnCopy(Ns_Conn *conn, size_t ncopy, Tcl_Channel chan,
+static int ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan,
                     FILE *fp, int fd);
 
 static int CheckKeep(Conn *connPtr);
@@ -967,17 +967,17 @@ Ns_ConnReadHeaders(Ns_Conn *conn, Ns_Set *set, size_t *nreadPtr)
  */
 
 int
-Ns_ConnCopyToDString(Ns_Conn *conn, size_t tocopy, Ns_DString *dsPtr)
+Ns_ConnCopyToDString(Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
 {
     Conn    *connPtr = (Conn *) conn;
     Request *reqPtr = connPtr->reqPtr;
 
-    if (connPtr->sockPtr == NULL || reqPtr->avail < tocopy) {
+    if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         return NS_ERROR;
     }
-    Ns_DStringNAppend(dsPtr, reqPtr->next, (int)tocopy);
-    reqPtr->next  += tocopy;
-    reqPtr->avail -= tocopy;
+    Ns_DStringNAppend(dsPtr, reqPtr->next, (int)toCopy);
+    reqPtr->next  += toCopy;
+    reqPtr->avail -= toCopy;
 
     return NS_OK;
 }
@@ -1018,13 +1018,13 @@ Ns_ConnCopyToFd(Ns_Conn *conn, size_t ncopy, int fd)
 }
 
 static int
-ConnCopy(Ns_Conn *conn, size_t tocopy, Tcl_Channel chan, FILE *fp, int fd)
+ConnCopy(Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 {
     Conn    *connPtr = (Conn *) conn;
     Request *reqPtr = connPtr->reqPtr;
-    long     nwrote, ncopy = (long)tocopy;
+    long     nwrote, ncopy = (long)toCopy;
 
-    if (connPtr->sockPtr == NULL || reqPtr->avail < tocopy) {
+    if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         return NS_ERROR;
     }
     while (ncopy > 0) {
