@@ -981,11 +981,11 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
         safehost = Ns_DStringAppend(&ds, rawhost);
 
         Ns_StrToLower(safehost);
-        if (servPtr->vhost.opts & NSD_STRIP_WWW
+        if ((servPtr->vhost.opts & NSD_STRIP_WWW)
             && strncmp(safehost, "www.", 4) == 0) {
             safehost = &safehost[4];
         }
-        if (servPtr->vhost.opts & NSD_STRIP_PORT
+        if ((servPtr->vhost.opts & NSD_STRIP_PORT)
             && (p = strrchr(safehost, ':')) != NULL) {
             *p = '\0';
         }

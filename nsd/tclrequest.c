@@ -263,7 +263,7 @@ NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
         return TCL_ERROR;
     }
     Ns_UnRegisterRequestEx(itPtr->servPtr->server, method, url,
-                           (noinherit | recurse));
+                           ((unsigned int)noinherit | (unsigned int)recurse));
 
     return TCL_OK;
 }

@@ -939,7 +939,7 @@ NsAdpLogError(NsInterp *itPtr)
                 len = 150;
                 dot = "...";
             }
-            while ((adp[len] & 0xC0) == 0x80) {
+            while (((unsigned char)adp[len] & 0xC0U) == 0x80U) {
                 /* NB: Avoid truncating multi-byte UTF-8 character. */
                 len--;
                 dot = "...";

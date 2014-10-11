@@ -67,8 +67,8 @@
 #define ADP_RETURN                     3
 #define ADP_TIMEOUT                    4
 
-#define NSD_STRIP_WWW                  1
-#define NSD_STRIP_PORT                 2
+#define NSD_STRIP_WWW                  0x01U
+#define NSD_STRIP_PORT                 0x02U
 
 #define MAX_URLSPACES                  16
 

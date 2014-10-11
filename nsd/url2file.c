@@ -447,7 +447,8 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    Ns_UnRegisterUrl2FileProc(itPtr->servPtr->server, url, noinherit | recurse);
+    Ns_UnRegisterUrl2FileProc(itPtr->servPtr->server, url, 
+			      (unsigned int)noinherit | (unsigned int)recurse);
 
     return TCL_OK;
 }

@@ -35,9 +35,9 @@
 
 #include "nsd.h"
 
-#define SERV_STREAM 1
-#define SERV_RUNAT  2
-#define SERV_NOTTCL 4
+#define SERV_STREAM 0x01U
+#define SERV_RUNAT  0x02U
+#define SERV_NOTTCL 0x04U
 
 #define TAG_ADP     1
 #define TAG_PROC    2

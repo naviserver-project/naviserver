@@ -46,7 +46,7 @@ typedef struct Event {
     Ns_EventProc      *proc;          /* Event callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
-    int                events;        /* Poll events. */
+    unsigned int       events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
     unsigned int       status;        /* Manipulated by Ns_EventCallback(). */
 } Event;

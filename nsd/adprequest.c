@@ -42,9 +42,9 @@
  */
 
 typedef struct AdpRequest {
-    Ns_Time  expires;     /* Time to live for cached output. */
-    int      flags;       /* ADP options. */
-    char     file[1];     /* Optional, path to specific page. */
+    Ns_Time       expires;     /* Time to live for cached output. */
+    unsigned int  flags;       /* ADP options. */
+    char          file[1];     /* Optional, path to specific page. */
 } AdpRequest;
 
 

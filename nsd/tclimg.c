@@ -393,8 +393,8 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    depth = 1 << (((buf[4]) & 0x7) + 1);
-    colormap = ((buf[4]) & 0x80 ? 1 : 0);
+    depth = 1 << ((buf[4] & 0x7U) + 1);
+    colormap = ((buf[4] & 0x80U) ? 1 : 0);
 
     if (colormap) {
         if (Tcl_Read(chan, (char *)buf, (3*depth)) != (3*depth)) {

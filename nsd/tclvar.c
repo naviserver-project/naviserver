@@ -567,7 +567,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                    &lobjv) != TCL_OK) {
             return TCL_ERROR;
         }
-        if (lobjc & 1) {
+        if (lobjc % 2 == 1) {
             Tcl_AppendResult(interp, "invalid list: ",
                              Tcl_GetString(objv[3]), NULL);
             return TCL_ERROR;

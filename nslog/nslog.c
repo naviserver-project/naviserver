@@ -59,7 +59,7 @@ typedef struct {
     CONST char **extheaders;
     int          numheaders;
     int          fd;
-    int          flags;
+    unsigned int flags;
     int          maxbackup;
     int          maxlines;
     int          curlines;

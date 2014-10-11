@@ -883,7 +883,8 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     Tcl_Obj        *scriptObj;
     Ns_DString      ds;
     char           *script;
-    int             remain = 0, opt, length, when = 0, result = TCL_OK;
+    int             remain = 0, opt, length, result = TCL_OK;
+    unsigned int    when = 0U;
 
     static const char *opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",

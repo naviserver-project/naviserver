@@ -52,7 +52,7 @@ typedef struct Mod {
     Ns_Set         *interps;
     Ns_Set         *mergeEnv;
     struct Cgi     *firstCgiPtr;
-    int		    flags;
+    unsigned int    flags;
     int             maxInput;
     int             maxCgi;
     int     	    maxWait;

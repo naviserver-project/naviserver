@@ -320,7 +320,8 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
     int             id, interval;
-    int             remain = 0, flags = 0, once = 0, thread = 0;
+    int             remain = 0, once = 0, thread = 0;
+    unsigned int    flags = 0U;
 
     Ns_ObjvSpec opts[] = {
         {"-once",    Ns_ObjvBool,  &once,   (void *) 1},

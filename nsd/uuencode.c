@@ -121,9 +121,9 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
 	    line = 0;
         }       
 	*q++ = ENC(p[0] >> 2);
-	*q++ = ENC(((p[0] << 4) & 060) | ((p[1] >> 4) & 017));
-	*q++ = ENC(((p[1] << 2) & 074) | ((p[2] >> 6) & 03));
-	*q++ = ENC(p[2] & 077);
+	*q++ = ENC(((p[0] << 4) & 060U) | ((p[1] >> 4) & 017U));
+	*q++ = ENC(((p[1] << 2) & 074U) | ((p[2] >> 6) & 03U));
+	*q++ = ENC(p[2] & 077U);
 	p += 3;
         line += 4;
     }
@@ -136,11 +136,11 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
     if (n > 0) {
 	*q++ = ENC(p[0] >> 2);
 	if (n == 1) {
-	    *q++ = ENC((p[0] << 4) & 060);
+	    *q++ = ENC((p[0] << 4) & 060U);
 	    *q++ = '=';
 	} else {
-	    *q++ = ENC(((p[0] << 4) & 060) | ((p[1] >> 4) & 017));
-	    *q++ = ENC((p[1] << 2) & 074);
+	    *q++ = ENC(((p[0] << 4) & 060U) | ((p[1] >> 4) & 017U));
+	    *q++ = ENC((p[1] << 2) & 074U);
 	}
 	*q++ = '=';
     }
