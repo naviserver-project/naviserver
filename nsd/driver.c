@@ -4417,7 +4417,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */
 void 
-NsAsyncWriterQueueEnable() 
+NsAsyncWriterQueueEnable(void) 
 {
     SpoolerQueue  *queuePtr;
 
@@ -4640,7 +4640,7 @@ AsyncWriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     unsigned char   c;
-    int             n, err, stopping, pollto, status;
+    int             n, stopping, pollto, status;
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 
@@ -4727,14 +4727,13 @@ AsyncWriterThread(void *arg)
         while (curPtr != NULL) {
 
             nextPtr = curPtr->nextPtr;
-            err = status = NS_OK;
+            status = NS_OK;
 
 	    /*
 	     * write the actual data and allow for partial write operations.
 	     */
 	    n = write(curPtr->fd, curPtr->buf, curPtr->bufsize);
 	    if (n < 0) {
-		err = errno;
 		status = NS_ERROR;
 	    } else {
 		curPtr->size -= n;

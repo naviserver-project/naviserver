@@ -1096,7 +1096,7 @@ NS_EXTERN void
 NsAsyncWriterQueueDisable(int shutdown);
 
 NS_EXTERN void
-NsAsyncWriterQueueEnable();
+NsAsyncWriterQueueEnable(void);
 
 NS_EXTERN Ns_Time *
 Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1);
