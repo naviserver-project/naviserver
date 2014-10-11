@@ -48,6 +48,7 @@ typedef struct _NsRegChan {
 static void SpliceChannel   (Tcl_Interp *interp, Tcl_Channel chan);
 static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -65,14 +66,6 @@ static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
  *
  *----------------------------------------------------------------------
  */
-
-static int
-GetOpenChannel(Tcl_Interp *interp, Tcl_Obj *obj, int write,
-               int check, Tcl_Channel *chanPtr)
-{
-    return Ns_TclGetOpenChannel(interp, Tcl_GetString(obj),
-                                write, check, chanPtr);
-}
 
 int
 Ns_TclGetOpenChannel(Tcl_Interp *interp, CONST char *chanId, int write,
@@ -414,7 +407,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");
         return TCL_ERROR;
     }
-    if (GetOpenChannel(interp, objv[1], 0, 1, &chan) != TCL_OK) {
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
     if (objc == 3 && Tcl_GetIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
