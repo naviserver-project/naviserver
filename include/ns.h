@@ -2693,9 +2693,6 @@ Ns_TclEval(Ns_DString *dsPtr, CONST char *server, CONST char *script)
      NS_GNUC_NONNULL(3);
 
 NS_EXTERN Tcl_Interp *
-NS_TclCreateInterp();
-
-NS_EXTERN Tcl_Interp *
 Ns_TclAllocateInterp(CONST char *server);
 
 NS_EXTERN void

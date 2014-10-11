@@ -134,7 +134,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST 
     }
 
     if (privateInterp) {
-      interp = NS_TclCreateInterp();
+      interp = NsTclCreateInterp();
     }
     status = Tcl_FSLoadFile(interp, pathObj, init, "Ns_ModuleVersion",
                             &tclInitProc, &tclVerProc, &lh, &uPtr);

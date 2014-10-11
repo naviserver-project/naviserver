@@ -1505,7 +1505,7 @@ GetCacheEntry(NsServer *servPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NS_TclCreateInterp --
+ * NsTclCreateInterp --
  *
  *      Create a fresh new Tcl interp. The creation is serialized to
  *      prevent concurrent interp creations.
@@ -1520,7 +1520,7 @@ GetCacheEntry(NsServer *servPtr)
  */
 
 Tcl_Interp *
-NS_TclCreateInterp() {
+NsTclCreateInterp() {
     static Ns_Mutex initLock = NULL; 
     Tcl_Interp *interp;
 
@@ -1557,7 +1557,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
      * Create and initialize a basic Tcl interp.
      */
 
-    interp = NS_TclCreateInterp();
+    interp = NsTclCreateInterp();
 
     Tcl_InitMemory(interp);
     if (Tcl_Init(interp) != TCL_OK) {

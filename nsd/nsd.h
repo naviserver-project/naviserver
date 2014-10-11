@@ -1380,6 +1380,7 @@ NS_EXTERN Tcl_AppInitProc NsTclAppInit;
 NS_EXTERN void NsTclInitServer(CONST char *server)
      NS_GNUC_NONNULL(1);
 NS_EXTERN void NsInitStaticModules(CONST char *server);
+NS_EXTERN Tcl_Interp *NsTclCreateInterp(void);
 NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 NS_EXTERN void NsFreeConnInterp(Conn *connPtr)
