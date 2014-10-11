@@ -1358,7 +1358,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Tcl_Obj *keylVarPtr, *newVarObj;
     char *varName, *key;
@@ -1418,7 +1418,7 @@ TclX_KeylsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *----------------------------------------------------------------------------
  */
 int
-TclX_KeyldelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Tcl_Obj *keylVarPtr, *keylPtr;
     char *varName;
@@ -1481,7 +1481,7 @@ TclX_KeyldelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylkeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Tcl_Obj *keylPtr, *listObjPtr;
     char *varName, *key;

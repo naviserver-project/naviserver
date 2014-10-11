@@ -736,7 +736,7 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
  */
 
 int
-NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                Tcl_Obj *CONST objv[])
 {
     Ns_LogSeverity severity;
@@ -787,7 +787,7 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
     int             count, opt, i;
@@ -947,8 +947,8 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
+		   int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
 {
     if (Ns_LogRoll() != NS_OK) {
         Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
@@ -1515,13 +1515,13 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
  */
 
 void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
+Ns_SetLogFlushProc(Ns_LogFlushProc *UNUSED(procPtr))
 {
     Ns_Fatal("Ns_SetLogFlushProc: deprecated, use Ns_AddLogFilter() instead");
 }
 
 void
-Ns_SetNsLogProc(Ns_LogProc *procPtr)
+Ns_SetNsLogProc(Ns_LogProc *UNUSED(procPtr))
 {
     Ns_Fatal("Ns_SetNsLogProc: deprecated, use Ns_AddLogFilter() instead");
 }

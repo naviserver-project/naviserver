@@ -1156,7 +1156,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
  */
 
 static void
-JobThread(void *arg)
+JobThread(void *UNUSED(arg))
 {
     CONST char        *err;
     Queue             *queue;
@@ -1322,7 +1322,7 @@ JobThread(void *arg)
  */
 
 static int
-JobAbort(ClientData cd, Tcl_Interp *interp, int code)
+JobAbort(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(code))
 {
     if (interp != NULL) {
         Tcl_SetErrorCode(interp, "ECANCEL", NULL);

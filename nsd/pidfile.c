@@ -40,7 +40,7 @@
  * Local functions defined in this file.
  */
 
-static Tcl_Obj *GetFile(char *procname);
+static Tcl_Obj *GetFile(void);
 
 
 /*
@@ -60,12 +60,12 @@ static Tcl_Obj *GetFile(char *procname);
  */
 
 void
-NsCreatePidFile(char *procname)
+NsCreatePidFile(void)
 {
     Tcl_Obj     *path;
     Tcl_Channel  chan;
 
-    path = GetFile(procname);
+    path = GetFile();
     chan = Tcl_OpenFileChannel(NULL, Tcl_GetString(path), "w", 0644);
     if (chan == NULL) {
     	Ns_Log(Error, "pidfile: failed to open pid file '%s': '%s'",
@@ -106,11 +106,11 @@ NsCreatePidFile(char *procname)
  */
 
 void
-NsRemovePidFile(char *procname)
+NsRemovePidFile(void)
 {
     Tcl_Obj *path;
 
-    path = GetFile(procname);
+    path = GetFile();
     Tcl_IncrRefCount(path);
     if (Tcl_FSDeleteFile(path) != 0) {
     	Ns_Log(Error, "pidfile: failed to remove '%s': '%s'",
@@ -120,7 +120,7 @@ NsRemovePidFile(char *procname)
 }
 
 static Tcl_Obj *
-GetFile(char *procname)
+GetFile(void)
 {
     char *file;
     Tcl_Obj *path;

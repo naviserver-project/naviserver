@@ -275,25 +275,25 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 }
     
 int
-NsTclAtPreStartupObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAtPreStartupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     return AtObjCmd(Ns_RegisterAtPreStartup, interp, objc, objv);
 }
 
 int
-NsTclAtStartupObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAtStartupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     return AtObjCmd(Ns_RegisterAtStartup, interp, objc, objv);
 }
 
 int
-NsTclAtSignalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAtSignalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     return AtObjCmd(Ns_RegisterAtSignal, interp, objc, objv);
 }
 
 int
-NsTclAtExitObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAtExitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     return AtObjCmd(Ns_RegisterAtExit, interp, objc, objv);
 }
@@ -317,7 +317,7 @@ NsTclAtExitObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclAtShutdownObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_TclCallback *cbPtr;
     static int      once = 0;

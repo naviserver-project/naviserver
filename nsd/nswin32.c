@@ -72,7 +72,7 @@ void NsdInit(void);
  *
  * NsBlockSignal --
  *
- *      Mask one specific signale
+ *      Mask one specific signal.
  *
  * Results:
  *      None.
@@ -84,7 +84,7 @@ void NsdInit(void);
  */
 
 void
-NsBlockSignal(int signal)
+NsBlockSignal(int UNUSED(signal))
 {
     return;
 }
@@ -107,19 +107,19 @@ NsBlockSignal(int signal)
  */
 
 void
-NsUnblockSignal(int signal)
+NsUnblockSignal(int UNUSED(signal))
 {
     return;
 }
 
 int
-Ns_SetGroup(char *group)
+Ns_SetGroup(char *UNUSED(group))
 {
     return -1;
 }
 
 int
-Ns_SetUser(char *user)
+Ns_SetUser(char *UNUSED(user))
 {
     return -1;
 }
@@ -143,7 +143,7 @@ Ns_SetUser(char *user)
  */
 
 BOOL APIENTRY
-DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
+DllMain(HANDLE hModule, DWORD why, LPVOID UNUSED(lpReserved))
 {
     WSADATA wsd;
 

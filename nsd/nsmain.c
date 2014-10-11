@@ -612,7 +612,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Create the pid file.
      */
 
-    NsCreatePidFile(procname);
+    NsCreatePidFile();
 
     /*
      * Initialize the virtual servers.
@@ -804,7 +804,7 @@ Ns_WaitForStartup(void)
 void
 Ns_StopServer(char *server)
 {
-    Ns_Log(Warning, "nsmain: immediate server shutdown requested");
+    Ns_Log(Warning, "nsmain: immediate shutdown of server %s requested", server);
     NsSendSignal(NS_SIGTERM);
 }
 
@@ -828,7 +828,7 @@ Ns_StopServer(char *server)
  */
 
 int
-NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     int timeout = 0, signal = NS_SIGTERM;
 

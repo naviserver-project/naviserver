@@ -40,11 +40,11 @@
  */
 
 static int ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[],
-                           int exception);
-static int EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[]);
-static int GetFrame(ClientData arg, AdpFrame **framePtrPtr);
-static int GetOutput(ClientData arg, Tcl_DString **dsPtrPtr);
-static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr);
+                           int exception) NS_GNUC_NONNULL(1);
+static int EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[]) NS_GNUC_NONNULL(1);
+static int GetFrame(ClientData arg, AdpFrame **framePtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int GetOutput(ClientData arg, Tcl_DString **dsPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 
@@ -335,13 +335,13 @@ NsTclAdpCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclAdpEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAdpEvalObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST objv[])
 {
     return EvalObjCmd(arg, objc, objv);
 }
 
 int
-NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST objv[])
 {
     NsInterp *itPtr = arg;
 
@@ -352,6 +352,7 @@ NsTclAdpSafeEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 static int
 EvalObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[])
 {
+    assert(itPtr != NULL);
 
     if (objc < 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "page ?args ...?");
@@ -660,19 +661,19 @@ NsTclAdpDirObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 
 
 int
-NsTclAdpReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAdpReturnObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST objv[])
 {
     return ExceptionObjCmd(arg, objc, objv, ADP_RETURN);
 }
 
 int
-NsTclAdpBreakObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAdpBreakObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc, Tcl_Obj *CONST objv[])
 {
     return ExceptionObjCmd(arg, objc, objv, ADP_BREAK);
 }
 
 int
-NsTclAdpAbortObjCmd(ClientData arg, Tcl_Interp *interp, int objc,  Tcl_Obj *CONST objv[])
+NsTclAdpAbortObjCmd(ClientData arg, Tcl_Interp *UNUSED(interp), int objc,  Tcl_Obj *CONST objv[])
 {
     return ExceptionObjCmd(arg, objc, objv, ADP_ABORT);
 }
@@ -680,6 +681,8 @@ NsTclAdpAbortObjCmd(ClientData arg, Tcl_Interp *interp, int objc,  Tcl_Obj *CONS
 static int
 ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], int exception)
 {
+    assert(itPtr != NULL);
+
     if (objc != 1 && objc != 2) {
         Tcl_WrongNumArgs(itPtr->interp, 1, objv, "?retval?");
         return TCL_ERROR;
@@ -1194,6 +1197,9 @@ GetFrame(ClientData arg, AdpFrame **framePtrPtr)
 {
     NsInterp *itPtr = arg;
 
+    assert(arg != NULL);
+    assert(framePtrPtr != NULL);
+
     if (itPtr->adp.framePtr == NULL) {
         Tcl_SetResult(itPtr->interp, "no active adp", TCL_STATIC);
         return TCL_ERROR;
@@ -1225,6 +1231,9 @@ GetOutput(ClientData arg, Tcl_DString **dsPtrPtr)
 {
     AdpFrame *framePtr = NULL;
 
+    assert(arg != NULL);
+    assert(dsPtrPtr != NULL);
+
     if (GetFrame(arg, &framePtr) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -1254,6 +1263,9 @@ static int
 GetInterp(Tcl_Interp *interp, NsInterp **itPtrPtr)
 {
     NsInterp *itPtr;
+
+    assert(interp != NULL);
+    assert(itPtrPtr != NULL);
 
     itPtr = NsGetInterpData(interp);
     if (itPtr == NULL) {

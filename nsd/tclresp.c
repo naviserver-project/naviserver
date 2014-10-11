@@ -665,8 +665,9 @@ NsTclReturnBadRequestObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 static int
-ReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-        Tcl_Obj *CONST objv[], int (*proc) (Ns_Conn *conn))
+ReturnObjCmd(ClientData arg, Tcl_Interp *interp, 
+	     int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]), 
+	     int (*proc) (Ns_Conn *conn))
 {
     Ns_Conn *conn = NULL;
 

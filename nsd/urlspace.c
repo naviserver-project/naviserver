@@ -263,15 +263,19 @@ static int CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr);
  * Juntion functions
  */
 
-static Junction *JunctionGet(NsServer *servPtr, int id);
+static Junction *JunctionGet(NsServer *servPtr, int id)
+    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
                         unsigned int flags, void (*deletefunc)(void *data))
-        NS_GNUC_NONNULL(2);
-static void *JunctionFind(Junction *juncPtr, char *seq, int fast);
-static void *JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags,
-                               int fast);
-static void *JunctionDeleteNode(Junction *juncPtr, char *seq, unsigned int flags);
-static void JunctionTruncBranch(Junction *juncPtr, char *seq);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void *JunctionFind(Junction *juncPtr, char *seq, int fast)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void *JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void *JunctionDeleteNode(Junction *juncPtr, char *seq, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void JunctionTruncBranch(Junction *juncPtr, char *seq)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * Static variables defined in this file
@@ -430,7 +434,7 @@ Ns_UrlSpecificGetExact(CONST char *server, CONST char *method, CONST char *url,
 
     Ns_DStringInit(&ds);
     MkSeq(&ds, method, url);
-    data = JunctionFindExact(JunctionGet(servPtr, id), ds.string, flags, 0);
+    data = JunctionFindExact(JunctionGet(servPtr, id), ds.string, flags);
     Ns_DStringFree(&ds);
 
     return data;
@@ -1279,6 +1283,8 @@ JunctionGet(NsServer *servPtr, int id)
 {
     Junction *juncPtr;
 
+    assert(servPtr != NULL);
+
     juncPtr = servPtr->urlspace[id];
     if (juncPtr == NULL) {
         juncPtr = ns_malloc(sizeof *juncPtr);
@@ -1292,6 +1298,9 @@ JunctionGet(NsServer *servPtr, int id)
                      (int (*) (const void *left, const void *right)) CmpKeyWithChannelAsStrings);
         servPtr->urlspace[id] = juncPtr;
     }
+
+    assert(juncPtr != NULL);
+
     return juncPtr;
 }
 
@@ -1318,6 +1327,9 @@ JunctionTruncBranch(Junction *juncPtr, char *seq)
     Channel *channelPtr;
     int      i;
     int      n;
+
+    assert(juncPtr != NULL);
+    assert(seq != NULL);
 
     /*
      * Loop over every channel in a junction and truncate the sequence in
@@ -1377,6 +1389,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
     int         depth;
     size_t      l;
     
+    assert(juncPtr != NULL);
     assert(seq != NULL);
 
     depth = 0;
@@ -1472,6 +1485,9 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
     ssize_t  i;
     int      depth = 0, doit;
     void    *data;
+
+    assert(juncPtr != NULL);
+    assert(seq != NULL);
 
     /*
      * After this loop, p will point at the last element in the sequence.
@@ -1592,13 +1608,16 @@ JunctionFind(Junction *juncPtr, char *seq, int fast)
  */
 
 static void *
-JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags, int fast)
+JunctionFindExact(Junction *juncPtr, char *seq, unsigned int flags)
 {
     Channel *channelPtr;
     char    *p;
     size_t  l;
     ssize_t i;
     void   *data = NULL;
+
+    assert(juncPtr != NULL);
+    assert(seq != NULL);
 
     /*
      * Set p to the last element of the sequence.
@@ -1686,6 +1705,9 @@ JunctionDeleteNode(Junction *juncPtr, char *seq, unsigned int flags)
     ssize_t  i;
     int      depth = 0;
     void    *data = NULL;
+
+    assert(juncPtr != NULL);
+    assert(seq != NULL);
 
     /*
      * Set p to the last element of the sequence, and

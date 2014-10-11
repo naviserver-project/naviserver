@@ -212,7 +212,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
  */
 
 int
-Ns_FastPathProc(void *arg, Ns_Conn *conn)
+Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 {
     Conn        *connPtr = (Conn *) conn;
     NsServer    *servPtr = connPtr->poolPtr->servPtr;
@@ -759,7 +759,8 @@ FreeEntry(void *arg)
  */
 // document me, maybe refactor me
 int
-NsTclFastPathCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
+			      int objc, Tcl_Obj *CONST objv[])
 {
     Ns_CacheSearch  search;
     Ns_DString      ds;

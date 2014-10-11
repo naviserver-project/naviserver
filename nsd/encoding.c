@@ -475,7 +475,8 @@ NsFindCharset(CONST char *mimetype, size_t *lenPtr)
  */
 
 int
-NsTclCharsetsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
+		    int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
 {
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
@@ -507,7 +508,7 @@ NsTclCharsetsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclEncodingForCharsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                               Tcl_Obj *CONST objv[])
 {
     Tcl_Encoding encoding;

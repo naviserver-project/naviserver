@@ -562,7 +562,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, size_t length)
  */
 
 int
-Ns_ConnResetReturn(Ns_Conn *conn)
+Ns_ConnResetReturn(Ns_Conn *UNUSED(conn))
 {
     return NS_OK;
 }

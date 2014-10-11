@@ -89,7 +89,7 @@ static Tcl_Channel GetFileChan(Tcl_Interp *interp, char *path);
  */
 
 int
-NsTclImgTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     char       *file, *type = "unknown";
@@ -136,7 +136,7 @@ NsTclImgTypeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclImgMimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     char       *file, *mime = "image/unknown";
@@ -184,7 +184,7 @@ NsTclImgMimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclImgSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     char       *file;
@@ -240,7 +240,7 @@ NsTclImgSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     char       *file;
@@ -285,7 +285,7 @@ NsTclGifSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclPngSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                    Tcl_Obj *CONST objv[])
 {
     char       *file;
@@ -330,7 +330,7 @@ NsTclPngSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclJpegSizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                     Tcl_Obj *CONST objv[])
 {
     char       *file;

@@ -1201,9 +1201,9 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  */
 
 int
-NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    NsInterp *itPtr = arg;
+    NsInterp *itPtr = clientData;
     Ns_Conn *conn = itPtr->conn;
     Conn *connPtr = (Conn *) conn;
     Ns_Request *request;
@@ -1687,7 +1687,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 int
-NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 			int objc, Tcl_Obj *CONST objv[])
 {
     NsServer *servPtr = NsGetInitServer();
@@ -1726,10 +1726,10 @@ NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 int
-NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, 
 			int objc, Tcl_Obj *CONST objv[])
 {
-    NsInterp    *itPtr = arg;
+    NsInterp    *itPtr = clientData;
     int         toCopy = 0;
     char        *chanName;
     Request     *reqPtr;

@@ -82,7 +82,7 @@ main(int argc, char **argv)
  */
 
 static int
-ServerInit(CONST char *server)
+ServerInit(CONST char *UNUSED(server))
 {
     /*
      * Add code here to initialize your server much like an ordinary

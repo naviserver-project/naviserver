@@ -577,7 +577,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
  */
 
 int
-NsShortcutFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
+NsShortcutFilterProc(void *UNUSED(arg), Ns_Conn *UNUSED(conn), unsigned int UNUSED(why))
 {
     return NS_FILTER_BREAK;
 }

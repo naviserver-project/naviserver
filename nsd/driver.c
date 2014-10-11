@@ -163,7 +163,7 @@ static void  SockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
 static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
-static int   SockParse(Sock *sockPtr, int spooler)
+static int   SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
@@ -193,7 +193,7 @@ static int WriterReadFromSpool(WriterSock *curPtr)
     NS_GNUC_NONNULL(1);
 static int WriterSend(WriterSock *curPtr, int *err) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void AsyncWriterRelease(AsyncWriteData *wdPtr, int reason, int err)
+static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -2383,7 +2383,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
         return SOCK_READY;
     }
 
-    n = SockParse(sockPtr, spooler);
+    n = SockParse(sockPtr);
 
     return (int)n;
 }
@@ -2426,7 +2426,7 @@ static char *strnchr(char *buffer, size_t len, int c) {
 }
 
 static int
-SockParse(Sock *sockPtr, int spooler)
+SockParse(Sock *sockPtr)
 {
     Request      *reqPtr;
     Tcl_DString  *bufPtr;
@@ -4139,7 +4139,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 }
 
 int
-NsTclWriterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                   Tcl_Obj *CONST objv[])
 {
     int           fd, opt, rc;
@@ -4600,8 +4600,7 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
  *
  * AsyncWriterRelease --
  *
- *      Deallocate write data. This function has the same interface as
- *      the *Release operations for the writer/spooler threads.
+ *      Deallocate write data. 
  *
  * Results:
  *      None
@@ -4612,7 +4611,7 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
  *----------------------------------------------------------------------
  */
 static void
-AsyncWriterRelease(AsyncWriteData *wdPtr, int reason, int err)
+AsyncWriterRelease(AsyncWriteData *wdPtr)
 {
     assert(wdPtr != NULL);
 
@@ -4747,7 +4746,7 @@ AsyncWriterThread(void *arg)
 	    }
 
             if (status != NS_OK) {
-                AsyncWriterRelease(curPtr, SOCK_WRITEERROR, err);
+                AsyncWriterRelease(curPtr);
                 queuePtr->queuesize--;
             } else {
 
@@ -4759,7 +4758,7 @@ AsyncWriterThread(void *arg)
                 if (curPtr->size > 0) {
                     Push(curPtr, writePtr);
                 } else {
-                    AsyncWriterRelease(curPtr, 0, 0);
+                    AsyncWriterRelease(curPtr);
                     queuePtr->queuesize--;
                 }
             }

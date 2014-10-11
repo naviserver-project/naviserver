@@ -445,7 +445,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
  */
 
 void
-Ns_FreeConnInterp(Ns_Conn *conn)
+Ns_FreeConnInterp(Ns_Conn *UNUSED(conn))
 {
     return;
 }
@@ -1814,7 +1814,7 @@ LogTrace(NsInterp *itPtr, TclTrace *tracePtr, unsigned int why)
  */
 
 static void
-FreeInterpData(ClientData arg, Tcl_Interp *interp)
+FreeInterpData(ClientData arg, Tcl_Interp *UNUSED(interp))
 {
     NsInterp *itPtr = arg;
 

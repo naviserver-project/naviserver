@@ -1345,15 +1345,15 @@ NS_EXTERN int NsInstallService(char *service);
 NS_EXTERN int NsRemoveService(char *service);
 #endif
 
-NS_EXTERN void NsCreatePidFile(char *service);
-NS_EXTERN void NsRemovePidFile(char *service);
+NS_EXTERN void NsCreatePidFile();
+NS_EXTERN void NsRemovePidFile();
 
 NS_EXTERN void NsLogOpen(void);
 NS_EXTERN void NsTclInitObjs(void);
 NS_EXTERN void NsRunPreStartupProcs(void);
 NS_EXTERN void NsBlockSignals(int debug);
-NS_EXTERN void NsBlockSignal(int signal);
-NS_EXTERN void NsUnblockSignal(int signal);
+NS_EXTERN void NsBlockSignal(int sig);
+NS_EXTERN void NsUnblockSignal(int sig);
 NS_EXTERN int  NsHandleSignals(void);
 NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);

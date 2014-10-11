@@ -733,7 +733,7 @@ DbConfigPathObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 static int
-PoolDescriptionObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "poolname");
@@ -761,7 +761,7 @@ PoolDescriptionObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 static int
-QuoteListToListObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     char       *quotelist;
     int         inquotes;
@@ -828,7 +828,7 @@ QuoteListToListObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 static int
-GetCsvObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     int             ncols, inquote, quoted, blank;
     char            c, *p, *delimiter = ",", *fileId, *varName;
@@ -1056,9 +1056,9 @@ DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, char *cmd)
  */
 
 static void
-FreeData(ClientData arg, Tcl_Interp *interp)
+FreeData(ClientData clientData, Tcl_Interp *UNUSED(interp))
 {
-    InterpData *idataPtr = arg;
+    InterpData *idataPtr = clientData;
 
     Tcl_DeleteHashTable(&idataPtr->dbs);
     ns_free(idataPtr);

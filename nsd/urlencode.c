@@ -472,7 +472,7 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, char *string, char *charset)
 Ns_OptionConverter Ns_OptionEnumPart;
 
 int
-Ns_OptionEnumPart(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+Ns_OptionEnumPart(Tcl_Interp *interp, Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
     int index, result;
     static const char *opts[] = {"query", "path", NULL};
     result = Tcl_GetIndexFromObj(interp, objPtr, opts, "-part", 0, &index);
@@ -481,7 +481,7 @@ Ns_OptionEnumPart(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, Client
 }
 
 int
-NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_DString   ds;
     int          i, part, nextArgIdx;
@@ -549,7 +549,7 @@ NsTclUrlEncodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  */
 
 int
-NsTclUrlDecodeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_DString   ds;
     char        *charset = NULL;

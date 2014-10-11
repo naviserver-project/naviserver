@@ -237,7 +237,7 @@ Ns_TclLogError(Tcl_Interp *interp)
  */
 
 CONST char *
-Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
+Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
 {
     return Ns_TclLogErrorInfo(interp, NULL);
 }
@@ -331,7 +331,7 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
  */
 
 int
-NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclStripHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     int   intag;     /* flag to see if are we inside a tag */
     int   intspec;   /* flag to see if we are inside a special char */
@@ -411,7 +411,7 @@ NsTclStripHtmlCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* ar
  */
 
 int
-NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclCryptObjCmd(ClientData UNUSED(arg), Tcl_Interp *interp, 
 		 int objc, Tcl_Obj *CONST objv[])
 {
     char buf[NS_ENCRYPT_BUFSIZE];
@@ -445,7 +445,7 @@ NsTclCryptObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 int
-NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST char* argv[])
 {
     char       *s, *e, *he, save;
     CONST char *p;
@@ -528,7 +528,7 @@ NsTclHrefsCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[]
  */
 
 int
-NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp, 
+NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 		      int objc, Tcl_Obj *CONST objv[])
 {
     unsigned char *string;
@@ -566,7 +566,7 @@ NsTclHTUUEncodeObjCmd(ClientData dummy, Tcl_Interp *interp,
  */
 
 int
-NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp, 
+NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 		      int objc, Tcl_Obj *CONST objv[])
 {
     int            size;
@@ -607,7 +607,8 @@ NsTclHTUUDecodeObjCmd(ClientData dummy, Tcl_Interp *interp,
  */
 
 int
-NsTclCrashCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclCrashCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
+	      int UNUSED(argc), CONST char* UNUSED(argv[]))
 {
     char *death;
 
@@ -1054,7 +1055,7 @@ void Ns_CtxString(unsigned char *digest, char *buf, int size)
  */
 
 int
-NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 		int objc, Tcl_Obj *CONST objv[])
 {
     Ns_CtxSHA1     ctx;
@@ -1099,7 +1100,7 @@ NsTclSHA1ObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 int
-NsTclFileStatObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 		    int objc, Tcl_Obj *CONST objv[])
 {
     struct stat st;
@@ -1418,7 +1419,7 @@ static void MD5Transform(uint32_t buf[4], uint32_t const in[16])
  */
 
 int
-NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 	       int objc, Tcl_Obj *CONST objv[])
 {
     Ns_CtxMD5      ctx;
@@ -1460,7 +1461,7 @@ NsTclMD5ObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 int
-NsTclSetUserObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 		   int objc, Tcl_Obj *CONST objv[])
 {
     if (objc < 2) {
@@ -1473,7 +1474,7 @@ NsTclSetUserObjCmd(ClientData arg, Tcl_Interp *interp,
 }
 
 int
-NsTclSetGroupObjCmd(ClientData arg, Tcl_Interp *interp, 
+NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 		    int objc, Tcl_Obj *CONST objv[])
 {
     if (objc < 2) {

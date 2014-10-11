@@ -743,7 +743,8 @@ NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs)
  */
 
 int
-NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclAdpStatsCmd(ClientData arg, Tcl_Interp *interp, 
+		 int UNUSED(argc), CONST char* UNUSED(argv[]))
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;

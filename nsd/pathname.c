@@ -47,7 +47,7 @@ static Ns_ServerInitProc ConfigServerVhost;
 static int ConfigServerVhost(CONST char *server)
     NS_GNUC_NONNULL(1);
 
-static int PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                       Tcl_Obj *CONST objv[], int cmd)
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
@@ -653,7 +653,7 @@ NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
 
 
 int
-NsTclHashPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
     Ns_DString  path;
     int         levels;
@@ -695,7 +695,7 @@ NsTclHashPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
               Tcl_Obj *CONST objv[])
 {
     Ns_DString      ds;
@@ -741,21 +741,21 @@ NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
 
 int
-NsTclServerPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclServerPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    return PathObjCmd(arg, interp, objc, objv, 's');
+    return PathObjCmd(clientData, interp, objc, objv, 's');
 }
 
 int
-NsTclPagePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    return PathObjCmd(arg, interp, objc, objv, 'p');
+    return PathObjCmd(clientData, interp, objc, objv, 'p');
 }
 
 static int
-PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int cmd)
+PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int cmd)
 {
-    NsInterp    *itPtr = arg;
+    NsInterp    *itPtr = clientData;
     NsServer    *servPtr;
     Ns_DString   ds;
     char        *host = NULL;
@@ -815,7 +815,7 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
  */
 
 int
-NsTclServerRootProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
+NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                           Tcl_Obj *CONST objv[])
 {
     NsServer       *servPtr = NsGetInitServer();

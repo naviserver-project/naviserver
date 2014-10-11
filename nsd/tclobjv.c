@@ -68,18 +68,18 @@ static Tcl_ObjType specType = {
 // document me
 
 int
-Ns_OptionObj(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+Ns_OptionObj(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
     *clientData = objPtr;
     return TCL_OK;
 }
 int
-Ns_OptionString(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+Ns_OptionString(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
     *clientData = Tcl_GetString(objPtr);
     return TCL_OK;
 }
 
 int
-Ns_OptionBoolean(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+Ns_OptionBoolean(Tcl_Interp *interp, Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
     int bool, result;
 
     result = Tcl_GetBooleanFromObj(interp, objPtr, &bool);
@@ -91,7 +91,7 @@ Ns_OptionBoolean(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientD
 }
 
 int
-Ns_OptionServer(Tcl_Interp *interp, Tcl_Obj *labelObj, Tcl_Obj *objPtr, ClientData *clientData) {
+Ns_OptionServer(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr, ClientData *clientData) {
     NsServer *servPtr = NsGetServer(Tcl_GetString(objPtr));
     *clientData = servPtr;
     return servPtr ? TCL_OK : TCL_ERROR;
@@ -446,7 +446,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
               Tcl_Obj *CONST objv[])
 {
     if (likely(*objcPtr > 0)) {
@@ -518,7 +518,7 @@ Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
               Tcl_Obj *CONST objv[])
 {
     unsigned char **dest = spec->dest;
@@ -550,7 +550,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
            Tcl_Obj *CONST objv[])
 {
     if (likely(*objcPtr > 0)) {
@@ -740,8 +740,8 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvBreak(Ns_ObjvSpec *spec, Tcl_Interp *interp,
-             int *objcPtr, Tcl_Obj *CONST objv[])
+Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
+	     int *UNUSED(objcPtr), Tcl_Obj *CONST UNUSED(objv[]))
 {
     return TCL_BREAK;
 }
@@ -764,8 +764,8 @@ Ns_ObjvBreak(Ns_ObjvSpec *spec, Tcl_Interp *interp,
  */
 
 int
-Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp,
-            int *objcPtr, Tcl_Obj *CONST objv[])
+Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp),
+            int *objcPtr, Tcl_Obj *CONST UNUSED(objv[]))
 {
     *((int *) spec->dest) = *objcPtr;
     *objcPtr = 0;
@@ -791,7 +791,7 @@ Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp,
  */
 
 int
-NsTclParseArgsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
+NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                      Tcl_Obj *CONST objv[])
 {
     Ns_ObjvSpec   *opts, *args, *specPtr;
