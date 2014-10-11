@@ -354,10 +354,10 @@ encrypt_private(struct sched *sp, char *block, int edflag)
                 (preS[t + 4] << 0) +
                 (preS[t + 5] << 4)];
             t = 4 * j;
-            f[t + 0] = (k >> 3) & 01;
-            f[t + 1] = (k >> 2) & 01;
-            f[t + 2] = (k >> 1) & 01;
-            f[t + 3] = (k >> 0) & 01;
+            f[t + 0] = (k >> 3) & 1U;
+            f[t + 1] = (k >> 2) & 1U;
+            f[t + 2] = (k >> 1) & 1U;
+            f[t + 3] = (k >> 0) & 1U;
         }
 
         /*
@@ -406,7 +406,7 @@ Ns_Encrypt(pw, salt, iobuf)
         block[i] = 0;
     for (i = 0; (c = *pw) && i < 64; pw++) {
         for (j = 0; j < 7; j++, i++)
-            block[i] = (c >> (6 - j)) & 01;
+            block[i] = (c >> (6 - j)) & 1U;
         i++;
     }
 
@@ -426,7 +426,7 @@ Ns_Encrypt(pw, salt, iobuf)
 	}
         c -= '.';
         for (j = 0; j < 6; j++) {
-            if ((c >> j) & 01) {
+            if ((c >> j) & 1U) {
                 temp = s.E[6 * i + j];
                 s.E[6 * i + j] = s.E[6 * i + j + 24];
                 s.E[6 * i + j + 24] = temp;
