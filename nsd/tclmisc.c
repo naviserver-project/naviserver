@@ -310,7 +310,7 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
     errPtr = Tcl_ObjSetVar2(interp, varPtr, NULL, valPtr,
 			       TCL_PARSE_PART1|TCL_LEAVE_ERR_MSG);
     Tcl_DecrRefCount(valPtr);
-    return (errPtr ? 1 : 0);
+    return (errPtr != NULL ? 1 : 0);
 }
 
 /*
@@ -455,23 +455,23 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
     }
 
     p = argv[1];
-    while ((s = strchr(p, '<')) && (e = strchr(s, '>'))) {
+    while (((s = strchr(p, '<')) != NULL) && ((e = strchr(s, '>')) != NULL)) {
         ++s;
         *e = '\0';
-        while (*s && isspace(UCHAR(*s))) {
+        while (*s && isspace(*s)) {
             ++s;
         }
-        if ((*s == 'a' || *s == 'A') && isspace(UCHAR(s[1]))) {
+        if ((*s == 'a' || *s == 'A') && isspace(s[1])) {
             ++s;
             while (*s) {
                 if (!strncasecmp(s, "href", 4)) {
                     s += 4;
-                    while (*s && isspace(UCHAR(*s))) {
+                    while (*s && isspace(*s)) {
                         ++s;
                     }
                     if (*s == '=') {
                         ++s;
-                        while (*s && isspace(UCHAR(*s))) {
+                        while (*s && isspace(*s)) {
                             ++s;
                         }
                         he = NULL;
@@ -481,7 +481,7 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
                         }
                         if (he == NULL) {
                             he = s;
-                            while (!isspace(UCHAR(*he))) {
+                            while (!isspace(*he)) {
                                 ++he;
                             }
                         }
