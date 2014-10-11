@@ -104,7 +104,7 @@ Ns_QuoteHtml(Ns_DString *pds, CONST char *string)
  */
 
 int
-NsTclQuoteHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclQuoteHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     Ns_DString ds;
 

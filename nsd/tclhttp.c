@@ -41,9 +41,9 @@ extern Tcl_ObjCmdProc NsTclHttpObjCmd;
  * Local functions defined in this file
  */
 
-static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
+static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
     NS_GNUC_NONNULL(1);
-static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int run)
+static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, char *method, char *url,
 			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
@@ -88,7 +88,7 @@ static Ns_TaskQueue *queue;
  */
 
 int
-NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp *itPtr = arg;
     Ns_HttpTask *httpPtr;
@@ -179,7 +179,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 static int
-HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int run)
+HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 {
     Tcl_Interp *interp;
     int isNew, i;
@@ -510,7 +510,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
  */
 
 static int
-HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
+HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Interp  *interp;
     Tcl_Obj     *valPtr, 

@@ -767,8 +767,7 @@ FreeEntry(void *arg)
  */
 // document me, maybe refactor me
 int
-NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
-			      int objc, Tcl_Obj *CONST objv[])
+NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_CacheSearch  search;
     Ns_DString      ds;

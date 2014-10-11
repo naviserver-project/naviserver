@@ -339,7 +339,7 @@ NsUrlToFileProc(Ns_DString *dsPtr, CONST char *server, CONST char *url)
  */
 
 int
-NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp   *itPtr = arg;
     Ns_DString  ds;
@@ -378,8 +378,7 @@ NsTclUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
-                            Tcl_Obj *CONST objv[])
+NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
@@ -427,8 +426,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
-                              Tcl_Obj *CONST objv[])
+NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp   *itPtr = arg;
     CONST char *url = NULL;
@@ -472,8 +470,7 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
-                                Tcl_Obj *CONST objv[])
+NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp     *itPtr = arg;
     CONST char   *url = NULL, *basepath = NULL;

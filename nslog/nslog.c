@@ -265,7 +265,7 @@ AddCmds(Tcl_Interp *interp, void *arg)
  */
 
 static int
-LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char        *strarg;
     CONST char **hdrs;

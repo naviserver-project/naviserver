@@ -302,7 +302,7 @@ typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
 typedef int   (Ns_UserAuthorizeProc) (char *user, char *passwd);
 struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
-                             int *objcPtr, Tcl_Obj *CONST objv[]);
+                             int *objcPtr, Tcl_Obj *CONST* objv);
 
 typedef int (Ns_OptionConverter) (Tcl_Interp *interp, Tcl_Obj *labelPtr, 
 				  Tcl_Obj *objPtr, ClientData *clientData);
@@ -1616,7 +1616,7 @@ NS_EXTERN Tcl_SetFromAnyProc Ns_TclSetFromAnyError;
 
 NS_EXTERN int
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
-                           Tcl_Interp *interp, int offset, int objc, Tcl_Obj *CONST objv[]);
+                           Tcl_Interp *interp, int offset, int objc, Tcl_Obj *CONST* objv);
 
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBool;
@@ -1644,7 +1644,7 @@ NS_EXTERN Ns_OptionConverter Ns_OptionServer;
 NS_EXTERN int
 Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[], 
 		ClientData clientData[], Tcl_Interp *interp, int offset, 
-		int max, int *nextArg, int objc, Tcl_Obj *CONST objv[]);
+		int max, int *nextArg, int objc, Tcl_Obj *CONST* objv);
 
 /*
  * tclthread.c:
@@ -2645,7 +2645,7 @@ Ns_StrIsHost(CONST char *string)
 
 NS_EXTERN Ns_TclCallback *
 Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbPtr, Tcl_Obj *scriptObjPtr, int objc,
-		  Tcl_Obj *CONST objv[]);
+		  Tcl_Obj *CONST* objv);
 
 NS_EXTERN int
 Ns_TclEvalCallback(Tcl_Interp *interp, Ns_TclCallback *cbPtr,
@@ -2798,7 +2798,7 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_TclLoggErrorInfo);
 
 NS_EXTERN void
-Ns_LogDeprecated(Tcl_Obj *CONST objv[], int objc, char *alternative, char *explanation)
+Ns_LogDeprecated(Tcl_Obj *CONST* objv, int objc, char *alternative, char *explanation)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void

@@ -736,8 +736,7 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
  */
 
 int
-NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-               Tcl_Obj *CONST objv[])
+NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_LogSeverity severity;
     Ns_DString     ds;
@@ -787,8 +786,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                  Tcl_Obj *CONST objv[])
+NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int             count, opt, i;
     Ns_DString      ds;

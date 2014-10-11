@@ -199,7 +199,7 @@ Ns_QueryToSet(char *query, Ns_Set *set)
  */
 
 int
-NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Set *set;
 

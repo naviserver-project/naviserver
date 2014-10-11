@@ -43,10 +43,10 @@
 static Ns_Conn *GetConn(Tcl_Interp *interp);
 
 static int SearchFirstCookie(Ns_DString *dest, Ns_Set *hdrs,  char *setName, char *name) 
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static int DeleteNamedCookies(Ns_Set *hdrs, char *setName, char *name)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
 /*
@@ -294,7 +294,7 @@ Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name)
  */
 
 int
-NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *data, *domain = NULL, *path = NULL;
@@ -379,7 +379,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn     *conn;
     Ns_DString   ds;
@@ -450,7 +450,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn  *conn = GetConn(interp);
     char     *name, *domain = NULL, *path = NULL;

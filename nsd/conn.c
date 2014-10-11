@@ -37,7 +37,7 @@
 #include "nsd.h"
 
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
-static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST objv[],
+static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST* objv,
                       int *offPtr, int *lenPtr);
 static Tcl_Channel MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn);
 
@@ -1201,7 +1201,7 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  */
 
 int
-NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp *itPtr = clientData;
     Ns_Conn *conn = itPtr->conn;
@@ -1687,8 +1687,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
  */
 
 int
-NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
-			int objc, Tcl_Obj *CONST objv[])
+NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
@@ -1726,8 +1725,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 
 int
-NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, 
-			int objc, Tcl_Obj *CONST objv[])
+NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp    *itPtr = clientData;
     int         toCopy = 0;
@@ -1861,7 +1859,7 @@ GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
  */
 
 static int
-GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST objv[], int *offPtr,
+GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST* objv, int *offPtr,
            int *lenPtr)
 {
     int off, len;

@@ -203,7 +203,7 @@ Ns_TclFreeSet(Tcl_Interp *interp, char *id)
  */
 
 int
-NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp        *itPtr = arg;
     Ns_Set          *set = NULL, *set2Ptr, **sets;
@@ -590,7 +590,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
  */
 
 int
-NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     NsInterp *itPtr = arg;
     Ns_Set *set;

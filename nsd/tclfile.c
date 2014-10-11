@@ -47,7 +47,7 @@ typedef struct _NsRegChan {
 
 static void SpliceChannel   (Tcl_Interp *interp, Tcl_Channel chan);
 static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
-static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char *cmd);
+static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char *cmd);
 
 
 
@@ -151,7 +151,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr)
  */
 
 static int
-FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char *cmd)
+FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char *cmd)
 {
     int max, status;
 
@@ -183,15 +183,13 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char *cmd)
 }
 
 int
-NsTclRollFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
-                    Tcl_Obj *CONST objv[])
+NsTclRollFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     return FileObjCmd(interp, objc, objv, "roll");
 }
 
 int
-NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                      Tcl_Obj *CONST objv[])
+NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     return FileObjCmd(interp, objc, objv, "purge");
 }
@@ -214,7 +212,7 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  */
 
 int
-NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
 
     if (argc == 1) {
@@ -255,8 +253,7 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
  */
 
 int
-NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                  Tcl_Obj *CONST objv[])
+NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char buf[L_tmpnam];
 
@@ -289,8 +286,7 @@ NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                Tcl_Obj *CONST objv[])
+NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int pid, signal;
 
@@ -347,8 +343,7 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
 
     if ((objc != 3) && (objc != 4)) {
@@ -396,8 +391,7 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp   *itPtr = clientData;
     Tcl_Channel chan;
@@ -445,8 +439,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                    Tcl_Obj *CONST objv[])
+NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int length;
     
@@ -489,8 +482,7 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                     Tcl_Obj *CONST objv[])
+NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int length, fd;
     
@@ -535,8 +527,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 int
-NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                         Tcl_Obj *CONST objv[])
+NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString ds;
 
@@ -572,8 +563,7 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  */
 
 int
-NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
-                Tcl_Obj *CONST objv[])
+NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;

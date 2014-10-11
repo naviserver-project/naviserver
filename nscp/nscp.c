@@ -65,6 +65,10 @@ typedef struct Sess {
     struct sockaddr_in sa;
 } Sess;
 
+/*
+ * The following functions are defined locally.
+ */
+
 static Ns_SockProc AcceptProc;
 static Tcl_CmdProc ExitCmd;
 static int Login(Sess *sessPtr, Tcl_DString *unameDS);
@@ -89,6 +93,10 @@ static const unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
 static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
 static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
 static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
+
+/*
+ * Define the version of the module (ususally 1).
+ */
 
 NS_EXPORT const int Ns_ModuleVersion = 1;
 

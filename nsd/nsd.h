@@ -1423,9 +1423,9 @@ NS_EXTERN int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
 NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) NS_GNUC_NONNULL(1);
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
-NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);
-NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);
-NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[],
+NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
+NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
+NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
 			char *file, Ns_Time *ttlPtr);
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
 		       unsigned int flags, CONST char* file);

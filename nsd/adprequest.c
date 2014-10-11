@@ -210,7 +210,7 @@ PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, unsigned int a
  */
 
 int
-NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char         *method, *url, *file = NULL;
     unsigned int rflags = 0, aflags = 0;
@@ -237,7 +237,7 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 }
 
 int
-NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     unsigned int rflags = 0;
     char        *method, *url, *file = NULL;

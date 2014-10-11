@@ -4139,8 +4139,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 }
 
 int
-NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
-                  Tcl_Obj *CONST objv[])
+NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int           fd, opt, rc;
     Tcl_DString   ds, *dsPtr = &ds;
