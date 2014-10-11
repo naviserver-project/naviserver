@@ -106,7 +106,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #ifndef _WIN32
     int       debug = 0, mode = 0;
     char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
-    char     *bindargs = NULL, *bindfile = NULL, *procname = NULL;
+    char     *bindargs = NULL, *bindfile = NULL;
     Ns_Set   *servers;
     struct rlimit  rl;
 #else
@@ -474,10 +474,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         server = Ns_SetKey(servers, i);
     }
 
-    /*
-     * Set the procname used for the pid file.
-     */
-    procname = (server ? server : Ns_SetKey(servers, 0));
 
     /*
      * Verify and change to the home directory.
@@ -536,6 +532,11 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     }
 
 #ifdef _WIN32
+
+    /*
+     * Set the procname used for the pid file.
+     */
+    procname = (server ? server : Ns_SetKey(servers, 0));
 
     /*
      * Connect to the service control manager if running
@@ -736,7 +737,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * status message and return to main.
      */
 
-    NsRemovePidFile(procname);
+    NsRemovePidFile();
     StatusMsg(exiting);
 
     /*
