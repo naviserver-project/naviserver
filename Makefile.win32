@@ -53,7 +53,7 @@ DEBUG=1
 !endif
 
 # nmake command to exec for each module:
-NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG) INCLUDE="$(INCLUDE)"
+NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG) INCLUDE="$(INCLUDE)"
 
 
 # To build for XP rather than a newer version of Windows, we would
