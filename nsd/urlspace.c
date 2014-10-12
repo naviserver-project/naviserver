@@ -1278,7 +1278,7 @@ CmpKeyWithChannelAsStrings(CONST char *key, Channel **channelPtrPtr)
  *----------------------------------------------------------------------
  */
 
-Junction *
+statuc Junction *
 JunctionGet(NsServer *servPtr, int id)
 {
     Junction *juncPtr;
