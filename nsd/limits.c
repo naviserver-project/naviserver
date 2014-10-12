@@ -363,7 +363,7 @@ FindLimits(char *limits, int create)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
            Tcl_Obj *CONST* objv)
 {

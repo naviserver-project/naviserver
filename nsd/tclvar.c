@@ -879,7 +879,7 @@ Ns_VarUnset(CONST char *server, CONST char *array, CONST char *key)
  *----------------------------------------------------------------
  */
 
-Array *
+static Array *
 LockArray(NsServer *servPtr, CONST char *array, int create)
 {
     Bucket        *bucketPtr;

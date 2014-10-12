@@ -1077,7 +1077,7 @@ MakePath(char *file)
  *----------------------------------------------------------------------
  */
 
-char *
+static char *
 SetCwd(char *path)
 {
     Tcl_Obj *pathObj;
