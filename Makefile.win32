@@ -9,8 +9,16 @@
 # OpenSSL binaries (/bin) directory".
 # --atp@piskorski.com, 2014/10/11 09:13 EDT
 
-openssl_dir = C:\OpenSSL-Win64
+!if "x86" == "$(TARGET_CPU)"
+openssl_dir = C:\P\OpenSSL-Win32
+!elseif "x64" == "$(TARGET_CPU)"
+openssl_dir = C:\P\OpenSSL-Win64
+!endif
 
+# TODO: This ..\naviserver default does not work for linking, because
+# nsd.lib is in a different subdirectory in the build vs. installed
+# location.  Do we actually even need to link against nsd.lib?
+# --atp@piskorski.com, 2014/10/12 12:29 EDT
 !ifndef NAVISERVER
 NAVISERVER = ..\naviserver
 !endif
