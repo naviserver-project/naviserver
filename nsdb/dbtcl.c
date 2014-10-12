@@ -592,7 +592,7 @@ DbObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
         if (objc != 3 && objc != 4) {
             Tcl_WrongNumArgs(interp, 2, objv, "dbId ?on|off?");
         }
-	assert(handlePtr);
+	assert(handlePtr != NULL);
         if (objc == 4) {
             int verbose;
             if (Tcl_GetBoolean(interp, Tcl_GetString(objv[3]), &verbose) != TCL_OK) {
@@ -1034,7 +1034,8 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle)
 static int
 DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, char *cmd)
 {
-    assert(handle);
+    assert(handle != NULL);
+
     Tcl_AppendResult(interp, "Database operation \"", cmd, "\" failed", NULL);
     if (handle->cExceptionCode[0] != '\0') {
         Tcl_AppendResult(interp, " (exception ", handle->cExceptionCode, NULL);
