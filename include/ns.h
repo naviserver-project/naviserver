@@ -296,10 +296,10 @@ typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Tim
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef int   (Ns_ServerInitProc) (CONST char *server);
 typedef int   (Ns_ModuleInitProc) (CONST char *server, CONST char *module);
-typedef int   (Ns_RequestAuthorizeProc) (char *server, char *method,
-			char *url, char *user, char *pass, char *peer);
+typedef int   (Ns_RequestAuthorizeProc) (const char *server, const char *method,
+			const char *url, const char *user, const char *pass, const char *peer);
 typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
-typedef int   (Ns_UserAuthorizeProc) (char *user, char *passwd);
+typedef int   (Ns_UserAuthorizeProc) (const char *user, const char *passwd);
 struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *CONST* objv);
@@ -632,15 +632,15 @@ Ns_AdpFlush(Tcl_Interp *interp, int stream)
  */
 
 NS_EXTERN int
-Ns_AuthorizeRequest(char *server, char *method, char *url,
-			       char *user, char *passwd, char *peer);
+Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
+		    const char *user, const char *passwd, const char *peer);
 NS_EXTERN void
-Ns_SetRequestAuthorizeProc(char *server, Ns_RequestAuthorizeProc *procPtr);
+Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr);
 NS_EXTERN void
 Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr);
 
 NS_EXTERN int
-Ns_AuthorizeUser(char *user, char *passwd);
+Ns_AuthorizeUser(const char *user, const char *passwd);
 
 /*
  * cache.c:
@@ -1235,20 +1235,20 @@ Ns_ConnGetCookie(Ns_DString *dest, Ns_Conn *conn, char *name);
  */
 
 NS_EXTERN char *
-Ns_Encrypt(char *pw, char *salt, char iobuf[ ]);
+Ns_Encrypt(const char *pw, const char *salt, char iobuf[ ]);
 
 /*
  * dns.c:
  */
 
 NS_EXTERN int
-Ns_GetHostByAddr(Ns_DString *dsPtr, char *addr);
+Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr);
 
 NS_EXTERN int
-Ns_GetAddrByHost(Ns_DString *dsPtr, char *host);
+Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host);
 
 NS_EXTERN int
-Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host);
+Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host);
 
 /*
  * driver.c:

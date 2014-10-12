@@ -119,8 +119,9 @@ static Tcl_ObjCmdProc SetPassObjCmd;
 
 static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv, int allow, int user);
 
-static int ValidateUserAddr(User * userPtr, char *peer);
-static int AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *peer);
+static int ValidateUserAddr(User * userPtr, const char *peer);
+static int AuthProc(const char *server, const char *method, const char *url, 
+		    const char *user, const char *pwd, const char *peer);
 static void WalkCallback(Tcl_DString * dsPtr, void *arg);
 static int CreateNonce(const char *privatekey, char **nonce, char *uri);
 static int CreateHeader(Server * servPtr, Ns_Conn * conn, int stale);
@@ -355,7 +356,8 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *C
  *----------------------------------------------------------------------
  */
 
-static int AuthProc(char *server, char *method, char *url, char *user, char *pwd, char *peer)
+static int AuthProc(const char *server, const char *method, const char *url, 
+		    const char *user, const char *pwd, const char *peer)
 {
     int status;
     Ns_Set *set;
@@ -558,7 +560,7 @@ static int AuthProc(char *server, char *method, char *url, char *user, char *pwd
  *----------------------------------------------------------------------
  */
 
-static int ValidateUserAddr(User * userPtr, char *peer)
+static int ValidateUserAddr(User *userPtr, const char *peer)
 {
     struct in_addr peerip, ip, mask;
     int retval;

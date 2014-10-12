@@ -41,7 +41,7 @@
  * Local functions defined in this file
  */
 
-static int MakeNum(char *s);
+static int MakeNum(const char *s);
 static int MakeMonth(char *s);
 
 /*
@@ -364,7 +364,7 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 static int
-MakeNum(char *s)
+MakeNum(const char *s)
 {
     if (*s >= '0' && *s <= '9') {
         return (10 * (*s - '0')) + (*(s + 1) - '0');

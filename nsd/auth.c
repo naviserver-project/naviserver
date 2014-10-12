@@ -64,8 +64,8 @@ static Ns_UserAuthorizeProc    *userProcPtr;
  */
 
 int
-Ns_AuthorizeRequest(char *server, char *method, char *url,
-	            char *user, char *passwd, char *peer)
+Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
+	            const char *user, const char *passwd, const char *peer)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -93,7 +93,7 @@ Ns_AuthorizeRequest(char *server, char *method, char *url,
  */
 
 void
-Ns_SetRequestAuthorizeProc(char *server, Ns_RequestAuthorizeProc *proc)
+Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *proc)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -183,7 +183,7 @@ NsTclRequestAuthorizeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
  */
 
 int
-Ns_AuthorizeUser(char *user, char *passwd)
+Ns_AuthorizeUser(const char *user, const char *passwd)
 {
     if (userProcPtr == NULL) {
 	return NS_ERROR;
