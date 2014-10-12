@@ -366,10 +366,10 @@ typedef struct _DrvSpooler {
 } DrvSpooler;
 
 typedef struct _DrvWriter {
-    int threads;               /* Number of writer threads to run */
-    int maxsize;               /* Max content size to use writer thread */
-    int bufsize;               /* Size of the output buffer */
-    int streaming;             /* Activate writer for HTML streaming */
+    int       threads;         /* Number of writer threads to run */
+    size_t    maxsize;         /* Max content size to use writer thread */
+    size_t    bufsize;         /* Size of the output buffer */
+    int       streaming;       /* Activate writer for HTML streaming */
     Ns_Mutex lock;             /* Lock around writer queues */
     SpoolerQueue *firstPtr;    /* List of writer threads */
     SpoolerQueue *curPtr;      /* Current writer thread */
@@ -381,17 +381,17 @@ typedef struct Driver {
      * Visible in Ns_Driver.
      */
 
-    void *arg;                          /* Driver callback data */
-    char *server;                       /* Virtual server name */
-    char *module;                       /* Driver module */
-    char *name;                         /* Driver name */
-    char *location;                     /* Location, e.g, "http://foo:9090" */
-    char *address;                      /* Address in location, e.g. "foo" */
-    char *protocol;                     /* Protocol in location, e.g, "http" */
-    int   sendwait;                     /* send() I/O timeout */
-    int   recvwait;                     /* recv() I/O timeout */
-    int   bufsize;                      /* Conn bufsize (0 for SSL) */
-    char *extraHeaders;                 /* Extra header fields added for every request */
+    void  *arg;                         /* Driver callback data */
+    char  *server;                      /* Virtual server name */
+    char  *module;                      /* Driver module */
+    char  *name;                        /* Driver name */
+    char  *location;                    /* Location, e.g, "http://foo:9090" */
+    char  *address;                     /* Address in location, e.g. "foo" */
+    char  *protocol;                    /* Protocol in location, e.g, "http" */
+    int    sendwait;                    /* send() I/O timeout */
+    int    recvwait;                    /* recv() I/O timeout */
+    size_t bufsize;                     /* Conn bufsize (0 for SSL) */
+    char  *extraHeaders;                /* Extra header fields added for every request */
 
     /*
      * Private to Driver.

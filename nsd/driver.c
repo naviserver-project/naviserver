@@ -543,7 +543,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                                            8192, 512, INT_MAX);
         wrPtr->streaming = Ns_ConfigBool(path, "writerstreaming", NS_FALSE);
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
-               "for downloads >= %d bytes, bufsize=%d bytes, HTML streaming %d",
+               "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
                module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->streaming);
         for (i = 0; i < wrPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
@@ -3822,7 +3822,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     if (nsend < (size_t)wrPtr->maxsize && !everysize && connPtr->fd == 0) {
-        Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%" PRIdz " < %d)",
+        Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%" PRIdz " < %" PRIdz ")",
                nsend, wrPtr->maxsize);
         return NS_ERROR;
     }
@@ -3930,7 +3930,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         }
     }
 
-    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %d",
+    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %" PRIdz,
 	   wrPtr->threads, nsend, wrPtr->maxsize);
 
     assert(connPtr->poolPtr);
