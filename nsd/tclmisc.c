@@ -1213,8 +1213,9 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
     /* Update bitcount */
 
     t = ctx->bits[0];
-    if ((ctx->bits[0] = t + ((uint32_t) len << 3)) < t)
+    if ((ctx->bits[0] = t + ((uint32_t) len << 3)) < t) {
 	ctx->bits[1]++;		/* Carry from low to high */
+    }
     ctx->bits[1] += len >> 29;
 
     t = (t >> 3) & 0x3FU;	/* Bytes already in shsInfo->data */

@@ -262,8 +262,9 @@ Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc)
     Ns_StringPrint("(");
     for (; lPtr != NULL; lPtr = lPtr->rest) {
         (*printProc) (lPtr->first);
-        if (lPtr->rest != NULL)
+        if (lPtr->rest != NULL) {
             Ns_StringPrint(" ");
+	}
     }
     Ns_StringPrint(")\n");
 }
