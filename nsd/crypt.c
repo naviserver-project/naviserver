@@ -198,12 +198,14 @@ setkey_private(struct sched *sp, const char *key)
          */
         for (k = 0; k < shifts[i]; k++) {
             t = sp->C[0];
-            for (j = 0; j < 28 - 1; j++)
+            for (j = 0; j < 28 - 1; j++) {
                 sp->C[j] = sp->C[j + 1];
+	    }
             sp->C[27] = t;
             t = sp->D[0];
-            for (j = 0; j < 28 - 1; j++)
+            for (j = 0; j < 28 - 1; j++) {
                 sp->D[j] = sp->D[j + 1];
+	    }
             sp->D[27] = t;
         }
 
@@ -216,8 +218,9 @@ setkey_private(struct sched *sp, const char *key)
         }
     }
 
-    for (i = 0; i < 48; i++)
+    for (i = 0; i < 48; i++) {
         sp->E[i] = e[i];
+    }
 }
 
 /*
@@ -308,8 +311,9 @@ encrypt_private(struct sched *sp, char *block, int edflag)
     /*
      * First, permute the bits in the input
      */
-    for (j = 0; j < 64; j++)
+    for (j = 0; j < 64; j++) {
         L[j] = block[IP[j] - 1];
+    }
 
     /*
      * Perform an encryption operation 16 times.
@@ -328,15 +332,17 @@ encrypt_private(struct sched *sp, char *block, int edflag)
         /*
          * Save the R array, which will be the new L.
          */
-        for (j = 0; j < 32; j++)
+        for (j = 0; j < 32; j++) {
             tempL[j] = R[j];
+	}
 
         /*
          * Expand R to 48 bits using the E selector; exclusive-or with the
          * current key bits.
          */
-        for (j = 0; j < 48; j++)
+        for (j = 0; j < 48; j++) {
             preS[j] = R[sp->E[j] - 1] ^ sp->KS[i][j];
+	}
 
         /*
          * The pre-select bits are now considered in 8 groups of 6 bits each.
@@ -364,14 +370,16 @@ encrypt_private(struct sched *sp, char *block, int edflag)
          * The new R is L ^ f(R, K). The f here has to be permuted first,
          * though.
          */
-        for (j = 0; j < 32; j++)
+        for (j = 0; j < 32; j++) {
             R[j] = L[j] ^ f[P[j] - 1];
+	}
 
         /*
          * Finally, the new L (the original R) is copied back.
          */
-        for (j = 0; j < 32; j++)
+        for (j = 0; j < 32; j++) {
             L[j] = tempL[j];
+	}
     }
 
     /*
@@ -386,8 +394,9 @@ encrypt_private(struct sched *sp, char *block, int edflag)
     /*
      * The final output gets the inverse permutation of the very original.
      */
-    for (j = 0; j < 64; j++)
+    for (j = 0; j < 64; j++) {
         block[j] = L[FP[j] - 1];
+    }
 }
 
 
@@ -402,18 +411,21 @@ Ns_Encrypt(pw, salt, iobuf)
     char            block[66];
     struct sched    s;
 
-    for (i = 0; i < 66; i++)
+    for (i = 0; i < 66; i++) {
         block[i] = 0;
+    }
     for (i = 0; (c = *pw) && i < 64; pw++) {
-        for (j = 0; j < 7; j++, i++)
+	for (j = 0; j < 7; j++, i++) {
             block[i] = (c >> (6 - j)) & 1U;
+	}
         i++;
     }
 
     setkey_private(&s, block);
 
-    for (i = 0; i < 66; i++)
+    for (i = 0; i < 66; i++) {
         block[i] = 0;
+    }
 
     for (i = 0; i < 2; i++) {
         c = *salt++;
