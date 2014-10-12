@@ -53,7 +53,7 @@
 #define PERM_IMPLICIT_ALLOW   1
 
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 /*
  * The following structure is allocated for each instance of the module.

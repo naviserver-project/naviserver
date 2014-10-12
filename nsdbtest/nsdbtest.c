@@ -31,7 +31,7 @@
 
 #include "../nsdb/nsdb.h"
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 
 /*

@@ -49,7 +49,7 @@
 # define PIPE_BUF 512
 #endif
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 typedef struct {
     Ns_Mutex     lock;
