@@ -72,7 +72,7 @@ void NsdInit(void);
  *
  * NsBlockSignal --
  *
- *      Mask one specific signale
+ *      Mask one specific signal.
  *
  * Results:
  *      None.
@@ -84,7 +84,7 @@ void NsdInit(void);
  */
 
 void
-NsBlockSignal(int signal)
+NsBlockSignal(int UNUSED(signal))
 {
     return;
 }
@@ -107,19 +107,19 @@ NsBlockSignal(int signal)
  */
 
 void
-NsUnblockSignal(int signal)
+NsUnblockSignal(int UNUSED(signal))
 {
     return;
 }
 
 int
-Ns_SetGroup(char *group)
+Ns_SetGroup(char *UNUSED(group))
 {
     return -1;
 }
 
 int
-Ns_SetUser(char *user)
+Ns_SetUser(char *UNUSED(user))
 {
     return -1;
 }
@@ -143,7 +143,7 @@ Ns_SetUser(char *user)
  */
 
 BOOL APIENTRY
-DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
+DllMain(HANDLE hModule, DWORD why, LPVOID UNUSED(lpReserved))
 {
     WSADATA wsd;
 
@@ -180,7 +180,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
  */
 
 char *
-NsWin32ErrMsg(int err)
+NsWin32ErrMsg(DWORD err)
 {
     char *msg;
 
@@ -189,7 +189,7 @@ NsWin32ErrMsg(int err)
         msg = ns_malloc(100);
         Ns_TlsSet(&tls, msg);
     }
-    snprintf(msg, 100, "win32 error code: %d", err);
+    snprintf(msg, 100, "win32 error code: %lu", err);
 
     return msg;
 }
@@ -474,7 +474,7 @@ NsHandleSignals(void)
         StartTicker(SERVICE_STOP_PENDING);
     }
 
-    return sig;
+    return (int)sig;
 }
 
 
@@ -681,7 +681,7 @@ ns_sockdup(NS_SOCKET sock)
     src = (HANDLE) sock;
     hp = GetCurrentProcess();
     if (!DuplicateHandle(hp, src, hp, &dup, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
-        return INVALID_SOCKET;
+        return NS_INVALID_SOCKET;
     }
 
     return (NS_SOCKET) dup;
@@ -802,13 +802,13 @@ ns_sockpair(NS_SOCKET socks[2])
 
     size = sizeof(struct sockaddr_in);
     sock = Ns_SockListen("127.0.0.1", 0);
-    if (sock == INVALID_SOCKET ||
+    if (sock == NS_INVALID_SOCKET ||
         getsockname(sock, (struct sockaddr *) &ia[0], &size) != 0) {
         return -1;
     }
     size = sizeof(struct sockaddr_in);
     socks[1] = Ns_SockConnect("127.0.0.1", (int) ntohs(ia[0].sin_port));
-    if (socks[1] == INVALID_SOCKET ||
+    if (socks[1] == NS_INVALID_SOCKET ||
         getsockname(socks[1], (struct sockaddr *) &ia[1], &size) != 0) {
         ns_sockclose(sock);
         return -1;
@@ -816,7 +816,7 @@ ns_sockpair(NS_SOCKET socks[2])
     size = sizeof(struct sockaddr_in);
     socks[0] = accept(sock, (struct sockaddr *) &ia[0], &size);
     ns_sockclose(sock);
-    if (socks[0] == INVALID_SOCKET) {
+    if (socks[0] == NS_INVALID_SOCKET) {
         ns_sockclose(socks[1]);
         return -1;
     }
@@ -840,7 +840,7 @@ ns_sockpair(NS_SOCKET socks[2])
  *      privileged port issues.
  *
  * Results:
- *      Socket descriptor or INVALID_SOCKET on error.
+ *      Socket descriptor or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -855,12 +855,12 @@ Ns_SockListenEx(char *address, int port, int backlog)
     struct sockaddr_in sa;
 
     if (Ns_GetSockAddr(&sa, address, port) != NS_OK) {
-        return INVALID_SOCKET;
+        return NS_INVALID_SOCKET;
     }
     sock = Ns_SockBind(&sa);
-    if (sock != INVALID_SOCKET && listen(sock, backlog) != 0) {
+    if (sock != NS_INVALID_SOCKET && listen(sock, backlog) != 0) {
         ns_sockclose(sock);
-        sock = INVALID_SOCKET;
+        sock = NS_INVALID_SOCKET;
     }
 
     return sock;
@@ -1021,7 +1021,7 @@ ServiceMain(DWORD argc, LPTSTR *argv)
     curStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
     curStatus.dwServiceSpecificExitCode = 0;
     StartTicker(SERVICE_START_PENDING);
-    Ns_Main(argc, argv, NULL);
+    Ns_Main((int)argc, argv, NULL);
     StopTicker();
     ReportStatus(SERVICE_STOP_PENDING, NO_ERROR, 100);
     if (!servicefailed) {
@@ -1127,7 +1127,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     struct timeval timeout, *toptr;
     fd_set ifds, ofds, efds;
     unsigned long int i;
-    NS_SOCKET n = INVALID_SOCKET;
+    NS_SOCKET n = NS_INVALID_SOCKET;
     int rc;
 
     FD_ZERO(&ifds);
@@ -1135,7 +1135,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
     FD_ZERO(&efds);
 
     for (i = 0; i < nfds; ++i) {
-        if (fds[i].fd == INVALID_SOCKET) {
+        if (fds[i].fd == NS_INVALID_SOCKET) {
             continue;
         }
 #ifndef _MSC_VER
@@ -1161,13 +1161,13 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, int timo)
         timeout.tv_sec = timo / 1000;
         timeout.tv_usec = (timo - timeout.tv_sec * 1000) * 1000;
     }
-    rc = select(++n, &ifds, &ofds, &efds, toptr);
+    rc = select((int)++n, &ifds, &ofds, &efds, toptr);
     if (rc <= 0) {
         return rc;
     }
     for (i = 0; i < nfds; ++i) {
         fds[i].revents = 0;
-        if (fds[i].fd == INVALID_SOCKET) {
+        if (fds[i].fd == NS_INVALID_SOCKET) {
             continue;
         }
         if (FD_ISSET(fds[i].fd, &ifds)) {

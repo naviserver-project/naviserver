@@ -285,7 +285,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                 while (isdigit(UCHAR(*rangestr))) {
                     rangestr++;
                 }
-                if (end >= objLength) {
+                if (end >= (off_t)objLength) {
 		  end = (off_t)objLength - 1;
                 }
             } else {
@@ -308,7 +308,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                 rangestr++;
             }
 
-            if (end >= objLength) {
+            if (end >= (off_t)objLength) {
 	      end = (off_t)objLength;
             }
 
@@ -316,7 +316,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
              * Size from the end; convert into offset.
              */
 
-            start = (off_t)(objLength - end);
+            start = ((off_t)objLength - end);
             end = start + end - 1;
 
         } else {
@@ -362,7 +362,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
          * We opt to implement "any of the..." rather ...
          */
 
-        if (start >= objLength) {
+        if (start >= (off_t)objLength) {
             Ns_ConnPrintfHeaders(conn, "Content-Range",
                                  "bytes */%" PRIuMAX, (uintmax_t) objLength);
             Ns_ConnReturnStatus(conn, 416);

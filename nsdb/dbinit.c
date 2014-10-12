@@ -44,7 +44,7 @@
 struct Handle;
 
 typedef struct Pool {
-    char           *name;
+    const char     *name;
     char           *desc;
     char           *source;
     char           *user;
@@ -77,7 +77,7 @@ typedef struct Handle {
     char           *user;
     char           *password;
     void           *connection;
-    char           *poolname;
+    const char     *poolname;
     int             connected;
     int             verbose;
     Ns_Set         *row;
@@ -108,13 +108,13 @@ typedef struct ServData {
  * Local functions defined in this file
  */
 
-static Pool     *GetPool(char *pool)                NS_GNUC_NONNULL(1);
-static void      ReturnHandle(Handle *handle)       NS_GNUC_NONNULL(1);
-static int       IsStale(Handle *, time_t now)      NS_GNUC_NONNULL(1);
-static int	 Connect(Handle *)                  NS_GNUC_NONNULL(1);
-static Pool     *CreatePool(char *pool, char *path, char *driver);
-static int	 IncrCount(Pool *poolPtr, int incr) NS_GNUC_NONNULL(1);
-static ServData *GetServer(char *server)            NS_GNUC_NONNULL(1);
+static Pool     *GetPool(const char *pool)              NS_GNUC_NONNULL(1);
+static void      ReturnHandle(Handle *handlePtr)        NS_GNUC_NONNULL(1);
+static int       IsStale(Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
+static int	 Connect(Handle *handlePtr)             NS_GNUC_NONNULL(1);
+static Pool     *CreatePool(const char *pool, char *path, char *driver);
+static int	 IncrCount(Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
+static ServData *GetServer(char *server)                NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file
@@ -146,7 +146,7 @@ static Ns_Tls tls;
  */
 
 char *
-Ns_DbPoolDescription(char *pool)
+Ns_DbPoolDescription(const char *pool)
 {
     Pool         *poolPtr;
 
@@ -225,7 +225,7 @@ Ns_DbPoolList(char *server)
  */
 
 int
-Ns_DbPoolAllowable(char *server, char *pool)
+Ns_DbPoolAllowable(char *server, const char *pool)
 {
     register char *p;
 
@@ -317,7 +317,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
  */
 
 Ns_DbHandle *
-Ns_DbPoolTimedGetHandle(char *pool, int wait)
+Ns_DbPoolTimedGetHandle(const char *pool, int wait)
 {
     Ns_DbHandle       *handle;
 
@@ -345,7 +345,7 @@ Ns_DbPoolTimedGetHandle(char *pool, int wait)
  */
 
 Ns_DbHandle *
-Ns_DbPoolGetHandle(char *pool)
+Ns_DbPoolGetHandle(const char *pool)
 {
     return Ns_DbPoolTimedGetHandle(pool, 0);
 }
@@ -369,7 +369,7 @@ Ns_DbPoolGetHandle(char *pool)
  */
 
 int
-Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, char *pool, int nwant)
+Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, const char *pool, int nwant)
 {
     return Ns_DbPoolTimedGetMultipleHandles(handles, pool, nwant, 0);
 }
@@ -396,7 +396,7 @@ Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, char *pool, int nwant)
  */
 
 int
-Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, char *pool, 
+Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool, 
     				 int nwant, int wait)
 {
     Handle    *handlePtr;
@@ -524,7 +524,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, char *pool,
  */
 
 int
-Ns_DbBouncePool(char *pool)
+Ns_DbBouncePool(const char *pool)
 {
     Pool	*poolPtr;
     Handle	*handlePtr;
@@ -585,7 +585,7 @@ NsDbInitPools(void)
     pools = Ns_ConfigGetSection("ns/db/pools");
 
     for (i = 0; pools != NULL && i < Ns_SetSize(pools); ++i) {
-	char          *pool = Ns_SetKey(pools, i);
+	const char    *pool = Ns_SetKey(pools, i);
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
 
 	if (!isNew) {
@@ -799,7 +799,7 @@ NsDbGetDriver(Ns_DbHandle *handle)
  */
 
 static Pool *
-GetPool(char *pool)
+GetPool(const char *pool)
 {
     Tcl_HashEntry   *hPtr;
 
@@ -1010,7 +1010,7 @@ CheckPool(void *arg)
  */
 
 static Pool  *
-CreatePool(char *pool, char *path, char *driver)
+CreatePool(const char *pool, char *path, char *driver)
 {
     Pool            *poolPtr;
     Handle          *handlePtr;
@@ -1159,13 +1159,13 @@ IncrCount(Pool *poolPtr, int incr)
     if (isNew) {
 	prev = 0;
     } else {
-        prev = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+	prev = PTR2INT(Tcl_GetHashValue(hPtr));
     }
     count = prev + incr;
     if (count == 0) {
 	Tcl_DeleteHashEntry(hPtr);
     } else {
-        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) count);
+        Tcl_SetHashValue(hPtr, INT2PTR(count));
     }
     return prev;
 }

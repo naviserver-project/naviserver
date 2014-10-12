@@ -49,7 +49,7 @@
 # define PIPE_BUF 512
 #endif
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 typedef struct {
     Ns_Mutex     lock;
@@ -59,7 +59,7 @@ typedef struct {
     CONST char **extheaders;
     int          numheaders;
     int          fd;
-    int          flags;
+    unsigned int flags;
     int          maxbackup;
     int          maxlines;
     int          curlines;
@@ -104,7 +104,7 @@ static int LogClose(Log *logPtr);
 NS_EXPORT int
 Ns_ModuleInit(char *server, char *module)
 {
-    CONST char *path, *file;
+    const char *path, *file;
     Log        *logPtr;
     Ns_DString  ds;
     static int  first = 1;
@@ -265,7 +265,7 @@ AddCmds(Tcl_Interp *interp, void *arg)
  */
 
 static int
-LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+LogObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char        *strarg;
     CONST char **hdrs;

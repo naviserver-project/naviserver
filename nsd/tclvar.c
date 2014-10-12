@@ -127,7 +127,7 @@ NsTclCreateBuckets(CONST char *server, int n)
  */
 
 int
-NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Array         *arrayPtr;
     Tcl_HashEntry *hPtr;
@@ -181,7 +181,7 @@ NsTclNsvGetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclNsvExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Array *arrayPtr;
     int    exists = 0;
@@ -220,7 +220,7 @@ NsTclNsvExistsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  */
 
 int
-NsTclNsvSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Array         *arrayPtr;
     char          *key;
@@ -237,7 +237,7 @@ NsTclNsvSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
 
         arrayPtr = LockArrayObj(interp, objv[1], 1);
 	assert(arrayPtr);
-        SetVar(arrayPtr, key, value, len);
+        SetVar(arrayPtr, key, value, (size_t)len);
         UnlockArray(arrayPtr);
 
         Tcl_SetObjResult(interp, objv[3]);
@@ -277,7 +277,7 @@ NsTclNsvSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclNsvIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Array         *arrayPtr;
     Tcl_WideInt    current;
@@ -322,7 +322,7 @@ NsTclNsvIncrObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST 
  */
 
 int
-NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Array         *arrayPtr;
     Tcl_HashEntry *hPtr;
@@ -334,7 +334,8 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         return TCL_ERROR;
     }
     arrayPtr = LockArrayObj(interp, objv[1], 1);
-    assert(arrayPtr);
+
+    assert(arrayPtr != NULL);
 
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
     if (unlikely(isNew)) {
@@ -348,7 +349,7 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
         }
     }
     value = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &len);
-    UpdateVar(hPtr, value, len);
+    UpdateVar(hPtr, value, (size_t)len);
     UnlockArray(arrayPtr);
 
     return TCL_OK;
@@ -372,7 +373,7 @@ NsTclNsvLappendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  */
 
 int
-NsTclNsvAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Array         *arrayPtr;
     Tcl_HashEntry *hPtr;
@@ -418,7 +419,7 @@ NsTclNsvAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
  */
 
 int
-NsTclNsvUnsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Obj *arrayObj;
     Array   *arrayPtr;
@@ -474,9 +475,9 @@ NsTclNsvUnsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclNsvNamesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    NsInterp       *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     Tcl_HashSearch  search;
     Tcl_Obj        *result;
@@ -533,14 +534,14 @@ NsTclNsvNamesObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Array          *arrayPtr;
     Tcl_HashSearch  search;
     int             i, opt, lobjc, size;
     Tcl_Obj       **lobjv;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "set", "reset", "get", "names", "size", "exists", NULL
     };
     enum ISubCmdIdx {
@@ -566,7 +567,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
                                    &lobjv) != TCL_OK) {
             return TCL_ERROR;
         }
-        if (lobjc & 1) {
+        if (lobjc % 2 == 1) {
             Tcl_AppendResult(interp, "invalid list: ",
                              Tcl_GetString(objv[3]), NULL);
             return TCL_ERROR;
@@ -580,7 +581,7 @@ NsTclNsvArrayObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
         }
         for (i = 0; i < lobjc; i += 2) {
             char *value = Tcl_GetStringFromObj(lobjv[i+1], &size);
-            SetVar(arrayPtr, Tcl_GetString(lobjv[i]), value, size);
+            SetVar(arrayPtr, Tcl_GetString(lobjv[i]), value, (size_t)size);
         }
         UnlockArray(arrayPtr);
         break;
@@ -797,7 +798,7 @@ Ns_VarIncr(CONST char *server, CONST char *array, CONST char *key, int incr)
 
 int
 Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
-             CONST char *value, size_t len)
+             CONST char *value, ssize_t len)
 {
     NsServer      *servPtr;
     Array         *arrayPtr;
@@ -813,7 +814,7 @@ Ns_VarAppend(CONST char *server, CONST char *array, CONST char *key,
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
 
         oldString = Tcl_GetHashValue(hPtr);
-        oldLen = oldString ? strlen(oldString) : 0;
+        oldLen = oldString ? strlen(oldString) : 0U;
 
         newLen = oldLen + (len > -1 ? len : strlen(value)) + 1;
         newString = ns_realloc(oldString, newLen + 1);
@@ -878,7 +879,7 @@ Ns_VarUnset(CONST char *server, CONST char *array, CONST char *key)
  *----------------------------------------------------------------
  */
 
-Array *
+static Array *
 LockArray(NsServer *servPtr, CONST char *array, int create)
 {
     Bucket        *bucketPtr;
@@ -898,7 +899,7 @@ LockArray(NsServer *servPtr, CONST char *array, int create)
         }
         result += (result<<3) + i;
     }
-    bucketPtr = &servPtr->nsv.buckets[result % servPtr->nsv.nbuckets];
+    bucketPtr = &servPtr->nsv.buckets[result % (unsigned int)servPtr->nsv.nbuckets];
 
     Ns_MutexLock(&bucketPtr->lock);
     if (unlikely(create)) {
@@ -1130,7 +1131,7 @@ static Array *
 LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, int create)
 {
     Array              *arrayPtr = NULL;
-    static CONST char  *arrayType = "nsv:array";
+    static const char  *arrayType = "nsv:array";
 
     if (likely(Ns_TclGetOpaqueFromObj(arrayObj, arrayType, (void **) &arrayPtr)
 	       == TCL_OK)) {
@@ -1174,9 +1175,9 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, int create)
  */
 
 int
-NsTclNsvBucketObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    NsInterp       *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int		    bucketNr = -1, i;
     Bucket         *bucketPtr;

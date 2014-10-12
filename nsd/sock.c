@@ -61,6 +61,7 @@ static NS_SOCKET SockConnect(char *host, int port, char *lhost, int lport,
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 static int SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
 
+static Ns_SockProc CloseLater;
 
 /*
  *----------------------------------------------------------------------
@@ -106,20 +107,20 @@ Ns_SetVec(struct iovec *iov, int i, CONST void *data, size_t len)
  */
 
 int
-Ns_ResetVec(struct iovec *iov, int nbufs, size_t sent)
+Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 {
     int     i;
 
     for (i = 0; i < nbufs && sent > 0; i++) {
-        char   *data = iov[i].iov_base;
-	size_t  len  = iov[i].iov_len;
+        char   *data = bufs[i].iov_base;
+	size_t  len  = bufs[i].iov_len;
 
         if (len > 0) {
             if (sent >= len) {
                 sent -= len;
-                Ns_SetVec(iov, i, NULL, 0);
+                Ns_SetVec(bufs, i, NULL, 0);
             } else {
-                Ns_SetVec(iov, i, data + sent, len - sent);
+                Ns_SetVec(bufs, i, data + sent, len - sent);
                 break;
             }
         }
@@ -305,16 +306,16 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
  */
 
 int
-Ns_SockRecv(NS_SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
+Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t toRead, Ns_Time *timePtr)
 {
     int nread;
 
-    nread = recv(sock, buf, toread, 0);
+    nread = recv(sock, vbuf, toRead, 0);
 
     if (nread == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_READ, timePtr) == NS_OK) {
-        nread = recv(sock, buf, toread, 0);
+        nread = recv(sock, vbuf, toRead, 0);
     }
 
     return nread;
@@ -339,16 +340,16 @@ Ns_SockRecv(NS_SOCKET sock, void *buf, size_t toread, Ns_Time *timePtr)
  */
 
 int
-Ns_SockSend(NS_SOCKET sock, void *buf, size_t towrite, Ns_Time *timeoutPtr)
+Ns_SockSend(NS_SOCKET sock, void *vbuf, size_t toWrite, Ns_Time *timeoutPtr)
 {
     int nwrote;
 
-    nwrote = send(sock, buf, towrite, 0);
+    nwrote = send(sock, vbuf, toWrite, 0);
 
     if (nwrote == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-        nwrote = send(sock, buf, towrite, 0);
+        nwrote = send(sock, vbuf, toWrite, 0);
     }
 
     return nwrote;
@@ -440,7 +441,7 @@ Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
  *      Listen for connections with default backlog.
  *
  * Results:
- *      A socket or INVALID_SOCKET on error.
+ *      A socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -463,7 +464,7 @@ Ns_SockListen(char *address, int port)
  *      Accept a TCP socket, setting close on exec.
  *
  * Results:
- *      A socket or INVALID_SOCKET on error.
+ *      A socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -478,9 +479,9 @@ Ns_SockAccept(NS_SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
 
     sock = accept(lsock, saPtr, (socklen_t *) lenPtr);
 
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
         sock = SockSetup(sock);
-    } else if (errno != EAGAIN) {
+    } else if (errno != 0 && errno != EAGAIN) {
         Ns_Log(Notice, "accept() fails, reason: %s", strerror(errno));
     }
 
@@ -496,7 +497,7 @@ Ns_SockAccept(NS_SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
  *      Create a TCP socket and bind it to the passed-in address.
  *
  * Results:
- *      A socket or INVALID_SOCKET on error.
+ *      A socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      Will set SO_REUSEADDR on the socket.
@@ -518,10 +519,10 @@ Ns_SockBind(struct sockaddr_in *saPtr)
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
         sock = SockSetup(sock);
     }
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
         n = 1;
         if (saPtr->sin_port != 0) {
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
@@ -530,7 +531,7 @@ Ns_SockBind(struct sockaddr_in *saPtr)
         if (bind(sock, (struct sockaddr *) saPtr,
                  sizeof(struct sockaddr_in)) != 0) {
             ns_sockclose(sock);
-            sock = INVALID_SOCKET;
+            sock = NS_INVALID_SOCKET;
         }
     }
 
@@ -546,7 +547,7 @@ Ns_SockBind(struct sockaddr_in *saPtr)
  *      Open a TCP connection to a host/port.
  *
  * Results:
- *      A socket, or INVALID_SOCKET on error.
+ *      A socket, or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -575,7 +576,7 @@ Ns_SockConnect2(char *host, int port, char *lhost, int lport)
  *      Like Ns_SockConnect, but uses a nonblocking socket.
  *
  * Results:
- *      A socket, or INVALID_SOCKET on error.
+ *      A socket, or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -604,7 +605,7 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  *      Like Ns_SockConnect, but with an optional timeout in seconds.
  *
  * Results:
- *      A socket, or INVALID_SOCKET on error.
+ *      A socket, or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None.
@@ -633,7 +634,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
 
     sock = SockConnect(host, port, lhost, lport, 1);
 
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
         len = sizeof(err);
         err = Ns_SockTimedWait(sock, NS_SOCK_WRITE, timePtr);
         switch (err) {
@@ -650,7 +651,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
             break;
         }
         ns_sockclose(sock);
-        sock = INVALID_SOCKET;
+        sock = NS_INVALID_SOCKET;
     }
 
     return sock;
@@ -867,7 +868,7 @@ Ns_SockPipe(NS_SOCKET socks[2])
  */
 
 static int
-CloseLater(NS_SOCKET sock, void *arg, unsigned int why)
+CloseLater(NS_SOCKET sock, void *UNUSED(arg), unsigned int UNUSED(why))
 {
     ns_sockclose(sock);
     return NS_FALSE;
@@ -1009,7 +1010,7 @@ NsPoll(struct pollfd *pfds, int nfds, Ns_Time *timeoutPtr)
  *      Open a TCP connection to a host/port.
  *
  * Results:
- *      A socket or INVALID_SOCKET on error.
+ *      A socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      If async is true, the returned socket will be nonblocking.
@@ -1026,10 +1027,10 @@ SockConnect(char *host, int port, char *lhost, int lport, int async)
 
     if (Ns_GetSockAddr(&sa, host, port) != NS_OK ||
         Ns_GetSockAddr(&lsa, lhost, lport) != NS_OK) {
-        return INVALID_SOCKET;
+        return NS_INVALID_SOCKET;
     }
     sock = Ns_SockBind(&lsa);
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
         if (async) {
             Ns_SockSetNonBlocking(sock);
         }
@@ -1037,10 +1038,10 @@ SockConnect(char *host, int port, char *lhost, int lport, int async)
             unsigned int err = ns_sockerrno;
             if (!async || (err != EINPROGRESS && err != EWOULDBLOCK)) {
                 ns_sockclose(sock);
-                sock = INVALID_SOCKET;
+                sock = NS_INVALID_SOCKET;
             }
         }
-        if (async && sock != INVALID_SOCKET) {
+        if (async && sock != NS_INVALID_SOCKET) {
             Ns_SockSetBlocking(sock);
         }
     }
@@ -1072,7 +1073,7 @@ SockSetup(NS_SOCKET sock)
     NS_SOCKET nsock;
 
     nsock = fcntl(sock, F_DUPFD, 256);
-    if (nsock != INVALID_SOCKET) {
+    if (nsock != NS_INVALID_SOCKET) {
       close(sock);
       sock = nsock;
     }

@@ -459,7 +459,7 @@ SetUrl(Ns_Request *request, char *url)
         }
         ++p;
     }
-    request->urlc = ds1.length / (sizeof(char *));
+    request->urlc = ds1.length / (int)sizeof(char *);
     p = NULL;
     Ns_DStringNAppend(&ds1, (char *) &p, sizeof(char *));
     request->urlv = (char **) ns_malloc((size_t)ds1.length);

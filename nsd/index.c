@@ -43,6 +43,18 @@
 static int BinSearch(void **elp, void **list, int n, Ns_IndexCmpProc *cmp);
 static int BinSearchKey(void *key, void **list, int n, Ns_IndexCmpProc *cmp);
 
+static int CmpStr(char **leftPtr, char **rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpKeyWithStr(char *key, char **elPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpInts(int *leftPtr, int *rightPtr)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int CmpKeyWithInt(int *keyPtr, int *elPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+#ifdef _MSC_VER_VERY_OLD
+static void * 
+NsBsearch (register const void *key, register const void *base,
+           register size_t nmemb, register size_t size,
+           int (*compar)(const void *left, const void *right));
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -62,8 +74,8 @@ static int BinSearchKey(void *key, void **list, int n, Ns_IndexCmpProc *cmp);
 
 void
 Ns_IndexInit(Ns_Index *indexPtr, int inc,
-	     int (*CmpEls) (const void *, const void *),
-	     int (*CmpKeyWithEl) (const void *, const void *))
+	     int (*CmpEls) (const void *left, const void *right),
+	     int (*CmpKeyWithEl) (const void *left, const void *right))
 {
     indexPtr->n = 0;
     indexPtr->max = inc;
@@ -495,6 +507,9 @@ Ns_IndexEl(Ns_Index *indexPtr, int i)
 static int
 CmpStr(char **leftPtr, char **rightPtr)
 {
+    assert(leftPtr != NULL);
+    assert(rightPtr != NULL);
+
     return strcmp(*leftPtr, *rightPtr);
 }
 
@@ -518,6 +533,9 @@ CmpStr(char **leftPtr, char **rightPtr)
 static int
 CmpKeyWithStr(char *key, char **elPtr)
 {
+    assert(key != NULL);
+    assert(elPtr != NULL);
+
     return strcmp(key, *elPtr);
 }
 
@@ -542,8 +560,9 @@ CmpKeyWithStr(char *key, char **elPtr)
 void
 Ns_IndexStringInit(Ns_Index *indexPtr, int inc)
 {
-    Ns_IndexInit(indexPtr, inc, (int (*) (const void *, const void *)) CmpStr,
-        (int (*) (const void *, const void *)) CmpKeyWithStr);
+    Ns_IndexInit(indexPtr, inc, 
+		 (int (*) (const void *left, const void *right)) CmpStr,
+		 (int (*) (const void *left, const void *right)) CmpKeyWithStr);
 }
 
 
@@ -686,6 +705,10 @@ Ns_IndexStringTrunc(Ns_Index *indexPtr)
 static int
 CmpInts(int *leftPtr, int *rightPtr)
 {
+
+    assert(leftPtr != NULL);
+    assert(rightPtr != NULL);
+
     if (*leftPtr == *rightPtr) {
         return 0;
     } else {
@@ -713,6 +736,9 @@ CmpInts(int *leftPtr, int *rightPtr)
 static int
 CmpKeyWithInt(int *keyPtr, int *elPtr)
 {
+    assert(keyPtr != NULL);
+    assert(elPtr != NULL);
+
     if (*keyPtr == *elPtr) {
         return 0;
     } else {
@@ -740,11 +766,12 @@ CmpKeyWithInt(int *keyPtr, int *elPtr)
 void
 Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
 {
-    Ns_IndexInit(indexPtr, inc, (int (*) (const void *, const void *)) CmpInts,
-        (int (*) (const void *, const void *)) CmpKeyWithInt);
+    Ns_IndexInit(indexPtr, inc, 
+		 (int (*) (const void *left, const void *right)) CmpInts,
+		 (int (*) (const void *left, const void *right)) CmpKeyWithInt);
 }
 
-#ifdef _WIN32
+#ifdef _MSC_VER_VERY_OLD
 #define bsearch(a,b,c,d,e) NsBsearch((a),(b),(c),(d),(e))
 
 /*
@@ -769,7 +796,7 @@ Ns_IndexIntInit(Ns_Index *indexPtr, int inc)
 static void * 
 NsBsearch (register const void *key, register const void *base,
            register size_t nmemb, register size_t size,
-           int (*compar)(const void *, const void *))
+           int (*compar)(const void *key, const void *value))
 {
     while (nmemb > 0) {
 	register const void *mid_point;

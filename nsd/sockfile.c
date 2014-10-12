@@ -336,6 +336,8 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
 #include <io.h>
 #include <stdio.h>
 
+ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
+
 ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
 {
     OVERLAPPED overlapped = { 0 };
@@ -451,7 +453,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
     while (toread > 0) {
 	ssize_t sent, nread;
 
-        nread = pread(fd, buf, MIN(toread, sizeof(buf)), offset);
+        nread = pread(fd, buf, MIN((size_t)toread, sizeof(buf)), offset);
         if (nread <= 0) {
             break;
         }

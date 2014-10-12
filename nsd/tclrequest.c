@@ -96,18 +96,18 @@ Ns_TclRequest(Ns_Conn *conn, CONST char *name)
  */
 
 int
-NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[])
+NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
     char           *method, *url;
-    int             flags = 0, remain = 0;
+    int             remain = 0, noinherit = 0;
+    unsigned int    flags = 0U;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
-        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
+        {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -120,6 +120,8 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+
+    if (noinherit) {flags |= NS_OP_NOINHERIT;}
 
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclRequestProc, scriptObj,
                               remain, objv + (objc - remain));
@@ -147,8 +149,7 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                        Tcl_Obj *CONST objv[])
+NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
@@ -197,12 +198,12 @@ NsTclRegisterProxyObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, 
-			    int objc, Tcl_Obj *CONST objv[])
+NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = arg;
     char           *method, *url;
-    int             flags = 0;
+    int             noinherit = 0;
+    unsigned int    flags = 0U;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
@@ -216,6 +217,10 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp,
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
+    }
+
+    if (noinherit) {
+	flags |= NS_OP_NOINHERIT;
     }
 
     Ns_RegisterRequest(itPtr->servPtr->server, method, url,
@@ -242,7 +247,7 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 int
-NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp *itPtr = arg;
     char     *method = NULL, *url = NULL;
@@ -263,7 +268,7 @@ NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
         return TCL_ERROR;
     }
     Ns_UnRegisterRequestEx(itPtr->servPtr->server, method, url,
-                           (noinherit | recurse));
+                           ((unsigned int)noinherit | (unsigned int)recurse));
 
     return TCL_OK;
 }
@@ -286,7 +291,7 @@ NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
  */
 
 int
-NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp        *itPtr = arg;
     Ns_TclCallback  *cbPtr;
@@ -337,7 +342,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
  */
 
 int
-NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp  *itPtr = arg;
     char      *server = itPtr->servPtr->server;
@@ -378,7 +383,7 @@ NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
  */
 
 int
-NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRegisterTraceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = arg;
     Ns_TclCallback *cbPtr;
@@ -466,7 +471,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
  */
 
 int
-NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
+NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
 {
     Ns_TclCallback      *cbPtr = arg;
     Tcl_DString          ds;
@@ -577,7 +582,7 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, int why)
  */
 
 int
-NsShortcutFilterProc(void *arg, Ns_Conn *conn, int why)
+NsShortcutFilterProc(void *UNUSED(arg), Ns_Conn *UNUSED(conn), unsigned int UNUSED(why))
 {
     return NS_FILTER_BREAK;
 }

@@ -106,7 +106,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #ifndef _WIN32
     int       debug = 0, mode = 0;
     char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
-    char     *bindargs = NULL, *bindfile = NULL, *procname = NULL;
+    char     *bindargs = NULL, *bindfile = NULL;
     Ns_Set   *servers;
     struct rlimit  rl;
 #else
@@ -474,10 +474,6 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
         server = Ns_SetKey(servers, i);
     }
 
-    /*
-     * Set the procname used for the pid file.
-     */
-    procname = (server ? server : Ns_SetKey(servers, 0));
 
     /*
      * Verify and change to the home directory.
@@ -538,12 +534,17 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
 #ifdef _WIN32
 
     /*
+     * Set the procname used for the pid file.
+     */
+    procname = (server ? server : Ns_SetKey(servers, 0));
+
+    /*
      * Connect to the service control manager if running
      * as a service (see service comment above).
      */
 
     if (mode == 'I' || mode == 'R' || mode == 'S') {
-        int status;
+	int status = TCL_OK;
 
         Ns_ThreadSetName("-service-");
         switch (mode) {
@@ -612,7 +613,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * Create the pid file.
      */
 
-    NsCreatePidFile(procname);
+    NsCreatePidFile();
 
     /*
      * Initialize the virtual servers.
@@ -736,7 +737,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * status message and return to main.
      */
 
-    NsRemovePidFile(procname);
+    NsRemovePidFile();
     StatusMsg(exiting);
 
     /*
@@ -804,7 +805,7 @@ Ns_WaitForStartup(void)
 void
 Ns_StopServer(char *server)
 {
-    Ns_Log(Warning, "nsmain: immediate server shutdown requested");
+    Ns_Log(Warning, "nsmain: immediate shutdown of server %s requested", server);
     NsSendSignal(NS_SIGTERM);
 }
 
@@ -828,7 +829,7 @@ Ns_StopServer(char *server)
  */
 
 int
-NsTclShutdownObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int timeout = 0, signal = NS_SIGTERM;
 
@@ -1076,7 +1077,7 @@ MakePath(char *file)
  *----------------------------------------------------------------------
  */
 
-char *
+static char *
 SetCwd(char *path)
 {
     Tcl_Obj *pathObj;

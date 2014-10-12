@@ -54,7 +54,7 @@ typedef struct LogEntry {
     Ns_LogSeverity   severity;  /* Entry's severity */
     Ns_Time          stamp;     /* Timestamp of the entry */
     int              offset;    /* Offset into the text buffer */
-    int              length;    /* Length of the log message */
+    size_t           length;    /* Length of the log message */
     struct LogEntry *nextPtr;   /* Next in the list of entries */
 } LogEntry;
 
@@ -120,13 +120,13 @@ static Ns_Tls       tls;
 static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
-static CONST char  *file;
-static unsigned int flags;
+static const char  *file;
+static unsigned int flags = 0U;
 static int          maxback;
 
 static LogFilter   *filters;
-static CONST char  *filterType = "ns:logfilter";
-static CONST char  *severityType = "ns:logseverity";
+static const char  *filterType = "ns:logfilter";
+static const char  *severityType = "ns:logseverity";
 
 /*
  * The following table defines which severity levels
@@ -149,7 +149,7 @@ static struct {
     { "Dev",     NS_FALSE }
 };
 
-static int severityCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
+static const int severityCount = sizeof(severityConfig) / sizeof(severityConfig[0]);
 static int severityIdx = 0;
 
 static Tcl_HashTable severityTable; /* Map severity names to indexes for Tcl. */
@@ -319,10 +319,10 @@ Ns_CreateLogSeverity(CONST char *name)
     hPtr = Tcl_CreateHashEntry(&severityTable, name, &isNew);
     if (isNew) {
         severity = severityIdx++;
-        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) severity);
+        Tcl_SetHashValue(hPtr, INT2PTR(severity));
         severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
     } else {
-        severity = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+	severity = PTR2INT(Tcl_GetHashValue(hPtr));
     }
     Ns_MutexUnlock(&lock);
 
@@ -736,8 +736,7 @@ LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt)
  */
 
 int
-NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-               Tcl_Obj *CONST objv[])
+NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_LogSeverity severity;
     Ns_DString     ds;
@@ -787,8 +786,7 @@ NsTclLogObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                  Tcl_Obj *CONST objv[])
+NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int             count, opt, i;
     Ns_DString      ds;
@@ -798,7 +796,7 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     void           *addr;
     Ns_TclCallback *cbPtr;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "hold", "count", "get", "peek", "flush", "release",
         "truncate", "severity", "severities",
         "register", "unregister", NULL
@@ -947,8 +945,8 @@ NsTclLogCtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclLogRollObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
+		   int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
 {
     if (Ns_LogRoll() != NS_OK) {
         Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
@@ -1226,7 +1224,7 @@ LogToDString(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
     Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
-                     Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+                     (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
                      Ns_LogSeverityName(severity));
     if (flags & LOG_EXPAND) {
         Ns_DStringAppend(dsPtr, "\n    ");
@@ -1476,7 +1474,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
              * Check for a legacy integer severity.
              */
             if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
-                    && i < severityCount) {
+		&& i < severityCount) {
 		*addrPtrPtr = INT2PTR(i);
             } else {
                 Tcl_AppendResult(interp, "unknown severity: \"",
@@ -1515,13 +1513,13 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
  */
 
 void
-Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
+Ns_SetLogFlushProc(Ns_LogFlushProc *UNUSED(procPtr))
 {
     Ns_Fatal("Ns_SetLogFlushProc: deprecated, use Ns_AddLogFilter() instead");
 }
 
 void
-Ns_SetNsLogProc(Ns_LogProc *procPtr)
+Ns_SetNsLogProc(Ns_LogProc *UNUSED(procPtr))
 {
     Ns_Fatal("Ns_SetNsLogProc: deprecated, use Ns_AddLogFilter() instead");
 }

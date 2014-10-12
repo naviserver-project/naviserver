@@ -236,7 +236,7 @@ Ns_StringArgProc(Tcl_DString *dsPtr, void *arg)
  *----------------------------------------------------------------------
  */
 
-void
+static void
 ServerArgProc(Tcl_DString *dsPtr, void *arg)
 {
     NsServer *servPtr = arg;

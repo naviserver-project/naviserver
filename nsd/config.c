@@ -736,7 +736,7 @@ NsConfigEval(CONST char *config, int argc, char **argv, int optind)
  */
 
 static int
-ParamCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
+ParamCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     Ns_Set *set;
 
@@ -745,13 +745,13 @@ ParamCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
                          argv[0], " key value", NULL);
         return TCL_ERROR;
     }
-    set = *((Ns_Set **) arg);
+    set = *((Ns_Set **) clientData);
     if (set == NULL) {
         Tcl_AppendResult(interp, argv[0],
                          " not preceded by an ns_section command.", NULL);
         return TCL_ERROR;
     }
-    Ns_SetPut(set, (char*) argv[1], (char*) argv[2]);
+    Ns_SetPut(set, argv[1], argv[2]);
 
     return TCL_OK;
 }
@@ -776,7 +776,7 @@ ParamCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
  */
 
 static int
-SectionCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
+SectionCmd(ClientData clientData, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     Ns_Set  **set;
 
@@ -785,7 +785,7 @@ SectionCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char **argv)
                          (char*)argv[0], " sectionname", NULL);
         return TCL_ERROR;
     }
-    set = (Ns_Set **) arg;
+    set = (Ns_Set **) clientData;
     *set = GetSection((char*) argv[1], 1);
 
     return TCL_OK;
@@ -928,7 +928,7 @@ GetSection(CONST char *section, int create)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ToBool(CONST char *value, int *valuePtr)
 {
     int boolValue;

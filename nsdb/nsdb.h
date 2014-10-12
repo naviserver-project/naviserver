@@ -150,18 +150,20 @@ NS_EXTERN Ns_Set *Ns_DbSpGetParams(Ns_DbHandle *handle);
  * dbinit.c:
  */
 
-NS_EXTERN char *Ns_DbPoolDescription(char *pool);
+NS_EXTERN char *Ns_DbPoolDescription(const char *pool);
 NS_EXTERN char *Ns_DbPoolDefault(char *server);
 NS_EXTERN char *Ns_DbPoolList(char *server);
-NS_EXTERN int Ns_DbPoolAllowable(char *server, char *pool);
+NS_EXTERN int Ns_DbPoolAllowable(char *server, const char *pool);
 NS_EXTERN void Ns_DbPoolPutHandle(Ns_DbHandle *handle);
-NS_EXTERN Ns_DbHandle *Ns_DbPoolTimedGetHandle(char *pool, int wait);
-NS_EXTERN Ns_DbHandle *Ns_DbPoolGetHandle(char *pool);
-NS_EXTERN int Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, char *pool,
-				       int nwant);
-NS_EXTERN int Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, char *pool,
-					    int nwant, int wait);
-NS_EXTERN int Ns_DbBouncePool(char *pool);
+NS_EXTERN Ns_DbHandle *Ns_DbPoolTimedGetHandle(const char *pool, int wait);
+NS_EXTERN Ns_DbHandle *Ns_DbPoolGetHandle(const char *pool);
+NS_EXTERN int Ns_DbPoolGetMultipleHandles(Ns_DbHandle **handles, 
+					  const char *pool,
+					  int nwant);
+NS_EXTERN int Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, 
+					       const char *pool,
+					       int nwant, int wait);
+NS_EXTERN int Ns_DbBouncePool(const char *pool);
 
 /*
  * dbtcl.c:

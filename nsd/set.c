@@ -300,7 +300,7 @@ int
 Ns_SetUnique(Ns_Set *set, CONST char *key)
 {
     return Ns_SetUniqueCmp(set, key,
-                           (int (*) (CONST char *, CONST char *)) strcmp);
+                           (int (*) (CONST char *left, CONST char *right)) strcmp);
 }
 
 
@@ -324,7 +324,7 @@ int
 Ns_SetIUnique(Ns_Set *set, CONST char *key)
 {
     return Ns_SetUniqueCmp(set, key,
-                           (int (*) (CONST char *, CONST char *)) strcasecmp);
+                           (int (*) (CONST char *s1, CONST char *s2)) strcasecmp);
 }
 
 
@@ -348,7 +348,7 @@ int
 Ns_SetFind(Ns_Set *set, CONST char *key)
 {
     return Ns_SetFindCmp(set, key,
-                         (int (*) (CONST char *, CONST char *)) strcmp);
+                         (int (*) (CONST char *s1, CONST char *s2)) strcmp);
 }
 
 
@@ -372,7 +372,7 @@ int
 Ns_SetIFind(Ns_Set *set, CONST char *key)
 {
     return Ns_SetFindCmp(set, key,
-                         (int (*) (CONST char *, CONST char *)) strcasecmp);
+                         (int (*) (CONST char *s1, CONST char *s2)) strcasecmp);
 }
 
 
@@ -396,7 +396,7 @@ char *
 Ns_SetGet(Ns_Set *set, CONST char *key)
 {
     return Ns_SetGetCmp(set, key,
-                        (int (*) (CONST char *, CONST char *)) strcmp);
+                        (int (*) (CONST char *s1, CONST char *s2)) strcmp);
 }
 
 

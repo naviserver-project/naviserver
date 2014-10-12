@@ -524,7 +524,7 @@ NsQueueConn(Sock *sockPtr, Ns_Time *nowPtr)
  */
 
 int
-NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int          subcmd, value = 0, nextArgIdx;
     NsInterp    *itPtr = arg;
@@ -533,7 +533,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     char        *pool = NULL, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
-    static CONST char *subcmds[] = {
+    static const char *subcmds[] = {
         "active", "all", "connections", 
 	"filters",
 	"keepalive", 
@@ -1390,10 +1390,6 @@ NsConnThread(void *arg)
  *
  *----------------------------------------------------------------------
  */
-static void
-ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 static void
 ConnRun(ConnThreadArg *argPtr, Conn *connPtr)
 {

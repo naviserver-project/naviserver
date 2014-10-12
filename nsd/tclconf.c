@@ -54,7 +54,7 @@
  */
 
 int
-NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char       *section, *key;
     CONST char *value;
@@ -63,12 +63,12 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     Tcl_WideInt v, min = LLONG_MIN, max = LLONG_MAX;
 
     Ns_ObjvSpec opts[] = {
-        {"-bool",  Ns_ObjvBool,      &isbool, (void *) NS_TRUE},
-        {"-int",   Ns_ObjvBool,      &isint,  (void *) NS_TRUE},
+        {"-bool",  Ns_ObjvBool,      &isbool, INT2PTR(NS_TRUE)},
+        {"-int",   Ns_ObjvBool,      &isint,  INT2PTR(NS_TRUE)},
         {"-min",   Ns_ObjvWideInt,   &min,    NULL},
         {"-max",   Ns_ObjvWideInt,   &max,    NULL},
-        {"-exact", Ns_ObjvBool,      &exact,  (void *) NS_TRUE},
-        {"-set",   Ns_ObjvBool,      &doSet,  (void *) NS_TRUE},
+        {"-exact", Ns_ObjvBool,      &exact,  INT2PTR(NS_TRUE)},
+        {"-set",   Ns_ObjvBool,      &doSet,  INT2PTR(NS_TRUE)},
         {"--",     Ns_ObjvBreak,     NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -183,7 +183,7 @@ NsTclConfigObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
  */
 
 int
-NsTclConfigSectionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Set *set;
 
@@ -216,7 +216,7 @@ NsTclConfigSectionObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 
 int
-NsTclConfigSectionsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Set **sets;
     int      i;

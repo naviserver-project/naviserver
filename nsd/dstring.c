@@ -285,7 +285,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
      */
 
     len = ((dsPtr->length / 8) + 1) * 8;
-    size = len + (sizeof(char *) * (argc + 1));
+    size = len + ((int)sizeof(char *) * (argc + 1));
     Ns_DStringSetLength(dsPtr, size);
 
     /*

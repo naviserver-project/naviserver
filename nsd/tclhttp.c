@@ -41,9 +41,9 @@ extern Tcl_ObjCmdProc NsTclHttpObjCmd;
  * Local functions defined in this file
  */
 
-static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
+static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
     NS_GNUC_NONNULL(1);
-static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int run)
+static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
 static int HttpConnect(Tcl_Interp *interp, char *method, char *url,
 			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
@@ -58,6 +58,9 @@ static void HttpAbort(Ns_HttpTask *httpPtr)  NS_GNUC_NONNULL(1);
 
 static int HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int outSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void ProcessReplyHeaderFields(Ns_HttpTask *httpPtr) 
+    NS_GNUC_NONNULL(1);
 
 static Ns_TaskProc HttpProc;
 
@@ -85,14 +88,14 @@ static Ns_TaskQueue *queue;
  */
 
 int
-NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp *itPtr = arg;
     Ns_HttpTask *httpPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     int opt, run = 0;
-    static CONST char *opts[] = {
+    static const char *opts[] = {
        "cancel", "cleanup", "run", "queue", "wait", "list",
        NULL
     };
@@ -176,7 +179,7 @@ NsTclHttpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 static int
-HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[], int run)
+HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
 {
     Tcl_Interp *interp;
     int isNew, i;
@@ -271,9 +274,9 @@ HttpParseHeaders(char *response, Ns_Set *hdrPtr, int *statusPtr)
     char *p, *eol;
     int firsthdr = 1, major, minor;
 
-    assert(hdrPtr);
-    assert(response);
-    assert(statusPtr);
+    assert(hdrPtr != NULL);
+    assert(response != NULL);
+    assert(statusPtr != NULL);
 
     sscanf(response, "HTTP/%2d.%2d %3d", &major, &minor, statusPtr);
     p = response;
@@ -319,6 +322,8 @@ static void
 ProcessReplyHeaderFields(Ns_HttpTask *httpPtr) 
 {
     char *encString;
+
+    assert(httpPtr != NULL);
 
     Ns_Log(Debug, "ProcessReplyHeaderFields %p", httpPtr->replyHeaders);
 
@@ -505,7 +510,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
  */
 
 static int
-HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj * CONST objv[])
+HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Interp  *interp;
     Tcl_Obj     *valPtr, 
@@ -711,7 +716,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
     strncpy(hostBuffer, host, sizeof(hostBuffer));
     sock = Ns_SockAsyncConnect(hostBuffer, portNr);
 
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
 	Tcl_AppendResult(interp, "connect to \"", url, "\" failed: ",
 	 		 ns_sockstrerror(ns_sockerrno), NULL);
 	return TCL_ERROR;

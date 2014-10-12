@@ -24,6 +24,11 @@
 
 #include "nsd.h"
 
+static int TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, char *string);
+static int TclX_IsNullObj(Tcl_Obj *objPtr);
+
+
+
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 /*          Stuff copied from the rest of TclX to avoid dependencies         */
@@ -61,7 +66,7 @@
 /*
  * Used to return argument messages by most commands.
  */
-static char *tclXWrongArgs = "wrong # args: ";
+static const char *tclXWrongArgs = "wrong # args: ";
 
 /*
  * Those are used in TclX_IsNullObj() in read-only mode
@@ -92,7 +97,7 @@ void NsTclInitKeylistType(void)
  *   TCL_ERROR
  *-----------------------------------------------------------------------------
  */
-int
+static int
 TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, char *string)
 {
     char    *commandName;
@@ -123,7 +128,7 @@ TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, char *string)
  *   True if NULL, FALSE if not.
  *-----------------------------------------------------------------------------
  */
-int
+static int
 TclX_IsNullObj(Tcl_Obj *objPtr)
 {
     int length;
@@ -233,7 +238,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
 	        (void) Tcl_GetStringFromObj(objValues[ii], (int*)&keySize);
                 totalKeySize += keySize + 1;
             }
-            keyArgv = (char **)ckalloc((int)(((keyCount+1)*sizeof(char *)) + totalKeySize));
+            keyArgv = (char **)ckalloc((size_t)(((keyCount+1)*sizeof(char *)) + totalKeySize));
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + ((keyCount+1) * sizeof(char *));
 
@@ -299,7 +304,7 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, CONST char *fieldName,
         if (fieldValuePtr) {
             size_t valueLen;
             char *keyValue = Tcl_GetStringFromObj(objValPtr, (int*)&valueLen);
-            char *newValue = strncpy(ckalloc((int)(valueLen + 1)), keyValue, valueLen);
+            char *newValue = strncpy(ckalloc((size_t)(valueLen + 1)), keyValue, valueLen);
             newValue[valueLen] = 0;
             *fieldValuePtr = newValue;
         }
@@ -350,7 +355,7 @@ Tcl_SetKeyedListField(Tcl_Interp *interp, CONST char *fieldName,
     }
 
     listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), (int*)&listLen);
-    newList = strncpy(ckalloc((int)(listLen + 1)), listStr, listLen);
+    newList = strncpy(ckalloc((size_t)(listLen + 1)), listStr, (size_t)listLen);
     listStr[listLen] = 0;
 
     Tcl_DecrRefCount(valuePtr);
@@ -1080,7 +1085,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valu
             Tcl_DecrRefCount(keylIntPtr->entries[findIdx].valuePtr);
         }
         keylIntPtr->entries[findIdx].key =
-	  (char *) ckalloc((int)(keyLen + 1));
+	  (char *) ckalloc((size_t)(keyLen + 1));
         strncpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = valuePtr;
@@ -1120,7 +1125,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valu
         EnsureKeyedListSpace(keylIntPtr, 1);
         findIdx = keylIntPtr->numEntries++;
         keylIntPtr->entries[findIdx].key =
-            (char *) ckalloc((int)(keyLen + 1));
+            (char *) ckalloc((size_t)(keyLen + 1));
         strncpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = newKeylPtr;
@@ -1278,7 +1283,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Obj *keylPtr, *valuePtr;
     char *varName, *key;
@@ -1358,7 +1363,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Obj *keylVarPtr, *newVarObj;
     char *varName, *key;
@@ -1418,7 +1423,7 @@ TclX_KeylsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *----------------------------------------------------------------------------
  */
 int
-TclX_KeyldelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Obj *keylVarPtr, *keylPtr;
     char *varName;
@@ -1481,7 +1486,7 @@ TclX_KeyldelObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylkeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Obj *keylPtr, *listObjPtr;
     char *varName, *key;
@@ -1526,29 +1531,4 @@ TclX_KeylkeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     return TCL_OK;
 }
 
-/*-----------------------------------------------------------------------------
- * TclX_KeyedListInit --
- *   Initialize the keyed list commands for this interpreter.
- *
- * Parameters:
- *   o interp - Interpreter to add commands to.
- *-----------------------------------------------------------------------------
- */
-void
-TclX_KeyedListInit(Tcl_Interp *interp)
-{
-    Tcl_RegisterObjType(&keyedListType);
-
-    Tcl_CreateObjCommand(interp, "keylget", TclX_KeylgetObjCmd, 
-			 (ClientData) NULL, NULL);
-
-    Tcl_CreateObjCommand(interp, "keylset", TclX_KeylsetObjCmd,
-			 (ClientData) NULL, NULL);
-
-    Tcl_CreateObjCommand(interp, "keyldel", TclX_KeyldelObjCmd,
-			 (ClientData) NULL, NULL);
-
-    Tcl_CreateObjCommand(interp, "keylkeys", TclX_KeylkeysObjCmd,
-                          (ClientData) NULL,NULL);
-}
 

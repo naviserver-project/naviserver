@@ -47,12 +47,11 @@ static Ns_ServerInitProc ConfigServerVhost;
 static int ConfigServerVhost(CONST char *server)
     NS_GNUC_NONNULL(1);
 
-static int PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                      Tcl_Obj *CONST objv[], int cmd)
+static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd)
     NS_GNUC_NONNULL(2);
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1);
-static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
+static char *ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawHost)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -137,6 +136,8 @@ ConfigServerVhost(CONST char *server)
 int
 Ns_PathIsAbsolute(CONST char *path)
 {
+    assert(path != NULL);
+
 #ifdef _WIN32
     if (isalpha(UCHAR(*path)) && path[1] == ':') {
         path += 2;
@@ -294,27 +295,27 @@ Ns_MakePath(Ns_DString *dest, ...)
  */
 
 char *
-Ns_HashPath(Ns_DString *dest, CONST char *string, int levels)
+Ns_HashPath(Ns_DString *dsPtr, CONST char *string, int levels)
 {
     CONST char *p = string;
     int         i;
 
     for (i = 0; i < levels; ++i) {
-        if (dest->string[dest->length] != '/') {
-            Ns_DStringNAppend(dest, "/", 1);
+        if (dsPtr->string[dsPtr->length] != '/') {
+            Ns_DStringNAppend(dsPtr, "/", 1);
         }
         while (*p == '.' || ISSLASH(*p)) {
             ++p;
         }
         if (*p != '\0') {
-            Ns_DStringNAppend(dest, p, 1);
+            Ns_DStringNAppend(dsPtr, p, 1);
             p++;
         } else {
-            Ns_DStringNAppend(dest, "_", 1);
+            Ns_DStringNAppend(dsPtr, "_", 1);
         }
     }
 
-    return Ns_DStringValue(dest);
+    return Ns_DStringValue(dsPtr);
 }
 
 
@@ -651,7 +652,7 @@ NsPageRoot(Ns_DString *dest, NsServer *servPtr, CONST char *host)
 
 
 int
-NsTclHashPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString  path;
     int         levels;
@@ -693,8 +694,7 @@ NsTclHashPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-              Tcl_Obj *CONST objv[])
+NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString      ds;
     int         i;
@@ -739,21 +739,21 @@ NsTclModulePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
 
 
 int
-NsTclServerPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclServerPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return PathObjCmd(arg, interp, objc, objv, 's');
+    return PathObjCmd(clientData, interp, objc, objv, 's');
 }
 
 int
-NsTclPagePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return PathObjCmd(arg, interp, objc, objv, 'p');
+    return PathObjCmd(clientData, interp, objc, objv, 'p');
 }
 
 static int
-PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int cmd)
+PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd)
 {
-    NsInterp    *itPtr = arg;
+    NsInterp    *itPtr = clientData;
     NsServer    *servPtr;
     Ns_DString   ds;
     char        *host = NULL;
@@ -813,8 +813,7 @@ PathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], 
  */
 
 int
-NsTclServerRootProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj *CONST objv[])
+NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsServer       *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
@@ -932,9 +931,8 @@ MakePath(Ns_DString *dest, va_list *pap)
  *
  *----------------------------------------------------------------------
  */
-
 static char *
-ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
+ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawHost)
 {
     char       *safehost, *path;
     Ns_Conn    *conn;
@@ -950,24 +948,24 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
          * Prefer to run a user-registered Ns_ServerRootProc.
          */
 
-        path = (servPtr->vhost.serverRootProc)(dest, rawhost, servPtr->vhost.serverRootArg);
+        path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
         if (path == NULL) {
             goto defpath;
         }
 
     } else if (servPtr->vhost.enabled
-               && (rawhost != NULL
+               && (rawHost != NULL
                    || ((conn = Ns_GetConn()) != NULL
                        && (headers = Ns_ConnHeaders(conn)) != NULL
-                       && (rawhost = Ns_SetIGet(headers, "Host")) != NULL))
-               && *rawhost != '\0') {
+                       && (rawHost = Ns_SetIGet(headers, "Host")) != NULL))
+               && *rawHost != '\0') {
         char *p;
 
         /*
          * Bail out if there are suspicious characters in the unprocessed Host.
          */
 
-        if (!Ns_StrIsHost(rawhost)) {
+        if (!Ns_StrIsHost(rawHost)) {
             goto defpath;
         }
 
@@ -976,14 +974,14 @@ ServerRoot(Ns_DString *dest, NsServer *servPtr, CONST char *rawhost)
          */
 
         Ns_DStringInit(&ds);
-        safehost = Ns_DStringAppend(&ds, rawhost);
+        safehost = Ns_DStringAppend(&ds, rawHost);
 
         Ns_StrToLower(safehost);
-        if (servPtr->vhost.opts & NSD_STRIP_WWW
+        if ((servPtr->vhost.opts & NSD_STRIP_WWW)
             && strncmp(safehost, "www.", 4) == 0) {
             safehost = &safehost[4];
         }
-        if (servPtr->vhost.opts & NSD_STRIP_PORT
+        if ((servPtr->vhost.opts & NSD_STRIP_PORT)
             && (p = strrchr(safehost, ':')) != NULL) {
             *p = '\0';
         }

@@ -157,6 +157,15 @@ static const char     e[] = {
 };
 
 /*
+ * Locally defined functions
+ */
+static void setkey_private(struct sched *sp, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void encrypt_private(struct sched *sp, char *block, int edflag)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+/*
  * Set up the key schedule from the key.
  */
 
@@ -165,6 +174,9 @@ setkey_private(struct sched *sp, const char *key)
 {
     register int    i, j, k;
     int             t;
+
+    assert(sp != NULL);
+    assert(key != NULL);
 
     /*
      * First, generate C and D by permuting the key.  The low order bit of
@@ -186,12 +198,14 @@ setkey_private(struct sched *sp, const char *key)
          */
         for (k = 0; k < shifts[i]; k++) {
             t = sp->C[0];
-            for (j = 0; j < 28 - 1; j++)
+            for (j = 0; j < 28 - 1; j++) {
                 sp->C[j] = sp->C[j + 1];
+	    }
             sp->C[27] = t;
             t = sp->D[0];
-            for (j = 0; j < 28 - 1; j++)
+            for (j = 0; j < 28 - 1; j++) {
                 sp->D[j] = sp->D[j + 1];
+	    }
             sp->D[27] = t;
         }
 
@@ -204,8 +218,9 @@ setkey_private(struct sched *sp, const char *key)
         }
     }
 
-    for (i = 0; i < 48; i++)
+    for (i = 0; i < 48; i++) {
         sp->E[i] = e[i];
+    }
 }
 
 /*
@@ -290,11 +305,15 @@ encrypt_private(struct sched *sp, char *block, int edflag)
     int             i, ii;
     register int    t, j, k;
 
+    assert(sp != NULL);
+    assert(block != NULL);
+
     /*
      * First, permute the bits in the input
      */
-    for (j = 0; j < 64; j++)
+    for (j = 0; j < 64; j++) {
         L[j] = block[IP[j] - 1];
+    }
 
     /*
      * Perform an encryption operation 16 times.
@@ -313,15 +332,17 @@ encrypt_private(struct sched *sp, char *block, int edflag)
         /*
          * Save the R array, which will be the new L.
          */
-        for (j = 0; j < 32; j++)
+        for (j = 0; j < 32; j++) {
             tempL[j] = R[j];
+	}
 
         /*
          * Expand R to 48 bits using the E selector; exclusive-or with the
          * current key bits.
          */
-        for (j = 0; j < 48; j++)
+        for (j = 0; j < 48; j++) {
             preS[j] = R[sp->E[j] - 1] ^ sp->KS[i][j];
+	}
 
         /*
          * The pre-select bits are now considered in 8 groups of 6 bits each.
@@ -339,24 +360,26 @@ encrypt_private(struct sched *sp, char *block, int edflag)
                 (preS[t + 4] << 0) +
                 (preS[t + 5] << 4)];
             t = 4 * j;
-            f[t + 0] = (k >> 3) & 01;
-            f[t + 1] = (k >> 2) & 01;
-            f[t + 2] = (k >> 1) & 01;
-            f[t + 3] = (k >> 0) & 01;
+            f[t + 0] = (k >> 3) & 1U;
+            f[t + 1] = (k >> 2) & 1U;
+            f[t + 2] = (k >> 1) & 1U;
+            f[t + 3] = (k >> 0) & 1U;
         }
 
         /*
          * The new R is L ^ f(R, K). The f here has to be permuted first,
          * though.
          */
-        for (j = 0; j < 32; j++)
+        for (j = 0; j < 32; j++) {
             R[j] = L[j] ^ f[P[j] - 1];
+	}
 
         /*
          * Finally, the new L (the original R) is copied back.
          */
-        for (j = 0; j < 32; j++)
+        for (j = 0; j < 32; j++) {
             L[j] = tempL[j];
+	}
     }
 
     /*
@@ -371,8 +394,9 @@ encrypt_private(struct sched *sp, char *block, int edflag)
     /*
      * The final output gets the inverse permutation of the very original.
      */
-    for (j = 0; j < 64; j++)
+    for (j = 0; j < 64; j++) {
         block[j] = L[FP[j] - 1];
+    }
 }
 
 
@@ -387,18 +411,21 @@ Ns_Encrypt(pw, salt, iobuf)
     char            block[66];
     struct sched    s;
 
-    for (i = 0; i < 66; i++)
+    for (i = 0; i < 66; i++) {
         block[i] = 0;
+    }
     for (i = 0; (c = *pw) && i < 64; pw++) {
-        for (j = 0; j < 7; j++, i++)
-            block[i] = (c >> (6 - j)) & 01;
+	for (j = 0; j < 7; j++, i++) {
+            block[i] = (c >> (6 - j)) & 1U;
+	}
         i++;
     }
 
     setkey_private(&s, block);
 
-    for (i = 0; i < 66; i++)
+    for (i = 0; i < 66; i++) {
         block[i] = 0;
+    }
 
     for (i = 0; i < 2; i++) {
         c = *salt++;
@@ -411,7 +438,7 @@ Ns_Encrypt(pw, salt, iobuf)
 	}
         c -= '.';
         for (j = 0; j < 6; j++) {
-            if ((c >> j) & 01) {
+            if ((c >> j) & 1U) {
                 temp = s.E[6 * i + j];
                 s.E[6 * i + j] = s.E[6 * i + j + 24];
                 s.E[6 * i + j + 24] = temp;

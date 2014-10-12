@@ -134,7 +134,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST 
     }
 
     if (privateInterp) {
-      interp = NS_TclCreateInterp();
+      interp = NsTclCreateInterp();
     }
     status = Tcl_FSLoadFile(interp, pathObj, init, "Ns_ModuleVersion",
                             &tclInitProc, &tclVerProc, &lh, &uPtr);
@@ -192,14 +192,14 @@ Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST 
  */
 
 int
-NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp   *itPtr = (NsInterp *) arg;
     CONST char *server, *module, *file, *init = "Ns_ModuleInit";
     int         global = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-global", Ns_ObjvBool,   &global, (void *) NS_TRUE},
+	{"-global", Ns_ObjvBool,   &global, INT2PTR(NS_TRUE)},
         {"-init",   Ns_ObjvString, &init,   NULL},
         {"--",      Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}

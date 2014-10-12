@@ -287,7 +287,7 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when, int timeo
  */
 
 static void
-SockCallbackThread(void *ignored)
+SockCallbackThread(void *UNUSED(ignored))
 {
     char           c;
     unsigned int   when[3], events[3];

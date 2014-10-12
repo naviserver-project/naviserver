@@ -57,9 +57,9 @@ static char            *noextType = TYPE_DEFAULT;
  * the client.  Case in the extension is ignored.
  */
 
-static struct exttype {
-    CONST char     *ext;
-    CONST char     *type;
+static const struct exttype {
+    const char     *ext;
+    const char     *type;
 } typetab[] = {
 
     /*
@@ -815,7 +815,7 @@ Ns_GetMimeType(CONST char *file)
  */
 
 int
-NsTclGuessTypeObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     CONST char *type;
 

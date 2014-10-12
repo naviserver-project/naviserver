@@ -39,8 +39,8 @@
  * Local functions defined in this file.
  */
 
-static void AddCharset(CONST char *name, CONST char *charset);
-static void AddExtension(CONST char *name, CONST char *charset);
+static void AddCharset(const char *name, const char *charset);
+static void AddExtension(const char *name, const char *charset);
 static Tcl_Encoding LoadEncoding(CONST char *name);
 static Ns_ServerInitProc ConfigServerEncodings;
 
@@ -65,9 +65,9 @@ static Tcl_Encoding   utf8Encoding; /* Cached pointer to utf-8 encoding. */
  * That is, the encoding used to read the files from disk (mainly ADP).
  */
 
-static struct {
-    CONST char  *extension;
-    CONST char  *name;
+static const struct {
+    const char  *extension;
+    const char  *name;
 } builtinExt[] = {
     {".txt",    "ascii"},
     {".htm",    "iso8859-1"},
@@ -80,9 +80,9 @@ static struct {
  * The following table provides HTTP charset aliases for Tcl encodings names.
  */
 
-static struct {
-    CONST char  *charset;
-    CONST char  *name;
+static const struct {
+    const char  *charset;
+    const char  *name;
 } builtinChar[] = {
     { "iso-2022-jp",        "iso2022-jp" },
     { "iso-2022-kr",        "iso2022-kr" },
@@ -475,7 +475,8 @@ NsFindCharset(CONST char *mimetype, size_t *lenPtr)
  */
 
 int
-NsTclCharsetsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
+		    int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
 {
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
@@ -507,8 +508,7 @@ NsTclCharsetsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
  */
 
 int
-NsTclEncodingForCharsetObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                              Tcl_Obj *CONST objv[])
+NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Tcl_Encoding encoding;
 
@@ -615,7 +615,7 @@ LoadEncoding(CONST char *name)
  */
 
 static void
-AddExtension(CONST char *ext, CONST char *name)
+AddExtension(const char *ext, const char *name)
 {
     Tcl_HashEntry  *hPtr;
     int             isNew;
@@ -625,7 +625,7 @@ AddExtension(CONST char *ext, CONST char *name)
 }
 
 static void
-AddCharset(CONST char *charset, CONST char *name)
+AddCharset(const char *charset, const char *name)
 {
     Tcl_HashEntry  *hPtr;
     Ns_DString      ds;

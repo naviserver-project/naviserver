@@ -35,9 +35,9 @@
 
 #include "nsd.h"
 
-#define SERV_STREAM 1
-#define SERV_RUNAT  2
-#define SERV_NOTTCL 4
+#define SERV_STREAM 0x01U
+#define SERV_RUNAT  0x02U
+#define SERV_NOTTCL 0x04U
 
 #define TAG_ADP     1
 #define TAG_PROC    2
@@ -45,9 +45,9 @@
 #define TAG_SERVER  4
 
 #define APPEND      "ns_adp_append "
-#define APPEND_LEN  (sizeof(APPEND)-1)
+#define APPEND_LEN  (int)(sizeof(APPEND)-1)
 
-#define LENSZ       (sizeof(int))
+#define LENSZ       (int)(sizeof(int))
 
 /*
  * The following structure maintains proc and adp registered tags.
@@ -77,14 +77,18 @@ typedef struct Parse {
  * Local functions defined in this file
  */
 
-static void AppendBlock(Parse *parsePtr, char *s, char *e, int type, unsigned int flags);
-static void AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae,
-                      char *se, unsigned int flags);
-static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                          Tcl_Obj *CONST objv[], int type);
+static void AppendBlock(Parse *parsePtr, char *s, char *e, int type, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
+static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type);
 static void AppendLengths(AdpCode *codePtr, int *lens, int *lines);
 static void GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr);
 static char *GetScript(char *tag, char *a, char *e, unsigned int *streamPtr);
+static void ParseAtts(char *s, char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
 /*
@@ -106,45 +110,39 @@ static char *GetScript(char *tag, char *a, char *e, unsigned int *streamPtr);
  */
 
 int
-NsTclAdpRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, 
-			  int objc, Tcl_Obj *CONST objv[])
+NsTclAdpRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     return RegisterObjCmd(arg, interp, objc, objv, TAG_ADP);
 }
 
 int
-NsTclAdpRegisterTagObjCmd(ClientData arg, Tcl_Interp *interp, 
-			  int objc, Tcl_Obj *CONST objv[])
+NsTclAdpRegisterTagObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registeradp", NULL);
     return RegisterObjCmd(arg, interp, objc, objv, TAG_ADP);
 }
 
 int
-NsTclAdpRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, 
-			   int objc, Tcl_Obj *CONST objv[])
+NsTclAdpRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     return RegisterObjCmd(arg, interp, objc, objv, TAG_PROC);
 }
 
 int
-NsTclAdpRegisterScriptObjCmd(ClientData arg, Tcl_Interp *interp, 
-			     int objc, Tcl_Obj *CONST objv[])
+NsTclAdpRegisterScriptObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     return RegisterObjCmd(arg, interp, objc, objv, TAG_SCRIPT);
 }
 
 int
-NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, 
-			     int objc, Tcl_Obj *CONST objv[])
+NsTclAdpRegisterAdptagObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registerscript", NULL);
     return RegisterObjCmd(arg, interp, objc, objv, TAG_SCRIPT);
 }
 
 static int
-RegisterObjCmd(ClientData arg, Tcl_Interp *interp, 
-	       int objc, Tcl_Obj *CONST objv[], int type)
+RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
@@ -518,8 +516,13 @@ NsAdpFreeCode(AdpCode *codePtr)
 static void
 AppendBlock(Parse *parsePtr, char *s, char *e, int type, unsigned int flags)
 {
-    AdpCode *codePtr = parsePtr->codePtr;
+    AdpCode *codePtr;
     ssize_t   len;
+
+    assert(parsePtr != NULL);
+    assert(s != NULL);
+
+    codePtr = parsePtr->codePtr;
 
     if (s >= e) {
         return;
@@ -527,6 +530,8 @@ AppendBlock(Parse *parsePtr, char *s, char *e, int type, unsigned int flags)
 
     if (flags & ADP_SINGLE) {
         char     save;
+
+	assert(e != NULL);
 
         switch (type) {
         case 'S':
@@ -543,6 +548,7 @@ AppendBlock(Parse *parsePtr, char *s, char *e, int type, unsigned int flags)
             break;
 
         default:
+
 	  Tcl_DStringAppend(&codePtr->text, s, (int)(e - s));
         }
         Tcl_DStringAppend(&codePtr->text, "\n", 1);
@@ -635,6 +641,9 @@ ParseAtts(char *s, char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int at
 {
     char *vs = NULL, *ve = NULL, *as = NULL;
     char end = 0, vsave = 0;
+
+    assert(s != NULL);
+    assert(e != NULL);
 
     if (flagsPtr != NULL) {
         *flagsPtr = 0;
@@ -797,6 +806,10 @@ static void
 AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, unsigned int flags)
 {
     Tcl_DString script;
+
+    assert(parsePtr != NULL);
+    assert(tagPtr != NULL);
+    assert(ae != NULL);
 
     Tcl_DStringInit(&script);
     Tcl_DStringAppend(&script, "ns_adp_append [", -1);

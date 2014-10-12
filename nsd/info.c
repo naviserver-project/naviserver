@@ -474,15 +474,14 @@ Ns_InfoTag(void)
  */
 
 int
-NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int         opt;
     NsInterp    *itPtr = arg;
     char        *server, *elog;
     Tcl_DString ds;
 
-
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "address", "argv0", "boottime", "builddate", "callbacks",
         "config", "home", "hostname", "locks", "log",
         "major", "minor", "mimetypes", "name", "nsd", "pagedir", 
@@ -726,7 +725,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 int
-NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     NsInterp *itPtr = arg;
     char *lib;

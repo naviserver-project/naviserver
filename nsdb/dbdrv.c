@@ -42,25 +42,25 @@
  */
 
 typedef int (InitProc) (char *server, char *module, char *driver);
-typedef char *(NameProc) (Ns_DbHandle *);
-typedef char *(TypeProc) (Ns_DbHandle *);
-typedef int (OpenProc) (Ns_DbHandle *);
-typedef void (CloseProc) (Ns_DbHandle *);
-typedef int (DMLProc) (Ns_DbHandle *, char *sql);
-typedef Ns_Set *(SelectProc) (Ns_DbHandle *, char *sql);
-typedef int (ExecProc) (Ns_DbHandle *, char *sql);
-typedef Ns_Set *(BindProc) (Ns_DbHandle *);
-typedef int (GetProc) (Ns_DbHandle *, Ns_Set *);
-typedef int (FlushProc) (Ns_DbHandle *);
-typedef int (CancelProc) (Ns_DbHandle *);
-typedef int (CountProc) (Ns_DbHandle *);
-typedef int (ResetProc) (Ns_DbHandle *);
+typedef char *(NameProc) (Ns_DbHandle *handle);
+typedef char *(TypeProc) (Ns_DbHandle *handle);
+typedef int (OpenProc) (Ns_DbHandle *handle);
+typedef void (CloseProc) (Ns_DbHandle *handle);
+typedef int (DMLProc) (Ns_DbHandle *handle, char *sql);
+typedef Ns_Set *(SelectProc) (Ns_DbHandle *handle, char *sql);
+typedef int (ExecProc) (Ns_DbHandle *handle, char *sql);
+typedef Ns_Set *(BindProc) (Ns_DbHandle *handle);
+typedef int (GetProc) (Ns_DbHandle *handle, Ns_Set *row);
+typedef int (FlushProc) (Ns_DbHandle *handle);
+typedef int (CancelProc) (Ns_DbHandle *handle);
+typedef int (CountProc) (Ns_DbHandle *handle);
+typedef int (ResetProc) (Ns_DbHandle *handle);
 typedef int (SpStartProc) (Ns_DbHandle *handle, char *procname);
 typedef int (SpSetParamProc) (Ns_DbHandle *handle, char *args);
 typedef int (SpExecProc) (Ns_DbHandle *handle);
-typedef int (SpReturnCodeProc) (Ns_DbHandle *dbhandle, char *returnCode,
-				int bufsize);
+typedef int (SpReturnCodeProc) (Ns_DbHandle *dbhandle, char *returnCode, int bufsize);
 typedef Ns_Set *(SpGetParamsProc) (Ns_DbHandle *handle);
+
 
 /*
  * The following structure specifies the driver-specific functions
@@ -96,6 +96,9 @@ typedef struct DbDriver {
  */
 
 static Tcl_HashTable driversTable;
+
+static void UnsupProcId(char *name);
+
 
 
 /*
@@ -387,9 +390,10 @@ Ns_DbSelect(Ns_DbHandle *handle, char *sql)
     	    if (Ns_DbExec(handle, sql) == NS_ROWS) {
     		setPtr = Ns_DbBindRow(handle);
 	    } else {
-		if(!handle->dsExceptionMsg.length)
-        	   Ns_DbSetException(handle, "NSDB",
-		    	"Query was not a statement returning rows.");
+		if(!handle->dsExceptionMsg.length) {
+		    Ns_DbSetException(handle, "NSDB",
+				      "Query was not a statement returning rows.");
+		}
 	    }
 	} else if (driverPtr->selectProc != NULL) {
     	    Ns_SetTrunc(handle->row, 0);

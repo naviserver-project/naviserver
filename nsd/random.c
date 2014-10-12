@@ -88,7 +88,7 @@ static volatile int initialized;
  */
 
 int
-NsTclRandObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     double d;
 
@@ -222,7 +222,7 @@ Ns_GenSeeds(unsigned long *seedsPtr, int nseeds)
  */
 
 static void
-CounterThread(void *ignored)
+CounterThread(void *UNUSED(arg))
 {
     while (fRun) {
         Ns_SemaWait(&sema);
@@ -283,7 +283,7 @@ Roulette(void)
     select(0, NULL, NULL, NULL, &tv);
     fCount = 0;
     counter ^= (counter >> 3) ^ (counter >> 6) ^ (ocount);
-    counter &= 0x7;
+    counter &= 0x7U;
     ocount = counter;
     randbuf = (randbuf<<3) ^ counter;
     return randbuf;

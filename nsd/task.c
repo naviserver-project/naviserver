@@ -77,9 +77,9 @@ typedef struct Task {
     Ns_TaskProc       *proc;          /* Queue callback. */
     void              *arg;           /* Callback data. */
     int                idx;           /* Poll index. */
-    int                events;        /* Poll events. */
+    unsigned int       events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
-    int                signal;        /* Signal bits sent to/from queue thread. */
+    unsigned int       signal;        /* Signal bits sent to/from queue thread. */
     unsigned int       flags;         /* Flags private to queue. */
 } Task;
 
@@ -90,9 +90,10 @@ typedef struct Task {
 static void TriggerQueue(TaskQueue *queuePtr);
 static void JoinQueue(TaskQueue *queuePtr);
 static void StopQueue(TaskQueue *queuePtr);
-static int SignalQueue(Task *taskPtr, int bit);
+static int SignalQueue(Task *taskPtr, unsigned int bit);
 static Ns_ThreadProc TaskThread;
-static void RunTask(Task *taskPtr, int revents, Ns_Time *nowPtr);
+static void RunTask(Task *taskPtr, unsigned int revents, Ns_Time *nowPtr);
+
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
 
 /*
@@ -108,7 +109,7 @@ static Ns_Mutex   lock;          /* Lock for queue list. */
  * when multiple events are ready.
  */
 
-static struct {
+static const struct {
     unsigned int when;           /* SOCK when bit. */
     unsigned int event;          /* Poll event bit. */
 } map[] = {
@@ -637,7 +638,7 @@ NsWaitTaskQueueShutdown(Ns_Time *toPtr)
  */
 
 static void
-RunTask(Task *taskPtr, int revents, Ns_Time *nowPtr)
+RunTask(Task *taskPtr, unsigned int revents, Ns_Time *nowPtr)
 {
 
     /*
@@ -680,7 +681,7 @@ RunTask(Task *taskPtr, int revents, Ns_Time *nowPtr)
  */
 
 static int
-SignalQueue(Task *taskPtr, int bit)
+SignalQueue(Task *taskPtr, unsigned int bit)
 {
     TaskQueue *queuePtr = taskPtr->queuePtr;
     int        pending = 0, shutdown;

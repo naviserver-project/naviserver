@@ -203,7 +203,7 @@ Ns_TclFreeSet(Tcl_Interp *interp, char *id)
  */
 
 int
-NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp        *itPtr = arg;
     Ns_Set          *set = NULL, *set2Ptr, **sets;
@@ -215,11 +215,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
     Tcl_HashSearch   search;
     Tcl_Obj         *objPtr;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "array", "cleanup", "copy", "cput", "create", "delete",
         "delkey", "find", "free", "get", "icput", "idelete",
         "idelkey", "ifind", "iget", "isnull", "iunique", "key",
-        "list", "merge", "move", "name", "new", "print", "purge",
+        "list", "merge", "move", "name", "new", "print",
         "put", "size", "split", "truncate", "unique", "update",
         "value", NULL,
     };
@@ -228,7 +228,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
         SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
         SICPutIdx, SIDeleteIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx,
         SIsNullIdx, SIUniqueIdx, SKeyIdx, SListIdx, SMergeIdx,
-        SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, spurgeidx, SPutIdx,
+        SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
         SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
         SValueIdx
     };
@@ -590,7 +590,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
  */
 
 int
-NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclParseHeaderCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     NsInterp *itPtr = arg;
     Ns_Set *set;

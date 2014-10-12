@@ -1402,8 +1402,7 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
  */
 
 static int
-ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
-            Tcl_Obj *CONST objv[])
+ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData    *idataPtr = data;
     Pool          *poolPtr, *thePoolPtr;
@@ -1669,8 +1668,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc,
  */
 
 static int
-ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc,
-             Tcl_Obj *CONST objv[])
+ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData *idataPtr = data;
     Pool       *poolPtr;
@@ -1916,7 +1914,7 @@ AppendStr(Tcl_Interp *interp, CONST char *flag, char *val)
  */
 
 static int
-GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     InterpData    *idataPtr = data;
     Proxy         *proxyPtr, *firstPtr;
@@ -2986,8 +2984,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static int
-RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc,
-            Tcl_Obj *CONST objv[])
+RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Proxy *proxyPtr = (Proxy *)clientData;
     int ms;

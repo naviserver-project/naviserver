@@ -42,7 +42,7 @@
  * of the 64 6-bit characters.
  */
 
-static char    six2pr[64] = {
+static const char six2pr[64] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -55,7 +55,7 @@ static char    six2pr[64] = {
  * either the corresponding 6-bit value or -1 for invalid character.
  */
 
-static int pr2six[256] = {
+static const int pr2six[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 
@@ -121,9 +121,9 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
 	    line = 0;
         }       
 	*q++ = ENC(p[0] >> 2);
-	*q++ = ENC(((p[0] << 4) & 060) | ((p[1] >> 4) & 017));
-	*q++ = ENC(((p[1] << 2) & 074) | ((p[2] >> 6) & 03));
-	*q++ = ENC(p[2] & 077);
+	*q++ = ENC(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+	*q++ = ENC(((p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03U));
+	*q++ = ENC(p[2] & 0x3FU);
 	p += 3;
         line += 4;
     }
@@ -136,11 +136,11 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
     if (n > 0) {
 	*q++ = ENC(p[0] >> 2);
 	if (n == 1) {
-	    *q++ = ENC((p[0] << 4) & 060);
+	    *q++ = ENC((p[0] << 4) & 0x30U);
 	    *q++ = '=';
 	} else {
-	    *q++ = ENC(((p[0] << 4) & 060) | ((p[1] >> 4) & 017));
-	    *q++ = ENC((p[1] << 2) & 074);
+	    *q++ = ENC(((p[0] << 4) & 0x30U) | ((p[1] >> 4) & 0x0FU));
+	    *q++ = ENC(( p[1] << 2) & 0x3CU);
 	}
 	*q++ = '=';
     }

@@ -121,7 +121,7 @@ Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
 	
         sa.sin_port = 0;
         sock = Ns_SockBind(&sa);
-        if (sock == INVALID_SOCKET) {
+        if (sock == NS_INVALID_SOCKET) {
             return NS_ERROR;
         }
         ns_sockclose(sock);
@@ -139,7 +139,7 @@ Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
         tablePtr = Tcl_GetHashValue(hPtr);
     } else {
         sock = Ns_SockListen(NULL, port);
-        if (sock == INVALID_SOCKET) {
+        if (sock == NS_INVALID_SOCKET) {
             Tcl_DeleteHashEntry(hPtr);
             status = NS_ERROR;
         } else {
@@ -233,7 +233,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
         return NS_FALSE;
     }
     newSock = Ns_SockAccept(sock, NULL, NULL);
-    if (newSock != INVALID_SOCKET) {
+    if (newSock != NS_INVALID_SOCKET) {
         Tcl_HashEntry *hPtr;
         ListenData    *ldPtr;
 

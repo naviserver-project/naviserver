@@ -37,7 +37,7 @@
 #include "nsd.h"
 
 static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
-static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST objv[],
+static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST* objv,
                       int *offPtr, int *lenPtr);
 static Tcl_Channel MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn);
 
@@ -738,7 +738,7 @@ Ns_ConnSock(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
-    return (connPtr->sockPtr ? connPtr->sockPtr->sock : INVALID_SOCKET);
+    return (connPtr->sockPtr ? connPtr->sockPtr->sock : NS_INVALID_SOCKET);
 }
 
 /*
@@ -1201,9 +1201,9 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  */
 
 int
-NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = arg;
+    NsInterp *itPtr = clientData;
     Ns_Conn *conn = itPtr->conn;
     Conn *connPtr = (Conn *) conn;
     Ns_Request *request;
@@ -1215,7 +1215,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     Ns_DString ds;
     int idx, off, len, opt, n;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
 	"auth", "authpassword", "authuser", 
 	"channel", "clientdata", "close", "compress", "content", 
 	"contentfile", "contentlength", "contentsentlength", "copy", 
@@ -1623,7 +1623,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
         break;
 
     case CFlagsIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->flags));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((int)connPtr->flags));
         break;
 
     case CStartIdx:
@@ -1687,8 +1687,7 @@ NsTclConnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 int
-NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp, 
-			int objc, Tcl_Obj *CONST objv[])
+NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsServer *servPtr = NsGetInitServer();
     Ns_TclCallback *cbPtr;
@@ -1726,10 +1725,9 @@ NsTclLocationProcObjCmd(ClientData arg, Tcl_Interp *interp,
  */
 
 int
-NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp, 
-			int objc, Tcl_Obj *CONST objv[])
+NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp    *itPtr = arg;
+    NsInterp    *itPtr = clientData;
     int         toCopy = 0;
     char        *chanName;
     Request     *reqPtr;
@@ -1761,7 +1759,7 @@ NsTclWriteContentObjCmd(ClientData arg, Tcl_Interp *interp,
     }
     Tcl_Flush(chan);
     reqPtr = ((Conn *)itPtr->conn)->reqPtr;
-    if (toCopy > reqPtr->avail || toCopy <= 0) {
+    if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
         toCopy = (int)reqPtr->avail;
     }
     if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
@@ -1861,7 +1859,7 @@ GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
  */
 
 static int
-GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST objv[], int *offPtr,
+GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST* objv, int *offPtr,
            int *lenPtr)
 {
     int off, len;
@@ -1916,7 +1914,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
         return NULL;
     }
 
-    if (connPtr->sockPtr->sock == INVALID_SOCKET) {
+    if (connPtr->sockPtr->sock == NS_INVALID_SOCKET) {
         Tcl_AppendResult(itPtr->interp, "no socket for connection", NULL);
         return NULL;
     }
@@ -1953,7 +1951,7 @@ MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
     }
 
     Ns_SockSetBlocking(connPtr->sockPtr->sock);
-    connPtr->sockPtr->sock = INVALID_SOCKET;
+    connPtr->sockPtr->sock = NS_INVALID_SOCKET;
 
     return chan;
 }

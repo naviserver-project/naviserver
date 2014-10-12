@@ -51,7 +51,7 @@ static int ReturnRange(Ns_Conn *conn, CONST char *type,
 
 static struct {
     int         status;
-    CONST char *reason;
+    const char *reason;
 } reasons[] = {
     {100, "Continue"},
     {101, "Switching Protocols"},
@@ -106,7 +106,7 @@ static struct {
  * Static variables defined in this file.
  */
 
-static int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
+static const int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 
 
 
@@ -562,7 +562,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, size_t length)
  */
 
 int
-Ns_ConnResetReturn(Ns_Conn *conn)
+Ns_ConnResetReturn(Ns_Conn *UNUSED(conn))
 {
     return NS_OK;
 }

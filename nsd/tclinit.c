@@ -206,8 +206,8 @@ ConfigServerTcl(CONST char *server)
      */
 
     p = Ns_ConfigGetValue(path, "errorlogheaders");
-    if (p != NULL && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders)
-            != TCL_OK) {
+    if (p != NULL 
+	&& Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
         Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
     }
 
@@ -445,7 +445,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
  */
 
 void
-Ns_FreeConnInterp(Ns_Conn *conn)
+Ns_FreeConnInterp(Ns_Conn *UNUSED(conn))
 {
     return;
 }
@@ -873,7 +873,7 @@ Ns_TclInitModule(CONST char *server, CONST char *module)
  */
 
 int
-NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
@@ -883,9 +883,10 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
     Tcl_Obj        *scriptObj;
     Ns_DString      ds;
     char           *script;
-    int             remain = 0, opt, length, when = 0, result = TCL_OK;
+    int             remain = 0, opt, length, result = TCL_OK;
+    unsigned int    when = 0U;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "addmodule", "cleanup", "epoch", "get", "getmodules",
         "gettraces", "markfordelete", "oncreate", "oncleanup", "ondelete",
         "oninit", "runtraces", "save", "trace", "update",
@@ -1140,7 +1141,7 @@ NsTclICtlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST obj
  */
 
 int
-NsTclAtCloseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclAtCloseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp  *itPtr = arg;
     AtClose   *atPtr;
@@ -1505,7 +1506,7 @@ GetCacheEntry(NsServer *servPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NS_TclCreateInterp --
+ * NsTclCreateInterp --
  *
  *      Create a fresh new Tcl interp. The creation is serialized to
  *      prevent concurrent interp creations.
@@ -1520,7 +1521,7 @@ GetCacheEntry(NsServer *servPtr)
  */
 
 Tcl_Interp *
-NS_TclCreateInterp() {
+NsTclCreateInterp() {
     static Ns_Mutex initLock = NULL; 
     Tcl_Interp *interp;
 
@@ -1557,7 +1558,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
      * Create and initialize a basic Tcl interp.
      */
 
-    interp = NS_TclCreateInterp();
+    interp = NsTclCreateInterp();
 
     Tcl_InitMemory(interp);
     if (Tcl_Init(interp) != TCL_OK) {
@@ -1814,7 +1815,7 @@ LogTrace(NsInterp *itPtr, TclTrace *tracePtr, unsigned int why)
  */
 
 static void
-FreeInterpData(ClientData arg, Tcl_Interp *interp)
+FreeInterpData(ClientData arg, Tcl_Interp *UNUSED(interp))
 {
     NsInterp *itPtr = arg;
 

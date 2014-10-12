@@ -200,12 +200,12 @@ static int    AnyDone(Queue *queue)
     NS_GNUC_NONNULL(1);
 static void   SetupJobDefaults(void);
 
-static CONST char* GetJobCodeStr(int code);
-static CONST char* GetJobStateStr(JobStates state);
-static CONST char* GetJobTypeStr(JobTypes type);
-static CONST char* GetJobReqStr(JobRequests req);
-static CONST char* GetQueueReqStr(QueueRequests req);
-static CONST char* GetTpReqStr(ThreadPoolRequests req);
+static const char* GetJobCodeStr(int code);
+static const char* GetJobStateStr(JobStates state);
+static const char* GetJobTypeStr(JobTypes type);
+static const char* GetJobReqStr(JobRequests req);
+static const char* GetQueueReqStr(QueueRequests req);
+static const char* GetTpReqStr(ThreadPoolRequests req);
 
 static int AppendField(Tcl_Interp *interp, Tcl_Obj *list,
                        CONST char *name, CONST char *value)
@@ -356,7 +356,7 @@ NsWaitJobsShutdown(Ns_Time *toPtr)
  */
 
 int
-NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp       *itPtr = arg;
     Queue          *queue = NULL;
@@ -1156,7 +1156,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv
  */
 
 static void
-JobThread(void *arg)
+JobThread(void *UNUSED(arg))
 {
     CONST char        *err;
     Queue             *queue;
@@ -1322,7 +1322,7 @@ JobThread(void *arg)
  */
 
 static int
-JobAbort(ClientData cd, Tcl_Interp *interp, int code)
+JobAbort(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(code))
 {
     if (interp != NULL) {
         Tcl_SetErrorCode(interp, "ECANCEL", NULL);
@@ -1726,11 +1726,11 @@ AnyDone(Queue *queue)
  *----------------------------------------------------------------------
  */
 
-static CONST char*
+static const char*
 GetJobCodeStr(int code)
 {
-    static int max_code_index = 5;
-    static CONST char *codeArr[] = {
+    static const int max_code_index = 5;
+    static const char *codeArr[] = {
         "TCL_OK",       /* 0 */
         "TCL_ERROR",    /* 1 */
         "TCL_RETURN",   /* 2 */
@@ -1764,11 +1764,11 @@ GetJobCodeStr(int code)
  *----------------------------------------------------------------------
  */
 
-static CONST char*
+static const char*
 GetJobStateStr(JobStates state)
 {
-    static int max_state_index = 3;
-    static CONST char *stateArr[] = {
+    static const int max_state_index = 3;
+    static const char *stateArr[] = {
         "scheduled",        /* 0 */
         "running",          /* 1 */
         "done",             /* 2 */
@@ -1798,11 +1798,11 @@ GetJobStateStr(JobStates state)
  *
  *----------------------------------------------------------------------
  */
-static CONST char*
+static const char*
 GetJobTypeStr(JobTypes type)
 {
-    static int max_type_index = 2;
-    static CONST char *typeArr[] = {
+    static const int max_type_index = 2;
+    static const char *typeArr[] = {
         "nondetached",     /* 0 */
         "detached",        /* 1 */
         "unknown"          /* 2 */
@@ -1831,11 +1831,11 @@ GetJobTypeStr(JobTypes type)
  *
  *----------------------------------------------------------------------
  */
-static CONST char*
+static const char*
 GetJobReqStr(JobRequests req)
 {
-    static int req_max_index = 2;
-    static CONST char *reqArr[] = {
+    static const int req_max_index = 2;
+    static const char *reqArr[] = {
         "none",     /* 0 */
         "wait",     /* 1 */
         "unknown"   /* 2 */
@@ -1864,11 +1864,11 @@ GetJobReqStr(JobRequests req)
  *
  *----------------------------------------------------------------------
  */
-static CONST char*
+static const char*
 GetQueueReqStr(QueueRequests req)
 {
-    static int req_max_index = 1;
-    static CONST char *reqArr[] = {
+    static const int req_max_index = 1;
+    static const char *reqArr[] = {
         "none",     /* 0 */
         "delete"    /* 1 */
     };
@@ -1896,11 +1896,11 @@ GetQueueReqStr(QueueRequests req)
  *
  *----------------------------------------------------------------------
  */
-static CONST char*
+static const char*
 GetTpReqStr(ThreadPoolRequests req)
 {
-    static int req_max_index = 1;
-    static CONST char *reqArr[] = {
+    static const int req_max_index = 1;
+    static const char *reqArr[] = {
         "none",     /* 0 */
         "stop"      /* 1 */
     };

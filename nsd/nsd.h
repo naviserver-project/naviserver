@@ -67,16 +67,16 @@
 #define ADP_RETURN                     3
 #define ADP_TIMEOUT                    4
 
-#define NSD_STRIP_WWW                  1
-#define NSD_STRIP_PORT                 2
+#define NSD_STRIP_WWW                  0x01U
+#define NSD_STRIP_PORT                 0x02U
 
 #define MAX_URLSPACES                  16
 
-#define CONN_TCLFORM                   1  /* Query form set is registered for interp */
-#define CONN_TCLHDRS                   2  /* Input headers set is registered for interp */
-#define CONN_TCLOUTHDRS                4  /* Output headers set is registered for interp */
-#define CONN_TCLAUTH                   8  /* 'auth' headers set is registered for interp */
-#define CONN_TCLHTTP                   16  /* HTTP headers requested by ns_headers */
+#define CONN_TCLFORM                   0x01U  /* Query form set is registered for interp */
+#define CONN_TCLHDRS                   0x02U  /* Input headers set is registered for interp */
+#define CONN_TCLOUTHDRS                0x04U  /* Output headers set is registered for interp */
+#define CONN_TCLAUTH                   0x08U  /* 'auth' headers set is registered for interp */
+#define CONN_TCLHTTP                   0x16U  /* HTTP headers requested by ns_headers */
 
 
 /*
@@ -213,7 +213,7 @@ typedef struct WriterSock {
     size_t               size;
     unsigned int         flags;
     int                  streaming;
-    NS_SOCKET            fd;
+    int                  fd;
     char                 *headerString;
     
     union {
@@ -1345,15 +1345,15 @@ NS_EXTERN int NsInstallService(char *service);
 NS_EXTERN int NsRemoveService(char *service);
 #endif
 
-NS_EXTERN void NsCreatePidFile(char *service);
-NS_EXTERN void NsRemovePidFile(char *service);
+NS_EXTERN void NsCreatePidFile();
+NS_EXTERN void NsRemovePidFile();
 
 NS_EXTERN void NsLogOpen(void);
 NS_EXTERN void NsTclInitObjs(void);
 NS_EXTERN void NsRunPreStartupProcs(void);
 NS_EXTERN void NsBlockSignals(int debug);
-NS_EXTERN void NsBlockSignal(int signal);
-NS_EXTERN void NsUnblockSignal(int signal);
+NS_EXTERN void NsBlockSignal(int sig);
+NS_EXTERN void NsUnblockSignal(int sig);
 NS_EXTERN int  NsHandleSignals(void);
 NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);
@@ -1380,6 +1380,7 @@ NS_EXTERN Tcl_AppInitProc NsTclAppInit;
 NS_EXTERN void NsTclInitServer(CONST char *server)
      NS_GNUC_NONNULL(1);
 NS_EXTERN void NsInitStaticModules(CONST char *server);
+NS_EXTERN Tcl_Interp *NsTclCreateInterp(void);
 NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)
      NS_GNUC_NONNULL(1);
 NS_EXTERN void NsFreeConnInterp(Conn *connPtr)
@@ -1420,11 +1421,11 @@ NS_EXTERN void NsAdpSetMimeType(NsInterp *itPtr, char *type);
 NS_EXTERN void NsAdpSetCharSet(NsInterp *itPtr, char *charset);
 NS_EXTERN int NsAdpGetBuf(NsInterp *itPtr, Tcl_DString **dsPtrPtr);
 NS_EXTERN int NsAdpAppend(NsInterp *itPtr, CONST char *buf, int len);
-NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream);
+NS_EXTERN int NsAdpFlush(NsInterp *itPtr, int stream) NS_GNUC_NONNULL(1);
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
-NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);
-NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[], char *resvar);
-NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST objv[],
+NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
+NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
+NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
 			char *file, Ns_Time *ttlPtr);
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
 		       unsigned int flags, CONST char* file);

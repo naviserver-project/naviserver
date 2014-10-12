@@ -47,6 +47,8 @@ typedef struct _NsRegChan {
 
 static void SpliceChannel   (Tcl_Interp *interp, Tcl_Channel chan);
 static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
+static int  FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char *cmd);
+
 
 
 /*
@@ -65,14 +67,6 @@ static void UnspliceChannel (Tcl_Interp *interp, Tcl_Channel chan);
  *
  *----------------------------------------------------------------------
  */
-
-static int
-GetOpenChannel(Tcl_Interp *interp, Tcl_Obj *obj, int write,
-               int check, Tcl_Channel *chanPtr)
-{
-    return Ns_TclGetOpenChannel(interp, Tcl_GetString(obj),
-                                write, check, chanPtr);
-}
 
 int
 Ns_TclGetOpenChannel(Tcl_Interp *interp, CONST char *chanId, int write,
@@ -157,7 +151,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, CONST char *chanId, int write, int *fdPtr)
  */
 
 static int
-FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char *cmd)
+FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, char *cmd)
 {
     int max, status;
 
@@ -189,15 +183,13 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], char *cmd)
 }
 
 int
-NsTclRollFileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
-                    Tcl_Obj *CONST objv[])
+NsTclRollFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     return FileObjCmd(interp, objc, objv, "roll");
 }
 
 int
-NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                      Tcl_Obj *CONST objv[])
+NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     return FileObjCmd(interp, objc, objv, "purge");
 }
@@ -220,7 +212,7 @@ NsTclPurgeFilesObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[])
+NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
 
     if (argc == 1) {
@@ -261,8 +253,7 @@ NsTclMkTempCmd(ClientData dummy, Tcl_Interp *interp, int argc, CONST char* argv[
  */
 
 int
-NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                  Tcl_Obj *CONST objv[])
+NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char buf[L_tmpnam];
 
@@ -295,8 +286,7 @@ NsTclTmpNamObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                Tcl_Obj *CONST objv[])
+NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int pid, signal;
 
@@ -353,8 +343,7 @@ NsTclKillObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
 
     if ((objc != 3) && (objc != 4)) {
@@ -402,10 +391,9 @@ NsTclSymlinkObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclWriteFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                   Tcl_Obj *CONST objv[])
+NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp   *itPtr = arg;
+    NsInterp   *itPtr = clientData;
     Tcl_Channel chan;
     int         nbytes = INT_MAX;
     int         result;
@@ -414,7 +402,7 @@ NsTclWriteFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
         Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");
         return TCL_ERROR;
     }
-    if (GetOpenChannel(interp, objv[1], 0, 1, &chan) != TCL_OK) {
+    if (Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]), 0, 1, &chan) != TCL_OK) {
         return TCL_ERROR;
     }
     if (objc == 3 && Tcl_GetIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
@@ -451,8 +439,7 @@ NsTclWriteFpObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                    Tcl_Obj *CONST objv[])
+NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int length;
     
@@ -495,8 +482,7 @@ NsTclTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclFTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                     Tcl_Obj *CONST objv[])
+NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     int length, fd;
     
@@ -541,8 +527,7 @@ NsTclFTruncateObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclNormalizePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                         Tcl_Obj *CONST objv[])
+NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString ds;
 
@@ -578,10 +563,9 @@ NsTclNormalizePathObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
  */
 
 int
-NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
-                Tcl_Obj *CONST objv[])
+NsTclChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp       *itPtr = arg;
+    NsInterp       *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     NsRegChan      *regChan = NULL;
 
@@ -593,7 +577,7 @@ NsTclChanObjCmd(ClientData arg, Tcl_Interp *interp, int objc,
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "cleanup", "list", "create", "put", "get", NULL
     };
 

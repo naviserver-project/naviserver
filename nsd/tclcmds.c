@@ -51,7 +51,7 @@ typedef struct Cmd {
  * and virtual server interps.
  */
 
-static Cmd basicCmds[] = {
+static const Cmd basicCmds[] = {
     {"env",      NULL, NsTclEnvObjCmd},
     {"keyldel",  NULL, TclX_KeyldelObjCmd},
     {"keylget",  NULL, TclX_KeylgetObjCmd},
@@ -160,7 +160,7 @@ static Cmd basicCmds[] = {
  * are available only in virtual server interps.
  */
 
-static Cmd servCmds[] = {
+static const Cmd servCmds[] = {
     {"_ns_adp_include", NULL, NsTclAdpIncludeObjCmd},
     {"ns_adp_abort", NULL, NsTclAdpAbortObjCmd},
     {"ns_adp_append", NULL, NsTclAdpAppendObjCmd},
@@ -283,6 +283,12 @@ static Cmd servCmds[] = {
     {NULL, NULL, NULL}
 };
 
+/* 
+ * Locally defined functions.
+ */
+static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr);
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -301,7 +307,7 @@ static Cmd servCmds[] = {
  */
 
 static void
-AddCmds(Cmd *cmdPtr, NsInterp *itPtr)
+AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 {
     Tcl_Interp *interp = itPtr->interp;
 

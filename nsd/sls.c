@@ -327,7 +327,7 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, CONST char *key)
  */
 
 int
-NsTclSlsObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Conn    *conn;
     Ns_Sock    *sock;
@@ -335,7 +335,7 @@ NsTclSlsObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST ob
     char       *data;
     int         cmd;
 
-    static CONST char *cmds[] = {
+    static const char *cmds[] = {
         "array", "get", "set", "unset", NULL
     };
     enum ISubCmdIdx {

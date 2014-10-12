@@ -139,13 +139,13 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
  */
 
 int
-NsTclEnvObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char        *name, *value, **envp;
     int          status, i, opt;
     Tcl_Obj     *result;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "exists", "names", "get", "set", "unset", NULL
     };
     enum {

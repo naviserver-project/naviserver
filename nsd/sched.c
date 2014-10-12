@@ -742,7 +742,7 @@ FreeEvent(Event *ePtr)
  */
 
 static void
-SchedThread(void *ignored)
+SchedThread(void *UNUSED(arg))
 {
     time_t          now;
     Ns_Time         timeout;

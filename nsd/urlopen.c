@@ -74,7 +74,7 @@ int
 Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
 {
     Ns_DString  ds;
-    Tcl_Channel chan = NULL;
+    Tcl_Channel chan;
 
     Ns_DStringInit(&ds);
     Ns_UrlToFile(&ds, server, url);
@@ -125,7 +125,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
     int             status, n;
     unsigned int    tosend;
 
-    sock = INVALID_SOCKET;
+    sock = NS_INVALID_SOCKET;
     Ns_DStringInit(&ds);
 
     /*
@@ -145,7 +145,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
         request.port = 80;
     }
     sock = Ns_SockConnect(request.host, request.port);
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
         Ns_Log(Error, "urlopen: failed to connect to '%s': '%s'",
                url, ns_sockstrerror(ns_sockerrno));
         goto done;
@@ -218,7 +218,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
  done:
     Ns_ResetRequest(&request);
 
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
         ns_sockclose(sock);
     }
     Ns_DStringFree(&ds);
@@ -244,8 +244,7 @@ Ns_FetchURL(Ns_DString *dsPtr, char *url, Ns_Set *headers)
  */
 
 int
-NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, 
-                  Tcl_Obj *CONST objv[])
+NsTclGetUrlObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     NsInterp   *itPtr = arg;
     Ns_DString  ds;

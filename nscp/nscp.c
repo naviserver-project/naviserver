@@ -65,6 +65,10 @@ typedef struct Sess {
     struct sockaddr_in sa;
 } Sess;
 
+/*
+ * The following functions are defined locally.
+ */
+
 static Ns_SockProc AcceptProc;
 static Tcl_CmdProc ExitCmd;
 static int Login(Sess *sessPtr, Tcl_DString *unameDS);
@@ -85,12 +89,16 @@ static Ns_ArgProc ArgProc;
 #define TN_IP   244
 #define TN_ECHO   1
 
-static unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
-static unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
-static unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
-static unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
+static const unsigned char do_echo[]    = {TN_IAC, TN_DO,   TN_ECHO};
+static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
+static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
+static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+/*
+ * Define the version of the module (ususally 1).
+ */
+
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 
 /*
@@ -132,7 +140,7 @@ Ns_ModuleInit(char *server, char *module)
 	return NS_ERROR;
     }
     lsock = Ns_SockListen(addr, port);
-    if (lsock == INVALID_SOCKET) {
+    if (lsock == NS_INVALID_SOCKET) {
 	Ns_Log(Error, "nscp: could not listen on %s:%d", addr, port);
 	return NS_ERROR;
     }
@@ -276,7 +284,7 @@ AcceptProc(NS_SOCKET lsock, void *arg, unsigned int why)
     sessPtr->modPtr = modPtr;
     len = sizeof(struct sockaddr_in);
     sessPtr->sock = Ns_SockAccept(lsock, (struct sockaddr *) &sessPtr->sa, &len);
-    if (sessPtr->sock == INVALID_SOCKET) {
+    if (sessPtr->sock == NS_INVALID_SOCKET) {
 	Ns_Log(Error, "nscp: accept() failed: %s",
 	       ns_sockstrerror(ns_sockerrno));
 	ns_free(sessPtr);
@@ -381,7 +389,9 @@ retry:
 	res = (char*)Tcl_GetStringResult(interp);;
 	len = strlen(res);
 	while (len > 0) {
-	    if ((n = send(sessPtr->sock, res, len, 0)) <= 0) goto done;
+	  if ((n = send(sessPtr->sock, res, len, 0)) <= 0) {
+	      goto done;
+	  }
 	    len -= n;
 	    res += n;
 	}

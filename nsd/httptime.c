@@ -48,12 +48,12 @@ static int MakeMonth(char *s);
  * Static variables defined in this file
  */
 
-static CONST char *month_names[] = {
+static const char *month_names[] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-static CONST char *week_names[] = {
+static const char *week_names[] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
@@ -287,7 +287,7 @@ Ns_ParseHttpTime(char *str)
  */
 
 int
-NsTclParseHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     time_t time;
 
@@ -324,7 +324,7 @@ NsTclParseHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *
  */
 
 int
-NsTclHttpTimeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_DString ds;
     int        itime;

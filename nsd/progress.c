@@ -117,7 +117,7 @@ NsConfigProgress(void)
  */
 
 int
-NsTclProgressObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "url");

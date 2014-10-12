@@ -59,7 +59,7 @@ static int debugMode = 0;
  *
  * NsBlockSignal --
  *
- *      Mask one specific signale
+ *      Mask one specific signal.
  *
  * Results:
  *      None.

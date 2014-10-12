@@ -43,7 +43,7 @@
 
 typedef struct {
     time_t mtime;
-    int    size;
+    size_t size;
     dev_t  dev;
     ino_t  ino;
     int    refcnt;
@@ -63,6 +63,10 @@ static int  FastStat       (CONST char *path, struct stat *stPtr);
 static int  FastGetRestart (Ns_Conn *conn, CONST char *page);
 static int  FastReturn     (Ns_Conn *conn, int status, CONST char *type,
                             CONST char *file);
+static int  GzipFile       (Tcl_Interp *interp, CONST char *fileName, CONST char *gzFileName) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+
 static Ns_ServerInitProc ConfigServerFastpath;
 
 
@@ -151,9 +155,9 @@ ConfigServerFastpath(CONST char *server)
     servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
     servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
 
-    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0);
-    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0);
-    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0);
+    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0U);
+    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0U);
+    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0U);
 
     return NS_OK;
 }
@@ -212,7 +216,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int status, CONST char *type, CONST char *file)
  */
 
 int
-Ns_FastPathProc(void *arg, Ns_Conn *conn)
+Ns_FastPathProc(void *UNUSED(arg), Ns_Conn *conn)
 {
     Conn        *connPtr = (Conn *) conn;
     NsServer    *servPtr = connPtr->poolPtr->servPtr;
@@ -386,6 +390,10 @@ GzipFile(Tcl_Interp *interp, CONST char *fileName, CONST char *gzFileName)
 {
     int result;
     Tcl_DString ds, *dsPtr = &ds;
+
+    assert(interp != NULL);
+    assert(fileName != NULL);
+    assert(gzFileName != NULL);
 
     Tcl_DStringInit(dsPtr);
     Tcl_DStringAppend(dsPtr, "::ns_gzipfile ", 13);
@@ -759,7 +767,7 @@ FreeEntry(void *arg)
  */
 // document me, maybe refactor me
 int
-NsTclFastPathCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_CacheSearch  search;
     Ns_DString      ds;

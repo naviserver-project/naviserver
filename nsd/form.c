@@ -199,7 +199,7 @@ Ns_QueryToSet(char *query, Ns_Set *set)
  */
 
 int
-NsTclParseQueryObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     Ns_Set *set;
 
@@ -340,15 +340,15 @@ ParseMultiInput(Conn *connPtr, char *start, char *end)
 
     disp = Ns_SetGet(set, "content-disposition");
     if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape)) {
-        char *key = Ext2Utf(&kds, ks, ke-ks, encoding, unescape);
+	char *key = Ext2Utf(&kds, ks, (size_t)(ke-ks), encoding, unescape);
 	char *value;
 
         if (!GetValue(disp, "filename=", &fs, &fe, &unescape)) {
-	    value = Ext2Utf(&vds, start, end-start, encoding, unescape);
+	    value = Ext2Utf(&vds, start, (size_t)(end-start), encoding, unescape);
         } else {
 	    Tcl_HashEntry *hPtr;
 
-            value = Ext2Utf(&vds, fs, fe-fs, encoding, unescape);
+            value = Ext2Utf(&vds, fs, (size_t)(fe-fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew) {
 	        FormFile *filePtr = ns_malloc(sizeof(FormFile));
