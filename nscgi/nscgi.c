@@ -376,7 +376,8 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
 {
     Mod		   *modPtr;
     Ns_DString     *dsPtr;
-    int             ulen, plen, i;
+    int             i;
+    size_t          ulen, plen;
     struct stat     st;
     char           *s, *e;
     char    	   *url = conn->request->url;
@@ -556,7 +557,8 @@ err:
 static int
 CgiSpool(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int     len, fd;
+    int     fd;
+    size_t  len;
     char   *content, *err;
 
     err = NULL;
@@ -565,7 +567,7 @@ CgiSpool(Cgi *cgiPtr, Ns_Conn *conn)
     fd = Ns_GetTemp();
     if (fd < 0) {
 	Ns_Log(Error, "nscgi: could not allocate temp file.");
-    } else if (write(fd, content, (size_t)len) != len) {
+    } else if (write(fd, content, len) != len) {
 	err = "write";
     } else if (lseek(fd, 0, SEEK_SET) != 0) {
 	err = "lseek";
