@@ -120,8 +120,8 @@ static Ns_Tls       tls;
 static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
-static CONST char  *file;
-static unsigned int flags;
+static const char  *file;
+static unsigned int flags = 0U;
 static int          maxback;
 
 static LogFilter   *filters;
