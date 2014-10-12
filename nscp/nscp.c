@@ -389,9 +389,9 @@ retry:
 	res = (char*)Tcl_GetStringResult(interp);;
 	len = strlen(res);
 	while (len > 0) {
-	  if ((n = send(sessPtr->sock, res, len, 0)) <= 0) {
-	      goto done;
-	  }
+	    if ((n = send(sessPtr->sock, res, len, 0)) <= 0) {
+		goto done;
+	    }
 	    len -= n;
 	    res += n;
 	}
