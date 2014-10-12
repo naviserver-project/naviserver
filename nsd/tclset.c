@@ -219,7 +219,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         "array", "cleanup", "copy", "cput", "create", "delete",
         "delkey", "find", "free", "get", "icput", "idelete",
         "idelkey", "ifind", "iget", "isnull", "iunique", "key",
-        "list", "merge", "move", "name", "new", "print", "purge",
+        "list", "merge", "move", "name", "new", "print",
         "put", "size", "split", "truncate", "unique", "update",
         "value", NULL,
     };
@@ -228,7 +228,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
         SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
         SICPutIdx, SIDeleteIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx,
         SIsNullIdx, SIUniqueIdx, SKeyIdx, SListIdx, SMergeIdx,
-        SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, spurgeidx, SPutIdx,
+        SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
         SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
         SValueIdx
     };
