@@ -65,7 +65,7 @@ static Tcl_Encoding   utf8Encoding; /* Cached pointer to utf-8 encoding. */
  * That is, the encoding used to read the files from disk (mainly ADP).
  */
 
-static struct {
+static const struct {
     const char  *extension;
     const char  *name;
 } builtinExt[] = {
@@ -80,7 +80,7 @@ static struct {
  * The following table provides HTTP charset aliases for Tcl encodings names.
  */
 
-static struct {
+static const struct {
     const char  *charset;
     const char  *name;
 } builtinChar[] = {

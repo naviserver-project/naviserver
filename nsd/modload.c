@@ -199,7 +199,7 @@ NsTclModuleLoadObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     int         global = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-global", Ns_ObjvBool,   &global, (void *) NS_TRUE},
+	{"-global", Ns_ObjvBool,   &global, INT2PTR(NS_TRUE)},
         {"-init",   Ns_ObjvString, &init,   NULL},
         {"--",      Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}

@@ -2233,13 +2233,12 @@ static int
 SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 {
     Driver       *drvPtr;
-    Request      *reqPtr = NULL;
-    Tcl_DString  *bufPtr = NULL;
-
+    Request      *reqPtr;
+    Tcl_DString  *bufPtr;
     struct iovec  buf;
-    char         tbuf[16384];
-    size_t       len, nread;
-    ssize_t      n;
+    char          tbuf[16384];
+    size_t        len, nread;
+    ssize_t       n;
 
     assert(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
@@ -3804,7 +3803,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     WriterSock    *wrSockPtr; 
     SpoolerQueue  *queuePtr;
     DrvWriter     *wrPtr;
-    int            trigger = 0, headerSize;
+    int            trigger = 0;
+    size_t         headerSize;
 
     if (connPtr == NULL || connPtr->sockPtr == NULL) {
         return NS_ERROR;
@@ -3962,10 +3962,10 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	Ns_CompleteHeaders(conn, nsend, 0, &ds);
 
 	wrSockPtr->headerString = ns_strdup(Tcl_DStringValue(&ds));
-	headerSize = Ns_DStringLength(&ds);
+	headerSize = (size_t)Ns_DStringLength(&ds);
 	Ns_DStringFree(&ds);
     } else {
-	headerSize = 0;
+	headerSize = 0U;
     }
 
     if (fd != -1) {

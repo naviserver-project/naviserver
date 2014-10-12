@@ -476,7 +476,7 @@ Ns_OptionEnumPart(Tcl_Interp *interp, Tcl_Obj *UNUSED(labelObj), Tcl_Obj *objPtr
     int index, result;
     static const char *opts[] = {"query", "path", NULL};
     result = Tcl_GetIndexFromObj(interp, objPtr, opts, "-part", 0, &index);
-    *clientData = (ClientData) INT2PTR(index + 1);
+    *clientData = INT2PTR(index + 1);
     return result;
 }
 

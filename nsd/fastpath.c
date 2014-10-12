@@ -43,7 +43,7 @@
 
 typedef struct {
     time_t mtime;
-    int    size;
+    size_t size;
     dev_t  dev;
     ino_t  ino;
     int    refcnt;
@@ -155,9 +155,9 @@ ConfigServerFastpath(CONST char *server)
     servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", p);
     servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
 
-    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0);
-    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0);
-    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0);
+    Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0U);
+    Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0U);
+    Ns_RegisterRequest(server, "POST", "/", Ns_FastPathProc, NULL, NULL, 0U);
 
     return NS_OK;
 }

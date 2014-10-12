@@ -34,10 +34,11 @@
 
 #define BUFSIZE	    4096
 #define NDSTRINGS   5
-#define CGI_NPH	    	1
-#define CGI_GETHOST	2
-#define CGI_ECONTENT	4
-#define CGI_SYSENV	8
+
+#define CGI_NPH	    	0x01U
+#define CGI_GETHOST	0x02U
+#define CGI_ECONTENT	0x04U
+#define CGI_SYSENV	0x08U
 
 /*
  * The following structure is allocated for each instance the module is
@@ -71,7 +72,7 @@ typedef struct Mod {
 
 typedef struct Cgi {
     Mod     	   *modPtr;
-    int		    flags;
+    unsigned int    flags;
     pid_t     	    pid;
     Ns_Set	   *env;
     char    	   *name;
@@ -124,7 +125,7 @@ static char    *NextWord(char *s);
 static void	SetAppend(Ns_Set *set, int index, char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, char *key, char *value);
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 
 /*

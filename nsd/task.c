@@ -90,7 +90,7 @@ typedef struct Task {
 static void TriggerQueue(TaskQueue *queuePtr);
 static void JoinQueue(TaskQueue *queuePtr);
 static void StopQueue(TaskQueue *queuePtr);
-static int SignalQueue(Task *taskPtr, int bit);
+static int SignalQueue(Task *taskPtr, unsigned int bit);
 static Ns_ThreadProc TaskThread;
 static void RunTask(Task *taskPtr, unsigned int revents, Ns_Time *nowPtr);
 
@@ -681,7 +681,7 @@ RunTask(Task *taskPtr, unsigned int revents, Ns_Time *nowPtr)
  */
 
 static int
-SignalQueue(Task *taskPtr, int bit)
+SignalQueue(Task *taskPtr, unsigned int bit)
 {
     TaskQueue *queuePtr = taskPtr->queuePtr;
     int        pending = 0, shutdown;

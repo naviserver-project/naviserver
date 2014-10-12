@@ -239,7 +239,7 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         limitsPtr->maxwait = maxwait;
     }
     if (maxupload > -1) {
-        limitsPtr->maxupload = maxupload;
+	limitsPtr->maxupload = (size_t)maxupload;
     }
     if (timeout > -1) {
         limitsPtr->timeout = timeout;
@@ -269,15 +269,16 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp *itPtr = clientData;
-    NsLimits *limitsPtr;
-    char     *method, *url, *server = itPtr->servPtr->server;
-    int       flags = 0;
+    NsInterp    *itPtr = clientData;
+    NsLimits    *limitsPtr;
+    char        *method, *url, *server = itPtr->servPtr->server;
+    int          noinherit = 0;
+    unsigned int flags = 0U;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,   &flags,  (void *) NS_OP_NOINHERIT},
-        {"-server",    Ns_ObjvString, &server, NULL},
-        {"--",         Ns_ObjvBreak,  NULL,    NULL},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(1)},
+        {"-server",    Ns_ObjvString, &server,    NULL},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -289,6 +290,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+    if (noinherit) {flags |= NS_OP_NOINHERIT;}
     Ns_MutexLock(&lock);
     Ns_UrlSpecificSet(server, method, url,
                       limid, limitsPtr, flags, NULL);

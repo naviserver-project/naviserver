@@ -215,7 +215,7 @@ Ns_TclSetStringRep(Tcl_Obj *objPtr, char *bytes, int length)
  */
 
 int
-Ns_TclSetFromAnyError(Tcl_Interp *interp, Tcl_Obj *objPtr)
+Ns_TclSetFromAnyError(Tcl_Interp *interp, Tcl_Obj *UNUSED(objPtr))
 {
     Tcl_AppendToObj(Tcl_GetObjResult(interp),
                     "can't convert value to requested type except via prescribed API",

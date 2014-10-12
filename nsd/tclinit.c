@@ -206,8 +206,8 @@ ConfigServerTcl(CONST char *server)
      */
 
     p = Ns_ConfigGetValue(path, "errorlogheaders");
-    if (p != NULL && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders)
-            != TCL_OK) {
+    if (p != NULL 
+	&& Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
         Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
     }
 

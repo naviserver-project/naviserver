@@ -237,7 +237,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
         arrayPtr = LockArrayObj(interp, objv[1], 1);
 	assert(arrayPtr);
-        SetVar(arrayPtr, key, value, len);
+        SetVar(arrayPtr, key, value, (size_t)len);
         UnlockArray(arrayPtr);
 
         Tcl_SetObjResult(interp, objv[3]);
@@ -349,7 +349,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         }
     }
     value = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &len);
-    UpdateVar(hPtr, value, len);
+    UpdateVar(hPtr, value, (size_t)len);
     UnlockArray(arrayPtr);
 
     return TCL_OK;
@@ -581,7 +581,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         }
         for (i = 0; i < lobjc; i += 2) {
             char *value = Tcl_GetStringFromObj(lobjv[i+1], &size);
-            SetVar(arrayPtr, Tcl_GetString(lobjv[i]), value, size);
+            SetVar(arrayPtr, Tcl_GetString(lobjv[i]), value, (size_t)size);
         }
         UnlockArray(arrayPtr);
         break;

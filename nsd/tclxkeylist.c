@@ -238,7 +238,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
 	        (void) Tcl_GetStringFromObj(objValues[ii], (int*)&keySize);
                 totalKeySize += keySize + 1;
             }
-            keyArgv = (char **)ckalloc((int)(((keyCount+1)*sizeof(char *)) + totalKeySize));
+            keyArgv = (char **)ckalloc((size_t)(((keyCount+1)*sizeof(char *)) + totalKeySize));
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + ((keyCount+1) * sizeof(char *));
 
@@ -304,7 +304,7 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, CONST char *fieldName,
         if (fieldValuePtr) {
             size_t valueLen;
             char *keyValue = Tcl_GetStringFromObj(objValPtr, (int*)&valueLen);
-            char *newValue = strncpy(ckalloc((int)(valueLen + 1)), keyValue, valueLen);
+            char *newValue = strncpy(ckalloc((size_t)(valueLen + 1)), keyValue, valueLen);
             newValue[valueLen] = 0;
             *fieldValuePtr = newValue;
         }
@@ -355,7 +355,7 @@ Tcl_SetKeyedListField(Tcl_Interp *interp, CONST char *fieldName,
     }
 
     listStr = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), (int*)&listLen);
-    newList = strncpy(ckalloc((int)(listLen + 1)), listStr, listLen);
+    newList = strncpy(ckalloc((size_t)(listLen + 1)), listStr, (size_t)listLen);
     listStr[listLen] = 0;
 
     Tcl_DecrRefCount(valuePtr);
@@ -1085,7 +1085,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valu
             Tcl_DecrRefCount(keylIntPtr->entries[findIdx].valuePtr);
         }
         keylIntPtr->entries[findIdx].key =
-	  (char *) ckalloc((int)(keyLen + 1));
+	  (char *) ckalloc((size_t)(keyLen + 1));
         strncpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = valuePtr;
@@ -1125,7 +1125,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valu
         EnsureKeyedListSpace(keylIntPtr, 1);
         findIdx = keylIntPtr->numEntries++;
         keylIntPtr->entries[findIdx].key =
-            (char *) ckalloc((int)(keyLen + 1));
+            (char *) ckalloc((size_t)(keyLen + 1));
         strncpy(keylIntPtr->entries[findIdx].key, key, keyLen);
         keylIntPtr->entries[findIdx].key[keyLen] = '\0';
         keylIntPtr->entries[findIdx].valuePtr = newKeylPtr;

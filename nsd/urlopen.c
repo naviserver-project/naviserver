@@ -74,7 +74,7 @@ int
 Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
 {
     Ns_DString  ds;
-    Tcl_Channel chan = NULL;
+    Tcl_Channel chan;
 
     Ns_DStringInit(&ds);
     Ns_UrlToFile(&ds, server, url);

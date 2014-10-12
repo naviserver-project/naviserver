@@ -304,7 +304,7 @@ struct Ns_ObjvSpec;
 typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *CONST* objv);
 
-typedef int (Ns_OptionConverter) (Tcl_Interp *interp, Tcl_Obj *labelPtr, 
+typedef int (Ns_OptionConverter) (Tcl_Interp *interp, Tcl_Obj *labelObj, 
 				  Tcl_Obj *objPtr, ClientData *clientData);
 
 /*
@@ -575,7 +575,7 @@ typedef int (Ns_FilterProc)
     (void *arg, Ns_Conn *conn, unsigned int why);
 
 typedef int (Ns_LogFilter)
-    (void *arg, Ns_LogSeverity severity, Ns_Time *time, char *msg, size_t len);
+    (void *arg, Ns_LogSeverity severity, Ns_Time *stamp, char *msg, size_t len);
 
 typedef int (Ns_UrlToFileProc)
     (Ns_DString *dsPtr, CONST char *server, CONST char *url);

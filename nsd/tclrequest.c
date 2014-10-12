@@ -102,11 +102,12 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
     char           *method, *url;
-    int             flags = 0, remain = 0;
+    int             remain = 0, noinherit = 0;
+    unsigned int    flags = 0U;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
-        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
+        {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -119,6 +120,8 @@ NsTclRegisterProcObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+
+    if (noinherit) {flags |= NS_OP_NOINHERIT;}
 
     cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclRequestProc, scriptObj,
                               remain, objv + (objc - remain));
@@ -199,7 +202,8 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
 {
     NsInterp       *itPtr = arg;
     char           *method, *url;
-    int             flags = 0;
+    int             noinherit = 0;
+    unsigned int    flags = 0U;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
@@ -213,6 +217,10 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
+    }
+
+    if (noinherit) {
+	flags |= NS_OP_NOINHERIT;
     }
 
     Ns_RegisterRequest(itPtr->servPtr->server, method, url,

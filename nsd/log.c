@@ -54,7 +54,7 @@ typedef struct LogEntry {
     Ns_LogSeverity   severity;  /* Entry's severity */
     Ns_Time          stamp;     /* Timestamp of the entry */
     int              offset;    /* Offset into the text buffer */
-    int              length;    /* Length of the log message */
+    size_t           length;    /* Length of the log message */
     struct LogEntry *nextPtr;   /* Next in the list of entries */
 } LogEntry;
 
@@ -319,10 +319,10 @@ Ns_CreateLogSeverity(CONST char *name)
     hPtr = Tcl_CreateHashEntry(&severityTable, name, &isNew);
     if (isNew) {
         severity = severityIdx++;
-        Tcl_SetHashValue(hPtr, (ClientData)(intptr_t) severity);
+        Tcl_SetHashValue(hPtr, INT2PTR(severity));
         severityConfig[severity].string = Tcl_GetHashKey(&severityTable, hPtr);
     } else {
-        severity = (int)(intptr_t) Tcl_GetHashValue(hPtr);
+	severity = PTR2INT(Tcl_GetHashValue(hPtr));
     }
     Ns_MutexUnlock(&lock);
 
@@ -1474,7 +1474,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
              * Check for a legacy integer severity.
              */
             if (Tcl_GetIntFromObj(NULL, objPtr, &i) == TCL_OK
-                    && i < severityCount) {
+		&& i < severityCount) {
 		*addrPtrPtr = INT2PTR(i);
             } else {
                 Tcl_AppendResult(interp, "unknown severity: \"",

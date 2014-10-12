@@ -41,7 +41,7 @@
  */
 
 static Ns_SchedProc FreeSched;
-static int SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd);
+static int SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, unsigned char cmd);
 static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr);
 
 
@@ -102,7 +102,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 static int
-SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int cmd)
+SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, unsigned char cmd)
 {
     int id, ok;
 
@@ -246,11 +246,12 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Ns_TclCallback *cbPtr;
     Tcl_Obj        *scriptObj;
     int             id, day, hour, minute;
-    int             remain = 0, flags = 0, once = 0, thread = 0;
+    int             remain = 0, once = 0, thread = 0;
+    unsigned int    flags = 0U;
 
     Ns_ObjvSpec opts[] = {
-        {"-once",   Ns_ObjvBool,  &once,   (void *) 1},
-        {"-thread", Ns_ObjvBool,  &thread, (void *) 1},
+	{"-once",   Ns_ObjvBool,  &once,   INT2PTR(1)},
+        {"-thread", Ns_ObjvBool,  &thread, INT2PTR(1)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
