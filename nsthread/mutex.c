@@ -212,9 +212,9 @@ void
 Ns_MutexLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr = GETMUTEX(mutex);
+#if (0 != NS_MUTEX_TIMING)
     Ns_Time end, diff, startTime;
 
-#if (0 != NS_MUTEX_TIMING)
     Ns_GetTime(&startTime);
 #endif
     if (unlikely(!NsLockTry(mutexPtr->lock))) {
@@ -304,9 +304,9 @@ void
 Ns_MutexUnlock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr = (Mutex *) *mutex;
+#if (0 != NS_MUTEX_TIMING)
     Ns_Time end, diff;
 
-#if (0 != NS_MUTEX_TIMING)
     Ns_GetTime(&end);
     Ns_DiffTime(&end, &mutexPtr->start_time, &diff);
     Ns_IncrTime(&mutexPtr->total_lock_time, diff.sec, diff.usec);
