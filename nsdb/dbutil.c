@@ -119,7 +119,6 @@ Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)
 
 		default:
 		    return NULL;
-		    break;
 	    }
         }
         row = Ns_SetCopy(row);
