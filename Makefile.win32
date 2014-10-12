@@ -4,7 +4,7 @@
 # 1. Edit include/Makefile.build and replace Makefile.module with
 #    Makefile.win32
 #
-# 2. Update TCLPATH and VC varibales below to reflect actual path to
+# 2. Update TCLPATH and VC variables below to reflect actual path to
 #    Tcl and VicualC++ installations
 #
 # 3. Run appropriate Microsoft build setup script.  E.g.:
@@ -16,8 +16,18 @@
 #
 #
 
+tcl_64 = C:\P\Tcl85
+tcl_32 = C:\P\Tcl-32
 
-TCLPATH = C:\P\Tcl85
+!if "x86" == "$(TARGET_CPU)"
+TCLPATH = $(tcl_32)
+!elseif "x64" == "$(TARGET_CPU)"
+TCLPATH = $(tcl_64)
+!else
+!message Warning: Unexpected TARGET_CPU:  $(TARGET_CPU)
+TCLPATH = $(tcl_64)
+!endif
+
 TCLLIB  = tcl85.lib
 VC      = %ProgramFiles(x86)%\Microsoft Visual Studio 10.0\VC
 MSDK    = %ProgramFiles%\Microsoft SDKs\Windows\v7.1

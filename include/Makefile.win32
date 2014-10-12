@@ -149,6 +149,10 @@ DEFS	= $(DEFS) /D "_WINDOWS" /D "TCL_THREADS=1" \
 
 LOPTS   = /NOLOGO /SUBSYSTEM:CONSOLE /OPT:NOREF /OPT:NOICF
 
+# Tcl always uses _USE_32BIT_TIME_T on 32-bit Windows, so we must as well:
+!if "x86" == "$(TARGET_CPU)"
+DEFS = $(DEFS) /D _USE_32BIT_TIME_T
+!endif
 
 #
 # Variables for building a DLL module.
