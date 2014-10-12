@@ -6,8 +6,6 @@
 #
 # 2. Update TCLPATH and VC variables below to reflect actual path to
 #    Tcl and VicualC++ installations
-#   
-# 3. nmake -f Makefile.win32
 #
 #    or
 #
@@ -27,24 +25,44 @@ TCLPATH = $(tcl_64)
 TCLPATH = $(tcl_64)
 !endif
 
+# I should be able to implicitly use these environment variable mappings:
+#   %ProgramFiles%      -> C:\Program Files
+#   %ProgramFiles(x86)% -> C:\Program Files (x86)
+# And indeed those work fine when building with /x64.  But with /x86,
+# they mysteriously fail, even though I SEE those exact same values in
+# /x86 build shell!  So I do NOT use them here: --atp@piskorski.com,
+# 2014/10/12 14:25 EDT
+
 TCLLIB  = tcl85.lib
+VC      = C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC
+MSDK    = C:\Program Files\Microsoft SDKs\Windows\v7.1
 
 ## TODO: Why is it necessary to set these variables here?  Shouldn't
 ## we just run the appropriate vcvars32.bat or other setup script?
 ## --atp@piskorski.com, 2014/09/17 12:05 EDT
 
-# We definitely need this file:
-#   "C:\Program Files\Microsoft SDKs\Windows\v7.1\Include\Windows.h"
+smash_lib_include = 0
+!if (1 != $(smash_lib_include))
+!message Appending to LIB and INCLUDE.
+# If your call to SetEnv.Cmd is working correctly, you should only
+# need to append to LIB and INCLUDE like this:
+LIB     = $(LIB);$(TCLPATH)\lib
+INCLUDE = $(INCLUDE);$(TCLPATH)\include
 
-#VC	= $(MY_VC)
-#MSDK	= $(MY_MSDK)
-VC	= C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC
-MSDK	= C:\Program Files\Microsoft SDKs\Windows\v7.1
+# But for reference and to help debugging, these are the full LIB and
+# INCLUDE environment variable settings I need when set from scratch,
+# smashing over any values set by SetEnv.Cmd:
+!elseif "x86" == "$(TARGET_CPU)"
+!message Smashing over LIB and INCLUDE, for x86 cpu.
+LIB     = $(MSDK)\Lib;$(VC)\Lib;$(TCLPATH)\lib
+INCLUDE = $(MSDK)\Include;$(VC)\include;$(TCLPATH)\include
 
-LIB	= $(LIB);$(MSDK)\Lib;$(TCLPATH)\lib
-#LIB	= $(LIB);$(VC)\Lib
-INCLUDE	= $(INCLUDE);$(MSDK)\Include;$(TCLPATH)\include
-#INCLUDE	= $(INCLUDE);$(VC)\include
+!else
+!message Smashing over LIB and INCLUDE, for x64 cpu.
+LIB     = $(MSDK)\Lib\X64;$(VC)\Lib\amd64;$(TCLPATH)\lib
+INCLUDE = $(MSDK)\Include;$(VC)\include;$(TCLPATH)\include
+!endif
+
 
 # include/Makefile.win32 uses this DEBUG flag.  For now default it to
 # 1 rather than 0 or unset:
