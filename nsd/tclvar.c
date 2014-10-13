@@ -73,7 +73,7 @@ static void Flush(Array *arrayPtr);
 static Array *LockArray(NsServer *servPtr, CONST char *array, int create);
 static void UnlockArray(Array *arrayPtr);
 
-static Array *LockArrayObj(Tcl_Interp *, Tcl_Obj *arrayObj, int create);
+static Array *LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, int create);
 
 
 /*
