@@ -49,7 +49,6 @@ typedef struct Pool {
     char           *source;
     char           *user;
     char           *pass;
-    int             type;
     Ns_Mutex	    lock;
     Ns_Cond	    waitCond;
     Ns_Cond	    getCond;
@@ -83,8 +82,6 @@ typedef struct Handle {
     Ns_Set         *row;
     char            cExceptionCode[6];
     Ns_DString      dsExceptionMsg;
-    void           *context;
-    void           *statement;
     int             fetchingRows;
     /* Members above must match Ns_DbHandle */
     struct Handle  *nextPtr;

@@ -52,7 +52,6 @@ typedef struct Mod {
     char	   *module;
     Ns_Set         *interps;
     Ns_Set         *mergeEnv;
-    struct Cgi     *firstCgiPtr;
     unsigned int    flags;
     int             maxInput;
     int             maxCgi;

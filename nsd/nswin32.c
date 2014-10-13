@@ -44,7 +44,6 @@ static VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv);
 static VOID WINAPI ServiceHandler(DWORD code);
 static BOOL WINAPI ConsoleHandler(DWORD code);
 static void ReportStatus(DWORD state, DWORD code, DWORD hint);
-static void ExitService(void);
 static char *GetServiceName(Ns_DString *dsPtr, char *service);
 
 /*
@@ -63,8 +62,6 @@ static int sigpending = 0;
 static int servicefailed = 0;
 
 #define SysErrMsg() (NsWin32ErrMsg(GetLastError()))
-
-void NsdInit(void);
 
 
 /*

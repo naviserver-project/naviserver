@@ -62,9 +62,10 @@ static int binderResponse[2] = { -1, -1 };
 /*
  * Local functions defined in this file
  */
-
+#ifndef _WIN32
 static void PreBind(char *line);
 static void Binder(void);
+#endif
 
 
 /*

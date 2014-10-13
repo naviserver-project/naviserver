@@ -36,7 +36,6 @@
 #include "nsd.h"
 
 EXTERN void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-NS_EXTERN char *nsBuildDate;
 
 /*
  * Static variables defined in this file.

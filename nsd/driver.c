@@ -111,7 +111,6 @@ typedef struct AsyncWriteData {
     struct AsyncWriteData *nextPtr;
     char              *data;
     int                fd;
-    int                pidx;
     Tcl_WideInt        nsent;
     size_t             size;
     size_t             bufsize;
