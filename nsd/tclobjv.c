@@ -739,7 +739,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
 int
 Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
-	     int *UNUSED(objcPtr), Tcl_Obj *CONST UNUSED(objv[]))
+	     int *UNUSED(objcPtr), Tcl_Obj *CONST* UNUSED(objv))
 {
     return TCL_BREAK;
 }
@@ -763,7 +763,7 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
 
 int
 Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp),
-            int *objcPtr, Tcl_Obj *CONST UNUSED(objv[]))
+            int *objcPtr, Tcl_Obj *CONST* UNUSED(objv))
 {
     *((int *) spec->dest) = *objcPtr;
     *objcPtr = 0;

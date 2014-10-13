@@ -403,7 +403,7 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  */
 
 int
-NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
+NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;

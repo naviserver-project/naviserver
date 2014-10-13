@@ -946,7 +946,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
 int
 NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
-		   int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
+		   int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     if (Ns_LogRoll() != NS_OK) {
         Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);

@@ -253,7 +253,7 @@ NsTclMkTempCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONS
  */
 
 int
-NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
+NsTclTmpNamObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* objv)
 {
     char buf[L_tmpnam];
 
