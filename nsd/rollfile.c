@@ -206,7 +206,7 @@ Ns_PurgeFiles(CONST char *file, int max)
     if (nfiles > 0) {
         int ii;
 
-        for (ii = 0, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
+        for (ii = 0, fiPtr = files; ii < nfiles; ii++, fiPtr++) {
             Tcl_DecrRefCount(fiPtr->path);
         }
         ns_free(files);

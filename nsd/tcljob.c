@@ -1775,7 +1775,7 @@ GetJobStateStr(JobStates state)
         "unknown"           /* 3 */
     };
 
-    if (state > (max_state_index)) {
+    if (state > max_state_index) {
         state = max_state_index;
     }
 
@@ -1808,7 +1808,7 @@ GetJobTypeStr(JobTypes type)
         "unknown"          /* 2 */
     };
 
-    if (type > (max_type_index)) {
+    if (type > max_type_index) {
         type = max_type_index;
     }
 
@@ -1841,7 +1841,7 @@ GetJobReqStr(JobRequests req)
         "unknown"   /* 2 */
     };
 
-    if (req > (req_max_index)) {
+    if (req > req_max_index) {
         req = req_max_index;
     }
 
@@ -1873,7 +1873,7 @@ GetQueueReqStr(QueueRequests req)
         "delete"    /* 1 */
     };
 
-    if (req > (req_max_index)) {
+    if (req > req_max_index) {
         req = req_max_index;
     }
 
@@ -1905,7 +1905,7 @@ GetTpReqStr(ThreadPoolRequests req)
         "stop"      /* 1 */
     };
 
-    if (req > (req_max_index)) {
+    if (req > req_max_index) {
         req = req_max_index;
     }
 

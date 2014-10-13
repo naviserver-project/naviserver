@@ -3371,7 +3371,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	     * send operation.
 	     */
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
-	    lseek(curPtr->fd, curPtr->nsent, SEEK_SET);
+	    lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
 	}
 	
 	n = read(curPtr->fd, bufPtr, (size_t)toread);

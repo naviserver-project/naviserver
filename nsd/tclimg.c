@@ -487,7 +487,7 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         while (1) {
-	    unsigned int i;
+	    int          i;
 	    uint32_t     numBytes = 0U;
 
             i = JpegNextMarker(chan);
