@@ -547,7 +547,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
     if (ipagePtr != NULL) {
 	AdpCode  *codePtr;
         Objs *objsPtr;
-	int   cacheGen;
+	int   cacheGen = 0;
 
         pagePtr = ipagePtr->pagePtr;
         if (ttlPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {

@@ -186,7 +186,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     char       *file;
     int         status = TCL_ERROR;
-    uint32_t    w, h;
+    uint32_t    w = 0, h = 0;
     Tcl_Channel chan;
 
     if (objc != 2) {

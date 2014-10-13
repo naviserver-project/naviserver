@@ -684,7 +684,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
 {
     NS_SOCKET    sock;
     Ns_HttpTask *httpPtr;
-    int          len, portNr, uaFlag = -1;
+    int          len = 0, portNr, uaFlag = -1;
     char        *body, *host, *file, *port, *url2;
     char         hostBuffer[256];
 
