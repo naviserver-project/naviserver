@@ -117,7 +117,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      */
     static int     mode = 0;
     static Ns_Set *servers;
-    static char   *procname, *server;
+    static char   *procname, *server = NULL;
 #endif
 
     /*
