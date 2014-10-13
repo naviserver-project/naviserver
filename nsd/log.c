@@ -1049,15 +1049,15 @@ NsLogOpen(void)
 static int
 LogOpen(void)
 {
-    int fd, flags, status = NS_OK;
+    int fd, oflags, status = NS_OK;
 
-    flags = O_WRONLY | O_APPEND | O_CREAT;
+    oflags = O_WRONLY | O_APPEND | O_CREAT;
 
 #ifdef O_LARGEFILE
-    flags |= O_LARGEFILE;
+    oflags |= O_LARGEFILE;
 #endif
 
-    fd = open(file, flags, 0644);
+    fd = open(file, oflags, 0644);
     if (fd == -1) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));

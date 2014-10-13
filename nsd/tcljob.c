@@ -400,7 +400,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             int jpt = -1, timeout = -1;
 
-            Ns_ObjvSpec opts[] = {
+            Ns_ObjvSpec lopts[] = {
                 {"-jobsperthread",  Ns_ObjvInt,  &jpt,     NULL},
                 {"-timeout",        Ns_ObjvInt,  &timeout, NULL},
                 {NULL, NULL, NULL, NULL}
@@ -409,7 +409,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
             Ns_MutexLock(&tp.queuelock);
@@ -515,7 +515,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 	    int   create = 0, head = 0, jobType = JOB_NON_DETACHED;
             char *script = NULL;
 
-            Ns_ObjvSpec opts[] = {
+            Ns_ObjvSpec lopts[] = {
                 {"-head",      Ns_ObjvBool,    &head,     (void *) 1},
                 {"-detached",  Ns_ObjvBool,    &jobType,  (void *) JOB_DETACHED},
                 {"-jobid",     Ns_ObjvString,  &jobId,    NULL},
@@ -527,7 +527,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
 
@@ -964,13 +964,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             jobList = Tcl_NewListObj(0, NULL);
             hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
             while (hPtr != NULL) {
-		CONST char *jobId, *jobState, *jobCode, *jobType, *jobReq;
+		CONST char *jobId1, *jobState, *jobCode, *jobType, *jobReq;
 		char       *jobResults, *jobScript;
 		Tcl_Obj    *jobFieldList;
 		double      delta;
 
                 jobPtr = (Job *)Tcl_GetHashValue(hPtr);
-                jobId      = Tcl_GetHashKey(&queue->jobs, hPtr);
+                jobId1     = Tcl_GetHashKey(&queue->jobs, hPtr);
                 jobCode    = GetJobCodeStr(jobPtr->code);
                 jobState   = GetJobStateStr(jobPtr->state);
                 jobType    = GetJobTypeStr(jobPtr->type);
@@ -987,7 +987,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 /* Create a Tcl List to hold the list of job fields. */
                 jobFieldList = Tcl_NewListObj(0, NULL);
                 if (   AppendField(interp, jobFieldList, "id",
-                                   jobId) != TCL_OK
+                                   jobId1) != TCL_OK
                     || AppendField(interp, jobFieldList, "state",
                                    jobState) != TCL_OK
                     || AppendField(interp, jobFieldList, "results",

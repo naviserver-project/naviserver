@@ -562,7 +562,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     if (server == NULL) {
-	Ns_Set *set;
+	Ns_Set *lset;
 
         if (defserver == NULL) {
             Ns_Fatal("%s: virtual servers configured,"
@@ -572,11 +572,11 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
         defMapPtr = NULL;
         path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
-        set  = Ns_ConfigGetSection(path);
+        lset  = Ns_ConfigGetSection(path);
         Ns_DStringInit(dsPtr);
-        for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-            server  = Ns_SetKey(set, i);
-            host    = Ns_SetValue(set, i);
+        for (i = 0; lset != NULL && i < Ns_SetSize(lset); ++i) {
+            server  = Ns_SetKey(lset, i);
+            host    = Ns_SetValue(lset, i);
             servPtr = NsGetServer(server);
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", module, server);
@@ -3827,7 +3827,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
     if (connPtr->flags & NS_CONN_STREAM || connPtr->fd > 0) {
 	int         first = 0, wrote = 0;
-	WriterSock *wrSockPtr = NULL;
+	WriterSock *wrSockPtr1 = NULL;
 
 	if (wrPtr->streaming == NS_FALSE) {
 	    return NS_ERROR;
@@ -3853,13 +3853,13 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    /*
 	     * Reuse previously created spool file.
 	     */
-	    wrSockPtr = WriterSockRequire(connPtr);
-	    if (wrSockPtr == NULL) {
+	    wrSockPtr1 = WriterSockRequire(connPtr);
+	    if (wrSockPtr1 == NULL) {
 		Ns_Log(Notice, 
 		       "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
 		return NS_ERROR;
 	    }
-	    Ns_MutexLock(&wrSockPtr->c.file.fdlock);
+	    Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
 	    lseek(connPtr->fd, 0, SEEK_END);
 	}
 
@@ -3893,16 +3893,16 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     * length info for the access log, and trigger the writer
 	     * to notify it about the change.
 	     */
-	    assert(wrSockPtr != NULL);
+	    assert(wrSockPtr1 != NULL);
 	    connPtr->streamWriter->size += wrote;
 	    connPtr->streamWriter->c.file.toread += wrote;
-	    Ns_MutexUnlock(&wrSockPtr->c.file.fdlock);
+	    Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
 
 	    connPtr->nContentSent += wrote;
-	    if (likely(wrSockPtr->queuePtr != NULL)) {
-		SockTrigger(wrSockPtr->queuePtr->pipe[1]);
+	    if (likely(wrSockPtr1->queuePtr != NULL)) {
+		SockTrigger(wrSockPtr1->queuePtr->pipe[1]);
 	    }
-	    WriterSockRelease(wrSockPtr);
+	    WriterSockRelease(wrSockPtr1);
 	    return TCL_OK;
 	}
     } else {
@@ -4202,8 +4202,8 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         Tcl_WideInt offset = 0, size = 0;
 	size_t      nrbytes;
 
-        Ns_ObjvSpec opts[] = {
-            {"-headers",  Ns_ObjvBool,    &headers, (void *) NS_TRUE},
+        Ns_ObjvSpec lopts[] = {
+	    {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
             {"-offset",   Ns_ObjvWideInt, &offset,  NULL},
             {"-size",     Ns_ObjvWideInt, &size,    NULL},
             {NULL, NULL, NULL, NULL}
@@ -4213,7 +4213,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             {NULL, NULL, NULL, NULL}
         };
 
-        if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
 
