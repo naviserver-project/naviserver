@@ -184,7 +184,7 @@ NsInitLog(void)
     Tcl_InitHashTable(&severityTable, TCL_STRING_KEYS);
 
     Tcl_SetPanicProc(Panic);
-    Ns_AddLogFilter(LogToFile, (void *) STDERR_FILENO, NULL);
+    Ns_AddLogFilter(LogToFile, INT2PTR(STDERR_FILENO), NULL);
 
     /*
      * Initialise the entire space with backwards-compatible integer keys.
@@ -1148,7 +1148,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                      * eventually gets written into some log sink, so we
                      * use the default logfile sink.
                      */
-                    LogToFile((void*)STDERR_FILENO, ePtr->severity,
+                    LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
                               &ePtr->stamp, log, ePtr->length);
                     break;
                 }
@@ -1267,12 +1267,12 @@ static int
 LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
           char *msg, size_t len)
 {
-    int        fd = (int)(intptr_t) arg;
+    int        fd = PTR2INT(arg);
     Ns_DString ds;
 
     Ns_DStringInit(&ds);
 
-    LogToDString((void*)&ds, severity, stamp, msg, len);      
+    LogToDString(&ds, severity, stamp, msg, len);      
     NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
     Ns_DStringFree(&ds);
@@ -1311,7 +1311,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
 {
     int             ii, ret;
     char            c;
-    void           *logfile = (void *)STDERR_FILENO;
+    void           *logfile = INT2PTR(STDERR_FILENO);
     Tcl_Obj        *stamp;
     Ns_DString      ds;
     Tcl_Interp     *interp;
