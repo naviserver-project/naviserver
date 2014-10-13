@@ -1342,8 +1342,8 @@ NS_EXTERN int NsInstallService(char *service);
 NS_EXTERN int NsRemoveService(char *service);
 #endif
 
-NS_EXTERN void NsCreatePidFile();
-NS_EXTERN void NsRemovePidFile();
+NS_EXTERN void NsCreatePidFile(void);
+NS_EXTERN void NsRemovePidFile(void);
 
 NS_EXTERN void NsLogOpen(void);
 NS_EXTERN void NsTclInitObjs(void);
