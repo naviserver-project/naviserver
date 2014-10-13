@@ -110,6 +110,11 @@ typedef struct Map {
 
 static int devNull;
 
+NS_EXPORT const int Ns_ModuleVersion = 1;
+
+/*
+ * Functions defined in this file.
+ */
 static Ns_OpProc CgiRequest;
 static void     CgiRegister(Mod *modPtr, char *map);
 static Ns_Callback CgiFreeMap;
@@ -124,8 +129,6 @@ static int	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
 static char    *NextWord(char *s);
 static void	SetAppend(Ns_Set *set, int index, char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, char *key, char *value);
-
-NS_EXPORT const int Ns_ModuleVersion = 1;
 
 
 /*
@@ -734,8 +737,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
 
     /*
-     * PATH is the only variable copied from the running environment if it
-     * isn't already in the server default environment.
+     * PATH is the only variable copied from the running environment
+     * if it isn't already in the server default environment.
      */
 
     if (Ns_SetFind(cgiPtr->env, "PATH") < 0) {
@@ -802,6 +805,10 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_DStringTrunc(dsPtr, 0);
     }
 
+    /*
+     * Provide Authentication information
+     */
+
     SetUpdate(cgiPtr->env, "AUTH_TYPE", "Basic");
     SetUpdate(cgiPtr->env, "REMOTE_USER", Ns_ConnAuthUser(conn));
     s = Ns_ConnPeer(conn);
@@ -816,6 +823,11 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
             SetUpdate(cgiPtr->env, "REMOTE_HOST", s);
         }
     }
+
+    /*
+     * Provide request information.
+     */
+
     SetUpdate(cgiPtr->env, "REQUEST_METHOD", conn->request->method);
     SetUpdate(cgiPtr->env, "QUERY_STRING", conn->request->query);
 
