@@ -703,8 +703,9 @@ DeleteKeyedListEntry(keylIntObj_t * keylIntPtr, int entryIdx)
     ckfree(keylIntPtr->entries[entryIdx].key);
     Tcl_DecrRefCount(keylIntPtr->entries[entryIdx].valuePtr);
 
-    for (idx = entryIdx; idx < keylIntPtr->numEntries - 1; idx++)
+    for (idx = entryIdx; idx < keylIntPtr->numEntries - 1; idx++) {
         keylIntPtr->entries[idx] = keylIntPtr->entries[idx + 1];
+    }
     keylIntPtr->numEntries--;
 
     KEYL_REP_ASSERT(keylIntPtr);
