@@ -688,7 +688,6 @@ static const char hexChars[] = "0123456789ABCDEF";
 #define SHA_VERSION 1
 
 #define SHA_BLOCKBYTES 64U
-#define SHA_HASHBYTES 20U
 
 /*
    Shuffle the bytes into big-endian order within words, as per the

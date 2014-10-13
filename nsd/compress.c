@@ -35,11 +35,11 @@
 
 #include "nsd.h"
 
-#define COMPRESS_SENT_HEADER 0x01U
-#define COMPRESS_FLUSHED     0x02U
-
-
 #ifdef HAVE_ZLIB_H
+
+# define COMPRESS_SENT_HEADER 0x01U
+# define COMPRESS_FLUSHED     0x02U
+
 
 /*
  * Static functions defined in this file.

@@ -42,7 +42,6 @@
 #define TAG_ADP     1
 #define TAG_PROC    2
 #define TAG_SCRIPT  3
-#define TAG_SERVER  4
 
 #define APPEND      "ns_adp_append "
 #define APPEND_LEN  (int)(sizeof(APPEND)-1)

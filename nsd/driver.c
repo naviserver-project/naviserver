@@ -64,8 +64,6 @@
 #define DRIVER_STOPPED           2U
 #define DRIVER_SHUTDOWN          4U
 #define DRIVER_FAILED            8U
-#define DRIVER_QUERY             16U
-#define DRIVER_DEBUG             32U
 
 /*
  * Managing streaming output via writer

@@ -37,12 +37,13 @@
 #include "nsd.h"
 
 #ifndef _WIN32
-#include <sys/un.h>
-#include <sys/uio.h>
+# include <sys/un.h>
+# include <sys/uio.h>
+
+# define REQUEST_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + 64)
+# define RESPONSE_SIZE (sizeof(int))
 #endif
 
-#define REQUEST_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + 64)
-#define RESPONSE_SIZE (sizeof(int))
 
 /*
  * Local variables defined in this file
