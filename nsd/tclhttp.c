@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-extern Tcl_ObjCmdProc NsTclHttpObjCmd;
-
 /*
  * Local functions defined in this file
  */

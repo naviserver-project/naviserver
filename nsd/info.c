@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-EXTERN void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-
 /*
  * Static variables defined in this file.
  */
