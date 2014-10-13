@@ -160,7 +160,7 @@ Ns_ParseHttpTime(char *str)
          */
 
         s++;
-        while (*s && *s == ' ') {
+        while (*s != '\0' && *s == ' ') {
             s++;
         }
 
@@ -219,7 +219,7 @@ Ns_ParseHttpTime(char *str)
          */
 
         s = str;
-        while (*s && *s == ' ') {
+        while (*s != '\0' && *s == ' ') {
             s++;
         }
         if ((int) strlen(s) < 24) {

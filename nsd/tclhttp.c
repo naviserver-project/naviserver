@@ -570,7 +570,6 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 	return TCL_ERROR;
     }
 
-    result = TCL_ERROR;
     if (elapsedVarPtr != NULL) {
     	Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
 	valPtr = Tcl_NewObj();
@@ -684,7 +683,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
 	    Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET    sock;
-    Ns_HttpTask *httpPtr = NULL;
+    Ns_HttpTask *httpPtr;
     int          len, portNr, uaFlag = -1;
     char        *body, *host, *file, *port, *url2;
     char         hostBuffer[256];

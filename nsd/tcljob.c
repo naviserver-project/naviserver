@@ -366,7 +366,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "cancel", "create", "delete", "genid", "jobs", "joblist",
         "threadlist", "queue", "queues", "queuelist", "wait",
         "waitany",  "exists", "configure", NULL
@@ -436,7 +436,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * Create a new thread pool queue.
              */
 
-            Tcl_Obj *queueIdObj = NULL;
+            Tcl_Obj *queueIdObj;
             char    *queueDesc  = "";
 
             argIndex = 2;
@@ -1418,7 +1418,7 @@ GetNextJob(void)
 static Queue*
 NewQueue(CONST char *queueName, CONST char *queueDesc, int maxThreads)
 {
-    Queue *queue = NULL;
+    Queue *queue;
 
     assert(queueName != NULL);
     assert(queueDesc != NULL);

@@ -590,7 +590,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     }
 
     toWrite = 0U;
-    nwrote = sent = 0;
+    nwrote = 0;
 
     assert(nbufs <= 0 || bufs != NULL);
 

@@ -530,7 +530,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     NsInterp    *itPtr = arg;
     NsServer    *servPtr;
     ConnPool    *poolPtr;
-    char        *pool = NULL, *optArg = NULL, buf[100];
+    char        *pool, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
     static const char *subcmds[] = {

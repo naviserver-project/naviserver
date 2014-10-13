@@ -101,7 +101,7 @@ Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
 {
     register unsigned char  *p, *q;
     register int line = 0;
-    register size_t n = 0;
+    register size_t n;
 
     /*
      * Convert every three input bytes into four output

@@ -440,8 +440,8 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
      */
 
     if (!echo) {
-	send(sock, will_echo, 3, 0);
-	send(sock, dont_echo, 3, 0);
+	send(sock, will_echo, 3U, 0);
+	send(sock, dont_echo, 3U, 0);
 	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);

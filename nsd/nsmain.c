@@ -104,7 +104,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     Ns_Set   *set;
 
 #ifndef _WIN32
-    int       debug = 0, mode = 0;
+    int       debug = 0;
+    char      mode = 0;
     char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
     char     *bindargs = NULL, *bindfile = NULL;
     Ns_Set   *servers;
@@ -115,7 +116,7 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * preserve their values when Ns_Main is re-entered by
      * the Win32 service control manager.
      */
-    static int     mode = 0;
+    static char    mode = 0;
     static Ns_Set *servers;
     static char   *procname, *server = NULL;
 #endif

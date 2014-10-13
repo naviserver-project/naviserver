@@ -110,9 +110,9 @@ Ns_ModuleLoad(Tcl_Interp *interp, CONST char *server, CONST char *module, CONST 
               CONST char *init)
 {
     Tcl_PackageInitProc  *tclInitProc = NULL, *tclVerProc = NULL;
-    Ns_ModuleInitProc    *initProc = NULL;
+    Ns_ModuleInitProc    *initProc;
     Ns_DString            ds;
-    int                   status, *verPtr = NULL, privateInterp = (interp == NULL);
+    int                   status, *verPtr, privateInterp = (interp == NULL);
     Tcl_Obj              *pathObj;
     Tcl_LoadHandle        lh;
     Tcl_FSUnloadFileProc *uPtr;
