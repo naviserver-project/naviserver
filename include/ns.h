@@ -399,7 +399,7 @@ typedef struct Ns_ObjvSpec {
 
 typedef struct Ns_ObjvTable {
     char            *key;
-    int              value;
+    unsigned int     value;
 } Ns_ObjvTable;
 
 /*

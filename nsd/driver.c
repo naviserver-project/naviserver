@@ -411,7 +411,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->maxheaders   = Ns_ConfigIntRange(path, "maxheaders",
                                              128,          8, INT_MAX);
 
-    drvPtr->bufsize      = Ns_ConfigIntRange(path, "bufsize",
+    drvPtr->bufsize      = (size_t)Ns_ConfigIntRange(path, "bufsize",
                                              16384,        1024, INT_MAX);
 
     drvPtr->maxqueuesize = Ns_ConfigIntRange(path, "maxqueuesize",
@@ -535,10 +535,10 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     wrPtr->threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
 
     if (wrPtr->threads > 0) {
-        wrPtr->maxsize = Ns_ConfigIntRange(path, "writersize",
-                                           1024*1024, 1024, INT_MAX);
-        wrPtr->bufsize = Ns_ConfigIntRange(path, "writerbufsize",
-                                           8192, 512, INT_MAX);
+	wrPtr->maxsize = (size_t)Ns_ConfigIntRange(path, "writersize",
+						   1024*1024, 1024, INT_MAX);
+        wrPtr->bufsize = (size_t)Ns_ConfigIntRange(path, "writerbufsize",
+						   8192, 512, INT_MAX);
         wrPtr->streaming = Ns_ConfigBool(path, "writerstreaming", NS_FALSE);
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
@@ -2183,7 +2183,7 @@ ChunkedDecode(Request *reqPtr, int update)
       }
       if (update) {
         char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
-        memmove(writeBuffer, p + 2, chunk_length);
+        memmove(writeBuffer, p + 2, (size_t)chunk_length);
         reqPtr->chunkWriteOff += chunk_length;
         *(writeBuffer + chunk_length) = '\0';
       }
@@ -2283,7 +2283,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
      * Grow the buffer to include space for the next bytes.
      */
 
-    len = bufPtr->length;
+    len = (size_t)bufPtr->length;
     n = (ssize_t)(len + nread);
     if (n > drvPtr->maxinput) {
 	n = (ssize_t)drvPtr->maxinput;
@@ -2337,7 +2337,8 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
             return SOCK_ERROR;
         }
         n = bufPtr->length - reqPtr->coff;
-        if (write(sockPtr->tfd, bufPtr->string + reqPtr->coff, n) != n) {
+	assert(n >= 0);
+        if (write(sockPtr->tfd, bufPtr->string + reqPtr->coff, (size_t)n) != n) {
             return SOCK_WRITEERROR;
         }
         Tcl_DStringSetLength(bufPtr, 0);
@@ -3501,17 +3502,17 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    curPtr->c.file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
-	  if (n < (ssize_t)towrite) {
+	    if (n < (ssize_t)towrite) {
 		/*
 		 * We have a partial transmit from the iovec
 		 * structure. We have to compact it to fill content in
 		 * the next round.
 		 */
-		curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, n);
+		curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, (size_t)n);
 		curPtr->c.mem.nsbufs -= curPtr->c.mem.sbufIdx;
 		
 		memmove(curPtr->c.mem.sbufs, curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx, 
-		/* move the iovecs to the start of the scratch buffers */
+			/* move the iovecs to the start of the scratch buffers */
 			(size_t) sizeof(struct iovec) * curPtr->c.mem.nsbufs);
 	    }
 	}
@@ -4186,9 +4187,9 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
         if (data) {
 	    struct iovec vbuf;
-	    vbuf.iov_base = (void *) data;
-	    vbuf.iov_len = size;
-            rc = NsWriterQueue(conn, size, NULL, NULL, -1, &vbuf, 1, 1);
+	    vbuf.iov_base = (void *)data;
+	    vbuf.iov_len = (size_t)size;
+            rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
             Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         }
         break;
@@ -4372,7 +4373,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 				     Tcl_GetString(objv[3]), " (min 1024)", NULL);
 		    return TCL_ERROR;
 		}
-		wrPtr->maxsize = value;
+		wrPtr->maxsize = (size_t)value;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(wrPtr->maxsize));
 

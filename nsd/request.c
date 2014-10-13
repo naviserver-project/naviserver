@@ -568,8 +568,8 @@ static CONST char *
 GetQvalue(CONST char *str, int *lenPtr) {
     CONST char *resultString;
 
-    assert(str);
-    assert(lenPtr);
+    assert(str != NULL);
+    assert(lenPtr != NULL);
 
     for (; *str == ' '; str++);
     if (*str != ';') {

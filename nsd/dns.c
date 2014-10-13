@@ -200,8 +200,8 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, in
                 Ns_GetTime(&endTime);
 		Ns_DiffTime(&endTime, &time, &diffTime);
                 Ns_IncrTime(&endTime, ttl, 0);
-                Ns_CacheSetValueExpires(entry, ns_strdup(ds.string), ds.length,
-                                        &endTime, 
+                Ns_CacheSetValueExpires(entry, ns_strdup(ds.string), 
+					(size_t)ds.length, &endTime, 
 					(int)(diffTime.sec * 1000000 + diffTime.usec));
             }
             Ns_CacheBroadcast(cache);

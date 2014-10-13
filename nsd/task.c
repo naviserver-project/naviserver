@@ -815,14 +815,14 @@ TaskThread(void *arg)
 {
     TaskQueue     *queuePtr = arg;
     char           c;
-    int            max;
+    size_t         max;
     Task          *taskPtr, *nextPtr, *firstWaitPtr;
     struct pollfd *pfds;
 
     Ns_ThreadSetName("task:%s", queuePtr->name);
     Ns_Log(Notice, "starting");
 
-    max = 100;
+    max = 100U;
     pfds = ns_malloc(sizeof(struct pollfd) * max);
     firstWaitPtr = NULL;
 
@@ -899,7 +899,7 @@ TaskThread(void *arg)
             if (taskPtr->flags & TASK_WAIT) {
                 if (max <= nfds) {
                     max  = nfds + 100;
-                    pfds = ns_realloc(pfds, (size_t) max);
+                    pfds = ns_realloc(pfds, max);
                 }
                 taskPtr->idx = nfds;
                 pfds[nfds].fd = taskPtr->sock;
