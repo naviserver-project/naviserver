@@ -118,7 +118,7 @@ Ns_TclGetSet(Tcl_Interp *interp, char *setId)
     assert(setId != NULL);
 	
     if (LookupInterpSet(interp, setId, 0, &set) != TCL_OK) {
-        setId = NULL;
+        set = NULL;
     }
     return set;
 }
