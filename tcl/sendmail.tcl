@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -30,14 +30,14 @@
 #
 # sendmail.tcl --
 #
-#   Support for sending email from a Tcl script 
+#   Support for sending email from a Tcl script
 #   to a remote SMTP server.
 #
 
 
 #
 # ns_sendmail --
-#   
+#
 #   Sends the email to remote SMTP server.
 #
 # Results:
@@ -146,7 +146,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
             }
             set key "Content-Transfer-Encoding"
             if {[ns_set iget $headers $key] eq {}} {
-                ns_set put $headers $key "quoted-printable" 
+                ns_set put $headers $key "quoted-printable"
             }
         }
     }
@@ -164,7 +164,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
     }
 
     #
-    # Put message essentials 
+    # Put message essentials
     #
 
     set date  [ns_httptime [clock seconds]]
@@ -233,7 +233,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
 
     #
     # Get auth data for connection to SMTP. We just
-    # blindly send this data to the remote server w/o 
+    # blindly send this data to the remote server w/o
     # being asked for.
     # AUTH PLAIN and AUTH LOGIN are supported.
     #
@@ -250,7 +250,7 @@ proc ns_sendmail {to from subject body {headers {}} {bcc {}} {cc {}}} {
     set smtpport [ns_config -set ns/parameters smtpport 25]
     set timeout  [ns_config -set ns/parameters smtptimeout 60]
 
-    if {$smtphost eq {}} { 
+    if {$smtphost eq {}} {
         set smtphost [ns_config -set ns/parameters mailhost "localhost"]
     }
 
@@ -416,18 +416,18 @@ proc _ns_sendmail_qp {str} {
 
     #
     # Quote characters where necessary
-    # 
-    
+    #
+
     set pat {[\x00-\x08\x0B-\x1E\x21-\x24\x3D\x40\x5B-\x5E\x60\x7B-\xFF]}
     set str [regsub -all -- $pat $str {[format =%02X [scan "\\&" %c]]}]
     set str [subst -novariable $str]
-    
+
     #
     # Handle some special cases
     #
 
     set map [list "\t\n" "=09\n" " \n" "=20\n" "\n\.\n" "\n=2E\n"]
-    
+
     return [string map $map $str]
 }
 
@@ -446,12 +446,12 @@ proc _ns_sendmail_qp {str} {
 #
 
 proc _ns_sendmail_breaklines {string} {
-    
+
     set broken ""
 
     #
     # Break lines on 72 margin boundary.
-    # Watch not to break in the middle 
+    # Watch not to break in the middle
     # of quoted-printable-encoded chars.
     #
 
@@ -547,7 +547,7 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
         } else {
 
             #
-            # Examine line of code returned by the server. 
+            # Examine line of code returned by the server.
             # Normally the line has this form:
             #
             #  250 Develop Hello [192.168.234.100], pleased to meet you
@@ -557,11 +557,11 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
             # look like this:
             #
             #  214-2.0.0 For more info use "HELP <topic>".
-            #  214-2.0.0 To report bugs in the implementation 
+            #  214-2.0.0 To report bugs in the implementation
             #  214-2.0.0 contact Technical Support.
             #  214-2.0.0 For local information send email to Postmaster
             #  214 2.0.0 End of HELP info
-            # 
+            #
             # Here, every line except the last one has "-" after
             # the status code.
             #
@@ -582,4 +582,4 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
     }
 }
 
-# EOF 
+# EOF
