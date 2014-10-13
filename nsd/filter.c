@@ -56,7 +56,7 @@ typedef struct Trace {
 } Trace;
 
 static Trace *NewTrace(Ns_TraceProc *proc, void *arg);
-static void RunTraces(Ns_Conn *conn, Trace *firstPtr);
+static void RunTraces(Ns_Conn *conn, Trace *tracePtr);
 static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc,
 			     void *arg);
 

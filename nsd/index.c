@@ -40,8 +40,8 @@
  * Local functions defined in this file
  */
 
-static int BinSearch(void **elp, void **list, int n, Ns_IndexCmpProc *cmp);
-static int BinSearchKey(void *key, void **list, int n, Ns_IndexCmpProc *cmp);
+static int BinSearch(void **elPtrPtr, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc);
+static int BinSearchKey(void *key, void **listPtrPtr, int n, Ns_IndexCmpProc *cmpProc);
 
 static int CmpStr(char **leftPtr, char **rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int CmpKeyWithStr(char *key, char **elPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);

@@ -93,12 +93,12 @@ Ns_AuthorizeRequest(const char *server, const char *method, const char *url,
  */
 
 void
-Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *proc)
+Ns_SetRequestAuthorizeProc(const char *server, Ns_RequestAuthorizeProc *procPtr)
 {
     NsServer *servPtr = NsGetServer(server);
 
     if (servPtr != NULL) {
-	servPtr->request.authProc = proc;
+	servPtr->request.authProc = procPtr;
     }
 }
 

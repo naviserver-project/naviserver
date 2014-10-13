@@ -71,7 +71,7 @@ typedef struct Sess {
 
 static Ns_SockProc AcceptProc;
 static Tcl_CmdProc ExitCmd;
-static int Login(Sess *sessPtr, Tcl_DString *unameDS);
+static int Login(Sess *sessPtr, Tcl_DString *unameDSPtr);
 static int GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo);
 static Ns_ArgProc ArgProc;
 

@@ -614,9 +614,9 @@ Ns_SockAsyncConnect2(char *host, int port, char *lhost, int lport)
  */
 
 NS_SOCKET
-Ns_SockTimedConnect(char *host, int port, Ns_Time *timePtr)
+Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr)
 {
-    return Ns_SockTimedConnect2(host, port, NULL, 0, timePtr);
+    return Ns_SockTimedConnect2(host, port, NULL, 0, timeoutPtr);
 }
 
 NS_SOCKET

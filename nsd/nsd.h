@@ -1006,7 +1006,6 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclAdpBindArgsObjCmd,
     NsTclAdpBreakObjCmd,
     NsTclAdpCloseObjCmd,
-    NsTclAdpCompressObjCmd,
     NsTclAdpCtlObjCmd,
     NsTclAdpDebugObjCmd,
     NsTclAdpDirObjCmd,
@@ -1201,8 +1200,6 @@ NS_EXTERN Tcl_CmdProc
     NsTclMkTempCmd,
     NsTclParseHeaderCmd,
     NsTclQuoteHtmlCmd,
-    NsTclRegisterTagCmd,
-    NsTclShareCmd,
     NsTclStripHtmlCmd;
 
 
@@ -1357,7 +1354,7 @@ NS_EXTERN void NsUnblockSignal(int sig);
 NS_EXTERN int  NsHandleSignals(void);
 NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);
-NS_EXTERN void NsPreBind(char *bindargs, char *bindfile);
+NS_EXTERN void NsPreBind(char *args, char *file);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN char *NsConfigRead(CONST char *file);
 NS_EXTERN void NsConfigEval(CONST char *config, int argc, char **argv, int optind);
@@ -1405,8 +1402,8 @@ NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *ur
 NS_EXTERN int NsMatchRange(Ns_Conn *conn, time_t mtime);
 
 NS_EXTERN int NsConnParseRange(Ns_Conn *conn, CONST char *type,
-                            int fd, CONST void *data, size_t length,
-                            Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
+			       int fd, CONST void *data, size_t objLength,
+			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
 /*
  * request parsing
  */
@@ -1426,9 +1423,9 @@ NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
-			char *file, Ns_Time *ttlPtr);
-NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
-		       unsigned int flags, CONST char* file);
+			   char *file, Ns_Time *expiresPtr);
+NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
+			  unsigned int flags, CONST char* file);
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);
 NS_EXTERN void NsAdpLogError(NsInterp *itPtr);
 NS_EXTERN void NsAdpInit(NsInterp *itPtr);

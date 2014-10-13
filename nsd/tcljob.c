@@ -189,9 +189,9 @@ static Job*   NewJob(CONST char* server, CONST char* queueName,
     NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4) NS_GNUC_RETURNS_NONNULL;
 static void   FreeJob(Job *jobPtr)
     NS_GNUC_NONNULL(1);
-static int    JobAbort(ClientData cd, Tcl_Interp *interp, int code);
+static int    JobAbort(ClientData clientData, Tcl_Interp *interp, int code);
 
-static int    LookupQueue(Tcl_Interp *interp, CONST char *queue_name,
+static int    LookupQueue(Tcl_Interp *interp, CONST char *queueName,
                           Queue **queuePtr, int locked)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static int    ReleaseQueue(Queue *queue, int locked)
@@ -1487,11 +1487,11 @@ FreeQueue(Queue *queue)
  */
 
 static Job*
-NewJob(CONST char* server, CONST char* queueId, int type, char *script)
+NewJob(CONST char* server, CONST char* queueName, int type, char *script)
 {
     Job *jobPtr;
 
-    assert(queueId != NULL);
+    assert(queueName != NULL);
     assert(script != NULL);
 
     jobPtr = ns_calloc(1, sizeof(Job));
@@ -1502,7 +1502,7 @@ NewJob(CONST char* server, CONST char* queueId, int type, char *script)
     jobPtr->code   = TCL_OK;
     jobPtr->req    = JOB_NONE;
 
-    jobPtr->queueId = ns_strdup(queueId);
+    jobPtr->queueId = ns_strdup(queueName);
 
     Tcl_DStringInit(&jobPtr->id);
     Tcl_DStringInit(&jobPtr->script);
@@ -1572,13 +1572,13 @@ FreeJob(Job *jobPtr)
  *----------------------------------------------------------------------
  */
 static int
-LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
+LookupQueue(Tcl_Interp *interp, CONST char *queueName, Queue **queuePtr,
             int locked)
 {
     Tcl_HashEntry *hPtr;
     
     assert(queuePtr != NULL);
-    assert(queueId != NULL);
+    assert(queueName != NULL);
 
     if (!locked) {
         Ns_MutexLock(&tp.queuelock);
@@ -1586,7 +1586,7 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
 
     *queuePtr = NULL;
 
-    hPtr = Tcl_FindHashEntry(&tp.queues, queueId);
+    hPtr = Tcl_FindHashEntry(&tp.queues, queueName);
     if (hPtr != NULL) {
         *queuePtr = Tcl_GetHashValue(hPtr);
         Ns_MutexLock(&(*queuePtr)->lock);
@@ -1599,7 +1599,7 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
 
     if (*queuePtr == NULL) {
         if (interp != NULL) {
-            Tcl_AppendResult(interp, "no such queue: ", queueId, NULL);
+            Tcl_AppendResult(interp, "no such queue: ", queueName, NULL);
         }
         return TCL_ERROR;
     }

@@ -493,9 +493,9 @@ Ns_TaskCallback(Ns_Task *task, unsigned int when, Ns_Time *timeoutPtr)
  */
 
 void
-Ns_TaskDone(Ns_Task *event)
+Ns_TaskDone(Ns_Task *task)
 {
-    Task *taskPtr = (Task *) event;
+    Task *taskPtr = (Task *) task;
 
     taskPtr->flags |= TASK_DONE;
 }

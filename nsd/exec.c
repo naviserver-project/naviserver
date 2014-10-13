@@ -37,7 +37,7 @@
 
 #ifdef _WIN32
 #include <process.h>
-static char   **Set2Argv(Ns_DString *dsPtr, Ns_Set *set);
+static char   **Set2Argv(Ns_DString *dsPtr, Ns_Set *env);
 static int  	WaitForProcess(pid_t pid, int *statusPtr);
 #else
 #define ERR_DUP         (-1)

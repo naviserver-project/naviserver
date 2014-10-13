@@ -277,7 +277,7 @@ Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
  */
 
 void
-Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *type)
+Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *mimeType)
 {
     Tcl_Encoding  encoding;
     CONST char   *charset;
@@ -285,7 +285,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *type)
     size_t        len;
 
     Ns_DStringInit(&ds);
-    charset = NsFindCharset(type, &len);
+    charset = NsFindCharset(mimeType, &len);
 
     if (charset != NULL) {
         encoding = Ns_GetCharsetEncodingEx(charset, len);
@@ -293,11 +293,11 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *type)
     } else {
         encoding = Ns_ConnGetEncoding(conn);
         charset = Ns_GetEncodingCharset(encoding);
-        Ns_DStringVarAppend(&ds, type, "; charset=", charset, NULL);
-        type = ds.string;
+        Ns_DStringVarAppend(&ds, mimeType, "; charset=", charset, NULL);
+        mimeType = ds.string;
     }
 
-    Ns_ConnSetTypeHeader(conn, type);
+    Ns_ConnSetTypeHeader(conn, mimeType);
     conn->flags |= NS_CONN_WRITE_ENCODED;
 
     Ns_DStringFree(&ds);

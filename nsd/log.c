@@ -97,12 +97,12 @@ typedef struct LogCache {
  */
 
 static int   LogOpen(void);
-static void  LogFlush(LogCache *cachePtr, LogFilter *list, int cnt,
-                      int trunc, int lock) NS_GNUC_NONNULL(1);
+static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
+                      int trunc, int locked) NS_GNUC_NONNULL(1);
 static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 
 static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-                              void **addrPtr);
+                              void **addrPtrPtr);
 
 static LogCache* GetCache(void);
 static Ns_TlsCleanup FreeCache;
@@ -501,7 +501,7 @@ Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
  */
 
 void
-Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *free)
+Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *freeProc)
 {
     LogFilter *filterPtr = ns_calloc(1, sizeof *filterPtr);
 
@@ -519,7 +519,7 @@ Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *free)
 
     filterPtr->proc = proc;
     filterPtr->arg  = arg;
-    filterPtr->free = free;
+    filterPtr->free = freeProc;
 
     Ns_MutexUnlock(&lock);
 }

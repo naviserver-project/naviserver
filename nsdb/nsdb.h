@@ -170,7 +170,7 @@ NS_EXTERN int Ns_DbBouncePool(const char *pool);
  */
 
 NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, char *handleId,
-			     Ns_DbHandle **handle);
+				Ns_DbHandle **handlePtr);
 
 /*
  * dbutil.c:

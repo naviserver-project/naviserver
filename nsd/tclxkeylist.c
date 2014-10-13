@@ -185,15 +185,15 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key,
  * ----------------------------------------------------------------------------
  * -
  * 
- * Tcl_GetKeyedListKeys -- Retrieve a list of keyes from a keyed list.  The list
+ * Tcl_GetKeyedListKeys -- Retrieve a list of keys from a keyed list.  The list
  * is walked rather than converted to a argv for increased performance.
  * 
  * Parameters: o interp (I/O) - Error message will be return in result if there
  * is an error. o subFieldName (I) - If "" or NULL, then the keys are
  * retreved for the top level of the list.  If specified, it is name of the
  * field who's subfield keys are to be retrieve. o keyedList (I) - The list
- * to search for the field. o keyesArgcPtr (O) - The number of keys in the
- * keyed list is returned here. o keyesArgvPtr (O) - An argv containing the
+ * to search for the field. o keysArgcPtr (O) - The number of keys in the
+ * keyed list is returned here. o keysArgvPtr (O) - An argv containing the
  * key names.  It is dynamically allocated, containing both the array and the
  * strings. A single call to ckfree will release it. Returns: TCL_OK - If the
  * field was found. TCL_BREAK - If the field was not found. TCL_ERROR - If an
@@ -203,7 +203,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key,
 
 int
 Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *keyedList, 
-		     int *keyesArgcPtr, char ***keyesArgvPtr)
+		     int *keysArgcPtr, char ***keysArgvPtr)
 {
     Tcl_Obj *keylistPtr = Tcl_NewStringObj(keyedList, -1);
     char    *keylistKey = (char *)subFieldName;
@@ -216,14 +216,14 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
     status = TclX_KeyedListGetKeys(interp, keylistPtr, keylistKey, &objValPtr);
 
     if (status == TCL_BREAK) {
-        if (keyesArgcPtr) {
-            *keyesArgcPtr = 0;
+        if (keysArgcPtr) {
+            *keysArgcPtr = 0;
         }
-        if (keyesArgvPtr) {
-            *keyesArgvPtr = NULL;
+        if (keysArgvPtr) {
+            *keysArgvPtr = NULL;
         }
     } else if (status == TCL_OK) {
-        if (keyesArgcPtr && keyesArgvPtr) {
+        if (keysArgcPtr && keysArgvPtr) {
             size_t    keySize = 0, totalKeySize = 0;
             int       ii, keyCount;
             char    **keyArgv, *nextByte;
@@ -251,8 +251,8 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
                 nextByte[keySize] = 0;
                 nextByte += keySize + 1;
             }
-            *keyesArgcPtr = keyCount;
-            *keyesArgvPtr = keyArgv;
+            *keysArgcPtr = keyCount;
+            *keysArgvPtr = keyArgv;
         }
         Tcl_DecrRefCount(objValPtr);
     }

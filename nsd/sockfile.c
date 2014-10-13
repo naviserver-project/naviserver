@@ -442,7 +442,7 @@ Ns_SockCork(Ns_Sock *sock, int cork)
 static ssize_t
 SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
        Ns_Time *timeoutPtr, unsigned int flags,
-       Ns_DriverSendProc *sendPtr)
+       Ns_DriverSendProc *sendProc)
 {
     char          buf[16384];
     struct iovec  iov;
@@ -461,7 +461,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
         offset += (off_t)nread;
 
         Ns_SetVec(&iov, 0, buf, nread);
-        sent = (*sendPtr)(sock, &iov, 1, timeoutPtr, flags);
+        sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
         if (sent > 0) {
             nwrote += sent;
         }

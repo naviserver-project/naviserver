@@ -97,7 +97,7 @@ static const int pr2six[256] = {
  */
 
 size_t
-Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
+Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf)
 {
     register unsigned char  *p, *q;
     register int line = 0;
@@ -109,8 +109,8 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
      */
 
     p = input;
-    q = (unsigned char *) output;
-    for (n = len / 3; n > 0; --n) {
+    q = (unsigned char *) buf;
+    for (n = bufSize / 3; n > 0; --n) {
         /*
          * Add wrapping newline to be compatible with GNU uuencode
          * if line length exceeds max line length - without adding
@@ -132,7 +132,7 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
      * Convert and pad any remaining bytes.
      */
 
-    n = len % 3;
+    n = bufSize % 3;
     if (n > 0) {
 	*q++ = ENC(p[0] >> 2);
 	if (n == 1) {
@@ -145,7 +145,7 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
 	*q++ = '=';
     }
     *q = '\0';
-    return (q - (unsigned char *) output);
+    return (q - (unsigned char *) buf);
 }
 
 
@@ -168,10 +168,10 @@ Ns_HtuuEncode(unsigned char *input, size_t len, char *output)
  */
 
 size_t
-Ns_HtuuDecode(char *input, unsigned char *output, size_t outputlen)
+Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize)
 {
     register int n;
-    unsigned char buf[4];
+    unsigned char chars[4];
     register unsigned char *p, *q;
 
 
@@ -189,14 +189,14 @@ Ns_HtuuDecode(char *input, unsigned char *output, size_t outputlen)
 
     n = 0;
     p = (unsigned char *) input;
-    q = output;
+    q = buf;
     while (*p) {
         if (pr2six[(int)(*p)] >= 0) {
-            buf[n++] = *p;
+            chars[n++] = *p;
 	    if (n == 4) {
-		*q++ = DEC(buf[0]) << 2 | DEC(buf[1]) >> 4;
-		*q++ = DEC(buf[1]) << 4 | DEC(buf[2]) >> 2;
-		*q++ = DEC(buf[2]) << 6 | DEC(buf[3]);
+		*q++ = DEC(chars[0]) << 2 | DEC(chars[1]) >> 4;
+		*q++ = DEC(chars[1]) << 4 | DEC(chars[2]) >> 2;
+		*q++ = DEC(chars[2]) << 6 | DEC(chars[3]);
 		n = 0;
 	    }
         }
@@ -208,13 +208,13 @@ Ns_HtuuDecode(char *input, unsigned char *output, size_t outputlen)
      */
 
     if (n > 1) {
-	*q++ = DEC(buf[0]) << 2 | DEC(buf[1]) >> 4;
+	*q++ = DEC(chars[0]) << 2 | DEC(chars[1]) >> 4;
     }
     if (n > 2) {
-	*q++ = DEC(buf[1]) << 4 | DEC(buf[2]) >> 2;
+	*q++ = DEC(chars[1]) << 4 | DEC(chars[2]) >> 2;
     }
-    if ((size_t)(q - output) < outputlen) {
+    if ((size_t)(q - buf) < bufSize) {
 	*q = '\0';
     }
-    return (q - output);
+    return (q - buf);
 }

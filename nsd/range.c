@@ -48,11 +48,11 @@ typedef struct Range {
 static int ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                              Range *ranges, int maxRanges);
 
-static void SetRangeHeader(Ns_Conn *conn, off_t offset, off_t end, size_t objLength);
+static void SetRangeHeader(Ns_Conn *conn, off_t start, off_t end, size_t objLength);
 static void SetMultipartRangeHeader(Ns_Conn *conn);
-static int AppendMultipartRangeHeader(Ns_DString *ds, CONST char *type,
+static int AppendMultipartRangeHeader(Ns_DString *dsPtr, CONST char *type,
                                       off_t start, off_t end, size_t objLength);
-static int AppendMultipartRangeTrailer(Ns_DString *ds);
+static int AppendMultipartRangeTrailer(Ns_DString *dsPtr);
 
 
 /*

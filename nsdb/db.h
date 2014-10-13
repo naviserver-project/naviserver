@@ -41,6 +41,6 @@ NS_EXTERN struct DbDriver *NsDbGetDriver(Ns_DbHandle *handle);
 NS_EXTERN struct DbDriver *NsDbLoadDriver(char *driver);
 NS_EXTERN void 		NsDbLogSql(Ns_DbHandle *handle, char *sql);
 NS_EXTERN int 		NsDbOpen(Ns_DbHandle *handle);
-NS_EXTERN void 		NsDbDriverInit(char *server, struct DbDriver *drvPtr);
+NS_EXTERN void 		NsDbDriverInit(char *server, struct DbDriver *driverPtr);
 
 #endif

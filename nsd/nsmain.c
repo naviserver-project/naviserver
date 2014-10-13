@@ -67,7 +67,7 @@ static void UsageError(char *msg, ...);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
 static char *MakePath(char *file);
-static char *SetCwd(char *homedir);
+static char *SetCwd(char *path);
 
 #if (STATIC_BUILD == 1)
 extern void NsthreadsInit();

@@ -2067,10 +2067,10 @@ SockSendResponse(Sock *sockPtr, int code)
  */
 
 static void
-SockTrigger(NS_SOCKET fd)
+SockTrigger(NS_SOCKET sock)
 {
-    if (send(fd, "", 1, 0) != 1) {
-        char * errstr = ns_sockstrerror(ns_sockerrno);
+    if (send(sock, "", 1, 0) != 1) {
+        char *errstr = ns_sockstrerror(ns_sockerrno);
 
         Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
     }

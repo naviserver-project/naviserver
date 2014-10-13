@@ -57,7 +57,7 @@ static int RegisterPage(ClientData arg, CONST char *method,
 			unsigned int rflags, unsigned int aflags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *ttlPtr, 
+static int PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, 
 		       unsigned int aflags)
     NS_GNUC_NONNULL(1);
 

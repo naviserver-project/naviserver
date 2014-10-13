@@ -350,17 +350,17 @@ Ns_NextWord(CONST char *line)
  */
 
 CONST char *
-Ns_StrNStr(CONST char *string, CONST char *substring)
+Ns_StrNStr(CONST char *string, CONST char *subString)
 {
-    return Ns_StrCaseFind(string, substring);
+    return Ns_StrCaseFind(string, subString);
 }
 
 CONST char *
-Ns_StrCaseFind(CONST char *string, CONST char *substring)
+Ns_StrCaseFind(CONST char *string, CONST char *subString)
 {
-    if (strlen(string) > strlen(substring)) {
+    if (strlen(string) > strlen(subString)) {
         while (*string != '\0') {
-            if (Ns_Match(string, substring)) {
+            if (Ns_Match(string, subString)) {
                 return string;
             }
             ++string;

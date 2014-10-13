@@ -62,7 +62,7 @@ typedef struct Array {
  * Local functions defined in this file.
  */
 
-static void SetVar(Array *, CONST char *key, CONST char *value, size_t len);
+static void SetVar(Array *arrayPtr, CONST char *key, CONST char *value, size_t len);
 static void UpdateVar(Tcl_HashEntry *hPtr, CONST char *value, size_t len);
 static int IncrVar(Array *arrayPtr, CONST char *key, int incr,
                    Tcl_WideInt *valuePtr);
@@ -73,7 +73,7 @@ static void Flush(Array *arrayPtr);
 static Array *LockArray(NsServer *servPtr, CONST char *array, int create);
 static void UnlockArray(Array *arrayPtr);
 
-static Array *LockArrayObj(Tcl_Interp *, Tcl_Obj *keyObj, int create);
+static Array *LockArrayObj(Tcl_Interp *, Tcl_Obj *arrayObj, int create);
 
 
 /*
@@ -93,17 +93,17 @@ static Array *LockArrayObj(Tcl_Interp *, Tcl_Obj *keyObj, int create);
  */
 
 Bucket *
-NsTclCreateBuckets(CONST char *server, int n)
+NsTclCreateBuckets(CONST char *server, int nbuckets)
 {
     char    buf[NS_THREAD_NAMESIZE];
     Bucket *buckets;
 
-    buckets = ns_malloc(sizeof(Bucket) * n);
-    while (--n >= 0) {
-        snprintf(buf, sizeof(buf), "nsv:%d", n);
-        Tcl_InitHashTable(&buckets[n].arrays, TCL_STRING_KEYS);
-        Ns_MutexInit(&buckets[n].lock);
-        Ns_MutexSetName2(&buckets[n].lock, buf, server);
+    buckets = ns_malloc(sizeof(Bucket) * nbuckets);
+    while (--nbuckets >= 0) {
+        snprintf(buf, sizeof(buf), "nsv:%d", nbuckets);
+        Tcl_InitHashTable(&buckets[nbuckets].arrays, TCL_STRING_KEYS);
+        Ns_MutexInit(&buckets[nbuckets].lock);
+        Ns_MutexSetName2(&buckets[nbuckets].lock, buf, server);
     }
 
     return buckets;

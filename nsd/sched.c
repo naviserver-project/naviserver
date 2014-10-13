@@ -137,7 +137,7 @@ NsInitSched(void)
  *
  * Ns_After --
  *
- *  Schedule a one-shot event.
+ *  Schedule a one-shot event after the speficied delay in seconds.
  *
  * Results:
  *  Event id or NS_ERROR if delay is out of range.
@@ -593,7 +593,7 @@ QueueEvent(Event *ePtr, time_t *nowPtr)
  */
 
 static Event   *
-DeQueueEvent(int k)
+DeQueueEvent(int qid)
 {
     Event          *ePtr;
     int             j;
@@ -603,19 +603,19 @@ DeQueueEvent(int k)
      * order of events to be fired.
      */
 
-    EXCH(k, nqueue);
+    EXCH(qid, nqueue);
     ePtr = queue[nqueue--];
     ePtr->qid = 0;
 
-    while ((j = 2 * k) <= nqueue) {
+    while ((j = 2 * qid) <= nqueue) {
         if (j < nqueue && queue[j]->nextqueue > queue[j + 1]->nextqueue) {
             ++j;
         }
-        if (queue[j]->nextqueue > queue[k]->nextqueue) {
+        if (queue[j]->nextqueue > queue[qid]->nextqueue) {
             break;
         }
-        EXCH(k, j);
-        k = j;
+        EXCH(qid, j);
+        qid = j;
     }
 
     return ePtr;

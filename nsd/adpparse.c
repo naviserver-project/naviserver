@@ -84,9 +84,9 @@ static void AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type);
-static void AppendLengths(AdpCode *codePtr, int *lens, int *lines);
+static void AppendLengths(AdpCode *codePtr, int *length, int *line);
 static void GetTag(Tcl_DString *dsPtr, char *s, char *e, char **aPtr);
-static char *GetScript(char *tag, char *a, char *e, unsigned int *streamPtr);
+static char *GetScript(char *tag, char *a, char *e, unsigned int *streamFlagPtr);
 static void ParseAtts(char *s, char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -861,7 +861,7 @@ AppendTag(Parse *parsePtr, Tag *tagPtr, char *as, char *ae, char *se, unsigned i
  */
 
 static void
-AppendLengths(AdpCode *codePtr, int *len, int *line)
+AppendLengths(AdpCode *codePtr, int *length, int *line)
 {
     Tcl_DString *textPtr = &codePtr->text;
     int          start, ncopy;
@@ -872,6 +872,6 @@ AppendLengths(AdpCode *codePtr, int *len, int *line)
     Tcl_DStringSetLength(textPtr, start + (ncopy * 2));
     codePtr->len = (int *) (textPtr->string + start);
     codePtr->line = (int *) (textPtr->string + start + ncopy);
-    memcpy(codePtr->len,  len, (size_t) ncopy);
+    memcpy(codePtr->len,  length, (size_t) ncopy);
     memcpy(codePtr->line, line, (size_t) ncopy);
 }
