@@ -38,12 +38,12 @@
 #include "ns.h"
 #include <ctype.h>  /* isspace */
 
-#define LOG_COMBINED      (1<<0)
-#define LOG_FMTTIME       (1<<1)
-#define LOG_REQTIME       (1<<2)
-#define LOG_PARTIALTIMES  (1<<3)
-#define LOG_CHECKFORPROXY (1<<4)
-#define LOG_SUPPRESSQUERY (1<<5)
+#define LOG_COMBINED      0x01U
+#define LOG_FMTTIME       0x02U
+#define LOG_REQTIME       0x04U
+#define LOG_PARTIALTIMES  0x08U
+#define LOG_CHECKFORPROXY 0x10U
+#define LOG_SUPPRESSQUERY 0x20U
 
 #if !defined(PIPE_BUF)
 # define PIPE_BUF 512
