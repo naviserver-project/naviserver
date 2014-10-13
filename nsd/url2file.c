@@ -484,8 +484,8 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tc
     unsigned int  flags = 0U;
 
     Ns_ObjvSpec opts[] = {
-	{"-noinherit", Ns_ObjvBool,  &flags, INT2PTR(1)},
-        {"--",         Ns_ObjvBreak, NULL,   NULL},
+	{"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(1)},
+        {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
