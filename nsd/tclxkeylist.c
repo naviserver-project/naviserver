@@ -161,16 +161,16 @@ Tcl_Obj*
 TclX_NewKeyedListObj(void);
 
 int
-TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, 
+TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, 
                   Tcl_Obj **valuePtrPtr);
 int
-TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, 
+TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, 
                   Tcl_Obj *valuePtr);
 int
-TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key);
+TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key);
 
 int
-TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, 
+TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, 
                       Tcl_Obj **listObjPtrPtr);
 
 
@@ -206,7 +206,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
 		     int *keysArgcPtr, char ***keysArgvPtr)
 {
     Tcl_Obj *keylistPtr = Tcl_NewStringObj(keyedList, -1);
-    char    *keylistKey = (char *)subFieldName;
+    const char    *keylistKey = subFieldName;
 
     Tcl_Obj *objValPtr;
     int status;
@@ -477,7 +477,7 @@ ValidateKeyedList _ANSI_ARGS_((keylIntObj_t *keylIntPtr));
 
 static int
 ValidateKey _ANSI_ARGS_((Tcl_Interp *interp,
-                         char *key,
+                         const char *key,
                          int keyLen,
                          int isPath));
 
@@ -497,7 +497,7 @@ DeleteKeyedListEntry _ANSI_ARGS_((keylIntObj_t *keylIntPtr,
 
 static int
 FindKeyedListEntry _ANSI_ARGS_((keylIntObj_t *keylIntPtr,
-                                char         *key,
+                                const char   *key,
                                 size_t       *keyLenPtr,
                                 char        **nextSubKeyPtr));
 
@@ -581,9 +581,9 @@ ValidateKeyedList(keylIntPtr)
  *-----------------------------------------------------------------------------
  */
 static int
-ValidateKey(Tcl_Interp *interp, char *key, int keyLen, int isPath)
+ValidateKey(Tcl_Interp *interp, const char *key, int keyLen, int isPath)
 {
-    char *keyp;
+    const char *keyp;
 
     if (strlen (key) != (size_t) keyLen) {
         Tcl_AppendResult(interp, "keyed list key may not be a ",
@@ -696,7 +696,7 @@ EnsureKeyedListSpace(keylIntObj_t * keylIntPtr, int newNumEntries)
  *-----------------------------------------------------------------------------
  */
 static void
-DeleteKeyedListEntry(keylIntObj_t * keylIntPtr, int entryIdx)
+DeleteKeyedListEntry(keylIntObj_t *keylIntPtr, int entryIdx)
 {
     int idx;
 
@@ -727,7 +727,7 @@ DeleteKeyedListEntry(keylIntObj_t * keylIntPtr, int entryIdx)
  *-----------------------------------------------------------------------------
  */
 static int
-FindKeyedListEntry(keylIntObj_t *keylIntPtr, char *key, size_t *keyLenPtr, char **nextSubKeyPtr)
+FindKeyedListEntry(keylIntObj_t *keylIntPtr, const char *key, size_t *keyLenPtr, char **nextSubKeyPtr)
 {
     char   *keySeparPtr;
     size_t keyLen;
@@ -784,7 +784,7 @@ ObjToKeyedListEntry(Tcl_Interp *interp, Tcl_Obj *objPtr, keylEntry_t *entryPtr)
 {
     int objc;
     Tcl_Obj **objv;
-    char *key;
+    const char *key;
     int keyLen;
 
     if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
@@ -1004,7 +1004,7 @@ TclX_NewKeyedListObj()
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj **valuePtrPtr)
+TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj **valuePtrPtr)
 {
     keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
@@ -1056,7 +1056,7 @@ TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj **val
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valuePtr)
+TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj *valuePtr)
 {
     keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
@@ -1154,7 +1154,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valu
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key)
+TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key)
 {
     keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
@@ -1229,7 +1229,7 @@ TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key)
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj **listObjPtrPtr)
+TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj **listObjPtrPtr)
 {
     keylIntObj_t *keylIntPtr;
     Tcl_Obj      *listObjPtr;

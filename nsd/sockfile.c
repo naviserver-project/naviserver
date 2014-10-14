@@ -37,6 +37,14 @@
 
 #include "nsd.h"
 
+
+#ifdef _WIN32
+#include <io.h>
+#include <stdio.h>
+
+ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
+#endif
+
 /*
  * Local functions defined in this file
  */
@@ -333,10 +341,7 @@ NsSockSendFileBufsIndirect(Ns_Sock *sock, CONST Ns_FileVec *bufs, int nbufs,
  *----------------------------------------------------------------------
  */
 #ifdef _WIN32
-#include <io.h>
-#include <stdio.h>
 
-ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset);
 
 ssize_t pread(unsigned int fd, char *buf, size_t count, off_t offset)
 {
