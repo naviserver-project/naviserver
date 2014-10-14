@@ -45,8 +45,6 @@
  * loaded (normally just once).
  */
 
-struct Cgi;
-
 typedef struct Mod {
     char	   *server;
     char	   *module;
