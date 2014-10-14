@@ -673,7 +673,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         break;
 
     case STcllibIdx:
-        Tcl_SetResult(interp, servPtr->tcl.library, TCL_STATIC);
+      Tcl_SetResult(interp, (char *)servPtr->tcl.library, TCL_STATIC);
         break;
 
     case SUrl2fileIdx:

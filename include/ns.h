@@ -2485,13 +2485,13 @@ NS_EXTERN int
 Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout);
 NS_EXTERN int
 Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr);
-NS_EXTERN int
+NS_EXTERN ssize_t
 Ns_SockRecv(NS_SOCKET sock, void *bufs, size_t toWrite,
 	    Ns_Time *timeoutPtr);
 NS_EXTERN int
 Ns_SockSend(NS_SOCKET sock, void *bufs, size_t nsend,
 	    Ns_Time *timeoutPtr);
-NS_EXTERN int
+NS_EXTERN ssize_t
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 		Ns_Time *timeoutPtr, unsigned int flags);
 NS_EXTERN ssize_t
@@ -2722,7 +2722,7 @@ NS_EXTERN int
 Ns_TclRegisterTrace(CONST char *server, Ns_TclTraceProc *proc, void *arg, unsigned int when)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_TclLibrary(CONST char *server);
 
 NS_EXTERN char *

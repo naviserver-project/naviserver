@@ -172,7 +172,7 @@ struct _nsconf {
 #endif
 
     struct {
-        char *sharedlibrary;
+        const char *sharedlibrary;
         char *version;
         bool lockoninit;
     } tcl;
@@ -823,7 +823,7 @@ typedef struct NsServer {
      */
 
     struct {
-        char *library;
+        const char *library;
         struct TclTrace *firstTracePtr;
         struct TclTrace *lastTracePtr;
         char *initfile;

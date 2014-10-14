@@ -59,7 +59,7 @@
 static NS_SOCKET SockConnect(char *host, int port, char *lhost, int lport,
 			     int async);
 static NS_SOCKET SockSetup(NS_SOCKET sock);
-static int SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
+static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags);
 
 static Ns_SockProc CloseLater;
 
@@ -111,14 +111,14 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 {
     int     i;
 
-    for (i = 0; i < nbufs && sent > 0; i++) {
+    for (i = 0; i < nbufs && sent > 0U; i++) {
         char   *data = bufs[i].iov_base;
 	size_t  len  = bufs[i].iov_len;
 
-        if (len > 0) {
+        if (len > 0U) {
             if (sent >= len) {
                 sent -= len;
-                Ns_SetVec(bufs, i, NULL, 0);
+                Ns_SetVec(bufs, i, NULL, 0U);
             } else {
                 Ns_SetVec(bufs, i, data + sent, len - sent);
                 break;
@@ -149,10 +149,10 @@ size_t
 Ns_SumVec(struct iovec *bufs, int nbufs)
 {
     int     i;
-    size_t  sum = 0;
+    size_t  sum = 0U;
 
     for (i = 0; i < nbufs; i++) {
-        if (bufs[i].iov_len > 0) {
+        if (bufs[i].iov_len > 0U) {
             sum += bufs[i].iov_len;
         }
     }
@@ -176,11 +176,11 @@ Ns_SumVec(struct iovec *bufs, int nbufs)
  *----------------------------------------------------------------------
  */
 
-int
+ssize_t
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
                 Ns_Time *timeoutPtr, unsigned int flags)
 {
-    int n;
+    ssize_t n;
 
     n = SockRecv(sock, bufs, nbufs, flags);
     if (n < 0
@@ -216,7 +216,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
     int           nwrote = 0, sent = -1;
     void         *data;
-    size_t        len, towrite = 0;
+    size_t        len, toWrite = 0U;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
     Sock          *sock = (Sock *)sockPtr;
 
@@ -226,7 +226,7 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
     sbufPtr = sbufs;
     sbufLen = UIO_MAXIOV;
 
-    while (bufIdx < nbufs || towrite > 0) {
+    while (bufIdx < nbufs || toWrite > 0U) {
 
         /*
          * Send up to UIO_MAXIOV buffers of data at a time and strip out
@@ -238,8 +238,8 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
             data = bufs[bufIdx].iov_base;
             len  = bufs[bufIdx].iov_len;
 
-            if (len > 0 && data != NULL) {
-                towrite += Ns_SetVec(sbufPtr, sbufIdx++, data, len);
+            if (len > 0U && data != NULL) {
+                toWrite += Ns_SetVec(sbufPtr, sbufIdx++, data, len);
                 nsbufs++;
             }
             bufIdx++;
@@ -259,10 +259,10 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
             break;
         }
 
-        towrite -= sent;
+        toWrite -= sent;
         nwrote  += sent;
 
-        if (towrite > 0) {
+        if (toWrite > 0U) {
 
             sbufIdx = Ns_ResetVec(sbufPtr, nsbufs, sent);
             nsbufs -= sbufIdx;
@@ -305,10 +305,10 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
  *----------------------------------------------------------------------
  */
 
-int
+ssize_t
 Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t toRead, Ns_Time *timePtr)
 {
-    int nread;
+    ssize_t nread;
 
     nread = recv(sock, vbuf, toRead, 0);
 
@@ -1101,10 +1101,10 @@ SockSetup(NS_SOCKET sock)
  *----------------------------------------------------------------------
  */
 
-static int
+static ssize_t
 SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    int n;
+    ssize_t n;
 
 #ifdef _WIN32
     if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags,

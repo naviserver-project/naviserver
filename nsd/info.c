@@ -671,7 +671,7 @@ NsTclInfoObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
 
     case ITclLibIdx:
 	Ns_LogDeprecated(objv, 2, "ns_server ?-server s? tcllib", NULL);
-        Tcl_SetResult(interp, itPtr->servPtr->tcl.library, TCL_STATIC);
+        Tcl_SetResult(interp, (char *)itPtr->servPtr->tcl.library, TCL_STATIC);
         return TCL_OK;
 
     case IFiltersIdx:
@@ -725,7 +725,7 @@ int
 NsTclLibraryCmd(ClientData arg, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
     NsInterp *itPtr = arg;
-    char *lib;
+    const char *lib;
     Ns_DString ds;
 
     if (argc != 2 && argc != 3) {

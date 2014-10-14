@@ -778,7 +778,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_TclLibrary(CONST char *server)
 {
     NsServer *servPtr = NsGetServer(server);
