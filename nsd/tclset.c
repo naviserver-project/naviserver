@@ -207,7 +207,8 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 {
     NsInterp        *itPtr = arg;
     Ns_Set          *set = NULL, *set2Ptr, **sets;
-    int              i, flags, opt;
+    int              i, opt;
+    unsigned int     flags;
     char            *key, *val, *def, *name, *split;
     Tcl_DString      ds;
     Tcl_HashTable   *tablePtr;
