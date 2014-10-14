@@ -1347,7 +1347,6 @@ NS_EXTERN void NsRemovePidFile(void);
 
 NS_EXTERN void NsLogOpen(void);
 NS_EXTERN void NsTclInitObjs(void);
-NS_EXTERN void NsRunPreStartupProcs(void);
 NS_EXTERN void NsBlockSignals(int debug);
 NS_EXTERN void NsBlockSignal(int sig);
 NS_EXTERN void NsUnblockSignal(int sig);
