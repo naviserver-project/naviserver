@@ -2358,11 +2358,11 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
 NS_EXTERN void
 Ns_SetPrint(Ns_Set *set);
 
-NS_EXTERN char *
-Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def);
+NS_EXTERN const char *
+Ns_SetGetValue(Ns_Set *set, const char *key, const char *def);
 
-NS_EXTERN char *
-Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def);
+NS_EXTERN const char *
+Ns_SetIGetValue(Ns_Set *set, const char *key, const char *def);
 
 
 /*

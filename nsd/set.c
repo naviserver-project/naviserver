@@ -440,12 +440,13 @@ Ns_SetIGet(Ns_Set *set, CONST char *key)
  *----------------------------------------------------------------------
  */
 
-char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
+const char *
+Ns_SetGetValue(Ns_Set *set, const char *key, const char *def)
 {
-    char *value = Ns_SetGet(set, key);
+    const char *value = Ns_SetGet(set, key);
 
     if (value == NULL || *value == '\0') {
-	value = (char*)def;
+	value = def;
     }
     return value;
 }
@@ -467,12 +468,13 @@ char *Ns_SetGetValue(Ns_Set *set, CONST char *key, CONST char *def)
  *----------------------------------------------------------------------
  */
 
-char *Ns_SetIGetValue(Ns_Set *set, CONST char *key, CONST char *def)
+const char *
+Ns_SetIGetValue(Ns_Set *set, const char *key, const char *def)
 {
-    char *value = Ns_SetIGet(set, key);
+    const char *value = Ns_SetIGet(set, key);
 
     if (value == NULL || *value == '\0') {
-	value = (char*)def;
+	value = def;
     }
     return value;
 }

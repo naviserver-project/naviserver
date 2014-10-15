@@ -389,11 +389,11 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
             switch (opt) {
             case SGetIdx:
-                Tcl_SetResult(interp, Ns_SetGetValue(set, key, def), TCL_VOLATILE);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetGetValue(set, key, def), -1));
                 break;
 
             case SIGetIdx:
-                Tcl_SetResult(interp, Ns_SetIGetValue(set, key, def), TCL_VOLATILE);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetIGetValue(set, key, def), -1));
                 break;
             }
             break;
