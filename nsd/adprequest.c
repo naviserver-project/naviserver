@@ -214,11 +214,11 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 {
     char         *method, *url, *file = NULL;
     int           noinherit = 0;
-    unsigned int  aflags, rflags = 0U;
-    Ns_Time     *expiresPtr = NULL;
+    unsigned int  rflags = 0U, aflags = 0U;
+    Ns_Time      *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
+	{"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
         {"-expires",   Ns_ObjvTime,  &expiresPtr, NULL},
         {"-options",   Ns_ObjvFlags, &aflags,     adpOpts},
         {"--",         Ns_ObjvBreak, NULL,        NULL},
