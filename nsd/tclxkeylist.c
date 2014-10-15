@@ -72,8 +72,8 @@ static const char *tclXWrongArgs = "wrong # args: ";
  * Those are used in TclX_IsNullObj() in read-only mode
  * therefore no need to mutex protect them (see below).
  */
-static Tcl_ObjType *listType;
-static Tcl_ObjType *stringType;
+static const Tcl_ObjType *listType;
+static const Tcl_ObjType *stringType;
 
 /*
  * This is called once from InitInterp() call in tclinit.c
