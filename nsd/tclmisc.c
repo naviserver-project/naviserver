@@ -103,7 +103,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     static int            initialized = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-global", Ns_ObjvBool,  &global, (void *) NS_TRUE},
+        {"-global", Ns_ObjvBool,  &global, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -565,7 +565,8 @@ NsTclHTUUEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    int            size;
+    int            len;
+    size_t         size;
     char          *string;
     unsigned char *decoded;
 
@@ -574,12 +575,12 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         return TCL_ERROR;
     }
 
-    string = Tcl_GetStringFromObj(objv[1], &size);
-    size += 3;
+    string = Tcl_GetStringFromObj(objv[1], &len);
+    size = (size_t)len + 3;
     decoded = (unsigned char *)ns_malloc(size);
-    size = (int)Ns_HtuuDecode(string, decoded, size);
+    size = Ns_HtuuDecode(string, decoded, size);
     decoded[size] = '\0';
-    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, size));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
     ns_free(decoded);
 
     return TCL_OK;
@@ -688,7 +689,6 @@ static const char hexChars[] = "0123456789ABCDEF";
 #define SHA_VERSION 1
 
 #define SHA_BLOCKBYTES 64U
-#define SHA_HASHBYTES 20U
 
 /*
    Shuffle the bytes into big-endian order within words, as per the

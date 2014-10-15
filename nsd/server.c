@@ -206,7 +206,7 @@ NsStopServers(Ns_Time *toPtr)
  */
 
 void
-NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
+NsInitServer(char *server, Ns_ServerInitProc *initProc)
 {
     Tcl_HashEntry     *hPtr;
     Ns_DString         ds;
@@ -217,7 +217,7 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
     int                i, n;
 
     assert(server != NULL);
-    assert(staticInitProc != NULL);
+    assert(initProc != NULL);
 
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (!n) {
@@ -279,8 +279,8 @@ NsInitServer(char *server, Ns_ServerInitProc *staticInitProc)
      * static modules.
      */
 
-    if (staticInitProc != NULL) {
-        (void) (*staticInitProc)(server);
+    if (initProc != NULL) {
+        (void) (*initProc)(server);
     }
 
     /*

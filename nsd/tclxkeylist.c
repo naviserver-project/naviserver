@@ -161,16 +161,16 @@ Tcl_Obj*
 TclX_NewKeyedListObj(void);
 
 int
-TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, 
+TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, 
                   Tcl_Obj **valuePtrPtr);
 int
-TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, 
+TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, 
                   Tcl_Obj *valuePtr);
 int
-TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key);
+TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key);
 
 int
-TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, 
+TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, 
                       Tcl_Obj **listObjPtrPtr);
 
 
@@ -185,15 +185,15 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key,
  * ----------------------------------------------------------------------------
  * -
  * 
- * Tcl_GetKeyedListKeys -- Retrieve a list of keyes from a keyed list.  The list
+ * Tcl_GetKeyedListKeys -- Retrieve a list of keys from a keyed list.  The list
  * is walked rather than converted to a argv for increased performance.
  * 
  * Parameters: o interp (I/O) - Error message will be return in result if there
  * is an error. o subFieldName (I) - If "" or NULL, then the keys are
  * retreved for the top level of the list.  If specified, it is name of the
  * field who's subfield keys are to be retrieve. o keyedList (I) - The list
- * to search for the field. o keyesArgcPtr (O) - The number of keys in the
- * keyed list is returned here. o keyesArgvPtr (O) - An argv containing the
+ * to search for the field. o keysArgcPtr (O) - The number of keys in the
+ * keyed list is returned here. o keysArgvPtr (O) - An argv containing the
  * key names.  It is dynamically allocated, containing both the array and the
  * strings. A single call to ckfree will release it. Returns: TCL_OK - If the
  * field was found. TCL_BREAK - If the field was not found. TCL_ERROR - If an
@@ -203,10 +203,10 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key,
 
 int
 Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *keyedList, 
-		     int *keyesArgcPtr, char ***keyesArgvPtr)
+		     int *keysArgcPtr, char ***keysArgvPtr)
 {
     Tcl_Obj *keylistPtr = Tcl_NewStringObj(keyedList, -1);
-    char    *keylistKey = (char *)subFieldName;
+    const char    *keylistKey = subFieldName;
 
     Tcl_Obj *objValPtr;
     int status;
@@ -216,14 +216,14 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
     status = TclX_KeyedListGetKeys(interp, keylistPtr, keylistKey, &objValPtr);
 
     if (status == TCL_BREAK) {
-        if (keyesArgcPtr) {
-            *keyesArgcPtr = 0;
+        if (keysArgcPtr) {
+            *keysArgcPtr = 0;
         }
-        if (keyesArgvPtr) {
-            *keyesArgvPtr = NULL;
+        if (keysArgvPtr) {
+            *keysArgvPtr = NULL;
         }
     } else if (status == TCL_OK) {
-        if (keyesArgcPtr && keyesArgvPtr) {
+        if (keysArgcPtr && keysArgvPtr) {
             size_t    keySize = 0, totalKeySize = 0;
             int       ii, keyCount;
             char    **keyArgv, *nextByte;
@@ -251,8 +251,8 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, CONST char *subFieldName, CONST char *k
                 nextByte[keySize] = 0;
                 nextByte += keySize + 1;
             }
-            *keyesArgcPtr = keyCount;
-            *keyesArgvPtr = keyArgv;
+            *keysArgcPtr = keyCount;
+            *keysArgvPtr = keyArgv;
         }
         Tcl_DecrRefCount(objValPtr);
     }
@@ -477,7 +477,7 @@ ValidateKeyedList _ANSI_ARGS_((keylIntObj_t *keylIntPtr));
 
 static int
 ValidateKey _ANSI_ARGS_((Tcl_Interp *interp,
-                         char *key,
+                         const char *key,
                          int keyLen,
                          int isPath));
 
@@ -497,7 +497,7 @@ DeleteKeyedListEntry _ANSI_ARGS_((keylIntObj_t *keylIntPtr,
 
 static int
 FindKeyedListEntry _ANSI_ARGS_((keylIntObj_t *keylIntPtr,
-                                char         *key,
+                                const char   *key,
                                 size_t       *keyLenPtr,
                                 char        **nextSubKeyPtr));
 
@@ -581,9 +581,9 @@ ValidateKeyedList(keylIntPtr)
  *-----------------------------------------------------------------------------
  */
 static int
-ValidateKey(Tcl_Interp *interp, char *key, int keyLen, int isPath)
+ValidateKey(Tcl_Interp *interp, const char *key, int keyLen, int isPath)
 {
-    char *keyp;
+    const char *keyp;
 
     if (strlen (key) != (size_t) keyLen) {
         Tcl_AppendResult(interp, "keyed list key may not be a ",
@@ -696,15 +696,16 @@ EnsureKeyedListSpace(keylIntObj_t * keylIntPtr, int newNumEntries)
  *-----------------------------------------------------------------------------
  */
 static void
-DeleteKeyedListEntry(keylIntObj_t * keylIntPtr, int entryIdx)
+DeleteKeyedListEntry(keylIntObj_t *keylIntPtr, int entryIdx)
 {
     int idx;
 
     ckfree(keylIntPtr->entries[entryIdx].key);
     Tcl_DecrRefCount(keylIntPtr->entries[entryIdx].valuePtr);
 
-    for (idx = entryIdx; idx < keylIntPtr->numEntries - 1; idx++)
+    for (idx = entryIdx; idx < keylIntPtr->numEntries - 1; idx++) {
         keylIntPtr->entries[idx] = keylIntPtr->entries[idx + 1];
+    }
     keylIntPtr->numEntries--;
 
     KEYL_REP_ASSERT(keylIntPtr);
@@ -726,7 +727,7 @@ DeleteKeyedListEntry(keylIntObj_t * keylIntPtr, int entryIdx)
  *-----------------------------------------------------------------------------
  */
 static int
-FindKeyedListEntry(keylIntObj_t *keylIntPtr, char *key, size_t *keyLenPtr, char **nextSubKeyPtr)
+FindKeyedListEntry(keylIntObj_t *keylIntPtr, const char *key, size_t *keyLenPtr, char **nextSubKeyPtr)
 {
     char   *keySeparPtr;
     size_t keyLen;
@@ -783,7 +784,7 @@ ObjToKeyedListEntry(Tcl_Interp *interp, Tcl_Obj *objPtr, keylEntry_t *entryPtr)
 {
     int objc;
     Tcl_Obj **objv;
-    char *key;
+    const char *key;
     int keyLen;
 
     if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
@@ -1003,7 +1004,7 @@ TclX_NewKeyedListObj()
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj **valuePtrPtr)
+TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj **valuePtrPtr)
 {
     keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
@@ -1055,7 +1056,7 @@ TclX_KeyedListGet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj **val
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valuePtr)
+TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj *valuePtr)
 {
     keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
@@ -1153,7 +1154,7 @@ TclX_KeyedListSet(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj *valu
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key)
+TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key)
 {
     keylIntObj_t *keylIntPtr;
     char         *nextSubKey;
@@ -1228,7 +1229,7 @@ TclX_KeyedListDelete(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key)
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, char *key, Tcl_Obj **listObjPtrPtr)
+TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl_Obj **listObjPtrPtr)
 {
     keylIntObj_t *keylIntPtr;
     Tcl_Obj      *listObjPtr;

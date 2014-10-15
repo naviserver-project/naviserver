@@ -68,8 +68,8 @@ static int GetSet(Tcl_Interp *interp, char *flist, int write,
 static int GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int byaddr)
     NS_GNUC_NONNULL(1);
 
-static void AppendReadyFiles(Tcl_Interp *interp, fd_set *pset, 
-                             int write, char *flist, Tcl_DString *pds)
+static void AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, 
+                             int write, char *flist, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static int EnterSock(Tcl_Interp *interp, NS_SOCKET sock)
@@ -720,7 +720,7 @@ done:
 
 int
 NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc),
-                      Tcl_Obj *CONST* objv)
+                      Tcl_Obj *CONST* UNUSED(objv))
 {
     NS_SOCKET socks[2];
     
@@ -941,7 +941,7 @@ SockSetBlocking(char *value, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 
 static void
 AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, int write, char *flist,
-         Tcl_DString *dsPtr)
+		 Tcl_DString *dsPtr)
 {
     int           fargc;
     CONST char  **fargv = NULL;

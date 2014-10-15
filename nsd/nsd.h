@@ -172,7 +172,7 @@ struct _nsconf {
 #endif
 
     struct {
-        char *sharedlibrary;
+        const char *sharedlibrary;
         char *version;
         bool lockoninit;
     } tcl;
@@ -366,10 +366,10 @@ typedef struct _DrvSpooler {
 } DrvSpooler;
 
 typedef struct _DrvWriter {
-    int threads;               /* Number of writer threads to run */
-    int maxsize;               /* Max content size to use writer thread */
-    int bufsize;               /* Size of the output buffer */
-    int streaming;             /* Activate writer for HTML streaming */
+    int       threads;         /* Number of writer threads to run */
+    size_t    maxsize;         /* Max content size to use writer thread */
+    size_t    bufsize;         /* Size of the output buffer */
+    int       streaming;       /* Activate writer for HTML streaming */
     Ns_Mutex lock;             /* Lock around writer queues */
     SpoolerQueue *firstPtr;    /* List of writer threads */
     SpoolerQueue *curPtr;      /* Current writer thread */
@@ -381,17 +381,17 @@ typedef struct Driver {
      * Visible in Ns_Driver.
      */
 
-    void *arg;                          /* Driver callback data */
-    char *server;                       /* Virtual server name */
-    char *module;                       /* Driver module */
-    char *name;                         /* Driver name */
-    char *location;                     /* Location, e.g, "http://foo:9090" */
-    char *address;                      /* Address in location, e.g. "foo" */
-    char *protocol;                     /* Protocol in location, e.g, "http" */
-    int   sendwait;                     /* send() I/O timeout */
-    int   recvwait;                     /* recv() I/O timeout */
-    int   bufsize;                      /* Conn bufsize (0 for SSL) */
-    char *extraHeaders;                 /* Extra header fields added for every request */
+    void  *arg;                         /* Driver callback data */
+    char  *server;                      /* Virtual server name */
+    char  *module;                      /* Driver module */
+    char  *name;                        /* Driver name */
+    char  *location;                    /* Location, e.g, "http://foo:9090" */
+    char  *address;                     /* Address in location, e.g. "foo" */
+    char  *protocol;                    /* Protocol in location, e.g, "http" */
+    int    sendwait;                    /* send() I/O timeout */
+    int    recvwait;                    /* recv() I/O timeout */
+    size_t bufsize;                     /* Conn bufsize (0 for SSL) */
+    char  *extraHeaders;                /* Extra header fields added for every request */
 
     /*
      * Private to Driver.
@@ -823,7 +823,7 @@ typedef struct NsServer {
      */
 
     struct {
-        char *library;
+        const char *library;
         struct TclTrace *firstTracePtr;
         struct TclTrace *lastTracePtr;
         char *initfile;
@@ -1006,7 +1006,6 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclAdpBindArgsObjCmd,
     NsTclAdpBreakObjCmd,
     NsTclAdpCloseObjCmd,
-    NsTclAdpCompressObjCmd,
     NsTclAdpCtlObjCmd,
     NsTclAdpDebugObjCmd,
     NsTclAdpDirObjCmd,
@@ -1201,8 +1200,6 @@ NS_EXTERN Tcl_CmdProc
     NsTclMkTempCmd,
     NsTclParseHeaderCmd,
     NsTclQuoteHtmlCmd,
-    NsTclRegisterTagCmd,
-    NsTclShareCmd,
     NsTclStripHtmlCmd;
 
 
@@ -1345,19 +1342,18 @@ NS_EXTERN int NsInstallService(char *service);
 NS_EXTERN int NsRemoveService(char *service);
 #endif
 
-NS_EXTERN void NsCreatePidFile();
-NS_EXTERN void NsRemovePidFile();
+NS_EXTERN void NsCreatePidFile(void);
+NS_EXTERN void NsRemovePidFile(void);
 
 NS_EXTERN void NsLogOpen(void);
 NS_EXTERN void NsTclInitObjs(void);
-NS_EXTERN void NsRunPreStartupProcs(void);
 NS_EXTERN void NsBlockSignals(int debug);
 NS_EXTERN void NsBlockSignal(int sig);
 NS_EXTERN void NsUnblockSignal(int sig);
 NS_EXTERN int  NsHandleSignals(void);
 NS_EXTERN void NsStopDrivers(void);
 NS_EXTERN void NsStopSpoolers(void);
-NS_EXTERN void NsPreBind(char *bindargs, char *bindfile);
+NS_EXTERN void NsPreBind(char *args, char *file);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN char *NsConfigRead(CONST char *file);
 NS_EXTERN void NsConfigEval(CONST char *config, int argc, char **argv, int optind);
@@ -1405,8 +1401,8 @@ NS_EXTERN NsLimits *NsGetRequestLimits(NsServer *servPtr, char *method, char *ur
 NS_EXTERN int NsMatchRange(Ns_Conn *conn, time_t mtime);
 
 NS_EXTERN int NsConnParseRange(Ns_Conn *conn, CONST char *type,
-                            int fd, CONST void *data, size_t length,
-                            Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
+			       int fd, CONST void *data, size_t objLength,
+			       Ns_FileVec *bufs, int *nbufsPtr, Ns_DString *dsPtr);
 /*
  * request parsing
  */
@@ -1426,9 +1422,9 @@ NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
-			char *file, Ns_Time *ttlPtr);
-NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *utf,
-		       unsigned int flags, CONST char* file);
+			   char *file, Ns_Time *expiresPtr);
+NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
+			  unsigned int flags, CONST char* file);
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);
 NS_EXTERN void NsAdpLogError(NsInterp *itPtr);
 NS_EXTERN void NsAdpInit(NsInterp *itPtr);

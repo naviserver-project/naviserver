@@ -41,7 +41,7 @@
  * Local functions defined in this file
  */
 
-static int MakeNum(char *s);
+static int MakeNum(const char *s);
 static int MakeMonth(char *s);
 
 /*
@@ -160,7 +160,7 @@ Ns_ParseHttpTime(char *str)
          */
 
         s++;
-        while (*s && *s == ' ') {
+        while (*s != '\0' && *s == ' ') {
             s++;
         }
 
@@ -219,7 +219,7 @@ Ns_ParseHttpTime(char *str)
          */
 
         s = str;
-        while (*s && *s == ' ') {
+        while (*s != '\0' && *s == ' ') {
             s++;
         }
         if ((int) strlen(s) < 24) {
@@ -364,7 +364,7 @@ NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  */
 
 static int
-MakeNum(char *s)
+MakeNum(const char *s)
 {
     if (*s >= '0' && *s <= '9') {
         return (10 * (*s - '0')) + (*(s + 1) - '0');

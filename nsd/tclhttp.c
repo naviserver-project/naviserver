@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-extern Tcl_ObjCmdProc NsTclHttpObjCmd;
-
 /*
  * Local functions defined in this file
  */
@@ -531,7 +529,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
         {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
         {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
         {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
-        {"-decompress", Ns_ObjvBool,   &decompress,    (void *)NS_TRUE},
+        {"-decompress", Ns_ObjvBool,   &decompress,    INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -572,7 +570,6 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
 	return TCL_ERROR;
     }
 
-    result = TCL_ERROR;
     if (elapsedVarPtr != NULL) {
     	Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
 	valPtr = Tcl_NewObj();
@@ -686,8 +683,8 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
 	    Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET    sock;
-    Ns_HttpTask *httpPtr = NULL;
-    int          len, portNr, uaFlag = -1;
+    Ns_HttpTask *httpPtr;
+    int          len = 0, portNr, uaFlag = -1;
     char        *body, *host, *file, *port, *url2;
     char         hostBuffer[256];
 

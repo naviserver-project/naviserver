@@ -100,7 +100,7 @@ int
 Ns_ConfigBool(CONST char *section, CONST char *key, int def)
 {
     CONST char *s;
-    int value, found = NS_FALSE;
+    int value = NS_FALSE, found = NS_FALSE;
 
     s = ConfigGet(section, key, 0, def ? "true" : "false");
     if (s != NULL && ToBool(s, &value)) {

@@ -61,7 +61,7 @@ static void **GetSlot(Ns_Cls *clsPtr, Ns_Conn *conn);
  */
 
 void
-Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanup)
+Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanupProc)
 {
     static uintptr_t nextId = 1;
     uintptr_t        id;
@@ -71,7 +71,7 @@ Ns_ClsAlloc(Ns_Cls *clsPtr, Ns_Callback *cleanup)
 	Ns_Fatal("Ns_ClsAlloc: exceded max cls: %d", NS_CONN_MAXCLS);
     }
     id = nextId++;
-    cleanupProcs[id] = cleanup;
+    cleanupProcs[id] = cleanupProc;
     Ns_MasterUnlock();
     *clsPtr = (void *) id;
 }

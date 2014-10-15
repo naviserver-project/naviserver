@@ -393,8 +393,8 @@ NsTclAdpIncludeObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
 
     Ns_ObjvSpec opts[] = {
         {"-cache",       Ns_ObjvTime,   &ttlPtr,  NULL},
-        {"-nocache",     Ns_ObjvBool,   &nocache, (void *) NS_TRUE},
-        {"-tcl",         Ns_ObjvBool,   &tcl,     (void *) NS_TRUE},
+        {"-nocache",     Ns_ObjvBool,   &nocache, INT2PTR(NS_TRUE)},
+        {"-tcl",         Ns_ObjvBool,   &tcl,     INT2PTR(NS_TRUE)},
         {"--",           Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -474,10 +474,10 @@ NsTclAdpParseObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST
 
     Ns_ObjvSpec opts[] = {
         {"-cwd",         Ns_ObjvString, &cwd,    NULL},
-        {"-file",        Ns_ObjvBool,   &file,   (void *) NS_TRUE},
-        {"-safe",        Ns_ObjvBool,   &safe,   (void *) NS_TRUE},
-        {"-string",      Ns_ObjvBool,   &string, (void *) NS_TRUE},
-        {"-tcl",         Ns_ObjvBool,   &tcl,    (void *) NS_TRUE},
+        {"-file",        Ns_ObjvBool,   &file,   INT2PTR(NS_TRUE)},
+        {"-safe",        Ns_ObjvBool,   &safe,   INT2PTR(NS_TRUE)},
+        {"-string",      Ns_ObjvBool,   &string, INT2PTR(NS_TRUE)},
+        {"-tcl",         Ns_ObjvBool,   &tcl,    INT2PTR(NS_TRUE)},
         {"--",           Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -587,7 +587,7 @@ NsTclAdpPutsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     int       length, nonewline = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-nonewline", Ns_ObjvBool,  &nonewline, (void *) NS_TRUE},
+        {"-nonewline", Ns_ObjvBool,  &nonewline, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };

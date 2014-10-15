@@ -89,7 +89,7 @@ static const char *datakey = "nsdb:data";
  */
 
 int
-Ns_TclDbGetHandle(Tcl_Interp *interp, char *id, Ns_DbHandle **handlePtr)
+Ns_TclDbGetHandle(Tcl_Interp *interp, char *handleId, Ns_DbHandle **handlePtr)
 {
     InterpData *idataPtr;
 
@@ -97,7 +97,7 @@ Ns_TclDbGetHandle(Tcl_Interp *interp, char *id, Ns_DbHandle **handlePtr)
     if (idataPtr == NULL) {
 	return TCL_ERROR;
     }
-    return DbGetHandle(idataPtr, interp, id, handlePtr, NULL);
+    return DbGetHandle(idataPtr, interp, handleId, handlePtr, NULL);
 }
 
 
@@ -965,14 +965,14 @@ loopstart:
  */
 
 static int
-DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, char *id, Ns_DbHandle **handle,
+DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, char *handleId, Ns_DbHandle **handle,
 	    Tcl_HashEntry **hPtrPtr)
 {
     Tcl_HashEntry  *hPtr;
 
-    hPtr = Tcl_FindHashEntry(&idataPtr->dbs, id);
+    hPtr = Tcl_FindHashEntry(&idataPtr->dbs, handleId);
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "invalid database id:  \"", id, "\"",
+	Tcl_AppendResult(interp, "invalid database id:  \"", handleId, "\"",
 	    NULL);
 	return TCL_ERROR;
     }

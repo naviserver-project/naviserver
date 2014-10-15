@@ -44,8 +44,7 @@ static VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv);
 static VOID WINAPI ServiceHandler(DWORD code);
 static BOOL WINAPI ConsoleHandler(DWORD code);
 static void ReportStatus(DWORD state, DWORD code, DWORD hint);
-static void ExitService(void);
-static char *GetServiceName(Ns_DString *dsPtr, char *server);
+static char *GetServiceName(Ns_DString *dsPtr, char *service);
 
 /*
  * Static variables used in this file
@@ -63,8 +62,6 @@ static int sigpending = 0;
 static int servicefailed = 0;
 
 #define SysErrMsg() (NsWin32ErrMsg(GetLastError()))
-
-void NsdInit(void);
 
 
 /*
@@ -84,7 +81,7 @@ void NsdInit(void);
  */
 
 void
-NsBlockSignal(int UNUSED(signal))
+NsBlockSignal(int UNUSED(sig))
 {
     return;
 }
@@ -107,7 +104,7 @@ NsBlockSignal(int UNUSED(signal))
  */
 
 void
-NsUnblockSignal(int UNUSED(signal))
+NsUnblockSignal(int UNUSED(sig))
 {
     return;
 }
@@ -293,7 +290,7 @@ NsConnectService(void)
  */
 
 int
-NsRemoveService(char *server)
+NsRemoveService(char *service)
 {
     SC_HANDLE hmgr;
     SERVICE_STATUS status;
@@ -301,7 +298,7 @@ NsRemoveService(char *server)
     BOOL ok;
 
     Ns_DStringInit(&name);
-    GetServiceName(&name, server);
+    GetServiceName(&name, service);
     ok = FALSE;
     hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (hmgr != NULL) {
@@ -342,7 +339,7 @@ NsRemoveService(char *server)
  */
 
 int
-NsInstallService(char *server)
+NsInstallService(char *service)
 {
     SC_HANDLE hmgr, hsrv;
     BOOL ok;
@@ -358,8 +355,8 @@ NsInstallService(char *server)
         Ns_DStringInit(&name);
         Ns_DStringInit(&cmd);
         Ns_DStringVarAppend(&cmd, "\"", nsd, "\"",
-                            " -S -s ", server, " -t \"", config, "\"", NULL);
-        GetServiceName(&name, server);
+                            " -S -s ", service, " -t \"", config, "\"", NULL);
+        GetServiceName(&name, service);
         Ns_Log(Notice, "nswin32: installing %s service: %s",
                name.string, cmd.string);
         hmgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
@@ -884,7 +881,7 @@ Ns_SockListenEx(char *address, int port, int backlog)
  */
 
 static BOOL WINAPI
-ConsoleHandler(DWORD ignored)
+ConsoleHandler(DWORD UNUSED(code))
 {
     SetConsoleCtrlHandler(ConsoleHandler, FALSE);
     NsSendSignal(NS_SIGTERM);
@@ -898,7 +895,7 @@ ConsoleHandler(DWORD ignored)
  *
  * GetServiceName --
  *
- *      Construct the service name for the corresponding server.
+ *      Construct the service name for the corresponding service.
  *
  * Results:
  *      Pointer to given dstring string.
@@ -910,9 +907,9 @@ ConsoleHandler(DWORD ignored)
  */
 
 static char *
-GetServiceName(Ns_DString *dsPtr, char *server)
+GetServiceName(Ns_DString *dsPtr, char *service)
 {
-    Ns_DStringVarAppend(dsPtr, PACKAGE_NAME, "-", server, NULL);
+    Ns_DStringVarAppend(dsPtr, PACKAGE_NAME, "-", service, NULL);
     return dsPtr->string;
 }
 

@@ -55,8 +55,8 @@ typedef struct Callback {
 static Ns_ThreadProc ShutdownThread;
 
 static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo);
-static void RunCallbacks(CONST char *list, Callback *firstPtr);
-static void AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *firstPtr);
+static void RunCallbacks(CONST char *list, Callback *cbPtr);
+static void AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr);
 
 /*
  * Static variables defined in this file

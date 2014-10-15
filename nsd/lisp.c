@@ -289,7 +289,7 @@ Ns_ListPrint(Ns_List *lPtr, Ns_ElemVoidProc *printProc)
 Ns_List *
 Ns_ListCopy(Ns_List *lPtr)
 {
-    Ns_List *curPtr = NULL, *newPtr = NULL, *headPtr = NULL;
+    Ns_List *curPtr, *newPtr = NULL, *headPtr;
 
     if (lPtr == NULL) {
         return NULL;

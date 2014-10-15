@@ -37,10 +37,8 @@
 #include "nsd.h"
 
 #ifdef _WIN32
-# define DEVNULL "nul:"
 # include <share.h>
 #else
-# define DEVNULL "/dev/null"
 # ifdef USE_DUPHIGH
 static int dupHigh = 0;
 # endif

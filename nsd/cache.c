@@ -63,7 +63,6 @@ typedef struct Entry {
 typedef struct Cache {
     Entry         *firstEntryPtr;
     Entry         *lastEntryPtr;
-    Tcl_HashEntry *hPtr;
     int            keys;
     size_t         maxSize;
     size_t         currentSize;

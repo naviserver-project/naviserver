@@ -189,9 +189,9 @@ static Job*   NewJob(CONST char* server, CONST char* queueName,
     NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4) NS_GNUC_RETURNS_NONNULL;
 static void   FreeJob(Job *jobPtr)
     NS_GNUC_NONNULL(1);
-static int    JobAbort(ClientData cd, Tcl_Interp *interp, int code);
+static int    JobAbort(ClientData clientData, Tcl_Interp *interp, int code);
 
-static int    LookupQueue(Tcl_Interp *interp, CONST char *queue_name,
+static int    LookupQueue(Tcl_Interp *interp, CONST char *queueName,
                           Queue **queuePtr, int locked)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static int    ReleaseQueue(Queue *queue, int locked)
@@ -366,7 +366,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch search;
 
-    static CONST char *opts[] = {
+    static const char *opts[] = {
         "cancel", "create", "delete", "genid", "jobs", "joblist",
         "threadlist", "queue", "queues", "queuelist", "wait",
         "waitany",  "exists", "configure", NULL
@@ -400,7 +400,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 
             int jpt = -1, timeout = -1;
 
-            Ns_ObjvSpec opts[] = {
+            Ns_ObjvSpec lopts[] = {
                 {"-jobsperthread",  Ns_ObjvInt,  &jpt,     NULL},
                 {"-timeout",        Ns_ObjvInt,  &timeout, NULL},
                 {NULL, NULL, NULL, NULL}
@@ -409,7 +409,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
             Ns_MutexLock(&tp.queuelock);
@@ -436,7 +436,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
              * Create a new thread pool queue.
              */
 
-            Tcl_Obj *queueIdObj = NULL;
+            Tcl_Obj *queueIdObj;
             char    *queueDesc  = "";
 
             argIndex = 2;
@@ -515,9 +515,9 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 	    int   create = 0, head = 0, jobType = JOB_NON_DETACHED;
             char *script = NULL;
 
-            Ns_ObjvSpec opts[] = {
-                {"-head",      Ns_ObjvBool,    &head,     (void *) 1},
-                {"-detached",  Ns_ObjvBool,    &jobType,  (void *) JOB_DETACHED},
+            Ns_ObjvSpec lopts[] = {
+                {"-head",      Ns_ObjvBool,    &head,     INT2PTR(1)},
+                {"-detached",  Ns_ObjvBool,    &jobType,  INT2PTR(JOB_DETACHED)},
                 {"-jobid",     Ns_ObjvString,  &jobId,    NULL},
                 {NULL, NULL, NULL, NULL}
             };
@@ -527,7 +527,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
                 return TCL_ERROR;
             }
 
@@ -964,13 +964,13 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             jobList = Tcl_NewListObj(0, NULL);
             hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
             while (hPtr != NULL) {
-		CONST char *jobId, *jobState, *jobCode, *jobType, *jobReq;
+		CONST char *jobId1, *jobState, *jobCode, *jobType, *jobReq;
 		char       *jobResults, *jobScript;
 		Tcl_Obj    *jobFieldList;
 		double      delta;
 
                 jobPtr = (Job *)Tcl_GetHashValue(hPtr);
-                jobId      = Tcl_GetHashKey(&queue->jobs, hPtr);
+                jobId1     = Tcl_GetHashKey(&queue->jobs, hPtr);
                 jobCode    = GetJobCodeStr(jobPtr->code);
                 jobState   = GetJobStateStr(jobPtr->state);
                 jobType    = GetJobTypeStr(jobPtr->type);
@@ -987,7 +987,7 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
                 /* Create a Tcl List to hold the list of job fields. */
                 jobFieldList = Tcl_NewListObj(0, NULL);
                 if (   AppendField(interp, jobFieldList, "id",
-                                   jobId) != TCL_OK
+                                   jobId1) != TCL_OK
                     || AppendField(interp, jobFieldList, "state",
                                    jobState) != TCL_OK
                     || AppendField(interp, jobFieldList, "results",
@@ -1418,7 +1418,7 @@ GetNextJob(void)
 static Queue*
 NewQueue(CONST char *queueName, CONST char *queueDesc, int maxThreads)
 {
-    Queue *queue = NULL;
+    Queue *queue;
 
     assert(queueName != NULL);
     assert(queueDesc != NULL);
@@ -1487,11 +1487,11 @@ FreeQueue(Queue *queue)
  */
 
 static Job*
-NewJob(CONST char* server, CONST char* queueId, int type, char *script)
+NewJob(CONST char* server, CONST char* queueName, int type, char *script)
 {
     Job *jobPtr;
 
-    assert(queueId != NULL);
+    assert(queueName != NULL);
     assert(script != NULL);
 
     jobPtr = ns_calloc(1, sizeof(Job));
@@ -1502,7 +1502,7 @@ NewJob(CONST char* server, CONST char* queueId, int type, char *script)
     jobPtr->code   = TCL_OK;
     jobPtr->req    = JOB_NONE;
 
-    jobPtr->queueId = ns_strdup(queueId);
+    jobPtr->queueId = ns_strdup(queueName);
 
     Tcl_DStringInit(&jobPtr->id);
     Tcl_DStringInit(&jobPtr->script);
@@ -1572,13 +1572,13 @@ FreeJob(Job *jobPtr)
  *----------------------------------------------------------------------
  */
 static int
-LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
+LookupQueue(Tcl_Interp *interp, CONST char *queueName, Queue **queuePtr,
             int locked)
 {
     Tcl_HashEntry *hPtr;
     
     assert(queuePtr != NULL);
-    assert(queueId != NULL);
+    assert(queueName != NULL);
 
     if (!locked) {
         Ns_MutexLock(&tp.queuelock);
@@ -1586,7 +1586,7 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
 
     *queuePtr = NULL;
 
-    hPtr = Tcl_FindHashEntry(&tp.queues, queueId);
+    hPtr = Tcl_FindHashEntry(&tp.queues, queueName);
     if (hPtr != NULL) {
         *queuePtr = Tcl_GetHashValue(hPtr);
         Ns_MutexLock(&(*queuePtr)->lock);
@@ -1599,7 +1599,7 @@ LookupQueue(Tcl_Interp *interp, CONST char *queueId, Queue **queuePtr,
 
     if (*queuePtr == NULL) {
         if (interp != NULL) {
-            Tcl_AppendResult(interp, "no such queue: ", queueId, NULL);
+            Tcl_AppendResult(interp, "no such queue: ", queueName, NULL);
         }
         return TCL_ERROR;
     }
@@ -1775,7 +1775,7 @@ GetJobStateStr(JobStates state)
         "unknown"           /* 3 */
     };
 
-    if (state > (max_state_index)) {
+    if (state > max_state_index) {
         state = max_state_index;
     }
 
@@ -1808,7 +1808,7 @@ GetJobTypeStr(JobTypes type)
         "unknown"          /* 2 */
     };
 
-    if (type > (max_type_index)) {
+    if (type > max_type_index) {
         type = max_type_index;
     }
 
@@ -1841,7 +1841,7 @@ GetJobReqStr(JobRequests req)
         "unknown"   /* 2 */
     };
 
-    if (req > (req_max_index)) {
+    if (req > req_max_index) {
         req = req_max_index;
     }
 
@@ -1873,7 +1873,7 @@ GetQueueReqStr(QueueRequests req)
         "delete"    /* 1 */
     };
 
-    if (req > (req_max_index)) {
+    if (req > req_max_index) {
         req = req_max_index;
     }
 
@@ -1905,7 +1905,7 @@ GetTpReqStr(ThreadPoolRequests req)
         "stop"      /* 1 */
     };
 
-    if (req > (req_max_index)) {
+    if (req > req_max_index) {
         req = req_max_index;
     }
 

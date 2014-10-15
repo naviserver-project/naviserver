@@ -64,8 +64,6 @@
 #define DRIVER_STOPPED           2U
 #define DRIVER_SHUTDOWN          4U
 #define DRIVER_FAILED            8U
-#define DRIVER_QUERY             16U
-#define DRIVER_DEBUG             32U
 
 /*
  * Managing streaming output via writer
@@ -113,7 +111,6 @@ typedef struct AsyncWriteData {
     struct AsyncWriteData *nextPtr;
     char              *data;
     int                fd;
-    int                pidx;
     Tcl_WideInt        nsent;
     size_t             size;
     size_t             bufsize;
@@ -413,7 +410,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     drvPtr->maxheaders   = Ns_ConfigIntRange(path, "maxheaders",
                                              128,          8, INT_MAX);
 
-    drvPtr->bufsize      = Ns_ConfigIntRange(path, "bufsize",
+    drvPtr->bufsize      = (size_t)Ns_ConfigIntRange(path, "bufsize",
                                              16384,        1024, INT_MAX);
 
     drvPtr->maxqueuesize = Ns_ConfigIntRange(path, "maxqueuesize",
@@ -537,13 +534,13 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
     wrPtr->threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
 
     if (wrPtr->threads > 0) {
-        wrPtr->maxsize = Ns_ConfigIntRange(path, "writersize",
-                                           1024*1024, 1024, INT_MAX);
-        wrPtr->bufsize = Ns_ConfigIntRange(path, "writerbufsize",
-                                           8192, 512, INT_MAX);
+	wrPtr->maxsize = (size_t)Ns_ConfigIntRange(path, "writersize",
+						   1024*1024, 1024, INT_MAX);
+        wrPtr->bufsize = (size_t)Ns_ConfigIntRange(path, "writerbufsize",
+						   8192, 512, INT_MAX);
         wrPtr->streaming = Ns_ConfigBool(path, "writerstreaming", NS_FALSE);
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
-               "for downloads >= %d bytes, bufsize=%d bytes, HTML streaming %d",
+               "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
                module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->streaming);
         for (i = 0; i < wrPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
@@ -564,7 +561,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     if (server == NULL) {
-	Ns_Set *set;
+	Ns_Set *lset;
 
         if (defserver == NULL) {
             Ns_Fatal("%s: virtual servers configured,"
@@ -574,11 +571,11 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
         defMapPtr = NULL;
         path = Ns_ConfigGetPath(NULL, module, "servers", NULL);
-        set  = Ns_ConfigGetSection(path);
+        lset  = Ns_ConfigGetSection(path);
         Ns_DStringInit(dsPtr);
-        for (i = 0; set != NULL && i < Ns_SetSize(set); ++i) {
-            server  = Ns_SetKey(set, i);
-            host    = Ns_SetValue(set, i);
+        for (i = 0; lset != NULL && i < Ns_SetSize(lset); ++i) {
+            server  = Ns_SetKey(lset, i);
+            host    = Ns_SetValue(lset, i);
             servPtr = NsGetServer(server);
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", module, server);
@@ -2067,10 +2064,10 @@ SockSendResponse(Sock *sockPtr, int code)
  */
 
 static void
-SockTrigger(NS_SOCKET fd)
+SockTrigger(NS_SOCKET sock)
 {
-    if (send(fd, "", 1, 0) != 1) {
-        char * errstr = ns_sockstrerror(ns_sockerrno);
+    if (send(sock, "", 1, 0) != 1) {
+        char *errstr = ns_sockstrerror(ns_sockerrno);
 
         Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
     }
@@ -2185,7 +2182,7 @@ ChunkedDecode(Request *reqPtr, int update)
       }
       if (update) {
         char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
-        memmove(writeBuffer, p + 2, chunk_length);
+        memmove(writeBuffer, p + 2, (size_t)chunk_length);
         reqPtr->chunkWriteOff += chunk_length;
         *(writeBuffer + chunk_length) = '\0';
       }
@@ -2285,7 +2282,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
      * Grow the buffer to include space for the next bytes.
      */
 
-    len = bufPtr->length;
+    len = (size_t)bufPtr->length;
     n = (ssize_t)(len + nread);
     if (n > drvPtr->maxinput) {
 	n = (ssize_t)drvPtr->maxinput;
@@ -2339,7 +2336,8 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
             return SOCK_ERROR;
         }
         n = bufPtr->length - reqPtr->coff;
-        if (write(sockPtr->tfd, bufPtr->string + reqPtr->coff, n) != n) {
+	assert(n >= 0);
+        if (write(sockPtr->tfd, bufPtr->string + reqPtr->coff, (size_t)n) != n) {
             return SOCK_WRITEERROR;
         }
         Tcl_DStringSetLength(bufPtr, 0);
@@ -3373,7 +3371,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	     * send operation.
 	     */
 	    Ns_MutexLock(&curPtr->c.file.fdlock);
-	    lseek(curPtr->fd, curPtr->nsent, SEEK_SET);
+	    lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
 	}
 	
 	n = read(curPtr->fd, bufPtr, (size_t)toread);
@@ -3503,17 +3501,17 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    curPtr->c.file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
-	  if (n < (ssize_t)towrite) {
+	    if (n < (ssize_t)towrite) {
 		/*
 		 * We have a partial transmit from the iovec
 		 * structure. We have to compact it to fill content in
 		 * the next round.
 		 */
-		curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, n);
+		curPtr->c.mem.sbufIdx = Ns_ResetVec(curPtr->c.mem.sbufs, curPtr->c.mem.nsbufs, (size_t)n);
 		curPtr->c.mem.nsbufs -= curPtr->c.mem.sbufIdx;
 		
 		memmove(curPtr->c.mem.sbufs, curPtr->c.mem.sbufs + curPtr->c.mem.sbufIdx, 
-		/* move the iovecs to the start of the scratch buffers */
+			/* move the iovecs to the start of the scratch buffers */
 			(size_t) sizeof(struct iovec) * curPtr->c.mem.nsbufs);
 	    }
 	}
@@ -3822,14 +3820,14 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     }
 
     if (nsend < (size_t)wrPtr->maxsize && !everysize && connPtr->fd == 0) {
-        Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%" PRIdz " < %d)",
+        Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%" PRIdz " < %" PRIdz ")",
                nsend, wrPtr->maxsize);
         return NS_ERROR;
     }
 
     if (connPtr->flags & NS_CONN_STREAM || connPtr->fd > 0) {
 	int         first = 0, wrote = 0;
-	WriterSock *wrSockPtr = NULL;
+	WriterSock *wrSockPtr1 = NULL;
 
 	if (wrPtr->streaming == NS_FALSE) {
 	    return NS_ERROR;
@@ -3855,13 +3853,13 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	    /*
 	     * Reuse previously created spool file.
 	     */
-	    wrSockPtr = WriterSockRequire(connPtr);
-	    if (wrSockPtr == NULL) {
+	    wrSockPtr1 = WriterSockRequire(connPtr);
+	    if (wrSockPtr1 == NULL) {
 		Ns_Log(Notice, 
 		       "NsWriterQueue: writer job was already canceled; maybe user dropped connection.");
 		return NS_ERROR;
 	    }
-	    Ns_MutexLock(&wrSockPtr->c.file.fdlock);
+	    Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
 	    lseek(connPtr->fd, 0, SEEK_END);
 	}
 
@@ -3895,16 +3893,16 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 	     * length info for the access log, and trigger the writer
 	     * to notify it about the change.
 	     */
-	    assert(wrSockPtr != NULL);
+	    assert(wrSockPtr1 != NULL);
 	    connPtr->streamWriter->size += wrote;
 	    connPtr->streamWriter->c.file.toread += wrote;
-	    Ns_MutexUnlock(&wrSockPtr->c.file.fdlock);
+	    Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
 
 	    connPtr->nContentSent += wrote;
-	    if (likely(wrSockPtr->queuePtr != NULL)) {
-		SockTrigger(wrSockPtr->queuePtr->pipe[1]);
+	    if (likely(wrSockPtr1->queuePtr != NULL)) {
+		SockTrigger(wrSockPtr1->queuePtr->pipe[1]);
 	    }
-	    WriterSockRelease(wrSockPtr);
+	    WriterSockRelease(wrSockPtr1);
 	    return TCL_OK;
 	}
     } else {
@@ -3930,7 +3928,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         }
     }
 
-    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %d",
+    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %" PRIdz,
 	   wrPtr->threads, nsend, wrPtr->maxsize);
 
     assert(connPtr->poolPtr);
@@ -4188,9 +4186,9 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         data = (char*)Tcl_GetByteArrayFromObj(objv[2], &size);
         if (data) {
 	    struct iovec vbuf;
-	    vbuf.iov_base = (void *) data;
-	    vbuf.iov_len = size;
-            rc = NsWriterQueue(conn, size, NULL, NULL, -1, &vbuf, 1, 1);
+	    vbuf.iov_base = (void *)data;
+	    vbuf.iov_len = (size_t)size;
+            rc = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, 1);
             Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
         }
         break;
@@ -4204,8 +4202,8 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         Tcl_WideInt offset = 0, size = 0;
 	size_t      nrbytes;
 
-        Ns_ObjvSpec opts[] = {
-            {"-headers",  Ns_ObjvBool,    &headers, (void *) NS_TRUE},
+        Ns_ObjvSpec lopts[] = {
+	    {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
             {"-offset",   Ns_ObjvWideInt, &offset,  NULL},
             {"-size",     Ns_ObjvWideInt, &size,    NULL},
             {NULL, NULL, NULL, NULL}
@@ -4215,7 +4213,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             {NULL, NULL, NULL, NULL}
         };
 
-        if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
             return TCL_ERROR;
         }
 
@@ -4374,7 +4372,7 @@ NsTclWriterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 				     Tcl_GetString(objv[3]), " (min 1024)", NULL);
 		    return TCL_ERROR;
 		}
-		wrPtr->maxsize = value;
+		wrPtr->maxsize = (size_t)value;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(wrPtr->maxsize));
 

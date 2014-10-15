@@ -39,8 +39,8 @@
  * Local functions defined in this file.
  */
 
-static void AddCharset(const char *name, const char *charset);
-static void AddExtension(const char *name, const char *charset);
+static void AddCharset(const char *charset, const char *name);
+static void AddExtension(const char *ext, const char *name);
 static Tcl_Encoding LoadEncoding(CONST char *name);
 static Ns_ServerInitProc ConfigServerEncodings;
 
@@ -320,12 +320,12 @@ Ns_GetFileEncoding(CONST char *file)
  */
 
 Tcl_Encoding
-Ns_GetTypeEncoding(CONST char *type)
+Ns_GetTypeEncoding(CONST char *mimeType)
 {
     char    *charset;
     size_t   len;
 
-    charset = NsFindCharset(type, &len);
+    charset = NsFindCharset(mimeType, &len);
     return (charset ? Ns_GetCharsetEncodingEx(charset, (int)len) : NULL);
 }
 
@@ -476,7 +476,7 @@ NsFindCharset(CONST char *mimetype, size_t *lenPtr)
 
 int
 NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
-		    int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
+		    int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     Tcl_HashEntry  *hPtr;
     Tcl_HashSearch  search;

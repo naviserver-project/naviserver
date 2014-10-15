@@ -186,7 +186,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     char       *file;
     int         status = TCL_ERROR;
-    uint32_t    w, h;
+    uint32_t    w = 0, h = 0;
     Tcl_Channel chan;
 
     if (objc != 2) {
@@ -387,7 +387,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         return TCL_ERROR;
     }
 
-    depth = 1 << ((buf[4] & 0x7U) + 1);
+    depth = 1U << ((buf[4] & 0x7U) + 1U);
     colormap = ((buf[4] & 0x80U) ? 1 : 0);
 
     if (colormap) {
@@ -487,7 +487,7 @@ JpegSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 {
     if (ChanGetc(chan) == 0xFF && ChanGetc(chan) == M_SOI) {
         while (1) {
-	    unsigned int i;
+	    int          i;
 	    uint32_t     numBytes = 0U;
 
             i = JpegNextMarker(chan);

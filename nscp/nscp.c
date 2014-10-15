@@ -71,7 +71,7 @@ typedef struct Sess {
 
 static Ns_SockProc AcceptProc;
 static Tcl_CmdProc ExitCmd;
-static int Login(Sess *sessPtr, Tcl_DString *unameDS);
+static int Login(Sess *sessPtr, Tcl_DString *unameDSPtr);
 static int GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo);
 static Ns_ArgProc ArgProc;
 
@@ -389,9 +389,9 @@ retry:
 	res = (char*)Tcl_GetStringResult(interp);;
 	len = strlen(res);
 	while (len > 0) {
-	  if ((n = send(sessPtr->sock, res, len, 0)) <= 0) {
-	      goto done;
-	  }
+	    if ((n = send(sessPtr->sock, res, len, 0)) <= 0) {
+		goto done;
+	    }
 	    len -= n;
 	    res += n;
 	}
@@ -440,8 +440,8 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
      */
 
     if (!echo) {
-	send(sock, will_echo, 3, 0);
-	send(sock, dont_echo, 3, 0);
+	send(sock, will_echo, 3U, 0);
+	send(sock, dont_echo, 3U, 0);
 	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);

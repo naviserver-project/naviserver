@@ -206,8 +206,8 @@ NsTclRegisterFastPathObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Ob
     unsigned int    flags = 0U;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &flags, (void *) NS_OP_NOINHERIT},
-        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
+        {"--",         Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -254,8 +254,8 @@ NsTclUnRegisterOpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *C
     int       noinherit = 0, recurse = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, (void *) NS_OP_NOINHERIT},
-        {"-recurse",   Ns_ObjvBool,  &recurse,   (void *) NS_OP_RECURSE},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
+        {"-recurse",   Ns_ObjvBool,  &recurse,   INT2PTR(NS_OP_RECURSE)},
         {"--",         Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -300,7 +300,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     int              remain = 0, when = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-first", Ns_ObjvBool,  &when, (void *) NS_FILTER_FIRST},
+        {"-first", Ns_ObjvBool,  &when, INT2PTR(NS_FILTER_FIRST)},
         {"--",     Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
     };

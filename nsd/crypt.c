@@ -32,7 +32,7 @@
 #ifdef __linux
 
 char *
-Ns_Encrypt(char *pw, char *salt, char iobuf[])
+Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
     char *c = crypt(pw, salt);
 
@@ -400,11 +400,8 @@ encrypt_private(struct sched *sp, char *block, int edflag)
 }
 
 
-char           *
-Ns_Encrypt(pw, salt, iobuf)
-    char           *pw;
-    char           *salt;
-    char            iobuf[];
+char *
+Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
 {
     register int    i, j, c;
     int             temp;

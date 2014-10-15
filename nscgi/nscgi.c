@@ -45,14 +45,11 @@
  * loaded (normally just once).
  */
 
-struct Cgi;
-
 typedef struct Mod {
     char	   *server;
     char	   *module;
     Ns_Set         *interps;
     Ns_Set         *mergeEnv;
-    struct Cgi     *firstCgiPtr;
     unsigned int    flags;
     int             maxInput;
     int             maxCgi;
@@ -110,6 +107,11 @@ typedef struct Map {
 
 static int devNull;
 
+NS_EXPORT const int Ns_ModuleVersion = 1;
+
+/*
+ * Functions defined in this file.
+ */
 static Ns_OpProc CgiRequest;
 static void     CgiRegister(Mod *modPtr, char *map);
 static Ns_Callback CgiFreeMap;
@@ -124,8 +126,6 @@ static int	CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr);
 static char    *NextWord(char *s);
 static void	SetAppend(Ns_Set *set, int index, char *sep, char *value);
 static void	SetUpdate(Ns_Set *set, char *key, char *value);
-
-NS_EXPORT const int Ns_ModuleVersion = 1;
 
 
 /*
@@ -376,7 +376,8 @@ CgiInit(Cgi *cgiPtr, Map *mapPtr, Ns_Conn *conn)
 {
     Mod		   *modPtr;
     Ns_DString     *dsPtr;
-    int             ulen, plen, i;
+    int             i;
+    size_t          ulen, plen;
     struct stat     st;
     char           *s, *e;
     char    	   *url = conn->request->url;
@@ -556,7 +557,8 @@ err:
 static int
 CgiSpool(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int     len, fd;
+    int     fd;
+    size_t  len;
     char   *content, *err;
 
     err = NULL;
@@ -565,7 +567,7 @@ CgiSpool(Cgi *cgiPtr, Ns_Conn *conn)
     fd = Ns_GetTemp();
     if (fd < 0) {
 	Ns_Log(Error, "nscgi: could not allocate temp file.");
-    } else if (write(fd, content, (size_t)len) != len) {
+    } else if (write(fd, content, len) != len) {
 	err = "write";
     } else if (lseek(fd, 0, SEEK_SET) != 0) {
 	err = "lseek";
@@ -732,8 +734,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     }
 
     /*
-     * PATH is the only variable copied from the running environment if it
-     * isn't already in the server default environment.
+     * PATH is the only variable copied from the running environment
+     * if it isn't already in the server default environment.
      */
 
     if (Ns_SetFind(cgiPtr->env, "PATH") < 0) {
@@ -800,6 +802,10 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_DStringTrunc(dsPtr, 0);
     }
 
+    /*
+     * Provide Authentication information
+     */
+
     SetUpdate(cgiPtr->env, "AUTH_TYPE", "Basic");
     SetUpdate(cgiPtr->env, "REMOTE_USER", Ns_ConnAuthUser(conn));
     s = Ns_ConnPeer(conn);
@@ -814,6 +820,11 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
             SetUpdate(cgiPtr->env, "REMOTE_HOST", s);
         }
     }
+
+    /*
+     * Provide request information.
+     */
+
     SetUpdate(cgiPtr->env, "REQUEST_METHOD", conn->request->method);
     SetUpdate(cgiPtr->env, "QUERY_STRING", conn->request->query);
 

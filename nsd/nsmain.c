@@ -67,7 +67,7 @@ static void UsageError(char *msg, ...);
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
 static char *MakePath(char *file);
-static char *SetCwd(char *homedir);
+static char *SetCwd(char *path);
 
 #if (STATIC_BUILD == 1)
 extern void NsthreadsInit();
@@ -104,7 +104,8 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
     Ns_Set   *set;
 
 #ifndef _WIN32
-    int       debug = 0, mode = 0;
+    int       debug = 0;
+    char      mode = 0;
     char     *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
     char     *bindargs = NULL, *bindfile = NULL;
     Ns_Set   *servers;
@@ -115,9 +116,9 @@ Ns_Main(int argc, char **argv, Ns_ServerInitProc *initProc)
      * preserve their values when Ns_Main is re-entered by
      * the Win32 service control manager.
      */
-    static int     mode = 0;
+    static char    mode = 0;
     static Ns_Set *servers;
-    static char   *procname, *server;
+    static char   *procname, *server = NULL;
 #endif
 
     /*
@@ -834,7 +835,7 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     int timeout = 0, signal = NS_SIGTERM;
 
     Ns_ObjvSpec opts[] = {
-        {"-restart", Ns_ObjvBool,  &signal, (void *) NS_SIGINT},
+        {"-restart", Ns_ObjvBool,  &signal, INT2PTR(NS_SIGINT)},
         {"--",       Ns_ObjvBreak, NULL,    NULL},
         {NULL,       NULL,         NULL,    NULL}
     };

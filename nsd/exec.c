@@ -37,8 +37,7 @@
 
 #ifdef _WIN32
 #include <process.h>
-static char   **Set2Argv(Ns_DString *dsPtr, Ns_Set *set);
-static int  	WaitForProcess(pid_t pid, int *statusPtr);
+static char   **Set2Argv(Ns_DString *dsPtr, Ns_Set *env);
 #else
 #define ERR_DUP         (-1)
 #define ERR_CHDIR	(-2)
@@ -139,7 +138,7 @@ Ns_WaitForProcess(pid_t pid, int *exitcodePtr)
 #ifdef _WIN32
     HANDLE process = (HANDLE) pid;
     int status = NS_OK;
-    DWORD exitcode;
+    DWORD exitcode = 0;
 
     if ((WaitForSingleObject(process, INFINITE) == WAIT_FAILED) ||
         (GetExitCodeProcess(process, &exitcode) != TRUE)) {

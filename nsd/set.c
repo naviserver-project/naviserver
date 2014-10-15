@@ -420,7 +420,7 @@ char *
 Ns_SetIGet(Ns_Set *set, CONST char *key)
 {
     return Ns_SetGetCmp(set, key,
-                        (int (*) (CONST char *, CONST char *)) strcasecmp);
+                        (int (*) (CONST char *s1, CONST char *s2)) strcasecmp);
 }
 
 /*

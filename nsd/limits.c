@@ -138,7 +138,7 @@ NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     NsLimits *limitsPtr;
 
     Ns_ObjvSpec args[] = {
-        {"limits", ObjvLimits, &limitsPtr, (void *) NOCREATE},
+        {"limits", ObjvLimits, &limitsPtr, INT2PTR(NOCREATE)},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
@@ -226,7 +226,7 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"limits", ObjvLimits, &limitsPtr, (void *) CREATE},
+        {"limits", ObjvLimits, &limitsPtr, INT2PTR(CREATE)},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -282,7 +282,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"limits", ObjvLimits,    &limitsPtr, (void *) NOCREATE},
+        {"limits", ObjvLimits,    &limitsPtr, INT2PTR(NOCREATE)},
         {"method", Ns_ObjvString, &method,    NULL},
         {"url",    Ns_ObjvString, &url,       NULL},
         {NULL, NULL, NULL, NULL}

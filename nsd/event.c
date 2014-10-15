@@ -326,7 +326,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     queuePtr->firstWaitPtr = NULL;
 
     while (evPtr != NULL) {
-	int revents;
+	unsigned int revents;
 
         nextPtr = evPtr->nextPtr;
 

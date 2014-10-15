@@ -60,7 +60,7 @@ extern int h_errno;
 #endif
 
 
-typedef int (GetProc)(Ns_DString *dsPtr, char *key);
+typedef int (GetProc)(Ns_DString *dsPtr, const char *key);
 
 
 /*
@@ -70,7 +70,7 @@ typedef int (GetProc)(Ns_DString *dsPtr, char *key);
 static GetProc GetAddr;
 static GetProc GetHost;
 static int DnsGet(GetProc *getProc, Ns_DString *dsPtr,
-                  Ns_Cache *cache, char *key, int all);
+                  Ns_Cache *cache, const char *key, int all);
 
 #if !defined(HAVE_GETADDRINFO) && !defined(HAVE_GETNAMEINFO)
 static void LogError(char *func, int h_errnop);
@@ -144,25 +144,25 @@ NsConfigDNS(void)
  */
 
 int
-Ns_GetHostByAddr(Ns_DString *dsPtr, char *addr)
+Ns_GetHostByAddr(Ns_DString *dsPtr, const char *addr)
 {
     return DnsGet(GetHost, dsPtr, hostCache, addr, 0);
 }
 
 int
-Ns_GetAddrByHost(Ns_DString *dsPtr, char *host)
+Ns_GetAddrByHost(Ns_DString *dsPtr, const char *host)
 {
     return DnsGet(GetAddr, dsPtr, addrCache, host, 0);
 }
 
 int
-Ns_GetAllAddrByHost(Ns_DString *dsPtr, char *host)
+Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host)
 {
     return DnsGet(GetAddr, dsPtr, addrCache, host, 1);
 }
 
 static int
-DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
+DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, int all)
 {
     Ns_DString  ds;
     Ns_Time     time;
@@ -200,8 +200,8 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
                 Ns_GetTime(&endTime);
 		Ns_DiffTime(&endTime, &time, &diffTime);
                 Ns_IncrTime(&endTime, ttl, 0);
-                Ns_CacheSetValueExpires(entry, ns_strdup(ds.string), ds.length,
-                                        &endTime, 
+                Ns_CacheSetValueExpires(entry, ns_strdup(ds.string), 
+					(size_t)ds.length, &endTime, 
 					(int)(diffTime.sec * 1000000 + diffTime.usec));
             }
             Ns_CacheBroadcast(cache);
@@ -251,7 +251,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, char *key, int all)
 #if defined(HAVE_GETNAMEINFO)
 
 static int
-GetHost(Ns_DString *dsPtr, char *addr)
+GetHost(Ns_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
     char buf[NI_MAXHOST];
@@ -291,7 +291,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
 #elif defined(HAVE_GETHOSTBYADDR_R)
 
 static int
-GetHost(Ns_DString *dsPtr, char *addr)
+GetHost(Ns_DString *dsPtr, const char *addr)
 {
     struct hostent he, *hePtr;
     struct sockaddr_in sa;
@@ -322,7 +322,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
  */
 
 static int
-GetHost(Ns_DString *dsPtr, char *addr)
+GetHost(Ns_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
     static Ns_Cs cs;
@@ -351,7 +351,7 @@ GetHost(Ns_DString *dsPtr, char *addr)
 #if defined(HAVE_GETADDRINFO)
 
 static int
-GetAddr(Ns_DString *dsPtr, char *host)
+GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct addrinfo hints;
     struct addrinfo *res, *ptr;
@@ -388,7 +388,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
 #elif defined(HAVE_GETHOSTBYNAME_R)
 
 static int
-GetAddr(Ns_DString *dsPtr, char *host)
+GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct in_addr ia, *ptr;
     char buf[2048];
@@ -445,7 +445,7 @@ GetAddr(Ns_DString *dsPtr, char *host)
  */
 
 static int
-GetAddr(Ns_DString *dsPtr, char *host)
+GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct hostent *he;
     struct in_addr ia, *ptr;

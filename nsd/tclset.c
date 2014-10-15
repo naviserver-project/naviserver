@@ -110,14 +110,14 @@ Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, unsigned int flags)
  */
 
 Ns_Set *
-Ns_TclGetSet(Tcl_Interp *interp, char *id)
+Ns_TclGetSet(Tcl_Interp *interp, char *setId)
 {
     Ns_Set *set = NULL;
 
     assert(interp != NULL);
-    assert(id != NULL);
+    assert(setId != NULL);
 	
-    if (LookupInterpSet(interp, id, 0, &set) != TCL_OK) {
+    if (LookupInterpSet(interp, setId, 0, &set) != TCL_OK) {
         set = NULL;
     }
     return set;
@@ -141,13 +141,13 @@ Ns_TclGetSet(Tcl_Interp *interp, char *id)
  */
 
 int
-Ns_TclGetSet2(Tcl_Interp *interp, char *id, Ns_Set **setPtr)
+Ns_TclGetSet2(Tcl_Interp *interp, char *setId, Ns_Set **setPtr)
 {
     assert(interp != NULL);
-    assert(id != NULL);
+    assert(setId != NULL);
     assert(setPtr != NULL);
 
-    return LookupInterpSet(interp, id, 0, setPtr);
+    return LookupInterpSet(interp, setId, 0, setPtr);
 }
 
 
@@ -169,17 +169,17 @@ Ns_TclGetSet2(Tcl_Interp *interp, char *id, Ns_Set **setPtr)
  */
 
 int
-Ns_TclFreeSet(Tcl_Interp *interp, char *id)
+Ns_TclFreeSet(Tcl_Interp *interp, char *setId)
 {
     Ns_Set  *set = NULL;
 
     assert(interp != NULL);
-    assert(id != NULL);
+    assert(setId != NULL);
 
-    if (LookupInterpSet(interp, id, 1, &set) != TCL_OK) {
+    if (LookupInterpSet(interp, setId, 1, &set) != TCL_OK) {
         return TCL_ERROR;
     }
-    if (IS_DYNAMIC(id)) {
+    if (IS_DYNAMIC(setId)) {
         Ns_SetFree(set);
     }
     return TCL_OK;
@@ -207,7 +207,8 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
 {
     NsInterp        *itPtr = arg;
     Ns_Set          *set = NULL, *set2Ptr, **sets;
-    int              i, flags, opt;
+    int              i, opt;
+    unsigned int     flags;
     char            *key, *val, *def, *name, *split;
     Tcl_DString      ds;
     Tcl_HashTable   *tablePtr;
@@ -514,6 +515,7 @@ NsTclSetObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             }
             key = Tcl_GetString(objv[3]);
             val = Tcl_GetString(objv[4]);
+	    i = 0;
 
             switch (opt) {
             case SUpdateIdx:

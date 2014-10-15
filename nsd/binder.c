@@ -37,12 +37,13 @@
 #include "nsd.h"
 
 #ifndef _WIN32
-#include <sys/un.h>
-#include <sys/uio.h>
+# include <sys/un.h>
+# include <sys/uio.h>
+
+# define REQUEST_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + 64)
+# define RESPONSE_SIZE (sizeof(int))
 #endif
 
-#define REQUEST_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + 64)
-#define RESPONSE_SIZE (sizeof(int))
 
 /*
  * Local variables defined in this file
@@ -61,9 +62,10 @@ static int binderResponse[2] = { -1, -1 };
 /*
  * Local functions defined in this file
  */
-
+#ifndef _WIN32
 static void PreBind(char *line);
 static void Binder(void);
+#endif
 
 
 /*

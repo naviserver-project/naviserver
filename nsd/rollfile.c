@@ -44,8 +44,8 @@ typedef struct File {
  * Local functions defined in this file.
  */
 
-static int MatchFiles(CONST char *file, File **files);
-static int CmpFile(const void *p1, const void *p2);
+static int MatchFiles(CONST char *fileName, File **files);
+static int CmpFile(const void *arg1, const void *arg2);
 static int Rename(CONST char *from, CONST char *to);
 static int Exists(CONST char *file);
 static int Unlink(CONST char *file);
@@ -206,7 +206,7 @@ Ns_PurgeFiles(CONST char *file, int max)
     if (nfiles > 0) {
         int ii;
 
-        for (ii = 0, fiPtr = files + ii; ii < nfiles; ii++, fiPtr++) {
+        for (ii = 0, fiPtr = files; ii < nfiles; ii++, fiPtr++) {
             Tcl_DecrRefCount(fiPtr->path);
         }
         ns_free(files);
@@ -236,7 +236,7 @@ Ns_PurgeFiles(CONST char *file, int max)
  */
 
 static int
-MatchFiles(CONST char *filename, File **files)
+MatchFiles(CONST char *fileName, File **files)
 {
     Tcl_Obj          *path, *pathElems, *parent, *patternObj;
     Tcl_Obj          *matched, **matchElems;
@@ -249,7 +249,7 @@ MatchFiles(CONST char *filename, File **files)
      * Obtain fully qualified path of the passed filename
      */
 
-    path = Tcl_NewStringObj(filename, -1);
+    path = Tcl_NewStringObj(fileName, -1);
     Tcl_IncrRefCount(path);
     if (Tcl_FSGetNormalizedPath(NULL, path) == NULL) {
         Tcl_DecrRefCount(path);

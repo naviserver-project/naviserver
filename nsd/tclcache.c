@@ -171,7 +171,7 @@ NsTclCacheEvalObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     Ns_ObjvSpec opts[] = {
         {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
         {"-expires", Ns_ObjvTime,  &expPtr,     NULL},
-        {"-force",   Ns_ObjvBool,  &force,      (void *) NS_TRUE},
+        {"-force",   Ns_ObjvBool,  &force,      INT2PTR(NS_TRUE)},
         {"--",       Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -403,7 +403,7 @@ CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
  */
 
 int
-NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
+NsTclCacheNamesObjCmd(ClientData arg, Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     NsInterp       *itPtr = arg;
     NsServer       *servPtr = itPtr->servPtr;
@@ -466,7 +466,7 @@ NsTclCacheKeysObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONS
     int             exact = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-exact",   Ns_ObjvBool,  &exact,     (void *) NS_TRUE},
+        {"-exact",   Ns_ObjvBool,  &exact,     INT2PTR(NS_TRUE)},
         {"--",       Ns_ObjvBreak, NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -548,7 +548,7 @@ NsTclCacheFlushObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     int             i, nflushed = 0, glob = NS_FALSE, npatterns = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-glob",    Ns_ObjvBool,  &glob, (void *) NS_TRUE},
+        {"-glob",    Ns_ObjvBool,  &glob, INT2PTR(NS_TRUE)},
         {"--",       Ns_ObjvBreak, NULL,  NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -691,8 +691,8 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
     int             contents = NS_FALSE, reset = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-contents", Ns_ObjvBool,  &contents, (void *) NS_TRUE},
-        {"-reset",    Ns_ObjvBool,  &reset,    (void *) NS_TRUE},
+        {"-contents", Ns_ObjvBool,  &contents, INT2PTR(NS_TRUE)},
+        {"-reset",    Ns_ObjvBool,  &reset,    INT2PTR(NS_TRUE)},
         {"--",        Ns_ObjvBreak, NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };

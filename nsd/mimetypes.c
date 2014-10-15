@@ -848,15 +848,15 @@ NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  */
 
 void
-NsGetMimeTypes(Ns_DString *dest)
+NsGetMimeTypes(Ns_DString *dsPtr)
 {
     Tcl_HashSearch  search;
     Tcl_HashEntry  *hPtr;
 
     hPtr = Tcl_FirstHashEntry(&types, &search);
     while (hPtr != NULL) {
-        Tcl_DStringAppendElement(dest, Tcl_GetHashKey(&types, hPtr));
-        Tcl_DStringAppendElement(dest, Tcl_GetHashValue(hPtr));
+        Tcl_DStringAppendElement(dsPtr, Tcl_GetHashKey(&types, hPtr));
+        Tcl_DStringAppendElement(dsPtr, Tcl_GetHashValue(hPtr));
         hPtr = Tcl_NextHashEntry(&search);
     }
 }

@@ -129,7 +129,7 @@ int
 Ns_DbRegisterDriver(char *driver, Ns_DbProc *procs)
 {
     Tcl_HashEntry *hPtr;
-    DbDriver *driverPtr = NULL;
+    DbDriver *driverPtr;
 
     hPtr = Tcl_FindHashEntry(&driversTable, driver);
     if (hPtr == NULL) {

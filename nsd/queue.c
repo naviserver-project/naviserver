@@ -530,7 +530,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     NsInterp    *itPtr = arg;
     NsServer    *servPtr;
     ConnPool    *poolPtr;
-    char        *pool = NULL, *optArg = NULL, buf[100];
+    char        *pool, *optArg = NULL, buf[100];
     Tcl_DString ds, *dsPtr = &ds;
 
     static const char *subcmds[] = {
@@ -673,7 +673,7 @@ NsTclServerObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
         break;
 
     case STcllibIdx:
-        Tcl_SetResult(interp, servPtr->tcl.library, TCL_STATIC);
+      Tcl_SetResult(interp, (char *)servPtr->tcl.library, TCL_STATIC);
         break;
 
     case SUrl2fileIdx:

@@ -97,12 +97,12 @@ typedef struct LogCache {
  */
 
 static int   LogOpen(void);
-static void  LogFlush(LogCache *cachePtr, LogFilter *list, int cnt,
-                      int trunc, int lock) NS_GNUC_NONNULL(1);
+static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
+                      int trunc, int locked) NS_GNUC_NONNULL(1);
 static char* LogTime(LogCache *cachePtr, Ns_Time *timePtr, int gmt);
 
 static int GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-                              void **addrPtr);
+                              void **addrPtrPtr);
 
 static LogCache* GetCache(void);
 static Ns_TlsCleanup FreeCache;
@@ -184,7 +184,7 @@ NsInitLog(void)
     Tcl_InitHashTable(&severityTable, TCL_STRING_KEYS);
 
     Tcl_SetPanicProc(Panic);
-    Ns_AddLogFilter(LogToFile, (void *) STDERR_FILENO, NULL);
+    Ns_AddLogFilter(LogToFile, INT2PTR(STDERR_FILENO), NULL);
 
     /*
      * Initialise the entire space with backwards-compatible integer keys.
@@ -501,7 +501,7 @@ Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
  */
 
 void
-Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *free)
+Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *freeProc)
 {
     LogFilter *filterPtr = ns_calloc(1, sizeof *filterPtr);
 
@@ -519,7 +519,7 @@ Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *free)
 
     filterPtr->proc = proc;
     filterPtr->arg  = arg;
-    filterPtr->free = free;
+    filterPtr->free = freeProc;
 
     Ns_MutexUnlock(&lock);
 }
@@ -946,7 +946,7 @@ NsTclLogCtlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
 int
 NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
-		   int UNUSED(objc), Tcl_Obj *CONST UNUSED(objv[]))
+		   int UNUSED(objc), Tcl_Obj *CONST* UNUSED(objv))
 {
     if (Ns_LogRoll() != NS_OK) {
         Tcl_SetResult(interp, "could not roll server log", TCL_STATIC);
@@ -1053,15 +1053,15 @@ NsLogOpen(void)
 static int
 LogOpen(void)
 {
-    int fd, flags, status = NS_OK;
+    int fd, oflags, status = NS_OK;
 
-    flags = O_WRONLY | O_APPEND | O_CREAT;
+    oflags = O_WRONLY | O_APPEND | O_CREAT;
 
 #ifdef O_LARGEFILE
-    flags |= O_LARGEFILE;
+    oflags |= O_LARGEFILE;
 #endif
 
-    fd = open(file, flags, 0644);
+    fd = open(file, oflags, 0644);
     if (fd == -1) {
     	Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
                file, strerror(errno));
@@ -1152,7 +1152,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, int trunc, int locke
                      * eventually gets written into some log sink, so we
                      * use the default logfile sink.
                      */
-                    LogToFile((void*)STDERR_FILENO, ePtr->severity,
+                    LogToFile(INT2PTR(STDERR_FILENO), ePtr->severity,
                               &ePtr->stamp, log, ePtr->length);
                     break;
                 }
@@ -1271,12 +1271,12 @@ static int
 LogToFile(void *arg, Ns_LogSeverity severity, Ns_Time *stamp,
           char *msg, size_t len)
 {
-    int        fd = (int)(intptr_t) arg;
+    int        fd = PTR2INT(arg);
     Ns_DString ds;
 
     Ns_DStringInit(&ds);
 
-    LogToDString((void*)&ds, severity, stamp, msg, len);      
+    LogToDString(&ds, severity, stamp, msg, len);      
     NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
     Ns_DStringFree(&ds);
@@ -1315,7 +1315,7 @@ LogToTcl(void *arg, Ns_LogSeverity severity, Ns_Time *stampPtr,
 {
     int             ii, ret;
     char            c;
-    void           *logfile = (void *)STDERR_FILENO;
+    void           *logfile = INT2PTR(STDERR_FILENO);
     Tcl_Obj        *stamp;
     Ns_DString      ds;
     Tcl_Interp     *interp;

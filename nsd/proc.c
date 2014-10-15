@@ -64,22 +64,22 @@ static struct proc {
     char        *desc;
     Ns_ArgProc  *argProc;
 } procs[] = {
-    {                NsTclThread,          "ns:tclthread",        NsTclThreadArgProc},
-    {                Ns_TclCallbackProc,   "ns:tclcallback",      Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclConnLocation,    "ns:tclconnlocation",  Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclSchedProc,       "ns:tclschedproc",     Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclServerRoot,      "ns:tclserverroot",    Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclSockProc,        "ns:tclsockcallback",  NsTclSockArgProc},
-    {                NsConnThread,         "ns:connthread",       NsConnArgProc},
-    { (Ns_Callback *)NsTclFilterProc,      "ns:tclfilter",        Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
-    { (Ns_Callback *)NsTclRequestProc,     "ns:tclrequest",       Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsAdpPageProc,        "ns:adppage",          NsAdpPageArgProc},
-    { (Ns_Callback *)Ns_FastPathProc,      "ns:fastget",          NULL},
-    { (Ns_Callback *)NsTclTraceProc,       "ns:tcltrace",         Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclUrl2FileProc,    "ns:tclurl2file",      Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsMountUrl2FileProc,  "ns:mounturl2file",    NsMountUrl2FileArgProc},
-    { (Ns_Callback *)Ns_FastUrl2FileProc,  "ns:fasturl2file",     ServerArgProc},
+    {                &NsTclThread,          "ns:tclthread",        &NsTclThreadArgProc},
+    {                &Ns_TclCallbackProc,   "ns:tclcallback",      &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsTclConnLocation,    "ns:tclconnlocation",  &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsTclSchedProc,       "ns:tclschedproc",     &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsTclServerRoot,      "ns:tclserverroot",    &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsTclSockProc,        "ns:tclsockcallback",  &NsTclSockArgProc},
+    {                &NsConnThread,         "ns:connthread",       &NsConnArgProc},
+    { (Ns_Callback *)&NsTclFilterProc,      "ns:tclfilter",        &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
+    { (Ns_Callback *)&NsTclRequestProc,     "ns:tclrequest",       &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsAdpPageProc,        "ns:adppage",          &NsAdpPageArgProc},
+    { (Ns_Callback *)&Ns_FastPathProc,      "ns:fastget",          NULL},
+    { (Ns_Callback *)&NsTclTraceProc,       "ns:tcltrace",         &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsTclUrl2FileProc,    "ns:tclurl2file",      &Ns_TclCallbackArgProc},
+    { (Ns_Callback *)&NsMountUrl2FileProc,  "ns:mounturl2file",    &NsMountUrl2FileArgProc},
+    { (Ns_Callback *)&Ns_FastUrl2FileProc,  "ns:fasturl2file",     &ServerArgProc},
     {NULL, NULL, NULL}
 };
 

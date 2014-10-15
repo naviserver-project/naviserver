@@ -30,7 +30,7 @@
 
 #include "nsd.h"
 
-#define VALUE_SUPPLIED ((void *) NS_TRUE)
+#define VALUE_SUPPLIED (INT2PTR(NS_TRUE))
 
 
 /*
@@ -45,8 +45,8 @@ static Tcl_SetFromAnyProc      SetSpecFromAny;
 static Ns_ObjvProc ObjvTcl;
 static Ns_ObjvProc ObjvTclArgs;
 
-static void FreeSpecs(Ns_ObjvSpec *optSpec);
-static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valObjPtr);
+static void FreeSpecs(Ns_ObjvSpec *specPtr);
+static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valObj);
 static void WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
 static int GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr);
 
@@ -739,7 +739,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
 int
 Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
-	     int *UNUSED(objcPtr), Tcl_Obj *CONST UNUSED(objv[]))
+	     int *UNUSED(objcPtr), Tcl_Obj *CONST* UNUSED(objv))
 {
     return TCL_BREAK;
 }
@@ -763,7 +763,7 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
 
 int
 Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp),
-            int *objcPtr, Tcl_Obj *CONST UNUSED(objv[]))
+            int *objcPtr, Tcl_Obj *CONST* UNUSED(objv))
 {
     *((int *) spec->dest) = *objcPtr;
     *objcPtr = 0;

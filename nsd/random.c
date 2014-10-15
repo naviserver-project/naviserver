@@ -272,7 +272,7 @@ TrueRand(void)
 static unsigned long
 Roulette(void)
 {
-    static unsigned long ocount, randbuf;
+    static unsigned long ocount = 0, randbuf = 0;
     struct timeval tv;
 
     counter = 0;
