@@ -1340,7 +1340,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     Ns_RWLockWrLock(&servPtr->lock);
     permPtr = Ns_UrlSpecificGet(servPtr->server, method, url, uskey);
     if (permPtr != NULL) {
-        Ns_UrlSpecificDestroy(servPtr->server, method, url, uskey, NS_OP_RECURSE);
+        Ns_UrlSpecificDestroy(servPtr->server, method, url, uskey, flags);
         ns_free(permPtr->baseurl);
         Tcl_DeleteHashTable(&permPtr->allowuser);
         Tcl_DeleteHashTable(&permPtr->denyuser);
