@@ -516,8 +516,8 @@ NsTclJobObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* obj
             char *script = NULL;
 
             Ns_ObjvSpec lopts[] = {
-                {"-head",      Ns_ObjvBool,    &head,     (void *) 1},
-                {"-detached",  Ns_ObjvBool,    &jobType,  (void *) JOB_DETACHED},
+                {"-head",      Ns_ObjvBool,    &head,     INT2PTR(1)},
+                {"-detached",  Ns_ObjvBool,    &jobType,  INT2PTR(JOB_DETACHED)},
                 {"-jobid",     Ns_ObjvString,  &jobId,    NULL},
                 {NULL, NULL, NULL, NULL}
             };

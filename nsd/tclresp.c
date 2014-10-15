@@ -80,7 +80,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     char     *type = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-binary", Ns_ObjvBool,  &binary, (void *) NS_TRUE},
+        {"-binary", Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -320,7 +320,7 @@ NsTclReturnObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* 
     int      status, len, result, binary = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-binary",  Ns_ObjvBool, &binary, (void *) NS_TRUE},
+        {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {

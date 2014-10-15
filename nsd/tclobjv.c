@@ -30,7 +30,7 @@
 
 #include "nsd.h"
 
-#define VALUE_SUPPLIED ((void *) NS_TRUE)
+#define VALUE_SUPPLIED (INT2PTR(NS_TRUE))
 
 
 /*

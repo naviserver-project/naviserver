@@ -213,11 +213,12 @@ int
 NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
     char         *method, *url, *file = NULL;
-    unsigned int rflags = 0, aflags = 0;
+    int           noinherit = 0;
+    unsigned int  aflags, rflags = 0U;
     Ns_Time     *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &rflags,     (void *) NS_OP_NOINHERIT},
+        {"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
         {"-expires",   Ns_ObjvTime,  &expiresPtr, NULL},
         {"-options",   Ns_ObjvFlags, &aflags,     adpOpts},
         {"--",         Ns_ObjvBreak, NULL,        NULL},
@@ -232,18 +233,19 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    return RegisterPage(arg, method, url, file,
-                        expiresPtr, rflags, aflags);
+    if (noinherit) {rflags |= NS_OP_NOINHERIT;}
+    return RegisterPage(arg, method, url, file, expiresPtr, rflags, aflags);
 }
 
 int
 NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    unsigned int rflags = 0;
+    int          noinherit = 0;
+    unsigned int rflags = 0U;
     char        *method, *url, *file = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &rflags, (void *) NS_OP_NOINHERIT},
+        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -256,8 +258,8 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    return RegisterPage(arg, method, url, file,
-                        NULL, rflags, ADP_TCLFILE);
+    if (noinherit) {rflags |= NS_OP_NOINHERIT;}
+    return RegisterPage(arg, method, url, file, NULL, rflags, ADP_TCLFILE);
 }
 
 static int

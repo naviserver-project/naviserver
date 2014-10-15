@@ -835,7 +835,7 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     int timeout = 0, signal = NS_SIGTERM;
 
     Ns_ObjvSpec opts[] = {
-        {"-restart", Ns_ObjvBool,  &signal, (void *) NS_SIGINT},
+        {"-restart", Ns_ObjvBool,  &signal, INT2PTR(NS_SIGINT)},
         {"--",       Ns_ObjvBreak, NULL,    NULL},
         {NULL,       NULL,         NULL,    NULL}
     };

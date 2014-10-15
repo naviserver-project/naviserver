@@ -427,7 +427,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     int      nocomplain = 0, result = TCL_OK;
 
     Ns_ObjvSpec opts[] = {
-        {"-nocomplain", Ns_ObjvBool,  &nocomplain, (void *) 1},
+        {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(1)},
         {"--",          Ns_ObjvBreak, NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };

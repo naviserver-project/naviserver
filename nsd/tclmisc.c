@@ -103,7 +103,7 @@ NsTclRunOnceObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     static int            initialized = NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-global", Ns_ObjvBool,  &global, (void *) NS_TRUE},
+        {"-global", Ns_ObjvBool,  &global, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };

@@ -811,7 +811,7 @@ NsBsearch (register const void *key, register const void *base,
         } else
             nmemb >>= 1;
     }
-    return (void *)NULL;
+    return NULL;
 }
 #endif
 

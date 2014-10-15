@@ -529,7 +529,7 @@ HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
         {"-status",     Ns_ObjvObj,    &statusVarPtr,  NULL},
         {"-file",       Ns_ObjvObj,    &fileVarPtr,    NULL},
         {"-spoolsize",  Ns_ObjvInt,    &spoolLimit,    NULL},
-        {"-decompress", Ns_ObjvBool,   &decompress,    (void *)NS_TRUE},
+        {"-decompress", Ns_ObjvBool,   &decompress,    INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {

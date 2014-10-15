@@ -300,7 +300,7 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     int              remain = 0, when = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-first", Ns_ObjvBool,  &when, (void *) NS_FILTER_FIRST},
+        {"-first", Ns_ObjvBool,  &when, INT2PTR(NS_FILTER_FIRST)},
         {"--",     Ns_ObjvBreak, NULL,   NULL},
         {NULL, NULL, NULL, NULL}
     };

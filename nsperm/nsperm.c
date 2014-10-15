@@ -720,9 +720,9 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     int isNew, i, nargs = 0, allow = 0, deny = 0, clear = 0;
 
     Ns_ObjvSpec opts[] = {
-        {"-allow", Ns_ObjvBool, &allow, (void *) NS_TRUE},
-        {"-deny", Ns_ObjvBool, &deny, (void *) NS_TRUE},
-        {"-clear", Ns_ObjvBool, &clear, (void *) NS_TRUE},
+        {"-allow", Ns_ObjvBool, &allow, INT2PTR(NS_TRUE)},
+        {"-deny", Ns_ObjvBool, &deny, INT2PTR(NS_TRUE)},
+        {"-clear", Ns_ObjvBool, &clear, INT2PTR(NS_TRUE)},
         {"-salt", Ns_ObjvString, &salt, NULL},
         {"--", Ns_ObjvBreak, NULL, NULL},
         {NULL, NULL, NULL, NULL}
@@ -1210,14 +1210,15 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_
 
 static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv, int allow, int user)
 {
-    Server *servPtr = data;
-    Perm *permPtr;
-    Ns_DString base;
-    char *method, *url;
-    int i, isNew, flags = 0, nargs = 0;
+    Server      *servPtr = data;
+    Perm        *permPtr;
+    Ns_DString   base;
+    char        *method, *url;
+    int          i, isNew, noinherit = 0, nargs = 0;
+    unsigned int flags = 0U;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,   &flags,  (void *) NS_OP_NOINHERIT},
+        {"-noinherit", Ns_ObjvBool,   &flags,  INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1230,6 +1231,7 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+    if (noinherit) {flags |= NS_OP_NOINHERIT;}
 
     /*
      * Construct the base url.
@@ -1301,14 +1303,15 @@ static int AllowDenyObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
 
 static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *CONST* objv)
 {
-    Server *servPtr = data;
-    Perm *permPtr;
-    Ns_DString base;
-    char *method, *url;
-    int flags = NS_OP_RECURSE;
+    Server      *servPtr = data;
+    Perm        *permPtr;
+    Ns_DString   base;
+    char        *method, *url;
+    int          noinherit = 0;
+    unsigned int flags = NS_OP_RECURSE;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool, &flags, (void *) NS_OP_NOINHERIT},
+        {"-noinherit", Ns_ObjvBool, &noinherit, INT2PTR(NS_TRUE)},
         {"--", Ns_ObjvBreak, NULL, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1321,6 +1324,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
+    if (noinherit) {flags |= NS_OP_NOINHERIT;}
 
     /*
      * Construct the base url.
