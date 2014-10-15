@@ -353,17 +353,17 @@ encrypt_private(struct sched *sp, char *block, int edflag)
          */
         for (j = 0; j < 8; j++) {
             t = 6 * j;
-            k = S[j][(preS[t + 0] << 5) +
+            k = S[j][(preS[t] << 5) +
                 (preS[t + 1] << 3) +
                 (preS[t + 2] << 2) +
                 (preS[t + 3] << 1) +
-                (preS[t + 4] << 0) +
+                (preS[t + 4]     ) +
                 (preS[t + 5] << 4)];
             t = 4 * j;
-            f[t + 0] = (k >> 3) & 1U;
+            f[t    ] = (k >> 3) & 1U;
             f[t + 1] = (k >> 2) & 1U;
             f[t + 2] = (k >> 1) & 1U;
-            f[t + 3] = (k >> 0) & 1U;
+            f[t + 3] = (k     ) & 1U;
         }
 
         /*
