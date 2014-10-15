@@ -48,7 +48,7 @@
 #define PTHREAD_TEST 1
 #endif
 
-extern void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+extern NS_IMPORT void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 /*
  * Collection of synchronization objects for tests.
