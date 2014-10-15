@@ -1996,7 +1996,7 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
  */
 
 NS_EXTERN void
-Ns_RegisterProcInfo(Ns_Callback procAddr, char *desc, Ns_ArgProc *argProc)
+Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void

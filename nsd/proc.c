@@ -43,7 +43,7 @@
 
 typedef struct Info {
     Ns_ArgProc  *proc;
-    char        *desc;
+    const char  *desc;
 } Info;
 
 /*
@@ -61,7 +61,7 @@ static Tcl_HashTable info;
 
 static struct proc {
     Ns_Callback *procAddr;
-    char        *desc;
+    const char  *desc;
     Ns_ArgProc  *argProc;
 } procs[] = {
     {                NsTclThread,          "ns:tclthread",        NsTclThreadArgProc},
@@ -134,7 +134,7 @@ NsInitProcInfo(void)
  */
 
 void
-Ns_RegisterProcInfo(Ns_Callback procAddr, char *desc, Ns_ArgProc *argProc)
+Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
 {
     Tcl_HashEntry *hPtr;
     Info          *iPtr;
