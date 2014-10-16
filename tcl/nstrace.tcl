@@ -120,12 +120,16 @@ ns_runonce {
         variable enabled    0     ; # True if trace is enabled
         variable config           ; # Array with config options
         variable epoch     -1     ; # The initialization epoch
-        
+
+        # The 'namespace ensemble' command does not exist in Tcl 8.4, it is
+        # only in Tcl 8.5 and later:
+        variable no_ensemble_cmd_p  [catch { namespace ensemble exists foo }]
+
         # Private namespaces
         namespace eval resolve "" ; # Commands for resolving commands
         namespace eval trace   "" ; # Commands registered for tracing
         namespace eval script  "" ; # Commands for generating scripts
-        
+
         # Exported commands
         namespace export unknown
 
@@ -668,7 +672,11 @@ ns_runonce {
 	# helper proc for ensemble serialization
 	# 
 
-	proc _getensemble {cmd} {
+        if { $no_ensemble_cmd_p } {
+            proc _getensemble {cmd} {
+                # Do nothing.
+            }
+        } else { proc _getensemble {cmd} {
 	    if {[namespace ensemble exists $cmd]} {
 		set _cfg [namespace ensemble configure $cmd]
 		set _enns [dict get $_cfg -namespace]
@@ -676,7 +684,7 @@ ns_runonce {
 		set _encmd [list ::nstrace::_create_or_config_ensemble $cmd $_cfg]
 		return [list namespace eval $_enns $_encmd]\n
 	    }
-	}
+	}}
 
         #
         # Generates scipts to re-generate namespace definition.
