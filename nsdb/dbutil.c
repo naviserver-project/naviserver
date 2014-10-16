@@ -61,13 +61,16 @@
  */
 
 void
-Ns_DbQuoteValue(Ns_DString *pds, char *string)
+Ns_DbQuoteValue(Ns_DString *dsPtr, char *string)
 {
+    assert(dsPtr != NULL);
+    assert(string != NULL);
+
     while (*string != '\0') {
         if (*string == '\'') {
-            Ns_DStringNAppend(pds, "'", 1);
+            Ns_DStringNAppend(dsPtr, "'", 1);
         }
-        Ns_DStringNAppend(pds, string, 1);
+        Ns_DStringNAppend(dsPtr, string, 1);
         ++string;
     }
 }
@@ -97,6 +100,10 @@ Ns_Set *
 Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)
 {
     Ns_Set *row;
+
+    assert(handle != NULL);
+    assert(sql != NULL);
+    assert(nrows != NULL);
 
     row = Ns_DbSelect(handle, sql);
     if (row != NULL) {
@@ -151,6 +158,9 @@ Ns_Db1Row(Ns_DbHandle *handle, char *sql)
     Ns_Set         *row;
     int             nrows;
 
+    assert(handle != NULL);
+    assert(sql != NULL);
+
     row = Ns_Db0or1Row(handle, sql, &nrows);
     if (row != NULL) {
         if (nrows != 1) {
@@ -189,6 +199,9 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
     Ns_DString      dsSql;
     int             i, status, inquote;
     char            c, lastc;
+
+    assert(handle != NULL);
+    assert(filename != NULL);
 
     fp = fopen(filename, "rt");
     if (fp == NULL) {
@@ -297,6 +310,10 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, char *filename)
 void
 Ns_DbSetException(Ns_DbHandle *handle, char *code, char *msg)
 {
+    assert(handle != NULL);
+    assert(code != NULL);
+    assert(msg != NULL);
+
     strcpy(handle->cExceptionCode, code);
     Ns_DStringFree(&(handle->dsExceptionMsg));
     Ns_DStringAppend(&(handle->dsExceptionMsg), msg);

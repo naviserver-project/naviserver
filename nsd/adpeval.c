@@ -102,7 +102,7 @@ static int AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
                    AdpCode *codePtr, Objs *objsPtr, Tcl_DString *outputPtr,
                    struct stat *stPtr);
 static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
-                     Ns_Time *ttlPtr, Tcl_DString *outputPtr);
+                     const Ns_Time *expiresPtr, Tcl_DString *outputPtr);
 static int AdpDebug(NsInterp *itPtr, char *ptr, int len, int nscript);
 static void DecrCache(AdpCache *cachePtr);
 static Objs *AllocObjs(int nobjs);
@@ -280,7 +280,7 @@ AdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar)
  */
 
 int
-NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file, Ns_Time *expiresPtr)
+NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file, const Ns_Time *expiresPtr)
 {
     Ns_DString *outputPtr;
 
@@ -390,7 +390,7 @@ NsAdpReset(NsInterp *itPtr)
 
 static int
 AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
-          Ns_Time *ttlPtr, Tcl_DString *outputPtr)
+          const Ns_Time *expiresPtr, Tcl_DString *outputPtr)
 {
     NsServer       *servPtr = itPtr->servPtr;
     Tcl_Interp     *interp = itPtr->interp;
@@ -550,7 +550,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
 	int   cacheGen = 0;
 
         pagePtr = ipagePtr->pagePtr;
-        if (ttlPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {
+        if (expiresPtr == NULL || !(itPtr->adp.flags & ADP_CACHE)) {
             cachePtr = NULL;
         } else {
 
@@ -611,7 +611,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *file,
                     NsAdpParse(&cachePtr->code, itPtr->servPtr, tmp.string,
                                itPtr->adp.flags & ~ADP_TCLFILE, file);
                     Ns_GetTime(&cachePtr->expires);
-                    Ns_IncrTime(&cachePtr->expires, ttlPtr->sec, ttlPtr->usec);
+                    Ns_IncrTime(&cachePtr->expires, expiresPtr->sec, expiresPtr->usec);
                     cachePtr->refcnt = 1;
                 }
                 Ns_DStringTrunc(&tmp, 0);

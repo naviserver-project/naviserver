@@ -372,7 +372,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      * Allocate a new driver instance and set configurable parameters.
      */
 
-    drvPtr = ns_calloc(1, sizeof(Driver));
+    drvPtr = ns_calloc(1U, sizeof(Driver));
     Ns_MutexInit(&drvPtr->lock);
     Ns_MutexSetName2(&drvPtr->lock, "ns:drv", module);
 
@@ -513,7 +513,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                "for uploads >= %" TCL_LL_MODIFIER "d bytes", module,
                spPtr->threads, drvPtr->readahead);
         for (i = 0; i < spPtr->threads; i++) {
-            SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
+            SpoolerQueue *queuePtr = ns_calloc(1U, sizeof(SpoolerQueue));
             char buffer[100];
 
 	    sprintf(buffer,"ns:driver:spooler:%d",i);
@@ -543,7 +543,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
                module, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->streaming);
         for (i = 0; i < wrPtr->threads; i++) {
-            SpoolerQueue *queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
+            SpoolerQueue *queuePtr = ns_calloc(1U, sizeof(SpoolerQueue));
             char buffer[100];
 
 	    sprintf(buffer,"ns:driver:writer:%d",i);
@@ -735,7 +735,7 @@ NsStopSpoolers(void)
  */
 void
 NsWakeupDriver(Driver *drvPtr) {
-    assert(drvPtr);
+    assert(drvPtr != NULL);
     SockTrigger(drvPtr->trigger[1]);
 }
 
@@ -1654,7 +1654,7 @@ SockPrepare(Sock *sockPtr)
     }
     Ns_MutexUnlock(&reqLock);
     if (reqPtr == NULL) {
-        reqPtr = ns_calloc(1, sizeof(Request));
+        reqPtr = ns_calloc(1U, sizeof(Request));
         Tcl_DStringInit(&reqPtr->buffer);
         reqPtr->headers    = Ns_SetCreate(NULL);
     }
@@ -1792,7 +1792,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
 
     if (sockPtr == NULL) {
 	size_t sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
-        sockPtr = ns_calloc(1, sockSize);
+        sockPtr = ns_calloc(1U, sockSize);
         sockPtr->drvPtr = drvPtr;
     } else {
         sockPtr->tfd    = 0;
@@ -2248,7 +2248,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
      * begin of a request. This part is intended for async drivers.
      */
     if (sockPtr->acceptTime.sec == 0) {
-	assert(timePtr);
+	assert(timePtr != NULL);
 	/*fprintf(stderr, "SOCKREAD reset times "
 		" start %" PRIu64 ".%06ld"
 		" now %" PRIu64 ".%06ld\n",
@@ -3208,7 +3208,6 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
     assert(wrSockPtr != NULL);
 
-    assert(wrSockPtr);
     wrSockPtr->refCount --;
 
     Ns_Log(DriverDebug, "WriterSockRelease %p refCount %d", 
@@ -3931,12 +3930,12 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %" PRIdz,
 	   wrPtr->threads, nsend, wrPtr->maxsize);
 
-    assert(connPtr->poolPtr);
+    assert(connPtr->poolPtr != NULL);
     /* Ns_MutexLock(&connPtr->poolPtr->threads.lock); */
     connPtr->poolPtr->stats.spool++;
     /* Ns_MutexUnlock(&connPtr->poolPtr->threads.lock); */
 
-    wrSockPtr = (WriterSock *)ns_calloc(1, sizeof(WriterSock));
+    wrSockPtr = (WriterSock *)ns_calloc(1U, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
     wrSockPtr->sockPtr->timeout.sec = 0;
     wrSockPtr->flags = connPtr->flags;
@@ -4438,13 +4437,13 @@ NsAsyncWriterQueueEnable(void)
 	    /*
 	     * Allocate and initialize writer thread context.
 	     */
-	    asyncWriter = ns_calloc(1, sizeof(AsyncWriter));
+	    asyncWriter = ns_calloc(1U, sizeof(AsyncWriter));
 	    Ns_MutexUnlock(&reqLock);
 	    Ns_MutexSetName2(&asyncWriter->lock, "ns:driver","async-writer");
 	    /*
 	     * Allocate and initialize a Spooler Queue for this thread.
 	     */
-	    queuePtr = ns_calloc(1, sizeof(SpoolerQueue));
+	    queuePtr = ns_calloc(1U, sizeof(SpoolerQueue));
 	    Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer","queue");
 	    asyncWriter->firstPtr = queuePtr;
 	    /*
@@ -4458,9 +4457,9 @@ NsAsyncWriterQueueEnable(void)
     }
 
 
-    assert(asyncWriter);
+    assert(asyncWriter != NULL);
     queuePtr = asyncWriter->firstPtr;
-    assert(queuePtr);
+    assert(queuePtr != NULL);
 
     Ns_MutexLock(&queuePtr->lock);
     queuePtr->stopped = 0;
@@ -4489,7 +4488,7 @@ NsAsyncWriterQueueDisable(int shutdown)
 	SpoolerQueue *queuePtr = asyncWriter->firstPtr;
 	Ns_Time timeout;
 
-	assert(queuePtr);
+	assert(queuePtr != NULL);
 
 	Ns_GetTime(&timeout);
 	Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
@@ -4559,7 +4558,7 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
      * interface, we could free the memory block after writing, and
      * save a malloc/free operation on the data.
      */
-    newWdPtr = ns_calloc(1, sizeof(AsyncWriteData));
+    newWdPtr = ns_calloc(1U, sizeof(AsyncWriteData));
     newWdPtr->fd = fd;
     newWdPtr->bufsize = nbyte;
     newWdPtr->data = ns_malloc(nbyte + 1);
@@ -4572,7 +4571,7 @@ NsAsyncWrite(int fd, char *buffer, size_t nbyte)
      * cases, the queue will be empty.
      */
     queuePtr = asyncWriter->firstPtr;
-    assert(queuePtr);
+    assert(queuePtr != NULL);
 
     Ns_MutexLock(&queuePtr->lock);
     wdPtr = queuePtr->sockPtr;

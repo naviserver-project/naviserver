@@ -1422,7 +1422,7 @@ NS_EXTERN int NsAdpDebug(NsInterp *itPtr, char *host, char *port, char *procs);
 NS_EXTERN int NsAdpEval(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpSource(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, char *resvar);
 NS_EXTERN int NsAdpInclude(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv,
-			   char *file, Ns_Time *expiresPtr);
+			   char *file, const Ns_Time *expiresPtr);
 NS_EXTERN void NsAdpParse(AdpCode *codePtr, NsServer *servPtr, char *adp,
 			  unsigned int flags, CONST char* file);
 NS_EXTERN void NsAdpFreeCode(AdpCode *codePtr);

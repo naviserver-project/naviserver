@@ -48,8 +48,6 @@
 #define PTHREAD_TEST 1
 #endif
 
-extern NS_IMPORT void Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-
 /*
  * Collection of synchronization objects for tests.
  */
@@ -417,6 +415,7 @@ int main(int argc, char *argv[])
     pthread_t tids[10];
 #endif
 
+    Tcl_FindExecutable(argv[0]);
     Nsthreads_LibInit();
 
     Ns_ThreadSetName("-main-");

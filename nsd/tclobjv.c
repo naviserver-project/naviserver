@@ -692,7 +692,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
              Tcl_Obj *CONST* objv)
 {
     Ns_ObjvTable   *tablePtr = spec->arg;
-    int            *dest     = spec->dest;
+    unsigned int   *dest     = spec->dest;
     int             tableIdx, i, flagc;
     Tcl_Obj       **flagv;
 

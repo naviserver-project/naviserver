@@ -185,7 +185,7 @@ static void   FreeQueue(Queue *queue)
     NS_GNUC_NONNULL(1);
 
 static Job*   NewJob(CONST char* server, CONST char* queueName,
-                     int type, char *script)
+                     unsigned int type, char *script)
     NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(4) NS_GNUC_RETURNS_NONNULL;
 static void   FreeJob(Job *jobPtr)
     NS_GNUC_NONNULL(1);
@@ -1487,7 +1487,7 @@ FreeQueue(Queue *queue)
  */
 
 static Job*
-NewJob(CONST char* server, CONST char* queueName, int type, char *script)
+NewJob(CONST char* server, CONST char* queueName, unsigned int type, char *script)
 {
     Job *jobPtr;
 

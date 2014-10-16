@@ -442,7 +442,7 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
     if (!echo) {
 	send(sock, will_echo, 3U, 0);
 	send(sock, dont_echo, 3U, 0);
-	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+	recv(sock, (char *)buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     n = strlen(prompt);
     if (send(sock, prompt, (size_t)n, 0) != n) {
@@ -451,7 +451,7 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
     }
 
     do {
-	if ((n = recv(sock, buf, sizeof(buf), 0)) <= 0) {
+      if ((n = recv(sock, (char *)buf, sizeof(buf), 0)) <= 0) {
 	    result = 0;
 	    goto bail;
 	}
@@ -506,7 +506,7 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
     if (!echo) {
 	send(sock, wont_echo, 3, 0);
 	send(sock, do_echo, 3, 0);
-	recv(sock, buf, sizeof(buf), 0); /* flush client ack thingies */
+	recv(sock, (char *)buf, sizeof(buf), 0); /* flush client ack thingies */
     }
     return result;
 }

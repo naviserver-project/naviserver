@@ -52,12 +52,12 @@ typedef struct AdpRequest {
  * Static functions defined in this file.
  */
 
-static int RegisterPage(ClientData arg, CONST char *method, 
-			CONST char *url, CONST char *file, Ns_Time *expiresPtr, 
+static int RegisterPage(ClientData arg, const char *method, 
+			const char *url, const char *file, const Ns_Time *expiresPtr, 
 			unsigned int rflags, unsigned int aflags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, 
+static int PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, 
 		       unsigned int aflags)
     NS_GNUC_NONNULL(1);
 
@@ -118,7 +118,7 @@ Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr)
 }
 
 static int
-PageRequest(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr, unsigned int aflags)
+PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned int aflags)
 {
     Conn         *connPtr = (Conn *) conn;
     Tcl_Interp   *interp;
@@ -214,11 +214,11 @@ NsTclRegisterAdpObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 {
     char         *method, *url, *file = NULL;
     int           noinherit = 0;
-    unsigned int  aflags, rflags = 0U;
-    Ns_Time     *expiresPtr = NULL;
+    unsigned int  rflags = 0U, aflags = 0U;
+    Ns_Time      *expiresPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
+	{"-noinherit", Ns_ObjvBool,  &noinherit,  INT2PTR(NS_TRUE)},
         {"-expires",   Ns_ObjvTime,  &expiresPtr, NULL},
         {"-options",   Ns_ObjvFlags, &aflags,     adpOpts},
         {"--",         Ns_ObjvBreak, NULL,        NULL},
@@ -264,8 +264,8 @@ NsTclRegisterTclObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CO
 
 static int
 RegisterPage(ClientData arg,
-             CONST char *method, CONST char *url, CONST char *file,
-             Ns_Time *expiresPtr, unsigned int rflags, unsigned int aflags)
+             const char *method, const char *url, const char *file,
+             const Ns_Time *expiresPtr, unsigned int rflags, unsigned int aflags)
 {
     NsInterp   *itPtr = arg;
     AdpRequest *adp;
