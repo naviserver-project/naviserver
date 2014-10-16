@@ -429,10 +429,19 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 
     /*
      * Add the basic required headers if they.
+     *
+     * Earlier versions included 
+     *
+     *       "MIME-Version: 1.0\r\n"
+     *
+     * However, MIME_Version is a MIME header, not a HTTP header
+     * (allthough allowed in HTTP/1.1); it's only used when HTTP
+     * messages are moved over MIME-based protocols (e.g., SMTP),
+     * which is uncommon. The HTTP mime message parsing semantics are
+     * defined by this RFC 2616 and not any MIME specification.
      */
 
     Ns_DStringVarAppend(dsPtr,
-			"MIME-Version: 1.0\r\n"
 			"Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
 			"Date: ",
 			NULL);
