@@ -2475,7 +2475,7 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN size_t
-Ns_SumVec(struct iovec *bufs, int nbufs)
+Ns_SumVec(const struct iovec *bufs, int nbufs)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
@@ -2483,19 +2483,22 @@ Ns_SockPipe(NS_SOCKET socks[2]);
 
 NS_EXTERN int
 Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout);
+
 NS_EXTERN int
-Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr);
+Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr);
+
 NS_EXTERN ssize_t
-Ns_SockRecv(NS_SOCKET sock, void *bufs, size_t toWrite,
-	    Ns_Time *timeoutPtr);
+Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, Ns_Time *timeoutPtr);
+
 NS_EXTERN int
-Ns_SockSend(NS_SOCKET sock, void *bufs, size_t nsend,
-	    Ns_Time *timeoutPtr);
+Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, Ns_Time *timeoutPtr);
+
 NS_EXTERN ssize_t
 Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 		Ns_Time *timeoutPtr, unsigned int flags);
+
 NS_EXTERN ssize_t
-Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
+Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
 		Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
@@ -2504,7 +2507,7 @@ Ns_BindSock(struct sockaddr_in *saPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_SockBind);
 
 NS_EXTERN NS_SOCKET
-Ns_SockBind(struct sockaddr_in *saPtr);
+Ns_SockBind(const struct sockaddr_in *saPtr);
 
 NS_EXTERN NS_SOCKET
 Ns_SockListen(char *address, int port);
@@ -2541,7 +2544,7 @@ NS_EXTERN void
 Ns_SockSetDeferAccept(NS_SOCKET sock, int secs);
 
 NS_EXTERN int
-Ns_GetSockAddr(struct sockaddr_in *saPtr, char *host, int port);
+Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port);
 
 NS_EXTERN int
 Ns_SockCloseLater(NS_SOCKET sock);
@@ -2826,7 +2829,7 @@ Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_CtxString(unsigned char *digest, char *buf, int size)
+Ns_CtxString(const unsigned char *digest, char *buf, int size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*

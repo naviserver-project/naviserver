@@ -40,7 +40,7 @@
  * Local functions defined in this file
  */
 
-static int WordEndsInSemi(char *ip);
+static int WordEndsInSemi(const char *ip);
 
 static void shaByteSwap(uint32_t *dest, uint8_t const *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -458,13 +458,13 @@ NsTclHrefsCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, CONST
     while (((s = strchr(p, '<')) != NULL) && ((e = strchr(s, '>')) != NULL)) {
         ++s;
         *e = '\0';
-        while (*s && isspace(*s)) {
+        while (*s != '\0' && isspace(*s)) {
             ++s;
         }
         if ((*s == 'a' || *s == 'A') && isspace(s[1])) {
             ++s;
             while (*s) {
-                if (!strncasecmp(s, "href", 4)) {
+                if (!strncasecmp(s, "href", 4u)) {
                     s += 4;
                     while (*s && isspace(*s)) {
                         ++s;
@@ -576,7 +576,7 @@ NsTclHTUUDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     }
 
     string = Tcl_GetStringFromObj(objv[1], &len);
-    size = (size_t)len + 3;
+    size = (size_t)len + 3U;
     decoded = (unsigned char *)ns_malloc(size);
     size = Ns_HtuuDecode(string, decoded, size);
     decoded[size] = '\0';
@@ -633,7 +633,7 @@ NsTclCrashCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
  */
 
 static int
-WordEndsInSemi(char *ip)
+WordEndsInSemi(const char *ip)
 {
     if (ip == NULL) {
         return 0;
@@ -978,20 +978,20 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     uint8_t *p = (uint8_t *) ctx->key + i;	/* First unused byte */
 
     /* Set the first char of padding to 0x80. There is always room. */
-    *p++ = 0x80;
+    *p++ = (uint8_t)0x80;
 
     /* Bytes of padding needed to make 64 bytes (0..63) */
-    i = SHA_BLOCKBYTES - 1 - i;
+    i = SHA_BLOCKBYTES - 1U - i;
 
-    if (i < 8) {				/* Padding forces an extra block */
+    if (i < 8U) {				/* Padding forces an extra block */
         memset(p, 0, i);
-        shaByteSwap(ctx->key, (uint8_t *) ctx->key, 16);
+        shaByteSwap(ctx->key, (uint8_t *) ctx->key, 16U);
         SHATransform(ctx);
         p = (uint8_t *) ctx->key;
-        i = 64;
+        i = 64U;
     }
     memset(p, 0, i - 8);
-    shaByteSwap(ctx->key, (uint8_t *) ctx->key, 14);
+    shaByteSwap(ctx->key, (uint8_t *) ctx->key, 14U);
 
     /* Append length in bits and transform */
 #if HAVE64
@@ -1009,19 +1009,19 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
      */
     /*memcpy(digest, ctx->iv, sizeof(digest));*/
 
-    for (i = 0; i < SHA_HASHWORDS; i++) {
+    for (i = 0U; i < SHA_HASHWORDS; i++) {
 	uint32_t t = ctx->iv[i];
 
-        digest[i * 4 + 0] = (uint8_t) (t >> 24);
-        digest[i * 4 + 1] = (uint8_t) (t >> 16);
-        digest[i * 4 + 2] = (uint8_t) (t >> 8);
-        digest[i * 4 + 3] = (uint8_t) t;
+        digest[i * 4U     ] = (uint8_t) (t >> 24);
+        digest[i * 4U + 1U] = (uint8_t) (t >> 16);
+        digest[i * 4U + 2U] = (uint8_t) (t >> 8);
+        digest[i * 4U + 3U] = (uint8_t) t;
     }
 
     memset(ctx, 0, sizeof(Ns_CtxSHA1)); 			/* In case it's sensitive */
 }
 
-void Ns_CtxString(unsigned char *digest, char *buf, int size)
+void Ns_CtxString(const unsigned char *digest, char *buf, int size)
 {
     int i;
 
@@ -1198,8 +1198,8 @@ void Ns_CtxMD5Init(Ns_CtxMD5 *ctx)
     ctx->buf[2] = 0x98badcfeU;
     ctx->buf[3] = 0x10325476U;
 
-    ctx->bits[0] = 0;
-    ctx->bits[1] = 0;
+    ctx->bits[0] = 0U;
+    ctx->bits[1] = 0U;
 }
 
 /*
@@ -1225,7 +1225,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
     if (t) {
 	unsigned char *p = (unsigned char *) ctx->in + t;
 
-	t = 64 - t;
+	t = 64U - t;
 	if (len < t) {
 	    memcpy(p, buf, len);
 	    return;
@@ -1238,12 +1238,12 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, unsigned const char *buf, unsigned len)
     }
     /* Process data in 64-byte chunks */
 
-    while (len >= 64) {
-	memcpy(ctx->in, buf, 64);
+    while (len >= 64U) {
+	memcpy(ctx->in, buf, 64U);
 	byteReverse(ctx->in, 16);
 	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
 	buf += 64;
-	len -= 64;
+	len -= 64U;
     }
 
     /* Handle any remaining bytes of data. */
@@ -1266,23 +1266,23 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     /* Set the first char of padding to 0x80.  This is safe since there is
        always at least one byte free */
     p = ctx->in + count;
-    *p++ = 0x80;
+    *p++ = (unsigned char)0x80;
 
     /* Bytes of padding needed to make 64 bytes */
-    count = 64 - 1 - count;
+    count = 64U - 1U - count;
 
     /* Pad out to 56 mod 64 */
-    if (count < 8) {
+    if (count < 8U) {
 	/* Two lots of padding:  Pad the first block to 64 bytes */
 	memset(p, 0, count);
 	byteReverse(ctx->in, 16);
 	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
 
 	/* Now fill the next block with 56 bytes */
-	memset(ctx->in, 0, 56);
+	memset(ctx->in, 0, 56U);
     } else {
 	/* Pad block to 56 bytes */
-	memset(p, 0, count - 8);
+	memset(p, 0, count - 8U);
     }
     byteReverse(ctx->in, 14);
 
@@ -1292,7 +1292,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
 
     MD5Transform(ctx->buf, (uint32_t *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
-    memcpy(digest, ctx->buf, 16);
+    memcpy(digest, ctx->buf, 16U);
     memset(ctx, 0, sizeof(Ns_CtxMD5));	/* In case it's sensitive */
 }
 

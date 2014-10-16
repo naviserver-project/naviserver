@@ -80,10 +80,10 @@ static Ns_SockProc CloseLater;
  */
 
 size_t
-Ns_SetVec(struct iovec *iov, int i, CONST void *data, size_t len)
+Ns_SetVec(struct iovec *bufs, int i, CONST void *data, size_t len)
 {
-    iov[i].iov_base = (void *) data;
-    iov[i].iov_len = len;
+    bufs[i].iov_base = (void *) data;
+    bufs[i].iov_len = len;
 
     return len;
 }
@@ -146,7 +146,7 @@ Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
  */
 
 size_t
-Ns_SumVec(struct iovec *bufs, int nbufs)
+Ns_SumVec(const struct iovec *bufs, int nbufs)
 {
     int     i;
     size_t  sum = 0U;
@@ -210,7 +210,7 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
  */
 
 ssize_t
-Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
+Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
                 Ns_Time *timeoutPtr, unsigned int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
@@ -306,16 +306,16 @@ Ns_SockSendBufs(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
  */
 
 ssize_t
-Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t toRead, Ns_Time *timePtr)
+Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length, Ns_Time *timeoutPtr)
 {
     ssize_t nread;
 
-    nread = recv(sock, vbuf, toRead, 0);
+    nread = recv(sock, buffer, length, 0);
 
     if (nread == -1
         && ns_sockerrno == EWOULDBLOCK
-        && Ns_SockTimedWait(sock, NS_SOCK_READ, timePtr) == NS_OK) {
-        nread = recv(sock, vbuf, toRead, 0);
+        && Ns_SockTimedWait(sock, NS_SOCK_READ, timeoutPtr) == NS_OK) {
+        nread = recv(sock, buffer, length, 0);
     }
 
     return nread;
@@ -340,16 +340,16 @@ Ns_SockRecv(NS_SOCKET sock, void *vbuf, size_t toRead, Ns_Time *timePtr)
  */
 
 int
-Ns_SockSend(NS_SOCKET sock, void *vbuf, size_t toWrite, Ns_Time *timeoutPtr)
+Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, Ns_Time *timeoutPtr)
 {
     int nwrote;
 
-    nwrote = send(sock, vbuf, toWrite, 0);
+    nwrote = send(sock, buffer, length, 0);
 
     if (nwrote == -1
         && ns_sockerrno == EWOULDBLOCK
         && Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-        nwrote = send(sock, vbuf, toWrite, 0);
+        nwrote = send(sock, buffer, length, 0);
     }
 
     return nwrote;
@@ -373,7 +373,7 @@ Ns_SockSend(NS_SOCKET sock, void *vbuf, size_t toWrite, Ns_Time *timeoutPtr)
  */
 
 int
-Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr)
+Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 {
     int           n, msec = -1;
     struct pollfd pfd;
@@ -425,12 +425,12 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, Ns_Time *timeoutPtr)
 int
 Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
 {
-    Ns_Time tm;
+    Ns_Time t;
 
-    tm.sec  = timeout;
-    tm.usec = 0;
+    t.sec  = timeout;
+    t.usec = 0;
 
-    return Ns_SockTimedWait(sock, what, &tm);
+    return Ns_SockTimedWait(sock, what, &t);
 }
 
 /*
@@ -473,11 +473,9 @@ Ns_SockListen(char *address, int port)
  */
 
 NS_SOCKET
-Ns_SockAccept(NS_SOCKET lsock, struct sockaddr *saPtr, int *lenPtr)
+Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, int *lenPtr)
 {
-    NS_SOCKET sock;
-
-    sock = accept(lsock, saPtr, (socklen_t *) lenPtr);
+    sock = accept(sock, saPtr, (socklen_t *) lenPtr);
 
     if (sock != NS_INVALID_SOCKET) {
         sock = SockSetup(sock);
@@ -512,7 +510,7 @@ Ns_BindSock(struct sockaddr_in *saPtr)
 }
 
 NS_SOCKET
-Ns_SockBind(struct sockaddr_in *saPtr)
+Ns_SockBind(const struct sockaddr_in *saPtr)
 {
     NS_SOCKET sock;
     int       n;
@@ -621,7 +619,7 @@ Ns_SockTimedConnect(char *host, int port, Ns_Time *timeoutPtr)
 
 NS_SOCKET
 Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
-                     Ns_Time *timePtr)
+                     Ns_Time *timeoutPtr)
 {
     NS_SOCKET sock;
     int       err;
@@ -636,7 +634,7 @@ Ns_SockTimedConnect2(char *host, int port, char *lhost, int lport,
 
     if (sock != NS_INVALID_SOCKET) {
         len = sizeof(err);
-        err = Ns_SockTimedWait(sock, NS_SOCK_WRITE, timePtr);
+        err = Ns_SockTimedWait(sock, NS_SOCK_WRITE, timeoutPtr);
         switch (err) {
         case NS_OK:
             len = sizeof(err);
@@ -793,7 +791,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, int secs)
  */
 
 int
-Ns_GetSockAddr(struct sockaddr_in *saPtr, char *host, int port)
+Ns_GetSockAddr(struct sockaddr_in *saPtr, const char *host, int port)
 {
     struct in_addr ia;
     Ns_DString     ds;
@@ -1104,16 +1102,17 @@ SockSetup(NS_SOCKET sock)
 static ssize_t
 SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    ssize_t n;
 
 #ifdef _WIN32
-    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &n, &flags,
+  DWORD RecvBytes, Flags = (DWORD)flags;
+    if (WSARecv(sock, (LPWSABUF)bufs, nbufs, &RecvBytes, &Flags,
                 NULL, NULL) != 0) {
-        n = -1;
+        RecvBytes = -1;
     }
 
-    return n;
+    return (ssize_t)RecvBytes;
 #else
+    ssize_t n;
     struct msghdr msg;
 
     memset(&msg, 0, sizeof(msg));
