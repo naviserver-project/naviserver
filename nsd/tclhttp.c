@@ -43,7 +43,7 @@ static int HttpWaitCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv)
     NS_GNUC_NONNULL(1);
 static int HttpQueueCmd(NsInterp *itPtr, int objc, Tcl_Obj *CONST* objv, int run)
     NS_GNUC_NONNULL(1);
-static int HttpConnect(Tcl_Interp *interp, char *method, char *url,
+static int HttpConnect(Tcl_Interp *interp, const char *method, char *url,
 			Ns_Set *hdrPtr, Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
 
@@ -51,10 +51,10 @@ static int HttpGet(NsInterp *itPtr, CONST char *id, Ns_HttpTask **httpPtrPtr, in
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void HttpClose(Ns_HttpTask *httpPtr)  NS_GNUC_NONNULL(1);
-static void HttpCancel(Ns_HttpTask *httpPtr) NS_GNUC_NONNULL(1);
+static void HttpCancel(const Ns_HttpTask *httpPtr) NS_GNUC_NONNULL(1);
 static void HttpAbort(Ns_HttpTask *httpPtr)  NS_GNUC_NONNULL(1);
 
-static int HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int outSize) 
+static int HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, size_t outSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void ProcessReplyHeaderFields(Ns_HttpTask *httpPtr) 
@@ -679,7 +679,7 @@ HttpGet(NsInterp *itPtr, CONST char *id, Ns_HttpTask **httpPtrPtr, int remove)
  *----------------------------------------------------------------------
  */
 static int
-HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
+HttpConnect(Tcl_Interp *interp, const char *method, char *url, Ns_Set *hdrPtr,
 	    Tcl_Obj *bodyPtr, Ns_HttpTask **httpPtrPtr)
 {
     NS_SOCKET    sock;
@@ -800,7 +800,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
 	Tcl_DStringAppend(&httpPtr->ds, body, len);
     }
     httpPtr->next = httpPtr->ds.string;
-    httpPtr->len = httpPtr->ds.length;
+    httpPtr->len = (size_t)httpPtr->ds.length;
 
     /* Ns_Log(Notice, "final request <%s>", httpPtr->ds.string);*/
 
@@ -829,7 +829,7 @@ HttpConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr,
  */
 
 static int
-HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int outSize) 
+HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, size_t outSize) 
 {
     int status = TCL_OK;
 
@@ -843,21 +843,21 @@ HttpAppendRawBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int outSize)
 	    status = TCL_ERROR;
 	}
     } else {
-	Tcl_DStringAppend(&httpPtr->ds, buffer, outSize);
+	Tcl_DStringAppend(&httpPtr->ds, buffer, (int)outSize);
     }
 
     return status;
 }
 
 int
-Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int inSize) 
+Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, size_t inSize) 
 {
     int status = TCL_OK;
 
     assert(httpPtr != NULL);
     assert(buffer != NULL);
 
-    Ns_Log(Debug, "Ns_HttpAppendBuffer: got %d bytes flags %.6x", inSize, httpPtr->flags);
+    Ns_Log(Debug, "Ns_HttpAppendBuffer: got %" PRIdz " bytes flags %.6x", inSize, httpPtr->flags);
     
     if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) != NS_HTTP_FLAG_GUNZIP)) {
 	/*
@@ -872,7 +872,7 @@ Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int inSize)
 	 * Output decompressed content
 	 */
 	Ns_InflateBufferInit(httpPtr->compress, buffer, inSize);
-	Ns_Log(Debug, "InflateBuffer: got %d compressed bytes", inSize);
+	Ns_Log(Debug, "InflateBuffer: got %" PRIdz " compressed bytes", inSize);
 	do {
 	    int uncompressedLen = 0;
 		
@@ -923,7 +923,7 @@ HttpClose(Ns_HttpTask *httpPtr)
 
 
 static void
-HttpCancel(Ns_HttpTask *httpPtr)
+HttpCancel(const Ns_HttpTask *httpPtr)
 {
     assert(httpPtr != NULL);
 

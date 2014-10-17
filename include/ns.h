@@ -819,11 +819,11 @@ Ns_InflateInit(Ns_CompressStream *stream)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_InflateBufferInit(Ns_CompressStream *stream, CONST char *buffer, int inSize) 
+Ns_InflateBufferInit(Ns_CompressStream *stream, CONST char *buffer, size_t inSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
-Ns_InflateBuffer(Ns_CompressStream *stream, CONST char *buffer, int outSize, int *nrBytes) 
+Ns_InflateBuffer(Ns_CompressStream *stream, CONST char *buffer, size_t outSize, int *nrBytes) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
@@ -2773,7 +2773,7 @@ Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
     NS_GNUC_NONNULL(1); 
 
 NS_EXTERN int
-Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, int inSize) 
+Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, CONST char *buffer, size_t inSize) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2); 
 
 /*
