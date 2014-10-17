@@ -739,7 +739,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data,
     }
 
     sbuf.iov_base = (void *)data;
-    sbuf.iov_len = len < 0U ? (data != NULL ? strlen(data) : 0U) : len;
+    sbuf.iov_len = len < 0 ? (data != NULL ? strlen(data) : 0U) : len;
 
     Ns_ConnSetResponseStatus(conn, status);
     Ns_ConnWriteVChars(conn, &sbuf, 1, 0);

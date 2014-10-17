@@ -897,8 +897,8 @@ TaskThread(void *arg)
                 broadcast = 1;
             }
             if (taskPtr->flags & TASK_WAIT) {
-                if (max <= nfds) {
-                    max  = nfds + 100;
+		if (max <= (size_t)nfds) {
+                    max  = (size_t)nfds + 100U;
                     pfds = ns_realloc(pfds, max);
                 }
                 taskPtr->idx = nfds;
