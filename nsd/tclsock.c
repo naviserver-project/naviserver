@@ -126,7 +126,7 @@ NsTclSockArgProc(Tcl_DString *dsPtr, void *arg)
  */
 
 static int
-GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int byaddr)
+GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int byaddr)
 {
     Ns_DString  ds;
     char       *opt, *addr;
