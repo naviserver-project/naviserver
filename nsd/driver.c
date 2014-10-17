@@ -853,9 +853,9 @@ NsFreeRequest(Request *reqPtr)
 
         reqPtr->next           = NULL;
         reqPtr->content        = NULL;
-        reqPtr->length         = 0;
-        reqPtr->contentLength  = 0;
-        reqPtr->avail          = 0;
+        reqPtr->length         = 0U;
+        reqPtr->contentLength  = 0U;
+        reqPtr->avail          = 0U;
         reqPtr->leadblanks     = 0;
 
         reqPtr->expectedLength = 0;
@@ -989,7 +989,7 @@ DriverListen(Driver *drvPtr)
 static NS_DRIVER_ACCEPT_STATUS
 DriverAccept(Sock *sockPtr)
 {
-    int n = sizeof(struct sockaddr_in);
+  int n = (int)sizeof(struct sockaddr_in);
 
     assert(sockPtr != NULL);
 
@@ -1219,7 +1219,7 @@ DriverThread(void *arg)
     PollCreate(&pdata);
     Ns_GetTime(&now);
     closePtr = waitPtr = readPtr = NULL;
-    stopping = (flags & DRIVER_SHUTDOWN);
+    stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
 
     while (!stopping) {
 	int n;
@@ -1504,7 +1504,7 @@ DriverThread(void *arg)
         flags            = drvPtr->flags;
         Ns_MutexUnlock(&drvPtr->lock);
 
-        stopping = (flags & DRIVER_SHUTDOWN);
+	stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
 
         /*
          * Update the timeout for each closing socket and add to the
@@ -1798,7 +1798,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
         sockPtr->tfd    = 0;
         sockPtr->taddr  = 0;
         sockPtr->keep   = 0;
-        sockPtr->flags  = 0;
+        sockPtr->flags  = 0U;
         sockPtr->arg    = NULL;
     }
 
@@ -2039,7 +2039,7 @@ SockSendResponse(Sock *sockPtr, int code)
     iov[1].iov_base = response;
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
-    iov[2].iov_len = 4;
+    iov[2].iov_len = 4U;
     sent = NsDriverSend(sockPtr, iov, 3, 0);
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
 	Ns_Log(Warning, "Driver: partial write while sending error reply");
@@ -2272,7 +2272,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 
     reqPtr = sockPtr->reqPtr;
     bufPtr = &reqPtr->buffer;
-    if (reqPtr->length == 0) {
+    if (reqPtr->length == 0U) {
         nread = drvPtr->bufsize;
     } else {
         nread = reqPtr->length - reqPtr->avail;
@@ -2287,7 +2287,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     if (n > drvPtr->maxinput) {
 	n = (ssize_t)drvPtr->maxinput;
         nread = n - len;
-        if (nread == 0) {
+        if (nread == 0U) {
             Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
                    drvPtr->maxinput);
             return SOCK_ERROR;
@@ -2532,7 +2532,7 @@ SockParse(Sock *sockPtr)
                         
                         reqPtr->chunkStartOff = reqPtr->coff;
                         reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
-                        reqPtr->contentLength = 0;
+                        reqPtr->contentLength = 0U;
 
                         /* We need expectedLength for safely terminating read loop */
 
@@ -2708,7 +2708,7 @@ SockParse(Sock *sockPtr)
         if (sockPtr->tfile != NULL) {
             reqPtr->content = NULL;
             reqPtr->next = NULL;
-            reqPtr->avail = 0;
+            reqPtr->avail = 0U;
             Ns_Log(Debug, "spooling content to file: size=%" PRIdz ", file=%s",
                    reqPtr->length, sockPtr->tfile);
 
@@ -3442,7 +3442,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	 * Send multiple buffers.
 	 * Get length of remaining buffers
 	 */
-	toWrite = 0;
+	toWrite = 0U;
 	for (i = 0; i < curPtr->c.mem.nsbufs; i ++) {
 	    toWrite += curPtr->c.mem.sbufs[i].iov_len;
 	}
