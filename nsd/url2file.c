@@ -109,7 +109,7 @@ ConfigServerUrl2File(CONST char *server)
     NsServer *servPtr;
 
     servPtr = NsGetServer(server);
-    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0);
+    Ns_RegisterUrl2FileProc(server, "/", Ns_FastUrl2FileProc, NULL, servPtr, 0U);
     Ns_SetUrlToFileProc(server, NsUrlToFileProc);
 
     return NS_OK;

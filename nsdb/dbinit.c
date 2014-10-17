@@ -107,13 +107,14 @@ typedef struct ServData {
  * Local functions defined in this file
  */
 
-static Pool     *GetPool(const char *pool)              NS_GNUC_NONNULL(1);
-static void      ReturnHandle(Handle *handlePtr)        NS_GNUC_NONNULL(1);
-static int       IsStale(Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
-static int	 Connect(Handle *handlePtr)             NS_GNUC_NONNULL(1);
-static Pool     *CreatePool(const char *pool, char *path, char *driver);
-static int	 IncrCount(Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
-static ServData *GetServer(char *server)                NS_GNUC_NONNULL(1);
+static Pool     *GetPool(const char *pool)                    NS_GNUC_NONNULL(1);
+static void      ReturnHandle(Handle *handlePtr)              NS_GNUC_NONNULL(1);
+static int       IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
+static int	 Connect(Handle *handlePtr)                   NS_GNUC_NONNULL(1);
+static Pool     *CreatePool(const char *pool, const char *path, char *driver)
+  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static int	 IncrCount(const Pool *poolPtr, int incr)     NS_GNUC_NONNULL(1);
+static ServData *GetServer(const char *server)                NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file
@@ -872,7 +873,7 @@ ReturnHandle(Handle *handlePtr)
  */
 
 static int
-IsStale(Handle *handlePtr, time_t now)
+IsStale(const Handle *handlePtr, time_t now)
 {
     assert(handlePtr != NULL);
 
@@ -1009,13 +1010,17 @@ CheckPool(void *arg)
  */
 
 static Pool  *
-CreatePool(const char *pool, char *path, char *driver)
+CreatePool(const char *pool, const char *path, char *driver)
 {
     Pool            *poolPtr;
     Handle          *handlePtr;
     struct DbDriver *driverPtr;
     int              i;
     char	    *source;
+
+    assert(pool != NULL);
+    assert(path != NULL);
+    assert(driver != NULL);
 
     if (driver == NULL) {
 	Ns_Log(Error, "dbinit: no driver for pool '%s'", pool);
@@ -1140,7 +1145,7 @@ Connect(Handle *handlePtr)
  */
 
 static int
-IncrCount(Pool *poolPtr, int incr)
+IncrCount(const Pool *poolPtr, int incr)
 {
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry *hPtr;
@@ -1187,7 +1192,7 @@ IncrCount(Pool *poolPtr, int incr)
  */
 
 static ServData *
-GetServer(char *server)
+GetServer(const char *server)
 {
     Tcl_HashEntry *hPtr;
 
