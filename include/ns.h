@@ -410,7 +410,7 @@ typedef struct Ns_ObjvTable {
 typedef struct Ns_TclCallback {
     Ns_Callback    *cbProc;
     CONST char     *server;
-    char           *script;
+    const char     *script;
     int             argc;
     char          **argv;
 } Ns_TclCallback;
@@ -2837,7 +2837,7 @@ Ns_CtxString(const unsigned char *digest, char *buf, int size)
  */
 
 NS_EXTERN int
-Ns_TclRequest(Ns_Conn *conn, CONST char *name)
+Ns_TclRequest(Ns_Conn *conn, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*

@@ -44,7 +44,7 @@ static Ns_ObjvTable filters[] = {
     {"preauth",  NS_FILTER_PRE_AUTH},
     {"postauth", NS_FILTER_POST_AUTH},
     {"trace",    NS_FILTER_TRACE},
-    {NULL, 0}
+    {NULL, 0U}
 };
 
 
@@ -65,13 +65,13 @@ static Ns_ObjvTable filters[] = {
  */
 
 int
-Ns_TclRequest(Ns_Conn *conn, CONST char *name)
+Ns_TclRequest(Ns_Conn *conn, const char *name)
 {
     Ns_TclCallback cb;
 
     cb.cbProc = (Ns_Callback *) NsTclRequestProc;
     cb.server = Ns_ConnServer(conn);
-    cb.script = (char *) name;
+    cb.script = name;
     cb.argc   = 0;
     cb.argv   = NULL;
 
@@ -297,7 +297,8 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
     Ns_TclCallback  *cbPtr;
     char            *method, *urlPattern;
     Tcl_Obj         *scriptObj;
-    int              remain = 0, when = 0;
+    int              remain = 0;
+    unsigned int     when = 0U;
 
     Ns_ObjvSpec opts[] = {
         {"-first", Ns_ObjvBool,  &when, INT2PTR(NS_FILTER_FIRST)},
@@ -344,10 +345,10 @@ NsTclRegisterFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclShortcutFilterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    NsInterp  *itPtr = arg;
-    char      *server = itPtr->servPtr->server;
-    char      *method, *urlPattern;
-    int        when = NS_FILTER_FIRST;
+    NsInterp    *itPtr = arg;
+    char        *server = itPtr->servPtr->server;
+    char        *method, *urlPattern;
+    unsigned int when = NS_FILTER_FIRST;
 
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},
@@ -445,7 +446,7 @@ NsTclRequestProc(void *arg, Ns_Conn *conn)
             Ns_DStringFree(&ds);
             status = Ns_ConnReturnUnavailable(conn);
         } else {
-            Ns_TclLogError(interp);
+	    (void)Ns_TclLogError(interp);
             status = Ns_ConnReturnInternalError(conn);
         }
     }
@@ -533,10 +534,10 @@ NsTclFilterProc(void *arg, Ns_Conn *conn, unsigned int why)
         if (NsTclTimeoutException(interp)) {
 	    Ns_GetProcInfo(&ds, (Ns_Callback *)NsTclFilterProc, arg);
 	    Ns_Log(Dev, "%s: %s", ds.string, result);
-            Ns_ConnReturnUnavailable(conn);
+            (void)Ns_ConnReturnUnavailable(conn);
             status = NS_FILTER_RETURN;
         } else {
-            Ns_TclLogError(interp);
+            (void)Ns_TclLogError(interp);
             status = NS_ERROR;
         }
     } else {
@@ -610,7 +611,7 @@ NsTclTimeoutException(Tcl_Interp *interp)
     CONST char *errorCode;
 
     errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
-    if (strncmp(errorCode, "NS_TIMEOUT", 10) == 0) {
+    if (strncmp(errorCode, "NS_TIMEOUT", 10U) == 0) {
         return 1;
     }
     return 0;

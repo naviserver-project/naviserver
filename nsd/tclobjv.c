@@ -335,7 +335,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
  */
 
 int
-Ns_ObjvInt(struct Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
            Tcl_Obj *CONST* objv)
 {
     int *dest = spec->dest;
@@ -348,7 +348,7 @@ Ns_ObjvInt(struct Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 }
 
 int
-Ns_ObjvLong(struct Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             Tcl_Obj *CONST* objv)
 {
     long *dest = spec->dest;

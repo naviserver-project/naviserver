@@ -53,7 +53,7 @@ typedef struct TclCache {
  */
 
 static int CacheAppendObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int append);
-static Ns_Entry *CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key,
+static Ns_Entry *CreateEntry(const NsInterp *itPtr, TclCache *cPtr, char *key,
                              int *newPtr, Ns_Time *timeoutPtr);
 static void SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost);
 static int noGlobChars(CONST char *pattern) 
@@ -763,18 +763,18 @@ NsTclCacheStatsObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CON
  */
 
 static Ns_Entry *
-CreateEntry(NsInterp *itPtr, TclCache *cPtr, char *key, int *newPtr,
+CreateEntry(const NsInterp *itPtr, TclCache *cPtr, char *key, int *newPtr,
             Ns_Time *timeoutPtr)
 {
     Ns_Cache *cache = cPtr->cache;
     Ns_Entry *entry;
-    Ns_Time   time;
+    Ns_Time   t;
 
     if (timeoutPtr == NULL
         && (cPtr->timeout.sec > 0 || cPtr->timeout.usec > 0)) {
-        timeoutPtr = Ns_AbsoluteTime(&time, &cPtr->timeout);
+        timeoutPtr = Ns_AbsoluteTime(&t, &cPtr->timeout);
     } else {
-        timeoutPtr = Ns_AbsoluteTime(&time, timeoutPtr);
+        timeoutPtr = Ns_AbsoluteTime(&t, timeoutPtr);
     }
     Ns_CacheLock(cache);
     entry = Ns_CacheWaitCreateEntry(cache, key, newPtr, timeoutPtr);
@@ -810,7 +810,7 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
     char    *string;
     int      len;
     size_t   length;
-    Ns_Time  time;
+    Ns_Time  t;
 
     string = Tcl_GetStringFromObj(valObj, &len);
     assert(len >= 0);
@@ -825,9 +825,9 @@ SetEntry(TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int 
         value[length] = '\0';
         if (expPtr == NULL
             && (cPtr->expires.sec > 0 || cPtr->expires.usec > 0)) {
-            expPtr = Ns_AbsoluteTime(&time, &cPtr->expires);
+            expPtr = Ns_AbsoluteTime(&t, &cPtr->expires);
         } else {
-            expPtr = Ns_AbsoluteTime(&time, expPtr);
+            expPtr = Ns_AbsoluteTime(&t, expPtr);
         }
         Ns_CacheSetValueExpires(entry, value, length, expPtr, cost);
     }
