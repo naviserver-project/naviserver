@@ -313,9 +313,9 @@ AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 
     while (cmdPtr->name != NULL) {
         if (cmdPtr->objProc != NULL) {
-            Tcl_CreateObjCommand(interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
+	    (void)Tcl_CreateObjCommand(interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
         } else {
-            Tcl_CreateCommand(interp, cmdPtr->name, cmdPtr->proc, itPtr, NULL);
+            (void)Tcl_CreateCommand(interp, cmdPtr->name, cmdPtr->proc, itPtr, NULL);
         }
         ++cmdPtr;
     }
