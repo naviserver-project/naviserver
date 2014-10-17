@@ -1249,7 +1249,7 @@ NS_EXTERN void NsStopServers(Ns_Time *toPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStartServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsStopServer(NsServer *servPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsWaitServer(NsServer *servPtr, Ns_Time *toPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-NS_EXTERN void NsWakeupDriver(Driver *drvPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
 
 /*
  * Url-specific data routines.

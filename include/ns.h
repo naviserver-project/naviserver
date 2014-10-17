@@ -1090,7 +1090,7 @@ Ns_ConnTimeStats(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int 
-NsAsyncWrite(int fd, char *buffer, size_t nbyte) NS_GNUC_NONNULL(2);
+NsAsyncWrite(int fd, const char *buffer, size_t nbyte) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 NsAsyncWriterQueueDisable(int shutdown);
@@ -1254,7 +1254,7 @@ Ns_GetAllAddrByHost(Ns_DString *dsPtr, const char *host);
  * driver.c:
  */
 
-NS_EXTERN int Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init);
+NS_EXTERN int Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init);
 
 /*
  * dstring.c:

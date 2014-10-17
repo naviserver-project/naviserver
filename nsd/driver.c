@@ -154,11 +154,11 @@ static void  SockError(Sock *sockPtr, int reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code)
     NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
-static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
+static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, int timeout)
     NS_GNUC_NONNULL(1);
 static void  SockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
-static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
+static int   SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static int   SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -178,11 +178,11 @@ static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
-static int PollWait(PollData *pdata, int waittime)
+static int PollWait(const PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
 static int ChunkedDecode(Request *reqPtr, int update)
     NS_GNUC_NONNULL(1);
-static WriterSock *WriterSockRequire(Conn *connPtr) 
+static WriterSock *WriterSockRequire(const Conn *connPtr) 
     NS_GNUC_NONNULL(1);
 static void WriterSockRelease(WriterSock *wrSockPtr) 
     NS_GNUC_NONNULL(1);
@@ -252,7 +252,7 @@ NsInitDrivers(void)
  */
 
 int
-Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
+Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
 {
     char           *path,*address, *host, *bindaddr, *defproto, *defserver;
     int             i, n, defport, noHostNameGiven;
@@ -734,7 +734,7 @@ NsStopSpoolers(void)
  *----------------------------------------------------------------------
  */
 void
-NsWakeupDriver(Driver *drvPtr) {
+NsWakeupDriver(const Driver *drvPtr) {
     assert(drvPtr != NULL);
     SockTrigger(drvPtr->trigger[1]);
 }
@@ -1604,7 +1604,7 @@ PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
 }
 
 static int
-PollWait(PollData *pdata, int waittime)
+PollWait(const PollData *pdata, int waittime)
 {
     int n;
 
@@ -1746,7 +1746,7 @@ SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
  */
 
 static void
-SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
+SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, int timeout)
 {
     assert(sockPtr != NULL);
     sockPtr->timeout = *nowPtr;
@@ -2227,7 +2227,7 @@ ChunkedDecode(Request *reqPtr, int update)
  */
 
 static int
-SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
+SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 {
     Driver       *drvPtr;
     Request      *reqPtr;
@@ -3188,7 +3188,7 @@ void NsWriterUnlock(void) {
  */
 
 static WriterSock *
-WriterSockRequire(Conn *connPtr) {
+WriterSockRequire(const Conn *connPtr) {
     WriterSock *wrSockPtr;
 
     assert(connPtr != NULL);
@@ -4534,7 +4534,7 @@ NsAsyncWriterQueueDisable(int shutdown)
  *----------------------------------------------------------------------
  */
 int 
-NsAsyncWrite(int fd, char *buffer, size_t nbyte) 
+NsAsyncWrite(int fd, const char *buffer, size_t nbyte) 
 {
     SpoolerQueue  *queuePtr;
     int            trigger = 0;
