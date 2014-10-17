@@ -1386,10 +1386,10 @@ Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg);
  */
 
 NS_EXTERN size_t
-Ns_HtuuEncode(unsigned char *string, size_t bufSize, char *buf);
+Ns_HtuuEncode(unsigned char *input, size_t bufSize, char *buf);
 
 NS_EXTERN size_t
-Ns_HtuuDecode(char *string, unsigned char *buf, size_t bufSize);
+Ns_HtuuDecode(char *input, unsigned char *buf, size_t bufSize);
 
 /*
  * index.c:

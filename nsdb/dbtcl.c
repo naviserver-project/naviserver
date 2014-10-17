@@ -53,7 +53,7 @@ static int DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, char *cmd)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static void EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle);
 static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, char *handleId,
-		       Ns_DbHandle **handle, Tcl_HashEntry **phe);
+		       Ns_DbHandle **handle, Tcl_HashEntry **hPtrPtr);
 static Tcl_InterpDeleteProc FreeData;
 static Tcl_ObjCmdProc 
     DbConfigPathObjCmd, 
