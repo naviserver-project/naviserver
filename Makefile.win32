@@ -3,8 +3,8 @@
 #
 # 1. Edit include/Makefile.build and replace Makefile.module with
 #    Makefile.win32
-# 
-# 2. Update TCLPATH and VC varibales below to reflect actual path to
+#
+# 2. Update TCLPATH and VC variables below to reflect actual path to
 #    Tcl and VicualC++ installations
 #   
 # 3. nmake -f Makefile.win32
@@ -15,9 +15,18 @@
 #
 #
 
+tcl_64 = C:\P\Tcl85
+tcl_32 = C:\P\Tcl-32
 
+!if "x86" == "$(TARGET_CPU)"
+TCLPATH = $(tcl_32)
+!elseif "x64" == "$(TARGET_CPU)"
+TCLPATH = $(tcl_64)
+!else
+!message Warning: Unexpected TARGET_CPU:  $(TARGET_CPU)
+TCLPATH = $(tcl_64)
+!endif
 
-TCLPATH	= C:\P\Tcl85
 TCLLIB  = tcl85.lib
 
 ## TODO: Why is it necessary to set these variables here?  Shouldn't
