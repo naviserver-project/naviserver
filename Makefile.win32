@@ -44,7 +44,7 @@ DEBUG=1
 !endif
 
 # nmake command to exec for each module:
-NMAKE	= nmake /nologo /e TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
+NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG) INCLUDE="$(INCLUDE)"
 
 
 # Note our use below of nmake's macro string substition feature:
