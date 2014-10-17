@@ -127,7 +127,7 @@ static const int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
  */
 
 void
-Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     Ns_SetPut(conn->outputheaders, field, value);
 }
@@ -149,7 +149,7 @@ Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
  */
 
 void
-Ns_ConnUpdateHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnUpdateHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     Ns_SetUpdate(conn->outputheaders, field, value);
 }
@@ -171,7 +171,7 @@ Ns_ConnUpdateHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
  */
 
 void
-Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt,...)
+Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt,...)
 {
     Ns_DString ds;
     va_list ap;
@@ -202,7 +202,7 @@ Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt,...)
  */
 
 void
-Ns_ConnCondSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     if (Ns_SetIGet(conn->outputheaders, field) == NULL) {
         Ns_SetPut(conn->outputheaders, field, value);
@@ -321,14 +321,15 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *mimeType)
  */
 
 void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length)
 {
     Conn *connPtr = (Conn *) conn;
 
     if (length >= 0) {
-        char strlength[TCL_INTEGER_SPACE];
-        snprintf(strlength, sizeof(strlength), "%" TCL_LL_MODIFIER "d", length);
-        Ns_ConnUpdateHeaders(conn, "Content-Length", strlength);
+        char buffer[TCL_INTEGER_SPACE];
+
+        snprintf(buffer, sizeof(buffer), "%" PRIdz, length);
+        Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
     } else {
         Ns_SetIDeleteKey(conn->outputheaders, "Content-Length");
     }

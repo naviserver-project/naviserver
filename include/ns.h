@@ -2046,15 +2046,15 @@ Ns_SetRequestUrl(Ns_Request *request, CONST char *url)
  */
 
 NS_EXTERN void
-Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_ConnUpdateHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnUpdateHeaders(const Ns_Conn *conn, const char *field, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_ConnCondSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
@@ -2062,7 +2062,7 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt, ...)
+Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt, ...)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(3, 4);
 
 NS_EXTERN void
@@ -2074,7 +2074,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
+Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
