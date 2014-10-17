@@ -451,7 +451,7 @@ GetLine(NS_SOCKET sock, char *prompt, Tcl_DString *dsPtr, int echo)
     }
 
     do {
-      if ((n = recv(sock, (char *)buf, sizeof(buf), 0)) <= 0) {
+	if ((n = recv(sock, (char *)buf, sizeof(buf), 0)) <= 0) {
 	    result = 0;
 	    goto bail;
 	}
