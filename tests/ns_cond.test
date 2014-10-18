@@ -1,0 +1,19 @@
+# -*- Tcl -*-
+
+# These two files work together for testing ns_cond:
+#   tests/testserver/modules/nscond.tcl
+#   tests/ns_cond.test
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+eval ::tcltest::configure $argv
+
+test ns_cond-1.1 {
+    Master uses ns_cond to wake up a worker thread.
+} -body {
+    set n_done [tst_cond_master]
+} -cleanup {
+    tst_cond_cleanup
+} -result 5
+
+cleanupTests
