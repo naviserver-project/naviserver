@@ -1406,34 +1406,34 @@ NS_EXTERN void
 Ns_IndexDestroy(Ns_Index *indexPtr);
 
 NS_EXTERN Ns_Index *
-Ns_IndexDup(Ns_Index *indexPtr);
+Ns_IndexDup(const Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void *
-Ns_IndexFind(Ns_Index *indexPtr, void *key);
+Ns_IndexFind(const Ns_Index *indexPtr, const void *key)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void *
-Ns_IndexFindInf(Ns_Index *indexPtr, void *key);
+Ns_IndexFindInf(const Ns_Index *indexPtr, const void *key) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void **
-Ns_IndexFindMultiple(Ns_Index *indexPtr, void *key);
+Ns_IndexFindMultiple(const Ns_Index *indexPtr, const void *key) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_IndexAdd(Ns_Index *indexPtr, void *el);
+Ns_IndexAdd(Ns_Index *indexPtr, void *el) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_IndexDel(Ns_Index *indexPtr, void *el);
+Ns_IndexDel(Ns_Index *indexPtr, const void *el) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void *
-Ns_IndexEl(Ns_Index *indexPtr, int i);
+Ns_IndexEl(const Ns_Index *indexPtr, int i) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_IndexStringInit(Ns_Index *indexPtr, int inc);
+Ns_IndexStringInit(Ns_Index *indexPtr, int inc) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Index *
-Ns_IndexStringDup(Ns_Index *indexPtr);
+Ns_IndexStringDup(const Ns_Index *indexPtr) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_IndexStringAppend(Ns_Index *addtoPtr, Ns_Index *addfromPtr);
+Ns_IndexStringAppend(Ns_Index *addtoPtr, const Ns_Index *addfromPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_IndexStringDestroy(Ns_Index *indexPtr);
@@ -1642,7 +1642,7 @@ NS_EXTERN Ns_OptionConverter Ns_OptionServer;
 #define Ns_NrElements(arr)  ((int) (sizeof(arr) / sizeof((arr)[0])))
 
 NS_EXTERN int
-Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[], 
+Ns_ParseOptions(const char *options[], Ns_OptionConverter *converter[], 
 		ClientData clientData[], Tcl_Interp *interp, int offset, 
 		int max, int *nextArg, int objc, Tcl_Obj *CONST* objv);
 
