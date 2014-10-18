@@ -1097,7 +1097,6 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
                                               "multipart/byteranges")) {
             conn->flags |= NS_CONN_CHUNK;
         }
-	Ns_ConnSetLengthHeader(conn, dataLength, 1);
 
     } else if (connPtr->responseLength < 0) {
       Ns_ConnSetLengthHeader(conn, dataLength, 0);
