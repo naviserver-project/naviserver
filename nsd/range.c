@@ -156,7 +156,7 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
         *nbufsPtr = 1;
 
         SetRangeHeader(conn, start, end, objLength);
-        Ns_ConnSetLengthHeader(conn, responseLength);
+        Ns_ConnSetLengthHeader(conn, responseLength, 0);
 
         return rangeCount;
     }
@@ -209,7 +209,7 @@ NsConnParseRange(Ns_Conn *conn, CONST char *type,
     *nbufsPtr = (rangeCount * 2) + 1;
 
     SetMultipartRangeHeader(conn);
-    Ns_ConnSetLengthHeader(conn, responseLength);
+    Ns_ConnSetLengthHeader(conn, responseLength, 0);
 
     return rangeCount;
 }

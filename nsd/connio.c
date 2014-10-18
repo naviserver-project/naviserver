@@ -680,6 +680,8 @@ int
 Ns_ConnClose(Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
+
+    assert(conn != NULL);
     
     Ns_Log(Debug, "Ns_ConnClose %p stream %.6x chunk %.6x via writer %.6x sockPtr %p", 
 	   connPtr, 
@@ -1073,7 +1075,10 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
     Conn       *connPtr = (Conn *) conn;
     CONST char *keep;
 
-    if (conn->flags & NS_CONN_SKIPHDRS) {
+    assert(conn != NULL);
+    assert(dsPtr != NULL);
+
+    if ((conn->flags & NS_CONN_SKIPHDRS) != 0U) {
         return 0;
     }
 
@@ -1081,7 +1086,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
      * Check for streaming vs. non-streaming.
      */
 
-    if (flags & NS_CONN_STREAM) {
+    if ((flags & NS_CONN_STREAM) != 0U) {
 
         conn->flags |= NS_CONN_STREAM;
 
@@ -1092,8 +1097,10 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
                                               "multipart/byteranges")) {
             conn->flags |= NS_CONN_CHUNK;
         }
+	Ns_ConnSetLengthHeader(conn, dataLength, 1);
+
     } else if (connPtr->responseLength < 0) {
-        Ns_ConnSetLengthHeader(conn, dataLength);
+      Ns_ConnSetLengthHeader(conn, dataLength, 0);
     }
 
     /*

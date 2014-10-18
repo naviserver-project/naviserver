@@ -81,7 +81,7 @@ static Ns_Mutex lock;
  */
 
 char *
-Ns_HttpTime(Ns_DString *pds, time_t *when)
+Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
 {
     time_t     now;
     struct tm *tmPtr;
@@ -101,12 +101,12 @@ Ns_HttpTime(Ns_DString *pds, time_t *when)
      * must always be used.
      */
 
-    Ns_DStringPrintf(pds, "%s, %02d %s %d %02d:%02d:%02d GMT",
+    Ns_DStringPrintf(dsPtr, "%s, %02d %s %d %02d:%02d:%02d GMT",
              week_names[tmPtr->tm_wday], tmPtr->tm_mday,
              month_names[tmPtr->tm_mon], tmPtr->tm_year + 1900,
              tmPtr->tm_hour, tmPtr->tm_min, tmPtr->tm_sec);
 
-    return pds->string;
+    return dsPtr->string;
 }
 
 

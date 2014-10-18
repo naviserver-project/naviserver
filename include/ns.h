@@ -970,7 +970,7 @@ NS_EXTERN int
 Ns_ConnModifiedSince(Ns_Conn *conn, time_t since);
 
 NS_EXTERN int
-Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since);
+Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since) NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ParseHeader(Ns_Set *set, CONST char *line, Ns_HeaderCaseDisposition disp);
@@ -985,25 +985,25 @@ NS_EXTERN int
 Ns_QueryToSet(char *query, Ns_Set *set);
 
 NS_EXTERN Ns_Set *
-Ns_ConnAuth(Ns_Conn *conn);
+Ns_ConnAuth(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Set *
-Ns_ConnHeaders(Ns_Conn *conn);
+Ns_ConnHeaders(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Set *
-Ns_ConnOutputHeaders(Ns_Conn *conn);
+Ns_ConnOutputHeaders(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ConnAuthUser(Ns_Conn *conn);
+Ns_ConnAuthUser(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ConnAuthPasswd(Ns_Conn *conn);
+Ns_ConnAuthPasswd(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN size_t
-Ns_ConnContentLength(Ns_Conn *conn);
+Ns_ConnContentLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_ConnContent(Ns_Conn *conn);
+Ns_ConnContent(const Ns_Conn *conn) NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
 Ns_ConnServer(Ns_Conn *conn);
@@ -1027,7 +1027,7 @@ NS_EXTERN char *
 Ns_ConnPeer(Ns_Conn *conn);
 
 NS_EXTERN char *
-Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr);
+Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr);
 
 NS_EXTERN int
 Ns_ConnPeerPort(Ns_Conn *conn);
@@ -1063,7 +1063,7 @@ NS_EXTERN int
 Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg);
 
 NS_EXTERN void
-Ns_SetLocationProc(char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
+Ns_SetLocationProc(const char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
 
 NS_EXTERN Ns_Time *
 Ns_ConnStartTime(Ns_Conn *conn) NS_GNUC_NONNULL(1);
@@ -1206,7 +1206,7 @@ Ns_WriteCharConn(Ns_Conn *conn, CONST char *buf, size_t toWrite)
 
 NS_EXTERN int
 Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength, unsigned int flags, Ns_DString *dsPtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 /*
  * cookies.c:
@@ -2066,7 +2066,7 @@ Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt, ..
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(3, 4);
 
 NS_EXTERN void
-Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
+Ns_ConnSetTypeHeader(const Ns_Conn *conn, const char *type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -2074,15 +2074,15 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *mimeType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length)
+Ns_ConnSetLengthHeader(const Ns_Conn *conn, size_t length, int streaming)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_ConnSetLastModifiedHeader(Ns_Conn *conn, time_t *mtime)
-    NS_GNUC_NONNULL(1);
+Ns_ConnSetLastModifiedHeader(const Ns_Conn *conn, const time_t *mtime)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_ConnSetExpiresHeader(Ns_Conn *conn, CONST char *expires)
+Ns_ConnSetExpiresHeader(const Ns_Conn *conn, const char *expires)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -2858,7 +2858,7 @@ NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, char *setId)
  */
 
 NS_EXTERN char *
-Ns_HttpTime(Ns_DString *pds, time_t *when);
+Ns_HttpTime(Ns_DString *dsPtr, const time_t *when) NS_GNUC_NONNULL(1);
 
 NS_EXTERN time_t
 Ns_ParseHttpTime(char *str);

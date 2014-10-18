@@ -108,7 +108,7 @@ NsTclHeadersObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST*
     }
 
     if (length > -1) {
-        Ns_ConnSetLengthHeader(conn, length);
+	Ns_ConnSetLengthHeader(conn, (size_t)length, 1);
     }
 
     /*

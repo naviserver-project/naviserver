@@ -36,10 +36,15 @@
 
 #include "nsd.h"
 
-static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr);
-static int GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST* objv,
-                      int *offPtr, int *lenPtr);
-static Tcl_Channel MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn);
+static int GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static int GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv,
+                      int *offPtr, int *lenPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  *----------------------------------------------------------------------
@@ -59,7 +64,7 @@ static Tcl_Channel MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn);
  */
 
 Ns_Set *
-Ns_ConnAuth(Ns_Conn *conn)
+Ns_ConnAuth(const Ns_Conn *conn)
 {
     return conn->auth;
 }
@@ -82,7 +87,7 @@ Ns_ConnAuth(Ns_Conn *conn)
  */
 
 Ns_Set *
-Ns_ConnHeaders(Ns_Conn *conn)
+Ns_ConnHeaders(const Ns_Conn *conn)
 {
     return conn->headers;
 }
@@ -105,7 +110,7 @@ Ns_ConnHeaders(Ns_Conn *conn)
  */
 
 Ns_Set *
-Ns_ConnOutputHeaders(Ns_Conn *conn)
+Ns_ConnOutputHeaders(const Ns_Conn *conn)
 {
     return conn->outputheaders;
 }
@@ -128,7 +133,7 @@ Ns_ConnOutputHeaders(Ns_Conn *conn)
  */
 
 char *
-Ns_ConnAuthUser(Ns_Conn *conn)
+Ns_ConnAuthUser(const Ns_Conn *conn)
 {
     return conn->auth ? Ns_SetIGet(conn->auth, "Username") : NULL;
 }
@@ -151,7 +156,7 @@ Ns_ConnAuthUser(Ns_Conn *conn)
  */
 
 char *
-Ns_ConnAuthPasswd(Ns_Conn *conn)
+Ns_ConnAuthPasswd(const Ns_Conn *conn)
 {
     return conn->auth ? Ns_SetIGet(conn->auth, "Password") : NULL;
 }
@@ -174,7 +179,7 @@ Ns_ConnAuthPasswd(Ns_Conn *conn)
  */
 
 size_t
-Ns_ConnContentLength(Ns_Conn *conn)
+Ns_ConnContentLength(const Ns_Conn *conn)
 {
     return conn->contentLength;
 }
@@ -197,7 +202,7 @@ Ns_ConnContentLength(Ns_Conn *conn)
  */
 
 char *
-Ns_ConnContent(Ns_Conn *conn)
+Ns_ConnContent(const Ns_Conn *conn)
 {
     Conn *connPtr = (Conn *) conn;
 
@@ -453,7 +458,7 @@ Ns_ConnPeer(Ns_Conn *conn)
  */
 
 char *
-Ns_ConnSetPeer(Ns_Conn *conn, struct sockaddr_in *saPtr)
+Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr_in *saPtr)
 {
     Conn *connPtr = (Conn *) conn;
 
@@ -540,7 +545,7 @@ Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg)
  */
 
 void
-Ns_SetLocationProc(char *server, Ns_LocationProc *proc)
+Ns_SetLocationProc(const char *server, Ns_LocationProc *proc)
 {
     NsServer *servPtr = NsGetServer(server);
 
@@ -1064,7 +1069,7 @@ Ns_ConnModifiedSince(Ns_Conn *conn, time_t since)
  */
 
 int
-Ns_ConnUnmodifiedSince(Ns_Conn *conn, time_t since)
+Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
 {
     char *hdr;
 
@@ -1631,10 +1636,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *CO
         break;
 
     case CCloseIdx:
-        if (Ns_ConnClose(conn) != NS_OK) {
-            Tcl_SetResult(interp, "could not close connection", TCL_STATIC);
-            return TCL_ERROR;
-        }
+	Ns_ConnClose(conn);
         break;
 
     case CChannelIdx:
@@ -1825,6 +1827,10 @@ GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
     Tcl_Channel chan;
     int mode;
 
+    assert(interp != NULL);
+    assert(id != NULL);
+    assert(chanPtr != NULL);
+
     chan = Tcl_GetChannel(interp, id, &mode);
     if (chan == (Tcl_Channel) NULL) {
         return TCL_ERROR;
@@ -1859,14 +1865,16 @@ GetChan(Tcl_Interp *interp, char *id, Tcl_Channel *chanPtr)
  */
 
 static int
-GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST* objv, int *offPtr,
+GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *CONST* objv, int *offPtr,
            int *lenPtr)
 {
     int off, len;
 
+    assert(interp != NULL);
+    assert(connPtr != NULL);
+
     if (Tcl_GetIntFromObj(interp, objv[0], &off) != TCL_OK
-        ||
-        Tcl_GetIntFromObj(interp, objv[1], &len) != TCL_OK) {
+        || Tcl_GetIntFromObj(interp, objv[1], &len) != TCL_OK) {
         return TCL_ERROR;
     }
     if (off < 0 || (size_t)off > connPtr->reqPtr->length) {
@@ -1904,10 +1912,13 @@ GetIndices(Tcl_Interp *interp, Conn *connPtr, Tcl_Obj *CONST* objv, int *offPtr,
  */
 
 static Tcl_Channel
-MakeConnChannel(NsInterp *itPtr, Ns_Conn *conn)
+MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
 {
     Conn       *connPtr = (Conn *) conn;
     Tcl_Channel chan;
+
+    assert(conn != NULL);
+    assert(itPtr != NULL);
 
     if ((connPtr->flags & NS_CONN_CLOSED)) {
         Tcl_AppendResult(itPtr->interp, "connection closed", NULL);
