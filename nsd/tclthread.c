@@ -517,7 +517,7 @@ NsTclCondObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* ob
                                 &servPtr->tcl.synch.condId,
                                 (Ns_Callback *) Ns_CondInit,
                                 condType,
-                                objc == 3 ? objv[2] : NULL, -1);
+                                objc > 2 ? objv[2] : NULL, -1);
     switch (opt) {
     case ECreateIdx:
         /* Handled above. */
@@ -815,7 +815,7 @@ CreateSynchObject(NsInterp *itPtr,
     int            isNew;
 
     if (objPtr != NULL
-            && Ns_TclGetOpaqueFromObj(objPtr, type, &addr) == TCL_OK) {
+	&& Ns_TclGetOpaqueFromObj(objPtr, type, &addr) == TCL_OK) {
         Tcl_SetObjResult(interp, objPtr);
         return addr;
     }
