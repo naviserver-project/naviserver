@@ -115,7 +115,7 @@ void
 Ns_GetTime(Ns_Time *timePtr)
 {
 #ifdef _MSC_VER
-    Ns_GetTimeFromTcl(timePtr);
+    Ns_GetTimeFromWindowsFileTime(timePtr);
 #elif defined(HAVE_GETTIMEOFDAY)
     Ns_GetTimeFromGetTimeOfDay(timePtr);
 #else
