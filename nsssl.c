@@ -353,7 +353,7 @@ Ns_ModuleInit(char *server, char *module)
  *      Open a listening socket in non-blocking mode.
  *
  * Results:
- *      The open socket or INVALID_SOCKET on error.
+ *      The open socket or NS_INVALID_SOCKET on error.
  *
  * Side effects:
  *      None
@@ -367,7 +367,7 @@ Listen(Ns_Driver *driver, CONST char *address, int port, int backlog)
     SOCKET sock;
 
     sock = Ns_SockListenEx((char*)address, port, backlog);
-    if (sock != INVALID_SOCKET) {
+    if (sock != NS_INVALID_SOCKET) {
 	SSLDriver *cfg = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
@@ -402,7 +402,7 @@ Accept(Ns_Sock *sock, SOCKET listensock, struct sockaddr *sockaddrPtr, int *sock
     SSLContext *sslPtr = sock->arg;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
-    if (sock->sock != INVALID_SOCKET) {
+    if (sock->sock != NS_INVALID_SOCKET) {
 #ifdef __APPLE__
       /* 
        * Darwin's poll returns per default writable in situations,
@@ -1058,7 +1058,7 @@ HttpsConnect(Tcl_Interp *interp, char *method, char *url, Ns_Set *hdrPtr, Tcl_Ob
      */
 
     sock = Ns_SockAsyncConnect(hostBuffer, portNr);
-    if (sock == INVALID_SOCKET) {
+    if (sock == NS_INVALID_SOCKET) {
 	Tcl_AppendResult(interp, "connect to ", url, " failed: ", ns_sockstrerror(ns_sockerrno), NULL);
 	return TCL_ERROR;
     }
