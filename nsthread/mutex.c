@@ -36,6 +36,20 @@
 #include "thread.h"
 
 /*
+ * On Windows, Mutex timings can lead to a lock-up during start, when
+ * Tcl_GetTime() is used, since the first calls to the mutex are
+ * issued from DllMain() at a time before Tcl is initialized. Per
+ * default, Windows compilations use the windows-native get time
+ * implementation, so it does not harm. However, implementations might
+ * choose to compile without mutex timings. In such cases,
+ * NS_NO_MUTEX_TIMING should be set during compilation
+ */
+/*
+ * #define NS_NO_MUTEX_TIMING 1
+ */
+
+
+/*
  * The following structure defines a mutex with
  * string name and lock and busy counters.
  */
@@ -200,19 +214,12 @@ Ns_MutexDestroy(Ns_Mutex *mutex)
  *----------------------------------------------------------------------
  */
 
-#if defined(_MSC_VER)
-#define NS_MUTEX_TIMING 0
-#elif defined(_WIN32)
-#define NS_MUTEX_TIMING 1
-#else
-#define NS_MUTEX_TIMING 1
-#endif
-
 void
 Ns_MutexLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr = GETMUTEX(mutex);
-#if (0 != NS_MUTEX_TIMING)
+
+#ifndef NS_NO_MUTEX_TIMING
     Ns_Time end, diff, startTime;
 
     Ns_GetTime(&startTime);
@@ -221,7 +228,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
 	NsLockSet(mutexPtr->lock);
 	++mutexPtr->nbusy;
 
-#if (0 != NS_MUTEX_TIMING)
+#ifndef NS_NO_MUTEX_TIMING
         /*
          * Measure total and max waiting time for busy mutex locks.
          */
@@ -247,7 +254,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
         }
 #endif
     }
-#if (0 != NS_MUTEX_TIMING)
+#ifndef NS_NO_MUTEX_TIMING
     mutexPtr->start_time = startTime;
 #endif
     ++mutexPtr->nlock;
@@ -304,7 +311,8 @@ void
 Ns_MutexUnlock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr = (Mutex *) *mutex;
-#if (0 != NS_MUTEX_TIMING)
+
+#ifndef NS_NO_MUTEX_TIMING
     Ns_Time end, diff;
 
     Ns_GetTime(&end);

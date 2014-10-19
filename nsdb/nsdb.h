@@ -126,7 +126,7 @@ typedef struct {
  * dbdrv.c:
  */
 
-NS_EXTERN int Ns_DbRegisterDriver(char *driver, Ns_DbProc *procs);
+NS_EXTERN int Ns_DbRegisterDriver(char *driver, const Ns_DbProc *procs);
 NS_EXTERN char *Ns_DbDriverName(Ns_DbHandle *handle);
 NS_EXTERN char *Ns_DbDriverDbType(Ns_DbHandle *handle);
 NS_EXTERN int Ns_DbDML(Ns_DbHandle *handle, char *sql);
@@ -151,8 +151,8 @@ NS_EXTERN Ns_Set *Ns_DbSpGetParams(Ns_DbHandle *handle);
  */
 
 NS_EXTERN char *Ns_DbPoolDescription(const char *pool);
-NS_EXTERN char *Ns_DbPoolDefault(char *server);
-NS_EXTERN char *Ns_DbPoolList(char *server);
+NS_EXTERN char *Ns_DbPoolDefault(const char *server);
+NS_EXTERN char *Ns_DbPoolList(const char *server);
 NS_EXTERN int Ns_DbPoolAllowable(char *server, const char *pool);
 NS_EXTERN void Ns_DbPoolPutHandle(Ns_DbHandle *handle);
 NS_EXTERN Ns_DbHandle *Ns_DbPoolTimedGetHandle(const char *pool, int wait);
@@ -176,7 +176,7 @@ NS_EXTERN int Ns_TclDbGetHandle(Tcl_Interp *interp, char *handleId,
  * dbutil.c:
  */
     
-NS_EXTERN void Ns_DbQuoteValue(Ns_DString *pds, char *string) 
+NS_EXTERN void Ns_DbQuoteValue(Ns_DString *dsPtr, char *string) 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *Ns_Db0or1Row(Ns_DbHandle *handle, char *sql, int *nrows)

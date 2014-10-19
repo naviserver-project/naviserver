@@ -286,10 +286,49 @@ static const Cmd servCmds[] = {
 /* 
  * Locally defined functions.
  */
-static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr);
-
+static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddCmds --
+ *
+ *      Add an array of commands or objCommands to the passed
+ *      interpreter.  The array is terminated by an entry with 
+ *      name == NULL.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      registered commands.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
+{
+
+    assert(cmdPtr != NULL);
+    assert(itPtr != NULL);
+
+    while (cmdPtr->name != NULL) {
+	/*
+	 * One has to provide wither an objProc or a proc.
+	 */
+        if (cmdPtr->objProc != NULL) {
+	    (void)Tcl_CreateObjCommand(itPtr->interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
+        } else {
+	    assert(cmdPtr->proc != NULL);
+            (void)Tcl_CreateCommand(itPtr->interp, cmdPtr->name, cmdPtr->proc, itPtr, NULL);
+        }
+        ++cmdPtr;
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -305,21 +344,6 @@ static void AddCmds(const Cmd *cmdPtr, NsInterp *itPtr);
  *
  *----------------------------------------------------------------------
  */
-
-static void
-AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
-{
-    Tcl_Interp *interp = itPtr->interp;
-
-    while (cmdPtr->name != NULL) {
-        if (cmdPtr->objProc != NULL) {
-            Tcl_CreateObjCommand(interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
-        } else {
-            Tcl_CreateCommand(interp, cmdPtr->name, cmdPtr->proc, itPtr, NULL);
-        }
-        ++cmdPtr;
-    }
-}
 
 void
 NsTclAddBasicCmds(NsInterp *itPtr)

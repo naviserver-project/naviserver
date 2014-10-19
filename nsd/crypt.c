@@ -162,7 +162,7 @@ static const char     e[] = {
 static void setkey_private(struct sched *sp, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void encrypt_private(struct sched *sp, char *block, int edflag)
+static void encrypt_private(const struct sched *sp, char *block, int edflag)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -288,7 +288,7 @@ static const char     P[] = {
  */
 
 static void
-encrypt_private(struct sched *sp, char *block, int edflag)
+encrypt_private(const struct sched *sp, char *block, int edflag)
 {
     /*
      * The current block, divided into 2 halves.

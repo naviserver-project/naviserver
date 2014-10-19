@@ -506,7 +506,7 @@ SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
  */
 
 static ssize_t
-SendBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
+SendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
          Ns_Time *timeoutPtr, unsigned int flags)
 {
     return Ns_SockSendBufs(sock, bufs, nbufs, timeoutPtr, flags);

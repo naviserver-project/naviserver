@@ -154,11 +154,11 @@ static void  SockError(Sock *sockPtr, int reason, int err);
 static void  SockSendResponse(Sock *sockPtr, int code)
     NS_GNUC_NONNULL(1);
 static void  SockTrigger(NS_SOCKET sock);
-static void  SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
+static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, int timeout)
     NS_GNUC_NONNULL(1);
 static void  SockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
-static int   SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
+static int   SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static int   SockParse(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -178,11 +178,11 @@ static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
-static int PollWait(PollData *pdata, int waittime)
+static int PollWait(const PollData *pdata, int waittime)
     NS_GNUC_NONNULL(1);
 static int ChunkedDecode(Request *reqPtr, int update)
     NS_GNUC_NONNULL(1);
-static WriterSock *WriterSockRequire(Conn *connPtr) 
+static WriterSock *WriterSockRequire(const Conn *connPtr) 
     NS_GNUC_NONNULL(1);
 static void WriterSockRelease(WriterSock *wrSockPtr) 
     NS_GNUC_NONNULL(1);
@@ -252,7 +252,7 @@ NsInitDrivers(void)
  */
 
 int
-Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
+Ns_DriverInit(char *server, char *module, const Ns_DriverInitData *init)
 {
     char           *path,*address, *host, *bindaddr, *defproto, *defserver;
     int             i, n, defport, noHostNameGiven;
@@ -296,7 +296,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
      */
 
     if (address == NULL) {
-        he = gethostbyname(host ? host : Ns_InfoHostname());
+        he = gethostbyname(host != NULL ? host : Ns_InfoHostname());
 
         /*
          * If the lookup suceeded but the resulting hostname does not
@@ -318,7 +318,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
 
         if (he == NULL || he->h_name == NULL) {
             Ns_Log(Error, "%s: could not resolve %s", module, 
-		   host ? host : Ns_InfoHostname());
+		   host != NULL ? host : Ns_InfoHostname());
             return NS_ERROR;
         }
         if (*(he->h_addr_list) == NULL) {
@@ -352,7 +352,7 @@ Ns_DriverInit(char *server, char *module, Ns_DriverInitData *init)
         host = address;
     }
 
-    if (noHostNameGiven && host && path) {
+    if (noHostNameGiven && host != NULL && path != NULL) {
 	Ns_SetUpdate(set, "hostname", host);
     }
 
@@ -734,7 +734,7 @@ NsStopSpoolers(void)
  *----------------------------------------------------------------------
  */
 void
-NsWakeupDriver(Driver *drvPtr) {
+NsWakeupDriver(const Driver *drvPtr) {
     assert(drvPtr != NULL);
     SockTrigger(drvPtr->trigger[1]);
 }
@@ -800,7 +800,7 @@ NsWaitDriversShutdown(Ns_Time *toPtr)
  */
 
 Request *
-NsGetRequest(Sock *sockPtr, Ns_Time *nowPtr)
+NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 {
     Request *reqPtr;
 
@@ -853,9 +853,9 @@ NsFreeRequest(Request *reqPtr)
 
         reqPtr->next           = NULL;
         reqPtr->content        = NULL;
-        reqPtr->length         = 0;
-        reqPtr->contentLength  = 0;
-        reqPtr->avail          = 0;
+        reqPtr->length         = 0U;
+        reqPtr->contentLength  = 0U;
+        reqPtr->avail          = 0U;
         reqPtr->leadblanks     = 0;
 
         reqPtr->expectedLength = 0;
@@ -989,7 +989,7 @@ DriverListen(Driver *drvPtr)
 static NS_DRIVER_ACCEPT_STATUS
 DriverAccept(Sock *sockPtr)
 {
-    int n = sizeof(struct sockaddr_in);
+  int n = (int)sizeof(struct sockaddr_in);
 
     assert(sockPtr != NULL);
 
@@ -1219,7 +1219,7 @@ DriverThread(void *arg)
     PollCreate(&pdata);
     Ns_GetTime(&now);
     closePtr = waitPtr = readPtr = NULL;
-    stopping = (flags & DRIVER_SHUTDOWN);
+    stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
 
     while (!stopping) {
 	int n;
@@ -1504,7 +1504,7 @@ DriverThread(void *arg)
         flags            = drvPtr->flags;
         Ns_MutexUnlock(&drvPtr->lock);
 
-        stopping = (flags & DRIVER_SHUTDOWN);
+	stopping = ((flags & DRIVER_SHUTDOWN) != 0U);
 
         /*
          * Update the timeout for each closing socket and add to the
@@ -1604,7 +1604,7 @@ PollSet(PollData *pdata, NS_SOCKET sock, unsigned int type, Ns_Time *timeoutPtr)
 }
 
 static int
-PollWait(PollData *pdata, int waittime)
+PollWait(const PollData *pdata, int waittime)
 {
     int n;
 
@@ -1746,7 +1746,7 @@ SockPoll(Sock *sockPtr, unsigned int type, PollData *pdata)
  */
 
 static void
-SockTimeout(Sock *sockPtr, Ns_Time *nowPtr, int timeout)
+SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, int timeout)
 {
     assert(sockPtr != NULL);
     sockPtr->timeout = *nowPtr;
@@ -1798,7 +1798,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, Ns_Time *nowPtr)
         sockPtr->tfd    = 0;
         sockPtr->taddr  = 0;
         sockPtr->keep   = 0;
-        sockPtr->flags  = 0;
+        sockPtr->flags  = 0U;
         sockPtr->arg    = NULL;
     }
 
@@ -2039,7 +2039,7 @@ SockSendResponse(Sock *sockPtr, int code)
     iov[1].iov_base = response;
     iov[1].iov_len = strlen(response);
     iov[2].iov_base = "\r\n\r\n";
-    iov[2].iov_len = 4;
+    iov[2].iov_len = 4U;
     sent = NsDriverSend(sockPtr, iov, 3, 0);
     if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
 	Ns_Log(Warning, "Driver: partial write while sending error reply");
@@ -2227,7 +2227,7 @@ ChunkedDecode(Request *reqPtr, int update)
  */
 
 static int
-SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
+SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 {
     Driver       *drvPtr;
     Request      *reqPtr;
@@ -2272,7 +2272,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
 
     reqPtr = sockPtr->reqPtr;
     bufPtr = &reqPtr->buffer;
-    if (reqPtr->length == 0) {
+    if (reqPtr->length == 0U) {
         nread = drvPtr->bufsize;
     } else {
         nread = reqPtr->length - reqPtr->avail;
@@ -2287,7 +2287,7 @@ SockRead(Sock *sockPtr, int spooler, Ns_Time *timePtr)
     if (n > drvPtr->maxinput) {
 	n = (ssize_t)drvPtr->maxinput;
         nread = n - len;
-        if (nread == 0) {
+        if (nread == 0U) {
             Ns_Log(DriverDebug, "SockRead: maxinput reached %" TCL_LL_MODIFIER "d",
                    drvPtr->maxinput);
             return SOCK_ERROR;
@@ -2532,7 +2532,7 @@ SockParse(Sock *sockPtr)
                         
                         reqPtr->chunkStartOff = reqPtr->coff;
                         reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
-                        reqPtr->contentLength = 0;
+                        reqPtr->contentLength = 0U;
 
                         /* We need expectedLength for safely terminating read loop */
 
@@ -2708,7 +2708,7 @@ SockParse(Sock *sockPtr)
         if (sockPtr->tfile != NULL) {
             reqPtr->content = NULL;
             reqPtr->next = NULL;
-            reqPtr->avail = 0;
+            reqPtr->avail = 0U;
             Ns_Log(Debug, "spooling content to file: size=%" PRIdz ", file=%s",
                    reqPtr->length, sockPtr->tfile);
 
@@ -3188,7 +3188,7 @@ void NsWriterUnlock(void) {
  */
 
 static WriterSock *
-WriterSockRequire(Conn *connPtr) {
+WriterSockRequire(const Conn *connPtr) {
     WriterSock *wrSockPtr;
 
     assert(connPtr != NULL);
@@ -3311,7 +3311,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 static int
 WriterReadFromSpool(WriterSock *curPtr) {
     int            streaming, status = NS_OK;
-    Tcl_WideInt    toread, maxsize;
+    Tcl_WideInt    toRead, maxsize;
     unsigned char *bufPtr;
 
     assert(curPtr != NULL);
@@ -3319,10 +3319,10 @@ WriterReadFromSpool(WriterSock *curPtr) {
     streaming = curPtr->streaming;
     if (streaming) {
 	Ns_MutexLock(&curPtr->c.file.fdlock);
-	toread = curPtr->c.file.toread;
+	toRead = curPtr->c.file.toread;
 	Ns_MutexUnlock(&curPtr->c.file.fdlock);
     } else {
-	toread = curPtr->c.file.toread;
+	toRead = curPtr->c.file.toread;
     }
     
     maxsize = curPtr->c.file.maxsize;
@@ -3348,14 +3348,14 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	bufPtr = curPtr->c.file.buf + curPtr->c.file.bufsize;
 	maxsize -= curPtr->c.file.bufsize;
     }
-    if (toread > maxsize) {
-	toread = maxsize;
+    if (toRead > maxsize) {
+	toRead = maxsize;
     }
     
     /*
      * Read content from the file into the buffer.
      */
-    if (toread > 0) {
+    if (toRead > 0) {
 	int n;
 
 	if (streaming) {
@@ -3373,7 +3373,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 	    lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
 	}
 	
-	n = read(curPtr->fd, bufPtr, (size_t)toread);
+	n = read(curPtr->fd, bufPtr, (size_t)toRead);
 	
 	if (n <= 0) {
 	    status = SOCK_ERROR;
@@ -3416,7 +3416,7 @@ static int
 WriterSend(WriterSock *curPtr, int *err) {
     struct iovec *bufs, vbuf;
     int           nbufs, status = NS_OK;
-    size_t        towrite;
+    size_t        toWrite;
     ssize_t       n;
 
     assert(curPtr != NULL);
@@ -3434,7 +3434,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	vbuf.iov_base = (void *)curPtr->c.file.buf;
 	bufs = &vbuf;
 	nbufs = 1;
-	towrite = curPtr->c.file.bufsize;
+	toWrite = curPtr->c.file.bufsize;
     } else {
 	int i;
 
@@ -3442,13 +3442,13 @@ WriterSend(WriterSock *curPtr, int *err) {
 	 * Send multiple buffers.
 	 * Get length of remaining buffers
 	 */
-	towrite = 0;
+	toWrite = 0U;
 	for (i = 0; i < curPtr->c.mem.nsbufs; i ++) {
-	    towrite += curPtr->c.mem.sbufs[i].iov_len;
+	    toWrite += curPtr->c.mem.sbufs[i].iov_len;
 	}
 	Ns_Log(DriverDebug, 
 	       "### Writer wants to send remainder nbufs %d len %" PRIdz, 
-	       curPtr->c.mem.nsbufs, towrite);
+	       curPtr->c.mem.nsbufs, toWrite);
 
 	/*
 	 * Add buffers from the source and fill structure up to max 
@@ -3463,7 +3463,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 		       "### Writer copies source %d to scratch %d len %" PRIiovlen,
 		       curPtr->c.mem.bufIdx, curPtr->c.mem.sbufIdx, vPtr->iov_len);
 
-		towrite += Ns_SetVec(curPtr->c.mem.sbufs, curPtr->c.mem.sbufIdx++, 
+		toWrite += Ns_SetVec(curPtr->c.mem.sbufs, curPtr->c.mem.sbufIdx++, 
 				     vPtr->iov_base, vPtr->iov_len);
 		curPtr->c.mem.nsbufs++;
 	    }
@@ -3473,7 +3473,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	bufs  = curPtr->c.mem.sbufs;
 	nbufs = curPtr->c.mem.nsbufs;
 	Ns_Log(DriverDebug, "### Writer wants to send %d bufs size %" PRIdz, 
-	       nbufs, towrite);
+	       nbufs, toWrite);
     }
     
     n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0);
@@ -3500,7 +3500,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 	    curPtr->c.file.bufoffset = n;
 	    /* for partial transmits bufsize is now > 0 */
 	} else {	
-	    if (n < (ssize_t)towrite) {
+	    if (n < (ssize_t)toWrite) {
 		/*
 		 * We have a partial transmit from the iovec
 		 * structure. We have to compact it to fill content in
@@ -3944,7 +3944,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
     /*
      * Make sure we have proper content length header for keep-alives
      */
-    Ns_ConnSetLengthHeader(conn, (wrSockPtr->flags & NS_CONN_STREAM) ? -1 : nsend);
+    Ns_ConnSetLengthHeader(conn, nsend, (wrSockPtr->flags & NS_CONN_STREAM) != 0U);
 
     /*
      * Flush the headers
@@ -4534,7 +4534,7 @@ NsAsyncWriterQueueDisable(int shutdown)
  *----------------------------------------------------------------------
  */
 int 
-NsAsyncWrite(int fd, char *buffer, size_t nbyte) 
+NsAsyncWrite(int fd, const char *buffer, size_t nbyte) 
 {
     SpoolerQueue  *queuePtr;
     int            trigger = 0;
@@ -4690,7 +4690,7 @@ AsyncWriterThread(void *arg)
          * Select and drain the trigger pipe if necessary.
          */
         if (PollIn(&pdata, 0)) {
-	    if (recv(queuePtr->pipe[0], &c, 1, 0) != 1) {
+	    if (recv(queuePtr->pipe[0], &c, 1U, 0) != 1) {
 		Ns_Fatal("asynclogwriter: trigger recv() failed: %s",
 			 ns_sockstrerror(ns_sockerrno));
 	    }

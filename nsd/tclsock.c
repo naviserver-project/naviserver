@@ -65,9 +65,6 @@ static int GetSet(Tcl_Interp *interp, char *flist, int write,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) 
     NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
-static int GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int byaddr)
-    NS_GNUC_NONNULL(1);
-
 static void AppendReadyFiles(Tcl_Interp *interp, fd_set *setPtr, 
                              int write, char *flist, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
@@ -112,77 +109,101 @@ NsTclSockArgProc(Tcl_DString *dsPtr, void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclGetHostObjCmd, NsTclGetAddrObjCmd --
+ * NsTclGetHostObjCmd --
  *
- *      Performs a forward or reverse DNS lookup.
+ *      Performs a reverse DNS lookup. This is the implementation of
+ *      ns_hostbyaddr.
  *
  * Results:
  *      Tcl result. 
  *
  * Side effects:
- *      Puts a hostname into the tcl result. 
+ *      Puts a hostname into the Tcl result. 
  *
  *----------------------------------------------------------------------
  */
-
-static int
-GetObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], int byaddr)
-{
-    Ns_DString  ds;
-    char       *opt, *addr;
-    int         all = 0;
-    int         status;
-
-    if (byaddr) {
-        if (objc < 2 || objc > 3) {
-            Tcl_WrongNumArgs(interp, 1, objv, "?-all? address");
-            return TCL_ERROR;
-        }
-    } else {
-        if (objc != 2) {
-            Tcl_WrongNumArgs(interp, 1, objv, "address");
-            return TCL_ERROR;
-        }
-    }
-    opt = Tcl_GetString(objv[1]);
-    if (objc >= 3 && STREQ(opt, "-all")) {
-        all = 1;
-        addr = Tcl_GetString(objv[2]);
-    } else {
-        addr = opt;
-    }
-
-    Ns_DStringInit(&ds);
-    if (byaddr) {
-        if (all) {
-            status = Ns_GetAllAddrByHost(&ds, addr);
-        } else {
-            status = Ns_GetAddrByHost(&ds, addr);
-        }
-    } else {
-        status = Ns_GetHostByAddr(&ds, addr);
-    }
-    if (status == NS_TRUE) {
-    	Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
-    }
-    Ns_DStringFree(&ds);
-    if (status != NS_TRUE) {
-        Tcl_AppendResult(interp, "could not lookup ", addr, NULL);
-	return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
 int
 NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return GetObjCmd(interp, objc, objv, 0);
+    Ns_DString  ds;
+    char       *addr;
+    int         status, result = TCL_OK;
+    Ns_ObjvSpec opts[] = {
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"address",  Ns_ObjvString, &addr,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    Ns_DStringInit(&ds);
+    status = Ns_GetHostByAddr(&ds, addr);
+
+    if (status == NS_TRUE) {
+    	Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
+    } else {
+        Tcl_AppendResult(interp, "could not lookup ", addr, NULL);
+	result = TCL_ERROR;
+    }
+    Ns_DStringFree(&ds);
+
+    return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclGetHostObjCmd --
+ *
+ *      Performs a DNS lookup. This is the implementation of
+ *      ns_addrbyhost.
+ *
+ * Results:
+ *      Tcl result. 
+ *
+ * Side effects:
+ *      Puts a sing or multiple IP addresses the Tcl result. 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv)
 {
-    return GetObjCmd(interp, objc, objv, 1);
+    Ns_DString  ds;
+    char       *host;
+    int         all = 0, status, result = TCL_OK;
+    Ns_ObjvSpec opts[] = {
+        {"-all",      Ns_ObjvBool,  &all, INT2PTR(1)},
+        {"--",        Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL,  NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"host",  Ns_ObjvString, &host,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        return TCL_ERROR;
+    }
+
+    Ns_DStringInit(&ds);
+    if (all) {
+	status = Ns_GetAllAddrByHost(&ds, host);
+    } else {
+	status = Ns_GetAddrByHost(&ds, host);
+    }
+    if (status == NS_TRUE) {
+    	Tcl_SetResult(interp, ds.string, TCL_VOLATILE);
+    } else {
+        Tcl_AppendResult(interp, "could not lookup ", host, NULL);
+	result = TCL_ERROR;
+    }
+    Ns_DStringFree(&ds);
+
+    return result;
 }
 
 

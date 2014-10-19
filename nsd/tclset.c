@@ -53,7 +53,7 @@ static int LookupSet(NsInterp *itPtr, CONST char *id, int deleteEntry, Ns_Set **
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static int LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry, Ns_Set **setPtr)
+static int LookupInterpSet(Tcl_Interp *interp, const char *id, int deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static int EnterSet(NsInterp *itPtr, Ns_Set *set, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -709,7 +709,7 @@ LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, int deleteEntry, Ns_Set **setPtr)
 }
 
 static int
-LookupInterpSet(Tcl_Interp *interp, char *id, int deleteEntry, Ns_Set **setPtr)
+LookupInterpSet(Tcl_Interp *interp, const char *id, int deleteEntry, Ns_Set **setPtr)
 {
     NsInterp *itPtr;
 

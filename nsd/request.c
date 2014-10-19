@@ -291,7 +291,7 @@ done:
  */
 
 char *
-Ns_SkipUrl(Ns_Request *request, int n)
+Ns_SkipUrl(const Ns_Request *request, int n)
 {
     size_t skip;
 

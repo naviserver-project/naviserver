@@ -75,7 +75,7 @@ static Ns_ThreadProc EventThread;       /* Proc for NS_SCHED_THREAD events. */
 static Event *DeQueueEvent(int qid);    /* Remove event from heap. */
 static void FreeEvent(Event *ePtr)      /* Free completed or cancelled event. */
     NS_GNUC_NONNULL(1);
-static void QueueEvent(Event *ePtr, time_t *nowPtr);    /* Queue event on heap. */
+static void QueueEvent(Event *ePtr, const time_t *nowPtr);    /* Queue event on heap. */
 /*
  * Static variables defined in this file.
  */
@@ -264,7 +264,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
 
 int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
-    int interval, Ns_SchedProc *deleteProc)
+    int interval, Ns_SchedProc *cleanupProc)
 {
     Event          *ePtr;
     int             id, isNew;
@@ -281,7 +281,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *arg, unsigned int flags,
     ePtr->lastqueue = ePtr->laststart = ePtr->lastend = -1;
     ePtr->interval = interval;
     ePtr->proc = proc;
-    ePtr->deleteProc = deleteProc;
+    ePtr->deleteProc = cleanupProc;
     ePtr->arg = arg;
 
     Ns_MutexLock(&lock);
@@ -510,7 +510,7 @@ NsWaitSchedShutdown(Ns_Time *toPtr)
  */
 
 static void
-QueueEvent(Event *ePtr, time_t *nowPtr)
+QueueEvent(Event *ePtr, const time_t *nowPtr)
 {
     struct tm      *tp;
 

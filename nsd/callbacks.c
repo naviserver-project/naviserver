@@ -55,8 +55,8 @@ typedef struct Callback {
 static Ns_ThreadProc ShutdownThread;
 
 static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo);
-static void RunCallbacks(CONST char *list, Callback *cbPtr);
-static void AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr);
+static void RunCallbacks(CONST char *list, const Callback *cbPtr);
+static void AppendList(Tcl_DString *dsPtr, CONST char *list, const Callback *cbPtr);
 
 /*
  * Static variables defined in this file
@@ -407,7 +407,7 @@ NsGetCallbacks(Tcl_DString *dsPtr)
 }
 
 static void
-AppendList(Tcl_DString *dsPtr, CONST char *list, Callback *cbPtr)
+AppendList(Tcl_DString *dsPtr, CONST char *list, const Callback *cbPtr)
 {
     while (cbPtr != NULL) {
         Tcl_DStringStartSublist(dsPtr);
@@ -491,7 +491,7 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, int fifo)
  */
 
 static void
-RunCallbacks(CONST char *list, Callback *cbPtr)
+RunCallbacks(CONST char *list, const Callback *cbPtr)
 {
     while (cbPtr != NULL) {
 	Ns_Callback *proc;

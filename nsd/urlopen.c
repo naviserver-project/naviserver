@@ -71,7 +71,7 @@ static int FillBuf(Stream *sPtr);
  */
 
 int
-Ns_FetchPage(Ns_DString *dsPtr, char *url, char *server)
+Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
 {
     Ns_DString  ds;
     Tcl_Channel chan;

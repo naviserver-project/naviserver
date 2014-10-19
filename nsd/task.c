@@ -87,7 +87,7 @@ typedef struct Task {
  * Local functions defined in this file
  */
 
-static void TriggerQueue(TaskQueue *queuePtr);
+static void TriggerQueue(const TaskQueue *queuePtr);
 static void JoinQueue(TaskQueue *queuePtr);
 static void StopQueue(TaskQueue *queuePtr);
 static int SignalQueue(Task *taskPtr, unsigned int bit);
@@ -136,7 +136,7 @@ static const struct {
  */
 
 Ns_TaskQueue *
-Ns_CreateTaskQueue(char *name)
+Ns_CreateTaskQueue(const char *name)
 {
     TaskQueue *queuePtr;
 
@@ -435,7 +435,7 @@ Ns_TaskCompleted(Ns_Task *task)
  */
 
 void
-Ns_TaskCallback(Ns_Task *task, unsigned int when, Ns_Time *timeoutPtr)
+Ns_TaskCallback(Ns_Task *task, unsigned int when, const Ns_Time *timeoutPtr)
 {
     Task *taskPtr = (Task *) task;
     int   i;
@@ -731,7 +731,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
  */
 
 static void
-TriggerQueue(TaskQueue *queuePtr)
+TriggerQueue(const TaskQueue *queuePtr)
 {
     if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
         Ns_Fatal("task queue: trigger send() failed: %s",
@@ -897,8 +897,8 @@ TaskThread(void *arg)
                 broadcast = 1;
             }
             if (taskPtr->flags & TASK_WAIT) {
-                if (max <= nfds) {
-                    max  = nfds + 100;
+		if (max <= (size_t)nfds) {
+                    max  = (size_t)nfds + 100U;
                     pfds = ns_realloc(pfds, max);
                 }
                 taskPtr->idx = nfds;

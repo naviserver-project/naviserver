@@ -103,7 +103,7 @@ NsInitListen(void)
  */
 
 int
-Ns_SockListenCallback(char *addr, int port, Ns_SockProc *proc, void *arg)
+Ns_SockListenCallback(const char *addr, int port, Ns_SockProc *proc, void *arg)
 {
     Tcl_HashTable      *tablePtr = NULL;
     Tcl_HashEntry      *hPtr;

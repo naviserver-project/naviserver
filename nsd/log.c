@@ -501,7 +501,7 @@ Ns_VALog(Ns_LogSeverity severity, CONST char *fmt, va_list *vaPtr)
  */
 
 void
-Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *freeProc)
+Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
 {
     LogFilter *filterPtr = ns_calloc(1, sizeof *filterPtr);
 
@@ -517,7 +517,7 @@ Ns_AddLogFilter(Ns_LogFilter *proc, void *arg, Ns_Callback *freeProc)
     filterPtr->nextPtr = NULL;
     filters = filterPtr;
 
-    filterPtr->proc = proc;
+    filterPtr->proc = procPtr;
     filterPtr->arg  = arg;
     filterPtr->free = freeProc;
 

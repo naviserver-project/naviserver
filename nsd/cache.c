@@ -352,13 +352,13 @@ Ns_CacheKey(Ns_Entry *entry)
  */
 
 void *
-Ns_CacheGetValue(Ns_Entry *entry)
+Ns_CacheGetValue(const Ns_Entry *entry)
 {
     return ((Entry *) entry)->value;
 }
 
 size_t
-Ns_CacheGetSize(Ns_Entry *entry)
+Ns_CacheGetSize(const Ns_Entry *entry)
 {
     return ((Entry *) entry)->size;
 }
@@ -402,7 +402,7 @@ Ns_CacheSetValueSz(Ns_Entry *entry, void *value, size_t size)
 
 void
 Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
-                        Ns_Time *timeoutPtr, int cost)
+                        const Ns_Time *timeoutPtr, int cost)
 {
     Entry *ePtr = (Entry *) entry;
     Cache *cachePtr = ePtr->cachePtr;

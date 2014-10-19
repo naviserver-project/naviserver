@@ -115,6 +115,7 @@ NsTclQuoteHtmlCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, C
     }
     Ns_DStringInit(&ds);
     Ns_QuoteHtml(&ds, argv[1]);
-    Tcl_SetResult(interp, Ns_DStringExport(&ds), (Tcl_FreeProc *)ns_free);
+
+    Tcl_DStringResult(interp, &ds);
     return TCL_OK;
 }

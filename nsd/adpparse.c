@@ -79,13 +79,21 @@ typedef struct Parse {
 static void AppendBlock(Parse *parsePtr, const char *s, char *e, int type, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, char *ae, char *se, unsigned int flags)
+static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type);
-static void AppendLengths(AdpCode *codePtr, int *length, int *line);
-static void GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr);
-static char *GetScript(const char *tag, char *a, char *e, unsigned int *streamFlagPtr);
+static int RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void AppendLengths(AdpCode *codePtr, const int *length, const int *line)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static void GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static char *GetScript(const char *tag, char *a, char *e, unsigned int *streamFlagPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4); 
+
 static void ParseAtts(char *s, const char *e, unsigned int *flagsPtr, Tcl_DString *attsPtr, int atts)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -144,12 +152,17 @@ static int
 RegisterObjCmd(ClientData arg, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv, int type)
 {
     NsInterp       *itPtr = arg;
-    NsServer       *servPtr = itPtr->servPtr;
+    NsServer       *servPtr;
     char           *string, *end, *tag;
     Tcl_HashEntry  *hPtr;
     int             isNew, slen, elen, tlen;
     Tcl_DString     tbuf;
     Tag            *tagPtr;
+
+    assert(arg != NULL);
+    assert(interp != NULL);
+
+    servPtr = itPtr->servPtr;
 
     if (objc != 4 && objc != 3) {
         Tcl_WrongNumArgs(interp, 1, objv, "tag ?endtag? [adp|proc]");
@@ -597,6 +610,10 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
 {
     char *t;
 
+    assert(dsPtr != NULL);
+    assert(s != NULL);
+    assert(e != NULL);
+
     ++s;
     while (s < e && isspace(UCHAR(*s))) {
         ++s;
@@ -774,6 +791,11 @@ GetScript(const char *tag, char *a, char *e, unsigned int *streamFlagPtr)
 {
     unsigned int flags;
 
+    assert(tag != NULL);
+    assert(a != NULL);
+    assert(e != NULL);
+    assert(streamFlagPtr != NULL);
+
     if (a < e && STRIEQ(tag, "script")) {
         ParseAtts(a, e, &flags, NULL, 1);
         if ((flags & SERV_RUNAT) && !(flags & SERV_NOTTCL)) {
@@ -802,7 +824,7 @@ GetScript(const char *tag, char *a, char *e, unsigned int *streamFlagPtr)
  */
 
 static void
-AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, char *ae, char *se, unsigned int flags)
+AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se, unsigned int flags)
 {
     Tcl_DString script;
 
@@ -860,11 +882,16 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, char *ae, char *se, unsi
  */
 
 static void
-AppendLengths(AdpCode *codePtr, int *length, int *line)
+AppendLengths(AdpCode *codePtr, const int *length, const int *line)
 {
-    Tcl_DString *textPtr = &codePtr->text;
+    Tcl_DString *textPtr;
     int          start, ncopy;
 
+    assert(codePtr != NULL);
+    assert(length != NULL);
+    assert(line != NULL);
+
+    textPtr = &codePtr->text;
     /* NB: Need to round up start of lengths array to next word. */
     start = ((textPtr->length / LENSZ) + 1) * LENSZ;
     ncopy = codePtr->nblocks * LENSZ;

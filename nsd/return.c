@@ -127,7 +127,7 @@ static const int nreasons = (sizeof(reasons) / sizeof(reasons[0]));
  */
 
 void
-Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     Ns_SetPut(conn->outputheaders, field, value);
 }
@@ -149,7 +149,7 @@ Ns_ConnSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
  */
 
 void
-Ns_ConnUpdateHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnUpdateHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     Ns_SetUpdate(conn->outputheaders, field, value);
 }
@@ -171,7 +171,7 @@ Ns_ConnUpdateHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
  */
 
 void
-Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt,...)
+Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt,...)
 {
     Ns_DString ds;
     va_list ap;
@@ -202,7 +202,7 @@ Ns_ConnPrintfHeaders(Ns_Conn *conn, CONST char *field, CONST char *fmt,...)
  */
 
 void
-Ns_ConnCondSetHeaders(Ns_Conn *conn, CONST char *field, CONST char *value)
+Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     if (Ns_SetIGet(conn->outputheaders, field) == NULL) {
         Ns_SetPut(conn->outputheaders, field, value);
@@ -252,7 +252,7 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, Ns_Set *newheaders)
  */
 
 void
-Ns_ConnSetTypeHeader(Ns_Conn *conn, CONST char *type)
+Ns_ConnSetTypeHeader(const Ns_Conn *conn, const char *type)
 {
     Ns_ConnUpdateHeaders(conn, "Content-Type", type);
 }
@@ -321,18 +321,23 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, CONST char *mimeType)
  */
 
 void
-Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
+Ns_ConnSetLengthHeader(const Ns_Conn *conn, size_t length, int streaming)
 {
     Conn *connPtr = (Conn *) conn;
 
-    if (length >= 0) {
-        char strlength[TCL_INTEGER_SPACE];
-        snprintf(strlength, sizeof(strlength), "%" TCL_LL_MODIFIER "d", length);
-        Ns_ConnUpdateHeaders(conn, "Content-Length", strlength);
+    if (streaming == 0) {
+	char buffer[TCL_INTEGER_SPACE];
+
+	snprintf(buffer, sizeof(buffer), "%" PRIdz, length);
+	Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
+	connPtr->responseLength = length;
     } else {
+	/*
+	 * In the streaming case, make sure no Content-Length is set.
+	 */
         Ns_SetIDeleteKey(conn->outputheaders, "Content-Length");
+	connPtr->responseLength = -1;
     }
-    connPtr->responseLength = length;
 }
 
 
@@ -353,9 +358,12 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
  */
 
 void
-Ns_ConnSetLastModifiedHeader(Ns_Conn *conn, time_t *mtime)
+Ns_ConnSetLastModifiedHeader(const Ns_Conn *conn, const time_t *mtime)
 {
     Ns_DString ds;
+
+    assert(conn != NULL);
+    assert(mtime != NULL);
 
     Ns_DStringInit(&ds);
     Ns_ConnCondSetHeaders(conn, "Last-Modified", Ns_HttpTime(&ds, mtime));
@@ -380,7 +388,7 @@ Ns_ConnSetLastModifiedHeader(Ns_Conn *conn, time_t *mtime)
  */
 
 void
-Ns_ConnSetExpiresHeader(Ns_Conn *conn, CONST char *expires)
+Ns_ConnSetExpiresHeader(const Ns_Conn *conn, const char *expires)
 {
     Ns_ConnSetHeaders(conn, "Expires", expires);
 }
@@ -429,14 +437,23 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 
     /*
      * Add the basic required headers if they.
+     *
+     * Earlier versions included 
+     *
+     *       "MIME-Version: 1.0\r\n"
+     *
+     * However, MIME_Version is a MIME header, not a HTTP header
+     * (allthough allowed in HTTP/1.1); it's only used when HTTP
+     * messages are moved over MIME-based protocols (e.g., SMTP),
+     * which is uncommon. The HTTP mime message parsing semantics are
+     * defined by this RFC 2616 and not any MIME specification.
      */
 
     Ns_DStringVarAppend(dsPtr,
-			"MIME-Version: 1.0\r\n"
 			"Server: ", Ns_InfoServerName(), "/", Ns_InfoServerVersion(), "\r\n",
 			"Date: ",
 			NULL);
-    Ns_HttpTime(dsPtr, NULL);
+    (void)Ns_HttpTime(dsPtr, NULL);
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 
     /*
@@ -523,6 +540,9 @@ Ns_ConnConstructHeaders(Ns_Conn *conn, Ns_DString *dsPtr)
 void
 Ns_ConnQueueHeaders(Ns_Conn *conn, int status)
 {
+    /* 
+     * Deprecated
+     */
     Ns_ConnSetResponseStatus(conn, status);
 }
 
@@ -530,7 +550,9 @@ Tcl_WideInt
 Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 {
     Conn *connPtr = (Conn *) conn;
-
+    /* 
+     * Deprecated
+     */
     Ns_ConnSetResponseStatus(conn, status);
     Ns_ConnWriteVData(conn, NULL, 0, 0);
 
@@ -538,10 +560,13 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
 }
 
 void
-Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, size_t length)
+Ns_ConnSetRequiredHeaders(const Ns_Conn *conn, CONST char *type, size_t length)
 {
+    /* 
+     * Deprecated
+     */
     Ns_ConnSetTypeHeader(conn, type);
-    Ns_ConnSetLengthHeader(conn, length);
+    Ns_ConnSetLengthHeader(conn, length, 0);
 }
 
 
@@ -691,7 +716,7 @@ Ns_ConnReturnData(Ns_Conn *conn, int status, CONST char *data,
         Ns_ConnSetTypeHeader(conn, type);
     }
     if (len < 0) {
-        len = data ? strlen(data) : 0;
+        len = (data != NULL) ? strlen(data) : 0;
     }
     Ns_ConnSetResponseStatus(conn, status);
 
@@ -730,7 +755,7 @@ Ns_ConnReturnCharData(Ns_Conn *conn, int status, CONST char *data,
     }
 
     sbuf.iov_base = (void *)data;
-    sbuf.iov_len = len < 0U ? (data != NULL ? strlen(data) : 0U) : len;
+    sbuf.iov_len = len < 0 ? (data != NULL ? strlen(data) : 0U) : (size_t)len;
 
     Ns_ConnSetResponseStatus(conn, status);
     Ns_ConnWriteVChars(conn, &sbuf, 1, 0);
@@ -822,10 +847,10 @@ ReturnOpen(Ns_Conn *conn, int status, CONST char *type, Tcl_Channel chan,
     }
 
     if (chan != NULL) {
-        Ns_ConnSetLengthHeader(conn, len);
+        Ns_ConnSetLengthHeader(conn, len, 0);
         result = Ns_ConnSendChannel(conn, chan, len);
     } else if (fp != NULL) {
-        Ns_ConnSetLengthHeader(conn, len);
+        Ns_ConnSetLengthHeader(conn, len, 0);
         result = Ns_ConnSendFp(conn, fp, len);
     } else {
         result = ReturnRange(conn, type, fd, NULL, len);
@@ -893,7 +918,7 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
 		nvbufs = rangeCount;
 		len = 0;
 		for (i = 0; i < rangeCount; i++) {
-		    vbuf[i].iov_base = (void *)(intptr_t)bufs[i].offset;
+		    vbuf[i].iov_base = INT2PTR(bufs[i].offset);
 		    vbuf[i].iov_len  = bufs[i].length;
 		    len += bufs[i].length;
 		}
@@ -917,7 +942,7 @@ ReturnRange(Ns_Conn *conn, CONST char *type,
     
     if (rangeCount >= 0) {
 	if (rangeCount == 0) {
-            Ns_ConnSetLengthHeader(conn, len);
+            Ns_ConnSetLengthHeader(conn, len, 0);
 
 	    if ((conn->flags & NS_CONN_SKIPBODY)) {
 	      len = 0;

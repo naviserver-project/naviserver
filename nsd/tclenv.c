@@ -46,7 +46,7 @@ extern char **environ;
  * Local functions defined in this file.
  */
 
-static int PutEnv(Tcl_Interp *interp, char *name, char *value);
+static int PutEnv(Tcl_Interp *interp, const char *name, const char *value);
 
 /*
  * Loca variables defined in this file.
@@ -248,7 +248,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  */
 
 static int
-PutEnv(Tcl_Interp *interp, char *name, char *value)
+PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 {
     char   *s;
     size_t  len;

@@ -235,7 +235,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  */
 
 static ssize_t
-Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
+Send(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
      Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t   n;
@@ -256,7 +256,7 @@ Send(Ns_Sock *sockPtr, struct iovec *bufs, int nbufs,
 	struct msghdr msg;
       
 	memset(&msg, 0, sizeof(msg));
-	msg.msg_iov = bufs;
+	msg.msg_iov = (struct iovec *)bufs;
 	msg.msg_iovlen = nbufs;
 
 	n = sendmsg(sock, &msg, flags);

@@ -43,7 +43,7 @@
  * Static functions defined in this file.
  */
 
-static void **GetSlot(Ns_Sls *slsPtr, Ns_Sock *sock);
+static void **GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock);
 static Ns_Callback CleanupKeyed;
 
 /* 
@@ -464,7 +464,7 @@ NsSlsCleanup(Sock *sockPtr)
  */
 
 static void **
-GetSlot(Ns_Sls *slsPtr, Ns_Sock *sock)
+GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock)
 {
     Sock      *sockPtr = (Sock *) sock;
     int        id      = PTR2INT(*slsPtr);

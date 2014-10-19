@@ -109,7 +109,7 @@ Ns_AdpRequest(Ns_Conn *conn, CONST char *file)
 }
 
 int
-Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, Ns_Time *expiresPtr)
+Ns_AdpRequestEx(Ns_Conn *conn, CONST char *file, const Ns_Time *expiresPtr)
 {
     assert(conn != NULL);
     assert(file != NULL);

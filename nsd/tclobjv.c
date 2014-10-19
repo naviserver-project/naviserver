@@ -45,10 +45,16 @@ static Tcl_SetFromAnyProc      SetSpecFromAny;
 static Ns_ObjvProc ObjvTcl;
 static Ns_ObjvProc ObjvTclArgs;
 
-static void FreeSpecs(Ns_ObjvSpec *specPtr);
-static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valObj);
+static void FreeSpecs(Ns_ObjvSpec *specPtr) 
+    NS_GNUC_NONNULL(1);
+
+static int SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj) 
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(3);
+
 static void WrongNumArgs(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int objc, Tcl_Obj *CONST* objv);
-static int GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr);
+
+static int GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(3);
 
 /*
  * Static variables defined in this file.
@@ -96,7 +102,7 @@ Ns_OptionServer(Tcl_Interp *UNUSED(interp), Tcl_Obj *UNUSED(labelObj), Tcl_Obj *
 }
 
 int 
-Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[], 
+Ns_ParseOptions(const char *options[], Ns_OptionConverter *converter[], 
 		ClientData clientData[], Tcl_Interp *interp, int offset, 
 		int max, int *nextArg, int objc, Tcl_Obj *CONST* objv) {
     int i = offset, opt;
@@ -115,7 +121,7 @@ Ns_ParseOptions(CONST char *options[], Ns_OptionConverter *converter[],
 	    return TCL_ERROR;
 	}
 	if (converter[opt] == NULL) {
-	    clientData[opt] = (ClientData)1;
+	    clientData[opt] = INT2PTR(1);
 	    i++;
 	} else {
 	    if (objc < i + 1) {
@@ -211,10 +217,14 @@ static int
 GetOptIndex(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr) 
 {
     Ns_ObjvSpec *entryPtr;
-    char        *key = Tcl_GetString(obj);
+    char        *key;
     int          idx;
 
+    assert(obj != NULL);
+    assert(tablePtr != NULL);    
+    assert(idxPtr != NULL);
 
+    key = Tcl_GetString(obj);
     if (*key != '-') {
 	return TCL_ERROR;
     }
@@ -335,7 +345,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
  */
 
 int
-Ns_ObjvInt(struct Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
            Tcl_Obj *CONST* objv)
 {
     int *dest = spec->dest;
@@ -348,7 +358,7 @@ Ns_ObjvInt(struct Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 }
 
 int
-Ns_ObjvLong(struct Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             Tcl_Obj *CONST* objv)
 {
     long *dest = spec->dest;
@@ -406,8 +416,7 @@ Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
-            Tcl_Obj *CONST* objv)
+Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST* objv)
 {
     int *dest = spec->dest;
 
@@ -983,6 +992,8 @@ FreeSpecs(Ns_ObjvSpec *specPtr)
     Ns_ObjvSpec  *saveSpec = specPtr;
     int           doneOpts = 0;
 
+    assert(specPtr != NULL);
+
     while(1) {
         if (specPtr->key == NULL) {
             if (doneOpts) {
@@ -1194,7 +1205,8 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *CONST*
 {
     Tcl_Obj  *listObj;
 
-    if ((listObj = Tcl_NewListObj(*objcPtr, objv)) == NULL) {
+    listObj = Tcl_NewListObj(*objcPtr, objv);
+    if (listObj == NULL) {
         return TCL_ERROR;
     }
     if (Tcl_SetVar2Ex(interp, "args", NULL, listObj,
@@ -1231,7 +1243,13 @@ static int
 SetValue(Tcl_Interp *interp, char *key, Tcl_Obj *valueObj)
 {
     size_t  len;
-    char   *name = key, *value = Tcl_GetString(valueObj);
+    char   *name = key, *value;
+
+    assert(interp != NULL);
+    assert(key != NULL);
+    assert(valueObj != NULL);
+
+    value = Tcl_GetString(valueObj);
 
     if (name[0] == '-' || name[0] == '?') {
         name++;
