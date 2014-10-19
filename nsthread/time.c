@@ -38,64 +38,6 @@
 
 
 /*
- * Platform-independent approach using Tcl_GetTime(), added by Zoran
- * Vasiljevic on 2007-09-29:
- *
- * Be wary that at least on Windows 7 64-bit with ActiveTcl 8.5, you
- * MUST NOT call this code from within DllMain().  If you do,
- * Naviserver locks up hard on startup inside TclpGetDate().
- * --atp@piskorski.com, 2014/10/04 01:20 EDT
- */
-void
-Ns_GetTimeFromTcl(Ns_Time *timePtr)
-{
-    Tcl_Time tbuf;
-    Tcl_GetTime(&tbuf);
-
-    timePtr->sec = tbuf.sec;
-    timePtr->usec = tbuf.usec;
-}
-
-/*
- * This is same Windows-specific code used in AOLserver 4.0.7 and
- * 4.5.2, and in Naviserver prior to Zoran's 2007-09-29 change:
- */
-#ifdef _WIN32
-void
-Ns_GetTimeFromWindowsFileTime(Ns_Time *timePtr)
-{
-    /* Number of 100 nanosecond units from 1601-01-01 to 1970-01-01: */
-#define EPOCH_BIAS  116444736000000000i64
-
-    union {
-	unsigned __int64    i;
-	FILETIME	    s;
-    } ft;
-
-    GetSystemTimeAsFileTime(&ft.s);
-    timePtr->sec  = (long)((ft.i - EPOCH_BIAS) / 10000000i64);
-    timePtr->usec = (long)((ft.i / 10i64     ) %  1000000i64);
-}
-#endif
-
-/*
- * Use native gettimeofday().
- * Essentially this same Unix-only code has been used in Ns_GetTime()
- * since at least AOLserver 4.0.7, and probably earlier:
- */
-#ifdef HAVE_GETTIMEOFDAY
-void
-Ns_GetTimeFromGetTimeOfDay(Ns_Time *timePtr)
-{
-    struct timeval tbuf;
-
-    gettimeofday(&tbuf, NULL);
-    timePtr->sec = tbuf.tv_sec;
-    timePtr->usec = tbuf.tv_usec;
-}
-#endif
-
-/*
  *----------------------------------------------------------------------
  *
  * Ns_GetTime --
@@ -110,6 +52,65 @@ Ns_GetTimeFromGetTimeOfDay(Ns_Time *timePtr)
  *
  *----------------------------------------------------------------------
  */
+
+/* 
+ *  Platform-independent approach to get the current time value
+ *  using Tcl_GetTime().
+ *
+ *  Be aware that calling this function requires Tcl to be
+ *  initialized.  Therefore, one MUST NOT call this code from
+ *  within DllMain() under windows, otherwise the call is blocked
+ *  or the behavior is undefined.  Therefore, don't use this
+ *  variant under Windows, when Mutex timing are activated.
+ */
+void
+Ns_GetTimeFromTcl(Ns_Time *timePtr)
+{
+    Tcl_Time tbuf;
+    Tcl_GetTime(&tbuf);
+
+    timePtr->sec = tbuf.sec;
+    timePtr->usec = tbuf.usec;
+}
+
+#ifdef HAVE_GETTIMEOFDAY
+void
+Ns_GetTimeFromGetTimeOfDay(Ns_Time *timePtr)
+{
+    struct timeval tbuf;
+
+    gettimeofday(&tbuf, NULL);
+    timePtr->sec = tbuf.tv_sec;
+    timePtr->usec = tbuf.tv_usec;
+}
+#endif
+
+/*
+ *  Platform-dependent approach to get the current time value from
+ *  Windows via GetSystemTimeAsFileTime()
+ *
+ *  Note: This version can be used together with Mutex timing under
+ *  Windows.
+ */
+#ifdef _WIN32
+void
+Ns_GetTimeFromWindowsFileTime(Ns_Time *timePtr)
+{
+    /* 
+     * Number of 100 nanosecond units from 1601-01-01 to 1970-01-01: 
+     */
+    static const __int64 EPOCH_BIAS = 116444736000000000i64;
+
+    union {
+	unsigned __int64    i;
+	FILETIME	    s;
+    } ft;
+
+    GetSystemTimeAsFileTime(&ft.s);
+    timePtr->sec  = (long)((ft.i - EPOCH_BIAS) / 10000000i64);
+    timePtr->usec = (long)((ft.i / 10i64     ) %  1000000i64);
+}
+#endif
 
 void
 Ns_GetTime(Ns_Time *timePtr)
